@@ -253,7 +253,6 @@ func (e *Store) LookupByEndpoint(endpoint net.NumericEndpoint) []LookupResult {
 		e.track("LookupByEndpoint(%s): found=true, foundIn=endpointsStore", endpoint.String())
 		return append(current, historical...)
 	}
-	// TODO: cover this if-case with tests!
 	if len(ipLookup)+len(ipLookupHistorical) > 0 {
 		e.track("LookupByEndpoint(%s): found=true, foundIn=ipLookup", endpoint.String())
 		return append(ipLookupHistorical, ipLookup...)

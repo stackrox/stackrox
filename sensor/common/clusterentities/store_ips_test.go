@@ -4,6 +4,7 @@ import (
 	"golang.org/x/exp/maps"
 
 	"github.com/stackrox/rox/pkg/net"
+	"github.com/stackrox/rox/pkg/networkgraph"
 )
 
 func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastIPs() {
@@ -422,6 +423,11 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastIPs() {
 
 func (s *ClusterEntitiesStoreTestSuite) TestChangingIPsAndExternalEntities() {
 	entityStore := NewStore()
+	type expectation struct {
+		ip           string
+		port         uint16
+		deploymentID string
+	}
 	type eUpdate struct {
 		deploymentID string
 		ipAddr       string
@@ -430,7 +436,7 @@ func (s *ClusterEntitiesStoreTestSuite) TestChangingIPsAndExternalEntities() {
 	}
 	cases := map[string]struct {
 		entityUpdates     []eUpdate
-		expectedEndpoints []string
+		expectedEndpoints []expectation
 	}{
 		"Incremental updates to the store shall not loose data": {
 			entityUpdates: []eUpdate{
@@ -447,7 +453,18 @@ func (s *ClusterEntitiesStoreTestSuite) TestChangingIPsAndExternalEntities() {
 					incremental:  true,
 				},
 			},
-			expectedEndpoints: []string{"10.0.0.1", "10.3.0.1"},
+			expectedEndpoints: []expectation{
+				{
+					ip:           "10.0.0.1",
+					port:         80,
+					deploymentID: "pod1",
+				},
+				{
+					ip:           "10.3.0.1",
+					port:         80,
+					deploymentID: "pod1",
+				},
+			},
 		},
 		"Non-incremental updates to the store shall overwrite all data for a key": {
 			entityUpdates: []eUpdate{
@@ -470,7 +487,37 @@ func (s *ClusterEntitiesStoreTestSuite) TestChangingIPsAndExternalEntities() {
 					incremental:  true,
 				},
 			},
-			expectedEndpoints: []string{"10.3.0.1", "10.0.0.2"},
+			expectedEndpoints: []expectation{
+				{
+					ip:           "10.3.0.1",
+					port:         80,
+					deploymentID: "pod1",
+				},
+				{
+					ip:           "10.0.0.2",
+					port:         80,
+					deploymentID: "pod2",
+				},
+			},
+		},
+		"Lookup by NetAddr finds data when endpoint cannot be found": {
+			entityUpdates: []eUpdate{
+				{
+					deploymentID: "pod2",
+					ipAddr:       "20.0.0.2",
+					port:         99,
+					incremental:  false,
+				},
+			},
+			// We will not find endpoint for port 80, but thanks to the ipLookup,
+			// should still be able to find pod2.
+			expectedEndpoints: []expectation{
+				{
+					ip:           "20.0.0.2",
+					port:         80,
+					deploymentID: "pod2",
+				},
+			},
 		},
 	}
 	for name, tCase := range cases {
@@ -481,8 +528,11 @@ func (s *ClusterEntitiesStoreTestSuite) TestChangingIPsAndExternalEntities() {
 				}, update.incremental)
 			}
 			for _, expectedEndpoint := range tCase.expectedEndpoints {
-				result := entityStore.LookupByEndpoint(buildEndpoint(expectedEndpoint))
-				s.Lenf(result, 1, "Expected endpoint %q not found", expectedEndpoint)
+				result := entityStore.LookupByEndpoint(buildEndpoint(expectedEndpoint.ip, expectedEndpoint.port))
+				s.Require().Lenf(result, 1, "Expected endpoint %q not found", expectedEndpoint)
+				s.Equal(networkgraph.EntityForDeployment(expectedEndpoint.deploymentID), result[0].Entity)
+				s.Require().Len(result[0].ContainerPorts, 1)
+				s.Equal(expectedEndpoint.port, result[0].ContainerPorts[0])
 			}
 		})
 	}

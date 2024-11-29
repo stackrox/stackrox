@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/set"
+
 	"golang.org/x/exp/maps"
 )
 
@@ -17,10 +18,12 @@ const (
 	deleteDeployment1 operation = "deleteDeployment1"
 )
 
-func buildEndpoint(ip string) net.NumericEndpoint {
+func buildEndpoint(ip string, port uint16) net.NumericEndpoint {
+	peer := net.ParseIPPortPair(ip)
 	return net.NumericEndpoint{
 		IPAndPort: net.NetworkPeerID{
-			Address: net.ParseIP(ip),
+			Address: peer.Address,
+			Port:    port,
 		},
 		L4Proto: net.TCP,
 	}
@@ -35,7 +38,7 @@ func entityUpdate(ip, contID string, port uint16) *EntityData {
 
 func entityUpdateWithPortName(ip, contID string, port uint16, portName string) *EntityData {
 	ed := &EntityData{}
-	ep := buildEndpoint(ip)
+	ep := buildEndpoint(ip, port)
 	ed.AddEndpoint(ep, EndpointTargetInfo{
 		ContainerPort: port,
 		PortName:      portName,

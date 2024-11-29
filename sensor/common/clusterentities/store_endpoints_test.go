@@ -278,7 +278,7 @@ func expectDeployment80(ip, deplID, portName string, location whereThingIsStored
 
 func buildExpectation(ip, deplID, portName string, location whereThingIsStored, typeFunc func(string) networkgraph.Entity, port int) expectation {
 	return expectation{
-		query:        buildEndpoint(ip),
+		query:        buildEndpoint(ip, uint16(port)),
 		wantLocation: location,
 		wantLookupResult: LookupResult{
 			Entity:         typeFunc(deplID),
