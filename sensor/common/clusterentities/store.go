@@ -184,26 +184,30 @@ func (e *Store) Apply(updates map[string]*EntityData, incremental bool, auxInfo 
 // currentlyStoredPublicIPs returns all public IPs currently stored in the store (including history).
 func (e *Store) currentlyStoredPublicIPs() set.Set[net.IPAddress] {
 	s := set.NewSet[net.IPAddress]()
-	for endpoint := range e.endpointsStore.endpointMap {
-		if endpoint.IPAndPort.Address.IsPublic() {
-			s.Add(endpoint.IPAndPort.Address)
+	concurrency.WithRLock(&e.endpointsStore.mutex, func() {
+		for endpoint := range e.endpointsStore.endpointMap {
+			if endpoint.IPAndPort.Address.IsPublic() {
+				s.Add(endpoint.IPAndPort.Address)
+			}
 		}
-	}
-	for endpoint := range e.endpointsStore.historicalEndpoints {
-		if endpoint.IPAndPort.Address.IsPublic() {
-			s.Add(endpoint.IPAndPort.Address)
+		for endpoint := range e.endpointsStore.historicalEndpoints {
+			if endpoint.IPAndPort.Address.IsPublic() {
+				s.Add(endpoint.IPAndPort.Address)
+			}
 		}
-	}
-	for address := range e.podIPsStore.ipMap {
-		if address.IsPublic() {
-			s.Add(address)
+	})
+	concurrency.WithRLock(&e.podIPsStore.mutex, func() {
+		for address := range e.podIPsStore.ipMap {
+			if address.IsPublic() {
+				s.Add(address)
+			}
 		}
-	}
-	for address := range e.podIPsStore.historicalIPs {
-		if address.IsPublic() {
-			s.Add(address)
+		for address := range e.podIPsStore.historicalIPs {
+			if address.IsPublic() {
+				s.Add(address)
+			}
 		}
-	}
+	})
 	return s
 }
 

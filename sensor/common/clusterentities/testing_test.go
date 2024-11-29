@@ -6,7 +6,6 @@ import (
 
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/set"
-
 	"golang.org/x/exp/maps"
 )
 
