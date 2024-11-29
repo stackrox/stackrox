@@ -109,11 +109,10 @@ func (c *CentralDB) validate() error {
 type Config struct {
 	Maintenance Maintenance
 	CentralDB   CentralDB
-	Instance    Instance
 }
 
 type yamlConfig interface {
-	centralConfig | externalDBConfig | instanceConfig
+	centralConfig | externalDBConfig
 }
 
 // Central Config
@@ -124,18 +123,6 @@ type centralConfig struct {
 // External DB Config
 type externalDBConfig struct {
 	CentralDB CentralDB `yaml:"centralDB"`
-}
-
-// Stackrox Instance Config
-type instanceConfig struct {
-	Instance Instance `yaml:"instance"`
-}
-
-// Instance defines all configuration-defined instance metadata
-type Instance struct {
-	CaCertificate string `yaml:"caCertificate"`
-	ApiToken      string `yaml:"apiToken"`
-	endpoints     string `yaml:"endpoints"`
 }
 
 func (c *Config) applyDefaults() {
