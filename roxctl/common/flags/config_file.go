@@ -1,8 +1,17 @@
 package flags
 
 import (
+<<<<<<< Updated upstream
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/env"
+=======
+	"path/filepath"
+
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+	"github.com/stackrox/rox/pkg/env"
+	fileutils "github.com/stackrox/rox/pkg/fileutils"
+>>>>>>> Stashed changes
 )
 
 // TODO: Where do we put these type definitions?
@@ -22,16 +31,28 @@ func NewConfig() *Config {
 }
 
 type ClientConfig struct {
+<<<<<<< Updated upstream
 	config      Config
+=======
+	config      *Config
+>>>>>>> Stashed changes
 	contextName string
 }
 
 var (
+<<<<<<< Updated upstream
 	configFile string
 	// configApiTokenFileSet      bool
 	// configCaCertificateFileSet bool
 	// configEndpointSet          bool
 	configFileChanged *bool
+=======
+	configFile        string
+	configFileChanged *bool
+	// configApiTokenFileSet      bool
+	// configCaCertificateFileSet bool
+	// configEndpointSet          bool
+>>>>>>> Stashed changes
 )
 
 // AddConfigurationFile adds --config-file flag to the base command.
@@ -40,7 +61,11 @@ func AddConfigurationFile(c *cobra.Command) {
 		"config-file",
 		"",
 		"",
+<<<<<<< Updated upstream
 		"Utilize instance-specific metadata defined within a configuration file. "+
+=======
+		"Utilize instance-specific metadata defined within a configuration file hello. "+
+>>>>>>> Stashed changes
 			"Alternatively, set the path via the ROX_CONFIG_FILE environment variable")
 	configFileChanged = &c.PersistentFlags().Lookup("config-file").Changed
 }
@@ -55,4 +80,46 @@ func ConfigurationFileChanged() bool {
 	return configFileChanged != nil && *configFileChanged
 }
 
+<<<<<<< Updated upstream
 func ReadConfigFile(fileName string) (string, error) {}
+=======
+// Load loads a config file from a given path
+//   - Load will prioritize the values that are defined within
+//     the configuration files over variables defined within the environment
+func Load(configPath string) (*ClientConfig, error) {
+
+	config := NewConfig()
+
+	if configPath != "" {
+		path := filepath.Dir(configPath)
+		filename := filepath.Base(configPath)
+		ext := filepath.Ext(configPath)
+	}
+
+	exists, err := fileutils.Exists(path)
+
+	if err != nil {
+		return config, err
+	}
+
+	// Checks for the existing values defined by environment variables
+
+	// NOTE: *Changed indicates that something is different from the default value
+	endpoint, plaintext, err := EndpointAndPlaintextSetting()
+
+	if err != nil {
+		return config, err
+	}
+
+	caCertFile := CAFile()
+	apiTokenFile := APITokenFile()
+
+	// if len(data) == 0 {
+	// 	return &ClientConfig{config, ""}, nil
+	// }
+
+	return &ClientConfig{config, ""}, nil
+}
+
+// func ReadConfigFile(fileName string) (string, error) {}
+>>>>>>> Stashed changes
