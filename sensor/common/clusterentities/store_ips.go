@@ -84,19 +84,17 @@ func (e *podIPsStore) RecordTick() set.FrozenSet[net.IPAddress] {
 	return dec
 }
 
-func (e *podIPsStore) Apply(updates map[string]*EntityData, incremental bool) (dec, inc set.FrozenSet[net.IPAddress]) {
+func (e *podIPsStore) Apply(updates map[string]*EntityData, incremental bool) {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
-	return e.applyNoLock(updates, incremental)
+	e.applyNoLock(updates, incremental)
 }
 
-func (e *podIPsStore) applyNoLock(updates map[string]*EntityData, incremental bool) (dec, inc set.FrozenSet[net.IPAddress]) {
+func (e *podIPsStore) applyNoLock(updates map[string]*EntityData, incremental bool) {
 	defer e.updateMetricsNoLock()
-	dec = set.NewFrozenSet[net.IPAddress]()
-	inc = set.NewFrozenSet[net.IPAddress]()
 	if !incremental {
 		for deploymentID := range updates {
-			dec = dec.Union(e.purgeDeploymentNoLock(deploymentID))
+			e.purgeDeploymentNoLock(deploymentID)
 		}
 	}
 	for deploymentID, data := range updates {
@@ -104,27 +102,18 @@ func (e *podIPsStore) applyNoLock(updates map[string]*EntityData, incremental bo
 			// A call to Apply() with empty payload of the updates map (no values) is meant to be a delete operation.
 			continue
 		}
-		decA, incA := e.applySingleNoLock(deploymentID, *data)
-		dec = dec.Union(decA)
-		inc = inc.Union(incA)
+		e.applySingleNoLock(deploymentID, *data)
 	}
-	// All IPs from `inc` will get +1, whereas all from `dec` will get -1. Let's optimize a bit
-	common := inc.Intersect(dec)
-	dec = dec.Difference(common)
-	inc = inc.Difference(common)
-	return dec, inc
 }
 
-func (e *podIPsStore) purgeDeploymentNoLock(deploymentID string) set.FrozenSet[net.IPAddress] {
-	decPublicIPs := set.NewFrozenSet[net.IPAddress]()
+func (e *podIPsStore) purgeDeploymentNoLock(deploymentID string) {
 	if e.historyEnabled() {
 		e.moveDeploymentToHistory(deploymentID)
 	} else {
-		decPublicIPs = decPublicIPs.Union(e.deleteDeploymentFromCurrent(deploymentID))
+		e.deleteDeploymentFromCurrent(deploymentID)
 		// In case we allow in the future to disable history during runtime, we would need to remove here all
 		// expired data for deploymentID from the history.
 	}
-	return decPublicIPs
 }
 
 func (e *podIPsStore) LookupByNetAddr(ip net.IPAddress, port uint16) (results, historical []LookupResult) {

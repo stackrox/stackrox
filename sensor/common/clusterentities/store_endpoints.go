@@ -87,19 +87,17 @@ func (e *endpointsStore) RecordTick() set.Set[net.NumericEndpoint] {
 	return expiredEndpointsWithPublicIP
 }
 
-func (e *endpointsStore) Apply(updates map[string]*EntityData, incremental bool) (dec, inc set.Set[net.NumericEndpoint]) {
+func (e *endpointsStore) Apply(updates map[string]*EntityData, incremental bool) {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
-	return e.applyNoLock(updates, incremental)
+	e.applyNoLock(updates, incremental)
 }
 
-func (e *endpointsStore) applyNoLock(updates map[string]*EntityData, incremental bool) (dec, inc set.Set[net.NumericEndpoint]) {
+func (e *endpointsStore) applyNoLock(updates map[string]*EntityData, incremental bool) {
 	defer e.updateMetricsNoLock()
-	dec = set.NewSet[net.NumericEndpoint]()
-	inc = set.NewSet[net.NumericEndpoint]()
 	if !incremental {
 		for deploymentID := range updates {
-			dec = dec.Union(e.purgeNoLock(deploymentID))
+			e.purgeNoLock(deploymentID)
 		}
 	}
 	for deploymentID, data := range updates {
@@ -107,11 +105,8 @@ func (e *endpointsStore) applyNoLock(updates map[string]*EntityData, incremental
 			// A call to Apply() with empty payload of the updates map (no values) is meant to be a delete operation.
 			continue
 		}
-		decApply, incApply := e.applySingleNoLock(deploymentID, *data)
-		dec = dec.Union(decApply)
-		inc = inc.Union(incApply)
+		e.applySingleNoLock(deploymentID, *data)
 	}
-	return dec, inc
 }
 
 func (e *endpointsStore) purgeNoLock(deploymentID string) set.Set[net.NumericEndpoint] {
@@ -133,10 +128,7 @@ func (e *endpointsStore) purgeNoLock(deploymentID string) set.Set[net.NumericEnd
 	return dec
 }
 
-func (e *endpointsStore) applySingleNoLock(deploymentID string, data EntityData) (dec, inc set.Set[net.NumericEndpoint]) {
-	publicIPsToIncrement := set.NewSet[net.NumericEndpoint]()
-	publicIPsToDecrement := set.NewSet[net.NumericEndpoint]()
-
+func (e *endpointsStore) applySingleNoLock(deploymentID string, data EntityData) {
 	dSet, deploymentFound := e.reverseEndpointMap[deploymentID]
 	if !deploymentFound || dSet == nil {
 		dSet = set.NewSet[net.NumericEndpoint]()
@@ -160,10 +152,6 @@ func (e *endpointsStore) applySingleNoLock(deploymentID string, data EntityData)
 				}
 			}
 		}
-		newPublicIPsOfThisEndpoint := set.NewSet[net.NumericEndpoint]()
-		if ipAddr := ep.IPAndPort.Address; ipAddr.IsPublic() {
-			newPublicIPsOfThisEndpoint.Add(ep)
-		}
 		etiSet, targetFound := e.endpointMap[ep][deploymentID]
 		if !targetFound {
 			etiSet = set.NewSet[EndpointTargetInfo]()
@@ -173,12 +161,8 @@ func (e *endpointsStore) applySingleNoLock(deploymentID string, data EntityData)
 		}
 		e.endpointMap[ep][deploymentID] = etiSet
 		// Endpoints previously marked as historical may need to be restored.
-		// Note that the endpoints deleted from history may be totally different from the newPublicIPsOfThisEndpoint,
-		// so there may be some IPs for which we will need to decrement the counters.
-		publicIPsToIncrement = publicIPsToIncrement.Union(newPublicIPsOfThisEndpoint) // append
-		publicIPsToDecrement = publicIPsToDecrement.Union(e.deleteFromHistory(deploymentID, ep))
+		e.deleteFromHistory(deploymentID, ep)
 	}
-	return publicIPsToDecrement, publicIPsToIncrement
 }
 
 type netAddrLookupper interface {
