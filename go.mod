@@ -6,7 +6,7 @@ require (
 	cloud.google.com/go/artifactregistry v1.16.0
 	cloud.google.com/go/compute/metadata v0.5.2
 	cloud.google.com/go/containeranalysis v0.13.2
-	cloud.google.com/go/securitycenter v1.35.1
+	cloud.google.com/go/securitycenter v1.35.2
 	cloud.google.com/go/storage v1.47.0
 	github.com/Azure/azure-sdk-for-go-extensions v0.1.8
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.16.0
@@ -29,7 +29,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.46
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.20
 	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.17.41
-	github.com/aws/aws-sdk-go-v2/service/ecr v1.30.3
+	github.com/aws/aws-sdk-go-v2/service/ecr v1.36.6
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.69.0
 	github.com/aws/aws-sdk-go-v2/service/securityhub v1.54.6
 	github.com/aws/aws-sdk-go-v2/service/sts v1.33.1
@@ -71,7 +71,7 @@ require (
 	github.com/hashicorp/go-version v1.7.0
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/heimdalr/dag v1.5.0
-	github.com/helm/helm-mapkubeapis v0.4.1
+	github.com/helm/helm-mapkubeapis v0.5.2
 	github.com/heroku/docker-registry-client v0.0.0
 	github.com/jackc/pgtype v1.14.4
 	github.com/jackc/pgx/v4 v4.18.3

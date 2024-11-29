@@ -31,8 +31,9 @@ import (
 )
 
 const (
-	backupMaxTimeout               = 4 * time.Hour
-	testMaxTimeout                 = 5 * time.Second
+	backupMaxTimeout = 4 * time.Hour
+	// Keep test timeout smaller than the UI timeout (see apps/platform/src/services/instance.js#7).
+	testMaxTimeout                 = 9 * time.Second
 	initialConfigurationMaxTimeout = 5 * time.Minute
 	formatKey                      = "backup_2006-01-02T15:04:05.zip"
 )
