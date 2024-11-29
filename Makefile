@@ -119,9 +119,9 @@ GOCACHE_VOLUME_SRC := $(GOCACHE_VOLUME_NAME)
 endif
 
 ifeq ($(BIND_GOPATH),1)
-GOPATH_VOLUME_SRC := $(HOME)/go
+GOPATH_VOLUME_SRC := $(GOPATH)
 else
-GOPATH_VOLUME_SRC := $(HOME)/go
+GOPATH_VOLUME_SRC := $(GOPATH_VOLUME_NAME)
 endif
 
 LOCAL_VOLUME_ARGS := -v $(CURDIR):/src:delegated -v $(GOCACHE_VOLUME_SRC):/linux-gocache:delegated -v $(GOPATH_VOLUME_SRC):/go:delegated
@@ -406,7 +406,7 @@ endif
 
 .PHONY: build-prep
 build-prep: deps
-	mkdir -p $(HOME)/go/bin/{darwin_amd64,darwin_arm64,linux_amd64,linux_arm64,linux_ppc64le,linux_s390x,windows_amd64}
+	mkdir -p bin/{darwin_amd64,darwin_arm64,linux_amd64,linux_arm64,linux_ppc64le,linux_s390x,windows_amd64}
 
 .PHONY: cli-build
 cli-build: cli-linux cli-darwin cli-windows
@@ -414,11 +414,11 @@ cli-build: cli-linux cli-darwin cli-windows
 .PHONY: cli-install
 cli-install:
 	# Workaround a bug on MacOS
-	rm -f $(HOME)/go/bin/roxctl
+	rm -f $(GOPATH)/bin/roxctl
 	# Copy the user's specific OS into gopath
-	mkdir -p $(HOME)/go/bin
-	cp bin/$(HOST_OS)_$(GOARCH)/roxctl $(HOME)/go/bin/roxctl
-	chmod u+w $(HOME)/go/bin/roxctl
+	mkdir -p $(GOPATH)/bin
+	cp bin/$(HOST_OS)_$(GOARCH)/roxctl $(GOPATH)/bin/roxctl
+	chmod u+w $(GOPATH)/bin/roxctl
 
 .PHONY: cli
 cli: cli-build cli-install
