@@ -1,0 +1,18 @@
+values:
+  imagePullSecrets:
+    allowNone: true
+tests:
+- name: "The collector config map should not exist when it is disabled"
+  set:
+    collector:
+      runtimeConfig:
+        enable: true
+  expect: |
+    .configmaps["collector-config"] | assertThat(. != null)
+- name: "The collector config map should exist when it is enabled"
+  set:
+    collector:
+      runtimeConfig:
+        enable: false
+  expect: |
+    .configmaps["collector-config"] | assertThat(. == null)
