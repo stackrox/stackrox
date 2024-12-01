@@ -53,8 +53,9 @@ func versionCommand(cliEnvironment environment.Environment) *cobra.Command {
 // Command constructs and returns the roxctl command tree
 func Command() *cobra.Command {
 	c := &cobra.Command{
-		SilenceUsage: true,
-		Use:          os.Args[0],
+		SilenceUsage:      true,
+		Use:               os.Args[0],
+		PersistentPreRunE: flags.LoadConfig,
 	}
 
 	flags.AddNoColor(c)
@@ -62,9 +63,11 @@ func Command() *cobra.Command {
 	flags.AddConnectionFlags(c)
 	flags.AddAPITokenFile(c)
 	flags.AddConfigurationFile(c)
-	flags.Load() // TODO: Should this be moved?
 
 	c.MarkFlagsMutuallyExclusive("password", "token-file")
+
+	// TODO: Should endpoint, ca, and apitoken be mutually exclusive from config?
+	// c.MarkFlagsMutuallyExclusive("endpoint", "token-file", "ca", "config-file")
 
 	cliEnvironment := environment.CLIEnvironment()
 	c.SetErr(errorWriter{
