@@ -117,7 +117,7 @@ collector:
     networking:
       externalIps:
         enable: false
-      per_container_rate_limit: 1024
+      perContainerRateLimit: 1024
   [<- end >]
 
 auditLogs:
