@@ -24,11 +24,9 @@ type instanceConfig struct {
 }
 
 var (
-	configFile string
-	// configApiTokenFileSet      bool
-	// configCaCertificateFileSet bool
-	// configEndpointSet          bool
+	configFile        string
 	configFileChanged *bool
+	config            *instanceConfig
 
 	log = logging.CreateLogger(logging.CurrentModule(), 0)
 )
@@ -37,7 +35,7 @@ var (
 func AddConfigurationFile(c *cobra.Command) {
 	c.PersistentFlags().StringVarP(&configFile,
 		"config-file",
-		"",
+		"C",
 		"",
 		"Utilize instance-specific metadata defined within a configuration file. "+
 			"Alternatively, set the path via the ROX_CONFIG_FILE environment variable")
@@ -74,22 +72,24 @@ func readConfig(path string) (*Instance, error) {
 // Load loads a config file from a given path
 //   - Load will prioritize the values that are defined within
 //     the configuration files over variables defined within the environment
-func Load() (*instanceConfig, error) {
-
-	var config *instanceConfig
+func LoadConfig(cmd *cobra.Command, args []string) error {
 
 	if configFile == "" || ConfigurationFileChanged() == false {
-		return nil, nil
+		return nil
 	}
 
 	instance, err := readConfig(configFile)
 
-	if err != nil {
+	if err != nil || instance == nil {
 		config = nil
 		log.Errorf("Error reading instance config file: %v", err)
+		return err
 	}
 
-	config.Instance = *instance
+	config = &instanceConfig{Instance: *instance}
+
+	// CHORE: Remove prints
+	// fmt.Println(config)
 
 	// TODO: Fix priority
 	// TODO: Should it be file > flag > env?
@@ -106,5 +106,5 @@ func Load() (*instanceConfig, error) {
 		apiTokenFile = instance.ApiTokenFilePath
 	}
 
-	return config, nil
+	return nil
 }
