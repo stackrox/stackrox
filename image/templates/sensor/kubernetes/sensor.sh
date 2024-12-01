@@ -147,7 +147,7 @@ ${KUBE_COMMAND} apply -f "$DIR/collector-rbac.yaml" || print_rbac_instructions
 echo "Creating collector network policies..."
 ${KUBE_COMMAND} apply -f "$DIR/collector-netpol.yaml"
 if [[ -f "$DIR/collector-config.yaml" ]]; then
-  echo "Creating collector ConfigMap.."
+  echo "Creating collector ConfigMap..."
   ${KUBE_COMMAND} apply -f "$DIR/collector-config.yaml"
 fi
 if [[ -f "$DIR/collector-pod-security.yaml" ]]; then
