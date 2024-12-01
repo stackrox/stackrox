@@ -61,6 +61,8 @@ func Command() *cobra.Command {
 	flags.AddPassword(c)
 	flags.AddConnectionFlags(c)
 	flags.AddAPITokenFile(c)
+	flags.AddConfigurationFile(c)
+	flags.Load() // TODO: Should this be moved?
 
 	c.MarkFlagsMutuallyExclusive("password", "token-file")
 
