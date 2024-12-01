@@ -9,10 +9,10 @@ import (
 )
 
 type Instance struct {
-	ProfileName       string `yaml:"name"`
-	CaCertificatePath string `yaml:"caCertPath"`
-	ApiTokenFilePath  string `yaml:"apiTokenPath"`
-	Endpoint          string `yaml:"endpoint"`
+	ProfileName       string `json:"name"`
+	CaCertificatePath string `json:"caCertPath"`
+	ApiTokenFilePath  string `json:"apiTokenPath"`
+	Endpoint          string `json:"endpoint"`
 }
 
 type yamlConfig interface {
