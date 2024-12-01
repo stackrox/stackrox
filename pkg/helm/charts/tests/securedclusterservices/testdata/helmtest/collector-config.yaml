@@ -1,7 +1,0 @@
-- name: "The collector config map should not exist when it is disabled"
-  set:
-    collector:
-      runtimeConfig:
-        enable: true
-  expect: |
-    .configmaps["collector-config"] | assertThat(. == null)
