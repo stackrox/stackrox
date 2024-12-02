@@ -1,10 +1,10 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { format } from 'date-fns';
+import { Alert } from '@patternfly/react-core';
 
 import dateTimeFormat from 'constants/dateTimeFormat';
 import Widget from 'Components/Widget';
-import NoResultsMessage from 'Components/NoResultsMessage';
 
 const processData = (data) => {
     if (!data.violations || !data.violations.length) {
@@ -16,7 +16,7 @@ const processData = (data) => {
 const ViolationFindings = ({ data, message }) => {
     const policyViolation = processData(data);
     let content = null;
-    if (policyViolation) {
+    if (!policyViolation) {
         content = (
             <div className="mx-4 grid-dense grid-auto-fit grid grid-gap-4 xl:grid-gap-6 mb-4 xxxl:grid-gap-8 grid-columns-1 md:grid-columns-2 lg:grid-columns-3 w-full">
                 <Widget
@@ -61,12 +61,11 @@ const ViolationFindings = ({ data, message }) => {
             </div>
         );
     } else {
+        // Replaced Tailwind with PatternFly, however ViolationFindings might be an orphan component.
         content = (
-            <NoResultsMessage
-                message={message}
-                className="p-3 shadow mb-4 mx-4 bg-base-100 rounded"
-                icon="info"
-            />
+            <div className="w-full">
+                <Alert variant="success" isInline title={message} component="p" />
+            </div>
         );
     }
     return <div className="flex w-full bg-transparent">{content}</div>;

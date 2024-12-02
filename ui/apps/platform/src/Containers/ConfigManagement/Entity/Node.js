@@ -1,11 +1,11 @@
 import React, { useContext } from 'react';
 import { gql } from '@apollo/client';
+import { Alert } from '@patternfly/react-core';
 import { format } from 'date-fns';
 
 import dateTimeFormat from 'constants/dateTimeFormat';
 import entityTypes from 'constants/entityTypes';
 import useCases from 'constants/useCaseTypes';
-import NoResultsMessage from 'Components/NoResultsMessage';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import PageNotFound from 'Components/PageNotFound';
@@ -195,11 +195,14 @@ const Node = ({ id, entityListType, entityId1, query, entityContext, pagination 
                             <CollapsibleSection title="Node Findings">
                                 <div className="flex pdf-page pdf-stretch shadow relative rounded bg-base-100 mb-4 ml-4 mr-4">
                                     {failedComplianceResults.length === 0 && (
-                                        <NoResultsMessage
-                                            message="No nodes failing controls on this node"
-                                            className="p-3 shadow"
-                                            icon="info"
-                                        />
+                                        <div className="w-full">
+                                            <Alert
+                                                variant="success"
+                                                isInline
+                                                title="No failing controls on this node"
+                                                component="p"
+                                            />
+                                        </div>
                                     )}
                                     {failedComplianceResults.length > 0 && (
                                         <TableWidget

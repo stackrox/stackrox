@@ -2,11 +2,11 @@ import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 import { gql, useQuery } from '@apollo/client';
 import sortBy from 'lodash/sortBy';
+import { Alert } from '@patternfly/react-core';
 
 import workflowStateContext from 'Containers/workflowStateContext';
 import Loader from 'Components/Loader';
 import Widget from 'Components/Widget';
-import NoResultsMessage from 'Components/NoResultsMessage';
 import { checkForPermissionErrorMessage } from 'utils/permissionUtils';
 import queryService from 'utils/queryService';
 import entityTypes from 'constants/entityTypes';
@@ -84,16 +84,23 @@ const MostCommonVulnerabilities = ({ entityContext, search, limit }) => {
 
             const parsedMessage = checkForPermissionErrorMessage(error, defaultMessage);
 
-            content = <NoResultsMessage message={parsedMessage} className="p-3" icon="warn" />;
+            content = (
+                <div className="w-full">
+                    <Alert variant="warning" isInline title={parsedMessage} component="p" />
+                </div>
+            );
         } else {
             const processedData = processData(data, workflowState);
             if (!processedData || processedData.length === 0) {
                 content = (
-                    <NoResultsMessage
-                        message="No vulnerabilities found"
-                        className="p-3"
-                        icon="info"
-                    />
+                    <div className="w-full">
+                        <Alert
+                            variant="success"
+                            isInline
+                            title="No vulnerabilities found"
+                            component="p"
+                        />
+                    </div>
                 );
             } else {
                 content = <LabeledBarGraph data={processedData} title="Deployments" />;

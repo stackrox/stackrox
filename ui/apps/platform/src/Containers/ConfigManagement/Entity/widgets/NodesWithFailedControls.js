@@ -1,7 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { Alert } from '@patternfly/react-core';
+
 import entityTypes from 'constants/entityTypes';
-import NoResultsMessage from 'Components/NoResultsMessage';
 import { gql, useQuery } from '@apollo/client';
 import Raven from 'raven-js';
 import queryService from 'utils/queryService';
@@ -80,13 +81,16 @@ const NodesWithFailedControls = (props) => {
     const { executedControls = [] } = data;
     if (executedControls.length === 0) {
         return (
-            <NoResultsMessage
-                message={`No nodes failing ${
-                    entityType === entityTypes.CONTROL ? 'this control' : 'any controls'
-                }`}
-                className="p-6"
-                icon="info"
-            />
+            <div className="w-full">
+                <Alert
+                    variant="success"
+                    isInline
+                    title={`No nodes failing ${
+                        entityType === entityTypes.CONTROL ? 'this control' : 'any controls'
+                    }`}
+                    component="p"
+                />
+            </div>
         );
     }
 
@@ -96,24 +100,31 @@ const NodesWithFailedControls = (props) => {
     const numPassing = passingNodes.length;
     if (numPassing && !numFailing) {
         return (
-            <NoResultsMessage
-                message={`No nodes failing ${
-                    entityType === entityTypes.CONTROL ? 'this control' : 'any controls'
-                }`}
-                className="p-3 shadow"
-                icon="info"
-            />
+            <div className="w-full">
+                <Alert
+                    variant="success"
+                    isInline
+                    title={`No nodes failing ${
+                        entityType === entityTypes.CONTROL ? 'this control' : 'any controls'
+                    }`}
+                    component="p"
+                />
+            </div>
         );
     }
+
     if (!numPassing && !numFailing) {
         return (
-            <NoResultsMessage
-                message={`Findings ${
-                    entityContext[entityTypes.CONTROL] ? 'for this control' : 'across controls'
-                } could not be assessed`}
-                className="p-3 shadow"
-                icon="warn"
-            />
+            <div className="w-full">
+                <Alert
+                    variant="warning"
+                    isInline
+                    title={`Findings ${
+                        entityContext[entityTypes.CONTROL] ? 'for this control' : 'across controls'
+                    } could not be assessed`}
+                    component="p"
+                />
+            </div>
         );
     }
     const tableHeader = `${numFailing} ${numFailing === 1 ? 'node is' : 'nodes are'} ${
