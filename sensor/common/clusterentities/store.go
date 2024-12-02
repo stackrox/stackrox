@@ -305,6 +305,8 @@ func (e *Store) updatePublicIPRefs(addrs set.Set[net.IPAddress]) {
 }
 
 func (e *Store) notifyPublicIPsListenersNoLock(notifyFunc func(PublicIPsListener, set.Set[net.IPAddress]), ips set.Set[net.IPAddress]) {
+	e.publicIPsTrackingMutex.RLock()
+	defer e.publicIPsTrackingMutex.RUnlock()
 	for listener := range e.publicIPsListeners {
 		notifyFunc(listener, ips)
 	}
