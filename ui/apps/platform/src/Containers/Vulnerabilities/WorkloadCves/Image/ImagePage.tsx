@@ -27,8 +27,8 @@ import PageTitle from 'Components/PageTitle';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import useIsScannerV4Enabled from 'hooks/useIsScannerV4Enabled';
 import useURLPagination from 'hooks/useURLPagination';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 
 import HeaderLoadingSkeleton from '../../components/HeaderLoadingSkeleton';
 import { getOverviewPagePath } from '../../utils/searchUtils';
@@ -66,13 +66,10 @@ export const imageDetailsQuery = gql`
 `;
 
 function ScannerV4RequiredTooltip({ children }: { children: ReactElement }) {
-    return (
-        <Tooltip content="SBOM generation requires Scanner V4 to be enabled">{children}</Tooltip>
-    );
+    return <Tooltip content="SBOM generation requires Scanner V4">{children}</Tooltip>;
 }
 
 function ImagePage() {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
     const { imageId } = useParams();
     const { data, error } = useQuery<
         {
@@ -97,7 +94,7 @@ function ImagePage() {
     const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
 
     const hasGenerateSBOMAbility = useHasGenerateSBOMAbility();
-    const isScannerV4Enabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
+    const isScannerV4Enabled = useIsScannerV4Enabled();
 
     const imageData = data && data.image;
     const imageName = imageData?.name;

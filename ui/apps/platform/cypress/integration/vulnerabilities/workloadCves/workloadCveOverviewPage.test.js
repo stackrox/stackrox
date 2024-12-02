@@ -14,11 +14,17 @@ import {
 } from './WorkloadCves.helpers';
 import { selectors } from './WorkloadCves.selectors';
 import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
-import { sortByTableHeader, verifyColumnManagement } from '../../../helpers/tableHelpers';
+import {
+    openTableRowActionMenu,
+    sortByTableHeader,
+    verifyColumnManagement,
+} from '../../../helpers/tableHelpers';
 import {
     getRouteMatcherMapForGraphQL,
     expectRequestedSort,
     interceptAndWatchRequests,
+    interceptAndOverridePermissions,
+    interceptAndOverrideFeatureFlags,
 } from '../../../helpers/request';
 
 describe('Workload CVE overview page tests', () => {
@@ -113,6 +119,50 @@ describe('Workload CVE overview page tests', () => {
             visitWorkloadCveOverview();
             selectEntityTab('Deployment');
             verifyColumnManagement({ tableSelector: 'table' });
+        });
+    });
+
+    describe('SBOM generation tests', () => {
+        const sbomGenerationButtonSelector = 'button:contains("Generate SBOM")';
+
+        before(function () {
+            if (!hasFeatureFlag('ROX_SBOM_GENERATION')) {
+                this.skip();
+            }
+        });
+
+        it('should hide the SBOM generation menu item when the user does not have write access to the Image resource', () => {
+            interceptAndOverridePermissions({ Image: 'READ_ACCESS' });
+
+            visitWorkloadCveOverview();
+            selectEntityTab('Image');
+            openTableRowActionMenu(selectors.firstTableRow);
+
+            cy.get(sbomGenerationButtonSelector).should('not.exist');
+        });
+
+        it('should disable the SBOM generation button when Scanner V4 is not enabled', () => {
+            interceptAndOverrideFeatureFlags({ ROX_SCANNER_V4: false });
+
+            visitWorkloadCveOverview();
+            selectEntityTab('Image');
+            openTableRowActionMenu(selectors.firstTableRow);
+
+            cy.get(sbomGenerationButtonSelector).should('have.attr', 'aria-disabled', 'true');
+        });
+
+        it('should trigger a download of the image SBOM via confirmation modal', function () {
+            if (!hasFeatureFlag('ROX_SCANNER_V4')) {
+                this.skip();
+            }
+
+            visitWorkloadCveOverview();
+            selectEntityTab('Image');
+            openTableRowActionMenu(selectors.firstTableRow);
+
+            cy.get(sbomGenerationButtonSelector).should('not.have.attr', 'aria-disabled');
+
+            // TODO Add to implementation
         });
     });
 
