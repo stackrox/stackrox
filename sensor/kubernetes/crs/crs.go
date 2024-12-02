@@ -118,7 +118,7 @@ func registerCluster() error {
 
 	// Store certificates+keys contained in Central's centralHello response as
 	// Kubernetes secrets named `tls-cert-<service slug name>`.
-	err = persistCertificates(ctx, centralHello, k8sClient)
+	err = persistCertificates(ctx, centralHello.GetCertBundle(), k8sClient)
 	if err != nil {
 		return errors.Wrap(err, "persisting certificates")
 	}
@@ -239,8 +239,7 @@ func centralHandshake(ctx context.Context, k8sClient kubernetes.Interface, centr
 }
 
 // persistCertificates persists as Kubernetes Secrets the certificates and keys retrieved from Central during the cluster-registration handshake.
-func persistCertificates(ctx context.Context, centralHello *central.CentralHello, k8sClient kubernetes.Interface) error {
-	certsFileMap := centralHello.GetCertBundle()
+func persistCertificates(ctx context.Context, certsFileMap map[string]string, k8sClient kubernetes.Interface) error {
 	for fileName := range certsFileMap {
 		log.Debugf("Received certificate from Central named %s.", fileName)
 	}
