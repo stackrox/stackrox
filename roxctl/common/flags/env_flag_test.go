@@ -31,6 +31,7 @@ func TestFlagOrSettingValue(t *testing.T) {
 	assert.Equal(t, "some-test-value", Password())
 }
 
+// TODO: How do I make this work from running "test ."?
 func TestFlagOrConfigurationValueFlags(t *testing.T) {
 
 	var (
