@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
 import { ActionsColumn, IAction, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
@@ -19,6 +19,7 @@ import {
 } from 'hooks/useManagedColumns';
 import useIsScannerV4Enabled from 'hooks/useIsScannerV4Enabled';
 import useHasGenerateSBOMAbility from '../../hooks/useHasGenerateSBOMAbility';
+import GenerateSbomModal from '../../components/GenerateSbomModal';
 import ImageNameLink from '../components/ImageNameLink';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import { VulnerabilitySeverityLabel, WatchStatus } from '../../types';
@@ -57,6 +58,7 @@ export const imageListQuery = gql`
                 registry
                 remote
                 tag
+                fullName
             }
             imageCVECountBySeverity(query: $query) {
                 critical {
@@ -93,6 +95,7 @@ export type Image = {
         registry: string;
         remote: string;
         tag: string;
+        fullName: string;
     } | null;
     imageCVECountBySeverity: {
         critical: { total: number };
@@ -145,6 +148,7 @@ function ImageOverviewTable({
     const hasActionColumn = hasWriteAccessForWatchedImage || hasGenerateSBOMAbility;
     const colSpan =
         5 + (hasActionColumn ? 1 : 0) + (showCveDetailFields ? 1 : 0) + -hiddenColumnCount;
+    const [sbomTargetImage, setSbomTargetImage] = useState<string>();
 
     return (
         <Table borders={false} variant="compact">
@@ -236,7 +240,9 @@ function ImageOverviewTable({
                                 description: !isScannerV4Enabled
                                     ? 'SBOM generation requires Scanner V4'
                                     : undefined,
-                                onClick: () => {},
+                                onClick: () => {
+                                    setSbomTargetImage(name?.fullName);
+                                },
                             });
                         }
 
@@ -340,6 +346,15 @@ function ImageOverviewTable({
                     })
                 }
             />
+            {sbomTargetImage && (
+                <GenerateSbomModal
+                    onClose={() => setSbomTargetImage(undefined)}
+                    imageFullName={sbomTargetImage}
+                    onGenerateSbom={() => {
+                        // TODO Implement analytics event
+                    }}
+                />
+            )}
         </Table>
     );
 }

@@ -1,4 +1,4 @@
-import React, { ReactElement, ReactNode } from 'react';
+import React, { ReactElement, ReactNode, useState } from 'react';
 import {
     Alert,
     Breadcrumb,
@@ -31,9 +31,10 @@ import useIsScannerV4Enabled from 'hooks/useIsScannerV4Enabled';
 import useURLPagination from 'hooks/useURLPagination';
 
 import HeaderLoadingSkeleton from '../../components/HeaderLoadingSkeleton';
+import GenerateSbomModal from '../../components/GenerateSbomModal';
 import { getOverviewPagePath } from '../../utils/searchUtils';
 import useInvalidateVulnerabilityQueries from '../../hooks/useInvalidateVulnerabilityQueries';
-import useHasGenerateSBOMAbility from '../../hooks/useHasGenerateSBOMAbility';
+import useHasGenerateSbomAbility from '../../hooks/useHasGenerateSBOMAbility';
 import ImagePageVulnerabilities from './ImagePageVulnerabilities';
 import ImagePageResources from './ImagePageResources';
 import { detailsTabValues } from '../../types';
@@ -59,6 +60,7 @@ export const imageDetailsQuery = gql`
                 registry
                 remote
                 tag
+                fullName
             }
             ...ImageDetails
         }
@@ -79,6 +81,7 @@ function ImagePage() {
                     registry: string;
                     remote: string;
                     tag: string;
+                    fullName: string;
                 } | null;
             } & ImageDetails;
         },
@@ -93,8 +96,9 @@ function ImagePage() {
 
     const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
 
-    const hasGenerateSBOMAbility = useHasGenerateSBOMAbility();
+    const hasGenerateSbomAbility = useHasGenerateSbomAbility();
     const isScannerV4Enabled = useIsScannerV4Enabled();
+    const [sbomTargetImage, setSbomTargetImage] = useState<string>();
 
     const imageData = data && data.image;
     const imageName = imageData?.name;
@@ -120,7 +124,7 @@ function ImagePage() {
             </PageSection>
         );
     } else {
-        const SBOMButtonWrapper = isScannerV4Enabled ? React.Fragment : ScannerV4RequiredTooltip;
+        const SbomButtonWrapper = isScannerV4Enabled ? React.Fragment : ScannerV4RequiredTooltip;
         const sha = imageData?.id;
         mainContent = (
             <>
@@ -148,17 +152,28 @@ function ImagePage() {
                                     )}
                                     <ImageDetailBadges imageData={imageData} />
                                 </Flex>
-                                {hasGenerateSBOMAbility && (
+                                {hasGenerateSbomAbility && (
                                     <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
-                                        <SBOMButtonWrapper>
+                                        <SbomButtonWrapper>
                                             <Button
                                                 variant="secondary"
-                                                onClick={() => {}}
+                                                onClick={() => {
+                                                    setSbomTargetImage(imageData.name?.fullName);
+                                                }}
                                                 isAriaDisabled={!isScannerV4Enabled}
                                             >
                                                 Generate SBOM
                                             </Button>
-                                        </SBOMButtonWrapper>
+                                        </SbomButtonWrapper>
+                                        {sbomTargetImage && (
+                                            <GenerateSbomModal
+                                                onClose={() => setSbomTargetImage(undefined)}
+                                                imageFullName={sbomTargetImage}
+                                                onGenerateSbom={() => {
+                                                    // TODO Implement analytics event
+                                                }}
+                                            />
+                                        )}
                                     </FlexItem>
                                 )}
                             </Flex>

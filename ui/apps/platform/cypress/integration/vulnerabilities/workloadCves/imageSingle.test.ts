@@ -28,7 +28,7 @@ describe('Workload CVE Image Single page', () => {
         }
     });
 
-    function visitFirstImage() {
+    function visitFirstImage(): Promise<string> {
         visitWorkloadCveOverview();
 
         selectEntityTab('Image');
@@ -39,7 +39,8 @@ describe('Workload CVE Image Single page', () => {
         return cy.get('tbody tr td[data-label="Image"] a').then(([$imageLink]) => {
             const imageName = $imageLink.innerText.replace('\n', '');
             cy.wrap($imageLink).click();
-            return cy.get('h1').contains(imageName);
+            cy.get('h1').contains(imageName);
+            return Promise.resolve(imageName);
         });
     }
 
@@ -345,11 +346,11 @@ describe('Workload CVE Image Single page', () => {
                 this.skip();
             }
 
-            visitFirstImage();
-
-            cy.get(sbomGenerationButtonSelector).should('not.have.attr', 'aria-disabled');
-
-            // TODO Add to implementation
+            visitFirstImage().then((imageFullName) => {
+                cy.get(sbomGenerationButtonSelector).click();
+                cy.get(selectors.generateSbomModal).contains(imageFullName);
+                // TODO Add to implementation
+            });
         });
     });
 });
