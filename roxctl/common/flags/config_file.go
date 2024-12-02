@@ -122,12 +122,12 @@ func LoadConfig(cmd *cobra.Command, args []string) error {
 
 	if instance.CaCertificatePath != "" {
 		caCertFile = instance.CaCertificatePath
-		configEndpointSet = pointers.Bool(true)
+		configCaCertFileSet = pointers.Bool(true)
 	}
 
 	if instance.ApiTokenFilePath != "" {
 		apiTokenFile = instance.ApiTokenFilePath
-		configEndpointSet = pointers.Bool(true)
+		configApiTokenFileSet = pointers.Bool(true)
 	}
 
 	return nil
