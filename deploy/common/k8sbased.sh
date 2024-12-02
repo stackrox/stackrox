@@ -727,7 +727,7 @@ function launch_sensor {
         helm_args+=(--set "allowNonstandardNamespace=true")
       fi
 
-      if [[ "$SENSOR_HELM_MANAGED" == "true" ]]; then
+      if [[ "$SENSOR_HELM_DEPLOY" == "true" ]]; then
         helm_args+=(--set "helmManaged=true")
       else
         helm_args+=(--set "helmManaged=false")
