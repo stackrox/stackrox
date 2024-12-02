@@ -157,6 +157,7 @@ func (resolver *Resolver) ImageVulnerabilityCount(ctx context.Context, args RawQ
 func (resolver *Resolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilityCounter")
 	log.Info("GraphQL ImageVulnerabilityCounter resolver")
+	defer log.Info("GraphQL ImageVulnerabilityCounter resolver finished")
 
 	// check permissions
 	if err := readImages(ctx); err != nil {
