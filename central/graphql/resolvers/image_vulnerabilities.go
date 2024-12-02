@@ -156,8 +156,13 @@ func (resolver *Resolver) ImageVulnerabilityCount(ctx context.Context, args RawQ
 // ImageVulnerabilityCounter returns a VulnerabilityCounterResolver for the input query
 func (resolver *Resolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilityCounter")
-	log.Info("GraphQL ImageVulnerabilityCounter resolver")
-	defer log.Info("GraphQL ImageVulnerabilityCounter resolver finished")
+	ID := "<no ID in resolver context>"
+	scope, found := scoped.GetScope(ctx)
+	if found {
+		ID = scope.ID
+	}
+	log.Info("GraphQL ImageVulnerabilityCounter resolver, Image ID ", ID)
+	defer log.Info("GraphQL ImageVulnerabilityCounter resolver finished, Image ID", ID)
 
 	// check permissions
 	if err := readImages(ctx); err != nil {
