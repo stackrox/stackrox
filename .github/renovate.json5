@@ -23,6 +23,13 @@
   ],
   // Tell Renovate not to update PRs when outside of schedule.
   "updateNotScheduled": false,
+  "tekton": {
+    "schedule": [
+      // For some reason, Konflux config defines custom schedule on each type of dependency manager and that takes
+      // precedence over the global/default schedule. We want our own schedule and hence need to make this override.
+      "after 3am and before 7am",
+    ],
+  },
   "dockerfile": {
     "includePaths": [
       // Instruct Renovate not try to update Dockerfiles other than konflux.Dockerfile (or konflux.anything.Dockerfile)
