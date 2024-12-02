@@ -89,7 +89,12 @@ func AddConnectionFlags(c *cobra.Command) {
 // connect in plaintext mode. As connection requires a port it deduces it from provided schema. If schema is not provided
 // the givenEndpoint must contain port or error is returned.
 func EndpointAndPlaintextSetting() (string, bool, error) {
-	endpoint = flagOrSettingValue(endpoint, *endpointChanged, env.EndpointEnv)
+	endpoint = flagOrConfigurationValue(endpoint,
+		*endpointChanged,
+		config.Endpoint(),
+		*configEndpointSet,
+		env.EndpointEnv)
+
 	if !strings.Contains(endpoint, "://") {
 		if _, _, err := net.SplitHostPort(endpoint); err != nil {
 			return "", false, errox.InvalidArgs.CausedBy(err)
@@ -169,7 +174,12 @@ func SkipTLSValidation() *bool {
 
 // CAFile returns the file for custom CA certificates.
 func CAFile() string {
-	return flagOrSettingValue(caCertFile, *caCertFileSet, env.CACertFileEnv)
+	return flagOrConfigurationValue(
+		caCertFile,
+		*caCertFileSet,
+		config.CaCertificatePath(),
+		*configCaCertFileSet,
+		env.CACertFileEnv)
 }
 
 // CentralURL returns the URL for the central instance based on the endpoint flags.
