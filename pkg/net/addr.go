@@ -279,7 +279,7 @@ func (d IPNetwork) Contains(ip IPAddress) bool {
 // String returns the IPNetwork in string form.
 func (d IPNetwork) String() string {
 	if !d.IsValid() {
-		return ""
+		return "no IP data"
 	}
 
 	ipNet := &net.IPNet{

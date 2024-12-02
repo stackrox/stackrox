@@ -604,7 +604,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 
 		if extSrc == nil {
 			netGraphFailReason = multierror.Append(netGraphFailReason,
-				fmt.Errorf("lookup by network in externalSrcsStore failed for network %s", conn.remote.IPAndPort.IPNetwork.String()))
+				fmt.Errorf("lookup by network in externalSrcsStore failed for network %+v", conn.remote.IPAndPort))
 			entityType := networkgraph.InternetEntity()
 			isExternal, err := conn.IsExternal()
 			if err != nil {
