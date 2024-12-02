@@ -30,7 +30,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.21
 	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.17.41
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.36.6
-	github.com/aws/aws-sdk-go-v2/service/s3 v1.69.0
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.70.0
 	github.com/aws/aws-sdk-go-v2/service/securityhub v1.54.6
 	github.com/aws/aws-sdk-go-v2/service/sts v1.33.1
 	github.com/aws/smithy-go v1.22.1
@@ -223,15 +223,15 @@ require (
 	github.com/antlr/antlr4/runtime/Go/antlr/v4 v4.0.0-20230512164433-5d1fd1a340c9 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.6.7 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.24 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.24 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.25 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.25 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/ini v1.8.1 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/v4a v1.3.24 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/v4a v1.3.25 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ecrpublic v1.18.2 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.12.1 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.4.5 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.12.5 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.18.5 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.4.6 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.12.6 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.18.6 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sso v1.24.6 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.28.5 // indirect
 	github.com/awslabs/amazon-ecr-credential-helper/ecr-login v0.0.0-20231024185945-8841054dbdb8 // indirect
