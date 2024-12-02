@@ -3,6 +3,7 @@ package fake
 import (
 	"context"
 	"os"
+	"reflect"
 	"time"
 
 	"github.com/cockroachdb/pebble"
@@ -20,6 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/apimachinery/pkg/watch"
 	fakediscovery "k8s.io/client-go/discovery/fake"
@@ -99,7 +101,6 @@ type WorkloadManager struct {
 	fakeClient *fake.Clientset
 	client     client.Interface
 	workload   *Workload
-	tracker    tracker
 
 	// signals services
 	servicesInitialized concurrency.Signal
@@ -156,7 +157,6 @@ func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 	mgr := &WorkloadManager{
 		db:                  db,
 		workload:            &workload,
-		tracker:             NewObjectTracker(scheme, codecs.UniversalDecoder()),
 		servicesInitialized: concurrency.NewSignal(),
 	}
 	mgr.initializePreexistingResources()
@@ -191,6 +191,28 @@ func (w *WorkloadManager) clearActions() {
 			log.Errorf("Failed to cast client to FakePods.")
 		}
 		log.Infof("Tracker stats - watchCount: %d - addCount: %d - deleteCount: %d")
+
+		//t := reflect.ValueOf(w.fakeClient).FieldByName("tracker")
+		clientset := reflect.ValueOf(w.fakeClient).Elem()
+		_, trackerFound := clientset.Type().FieldByName("tracker")
+		if !trackerFound {
+			log.Warnf("Couldn't reflect clientset to access tracker member.")
+		}
+		tracker := clientset.FieldByName("tracker")
+		_, objectsFound := tracker.Type().FieldByName("tracker")
+		if !objectsFound {
+			log.Warnf("Couldn't reflect tracker to access objects member.")
+		}
+		objectsField := tracker.FieldByName("objects")
+		if objectsField.IsValid() && objectsField.CanSet() {
+			curval := objectsField.Interface()
+			curvalTyped := curval.(map[schema.GroupVersionResource]map[types.NamespacedName]runtime.Object)
+			objectsField.Set(reflect.ValueOf(nil))
+			log.Infof("Successfully set clientset.tracker.objects to nil, previous size: %d", len(curvalTyped))
+		} else {
+			log.Warnf("clientset.tracker.objects was invalid or could not be set")
+		}
+
 	}
 }
 
@@ -245,7 +267,7 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		}
 	}
 
-	w.fakeClient = w.newSimpleClientset(objects...)
+	w.fakeClient = fake.NewSimpleClientset(objects...)
 	w.fakeClient.Discovery().(*fakediscovery.FakeDiscovery).FakedServerVersion = &version.Info{
 		Major:        "1",
 		Minor:        "14",
