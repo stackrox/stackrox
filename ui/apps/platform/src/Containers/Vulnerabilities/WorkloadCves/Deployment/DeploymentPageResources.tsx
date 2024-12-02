@@ -17,7 +17,6 @@ import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 
 import { getPaginationParams } from 'utils/searchUtils';
-import { getDefaultWorkloadSortOption, getWorkloadSortFields } from '../../utils/sortUtils';
 import ImageResourceTable, { ImageResources, imageResourcesFragment } from './ImageResourceTable';
 
 export type DeploymentPageResourcesProps = {
@@ -38,8 +37,8 @@ const deploymentResourcesQuery = gql`
 function DeploymentPageResources({ deploymentId, pagination }: DeploymentPageResourcesProps) {
     const { page, perPage, setPage, setPerPage } = pagination;
     const { sortOption, getSortParams } = useURLSort({
-        sortFields: getWorkloadSortFields('Image'),
-        defaultSortOption: getDefaultWorkloadSortOption('Image'),
+        sortFields: ['Image'],
+        defaultSortOption: { field: 'Image', direction: 'asc' },
         onSort: () => setPage(1),
     });
 
