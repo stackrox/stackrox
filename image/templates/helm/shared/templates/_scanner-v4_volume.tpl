@@ -103,10 +103,6 @@
   {{ $scannerV4DBVolumeHumanReadable = printf "PVC (%s)" $scannerV4DBPVCCfg.claimName }}
 {{ end }}
 
-{{ $allPersistenceMethods := keys $scannerV4DBVolumeCfg | sortAlpha }}
-{{ if ne (len $allPersistenceMethods) 1 }}
-{{ end }}
-
 {{ $_ = set $scannerV4DBCfg.persistence "_volumeCfg" $scannerV4DBVolumeCfg }}
 {{ $_ := set $._rox "_scannerV4Volume" $scannerV4DBVolumeHumanReadable }}
 
