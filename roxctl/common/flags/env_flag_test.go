@@ -1,6 +1,7 @@
 package flags
 
 import (
+	// "fmt"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -28,6 +29,70 @@ func TestFlagOrSettingValue(t *testing.T) {
 	cmd = &cobra.Command{}
 	AddPassword(cmd)
 	assert.Equal(t, "some-test-value", Password())
+}
+
+func TestFlagOrConfigurationValueFlags(t *testing.T) {
+
+	var (
+		testFile1 = "../../../tests/roxctl/roxctl-instance/test_instance1.yaml"
+	)
+	// 1. Default, unchanged flag value and setting not set should lead to the default value being returned.
+	cmd := &cobra.Command{
+		PersistentPreRunE: LoadConfig,
+	}
+
+	AddAPITokenFile(cmd)
+	AddConnectionFlags(cmd)
+	AddConfigurationFile(cmd)
+
+	// assert.False(t, ConfigurationFileChanged())
+	// assert.False(t, *caCertFileSet)
+	// assert.Empty(t, *apiTokenFileChanged)
+	// assert.False(t, *endpointChanged)
+
+	err := cmd.PersistentFlags().Set("config-file", testFile1)
+	assert.NoError(t, err)
+	assert.Equal(t, testFile1, ConfigurationFileName())
+
+	err = cmd.PersistentPreRunE(cmd, []string{})
+	assert.True(t, ConfigurationFileChanged())
+
+	// TODO: Flags that we care about
+	// - apiTokenFile ("token-file")
+	// - endpoint ("endpoint")
+	// - caCertFile ("ca")
+	//
+	// Execute the command to trigger PersistentPreRunE
+	assert.NoError(t, err, "Command execution should not produce an error")
+
+	// 3. Validate that PersistentPreRunE (LoadConfig) ran successfully
+	assert.NotNil(t, config, "Config should be initialized after LoadConfig runs")
+
+	// 4. Change flag values. The changed flag values should be returned, irrespective if set by configuration.
+	err2 := cmd.PersistentFlags().Set("token-file", "some-test-value")
+	assert.NotEmpty(t, config)
+	assert.NoError(t, err2)
+	assert.Equal(t, APITokenFile(), "some-test-value")
+
+	cmd.PersistentFlags().Set("endpoint", "some-other-test-value")
+	assert.Equal(t, endpoint, "some-other-test-value")
+
+	cmd.PersistentFlags().Set("ca", "some-other-other-test-value")
+	assert.Equal(t, caCertFile, "some-other-other-test-value")
+
+}
+
+// TODO: Add environment setting tests
+func TestFlagOrConfigurationValueFlagsAndEnv(t *testing.T) {
+	cmd := &cobra.Command{}
+
+	cmd.PersistentFlags().Set("token-file", "some-test-value")
+	cmd.PersistentFlags().Set("endpoint", "some-other-test-value")
+	cmd.PersistentFlags().Set("ca", "some-other-other-test-value")
+
+	t.Setenv("ROX_ENDPOINT", "some-test-env-value")
+	t.Setenv("ROX_API_TOKEN_FILE", "some-other-test-env-value")
+	t.Setenv("ROX_CA_CERT_FILE", "some-other-other-test-env-value")
 }
 
 func TestBooleanFlagOrSettingValue(t *testing.T) {
