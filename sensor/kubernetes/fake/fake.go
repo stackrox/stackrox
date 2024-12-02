@@ -28,7 +28,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 	fakecore "k8s.io/client-go/kubernetes/typed/core/v1/fake"
-	"k8s.io/client-go/testing"
 )
 
 const (
@@ -285,39 +284,4 @@ func (w *WorkloadManager) initializePreexistingResources() {
 	}
 
 	go w.manageFlows(context.Background(), w.workload.NetworkWorkload)
-}
-
-type Clientset struct {
-	testing.Fake
-	discovery *fakediscovery.FakeDiscovery
-	tracker   testing.ObjectTracker
-}
-
-func (w *WorkloadManager) newSimpleClientset(objects ...runtime.Object) *fake.Clientset {
-	for _, obj := range objects {
-		if err := w.tracker.Add(obj); err != nil {
-			panic(err)
-		}
-	}
-
-	cs := &Clientset{tracker: &w.tracker}
-	cs.discovery = &fakediscovery.FakeDiscovery{Fake: &cs.Fake}
-	cs.AddReactor("*", "*", testing.ObjectReaction(&w.tracker))
-	cs.AddWatchReactor("*", func(action testing.Action) (handled bool, ret watch.Interface, err error) {
-		gvr := action.GetResource()
-		ns := action.GetNamespace()
-		watch, err := w.tracker.Watch(gvr, ns)
-		if err != nil {
-			return false, nil, err
-		}
-		return true, watch, nil
-	})
-
-	switch t := interface{}(cs).(type) {
-	case *fake.Clientset:
-		return t
-	default:
-		log.Errorf("Failed to case ClientSet to *fake.ClientSet")
-	}
-	return nil
 }
