@@ -29,7 +29,7 @@ teardown() {
   assert_output --partial "Written Helm chart secured-cluster-services to directory"
 
   helm_template_secured_cluster "$out_dir" "$out_dir/rendered" "$CLUSTER_NAME"
-  assert_components_registry "$out_dir/rendered" "quay.io/rhacs-eng" "$any_version" 'collector-slim' 'admission-controller' 'sensor'
+  assert_components_registry "$out_dir/rendered" "quay.io/rhacs-eng" "$any_version" 'collector' 'admission-controller' 'sensor'
 
   helm_template_secured_cluster "$out_dir" "$out_dir/rendered" "$CLUSTER_NAME"
   assert_components_registry "$out_dir/rendered" "quay.io/rhacs-eng" "$any_version" 'collector' 'admission-controller' 'sensor'
