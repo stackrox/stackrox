@@ -12,6 +12,8 @@
     // The following was used as example (we may want to check it if the base config gets suddenly moved):
     // https://github.com/enterprise-contract/ec-cli/blob/407847910ad420850385eea1db78e2a2e49c7e25/renovate.json#L1C1-L7C2
     "github>konflux-ci/mintmaker//config/renovate/renovate.json",
+    // This tells Renovate to combine all updates in one PR so that we have less PRs to deal with.
+    "group:all",
   ],
   "timezone": "Etc/UTC",
   "schedule": [
