@@ -14,4 +14,4 @@ metadata:
 data:
   runtime_config.yaml: |
     {{- tpl (.Files.Get "config-templates/collector/config.yaml.tpl") . | nindent 4 }}
-{{ end -}}
+{{- end }}
