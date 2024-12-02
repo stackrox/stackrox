@@ -141,14 +141,9 @@ func (w *WorkloadManager) newSimpleClientset(objects ...runtime.Object) *fake.Cl
 	})
 
 	ics := interface{}(cs)
+	fcs := ics.(*fake.Clientset)
 
-	switch t := ics.(type) {
-	case fake.Clientset:
-		return &t
-	default:
-		log.Errorf("Failed to cast ClientSet to *fake.ClientSet")
-	}
-	return nil
+	return fcs
 }
 
 func (c *Clientset) Discovery() discovery.DiscoveryInterface {
