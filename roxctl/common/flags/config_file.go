@@ -6,6 +6,8 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"os"
+
+	"k8s.io/utils/pointer"
 )
 
 type Instance struct {
@@ -28,6 +30,10 @@ var (
 	configFileChanged *bool
 	config            *instanceConfig
 
+	configEndpointSet     = pointer.Bool(false)
+	configCaCertFileSet   = pointer.Bool(false)
+	configApiTokenFileSet = pointer.Bool(false)
+
 	log = logging.CreateLogger(logging.CurrentModule(), 0)
 )
 
@@ -47,9 +53,24 @@ func ConfigurationFile() string {
 	return flagOrSettingValue(configFile, ConfigurationFileChanged(), env.ConfigFileEnv)
 }
 
-// ConfigurationFileChanged returns whether the config-file is provided as an argument.
+// ConfigurationFileChanged returns whether the configuration file is provided as an argument.
 func ConfigurationFileChanged() bool {
 	return configFileChanged != nil && *configFileChanged
+}
+
+// CaCertificatePath returns the configuration-defined CA Certificate path.
+func (c *instanceConfig) CaCertificatePath() string {
+	return c.Instance.CaCertificatePath
+}
+
+// ApiTokenFilePath returns the configuration-defined API Token file path.
+func (c *instanceConfig) ApiTokenFilePath() string {
+	return c.Instance.ApiTokenFilePath
+}
+
+// Endpoint returns the configuration-defined endpoint.
+func (c *instanceConfig) Endpoint() string {
+	return c.Instance.Endpoint
 }
 
 // readConfig is a utilty function for reading YAML-based configuration files
@@ -96,14 +117,17 @@ func LoadConfig(cmd *cobra.Command, args []string) error {
 
 	if instance.Endpoint != "" {
 		endpoint = instance.Endpoint
+		configEndpointSet = pointer.Bool(true)
 	}
 
 	if instance.CaCertificatePath != "" {
 		caCertFile = instance.CaCertificatePath
+		configEndpointSet = pointer.Bool(true)
 	}
 
 	if instance.ApiTokenFilePath != "" {
 		apiTokenFile = instance.ApiTokenFilePath
+		configEndpointSet = pointer.Bool(true)
 	}
 
 	return nil
