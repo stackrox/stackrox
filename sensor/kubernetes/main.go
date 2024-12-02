@@ -40,7 +40,7 @@ func main() {
 	features.LogFeatureFlags()
 
 	if len(os.Args) > 1 && os.Args[1] == "ensure-cluster-registered" {
-		err := crs.EnsureClusterRegistered()
+		err := crs.EnsureServiceCertificatesPresent()
 		if err != nil {
 			log.Errorf("Ensuring that this cluster is registered failed: %v", err)
 			os.Exit(1)
