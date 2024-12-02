@@ -1,5 +1,0 @@
-# Sample instance.yaml configuration for StackRox roxctl. 
-# name: rox 
-# caCertPath: test
-# apiTokenPath: test
-# endpoint: test 
