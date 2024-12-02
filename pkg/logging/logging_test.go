@@ -63,9 +63,11 @@ func Test_withRotatingCore(t *testing.T) {
 	dir2 := t.TempDir()
 	logname1 := filepath.Join(dir1, "test.log")
 	logname2 := filepath.Join(dir2, "test.log")
+	// Clone the global config:
 	cfg := config
-	cfg.OutputPaths = []string{logname1, logname2}
-	core := withRotatingCore(&cfg)
+	// ... but do not log to the standard streams:
+	cfg.OutputPaths = []string{}
+	core := withRotatingCores(&cfg, []string{logname1, logname2})
 
 	logger, err := cfg.Build(zap.WrapCore(core))
 	require.NoError(t, err)
