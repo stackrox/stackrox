@@ -7,7 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"os"
 
-	"k8s.io/utils/pointer"
+	"github.com/stackrox/rox/pkg/pointers"
 )
 
 type Instance struct {
@@ -26,13 +26,13 @@ type instanceConfig struct {
 }
 
 var (
-	configFile        string
-	configFileChanged *bool
-	config            *instanceConfig
+	configFile    string
+	configFileSet = pointers.Bool(false)
+	config        *instanceConfig
 
-	configEndpointSet     = pointer.Bool(false)
-	configCaCertFileSet   = pointer.Bool(false)
-	configApiTokenFileSet = pointer.Bool(false)
+	configEndpointSet     = pointers.Bool(false)
+	configCaCertFileSet   = pointers.Bool(false)
+	configApiTokenFileSet = pointers.Bool(false)
 
 	log = logging.CreateLogger(logging.CurrentModule(), 0)
 )
@@ -45,17 +45,17 @@ func AddConfigurationFile(c *cobra.Command) {
 		"",
 		"Utilize instance-specific metadata defined within a configuration file. "+
 			"Alternatively, set the path via the ROX_CONFIG_FILE environment variable")
-	configFileChanged = &c.PersistentFlags().Lookup("config-file").Changed
+	configFileSet = &c.PersistentFlags().Lookup("config-file").Changed
 }
 
 // ConfigurationFile returns the currently specified configuration file name.
-func ConfigurationFile() string {
+func ConfigurationFileName() string {
 	return flagOrSettingValue(configFile, ConfigurationFileChanged(), env.ConfigFileEnv)
 }
 
 // ConfigurationFileChanged returns whether the configuration file is provided as an argument.
 func ConfigurationFileChanged() bool {
-	return configFileChanged != nil && *configFileChanged
+	return configFileSet != nil && *configFileSet == true
 }
 
 // CaCertificatePath returns the configuration-defined CA Certificate path.
@@ -117,17 +117,17 @@ func LoadConfig(cmd *cobra.Command, args []string) error {
 
 	if instance.Endpoint != "" {
 		endpoint = instance.Endpoint
-		configEndpointSet = pointer.Bool(true)
+		configEndpointSet = pointers.Bool(true)
 	}
 
 	if instance.CaCertificatePath != "" {
 		caCertFile = instance.CaCertificatePath
-		configEndpointSet = pointer.Bool(true)
+		configEndpointSet = pointers.Bool(true)
 	}
 
 	if instance.ApiTokenFilePath != "" {
 		apiTokenFile = instance.ApiTokenFilePath
-		configEndpointSet = pointer.Bool(true)
+		configEndpointSet = pointers.Bool(true)
 	}
 
 	return nil
