@@ -1,5 +1,15 @@
 import React from 'react';
-import { Alert, Button, Flex, Modal, Text } from '@patternfly/react-core';
+import {
+    Alert,
+    Button,
+    DescriptionList,
+    DescriptionListDescription,
+    DescriptionListGroup,
+    DescriptionListTerm,
+    Flex,
+    Modal,
+    Text,
+} from '@patternfly/react-core';
 
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
@@ -38,7 +48,7 @@ function GenerateSbomModal(props: GenerateSbomModalProps) {
                     Generate SBOM
                 </Button>,
                 <Button key="close-modal" variant="link" onClick={onClose}>
-                    Cancel
+                    Close
                 </Button>,
             ]}
         >
@@ -48,9 +58,12 @@ function GenerateSbomModal(props: GenerateSbomModalProps) {
                     This file contains a detailed list of all components and dependencies included
                     in the image.
                 </Text>
-                <Text>
-                    Selected image: <em>{imageFullName}</em>
-                </Text>
+                <DescriptionList isHorizontal>
+                    <DescriptionListGroup>
+                        <DescriptionListTerm>Selected image:</DescriptionListTerm>
+                        <DescriptionListDescription>{imageFullName}</DescriptionListDescription>
+                    </DescriptionListGroup>
+                </DescriptionList>
                 {isSuccess && (
                     <Alert
                         isInline
