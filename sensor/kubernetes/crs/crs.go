@@ -48,10 +48,10 @@ var (
 	}
 )
 
-// EnsureClusterRegistered initiates the CRS based cluster registration flow in case a
-// CRS is found instead of regular service certificate.
-func EnsureClusterRegistered() error {
-	log.Infof("Ensuring Secured Cluster is registered.")
+// EnsureServiceCertificatesPresent initiates the CRS-based cluster registration flow to retrieve the
+// service certificates in case no services certificates are found and instead a CRS is present.
+func EnsureServiceCertificatesPresent() error {
+	log.Infof("Ensuring certificates for Secured Cluster services are present.")
 	clientconn.SetUserAgent(fmt.Sprintf("%s Cluster Registration Helper", clientconn.Sensor))
 
 	// Check if legacy sensor service certificate, e.g. created via init-bundle, exists.
