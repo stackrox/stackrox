@@ -71,7 +71,7 @@ func (z *zipWriter) writerWithCurrentTimestampNoLock(fileName string) (io.Writer
 	return writer, nil
 }
 
-func (z *zipWriter) addFile(sourceFileName, targetFileName string) error {
+func (z *zipWriter) addFile(targetFileName, sourceFileName string) error {
 	z.LockWrite()
 	defer z.UnlockWrite()
 

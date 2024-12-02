@@ -751,8 +751,8 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 
 	// Get logs last to also catch logs made during creation of diag bundle.
 	if (opts.withCentral || opts.withDBOnly) && (opts.logs == localLogs || failureDuringDiagnostics) {
-		if err := logging.ForEachRotation(logging.LoggingPath, func(rollfilepath string) error {
-			return zipWriter.addFile(rollfilepath, filepath.Base(rollfilepath))
+		if err := logging.ForEachRotation(logging.LoggingPath, func(logFileName string) error {
+			return zipWriter.addFile(filepath.Base(logFileName), logFileName)
 		}); err != nil {
 			log.Error(err)
 		}
