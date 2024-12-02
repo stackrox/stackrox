@@ -19,6 +19,7 @@ import (
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/apimachinery/pkg/watch"
 	fakediscovery "k8s.io/client-go/discovery/fake"
@@ -27,6 +28,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 	fakecore "k8s.io/client-go/kubernetes/typed/core/v1/fake"
+	"k8s.io/client-go/testing"
 )
 
 const (
@@ -36,6 +38,9 @@ const (
 )
 
 var (
+	scheme = runtime.NewScheme()
+	codecs = serializer.NewCodecFactory(scheme)
+
 	log = logging.LoggerForModule()
 )
 
@@ -95,6 +100,7 @@ type WorkloadManager struct {
 	fakeClient *fake.Clientset
 	client     client.Interface
 	workload   *Workload
+	tracker    tracker
 
 	// signals services
 	servicesInitialized concurrency.Signal
@@ -151,6 +157,7 @@ func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 	mgr := &WorkloadManager{
 		db:                  db,
 		workload:            &workload,
+		tracker:             NewObjectTracker(scheme, codecs.UniversalDecoder()),
 		servicesInitialized: concurrency.NewSignal(),
 	}
 	mgr.initializePreexistingResources()
@@ -174,8 +181,8 @@ func (w *WorkloadManager) SetSignalHandlers(processPipeline signal.Pipeline, net
 func (w *WorkloadManager) clearActions() {
 	t := time.NewTicker(10 * time.Second)
 	for range t.C {
-		log.Infof("Cleared %d Actions from w.fakeClient", len(w.fakeClient.Actions()))
-		w.fakeClient.ClearActions()
+		//log.Infof("Cleared %d Actions from w.fakeClient", len(w.fakeClient.Actions()))
+		//w.fakeClient.ClearActions()
 		c := w.client.Kubernetes().CoreV1().Pods("")
 		d, ok := c.(*fakecore.FakePods)
 		if ok {
@@ -184,6 +191,7 @@ func (w *WorkloadManager) clearActions() {
 		} else {
 			log.Errorf("Failed to cast client to FakePods.")
 		}
+		log.Infof("Tracker stats - watchCount: %d - addCount: %d - deleteCount: %d")
 	}
 }
 
@@ -238,7 +246,7 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		}
 	}
 
-	w.fakeClient = fake.NewSimpleClientset(objects...)
+	w.fakeClient = w.newSimpleClientset(objects...)
 	w.fakeClient.Discovery().(*fakediscovery.FakeDiscovery).FakedServerVersion = &version.Info{
 		Major:        "1",
 		Minor:        "14",
@@ -277,4 +285,39 @@ func (w *WorkloadManager) initializePreexistingResources() {
 	}
 
 	go w.manageFlows(context.Background(), w.workload.NetworkWorkload)
+}
+
+type Clientset struct {
+	testing.Fake
+	discovery *fakediscovery.FakeDiscovery
+	tracker   testing.ObjectTracker
+}
+
+func (w *WorkloadManager) newSimpleClientset(objects ...runtime.Object) *fake.Clientset {
+	for _, obj := range objects {
+		if err := w.tracker.Add(obj); err != nil {
+			panic(err)
+		}
+	}
+
+	cs := &Clientset{tracker: &w.tracker}
+	cs.discovery = &fakediscovery.FakeDiscovery{Fake: &cs.Fake}
+	cs.AddReactor("*", "*", testing.ObjectReaction(&w.tracker))
+	cs.AddWatchReactor("*", func(action testing.Action) (handled bool, ret watch.Interface, err error) {
+		gvr := action.GetResource()
+		ns := action.GetNamespace()
+		watch, err := w.tracker.Watch(gvr, ns)
+		if err != nil {
+			return false, nil, err
+		}
+		return true, watch, nil
+	})
+
+	switch t := interface{}(cs).(type) {
+	case *fake.Clientset:
+		return t
+	default:
+		log.Errorf("Failed to case ClientSet to *fake.ClientSet")
+	}
+	return nil
 }
