@@ -46,10 +46,10 @@ func TestFlagOrConfigurationValueFlags(t *testing.T) {
 	AddConnectionFlags(cmd)
 	AddConfigurationFile(cmd)
 
-	// assert.False(t, ConfigurationFileChanged())
-	// assert.False(t, *caCertFileSet)
-	// assert.Empty(t, *apiTokenFileChanged)
-	// assert.False(t, *endpointChanged)
+	assert.False(t, ConfigurationFileChanged())
+	assert.False(t, *caCertFileSet)
+	assert.Empty(t, *apiTokenFileChanged)
+	assert.False(t, *endpointChanged)
 
 	err := cmd.PersistentFlags().Set("config-file", testFile1)
 	assert.NoError(t, err)
@@ -58,11 +58,6 @@ func TestFlagOrConfigurationValueFlags(t *testing.T) {
 	err = cmd.PersistentPreRunE(cmd, []string{})
 	assert.True(t, ConfigurationFileChanged())
 
-	// TODO: Flags that we care about
-	// - apiTokenFile ("token-file")
-	// - endpoint ("endpoint")
-	// - caCertFile ("ca")
-	//
 	// Execute the command to trigger PersistentPreRunE
 	assert.NoError(t, err, "Command execution should not produce an error")
 
@@ -85,15 +80,46 @@ func TestFlagOrConfigurationValueFlags(t *testing.T) {
 
 // TODO: Add environment setting tests
 func TestFlagOrConfigurationValueFlagsAndEnv(t *testing.T) {
-	cmd := &cobra.Command{}
+	var (
+		testFile1 = "../../../tests/roxctl/roxctl-instance/test_instance1.yaml"
+	)
 
-	cmd.PersistentFlags().Set("token-file", "some-test-value")
-	cmd.PersistentFlags().Set("endpoint", "some-other-test-value")
-	cmd.PersistentFlags().Set("ca", "some-other-other-test-value")
+	cmd := &cobra.Command{
+		PersistentPreRunE: LoadConfig,
+	}
+
+	AddAPITokenFile(cmd)
+	AddConnectionFlags(cmd)
+	AddConfigurationFile(cmd)
+
+	assert.False(t, ConfigurationFileChanged())
+	assert.False(t, *caCertFileSet)
+	assert.Empty(t, *apiTokenFileChanged)
+	assert.False(t, *endpointChanged)
+
+	err := cmd.PersistentFlags().Set("config-file", testFile1)
+	assert.NoError(t, err, "Setting a configuration file should not produce an error")
+	assert.Equal(t, testFile1, ConfigurationFileName())
+
+	// Execute the command to trigger PersistentPreRunE
+	err = cmd.PersistentPreRunE(cmd, []string{})
+	assert.NoError(t, err, "Command execution should not produce an error")
+	assert.True(t, ConfigurationFileChanged())
+	assert.NotEmpty(t, config)
+
+	// 3. Validate that PersistentPreRunE (LoadConfig) ran successfully
+	assert.NotNil(t, config, "Config should be initialized after LoadConfig runs")
+
+	// 4. Change environment values. The configuration-defined flag values should be returned, irrespective if set by environment.
+	t.Setenv("ROX_API_TOKEN_FILE", "some-other-test-env-value")
+	assert.Equal(t, "REDACTED", APITokenFile())
 
 	t.Setenv("ROX_ENDPOINT", "some-test-env-value")
-	t.Setenv("ROX_API_TOKEN_FILE", "some-other-test-env-value")
+	assert.Equal(t, "localhost:8000", endpoint)
+
 	t.Setenv("ROX_CA_CERT_FILE", "some-other-other-test-env-value")
+	assert.Equal(t, "./deploy/cert", caCertFile)
+
 }
 
 func TestBooleanFlagOrSettingValue(t *testing.T) {
