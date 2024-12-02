@@ -201,16 +201,18 @@ export function cancelAllCveExceptions() {
 
     cy.request({ url: '/v2/vulnerability-exceptions', auth }).as('vulnExceptions');
 
-    cy.get('@vulnExceptions').then((res) => {
-        res.body.exceptions.forEach(({ id, expired }) => {
-            if (!expired) {
-                cy.request({
-                    url: `/v2/vulnerability-exceptions/${id}/cancel`,
-                    auth,
-                    method: 'POST',
-                });
-            }
-        });
+    return cy.get('@vulnExceptions').then((res) => {
+        return Promise.all(
+            res.body.exceptions.map(({ id, expired, requester }) => {
+                return requester?.name === 'ui_tests' && !expired
+                    ? cy.request({
+                          url: `/v2/vulnerability-exceptions/${id}/cancel`,
+                          auth,
+                          method: 'POST',
+                      })
+                    : Promise.resolve();
+            })
+        );
     });
 }
 
@@ -227,11 +229,7 @@ export function selectSingleCveForException(exceptionType) {
 
     return cy.get(selectors.firstTableRow).then(($row) => {
         const cveName = $row.find('td[data-label="CVE"]').text();
-        cy.wrap($row)
-            .find(selectors.tableRowMenuToggle, { timeout: 10000 })
-            .should('exist')
-            .and('be.visible')
-            .click();
+        cy.wrap($row).find(selectors.tableRowMenuToggle).click();
         cy.get(selectors.menuOption(menuOption)).click();
 
         cy.get('button:contains("CVE selections")').click();
@@ -293,10 +291,17 @@ export function verifySelectedCvesInModal(cveNames) {
     });
 }
 
-export function visitAnyImageSinglePageWithMockedCves() {
+export function visitImageSinglePageWithMockedResponses() {
+    const imageDetailsOpname = 'getImageDetails';
     const cveListOpname = 'getCVEsForImage';
-    const routeMatcherMapForImageCves = getRouteMatcherMapForGraphQL([cveListOpname]);
+    const routeMatcherMapForImageCves = getRouteMatcherMapForGraphQL([
+        imageDetailsOpname,
+        cveListOpname,
+    ]);
     const staticResponseMapForImageCves = {
+        [imageDetailsOpname]: {
+            fixture: 'vulnerabilities/workloadCves/imageWithMultipleCves.json',
+        },
         [cveListOpname]: { fixture: 'vulnerabilities/workloadCves/multipleCvesForImage.json' },
     };
 

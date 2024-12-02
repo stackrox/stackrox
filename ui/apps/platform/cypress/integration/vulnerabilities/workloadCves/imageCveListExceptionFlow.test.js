@@ -10,7 +10,7 @@ import {
     selectSingleCveForException,
     verifyExceptionConfirmationDetails,
     verifySelectedCvesInModal,
-    visitAnyImageSinglePageWithMockedCves,
+    visitImageSinglePageWithMockedResponses,
 } from './WorkloadCves.helpers';
 
 describe('Workload CVE Image page deferral and false positive flows', () => {
@@ -33,7 +33,7 @@ describe('Workload CVE Image page deferral and false positive flows', () => {
     });
 
     it('should defer a single CVE', () => {
-        visitAnyImageSinglePageWithMockedCves().then((image) => {
+        visitImageSinglePageWithMockedResponses().then((image) => {
             selectSingleCveForException('DEFERRAL').then((cveName) => {
                 verifySelectedCvesInModal([cveName]);
                 fillAndSubmitExceptionForm({
@@ -51,7 +51,7 @@ describe('Workload CVE Image page deferral and false positive flows', () => {
     });
 
     it('should defer multiple selected CVEs', () => {
-        visitAnyImageSinglePageWithMockedCves().then((image) => {
+        visitImageSinglePageWithMockedResponses().then((image) => {
             selectMultipleCvesForException('DEFERRAL').then((cveNames) => {
                 verifySelectedCvesInModal(cveNames);
                 fillAndSubmitExceptionForm({
@@ -70,7 +70,7 @@ describe('Workload CVE Image page deferral and false positive flows', () => {
     });
 
     it('should mark a single CVE as false positive', () => {
-        visitAnyImageSinglePageWithMockedCves().then((image) => {
+        visitImageSinglePageWithMockedResponses().then((image) => {
             selectSingleCveForException('FALSE_POSITIVE').then((cveName) => {
                 verifySelectedCvesInModal([cveName]);
                 fillAndSubmitExceptionForm({ comment: 'Test comment' });
@@ -84,7 +84,7 @@ describe('Workload CVE Image page deferral and false positive flows', () => {
     });
 
     it('should mark multiple selected CVEs as false positive', () => {
-        visitAnyImageSinglePageWithMockedCves().then((image) => {
+        visitImageSinglePageWithMockedResponses().then((image) => {
             selectMultipleCvesForException('FALSE_POSITIVE').then((cveNames) => {
                 verifySelectedCvesInModal(cveNames);
                 fillAndSubmitExceptionForm({
