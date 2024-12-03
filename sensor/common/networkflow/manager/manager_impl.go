@@ -510,6 +510,7 @@ func (m *networkFlowManager) enrichAndSendProcesses() {
 
 func (m *networkFlowManager) handleContainerNotFound(conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) error {
 	var failReasons error
+	failReasons = multierror.Append(failReasons, fmt.Errorf("ContainerID %s unknown", conn.containerID))
 	timeElapsedSinceFirstSeen := timestamp.Now().ElapsedSince(status.firstSeen)
 	// Expire the connection if the container cannot be found within the clusterEntityResolutionWaitPeriod
 	if timeElapsedSinceFirstSeen > maxContainerResolutionWaitPeriod {
@@ -537,18 +538,34 @@ func formatMultiErrorOneline(errs []error) string {
 	return str
 }
 
+func logReasonForAggregatingNetGraphFlow(conn *connection, contNs, contName, entitiesName string, port uint16, failReason *multierror.Error) {
+	if failReason != nil {
+		failReason.ErrorFormat = formatMultiErrorOneline
+	}
+	if conn.incoming {
+		// Keep internal wording even if central lacks `NetworkGraphInternalEntitiesSupported` capability.
+		log.Debugf("Incoming connection to container %s/%s from %s:%s. "+
+			"Marking it as '%s' in the network graph: %v.",
+			contNs, contName, conn.remote.IPAndPort.String(),
+			strconv.Itoa(int(port)), entitiesName, failReason)
+	} else {
+		log.Debugf("Outgoing connection from container %s/%s to %s. "+
+			"Marking it as '%s' in the network graph: %v.",
+			contNs, contName, conn.remote.IPAndPort.String(),
+			entitiesName, failReason)
+	}
+}
+
 // enrichConnection returns error with a reason about why the enrichment did not fully succeed
 func (m *networkFlowManager) enrichConnection(conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) error {
 	timeElapsedSinceFirstSeen := timestamp.Now().ElapsedSince(status.firstSeen)
 	isFresh := timeElapsedSinceFirstSeen < clusterEntityResolutionWaitPeriod
 	var netGraphFailReason *multierror.Error
-	netGraphFailReason.ErrorFormat = formatMultiErrorOneline
 
 	container, ok := m.clusterEntities.LookupByContainerID(conn.containerID)
 	if !ok {
 		// There is an incoming connection to a container that we do not know.
 		// 90% of the cases that container is Sensor itself before being restarted.
-		netGraphFailReason = multierror.Append(netGraphFailReason, fmt.Errorf("ContainerID %s unknown", conn.containerID))
 		return m.handleContainerNotFound(conn, status, enrichedConnections)
 	}
 	netGraphFailReason = multierror.Append(netGraphFailReason, errors.New("ContainerID lookup successful"))
@@ -641,18 +658,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 				netGraphFailReason = multierror.Append(netGraphFailReason,
 					errors.New("collector did not report the IP address to Sensor"))
 			}
-			if conn.incoming {
-				// Keep internal wording even if central lacks `NetworkGraphInternalEntitiesSupported` capability.
-				log.Debugf("Incoming connection to container %s/%s from %s:%s. "+
-					"Marking it as '%s' in the network graph: %v.",
-					container.Namespace, container.ContainerName, conn.remote.IPAndPort.String(),
-					strconv.Itoa(int(port)), entitiesName, netGraphFailReason)
-			} else {
-				log.Debugf("Outgoing connection from container %s/%s to %s. "+
-					"Marking it as '%s' in the network graph: %v.",
-					container.Namespace, container.ContainerName, conn.remote.IPAndPort.String(),
-					entitiesName, netGraphFailReason)
-			}
+			logReasonForAggregatingNetGraphFlow(conn, container.Namespace, container.ContainerName, entitiesName, port, netGraphFailReason)
 
 			if !status.used {
 				// Count internal metrics even if central lacks `NetworkGraphInternalEntitiesSupported` capability.
@@ -811,10 +817,7 @@ func (m *networkFlowManager) enrichHostConnections(hostConns *hostConnections, e
 
 	prevSize := len(hostConns.connections)
 	for conn, status := range hostConns.connections {
-		reason := m.enrichConnection(&conn, status, enrichedConnections)
-		if reason != nil {
-			log.Warnf("Connection %q not enriched due to: %s", conn.String(), reason)
-		}
+		_ = m.enrichConnection(&conn, status, enrichedConnections)
 		if status.rotten || (status.used && status.lastSeen != timestamp.InfiniteFuture) {
 			// connections that are no longer active and have already been used can be deleted.
 			delete(hostConns.connections, conn)
