@@ -541,13 +541,13 @@ func formatMultiErrorOneline(errs []error) string {
 
 func logReasonForAggregatingNetGraphFlow(conn *connection, contNs, contName, entitiesName string, port uint16, failReason *multierror.Error) {
 	reasonStr := ""
-	// No need to produce complex chain of reasons, if there is one simple explanation
-	if strings.HasPrefix(conn.remote.IPAndPort.String(), "255.255.255.255") {
-		reasonStr = "Collector did not report the IP address to Sensor"
-	}
 	if failReason != nil {
 		failReason.ErrorFormat = formatMultiErrorOneline
 		reasonStr = failReason.Error()
+	}
+	// No need to produce complex chain of reasons, if there is one simple explanation
+	if strings.HasPrefix(conn.remote.IPAndPort.String(), "255.255.255.255") {
+		reasonStr = "Collector did not report the IP address to Sensor - the remote part is the Internet"
 	}
 	if conn.incoming {
 		// Keep internal wording even if central lacks `NetworkGraphInternalEntitiesSupported` capability.
