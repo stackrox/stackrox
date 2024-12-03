@@ -529,11 +529,21 @@ func (m *networkFlowManager) handleContainerNotFound(conn *connection, status *c
 	return failReasons
 }
 
+func formatMultiErrorOneline(errs []error) string {
+	str := ""
+	for i, err := range errs {
+		str = fmt.Sprintf("%s, (%d) %s", str, i+1, err)
+	}
+	return str
+}
+
 // enrichConnection returns error with a reason about why the enrichment did not fully succeed
 func (m *networkFlowManager) enrichConnection(conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) error {
 	timeElapsedSinceFirstSeen := timestamp.Now().ElapsedSince(status.firstSeen)
 	isFresh := timeElapsedSinceFirstSeen < clusterEntityResolutionWaitPeriod
-	var failReasons, netGraphFailReason error
+	var failReasons, netGraphFailReason *multierror.Error
+	netGraphFailReason.ErrorFormat = formatMultiErrorOneline
+
 	container, ok := m.clusterEntities.LookupByContainerID(conn.containerID)
 	if !ok {
 		// There is an incoming connection to a container that we do not know.
