@@ -645,14 +645,13 @@ function launch_sensor {
     else
         if [[ "${ROX_COLLECTOR_EXTERNAL_IPS_ENABLE:-false}" == "true" ]]; then
 	    echo "If ROX_COLLECTOR_EXTERNAL_IPS_ENABLE is true ROX_COLLECTOR_RUNTIME_CONFIG must be true"
-	    exit 1 
+	    exit 1
         fi
 
         if [[ -n "${ROX_COLLECTOR_NETWORKING_PER_CONTAINER_RATE_LIMIT:-}" ]]; then
 	    echo "If ROX_COLLECTOR_NETWORKING_PER_CONTAINER_RATE_LIMIT is set ROX_COLLECTOR_RUNTIME_CONFIG must be true"
-	    exit 1 
+	    exit 1
         fi
-        
     fi
 
 
