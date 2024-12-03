@@ -24,8 +24,8 @@ jobs:
     needs: determine-new-scanner-version
     strategy:
       matrix:
-        tag_suffix: ["", "-fast"]
         image: ["scanner", "scanner-slim", "scanner-db", "scanner-db-slim"]
+        tag_suffix: ["", "-fast"]
     steps:
     - name: Ensure image exists
       uses: stackrox/actions/release/wait-for-image@v1
