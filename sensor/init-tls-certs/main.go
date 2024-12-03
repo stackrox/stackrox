@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io/fs"
 	"log"
@@ -11,14 +12,25 @@ import (
 	"time"
 )
 
-const (
-	destinationDir  = "/tmp/certs"
-	legacySourceDir = "/tmp/certs-legacy"
-	newSourceDir    = "/tmp/certs-new"
+var (
+	destinationDir  string
+	legacySourceDir string
+	newSourceDir    string
 )
 
+func init() {
+	flag.StringVar(&legacySourceDir, "legacy", "/tmp/certs-legacy", "Source directory for legacy certs")
+	flag.StringVar(&newSourceDir, "new", "/tmp/certs-new", "Source directory for new certs")
+	flag.StringVar(&destinationDir, "destination", "/tmp/certs", "Destination directory for certs")
+}
+
 func main() {
-	log.Print("Started.")
+	flag.Parse()
+
+	fmt.Println("New certs directory:", newSourceDir)
+	fmt.Println("Legacy certs directory:", legacySourceDir)
+	fmt.Println("Destination directory:", destinationDir)
+
 	realDest, err := sanityCheckDestination()
 	if err != nil {
 		log.Fatalf("Cannot check destination directory %q: %s", destinationDir, err)
@@ -90,7 +102,7 @@ func findFiles(sourceDir string) ([]string, error) {
 		base := filepath.Base(path)
 		if strings.HasPrefix(base, ".") {
 			if d.IsDir() {
-				log.Printf("Skipping hidden dir %q", path)
+				log.Printf("Ignoring hidden dir %q", path)
 				return filepath.SkipDir
 			}
 
