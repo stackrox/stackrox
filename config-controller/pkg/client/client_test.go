@@ -37,13 +37,13 @@ func loadPolicies() []*storage.Policy {
 	return policies
 }
 
-type applyMockPolicyClient struct {
-	mockClient PolicyClient
+type applyMockCentralClient struct {
+	mockClient CentralClient
 }
 
-func (a *applyMockPolicyClient) Apply(c CachedPolicyClient) {
+func (a *applyMockCentralClient) Apply(c CachedCentralClient) {
 	cl := c.(*client)
-	cl.svc = a.mockClient
+	cl.centralSvc = a.mockClient
 }
 
 func createListPolicies(policies []*storage.Policy) []*storage.ListPolicy {
@@ -59,19 +59,19 @@ func createListPolicies(policies []*storage.Policy) []*storage.ListPolicy {
 type clientTest struct {
 	ctx        context.Context
 	policies   []*storage.Policy
-	client     CachedPolicyClient
+	client     CachedCentralClient
 	controller *gomock.Controller
-	mockClient *mocks.MockPolicyClient
+	mockClient *mocks.MockCentralClient
 }
 
 // setUp loads the policies from embed.FS, creates the mock and cached client
 // Every test in this file calls setUp
-func setUp(t *testing.T, fn func(*mocks.MockPolicyClient, []*storage.Policy)) clientTest {
+func setUp(t *testing.T, fn func(*mocks.MockCentralClient, []*storage.Policy)) clientTest {
 	policies := loadPolicies()
 
 	controller := gomock.NewController(t)
-	mockClient := mocks.NewMockPolicyClient(controller)
-	o := applyMockPolicyClient{
+	mockClient := mocks.NewMockCentralClient(controller)
+	o := applyMockCentralClient{
 		mockClient: mockClient,
 	}
 
@@ -91,7 +91,7 @@ func setUp(t *testing.T, fn func(*mocks.MockPolicyClient, []*storage.Policy)) cl
 // TestCachedClientList validates that the cached client lists policies as expected
 func TestCachedClientList(t *testing.T) {
 
-	clientTest := setUp(t, func(mockClient *mocks.MockPolicyClient, policies []*storage.Policy) {
+	clientTest := setUp(t, func(mockClient *mocks.MockCentralClient, policies []*storage.Policy) {
 		mockClient.EXPECT().ListPolicies(gomock.Any()).Return(createListPolicies(policies), nil).Times(1)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[0].Id).Return(policies[0], nil).Times(1)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[1].Id).Return(policies[1], nil).Times(1)
@@ -108,7 +108,7 @@ func TestCachedClientList(t *testing.T) {
 
 // TestCachedClientGet validates that the cached client fetches policies as expected
 func TestCachedClientGet(t *testing.T) {
-	clientTest := setUp(t, func(mockClient *mocks.MockPolicyClient, policies []*storage.Policy) {
+	clientTest := setUp(t, func(mockClient *mocks.MockCentralClient, policies []*storage.Policy) {
 		mockClient.EXPECT().ListPolicies(gomock.Any()).Return(createListPolicies(policies), nil).Times(1)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[0].Id).Return(policies[0], nil).Times(1)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[1].Id).Return(policies[1], nil).Times(1)
@@ -169,7 +169,7 @@ func TestCachedClientDelete(t *testing.T) {
 	mockImpPolicyToReturn := newPolicyImperative.CloneVT()
 	mockImpPolicyToReturn.Id = "imp123"
 
-	clientTest := setUp(t, func(mockClient *mocks.MockPolicyClient, policies []*storage.Policy) {
+	clientTest := setUp(t, func(mockClient *mocks.MockCentralClient, policies []*storage.Policy) {
 		mockClient.EXPECT().ListPolicies(gomock.Any()).Return(createListPolicies(policies), nil).Times(1)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[0].Id).Return(policies[0], nil).Times(1)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[1].Id).Return(policies[1], nil).Times(1)
@@ -218,7 +218,7 @@ func TestCachedClientCreate(t *testing.T) {
 	mockPolicyToReturn := newPolicy.CloneVT()
 	mockPolicyToReturn.Id = "abc123"
 
-	clientTest := setUp(t, func(mockClient *mocks.MockPolicyClient, policies []*storage.Policy) {
+	clientTest := setUp(t, func(mockClient *mocks.MockCentralClient, policies []*storage.Policy) {
 		mockClient.EXPECT().ListPolicies(gomock.Any()).Return(createListPolicies(policies), nil).Times(1)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[0].Id).Return(policies[0], nil).Times(1)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[1].Id).Return(policies[1], nil).Times(1)
@@ -235,7 +235,7 @@ func TestCachedClientCreate(t *testing.T) {
 
 // TestCachedClientUpdate validates that the cached client updates policies as expected
 func TestCachedClientUpdate(t *testing.T) {
-	clientTest := setUp(t, func(mockClient *mocks.MockPolicyClient, policies []*storage.Policy) {
+	clientTest := setUp(t, func(mockClient *mocks.MockCentralClient, policies []*storage.Policy) {
 		mockClient.EXPECT().ListPolicies(gomock.Any()).Return(createListPolicies(policies), nil).Times(1)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[0].Id).Return(policies[0], nil).Times(1)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[1].Id).Return(policies[1], nil).Times(1)
@@ -256,7 +256,7 @@ func TestCachedClientUpdate(t *testing.T) {
 // TestCachedClientFlushCacheNoUpdate validates that the cached client flushes the cache as expected
 // In this test, FlushCache is a no-op since the last updated timestamp is too recent.
 func TestCachedClientFlushCacheNoUpdate(t *testing.T) {
-	clientTest := setUp(t, func(mockClient *mocks.MockPolicyClient, policies []*storage.Policy) {
+	clientTest := setUp(t, func(mockClient *mocks.MockCentralClient, policies []*storage.Policy) {
 		mockClient.EXPECT().ListPolicies(gomock.Any()).Return(createListPolicies(policies), nil).Times(1)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[0].Id).Return(policies[0], nil).Times(1)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[1].Id).Return(policies[1], nil).Times(1)
@@ -272,7 +272,7 @@ func TestCachedClientFlushCacheNoUpdate(t *testing.T) {
 // TestCachedClientFlushCacheWithUpdate validates that the cached client flushes the cache as expected
 // In this test, the last updated timestamp is "hacked" to make it appear older so as to trigger a real flush.
 func TestCachedClientFlushCacheWithUpdate(t *testing.T) {
-	clientTest := setUp(t, func(mockClient *mocks.MockPolicyClient, policies []*storage.Policy) {
+	clientTest := setUp(t, func(mockClient *mocks.MockCentralClient, policies []*storage.Policy) {
 		mockClient.EXPECT().ListPolicies(gomock.Any()).Return(createListPolicies(policies), nil).Times(2)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[0].Id).Return(policies[0], nil).Times(2)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[1].Id).Return(policies[1], nil).Times(2)
@@ -291,7 +291,7 @@ func TestCachedClientFlushCacheWithUpdate(t *testing.T) {
 // TestCachedClientEnsureFreshNoUpdate validates that EnsureFresh works as expected
 // In this test, EnsureFresh is a no-op since the last updated timestamp is too recent.
 func TestCachedClientEnsureFreshNoUpdate(t *testing.T) {
-	clientTest := setUp(t, func(mockClient *mocks.MockPolicyClient, policies []*storage.Policy) {
+	clientTest := setUp(t, func(mockClient *mocks.MockCentralClient, policies []*storage.Policy) {
 		mockClient.EXPECT().ListPolicies(gomock.Any()).Return(createListPolicies(policies), nil).Times(1)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[0].Id).Return(policies[0], nil).Times(1)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[1].Id).Return(policies[1], nil).Times(1)
@@ -307,7 +307,7 @@ func TestCachedClientEnsureFreshNoUpdate(t *testing.T) {
 // TestCachedClientEnsureFreshWithUpdate validates that EnsureFresh works as expected
 // In this test, the last updated timestamp is "hacked" to make it appear older so as to trigger a real flush.
 func TestCachedClientEnsureFreshWithUpdate(t *testing.T) {
-	clientTest := setUp(t, func(mockClient *mocks.MockPolicyClient, policies []*storage.Policy) {
+	clientTest := setUp(t, func(mockClient *mocks.MockCentralClient, policies []*storage.Policy) {
 		mockClient.EXPECT().ListPolicies(gomock.Any()).Return(createListPolicies(policies), nil).Times(2)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[0].Id).Return(policies[0], nil).Times(2)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[1].Id).Return(policies[1], nil).Times(2)

@@ -23,7 +23,11 @@ import (
 	"github.com/pkg/errors"
 	configstackroxiov1alpha1 "github.com/stackrox/rox/config-controller/api/v1alpha1"
 	"github.com/stackrox/rox/config-controller/pkg/client"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/uuid"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -41,9 +45,9 @@ var (
 
 // SecurityPolicyReconciler reconciles a SecurityPolicy object
 type SecurityPolicyReconciler struct {
-	K8sClient    ctrlClient.Client
-	Scheme       *runtime.Scheme
-	PolicyClient client.CachedPolicyClient
+	K8sClient     ctrlClient.Client
+	Scheme        *runtime.Scheme
+	CentralClient client.CachedCentralClient
 }
 
 //+kubebuilder:rbac:groups=config.stackrox.io,resources=policies,verbs=get;list;watch;create;update;patch;delete
@@ -67,13 +71,13 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, errors.Wrapf(err, "Invalid policy resource: namespace=%s, name=%s", req.Namespace, req.Name)
 	}
 
-	if err := r.PolicyClient.EnsureFresh(ctx); err != nil {
+	if err := r.CentralClient.EnsureFresh(ctx); err != nil {
 		return ctrl.Result{}, errors.Wrap(err, "Failed to refresh")
 	}
 
-	desiredState := policyCR.Spec.ToProtobuf()
+	desiredState := r.ToProtobuf(ctx, policyCR.Spec)
 
-	existingPolicy, exists, err := r.PolicyClient.GetPolicy(ctx, desiredState.GetName())
+	existingPolicy, exists, err := r.CentralClient.GetPolicy(ctx, desiredState.GetName())
 	if err != nil {
 		return ctrl.Result{}, errors.Wrap(err, "Failed to fetch policy")
 	}
@@ -104,7 +108,7 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			// finalizer is present, so lets handle the external dependency of deleting policy in central
 			if policyCR.Status.Accepted {
 				// Only try to delete a policy from Central if the CR has been marked as accepted
-				if err := r.PolicyClient.DeletePolicy(ctx, policyCR.Spec.PolicyName); err != nil {
+				if err := r.CentralClient.DeletePolicy(ctx, policyCR.Spec.PolicyName); err != nil {
 					// if we failed to delete the policy in central, return with error
 					// so that reconciliation can be retried.
 					return ctrl.Result{}, errors.Wrapf(err, "failed to delete policy %q", policyCR.GetName())
@@ -142,7 +146,7 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	var retErr error
 	if desiredState.GetId() != "" {
 		log.Debugf("Updating policy %q (ID: %q)", desiredState.GetName(), desiredState.GetId())
-		if err := r.PolicyClient.UpdatePolicy(ctx, desiredState); err != nil {
+		if err := r.CentralClient.UpdatePolicy(ctx, desiredState); err != nil {
 			retErr = errors.Wrap(err, fmt.Sprintf("Failed to update policy '%s'", desiredState.GetName()))
 			policyCR.Status = configstackroxiov1alpha1.SecurityPolicyStatus{
 				Accepted: false,
@@ -157,7 +161,7 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		}
 	} else {
 		log.Debugf("Creating policy with name %q", desiredState.GetName())
-		if createdPolicy, err := r.PolicyClient.CreatePolicy(ctx, desiredState); err != nil {
+		if createdPolicy, err := r.CentralClient.CreatePolicy(ctx, desiredState); err != nil {
 			retErr = errors.Wrap(err, fmt.Sprintf("Failed to create policy '%s'", desiredState.GetName()))
 			policyCR.Status = configstackroxiov1alpha1.SecurityPolicyStatus{
 				Accepted: false,
@@ -175,7 +179,7 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 	if retErr != nil {
 		// Perhaps the cache is stale, ignore errors since this is best effort
-		_ = r.PolicyClient.FlushCache(ctx)
+		_ = r.CentralClient.FlushCache(ctx)
 	}
 
 	if err := r.K8sClient.Status().Update(ctx, policyCR); err != nil {
@@ -197,4 +201,153 @@ func (r *SecurityPolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		return errors.Wrap(err, "Failed to set up reconciler")
 	}
 	return nil
+}
+
+// ToProtobuf converts the SecurityPolicy spec into policy proto
+func (r *SecurityPolicyReconciler) ToProtobuf(ctx context.Context, p configstackroxiov1alpha1.SecurityPolicySpec) *storage.Policy {
+	proto := storage.Policy{
+		Name:               p.PolicyName,
+		Description:        p.Description,
+		Rationale:          p.Rationale,
+		Remediation:        p.Remediation,
+		Disabled:           p.Disabled,
+		Categories:         p.Categories,
+		PolicyVersion:      policyversion.CurrentVersion().String(),
+		CriteriaLocked:     p.CriteriaLocked,
+		MitreVectorsLocked: p.MitreVectorsLocked,
+		IsDefault:          p.IsDefault,
+		Source:             storage.PolicySource_DECLARATIVE,
+	}
+
+	proto.Notifiers = make([]string, len(p.Notifiers))
+	for _, notifier := range p.Notifiers {
+		_, err := uuid.FromString(notifier)
+		if err == nil {
+			proto.Notifiers = append(proto.Notifiers, notifier)
+			continue
+		}
+		// spec has notifier names specified
+		id, exists := r.CentralClient.GetNotifierID(ctx, notifier)
+		if exists {
+			proto.Notifiers = append(proto.Notifiers, id)
+			continue
+		}
+		log.Warnf("Notifier '%s' does not exist, skipping ..", notifier)
+	}
+
+	for _, ls := range p.LifecycleStages {
+		val, found := storage.LifecycleStage_value[string(ls)]
+		if found {
+			proto.LifecycleStages = append(proto.LifecycleStages, storage.LifecycleStage(val))
+		}
+	}
+
+	for _, exclusion := range p.Exclusions {
+		protoExclusion := storage.Exclusion{
+			Name: exclusion.Name,
+		}
+
+		if exclusion.Expiration != "" {
+			protoTS, err := protocompat.ParseRFC3339NanoTimestamp(exclusion.Expiration)
+			if err != nil {
+				return nil
+			}
+			protoExclusion.Expiration = protoTS
+		}
+
+		if exclusion.Deployment != (configstackroxiov1alpha1.Deployment{}) {
+			protoExclusion.Deployment = &storage.Exclusion_Deployment{
+				Name: exclusion.Deployment.Name,
+			}
+
+			scope := exclusion.Deployment.Scope
+			if scope != (configstackroxiov1alpha1.Scope{}) {
+				protoExclusion.Deployment.Scope = &storage.Scope{
+					Cluster:   scope.Cluster,
+					Namespace: scope.Namespace,
+				}
+			}
+
+			if scope.Label != (configstackroxiov1alpha1.Label{}) {
+				protoExclusion.Deployment.Scope.Label = &storage.Scope_Label{
+					Key:   scope.Label.Key,
+					Value: scope.Label.Value,
+				}
+			}
+
+		}
+
+		proto.Exclusions = append(proto.Exclusions, &protoExclusion)
+	}
+
+	for _, scope := range p.Scope {
+		protoScope := &storage.Scope{
+			Cluster:   scope.Cluster,
+			Namespace: scope.Namespace,
+		}
+
+		if scope.Label != (configstackroxiov1alpha1.Label{}) {
+			protoScope.Label = &storage.Scope_Label{
+				Key:   scope.Label.Key,
+				Value: scope.Label.Value,
+			}
+		}
+
+		proto.Scope = append(proto.Scope, protoScope)
+	}
+
+	val, found := storage.Severity_value[p.Severity]
+	if found {
+		proto.Severity = storage.Severity(val)
+	}
+
+	val, found = storage.EventSource_value[string(p.EventSource)]
+	if found {
+		proto.EventSource = storage.EventSource(val)
+	}
+
+	for _, ea := range p.EnforcementActions {
+		val, found := storage.EnforcementAction_value[string(ea)]
+		if found {
+			proto.EnforcementActions = append(proto.EnforcementActions, storage.EnforcementAction(val))
+		}
+	}
+
+	for _, section := range p.PolicySections {
+		protoSection := &storage.PolicySection{
+			SectionName: section.SectionName,
+		}
+
+		for _, group := range section.PolicyGroups {
+			protoGroup := &storage.PolicyGroup{
+				FieldName: group.FieldName,
+				Negate:    group.Negate,
+			}
+
+			val, found = storage.BooleanOperator_value[group.BooleanOperator]
+			if found {
+				protoGroup.BooleanOperator = storage.BooleanOperator(val)
+			}
+
+			for _, value := range group.Values {
+				protoValue := &storage.PolicyValue{
+					Value: value.Value,
+				}
+				protoGroup.Values = append(protoGroup.Values, protoValue)
+			}
+			protoSection.PolicyGroups = append(protoSection.PolicyGroups, protoGroup)
+		}
+		proto.PolicySections = append(proto.PolicySections, protoSection)
+	}
+
+	for _, mitreAttackVectors := range p.MitreAttackVectors {
+		protoMitreAttackVetor := &storage.Policy_MitreAttackVectors{
+			Tactic:     mitreAttackVectors.Tactic,
+			Techniques: mitreAttackVectors.Techniques,
+		}
+
+		proto.MitreAttackVectors = append(proto.MitreAttackVectors, protoMitreAttackVetor)
+	}
+
+	return &proto
 }
