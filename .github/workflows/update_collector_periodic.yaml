@@ -7,7 +7,7 @@ jobs:
   determine-new-collector-version:
     runs-on: ubuntu-latest
     outputs:
-      new-collector-version: ${{ steps.update-version.new-collector-version }}
+      new-collector-version: ${{ steps.update-version.outputs.new-collector-version }}
     steps:
     - name: Checkout collector repo
       uses: actions/checkout@v4
@@ -16,8 +16,9 @@ jobs:
         fetch-depth: 0 # we need to fetch tags
     - name: Update version
       id: update-version
+
       run: |
-        echo "new-collector-version=$(make -s tag) >> "${GITHUB_OUTPUT}"
+        echo "new-collector-version=$(make -s tag)" >> "${GITHUB_OUTPUT}"
 
   ensure-images-exist:
     runs-on: ubuntu-latest
