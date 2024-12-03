@@ -59,6 +59,7 @@ func init() {
 		&storage.Hash{}:                                         resources.Hash,
 		&storage.ImageComponent{}:                               resources.Image,
 		&storage.ImageComponentV2{}:                             resources.Image,
+		&storage.ImageComponentV3{}:                             resources.Image,
 		&storage.ImageComponentEdge{}:                           resources.Image,
 		&storage.ImageCVE{}:                                     resources.Image,
 		&storage.ImageCVEEdge{}:                                 resources.Image,

@@ -175,6 +175,34 @@ message ImageCVEV2 {
   VulnerabilityState state = 12; // @gotags: search:"Vulnerability State" sql:"index=btree"
 }
 
+message ImageCVEV3 {
+  // keeping id similar construction for now during investigation.  May just need to be auto-generated
+  string id = 1; // This field is composite of cve and image id. // @gotags: search:"CVE ID,hidden" sql:"pk,id"
+  // was hash index, making it btree
+  string image_id = 2; // @gotags: sql:"fk(Image:id),index=btree"
+  CVEInfo cve_base_info = 3;
+  string operating_system = 4; // @gotags: search:"Operating System"
+  // cvss stores ACS preferred cvss score
+  float cvss = 5; // @gotags: search:"CVSS,store"
+  VulnerabilitySeverity severity = 6; // @gotags: search:"Severity" sql:"index=btree"
+  float impact_score = 7; // @gotags: search:"Impact Score"
+
+  // nvdcvss stores cvss score for a cve from NVD
+  float nvdcvss = 8; // @gotags: search:"NVD CVSS,store"
+  // cvss_metrics stores list of cvss metrics from different sources like Redhat, NVD etc
+  repeated CVSSScore cvss_metrics = 9;
+  CvssScoreVersion nvd_score_version = 10;
+  google.protobuf.Timestamp first_image_occurrence = 11; // @gotags: search:"First Image Occurrence Timestamp,hidden"
+  VulnerabilityState state = 12; // @gotags: search:"Vulnerability State" sql:"index=btree"
+
+  bool is_fixable = 13; // @gotags: search:"Fixable,store"
+
+  // Whether there is a version the CVE is fixed in the component.
+  oneof has_fixed_by {
+    string fixed_by = 14; // @gotags: search:"Fixed By,store,hidden"
+  }
+}
+
 message NodeCVE {
   string id = 1; // This field is composite of cve and operating system. // @gotags: search:"CVE ID,hidden" sql:"pk,id"
   CVEInfo cve_base_info = 2;

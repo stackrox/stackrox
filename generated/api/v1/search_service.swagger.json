@@ -121,7 +121,9 @@
                 "COMPLIANCE_REPORT_SNAPSHOT",
                 "IMAGE_COMPONENTS_V2",
                 "COMPONENT_VULN_EDGE_V2",
-                "IMAGE_VULNERABILITIES_V2"
+                "IMAGE_VULNERABILITIES_V2",
+                "IMAGE_COMPONENTS_V3",
+                "IMAGE_VULNERABILITIES_V3"
               ]
             },
             "collectionFormat": "multi"
@@ -237,7 +239,9 @@
                 "COMPLIANCE_REPORT_SNAPSHOT",
                 "IMAGE_COMPONENTS_V2",
                 "COMPONENT_VULN_EDGE_V2",
-                "IMAGE_VULNERABILITIES_V2"
+                "IMAGE_VULNERABILITIES_V2",
+                "IMAGE_COMPONENTS_V3",
+                "IMAGE_VULNERABILITIES_V3"
               ]
             },
             "collectionFormat": "multi"
@@ -347,7 +351,9 @@
                 "COMPLIANCE_REPORT_SNAPSHOT",
                 "IMAGE_COMPONENTS_V2",
                 "COMPONENT_VULN_EDGE_V2",
-                "IMAGE_VULNERABILITIES_V2"
+                "IMAGE_VULNERABILITIES_V2",
+                "IMAGE_COMPONENTS_V3",
+                "IMAGE_VULNERABILITIES_V3"
               ]
             },
             "collectionFormat": "multi"
@@ -500,7 +506,9 @@
         "COMPLIANCE_REPORT_SNAPSHOT",
         "IMAGE_COMPONENTS_V2",
         "COMPONENT_VULN_EDGE_V2",
-        "IMAGE_VULNERABILITIES_V2"
+        "IMAGE_VULNERABILITIES_V2",
+        "IMAGE_COMPONENTS_V3",
+        "IMAGE_VULNERABILITIES_V3"
       ],
       "default": "SEARCH_UNSET",
       "title": "Next available tag: 74"
