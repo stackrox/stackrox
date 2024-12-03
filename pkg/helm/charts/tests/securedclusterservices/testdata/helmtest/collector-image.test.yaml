@@ -54,7 +54,7 @@ tests:
   tests:
   - name: "default settings"
     expect: |
-      collector | assertThat(.imagePullPolicy == "IfNotPresent")
+      collector | assertThat(.imagePullPolicy == "Always")
   - name: "global setting"
     set:
       image.collector.pullPolicy: Never
