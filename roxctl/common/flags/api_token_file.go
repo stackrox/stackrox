@@ -31,7 +31,7 @@ func AddAPITokenFile(c *cobra.Command) {
 func APITokenFile() string {
 	return flagOrConfigurationValue(apiTokenFile,
 		APITokenFileChanged(),
-		config.ApiTokenFilePath(),
+		ApiTokenFilePath(),
 		*configApiTokenFileSet,
 		env.TokenFileEnv)
 }
