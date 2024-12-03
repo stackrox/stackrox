@@ -452,7 +452,7 @@ func ForEachRotation(logFile string, f func(rotationFileName string) error) erro
 		return nil
 	})
 	if err != nil {
-		return errors.Wrap(err, "failed to copy log files")
+		return errors.Wrap(err, "failed to iterate over log files")
 	}
 	return nil
 }

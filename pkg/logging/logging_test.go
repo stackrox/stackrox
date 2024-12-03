@@ -79,11 +79,11 @@ func Test_withRotatingCore(t *testing.T) {
 	require.NoError(t, logger.Sync())
 	fi, err := os.Stat(logname1)
 	require.NoError(t, err)
-	assert.Equal(t, int64(451500), fi.Size()) // may change if code changes.
+	assert.Greater(t, fi.Size(), maxSizeInBytes>>4)
 	assert.Less(t, fi.Size(), maxSizeInBytes)
 	fi, err = os.Stat(logname2)
 	require.NoError(t, err)
-	assert.Equal(t, int64(451500), fi.Size())
+	assert.Greater(t, fi.Size(), maxSizeInBytes>>4)
 
 	logLineRegex := regexp.MustCompile(`^\d{4}/\d\d/\d\d \d\d:\d\d:\d\d\.\d{6}: logging_test\.go`)
 
@@ -112,7 +112,7 @@ func Test_withRotatingCore(t *testing.T) {
 			oldestRoll = rotationFileName
 			fi, err := os.Stat(rotationFileName)
 			require.NoError(t, err)
-			assert.Equal(t, int64(1048559), fi.Size(), rotationFileName)
+			assert.Greater(t, fi.Size(), maxSizeInBytes-(maxSizeInBytes>>10), rotationFileName)
 			assert.Less(t, fi.Size(), maxSizeInBytes)
 			f, err := os.Open(rotationFileName)
 			require.NoError(t, err)

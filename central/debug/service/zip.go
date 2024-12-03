@@ -72,20 +72,20 @@ func (z *zipWriter) writerWithCurrentTimestampNoLock(fileName string) (io.Writer
 }
 
 func (z *zipWriter) addFile(targetFileName, sourceFileName string) error {
+	logFile, err := os.Open(sourceFileName)
+	if err != nil {
+		return errors.Wrap(err, "failed to open log file")
+	}
+	defer utils.IgnoreError(logFile.Close)
+
 	z.LockWrite()
 	defer z.UnlockWrite()
 
-	w, err := z.writerWithCurrentTimestampNoLock(targetFileName)
-	if err != nil {
-		return err
-	}
-	if logFile, err := os.Open(sourceFileName); err == nil {
-		defer utils.IgnoreError(logFile.Close)
-		if _, err = io.Copy(w, logFile); err != nil {
-			return errors.Wrap(err, "failed to append log file to the bundle")
+	var w io.Writer
+	if w, err = z.writerWithCurrentTimestampNoLock(targetFileName); err == nil {
+		if _, err = io.Copy(w, logFile); err == nil {
+			return nil
 		}
-	} else {
-		return errors.Wrap(err, "failed to open log file")
 	}
-	return nil
+	return errors.Wrap(err, "failed to append log file to the bundle")
 }
