@@ -182,28 +182,24 @@ func (w *WorkloadManager) clearActions() {
 		log.Infof("Cleared %d Actions from w.fakeClient", len(w.fakeClient.Actions()))
 		w.fakeClient.ClearActions()
 
-		tracker := reflect.ValueOf(w.fakeClient).Elem().Elem().FieldByName("tracker")
-		if tracker.IsValid() {
-			numObjects := 0
-			numWatchers := 0
-			objects := tracker.Elem().FieldByName("objects")
-			if objects.IsValid() {
-				val := objects.Interface().(map[schema.GroupVersionResource]map[types.NamespacedName]runtime.Object)
-				numObjects = len(val)
-			} else {
-				log.Warnf("tracker.objects was invalid")
-			}
-			watchers := tracker.Elem().Elem().FieldByName("watchers")
-			if watchers.IsValid() {
-				val := watchers.Interface().(map[schema.GroupVersionResource]map[types.NamespacedName]runtime.Object)
-				numWatchers = len(val)
-			} else {
-				log.Warnf("tracker.watchers was invalid")
-			}
-			log.Infof("tracker is holding %d objects and %d watchers", numObjects, numWatchers)
+		tracker := w.fakeClient.Tracker()
+		objects := reflect.ValueOf(tracker).Elem().Elem().FieldByName("objects")
+		watchers := reflect.ValueOf(tracker).Elem().Elem().FieldByName("watchers")
+		numObjects := 0
+		numWatchers := 0
+		if objects.IsValid() {
+			val := objects.Interface().(map[schema.GroupVersionResource]map[types.NamespacedName]runtime.Object)
+			numObjects = len(val)
 		} else {
-			log.Warnf("clientset.tracker was invalid")
+			log.Warnf("tracker.objects was invalid")
 		}
+		if watchers.IsValid() {
+			val := watchers.Interface().(map[schema.GroupVersionResource]map[types.NamespacedName]runtime.Object)
+			numWatchers = len(val)
+		} else {
+			log.Warnf("tracker.watchers was invalid")
+		}
+		log.Infof("tracker is holding %d objects and %d watchers", numObjects, numWatchers)
 	}
 }
 
