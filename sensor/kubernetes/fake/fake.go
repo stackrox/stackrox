@@ -29,7 +29,6 @@ import (
 	fakeDynamic "k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
-	fakecore "k8s.io/client-go/kubernetes/typed/core/v1/fake"
 )
 
 const (
@@ -180,30 +179,30 @@ func (w *WorkloadManager) SetSignalHandlers(processPipeline signal.Pipeline, net
 func (w *WorkloadManager) clearActions() {
 	t := time.NewTicker(10 * time.Second)
 	for range t.C {
-		//log.Infof("Cleared %d Actions from w.fakeClient", len(w.fakeClient.Actions()))
-		//w.fakeClient.ClearActions()
-		c := w.client.Kubernetes().CoreV1().Pods("")
-		d, ok := c.(*fakecore.FakePods)
-		if ok {
-			log.Infof("Cleared %d Actions from w.client", len(d.Fake.Actions()))
-			d.Fake.ClearActions()
-		} else {
-			log.Errorf("Failed to cast client to FakePods.")
-		}
+		log.Infof("Cleared %d Actions from w.fakeClient", len(w.fakeClient.Actions()))
+		w.fakeClient.ClearActions()
 
-		//t := reflect.ValueOf(w.fakeClient).FieldByName("tracker")
 		tracker := reflect.ValueOf(w.fakeClient).Elem().FieldByName("tracker")
-		if tracker.IsValid() && tracker.CanSet() {
+		if tracker.IsValid() {
+			numObjects := 0
+			numWatchers := 0
 			objects := tracker.FieldByName("objects")
-			if objects.IsValid() && objects.CanSet() {
+			if objects.IsValid() {
 				val := objects.Interface().(map[schema.GroupVersionResource]map[types.NamespacedName]runtime.Object)
-				objects.Set(reflect.ValueOf(nil))
-				log.Infof("Successfully set clientset.tracker.objects to nil, previous size: %d", len(val))
+				numObjects = len(val)
 			} else {
-				log.Warnf("tracker.objects was invalid or could not be set")
+				log.Warnf("tracker.objects was invalid")
 			}
+			watchers := tracker.FieldByName("watchers")
+			if watchers.IsValid() {
+				val := watchers.Interface().(map[schema.GroupVersionResource]map[types.NamespacedName]runtime.Object)
+				numWatchers = len(val)
+			} else {
+				log.Warnf("tracker.watchers was invalid")
+			}
+			log.Infof("tracker is holding %d objects and %d watchers", numObjects, numWatchers)
 		} else {
-			log.Errorf("clientset.tracker was invalid or could not be set")
+			log.Warnf("clientset.tracker was invalid")
 		}
 	}
 }
