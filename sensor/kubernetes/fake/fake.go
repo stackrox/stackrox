@@ -186,14 +186,14 @@ func (w *WorkloadManager) clearActions() {
 		if tracker.IsValid() {
 			numObjects := 0
 			numWatchers := 0
-			objects := tracker.FieldByName("objects")
+			objects := tracker.Elem().FieldByName("objects")
 			if objects.IsValid() {
 				val := objects.Interface().(map[schema.GroupVersionResource]map[types.NamespacedName]runtime.Object)
 				numObjects = len(val)
 			} else {
 				log.Warnf("tracker.objects was invalid")
 			}
-			watchers := tracker.FieldByName("watchers")
+			watchers := tracker.Elem().FieldByName("watchers")
 			if watchers.IsValid() {
 				val := watchers.Interface().(map[schema.GroupVersionResource]map[types.NamespacedName]runtime.Object)
 				numWatchers = len(val)
