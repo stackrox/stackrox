@@ -4,10 +4,19 @@ import (
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"os"
 	"testing"
 )
 
 func TestLoadConfig(t *testing.T) {
+
+	cwd, err := os.Getwd()
+
+	if err != nil {
+		t.Logf("Something went wrong: %v", err)
+	}
+
+	t.Logf("Current working directory: %v", cwd)
 
 	configFileSet = pointers.Bool(false)
 	configEndpointSet = pointers.Bool(false)
@@ -62,7 +71,7 @@ func TestLoadConfig(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.configFile, func(t *testing.T) {
-			instance, err := readConfig(configFile)
+			instance, err := readConfig(tc.configFile)
 
 			if tc.err == "" {
 				require.NoError(t, err)
