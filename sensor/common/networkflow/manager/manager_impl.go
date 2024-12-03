@@ -541,19 +541,16 @@ func formatMultiErrorOneline(errs []error) string {
 func (m *networkFlowManager) enrichConnection(conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) error {
 	timeElapsedSinceFirstSeen := timestamp.Now().ElapsedSince(status.firstSeen)
 	isFresh := timeElapsedSinceFirstSeen < clusterEntityResolutionWaitPeriod
-	var failReasons, netGraphFailReason *multierror.Error
+	var netGraphFailReason *multierror.Error
 	netGraphFailReason.ErrorFormat = formatMultiErrorOneline
 
 	container, ok := m.clusterEntities.LookupByContainerID(conn.containerID)
 	if !ok {
 		// There is an incoming connection to a container that we do not know.
 		// 90% of the cases that container is Sensor itself before being restarted.
-		failReasons = multierror.Append(failReasons, fmt.Errorf("ContainerID %s unknown", conn.containerID))
 		netGraphFailReason = multierror.Append(netGraphFailReason, fmt.Errorf("ContainerID %s unknown", conn.containerID))
-		failReasons = multierror.Append(failReasons, m.handleContainerNotFound(conn, status, enrichedConnections))
-		return failReasons
+		return m.handleContainerNotFound(conn, status, enrichedConnections)
 	}
-	failReasons = multierror.Append(failReasons, errors.New("ContainerID lookup successful"))
 	netGraphFailReason = multierror.Append(netGraphFailReason, errors.New("ContainerID lookup successful"))
 
 	var lookupResults []clusterentities.LookupResult
@@ -563,7 +560,6 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 	if conn.remote.IPAndPort.Address == externalIPv4Addr || conn.remote.IPAndPort.Address == externalIPv6Addr {
 		isFresh = false
 		isInternet = true
-		failReasons = multierror.Append(failReasons, errors.New("remote part is the Internet"))
 		netGraphFailReason = multierror.Append(netGraphFailReason, errors.New("remote part is the Internet"))
 	} else {
 		// Otherwise, check if the remote entity is actually a cluster entity.
@@ -586,26 +582,20 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 	}
 
 	if len(lookupResults) == 0 {
-		failReasons = multierror.Append(failReasons, fmt.Errorf("lookup in clusterEntitiesStore failed for endpoint %s", conn.remote.String()))
 		netGraphFailReason = multierror.Append(netGraphFailReason, fmt.Errorf("lookup in clusterEntitiesStore failed for endpoint %s", conn.remote.String()))
 		// If the address is set and is not resolvable, we want to we wait for `clusterEntityResolutionWaitPeriod` time
 		// before associating it to a known network or INTERNET.
 		if isFresh && conn.remote.IPAndPort.Address.IsValid() {
-			return multierror.Append(failReasons, errors.New("connection is fresh and remote IP address is valid"))
+			return errors.New("connection is fresh and remote IP address is valid")
 		}
 
 		extSrc := m.externalSrcs.LookupByNetwork(conn.remote.IPAndPort.IPNetwork)
 		if extSrc != nil {
-			failReasons = multierror.Append(failReasons,
-				fmt.Errorf("network lookup succeded for network %s", conn.remote.IPAndPort.IPNetwork.String()))
 			isFresh = false
-		} else {
-			failReasons = multierror.Append(failReasons,
-				fmt.Errorf("no network lookup results for network %s", conn.remote.IPAndPort.IPNetwork.String()))
 		}
 
 		if isFresh {
-			return multierror.Append(failReasons, errors.New("connection is fresh"))
+			return errors.New("connection is fresh")
 		}
 
 		defer func() {
@@ -621,8 +611,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 				// IP is malformed or unknown - do not show on the graph and log the info
 				// TODO(ROX-22388): Change log level back to warning when potential Collector issue is fixed
 				log.Debugf("Not showing flow on the network graph: %v", err)
-				return multierror.Append(failReasons,
-					fmt.Errorf("connection (%s) not recognized as external: %w", conn.String(), err))
+				return fmt.Errorf("connection (%s) not recognized as external: %w", conn.String(), err)
 			}
 			if isExternal {
 				// If Central does not handle DiscoveredExternalEntities, report an Internet entity as it used to be.
