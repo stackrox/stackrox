@@ -190,29 +190,21 @@ func (w *WorkloadManager) clearActions() {
 		} else {
 			log.Errorf("Failed to cast client to FakePods.")
 		}
-		log.Infof("Tracker stats - watchCount: %d - addCount: %d - deleteCount: %d")
 
 		//t := reflect.ValueOf(w.fakeClient).FieldByName("tracker")
-		clientset := reflect.ValueOf(w.fakeClient).Elem()
-		_, trackerFound := clientset.Type().FieldByName("tracker")
-		if !trackerFound {
-			log.Warnf("Couldn't reflect clientset to access tracker member.")
-		}
-		tracker := clientset.FieldByName("tracker")
-		_, objectsFound := tracker.Type().FieldByName("tracker")
-		if !objectsFound {
-			log.Warnf("Couldn't reflect tracker to access objects member.")
-		}
-		objectsField := tracker.FieldByName("objects")
-		if objectsField.IsValid() && objectsField.CanSet() {
-			curval := objectsField.Interface()
-			curvalTyped := curval.(map[schema.GroupVersionResource]map[types.NamespacedName]runtime.Object)
-			objectsField.Set(reflect.ValueOf(nil))
-			log.Infof("Successfully set clientset.tracker.objects to nil, previous size: %d", len(curvalTyped))
+		tracker := reflect.ValueOf(w.fakeClient).Elem().FieldByName("tracker")
+		if tracker.IsValid() && tracker.CanSet() {
+			objects := tracker.FieldByName("objects")
+			if objects.IsValid() && objects.CanSet() {
+				val := objects.Interface().(map[schema.GroupVersionResource]map[types.NamespacedName]runtime.Object)
+				objects.Set(reflect.ValueOf(nil))
+				log.Infof("Successfully set clientset.tracker.objects to nil, previous size: %d", len(val))
+			} else {
+				log.Warnf("tracker.objects was invalid or could not be set")
+			}
 		} else {
-			log.Warnf("clientset.tracker.objects was invalid or could not be set")
+			log.Errorf("clientset.tracker was invalid or could not be set")
 		}
-
 	}
 }
 
