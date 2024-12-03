@@ -141,7 +141,7 @@ func main() {
 		os.Exit(1)
 	}
 	ctx := ctrl.SetupSignalHandler()
-	policyClient, err := client.New(ctx)
+	centralClient, err := client.New(ctx)
 
 	if err != nil {
 		setupLog.Error(err, "unable to connect to Central")
@@ -149,9 +149,9 @@ func main() {
 	}
 
 	if err = (&controller.SecurityPolicyReconciler{
-		K8sClient:    mgr.GetClient(),
-		Scheme:       mgr.GetScheme(),
-		PolicyClient: policyClient,
+		K8sClient:     mgr.GetClient(),
+		Scheme:        mgr.GetScheme(),
+		CentralClient: centralClient,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "SecurityPolicy")
 		os.Exit(1)

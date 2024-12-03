@@ -1,6 +1,6 @@
 package client
 
-//go:generate mockgen-wrapper CachedPolicyClient,PolicyClient
+//go:generate mockgen-wrapper CachedCentralClient,CentralClient
 
 import (
 	"context"
@@ -65,31 +65,34 @@ func (c *perRPCCreds) refreshToken(ctx context.Context) error {
 	return nil
 }
 
-type CachedPolicyClient interface {
+type CachedCentralClient interface {
 	ListPolicies(ctx context.Context) ([]*storage.Policy, error)
 	GetPolicy(ctx context.Context, name string) (*storage.Policy, bool, error)
 	CreatePolicy(ctx context.Context, policy *storage.Policy) (*storage.Policy, error)
 	UpdatePolicy(ctx context.Context, policy *storage.Policy) error
 	DeletePolicy(ctx context.Context, name string) error
+	GetNotifiers() map[string]string
 	FlushCache(ctx context.Context) error
 	EnsureFresh(ctx context.Context) error
 }
 
-type PolicyClient interface {
+type CentralClient interface {
 	ListPolicies(context.Context) ([]*storage.ListPolicy, error)
 	GetPolicy(ctx context.Context, id string) (*storage.Policy, error)
 	PostPolicy(context.Context, *storage.Policy) (*storage.Policy, error)
 	PutPolicy(context.Context, *storage.Policy) error
 	DeletePolicy(ctx context.Context, id string) error
+	ListNotifiers(ctx context.Context) ([]*storage.Notifier, error)
 	TokenExchange(ctx context.Context) error
 }
 
 type grpcClient struct {
-	svc         v1.PolicyServiceClient
+	policySvc   v1.PolicyServiceClient
+	notifierSvc v1.NotifierServiceClient
 	perRPCCreds *perRPCCreds
 }
 
-func newGrpcClient(ctx context.Context) (PolicyClient, error) {
+func newGrpcClient(ctx context.Context) (CentralClient, error) {
 	clientconn.SetUserAgent(clientconn.ConfigController)
 
 	dialOpts := []grpc.DialOption{
@@ -111,18 +114,26 @@ func newGrpcClient(ctx context.Context) (PolicyClient, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to create gRPC connection")
 	}
-
-	svc := v1.NewPolicyServiceClient(conn)
 	perRPCCreds.svc = v1.NewAuthServiceClient(conn)
 
 	return &grpcClient{
 		perRPCCreds: perRPCCreds,
-		svc:         svc,
+		policySvc:   v1.NewPolicyServiceClient(conn),
+		notifierSvc: v1.NewNotifierServiceClient(conn),
 	}, nil
 }
 
+func (gc *grpcClient) ListNotifiers(ctx context.Context) ([]*storage.Notifier, error) {
+	allNotifiers, err := gc.notifierSvc.GetNotifiers(ctx, &v1.GetNotifiersRequest{})
+	if err != nil {
+		return []*storage.Notifier{}, errors.Wrap(err, "Failed to list notifiers from grpc client")
+	}
+
+	return allNotifiers.Notifiers, err
+}
+
 func (gc *grpcClient) ListPolicies(ctx context.Context) ([]*storage.ListPolicy, error) {
-	allPolicies, err := gc.svc.ListPolicies(ctx, &v1.RawQuery{})
+	allPolicies, err := gc.policySvc.ListPolicies(ctx, &v1.RawQuery{})
 	if err != nil {
 		return []*storage.ListPolicy{}, errors.Wrap(err, "Failed to list policies from grpc client")
 	}
@@ -131,7 +142,7 @@ func (gc *grpcClient) ListPolicies(ctx context.Context) ([]*storage.ListPolicy, 
 }
 
 func (gc *grpcClient) GetPolicy(ctx context.Context, id string) (*storage.Policy, error) {
-	policy, err := gc.svc.GetPolicy(ctx, &v1.ResourceByID{Id: id})
+	policy, err := gc.policySvc.GetPolicy(ctx, &v1.ResourceByID{Id: id})
 	if err != nil {
 		return nil, errors.Wrapf(err, "Failed to fetch policy %s", id)
 	}
@@ -145,7 +156,7 @@ func (gc *grpcClient) PostPolicy(ctx context.Context, policy *storage.Policy) (*
 		EnableStrictValidation: true,
 	}
 
-	policy, err := gc.svc.PostPolicy(ctx, req)
+	policy, err := gc.policySvc.PostPolicy(ctx, req)
 
 	if err != nil {
 		return nil, errors.Wrapf(err, "Failed to create policy %q", policy.GetName())
@@ -155,7 +166,7 @@ func (gc *grpcClient) PostPolicy(ctx context.Context, policy *storage.Policy) (*
 }
 
 func (gc *grpcClient) PutPolicy(ctx context.Context, policy *storage.Policy) error {
-	_, err := gc.svc.PutPolicy(ctx, policy)
+	_, err := gc.policySvc.PutPolicy(ctx, policy)
 
 	if err != nil {
 		return errors.Wrapf(err, "Failed to update policy %q", policy.GetName())
@@ -165,7 +176,7 @@ func (gc *grpcClient) PutPolicy(ctx context.Context, policy *storage.Policy) err
 }
 
 func (gc *grpcClient) DeletePolicy(ctx context.Context, id string) error {
-	_, err := gc.svc.DeletePolicy(ctx, &v1.ResourceByID{Id: id})
+	_, err := gc.policySvc.DeletePolicy(ctx, &v1.ResourceByID{Id: id})
 
 	if err != nil {
 		return errors.Wrapf(err, "Failed to delete policy: %s", id)
@@ -182,30 +193,31 @@ func (gc *grpcClient) TokenExchange(ctx context.Context) error {
 }
 
 type client struct {
-	svc                 PolicyClient
-	policyObjectCache   map[string]*storage.Policy // policy ID to policy
-	policyNameToIDCache map[string]string          // policy name to policy ID
-	lastUpdated         time.Time
+	centralSvc            CentralClient
+	policyObjectCache     map[string]*storage.Policy // policy ID to policy
+	policyNameToIDCache   map[string]string          // policy name to policy ID
+	notifierNameToIDCache map[string]string          // notifier name to notifier ID
+	lastUpdated           time.Time
 }
 
 type clientOptions interface {
-	Apply(CachedPolicyClient)
+	Apply(centralClient CachedCentralClient)
 }
 
-func New(ctx context.Context, opts ...clientOptions) (CachedPolicyClient, error) {
+func New(ctx context.Context, opts ...clientOptions) (CachedCentralClient, error) {
 	c := client{}
 
 	for _, o := range opts {
 		o.Apply(&c)
 	}
 
-	if c.svc == nil {
+	if c.centralSvc == nil {
 		gc, err := newGrpcClient(ctx)
 		if err != nil {
 			log.Error(err, "Failed to connect to Central")
 		}
 
-		c.svc = gc
+		c.centralSvc = gc
 	}
 
 	err := c.EnsureFresh(ctx)
@@ -227,6 +239,10 @@ func New(ctx context.Context, opts ...clientOptions) (CachedPolicyClient, error)
 	return &c, nil
 }
 
+func (c *client) GetNotifiers() map[string]string {
+	return c.notifierNameToIDCache
+}
+
 func (c *client) ListPolicies(_ context.Context) ([]*storage.Policy, error) {
 	policies := make([]*storage.Policy, 0, len(c.policyObjectCache))
 	for _, value := range c.policyObjectCache {
@@ -242,7 +258,7 @@ func (c *client) GetPolicy(_ context.Context, name string) (*storage.Policy, boo
 
 func (c *client) CreatePolicy(ctx context.Context, policy *storage.Policy) (*storage.Policy, error) {
 	log.Infof("Creating policy %q", policy.Name)
-	createdPolicy, err := c.svc.PostPolicy(ctx, policy)
+	createdPolicy, err := c.centralSvc.PostPolicy(ctx, policy)
 
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("Failed to POST policy '%s'", policy.Name))
@@ -263,7 +279,7 @@ func (c *client) UpdatePolicy(ctx context.Context, policy *storage.Policy) error
 	}
 
 	// update policy on central
-	err := c.svc.PutPolicy(ctx, policy)
+	err := c.centralSvc.PutPolicy(ctx, policy)
 	if err != nil {
 		return errors.Wrap(err, "Failed to PUT policy")
 	}
@@ -287,7 +303,7 @@ func (c *client) DeletePolicy(ctx context.Context, name string) error {
 		return errors.New(fmt.Sprintf("policy %q is not externally managed and can be deleted only from central", name))
 	}
 
-	if err := c.svc.DeletePolicy(ctx, policyID); err != nil {
+	if err := c.centralSvc.DeletePolicy(ctx, policyID); err != nil {
 		return errors.Wrapf(err, "Failed to DELETE policy %q in central", name)
 	}
 	delete(c.policyObjectCache, policyID)
@@ -304,25 +320,38 @@ func (c *client) FlushCache(ctx context.Context) error {
 	log.Info("Flushing policy cache")
 
 	log.Debug("Listing policies")
-	allPolicies, err := c.svc.ListPolicies(ctx)
+	allPolicies, err := c.centralSvc.ListPolicies(ctx)
 	if err != nil {
 		return errors.Wrap(err, "Failed to list policies")
 	}
 
+	allNotifiers, err := c.centralSvc.ListNotifiers(ctx)
+	if err != nil {
+		return errors.Wrap(err, "Failed to list notifiers")
+	}
+
 	newPolicyObjectCache := make(map[string]*storage.Policy, len(allPolicies))
 	newPolicyNameToIDCache := make(map[string]string, len(allPolicies))
+	newNotifierNameToIDCache := make(map[string]string, len(allNotifiers))
 
 	for _, listPolicy := range allPolicies {
 		log.Debugf("Get policy: %s", listPolicy.GetName())
-		policy, err := c.svc.GetPolicy(ctx, listPolicy.Id)
+		policy, err := c.centralSvc.GetPolicy(ctx, listPolicy.Id)
 		if err != nil {
 			return errors.Wrapf(err, "Failed to fetch policy %s", listPolicy.Id)
 		}
 		newPolicyObjectCache[policy.GetId()] = policy
 		newPolicyNameToIDCache[policy.GetName()] = policy.GetId()
 	}
+
+	for _, notifier := range allNotifiers {
+		newNotifierNameToIDCache[notifier.GetName()] = notifier.GetId()
+	}
+
 	c.policyObjectCache = newPolicyObjectCache
 	c.policyNameToIDCache = newPolicyNameToIDCache
+	c.notifierNameToIDCache = newNotifierNameToIDCache
+
 	c.lastUpdated = time.Now()
 
 	return nil
@@ -330,7 +359,7 @@ func (c *client) FlushCache(ctx context.Context) error {
 
 func (c *client) EnsureFresh(ctx context.Context) error {
 	// Make sure token isn't expired before flushing cache
-	if err := c.svc.TokenExchange(ctx); err != nil {
+	if err := c.centralSvc.TokenExchange(ctx); err != nil {
 		return err
 	}
 
