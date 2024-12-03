@@ -13,19 +13,20 @@ import {
 import Raven from 'raven-js';
 
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import useAnalytics, { IMAGE_SBOM_GENERATED } from 'hooks/useAnalytics';
 import useRestMutation from 'hooks/useRestMutation';
 import { generateAndSaveSbom } from 'services/ImageSbomService';
 
 export type GenerateSbomModalProps = {
     onClose: () => void;
-    onGenerateSbom: () => void;
     imageName: string;
 };
 
 function GenerateSbomModal(props: GenerateSbomModalProps) {
-    const { onClose, onGenerateSbom, imageName } = props;
+    const { analyticsTrack } = useAnalytics();
+    const { onClose, imageName } = props;
     const { mutate, isLoading, isSuccess, isError, error } = useRestMutation(generateAndSaveSbom, {
-        onSuccess: onGenerateSbom,
+        onSuccess: () => analyticsTrack(IMAGE_SBOM_GENERATED),
         onError: (err) => Raven.captureException(err),
     });
 
