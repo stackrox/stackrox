@@ -86,7 +86,7 @@ central:
       minConns: null # int
       maxConns: null # int
       statementTimeoutMs: null #int
-    config:
+    settings:
       maxConnections: null # int
       sharedBuffers: null # string
       workMem: null # string
