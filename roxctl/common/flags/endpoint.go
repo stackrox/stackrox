@@ -91,7 +91,7 @@ func AddConnectionFlags(c *cobra.Command) {
 func EndpointAndPlaintextSetting() (string, bool, error) {
 	endpoint = flagOrConfigurationValue(endpoint,
 		*endpointChanged,
-		config.Endpoint(),
+		Endpoint(),
 		*configEndpointSet,
 		env.EndpointEnv)
 
@@ -177,7 +177,7 @@ func CAFile() string {
 	return flagOrConfigurationValue(
 		caCertFile,
 		*caCertFileSet,
-		config.CaCertificatePath(),
+		CaCertificatePath(),
 		*configCaCertFileSet,
 		env.CACertFileEnv)
 }

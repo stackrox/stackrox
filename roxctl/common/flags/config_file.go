@@ -59,18 +59,30 @@ func ConfigurationFileChanged() bool {
 }
 
 // CaCertificatePath returns the configuration-defined CA Certificate path.
-func (c *instanceConfig) CaCertificatePath() string {
-	return c.Instance.CaCertificatePath
+func CaCertificatePath() string {
+	if config != nil {
+		return config.Instance.CaCertificatePath
+	}
+
+	return ""
 }
 
 // ApiTokenFilePath returns the configuration-defined API Token file path.
-func (c *instanceConfig) ApiTokenFilePath() string {
-	return c.Instance.ApiTokenFilePath
+func ApiTokenFilePath() string {
+	if config != nil {
+		return config.Instance.ApiTokenFilePath
+	}
+
+	return ""
 }
 
 // Endpoint returns the configuration-defined endpoint.
-func (c *instanceConfig) Endpoint() string {
-	return c.Instance.Endpoint
+func Endpoint() string {
+	if config != nil {
+		return config.Instance.Endpoint
+	}
+
+	return ""
 }
 
 // readConfig is a utilty function for reading YAML-based configuration files
