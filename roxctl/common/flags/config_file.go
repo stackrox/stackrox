@@ -60,7 +60,7 @@ func ConfigurationFileChanged() bool {
 
 // CaCertificatePath returns the configuration-defined CA Certificate path.
 func CaCertificatePath() string {
-	if config != nil {
+	if ConfigurationFileChanged() == true {
 		return config.Instance.CaCertificatePath
 	}
 
@@ -69,7 +69,7 @@ func CaCertificatePath() string {
 
 // ApiTokenFilePath returns the configuration-defined API Token file path.
 func ApiTokenFilePath() string {
-	if config != nil {
+	if ConfigurationFileChanged() == true {
 		return config.Instance.ApiTokenFilePath
 	}
 
@@ -78,7 +78,7 @@ func ApiTokenFilePath() string {
 
 // Endpoint returns the configuration-defined endpoint.
 func Endpoint() string {
-	if config != nil {
+	if ConfigurationFileChanged() == true {
 		return config.Instance.Endpoint
 	}
 
