@@ -23,6 +23,7 @@ type ComponentParts struct {
 	Edge        *storage.ImageComponentEdge
 	Component   *storage.ImageComponent
 	ComponentV2 *storage.ImageComponentV2
+	ComponentV3 *storage.ImageComponentV3
 
 	Children []CVEParts
 }

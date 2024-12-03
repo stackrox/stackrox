@@ -39,6 +39,7 @@ const (
 	imageCVEsTable           = pkgSchema.ImageCvesTableName
 	imageCVEsV2Table         = pkgSchema.ImageCvesV2TableName
 	imageCVEEdgesTable       = pkgSchema.ImageCveEdgesTableName
+	imageComponentsV3Table   = pkgSchema.ImageComponentV3TableName
 
 	getImageMetaStmt = "SELECT serialized FROM " + imagesTable + " WHERE Id = $1"
 	getImageIDsStmt  = "SELECT Id FROM " + imagesTable
@@ -67,6 +68,7 @@ type imagePartsAsSlice struct {
 	componentsV2        []*storage.ImageComponentV2
 	vulnsV2             []*storage.ImageCVEV2
 	componentCVEEdgesV2 []*storage.ComponentCVEEdgeV2
+	componentsV3        []*storage.ImageComponentV3
 }
 
 // New returns a new Store instance using the provided sql instance.
@@ -163,6 +165,9 @@ func (s *storeImpl) insertIntoImages(
 	if err := copyFromImageComponentsV2(ctx, tx, parts.componentsV2...); err != nil {
 		return err
 	}
+	if err := copyFromImageComponentV3(ctx, tx, parts.componentsV3...); err != nil {
+		return err
+	}
 	if err := copyFromImageComponentCVEEdges(ctx, tx, parts.componentCVEEdges...); err != nil {
 		return err
 	}
@@ -181,6 +186,7 @@ func (s *storeImpl) insertIntoImages(
 func getPartsAsSlice(parts common.ImageParts) *imagePartsAsSlice {
 	components := make([]*storage.ImageComponent, 0, len(parts.Children))
 	componentsV2 := make([]*storage.ImageComponentV2, 0, len(parts.Children))
+	componentsV3 := make([]*storage.ImageComponentV3, 0, len(parts.Children))
 	imageComponentEdges := make([]*storage.ImageComponentEdge, 0, len(parts.Children))
 	vulnMap := make(map[string]*storage.ImageCVE)
 	vulnV2Map := make(map[string]*storage.ImageCVEV2)
@@ -189,6 +195,7 @@ func getPartsAsSlice(parts common.ImageParts) *imagePartsAsSlice {
 	for _, child := range parts.Children {
 		components = append(components, child.Component)
 		componentsV2 = append(componentsV2, child.ComponentV2)
+		componentsV3 = append(componentsV3, child.ComponentV3)
 		imageComponentEdges = append(imageComponentEdges, child.Edge)
 		for _, gChild := range child.Children {
 			componentCVEEdges = append(componentCVEEdges, gChild.Edge)
@@ -220,6 +227,7 @@ func getPartsAsSlice(parts common.ImageParts) *imagePartsAsSlice {
 		vulnsV2:             vulnsV2,
 		componentsV2:        componentsV2,
 		componentCVEEdgesV2: componentCVEEdgesV2,
+		componentsV3:        componentsV3,
 	}
 }
 
@@ -828,6 +836,158 @@ func copyFromImageCVEEdgesWithVulnStateUpdates(ctx context.Context, tx *postgres
 			return err
 		}
 	}
+	return nil
+}
+
+// Copied from image components v3 store for now.  Makes life a little easier not having to think about passing the
+// transaction to that other store yet.
+func copyFromImageComponentV3(ctx context.Context, tx *postgres.Tx, objs ...*storage.ImageComponentV3) error {
+	batchSize := pgSearch.MaxBatchSize
+	if len(objs) < batchSize {
+		batchSize = len(objs)
+	}
+	inputRows := make([][]interface{}, 0, batchSize)
+
+	// This is a copy, so first we must delete the rows and re-add them
+	// Which is essentially the desired behaviour of an upsert.
+	deletes := make([]string, 0, batchSize)
+
+	copyCols := []string{
+		"id",
+		"name",
+		"version",
+		"priority",
+		"source",
+		"riskscore",
+		"topcvss",
+		"operatingsystem",
+		"imageid",
+		"location",
+		"serialized",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
+			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
+			"to simply use the object.  %s", obj)
+
+		serialized, marshalErr := obj.MarshalVT()
+		if marshalErr != nil {
+			return marshalErr
+		}
+
+		inputRows = append(inputRows, []interface{}{
+			obj.GetId(),
+			obj.GetName(),
+			obj.GetVersion(),
+			obj.GetPriority(),
+			obj.GetSource(),
+			obj.GetRiskScore(),
+			obj.GetTopCvss(),
+			obj.GetOperatingSystem(),
+			obj.GetImageId(),
+			obj.GetLocation(),
+			serialized,
+		})
+
+		// Add the ID to be deleted.
+		deletes = append(deletes, obj.GetId())
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+			_, err := tx.Exec(ctx, "DELETE FROM "+imageComponentsV3Table+" WHERE id = ANY($1::text[])", deletes)
+			if err != nil {
+				return err
+			}
+			// clear the inserts and vals for the next batch
+			deletes = deletes[:0]
+
+			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"image_component_v3"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+				return err
+			}
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	for idx, obj := range objs {
+		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
+
+		if err := copyFromImageComponentV3Cves(ctx, tx, obj.GetId(), obj.GetCves()...); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func copyFromImageComponentV3Cves(ctx context.Context, tx *postgres.Tx, imageComponentV3ID string, objs ...*storage.ImageCVEV3) error {
+	batchSize := pgSearch.MaxBatchSize
+	if len(objs) < batchSize {
+		batchSize = len(objs)
+	}
+	inputRows := make([][]interface{}, 0, batchSize)
+
+	copyCols := []string{
+		"image_component_v3_id",
+		"idx",
+		"id",
+		"imageid",
+		"cvebaseinfo_cve",
+		"cvebaseinfo_publishedon",
+		"cvebaseinfo_createdat",
+		"operatingsystem",
+		"cvss",
+		"severity",
+		"impactscore",
+		"nvdcvss",
+		"firstimageoccurrence",
+		"state",
+		"isfixable",
+		"fixedby",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
+			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
+			"to simply use the object.  %s", obj)
+
+		inputRows = append(inputRows, []interface{}{
+			imageComponentV3ID,
+			idx,
+			obj.GetId(),
+			obj.GetImageId(),
+			obj.GetCveBaseInfo().GetCve(),
+			protocompat.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
+			protocompat.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
+			obj.GetOperatingSystem(),
+			obj.GetCvss(),
+			obj.GetSeverity(),
+			obj.GetImpactScore(),
+			obj.GetNvdcvss(),
+			protocompat.NilOrTime(obj.GetFirstImageOccurrence()),
+			obj.GetState(),
+			obj.GetIsFixable(),
+			obj.GetFixedBy(),
+		})
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"image_component_v3_cves"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+				return err
+			}
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
 	return nil
 }
 
