@@ -17,3 +17,15 @@
 {{ end }}
 
 {{ end }}
+
+{{- define "srox.securedClusterCertRefresh.certsPath" -}}
+/tmp/certs
+{{- end }}
+
+{{- define "srox.securedClusterCertRefresh.newCertsPath" -}}
+/tmp/certs-new
+{{- end }}
+
+{{- define "srox.securedClusterCertRefresh.legacyCertsPath" -}}
+/tmp/certs-legacy
+{{- end }}

@@ -28,9 +28,9 @@ func init() {
 func main() {
 	flag.Parse()
 
-	fmt.Println("New certs directory:", newSourceDir)
-	fmt.Println("Legacy certs directory:", legacySourceDir)
-	fmt.Println("Destination directory:", destinationDir)
+	log.Println("New certs directory:", newSourceDir)
+	log.Println("Legacy certs directory:", legacySourceDir)
+	log.Println("Destination directory:", destinationDir)
 
 	realDest, err := sanityCheckDestination()
 	if err != nil {
