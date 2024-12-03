@@ -20,8 +20,14 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/uuid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // +kubebuilder:validation:Enum=DEPLOY;BUILD;RUNTIME
@@ -154,8 +160,34 @@ func (p SecurityPolicySpec) IsValid() (bool, error) {
 	return true, nil
 }
 
+// +kubebuilder:object:root=true
+// +kubebuilder:resource:shortName=sp
+// +kubebuilder:subresource:status
+
+// SecurityPolicy is the Schema for the policies API
+type SecurityPolicy struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   SecurityPolicySpec   `json:"spec,omitempty"`
+	Status SecurityPolicyStatus `json:"status,omitempty"`
+}
+
+// +kubebuilder:object:root=true
+
+// SecurityPolicyList contains a list of Policy
+type SecurityPolicyList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []SecurityPolicy `json:"items"`
+}
+
+func init() {
+	SchemeBuilder.Register(&SecurityPolicy{}, &SecurityPolicyList{})
+}
+
 // ToProtobuf converts the SecurityPolicy spec into policy proto
-func (p SecurityPolicySpec) ToProtobuf() *storage.Policy {
+func (p SecurityPolicySpec) ToProtobuf(notifiers map[string]string) *storage.Policy {
 	proto := storage.Policy{
 		Name:               p.PolicyName,
 		Description:        p.Description,
@@ -163,12 +195,27 @@ func (p SecurityPolicySpec) ToProtobuf() *storage.Policy {
 		Remediation:        p.Remediation,
 		Disabled:           p.Disabled,
 		Categories:         p.Categories,
-		Notifiers:          p.Notifiers,
 		PolicyVersion:      policyversion.CurrentVersion().String(),
 		CriteriaLocked:     p.CriteriaLocked,
 		MitreVectorsLocked: p.MitreVectorsLocked,
 		IsDefault:          p.IsDefault,
 		Source:             storage.PolicySource_DECLARATIVE,
+	}
+
+	proto.Notifiers = make([]string, 0, len(p.Notifiers))
+	for _, notifier := range p.Notifiers {
+		_, err := uuid.FromString(notifier)
+		if err == nil {
+			proto.Notifiers = append(proto.Notifiers, notifier)
+			continue
+		}
+		// spec has notifier names specified
+		id, exists := notifiers[notifier]
+		if exists {
+			proto.Notifiers = append(proto.Notifiers, id)
+			continue
+		}
+		log.Warnf("Notifier '%s' does not exist, skipping ..", notifier)
 	}
 
 	for _, ls := range p.LifecycleStages {
@@ -189,7 +236,6 @@ func (p SecurityPolicySpec) ToProtobuf() *storage.Policy {
 				return nil
 			}
 			protoExclusion.Expiration = protoTS
-
 		}
 
 		if exclusion.Deployment != (Deployment{}) {
@@ -287,30 +333,4 @@ func (p SecurityPolicySpec) ToProtobuf() *storage.Policy {
 	}
 
 	return &proto
-}
-
-// +kubebuilder:object:root=true
-// +kubebuilder:resource:shortName=sp
-// +kubebuilder:subresource:status
-
-// SecurityPolicy is the Schema for the policies API
-type SecurityPolicy struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec   SecurityPolicySpec   `json:"spec,omitempty"`
-	Status SecurityPolicyStatus `json:"status,omitempty"`
-}
-
-// +kubebuilder:object:root=true
-
-// SecurityPolicyList contains a list of Policy
-type SecurityPolicyList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []SecurityPolicy `json:"items"`
-}
-
-func init() {
-	SchemeBuilder.Register(&SecurityPolicy{}, &SecurityPolicyList{})
 }

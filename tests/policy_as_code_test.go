@@ -237,7 +237,7 @@ func (pc *PolicyAsCodeSuite) createPolicyInCentral() *storage.Policy {
 			Name:            policyName,
 			Description:     "This is a description",
 			Categories:      []string{"Vulnerability Management"},
-			Notifiers:       []string{pc.notifier.GetId()},
+			Notifiers:       []string{pc.notifier.GetName()},
 			Severity:        storage.Severity_MEDIUM_SEVERITY,
 			LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
 			PolicySections: []*storage.PolicySection{{
