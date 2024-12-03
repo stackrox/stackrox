@@ -73,10 +73,7 @@ shellcheck-reports
 .direnv/
 
 # Snyk
-.dccache 
-
-# TODO files 
-TODO.md
+.dccache
 
 # Konflux builds download scanner vuln files to the code repo.
 # These files need to be ignored in order for `make tag` return a clean version string.
