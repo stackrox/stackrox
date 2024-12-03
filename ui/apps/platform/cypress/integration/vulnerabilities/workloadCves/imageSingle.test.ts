@@ -317,7 +317,7 @@ describe('Workload CVE Image Single page', () => {
     });
 
     describe('SBOM generation tests', () => {
-        const sbomGenerationButtonSelector = 'button:contains("Generate SBOM")';
+        const sbomGenerationButton = 'button:contains("Generate SBOM")';
 
         before(function () {
             if (!hasFeatureFlag('ROX_SBOM_GENERATION')) {
@@ -330,7 +330,7 @@ describe('Workload CVE Image Single page', () => {
 
             visitFirstImage();
 
-            cy.get(sbomGenerationButtonSelector).should('not.exist');
+            cy.get(sbomGenerationButton).should('not.exist');
         });
 
         it('should disable the SBOM generation button when Scanner V4 is not enabled', () => {
@@ -338,7 +338,7 @@ describe('Workload CVE Image Single page', () => {
 
             visitFirstImage();
 
-            cy.get(sbomGenerationButtonSelector).should('have.attr', 'aria-disabled', 'true');
+            cy.get(sbomGenerationButton).should('have.attr', 'aria-disabled', 'true');
         });
 
         it('should trigger a download of the image SBOM via confirmation modal', function () {
@@ -347,9 +347,11 @@ describe('Workload CVE Image Single page', () => {
             }
 
             visitFirstImage().then((imageFullName) => {
-                cy.get(sbomGenerationButtonSelector).click();
+                cy.get(sbomGenerationButton).click();
                 cy.get(selectors.generateSbomModal).contains(imageFullName);
-                // TODO Add to implementation
+                cy.get(`[role='dialog'] ${sbomGenerationButton}`).click();
+                cy.get(':contains("Generating, please do not navigate away from this modal")');
+                cy.get(':contains("Software Bill of Materials (SBOM) generated successfully")');
             });
         });
     });

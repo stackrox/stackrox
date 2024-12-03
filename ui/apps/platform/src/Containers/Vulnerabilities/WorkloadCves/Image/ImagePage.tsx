@@ -168,7 +168,7 @@ function ImagePage() {
                                         {sbomTargetImage && (
                                             <GenerateSbomModal
                                                 onClose={() => setSbomTargetImage(undefined)}
-                                                imageFullName={sbomTargetImage}
+                                                imageName={sbomTargetImage}
                                                 onGenerateSbom={() => {
                                                     // TODO Implement analytics event
                                                 }}
