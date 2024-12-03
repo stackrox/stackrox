@@ -5,7 +5,6 @@
   via `--set`/values-files specified via `-f`.
      */ -}}
 
-{{- include "srox.init" . -}}
 # Configuration file for collector.
 
 networking:
