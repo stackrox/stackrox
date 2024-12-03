@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io/fs"
@@ -37,9 +38,17 @@ func main() {
 	}
 	log.Printf("Destination directory %q looks sane.", destinationDir)
 
-	files := waitForSource()
+	timeout := 5 * time.Minute
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	files, err := waitForSource(ctx)
+	if err != nil {
+		log.Fatalf("Failed to load certificates: %v", err)
+	}
+
 	if err = copyFiles(files, realDest); err != nil {
-		log.Fatalf("Cannot copy files: %s", err)
+		log.Fatalf("Cannot copy files: %v", err)
 	}
 }
 
@@ -59,29 +68,34 @@ func copyFiles(files []string, destDir string) error {
 	return nil
 }
 
-func waitForSource() []string {
+func waitForSource(ctx context.Context) ([]string, error) {
 	log.Printf("Looking for files in the source directory %q.", legacySourceDir)
 	for {
-		// Check new certificates first
-		files, err := findFiles(newSourceDir)
-		if err != nil {
-			log.Printf("Error checking certificates in %q: %s", newSourceDir, err)
-		} else {
-			log.Printf("Using new certificates from %q.", newSourceDir)
-			return files
-		}
+		select {
+		case <-ctx.Done():
+			return nil, fmt.Errorf("context expired while waiting for certificates: %w", ctx.Err())
+		default:
+			// Check new certificates first
+			files, err := findFiles(newSourceDir)
+			if err != nil {
+				log.Printf("Error checking certificates in %q: %s", newSourceDir, err)
+			} else {
+				log.Printf("Using %d new certificate files from %q.", len(files), newSourceDir)
+				return files, nil
+			}
 
-		// Fall back to legacy certificates
-		files, err = findFiles(legacySourceDir)
-		if err != nil {
-			log.Printf("Error checking legacy certificates in %q: %s", legacySourceDir, err)
-		} else {
-			log.Printf("Using legacy certificates from %q.", legacySourceDir)
-			return files
-		}
+			// Fall back to legacy certificates
+			files, err = findFiles(legacySourceDir)
+			if err != nil {
+				log.Printf("Error checking legacy certificates in %q: %s", legacySourceDir, err)
+			} else {
+				log.Printf("Using %d legacy certificates from %q.", len(files), legacySourceDir)
+				return files, nil
+			}
 
-		log.Printf("No certificates found. Retrying...")
-		time.Sleep(5 * time.Second)
+			log.Printf("No certificates found. Retrying...")
+			time.Sleep(5 * time.Second)
+		}
 	}
 }
 
@@ -130,11 +144,11 @@ func findFiles(sourceDir string) ([]string, error) {
 	}
 
 	requiredFiles := 3
-	if len(files) >= requiredFiles {
-		return files, nil
+	if len(files) < requiredFiles {
+		return nil, fmt.Errorf("expecting at least %d files at %q", requiredFiles, sourceDir)
 	}
 
-	return nil, fmt.Errorf("expecting at least %d files at %q", requiredFiles, sourceDir)
+	return files, nil
 }
 
 func sanityCheckDestination() (string, error) {
