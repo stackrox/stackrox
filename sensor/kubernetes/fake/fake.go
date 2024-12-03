@@ -182,7 +182,7 @@ func (w *WorkloadManager) clearActions() {
 		log.Infof("Cleared %d Actions from w.fakeClient", len(w.fakeClient.Actions()))
 		w.fakeClient.ClearActions()
 
-		tracker := reflect.ValueOf(w.fakeClient).Elem().FieldByName("tracker")
+		tracker := reflect.ValueOf(w.fakeClient).Elem().Elem().FieldByName("tracker")
 		if tracker.IsValid() {
 			numObjects := 0
 			numWatchers := 0
@@ -193,7 +193,7 @@ func (w *WorkloadManager) clearActions() {
 			} else {
 				log.Warnf("tracker.objects was invalid")
 			}
-			watchers := tracker.Elem().FieldByName("watchers")
+			watchers := tracker.Elem().Elem().FieldByName("watchers")
 			if watchers.IsValid() {
 				val := watchers.Interface().(map[schema.GroupVersionResource]map[types.NamespacedName]runtime.Object)
 				numWatchers = len(val)
