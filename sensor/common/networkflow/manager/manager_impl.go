@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -531,28 +532,32 @@ func (m *networkFlowManager) handleContainerNotFound(conn *connection, status *c
 }
 
 func formatMultiErrorOneline(errs []error) string {
-	str := ""
+	elems := make([]string, len(errs))
 	for i, err := range errs {
-		str = fmt.Sprintf("%s, (%d) %s", str, i+1, err)
+		elems[i] = fmt.Sprintf("(%d) %s", i+1, err)
 	}
-	return str
+	return strings.Join(elems, ", ")
 }
 
 func logReasonForAggregatingNetGraphFlow(conn *connection, contNs, contName, entitiesName string, port uint16, failReason *multierror.Error) {
+	reasonStr := ""
+	// No need to produce complex chain of reasons, if there is one simple explanation
+	if strings.HasPrefix(conn.remote.IPAndPort.String(), "255.255.255.255") {
+		reasonStr = "Collector did not report the IP address to Sensor"
+	}
 	if failReason != nil {
 		failReason.ErrorFormat = formatMultiErrorOneline
+		reasonStr = failReason.Error()
 	}
 	if conn.incoming {
 		// Keep internal wording even if central lacks `NetworkGraphInternalEntitiesSupported` capability.
-		log.Debugf("Incoming connection to container %s/%s from %s:%s. "+
-			"Marking it as '%s' in the network graph: %v.",
+		log.Debugf("Marking incoming connection to container %s/%s from %s:%s as '%s' in the network graph: %s.",
 			contNs, contName, conn.remote.IPAndPort.String(),
-			strconv.Itoa(int(port)), entitiesName, failReason)
+			strconv.Itoa(int(port)), entitiesName, reasonStr)
 	} else {
-		log.Debugf("Outgoing connection from container %s/%s to %s. "+
-			"Marking it as '%s' in the network graph: %v.",
+		log.Debugf("Marking outgoing connection from container %s/%s to %s as '%s' in the network graph: %s.",
 			contNs, contName, conn.remote.IPAndPort.String(),
-			entitiesName, failReason)
+			entitiesName, reasonStr)
 	}
 }
 
@@ -641,6 +646,8 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 			} else if centralcaps.Has(centralsensor.NetworkGraphInternalEntitiesSupported) {
 				// Central without the capability would crash the UI if we make it display "Internal Entities".
 				entityType = networkgraph.InternalEntities()
+				netGraphFailReason = multierror.Append(netGraphFailReason,
+					errors.New("central lacks capability to display internal entities in the UI"))
 			}
 
 			// Fake a lookup result. This shows "External Entities" or "Internal Entities" in the network graph
@@ -653,10 +660,6 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 			entitiesName := "Internal Entities"
 			if isExternal {
 				entitiesName = "External Entities"
-			}
-			if conn.remote.IPAndPort.String() == "255.255.255.255" {
-				netGraphFailReason = multierror.Append(netGraphFailReason,
-					errors.New("collector did not report the IP address to Sensor"))
 			}
 			logReasonForAggregatingNetGraphFlow(conn, container.Namespace, container.ContainerName, entitiesName, port, netGraphFailReason)
 
