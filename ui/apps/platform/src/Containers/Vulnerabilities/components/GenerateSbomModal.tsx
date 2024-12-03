@@ -10,26 +10,27 @@ import {
     Modal,
     Text,
 } from '@patternfly/react-core';
+import Raven from 'raven-js';
 
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import useRestMutation from 'hooks/useRestMutation';
+import { generateAndSaveSbom } from 'services/ImageSbomService';
 
 export type GenerateSbomModalProps = {
     onClose: () => void;
     onGenerateSbom: () => void;
-    imageFullName: string;
+    imageName: string;
 };
 
 function GenerateSbomModal(props: GenerateSbomModalProps) {
-    const { onClose, onGenerateSbom, imageFullName } = props;
-
-    const isLoading = false;
-    const isSuccess = false;
-    const isError = false;
-    const error = undefined;
+    const { onClose, onGenerateSbom, imageName } = props;
+    const { mutate, isLoading, isSuccess, isError, error } = useRestMutation(generateAndSaveSbom, {
+        onSuccess: onGenerateSbom,
+        onError: (err) => Raven.captureException(err),
+    });
 
     function onClickGenerateSbom() {
-        // TODO Implement API call
-        onGenerateSbom();
+        mutate({ imageName });
     }
 
     return (
@@ -61,7 +62,7 @@ function GenerateSbomModal(props: GenerateSbomModalProps) {
                 <DescriptionList isHorizontal>
                     <DescriptionListGroup>
                         <DescriptionListTerm>Selected image:</DescriptionListTerm>
-                        <DescriptionListDescription>{imageFullName}</DescriptionListDescription>
+                        <DescriptionListDescription>{imageName}</DescriptionListDescription>
                     </DescriptionListGroup>
                 </DescriptionList>
                 {isSuccess && (
