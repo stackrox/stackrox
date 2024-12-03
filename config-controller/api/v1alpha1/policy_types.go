@@ -17,6 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
@@ -154,8 +156,18 @@ func (p SecurityPolicySpec) IsValid() (bool, error) {
 	return true, nil
 }
 
+// FindNotifierFuzzy searches a list of notifiers and matches one with the same name or ID
+func FindNotifierFuzzy(notifiers []*storage.Notifier, value string) (string, error) {
+	for _, notifier := range notifiers {
+		if notifier.Name == value || notifier.Id == value {
+			return notifier.Id, nil
+		}
+	}
+	return "", fmt.Errorf("Did not find a notifier with a name or ID that matches %s", value)
+}
+
 // ToProtobuf converts the SecurityPolicy spec into policy proto
-func (p SecurityPolicySpec) ToProtobuf() *storage.Policy {
+func (p SecurityPolicySpec) ToProtobuf(notifiers []*storage.Notifier) (*storage.Policy, error) {
 	proto := storage.Policy{
 		Name:               p.PolicyName,
 		Description:        p.Description,
@@ -163,12 +175,20 @@ func (p SecurityPolicySpec) ToProtobuf() *storage.Policy {
 		Remediation:        p.Remediation,
 		Disabled:           p.Disabled,
 		Categories:         p.Categories,
-		Notifiers:          p.Notifiers,
 		PolicyVersion:      policyversion.CurrentVersion().String(),
 		CriteriaLocked:     p.CriteriaLocked,
 		MitreVectorsLocked: p.MitreVectorsLocked,
 		IsDefault:          p.IsDefault,
 		Source:             storage.PolicySource_DECLARATIVE,
+	}
+
+	for _, notifierValue := range p.Notifiers {
+		id, err := FindNotifierFuzzy(notifiers, notifierValue)
+		if err != nil {
+			return nil, err
+		}
+
+		proto.Notifiers = append(proto.Notifiers, id)
 	}
 
 	for _, ls := range p.LifecycleStages {
@@ -186,7 +206,7 @@ func (p SecurityPolicySpec) ToProtobuf() *storage.Policy {
 		if exclusion.Expiration != "" {
 			protoTS, err := protocompat.ParseRFC3339NanoTimestamp(exclusion.Expiration)
 			if err != nil {
-				return nil
+				return nil, err
 			}
 			protoExclusion.Expiration = protoTS
 
@@ -286,7 +306,7 @@ func (p SecurityPolicySpec) ToProtobuf() *storage.Policy {
 		proto.MitreAttackVectors = append(proto.MitreAttackVectors, protoMitreAttackVetor)
 	}
 
-	return &proto
+	return &proto, nil
 }
 
 // +kubebuilder:object:root=true
