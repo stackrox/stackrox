@@ -66,9 +66,6 @@ func Command() *cobra.Command {
 
 	c.MarkFlagsMutuallyExclusive("password", "token-file")
 
-	// TODO: Should endpoint, ca, and apitoken be mutually exclusive from config?
-	// c.MarkFlagsMutuallyExclusive("endpoint", "token-file", "ca", "config-file")
-
 	cliEnvironment := environment.CLIEnvironment()
 	c.SetErr(errorWriter{
 		logger: cliEnvironment.Logger(),
