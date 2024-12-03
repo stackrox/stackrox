@@ -80,7 +80,7 @@ defaults:
         maxConns: 90
         statementTimeoutMs: 1200000
 
-      config:
+      settings:
         maxConnections: 63
         sharedBuffers: 2GB
         workMem: 40MB
