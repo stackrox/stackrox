@@ -111,23 +111,17 @@ func (e *endpointsStore) applyNoLock(updates map[string]*EntityData, incremental
 	}
 }
 
-func (e *endpointsStore) purgeNoLock(deploymentID string) set.Set[net.NumericEndpoint] {
-	dec := set.NewSet[net.NumericEndpoint]()
+func (e *endpointsStore) purgeNoLock(deploymentID string) {
 	// We will be manipulating reverseEndpointMap when calling deleteFromCurrent or moveToHistory,
-	// so let's make a temporary copy
+	// so let's make a temporary copy.
 	endpointsSet := e.reverseEndpointMap[deploymentID]
 	for ep := range endpointsSet {
 		if e.historyEnabled() {
-			// When history expires, the counter will be decremented
 			e.moveToHistory(deploymentID, ep)
 		} else {
 			e.deleteFromCurrent(deploymentID, ep)
-			if ipAddr := ep.IPAndPort.Address; ipAddr.IsPublic() {
-				dec.Add(ep)
-			}
 		}
 	}
-	return dec
 }
 
 func (e *endpointsStore) applySingleNoLock(deploymentID string, data EntityData) {
