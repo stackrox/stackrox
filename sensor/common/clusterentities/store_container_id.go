@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"golang.org/x/exp/maps"
+
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
