@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-
 	"github.com/stackrox/rox/pkg/concurrency"
 )
 

@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/stackrox/rox/pkg/metrics"
 )
 
