@@ -185,7 +185,7 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastContainerIDs() {
 				{"pod1": nowhere},
 			},
 		},
-		"Re-adding normally deleted container should reset the history status": {
+		"Re-adding normally deleted container (after history expired) should reset the history status": {
 			numTicksToRemember: 2,
 			entityUpdates: map[int][]eUpdate{
 				0: {
@@ -214,6 +214,37 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastContainerIDs() {
 				// adding container again
 				{"pod1": theMap}, // after tick 5: should be normally added to the map
 				{"pod1": theMap}, // after tick 6: should stay in the map until the next deletion or reset
+				{"pod1": theMap},
+			},
+		},
+		"Re-adding normally deleted container (while still in history) should reset the history status": {
+			numTicksToRemember: 2,
+			entityUpdates: map[int][]eUpdate{
+				0: {
+					{
+						deploymentID: "depl1",
+						containerID:  "pod1",
+						incremental:  true,
+					},
+				},
+				4: {
+					{
+						deploymentID: "depl1",
+						containerID:  "pod1",
+						incremental:  true,
+					},
+				},
+			},
+			operationAfterTick: map[int]operation{1: deleteDeployment1},
+			containerIDsAfterTick: []map[string]whereThingIsStored{
+				{"pod1": theMap}, // before tick 1: container should be added immediately
+				{"pod1": theMap}, // after tick 1
+				// container deletion
+				{"pod1": history}, // after tick 2: will remember that for one more tick
+				{"pod1": history}, // after tick 3: will remember that for this last tick
+				// add container again
+				{"pod1": theMap}, // after tick 4 should be normally added to the map
+				{"pod1": theMap},
 				{"pod1": theMap},
 			},
 		},
