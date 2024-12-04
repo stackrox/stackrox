@@ -97,5 +97,3 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryWhenGoingOffline() {
 		})
 	}
 }
-
-// region external-entities test
