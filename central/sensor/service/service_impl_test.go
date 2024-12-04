@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
 	clusterMock "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	installationMock "github.com/stackrox/rox/central/installation/store/mocks"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -23,6 +22,8 @@ import (
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -86,7 +87,7 @@ type crsTestSuite struct {
 func (s *crsTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	s.context = sac.WithAllAccess(context.Background())
-	testutils.LoadTestMTLSCerts(s.T())
+	utils.Should(testutils.LoadTestMTLSCerts(s.T()))
 }
 
 func TestCrs(t *testing.T) {
@@ -215,7 +216,7 @@ func (s *mockServer) LookupOrCreateClusterFromConfig(clusterId string, hello *ce
 
 func newCluster(clusterName string, hello *central.SensorHello) *storage.Cluster {
 	return &storage.Cluster{
-		Id:                 uuid.New().String(),
+		Id:                 uuid.NewV4().String(),
 		Name:               clusterName,
 		HealthStatus:       &storage.ClusterHealthStatus{},
 		MostRecentSensorId: hello.DeploymentIdentification,
@@ -239,11 +240,11 @@ var installInfo *storage.InstallationInfo = &storage.InstallationInfo{
 }
 
 var sensorDeploymentIdentification = &storage.SensorDeploymentIdentification{
-	SystemNamespaceId:   uuid.New().String(),
-	DefaultNamespaceId:  uuid.New().String(),
+	SystemNamespaceId:   uuid.NewV4().String(),
+	DefaultNamespaceId:  uuid.NewV4().String(),
 	AppNamespace:        "my-stackrox-namespace",
-	AppNamespaceId:      uuid.New().String(),
-	AppServiceaccountId: uuid.New().String(),
+	AppNamespaceId:      uuid.NewV4().String(),
+	AppServiceaccountId: uuid.NewV4().String(),
 	K8SNodeName:         "my-node",
 }
 
