@@ -3,7 +3,7 @@ package resources
 import "github.com/stackrox/rox/pkg/env"
 
 var (
-	// pastEndpointsMemorySize defines for how many ticks Sensor should remember past endpoints.
+	// pastClusterEntitiesMemorySize defines for how many ticks Sensor should remember past entities.
 	// The duration of one tick is defined as duration of networkFlowManager.enricherTicker.
 	// Value of 0 disables the memory completely.
 	// The default value of 20 results in between 9.5 to 10 minutes (19-20 * 30s) - the precision of 1 tick is necessary,
@@ -11,11 +11,11 @@ var (
 	// A memory of ~10 minutes is necessary if Collector is used with ROX_ENABLE_AFTERGLOW=true and its default settings.
 	// This means that Collector can report on past connections up to 400 seconds (for default Collector settings)
 	// after k8s informs Sensor that an Endpoint (or IP address) has been deleted.
-	// Setting this value too low may result in 'External Entities' appearing on the Network Graph
-	// for connections that are in fact not external.
+	// Setting this value too low may result in External- or Internal Entities appearing on the Network Graph
+	// for connections that could have been attributed to a past deployment.
 	// Setting this value too high will result in higher memory consumption of Sensor (especially in clusters with many
-	// deletions or dynamic changes to services or IP addresses).
-	pastEndpointsMemorySize = env.RegisterIntegerSetting("ROX_PAST_ENDPOINTS_MEMORY_SIZE", 20)
+	// deletions or frequent dynamic changes to services or IP addresses).
+	pastClusterEntitiesMemorySize = env.RegisterIntegerSetting("ROX_PAST_CLUSTER_ENTITIES_MEMORY_SIZE", 20)
 	// debugClusterEntitiesStore enables running a debug http server that allows to look into the state of the
 	// clusterentities store and events that added and deleted entries from the store. DO NOT RUN IN PRODUCTION.
 	debugClusterEntitiesStore = env.RegisterBooleanSetting("ROX_DEBUG_CLUSTER_ENTITIES_STORE", false)
