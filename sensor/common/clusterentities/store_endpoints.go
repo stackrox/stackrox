@@ -172,7 +172,10 @@ func (e *endpointsStore) lookupEndpoint(endpoint net.NumericEndpoint, netLookup 
 	current = searchInSet(endpoint, e.endpointMap)
 	// Phase 2: Search in the historical map
 	historical = searchInMap(endpoint, e.historicalEndpoints)
-	// Phase 3: Search by network address (current and historical entries are mixed)
+	if len(current)+len(historical) > 0 {
+		return current, historical, ipLookup, ipLookupHistorical
+	}
+	// Phase 3: Search by network address
 	ipLookup, ipLookupHistorical = netLookup.LookupByNetAddr(endpoint.IPAndPort.Address, endpoint.IPAndPort.Port)
 	return current, historical, ipLookup, ipLookupHistorical
 }
