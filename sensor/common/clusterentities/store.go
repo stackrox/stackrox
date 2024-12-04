@@ -5,12 +5,12 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/exp/maps"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
+	"golang.org/x/exp/maps"
 )
 
 // ContainerMetadata is the container metadata that is stored per instance

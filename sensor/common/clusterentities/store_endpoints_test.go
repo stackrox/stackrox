@@ -3,9 +3,9 @@ package clusterentities
 import (
 	"slices"
 
-	"golang.org/x/exp/maps"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
+	"golang.org/x/exp/maps"
 )
 
 type expectation struct {

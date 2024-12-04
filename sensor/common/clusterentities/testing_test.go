@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"golang.org/x/exp/maps"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/set"
+	"golang.org/x/exp/maps"
 )
 
 type operation string
