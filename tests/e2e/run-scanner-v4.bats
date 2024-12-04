@@ -97,12 +97,32 @@ setup_file() {
     # Without a timeout it might happen that the pod running the tests is simply killed and we won't
     # have any logs for investigation the situation.
     export BATS_TEST_TIMEOUT=1800 # Seconds
+
+    BATS_STATE_FILE=$(mktemp)
+    export BATS_STATE_FILE
 }
 
 test_case_no=0
 
+save_state() {
+    echo "$1" >> "${BATS_STATE_FILE}"
+}
+
+load_state() {
+    if [[ ! -e "${BATS_STATE_FILE}" ]]; then
+        echo >&2 "ERROR: Bats state file ${BATS_STATE_FILE} does not exist"
+        exit 1
+    fi
+    # shellcheck source=/dev/null
+    source "${BATS_STATE_FILE}"
+}
+
 setup() {
+    load_state "${BATS_STATE_FILE}"
+
     [[ "${TEST_SUITE_ABORTED}" == "true" ]] && return 1
+    [[ "${SKIP_TESTS:-}" == "all" ]] && skip "Skipping due to missing main image"
+
     init
     set -euo pipefail
 
@@ -158,6 +178,9 @@ describe_deployments_in_namespace() {
 }
 
 teardown() {
+    if [[ "${SKIP_TESTS:-}" = "all" ]]; then
+        return
+    fi
     if [[ "${TEST_SUITE_ABORTED}" == "true" ]]; then
         echo "Skipping teardown due to previous failure." >&3
         return
@@ -210,11 +233,28 @@ teardown() {
 
 teardown_file() {
     remove_earlier_roxctl_binary
+    if [[ -e "${BATS_STATE_FILE}" ]]; then
+        rm "${BATS_STATE_FILE}" || true
+    fi
+}
+
+@test "Verify freshly built main image is available" {
+    # shellcheck source=../../deploy/common/env.sh
+    source "${ROOT}/deploy/common/env.sh" > /dev/null
+    # shellcheck source=../../deploy/common/deploy.sh
+    source "${ROOT}/deploy/common/deploy.sh" > /dev/null
+    # We use the image inspection functionality baked into `oc` -- works on OpenShift and vanilla K8s.
+    info "Checking availability of image ${MAIN_IMAGE}"
+    if ! oc image info --filter-by-os=linux/amd64 "${MAIN_IMAGE}"; then
+      save_state "SKIP_TESTS=all"
+      return 1
+    fi
 }
 
 @test "Upgrade from old Helm chart to HEAD Helm chart with Scanner v4 enabled" {
     # shellcheck disable=SC2030,SC2031
     export OUTPUT_FORMAT=helm
+    # shellcheck disable=SC2030,SC2031
     local main_image_tag="${MAIN_IMAGE_TAG}"
 
     # Deploy earlier version without Scanner V4.
