@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/stackrox/rox/pkg/metrics"
 )
 
@@ -26,7 +27,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "num_endpoints_in_clusterentities_store",
-		Help:      "A gauge to track the number of IPs in the entity store",
+		Help:      "A gauge to track the number of endpoints in the entity store",
 	}, []string{"type"})
 
 	// This metric is ideally always 0 - we do not expect one IP to have multiple owners,
