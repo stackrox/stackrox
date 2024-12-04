@@ -48,7 +48,7 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 		return fmt.Errorf("initializing: manual: %w", err)
 	}
 	bundles["nvd"] = nvdOpts()
-
+	bundles["epss"] = epssOpts(ctx)
 	// ClairCore updaters.
 	for _, uSet := range []string{
 		"alpine",
@@ -64,7 +64,6 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 	} {
 		bundles[uSet] = []updates.ManagerOption{updates.WithEnabled([]string{uSet})}
 	}
-	bundles["epss"] = epssOpts(ctx)
 	// Rate limit to ~16 requests/second by default.
 	interval := 62 * time.Millisecond
 	configuredInterval := os.Getenv("STACKROX_SCANNER_V4_UPDATER_INTERVAL")
@@ -174,6 +173,20 @@ func nvdOpts() []updates.ManagerOption {
 	}
 }
 
+func epssOpts(ctx context.Context) []updates.ManagerOption {
+	enricher := &epss.Enricher{}
+	err := enricher.Configure(ctx, nil, &http.Client{})
+	if err != nil {
+		log.Printf("Failed to configure EPSS enricher: %v", err)
+		return nil
+	}
+	return []updates.ManagerOption{
+		// This is required to prevent default updaters from running.
+		updates.WithEnabled([]string{}),
+		updates.WithOutOfTree([]driver.Updater{enricher}),
+	}
+}
+
 func zstdWriter(filename string) (io.WriteCloser, error) {
 	f, err := os.Create(filename)
 	if err != nil {
@@ -217,17 +230,4 @@ func (t *rateLimitedTransport) RoundTrip(req *http.Request) (*http.Response, err
 		return nil, err
 	}
 	return t.transport.RoundTrip(req)
-}
-
-func epssOpts(ctx context.Context) []updates.ManagerOption {
-	enricher := &epss.Enricher{}
-	err := enricher.Configure(ctx, nil, &http.Client{})
-	if err != nil {
-		log.Printf("Failed to configure EPSS enricher: %v", err)
-		return nil
-	}
-	return []updates.ManagerOption{
-		updates.WithEnabled([]string{}),
-		updates.WithOutOfTree([]driver.Updater{enricher}),
-	}
 }
