@@ -32,35 +32,35 @@ func TestLoadConfig(t *testing.T) {
 		err                  string
 	}{
 		{
-			configFile:           "../../../tests/roxctl/roxctl-instance/test_instance1.yaml",
+			configFile:           "./testdata/test_instance1.yaml",
 			expectedProfileName:  "profile-1",
 			expectedCaCertPath:   "./deploy/cert",
 			expectedApiTokenFile: "REDACTED",
 			expectedEndpoint:     "localhost:8000",
 		},
 		{
-			configFile:           "../../../tests/roxctl/roxctl-instance/test_instance2.yaml",
+			configFile:           "./testdata/test_instance2.yaml",
 			expectedProfileName:  "dev-environment",
 			expectedCaCertPath:   "/etc/ssl/certs",
 			expectedApiTokenFile: "/var/secrets/api-token",
 			expectedEndpoint:     "localhost:3000",
 		},
 		{
-			configFile:           "../../../tests/roxctl/roxctl-instance/test_instance3.yaml",
+			configFile:           "./testdata/test_instance3.yaml",
 			expectedProfileName:  "staging-profile",
 			expectedCaCertPath:   "./staging/certs",
 			expectedApiTokenFile: "staging-secret-token",
 			expectedEndpoint:     "staging.example.com:9000",
 		},
 		{
-			configFile:           "../../../tests/roxctl/roxctl-instance/test_instance4.yaml",
+			configFile:           "./testdata/test_instance4.yaml",
 			expectedProfileName:  "production-profile",
 			expectedCaCertPath:   "/usr/local/share/ca-certificates",
 			expectedApiTokenFile: "/home/user/.secrets/api-token",
 			expectedEndpoint:     "https://prod.stackrox.example.com",
 		},
 		{
-			configFile:           "../../../tests/roxctl/roxctl-instance/test_instance5.yaml",
+			configFile:           "./testdata/test_instance5.yaml",
 			expectedProfileName:  "test-profile",
 			expectedCaCertPath:   "./test/certificates",
 			expectedApiTokenFile: "test-token-redacted",

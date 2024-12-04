@@ -35,7 +35,7 @@ func TestFlagOrSettingValue(t *testing.T) {
 func TestFlagOrConfigurationValueFlags(t *testing.T) {
 
 	var (
-		testFile1 = "../../../tests/roxctl/roxctl-instance/test_instance1.yaml"
+		testFile1 = "./testdata/test_instance1.yaml"
 	)
 	// 1. Default, unchanged flag value and setting not set should lead to the default value being returned.
 	cmd := &cobra.Command{
@@ -80,7 +80,7 @@ func TestFlagOrConfigurationValueFlags(t *testing.T) {
 
 func TestFlagOrConfigurationValueEnv(t *testing.T) {
 	var (
-		testFile1 = "../../../tests/roxctl/roxctl-instance/test_instance1.yaml"
+		testFile1 = "./testdata/test_instance1.yaml"
 	)
 
 	cmd := &cobra.Command{
@@ -124,7 +124,7 @@ func TestFlagOrConfigurationValueEnv(t *testing.T) {
 // TODO: Add flag > config > env setting tests
 func TestFlagOrConfigurationValueFlagsAndEnv(t *testing.T) {
 	var (
-		testFile1 = "../../../tests/roxctl/roxctl-instance/test_instance1.yaml"
+		testFile1 = "./testdata/test_instance1.yaml"
 	)
 
 	cmd := &cobra.Command{
