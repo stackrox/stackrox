@@ -12,6 +12,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Added Features
 
 - ROX-26849: Introduce report caching for RHCOS Node Indexing
+- ROX-25638: Introduce configurable log rotation. `ROX_LOGGING_MAX_ROTATION_FILES` and `ROX_LOGGING_MAX_SIZE_MB` variables allow for configuring the number and the size of a central log rotation file.
 
 ### Removed Features
 
@@ -20,8 +21,6 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Technical Changes
 
 ## [4.6.0]
-
-
 
 ### Added Features
 
