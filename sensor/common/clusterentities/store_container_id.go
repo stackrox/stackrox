@@ -5,6 +5,7 @@ import (
 
 	"golang.org/x/exp/maps"
 
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/clusterentities/metrics"
@@ -27,9 +28,9 @@ type containerIDsStore struct {
 
 func newContainerIDsStoreWithMemory(numTicks uint16) *containerIDsStore {
 	store := &containerIDsStore{memorySize: numTicks}
-	store.mutex.Lock()
-	defer store.mutex.Unlock()
-	store.initMapsNoLock()
+	concurrency.WithLock(&store.mutex, func() {
+		store.initMapsNoLock()
+	})
 	return store
 }
 
