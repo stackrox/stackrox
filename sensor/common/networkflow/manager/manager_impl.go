@@ -582,7 +582,8 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 	if conn.remote.IPAndPort.Address == externalIPv4Addr || conn.remote.IPAndPort.Address == externalIPv6Addr {
 		isFresh = false
 		isInternet = true
-		netGraphFailReason = multierror.Append(netGraphFailReason, errors.New("remote part is the Internet"))
+		netGraphFailReason = multierror.Append(netGraphFailReason,
+			errors.New("Remote part of the connection is the Internet"))
 	} else {
 		// Otherwise, check if the remote entity is actually a cluster entity.
 		lookupResults = m.clusterEntities.LookupByEndpoint(conn.remote)
@@ -641,13 +642,14 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 					entityType = networkgraph.DiscoveredExternalEntity(net.IPNetworkFromNetworkPeerID(conn.remote.IPAndPort))
 				} else {
 					netGraphFailReason = multierror.Append(netGraphFailReason,
-						errors.New("central lacks capability to display discovered external entities"))
+						errors.New("Central lacks capability to display discovered external entities"))
 				}
 			} else if centralcaps.Has(centralsensor.NetworkGraphInternalEntitiesSupported) {
 				// Central without the capability would crash the UI if we make it display "Internal Entities".
 				entityType = networkgraph.InternalEntities()
+			} else {
 				netGraphFailReason = multierror.Append(netGraphFailReason,
-					errors.New("central lacks capability to display internal entities in the UI"))
+					errors.New("Central lacks capability to display 'Internal Entities' in the UI"))
 			}
 
 			// Fake a lookup result. This shows "External Entities" or "Internal Entities" in the network graph
