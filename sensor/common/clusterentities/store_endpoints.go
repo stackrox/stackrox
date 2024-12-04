@@ -261,11 +261,9 @@ func (e *endpointsStore) deleteFromCurrent(deploymentID string, ep net.NumericEn
 	dSet, found := e.reverseEndpointMap[deploymentID]
 	if found {
 		dSet.Remove(ep)
-	}
-	if dSet.Cardinality() == 0 {
-		delete(e.reverseEndpointMap, deploymentID)
-	} else {
-		e.reverseEndpointMap[deploymentID] = dSet
+		if dSet.Cardinality() == 0 {
+			delete(e.reverseEndpointMap, deploymentID)
+		}
 	}
 }
 
