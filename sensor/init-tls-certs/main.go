@@ -19,26 +19,17 @@ var (
 	newSourceDir    string
 )
 
-func init() {
-	flag.StringVar(&legacySourceDir, "legacy", "/tmp/certs-legacy", "Source directory for legacy certs")
-	flag.StringVar(&newSourceDir, "new", "/tmp/certs-new", "Source directory for new certs")
-	flag.StringVar(&destinationDir, "destination", "/tmp/certs", "Destination directory for certs")
-}
+const timeout = 5 * time.Minute
 
 func main() {
-	flag.Parse()
-
-	log.Println("New certs directory:", newSourceDir)
-	log.Println("Legacy certs directory:", legacySourceDir)
-	log.Println("Destination directory:", destinationDir)
+	setupFlags()
 
 	realDest, err := sanityCheckDestination()
 	if err != nil {
-		log.Fatalf("Cannot check destination directory %q: %s", destinationDir, err)
+		log.Fatalf("Unusable destination directory %q: %s", destinationDir, err)
 	}
 	log.Printf("Destination directory %q looks sane.", destinationDir)
 
-	timeout := 5 * time.Minute
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
@@ -50,6 +41,18 @@ func main() {
 	if err = copyFiles(files, realDest); err != nil {
 		log.Fatalf("Cannot copy files: %v", err)
 	}
+}
+
+func setupFlags() {
+	flag.StringVar(&legacySourceDir, "legacy", "", "Source directory for legacy certs")
+	flag.StringVar(&newSourceDir, "new", "", "Source directory for new certs")
+	flag.StringVar(&destinationDir, "destination", "", "Destination directory for certs")
+
+	flag.Parse()
+
+	log.Println("New certs directory:", newSourceDir)
+	log.Println("Legacy certs directory:", legacySourceDir)
+	log.Println("Destination directory:", destinationDir)
 }
 
 func copyFiles(files []string, destDir string) error {
@@ -102,7 +105,7 @@ func waitForSource(ctx context.Context) ([]string, error) {
 func findFiles(sourceDir string) ([]string, error) {
 	realSource, err := filepath.EvalSymlinks(sourceDir)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("evaluating symlinks for %q: %w", sourceDir, err)
 	}
 
 	log.Printf("Walking %q.", realSource)
@@ -143,9 +146,9 @@ func findFiles(sourceDir string) ([]string, error) {
 		return nil, err
 	}
 
-	requiredFiles := 3
-	if len(files) < requiredFiles {
-		return nil, fmt.Errorf("expecting at least %d files at %q", requiredFiles, sourceDir)
+	minRequiredFiles := 3 // CA cert + leaf cert + private key
+	if len(files) < minRequiredFiles {
+		return nil, fmt.Errorf("expecting at least %d files at %q", minRequiredFiles, sourceDir)
 	}
 
 	return files, nil
@@ -154,11 +157,11 @@ func findFiles(sourceDir string) ([]string, error) {
 func sanityCheckDestination() (string, error) {
 	realDest, err := filepath.EvalSymlinks(destinationDir)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("evaluating symlink for %q: %w", destinationDir, err)
 	}
 	st, err := os.Stat(realDest)
 	if err != nil {
-		return "", fmt.Errorf("stat failed: %w", err)
+		return "", fmt.Errorf("stat() failed for %q: %w", realDest, err)
 	}
 	if !st.IsDir() {
 		return "", fmt.Errorf("%q is not a directory", realDest)
