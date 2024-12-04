@@ -3,12 +3,12 @@ tests:
   expect: |
     assertMainIs("quay.io/rhacs-eng/main:3.0.99.0")
     assertCollectorIs("quay.io/rhacs-eng/collector:99.9.9-latest")
-- name: slim mode
+- name: slim mode ignored
   set:
     collector.slimMode: true
   expect: |
     assertMainIs("quay.io/rhacs-eng/main:3.0.99.0")
-    assertCollectorIs("quay.io/rhacs-eng/collector:99.9.9")
+    assertCollectorIs("quay.io/rhacs-eng/collector:99.9.9-latest")
 
 - name: scanner image
   server:
