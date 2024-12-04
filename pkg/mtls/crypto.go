@@ -136,7 +136,7 @@ type IssuedCert struct {
 
 // LeafCertificateFromFile reads a tls.Certificate (including private key and cert).
 func LeafCertificateFromFile() (tls.Certificate, error) {
-	return tls.LoadX509KeyPair(CertFilePathSetting.Setting(), KeyFilePathSetting.Setting())
+	return tls.LoadX509KeyPair(certFilePathSetting.Setting(), keyFilePathSetting.Setting())
 }
 
 // CACertPEM returns the PEM-encoded CA certificate.
@@ -153,7 +153,7 @@ func CACertPEM() ([]byte, error) {
 
 func readCAKey() ([]byte, error) {
 	readCAKeyOnce.Do(func() {
-		caKeyBytes, err := os.ReadFile(CAKeyFilePathSetting.Setting())
+		caKeyBytes, err := os.ReadFile(caKeyFilePathSetting.Setting())
 		if err != nil {
 			caKeyErr = errors.Wrap(err, "reading CA key")
 			return
@@ -165,7 +165,7 @@ func readCAKey() ([]byte, error) {
 
 func readCA() (*x509.Certificate, []byte, []byte, error) {
 	readCACertOnce.Do(func() {
-		caBytes, err := os.ReadFile(CAFilePathSetting.Setting())
+		caBytes, err := os.ReadFile(caFilePathSetting.Setting())
 		if err != nil {
 			caCertErr = errors.Wrap(err, "reading CA file")
 			return
@@ -221,7 +221,7 @@ func CAForSigning() (CA, error) {
 }
 
 func signer() (cfsigner.Signer, error) {
-	return local.NewSignerFromFile(CAFilePathSetting.Setting(), CAKeyFilePathSetting.Setting(), createSigningPolicy())
+	return local.NewSignerFromFile(caFilePathSetting.Setting(), caKeyFilePathSetting.Setting(), createSigningPolicy())
 }
 
 func createSigningPolicy() *config.Signing {

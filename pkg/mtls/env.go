@@ -14,27 +14,23 @@ const (
 )
 
 var (
-	// CAFilePathSetting allows configuring the CA certificate from the environment.
-	CAFilePathSetting = env.RegisterSetting(CAFileEnvName, env.WithDefault(defaultCACertFilePath))
-	// CAKeyFilePathSetting allows configuring the CA key from the environment.
-	CAKeyFilePathSetting = env.RegisterSetting(CAKeyFileEnvName, env.WithDefault(defaultCAKeyFilePath))
-	// CertFilePathSetting allows configuring the MTLS certificate from the environment.
-	CertFilePathSetting = env.RegisterSetting(CertFilePathEnvName, env.WithDefault(defaultCertFilePath))
-	// KeyFilePathSetting allows configuring the MTLS key from the environment.
-	KeyFilePathSetting = env.RegisterSetting(KeyFileEnvName, env.WithDefault(defaultKeyFilePath))
+	caFilePathSetting    = env.RegisterSetting(CAFileEnvName, env.WithDefault(defaultCACertFilePath))
+	caKeyFilePathSetting = env.RegisterSetting(CAKeyFileEnvName, env.WithDefault(defaultCAKeyFilePath))
+	certFilePathSetting  = env.RegisterSetting(CertFilePathEnvName, env.WithDefault(defaultCertFilePath))
+	keyFilePathSetting   = env.RegisterSetting(KeyFileEnvName, env.WithDefault(defaultKeyFilePath))
 )
 
 // CAFilePath returns the path where the CA certificate is stored.
 func CAFilePath() string {
-	return CAFilePathSetting.Setting()
+	return caFilePathSetting.Setting()
 }
 
 // CertFilePath returns the path where the certificate is stored.
 func CertFilePath() string {
-	return CertFilePathSetting.Setting()
+	return certFilePathSetting.Setting()
 }
 
 // KeyFilePath returns the path where the key is stored.
 func KeyFilePath() string {
-	return KeyFilePathSetting.Setting()
+	return keyFilePathSetting.Setting()
 }
