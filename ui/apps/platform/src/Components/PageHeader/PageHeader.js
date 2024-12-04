@@ -1,17 +1,12 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import { useTheme } from 'Containers/ThemeProvider';
 import SubHeader from 'Components/SubHeader';
 
 const PageHeader = ({ header, subHeader, classes, bgStyle, children }) => {
-    const { isDarkMode } = useTheme();
-
     return (
         <div
-            className={`flex h-18 px-4 w-full flex-shrink-0 z-10 border-b border-base-400 ${classes} ${
-                !isDarkMode ? 'bg-base-100' : 'bg-base-0'
-            }`}
+            className={`flex h-18 px-4 w-full flex-shrink-0 z-10 border-b border-base-400 ${classes} bg-base-100`}
             style={bgStyle}
             data-testid="page-header"
         >

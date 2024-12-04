@@ -3,8 +3,6 @@ import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 import upperFirst from 'lodash/upperFirst';
 
-import { useTheme } from 'Containers/ThemeProvider';
-
 const GroupedTab = ({ text, index, active, to }) => (
     <li
         className={`flex flex-grow items-center border-t border-base-400 ${
@@ -27,7 +25,6 @@ GroupedTab.propTypes = {
 };
 
 const GroupedTabs = ({ groups, tabs, activeTab }) => {
-    const { isDarkMode } = useTheme();
     const groupMapping = tabs.reduce((acc, curr) => {
         acc[curr.group] = [...(acc[curr.group] || []), curr];
         return acc;
@@ -41,10 +38,7 @@ const GroupedTabs = ({ groups, tabs, activeTab }) => {
             return (
                 <li
                     data-testid="grouped-tab"
-                    className={`
-                        ${!isDarkMode ? 'bg-primary-100' : 'bg-base-0'} ${
-                            idx !== 0 ? 'ml-4' : ''
-                        } flex flex-col relative justify-end`}
+                    className={`${idx !== 0 ? 'ml-4' : ''} flex flex-col relative justify-end`}
                     key={group}
                 >
                     {showGroupTab && (
@@ -74,9 +68,7 @@ const GroupedTabs = ({ groups, tabs, activeTab }) => {
         <div className="relative">
             <ul
                 data-testid="grouped-tabs"
-                className={` flex border-b border-base-400 px-4 text-sm ignore-react-onclickoutside ${
-                    !isDarkMode ? 'bg-primary-100' : 'bg-base-0'
-                }`}
+                className="flex border-b border-base-400 px-4 text-sm ignore-react-onclickoutside"
             >
                 {result}
             </ul>

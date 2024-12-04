@@ -44,7 +44,6 @@ import {
     deprecatedPoliciesBasePath,
     policiesBasePath,
 } from 'routePaths';
-import { useTheme } from 'Containers/ThemeProvider';
 
 import PageNotFound from 'Components/PageNotFound';
 import PageTitle from 'Components/PageTitle';
@@ -242,16 +241,10 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
     const hasWriteAccessForInviting = hasReadWriteAccess('Access');
     const showInviteModal = useSelector(selectors.inviteSelector);
 
-    const { isDarkMode } = useTheme();
-
     const routePredicates = { hasReadAccess, isFeatureFlagEnabled };
 
     return (
-        <div
-            className={`flex flex-col h-full w-full relative overflow-auto ${
-                isDarkMode ? 'bg-base-0' : 'bg-base-100'
-            }`}
-        >
+        <div className="flex flex-col h-full w-full relative overflow-auto bg-base-100">
             <ErrorBoundary>
                 <Switch>
                     <Route path="/" exact render={() => <Redirect to={dashboardPath} />} />
