@@ -47,7 +47,7 @@ jobs:
         echo "${{ needs.determine-new-scanner-version.outputs.new-scanner-version }}" > SCANNER_VERSION
     - name: Create Pull Request
       id: cpr
-      uses: peter-evans/create-pull-request@v6
+      uses: peter-evans/create-pull-request@v7
       with:
         token: '${{ secrets.RHACS_BOT_GITHUB_TOKEN }}'
         commit-message: Update SCANNER_VERSION
