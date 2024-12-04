@@ -22,5 +22,7 @@ var (
 	// allowHostNetworkPodIPS (EXPERIMENTAL) enables registering specific pod IPs in the clusterentities store.
 	// Those IPs were originally skipped due to the following problem: (ROX-897)
 	// "When connecting to a nginx deployment (via curl) from an external source, the outEdge for the INTERNET node does not get generated."
+	// Allowing those IPs to be stored should visibly decrease the number of cases where we must show "Internal Entities"
+	// on the network graph because the deployment owning a given IP could not be found.
 	allowHostNetworkPodIPsInEntitiesStore = env.RegisterBooleanSetting("ROX_ALLOW_HOST_NETWORK_POD_IPS_IN_ENTITIES_STORE", false)
 )
