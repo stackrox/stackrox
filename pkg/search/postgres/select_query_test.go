@@ -4,7 +4,6 @@ package postgres_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -1085,7 +1084,6 @@ func runTest(ctx context.Context, t *testing.T, testDB *pgtest.TestPostgres, tc 
 		return
 	}
 
-	fmt.Println(results)
 	if tc.q.GetPagination() != nil {
 		assert.Equal(t, tc.expectedResult, results)
 	} else {
