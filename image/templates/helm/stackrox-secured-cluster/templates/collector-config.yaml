@@ -1,6 +1,6 @@
 {{- include "srox.init" . -}}
 
-{{- if ._rox.collector.runtimeConfig.enable -}}
+{{- if ._rox.collector.runtimeConfig.enabled -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
