@@ -237,7 +237,7 @@ func centralHandshake(ctx context.Context, k8sClient kubernetes.Interface, centr
 
 	centralCaps := set.NewFrozenStringSet(centralHello.GetCapabilities()...)
 	if !centralCaps.Contains(centralsensor.ClusterRegistrationSecretSupported) {
-		return nil, errors.New("this version of central does not support CRS-based cluster registration")
+		return nil, errors.Errorf("this version of central (central ID: %s) does not support CRS-based cluster registration", centralHello.GetCentralId())
 	}
 
 	return centralHello, nil
