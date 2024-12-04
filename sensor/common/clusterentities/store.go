@@ -160,11 +160,11 @@ func (e *Store) Cleanup() {
 // Apply applies an update to the store. If incremental is true, data will be added; otherwise, data for each deployment
 // that is a key in the map will be replaced (or deleted).
 func (e *Store) Apply(updates map[string]*EntityData, incremental bool, auxInfo ...string) {
-	for id, data := range updates {
-		e.track("add-deployment (%s) overwrite=%t ID=%s, data=%v", auxInfo, !incremental, id, data.String())
+	if e.debugMode {
+		for id, data := range updates {
+			e.track("add-deployment (%s) overwrite=%t ID=%s, data=%v", auxInfo, !incremental, id, data.String())
+		}
 	}
-	// We track the number of references to Public IPs.
-	// Each operation may cause the counter to be incremented or decremented.
 
 	// Order matters: Endpoints must be applied before IPs, as the IP store may query the endpoints store to check
 	// whether a given IP is used by other endpoints.
@@ -174,10 +174,8 @@ func (e *Store) Apply(updates map[string]*EntityData, incremental bool, auxInfo 
 	e.updatePublicIPRefs(e.currentlyStoredPublicIPs())
 
 	callbacks := e.containerIDsStore.Apply(updates, incremental)
-	if callbacks != nil {
-		if e.callbackChannel != nil && len(callbacks) > 0 {
-			go sendMetadataCallbacks(e.callbackChannel, callbacks)
-		}
+	if e.callbackChannel != nil && len(callbacks) > 0 {
+		go sendMetadataCallbacks(e.callbackChannel, callbacks)
 	}
 }
 

@@ -3,10 +3,11 @@ package clusterentities
 import (
 	"fmt"
 
+	"golang.org/x/exp/maps"
+
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/clusterentities/metrics"
-	"golang.org/x/exp/maps"
 )
 
 type containerIDsStore struct {
@@ -117,12 +118,12 @@ func (e *containerIDsStore) applySingleNoLock(deploymentID string, data EntityDa
 	mdsForCallback := make([]ContainerMetadata, 0, len(data.containerIDs))
 	for containerID, metadata := range data.containerIDs {
 		cSet.Add(containerID)
-		e.reverseContainerIDMap[deploymentID] = cSet
 		e.containerIDMap[containerID] = metadata
 		// We must unmark if the container was previously marked as historical, otherwise it will expire
 		e.deleteFromHistory(containerID, metadata)
 		mdsForCallback = append(mdsForCallback, metadata)
 	}
+	e.reverseContainerIDMap[deploymentID] = cSet
 	return mdsForCallback
 }
 
