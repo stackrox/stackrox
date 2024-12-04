@@ -11,6 +11,8 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
@@ -534,7 +536,10 @@ func (m *networkFlowManager) handleContainerNotFound(conn *connection, status *c
 func formatMultiErrorOneline(errs []error) string {
 	elems := make([]string, len(errs))
 	for i, err := range errs {
-		elems[i] = fmt.Sprintf("(%d) %s", i+1, err)
+		// The error is used in debug logs and is much nicer to read with the first letter capitalized.
+		// Writing the error message with first capital in the code raises a style warning.
+		msg := cases.Title(language.English, cases.NoLower).String(err.Error())
+		elems[i] = fmt.Sprintf("(%d) %s", i+1, msg)
 	}
 	return strings.Join(elems, ", ")
 }
@@ -561,8 +566,7 @@ func logReasonForAggregatingNetGraphFlow(conn *connection, contNs, contName, ent
 	}
 }
 
-// enrichConnection returns error with a reason about why the enrichment did not fully succeed
-func (m *networkFlowManager) enrichConnection(conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) error {
+func (m *networkFlowManager) enrichConnection(conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) {
 	timeElapsedSinceFirstSeen := timestamp.Now().ElapsedSince(status.firstSeen)
 	isFresh := timeElapsedSinceFirstSeen < clusterEntityResolutionWaitPeriod
 	var netGraphFailReason *multierror.Error
@@ -571,7 +575,9 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 	if !ok {
 		// There is an incoming connection to a container that we do not know.
 		// 90% of the cases that container is Sensor itself before being restarted.
-		return m.handleContainerNotFound(conn, status, enrichedConnections)
+		err := m.handleContainerNotFound(conn, status, enrichedConnections)
+		log.Debugf("Enrichment failed: %v", err)
+		return
 	}
 	netGraphFailReason = multierror.Append(netGraphFailReason, errors.New("ContainerID lookup successful"))
 
@@ -605,11 +611,12 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 	}
 
 	if len(lookupResults) == 0 {
-		netGraphFailReason = multierror.Append(netGraphFailReason, fmt.Errorf("lookup in clusterEntitiesStore failed for endpoint %s", conn.remote.String()))
+		netGraphFailReason = multierror.Append(netGraphFailReason,
+			fmt.Errorf("lookup in clusterEntitiesStore failed for endpoint %s", conn.remote.String()))
 		// If the address is set and is not resolvable, we want to we wait for `clusterEntityResolutionWaitPeriod` time
 		// before associating it to a known network or INTERNET.
 		if isFresh && conn.remote.IPAndPort.Address.IsValid() {
-			return errors.New("connection is fresh and remote IP address is valid")
+			return
 		}
 
 		extSrc := m.externalSrcs.LookupByNetwork(conn.remote.IPAndPort.IPNetwork)
@@ -618,7 +625,8 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		}
 
 		if isFresh {
-			return errors.New("connection is fresh")
+			log.Debugf("Enrichment aborted: Connection is fresh")
+			return
 		}
 
 		defer func() {
@@ -633,8 +641,8 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 			if err != nil {
 				// IP is malformed or unknown - do not show on the graph and log the info
 				// TODO(ROX-22388): Change log level back to warning when potential Collector issue is fixed
-				log.Debugf("Not showing flow on the network graph: %v", err)
-				return fmt.Errorf("connection (%s) not recognized as external: %w", conn.String(), err)
+				log.Debugf("Enrichment aborted: Not showing flow on the network graph: %v", err)
+				return
 			}
 			if isExternal {
 				// If Central does not handle DiscoveredExternalEntities, report an Internet entity as it used to be.
@@ -692,7 +700,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		if conn.incoming {
 			// Only report incoming connections from outside the cluster. These are already taken care of by the
 			// corresponding outgoing connection from the other end.
-			return nil // returning reasons here would flood the logs
+			return
 		}
 	}
 
@@ -727,7 +735,6 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 			}
 		}
 	}
-	return nil
 }
 
 func (m *networkFlowManager) enrichContainerEndpoint(ep *containerEndpoint, status *connStatus, enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS) {
@@ -822,7 +829,7 @@ func (m *networkFlowManager) enrichHostConnections(hostConns *hostConnections, e
 
 	prevSize := len(hostConns.connections)
 	for conn, status := range hostConns.connections {
-		_ = m.enrichConnection(&conn, status, enrichedConnections)
+		m.enrichConnection(&conn, status, enrichedConnections)
 		if status.rotten || (status.used && status.lastSeen != timestamp.InfiniteFuture) {
 			// connections that are no longer active and have already been used can be deleted.
 			delete(hostConns.connections, conn)

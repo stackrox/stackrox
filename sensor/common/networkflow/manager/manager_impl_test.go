@@ -394,7 +394,7 @@ func (s *NetworkFlowManagerTestSuite) TestEnrichConnection() {
 			tCase.expectEntityLookupContainer.runIfSet()
 			tCase.expectEntityLookupEndpoint.runIfSet()
 			tCase.expectExternalLookup.runIfSet()
-			_ = m.enrichConnection(tCase.connPair.conn, tCase.connPair.status, tCase.enrichedConnections)
+			m.enrichConnection(tCase.connPair.conn, tCase.connPair.status, tCase.enrichedConnections)
 			s.Assert().Equal(tCase.expectedStatus.used, tCase.connPair.status.used)
 			s.Assert().Equal(tCase.expectedStatus.rotten, tCase.connPair.status.rotten)
 			if tCase.expectedIndicator != nil {
