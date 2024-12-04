@@ -55,7 +55,7 @@ func ConfigurationFileName() string {
 
 // ConfigurationFileChanged returns whether the configuration file is provided as an argument.
 func ConfigurationFileChanged() bool {
-	return configFileSet != nil && *configFileSet == true
+	return configFileSet != nil && *configFileSet
 }
 
 // CaCertificatePath returns the configuration-defined CA Certificate path.
