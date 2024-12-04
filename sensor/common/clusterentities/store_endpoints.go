@@ -238,10 +238,9 @@ func (e *endpointsStore) moveToHistory(deploymentID string, ep net.NumericEndpoi
 
 // deleteFromHistory marks previously marked historical endpoint as no longer historical
 func (e *endpointsStore) deleteFromHistory(deploymentID string, ep net.NumericEndpoint) bool {
-	if _, ok := e.reverseHistoricalEndpoints[deploymentID]; !ok {
-		// Prevent decrementing the count of public IPs if nothing is being removed
-		return false
-	}
+	_, foundDepl := e.reverseHistoricalEndpoints[deploymentID][ep]
+	_, foundEp := e.historicalEndpoints[ep][deploymentID]
+
 	delete(e.reverseHistoricalEndpoints[deploymentID], ep)
 	if len(e.reverseHistoricalEndpoints[deploymentID]) == 0 {
 		delete(e.reverseHistoricalEndpoints, deploymentID)
@@ -250,7 +249,7 @@ func (e *endpointsStore) deleteFromHistory(deploymentID string, ep net.NumericEn
 	if len(e.historicalEndpoints[ep]) == 0 {
 		delete(e.historicalEndpoints, ep)
 	}
-	return true
+	return foundDepl || foundEp
 }
 
 // deleteFromCurrent is a helper that removes data from the current map, but does not manipulate history
