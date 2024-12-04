@@ -2,6 +2,7 @@ package flags
 
 import (
 	"github.com/ghodss/yaml"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
@@ -93,10 +94,10 @@ func readConfig(path string) (*Instance, error) {
 		if os.IsNotExist(err) {
 			return &conf, nil
 		}
-		return nil, err
+		return nil, errors.Wrapf(err, "failed to retrieve config from file %q", path)
 	}
 	if err := yaml.Unmarshal(bytes, &conf); err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "failed to retrieve config from file %q", path)
 	}
 
 	return &conf, nil
@@ -107,7 +108,7 @@ func readConfig(path string) (*Instance, error) {
 //     the configuration files over variables defined within the environment
 func LoadConfig(cmd *cobra.Command, args []string) error {
 
-	if configFile == "" || ConfigurationFileChanged() {
+	if configFile == "" || !ConfigurationFileChanged() {
 		return nil
 	}
 
