@@ -348,12 +348,12 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastIPs() {
 			store.RegisterPublicIPsListener(ipListener)
 			// Set up the cleanup-assertions
 			defer func() {
-				s.True(store.UnregisterPublicIPsListener(ipListener))
 				s.Equalf(len(tCase.publicIPsAtCleanup), ipListener.data.Cardinality(),
 					"the listeners of public IPs have incorrect data at test cleanup")
 				for gotIP := range ipListener.data {
-					s.Contains(tCase.publicIPsAtCleanup, gotIP.AsNetIP().String())
+					s.Containsf(tCase.publicIPsAtCleanup, gotIP.AsNetIP().String(), "unexpected IP %s in the ipListener", gotIP)
 				}
+				s.True(store.UnregisterPublicIPsListener(ipListener))
 			}()
 
 			for tickNo, expect := range tCase.endpointsAfterTick {

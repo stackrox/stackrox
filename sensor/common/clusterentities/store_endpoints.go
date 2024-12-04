@@ -69,11 +69,12 @@ func (e *endpointsStore) updateMetricsNoLock() {
 	metrics.UpdateNumberOfEndpoints(len(e.endpointMap), len(e.historicalEndpoints))
 }
 
-// RecordTick records a tick and returns true if any item in the history expired in this tick
+// RecordTick records a tick and returns true if
+// there was any endpoint in the history expired in this tick with public IP address.
 func (e *endpointsStore) RecordTick() bool {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
-	removed := false
+	removedPublic := false
 	for endpoint, m1 := range e.historicalEndpoints {
 		for deploymentID, m2 := range m1 {
 			for _, status := range m2 {
@@ -81,10 +82,11 @@ func (e *endpointsStore) RecordTick() bool {
 			}
 			e.reverseHistoricalEndpoints[deploymentID][endpoint].recordTick()
 			// Remove all historical entries that expired in this tick.
-			removed = e.removeFromHistoryIfExpired(deploymentID, endpoint) || removed
+			removed := e.removeFromHistoryIfExpired(deploymentID, endpoint)
+			removedPublic = removedPublic || removed && endpoint.IPAndPort.Address.IsPublic()
 		}
 	}
-	return removed
+	return removedPublic
 }
 
 func (e *endpointsStore) Apply(updates map[string]*EntityData, incremental bool) {

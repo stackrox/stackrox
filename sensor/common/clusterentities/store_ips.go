@@ -70,19 +70,20 @@ func (e *podIPsStore) updateMetricsNoLock() {
 	metrics.UpdateNumberOfIPs(len(e.ipMap), len(e.historicalIPs))
 }
 
-// RecordTick records a tick and returns true if any item in the history expired in this tick
+// RecordTick records a tick and returns true if any Public IP in the history expired in this tick.
 func (e *podIPsStore) RecordTick() bool {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
-	removed := false
+	removedPublic := false
 	for ip, m := range e.historicalIPs {
 		for deploymentID, status := range m {
 			status.recordTick()
 			// Remove all historical entries that expired in this tick.
-			removed = e.removeFromHistoryIfExpired(deploymentID, ip) || removed
+			removed := e.removeFromHistoryIfExpired(deploymentID, ip)
+			removedPublic = removedPublic || removed && ip.IsPublic()
 		}
 	}
-	return removed
+	return removedPublic
 }
 
 func (e *podIPsStore) Apply(updates map[string]*EntityData, incremental bool) {

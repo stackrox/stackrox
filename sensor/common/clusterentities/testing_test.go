@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"testing"
 
+	"golang.org/x/exp/maps"
+
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/set"
-	"golang.org/x/exp/maps"
 )
 
 type operation string
@@ -75,5 +76,5 @@ func (p *testPublicIPsListener) String() string {
 
 func (p *testPublicIPsListener) OnUpdate(ips set.Set[net.IPAddress]) {
 	p.data = ips
-	p.t.Logf("Updatet public IPs to %s", p.String())
+	p.t.Logf("Updated public IPs to %s", p.String())
 }
