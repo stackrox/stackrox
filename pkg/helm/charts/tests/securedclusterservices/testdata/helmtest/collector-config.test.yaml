@@ -6,13 +6,13 @@ tests:
   set:
     collector:
       runtimeConfig:
-        enable: true
+        enabled: true
   expect: |
     .configmaps["collector-config"] | assertThat(. != null)
 - name: "The collector config map should exist when it is enabled"
   set:
     collector:
       runtimeConfig:
-        enable: false
+        enabled: false
   expect: |
     .configmaps["collector-config"] | assertThat(. == null)

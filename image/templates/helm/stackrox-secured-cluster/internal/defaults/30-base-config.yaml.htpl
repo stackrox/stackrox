@@ -116,7 +116,7 @@ collector:
     enabled: true
     networking:
       externalIps:
-        enable: false
+        enabled: false
       perContainerRateLimit: 1024
   [<- end >]
 
