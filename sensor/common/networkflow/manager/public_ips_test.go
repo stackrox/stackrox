@@ -6,11 +6,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestIPv6Sort(t *testing.T) {
@@ -51,7 +52,9 @@ func TestPublicIPsManager(t *testing.T) {
 	assert.Nil(t, vs.TryNext())
 	assert.False(t, mgr.publicIPsUpdateSig.IsDone())
 
-	mgr.OnAdded(net.ParseIP("4.4.4.4"))
+	concurrency.WithLock(&mgr.mutex, func() {
+		mgr.onAddNoLock(net.ParseIP("4.4.4.4"))
+	})
 
 	require.True(t, concurrency.WaitWithTimeout(vs, 100*time.Millisecond))
 	vs = vs.TryNext()
@@ -62,7 +65,9 @@ func TestPublicIPsManager(t *testing.T) {
 	assert.Nil(t, vs.TryNext())
 	assert.False(t, mgr.publicIPsUpdateSig.IsDone())
 
-	mgr.OnAdded(net.ParseIP("8.8.8.8"))
+	concurrency.WithLock(&mgr.mutex, func() {
+		mgr.onAddNoLock(net.ParseIP("8.8.8.8"))
+	})
 
 	require.True(t, concurrency.WaitWithTimeout(vs, 100*time.Millisecond))
 	vs = vs.TryNext()
@@ -73,13 +78,17 @@ func TestPublicIPsManager(t *testing.T) {
 	assert.Nil(t, vs.TryNext())
 	assert.False(t, mgr.publicIPsUpdateSig.IsDone())
 
-	mgr.OnRemoved(net.ParseIP("4.4.4.4"))
+	concurrency.WithLock(&mgr.mutex, func() {
+		mgr.onRemoveNoLock(net.ParseIP("4.4.4.4"))
+	})
 
 	assert.False(t, concurrency.WaitWithTimeout(vs, 100*time.Millisecond))
 	assert.Nil(t, vs.TryNext())
 	assert.False(t, mgr.publicIPsUpdateSig.IsDone())
 
-	mgr.OnAdded(net.ParseIP("4.4.4.4"))
+	concurrency.WithLock(&mgr.mutex, func() {
+		mgr.onAddNoLock(net.ParseIP("4.4.4.4"))
+	})
 
 	assert.False(t, concurrency.WaitWithTimeout(vs, 100*time.Millisecond))
 	assert.Nil(t, vs.TryNext())

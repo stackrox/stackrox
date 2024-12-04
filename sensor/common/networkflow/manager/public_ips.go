@@ -76,22 +76,10 @@ func (m *publicIPsManager) OnUpdate(ips set.Set[net.IPAddress]) {
 	}
 }
 
-func (m *publicIPsManager) OnAdded(ip net.IPAddress) {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-	m.onAddNoLock(ip)
-}
-
 func (m *publicIPsManager) onAddNoLock(ip net.IPAddress) {
 	m.publicIPs[ip] = struct{}{}
 	delete(m.publicIPDeletions, ip) // undo a pending deletion, if any
 	m.publicIPsUpdateSig.Signal()
-}
-
-func (m *publicIPsManager) OnRemoved(ip net.IPAddress) {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-	m.onRemoveNoLock(ip)
 }
 
 func (m *publicIPsManager) onRemoveNoLock(ip net.IPAddress) {
