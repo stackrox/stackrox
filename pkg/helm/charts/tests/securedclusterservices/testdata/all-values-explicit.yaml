@@ -39,10 +39,10 @@ collector:
     cert: "DUMMY COLLECTOR CERT"
     key: "DUMMY COLLECTOR KEY"
   runtimeConfig:
-    enable: true
+    enabled: true
     networking:
       externalIps:
-        enable: true
+        enabled: true
     perContainerRateLimit: 1024
 
 admissionControl:

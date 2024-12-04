@@ -634,9 +634,9 @@ function launch_sensor {
     fi
 
     if [[ "${ROX_COLLECTOR_RUNTIME_CONFIG:-false}" == "true" ]]; then
-        extra_helm_config+=(--set "collector.runtimeConfig.enable=${ROX_COLLECTOR_RUNTIME_CONFIG}")
+        extra_helm_config+=(--set "collector.runtimeConfig.enabled=${ROX_COLLECTOR_RUNTIME_CONFIG}")
         if [[ "${ROX_COLLECTOR_EXTERNAL_IPS_ENABLE:-false}" == "true" ]]; then
-            extra_helm_config+=(--set "collector.runtimeConfig.networking.externalIps.enable=${ROX_COLLECTOR_EXTERNAL_IPS_ENABLE}")
+            extra_helm_config+=(--set "collector.runtimeConfig.networking.externalIps.enabled=${ROX_COLLECTOR_EXTERNAL_IPS_ENABLE}")
         fi
 
         if [[ -n "${ROX_COLLECTOR_NETWORKING_PER_CONTAINER_RATE_LIMIT:-}" ]]; then
