@@ -2,7 +2,6 @@ import React, { ReactElement, useEffect, useState } from 'react';
 import { FormikContextType } from 'formik';
 import {
     Alert,
-    AlertVariant,
     Flex,
     FlexItem,
     Form,
@@ -104,7 +103,7 @@ function AccessScopeForm({ hasAction, alertSubmit, formik }: AccessScopeFormProp
                     <Alert
                         title="Compute effective access scope failed"
                         component="p"
-                        variant={AlertVariant.danger}
+                        variant="danger"
                         isInline
                     >
                         {error.message}

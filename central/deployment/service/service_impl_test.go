@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/deployment/datastore"
+	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	"github.com/stackrox/rox/central/ranking"
 	riskDatastoreMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	riskMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
@@ -132,7 +133,7 @@ func setupPostgresDatastore(t *testing.T) (datastore.DataStore, func()) {
 
 	mockCtrl := gomock.NewController(t)
 	riskDataStore := riskMocks.NewMockDataStore(mockCtrl)
-	ds, err := datastore.New(pool, nil, nil, nil, riskDataStore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	ds, err := datastore.New(pool, nil, nil, nil, riskDataStore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker(), platformmatcher.Singleton())
 	require.NoError(t, err)
 
 	closer := func() {

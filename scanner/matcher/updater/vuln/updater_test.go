@@ -92,8 +92,9 @@ func TestSingleBundleUpdate(t *testing.T) {
 		importFunc: func(_ context.Context, _ io.Reader) error {
 			return nil
 		},
-		retryDelay: 1 * time.Second,
-		retryMax:   1,
+		retryDelay:  1 * time.Second,
+		retryMax:    1,
+		distManager: newDistManager(store),
 	}
 
 	// Skip update when locking fails.
@@ -101,6 +102,15 @@ func TestSingleBundleUpdate(t *testing.T) {
 	assert.NoError(t, err)
 
 	locker.fail = false
+
+	dists := []claircore.Distribution{
+		{
+			ID: "0",
+		},
+		{
+			ID: "1",
+		},
+	}
 
 	// Successful update.
 	metadataStore.EXPECT().
@@ -112,8 +122,12 @@ func TestSingleBundleUpdate(t *testing.T) {
 	store.EXPECT().
 		GC(gomock.Any(), gomock.Any()).
 		Return(int64(0), nil)
+	store.EXPECT().
+		Distributions(gomock.Any()).
+		Return(dists, nil)
 	err = u.Update(context.Background())
 	assert.NoError(t, err)
+	assert.Equal(t, dists, u.KnownDistributions())
 
 	// No update.
 	metadataStore.EXPECT().
@@ -121,6 +135,7 @@ func TestSingleBundleUpdate(t *testing.T) {
 		Return(now.Add(time.Minute), nil)
 	err = u.Update(context.Background())
 	assert.NoError(t, err)
+	assert.Equal(t, dists, u.KnownDistributions())
 }
 
 func TestMultiBundleUpdate(t *testing.T) {
@@ -158,6 +173,7 @@ func TestMultiBundleUpdate(t *testing.T) {
 		importFunc:    func(_ context.Context, _ io.Reader) error { return nil },
 		retryDelay:    1 * time.Second,
 		retryMax:      1,
+		distManager:   newDistManager(store),
 	}
 
 	// Skip update and error when unable to get previous update time.
@@ -166,6 +182,16 @@ func TestMultiBundleUpdate(t *testing.T) {
 		Return(time.Time{}, errors.New("err"))
 	err := u.Update(context.Background())
 	assert.Error(t, err)
+	assert.Nil(t, u.KnownDistributions())
+
+	dists := []claircore.Distribution{
+		{
+			ID: "0",
+		},
+		{
+			ID: "1",
+		},
+	}
 
 	// Successful update.
 	metadataStore.EXPECT().
@@ -180,8 +206,12 @@ func TestMultiBundleUpdate(t *testing.T) {
 	store.EXPECT().
 		GC(gomock.Any(), gomock.Any()).
 		Return(int64(0), nil)
+	store.EXPECT().
+		Distributions(gomock.Any()).
+		Return(dists, nil)
 	err = u.Update(context.Background())
 	assert.NoError(t, err)
+	assert.Equal(t, dists, u.KnownDistributions())
 
 	// No update.
 	metadataStore.EXPECT().
@@ -189,6 +219,7 @@ func TestMultiBundleUpdate(t *testing.T) {
 		Return(now.Add(time.Minute), nil)
 	err = u.Update(context.Background())
 	assert.NoError(t, err)
+	assert.Equal(t, dists, u.KnownDistributions())
 }
 
 func TestFetch(t *testing.T) {

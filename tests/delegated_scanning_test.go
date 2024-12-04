@@ -21,8 +21,8 @@ import (
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/retry"
-	"github.com/stackrox/rox/pkg/ternary"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
+	pkgUtils "github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/scan"
 	"github.com/stretchr/testify/assert"
@@ -31,6 +31,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 )
@@ -169,7 +170,7 @@ func (ts *DelegatedScanningSuite) SetupSuite() {
 
 	// Get a reference to the Secured Cluster to send delegated scans too.
 	// If a valid remote cluster is NOT available all tests in this suite will fail.
-	t.Log("Getting remote StackRox cluster details")
+	logf(t, "Getting remote StackRox cluster details")
 	envVal, _ := ts.getDeploymentEnvVal(ctx, ts.namespace, sensorDeployment, sensorContainer, env.LocalImageScanningEnabled.EnvVar())
 
 	// Verify the StackRox installation supports delegated scanning, Central and Sensor
@@ -196,13 +197,13 @@ func (ts *DelegatedScanningSuite) SetupSuite() {
 	ts.origSensorLogLevel, _ = ts.getDeploymentEnvVal(ctx, ts.namespace, sensorDeployment, sensorContainer, deleScanLogLevelEnvVar)
 	if ts.origSensorLogLevel != deleScanDesiredLogLevel {
 		ts.mustSetDeploymentEnvVal(ctx, ts.namespace, sensorDeployment, sensorContainer, deleScanLogLevelEnvVar, deleScanDesiredLogLevel)
-		t.Logf("Log level env var changed from %q to %q on Sensor", ts.origSensorLogLevel, deleScanDesiredLogLevel)
+		logf(t, "Log level env var changed from %q to %q on Sensor", ts.origSensorLogLevel, deleScanDesiredLogLevel)
 
 		ts.waitForHealthyCentralSensorConn()
 	}
 
 	// Pre-clean any roles, permissions, etc. from previous runs.
-	t.Log("Deleteing resources from previous tests")
+	logf(t, "Deleteing resources from previous tests")
 	ts.resetAccess(ctx)
 
 	// Reset the delegated scanning config to default value.
@@ -212,9 +213,9 @@ func (ts *DelegatedScanningSuite) SetupSuite() {
 	ts.deleScanUtils = NewDeleScanTestUtils(t, ts.restCfg, ts.listK8sAPIResources())
 
 	if isOpenshift() {
-		t.Log("Building and pushing an image to the OCP internal registry")
+		logf(t, "Building and pushing an image to the OCP internal registry")
 		ts.ocpInternalImage = ts.deleScanUtils.BuildOCPInternalImage(t, ts.ctx, ts.namespace, "dele-scan-test-01", ts.ubi9Image.TagRef())
-		t.Logf("OCP Internal Image: %q", ts.ocpInternalImage.cImage.GetName().GetFullName())
+		logf(t, "OCP Internal Image: %q", ts.ocpInternalImage.cImage.GetName().GetFullName())
 	}
 }
 
@@ -226,15 +227,18 @@ func (ts *DelegatedScanningSuite) TearDownSuite() {
 	// Changing the log level may result in pod restarts and logs lost.
 	ts.handleFailure()
 
+	// Reset the delegated scanning config back so that other tests are not impacted.
+	ts.resetConfig(ctx)
+
 	// Reset the log level back to its original value so that other e2e tests are
 	// not impacted by the additional logging.
 	if ts.origSensorLogLevel != deleScanDesiredLogLevel {
 		if ts.origSensorLogLevel != "" {
 			ts.mustSetDeploymentEnvVal(ctx, ts.namespace, sensorDeployment, sensorContainer, deleScanLogLevelEnvVar, ts.origSensorLogLevel)
-			t.Logf("Log level reverted back to %q on Sensor", ts.origSensorLogLevel)
+			logf(t, "Log level reverted back to %q on Sensor", ts.origSensorLogLevel)
 		} else {
 			ts.mustDeleteDeploymentEnvVar(ctx, ts.namespace, sensorDeployment, deleScanLogLevelEnvVar)
-			t.Logf("Log level env var removed from Sensor")
+			logf(t, "Log level env var removed from Sensor")
 		}
 	}
 
@@ -248,7 +252,7 @@ func (ts *DelegatedScanningSuite) AfterTest(suiteName string, testName string) {
 		// Collect artifacts after each failed test so that we don't lose logs
 		// when subsequent tests trigger pod restarts.
 		dir := filepath.Join(deleScanArtifactsDir, testName)
-		t.Logf("Test failed, collecting artifacts into %q", dir)
+		logf(t, "Test failed, collecting artifacts into %q", dir)
 		collectLogs(t, ts.namespace, dir)
 	}
 }
@@ -262,7 +266,7 @@ func (ts *DelegatedScanningSuite) handleFailure() {
 	}
 
 	t := ts.T()
-	t.Log("Handling failures (if any)")
+	logf(t, "Handling failures (if any)")
 
 	if t.Failed() {
 		dir := filepath.Join(deleScanArtifactsDir, "Final")
@@ -313,13 +317,13 @@ func (ts *DelegatedScanningSuite) TestConfig() {
 		got, err := service.UpdateConfig(ctx, want)
 		require.NoError(t, err)
 		if !assert.True(t, got.EqualVT(want)) {
-			t.Logf("\n got: %v\nwant: %v", got, want)
+			logf(t, "\n got: %v\nwant: %v", got, want)
 		}
 
 		got, err = service.GetConfig(ctx, &v1.Empty{})
 		require.NoError(t, err)
 		if !assert.True(t, got.EqualVT(want)) {
-			t.Logf("\n got: %v\nwant: %v", got, want)
+			logf(t, "\n got: %v\nwant: %v", got, want)
 		}
 	})
 
@@ -453,7 +457,7 @@ func (ts *DelegatedScanningSuite) TestAdHocScans() {
 	withClusterFlag := true
 
 	scanImgReq := func(imageStr string, withClusterFlag bool) *v1.ScanImageRequest {
-		cluster := ternary.String(withClusterFlag, ts.remoteCluster.GetId(), "")
+		cluster := pkgUtils.IfThenElse(withClusterFlag, ts.remoteCluster.GetId(), "")
 		return &v1.ScanImageRequest{
 			ImageName: imageStr,
 			Force:     true,
@@ -538,7 +542,7 @@ func (ts *DelegatedScanningSuite) TestAdHocScans() {
 		query := fmt.Sprintf("Image:%s", ts.ubi9Image.TagRef())
 		delResp, err := service.DeleteImages(ctx, &v1.DeleteImagesRequest{Query: &v1.RawQuery{Query: query}, Confirm: true})
 		require.NoError(t, err)
-		t.Logf("Num images deleted from query %q: %d", query, delResp.NumDeleted)
+		logf(t, "Num images deleted from query %q: %d", query, delResp.NumDeleted)
 
 		fromByte := ts.getSensorLastLogBytePos(ctx)
 
@@ -584,7 +588,7 @@ func (ts *DelegatedScanningSuite) TestAdHocScans() {
 
 		limitedConn := ts.getLimitedCentralConn(ctx, ps, role)
 		service := v1.NewImageServiceClient(limitedConn)
-		_, err := ts.scanWithRetries(t, ctx, service, scanImgReq(ts.ocpInternalImage.TagRef(), withClusterFlag))
+		_, err := ts.scanWithRetries(ctx, service, scanImgReq(ts.ocpInternalImage.TagRef(), withClusterFlag))
 		require.Error(t, err, "scan should fail when user has no namespace access")
 	})
 
@@ -638,7 +642,7 @@ func (ts *DelegatedScanningSuite) TestDeploymentScans() {
 
 		// Pull the image scan from the API and validate it.
 		imageService := v1.NewImageServiceClient(conn)
-		img, err := ts.getImageWithRetries(t, ctx, imageService, &v1.GetImageRequest{Id: image.ID()})
+		img, err := ts.getImageWithRetries(ctx, imageService, &v1.GetImageRequest{Id: image.ID()})
 		require.NoError(t, err)
 		ts.validateImageScan(t, image.IDRef(), img)
 
@@ -646,7 +650,7 @@ func (ts *DelegatedScanningSuite) TestDeploymentScans() {
 		ts.waitUntilSensorLogsScan(ctx, image.IDRef(), fromByte)
 
 		// Only perform teardown on success so that logs can be captured on failure.
-		t.Logf("Tearing down deployment %q", deployName)
+		logf(t, "Tearing down deployment %q", deployName)
 		teardownDeploymentWithoutCheck(t, deployName)
 	}
 
@@ -701,8 +705,8 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 	// Sensor connects to Central quicker on fresh start vs. waiting for automatic reconnect.
 	// Since Sensor may have started first after the prior node drain, we restart Sensor
 	// so that testing will be able to proceed quicker.
-	t.Log("Deleting Sensor to speed up ready state")
-	sensorPod, err := ts.getSensorPod(ctx, ts.namespace)
+	logf(t, "Deleting Sensor to speed up ready state")
+	sensorPod, err := ts.getSensorPodWithRetries(ctx, ts.namespace)
 	require.NoError(t, err)
 	err = ts.k8s.CoreV1().Pods(ts.namespace).Delete(ctx, sensorPod.GetName(), metaV1.DeleteOptions{})
 	require.NoError(t, err)
@@ -722,10 +726,8 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 		Password: ts.quayROPassword,
 	}, false, true)
 
-	t.Logf("Enabling delegated scanning for the mirror hosts")
-	conn := centralgrpc.GRPCConnectionToCentral(t)
-	deleService := v1.NewDelegatedRegistryConfigServiceClient(conn)
-	_, err = deleService.UpdateConfig(ctx, &v1.DelegatedRegistryConfig{
+	logf(t, "Enabling delegated scanning for the mirror hosts")
+	err = ts.updateConfigWithRetries(ctx, &v1.DelegatedRegistryConfig{
 		EnabledFor: v1.DelegatedRegistryConfig_SPECIFIC,
 		Registries: []*v1.DelegatedRegistryConfig_DelegatedRegistry{
 			// These paths are defined via the mirroring CRs in testdata/delegatedscanning/mirrors/*.
@@ -750,6 +752,7 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 		{"Scan ad-hoc image from mirror via ImageTagMirrorSet", itmsImage.TagRef(), !itmsAvail},
 	}
 
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 	for _, tc := range adhocTCs {
 		ts.Run(tc.desc, func() {
 			t := ts.T()
@@ -797,22 +800,22 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 			query := fmt.Sprintf("Image Sha:%s", tc.imgID)
 			delResp, err := imageService.DeleteImages(ctx, &v1.DeleteImagesRequest{Query: &v1.RawQuery{Query: query}, Confirm: true})
 			require.NoError(t, err)
-			t.Logf("Num images deleted from query %q: %d", query, delResp.NumDeleted)
+			logf(t, "Num images deleted from query %q: %d", query, delResp.NumDeleted)
 
 			fromByte := ts.getSensorLastLogBytePos(ctx)
 
 			// Create deployment.
-			t.Logf("Creating deployment %q with image: %q", tc.deployName, tc.imageStr)
+			logf(t, "Creating deployment %q with image: %q", tc.deployName, tc.imageStr)
 			setupDeploymentNoWait(t, tc.imageStr, tc.deployName, 1)
 
-			img, err := ts.getImageWithRetries(t, ctx, imageService, &v1.GetImageRequest{Id: tc.imgID})
+			img, err := ts.getImageWithRetries(ctx, imageService, &v1.GetImageRequest{Id: tc.imgID})
 			require.NoError(t, err)
 			ts.validateImageScan(t, tc.imageStr, img)
 
 			ts.waitUntilSensorLogsScan(ctx, tc.imageStr, fromByte)
 
 			// Only perform teardown on success so that logs can be captured on failure.
-			t.Logf("Tearing down deployment %q", tc.deployName)
+			logf(t, "Tearing down deployment %q", tc.deployName)
 			teardownDeployment(t, tc.deployName)
 		})
 	}
@@ -829,7 +832,7 @@ func (ts *DelegatedScanningSuite) validateImageScan(t *testing.T, imgFullName st
 	// Ensure at least one component has a vulnerability.
 	for _, c := range img.GetScan().GetComponents() {
 		if len(c.GetVulns()) > 0 {
-			t.Logf("Found successful scan of %q", imgFullName)
+			logf(t, "Found successful scan of %q", imgFullName)
 			return
 		}
 	}
@@ -838,7 +841,7 @@ func (ts *DelegatedScanningSuite) validateImageScan(t *testing.T, imgFullName st
 }
 
 // getImageWithRetries will get an image from the StackRox API, retrying when not found.
-func (ts *DelegatedScanningSuite) getImageWithRetries(t *testing.T, ctx context.Context, service v1.ImageServiceClient, req *v1.GetImageRequest) (*storage.Image, error) {
+func (ts *DelegatedScanningSuite) getImageWithRetries(ctx context.Context, service v1.ImageServiceClient, req *v1.GetImageRequest) (*storage.Image, error) {
 	var err error
 	var img *storage.Image
 
@@ -854,47 +857,37 @@ func (ts *DelegatedScanningSuite) getImageWithRetries(t *testing.T, ctx context.
 		return err
 	}
 
-	betweenAttemptsFunc := func(num int) {
-		t.Logf("Image not found, trying again in %s, attempt %d/%d", deleScanDefaultRetryDelay, num, deleScanDefaultMaxRetries)
-		time.Sleep(deleScanDefaultRetryDelay)
-	}
-
-	err = retry.WithRetry(retryFunc,
-		retry.BetweenAttempts(betweenAttemptsFunc),
-		retry.Tries(deleScanDefaultMaxRetries),
-		retry.OnlyRetryableErrors(),
-	)
+	err = ts.withRetries(retryFunc, "Image not found")
 
 	return img, err
 }
 
 // scanWithRetries will scan an image using the StackRox API, retrying when rate limited.
-func (ts *DelegatedScanningSuite) scanWithRetries(t *testing.T, ctx context.Context, service v1.ImageServiceClient, req *v1.ScanImageRequest) (*storage.Image, error) {
+func (ts *DelegatedScanningSuite) scanWithRetries(ctx context.Context, service v1.ImageServiceClient, req *v1.ScanImageRequest) (*storage.Image, error) {
 	var err error
 	var img *storage.Image
 
+	retryErrTokens := []string{
+		scan.ErrTooManyParallelScans.Error(),
+		"context deadline exceeded",
+	}
+
 	retryFunc := func() error {
 		img, err = service.ScanImage(ctx, req)
+		if err == nil {
+			return nil
+		}
 
-		if err != nil && strings.Contains(err.Error(), scan.ErrTooManyParallelScans.Error()) {
-			err = retry.MakeRetryable(err)
+		for _, token := range retryErrTokens {
+			if strings.Contains(err.Error(), token) {
+				return retry.MakeRetryable(err)
+			}
 		}
 
 		return err
 	}
 
-	betweenAttemptsFunc := func(num int) {
-		t.Logf("Too many parallel scans, trying again in %s, attempt %d/%d", deleScanDefaultRetryDelay, num, deleScanDefaultMaxRetries)
-		time.Sleep(deleScanDefaultRetryDelay)
-	}
-
-	err = retry.WithRetry(retryFunc,
-		retry.BetweenAttempts(betweenAttemptsFunc),
-		retry.Tries(deleScanDefaultMaxRetries),
-		retry.WithExponentialBackoff(),
-		retry.OnlyRetryableErrors(),
-	)
-
+	err = ts.withRetries(retryFunc, "Timeout or too many parallel scans")
 	return img, err
 }
 
@@ -917,7 +910,7 @@ func (ts *DelegatedScanningSuite) checkLogsMatch(ctx context.Context, descriptio
 // are matched.
 func (ts *DelegatedScanningSuite) getSensorLastLogBytePos(ctx context.Context) int64 {
 	t := ts.T()
-	sensorPod, err := ts.getSensorPod(ctx, ts.namespace)
+	sensorPod, err := ts.getSensorPodWithRetries(ctx, ts.namespace)
 	require.NoError(t, err)
 
 	fromByte, err := ts.getLastLogBytePos(ctx, ts.namespace, sensorPod.GetName(), sensorPod.Spec.Containers[0].Name)
@@ -930,10 +923,7 @@ func (ts *DelegatedScanningSuite) getSensorLastLogBytePos(ctx context.Context) i
 func (ts *DelegatedScanningSuite) resetConfig(ctx context.Context) {
 	t := ts.T()
 
-	conn := centralgrpc.GRPCConnectionToCentral(t)
-
-	service := v1.NewDelegatedRegistryConfigServiceClient(conn)
-	_, err := service.UpdateConfig(ctx, &v1.DelegatedRegistryConfig{})
+	err := ts.updateConfigWithRetries(ctx, &v1.DelegatedRegistryConfig{})
 	require.NoError(t, err)
 }
 
@@ -942,9 +932,6 @@ func (ts *DelegatedScanningSuite) resetConfig(ctx context.Context) {
 func (ts *DelegatedScanningSuite) setConfig(ctx context.Context, image deleScanTestImage) {
 	t := ts.T()
 
-	conn := centralgrpc.GRPCConnectionToCentral(t)
-	service := v1.NewDelegatedRegistryConfigServiceClient(conn)
-
 	cfg := &v1.DelegatedRegistryConfig{
 		EnabledFor:       v1.DelegatedRegistryConfig_SPECIFIC,
 		DefaultClusterId: ts.remoteCluster.GetId(),
@@ -952,8 +939,26 @@ func (ts *DelegatedScanningSuite) setConfig(ctx context.Context, image deleScanT
 			{Path: image.Base()},
 		},
 	}
-	_, err := service.UpdateConfig(ctx, cfg)
+
+	err := ts.updateConfigWithRetries(ctx, cfg)
 	require.NoError(t, err)
+}
+
+// updateConfigWithRetries will update the delegated registry config in Central
+// retrying on connection refused error. This was added to reduce flakes in
+// CI.
+func (ts *DelegatedScanningSuite) updateConfigWithRetries(ctx context.Context, cfg *v1.DelegatedRegistryConfig) error {
+	t := ts.T()
+
+	conn := centralgrpc.GRPCConnectionToCentral(t)
+	service := v1.NewDelegatedRegistryConfigServiceClient(conn)
+
+	retryFunc := func() error {
+		_, err := service.UpdateConfig(ctx, cfg)
+		return ts.retryConnectionRefused(err)
+	}
+
+	return ts.withRetries(retryFunc, "Connection refused by Central attempting to update the delegated registry config")
 }
 
 // resetAccess will revoke API tokens, delete roles, and delete permissions sets
@@ -978,7 +983,7 @@ func (ts *DelegatedScanningSuite) waitUntilSensorLogsScan(ctx context.Context, i
 		containsLineMatchingAfter(regexp.MustCompile(reStr), fromByte),
 	)
 
-	t.Logf("Found Sensor log entries indiciating successful scan of %q after byte %d", imageStr, fromByte)
+	logf(t, "Found Sensor log entries indiciating successful scan of %q after byte %d", imageStr, fromByte)
 }
 
 // getLimitedCentralConn will return a connection to central using a token defined by the provided
@@ -1020,7 +1025,7 @@ func (ts *DelegatedScanningSuite) executeAndValidateScan(ctx context.Context, co
 
 	// Scan the image via the image service, retrying as needed.
 	service := v1.NewImageServiceClient(conn)
-	img, err := ts.scanWithRetries(t, ctx, service, req)
+	img, err := ts.scanWithRetries(ctx, service, req)
 	require.NoError(t, err)
 
 	// Validate that the image scan looks 'OK'
@@ -1060,8 +1065,18 @@ func (ts *DelegatedScanningSuite) createImageIntegration(dockerConfig *storage.D
 		},
 		Autogenerated: autogenerated,
 	}
-	rii, err := iiService.PostImageIntegration(ctx, ii)
+
+	var err error
+	var rii *storage.ImageIntegration
+
+	retryFunc := func() error {
+		rii, err = iiService.PostImageIntegration(ctx, ii)
+		return ts.retryConnectionRefused(err)
+	}
+
+	err = ts.withRetries(retryFunc, "Connection refused by Central attempting to create image integration")
 	require.NoError(t, err)
+
 	if cleanup {
 		t.Cleanup(func() { _, _ = iiService.DeleteImageIntegration(ctx, &v1.ResourceByID{Id: rii.GetId()}) })
 	}
@@ -1084,7 +1099,7 @@ func (ts *DelegatedScanningSuite) deleteImageByID(id string) {
 	delResp, err := imageService.DeleteImages(ctx, &v1.DeleteImagesRequest{Query: &v1.RawQuery{Query: query}, Confirm: true})
 	require.NoError(t, err)
 
-	t.Logf("Num images deleted from query %q: %d", query, delResp.NumDeleted)
+	logf(t, "Num images deleted from query %q: %d", query, delResp.NumDeleted)
 }
 
 // waitForHealthyCentralSensorConn will wait for the Sensor deployment to be ready
@@ -1094,9 +1109,61 @@ func (ts *DelegatedScanningSuite) waitForHealthyCentralSensorConn() {
 	ctx := ts.ctx
 
 	// Wait for critical components to be healthy.
-	t.Log("Waiting for Sensor to be ready")
+	logf(t, "Waiting for Sensor to be ready")
 	ts.waitUntilK8sDeploymentReady(ctx, ts.namespace, sensorDeployment)
 
-	t.Log("Waiting for Central/Sensor connection to be ready")
+	logf(t, "Waiting for Central/Sensor connection to be ready")
 	waitUntilCentralSensorConnectionIs(t, ctx, storage.ClusterHealthStatus_HEALTHY)
+}
+
+// getSensorPodWithRetries will retry calls to getSensorPod when more than one pod
+// is detected.
+func (ts *DelegatedScanningSuite) getSensorPodWithRetries(ctx context.Context, namespace string) (*coreV1.Pod, error) {
+	var err error
+	var pod *coreV1.Pod
+
+	retryFunc := func() error {
+		pod, err = ts.getSensorPod(ctx, namespace)
+
+		if err != nil && strings.Contains(err.Error(), "more than one") {
+			err = retry.MakeRetryable(err)
+		}
+
+		return err
+	}
+
+	err = ts.withRetries(retryFunc, "Found more then one sensor pod")
+	return pod, err
+}
+
+// withRetries will execute retryFunc and retry execution when retryFunc marks the returned
+// error as retriable, statusMsg will be printed between attempts.
+func (ts *DelegatedScanningSuite) withRetries(retryFunc func() error, statusMsg string) error {
+	t := ts.T()
+
+	betweenAttemptsFunc := func(num int) {
+		logf(t, "%s, trying again in %s, attempt %d/%d", statusMsg, deleScanDefaultRetryDelay, num, deleScanDefaultMaxRetries)
+		time.Sleep(deleScanDefaultRetryDelay)
+	}
+
+	return retry.WithRetry(retryFunc,
+		retry.BetweenAttempts(betweenAttemptsFunc),
+		retry.Tries(deleScanDefaultMaxRetries),
+		retry.WithExponentialBackoff(),
+		retry.OnlyRetryableErrors(),
+	)
+}
+
+// retryConnectionRefused will return err wrapped in a retryable if it is
+// a connection refused error.
+func (ts *DelegatedScanningSuite) retryConnectionRefused(err error) error {
+	if err == nil {
+		return err
+	}
+
+	if strings.Contains(err.Error(), "connection refused") {
+		return retry.MakeRetryable(err)
+	}
+
+	return err
 }

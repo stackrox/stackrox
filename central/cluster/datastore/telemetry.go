@@ -30,7 +30,7 @@ func trackClusterRegistered(cluster *storage.Cluster) {
 		// cluster 'user' to the Tenant group:
 		cfg.Telemeter().Track("Secured Cluster Static Properties", nil,
 			telemeter.WithTraits(makeClusterProperties(cluster)),
-			telemeter.WithClient(cluster.GetId(), securedClusterClient),
+			telemeter.WithClient(cluster.GetId(), securedClusterClient, cluster.GetMainImage()),
 			groups)
 	}
 }
@@ -55,7 +55,7 @@ func trackClusterInitialized(cluster *storage.Cluster) {
 			Track("Secured Cluster Initialized", map[string]any{
 				"Health": cluster.GetHealthStatus().GetOverallHealthStatus().String(),
 			},
-				telemeter.WithClient(cluster.GetId(), securedClusterClient),
+				telemeter.WithClient(cluster.GetId(), securedClusterClient, cluster.GetMainImage()),
 				telemeter.WithGroups(cfg.GroupType, cfg.GroupID))
 	}
 }
@@ -118,7 +118,7 @@ func UpdateSecuredClusterIdentity(ctx context.Context, clusterID string, metrics
 	props["Orchestrator Version"] = omd.GetVersion()
 
 	opts := []telemeter.Option{
-		telemeter.WithClient(clusterID, securedClusterClient),
+		telemeter.WithClient(clusterID, securedClusterClient, cluster.GetMainImage()),
 		telemeter.WithGroups(cfg.GroupType, cfg.GroupID),
 		telemeter.WithTraits(props),
 		telemeter.WithNoDuplicates(time.Now().Format(time.DateOnly)),

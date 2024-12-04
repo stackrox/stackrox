@@ -7,7 +7,6 @@ spec:
   description: Alert if the container contains vulnerabilities
   rationale: This is the rationale
   remediation: This is the remediation
-  disabled: false
   categories:
   - Image Assurance
   - Privileges Capabilities

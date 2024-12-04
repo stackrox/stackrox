@@ -170,6 +170,8 @@ allowNonstandardNamespace: null # bool
 allowNonstandardReleaseName: null # bool
 allowUnsupportedHelmVersion: null # bool
 enableOpenShiftMonitoring: null # bool
+configAsCode:
+  enabled: null # bool
 monitoring:
   openshift:
     enabled: null # bool

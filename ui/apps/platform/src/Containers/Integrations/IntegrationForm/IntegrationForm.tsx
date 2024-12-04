@@ -7,24 +7,24 @@ import { integrationsPath } from 'routePaths';
 import { Integration, IntegrationSource, IntegrationType } from '../utils/integrationUtils';
 
 // image integrations
-import ClairifyIntegrationForm from './Forms/ClairifyIntegrationForm';
+import ArtifactRegistryIntegrationForm from './Forms/ArtifactRegistryIntegrationForm';
+import ArtifactoryIntegrationForm from './Forms/ArtifactoryIntegrationForm';
+import AzureIntegrationForm from './Forms/AzureIntegrationForm';
 import ClairIntegrationForm from './Forms/ClairIntegrationForm';
 import ClairV4IntegrationForm from './Forms/ClairV4IntegrationForm';
+import ClairifyIntegrationForm from './Forms/ClairifyIntegrationForm';
 import DockerIntegrationForm from './Forms/DockerIntegrationForm';
 import EcrIntegrationForm from './Forms/EcrIntegrationForm';
 import GoogleIntegrationForm from './Forms/GoogleIntegrationForm';
-import ArtifactRegistryIntegrationForm from './Forms/ArtifactRegistryIntegrationForm';
-import AzureIntegrationForm from './Forms/AzureIntegrationForm';
-import ArtifactoryIntegrationForm from './Forms/ArtifactoryIntegrationForm';
-import QuayIntegrationForm from './Forms/QuayIntegrationForm';
-import NexusIntegrationForm from './Forms/NexusIntegrationForm';
 import IbmIntegrationForm from './Forms/IbmIntegrationForm';
+import NexusIntegrationForm from './Forms/NexusIntegrationForm';
+import QuayIntegrationForm from './Forms/QuayIntegrationForm';
 import RhelIntegrationForm from './Forms/RhelIntegrationForm';
 import ScannerV4IntegrationForm from './Forms/ScannerV4IntegrationForm';
 // notifiers
+import ACSCSEmailIntegrationForm from './Forms/AcscsEmailIntegrationForm';
 import AwsSecurityHubIntegrationForm from './Forms/AwsSecurityHubIntegrationForm';
 import EmailIntegrationForm from './Forms/EmailIntegrationForm';
-import ACSCSEmailIntegrationForm from './Forms/AcscsEmailIntegrationForm';
 import GenericWebhookIntegrationForm from './Forms/GenericWebhookIntegrationForm';
 import GoogleCloudSccIntegrationForm from './Forms/GoogleCloudSccIntegrationForm';
 import JiraIntegrationForm from './Forms/JiraIntegrationForm';
@@ -36,9 +36,9 @@ import SumoLogicIntegrationForm from './Forms/SumoLogicIntegrationForm';
 import SyslogIntegrationForm from './Forms/SyslogIntegrationForm';
 import TeamsIntegrationForm from './Forms/TeamsIntegrationForm';
 // external backups
-import S3IntegrationForm from './Forms/ExternalBackupIntegrations/S3IntegrationForm';
-import S3CompatibleIntegrationForm from './Forms/ExternalBackupIntegrations/S3CompatibleIntegrationForm';
 import GcsIntegrationForm from './Forms/ExternalBackupIntegrations/GcsIntegrationForm';
+import S3CompatibleIntegrationForm from './Forms/ExternalBackupIntegrations/S3CompatibleIntegrationForm';
+import S3IntegrationForm from './Forms/ExternalBackupIntegrations/S3IntegrationForm';
 // auth plugins
 import ApiTokenIntegrationForm from './Forms/ApiTokenIntegrationForm';
 import MachineAccessIntegrationForm from './Forms/MachineAccessIntegrationForm';
@@ -46,8 +46,8 @@ import MachineAccessIntegrationForm from './Forms/MachineAccessIntegrationForm';
 import SignatureIntegrationForm from './Forms/SignatureIntegrationForm';
 
 // cloud source integrations
-import PaladinCloudIntegrationForm from './Forms/CloudSourceIntegrations/PaladinCloudIntegrationForm';
 import OcmIntegrationForm from './Forms/CloudSourceIntegrations/OcmIntegrationForm';
+import PaladinCloudIntegrationForm from './Forms/CloudSourceIntegrations/PaladinCloudIntegrationForm';
 
 import './IntegrationForm.css';
 
@@ -64,30 +64,40 @@ type FormProps = {
 };
 
 const ComponentFormMap = {
+    authProviders: {
+        apitoken: ApiTokenIntegrationForm,
+        machineAccess: MachineAccessIntegrationForm,
+    },
+    backups: {
+        gcs: GcsIntegrationForm,
+        s3: S3IntegrationForm,
+        s3compatible: S3CompatibleIntegrationForm,
+    },
+    cloudSources: {
+        ocm: OcmIntegrationForm,
+        paladinCloud: PaladinCloudIntegrationForm,
+    },
     imageIntegrations: {
-        clairify: ClairifyIntegrationForm,
+        artifactory: ArtifactoryIntegrationForm,
+        artifactregistry: ArtifactRegistryIntegrationForm,
+        azure: AzureIntegrationForm,
         clair: ClairIntegrationForm,
         clairV4: ClairV4IntegrationForm,
+        clairify: ClairifyIntegrationForm,
         docker: DockerIntegrationForm,
         ecr: EcrIntegrationForm,
         google: GoogleIntegrationForm,
-        artifactregistry: ArtifactRegistryIntegrationForm,
-        azure: AzureIntegrationForm,
-        artifactory: ArtifactoryIntegrationForm,
-        quay: QuayIntegrationForm,
-        nexus: NexusIntegrationForm,
         ibm: IbmIntegrationForm,
+        nexus: NexusIntegrationForm,
+        quay: QuayIntegrationForm,
         rhel: RhelIntegrationForm,
         scannerv4: ScannerV4IntegrationForm,
     },
-    signatureIntegrations: {
-        signature: SignatureIntegrationForm,
-    },
     notifiers: {
+        acscsEmail: ACSCSEmailIntegrationForm,
         awsSecurityHub: AwsSecurityHubIntegrationForm,
         cscc: GoogleCloudSccIntegrationForm,
         email: EmailIntegrationForm,
-        acscsEmail: ACSCSEmailIntegrationForm,
         generic: GenericWebhookIntegrationForm,
         jira: JiraIntegrationForm,
         microsoftSentinel: MicrosoftSentinelForm,
@@ -98,18 +108,8 @@ const ComponentFormMap = {
         syslog: SyslogIntegrationForm,
         teams: TeamsIntegrationForm,
     },
-    backups: {
-        s3: S3IntegrationForm,
-        s3compatible: S3CompatibleIntegrationForm,
-        gcs: GcsIntegrationForm,
-    },
-    authProviders: {
-        apitoken: ApiTokenIntegrationForm,
-        machineAccess: MachineAccessIntegrationForm,
-    },
-    cloudSources: {
-        paladinCloud: PaladinCloudIntegrationForm,
-        ocm: OcmIntegrationForm,
+    signatureIntegrations: {
+        signature: SignatureIntegrationForm,
     },
 } as Record<
     IntegrationSource,

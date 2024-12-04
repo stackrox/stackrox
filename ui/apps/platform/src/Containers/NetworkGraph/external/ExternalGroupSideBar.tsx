@@ -35,13 +35,6 @@ type ExternalGroupSideBarProps = {
     onNodeSelect: (id: string) => void;
 };
 
-const columnNames = {
-    entity: 'Entity',
-    address: 'Address',
-    activeTraffic: 'Active traffic',
-};
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function ExternalGroupSideBar({
     labelledById,
     id,
@@ -115,9 +108,9 @@ function ExternalGroupSideBar({
                         <Table aria-label="External to cluster table" variant="compact">
                             <Thead>
                                 <Tr>
-                                    <Th width={50}>{columnNames.entity}</Th>
-                                    <Th>{columnNames.address}</Th>
-                                    <Th>{columnNames.activeTraffic}</Th>
+                                    <Th width={50}>Entity</Th>
+                                    <Th>Address</Th>
+                                    <Th>Active traffic</Th>
                                 </Tr>
                             </Thead>
                             <Tbody>
@@ -136,7 +129,7 @@ function ExternalGroupSideBar({
                                     const relevantEdges = getEdgesByNodeId(edges, externalNode.id);
                                     return (
                                         <Tr key={externalNode.id}>
-                                            <Td dataLabel={columnNames.entity}>
+                                            <Td dataLabel="Entity">
                                                 <Flex>
                                                     <FlexItem>{entityIcon}</FlexItem>
                                                     <FlexItem>
@@ -152,8 +145,8 @@ function ExternalGroupSideBar({
                                                     </FlexItem>
                                                 </Flex>
                                             </Td>
-                                            <Td dataLabel={columnNames.address}>{address}</Td>
-                                            <Td dataLabel={columnNames.activeTraffic}>
+                                            <Td dataLabel="Address">{address}</Td>
+                                            <Td dataLabel="Active traffic">
                                                 {relevantEdges.length}
                                             </Td>
                                         </Tr>

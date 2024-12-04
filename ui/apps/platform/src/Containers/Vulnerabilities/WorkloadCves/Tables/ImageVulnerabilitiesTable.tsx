@@ -40,7 +40,6 @@ import ImageComponentVulnerabilitiesTable, {
     imageComponentVulnerabilitiesFragment,
 } from './ImageComponentVulnerabilitiesTable';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { CveSelectionsProps } from '../../components/ExceptionRequestModal/CveSelections';
 import CVESelectionTh from '../../components/CVESelectionTh';
 import CVESelectionTd from '../../components/CVESelectionTd';
@@ -74,6 +73,10 @@ export const defaultColumns = {
         title: 'First discovered',
         isShownByDefault: true,
     },
+    publishedOn: {
+        title: 'Published',
+        isShownByDefault: true,
+    },
 } as const;
 
 export const imageVulnerabilitiesFragment = gql`
@@ -87,6 +90,7 @@ export const imageVulnerabilitiesFragment = gql`
         nvdCvss
         nvdScoreVersion
         discoveredAtImage
+        publishedOn
         pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
         imageComponents(query: $query) {
             ...ImageComponentVulnerabilities
@@ -103,6 +107,7 @@ export type ImageVulnerability = {
     nvdCvss: number;
     nvdScoreVersion: string; // for example, V3 or UNKNOWN_VERSION
     discoveredAtImage: string | null;
+    publishedOn: string | null;
     pendingExceptionCount: number;
     imageComponents: ImageComponentVulnerability[];
 };
@@ -114,7 +119,7 @@ export type ImageVulnerabilitiesTableProps = {
     isFiltered: boolean;
     canSelectRows: boolean;
     selectedCves: ReturnType<typeof useMap<string, CveSelectionsProps['cves'][number]>>;
-    vulnerabilityState: VulnerabilityState | undefined; // TODO Make Required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
+    vulnerabilityState: VulnerabilityState;
     createTableActions?: (cve: {
         cve: string;
         summary: string;
@@ -139,7 +144,7 @@ function ImageVulnerabilitiesTable({
     const getVisibilityClass = generateVisibilityForColumns(tableConfig);
     const hiddenColumnCount = getHiddenColumnCount(tableConfig);
     const expandedRowSet = useSet<string>();
-    const showExceptionDetailsLink = vulnerabilityState && vulnerabilityState !== 'OBSERVED';
+    const showExceptionDetailsLink = vulnerabilityState !== 'OBSERVED';
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isNvdCvssColumnEnabled =
@@ -179,7 +184,12 @@ function ImageVulnerabilitiesTable({
                         Affected components
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
-                    <Th className={getVisibilityClass('firstDiscovered')}>First discovered</Th>
+                    <Th className={getVisibilityClass('firstDiscovered')} modifier="nowrap">
+                        First discovered
+                    </Th>
+                    <Th className={getVisibilityClass('publishedOn')} modifier="nowrap">
+                        Published
+                    </Th>
                     {showExceptionDetailsLink && (
                         <TooltipTh tooltip="View information about this exception request">
                             Request details
@@ -187,7 +197,7 @@ function ImageVulnerabilitiesTable({
                     )}
                     {createTableActions && (
                         <Th>
-                            <span className="pf-v5-screen-reader">CVE actions</span>
+                            <span className="pf-v5-screen-reader">Row actions</span>
                         </Th>
                     )}
                 </Tr>
@@ -209,6 +219,7 @@ function ImageVulnerabilitiesTable({
                             nvdScoreVersion,
                             imageComponents,
                             discoveredAtImage,
+                            publishedOn,
                             pendingExceptionCount,
                         } = vulnerability;
                         const vulnerabilities = imageComponents.flatMap(
@@ -302,6 +313,16 @@ function ImageVulnerabilitiesTable({
                                     >
                                         <DateDistance date={discoveredAtImage} />
                                     </Td>
+                                    <Td
+                                        className={getVisibilityClass('publishedOn')}
+                                        dataLabel="Published"
+                                    >
+                                        {publishedOn ? (
+                                            <DateDistance date={publishedOn} />
+                                        ) : (
+                                            'Not available'
+                                        )}
+                                    </Td>
                                     {showExceptionDetailsLink && (
                                         <ExceptionDetailsCell
                                             cve={cve}
@@ -309,7 +330,7 @@ function ImageVulnerabilitiesTable({
                                         />
                                     )}
                                     {createTableActions && (
-                                        <Td className="pf-v5-u-px-0">
+                                        <Td isActionCell>
                                             <ActionsColumn
                                                 // menuAppendTo={() => document.body}
                                                 items={createTableActions({

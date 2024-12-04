@@ -1,6 +1,6 @@
 import React, { useState, useEffect, ReactElement } from 'react';
 import { FormGroup, FormHelperText, HelperText, HelperTextItem } from '@patternfly/react-core';
-import { Select, SelectOption, SelectVariant } from '@patternfly/react-core/deprecated';
+import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 import { useField } from 'formik';
 
 import { getPolicyCategories } from 'services/PolicyCategoriesService';
@@ -42,7 +42,7 @@ function PolicyCategoriesSelectField(): ReactElement {
     return (
         <FormGroup fieldId="policy-categories" label="Categories" isRequired>
             <Select
-                variant={SelectVariant.typeaheadMulti}
+                variant="typeaheadmulti"
                 name={field.name}
                 value={field.value}
                 isOpen={isCategoriesOpen}

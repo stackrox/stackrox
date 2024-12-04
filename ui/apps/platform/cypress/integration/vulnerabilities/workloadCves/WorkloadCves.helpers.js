@@ -5,7 +5,6 @@ import {
     getRouteMatcherMapForGraphQL,
 } from '../../../helpers/request';
 import { visit } from '../../../helpers/visit';
-import { hasFeatureFlag } from '../../../helpers/features';
 import { selectors } from './WorkloadCves.selectors';
 import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 
@@ -37,7 +36,7 @@ export function visitWorkloadCveOverview({ clearFiltersOnVisit = true, urlSearch
     // Clear the default filters that will be applied to increase the likelihood of finding entities with
     // CVEs. The default filters of Severity: Critical and Severity: Important make it very likely that
     // there will be no results across entity tabs on the overview page.
-    if (hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS') && clearFiltersOnVisit) {
+    if (clearFiltersOnVisit) {
         cy.get(vulnSelectors.clearFiltersButton).click();
         // Ensure the data in the table has settled before continuing with the test
         cy.get(selectors.isUpdatingTable).should('not.exist');
@@ -228,7 +227,11 @@ export function selectSingleCveForException(exceptionType) {
 
     return cy.get(selectors.firstTableRow).then(($row) => {
         const cveName = $row.find('td[data-label="CVE"]').text();
-        cy.wrap($row).find(selectors.tableRowMenuToggle).click();
+        cy.wrap($row)
+            .find(selectors.tableRowMenuToggle, { timeout: 10000 })
+            .should('exist')
+            .and('be.visible')
+            .click();
         cy.get(selectors.menuOption(menuOption)).click();
 
         cy.get('button:contains("CVE selections")').click();
@@ -257,12 +260,18 @@ export function selectMultipleCvesForException(exceptionType) {
         .get(selectors.nthTableRow(1))
         .then(($row) => {
             cveNames.push($row.find('td[data-label="CVE"]').text());
-            cy.wrap($row).find(selectors.tableRowSelectCheckbox).click();
+            cy.wrap($row).then(($rowElement) => {
+                const checkbox = $rowElement.find(selectors.tableRowSelectCheckbox);
+                cy.wrap(checkbox).click();
+            });
             return cy.get(selectors.nthTableRow(2));
         })
         .then(($nextRow) => {
             cveNames.push($nextRow.find('td[data-label="CVE"]').text());
-            cy.wrap($nextRow).find(selectors.tableRowSelectCheckbox).click();
+            cy.wrap($nextRow).then(($rowElement) => {
+                const checkbox = $rowElement.find(selectors.tableRowSelectCheckbox);
+                cy.wrap(checkbox).click();
+            });
 
             cy.get(selectors.bulkActionMenuToggle).click();
             cy.get(selectors.menuOption(menuOption)).click();
@@ -284,13 +293,23 @@ export function verifySelectedCvesInModal(cveNames) {
     });
 }
 
-export function visitAnyImageSinglePage() {
+export function visitAnyImageSinglePageWithMockedCves() {
+    const cveListOpname = 'getCVEsForImage';
+    const routeMatcherMapForImageCves = getRouteMatcherMapForGraphQL([cveListOpname]);
+    const staticResponseMapForImageCves = {
+        [cveListOpname]: { fixture: 'vulnerabilities/workloadCves/multipleCvesForImage.json' },
+    };
+
     visitWorkloadCveOverview();
 
-    selectEntityTab('Image');
-    cy.get('tbody tr td[data-label="Image"] a').first().click();
-
-    waitForTableLoadCompleteIndicator();
+    interactAndWaitForResponses(
+        () => {
+            selectEntityTab('Image');
+            cy.get('tbody tr td[data-label="Image"] a').first().click();
+        },
+        routeMatcherMapForImageCves,
+        staticResponseMapForImageCves
+    );
 
     return cy.get('h1').then(($h1) => {
         // Remove the SHA and/or tag from the image name
@@ -446,8 +465,10 @@ export function changeObservedCveViewingMode(modeText) {
 export function interactAndWaitForCveList(callback) {
     const cveListOpname = 'getImageCVEList';
     const cveListRouteMatcherMap = getRouteMatcherMapForGraphQL([cveListOpname]);
-    cveListRouteMatcherMap[cveListOpname].times = 1;
-    return interactAndWaitForResponses(callback, cveListRouteMatcherMap);
+    const staticResponseMap = {
+        [cveListOpname]: { fixture: 'vulnerabilities/workloadCves/getImageCVEList.json' },
+    };
+    return interactAndWaitForResponses(callback, cveListRouteMatcherMap, staticResponseMap);
 }
 
 /**

@@ -390,10 +390,6 @@
                 "name": "ACTIVE"
               },
               {
-                "name": "SNOOZED",
-                "integer": 1
-              },
-              {
                 "name": "RESOLVED",
                 "integer": 2
               },
@@ -401,6 +397,12 @@
                 "name": "ATTEMPTED",
                 "integer": 3
               }
+            ],
+            "reserved_ids": [
+              1
+            ],
+            "reserved_names": [
+              "SNOOZED"
             ]
           }
         ],
@@ -498,11 +500,6 @@
                 "type": "ViolationState"
               },
               {
-                "id": 12,
-                "name": "snooze_till",
-                "type": "google.protobuf.Timestamp"
-              },
-              {
                 "id": 22,
                 "name": "platform_component",
                 "type": "bool"
@@ -514,7 +511,11 @@
               }
             ],
             "reserved_ids": [
+              12,
               14
+            ],
+            "reserved_names": [
+              "snooze_till"
             ],
             "messages": [
               {
@@ -3808,6 +3809,54 @@
                 "integer": 7
               }
             ]
+          },
+          {
+            "name": "ComplianceOperatorReportStatus.RunState",
+            "enum_fields": [
+              {
+                "name": "WAITING"
+              },
+              {
+                "name": "PREPARING",
+                "integer": 1
+              },
+              {
+                "name": "GENERATED",
+                "integer": 2
+              },
+              {
+                "name": "DELIVERED",
+                "integer": 3
+              },
+              {
+                "name": "FAILURE",
+                "integer": 4
+              }
+            ]
+          },
+          {
+            "name": "ComplianceOperatorReportStatus.NotificationMethod",
+            "enum_fields": [
+              {
+                "name": "EMAIL"
+              },
+              {
+                "name": "DOWNLOAD",
+                "integer": 1
+              }
+            ]
+          },
+          {
+            "name": "ComplianceOperatorReportStatus.RunMethod",
+            "enum_fields": [
+              {
+                "name": "ON_DEMAND"
+              },
+              {
+                "name": "SCHEDULED",
+                "integer": 1
+              }
+            ]
           }
         ],
         "messages": [
@@ -4698,6 +4747,99 @@
                 "id": 8,
                 "name": "cluster_id",
                 "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "ComplianceOperatorReportSnapshotV2",
+            "fields": [
+              {
+                "id": 1,
+                "name": "report_id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "scan_configuration_id",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "description",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "report_status",
+                "type": "ComplianceOperatorReportStatus"
+              },
+              {
+                "id": 6,
+                "name": "user",
+                "type": "SlimUser"
+              },
+              {
+                "id": 7,
+                "name": "scans",
+                "type": "Scan",
+                "is_repeated": true
+              }
+            ],
+            "messages": [
+              {
+                "name": "Scan",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "scan_ref_id",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "last_started_time",
+                    "type": "google.protobuf.Timestamp"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "ComplianceOperatorReportStatus",
+            "fields": [
+              {
+                "id": 1,
+                "name": "run_state",
+                "type": "RunState"
+              },
+              {
+                "id": 2,
+                "name": "started_at",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 3,
+                "name": "completed_at",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 4,
+                "name": "error_msg",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "report_request_type",
+                "type": "RunMethod"
+              },
+              {
+                "id": 6,
+                "name": "report_notification_method",
+                "type": "NotificationMethod"
               }
             ]
           }
@@ -17810,6 +17952,11 @@
                 "name": "cvss_metrics",
                 "type": "CVSSScore",
                 "is_repeated": true
+              },
+              {
+                "id": 22,
+                "name": "nvd_cvss",
+                "type": "float"
               }
             ],
             "reserved_ids": [

@@ -18,7 +18,16 @@ import {
     DropdownSeparator,
     DropdownToggle,
 } from '@patternfly/react-core/deprecated';
-import { Table, Thead, Tbody, Tr, Th, Td, ExpandableRowContent } from '@patternfly/react-table';
+import {
+    ActionsColumn,
+    ExpandableRowContent,
+    Table,
+    Tbody,
+    Td,
+    Th,
+    Thead,
+    Tr,
+} from '@patternfly/react-table';
 import { CaretDownIcon } from '@patternfly/react-icons';
 
 import { ListPolicy } from 'types/policy.proto';
@@ -37,7 +46,6 @@ import { UseURLSortResult } from 'hooks/useURLSort';
 import { policiesBasePath } from 'routePaths';
 import { NotifierIntegration } from 'types/notifier.proto';
 import { SearchFilter } from 'types/search';
-import { columns } from './PoliciesTable.utils';
 import {
     LabelAndNotifierIdsForType,
     formatLifecycleStages,
@@ -354,7 +362,12 @@ function PoliciesTable({
                                     isSelected: allRowsSelected,
                                 }}
                             />
-                            {columns.map(({ Header, width }) => {
+                            {/* columns.map(({ Header, width }) => {
+                                // https://github.com/stackrox/stackrox/pull/10316
+                                // Move client-side sorting from PoliciesTable to PoliciesTablePage.
+                                // After the Policies API is paginated in the API,
+                                // we can use start passing the URL sort parameters that I (Van) have added here directly to the API call.
+                                //
                                 // const sortParams = {
                                 //     sort: {
                                 //         sortBy: {
@@ -375,7 +388,25 @@ function PoliciesTable({
                                         {Header}
                                     </Th>
                                 );
-                            })}
+                            }) */}
+                            <Th modifier="wrap" sort={getSortParams('Policy')} width={30}>
+                                Policy
+                            </Th>
+                            <Th modifier="wrap" sort={getSortParams('Status')}>
+                                Status
+                            </Th>
+                            <Th modifier="wrap" sort={getSortParams('Origin')} width={20}>
+                                Origin
+                            </Th>
+                            <Th modifier="wrap" sort={getSortParams('Notifiers')}>
+                                Notifiers
+                            </Th>
+                            <Th modifier="wrap" sort={getSortParams('Severity')}>
+                                Severity
+                            </Th>
+                            <Th modifier="wrap" sort={getSortParams('Lifecycle')}>
+                                Lifecycle
+                            </Th>
                             <Th>
                                 <span className="pf-v5-screen-reader">Row actions</span>
                             </Th>
@@ -500,11 +531,9 @@ function PoliciesTable({
                                     <Td dataLabel="Lifecycle">
                                         {formatLifecycleStages(lifecycleStages)}
                                     </Td>
-                                    <Td
-                                        actions={{
-                                            items: actionItems,
-                                        }}
-                                    />
+                                    <Td isActionCell>
+                                        <ActionsColumn items={actionItems} />
+                                    </Td>
                                 </Tr>
                                 <Tr isExpanded={isExpanded}>
                                     <Td />

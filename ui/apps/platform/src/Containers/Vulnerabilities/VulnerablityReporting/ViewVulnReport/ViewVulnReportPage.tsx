@@ -4,7 +4,6 @@ import {
     Alert,
     AlertActionCloseButton,
     AlertGroup,
-    AlertVariant,
     PageSection,
     Title,
     Divider,
@@ -170,9 +169,7 @@ function ViewVulnReportPage() {
                     </Alert>
                 ))}
             </AlertGroup>
-            {runError && (
-                <Alert variant={AlertVariant.danger} isInline title={runError} component="p" />
-            )}
+            {runError && <Alert variant="danger" isInline title={runError} component="p" />}
             <PageTitle title="View vulnerability report" />
             <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
@@ -340,7 +337,7 @@ function ViewVulnReportPage() {
                         return (
                             <Alert
                                 isInline
-                                variant={AlertVariant.danger}
+                                variant="danger"
                                 title={`Failed to delete "${reportConfiguration.name}"`}
                                 component="p"
                                 className="pf-v5-u-mb-sm"

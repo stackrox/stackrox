@@ -228,7 +228,7 @@ func Test_TwoPipelines_Run(t *testing.T) {
 				tt.setUpMocks(t, tt.mocks)
 			}
 			pNode := nodes.NewPipeline(tt.mocks.clusterStore, tt.mocks.nodeDatastore, tt.enricher, tt.riskManager)
-			pNodeInv := newPipeline(tt.mocks.clusterStore, tt.mocks.nodeDatastore, tt.enricher, tt.riskManager)
+			pNodeInv := NewPipeline(tt.mocks.clusterStore, tt.mocks.nodeDatastore, tt.enricher, tt.riskManager)
 
 			for i, op := range tt.operations {
 				t.Logf("Running operation %d of %d", i+1, len(tt.operations))

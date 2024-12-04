@@ -75,6 +75,10 @@ type CentralSpec struct {
 	// Network configuration.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Network,order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	Network *GlobalNetworkSpec `json:"network,omitempty"`
+
+	// Config-as-Code configuration.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Config-as-Code,order=11,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	ConfigAsCode *ConfigAsCodeSpec `json:"configAsCode,omitempty"`
 }
 
 // Egress defines settings related to outgoing network traffic.
@@ -600,6 +604,24 @@ const (
 	ScannerV4ComponentEnabled ScannerV4ComponentPolicy = "Enabled"
 	// ScannerV4ComponentDisabled explicitly disables the Scanner V4 component.
 	ScannerV4ComponentDisabled ScannerV4ComponentPolicy = "Disabled"
+)
+
+type ConfigAsCodeSpec struct {
+	// If you want to deploy the Config as Code component, set this to "Enabled"
+	//+kubebuilder:default=Enabled
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Config as Code component"
+	ComponentPolicy *ConfigAsCodeComponentPolicy `json:"configAsCodeComponent,omitempty"`
+}
+
+// ConfigAsCodeComponentPolicy is a type for values of spec.configAsCode.configAsCodeComponent
+// +kubebuilder:validation:Enum=Enabled;Disabled
+type ConfigAsCodeComponentPolicy string
+
+const (
+	// ConfigAsCodeComponentEnabled explicitly enables the Config as Code component.
+	ConfigAsCodeComponentEnabled ConfigAsCodeComponentPolicy = "Enabled"
+	// ConfigAsCodeComponentDisabled explicitly disables the Config as Code component.
+	ConfigAsCodeComponentDisabled ConfigAsCodeComponentPolicy = "Disabled"
 )
 
 // -------------------------------------------------------------

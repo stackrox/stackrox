@@ -1,4 +1,4 @@
-//go:build test_e2e || sql_integration || compliance || destructive || externalbackups
+//go:build test_e2e || sql_integration || compliance || destructive || externalbackups || test_compatibility
 
 package tests
 

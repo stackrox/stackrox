@@ -2,7 +2,6 @@ import React from 'react';
 import * as yup from 'yup';
 import {
     Modal,
-    ModalVariant,
     ModalBoxBody,
     ModalBoxFooter,
     Button,
@@ -80,7 +79,7 @@ function CreatePolicyCategoryModal({
         <Modal
             title="Create category"
             isOpen={isOpen}
-            variant={ModalVariant.small}
+            variant="small"
             onClose={onCancel}
             data-testid="create-category-modal"
             aria-label="Create category"

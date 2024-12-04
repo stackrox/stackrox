@@ -13,7 +13,7 @@ import {
     HelperText,
     HelperTextItem,
 } from '@patternfly/react-core';
-import { Select, SelectVariant, SelectOption } from '@patternfly/react-core/deprecated';
+import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 
 import { ClientPolicy } from 'types/policy.proto';
 import { ListImage } from 'types/image.proto';
@@ -191,7 +191,7 @@ function PolicyScopeForm() {
                         <Select
                             onToggle={() => setIsExcludeImagesOpen(!isExcludeImagesOpen)}
                             isOpen={isExcludeImagesOpen}
-                            variant={SelectVariant.typeaheadMulti}
+                            variant="typeaheadmulti"
                             selections={excludedImageNames}
                             onSelect={handleChangeMultiSelect}
                             isCreatable

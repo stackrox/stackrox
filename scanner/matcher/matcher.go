@@ -34,7 +34,6 @@ import (
 	"github.com/stackrox/rox/scanner/enricher/fixedby"
 	"github.com/stackrox/rox/scanner/enricher/nvd"
 	"github.com/stackrox/rox/scanner/internal/httputil"
-	"github.com/stackrox/rox/scanner/matcher/updater/distribution"
 	"github.com/stackrox/rox/scanner/matcher/updater/vuln"
 )
 
@@ -83,8 +82,7 @@ type matcherImpl struct {
 	metadataStore postgres.MatcherMetadataStore
 	pool          *pgxpool.Pool
 
-	vulnUpdater   *vuln.Updater
-	distroUpdater *distribution.Updater
+	vulnUpdater *vuln.Updater
 }
 
 // NewMatcher creates a new matcher.
@@ -177,18 +175,6 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		return nil, fmt.Errorf("creating vuln updater: %w", err)
 	}
 
-	distroUpdater, err := distribution.New(ctx, store, vulnUpdater.Initialized)
-	if err != nil {
-		return nil, fmt.Errorf("creating known-distribution updater: %w", err)
-	}
-
-	// Start the known-distributions updater.
-	go func() {
-		if err := distroUpdater.Start(); err != nil {
-			zlog.Error(ctx).Err(err).Msg("known-distributions updater failed")
-		}
-	}()
-
 	// Start the vulnerability updater.
 	go func() {
 		if err := vulnUpdater.Start(); err != nil {
@@ -202,8 +188,7 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		metadataStore: metadataStore,
 		pool:          pool,
 
-		vulnUpdater:   vulnUpdater,
-		distroUpdater: distroUpdater,
+		vulnUpdater: vulnUpdater,
 	}, nil
 }
 
@@ -218,13 +203,13 @@ func (m *matcherImpl) GetLastVulnerabilityUpdate(ctx context.Context) (time.Time
 }
 
 func (m *matcherImpl) GetKnownDistributions(_ context.Context) []claircore.Distribution {
-	return m.distroUpdater.Known()
+	return m.vulnUpdater.KnownDistributions()
 }
 
 // Close closes the matcher.
 func (m *matcherImpl) Close(ctx context.Context) error {
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/matcher.Close")
-	err := errors.Join(m.distroUpdater.Stop(), m.vulnUpdater.Stop(), m.libVuln.Close(ctx))
+	err := errors.Join(m.vulnUpdater.Stop(), m.libVuln.Close(ctx))
 	m.pool.Close()
 	return err
 }

@@ -73,7 +73,7 @@ main() {
     done < <("$DIR"/scanner-output-release-versions.sh | jq -r '.versions[] | "\(.tag) \(.version)"')
     echo '{"versions": ['
     for v in "${!releases[@]}"; do
-        version_object "$vuln_version" "${releases[$v]% *}"
+        version_object "$v" "${releases[$v]% *}"
         echo ,
     done
 

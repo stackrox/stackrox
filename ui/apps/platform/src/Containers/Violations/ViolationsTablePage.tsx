@@ -15,7 +15,7 @@ import { CancelledPromiseError } from 'services/cancellationUtils';
 import useAnalytics from 'hooks/useAnalytics';
 import useEntitiesByIdsCache from 'hooks/useEntitiesByIdsCache';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
-import VIOLATION_STATES from 'constants/violationStates';
+import { VIOLATION_STATES } from 'constants/violationStates';
 import { ENFORCEMENT_ACTIONS } from 'constants/enforcementActions';
 import { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
 import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
@@ -66,7 +66,7 @@ function ViolationsTablePage(): ReactElement {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isPlatformComponentsEnabled = isFeatureFlagEnabled('ROX_PLATFORM_COMPONENTS');
 
-    const [activeViolationStateTab, setActiveViolationStateTab] = useURLStringUnion(
+    const [selectedViolationStateTab, setSelectedViolationStateTab] = useURLStringUnion(
         'violationState',
         violationStateTabs
     );
@@ -152,7 +152,7 @@ function ViolationsTablePage(): ReactElement {
         const alertSearchFilter: SearchFilter = {
             ...searchFilter,
             ...filteredWorkflowFilter,
-            'Violation State': activeViolationStateTab,
+            'Violation State': selectedViolationStateTab,
         };
 
         const { request: alertRequest, cancel: cancelAlertRequest } = fetchAlerts({
@@ -197,8 +197,9 @@ function ViolationsTablePage(): ReactElement {
         setCurrentPageAlertsErrorMessage,
         setAlertCount,
         perPage,
-        activeViolationStateTab,
+        selectedViolationStateTab,
         filteredWorkflowView,
+        isPlatformComponentsEnabled,
     ]);
 
     // We need to be able to identify which alerts are runtime or attempted, and which are not by id.
@@ -224,13 +225,13 @@ function ViolationsTablePage(): ReactElement {
             </PageSection>
             <PageSection variant="light" className="pf-v5-u-py-0">
                 <Tabs
-                    activeKey={activeViolationStateTab}
+                    activeKey={selectedViolationStateTab}
                     onSelect={(_e, tab) => {
                         setIsLoadingAlerts(true);
                         setSearchFilter({});
                         setPage(1);
                         setFilteredWorkflowView('Applications view');
-                        setActiveViolationStateTab(tab);
+                        setSelectedViolationStateTab(tab);
                     }}
                 >
                     <Tab
@@ -242,6 +243,11 @@ function ViolationsTablePage(): ReactElement {
                         eventKey="RESOLVED"
                         tabContentId={tabContentId}
                         title={<TabTitleText>Resolved</TabTitleText>}
+                    />
+                    <Tab
+                        eventKey="ATTEMPTED"
+                        tabContentId={tabContentId}
+                        title={<TabTitleText>Attempted</TabTitleText>}
                     />
                 </Tabs>
             </PageSection>
@@ -285,6 +291,7 @@ function ViolationsTablePage(): ReactElement {
                             onFilterChange={setSearchFilter}
                             onSearch={onSearch}
                             additionalContextFilter={additionalContextFilter}
+                            hasActiveViolations={selectedViolationStateTab === 'ACTIVE'}
                         />
                     </PageSection>
                 )}

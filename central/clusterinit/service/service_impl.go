@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/clusterinit/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc"
@@ -129,6 +130,10 @@ func (s *serviceImpl) GenerateInitBundle(ctx context.Context, request *v1.InitBu
 }
 
 func (s *serviceImpl) GenerateCRS(ctx context.Context, request *v1.CRSGenRequest) (*v1.CRSGenResponse, error) {
+	if !features.ClusterRegistrationSecrets.Enabled() {
+		return nil, status.Error(codes.Unimplemented, "support for generating Cluster Registration Secrets (CRS) is not enabled")
+	}
+
 	generated, err := s.backend.IssueCRS(ctx, request.GetName())
 	if err != nil {
 		if errors.Is(err, store.ErrInitBundleDuplicateName) {

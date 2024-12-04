@@ -20,7 +20,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/klauspost/compress/zstd"
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/datastore"
 	"github.com/quay/claircore/libvuln"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/updates"
@@ -64,7 +63,7 @@ var (
 // Store, Locker, MetadataStore, and URL are required.
 // The rest are optional.
 type Opts struct {
-	Store         datastore.MatcherStore
+	Store         postgres.MatcherStore
 	Locker        *ctxlock.Locker
 	MetadataStore postgres.MatcherMetadataStore
 
@@ -87,7 +86,7 @@ type Updater struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 
-	store         datastore.MatcherStore
+	store         postgres.MatcherStore
 	locker        updates.LockSource
 	metadataStore postgres.MatcherMetadataStore
 
@@ -110,6 +109,8 @@ type Updater struct {
 
 	retryDelay time.Duration
 	retryMax   int
+
+	distManager *distManager
 }
 
 // New creates a new Updater based on the given options.
@@ -138,6 +139,8 @@ func New(ctx context.Context, opts Opts) (*Updater, error) {
 
 		retryDelay: opts.RetryDelay,
 		retryMax:   opts.RetryMax,
+
+		distManager: newDistManager(opts.Store),
 	}
 	u.importFunc = func(ctx context.Context, reader io.Reader) error {
 		return u.Import(ctx, reader)
@@ -302,6 +305,10 @@ func (u *Updater) Start() error {
 		go u.runGCFullPeriodic()
 	}
 
+	if err := u.distManager.update(ctx); err != nil {
+		zlog.Warn(ctx).Err(err).Msg("failed to initialize known-distributions")
+	}
+
 	// Start immediately, all matchers will compete to update each vulnerability
 	// bundle if multi-bundle mode is on, or the single bundle.
 	timer := time.NewTimer(0)
@@ -343,6 +350,10 @@ func (u *Updater) Initialized(ctx context.Context) bool {
 	zlog.Info(ctx).Msg("all vulnerability bundles were updated at least once: setting to initialized")
 	u.initialized.Store(true)
 	return true
+}
+
+func (u *Updater) KnownDistributions() []claircore.Distribution {
+	return u.distManager.get()
 }
 
 // Update runs the full vulnerability update process.
@@ -434,6 +445,10 @@ func (u *Updater) runSingleBundleUpdate(ctx context.Context) (bool, error) {
 		return false, err
 	}
 
+	if err := u.distManager.update(ctx); err != nil {
+		return false, fmt.Errorf("updating known-distributions: %w", err)
+	}
+
 	if u.initialized.CompareAndSwap(false, true) {
 		zlog.Info(ctx).Msg("finished initial updater run: setting updater to initialized")
 	}
@@ -503,6 +518,11 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 	err = u.metadataStore.GCVulnerabilityUpdates(ctx, names, zipTime)
 	if err != nil {
 		return false, fmt.Errorf("cleaning vuln updates: %w", err)
+	}
+
+	err = u.distManager.update(ctx)
+	if err != nil {
+		return false, fmt.Errorf("updating known-distributions: %w", err)
 	}
 
 	_ = u.Initialized(ctx)

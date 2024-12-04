@@ -1,4 +1,3 @@
-/* eslint-disable no-void */
 import React, { useState, ReactElement } from 'react';
 import {
     Card,
@@ -121,10 +120,6 @@ function MicrosoftSentinelForm({
     if (initialValues) {
         merge(formInitialValues.notifier, initialValues);
 
-        formInitialValues.notifier = {
-            ...formInitialValues.notifier,
-            ...initialValues,
-        };
         // We want to clear the password because backend returns '******' to represent that there
         // are currently stored credentials
         formInitialValues.notifier.microsoftSentinel.secret = '';

@@ -4,7 +4,6 @@ import { useHistory, useLocation, useParams } from 'react-router-dom';
 import {
     Alert,
     AlertActionCloseButton,
-    AlertVariant,
     Bullseye,
     Button,
     PageSection,
@@ -89,12 +88,7 @@ function Roles(): ReactElement {
             })
             .catch((error) => {
                 setAlertRoles(
-                    <Alert
-                        title="Fetch roles failed"
-                        component="p"
-                        variant={AlertVariant.danger}
-                        isInline
-                    >
+                    <Alert title="Fetch roles failed" component="p" variant="danger" isInline>
                         {error.message}
                     </Alert>
                 );
@@ -132,7 +126,7 @@ function Roles(): ReactElement {
                     <Alert
                         title="Fetch auth providers or groups failed"
                         component="p"
-                        variant={AlertVariant.warning}
+                        variant="warning"
                         isInline
                         actionClose={actionClose}
                     >
@@ -156,7 +150,7 @@ function Roles(): ReactElement {
                     <Alert
                         title="Fetch permission sets failed"
                         component="p"
-                        variant={AlertVariant.warning}
+                        variant="warning"
                         isInline
                         actionClose={actionClose}
                     >
@@ -180,7 +174,7 @@ function Roles(): ReactElement {
                     <Alert
                         title="Fetch access scopes failed"
                         component="p"
-                        variant={AlertVariant.warning}
+                        variant="warning"
                         isInline
                         actionClose={actionClose}
                     >

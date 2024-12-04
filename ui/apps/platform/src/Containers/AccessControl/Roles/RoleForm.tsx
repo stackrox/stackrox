@@ -3,7 +3,6 @@ import { useFormik } from 'formik';
 import * as yup from 'yup';
 import {
     Alert,
-    AlertVariant,
     Button,
     Form,
     FormGroup,
@@ -92,12 +91,7 @@ function RoleForm({
         handleSubmit(values)
             .catch((error) => {
                 setAlertSubmit(
-                    <Alert
-                        title="Failed to save role"
-                        component="p"
-                        variant={AlertVariant.danger}
-                        isInline
-                    >
+                    <Alert title="Failed to save role" component="p" variant="danger" isInline>
                         {error.message}
                     </Alert>
                 );

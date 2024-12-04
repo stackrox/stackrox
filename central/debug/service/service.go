@@ -8,7 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
+	"path/filepath"
 	"runtime/pprof"
 	"strconv"
 	"strings"
@@ -413,30 +413,6 @@ func getGoroutines(zipWriter *zipWriter) error {
 	return err
 }
 
-func getLogs(zipWriter *zipWriter) error {
-	if err := getLogFile(zipWriter, "central.log", logging.LoggingPath); err != nil {
-		return err
-	}
-	return nil
-}
-
-func getLogFile(zipWriter *zipWriter, targetPath string, sourcePath string) error {
-	logFile, err := os.Open(sourcePath)
-	if err != nil {
-		return err
-	}
-
-	zipWriter.LockWrite()
-	defer zipWriter.UnlockWrite()
-	w, err := zipWriter.writerWithCurrentTimestampNoLock(targetPath)
-	if err != nil {
-		return err
-	}
-
-	_, err = io.Copy(w, logFile)
-	return err
-}
-
 func getVersion(ctx context.Context, zipWriter *zipWriter) error {
 	versions := buildVersions(ctx)
 
@@ -775,7 +751,9 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 
 	// Get logs last to also catch logs made during creation of diag bundle.
 	if (opts.withCentral || opts.withDBOnly) && (opts.logs == localLogs || failureDuringDiagnostics) {
-		if err := getLogs(zipWriter); err != nil {
+		if err := logging.ForEachRotation(logging.LoggingPath, func(logFileName string) error {
+			return zipWriter.addFile(filepath.Base(logFileName), logFileName)
+		}); err != nil {
 			log.Error(err)
 		}
 	}

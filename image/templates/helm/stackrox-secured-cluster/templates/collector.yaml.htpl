@@ -135,7 +135,7 @@ spec:
         - name: ROX_CALL_NODE_INVENTORY_ENABLED
           value: {{ if eq ._rox.env.openshift 4 }}"true"{{ else }}"false"{{ end }}
         - name: ROX_NODE_INDEX_ENABLED
-          value: {{ eq ._rox.env.openshift 4 | quote }}
+          value: "false"
       {{- if eq ._rox.env.openshift 4 }}
         - name: ROX_NODE_INDEX_HOST_PATH
           value: "/hostindex"

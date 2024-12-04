@@ -843,11 +843,6 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 	helmConfig := hello.GetHelmManagedConfigInit()
 	manager := helmConfig.GetManagedBy()
 
-	// Be backwards compatible for older Helm charts, which do not send the `managedBy` field: derive `managedBy` from the provided `notHelmManaged` property.
-	if manager == storage.ManagerType_MANAGER_TYPE_UNKNOWN && helmConfig.GetNotHelmManaged() {
-		manager = storage.ManagerType_MANAGER_TYPE_MANUAL
-	}
-
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 

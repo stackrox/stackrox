@@ -27,6 +27,7 @@ import (
 type MockEnvironment struct {
 	ctrl     *gomock.Controller
 	recorder *MockEnvironmentMockRecorder
+	isgomock struct{}
 }
 
 // MockEnvironmentMockRecorder is the mock recorder for MockEnvironment.

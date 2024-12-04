@@ -20,6 +20,7 @@ import (
 type MockComplianceReportGenerator struct {
 	ctrl     *gomock.Controller
 	recorder *MockComplianceReportGeneratorMockRecorder
+	isgomock struct{}
 }
 
 // MockComplianceReportGeneratorMockRecorder is the mock recorder for MockComplianceReportGenerator.
@@ -40,9 +41,11 @@ func (m *MockComplianceReportGenerator) EXPECT() *MockComplianceReportGeneratorM
 }
 
 // ProcessReportRequest mocks base method.
-func (m *MockComplianceReportGenerator) ProcessReportRequest(req *complianceReportgenerator.ComplianceReportRequest) {
+func (m *MockComplianceReportGenerator) ProcessReportRequest(req *complianceReportgenerator.ComplianceReportRequest) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ProcessReportRequest", req)
+	ret := m.ctrl.Call(m, "ProcessReportRequest", req)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // ProcessReportRequest indicates an expected call of ProcessReportRequest.

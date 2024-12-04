@@ -90,7 +90,7 @@ function ClusterSelection({
     };
 
     function renderTableContent() {
-        return clusters?.map(({ clusterId, clusterName, statusErrors }, rowIndex) => (
+        return clusters?.map(({ clusterId, clusterName, statusErrors, version }, rowIndex) => (
             <Tr key={clusterId}>
                 <Td
                     key={clusterId}
@@ -104,6 +104,7 @@ function ClusterSelection({
                 <Td dataLabel="Operator status">
                     <ComplianceClusterStatus errors={statusErrors} />
                 </Td>
+                <Td dataLabel="Operator version">{version}</Td>
             </Tr>
         ));
     }
@@ -181,6 +182,7 @@ function ClusterSelection({
                             />
                             <Th>Name</Th>
                             <Th>Operator status</Th>
+                            <Th>Operator version</Th>
                         </Tr>
                     </Thead>
                     <Tbody>{renderTableBodyContent()}</Tbody>

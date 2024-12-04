@@ -1,4 +1,3 @@
-/* eslint-disable react/jsx-no-comment-textnodes */
 // eslint-disable @typescript-eslint/ban-ts-comment
 import React, { useState } from 'react';
 import { Flex, FlexItem, Pagination, Title } from '@patternfly/react-core';

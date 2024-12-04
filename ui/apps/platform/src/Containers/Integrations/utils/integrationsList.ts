@@ -90,11 +90,11 @@ export const imageIntegrationsDescriptors: ImageIntegrationDescriptor[] = [
     {
         categories: 'Image Scanner + Node Scanner',
         image: logo,
-        label: 'StackRox Scanner',
+        label: '[DEPRECATED] StackRox Scanner',
         type: 'clairify',
     },
     {
-        categories: 'Scanner',
+        categories: 'Image Scanner + Node Scanner',
         image: logo,
         label: 'Scanner V4',
         type: 'scannerv4',
@@ -115,7 +115,7 @@ export const imageIntegrationsDescriptors: ImageIntegrationDescriptor[] = [
     {
         categories: 'Registry + Scanner',
         image: googleregistry,
-        label: 'Google Container Registry',
+        label: '[DEPRECATED] Google Container Registry',
         type: 'google',
     },
     {

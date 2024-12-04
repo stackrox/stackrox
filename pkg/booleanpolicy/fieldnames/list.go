@@ -48,6 +48,7 @@ var (
 	MinimumRBACPermissions         = newFieldName("Minimum RBAC Permissions")
 	MountPropagation               = newFieldName("Mount Propagation")
 	Namespace                      = newFieldName("Namespace")
+	NvdCvss                        = newFieldName("NVD CVSS")
 	PortExposure                   = newFieldName("Port Exposure Method")
 	PrivilegedContainer            = newFieldName("Privileged Container")
 	ProcessAncestor                = newFieldName("Process Ancestor")

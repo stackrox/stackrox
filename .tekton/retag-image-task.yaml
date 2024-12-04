@@ -1,0 +1,118 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: retag-image
+  namespace: rh-acs-tenant
+# TODO(ROX-22196): Refactor to a task bundle
+spec:
+  description: |
+    Copies input image to the desired repo with the desired tag.
+    Handles index images that reference per-arch images.
+    Copies attached `cosign` and `oras` artifacts.
+    Copies source images that are logically linked to the input image digest.
+  params:
+  - name: INPUT_IMAGE_REPO
+    description: Repository of the input image.
+    type: string
+  - name: INPUT_IMAGE_TAG
+    description: Tag of the input image.
+    type: string
+  - name: OUTPUT_IMAGE_REPO
+    description: Repository of the output image.
+    type: string
+  - name: OUTPUT_IMAGE_TAG
+    description: Tag of the output image.
+    type: string
+  results:
+  # Names *IMAGE_DIGEST, *IMAGE_URL must not be declared here. Otherwise, Tekton Chains will overwrite the original
+  # pipeline information linked to the image with info of the pipeline which executes this task and that pipeline
+  # doesn't pass EC checks. See https://tekton.dev/docs/chains/slsa-provenance/#image_url--image_digest
+  # We could skip providing any results here at all, but it's nice to find them in UI for the task.
+  - name: RESULTING_DIGEST
+    description: Digest of the output image (will be the same as of the input one).
+  - name: RESULTING_URL
+    description: Image repository and tag of the output image.
+  - name: RESULTING_REF
+    description: Image reference of the output image containing both the repository, the tag and the digest.
+  steps:
+  - name: retag-image
+    image: quay.io/konflux-ci/release-service-utils:latest@sha256:5631aada144d09e049bdc47fb25bf38ebc855c20e5535527a7c41a20befcd0d0
+    script: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+
+      SKOPEO_RETRIES=5
+
+      function copy_image() {
+        local -r input_url="${1}"
+        local -r output_url="${2}"
+
+        if [[ "${input_url}" == "${output_url}" ]]; then
+          >&2 echo "Error: Will not copy image ${input_url} into itself."
+          exit 5
+        fi
+
+        echo ">>> Copying image from ${input_url} ..."
+        echo ">>> ... to ${output_url} ..."
+
+        # cosign copies not just cosign artifacts but also images. It understands and copies index images.
+        # --force argument is needed to prevent the command failing when it runs into (partial) previous copies with
+        # errors like the following.
+        #   Error: image "quay.io/rhacs-eng/collector:sha256-4b509fdf27761150a5a5ce519f087bc6d69af9d886a63f67f70b1e293643ea19" already exists. Use `-f` to overwrite
+        cosign copy --force "${input_url}" "${output_url}"
+
+        oras cp --recursive "${input_url}" "${output_url}"
+
+        # NB: cosign and oras don't retry by themselves. TODO: add retries against Quay transient errors.
+      }
+
+      function get_digest() {
+        local -r image_url="${1}"
+        skopeo inspect \
+          --retry-times="${SKOPEO_RETRIES}" \
+          --format '{{.Digest}}' \
+          --no-tags \
+          "docker://${image_url}"
+      }
+
+      INPUT_URL="$(params.INPUT_IMAGE_REPO):$(params.INPUT_IMAGE_TAG)"
+      OUTPUT_URL="$(params.OUTPUT_IMAGE_REPO):$(params.OUTPUT_IMAGE_TAG)"
+
+      # This copies the images themselves.
+      # It also handles the case when the image is index on top of arch-specific containers in which case arch-specific
+      # containers are also copied (but not tags of arch-specific containers if they were additionally tagged).
+      copy_image "${INPUT_URL}" "${OUTPUT_URL}"
+
+      echo ">>> Figuring the input image digest ..."
+      INPUT_DIGEST="$(get_digest "${INPUT_URL}")"
+
+      echo ">>> Figuring the output image digest ..."
+      OUTPUT_DIGEST="$(get_digest "${OUTPUT_URL}")"
+
+      echo ">>> Checking if the input image digest ${INPUT_DIGEST} is the same as the output image digest ${OUTPUT_DIGEST} ..."
+      [[ "${INPUT_DIGEST}" == "${OUTPUT_DIGEST}" ]]
+
+      # This handles the source image.
+      # Source image is the one where application source code, source code of its dependencies and base container is
+      # packaged. Source image is produced for the input image by Konflux if there's task-source-build* in the pipeline.
+      # While source image is related to the input image semantically and through its tag, there's no enforced link
+      # between them (unlike cosign or oras artifacts) and it is a _separate, independent_ image, so it must not to be
+      # confused with the input image itself.
+      echo ">>> Copying source image ..."
+      # Tag determination borrowed from
+      # https://github.com/konflux-ci/release-service-catalog/blob/92dabb8a31c42669ab9b6ccce831487727514059/tasks/push-snapshot/push-snapshot.yaml#L158
+      SOURCE_IMAGE_TAG="${INPUT_DIGEST/:/-}.src"
+      INPUT_SOURCE_IMAGE_URL="$(params.INPUT_IMAGE_REPO):${SOURCE_IMAGE_TAG}"
+      OUTPUT_SOURCE_IMAGE_URL="$(params.OUTPUT_IMAGE_REPO):${SOURCE_IMAGE_TAG}"
+      if [[ "${INPUT_SOURCE_IMAGE_URL}" == "${OUTPUT_SOURCE_IMAGE_URL}" ]]; then
+        # This is the case when we retag in the same repo.
+        echo ">>> The repo and tag of the source image would not change and so the image does not need to be copied."
+      else
+        copy_image "${INPUT_SOURCE_IMAGE_URL}" "${OUTPUT_SOURCE_IMAGE_URL}"
+      fi
+
+      echo ">>> Done"
+
+      echo -n "${OUTPUT_DIGEST}" | tee "$(results.RESULTING_DIGEST.path)"; echo
+      echo -n "${OUTPUT_URL}" | tee "$(results.RESULTING_URL.path)"; echo
+      echo -n "${OUTPUT_URL}@${OUTPUT_DIGEST}" | tee "$(results.RESULTING_REF.path)"; echo

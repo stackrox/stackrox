@@ -1,11 +1,6 @@
 import React, { useState } from 'react';
 import { Split, SplitItem } from '@patternfly/react-core';
-import {
-    Select,
-    SelectVariant,
-    SelectGroup,
-    SelectOption,
-} from '@patternfly/react-core/deprecated';
+import { Select, SelectGroup, SelectOption } from '@patternfly/react-core/deprecated';
 import { PficonNetworkRangeIcon } from '@patternfly/react-icons';
 
 import { ReactComponent as NoPolicyRules } from 'images/network-graph/no-policy-rules.svg';
@@ -50,7 +45,7 @@ function DisplayOptionsSelect({
 
     return (
         <Select
-            variant={SelectVariant.checkbox}
+            variant="checkbox"
             isOpen={isOpen}
             onToggle={onToggle}
             onSelect={onSelect}

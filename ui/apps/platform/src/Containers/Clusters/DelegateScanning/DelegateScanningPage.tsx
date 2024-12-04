@@ -1,7 +1,6 @@
 import React, { useState, useEffect, ReactElement, ReactFragment } from 'react';
 import {
     Alert,
-    AlertVariant,
     Breadcrumb,
     BreadcrumbItem,
     Button,
@@ -28,7 +27,7 @@ import DelegatedScanningSettings from './Components/DelegatedScanningSettings';
 import DelegatedRegistriesList from './Components/DelegatedRegistriesList';
 
 type AlertObj = {
-    type: AlertVariant.danger | AlertVariant.success;
+    type: 'danger' | 'success';
     title: string;
     body: ReactElement | ReactFragment;
 };
@@ -41,7 +40,6 @@ const initialDelegatedState: DelegatedRegistryConfig = {
 function getUuid() {
     const MAX_RANDOM = 1000000;
 
-    // eslint-disable-next-line no-restricted-globals
     const uuid = self?.crypto?.randomUUID() ?? Math.floor(Math.random() * MAX_RANDOM).toString();
 
     return uuid;
@@ -89,7 +87,7 @@ function DelegateScanningPage() {
             })
             .catch((error) => {
                 const newErrorObj: AlertObj = {
-                    type: AlertVariant.danger,
+                    type: 'danger',
                     title: 'Problem retrieving the delegated scanning configuration from the server',
                     body: (
                         <>
@@ -113,7 +111,7 @@ function DelegateScanningPage() {
             })
             .catch((error) => {
                 const newErrorObj: AlertObj = {
-                    type: AlertVariant.danger,
+                    type: 'danger',
                     title: 'Problem retrieving clusters eligible for delegated scanning',
                     body: (
                         <>
@@ -222,7 +220,7 @@ function DelegateScanningPage() {
         updateDelegatedRegistryConfig(delegatedRegistryConfig)
             .then(() => {
                 const newSuccessObj: AlertObj = {
-                    type: AlertVariant.success,
+                    type: 'success',
                     title: 'Delegated scanning configuration saved successfully',
                     body: <></>,
                 };
@@ -230,7 +228,7 @@ function DelegateScanningPage() {
             })
             .catch((error) => {
                 const newErrorObj: AlertObj = {
-                    type: AlertVariant.danger,
+                    type: 'danger',
                     title: 'Problem saving the delegated scanning configuration to the server',
                     body: (
                         <>

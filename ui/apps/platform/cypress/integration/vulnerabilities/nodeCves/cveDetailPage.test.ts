@@ -1,6 +1,5 @@
 import withAuth from '../../../helpers/basicAuth';
 import { assertAvailableFilters } from '../../../helpers/compoundFilters';
-import { hasFeatureFlag } from '../../../helpers/features';
 import {
     expectRequestedPagination,
     expectRequestedQuery,
@@ -49,12 +48,6 @@ const staticResponseMapForNodeCvePage = {
 
 describe('Node CVEs - CVE Detail Page', () => {
     withAuth();
-
-    before(function () {
-        if (!hasFeatureFlag('ROX_VULN_MGMT_NODE_PLATFORM_CVES')) {
-            this.skip();
-        }
-    });
 
     it('should restrict access to users with insufficient "Node" permission', () => {
         visitNodeCvePageWithStaticPermissions(mockCveName, { Node: 'READ_ACCESS' });

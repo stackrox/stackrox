@@ -8,6 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore/mocks"
+	snapshotMocks "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore/mocks"
 	scanMocks "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -76,6 +77,13 @@ func TestScanConfigWatcher(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	scanDS := scanMocks.NewMockDataStore(ctrl)
 	profileDS := profileDatastore.NewMockDataStore(ctrl)
+	snapshotDS := snapshotMocks.NewMockDataStore(ctrl)
+	snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).AnyTimes().
+		DoAndReturn(func(_, _ any) (*storage.ComplianceOperatorReportSnapshotV2, bool, error) {
+			return &storage.ComplianceOperatorReportSnapshotV2{}, true, nil
+		})
+	snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).AnyTimes().
+		DoAndReturn(func(_, _ any) error { return nil })
 	cases := map[string]struct {
 		events           []scanConfigTestEvent
 		snapshotIDs      []string
@@ -124,7 +132,10 @@ func TestScanConfigWatcher(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 			resultsQueue := queue.NewQueue[*ScanConfigWatcherResults]()
-			scanConfigWatcher := NewScanConfigWatcher(ctx, watcherID, scanConfig, scanDS, profileDS, resultsQueue, tCase.snapshotIDs...)
+			scanConfigWatcher := NewScanConfigWatcher(ctx, ctx, watcherID, scanConfig, scanDS, profileDS, snapshotDS, resultsQueue)
+			for _, id := range tCase.snapshotIDs {
+				require.NoError(t, scanConfigWatcher.Subscribe(&storage.ComplianceOperatorReportSnapshotV2{ReportId: id}))
+			}
 			for _, event := range tCase.events {
 				event(t, scanConfigWatcher)
 			}
@@ -140,9 +151,16 @@ func TestScanConfigWatcher(t *testing.T) {
 					assert.Contains(t, tCase.assertScanErrors, scanResult.Scan.GetId())
 				}
 			}
-			require.Len(t, result.ReportSnapshotIDs, len(tCase.snapshotIDs))
+			require.Len(t, result.ReportSnapshot, len(tCase.snapshotIDs))
 			for _, id := range tCase.snapshotIDs {
-				assert.Contains(t, result.ReportSnapshotIDs, id)
+				found := false
+				for _, snapshot := range result.ReportSnapshot {
+					if snapshot.GetReportId() == id {
+						found = true
+						break
+					}
+				}
+				assert.Truef(t, found, "the Snapshot with id %s was not found", id)
 			}
 		})
 	}
@@ -152,13 +170,20 @@ func TestScanConfigWatcherCancel(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	scanDS := scanMocks.NewMockDataStore(ctrl)
 	profileDS := profileDatastore.NewMockDataStore(ctrl)
+	snapshotDS := snapshotMocks.NewMockDataStore(ctrl)
+	snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).AnyTimes().
+		DoAndReturn(func(_, _ any) (*storage.ComplianceOperatorReportSnapshotV2, bool, error) {
+			return &storage.ComplianceOperatorReportSnapshotV2{}, true, nil
+		})
+	snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).AnyTimes().
+		DoAndReturn(func(_, _ any) error { return nil })
 	watcherID := "sc-id"
 	scanConfig := &storage.ComplianceOperatorScanConfigurationV2{
 		Id: watcherID,
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	resultQueue := queue.NewQueue[*ScanConfigWatcherResults]()
-	scanConfigWatcher := NewScanConfigWatcher(ctx, watcherID, scanConfig, scanDS, profileDS, resultQueue)
+	scanConfigWatcher := NewScanConfigWatcher(ctx, ctx, watcherID, scanConfig, scanDS, profileDS, snapshotDS, resultQueue)
 	handleInitialScanResults("scan-0", scanDS, profileDS, 2)(t, scanConfigWatcher)
 	cancel()
 	select {
@@ -166,19 +191,28 @@ func TestScanConfigWatcherCancel(t *testing.T) {
 	case <-time.After(100 * time.Millisecond):
 		t.Error("timeout waiting for the watcher to stop")
 	}
-	assert.Equal(t, 0, resultQueue.Len())
+	assert.Equal(t, 1, resultQueue.Len())
+	result := resultQueue.Pull()
+	assert.ErrorIs(t, result.Error, ErrScanConfigContextCancelled)
 }
 
 func TestScanConfigWatcherStop(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	scanDS := scanMocks.NewMockDataStore(ctrl)
 	profileDS := profileDatastore.NewMockDataStore(ctrl)
+	snapshotDS := snapshotMocks.NewMockDataStore(ctrl)
+	snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).AnyTimes().
+		DoAndReturn(func(_, _ any) (*storage.ComplianceOperatorReportSnapshotV2, bool, error) {
+			return &storage.ComplianceOperatorReportSnapshotV2{}, true, nil
+		})
+	snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).AnyTimes().
+		DoAndReturn(func(_, _ any) error { return nil })
 	watcherID := "sc-id"
 	scanConfig := &storage.ComplianceOperatorScanConfigurationV2{
 		Id: watcherID,
 	}
 	resultQueue := queue.NewQueue[*ScanConfigWatcherResults]()
-	scanConfigWatcher := NewScanConfigWatcher(context.Background(), watcherID, scanConfig, scanDS, profileDS, resultQueue)
+	scanConfigWatcher := NewScanConfigWatcher(context.Background(), context.Background(), watcherID, scanConfig, scanDS, profileDS, snapshotDS, resultQueue)
 	handleInitialScanResults("scan-0", scanDS, profileDS, 2)(t, scanConfigWatcher)
 	scanConfigWatcher.Stop()
 	select {
@@ -186,7 +220,9 @@ func TestScanConfigWatcherStop(t *testing.T) {
 	case <-time.After(100 * time.Millisecond):
 		t.Error("timeout waiting for the watcher to stop")
 	}
-	assert.Equal(t, 0, resultQueue.Len())
+	assert.Equal(t, 1, resultQueue.Len())
+	result := resultQueue.Pull()
+	assert.ErrorIs(t, result.Error, ErrScanConfigContextCancelled)
 }
 
 type testTimer struct {
@@ -201,10 +237,19 @@ func (t *testTimer) C() <-chan time.Time {
 	return t.ch
 }
 
+func (t *testTimer) Reset() {}
+
 func TestScanConfigWatcherTimeout(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	scanDS := scanMocks.NewMockDataStore(ctrl)
 	profileDS := profileDatastore.NewMockDataStore(ctrl)
+	snapshotDS := snapshotMocks.NewMockDataStore(ctrl)
+	snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).AnyTimes().
+		DoAndReturn(func(_, _ any) (*storage.ComplianceOperatorReportSnapshotV2, bool, error) {
+			return &storage.ComplianceOperatorReportSnapshotV2{}, true, nil
+		})
+	snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).AnyTimes().
+		DoAndReturn(func(_, _ any) error { return nil })
 	resultQueue := queue.NewQueue[*ScanConfigWatcherResults]()
 	ctx, cancel := context.WithCancel(context.Background())
 	finishedSignal := concurrency.NewSignal()
@@ -214,13 +259,16 @@ func TestScanConfigWatcherTimeout(t *testing.T) {
 		ch: timeoutC,
 	}
 	scanConfigWatcher := &scanConfigWatcherImpl{
-		ctx:       ctx,
-		cancel:    cancel,
-		stopped:   &finishedSignal,
-		scanDS:    scanDS,
-		profileDS: profileDS,
-		scanC:     make(chan *ScanWatcherResults),
+		ctx:                 ctx,
+		sensorCtx:           ctx,
+		cancel:              cancel,
+		stopped:             &finishedSignal,
+		scanDS:              scanDS,
+		profileDS:           profileDS,
+		snapshotDS:          snapshotDS,
+		scanWatcherResoutsC: make(chan *ScanWatcherResults),
 		scanConfigResults: &ScanConfigWatcherResults{
+			SensorCtx: ctx,
 			WatcherID: "id",
 			ScanConfig: &storage.ComplianceOperatorScanConfigurationV2{
 				Id: "id",
@@ -241,13 +289,20 @@ func TestScanConfigWatcherTimeout(t *testing.T) {
 	// We should have a result in the queue with an error
 	require.Equal(t, 1, resultQueue.Len())
 	result := resultQueue.Pull()
-	assert.Error(t, result.Error)
+	assert.ErrorIs(t, result.Error, ErrScanConfigTimeout)
 }
 
 func TestScanConfigWatcherSubscribe(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	scanDS := scanMocks.NewMockDataStore(ctrl)
 	profileDS := profileDatastore.NewMockDataStore(ctrl)
+	snapshotDS := snapshotMocks.NewMockDataStore(ctrl)
+	snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).AnyTimes().
+		DoAndReturn(func(_, _ any) (*storage.ComplianceOperatorReportSnapshotV2, bool, error) {
+			return &storage.ComplianceOperatorReportSnapshotV2{}, true, nil
+		})
+	snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).AnyTimes().
+		DoAndReturn(func(_, _ any) error { return nil })
 	watcherID := "sc-id"
 	scanConfig := &storage.ComplianceOperatorScanConfigurationV2{
 		Id: watcherID,
@@ -255,10 +310,13 @@ func TestScanConfigWatcherSubscribe(t *testing.T) {
 	resultsQueue := queue.NewQueue[*ScanConfigWatcherResults]()
 	scanIDs := []string{"scan-0", "scan-1", "scan-2"}
 	snapshotIDS := []string{"snapshot-0", "snapshot-1"}
-	scanConfigWatcher := NewScanConfigWatcher(context.Background(), watcherID, scanConfig, scanDS, profileDS, resultsQueue, snapshotIDS[0])
+	scanConfigWatcher := NewScanConfigWatcher(context.Background(), context.Background(), watcherID, scanConfig, scanDS, profileDS, snapshotDS, resultsQueue)
+	err := scanConfigWatcher.Subscribe(&storage.ComplianceOperatorReportSnapshotV2{ReportId: snapshotIDS[0]})
+	assert.NoError(t, err)
 	handleInitialScanResults(scanIDs[0], scanDS, profileDS, len(scanIDs))(t, scanConfigWatcher)
 	handleScanResults(scanIDs[1])(t, scanConfigWatcher)
-	scanConfigWatcher.Subscribe(snapshotIDS[1])
+	err = scanConfigWatcher.Subscribe(&storage.ComplianceOperatorReportSnapshotV2{ReportId: snapshotIDS[1]})
+	assert.NoError(t, err)
 	handleScanResults(scanIDs[2])(t, scanConfigWatcher)
 
 	require.Eventually(t, func() bool {
@@ -272,8 +330,49 @@ func TestScanConfigWatcherSubscribe(t *testing.T) {
 	for _, scanResult := range result.ScanResults {
 		assert.Contains(t, scanIDs, scanResult.Scan.GetId())
 	}
-	require.Len(t, result.ReportSnapshotIDs, len(snapshotIDS))
+	require.Len(t, result.ReportSnapshot, len(snapshotIDS))
 	for _, id := range snapshotIDS {
-		assert.Contains(t, result.ReportSnapshotIDs, id)
+		found := false
+		for _, snapshot := range result.ReportSnapshot {
+			if snapshot.GetReportId() == id {
+				found = true
+				break
+			}
+		}
+		assert.Truef(t, found, "the Snapshot with id %s was not found", id)
 	}
+}
+
+func TestScanConfigWatcherGetScans(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	scanDS := scanMocks.NewMockDataStore(ctrl)
+	profileDS := profileDatastore.NewMockDataStore(ctrl)
+	snapshotDS := snapshotMocks.NewMockDataStore(ctrl)
+	snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).AnyTimes().
+		DoAndReturn(func(_, _ any) (*storage.ComplianceOperatorReportSnapshotV2, bool, error) {
+			return &storage.ComplianceOperatorReportSnapshotV2{}, true, nil
+		})
+	snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).AnyTimes().
+		DoAndReturn(func(_, _ any) error { return nil })
+	watcherID := "sc-id"
+	scanConfig := &storage.ComplianceOperatorScanConfigurationV2{
+		Id: watcherID,
+	}
+	resultsQueue := queue.NewQueue[*ScanConfigWatcherResults]()
+	scanConfigWatcher := NewScanConfigWatcher(context.Background(), context.Background(), watcherID, scanConfig, scanDS, profileDS, snapshotDS, resultsQueue)
+	scans := scanConfigWatcher.GetScans()
+	require.Len(t, scans, 0)
+
+	handleInitialScanResults("scan-0", scanDS, profileDS, 2)(t, scanConfigWatcher)
+	require.Eventually(t, func() bool {
+		return len(scanConfigWatcher.GetScans()) == 1
+	}, 200*time.Millisecond, 10*time.Millisecond)
+
+	handleScanResults("scan-1")(t, scanConfigWatcher)
+	require.Eventually(t, func() bool {
+		return resultsQueue.Len() != 0
+	}, 200*time.Millisecond, 10*time.Millisecond)
+
+	scans = scanConfigWatcher.GetScans()
+	require.Len(t, scans, 2)
 }

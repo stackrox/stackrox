@@ -9,6 +9,8 @@ import {
     PendingIcon,
 } from '@patternfly/react-icons';
 import { Button, Flex, FlexItem, Tooltip } from '@patternfly/react-core';
+import capitalize from 'lodash/capitalize';
+
 import { ReportStatus } from 'types/reportJob';
 
 export type ReportJobStatusProps = {
@@ -42,7 +44,9 @@ function ReportJobStatus({
     } else if (reportStatus.runState === 'FAILURE') {
         statusColorClass = 'pf-v5-u-danger-color-100';
         statusIcon = (
-            <Tooltip content={reportStatus?.errorMsg || genericMsg}>
+            <Tooltip
+                content={reportStatus?.errorMsg ? capitalize(reportStatus.errorMsg) : genericMsg}
+            >
                 <ExclamationCircleIcon title="Report run was unsuccessful" />
             </Tooltip>
         );

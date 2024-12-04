@@ -362,8 +362,7 @@ clean-proto-generated-srcs:
 config-controller-gen:
 	make -C config-controller/ manifests
 	make -C config-controller/ generate
-	echo -e '{{- include "srox.init" . -}}' > image/templates/helm/stackrox-central/templates/00-securitypolicies-crd.yaml
-	cat config-controller/config/crd/bases/config.stackrox.io_securitypolicies.yaml >> image/templates/helm/stackrox-central/templates/00-securitypolicies-crd.yaml
+	cp config-controller/config/crd/bases/config.stackrox.io_securitypolicies.yaml image/templates/helm/stackrox-central/crds
 
 .PHONY: generated-srcs
 generated-srcs: go-generated-srcs config-controller-gen
@@ -485,7 +484,7 @@ main-build-dockerized: build-volumes
 
 .PHONY: main-build-nodeps
 main-build-nodeps: central-build-nodeps migrator-build-nodeps config-controller-build-nodeps
-	$(GOBUILD) sensor/kubernetes sensor/admission-control compliance/collection
+	$(GOBUILD) sensor/kubernetes sensor/admission-control compliance/cmd/compliance
 	$(GOBUILD) sensor/upgrader
 ifndef CI
 	CGO_ENABLED=0 $(GOBUILD) roxctl
@@ -676,7 +675,7 @@ endif
 	cp bin/linux_$(GOARCH)/kubernetes        image/rhel/bin/kubernetes-sensor
 	cp bin/linux_$(GOARCH)/upgrader          image/rhel/bin/sensor-upgrader
 	cp bin/linux_$(GOARCH)/admission-control image/rhel/bin/admission-control
-	cp bin/linux_$(GOARCH)/collection        image/rhel/bin/compliance
+	cp bin/linux_$(GOARCH)/compliance        image/rhel/bin/compliance
 	# Workaround to bug in lima: https://github.com/lima-vm/lima/issues/602
 	find image/rhel/bin -not -path "*/.*" -type f -exec chmod +x {} \;
 

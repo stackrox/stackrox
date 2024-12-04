@@ -158,7 +158,7 @@ func (d *deleScanTestUtils) availMirroringCRs() (icspAvail bool, idmsAvail bool,
 func (d *deleScanTestUtils) SetupMirrors(t *testing.T, ctx context.Context, reg string, dce config.DockerConfigEntry) (icspAvail bool, idmsAvail bool, itmsAvail bool) {
 	start := time.Now()
 	defer func() {
-		t.Logf("Setting up mirrors took:: %v", time.Since(start))
+		logf(t, "Setting up mirrors took:: %v", time.Since(start))
 	}()
 
 	// Instantiate various API clients.
@@ -189,7 +189,7 @@ func (d *deleScanTestUtils) SetupMirrors(t *testing.T, ctx context.Context, reg 
 	if icspAvail {
 		// Create an ImageContentSourcePolicy.
 		icspName := "icsp-invalid"
-		t.Logf("Applying ImageContentSourcePolicy %q", icspName)
+		logf(t, "Applying ImageContentSourcePolicy %q", icspName)
 		origIcsp, _ := opClient.ImageContentSourcePolicies().Get(ctx, icspName, v1.GetOptions{})
 
 		yamlB := d.renderTemplate(t, "testdata/delegatedscanning/mirrors/icsp.yaml.tmpl", map[string]string{"name": icspName})
@@ -197,7 +197,7 @@ func (d *deleScanTestUtils) SetupMirrors(t *testing.T, ctx context.Context, reg 
 		d.applyK8sYamlOrJson(t, ctx, opClient.RESTClient(), "", "imagecontentsourcepolicies", yamlB, icsp)
 
 		if icsp.ResourceVersion != origIcsp.ResourceVersion {
-			t.Logf("ImageContentSourcePolicy %q updated", icspName)
+			logf(t, "ImageContentSourcePolicy %q updated", icspName)
 			updated = true
 		}
 	}
@@ -205,7 +205,7 @@ func (d *deleScanTestUtils) SetupMirrors(t *testing.T, ctx context.Context, reg 
 	if idmsAvail {
 		// Create an ImageDigestMirrorSet.
 		idmsName := "idms-invalid"
-		t.Logf("Applying ImageDigestMirrorSet %q", idmsName)
+		logf(t, "Applying ImageDigestMirrorSet %q", idmsName)
 		origIdms, _ := cfgClient.ImageDigestMirrorSets().Get(ctx, idmsName, v1.GetOptions{})
 
 		yamlB := d.renderTemplate(t, "testdata/delegatedscanning/mirrors/idms.yaml.tmpl", map[string]string{"name": idmsName})
@@ -213,7 +213,7 @@ func (d *deleScanTestUtils) SetupMirrors(t *testing.T, ctx context.Context, reg 
 		d.applyK8sYamlOrJson(t, ctx, cfgClient.RESTClient(), "", "imagedigestmirrorsets", yamlB, idms)
 
 		if idms.ResourceVersion != origIdms.ResourceVersion {
-			t.Logf("ImageDigestMirrorSet %q updated", idmsName)
+			logf(t, "ImageDigestMirrorSet %q updated", idmsName)
 			updated = true
 		}
 	}
@@ -221,7 +221,7 @@ func (d *deleScanTestUtils) SetupMirrors(t *testing.T, ctx context.Context, reg 
 	if itmsAvail {
 		// Create an ImageTagMirrorSet.
 		itmsName := "itms-invalid"
-		t.Logf("Applying ImageTagMirrorSet %q", itmsName)
+		logf(t, "Applying ImageTagMirrorSet %q", itmsName)
 		origItms, _ := cfgClient.ImageTagMirrorSets().Get(ctx, itmsName, v1.GetOptions{})
 
 		yamlB := d.renderTemplate(t, "testdata/delegatedscanning/mirrors/itms.yaml.tmpl", map[string]string{"name": itmsName})
@@ -229,7 +229,7 @@ func (d *deleScanTestUtils) SetupMirrors(t *testing.T, ctx context.Context, reg 
 		d.applyK8sYamlOrJson(t, ctx, cfgClient.RESTClient(), "", "imagetagmirrorsets", yamlB, itms)
 
 		if itms.ResourceVersion != origItms.ResourceVersion {
-			t.Logf("ImageTagMirrorSet %q updated", itmsName)
+			logf(t, "ImageTagMirrorSet %q updated", itmsName)
 			updated = true
 		}
 
@@ -237,11 +237,11 @@ func (d *deleScanTestUtils) SetupMirrors(t *testing.T, ctx context.Context, reg 
 
 	// If no resources were updated exit early.
 	if !updated {
-		t.Logf("Mirroring resources unchanged")
+		logf(t, "Mirroring resources unchanged")
 		return
 	}
 
-	t.Logf("Mirroring resources changed, waiting for cluster nodes to be updated")
+	logf(t, "Mirroring resources changed, waiting for cluster nodes to be updated")
 	d.waitForNodesToProcessConfigUpdates(t, ctx, machineCfgClient, origPools)
 	return
 }
@@ -272,7 +272,7 @@ func (d *deleScanTestUtils) addCredToOCPGlobalPullSecret(t *testing.T, ctx conte
 			dce.Password == newDce.Password &&
 			dce.Email == newDce.Email {
 
-			t.Logf("No change needed to secret %q in namespace %q", name, ns)
+			logf(t, "No change needed to secret %q in namespace %q", name, ns)
 			return false
 		}
 	}
@@ -284,7 +284,7 @@ func (d *deleScanTestUtils) addCredToOCPGlobalPullSecret(t *testing.T, ctx conte
 	secret.Data[key] = dataB
 	_, err = k8s.CoreV1().Secrets(ns).Update(ctx, secret, v1.UpdateOptions{FieldManager: ignoreFieldManager})
 	require.NoError(t, err)
-	t.Logf("Updated secret %q in namespace %q", name, ns)
+	logf(t, "Updated secret %q in namespace %q", name, ns)
 	return true
 }
 
@@ -295,7 +295,7 @@ func (d *deleScanTestUtils) waitForNodesToProcessConfigUpdates(t *testing.T, ctx
 	ticker := time.NewTicker(15 * time.Second)
 	defer ticker.Stop()
 
-	t.Logf("Waiting for changes to be propagated")
+	logf(t, "Waiting for changes to be propagated")
 	for {
 		select {
 		case <-ctx.Done():
@@ -309,7 +309,7 @@ func (d *deleScanTestUtils) waitForNodesToProcessConfigUpdates(t *testing.T, ctx
 				continue
 			}
 
-			t.Logf("All nodes are now updated")
+			logf(t, "All nodes are now updated")
 			return
 		}
 	}
@@ -337,7 +337,7 @@ func (d *deleScanTestUtils) logMachineConfigPoolsState(t *testing.T, poolList *m
 	}
 	utils.IgnoreError(w.Flush)
 
-	t.Logf("Machine Config Pools Status: \n%s", sb.String())
+	logf(t, "Machine Config Pools Status: \n%s", sb.String())
 }
 
 // machineConfigPoolsReady verifies that each machine config pool has fully processed
@@ -376,7 +376,7 @@ func (d *deleScanTestUtils) DeploySleeperImage(t *testing.T, ctx context.Context
 	require.NoError(t, err)
 
 	d.applyK8sYamlOrJson(t, ctx, clientset.AppsV1().RESTClient(), namespace, "deployments", yamlB, nil)
-	t.Logf("Deployed image: %q", imageStr)
+	logf(t, "Deployed image: %q", imageStr)
 }
 
 // BuildOCPInternalImage builds an image, pushes it to the OCP internal registry, and
@@ -398,7 +398,7 @@ func (d *deleScanTestUtils) BuildOCPInternalImage(t *testing.T, ctx context.Cont
 func (d *deleScanTestUtils) applyBuildConfig(t *testing.T, ctx context.Context, namespace, name string) {
 	restCfg := d.restCfg
 
-	t.Logf("Applying BuildConfig %q", name)
+	logf(t, "Applying BuildConfig %q", name)
 	buildV1Client, err := buildv1client.NewForConfig(restCfg)
 	require.NoError(t, err)
 
@@ -410,7 +410,7 @@ func (d *deleScanTestUtils) applyBuildConfig(t *testing.T, ctx context.Context, 
 func (d *deleScanTestUtils) applyImageStream(t *testing.T, ctx context.Context, namespace, name string) {
 	restCfg := d.restCfg
 
-	t.Logf("Applying ImageStream %q", name)
+	logf(t, "Applying ImageStream %q", name)
 	imageV1Client, err := imagev1client.NewForConfig(restCfg)
 	require.NoError(t, err)
 
@@ -424,7 +424,7 @@ func (d *deleScanTestUtils) getDigestFromImageStreamTag(t *testing.T, ctx contex
 
 	nameTag := fmt.Sprintf("%s:%s", name, tag)
 
-	t.Logf("Getting image digest from image stream tag: %v", nameTag)
+	logf(t, "Getting image digest from image stream tag: %v", nameTag)
 	imageV1Client, err := imagev1client.NewForConfig(restCfg)
 	require.NoError(t, err)
 
@@ -433,7 +433,7 @@ func (d *deleScanTestUtils) getDigestFromImageStreamTag(t *testing.T, ctx contex
 
 	digest := isTag.Image.GetObjectMeta().GetName()
 	require.NotEmpty(t, digest)
-	t.Logf("Digest found: %s", digest)
+	logf(t, "Digest found: %s", digest)
 
 	return digest
 }
@@ -465,7 +465,7 @@ func (d *deleScanTestUtils) buildAndPushImage(t *testing.T, ctx context.Context,
 	client := buildV1Client.RESTClient()
 
 	result := &buildv1.Build{}
-	t.Logf("Starting build for %q", name)
+	logf(t, "Starting build for %q", name)
 	err = client.Post().
 		Namespace(namespace).
 		Resource("buildconfigs").
@@ -476,11 +476,11 @@ func (d *deleScanTestUtils) buildAndPushImage(t *testing.T, ctx context.Context,
 		Into(result)
 	require.NoError(t, err)
 
-	t.Logf("Streaming build logs for %q", result.GetName())
+	logf(t, "Streaming build logs for %q", result.GetName())
 	err = d.streamBuildLogs(ctx, client, result, namespace)
 	require.NoError(t, err)
 
-	t.Logf("Waiting for build %q to complete", result.GetName())
+	logf(t, "Waiting for build %q to complete", result.GetName())
 	err = d.waitForBuildComplete(ctx, buildV1Client.Builds(namespace), result.GetName())
 	require.NoError(t, err)
 

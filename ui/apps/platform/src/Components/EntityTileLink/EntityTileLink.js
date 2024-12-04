@@ -15,7 +15,6 @@ const EntityTileLink = ({
     icon,
     url,
     loading,
-    isError,
     short,
 }) => {
     const resourceLabel = resourceLabels[entityType] || '';
@@ -31,7 +30,6 @@ const EntityTileLink = ({
             url={url}
             short={short}
             loading={loading}
-            isError={isError}
         />
     );
 };
@@ -44,7 +42,6 @@ EntityTileLink.propTypes = {
     icon: PropTypes.element,
     url: PropTypes.string.isRequired,
     loading: PropTypes.bool,
-    isError: PropTypes.bool,
     position: PropTypes.oneOf(Object.values(POSITION)),
     short: PropTypes.bool,
 };

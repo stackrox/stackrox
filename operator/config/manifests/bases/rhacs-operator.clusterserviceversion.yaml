@@ -12,7 +12,7 @@ metadata:
     features.operators.openshift.io/cni: "false"
     features.operators.openshift.io/csi: "false"
     features.operators.openshift.io/disconnected: "true"
-    features.operators.openshift.io/fips-compliant: "false"
+    features.operators.openshift.io/fips-compliant: "true"
     features.operators.openshift.io/proxy-aware: "true"
     features.operators.openshift.io/tls-profiles: "false"
     features.operators.openshift.io/token-auth-aws: "false"
@@ -113,6 +113,10 @@ spec:
       - description: Storage API endpoint.
         displayName: Endpoint
         path: central.telemetry.storage.endpoint
+      - description: If you want to deploy the Config as Code component, set this
+          to "Enabled"
+        displayName: Config as Code component
+        path: configAsCode.configAsCodeComponent
       - description: Custom labels to set on all managed objects.
         displayName: Labels
         path: customize.labels
@@ -491,6 +495,11 @@ spec:
       - description: Network configuration.
         displayName: Network
         path: network
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: Config-as-Code configuration.
+        displayName: Config-as-Code
+        path: configAsCode
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
       - description: |-

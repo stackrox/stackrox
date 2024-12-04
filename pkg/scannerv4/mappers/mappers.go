@@ -20,6 +20,7 @@ import (
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/scanners/scannerv4"
@@ -31,6 +32,8 @@ const (
 	nvdCVEURLPrefix    = "https://nvd.nist.gov/vuln/detail/"
 	osvCVEURLPrefix    = "https://osv.dev/vulnerability/"
 	redhatCVEURLPrefix = "https://access.redhat.com/security/cve/"
+	// TODO(ROX-26672): Remove this when we stop tracking RHSAs as the vuln name.
+	redhatErrataURLPrefix = "https://access.redhat.com/errata/"
 )
 
 var (
@@ -49,20 +52,28 @@ var (
 	awsUpdaterPrefix = `aws-`
 	osvUpdaterPrefix = `osv/`
 	rhelUpdaterName  = (*vex.Updater)(nil).Name()
+	// TODO(ROX-26672): This won't be needed when we show CVEs as the top-level vuln name.
+	rhccUpdaterName = "rhel-container-updater"
 
 	// Name patterns are regexes to match against vulnerability fields to
 	// extract their name according to their updater.
 
-	awsVulnNamePattern = regexp.MustCompile(`ALAS\d*-\d{4}-\d+`)
+	// alasIDPattern captures Amazon Linux Security Advisories.
+	alasIDPattern = regexp.MustCompile(`ALAS\d*-\d{4}-\d+`)
+	// cveIDPattern captures CVEs.
+	cveIDPattern = regexp.MustCompile(`CVE-\d{4}-\d+`)
+	// rhelVulnNamePattern captures known Red Hat advisory patterns.
+	// TODO(ROX-26672): Remove this and show CVE as the vulnerability name.
+	rhelVulnNamePattern = regexp.MustCompile(`(RHSA|RHBA|RHEA)-\d{4}:\d+`)
 
 	// vulnNamePatterns is a default prioritized list of regexes to match
 	// vulnerability names.
 	vulnNamePatterns = []*regexp.Regexp{
-		// A CVE.
-		regexp.MustCompile(`CVE-\d{4}-\d+`),
+		// CVE
+		cveIDPattern,
 		// GHSA, see: https://github.com/github/advisory-database#ghsa-ids
 		regexp.MustCompile(`GHSA(-[2-9cfghjmpqrvwx]{4}){3}`),
-		// Catchall.
+		// Catchall
 		regexp.MustCompile(`[A-Z]+-\d{4}[-:]\d+`),
 	}
 )
@@ -323,23 +334,19 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 		}
 		normalizedSeverity := toProtoV4VulnerabilitySeverity(ctx, v.NormalizedSeverity)
 		name := vulnerabilityName(v)
+		// Determine the related CVE for this vulnerability. This is necessary, as NVD is CVE-based.
+		cve, foundCVE := findName(v, cveIDPattern)
 		// Find the related NVD vuln for this vulnerability name, let it be empty if no
 		// NVD vuln for that name was found.
 		var nvdVuln nvdschema.CVEAPIJSON20CVEItem
 		if nvdCVEs, ok := nvdVulns[v.ID]; ok {
-			if v, ok := nvdCVEs[name]; ok {
+			if v, ok := nvdCVEs[cve]; foundCVE && ok {
 				nvdVuln = *v
-			} else {
-				// Pick the first one as a fallback.
-				for _, v := range nvdCVEs {
-					nvdVuln = *v
-					break
-				}
 			}
 		}
-		metrics, err := cvssMetrics(ctx, v, &nvdVuln)
+		metrics, err := cvssMetrics(ctx, v, name, &nvdVuln)
 		if err != nil {
-			zlog.Warn(ctx).
+			zlog.Debug(ctx).
 				Err(err).
 				Str("vuln_id", v.ID).
 				Str("vuln_name", v.Name).
@@ -649,7 +656,9 @@ func pkgFixedBy(enrichments map[string][]json.RawMessage) (map[string]string, er
 // An error is returned when there is a failure to collect CVSS metrics from all sources;
 // however, the returned slice of metrics will still be populated with any successfully gathered metrics.
 // It is up to the caller to ensure the returned slice is populated prior to using it.
-func cvssMetrics(_ context.Context, vuln *claircore.Vulnerability, nvdVuln *nvdschema.CVEAPIJSON20CVEItem) ([]*v4.VulnerabilityReport_Vulnerability_CVSS, error) {
+//
+// TODO(ROX-26672): Remove vulnName parameter. It's a temporary patch until we stop making RHSAs the top-level vulnerability.
+func cvssMetrics(_ context.Context, vuln *claircore.Vulnerability, vulnName string, nvdVuln *nvdschema.CVEAPIJSON20CVEItem) ([]*v4.VulnerabilityReport_Vulnerability_CVSS, error) {
 	var metrics []*v4.VulnerabilityReport_Vulnerability_CVSS
 
 	var preferredCVSS *v4.VulnerabilityReport_Vulnerability_CVSS
@@ -657,6 +666,10 @@ func cvssMetrics(_ context.Context, vuln *claircore.Vulnerability, nvdVuln *nvds
 	switch {
 	case strings.EqualFold(vuln.Updater, rhelUpdaterName):
 		preferredCVSS, preferredErr = vulnCVSS(vuln, v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT)
+		// TODO(ROX-26672): Remove this
+		if !features.ScannerV4RedHatCVEs.Enabled() && preferredCVSS != nil && rhelVulnNamePattern.MatchString(vulnName) {
+			preferredCVSS.Url = redhatErrataURLPrefix + vulnName
+		}
 	case strings.HasPrefix(vuln.Updater, osvUpdaterPrefix) && !isOSVDBSpecificSeverity(vuln.Severity):
 		preferredCVSS, preferredErr = vulnCVSS(vuln, v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_OSV)
 	case strings.EqualFold(vuln.Updater, constants.ManualUpdaterName):
@@ -831,8 +844,15 @@ func vulnerabilityName(vuln *claircore.Vulnerability) string {
 	// Attempt per-updater patterns.
 	switch {
 	case strings.HasPrefix(vuln.Updater, awsUpdaterPrefix):
-		if v, ok := findName(vuln, awsVulnNamePattern); ok {
+		if v, ok := findName(vuln, alasIDPattern); ok {
 			return v
+		}
+	// TODO(ROX-26672): Remove this to show CVE as the vuln name.
+	case strings.EqualFold(vuln.Updater, rhelUpdaterName), strings.EqualFold(vuln.Updater, rhccUpdaterName):
+		if !features.ScannerV4RedHatCVEs.Enabled() {
+			if v, ok := findName(vuln, rhelVulnNamePattern); ok {
+				return v
+			}
 		}
 	}
 	// Default patterns.

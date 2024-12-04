@@ -22,17 +22,11 @@ var (
 	// ActiveVulnMgmt defines if the active vuln mgmt feature is enabled
 	ActiveVulnMgmt = registerFeature("Enable Active Vulnerability Management", "ROX_ACTIVE_VULN_MGMT")
 
-	// VulnReportingEnhancements enables APIs and UI pages for VM Reporting enhancements including downloadable reports
-	VulnReportingEnhancements = registerFeature("Enable Vulnerability Reporting enhancements", "ROX_VULN_MGMT_REPORTING_ENHANCEMENTS", enabled)
-
 	// UnifiedCVEDeferral enables APIs and UI pages for unified deferral workflow.
 	UnifiedCVEDeferral = registerFeature("Enable new unified Vulnerability deferral workflow", "ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL", enabled)
 
 	// ClusterAwareDeploymentCheck enables roxctl deployment check to check deployments on the cluster level.
 	ClusterAwareDeploymentCheck = registerFeature("Enables cluster level check for the 'roxctl deployment check' command.", "ROX_CLUSTER_AWARE_DEPLOYMENT_CHECK", enabled)
-
-	// WorkloadCVEsFixabilityFilters enables Workload CVE UI controls for fixability filters and default filters
-	WorkloadCVEsFixabilityFilters = registerFeature("Enables Workload CVE fixability filters", "ROX_WORKLOAD_CVES_FIXABILITY_FILTERS", enabled)
 
 	// SensorReconciliationOnReconnect enables sensors to support reconciliation when reconnecting
 	SensorReconciliationOnReconnect = registerFeature("Enable Sensors to support reconciliation on reconnect", "ROX_SENSOR_RECONCILIATION", enabled)
@@ -54,12 +48,6 @@ var (
 
 	// ScannerV4MultiBundle enables Scanner V4 to consume vulnerabilities using multi-bundle archives.
 	ScannerV4MultiBundle = registerFeature("Enables Scanner V4 to consume vulnerabilities using multi-bundle archives", "ROX_SCANNER_V4_MULTI_BUNDLE", enabled)
-
-	// ComplianceHierachyControlData enables support for compliance hierarchy control data.
-	ComplianceHierachyControlData = registerFeature("Enable support to display and import the compliance hierarchy control data", "ROX_COMPLIANCE_HIERARCHY_CONTROL_DATA", enabled)
-
-	// VulnMgmtNodePlatformCVEs enables new APIs and UI for VM 2.0 Node and Platform CVEs
-	VulnMgmtNodePlatformCVEs = registerFeature("Enables support for Node and Platform CVEs in VM 2.0", "ROX_VULN_MGMT_NODE_PLATFORM_CVES", enabled)
 
 	// VulnMgmtLegacySnooze enables APIs and UI for the legacy VM 1.0 "snooze CVE" functionality in the new VM 2.0 sections
 	VulnMgmtLegacySnooze = registerFeature("Enables the ability to snooze Node and Platform CVEs in VM 2.0", "ROX_VULN_MGMT_LEGACY_SNOOZE")
@@ -102,22 +90,22 @@ var (
 	SensorSingleScanPerImage = registerFeature("Sensor will only allow a single active scan per image", "ROX_SENSOR_SINGLE_SCAN", enabled)
 
 	// MicrosoftSentinelNotifier enables the Microsoft Sentinel notifier.
-	MicrosoftSentinelNotifier = registerFeature("Enable the Microsoft Sentinel notifier", "ROX_MICROSOFT_SENTINEL")
+	MicrosoftSentinelNotifier = registerFeature("Enable the Microsoft Sentinel notifier", "ROX_MICROSOFT_SENTINEL", enabled)
 
 	// ScanScheduleReportJobs enables support for compliance scan schedule report jobs
-	ScanScheduleReportJobs = registerFeature("Enables support for compliance scan schedule report jobs", "ROX_SCAN_SCHEDULE_REPORT_JOBS")
+	ScanScheduleReportJobs = registerFeature("Enables support for compliance scan schedule report jobs", "ROX_SCAN_SCHEDULE_REPORT_JOBS", enabled)
 
 	// PlatformComponents introduces the concept of platform collections and filtered views across the app.
-	PlatformComponents = registerFeature("Introduce the concept of platform collections and filtered views across the app", "ROX_PLATFORM_COMPONENTS")
+	PlatformComponents = registerFeature("Introduce the concept of platform collections and filtered views across the app", "ROX_PLATFORM_COMPONENTS", enabled)
 
 	// Display NVD CVSS score in UI.
-	NvdCvssUI = registerFeature("Display NVD CVSS score in UI", "ROX_NVD_CVSS_UI")
+	NvdCvssUI = registerFeature("Display NVD CVSS score in UI", "ROX_NVD_CVSS_UI", enabled)
 
 	// Display clusters page patternfly redesign.
 	ClustersPageMigrationUI = registerFeature("Display clusters page patternfly redesign", "ROX_CLUSTERS_PAGE_MIGRATION_UI")
 
 	// ClusterRegistrationSecrets enables support for Cluster Registration Secrets (CRS), the next-gen init-bundles.
-	ClusterRegistrationSecrets = registerFeature("Enable support for Cluster Registration Secrets (CRS)", "ROX_CLUSTER_REGISTRATION_SECRETS")
+	ClusterRegistrationSecrets = registerFeature("Enable support for Cluster Registration Secrets (CRS)", "ROX_CLUSTER_REGISTRATION_SECRETS", enabled)
 
 	// SensorPullSecretsByName when set to enabled will cause Sensor to capture pull secrets by secret name and registry host instead of just
 	// registry host.
@@ -125,4 +113,20 @@ var (
 
 	// ExternalIPs enables storing detailed discovered external IPs
 	ExternalIPs = registerFeature("Central will work with discovered external IPs", "ROX_EXTERNAL_IPS")
+
+	// NetworkGraphExternalIPs enables displaying external (discovered) entities in the network graph
+	NetworkGraphExternalIPs = registerFeature("Enables display of external IPs in the network graph UI", "ROX_NETWORK_GRAPH_EXTERNAL_IPS")
+
+	// ScannerV4RedHatCVEs enables displaying CVEs instead of RHSAs/RHEAs/RHBAs in the place of fixed vulnerabilities affected Red Hat products.
+	// TODO(ROX-26672): Remove this once we can show both CVEs and RHSAs in the UI + reports.
+	ScannerV4RedHatCVEs = registerFeature("Scanner V4 will output CVEs instead of RHSAs/RHBAs/RHEAs for fixed Red Hat vulnerabilities", "ROX_SCANNER_V4_RED_HAT_CVES")
+
+	// ScannerV4ReIndex enables Scanner V4 manifest re-indexing.
+	ScannerV4ReIndex = registerFeature("Scanner V4 will re-index and delete unused manifests", "ROX_SCANNER_V4_REINDEX", enabled)
+
+	// Display RHSA/RHBA/RHEA advisory separately from associated CVE.
+	CVEAdvisorySeparation = registerFeature("Display RHSA/RHBA/RHEA advisory separately from associated CVE", "ROX_CVE_ADVISORY_SEPARATION")
+
+	// Add the ability to generate an SBOM from an image
+	SBOMGeneration = registerFeature("Add the ability to generate an SBOM from an image", "ROX_SBOM_GENERATION")
 )

@@ -61,7 +61,7 @@ func (e *enricherImpl) RemoveNodeIntegration(id string) {
 // EnrichNodeWithInventory does vulnerability scanning and sets the result in node.NodeScan.
 // node must not be nil - it is caller's responsibility to ensure this
 // nodeInventory can be nil - in that case it is skipped on scanning
-func (e *enricherImpl) EnrichNodeWithInventory(node *storage.Node, nodeInventory *storage.NodeInventory, indexReport *v4.IndexReport) error {
+func (e *enricherImpl) EnrichNodeWithVulnerabilities(node *storage.Node, nodeInventory *storage.NodeInventory, indexReport *v4.IndexReport) error {
 	// Clear any pre-existing notes, as it will all be filled here.
 	// Note: this is valid even if node.Notes is nil.
 	node.Notes = node.Notes[:0]
@@ -78,7 +78,7 @@ func (e *enricherImpl) EnrichNodeWithInventory(node *storage.Node, nodeInventory
 
 // EnrichNode enriches a node with the integration set present.
 func (e *enricherImpl) EnrichNode(node *storage.Node) error {
-	return e.EnrichNodeWithInventory(node, nil, nil)
+	return e.EnrichNodeWithVulnerabilities(node, nil, nil)
 }
 
 func (e *enricherImpl) enrichWithScan(node *storage.Node, nodeInventory *storage.NodeInventory, indexReport *v4.IndexReport) error {
@@ -126,20 +126,17 @@ func (e *enricherImpl) enrichNodeWithScanner(node *storage.Node, nodeInventory *
 	var scan *storage.NodeScan
 	var err error
 
-	var scannerVersion int
-
 	scanStartTime := time.Now()
 	if scanner.Type() == types.ScannerV4 {
 		scan, err = scanner.GetNodeInventoryScan(node, nil, indexReport)
-		scannerVersion = 4
+		e.metrics.SetScanDurationTime(scanStartTime, scanner.Name(), err)
+		e.metrics.SetNodeInventoryNumberComponents(len(indexReport.GetContents().GetPackages()), node.GetClusterName(), node.GetName(), scanner.Name())
 	} else {
 		scan, err = scanner.GetNodeInventoryScan(node, nodeInventory, nil)
-		scannerVersion = 2
+		e.metrics.SetScanDurationTime(scanStartTime, scanner.Name(), err)
+		e.metrics.SetNodeInventoryNumberComponents(len(nodeInventory.GetComponents().GetRhelComponents()), node.GetClusterName(), node.GetName(), scanner.Name())
 	}
 
-	e.metrics.SetScanDurationTime(scanStartTime, scanner.Name(), err)
-	e.metrics.SetNodeInventoryNumberComponents(len(nodeInventory.GetComponents().GetRhelComponents()), node.GetClusterName(), node.GetName())
-	e.metrics.SetNodeScanScannerVersion(scannerVersion, node.GetClusterName(), node.GetName())
 	if err != nil {
 		return errors.Wrapf(err, "Error scanning '%s:%s' with scanner %q", node.GetClusterName(), node.GetName(), scanner.Name())
 	}

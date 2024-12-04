@@ -9,12 +9,14 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/stackrox/rox/config-controller/api/v1alpha1"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
@@ -32,11 +34,18 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-var policyGVR = schema.GroupVersionResource{
-	Group:    "config.stackrox.io",
-	Version:  "v1alpha1",
-	Resource: "securitypolicies",
-}
+var (
+	policyGVR = schema.GroupVersionResource{
+		Group:    "config.stackrox.io",
+		Version:  "v1alpha1",
+		Resource: "securitypolicies",
+	}
+)
+
+const (
+	server = "smtp.mailgun.org"
+	user   = "postmaster@sandboxd6576ea8be3c477989eba2c14735d2e6.mailgun.org"
+)
 
 func TestPolicyAsCode(t *testing.T) {
 	suite.Run(t, new(PolicyAsCodeSuite))
@@ -44,12 +53,14 @@ func TestPolicyAsCode(t *testing.T) {
 
 type PolicyAsCodeSuite struct {
 	suite.Suite
-	centralClient     v1.PolicyServiceClient
+	policyClient      v1.PolicyServiceClient
+	notifierClient    v1.NotifierServiceClient
 	centralHTTPClient *http.Client
 	k8sClient         dynamic.ResourceInterface
 	informerfactory   dynamicinformer.DynamicSharedInformerFactory
 	informer          informers.GenericInformer
 	policies          []*storage.Policy
+	notifier          *storage.Notifier
 	ctx               context.Context
 	cleanupCtx        context.Context
 	cancel            func()
@@ -60,7 +71,10 @@ func (pc *PolicyAsCodeSuite) SetupSuite() {
 	pc.ctx, pc.cleanupCtx, pc.cancel = testContexts(pc.T(), "TestPolicyAsCode", 15*time.Minute)
 
 	conn := centralgrpc.GRPCConnectionToCentral(pc.T())
-	pc.centralClient = v1.NewPolicyServiceClient(conn)
+	pc.policyClient = v1.NewPolicyServiceClient(conn)
+	pc.notifierClient = v1.NewNotifierServiceClient(conn)
+	pc.notifier = pc.createNotifierInCentral()
+
 	pc.centralHTTPClient = centralgrpc.HTTPClientForCentral(pc.T())
 
 	dynamicClient := dynamic.NewForConfigOrDie(getConfig(pc.T()))
@@ -76,25 +90,154 @@ func (pc *PolicyAsCodeSuite) SetupSuite() {
 	pc.informerfactory.WaitForCacheSync(pc.stopCh)
 }
 
-func (pc *PolicyAsCodeSuite) TestPolicyAsCode() {
+func (pc *PolicyAsCodeSuite) TestSaveAsCRUpdateDelete() {
 	policy := pc.createPolicyInCentral()
 	pc.policies = append(pc.policies, policy)
 	k8sPolicy := pc.saveAsCustomResource(policy)
 	k8sPolicy = pc.createPolicyInK8s(k8sPolicy)
+
 	// Make sure the ID from Central is used to ensure controller didn't create a duplicate
 	pc.checkPolicyIsDeclarative(policy.Id)
 	pc.updateCRandObserveInCentral(k8sPolicy, policy.Id)
 	pc.deleteCRandObserveInCentral(k8sPolicy, policy.Id)
 }
 
+func createBasePolicyStruct(name string) *v1alpha1.SecurityPolicy {
+	k8sPolicy := &v1alpha1.SecurityPolicy{
+		Spec: v1alpha1.SecurityPolicySpec{
+			PolicyName:      name,
+			Description:     "This is a description",
+			Categories:      []string{"Vulnerability Management"},
+			Severity:        storage.Severity_MEDIUM_SEVERITY.String(),
+			LifecycleStages: []v1alpha1.LifecycleStage{"DEPLOY"},
+			PolicySections: []v1alpha1.PolicySection{
+				{
+					SectionName: "Section 1",
+					PolicyGroups: []v1alpha1.PolicyGroup{
+						{
+							FieldName: "Days Since CVE Was First Discovered In Image",
+							Values: []v1alpha1.PolicyValue{
+								{
+									Value: "5",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	k8sPolicy.SetName(name)
+	k8sPolicy.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "config.stackrox.io",
+		Version: "v1alpha1",
+		Kind:    "SecurityPolicy",
+	})
+	k8sPolicy.SetLabels(map[string]string{
+		"test": "policy-as-code",
+	})
+
+	return k8sPolicy
+}
+
+func (pc *PolicyAsCodeSuite) TestCreateCR() {
+	k8sPolicy := createBasePolicyStruct("test-policy-create")
+	k8sPolicy.Spec.Notifiers = []string{pc.notifier.GetId()}
+	id := pc.createCRAndObserveInCentral(k8sPolicy)
+	pc.Require().NotEmpty(id)
+	pc.checkPolicyIsDeclarative(id)
+
+	// Add the policy to the policy set so it can be deleted at teardown
+	policy, err := pc.policyClient.GetPolicy(pc.ctx, &v1.ResourceByID{
+		Id: id,
+	})
+	pc.Require().NoError(err)
+	pc.policies = append(pc.policies, policy)
+}
+
+func (pc *PolicyAsCodeSuite) TestCreateDefaultCR() {
+	k8sPolicy := createBasePolicyStruct("90-Day Image Age")
+	k8sPolicy.SetName("90-day-image-age")
+	ch, watchStop := pc.watch(k8sPolicy.GetName())
+	defer watchStop()
+	_, err := pc.k8sClient.Create(pc.ctx, pc.toUnstructured(k8sPolicy), metav1.CreateOptions{})
+	pc.Require().NoError(err)
+
+	message := "status never udpated"
+	timer := time.NewTimer(time.Second * 5)
+	for {
+		select {
+		case <-timer.C:
+			pc.FailNowf("Policy never marked as rejected as duplicate of default policy", message+": %s", k8sPolicy.Spec.PolicyName)
+		case p := <-ch:
+			if !p.Status.Accepted && strings.Contains(p.Status.Message, "existing default policy with the same name") {
+				return
+			}
+			message = p.Status.Message
+		}
+	}
+}
+
+func (pc *PolicyAsCodeSuite) TestRenameToDefaultCR() {
+	k8sPolicy := createBasePolicyStruct("rename-to-default-test")
+	ch, watchStop := pc.watch(k8sPolicy.GetName())
+	defer watchStop()
+
+	u, err := pc.k8sClient.Create(pc.ctx, pc.toUnstructured(k8sPolicy), metav1.CreateOptions{})
+	pc.Require().NoError(err)
+	pc.fromUnstructured(u, k8sPolicy)
+
+	message := "status never udpated"
+	timer := time.NewTimer(time.Second * 5)
+	for {
+		accepted := false
+		select {
+		case <-timer.C:
+			pc.FailNowf("Policy never marked as accepted", message+": %s", k8sPolicy.Spec.PolicyName)
+		case p := <-ch:
+			accepted = p.Status.Accepted
+			message = p.Status.Message
+		}
+
+		if accepted {
+			break
+		}
+	}
+
+	k8sPolicy.Spec.PolicyName = "90-Day Image Age"
+	pc.Require().EventuallyWithT(func(collect *assert.CollectT) {
+		_, err = pc.k8sClient.Update(pc.ctx, pc.toUnstructured(k8sPolicy), metav1.UpdateOptions{})
+		assert.NoError(collect, err)
+		u, err = pc.k8sClient.Get(pc.ctx, k8sPolicy.GetName(), metav1.GetOptions{})
+		pc.fromUnstructured(u, k8sPolicy)
+		k8sPolicy.Spec.PolicyName = "90-Day Image Age"
+	}, time.Second*5, time.Millisecond*30)
+
+	timer = time.NewTimer(time.Second * 5)
+	for {
+		var policy *v1alpha1.SecurityPolicy
+		select {
+		case <-timer.C:
+			pc.FailNowf("Policy never marked as duplicate of default policy", message+": %s", k8sPolicy.Spec.PolicyName)
+		case p := <-ch:
+			policy = p
+		}
+
+		if !policy.Status.Accepted && strings.Contains(policy.Status.Message, "existing default policy with the same name") {
+			break
+		}
+	}
+}
+
 func (pc *PolicyAsCodeSuite) createPolicyInCentral() *storage.Policy {
 	policyName := "This is a test policy"
 	log.Infof("Adding policy with name \"%s\"", policyName)
-	policy, err := pc.centralClient.PostPolicy(pc.ctx, &v1.PostPolicyRequest{
+	policy, err := pc.policyClient.PostPolicy(pc.ctx, &v1.PostPolicyRequest{
 		Policy: &storage.Policy{
 			Name:            policyName,
 			Description:     "This is a description",
 			Categories:      []string{"Vulnerability Management"},
+			Notifiers:       []string{pc.notifier.GetId()},
 			Severity:        storage.Severity_MEDIUM_SEVERITY,
 			LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
 			PolicySections: []*storage.PolicySection{{
@@ -108,9 +251,28 @@ func (pc *PolicyAsCodeSuite) createPolicyInCentral() *storage.Policy {
 			}},
 		},
 	})
-
 	pc.Require().NoError(err)
 	return policy
+}
+
+func (pc *PolicyAsCodeSuite) createNotifierInCentral() *storage.Notifier {
+	notifierName := "email-notifier"
+	log.Infof("Adding notifier with name \"%s\"", notifierName)
+	notifier, err := pc.notifierClient.PostNotifier(pc.ctx, &storage.Notifier{
+		Name:       notifierName,
+		Type:       notifiers.EmailType,
+		UiEndpoint: "http://google.com",
+		Config: &storage.Notifier_Email{
+			Email: &storage.Email{
+				Server:                   server,
+				Sender:                   user,
+				AllowUnauthenticatedSmtp: true,
+				DisableTLS:               true,
+			},
+		},
+	})
+	pc.Require().NoError(err)
+	return notifier
 }
 
 func (pc *PolicyAsCodeSuite) saveAsCustomResource(policy *storage.Policy) *v1alpha1.SecurityPolicy {
@@ -152,7 +314,7 @@ func (pc *PolicyAsCodeSuite) createPolicyInK8s(toCreate *v1alpha1.SecurityPolicy
 		"test": "policy-as-code",
 	}
 
-	ch, watchStop := pc.watch()
+	ch, watchStop := pc.watch(toCreate.GetName())
 	defer watchStop()
 
 	_, err := pc.k8sClient.Create(pc.ctx, pc.toUnstructured(toCreate), metav1.CreateOptions{})
@@ -173,12 +335,14 @@ func (pc *PolicyAsCodeSuite) createPolicyInK8s(toCreate *v1alpha1.SecurityPolicy
 	}
 }
 
-func (pc *PolicyAsCodeSuite) watch() (chan *v1alpha1.SecurityPolicy, func()) {
+func (pc *PolicyAsCodeSuite) watch(name string) (chan *v1alpha1.SecurityPolicy, func()) {
 	ch := make(chan *v1alpha1.SecurityPolicy)
 	reg, err := pc.informer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		UpdateFunc: func(oldObj, newObj interface{}) {
 			p := pc.toPolicy(newObj)
-			ch <- p
+			if p.GetName() == name {
+				ch <- p
+			}
 		},
 	})
 	pc.Require().NoError(err)
@@ -203,9 +367,13 @@ func (pc *PolicyAsCodeSuite) toUnstructured(i interface{}) *unstructured.Unstruc
 	return &unstructured.Unstructured{Object: m}
 }
 
+func (pc *PolicyAsCodeSuite) fromUnstructured(u *unstructured.Unstructured, i interface{}) {
+	pc.Require().NoError(runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, i))
+}
+
 func (pc *PolicyAsCodeSuite) checkPolicyIsDeclarative(id string) {
 	pc.Require().EventuallyWithT(func(collect *assert.CollectT) {
-		policy, err := pc.centralClient.GetPolicy(pc.ctx, &v1.ResourceByID{Id: id})
+		policy, err := pc.policyClient.GetPolicy(pc.ctx, &v1.ResourceByID{Id: id})
 		if err != nil {
 			collect.Errorf("Failed to get policy: %s", err.Error())
 		}
@@ -221,7 +389,7 @@ func (pc *PolicyAsCodeSuite) updateCRandObserveInCentral(k8sPolicy *v1alpha1.Sec
 	pc.Require().NoError(err)
 
 	pc.Require().EventuallyWithT(func(collect *assert.CollectT) {
-		policy, err := pc.centralClient.GetPolicy(pc.ctx, &v1.ResourceByID{Id: id})
+		policy, err := pc.policyClient.GetPolicy(pc.ctx, &v1.ResourceByID{Id: id})
 		if err != nil {
 			collect.Errorf("Failed to get policy: %s", err.Error())
 		}
@@ -236,7 +404,7 @@ func (pc *PolicyAsCodeSuite) deleteCRandObserveInCentral(k8sPolicy *v1alpha1.Sec
 	pc.Require().NoError(pc.k8sClient.Delete(pc.ctx, k8sPolicy.GetName(), metav1.DeleteOptions{}))
 
 	pc.Require().EventuallyWithT(func(collect *assert.CollectT) {
-		_, err := pc.centralClient.GetPolicy(pc.ctx, &v1.ResourceByID{Id: id})
+		_, err := pc.policyClient.GetPolicy(pc.ctx, &v1.ResourceByID{Id: id})
 		if err != nil {
 			statusErr, _ := status.FromError(err)
 			if statusErr.Code() != codes.NotFound {
@@ -248,12 +416,42 @@ func (pc *PolicyAsCodeSuite) deleteCRandObserveInCentral(k8sPolicy *v1alpha1.Sec
 	}, time.Second*5, time.Millisecond*30, "Policy CR deletion not propogated to Central")
 }
 
+func (pc *PolicyAsCodeSuite) createCRAndObserveInCentral(policyCR *v1alpha1.SecurityPolicy) string {
+	_, err := pc.k8sClient.Create(pc.ctx, pc.toUnstructured(policyCR), metav1.CreateOptions{})
+	pc.Require().NoError(err)
+
+	var policyId string
+	pc.Require().EventuallyWithT(func(collect *assert.CollectT) {
+		resp, err := pc.policyClient.ListPolicies(pc.ctx, &v1.RawQuery{})
+		if err != nil {
+			collect.Errorf("Failed to list policies: %s", err.Error())
+		}
+		for _, p := range resp.GetPolicies() {
+			if p.GetName() == policyCR.Spec.PolicyName {
+				policyId = p.GetId()
+				break
+			}
+		}
+		assert.NotEmpty(collect, policyId)
+	}, time.Second*5, time.Millisecond*30)
+	return policyId
+}
+
 func (pc *PolicyAsCodeSuite) TearDownSuite() {
 	// TODO: Don't double delete
 	for _, policy := range pc.policies {
 		log.Infof("Deleting policy with name \"%s\"", policy.Name)
-		_, err := pc.centralClient.DeletePolicy(pc.ctx, &v1.ResourceByID{
+		_, err := pc.policyClient.DeletePolicy(pc.ctx, &v1.ResourceByID{
 			Id: policy.Id,
+		})
+		pc.Require().NoError(err)
+	}
+
+	if pc.notifier != nil {
+		log.Infof("Deleting notifier with name \"%s\"", pc.notifier.Name)
+		_, err := pc.notifierClient.DeleteNotifier(pc.ctx, &v1.DeleteNotifierRequest{
+			Id:    pc.notifier.Id,
+			Force: true,
 		})
 		pc.Require().NoError(err)
 	}
