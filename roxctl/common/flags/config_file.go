@@ -60,7 +60,7 @@ func ConfigurationFileChanged() bool {
 
 // CaCertificatePath returns the configuration-defined CA Certificate path.
 func CaCertificatePath() string {
-	if ConfigurationFileChanged() == true {
+	if ConfigurationFileChanged() {
 		return config.Instance.CaCertificatePath
 	}
 
