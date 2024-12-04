@@ -145,7 +145,9 @@ func (e *podIPsStore) applySingleNoLock(deploymentID string, data EntityData) {
 	for ip := range data.ips {
 		ipsSet.Add(ip)
 
-		// check if this IP already belongs to other deployment
+		// Check if this IP already belongs to other deployment.
+		// If the `ip` is not in the `ipMap` then `e.ipMap[ip]` returns the zero-value of the StringSet,
+		// which is an empty (but initialized) StringSet.
 		deplSet := e.ipMap[ip]
 		deplSet.Add(deploymentID)
 		// This IP has more than one deployment! Interesting, let's record it.
@@ -154,10 +156,9 @@ func (e *podIPsStore) applySingleNoLock(deploymentID string, data EntityData) {
 		}
 		e.ipMap[ip] = deplSet
 		// If the IP being currently added was already in history,
-		// we must remove it from the history to prevent expiration after a while.
+		// we must remove it from there to prevent unwanted expiration.
 		_ = e.deleteFromHistory(deploymentID, ip)
 	}
-
 	e.reverseIPMap[deploymentID] = ipsSet.Freeze()
 }
 
