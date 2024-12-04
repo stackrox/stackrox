@@ -179,22 +179,17 @@ func (e *podIPsStore) addToHistory(deploymentID string) {
 }
 
 // deleteDeploymentFromCurrent deletes all data for given deployment from the current map
-func (e *podIPsStore) deleteDeploymentFromCurrent(deploymentID string) set.FrozenSet[net.IPAddress] {
-	deletedPublicIPs := set.NewSet[net.IPAddress]()
+func (e *podIPsStore) deleteDeploymentFromCurrent(deploymentID string) {
 	ips := e.reverseIPMap[deploymentID]
 	for _, address := range ips.AsSlice() {
 		deploymentsHavingIP := e.ipMap[address]
 		if deploymentsHavingIP.Cardinality() < 2 {
-			if address.IsPublic() {
-				deletedPublicIPs.Add(address)
-			}
 			delete(e.ipMap, address)
 		} else {
 			log.Warnf("The same pod IP %s belongs to 2 or more deployments:%v !", address, deploymentsHavingIP.AsSlice())
 		}
 	}
 	delete(e.reverseIPMap, deploymentID)
-	return deletedPublicIPs.Freeze()
 }
 
 // deleteFromHistory removes all entries matching <deploymentID, IP> from history.
