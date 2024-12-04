@@ -212,10 +212,8 @@ func (e *Store) currentlyStoredPublicIPs() set.Set[net.IPAddress] {
 // RecordTick records the information that a unit of time (1 tick) has passed
 func (e *Store) RecordTick() {
 	e.track("Tick")
-	removed1 := e.podIPsStore.RecordTick()
-	removed2 := e.endpointsStore.RecordTick()
-	if removed1 || removed2 {
-		// There may be public pod IP addresses expiring in this tick, and we may need to decrement the counters for them.
+	if e.podIPsStore.RecordTick() || e.endpointsStore.RecordTick() {
+		// If there are any public pod IPs expiring in this tick, then we need to update the listeners.
 		e.updatePublicIPRefs(e.currentlyStoredPublicIPs())
 	}
 	e.containerIDsStore.RecordTick()

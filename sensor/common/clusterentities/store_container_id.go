@@ -61,6 +61,7 @@ func (e *containerIDsStore) historyEnabled() bool {
 	return e.memorySize > 0
 }
 
+// RecordTick records a tick
 func (e *containerIDsStore) RecordTick() {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()

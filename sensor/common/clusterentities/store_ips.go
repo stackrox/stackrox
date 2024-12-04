@@ -70,6 +70,7 @@ func (e *podIPsStore) updateMetricsNoLock() {
 	metrics.UpdateNumberOfIPs(len(e.ipMap), len(e.historicalIPs))
 }
 
+// RecordTick records a tick and returns true if any item in the history expired in this tick
 func (e *podIPsStore) RecordTick() bool {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()

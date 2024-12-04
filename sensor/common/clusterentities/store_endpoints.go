@@ -69,7 +69,7 @@ func (e *endpointsStore) updateMetricsNoLock() {
 	metrics.UpdateNumberOfEndpoints(len(e.endpointMap), len(e.historicalEndpoints))
 }
 
-// RecordTick records a tick and returns all public IP addresses for which the count should be decremented
+// RecordTick records a tick and returns true if any item in the history expired in this tick
 func (e *endpointsStore) RecordTick() bool {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
