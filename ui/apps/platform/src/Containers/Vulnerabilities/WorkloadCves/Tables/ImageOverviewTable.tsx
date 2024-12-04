@@ -350,9 +350,6 @@ function ImageOverviewTable({
                 <GenerateSbomModal
                     onClose={() => setSbomTargetImage(undefined)}
                     imageName={sbomTargetImage}
-                    onGenerateSbom={() => {
-                        // TODO Implement analytics event
-                    }}
                 />
             )}
         </Table>

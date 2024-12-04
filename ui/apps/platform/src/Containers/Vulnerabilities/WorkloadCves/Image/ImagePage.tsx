@@ -169,9 +169,6 @@ function ImagePage() {
                                             <GenerateSbomModal
                                                 onClose={() => setSbomTargetImage(undefined)}
                                                 imageName={sbomTargetImage}
-                                                onGenerateSbom={() => {
-                                                    // TODO Implement analytics event
-                                                }}
                                             />
                                         )}
                                     </FlexItem>

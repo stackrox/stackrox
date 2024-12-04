@@ -27,7 +27,7 @@ export const CIDR_BLOCK_FORM_OPENED = 'Network Graph: CIDR Block Form Opened';
 export const WATCH_IMAGE_MODAL_OPENED = 'Watch Image Modal Opened';
 export const WATCH_IMAGE_SUBMITTED = 'Watch Image Submitted';
 
-// workflow cves
+// workload cves
 export const WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED = 'Workload CVE Entity Context View';
 export const WORKLOAD_CVE_FILTER_APPLIED = 'Workload CVE Filter Applied';
 export const WORKLOAD_CVE_DEFAULT_FILTERS_CHANGED = 'Workload CVE Default Filters Changed';
@@ -39,6 +39,7 @@ export const COLLECTION_CREATED = 'Collection Created';
 export const VULNERABILITY_REPORT_CREATED = 'Vulnerability Report Created';
 export const VULNERABILITY_REPORT_DOWNLOAD_GENERATED = 'Vulnerability Report Download Generated';
 export const VULNERABILITY_REPORT_SENT_MANUALLY = 'Vulnerability Report Sent Manually';
+export const IMAGE_SBOM_GENERATED = 'Image SBOM Generated';
 
 // node and platform CVEs
 export const GLOBAL_SNOOZE_CVE = 'Global Snooze CVE';
@@ -242,6 +243,10 @@ export type AnalyticsEvent =
      * Tracks each time the user sends a vulnerability report manually.
      */
     | typeof VULNERABILITY_REPORT_SENT_MANUALLY
+    /**
+     * Tracks each time the user generates an SBOM for an image.
+     */
+    | typeof IMAGE_SBOM_GENERATED
     /**
      * Tracks each time the user snoozes a Node or Platform CVE via
      * Vulnerability Management 1.0
