@@ -399,6 +399,7 @@ func EmbeddedVulnerabilityToImageCVEV3(os string, imageID string, from *storage.
 		ImageId:              imageID,
 		FirstImageOccurrence: from.GetFirstImageOccurrence(),
 		State:                from.GetState(),
+		IsFixable:            from.GetFixedBy() != "",
 	}
 	if ret.GetCveBaseInfo().GetCvssV3() != nil {
 		ret.CveBaseInfo.ScoreVersion = storage.CVEInfo_V3
@@ -407,6 +408,13 @@ func EmbeddedVulnerabilityToImageCVEV3(os string, imageID string, from *storage.
 		ret.CveBaseInfo.ScoreVersion = storage.CVEInfo_V2
 		ret.ImpactScore = from.GetCvssV2().GetImpactScore()
 	}
+
+	if ret.IsFixable {
+		ret.HasFixedBy = &storage.ImageCVEV3_FixedBy{
+			FixedBy: from.GetFixedBy(),
+		}
+	}
+
 	return ret
 }
 
