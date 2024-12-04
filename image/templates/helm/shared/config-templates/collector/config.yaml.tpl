@@ -9,5 +9,5 @@
 
 networking:
   externalIps:
-    enable: {{ ._rox.collector.runtimeConfig.networking.externalIps.enable }}
+    enable: {{ ._rox.collector.runtimeConfig.networking.externalIps.enabled }}
   perContainerRateLimit: {{ ._rox.collector.runtimeConfig.networking.perContainerRateLimit }}

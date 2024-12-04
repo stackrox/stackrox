@@ -141,7 +141,7 @@ collector:
     enabled: null # bool
     networking:
       externalIps:
-        enable: null # bool
+        enabled: null # bool
       perContainerRateLimit: null # int
 auditLogs:
   disableCollection: null # bool
