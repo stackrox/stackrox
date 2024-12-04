@@ -141,7 +141,7 @@
         "@typescript-eslint/eslint-plugin": "^8.17.0",
         "@typescript-eslint/parser": "^8.17.0",
         "axe-core": "^4.10.0",
-        "cypress": "^13.14.2",
+        "cypress": "^13.16.1",
         "cypress-axe": "^1.5.0",
         "eslint": "^9.16.0",
         "eslint-import-resolver-typescript": "^3.6.3",
