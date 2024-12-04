@@ -127,7 +127,7 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastEndpoints() {
 				3: {expectDeployment80("10.0.0.1", "depl1", "http", theMap)},
 			},
 		},
-		"Re-add deployment previously marked as historical after history expired": {
+		"Re-add deployment previously marked as historical before history expired": {
 			numTicksToRemember: 2,
 			entityUpdates: map[int][]eUpdate{
 				0: {
@@ -164,6 +164,47 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastEndpoints() {
 				3: {expectDeployment80("10.0.0.1", "depl1", "http", history)},
 				// after tick 4: endpoint should be no longer considered historical
 				4: {expectDeployment80("10.0.0.1", "depl1", "http", theMap)},
+			},
+		},
+		"Re-add deployment previously marked as historical after history expired": {
+			numTicksToRemember: 2,
+			entityUpdates: map[int][]eUpdate{
+				0: {
+					{
+						deploymentID: "depl1",
+						containerID:  "pod1",
+						ipAddr:       "10.0.0.1",
+						port:         80,
+						portName:     "http",
+						incremental:  true,
+					},
+				},
+				5: {
+					{
+						deploymentID: "depl1",
+						containerID:  "pod1",
+						ipAddr:       "10.0.0.1",
+						port:         80,
+						portName:     "http",
+						incremental:  true,
+					},
+				},
+			},
+			operationAfterTick: map[int]operation{1: deleteDeployment1},
+			lookupResultsAfterTick: map[int][]expectation{
+				// before tick 1: endpoint should be added immediately
+				0: {expectDeployment80("10.0.0.1", "depl1", "http", theMap)},
+				// after tick 1: no change expected
+				1: {expectDeployment80("10.0.0.1", "depl1", "http", theMap)},
+				// deletion happens here
+				// after tick 2: endpoint should be marked as historical
+				2: {expectDeployment80("10.0.0.1", "depl1", "http", history)},
+				// after tick 3: endpoint should still be in the history
+				3: {expectDeployment80("10.0.0.1", "depl1", "http", history)},
+				// after tick 4: endpoint should be no longer considered historical
+				4: {expectDeployment80("10.0.0.1", "depl1", "http", nowhere)},
+				// after tick 5: endpoint should be added again
+				5: {expectDeployment80("10.0.0.1", "depl1", "http", theMap)},
 			},
 		},
 		"IP changing the owner deployment should populate history with previous IP": {
