@@ -98,7 +98,7 @@ type Store struct {
 	containerIDsStore *containerIDsStore
 
 	publicIPsTrackingMutex sync.RWMutex
-	publicIPsListeners     map[PublicIPsListener]struct{}
+	publicIPsListeners     set.Set[PublicIPsListener]
 	// callbackChannel is a channel to send container metadata upon resolution
 	callbackChannel chan<- ContainerMetadata
 
@@ -133,7 +133,7 @@ func NewStoreWithMemory(numTicks uint16, debugMode bool) *Store {
 func (e *Store) initMaps() {
 	e.publicIPsTrackingMutex.Lock()
 	defer e.publicIPsTrackingMutex.Unlock()
-	e.publicIPsListeners = make(map[PublicIPsListener]struct{})
+	e.publicIPsListeners = set.NewSet[PublicIPsListener]()
 	e.trace = make(map[string]string)
 	if !e.debugMode {
 		concurrency.WithLock(&e.traceMutex, func() {
@@ -280,11 +280,7 @@ func (e *Store) RegisterPublicIPsListener(listener PublicIPsListener) bool {
 	// another publicIPsTrackingMutex that would need to get locked separately.
 	e.publicIPsTrackingMutex.Lock()
 	defer e.publicIPsTrackingMutex.Unlock()
-
-	oldLen := len(e.publicIPsListeners)
-	e.publicIPsListeners[listener] = struct{}{}
-
-	return len(e.publicIPsListeners) > oldLen
+	return e.publicIPsListeners.Add(listener)
 }
 
 // UnregisterPublicIPsListener unregisters a previously registered listener for public IP events. It returns a boolean
@@ -293,11 +289,7 @@ func (e *Store) RegisterPublicIPsListener(listener PublicIPsListener) bool {
 func (e *Store) UnregisterPublicIPsListener(listener PublicIPsListener) bool {
 	e.publicIPsTrackingMutex.Lock()
 	defer e.publicIPsTrackingMutex.Unlock()
-
-	oldLen := len(e.publicIPsListeners)
-	delete(e.publicIPsListeners, listener)
-
-	return len(e.publicIPsListeners) < oldLen
+	return e.publicIPsListeners.Remove(listener)
 }
 
 func (e *Store) updatePublicIPRefs(addrs set.Set[net.IPAddress]) {
