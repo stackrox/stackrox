@@ -223,6 +223,11 @@ func centralHandshake(ctx context.Context, k8sClient kubernetes.Interface, centr
 	}
 	log.Debug("Received Central response.")
 
+	// That's it, we don't need the central connection any longer for the CRS flow.
+	if closeErr := stream.CloseSend(); closeErr != nil {
+		log.Warnf("error while trying to close the bidirectional streaming connection to Central: %v.", err)
+	}
+
 	centralHello := firstMsg.GetHello()
 	if centralHello == nil {
 		return nil, errors.Errorf("first message received from central was not CentralHello but of type %T", firstMsg.GetMsg())
