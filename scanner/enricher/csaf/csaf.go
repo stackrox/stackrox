@@ -14,6 +14,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/zlog"
+	"github.com/stackrox/rox/pkg/scannerv4/mappers"
 )
 
 var (
@@ -107,23 +108,21 @@ func (*Enricher) Name() string {
 func (e *Enricher) Enrich(ctx context.Context, g driver.EnrichmentGetter, r *claircore.VulnerabilityReport) (string, []json.RawMessage, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "enricher/csaf/Enricher/Enrich")
 
-	// We return any CVSS blobs for CVEs mentioned in the free-form parts of the
-	// vulnerability.
 	m := make(map[string][]json.RawMessage)
 
 	erCache := make(map[string][]driver.EnrichmentRecord)
 	for id, v := range r.Vulnerabilities {
-		ctx := zlog.ContextWithValues(ctx,
-			"vuln", v.Name)
-		rec, ok := erCache[v.Name]
+		vulnName := mappers.VulnerabilityName(v)
+		ctx := zlog.ContextWithValues(ctx, "original_vuln", v.Name, "vuln", vulnName)
+		rec, ok := erCache[vulnName]
 		if !ok {
-			ts := []string{v.Name}
+			ts := []string{vulnName}
 			var err error
 			rec, err = g.GetEnrichment(ctx, ts)
 			if err != nil {
 				return "", nil, err
 			}
-			erCache[v.Name] = rec
+			erCache[vulnName] = rec
 		}
 		zlog.Debug(ctx).
 			Int("count", len(rec)).
