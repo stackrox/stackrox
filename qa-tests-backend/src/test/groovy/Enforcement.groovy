@@ -16,6 +16,7 @@ import services.PolicyService
 import services.ProcessBaselineService
 import util.Timer
 
+import spock.lang.Ignore
 import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Unroll
@@ -680,6 +681,8 @@ class Enforcement extends BaseSpecification {
 
     @Tag("BAT")
     @Tag("PolicyEnforcement")
+    // ROX-18278 Test is flaky since 07/2023. (~2 failures / month)
+    @Ignore("ROX-18278")
     def "Test Alert and Kill Pod Enforcement - Baseline Process"() {
         // This test verifies enforcement of kill pod after triggering a policy violation of
         //  Unauthorized Process Execution
