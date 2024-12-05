@@ -647,6 +647,10 @@ image_prefetcher_start_set() {
         --secret=stackrox \
         --collect-metrics \
         "$name" > "$manifest"
+    mv "${manifest}" "${manifest}.tmp"
+    awk '{print} /--cri-socket/{print "        - \"--initial-pull-attempt-timeout=1s\"";print "        - \"--max-pull-attempt-timeout=1s\""}' \
+      "${manifest}.tmp" > "${manifest}"
+    rm -f "${manifest}.tmp"
 
     # image list
     local image_list
