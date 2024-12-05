@@ -289,7 +289,7 @@ func (d IPNetwork) String() string {
 	return ipNet.String()
 }
 
-// IPNetworkFromCIDR converts a CIDR string string to an `IPNetwork`. In case of invalid string, an invalid IPNetwork is returned.
+// IPNetworkFromCIDR converts a CIDR string to an `IPNetwork`. In case of invalid string, an invalid IPNetwork is returned.
 func IPNetworkFromCIDR(cidr string) IPNetwork {
 	_, ipNet, err := net.ParseCIDR(cidr)
 	if err != nil {

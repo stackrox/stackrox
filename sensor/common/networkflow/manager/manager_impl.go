@@ -51,10 +51,6 @@ const (
 )
 
 var (
-	// these are "canonical" external addresses sent by collector when we don't care about the precise IP address.
-	externalIPv4Addr = net.ParseIP("255.255.255.255")
-	externalIPv6Addr = net.ParseIP("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff")
-
 	emptyProcessInfo = processInfo{}
 	tickerTime       = time.Second * 30
 )
@@ -551,7 +547,7 @@ func logReasonForAggregatingNetGraphFlow(conn *connection, contNs, contName, ent
 		reasonStr = failReason.Error()
 	}
 	// No need to produce complex chain of reasons, if there is one simple explanation
-	if strings.HasPrefix(conn.remote.IPAndPort.String(), "255.255.255.255") {
+	if conn.remote.IsConsideredExternal() {
 		reasonStr = "Collector did not report the IP address to Sensor - the remote part is the Internet"
 	}
 	if conn.incoming {
@@ -585,7 +581,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 	var isInternet = false
 
 	// Check if the remote address represents the de-facto INTERNET entity.
-	if conn.remote.IPAndPort.Address == externalIPv4Addr || conn.remote.IPAndPort.Address == externalIPv6Addr {
+	if conn.remote.IsConsideredExternal() {
 		isFresh = false
 		isInternet = true
 		netGraphFailReason = multierror.Append(netGraphFailReason,
