@@ -100,7 +100,7 @@ func registerCluster() error {
 		return errors.Wrap(err, "preparing registration secret for mTLS authentication")
 	}
 
-	centralConnection, err := openCentralConnection(crs)
+	centralConnection, err := openCentralConnection()
 	if err != nil {
 		return errors.Wrap(err, "opening connection to Central")
 	}
@@ -153,7 +153,7 @@ func temporarilyStoreRegistrantSecret(crs *crs.CRS) error {
 	return nil
 }
 
-func openCentralConnection(crs *crs.CRS) (*grpcUtil.LazyClientConn, error) {
+func openCentralConnection() (*grpcUtil.LazyClientConn, error) {
 	// Create central client.
 	centralEndpoint := env.CentralEndpoint.Setting()
 	centralClient, err := centralclient.NewClient(centralEndpoint)
