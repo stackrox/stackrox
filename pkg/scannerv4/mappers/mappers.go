@@ -821,6 +821,7 @@ func cvssMetrics(_ context.Context, vuln *claircore.Vulnerability, vulnName stri
 	var preferredErr error
 	switch {
 	case strings.EqualFold(vuln.Updater, rhelUpdaterName):
+		// TODO: enrich with CSAF data.
 		preferredCVSS, preferredErr = vulnCVSS(vuln, v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT)
 		// TODO(ROX-26672): Remove this
 		if !features.ScannerV4RedHatCVEs.Enabled() && preferredCVSS != nil && rhelVulnNamePattern.MatchString(vulnName) {
