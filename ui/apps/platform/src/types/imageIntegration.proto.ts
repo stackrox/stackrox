@@ -27,6 +27,7 @@ export type ImageIntegration =
     | ClairifyImageIntegration
     | DockerImageIntegration
     | EcrImageIntegration
+    | GhcrImageIntegration
     | GoogleImageIntegration
     | IbmImageIntegration
     | NexusImageIntegration
@@ -116,6 +117,10 @@ export type EcrAuthorizationData = {
     passwordstring; // scrub: always
     expiresAt: string; // ISO 8601 date string
 };
+
+export type GhcrImageIntegration = {
+    type: 'ghcr';
+} & BaseImageIntegration;
 
 export type GoogleImageIntegration = {
     type: 'google';
