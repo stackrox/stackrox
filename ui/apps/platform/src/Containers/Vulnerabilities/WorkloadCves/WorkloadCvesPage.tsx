@@ -26,7 +26,11 @@ const vulnerabilitiesWorkloadCveSinglePath = `${vulnerabilitiesWorkloadCvesPath}
 const vulnerabilitiesWorkloadCveImageSinglePath = `${vulnerabilitiesWorkloadCvesPath}/images/:imageId`;
 const vulnerabilitiesWorkloadCveDeploymentSinglePath = `${vulnerabilitiesWorkloadCvesPath}/deployments/:deploymentId`;
 
-function WorkloadCvesPage() {
+export type WorkloadCvesPageProps = {
+    pageTitle: string;
+};
+
+function WorkloadCvesPage({ pageTitle }: WorkloadCvesPageProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const { hasReadAccess } = usePermissions();
     const hasReadAccessForIntegration = hasReadAccess('Integration');
@@ -45,24 +49,24 @@ function WorkloadCvesPage() {
             <Switch>
                 {hasReadAccessForNamespaces && (
                     <Route path={vulnerabilityNamespaceViewPath}>
-                        <NamespaceViewPage />
+                        <NamespaceViewPage pageTitle={pageTitle} />
                     </Route>
                 )}
                 <Route path={vulnerabilitiesWorkloadCveSinglePath}>
-                    <ImageCvePage />
+                    <ImageCvePage pageTitle={pageTitle} />
                 </Route>
                 <Route path={vulnerabilitiesWorkloadCveImageSinglePath}>
-                    <ImagePage />
+                    <ImagePage pageTitle={pageTitle} />
                 </Route>
                 <Route path={vulnerabilitiesWorkloadCveDeploymentSinglePath}>
-                    <DeploymentPage />
+                    <DeploymentPage pageTitle={pageTitle} />
                 </Route>
                 <Route exact path={vulnerabilitiesWorkloadCvesPath}>
-                    <WorkloadCvesOverviewPage />
+                    <WorkloadCvesOverviewPage pageTitle={pageTitle} />
                 </Route>
                 <Route>
                     <PageSection variant="light">
-                        <PageTitle title="Workload CVEs - Not Found" />
+                        <PageTitle title={`${pageTitle} - Not Found`} />
                         <PageNotFound />
                     </PageSection>
                 </Route>

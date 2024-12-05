@@ -71,7 +71,11 @@ function ScannerV4RequiredTooltip({ children }: { children: ReactElement }) {
     return <Tooltip content="SBOM generation requires Scanner V4">{children}</Tooltip>;
 }
 
-function ImagePage() {
+export type ImagePageProps = {
+    pageTitle: string;
+};
+
+function ImagePage({ pageTitle }: ImagePageProps) {
     const { imageId } = useParams();
     const { data, error } = useQuery<
         {
@@ -246,7 +250,7 @@ function ImagePage() {
 
     return (
         <>
-            <PageTitle title={`Workload CVEs - Image ${imageData ? imageDisplayName : ''}`} />
+            <PageTitle title={`${pageTitle} - Image ${imageData ? imageDisplayName : ''}`} />
             <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={workloadCveOverviewImagePath}>
