@@ -55,7 +55,7 @@ func (e *Enricher) ParseEnrichment(ctx context.Context, contents io.ReadCloser) 
 
 		record := Record{
 			// This would be the RHSA/RHBA/RHEA ID.
-			Name:        c.Document.Tracking.ID,
+			Name: c.Document.Tracking.ID,
 			// Use the title as the advisory's description.
 			// The current csaf type from Claircore does not enable us
 			// to fetch c.Document.Notes which would have more in-depth descriptions.
@@ -130,7 +130,7 @@ func (e *Enricher) ParseEnrichment(ctx context.Context, contents io.ReadCloser) 
 			return nil, err
 		}
 		out = append(out, driver.EnrichmentRecord{
-			Tags: []string{record.Name},
+			Tags:       []string{record.Name},
 			Enrichment: b,
 		})
 	}
