@@ -132,4 +132,7 @@ var (
 
 	// Add the ability to generate an SBOM from an image
 	SBOMGeneration = registerFeature("Add the ability to generate an SBOM from an image", "ROX_SBOM_GENERATION")
+
+	// Splits Image CVEs into Workload CVE and Platform CVE sections in the UI
+	PlatformCVESplit = registerFeature("Splits Image CVEs into Workload CVE and Platform CVE sections in the UI", "ROX_PLATFORM_CVE_SPLIT")
 )
