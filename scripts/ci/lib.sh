@@ -642,7 +642,7 @@ image_prefetcher_start_set() {
 
     # daemonset, etc
     ${image_prefetcher_deploy_bin} \
-        --version="${image_prefetcher_version}" \
+        --version="branch-porridge-max-pull-attempt-flags" \
         --k8s-flavor="$flavor" \
         --secret=stackrox \
         --collect-metrics \
