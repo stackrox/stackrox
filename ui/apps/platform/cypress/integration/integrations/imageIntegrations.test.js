@@ -573,7 +573,7 @@ describe('Image Integrations', () => {
         getInputByLabel('Integration name').clear().type(' ');
         getInputByLabel('Endpoint').clear().type(' ');
         getInputByLabel('User').clear().type(' ');
-        getInputByLabel('Password').clear().type(' ').blur();
+        getInputByLabel('GitHub token').clear().type(' ').blur();
 
         getHelperElementByLabel('Integration name').contains('An integration name is required');
         getHelperElementByLabel('Endpoint').contains('An endpoint is required');
@@ -584,7 +584,7 @@ describe('Image Integrations', () => {
         getInputByLabel('Integration name').clear().type(integrationName);
         getInputByLabel('Endpoint').clear().type('test.endpoint');
         getInputByLabel('Username').clear().type('admin');
-        getInputByLabel('Password').type('password');
+        getInputByLabel('GitHub token').type('password');
 
         testIntegrationInFormWithStoredCredentials(
             integrationSource,

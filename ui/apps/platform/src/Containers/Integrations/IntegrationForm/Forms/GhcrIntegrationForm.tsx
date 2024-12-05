@@ -227,10 +227,10 @@ function GhcrIntegrationForm({
                         </FormLabelGroup>
                     )}
                     <FormLabelGroup
-                        label="Password"
+                        label="GitHub token"
                         labelIcon={
                             <IntegrationHelpIcon
-                                helpTitle="GitHub password"
+                                helpTitle="GitHub token"
                                 helpText={
                                     <Flex direction={{ default: 'column' }}>
                                         <FlexItem>
@@ -248,7 +248,7 @@ function GhcrIntegrationForm({
                                         </FlexItem>
                                     </Flex>
                                 }
-                                ariaLabel="Help for password"
+                                ariaLabel="Help for GitHub token"
                             />
                         }
                         fieldId="config.docker.password"
