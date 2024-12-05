@@ -192,8 +192,7 @@ function WorkloadCVEOverviewTable({
     const hiddenColumnCount = getHiddenColumnCount(columnVisibilityState);
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isNvdCvssColumnEnabled =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
+    const isNvdCvssColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
 
     const colSpan =
         (isNvdCvssColumnEnabled ? 7 : 6) +

@@ -143,8 +143,7 @@ function AffectedImagesTable({
     const hiddenColumnCount = getHiddenColumnCount(tableConfig);
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isNvdCvssColumnEnabled =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
+    const isNvdCvssColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
     const colSpan = 8 + (isNvdCvssColumnEnabled ? 1 : 0) + -hiddenColumnCount;
 
     return (
