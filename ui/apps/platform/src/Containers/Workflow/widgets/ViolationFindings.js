@@ -16,7 +16,7 @@ const processData = (data) => {
 const ViolationFindings = ({ data, message }) => {
     const policyViolation = processData(data);
     let content = null;
-    if (!policyViolation) {
+    if (policyViolation) {
         content = (
             <div className="mx-4 grid-dense grid-auto-fit grid grid-gap-4 xl:grid-gap-6 mb-4 xxxl:grid-gap-8 grid-columns-1 md:grid-columns-2 lg:grid-columns-3 w-full">
                 <Widget
