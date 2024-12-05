@@ -8,6 +8,7 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/sensor/tests/helper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -125,8 +126,16 @@ func Test_ScannerDefinitionsProxy(t *testing.T) {
 		req, err := http.NewRequest(http.MethodGet, "https://localhost:8443/scanner/definitions", nil)
 		require.NoError(t, err)
 
-		resp, err := client.Do(req)
+		// Sensor may not be yet in the ready state and may reject the API call
+		err = retry.WithRetry(func() error {
+			t.Logf("Attempting GET call to https://localhost:8443/scanner/definitions")
+			resp, err := client.Do(req)
+			if err != nil {
+				return err
+			}
+			require.Equal(t, http.StatusOK, resp.StatusCode, "response: %v", resp)
+			return nil
+		}, retry.WithExponentialBackoff(), retry.Tries(5))
 		require.NoError(t, err)
-		require.Equal(t, http.StatusOK, resp.StatusCode, "response: %v", resp)
 	}))
 }
