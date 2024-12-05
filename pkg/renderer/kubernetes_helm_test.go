@@ -49,7 +49,7 @@ func getDefaultMetaValues(t *testing.T) *charts.MetaValues {
 
 		CollectorRegistry:    "collector.stackrox.io",
 		CollectorImageRemote: "collector",
-		CollectorImageTag:    "3.0.11-latest",
+		CollectorImageTag:    "3.0.11",
 
 		ScannerSlimImageRemote: "scanner",
 		ScannerImageTag:        "3.0.11-slim",
