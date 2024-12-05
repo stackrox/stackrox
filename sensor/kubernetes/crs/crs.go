@@ -174,7 +174,7 @@ func openCentralConnection(crs *crs.CRS) (*grpcUtil.LazyClientConn, error) {
 	select {
 	case <-errSig.Done():
 		log.Errorf("failed to get a connection from Central connection factory: %v.", errSig.Err())
-		return nil, errors.Wrap(err, "waiting for Central connection from factory")
+		return nil, errors.Wrap(errSig.Err(), "waiting for Central connection from factory")
 	case <-okSig.Done():
 	}
 
