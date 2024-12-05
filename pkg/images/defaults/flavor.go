@@ -99,7 +99,7 @@ type ImageFlavor struct {
 // DevelopmentBuildImageFlavor returns image values for `development_build` flavor.
 func DevelopmentBuildImageFlavor() ImageFlavor {
 	v := version.GetAllVersionsDevelopment()
-	collectorTag := v.CollectorVersion + "-latest"
+	collectorTag := v.CollectorVersion
 	if buildinfo.ReleaseBuild {
 		v = version.GetAllVersionsUnified()
 		collectorTag = v.CollectorVersion
@@ -180,7 +180,7 @@ func RHACSReleaseImageFlavor() ImageFlavor {
 // Release builds get unified tags like in other release image flavors.
 func OpenSourceImageFlavor() ImageFlavor {
 	v := version.GetAllVersionsDevelopment()
-	collectorTag := v.CollectorVersion + "-latest"
+	collectorTag := v.CollectorVersion
 	if buildinfo.ReleaseBuild {
 		v = version.GetAllVersionsUnified()
 		collectorTag = v.CollectorVersion

@@ -78,7 +78,7 @@ image:
 image:
   collector:
     tag: "[< required "" .CollectorImageTag >]"
-    pullPolicy: Always
+    pullPolicy: IfNotPresent
 ---
 # Add fullRef references to images
 # TODO(ROX-9261): Add support for image pull policy to scanner slim

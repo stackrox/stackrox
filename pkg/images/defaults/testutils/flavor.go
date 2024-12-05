@@ -20,7 +20,7 @@ func MakeImageFlavorForTest(t *testing.T) defaults.ImageFlavor {
 		CentralDBImageName:     "central-db",
 		CollectorRegistry:      "test.registry",
 		CollectorImageName:     "collector",
-		CollectorImageTag:      "3.2.1-latest",
+		CollectorImageTag:      "3.2.1",
 		ScannerImageName:       "scanner",
 		ScannerSlimImageName:   "scanner-slim",
 		ScannerImageTag:        "2.2.2",
