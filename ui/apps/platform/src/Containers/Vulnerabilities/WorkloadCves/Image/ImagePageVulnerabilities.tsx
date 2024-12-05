@@ -192,8 +192,7 @@ function ImagePageVulnerabilities({
         searchFilter,
     });
 
-    const isNvdCvssColumnEnabled =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
+    const isNvdCvssColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
     const filteredColumns = filterManagedColumns(
         defaultColumns,
         (key) => key !== 'nvdCvss' || isNvdCvssColumnEnabled

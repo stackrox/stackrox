@@ -29,8 +29,7 @@ function ReportParametersDetails({
     formValues,
 }: ReportParametersDetailsProps): ReactElement {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isIncludeNvdCvssEnabled =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
+    const isIncludeNvdCvssEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
 
     const cveSeverities =
         formValues.reportParameters.cveSeverities.length !== 0 ? (
