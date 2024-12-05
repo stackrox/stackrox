@@ -296,8 +296,8 @@ spec:
       value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
     - name: MAKEFILE_DIRECTORY
       value: ./operator
-    - name: TARGET_BRANCH
-      value: "{{target_branch}}"
+    - name: SOURCE_BRANCH
+      value: "{{source_branch}}"
     taskRef:
       name: determine-image-tag
 
@@ -309,8 +309,8 @@ spec:
       value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
     - name: MAKEFILE_DIRECTORY
       value: "."
-    - name: TARGET_BRANCH
-      value: "{{target_branch}}"
+    - name: SOURCE_BRANCH
+      value: "{{source_branch}}"
     taskRef:
       name: determine-image-tag
 

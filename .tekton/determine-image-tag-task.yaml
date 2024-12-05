@@ -23,13 +23,13 @@ spec:
     description: Makefile target to run.
     type: string
     default: "tag"
-  - name: TARGET_BRANCH
+  - name: SOURCE_BRANCH
     description: Branch or tag that triggered a build pipeline with this task.
-      Must be set to {{ target_branch }} Pipelines as Code variable.
+      Must be set to {{ source_branch }} Pipelines as Code variable.
       See https://pipelinesascode.com/docs/guide/authoringprs/#dynamic-variables
     type: string
-  - name: SUPPRESS_TAG_SUFFIX_ON_TARGET_BRANCH_REGEX
-    description: Regular expression which, when matches TARGET_BRANCH param, prevents TAG_SUFFIX to be appended to the
+  - name: SUPPRESS_TAG_SUFFIX_ON_SOURCE_BRANCH_REGEX
+    description: Regular expression which, when matches SOURCE_BRANCH param, prevents TAG_SUFFIX to be appended to the
       resulting tag. Intended for Stable Stream builds where we want to produce image tags without the "-fast" suffix.
       Set to release branches, release and RC tags by default.
     type: string
@@ -62,35 +62,35 @@ spec:
       .konflux/scripts/fail-build-if-git-is-dirty.sh
 
       suffix="$(params.TAG_SUFFIX)"
-      target="$(params.MAKEFILE_TARGET)"
+      makefile_target="$(params.MAKEFILE_TARGET)"
 
-      if [[ "${target}" == "collector-tag" || "${target}" == "scanner-tag" ]]; then
+      if [[ "${makefile_target}" == "collector-tag" || "${makefile_target}" == "scanner-tag" ]]; then
 
         # For dependencies (i.e. scanner and collector) tags, we always take what make returns. Konflux builds of
         # scanner and collector don't replace quay.io/rhacs-eng/ builds that's why we currently locate Konflux images
         # via the suffix.
-        image_tag="$(make -C "$(params.MAKEFILE_DIRECTORY)" --quiet --no-print-directory "${target}")${suffix}"
+        image_tag="$(make -C "$(params.MAKEFILE_DIRECTORY)" --quiet --no-print-directory "${makefile_target}")${suffix}"
 
-      elif [[ "${target}" != "tag" ]]; then
+      elif [[ "${makefile_target}" != "tag" ]]; then
 
-        >&2 echo "Error: provided MAKEFILE_TARGET ${target} is not recognized."
+        >&2 echo "Error: provided MAKEFILE_TARGET ${makefile_target} is not recognized."
         exit 2
 
-      else # "${target}" is "tag"
+      else # "${makefile_target}" is "tag"
 
-        target_branch="$(params.TARGET_BRANCH)"
+        source_branch="$(params.SOURCE_BRANCH)"
 
-        if grep -qE '$(params.SUPPRESS_TAG_SUFFIX_ON_TARGET_BRANCH_REGEX)' <<< "${target_branch}"; then
-          echo "Target branch ${target_branch} matches regex, the image tag suffix ${suffix} will be omitted."
+        if grep -qE '$(params.SUPPRESS_TAG_SUFFIX_ON_SOURCE_BRANCH_REGEX)' <<< "${source_branch}"; then
+          echo "Target branch ${source_branch} matches regex, the image tag suffix ${suffix} will be omitted."
           suffix=""
         fi
 
-        if [[ "${target_branch}" == refs/tags/* ]]; then
-          echo "${target_branch} seems to be a build of a git tag, will use this git tag."
-          image_tag="${target_branch#refs/tags/}"
+        if [[ "${source_branch}" == refs/tags/* ]]; then
+          echo "${source_branch} seems to be a build of a git tag, will use this git tag."
+          image_tag="${source_branch#refs/tags/}"
         else
           # Otherwise, delegate the work to Makefiles.
-          image_tag="$(make -C "$(params.MAKEFILE_DIRECTORY)" --quiet --no-print-directory "${target}")"
+          image_tag="$(make -C "$(params.MAKEFILE_DIRECTORY)" --quiet --no-print-directory "${makefile_target}")"
         fi
 
         image_tag="${image_tag}${suffix}"
