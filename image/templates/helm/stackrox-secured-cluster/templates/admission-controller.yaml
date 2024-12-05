@@ -60,9 +60,9 @@ spec:
           command:
           - /stackrox/bin/init-tls-certs
           args:
-          - --legacy={{ include "srox.securedClusterCertRefresh.legacyCertsPath" . }}
-          - --new={{ include "srox.securedClusterCertRefresh.newCertsPath" . }}
-          - --destination={{ include "srox.securedClusterCertRefresh.certsPath" . }}
+          - --legacy=/run/secrets/stackrox.io/certs-legacy/
+          - --new=/run/secrets/stackrox.io/certs-new/
+          - --destination=/run/secrets/stackrox.io/certs/
           resources:
             {{- ._rox.admissionControl._resources | nindent 12 }}
           securityContext:
@@ -70,13 +70,13 @@ spec:
             readOnlyRootFilesystem: true
           volumeMounts:
           - name: certs-legacy
-            mountPath: {{ include "srox.securedClusterCertRefresh.legacyCertsPath" . }}
+            mountPath: /run/secrets/stackrox.io/certs-legacy/
             readOnly: true
           - name: certs-new
-            mountPath: {{ include "srox.securedClusterCertRefresh.newCertsPath" . }}
+            mountPath: /run/secrets/stackrox.io/certs-new/
             readOnly: true
           - name: certs
-            mountPath: {{ include "srox.securedClusterCertRefresh.certsPath" . }}
+            mountPath: /run/secrets/stackrox.io/certs/
       {{- end }}
       containers:
         - image: {{ quote ._rox.image.main.fullRef }}
