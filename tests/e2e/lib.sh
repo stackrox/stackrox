@@ -181,6 +181,7 @@ export_test_environment() {
     ci_export ROX_PLATFORM_COMPONENTS "${ROX_PLATFORM_COMPONENTS:-true}"
     ci_export ROX_NVD_CVSS "${ROX_NVD_CVSS_UI:-true}"
     ci_export ROX_CVE_ADVISORY_SEPARATION "${ROX_CVE_ADVISORY_SEPARATION:-true}"
+    ci_export ROX_EPSS_SCORE "${ROX_EPSS_SCORE:-true}"
     ci_export ROX_SBOM_GENERATION "${ROX_SBOM_GENERATION:-true}"
     ci_export ROX_CLUSTERS_PAGE_MIGRATION_UI "${ROX_CLUSTERS_PAGE_MIGRATION_UI:-true}"
 
@@ -319,6 +320,8 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n      - name: ROX_NVD_CVSS_UI'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_CVE_ADVISORY_SEPARATION'
+    customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_EPSS_SCORE'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_CLUSTERS_PAGE_MIGRATION_UI'
     customize_envVars+=$'\n        value: "true"'
