@@ -291,6 +291,14 @@ export function verifySelectedCvesInModal(cveNames) {
     });
 }
 
+/**
+ * Visits an image single page via the workload CVE overview page and mocks the responses for the image
+ * details and CVE list. We need to mock the CVE list to ensure that multiple CVEs are present for the image. We
+ * also need to mock the image details to ensure Apollo does not duplicate CVE requests due to mismatched
+ * image IDs.
+ *
+ * @returns {Cypress.Chainable} - The image name
+ */
 export function visitImageSinglePageWithMockedResponses() {
     const imageDetailsOpname = 'getImageDetails';
     const cveListOpname = 'getCVEsForImage';
