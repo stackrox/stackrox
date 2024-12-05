@@ -426,6 +426,11 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 				ReprocessDeployments: &central.ReprocessDeployments{},
 			},
 		})
+		l.connManager.BroadcastMessage(&central.MsgToSensor{
+			Msg: &central.MsgToSensor_ReassessPolicies{
+				ReassessPolicies: &central.ReassessPolicies{},
+			},
+		})
 	}
 }
 
@@ -520,6 +525,7 @@ func (l *loopImpl) runReprocessing(imageFetchOpt imageEnricher.FetchOption) {
 	defer metrics.SetReprocessorDuration(time.Now())
 	l.reprocessNodes()
 	l.reprocessWatchedImages()
+	log.Info("Run IMagesAndResyncDeployments")
 	l.reprocessImagesAndResyncDeployments(imageFetchOpt, l.enrichImage, allImagesQuery)
 
 	l.reprocessingInProgress.Set(false)
