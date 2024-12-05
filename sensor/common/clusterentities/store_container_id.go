@@ -3,12 +3,11 @@ package clusterentities
 import (
 	"fmt"
 
-	"golang.org/x/exp/maps"
-
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/clusterentities/metrics"
+	"golang.org/x/exp/maps"
 )
 
 type containerIDsStore struct {
