@@ -135,6 +135,7 @@ func Test_withRotatingCore(t *testing.T) {
 		for i := 0; i < 4000; i++ {
 			logger.Info("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
 		}
+		assert.NoError(t, logger.Sync())
 		_, err := os.Stat(oldestRoll)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), oldestRoll+": no such file or directory", oldestRoll)
