@@ -26,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/scanners/scannerv4"
 	"github.com/stackrox/rox/pkg/scannerv4/constants"
+	"github.com/stackrox/rox/scanner/enricher/csaf"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -106,7 +107,8 @@ func ToProtoV4VulnerabilityReport(ctx context.Context, r *claircore.Vulnerabilit
 	if err != nil {
 		return nil, fmt.Errorf("internal error: parsing nvd vulns: %w", err)
 	}
-	vulnerabilities, err := toProtoV4VulnerabilitiesMap(ctx, r.Vulnerabilities, nvdVulns)
+	advisories, err := csafAdvisories(r.Enrichments)
+	vulnerabilities, err := toProtoV4VulnerabilitiesMap(ctx, r.Vulnerabilities, nvdVulns, advisories)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: %w", err)
 	}
@@ -359,7 +361,7 @@ func sortBySeverity(ids []string, vulnerabilities map[string]*v4.VulnerabilityRe
 	})
 }
 
-func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircore.Vulnerability, nvdVulns map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem) (map[string]*v4.VulnerabilityReport_Vulnerability, error) {
+func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircore.Vulnerability, nvdVulns map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem, advisories map[string]map[string]csaf.Record) (map[string]*v4.VulnerabilityReport_Vulnerability, error) {
 	if vulns == nil {
 		return nil, nil
 	}
@@ -381,7 +383,7 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 			repoID = v.Repo.ID
 		}
 		normalizedSeverity := toProtoV4VulnerabilitySeverity(ctx, v.NormalizedSeverity)
-		name := vulnerabilityName(v)
+		name := VulnerabilityName(v)
 		// Determine the related CVE for this vulnerability. This is necessary, as NVD is CVE-based.
 		cve, foundCVE := findName(v, cveIDPattern)
 		// Find the related NVD vuln for this vulnerability name, let it be empty if no
@@ -656,6 +658,34 @@ func nvdVulnerabilities(enrichments map[string][]json.RawMessage) (map[string]ma
 	return ret, nil
 }
 
+func csafAdvisories(enrichments map[string][]json.RawMessage) (map[string]map[string]csaf.Record, error) {
+	enrichmentsList := enrichments[csaf.Type]
+	if len(enrichmentsList) == 0 {
+		return nil, nil
+	}
+	var items map[string][]csaf.Record
+	// The CSAF enrichment always contains only one element.
+	err := json.Unmarshal(enrichmentsList[0], &items)
+	if err != nil {
+		return nil, err
+	}
+	if len(items) == 0 {
+		return nil, nil
+	}
+	ret := make(map[string]map[string]csaf.Record)
+	for recordID, list := range items {
+		if len(list) > 0 {
+			m := make(map[string]csaf.Record)
+			for idx := range list {
+				record := list[idx]
+				m[record.Name] = record
+			}
+			ret[recordID] = m
+		}
+	}
+	return ret, nil
+}
+
 // filterPackages filters out packages from the given map.
 func filterPackages(packages map[string]*claircore.Package, environments map[string][]*claircore.Environment, packageVulns map[string][]string) {
 	// We only filter out Node.js packages with no known vulnerabilities (if configured to do so) at this time.
@@ -886,10 +916,10 @@ func nvdCVSS(v *nvdschema.CVEAPIJSON20CVEItem) (*v4.VulnerabilityReport_Vulnerab
 	return cvss, nil
 }
 
-// vulnerabilityName searches the best known candidate for the vulnerability name
+// VulnerabilityName searches the best known candidate for the vulnerability name
 // in the vulnerability details. It works by matching data against well-known
 // name patterns, and defaults to the original name if nothing is found.
-func vulnerabilityName(vuln *claircore.Vulnerability) string {
+func VulnerabilityName(vuln *claircore.Vulnerability) string {
 	// Attempt per-updater patterns.
 	switch {
 	case strings.HasPrefix(vuln.Updater, awsUpdaterPrefix):
