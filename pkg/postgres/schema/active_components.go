@@ -35,8 +35,9 @@ var (
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ActiveComponent)(nil)), "active_components")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.Deployment":     DeploymentsSchema,
-			"storage.ImageComponent": ImageComponentsSchema,
+			"storage.Deployment":       DeploymentsSchema,
+			"storage.ImageComponent":   ImageComponentsSchema,
+			"storage.ImageComponentV2": ImageComponentV2Schema,
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -59,10 +60,11 @@ const (
 
 // ActiveComponents holds the Gorm model for Postgres table `active_components`.
 type ActiveComponents struct {
-	ID           string `gorm:"column:id;type:varchar;primaryKey"`
-	DeploymentID string `gorm:"column:deploymentid;type:uuid;index:activecomponents_deploymentid,type:hash"`
-	ComponentID  string `gorm:"column:componentid;type:varchar"`
-	Serialized   []byte `gorm:"column:serialized;type:bytea"`
+	ID            string `gorm:"column:id;type:varchar;primaryKey"`
+	DeploymentID  string `gorm:"column:deploymentid;type:uuid;index:activecomponents_deploymentid,type:hash"`
+	ComponentID   string `gorm:"column:componentid;type:varchar"`
+	ComponentIDV2 string `gorm:"column:componentidv2;type:varchar"`
+	Serialized    []byte `gorm:"column:serialized;type:bytea"`
 }
 
 // ActiveComponentsActiveContextsSlices holds the Gorm model for Postgres table `active_components_active_contexts_slices`.
