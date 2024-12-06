@@ -18,9 +18,10 @@ package v1alpha1
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
-	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/booleanpolicy/policyversion"
+	"github.com/stackrox/stackrox/pkg/protocompat"
+	"github.com/stackrox/stackrox/pkg/uuid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -154,8 +155,34 @@ func (p SecurityPolicySpec) IsValid() (bool, error) {
 	return true, nil
 }
 
+// +kubebuilder:object:root=true
+// +kubebuilder:resource:shortName=sp
+// +kubebuilder:subresource:status
+
+// SecurityPolicy is the Schema for the policies API
+type SecurityPolicy struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   SecurityPolicySpec   `json:"spec,omitempty"`
+	Status SecurityPolicyStatus `json:"status,omitempty"`
+}
+
+// +kubebuilder:object:root=true
+
+// SecurityPolicyList contains a list of Policy
+type SecurityPolicyList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []SecurityPolicy `json:"items"`
+}
+
+func init() {
+	SchemeBuilder.Register(&SecurityPolicy{}, &SecurityPolicyList{})
+}
+
 // ToProtobuf converts the SecurityPolicy spec into policy proto
-func (p SecurityPolicySpec) ToProtobuf() *storage.Policy {
+func (p SecurityPolicySpec) ToProtobuf(notifiers map[string][string]) *storage.Policy {
 	proto := storage.Policy{
 		Name:               p.PolicyName,
 		Description:        p.Description,
@@ -163,12 +190,27 @@ func (p SecurityPolicySpec) ToProtobuf() *storage.Policy {
 		Remediation:        p.Remediation,
 		Disabled:           p.Disabled,
 		Categories:         p.Categories,
-		Notifiers:          p.Notifiers,
 		PolicyVersion:      policyversion.CurrentVersion().String(),
 		CriteriaLocked:     p.CriteriaLocked,
 		MitreVectorsLocked: p.MitreVectorsLocked,
 		IsDefault:          p.IsDefault,
 		Source:             storage.PolicySource_DECLARATIVE,
+	}
+
+	proto.Notifiers = make([]string, len(p.Notifiers))
+	for _, notifier := range p.Notifiers {
+		_, err := uuid.FromString(notifier)
+		if err == nil {
+			proto.Notifiers = append(proto.Notifiers, notifier)
+			continue
+		}
+		// spec has notifier names specified
+		id, exists := notifiers[notifier]
+		if exists {
+			proto.Notifiers = append(proto.Notifiers, id)
+			continue
+		}
+		log.Warnf("Notifier '%s' does not exist, skipping ..", notifier)
 	}
 
 	for _, ls := range p.LifecycleStages {
@@ -189,23 +231,22 @@ func (p SecurityPolicySpec) ToProtobuf() *storage.Policy {
 				return nil
 			}
 			protoExclusion.Expiration = protoTS
-
 		}
 
-		if exclusion.Deployment != (Deployment{}) {
+		if exclusion.Deployment != (configstackroxiov1alpha1.Deployment{}) {
 			protoExclusion.Deployment = &storage.Exclusion_Deployment{
 				Name: exclusion.Deployment.Name,
 			}
 
 			scope := exclusion.Deployment.Scope
-			if scope != (Scope{}) {
+			if scope != (configstackroxiov1alpha1.Scope{}) {
 				protoExclusion.Deployment.Scope = &storage.Scope{
 					Cluster:   scope.Cluster,
 					Namespace: scope.Namespace,
 				}
 			}
 
-			if scope.Label != (Label{}) {
+			if scope.Label != (configstackroxiov1alpha1.Label{}) {
 				protoExclusion.Deployment.Scope.Label = &storage.Scope_Label{
 					Key:   scope.Label.Key,
 					Value: scope.Label.Value,
@@ -223,7 +264,7 @@ func (p SecurityPolicySpec) ToProtobuf() *storage.Policy {
 			Namespace: scope.Namespace,
 		}
 
-		if scope.Label != (Label{}) {
+		if scope.Label != (configstackroxiov1alpha1.Label{}) {
 			protoScope.Label = &storage.Scope_Label{
 				Key:   scope.Label.Key,
 				Value: scope.Label.Value,
@@ -287,30 +328,4 @@ func (p SecurityPolicySpec) ToProtobuf() *storage.Policy {
 	}
 
 	return &proto
-}
-
-// +kubebuilder:object:root=true
-// +kubebuilder:resource:shortName=sp
-// +kubebuilder:subresource:status
-
-// SecurityPolicy is the Schema for the policies API
-type SecurityPolicy struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec   SecurityPolicySpec   `json:"spec,omitempty"`
-	Status SecurityPolicyStatus `json:"status,omitempty"`
-}
-
-// +kubebuilder:object:root=true
-
-// SecurityPolicyList contains a list of Policy
-type SecurityPolicyList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []SecurityPolicy `json:"items"`
-}
-
-func init() {
-	SchemeBuilder.Register(&SecurityPolicy{}, &SecurityPolicyList{})
 }
