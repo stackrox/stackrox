@@ -18,6 +18,28 @@ func flagOrSettingValue(flagValue string, flagChanged bool, setting env.Setting)
 	return flagValue
 }
 
+// flagOrConfigurationValue will either return the following:
+//   - the flag value, if the flag value is not the default value (i.e. flagChanged != false).
+//   - the configuration value, if the flag value is the default value (i.e. flagChanged != false).
+//   - the setting's value, if the flag value is the default value (i.e. flag changed == false) _and_ the setting's value is non-empty.
+//   - the default value, if the flag value is the default value (i.e. flag changed != false) and the setting's value
+//     is empty.
+func flagOrConfigurationValue(flagValue string, flagChanged bool, configValue string, configValueChanged bool, setting env.Setting) string {
+	if !flagChanged {
+
+		if configValueChanged == true {
+			return configValue
+		}
+
+		if setting.Setting() != "" {
+			return setting.Setting()
+		}
+
+	}
+
+	return flagValue
+}
+
 // booleanFlagOrSettingValue will either return the following:
 // - the flag value, if the flag value is not the default value (i.e. flagChanged != false).
 // - the setting's boolean value, if the flag value is the default value (i.e. flagChanged == false)
