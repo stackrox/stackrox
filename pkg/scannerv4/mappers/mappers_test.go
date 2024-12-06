@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/scannerv4/constants"
+	"github.com/stackrox/rox/scanner/enricher/csaf"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -1126,7 +1127,7 @@ func Test_toProtoV4VulnerabilitiesMapWithEPSS(t *testing.T) {
 			t.Setenv(features.ScannerV4RedHatCVEs.EnvVar(), enableRedHatCVEs)
 			enableEPSS := "true"
 			t.Setenv(features.EPSSScore.EnvVar(), enableEPSS)
-			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities, tt.nvdVulns, tt.epssItems)
+			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities, tt.nvdVulns, tt.epssItems, nil)
 			assert.NoError(t, err)
 			protoassert.MapEqual(t, tt.want, got)
 		})
@@ -1142,6 +1143,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 	tests := map[string]struct {
 		ccVulnerabilities map[string]*claircore.Vulnerability
 		nvdVulns          map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem
+		advisories        map[string]csaf.Record
 		enableRedHatCVEs  bool
 		want              map[string]*v4.VulnerabilityReport_Vulnerability
 	}{
@@ -1632,18 +1634,38 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 					},
 				},
 			},
+			advisories: map[string]csaf.Record{
+				"foo": {
+					Name:        "RHSA-2021:5132",
+					Description: "RHSA description",
+					Severity:    "Moderate",
+					CVSSv3: csaf.CVSS{
+						Score:  9.1,
+						Vector: "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N",
+					},
+					CVSSv2: csaf.CVSS{
+						Score:  9.4,
+						Vector: "AV:N/AC:L/Au:N/C:C/I:C/A:N",
+					},
+				},
+			},
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
 				"foo": {
 					Id:                 "foo",
 					Name:               "RHSA-2021:5132",
+					Description:        "RHSA description",
 					Link:               "https://access.redhat.com/security/cve/CVE-2021-44228 https://access.redhat.com/errata/RHSA-2021:5132",
 					Issued:             protoNow,
 					Severity:           "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
-					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_CRITICAL,
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
 					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
 						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
-							BaseScore: 9.8,
-							Vector:    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+							BaseScore: 9.1,
+							Vector:    "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N",
+						},
+						V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
+							BaseScore: 9.4,
+							Vector:    "AV:N/AC:L/Au:N/C:C/I:C/A:N",
 						},
 						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
 						Url:    "https://access.redhat.com/errata/RHSA-2021:5132",
@@ -1651,8 +1673,12 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 					CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
 						{
 							V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
-								BaseScore: 9.8,
-								Vector:    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+								BaseScore: 9.1,
+								Vector:    "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N",
+							},
+							V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
+								BaseScore: 9.4,
+								Vector:    "AV:N/AC:L/Au:N/C:C/I:C/A:N",
 							},
 							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
 							Url:    "https://access.redhat.com/errata/RHSA-2021:5132",
@@ -1747,7 +1773,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 			}
 			t.Setenv(features.ScannerV4RedHatCVEs.EnvVar(), enableRedHatCVEs)
 			// EPSS scores are intentionally not covered here
-			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities, tt.nvdVulns, nil)
+			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities, tt.nvdVulns, nil, tt.advisories)
 			assert.NoError(t, err)
 			protoassert.MapEqual(t, tt.want, got)
 		})
