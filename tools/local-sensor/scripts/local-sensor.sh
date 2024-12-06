@@ -13,6 +13,7 @@ LOCAL_SENSOR_BIN=local-sensor
 EXEC=$OUTPUT_DIR/$LOCAL_SENSOR_BIN
 PROMETHEUS_ENDPOINT=http://localhost:9090
 ROX_METRICS_PORT=:9091
+LOGLEVEL="${LOGLEVEL:-debug}"
 PROMETHEUS_QUERY=rox_sensor_sensor_events
 PROMETHEUS_DUMP=$OUTPUT_DIR/sensor_events_dump.json
 
@@ -43,6 +44,7 @@ function generate_k8s_events() {
 function run_test() {
   [[ "$VERBOSE" == "false" ]] || echo "Running tests with: $K8S_EVENTS_FILE"
   export ROX_METRICS_PORT=$ROX_METRICS_PORT
+  export LOGLEVEL=$LOGLEVEL
   { time $EXEC -replay -replay-in="$K8S_EVENTS_FILE" -delay=0s -with-metrics -with-policies="$POLICIES_FILE" -central-out=/dev/null > "$OUTPUT_DIR"/test.log 2>&1 ; } > "$TIME_FILE" 2>&1 &
   TIME_PID=$!
   SENSOR_PID=$(pgrep -P $TIME_PID)
@@ -66,6 +68,7 @@ function print_header() {
   echo "RUN_GENERATE        = $RUN_GENERATE"
   echo "RUN_TEST            = $RUN_TEST"
   echo "VERBOSE             = $VERBOSE"
+  echo "LOGLEVEL            = $LOGLEVEL"
   echo "OUTPUT_DIR          = $OUTPUT_DIR"
   echo "K8S_EVENTS_FILE     = $K8S_EVENTS_FILE"
   echo "FAKE_WORKLOAD_FILE  = $FAKE_WORKLOAD_FILE"
