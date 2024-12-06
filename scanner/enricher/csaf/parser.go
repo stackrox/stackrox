@@ -95,7 +95,7 @@ func (e *Enricher) ParseEnrichment(ctx context.Context, contents io.ReadCloser) 
 		for _, v := range c.Vulnerabilities {
 			for _, score := range v.Scores {
 				if score.CVSSV3 != nil && score.CVSSV3.BaseScore > cvss3.score {
-					cvss3.score = max(score.CVSSV3.BaseScore)
+					cvss3.score = score.CVSSV3.BaseScore
 					cvss3.vector = score.CVSSV3.VectorString
 				}
 				if score.CVSSV2 != nil && score.CVSSV2.BaseScore > cvss2.score {
@@ -112,11 +112,11 @@ func (e *Enricher) ParseEnrichment(ctx context.Context, contents io.ReadCloser) 
 
 		record.Severity = nameFromSeverity[sev]
 		if cvss3.vector != "" {
-			record.CVSSv3.Score = cvss3.score
+			record.CVSSv3.Score = float32(cvss3.score)
 			record.CVSSv3.Vector = cvss3.vector
 		}
 		if cvss2.vector != "" {
-			record.CVSSv2.Score = cvss2.score
+			record.CVSSv2.Score = float32(cvss2.score)
 			record.CVSSv2.Vector = cvss2.vector
 		}
 
