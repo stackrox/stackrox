@@ -16,3 +16,27 @@ tests:
         enabled: false
   expect: |
     .configmaps["collector-config"] | assertThat(. == null)
+- name: "The collector config should have the correct values for networking"
+  set:
+    collector:
+      runtimeConfig:
+        enabled: true
+        networking:
+          externalIps:
+            enabled: true
+          perContainerRateLimit: 512
+  expect: |
+    .configmaps["collector-config"].data.["runtime_config.yaml"] | fromyaml | .networking.externalIps.enable | assertThat(. == true)
+    .configmaps["collector-config"].data.["runtime_config.yaml"] | fromyaml | .networking.perContainerRateLimit | assertThat(. == 512)
+- name: "The collector config should have the correct values for networking 2"
+  set:
+    collector:
+      runtimeConfig:
+        enabled: true
+        networking:
+          externalIps:
+            enabled: false
+          perContainerRateLimit: 200
+  expect: |
+    .configmaps["collector-config"].data.["runtime_config.yaml"] | fromyaml | .networking.externalIps.enable | assertThat(. == false)
+    .configmaps["collector-config"].data.["runtime_config.yaml"] | fromyaml | .networking.perContainerRateLimit | assertThat(. == 200)
