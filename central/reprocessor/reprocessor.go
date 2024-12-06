@@ -426,11 +426,11 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 				ReprocessDeployments: &central.ReprocessDeployments{},
 			},
 		})
-		l.connManager.BroadcastMessage(&central.MsgToSensor{
-			Msg: &central.MsgToSensor_ReassessPolicies{
-				ReassessPolicies: &central.ReassessPolicies{},
-			},
-		})
+		//l.connManager.BroadcastMessage(&central.MsgToSensor{
+		//	Msg: &central.MsgToSensor_ReassessPolicies{
+		//		ReassessPolicies: &central.ReassessPolicies{},
+		//	},
+		//})
 	}
 }
 

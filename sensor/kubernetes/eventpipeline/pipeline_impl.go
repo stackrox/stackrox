@@ -185,11 +185,19 @@ func (p *eventPipeline) processReprocessDeployments() error {
 	if err := p.detector.ProcessReprocessDeployments(); err != nil {
 		return err
 	}
+
 	msg := component.NewEvent()
 	// TODO(ROX-14310): Add WithSkipResolving to the DeploymentResolution (Revert: https://github.com/stackrox/stackrox/pull/5551)
-	msg.AddDeploymentReference(resolver.ResolveAllDeployments(),
+	deployments := resolver.ResolveAllDeployments()
+	deployments(sing)
+	for _, deploy = range deployments {
+		log.Info(deploy)
+	}
+
+	msg.AddDeploymentReference(deployments,
 		component.WithForceDetection())
 	msg.Context = p.getCurrentContext()
+	log.Infof("Reporcess: MSG %+v", msg)
 	p.resolver.Send(msg)
 	return nil
 }
