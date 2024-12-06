@@ -58,10 +58,10 @@ type ListeningEndpoints struct {
 	Port               uint32             `gorm:"column:port;type:bigint"`
 	Protocol           storage.L4Protocol `gorm:"column:protocol;type:integer"`
 	CloseTimestamp     *time.Time         `gorm:"column:closetimestamp;type:timestamp"`
-	ProcessIndicatorID string             `gorm:"column:processindicatorid;type:uuid;index:listeningendpoints_processindicatorid,type:btree"`
-	Closed             bool               `gorm:"column:closed;type:bool;index:listeningendpoints_closed,type:btree"`
-	DeploymentID       string             `gorm:"column:deploymentid;type:uuid;index:listeningendpoints_deploymentid,type:btree"`
-	PodUID             string             `gorm:"column:poduid;type:uuid;index:listeningendpoints_poduid,type:hash"`
+	ProcessIndicatorID string             `gorm:"column:processindicatorid;type:uuid;index:listeningendpoints_processindicatorid,type:btree,option:CONCURRENTLY"`
+	Closed             bool               `gorm:"column:closed;type:bool;index:listeningendpoints_closed,type:btree,option:CONCURRENTLY"`
+	DeploymentID       string             `gorm:"column:deploymentid;type:uuid;index:listeningendpoints_deploymentid,type:btree,option:CONCURRENTLY"`
+	PodUID             string             `gorm:"column:poduid;type:uuid;index:listeningendpoints_poduid,type:hash,option:CONCURRENTLY"`
 	ClusterID          string             `gorm:"column:clusterid;type:uuid;index:listeningendpoints_sac_filter,type:btree"`
 	Namespace          string             `gorm:"column:namespace;type:varchar;index:listeningendpoints_sac_filter,type:btree"`
 	Serialized         []byte             `gorm:"column:serialized;type:bytea"`

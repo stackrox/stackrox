@@ -65,7 +65,7 @@ type RoleBindings struct {
 // RoleBindingsSubjects holds the Gorm model for Postgres table `role_bindings_subjects`.
 type RoleBindingsSubjects struct {
 	RoleBindingsID  string              `gorm:"column:role_bindings_id;type:uuid;primaryKey"`
-	Idx             int                 `gorm:"column:idx;type:integer;primaryKey;index:rolebindingssubjects_idx,type:btree"`
+	Idx             int                 `gorm:"column:idx;type:integer;primaryKey;index:rolebindingssubjects_idx,type:btree,option:CONCURRENTLY"`
 	Kind            storage.SubjectKind `gorm:"column:kind;type:integer"`
 	Name            string              `gorm:"column:name;type:varchar"`
 	RoleBindingsRef RoleBindings        `gorm:"foreignKey:role_bindings_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`

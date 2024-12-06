@@ -61,7 +61,7 @@ type AuthMachineToMachineConfigs struct {
 // AuthMachineToMachineConfigsMappings holds the Gorm model for Postgres table `auth_machine_to_machine_configs_mappings`.
 type AuthMachineToMachineConfigsMappings struct {
 	AuthMachineToMachineConfigsID  string                      `gorm:"column:auth_machine_to_machine_configs_id;type:uuid;primaryKey"`
-	Idx                            int                         `gorm:"column:idx;type:integer;primaryKey;index:authmachinetomachineconfigsmappings_idx,type:btree"`
+	Idx                            int                         `gorm:"column:idx;type:integer;primaryKey;index:authmachinetomachineconfigsmappings_idx,type:btree,option:CONCURRENTLY"`
 	Role                           string                      `gorm:"column:role;type:varchar"`
 	AuthMachineToMachineConfigsRef AuthMachineToMachineConfigs `gorm:"foreignKey:auth_machine_to_machine_configs_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 	RolesRef                       Roles                       `gorm:"foreignKey:role;references:name;belongsTo;constraint:OnDelete:RESTRICT"`

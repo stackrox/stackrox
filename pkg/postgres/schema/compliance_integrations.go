@@ -56,7 +56,7 @@ const (
 type ComplianceIntegrations struct {
 	ID                string           `gorm:"column:id;type:uuid;primaryKey"`
 	Version           string           `gorm:"column:version;type:varchar"`
-	ClusterID         string           `gorm:"column:clusterid;type:uuid;uniqueIndex:compliance_unique_indicator;index:complianceintegrations_sac_filter,type:hash"`
+	ClusterID         string           `gorm:"column:clusterid;type:uuid;uniqueIndex:compliance_unique_indicator,option:CONCURRENTLY;index:complianceintegrations_sac_filter,type:hash"`
 	OperatorInstalled bool             `gorm:"column:operatorinstalled;type:bool"`
 	OperatorStatus    storage.COStatus `gorm:"column:operatorstatus;type:integer"`
 	Serialized        []byte           `gorm:"column:serialized;type:bytea"`

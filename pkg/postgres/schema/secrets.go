@@ -70,7 +70,7 @@ type Secrets struct {
 // SecretsFiles holds the Gorm model for Postgres table `secrets_files`.
 type SecretsFiles struct {
 	SecretsID   string             `gorm:"column:secrets_id;type:uuid;primaryKey"`
-	Idx         int                `gorm:"column:idx;type:integer;primaryKey;index:secretsfiles_idx,type:btree"`
+	Idx         int                `gorm:"column:idx;type:integer;primaryKey;index:secretsfiles_idx,type:btree,option:CONCURRENTLY"`
 	Type        storage.SecretType `gorm:"column:type;type:integer"`
 	CertEndDate *time.Time         `gorm:"column:cert_enddate;type:timestamp"`
 	SecretsRef  Secrets            `gorm:"foreignKey:secrets_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
@@ -80,7 +80,7 @@ type SecretsFiles struct {
 type SecretsFilesRegistries struct {
 	SecretsID       string       `gorm:"column:secrets_id;type:uuid;primaryKey"`
 	SecretsFilesIdx int          `gorm:"column:secrets_files_idx;type:integer;primaryKey"`
-	Idx             int          `gorm:"column:idx;type:integer;primaryKey;index:secretsfilesregistries_idx,type:btree"`
+	Idx             int          `gorm:"column:idx;type:integer;primaryKey;index:secretsfilesregistries_idx,type:btree,option:CONCURRENTLY"`
 	Name            string       `gorm:"column:name;type:varchar"`
 	SecretsFilesRef SecretsFiles `gorm:"foreignKey:secrets_id,secrets_files_idx;references:secrets_id,idx;belongsTo;constraint:OnDelete:CASCADE"`
 }

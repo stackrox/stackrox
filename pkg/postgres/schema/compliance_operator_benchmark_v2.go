@@ -69,7 +69,7 @@ type ComplianceOperatorBenchmarkV2 struct {
 // ComplianceOperatorBenchmarkV2Profiles holds the Gorm model for Postgres table `compliance_operator_benchmark_v2_profiles`.
 type ComplianceOperatorBenchmarkV2Profiles struct {
 	ComplianceOperatorBenchmarkV2ID  string                        `gorm:"column:compliance_operator_benchmark_v2_id;type:uuid;primaryKey"`
-	Idx                              int                           `gorm:"column:idx;type:integer;primaryKey;index:complianceoperatorbenchmarkv2profiles_idx,type:btree"`
+	Idx                              int                           `gorm:"column:idx;type:integer;primaryKey;index:complianceoperatorbenchmarkv2profiles_idx,type:btree,option:CONCURRENTLY"`
 	ProfileName                      string                        `gorm:"column:profilename;type:varchar"`
 	ProfileVersion                   string                        `gorm:"column:profileversion;type:varchar"`
 	ComplianceOperatorBenchmarkV2Ref ComplianceOperatorBenchmarkV2 `gorm:"foreignKey:compliance_operator_benchmark_v2_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`

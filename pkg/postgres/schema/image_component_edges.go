@@ -65,8 +65,8 @@ const (
 type ImageComponentEdges struct {
 	ID               string `gorm:"column:id;type:varchar;primaryKey"`
 	Location         string `gorm:"column:location;type:varchar"`
-	ImageID          string `gorm:"column:imageid;type:varchar;index:imagecomponentedges_imageid,type:hash"`
-	ImageComponentID string `gorm:"column:imagecomponentid;type:varchar;index:imagecomponentedges_imagecomponentid,type:hash"`
+	ImageID          string `gorm:"column:imageid;type:varchar;index:imagecomponentedges_imageid,type:hash,option:CONCURRENTLY"`
+	ImageComponentID string `gorm:"column:imagecomponentid;type:varchar;index:imagecomponentedges_imagecomponentid,type:hash,option:CONCURRENTLY"`
 	Serialized       []byte `gorm:"column:serialized;type:bytea"`
 	ImagesRef        Images `gorm:"foreignKey:imageid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

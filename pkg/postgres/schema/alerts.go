@@ -46,7 +46,7 @@ const (
 // Alerts holds the Gorm model for Postgres table `alerts`.
 type Alerts struct {
 	ID                       string                              `gorm:"column:id;type:uuid;primaryKey"`
-	PolicyID                 string                              `gorm:"column:policy_id;type:varchar;index:alerts_policy_id,type:btree"`
+	PolicyID                 string                              `gorm:"column:policy_id;type:varchar;index:alerts_policy_id,type:btree,option:CONCURRENTLY"`
 	PolicyName               string                              `gorm:"column:policy_name;type:varchar"`
 	PolicyDescription        string                              `gorm:"column:policy_description;type:varchar"`
 	PolicyDisabled           bool                                `gorm:"column:policy_disabled;type:bool"`
@@ -57,12 +57,12 @@ type Alerts struct {
 	PolicySORTName           string                              `gorm:"column:policy_sortname;type:varchar"`
 	PolicySORTLifecycleStage string                              `gorm:"column:policy_sortlifecyclestage;type:varchar"`
 	PolicySORTEnforcement    bool                                `gorm:"column:policy_sortenforcement;type:bool"`
-	LifecycleStage           storage.LifecycleStage              `gorm:"column:lifecyclestage;type:integer;index:alerts_lifecyclestage,type:btree"`
+	LifecycleStage           storage.LifecycleStage              `gorm:"column:lifecyclestage;type:integer;index:alerts_lifecyclestage,type:btree,option:CONCURRENTLY"`
 	ClusterID                string                              `gorm:"column:clusterid;type:uuid;index:alerts_sac_filter,type:btree"`
 	ClusterName              string                              `gorm:"column:clustername;type:varchar"`
 	Namespace                string                              `gorm:"column:namespace;type:varchar;index:alerts_sac_filter,type:btree"`
 	NamespaceID              string                              `gorm:"column:namespaceid;type:uuid"`
-	DeploymentID             string                              `gorm:"column:deployment_id;type:uuid;index:alerts_deployment_id,type:hash"`
+	DeploymentID             string                              `gorm:"column:deployment_id;type:uuid;index:alerts_deployment_id,type:hash,option:CONCURRENTLY"`
 	DeploymentName           string                              `gorm:"column:deployment_name;type:varchar"`
 	DeploymentInactive       bool                                `gorm:"column:deployment_inactive;type:bool"`
 	ImageID                  string                              `gorm:"column:image_id;type:varchar"`
@@ -73,8 +73,8 @@ type Alerts struct {
 	ResourceResourceType     storage.Alert_Resource_ResourceType `gorm:"column:resource_resourcetype;type:integer"`
 	ResourceName             string                              `gorm:"column:resource_name;type:varchar"`
 	EnforcementAction        storage.EnforcementAction           `gorm:"column:enforcement_action;type:integer"`
-	Time                     *time.Time                          `gorm:"column:time;type:timestamp;index:alerts_time,type:btree"`
-	State                    storage.ViolationState              `gorm:"column:state;type:integer;index:alerts_state,type:btree"`
+	Time                     *time.Time                          `gorm:"column:time;type:timestamp;index:alerts_time,type:btree,option:CONCURRENTLY"`
+	State                    storage.ViolationState              `gorm:"column:state;type:integer;index:alerts_state,type:btree,option:CONCURRENTLY"`
 	PlatformComponent        bool                                `gorm:"column:platformcomponent;type:bool"`
 	EntityType               storage.Alert_EntityType            `gorm:"column:entitytype;type:integer"`
 	Serialized               []byte                              `gorm:"column:serialized;type:bytea"`
