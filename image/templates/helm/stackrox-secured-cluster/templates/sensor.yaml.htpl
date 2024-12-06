@@ -53,7 +53,7 @@ spec:
         fsGroup: 4000
       {{- end }}
       serviceAccountName: sensor
-      {{- if ._rox.env.securedClusterCertRefresh }}
+      {{- if ._rox._securedClusterCertRefresh }}
       initContainers:
         - name: init-tls-certs
           image: {{ quote ._rox.image.main.fullRef }}
@@ -193,7 +193,7 @@ spec:
           readOnly: true
         {{- end }}
       volumes:
-      {{- if ._rox.env.securedClusterCertRefresh }}
+      {{- if ._rox._securedClusterCertRefresh }}
       - name: certs
         emptyDir: {}
       - name: certs-legacy

@@ -45,7 +45,7 @@ spec:
       hostAliases: {{ toYaml ._rox.collector.hostAliases | nindent 8 }}
       {{- end }}
       serviceAccountName: collector
-      {{- if ._rox.env.securedClusterCertRefresh }}
+      {{- if ._rox._securedClusterCertRefresh }}
       initContainers:
         - name: init-tls-certs
           image: {{ quote ._rox.image.main.fullRef }}
@@ -262,7 +262,7 @@ spec:
       - hostPath:
           path: /dev
         name: dev-ro
-      {{- if ._rox.env.securedClusterCertRefresh }}
+      {{- if ._rox._securedClusterCertRefresh }}
       - name: certs
         emptyDir: {}
       - name: certs-legacy

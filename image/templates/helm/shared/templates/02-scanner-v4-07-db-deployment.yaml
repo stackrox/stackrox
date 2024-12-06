@@ -47,7 +47,7 @@ spec:
       serviceAccountName: scanner-v4
       terminationGracePeriodSeconds: 120
       initContainers:
-      {{- if ._rox.env.securedClusterCertRefresh }}
+      {{- if ._rox._securedClusterCertRefresh }}
       - name: init-tls-certs
         image: {{ quote ._rox.image.main.fullRef }}
         command:
@@ -141,7 +141,7 @@ spec:
       - name: config-volume
         configMap:
           name: {{ default "scanner-v4-db-config" ._rox.scannerV4.db.configOverride }}
-      {{- if ._rox.env.securedClusterCertRefresh }}
+      {{- if ._rox._securedClusterCertRefresh }}
       - name: certs
         emptyDir: {}
       - name: certs-legacy

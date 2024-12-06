@@ -49,7 +49,7 @@ spec:
       {{- if ._rox.scanner.priorityClassName }}
       priorityClassName: {{ ._rox.scanner.priorityClassName }}
       {{- end }}
-      {{- if ._rox.env.securedClusterCertRefresh }}
+      {{- if ._rox._securedClusterCertRefresh }}
       initContainers:
         - name: init-tls-certs
           image: {{ quote ._rox.image.main.fullRef }}
@@ -173,7 +173,7 @@ spec:
       - name: scanner-config-volume
         configMap:
           name: scanner-config
-      {{- if ._rox.env.securedClusterCertRefresh }}
+      {{- if ._rox._securedClusterCertRefresh }}
       - name: certs
         emptyDir: {}
       - name: certs-legacy
@@ -280,7 +280,7 @@ spec:
       priorityClassName: {{ ._rox.scanner.dbPriorityClassName }}
       {{- end }}
       initContainers:
-        {{- if ._rox.env.securedClusterCertRefresh }}
+        {{- if ._rox._securedClusterCertRefresh }}
         - name: init-tls-certs
           image: {{ quote ._rox.image.main.fullRef }}
           command:
@@ -357,7 +357,7 @@ spec:
       - name: scanner-config-volume
         configMap:
           name: scanner-config
-      {{- if ._rox.env.securedClusterCertRefresh }}
+      {{- if ._rox._securedClusterCertRefresh }}
       - name: certs
         emptyDir: {}
       - name: certs-legacy
