@@ -271,6 +271,8 @@ The following block checks for the validity of the provided init bundle. (`helm 
   {{ $_ = set $._rox "managedBy" "MANAGER_TYPE_MANUAL" }}
 {{- end }}
 
+{{ include "srox.setSecuredClusterCertRefresh" (list $) }}
+
 [< if (not .KubectlOutput) ->]
 
 {{ $imagePullSecretNames := list }}
