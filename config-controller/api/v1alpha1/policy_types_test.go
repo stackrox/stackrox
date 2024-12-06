@@ -1,11 +1,18 @@
 package v1alpha1
 
+import (
+	"testing"
+
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/protoassert"
+	"github.com/stackrox/stackrox/pkg/protoconv"
+)
+
 const (
 	expirationTS = "2006-01-02T15:04:05Z"
 )
 
-// TODO: Move this test func elsewhere
-/*func TestToProtobuf(t *testing.T) {
+func TestToProtobuf(t *testing.T) {
 	policyCRSpec := SecurityPolicySpec{
 		PolicyName:      "This is a test policy",
 		Description:     "This is a test description",
@@ -13,6 +20,9 @@ const (
 		Remediation:     "This is a test remediation",
 		Categories:      []string{"Security Best Practices"},
 		LifecycleStages: []LifecycleStage{"BUILD", "DEPLOY"},
+		Notifiers: []string{
+			"email-notifier",
+		},
 		Exclusions: []Exclusion{
 			{
 				Name: "Don't alert on deployment collector in namespace stackrox",
@@ -55,6 +65,9 @@ const (
 		Categories:      []string{"Security Best Practices"},
 		PolicyVersion:   "1.1",
 		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_BUILD, storage.LifecycleStage_DEPLOY},
+		Notifiers: []string{
+			"notifier-1",
+		},
 		Exclusions: []*storage.Exclusion{
 			{
 				Name: "Don't alert on deployment collector in namespace stackrox",
@@ -90,9 +103,13 @@ const (
 		MitreVectorsLocked: true,
 		IsDefault:          false,
 	}
-	protoPolicy := ToProtobuf()
+
+	notifiers := map[string]string{
+		"email-notifier": "notifier-1",
+		"jira-notifier":  "notifier-2",
+	}
+	protoPolicy := ToProtobuf(notifiers)
 	// Hack: Reset the source field for us to be able to compare
 	protoPolicy.Source = storage.PolicySource_IMPERATIVE
 	protoassert.Equal(t, expectedProto, protoPolicy, "proto message derived from custom resource not as expected")
 }
-*/

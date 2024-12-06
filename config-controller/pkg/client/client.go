@@ -71,7 +71,7 @@ type CachedCentralClient interface {
 	CreatePolicy(ctx context.Context, policy *storage.Policy) (*storage.Policy, error)
 	UpdatePolicy(ctx context.Context, policy *storage.Policy) error
 	DeletePolicy(ctx context.Context, name string) error
-	GetNotifierID(ctx context.Context, notifierName string) (string, bool)
+	GetNotifiers(ctx context.Context) map[string]string
 	FlushCache(ctx context.Context) error
 	EnsureFresh(ctx context.Context) error
 }
@@ -239,9 +239,8 @@ func New(ctx context.Context, opts ...clientOptions) (CachedCentralClient, error
 	return &c, nil
 }
 
-func (c *client) GetNotifierID(ctx context.Context, notifierName string) (string, bool) {
-	id, exists := c.notifierNameToIDCache[notifierName]
-	return id, exists
+func (c *client) GetNotifiers() map[string]string {
+	return c.notifierNameToIDCache
 }
 
 func (c *client) ListPolicies(_ context.Context) ([]*storage.Policy, error) {

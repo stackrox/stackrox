@@ -18,6 +18,10 @@ package v1alpha1
 
 import (
 	"github.com/pkg/errors"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/booleanpolicy/policyversion"
+	"github.com/stackrox/stackrox/pkg/protocompat"
+	"github.com/stackrox/stackrox/pkg/uuid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -175,4 +179,153 @@ type SecurityPolicyList struct {
 
 func init() {
 	SchemeBuilder.Register(&SecurityPolicy{}, &SecurityPolicyList{})
+}
+
+// ToProtobuf converts the SecurityPolicy spec into policy proto
+func (p SecurityPolicySpec) ToProtobuf(notifiers map[string][string]) *storage.Policy {
+	proto := storage.Policy{
+		Name:               p.PolicyName,
+		Description:        p.Description,
+		Rationale:          p.Rationale,
+		Remediation:        p.Remediation,
+		Disabled:           p.Disabled,
+		Categories:         p.Categories,
+		PolicyVersion:      policyversion.CurrentVersion().String(),
+		CriteriaLocked:     p.CriteriaLocked,
+		MitreVectorsLocked: p.MitreVectorsLocked,
+		IsDefault:          p.IsDefault,
+		Source:             storage.PolicySource_DECLARATIVE,
+	}
+
+	proto.Notifiers = make([]string, len(p.Notifiers))
+	for _, notifier := range p.Notifiers {
+		_, err := uuid.FromString(notifier)
+		if err == nil {
+			proto.Notifiers = append(proto.Notifiers, notifier)
+			continue
+		}
+		// spec has notifier names specified
+		id, exists := notifiers[notifier]
+		if exists {
+			proto.Notifiers = append(proto.Notifiers, id)
+			continue
+		}
+		log.Warnf("Notifier '%s' does not exist, skipping ..", notifier)
+	}
+
+	for _, ls := range p.LifecycleStages {
+		val, found := storage.LifecycleStage_value[string(ls)]
+		if found {
+			proto.LifecycleStages = append(proto.LifecycleStages, storage.LifecycleStage(val))
+		}
+	}
+
+	for _, exclusion := range p.Exclusions {
+		protoExclusion := storage.Exclusion{
+			Name: exclusion.Name,
+		}
+
+		if exclusion.Expiration != "" {
+			protoTS, err := protocompat.ParseRFC3339NanoTimestamp(exclusion.Expiration)
+			if err != nil {
+				return nil
+			}
+			protoExclusion.Expiration = protoTS
+		}
+
+		if exclusion.Deployment != (configstackroxiov1alpha1.Deployment{}) {
+			protoExclusion.Deployment = &storage.Exclusion_Deployment{
+				Name: exclusion.Deployment.Name,
+			}
+
+			scope := exclusion.Deployment.Scope
+			if scope != (configstackroxiov1alpha1.Scope{}) {
+				protoExclusion.Deployment.Scope = &storage.Scope{
+					Cluster:   scope.Cluster,
+					Namespace: scope.Namespace,
+				}
+			}
+
+			if scope.Label != (configstackroxiov1alpha1.Label{}) {
+				protoExclusion.Deployment.Scope.Label = &storage.Scope_Label{
+					Key:   scope.Label.Key,
+					Value: scope.Label.Value,
+				}
+			}
+
+		}
+
+		proto.Exclusions = append(proto.Exclusions, &protoExclusion)
+	}
+
+	for _, scope := range p.Scope {
+		protoScope := &storage.Scope{
+			Cluster:   scope.Cluster,
+			Namespace: scope.Namespace,
+		}
+
+		if scope.Label != (configstackroxiov1alpha1.Label{}) {
+			protoScope.Label = &storage.Scope_Label{
+				Key:   scope.Label.Key,
+				Value: scope.Label.Value,
+			}
+		}
+
+		proto.Scope = append(proto.Scope, protoScope)
+	}
+
+	val, found := storage.Severity_value[p.Severity]
+	if found {
+		proto.Severity = storage.Severity(val)
+	}
+
+	val, found = storage.EventSource_value[string(p.EventSource)]
+	if found {
+		proto.EventSource = storage.EventSource(val)
+	}
+
+	for _, ea := range p.EnforcementActions {
+		val, found := storage.EnforcementAction_value[string(ea)]
+		if found {
+			proto.EnforcementActions = append(proto.EnforcementActions, storage.EnforcementAction(val))
+		}
+	}
+
+	for _, section := range p.PolicySections {
+		protoSection := &storage.PolicySection{
+			SectionName: section.SectionName,
+		}
+
+		for _, group := range section.PolicyGroups {
+			protoGroup := &storage.PolicyGroup{
+				FieldName: group.FieldName,
+				Negate:    group.Negate,
+			}
+
+			val, found = storage.BooleanOperator_value[group.BooleanOperator]
+			if found {
+				protoGroup.BooleanOperator = storage.BooleanOperator(val)
+			}
+
+			for _, value := range group.Values {
+				protoValue := &storage.PolicyValue{
+					Value: value.Value,
+				}
+				protoGroup.Values = append(protoGroup.Values, protoValue)
+			}
+			protoSection.PolicyGroups = append(protoSection.PolicyGroups, protoGroup)
+		}
+		proto.PolicySections = append(proto.PolicySections, protoSection)
+	}
+
+	for _, mitreAttackVectors := range p.MitreAttackVectors {
+		protoMitreAttackVetor := &storage.Policy_MitreAttackVectors{
+			Tactic:     mitreAttackVectors.Tactic,
+			Techniques: mitreAttackVectors.Techniques,
+		}
+
+		proto.MitreAttackVectors = append(proto.MitreAttackVectors, protoMitreAttackVetor)
+	}
+
+	return &proto
 }
