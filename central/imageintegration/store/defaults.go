@@ -122,6 +122,7 @@ var DefaultImageIntegrations = []*storage.ImageIntegration{
 				Endpoint: "ghcr.io",
 			},
 		},
+		SkipTestIntegration: true, // /v2 endpoint requires authentication.
 	},
 }
 
