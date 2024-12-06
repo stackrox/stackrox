@@ -185,6 +185,8 @@ func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique, ignor
 							indexOptions.IndexCategory = value
 						case "priority":
 							indexOptions.IndexPriority = value
+						case "option":
+							indexOptions.IndexOption = value
 						}
 					}
 					opts.Index = append(opts.Index, indexOptions)
