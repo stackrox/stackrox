@@ -133,21 +133,21 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		Transport: httputil.DenyTransport,
 	}
 
+	enrichers := []driver.Enricher{
+		&fixedby.Enricher{},
+		&nvd.Enricher{},
+	}
+	if features.EPSSScore.Enabled() {
+		enrichers = append(enrichers, &epss.Enricher{})
+	}
+	if !features.ScannerV4RedHatCVEs.Enabled() {
+		enrichers = append(enrichers, &csaf.Enricher{})
+	}
 	libVuln, err := libvuln.New(ctx, &libvuln.Options{
-		Store:        store,
-		Locker:       locker,
-		MatcherNames: matcherNames,
-		Enrichers: func() []driver.Enricher {
-			enrichers := []driver.Enricher{
-				&csaf.Enricher{},
-				&nvd.Enricher{},
-				&fixedby.Enricher{},
-			}
-			if features.EPSSScore.Enabled() {
-				enrichers = append(enrichers, &epss.Enricher{})
-			}
-			return enrichers
-		}(),
+		Store:                    store,
+		Locker:                   locker,
+		MatcherNames:             matcherNames,
+		Enrichers:                enrichers,
 		UpdateRetention:          libvuln.DefaultUpdateRetention,
 		DisableBackgroundUpdates: true,
 		Client:                   ccClient,
