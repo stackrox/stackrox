@@ -182,7 +182,8 @@ func (w *WorkloadManager) clearActions() {
 		log.Infof("Cleared %d Actions from w.fakeClient", len(w.fakeClient.Actions()))
 		w.fakeClient.ClearActions()
 
-		tracker := w.fakeClient.Tracker()
+		//tracker := w.fakeClient.Tracker()
+		tracker := reflect.ValueOf(w.fakeClient).Elem().FieldByName("tracker")
 		reflectTracker := reflect.ValueOf(tracker).Elem()
 
 		setValue := func(fieldName string, value interface{}) {
