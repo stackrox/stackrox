@@ -101,7 +101,11 @@ const defaultSortOption = {
 
 const pollInterval = 30000;
 
-function NamespaceViewPage() {
+export type NamespaceViewPageProps = {
+    pageTitle: string;
+};
+
+function NamespaceViewPage({ pageTitle }: NamespaceViewPageProps) {
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
     const { searchFilter, setSearchFilter } = useURLSearch();
@@ -161,11 +165,11 @@ function NamespaceViewPage() {
 
     return (
         <>
-            <PageTitle title="Workload CVEs - Namespace view" />
+            <PageTitle title={`${pageTitle} - Namespace view`} />
             <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={vulnerabilitiesWorkloadCvesPath}>
-                        Workload CVEs
+                        {pageTitle}
                     </BreadcrumbItemLink>
                     <BreadcrumbItem isActive>Namespace view</BreadcrumbItem>
                 </Breadcrumb>

@@ -44,7 +44,11 @@ const deploymentMetadataQuery = gql`
     }
 `;
 
-function DeploymentPage() {
+export type DeploymentPageProps = {
+    pageTitle: string;
+};
+
+function DeploymentPage({ pageTitle }: DeploymentPageProps) {
     const { deploymentId } = useParams() as { deploymentId: string };
     const [activeTabKey, setActiveTabKey] = useURLStringUnion('detailsTab', detailsTabValues);
 
@@ -62,7 +66,7 @@ function DeploymentPage() {
 
     return (
         <>
-            <PageTitle title={`Workload CVEs - Deployment ${deploymentName ?? ''}`} />
+            <PageTitle title={`${pageTitle} - Deployment ${deploymentName ?? ''}`} />
             <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={workloadCveOverviewDeploymentsPath}>
