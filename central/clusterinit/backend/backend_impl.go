@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/clusters"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/crs"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -192,7 +193,7 @@ func (b *backendImpl) IssueCRS(ctx context.Context, name string) (*CRSWithMeta, 
 	}
 
 	return &CRSWithMeta{
-		CRS: &CRS{
+		CRS: &crs.CRS{
 			CAs:  []string{caCert},
 			Cert: string(cert.CertPEM),
 			Key:  string(cert.KeyPEM),
