@@ -87,7 +87,7 @@ func (s *initTLSCertsSuite) TestFileCopy() {
 					s.Require().NoError(err, "Expected file %s to exist", file)
 
 					fileName := filepath.Base(file)
-					s.True(strings.HasPrefix(fileName, tt.expectedPrefix), "Expected file name to start with '%s', got %s", tt.expectedPrefix, fileName)
+					s.True(strings.HasPrefix(fileName, tt.expectedPrefix), "Expected file name to start with %q, got %q", tt.expectedPrefix, fileName)
 				}
 
 				err = copyFiles(files, destinationDir)
@@ -99,7 +99,7 @@ func (s *initTLSCertsSuite) TestFileCopy() {
 
 				for _, file := range destFiles {
 					fileName := file.Name()
-					s.True(strings.HasPrefix(fileName, tt.expectedPrefix), "Expected file name to start with '%s', got %s", tt.expectedPrefix, fileName)
+					s.True(strings.HasPrefix(fileName, tt.expectedPrefix), "Expected file name to start with %q, got %q", tt.expectedPrefix, fileName)
 				}
 			}
 		})
