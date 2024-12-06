@@ -4,47 +4,21 @@ on:
   schedule:
   - cron: 0 5 * * 1
 jobs:
-  determine-new-scanner-version:
+  update-scanner:
     runs-on: ubuntu-latest
-    outputs:
-      new-scanner-version: ${{ steps.update-version.outputs.new-scanner-version }}
-    steps:
-    - name: Checkout scanner repo
-      uses: actions/checkout@v4
-      with:
-        repository: stackrox/scanner
-        fetch-depth: 0 # we need to fetch tags
-    - name: Update version
-      id: update-version
-      run: |
-        echo "new-scanner-version=$(make -s tag)" >> "${GITHUB_OUTPUT}"
-
-  ensure-images-exist:
-    runs-on: ubuntu-latest
-    needs: determine-new-scanner-version
-    strategy:
-      matrix:
-        image: ["scanner", "scanner-slim", "scanner-db", "scanner-db-slim"]
-        tag_suffix: ["", "-fast"]
-    steps:
-    - name: Ensure image exists
-      uses: stackrox/actions/release/wait-for-image@v1
-      with:
-        token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
-        image: rhacs-eng/${{ matrix.image }}:${{ needs.determine-new-scanner-version.outputs.new-scanner-version }}${{ matrix.tag_suffix }}
-        limit: 1800
-
-  create-pr:
-    runs-on: ubuntu-latest
-    needs: [determine-new-scanner-version, ensure-images-exist]
     steps:
     - uses: actions/checkout@v4
       with:
         ref: master # this is our target branch
         fetch-depth: 0 # we need to fetch all branches
-    - name: Update SCANNER_VERSION
-      run: |
-        echo "${{ needs.determine-new-scanner-version.outputs.new-scanner-version }}" > SCANNER_VERSION
+    - name: Checkout scanner repo
+      uses: actions/checkout@v4
+      with:
+        repository: stackrox/scanner
+        path: deps/scanner
+        fetch-depth: 0 # we need to fetch tags
+    - name: Update version
+      run: make -sC deps/scanner tag | tee SCANNER_VERSION
     - name: Create Pull Request
       id: cpr
       uses: peter-evans/create-pull-request@v7
