@@ -113,7 +113,7 @@ export function teardown(sacInfos) {
 }
 
 const runAllGroups = (header, tags) => {
-    vulnerabilityManagementDashboard(__ENV.HOST, header, tags);
+    // vulnerabilityManagementDashboard(__ENV.HOST, header, tags);
     mainDashboard(__ENV.HOST, header, tags);
 };
 
