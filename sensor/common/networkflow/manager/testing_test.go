@@ -111,7 +111,7 @@ func (c *connectionPair) incoming() *connectionPair {
 }
 
 func (c *connectionPair) external() *connectionPair {
-	c.conn.remote.IPAndPort.Address = externalIPv4Addr
+	c.conn.remote.IPAndPort.Address = net.ExternalIPv4Addr
 	return c
 }
 
