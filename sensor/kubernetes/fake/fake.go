@@ -185,8 +185,7 @@ func (w *WorkloadManager) clearActions() {
 		w.fakeClient.ClearActions()
 
 		gvk := schema.GroupVersionKind{
-			Version: "v1",
-			Kind:    "Pod",
+			Kind: "Pod",
 		}
 		objectctr := 0
 		for _, namespace := range w.namespaces {
