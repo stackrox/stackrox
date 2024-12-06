@@ -41,6 +41,16 @@ export function mainDashboard(host, headers, tags) {
          **/
 
         http.post(
+            `${host}/api/graphql?opname=alertCountsBySeverity`,
+            '{"operationName":"alertCountsBySeverity","variables":{"lowQuery":"Severity:LOW_SEVERITY","medQuery":"Severity:MEDIUM_SEVERITY","highQuery":"Severity:HIGH_SEVERITY","critQuery":"Severity:CRITICAL_SEVERITY"},"query":"query alertCountsBySeverity($lowQuery: String, $medQuery: String, $highQuery: String, $critQuery: String) {\\n  LOW_SEVERITY: violationCount(query: $lowQuery)\\n  MEDIUM_SEVERITY: violationCount(query: $medQuery)\\n  HIGH_SEVERITY: violationCount(query: $highQuery)\\n  CRITICAL_SEVERITY: violationCount(query: $critQuery)\\n}\\n"}',
+            { headers, tags }
+        );
+        /** DB Queries
+         *  - violationCount ($12 = 1..4, $13 = 0 -ViolationState_ACTIVE-, $14 = 3 -ViolationState_ATTEMPTED-)
+         *  select count(*) from alerts where ((alerts.ClusterId = $1 and (alerts.Namespace = $2 or ... or alerts.Namespace = $11)) and ((alerts.Policy_Severity = $12) and ((alerts.State = $13) or (alerts.State = $14))))
+         */
+
+        http.post(
             `${host}/api/graphql?opname=mostRecentAlerts`,
             '{"operationName":"mostRecentAlerts","variables":{"query":"Severity:CRITICAL_SEVERITY"},"query":"query mostRecentAlerts($query: String) {\\n  alerts: violations(\\n    query: $query\\n    pagination: {limit: 3, sortOption: {field: \\"Violation Time\\", reversed: true}}\\n  ) {\\n    id\\n    time\\n    deployment {\\n      name\\n      __typename\\n    }\\n    resource {\\n      resourceType\\n      name\\n      __typename\\n    }\\n    policy {\\n      name\\n      severity\\n      __typename\\n    }\\n    __typename\\n  }\\n}\\n"}',
             { headers, tags }
@@ -70,6 +80,26 @@ export function mainDashboard(host, headers, tags) {
          */
 
         // GET v1/deploymentswithprocessinfo?pagination.offset=0&pagination.limit=6&pagination.sortOption.field=Deployment%20Risk%20Priority&pagination.sortOption.reversed=false
+        http.get(
+            `${host}/v1/deploymentswithprocessinfo?pagination.offset=0&pagination.limit=6&pagination.sortOption.field=Deployment%20Risk%20Priority&pagination.sortOption.reversed=false`,
+            { headers, tags }
+        );
+        /** DB Queries
+         *  - 6 deployments in scope with highest risk
+         *  select deployments.Id::text as Deployment_ID from deployments where (deployments.ClusterId = $$ and (deployments.Namespace = $$ or deployments.Namespace = $$ or deployments.Namespace = $$ or deployments.Namespace = $$ or deployments.Namespace = $$ or deployments.Namespace = $$ or deployments.Namespace = $$ or deployments.Namespace = $$ or deployments.Namespace = $$ or deployments.Namespace = $$)) order by deployments.RiskScore desc LIMIT 6
+         *  - associated process data
+         *  select "process_baseline_results".serialized from process_baseline_results where process_baseline_results.DeploymentId = ANY($$::uuid[])
+         */
+
+        // GET v1/deployments?pagination.offset=0&pagination.limit=6&pagination.sortOption.field=Deployment%20Risk%20Priority&pagination.sortOption.reversed=false
+        http.get(
+            `${host}/v1/deployments?pagination.offset=0&pagination.limit=6&pagination.sortOption.field=Deployment%20Risk%20Priority&pagination.sortOption.reversed=false`,
+            { headers, tags }
+        );
+        /** DB Queries
+         *  - 6 deployments in scope with highest risk
+         *  select deployments.Id::text as Deployment_ID from deployments where (deployments.ClusterId = $$ and (deployments.Namespace = $$ or deployments.Namespace = $$ or deployments.Namespace = $$ or deployments.Namespace = $$ or deployments.Namespace = $$ or deployments.Namespace = $$ or deployments.Namespace = $$ or deployments.Namespace = $$ or deployments.Namespace = $$ or deployments.Namespace = $$)) order by deployments.RiskScore desc LIMIT 6
+         */
 
         http.post(
             `${host}/api/graphql?opname=agingImagesQuery`,
@@ -85,6 +115,14 @@ export function mainDashboard(host, headers, tags) {
          */
 
         // GET v1/alerts/summary/counts?request.query=&group_by=CATEGORY
+        http.get(
+            `${host}/v1/alerts/summary/counts?request.query=&group_by=CATEGORY`,
+            { headers, tags }
+        );
+        /** DB Queries
+         *
+         *  select alerts.Id::text as Alert_ID, alerts.ClusterName, alerts.Policy_Severity, alerts.Policy_Categories from alerts where ((alerts.ClusterId = $$ and (alerts.Namespace = $$ or ... or alerts.Namespace = $$)) and (((alerts.ClusterName is not null and alerts.Policy_Severity is not null) and alerts.Policy_Categories is not null) and ((alerts.State = $$) or (alerts.State = $$))))
+         */
 
         http.post(
             `${host}/api/graphql?opname=getAggregatedResults`,
