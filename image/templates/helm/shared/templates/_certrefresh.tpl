@@ -14,7 +14,7 @@
 
 {{ $_ := set $._rox "_securedClusterCertRefresh" false }}
 
-{{ if and (not $env.centralServices) (ne $env.installMethod "manifest") }}
+{{ if and (not $env.centralServices) (ne $._rox.managedBy "MANAGER_TYPE_MANUAL") }}
   {{ $_ := set $._rox "_securedClusterCertRefresh" true }}
 {{ end }}
 

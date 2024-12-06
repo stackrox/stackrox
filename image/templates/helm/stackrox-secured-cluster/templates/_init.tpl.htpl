@@ -129,8 +129,6 @@
 
 {{ include "srox.setInstallMethod" (list $) }}
 
-{{ include "srox.setSecuredClusterCertRefresh" (list $) }}
-
 {{ include "srox.applyDefaults" $ }}
 {{ include "srox.ensureCentralEndpointContainsPort" $ }}
 
@@ -272,6 +270,8 @@ The following block checks for the validity of the provided init bundle. (`helm 
 {{- if not ._rox.helmManaged }}
   {{ $_ = set $._rox "managedBy" "MANAGER_TYPE_MANUAL" }}
 {{- end }}
+
+{{ include "srox.setSecuredClusterCertRefresh" (list $) }}
 
 [< if (not .KubectlOutput) ->]
 
