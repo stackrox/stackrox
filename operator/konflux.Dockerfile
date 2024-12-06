@@ -8,8 +8,9 @@ COPY . .
 
 RUN .konflux/scripts/fail-build-if-git-is-dirty.sh
 
-ARG VERSIONS_SUFFIX
-ENV MAIN_TAG_SUFFIX="$VERSIONS_SUFFIX" COLLECTOR_TAG_SUFFIX="$VERSIONS_SUFFIX" SCANNER_TAG_SUFFIX="$VERSIONS_SUFFIX"
+ARG MAIN_IMAGE_TAG
+RUN if [[ "$MAIN_IMAGE_TAG" == "" ]]; then >&2 echo "error: required MAIN_IMAGE_TAG arg is unset"; exit 6; fi
+ENV BUILD_TAG="$MAIN_IMAGE_TAG"
 
 # Build the operator binary.
 # TODO(ROX-20240): enable non-release development builds.
@@ -23,7 +24,6 @@ RUN GOOS=linux GOARCH=$(go env GOARCH) scripts/go-build-file.sh operator/cmd/mai
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 
 ARG MAIN_IMAGE_TAG
-RUN if [[ "$MAIN_IMAGE_TAG" == "" ]]; then >&2 echo "error: required MAIN_IMAGE_TAG arg is unset"; exit 6; fi
 
 LABEL \
     com.redhat.component="rhacs-operator-container" \
@@ -54,7 +54,7 @@ RUN microdnf upgrade -y --nobest && \
 COPY LICENSE /licenses/LICENSE
 
 # TODO(ROX-22245): set proper image flavor for user-facing GA Fast Stream images.
-ENV ROX_IMAGE_FLAVOR="development_build"
+ENV ROX_IMAGE_FLAVOR="rhacs"
 
 # The following are numeric uid and gid of `nobody` user in UBI.
 # We can't use symbolic names because otherwise k8s will fail to start the pod with an error like this:
