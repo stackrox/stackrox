@@ -12,6 +12,8 @@
 {{ $ := index . 0 }}
 {{ $env := $._rox.env }}
 
+{{ $_ := set $._rox "_securedClusterCertRefresh" false }}
+
 {{ if and (not $env.centralServices) (ne $env.installMethod "manifest") }}
   {{ $_ := set $._rox "_securedClusterCertRefresh" true }}
 {{ end }}
