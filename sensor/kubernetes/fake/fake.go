@@ -5,6 +5,7 @@ import (
 	"os"
 	"reflect"
 	"time"
+	"unsafe"
 
 	"github.com/cockroachdb/pebble"
 	appVersioned "github.com/openshift/client-go/apps/clientset/versioned"
@@ -21,7 +22,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/apimachinery/pkg/watch"
 	fakediscovery "k8s.io/client-go/discovery/fake"
@@ -183,23 +183,17 @@ func (w *WorkloadManager) clearActions() {
 		w.fakeClient.ClearActions()
 
 		tracker := w.fakeClient.Tracker()
-		objects := reflect.ValueOf(tracker).Elem().Elem().FieldByName("objects")
-		watchers := reflect.ValueOf(tracker).Elem().Elem().FieldByName("watchers")
-		numObjects := 0
-		numWatchers := 0
-		if objects.IsValid() {
-			val := objects.Interface().(map[schema.GroupVersionResource]map[types.NamespacedName]runtime.Object)
-			numObjects = len(val)
-		} else {
-			log.Warnf("tracker.objects was invalid")
+		reflectTracker := reflect.ValueOf(tracker).Elem()
+
+		setValue := func(fieldName string, value interface{}) {
+			field := reflectTracker.FieldByName(fieldName)
+			//#nosec G103
+			field = reflect.NewAt(field.Type(), unsafe.Pointer(field.UnsafeAddr())).Elem()
+			field.Set(reflect.ValueOf(value).Elem())
 		}
-		if watchers.IsValid() {
-			val := watchers.Interface().(map[schema.GroupVersionResource]map[types.NamespacedName]runtime.Object)
-			numWatchers = len(val)
-		} else {
-			log.Warnf("tracker.watchers was invalid")
-		}
-		log.Infof("tracker is holding %d objects and %d watchers", numObjects, numWatchers)
+
+		setValue("objects", nil)
+		setValue("watchers", nil)
 	}
 }
 
