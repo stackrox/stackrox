@@ -76,6 +76,8 @@ type EnrichmentContext struct {
 	Namespace string
 
 	Source *RequestSource
+
+	ScannerTypeHint string
 }
 
 // FetchOnlyIfMetadataEmpty checks the fetch opts and return whether or not we can used a cached or saved

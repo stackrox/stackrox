@@ -238,6 +238,22 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 
 	errorList := errorhelpers.NewErrorList("image enrichment")
 
+	//verify that there is an integration for  scanner specified in enrichContext
+	if enrichContext.ScannerTypeHint != "" {
+		scanners := e.integrations.ScannerSet()
+		found := false
+		for _, scanner := range scanners.GetAll() {
+			if scanner.GetScanner().Type() != enrichContext.ScannerTypeHint {
+				found = true
+				break
+			}
+		}
+		if !found {
+			errorList.AddError(errors.New("no image scanners are integrated"))
+			return EnrichmentResult{ImageUpdated: false, ScanResult: ScanNotDone}, errorList.ToError()
+		}
+	}
+
 	imageNoteSet := make(map[storage.Image_Note]struct{}, len(image.Notes))
 	for _, note := range image.Notes {
 		imageNoteSet[note] = struct{}{}
