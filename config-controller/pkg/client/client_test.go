@@ -56,6 +56,19 @@ func createListPolicies(policies []*storage.Policy) []*storage.ListPolicy {
 	return ret
 }
 
+func listNotifiers() []*storage.Notifier {
+	return []*storage.Notifier{
+		{
+			Id:   "notifier-1",
+			Name: "email-notifier",
+		},
+		{
+			Id:   "notifier-2",
+			Name: "jira-notifier",
+		},
+	}
+}
+
 type clientTest struct {
 	ctx        context.Context
 	policies   []*storage.Policy
@@ -113,6 +126,7 @@ func TestCachedClientGet(t *testing.T) {
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[0].Id).Return(policies[0], nil).Times(1)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[1].Id).Return(policies[1], nil).Times(1)
 		mockClient.EXPECT().TokenExchange(gomock.Any()).Return(nil).Times(1)
+		mockClient.EXPECT().ListNotifiers(gomock.Any()).Return(listNotifiers(), nil).Times(1)
 	})
 	defer clientTest.controller.Finish()
 
@@ -176,6 +190,7 @@ func TestCachedClientDelete(t *testing.T) {
 		mockClient.EXPECT().PostPolicy(gomock.Any(), &newPolicyDeclarative).Return(mockDecPolicyToReturn, nil).Times(1)
 		mockClient.EXPECT().PostPolicy(gomock.Any(), &newPolicyImperative).Return(mockImpPolicyToReturn, nil).Times(1)
 		mockClient.EXPECT().DeletePolicy(gomock.Any(), mockDecPolicyToReturn.Id).Return(nil).Times(1)
+		mockClient.EXPECT().ListNotifiers(gomock.Any()).Return(listNotifiers(), nil).Times(1)
 		mockClient.EXPECT().TokenExchange(gomock.Any()).Return(nil).Times(1)
 	})
 	defer clientTest.controller.Finish()
@@ -223,6 +238,7 @@ func TestCachedClientCreate(t *testing.T) {
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[0].Id).Return(policies[0], nil).Times(1)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[1].Id).Return(policies[1], nil).Times(1)
 		mockClient.EXPECT().PostPolicy(gomock.Any(), &newPolicy).Return(mockPolicyToReturn, nil).Times(1)
+		mockClient.EXPECT().ListNotifiers(gomock.Any()).Return(listNotifiers(), nil).Times(1)
 		mockClient.EXPECT().TokenExchange(gomock.Any()).Return(nil).Times(1)
 	})
 	defer clientTest.controller.Finish()
@@ -239,6 +255,7 @@ func TestCachedClientUpdate(t *testing.T) {
 		mockClient.EXPECT().ListPolicies(gomock.Any()).Return(createListPolicies(policies), nil).Times(1)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[0].Id).Return(policies[0], nil).Times(1)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[1].Id).Return(policies[1], nil).Times(1)
+		mockClient.EXPECT().ListNotifiers(gomock.Any()).Return(listNotifiers(), nil).Times(1)
 		mockClient.EXPECT().TokenExchange(gomock.Any()).Return(nil).Times(1)
 	})
 	defer clientTest.controller.Finish()
@@ -260,6 +277,7 @@ func TestCachedClientFlushCacheNoUpdate(t *testing.T) {
 		mockClient.EXPECT().ListPolicies(gomock.Any()).Return(createListPolicies(policies), nil).Times(1)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[0].Id).Return(policies[0], nil).Times(1)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[1].Id).Return(policies[1], nil).Times(1)
+		mockClient.EXPECT().ListNotifiers(gomock.Any()).Return(listNotifiers(), nil).Times(1)
 		mockClient.EXPECT().TokenExchange(gomock.Any()).Return(nil).Times(1)
 	})
 	defer clientTest.controller.Finish()
