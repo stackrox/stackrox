@@ -103,11 +103,9 @@ function ClusterPage({ clusterId }: ClusterPageProps): ReactElement {
                     const {
                         mainImageRepository: mainImage,
                         collectorImageRepository: collectorImage,
-                        kernelSupportAvailable,
                     } = clusterDefaults;
 
                     setCentralEnv({
-                        kernelSupportAvailable,
                         successfullyFetched: true,
                     });
 
@@ -116,7 +114,6 @@ function ClusterPage({ clusterId }: ClusterPageProps): ReactElement {
                             ...selectedCluster,
                             mainImage,
                             collectorImage,
-                            slimCollector: kernelSupportAvailable,
                         };
                         setSelectedCluster(updatedCluster);
                     }
