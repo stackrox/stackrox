@@ -68,6 +68,8 @@ ci_exit_trap() {
     done
 
     handle_dangling_processes
+
+    gate_flaky_tests "${exit_code}"
 }
 
 # handle_dangling_processes() - The OpenShift CI ci-operator will not complete a
@@ -1581,6 +1583,26 @@ post_process_test_results() {
         save_test_metrics "${csv_output}"
     } || true
     set -u
+}
+
+gate_flaky_tests() {
+    local exit_code="$1"
+
+    if [[ "${exit_code}" == "0" ]]; then
+        exit "${exit_code}"
+    fi
+
+    # Prepare flakechecker
+    git -C /tmp clone --depth=1 --branch "mtodor/add-flakechecker" https://github.com/stackrox/junit2jira.git /tmp/junit2jira-flakechecker
+    (cd /tmp/junit2jira-flakechecker && go build  -o . ./...)
+
+    setup_gcp || echo "setup_gcp called"
+
+    # Run flakechecker for failed test
+    local config_file="${SCRIPTS_ROOT}/scripts/ci/flakechecker/flake-config.json"
+    /tmp/junit2jira-flakechecker/flakechecker --config-file "${config_file}" --job-name "${JOB_NAME}" -junit-reports-dir "${ARTIFACT_DIR}" || exit "${exit_code}"
+
+    exit 0
 }
 
 make_prow_job_link() {
