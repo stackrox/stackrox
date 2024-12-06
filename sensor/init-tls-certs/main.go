@@ -50,6 +50,10 @@ func setupFlags() {
 
 	flag.Parse()
 
+	if legacySourceDir == "" || newSourceDir == "" || destinationDir == "" {
+		log.Fatalf("All parameters are mandatory: -legacy, -new, and -destination must be provided.")
+	}
+
 	log.Println("New certs directory:", newSourceDir)
 	log.Println("Legacy certs directory:", legacySourceDir)
 	log.Println("Destination directory:", destinationDir)
