@@ -24,18 +24,16 @@ func NewSecuredClusterTLSIssuer(
 	sensorNamespace string,
 	sensorPodName string,
 ) common.SensorComponent {
-	msgToCentralC := make(chan *message.ExpiringMessage)
-	msgFromCentralC := make(chan *central.IssueSecuredClusterCertsResponse)
+	respFromCentralC := make(chan *central.IssueSecuredClusterCertsResponse)
 	return &securedClusterTLSIssuerImpl{
 		sensorNamespace:              sensorNamespace,
 		sensorPodName:                sensorPodName,
 		k8sClient:                    k8sClient,
-		msgToCentralC:                msgToCentralC,
-		msgFromCentralC:              msgFromCentralC,
+		respFromCentralC:             respFromCentralC,
 		certRefreshBackoff:           certRefreshBackoff,
 		getCertificateRefresherFn:    newCertificatesRefresher,
 		getServiceCertificatesRepoFn: securedcluster.NewServiceCertificatesRepo,
-		certRequester:                certificates.NewSecuredClusterCertificateRequester(msgToCentralC, msgFromCentralC),
+		certRequester:                certificates.NewSecuredClusterCertificateRequester(respFromCentralC),
 	}
 }
 
@@ -43,8 +41,7 @@ type securedClusterTLSIssuerImpl struct {
 	sensorNamespace              string
 	sensorPodName                string
 	k8sClient                    kubernetes.Interface
-	msgToCentralC                chan *message.ExpiringMessage
-	msgFromCentralC              chan *central.IssueSecuredClusterCertsResponse
+	respFromCentralC             chan *central.IssueSecuredClusterCertsResponse
 	certRefreshBackoff           wait.Backoff
 	getCertificateRefresherFn    certificateRefresherGetter
 	getServiceCertificatesRepoFn serviceCertificatesRepoGetter
@@ -110,7 +107,7 @@ func (i *securedClusterTLSIssuerImpl) Capabilities() []centralsensor.SensorCapab
 // ResponsesC is called "responses" because for other SensorComponents it is Central that
 // initiates the interaction. However, here it is Sensor which sends a request to Central.
 func (i *securedClusterTLSIssuerImpl) ResponsesC() <-chan *message.ExpiringMessage {
-	return i.msgToCentralC
+	return i.certRequester.MsgToCentralC()
 }
 
 // ProcessMessage dispatches Central's messages to Sensor received via the Central receiver.
@@ -127,7 +124,7 @@ func (i *securedClusterTLSIssuerImpl) ProcessMessage(msg *central.MsgToSensor) e
 			case <-ctx.Done():
 				// certRefresher will retry.
 				log.Errorf("timeout forwarding response %s from central: %s", response, ctx.Err())
-			case i.msgFromCentralC <- response:
+			case i.respFromCentralC <- response:
 			}
 		}()
 		return nil
