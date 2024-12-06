@@ -265,7 +265,7 @@ jobs:
       run: |
         echo "collector-version=$(make --quiet --no-print-directory collector-tag)" >> "${GITHUB_OUTPUT}"
 
-    - name: Ensure image exists
+    - name: Check image exists
       uses: stackrox/actions/release/wait-for-image@v1
       with:
         token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
@@ -287,7 +287,7 @@ jobs:
       run: |
         echo "scanner-version=$(make --quiet --no-print-directory scanner-tag)" >> "${GITHUB_OUTPUT}"
 
-    - name: Ensure image exists
+    - name: Check image exists
       uses: stackrox/actions/release/wait-for-image@v1
       with:
         token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
