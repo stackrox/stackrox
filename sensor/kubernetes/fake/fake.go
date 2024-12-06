@@ -3,9 +3,7 @@ package fake
 import (
 	"context"
 	"os"
-	"reflect"
 	"time"
-	"unsafe"
 
 	"github.com/cockroachdb/pebble"
 	appVersioned "github.com/openshift/client-go/apps/clientset/versioned"
@@ -19,9 +17,9 @@ import (
 	"github.com/stackrox/rox/sensor/common/signal"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"gopkg.in/yaml.v3"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/apimachinery/pkg/watch"
 	fakediscovery "k8s.io/client-go/discovery/fake"
@@ -38,10 +36,13 @@ const (
 )
 
 var (
-	scheme = runtime.NewScheme()
-	codecs = serializer.NewCodecFactory(scheme)
-
 	log = logging.LoggerForModule()
+
+	gvr = schema.GroupVersionResource{
+		Group:    "apiextensions.k8s.io",
+		Version:  "v1",
+		Resource: "customresourcedefinitions",
+	}
 )
 
 func init() {
@@ -105,6 +106,7 @@ type WorkloadManager struct {
 	servicesInitialized concurrency.Signal
 	processes           signal.Pipeline
 	networkManager      manager.Manager
+	namespaces          []string
 }
 
 // WorkloadManagerConfig WorkloadManager's configuration
@@ -182,19 +184,35 @@ func (w *WorkloadManager) clearActions() {
 		log.Infof("Cleared %d Actions from w.fakeClient", len(w.fakeClient.Actions()))
 		w.fakeClient.ClearActions()
 
-		//tracker := w.fakeClient.Tracker()
-		tracker := reflect.ValueOf(w.fakeClient).Elem().FieldByName("tracker")
-		reflectTracker := reflect.ValueOf(tracker).Elem()
-
-		setValue := func(fieldName string, value interface{}) {
-			field := reflectTracker.FieldByName(fieldName)
-			//#nosec G103
-			field = reflect.NewAt(field.Type(), unsafe.Pointer(field.UnsafeAddr())).Elem()
-			field.Set(reflect.ValueOf(value).Elem())
+		gvk := schema.GroupVersionKind{
+			Version: "v1",
+			Kind:    "Pod",
+		}
+		objectctr := 0
+		for _, namespace := range w.namespaces {
+			list, err := w.fakeClient.Tracker().List(gvr, gvk, namespace)
+			if err != nil {
+				log.Errorf("Failed to gather tracker data for namespace %s", namespace)
+			}
+			objectctr = objectctr + meta.LenList(list)
 		}
 
-		setValue("objects", nil)
-		setValue("watchers", nil)
+		log.Infof("Found %d items in tracker", objectctr)
+		/*
+			//tracker := w.fakeClient.Tracker()
+			tracker := reflect.ValueOf(w.fakeClient).Elem().FieldByName("tracker")
+			reflectTracker := reflect.ValueOf(tracker).Elem()
+
+			setValue := func(fieldName string, value interface{}) {
+				field := reflectTracker.FieldByName(fieldName)
+				//#nosec G103
+				field = reflect.NewAt(field.Type(), unsafe.Pointer(field.UnsafeAddr())).Elem()
+				field.Set(reflect.ValueOf(value).Elem())
+			}
+
+			setValue("objects", nil)
+			setValue("watchers", nil)
+		*/
 	}
 }
 
@@ -206,6 +224,7 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		numNamespaces = num
 	}
 	for _, n := range getNamespaces(numNamespaces, w.getIDsForPrefix(namespacePrefix)) {
+		w.namespaces = append(w.namespaces, n.String())
 		w.writeID(namespacePrefix, n.UID)
 		objects = append(objects, n)
 	}
@@ -262,11 +281,6 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		Platform:     "linux/amd64",
 	}
 	scheme := runtime.NewScheme()
-	gvr := schema.GroupVersionResource{
-		Group:    "apiextensions.k8s.io",
-		Version:  "v1",
-		Resource: "customresourcedefinitions",
-	}
 
 	clientSet := &clientSetImpl{
 		kubernetes: w.fakeClient,
