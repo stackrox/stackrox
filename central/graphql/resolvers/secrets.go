@@ -64,6 +64,7 @@ func (resolver *Resolver) Secrets(ctx context.Context, args PaginatedQuery) ([]*
 // SecretCount gets count of all secrets
 func (resolver *Resolver) SecretCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "SecretCount")
+	log.Info("GraphQL SecretCount resolver")
 	if err := readSecrets(ctx); err != nil {
 		return 0, err
 	}

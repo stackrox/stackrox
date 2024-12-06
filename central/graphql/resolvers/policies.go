@@ -43,6 +43,7 @@ func init() {
 // Policies returns GraphQL resolvers for all policies
 func (resolver *Resolver) Policies(ctx context.Context, args PaginatedQuery) ([]*policyResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Policies")
+	log.Info("GraphQL Policies resolver")
 	if err := readWorkflowAdministration(ctx); err != nil {
 		return nil, err
 	}
@@ -57,6 +58,7 @@ func (resolver *Resolver) Policies(ctx context.Context, args PaginatedQuery) ([]
 // Policy returns a GraphQL resolver for a given policy
 func (resolver *Resolver) Policy(ctx context.Context, args struct{ *graphql.ID }) (*policyResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Policy")
+	log.Info("GraphQL Policy resolver")
 	if err := readWorkflowAdministration(ctx); err != nil {
 		return nil, err
 	}

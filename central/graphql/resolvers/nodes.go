@@ -73,6 +73,7 @@ func (resolver *Resolver) Node(ctx context.Context, args struct{ graphql.ID }) (
 // Nodes returns resolvers for a matching nodes, or nil if no node is found in any cluster
 func (resolver *Resolver) Nodes(ctx context.Context, args PaginatedQuery) ([]*nodeResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Nodes")
+	log.Info("GraphQL Nodes resolver")
 	if err := readNodes(ctx); err != nil {
 		return nil, err
 	}
@@ -92,6 +93,7 @@ func (resolver *Resolver) Nodes(ctx context.Context, args PaginatedQuery) ([]*no
 // NodeCount returns count of nodes across clusters
 func (resolver *Resolver) NodeCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeCount")
+	log.Info("GraphQL NodeCount resolver")
 	if err := readNodes(ctx); err != nil {
 		return 0, err
 	}
@@ -344,12 +346,14 @@ func (resolver *nodeResolver) NodeVulnerabilityCount(ctx context.Context, args R
 // NodeVulnerabilityCounter resolves the number of different types of vulnerabilities contained in a node.
 func (resolver *nodeResolver) NodeVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "NodeVulnerabilityCounter")
+	log.Info("GraphQL Node NodeVulnerabilityCounter resolver")
 	return resolver.root.NodeVulnerabilityCounter(resolver.nodeScopeContext(ctx), args)
 }
 
 // PlottedNodeVulnerabilities returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
 func (resolver *nodeResolver) PlottedNodeVulnerabilities(ctx context.Context, args RawQuery) (*PlottedNodeVulnerabilitiesResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "PlottedNodeVulnerabilities")
+	log.Info("GraphQL Node PlottedNodeVulnerabilities resolver")
 
 	// (ROX-10911) Cluster scoping the context is not able to resolve node vulns when combined with 'Fixable:true/false' query
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNodeRawQuery())
