@@ -300,4 +300,35 @@ describe('Violations', () => {
             'Resolved on:'
         );
     });
+
+    it('should filter by active violations', () => {
+        visitViolations();
+
+        cy.intercept('GET', '/v1/alerts?query=*').as('getViolations');
+
+        // should filter using the correct query values for active violations
+        cy.wait('@getViolations').then((interception) => {
+            const queryString = interception.request.query.query;
+
+            expect(queryString).to.contain('Violation State:ACTIVE');
+        });
+    });
+
+    it('should filter by resolved violations', () => {
+        visitViolations();
+
+        // select the "Resolved" tab to view resolved violations
+        cy.get(
+            '[aria-label="Violation state tabs"] button[role="tab"]:contains("Resolved")'
+        ).click();
+
+        cy.intercept('GET', '/v1/alerts?query=*').as('getViolations');
+
+        // should filter using the correct query values for resolved violations
+        cy.wait('@getViolations').then((interception) => {
+            const queryString = interception.request.query.query;
+
+            expect(queryString).to.contain('Violation State:RESOLVED');
+        });
+    });
 });
