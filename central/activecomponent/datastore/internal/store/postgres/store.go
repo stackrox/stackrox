@@ -260,13 +260,13 @@ func Destroy(ctx context.Context, db postgres.DB) {
 }
 
 func dropTableActiveComponents(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS active_components CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE active_components CASCADE")
 	dropTableActiveComponentsActiveContextsSlices(ctx, db)
 
 }
 
 func dropTableActiveComponentsActiveContextsSlices(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS active_components_active_contexts_slices CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE active_components_active_contexts_slices CASCADE")
 
 }
 

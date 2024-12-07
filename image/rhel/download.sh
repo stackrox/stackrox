@@ -32,6 +32,9 @@ if [[ "$DEBUG_BUILD" == "yes" ]]; then
   fi
 fi
 
+dnf install -y golang
+GOBIN="${output_dir}/go/bin" go install github.com/jackc/tern/v2@latest
+
 mkdir -p "$output_dir/rpms"
 
 if [[ "$arch" == "s390x" ]]; then

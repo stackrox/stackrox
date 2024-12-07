@@ -176,7 +176,7 @@ func Destroy(ctx context.Context, db postgres.DB) {
 }
 
 func dropTableExternalBackups(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS external_backups CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE external_backups CASCADE")
 
 }
 

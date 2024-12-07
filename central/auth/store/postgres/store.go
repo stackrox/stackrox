@@ -254,13 +254,13 @@ func Destroy(ctx context.Context, db postgres.DB) {
 }
 
 func dropTableAuthMachineToMachineConfigs(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS auth_machine_to_machine_configs CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE auth_machine_to_machine_configs CASCADE")
 	dropTableAuthMachineToMachineConfigsMappings(ctx, db)
 
 }
 
 func dropTableAuthMachineToMachineConfigsMappings(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS auth_machine_to_machine_configs_mappings CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE auth_machine_to_machine_configs_mappings CASCADE")
 
 }
 
