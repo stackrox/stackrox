@@ -87,7 +87,7 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 		res := recorder.Result()
 		err := res.Body.Close()
 		assert.NoError(t, err)
-		assert.Equal(t, http.StatusNotFound, res.StatusCode)
+		assert.Equal(t, http.StatusNotImplemented, res.StatusCode)
 	})
 
 	// Test case: SBOM feature not enabled
@@ -103,14 +103,14 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 		res := recorder.Result()
 		err := res.Body.Close()
 		assert.NoError(t, err)
-		assert.Equal(t, http.StatusNotFound, res.StatusCode)
+		assert.Equal(t, http.StatusNotImplemented, res.StatusCode)
 	})
 
 	// Test case: request body size exceeds limit
 	t.Run("request body size exceeds limit", func(t *testing.T) {
 		t.Setenv(features.SBOMGeneration.EnvVar(), "true")
 		t.Setenv(features.ScannerV4.EnvVar(), "true")
-		t.Setenv("ROX_SBOM_API_REQ_SIZE", "2")
+		t.Setenv("ROX_SBOM_GEN_MAX_REQ_SIZE_BYTES", "2")
 		largeRequestBody := []byte(`{"cluster": "test-cluster", "image_name": "test-image", "force": true}`)
 		req := httptest.NewRequest(http.MethodPost, "/sbom", bytes.NewReader(largeRequestBody))
 		recorder := httptest.NewRecorder()

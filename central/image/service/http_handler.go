@@ -6,24 +6,17 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
-	"strconv"
-	"time"
 
 	"github.com/pkg/errors"
 	clusterUtil "github.com/stackrox/rox/central/cluster/util"
 	"github.com/stackrox/rox/central/role/sachelper"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/images/integration"
 	"google.golang.org/grpc/codes"
-)
-
-const (
-	NumberBytes = 100 * 1024
-	timeout     = 10 * time.Minute
 )
 
 type sbomRequestBody struct {
@@ -58,28 +51,19 @@ func (h sbomHttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	// verify scanner v4 is enabled
 	if !features.ScannerV4.Enabled() {
-		httputil.WriteGRPCStyleError(w, codes.NotFound, errors.New("Scanner v4 is not enabled. Enabled scanner v4 to get SBOMs"))
+		httputil.WriteGRPCStyleError(w, codes.Unimplemented, errors.New("Scanner V4 is disabled.Enable Scanner V4 to generate SBOMs"))
 		return
 	}
 	if !features.SBOMGeneration.Enabled() {
-		httputil.WriteGRPCStyleError(w, codes.NotFound, errors.New("SBOM feature is not enabled"))
+		httputil.WriteGRPCStyleError(w, codes.Unimplemented, errors.New("SBOM feature is not enabled"))
 		return
 	}
 	var params sbomRequestBody
-	reqSizeLimit := NumberBytes
-	reqSizeBytes := os.Getenv("ROX_SBOM_API_REQ_SIZE")
-	if reqSizeBytes != "" {
-		reqSizeLimitInt, err := strconv.Atoi(reqSizeBytes)
-		if err == nil {
-			reqSizeLimit = reqSizeLimitInt
-		}
-	}
+	sbomGenMaxReqSizeBytes := env.SBOMGenerationMaxReqSizeBytes.IntegerSetting()
 	// timeout api after 10 minutes
-	ctx, cancel := context.WithTimeout(r.Context(), time.Duration(timeout))
+	ctx, cancel := context.WithTimeout(r.Context(), env.ScanTimeout.DurationSetting())
 	defer cancel()
-	//for testing only
-	log.Infof("request size is %d", reqSizeLimit)
-	lr := io.LimitReader(r.Body, int64(reqSizeLimit))
+	lr := io.LimitReader(r.Body, int64(sbomGenMaxReqSizeBytes))
 	err := json.NewDecoder(lr).Decode(&params)
 	if err != nil {
 		httputil.WriteGRPCStyleError(w, codes.InvalidArgument, errors.Wrap(err, "decoding json request body"))
@@ -87,7 +71,7 @@ func (h sbomHttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	bytes, err := h.getSbom(ctx, params)
 	if err != nil {
-		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrap(err, "error generating SBOM"))
+		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrap(err, "generating SBOM"))
 		return
 	}
 
@@ -140,8 +124,8 @@ func (h sbomHttpHandler) getSbom(ctx context.Context, params sbomRequestBody) ([
 		"creationInfo": map[string]interface{}{
 			"created": "2023-08-30T04:40:16Z",
 			"creators": []string{
-				"Organization: Uchiha Cortez",
-				"Tool: FOSSA v0.12.0",
+				"Organization: NA Org",
+				"Tool:  N/A - PoC",
 			},
 		},
 	}
