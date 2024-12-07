@@ -21,12 +21,12 @@ log_timezone = 'Etc/UTC'
 datestyle = 'iso, mdy'
 timezone = 'Etc/UTC'
 lc_messages = 'en_US.utf8'
-lc_monetary = 'en_US.utf8'		# locale for monetary formatting
-lc_numeric = 'en_US.utf8'		# locale for number formatting
-lc_time = 'en_US.utf8'			# locale for time formatting
+lc_monetary = 'en_US.utf8'          # locale for monetary formatting
+lc_numeric = 'en_US.utf8'           # locale for number formatting
+lc_time = 'en_US.utf8'              # locale for time formatting
 
 default_text_search_config = 'pg_catalog.english'
-shared_preload_libraries = 'pg_stat_statements'	# StackRox customized
+shared_preload_libraries = 'pg_stat_statements'     # StackRox customized
 
 # Logging. For more details, see
 # https://www.postgresql.org/docs/current/runtime-config-logging.html
