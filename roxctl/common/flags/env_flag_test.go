@@ -34,9 +34,8 @@ func TestFlagOrSettingValue(t *testing.T) {
 // TODO: How do I make this work from running "test ."?
 func TestFlagOrConfigurationValueFlags(t *testing.T) {
 
-	var (
-		testFile1 = "./testdata/test_instance1.yaml"
-	)
+	testFile1 := "./testdata/test_instance1.yaml"
+
 	// 1. Default, unchanged flag value and setting not set should lead to the default value being returned.
 	cmd := &cobra.Command{
 		PersistentPreRunE: LoadConfig,
@@ -79,9 +78,8 @@ func TestFlagOrConfigurationValueFlags(t *testing.T) {
 }
 
 func TestFlagOrConfigurationValueEnv(t *testing.T) {
-	var (
-		testFile1 = "./testdata/test_instance1.yaml"
-	)
+
+	testFile1 := "./testdata/test_instance1.yaml"
 
 	cmd := &cobra.Command{
 		PersistentPreRunE: LoadConfig,
@@ -122,9 +120,8 @@ func TestFlagOrConfigurationValueEnv(t *testing.T) {
 }
 
 func TestFlagOrConfigurationValueFlagsAndEnv(t *testing.T) {
-	var (
-		testFile1 = "./testdata/test_instance1.yaml"
-	)
+
+	testFile1 := "./testdata/test_instance1.yaml"
 
 	cmd := &cobra.Command{
 		PersistentPreRunE: LoadConfig,
