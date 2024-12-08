@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestLoadConfig(t *testing.T) {
+func TestReadConfig(t *testing.T) {
 
 	testCases := []struct {
 		configFile           string
