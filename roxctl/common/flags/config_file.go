@@ -31,7 +31,7 @@ var (
 	configCaCertFileSet   = pointers.Bool(false)
 	configApiTokenFileSet = pointers.Bool(false)
 
-	log = logging.CreateLogger(logging.CurrentModule(), 0)
+	log = logging.LoggerForModule()
 )
 
 // AddConfigurationFile adds --config-file flag to the base command.
