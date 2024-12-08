@@ -1,27 +1,12 @@
 package flags
 
 import (
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"os"
 	"testing"
 )
 
 func TestLoadConfig(t *testing.T) {
-
-	cwd, err := os.Getwd()
-
-	if err != nil {
-		t.Logf("Something went wrong: %v", err)
-	}
-
-	t.Logf("Current working directory: %v", cwd)
-
-	configFileSet = pointers.Bool(false)
-	configEndpointSet = pointers.Bool(false)
-	configCaCertFileSet = pointers.Bool(false)
-	configApiTokenFileSet = pointers.Bool(false)
 
 	testCases := []struct {
 		configFile           string
