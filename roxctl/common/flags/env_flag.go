@@ -27,7 +27,7 @@ func flagOrSettingValue(flagValue string, flagChanged bool, setting env.Setting)
 func flagOrConfigurationValue(flagValue string, flagChanged bool, configValue string, configValueChanged bool, setting env.Setting) string {
 	if !flagChanged {
 
-		if configValueChanged == true {
+		if configValueChanged {
 			return configValue
 		}
 
