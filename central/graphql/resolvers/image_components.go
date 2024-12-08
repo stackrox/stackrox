@@ -17,7 +17,6 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -257,9 +256,9 @@ func getImageCVEResolvers(ctx context.Context, root *Resolver, os string, vulns 
 		if !predicate.Matches(vuln) {
 			continue
 		}
-		id := cve.ID(vuln.GetCve(), os)
+		converted := cveConverter.EmbeddedVulnerabilityToImageCVE(os, vuln)
+		id := converted.Id // cve.ID(vuln.GetCve(), os, cveStep)
 		if _, exists := idToVals[id]; !exists {
-			converted := cveConverter.EmbeddedVulnerabilityToImageCVE(os, vuln)
 			resolver, err := root.wrapImageCVE(converted, true, nil)
 			if err != nil {
 				return nil, err
