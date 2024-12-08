@@ -18,10 +18,6 @@ type Instance struct {
 	Endpoint          string `json:"endpoint"`
 }
 
-type yamlConfig interface {
-	instanceConfig
-}
-
 type instanceConfig struct {
 	Instance Instance `yaml:"instance"`
 }
