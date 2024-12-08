@@ -122,10 +122,6 @@ func LoadConfig(cmd *cobra.Command, args []string) error {
 
 	config = &instanceConfig{Instance: *instance}
 
-	// CHORE: Remove prints
-	// fmt.Println(config)
-
-	// TODO: Fix priority
 	// TODO: Should it be file > flag > env?
 
 	if instance.Endpoint != "" {

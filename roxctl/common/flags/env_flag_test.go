@@ -121,7 +121,6 @@ func TestFlagOrConfigurationValueEnv(t *testing.T) {
 
 }
 
-// TODO: Add flag > config > env setting tests
 func TestFlagOrConfigurationValueFlagsAndEnv(t *testing.T) {
 	var (
 		testFile1 = "./testdata/test_instance1.yaml"
