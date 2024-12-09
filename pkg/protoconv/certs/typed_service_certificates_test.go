@@ -63,7 +63,7 @@ func TestConvertTypedServiceCertificateSetToFileMap(t *testing.T) {
 			assert.Equal(t, c.expectedFileMap, fileMap)
 
 			// Convert FileMap back to TypedServiceCertificateSet.
-			roundTripTypedServiceCertificateSet, err := ConvertFileMapToTypedServiceCertificateSet(fileMap)
+			roundTripTypedServiceCertificateSet, _, err := ConvertFileMapToTypedServiceCertificateSet(fileMap)
 			assert.NoError(t, err)
 			roundTripCa := roundTripTypedServiceCertificateSet.GetCaPem()
 			roundTripCerts := roundTripTypedServiceCertificateSet.GetServiceCerts()
@@ -78,6 +78,118 @@ func TestConvertTypedServiceCertificateSetToFileMap(t *testing.T) {
 					fmt.Sprintf("Not equal for test case %q:\n"+
 						"input certs: %v\n"+
 						"round-trip certs: %v\n", c.description, inputCerts, roundTripCerts))
+			}
+		})
+	}
+}
+
+func TestConvertFileMapToTypedServiceCertificateSet(t *testing.T) {
+	cases := []struct {
+		description                        string
+		input                              map[string]string
+		expectedErr                        bool
+		expectedUnknownServices            []string
+		expectedTypedServiceCertificateSet *storage.TypedServiceCertificateSet
+	}{
+		{
+			description:                        "empty",
+			input:                              map[string]string{},
+			expectedErr:                        false,
+			expectedUnknownServices:            nil,
+			expectedTypedServiceCertificateSet: nil,
+		},
+		{
+			description: "known services",
+			input: map[string]string{
+				"admission-control-cert.pem": "cert 1",
+				"admission-control-key.pem":  "key 1",
+			},
+			expectedErr:             false,
+			expectedUnknownServices: nil,
+			expectedTypedServiceCertificateSet: &storage.TypedServiceCertificateSet{
+				CaPem: nil,
+				ServiceCerts: []*storage.TypedServiceCertificate{
+					{
+						ServiceType: storage.ServiceType_ADMISSION_CONTROL_SERVICE,
+						Cert: &storage.ServiceCertificate{
+							CertPem: []byte("cert 1"),
+							KeyPem:  []byte("key 1"),
+						},
+					},
+				},
+			},
+		},
+		{
+			description: "mixed known and unknown",
+			input: map[string]string{
+				"admission-control-cert.pem": "cert 1",
+				"admission-control-key.pem":  "key 1",
+				"foo-cert.pem":               "cert 2",
+				"foo-key.pem":                "key 2",
+				"bar-cert.pem":               "cert 3",
+				"bar-key.pem":                "key 3",
+			},
+			expectedErr:             false,
+			expectedUnknownServices: []string{"foo", "bar"},
+			expectedTypedServiceCertificateSet: &storage.TypedServiceCertificateSet{
+				CaPem: nil,
+				ServiceCerts: []*storage.TypedServiceCertificate{
+					{
+						ServiceType: storage.ServiceType_ADMISSION_CONTROL_SERVICE,
+						Cert: &storage.ServiceCertificate{
+							CertPem: []byte("cert 1"),
+							KeyPem:  []byte("key 1"),
+						},
+					},
+				},
+			},
+		},
+		{
+			description: "invalid file names",
+			input: map[string]string{
+				"admission-control-cert.pem": "cert 1",
+				"admission-control.pem":      "bogus file name",
+			},
+			expectedErr:             true,
+			expectedUnknownServices: nil,
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.description, func(t *testing.T) {
+			// Convert input FileMap into a TypedServiceCertificateSet.
+			inputFileMap := c.input
+			typedServiceCertificateSet, unknownServices, err := ConvertFileMapToTypedServiceCertificateSet(inputFileMap)
+			if c.expectedErr {
+				assert.Error(t, err)
+				assert.Nil(t, typedServiceCertificateSet)
+				assert.Nil(t, unknownServices)
+				return
+			} else {
+				assert.NoError(t, err)
+			}
+			expectedUnknownServices := c.expectedUnknownServices
+			if expectedUnknownServices != nil {
+				slices.Sort(expectedUnknownServices)
+			}
+
+			assert.Equal(t, c.expectedUnknownServices, unknownServices)
+			expectedTypedServiceCertificates := c.expectedTypedServiceCertificateSet.GetServiceCerts()
+			typedServiceCertificates := typedServiceCertificateSet.GetServiceCerts()
+
+			assert.Equal(t, c.expectedTypedServiceCertificateSet.GetCaPem(), typedServiceCertificateSet.GetCaPem())
+
+			if !protoutils.SlicesEqual(expectedTypedServiceCertificates, typedServiceCertificates) {
+				assert.Fail(t,
+					fmt.Sprintf("Not equal for test case %q:\n"+
+						"expected typed service certs: %v\n"+
+						"typed service certs: %v\n", c.description, expectedTypedServiceCertificates, typedServiceCertificates))
+			}
+
+			if len(c.expectedUnknownServices) == 0 {
+				// Convert TypedServiceCertificateSet back to FileMap.
+				roundTripFileMap, err := ConvertTypedServiceCertificateSetToFileMap(typedServiceCertificateSet)
+				assert.NoError(t, err)
+				assert.Equal(t, inputFileMap, roundTripFileMap)
 			}
 		})
 	}
