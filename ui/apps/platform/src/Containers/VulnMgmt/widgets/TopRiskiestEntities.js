@@ -2,10 +2,10 @@ import React, { useState, useContext } from 'react';
 import PropTypes from 'prop-types';
 import { gql, useQuery } from '@apollo/client';
 import { format } from 'date-fns';
+import { Alert } from '@patternfly/react-core';
 
 import workflowStateContext from 'Containers/workflowStateContext';
 import Loader from 'Components/Loader';
-import NoResultsMessage from 'Components/NoResultsMessage';
 import TextSelect from 'Components/TextSelect';
 import Widget from 'Components/Widget';
 import CVEStackedPill from 'Components/CVEStackedPill';
@@ -375,7 +375,11 @@ const TopRiskiestEntities = ({ entityContext, search, limit }) => {
 
             const parsedMessage = checkForPermissionErrorMessage(error, defaultMessage);
 
-            content = <NoResultsMessage message={parsedMessage} className="p-3" icon="warn" />;
+            content = (
+                <div className="w-full">
+                    <Alert variant="warning" isInline title={parsedMessage} component="p" />
+                </div>
+            );
         } else if (data && data.results && data.results === 0) {
             content = (
                 <div className="flex mx-auto items-center">No scanner setup for this registry.</div>
