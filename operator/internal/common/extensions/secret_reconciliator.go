@@ -74,7 +74,7 @@ func (r *SecretReconciliator) DeleteSecret(ctx context.Context, name string) err
 // EnsureSecret makes sure a secret with the given name exists.
 // If the validateSecretDataFunc returns an error, then this function calls generateSecretDataFunc to get new secret data and updates the secret to "fix" it.
 // Also note that this function will refuse to touch a secret which is not owned by the object passed to the constructor.
-func (r *SecretReconciliator) EnsureSecret(ctx context.Context, name string, validate validateSecretDataFunc, generate generateSecretDataFunc) error {
+func (r *SecretReconciliator) EnsureSecret(ctx context.Context, name string, validate validateSecretDataFunc, generate generateSecretDataFunc, desiredLabels map[string]string) error {
 	secret := &coreV1.Secret{}
 	key := ctrlClient.ObjectKey{Namespace: r.obj.GetNamespace(), Name: name}
 
@@ -97,6 +97,11 @@ func (r *SecretReconciliator) EnsureSecret(ctx context.Context, name string, val
 	if err != nil {
 		return generateError(err, name, "new")
 	}
+	labels := commonLabels.DefaultLabels()
+	for k, v := range desiredLabels {
+		labels[k] = v
+	}
+
 	newSecret := &coreV1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -104,7 +109,7 @@ func (r *SecretReconciliator) EnsureSecret(ctx context.Context, name string, val
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(r.obj, r.obj.GroupVersionKind()),
 			},
-			Labels: commonLabels.DefaultLabels(),
+			Labels: labels,
 		},
 		Data: data,
 	}
