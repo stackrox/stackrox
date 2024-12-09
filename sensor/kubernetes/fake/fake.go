@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/cockroachdb/pebble"
-	//"github.com/jschnath/k8s-client-go/kubernetes/fake"
 	appVersioned "github.com/openshift/client-go/apps/clientset/versioned"
 	configVersioned "github.com/openshift/client-go/config/clientset/versioned"
 	operatorVersioned "github.com/openshift/client-go/operator/clientset/versioned"
@@ -18,6 +17,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/signal"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"gopkg.in/yaml.v3"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/version"
@@ -185,13 +185,18 @@ func (w *WorkloadManager) clearActions() {
 		w.fakeClient.ClearActions()
 
 		gvk := schema.GroupVersionKind{
-			Version: "v1",
-			Kind:    "Pod",
+			Kind: "Pod",
+		}
+		objectctr := 0
+		for _, namespace := range w.namespaces {
+			list, err := w.fakeClient.Tracker().List(gvr, gvk, namespace)
+			if err != nil {
+				log.Errorf("Failed to gather tracker data for namespace %s", namespace)
+			}
+			objectctr = objectctr + meta.LenList(list)
 		}
 
-		objectCount, watcherCount := w.fakeClient.Tracker().GetNumObjectsWatchers()
-
-		log.Infof("Found %d objects and %d watchers in tracker", objectCount, watcherCount)
+		log.Infof("Found %d items in tracker", objectctr)
 		/*
 			//tracker := w.fakeClient.Tracker()
 			tracker := reflect.ValueOf(w.fakeClient).Elem().FieldByName("tracker")
