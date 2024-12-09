@@ -677,11 +677,10 @@ jobs:
         directory: 'junit-reports'
 
   scan-images-with-roxctl:
-    if: github.event_name == 'push'
-    needs:
-      - build-and-push-main
-      - build-and-push-operator
-      - push-main-manifests
+    # needs:
+    #   - build-and-push-main
+    #   - build-and-push-operator
+    #   - push-main-manifests
     name: Check images for vulnerabilities
     runs-on: ubuntu-latest
     permissions:
@@ -705,17 +704,16 @@ jobs:
             "stackrox-operator",
           ]
     steps:
+      # - name: Initialize CodeQL
+      #   uses: github/codeql-action/init@v3
+      #   with:
+      #     debug: true
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
-
-      - uses: ./.github/actions/job-preamble
-        with:
-          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-      - uses: ./.github/actions/handle-tagged-build
 
       - name: Central login
         uses: stackrox/central-login@v1
@@ -734,17 +732,17 @@ jobs:
           if [[ ${{ matrix.image }} =~ "operator" ]]; then
             release_tag=$(make -C operator --silent tag)
           fi
+          release_tag=4.6.0
           roxctl image scan --retries=10 --retry-delay=15 --force --severity=CRITICAL,IMPORTANT --output=sarif \
             --image="quay.io/rhacs-eng/${{ matrix.image }}:${release_tag}" \
             > results.sarif
           cat results.sarif
 
-      # TODO: re-enable roxctl scan results upload once quota issue has been resolved
-      # - name: Upload roxctl scan results to GitHub Security tab
-      #   uses: github/codeql-action/upload-sarif@v3
-      #   with:
-      #     category: ${{ matrix.image }}
-      #     sarif_file: results.sarif
+      - name: Upload roxctl scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          category: ${{ matrix.image }}
+          sarif_file: results.sarif
 
   slack-on-build-failure:
     env:
