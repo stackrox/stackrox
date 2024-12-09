@@ -14,8 +14,8 @@ var (
 	defaultBaseInterval = 1 * time.Minute
 )
 
-// UnconfirmedMessageHandlerImpl informs the caller whether a resending should happen based on receiving ACK messsages.
-// Assumption: Time to receive an ACK is generally much shorter than the interval between sending consequtive messages.
+// UnconfirmedMessageHandlerImpl informs the caller whether a resending should happen based on receiving ACK messages.
+// Assumption: Time to receive an ACK is generally much shorter than the interval between sending consecutive messages.
 type UnconfirmedMessageHandlerImpl struct {
 	// baseInterval defines the delay after which we resend a message
 	baseInterval time.Duration
@@ -27,7 +27,7 @@ type UnconfirmedMessageHandlerImpl struct {
 	ch chan struct{}
 	// retry counts the number of retries for a given message
 	retry atomic.Int32
-	// numUnackedSendings counts how many sendings occured (not retries) since the last ack
+	// numUnackedSendings counts how many send attempts occurred (not retries) since the last ack
 	numUnackedSendings atomic.Int32
 	// ctx is a context that can be used to stop this object
 	ctx context.Context
@@ -82,7 +82,7 @@ func (s *UnconfirmedMessageHandlerImpl) retryLater() {
 	s.ticker.Reset(s.resendInterval)
 }
 
-// ObserveSending should be called when a new message is sent and it is expected to be [N]ACKed
+// ObserveSending should be called when a new message is sent, and it is expected to be [N]ACKed
 func (s *UnconfirmedMessageHandlerImpl) ObserveSending() {
 	s.numUnackedSendings.Add(1)
 	log.Debugf("Observing message being sent. Waiting for an ACK for %s", s.baseInterval.String())
