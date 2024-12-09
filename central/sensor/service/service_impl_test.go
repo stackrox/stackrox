@@ -103,7 +103,10 @@ func (s *crsTestSuite) TestCrsCentralReturnsAllServiceCertificates() {
 	s.NoError(err)
 	s.Len(mockServer.clustersRegistered, 1, "expected exactly one registered cluster")
 	centralHello := retrieveCentralHello(s, mockServer)
-	certBundle := centralHello.GetCertBundle()
+	assertCertificateBundleComplete(s, centralHello.GetCertBundle())
+}
+
+func assertCertificateBundleComplete(s *crsTestSuite, certBundle map[string]string) {
 	s.Len(certBundle, 15, "expected 15 entries (1 CA cert, 7 service certs, 7 service keys) in bundle")
 }
 
@@ -123,8 +126,7 @@ func (s *crsTestSuite) TestCrsFlowCanBeRepeated() {
 	s.Len(mockServer.clustersRegistered, 1, "expected exactly one registered cluster")
 	// Verify that we again got all certificates we need.
 	centralHello := retrieveCentralHello(s, mockServer)
-	certBundle := centralHello.GetCertBundle()
-	s.Len(certBundle, 15, "expected 15 entries (1 CA cert, 7 service certs, 7 service keys) in bundle")
+	assertCertificateBundleComplete(s, centralHello.GetCertBundle())
 }
 
 func (s *crsTestSuite) TestCrsFlowFailsAfterLastContact() {
