@@ -74,6 +74,21 @@ func (mr *MockFlowDataStoreMockRecorder) GetExternalFlowsForDeployment(ctx, depl
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetExternalFlowsForDeployment", reflect.TypeOf((*MockFlowDataStore)(nil).GetExternalFlowsForDeployment), ctx, deploymentID)
 }
 
+// GetFlowsByEntity mocks base method.
+func (m *MockFlowDataStore) GetFlowsByEntity(ctx context.Context, id string) ([]*storage.NetworkFlow, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetFlowsByEntity", ctx, id)
+	ret0, _ := ret[0].([]*storage.NetworkFlow)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetFlowsByEntity indicates an expected call of GetFlowsByEntity.
+func (mr *MockFlowDataStoreMockRecorder) GetFlowsByEntity(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFlowsByEntity", reflect.TypeOf((*MockFlowDataStore)(nil).GetFlowsByEntity), ctx, id)
+}
+
 // GetFlowsForDeployment mocks base method.
 func (m *MockFlowDataStore) GetFlowsForDeployment(ctx context.Context, deploymentID string, adjustForGraph bool) ([]*storage.NetworkFlow, error) {
 	m.ctrl.T.Helper()

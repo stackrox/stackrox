@@ -45,6 +45,7 @@ var (
 			"/v1.NetworkGraphService/GetNetworkGraph",
 			"/v1.NetworkGraphService/GetExternalNetworkEntities",
 			"/v1.NetworkGraphService/GetExternalNetworkFlows",
+			"/v1.NetworkGraphService/GetExternalEntityDeployments",
 		},
 		user.With(permissions.Modify(resources.NetworkGraph)): {
 			"/v1.NetworkGraphService/CreateExternalNetworkEntity",
@@ -156,6 +157,35 @@ func (s *serviceImpl) GetExternalNetworkFlows(ctx context.Context, request *v1.G
 	}
 
 	return &v1.GetExternalNetworkFlowsResponse{
+		Flows: flows,
+	}, nil
+}
+
+func (s *serviceImpl) GetEntityFlows(ctx context.Context, request *v1.GetEntityFlowsRequest) (*v1.GetEntityFlowsResponse, error) {
+	entity, found, err := s.entityDS.GetEntity(ctx, request.GetEntityId())
+	if err != nil || !found {
+		return nil, err
+	}
+
+	elevatedCtx := sac.WithGlobalAccessScopeChecker(
+		ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Deployment),
+		),
+	)
+
+	store, err := s.getFlowStore(elevatedCtx, request.GetClusterId())
+	if err != nil {
+		return nil, err
+	}
+
+	flows, err := store.GetFlowsByEntity(ctx, entity.GetInfo().GetId())
+	if err != nil {
+		return nil, err
+	}
+
+	return &v1.GetEntityFlowsResponse{
 		Flows: flows,
 	}, nil
 }

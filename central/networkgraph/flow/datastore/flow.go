@@ -19,6 +19,8 @@ type FlowDataStore interface {
 	// GetExternalFlowsForDeployment returns all external flows referencing a specific deployment id
 	GetExternalFlowsForDeployment(ctx context.Context, deploymentID string) ([]*storage.NetworkFlow, error)
 
+	GetFlowsByEntity(ctx context.Context, id string) ([]*storage.NetworkFlow, error)
+
 	// UpsertFlows upserts the given flows to the store. The flows slice might be modified by this function, so if you
 	// need to use it afterwards, create a copy.
 	UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error
