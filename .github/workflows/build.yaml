@@ -677,10 +677,10 @@ jobs:
         directory: 'junit-reports'
 
   scan-images-with-roxctl:
-    needs:
-      - build-and-push-main
-      - build-and-push-operator
-      - push-main-manifests
+    # needs:
+    #   - build-and-push-main
+    #   - build-and-push-operator
+    #   - push-main-manifests
     name: Check images for vulnerabilities
     runs-on: ubuntu-latest
     permissions:
