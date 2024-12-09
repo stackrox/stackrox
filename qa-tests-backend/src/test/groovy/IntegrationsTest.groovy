@@ -498,7 +498,9 @@ class IntegrationsTest extends BaseSpecification {
         then:
         "verify test integration"
         // Test integration for S3 performs test backup (and rollback).
-        ExternalBackupService.getExternalBackupClient().testExternalBackup(backup)
+        withRetry(3, 10) {
+            assert ExternalBackupService.getExternalBackupClient().testExternalBackup(backup)
+        }
 
         where:
         "configurations are:"
@@ -527,7 +529,9 @@ class IntegrationsTest extends BaseSpecification {
         then:
         "verify test integration"
         // Test integration for S3 compatible performs test backup (and rollback).
-        ExternalBackupService.getExternalBackupClient().testExternalBackup(backup)
+        withRetry(3, 10) {
+            assert ExternalBackupService.getExternalBackupClient().testExternalBackup(backup)
+        }
 
         where:
         "configurations are:"
@@ -559,7 +563,9 @@ class IntegrationsTest extends BaseSpecification {
         then:
         "verify test integration"
         // Test integration for GCS performs test backup (and rollback).
-        ExternalBackupService.getExternalBackupClient().testExternalBackup(backup)
+        withRetry(3, 10) {
+            assert ExternalBackupService.getExternalBackupClient().testExternalBackup(backup)
+        }
 
         where:
         "configurations are:"
