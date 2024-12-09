@@ -170,13 +170,45 @@ func (t Translator) getTLSValues(ctx context.Context, sc platform.SecuredCluster
 }
 
 func (t Translator) checkRequiredTLSSecrets(ctx context.Context, sc platform.SecuredCluster) error {
-	var finalErr error
-	for _, name := range []string{sensorTLSSecretName, admissionControlTLSSecretName, collectorTLSSecretName} {
-		if err := t.checkInitBundleSecret(ctx, sc, name); err != nil {
-			finalErr = multierror.Append(finalErr, err)
+	// Check for CRS first, if it exists, signal success immediately.
+	if err := t.checkClusterRegistrationSecret(ctx, sc); err == nil {
+		return nil
+	}
+
+	notFound := false
+	var multiErr error
+	for _, secretName := range []string{sensorTLSSecretName, admissionControlTLSSecretName, collectorTLSSecretName} {
+		if err := t.checkInitBundleSecret(ctx, sc, secretName); err != nil {
+			multiErr = multierror.Append(multiErr, err)
+			if !notFound && k8sErrors.IsNotFound(err) {
+				// In this case we wrap the aggregated error in a pretty error message for the user.
+				notFound = true
+			}
 		}
 	}
-	return finalErr
+
+	if multiErr != nil {
+		if notFound {
+			return errors.Wrapf(multiErr, "some init-bundle secrets missing in namespace %q, please make sure you have downloaded init-bundle secrets (from UI or with roxctl) and created corresponding resources in the correct namespace", sc.Namespace)
+		}
+		return multiErr
+	}
+
+	return nil
+}
+
+func (t Translator) checkClusterRegistrationSecret(ctx context.Context, sc platform.SecuredCluster) error {
+	secretName := "cluster-registration-secret"
+	namespace := sc.Namespace
+	secret := &corev1.Secret{}
+	key := ctrlClient.ObjectKey{Namespace: namespace, Name: secretName}
+	if err := t.direct.Get(ctx, key, secret); err != nil {
+		if k8sErrors.IsNotFound(err) {
+			return errors.Wrapf(err, "receiving cluster-registration-secret within namespace %q", namespace)
+		}
+		return errors.Wrapf(err, "failed receiving secret %q", secretName)
+	}
+	return nil
 }
 
 func (t Translator) checkInitBundleSecret(ctx context.Context, sc platform.SecuredCluster, secretName string) error {
@@ -185,7 +217,7 @@ func (t Translator) checkInitBundleSecret(ctx context.Context, sc platform.Secur
 	key := ctrlClient.ObjectKey{Namespace: namespace, Name: secretName}
 	if err := t.direct.Get(ctx, key, secret); err != nil {
 		if k8sErrors.IsNotFound(err) {
-			return errors.Wrapf(err, "init-bundle secret %q does not exist in namespace %q, please make sure you have downloaded init-bundle secrets (from UI or with roxctl) and created corresponding resources in the correct namespace", secretName, namespace)
+			return errors.Wrapf(err, "receiving init-bundle secret %q within namespace %q", secretName, namespace)
 		}
 		return errors.Wrapf(err, "failed receiving secret %q", secretName)
 	}
