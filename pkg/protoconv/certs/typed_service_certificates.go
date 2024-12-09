@@ -1,11 +1,13 @@
 package protoconv
 
 import (
+	"slices"
 	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/services"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 const (
@@ -56,8 +58,10 @@ func ConvertTypedServiceCertificateSetToFileMap(certSet *storage.TypedServiceCer
 //
 // It returns error in case the input map contains keys of unexpected shape or in case it was
 // not possible to derive proper service types from the respective file name.
-func ConvertFileMapToTypedServiceCertificateSet(fileMap map[string]string) (*storage.TypedServiceCertificateSet, error) {
+func ConvertFileMapToTypedServiceCertificateSet(fileMap map[string]string) (*storage.TypedServiceCertificateSet, []string, error) {
 	var caPem []byte
+	var unknownServices set.Set[string]
+
 	if caCert := fileMap[caCertKey]; caCert != "" {
 		caPem = []byte(caCert)
 	}
@@ -79,11 +83,15 @@ func ConvertFileMapToTypedServiceCertificateSet(fileMap map[string]string) (*sto
 			serviceSlugName = strings.TrimSuffix(fileName, "-key.pem")
 			keyPem = []byte(pemData)
 		} else {
-			return nil, errors.Errorf("unexpected file name %q in file map", fileName)
+			return nil, nil, errors.Errorf("unexpected file name %q in file map", fileName)
 		}
 		serviceType := services.SlugNameToServiceType(serviceSlugName)
 		if serviceType == storage.ServiceType_UNKNOWN_SERVICE {
-			return nil, errors.Errorf("failed to obtain service type for slug-name %q", serviceSlugName)
+			if unknownServices == nil {
+				unknownServices = make(set.Set[string], len(fileMap))
+			}
+			unknownServices.Add(serviceSlugName)
+			continue
 		}
 		if serviceCertMap[serviceType] == nil {
 			serviceCertMap[serviceType] = &storage.ServiceCertificate{}
@@ -97,12 +105,15 @@ func ConvertFileMapToTypedServiceCertificateSet(fileMap map[string]string) (*sto
 		}
 	}
 
-	typedServiceCerts := make([]*storage.TypedServiceCertificate, 0, len(serviceCertMap))
-	for serviceType, serviceCert := range serviceCertMap {
-		typedServiceCerts = append(typedServiceCerts, &storage.TypedServiceCertificate{
-			ServiceType: serviceType,
-			Cert:        serviceCert,
-		})
+	var typedServiceCerts []*storage.TypedServiceCertificate
+	if len(serviceCertMap) != 0 {
+		typedServiceCerts = make([]*storage.TypedServiceCertificate, 0, len(serviceCertMap))
+		for serviceType, serviceCert := range serviceCertMap {
+			typedServiceCerts = append(typedServiceCerts, &storage.TypedServiceCertificate{
+				ServiceType: serviceType,
+				Cert:        serviceCert,
+			})
+		}
 	}
 
 	certSet := storage.TypedServiceCertificateSet{
@@ -110,5 +121,11 @@ func ConvertFileMapToTypedServiceCertificateSet(fileMap map[string]string) (*sto
 		ServiceCerts: typedServiceCerts,
 	}
 
-	return &certSet, nil
+	var unknownServicesSlice []string
+	if unknownServices != nil {
+		unknownServicesSlice = unknownServices.AsSlice()
+		slices.Sort(unknownServicesSlice)
+	}
+
+	return &certSet, unknownServicesSlice, nil
 }

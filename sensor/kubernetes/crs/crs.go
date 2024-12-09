@@ -256,9 +256,16 @@ func persistCertificates(ctx context.Context, certsFileMap map[string]string, k8
 	log.Infof("Persisting retrieved certificates as Kubernetes Secrets in namespace %q.", sensorNamespace)
 	secretsClient := k8sClient.CoreV1().Secrets(sensorNamespace)
 
-	typedServiceCerts, err := protoconv.ConvertFileMapToTypedServiceCertificateSet(certsFileMap)
+	typedServiceCerts, unknownServices, err := protoconv.ConvertFileMapToTypedServiceCertificateSet(certsFileMap)
 	if err != nil {
 		return errors.Wrap(err, "converting file map into typed service certificate set")
+	}
+	if len(unknownServices) > 0 {
+		for idx, svc := range unknownServices {
+			unknownServices[idx] = fmt.Sprintf("%q", svc)
+		}
+		unknownServicesJoined := strings.Join(unknownServices, ", ")
+		log.Warnf("Central's certificate bundle contained certificates for the following unknown services: %s.", unknownServicesJoined)
 	}
 	ownerRef, err := certrefresh.FetchSensorDeploymentOwnerRef(ctx, podName, sensorNamespace, k8sClient, fetchSensorDeploymentOwnerRefBackoff)
 	if err != nil {
