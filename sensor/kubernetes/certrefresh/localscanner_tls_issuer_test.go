@@ -47,14 +47,12 @@ func newLocalScannerTLSIssuerFixture(k8sClientConfig fakeK8sClientConfig) *local
 		componentGetter: &componentGetterMock{},
 		k8sClient:       getFakeK8sClient(k8sClientConfig),
 	}
-	msgToCentralC := make(chan *message.ExpiringMessage)
-	msgFromCentralC := make(chan *central.IssueLocalScannerCertsResponse)
+	respFromCentralC := make(chan *central.IssueLocalScannerCertsResponse)
 	fixture.tlsIssuer = &localScannerTLSIssuerImpl{
 		sensorNamespace:              sensorNamespace,
 		sensorPodName:                sensorPodName,
 		k8sClient:                    fixture.k8sClient,
-		msgToCentralC:                msgToCentralC,
-		msgFromCentralC:              msgFromCentralC,
+		respFromCentralC:             respFromCentralC,
 		certRefreshBackoff:           certRefreshBackoff,
 		getCertificateRefresherFn:    fixture.componentGetter.getCertificateRefresher,
 		getServiceCertificatesRepoFn: fixture.componentGetter.getServiceCertificatesRepo,
@@ -185,7 +183,7 @@ func TestLocalScannerTLSIssuerProcessMessageKnownMessage(t *testing.T) {
 	select {
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
-	case response := <-fixture.tlsIssuer.msgFromCentralC:
+	case response := <-fixture.tlsIssuer.respFromCentralC:
 		protoassert.Equal(t, expectedResponse, response)
 	}
 
@@ -209,7 +207,7 @@ func TestLocalScannerTLSIssuerProcessMessageUnknownMessage(t *testing.T) {
 
 	select {
 	case <-ctx.Done():
-	case <-fixture.tlsIssuer.msgFromCentralC:
+	case <-fixture.tlsIssuer.respFromCentralC:
 		assert.Fail(t, "unknown message is not ignored")
 	}
 	_, ok := processMessageDoneSignal.WaitWithTimeout(100 * time.Millisecond)
