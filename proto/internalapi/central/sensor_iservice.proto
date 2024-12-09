@@ -103,6 +103,16 @@ message NodeInventoryACK {
     ACK = 0;
     NACK = 1;
   }
+
+  // Recipient is a generic way of determining to which component this message is directed to.
+  // In 4.6 and earlier, the recipient field was missing, because there was only one recipient and it
+  // was the node-inventory code within compliance container.
+  Recipient recipient = 4;
+
+  enum Recipient {
+    NodeInventory = 0;
+    NodeIndexer = 1;
+  }
 }
 
 message AuditLogSync {
