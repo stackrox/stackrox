@@ -38,6 +38,12 @@ collector:
   serviceTLS:
     cert: "DUMMY COLLECTOR CERT"
     key: "DUMMY COLLECTOR KEY"
+  runtimeConfig:
+    enabled: true
+    networking:
+      externalIps:
+        enabled: true
+    perContainerRateLimit: 1024
 
 admissionControl:
   serviceTLS:
