@@ -47,28 +47,28 @@ spec:
       serviceAccountName: collector
       {{- if ._rox._securedClusterCertRefresh }}
       initContainers:
-        - name: init-tls-certs
-          image: {{ quote ._rox.image.main.fullRef }}
-          command:
-          - /stackrox/bin/init-tls-certs
-          args:
-          - --legacy=/run/secrets/stackrox.io/certs-legacy/
-          - --new=/run/secrets/stackrox.io/certs-new/
-          - --destination=/run/secrets/stackrox.io/certs/
-          resources:
-            {{- ._rox.collector._resources | nindent 12 }}
-          securityContext:
-            runAsNonRoot: true
-            readOnlyRootFilesystem: true
-          volumeMounts:
-          - name: certs-legacy
-            mountPath: /run/secrets/stackrox.io/certs-legacy/
-            readOnly: true
-          - name: certs-new
-            mountPath: /run/secrets/stackrox.io/certs-new/
-            readOnly: true
-          - name: certs
-            mountPath: /run/secrets/stackrox.io/certs/
+      - name: init-tls-certs
+        image: {{ quote ._rox.image.main.fullRef }}
+        command:
+        - /stackrox/bin/init-tls-certs
+        args:
+        - --legacy=/run/secrets/stackrox.io/certs-legacy/
+        - --new=/run/secrets/stackrox.io/certs-new/
+        - --destination=/run/secrets/stackrox.io/certs/
+        resources:
+          {{- ._rox.collector._resources | nindent 12 }}
+        securityContext:
+          runAsNonRoot: true
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - name: certs-legacy
+          mountPath: /run/secrets/stackrox.io/certs-legacy/
+          readOnly: true
+        - name: certs-new
+          mountPath: /run/secrets/stackrox.io/certs-new/
+          readOnly: true
+        - name: certs
+          mountPath: /run/secrets/stackrox.io/certs/
       {{- end }}
       containers:
       {{- if ne ._rox.collector.collectionMethod "NO_COLLECTION"}}
