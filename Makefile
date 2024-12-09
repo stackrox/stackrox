@@ -486,6 +486,7 @@ main-build-dockerized: build-volumes
 main-build-nodeps: central-build-nodeps migrator-build-nodeps config-controller-build-nodeps
 	$(GOBUILD) sensor/kubernetes sensor/admission-control compliance/cmd/compliance
 	$(GOBUILD) sensor/upgrader
+	$(GOBUILD) sensor/init-tls-certs
 ifndef CI
 	CGO_ENABLED=0 $(GOBUILD) roxctl
 endif
@@ -673,6 +674,7 @@ endif
 endif
 	cp bin/linux_$(GOARCH)/migrator image/rhel/bin/migrator
 	cp bin/linux_$(GOARCH)/kubernetes        image/rhel/bin/kubernetes-sensor
+	cp bin/linux_$(GOARCH)/init-tls-certs    image/rhel/bin/init-tls-certs
 	cp bin/linux_$(GOARCH)/upgrader          image/rhel/bin/sensor-upgrader
 	cp bin/linux_$(GOARCH)/admission-control image/rhel/bin/admission-control
 	cp bin/linux_$(GOARCH)/compliance        image/rhel/bin/compliance
