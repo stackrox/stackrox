@@ -45,6 +45,10 @@ func WithDefaults(labels map[string]string) (map[string]string, bool) {
 	return newLabels, updated
 }
 
+func GetTlsSecretLabels() map[string]string {
+	return map[string]string{"rhacs.central.com/tls": "true"}
+}
+
 // NewLabelPostRenderer is a postrenderer for helm operator plugin kube clients to add
 // given labels to each renderered object.
 func NewLabelPostRenderer(client kube.Interface, labels map[string]string) postrender.PostRenderer {
