@@ -146,6 +146,7 @@ func (s *crsTestSuite) TestCrsFlowFailsAfterLastContact() {
 	// Initiating the CRS should fail now.
 	mockServer.prepareNewHandshake(sensorHello)
 	err = sensorService.Communicate(mockServer)
+	s.ErrorContains(err, "forbidden to use a Cluster Registration Certificate for already-existing cluster")
 	s.Error(err, "CRS flow succeeded even after LastContact field was updated.")
 }
 
