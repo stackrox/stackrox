@@ -16,6 +16,13 @@ const (
 	ICMP
 )
 
+var (
+	// ExternalIPv4Addr is the "canonical" external address sent by collector when the precise IPv4 address is not needed.
+	ExternalIPv4Addr = ParseIP("255.255.255.255")
+	// ExternalIPv6Addr is the "canonical" external address sent by collector when the precise IPv6 address is not needed.
+	ExternalIPv6Addr = ParseIP("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff")
+)
+
 // String represents a string representation of this L4 protocol.
 func (p L4Proto) String() string {
 	switch p {
@@ -83,4 +90,9 @@ func (e NumericEndpoint) IsValid() bool {
 // String returns a string representation of this numeric endpoint.
 func (e NumericEndpoint) String() string {
 	return fmt.Sprintf("%s (%s)", e.IPAndPort, e.L4Proto)
+}
+
+// IsConsideredExternal checks whether the given numeric endpoint is considered as external IP by collector.
+func (e NumericEndpoint) IsConsideredExternal() bool {
+	return e.IPAndPort.Address == ExternalIPv4Addr || e.IPAndPort.Address == ExternalIPv6Addr
 }
