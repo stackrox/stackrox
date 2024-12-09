@@ -172,7 +172,7 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 	}
 
 	if svcType == storage.ServiceType_REGISTRANT_SERVICE {
-		// Terminate connection using a CRS certificate at this point.
+		// Terminate connection which uses a CRS certificate at this point.
 		return nil
 	}
 
