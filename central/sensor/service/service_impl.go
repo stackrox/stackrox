@@ -108,7 +108,7 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 	// as long as that cluster has never successfully connected to central with proper service certificates
 	// (not ServiceType_REGISTRANT_SERVICE).
 	if svcType == storage.ServiceType_REGISTRANT_SERVICE && cluster.GetHealthStatus().GetLastContact() != nil {
-		log.Errorf("it is forbidden to connect with a Cluster Registration Certificate as already-existing cluster %q.", cluster.GetName())
+		log.Errorf("It is forbidden to connect with a Cluster Registration Certificate as already-existing cluster %q.", cluster.GetName())
 		return errox.NotAuthorized.CausedByf("forbidden to use a Cluster Registration Certificate for already-existing cluster %q", cluster.GetName())
 	}
 
