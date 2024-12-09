@@ -273,6 +273,7 @@ function GhcrIntegrationForm({
                         fieldId="config.skipTestIntegration"
                         touched={touched}
                         errors={errors}
+                        helperText="Enable this option for anonymous access with empty username and token"
                     >
                         <Checkbox
                             label="Create integration without testing"
