@@ -158,7 +158,11 @@ const searchFilterConfig = [
     clusterSearchFilterConfig,
 ];
 
-function WorkloadCvesOverviewPage() {
+export type WorkloadCvesOverviewPageProps = {
+    pageTitle: string;
+};
+
+function WorkloadCvesOverviewPage({ pageTitle }: WorkloadCvesOverviewPageProps) {
     const apolloClient = useApolloClient();
 
     const { hasReadAccess, hasReadWriteAccess } = usePermissions();
@@ -371,13 +375,13 @@ function WorkloadCvesOverviewPage() {
 
     return (
         <>
-            <PageTitle title="Workload CVEs Overview" />
+            <PageTitle title={`${pageTitle} Overview`} />
             <PageSection
                 className="pf-v5-u-display-flex pf-v5-u-flex-direction-row pf-v5-u-align-items-center"
                 variant="light"
             >
                 <Flex direction={{ default: 'column' }} className="pf-v5-u-flex-grow-1">
-                    <Title headingLevel="h1">Workload CVEs</Title>
+                    <Title headingLevel="h1">{pageTitle}</Title>
                     <FlexItem>
                         Prioritize and manage scanned CVEs across images and deployments
                     </FlexItem>

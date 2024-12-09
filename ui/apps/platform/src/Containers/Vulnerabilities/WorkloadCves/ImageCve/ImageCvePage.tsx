@@ -204,7 +204,11 @@ const searchFilterConfig = [
     clusterSearchFilterConfig,
 ];
 
-function ImageCvePage() {
+export type ImageCvePageProps = {
+    pageTitle: string;
+};
+
+function ImageCvePage({ pageTitle }: ImageCvePageProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isAdvancedFiltersEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_ADVANCED_FILTERS');
 
@@ -387,12 +391,12 @@ function ImageCvePage() {
     return (
         <>
             <PageTitle
-                title={`Workload CVEs - ImageCVE ${metadataRequest.data?.imageCVE?.cve ?? ''}`}
+                title={`${pageTitle} - ImageCVE ${metadataRequest.data?.imageCVE?.cve ?? ''}`}
             />
             <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={workloadCveOverviewCvePath}>
-                        Workload CVEs
+                        {pageTitle}
                     </BreadcrumbItemLink>
                     {!metadataRequest.error && (
                         <BreadcrumbItem isActive>
