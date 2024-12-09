@@ -26,8 +26,8 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	umhNodeInv := handler.NewUnconfirmedMessageHandler(ctx, env.NodeScanningAckDeadlineBase.DurationSetting())
-	umhNodeIndex := handler.NewUnconfirmedMessageHandler(ctx, env.NodeScanningAckDeadlineBase.DurationSetting())
+	umhNodeInv := handler.NewUnconfirmedMessageHandler(ctx, "node-inventory", env.NodeScanningAckDeadlineBase.DurationSetting())
+	umhNodeIndex := handler.NewUnconfirmedMessageHandler(ctx, "nove-index", env.NodeScanningAckDeadlineBase.DurationSetting())
 	c := compliance.NewComplianceApp(np, scanner, cachedNodeIndexer, umhNodeInv, umhNodeIndex)
 	c.Start()
 }

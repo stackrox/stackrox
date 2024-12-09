@@ -25,6 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/protoutils"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 	"google.golang.org/grpc/metadata"
@@ -93,23 +94,34 @@ func (c *Compliance) Start() {
 		c.manageStream(ctx, cli, &stoppedSig, toSensorC)
 	}()
 
-	if c.nodeScanner.IsActive() {
-		log.Infof("Node Inventory v2 enabled")
-		nodeInventoriesC := c.manageNodeInventoryScanLoop(ctx)
-		// sending nodeInventories into output toSensorC
-		for n := range nodeInventoriesC {
-			toSensorC <- n
-		}
-	}
+	wg := &sync.WaitGroup{}
+	defer wg.Add(2)
 
-	if env.NodeIndexEnabled.BooleanSetting() {
-		log.Infof("Node Index v4 enabled")
-		nodeInventoriesC := c.manageNodeIndexScanLoop(ctx)
-		// sending nodeInventories into output toSensorC
-		for n := range nodeInventoriesC {
-			toSensorC <- n
+	go func() {
+		defer wg.Done()
+		if c.nodeScanner.IsActive() {
+			log.Infof("Node Inventory v2 enabled")
+			nodeInventoriesC := c.manageNodeInventoryScanLoop(ctx)
+			// sending nodeInventories into output toSensorC
+			for n := range nodeInventoriesC {
+				toSensorC <- n
+			}
 		}
-	}
+	}()
+
+	go func() {
+		defer wg.Done()
+		if env.NodeIndexEnabled.BooleanSetting() {
+			log.Infof("Node Index v4 enabled")
+			nodeInventoriesC := c.manageNodeIndexScanLoop(ctx)
+			// sending nodeInventories into output toSensorC
+			for n := range nodeInventoriesC {
+				toSensorC <- n
+			}
+		}
+	}()
+
+	wg.Wait()
 
 	signalsC := make(chan os.Signal, 1)
 	signal.Notify(signalsC, syscall.SIGINT, syscall.SIGTERM)

@@ -134,6 +134,8 @@ var (
 		[]string{
 			// The Node this scan belongs to
 			"node_name",
+			// The version of Scanner this metric was generated for
+			"scanner_version",
 		})
 
 	protobufMessageSize = prometheus.NewHistogramVec(prometheus.HistogramOpts{
