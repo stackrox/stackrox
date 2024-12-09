@@ -38,7 +38,8 @@ import (
 )
 
 var (
-	log                                  = logging.LoggerForModule()
+	log = logging.LoggerForModule()
+
 	fetchSensorDeploymentOwnerRefBackoff = wait.Backoff{
 		Duration: 10 * time.Millisecond,
 		Factor:   3,
