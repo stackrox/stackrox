@@ -100,25 +100,27 @@ func (c *nodeInventoryHandlerImpl) ProcessMessage(msg *central.MsgToSensor) erro
 	switch ackMsg.GetAction() {
 	case central.NodeInventoryACK_ACK:
 		switch ackMsg.GetRecipient() {
-		case central.NodeInventoryACK_NodeInventory:
-			c.sendAckToCompliance(c.acksFromCentral, ackMsg.GetNodeName(),
-				sensor.MsgToCompliance_NodeInventoryACK_ACK,
-				sensor.MsgToCompliance_NodeInventoryACK_NodeInventory)
 		case central.NodeInventoryACK_NodeIndexer:
 			c.sendAckToCompliance(c.acksFromCentral, ackMsg.GetNodeName(),
 				sensor.MsgToCompliance_NodeInventoryACK_ACK,
 				sensor.MsgToCompliance_NodeInventoryACK_NodeIndexer)
+		default:
+			// If Central version is behind Sensor, then Recipient field will be unset - then default to NodeInventory.
+			c.sendAckToCompliance(c.acksFromCentral, ackMsg.GetNodeName(),
+				sensor.MsgToCompliance_NodeInventoryACK_ACK,
+				sensor.MsgToCompliance_NodeInventoryACK_NodeInventory)
 		}
 	case central.NodeInventoryACK_NACK:
 		switch ackMsg.GetRecipient() {
-		case central.NodeInventoryACK_NodeInventory:
-			c.sendAckToCompliance(c.acksFromCentral, ackMsg.GetNodeName(),
-				sensor.MsgToCompliance_NodeInventoryACK_NACK,
-				sensor.MsgToCompliance_NodeInventoryACK_NodeInventory)
 		case central.NodeInventoryACK_NodeIndexer:
 			c.sendAckToCompliance(c.acksFromCentral, ackMsg.GetNodeName(),
 				sensor.MsgToCompliance_NodeInventoryACK_NACK,
 				sensor.MsgToCompliance_NodeInventoryACK_NodeIndexer)
+		default:
+			// If Central version is behind Sensor, then Recipient field will be unset - then default to NodeInventory.
+			c.sendAckToCompliance(c.acksFromCentral, ackMsg.GetNodeName(),
+				sensor.MsgToCompliance_NodeInventoryACK_NACK,
+				sensor.MsgToCompliance_NodeInventoryACK_NodeInventory)
 		}
 	}
 	return nil
