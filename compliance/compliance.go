@@ -239,6 +239,7 @@ func (c *Compliance) runNodeIndex(ctx context.Context) *sensor.MsgFromCompliance
 		log.Errorf("Error creating node index: %v", err)
 		return nil
 	}
+	c.umhNodeIndex.ObserveSending()
 	cmetrics.ObserveNodeIndexReport(report, nodeName)
 	msg := c.createIndexMsg(report, nodeName)
 	cmetrics.ObserveReportProtobufMessage(msg, cmetrics.ScannerVersionV4)
