@@ -152,7 +152,7 @@ func findFiles(sourceDir string) ([]string, error) {
 
 	minRequiredFiles := 3 // CA cert + leaf cert + private key
 	if len(files) < minRequiredFiles {
-		return nil, fmt.Errorf("expecting at least %d files at %q", minRequiredFiles, sourceDir)
+		return nil, fmt.Errorf("expecting at least %d files at %q, found %d", minRequiredFiles, sourceDir, len(files))
 	}
 
 	return files, nil
