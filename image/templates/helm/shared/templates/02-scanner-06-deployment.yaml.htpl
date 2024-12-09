@@ -51,28 +51,28 @@ spec:
       {{- end }}
       {{- if ._rox._securedClusterCertRefresh }}
       initContainers:
-        - name: init-tls-certs
-          image: {{ quote ._rox.image.main.fullRef }}
-          command:
-          - /stackrox/bin/init-tls-certs
-          args:
-          - --legacy=/run/secrets/stackrox.io/certs-legacy/
-          - --new=/run/secrets/stackrox.io/certs-new/
-          - --destination=/run/secrets/stackrox.io/certs/
-          resources:
-            {{- ._rox.scanner._resources | nindent 12 }}
-          securityContext:
-            runAsNonRoot: true
-            readOnlyRootFilesystem: true
-          volumeMounts:
-          - name: certs-legacy
-            mountPath: /run/secrets/stackrox.io/certs-legacy/
-            readOnly: true
-          - name: certs-new
-            mountPath: /run/secrets/stackrox.io/certs-new/
-            readOnly: true
-          - name: certs
-            mountPath: /run/secrets/stackrox.io/certs/
+      - name: init-tls-certs
+        image: {{ quote ._rox.image.main.fullRef }}
+        command:
+        - /stackrox/bin/init-tls-certs
+        args:
+        - --legacy=/run/secrets/stackrox.io/certs-legacy/
+        - --new=/run/secrets/stackrox.io/certs-new/
+        - --destination=/run/secrets/stackrox.io/certs/
+        resources:
+          {{- ._rox.scanner._resources | nindent 12 }}
+        securityContext:
+          runAsNonRoot: true
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - name: certs-legacy
+          mountPath: /run/secrets/stackrox.io/certs-legacy/
+          readOnly: true
+        - name: certs-new
+          mountPath: /run/secrets/stackrox.io/certs-new/
+          readOnly: true
+        - name: certs
+          mountPath: /run/secrets/stackrox.io/certs/
       {{- end }}
       containers:
       - name: scanner
@@ -280,52 +280,52 @@ spec:
       priorityClassName: {{ ._rox.scanner.dbPriorityClassName }}
       {{- end }}
       initContainers:
-        {{- if ._rox._securedClusterCertRefresh }}
-        - name: init-tls-certs
-          image: {{ quote ._rox.image.main.fullRef }}
-          command:
-          - /stackrox/bin/init-tls-certs
-          args:
-          - --legacy=/run/secrets/stackrox.io/certs-legacy/
-          - --new=/run/secrets/stackrox.io/certs-new/
-          - --destination=/run/secrets/stackrox.io/certs/
-          resources:
-            {{- ._rox.scanner._dbResources | nindent 12 }}
-          securityContext:
-            runAsNonRoot: true
-            readOnlyRootFilesystem: true
-          volumeMounts:
-          - name: certs-legacy
-            mountPath: /run/secrets/stackrox.io/certs-legacy/
-            readOnly: true
-          - name: certs-new
-            mountPath: /run/secrets/stackrox.io/certs-new/
-            readOnly: true
+      {{- if ._rox._securedClusterCertRefresh }}
+      - name: init-tls-certs
+        image: {{ quote ._rox.image.main.fullRef }}
+        command:
+        - /stackrox/bin/init-tls-certs
+        args:
+        - --legacy=/run/secrets/stackrox.io/certs-legacy/
+        - --new=/run/secrets/stackrox.io/certs-new/
+        - --destination=/run/secrets/stackrox.io/certs/
+        resources:
+          {{- ._rox.scanner._dbResources | nindent 12 }}
+        securityContext:
+          runAsNonRoot: true
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - name: certs-legacy
+          mountPath: /run/secrets/stackrox.io/certs-legacy/
+          readOnly: true
+        - name: certs-new
+          mountPath: /run/secrets/stackrox.io/certs-new/
+          readOnly: true
+        - name: certs
+          mountPath: /run/secrets/stackrox.io/certs/
+      {{- end }}
+      - name: init-db
+        {{ if eq ._rox.scanner.mode "slim" -}}
+        image: {{ ._rox.scanner.slimDBImage.fullRef | quote }}
+        {{ else -}}
+        image: {{ ._rox.scanner.dbImage.fullRef | quote }}
+        {{ end -}}
+        env:
+          - name: POSTGRES_PASSWORD_FILE
+            value: "/run/secrets/stackrox.io/secrets/password"
+          - name: ROX_SCANNER_DB_INIT
+            value: "true"
+        resources:
+          {{- ._rox.scanner._dbResources | nindent 12 }}
+        volumeMounts:
+          - name: scanner-db-data
+            mountPath: /var/lib/postgresql/data
           - name: certs
-            mountPath: /run/secrets/stackrox.io/certs/
-        {{- end }}
-        - name: init-db
-          {{ if eq ._rox.scanner.mode "slim" -}}
-          image: {{ ._rox.scanner.slimDBImage.fullRef | quote }}
-          {{ else -}}
-          image: {{ ._rox.scanner.dbImage.fullRef | quote }}
-          {{ end -}}
-          env:
-            - name: POSTGRES_PASSWORD_FILE
-              value: "/run/secrets/stackrox.io/secrets/password"
-            - name: ROX_SCANNER_DB_INIT
-              value: "true"
-          resources:
-            {{- ._rox.scanner._dbResources | nindent 12 }}
-          volumeMounts:
-            - name: scanner-db-data
-              mountPath: /var/lib/postgresql/data
-            - name: certs
-              mountPath: /run/secrets/stackrox.io/certs
-              readOnly: true
-            - name: scanner-db-password
-              mountPath: /run/secrets/stackrox.io/secrets
-              readOnly: true
+            mountPath: /run/secrets/stackrox.io/certs
+            readOnly: true
+          - name: scanner-db-password
+            mountPath: /run/secrets/stackrox.io/secrets
+            readOnly: true
       containers:
       - name: db
         {{ if eq ._rox.scanner.mode "slim" -}}
