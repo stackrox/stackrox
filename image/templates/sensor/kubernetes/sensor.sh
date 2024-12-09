@@ -157,6 +157,9 @@ fi
 echo "Creating collector daemon set..."
 ${KUBE_COMMAND} apply -f "$DIR/collector.yaml"
 
+echo "Creating cert-picker-script configmap..."
+${KUBE_COMMAND} apply -f "$DIR/cert-picker-script-configmap.yaml"
+
 echo "Creating sensor deployment..."
 ${KUBE_COMMAND} apply -f "$DIR/sensor.yaml"
 

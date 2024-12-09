@@ -53,6 +53,46 @@ spec:
         fsGroup: 4000
       {{- end }}
       serviceAccountName: admission-control
+      initContainers:
+      - image: registry.access.redhat.com/ubi9/ubi-minimal:9.4
+        imagePullPolicy: {{ ._rox.sensor.imagePullPolicy | quote }}
+        name: service-cert-picker
+        command:
+        - /bin/bash
+        args:
+        - /cert-picker/script
+        resources: {} # few resources!
+        securityContext:
+          runAsNonRoot: true
+          readOnlyRootFilesystem: true
+        env:
+        - name: K8S_NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: CRS_CREATED_CERTS
+          value: /run/secrets/stackrox.io/crs-created-certs
+        - name: LEGACY_CERTS
+          value: /run/secrets/stackrox.io/legacy-certs
+        - name: EFFECTIVE_CERTS
+          value: /run/secrets/stackrox.io/effective-certs
+        volumeMounts:
+        - name: cert-picker-script
+          mountPath: /cert-picker/
+        - name: certs
+          mountPath: /run/secrets/stackrox.io/legacy-certs/
+        - name: crs-created-certs
+          mountPath: /run/secrets/stackrox.io/crs-created-certs/
+        - name: effective-certs
+          mountPath: /run/secrets/stackrox.io/effective-certs/
       containers:
         - image: {{ quote ._rox.image.main.fullRef }}
           imagePullPolicy: {{ ._rox.admissionControl.imagePullPolicy }}
@@ -100,7 +140,7 @@ spec:
             - name: ca
               mountPath: /run/secrets/stackrox.io/ca/
               readOnly: true
-            - name: certs
+            - name: effective-certs
               mountPath: /run/secrets/stackrox.io/certs/
               readOnly: true
             - name: ssl
@@ -112,6 +152,16 @@ spec:
               readOnly: true
             {{- include "srox.injectedCABundleVolumeMount" . | nindent 12 }}
       volumes:
+        - name: crs-created-certs
+          secret:
+            secretName: tls-cert-admission-control
+            optional: true
+        - name: cert-picker-script
+          configMap:
+            name: cert-picker-script
+        - name: effective-certs
+          emptyDir:
+            medium: Memory
         - name: certs
           secret:
             secretName: admission-control-tls

@@ -248,6 +248,28 @@
 
 {{ include "srox.initGlobalPrefix" (list $) }}
 
+[<- if .FeatureFlags.ROX_CLUSTER_REGISTRATION_SECRETS >]
+{{- $crsFile := ._rox.crs.file -}}
+{{- if kindIs "string" $crsFile -}}
+  {{- $crs := dict -}}
+  {{- $_ = set ._rox "createSecrets" false -}}
+  {{- $crsManifest := $crsFile | fromYaml -}}
+  {{- $_ = set $crs "_secret" $crsManifest -}}
+  {{- $crsOpaque := dig "data" "crs" "" $crsManifest -}}
+  {{/* FAIL ASSERT */}}
+  {{- $_ = set $crs "_opaque" $crsOpaque -}}
+  {{- $crsDeserialized := $crsOpaque | b64dec | b64dec | fromYaml -}}
+  {{- $_ = set $crs "_deserialized" $crsDeserialized -}}
+  {{- $crsCAs := dig "CAs" list $crsDeserialized -}}
+  {{/* FAIL ASSERT */}}
+  {{- $crsCA := first $crsCAs -}}
+  {{- $_ = set $crs "_caCert" $crsCA -}}
+  {{- $_ = set $crs "_enabled" true -}}
+  {{- $_ = set ._rox.ca "_cert" $crsCA -}}
+  {{- $_ = set ._rox "crs" $crs -}}
+{{- end }}
+[<- end >]
+
 {{/*
 The following block checks for the validity of the provided init bundle. (`helm install ... -f <init-bundle.yaml>`)
 1. Throw an error if no init bundle was provided

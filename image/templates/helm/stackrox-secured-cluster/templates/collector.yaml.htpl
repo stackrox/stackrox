@@ -45,6 +45,46 @@ spec:
       hostAliases: {{ toYaml ._rox.collector.hostAliases | nindent 8 }}
       {{- end }}
       serviceAccountName: collector
+      initContainers:
+      - image: registry.access.redhat.com/ubi9/ubi-minimal:9.4
+        imagePullPolicy: {{ ._rox.sensor.imagePullPolicy | quote }}
+        name: service-cert-picker
+        command:
+        - /bin/bash
+        args:
+        - /cert-picker/script
+        resources: {} # few resources!
+        securityContext:
+          # runAsNonRoot: true
+          readOnlyRootFilesystem: true
+        env:
+        - name: K8S_NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: CRS_CREATED_CERTS
+          value: /run/secrets/stackrox.io/crs-created-certs
+        - name: LEGACY_CERTS
+          value: /run/secrets/stackrox.io/legacy-certs
+        - name: EFFECTIVE_CERTS
+          value: /run/secrets/stackrox.io/effective-certs
+        volumeMounts:
+        - name: cert-picker-script
+          mountPath: /cert-picker/
+        - name: certs
+          mountPath: /run/secrets/stackrox.io/legacy-certs/
+        - name: crs-created-certs
+          mountPath: /run/secrets/stackrox.io/crs-created-certs/
+        - name: effective-certs
+          mountPath: /run/secrets/stackrox.io/effective-certs/
       containers:
       {{- if ne ._rox.collector.collectionMethod "NO_COLLECTION"}}
       - name: collector
@@ -103,7 +143,7 @@ spec:
           readOnly: true
           mountPropagation: HostToContainer
         - mountPath: /run/secrets/stackrox.io/certs/
-          name: certs
+          name: effective-certs
           readOnly: true
         [<- if .FeatureFlags.ROX_COLLECTOR_RUNTIME_CONFIG >]
         {{- if ._rox.collector.containerd.enabled }}
@@ -183,7 +223,7 @@ spec:
           readOnly: true
           mountPropagation: HostToContainer
         - mountPath: /run/secrets/stackrox.io/certs/
-          name: certs
+          name: effective-certs
           readOnly: true
       {{- if eq ._rox.env.openshift 4 }}
         - mountPath: /hostindex/usr/share
@@ -237,9 +277,20 @@ spec:
       - hostPath:
           path: /dev
         name: dev-ro
+      - name: crs-created-certs
+        secret:
+          secretName: tls-cert-collector
+          optional: true
+      - name: cert-picker-script
+        configMap:
+          name: cert-picker-script
+      - name: effective-certs
+        emptyDir:
+          medium: Memory
       - name: certs
         secret:
           secretName: collector-tls
+          optional: true
           items:
           - key: collector-cert.pem
             path: cert.pem
