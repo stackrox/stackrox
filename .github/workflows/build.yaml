@@ -715,12 +715,6 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - uses: ./.github/actions/job-preamble
-        with:
-          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-      - uses: ./.github/actions/handle-tagged-build
-
       - name: Central login
         uses: stackrox/central-login@v1
         with:
@@ -738,19 +732,13 @@ jobs:
           if [[ ${{ matrix.image }} =~ "operator" ]]; then
             release_tag=$(make -C operator --silent tag)
           fi
-          release_tag=4.0.0
+          release_tag=4.6.0
           roxctl image scan --retries=10 --retry-delay=15 --force --severity=CRITICAL,IMPORTANT --output=sarif \
             --image="quay.io/rhacs-eng/${{ matrix.image }}:${release_tag}" \
             > results.sarif
           cat results.sarif
 
-      - name: Upload roxctl scan results to GitHub Security tab number one
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          category: ${{ matrix.image }}
-          sarif_file: results.sarif
-
-      - name: oijoaijafoijUpload roxctl scan results to GitHub Security tab number two
+      - name: Upload roxctl scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
         with:
           category: ${{ matrix.image }}
