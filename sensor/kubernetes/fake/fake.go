@@ -268,6 +268,9 @@ func (w *WorkloadManager) initializePreexistingResources() {
 	}
 
 	w.fakeClient = fake.NewSimpleClientset(objects...)
+	w.fakeClient.ReactionChain = nil
+	w.fakeClient.ProxyReactionChain = nil
+	w.fakeClient.WatchReactionChain = nil
 	w.fakeClient.Discovery().(*fakediscovery.FakeDiscovery).FakedServerVersion = &version.Info{
 		Major:        "1",
 		Minor:        "14",
