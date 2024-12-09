@@ -275,6 +275,7 @@ func (m *MsgToCompliance_NodeInventoryACK) CloneVT() *MsgToCompliance_NodeInvent
 	}
 	r := new(MsgToCompliance_NodeInventoryACK)
 	r.Action = m.Action
+	r.Recipient = m.Recipient
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -728,6 +729,9 @@ func (this *MsgToCompliance_NodeInventoryACK) EqualVT(that *MsgToCompliance_Node
 		return false
 	}
 	if this.Action != that.Action {
+		return false
+	}
+	if this.Recipient != that.Recipient {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1459,6 +1463,11 @@ func (m *MsgToCompliance_NodeInventoryACK) MarshalToSizedBufferVT(dAtA []byte) (
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.Recipient != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Recipient))
+		i--
+		dAtA[i] = 0x10
+	}
 	if m.Action != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Action))
 		i--
@@ -1851,6 +1860,9 @@ func (m *MsgToCompliance_NodeInventoryACK) SizeVT() (n int) {
 	_ = l
 	if m.Action != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.Action))
+	}
+	if m.Recipient != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.Recipient))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -3012,6 +3024,25 @@ func (m *MsgToCompliance_NodeInventoryACK) UnmarshalVTUnsafe(dAtA []byte) error 
 				b := dAtA[iNdEx]
 				iNdEx++
 				m.Action |= MsgToCompliance_NodeInventoryACK_Action(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Recipient", wireType)
+			}
+			m.Recipient = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Recipient |= MsgToCompliance_NodeInventoryACK_Recipient(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
