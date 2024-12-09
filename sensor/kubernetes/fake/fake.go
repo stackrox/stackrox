@@ -185,7 +185,8 @@ func (w *WorkloadManager) clearActions() {
 		w.fakeClient.ClearActions()
 
 		gvk := schema.GroupVersionKind{
-			Kind: "Pod",
+			Kind:    "Pod",
+			Version: "v1",
 		}
 		objectctr := 0
 		for _, namespace := range w.namespaces {
@@ -268,9 +269,6 @@ func (w *WorkloadManager) initializePreexistingResources() {
 	}
 
 	w.fakeClient = fake.NewSimpleClientset(objects...)
-	w.fakeClient.ReactionChain = nil
-	w.fakeClient.ProxyReactionChain = nil
-	w.fakeClient.WatchReactionChain = nil
 	w.fakeClient.Discovery().(*fakediscovery.FakeDiscovery).FakedServerVersion = &version.Info{
 		Major:        "1",
 		Minor:        "14",
