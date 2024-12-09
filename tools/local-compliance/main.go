@@ -13,7 +13,7 @@ import (
 var log = logging.LoggerForModule()
 
 // local-compliance is an application that allows you to run compliance in your host machine, while using a
-// gRPC connection to Sensor. This was introduced for intergration-, load-testing, and debugging purposes.
+// gRPC connection to Sensor. This was introduced for integration-, load-testing, and debugging purposes.
 func main() {
 	np := &dummyNodeNameProvider{}
 	scanner := &LoadGeneratingNodeScanner{

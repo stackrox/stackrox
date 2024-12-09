@@ -68,6 +68,8 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 		// Node Indexing only works correctly when both, itself and Scanner v4 are enabled
 		log.Debugf("Skipping node index message (Node Indexing Enabled: %t, Scanner V4 Enabled: %t",
 			env.NodeIndexEnabled.BooleanSetting(), features.ScannerV4.Enabled())
+		// ACK the message to prevent frequent retries
+		sendComplianceAck(ctx, msg.GetEvent().GetNode(), injector)
 		return nil
 	}
 	event := msg.GetEvent()
