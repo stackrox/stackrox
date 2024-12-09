@@ -142,7 +142,7 @@ func createBasePolicyStruct(name string) *v1alpha1.SecurityPolicy {
 
 func (pc *PolicyAsCodeSuite) TestCreateCR() {
 	k8sPolicy := createBasePolicyStruct("test-policy-create")
-	k8sPolicy.Spec.Notifiers = []string{pc.notifier.GetId()}
+	k8sPolicy.Spec.Notifiers = []string{pc.notifier.GetName()}
 	id := pc.createCRAndObserveInCentral(k8sPolicy)
 	pc.Require().NotEmpty(id)
 	pc.checkPolicyIsDeclarative(id)
@@ -237,7 +237,7 @@ func (pc *PolicyAsCodeSuite) createPolicyInCentral() *storage.Policy {
 			Name:            policyName,
 			Description:     "This is a description",
 			Categories:      []string{"Vulnerability Management"},
-			Notifiers:       []string{pc.notifier.GetName()},
+			Notifiers:       []string{pc.notifier.GetId()},
 			Severity:        storage.Severity_MEDIUM_SEVERITY,
 			LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
 			PolicySections: []*storage.PolicySection{{
