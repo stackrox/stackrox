@@ -198,6 +198,9 @@ func (w *WorkloadManager) clearActions() {
 		}
 
 		log.Infof("Found %d items in tracker", objectctr)
+
+		log.Infof("Numbers of Reactions: %d - WatchReactions: %d - ProxyReactions: %d", len(w.fakeClient.ReactionChain), len(w.fakeClient.WatchReactionChain), len(w.fakeClient.ProxyReactionChain))
+		log.Infof("Number of resources: %d", len(w.fakeClient.Resources))
 		/*
 			//tracker := w.fakeClient.Tracker()
 			tracker := reflect.ValueOf(w.fakeClient).Elem().FieldByName("tracker")

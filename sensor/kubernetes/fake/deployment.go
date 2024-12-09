@@ -473,22 +473,12 @@ func (w *WorkloadManager) manageDeploymentLifecycle(ctx context.Context, resourc
 		select {
 		case <-timer.C:
 			stopSig.Signal()
-			deploymentName := deployment.Name
-			deploymentNamespace := deployment.Namespace
 			if err := deploymentClient.Delete(ctx, deployment.Name, metav1.DeleteOptions{}); err != nil {
 				log.Error(err)
 			}
-			if err := w.fakeClient.Tracker().Delete(gvr, deploymentNamespace, deploymentName); err != nil {
-				log.Errorf("error deleting deployment from tracker: %v", err)
-			}
 			w.deleteID(deploymentPrefix, deployment.UID)
-			replicaSetName := deployment.Name
-			replicaSetNamespace := deployment.Namespace
 			if err := replicaSetClient.Delete(ctx, replicaset.Name, metav1.DeleteOptions{}); err != nil {
 				log.Error(err)
-			}
-			if err := w.fakeClient.Tracker().Delete(gvr, replicaSetNamespace, replicaSetName); err != nil {
-				log.Errorf("error deleting replicaset from tracker: %v", err)
 			}
 			w.deleteID(replicaSetPrefix, replicaset.UID)
 			return
@@ -538,13 +528,8 @@ func (w *WorkloadManager) managePod(ctx context.Context, deploymentSig *concurre
 
 	client := w.client.Kubernetes().CoreV1().Pods(pod.Namespace)
 	cleanupPodFn := func(pod *corev1.Pod) {
-		podName := pod.Name
-		podNamespace := pod.Namespace
 		if err := client.Delete(ctx, pod.Name, metav1.DeleteOptions{}); err != nil {
 			log.Errorf("error deleting pod: %v", err)
-		}
-		if err := w.fakeClient.Tracker().Delete(gvr, podNamespace, podName); err != nil {
-			log.Errorf("error deleting pod from tracker: %v", err)
 		}
 		podCounter.incrementDelete()
 
