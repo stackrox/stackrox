@@ -26,7 +26,8 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	umh := handler.NewUnconfirmedMessageHandler(ctx, env.NodeScanningAckDeadlineBase.DurationSetting())
-	c := compliance.NewComplianceApp(np, scanner, cachedNodeIndexer, umh)
+	umhNodeInv := handler.NewUnconfirmedMessageHandler(ctx, env.NodeScanningAckDeadlineBase.DurationSetting())
+	umhNodeIndex := handler.NewUnconfirmedMessageHandler(ctx, env.NodeScanningAckDeadlineBase.DurationSetting())
+	c := compliance.NewComplianceApp(np, scanner, cachedNodeIndexer, umhNodeInv, umhNodeIndex)
 	c.Start()
 }

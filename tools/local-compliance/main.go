@@ -29,8 +29,9 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	umh := handler.NewUnconfirmedMessageHandler(ctx, 5*time.Second)
-	c := compliance.NewComplianceApp(np, scanner, nindexer, umh)
+	umh1 := handler.NewUnconfirmedMessageHandler(ctx, 5*time.Second)
+	umh2 := handler.NewUnconfirmedMessageHandler(ctx, 5*time.Second)
+	c := compliance.NewComplianceApp(np, scanner, nindexer, umh1, umh2)
 	c.Start()
 }
 
