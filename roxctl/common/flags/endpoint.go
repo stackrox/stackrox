@@ -41,6 +41,7 @@ var (
 const (
 	caCertFileFlagName            = "ca"
 	directGRPCFlagName            = "direct-grpc"
+	endpointFlagName              = "endpoint"
 	forceHTTP1FlagName            = "force-http1"
 	insecureFlagName              = "insecure"
 	insecureSkipTLSVerifyFlagName = "insecure-skip-tls-verify"
@@ -51,9 +52,9 @@ const (
 
 // AddConnectionFlags adds connection-related flags to roxctl.
 func AddConnectionFlags(c *cobra.Command) {
-	c.PersistentFlags().StringVarP(&endpoint, "endpoint", "e", "localhost:8443",
+	c.PersistentFlags().StringVarP(&endpoint, endpointFlagName, "e", "localhost:8443",
 		"Endpoint for service to contact. Alternatively, set the endpoint via the ROX_ENDPOINT environment variable")
-	endpointChanged = &c.PersistentFlags().Lookup("endpoint").Changed
+	endpointChanged = &c.PersistentFlags().Lookup(endpointFlagName).Changed
 	c.PersistentFlags().StringVarP(&serverName, serverNameFlagName, "s", "", "TLS ServerName to use for SNI "+
 		"(if empty, derived from endpoint). Alternately, set the server name via the ROX_SERVER_NAME environment variable")
 	serverNameSet = &c.PersistentFlags().Lookup(serverNameFlagName).Changed
@@ -82,7 +83,7 @@ func AddConnectionFlags(c *cobra.Command) {
 	c.PersistentFlags().BoolVarP(&useKubeContext, useKubeContextFlagName, "", false,
 		"Use the current kubeconfig context to connect to the central service via port-forwarding. "+
 			"Alternatively, set "+env.UseCurrentKubeContext.EnvVar()+" environment variable to true")
-	c.MarkFlagsMutuallyExclusive(useKubeContextFlagName, "endpoint")
+	c.MarkFlagsMutuallyExclusive(useKubeContextFlagName, endpointFlagName)
 }
 
 // EndpointAndPlaintextSetting returns the Central endpoint to connect to, as well as a bool indicating whether to
