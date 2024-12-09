@@ -10,11 +10,10 @@
 {{ define "srox.setSecuredClusterCertRefresh" }}
 
 {{ $ := index . 0 }}
-{{ $env := $._rox.env }}
 
 {{ $_ := set $._rox "_securedClusterCertRefresh" false }}
 
-{{ if and (not $env.centralServices) (ne $._rox.managedBy "MANAGER_TYPE_MANUAL") }}
+{{ if and (not $._rox.env.centralServices) (ne $._rox.managedBy "MANAGER_TYPE_MANUAL") }}
   {{ $_ := set $._rox "_securedClusterCertRefresh" true }}
 {{ end }}
 
