@@ -1952,7 +1952,13 @@ type ClusterHealthStatus struct {
 	AdmissionControlHealthStatus ClusterHealthStatus_HealthStatusLabel `protobuf:"varint,7,opt,name=admission_control_health_status,json=admissionControlHealthStatus,proto3,enum=storage.ClusterHealthStatus_HealthStatusLabel" json:"admission_control_health_status,omitempty" search:"Admission Control Status,store"` // @gotags: search:"Admission Control Status,store"
 	ScannerHealthStatus          ClusterHealthStatus_HealthStatusLabel `protobuf:"varint,11,opt,name=scanner_health_status,json=scannerHealthStatus,proto3,enum=storage.ClusterHealthStatus_HealthStatusLabel" json:"scanner_health_status,omitempty" search:"Scanner Status,store"`                             // @gotags: search:"Scanner Status,store"
 	// For sensors not having health capability, this will be filled with gRPC connection poll. Otherwise,
-	// this timestamp will be updated by central pipeline when message is processed
+	// this timestamp will be updated by central pipeline when message is processed.
+	//
+	// Note: we use this setting to guard against a specific attack vector during CRS-based cluster registration.
+	// Assuming that a CRS was used to register a cluster A and the CRS is leaked, an attacker shall not be able
+	// to re-run the CRS-flow which would then equip the attacker with a certificate & key issued to the cluster A.
+	// As countermeasure we only allow re-running the CRS-flow only as long as the last_contact field is empty,
+	// indicating that the legit cluster A's sensor has not yet connected with the CRS-issued service certificates.
 	LastContact *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_contact,json=lastContact,proto3" json:"last_contact,omitempty" search:"Last Contact,store"` // @gotags: search:"Last Contact,store"
 	// To track cases such as when sensor is healthy, but collector status data is unavailable because the sensor is on an old version
 	HealthInfoComplete bool `protobuf:"varint,6,opt,name=health_info_complete,json=healthInfoComplete,proto3" json:"health_info_complete,omitempty"`
