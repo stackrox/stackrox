@@ -21,6 +21,7 @@ const (
 	GetMany
 	GetExternalFlowsForDeployment
 	GetFlowsForDeployment
+	GetFlowsByEntity
 	GetByQuery
 
 	// Special operation currently used only for processes.
