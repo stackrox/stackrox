@@ -42,7 +42,7 @@ func main() {
 	if len(os.Args) > 1 && os.Args[1] == "ensure-service-certificates" {
 		err := crs.EnsureServiceCertificatesPresent()
 		if err != nil {
-			log.Errorf("Ensuring that this cluster is registered failed: %v", err)
+			log.Errorf("Ensuring presence of service certificates for this cluster failed: %v", err)
 			os.Exit(1)
 		}
 		os.Exit(0)
