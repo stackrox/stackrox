@@ -79,6 +79,15 @@ const (
 	FROM %s nf ` + joinStmt +
 		`WHERE nf.Props_DstEntity_Type = 1 AND nf.Props_DstEntity_Id = $1 AND nf.Props_SrcEntity_Type = 4`
 
+	getByEntityStmt = `SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type,
+	nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId::text
+	FROM %s nf ` + joinStmt +
+		`WHERE nf.Props_SrcEntity_Id = $1
+	UNION ALL
+	SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId::text
+	FROM %s nf ` + joinStmt +
+		`WHERE nf.Props_DstEntity_Id = $1`
+
 	pruneStaleNetworkFlowsStmt = `DELETE FROM %s a USING (
       SELECT MAX(flow_id) as Max_Flow, Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId
         FROM %s
@@ -126,6 +135,8 @@ type FlowStore interface {
 	GetFlowsForDeployment(ctx context.Context, deploymentID string) ([]*storage.NetworkFlow, error)
 	// GetExternalFlowsForDeployment returns all external flows referencing a specific deployment id
 	GetExternalFlowsForDeployment(ctx context.Context, deploymentID string) ([]*storage.NetworkFlow, error)
+
+	GetFlowsByEntity(ctx context.Context, id string) ([]*storage.NetworkFlow, error)
 
 	// UpsertFlows Same as other Upserts but it takes in a time
 	UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error
@@ -521,6 +532,33 @@ func (s *flowStoreImpl) GetExternalFlowsForDeployment(ctx context.Context, deplo
 	return pgutils.Retry2(ctx, func() ([]*storage.NetworkFlow, error) {
 		return s.retryableGetFlowsForDeployment(ctx, deploymentID, getExternalByDeploymentStmt)
 	})
+}
+
+func (s *flowStoreImpl) GetFlowsByEntity(ctx context.Context, entityID string) ([]*storage.NetworkFlow, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetFlowsByEntity, "NetworkFlow")
+
+	return pgutils.Retry2(ctx, func() ([]*storage.NetworkFlow, error) {
+		return s.retryableGetFlowsByEntity(ctx, entityID)
+	})
+}
+
+func (s *flowStoreImpl) retryableGetFlowsByEntity(ctx context.Context, entityID string) ([]*storage.NetworkFlow, error) {
+	var rows pgx.Rows
+	var err error
+
+	partitionGetByEntityStmt := fmt.Sprintf(getByEntityStmt, s.partitionName, s.partitionName, s.partitionName, s.partitionName)
+	rows, err = s.db.Query(ctx, partitionGetByEntityStmt, entityID)
+	if err != nil {
+		return nil, pgutils.ErrNilIfNoRows(err)
+	}
+	defer rows.Close()
+
+	flows, err := s.readRows(rows, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return flows, nil
 }
 
 func (s *flowStoreImpl) retryableGetFlowsForDeployment(ctx context.Context, deploymentID string, getStmt string) ([]*storage.NetworkFlow, error) {
