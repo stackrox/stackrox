@@ -13,7 +13,6 @@ LOCAL_SENSOR_BIN=local-sensor
 EXEC=$OUTPUT_DIR/$LOCAL_SENSOR_BIN
 PROMETHEUS_ENDPOINT=http://localhost:9090
 ROX_METRICS_PORT=:9091
-LOGLEVEL="${LOGLEVEL:-debug}"
 PROMETHEUS_QUERY=rox_sensor_sensor_events
 PROMETHEUS_DUMP=$OUTPUT_DIR/sensor_events_dump.json
 
@@ -68,7 +67,6 @@ function print_header() {
   echo "RUN_GENERATE        = $RUN_GENERATE"
   echo "RUN_TEST            = $RUN_TEST"
   echo "VERBOSE             = $VERBOSE"
-  echo "LOGLEVEL            = $LOGLEVEL"
   echo "OUTPUT_DIR          = $OUTPUT_DIR"
   echo "K8S_EVENTS_FILE     = $K8S_EVENTS_FILE"
   echo "FAKE_WORKLOAD_FILE  = $FAKE_WORKLOAD_FILE"
