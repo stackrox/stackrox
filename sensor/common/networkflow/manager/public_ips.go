@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/net"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -58,21 +59,31 @@ func (m *publicIPsManager) Run(ctx concurrency.Waitable, clusterEntities EntityS
 	}
 }
 
-func (m *publicIPsManager) OnAdded(ip net.IPAddress) {
+func (m *publicIPsManager) OnUpdate(ips set.Set[net.IPAddress]) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
+	for ip := range ips {
+		if _, ok := m.publicIPs[ip]; !ok {
+			// New public IP: trigger adding
+			m.onAddNoLock(ip)
+		}
+	}
+	for address := range m.publicIPs {
+		if !ips.Contains(address) {
+			// IP is tracked but not present in the update: trigger removal
+			m.onRemoveNoLock(address)
+		}
+	}
+}
 
+func (m *publicIPsManager) onAddNoLock(ip net.IPAddress) {
 	m.publicIPs[ip] = struct{}{}
 	delete(m.publicIPDeletions, ip) // undo a pending deletion, if any
 	m.publicIPsUpdateSig.Signal()
 }
 
-func (m *publicIPsManager) OnRemoved(ip net.IPAddress) {
-	now := time.Now()
-
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-	m.publicIPDeletions[ip] = now
+func (m *publicIPsManager) onRemoveNoLock(ip net.IPAddress) {
+	m.publicIPDeletions[ip] = time.Now()
 }
 
 func (m *publicIPsManager) regenerateAndPushPublicIPsProto() {
