@@ -97,7 +97,10 @@ func TestToProtobuf(t *testing.T) {
 		MitreVectorsLocked: true,
 		IsDefault:          false,
 	}
-	protoPolicy := policyCRSpec.ToProtobuf()
+
+	mockNotifiers := make([]*storage.Notifier, 0)
+	protoPolicy, _ := policyCRSpec.ToProtobuf(mockNotifiers)
+
 	// Hack: Reset the source field for us to be able to compare
 	protoPolicy.Source = storage.PolicySource_IMPERATIVE
 	protoassert.Equal(t, expectedProto, protoPolicy, "proto message derived from custom resource not as expected")

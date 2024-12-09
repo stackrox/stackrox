@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/notifier/datastore"
 	configstackroxiov1alpha1 "github.com/stackrox/rox/config-controller/api/v1alpha1"
 	"github.com/stackrox/rox/config-controller/pkg/client"
 	"github.com/stackrox/rox/pkg/logging"
@@ -71,7 +72,13 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, errors.Wrap(err, "Failed to refresh")
 	}
 
-	desiredState := policyCR.Spec.ToProtobuf()
+	notifierDatastore := datastore.Singleton()
+	notifiers, err := notifierDatastore.GetNotifiers(ctx)
+	if err != nil {
+		return ctrl.Result{}, errors.Wrap(err, "Failed to get exisiting notifiers")
+	}
+
+	desiredState, err := policyCR.Spec.ToProtobuf(notifiers)
 
 	existingPolicy, exists, err := r.PolicyClient.GetPolicy(ctx, desiredState.GetName())
 	if err != nil {
