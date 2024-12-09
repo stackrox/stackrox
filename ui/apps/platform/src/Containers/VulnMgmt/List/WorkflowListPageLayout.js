@@ -4,7 +4,6 @@ import startCase from 'lodash/startCase';
 
 import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
 import PageHeader from 'Components/PageHeader';
-import { useTheme } from 'Containers/ThemeProvider';
 import SidePanelAnimatedArea from 'Components/animations/SidePanelAnimatedArea';
 import ExportButton from 'Components/ExportButton';
 import BackdropExporting from 'Components/PatternFly/BackdropExporting';
@@ -27,7 +26,6 @@ const WorkflowListPageLayout = () => {
     const location = useLocation();
     const [isExporting, setIsExporting] = useState(false);
 
-    const { isDarkMode } = useTheme();
     const workflowState = parseURL(location);
     const { useCase, search, sort, paging } = workflowState;
     const pageState = new WorkflowState(
@@ -100,12 +98,7 @@ const WorkflowListPageLayout = () => {
                         </div>
                     </div>
                 </PageHeader>
-                <div
-                    className={`h-full relative z-0 min-h-0 ${
-                        !isDarkMode ? 'bg-base-100' : 'bg-base-0'
-                    }`}
-                    id="capture-list"
-                >
+                <div className="h-full relative z-0 min-h-0 bg-base-100" id="capture-list">
                     <ListComponent
                         entityListType={pageListType}
                         selectedRowId={selectedRow && selectedRow.entityId}
@@ -115,7 +108,7 @@ const WorkflowListPageLayout = () => {
                         refreshTrigger={refreshTrigger}
                         setRefreshTrigger={setRefreshTrigger}
                     />
-                    <SidePanelAnimatedArea isDarkMode={isDarkMode} isOpen={!!sidePanelEntityId}>
+                    <SidePanelAnimatedArea isOpen={!!sidePanelEntityId}>
                         <WorkflowSidePanel>
                             <EntityComponent
                                 entityId={sidePanelEntityId}

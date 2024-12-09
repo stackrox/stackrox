@@ -235,10 +235,15 @@ const StaticConfigurationSection = ({
                         />
                     )}
                     {isTypeOpenShift3 && (
-                        <div className="border border-alert-200 bg-alert-200 p-2 rounded-b">
+                        <Alert
+                            variant="warning"
+                            isInline
+                            title="Openshift compatibility"
+                            component="p"
+                        >
                             This setting will not work for OpenShift 3.11. To use this webhook, you
                             must upgrade your cluster to OpenShift 4.1 or higher.
-                        </div>
+                        </Alert>
                     )}
                 </div>
                 <div className={wrapperMarginClassName}>

@@ -336,8 +336,8 @@ func (s *DeploymentExposureSuite) Test_MultipleDeploymentUpdates() {
 	s.testContext.RunTest(s.T(), helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, _ map[string]k8s.Object) {
 		deployment := &appsv1.Deployment{}
 		deleteDep, err := testC.ApplyResourceAndWait(context.Background(), t, helper.DefaultNamespace, &NginxDeployment, deployment, nil)
-		defer utils.IgnoreError(deleteDep)
 		require.NoError(t, err)
+		defer utils.IgnoreError(deleteDep)
 
 		port := getPort(t)
 		svc := &v1.Service{}

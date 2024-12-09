@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { Alert, AlertVariant } from '@patternfly/react-core';
+import { Alert } from '@patternfly/react-core';
 
 export type FormResponseMessage = {
     message: string;
@@ -12,7 +12,7 @@ export type FormMessageProps = {
 
 function FormMessage({ message }: FormMessageProps): ReactElement {
     const title = message?.isError ? 'Failure' : 'Success';
-    const variant = message?.isError ? AlertVariant.danger : AlertVariant.success;
+    const variant = message?.isError ? 'danger' : 'success';
     return (
         <div id="form-message-alert">
             {message && (

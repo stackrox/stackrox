@@ -1,0 +1,115 @@
+{
+    "data": {
+        "image": {
+            "id": "sha256:abcxyz",
+            "name": {
+                "registry": "docker.io",
+                "remote": "cypress-test/image",
+                "tag": "v0.0.1",
+                "__typename": "ImageName"
+            },
+            "metadata": {
+                "v1": {
+                    "layers": [
+                        {
+                            "instruction": "ADD",
+                            "value": "file:abc123 in /",
+                            "__typename": "ImageLayer"
+                        }
+                    ],
+                    "__typename": "V1Metadata"
+                },
+                "__typename": "ImageMetadata"
+            },
+            "__typename": "Image",
+            "imageVulnerabilityCount": 2,
+            "imageCVECountBySeverity": {
+                "low": {
+                    "total": 0,
+                    "fixable": 0,
+                    "__typename": "ResourceCountByFixability"
+                },
+                "moderate": {
+                    "total": 0,
+                    "fixable": 0,
+                    "__typename": "ResourceCountByFixability"
+                },
+                "important": {
+                    "total": 2,
+                    "fixable": 2,
+                    "__typename": "ResourceCountByFixability"
+                },
+                "critical": {
+                    "total": 0,
+                    "fixable": 0,
+                    "__typename": "ResourceCountByFixability"
+                },
+                "__typename": "ResourceCountByCVESeverity"
+            },
+            "imageVulnerabilities": [
+                {
+                    "severity": "IMPORTANT_VULNERABILITY_SEVERITY",
+                    "cve": "MOCK-2023-0464",
+                    "summary": "This is a mocked CVE in a Cypress test",
+                    "cvss": 7.5,
+                    "scoreVersion": "V3",
+                    "nvdCvss": 0,
+                    "nvdScoreVersion": "UNKNOWN_VERSION",
+                    "discoveredAtImage": "2024-03-01T17:45:32.757812569Z",
+                    "publishedOn": "2023-03-22T17:15:00Z",
+                    "pendingExceptionCount": 0,
+                    "imageComponents": [
+                        {
+                            "name": "openssl",
+                            "version": "3.0.8-r0",
+                            "location": "",
+                            "source": "OS",
+                            "layerIndex": 0,
+                            "imageVulnerabilities": [
+                                {
+                                    "severity": "IMPORTANT_VULNERABILITY_SEVERITY",
+                                    "fixedByVersion": "3.0.8-r1",
+                                    "pendingExceptionCount": 0,
+                                    "__typename": "ImageVulnerability"
+                                }
+                            ],
+                            "__typename": "ImageComponent"
+                        }
+                    ],
+                    "__typename": "ImageVulnerability"
+                },
+                {
+                    "severity": "IMPORTANT_VULNERABILITY_SEVERITY",
+                    "cve": "MOCK-2023-5363",
+                    "summary": "This is a mocked CVE in a Cypress test",
+                    "cvss": 7.5,
+                    "scoreVersion": "V3",
+                    "nvdCvss": 0,
+                    "nvdScoreVersion": "UNKNOWN_VERSION",
+                    "discoveredAtImage": "2024-03-01T17:45:32.757812569Z",
+                    "publishedOn": "2023-10-25T18:17:00Z",
+                    "pendingExceptionCount": 0,
+                    "imageComponents": [
+                        {
+                            "name": "openssl",
+                            "version": "3.0.8-r0",
+                            "location": "",
+                            "source": "OS",
+                            "layerIndex": 0,
+                            "imageVulnerabilities": [
+                                {
+                                    "severity": "IMPORTANT_VULNERABILITY_SEVERITY",
+                                    "fixedByVersion": "3.0.12-r0",
+                                    "pendingExceptionCount": 0,
+                                    "__typename": "ImageVulnerability"
+                                }
+                            ],
+                            "__typename": "ImageComponent"
+                        }
+                    ],
+                    "__typename": "ImageVulnerability"
+                }
+            ]
+        }
+    }
+}

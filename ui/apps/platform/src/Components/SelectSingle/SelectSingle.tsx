@@ -1,5 +1,5 @@
 import React, { ReactElement, useState } from 'react';
-import { Select, SelectVariant } from '@patternfly/react-core/deprecated';
+import { Select } from '@patternfly/react-core/deprecated';
 
 export type SelectSingleProps = {
     toggleIcon?: ReactElement;
@@ -36,8 +36,6 @@ function SelectSingle({
 }: SelectSingleProps): ReactElement {
     const [isOpen, setIsOpen] = useState(false);
 
-    const isTypeahead = variant === 'typeahead' ? SelectVariant.typeahead : SelectVariant.single;
-
     function onSelect(_event, selection) {
         // The mouse event is not useful.
         setIsOpen(false);
@@ -46,7 +44,7 @@ function SelectSingle({
 
     return (
         <Select
-            variant={isTypeahead}
+            variant={variant === 'typeahead' ? 'typeahead' : 'single'}
             toggleIcon={toggleIcon}
             toggleAriaLabel={toggleAriaLabel}
             id={id}

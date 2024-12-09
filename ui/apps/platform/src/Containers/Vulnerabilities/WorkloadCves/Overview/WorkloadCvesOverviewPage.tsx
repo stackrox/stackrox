@@ -166,7 +166,6 @@ function WorkloadCvesOverviewPage() {
     const hasReadAccessForNamespaces = hasReadAccess('Namespace');
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isFixabilityFiltersEnabled = isFeatureFlagEnabled('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS');
     const isAdvancedFiltersEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_ADVANCED_FILTERS');
 
     const { analyticsTrack } = useAnalytics();
@@ -220,20 +219,17 @@ function WorkloadCvesOverviewPage() {
     const defaultStorage: VulnMgmtLocalStorage = {
         preferences: {
             defaultFilters: {
-                SEVERITY: isFixabilityFiltersEnabled ? ['Critical', 'Important'] : [],
-                FIXABLE: isFixabilityFiltersEnabled ? ['Fixable'] : [],
+                SEVERITY: ['Critical', 'Important'],
+                FIXABLE: ['Fixable'],
             },
         },
     } as const;
 
-    const [storedValue, setStoredValue] = useLocalStorage(
+    const [localStorageValue, setStoredValue] = useLocalStorage(
         'vulnerabilityManagement',
         defaultStorage,
         isVulnMgmtLocalStorage
     );
-    // Until the ROX_VULN_MGMT_FIXABILITY_FILTERS feature flag is removed, we need to used empty default filters
-    // as a fallback
-    const localStorageValue = isFixabilityFiltersEnabled ? storedValue : defaultStorage;
 
     const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
 
@@ -305,9 +301,7 @@ function WorkloadCvesOverviewPage() {
     }
 
     function applyDefaultFilters() {
-        if (isFixabilityFiltersEnabled) {
-            setSearchFilter(localStorageValue.preferences.defaultFilters);
-        }
+        setSearchFilter(localStorageValue.preferences.defaultFilters);
     }
 
     // Track the current entity tab when the page is initially visited.
@@ -460,15 +454,12 @@ function WorkloadCvesOverviewPage() {
                                                         Prioritize by namespace view
                                                     </Button>
                                                 )}
-                                                {isFixabilityFiltersEnabled && (
-                                                    <DefaultFilterModal
-                                                        defaultFilters={
-                                                            localStorageValue.preferences
-                                                                .defaultFilters
-                                                        }
-                                                        setLocalStorage={updateDefaultFilters}
-                                                    />
-                                                )}
+                                                <DefaultFilterModal
+                                                    defaultFilters={
+                                                        localStorageValue.preferences.defaultFilters
+                                                    }
+                                                    setLocalStorage={updateDefaultFilters}
+                                                />
                                             </Flex>
                                         </FlexItem>
                                     )}

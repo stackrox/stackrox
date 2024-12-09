@@ -6,18 +6,22 @@ import (
 
 	"github.com/pkg/errors"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
+	snapshotDS "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore"
 	scanConfigurationDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	scan "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
-	ScanConfigTimeoutError   = errors.New("scan config watcher timed out")
-	defaultScanConfigTimeout = defaultTimeout * 2
+	ErrScanConfigTimeout          = errors.New("scan config watcher timed out")
+	ErrScanConfigContextCancelled = errors.New("scan config watcher context cancelled")
 )
 
 // GetScanConfigFromScan returns the ScanConfiguration associated with the given scan
@@ -28,31 +32,34 @@ func GetScanConfigFromScan(ctx context.Context, scan *storage.ComplianceOperator
 // ScanConfigWatcher determines if a ScanConfiguration has running scans or has completed
 type ScanConfigWatcher interface {
 	PushScanResults(results *ScanWatcherResults) error
-	Subscribe(snapshotID string)
+	Subscribe(snapshot *storage.ComplianceOperatorReportSnapshotV2) error
+	GetScans() []*storage.ComplianceOperatorReportSnapshotV2_Scan
 	Stop()
 	Finished() concurrency.ReadOnlySignal
 }
 
 // ScanConfigWatcherResults is returned when the watcher detects all the scans are completed
 type ScanConfigWatcherResults struct {
-	Ctx               context.Context
-	WatcherID         string
-	ReportSnapshotIDs []string
-	ScanConfig        *storage.ComplianceOperatorScanConfigurationV2
-	ScanResults       map[string]*ScanWatcherResults
-	Error             error
+	SensorCtx      context.Context
+	WatcherID      string
+	ReportSnapshot []*storage.ComplianceOperatorReportSnapshotV2
+	ScanConfig     *storage.ComplianceOperatorScanConfigurationV2
+	ScanResults    map[string]*ScanWatcherResults
+	Error          error
 }
 
 type scanConfigWatcherImpl struct {
-	ctx     context.Context
-	cancel  func()
-	scanC   chan *ScanWatcherResults
-	stopped *concurrency.Signal
+	ctx                 context.Context
+	sensorCtx           context.Context
+	cancel              func()
+	scanWatcherResoutsC chan *ScanWatcherResults
+	stopped             *concurrency.Signal
 
-	scanDS    scan.DataStore
-	profileDS profileDatastore.DataStore
+	scanDS     scan.DataStore
+	profileDS  profileDatastore.DataStore
+	snapshotDS snapshotDS.DataStore
 
-	snapshotsLock     sync.Mutex
+	resultsLock       sync.Mutex
 	readyQueue        readyQueue[*ScanConfigWatcherResults]
 	scanConfigResults *ScanConfigWatcherResults
 	scansToWait       set.StringSet
@@ -60,24 +67,25 @@ type scanConfigWatcherImpl struct {
 }
 
 // NewScanConfigWatcher creates a new ScanConfigWatcher
-func NewScanConfigWatcher(ctx context.Context, watcherID string, sc *storage.ComplianceOperatorScanConfigurationV2, scanDS scan.DataStore, profileDS profileDatastore.DataStore, queue readyQueue[*ScanConfigWatcherResults], snapshotIDs ...string) *scanConfigWatcherImpl {
+func NewScanConfigWatcher(ctx, sensorCtx context.Context, watcherID string, sc *storage.ComplianceOperatorScanConfigurationV2, scanDS scan.DataStore, profileDS profileDatastore.DataStore, snapshotDS snapshotDS.DataStore, queue readyQueue[*ScanConfigWatcherResults]) *scanConfigWatcherImpl {
 	watcherCtx, cancel := context.WithCancel(ctx)
 	finishedSignal := concurrency.NewSignal()
-	timeout := NewTimer(defaultScanConfigTimeout)
+	timeout := NewTimer(env.ComplianceScanScheduleWatcherTimeout.DurationSetting())
 	ret := &scanConfigWatcherImpl{
-		ctx:        watcherCtx,
-		cancel:     cancel,
-		stopped:    &finishedSignal,
-		scanDS:     scanDS,
-		profileDS:  profileDS,
-		scanC:      make(chan *ScanWatcherResults),
-		readyQueue: queue,
+		ctx:                 watcherCtx,
+		sensorCtx:           sensorCtx,
+		cancel:              cancel,
+		stopped:             &finishedSignal,
+		scanDS:              scanDS,
+		profileDS:           profileDS,
+		snapshotDS:          snapshotDS,
+		scanWatcherResoutsC: make(chan *ScanWatcherResults),
+		readyQueue:          queue,
 		scanConfigResults: &ScanConfigWatcherResults{
-			Ctx:               ctx,
-			WatcherID:         watcherID,
-			ScanConfig:        sc,
-			ReportSnapshotIDs: snapshotIDs,
-			ScanResults:       make(map[string]*ScanWatcherResults),
+			SensorCtx:   sensorCtx,
+			WatcherID:   watcherID,
+			ScanConfig:  sc,
+			ScanResults: make(map[string]*ScanWatcherResults),
 		},
 		scansToWait: set.NewStringSet(),
 	}
@@ -90,19 +98,40 @@ func (w *scanConfigWatcherImpl) PushScanResults(results *ScanWatcherResults) err
 	select {
 	case <-w.ctx.Done():
 		return errors.New("The watcher is stopped")
-	case w.scanC <- results:
+	case w.scanWatcherResoutsC <- results:
 		return nil
 	}
 }
 
-// Subscribe snapshot to the watcher
-func (w *scanConfigWatcherImpl) Subscribe(id string) {
-	concurrency.WithLock(&w.snapshotsLock, func() {
-		if w.scanConfigResults == nil {
-			return
-		}
-		w.scanConfigResults.ReportSnapshotIDs = append(w.scanConfigResults.ReportSnapshotIDs, id)
+// Subscribe snapshot to the watcher. A subscribed snapshot is a snapshots that
+// needs to be updated from 'WAITING' to 'PREPARING' once the ScanConfigWatcher finishes.
+func (w *scanConfigWatcherImpl) Subscribe(snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
+	if w.scanConfigResults == nil {
+		return errors.New("the scan config results are nil")
+	}
+	concurrency.WithLock(&w.resultsLock, func() {
+		// Here we subscribe the snapshot to the watcher
+		w.scanConfigResults.ReportSnapshot = append(w.scanConfigResults.ReportSnapshot, snapshot)
 	})
+	return nil
+}
+
+// GetScans returns all the scans that are handled by the watcher
+func (w *scanConfigWatcherImpl) GetScans() []*storage.ComplianceOperatorReportSnapshotV2_Scan {
+	var scans []*storage.ComplianceOperatorReportSnapshotV2_Scan
+	if w.scanConfigResults == nil {
+		return scans
+	}
+	concurrency.WithLock(&w.resultsLock, func() {
+		// We return the current scans to be appended to the snapshot
+		for _, scanResult := range w.scanConfigResults.ScanResults {
+			scans = append(scans, &storage.ComplianceOperatorReportSnapshotV2_Scan{
+				ScanRefId:       scanResult.Scan.GetScanRefId(),
+				LastStartedTime: scanResult.Scan.GetLastStartedTime(),
+			})
+		}
+	})
+	return scans
 }
 
 // Stop the watcher
@@ -125,23 +154,35 @@ func (w *scanConfigWatcherImpl) run(timer Timer) {
 		select {
 		case <-w.ctx.Done():
 			log.Infof("Stopping scan config watcher")
+			concurrency.WithLock(&w.resultsLock, func() {
+				w.scanConfigResults.Error = ErrScanConfigContextCancelled
+				w.readyQueue.Push(w.scanConfigResults)
+			})
 			return
 		case <-timer.C():
-			log.Warnf("Timeout waiting for the ScanConfiguration %s's scans to finish", w.scanConfigResults.ScanConfig.GetScanConfigName())
-			concurrency.WithLock(&w.snapshotsLock, func() {
-				w.scanConfigResults.Error = ScanConfigTimeoutError
+			concurrency.WithLock(&w.resultsLock, func() {
+				log.Warnf("Timeout waiting for the ScanConfiguration %s's scans to finish", w.scanConfigResults.ScanConfig.GetScanConfigName())
+				w.scanConfigResults.Error = ErrScanConfigTimeout
 				w.readyQueue.Push(w.scanConfigResults)
 			})
 			return
-		case result := <-w.scanC:
+		case result := <-w.scanWatcherResoutsC:
 			if err := w.handleScanResults(result); err != nil {
 				log.Errorf("Unable to handle scan results %s: %v", result.Scan.GetScanName(), err)
+				concurrency.WithLock(&w.resultsLock, func() {
+					w.scanConfigResults.Error = err
+					w.readyQueue.Push(w.scanConfigResults)
+				})
+				return
 			}
 		}
-		if w.totalResults != 0 && w.totalResults == len(w.scanConfigResults.ScanResults) {
-			concurrency.WithLock(&w.snapshotsLock, func() {
+		if concurrency.WithLock1[bool](&w.resultsLock, func() bool {
+			if w.totalResults != 0 && w.totalResults == len(w.scanConfigResults.ScanResults) {
 				w.readyQueue.Push(w.scanConfigResults)
-			})
+				return true
+			}
+			return false
+		}) {
 			return
 		}
 	}
@@ -150,20 +191,52 @@ func (w *scanConfigWatcherImpl) run(timer Timer) {
 func (w *scanConfigWatcherImpl) handleScanResults(result *ScanWatcherResults) error {
 	// Here we have the scan config id and the scan
 	if w.totalResults == 0 {
-		scans, err := GetScansFromScanConfiguration(w.scanConfigResults.Ctx, w.scanConfigResults.ScanConfig, w.profileDS, w.scanDS)
+		scans, err := GetScansFromScanConfiguration(w.ctx, w.scanConfigResults.ScanConfig, w.profileDS, w.scanDS)
 		if err != nil {
 			return err
 		}
 		w.scansToWait = scans
 		w.totalResults = len(w.scansToWait)
-		log.Infof("Scan config %s needs to wait for %d scans", w.scanConfigResults.ScanConfig.GetScanConfigName(), w.totalResults)
+		log.Debugf("Scan config %s needs to wait for %d scans", w.scanConfigResults.ScanConfig.GetScanConfigName(), w.totalResults)
 	}
-	log.Infof("Scan to handle %s with id %s", result.Scan.GetScanName(), result.Scan.GetId())
+	log.Debugf("Scan to handle %s with id %s", result.Scan.GetScanName(), result.Scan.GetId())
+	scanResultKey := fmt.Sprintf("%s:%s", result.Scan.GetClusterId(), result.Scan.GetId())
 	if found := w.scansToWait.Remove(fmt.Sprintf("%s:%s", result.Scan.GetClusterId(), result.Scan.GetId())); !found {
-		return errors.Errorf("The scan %s should be handle by this watcher", result.Scan.GetId())
+		newScanResult := result.Scan
+		var timestampCmpResult int
+		concurrency.WithLock(&w.resultsLock, func() {
+			if prevScanResult, ok := w.scanConfigResults.ScanResults[scanResultKey]; ok {
+				timestampCmpResult = protocompat.CompareTimestamps(prevScanResult.Scan.GetLastStartedTime(), newScanResult.GetLastStartedTime())
+			}
+		})
+		if timestampCmpResult > 0 {
+			// We already handled a newer scan, so we can ignore this scan.
+			return nil
+		}
 	}
-	w.scanConfigResults.ScanResults[fmt.Sprintf("%s:%s", result.Scan.GetClusterId(), result.Scan.GetId())] = result
-	return nil
+	concurrency.WithLock(&w.resultsLock, func() {
+		w.scanConfigResults.ScanResults[scanResultKey] = result
+	})
+
+	return w.appendScanToSnapshots(w.ctx, result.Scan)
+}
+
+func (w *scanConfigWatcherImpl) appendScanToSnapshots(ctx context.Context, scan *storage.ComplianceOperatorScanV2) error {
+	errList := errorhelpers.NewErrorList("update snapshots' scans")
+	concurrency.WithLock(&w.resultsLock, func() {
+		for _, snapshot := range w.scanConfigResults.ReportSnapshot {
+			// The new Scan is appended to the Snapshot. This allows us later to make sure
+			// we do not generate duplicate Report Snapshots if we received an update in the Scan
+			snapshot.Scans = append(snapshot.Scans, &storage.ComplianceOperatorReportSnapshotV2_Scan{
+				ScanRefId:       scan.GetScanRefId(),
+				LastStartedTime: scan.GetLastStartedTime(),
+			})
+			if err := w.snapshotDS.UpsertSnapshot(ctx, snapshot); err != nil {
+				errList.AddError(err)
+			}
+		}
+	})
+	return errList.ToError()
 }
 
 // GetScansFromScanConfiguration returns the scans associated with a given ScanConfiguration

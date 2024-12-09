@@ -34,7 +34,7 @@ function RequestOverview({ exception, context }: RequestOverviewProps) {
                 <Title headingLevel="h2">Overview</Title>
                 <DescriptionList className="vulnerability-exception-request-overview">
                     <DescriptionListGroup>
-                        <DescriptionListTerm>Requestor</DescriptionListTerm>
+                        <DescriptionListTerm>Requester</DescriptionListTerm>
                         <DescriptionListDescription>
                             {exception.requester?.name || '-'}
                         </DescriptionListDescription>

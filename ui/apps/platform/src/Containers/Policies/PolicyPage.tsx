@@ -16,7 +16,7 @@ import { getClientWizardPolicy, initialPolicy } from './policies.utils';
 import PolicyDetail from './Detail/PolicyDetail';
 import PolicyWizard from './Wizard/PolicyWizard';
 
-function clonePolicy(policy: ClientPolicy) {
+function clonePolicy(policy: ClientPolicy): ClientPolicy {
     /*
      * Default policies will have the "criteriaLocked" and "mitreVectorsLocked" fields set to true.
      * When we clone these policies, we'll need to set them to false to allow users to edit
@@ -24,6 +24,7 @@ function clonePolicy(policy: ClientPolicy) {
      */
     return {
         ...policy,
+        source: 'IMPERATIVE',
         criteriaLocked: false,
         id: '',
         isDefault: false,

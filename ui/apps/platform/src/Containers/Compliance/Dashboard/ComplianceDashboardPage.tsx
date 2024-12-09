@@ -11,7 +11,6 @@ import PageHeader from 'Components/PageHeader';
 import BackdropExporting from 'Components/PatternFly/BackdropExporting';
 import { resourceTypes } from 'constants/entityTypes';
 import useCaseTypes from 'constants/useCaseTypes';
-import { useTheme } from 'Containers/ThemeProvider';
 import { useBooleanLocalStorage } from 'hooks/useLocalStorage';
 import usePermissions from 'hooks/usePermissions';
 import {
@@ -67,11 +66,6 @@ function ComplianceDashboardPage(): ReactElement {
 
     const [isExporting, setIsExporting] = useState(false);
 
-    const { isDarkMode } = useTheme();
-    const darkModeClasses = `${
-        isDarkMode ? 'text-base-600 hover:bg-primary-200' : 'text-base-100 hover:bg-primary-800'
-    }`;
-
     const { runs, error, restartPolling, inProgressScanDetected, isCurrentScanIncomplete } =
         useComplianceRunStatuses(queriesToRefetchOnPollingComplete);
 
@@ -123,7 +117,7 @@ function ComplianceDashboardPage(): ReactElement {
                         <ComplianceDashboardTile entityType="DEPLOYMENT" />
                         {hasWriteAccessForCompliance && (
                             <ScanButton
-                                className={`flex items-center justify-center border-2 btn btn-base h-10 lg:min-w-32 xl:min-w-43 ${darkModeClasses}`}
+                                className={`flex items-center justify-center border-2 btn btn-base h-10 lg:min-w-32 xl:min-w-43`}
                                 text="Scan environment"
                                 textClass="hidden lg:block"
                                 textCondensed="Scan all"

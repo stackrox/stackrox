@@ -45,6 +45,11 @@ func ContainsCVSSField(p *storage.Policy) bool {
 	return booleanpolicy.ContainsValueWithFieldName(p, fieldnames.CVSS)
 }
 
+// ContainsNVDCVSSField returns whether the given policy contains a NVD CVSS field.
+func ContainsNVDCVSSField(p *storage.Policy) bool {
+	return booleanpolicy.ContainsValueWithFieldName(p, fieldnames.NvdCvss)
+}
+
 // ContainsSeverityField returns whether the given policy contains a Severity field.
 func ContainsSeverityField(p *storage.Policy) bool {
 	return booleanpolicy.ContainsValueWithFieldName(p, fieldnames.Severity)

@@ -2,7 +2,6 @@ import React, { useState, useCallback } from 'react';
 import {
     Alert,
     AlertActionCloseButton,
-    AlertVariant,
     Breadcrumb,
     BreadcrumbItem,
     Bullseye,
@@ -164,7 +163,7 @@ function ExceptionRequestDetailsPage() {
     const showUpdateButton =
         !expired &&
         currentUser.userId === requester?.id &&
-        (status === 'PENDING' || 'APPROVED' || status === 'APPROVED_PENDING_UPDATE');
+        (status === 'PENDING' || status === 'APPROVED' || status === 'APPROVED_PENDING_UPDATE');
 
     const relevantCVEs =
         selectedContext === 'CURRENT' ? cves : getCVEsForUpdatedRequest(vulnerabilityException);
@@ -176,7 +175,7 @@ function ExceptionRequestDetailsPage() {
             <PageTitle title="Exception Management - Request Details" />
             {successMessage && (
                 <Alert
-                    variant={AlertVariant.success}
+                    variant="success"
                     isInline
                     title={successMessage}
                     component="p"
@@ -184,12 +183,7 @@ function ExceptionRequestDetailsPage() {
                 />
             )}
             {expired && (
-                <Alert
-                    variant={AlertVariant.warning}
-                    isInline
-                    title="Request Canceled."
-                    component="p"
-                >
+                <Alert variant="warning" isInline title="Request Canceled." component="p">
                     You are viewing a canceled request. If this cancelation was not intended, please
                     submit a new request
                 </Alert>

@@ -49,6 +49,10 @@ export const defaultColumns = {
         title: 'First discovered',
         isShownByDefault: true,
     },
+    publishedOn: {
+        title: 'Published',
+        isShownByDefault: true,
+    },
 } as const;
 
 export const deploymentWithVulnerabilitiesFragment = gql`
@@ -62,6 +66,7 @@ export const deploymentWithVulnerabilitiesFragment = gql`
             vulnerabilityId: id
             cve
             operatingSystem
+            publishedOn
             summary
             pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
             images(query: $query) {
@@ -78,7 +83,7 @@ export type DeploymentVulnerabilitiesTableProps = {
     tableState: TableUIState<FormattedDeploymentVulnerability>;
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
-    vulnerabilityState: VulnerabilityState | undefined; // TODO Make Required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
+    vulnerabilityState: VulnerabilityState;
     onClearFilters: () => void;
     tableConfig: ManagedColumns<keyof typeof defaultColumns>['columns'];
 };
@@ -119,6 +124,7 @@ function DeploymentVulnerabilitiesTable({
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
                     <Th className={getVisibilityClass('firstDiscovered')}>First discovered</Th>
+                    <Th className={getVisibilityClass('publishedOn')}>Published</Th>
                 </Tr>
             </Thead>
             <TbodyUnified
@@ -138,6 +144,7 @@ function DeploymentVulnerabilitiesTable({
                             images,
                             affectedComponentsText,
                             discoveredAtImage,
+                            publishedOn,
                             pendingExceptionCount,
                         } = vulnerability;
                         const isExpanded = expandedRowSet.has(vulnerabilityId);
@@ -179,14 +186,14 @@ function DeploymentVulnerabilitiesTable({
                                     <Td
                                         className={getVisibilityClass('cveSeverity')}
                                         modifier="nowrap"
-                                        dataLabel="Severity"
+                                        dataLabel="CVE severity"
                                     >
                                         <VulnerabilitySeverityIconText severity={severity} />
                                     </Td>
                                     <Td
                                         className={getVisibilityClass('cveStatus')}
                                         modifier="nowrap"
-                                        dataLabel="CVE Status"
+                                        dataLabel="CVE status"
                                     >
                                         <VulnerabilityFixableIconText isFixable={isFixable} />
                                     </Td>
@@ -202,6 +209,17 @@ function DeploymentVulnerabilitiesTable({
                                         dataLabel="First discovered"
                                     >
                                         <DateDistance date={discoveredAtImage} />
+                                    </Td>
+                                    <Td
+                                        className={getVisibilityClass('publishedOn')}
+                                        modifier="nowrap"
+                                        dataLabel="Published"
+                                    >
+                                        {publishedOn ? (
+                                            <DateDistance date={publishedOn} />
+                                        ) : (
+                                            'Not available'
+                                        )}
                                     </Td>
                                 </Tr>
                                 <Tr isExpanded={isExpanded}>

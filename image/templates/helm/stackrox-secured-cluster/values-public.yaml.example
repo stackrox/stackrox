@@ -250,6 +250,17 @@
 #               matchLabels:
 #                 app: admission-control
 #
+#  # If the admission controller webhook needs a specific namespaceSelector, you can specify it here.
+#  namespaceSelector:
+#    matchExpressions:
+#    - key: namespace.metadata.stackrox.io/name
+#      operator: NotIn
+#      values:
+#        - {{ ._rox._namespace }}
+#        - kube-system
+#        - kube-public
+#        - istio-system
+#
 #  # Dynamic part of the configuration which is retrieved from Central and can be modified through
 #  # the frontend.
 #  dynamic:

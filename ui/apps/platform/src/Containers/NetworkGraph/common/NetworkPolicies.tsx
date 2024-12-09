@@ -2,12 +2,10 @@ import React, { useEffect, useMemo } from 'react';
 import {
     Alert,
     AlertGroup,
-    AlertVariant,
     Bullseye,
     Button,
     Divider,
     EmptyState,
-    EmptyStateVariant,
     Spinner,
     Stack,
     StackItem,
@@ -18,7 +16,6 @@ import { CodeEditor, Language } from '@patternfly/react-code-editor';
 
 import download from 'utils/download';
 import SelectSingle from 'Components/SelectSingle';
-import { useTheme } from 'Containers/ThemeProvider';
 import useFetchNetworkPolicies from 'hooks/useFetchNetworkPolicies';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import CodeEditorDarkModeControl from 'Components/PatternFly/CodeEditorDarkModeControl';
@@ -38,8 +35,7 @@ const allNetworkPoliciesId = 'All network policies';
 function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React.ReactElement {
     const { networkPolicies, networkPolicyErrors, isLoading, error } =
         useFetchNetworkPolicies(policyIds);
-    const { isDarkMode } = useTheme();
-    const [customDarkMode, setCustomDarkMode] = React.useState(isDarkMode);
+    const [customDarkMode, setCustomDarkMode] = React.useState(false);
 
     const allNetworkPoliciesYAML = useMemo(
         () => ({
@@ -95,7 +91,7 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
         return (
             <Alert
                 isInline
-                variant={AlertVariant.danger}
+                variant="danger"
                 title={getAxiosErrorMessage(error)}
                 component="p"
                 className="pf-v5-u-mb-lg"
@@ -111,7 +107,7 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
                 {networkPolicyErrors.map((networkPolicyError) => (
                     <Alert
                         isInline
-                        variant={AlertVariant.warning}
+                        variant="warning"
                         title="There was an error loading network policy data"
                         component="p"
                     >
@@ -127,7 +123,7 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
             <>
                 {policyErrorBanner}
                 <Bullseye>
-                    <EmptyState variant={EmptyStateVariant.xs}>
+                    <EmptyState variant="xs">
                         <EmptyStateHeader titleText="No network policies" headingLevel="h4" />
                     </EmptyState>
                 </Bullseye>

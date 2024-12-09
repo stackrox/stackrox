@@ -29,7 +29,7 @@ import (
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/vbauerster/mpb/v4"
 	"github.com/vbauerster/mpb/v4/decor"
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -160,7 +160,7 @@ func (r *v2Restorer) Run(ctx context.Context, file *os.File) (*http.Response, er
 	r.statusLine.SetSpinner(waitingSpinner)
 	r.statusLine.SetTextStatic("Initiating restore ...")
 
-	termWidth, _, err := terminal.GetSize(int(os.Stderr.Fd())) //nolint:forbidigo // TODO(ROX-13473)
+	termWidth, _, err := term.GetSize(int(os.Stderr.Fd())) //nolint:forbidigo // TODO(ROX-13473)
 	if err == nil && termWidth > 40 {
 		if termWidth > 120 {
 			termWidth = 120

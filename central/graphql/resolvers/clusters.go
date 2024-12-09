@@ -12,11 +12,14 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/policy/matcher"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
+	sacHelper "github.com/stackrox/rox/central/role/sachelper"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/k8srbac"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/set"
@@ -143,6 +146,52 @@ func (resolver *Resolver) Clusters(ctx context.Context, args PaginatedQuery) ([]
 
 	clusters, err := resolver.ClusterDataStore.SearchRawClusters(ctx, query)
 	return resolver.wrapClustersWithContext(ctx, clusters, err)
+}
+
+func (resolver *Resolver) clustersForReadPermission(ctx context.Context, args PaginatedQuery, resource permissions.ResourceMetadata) ([]*scopeObjectResolver, error) {
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+	clusterIDs, unrestricted, err := sacHelper.ListClusterIDsInScope(
+		ctx,
+		[]permissions.ResourceWithAccess{permissions.View(resource)},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Elevate context to find all matching clusters.
+	// The access control is enforced by the query restriction to
+	// the cluster IDs in the requester scope.
+	scopeKeys := [][]sac.ScopeKey{
+		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+		sac.ResourceScopeKeys(resources.Cluster),
+	}
+	if !unrestricted {
+		if clusterIDs.Cardinality() == 0 {
+			// No clusters in scope, avoid storage round-trip
+			return []*scopeObjectResolver{}, nil
+		}
+		scopeKeys = append(scopeKeys, sac.ClusterScopeKeys(clusterIDs.AsSlice()...))
+	}
+	elevatedCtx := sac.WithGlobalAccessScopeChecker(
+		ctx,
+		sac.AllowFixedScopes(scopeKeys...),
+	)
+	clusters, err := resolver.ClusterDataStore.SearchRawClusters(elevatedCtx, query)
+	if err != nil {
+		return nil, err
+	}
+	scopeObjects := make([]*v1.ScopeObject, 0, len(clusters))
+	for _, cluster := range clusters {
+		scopeObject := &v1.ScopeObject{
+			Id:   cluster.GetId(),
+			Name: cluster.GetName(),
+		}
+		scopeObjects = append(scopeObjects, scopeObject)
+	}
+	return resolver.wrapScopeObjectsWithContext(ctx, scopeObjects, err)
 }
 
 // ClusterCount returns count of all clusters across infrastructure
@@ -961,9 +1010,6 @@ func (resolver *orchestratorMetadataResolver) OpenShiftVersion() (string, error)
 func (resolver *clusterResolver) PlatformCVECountByType(ctx context.Context, q RawQuery) (*platformCVECountByTypeResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "PlatformCVECountByType")
 
-	if !features.VulnMgmtNodePlatformCVEs.Enabled() {
-		return nil, errors.Errorf("Feature %s is disabled", features.VulnMgmtWorkloadCVEs.Name())
-	}
 	if err := readClusters(ctx); err != nil {
 		return nil, err
 	}
@@ -981,9 +1027,6 @@ func (resolver *clusterResolver) PlatformCVECountByType(ctx context.Context, q R
 func (resolver *clusterResolver) PlatformCVECountByFixability(ctx context.Context, q RawQuery) (*platformCVECountByFixabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "PlatformCVECountByFixability")
 
-	if !features.VulnMgmtNodePlatformCVEs.Enabled() {
-		return nil, errors.Errorf("Feature %s is disabled", features.VulnMgmtWorkloadCVEs.Name())
-	}
 	if err := readClusters(ctx); err != nil {
 		return nil, err
 	}

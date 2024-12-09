@@ -69,7 +69,7 @@ export function getRequestQueryStringForAutocomplete(
     delete filter[category];
 
     return Object.entries(filter)
-        .map(([key, val]) => `${key}:${Array.isArray(val) ? val.join(',') : val ?? ''}`)
+        .map(([key, val]) => `${key}:${Array.isArray(val) ? val.join(',') : (val ?? '')}`)
         .concat(`${category}:${value}`)
         .join('+');
 }

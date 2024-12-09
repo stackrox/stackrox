@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-duplicate-type-constituents */
 import { SearchCategory } from 'services/SearchService';
 
 // Compound search filter types

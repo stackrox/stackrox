@@ -63,7 +63,7 @@ const getEntityName = (entityType, data) => {
     }
     try {
         return extractEntityName(entityType, data);
-    } catch (error) {
+    } catch {
         throw new Error(
             `Entity (${entityType}) is not mapped correctly in the "entityToNameResolverMapping"`
         );

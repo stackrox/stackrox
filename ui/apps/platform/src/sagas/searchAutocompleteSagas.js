@@ -7,7 +7,7 @@ function* getAutoCompleteResults(request) {
     try {
         const result = yield call(service.fetchAutoCompleteResults, request);
         yield put(actions.recordAutoCompleteResponse(result));
-    } catch (error) {
+    } catch {
         yield put(actions.recordAutoCompleteResponse([]));
     }
 }

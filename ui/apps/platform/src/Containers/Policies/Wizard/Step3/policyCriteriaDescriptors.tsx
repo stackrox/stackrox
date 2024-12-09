@@ -509,7 +509,6 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         ],
         canBooleanLogic: true,
         lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
-        featureFlagDependency: ['ROX_NVD_CVSS_UI'],
     },
     {
         label: 'Severity',
@@ -1393,6 +1392,7 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         label: 'Kubernetes user groups',
         name: 'Kubernetes User Groups',
         shortName: 'Kubernetes user groups',
+        negatedName: "Kubernetes user group doesn't match",
         category: policyCriteriaCategories.KUBERNETES_EVENTS,
         type: 'text',
         canBooleanLogic: false,
@@ -1541,6 +1541,7 @@ export const auditLogDescriptor: Descriptor[] = [
         label: 'Kubernetes user group',
         name: 'Kubernetes User Groups',
         shortName: 'Kubernetes user groups',
+        negatedName: "Kubernetes user group doesn't match",
         category: policyCriteriaCategories.KUBERNETES_EVENTS,
         type: 'text',
         canBooleanLogic: false,

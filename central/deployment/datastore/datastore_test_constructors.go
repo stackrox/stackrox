@@ -1,7 +1,6 @@
 package datastore
 
 import (
-	"context"
 	"errors"
 	"testing"
 
@@ -10,6 +9,7 @@ import (
 	pgStore "github.com/stackrox/rox/central/deployment/datastore/internal/store/postgres"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
+	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	pbDS "github.com/stackrox/rox/central/processbaseline/datastore"
 	processIndicatorFilter "github.com/stackrox/rox/central/processindicator/filter"
 	"github.com/stackrox/rox/central/ranking"
@@ -39,13 +39,10 @@ func NewTestDataStore(
 	testDB *pgtest.TestPostgres,
 	storeParams *DeploymentTestStoreParams,
 ) (DataStore, error) {
-	ctx := context.Background()
-	pgStore.Destroy(ctx, testDB.DB)
-	deploymentStore := pgStore.NewFullTestStore(ctx, t, pgStore.New(testDB.DB), testDB.GetGormDB(t))
 	if t == nil {
 		return nil, errors.New("NewTestDataStore called without testing")
 	}
-
+	deploymentStore := pgStore.FullStoreWrap(pgStore.New(testDB.DB))
 	searcher := search.NewV2(deploymentStore)
 	ds := newDatastoreImpl(
 		deploymentStore,
@@ -59,6 +56,7 @@ func NewTestDataStore(
 		storeParams.ClusterRanker,
 		storeParams.NamespaceRanker,
 		storeParams.DeploymentRanker,
+		platformmatcher.Singleton(),
 	)
 
 	ds.initializeRanker()
@@ -95,5 +93,6 @@ func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error)
 		clusterRanker,
 		namespaceRanker,
 		deploymentRanker,
+		platformmatcher.Singleton(),
 	), nil
 }

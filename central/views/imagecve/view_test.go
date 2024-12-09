@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	imageSamples "github.com/stackrox/rox/pkg/fixtures/image"
+	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -124,6 +125,7 @@ func (s *ImageCVEViewTestSuite) SetupSuite() {
 					},
 				}
 				vuln.CvssMetrics = []*storage.CVSSScore{cvssScore}
+				vuln.NvdCvss = 10
 			}
 		}
 		s.Require().NoError(imageStore.UpsertImage(ctx, image))
@@ -657,10 +659,10 @@ func (s *ImageCVEViewTestSuite) paginationTestCases() []testCase {
 			).ProtoQuery(),
 			less: func(records []*imageCVECoreResponse) func(i, j int) bool {
 				return func(i, j int) bool {
-					if records[i].TopCVSS == records[j].TopCVSS {
+					if records[i].GetTopCVSS() == records[j].GetTopCVSS() {
 						return records[i].CVE < records[j].CVE
 					}
-					return records[i].TopCVSS > records[j].TopCVSS
+					return records[i].GetTopCVSS() > records[j].GetTopCVSS()
 				}
 			},
 		},
@@ -809,23 +811,23 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 				if val == nil {
 					val = &imageCVECoreResponse{
 						CVE:                     vuln.GetCve(),
-						TopCVSS:                 vuln.GetCvss(),
+						TopCVSS:                 pointers.Float32(vuln.GetCvss()),
 						FirstDiscoveredInSystem: &vulnTime,
 						Published:               &vulnPublishDate,
 					}
 					for _, metric := range vuln.CvssMetrics {
 						if metric.Source == storage.Source_SOURCE_NVD {
 							if metric.GetCvssv2() != nil {
-								val.TopNVDCVSS = metric.GetCvssv2().GetScore()
+								val.TopNVDCVSS = pointers.Float32(metric.GetCvssv2().GetScore())
 							} else {
-								val.TopNVDCVSS = metric.GetCvssv3().GetScore()
+								val.TopNVDCVSS = pointers.Float32(metric.GetCvssv3().GetScore())
 							}
 						}
 					}
 					cveMap[val.CVE] = val
 				}
 
-				val.TopCVSS = max(val.GetTopCVSS(), vuln.GetCvss())
+				val.TopCVSS = pointers.Float32(max(val.GetTopCVSS(), vuln.GetCvss()))
 
 				id := cve.ID(val.GetCVE(), image.GetScan().GetOperatingSystem())
 				var found bool
@@ -901,7 +903,7 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 	}
 	if options.SkipGetTopCVSS {
 		for _, entry := range expected {
-			entry.TopCVSS = 0
+			entry.TopCVSS = nil
 		}
 	}
 	if options.SkipGetAffectedImages {

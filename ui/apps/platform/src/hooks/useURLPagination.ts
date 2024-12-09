@@ -4,8 +4,8 @@ import useURLParameter, { HistoryAction } from './useURLParameter';
 export type UseURLPaginationResult = {
     page: number;
     perPage: number;
-    setPage: (page: number, historyAction?: HistoryAction | undefined) => void;
-    setPerPage: (perPage: number, historyAction?: HistoryAction | undefined) => void;
+    setPage: (page: number, historyAction?: HistoryAction) => void;
+    setPerPage: (perPage: number, historyAction?: HistoryAction) => void;
 };
 
 function safeNumber(val: unknown, defaultVal: number) {
@@ -18,12 +18,12 @@ function useURLPagination(defaultPerPage: number): UseURLPaginationResult {
     const [page, setPageString] = useURLParameter('page', '1');
     const [perPage, setPerPageString] = useURLParameter('perPage', `${defaultPerPage}`);
     const setPage = useCallback(
-        (num: number, historyAction?: HistoryAction | undefined) =>
+        (num: number, historyAction?: HistoryAction) =>
             setPageString(num > 1 ? String(num) : undefined, historyAction),
         [setPageString]
     );
     const setPerPage = useCallback(
-        (num: number, historyAction?: HistoryAction | undefined) => {
+        (num: number, historyAction?: HistoryAction) => {
             // If the history action is 'replace', we replace both the perPage and page in-place.
             // If the history action is 'push', we push a new perPage and replace the page in
             // order to keep a single record on the history stack.

@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { Select, SelectOption, SelectVariant } from '@patternfly/react-core/deprecated';
+import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 
 import useMultiSelect from 'hooks/useMultiSelect';
 import { IntervalType } from 'services/ComplianceScanConfigurationService';
@@ -95,7 +95,7 @@ function DayPickerDropdown({
 
     return (
         <Select
-            variant={SelectVariant.checkbox}
+            variant="checkbox"
             aria-label="Select one or more days"
             onToggle={onToggleDaySelect}
             onSelect={onSelectDay}

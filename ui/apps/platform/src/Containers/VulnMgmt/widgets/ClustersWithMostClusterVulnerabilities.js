@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 import { gql, useQuery } from '@apollo/client';
-import { HelpCircle, AlertCircle } from 'react-feather';
+import { ExclamationCircleIcon, InfoCircleIcon } from '@patternfly/react-icons';
 import sortBy from 'lodash/sortBy';
 import { Tooltip } from '@patternfly/react-core';
 
@@ -110,9 +110,15 @@ const processData = (data, workflowState, limit) => {
                 : 'These CVEs were not patched in the current Kubernetes version of this cluster.';
 
             const indicatorIcon = isGKECluster ? (
-                <HelpCircle className="w-4 h-4 text-warning-700 ml-2" />
+                <InfoCircleIcon
+                    className="w-4 h-4 ml-2"
+                    color="var(--pf-v5-global--info-color--100)"
+                />
             ) : (
-                <AlertCircle className="w-4 h-4 text-alert-700 ml-2" />
+                <ExclamationCircleIcon
+                    className="w-4 h-4 ml-2"
+                    color="var(--pf-v5-global--danger-color--100)"
+                />
             );
 
             const orchestratorContent = isOpenShiftCluster ? (

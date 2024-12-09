@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/views/nodecve"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/search"
@@ -142,9 +141,6 @@ func (resolver *Resolver) NodeCVE(ctx context.Context, args struct {
 }) (*nodeCVECoreResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeCVEs, "NodeCVEMetadata")
 
-	if !features.VulnMgmtNodePlatformCVEs.Enabled() {
-		return nil, errors.Errorf("%s=false. Set %s=true and retry", features.VulnMgmtNodePlatformCVEs.Name(), features.VulnMgmtNodePlatformCVEs.Name())
-	}
 	if err := readNodes(ctx); err != nil {
 		return nil, err
 	}
@@ -187,9 +183,6 @@ func (resolver *Resolver) NodeCVE(ctx context.Context, args struct {
 func (resolver *Resolver) NodeCVECount(ctx context.Context, q RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeCVECount")
 
-	if !features.VulnMgmtNodePlatformCVEs.Enabled() {
-		return 0, errors.Errorf("%s=false. Set %s=true and retry", features.VulnMgmtNodePlatformCVEs.Name(), features.VulnMgmtNodePlatformCVEs.Name())
-	}
 	if err := readNodes(ctx); err != nil {
 		return 0, err
 	}
@@ -212,9 +205,6 @@ func (resolver *Resolver) NodeCVECount(ctx context.Context, q RawQuery) (int32, 
 func (resolver *Resolver) NodeCVEs(ctx context.Context, q PaginatedQuery) ([]*nodeCVECoreResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeCVEs")
 
-	if !features.VulnMgmtNodePlatformCVEs.Enabled() {
-		return nil, errors.Errorf("%s=false. Set %s=true and retry", features.VulnMgmtNodePlatformCVEs.Name(), features.VulnMgmtNodePlatformCVEs.Name())
-	}
 	if err := readNodes(ctx); err != nil {
 		return nil, err
 	}
@@ -242,9 +232,6 @@ func (resolver *Resolver) NodeCVEs(ctx context.Context, q PaginatedQuery) ([]*no
 func (resolver *Resolver) NodeCVECountBySeverity(ctx context.Context, q RawQuery) (*resourceCountBySeverityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeCVECountBySeverity")
 
-	if !features.VulnMgmtNodePlatformCVEs.Enabled() {
-		return nil, errors.Errorf("%s=false. Set %s=true and retry", features.VulnMgmtNodePlatformCVEs.Name(), features.VulnMgmtNodePlatformCVEs.Name())
-	}
 	if err := readNodes(ctx); err != nil {
 		return nil, err
 	}

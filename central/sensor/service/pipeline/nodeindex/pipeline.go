@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/nodes/enricher"
@@ -58,8 +59,10 @@ func (p pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 }
 
 func (p pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
-	if !features.ScannerV4.Enabled() {
-		// If Scanner V4 is disabled do not run this pipeline
+	if !env.NodeIndexEnabled.BooleanSetting() || !features.ScannerV4.Enabled() {
+		// Node Indexing only works correctly when both, itself and Scanner v4 are enabled
+		log.Debugf("Skipping node index message (Node Indexing Enabled: %t, Scanner V4 Enabled: %t",
+			env.NodeIndexEnabled.BooleanSetting(), features.ScannerV4.Enabled())
 		return nil
 	}
 	event := msg.GetEvent()
@@ -86,18 +89,17 @@ func (p pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSen
 	}
 
 	// Send the Node and Index Report to Scanner for enrichment. The result will be persisted in node.NodeScan
-	err = p.enricher.EnrichNodeWithInventory(node, nil, report)
+	err = p.enricher.EnrichNodeWithVulnerabilities(node, nil, report)
 	if err != nil {
 		return errors.WithMessagef(err, "enriching node %s with index report", nodeId)
 	}
-	log.Debugf("Successfully enriched node %s with %s report - found %d components (id: %s)",
-		node.GetName(), node.GetScan().GetScannerVersion().String(), len(node.GetScan().GetComponents()), nodeId)
+	log.Infof("Scanned index report and found %d components for node %s",
+		len(node.GetScan().GetComponents()), nodeDatastore.NodeString(node))
 
 	// Update the whole node in the database with the new and previous information.
 	err = p.riskManager.CalculateRiskAndUpsertNode(node)
 	if err != nil {
-		log.Error(err)
-		return err
+		return errors.Wrapf(err, "failed calculating risk and upserting node %s", nodeDatastore.NodeString(node))
 	}
 
 	return nil

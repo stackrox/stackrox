@@ -1,7 +1,6 @@
 import React from 'react';
 import {
     Alert,
-    AlertVariant,
     Bullseye,
     Button,
     Checkbox,
@@ -151,7 +150,7 @@ function DeploymentBaselines({ deployment, deploymentId, onNodeSelect }: Deploym
             {errorMessage && (
                 <Alert
                     isInline
-                    variant={AlertVariant.danger}
+                    variant="danger"
                     title={errorMessage}
                     component="p"
                     className="pf-v5-u-mb-sm"

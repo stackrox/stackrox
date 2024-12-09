@@ -8,7 +8,6 @@ import { ExclamationTriangleIcon } from '@patternfly/react-icons';
 import Loader from 'Components/Loader';
 import PageNotFound from 'Components/PageNotFound';
 import EmptyStateTemplate from 'Components/EmptyStateTemplate/EmptyStateTemplate';
-import { useTheme } from 'Containers/ThemeProvider';
 import queryService from 'utils/queryService';
 
 import { LIST_PAGE_SIZE, defaultCountKeyMap } from 'constants/workflowPages.constants';
@@ -47,8 +46,6 @@ const WorkflowEntityPage = ({
     page,
     setRefreshTrigger,
 }) => {
-    const { isDarkMode } = useTheme();
-
     const enhancedQueryOptions =
         queryOptions && queryOptions.variables ? queryOptions : { variables: {} };
     let query = overviewQuery;
@@ -121,7 +118,7 @@ const WorkflowEntityPage = ({
             setRefreshTrigger={setRefreshTrigger}
         />
     ) : (
-        <div className={`flex w-full min-h-full ${isDarkMode ? 'bg-base-0' : 'bg-base-200'}`}>
+        <div className="flex w-full min-h-full bg-base-200">
             <div className="w-full min-h-full" id="capture-widgets">
                 <OverviewComponent
                     data={result}

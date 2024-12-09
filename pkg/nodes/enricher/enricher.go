@@ -14,7 +14,7 @@ import (
 //
 //go:generate mockgen-wrapper
 type NodeEnricher interface {
-	EnrichNodeWithInventory(node *storage.Node, nodeInventory *storage.NodeInventory, indexReport *v4.IndexReport) error
+	EnrichNodeWithVulnerabilities(node *storage.Node, nodeInventory *storage.NodeInventory, indexReport *v4.IndexReport) error
 	EnrichNode(node *storage.Node) error
 	CreateNodeScanner(integration *storage.NodeIntegration) (types.NodeScannerWithDataSource, error)
 	UpsertNodeIntegration(integration *storage.NodeIntegration) error

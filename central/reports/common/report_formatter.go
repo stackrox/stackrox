@@ -3,7 +3,6 @@ package common
 import (
 	"archive/zip"
 	"bytes"
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -172,20 +171,9 @@ func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults [
 
 	var zipBuf bytes.Buffer
 	zipWriter := zip.NewWriter(&zipBuf)
-	var reportName string
-	if len(configName) > 80 {
-		configName = configName[0:80] + "..."
-		reportName = fmt.Sprintf("RHACS_Vulnerability_Report_%s_%s.csv", configName, time.Now().Format("02_January_2006"))
-	} else if configName == "" {
-		reportName = fmt.Sprintf("RHACS_Vulnerability_Report_%s.csv", time.Now().Format("02_January_2006"))
-	} else {
-		reportName = fmt.Sprintf("RHACS_Vulnerability_Report_%s_%s.csv", configName, time.Now().Format("02_January_2006"))
-	}
-
-	zipFile, err := zipWriter.Create(reportName)
+	zipFile, err := zipWriter.Create(makeFileName(configName, time.Now()))
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to create a zip file of the vuln report")
-
 	}
 	_, err = zipFile.Write(buf.Bytes())
 	if err != nil {
@@ -201,6 +189,31 @@ func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults [
 		NumDeployedImageCVEs: numDeployedImageCVEs,
 		NumWatchedImageCVEs:  numWatchedImageCVEs,
 	}, nil
+}
+
+func makeFileName(configName string, timestamp time.Time) string {
+	var builder strings.Builder
+	builder.WriteString("RHACS_Vulnerability_Report")
+	if len(configName) > 0 {
+		builder.WriteRune('_')
+		replaceUnsafeRunes(&builder, configName)
+	}
+	builder.WriteRune('_')
+	builder.WriteString(timestamp.UTC().Format("02_January_2006"))
+	builder.WriteString(".csv")
+	return builder.String()
+}
+
+func replaceUnsafeRunes(builder *strings.Builder, configName string) {
+	const allowedSet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-"
+	const replacementRune = '_'
+	length := min(80, len(configName))
+	for _, char := range configName[0:length] {
+		if !strings.ContainsRune(allowedSet, char) {
+			char = replacementRune
+		}
+		builder.WriteRune(char)
+	}
 }
 
 // GetClusterName returns name of cluster containing the Deployment

@@ -20,7 +20,6 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	permissionsMocks "github.com/stackrox/rox/pkg/auth/permissions/mocks"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
@@ -61,14 +60,6 @@ type ReportServiceTestSuite struct {
 	blobStore               *blobDSMocks.MockDatastore
 	scheduler               *schedulerMocks.MockScheduler
 	service                 Service
-}
-
-func (s *ReportServiceTestSuite) SetupSuite() {
-	s.T().Setenv(features.VulnReportingEnhancements.EnvVar(), "true")
-	if !features.VulnReportingEnhancements.Enabled() {
-		s.T().Skip("Skip test when reporting enhancements are disabled")
-		s.T().SkipNow()
-	}
 }
 
 func (s *ReportServiceTestSuite) SetupTest() {

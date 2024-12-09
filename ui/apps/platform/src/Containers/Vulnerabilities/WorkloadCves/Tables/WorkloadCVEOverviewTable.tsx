@@ -44,7 +44,6 @@ import {
     aggregateByDistinctCount,
     getSeveritySortOptions,
 } from '../../utils/sortUtils';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { CveSelectionsProps } from '../../components/ExceptionRequestModal/CveSelections';
 import CVESelectionTh from '../../components/CVESelectionTh';
 import CVESelectionTd from '../../components/CVESelectionTd';
@@ -74,6 +73,10 @@ export const defaultColumns = {
         title: 'First discovered',
         isShownByDefault: true,
     },
+    publishedOn: {
+        title: 'Published',
+        isShownByDefault: true,
+    },
 } as const;
 
 export const cveListQuery = gql`
@@ -82,6 +85,7 @@ export const cveListQuery = gql`
         $pagination: Pagination
         $statusesForExceptionCount: [String!]
     ) {
+        imageCVECount(query: $query)
         imageCVEs(query: $query, pagination: $pagination) {
             cve
             affectedImageCountBySeverity {
@@ -101,6 +105,7 @@ export const cveListQuery = gql`
             topCVSS
             affectedImageCount
             firstDiscoveredInSystem
+            publishedOn
             topNvdCVSS
             distroTuples {
                 summary
@@ -122,6 +127,7 @@ export const unfilteredImageCountQuery = gql`
 `;
 
 export type CVEListQueryResult = {
+    imageCVECount: number;
     imageCVEs: ImageCVE[];
 };
 
@@ -136,6 +142,7 @@ export type ImageCVE = {
     topCVSS: number;
     affectedImageCount: number;
     firstDiscoveredInSystem: string | null;
+    publishedOn: string | null;
     topNvdCVSS: number;
     distroTuples: {
         summary: string;
@@ -161,7 +168,7 @@ export type WorkloadCVEOverviewTableProps = {
         summary: string;
         numAffectedImages: number;
     }) => IAction[];
-    vulnerabilityState: VulnerabilityState | undefined; // TODO Make Required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
+    vulnerabilityState: VulnerabilityState;
     onClearFilters: () => void;
     columnVisibilityState: ManagedColumns<keyof typeof defaultColumns>['columns'];
 };
@@ -180,13 +187,12 @@ function WorkloadCVEOverviewTable({
     columnVisibilityState,
 }: WorkloadCVEOverviewTableProps) {
     const expandedRowSet = useSet<string>();
-    const showExceptionDetailsLink = vulnerabilityState && vulnerabilityState !== 'OBSERVED';
+    const showExceptionDetailsLink = vulnerabilityState !== 'OBSERVED';
     const getVisibilityClass = generateVisibilityForColumns(columnVisibilityState);
     const hiddenColumnCount = getHiddenColumnCount(columnVisibilityState);
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isNvdCvssColumnEnabled =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
+    const isNvdCvssColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
 
     const colSpan =
         (isNvdCvssColumnEnabled ? 7 : 6) +
@@ -244,6 +250,12 @@ function WorkloadCVEOverviewTable({
                         First discovered
                         {isFiltered && <DynamicColumnIcon />}
                     </TooltipTh>
+                    <TooltipTh
+                        className={getVisibilityClass('publishedOn')}
+                        tooltip="Time when the CVE was made public and assigned a number"
+                    >
+                        Published
+                    </TooltipTh>
                     {showExceptionDetailsLink && (
                         <TooltipTh tooltip="View information about this exception request">
                             Request details
@@ -251,7 +263,7 @@ function WorkloadCVEOverviewTable({
                     )}
                     {createTableActions && (
                         <Th>
-                            <span className="pf-v5-screen-reader">CVE actions</span>
+                            <span className="pf-v5-screen-reader">Row actions</span>
                         </Th>
                     )}
                 </Tr>
@@ -271,6 +283,7 @@ function WorkloadCVEOverviewTable({
                                 topNvdCVSS,
                                 affectedImageCount,
                                 firstDiscoveredInSystem,
+                                publishedOn,
                                 distroTuples,
                                 pendingExceptionCount,
                             },
@@ -381,8 +394,20 @@ function WorkloadCVEOverviewTable({
                                         <Td
                                             dataLabel="First discovered"
                                             className={getVisibilityClass('firstDiscovered')}
+                                            modifier="nowrap"
                                         >
                                             <DateDistance date={firstDiscoveredInSystem} />
+                                        </Td>
+                                        <Td
+                                            dataLabel="Published"
+                                            className={getVisibilityClass('publishedOn')}
+                                            modifier="nowrap"
+                                        >
+                                            {publishedOn ? (
+                                                <DateDistance date={publishedOn} />
+                                            ) : (
+                                                'Not available'
+                                            )}
                                         </Td>
                                         {showExceptionDetailsLink && (
                                             <ExceptionDetailsCell

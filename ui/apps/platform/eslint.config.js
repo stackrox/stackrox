@@ -6,6 +6,7 @@ const parserTypeScriptESLint = require('@typescript-eslint/parser');
 
 const pluginCypress = require('eslint-plugin-cypress');
 const pluginESLint = require('@eslint/js'); // eslint-disable-line import/no-extraneous-dependencies
+const pluginJSON = require('@eslint/json').default;
 const pluginESLintComments = require('eslint-plugin-eslint-comments');
 const pluginImport = require('eslint-plugin-import');
 const pluginJest = require('eslint-plugin-jest');
@@ -20,6 +21,7 @@ const { browser: browserGlobals, jest: jestGlobals, node: nodeGlobals } = requir
 
 const pluginAccessibility = require('./eslint-plugins/pluginAccessibility');
 const pluginGeneric = require('./eslint-plugins/pluginGeneric');
+const pluginPatternFly = require('./eslint-plugins/pluginPatternFly');
 
 const parserAndOptions = {
     parser: parserTypeScriptESLint,
@@ -44,6 +46,28 @@ module.exports = [
         ],
     },
     {
+        files: ['*.json', 'cypress/**/*.json', 'src/**/*.json'], // JSON without comments
+        ignores: [
+            'package-lock.json', // ignore because it is auto-generated
+            'tsconfig.eslint.json', // contains comments, see below
+            'cypress/downloads/*.json', // StackRox_Exported_Policies_*.json
+            'cypress/tsconfig.json', // contains comments, see below
+        ],
+
+        language: 'json/json',
+
+        // https://github.com/eslint/json/blob/main/src/index.js
+        ...pluginJSON.configs.recommended,
+    },
+    {
+        files: ['tsconfig.eslint.json', 'cypress/tsconfig.json'], // JSON with comments
+
+        language: 'json/jsonc',
+
+        // https://github.com/eslint/json/blob/main/src/index.js
+        ...pluginJSON.configs.recommended,
+    },
+    {
         files: ['**/*.{js,jsx,ts,tsx}'], // generic configuration
 
         // ESLint has cascade for rules (that is, last value for a rule wins).
@@ -52,7 +76,7 @@ module.exports = [
         // languageOptions are in specific configuration objects
 
         linterOptions: {
-            // reportUnusedDisableDirectives: true, // TODO fix errors
+            reportUnusedDisableDirectives: 'error',
         },
 
         // Key of plugin is namespace of its rules.
@@ -534,12 +558,14 @@ module.exports = [
             accessibility: pluginAccessibility,
             generic: pluginGeneric,
             import: pluginImport,
+            patternfly: pluginPatternFly,
             react: pluginReact,
             'react-hooks': pluginReactHooks,
         },
         rules: {
             ...pluginAccessibility.configs.recommended.rules,
             ...pluginGeneric.configs.recommended.rules,
+            ...pluginPatternFly.configs.recommended.rules,
 
             'no-restricted-imports': [
                 'error',
@@ -675,6 +701,7 @@ module.exports = [
             // Turn off new rules until after we fix errors in follow-up contributions.
             '@typescript-eslint/no-misused-promises': 'off', // more than 100 errors
             '@typescript-eslint/no-unsafe-argument': 'off', // more than 300 errors
+            '@typescript-eslint/prefer-promise-reject-errors': 'off', // 9 errors
             '@typescript-eslint/require-await': 'off', // about 20 errors
 
             '@typescript-eslint/array-type': 'error',

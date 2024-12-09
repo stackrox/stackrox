@@ -9,14 +9,22 @@ metadata:
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "500"
     # TODO(ROX-21073): re-enable for all PR branches
-    pipelinesascode.tekton.dev/on-cel-expression: |
-      (event == "push" && target_branch.matches("^(master|release-.*)$")) ||
-      (event == "pull_request" && (source_branch.matches("(konflux|appstudio|rhtap)") || body.pull_request.labels.exists(l, l.name == "konflux-build")))
+    pipelinesascode.tekton.dev/on-cel-expression: (
+        event == "push" && (
+          source_branch == "master" ||
+          target_branch.startsWith("refs/tags/")
+        )
+      ) || (
+        event == "pull_request" && (
+          source_branch.matches("(konflux|renovate|appstudio|rhtap)") ||
+          body.pull_request.labels.exists(l, l.name == "konflux-build")
+        )
+      )
   labels:
     appstudio.openshift.io/application: acs
     appstudio.openshift.io/component: main
     pipelines.appstudio.openshift.io/type: build
-  name: main-build
+  name: main-on-push
   namespace: rh-acs-tenant
 
 spec:
@@ -25,7 +33,7 @@ spec:
   - name: dockerfile
     value: image/rhel/konflux.Dockerfile
   - name: git-url
-    value: '{{repo_url}}'
+    value: '{{source_url}}'
   - name: image-expires-after
     # TODO(ROX-24530): return expiration for non-released images to 13w
     value: '52w'
@@ -58,6 +66,7 @@ spec:
     secret:
       secretName: '{{ git_auth_secret }}'
 
+  # IMPORTANT: when changing timeouts here, read and follow timeout instructions in operator-bundle-build.yaml.
   timeouts:
     # Slow multiarch builds may take around 2h to finish.
     tasks: 2h30m

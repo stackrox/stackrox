@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
-import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { ActionsColumn, IAction, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { Flex, Label } from '@patternfly/react-core';
 import { EyeIcon } from '@patternfly/react-icons';
 
@@ -17,6 +17,9 @@ import {
     getHiddenColumnCount,
     ManagedColumns,
 } from 'hooks/useManagedColumns';
+import useIsScannerV4Enabled from 'hooks/useIsScannerV4Enabled';
+import useHasGenerateSBOMAbility from '../../hooks/useHasGenerateSBOMAbility';
+import GenerateSbomModal from '../../components/GenerateSbomModal';
 import ImageNameLink from '../components/ImageNameLink';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import { VulnerabilitySeverityLabel, WatchStatus } from '../../types';
@@ -55,6 +58,7 @@ export const imageListQuery = gql`
                 registry
                 remote
                 tag
+                fullName
             }
             imageCVECountBySeverity(query: $query) {
                 critical {
@@ -91,6 +95,7 @@ export type Image = {
         registry: string;
         remote: string;
         tag: string;
+        fullName: string;
     } | null;
     imageCVECountBySeverity: {
         critical: { total: number };
@@ -136,13 +141,14 @@ function ImageOverviewTable({
     onClearFilters,
     columnVisibilityState,
 }: ImageOverviewTableProps) {
+    const hasGenerateSBOMAbility = useHasGenerateSBOMAbility();
+    const isScannerV4Enabled = useIsScannerV4Enabled();
     const getVisibilityClass = generateVisibilityForColumns(columnVisibilityState);
     const hiddenColumnCount = getHiddenColumnCount(columnVisibilityState);
+    const hasActionColumn = hasWriteAccessForWatchedImage || hasGenerateSBOMAbility;
     const colSpan =
-        5 +
-        (hasWriteAccessForWatchedImage ? 1 : 0) +
-        (showCveDetailFields ? 1 : 0) +
-        -hiddenColumnCount;
+        5 + (hasActionColumn ? 1 : 0) + (showCveDetailFields ? 1 : 0) + -hiddenColumnCount;
+    const [sbomTargetImage, setSbomTargetImage] = useState<string>();
 
     return (
         <Table borders={false} variant="compact">
@@ -180,9 +186,9 @@ function ImageOverviewTable({
                     >
                         Scan time
                     </Th>
-                    {hasWriteAccessForWatchedImage && (
+                    {hasActionColumn && (
                         <Th>
-                            <span className="pf-v5-screen-reader">Image action menu</span>
+                            <span className="pf-v5-screen-reader">Row actions</span>
                         </Th>
                     )}
                 </Tr>
@@ -214,6 +220,31 @@ function ImageOverviewTable({
                         const isWatchedImage = watchStatus === 'WATCHED';
                         const watchImageMenuText = isWatchedImage ? 'Unwatch image' : 'Watch image';
                         const watchImageMenuAction = isWatchedImage ? onUnwatchImage : onWatchImage;
+
+                        const rowActions: IAction[] = [];
+
+                        if (hasWriteAccessForWatchedImage && name?.tag) {
+                            rowActions.push({
+                                title: watchImageMenuText,
+                                onClick: () =>
+                                    watchImageMenuAction(
+                                        `${name.registry}/${name.remote}:${name.tag}`
+                                    ),
+                            });
+                        }
+
+                        if (hasGenerateSBOMAbility) {
+                            rowActions.push({
+                                title: 'Generate SBOM',
+                                isAriaDisabled: !isScannerV4Enabled,
+                                description: !isScannerV4Enabled
+                                    ? 'SBOM generation requires Scanner V4'
+                                    : undefined,
+                                onClick: () => {
+                                    setSbomTargetImage(name?.fullName);
+                                },
+                            });
+                        }
 
                         return (
                             <Tbody
@@ -301,22 +332,12 @@ function ImageOverviewTable({
                                     >
                                         {scanTime ? <DateDistance date={scanTime} /> : 'unknown'}
                                     </Td>
-                                    {hasWriteAccessForWatchedImage && (
+                                    {hasActionColumn && (
                                         <Td isActionCell>
-                                            {name?.tag && (
-                                                <ActionsColumn
-                                                    popperProps={ACTION_COLUMN_POPPER_PROPS}
-                                                    items={[
-                                                        {
-                                                            title: watchImageMenuText,
-                                                            onClick: () =>
-                                                                watchImageMenuAction(
-                                                                    `${name.registry}/${name.remote}:${name.tag}`
-                                                                ),
-                                                        },
-                                                    ]}
-                                                />
-                                            )}
+                                            <ActionsColumn
+                                                popperProps={ACTION_COLUMN_POPPER_PROPS}
+                                                items={rowActions}
+                                            />
                                         </Td>
                                     )}
                                 </Tr>
@@ -325,6 +346,12 @@ function ImageOverviewTable({
                     })
                 }
             />
+            {sbomTargetImage && (
+                <GenerateSbomModal
+                    onClose={() => setSbomTargetImage(undefined)}
+                    imageName={sbomTargetImage}
+                />
+            )}
         </Table>
     );
 }

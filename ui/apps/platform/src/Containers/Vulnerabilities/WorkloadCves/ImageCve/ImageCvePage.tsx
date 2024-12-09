@@ -102,6 +102,7 @@ export const imageCveMetadataQuery = gql`
         imageCVE(cve: $cve) {
             cve
             firstDiscoveredInSystem
+            publishedOn
             distroTuples {
                 summary
                 link
@@ -304,8 +305,7 @@ function ImageCvePage() {
         skip: entityTab !== 'Deployment',
     });
 
-    const isNvdCvssColumnEnabled =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
+    const isNvdCvssColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
     const affectedImagesFilteredColumns = filterManagedColumns(
         affectedImagesDefaultColumns,
         (key) => key !== 'nvdCvss' || isNvdCvssColumnEnabled

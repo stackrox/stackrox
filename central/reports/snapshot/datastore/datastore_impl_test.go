@@ -9,7 +9,6 @@ import (
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -33,12 +32,6 @@ type ReportSnapshotDatastoreTestSuite struct {
 }
 
 func (s *ReportSnapshotDatastoreTestSuite) SetupSuite() {
-	s.T().Setenv(features.VulnReportingEnhancements.EnvVar(), "true")
-	if !features.VulnReportingEnhancements.Enabled() {
-		s.T().Skip("Skip tests when ROX_VULN_MGMT_REPORTING_ENHANCEMENTS disabled")
-		s.T().SkipNow()
-	}
-
 	s.testDB = pgtest.ForT(s.T())
 	s.datastore = GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	s.reportConfigStore = reportConfigDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)

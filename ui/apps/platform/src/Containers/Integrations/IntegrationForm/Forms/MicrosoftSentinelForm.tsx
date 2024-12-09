@@ -1,4 +1,3 @@
-/* eslint-disable no-void */
 import React, { useState, ReactElement } from 'react';
 import {
     Card,
@@ -121,10 +120,6 @@ function MicrosoftSentinelForm({
     if (initialValues) {
         merge(formInitialValues.notifier, initialValues);
 
-        formInitialValues.notifier = {
-            ...formInitialValues.notifier,
-            ...initialValues,
-        };
         // We want to clear the password because backend returns '******' to represent that there
         // are currently stored credentials
         formInitialValues.notifier.microsoftSentinel.secret = '';
@@ -274,18 +269,18 @@ function MicrosoftSentinelForm({
                         />
                     </FormLabelGroup>
                     <Card isFlat>
-                        <CardTitle>Authentication Method</CardTitle>
+                        <CardTitle>Authentication method</CardTitle>
                         <CardBody>
                             <ToggleGroup aria-label="Authentication method selection">
                                 <ToggleGroupItem
-                                    text="Use Secret"
+                                    text="Use secret"
                                     buttonId="use-secret"
                                     isSelected={selectedAuthMethod === 'use-secret'}
                                     onChange={onUpdateAuthMethod}
                                     isDisabled={!isEditable}
                                 />
                                 <ToggleGroupItem
-                                    text="Use Client Certificate"
+                                    text="Use client certificate"
                                     buttonId="use-client-cert"
                                     isSelected={selectedAuthMethod === 'use-client-cert'}
                                     onChange={onUpdateAuthMethod}

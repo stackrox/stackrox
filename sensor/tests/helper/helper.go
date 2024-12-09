@@ -224,9 +224,7 @@ func WithRetryCallback(retryCallback RetryCallback) TestRunFunc {
 // RunTest runs a test case. Fails the test if the testRun cannot be created.
 func (c *TestContext) RunTest(t *testing.T, options ...TestRunFunc) {
 	tr, err := newTestRun(options...)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	c.run(t, tr)
 }
 
@@ -339,9 +337,8 @@ func (c *TestContext) run(t *testing.T, tr *testRun) {
 		if tr.permutation {
 			c.runWithResourcesPermutation(t, tr)
 		} else {
-			if err := c.runWithResources(t, tr.resources, tr.testCase, tr.retryCallback); err != nil {
-				t.Fatal(err.Error())
-			}
+			err := c.runWithResources(t, tr.resources, tr.testCase, tr.retryCallback)
+			require.NoError(t, err)
 		}
 	}
 }
@@ -377,10 +374,8 @@ func (c *TestContext) runWithResources(t *testing.T, resources []K8sResourceInfo
 // runBare runs a test case without applying any resources to the cluster.
 func (c *TestContext) runBare(t *testing.T, testCase TestCallback) {
 	_, removeNamespace, err := c.createTestNs(context.Background(), t, DefaultNamespace)
+	require.NoErrorf(t, err, "failed to create namespace %s", DefaultNamespace)
 	defer utils.IgnoreError(removeNamespace)
-	if err != nil {
-		t.Fatalf("failed to create namespace: %s", err)
-	}
 	testCase(t, c, nil)
 }
 
@@ -393,9 +388,8 @@ func (c *TestContext) runWithResourcesPermutation(t *testing.T, tr *testRun) {
 		newTestRun := tr.copy()
 		newTestRun.resources = newF
 		t.Run(fmt.Sprintf("Permutation_%s", permutationKind(newF)), func(_ *testing.T) {
-			if err := c.runWithResources(t, tr.resources, tr.testCase, tr.retryCallback); err != nil {
-				t.Fatal(err.Error())
-			}
+			err := c.runWithResources(t, tr.resources, tr.testCase, tr.retryCallback)
+			require.NoError(t, err)
 		})
 	})
 }
@@ -1017,9 +1011,8 @@ func (c *TestContext) ApplyResource(ctx context.Context, t *testing.T, ns string
 		if err := execWithRetry(defaultCreationTimeout, 5*time.Second, func() error {
 			err := c.r.Create(ctx, obj)
 			if err != nil && retryFn != nil {
-				if retryErr := retryFn(err, obj); retryErr != nil {
-					t.Fatal(errors.Wrapf(err, "error in retry callback: %s", retryErr))
-				}
+				retryErr := retryFn(err, obj)
+				require.NoError(t, retryErr)
 			}
 			return err
 		}); err != nil {

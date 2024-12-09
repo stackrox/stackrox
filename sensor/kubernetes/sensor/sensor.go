@@ -43,7 +43,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/sensor/helmconfig"
 	signalService "github.com/stackrox/rox/sensor/common/signal"
 	k8sadmctrl "github.com/stackrox/rox/sensor/kubernetes/admissioncontroller"
-	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/localscanner"
+	"github.com/stackrox/rox/sensor/kubernetes/certrefresh"
 	"github.com/stackrox/rox/sensor/kubernetes/clusterhealth"
 	"github.com/stackrox/rox/sensor/kubernetes/clustermetrics"
 	"github.com/stackrox/rox/sensor/kubernetes/clusterstatus"
@@ -191,12 +191,21 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		components = append(components, k8sadmctrl.NewConfigMapSettingsPersister(cfg.k8sClient.Kubernetes(), admCtrlSettingsMgr, sensorNamespace))
 	}
 
-	// Local scanner can be started even if scanner-tls certs are available in the same namespace because
-	// it ignores secrets not owned by Sensor.
-	if securedClusterIsNotManagedManually(helmManagedConfig) && env.LocalImageScanningEnabled.BooleanSetting() {
+	if securedClusterIsNotManagedManually(helmManagedConfig) {
+		// Central capabilities are not available at this point (there's no connection to Central yet),
+		// so we'll start both Secured Cluster and Local Scanner TLS issuer Sensor components. The Secured Cluster
+		// certificate refresher can determine at runtime if Central has the required capability for it to work.
+
 		podName := os.Getenv("POD_NAME")
 		components = append(components,
-			localscanner.NewLocalScannerTLSIssuer(cfg.k8sClient.Kubernetes(), sensorNamespace, podName))
+			certrefresh.NewSecuredClusterTLSIssuer(cfg.k8sClient.Kubernetes(), sensorNamespace, podName))
+
+		// Local scanner can be started even if scanner-tls certs are available in the same namespace because
+		// it ignores secrets not owned by Sensor.
+		if env.LocalImageScanningEnabled.BooleanSetting() {
+			components = append(components,
+				certrefresh.NewLocalScannerTLSIssuer(cfg.k8sClient.Kubernetes(), sensorNamespace, podName))
+		}
 	}
 
 	s := sensor.NewSensor(

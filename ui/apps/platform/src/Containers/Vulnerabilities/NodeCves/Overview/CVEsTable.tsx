@@ -142,7 +142,7 @@ function CVEsTable({
                     <Th>First discovered</Th>
                     {canSelectRows && (
                         <Th>
-                            <span className="pf-v5-screen-reader">CVE actions</span>
+                            <span className="pf-v5-screen-reader">Row actions</span>
                         </Th>
                     )}
                 </Tr>
@@ -218,7 +218,7 @@ function CVEsTable({
                                         <DateDistance date={firstDiscoveredInSystem} />
                                     </Td>
                                     {canSelectRows && (
-                                        <Td className="pf-v5-u-px-0">
+                                        <Td isActionCell>
                                             <ActionsColumn items={createRowActions({ cve })} />
                                         </Td>
                                     )}

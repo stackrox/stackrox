@@ -1,4 +1,4 @@
-//go:build test_e2e || sql_integration || compliance || destructive || externalbackups
+//go:build test_e2e || sql_integration || compliance || destructive || externalbackups || test_compatibility
 
 package tests
 
@@ -73,7 +73,7 @@ func testContexts(t *testing.T, name string, timeout time.Duration) (testCtx con
 		testCancel    func()
 	)
 	cleanupTimeout := 10 * time.Minute
-	t.Logf("Running %s with a timeout of %s plus %s for cleanup", name, timeout, cleanupTimeout)
+	logf(t, "Running %s with a timeout of %s plus %s for cleanup", name, timeout, cleanupTimeout)
 	overallTimeout := timeout + cleanupTimeout
 	overallErr := fmt.Errorf("overall %s test+cleanup timeout of %s reached", name, overallTimeout)
 	testErr := fmt.Errorf("%s test timeout of %s reached", name, timeout)
@@ -308,7 +308,7 @@ func teardownDeploymentWithoutCheck(t *testing.T, deploymentName string) {
 	// we can trigger deletion and assume that it will be deleted eventually.
 	cmd := exec.Command(`kubectl`, `delete`, `deployment`, deploymentName, `--ignore-not-found=true`, `--grace-period=1`)
 	if err := cmd.Run(); err != nil {
-		t.Logf("Deleting deployment %q failed: %v", deploymentName, err)
+		logf(t, "Deleting deployment %q failed: %v", deploymentName, err)
 	}
 }
 
@@ -647,7 +647,7 @@ func mustCreateAPIToken(t *testing.T, ctx context.Context, name string, roles []
 	})
 	require.NoError(err)
 
-	t.Logf("Created API Token %q (%v): %v", name, tokResp.GetMetadata().GetId(), roles)
+	logf(t, "Created API Token %q (%v): %v", name, tokResp.GetMetadata().GetId(), roles)
 	return tokResp.GetMetadata().GetId(), tokResp.GetToken()
 }
 
@@ -665,7 +665,7 @@ func revokeAPIToken(t *testing.T, ctx context.Context, idOrName string) {
 		if tok.GetId() == idOrName || tok.GetName() == idOrName {
 			_, err = service.RevokeToken(ctx, &v1.ResourceByID{Id: tok.GetId()})
 			require.NoError(t, err)
-			t.Logf("Revoked API token %q (%s)", tok.GetName(), tok.GetId())
+			logf(t, "Revoked API token %q (%s)", tok.GetName(), tok.GetId())
 			return
 		}
 	}
@@ -679,7 +679,7 @@ func mustCreatePermissionSet(t *testing.T, ctx context.Context, permissionSet *s
 	ps, err := service.PostPermissionSet(ctx, permissionSet)
 	require.NoError(t, err)
 
-	t.Logf("Created permission set: %v", ps)
+	logf(t, "Created permission set: %v", ps)
 	return ps.GetId()
 }
 
@@ -695,7 +695,7 @@ func deletePermissionSet(t *testing.T, ctx context.Context, idOrName string) {
 		if ps.GetId() == idOrName || ps.GetName() == idOrName {
 			_, err = service.DeletePermissionSet(ctx, &v1.ResourceByID{Id: ps.GetId()})
 			require.NoError(t, err)
-			t.Logf("Deleted permission set %q (%s)", ps.GetName(), ps.GetId())
+			logf(t, "Deleted permission set %q (%s)", ps.GetName(), ps.GetId())
 			return
 		}
 	}
@@ -712,7 +712,7 @@ func mustCreateRole(t *testing.T, ctx context.Context, role *storage.Role) {
 	})
 	require.NoError(t, err)
 
-	t.Logf("Created role: %v", role)
+	logf(t, "Created role: %v", role)
 }
 
 // deleteRole will delete the specified role.
@@ -727,7 +727,7 @@ func deleteRole(t *testing.T, ctx context.Context, name string) {
 		if role.GetName() == name {
 			_, err = service.DeleteRole(ctx, &v1.ResourceByID{Id: name})
 			require.NoError(t, err)
-			t.Logf("Deleted role %q", name)
+			logf(t, "Deleted role %q", name)
 			return
 		}
 	}
@@ -762,9 +762,9 @@ func collectLogs(t *testing.T, ns string, dir string) {
 	start := time.Now()
 	err := exec.Command("../scripts/ci/collect-service-logs.sh", ns, "/tmp/e2e-test-logs/"+dir).Run()
 	if err != nil {
-		t.Logf("Collecting %q logs returned error %s", ns, err)
+		logf(t, "Collecting %q logs returned error %s", ns, err)
 	}
-	t.Logf("Log collection took: %s", time.Since(start))
+	logf(t, "Log collection took: %s", time.Since(start))
 }
 
 // isOpenshift returns true when the test env is a flavor of OCP, false otherwise.

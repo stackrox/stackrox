@@ -7,6 +7,7 @@ import (
 	"sync/atomic"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/urlfmt"
@@ -84,16 +85,16 @@ func (l *lazyTLSCheckRegistry) Metadata(image *storage.Image) (*storage.ImageMet
 	// Attempt initialization since Metadata interacts with the registry.
 	l.lazyInit()
 
-	// initError and registry are modified while the
-	// write lock is held, to avoid a race grab the
-	// read lock.
-	l.initializedMutex.RLock()
-	defer l.initializedMutex.RUnlock()
-
-	if l.initError != nil {
-		return nil, l.initError
+	// initError is modified while the write lock is held, to avoid a race
+	// grab the read lock.
+	err := concurrency.WithRLock1(&l.initializedMutex, func() error {
+		return l.initError
+	})
+	if err != nil {
+		return nil, err
 	}
 
+	// At this point lazy init has successfully completed.
 	return l.registry.Metadata(image)
 }
 

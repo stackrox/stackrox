@@ -92,7 +92,6 @@ describe('useRestMutation hook', () => {
         const requestFn = (arg: string) =>
             new Promise<string>((resolve, reject) =>
                 // Using a 'string' instead of `Error` for simplicity
-                // eslint-disable-next-line prefer-promise-reject-errors
                 setTimeout(() => reject(`error with "${arg}"`), 1000)
             );
 
