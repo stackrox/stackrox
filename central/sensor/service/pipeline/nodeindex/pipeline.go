@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
@@ -47,22 +48,28 @@ type pipelineImpl struct {
 	riskManager   riskManager.Manager
 }
 
-func (p pipelineImpl) OnFinish(_ string) {
+func (p *pipelineImpl) OnFinish(_ string) {
 }
 
-func (p pipelineImpl) Capabilities() []centralsensor.CentralCapability {
+func (p *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
 	return nil
 }
 
-func (p pipelineImpl) Match(msg *central.MsgFromSensor) bool {
+func (p *pipelineImpl) Reconcile(_ context.Context, _ string, _ *reconciliation.StoreMap) error {
+	return nil
+}
+
+func (p *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 	return msg.GetEvent().GetIndexReport() != nil
 }
 
-func (p pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
+func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSensor, injector common.MessageInjector) error {
 	if !env.NodeIndexEnabled.BooleanSetting() || !features.ScannerV4.Enabled() {
 		// Node Indexing only works correctly when both, itself and Scanner v4 are enabled
 		log.Debugf("Skipping node index message (Node Indexing Enabled: %t, Scanner V4 Enabled: %t",
 			env.NodeIndexEnabled.BooleanSetting(), features.ScannerV4.Enabled())
+		// ACK the message to prevent frequent retries
+		sendComplianceAck(ctx, msg.GetEvent().GetNode(), injector)
 		return nil
 	}
 	event := msg.GetEvent()
@@ -102,9 +109,31 @@ func (p pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSen
 		return errors.Wrapf(err, "failed calculating risk and upserting node %s", nodeDatastore.NodeString(node))
 	}
 
+	sendComplianceAck(ctx, node, injector)
 	return nil
 }
 
-func (p pipelineImpl) Reconcile(_ context.Context, _ string, _ *reconciliation.StoreMap) error {
-	return nil
+func sendComplianceAck(ctx context.Context, node *storage.Node, injector common.MessageInjector) {
+	if injector == nil {
+		return
+	}
+	reply := replyCompliance(node.GetClusterId(), node.GetName(), central.NodeInventoryACK_ACK)
+	if err := injector.InjectMessage(ctx, reply); err != nil {
+		log.Warnf("Failed sending node-indexing-ACK to Sensor for %s: %v", nodeDatastore.NodeString(node), err)
+	} else {
+		log.Debugf("Sent node-indexing-ACK for %s", nodeDatastore.NodeString(node))
+	}
+}
+
+func replyCompliance(clusterID, nodeName string, t central.NodeInventoryACK_Action) *central.MsgToSensor {
+	return &central.MsgToSensor{
+		Msg: &central.MsgToSensor_NodeInventoryAck{
+			NodeInventoryAck: &central.NodeInventoryACK{
+				ClusterId: clusterID,
+				NodeName:  nodeName,
+				Action:    t,
+				Recipient: central.NodeInventoryACK_NodeIndexer,
+			},
+		},
+	}
 }
