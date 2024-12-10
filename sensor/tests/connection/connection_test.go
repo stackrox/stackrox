@@ -8,7 +8,6 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/sensor/tests/helper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -127,21 +126,11 @@ func Test_ScannerDefinitionsProxy(t *testing.T) {
 		require.NoError(t, err)
 
 		// Sensor may not be yet in the ready state and may reject the API call
-		err = retry.WithRetry(
-			func() error {
-				t.Logf("Attempting GET call to https://localhost:8443/scanner/definitions")
-				resp, err := client.Do(req)
-				if err != nil {
-					return err
-				}
-				require.Equal(t, http.StatusOK, resp.StatusCode, "response: %v", resp)
-				return nil
-			},
-			retry.Tries(5),
-			retry.BetweenAttempts(func(previousAttempt int) {
-				<-time.After(time.Millisecond * 500 * time.Duration(previousAttempt*previousAttempt))
-			}),
-		)
-		require.NoError(t, err)
+		assert.EventuallyWithT(t, func(collect *assert.CollectT) {
+			t.Logf("Attempting GET call to https://localhost:8443/scanner/definitions")
+			resp, err := client.Do(req)
+			assert.NoError(collect, err)
+			require.Equal(collect, http.StatusOK, resp.StatusCode, "response: %v", resp)
+		}, time.Second*5, time.Millisecond*500, "Could not fetch scanner definitions")
 	}))
 }
