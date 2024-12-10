@@ -7,7 +7,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/imageintegration"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	enricherMock "github.com/stackrox/rox/pkg/images/enricher/mocks"
@@ -29,6 +31,33 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 		err := res.Body.Close()
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusMethodNotAllowed, res.StatusCode)
+	})
+
+	// Test case: valid json body and enricher returns error
+	t.Run("valid json body with error from enricher", func(t *testing.T) {
+		t.Setenv(features.SBOMGeneration.EnvVar(), "true")
+		t.Setenv(features.ScannerV4.EnvVar(), "true")
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		mockEnricher := enricherMock.NewMockImageEnricher(ctrl)
+		mockEnricher.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).Return(enricher.EnrichmentResult{ImageUpdated: false, ScanResult: enricher.ScanNotDone}, errors.New("Image enrichment failed")).AnyTimes()
+
+		reqBody := &sbomRequestBody{
+			ImageName: "test-image",
+			Force:     false,
+		}
+		reqJson, err := json.Marshal(reqBody)
+		assert.NoError(t, err)
+		req := httptest.NewRequest(http.MethodPost, "/sbom", bytes.NewReader(reqJson))
+		recorder := httptest.NewRecorder()
+
+		handler := SBOMHandler(imageintegration.Set(), mockEnricher, nil)
+		handler.ServeHTTP(recorder, req)
+
+		res := recorder.Result()
+		err = res.Body.Close()
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
 	})
 
 	// Test case: valid json body and validate enricher being called
@@ -59,7 +88,7 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 	})
 
 	// Test case: invalid json body
-	t.Run("json body", func(t *testing.T) {
+	t.Run("invalid json body", func(t *testing.T) {
 		t.Setenv(features.SBOMGeneration.EnvVar(), "true")
 		t.Setenv(features.ScannerV4.EnvVar(), "true")
 		invalidJson := `{"cluster": "test-cluster", "image_name": "test-image", "force": true,`
@@ -110,7 +139,7 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 	t.Run("request body size exceeds limit", func(t *testing.T) {
 		t.Setenv(features.SBOMGeneration.EnvVar(), "true")
 		t.Setenv(features.ScannerV4.EnvVar(), "true")
-		t.Setenv("ROX_SBOM_GEN_MAX_REQ_SIZE_BYTES", "2")
+		t.Setenv(env.SBOMGenerationMaxReqSizeBytes.EnvVar(), "2")
 		largeRequestBody := []byte(`{"cluster": "test-cluster", "image_name": "test-image", "force": true}`)
 		req := httptest.NewRequest(http.MethodPost, "/sbom", bytes.NewReader(largeRequestBody))
 		recorder := httptest.NewRecorder()
