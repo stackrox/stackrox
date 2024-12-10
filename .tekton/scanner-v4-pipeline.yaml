@@ -207,7 +207,16 @@ spec:
     - name: ociArtifactExpiresAfter
       value: $(params.oci-artifact-expires-after)
     taskRef:
-      name: fetch-scanner-vuln-mappings
+      resolver: git
+      params:
+      - name: url
+        value: https://github.com/msugakov/konflux-tasks-test.git
+      - name: revision
+        value: main
+      - name: pathInRepo
+        value: tasks/fetch-scanner-vuln-mappings-task.yaml
+      - name: scmType
+        value: github
 
   - name: prefetch-dependencies
     params:

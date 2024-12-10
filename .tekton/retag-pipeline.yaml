@@ -159,4 +159,13 @@ spec:
     - name: OUTPUT_IMAGE_TAG
       value: $(tasks.determine-output-image-tag.results.IMAGE_TAG)
     taskRef:
-      name: retag-image
+      resolver: git
+      params:
+      - name: url
+        value: https://github.com/msugakov/konflux-tasks-test.git
+      - name: revision
+        value: main
+      - name: pathInRepo
+        value: tasks/retag-image-task.yaml
+      - name: scmType
+        value: github
