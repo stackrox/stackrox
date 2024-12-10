@@ -5,8 +5,13 @@ import {
     interactAndWaitForResponses,
     interceptAndOverrideFeatureFlags,
     interceptAndOverridePermissions,
+    interceptAndWatchRequests,
 } from '../../../helpers/request';
-import { verifyColumnManagement } from '../../../helpers/tableHelpers';
+import {
+    changePerPageOption,
+    sortByTableHeader,
+    verifyColumnManagement,
+} from '../../../helpers/tableHelpers';
 
 import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 import {
@@ -306,6 +311,75 @@ describe('Workload CVE Image Single page', () => {
             cy.get(fixedInCellSelector)
                 .eq(index)
                 .contains(component.imageVulnerabilities[0].fixedByVersion);
+        });
+    });
+
+    // See case 03985920 and ROX-27344 for more details
+    it('should receive consistent CVE counts when sorting and paginating the table', () => {
+        const opname = 'getCVEsForImage';
+        const routeMatcherMap = getRouteMatcherMapForGraphQL([opname]);
+
+        // Captures the initial CVE count and the initial query sent when visiting the image details page
+        // and uses these values as a basis of comparison on subsequent requests
+        function createAssertion(initialCount: number, initialQuery: string) {
+            return function (interception) {
+                expect(interception.request.body.variables.query).to.equal(initialQuery);
+                expect(interception.response.body.data.image.imageVulnerabilityCount).to.equal(
+                    initialCount
+                );
+            };
+        }
+
+        // Test count stability with no filters applied
+        interceptAndWatchRequests(routeMatcherMap).then(({ waitForRequests }) => {
+            visitFirstImage();
+            waitForRequests()
+                .then(({ request, response }) => ({
+                    assertCveCountsUnchanged: createAssertion(
+                        response.body.data.image.imageVulnerabilityCount,
+                        request.body.variables.query
+                    ),
+                }))
+                .then(({ assertCveCountsUnchanged }) => {
+                    // Check the initial sort request
+                    sortByTableHeader('CVE');
+                    waitForRequests().then(assertCveCountsUnchanged);
+
+                    // Check the initial perPage change request
+                    changePerPageOption(50);
+                    waitForRequests().then(assertCveCountsUnchanged);
+
+                    // Test another sort back-and-forth
+                    sortByTableHeader('CVE severity');
+                    waitForRequests().then(assertCveCountsUnchanged);
+                    sortByTableHeader('CVE severity');
+                    waitForRequests().then(assertCveCountsUnchanged);
+                    sortByTableHeader('CVE severity');
+                    waitForRequests().then(assertCveCountsUnchanged);
+
+                    // Test changing back to the original pagination
+                    changePerPageOption(20);
+                    waitForRequests().then(assertCveCountsUnchanged);
+
+                    // Test a pagination change after returning to the default
+                    changePerPageOption(10);
+                    waitForRequests().then(assertCveCountsUnchanged);
+
+                    // Test sorting by a column already used as a sort *again*
+                    sortByTableHeader('CVE severity');
+                    waitForRequests().then(assertCveCountsUnchanged);
+
+                    // Test sorting on the only remaining untested column by rapidly changing
+                    // the column value without waiting for a response
+                    sortByTableHeader('CVSS');
+                    sortByTableHeader('CVSS');
+                    sortByTableHeader('CVSS');
+                    sortByTableHeader('CVSS');
+                    waitForRequests().then(assertCveCountsUnchanged);
+                    waitForRequests().then(assertCveCountsUnchanged);
+                    waitForRequests().then(assertCveCountsUnchanged);
+                    waitForRequests().then(assertCveCountsUnchanged);
+                });
         });
     });
 
