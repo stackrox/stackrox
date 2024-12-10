@@ -455,3 +455,71 @@ func (s *NetworkflowStoreSuite) TestGetExternalFlowsForDeployment() {
 	s.Nil(err)
 	protoassert.ElementsMatch(s.T(), []*storage.NetworkFlow{flows[0], flows[1]}, deploymentFlows)
 }
+
+func (s *NetworkflowStoreSuite) TestGetFlowsByEntity() {
+	now, err := protocompat.ConvertTimeToTimestampOrError(time.Now().Truncate(time.Microsecond))
+	s.Require().NoError(err)
+
+	flows := []*storage.NetworkFlow{
+		{
+			Props: &storage.NetworkFlowProperties{
+				DstPort: 22,
+				DstEntity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+					Id:   "TestExternalDst1",
+				},
+				SrcEntity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					Id:   "TestDeployment1",
+				},
+			},
+			ClusterId:         clusterID,
+			LastSeenTimestamp: nil,
+		},
+		{
+			Props: &storage.NetworkFlowProperties{
+				DstPort: 22,
+				DstEntity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					Id:   "TestDeployment1",
+				},
+				SrcEntity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+					Id:   "TestExternalSrc1",
+				},
+			},
+			ClusterId:         clusterID,
+			LastSeenTimestamp: now,
+		},
+		{
+			Props: &storage.NetworkFlowProperties{
+				DstPort: 22,
+				DstEntity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					Id:   "TestDeploymentDst2",
+				},
+				SrcEntity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					Id:   "TestDeployment1",
+				},
+			},
+			ClusterId:         clusterID,
+			LastSeenTimestamp: now,
+		},
+	}
+
+	err = s.store.UpsertFlows(s.ctx, flows, timestamp.Now())
+	s.Nil(err)
+
+	entityFlows, err := s.store.GetFlowsByEntity(s.ctx, "TestDeployment1")
+	s.Nil(err)
+	protoassert.ElementsMatch(s.T(), flows, entityFlows)
+
+	entityFlows, err = s.store.GetFlowsByEntity(s.ctx, "TestExternalSrc1")
+	s.Nil(err)
+	protoassert.ElementsMatch(s.T(), []*storage.NetworkFlow{flows[1]}, entityFlows)
+
+	entityFlows, err = s.store.GetFlowsByEntity(s.ctx, "TestDeploymentDst2")
+	s.Nil(err)
+	protoassert.ElementsMatch(s.T(), []*storage.NetworkFlow{flows[2]}, entityFlows)
+}
