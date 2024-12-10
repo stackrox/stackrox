@@ -184,5 +184,5 @@ func (s *storeImpl) retryableDelete(ctx context.Context) error {
 
 // Destroy drops the tables associated with the target object type.
 func Destroy(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS delegated_registry_configs CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE delegated_registry_configs CASCADE")
 }

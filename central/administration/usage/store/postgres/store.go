@@ -187,7 +187,7 @@ func Destroy(ctx context.Context, db postgres.DB) {
 }
 
 func dropTableSecuredUnits(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS secured_units CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE secured_units CASCADE")
 
 }
 

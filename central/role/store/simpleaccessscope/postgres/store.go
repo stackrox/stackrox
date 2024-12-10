@@ -179,7 +179,7 @@ func Destroy(ctx context.Context, db postgres.DB) {
 }
 
 func dropTableSimpleAccessScopes(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS simple_access_scopes CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE simple_access_scopes CASCADE")
 
 }
 

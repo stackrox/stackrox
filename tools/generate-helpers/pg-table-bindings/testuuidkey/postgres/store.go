@@ -209,7 +209,7 @@ func Destroy(ctx context.Context, db postgres.DB) {
 }
 
 func dropTableTestSingleUUIDKeyStructs(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS test_single_uuid_key_structs CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE test_single_uuid_key_structs CASCADE")
 
 }
 

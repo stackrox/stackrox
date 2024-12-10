@@ -291,7 +291,7 @@ func Destroy(ctx context.Context, db postgres.DB) {
 }
 
 func dropTableAlerts(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS alerts CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE alerts CASCADE")
 
 }
 
