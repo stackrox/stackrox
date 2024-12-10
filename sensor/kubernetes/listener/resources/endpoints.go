@@ -1,7 +1,6 @@
 package resources
 
 import (
-	v1 "k8s.io/api/core/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/containerid"
 	"github.com/stackrox/rox/pkg/net"
@@ -9,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/service"
+	v1 "k8s.io/api/core/v1"
 )
 
 type endpointManager interface {
