@@ -524,6 +524,41 @@ spec:
                       Settings for the Collector container, which is responsible for collecting process and networking
                       activity at the host level.
                     properties:
+                      runtimeConfiguration:
+                        description: |-
+                          Collector settings that can be changed during runtime without
+                          restarting collector
+                        properties:
+                          enabled:
+                            default: true
+                            description: |-
+                              Controls if the ConfigMap for collector runtime
+                              configuration is created
+                            type: boolean
+                          networking:
+                            description: |-
+                              Settings impacting the reporting of networking
+                              connections by Collector.
+                            properties:
+                              externalIps:
+                                description: |-
+                                  Settings impacting the reporting of networking
+                                  connections involving external IPs.
+                                properties:
+                                  enabled:
+                                    default: false
+                                    description: |-
+                                      Controls if all connections to external IPs
+                                      not belonging to specified CIDR blocks are
+                                      aggregated to one external IP.
+                                    type: boolean
+                                  perContainerRateLimit:
+                                    default: 1024
+                                    description: |-
+                                      The maximum number of open networking connections
+                                      reported for each container per scrape.
+                                    type: integer
+
                       collection:
                         default: CORE_BPF
                         description: |-
