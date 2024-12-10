@@ -569,10 +569,11 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 
 	container, ok := m.clusterEntities.LookupByContainerID(conn.containerID)
 	if !ok {
-		// There is an incoming connection to a container that we do not know.
+		// There is an incoming connection to a container that Sensor does not recognize.
 		// 90% of the cases that container is Sensor itself before being restarted.
-		err := m.handleContainerNotFound(conn, status, enrichedConnections)
-		log.Debugf("Enrichment failed: %v", err)
+		if err := m.handleContainerNotFound(conn, status, enrichedConnections); err != nil {
+			log.Debugf("Enrichment failed: %v", err)
+		}
 		return
 	}
 	netGraphFailReason = multierror.Append(netGraphFailReason, errors.New("ContainerID lookup successful"))
