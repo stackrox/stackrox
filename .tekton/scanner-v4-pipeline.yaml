@@ -192,7 +192,7 @@ spec:
       - name: url
         value: https://github.com/msugakov/konflux-tasks-test.git
       - name: revision
-        value: main
+        value: fac37e5a8a607ac83639dc9f75d39e797d2e3c6c
       - name: pathInRepo
         value: tasks/determine-image-tag-task.yaml
       - name: scmType
@@ -212,7 +212,7 @@ spec:
       - name: url
         value: https://github.com/msugakov/konflux-tasks-test.git
       - name: revision
-        value: main
+        value: fac37e5a8a607ac83639dc9f75d39e797d2e3c6c
       - name: pathInRepo
         value: tasks/fetch-scanner-vuln-mappings-task.yaml
       - name: scmType
