@@ -253,7 +253,7 @@ jobs:
 
   check-collector-images-exist:
     # This job ensures that COLLECTOR_VERSION cannot be updated to a version for which
-    # the image was not successfully built on GHA and Konflux.
+    # the image was not successfully built on Konflux.
     runs-on: ubuntu-latest
     strategy:
       matrix:
