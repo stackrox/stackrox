@@ -267,6 +267,96 @@ func (s *NetworkGraphServiceTestSuite) TestGetExternalNetworkFlows() {
 	protoassert.Equal(s.T(), entities[1].Info, result[1].GetProps().GetDstEntity())
 }
 
+func (s *NetworkGraphServiceTestSuite) TestGetFlowsByEntity() {
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.TestScopeCheckerCoreFromFullScopeMap(s.T(),
+			sac.TestScopeMap{
+				storage.Access_READ_ACCESS: {
+					resources.Deployment.Resource: &sac.TestResourceScope{
+						Clusters: map[string]*sac.TestClusterScope{
+							"mycluster": {Namespaces: []string{"foo"}},
+						},
+					},
+					resources.NetworkGraph.Resource: &sac.TestResourceScope{
+						Clusters: map[string]*sac.TestClusterScope{
+							"mycluster": {Namespaces: []string{"foo"}},
+						},
+					},
+				},
+			}))
+
+	mockFlowStore := nfDSMocks.NewMockFlowDataStore(s.mockCtrl)
+	s.flows.EXPECT().GetFlowStore(ctx, gomock.Any()).AnyTimes().Return(mockFlowStore, nil)
+
+	deployment1 := &storage.NetworkEntity{
+		Info: &storage.NetworkEntityInfo{
+			Type: storage.NetworkEntityInfo_DEPLOYMENT,
+			Id:   "Deployment1",
+			Desc: &storage.NetworkEntityInfo_Deployment_{
+				Deployment: &storage.NetworkEntityInfo_Deployment{
+					Name:      "mydeployment",
+					Cluster:   "mycluster",
+					Namespace: "foo",
+				},
+			},
+		},
+	}
+
+	external1 := &storage.NetworkEntity{
+		Info: &storage.NetworkEntityInfo{
+			Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+			Id:   "ExternalEntity1",
+			Desc: &storage.NetworkEntityInfo_ExternalSource_{
+				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+					Name: "cidr1",
+					Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+						Cidr: "192.168.0.1/32",
+					},
+				},
+			},
+		},
+	}
+
+	// Verify getting by deployment
+	ext1ToDep1 := extFlow("mydeployment", "ExternalEntity1")
+	s.entities.EXPECT().GetEntity(ctx, "Deployment1").Return(deployment1, true, nil)
+
+	mockFlowStore.EXPECT().GetFlowsByEntity(ctx, gomock.Any()).Return(
+		[]*storage.NetworkFlow{
+			ext1ToDep1,
+		},
+		nil,
+	)
+
+	resp, err := s.tested.GetFlowsByEntity(ctx, &v1.GetFlowsByEntityRequest{
+		ClusterId: "mycluster",
+		EntityId:  "Deployment1",
+	})
+	s.NoError(err)
+
+	s.Len(resp.Flows, 1)
+	protoassert.Equal(s.T(), resp.Flows[0], ext1ToDep1)
+
+	// Verify getting by external entity
+	s.entities.EXPECT().GetEntity(ctx, "ExternalEntity1").Return(external1, true, nil)
+
+	mockFlowStore.EXPECT().GetFlowsByEntity(ctx, gomock.Any()).Return(
+		[]*storage.NetworkFlow{
+			ext1ToDep1,
+		},
+		nil,
+	)
+
+	resp, err = s.tested.GetFlowsByEntity(ctx, &v1.GetFlowsByEntityRequest{
+		ClusterId: "mycluster",
+		EntityId:  "ExternalEntity1",
+	})
+	s.NoError(err)
+
+	s.Len(resp.Flows, 1)
+	protoassert.Equal(s.T(), resp.Flows[0], ext1ToDep1)
+}
+
 func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {
 	// Test setup:
 	// Query selects namespace foo and bar (visible)

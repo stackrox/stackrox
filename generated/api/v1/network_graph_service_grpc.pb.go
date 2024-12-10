@@ -23,7 +23,7 @@ const (
 	NetworkGraphService_GetNetworkGraph_FullMethodName             = "/v1.NetworkGraphService/GetNetworkGraph"
 	NetworkGraphService_GetExternalNetworkEntities_FullMethodName  = "/v1.NetworkGraphService/GetExternalNetworkEntities"
 	NetworkGraphService_GetExternalNetworkFlows_FullMethodName     = "/v1.NetworkGraphService/GetExternalNetworkFlows"
-	NetworkGraphService_GetEntityFlows_FullMethodName              = "/v1.NetworkGraphService/GetEntityFlows"
+	NetworkGraphService_GetFlowsByEntity_FullMethodName            = "/v1.NetworkGraphService/GetFlowsByEntity"
 	NetworkGraphService_CreateExternalNetworkEntity_FullMethodName = "/v1.NetworkGraphService/CreateExternalNetworkEntity"
 	NetworkGraphService_PatchExternalNetworkEntity_FullMethodName  = "/v1.NetworkGraphService/PatchExternalNetworkEntity"
 	NetworkGraphService_DeleteExternalNetworkEntity_FullMethodName = "/v1.NetworkGraphService/DeleteExternalNetworkEntity"
@@ -38,7 +38,7 @@ type NetworkGraphServiceClient interface {
 	GetNetworkGraph(ctx context.Context, in *NetworkGraphRequest, opts ...grpc.CallOption) (*NetworkGraph, error)
 	GetExternalNetworkEntities(ctx context.Context, in *GetExternalNetworkEntitiesRequest, opts ...grpc.CallOption) (*GetExternalNetworkEntitiesResponse, error)
 	GetExternalNetworkFlows(ctx context.Context, in *GetExternalNetworkFlowsRequest, opts ...grpc.CallOption) (*GetExternalNetworkFlowsResponse, error)
-	GetEntityFlows(ctx context.Context, in *GetEntityFlowsRequest, opts ...grpc.CallOption) (*GetEntityFlowsResponse, error)
+	GetFlowsByEntity(ctx context.Context, in *GetFlowsByEntityRequest, opts ...grpc.CallOption) (*GetFlowsByEntityResponse, error)
 	CreateExternalNetworkEntity(ctx context.Context, in *CreateNetworkEntityRequest, opts ...grpc.CallOption) (*storage.NetworkEntity, error)
 	PatchExternalNetworkEntity(ctx context.Context, in *PatchNetworkEntityRequest, opts ...grpc.CallOption) (*storage.NetworkEntity, error)
 	DeleteExternalNetworkEntity(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
@@ -84,10 +84,10 @@ func (c *networkGraphServiceClient) GetExternalNetworkFlows(ctx context.Context,
 	return out, nil
 }
 
-func (c *networkGraphServiceClient) GetEntityFlows(ctx context.Context, in *GetEntityFlowsRequest, opts ...grpc.CallOption) (*GetEntityFlowsResponse, error) {
+func (c *networkGraphServiceClient) GetFlowsByEntity(ctx context.Context, in *GetFlowsByEntityRequest, opts ...grpc.CallOption) (*GetFlowsByEntityResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetEntityFlowsResponse)
-	err := c.cc.Invoke(ctx, NetworkGraphService_GetEntityFlows_FullMethodName, in, out, cOpts...)
+	out := new(GetFlowsByEntityResponse)
+	err := c.cc.Invoke(ctx, NetworkGraphService_GetFlowsByEntity_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +151,7 @@ type NetworkGraphServiceServer interface {
 	GetNetworkGraph(context.Context, *NetworkGraphRequest) (*NetworkGraph, error)
 	GetExternalNetworkEntities(context.Context, *GetExternalNetworkEntitiesRequest) (*GetExternalNetworkEntitiesResponse, error)
 	GetExternalNetworkFlows(context.Context, *GetExternalNetworkFlowsRequest) (*GetExternalNetworkFlowsResponse, error)
-	GetEntityFlows(context.Context, *GetEntityFlowsRequest) (*GetEntityFlowsResponse, error)
+	GetFlowsByEntity(context.Context, *GetFlowsByEntityRequest) (*GetFlowsByEntityResponse, error)
 	CreateExternalNetworkEntity(context.Context, *CreateNetworkEntityRequest) (*storage.NetworkEntity, error)
 	PatchExternalNetworkEntity(context.Context, *PatchNetworkEntityRequest) (*storage.NetworkEntity, error)
 	DeleteExternalNetworkEntity(context.Context, *ResourceByID) (*Empty, error)
@@ -175,8 +175,8 @@ func (UnimplementedNetworkGraphServiceServer) GetExternalNetworkEntities(context
 func (UnimplementedNetworkGraphServiceServer) GetExternalNetworkFlows(context.Context, *GetExternalNetworkFlowsRequest) (*GetExternalNetworkFlowsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetExternalNetworkFlows not implemented")
 }
-func (UnimplementedNetworkGraphServiceServer) GetEntityFlows(context.Context, *GetEntityFlowsRequest) (*GetEntityFlowsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetEntityFlows not implemented")
+func (UnimplementedNetworkGraphServiceServer) GetFlowsByEntity(context.Context, *GetFlowsByEntityRequest) (*GetFlowsByEntityResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetFlowsByEntity not implemented")
 }
 func (UnimplementedNetworkGraphServiceServer) CreateExternalNetworkEntity(context.Context, *CreateNetworkEntityRequest) (*storage.NetworkEntity, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateExternalNetworkEntity not implemented")
@@ -267,20 +267,20 @@ func _NetworkGraphService_GetExternalNetworkFlows_Handler(srv interface{}, ctx c
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkGraphService_GetEntityFlows_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetEntityFlowsRequest)
+func _NetworkGraphService_GetFlowsByEntity_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetFlowsByEntityRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NetworkGraphServiceServer).GetEntityFlows(ctx, in)
+		return srv.(NetworkGraphServiceServer).GetFlowsByEntity(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: NetworkGraphService_GetEntityFlows_FullMethodName,
+		FullMethod: NetworkGraphService_GetFlowsByEntity_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NetworkGraphServiceServer).GetEntityFlows(ctx, req.(*GetEntityFlowsRequest))
+		return srv.(NetworkGraphServiceServer).GetFlowsByEntity(ctx, req.(*GetFlowsByEntityRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -395,8 +395,8 @@ var NetworkGraphService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _NetworkGraphService_GetExternalNetworkFlows_Handler,
 		},
 		{
-			MethodName: "GetEntityFlows",
-			Handler:    _NetworkGraphService_GetEntityFlows_Handler,
+			MethodName: "GetFlowsByEntity",
+			Handler:    _NetworkGraphService_GetFlowsByEntity_Handler,
 		},
 		{
 			MethodName: "CreateExternalNetworkEntity",

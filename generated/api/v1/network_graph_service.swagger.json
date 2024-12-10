@@ -185,14 +185,14 @@
         ]
       }
     },
-    "/v1/networkgraph/cluster/{clusterId}/externalentities/{entityId}": {
+    "/v1/networkgraph/cluster/{clusterId}/flows/{entityId}": {
       "get": {
-        "operationId": "NetworkGraphService_GetEntityFlows",
+        "operationId": "NetworkGraphService_GetFlowsByEntity",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1GetEntityFlowsResponse"
+              "$ref": "#/definitions/v1GetFlowsByEntityResponse"
             }
           },
           "default": {
@@ -554,18 +554,6 @@
     "v1Empty": {
       "type": "object"
     },
-    "v1GetEntityFlowsResponse": {
-      "type": "object",
-      "properties": {
-        "flows": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/storageNetworkFlow"
-          }
-        }
-      }
-    },
     "v1GetExternalNetworkEntitiesResponse": {
       "type": "object",
       "properties": {
@@ -579,6 +567,18 @@
       }
     },
     "v1GetExternalNetworkFlowsResponse": {
+      "type": "object",
+      "properties": {
+        "flows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageNetworkFlow"
+          }
+        }
+      }
+    },
+    "v1GetFlowsByEntityResponse": {
       "type": "object",
       "properties": {
         "flows": {

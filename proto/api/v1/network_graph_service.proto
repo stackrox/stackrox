@@ -81,12 +81,12 @@ message GetExternalNetworkFlowsResponse {
   repeated storage.NetworkFlow flows = 1;
 }
 
-message GetEntityFlowsRequest {
+message GetFlowsByEntityRequest {
   string cluster_id = 1;
   string entity_id = 2;
 }
 
-message GetEntityFlowsResponse {
+message GetFlowsByEntityResponse {
   repeated storage.NetworkFlow flows = 1;
 }
 
@@ -110,8 +110,8 @@ service NetworkGraphService {
 };
   }
 
-  rpc GetEntityFlows(GetEntityFlowsRequest) returns (GetEntityFlowsResponse) {
-    option (google.api.http) = {get: "/v1/networkgraph/cluster/{cluster_id}/externalentities/{entity_id}"};
+  rpc GetFlowsByEntity(GetFlowsByEntityRequest) returns (GetFlowsByEntityResponse) {
+    option (google.api.http) = {get: "/v1/networkgraph/cluster/{cluster_id}/flows/{entity_id}"};
   }
 
   rpc CreateExternalNetworkEntity(CreateNetworkEntityRequest) returns (storage.NetworkEntity) {

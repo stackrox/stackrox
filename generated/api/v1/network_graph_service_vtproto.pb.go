@@ -303,11 +303,11 @@ func (m *GetExternalNetworkFlowsResponse) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *GetEntityFlowsRequest) CloneVT() *GetEntityFlowsRequest {
+func (m *GetFlowsByEntityRequest) CloneVT() *GetFlowsByEntityRequest {
 	if m == nil {
-		return (*GetEntityFlowsRequest)(nil)
+		return (*GetFlowsByEntityRequest)(nil)
 	}
-	r := new(GetEntityFlowsRequest)
+	r := new(GetFlowsByEntityRequest)
 	r.ClusterId = m.ClusterId
 	r.EntityId = m.EntityId
 	if len(m.unknownFields) > 0 {
@@ -317,15 +317,15 @@ func (m *GetEntityFlowsRequest) CloneVT() *GetEntityFlowsRequest {
 	return r
 }
 
-func (m *GetEntityFlowsRequest) CloneMessageVT() proto.Message {
+func (m *GetFlowsByEntityRequest) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *GetEntityFlowsResponse) CloneVT() *GetEntityFlowsResponse {
+func (m *GetFlowsByEntityResponse) CloneVT() *GetFlowsByEntityResponse {
 	if m == nil {
-		return (*GetEntityFlowsResponse)(nil)
+		return (*GetFlowsByEntityResponse)(nil)
 	}
-	r := new(GetEntityFlowsResponse)
+	r := new(GetFlowsByEntityResponse)
 	if rhs := m.Flows; rhs != nil {
 		tmpContainer := make([]*storage.NetworkFlow, len(rhs))
 		for k, v := range rhs {
@@ -344,7 +344,7 @@ func (m *GetEntityFlowsResponse) CloneVT() *GetEntityFlowsResponse {
 	return r
 }
 
-func (m *GetEntityFlowsResponse) CloneMessageVT() proto.Message {
+func (m *GetFlowsByEntityResponse) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
@@ -758,7 +758,7 @@ func (this *GetExternalNetworkFlowsResponse) EqualMessageVT(thatMsg proto.Messag
 	}
 	return this.EqualVT(that)
 }
-func (this *GetEntityFlowsRequest) EqualVT(that *GetEntityFlowsRequest) bool {
+func (this *GetFlowsByEntityRequest) EqualVT(that *GetFlowsByEntityRequest) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
@@ -773,14 +773,14 @@ func (this *GetEntityFlowsRequest) EqualVT(that *GetEntityFlowsRequest) bool {
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *GetEntityFlowsRequest) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*GetEntityFlowsRequest)
+func (this *GetFlowsByEntityRequest) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*GetFlowsByEntityRequest)
 	if !ok {
 		return false
 	}
 	return this.EqualVT(that)
 }
-func (this *GetEntityFlowsResponse) EqualVT(that *GetEntityFlowsResponse) bool {
+func (this *GetFlowsByEntityResponse) EqualVT(that *GetFlowsByEntityResponse) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
@@ -812,8 +812,8 @@ func (this *GetEntityFlowsResponse) EqualVT(that *GetEntityFlowsResponse) bool {
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *GetEntityFlowsResponse) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*GetEntityFlowsResponse)
+func (this *GetFlowsByEntityResponse) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*GetFlowsByEntityResponse)
 	if !ok {
 		return false
 	}
@@ -1560,7 +1560,7 @@ func (m *GetExternalNetworkFlowsResponse) MarshalToSizedBufferVT(dAtA []byte) (i
 	return len(dAtA) - i, nil
 }
 
-func (m *GetEntityFlowsRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *GetFlowsByEntityRequest) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -1573,12 +1573,12 @@ func (m *GetEntityFlowsRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetEntityFlowsRequest) MarshalToVT(dAtA []byte) (int, error) {
+func (m *GetFlowsByEntityRequest) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *GetEntityFlowsRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *GetFlowsByEntityRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -1607,7 +1607,7 @@ func (m *GetEntityFlowsRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *GetEntityFlowsResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *GetFlowsByEntityResponse) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -1620,12 +1620,12 @@ func (m *GetEntityFlowsResponse) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetEntityFlowsResponse) MarshalToVT(dAtA []byte) (int, error) {
+func (m *GetFlowsByEntityResponse) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *GetEntityFlowsResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *GetFlowsByEntityResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -1993,7 +1993,7 @@ func (m *GetExternalNetworkFlowsResponse) SizeVT() (n int) {
 	return n
 }
 
-func (m *GetEntityFlowsRequest) SizeVT() (n int) {
+func (m *GetFlowsByEntityRequest) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -2011,7 +2011,7 @@ func (m *GetEntityFlowsRequest) SizeVT() (n int) {
 	return n
 }
 
-func (m *GetEntityFlowsResponse) SizeVT() (n int) {
+func (m *GetFlowsByEntityResponse) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -3701,7 +3701,7 @@ func (m *GetExternalNetworkFlowsResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetEntityFlowsRequest) UnmarshalVTUnsafe(dAtA []byte) error {
+func (m *GetFlowsByEntityRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3724,10 +3724,10 @@ func (m *GetEntityFlowsRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: GetEntityFlowsRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: GetFlowsByEntityRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: GetEntityFlowsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: GetFlowsByEntityRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -3824,7 +3824,7 @@ func (m *GetEntityFlowsRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetEntityFlowsResponse) UnmarshalVTUnsafe(dAtA []byte) error {
+func (m *GetFlowsByEntityResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3847,10 +3847,10 @@ func (m *GetEntityFlowsResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: GetEntityFlowsResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: GetFlowsByEntityResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: GetEntityFlowsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: GetFlowsByEntityResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
