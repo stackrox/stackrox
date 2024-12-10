@@ -1,0 +1,14 @@
+# Pushed to: "quay.io/rhacs-eng/qa:lineage-jdk-17.0.13".
+
+FROM registry.access.redhat.com/ubi8/openjdk-17:1.19
+
+USER root
+
+RUN microdnf -y install java-17-openjdk-headless-17.0.13.0.11-3.el8.x86_64
+
+COPY --chown=root:root dummy.txt /dummy.txt
+
+USER jboss
+
+ENTRYPOINT [ "/bin/sh", "-c"]
+CMD [ "trap : TERM INT; sleep 9999999999d & wait" ]

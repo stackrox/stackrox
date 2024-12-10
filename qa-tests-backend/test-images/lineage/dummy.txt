@@ -1,0 +1,1 @@
+Dummy file added to multiple images to create a common image layer
