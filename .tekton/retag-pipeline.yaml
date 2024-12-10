@@ -117,7 +117,16 @@ spec:
     - name: SOURCE_ARTIFACT
       value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
     taskRef:
-      name: determine-image-tag
+      resolver: git
+      params:
+      - name: url
+        value: git+https://github.com/stackrox/stackrox.git
+      - name: revision
+        value: master
+      - name: pathInRepo
+        value: .tekton/determine-image-tag-task.yaml
+      - name: scmType
+        value: github
 
   - name: determine-input-image-tag
     params:
@@ -128,7 +137,16 @@ spec:
     - name: SOURCE_ARTIFACT
       value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
     taskRef:
-      name: determine-image-tag
+      resolver: git
+      params:
+      - name: url
+        value: git+https://github.com/stackrox/stackrox.git
+      - name: revision
+        value: master
+      - name: pathInRepo
+        value: .tekton/determine-image-tag-task.yaml
+      - name: scmType
+        value: github
 
   - name: retag-image
     params:

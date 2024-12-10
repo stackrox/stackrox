@@ -193,7 +193,16 @@ spec:
     - name: MAKEFILE_DIRECTORY
       value: $(params.image-tag-makefile-directory)
     taskRef:
-      name: determine-image-tag
+      resolver: git
+      params:
+      - name: url
+        value: git+https://github.com/stackrox/stackrox.git
+      - name: revision
+        value: master
+      - name: pathInRepo
+        value: .tekton/determine-image-tag-task.yaml
+      - name: scmType
+        value: github
 
   - name: prefetch-dependencies
     params:
