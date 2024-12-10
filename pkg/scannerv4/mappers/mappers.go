@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -119,7 +120,7 @@ func ToProtoV4VulnerabilityReport(ctx context.Context, r *claircore.Vulnerabilit
 	}
 	return &v4.VulnerabilityReport{
 		Vulnerabilities:        vulnerabilities,
-		PackageVulnerabilities: toProtoV4PackageVulnerabilitiesMap(r.PackageVulnerabilities, r.Vulnerabilities),
+		PackageVulnerabilities: toProtoV4PackageVulnerabilitiesMap(r.PackageVulnerabilities, r.Vulnerabilities, vulnerabilities),
 		Contents:               contents,
 	}, nil
 }
@@ -292,7 +293,7 @@ func toProtoV4Environment(e *claircore.Environment) *v4.Environment {
 	}
 }
 
-func toProtoV4PackageVulnerabilitiesMap(ccPkgVulnerabilities map[string][]string, ccVulnerabilities map[string]*claircore.Vulnerability) map[string]*v4.StringList {
+func toProtoV4PackageVulnerabilitiesMap(ccPkgVulnerabilities map[string][]string, ccVulnerabilities map[string]*claircore.Vulnerability, vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerability) map[string]*v4.StringList {
 	if ccPkgVulnerabilities == nil {
 		return nil
 	}
@@ -307,8 +308,74 @@ func toProtoV4PackageVulnerabilitiesMap(ccPkgVulnerabilities map[string][]string
 		pkgVulns[id] = &v4.StringList{
 			Values: filterRepeatedVulns(vulnIDs, ccVulnerabilities),
 		}
+		pkgVulns[id].Values = sortBySeverity(pkgVulns[id].GetValues(), vulnerabilities)
 	}
 	return pkgVulns
+}
+
+// getMaxBaseScore returns the highest CVSS base score found in the CVSS metrics for V3 and V2,
+// prioritizing scores from the Red Hat source. If no Red Hat score is found, it returns the highest available score.
+func getMaxBaseScore(cvssMetrics []*v4.VulnerabilityReport_Vulnerability_CVSS) float32 {
+	var maxScore float32
+
+	for _, metric := range cvssMetrics {
+		if metric == nil {
+			continue
+		}
+
+		// Check for Red Hat source and return the highest Red Hat score immediately if found.
+		if metric.GetSource() == v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT {
+			if v3 := metric.GetV3(); v3 != nil {
+				return v3.GetBaseScore()
+			} else if v2 := metric.GetV2(); v2 != nil {
+				return v2.GetBaseScore()
+			}
+		}
+
+		// Track the highest score among all available metrics.
+		if v3 := metric.GetV3(); v3 != nil && v3.GetBaseScore() > maxScore {
+			maxScore = v3.GetBaseScore()
+		}
+		if v2 := metric.GetV2(); v2 != nil && v2.GetBaseScore() > maxScore {
+			maxScore = v2.GetBaseScore()
+		}
+	}
+
+	return maxScore
+}
+
+// sortBySeverity sorts the vulnerability IDs based on normalized severity and,
+// if equal, by the highest CVSS base score, decreasing.
+func sortBySeverity(ids []string, vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerability) []string {
+	// Define a custom sort function
+	sort.SliceStable(ids, func(i, j int) bool {
+		vulnI := vulnerabilities[ids[i]]
+		vulnJ := vulnerabilities[ids[j]]
+
+		// Handle nil vulnerabilities explicitly: nil is considered lower
+		if vulnI == nil && vulnJ == nil {
+			return false // keep the original order
+		}
+		if vulnI == nil {
+			return false // vulnJ non-nil, higher
+		}
+		if vulnJ == nil {
+			return true // vulnI non-nil, higher
+		}
+
+		// Compare by normalized severity (higher severity first).
+		if vulnI.GetNormalizedSeverity() != vulnJ.GetNormalizedSeverity() {
+			return vulnI.GetNormalizedSeverity() > vulnJ.GetNormalizedSeverity()
+		}
+
+		// If severities are equal, compare by the highest CVSS base score.
+		maxScoreI := getMaxBaseScore(vulnI.GetCvssMetrics())
+		maxScoreJ := getMaxBaseScore(vulnJ.GetCvssMetrics())
+
+		return maxScoreI > maxScoreJ
+	})
+
+	return ids
 }
 
 func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircore.Vulnerability, nvdVulns map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem) (map[string]*v4.VulnerabilityReport_Vulnerability, error) {
