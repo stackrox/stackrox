@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 
-# Runs Scanner V4 tests using the Bats testing framework.
+# Runs Scanner V4 installation tests using the Bats testing framework.
 
 init() {
     ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")"/../.. && pwd)"
@@ -234,7 +234,7 @@ central:
 EOF
     ROX_CENTRAL_EXTRA_HELM_VALUES_FILE="${_ROX_CENTRAL_EXTRA_HELM_VALUES_FILE}" CENTRAL_CHART_DIR_OVERRIDE="${_CENTRAL_CHART_DIR_OVERRIDE}" _deploy_stackrox
 
-    # Upgrade to HEAD chart without explicit disabling of Scanner v4.
+    # Upgrade to HEAD chart without explicit disabling of Scanner V4.
     info "Upgrading StackRox using HEAD Helm chart"
     MAIN_IMAGE_TAG="${main_image_tag}"
 
@@ -243,7 +243,7 @@ EOF
 
     _deploy_stackrox
 
-    # Verify that Scanner v2 and v4 are up.
+    # Verify that Scanner V2 and V4 are up.
     verify_scannerV2_deployed "stackrox"
     verify_scannerV4_deployed "stackrox"
     verify_deployment_scannerV4_env_var_set "stackrox" "central"
@@ -251,7 +251,7 @@ EOF
 }
 
 @test "Fresh installation of HEAD Helm chart with Scanner V4 disabled and enabling it later" {
-    info "Installing StackRox using HEAD Helm chart with Scanner v4 disabled and enabling it later"
+    info "Installing StackRox using HEAD Helm chart with Scanner V4 disabled and enabling it later"
     # shellcheck disable=SC2030,SC2031
     export OUTPUT_FORMAT=helm
     ROX_SCANNER_V4=false _deploy_stackrox
@@ -281,8 +281,8 @@ EOF
 
 }
 
-@test "Fresh installation of HEAD Helm chart with Scanner v4 enabled" {
-    info "Installing StackRox using HEAD Helm chart with Scanner v4 enabled"
+@test "Fresh installation of HEAD Helm chart with Scanner V4 enabled" {
+    info "Installing StackRox using HEAD Helm chart with Scanner V4 enabled"
     # shellcheck disable=SC2030,SC2031
     export OUTPUT_FORMAT=helm
     # shellcheck disable=SC2030,SC2031
@@ -296,11 +296,11 @@ EOF
     verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
 }
 
-@test "Fresh installation of HEAD Helm charts with Scanner v4 enabled in multi-namespace mode" {
+@test "Fresh installation of HEAD Helm charts with Scanner V4 enabled in multi-namespace mode" {
     local central_namespace="$CUSTOM_CENTRAL_NAMESPACE"
     local sensor_namespace="$CUSTOM_SENSOR_NAMESPACE"
 
-    info "Installing StackRox using HEAD Helm chart with Scanner v4 enabled in multi-namespace mode"
+    info "Installing StackRox using HEAD Helm chart with Scanner V4 enabled in multi-namespace mode"
 
     # shellcheck disable=SC2030,SC2031
     export OUTPUT_FORMAT=helm
@@ -579,7 +579,7 @@ EOT
     verify_deployment_scannerV4_env_var_set "stackrox" "central"
 }
 
-@test "Upgrade from old version without Scanner V4 support to the version which supports Scanner v4" {
+@test "Upgrade from old version without Scanner V4 support to the version which supports Scanner V4" {
     if [[ "$CI" = "true" ]]; then
         setup_default_TLS_certs
     fi
