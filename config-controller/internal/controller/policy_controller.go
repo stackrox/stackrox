@@ -71,7 +71,10 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, errors.Wrap(err, "Failed to refresh")
 	}
 
-	desiredState := policyCR.Spec.ToProtobuf(r.CentralClient.GetNotifiers())
+	desiredState, err := policyCR.Spec.ToProtobuf(r.CentralClient.GetNotifiers())
+	if err != nil {
+		return ctrl.Result{}, errors.Wrap(err, "Failed to convert policy to protobuf")
+	}
 
 	existingPolicy, exists, err := r.CentralClient.GetPolicy(ctx, desiredState.GetName())
 	if err != nil {

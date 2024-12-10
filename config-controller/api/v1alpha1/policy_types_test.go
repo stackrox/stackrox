@@ -6,10 +6,17 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stretchr/testify/assert"
 )
 
 const (
 	expirationTS = "2006-01-02T15:04:05Z"
+)
+
+var (
+	emailNotifierID = uuid.NewV4().String()
+	jiraNotifierID  = uuid.NewV4().String()
 )
 
 func TestToProtobuf(t *testing.T) {
@@ -66,7 +73,7 @@ func TestToProtobuf(t *testing.T) {
 		PolicyVersion:   "1.1",
 		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_BUILD, storage.LifecycleStage_DEPLOY},
 		Notifiers: []string{
-			"notifier-1",
+			emailNotifierID,
 		},
 		Exclusions: []*storage.Exclusion{
 			{
@@ -105,10 +112,11 @@ func TestToProtobuf(t *testing.T) {
 	}
 
 	notifiers := map[string]string{
-		"email-notifier": "notifier-1",
-		"jira-notifier":  "notifier-2",
+		"email-notifier": emailNotifierID,
+		"jira-notifier":  jiraNotifierID,
 	}
-	protoPolicy := policyCRSpec.ToProtobuf(notifiers)
+	protoPolicy, err := policyCRSpec.ToProtobuf(notifiers)
+	assert.NoError(t, err, "unexpected error in converting to policy proto")
 	// Hack: Reset the source field for us to be able to compare
 	protoPolicy.Source = storage.PolicySource_IMPERATIVE
 	protoassert.Equal(t, expectedProto, protoPolicy, "proto message derived from custom resource not as expected")

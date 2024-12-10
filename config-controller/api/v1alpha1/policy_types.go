@@ -17,6 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
@@ -187,7 +189,7 @@ func init() {
 }
 
 // ToProtobuf converts the SecurityPolicy spec into policy proto
-func (p SecurityPolicySpec) ToProtobuf(notifiers map[string]string) *storage.Policy {
+func (p SecurityPolicySpec) ToProtobuf(notifiers map[string]string) (*storage.Policy, error) {
 	proto := storage.Policy{
 		Name:               p.PolicyName,
 		Description:        p.Description,
@@ -215,7 +217,7 @@ func (p SecurityPolicySpec) ToProtobuf(notifiers map[string]string) *storage.Pol
 			proto.Notifiers = append(proto.Notifiers, id)
 			continue
 		}
-		log.Warnf("Notifier '%s' does not exist, skipping ..", notifier)
+		return nil, errors.New(fmt.Sprintf("Notifier '%s' does not exist", notifier))
 	}
 
 	for _, ls := range p.LifecycleStages {
@@ -233,7 +235,7 @@ func (p SecurityPolicySpec) ToProtobuf(notifiers map[string]string) *storage.Pol
 		if exclusion.Expiration != "" {
 			protoTS, err := protocompat.ParseRFC3339NanoTimestamp(exclusion.Expiration)
 			if err != nil {
-				return nil
+				return nil, errors.Wrapf(err, fmt.Sprintf("Error parsing timestamp '%s'", exclusion.Expiration))
 			}
 			protoExclusion.Expiration = protoTS
 		}
@@ -332,5 +334,5 @@ func (p SecurityPolicySpec) ToProtobuf(notifiers map[string]string) *storage.Pol
 		proto.MitreAttackVectors = append(proto.MitreAttackVectors, protoMitreAttackVetor)
 	}
 
-	return &proto
+	return &proto, nil
 }
