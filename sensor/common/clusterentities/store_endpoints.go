@@ -54,7 +54,12 @@ func (e *endpointsStore) resetMaps() {
 		e.initMapsNoLock()
 		return
 	}
-	e.moveAllToHistory()
+	// Add all endpoints to history before wiping the current state.
+	for ep, m1 := range e.endpointMap {
+		for deplID := range m1 {
+			e.addToHistory(deplID, ep)
+		}
+	}
 
 	e.endpointMap = make(map[net.NumericEndpoint]map[string]set.Set[EndpointTargetInfo])
 	e.reverseEndpointMap = make(map[string]set.Set[net.NumericEndpoint])
@@ -245,16 +250,6 @@ func (e *endpointsStore) deleteFromCurrent(deploymentID string, ep net.NumericEn
 		dSet.Remove(ep)
 		if dSet.Cardinality() == 0 {
 			delete(e.reverseEndpointMap, deploymentID)
-		}
-	}
-}
-
-// moveAllToHistory does a history-preserving version of removeAll
-func (e *endpointsStore) moveAllToHistory() {
-	for ep, m1 := range e.endpointMap {
-		for deplID := range m1 {
-			e.addToHistory(deplID, ep)
-			e.deleteFromCurrent(deplID, ep)
 		}
 	}
 }
