@@ -199,22 +199,22 @@ func (w *WorkloadManager) clearActions() {
 
 		log.Infof("Found %d items in tracker", objectctr)
 
-		log.Infof("Numbers of Reactions: %d - WatchReactions: %d - ProxyReactions: %d", len(w.fakeClient.ReactionChain), len(w.fakeClient.WatchReactionChain), len(w.fakeClient.ProxyReactionChain))
-		log.Infof("Number of resources: %d", len(w.fakeClient.Resources))
 		/*
-			//tracker := w.fakeClient.Tracker()
-			tracker := reflect.ValueOf(w.fakeClient).Elem().FieldByName("tracker")
-			reflectTracker := reflect.ValueOf(tracker).Elem()
+			log.Infof("Numbers of Reactions: %d - WatchReactions: %d - ProxyReactions: %d", len(w.fakeClient.ReactionChain), len(w.fakeClient.WatchReactionChain), len(w.fakeClient.ProxyReactionChain))
+			log.Infof("Number of resources: %d", len(w.fakeClient.Resources))
+				//tracker := w.fakeClient.Tracker()
+				tracker := reflect.ValueOf(w.fakeClient).Elem().FieldByName("tracker")
+				reflectTracker := reflect.ValueOf(tracker).Elem()
 
-			setValue := func(fieldName string, value interface{}) {
-				field := reflectTracker.FieldByName(fieldName)
-				//#nosec G103
-				field = reflect.NewAt(field.Type(), unsafe.Pointer(field.UnsafeAddr())).Elem()
-				field.Set(reflect.ValueOf(value).Elem())
-			}
+				setValue := func(fieldName string, value interface{}) {
+					field := reflectTracker.FieldByName(fieldName)
+					//#nosec G103
+					field = reflect.NewAt(field.Type(), unsafe.Pointer(field.UnsafeAddr())).Elem()
+					field.Set(reflect.ValueOf(value).Elem())
+				}
 
-			setValue("objects", nil)
-			setValue("watchers", nil)
+				setValue("objects", nil)
+				setValue("watchers", nil)
 		*/
 	}
 }
@@ -272,6 +272,7 @@ func (w *WorkloadManager) initializePreexistingResources() {
 	}
 
 	w.fakeClient = fake.NewSimpleClientset(objects...)
+	w.fakeClient.WatchReactionChain = nil
 	w.fakeClient.Discovery().(*fakediscovery.FakeDiscovery).FakedServerVersion = &version.Info{
 		Major:        "1",
 		Minor:        "14",
