@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/compliance/datastore"
@@ -161,7 +162,7 @@ func CSVHandler() http.HandlerFunc {
 		for _, d := range validResults {
 			controls := make(map[string]*v1.ComplianceControl)
 			standardName := d.GetRunMetadata().GetStandardId()
-			timestamp := protocompat.ConvertTimestampToCSVString(d.GetRunMetadata().GetFinishTimestamp())
+			timestamp := protocompat.ConvertTimestampToString(d.GetRunMetadata().GetFinishTimestamp(), time.RFC1123)
 			standard, ok, _ := standards.Standard(standardName)
 			if ok {
 				standardName = standard.GetMetadata().GetName()
