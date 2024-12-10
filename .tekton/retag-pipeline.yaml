@@ -120,7 +120,7 @@ spec:
       resolver: git
       params:
       - name: url
-        value: git+https://github.com/stackrox/stackrox.git
+        value: https://github.com/stackrox/stackrox.git
       - name: revision
         value: master
       - name: pathInRepo
