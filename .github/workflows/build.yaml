@@ -252,6 +252,8 @@ jobs:
             image/rhel/docs
 
   check-collector-images-exist:
+    # This job ensures that COLLECTOR_VERSION cannot be updated to a version for which
+    # the image was not successfully built on GHA and Konflux.
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -270,9 +272,11 @@ jobs:
       with:
         token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
         image: rhacs-eng/collector:${{ steps.collector-version.outputs.collector-version }}${{ matrix.tag_suffix }}
-        limit: 1800
+        limit: 300
 
   check-scanner-images-exist:
+    # This job ensures that SCANNER_VERSION cannot be updated to a version for which
+    # the image was not successfully built on GHA and Konflux.
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -292,7 +296,7 @@ jobs:
       with:
         token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
         image: rhacs-eng/${{ matrix.image }}:${{ steps.scanner-version.outputs.scanner-version }}${{ matrix.tag_suffix }}
-        limit: 1800
+        limit: 300
 
   build-and-push-main:
     runs-on: ubuntu-latest
