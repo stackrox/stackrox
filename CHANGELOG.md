@@ -7,6 +7,12 @@ Entries in this file should be limited to:
 - Obscure side-effects that are not obviously apparent based on the JIRA associated with the changes.
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
+## [4.6.1]
+
+### Technical changes
+
+- UI Fix: column values are sanitized when rendering PDFs
+
 ## [4.6.0]
 
 ### Added Features
