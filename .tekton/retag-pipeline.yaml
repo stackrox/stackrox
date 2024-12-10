@@ -117,16 +117,14 @@ spec:
     - name: SOURCE_ARTIFACT
       value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
     taskRef:
-      resolver: git
+      resolver: bundles
       params:
-      - name: url
-        value: https://github.com/msugakov/konflux-tasks-test.git
-      - name: revision
-        value: fac37e5a8a607ac83639dc9f75d39e797d2e3c6c
-      - name: pathInRepo
-        value: tasks/determine-image-tag-task.yaml
-      - name: scmType
-        value: github
+      - name: name
+        value: determine-image-tag
+      - name: bundle
+        value: quay.io/msugakov/test-bundles:latest@sha256:586d13373f236c7e7187cbcebe5cfc7e0378143ce48b7a9818c633a8d3b8204e
+      - name: kind
+        value: task
 
   - name: determine-input-image-tag
     params:
@@ -137,16 +135,14 @@ spec:
     - name: SOURCE_ARTIFACT
       value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
     taskRef:
-      resolver: git
+      resolver: bundles
       params:
-      - name: url
-        value: https://github.com/msugakov/konflux-tasks-test.git
-      - name: revision
-        value: fac37e5a8a607ac83639dc9f75d39e797d2e3c6c
-      - name: pathInRepo
-        value: tasks/determine-image-tag-task.yaml
-      - name: scmType
-        value: github
+      - name: name
+        value: determine-image-tag
+      - name: bundle
+        value: quay.io/msugakov/test-bundles:latest@sha256:586d13373f236c7e7187cbcebe5cfc7e0378143ce48b7a9818c633a8d3b8204e
+      - name: kind
+        value: task
 
   - name: retag-image
     params:
@@ -159,13 +155,11 @@ spec:
     - name: OUTPUT_IMAGE_TAG
       value: $(tasks.determine-output-image-tag.results.IMAGE_TAG)
     taskRef:
-      resolver: git
+      resolver: bundles
       params:
-      - name: url
-        value: https://github.com/msugakov/konflux-tasks-test.git
-      - name: revision
-        value: fac37e5a8a607ac83639dc9f75d39e797d2e3c6c
-      - name: pathInRepo
-        value: tasks/retag-image-task.yaml
-      - name: scmType
-        value: github
+      - name: name
+        value: retag-image
+      - name: bundle
+        value: quay.io/msugakov/test-bundles:latest@sha256:586d13373f236c7e7187cbcebe5cfc7e0378143ce48b7a9818c633a8d3b8204e
+      - name: kind
+        value: task

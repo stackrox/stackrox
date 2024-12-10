@@ -297,16 +297,14 @@ spec:
     - name: MAKEFILE_DIRECTORY
       value: ./operator
     taskRef:
-      resolver: git
+      resolver: bundles
       params:
-      - name: url
-        value: https://github.com/msugakov/konflux-tasks-test.git
-      - name: revision
-        value: fac37e5a8a607ac83639dc9f75d39e797d2e3c6c
-      - name: pathInRepo
-        value: tasks/determine-image-tag-task.yaml
-      - name: scmType
-        value: github
+      - name: name
+        value: determine-image-tag
+      - name: bundle
+        value: quay.io/msugakov/test-bundles:latest@sha256:586d13373f236c7e7187cbcebe5cfc7e0378143ce48b7a9818c633a8d3b8204e
+      - name: kind
+        value: task
 
   - name: determine-main-image-tag
     params:
@@ -317,16 +315,14 @@ spec:
     - name: MAKEFILE_DIRECTORY
       value: "."
     taskRef:
-      resolver: git
+      resolver: bundles
       params:
-      - name: url
-        value: https://github.com/msugakov/konflux-tasks-test.git
-      - name: revision
-        value: fac37e5a8a607ac83639dc9f75d39e797d2e3c6c
-      - name: pathInRepo
-        value: tasks/determine-image-tag-task.yaml
-      - name: scmType
-        value: github
+      - name: name
+        value: determine-image-tag
+      - name: bundle
+        value: quay.io/msugakov/test-bundles:latest@sha256:586d13373f236c7e7187cbcebe5cfc7e0378143ce48b7a9818c633a8d3b8204e
+      - name: kind
+        value: task
 
   - name: prefetch-dependencies
     params:
@@ -356,16 +352,14 @@ spec:
     - name: IMAGE
       value: "$(params.operator-image-build-repo):$(tasks.determine-operator-image-tag.results.IMAGE_TAG)"
     taskRef: &wait-for-image-task
-      resolver: git
+      resolver: bundles
       params:
-      - name: url
-        value: https://github.com/msugakov/konflux-tasks-test.git
-      - name: revision
-        value: fac37e5a8a607ac83639dc9f75d39e797d2e3c6c
-      - name: pathInRepo
-        value: tasks/wait-for-image-task.yaml
-      - name: scmType
-        value: github
+      - name: name
+        value: wait-for-image
+      - name: bundle
+        value: quay.io/msugakov/test-bundles:latest@sha256:586d13373f236c7e7187cbcebe5cfc7e0378143ce48b7a9818c633a8d3b8204e
+      - name: kind
+        value: task
     # This timeout must be the same as the pipeline timeout in `operator-build.yaml`.
     timeout: 1h10m
 
