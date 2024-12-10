@@ -127,15 +127,21 @@ func Test_ScannerDefinitionsProxy(t *testing.T) {
 		require.NoError(t, err)
 
 		// Sensor may not be yet in the ready state and may reject the API call
-		err = retry.WithRetry(func() error {
-			t.Logf("Attempting GET call to https://localhost:8443/scanner/definitions")
-			resp, err := client.Do(req)
-			if err != nil {
-				return err
-			}
-			require.Equal(t, http.StatusOK, resp.StatusCode, "response: %v", resp)
-			return nil
-		}, retry.WithExponentialBackoff(), retry.Tries(5))
+		err = retry.WithRetry(
+			func() error {
+				t.Logf("Attempting GET call to https://localhost:8443/scanner/definitions")
+				resp, err := client.Do(req)
+				if err != nil {
+					return err
+				}
+				require.Equal(t, http.StatusOK, resp.StatusCode, "response: %v", resp)
+				return nil
+			},
+			retry.Tries(5),
+			retry.BetweenAttempts(func(previousAttempt int) {
+				<-time.After(time.Millisecond * 500 * time.Duration(previousAttempt*previousAttempt))
+			}),
+		)
 		require.NoError(t, err)
 	}))
 }
