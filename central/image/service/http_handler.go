@@ -51,7 +51,7 @@ func (h sbomHttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	// verify scanner v4 is enabled
 	if !features.ScannerV4.Enabled() {
-		httputil.WriteGRPCStyleError(w, codes.Unimplemented, errors.New("Scanner V4 is disabled.Enable Scanner V4 to generate SBOMs"))
+		httputil.WriteGRPCStyleError(w, codes.Unimplemented, errors.New("Scanner V4 is disabled. Enable Scanner V4 to generate SBOMs"))
 		return
 	}
 	if !features.SBOMGeneration.Enabled() {
@@ -61,14 +61,14 @@ func (h sbomHttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var params sbomRequestBody
 	sbomGenMaxReqSizeBytes := env.SBOMGenerationMaxReqSizeBytes.IntegerSetting()
 	// timeout api after 10 minutes
-	ctx, cancel := context.WithTimeout(r.Context(), env.ScanTimeout.DurationSetting())
-	defer cancel()
 	lr := io.LimitReader(r.Body, int64(sbomGenMaxReqSizeBytes))
 	err := json.NewDecoder(lr).Decode(&params)
 	if err != nil {
 		httputil.WriteGRPCStyleError(w, codes.InvalidArgument, errors.Wrap(err, "decoding json request body"))
 		return
 	}
+	ctx, cancel := context.WithTimeout(r.Context(), env.ScanTimeout.DurationSetting())
+	defer cancel()
 	bytes, err := h.getSbom(ctx, params)
 	if err != nil {
 		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrap(err, "generating SBOM"))
@@ -82,7 +82,7 @@ func (h sbomHttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(bytes)
 }
 
-func (h sbomHttpHandler) enrichImage(params sbomRequestBody, ctx context.Context) (*storage.Image, error) {
+func (h sbomHttpHandler) enrichImage(ctx context.Context, params sbomRequestBody) (*storage.Image, error) {
 	enrichmentCtx := enricher.EnrichmentContext{
 		FetchOpt:  enricher.UseCachesIfPossible,
 		Delegable: true,
@@ -105,17 +105,18 @@ func (h sbomHttpHandler) enrichImage(params sbomRequestBody, ctx context.Context
 	if err != nil {
 		return nil, err
 	}
+	// TODO(ROX-24541): save the image to the database
 	return img, nil
 }
 
 func (h sbomHttpHandler) getSbom(ctx context.Context, params sbomRequestBody) ([]byte, error) {
 	// enrich image checks image metadata cache if fetchopt = UseCachesIfPossible otherwise fetches metdata from registry
 	// enrich image calls get scans on image which creates index report for image if it does not exsist
-	_, err := h.enrichImage(params, ctx)
+	_, err := h.enrichImage(ctx, params)
 	if err != nil {
 		return nil, err
 	}
-	// how to verify enrichimage failed because index report not found
+
 	// get sbom from matcher
 	// for testing only
 	sbom := map[string]interface{}{
