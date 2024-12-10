@@ -227,16 +227,16 @@ export function selectSingleCveForException(exceptionType) {
             ? selectors.deferCveModal
             : selectors.markCveFalsePositiveModal;
 
-    return cy.get(selectors.firstTableRow).then(($row) => {
-        const cveName = $row.find('td[data-label="CVE"]').text();
-        cy.wrap($row).find(selectors.tableRowMenuToggle).click();
-        cy.get(selectors.menuOption(menuOption)).click();
-
-        cy.get('button:contains("CVE selections")').click();
-        // TODO - Update this code when modal form is completed
-        cy.get(`${modalSelector}:contains("${cveName}")`);
-        return Promise.resolve(cveName);
-    });
+    return cy
+        .get(`${selectors.firstTableRow} td[data-label="CVE"]`)
+        .then(($cell) => $cell.text())
+        .then((cveName) => {
+            cy.get(`${selectors.firstTableRow} ${selectors.tableRowMenuToggle}`).click();
+            cy.get(selectors.menuOption(menuOption)).click();
+            cy.get('button:contains("CVE selections")').click();
+            cy.get(`${modalSelector}:contains("${cveName}")`);
+            return Promise.resolve(cveName);
+        });
 }
 
 /**
