@@ -187,7 +187,16 @@ spec:
     - name: SOURCE_ARTIFACT
       value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
     taskRef:
-      name: determine-image-tag
+      resolver: git
+      params:
+      - name: url
+        value: https://github.com/msugakov/konflux-tasks-test.git
+      - name: revision
+        value: main
+      - name: pathInRepo
+        value: tasks/determine-image-tag-task.yaml
+      - name: scmType
+        value: github
 
   - name: fetch-external-networks
     params:

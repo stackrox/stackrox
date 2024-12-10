@@ -297,7 +297,16 @@ spec:
     - name: MAKEFILE_DIRECTORY
       value: ./operator
     taskRef:
-      name: determine-image-tag
+      resolver: git
+      params:
+      - name: url
+        value: https://github.com/msugakov/konflux-tasks-test.git
+      - name: revision
+        value: main
+      - name: pathInRepo
+        value: tasks/determine-image-tag-task.yaml
+      - name: scmType
+        value: github
 
   - name: determine-main-image-tag
     params:
@@ -308,7 +317,16 @@ spec:
     - name: MAKEFILE_DIRECTORY
       value: "."
     taskRef:
-      name: determine-image-tag
+      resolver: git
+      params:
+      - name: url
+        value: https://github.com/msugakov/konflux-tasks-test.git
+      - name: revision
+        value: main
+      - name: pathInRepo
+        value: tasks/determine-image-tag-task.yaml
+      - name: scmType
+        value: github
 
   - name: prefetch-dependencies
     params:

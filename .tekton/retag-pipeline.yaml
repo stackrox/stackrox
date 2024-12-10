@@ -120,11 +120,11 @@ spec:
       resolver: git
       params:
       - name: url
-        value: https://github.com/stackrox/stackrox.git
+        value: https://github.com/msugakov/konflux-tasks-test.git
       - name: revision
-        value: master
+        value: main
       - name: pathInRepo
-        value: .tekton/determine-image-tag-task.yaml
+        value: tasks/determine-image-tag-task.yaml
       - name: scmType
         value: github
 
@@ -140,11 +140,11 @@ spec:
       resolver: git
       params:
       - name: url
-        value: git+https://github.com/stackrox/stackrox.git
+        value: https://github.com/msugakov/konflux-tasks-test.git
       - name: revision
-        value: master
+        value: main
       - name: pathInRepo
-        value: .tekton/determine-image-tag-task.yaml
+        value: tasks/determine-image-tag-task.yaml
       - name: scmType
         value: github
 
