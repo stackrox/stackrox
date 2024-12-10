@@ -169,9 +169,9 @@ func (e *endpointsStore) lookupEndpoint(endpoint net.NumericEndpoint, netLookup 
 	e.mutex.RLock()
 	defer e.mutex.RUnlock()
 	// Phase 1: Search in the current map
-	current = searchInSet(endpoint, e.endpointMap)
+	current = doLookupEndpoint(endpoint, e.endpointMap)
 	// Phase 2: Search in the historical map
-	historical = searchInMap(endpoint, e.historicalEndpoints)
+	historical = doLookupEndpoint(endpoint, e.historicalEndpoints)
 	if len(current)+len(historical) > 0 {
 		return current, historical, ipLookup, ipLookupHistorical
 	}
@@ -180,31 +180,15 @@ func (e *endpointsStore) lookupEndpoint(endpoint net.NumericEndpoint, netLookup 
 	return current, historical, ipLookup, ipLookupHistorical
 }
 
-// TODO: fix the code duplication in searchInSet and searchInMap
-// searchInSet is identical as searchInMap
-func searchInSet(ep net.NumericEndpoint, src map[net.NumericEndpoint]map[string]set.Set[EndpointTargetInfo]) (results []LookupResult) {
+type Map[T any] interface {
+	~map[EndpointTargetInfo]T
+}
+
+func doLookupEndpoint[M Map[T], T any](ep net.NumericEndpoint, src map[net.NumericEndpoint]map[string]M) (results []LookupResult) {
 	for deploymentID, targetInfoSet := range src[ep] {
 		result := LookupResult{
 			Entity:         networkgraph.EntityForDeployment(deploymentID),
 			ContainerPorts: make([]uint16, 0),
-		}
-		for tgtInfo := range targetInfoSet {
-			result.ContainerPorts = append(result.ContainerPorts, tgtInfo.ContainerPort)
-			if tgtInfo.PortName != "" {
-				result.PortNames = append(result.PortNames, tgtInfo.PortName)
-			}
-		}
-		results = append(results, result)
-	}
-	return results
-}
-
-// searchInMap is identical as searchInSet
-func searchInMap[T any](ep net.NumericEndpoint, src map[net.NumericEndpoint]map[string]map[EndpointTargetInfo]T) (results []LookupResult) {
-	for deploymentID, targetInfoSet := range src[ep] {
-		result := LookupResult{
-			Entity:         networkgraph.EntityForDeployment(deploymentID),
-			ContainerPorts: make([]uint16, 0, len(targetInfoSet)),
 		}
 		for tgtInfo := range targetInfoSet {
 			result.ContainerPorts = append(result.ContainerPorts, tgtInfo.ContainerPort)
