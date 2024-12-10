@@ -81,7 +81,7 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 		log.Errorf("index report from node %s has unsupported action: %q", event.GetNode().GetName(), event.GetAction())
 		return nil
 	}
-	log.Debugf("received node index report for node %s with %d packages from %d content sets",
+	log.Debugf("Received node index report for node %s with %d packages from %d content sets",
 		event.GetId(), len(report.GetContents().Packages), len(report.GetContents().Repositories))
 	report = report.CloneVT()
 
