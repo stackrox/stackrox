@@ -31,6 +31,8 @@ const (
 	AckReasonNodeUnknown AckReason = "Node unknown to Sensor"
 	// AckReasonCentralUnreachable is used by Sensor when node inventory cannot be sent to Central
 	AckReasonCentralUnreachable AckReason = "Central unreachable"
+	// AckReasonForwardingFromCentral is used for ACKs that arrived from Central and are forwarded to Compliance.
+	AckReasonForwardingFromCentral AckReason = "Forwarding from Central"
 )
 
 var (
@@ -79,13 +81,14 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "node_inventory_ack_received_total",
-		Help:      "Total number of Acks or Nacks for Node Inventories received by this sensor",
+		Help:      "Total number of Acks or Nacks for Node Inventories/Indexes received by this sensor",
 	},
 		[]string{
 			// Name of the node sending an inventory
 			"node_name",
 			"origin",
 			"ack_type",
+			"message_type",
 			"reason",
 		})
 
@@ -149,12 +152,13 @@ func ObserveReceivedNodeInventory(inventory *storage.NodeInventory) {
 }
 
 // ObserveNodeInventoryAck records (in Sensor) the instance of Central sending (N)Ack to Sensor
-func ObserveNodeInventoryAck(nodeName, ackType string, reason AckReason, origin AckOrigin) {
+func ObserveNodeInventoryAck(nodeName, ackType, messageType string, reason AckReason, origin AckOrigin) {
 	receivedNodeInventoryAck.With(prometheus.Labels{
-		"node_name": nodeName,
-		"origin":    string(origin),
-		"ack_type":  ackType,
-		"reason":    string(reason),
+		"node_name":    nodeName,
+		"origin":       string(origin),
+		"ack_type":     ackType,
+		"message_type": messageType,
+		"reason":       string(reason),
 	}).Inc()
 }
 
