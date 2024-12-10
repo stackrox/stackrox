@@ -49,6 +49,9 @@ spec:
       initContainers:
       - name: init-db
         image: {{ ._rox.scannerV4.db.image.fullRef | quote }}
+        {{- if not ._rox.env.centralServices }}
+        imagePullPolicy: {{ ._rox.scannerV4.db.imagePullPolicy }}
+        {{- end }}
         env:
         - name: PGDATA
           value: "/var/lib/postgresql/data/pgdata"
@@ -76,6 +79,9 @@ spec:
       containers:
       - name: db
         image: {{ ._rox.scannerV4.db.image.fullRef | quote }}
+        {{- if not ._rox.env.centralServices }}
+        imagePullPolicy: {{ ._rox.scannerV4.db.imagePullPolicy }}
+        {{- end }}
         env:
         - name: PGDATA
           value: "/var/lib/postgresql/data/pgdata"
