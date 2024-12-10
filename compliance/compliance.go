@@ -95,7 +95,7 @@ func (c *Compliance) Start() {
 	}()
 
 	wg := &sync.WaitGroup{}
-	defer wg.Add(2)
+	wg.Add(2)
 
 	go func() {
 		defer wg.Done()
