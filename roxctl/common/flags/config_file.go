@@ -1,13 +1,13 @@
 package flags
 
 import (
+	"os"
+
 	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
-	"os"
-
 	"github.com/stackrox/rox/pkg/pointers"
 )
 
