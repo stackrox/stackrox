@@ -99,25 +99,25 @@ func (c *nodeInventoryHandlerImpl) ProcessMessage(msg *central.MsgToSensor) erro
 		metrics.AckReasonUnknown, metrics.AckOriginCentral)
 	switch ackMsg.GetAction() {
 	case central.NodeInventoryACK_ACK:
-		switch ackMsg.GetRecipient() {
+		switch ackMsg.GetMessageType() {
 		case central.NodeInventoryACK_NodeIndexer:
 			c.sendAckToCompliance(c.acksFromCentral, ackMsg.GetNodeName(),
 				sensor.MsgToCompliance_NodeInventoryACK_ACK,
 				sensor.MsgToCompliance_NodeInventoryACK_NodeIndexer)
 		default:
-			// If Central version is behind Sensor, then Recipient field will be unset - then default to NodeInventory.
+			// If Central version is behind Sensor, then MessageType field will be unset - then default to NodeInventory.
 			c.sendAckToCompliance(c.acksFromCentral, ackMsg.GetNodeName(),
 				sensor.MsgToCompliance_NodeInventoryACK_ACK,
 				sensor.MsgToCompliance_NodeInventoryACK_NodeInventory)
 		}
 	case central.NodeInventoryACK_NACK:
-		switch ackMsg.GetRecipient() {
+		switch ackMsg.GetMessageType() {
 		case central.NodeInventoryACK_NodeIndexer:
 			c.sendAckToCompliance(c.acksFromCentral, ackMsg.GetNodeName(),
 				sensor.MsgToCompliance_NodeInventoryACK_NACK,
 				sensor.MsgToCompliance_NodeInventoryACK_NodeIndexer)
 		default:
-			// If Central version is behind Sensor, then Recipient field will be unset - then default to NodeInventory.
+			// If Central version is behind Sensor, then MessageType field will be unset - then default to NodeInventory.
 			c.sendAckToCompliance(c.acksFromCentral, ackMsg.GetNodeName(),
 				sensor.MsgToCompliance_NodeInventoryACK_NACK,
 				sensor.MsgToCompliance_NodeInventoryACK_NodeInventory)
@@ -216,13 +216,13 @@ func (c *nodeInventoryHandlerImpl) nodeInventoryHandlingLoop(toCentral chan *mes
 func (c *nodeInventoryHandlerImpl) sendAckToCompliance(complianceC chan<- common.MessageToComplianceWithAddress,
 	nodeName string,
 	action sensor.MsgToCompliance_NodeInventoryACK_Action,
-	recipient sensor.MsgToCompliance_NodeInventoryACK_Recipient) {
+	recipient sensor.MsgToCompliance_NodeInventoryACK_MessageType) {
 	complianceC <- common.MessageToComplianceWithAddress{
 		Msg: &sensor.MsgToCompliance{
 			Msg: &sensor.MsgToCompliance_Ack{
 				Ack: &sensor.MsgToCompliance_NodeInventoryACK{
-					Action:    action,
-					Recipient: recipient,
+					Action:      action,
+					MessageType: recipient,
 				},
 			},
 		},

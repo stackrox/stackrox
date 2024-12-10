@@ -17,7 +17,7 @@ var (
 // UnconfirmedMessageHandlerImpl informs the caller whether a resending should happen based on receiving ACK messages.
 // Assumption: Time to receive an ACK is generally much shorter than the interval between sending consecutive messages.
 type UnconfirmedMessageHandlerImpl struct {
-	name string
+	messageName string
 	// baseInterval defines the delay after which we resend a message
 	baseInterval time.Duration
 	// resendInterval is a multiply of the baseInterval and defines how much time should pass before the next retry
@@ -36,9 +36,9 @@ type UnconfirmedMessageHandlerImpl struct {
 
 // NewUnconfirmedMessageHandler returns a new running UnconfirmedMessageHandlerImpl.
 // It can be stopped by canceling the context.
-func NewUnconfirmedMessageHandler(ctx context.Context, name string, resendInterval time.Duration) *UnconfirmedMessageHandlerImpl {
+func NewUnconfirmedMessageHandler(ctx context.Context, messageName string, resendInterval time.Duration) *UnconfirmedMessageHandlerImpl {
 	nsr := &UnconfirmedMessageHandlerImpl{
-		name:           name,
+		messageName:    messageName,
 		baseInterval:   resendInterval,
 		resendInterval: resendInterval,
 		ticker:         time.NewTicker(resendInterval),
@@ -63,7 +63,7 @@ func (s *UnconfirmedMessageHandlerImpl) run() {
 			select {
 			case <-s.ticker.C:
 				s.retryLater()
-				log.Infof("Suggesting to resend %s, retry %d (next retry in %s)", s.name, s.retry.Load(), s.resendInterval)
+				log.Infof("Suggesting to resend %s, retry %d (next retry in %s)", s.messageName, s.retry.Load(), s.resendInterval)
 				s.ch <- struct{}{}
 			case <-s.ctx.Done():
 				return
@@ -87,7 +87,7 @@ func (s *UnconfirmedMessageHandlerImpl) retryLater() {
 // ObserveSending should be called when a new message is sent, and it is expected to be [N]ACKed
 func (s *UnconfirmedMessageHandlerImpl) ObserveSending() {
 	s.numUnackedSendings.Add(1)
-	log.Debugf("Observing message %s being sent. Waiting for an ACK for %s", s.name, s.baseInterval.String())
+	log.Debugf("Observing message %s being sent. Waiting for an ACK for %s", s.messageName, s.baseInterval.String())
 	if s.numUnackedSendings.Load() > 1 {
 		// Not resetting the ticker to the the baseInterval, because previous message was not acked at all
 		return
@@ -98,7 +98,7 @@ func (s *UnconfirmedMessageHandlerImpl) ObserveSending() {
 }
 
 func (s *UnconfirmedMessageHandlerImpl) observeConfirmation() {
-	log.Debugf("Message %s has been acknowledged", s.name)
+	log.Debugf("Message %s has been acknowledged", s.messageName)
 	s.ticker.Stop()
 	s.retry.Store(0)
 	s.numUnackedSendings.Store(0)
@@ -106,11 +106,11 @@ func (s *UnconfirmedMessageHandlerImpl) observeConfirmation() {
 
 // HandleACK is called when ACK is received
 func (s *UnconfirmedMessageHandlerImpl) HandleACK() {
-	log.Debugf("Received ACK in %s", s.name)
+	log.Debugf("Received ACK in %s", s.messageName)
 	s.observeConfirmation()
 }
 
 // HandleNACK is called when NACK is received
 func (s *UnconfirmedMessageHandlerImpl) HandleNACK() {
-	log.Debugf("Received NACK in %s. Message will be resent", s.name)
+	log.Debugf("Received NACK in %s. Message will be resent", s.messageName)
 }

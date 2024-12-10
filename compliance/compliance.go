@@ -318,14 +318,14 @@ func (c *Compliance) runRecv(ctx context.Context, client sensor.ComplianceServic
 		case *sensor.MsgToCompliance_Ack:
 			switch t.Ack.GetAction() {
 			case sensor.MsgToCompliance_NodeInventoryACK_ACK:
-				switch t.Ack.GetRecipient() {
+				switch t.Ack.GetMessageType() {
 				case sensor.MsgToCompliance_NodeInventoryACK_NodeInventory:
 					c.umhNodeInventory.HandleACK()
 				case sensor.MsgToCompliance_NodeInventoryACK_NodeIndexer:
 					c.umhNodeIndex.HandleACK()
 				}
 			case sensor.MsgToCompliance_NodeInventoryACK_NACK:
-				switch t.Ack.GetRecipient() {
+				switch t.Ack.GetMessageType() {
 				case sensor.MsgToCompliance_NodeInventoryACK_NodeInventory:
 					c.umhNodeInventory.HandleNACK()
 				case sensor.MsgToCompliance_NodeInventoryACK_NodeIndexer:

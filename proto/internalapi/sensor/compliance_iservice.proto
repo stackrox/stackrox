@@ -59,8 +59,8 @@ message MsgToCompliance {
       ACK = 0;
       NACK = 1;
     }
-    Recipient recipient = 2;
-    enum Recipient {
+    MessageType messageType = 2;
+    enum MessageType {
       NodeInventory = 0;
       NodeIndexer = 1;
     }

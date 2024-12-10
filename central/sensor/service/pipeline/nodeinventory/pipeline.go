@@ -155,10 +155,10 @@ func replyCompliance(clusterID, nodeName string, t central.NodeInventoryACK_Acti
 	return &central.MsgToSensor{
 		Msg: &central.MsgToSensor_NodeInventoryAck{
 			NodeInventoryAck: &central.NodeInventoryACK{
-				ClusterId: clusterID,
-				NodeName:  nodeName,
-				Action:    t,
-				Recipient: central.NodeInventoryACK_NodeInventory,
+				ClusterId:   clusterID,
+				NodeName:    nodeName,
+				Action:      t,
+				MessageType: central.NodeInventoryACK_NodeInventory,
 			},
 		},
 	}
