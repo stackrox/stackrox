@@ -248,6 +248,41 @@
 
 {{ include "srox.initGlobalPrefix" (list $) }}
 
+{{/* ManagedBy related settings */}}
+{{/* The field `helmManaged` defaults to true, therefore `managedBy` will only be changed to `MANAGER_TYPE_MANUAL` here
+     in case it was explicitly set `helmManaged=false`. */}}
+{{- if not ._rox.helmManaged }}
+  {{ $_ = set $._rox "managedBy" "MANAGER_TYPE_MANUAL" }}
+{{- end }}
+
+{{ include "srox.setSecuredClusterCertRefresh" (list $) }}
+
+[<- if .FeatureFlags.ROX_CLUSTER_REGISTRATION_SECRETS >]
+{{- $crsFile := ._rox.crs.file -}}
+{{- if kindIs "string" $crsFile -}}
+  {{- if not ._rox._securedClusterCertRefresh -}}
+    {{ include "srox.fail" "A cluster registration secret cannot be used with manually managed (helmManaged=false) clusters." }}
+  {{- end -}}
+
+  {{- $crs := dict -}}
+  {{- $_ = set ._rox "createSecrets" false -}}
+  {{- $crsManifest := $crsFile | fromYaml -}}
+  {{- $_ = set $crs "_secret" $crsManifest -}}
+  {{- $crsOpaque := dig "data" "crs" "" $crsManifest -}}
+  {{/* FAIL ASSERT */}}
+  {{- $_ = set $crs "_opaque" $crsOpaque -}}
+  {{- $crsDeserialized := $crsOpaque | b64dec | b64dec | fromYaml -}}
+  {{- $_ = set $crs "_deserialized" $crsDeserialized -}}
+  {{- $crsCAs := dig "CAs" list $crsDeserialized -}}
+  {{/* FAIL ASSERT */}}
+  {{- $crsCA := first $crsCAs -}}
+  {{- $_ = set $crs "_caCert" $crsCA -}}
+  {{- $_ = set $crs "_enabled" true -}}
+  {{- $_ = set ._rox.ca "_cert" $crsCA -}}
+  {{- $_ = set ._rox "crs" $crs -}}
+{{- end }}
+[<- end >]
+
 {{/*
 The following block checks for the validity of the provided init bundle. (`helm install ... -f <init-bundle.yaml>`)
 1. Throw an error if no init bundle was provided
@@ -263,15 +298,6 @@ The following block checks for the validity of the provided init bundle. (`helm 
 {{- else if $helmInitBundleNotPresent }}
     {{ include "srox.fail" "A CA certificate must be specified" }}
 {{- end }}
-
-{{/* ManagedBy related settings */}}
-{{/* The field `helmManaged` defaults to true, therefore `managedBy` will only be changed to `MANAGER_TYPE_MANUAL` here
-     in case it was explicitly set `helmManaged=false`. */}}
-{{- if not ._rox.helmManaged }}
-  {{ $_ = set $._rox "managedBy" "MANAGER_TYPE_MANUAL" }}
-{{- end }}
-
-{{ include "srox.setSecuredClusterCertRefresh" (list $) }}
 
 [< if (not .KubectlOutput) ->]
 
