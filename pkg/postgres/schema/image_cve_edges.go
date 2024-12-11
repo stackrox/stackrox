@@ -67,8 +67,8 @@ type ImageCveEdges struct {
 	ID                   string                     `gorm:"column:id;type:varchar;primaryKey"`
 	FirstImageOccurrence *time.Time                 `gorm:"column:firstimageoccurrence;type:timestamp"`
 	State                storage.VulnerabilityState `gorm:"column:state;type:integer"`
-	ImageID              string                     `gorm:"column:imageid;type:varchar;index:imagecveedges_imageid,type:hash"`
-	ImageCveID           string                     `gorm:"column:imagecveid;type:varchar;index:imagecveedges_imagecveid,type:hash"`
+	ImageID              string                     `gorm:"column:imageid;type:varchar;index:imagecveedges_imageid,type:hash,option:CONCURRENTLY"`
+	ImageCveID           string                     `gorm:"column:imagecveid;type:varchar;index:imagecveedges_imagecveid,type:hash,option:CONCURRENTLY"`
 	Serialized           []byte                     `gorm:"column:serialized;type:bytea"`
 	ImagesRef            Images                     `gorm:"foreignKey:imageid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
