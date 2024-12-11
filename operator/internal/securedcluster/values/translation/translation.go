@@ -154,22 +154,25 @@ func (t Translator) getTLSValues(ctx context.Context, sc platform.SecuredCluster
 		return v.SetError(err)
 	}
 
-	secretToCheck := utils.IfThenElse(usingCrs, clusterRegistrationSecretName, sensorTLSSecretName)
-
 	v.SetBoolValue("createSecrets", false)
+	v.AddAllFrom(translation.GetTLSConfigValues(sc.Spec.TLS))
+
+	if usingCrs {
+		// When using CRS we are done already.
+		return &v
+	}
+
 	sensorSecret := &corev1.Secret{}
-	key := ctrlClient.ObjectKey{Namespace: sc.Namespace, Name: secretToCheck}
+	key := ctrlClient.ObjectKey{Namespace: sc.Namespace, Name: sensorTLSSecretName}
 	if err := t.direct.Get(ctx, key, sensorSecret); err != nil {
-		return v.SetError(errors.Wrapf(err, "failed reading %q secret", secretToCheck))
+		return v.SetError(errors.Wrapf(err, "failed reading %q secret", sensorTLSSecretName))
 	}
 
 	centralCA, ok := sensorSecret.Data["ca.pem"]
 	if !ok {
-		return v.SetError(errors.Errorf("could not find centrals ca certificate 'ca.pem' in secret/%s", secretToCheck))
+		return v.SetError(errors.Errorf("could not find centrals ca certificate 'ca.pem' in secret/%s", sensorTLSSecretName))
 	}
 	v.SetStringMap("ca", map[string]string{"cert": string(centralCA)})
-
-	v.AddAllFrom(translation.GetTLSConfigValues(sc.Spec.TLS))
 
 	return &v
 }
