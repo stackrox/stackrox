@@ -32,12 +32,16 @@ func splitComponents(parts ImageParts) []ComponentParts {
 	addedComponents := set.NewStringSet()
 	for _, component := range parts.Image.GetScan().GetComponents() {
 		generatedComponent := GenerateImageComponent(parts.Image.GetScan().GetOperatingSystem(), component)
+		generatedComponentV2 := GenerateImageComponentV2(parts.Image.GetScan().GetOperatingSystem(), parts.Image, component)
+		generatedComponentV3 := GenerateImageComponentV3(parts.Image.GetScan().GetOperatingSystem(), parts.Image, component)
 		if !addedComponents.Add(generatedComponent.GetId()) {
 			continue
 		}
 
 		cp := ComponentParts{}
 		cp.Component = generatedComponent
+		cp.ComponentV2 = generatedComponentV2
+		cp.ComponentV3 = generatedComponentV3
 		cp.Edge = generateImageComponentEdge(parts.Image, cp.Component, component)
 		cp.Children = splitCVEs(parts, cp, component)
 
@@ -55,12 +59,19 @@ func splitCVEs(parts ImageParts, component ComponentParts, embedded *storage.Emb
 		if !addedCVEs.Add(convertedCVE.GetId()) {
 			continue
 		}
+		convertedCVEV2 := utils.EmbeddedVulnerabilityToImageCVEV2(parts.Image.GetScan().GetOperatingSystem(), parts.Image.GetId(), cve)
+
 		cp := CVEParts{}
 		cp.CVE = convertedCVE
+		cp.CVEV2 = convertedCVEV2
+
 		cp.Edge = generateComponentCVEEdge(component.Component, cp.CVE, cve)
 		if _, ok := parts.ImageCVEEdges[cp.CVE.GetId()]; !ok {
 			parts.ImageCVEEdges[cp.CVE.GetId()] = generateImageCVEEdge(parts.Image.GetId(), cp.CVE, cve)
 		}
+
+		cp.EdgeV2 = generateComponentCVEEdgeV2(component.ComponentV2, cp.CVEV2, cve)
+
 		ret = append(ret, cp)
 	}
 
@@ -77,6 +88,22 @@ func generateComponentCVEEdge(convertedComponent *storage.ImageComponent, conver
 
 	if ret.IsFixable {
 		ret.HasFixedBy = &storage.ComponentCVEEdge_FixedBy{
+			FixedBy: embedded.GetFixedBy(),
+		}
+	}
+	return ret
+}
+
+func generateComponentCVEEdgeV2(convertedComponent *storage.ImageComponentV2, convertedCVE *storage.ImageCVEV2, embedded *storage.EmbeddedVulnerability) *storage.ComponentCVEEdgeV2 {
+	ret := &storage.ComponentCVEEdgeV2{
+		Id:               pgSearch.IDFromPks([]string{convertedComponent.GetId(), convertedCVE.GetId()}),
+		IsFixable:        embedded.GetFixedBy() != "",
+		ImageCveId:       convertedCVE.GetId(),
+		ImageComponentId: convertedComponent.GetId(),
+	}
+
+	if ret.IsFixable {
+		ret.HasFixedBy = &storage.ComponentCVEEdgeV2_FixedBy{
 			FixedBy: embedded.GetFixedBy(),
 		}
 	}
@@ -100,6 +127,72 @@ func GenerateImageComponent(os string, from *storage.EmbeddedImageScanComponent)
 	if from.GetSetTopCvss() != nil {
 		ret.SetTopCvss = &storage.ImageComponent_TopCvss{TopCvss: from.GetTopCvss()}
 	}
+	return ret
+}
+
+// GenerateImageComponentV2 returns top-level image component from embedded component.
+func GenerateImageComponentV2(os string, image *storage.Image, from *storage.EmbeddedImageScanComponent) *storage.ImageComponentV2 {
+	ret := &storage.ImageComponentV2{
+		Id:              scancomponent.ComponentID(from.GetName(), from.GetVersion(), image.GetId()),
+		Name:            from.GetName(),
+		Version:         from.GetVersion(),
+		License:         from.GetLicense().CloneVT(),
+		Source:          from.GetSource(),
+		FixedBy:         from.GetFixedBy(),
+		RiskScore:       from.GetRiskScore(),
+		Priority:        from.GetPriority(),
+		OperatingSystem: os,
+		ImageId:         image.GetId(),
+		Location:        from.GetLocation(),
+	}
+
+	if from.GetSetTopCvss() != nil {
+		ret.SetTopCvss = &storage.ImageComponentV2_TopCvss{TopCvss: from.GetTopCvss()}
+	}
+
+	if from.HasLayerIndex != nil {
+		ret.HasLayerIndex = &storage.ImageComponentV2_LayerIndex{
+			LayerIndex: from.GetLayerIndex(),
+		}
+	}
+	return ret
+}
+
+// GenerateImageComponentV3 returns top-level image component from embedded component.
+func GenerateImageComponentV3(os string, image *storage.Image, from *storage.EmbeddedImageScanComponent) *storage.ImageComponentV3 {
+	ret := &storage.ImageComponentV3{
+		Id:              scancomponent.ComponentID(from.GetName(), from.GetVersion(), image.GetId()),
+		Name:            from.GetName(),
+		Version:         from.GetVersion(),
+		License:         from.GetLicense().CloneVT(),
+		Source:          from.GetSource(),
+		FixedBy:         from.GetFixedBy(),
+		RiskScore:       from.GetRiskScore(),
+		Priority:        from.GetPriority(),
+		OperatingSystem: os,
+		ImageId:         image.GetId(),
+		Location:        from.GetLocation(),
+	}
+
+	if from.GetSetTopCvss() != nil {
+		ret.SetTopCvss = &storage.ImageComponentV3_TopCvss{TopCvss: from.GetTopCvss()}
+	}
+
+	if from.HasLayerIndex != nil {
+		ret.HasLayerIndex = &storage.ImageComponentV3_LayerIndex{
+			LayerIndex: from.GetLayerIndex(),
+		}
+	}
+
+	cves3 := make([]*storage.ImageCVEV3, 0, len(from.GetVulns()))
+	for _, cve := range from.GetVulns() {
+		convertedCVEV3 := utils.EmbeddedVulnerabilityToImageCVEV3(image.GetScan().GetOperatingSystem(), image.GetId(), cve)
+
+		cves3 = append(cves3, convertedCVEV3)
+	}
+
+	ret.Cves = cves3
+
 	return ret
 }
 
