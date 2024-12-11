@@ -235,7 +235,7 @@ func (p SecurityPolicySpec) ToProtobuf(notifiers map[string]string) (*storage.Po
 		if exclusion.Expiration != "" {
 			protoTS, err := protocompat.ParseRFC3339NanoTimestamp(exclusion.Expiration)
 			if err != nil {
-				return nil, errors.Wrapf(err, fmt.Sprintf("Error parsing timestamp '%s'", exclusion.Expiration))
+				return nil, errors.Wrapf(err, "Error parsing timestamp '%s'", exclusion.Expiration)
 			}
 			protoExclusion.Expiration = protoTS
 		}
