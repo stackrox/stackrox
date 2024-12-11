@@ -574,4 +574,4 @@ replace (
 )
 
 // @stackrox/maple
-replace k8s.io/client-go => github.com/jschnath/k8s-client-go v1.0.6
+replace k8s.io/client-go => github.com/jschnath/k8s-client-go v1.0.8
