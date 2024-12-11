@@ -187,7 +187,16 @@ spec:
     - name: SOURCE_ARTIFACT
       value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
     taskRef:
-      name: determine-image-tag
+      resolver: git
+      params:
+      - name: url
+        value: https://github.com/msugakov/konflux-tasks-test.git
+      - name: revision
+        value: fac37e5a8a607ac83639dc9f75d39e797d2e3c6c
+      - name: pathInRepo
+        value: tasks/determine-image-tag-task.yaml
+      - name: scmType
+        value: github
 
   - name: fetch-scanner-vuln-mappings
     params:
@@ -198,7 +207,16 @@ spec:
     - name: ociArtifactExpiresAfter
       value: $(params.oci-artifact-expires-after)
     taskRef:
-      name: fetch-scanner-vuln-mappings
+      resolver: git
+      params:
+      - name: url
+        value: https://github.com/msugakov/konflux-tasks-test.git
+      - name: revision
+        value: fac37e5a8a607ac83639dc9f75d39e797d2e3c6c
+      - name: pathInRepo
+        value: tasks/fetch-scanner-vuln-mappings-task.yaml
+      - name: scmType
+        value: github
 
   - name: prefetch-dependencies
     params:
@@ -261,45 +279,45 @@ spec:
       operator: in
       values: [ "true" ]
 
-  - name: build-container-s390x
-    params:
-    - name: IMAGE
-      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-s390x
-    - name: DOCKERFILE
-      value: $(params.dockerfile)
-    - name: CONTEXT
-      value: $(params.path-context)
-    - name: HERMETIC
-      value: $(params.hermetic)
-    - name: PREFETCH_INPUT
-      value: $(params.prefetch-input)
-    - name: IMAGE_EXPIRES_AFTER
-      value: $(params.image-expires-after)
-    - name: COMMIT_SHA
-      value: $(tasks.clone-repository.results.commit)
-    - name: BUILD_ARGS
-      value:
-      - VERSIONS_SUFFIX=$(params.output-tag-suffix)
-      - MAIN_IMAGE_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
-    - name: SOURCE_ARTIFACT
-      value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
-    - name: CACHI2_ARTIFACT
-      value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
-    - name: PLATFORM
-      value: linux/s390x
-    taskRef:
-      params:
-      - name: name
-        value: buildah-remote-oci-ta
-      - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-buildah-remote-oci-ta:0.2@sha256:52a1a93cf99ab1f1092e983ac41b3684b7af004772d325e89b42e82e046bc7d1
-      - name: kind
-        value: task
-      resolver: bundles
-    when:
-    - input: $(tasks.init.results.build)
-      operator: in
-      values: [ "true" ]
+#  - name: build-container-s390x
+#    params:
+#    - name: IMAGE
+#      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-s390x
+#    - name: DOCKERFILE
+#      value: $(params.dockerfile)
+#    - name: CONTEXT
+#      value: $(params.path-context)
+#    - name: HERMETIC
+#      value: $(params.hermetic)
+#    - name: PREFETCH_INPUT
+#      value: $(params.prefetch-input)
+#    - name: IMAGE_EXPIRES_AFTER
+#      value: $(params.image-expires-after)
+#    - name: COMMIT_SHA
+#      value: $(tasks.clone-repository.results.commit)
+#    - name: BUILD_ARGS
+#      value:
+#      - VERSIONS_SUFFIX=$(params.output-tag-suffix)
+#      - MAIN_IMAGE_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
+#    - name: SOURCE_ARTIFACT
+#      value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
+#    - name: CACHI2_ARTIFACT
+#      value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
+#    - name: PLATFORM
+#      value: linux/s390x
+#    taskRef:
+#      params:
+#      - name: name
+#        value: buildah-remote-oci-ta
+#      - name: bundle
+#        value: quay.io/konflux-ci/tekton-catalog/task-buildah-remote-oci-ta:0.2@sha256:52a1a93cf99ab1f1092e983ac41b3684b7af004772d325e89b42e82e046bc7d1
+#      - name: kind
+#        value: task
+#      resolver: bundles
+#    when:
+#    - input: $(tasks.init.results.build)
+#      operator: in
+#      values: [ "true" ]
 
   - name: build-container-ppc64le
     params:
@@ -390,7 +408,7 @@ spec:
     - name: IMAGES
       value:
       - $(tasks.build-container-amd64.results.IMAGE_REF)
-      - $(tasks.build-container-s390x.results.IMAGE_REF)
+#      - $(tasks.build-container-s390x.results.IMAGE_REF)
       - $(tasks.build-container-ppc64le.results.IMAGE_REF)
       - $(tasks.build-container-arm64.results.IMAGE_REF)
     - name: IMAGE_EXPIRES_AFTER
@@ -418,7 +436,7 @@ spec:
     - name: IMAGES
       value:
       - $(tasks.build-container-amd64.results.IMAGE_REF)
-      - $(tasks.build-container-s390x.results.IMAGE_REF)
+#      - $(tasks.build-container-s390x.results.IMAGE_REF)
       - $(tasks.build-container-ppc64le.results.IMAGE_REF)
       - $(tasks.build-container-arm64.results.IMAGE_REF)
     - name: IMAGE_EXPIRES_AFTER
