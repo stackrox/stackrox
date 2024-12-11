@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/protocompat"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
@@ -48,8 +49,8 @@ func listCRSs(cliEnvironment environment.Environment, timeout time.Duration, ret
 		}
 		fmt.Fprintf(tabWriter, "%s\t%s\t%s\t%s\t%s\n",
 			name,
-			crsMeta.GetCreatedAt().AsTime().Format(time.RFC3339),
-			crsMeta.GetExpiresAt().AsTime().Format(time.RFC3339),
+			protocompat.ConvertTimestampToString(crsMeta.GetCreatedAt(), time.RFC3339),
+			protocompat.ConvertTimestampToString(crsMeta.GetExpiresAt(), time.RFC3339),
 			getPrettyUser(crsMeta.GetCreatedBy()),
 			crsMeta.GetId(),
 		)
