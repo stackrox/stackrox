@@ -12,6 +12,7 @@ import (
 
 	"github.com/klauspost/compress/zstd"
 	"github.com/pkg/errors"
+	"github.com/quay/claircore/enricher/epss"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/jsonblob"
 	"github.com/quay/claircore/libvuln/updates"
@@ -20,7 +21,6 @@ import (
 	"github.com/stackrox/rox/scanner/updater/manual"
 	"golang.org/x/time/rate"
 
-	"github.com/quay/claircore/enricher/epss"
 	// Default updaters. This is required to ensure updater factories are set properly.
 	_ "github.com/quay/claircore/updater/defaults"
 )
@@ -48,7 +48,7 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 		return fmt.Errorf("initializing: manual: %w", err)
 	}
 	bundles["nvd"] = nvdOpts()
-	bundles["epss"] = epssOpts(ctx)
+	bundles["epss"] = epssOpts()
 	// ClairCore updaters.
 	for _, uSet := range []string{
 		"alpine",
@@ -173,17 +173,12 @@ func nvdOpts() []updates.ManagerOption {
 	}
 }
 
-func epssOpts(ctx context.Context) []updates.ManagerOption {
-	enricher := &epss.Enricher{}
-	err := enricher.Configure(ctx, nil, &http.Client{})
-	if err != nil {
-		log.Printf("Failed to configure EPSS enricher: %v", err)
-		return nil
-	}
+func epssOpts() []updates.ManagerOption {
 	return []updates.ManagerOption{
-		// This is required to prevent default updaters from running.
 		updates.WithEnabled([]string{}),
-		updates.WithOutOfTree([]driver.Updater{enricher}),
+		updates.WithFactories(map[string]driver.UpdaterSetFactory{
+			"clair.epss": epss.NewFactory(),
+		}),
 	}
 }
 
