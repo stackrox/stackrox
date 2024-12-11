@@ -9,7 +9,7 @@ spec:
   - name: SOURCE_ARTIFACT
     description: The Trusted Artifact URI pointing to the application source code.
     type: string
-  - name: IMAGES
+  - name: IMAGE_REFS
     description: Image references.
     type: string
   steps:
@@ -18,7 +18,7 @@ spec:
     args:
     - use
     - $(params.SOURCE_ARTIFACT)=/var/workdir/source
-  - name: wait-for-image
+  - name: create-snapshot
     image: registry.access.redhat.com/ubi9/ubi:latest
     script: |
       #!/usr/bin/env bash
@@ -26,4 +26,4 @@ spec:
       dnf -y upgrade --nobest
       dnf -y install jq
 
-      echo "$(params.IMAGE_REF)" | jq
+      echo "$(params.IMAGE_REFS)" | jq
