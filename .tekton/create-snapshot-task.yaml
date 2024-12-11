@@ -12,6 +12,9 @@ spec:
   - name: IMAGE_REFS
     description: Image references.
     type: string
+  - name: APPLICATION
+    description: Konflux application.
+    type: string
   volumes:
   - name: workdir
     emptyDir: { }
@@ -34,4 +37,6 @@ spec:
       dnf -y upgrade --nobest
       dnf -y install jq
 
-      echo "$(params.IMAGE_REFS)" | jq
+      echo "$(params.IMAGE_REFS)"
+
+      echo "Application: $(params.APPLICATION)"
