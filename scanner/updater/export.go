@@ -2,6 +2,7 @@ package updater
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/klauspost/compress/zstd"
 	"github.com/pkg/errors"
+	"github.com/quay/claircore/enricher/epss"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/jsonblob"
 	"github.com/quay/claircore/libvuln/updates"
@@ -19,8 +21,6 @@ import (
 	"github.com/stackrox/rox/scanner/enricher/nvd"
 	"github.com/stackrox/rox/scanner/updater/manual"
 	"golang.org/x/time/rate"
-
-	"github.com/quay/claircore/enricher/epss"
 	// Default updaters. This is required to ensure updater factories are set properly.
 	_ "github.com/quay/claircore/updater/defaults"
 )
@@ -221,7 +221,17 @@ func (t *rateLimitedTransport) RoundTrip(req *http.Request) (*http.Response, err
 
 func epssOpts(ctx context.Context) []updates.ManagerOption {
 	enricher := &epss.Enricher{}
-	err := enricher.Configure(ctx, nil, &http.Client{})
+	configJSON, err := json.Marshal(epss.Config{
+		URL: nil, // use default URL for now
+	})
+	if err != nil {
+		log.Printf("Failed to encode EPSS enricher config : %v", err)
+		return nil
+	}
+
+	err = enricher.Configure(ctx, func(config interface{}) error {
+		return json.Unmarshal(configJSON, config)
+	}, &http.Client{})
 	if err != nil {
 		log.Printf("Failed to configure EPSS enricher: %v", err)
 		return nil
