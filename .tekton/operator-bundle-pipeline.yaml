@@ -301,7 +301,6 @@ spec:
       valueFrom:
         fieldRef:
           fieldPath: metadata.labels['appstudio.openshift.io/application']
-
     - name: IMAGE_REFS
       value: |
         [
