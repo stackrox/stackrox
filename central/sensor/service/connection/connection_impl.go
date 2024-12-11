@@ -302,7 +302,7 @@ func (c *sensorConnection) handleMessage(ctx context.Context, msg *central.MsgFr
 			return nil
 		}
 		// Only dedupe on non-creates
-		if msg.GetEvent().GetAction() != central.ResourceAction_CREATE_RESOURCE {
+		if shallDedupe(msg) {
 			msg.DedupeKey = msg.GetEvent().GetId()
 		}
 		// Set the hash key for all values
@@ -312,6 +312,14 @@ func (c *sensorConnection) handleMessage(ctx context.Context, msg *central.MsgFr
 		return nil
 	}
 	return c.eventPipeline.Run(ctx, msg, c)
+}
+
+func shallDedupe(msg *central.MsgFromSensor) bool {
+	if msg.GetEvent().GetAction() == central.ResourceAction_UNSET_ACTION_RESOURCE {
+		// Special handling of node inventory and node indexes for Sensor version 4.6 and earlier
+		return false
+	}
+	return msg.GetEvent().GetAction() != central.ResourceAction_CREATE_RESOURCE
 }
 
 func (c *sensorConnection) processComplianceResponse(ctx context.Context, msg *central.ComplianceResponse) error {
