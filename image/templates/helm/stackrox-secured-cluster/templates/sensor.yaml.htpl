@@ -54,7 +54,7 @@ spec:
       {{- end }}
       serviceAccountName: sensor
       initContainers:
-      {{- if ._rox.crs._enabled }}
+      {{- if ._rox._securedClusterCertRefresh }}
       - image: {{ ._rox.image.main.fullRef | quote }}
         imagePullPolicy: {{ ._rox.sensor.imagePullPolicy | quote }}
         name: crs
@@ -139,8 +139,6 @@ spec:
           mountPath: /run/secrets/stackrox.io/helm-effective-cluster-name/
           readOnly: true
         {{- include "srox.injectedCABundleVolumeMount" . | nindent 8 }}
-      {{- end }}
-      {{- if ._rox._securedClusterCertRefresh }}
       - name: init-tls-certs
         image: {{ quote ._rox.image.main.fullRef }}
         command:
@@ -310,12 +308,10 @@ spec:
           - key: ca.pem
             path: ca.pem
       {{- end }}
-      {{- if ._rox.crs._enabled }}
       - name: crs
         secret:
           secretName: cluster-registration-secret
           optional: true
-      {{- end }}
       - name: sensor-etc-ssl-volume
         emptyDir: {}
       - name: sensor-etc-pki-volume
