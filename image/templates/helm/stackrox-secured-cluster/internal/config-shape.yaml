@@ -139,6 +139,10 @@ collector:
     enabled: null # bool
   runtimeConfig:
     enabled: null # bool
+    networking:
+      externalIps:
+        enabled: null # bool
+      perContainerRateLimit: null # int
 auditLogs:
   disableCollection: null # bool
 customize:
