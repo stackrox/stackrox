@@ -41,6 +41,10 @@ func DeserializeSecret(serializedCrs string) (*CRS, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "JSON unmarshalling CRS")
 	}
+	if len(deserializedCrs.CAs) == 0 {
+		return nil, errors.New("missing CA in CRS")
+	}
+
 	return &deserializedCrs, nil
 }
 
