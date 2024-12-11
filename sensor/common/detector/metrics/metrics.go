@@ -71,7 +71,17 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "node_inventories_received_total",
-		Help:      "Total number of Node Inventories received by this sensor",
+		Help:      "Total number of Node Inventories received by this Sensor",
+	},
+		[]string{
+			// Name of the node sending an inventory
+			"node_name",
+		})
+	receivedNodeIndex = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "node_indexes_received_total",
+		Help:      "Total number of Node Indexes received by this Sensor",
 	},
 		[]string{
 			// Name of the node sending an inventory
@@ -151,6 +161,13 @@ func ObserveReceivedNodeInventory(inventory *storage.NodeInventory) {
 	}).Inc()
 }
 
+// ObserveReceivedNodeIndex observes the metric.
+func ObserveReceivedNodeIndex(nodeName string) {
+	receivedNodeIndex.With(prometheus.Labels{
+		"node_name": nodeName,
+	}).Inc()
+}
+
 // ObserveNodeScanningAck records (in Sensor) the instance of Central sending (N)Ack to Sensor
 func ObserveNodeScanningAck(nodeName, ackType, messageType string, reason AckReason, origin AckOrigin) {
 	receivedNodeScanningAck.With(prometheus.Labels{
@@ -167,6 +184,7 @@ func init() {
 		networkPoliciesStored,
 		networkPoliciesStoreEvents,
 		receivedNodeInventory,
+		receivedNodeIndex,
 		receivedNodeScanningAck,
 		DetectorNetworkFlowBufferSize,
 		DetectorProcessIndicatorBufferSize,

@@ -131,12 +131,12 @@ func (c *nodeInventoryHandlerImpl) run() (<-chan *message.ExpiringMessage, <-cha
 	toCentral := make(chan *message.ExpiringMessage)
 	toCompliance := make(chan common.MessageToComplianceWithAddress)
 
-	go c.nodeInventoryHandlingLoop(toCentral, toCompliance)
+	go c.nodeScanHandlingLoop(toCentral, toCompliance)
 
 	return toCentral, toCompliance
 }
 
-func (c *nodeInventoryHandlerImpl) nodeInventoryHandlingLoop(toCentral chan *message.ExpiringMessage, toCompliance chan common.MessageToComplianceWithAddress) {
+func (c *nodeInventoryHandlerImpl) nodeScanHandlingLoop(toCentral chan *message.ExpiringMessage, toCompliance chan common.MessageToComplianceWithAddress) {
 	defer c.stopper.Flow().ReportStopped()
 	defer close(toCentral)
 	defer close(toCompliance)
@@ -167,7 +167,7 @@ func (c *nodeInventoryHandlerImpl) nodeInventoryHandlingLoop(toCentral chan *mes
 			}
 			if inventory == nil {
 				log.Warn("Received nil node inventory: not sending to Central")
-				break
+				continue
 			}
 			if nodeID, err := c.nodeMatcher.GetNodeID(inventory.GetNodeName()); err != nil {
 				log.Warnf("Node %q unknown to Sensor. Requesting Compliance to resend NodeInventory later", inventory.GetNodeName())
@@ -194,10 +194,11 @@ func (c *nodeInventoryHandlerImpl) nodeInventoryHandlingLoop(toCentral chan *mes
 					sensor.MsgToCompliance_NodeInventoryACK_NACK,
 					sensor.MsgToCompliance_NodeInventoryACK_NodeIndexer,
 					metrics.AckReasonCentralUnreachable)
+				continue
 			}
 			if wrap == nil || wrap.IndexReport == nil {
 				log.Warn("Received nil index report: not sending to Central")
-				break
+				continue
 			}
 			if nodeID, err := c.nodeMatcher.GetNodeID(wrap.NodeName); err != nil {
 				log.Warnf("Received Index Report from Node %q that is unknown to Sensor. Requesting Compliance to resend later.", wrap.NodeName)
@@ -206,8 +207,9 @@ func (c *nodeInventoryHandlerImpl) nodeInventoryHandlingLoop(toCentral chan *mes
 					sensor.MsgToCompliance_NodeInventoryACK_NodeIndexer,
 					metrics.AckReasonNodeUnknown)
 			} else {
-				log.Debugf("Sending Index Report to Central")
 				wrap.NodeID = nodeID
+				metrics.ObserveReceivedNodeIndex(wrap.NodeName)
+				log.Debugf("Mapping Node Index name '%s' to Node ID '%s'", wrap.NodeName, nodeID)
 				c.sendNodeIndex(toCentral, wrap)
 			}
 		}
@@ -266,7 +268,7 @@ func (c *nodeInventoryHandlerImpl) sendNodeIndex(toC chan<- *message.ExpiringMes
 		log.Debugf("Empty index report - not sending to Central")
 		return
 	}
-
+	defer log.Debugf("Finished sending index report to Central")
 	select {
 	case <-c.stopper.Flow().StopRequested():
 	case toC <- message.New(&central.MsgFromSensor{
