@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/scanner/enricher/nvd"
 	"github.com/stackrox/rox/scanner/updater/manual"
 	"golang.org/x/time/rate"
+
 	// Default updaters. This is required to ensure updater factories are set properly.
 	_ "github.com/quay/claircore/updater/defaults"
 )
