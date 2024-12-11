@@ -15,6 +15,7 @@ import (
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/operator/internal/securedcluster/scanner"
 	"github.com/stackrox/rox/operator/internal/values/translation"
+	"github.com/stackrox/rox/pkg/crs"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/utils"
@@ -147,9 +148,8 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 
 // getTLSValues reads TLS configuration and looks up CA certificate from secrets.
 func (t Translator) getTLSValues(ctx context.Context, sc platform.SecuredCluster) *translation.ValuesBuilder {
-	var usingCrs bool
 	v := translation.NewValuesBuilder()
-	usingCrs, err := t.checkRequiredTLSSecrets(ctx, sc)
+	crs, err := t.checkRequiredTLSSecrets(ctx, sc)
 	if err != nil {
 		return v.SetError(err)
 	}
@@ -157,30 +157,31 @@ func (t Translator) getTLSValues(ctx context.Context, sc platform.SecuredCluster
 	v.SetBoolValue("createSecrets", false)
 	v.AddAllFrom(translation.GetTLSConfigValues(sc.Spec.TLS))
 
-	if usingCrs {
-		// When using CRS we are done already.
-		return &v
-	}
+	var centralCA string
+	if crs != nil {
+		centralCA = crs.CAs[0]
+	} else {
+		sensorSecret := &corev1.Secret{}
+		key := ctrlClient.ObjectKey{Namespace: sc.Namespace, Name: sensorTLSSecretName}
+		if err := t.direct.Get(ctx, key, sensorSecret); err != nil {
+			return v.SetError(errors.Wrapf(err, "failed reading %q secret", sensorTLSSecretName))
+		}
 
-	sensorSecret := &corev1.Secret{}
-	key := ctrlClient.ObjectKey{Namespace: sc.Namespace, Name: sensorTLSSecretName}
-	if err := t.direct.Get(ctx, key, sensorSecret); err != nil {
-		return v.SetError(errors.Wrapf(err, "failed reading %q secret", sensorTLSSecretName))
+		ca, ok := sensorSecret.Data["ca.pem"]
+		if !ok {
+			return v.SetError(errors.Errorf("could not find centrals CA certificate 'ca.pem' in secret/%s", sensorTLSSecretName))
+		}
+		centralCA = string(ca)
 	}
-
-	centralCA, ok := sensorSecret.Data["ca.pem"]
-	if !ok {
-		return v.SetError(errors.Errorf("could not find centrals ca certificate 'ca.pem' in secret/%s", sensorTLSSecretName))
-	}
-	v.SetStringMap("ca", map[string]string{"cert": string(centralCA)})
+	v.SetStringMap("ca", map[string]string{"cert": centralCA})
 
 	return &v
 }
 
-func (t Translator) checkRequiredTLSSecrets(ctx context.Context, sc platform.SecuredCluster) (bool, error) {
+func (t Translator) checkRequiredTLSSecrets(ctx context.Context, sc platform.SecuredCluster) (*crs.CRS, error) {
 	// Check for CRS first, if it exists, signal success immediately.
-	if err := t.checkClusterRegistrationSecret(ctx, sc); err == nil {
-		return true, nil
+	if crs, err := t.checkClusterRegistrationSecret(ctx, sc); err == nil {
+		return crs, nil
 	}
 
 	notFound := false
@@ -197,25 +198,31 @@ func (t Translator) checkRequiredTLSSecrets(ctx context.Context, sc platform.Sec
 
 	if multiErr != nil {
 		if notFound {
-			return false, errors.Wrapf(multiErr, "some init-bundle secrets missing in namespace %q, please make sure you have downloaded init-bundle secrets (from UI or with roxctl) and created corresponding resources in the correct namespace", sc.Namespace)
+			return nil, errors.Wrapf(multiErr, "some init-bundle secrets missing in namespace %q, please make sure you have downloaded init-bundle secrets (from UI or with roxctl) and created corresponding resources in the correct namespace", sc.Namespace)
 		}
-		return false, multiErr
+		return nil, multiErr
 	}
 
-	return false, nil
+	return nil, nil
 }
 
-func (t Translator) checkClusterRegistrationSecret(ctx context.Context, sc platform.SecuredCluster) error {
+func (t Translator) checkClusterRegistrationSecret(ctx context.Context, sc platform.SecuredCluster) (*crs.CRS, error) {
 	namespace := sc.Namespace
 	secret := &corev1.Secret{}
 	key := ctrlClient.ObjectKey{Namespace: namespace, Name: clusterRegistrationSecretName}
 	if err := t.direct.Get(ctx, key, secret); err != nil {
 		if k8sErrors.IsNotFound(err) {
-			return errors.Wrapf(err, "receiving cluster-registration-secret within namespace %q", namespace)
+			return nil, errors.Wrapf(err, "receiving cluster-registration-secret within namespace %q", namespace)
 		}
-		return errors.Wrapf(err, "failed receiving secret %q", clusterRegistrationSecretName)
+		return nil, errors.Wrapf(err, "failed receiving secret %q", clusterRegistrationSecretName)
 	}
-	return nil
+
+	crs, err := crs.DeserializeSecret(string(secret.Data["crs"]))
+	if err != nil {
+		return nil, errors.Wrap(err, "deserializing CRS")
+	}
+
+	return crs, nil
 }
 
 func (t Translator) checkInitBundleSecret(ctx context.Context, sc platform.SecuredCluster, secretName string) error {
