@@ -130,18 +130,9 @@ type Policy struct {
 }
 
 // convertPolicy Converts storage.Policy to *Policy
-func convertPolicy(p *storage.Policy, notifiers map[string]string) *Policy {
+func convertPolicy(p *storage.Policy) *Policy {
 	if p == nil {
 		return nil
-	}
-
-	convertedNotifiers := make([]string, 0, len(p.Notifiers))
-	for _, notifier := range p.Notifiers {
-		name, exists := notifiers[notifier]
-		if exists {
-			convertedNotifiers = append(convertedNotifiers, name)
-			continue
-		}
 	}
 
 	return &Policy{
@@ -157,7 +148,7 @@ func convertPolicy(p *storage.Policy, notifiers map[string]string) *Policy {
 		Scope:              sliceutils.ConvertSlice(p.Scope, convertScope),
 		Severity:           p.Severity.String(),
 		EnforcementActions: sliceutils.StringSlice(p.EnforcementActions...),
-		Notifiers:          convertedNotifiers,
+		Notifiers:          p.Notifiers,
 		PolicySections:     sliceutils.ConvertSlice(p.PolicySections, convertPolicySection),
 		MitreAttackVectors: p.MitreAttackVectors,
 		CriteriaLocked:     p.CriteriaLocked,
@@ -167,7 +158,7 @@ func convertPolicy(p *storage.Policy, notifiers map[string]string) *Policy {
 }
 
 // ConvertPolicyToCustomResource converts a storage.Policy to a SecurityPolicy custom resource
-func ConvertPolicyToCustomResource(p *storage.Policy, notifiers map[string]string) *CustomResource {
+func ConvertPolicyToCustomResource(p *storage.Policy) *CustomResource {
 	if p == nil {
 		return nil
 	}
@@ -175,6 +166,6 @@ func ConvertPolicyToCustomResource(p *storage.Policy, notifiers map[string]strin
 		APIVersion:         "config.stackrox.io/v1alpha1",
 		Kind:               "SecurityPolicy",
 		Metadata:           map[string]interface{}{"name": toDNSSubdomainName(p.GetName())},
-		SecurityPolicySpec: convertPolicy(p, notifiers),
+		SecurityPolicySpec: convertPolicy(p),
 	}
 }

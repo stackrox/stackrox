@@ -9,14 +9,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/protocompat"
-	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-)
-
-var (
-	emailNotifierID = uuid.NewV4().String()
-	jiraNotifierID  = uuid.NewV4().String()
 )
 
 //go:embed testdata/custom_resource.yaml
@@ -33,7 +27,7 @@ func TestConvertToCR(t *testing.T) {
 func getTestPolicy() *storage.Policy {
 	p := fixtures.GetPolicy()
 	p.Notifiers = []string{
-		emailNotifierID,
+		"email-notifier-uuid",
 	}
 	p.MitreAttackVectors = []*storage.Policy_MitreAttackVectors{
 		{
@@ -157,13 +151,8 @@ func TestToDNSSubdomainName(t *testing.T) {
 
 // generateCustomResource generate custom resource in YAML text from a policy
 func generateCustomResource(policy *storage.Policy) (string, error) {
-	notifiers := map[string]string{
-		emailNotifierID: "email-notifier",
-		jiraNotifierID:  "jira-notifier",
-	}
-
 	w := &bytes.Buffer{}
-	if err := WriteCustomResource(w, ConvertPolicyToCustomResource(policy, notifiers)); err != nil {
+	if err := WriteCustomResource(w, ConvertPolicyToCustomResource(policy)); err != nil {
 		return "", err
 	}
 	return w.String(), nil

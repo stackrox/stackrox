@@ -27,6 +27,11 @@ import (
 	"golang.org/x/exp/maps"
 )
 
+var (
+	emailNotifierUuid = uuid.NewV4().String()
+	jiraNotifierUuid  = uuid.NewV4().String()
+)
+
 func TestPolicyHTTPTestSuite(t *testing.T) {
 	t.Parallel()
 	suite.Run(t, new(PolicyHandlerTestSuite))
@@ -47,6 +52,7 @@ func (s *PolicyHandlerTestSuite) SetupTest() {
 	s.ctx = context.Background()
 	s.mockCtrl = gomock.NewController(s.T())
 	s.policyStore = policyStoreMocks.NewMockDataStore(s.mockCtrl)
+	s.notifierStore = notifierStoreMocks.NewMockDataStore(s.mockCtrl)
 	s.handler = Handler(s.policyStore, s.notifierStore)
 	s.mockRecorder = httptest.NewRecorder()
 }
@@ -83,7 +89,6 @@ func (s *PolicyHandlerTestSuite) TestSaveAsInvalidIDFails() {
 
 	// Mock GetPolicies call to return no policies
 	s.policyStore.EXPECT().GetPolicies(s.ctx, mockRequest.IDs).Return(nil, []int{0}, nil)
-
 	resp := s.performRequest(mockRequest)
 	s.Equal(http.StatusBadRequest, resp.Code)
 	s.verifyResponse(resp, "Failed to retrieve all policies", http.StatusBadRequest, mockErrors)
@@ -101,6 +106,16 @@ func (s *PolicyHandlerTestSuite) TestSaveAsValidIDSucceeds() {
 	mockRequest := &apiparams.SaveAsCustomResourcesRequest{IDs: []string{"valid-id"}}
 
 	s.policyStore.EXPECT().GetPolicies(ctx, mockRequest.IDs).Return(maps.Values(expectedNameToPolicies), nil, nil)
+	s.notifierStore.EXPECT().GetNotifiers(s.ctx).Return([]*storage.Notifier{
+		{
+			Id:   emailNotifierUuid,
+			Name: "email-notifier",
+		},
+		{
+			Id:   jiraNotifierUuid,
+			Name: "jira-notifier",
+		},
+	}, nil)
 
 	resp := s.performRequest(mockRequest)
 	s.Equal(http.StatusOK, resp.Code)
@@ -131,7 +146,16 @@ func (s *PolicyHandlerTestSuite) TestSaveAsMultipleValidIDSucceeds() {
 	policies := maps.Values(expectedNameToPolicies)
 	slices.SortFunc(policies, func(a, b *storage.Policy) int { return strings.Compare(a.GetId(), b.GetId()) })
 	s.policyStore.EXPECT().GetPolicies(ctx, mockRequest.IDs).Return(policies, nil, nil)
-
+	s.notifierStore.EXPECT().GetNotifiers(s.ctx).Return([]*storage.Notifier{
+		{
+			Id:   emailNotifierUuid,
+			Name: "email-notifier",
+		},
+		{
+			Id:   jiraNotifierUuid,
+			Name: "jira-notifier",
+		},
+	}, nil)
 	resp := s.performRequest(mockRequest)
 	s.Equal(http.StatusOK, resp.Code)
 
@@ -166,7 +190,6 @@ func (s *PolicyHandlerTestSuite) TestSaveAsMixedSuccessAndMissing() {
 	}
 
 	s.policyStore.EXPECT().GetPolicies(ctx, mockRequest.IDs).Return(policies, []int{1}, nil)
-
 	resp := s.performRequest(mockRequest)
 	s.Equal(http.StatusBadRequest, resp.Code)
 	s.verifyResponse(resp, "Failed to retrieve all policies", http.StatusBadRequest, mockErrors)
@@ -192,7 +215,6 @@ func (s *PolicyHandlerTestSuite) TestSaveAsMultipleFailures() {
 	}
 
 	s.policyStore.EXPECT().GetPolicies(ctx, mockRequest.IDs).Return(nil, []int{0, 1}, nil)
-
 	resp := s.performRequest(mockRequest)
 	s.Equal(http.StatusBadRequest, resp.Code)
 
