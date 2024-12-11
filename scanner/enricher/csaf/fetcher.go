@@ -281,7 +281,7 @@ func (e *Enricher) getLastModified(ctx context.Context, cu *url.URL) (time.Time,
 // to w means they are deemed to have changed since the compressed
 // file was last processed. w and fp can be modified.
 func (e *Enricher) processChanges(ctx context.Context, w io.Writer, fp *fingerprint, changed map[string]bool) error {
-	tf, err := tmp.NewFile("", "enricher.rhel-csaf-changes.")
+	tf, err := tmp.NewFile("", "enricher.stackrox-rhel-csaf-changes.")
 	if err != nil {
 		return err
 	}
