@@ -14,6 +14,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-26849: Introduce report caching for RHCOS Node Indexing
 - ROX-25638: Introduce configurable log rotation. `ROX_LOGGING_MAX_ROTATION_FILES` and `ROX_LOGGING_MAX_SIZE_MB` variables allow for configuring the number and the size of a central log rotation file.
 - ROX-14332: Automatic service certificate renewal for Secured Clusters installed using Helm or operator.
+- ROX-26088: Implemented Cluster Registration Secrets (CRS) as a successor to init bundles for registering Secured Clusters.
 
 ### Removed Features
 
