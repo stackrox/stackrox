@@ -11,8 +11,9 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
+	notifierDatastore "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/policy/customresource"
-	"github.com/stackrox/rox/central/policy/datastore"
+	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/apiparams"
 	"github.com/stackrox/rox/pkg/httputil"
@@ -32,14 +33,16 @@ var (
 )
 
 // Handler returns a handler for policy http requests
-func Handler(c datastore.DataStore) http.Handler {
+func Handler(p policyDatastore.DataStore, n notifierDatastore.DataStore) http.Handler {
 	return httpHandler{
-		policyStore: c,
+		policyStore:   p,
+		notifierStore: n,
 	}
 }
 
 type httpHandler struct {
-	policyStore datastore.DataStore
+	policyStore   policyDatastore.DataStore
+	notifierStore notifierDatastore.DataStore
 }
 
 func (h httpHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
@@ -80,6 +83,16 @@ func (h httpHandler) saveAsCustomResources(ctx context.Context, request *apipara
 		return
 	}
 
+	notifierList, err := h.notifierStore.GetNotifiers(ctx)
+	if err != nil {
+		httputil.WriteGRPCStyleError(writer, codes.Internal, err)
+		return
+	}
+	notifiers := make(map[string]string, len(notifierList))
+	for _, n := range notifierList {
+		notifiers[n.GetName()] = n.GetId()
+	}
+
 	zipWriter := zip.NewWriter(writer)
 	defer utils.IgnoreError(zipWriter.Close)
 
@@ -87,7 +100,7 @@ func (h httpHandler) saveAsCustomResources(ctx context.Context, request *apipara
 	writer.Header().Set("Content-Type", "application/zip")
 	names := set.NewStringSet()
 	for _, policy := range policyList {
-		cr := customresource.ConvertPolicyToCustomResource(policy)
+		cr := customresource.ConvertPolicyToCustomResource(policy, notifiers)
 		// Rename custom resource if its name conflicts with existing resource in the zip archive.
 		crName, ok := cr.Metadata["name"].(string)
 		if !ok {

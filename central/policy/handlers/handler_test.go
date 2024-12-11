@@ -12,6 +12,7 @@ import (
 	"strings"
 	"testing"
 
+	notifierStoreMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	"github.com/stackrox/rox/central/policy/customresource"
 	policyStoreMocks "github.com/stackrox/rox/central/policy/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -34,18 +35,19 @@ func TestPolicyHTTPTestSuite(t *testing.T) {
 type PolicyHandlerTestSuite struct {
 	suite.Suite
 
-	ctx          context.Context
-	mockCtrl     *gomock.Controller
-	policyStore  *policyStoreMocks.MockDataStore
-	handler      http.Handler
-	mockRecorder *httptest.ResponseRecorder
+	ctx           context.Context
+	mockCtrl      *gomock.Controller
+	policyStore   *policyStoreMocks.MockDataStore
+	notifierStore *notifierStoreMocks.MockDataStore
+	handler       http.Handler
+	mockRecorder  *httptest.ResponseRecorder
 }
 
 func (s *PolicyHandlerTestSuite) SetupTest() {
 	s.ctx = context.Background()
 	s.mockCtrl = gomock.NewController(s.T())
 	s.policyStore = policyStoreMocks.NewMockDataStore(s.mockCtrl)
-	s.handler = Handler(s.policyStore)
+	s.handler = Handler(s.policyStore, s.notifierStore)
 	s.mockRecorder = httptest.NewRecorder()
 }
 
