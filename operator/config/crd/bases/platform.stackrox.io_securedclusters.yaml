@@ -558,6 +558,9 @@ spec:
                                       The maximum number of open networking connections
                                       reported for each container per scrape.
                                     type: integer
+                                type: object
+                            type: object
+                        type: object
 
                       collection:
                         default: CORE_BPF
