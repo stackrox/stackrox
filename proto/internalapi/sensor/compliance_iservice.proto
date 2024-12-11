@@ -59,6 +59,11 @@ message MsgToCompliance {
       ACK = 0;
       NACK = 1;
     }
+    MessageType messageType = 2;
+    enum MessageType {
+      NodeInventory = 0;
+      NodeIndexer = 1;
+    }
   }
 
   oneof msg {
