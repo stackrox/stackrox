@@ -56,10 +56,6 @@ spec:
     value: '0'
   - name: clone-fetch-tags
     value: 'true'
-  - name: application
-    valueFrom:
-      fieldRef:
-        fieldPath: metadata.labels['appstudio.openshift.io/application']
 
   workspaces:
   - name: git-auth

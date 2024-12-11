@@ -12,9 +12,6 @@ spec:
   - name: IMAGE_REFS
     description: Image references.
     type: string
-  - name: APPLICATION
-    description: Konflux application.
-    type: string
   volumes:
   - name: workdir
     emptyDir: { }
@@ -31,6 +28,11 @@ spec:
   - name: create-snapshot
     image: registry.access.redhat.com/ubi9/ubi:latest
     workingDir: /var/workdir/source
+    env:
+      - name: APPLICATION
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.labels['appstudio.openshift.io/application']
     script: |
       #!/usr/bin/env bash
       set -euo pipefail
@@ -39,4 +41,4 @@ spec:
 
       echo "$(params.IMAGE_REFS)"
 
-      echo "Application: $(params.APPLICATION)"
+      echo "Application: ${APPLICATION}"
