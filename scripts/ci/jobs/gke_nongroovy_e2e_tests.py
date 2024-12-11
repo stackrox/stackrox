@@ -20,6 +20,7 @@ os.environ["SENSOR_SCANNER_SUPPORT"] = "true"
 
 # Enable new CRS-based flow for registering secured clusters
 os.environ["ROX_DEPLOY_SENSOR_WITH_CRS"] = "true"
+os.environ["SENSOR_HELM_MANAGED"] = "true"
 
 ClusterTestRunner(
     cluster=GKECluster("nongroovy-test"),
