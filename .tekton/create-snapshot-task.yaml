@@ -1,0 +1,29 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: create-snapshot
+  namespace: rh-acs-tenant
+spec:
+  description: Creates snapshot
+  params:
+  - name: SOURCE_ARTIFACT
+    description: The Trusted Artifact URI pointing to the application source code.
+    type: string
+  - name: IMAGES
+    description: Image references.
+    type: string
+  steps:
+  - name: use-trusted-artifact
+    image: quay.io/redhat-appstudio/build-trusted-artifacts:latest@sha256:81c4864dae6bb11595f657be887e205262e70086a05ed16ada827fd6391926ac
+    args:
+    - use
+    - $(params.SOURCE_ARTIFACT)=/var/workdir/source
+  - name: wait-for-image
+    image: registry.access.redhat.com/ubi9/ubi:latest
+    script: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+      dnf -y upgrade --nobest
+      dnf -y install jq
+
+      echo "$(params.IMAGE_REF)" | jq
