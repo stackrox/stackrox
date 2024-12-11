@@ -12,11 +12,11 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/mtls"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
-	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certificates"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certrepo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -59,12 +59,10 @@ func newSecuredClusterTLSIssuerFixture(k8sClientConfig fakeK8sClientConfig) *sec
 		componentGetter: &componentGetterMock{},
 		k8sClient:       getFakeK8sClient(k8sClientConfig),
 	}
-	respFromCentralC := make(chan *central.IssueSecuredClusterCertsResponse)
 	fixture.tlsIssuer = &securedClusterTLSIssuerImpl{
 		sensorNamespace:              sensorNamespace,
 		sensorPodName:                sensorPodName,
 		k8sClient:                    fixture.k8sClient,
-		respFromCentralC:             respFromCentralC,
 		certRefreshBackoff:           certRefreshBackoff,
 		getCertificateRefresherFn:    fixture.componentGetter.getCertificateRefresher,
 		getServiceCertificatesRepoFn: fixture.componentGetter.getServiceCertificatesRepo,
@@ -169,9 +167,6 @@ func TestSecuredClusterTLSIssuerFetchSensorDeploymentOwnerRefErrorStartFailure(t
 }
 
 func TestSecuredClusterTLSIssuerProcessMessageKnownMessage(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-	processMessageDoneSignal := concurrency.NewErrorSignal()
 	fixture := newSecuredClusterTLSIssuerFixture(fakeK8sClientConfig{})
 	expectedResponse := &central.IssueSecuredClusterCertsResponse{
 		RequestId: uuid.NewDummy().String(),
@@ -182,43 +177,32 @@ func TestSecuredClusterTLSIssuerProcessMessageKnownMessage(t *testing.T) {
 		},
 	}
 
-	go func() {
-		assert.NoError(t, fixture.tlsIssuer.ProcessMessage(msg))
-		processMessageDoneSignal.Signal()
-	}()
+	done := make(chan struct{})
+	fixture.certRequester.On("DispatchResponse",
+		certificates.NewResponseFromSecuredClusterCerts(expectedResponse)).Run(func(args mock.Arguments) {
+		close(done)
+	}).Once().Return()
+
+	assert.NoError(t, fixture.tlsIssuer.ProcessMessage(msg))
 
 	select {
-	case <-ctx.Done():
-		assert.Fail(t, ctx.Err().Error())
-	case response := <-fixture.tlsIssuer.respFromCentralC:
-		protoassert.Equal(t, expectedResponse, response)
+	case <-done:
+		fixture.certRequester.AssertExpectations(t)
+	case <-time.After(5 * time.Second):
+		t.Fatalf("Test timed out waiting for DispatchResponse to be called")
 	}
-
-	_, ok := processMessageDoneSignal.WaitWithTimeout(100 * time.Millisecond)
-	assert.True(t, ok)
 }
 
 func TestSecuredClusterTLSIssuerProcessMessageUnknownMessage(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-	defer cancel()
-	processMessageDoneSignal := concurrency.NewErrorSignal()
 	fixture := newSecuredClusterTLSIssuerFixture(fakeK8sClientConfig{})
 	msg := &central.MsgToSensor{
 		Msg: &central.MsgToSensor_ReprocessDeployments{},
 	}
 
-	go func() {
-		assert.NoError(t, fixture.tlsIssuer.ProcessMessage(msg))
-		processMessageDoneSignal.Signal()
-	}()
+	assert.NoError(t, fixture.tlsIssuer.ProcessMessage(msg))
 
-	select {
-	case <-ctx.Done():
-	case <-fixture.tlsIssuer.respFromCentralC:
-		assert.Fail(t, "unknown message is not ignored")
-	}
-	_, ok := processMessageDoneSignal.WaitWithTimeout(100 * time.Millisecond)
-	assert.True(t, ok)
+	time.Sleep(100 * time.Millisecond)
+	fixture.certRequester.AssertNotCalled(t, "DispatchResponse", mock.Anything)
 }
 
 func TestSecuredClusterTLSIssuerIntegrationTests(t *testing.T) {

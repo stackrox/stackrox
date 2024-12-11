@@ -29,16 +29,14 @@ func NewLocalScannerTLSIssuer(
 	sensorNamespace string,
 	sensorPodName string,
 ) common.SensorComponent {
-	respFromCentralC := make(chan *central.IssueLocalScannerCertsResponse)
 	return &localScannerTLSIssuerImpl{
 		sensorNamespace:              sensorNamespace,
 		sensorPodName:                sensorPodName,
 		k8sClient:                    k8sClient,
-		respFromCentralC:             respFromCentralC,
 		certRefreshBackoff:           certRefreshBackoff,
 		getCertificateRefresherFn:    newCertificatesRefresher,
 		getServiceCertificatesRepoFn: localscanner.NewServiceCertificatesRepo,
-		certRequester:                certificates.NewLocalScannerCertificateRequester(respFromCentralC),
+		certRequester:                certificates.NewLocalScannerCertificateRequester(),
 	}
 }
 
@@ -46,7 +44,6 @@ type localScannerTLSIssuerImpl struct {
 	sensorNamespace              string
 	sensorPodName                string
 	k8sClient                    kubernetes.Interface
-	respFromCentralC             chan *central.IssueLocalScannerCertsResponse
 	certRefreshBackoff           wait.Backoff
 	getCertificateRefresherFn    certificateRefresherGetter
 	getServiceCertificatesRepoFn serviceCertificatesRepoGetter
@@ -119,22 +116,12 @@ func (i *localScannerTLSIssuerImpl) ResponsesC() <-chan *message.ExpiringMessage
 // This method must not block as it would prevent centralReceiverImpl from sending messages
 // to other SensorComponents.
 func (i *localScannerTLSIssuerImpl) ProcessMessage(msg *central.MsgToSensor) error {
-	switch m := msg.GetMsg().(type) {
-	case *central.MsgToSensor_IssueLocalScannerCertsResponse:
-		response := m.IssueLocalScannerCertsResponse
+	if m, ok := msg.GetMsg().(*central.MsgToSensor_IssueLocalScannerCertsResponse); ok {
 		go func() {
-			ctx, cancel := context.WithTimeout(context.Background(), processMessageTimeout)
-			defer cancel()
-			select {
-			case <-ctx.Done():
-				// certRefresher will retry.
-				log.Errorf("timeout forwarding response %s from central: %s", response, ctx.Err())
-			case i.respFromCentralC <- response:
-			}
+			i.certRequester.DispatchResponse(certificates.NewResponseFromLocalScannerCerts(m.IssueLocalScannerCertsResponse))
 		}()
-		return nil
-	default:
-		// messages not supported by this component are ignored because unknown messages types are handled by the central receiver.
-		return nil
 	}
+
+	// messages not supported by this component are ignored
+	return nil
 }

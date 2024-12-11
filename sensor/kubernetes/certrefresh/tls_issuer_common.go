@@ -19,9 +19,8 @@ var (
 		Steps:    10,
 		Cap:      startTimeout,
 	}
-	processMessageTimeout = 5 * time.Second
-	certRefreshTimeout    = 5 * time.Minute
-	certRefreshBackoff    = wait.Backoff{
+	certRefreshTimeout = 5 * time.Minute
+	certRefreshBackoff = wait.Backoff{
 		Duration: 5 * time.Second,
 		Factor:   3.0,
 		Jitter:   0.1,
