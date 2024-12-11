@@ -248,8 +248,10 @@ func (c *nodeInventoryHandlerImpl) sendNodeInventory(toC chan<- *message.Expirin
 	case toC <- message.New(&central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
 			Event: &central.SensorEvent{
-				Id:     inventory.GetNodeId(),
-				Action: central.ResourceAction_UNSET_ACTION_RESOURCE, // There is no action required for NodeInventory as this is not a K8s resource
+				Id: inventory.GetNodeId(),
+				// ResourceAction_UNSET_ACTION_RESOURCE is the only one supported by Central 4.6 and older.
+				// This can be changed to CREATE or UPDATE when 4.6 is out of support.
+				Action: central.ResourceAction_UNSET_ACTION_RESOURCE,
 				Resource: &central.SensorEvent_NodeInventory{
 					NodeInventory: inventory,
 				},
@@ -270,7 +272,9 @@ func (c *nodeInventoryHandlerImpl) sendNodeIndex(toC chan<- *message.ExpiringMes
 	case toC <- message.New(&central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
 			Event: &central.SensorEvent{
-				Id:     indexWrap.NodeID,
+				Id: indexWrap.NodeID,
+				// ResourceAction_UNSET_ACTION_RESOURCE is the only one supported by Central 4.6 and older.
+				// This can be changed to CREATE or UPDATE when 4.6 is out of support.
 				Action: central.ResourceAction_UNSET_ACTION_RESOURCE,
 				Resource: &central.SensorEvent_IndexReport{
 					IndexReport: indexWrap.IndexReport,
