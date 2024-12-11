@@ -50,7 +50,7 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 	}
 	bundles["nvd"] = nvdOpts()
 	bundles["epss"] = epssOpts()
-	bundles["rhel-csaf"] = csafOpts()
+	bundles["stackrox-rhel-csaf"] = redhatCSAFOpts()
 
 	// ClairCore updaters.
 	for _, uSet := range []string{
@@ -186,12 +186,12 @@ func epssOpts() []updates.ManagerOption {
 	}
 }
 
-func csafOpts() []updates.ManagerOption {
+func redhatCSAFOpts() []updates.ManagerOption {
 		return []updates.ManagerOption{
 		// This is required to prevent default updaters from running.
 		updates.WithEnabled([]string{}),
 		updates.WithFactories(map[string]driver.UpdaterSetFactory{
-			"rhel-csaf": csaf.NewFactory(),
+			"stackrox-rhel-csaf": csaf.NewFactory(),
 		}),
 	}
 }
