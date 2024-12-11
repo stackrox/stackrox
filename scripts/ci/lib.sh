@@ -695,15 +695,16 @@ _image_prefetcher_prebuilt_await() {
     info "Image pre-fetch prebuilt images await for CI_JOB_NAME='${CI_JOB_NAME}'"
 
     case "$CI_JOB_NAME" in
-    *-ocp-*-interop-acs-tests-*)
-        info "Image pre-fetch await for OCP-interop tests..."
-        enable -n exit
-        image_prefetcher_await_set qa-e2e \
-          || info "Image pre-fetch await failed, but this is ignored for OCP-interop tests."
-        enable exit
-        ;;
     *qa-e2e-tests)
+        if [[ "${JOB_NAME:-unknown}" =~ interop ]]; then
+            info "Image pre-fetch await for OCP-interop tests..."
+            enable -n exit
+        fi
         image_prefetcher_await_set qa-e2e
+        if [[ "${JOB_NAME:-unknown}" =~ interop ]]; then
+            info "Image pre-fetch await result is ignored for OCP-interop tests."
+            enable exit
+        fi
         ;;
     # TODO(ROX-20508): for operaror-e2e jobs, pre-fetch images of the release from which operator upgrade test starts.
     *)
@@ -718,15 +719,16 @@ _image_prefetcher_system_await() {
     case "$CI_JOB_NAME" in
     # ROX-24818: GKE is excluded from system image prefetch as it causes
     # flakes in test.
-    *-ocp-*-interop-acs-tests-*)
-        info "Image pre-fetch await for OCP-interop tests..."
-        enable -n exit
-        image_prefetcher_await_set stackrox-images \
-          || info "Image pre-fetch await failed, but this is ignored for OCP-interop tests."
-        enable exit
-        ;;
     *-operator-e2e-tests|*ocp*qa-e2e-tests)
+        if [[ "${JOB_NAME:-unknown}" =~ interop ]]; then
+            info "Image pre-fetch await for OCP-interop tests..."
+            enable -n exit
+        fi
         image_prefetcher_await_set stackrox-images
+        if [[ "${JOB_NAME:-unknown}" =~ interop ]]; then
+            info "Image pre-fetch await result is ignored for OCP-interop tests."
+            enable exit
+        fi
         ;;
     *)
         info "No system image prefetching is performed for: ${CI_JOB_NAME}. Nothing to wait for."
