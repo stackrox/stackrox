@@ -197,27 +197,27 @@ func (w *WorkloadManager) clearActions() {
 			objectctr = objectctr + meta.LenList(list)
 		}
 
-		log.Infof("Found %d items in tracker", objectctr)
-
-		numObjects, numWatchers := w.fakeClient.Tracker().GetNumObjectsWatchers()
-		log.Infof("Found %d objects and %d watchers in tracker.", numObjects, numWatchers)
-
 		/*
-			log.Infof("Numbers of Reactions: %d - WatchReactions: %d - ProxyReactions: %d", len(w.fakeClient.ReactionChain), len(w.fakeClient.WatchReactionChain), len(w.fakeClient.ProxyReactionChain))
-			log.Infof("Number of resources: %d", len(w.fakeClient.Resources))
-				//tracker := w.fakeClient.Tracker()
-				tracker := reflect.ValueOf(w.fakeClient).Elem().FieldByName("tracker")
-				reflectTracker := reflect.ValueOf(tracker).Elem()
+			log.Infof("Found %d items in tracker", objectctr)
 
-				setValue := func(fieldName string, value interface{}) {
-					field := reflectTracker.FieldByName(fieldName)
-					//#nosec G103
-					field = reflect.NewAt(field.Type(), unsafe.Pointer(field.UnsafeAddr())).Elem()
-					field.Set(reflect.ValueOf(value).Elem())
-				}
+			numObjects, numWatchers := w.fakeClient.Tracker().GetNumObjectsWatchers()
+			log.Infof("Found %d objects and %d watchers in tracker.", numObjects, numWatchers)
 
-				setValue("objects", nil)
-				setValue("watchers", nil)
+				log.Infof("Numbers of Reactions: %d - WatchReactions: %d - ProxyReactions: %d", len(w.fakeClient.ReactionChain), len(w.fakeClient.WatchReactionChain), len(w.fakeClient.ProxyReactionChain))
+				log.Infof("Number of resources: %d", len(w.fakeClient.Resources))
+					//tracker := w.fakeClient.Tracker()
+					tracker := reflect.ValueOf(w.fakeClient).Elem().FieldByName("tracker")
+					reflectTracker := reflect.ValueOf(tracker).Elem()
+
+					setValue := func(fieldName string, value interface{}) {
+						field := reflectTracker.FieldByName(fieldName)
+						//#nosec G103
+						field = reflect.NewAt(field.Type(), unsafe.Pointer(field.UnsafeAddr())).Elem()
+						field.Set(reflect.ValueOf(value).Elem())
+					}
+
+					setValue("objects", nil)
+					setValue("watchers", nil)
 		*/
 	}
 }
