@@ -1763,6 +1763,89 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				},
 			},
 		},
+		"when multiple Red Hat CVEs relate to same RHSA return single RHSA": {
+			ccVulnerabilities: map[string]*claircore.Vulnerability{
+				"foo": {
+					ID:                 "foo",
+					Name:               "CVE-2024-24789",
+					Links:              "https://access.redhat.com/security/cve/CVE-2024-24789 https://access.redhat.com/errata/RHSA-2024:10775",
+					Updater:            "rhel-vex",
+					Severity:           "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
+					NormalizedSeverity: claircore.Medium,
+					Issued:             now,
+				},
+				"bar": {
+					ID: "bar",
+					Name: "CVE-2024-24790",
+					Links: "https://access.redhat.com/security/cve/CVE-2024-24790 https://access.redhat.com/errata/RHSA-2024:10775",
+					Updater:            "rhel-vex",
+					Severity:           "CVSS:3.1/AV:L/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:N",
+					NormalizedSeverity: claircore.Medium,
+					Issued:             now,
+				},
+			},
+			advisories: map[string]csaf.Record{
+				"foo": {
+					Name:        "RHSA-2024:10775",
+					Description: "RHSA description",
+					Severity:    "Moderate",
+					CVSSv3: csaf.CVSS{
+						Score:  7.5,
+						Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
+					},
+				},
+				"bar": {
+					Name:        "RHSA-2024:10775",
+					Description: "RHSA description",
+					Severity:    "Moderate",
+					CVSSv3: csaf.CVSS{
+						Score:  7.5,
+						Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
+					},
+				},
+			},
+			want: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"foo": {
+					Id:                 "foo",
+					Name:               "RHSA-2021:5132",
+					Description:        "RHSA description",
+					Link:               "https://access.redhat.com/security/cve/CVE-2021-44228 https://access.redhat.com/errata/RHSA-2021:5132",
+					Issued:             protoNow,
+					Severity:           "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
+					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
+						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+							BaseScore: 9.1,
+							Vector:    "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N",
+						},
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
+						Url:    "https://access.redhat.com/errata/RHSA-2021:5132",
+					},
+					CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+						{
+							V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+								BaseScore: 9.1,
+								Vector:    "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N",
+							},
+							V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
+								BaseScore: 9.4,
+								Vector:    "AV:N/AC:L/Au:N/C:C/I:C/A:N",
+							},
+							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
+							Url:    "https://access.redhat.com/errata/RHSA-2021:5132",
+						},
+						{
+							V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+								BaseScore: 10.0,
+								Vector:    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+							},
+							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+							Url:    "https://nvd.nist.gov/vuln/detail/CVE-2021-44228",
+						},
+					},
+				},
+			},
+		},
 	}
 	ctx := context.Background()
 	for name, tt := range tests {

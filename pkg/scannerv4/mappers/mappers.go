@@ -117,8 +117,11 @@ func ToProtoV4VulnerabilityReport(ctx context.Context, r *claircore.Vulnerabilit
 	if err != nil {
 		return nil, fmt.Errorf("internal error: parsing EPSS items: %w", err)
 	}
-	advisories, err := csafAdvisories(ctx, r.Enrichments)
-	vulnerabilities, err := toProtoV4VulnerabilitiesMap(ctx, r.Vulnerabilities, nvdVulns, epssItems, advisories)
+	csafAdvisories, err := redhatCSAFAdvisories(ctx, r.Enrichments)
+	if err != nil {
+		return nil, fmt.Errorf("internal error: parsing Red Hat CSAF advisories: %w", err)
+	}
+	vulnerabilities, err := toProtoV4VulnerabilitiesMap(ctx, r.Vulnerabilities, nvdVulns, epssItems, csafAdvisories)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: %w", err)
 	}
@@ -413,10 +416,12 @@ func rhelVulnsEPSS(vulns map[string]*claircore.Vulnerability, epssItems map[stri
 	return rhsaEPSS
 }
 
-func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircore.Vulnerability,
+func toProtoV4VulnerabilitiesMap(
+	ctx context.Context,
+	vulns map[string]*claircore.Vulnerability,
 	nvdVulns map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem,
 	epssItems map[string]map[string]*epss.EPSSItem,
-	advisories map[string]csaf.Record,
+	csafAdvisories map[string]csaf.Record,
 ) (map[string]*v4.VulnerabilityReport_Vulnerability, error) {
 	if vulns == nil {
 		return nil, nil
@@ -426,6 +431,7 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 	if !features.ScannerV4RedHatCVEs.Enabled() {
 		rhelEPSSDetails = rhelVulnsEPSS(vulns, epssItems)
 	}
+	uniqueAdvisories := make(map[string]string)
 	for k, v := range vulns {
 		if v == nil {
 			continue
@@ -443,7 +449,17 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 			repoID = v.Repo.ID
 		}
 		// TODO(ROX-26672): Remove this line.
-		advisory, advisoryExists := advisories[v.ID]
+		advisory, advisoryExists := csafAdvisories[v.ID]
+		if id, advisoryUsed := uniqueAdvisories[v.ID]; advisoryExists && advisoryUsed {
+			zlog.Debug(ctx).
+				Str("vuln_id", v.ID).
+				Str("vuln_name", v.Name).
+				Str("vuln_updater", v.Updater).
+				Str("advisory_name", v.Severity).
+				Str("original_vuln_id", id).
+				Msg("skipping vulnerability, as there already exists an advisory for it")
+			continue
+		}
 		normalizedSeverity := toProtoV4VulnerabilitySeverity(ctx, v.NormalizedSeverity)
 		if advisoryExists {
 			normalizedSeverity = toProtoV4VulnerabilitySeverityFromString(ctx, advisory.Severity)
@@ -755,7 +771,7 @@ func nvdVulnerabilities(enrichments map[string][]json.RawMessage) (map[string]ma
 	return ret, nil
 }
 
-func csafAdvisories(ctx context.Context, enrichments map[string][]json.RawMessage) (map[string]csaf.Record, error) {
+func redhatCSAFAdvisories(ctx context.Context, enrichments map[string][]json.RawMessage) (map[string]csaf.Record, error) {
 	if features.ScannerV4RedHatCVEs.Enabled() {
 		return nil, nil
 	}
