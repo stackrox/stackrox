@@ -77,10 +77,10 @@ var (
 			// Name of the node sending an inventory
 			"node_name",
 		})
-	receivedNodeInventoryAck = prometheus.NewCounterVec(prometheus.CounterOpts{
+	receivedNodeScanningAck = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "node_inventory_ack_received_total",
+		Name:      "node_scanning_ack_received_total",
 		Help:      "Total number of Acks or Nacks for Node Inventories/Indexes received by this sensor",
 	},
 		[]string{
@@ -151,9 +151,9 @@ func ObserveReceivedNodeInventory(inventory *storage.NodeInventory) {
 	}).Inc()
 }
 
-// ObserveNodeInventoryAck records (in Sensor) the instance of Central sending (N)Ack to Sensor
-func ObserveNodeInventoryAck(nodeName, ackType, messageType string, reason AckReason, origin AckOrigin) {
-	receivedNodeInventoryAck.With(prometheus.Labels{
+// ObserveNodeScanningAck records (in Sensor) the instance of Central sending (N)Ack to Sensor
+func ObserveNodeScanningAck(nodeName, ackType, messageType string, reason AckReason, origin AckOrigin) {
+	receivedNodeScanningAck.With(prometheus.Labels{
 		"node_name":    nodeName,
 		"origin":       string(origin),
 		"ack_type":     ackType,
@@ -167,6 +167,7 @@ func init() {
 		networkPoliciesStored,
 		networkPoliciesStoreEvents,
 		receivedNodeInventory,
+		receivedNodeScanningAck,
 		DetectorNetworkFlowBufferSize,
 		DetectorProcessIndicatorBufferSize,
 		DetectorNetworkFlowDroppedCount,

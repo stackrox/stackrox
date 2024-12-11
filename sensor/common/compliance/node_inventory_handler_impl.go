@@ -233,7 +233,7 @@ func (c *nodeInventoryHandlerImpl) sendAckToCompliance(
 		Hostname:  nodeName,
 		Broadcast: nodeName == "",
 	}
-	metrics.ObserveNodeInventoryAck(nodeName,
+	metrics.ObserveNodeScanningAck(nodeName,
 		action.String(),
 		messageType.String(),
 		reason, metrics.AckOriginSensor)
