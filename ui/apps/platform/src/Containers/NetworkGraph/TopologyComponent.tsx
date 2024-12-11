@@ -246,7 +246,7 @@ const TopologyComponent = ({
                             edges={model?.edges || []}
                             onNodeSelect={onNodeSelect}
                             EntityHeaderIcon={<ExternalEntitiesIcon />}
-                            sidebarTitle={'Connected Entities Outside Your Cluster'}
+                            sidebarTitle="Connected Entities Outside Your Cluster"
                             flowTableLabel="External entities flows"
                         />
                     )}
@@ -258,7 +258,7 @@ const TopologyComponent = ({
                             edges={model?.edges || []}
                             onNodeSelect={onNodeSelect}
                             EntityHeaderIcon={<InternalEntitiesIcon />}
-                            sidebarTitle={'Unknown entity connections within your clusters'}
+                            sidebarTitle="Unknown entity connections within your clusters"
                             flowTableLabel="Internal entities flows"
                         />
                     )}

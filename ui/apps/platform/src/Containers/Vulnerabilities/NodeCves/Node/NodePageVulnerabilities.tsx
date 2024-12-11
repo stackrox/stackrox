@@ -100,7 +100,7 @@ function NodePageVulnerabilities({ nodeId }: NodePageVulnerabilitiesProps) {
                 />
                 <SummaryCardLayout isLoading={summaryRequest.loading} error={summaryRequest.error}>
                     <SummaryCard
-                        loadingText={'Loading node CVEs by severity summary'}
+                        loadingText="Loading node CVEs by severity summary"
                         data={summaryRequest.data}
                         renderer={({ data }) => (
                             <BySeveritySummaryCard
@@ -111,7 +111,7 @@ function NodePageVulnerabilities({ nodeId }: NodePageVulnerabilitiesProps) {
                         )}
                     />
                     <SummaryCard
-                        loadingText={'Loading node CVEs by status summary'}
+                        loadingText="Loading node CVEs by status summary"
                         data={summaryRequest.data}
                         renderer={({ data }) => (
                             <CvesByStatusSummaryCard
