@@ -261,6 +261,7 @@ func (c *nodeInventoryHandlerImpl) sendNodeInventory(toC chan<- *message.Expirin
 
 func (c *nodeInventoryHandlerImpl) sendNodeIndex(toC chan<- *message.ExpiringMessage, indexWrap *index.IndexReportWrap) {
 	if indexWrap == nil || indexWrap.IndexReport == nil {
+		log.Debugf("Empty index report - not sending to Central")
 		return
 	}
 
