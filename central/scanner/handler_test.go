@@ -45,8 +45,9 @@ func (s *handlerTestSuite) TestGenerateScannerHTTPHandler() {
 	s.Assert().Equal(http.StatusOK, resp.StatusCode)
 	body, err := io.ReadAll(resp.Body)
 	s.Require().NoError(err)
-	s.Assert().NotEmpty(body)
+	s.Require().NoError(resp.Body.Close())
 
+	s.Assert().NotEmpty(body)
 	_, err = zip.NewReader(bytes.NewReader(body), int64(len(body)))
 	s.Assert().NoError(err)
 }

@@ -17,4 +17,5 @@ func TestHttpToHttps(t *testing.T) {
 	resp, err := http.Get(url)
 	require.NoError(t, err)
 	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	require.NoError(t, resp.Body.Close())
 }

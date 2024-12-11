@@ -78,7 +78,8 @@ func (a *APIServerSuite) Test_Server_RateLimit_HTTP_Integration() {
 
 	for _, tt := range tests {
 		a.Run(tt.name, func() {
-			cfg := defaultConf()
+			testPort := getFreeTestPort()
+			cfg := defaultConf(testPort)
 			if tt.hasLimiter {
 				cfg.RateLimiter = ratelimit.NewRateLimiter(tt.maxPerSec, 0)
 			}
@@ -100,10 +101,10 @@ func (a *APIServerSuite) Test_Server_RateLimit_HTTP_Integration() {
 			a.T().Cleanup(func() { api.Stop() })
 			var urls []string
 			if tt.useHTTP {
-				urls = append(urls, fmt.Sprintf("https://localhost:%d/test", testDefaultPort))
+				urls = append(urls, fmt.Sprintf("https://localhost:%d/test", testPort))
 			}
 			if tt.useGRPC {
-				urls = append(urls, fmt.Sprintf("https://localhost:%d/v1/ping", testDefaultPort))
+				urls = append(urls, fmt.Sprintf("https://localhost:%d/v1/ping", testPort))
 			}
 
 			hitLimit := false
@@ -114,6 +115,7 @@ func (a *APIServerSuite) Test_Server_RateLimit_HTTP_Integration() {
 					requestCount++
 					resp, err := http.Get(url)
 					a.Require().NoError(err)
+					a.Require().NoError(resp.Body.Close())
 
 					if !tt.hasLimiter || tt.maxPerSec == 0 || requestCount <= tt.maxPerSec {
 						a.Require().Equal(http.StatusOK, resp.StatusCode)
@@ -155,6 +157,7 @@ func (a *APIServerSuite) Test_Server_RateLimit_HTTP_Integration() {
 				resp, err := http.Get(url)
 				a.Assert().NoError(err)
 				a.Assert().Equal(http.StatusOK, resp.StatusCode)
+				a.Assert().NoError(resp.Body.Close())
 			}
 
 			a.Assert().Equal(requestCount, httpHandler.requestCount+grpcService.requestCount)
