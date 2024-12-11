@@ -498,7 +498,7 @@ require (
 	modernc.org/libc v1.55.3 // indirect
 	modernc.org/mathutil v1.6.0 // indirect
 	modernc.org/memory v1.8.0 // indirect
-	modernc.org/sqlite v1.34.1 // indirect
+	modernc.org/sqlite v1.34.2 // indirect
 	modernc.org/strutil v1.2.0 // indirect
 	modernc.org/token v1.1.0 // indirect
 	oras.land/oras-go v1.2.5 // indirect
@@ -572,5 +572,5 @@ replace (
 	github.com/facebookincubator/nvdtools => github.com/stackrox/nvdtools v0.0.0-20231111002313-57e262e4797e
 	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.2.0
 	github.com/mholt/archiver/v3 => github.com/anchore/archiver/v3 v3.5.2
-	github.com/quay/claircore => github.com/daynewlee/claircore-python-osv v0.0.0-20241202152404-271a0e07b931
+	github.com/quay/claircore => github.com/daynewlee/claircore-python-osv v0.0.0-20241209230628-f93b0346ee39
 )
