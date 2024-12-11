@@ -26,19 +26,19 @@ spec:
         value: task
       resolver: bundles
 
-  - name: show-sbom
-    params:
-    - name: IMAGE_URL
-      value: $(tasks.build-container.results.IMAGE_URL)
-    taskRef:
-      params:
-      - name: name
-        value: show-sbom
-      - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-show-sbom:0.1@sha256:945a7c9066d3e0a95d3fddb7e8a6992e4d632a2a75d8f3a9bd2ff2fef0ec9aa0
-      - name: kind
-        value: task
-      resolver: bundles
+  # - name: show-sbom
+  #   params:
+  #   - name: IMAGE_URL
+  #     value: $(tasks.build-container.results.IMAGE_URL)
+  #   taskRef:
+  #     params:
+  #     - name: name
+  #       value: show-sbom
+  #     - name: bundle
+  #       value: quay.io/konflux-ci/tekton-catalog/task-show-sbom:0.1@sha256:945a7c9066d3e0a95d3fddb7e8a6992e4d632a2a75d8f3a9bd2ff2fef0ec9aa0
+  #     - name: kind
+  #       value: task
+  #     resolver: bundles
 
   params:
   - description: Source Repository URL
@@ -220,21 +220,21 @@ spec:
     default: "acs"
 
   results:
-  - description: ""
-    name: IMAGE_URL
-    value: $(tasks.build-container.results.IMAGE_URL)
-  - description: ""
-    name: IMAGE_DIGEST
-    value: $(tasks.build-container.results.IMAGE_DIGEST)
+  # - description: ""
+  #   name: IMAGE_URL
+  #   value: $(tasks.build-container.results.IMAGE_URL)
+  # - description: ""
+  #   name: IMAGE_DIGEST
+  #   value: $(tasks.build-container.results.IMAGE_DIGEST)
   - description: ""
     name: CHAINS-GIT_URL
     value: $(tasks.clone-repository.results.url)
   - description: ""
     name: CHAINS-GIT_COMMIT
     value: $(tasks.clone-repository.results.commit)
-  - description: ""
-    name: JAVA_COMMUNITY_DEPENDENCIES
-    value: $(tasks.build-container.results.JAVA_COMMUNITY_DEPENDENCIES)
+  # - description: ""
+  #   name: JAVA_COMMUNITY_DEPENDENCIES
+  #   value: $(tasks.build-container.results.JAVA_COMMUNITY_DEPENDENCIES)
 
   workspaces:
   - name: git-auth
