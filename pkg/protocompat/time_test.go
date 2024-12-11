@@ -25,23 +25,30 @@ func TestCompareTimestamps(t *testing.T) {
 	assert.Positive(t, CompareTimestamps(protoTS2, protoTS1))
 }
 
-func TestConvertTimestampToCSVString(t *testing.T) {
+func TestConvertTimestampToString(t *testing.T) {
 	var nilTS *timestamppb.Timestamp
-	nilStringRepresentation := ConvertTimestampToCSVString(nilTS)
+	nilStringRepresentation := ConvertTimestampToString(nilTS, time.RFC3339Nano)
 	assert.Equal(t, "N/A", nilStringRepresentation)
 
 	invalidTS := &timestamppb.Timestamp{
 		Seconds: -62234567890,
 	}
-	stringFromInvalid := ConvertTimestampToCSVString(invalidTS)
+	stringFromInvalid := ConvertTimestampToString(invalidTS, time.RFC3339Nano)
 	assert.Equal(t, "ERR", stringFromInvalid)
 
 	ts := &timestamppb.Timestamp{
 		Seconds: 2345678901,
 		Nanos:   123456789,
 	}
-	timeString := ConvertTimestampToCSVString(ts)
-	assert.Equal(t, "Sun, 01 May 2044 01:28:21 UTC", timeString)
+	timeString := ConvertTimestampToString(ts, time.RFC3339)
+	assert.Equal(t, "2044-05-01T01:28:21Z", timeString)
+
+	timeStringNoFormatProvided := ConvertTimestampToString(ts, "")
+	timeStringDefaultFormat := ConvertTimestampToString(ts, defaultTimeStringFormat)
+	assert.Equal(t, timeStringDefaultFormat, timeStringNoFormatProvided)
+
+	timeStringRFC1123 := ConvertTimestampToString(ts, time.RFC1123)
+	assert.Equal(t, "Sun, 01 May 2044 01:28:21 UTC", timeStringRFC1123)
 }
 
 func TestConvertTimestampToTimeOrError(t *testing.T) {
