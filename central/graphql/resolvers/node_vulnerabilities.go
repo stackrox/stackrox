@@ -69,6 +69,7 @@ func (resolver *Resolver) NodeVulnerability(ctx context.Context, args IDQuery) (
 // NodeVulnerabilities resolves a set of vulnerabilities based on a query.
 func (resolver *Resolver) NodeVulnerabilities(ctx context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeVulnerabilities")
+	log.Info("GraphQL NodeVulnerabilities resolver")
 
 	if err := readNodes(ctx); err != nil {
 		return nil, err
@@ -103,6 +104,7 @@ func (resolver *Resolver) NodeVulnerabilities(ctx context.Context, args Paginate
 // NodeVulnerabilityCount returns count of node vulnerabilities based on a query
 func (resolver *Resolver) NodeVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeVulnerabilityCount")
+	log.Info("GraphQL NodeVulnerabilityCount resolver")
 
 	if err := readNodes(ctx); err != nil {
 		return 0, err
@@ -126,6 +128,7 @@ func (resolver *Resolver) NodeVulnerabilityCount(ctx context.Context, args RawQu
 // NodeVulnerabilityCounter returns a VulnerabilityCounterResolver for the input query.s
 func (resolver *Resolver) NodeVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeVulnerabilityCounter")
+	log.Info("GraphQL NodeVulnerabilityCounter resolver")
 
 	if err := readNodes(ctx); err != nil {
 		return nil, err

@@ -75,6 +75,7 @@ func InitCompliance() {
 // ComplianceStandards returns graphql resolvers for all compliance standards
 func (resolver *Resolver) ComplianceStandards(ctx context.Context, query RawQuery) ([]*complianceStandardMetadataResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ComplianceStandards")
+	log.Info("GraphQL ComplianceStandards resolver")
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
@@ -103,6 +104,7 @@ func (resolver *Resolver) ComplianceStandards(ctx context.Context, query RawQuer
 // ComplianceStandard returns a graphql resolver for a named compliance standard
 func (resolver *Resolver) ComplianceStandard(ctx context.Context, args struct{ graphql.ID }) (*complianceStandardMetadataResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ComplianceStandard")
+	log.Info("GraphQL ComplianceStandard resolver")
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
@@ -256,6 +258,7 @@ type aggregatedResultQuery struct {
 // AggregatedResults returns the aggregation of the last runs aggregated by scope, unit and filtered by a query
 func (resolver *Resolver) AggregatedResults(ctx context.Context, args aggregatedResultQuery) (*complianceAggregationResponseWithDomainResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "AggregatedResults")
+	log.Info("GraphQL Compliance AggregatedResults resolver")
 
 	if err := readCompliance(ctx); err != nil {
 		return nil, err

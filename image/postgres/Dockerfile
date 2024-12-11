@@ -1,4 +1,4 @@
-FROM quay.io/sclorg/postgresql-13-c8s:latest AS final
+FROM quay.io/sclorg/postgresql-15-c8s:latest AS final
 
 USER root
 
