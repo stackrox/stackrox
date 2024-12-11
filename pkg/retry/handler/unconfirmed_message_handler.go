@@ -63,7 +63,8 @@ func (s *UnconfirmedMessageHandlerImpl) run() {
 			select {
 			case <-s.ticker.C:
 				s.retryLater()
-				log.Infof("Suggesting to resend %s, retry %d (next retry in %s)", s.messageName, s.retry.Load(), s.resendInterval)
+				log.Infof("There are %d unacked messages: Suggesting to resend %s, retry %d (next retry in %s)",
+					s.numUnackedSendings.Load(), s.messageName, s.retry.Load(), s.resendInterval)
 				s.ch <- struct{}{}
 			case <-s.ctx.Done():
 				return
