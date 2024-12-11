@@ -228,6 +228,18 @@ func getCentralDBComponentValues(c *platform.CentralDBSpec) *translation.ValuesB
 		cv.SetStringValue("configOverride", c.ConfigOverride.Name)
 	}
 
+	bcv := translation.NewValuesBuilder()
+	if c.BetterConfigOverride != nil {
+		bcv.SetInt32("maxConnections", c.BetterConfigOverride.MaxConnections)
+		bcv.SetString("sharedBuffers", c.BetterConfigOverride.SharedBuffers)
+		bcv.SetString("workMem", c.BetterConfigOverride.WorkMem)
+		bcv.SetString("hashMemMultiplier", c.BetterConfigOverride.HashMemMultiplier)
+		bcv.SetString("maintenanceWorkMem", c.BetterConfigOverride.MaintenanceWorkMem)
+		bcv.SetString("effectiveCacheSize", c.BetterConfigOverride.EffectiveCacheSize)
+		bcv.SetString("maxWalSize", c.BetterConfigOverride.MaxWalSize)
+		bcv.SetString("minWalSize", c.BetterConfigOverride.MinWalSize)
+	}
+
 	source := translation.NewValuesBuilder()
 	if c.ConnectionPoolSize != nil {
 		source.SetInt32("minConns", c.ConnectionPoolSize.MinConnections)
