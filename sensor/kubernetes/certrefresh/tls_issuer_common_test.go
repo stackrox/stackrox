@@ -125,6 +125,10 @@ func (m *certificateRequesterMock) RequestCertificates(ctx context.Context) (*ce
 	return args.Get(0).(*certificates.Response), args.Error(1)
 }
 
+func (m *certificateRequesterMock) DispatchResponse(response *certificates.Response) {
+	m.Called(response)
+}
+
 func (m *certificateRequesterMock) MsgToCentralC() <-chan *message.ExpiringMessage {
 	args := m.Called()
 	return args.Get(0).(<-chan *message.ExpiringMessage)
