@@ -1,31 +1,17 @@
 package clusterentities
 
-func newEntityStatus(numTicks uint16) *entityStatus {
+func newHistoricalEntity(numTicks uint16) *entityStatus {
 	return &entityStatus{
-		ticksLeft:    numTicks,
-		isHistorical: false,
+		ticksLeft: numTicks,
 	}
 }
 
 type entityStatus struct {
-	ticksLeft    uint16
-	isHistorical bool
+	ticksLeft uint16
 }
 
-// markHistorical is called when entity is deleted from the cluster.
-// Instead of deleting it from memory, we mark it as historical and keep it as long as ticksLeft
-func (es *entityStatus) markHistorical(ticksLeft uint16) {
-	if !es.isHistorical {
-		es.ticksLeft = ticksLeft
-	}
-	es.isHistorical = true
-}
-
-// recordTick decreases value of ticksLeft until it reaches 0
+// recordTick decreases the value of ticksLeft until it reaches 0
 func (es *entityStatus) recordTick() {
-	if !es.isHistorical {
-		return
-	}
 	if es.ticksLeft > 0 {
 		es.ticksLeft--
 	}
@@ -33,5 +19,5 @@ func (es *entityStatus) recordTick() {
 
 // IsExpired returns true if historical entry waited for `ticksLeft` ticks
 func (es *entityStatus) IsExpired() bool {
-	return es.isHistorical && es.ticksLeft == 0
+	return es.ticksLeft == 0
 }
