@@ -302,10 +302,7 @@ type CollectorContainerSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:select:EBPF", "urn:alm:descriptor:com.tectonic.ui:select:CORE_BPF", "urn:alm:descriptor:com.tectonic.ui:select:NoCollection"}
 	Collection *CollectionMethod `json:"collection,omitempty"`
 
-	// The image flavor to use for collector. "Regular" images are bigger in size, but contain probes
-	// for most kernels. If you use the "Slim" image flavor, you must ensure that your Central instance
-	// is connected to the internet, or regularly receives Collector Support Package updates (for further
-	// instructions, please refer to the documentation).
+	// Deprecated field. This field will be removed in a future release.
 	//+kubebuilder:default=Regular
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
 	ImageFlavor *CollectorImageFlavor `json:"imageFlavor,omitempty"`
