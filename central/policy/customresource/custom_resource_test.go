@@ -26,13 +26,14 @@ func TestConvertToCR(t *testing.T) {
 	policy := getTestPolicy()
 	converted, err := generateCustomResource(policy)
 	require.NoError(t, err)
+
 	assert.YAMLEq(t, templateFile, converted)
 }
 
 func getTestPolicy() *storage.Policy {
 	p := fixtures.GetPolicy()
 	p.Notifiers = []string{
-		"email-notifier",
+		emailNotifierID,
 	}
 	p.MitreAttackVectors = []*storage.Policy_MitreAttackVectors{
 		{
@@ -157,8 +158,8 @@ func TestToDNSSubdomainName(t *testing.T) {
 // generateCustomResource generate custom resource in YAML text from a policy
 func generateCustomResource(policy *storage.Policy) (string, error) {
 	notifiers := map[string]string{
-		"email-notifier": emailNotifierID,
-		"jira-notifier":  jiraNotifierID,
+		emailNotifierID: "email-notifier",
+		jiraNotifierID:  "jira-notifier",
 	}
 
 	w := &bytes.Buffer{}

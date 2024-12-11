@@ -3,11 +3,8 @@
 package customresource
 
 import (
-	"fmt"
-
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sliceutils"
-	"github.com/stackrox/rox/pkg/uuid"
 )
 
 // Scope represents storage.Scope in the Custom Resource.
@@ -110,25 +107,6 @@ func convertPolicySection(p *storage.PolicySection) *PolicySection {
 	}
 }
 
-// convertNotifiers Converts notifier names to IDs
-func convertNotifiers(notifierRefs []string, notifierMap map[string]string) []string {
-	convertedNotifiers := make([]string, 0, len(notifierRefs))
-	for _, notifier := range notifierRefs {
-		_, err := uuid.FromString(notifier)
-		if err == nil {
-			convertedNotifiers = append(convertedNotifiers, notifier)
-			continue
-		}
-		// spec has notifier names specified
-		id, exists := notifierMap[notifier]
-		if exists {
-			convertedNotifiers = append(convertedNotifiers, id)
-			continue
-		}
-	}
-	return convertedNotifiers
-}
-
 // Policy represents storage.Policy in the Custom Resource.
 type Policy struct {
 	Name               string       `yaml:"policyName"`
@@ -157,6 +135,15 @@ func convertPolicy(p *storage.Policy, notifiers map[string]string) *Policy {
 		return nil
 	}
 
+	convertedNotifiers := make([]string, 0, len(p.Notifiers))
+	for _, notifier := range p.Notifiers {
+		name, exists := notifiers[notifier]
+		if exists {
+			convertedNotifiers = append(convertedNotifiers, name)
+			continue
+		}
+	}
+
 	return &Policy{
 		Name:               p.Name,
 		Description:        p.Description,
@@ -170,7 +157,7 @@ func convertPolicy(p *storage.Policy, notifiers map[string]string) *Policy {
 		Scope:              sliceutils.ConvertSlice(p.Scope, convertScope),
 		Severity:           p.Severity.String(),
 		EnforcementActions: sliceutils.StringSlice(p.EnforcementActions...),
-		Notifiers:          sliceutils.ConvertSlice(p.Notifiers, convertNotifiers),
+		Notifiers:          convertedNotifiers,
 		PolicySections:     sliceutils.ConvertSlice(p.PolicySections, convertPolicySection),
 		MitreAttackVectors: p.MitreAttackVectors,
 		CriteriaLocked:     p.CriteriaLocked,
