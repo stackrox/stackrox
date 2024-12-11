@@ -2,6 +2,7 @@
 // The contents are strongly based on https://github.com/quay/claircore/tree/v1.5.33/rhel/vex.
 //
 // This exists as a temporary solution at this point, but there is potential for repurposing.
+// TODO(ROX-26672): This enricher may no longer be needed one this is done.
 package csaf
 
 import (
@@ -102,7 +103,7 @@ func (e *Enricher) Configure(_ context.Context, f driver.ConfigUnmarshaler, c *h
 
 // Name implements driver.Enricher and driver.EnrichmentUpdater.
 func (*Enricher) Name() string {
-	return "rhel-csaf"
+	return "stackrox-rhel-csaf"
 }
 
 // Enrich implements driver.Enricher.
