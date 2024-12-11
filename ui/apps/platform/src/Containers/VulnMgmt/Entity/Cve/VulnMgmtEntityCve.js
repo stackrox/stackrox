@@ -1,5 +1,6 @@
 import React, { useContext } from 'react';
 import { gql } from '@apollo/client';
+import { Alert } from '@patternfly/react-core';
 
 import { workflowEntityPropTypes, workflowEntityDefaultProps } from 'constants/entityPageProps';
 import useCases from 'constants/useCaseTypes';
@@ -12,7 +13,6 @@ import {
     NODE_CVE_DETAIL_FRAGMENT,
     CLUSTER_CVE_DETAIL_FRAGMENT,
 } from 'Containers/VulnMgmt/VulnMgmt.fragments';
-import NoResultsMessage from 'Components/NoResultsMessage';
 import WorkflowEntityPage from '../WorkflowEntityPage';
 import VulnMgmtCveOverview from './VulnMgmtCveOverview';
 import VulnMgmtList from '../../List/VulnMgmtList';
@@ -71,11 +71,14 @@ const VulmMgmtCve = ({ entityId, entityListType, search, entityContext, sort, pa
     // When switching between workflow states, the entity state changes before this component dismounts
     if (!entityListType && (!vulnQuery || !vulnFields)) {
         return (
-            <NoResultsMessage
-                message={`No vulnerability found of type ${cveType}`}
-                className="p-3"
-                icon="info"
-            />
+            <div className="w-full">
+                <Alert
+                    variant="warning"
+                    isInline
+                    title={`No vulnerability found of type ${cveType}`}
+                    component="p"
+                />
+            </div>
         );
     }
 

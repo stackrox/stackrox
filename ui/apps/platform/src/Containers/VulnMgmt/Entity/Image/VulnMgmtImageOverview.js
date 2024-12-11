@@ -166,7 +166,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                 <CollapsibleSection id="image-findings" title="Image Findings" defaultOpen>
                     <div className="flex pdf-page pdf-stretch pdf-new rounded relative mb-4 ml-4 mr-4 pb-20">
                         <Alert
-                            variant="warning"
+                            variant="info"
                             isInline
                             title={
                                 <>
@@ -183,6 +183,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                                 </>
                             }
                             component="p"
+                            className="w-full"
                         />
                     </div>
                 </CollapsibleSection>
