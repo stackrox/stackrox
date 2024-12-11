@@ -217,7 +217,6 @@ spec:
   - name: application
     description: Name of the Konflux application that the bundle is created for to use in snapshot.
     type: string
-    default: "acs"
 
   results:
   # - description: ""
@@ -298,9 +297,7 @@ spec:
     - name: SOURCE_ARTIFACT
       value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
     - name: APPLICATION
-      valueFrom:
-        fieldRef:
-          fieldPath: metadata.labels['appstudio.openshift.io/application']
+      value: $(params.application)
     - name: IMAGE_REFS
       value: |
         [

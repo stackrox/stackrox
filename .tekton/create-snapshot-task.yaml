@@ -14,6 +14,7 @@ spec:
     type: string
   - name: APPLICATION
     description: Konflux application.
+    type: string
   volumes:
   - name: workdir
     emptyDir: { }
