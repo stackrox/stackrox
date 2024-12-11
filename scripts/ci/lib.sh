@@ -692,6 +692,8 @@ image_prefetcher_system_await() {
 }
 
 _image_prefetcher_prebuilt_await() {
+    info "Image pre-fetch prebuilt images await for CI_JOB_NAME='${CI_JOB_NAME}'"
+
     case "$CI_JOB_NAME" in
     *-ocp-*-interop-acs-tests-*)
         info "Image pre-fetch await for OCP-interop tests..."
@@ -711,6 +713,8 @@ _image_prefetcher_prebuilt_await() {
 }
 
 _image_prefetcher_system_await() {
+    info "Image pre-fetch system images await for CI_JOB_NAME='${CI_JOB_NAME}'"
+
     case "$CI_JOB_NAME" in
     # ROX-24818: GKE is excluded from system image prefetch as it causes
     # flakes in test.
