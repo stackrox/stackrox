@@ -68,7 +68,6 @@ func (f *localScannerTLSIssuerFixture) assertMockExpectations(t *testing.T) {
 
 // mockForStart setups the mocks for the happy path of Start
 func (f *localScannerTLSIssuerFixture) mockForStart(conf mockForStartConfig) {
-	f.certRequester.On("Start").Once()
 	f.certRefresher.On("Start").Once().Return(conf.refresherStartErr)
 
 	f.repo.On("GetServiceCertificates", mock.Anything).Once().
@@ -100,7 +99,6 @@ func TestLocalScannerTLSIssuerStartStopSuccess(t *testing.T) {
 			fixture := newLocalScannerTLSIssuerFixture(fakeK8sClientConfig{})
 			fixture.mockForStart(mockForStartConfig{getCertsErr: tc.getCertsErr})
 			fixture.certRefresher.On("Stop").Once()
-			fixture.certRequester.On("Stop").Once()
 
 			startErr := fixture.tlsIssuer.Start()
 			fixture.tlsIssuer.Stop(nil)
@@ -116,7 +114,6 @@ func TestLocalScannerTLSIssuerRefresherFailureStartFailure(t *testing.T) {
 	fixture := newLocalScannerTLSIssuerFixture(fakeK8sClientConfig{})
 	fixture.mockForStart(mockForStartConfig{refresherStartErr: errForced})
 	fixture.certRefresher.On("Stop").Once()
-	fixture.certRequester.On("Stop").Once()
 
 	startErr := fixture.tlsIssuer.Start()
 
@@ -128,7 +125,6 @@ func TestLocalScannerTLSIssuerStartAlreadyStartedFailure(t *testing.T) {
 	fixture := newLocalScannerTLSIssuerFixture(fakeK8sClientConfig{})
 	fixture.mockForStart(mockForStartConfig{})
 	fixture.certRefresher.On("Stop").Once()
-	fixture.certRequester.On("Stop").Once()
 
 	startErr := fixture.tlsIssuer.Start()
 	secondStartErr := fixture.tlsIssuer.Start()
@@ -149,7 +145,6 @@ func TestLocalScannerTLSIssuerFetchSensorDeploymentOwnerRefErrorStartFailure(t *
 		t.Run(tcName, func(t *testing.T) {
 			fixture := newLocalScannerTLSIssuerFixture(tc.k8sClientConfig)
 			fixture.certRefresher.On("Stop").Once()
-			fixture.certRequester.On("Stop").Once()
 
 			startErr := fixture.tlsIssuer.Start()
 

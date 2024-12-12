@@ -24,15 +24,19 @@ func NewSecuredClusterTLSIssuer(
 	sensorNamespace string,
 	sensorPodName string,
 ) common.SensorComponent {
-	return &securedClusterTLSIssuerImpl{
+	tlsIssuer := &securedClusterTLSIssuerImpl{
 		sensorNamespace:              sensorNamespace,
 		sensorPodName:                sensorPodName,
 		k8sClient:                    k8sClient,
 		certRefreshBackoff:           certRefreshBackoff,
 		getCertificateRefresherFn:    newCertificatesRefresher,
 		getServiceCertificatesRepoFn: securedcluster.NewServiceCertificatesRepo,
-		certRequester:                certificates.NewSecuredClusterCertificateRequester(),
+		msgToCentralC:                make(chan *message.ExpiringMessage),
+		stopSig:                      concurrency.NewErrorSignal(),
 	}
+
+	tlsIssuer.certRequester = certificates.NewSecuredClusterCertificateRequester(tlsIssuer.msgToCentralHandler)
+	return tlsIssuer
 }
 
 type securedClusterTLSIssuerImpl struct {
@@ -44,6 +48,8 @@ type securedClusterTLSIssuerImpl struct {
 	getServiceCertificatesRepoFn serviceCertificatesRepoGetter
 	certRequester                certificates.Requester
 	certRefresher                concurrency.RetryTicker
+	msgToCentralC                chan *message.ExpiringMessage
+	stopSig                      concurrency.ErrorSignal
 }
 
 // Start starts the Sensor component and launches a certificate refresher that immediately checks the certificates,
@@ -52,6 +58,7 @@ type securedClusterTLSIssuerImpl struct {
 // In case this component was already started, it fails immediately.
 func (i *securedClusterTLSIssuerImpl) Start() error {
 	log.Debug("Starting Secured Cluster TLS issuer.")
+	i.stopSig.Reset()
 	ctx, cancel := context.WithTimeout(context.Background(), startTimeout)
 	defer cancel()
 
@@ -70,7 +77,6 @@ func (i *securedClusterTLSIssuerImpl) Start() error {
 	i.certRefresher = i.getCertificateRefresherFn("secured cluster certificates", i.certRequester.RequestCertificates, certsRepo,
 		certRefreshTimeout, i.certRefreshBackoff)
 
-	i.certRequester.Start()
 	if refreshStartErr := i.certRefresher.Start(); refreshStartErr != nil {
 		return i.abortStart(errors.Wrap(refreshStartErr, "starting certificate certRefresher"))
 	}
@@ -86,12 +92,12 @@ func (i *securedClusterTLSIssuerImpl) abortStart(err error) error {
 }
 
 func (i *securedClusterTLSIssuerImpl) Stop(_ error) {
+	i.stopSig.Signal()
 	if i.certRefresher != nil {
 		i.certRefresher.Stop()
 		i.certRefresher = nil
 	}
 
-	i.certRequester.Stop()
 	log.Debug("Secured Cluster TLS issuer stopped.")
 }
 
@@ -104,7 +110,7 @@ func (i *securedClusterTLSIssuerImpl) Capabilities() []centralsensor.SensorCapab
 // ResponsesC is called "responses" because for other SensorComponents it is Central that
 // initiates the interaction. However, here it is Sensor which sends a request to Central.
 func (i *securedClusterTLSIssuerImpl) ResponsesC() <-chan *message.ExpiringMessage {
-	return i.certRequester.MsgToCentralC()
+	return i.msgToCentralC
 }
 
 // ProcessMessage dispatches Central's messages to Sensor received via the Central receiver.
@@ -119,4 +125,15 @@ func (i *securedClusterTLSIssuerImpl) ProcessMessage(msg *central.MsgToSensor) e
 
 	// messages not supported by this component are ignored
 	return nil
+}
+
+func (i *securedClusterTLSIssuerImpl) msgToCentralHandler(ctx context.Context, msg *message.ExpiringMessage) error {
+	select {
+	case <-i.stopSig.Done():
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	case i.msgToCentralC <- msg:
+		return nil
+	}
 }

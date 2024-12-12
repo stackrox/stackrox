@@ -17,56 +17,9 @@ var (
 	testTimeout = time.Second
 )
 
-func TestLocalScannerCertificateRequesterRequestFailureIfStopped(t *testing.T) {
-	testCases := map[string]struct {
-		startRequester bool
-	}{
-		"requester not started":            {false},
-		"requester stopped before request": {true},
-	}
-	for tcName, tc := range testCases {
-		t.Run(tcName, func(t *testing.T) {
-			f := newLocalScannerFixture(0)
-			defer f.tearDown()
-			if tc.startRequester {
-				f.requester.Start()
-				f.requester.Stop()
-			}
-
-			certs, requestErr := f.requester.RequestCertificates(f.ctx)
-			assert.Nil(t, certs)
-			assert.Equal(t, ErrCertificateRequesterStopped, requestErr)
-		})
-	}
-}
-
-func TestSecuredClusterCertificateRequesterRequestFailureIfStopped(t *testing.T) {
-	testCases := map[string]struct {
-		startRequester bool
-	}{
-		"requester not started":            {false},
-		"requester stopped before request": {true},
-	}
-	for tcName, tc := range testCases {
-		t.Run(tcName, func(t *testing.T) {
-			f := newSecuredClusterFixture(0)
-			defer f.tearDown()
-			if tc.startRequester {
-				f.requester.Start()
-				f.requester.Stop()
-			}
-
-			certs, requestErr := f.requester.RequestCertificates(f.ctx)
-			assert.Nil(t, certs)
-			assert.Equal(t, ErrCertificateRequesterStopped, requestErr)
-		})
-	}
-}
-
 func TestLocalScannerCertificateRequesterRequestCancellation(t *testing.T) {
 	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.SecuredClusterCertificatesReissue})
 	f := newLocalScannerFixture(0)
-	f.requester.Start()
 	defer f.tearDown()
 
 	f.cancelCtx()
@@ -78,7 +31,6 @@ func TestLocalScannerCertificateRequesterRequestCancellation(t *testing.T) {
 func TestSecuredClusterCertificateRequesterRequestCancellation(t *testing.T) {
 	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.SecuredClusterCertificatesReissue})
 	f := newSecuredClusterFixture(0)
-	f.requester.Start()
 	defer f.tearDown()
 
 	f.cancelCtx()
@@ -89,7 +41,6 @@ func TestSecuredClusterCertificateRequesterRequestCancellation(t *testing.T) {
 
 func TestLocalScannerCertificateRequesterRequestSuccess(t *testing.T) {
 	f := newLocalScannerFixture(0)
-	f.requester.Start()
 	defer f.tearDown()
 
 	go f.respondRequest(t, nil)
@@ -101,7 +52,6 @@ func TestLocalScannerCertificateRequesterRequestSuccess(t *testing.T) {
 
 func TestSecuredClusterCertificateRequesterRequestSuccess(t *testing.T) {
 	f := newSecuredClusterFixture(0)
-	f.requester.Start()
 	defer f.tearDown()
 
 	go f.respondRequest(t, nil)
@@ -122,7 +72,6 @@ func TestSecuredClusterCertificateRequesterRequestSuccess(t *testing.T) {
 
 func TestLocalScannerCertificateRequesterResponsesWithUnknownIDAreIgnored(t *testing.T) {
 	f := newLocalScannerFixture(100 * time.Millisecond)
-	f.requester.Start()
 	defer f.tearDown()
 
 	response := &central.IssueLocalScannerCertsResponse{RequestId: "UNKNOWN"}
@@ -136,7 +85,6 @@ func TestLocalScannerCertificateRequesterResponsesWithUnknownIDAreIgnored(t *tes
 
 func TestSecuredClusterCertificateRequesterResponsesWithUnknownIDAreIgnored(t *testing.T) {
 	f := newSecuredClusterFixture(100 * time.Millisecond)
-	f.requester.Start()
 	defer f.tearDown()
 
 	response := &central.IssueSecuredClusterCertsResponse{RequestId: "UNKNOWN"}
@@ -150,7 +98,6 @@ func TestSecuredClusterCertificateRequesterResponsesWithUnknownIDAreIgnored(t *t
 
 func TestSecuredClusterCertificateRequesterNoReplyFromCentral(t *testing.T) {
 	f := newSecuredClusterFixture(200 * time.Millisecond)
-	f.requester.Start()
 	defer f.tearDown()
 
 	certs, requestErr := f.requester.RequestCertificates(f.ctx)
@@ -168,6 +115,7 @@ type certificateRequesterFixture[ReqT any, RespT protobufResponse] struct {
 	getRequestID         requestIDGetter
 	newResponseWithID    func(requestID string) RespT
 	responseFactory      responseFactory[RespT]
+	msgToCentralC        chan *message.ExpiringMessage
 }
 
 func newLocalScannerFixture(timeout time.Duration) *certificateRequesterFixture[*central.IssueLocalScannerCertsRequest,
@@ -200,37 +148,49 @@ func newFixture[ReqT any, RespT protobufResponse](
 	getRequestID requestIDGetter,
 	newResponseWithID func(requestID string) RespT,
 ) *certificateRequesterFixture[ReqT, RespT] {
-	requester := newRequester[ReqT, RespT](messageFactory, nil)
 	var interceptedRequestID atomic.Value
 	if timeout == 0 {
 		timeout = testTimeout
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	return &certificateRequesterFixture[ReqT, RespT]{
-		requester:            requester,
+
+	fixture := &certificateRequesterFixture[ReqT, RespT]{
 		ctx:                  ctx,
 		cancelCtx:            cancel,
 		interceptedRequestID: &interceptedRequestID,
 		getRequestID:         getRequestID,
 		newResponseWithID:    newResponseWithID,
 		responseFactory:      responseFactory,
+		msgToCentralC:        make(chan *message.ExpiringMessage),
 	}
+
+	requester := newRequester[ReqT, RespT](messageFactory, nil, fixture.msgToCentralHandler)
+	fixture.requester = requester
+	return fixture
 }
 
 func (f *certificateRequesterFixture[ReqT, RespT]) tearDown() {
 	f.cancelCtx()
-	f.requester.Stop()
 }
 
-// respondRequest reads a request from `f.requester.MsgToCentralC()` and responds with `responseOverwrite` if not nil, or with
-// a response with the same ID as the request otherwise.
+func (f *certificateRequesterFixture[ReqT, RespT]) msgToCentralHandler(ctx context.Context, msg *message.ExpiringMessage) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case f.msgToCentralC <- msg:
+		return nil
+	}
+}
+
+// respondRequest reads a request from `f.MsgToCentralC` and responds with `responseOverwrite` if not nil,
+// or with a response with the same ID as the request otherwise.
 // Before sending the response, it stores in `f.interceptedRequestID` the ID of the request.
 func (f *certificateRequesterFixture[ReqT, RespT]) respondRequest(
 	t *testing.T,
 	responseOverwrite *RespT) {
 	select {
 	case <-f.ctx.Done():
-	case request := <-f.requester.MsgToCentralC():
+	case request := <-f.msgToCentralC:
 		interceptedRequestID := f.getRequestID(request)
 		assert.NotEmpty(t, interceptedRequestID)
 		var response RespT

@@ -80,7 +80,6 @@ func (f *securedClusterTLSIssuerFixture) assertMockExpectations(t *testing.T) {
 
 // mockForStart setups the mocks for the happy path of Start
 func (f *securedClusterTLSIssuerFixture) mockForStart(conf mockForStartConfig) {
-	f.certRequester.On("Start").Once()
 	f.certRefresher.On("Start").Once().Return(conf.refresherStartErr)
 
 	f.repo.On("GetServiceCertificates", mock.Anything).Once().
@@ -107,7 +106,6 @@ func TestSecuredClusterTLSIssuerStartStopSuccess(t *testing.T) {
 			fixture := newSecuredClusterTLSIssuerFixture(fakeK8sClientConfig{})
 			fixture.mockForStart(mockForStartConfig{getCertsErr: tc.getCertsErr})
 			fixture.certRefresher.On("Stop").Once()
-			fixture.certRequester.On("Stop").Once()
 
 			startErr := fixture.tlsIssuer.Start()
 			fixture.tlsIssuer.Stop(nil)
@@ -123,7 +121,6 @@ func TestSecuredClusterTLSIssuerRefresherFailureStartFailure(t *testing.T) {
 	fixture := newSecuredClusterTLSIssuerFixture(fakeK8sClientConfig{})
 	fixture.mockForStart(mockForStartConfig{refresherStartErr: errForced})
 	fixture.certRefresher.On("Stop").Once()
-	fixture.certRequester.On("Stop").Once()
 
 	startErr := fixture.tlsIssuer.Start()
 
@@ -135,7 +132,6 @@ func TestSecuredClusterTLSIssuerStartAlreadyStartedFailure(t *testing.T) {
 	fixture := newSecuredClusterTLSIssuerFixture(fakeK8sClientConfig{})
 	fixture.mockForStart(mockForStartConfig{})
 	fixture.certRefresher.On("Stop").Once()
-	fixture.certRequester.On("Stop").Once()
 
 	startErr := fixture.tlsIssuer.Start()
 	secondStartErr := fixture.tlsIssuer.Start()
@@ -156,7 +152,6 @@ func TestSecuredClusterTLSIssuerFetchSensorDeploymentOwnerRefErrorStartFailure(t
 		t.Run(tcName, func(t *testing.T) {
 			fixture := newSecuredClusterTLSIssuerFixture(tc.k8sClientConfig)
 			fixture.certRefresher.On("Stop").Once()
-			fixture.certRequester.On("Stop").Once()
 
 			startErr := fixture.tlsIssuer.Start()
 
