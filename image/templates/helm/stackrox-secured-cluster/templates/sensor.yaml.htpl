@@ -141,28 +141,7 @@ spec:
         {{- include "srox.injectedCABundleVolumeMount" . | nindent 8 }}
       {{- end }}
       {{- if ._rox._securedClusterCertRefresh }}
-      - name: init-tls-certs
-        image: {{ quote ._rox.image.main.fullRef }}
-        command:
-        - /stackrox/bin/init-tls-certs
-        args:
-        - --legacy=/run/secrets/stackrox.io/certs-legacy/
-        - --new=/run/secrets/stackrox.io/certs-new/
-        - --destination=/run/secrets/stackrox.io/certs/
-        resources:
-          {{- ._rox.sensor._resources | nindent 12 }}
-        securityContext:
-          runAsNonRoot: true
-          readOnlyRootFilesystem: true
-        volumeMounts:
-        - name: certs-legacy
-          mountPath: /run/secrets/stackrox.io/certs-legacy/
-          readOnly: true
-        - name: certs-new
-          mountPath: /run/secrets/stackrox.io/certs-new/
-          readOnly: true
-        - name: certs
-          mountPath: /run/secrets/stackrox.io/certs/
+      - {{ include "srox.tlsCertsInitContainer" (list .  ._rox.sensor._resources) | indent 8 | trim }}
       {{- end }}
       containers:
       - image: {{ quote ._rox.image.main.fullRef }}
@@ -280,23 +259,7 @@ spec:
         {{- end }}
       volumes:
       {{- if ._rox._securedClusterCertRefresh }}
-      - name: certs
-        emptyDir: {}
-      - name: certs-legacy
-        secret:
-          secretName: sensor-tls
-          optional: true
-          items:
-          - key: sensor-cert.pem
-            path: cert.pem
-          - key: sensor-key.pem
-            path: key.pem
-          - key: ca.pem
-            path: ca.pem
-      - name: certs-new
-        secret:
-          secretName: tls-cert-sensor
-          optional: true
+      {{- include "srox.tlsCertsInitContainerVolumes" (list "sensor") | indent 6 }}
       {{- else }}
       - name: certs
         secret:
