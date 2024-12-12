@@ -39,6 +39,9 @@ spec:
       dnf -y upgrade --nobest
       dnf -y install jq
 
+
+      echo "$(params.IMAGE_REFS)"
+
       echo "$(params.IMAGE_REFS)" | jq
 
       cat <<EOF > snapshot-template.json
