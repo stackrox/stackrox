@@ -225,7 +225,15 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
             );
 
             return function WorkloadCvesPage() {
-                return <AsyncWorkloadCvesComponent />;
+                return (
+                    <AsyncWorkloadCvesComponent
+                        context={{
+                            pageTitle: 'Workload CVEs', // TODO Implement throughout in follow up
+                            baseSearchFilter: {}, // TODO Implement throughout in follow up
+                            createUrl: (path) => `${vulnerabilitiesWorkloadCvesPath}${path}`, // TODO Implement throughout in follow up
+                        }}
+                    />
+                );
             };
         })(),
         path: vulnerabilitiesWorkloadCvesPath,

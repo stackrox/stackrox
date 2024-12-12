@@ -19,6 +19,7 @@ import ImagePage from './Image/ImagePage';
 import WorkloadCvesOverviewPage from './Overview/WorkloadCvesOverviewPage';
 import ImageCvePage from './ImageCve/ImageCvePage';
 import NamespaceViewPage from './NamespaceView/NamespaceViewPage';
+import { WorkloadCveView, WorkloadCveViewContext } from './WorkloadCveViewContext';
 
 import './WorkloadCvesPage.css';
 
@@ -26,14 +27,18 @@ const vulnerabilitiesWorkloadCveSinglePath = `${vulnerabilitiesWorkloadCvesPath}
 const vulnerabilitiesWorkloadCveImageSinglePath = `${vulnerabilitiesWorkloadCvesPath}/images/:imageId`;
 const vulnerabilitiesWorkloadCveDeploymentSinglePath = `${vulnerabilitiesWorkloadCvesPath}/deployments/:deploymentId`;
 
-function WorkloadCvesPage() {
+export type WorkloadCvePageProps = {
+    context: WorkloadCveView;
+};
+
+function WorkloadCvesPage({ context }: WorkloadCvePageProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const { hasReadAccess } = usePermissions();
     const hasReadAccessForIntegration = hasReadAccess('Integration');
     const hasReadAccessForNamespaces = hasReadAccess('Namespace');
 
     return (
-        <>
+        <WorkloadCveViewContext.Provider value={context}>
             {hasReadAccessForIntegration && <ScannerV4IntegrationBanner />}
             {!isFeatureFlagEnabled('ROX_VULN_MGMT_2_GA') && (
                 <TechPreviewBanner
@@ -62,12 +67,12 @@ function WorkloadCvesPage() {
                 </Route>
                 <Route>
                     <PageSection variant="light">
-                        <PageTitle title="Workload CVEs - Not Found" />
+                        <PageTitle title={`${context.pageTitle} - Not Found`} />
                         <PageNotFound />
                     </PageSection>
                 </Route>
             </Switch>
-        </>
+        </WorkloadCveViewContext.Provider>
     );
 }
 
