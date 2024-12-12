@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	commonExtensions "github.com/stackrox/rox/operator/internal/common/extensions"
+	commonLabels "github.com/stackrox/rox/operator/internal/common/labels"
 	"github.com/stackrox/rox/operator/internal/types"
 	"github.com/stackrox/rox/pkg/auth/htpasswd"
 	"github.com/stackrox/rox/pkg/grpc/client/authn/basic"
@@ -97,7 +98,7 @@ func (r *reconcileAdminPasswordExtensionRun) Execute(ctx context.Context) error 
 		return err
 	}
 
-	if err := r.EnsureSecret(ctx, defaultPasswordSecretName, r.validateHtpasswdSecretData, r.generateHtpasswdSecretData); err != nil {
+	if err := r.EnsureSecret(ctx, defaultPasswordSecretName, r.validateHtpasswdSecretData, r.generateHtpasswdSecretData, commonLabels.DefaultLabels()); err != nil {
 		return errors.Wrap(err, "reconciling central-htpasswd secret")
 	}
 
