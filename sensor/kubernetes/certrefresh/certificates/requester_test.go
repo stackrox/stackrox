@@ -7,8 +7,6 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/centralsensor"
-	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stretchr/testify/assert"
 )
@@ -18,8 +16,8 @@ var (
 )
 
 func TestLocalScannerCertificateRequesterRequestCancellation(t *testing.T) {
-	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.SecuredClusterCertificatesReissue})
 	f := newLocalScannerFixture(0)
+	f.requester.NotifySensorOnline()
 	defer f.tearDown()
 
 	f.cancelCtx()
@@ -29,8 +27,8 @@ func TestLocalScannerCertificateRequesterRequestCancellation(t *testing.T) {
 }
 
 func TestSecuredClusterCertificateRequesterRequestCancellation(t *testing.T) {
-	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.SecuredClusterCertificatesReissue})
 	f := newSecuredClusterFixture(0)
+	f.requester.NotifySensorOnline()
 	defer f.tearDown()
 
 	f.cancelCtx()
@@ -45,6 +43,7 @@ func TestLocalScannerCertificateRequesterRequestSuccess(t *testing.T) {
 
 	go f.respondRequest(t, nil)
 
+	f.requester.NotifySensorOnline()
 	response, err := f.requester.RequestCertificates(f.ctx)
 	assert.NoError(t, err)
 	assert.Equal(t, f.interceptedRequestID.Load(), response.RequestId)
@@ -56,6 +55,7 @@ func TestSecuredClusterCertificateRequesterRequestSuccess(t *testing.T) {
 
 	go f.respondRequest(t, nil)
 
+	f.requester.NotifySensorOnline()
 	response, err := f.requester.RequestCertificates(f.ctx)
 	assert.NoError(t, err)
 	assert.Equal(t, f.interceptedRequestID.Load(), response.RequestId)
@@ -72,6 +72,7 @@ func TestSecuredClusterCertificateRequesterRequestSuccess(t *testing.T) {
 
 func TestLocalScannerCertificateRequesterResponsesWithUnknownIDAreIgnored(t *testing.T) {
 	f := newLocalScannerFixture(100 * time.Millisecond)
+	f.requester.NotifySensorOnline()
 	defer f.tearDown()
 
 	response := &central.IssueLocalScannerCertsResponse{RequestId: "UNKNOWN"}
@@ -85,6 +86,7 @@ func TestLocalScannerCertificateRequesterResponsesWithUnknownIDAreIgnored(t *tes
 
 func TestSecuredClusterCertificateRequesterResponsesWithUnknownIDAreIgnored(t *testing.T) {
 	f := newSecuredClusterFixture(100 * time.Millisecond)
+	f.requester.NotifySensorOnline()
 	defer f.tearDown()
 
 	response := &central.IssueSecuredClusterCertsResponse{RequestId: "UNKNOWN"}
@@ -98,6 +100,7 @@ func TestSecuredClusterCertificateRequesterResponsesWithUnknownIDAreIgnored(t *t
 
 func TestSecuredClusterCertificateRequesterNoReplyFromCentral(t *testing.T) {
 	f := newSecuredClusterFixture(200 * time.Millisecond)
+	f.requester.NotifySensorOnline()
 	defer f.tearDown()
 
 	certs, requestErr := f.requester.RequestCertificates(f.ctx)
@@ -164,7 +167,7 @@ func newFixture[ReqT any, RespT protobufResponse](
 		msgToCentralC:        make(chan *message.ExpiringMessage),
 	}
 
-	requester := newRequester[ReqT, RespT](messageFactory, nil, fixture.msgToCentralHandler)
+	requester := newRequester[ReqT, RespT](messageFactory, fixture.msgToCentralHandler)
 	fixture.requester = requester
 	return fixture
 }

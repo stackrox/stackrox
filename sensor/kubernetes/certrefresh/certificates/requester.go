@@ -2,16 +2,13 @@ package certificates
 
 import (
 	"context"
-	"fmt"
 	"sync/atomic"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/uuid"
-	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/message"
 )
 
@@ -21,6 +18,8 @@ var (
 
 // Requester defines an interface for requesting TLS certificates from Central
 type Requester interface {
+	NotifySensorOnline()
+	NotifySensorOffline()
 	RequestCertificates(ctx context.Context) (*Response, error)
 	DispatchResponse(response *Response)
 }
@@ -35,7 +34,6 @@ func NewLocalScannerCertificateRequester(msgToCentralFn MsgToCentralFn) Requeste
 		*central.IssueLocalScannerCertsResponse,
 	](
 		&localScannerMessageFactory{},
-		nil,
 		msgToCentralFn,
 	)
 }
@@ -47,35 +45,30 @@ func NewSecuredClusterCertificateRequester(msgToCentralFn MsgToCentralFn) Reques
 		*central.IssueSecuredClusterCertsResponse,
 	](
 		&securedClusterMessageFactory{},
-		func() *centralsensor.CentralCapability {
-			centralCap := centralsensor.CentralCapability(centralsensor.SecuredClusterCertificatesReissue)
-			return &centralCap
-		}(),
 		msgToCentralFn,
 	)
 }
 
 func newRequester[ReqT any, RespT protobufResponse](
 	messageFactory messageFactory,
-	requiredCentralCapability *centralsensor.CentralCapability,
 	msgToCentralFn MsgToCentralFn,
 ) *genericRequester[ReqT, RespT] {
 	return &genericRequester[ReqT, RespT]{
-		messageFactory:            messageFactory,
-		responseReceived:          concurrency.NewSignal(),
-		requiredCentralCapability: requiredCentralCapability,
-		msgToCentralFn:            msgToCentralFn,
+		messageFactory:   messageFactory,
+		responseReceived: concurrency.NewSignal(),
+		sensorOnline:     concurrency.NewSignal(),
+		msgToCentralFn:   msgToCentralFn,
 	}
 }
 
 type genericRequester[ReqT any, RespT protobufResponse] struct {
-	msgToCentralFn            MsgToCentralFn
-	responseFromCentral       *Response
-	responseReceived          concurrency.Signal
-	ongoingRequestID          string
-	ongoingRequest            atomic.Bool
-	messageFactory            messageFactory
-	requiredCentralCapability *centralsensor.CentralCapability
+	msgToCentralFn      MsgToCentralFn
+	responseFromCentral *Response
+	responseReceived    concurrency.Signal
+	ongoingRequestID    string
+	ongoingRequest      atomic.Bool
+	messageFactory      messageFactory
+	sensorOnline        concurrency.Signal
 }
 
 type protobufResponse interface {
@@ -110,6 +103,14 @@ func (f *localScannerMessageFactory) newMsgFromSensor(requestID string) *central
 	}
 }
 
+func (r *genericRequester[ReqT, RespT]) NotifySensorOnline() {
+	r.sensorOnline.Signal()
+}
+
+func (r *genericRequester[ReqT, RespT]) NotifySensorOffline() {
+	r.sensorOnline.Reset()
+}
+
 // DispatchResponse forwards a response from Central to a RequestCertificates call running in another goroutine
 func (r *genericRequester[ReqT, RespT]) DispatchResponse(response *Response) {
 	if !r.ongoingRequest.Load() {
@@ -129,12 +130,8 @@ func (r *genericRequester[ReqT, RespT]) DispatchResponse(response *Response) {
 // RequestCertificates makes a new request for a new set of secured cluster certificates from Central.
 // Concurrent requests are *not* supported.
 func (r *genericRequester[ReqT, RespT]) RequestCertificates(ctx context.Context) (*Response, error) {
-	if r.requiredCentralCapability != nil {
-		// Central capabilities are only available after this component is created,
-		// which is why this check is done here
-		if !centralcaps.Has(*r.requiredCentralCapability) {
-			return nil, fmt.Errorf("TLS certificate refresh failed: missing Central capability '%s'", *r.requiredCentralCapability)
-		}
+	if !r.sensorOnline.IsDone() {
+		return nil, errors.New("Cannot refresh TLS certificates: Sensor is running in offline mode")
 	}
 
 	if r.ongoingRequest.Load() {

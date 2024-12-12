@@ -111,6 +111,14 @@ type certificateRequesterMock struct {
 	mock.Mock
 }
 
+func (m *certificateRequesterMock) NotifySensorOnline() {
+	m.Called()
+}
+
+func (m *certificateRequesterMock) NotifySensorOffline() {
+	m.Called()
+}
+
 func (m *certificateRequesterMock) RequestCertificates(ctx context.Context) (*certificates.Response, error) {
 	args := m.Called(ctx)
 	return args.Get(0).(*certificates.Response), args.Error(1)
