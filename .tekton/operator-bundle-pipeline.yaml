@@ -296,9 +296,11 @@ spec:
       value: |
         [
           {
-            component: scanner-slim,
-            ref: quay.io/rhacs-eng/scanner-slim@sha256:7b8e00ffbad318ff0aca32ba484eaf9493335d26195938704fb25efc73d36302
-          },
+            "component": "scanner-v4-4-6",
+            "ref": "quay.io/rhacs-eng/scanner-v4@sha256:c2ada6227ad865379387ddfdfaa91d281898aaf59d39c898246b700638b4d585",
+            "repository": "$(params.git-url)",
+            "revision": "$(params.revision)"
+          }
         ]
     taskRef:
       name: create-snapshot

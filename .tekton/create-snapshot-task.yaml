@@ -39,6 +39,23 @@ spec:
       dnf -y upgrade --nobest
       dnf -y install jq
 
-      echo "$(params.IMAGE_REFS)"
+      echo "$(params.IMAGE_REFS)" | jq
 
-      echo "Application: ${APPLICATION}"
+      cat <<EOF > snapshot-template.json
+      {
+        "apiVersion": "appstudio.redhat.com/v1alpha1",
+        "kind": "Snapshot",
+        "metadata": {
+          "name": "tm-$(date +%s)"
+        },
+        {
+          "spec": {
+            "application": "${APPLICATION}",
+            "components": []
+          }
+        }
+      }
+
+      cat snapshot-template.json
+
+      jq . snapshot-template.json
