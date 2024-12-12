@@ -145,6 +145,46 @@ func (mr *MockScannerMockRecorder) Type() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Type", reflect.TypeOf((*MockScanner)(nil).Type))
 }
 
+// MockSBOMer is a mock of SBOMer interface.
+type MockSBOMer struct {
+	ctrl     *gomock.Controller
+	recorder *MockSBOMerMockRecorder
+	isgomock struct{}
+}
+
+// MockSBOMerMockRecorder is the mock recorder for MockSBOMer.
+type MockSBOMerMockRecorder struct {
+	mock *MockSBOMer
+}
+
+// NewMockSBOMer creates a new mock instance.
+func NewMockSBOMer(ctrl *gomock.Controller) *MockSBOMer {
+	mock := &MockSBOMer{ctrl: ctrl}
+	mock.recorder = &MockSBOMerMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockSBOMer) EXPECT() *MockSBOMerMockRecorder {
+	return m.recorder
+}
+
+// GetSBOM mocks base method.
+func (m *MockSBOMer) GetSBOM(image *storage.Image) ([]byte, error, bool) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSBOM", image)
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(error)
+	ret2, _ := ret[2].(bool)
+	return ret0, ret1, ret2
+}
+
+// GetSBOM indicates an expected call of GetSBOM.
+func (mr *MockSBOMerMockRecorder) GetSBOM(image any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSBOM", reflect.TypeOf((*MockSBOMer)(nil).GetSBOM), image)
+}
+
 // MockImageScannerWithDataSource is a mock of ImageScannerWithDataSource interface.
 type MockImageScannerWithDataSource struct {
 	ctrl     *gomock.Controller

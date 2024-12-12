@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
@@ -54,8 +53,8 @@ type Scanner interface {
 	// GetMatcherMetadata returns metadata from the matcher.
 	GetMatcherMetadata(context.Context) (*v4.Metadata, error)
 
-	//GetSBOM to get sbom for an image
-	GetSBOM(ctx context.Context, ref name.Digest) ([]byte, error)
+	// GetSBOM to get sbom for an image
+	GetSBOM(ctx context.Context, ref name.Digest) ([]byte, error, bool)
 
 	// Close cleans up any resources used by the implementation.
 	Close() error
@@ -181,18 +180,19 @@ func createGRPCConn(ctx context.Context, o connOptions) (*grpc.ClientConn, error
 	return clientconn.AuthenticatedGRPCConnection(ctx, address, o.mTLSSubject, connOpts...)
 }
 
-// GetSBOM verfieis that index report exists and calls matcher to return sbom for an image
-func (c *gRPCScanner) GetSBOM(ctx context.Context, ref name.Digest) ([]byte, error) {
+// GetSBOM verifies that index report exists and calls matcher to return sbom for an image
+func (c *gRPCScanner) GetSBOM(ctx context.Context, ref name.Digest) ([]byte, error, bool) {
+	// verify index report exists for the image
 	hashId := getImageManifestID(ref)
 	_, found, err := c.GetImageIndex(ctx, hashId)
 	if err != nil {
-		return nil, err
+		return nil, err, false
 	}
 	if !found {
-		return nil, errox.NotFound
+		return nil, nil, false
 	}
 
-	//for testing only
+	// for testing only
 	sbom := map[string]interface{}{
 		"SPDXID":      "SPDXRef-DOCUMENT",
 		"spdxVersion": "SPDX-2.3",
@@ -206,9 +206,9 @@ func (c *gRPCScanner) GetSBOM(ctx context.Context, ref name.Digest) ([]byte, err
 	}
 	sbomBytes, err := json.Marshal(sbom)
 	if err != nil {
-		return nil, err
+		return nil, err, false
 	}
-	return sbomBytes, nil
+	return sbomBytes, nil, true
 }
 
 // GetImageIndex calls the Indexer's gRPC endpoint GetIndexReport.

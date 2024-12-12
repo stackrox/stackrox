@@ -29,10 +29,10 @@ import (
 const mockDigest = "registry/repository@sha256:deadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33f"
 
 var (
-	_ types.Scanner                  = (*Scannerv4)(nil)
-	_ types.ImageVulnerabilityGetter = (*Scannerv4)(nil)
-	_ types.NodeScanner              = (*Scannerv4)(nil)
-	_ types.SBOM                     = (*Scannerv4)(nil)
+	_ types.Scanner                  = (*scannerv4)(nil)
+	_ types.ImageVulnerabilityGetter = (*scannerv4)(nil)
+	_ types.NodeScanner              = (*scannerv4)(nil)
+	_ types.SBOMer                   = (*scannerv4)(nil)
 
 	log = logging.LoggerForModule()
 
@@ -56,7 +56,7 @@ func Creator(set registries.Set) (string, func(integration *storage.ImageIntegra
 	}
 }
 
-type Scannerv4 struct {
+type scannerv4 struct {
 	types.ScanSemaphore
 	types.NodeScanSemaphore
 
@@ -65,7 +65,7 @@ type Scannerv4 struct {
 	scannerClient    client.Scanner
 }
 
-func newScanner(integration *storage.ImageIntegration, activeRegistries registries.Set) (*Scannerv4, error) {
+func newScanner(integration *storage.ImageIntegration, activeRegistries registries.Set) (*scannerv4, error) {
 	conf := integration.GetScannerV4()
 	if conf == nil {
 		return nil, errors.New("scanner V4 configuration required")
@@ -92,12 +92,11 @@ func newScanner(integration *storage.ImageIntegration, activeRegistries registri
 		client.WithIndexerAddress(indexerEndpoint),
 		client.WithMatcherAddress(matcherEndpoint),
 	)
-
 	if err != nil {
 		return nil, err
 	}
 
-	scanner := &Scannerv4{
+	scanner := &scannerv4{
 		name:              integration.GetName(),
 		activeRegistries:  activeRegistries,
 		ScanSemaphore:     types.NewSemaphoreWithValue(numConcurrentScans),
@@ -108,20 +107,20 @@ func newScanner(integration *storage.ImageIntegration, activeRegistries registri
 	return scanner, nil
 }
 
-// GetSBOM
-func (s *Scannerv4) GetSBOM(image *storage.Image) ([]byte, error) {
+// GetSBOM returns sbom of an image as a byte array. It also returns a boolean indicating if the index report for the image was found.
+func (s *scannerv4) GetSBOM(image *storage.Image) ([]byte, error, bool) {
 
 	digest, err := pkgscanner.DigestFromImage(image)
 	if err != nil {
-		return nil, err
+		return nil, err, false
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
 	defer cancel()
-	sbom, err := s.scannerClient.GetSBOM(ctx, digest)
-	return sbom, err
+	sbom, err, found := s.scannerClient.GetSBOM(ctx, digest)
+	return sbom, err, found
 }
 
-func (s *Scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
+func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 	if image.GetMetadata() == nil {
 		return nil, nil
 	}
@@ -171,7 +170,7 @@ func (s *Scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 	return imageScan(image.GetMetadata(), vr), nil
 }
 
-func (s *Scannerv4) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
+func (s *scannerv4) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), metadataTimeout)
 	defer cancel()
 
@@ -190,25 +189,25 @@ func (s *Scannerv4) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
 	}, nil
 }
 
-func (s *Scannerv4) Match(image *storage.ImageName) bool {
+func (s *scannerv4) Match(image *storage.ImageName) bool {
 	return s.activeRegistries.Match(image)
 }
 
-func (s *Scannerv4) Name() string {
+func (s *scannerv4) Name() string {
 	return s.name
 }
 
-func (s *Scannerv4) Test() error {
+func (s *scannerv4) Test() error {
 	// TODO(ROX-20624): Dependent on the matcher/indexer test endpoints being avail.
 	log.Warn("ScannerV4 - Returning FAKE 'success' to Test")
 	return nil
 }
 
-func (s *Scannerv4) Type() string {
+func (s *scannerv4) Type() string {
 	return types.ScannerV4
 }
 
-func (s *Scannerv4) GetVulnerabilities(image *storage.Image, components *types.ScanComponents, _ []scannerv1.Note) (*storage.ImageScan, error) {
+func (s *scannerv4) GetVulnerabilities(image *storage.Image, components *types.ScanComponents, _ []scannerv1.Note) (*storage.ImageScan, error) {
 	v4Contents := components.ScannerV4()
 
 	digest, err := pkgscanner.DigestFromImage(image)
@@ -237,7 +236,7 @@ func (s *Scannerv4) GetVulnerabilities(image *storage.Image, components *types.S
 	return imageScan(image.GetMetadata(), vr), nil
 }
 
-func (s *Scannerv4) GetNodeVulnerabilityReport(node *storage.Node, indexReport *v4.IndexReport) (*v4.VulnerabilityReport, error) {
+func (s *scannerv4) GetNodeVulnerabilityReport(node *storage.Node, indexReport *v4.IndexReport) (*v4.VulnerabilityReport, error) {
 	nodeDigest, err := name.NewDigest(mockDigest)
 	if err != nil {
 		log.Errorf("Failed to parse digest from node %q: %v", node.GetName(), err)
@@ -254,7 +253,7 @@ func (s *Scannerv4) GetNodeVulnerabilityReport(node *storage.Node, indexReport *
 	return vr, nil
 }
 
-func (s *Scannerv4) GetNodeInventoryScan(node *storage.Node, inv *storage.NodeInventory, ir *v4.IndexReport) (*storage.NodeScan, error) {
+func (s *scannerv4) GetNodeInventoryScan(node *storage.Node, inv *storage.NodeInventory, ir *v4.IndexReport) (*storage.NodeScan, error) {
 	if ir == nil && inv != nil {
 		return nil, errors.New("Received Scanner v2 data for Scanner v4. Exiting.")
 	}
@@ -266,11 +265,11 @@ func (s *Scannerv4) GetNodeInventoryScan(node *storage.Node, inv *storage.NodeIn
 	return toNodeScan(vr, node.GetOsImage()), nil
 }
 
-func (s *Scannerv4) GetNodeScan(_ *storage.Node) (*storage.NodeScan, error) {
+func (s *scannerv4) GetNodeScan(_ *storage.Node) (*storage.NodeScan, error) {
 	return nil, errors.New("Not implemented for Scanner v4")
 }
 
-func (s *Scannerv4) TestNodeScanner() error {
+func (s *scannerv4) TestNodeScanner() error {
 	log.Warn("NodeScanner v4 - Returning FAKE 'success' to Test")
 	return nil
 }
@@ -282,7 +281,7 @@ func NodeScannerCreator() (string, func(integration *storage.NodeIntegration) (s
 	}
 }
 
-func newNodeScanner(integration *storage.NodeIntegration) (*Scannerv4, error) {
+func newNodeScanner(integration *storage.NodeIntegration) (*scannerv4, error) {
 	conf := integration.GetScannerv4()
 	if conf == nil {
 		return nil, errors.New("scanner v4 configuration required")
@@ -312,7 +311,7 @@ func newNodeScanner(integration *storage.NodeIntegration) (*Scannerv4, error) {
 		return nil, err
 	}
 
-	scanner := &Scannerv4{
+	scanner := &scannerv4{
 		name:              integration.GetName(),
 		activeRegistries:  nil,
 		ScanSemaphore:     types.NewSemaphoreWithValue(numConcurrentScans),
