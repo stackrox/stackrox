@@ -8,28 +8,35 @@ function setup() {
     ARTIFACT_DIR="${BATS_TEST_TMPDIR}"
 }
 
-@test "gets IP from endpoint when IP is reported" {
+@test "service_get_endpoint gets IP from endpoint when IP is reported" {
     local output
     run service_get_endpoint < "${BATS_TEST_DIRNAME}/fixtures/service-ip.json"
     assert_success
     assert_output "35.193.73.252"
 }
 
-@test "gets hostname from endpoint when hostname is reported" {
+@test "service_get_endpoint gets hostname from endpoint when hostname is reported" {
     local output
     run service_get_endpoint < "${BATS_TEST_DIRNAME}/fixtures/service-hostname.json"
     assert_success
     assert_output "a210901dccf824daf8118d5aa9993115-2055499247.us-east-2.elb.amazonaws.com"
 }
 
-@test "gets hostname from endpoint when both hostname and ip is reported" {
+@test "service_get_endpoint gets hostname from endpoint when both hostname and ip is reported" {
     local output
     run service_get_endpoint < "${BATS_TEST_DIRNAME}/fixtures/service-both.json"
     assert_success
     assert_output "a210901dccf824daf8118d5aa9993115-2055499247.us-east-2.elb.amazonaws.com"
 }
 
-@test "fails with informative error when neither hostname nor IP is reported" {
+@test "service_get_endpoint gets first endpoint if multiple are reported" {
+    local output
+    run service_get_endpoint < "${BATS_TEST_DIRNAME}/fixtures/service-two-ingresses.json"
+    assert_success
+    assert_output "35.193.73.252"
+}
+
+@test "service_get_endpoint fails with informative error when neither hostname nor IP is reported" {
     local output
     run service_get_endpoint < "${BATS_TEST_DIRNAME}/fixtures/service-unready.json"
     assert_failure
