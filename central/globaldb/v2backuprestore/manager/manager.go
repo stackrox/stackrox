@@ -104,13 +104,15 @@ func (m *manager) LaunchRestoreProcess(ctx context.Context, id string, requestHe
 
 	handlerFuncs, _, err := analyzeManifest(requestHeader.GetManifest(), format)
 	if err != nil {
-		log.Errorf("Error analyzing manifest: %s", err)
+		err := errors.Errorf("Error analyzing manifest: %s", err)
+		log.Error(err)
 		return nil, err
 	}
 
 	process, err := newRestoreProcess(ctx, id, requestHeader, handlerFuncs, data)
 	if err != nil {
-		log.Errorf("Error restoring process: %s", err)
+		err := errors.Errorf("Error restoring process: %s", err)
+		log.Error(err)
 		return nil, err
 	}
 
