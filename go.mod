@@ -1,6 +1,7 @@
 module github.com/stackrox/rox
 
 go 1.22.5
+toolchain go1.22.10
 
 require (
 	cloud.google.com/go/artifactregistry v1.16.0
@@ -65,7 +66,7 @@ require (
 	github.com/graph-gophers/graphql-go v1.5.0
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.2.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.1-0.20210315223345-82c243799c99
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.22.0
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.24.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/go-retryablehttp v0.7.7
 	github.com/hashicorp/go-version v1.7.0
@@ -147,7 +148,7 @@ require (
 	golang.stackrox.io/grpc-http1 v0.3.13
 	google.golang.org/api v0.210.0
 	google.golang.org/genproto v0.0.0-20241118233622-e639e219e697
-	google.golang.org/grpc v1.67.2
+	google.golang.org/grpc v1.68.0
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
 	google.golang.org/protobuf v1.35.2
 	gopkg.in/mcuadros/go-syslog.v2 v2.3.0
@@ -482,7 +483,7 @@ require (
 	go.step.sm/crypto v0.44.2 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20241113202542-65e8d215514f // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20241118233622-e639e219e697 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241118233622-e639e219e697 // indirect
 	google.golang.org/grpc/stats/opentelemetry v0.0.0-20240907200651-3ffb98b2c93a // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
