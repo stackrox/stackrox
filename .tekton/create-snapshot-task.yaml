@@ -41,10 +41,11 @@ spec:
 
 
       echo "--- direct ---"
-      echo "$(params.IMAGE_REFS)"
+      echo "$(params.IMAGE_REFS)" > image-refs.json
+      cat image-refs.json
 
       echo "--- with jq ---"
-      echo "$(params.IMAGE_REFS)" | jq
+      cat image-refs.json | jq
 
       cat <<EOF > snapshot-template.json
       {
