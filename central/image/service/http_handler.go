@@ -136,6 +136,7 @@ func (h sbomHttpHandler) enrichImage(ctx context.Context, enrichmentCtx enricher
 
 	}
 
+<<<<<<< HEAD
 	// Save the image
 	img.Id = utils.GetSHA(img)
 	if img.GetId() != "" {
@@ -155,6 +156,11 @@ func (h sbomHttpHandler) saveImage(img *storage.Image) error {
 	return nil
 }
 
+=======
+	return img, nil
+}
+
+>>>>>>> 44e553c457 (Add image enrichment in handler)
 func (h sbomHttpHandler) getSbom(ctx context.Context, params sbomRequestBody) ([]byte, error) {
 	enrichmentCtx := enricher.EnrichmentContext{
 		FetchOpt:        enricher.UseCachesIfPossible,
