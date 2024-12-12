@@ -35,13 +35,15 @@ spec:
             fieldPath: metadata.labels['appstudio.openshift.io/application']
     script: |
       #!/usr/bin/env bash
-      set -euo pipefail
+      set -exuo pipefail
       dnf -y upgrade --nobest
       dnf -y install jq
 
 
+      echo "--- direct ---"
       echo "$(params.IMAGE_REFS)"
 
+      echo "--- with jq ---"
       echo "$(params.IMAGE_REFS)" | jq
 
       cat <<EOF > snapshot-template.json
@@ -59,6 +61,8 @@ spec:
         }
       }
 
+      echo "--- direct ---"
       cat snapshot-template.json
 
-      jq . snapshot-template.json
+      echo "--- with jq ---"
+      cat snapshot-template.json | jq
