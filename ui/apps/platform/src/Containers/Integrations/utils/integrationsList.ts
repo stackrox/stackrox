@@ -295,6 +295,13 @@ export const clusterInitBundleDescriptor: AuthProviderDescriptor = {
     type: 'clusterInitBundle',
 };
 
+export const clusterRegistrationSecretDescriptor: AuthProviderDescriptor = {
+    image: logo,
+    label: 'Cluster Registration Secret',
+    type: 'clusterRegistrationSecret',
+};
+
+
 export const machineAccessDescriptor: AuthProviderDescriptor = {
     image: logo,
     label: 'Machine access configuration',
@@ -304,6 +311,7 @@ export const machineAccessDescriptor: AuthProviderDescriptor = {
 const authenticationTokensDescriptors = [
     apiTokenDescriptor,
     clusterInitBundleDescriptor,
+    clusterRegistrationSecretDescriptor,
     machineAccessDescriptor,
 ];
 

@@ -211,6 +211,19 @@ export type ClusterInitBundle = {
     impactedClusters: ImpactedCluster[];
 };
 
+export type ClusterRegistrationSecret = {
+    id: string;
+    name: string;
+    createdAt: string;
+    createdBy: {
+        id: string;
+        authProviderId: string;
+        attributes: InitBundleAttribute[];
+    };
+    expiresAt: string;
+    impactedClusters: ImpactedCluster[];
+};
+
 export function fetchCAConfig(): Promise<{ helmValuesBundle?: string }> {
     return axios
         .get<{ helmValuesBundle: string }>(`${clusterInitUrl}/ca-config`)
@@ -229,10 +242,25 @@ export function fetchClusterInitBundles(): Promise<{ response: { items: ClusterI
         });
 }
 
+export function fetchClusterRegistrationSecrets(): Promise<{ response: { items: ClusterRegistrationSecret[] } }> {
+    return axios
+        .get<{ items: ClusterRegistrationSecret[] }>(`${clusterInitUrl}/crs`)
+        .then((response) => {
+            return {
+                response: response.data || { items: [] },
+            };
+        });
+}
+
 export type GenerateClusterInitBundleResponse = {
     meta?: ClusterInitBundle;
     helmValuesBundle?: string; // bytes
     kubectlBundle?: string; // bytes
+};
+
+export type GenerateClusterRegistrationSecretResponse = {
+    meta?: ClusterRegistrationSecret;
+    crs?: string; // bytes
 };
 
 export function generateClusterInitBundle(data: { name: string }): Promise<{
@@ -251,6 +279,21 @@ export function generateClusterInitBundle(data: { name: string }): Promise<{
         });
 }
 
+export function generateClusterRegistrationSecret(data: { name: string }): Promise<{
+    response: GenerateClusterRegistrationSecretResponse;
+}> {
+    return axios
+        .post<{
+            meta: ClusterRegistrationSecret;
+            crs: string;
+        }>(`${clusterInitUrl}/crs`, data)
+        .then((response) => {
+            return {
+                response: response.data || {},
+            };
+        });
+}
+
 export type InitBundleRevocationError = {
     id: string;
     error: string;
@@ -262,6 +305,16 @@ export type InitBundleRevokeResponse = {
     initBundleRevokedIds: string[];
 };
 
+export type ClusterRegistrationSecretRevocationError = {
+    id: string;
+    error: string;
+};
+
+export type ClusterRegistrationSecretRevokeResponse = {
+    crsRevocationErrors: ClusterRegistrationSecretRevocationError[];
+    revokedIds: string[];
+};
+
 export function revokeClusterInitBundles(
     ids: string[],
     confirmImpactedClustersIds: string[]
@@ -270,6 +323,18 @@ export function revokeClusterInitBundles(
         .patch<InitBundleRevokeResponse>(`${clusterInitUrl}/init-bundles/revoke`, {
             ids,
             confirmImpactedClustersIds,
+        })
+        .then((response) => {
+            return response.data;
+        });
+}
+
+export function revokeClusterRegistrationSecrets(
+    ids: string[],
+): Promise<ClusterRegistrationSecretRevokeResponse> {
+    return axios
+        .patch<ClusterRegistrationSecretRevokeResponse>(`${clusterInitUrl}/crs/revoke`, {
+            ids,
         })
         .then((response) => {
             return response.data;

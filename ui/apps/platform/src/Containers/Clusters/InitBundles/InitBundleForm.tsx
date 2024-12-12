@@ -21,7 +21,7 @@ import * as yup from 'yup';
 
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
-import useAnalytics, { DOWNLOAD_INIT_BUNDLE } from 'hooks/useAnalytics';
+import useAnalytics, { DOWNLOAD_CLUSTER_REGISTRATION_SECRET } from 'hooks/useAnalytics';
 import { generateClusterInitBundle } from 'services/ClustersService'; // ClusterInitBundle
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
@@ -230,7 +230,7 @@ function InitBundleForm(): ReactElement {
                             isDisabled={isSubmitting || !isValid}
                             isLoading={isSubmitting}
                             onClick={() => {
-                                analyticsTrack(DOWNLOAD_INIT_BUNDLE);
+                                analyticsTrack(DOWNLOAD_CLUSTER_REGISTRATION_SECRET);
                                 return submitForm();
                             }}
                         >

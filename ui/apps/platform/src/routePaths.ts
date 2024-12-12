@@ -29,7 +29,11 @@ export const clustersDelegatedScanningPath = `${clustersBasePath}/delegated-imag
 export const clustersDiscoveredClustersPath = `${clustersBasePath}/discovered-clusters`;
 export const clustersInitBundlesPath = `${clustersBasePath}/init-bundles`;
 export const clustersInitBundlesPathWithParam = `${clustersInitBundlesPath}/:id?`;
+export const clustersClusterRegistrationSecretsPath = `${clustersBasePath}/cluster-registration-secrets`;
+export const clustersClusterRegistrationSecretsPathWithParam = `${clustersClusterRegistrationSecretsPath}/:id?`;
+
 export const clustersSecureClusterPath = `${clustersBasePath}/secure-a-cluster`;
+export const clustersSecureClusterCrsPath = `${clustersBasePath}/secure-a-cluster-crs`;
 export const collectionsBasePath = `${mainPath}/collections`;
 export const collectionsPath = `${mainPath}/collections/:collectionId?`;
 export const complianceBasePath = `${mainPath}/compliance`;
@@ -147,8 +151,12 @@ export type RouteKey =
     | 'clusters/discovered-clusters'
     // Cluster init bundles must precede generic Clusters in Body and so here for consistency.
     | 'clusters/init-bundles'
+    // Cluster registration secrets must precede generic Clusters in Body and so here for consistency.
+    | 'clusters/cluster-registration-secrets'
     // Cluster secure-a-cluster must precede generic Clusters in Body and so here for consistency.
     | 'clusters/secure-a-cluster'
+    // Cluster secure-a-cluster-crs must precede generic Clusters in Body and so here for consistency.
+    | 'clusters/secure-a-cluster-crs'
     | 'clusters'
     | 'collections'
     | 'compliance'
@@ -206,8 +214,16 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     'clusters/init-bundles': {
         resourceAccessRequirements: everyResource(['Administration', 'Integration']),
     },
+    // Cluster registration secrets must precede generic Clusters in Body and so here for consistency.
+    'clusters/cluster-registration-secrets': {
+        resourceAccessRequirements: everyResource(['Administration', 'Integration']),
+    },
     // Clusters secure-a-cluster must precede generic Clusters in Body and so here for consistency.
     'clusters/secure-a-cluster': {
+        resourceAccessRequirements: everyResource([]),
+    },
+    // Clusters secure-a-cluster-crs must precede generic Clusters in Body and so here for consistency.
+    'clusters/secure-a-cluster-crs': {
         resourceAccessRequirements: everyResource([]),
     },
     clusters: {

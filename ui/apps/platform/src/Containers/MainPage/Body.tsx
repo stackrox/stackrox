@@ -13,8 +13,10 @@ import {
     clustersDelegatedScanningPath,
     clustersDiscoveredClustersPath,
     clustersInitBundlesPathWithParam,
+    clustersClusterRegistrationSecretsPathWithParam,
     clustersPathWithParam,
     clustersSecureClusterPath,
+    clustersSecureClusterCrsPath,
     collectionsPath,
     complianceEnhancedCoveragePath,
     complianceEnhancedSchedulesPath,
@@ -123,12 +125,24 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         component: asyncComponent(() => import('Containers/Clusters/InitBundles/InitBundlesRoute')),
         path: clustersInitBundlesPathWithParam,
     },
+    // Cluster registration secrets must precede generic Clusters.
+    'clusters/cluster-registration-secrets': {
+        component: asyncComponent(() => import('Containers/Clusters/ClusterRegistrationSecrets/ClusterRegistrationSecretsRoute')),
+        path: clustersClusterRegistrationSecretsPathWithParam,
+    },
     // Cluster secure-a-cluster must precede generic Clusters.
     'clusters/secure-a-cluster': {
         component: asyncComponent(
             () => import('Containers/Clusters/InitBundles/SecureClusterPage')
         ),
         path: clustersSecureClusterPath,
+    },
+    // Cluster secure-a-cluster-crs must precede generic Clusters.
+    'clusters/secure-a-cluster-crs': {
+        component: asyncComponent(
+            () => import('Containers/Clusters/ClusterRegistrationSecrets/SecureClusterPage')
+        ),
+        path: clustersSecureClusterCrsPath,
     },
     clusters: {
         component: asyncComponent(() => import('Containers/Clusters/ClustersPage')),
