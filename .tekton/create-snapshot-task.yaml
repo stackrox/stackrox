@@ -25,7 +25,7 @@ spec:
     args:
     - use
     - $(params.SOURCE_ARTIFACT)=/var/workdir/source
-  - name: create-snapshot
+  - name: render-snapshot
     image: registry.access.redhat.com/ubi9/ubi:latest
     workingDir: /var/workdir/source
     env:
@@ -33,28 +33,50 @@ spec:
         valueFrom:
           fieldRef:
             fieldPath: metadata.labels['appstudio.openshift.io/application']
+      - name: IMAGE_REFS
+        value: $(params.IMAGE_REFS)
+    script: |
+      #!/usr/bin/env python3
+
+      import json
+      import os
+
+
+      def load_image_refs():
+        return json.loads(os.getenv("IMAGE_REFS", "[]"))
+
+
+      def construct_snapshot(snapshot_name, application, components):
+        return {
+          "apiVersion": "appstudio.redhat.com/v1alpha1",
+          "kind": "Snapshot",
+          "metadata": {
+            "name": snapshot_name
+          },
+          "spec": {
+            "application": application,
+            "components": components
+          }
+        }
+
+
+      if __name__ == '__main__':
+        components = load_image_refs()
+        snapshot = construct_snapshot(
+          "tm-acs-4-6-0",
+          os.getenv("APPLICATION", ""),
+          components
+        )
+
+        print("Snapshot:", snapshot)
+
+        with open("snapshot.json", "w") as f:
+          json.dump(snapshot, f)
+
+  - name: apply-snapshot
+    image: registry.access.redhat.com/ubi9/ubi:latest
+    workingDir: /var/workdir/source
     script: |
       #!/usr/bin/env bash
-      set -exuo pipefail
-      dnf -y upgrade --nobest
-      dnf -y install jq
 
-      cat <<EOF > snapshot-template.json
-      {
-        "apiVersion": "appstudio.redhat.com/v1alpha1",
-        "kind": "Snapshot",
-        "metadata": {
-          "name": "tm-$(date +%s)"
-        },
-        "spec": {
-          "application": "${APPLICATION}",
-          "components": []
-        }
-      }
-      EOF
-
-      echo "--- direct ---"
-      cat snapshot-template.json
-
-      echo "--- with jq ---"
-      cat snapshot-template.json | jq
+      cat snapshot.json | jq
