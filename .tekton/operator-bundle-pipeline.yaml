@@ -303,7 +303,7 @@ spec:
           },
           {
             "component": "main",
-            "containerImage": "$(params.main-image-build-repo)@sha256:803d57f11ae1a718e1a1298a03f6377a383e058cb15cbeff631129c30dea0809",
+            "ref": "$(params.main-image-build-repo)@sha256:803d57f11ae1a718e1a1298a03f6377a383e058cb15cbeff631129c30dea0809",
             "repository": "$(params.git-url)",
             "revision": "$(params.revision)"
           }
