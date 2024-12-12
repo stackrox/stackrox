@@ -6,15 +6,13 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
-	"strconv"
-	"time"
 
 	"github.com/pkg/errors"
 	clusterUtil "github.com/stackrox/rox/central/cluster/util"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/sachelper"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/httputil"
@@ -25,11 +23,6 @@ import (
 	scannerV4 "github.com/stackrox/rox/pkg/scanners/scannerv4"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	"google.golang.org/grpc/codes"
-)
-
-const (
-	NumberBytes = 100 * 1024
-	timeout     = 10 * time.Minute
 )
 
 type sbomRequestBody struct {
@@ -47,7 +40,7 @@ type sbomHttpHandler struct {
 
 var _ http.Handler = (*sbomHttpHandler)(nil)
 
-// Handler returns a handler for get sbom http request
+// SBOMHandler returns a handler for get sbom http request
 func SBOMHandler(integration integration.Set, enricher enricher.ImageEnricher, clusterSACHelper sachelper.ClusterSacHelper, riskManager manager.Manager) http.Handler {
 	return sbomHttpHandler{
 		integration:      integration,
@@ -66,35 +59,27 @@ func (h sbomHttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	// verify scanner v4 is enabled
 	if !features.ScannerV4.Enabled() {
-		httputil.WriteGRPCStyleError(w, codes.NotFound, errors.New("Scanner v4 is not enabled. Enabled scanner v4 to get SBOMs"))
+		httputil.WriteGRPCStyleError(w, codes.Unimplemented, errors.New("Scanner V4 is disabled. Enable Scanner V4 to generate SBOMs"))
 		return
 	}
 	if !features.SBOMGeneration.Enabled() {
-		httputil.WriteGRPCStyleError(w, codes.NotFound, errors.New("SBOM feature is not enabled"))
+		httputil.WriteGRPCStyleError(w, codes.Unimplemented, errors.New("SBOM feature is not enabled"))
 		return
 	}
 	var params sbomRequestBody
-	reqSizeLimit := NumberBytes
-	reqSizeBytes := os.Getenv("ROX_SBOM_API_REQ_SIZE")
-	if reqSizeBytes != "" {
-		reqSizeLimitInt, err := strconv.Atoi(reqSizeBytes)
-		if err == nil {
-			reqSizeLimit = reqSizeLimitInt
-		}
-	}
+	sbomGenMaxReqSizeBytes := env.SBOMGenerationMaxReqSizeBytes.IntegerSetting()
 	// timeout api after 10 minutes
-	ctx, cancel := context.WithTimeout(r.Context(), time.Duration(timeout))
-	defer cancel()
-	log.Infof("request size is %d", reqSizeLimit)
-	lr := io.LimitReader(r.Body, int64(reqSizeLimit))
+	lr := io.LimitReader(r.Body, int64(sbomGenMaxReqSizeBytes))
 	err := json.NewDecoder(lr).Decode(&params)
 	if err != nil {
 		httputil.WriteGRPCStyleError(w, codes.InvalidArgument, errors.Wrap(err, "decoding json request body"))
 		return
 	}
+	ctx, cancel := context.WithTimeout(r.Context(), env.ScanTimeout.DurationSetting())
+	defer cancel()
 	bytes, err := h.getSbom(ctx, params)
 	if err != nil {
-		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrap(err, "error generating SBOM"))
+		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrap(err, "generating SBOM"))
 		return
 	}
 
@@ -125,7 +110,7 @@ func (h sbomHttpHandler) enrichImage(ctx context.Context, enrichmentCtx enricher
 	if err != nil {
 		return nil, err
 	}
-	//verify that image is scanned by scanner v4 if not force enrichment using scanner v4
+	// verify that image is scanned by scanner v4 if not force enrichment using scanner v4
 	scannedByV4, _ := h.getScannerV4Integration(img)
 
 	if enrichmentCtx.FetchOpt != enricher.UseImageNamesRefetchCachedValues && !scannedByV4 {
@@ -136,7 +121,6 @@ func (h sbomHttpHandler) enrichImage(ctx context.Context, enrichmentCtx enricher
 
 	}
 
-<<<<<<< HEAD
 	// Save the image
 	img.Id = utils.GetSHA(img)
 	if img.GetId() != "" {
@@ -156,11 +140,6 @@ func (h sbomHttpHandler) saveImage(img *storage.Image) error {
 	return nil
 }
 
-=======
-	return img, nil
-}
-
->>>>>>> 44e553c457 (Add image enrichment in handler)
 func (h sbomHttpHandler) getSbom(ctx context.Context, params sbomRequestBody) ([]byte, error) {
 	enrichmentCtx := enricher.EnrichmentContext{
 		FetchOpt:        enricher.UseCachesIfPossible,
@@ -184,11 +163,15 @@ func (h sbomHttpHandler) getSbom(ctx context.Context, params sbomRequestBody) ([
 	if err != nil {
 		return nil, err
 	}
-	//verify that index report exists. if not force image enrichment using scanner v4
-	_, scannerV4 := h.getScannerV4Integration(img)
+	// verify that index report exists. if not force image enrichment using scanner v4
+	found, scannerV4 := h.getScannerV4Integration(img)
+	if !found {
+		return nil, errors.New("Scanner V4 integration not found")
+	}
 	sbom, err := scannerV4.GetSBOM(img)
+	log.Infof("scanner type is %s", img.GetScan().GetDataSource().GetName())
 	if err == errox.NotFound {
-		img, err = enricher.EnrichImageByName(ctx, h.enricher, enrichmentCtx, params.ImageName)
+		_, err = enricher.EnrichImageByName(ctx, h.enricher, enrichmentCtx, params.ImageName)
 		if err != nil {
 			return nil, err
 		}
