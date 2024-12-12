@@ -54,7 +54,7 @@ type Scanner interface {
 	// GetMatcherMetadata returns metadata from the matcher.
 	GetMatcherMetadata(context.Context) (*v4.Metadata, error)
 
-	//GetSBOM to get sbom for an image
+	// GetSBOM to get sbom for an image
 	GetSBOM(ctx context.Context, ref name.Digest) ([]byte, error)
 
 	// Close cleans up any resources used by the implementation.
@@ -181,8 +181,9 @@ func createGRPCConn(ctx context.Context, o connOptions) (*grpc.ClientConn, error
 	return clientconn.AuthenticatedGRPCConnection(ctx, address, o.mTLSSubject, connOpts...)
 }
 
-// GetSBOM verfieis that index report exists and calls matcher to return sbom for an image
+// GetSBOM verifies that index report exists and calls matcher to return sbom for an image
 func (c *gRPCScanner) GetSBOM(ctx context.Context, ref name.Digest) ([]byte, error) {
+	// verify index report exists for the image
 	hashId := getImageManifestID(ref)
 	_, found, err := c.GetImageIndex(ctx, hashId)
 	if err != nil {
@@ -192,7 +193,7 @@ func (c *gRPCScanner) GetSBOM(ctx context.Context, ref name.Digest) ([]byte, err
 		return nil, errox.NotFound
 	}
 
-	//for testing only
+	// for testing only
 	sbom := map[string]interface{}{
 		"SPDXID":      "SPDXRef-DOCUMENT",
 		"spdxVersion": "SPDX-2.3",
