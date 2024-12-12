@@ -105,11 +105,12 @@ const pollInterval = 30000;
 function NamespaceViewPage() {
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
-    const { pageTitle } = useWorkloadCveViewContext();
+    const { pageTitle, baseSearchFilter } = useWorkloadCveViewContext();
     const { searchFilter, setSearchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter({
         ...searchFilter,
         ...defaultSearchFilters,
+        ...baseSearchFilter,
     });
     const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
     const { sortOption, getSortParams } = useURLSort({

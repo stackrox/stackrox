@@ -212,7 +212,7 @@ function ImageCvePage() {
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
 
-    const { pageTitle } = useWorkloadCveViewContext();
+    const { pageTitle, baseSearchFilter } = useWorkloadCveViewContext();
     const currentVulnerabilityState = useVulnerabilityState();
 
     const urlParams = useParams();
@@ -223,6 +223,7 @@ function ImageCvePage() {
     const query = getVulnStateScopedQueryString(
         {
             ...querySearchFilter,
+            ...baseSearchFilter,
             CVE: [exactCveIdSearchRegex],
         },
         currentVulnerabilityState
@@ -277,7 +278,7 @@ function ImageCvePage() {
     });
 
     function getDeploymentSearchQuery(severity?: VulnerabilitySeverity) {
-        const filters = { ...querySearchFilter, CVE: [exactCveIdSearchRegex] };
+        const filters = { ...querySearchFilter, ...baseSearchFilter, CVE: [exactCveIdSearchRegex] };
         if (severity) {
             filters.SEVERITY = [severity];
         }
@@ -443,6 +444,10 @@ function ImageCvePage() {
                                     setSearchFilter(newFilter);
                                     setPage(1);
                                     trackAppliedFilter(WORKLOAD_CVE_FILTER_APPLIED, searchPayload);
+                                }}
+                                additionalContextFilter={{
+                                    ...baseSearchFilter,
+                                    CVE: exactCveIdSearchRegex,
                                 }}
                             />
                         ) : (
