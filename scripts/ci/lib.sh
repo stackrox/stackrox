@@ -692,17 +692,15 @@ image_prefetcher_system_await() {
 }
 
 _image_prefetcher_prebuilt_await() {
-    info "Image pre-fetch prebuilt images await for CI_JOB_NAME='${CI_JOB_NAME}'"
-
     case "$CI_JOB_NAME" in
     *qa-e2e-tests)
         if [[ "${JOB_NAME:-unknown}" =~ interop ]]; then
-            info "Image pre-fetch await for OCP-interop tests..."
+            info "Image pre-fetch await for OCP-interop tests (disable exit)..."
             enable -n exit
         fi
         image_prefetcher_await_set qa-e2e
         if [[ "${JOB_NAME:-unknown}" =~ interop ]]; then
-            info "Image pre-fetch await result is ignored for OCP-interop tests."
+            info "Image pre-fetch await result is ignored for OCP-interop tests (re-enable exit)."
             enable exit
         fi
         ;;
@@ -714,19 +712,17 @@ _image_prefetcher_prebuilt_await() {
 }
 
 _image_prefetcher_system_await() {
-    info "Image pre-fetch system images await for CI_JOB_NAME='${CI_JOB_NAME}'"
-
     case "$CI_JOB_NAME" in
     # ROX-24818: GKE is excluded from system image prefetch as it causes
     # flakes in test.
     *-operator-e2e-tests|*ocp*qa-e2e-tests)
         if [[ "${JOB_NAME:-unknown}" =~ interop ]]; then
-            info "Image pre-fetch await for OCP-interop tests..."
+            info "Image pre-fetch await for OCP-interop tests (disable exit)..."
             enable -n exit
         fi
         image_prefetcher_await_set stackrox-images
         if [[ "${JOB_NAME:-unknown}" =~ interop ]]; then
-            info "Image pre-fetch await result is ignored for OCP-interop tests."
+            info "Image pre-fetch await result is ignored for OCP-interop tests (re-enable exit)."
             enable exit
         fi
         ;;
