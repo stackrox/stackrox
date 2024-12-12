@@ -76,7 +76,7 @@ type EnrichmentContext struct {
 	Namespace string
 
 	Source *RequestSource
-
+	// ScannerTypeHint will ensure this scanner type is used when a scan is executed, does nothing if a scan is not executed.
 	ScannerTypeHint string
 }
 

@@ -238,22 +238,6 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 
 	errorList := errorhelpers.NewErrorList("image enrichment")
 
-	//verify that there is an integration for  scanner specified in enrichContext
-	if enrichContext.ScannerTypeHint != "" {
-		scanners := e.integrations.ScannerSet()
-		found := false
-		for _, scanner := range scanners.GetAll() {
-			if scanner.GetScanner().Type() != enrichContext.ScannerTypeHint {
-				found = true
-				break
-			}
-		}
-		if !found {
-			errorList.AddError(errors.New("no image scanners are integrated"))
-			return EnrichmentResult{ImageUpdated: false, ScanResult: ScanNotDone}, errorList.ToError()
-		}
-	}
-
 	imageNoteSet := make(map[storage.Image_Note]struct{}, len(image.Notes))
 	for _, note := range image.Notes {
 		imageNoteSet[note] = struct{}{}
@@ -604,8 +588,28 @@ func (e *enricherImpl) enrichWithScan(ctx context.Context, enrichmentContext Enr
 		return ScanNotDone, errorList.ToError()
 	}
 
+	// verify that there is an integration of type scannerTypeHint
+	if enrichmentContext.ScannerTypeHint != "" {
+		found := false
+		for _, scanner := range scanners.GetAll() {
+			scannerType := scanner.GetScanner().Type()
+			if scannerType == enrichmentContext.ScannerTypeHint {
+				found = true
+				break
+			}
+		}
+		if !found {
+			errorList.AddError(errors.Errorf("no scanner integration found for scannerTypeHint %s", enrichmentContext.ScannerTypeHint))
+		}
+	}
+
 	log.Debugf("Scanning image %q (ID %q)", image.GetName().GetFullName(), image.GetId())
 	for _, scanner := range scanners.GetAll() {
+		scannerType := scanner.GetScanner().Type()
+		// only run scan with scanner specified in scannerTypeHint
+		if enrichmentContext.ScannerTypeHint != "" && scannerType != enrichmentContext.ScannerTypeHint {
+			continue
+		}
 		result, err := e.enrichImageWithScanner(ctx, image, scanner)
 		if err != nil {
 			currentScannerErrors := concurrency.WithLock1(&e.scannerErrorsLock, func() int32 {
@@ -657,6 +661,7 @@ func (e *enricherImpl) enrichWithScan(ctx context.Context, enrichmentContext Enr
 			return result, nil
 		}
 	}
+	log.Infof("scanner type is %s", image.GetScan().GetDataSource().GetName())
 	return ScanNotDone, errorList.ToError()
 }
 

@@ -26,6 +26,12 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
+type sbomRequestBody struct {
+	Cluster   string `json:"cluster"`
+	ImageName string `json:"imageName"`
+	Force     bool   `json:"force"`
+}
+
 type sbomHttpHandler struct {
 	integration      integration.Set
 	enricher         enricher.ImageEnricher
@@ -61,6 +67,7 @@ func (h sbomHttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteGRPCStyleError(w, codes.Unimplemented, errors.New("SBOM feature is not enabled"))
 		return
 	}
+
 	var params apiparams.SbomRequestBody
 	sbomGenMaxReqSizeBytes := env.SBOMGenerationMaxReqSizeBytes.IntegerSetting()
 	// timeout api after 10 minutes
@@ -75,8 +82,10 @@ func (h sbomHttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	bytes, err := h.getSbom(ctx, params)
 	if err != nil {
 		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrap(err, "generating SBOM"))
+
 		return
 	}
+
 	if len(bytes) == 0 {
 		httputil.WriteGRPCStyleError(w, codes.Internal, errors.New("SBOM not found for the image"))
 		return
@@ -91,7 +100,6 @@ func (h sbomHttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // enrichImage enriches the image with the given name and based on the given enrichment context
 func (h sbomHttpHandler) enrichImage(ctx context.Context, enrichmentCtx enricher.EnrichmentContext, imgName string) (*storage.Image, bool, error) {
-
 	// forcedEnrichment is set to true when enrichImage forces an enrichment.
 	forceEnrichment := false
 	img, err := enricher.EnrichImageByName(ctx, h.enricher, enrichmentCtx, imgName)
@@ -101,10 +109,10 @@ func (h sbomHttpHandler) enrichImage(ctx context.Context, enrichmentCtx enricher
 	// verify that image is scanned by scanner v4 if not force enrichment using scanner v4
 	scannedByV4 := h.scannedByScannerv4(img)
 
-	if enrichmentCtx.FetchOpt != enricher.UseImageNamesRefetchCachedValues && !scannedByV4 {
+	if enrichmentCtx.FetchOpt != enricher.UseImageNamesRefetchCachedValues && !scannedbyV4 {
 		// force scan by scanner v4
 		addForceToEnrichmentContext(&enrichmentCtx)
-		forceEnrichment = true
+		enrichmentCtx.ScannerTypeHint = scannerTypes.ScannerV4
 		img, err = enricher.EnrichImageByName(ctx, h.enricher, enrichmentCtx, imgName)
 		if err != nil {
 			return nil, forceEnrichment, err
@@ -124,13 +132,13 @@ func (h sbomHttpHandler) enrichImage(ctx context.Context, enrichmentCtx enricher
 
 func (h sbomHttpHandler) getSbom(ctx context.Context, params apiparams.SbomRequestBody) ([]byte, error) {
 	enrichmentCtx := enricher.EnrichmentContext{
-		FetchOpt:        enricher.UseCachesIfPossible,
-		Delegable:       true,
-		ScannerTypeHint: scannerTypes.ScannerV4,
+		FetchOpt:  enricher.UseCachesIfPossible,
+		Delegable: true,
 	}
 
 	if params.Force {
 		addForceToEnrichmentContext(&enrichmentCtx)
+		enrichmentCtx.ScannerTypeHint = scannerTypes.ScannerV4
 	}
 
 	if params.Cluster != "" {
@@ -155,20 +163,21 @@ func (h sbomHttpHandler) getSbom(ctx context.Context, params apiparams.SbomReque
 	if err != nil {
 		return nil, err
 	}
+
 	if !found && !params.Force && !alreadyForcedEnrichment {
 		// since index report for image does not exist force scan by scanner v4
 		addForceToEnrichmentContext(&enrichmentCtx)
+		enrichmentCtx.ScannerTypeHint = scannerTypes.ScannerV4
 		_, err = enricher.EnrichImageByName(ctx, h.enricher, enrichmentCtx, params.ImageName)
 		if err != nil {
 			return nil, err
 		}
-		sbom, _, err = scannerV4.GetSBOM(img)
-
-		if err != nil {
-			return nil, err
-		}
-
 	}
+	sbom, _, err = scannerV4.GetSBOM(img)
+	if err != nil {
+		return nil, err
+	}
+
 	return sbom, nil
 }
 
@@ -192,6 +201,19 @@ func (h sbomHttpHandler) getScannerV4SBOMIntegration() (scannerTypes.SBOMer, err
 // scannedByScannerv4 checks if image is scanned by scanner v4
 func (h sbomHttpHandler) scannedByScannerv4(img *storage.Image) bool {
 	return img.GetScan().GetDataSource().GetId() == iiStore.DefaultScannerV4Integration.GetId()
+}
+
+// isimagescannedByScannerv4 checks if image is scanned by scanner v4
+func (h sbomHttpHandler) isimagescannedByScannerv4(img *storage.Image) bool {
+	scanners := h.integration.ScannerSet()
+	for _, scanner := range scanners.GetAll() {
+		if scanner.GetScanner().Type() == scannerTypes.ScannerV4 {
+			if scanner.DataSource().GetId() == img.GetMetadata().GetDataSource().GetId() {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // saveImage saves the image to the scanner database

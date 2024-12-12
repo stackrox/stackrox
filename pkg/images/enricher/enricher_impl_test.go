@@ -236,6 +236,7 @@ func TestEnricherFlow(t *testing.T) {
 		imageGetter          ImageGetter
 		fsr                  *fakeRegistryScanner
 		result               EnrichmentResult
+		errorExpected        bool
 	}{
 		{
 			name: "nothing in the cache",
@@ -329,6 +330,49 @@ func TestEnricherFlow(t *testing.T) {
 			name: "data in both caches but force refetch scans only",
 			ctx: EnrichmentContext{
 				FetchOpt: ForceRefetchScansOnly,
+			},
+			inMetadataCache: true,
+			image: &storage.Image{
+				Id: "id", Name: &storage.ImageName{Registry: "reg"},
+				Names: []*storage.ImageName{{Registry: "reg"}},
+			},
+
+			fsr: newFakeRegistryScanner(opts{
+				requestedMetadata: false,
+				requestedScan:     true,
+			}),
+			result: EnrichmentResult{
+				ImageUpdated: true,
+				ScanResult:   ScanSucceeded,
+			},
+		},
+		{
+			name:          "set ScannerTypeHint to something not found in integrations",
+			errorExpected: true,
+			ctx: EnrichmentContext{
+				FetchOpt:        ForceRefetchScansOnly,
+				ScannerTypeHint: "type-test",
+			},
+			inMetadataCache: true,
+			image: &storage.Image{
+				Id: "id", Name: &storage.ImageName{Registry: "reg"},
+				Names: []*storage.ImageName{{Registry: "reg"}},
+			},
+
+			fsr: newFakeRegistryScanner(opts{
+				requestedMetadata: false,
+				requestedScan:     false,
+			}),
+			result: EnrichmentResult{
+				ImageUpdated: true,
+				ScanResult:   ScanNotDone,
+			},
+		},
+		{
+			name: "set ScannerTypeHint to something found in integrations",
+			ctx: EnrichmentContext{
+				FetchOpt:        ForceRefetchScansOnly,
+				ScannerTypeHint: "type",
 			},
 			inMetadataCache: true,
 			image: &storage.Image{
@@ -456,7 +500,7 @@ func TestEnricherFlow(t *testing.T) {
 			scannerSet := scannerMocks.NewMockSet(ctrl)
 			if !c.shortCircuitScanner {
 				scannerSet.EXPECT().IsEmpty().Return(false)
-				scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScannerWithDataSource{fsr})
+				scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScannerWithDataSource{fsr}).AnyTimes()
 				set.EXPECT().ScannerSet().Return(scannerSet)
 			}
 
@@ -484,7 +528,11 @@ func TestEnricherFlow(t *testing.T) {
 				enricherImpl.imageGetter = c.imageGetter
 			}
 			result, err := enricherImpl.EnrichImage(emptyCtx, c.ctx, c.image)
-			require.NoError(t, err)
+			if !c.errorExpected {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
 			assert.Equal(t, c.result, result)
 
 			assert.Equal(t, c.fsr, fsr)
