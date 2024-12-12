@@ -187,10 +187,20 @@ spec:
     - name: SOURCE_ARTIFACT
       value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
     taskRef:
-      name: determine-image-tag
+      params:
+      - name: name
+        value: determine-image-tag-stackrox
+      - name: bundle
+        # TODO(ROX-27350): switch to latest tag after tasks PR is pushed.
+        value: quay.io/rhacs-eng/konflux-tasks:pr-3@sha256:50d7e4bca7e81fbf09faa749dfad62167b2099884363efb4d9fd0d05a6bc843d
+      - name: kind
+        value: task
+      resolver: bundles
 
   - name: fetch-external-networks
     params:
+    - name: TARGET_DIR
+      value: .konflux/stackrox-data
     - name: SOURCE_ARTIFACT
       value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
     - name: ociStorage
@@ -198,7 +208,15 @@ spec:
     - name: ociArtifactExpiresAfter
       value: $(params.oci-artifact-expires-after)
     taskRef:
-      name: fetch-external-networks
+      params:
+      - name: name
+        value: fetch-external-networks
+      - name: bundle
+        # TODO(ROX-27350): switch to latest tag after tasks PR is pushed.
+        value: quay.io/rhacs-eng/konflux-tasks:pr-3@sha256:50d7e4bca7e81fbf09faa749dfad62167b2099884363efb4d9fd0d05a6bc843d
+      - name: kind
+        value: task
+      resolver: bundles
 
   - name: prefetch-dependencies
     params:
