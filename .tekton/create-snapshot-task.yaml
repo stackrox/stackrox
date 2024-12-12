@@ -38,45 +38,63 @@ spec:
     script: |
       #!/usr/bin/env python3
 
-      import json
       import os
+      import json
 
 
       def load_image_refs():
-        return json.loads(os.getenv("IMAGE_REFS", "[]"))
+          return json.loads(os.getenv("IMAGE_REFS", "[]"))
+
+
+      def process_component(component):
+          return {
+              "containerImage": component["ref"],
+              "name": component["component"],
+              "source": {
+                  "git": {
+                      "revision": component["revision"],
+                      "url": component["repository"]
+                  }
+              }
+          }
 
 
       def construct_snapshot(snapshot_name, application, components):
-        return {
-          "apiVersion": "appstudio.redhat.com/v1alpha1",
-          "kind": "Snapshot",
-          "metadata": {
-            "name": snapshot_name
-          },
-          "spec": {
-            "application": application,
-            "components": components
+          return {
+              "apiVersion": "appstudio.redhat.com/v1alpha1",
+              "kind": "Snapshot",
+              "metadata": {
+                  "name": snapshot_name
+              },
+              "spec": {
+                  "application": application,
+                  "components": components
+              }
           }
-        }
 
 
       if __name__ == '__main__':
-        components = load_image_refs()
-        snapshot = construct_snapshot(
-          "tm-acs-4-6-0",
-          os.getenv("APPLICATION", ""),
-          components
-        )
+          image_refs = load_image_refs()
+          components = [process_component(c) for c in image_refs]
+          snapshot = construct_snapshot(
+              "tm-acs-4-6-0",
+              os.getenv("APPLICATION", ""),
+              components
+          )
 
-        print("Snapshot:", snapshot)
+          print("Snapshot:", snapshot)
 
-        with open("snapshot.json", "w") as f:
-          json.dump(snapshot, f)
+          with open("snapshot.json", "w") as f:
+              json.dump(snapshot, f)
 
   - name: apply-snapshot
     image: registry.access.redhat.com/ubi9/ubi:latest
     workingDir: /var/workdir/source
     script: |
       #!/usr/bin/env bash
+
+      set -euo pipefail
+      dnf -y upgrade --nobest
+      dnf -y install jq
 
       cat snapshot.json | jq
