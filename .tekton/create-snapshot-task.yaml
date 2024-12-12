@@ -39,14 +39,6 @@ spec:
       dnf -y upgrade --nobest
       dnf -y install jq
 
-
-      # echo "--- direct ---"
-      # echo "$(params.IMAGE_REFS)" > image-refs.json
-      # cat image-refs.json
-
-      # echo "--- with jq ---"
-      # echo "$(params.IMAGE_REFS)" | jq
-
       cat <<EOF > snapshot-template.json
       {
         "apiVersion": "appstudio.redhat.com/v1alpha1",
