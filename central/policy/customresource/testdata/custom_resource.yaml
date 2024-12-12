@@ -14,6 +14,8 @@ spec:
   lifecycleStages:
   - BUILD
   eventSource: NOT_APPLICABLE
+  notifiers:
+  - email-notifier-uuid
   exclusions:
   - name: exclusionName1
     deployment:

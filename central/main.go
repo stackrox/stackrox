@@ -817,7 +817,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		{
 			Route:         "/api/policy/custom-resource/save-as-zip",
 			Authorizer:    user.With(permissions.View(resources.WorkflowAdministration)),
-			ServerHandler: policyHandler.Handler(policyDataStore.Singleton()),
+			ServerHandler: policyHandler.Handler(policyDataStore.Singleton(), notifierDS.Singleton()),
 			Compression:   false,
 		},
 		{

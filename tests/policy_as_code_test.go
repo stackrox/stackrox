@@ -142,7 +142,7 @@ func createBasePolicyStruct(name string) *v1alpha1.SecurityPolicy {
 
 func (pc *PolicyAsCodeSuite) TestCreateCR() {
 	k8sPolicy := createBasePolicyStruct("test-policy-create")
-	k8sPolicy.Spec.Notifiers = []string{pc.notifier.GetId()}
+	k8sPolicy.Spec.Notifiers = []string{pc.notifier.GetName()}
 	id := pc.createCRAndObserveInCentral(k8sPolicy)
 	pc.Require().NotEmpty(id)
 	pc.checkPolicyIsDeclarative(id)

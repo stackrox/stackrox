@@ -20,11 +20,15 @@ func TestConvertToCR(t *testing.T) {
 	policy := getTestPolicy()
 	converted, err := generateCustomResource(policy)
 	require.NoError(t, err)
+
 	assert.YAMLEq(t, templateFile, converted)
 }
 
 func getTestPolicy() *storage.Policy {
 	p := fixtures.GetPolicy()
+	p.Notifiers = []string{
+		"email-notifier-uuid",
+	}
 	p.MitreAttackVectors = []*storage.Policy_MitreAttackVectors{
 		{
 			Tactic:     "This is a tactic.",
