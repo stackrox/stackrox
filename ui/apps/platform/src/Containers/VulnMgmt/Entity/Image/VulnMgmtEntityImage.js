@@ -27,7 +27,6 @@ const VulnMgmtImage = ({
     sort,
     page,
     refreshTrigger,
-    setRefreshTrigger,
 }) => {
     const workflowState = useContext(workflowStateContext);
 
@@ -132,7 +131,6 @@ const VulnMgmtImage = ({
             page={page}
             queryOptions={queryOptions}
             entityContext={entityContext}
-            setRefreshTrigger={setRefreshTrigger}
         />
     );
 };

@@ -88,9 +88,7 @@ type ParentDescription = {
 
 type NavDescription = LinkDescription | ParentDescription;
 
-function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDescription[] {
-    const isVulnMgmt2GAEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_2_GA');
-
+function getNavDescriptions(): NavDescription[] {
     return [
         {
             type: 'link',
@@ -165,11 +163,7 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
             children: [
                 {
                     type: 'link',
-                    content: isVulnMgmt2GAEnabled ? (
-                        'Workload CVEs'
-                    ) : (
-                        <NavigationContent variant="TechPreview">Workload CVEs</NavigationContent>
-                    ),
+                    content: 'Workload CVEs',
                     path: vulnerabilitiesWorkloadCvesPath,
                     routeKey: 'workload-cves',
                 },
@@ -191,21 +185,13 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
                 },
                 {
                     type: 'link',
-                    content: isVulnMgmt2GAEnabled ? (
-                        'Platform CVEs'
-                    ) : (
-                        <NavigationContent variant="TechPreview">Platform CVEs</NavigationContent>
-                    ),
+                    content: 'Platform CVEs',
                     path: vulnerabilitiesPlatformCvesPath,
                     routeKey: 'platform-cves',
                 },
                 {
                     type: 'link',
-                    content: isVulnMgmt2GAEnabled ? (
-                        'Node CVEs'
-                    ) : (
-                        <NavigationContent variant="TechPreview">Node CVEs</NavigationContent>
-                    ),
+                    content: 'Node CVEs',
                     path: vulnerabilitiesNodeCvesPath,
                     routeKey: 'node-cves',
                 },
@@ -215,11 +201,7 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
                 },
                 {
                     type: 'link',
-                    content: isVulnMgmt2GAEnabled ? (
-                        <NavigationContent variant="Deprecated">Dashboard</NavigationContent>
-                    ) : (
-                        'Dashboard'
-                    ),
+                    content: <NavigationContent variant="Deprecated">Dashboard</NavigationContent>,
                     path: vulnManagementPath,
                     routeKey: 'vulnerability-management',
                     isActive: (pathname) =>
@@ -332,7 +314,7 @@ function NavigationSidebar({
             : true;
     }
 
-    const navDescriptionsFiltered = getNavDescriptions(isFeatureFlagEnabled)
+    const navDescriptionsFiltered = getNavDescriptions()
         .map((navDescription) => {
             switch (navDescription.type) {
                 case 'parent': {
