@@ -395,7 +395,8 @@ class SACTest extends BaseSpecification {
         tokenName                | category     | numResults
         NOACCESSTOKEN            | "Cluster"    | 0
         "searchDeploymentsToken" | "Deployment" | 1
-        "searchImagesToken"      | "Image"      | 1
+        // ROX-26729 - it's failing ~5 times a week. Disabled for now.
+        // "searchImagesToken"      | "Image"      | 1
     }
 
     @Unroll
