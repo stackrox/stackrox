@@ -46,11 +46,9 @@ spec:
         "metadata": {
           "name": "tm-$(date +%s)"
         },
-        {
-          "spec": {
-            "application": "${APPLICATION}",
-            "components": []
-          }
+        "spec": {
+          "application": "${APPLICATION}",
+          "components": []
         }
       }
       EOF
