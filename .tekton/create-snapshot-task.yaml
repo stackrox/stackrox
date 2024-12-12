@@ -25,8 +25,8 @@ spec:
     args:
     - use
     - $(params.SOURCE_ARTIFACT)=/var/workdir/source
-  - name: render-snapshot
-    image: registry.access.redhat.com/ubi9/ubi:latest
+  - name: create-snapshot
+    image: registry.redhat.io/openshift4/ose-cli@sha256:4d58b5a47a84f843e646c5272e32b2dbefac67fd56e283cb60635d792e6348f9
     workingDir: /var/workdir/source
     env:
       - name: APPLICATION
@@ -36,64 +36,7 @@ spec:
       - name: IMAGE_REFS
         value: $(params.IMAGE_REFS)
     script: |
-      #!/usr/bin/env python3
-
-      import json
-      import os
-      import time
-
-
-      def load_image_refs():
-          return json.loads(os.getenv("IMAGE_REFS", "[]"))
-
-
-      def process_component(component):
-          return {
-              "containerImage": component["ref"],
-              "name": component["component"],
-              "source": {
-                  "git": {
-                      "revision": component["revision"],
-                      "url": component["repository"]
-                  }
-              }
-          }
-
-
-      def construct_snapshot(snapshot_name_prefix, application, components):
-          snapshot_name = f"{snapshot_name_prefix}-{int(time.time())}"
-          return {
-              "apiVersion": "appstudio.redhat.com/v1alpha1",
-              "kind": "Snapshot",
-              "metadata": {
-                  "name": snapshot_name
-              },
-              "spec": {
-                  "application": application,
-                  "components": components
-              }
-          }
-
-
-      if __name__ == '__main__':
-          application = os.getenv("APPLICATION", "")
-          image_refs = load_image_refs()
-          components = [process_component(c) for c in image_refs]
-          snapshot = construct_snapshot(
-              f"tm-{application}",
-              application,
-              components
-          )
-
-          print("Snapshot:", snapshot)
-
-          with open("snapshot.json", "w") as f:
-              json.dump(snapshot, f)
-
-  - name: apply-snapshot
-    image: registry.redhat.io/openshift4/ose-cli@sha256:4d58b5a47a84f843e646c5272e32b2dbefac67fd56e283cb60635d792e6348f9
-    workingDir: /var/workdir/source
-    script: |
       #!/usr/bin/env bash
 
+      .konflux/scripts/render_snapshot.py
       oc apply -f snapshot.json
