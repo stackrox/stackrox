@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/url"
@@ -15,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
@@ -51,6 +53,9 @@ type Scanner interface {
 
 	// GetMatcherMetadata returns metadata from the matcher.
 	GetMatcherMetadata(context.Context) (*v4.Metadata, error)
+
+	//GetSBOM to get sbom for an image
+	GetSBOM(ctx context.Context, ref name.Digest) ([]byte, error)
 
 	// Close cleans up any resources used by the implementation.
 	Close() error
@@ -174,6 +179,36 @@ func createGRPCConn(ctx context.Context, o connOptions) (*grpc.ClientConn, error
 		clientconn.WithDialOptions(dialOpts...),
 	}
 	return clientconn.AuthenticatedGRPCConnection(ctx, address, o.mTLSSubject, connOpts...)
+}
+
+// GetSBOM verfieis that index report exists and calls matcher to return sbom for an image
+func (c *gRPCScanner) GetSBOM(ctx context.Context, ref name.Digest) ([]byte, error) {
+	hashId := getImageManifestID(ref)
+	_, found, err := c.GetImageIndex(ctx, hashId)
+	if err != nil {
+		return nil, err
+	}
+	if !found {
+		return nil, errox.NotFound
+	}
+
+	//for testing only
+	sbom := map[string]interface{}{
+		"SPDXID":      "SPDXRef-DOCUMENT",
+		"spdxVersion": "SPDX-2.3",
+		"creationInfo": map[string]interface{}{
+			"created": "2023-08-30T04:40:16Z",
+			"creators": []string{
+				"Organization: Uchiha Cortez",
+				"Tool: FOSSA v0.12.0",
+			},
+		},
+	}
+	sbomBytes, err := json.Marshal(sbom)
+	if err != nil {
+		return nil, err
+	}
+	return sbomBytes, nil
 }
 
 // GetImageIndex calls the Indexer's gRPC endpoint GetIndexReport.

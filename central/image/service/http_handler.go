@@ -122,7 +122,6 @@ func (h sbomHttpHandler) enrichImage(ctx context.Context, enrichmentCtx enricher
 	return img, forceEnrichment, nil
 }
 
-// getSbom generates an SBOM for the specified parameters
 func (h sbomHttpHandler) getSbom(ctx context.Context, params apiparams.SbomRequestBody) ([]byte, error) {
 	enrichmentCtx := enricher.EnrichmentContext{
 		FetchOpt:        enricher.UseCachesIfPossible,

@@ -32,6 +32,12 @@ type Scanner interface {
 	GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error)
 }
 
+// SBOM is the interface that contains the StackRox SBOM methods
+type SBOM interface {
+	//GetSBOM to get sbom for an image
+	GetSBOM(image *storage.Image) ([]byte, error)
+}
+
 // ImageScannerWithDataSource provides a GetScanner to retrieve the underlying Scanner and
 // a DataSource function to describe which integration formed the interface.
 //
