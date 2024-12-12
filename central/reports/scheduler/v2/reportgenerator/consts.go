@@ -11,6 +11,7 @@ const (
                              discoveredAtImage
 		                     link
                              cvss
+                             nvdCvss
                          }`
 
 	deployedImagesReportQuery = `query getDeployedImagesReportData($scopequery: String, 

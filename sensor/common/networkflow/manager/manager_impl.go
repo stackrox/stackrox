@@ -4,11 +4,16 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 	"sync/atomic"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -46,10 +51,6 @@ const (
 )
 
 var (
-	// these are "canonical" external addresses sent by collector when we don't care about the precise IP address.
-	externalIPv4Addr = net.ParseIP("255.255.255.255")
-	externalIPv6Addr = net.ParseIP("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff")
-
 	emptyProcessInfo = processInfo{}
 	tickerTime       = time.Second * 30
 )
@@ -506,33 +507,86 @@ func (m *networkFlowManager) enrichAndSendProcesses() {
 	}
 }
 
+func (m *networkFlowManager) handleContainerNotFound(conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) error {
+	var failReasons error
+	failReasons = multierror.Append(failReasons, fmt.Errorf("ContainerID %s unknown", conn.containerID))
+	timeElapsedSinceFirstSeen := timestamp.Now().ElapsedSince(status.firstSeen)
+	// Expire the connection if the container cannot be found within the clusterEntityResolutionWaitPeriod
+	if timeElapsedSinceFirstSeen > maxContainerResolutionWaitPeriod {
+		if activeConn, found := m.activeConnections[*conn]; found {
+			enrichedConnections[*activeConn] = timestamp.Now()
+			delete(m.activeConnections, *conn)
+			flowMetrics.SetActiveFlowsTotalGauge(len(m.activeConnections))
+			return nil // connection has been enriched
+		}
+		status.rotten = true
+		// Only increment metric once the connection is marked rotten
+		flowMetrics.ContainerIDMisses.Inc()
+		log.Debugf("Unable to fetch deployment information for container %s: no deployment found", conn.containerID)
+	} else {
+		failReasons = multierror.Append(failReasons, fmt.Errorf("time for container resolution (%s) not elapsed yet", maxContainerResolutionWaitPeriod))
+	}
+	return failReasons
+}
+
+func formatMultiErrorOneline(errs []error) string {
+	elems := make([]string, len(errs))
+	for i, err := range errs {
+		// The error is used in debug logs and is much nicer to read with the first letter capitalized.
+		// Writing the error message with first capital in the code raises a style warning.
+		msg := cases.Title(language.English, cases.NoLower).String(err.Error())
+		elems[i] = fmt.Sprintf("(%d) %s", i+1, msg)
+	}
+	return strings.Join(elems, ", ")
+}
+
+func logReasonForAggregatingNetGraphFlow(conn *connection, contNs, contName, entitiesName string, port uint16, failReason *multierror.Error) {
+	reasonStr := ""
+	if failReason != nil {
+		failReason.ErrorFormat = formatMultiErrorOneline
+		reasonStr = failReason.Error()
+	}
+	// No need to produce complex chain of reasons, if there is one simple explanation
+	if conn.remote.IsConsideredExternal() {
+		reasonStr = "Collector did not report the IP address to Sensor - the remote part is the Internet"
+	}
+	if conn.incoming {
+		// Keep internal wording even if central lacks `NetworkGraphInternalEntitiesSupported` capability.
+		log.Debugf("Marking incoming connection to container %s/%s from %s:%s as '%s' in the network graph: %s.",
+			contNs, contName, conn.remote.IPAndPort.String(),
+			strconv.Itoa(int(port)), entitiesName, reasonStr)
+	} else {
+		log.Debugf("Marking outgoing connection from container %s/%s to %s as '%s' in the network graph: %s.",
+			contNs, contName, conn.remote.IPAndPort.String(),
+			entitiesName, reasonStr)
+	}
+}
+
 func (m *networkFlowManager) enrichConnection(conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) {
 	timeElapsedSinceFirstSeen := timestamp.Now().ElapsedSince(status.firstSeen)
 	isFresh := timeElapsedSinceFirstSeen < clusterEntityResolutionWaitPeriod
+	var netGraphFailReason *multierror.Error
 
 	container, ok := m.clusterEntities.LookupByContainerID(conn.containerID)
 	if !ok {
-		// Expire the connection if the container cannot be found within the clusterEntityResolutionWaitPeriod
-		if timeElapsedSinceFirstSeen > maxContainerResolutionWaitPeriod {
-			if activeConn, found := m.activeConnections[*conn]; found {
-				enrichedConnections[*activeConn] = timestamp.Now()
-				delete(m.activeConnections, *conn)
-				flowMetrics.SetActiveFlowsTotalGauge(len(m.activeConnections))
-				return
-			}
-			status.rotten = true
-			// Only increment metric once the connection is marked rotten
-			flowMetrics.ContainerIDMisses.Inc()
-			log.Debugf("Unable to fetch deployment information for container %s: no deployment found", conn.containerID)
+		// There is an incoming connection to a container that Sensor does not recognize.
+		// 90% of the cases that container is Sensor itself before being restarted.
+		if err := m.handleContainerNotFound(conn, status, enrichedConnections); err != nil {
+			log.Debugf("Enrichment failed: %v", err)
 		}
 		return
 	}
+	netGraphFailReason = multierror.Append(netGraphFailReason, errors.New("ContainerID lookup successful"))
 
 	var lookupResults []clusterentities.LookupResult
+	var isInternet = false
 
 	// Check if the remote address represents the de-facto INTERNET entity.
-	if conn.remote.IPAndPort.Address == externalIPv4Addr || conn.remote.IPAndPort.Address == externalIPv6Addr {
+	if conn.remote.IsConsideredExternal() {
 		isFresh = false
+		isInternet = true
+		netGraphFailReason = multierror.Append(netGraphFailReason,
+			errors.New("Remote part of the connection is the Internet"))
 	} else {
 		// Otherwise, check if the remote entity is actually a cluster entity.
 		lookupResults = m.clusterEntities.LookupByEndpoint(conn.remote)
@@ -554,6 +608,8 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 	}
 
 	if len(lookupResults) == 0 {
+		netGraphFailReason = multierror.Append(netGraphFailReason,
+			fmt.Errorf("lookup in clusterEntitiesStore failed for endpoint %s", conn.remote.String()))
 		// If the address is set and is not resolvable, we want to we wait for `clusterEntityResolutionWaitPeriod` time
 		// before associating it to a known network or INTERNET.
 		if isFresh && conn.remote.IPAndPort.Address.IsValid() {
@@ -566,6 +622,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		}
 
 		if isFresh {
+			log.Debugf("Enrichment aborted: Connection is fresh")
 			return
 		}
 
@@ -574,17 +631,30 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		}()
 
 		if extSrc == nil {
+			netGraphFailReason = multierror.Append(netGraphFailReason,
+				fmt.Errorf("lookup by network in externalSrcsStore failed for network %+v", conn.remote.IPAndPort))
 			entityType := networkgraph.InternetEntity()
 			isExternal, err := conn.IsExternal()
 			if err != nil {
 				// IP is malformed or unknown - do not show on the graph and log the info
 				// TODO(ROX-22388): Change log level back to warning when potential Collector issue is fixed
-				log.Debugf("Not showing flow on the network graph: %v", err)
+				log.Debugf("Enrichment aborted: Not showing flow on the network graph: %v", err)
 				return
 			}
-			if !isExternal && centralcaps.Has(centralsensor.NetworkGraphInternalEntitiesSupported) {
+			if isExternal {
+				// If Central does not handle DiscoveredExternalEntities, report an Internet entity as it used to be.
+				if !isInternet && centralcaps.Has(centralsensor.NetworkGraphDiscoveredExternalEntitiesSupported) {
+					entityType = networkgraph.DiscoveredExternalEntity(net.IPNetworkFromNetworkPeerID(conn.remote.IPAndPort))
+				} else {
+					netGraphFailReason = multierror.Append(netGraphFailReason,
+						errors.New("Central lacks capability to display discovered external entities"))
+				}
+			} else if centralcaps.Has(centralsensor.NetworkGraphInternalEntitiesSupported) {
 				// Central without the capability would crash the UI if we make it display "Internal Entities".
 				entityType = networkgraph.InternalEntities()
+			} else {
+				netGraphFailReason = multierror.Append(netGraphFailReason,
+					errors.New("Central lacks capability to display 'Internal Entities' in the UI"))
 			}
 
 			// Fake a lookup result. This shows "External Entities" or "Internal Entities" in the network graph
@@ -598,16 +668,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 			if isExternal {
 				entitiesName = "External Entities"
 			}
-			if conn.incoming {
-				// Keep internal wording even if central lacks `NetworkGraphInternalEntitiesSupported` capability.
-				log.Debugf("Incoming connection to container %s/%s from %s:%s. "+
-					"Marking it as '%s' in the network graph.",
-					container.Namespace, container.ContainerName, conn.remote.IPAndPort.String(), strconv.Itoa(int(port)), entitiesName)
-			} else {
-				log.Debugf("Outgoing connection from container %s/%s to %s. "+
-					"Marking it as '%s' in the network graph.",
-					container.Namespace, container.ContainerName, conn.remote.IPAndPort.String(), entitiesName)
-			}
+			logReasonForAggregatingNetGraphFlow(conn, container.Namespace, container.ContainerName, entitiesName, port, netGraphFailReason)
 
 			if !status.used {
 				// Count internal metrics even if central lacks `NetworkGraphInternalEntitiesSupported` capability.
@@ -634,7 +695,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		}
 		status.used = true
 		if conn.incoming {
-			// Only report incoming connections from outside of the cluster. These are already taken care of by the
+			// Only report incoming connections from outside the cluster. These are already taken care of by the
 			// corresponding outgoing connection from the other end.
 			return
 		}

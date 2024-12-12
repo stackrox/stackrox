@@ -21,6 +21,7 @@ import (
 type MockManager struct {
 	ctrl     *gomock.Controller
 	recorder *MockManagerMockRecorder
+	isgomock struct{}
 }
 
 // MockManagerMockRecorder is the mock recorder for MockManager.
@@ -38,6 +39,48 @@ func NewMockManager(ctrl *gomock.Controller) *MockManager {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockManager) EXPECT() *MockManagerMockRecorder {
 	return m.recorder
+}
+
+// HandleResult mocks base method.
+func (m *MockManager) HandleResult(ctx context.Context, result *storage.ComplianceOperatorCheckResultV2) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HandleResult", ctx, result)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// HandleResult indicates an expected call of HandleResult.
+func (mr *MockManagerMockRecorder) HandleResult(ctx, result any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleResult", reflect.TypeOf((*MockManager)(nil).HandleResult), ctx, result)
+}
+
+// HandleScan mocks base method.
+func (m *MockManager) HandleScan(ctx context.Context, scan *storage.ComplianceOperatorScanV2) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HandleScan", ctx, scan)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// HandleScan indicates an expected call of HandleScan.
+func (mr *MockManagerMockRecorder) HandleScan(ctx, scan any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleScan", reflect.TypeOf((*MockManager)(nil).HandleScan), ctx, scan)
+}
+
+// HandleScanRemove mocks base method.
+func (m *MockManager) HandleScanRemove(scanID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HandleScanRemove", scanID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// HandleScanRemove indicates an expected call of HandleScanRemove.
+func (mr *MockManagerMockRecorder) HandleScanRemove(scanID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleScanRemove", reflect.TypeOf((*MockManager)(nil).HandleScanRemove), scanID)
 }
 
 // Start mocks base method.
@@ -65,15 +108,15 @@ func (mr *MockManagerMockRecorder) Stop() *gomock.Call {
 }
 
 // SubmitReportRequest mocks base method.
-func (m *MockManager) SubmitReportRequest(ctx context.Context, scanConfig *storage.ComplianceOperatorScanConfigurationV2) error {
+func (m *MockManager) SubmitReportRequest(ctx context.Context, scanConfig *storage.ComplianceOperatorScanConfigurationV2, notificationMethod storage.ComplianceOperatorReportStatus_NotificationMethod) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubmitReportRequest", ctx, scanConfig)
+	ret := m.ctrl.Call(m, "SubmitReportRequest", ctx, scanConfig, notificationMethod)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SubmitReportRequest indicates an expected call of SubmitReportRequest.
-func (mr *MockManagerMockRecorder) SubmitReportRequest(ctx, scanConfig any) *gomock.Call {
+func (mr *MockManagerMockRecorder) SubmitReportRequest(ctx, scanConfig, notificationMethod any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitReportRequest", reflect.TypeOf((*MockManager)(nil).SubmitReportRequest), ctx, scanConfig)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitReportRequest", reflect.TypeOf((*MockManager)(nil).SubmitReportRequest), ctx, scanConfig, notificationMethod)
 }

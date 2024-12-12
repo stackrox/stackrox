@@ -490,7 +490,8 @@
           "type": "string"
         },
         "serviceAccount": {
-          "type": "string"
+          "type": "string",
+          "description": "The service account for the storage integration. The server will mask the value of this credential in responses and logs."
         },
         "objectPrefix": {
           "type": "string"
@@ -507,10 +508,12 @@
           "type": "string"
         },
         "accessKeyId": {
-          "type": "string"
+          "type": "string",
+          "description": "The access key ID to use. The server will mask the value of this credential in responses and logs."
         },
         "secretAccessKey": {
-          "type": "string"
+          "type": "string",
+          "description": "The secret access key to use. The server will mask the value of this credential in responses and logs."
         },
         "region": {
           "type": "string"
@@ -538,10 +541,12 @@
           "type": "boolean"
         },
         "accessKeyId": {
-          "type": "string"
+          "type": "string",
+          "description": "The access key ID for the storage integration. The server will mask the value of this credential in responses and logs."
         },
         "secretAccessKey": {
-          "type": "string"
+          "type": "string",
+          "description": "The secret access key for the storage integration. The server will mask the value of this credential in responses and logs."
         },
         "region": {
           "type": "string"

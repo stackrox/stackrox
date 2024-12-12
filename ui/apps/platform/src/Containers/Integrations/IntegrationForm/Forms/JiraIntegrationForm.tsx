@@ -127,9 +127,9 @@ function JiraIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<JiraIntegration>): ReactElement {
-    const formInitialValues = { ...defaultValues, ...initialValues };
+    const formInitialValues = structuredClone(defaultValues);
     if (initialValues) {
-        formInitialValues.notifier = merge({}, defaultValues.notifier, initialValues); // in case properties are missing from initialValues
+        merge(formInitialValues.notifier, initialValues);
 
         // We want to clear the password because backend returns '******' to represent that there
         // are currently stored credentials
@@ -428,7 +428,7 @@ function JiraIntegrationForm({
                         {/* </FormSection>
                         )} */}
                         <FormLabelGroup
-                            label="Default Fields JSON"
+                            label="Default fields JSON"
                             fieldId="notifier.jira.defaultFieldsJson"
                             touched={touched}
                             errors={errors}

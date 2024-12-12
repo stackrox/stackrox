@@ -1,4 +1,5 @@
 import React, { useContext } from 'react';
+import { useLocation, useRouteMatch } from 'react-router-dom';
 import pluralize from 'pluralize';
 
 import PolicyStatusIconText from 'Components/PatternFly/IconText/PolicyStatusIconText';
@@ -182,8 +183,6 @@ const buildTableColumns = (match, location, entityContext) => {
 const createTableRows = (data) => data.results;
 
 const Deployments = ({
-    match,
-    location,
     className,
     selectedRowId,
     onRowClick,
@@ -192,6 +191,8 @@ const Deployments = ({
     totalResults,
     entityContext,
 }) => {
+    const location = useLocation();
+    const match = useRouteMatch();
     const searchParam = useContext(searchContext);
 
     const autoFocusSearchInput = !selectedRowId;

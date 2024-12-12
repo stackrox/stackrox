@@ -5,8 +5,10 @@ import (
 	"time"
 
 	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
+	entityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	flowDataStore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -18,10 +20,37 @@ type flowPersisterImpl struct {
 	baselines       networkBaselineManager.Manager
 	flowStore       flowDataStore.FlowDataStore
 	firstUpdateSeen bool
+	entityStore     entityDataStore.EntityDataStore
 }
 
 // update updates the FlowStore with the given network flow updates.
 func (s *flowPersisterImpl) update(ctx context.Context, newFlows []*storage.NetworkFlow, updateTS *time.Time) error {
+	if features.ExternalIPs.Enabled() {
+		// Sensor may have forwarded unknown NetworkEntities that we want to learn
+		for _, newFlow := range newFlows {
+			err := s.updateExternalNetworkEntityIfDiscovered(ctx, newFlow.GetProps().DstEntity)
+			if err != nil {
+				return err
+			}
+			err = s.updateExternalNetworkEntityIfDiscovered(ctx, newFlow.GetProps().SrcEntity)
+			if err != nil {
+				return err
+			}
+		}
+	} else {
+		// We are not storing the discovered entities. Let net-flows point to INTERNET instead.
+		internetEntity := networkgraph.InternetEntity().ToProto()
+		for _, newFlow := range newFlows {
+			if newFlow.GetProps().GetSrcEntity().GetExternalSource().GetDiscovered() {
+				newFlow.GetProps().SrcEntity = internetEntity
+			}
+
+			if newFlow.GetProps().GetDstEntity().GetExternalSource().GetDiscovered() {
+				newFlow.GetProps().DstEntity = internetEntity
+			}
+		}
+	}
+
 	now := timestamp.Now()
 	var updateMicroTS timestamp.MicroTS
 	if updateTS != nil {
@@ -98,4 +127,17 @@ func convertToFlows(updatedFlows map[networkgraph.NetworkConnIndicator]timestamp
 		flowsToBeUpserted = append(flowsToBeUpserted, toBeUpserted)
 	}
 	return flowsToBeUpserted
+}
+
+func (s *flowPersisterImpl) updateExternalNetworkEntityIfDiscovered(ctx context.Context, entityInfo *storage.NetworkEntityInfo) error {
+	if !entityInfo.GetExternalSource().GetDiscovered() {
+		return nil
+	}
+
+	entity := &storage.NetworkEntity{
+		Info: entityInfo,
+		// Scope.ClusterId defaults to "", which is the default cluster
+	}
+
+	return s.entityStore.UpdateExternalNetworkEntity(ctx, entity, true)
 }

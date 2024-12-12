@@ -1,5 +1,5 @@
-import React, { useContext, useState } from 'react';
-import ReactRouterPropTypes from 'react-router-prop-types';
+import React, { useCallback, useContext, useRef, useState } from 'react';
+import { useHistory, useLocation, useRouteMatch } from 'react-router-dom';
 import pluralize from 'pluralize';
 import upperFirst from 'lodash/upperFirst';
 import startCase from 'lodash/startCase';
@@ -16,8 +16,8 @@ import configMgmtPaginationContext, {
 } from 'Containers/configMgmtPaginationContext';
 import searchContext from 'Containers/searchContext';
 import { searchParams } from 'constants/searchParams';
-import { useTheme } from 'Containers/ThemeProvider';
 import workflowStateContext from 'Containers/workflowStateContext';
+import useClickOutside from 'hooks/useClickOutside';
 import entityLabels from 'messages/entity';
 import parseURL from 'utils/URLParser';
 import URLService from 'utils/URLService';
@@ -26,9 +26,12 @@ import { WorkflowState } from 'utils/WorkflowState';
 import EntityList from './EntityList';
 import SidePanel from '../SidePanel/SidePanel';
 
-const ListPage = ({ match, location, history }) => {
+const ListPage = () => {
+    const sidePanelRef = useRef(null);
+    const location = useLocation();
+    const history = useHistory();
+    const match = useRouteMatch();
     const [isExporting, setIsExporting] = useState(false);
-    const { isDarkMode } = useTheme();
 
     const workflowState = parseURL(location);
     const { useCase, search, sort, paging } = workflowState;
@@ -44,6 +47,12 @@ const ListPage = ({ match, location, history }) => {
     const { pageEntityListType, entityId1, entityType2, entityListType2, entityId2, query } =
         params;
     const searchParam = useContext(searchContext);
+
+    const closeSidePanel = useCallback(() => {
+        history.push(URLService.getURL(match, location).clearSidePanelParams().url());
+    }, [history, match, location]);
+
+    useClickOutside(sidePanelRef, closeSidePanel, !!entityId1);
 
     function onRowClick(entityId) {
         const urlBuilder = URLService.getURL(match, location).push(entityId);
@@ -89,15 +98,17 @@ const ListPage = ({ match, location, history }) => {
                 </configMgmtPaginationContext.Provider>
                 <searchContext.Provider value={searchParams.sidePanel}>
                     <configMgmtPaginationContext.Provider value={SIDEPANEL_PAGINATION_PARAMS}>
-                        <SidePanelAnimatedArea isDarkMode={isDarkMode} isOpen={!!entityId1}>
-                            <SidePanel
-                                entityType1={pageEntityListType}
-                                entityId1={entityId1}
-                                entityType2={entityType2}
-                                entityListType2={entityListType2}
-                                entityId2={entityId2}
-                                query={query}
-                            />
+                        <SidePanelAnimatedArea isOpen={!!entityId1}>
+                            <div ref={sidePanelRef}>
+                                <SidePanel
+                                    entityType1={pageEntityListType}
+                                    entityId1={entityId1}
+                                    entityType2={entityType2}
+                                    entityListType2={entityListType2}
+                                    entityId2={entityId2}
+                                    query={query}
+                                />
+                            </div>
                         </SidePanelAnimatedArea>
                     </configMgmtPaginationContext.Provider>
                 </searchContext.Provider>
@@ -105,12 +116,6 @@ const ListPage = ({ match, location, history }) => {
             {isExporting && <BackdropExporting />}
         </workflowStateContext.Provider>
     );
-};
-
-ListPage.propTypes = {
-    match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired,
-    history: ReactRouterPropTypes.history.isRequired,
 };
 
 export default ListPage;

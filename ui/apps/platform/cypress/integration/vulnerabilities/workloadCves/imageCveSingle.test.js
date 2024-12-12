@@ -1,7 +1,9 @@
 import withAuth from '../../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../../helpers/features';
+import { verifyColumnManagement } from '../../../helpers/tableHelpers';
 import {
     applyLocalSeverityFilters,
+    selectEntityTab,
     typeAndSelectSearchFilterValue,
     typeAndSelectCustomSearchFilterValue as typeAndCreateResourceFilterValue,
     visitWorkloadCveOverview,
@@ -173,5 +175,18 @@ describe('Workload CVE Image CVE Single page', () => {
 
         // Go back to the CVE page
         cy.go('back');
+    });
+
+    describe('Column management tests', () => {
+        it('should allow the user to hide and show columns on the Images tab', () => {
+            visitFirstCve();
+            verifyColumnManagement({ tableSelector: 'table' });
+        });
+
+        it('should allow the user to hide and show columns on the Deployments tab', () => {
+            visitFirstCve();
+            selectEntityTab('Deployment');
+            verifyColumnManagement({ tableSelector: 'table' });
+        });
     });
 });

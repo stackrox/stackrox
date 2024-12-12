@@ -6,7 +6,7 @@ import { resourceTypes, standardEntityTypes, rbacConfigTypes } from 'constants/e
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import { HasReadAccess } from 'hooks/usePermissions';
 import { ResourceName } from 'types/roleResources';
-import { FeatureFlagPredicate, allDisabled, allEnabled } from 'utils/featureFlagUtils';
+import { FeatureFlagPredicate, allEnabled } from 'utils/featureFlagUtils';
 
 export const mainPath = '/main';
 export const loginPath = '/login';
@@ -67,7 +67,6 @@ export const userRolePath = `${userBasePath}/roles/:roleName`;
 export const violationsBasePath = `${mainPath}/violations`;
 export const violationsPath = `${violationsBasePath}/:alertId?`;
 export const vulnManagementPath = `${mainPath}/vulnerability-management`;
-export const vulnManagementRiskAcceptancePath = `${vulnManagementPath}/risk-acceptance`;
 export const vulnerabilitiesWorkloadCvesPath = `${vulnerabilitiesBasePath}/workload-cves`;
 export const vulnerabilityNamespaceViewPath = `${vulnerabilitiesWorkloadCvesPath}/namespace-view`;
 export const vulnerabilitiesPlatformCvesPath = `${vulnerabilitiesBasePath}/platform-cves`;
@@ -158,8 +157,6 @@ export type RouteKey =
     | 'user'
     | 'violations'
     | 'vulnerabilities/reports' // add prefix because reports might become ambiguous in the future
-    // Risk Acceptance must precede generic Vulnerability Management in Body and so here for consistency.
-    | 'vulnerability-management/risk-acceptance'
     | 'vulnerability-management'
     | 'workload-cves'
     ;
@@ -219,7 +216,6 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         ]),
     },
     'compliance-enhanced': {
-        featureFlagRequirements: allEnabled(['ROX_COMPLIANCE_ENHANCEMENTS']),
         resourceAccessRequirements: everyResource(['Compliance']),
     },
     configmanagement: {
@@ -244,11 +240,9 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource([]),
     },
     'exception-configuration': {
-        featureFlagRequirements: allEnabled(['ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL']),
         resourceAccessRequirements: everyResource(['Administration']),
     },
     'exception-management': {
-        featureFlagRequirements: allEnabled(['ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL']),
         resourceAccessRequirements: someResource([
             'VulnerabilityManagementRequests',
             'VulnerabilityManagementApprovals',
@@ -264,11 +258,9 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource(nonGlobalResourceNamesForNetworkGraph),
     },
     'node-cves': {
-        featureFlagRequirements: allEnabled(['ROX_VULN_MGMT_NODE_PLATFORM_CVES']),
         resourceAccessRequirements: everyResource(['Cluster', 'Node']),
     },
     'platform-cves': {
-        featureFlagRequirements: allEnabled(['ROX_VULN_MGMT_NODE_PLATFORM_CVES']),
         resourceAccessRequirements: everyResource(['Cluster']),
     },
     'policy-management': {
@@ -313,16 +305,7 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource(['Alert']),
     },
     'vulnerabilities/reports': {
-        featureFlagRequirements: allEnabled(['ROX_VULN_MGMT_REPORTING_ENHANCEMENTS']),
         resourceAccessRequirements: everyResource(['WorkflowAdministration']),
-    },
-    // Risk Acceptance must precede generic Vulnerability Management in Body and so here for consistency.
-    'vulnerability-management/risk-acceptance': {
-        featureFlagRequirements: allDisabled(['ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL']),
-        resourceAccessRequirements: everyResource([
-            'VulnerabilityManagementApprovals',
-            'VulnerabilityManagementRequests',
-        ]),
     },
     'vulnerability-management': {
         resourceAccessRequirements: everyResource([
@@ -410,7 +393,6 @@ export const urlEntityTypes: Record<string, string> = {
 
 const vulnManagementPathToLabelMap: Record<string, string> = {
     [vulnManagementPath]: 'Dashboard',
-    [vulnManagementRiskAcceptancePath]: 'Risk Acceptance',
 };
 
 const vulnerabilitiesPathToLabelMap: Record<string, string> = {

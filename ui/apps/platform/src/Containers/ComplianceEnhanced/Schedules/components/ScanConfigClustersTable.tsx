@@ -1,4 +1,3 @@
-/* eslint-disable react/jsx-no-comment-textnodes */
 // eslint-disable @typescript-eslint/ban-ts-comment
 import React, { useState } from 'react';
 import { Flex, FlexItem, Pagination, Title } from '@patternfly/react-core';
@@ -29,11 +28,9 @@ function ScanConfigClustersTable({
 
     const onPerPageSelect = (
         _event: React.MouseEvent | React.KeyboardEvent | MouseEvent,
-        newPerPage: number,
-        newPage: number
+        newPerPage: number
     ) => {
         setPerPage(newPerPage);
-        setPage(newPage);
     };
 
     // Index of the currently sorted column

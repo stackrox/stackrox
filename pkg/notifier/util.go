@@ -43,8 +43,6 @@ func sendNotification(ctx context.Context, notifier notifiers.AlertNotifier, ale
 func sendResolvableNotification(notifier notifiers.ResolvableAlertNotifier, alert *storage.Alert) error {
 	var err error
 	switch alert.GetState() {
-	case storage.ViolationState_SNOOZED:
-		err = notifier.AckAlert(context.Background(), alert)
 	case storage.ViolationState_RESOLVED:
 		err = notifier.ResolveAlert(context.Background(), alert)
 	}

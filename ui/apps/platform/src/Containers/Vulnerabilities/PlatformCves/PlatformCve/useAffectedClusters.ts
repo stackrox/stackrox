@@ -15,9 +15,7 @@ const affectedClustersQuery = gql`
 
 export default function useAffectedClusters({
     query,
-    page,
-    perPage,
-    sortOption,
+    ...pagination
 }: { query: string } & ClientPagination) {
     const affectedClustersRequest = useQuery<
         {
@@ -31,7 +29,7 @@ export default function useAffectedClusters({
     >(affectedClustersQuery, {
         variables: {
             query,
-            pagination: getPaginationParams({ page, perPage, sortOption }),
+            pagination: getPaginationParams(pagination),
         },
     });
 

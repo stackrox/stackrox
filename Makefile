@@ -8,13 +8,23 @@ BENCHTIME ?= 1x
 BENCHTIMEOUT ?= 20m
 BENCHCOUNT ?= 1
 
-ifeq (,$(findstring podman,$(shell docker --version 2>/dev/null)))
+podman =
+# docker --version might not contain any traces of podman in the latest
+# version, search for more output
+ifneq (,$(findstring podman,$(shell docker --version 2>/dev/null)))
+	podman = yes
+endif
+ifneq (,$(findstring Podman,$(shell docker version 2>/dev/null)))
+	podman = yes
+endif
+
+ifdef podman
+# Disable selinux for local podman builds.
+DOCKER_OPTS=--security-opt label=disable
+else
 # Podman DTRT by running processes unprivileged in containers,
 # but it's UID mapping is more nuanced. Only set user for vanilla docker.
 DOCKER_OPTS=--user "$(shell id -u)"
-else
-# Disable selinux for local podman builds.
-DOCKER_OPTS=--security-opt label=disable
 endif
 
 # Set to empty string to echo some command lines which are hidden by default.
@@ -24,7 +34,7 @@ SILENT ?= @
 # the pattern is passed to: grep -Ev
 #  usage: "path/to/ignored|another/path"
 # TODO: [ROX-19070] Update postgres store test generation to work for foreign keys
-UNIT_TEST_IGNORE := "stackrox/rox/sensor/tests|stackrox/rox/operator/tests|stackrox/rox/config-controller|stackrox/rox/central/reports/config/store/postgres|stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres|stackrox/rox/central/auth/store/postgres|stackrox/rox/scanner/e2etests"
+UNIT_TEST_IGNORE := "stackrox/rox/sensor/tests|stackrox/rox/operator/tests|stackrox/rox/central/reports/config/store/postgres|stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres|stackrox/rox/central/auth/store/postgres|stackrox/rox/scanner/e2etests"
 
 ifeq ($(TAG),)
 TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')$(MAIN_TAG_SUFFIX)
@@ -114,7 +124,7 @@ else
 GOPATH_VOLUME_SRC := $(GOPATH_VOLUME_NAME)
 endif
 
-LOCAL_VOLUME_ARGS := -v$(CURDIR):/src:delegated -v $(GOCACHE_VOLUME_SRC):/linux-gocache:delegated -v $(GOPATH_VOLUME_SRC):/go:delegated
+LOCAL_VOLUME_ARGS := -v $(CURDIR):/src:delegated -v $(GOCACHE_VOLUME_SRC):/linux-gocache:delegated -v $(GOPATH_VOLUME_SRC):/go:delegated
 GOPATH_WD_OVERRIDES := -w /src -e GOPATH=/go -e GOCACHE=/linux-gocache -e GIT_CONFIG_COUNT=1 -e GIT_CONFIG_KEY_0=safe.directory -e GIT_CONFIG_VALUE_0='/src'
 
 null :=
@@ -348,8 +358,14 @@ clean-proto-generated-srcs:
 	@echo "+ $@"
 	git clean -xdf generated
 
+.PHONY: config-controller-gen
+config-controller-gen:
+	make -C config-controller/ manifests
+	make -C config-controller/ generate
+	cp config-controller/config/crd/bases/config.stackrox.io_securitypolicies.yaml image/templates/helm/stackrox-central/crds
+
 .PHONY: generated-srcs
-generated-srcs: go-generated-srcs
+generated-srcs: go-generated-srcs config-controller-gen
 
 deps: $(shell find $(BASE_DIR) -name "go.sum")
 	@echo "+ $@"
@@ -468,8 +484,9 @@ main-build-dockerized: build-volumes
 
 .PHONY: main-build-nodeps
 main-build-nodeps: central-build-nodeps migrator-build-nodeps config-controller-build-nodeps
-	$(GOBUILD) sensor/kubernetes sensor/admission-control compliance/collection
+	$(GOBUILD) sensor/kubernetes sensor/admission-control compliance/cmd/compliance
 	$(GOBUILD) sensor/upgrader
+	$(GOBUILD) sensor/init-tls-certs
 ifndef CI
 	CGO_ENABLED=0 $(GOBUILD) roxctl
 endif
@@ -525,7 +542,7 @@ sensor-integration-test: build-prep test-prep
 	set -eo pipefail ; \
 	rm -rf  $(GO_TEST_OUTPUT_PATH); \
 	for package in $(shell git ls-files ./sensor/tests | grep '_test.go' | xargs -n 1 dirname | uniq | sort | sed -e 's/sensor\/tests\///'); do \
-		CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test scripts/go-test.sh -p 4 -race -cover -coverprofile test-output/coverage.out -v ./sensor/tests/$$package \
+		CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 LOGLEVEL=debug GOTAGS=$(GOTAGS),test scripts/go-test.sh -p 4 -race -cover -coverprofile test-output/coverage.out -v ./sensor/tests/$$package \
 		| tee -a $(GO_TEST_OUTPUT_PATH); \
 	done \
 
@@ -657,9 +674,10 @@ endif
 endif
 	cp bin/linux_$(GOARCH)/migrator image/rhel/bin/migrator
 	cp bin/linux_$(GOARCH)/kubernetes        image/rhel/bin/kubernetes-sensor
+	cp bin/linux_$(GOARCH)/init-tls-certs    image/rhel/bin/init-tls-certs
 	cp bin/linux_$(GOARCH)/upgrader          image/rhel/bin/sensor-upgrader
 	cp bin/linux_$(GOARCH)/admission-control image/rhel/bin/admission-control
-	cp bin/linux_$(GOARCH)/collection        image/rhel/bin/compliance
+	cp bin/linux_$(GOARCH)/compliance        image/rhel/bin/compliance
 	# Workaround to bug in lima: https://github.com/lima-vm/lima/issues/602
 	find image/rhel/bin -not -path "*/.*" -type f -exec chmod +x {} \;
 
@@ -783,8 +801,7 @@ install-dev-tools: gotools-all
 	@echo "+ $@"
 
 .PHONY: roxvet
-roxvet: skip-dirs := operator/pkg/clientset \
-                     scanner/updater/rhel      # TODO(ROX-21539): Remove when CSAF/VEX arrives
+roxvet: skip-dirs := operator/pkg/clientset
 roxvet: $(ROXVET_BIN)
 	@echo "+ $@"
 	@# TODO(ROX-7574): Add options to ignore specific files or paths in roxvet

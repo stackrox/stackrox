@@ -10,6 +10,12 @@ all: test
 	@echo "+ $@"
 	@$(MAKE) report JUNIT_OUT=all-tests-results
 
+.PHONY: compatibility-tests
+compatibility-tests:
+	@echo "+ $@"
+	@GOTAGS=$(GOTAGS),test,test_compatibility $(TOPLEVEL)/scripts/go-test.sh -cover $(TESTFLAGS) -v $(shell go list -e ./... | grep -v generated | grep -v vendor) 2>&1 | tee test.log
+	@$(MAKE) report JUNIT_OUT=compatibility-tests-results
+
 .PHONY: destructive-tests
 destructive-tests:
 	@echo "+ $@"

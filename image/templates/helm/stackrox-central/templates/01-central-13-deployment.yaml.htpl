@@ -191,6 +191,7 @@ spec:
         {{- if ._rox.central.notifierSecretsEncryption.enabled }}
         - name: central-encryption-key-chain
           mountPath: /run/secrets/stackrox.io/central-encryption-key-chain
+          readOnly: true
         {{- end }}
         {{- end }}
         {{- if ._rox.monitoring.openshift.enabled }}

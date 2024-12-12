@@ -12,7 +12,7 @@ metadata:
     features.operators.openshift.io/cni: "false"
     features.operators.openshift.io/csi: "false"
     features.operators.openshift.io/disconnected: "true"
-    features.operators.openshift.io/fips-compliant: "false"
+    features.operators.openshift.io/fips-compliant: "true"
     features.operators.openshift.io/proxy-aware: "true"
     features.operators.openshift.io/tls-profiles: "false"
     features.operators.openshift.io/token-auth-aws: "false"
@@ -113,6 +113,10 @@ spec:
       - description: Storage API endpoint.
         displayName: Endpoint
         path: central.telemetry.storage.endpoint
+      - description: If you want to deploy the Config as Code component, set this
+          to "Enabled"
+        displayName: Config as Code component
+        path: configAsCode.configAsCodeComponent
       - description: Custom labels to set on all managed objects.
         displayName: Labels
         path: customize.labels
@@ -429,14 +433,12 @@ spec:
         path: scannerV4.matcher.scaling.maxReplicas
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.autoScaling:Enabled
+      - description: Settings for Central DB, which is responsible for data persistence.
+        displayName: Central DB Settings
+        path: central.db
       - description: Configures the database connection pool size.
         displayName: Database Connection Pool Size Settings
         path: central.db.connectionPoolSize
-      - description: |-
-          Configures how Central should store its persistent data. You can choose between using a persistent
-          volume claim (recommended default), and a host path.
-        displayName: Persistence
-        path: central.persistence
       - description: List of patches to apply to resource.
         displayName: Patches
         path: overlays[0].patches
@@ -451,15 +453,6 @@ spec:
       - description: Allows you to specify additional trusted Root CAs.
         displayName: TLS
         path: tls
-      - description: Settings for Central DB, which is responsible for data persistence.
-        displayName: Central DB Settings
-        path: central.db
-      - description: Additional image pull secrets to be taken into account for pulling
-          images.
-        displayName: Image Pull Secrets
-        path: imagePullSecrets
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
       - description: |-
           Configures telemetry settings for Central. If enabled, Central transmits telemetry and diagnostic
           data to a remote storage backend.
@@ -467,9 +460,10 @@ spec:
         path: central.telemetry
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: Customizations to apply on all Central Services components.
-        displayName: Customizations
-        path: customize
+      - description: Additional image pull secrets to be taken into account for pulling
+          images.
+        displayName: Image Pull Secrets
+        path: imagePullSecrets
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
       - description: Configures resources within Central in a declarative manner.
@@ -477,15 +471,20 @@ spec:
         path: central.declarativeConfiguration
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: Overlays
-        displayName: Overlays
-        path: overlays
+      - description: Customizations to apply on all Central Services components.
+        displayName: Customizations
+        path: customize
         x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:hidden
+        - urn:alm:descriptor:com.tectonic.ui:advanced
       - description: Configures the encryption of notifier secrets stored in the Central
           DB.
         displayName: Notifier Secrets Encryption
         path: central.notifierSecretsEncryption
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Overlays
+        displayName: Overlays
+        path: overlays
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Monitoring configuration.
@@ -496,6 +495,11 @@ spec:
       - description: Network configuration.
         displayName: Network
         path: network
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: Config-as-Code configuration.
+        displayName: Config-as-Code
+        path: configAsCode
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
       - description: |-
@@ -726,6 +730,12 @@ spec:
         path: central.defaultTLSSecret.name
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
+      - description: Unused field. This field exists solely for backward compatibility
+          starting from version v4.6.0.
+        displayName: Persistence
+        path: central.persistence
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: The name of the referenced secret.
         displayName: Name
         path: imagePullSecrets[0].name

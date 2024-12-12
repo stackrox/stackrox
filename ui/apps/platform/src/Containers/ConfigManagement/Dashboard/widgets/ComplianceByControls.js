@@ -1,13 +1,12 @@
 import React, { useState, useContext } from 'react';
 import { Alert } from '@patternfly/react-core';
 import PropTypes from 'prop-types';
-import ReactRouterPropTypes from 'react-router-prop-types';
 import { gql } from '@apollo/client';
+import { Link, useLocation, useRouteMatch } from 'react-router-dom';
 import queryService from 'utils/queryService';
 import entityTypes, { standardEntityTypes, standardBaseTypes } from 'constants/entityTypes';
 import { COMPLIANCE_FAIL_COLOR, COMPLIANCE_PASS_COLOR } from 'constants/severityColors';
 import { standardLabels } from 'messages/standards';
-import { Link, withRouter } from 'react-router-dom';
 import URLService from 'utils/URLService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import searchContext from 'Containers/searchContext';
@@ -259,7 +258,7 @@ const ViewStandardButton = ({ standardType, searchParam, urlBuilder }) => {
 
 const queriesToRefetchOnPollingComplete = [QUERY];
 
-const ComplianceByControls = ({ match, location, className, standardOptions }) => {
+const ComplianceByControls = ({ className, standardOptions }) => {
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForCompliance = hasReadWriteAccess('Compliance');
 
@@ -274,6 +273,9 @@ const ComplianceByControls = ({ match, location, className, standardOptions }) =
         standard,
     }));
     const [selectedStandard, selectStandard] = useState(options[0]);
+
+    const location = useLocation();
+    const match = useRouteMatch();
 
     function onChange(datum) {
         const standard = options.find((option) => option.value === datum);
@@ -381,8 +383,6 @@ const ComplianceByControls = ({ match, location, className, standardOptions }) =
 };
 
 ComplianceByControls.propTypes = {
-    match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired,
     className: PropTypes.string,
     standardOptions: PropTypes.arrayOf(PropTypes.shape).isRequired,
 };
@@ -391,4 +391,4 @@ ComplianceByControls.defaultProps = {
     className: '',
 };
 
-export default withRouter(ComplianceByControls);
+export default ComplianceByControls;

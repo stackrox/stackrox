@@ -28,8 +28,13 @@ func convertStorageIntegrationToV2(ctx context.Context, integration *complianceD
 	}
 
 	opStatus := v2.COStatus_UNHEALTHY
-	if integration.OperatorStatus == storage.COStatus_HEALTHY {
+	if integration.GetOperatorStatus() == storage.COStatus_HEALTHY {
 		opStatus = v2.COStatus_HEALTHY
+	}
+
+	opInstalled := false
+	if integration.GetOperatorInstalled() {
+		opInstalled = true
 	}
 
 	return &v2.ComplianceIntegration{
@@ -39,10 +44,10 @@ func convertStorageIntegrationToV2(ctx context.Context, integration *complianceD
 		ClusterName:         integration.ClusterName,
 		Namespace:           integrationDetail.GetComplianceNamespace(),
 		StatusErrors:        integrationDetail.GetStatusErrors(),
-		OperatorInstalled:   integration.OperatorInstalled,
+		OperatorInstalled:   opInstalled,
 		Status:              opStatus,
-		ClusterPlatformType: convertPlatformType(integration.Type),
-		ClusterProviderType: convertProviderType(integration.StatusProviderMetadataClusterType),
+		ClusterPlatformType: convertPlatformType(integration.GetType()),
+		ClusterProviderType: convertProviderType(integration.GetStatusProviderMetadataClusterType()),
 	}, true, nil
 }
 

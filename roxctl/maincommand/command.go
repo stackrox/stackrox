@@ -62,6 +62,8 @@ func Command() *cobra.Command {
 	flags.AddConnectionFlags(c)
 	flags.AddAPITokenFile(c)
 
+	c.MarkFlagsMutuallyExclusive("password", "token-file")
+
 	cliEnvironment := environment.CLIEnvironment()
 	c.SetErr(errorWriter{
 		logger: cliEnvironment.Logger(),

@@ -1,10 +1,10 @@
 import { gql } from '@apollo/client';
-import { min } from 'date-fns';
+import { min, parse } from 'date-fns';
 import sortBy from 'lodash/sortBy';
 import uniq from 'lodash/uniq';
 import { VulnerabilitySeverity, isVulnerabilitySeverity } from 'types/cve.proto';
 import { SourceType } from 'types/image.proto';
-import { ApiSortOption } from 'types/search';
+import { ApiSortOptionSingle } from 'types/search';
 
 import {
     getHighestVulnerabilitySeverity,
@@ -74,6 +74,7 @@ export type DeploymentComponentVulnerability = Omit<
         scoreVersion: string;
         fixedByVersion: string;
         discoveredAtImage: string | null;
+        publishedOn: string | null;
         pendingExceptionCount: number;
     }[];
 };
@@ -190,7 +191,7 @@ function extractCommonComponentFields(
 
 export function sortTableData<TableRowType extends TableDataRow>(
     tableData: TableRowType[],
-    sortOption: ApiSortOption
+    sortOption: ApiSortOptionSingle
 ): TableRowType[] {
     const sortedRows = sortBy(tableData, (row) => {
         switch (sortOption.field) {
@@ -216,6 +217,7 @@ export type DeploymentWithVulnerabilities = {
         vulnerabilityId: string;
         cve: string;
         operatingSystem: string;
+        publishedOn: string | null;
         summary: string;
         pendingExceptionCount: number;
         images: {
@@ -237,6 +239,7 @@ export type FormattedDeploymentVulnerability = {
     severity: VulnerabilitySeverity;
     isFixable: boolean;
     discoveredAtImage: Date | null;
+    publishedOn: Date | null;
     summary: string;
     affectedComponentsText: string;
     images: DeploymentVulnerabilityImageMapping[];
@@ -283,6 +286,10 @@ export function formatVulnerabilityData(
                     !!vulnImageMap.imageMetadataContext
             );
 
+        const publishedOnDate = allVulnerabilities[0].publishedOn
+            ? parse(allVulnerabilities[0].publishedOn)
+            : null;
+
         return {
             vulnerabilityId,
             cve,
@@ -290,6 +297,7 @@ export function formatVulnerabilityData(
             severity: highestVulnSeverity,
             isFixable: isFixableInDeployment,
             discoveredAtImage: oldestDiscoveredVulnDate,
+            publishedOn: publishedOnDate,
             summary,
             affectedComponentsText,
             images: vulnerabilityImages,

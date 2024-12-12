@@ -342,17 +342,18 @@ func GetJSONSerializedTestAlertWithDefaults() string {
 	"clusterId": "caaaaaaa-bbbb-4011-0000-111111111111",
 	"clusterName": "prod cluster",
 	"enforcement": null,
+	"entityType": "UNSET",
 	"firstOccurred": null,
 	"lifecycleStage": "DEPLOY",
 	"namespace": "stackrox",
 	"namespaceId": "",
+	"platformComponent": false,
 	"policy": null,
 	"processViolation": {
 		"message": "This is a process violation",
 		"processes": []
 	},
 	"resolvedAt":null,
-	"snoozeTill":null,
 	"state": "ACTIVE",
 	"time": null,
 	"violations": [

@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import ReactRouterPropTypes from 'react-router-prop-types';
-import { withRouter } from 'react-router-dom';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useHistory, useLocation, useRouteMatch } from 'react-router-dom';
 
 import SidePanelAnimatedArea from 'Components/animations/SidePanelAnimatedArea';
 import BackdropExporting from 'Components/PatternFly/BackdropExporting';
@@ -10,8 +9,8 @@ import configMgmtPaginationContext, {
     SIDEPANEL_PAGINATION_PARAMS,
 } from 'Containers/configMgmtPaginationContext';
 import searchContext from 'Containers/searchContext';
-import { useTheme } from 'Containers/ThemeProvider';
 import workflowStateContext from 'Containers/workflowStateContext';
+import useClickOutside from 'hooks/useClickOutside';
 import parseURL from 'utils/URLParser';
 import URLService from 'utils/URLService';
 import { WorkflowState } from 'utils/WorkflowState';
@@ -20,9 +19,12 @@ import Tabs from './EntityTabs';
 import SidePanel from '../SidePanel/SidePanel';
 import Entity from '../Entity';
 
-const EntityPage = ({ match, location }) => {
+const EntityPage = () => {
+    const sidePanelRef = useRef(null);
     const [isExporting, setIsExporting] = useState(false);
-    const { isDarkMode } = useTheme();
+    const location = useLocation();
+    const history = useHistory();
+    const match = useRouteMatch();
     const workflowState = parseURL(location);
     const { useCase, search, sort, paging } = workflowState;
     const pageState = new WorkflowState(
@@ -49,6 +51,12 @@ const EntityPage = ({ match, location }) => {
     const [fadeIn, setFadeIn] = useState(false);
 
     useEffect(() => setFadeIn(false), [pageEntityId]);
+
+    const closeSidePanel = useCallback(() => {
+        history.push(URLService.getURL(match, location).clearSidePanelParams().url());
+    }, [history, match, location]);
+
+    useClickOutside(sidePanelRef, closeSidePanel, !!entityId1);
 
     // manually adding the styles to fade back in
     if (!fadeIn) {
@@ -94,18 +102,20 @@ const EntityPage = ({ match, location }) => {
                     </configMgmtPaginationContext.Provider>
                     <searchContext.Provider value={searchParams.sidePanel}>
                         <configMgmtPaginationContext.Provider value={SIDEPANEL_PAGINATION_PARAMS}>
-                            <SidePanelAnimatedArea isDarkMode={isDarkMode} isOpen={!!entityId1}>
-                                <SidePanel
-                                    contextEntityId={pageEntityId}
-                                    contextEntityType={pageEntityType}
-                                    entityListType1={entityListType1}
-                                    entityType1={entityType1}
-                                    entityId1={entityId1}
-                                    entityType2={entityType2}
-                                    entityListType2={entityListType2}
-                                    entityId2={entityId2}
-                                    query={query}
-                                />
+                            <SidePanelAnimatedArea isOpen={!!entityId1}>
+                                <div ref={sidePanelRef}>
+                                    <SidePanel
+                                        contextEntityId={pageEntityId}
+                                        contextEntityType={pageEntityType}
+                                        entityListType1={entityListType1}
+                                        entityType1={entityType1}
+                                        entityId1={entityId1}
+                                        entityType2={entityType2}
+                                        entityListType2={entityListType2}
+                                        entityId2={entityId2}
+                                        query={query}
+                                    />
+                                </div>
                             </SidePanelAnimatedArea>
                         </configMgmtPaginationContext.Provider>
                     </searchContext.Provider>
@@ -116,9 +126,4 @@ const EntityPage = ({ match, location }) => {
     );
 };
 
-EntityPage.propTypes = {
-    match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired,
-};
-
-export default withRouter(EntityPage);
+export default EntityPage;

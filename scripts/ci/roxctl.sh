@@ -13,8 +13,8 @@ main() {
         usage
         exit 1
     fi
-    if [ -z "${ROX_PASSWORD}" ]; then
-        echo "ROX_PASSWORD must be set"
+    if [ -z "${ROX_ADMIN_PASSWORD}" ]; then
+        echo "ROX_ADMIN_PASSWORD must be set"
         exit 1
     fi
 
@@ -27,7 +27,7 @@ main() {
     fi
     api_endpoint="${api_hostname}:${api_port}"
 
-    roxctl -e "${api_endpoint}" -p "${ROX_PASSWORD}" --insecure-skip-tls-verify "$@"
+    roxctl -e "${api_endpoint}" --insecure-skip-tls-verify "$@"
 }
 
 main "$@"

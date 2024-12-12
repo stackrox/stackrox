@@ -13,6 +13,7 @@ import {
 import * as yup from 'yup';
 import { FieldArray, FormikProvider } from 'formik';
 import { HelpIcon, TrashIcon } from '@patternfly/react-icons';
+import merge from 'lodash/merge';
 
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
@@ -132,9 +133,7 @@ function SignatureIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<SignatureIntegration>): ReactElement {
-    const formInitialValues = initialValues
-        ? ({ ...defaultValues, ...initialValues } as SignatureIntegration)
-        : defaultValues;
+    const formInitialValues: SignatureIntegration = merge({}, defaultValues, initialValues);
     const formik = useIntegrationForm<SignatureIntegration>({
         initialValues: formInitialValues,
         validationSchema,

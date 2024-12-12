@@ -4,7 +4,6 @@ import { useHistory, useLocation, useParams } from 'react-router-dom';
 import {
     Alert,
     AlertActionCloseButton,
-    AlertVariant,
     Bullseye,
     Button,
     PageSection,
@@ -68,7 +67,7 @@ function AccessScopes(): ReactElement {
                     <Alert
                         title="Fetch access scopes failed"
                         component="p"
-                        variant={AlertVariant.danger}
+                        variant="danger"
                         isInline
                     >
                         {error.message}
@@ -93,7 +92,7 @@ function AccessScopes(): ReactElement {
                     <Alert
                         title="Fetch roles failed"
                         component="p"
-                        variant={AlertVariant.warning}
+                        variant="warning"
                         isInline
                         actionClose={actionClose}
                     >

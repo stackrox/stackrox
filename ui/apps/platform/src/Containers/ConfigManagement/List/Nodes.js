@@ -1,5 +1,5 @@
 import React from 'react';
-import { withRouter } from 'react-router-dom';
+import { useLocation, useRouteMatch } from 'react-router-dom';
 import { gql } from '@apollo/client';
 import { format } from 'date-fns';
 import pluralize from 'pluralize';
@@ -159,8 +159,6 @@ const buildTableColumns = (match, location, entityContext) => {
 const createTableRows = (data) => data.results;
 
 const Nodes = ({
-    match,
-    location,
     className,
     selectedRowId,
     onRowClick,
@@ -169,6 +167,8 @@ const Nodes = ({
     totalResults,
     entityContext,
 }) => {
+    const match = useRouteMatch();
+    const location = useLocation();
     const autoFocusSearchInput = !selectedRowId;
     const tableColumns = buildTableColumns(match, location, entityContext);
     const queryText = queryService.objectToWhereClause(query);
@@ -194,4 +194,4 @@ const Nodes = ({
 Nodes.propTypes = entityListPropTypes;
 Nodes.defaultProps = entityListDefaultprops;
 
-export default withRouter(Nodes);
+export default Nodes;

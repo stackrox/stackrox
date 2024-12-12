@@ -5,8 +5,8 @@ import useAnalytics, {
     VULNERABILITY_REPORT_SENT_MANUALLY,
 } from 'hooks/useAnalytics';
 import { runReportRequest } from 'services/ReportsService';
-import { ReportNotificationMethod } from 'services/ReportsService.types';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import { ReportNotificationMethod } from 'types/reportJob';
 
 export type UseSaveReportProps = {
     onCompleted: (context: { reportNotificationMethod: ReportNotificationMethod }) => void;

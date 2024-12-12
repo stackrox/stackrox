@@ -13,6 +13,7 @@ import (
 	reflect "reflect"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	storage "github.com/stackrox/rox/generated/storage"
 	types "github.com/stackrox/rox/pkg/scanners/types"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
@@ -24,6 +25,7 @@ import (
 type MockScanner struct {
 	ctrl     *gomock.Controller
 	recorder *MockScannerMockRecorder
+	isgomock struct{}
 }
 
 // MockScannerMockRecorder is the mock recorder for MockScanner.
@@ -147,6 +149,7 @@ func (mr *MockScannerMockRecorder) Type() *gomock.Call {
 type MockImageScannerWithDataSource struct {
 	ctrl     *gomock.Controller
 	recorder *MockImageScannerWithDataSourceMockRecorder
+	isgomock struct{}
 }
 
 // MockImageScannerWithDataSourceMockRecorder is the mock recorder for MockImageScannerWithDataSource.
@@ -198,6 +201,7 @@ func (mr *MockImageScannerWithDataSourceMockRecorder) GetScanner() *gomock.Call 
 type MockImageVulnerabilityGetter struct {
 	ctrl     *gomock.Controller
 	recorder *MockImageVulnerabilityGetterMockRecorder
+	isgomock struct{}
 }
 
 // MockImageVulnerabilityGetterMockRecorder is the mock recorder for MockImageVulnerabilityGetter.
@@ -236,6 +240,7 @@ func (mr *MockImageVulnerabilityGetterMockRecorder) GetVulnerabilities(image, co
 type MockNodeScanner struct {
 	ctrl     *gomock.Controller
 	recorder *MockNodeScannerMockRecorder
+	isgomock struct{}
 }
 
 // MockNodeScannerMockRecorder is the mock recorder for MockNodeScanner.
@@ -256,18 +261,18 @@ func (m *MockNodeScanner) EXPECT() *MockNodeScannerMockRecorder {
 }
 
 // GetNodeInventoryScan mocks base method.
-func (m *MockNodeScanner) GetNodeInventoryScan(node *storage.Node, inv *storage.NodeInventory) (*storage.NodeScan, error) {
+func (m *MockNodeScanner) GetNodeInventoryScan(node *storage.Node, inv *storage.NodeInventory, ir *v4.IndexReport) (*storage.NodeScan, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNodeInventoryScan", node, inv)
+	ret := m.ctrl.Call(m, "GetNodeInventoryScan", node, inv, ir)
 	ret0, _ := ret[0].(*storage.NodeScan)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetNodeInventoryScan indicates an expected call of GetNodeInventoryScan.
-func (mr *MockNodeScannerMockRecorder) GetNodeInventoryScan(node, inv any) *gomock.Call {
+func (mr *MockNodeScannerMockRecorder) GetNodeInventoryScan(node, inv, ir any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNodeInventoryScan", reflect.TypeOf((*MockNodeScanner)(nil).GetNodeInventoryScan), node, inv)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNodeInventoryScan", reflect.TypeOf((*MockNodeScanner)(nil).GetNodeInventoryScan), node, inv, ir)
 }
 
 // GetNodeScan mocks base method.
@@ -345,6 +350,7 @@ func (mr *MockNodeScannerMockRecorder) Type() *gomock.Call {
 type MockNodeScannerWithDataSource struct {
 	ctrl     *gomock.Controller
 	recorder *MockNodeScannerWithDataSourceMockRecorder
+	isgomock struct{}
 }
 
 // MockNodeScannerWithDataSourceMockRecorder is the mock recorder for MockNodeScannerWithDataSource.
@@ -396,6 +402,7 @@ func (mr *MockNodeScannerWithDataSourceMockRecorder) GetNodeScanner() *gomock.Ca
 type MockOrchestratorScanner struct {
 	ctrl     *gomock.Controller
 	recorder *MockOrchestratorScannerMockRecorder
+	isgomock struct{}
 }
 
 // MockOrchestratorScannerMockRecorder is the mock recorder for MockOrchestratorScanner.

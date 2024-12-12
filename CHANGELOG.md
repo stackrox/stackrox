@@ -11,14 +11,32 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Added Features
 
-- ROX-25066: Add new external backup integration for non-AWS S3 compatible providers.
-- ROX-25376: Add the release stage property to the `/v1/featureflags` response.
-- ROX-25451: Secured Cluster Auto-Upgrader is now enabled for all kind of clusters.
-- ROX-26124: Added a `--with-database-only` only to diagnostic bundle.
-  - `roxctl central debug download-diagnostics --with-database-only`
+- ROX-26849: Introduce report caching for RHCOS Node Indexing
+- ROX-25638: Introduce configurable log rotation. `ROX_LOGGING_MAX_ROTATION_FILES` and `ROX_LOGGING_MAX_SIZE_MB` variables allow for configuring the number and the size of a central log rotation file.
+- ROX-14332: Automatic service certificate renewal for Secured Clusters installed using Helm or operator.
 
 ### Removed Features
 
+### Deprecated Fatures
+
+### Technical Changes
+
+## [4.6.0]
+
+### Added Features
+
+- ROX-25066: Add new external backup integration for non-AWS S3 compatible providers.
+- ROX-25451: Secured Cluster Auto-Upgrader is now enabled for all kind of clusters.
+- ROX-26124: Added a `--with-database-only` only to diagnostic bundle.
+  - `roxctl central debug download-diagnostics --with-database-only`
+- ROX-18899: Added Microsoft Sentinel notifier to send alerts and audit logs to Azure Log Analytics Workspace.
+
+### Removed Features
+
+- The environment variable `ROX_DEPLOYMENT_ENVVAR_SEARCH` has been removed.
+- The environment variable `ROX_DEPLOYMENT_SECRET_SEARCH` has been removed.
+- The environment variable `ROX_DEPLOYMENT_VOLUME_SEARCH` has been removed.
+- The environment variable `ROX_SECRET_FILE_SEARCH` has been removed.
 - The Central PVC stackrox-db will be removed. Existing volumes will be released. Flags for configuring Central attached persistent storage have been removed from roxctl:
   - `roxctl central generate k8s pvc` and `roxctl central generate openshift pvc` no longer have the flags `--name`, `--size`, and `--storage-class`.
   - `roxctl central generate k8s hostpath` and `roxctl central generate openshift hostpath` no longer have the flags `--hostpath`, `--node-selector-key`, and `--node-selector-value`.
@@ -32,14 +50,45 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   This replaces the current format, which allows a string with a signed sequence of decimal numbers,
   each with an optional fraction and a unit suffix (e.g., "300ms", "-1.5h", or "2h45m").
   The currently valid time units "ns", "us" (or "µs"), "ms", "m", and "h" will no longer be supported.
+- ROX-24169: API token authentication has been deprecated by Red Hat OpenShift Cluster Manager. The corresponding cloud source integration now uses service accounts for authentication.
+- ROX-26669: StackRox Scanner is now deprecated. Users should use Scanner V4, instead, for all image scanning needs. StackRox Scanner is still required for full Node and Orchestrator scanning, though.
+- ROX-26670: Google Container Registry integration is now deprecated. Users should use Artifact Registry as a registry replacement and Scanner V4 as a scanner replacement.
 
 ### Technical Changes
 - ROX-24897: Sensor will now perform TLS checks lazily during delegated scanning instead of when secrets are first discovered, this should reduce Sensor startup time.
-  - To revert back to synchronous TLS checks set `ROX_SENSOR_LAZY_TLS_CHECKS` to `false` on Sensor.
 - ROX-23343: The auto-sensing within the Helm charts for detecting OpenShift clusters has been changed to depend on the `project.openshift.io/v1` APIVersion.
 - ROX-22701: Prevent deleting default policies through the API
-
+- ROX-26422: Central will now include the `id` field in alert notifications and API responses.
 - ROX-20723: Remove monorepo substructure under `ui/` directory and switch from yarn v1 to npm for package management. Use `npm run` in place of `yarn` commands.
+- ROX-26306: Increase minimum Node.js version from `">=18.0.0"` to `"^18.18.0 || >=20.0.0"` for open source community to run `make lint` command in the ui directory.
+    - Node.js 18.18.0 was released on 2023-09-18
+    - Node.js 18 moves from Maintenance to End-of-Life status on 2025-04-30
+    - Node.js 20 moves from Active to Maintenance status on 2024-10-22
+- ROX-20578: Sensor will now store pull secrets by secret name and registry host (instead of only registry host). This will reduce Delegated Scanning authentication failures when multiple secrets exist for the same registry within a namespace and more closely aligns with k8s secret handling.
+  - Setting `ROX_SENSOR_PULL_SECRETS_BY_NAME` to `false` on Sensor will disable this feature and cause secrets to be stored by only registry host.
+- ROX-25981: Scanner V4 now fetches vulnerability data from [Red Hat's VEX files](https://security.access.redhat.com/data/csaf/v2/vex/) instead of [Red Hat's OVAL feed](https://security.access.redhat.com/data/oval/v2/) for RPMs installed in RHEL-based image containers.
+  - Fixed vulnerabilities affecting RHEL-based images are still identified by the respective RHSA, RHBA, or RHEA, by default. They may be identified by CVE, instead, by setting the feature flag `ROX_SCANNER_V4_RED_HAT_CVES` to `true` in Scanner V4 Matcher.
+    - This will also apply to vulnerabilities obtained from the [CVE map](https://security.access.redhat.com/data/metrics/cvemap.xml) (used for container-first scanning).
+    - Setting the feature flag will disrupt policies created around RHSAs, as RHSAs will no longer be tracked.
+  - Scanner V4 now only considers vulnerabilities affecting Red Hat products dated back to 2014.
+    - Previously when reading Red Hat's OVAL data, the vulnerabilities dated back to pre-2000, but ClairCore only reads back to 2014.
+  - Scanner V4 DB requires less space for vulnerability data, and its initialization time has improved from about 1 hour on SSD to about 10 minutes.
+- ROX-26372: `ROX_POSTGRES_VM_STATEMENT_TIMEOUT` env var defaulting to 3 minutes to allow customers to extend the timeout for queries backing VM pages only
+- ROX-26428: Fixed a bug when using delegated scanning where newer image metadata and layers were pulled incorrectly for an older image referenced by tag when the image registry contents have changed since deployment.
+  - Now the metadata and layers pulled will be based on the digest of the image provided by the container runtime (when available) instead of just the tag.
+- ROX-26748: Replaced 'unsafe' characters in the CSV report file name.
+- The endpoint `/v2/compliance/scan/configurations/reports/run` method has changed from `PUT` to `POST`.
+- ROX-23956, ROX-17355: Scanner V4 Indexer will now re-index manifests/images for one of two reasons: (1) upon Indexer update which knowingly affects manifests/images or (2) after some random amount of time between 7 and 30 days after indexing.
+  - This means Scanner V4 Indexer will now pull images from the registry more than just once.
+  - This will allow image scans to reflect the latest features (for example, we support a new language, we will re-index an image to see if artifacts of the new language exist).
+  - This will also clean up manifests/Index Reports from Scanner V4 DB which are no longer relevant in the environment or may have previously been indexed incorrectly due to a bug or missing data.
+  - Any manifests indexed prior to this change will be deleted upon update to this version to ensure any incorrect Index Reports are amended.
+  - The interval in which manifests are randomly deleted may be modified via `ROX_SCANNER_V4_MANIFEST_DELETE_INTERVAL_START` (default: 7 days) and `ROX_SCANNER_V4_MANIFEST_DELETE_DURATION` (default: 23 days) in Scanner V4 Indexer.
+  - Scanner V4 Indexer periodically checks for expired manifests at the interval specified by `ROX_SCANNER_V4_MANIFEST_GC_INTERVAL` (default: 4 hours).
+  - Each GC process only deletes a subset of expired manifests specified by `ROX_SCANNER_V4_MANIFEST_GC_THROTTLE` (default: 100) in Scanner V4 Indexer.
+  - Scanner V4 Indexer will also run a periodic "full" GC process at the interval specified by `ROX_SCANNER_V4_FULL_MANIFEST_GC_INTERVAL` (default: 24 hours).
+  - Re-indexing may be disabled by setting `ROX_SCANNER_V4_REINDEX` to `false` in the Scanner V4 Indexer.
+- Alpine vulnerabilities will now have a link to https://security.alpinelinux.org instead of https://www.cve.org.
 
 ## [4.5.0]
 
@@ -192,7 +241,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - Secret terms that can be removed by setting ROX_DEPLOYMENT_SECRET_SEARCH=false:
     - Secret, Secret Path
 - The following search terms will be disabled in the next release and removed from the secret context in 2 releases. They can be removed in the current release by setting ROX_SECRET_FILE_SEARCH=false:
-  - Secret Type, Cert Expiration,Image Pull Secret Registry
+  - Secret Type, Cert Expiration, Image Pull Secret Registry
 - The `/v1/availableAuthProviders` endpoint will in a future release require authentication and at least READ permission on the `Access` resource.
   Ensure that any flow interacting with it is authenticated and has the proper permissions going forward.
 - The `/v1/tls-challenge` will  require authentication, ensure that all interactions with these endpoints include proper authentication going forward.

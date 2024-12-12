@@ -18,10 +18,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/klauspost/compress/zstd"
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/datastore"
 	"github.com/quay/claircore/libvuln"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/updates"
@@ -62,12 +60,11 @@ var (
 
 // Opts represents Updater options.
 //
-// Store, Locker, Pool, MetadataStore, and URL are required.
+// Store, Locker, MetadataStore, and URL are required.
 // The rest are optional.
 type Opts struct {
-	Store         datastore.MatcherStore
+	Store         postgres.MatcherStore
 	Locker        *ctxlock.Locker
-	Pool          *pgxpool.Pool
 	MetadataStore postgres.MatcherMetadataStore
 
 	Client         *http.Client
@@ -89,9 +86,8 @@ type Updater struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 
-	store         datastore.MatcherStore
+	store         postgres.MatcherStore
 	locker        updates.LockSource
-	pool          *pgxpool.Pool
 	metadataStore postgres.MatcherMetadataStore
 
 	client         *http.Client
@@ -113,6 +109,8 @@ type Updater struct {
 
 	retryDelay time.Duration
 	retryMax   int
+
+	distManager *distManager
 }
 
 // New creates a new Updater based on the given options.
@@ -128,7 +126,6 @@ func New(ctx context.Context, opts Opts) (*Updater, error) {
 
 		store:         opts.Store,
 		locker:        opts.Locker,
-		pool:          opts.Pool,
 		metadataStore: opts.MetadataStore,
 
 		client:         opts.Client,
@@ -142,6 +139,8 @@ func New(ctx context.Context, opts Opts) (*Updater, error) {
 
 		retryDelay: opts.RetryDelay,
 		retryMax:   opts.RetryMax,
+
+		distManager: newDistManager(opts.Store),
 	}
 	u.importFunc = func(ctx context.Context, reader io.Reader) error {
 		return u.Import(ctx, reader)
@@ -186,8 +185,8 @@ func fillOpts(opts *Opts) error {
 }
 
 func validate(opts Opts) error {
-	if opts.Store == nil || opts.Locker == nil || opts.Pool == nil || opts.MetadataStore == nil {
-		return errors.New("must provide a Store, a Locker, a Pool, and a MetadataStore")
+	if opts.Store == nil || opts.Locker == nil || opts.MetadataStore == nil {
+		return errors.New("must provide a Store, a Locker, and a MetadataStore")
 	}
 	if _, err := url.Parse(opts.URL); err != nil {
 		return fmt.Errorf("invalid URL: %q", opts.URL)
@@ -306,6 +305,10 @@ func (u *Updater) Start() error {
 		go u.runGCFullPeriodic()
 	}
 
+	if err := u.distManager.update(ctx); err != nil {
+		zlog.Warn(ctx).Err(err).Msg("failed to initialize known-distributions")
+	}
+
 	// Start immediately, all matchers will compete to update each vulnerability
 	// bundle if multi-bundle mode is on, or the single bundle.
 	timer := time.NewTimer(0)
@@ -349,27 +352,44 @@ func (u *Updater) Initialized(ctx context.Context) bool {
 	return true
 }
 
+func (u *Updater) KnownDistributions() []claircore.Distribution {
+	return u.distManager.get()
+}
+
 // Update runs the full vulnerability update process.
 //
 // Note: periodic full GC will not be started.
 func (u *Updater) Update(ctx context.Context) error {
+	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/vuln/Updater.Update")
+
+	var (
+		updated bool
+		err     error
+	)
 	if features.ScannerV4MultiBundle.Enabled() {
-		if err := u.runMultiBundleUpdate(ctx); err != nil {
-			return err
-		}
+		updated, err = u.runMultiBundleUpdate(ctx)
 	} else {
-		if err := u.runSingleBundleUpdate(ctx); err != nil {
-			return err
-		}
+		updated, err = u.runSingleBundleUpdate(ctx)
 	}
-	if !u.skipGC {
+	if err != nil {
+		return err
+	}
+
+	// Only bother running the GC when it's not disabled
+	// and when the vulnerabilities have been updated.
+	if !u.skipGC && updated {
 		u.runGC(ctx)
+	} else if !u.skipGC {
+		// Only log if GC is enabled to reduce noise when GC is disabled.
+		zlog.Info(ctx).Msg("no vulnerability updates: skipping GC")
 	}
+
 	return nil
 }
 
-// runSingleBundleUpdate updates the vulnerability data with one single bundle.
-func (u *Updater) runSingleBundleUpdate(ctx context.Context) error {
+// runSingleBundleUpdate updates the vulnerability data with one single bundle and
+// returns a bool indicating if any updates actually happened.
+func (u *Updater) runSingleBundleUpdate(ctx context.Context) (bool, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/vuln/Updater.runSingleBundleUpdate")
 
 	// Use TryLock instead of Lock to prevent simultaneous updates.
@@ -379,7 +399,7 @@ func (u *Updater) runSingleBundleUpdate(ctx context.Context) error {
 		zlog.Info(ctx).
 			Str("lock", updateName).
 			Msg("did not obtain lock, skipping update run")
-		return nil
+		return false, nil
 	}
 
 	prevTimestamp, err := u.metadataStore.GetLastVulnerabilityUpdate(ctx)
@@ -387,7 +407,7 @@ func (u *Updater) runSingleBundleUpdate(ctx context.Context) error {
 		zlog.Debug(ctx).
 			Err(err).
 			Msg("did not get previous vuln update timestamp")
-		return err
+		return false, err
 	}
 	zlog.Info(ctx).
 		Str("timestamp", prevTimestamp.Format(http.TimeFormat)).
@@ -395,12 +415,12 @@ func (u *Updater) runSingleBundleUpdate(ctx context.Context) error {
 
 	f, timestamp, err := u.fetch(ctx, prevTimestamp)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if f == nil {
 		// Nothing to update at this time.
 		zlog.Info(ctx).Msg("no new vulnerability update")
-		return nil
+		return false, nil
 	}
 	defer func() {
 		if err := f.Close(); err != nil {
@@ -413,27 +433,32 @@ func (u *Updater) runSingleBundleUpdate(ctx context.Context) error {
 
 	dec, err := zstd.NewReader(f)
 	if err != nil {
-		return fmt.Errorf("creating zstd reader: %w", err)
+		return false, fmt.Errorf("creating zstd reader: %w", err)
 	}
 	defer dec.Close()
 
 	if err := u.importFunc(ctx, dec); err != nil {
-		return err
+		return false, err
 	}
 
 	if err := u.metadataStore.SetLastVulnerabilityUpdate(ctx, postgres.SingleBundleUpdateKey, timestamp); err != nil {
-		return err
+		return false, err
+	}
+
+	if err := u.distManager.update(ctx); err != nil {
+		return false, fmt.Errorf("updating known-distributions: %w", err)
 	}
 
 	if u.initialized.CompareAndSwap(false, true) {
 		zlog.Info(ctx).Msg("finished initial updater run: setting updater to initialized")
 	}
 
-	return nil
+	return true, nil
 }
 
-// runMultiBundleUpdate updates the vulnerability data with a multi-bundle.
-func (u *Updater) runMultiBundleUpdate(ctx context.Context) error {
+// runMultiBundleUpdate updates the vulnerability data with a multi-bundle and
+// returns a bool indicating if any updates actually happened.
+func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/vuln/Updater.runMultiBundleUpdate")
 
 	prevTime, err := u.metadataStore.GetLastVulnerabilityUpdate(ctx)
@@ -441,7 +466,7 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) error {
 		zlog.Debug(ctx).
 			Err(err).
 			Msg("did not get previous vuln update timestamp")
-		return err
+		return false, err
 	}
 	zlog.Info(ctx).
 		Time("timestamp", prevTime).
@@ -449,12 +474,12 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) error {
 
 	zipFile, zipTime, err := u.fetch(ctx, prevTime)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if zipFile == nil {
 		// Nothing to update at this time.
 		zlog.Info(ctx).Msg("no new vulnerability update")
-		return nil
+		return false, nil
 	}
 	defer func() {
 		if err := zipFile.Close(); err != nil {
@@ -467,11 +492,11 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) error {
 
 	zipInfo, err := zipFile.Stat()
 	if err != nil {
-		return err
+		return false, err
 	}
 	zipReader, err := zip.NewReader(zipFile, zipInfo.Size())
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	// Iterate through each vulnerability bundle in the .zip archive
@@ -483,7 +508,7 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) error {
 		zlog.Info(ctx).Msg("starting bundle update")
 		if err := u.updateBundle(ctx, bundleF, zipTime, prevTime); err != nil {
 			zlog.Error(ctx).Err(err).Msg("updating bundle failed")
-			return fmt.Errorf("updating bundle %s: %w", bundleF.Name, err)
+			return false, fmt.Errorf("updating bundle %s: %w", bundleF.Name, err)
 		}
 		zlog.Info(ctx).Msg("completed bundle update")
 	}
@@ -492,12 +517,17 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) error {
 	// Safe to be run concurrently.
 	err = u.metadataStore.GCVulnerabilityUpdates(ctx, names, zipTime)
 	if err != nil {
-		return fmt.Errorf("cleaning vuln updates: %w", err)
+		return false, fmt.Errorf("cleaning vuln updates: %w", err)
+	}
+
+	err = u.distManager.update(ctx)
+	if err != nil {
+		return false, fmt.Errorf("updating known-distributions: %w", err)
 	}
 
 	_ = u.Initialized(ctx)
 
-	return nil
+	return true, nil
 }
 
 func (u *Updater) updateBundle(ctx context.Context, zipF *zip.File, zipTime time.Time, prevTime time.Time) error {

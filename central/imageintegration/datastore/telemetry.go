@@ -44,6 +44,7 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 		types.AzureType:            0,
 		types.DockerType:           0,
 		types.ECRType:              0,
+		types.GHCRType:             0,
 		types.GoogleType:           0,
 		types.IBMType:              0,
 		types.NexusType:            0,

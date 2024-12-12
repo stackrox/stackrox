@@ -16,7 +16,7 @@ import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 import { ActionsColumn, Table, Tbody, Thead, Td, Th, Tr } from '@patternfly/react-table';
 
 import { ENFORCEMENT_ACTIONS } from 'constants/enforcementActions';
-import VIOLATION_STATES from 'constants/violationStates';
+import { VIOLATION_STATES } from 'constants/violationStates';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
 import TableCell from 'Components/PatternFly/TableCell';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
@@ -31,7 +31,6 @@ import { ListAlert } from 'types/alert.proto';
 import { TableColumn } from 'types/table';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { SearchFilter } from 'types/search';
-
 import { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
 import ResolveConfirmation from './Modals/ResolveConfirmation';
 import ExcludeConfirmation from './Modals/ExcludeConfirmation';
@@ -56,7 +55,10 @@ type ViolationsTablePanelProps = {
     getSortParams: GetSortParams;
     columns: TableColumn[];
     searchFilter: SearchFilter;
+    onFilterChange: (newFilter: SearchFilter) => void;
     onSearch: OnSearchCallback;
+    additionalContextFilter: SearchFilter;
+    hasActiveViolations: boolean;
 };
 
 function ViolationsTablePanel({
@@ -71,7 +73,10 @@ function ViolationsTablePanel({
     getSortParams,
     columns,
     searchFilter,
+    onFilterChange,
     onSearch,
+    additionalContextFilter,
+    hasActiveViolations,
 }: ViolationsTablePanelProps): ReactElement {
     const isRouteEnabled = useIsRouteEnabled();
     const { hasReadWriteAccess } = usePermissions();
@@ -79,7 +84,9 @@ function ViolationsTablePanel({
     // Require READ_WRITE_ACCESS to exclude plus READ_ACCESS to other resources for Policies route.
     const hasWriteAccessForExcludeDeploymentsFromPolicy =
         hasReadWriteAccess('WorkflowAdministration') && isRouteEnabled('policy-management');
-    const hasActions = hasWriteAccessForAlert || hasWriteAccessForExcludeDeploymentsFromPolicy;
+    const hasActions =
+        hasActiveViolations &&
+        (hasWriteAccessForAlert || hasWriteAccessForExcludeDeploymentsFromPolicy);
 
     // Handle confirmation modal being open.
     const [modalType, setModalType] = useState<ModalType>();
@@ -194,7 +201,12 @@ function ViolationsTablePanel({
                     </Alert>
                 ))}
             </AlertGroup>
-            <ViolationsTableSearchFilter searchFilter={searchFilter} onSearch={onSearch} />
+            <ViolationsTableSearchFilter
+                searchFilter={searchFilter}
+                onFilterChange={onFilterChange}
+                onSearch={onSearch}
+                additionalContextFilter={additionalContextFilter}
+            />
             <Divider component="div" />
             <Toolbar>
                 <ToolbarContent>
@@ -246,12 +258,14 @@ function ViolationsTablePanel({
                 <Table variant="compact" isStickyHeader>
                     <Thead>
                         <Tr>
-                            <Th
-                                select={{
-                                    onSelect: onSelectAll,
-                                    isSelected: allRowsSelected,
-                                }}
-                            />
+                            {hasActions && (
+                                <Th
+                                    select={{
+                                        onSelect: onSelectAll,
+                                        isSelected: allRowsSelected,
+                                    }}
+                                />
+                            )}
                             {columns.map(({ Header, sortField }) => {
                                 const sortParams = sortField
                                     ? { sort: getSortParams(sortField) }
@@ -262,7 +276,11 @@ function ViolationsTablePanel({
                                     </Th>
                                 );
                             })}
-                            {hasActions && <Td />}
+                            {hasActions && (
+                                <Th>
+                                    <span className="pf-v5-screen-reader">Row actions</span>
+                                </Th>
+                            )}
                         </Tr>
                     </Thead>
                     <Tbody>
@@ -311,16 +329,16 @@ function ViolationsTablePanel({
                                 });
                             }
                             return (
-                                // eslint-disable-next-line react/no-array-index-key
-                                <Tr key={rowIndex}>
-                                    <Td
-                                        key={id}
-                                        select={{
-                                            rowIndex,
-                                            onSelect,
-                                            isSelected: selected[rowIndex],
-                                        }}
-                                    />
+                                <Tr key={id}>
+                                    {hasActions && (
+                                        <Td
+                                            select={{
+                                                rowIndex,
+                                                onSelect,
+                                                isSelected: selected[rowIndex],
+                                            }}
+                                        />
+                                    )}
                                     {columns.map((column) => {
                                         return (
                                             <TableCell
@@ -331,7 +349,7 @@ function ViolationsTablePanel({
                                         );
                                     })}
                                     {hasActions && (
-                                        <Td>
+                                        <Td isActionCell>
                                             <ActionsColumn
                                                 // menuAppendTo={() => document.body}
                                                 isDisabled={actionItems.length === 0}

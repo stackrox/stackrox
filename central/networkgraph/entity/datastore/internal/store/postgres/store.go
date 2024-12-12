@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -93,11 +94,13 @@ func insertIntoNetworkEntities(batch *pgx.Batch, obj *storage.NetworkEntity) err
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetInfo().GetId(),
+		pgutils.NilOrCIDR(obj.GetInfo().GetExternalSource().GetCidr()),
 		obj.GetInfo().GetExternalSource().GetDefault(),
+		obj.GetInfo().GetExternalSource().GetDiscovered(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO network_entities (Info_Id, Info_ExternalSource_Default, serialized) VALUES($1, $2, $3) ON CONFLICT(Info_Id) DO UPDATE SET Info_Id = EXCLUDED.Info_Id, Info_ExternalSource_Default = EXCLUDED.Info_ExternalSource_Default, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO network_entities (Info_Id, Info_ExternalSource_Cidr, Info_ExternalSource_Default, Info_ExternalSource_Discovered, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Info_Id) DO UPDATE SET Info_Id = EXCLUDED.Info_Id, Info_ExternalSource_Cidr = EXCLUDED.Info_ExternalSource_Cidr, Info_ExternalSource_Default = EXCLUDED.Info_ExternalSource_Default, Info_ExternalSource_Discovered = EXCLUDED.Info_ExternalSource_Discovered, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -116,7 +119,9 @@ func copyFromNetworkEntities(ctx context.Context, s pgSearch.Deleter, tx *postgr
 
 	copyCols := []string{
 		"info_id",
+		"info_externalsource_cidr",
 		"info_externalsource_default",
+		"info_externalsource_discovered",
 		"serialized",
 	}
 
@@ -133,7 +138,9 @@ func copyFromNetworkEntities(ctx context.Context, s pgSearch.Deleter, tx *postgr
 
 		inputRows = append(inputRows, []interface{}{
 			obj.GetInfo().GetId(),
+			pgutils.NilOrCIDR(obj.GetInfo().GetExternalSource().GetCidr()),
 			obj.GetInfo().GetExternalSource().GetDefault(),
+			obj.GetInfo().GetExternalSource().GetDiscovered(),
 			serialized,
 		})
 

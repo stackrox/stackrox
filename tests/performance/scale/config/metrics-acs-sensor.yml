@@ -1,0 +1,332 @@
+- query: go_gc_duration_seconds{namespace="stackrox",container="sensor"}
+  metricName: sensor_go_gc_duration_seconds
+
+- query: go_gc_duration_seconds_count{namespace="stackrox",container="sensor"}
+  metricName: sensor_go_gc_duration_seconds_count
+
+- query: go_gc_duration_seconds_sum{namespace="stackrox",container="sensor"}
+  metricName: sensor_go_gc_duration_seconds_sum
+
+- query: go_goroutines{namespace="stackrox",container="sensor"}
+  metricName: sensor_go_goroutines
+
+- query: go_info{namespace="stackrox",container="sensor"}
+  metricName: sensor_go_info
+
+- query: go_memstats_alloc_bytes{namespace="stackrox",container="sensor"}
+  metricName: sensor_go_memstats_alloc_bytes
+
+- query: go_memstats_alloc_bytes_total{namespace="stackrox",container="sensor"}
+  metricName: sensor_go_memstats_alloc_bytes_total
+
+- query: go_memstats_buck_hash_sys_bytes{namespace="stackrox",container="sensor"}
+  metricName: sensor_go_memstats_buck_hash_sys_bytes
+
+- query: go_memstats_frees_total{namespace="stackrox",container="sensor"}
+  metricName: sensor_go_memstats_frees_total
+
+- query: go_memstats_gc_sys_bytes{namespace="stackrox",container="sensor"}
+  metricName: sensor_go_memstats_gc_sys_bytes
+
+- query: go_memstats_heap_alloc_bytes{namespace="stackrox",container="sensor"}
+  metricName: sensor_go_memstats_heap_alloc_bytes
+
+- query: go_memstats_heap_idle_bytes{namespace="stackrox",container="sensor"}
+  metricName: sensor_go_memstats_heap_idle_bytes
+
+- query: go_memstats_heap_inuse_bytes{namespace="stackrox",container="sensor"}
+  metricName: sensor_go_memstats_heap_inuse_bytes
+
+- query: go_memstats_heap_objects{namespace="stackrox",container="sensor"}
+  metricName: sensor_go_memstats_heap_objects
+
+- query: go_memstats_heap_released_bytes{namespace="stackrox",container="sensor"}
+  metricName: sensor_go_memstats_heap_released_bytes
+
+- query: go_memstats_heap_sys_bytes{namespace="stackrox",container="sensor"}
+  metricName: sensor_go_memstats_heap_sys_bytes
+
+- query: go_memstats_last_gc_time_seconds{namespace="stackrox",container="sensor"}
+  metricName: sensor_go_memstats_last_gc_time_seconds
+
+- query: go_memstats_lookups_total{namespace="stackrox",container="sensor"}
+  metricName: sensor_go_memstats_lookups_total
+
+- query: go_memstats_mallocs_total{namespace="stackrox",container="sensor"}
+  metricName: sensor_go_memstats_mallocs_total
+
+- query: go_memstats_mcache_inuse_bytes{namespace="stackrox",container="sensor"}
+  metricName: sensor_go_memstats_mcache_inuse_bytes
+
+- query: go_memstats_mcache_sys_bytes{namespace="stackrox",container="sensor"}
+  metricName: sensor_go_memstats_mcache_sys_bytes
+
+- query: go_memstats_mspan_inuse_bytes{namespace="stackrox",container="sensor"}
+  metricName: sensor_go_memstats_mspan_inuse_bytes
+
+- query: go_memstats_mspan_sys_bytes{namespace="stackrox",container="sensor"}
+  metricName: sensor_go_memstats_mspan_sys_bytes
+
+- query: go_memstats_next_gc_bytes{namespace="stackrox",container="sensor"}
+  metricName: sensor_go_memstats_next_gc_bytes
+
+- query: go_memstats_other_sys_bytes{namespace="stackrox",container="sensor"}
+  metricName: sensor_go_memstats_other_sys_bytes
+
+- query: go_memstats_stack_inuse_bytes{namespace="stackrox",container="sensor"}
+  metricName: sensor_go_memstats_stack_inuse_bytes
+
+- query: go_memstats_stack_sys_bytes{namespace="stackrox",container="sensor"}
+  metricName: sensor_go_memstats_stack_sys_bytes
+
+- query: go_memstats_sys_bytes{namespace="stackrox",container="sensor"}
+  metricName: sensor_go_memstats_sys_bytes
+
+- query: go_threads{namespace="stackrox",container="sensor"}
+  metricName: sensor_go_threads
+
+- query: grpc_server_handled_total{namespace="stackrox",container="sensor"}
+  metricName: sensor_grpc_server_handled_total
+
+- query: grpc_server_handling_seconds_bucket{namespace="stackrox",container="sensor"}
+  metricName: sensor_grpc_server_handling_seconds_bucket
+
+- query: grpc_server_handling_seconds_count{namespace="stackrox",container="sensor"}
+  metricName: sensor_grpc_server_handling_seconds_count
+
+- query: grpc_server_handling_seconds_sum{namespace="stackrox",container="sensor"}
+  metricName: sensor_grpc_server_handling_seconds_sum
+
+- query: grpc_server_msg_received_total{namespace="stackrox",container="sensor"}
+  metricName: sensor_grpc_server_msg_received_total
+
+- query: grpc_server_msg_sent_total{namespace="stackrox",container="sensor"}
+  metricName: sensor_grpc_server_msg_sent_total
+
+- query: grpc_server_started_total{namespace="stackrox",container="sensor"}
+  metricName: sensor_grpc_server_started_total
+
+- query: http_incoming_in_flight_requests{namespace="stackrox",container="sensor"}
+  metricName: sensor_http_incoming_in_flight_requests
+
+- query: process_cpu_seconds_total{namespace="stackrox",container="sensor"}
+  metricName: sensor_process_cpu_seconds_total
+
+- query: process_max_fds{namespace="stackrox",container="sensor"}
+  metricName: sensor_process_max_fds
+
+- query: process_open_fds{namespace="stackrox",container="sensor"}
+  metricName: sensor_process_open_fds
+
+- query: process_resident_memory_bytes{namespace="stackrox",container="sensor"}
+  metricName: sensor_process_resident_memory_bytes
+
+- query: process_start_time_seconds{namespace="stackrox",container="sensor"}
+  metricName: sensor_process_start_time_seconds
+
+- query: process_virtual_memory_bytes{namespace="stackrox",container="sensor"}
+  metricName: sensor_process_virtual_memory_bytes
+
+- query: process_virtual_memory_max_bytes{namespace="stackrox",container="sensor"}
+  metricName: sensor_process_virtual_memory_max_bytes
+
+- query: rox_sensor_active_endpoints_total{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_active_endpoints_total
+
+- query: rox_sensor_active_network_flows_total{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_active_network_flows_total
+
+- query: rox_sensor_dedupe_cache_hits{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_dedupe_cache_hits
+
+- query: rox_sensor_dedupe_cache_misses{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_dedupe_cache_misses
+
+- query: rox_sensor_deployment_enhancement_queue_size{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_deployment_enhancement_queue_size
+
+- query: rox_sensor_detector_dedupe_cache_hits{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_detector_dedupe_cache_hits
+
+- query: rox_sensor_detector_deployment_processed{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_detector_deployment_processed
+
+- query: rox_sensor_detector_network_flow_buffer_size{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_detector_network_flow_buffer_size
+
+- query: rox_sensor_detector_network_flows_dropped_total{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_detector_network_flows_dropped_total
+
+- query: rox_sensor_detector_process_indicator_buffer_size{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_detector_process_indicator_buffer_size
+
+- query: rox_sensor_detector_process_indicators_dropped_total{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_detector_process_indicators_dropped_total
+
+- query: rox_sensor_enricher_image_scan_internal_exponential_backoff_seconds_bucket{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_enricher_image_scan_internal_exponential_backoff_seconds_bucket
+
+- query: rox_sensor_enricher_image_scan_internal_exponential_backoff_seconds_count{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_enricher_image_scan_internal_exponential_backoff_seconds_count
+
+- query: rox_sensor_enricher_image_scan_internal_exponential_backoff_seconds_sum{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_enricher_image_scan_internal_exponential_backoff_seconds_sum
+
+- query: rox_sensor_events_network_policy_store_total{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_events_network_policy_store_total
+
+- query: rox_sensor_grpc_last_message_size_sent_bytes{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_grpc_last_message_size_sent_bytes
+
+- query: rox_sensor_grpc_max_message_size_sent_bytes{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_grpc_max_message_size_sent_bytes
+
+- query: rox_sensor_grpc_message_size_sent_bytes_bucket{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_grpc_message_size_sent_bytes_bucket
+
+- query: rox_sensor_grpc_message_size_sent_bytes_count{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_grpc_message_size_sent_bytes_count
+
+- query: rox_sensor_grpc_message_size_sent_bytes_sum{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_grpc_message_size_sent_bytes_sum
+
+- query: rox_sensor_indicators_channel_indicator_dropped_counter{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_indicators_channel_indicator_dropped_counter
+
+- query: rox_sensor_info{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_info
+
+- query: rox_sensor_k8s_event_ingestion_to_send_duration_bucket{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_k8s_event_ingestion_to_send_duration_bucket
+
+- query: rox_sensor_k8s_event_ingestion_to_send_duration_count{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_k8s_event_ingestion_to_send_duration_count
+
+- query: rox_sensor_k8s_event_ingestion_to_send_duration_sum{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_k8s_event_ingestion_to_send_duration_sum
+
+- query: rox_sensor_k8s_event_processing_duration_bucket{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_k8s_event_processing_duration_bucket
+
+- query: rox_sensor_k8s_event_processing_duration_count{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_k8s_event_processing_duration_count
+
+- query: rox_sensor_k8s_event_processing_duration_sum{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_k8s_event_processing_duration_sum
+
+- query: rox_sensor_k8s_events{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_k8s_events
+
+- query: rox_sensor_network_endpoints_total_per_node{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_network_endpoints_total_per_node
+
+- query: rox_sensor_network_flow_buffer_size{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_network_flow_buffer_size
+
+- query: rox_sensor_network_flow_entity_flows{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_network_flow_entity_flows
+
+- query: rox_sensor_network_flow_external_flows{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_network_flow_external_flows
+
+- query: rox_sensor_network_flow_host_connections_added{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_network_flow_host_connections_added
+
+- query: rox_sensor_network_flow_host_connections_removed{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_network_flow_host_connections_removed
+
+- query: rox_sensor_network_flow_host_endpoints_added{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_network_flow_host_endpoints_added
+
+- query: rox_sensor_network_flow_host_endpoints_removed{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_network_flow_host_endpoints_removed
+
+- query: rox_sensor_network_flow_internal_flows{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_network_flow_internal_flows
+
+- query: rox_sensor_network_flow_misses_container_lookup{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_network_flow_misses_container_lookup
+
+- query: rox_sensor_network_flow_msgs_received_per_node{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_network_flow_msgs_received_per_node
+
+- query: rox_sensor_network_flow_total_per_node{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_network_flow_total_per_node
+
+- query: rox_sensor_num_containers_in_entity_store{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_num_containers_in_entity_store
+
+- query: rox_sensor_num_network_policies_in_store{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_num_network_policies_in_store
+
+- query: rox_sensor_num_pods_in_store{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_num_pods_in_store
+
+- query: rox_sensor_output_channel_size{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_output_channel_size
+
+- query: rox_sensor_process_cpu_nr_periods{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_process_cpu_nr_periods
+
+- query: rox_sensor_process_cpu_nr_throttled{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_process_cpu_nr_throttled
+
+- query: rox_sensor_process_cpu_throttled_time{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_process_cpu_throttled_time
+
+- query: rox_sensor_process_enrichment_cache_size{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_process_enrichment_cache_size
+
+- query: rox_sensor_process_enrichment_drops{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_process_enrichment_drops
+
+- query: rox_sensor_process_enrichment_hits{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_process_enrichment_hits
+
+- query: rox_sensor_process_signal_buffer_size{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_process_signal_buffer_size
+
+- query: rox_sensor_process_signal_dropper_counter{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_process_signal_dropper_counter
+
+- query: rox_sensor_resolver_channel_size{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_resolver_channel_size
+
+- query: rox_sensor_resolver_deduping_queue_size{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_resolver_deduping_queue_size
+
+- query: rox_sensor_resources_synced_size{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_resources_synced_size
+
+- query: rox_sensor_resources_synced_unchanged{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_resources_synced_unchanged
+
+- query: rox_sensor_secured_nodes{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_secured_nodes
+
+- query: rox_sensor_secured_vcpus{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_secured_vcpus
+
+- query: rox_sensor_sensor_events{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_sensor_events
+
+- query: rox_sensor_total_network_endpoints_received_counter{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_total_network_endpoints_received_counter
+
+- query: rox_sensor_total_network_endpoints_sent_counter{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_total_network_endpoints_sent_counter
+
+- query: rox_sensor_total_network_flows_sensor_received_counter{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_total_network_flows_sensor_received_counter
+
+- query: rox_sensor_total_network_flows_sent_counter{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_total_network_flows_sent_counter
+
+- query: rox_sensor_total_processes_received_counter{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_total_processes_received_counter
+
+- query: rox_sensor_total_processes_sent_counter{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_total_processes_sent_counter
+
+- query: rox_sensor_uptime_seconds{namespace="stackrox",container="sensor"}
+  metricName: sensor_rox_sensor_uptime_seconds

@@ -115,6 +115,7 @@ func DefaultOptionsForStoredProvider(backendFactoryPool map[string]BackendFactor
 // DefaultOptionsForNewProvider returns the default options that should be run for newly created providers.
 func DefaultOptionsForNewProvider(ctx context.Context, store Store, backendFactoryPool map[string]BackendFactory, issuerFactory tokens.IssuerFactory, roleMapperFactory permissions.RoleMapperFactory, loginURLFn func(authProviderID string) string) []ProviderOption {
 	return []ProviderOption{
+		ValidateName(ctx, store),
 		DefaultNewID(),
 		DefaultLoginURL(loginURLFn),                                  // Must have id set, so do this after default id setting.
 		DefaultBackend(ctx, backendFactoryPool),                      // Not ok to fail to load a backend for newly created providers.

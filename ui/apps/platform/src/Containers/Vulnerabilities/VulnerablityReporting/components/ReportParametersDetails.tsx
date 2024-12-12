@@ -17,12 +17,20 @@ import {
 } from 'Containers/Vulnerabilities/VulnerablityReporting/utils';
 
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 
 export type ReportParametersDetailsProps = {
+    headingLevel: 'h2' | 'h3';
     formValues: ReportFormValues;
 };
 
-function ReportParametersDetails({ formValues }: ReportParametersDetailsProps): ReactElement {
+function ReportParametersDetails({
+    headingLevel,
+    formValues,
+}: ReportParametersDetailsProps): ReactElement {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isIncludeNvdCvssEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
+
     const cveSeverities =
         formValues.reportParameters.cveSeverities.length !== 0 ? (
             formValues.reportParameters.cveSeverities.map((severity) => (
@@ -53,7 +61,7 @@ function ReportParametersDetails({ formValues }: ReportParametersDetailsProps): 
     return (
         <Flex direction={{ default: 'column' }}>
             <FlexItem>
-                <Title headingLevel="h3">Report parameters</Title>
+                <Title headingLevel={headingLevel}>Report parameters</Title>
             </FlexItem>
             <FlexItem flex={{ default: 'flexNone' }}>
                 <DescriptionList
@@ -106,6 +114,14 @@ function ReportParametersDetails({ formValues }: ReportParametersDetailsProps): 
                             {getCVEsDiscoveredSinceText(formValues.reportParameters)}
                         </DescriptionListDescription>
                     </DescriptionListGroup>
+                    {isIncludeNvdCvssEnabled && formValues.reportParameters.includeNvdCvss && (
+                        <DescriptionListGroup>
+                            <DescriptionListTerm>Optional columns</DescriptionListTerm>
+                            <DescriptionListDescription>
+                                Include NVD CVSS
+                            </DescriptionListDescription>
+                        </DescriptionListGroup>
+                    )}
                 </DescriptionList>
             </FlexItem>
         </Flex>

@@ -16,8 +16,9 @@ type Set interface {
 	GetRegistryByImage(image *storage.Image) types.Registry
 
 	IsEmpty() bool
+	Len() int
 	Clear()
-	UpdateImageIntegration(integration *storage.ImageIntegration) error
+	UpdateImageIntegration(integration *storage.ImageIntegration) (bool, error)
 	RemoveImageIntegration(id string) error
 }
 

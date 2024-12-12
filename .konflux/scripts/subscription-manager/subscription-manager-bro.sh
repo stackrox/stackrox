@@ -10,7 +10,7 @@ set -euo pipefail
 SCRIPT_NAME="$(basename -- "${BASH_SOURCE[0]}")"
 SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-SECRET_NAME_IN_KONFLUX="subscription-manager-activation-key"
+SECRET_NAME_IN_KONFLUX="subscription-manager-activation-key-prod"
 # The mount is provided by the buildah task when the ACTIVATION_KEY parameter is set to a valid secret name.
 SECRET_MOUNT_PATH="/activation-key"
 SECRET_KEY="activation-key"

@@ -47,21 +47,24 @@ function CoverageContent() {
 
     return (
         <Switch>
-            <Route
-                exact
-                path={[coverageProfileChecksPath, coverageProfileClustersPath]}
-                component={CoveragesPage}
-            />
-            <Route exact path={coverageCheckDetailsPath} component={CheckDetailsPage} />
-            <Route exact path={coverageClusterDetailsPath} component={ClusterDetailsPage} />
+            <Route exact path={[coverageProfileChecksPath, coverageProfileClustersPath]}>
+                <CoveragesPage />
+            </Route>
+            <Route exact path={coverageCheckDetailsPath}>
+                <CheckDetailsPage />
+            </Route>
+            <Route exact path={coverageClusterDetailsPath}>
+                <ClusterDetailsPage />
+            </Route>
             <Route
                 exact
                 path={[
                     `${complianceEnhancedCoveragePath}`,
                     `${complianceEnhancedCoveragePath}/profiles`,
                 ]}
-                component={ProfilesRedirectHandler}
-            />
+            >
+                <ProfilesRedirectHandler />
+            </Route>
         </Switch>
     );
 }

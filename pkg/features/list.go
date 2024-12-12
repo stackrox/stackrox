@@ -22,17 +22,11 @@ var (
 	// ActiveVulnMgmt defines if the active vuln mgmt feature is enabled
 	ActiveVulnMgmt = registerFeature("Enable Active Vulnerability Management", "ROX_ACTIVE_VULN_MGMT")
 
-	// VulnReportingEnhancements enables APIs and UI pages for VM Reporting enhancements including downloadable reports
-	VulnReportingEnhancements = registerFeature("Enable Vulnerability Reporting enhancements", "ROX_VULN_MGMT_REPORTING_ENHANCEMENTS", enabled)
-
 	// UnifiedCVEDeferral enables APIs and UI pages for unified deferral workflow.
 	UnifiedCVEDeferral = registerFeature("Enable new unified Vulnerability deferral workflow", "ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL", enabled)
 
 	// ClusterAwareDeploymentCheck enables roxctl deployment check to check deployments on the cluster level.
 	ClusterAwareDeploymentCheck = registerFeature("Enables cluster level check for the 'roxctl deployment check' command.", "ROX_CLUSTER_AWARE_DEPLOYMENT_CHECK", enabled)
-
-	// WorkloadCVEsFixabilityFilters enables Workload CVE UI controls for fixability filters and default filters
-	WorkloadCVEsFixabilityFilters = registerFeature("Enables Workload CVE fixability filters", "ROX_WORKLOAD_CVES_FIXABILITY_FILTERS", enabled)
 
 	// SensorReconciliationOnReconnect enables sensors to support reconciliation when reconnecting
 	SensorReconciliationOnReconnect = registerFeature("Enable Sensors to support reconciliation on reconnect", "ROX_SENSOR_RECONCILIATION", enabled)
@@ -46,18 +40,6 @@ var (
 	// SensorDeploymentBuildOptimization enables a performance improvement by skipping deployments processing when no dependency or spec changed
 	SensorDeploymentBuildOptimization = registerFeature("Enables a performance improvement by skipping deployments processing when no dependency or spec changed", "ROX_DEPLOYMENT_BUILD_OPTIMIZATION", enabled)
 
-	// DeploymentVolumeSearch enables search on the volume fields of deployments
-	_ = registerFeature("Enables search on the volume fields of deployments", "ROX_DEPLOYMENT_VOLUME_SEARCH", enabled)
-
-	// DeploymentSecretSearch enables search on the secret fields of deployments
-	_ = registerFeature("Enables search on the secret fields of deployments", "ROX_DEPLOYMENT_SECRET_SEARCH", enabled)
-
-	// DeploymentEnvvarSearch enables search on the environment variable fields of deployments
-	_ = registerFeature("Enables search on the environment variable fields of deployments", "ROX_DEPLOYMENT_ENVVAR_SEARCH", enabled)
-
-	// SecretFileSearch enables search on the file fields of secrets
-	_ = registerFeature("Enables search on the file fields of secrets", "ROX_SECRET_FILE_SEARCH", enabled)
-
 	// SensorCapturesIntermediateEvents enables sensor to capture intermediate events when it is disconnected from central
 	SensorCapturesIntermediateEvents = registerFeature("Enables sensor to capture intermediate events when it is disconnected from central", "ROX_CAPTURE_INTERMEDIATE_EVENTS", enabled)
 
@@ -66,12 +48,6 @@ var (
 
 	// ScannerV4MultiBundle enables Scanner V4 to consume vulnerabilities using multi-bundle archives.
 	ScannerV4MultiBundle = registerFeature("Enables Scanner V4 to consume vulnerabilities using multi-bundle archives", "ROX_SCANNER_V4_MULTI_BUNDLE", enabled)
-
-	// ComplianceHierachyControlData enables support for compliance hierarchy control data.
-	ComplianceHierachyControlData = registerFeature("Enable support to display and import the compliance hierarchy control data", "ROX_COMPLIANCE_HIERARCHY_CONTROL_DATA", enabled)
-
-	// VulnMgmtNodePlatformCVEs enables new APIs and UI for VM 2.0 Node and Platform CVEs
-	VulnMgmtNodePlatformCVEs = registerFeature("Enables support for Node and Platform CVEs in VM 2.0", "ROX_VULN_MGMT_NODE_PLATFORM_CVES", enabled)
 
 	// VulnMgmtLegacySnooze enables APIs and UI for the legacy VM 1.0 "snooze CVE" functionality in the new VM 2.0 sections
 	VulnMgmtLegacySnooze = registerFeature("Enables the ability to snooze Node and Platform CVEs in VM 2.0", "ROX_VULN_MGMT_LEGACY_SNOOZE")
@@ -113,25 +89,47 @@ var (
 	// TODO(ROX-24641): Remove dependency on the UnqualifiedSearchRegistries feature so that this is enabled by default.
 	SensorSingleScanPerImage = registerFeature("Sensor will only allow a single active scan per image", "ROX_SENSOR_SINGLE_SCAN", enabled)
 
-	// SensorLazyTLSChecks when set to enabled forces Sensor to perform lazy TLS checks during local scanning, otherwise the
-	// checks will be performed on startup and immediately when secrets are discovered.
-	SensorLazyTLSChecks = registerFeature("Sensor will perform lazy TLS checks instead of immediate", "ROX_SENSOR_LAZY_TLS_CHECKS", enabled)
-
-	// PolicyAsCode enables policy definition and lifecycle changes to be managed in external repositories.
-	PolicyAsCode = registerFeature("Enables policy definition and lifecycle changes to be managed in external repositories.", "ROX_POLICY_AS_CODE")
-
 	// MicrosoftSentinelNotifier enables the Microsoft Sentinel notifier.
-	MicrosoftSentinelNotifier = registerFeature("Enable the Microsoft Sentinel notifier", "ROX_MICROSOFT_SENTINEL")
+	MicrosoftSentinelNotifier = registerFeature("Enable the Microsoft Sentinel notifier", "ROX_MICROSOFT_SENTINEL", enabled)
 
 	// ScanScheduleReportJobs enables support for compliance scan schedule report jobs
-	ScanScheduleReportJobs = registerFeature("Enables support for compliance scan schedule report jobs", "ROX_SCAN_SCHEDULE_REPORT_JOBS")
+	ScanScheduleReportJobs = registerFeature("Enables support for compliance scan schedule report jobs", "ROX_SCAN_SCHEDULE_REPORT_JOBS", enabled)
 
 	// PlatformComponents introduces the concept of platform collections and filtered views across the app.
-	PlatformComponents = registerFeature("Introduce the concept of platform collections and filtered views across the app", "ROX_PLATFORM_COMPONENTS")
-
-	// Display NVD CVSS score in UI.
-	NvdCvssUI = registerFeature("Display NVD CVSS score in UI", "ROX_NVD_CVSS_UI")
+	PlatformComponents = registerFeature("Introduce the concept of platform collections and filtered views across the app", "ROX_PLATFORM_COMPONENTS", enabled)
 
 	// Display clusters page patternfly redesign.
 	ClustersPageMigrationUI = registerFeature("Display clusters page patternfly redesign", "ROX_CLUSTERS_PAGE_MIGRATION_UI")
+
+	// ClusterRegistrationSecrets enables support for Cluster Registration Secrets (CRS), the next-gen init-bundles.
+	ClusterRegistrationSecrets = registerFeature("Enable support for Cluster Registration Secrets (CRS)", "ROX_CLUSTER_REGISTRATION_SECRETS", enabled)
+
+	// SensorPullSecretsByName when set to enabled will cause Sensor to capture pull secrets by secret name and registry host instead of just
+	// registry host.
+	SensorPullSecretsByName = registerFeature("Sensor will capture pull secrets by name and registry host instead of just registry host", "ROX_SENSOR_PULL_SECRETS_BY_NAME", enabled)
+
+	// ExternalIPs enables storing detailed discovered external IPs
+	ExternalIPs = registerFeature("Central will work with discovered external IPs", "ROX_EXTERNAL_IPS")
+
+	// NetworkGraphExternalIPs enables displaying external (discovered) entities in the network graph
+	NetworkGraphExternalIPs = registerFeature("Enables display of external IPs in the network graph UI", "ROX_NETWORK_GRAPH_EXTERNAL_IPS")
+
+	// ScannerV4RedHatCVEs enables displaying CVEs instead of RHSAs/RHEAs/RHBAs in the place of fixed vulnerabilities affected Red Hat products.
+	// TODO(ROX-26672): Remove this once we can show both CVEs and RHSAs in the UI + reports.
+	ScannerV4RedHatCVEs = registerFeature("Scanner V4 will output CVEs instead of RHSAs/RHBAs/RHEAs for fixed Red Hat vulnerabilities", "ROX_SCANNER_V4_RED_HAT_CVES")
+
+	// ScannerV4ReIndex enables Scanner V4 manifest re-indexing.
+	ScannerV4ReIndex = registerFeature("Scanner V4 will re-index and delete unused manifests", "ROX_SCANNER_V4_REINDEX", enabled)
+
+	// Display RHSA/RHBA/RHEA advisory separately from associated CVE.
+	CVEAdvisorySeparation = registerFeature("Display RHSA/RHBA/RHEA advisory separately from associated CVE", "ROX_CVE_ADVISORY_SEPARATION")
+
+	// Display Exploit Prediction Scoring System (EPSS) score.
+	EPSSScore = registerFeature("Display Exploit Prediction Scoring System (EPSS) score", "ROX_EPSS_SCORE")
+
+	// Add the ability to generate an SBOM from an image
+	SBOMGeneration = registerFeature("Add the ability to generate an SBOM from an image", "ROX_SBOM_GENERATION")
+
+	// Splits Image CVEs into Workload CVE and Platform CVE sections in the UI
+	PlatformCVESplit = registerFeature("Splits Image CVEs into Workload CVE and Platform CVE sections in the UI", "ROX_PLATFORM_CVE_SPLIT")
 )

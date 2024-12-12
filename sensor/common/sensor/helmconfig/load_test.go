@@ -12,7 +12,6 @@ import (
 func TestLoad(t *testing.T) {
 	clusterConfig := []byte(`
 clusterName: remote
-notHelmManaged: true
 clusterConfig:
   staticConfig:
     type: KUBERNETES_CLUSTER
@@ -73,10 +72,9 @@ clusterConfig:
 	}
 
 	expectedConfig := &central.HelmManagedConfigInit{
-		ClusterConfig:  expectedClusterConfig,
-		ClusterName:    "remote",
-		ClusterId:      "",
-		NotHelmManaged: true,
+		ClusterConfig: expectedClusterConfig,
+		ClusterName:   "remote",
+		ClusterId:     "",
 	}
 
 	assert.True(t, expectedConfig.EqualVT(config), "Converted proto and expected proto do not match")

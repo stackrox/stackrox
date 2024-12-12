@@ -17,9 +17,11 @@ function AccessControl(): ReactElement {
     return (
         <>
             <Switch>
-                <Route exact path={accessControlBasePath}>
-                    <Redirect to={getEntityPath('AUTH_PROVIDER')} />
-                </Route>
+                <Route
+                    exact
+                    path={accessControlBasePath}
+                    render={() => <Redirect to={getEntityPath('AUTH_PROVIDER')} />}
+                />
                 <Route path={accessControlPath}>
                     <Switch>
                         <Route path={getEntityPath('AUTH_PROVIDER', paramId)}>

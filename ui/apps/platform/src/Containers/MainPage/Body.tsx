@@ -28,7 +28,6 @@ import {
     listeningEndpointsBasePath,
     mainPath,
     networkPath,
-    policiesPath,
     policyManagementBasePath,
     riskPath,
     searchPath,
@@ -37,14 +36,14 @@ import {
     userBasePath,
     violationsPath,
     vulnManagementPath,
-    vulnManagementRiskAcceptancePath,
     vulnerabilitiesWorkloadCvesPath,
     vulnerabilityReportsPath,
     exceptionManagementPath,
     vulnerabilitiesNodeCvesPath,
     vulnerabilitiesPlatformCvesPath,
+    deprecatedPoliciesBasePath,
+    policiesBasePath,
 } from 'routePaths';
-import { useTheme } from 'Containers/ThemeProvider';
 
 import PageNotFound from 'Components/PageNotFound';
 import PageTitle from 'Components/PageTitle';
@@ -215,13 +214,6 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         ),
         path: vulnerabilityReportsPath,
     },
-    // Risk Acceptance must precede generic Vulnerability Management.
-    'vulnerability-management/risk-acceptance': {
-        component: asyncComponent(
-            () => import('Containers/VulnMgmt/RiskAcceptance/RiskAcceptancePage')
-        ),
-        path: vulnManagementRiskAcceptancePath,
-    },
     'vulnerability-management': {
         component: asyncComponent(() => import('Containers/VulnMgmt/WorkflowLayout')),
         path: vulnManagementPath,
@@ -249,29 +241,36 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
     const hasWriteAccessForInviting = hasReadWriteAccess('Access');
     const showInviteModal = useSelector(selectors.inviteSelector);
 
-    const { isDarkMode } = useTheme();
-
     const routePredicates = { hasReadAccess, isFeatureFlagEnabled };
 
     return (
-        <div
-            className={`flex flex-col h-full w-full relative overflow-auto ${
-                isDarkMode ? 'bg-base-0' : 'bg-base-100'
-            }`}
-        >
+        <div className="flex flex-col h-full w-full relative overflow-auto bg-base-100">
             <ErrorBoundary>
                 <Switch>
                     <Route path="/" exact render={() => <Redirect to={dashboardPath} />} />
                     <Route path={mainPath} exact render={() => <Redirect to={dashboardPath} />} />
                     {/* Make sure the following Redirect element works after react-router-dom upgrade */}
-                    <Redirect exact from={deprecatedPoliciesPath} to={policiesPath} />
+                    <Route
+                        path={deprecatedPoliciesBasePath}
+                        exact
+                        render={() => <Redirect to={policiesBasePath} />}
+                    />
+                    <Route
+                        exact
+                        path={deprecatedPoliciesPath}
+                        render={({ match }) => (
+                            <Redirect to={`${policiesBasePath}/${match.params.policyId}`} />
+                        )}
+                    />
                     {Object.keys(routeComponentMap)
                         .filter((routeKey) => isRouteEnabled(routePredicates, routeKey as RouteKey))
                         .map((routeKey) => {
                             const { component, path } = routeComponentMap[routeKey];
                             return <Route key={routeKey} path={path} component={component} />;
                         })}
-                    <Route component={NotFoundPage} />
+                    <Route>
+                        <NotFoundPage />
+                    </Route>
                 </Switch>
                 {hasWriteAccessForInviting && showInviteModal && <InviteUsersModal />}
             </ErrorBoundary>

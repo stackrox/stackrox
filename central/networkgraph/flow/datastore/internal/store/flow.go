@@ -16,6 +16,8 @@ type FlowStore interface {
 	GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *time.Time) ([]*storage.NetworkFlow, *time.Time, error)
 	// GetFlowsForDeployment returns all flows referencing a specific deployment id
 	GetFlowsForDeployment(ctx context.Context, deploymentID string) ([]*storage.NetworkFlow, error)
+	// GetExternalFlowsForDeployment returns all External flows referencing a specific deployment id
+	GetExternalFlowsForDeployment(ctx context.Context, deploymentID string) ([]*storage.NetworkFlow, error)
 
 	UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error
 	RemoveFlow(ctx context.Context, props *storage.NetworkFlowProperties) error

@@ -1,7 +1,6 @@
 import React, { useContext } from 'react';
-import { withRouter } from 'react-router-dom';
+import { useHistory, useLocation, useRouteMatch } from 'react-router-dom';
 import PropTypes from 'prop-types';
-import ReactRouterPropTypes from 'react-router-prop-types';
 
 import Widget from 'Components/Widget';
 import { newWorkflowCases } from 'constants/useCaseTypes';
@@ -9,7 +8,10 @@ import workflowStateContext from 'Containers/workflowStateContext';
 import URLService from 'utils/URLService';
 
 // @TODO We should try to use this component for Compliance as well
-const RelatedEntityListCount = ({ match, location, history, name, value, entityType, ...rest }) => {
+const RelatedEntityListCount = ({ name, value, entityType, ...rest }) => {
+    const history = useHistory();
+    const location = useLocation();
+    const match = useRouteMatch();
     const workflowState = useContext(workflowStateContext);
 
     function onClick() {
@@ -53,9 +55,6 @@ const RelatedEntityListCount = ({ match, location, history, name, value, entityT
 RelatedEntityListCount.propTypes = {
     name: PropTypes.string.isRequired,
     value: PropTypes.number,
-    match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired,
-    history: ReactRouterPropTypes.history.isRequired,
     entityType: PropTypes.string.isRequired,
 };
 
@@ -63,4 +62,4 @@ RelatedEntityListCount.defaultProps = {
     value: 0,
 };
 
-export default withRouter(RelatedEntityListCount);
+export default RelatedEntityListCount;

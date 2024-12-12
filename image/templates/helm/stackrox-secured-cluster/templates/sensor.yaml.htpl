@@ -53,6 +53,31 @@ spec:
         fsGroup: 4000
       {{- end }}
       serviceAccountName: sensor
+      {{- if ._rox._securedClusterCertRefresh }}
+      initContainers:
+      - name: init-tls-certs
+        image: {{ quote ._rox.image.main.fullRef }}
+        command:
+        - /stackrox/bin/init-tls-certs
+        args:
+        - --legacy=/run/secrets/stackrox.io/certs-legacy/
+        - --new=/run/secrets/stackrox.io/certs-new/
+        - --destination=/run/secrets/stackrox.io/certs/
+        resources:
+          {{- ._rox.sensor._resources | nindent 12 }}
+        securityContext:
+          runAsNonRoot: true
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - name: certs-legacy
+          mountPath: /run/secrets/stackrox.io/certs-legacy/
+          readOnly: true
+        - name: certs-new
+          mountPath: /run/secrets/stackrox.io/certs-new/
+          readOnly: true
+        - name: certs
+          mountPath: /run/secrets/stackrox.io/certs/
+      {{- end }}
       containers:
       - image: {{ quote ._rox.image.main.fullRef }}
         imagePullPolicy: {{ ._rox.sensor.imagePullPolicy }}
@@ -110,6 +135,8 @@ spec:
         {{- if ._rox.env.openshift }}
         - name: ROX_OPENSHIFT_API
           value: "true"
+        - name: ROX_NODE_INDEX_ENABLED
+          value: "true"
         {{- end }}
         [<- if (not .KubectlOutput) >]
         {{- if ._rox.sensor.localImageScanning.enabled }}
@@ -166,9 +193,13 @@ spec:
           readOnly: true
         {{- end }}
       volumes:
+      {{- if ._rox._securedClusterCertRefresh }}
       - name: certs
+        emptyDir: {}
+      - name: certs-legacy
         secret:
           secretName: sensor-tls
+          optional: true
           items:
           - key: sensor-cert.pem
             path: cert.pem
@@ -176,6 +207,23 @@ spec:
             path: key.pem
           - key: ca.pem
             path: ca.pem
+      - name: certs-new
+        secret:
+          secretName: tls-cert-sensor
+          optional: true
+      {{- else }}
+      - name: certs
+        secret:
+          secretName: sensor-tls
+          optional: true
+          items:
+          - key: sensor-cert.pem
+            path: cert.pem
+          - key: sensor-key.pem
+            path: key.pem
+          - key: ca.pem
+            path: ca.pem
+      {{- end }}
       - name: sensor-etc-ssl-volume
         emptyDir: {}
       - name: sensor-etc-pki-volume

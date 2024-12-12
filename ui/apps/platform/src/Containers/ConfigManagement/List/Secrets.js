@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLocation, useRouteMatch } from 'react-router-dom';
 import uniq from 'lodash/uniq';
 import { format } from 'date-fns';
 import pluralize from 'pluralize';
@@ -149,8 +150,6 @@ const createTableRows = (data) => {
 };
 
 const Secrets = ({
-    match,
-    location,
     className,
     selectedRowId,
     onRowClick,
@@ -159,6 +158,8 @@ const Secrets = ({
     totalResults,
     entityContext,
 }) => {
+    const location = useLocation();
+    const match = useRouteMatch();
     const autoFocusSearchInput = !selectedRowId;
     const tableColumns = buildTableColumns(match, location, entityContext);
     const queryText = queryService.objectToWhereClause(query);

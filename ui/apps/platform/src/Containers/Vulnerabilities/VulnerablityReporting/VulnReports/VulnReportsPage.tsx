@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, generatePath, useHistory } from 'react-router-dom';
 import isEmpty from 'lodash/isEmpty';
 import {
+    Alert,
     AlertActionCloseButton,
     AlertGroup,
     PageSection,
@@ -16,10 +17,7 @@ import {
     EmptyState,
     EmptyStateIcon,
     EmptyStateBody,
-    EmptyStateVariant,
     Text,
-    Alert,
-    AlertVariant,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
@@ -54,8 +52,11 @@ import useToasts, { Toast } from 'hooks/patternfly/useToasts';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import useTableSelection from 'hooks/useTableSelection';
 import pluralize from 'pluralize';
-import HelpIconTh from './HelpIconTh';
-import MyActiveJobStatus from './MyActiveJobStatus';
+import HelpIconTh from 'Components/HelpIconTh';
+import JobStatusPopoverContent from 'Components/ReportJob/JobStatusPopoverContent';
+import MyLastJobStatus from 'Components/ReportJob/MyLastJobStatus';
+import useAuthStatus from 'hooks/useAuthStatus';
+import { reportDownloadURL } from 'services/ReportsService';
 
 const CreateReportsButton = () => {
     return (
@@ -76,6 +77,7 @@ const emptyReportArray = [];
 
 function VulnReportsPage() {
     const history = useHistory();
+    const { currentUser } = useAuthStatus();
 
     const { hasReadWriteAccess, hasReadAccess } = usePermissions();
     const hasWriteAccessForReport =
@@ -108,7 +110,8 @@ function VulnReportsPage() {
         perPage,
         sortOption,
     });
-    const { reportSnapshots } = useWatchLastSnapshotForReports(reportConfigurations);
+    const { reportSnapshots, isLoading: isLoadingReportSnapshots } =
+        useWatchLastSnapshotForReports(reportConfigurations);
     const { isRunning, runError, runReport } = useRunReport({
         onCompleted: ({ reportNotificationMethod }) => {
             if (reportNotificationMethod === 'EMAIL') {
@@ -180,9 +183,7 @@ function VulnReportsPage() {
                 ))}
             </AlertGroup>
             <PageTitle title="Vulnerability reporting" />
-            {runError && (
-                <Alert variant={AlertVariant.danger} isInline title={runError} component="p" />
-            )}
+            {runError && <Alert variant="danger" isInline title={runError} component="p" />}
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
                 <Flex
                     direction={{ default: 'row' }}
@@ -273,7 +274,7 @@ function VulnReportsPage() {
                                 </div>
                             )}
                             {fetchError && (
-                                <EmptyState variant={EmptyStateVariant.sm}>
+                                <EmptyState variant="sm">
                                     <EmptyStateHeader
                                         titleText="Unable to get vulnerability reports"
                                         icon={
@@ -312,49 +313,17 @@ function VulnReportsPage() {
                                             </HelpIconTh>
                                             <Th>Description</Th>
                                             <HelpIconTh
-                                                popoverContent={
-                                                    <Flex
-                                                        direction={{ default: 'column' }}
-                                                        spaceItems={{ default: 'spaceItemsMd' }}
-                                                    >
-                                                        <FlexItem>
-                                                            <p>
-                                                                The status of your last requested
-                                                                job from the{' '}
-                                                                <strong>active job queue</strong>.
-                                                                An <strong>active job queue</strong>{' '}
-                                                                includes any requested job with the
-                                                                status of <strong>preparing</strong>{' '}
-                                                                or <strong>waiting</strong> until
-                                                                completed.
-                                                            </p>
-                                                        </FlexItem>
-                                                        <FlexItem>
-                                                            <p>
-                                                                <strong>Preparing:</strong>
-                                                            </p>
-                                                            <p>
-                                                                Your last requested job is still
-                                                                being processed.
-                                                            </p>
-                                                        </FlexItem>
-                                                        <FlexItem>
-                                                            <p>
-                                                                <strong>Waiting:</strong>
-                                                            </p>
-                                                            <p>
-                                                                Your last requested job is in the
-                                                                queue and waiting to be processed
-                                                                since other requested jobs are being
-                                                                processed.
-                                                            </p>
-                                                        </FlexItem>
-                                                    </Flex>
-                                                }
+                                                popoverContent={<JobStatusPopoverContent />}
                                             >
-                                                My active job status
+                                                My last job status
                                             </HelpIconTh>
-                                            {hasWriteAccessForReport && <Td />}
+                                            {hasWriteAccessForReport && (
+                                                <Th>
+                                                    <span className="pf-v5-screen-reader">
+                                                        Row actions
+                                                    </span>
+                                                </Th>
+                                            )}
                                         </Tr>
                                     </Thead>
                                     {reportConfigurations.length === 0 && isEmpty(searchFilter) && (
@@ -446,10 +415,10 @@ function VulnReportsPage() {
                                                 reportId: report.id,
                                             }
                                         ) as string;
-                                        const reportSnapshot = reportSnapshots[report.id];
+                                        const snapshot = reportSnapshots[report.id];
                                         const isReportStatusPending =
-                                            reportSnapshot?.reportStatus.runState === 'PREPARING' ||
-                                            reportSnapshot?.reportStatus.runState === 'WAITING';
+                                            snapshot?.reportStatus.runState === 'PREPARING' ||
+                                            snapshot?.reportStatus.runState === 'WAITING';
                                         const rowActions = [
                                             {
                                                 title: 'Edit report',
@@ -463,7 +432,7 @@ function VulnReportsPage() {
                                                 isSeparator: true,
                                             },
                                             {
-                                                title: 'Send report now',
+                                                title: 'Send report',
                                                 description:
                                                     report.notifiers.length === 0
                                                         ? 'No delivery destinations set'
@@ -515,6 +484,7 @@ function VulnReportsPage() {
                                         ];
                                         const { collectionName, collectionId } =
                                             report.resourceScope.collectionScope;
+
                                         return (
                                             <Tbody
                                                 key={report.id}
@@ -532,12 +502,12 @@ function VulnReportsPage() {
                                                             isSelected: selected[rowIndex],
                                                         }}
                                                     />
-                                                    <Td>
+                                                    <Td dataLabel="Report">
                                                         <Link to={vulnReportURL}>
                                                             {report.name}
                                                         </Link>
                                                     </Td>
-                                                    <Td>
+                                                    <Td dataLabel="Collection">
                                                         {isCollectionsRouteEnabled ? (
                                                             <Button
                                                                 variant="link"
@@ -554,12 +524,17 @@ function VulnReportsPage() {
                                                             collectionName
                                                         )}
                                                     </Td>
-                                                    <Td>{report.description || '-'}</Td>
-                                                    <Td>
-                                                        <MyActiveJobStatus
-                                                            reportStatus={
-                                                                reportSnapshot?.reportStatus
+                                                    <Td dataLabel="Description">
+                                                        {report.description || '-'}
+                                                    </Td>
+                                                    <Td dataLabel="My last job status">
+                                                        <MyLastJobStatus
+                                                            snapshot={snapshot}
+                                                            isLoadingSnapshots={
+                                                                isLoadingReportSnapshots
                                                             }
+                                                            currentUserId={currentUser.userId}
+                                                            baseDownloadURL={reportDownloadURL}
                                                         />
                                                     </Td>
                                                     {hasWriteAccessForReport && (
@@ -595,7 +570,7 @@ function VulnReportsPage() {
                     {numSuccessfulDeletions > 0 && (
                         <Alert
                             isInline
-                            variant={AlertVariant.success}
+                            variant="success"
                             title={`Successfully deleted ${numSuccessfulDeletions} ${pluralize(
                                 'report',
                                 numSuccessfulDeletions
@@ -614,7 +589,7 @@ function VulnReportsPage() {
                         return (
                             <Alert
                                 isInline
-                                variant={AlertVariant.danger}
+                                variant="danger"
                                 title={`Failed to delete "${report.name}"`}
                                 component="p"
                                 className="pf-v5-u-mb-sm"

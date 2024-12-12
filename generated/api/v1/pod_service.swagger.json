@@ -287,7 +287,8 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/PodContainerInstanceList"
-          }
+          },
+          "description": "Must be a list of lists, so we can perform search queries (does not work for maps that aren't <string, string>)\nThere is one bucket (list) per container name."
         },
         "started": {
           "type": "string",

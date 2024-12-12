@@ -1,7 +1,6 @@
 import React from 'react';
 import {
     Alert,
-    AlertVariant,
     Bullseye,
     Divider,
     EmptyState,
@@ -147,7 +146,7 @@ function DeploymentFlows({
             {(networkFlowsError || modifyError) && (
                 <Alert
                     isInline
-                    variant={AlertVariant.danger}
+                    variant="danger"
                     title={networkFlowsError || modifyError}
                     component="p"
                     className="pf-v5-u-mb-sm"
@@ -201,7 +200,9 @@ function DeploymentFlows({
                                     'flow',
                                     numAnomalousFlows
                                 )}`}
-                                onToggle={() => toggleAnomalousFlowsExpandable}
+                                onToggle={(e, isExpanded) =>
+                                    toggleAnomalousFlowsExpandable(isExpanded)
+                                }
                                 isExpanded={isAnomalousFlowsExpanded}
                             >
                                 {numAnomalousFlows > 0 ? (
@@ -231,7 +232,9 @@ function DeploymentFlows({
                                     'flow',
                                     numBaselineFlows
                                 )}`}
-                                onToggle={() => toggleBaselineFlowsExpandable}
+                                onToggle={(e, isExpanded) =>
+                                    toggleBaselineFlowsExpandable(isExpanded)
+                                }
                                 isExpanded={isBaselineFlowsExpanded}
                             >
                                 {numBaselineFlows > 0 ? (

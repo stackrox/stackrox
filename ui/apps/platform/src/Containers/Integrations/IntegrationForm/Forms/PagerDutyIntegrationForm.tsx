@@ -62,6 +62,12 @@ function PagerDutyIntegrationForm({
     const [isUpdatingStoredCredential, setIsUpdatingCredential] = useState(false);
     const isStoredCredentialInputEnabled = isCreating || isUpdatingStoredCredential;
 
+    let formInitialValues = structuredClone(defaultValues);
+    if (initialValues) {
+        merge(formInitialValues, initialValues);
+        formInitialValues = clearStoredCredentials(formInitialValues, storedCredentialKeyPaths);
+    }
+
     const {
         values,
         touched,
@@ -77,12 +83,7 @@ function PagerDutyIntegrationForm({
         onCancel,
         message,
     } = useIntegrationForm<PagerDutyIntegration>({
-        initialValues: initialValues
-            ? clearStoredCredentials(
-                  merge({}, defaultValues, initialValues),
-                  storedCredentialKeyPaths
-              )
-            : defaultValues,
+        initialValues: formInitialValues,
         validationSchema: () =>
             isStoredCredentialInputEnabled
                 ? validationSchemaStoredCredentialRequired

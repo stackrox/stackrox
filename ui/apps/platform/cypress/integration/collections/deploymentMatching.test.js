@@ -31,7 +31,7 @@ describe('Collection deployment matching', () => {
         cy.get('input[name="name"]').type(sampleCollectionName);
         cy.get('input[name="description"]').type('Matches some stackrox deployments');
 
-        cy.get('button:contains("All namespaces")').click();
+        cy.get('button:contains("No namespaces specified")').click();
         cy.get('button:contains("Namespaces with names matching")').click();
         cy.get('input[aria-label="Select value 1 of 1 for the namespace name"]').type('stackrox');
 
@@ -39,7 +39,7 @@ describe('Collection deployment matching', () => {
         assertDeploymentsAreMatched(['central', 'central-db', 'collector', 'scanner', 'sensor']);
 
         // Restrict collection to two specific deployments
-        cy.get('button:contains("All deployments")').click();
+        cy.get('button:contains("No deployments specified")').click();
         cy.get('button:contains("Deployments with labels matching")').click();
         cy.get('input[aria-label="Select label value 1 of 1 for deployment rule 1 of 1"]').type(
             'app=collector'
@@ -68,7 +68,7 @@ describe('Collection deployment matching', () => {
         cy.get('input[name="name"]').type(withEmbeddedCollectionName);
         cy.get('input[name="description"]').type('Embeds another collection');
 
-        cy.get('button:contains("All namespaces")').click();
+        cy.get('button:contains("No namespaces specified")').click();
         cy.get('button:contains("Namespaces with names matching")').click();
         cy.get('input[aria-label="Select value 1 of 1 for the namespace name"]').type(
             'kube-system'
@@ -91,7 +91,7 @@ describe('Collection deployment matching', () => {
         assertDeploymentsAreMatched(['kube-dns']);
 
         // Restrict collection to two specific deployments
-        cy.get('button:contains("All deployments")').click();
+        cy.get('button:contains("No deployments specified")').click();
         cy.get('button:contains("Deployments with labels matching")').click();
         cy.get('input[aria-label="Select label value 1 of 1 for deployment rule 1 of 1"]').type(
             'k8s-app=calico-node-autoscaler'

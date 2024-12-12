@@ -479,7 +479,8 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storagePortConfig"
-          }
+          },
+          "title": "Policies use the port config on the top-level deployment."
         },
         "secrets": {
           "type": "array",
@@ -709,14 +710,18 @@
         },
         "stateTimestamp": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "title": "Internal use only"
         },
         "riskScore": {
           "type": "number",
           "format": "float"
+        },
+        "platformComponent": {
+          "type": "boolean"
         }
       },
-      "title": "Next available tag: 35"
+      "title": "Next available tag: 36"
     },
     "storageEmbeddedImageScanComponent": {
       "type": "object",
@@ -859,11 +864,13 @@
         },
         "firstSystemOccurrence": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "Time when the CVE was first seen, for this specific distro, in the system."
         },
         "firstImageOccurrence": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "Time when the CVE was first seen in this image."
         },
         "severity": {
           "$ref": "#/definitions/storageVulnerabilitySeverity"
@@ -878,6 +885,10 @@
             "$ref": "#/definitions/storageCVSSScore"
           },
           "title": "cvss_metrics stores list of cvss scores from different sources like nvd, Redhat etc"
+        },
+        "nvdCvss": {
+          "type": "number",
+          "format": "float"
         }
       },
       "title": "Next Tag: 22"
@@ -906,7 +917,8 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageImageName"
-          }
+          },
+          "description": "This should deprecate the ImageName field long-term, allowing images with the same digest to be associated with\ndifferent locations.\nTODO(dhaus): For now, this message will be without search tags due to duplicated search tags otherwise."
         },
         "metadata": {
           "$ref": "#/definitions/storageImageMetadata"

@@ -96,6 +96,7 @@ function ReviewConfig({ clusters, errorMessage }: ReviewConfigProps) {
                 />
                 {isComplianceReportingEnabled && (
                     <NotifierConfigurationView
+                        headingLevel={headingLevel}
                         customBodyDefault={getBodyDefault(formikValues.profiles)}
                         customSubjectDefault={getSubjectDefault(
                             formikValues.parameters.name,

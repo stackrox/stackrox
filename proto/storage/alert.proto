@@ -11,6 +11,7 @@ import "storage/process_indicator.proto";
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
 
+// Next available tag: 24
 message Alert {
   message Deployment {
     string id = 1; // @gotags: search:"Deployment ID,store,hidden" sql:"index=hash,type(uuid)"
@@ -103,7 +104,7 @@ message Alert {
     string message = 2;
   }
 
-  string id = 1; // Internal use only // @gotags: search:"Alert ID,hidden" sensorhash:"ignore" sql:"pk,type(uuid)"
+  string id = 1; // @gotags: search:"Alert ID" sensorhash:"ignore" sql:"pk,type(uuid)"
   Policy policy = 2; // @gotags: sql:"ignore_pk,ignore_unique,ignore_labels(Lifecycle Stage)"
   LifecycleStage lifecycle_stage = 3; // @gotags: search:"Lifecycle Stage" sql:"index=btree"
 
@@ -113,6 +114,13 @@ message Alert {
   string cluster_name = 19; // @gotags: search:"Cluster,store"
   string namespace = 20; // @gotags: search:"Namespace,store"
   string namespace_id = 21; // @gotags: search:"Namespace ID" sql:"type(uuid)"
+
+  enum EntityType {
+    UNSET = 0;
+    DEPLOYMENT = 1;
+    CONTAINER_IMAGE = 2;
+    RESOURCE = 3;
+  }
 
   oneof Entity {
     // Represents an alert on a deployment
@@ -132,15 +140,19 @@ message Alert {
 
   Enforcement enforcement = 6;
 
-  google.protobuf.Timestamp time = 7; // @gotags: sensorhash:"ignore" search:"Violation Time"
+  google.protobuf.Timestamp time = 7; // @gotags: sensorhash:"ignore" search:"Violation Time" sql:"index=btree"
   google.protobuf.Timestamp first_occurred = 10; // @gotags: sensorhash:"ignore"
 
   // The time at which the alert was resolved. Only set if ViolationState is RESOLVED.
   google.protobuf.Timestamp resolved_at = 17; // @gotags: sensorhash:"ignore"
 
   ViolationState state = 11; // @gotags: search:"Violation State,store" sql:"index=btree"
-  google.protobuf.Timestamp snooze_till = 12;
+  reserved 12;
+  reserved "snooze_till";
   reserved 14; // was tags
+
+  bool platform_component = 22; // @gotags: search:"Platform Component"
+  EntityType entity_type = 23; // @gotags: search:"Entity Type"
 }
 
 message ListAlert {
@@ -226,7 +238,8 @@ message ListAlertDeployment {
 
 enum ViolationState {
   ACTIVE = 0;
-  SNOOZED = 1;
+  reserved 1;
+  reserved "SNOOZED";
   RESOLVED = 2;
   ATTEMPTED = 3;
 }

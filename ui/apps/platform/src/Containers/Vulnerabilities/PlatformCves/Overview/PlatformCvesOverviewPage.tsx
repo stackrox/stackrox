@@ -26,6 +26,7 @@ import { getHasSearchApplied } from 'utils/searchUtils';
 import TableEntityToolbar from 'Containers/Vulnerabilities/components/TableEntityToolbar';
 import useMap from 'hooks/useMap';
 import useURLSort from 'hooks/useURLSort';
+import { createFilterTracker } from 'utils/analyticsEventTracking';
 import useSnoozeCveModal from 'Containers/Vulnerabilities/components/SnoozeCvesModal/useSnoozeCveModal';
 import SnoozeCvesModal from 'Containers/Vulnerabilities/components/SnoozeCvesModal/SnoozeCvesModal';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
@@ -33,7 +34,6 @@ import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import { parseQuerySearchFilter } from 'Containers/Vulnerabilities/utils/searchUtils';
 import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/AdvancedFiltersToolbar';
 import useSnoozedCveCount from 'Containers/Vulnerabilities/hooks/useSnoozedCveCount';
-import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
 import {
     clusterSearchFilterConfig,
     platformCVESearchFilterConfig,

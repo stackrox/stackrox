@@ -2,6 +2,7 @@ package pgutils
 
 import (
 	"context"
+	"net"
 	"reflect"
 	"regexp"
 	"strings"
@@ -59,6 +60,18 @@ func NilOrUUID(value string) *uuid.UUID {
 		return nil
 	}
 	return &id
+}
+
+// NilOrCIDR allows for a proto string to be stored as a CIDR type in Postgres
+func NilOrCIDR(value string) *net.IPNet {
+	if value == "" {
+		return nil
+	}
+	_, cidr, err := net.ParseCIDR(value)
+	if err != nil {
+		return nil
+	}
+	return cidr
 }
 
 // EmptyOrMap allows for map to be stored explicit as an empty object ({}) rather than null.

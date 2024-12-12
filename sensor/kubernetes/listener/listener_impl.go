@@ -7,6 +7,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/awscredentials"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/internalmessage"
@@ -30,18 +31,24 @@ const (
 	osImageContentSourcePoliciesResourceName = "imagecontentsourcepolicies"
 )
 
+type stoppable interface {
+	Shutdown()
+}
+
 type listenerImpl struct {
-	client             client.Interface
-	stopSig            concurrency.Signal
-	credentialsManager awscredentials.RegistryCredentialsManager
-	configHandler      config.Handler
-	traceWriter        io.Writer
-	outputQueue        component.Resolver
-	storeProvider      *resources.StoreProvider
-	mayCreateHandlers  concurrency.Signal
-	context            context.Context
-	crdWatcherStatusC  chan *watcher.Status
-	pubSub             *internalmessage.MessageSubscriber
+	client                    client.Interface
+	stopSig                   concurrency.Signal
+	credentialsManager        awscredentials.RegistryCredentialsManager
+	configHandler             config.Handler
+	traceWriter               io.Writer
+	outputQueue               component.Resolver
+	storeProvider             *resources.StoreProvider
+	mayCreateHandlers         concurrency.Signal
+	context                   context.Context
+	crdWatcherStatusC         chan *watcher.Status
+	pubSub                    *internalmessage.MessageSubscriber
+	sifLock                   sync.Mutex
+	sharedInformersToShutdown []stoppable
 }
 
 func (k *listenerImpl) StartWithContext(ctx context.Context) error {
@@ -88,6 +95,18 @@ func (k *listenerImpl) Stop(_ error) {
 	}
 	k.stopSig.Signal()
 	k.storeProvider.CleanupStores()
+	k.shutdownSharedInformers()
+}
+
+func (k *listenerImpl) shutdownSharedInformers() {
+	// We need to wait for all the SharedInformers to be started before attempting to stop them
+	k.mayCreateHandlers.Wait()
+	k.sifLock.Lock()
+	defer k.sifLock.Unlock()
+	for _, sif := range k.sharedInformersToShutdown {
+		sif.Shutdown()
+	}
+	k.sharedInformersToShutdown = []stoppable{}
 }
 
 func (k *listenerImpl) handleWatcherStatus(fn func(*watcher.Status)) {

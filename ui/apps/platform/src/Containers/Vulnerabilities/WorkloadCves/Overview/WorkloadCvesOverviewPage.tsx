@@ -33,6 +33,7 @@ import {
     getDefaultWorkloadSortOption,
     getDefaultZeroCveSortOption,
     getWorkloadSortFields,
+    syncSeveritySortOption,
 } from 'Containers/Vulnerabilities/utils/sortUtils';
 import useURLSort from 'hooks/useURLSort';
 import {
@@ -50,7 +51,7 @@ import { VulnerabilityState } from 'types/cve.proto';
 import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/AdvancedFiltersToolbar';
 import LinkShim from 'Components/PatternFly/LinkShim';
 
-import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
+import { createFilterTracker } from 'utils/analyticsEventTracking';
 import {
     clusterSearchFilterConfig,
     deploymentSearchFilterConfig,
@@ -165,7 +166,6 @@ function WorkloadCvesOverviewPage() {
     const hasReadAccessForNamespaces = hasReadAccess('Namespace');
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isFixabilityFiltersEnabled = isFeatureFlagEnabled('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS');
     const isAdvancedFiltersEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_ADVANCED_FILTERS');
 
     const { analyticsTrack } = useAnalytics();
@@ -173,7 +173,7 @@ function WorkloadCvesOverviewPage() {
 
     const currentVulnerabilityState = useVulnerabilityState();
 
-    const { searchFilter, setSearchFilter } = useURLSearch();
+    const { searchFilter, setSearchFilter: setURLSearchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const [activeEntityTabKey, setActiveEntityTabKey] = useURLStringUnion(
         'entityTab',
@@ -219,28 +219,30 @@ function WorkloadCvesOverviewPage() {
     const defaultStorage: VulnMgmtLocalStorage = {
         preferences: {
             defaultFilters: {
-                SEVERITY: isFixabilityFiltersEnabled ? ['Critical', 'Important'] : [],
-                FIXABLE: isFixabilityFiltersEnabled ? ['Fixable'] : [],
+                SEVERITY: ['Critical', 'Important'],
+                FIXABLE: ['Fixable'],
             },
         },
     } as const;
 
-    const [storedValue, setStoredValue] = useLocalStorage(
+    const [localStorageValue, setStoredValue] = useLocalStorage(
         'vulnerabilityManagement',
         defaultStorage,
         isVulnMgmtLocalStorage
     );
-    // Until the ROX_VULN_MGMT_FIXABILITY_FILTERS feature flag is removed, we need to used empty default filters
-    // as a fallback
-    const localStorageValue = isFixabilityFiltersEnabled ? storedValue : defaultStorage;
 
     const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
 
     const sort = useURLSort({
         sortFields: getWorkloadSortFields(activeEntityTabKey),
-        defaultSortOption: getDefaultSortOption(activeEntityTabKey),
+        defaultSortOption: getDefaultSortOption(activeEntityTabKey, searchFilter),
         onSort: () => pagination.setPage(1),
     });
+
+    function setSearchFilter(searchFilter: SearchFilter) {
+        setURLSearchFilter(searchFilter);
+        syncSeveritySortOption(searchFilter, sort.sortOption, sort.setSortOption);
+    }
 
     function updateDefaultFilters(values: DefaultFilters) {
         pagination.setPage(1);
@@ -256,7 +258,7 @@ function WorkloadCvesOverviewPage() {
 
     function onEntityTabChange(entityTab: WorkloadEntityTab) {
         pagination.setPage(1);
-        sort.setSortOption(getDefaultSortOption(entityTab));
+        sort.setSortOption(getDefaultSortOption(entityTab, searchFilter));
 
         analyticsTrack({
             event: WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED,
@@ -299,9 +301,7 @@ function WorkloadCvesOverviewPage() {
     }
 
     function applyDefaultFilters() {
-        if (isFixabilityFiltersEnabled) {
-            setSearchFilter(localStorageValue.preferences.defaultFilters);
-        }
+        setSearchFilter(localStorageValue.preferences.defaultFilters);
     }
 
     // Track the current entity tab when the page is initially visited.
@@ -454,21 +454,20 @@ function WorkloadCvesOverviewPage() {
                                                         Prioritize by namespace view
                                                     </Button>
                                                 )}
-                                                {isFixabilityFiltersEnabled && (
-                                                    <DefaultFilterModal
-                                                        defaultFilters={
-                                                            localStorageValue.preferences
-                                                                .defaultFilters
-                                                        }
-                                                        setLocalStorage={updateDefaultFilters}
-                                                    />
-                                                )}
+                                                <DefaultFilterModal
+                                                    defaultFilters={
+                                                        localStorageValue.preferences.defaultFilters
+                                                    }
+                                                    setLocalStorage={updateDefaultFilters}
+                                                />
                                             </Flex>
                                         </FlexItem>
                                     )}
                             </Flex>
                             {activeEntityTabKey === 'CVE' && (
                                 <CVEsTableContainer
+                                    searchFilter={searchFilter}
+                                    onFilterChange={setSearchFilter}
                                     filterToolbar={filterToolbar}
                                     entityToggleGroup={entityToggleGroup}
                                     rowCount={entityCounts.CVE}
@@ -481,6 +480,8 @@ function WorkloadCvesOverviewPage() {
                             )}
                             {activeEntityTabKey === 'Image' && (
                                 <ImagesTableContainer
+                                    searchFilter={searchFilter}
+                                    onFilterChange={setSearchFilter}
                                     filterToolbar={filterToolbar}
                                     entityToggleGroup={entityToggleGroup}
                                     rowCount={entityCounts.Image}
@@ -503,6 +504,8 @@ function WorkloadCvesOverviewPage() {
                             )}
                             {activeEntityTabKey === 'Deployment' && (
                                 <DeploymentsTableContainer
+                                    searchFilter={searchFilter}
+                                    onFilterChange={setSearchFilter}
                                     filterToolbar={filterToolbar}
                                     entityToggleGroup={entityToggleGroup}
                                     rowCount={entityCounts.Deployment}

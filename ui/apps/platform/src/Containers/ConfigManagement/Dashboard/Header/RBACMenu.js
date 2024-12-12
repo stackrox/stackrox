@@ -3,7 +3,7 @@ import entityTypes from 'constants/entityTypes';
 import pluralize from 'pluralize';
 import entityLabels from 'messages/entity';
 import URLService from 'utils/URLService';
-import { withRouter } from 'react-router-dom';
+import { useLocation, useRouteMatch } from 'react-router-dom';
 
 import DashboardMenu from 'Components/DashboardMenu';
 
@@ -18,13 +18,15 @@ const createOptions = (urlBuilder, types) => {
     });
 };
 
-const RBACMenu = ({ match, location }) => {
+const RBACMenu = () => {
     const types = [entityTypes.SUBJECT, entityTypes.SERVICE_ACCOUNT, entityTypes.ROLE];
 
+    const match = useRouteMatch();
+    const location = useLocation();
     const urlBuilder = URLService.getURL(match, location);
     const options = createOptions(urlBuilder, types);
 
     return <DashboardMenu text="Role-Based Access Control" options={options} />;
 };
 
-export default withRouter(RBACMenu);
+export default RBACMenu;

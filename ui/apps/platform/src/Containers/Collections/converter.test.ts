@@ -49,7 +49,7 @@ describe('Collection parser', () => {
             name: 'Sample',
             description: 'Sample description',
             resourceSelector: {
-                Deployment: { type: 'All' },
+                Deployment: { type: 'NoneSpecified' },
                 Namespace: {
                     type: 'ByLabel',
                     field: 'Namespace Label',
@@ -188,8 +188,8 @@ describe('Collection response generator', () => {
             name: 'Sample',
             description: 'Sample description',
             resourceSelector: {
-                // "All" should result in no rules
-                Deployment: { type: 'All' },
+                // "NoneSpecified" should result in no rules
+                Deployment: { type: 'NoneSpecified' },
                 // "ByLabel" will create two rules, one with multiple values, and test the joining of keys'values
                 Namespace: {
                     type: 'ByLabel',

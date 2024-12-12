@@ -28,7 +28,7 @@ import { getHasSearchApplied } from 'utils/searchUtils';
 
 import { parseQuerySearchFilter } from 'Containers/Vulnerabilities/utils/searchUtils';
 import useSnoozedCveCount from 'Containers/Vulnerabilities/hooks/useSnoozedCveCount';
-import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
+import { createFilterTracker } from 'utils/analyticsEventTracking';
 import {
     clusterSearchFilterConfig,
     nodeCVESearchFilterConfig,

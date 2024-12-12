@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -39,6 +40,19 @@ func (b *datastoreImpl) GetAuthProvider(ctx context.Context, id string) (*storag
 	}
 
 	return b.storage.Get(ctx, id)
+}
+func (b *datastoreImpl) AuthProviderExistsWithName(ctx context.Context, name string) (bool, error) {
+	if err := sac.VerifyAuthzOK(accessSAC.ReadAllowed(ctx)); err != nil {
+		return false, err
+	}
+
+	query := search.NewQueryBuilder().AddExactMatches(search.AuthProviderName, name).ProtoQuery()
+	results, err := b.storage.Search(ctx, query)
+	if err != nil {
+		return false, err
+	}
+
+	return len(results) > 0, nil
 }
 
 func (b *datastoreImpl) GetAuthProvidersFiltered(ctx context.Context,

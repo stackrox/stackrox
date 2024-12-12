@@ -37,7 +37,7 @@ function ScheduleDetails({ formValues }: ScheduleDetailsProps): ReactElement {
     return (
         <Flex direction={{ default: 'column' }}>
             <FlexItem>
-                <Title headingLevel="h3">Schedule details</Title>
+                <Title headingLevel="h2">Schedule details</Title>
             </FlexItem>
             <FlexItem flex={{ default: 'flexNone' }}>
                 <TextContent>

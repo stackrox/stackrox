@@ -1,8 +1,6 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
-import ReactRouterPropTypes from 'react-router-prop-types';
-import { withRouter, Link } from 'react-router-dom';
-import onClickOutside from 'react-onclickoutside';
+import { useLocation, useHistory, useRouteMatch, Link } from 'react-router-dom';
 import { ExternalLinkAltIcon } from '@patternfly/react-icons';
 
 import CloseButton from 'Components/CloseButton';
@@ -15,9 +13,6 @@ import URLService from 'utils/URLService';
 import BreadCrumbs from './BreadCrumbs';
 
 const SidePanel = ({
-    match,
-    location,
-    history,
     contextEntityType,
     contextEntityId,
     entityListType1,
@@ -28,6 +23,9 @@ const SidePanel = ({
     entityId2,
     query,
 }) => {
+    const match = useRouteMatch();
+    const location = useLocation();
+    const history = useHistory();
     const workflowState = parseURL(location);
     const searchParam = useContext(searchContext);
     const isList = !entityId1 || (entityListType2 && !entityId2);
@@ -60,10 +58,6 @@ const SidePanel = ({
     function onClose() {
         history.push(URLService.getURL(match, location).clearSidePanelParams().url());
     }
-
-    SidePanel.handleClickOutside = () => {
-        onClose();
-    };
 
     const entityId = getCurrentEntityId();
     const entityType = getCurrentEntityType();
@@ -125,9 +119,6 @@ const SidePanel = ({
 };
 
 SidePanel.propTypes = {
-    match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired,
-    history: ReactRouterPropTypes.history.isRequired,
     contextEntityType: PropTypes.string,
     contextEntityId: PropTypes.string,
     entityType1: PropTypes.string,
@@ -150,12 +141,4 @@ SidePanel.defaultProps = {
     entityId2: null,
 };
 
-const clickOutsideConfig = {
-    handleClickOutside: () => SidePanel.handleClickOutside,
-};
-
-/*
- * If more than one SidePanel is rendered, this Pure Functional Component will need to be converted to
- * a Class Component in order to work correctly. See https://github.com/stackrox/rox/pull/3090#pullrequestreview-274948849
- */
-export default onClickOutside(withRouter(SidePanel), clickOutsideConfig);
+export default SidePanel;

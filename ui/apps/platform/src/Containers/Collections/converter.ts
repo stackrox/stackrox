@@ -53,9 +53,9 @@ export function parseCollection(
         description: data.description,
         embeddedCollectionIds: data.embeddedCollections.map(({ id }) => id),
         resourceSelector: {
-            Deployment: { type: 'All' },
-            Namespace: { type: 'All' },
-            Cluster: { type: 'All' },
+            Deployment: { type: 'NoneSpecified' },
+            Namespace: { type: 'NoneSpecified' },
+            Cluster: { type: 'NoneSpecified' },
         },
     };
 
@@ -75,7 +75,8 @@ export function parseCollection(
         }
         const entity = fieldToEntityMap[field];
         const selectorScope = collection.resourceSelector[entity];
-        const existingEntityField = selectorScope.type === 'All' ? undefined : selectorScope.field;
+        const existingEntityField =
+            selectorScope.type === 'NoneSpecified' ? undefined : selectorScope.field;
         const hasMultipleFieldsForEntity = existingEntityField && existingEntityField !== field;
         const isUnsupportedField = !isSupportedSelectorField(field);
         const isUnsupportedRuleOperator = rule.operator !== 'OR';
@@ -100,7 +101,7 @@ export function parseCollection(
             return;
         }
 
-        if (selectorScope.type === 'All') {
+        if (selectorScope.type === 'NoneSpecified') {
             if (isByLabelField(field)) {
                 collection.resourceSelector[entity] = {
                     type: 'ByLabel',
@@ -146,7 +147,7 @@ export function parseCollection(
                 selector.rule.values = nameMatchValues;
                 break;
             }
-            case 'All':
+            case 'NoneSpecified':
                 // Do nothing
                 break;
             default:
@@ -188,7 +189,7 @@ export function generateRequest(collection: ClientCollection): CollectionRequest
                     });
                 });
                 break;
-            case 'All':
+            case 'NoneSpecified':
                 // Append nothing
                 break;
             default:

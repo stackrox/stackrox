@@ -541,6 +541,10 @@ func (*tstAuthProviderStore) GetAuthProvidersFiltered(_ context.Context, _ func(
 	return nil, nil
 }
 
+func (*tstAuthProviderStore) AuthProviderExistsWithName(ctx context.Context, name string) (bool, error) {
+	return false, nil
+}
+
 func (*tstAuthProviderStore) AddAuthProvider(_ context.Context, _ *storage.AuthProvider) error {
 	return nil
 }

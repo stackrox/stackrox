@@ -1,4 +1,3 @@
-/* eslint-disable no-void */
 import React, { ReactElement } from 'react';
 import {
     Checkbox,
@@ -12,6 +11,7 @@ import {
 } from '@patternfly/react-core';
 import { SelectOption } from '@patternfly/react-core/deprecated';
 import * as yup from 'yup';
+import merge from 'lodash/merge';
 
 import { BackupIntegrationBase } from 'services/BackupIntegrationsService';
 
@@ -142,13 +142,10 @@ function S3CompatibleIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<S3CompatibleIntegration>): ReactElement {
-    const formInitialValues = { ...defaultValues, ...initialValues };
-
+    const formInitialValues = structuredClone(defaultValues);
     if (initialValues) {
-        formInitialValues.externalBackup = {
-            ...formInitialValues.externalBackup,
-            ...initialValues,
-        };
+        merge(formInitialValues.externalBackup, initialValues);
+
         // We want to clear the password because backend returns '******' to represent that there
         // are currently stored credentials
         formInitialValues.externalBackup.s3compatible.accessKeyId = '';

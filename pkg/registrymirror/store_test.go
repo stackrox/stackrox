@@ -2,6 +2,7 @@ package registrymirror
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -213,18 +214,17 @@ func TestPullSources(t *testing.T) {
 	itmsImageWithDigest := fmt.Sprintf(itmsfmtStr, digest)
 	itmsImageWithTag := fmt.Sprintf(itmsfmtStr, tag)
 
-	t.Run("return source image when config does not exist", func(t *testing.T) {
+	t.Run("return error when config does not exist", func(t *testing.T) {
 		path := filepath.Join(t.TempDir(), fileName)
 
 		s := NewFileStore(WithConfigPath(path))
 
 		srcs, err := s.PullSources(icspImageWithDigest)
-		assert.NoError(t, err)
-		require.Len(t, srcs, 1)
-		assert.Equal(t, icspImageWithDigest, srcs[0])
+		require.ErrorIs(t, err, fs.ErrNotExist)
+		assert.Zero(t, srcs)
 	})
 
-	t.Run("return source image when config is empty", func(t *testing.T) {
+	t.Run("return nil when config is empty", func(t *testing.T) {
 		path := filepath.Join(t.TempDir(), fileName)
 
 		_, err := os.Create(path)
@@ -233,9 +233,8 @@ func TestPullSources(t *testing.T) {
 		s := NewFileStore(WithConfigPath(path))
 
 		srcs, err := s.PullSources(icspImageWithDigest)
-		assert.NoError(t, err)
-		require.Len(t, srcs, 1)
-		assert.Equal(t, icspImageWithDigest, srcs[0])
+		require.NoError(t, err)
+		assert.Zero(t, srcs)
 	})
 
 	t.Run("return mirrors from ICSP", func(t *testing.T) {
@@ -347,7 +346,7 @@ func TestPullSources(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
-	t.Run("unqualified hostname returns source image", func(t *testing.T) {
+	t.Run("unqualified hostname returns nil", func(t *testing.T) {
 		path := filepath.Join(t.TempDir(), fileName)
 
 		s := NewFileStore(WithConfigPath(path), WithDelay(0))
@@ -358,7 +357,6 @@ func TestPullSources(t *testing.T) {
 		src := "nginx:latest"
 		srcs, err := s.PullSources(src)
 		require.NoError(t, err)
-		require.Len(t, srcs, 1)
-		assert.Equal(t, src, srcs[0])
+		assert.Zero(t, srcs)
 	})
 }

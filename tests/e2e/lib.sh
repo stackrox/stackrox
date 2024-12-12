@@ -14,11 +14,32 @@ source "$TEST_ROOT/scripts/ci/lib.sh"
 source "$TEST_ROOT/scripts/ci/test_state.sh"
 
 export QA_TEST_DEBUG_LOGS="/tmp/qa-tests-backend-logs"
+export QA_DEPLOY_WAIT_INFO="/tmp/wait-for-kubectl-object"
 
 # If `envsubst` is contained in a non-standard directory `env -i` won't be able to
 # execute it, even though it can be located via `$PATH`, hence we retrieve the absolute path of
 # `envsubst`` before passing it to `env`.
 envsubst=$(command -v envsubst)
+
+CHECK_POD_RESTARTS_TEST_NAME="Check unexpected pod restarts"
+# Define map of all stackrox pod->containers and their log dump files.
+declare -A POD_CONTAINERS_MAP
+POD_CONTAINERS_MAP["pod: central - container: central"]="central-[A-Za-z0-9]+-[A-Za-z0-9]+-central-previous.log"
+POD_CONTAINERS_MAP["pod: central-db - container: init-db"]="central-db-[A-Za-z0-9]+-[A-Za-z0-9]+-init-db-previous.log"
+POD_CONTAINERS_MAP["pod: central-db - container: central-db"]="central-db-[A-Za-z0-9]+-[A-Za-z0-9]+-central-db-previous.log"
+POD_CONTAINERS_MAP["pod: config-controller - container: manager"]="config-controller-[A-Za-z0-9]+-[A-Za-z0-9]+-manager-previous.log"
+POD_CONTAINERS_MAP["pod: scanner - container: scanner"]="scanner-[A-Za-z0-9]+-[A-Za-z0-9]+-scanner-previous.log"
+POD_CONTAINERS_MAP["pod: scanner-db - container: init-db"]="scanner-db-[A-Za-z0-9]+-[A-Za-z0-9]+-init-db-previous.log"
+POD_CONTAINERS_MAP["pod: scanner-db - container: db"]="scanner-db-[A-Za-z0-9]+-[A-Za-z0-9]+-db-previous.log"
+POD_CONTAINERS_MAP["pod: scanner-v4 - container: matcher"]="scanner-v4-[A-Za-z0-9]+-[A-Za-z0-9]+-matcher-previous.log"
+POD_CONTAINERS_MAP["pod: scanner-v4 - container: indexer"]="scanner-v4-[A-Za-z0-9]+-[A-Za-z0-9]+-indexer-previous.log"
+POD_CONTAINERS_MAP["pod: scanner-v4-db - container: init-db"]="scanner-v4-db-[A-Za-z0-9]+-[A-Za-z0-9]+-init-db-previous.log"
+POD_CONTAINERS_MAP["pod: scanner-v4-db - container: db"]="scanner-v4-db-[A-Za-z0-9]+-[A-Za-z0-9]+-db-previous.log"
+POD_CONTAINERS_MAP["pod: sensor - container: sensor"]="sensor-[A-Za-z0-9]+-[A-Za-z0-9]+-sensor-previous.log"
+POD_CONTAINERS_MAP["pod: admission-control - container: admission-control"]="admission-control-[A-Za-z0-9]+-[A-Za-z0-9]+-admission-control-previous.log"
+POD_CONTAINERS_MAP["pod: collector - container: collector"]="collector-[A-Za-z0-9]+-collector-previous.log"
+POD_CONTAINERS_MAP["pod: collector - container: compliance"]="collector-[A-Za-z0-9]+-compliance-previous.log"
+POD_CONTAINERS_MAP["pod: collector - container: node-inventory"]="collector-[A-Za-z0-9]+-node-inventory-previous.log"
 
 # shellcheck disable=SC2120
 deploy_stackrox() {
@@ -141,14 +162,11 @@ export_test_environment() {
 
     ci_export ROX_BASELINE_GENERATION_DURATION "${ROX_BASELINE_GENERATION_DURATION:-1m}"
     ci_export ROX_NETWORK_BASELINE_OBSERVATION_PERIOD "${ROX_NETWORK_BASELINE_OBSERVATION_PERIOD:-2m}"
-    ci_export ROX_VULN_MGMT_REPORTING_ENHANCEMENTS "${ROX_VULN_MGMT_REPORTING_ENHANCEMENTS:-true}"
     ci_export ROX_VULN_MGMT_WORKLOAD_CVES "${ROX_VULN_MGMT_WORKLOAD_CVES:-true}"
     ci_export ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL "${ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL:-true}"
-    ci_export ROX_VULN_MGMT_NODE_PLATFORM_CVES "${ROX_VULN_MGMT_NODE_PLATFORM_CVES:-true}"
     ci_export ROX_VULN_MGMT_2_GA "${ROX_VULN_MGMT_2_GA:-true}"
     ci_export ROX_VULN_MGMT_ADVANCED_FILTERS "${ROX_VULN_MGMT_ADVANCED_FILTERS:-true}"
     ci_export ROX_VULN_MGMT_LEGACY_SNOOZE "${ROX_VULN_MGMT_LEGACY_SNOOZE:-true}"
-    ci_export ROX_WORKLOAD_CVES_FIXABILITY_FILTERS "${ROX_WORKLOAD_CVES_FIXABILITY_FILTERS:-true}"
     ci_export ROX_DECLARATIVE_CONFIGURATION "${ROX_DECLARATIVE_CONFIGURATION:-true}"
     ci_export ROX_COMPLIANCE_ENHANCEMENTS "${ROX_COMPLIANCE_ENHANCEMENTS:-true}"
     ci_export ROX_POLICY_CRITERIA_MODAL "${ROX_POLICY_CRITERIA_MODAL:-true}"
@@ -161,8 +179,11 @@ export_test_environment() {
     ci_export ROX_REGISTRY_CLIENT_TIMEOUT "${ROX_REGISTRY_CLIENT_TIMEOUT:-120s}"
     ci_export ROX_SCAN_SCHEDULE_REPORT_JOBS "${ROX_SCAN_SCHEDULE_REPORT_JOBS:-true}"
     ci_export ROX_PLATFORM_COMPONENTS "${ROX_PLATFORM_COMPONENTS:-true}"
-    ci_export ROX_NVD_CVSS "${ROX_NVD_CVSS_UI:-true}"
+    ci_export ROX_CVE_ADVISORY_SEPARATION "${ROX_CVE_ADVISORY_SEPARATION:-true}"
+    ci_export ROX_EPSS_SCORE "${ROX_EPSS_SCORE:-true}"
+    ci_export ROX_SBOM_GENERATION "${ROX_SBOM_GENERATION:-true}"
     ci_export ROX_CLUSTERS_PAGE_MIGRATION_UI "${ROX_CLUSTERS_PAGE_MIGRATION_UI:-true}"
+    ci_export ROX_PLATFORM_CVE_SPLIT "${ROX_PLATFORM_CVE_SPLIT:-true}"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
         ci_export FAIL_FAST "true"
@@ -186,17 +207,16 @@ deploy_stackrox_operator() {
         info "Deploying ACS operator via midstream images"
         # Retrieving values from json map for operator and iib
         ocp_version=$(kubectl get clusterversion -o=jsonpath='{.items[0].status.desired.version}' | cut -d '.' -f 1,2)
-        OPERATOR_VERSION=$(< operator/midstream/iib.json jq -r '.operator.version')
-        VERSION=$(< operator/midstream/iib.json jq -r --arg version "$ocp_version" '.iibs[$version]')
-        #Exporting the above vars
-        export IMAGE_TAG_BASE="brew.registry.redhat.io/rh-osbs/iib"
-        export OPERATOR_VERSION
-        export VERSION
 
-        make -C operator kuttl deploy-via-olm-midstream
+        make -C operator kuttl deploy-via-olm \
+          INDEX_IMG_BASE="brew.registry.redhat.io/rh-osbs/iib" \
+          INDEX_IMG_TAG="$(< operator/midstream/iib.json jq -r --arg version "$ocp_version" '.iibs[$version]')" \
+          INSTALL_CHANNEL="$(< operator/midstream/iib.json jq -r '.operator.channel')" \
+          INSTALL_VERSION="v$(< operator/midstream/iib.json jq -r '.operator.version')"
     else
         info "Deploying ACS operator"
-        ROX_PRODUCT_BRANDING=RHACS_BRANDING make -C operator kuttl deploy-via-olm
+        make -C operator kuttl deploy-via-olm \
+          ROX_PRODUCT_BRANDING=RHACS_BRANDING
     fi
 }
 
@@ -238,8 +258,8 @@ deploy_central_via_operator() {
 
     NAMESPACE="${central_namespace}" make -C operator stackrox-image-pull-secret
 
-    ROX_PASSWORD="$(tr -dc _A-Z-a-z-0-9 < /dev/urandom | head -c12 || true)"
-    centralAdminPasswordBase64="$(echo "$ROX_PASSWORD" | base64)"
+    ROX_ADMIN_PASSWORD="$(tr -dc _A-Z-a-z-0-9 < /dev/urandom | head -c12 || true)"
+    centralAdminPasswordBase64="$(echo "$ROX_ADMIN_PASSWORD" | base64)"
 
     centralAdditionalCAIndented="$(sed 's,^,        ,' "${TRUSTED_CA_FILE:-/dev/null}")"
     if [[ -z $centralAdditionalCAIndented ]]; then
@@ -293,15 +313,19 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_VULN_MGMT_LEGACY_SNOOZE'
     customize_envVars+=$'\n        value: "true"'
-    customize_envVars+=$'\n      - name: ROX_WORKLOAD_CVES_FIXABILITY_FILTERS'
-    customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_SCAN_SCHEDULE_REPORT_JOBS'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_PLATFORM_COMPONENTS'
     customize_envVars+=$'\n        value: "true"'
-    customize_envVars+=$'\n      - name: ROX_NVD_CVSS_UI'
+    customize_envVars+=$'\n      - name: ROX_CVE_ADVISORY_SEPARATION'
+    customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_EPSS_SCORE'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_CLUSTERS_PAGE_MIGRATION_UI'
+    customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_SBOM_GENERATION'
+    customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_PLATFORM_CVE_SPLIT'
     customize_envVars+=$'\n        value: "true"'
 
     CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr.envsubst.yaml"
@@ -379,11 +403,12 @@ deploy_sensor_via_operator() {
 
     NAMESPACE="${sensor_namespace}" make -C operator stackrox-image-pull-secret
 
-    kubectl -n "${central_namespace}" exec deploy/central -- \
-    roxctl central init-bundles generate my-test-bundle \
+    # shellcheck disable=SC2016
+    echo "${ROX_ADMIN_PASSWORD}" | \
+    kubectl -n "${central_namespace}" exec -i deploy/central -- bash -c \
+    'ROX_ADMIN_PASSWORD=$(cat) roxctl central init-bundles generate my-test-bundle \
         --insecure-skip-tls-verify \
-        --password "$ROX_PASSWORD" \
-        --output-secrets - \
+        --output-secrets -' \
     | kubectl -n "${sensor_namespace}" apply -f -
 
     if [[ -n "${COLLECTION_METHOD:-}" ]]; then
@@ -450,17 +475,17 @@ pause_stackrox_operator_reconcile() {
 export_central_basic_auth_creds() {
     if [[ -n ${DEPLOY_DIR:-} && -f "${DEPLOY_DIR}/central-deploy/password" ]]; then
         info "Getting central basic auth creds from central-deploy/password"
-        ROX_PASSWORD="$(cat "${DEPLOY_DIR}"/central-deploy/password)"
-    elif [[ -n "${ROX_PASSWORD:-}" ]]; then
-        info "Using existing ROX_PASSWORD env"
+        ROX_ADMIN_PASSWORD="$(cat "${DEPLOY_DIR}"/central-deploy/password)"
+    elif [[ -n "${ROX_ADMIN_PASSWORD:-}" ]]; then
+        info "Using existing ROX_ADMIN_PASSWORD env"
     else
-        echo "Expected to find file ${DEPLOY_DIR}/central-deploy/password or ROX_PASSWORD env"
+        echo "Expected to find file ${DEPLOY_DIR}/central-deploy/password or ROX_ADMIN_PASSWORD env"
         exit 1
     fi
 
     ROX_USERNAME="admin"
     ci_export "ROX_USERNAME" "$ROX_USERNAME"
-    ci_export "ROX_PASSWORD" "$ROX_PASSWORD"
+    ci_export "ROX_ADMIN_PASSWORD" "$ROX_ADMIN_PASSWORD"
 }
 
 deploy_optional_e2e_components() {
@@ -497,10 +522,10 @@ setup_client_CA_auth_provider() {
     info "Set up client CA auth provider for endpoints_test.go"
 
     require_environment "API_ENDPOINT"
-    require_environment "ROX_PASSWORD"
+    require_environment "ROX_ADMIN_PASSWORD"
     require_environment "CLIENT_CA_PATH"
 
-    roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" \
+    roxctl -e "$API_ENDPOINT" \
         central userpki create test-userpki -r Analyst -c "$CLIENT_CA_PATH"
 }
 
@@ -514,9 +539,9 @@ setup_generated_certs_for_test() {
     local dir="$1"
 
     require_environment "API_ENDPOINT"
-    require_environment "ROX_PASSWORD"
+    require_environment "ROX_ADMIN_PASSWORD"
 
-    roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" \
+    roxctl -e "$API_ENDPOINT" \
         sensor generate-certs remote --output-dir "$dir"
     [[ -f "$dir"/cluster-remote-tls.yaml ]]
     # Use the certs in future steps that will use client auth.
@@ -557,6 +582,10 @@ wait_for_collectors_to_be_operational() {
         return
     fi
 
+    # Ensure collector DaemonSet state is stable
+    kubectl rollout status daemonset collector --namespace "${sensor_namespace}" --timeout=5m --watch=true
+
+    # Check each collector pod readiness.
     local start_time
     start_time="$(date '+%s')"
     local all_ready="false"
@@ -665,6 +694,60 @@ check_for_stackrox_OOMs() {
     fi
 }
 
+junit_report_pod_restarts() {
+    local check_output="${1:-}"
+
+    local previous_logs=()
+    while IFS='' read -r line; do previous_logs+=("$line"); done < <(echo "${check_output}" | grep "copied to Artifacts" | cut -d" " -f1 | sort -u)
+
+    local previous_log_regex=""
+    declare -A found_previous_logs
+    declare -A found_pod_container_keys
+    for previous_log in "${previous_logs[@]}"
+    do
+        found_previous_logs["${previous_log}"]=""
+        for map_key in "${!POD_CONTAINERS_MAP[@]}"
+        do
+            previous_log_regex="${POD_CONTAINERS_MAP[${map_key}]}"
+            if [[ "${previous_log}" =~ $previous_log_regex ]]; then
+                found_previous_logs["${previous_log}"]="${map_key}"
+                found_pod_container_keys["${map_key}"]="found"
+                break
+            fi
+        done
+    done
+
+    # (FAILURES - Fallback) Report failed, but not found pods in defined pod->container map.
+    local crop_pod_name=""
+    for previous_log in "${!found_previous_logs[@]}"
+    do
+        if [[ "${found_previous_logs[${previous_log}]}" != "" ]]; then
+            continue
+        fi
+
+        crop_pod_name="$(echo "${previous_log}" | cut -d- -f1)"
+        save_junit_failure "${CHECK_POD_RESTARTS_TEST_NAME}" "${crop_pod_name}" "${check_output}"
+    done
+
+    # (FAILURES) Report failed and found pods. We use improved test name matching.
+    for map_key in "${!found_pod_container_keys[@]}"
+    do
+        save_junit_failure "${CHECK_POD_RESTARTS_TEST_NAME}" "${map_key}" "${check_output}"
+    done
+
+    # Report pods without restarts (SUCCESSES).
+    local found_map_key=""
+    for map_key in "${!POD_CONTAINERS_MAP[@]}"
+    do
+        found_map_key="${found_pod_container_keys[${map_key}]:-}"
+        if [[ "${found_map_key}" == "found" ]]; then
+            continue
+        fi
+
+        save_junit_success "${CHECK_POD_RESTARTS_TEST_NAME}" "${map_key}"
+    done
+}
+
 check_for_stackrox_restarts() {
     info "Checking for unexplained restarts by stackrox pods"
 
@@ -685,8 +768,7 @@ check_for_stackrox_restarts() {
         local check_out=""
         # shellcheck disable=SC2086
         if ! check_out="$(scripts/ci/logcheck/check-restart-logs.sh "${CI_JOB_NAME}" $previous_logs)"; then
-            names=$(echo "${check_out}" | grep "copied to Artifacts" | cut -d- -f1 | sort -u | tr '\n' ' ')
-            save_junit_failure "Pod Restarts" "${names}" "${check_out}"
+            junit_report_pod_restarts "${check_out}"
             die "ERROR: Found at least one unexplained pod restart. ${check_out}"
         fi
         info "Restarts were considered benign"
@@ -695,7 +777,7 @@ check_for_stackrox_restarts() {
         info "No pod restarts were found"
     fi
 
-    save_junit_success "Pod Restarts" "Check for unexplained pod restart"
+    junit_report_pod_restarts
 }
 
 check_for_errors_in_stackrox_logs() {
@@ -989,7 +1071,9 @@ wait_for_api() {
         # OCP Interop tests are run on minimal instances and will take longer
         # Allow override with MAX_WAIT_SECONDS
         max_seconds=${MAX_WAIT_SECONDS:-600}
+        info "Waiting ${max_seconds}s (increased for openshift-ci provisioned clusters) for central api and $(( max_seconds * 6 )) for ingress..."
     fi
+    max_ingress_seconds=$(( max_seconds * 6 ))
 
     while true; do
         central_json="$(kubectl -n "${central_namespace}" get deploy/central -o json)"
@@ -1022,12 +1106,12 @@ wait_for_api() {
     LOAD_BALANCER="${LOAD_BALANCER:-}"
     case "${LOAD_BALANCER}" in
         lb)
-            get_ingress_endpoint "${central_namespace}" svc/central-loadbalancer '.status.loadBalancer.ingress[0] | .ip // .hostname'
+            get_ingress_endpoint "${central_namespace}" svc/central-loadbalancer '.status.loadBalancer.ingress[0] | .ip // .hostname' "${max_ingress_seconds}"
             API_HOSTNAME="${ingress_endpoint}"
             API_PORT=443
             ;;
         route)
-            get_ingress_endpoint "${central_namespace}" routes/central '.spec.host'
+            get_ingress_endpoint "${central_namespace}" routes/central '.spec.host' "${max_ingress_seconds}"
             API_HOSTNAME="${ingress_endpoint}"
             API_PORT=443
             ;;
@@ -1129,12 +1213,12 @@ _record_build_info() {
 
     local central_namespace=${1:-stackrox}
 
-    require_environment "ROX_PASSWORD"
+    require_environment "ROX_ADMIN_PASSWORD"
 
     local build_info
 
     local metadata_url="https://${API_ENDPOINT}/v1/metadata"
-    releaseBuild="$(curl -skS --config <(curl_cfg user "admin:${ROX_PASSWORD}") "${metadata_url}" | jq -r '.releaseBuild')"
+    releaseBuild="$(curl -skS --config <(curl_cfg user "admin:${ROX_ADMIN_PASSWORD}") "${metadata_url}" | jq -r '.releaseBuild')"
 
     if [[ "$releaseBuild" == "true" ]]; then
         build_info="release"
@@ -1157,10 +1241,10 @@ restore_4_1_postgres_backup() {
     info "Restoring a 4.1 postgres backup"
 
     require_environment "API_ENDPOINT"
-    require_environment "ROX_PASSWORD"
+    require_environment "ROX_ADMIN_PASSWORD"
 
     gsutil cp gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/postgres_db_4_1.sql.zip .
-    roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" \
+    roxctl -e "$API_ENDPOINT" \
         central db restore --timeout 5m postgres_db_4_1.sql.zip
 }
 
@@ -1183,21 +1267,21 @@ db_backup_and_restore_test() {
     fi
 
     require_environment "API_ENDPOINT"
-    require_environment "ROX_PASSWORD"
+    require_environment "ROX_ADMIN_PASSWORD"
 
     # Ensure central is ready for requests after any previous tests
     wait_for_api "${central_namespace}"
 
     info "Backing up to ${output_dir}"
     mkdir -p "$output_dir"
-    roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central backup --output "$output_dir" || touch DB_TEST_FAIL
+    roxctl -e "${API_ENDPOINT}" central backup --output "$output_dir" || touch DB_TEST_FAIL
 
     info "Updating public config"
     update_public_config
 
     if [[ ! -e DB_TEST_FAIL ]]; then
         info "Restoring from ${output_dir}/postgres_db_*"
-        roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore "$output_dir"/postgres_db_* || touch DB_TEST_FAIL
+        roxctl -e "${API_ENDPOINT}" central db restore "$output_dir"/postgres_db_* || touch DB_TEST_FAIL
     fi
 
     wait_for_api "${central_namespace}"
@@ -1253,7 +1337,11 @@ _EO_DETAILS_
         if [[ -f "${STATE_DEPLOYED}" ]]; then
             save_junit_success "${stackrox_deployed[@]}"
         else
-            save_junit_failure "${stackrox_deployed[@]}" "Check the build log"
+            if [[ -f "${QA_DEPLOY_WAIT_INFO}" ]]; then
+                save_junit_failure "${stackrox_deployed[0]}" "$(cat "${QA_DEPLOY_WAIT_INFO}")" "Check the build log"
+            else
+                save_junit_failure "${stackrox_deployed[@]}" "Check the build log"
+            fi
         fi
     else
         save_junit_skipped "${stackrox_deployed[@]}"
@@ -1401,6 +1489,7 @@ wait_for_object_to_appear() {
         count=$((count + 1))
         if [[ $count -ge "$tries" ]]; then
             info "$namespace $object did not appear after $count tries"
+            echo "Waiting for $object in ns $namespace timed out." > "${QA_DEPLOY_WAIT_INFO}" || true
             kubectl -n "$namespace" get "$object"
             return 1
         fi

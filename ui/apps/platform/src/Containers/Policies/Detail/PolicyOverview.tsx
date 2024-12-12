@@ -16,7 +16,7 @@ import { NotifierIntegration } from 'types/notifier.proto';
 import { BasePolicy } from 'types/policy.proto';
 import MitreAttackVectorsViewContainer from 'Containers/MitreAttackVectors/MitreAttackVectorsViewContainer';
 
-import { formatCategories, formatType } from '../policies.utils';
+import { formatCategories, getPolicyOriginLabel } from '../policies.utils';
 import Notifier from './Notifier';
 
 type PolicyOverviewProps = {
@@ -33,7 +33,6 @@ function PolicyOverview({
     const {
         categories,
         description,
-        isDefault,
         notifiers: notifierIds,
         rationale,
         remediation,
@@ -56,7 +55,7 @@ function PolicyOverview({
                         desc={<PolicySeverityIconText severity={severity} />}
                     />
                     <DescriptionListItem term="Categories" desc={formatCategories(categories)} />
-                    <DescriptionListItem term="Type" desc={formatType(isDefault)} />
+                    <DescriptionListItem term="Origin" desc={getPolicyOriginLabel(policy)} />
                     <DescriptionListItem term="Description" desc={description} />
                     <DescriptionListItem term="Rationale" desc={rationale} />
                     <DescriptionListItem term="Guidance" desc={remediation} />

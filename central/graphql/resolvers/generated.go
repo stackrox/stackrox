@@ -53,17 +53,18 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"clusterName: String!",
 		"deployment: Alert_Deployment",
 		"enforcement: Alert_Enforcement",
+		"entityType: Alert_EntityType!",
 		"firstOccurred: Time",
 		"id: ID!",
 		"image: ContainerImage",
 		"lifecycleStage: LifecycleStage!",
 		"namespace: String!",
 		"namespaceId: String!",
+		"platformComponent: Boolean!",
 		"policy: Policy",
 		"processViolation: Alert_ProcessViolation",
 		"resolvedAt: Time",
 		"resource: Alert_Resource",
-		"snoozeTill: Time",
 		"state: ViolationState!",
 		"time: Time",
 		"violations: [Alert_Violation]!",
@@ -95,6 +96,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"action: EnforcementAction!",
 		"message: String!",
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Alert_EntityType(0)))
 	utils.Must(builder.AddType("Alert_ProcessViolation", []string{
 		"message: String!",
 		"processes: [ProcessIndicator]!",
@@ -547,6 +549,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("CosignSignature", []string{
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CvssScoreVersion(0)))
 	utils.Must(builder.AddType("DataSource", []string{
 		"id: ID!",
 		"mirror: String!",
@@ -571,6 +574,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"namespace: String!",
 		"namespaceId: String!",
 		"orchestratorComponent: Boolean!",
+		"platformComponent: Boolean!",
 		"podLabels: [Label!]!",
 		"ports: [PortConfig]!",
 		"priority: Int!",
@@ -686,6 +690,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"cvssMetrics: [CVSSScore]!",
 		"id: ID!",
 		"impactScore: Float!",
+		"nvdScoreVersion: CvssScoreVersion!",
 		"nvdcvss: Float!",
 		"operatingSystem: String!",
 		"severity: VulnerabilitySeverity!",
@@ -829,9 +834,14 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"alertDcrConfig: MicrosoftSentinel_DataCollectionRuleConfig",
 		"applicationClientId: String!",
 		"auditLogDcrConfig: MicrosoftSentinel_DataCollectionRuleConfig",
+		"clientCertAuthConfig: MicrosoftSentinel_ClientCertAuthConfig",
 		"directoryTenantId: String!",
 		"logIngestionEndpoint: String!",
 		"secret: String!",
+	}))
+	utils.Must(builder.AddType("MicrosoftSentinel_ClientCertAuthConfig", []string{
+		"clientCert: String!",
+		"privateKey: String!",
 	}))
 	utils.Must(builder.AddType("MicrosoftSentinel_DataCollectionRuleConfig", []string{
 		"dataCollectionRuleId: String!",
@@ -891,6 +901,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("NetworkEntityInfo_ExternalSource", []string{
 		"default: Boolean!",
+		"discovered: Boolean!",
 		"name: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.NetworkEntityInfo_Type(0)))
@@ -954,8 +965,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"notes: [NodeScan_Note!]!",
 		"operatingSystem: String!",
 		"scanTime: Time",
+		"scannerVersion: NodeScan_Scanner!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.NodeScan_Note(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.NodeScan_Scanner(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Node_Note(0)))
 	utils.Must(builder.AddType("Notifier", []string{
 		"awsSecurityHub: AWSSecurityHub",
@@ -1207,6 +1220,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"cluster: String!",
 		"label: Scope_Label",
 		"namespace: String!",
+	}))
+	utils.Must(builder.AddType("ScopeObject", []string{
+		"id: ID!",
+		"name: String!",
 	}))
 	utils.Must(builder.AddType("Scope_Label", []string{
 		"key: String!",
@@ -1922,6 +1939,12 @@ func (resolver *alertResolver) Enforcement(ctx context.Context) (*alert_Enforcem
 	return resolver.root.wrapAlert_Enforcement(value, true, nil)
 }
 
+func (resolver *alertResolver) EntityType(ctx context.Context) string {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetEntityType()
+	return value.String()
+}
+
 func (resolver *alertResolver) FirstOccurred(ctx context.Context) (*graphql.Time, error) {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetFirstOccurred()
@@ -1962,6 +1985,12 @@ func (resolver *alertResolver) NamespaceId(ctx context.Context) string {
 	return value
 }
 
+func (resolver *alertResolver) PlatformComponent(ctx context.Context) bool {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetPlatformComponent()
+	return value
+}
+
 func (resolver *alertResolver) Policy(ctx context.Context) (*policyResolver, error) {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetPolicy()
@@ -1984,12 +2013,6 @@ func (resolver *alertResolver) Resource(ctx context.Context) (*alert_ResourceRes
 	resolver.ensureData(ctx)
 	value := resolver.data.GetResource()
 	return resolver.root.wrapAlert_Resource(value, true, nil)
-}
-
-func (resolver *alertResolver) SnoozeTill(ctx context.Context) (*graphql.Time, error) {
-	resolver.ensureData(ctx)
-	value := resolver.data.GetSnoozeTill()
-	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *alertResolver) State(ctx context.Context) string {
@@ -2251,6 +2274,24 @@ func (resolver *alert_EnforcementResolver) Action(ctx context.Context) string {
 func (resolver *alert_EnforcementResolver) Message(ctx context.Context) string {
 	value := resolver.data.GetMessage()
 	return value
+}
+
+func toAlert_EntityType(value *string) storage.Alert_EntityType {
+	if value != nil {
+		return storage.Alert_EntityType(storage.Alert_EntityType_value[*value])
+	}
+	return storage.Alert_EntityType(0)
+}
+
+func toAlert_EntityTypes(values *[]string) []storage.Alert_EntityType {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.Alert_EntityType, len(*values))
+	for i, v := range *values {
+		output[i] = toAlert_EntityType(&v)
+	}
+	return output
 }
 
 type alert_ProcessViolationResolver struct {
@@ -6734,6 +6775,24 @@ func (resolver *cosignSignatureResolver) SignaturePayload(ctx context.Context) [
 	return value
 }
 
+func toCvssScoreVersion(value *string) storage.CvssScoreVersion {
+	if value != nil {
+		return storage.CvssScoreVersion(storage.CvssScoreVersion_value[*value])
+	}
+	return storage.CvssScoreVersion(0)
+}
+
+func toCvssScoreVersions(values *[]string) []storage.CvssScoreVersion {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.CvssScoreVersion, len(*values))
+	for i, v := range *values {
+		output[i] = toCvssScoreVersion(&v)
+	}
+	return output
+}
+
 type dataSourceResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -6966,6 +7025,12 @@ func (resolver *deploymentResolver) NamespaceId(ctx context.Context) string {
 func (resolver *deploymentResolver) OrchestratorComponent(ctx context.Context) bool {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetOrchestratorComponent()
+	return value
+}
+
+func (resolver *deploymentResolver) PlatformComponent(ctx context.Context) bool {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetPlatformComponent()
 	return value
 }
 
@@ -8175,6 +8240,11 @@ func (resolver *imageCVEResolver) Id(ctx context.Context) graphql.ID {
 func (resolver *imageCVEResolver) ImpactScore(ctx context.Context) float64 {
 	value := resolver.data.GetImpactScore()
 	return float64(value)
+}
+
+func (resolver *imageCVEResolver) NvdScoreVersion(ctx context.Context) string {
+	value := resolver.data.GetNvdScoreVersion()
+	return value.String()
 }
 
 func (resolver *imageCVEResolver) Nvdcvss(ctx context.Context) float64 {
@@ -9681,6 +9751,11 @@ func (resolver *microsoftSentinelResolver) AuditLogDcrConfig(ctx context.Context
 	return resolver.root.wrapMicrosoftSentinel_DataCollectionRuleConfig(value, true, nil)
 }
 
+func (resolver *microsoftSentinelResolver) ClientCertAuthConfig(ctx context.Context) (*microsoftSentinel_ClientCertAuthConfigResolver, error) {
+	value := resolver.data.GetClientCertAuthConfig()
+	return resolver.root.wrapMicrosoftSentinel_ClientCertAuthConfig(value, true, nil)
+}
+
 func (resolver *microsoftSentinelResolver) DirectoryTenantId(ctx context.Context) string {
 	value := resolver.data.GetDirectoryTenantId()
 	return value
@@ -9693,6 +9768,58 @@ func (resolver *microsoftSentinelResolver) LogIngestionEndpoint(ctx context.Cont
 
 func (resolver *microsoftSentinelResolver) Secret(ctx context.Context) string {
 	value := resolver.data.GetSecret()
+	return value
+}
+
+type microsoftSentinel_ClientCertAuthConfigResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.MicrosoftSentinel_ClientCertAuthConfig
+}
+
+func (resolver *Resolver) wrapMicrosoftSentinel_ClientCertAuthConfig(value *storage.MicrosoftSentinel_ClientCertAuthConfig, ok bool, err error) (*microsoftSentinel_ClientCertAuthConfigResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &microsoftSentinel_ClientCertAuthConfigResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapMicrosoftSentinel_ClientCertAuthConfigs(values []*storage.MicrosoftSentinel_ClientCertAuthConfig, err error) ([]*microsoftSentinel_ClientCertAuthConfigResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*microsoftSentinel_ClientCertAuthConfigResolver, len(values))
+	for i, v := range values {
+		output[i] = &microsoftSentinel_ClientCertAuthConfigResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapMicrosoftSentinel_ClientCertAuthConfigWithContext(ctx context.Context, value *storage.MicrosoftSentinel_ClientCertAuthConfig, ok bool, err error) (*microsoftSentinel_ClientCertAuthConfigResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &microsoftSentinel_ClientCertAuthConfigResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapMicrosoftSentinel_ClientCertAuthConfigsWithContext(ctx context.Context, values []*storage.MicrosoftSentinel_ClientCertAuthConfig, err error) ([]*microsoftSentinel_ClientCertAuthConfigResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*microsoftSentinel_ClientCertAuthConfigResolver, len(values))
+	for i, v := range values {
+		output[i] = &microsoftSentinel_ClientCertAuthConfigResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *microsoftSentinel_ClientCertAuthConfigResolver) ClientCert(ctx context.Context) string {
+	value := resolver.data.GetClientCert()
+	return value
+}
+
+func (resolver *microsoftSentinel_ClientCertAuthConfigResolver) PrivateKey(ctx context.Context) string {
+	value := resolver.data.GetPrivateKey()
 	return value
 }
 
@@ -10314,6 +10441,11 @@ func (resolver *networkEntityInfo_ExternalSourceResolver) Default(ctx context.Co
 	return value
 }
 
+func (resolver *networkEntityInfo_ExternalSourceResolver) Discovered(ctx context.Context) bool {
+	value := resolver.data.GetDiscovered()
+	return value
+}
+
 func (resolver *networkEntityInfo_ExternalSourceResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
@@ -10834,6 +10966,11 @@ func (resolver *nodeScanResolver) ScanTime(ctx context.Context) (*graphql.Time, 
 	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
+func (resolver *nodeScanResolver) ScannerVersion(ctx context.Context) string {
+	value := resolver.data.GetScannerVersion()
+	return value.String()
+}
+
 func toNodeScan_Note(value *string) storage.NodeScan_Note {
 	if value != nil {
 		return storage.NodeScan_Note(storage.NodeScan_Note_value[*value])
@@ -10848,6 +10985,24 @@ func toNodeScan_Notes(values *[]string) []storage.NodeScan_Note {
 	output := make([]storage.NodeScan_Note, len(*values))
 	for i, v := range *values {
 		output[i] = toNodeScan_Note(&v)
+	}
+	return output
+}
+
+func toNodeScan_Scanner(value *string) storage.NodeScan_Scanner {
+	if value != nil {
+		return storage.NodeScan_Scanner(storage.NodeScan_Scanner_value[*value])
+	}
+	return storage.NodeScan_Scanner(0)
+}
+
+func toNodeScan_Scanners(values *[]string) []storage.NodeScan_Scanner {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.NodeScan_Scanner, len(*values))
+	for i, v := range *values {
+		output[i] = toNodeScan_Scanner(&v)
 	}
 	return output
 }
@@ -13125,6 +13280,58 @@ func (resolver *scopeResolver) Label(ctx context.Context) (*scope_LabelResolver,
 
 func (resolver *scopeResolver) Namespace(ctx context.Context) string {
 	value := resolver.data.GetNamespace()
+	return value
+}
+
+type scopeObjectResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *v1.ScopeObject
+}
+
+func (resolver *Resolver) wrapScopeObject(value *v1.ScopeObject, ok bool, err error) (*scopeObjectResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &scopeObjectResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapScopeObjects(values []*v1.ScopeObject, err error) ([]*scopeObjectResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*scopeObjectResolver, len(values))
+	for i, v := range values {
+		output[i] = &scopeObjectResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapScopeObjectWithContext(ctx context.Context, value *v1.ScopeObject, ok bool, err error) (*scopeObjectResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &scopeObjectResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapScopeObjectsWithContext(ctx context.Context, values []*v1.ScopeObject, err error) ([]*scopeObjectResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*scopeObjectResolver, len(values))
+	for i, v := range values {
+		output[i] = &scopeObjectResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *scopeObjectResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *scopeObjectResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
 	return value
 }
 

@@ -23,6 +23,7 @@ import (
 type MockDataStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockDataStoreMockRecorder
+	isgomock struct{}
 }
 
 // MockDataStoreMockRecorder is the mock recorder for MockDataStore.
@@ -105,6 +106,21 @@ func (m *MockDataStore) GetAlert(ctx context.Context, id string) (*storage.Alert
 func (mr *MockDataStoreMockRecorder) GetAlert(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAlert", reflect.TypeOf((*MockDataStore)(nil).GetAlert), ctx, id)
+}
+
+// GetByQuery mocks base method.
+func (m *MockDataStore) GetByQuery(ctx context.Context, q *v1.Query) ([]*storage.Alert, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByQuery", ctx, q)
+	ret0, _ := ret[0].([]*storage.Alert)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByQuery indicates an expected call of GetByQuery.
+func (mr *MockDataStoreMockRecorder) GetByQuery(ctx, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByQuery", reflect.TypeOf((*MockDataStore)(nil).GetByQuery), ctx, q)
 }
 
 // MarkAlertsResolvedBatch mocks base method.

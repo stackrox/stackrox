@@ -38,6 +38,7 @@ export type ClusterDetailsTableProps = {
     getSortParams: UseURLSortResult['getSortParams'];
     searchFilterConfig: CompoundSearchFilterConfig;
     searchFilter: SearchFilter;
+    onFilterChange: (newFilter: SearchFilter) => void;
     onSearch: (payload: OnSearchPayload) => void;
     onCheckStatusSelect: (
         filterType: 'Compliance Check Status',
@@ -55,6 +56,7 @@ function ClusterDetailsTable({
     getSortParams,
     searchFilterConfig,
     searchFilter,
+    onFilterChange,
     onSearch,
     onCheckStatusSelect,
     onClearFilters,
@@ -105,6 +107,8 @@ function ClusterDetailsTable({
                     </ToolbarGroup>
                     <ToolbarGroup className="pf-v5-u-w-100">
                         <SearchFilterChips
+                            searchFilter={searchFilter}
+                            onFilterChange={onFilterChange}
                             filterChipGroupDescriptors={[
                                 {
                                     displayName: 'Profile Check',

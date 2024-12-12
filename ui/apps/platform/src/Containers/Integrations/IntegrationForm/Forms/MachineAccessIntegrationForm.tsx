@@ -2,7 +2,6 @@ import * as yup from 'yup';
 import React, { ReactElement, useEffect, useState } from 'react';
 import {
     Alert,
-    AlertVariant,
     Button,
     Flex,
     FlexItem,
@@ -19,6 +18,7 @@ import {
 import { SelectOption } from '@patternfly/react-core/deprecated';
 import { FieldArray, FormikProvider } from 'formik';
 import { ArrowRightIcon, HelpIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
+import merge from 'lodash/merge';
 
 import FormMessage from 'Components/PatternFly/FormMessage';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
@@ -75,7 +75,7 @@ function MachineAccessIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<MachineAccessConfig>): ReactElement {
-    const formInitialValues = { ...defaultValues, ...initialValues };
+    const formInitialValues: MachineAccessConfig = merge({}, defaultValues, initialValues);
     const formik = useIntegrationForm<MachineAccessConfig>({
         initialValues: formInitialValues,
         validationSchema,
@@ -116,12 +116,7 @@ function MachineAccessIntegrationForm({
     return (
         <>
             {alertRoles && (
-                <Alert
-                    title="Fetch roles failed"
-                    component="p"
-                    variant={AlertVariant.warning}
-                    isInline
-                >
+                <Alert title="Fetch roles failed" component="p" variant="warning" isInline>
                     {alertRoles}
                 </Alert>
             )}

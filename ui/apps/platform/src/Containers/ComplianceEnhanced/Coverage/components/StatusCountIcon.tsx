@@ -18,11 +18,12 @@ type StatusCountIconProps = {
     text: string;
     status: Status;
     count: number;
+    disabled?: boolean;
 };
 
-function getStatusIcon(status: Status, count: number) {
+function getStatusIcon(status: Status, count: number, disabled: boolean) {
     let color = 'var(--pf-v5-global--disabled-color--100)';
-    if (count > 0) {
+    if (!disabled && count > 0) {
         switch (status) {
             case 'fail':
                 color = FAILING_VAR_COLOR;
@@ -62,10 +63,11 @@ function getStatusIcon(status: Status, count: number) {
     }
 }
 
-function StatusCountIcon({ text, status, count }: StatusCountIconProps) {
-    const icon = <Icon>{getStatusIcon(status, count)}</Icon>;
+function StatusCountIcon({ text, status, count, disabled = false }: StatusCountIconProps) {
+    const icon = <Icon>{getStatusIcon(status, count, disabled)}</Icon>;
+    const displayText = disabled ? '—' : `${count} ${pluralize(text, count)}`;
 
-    return <IconText icon={icon} text={`${count} ${pluralize(text, count)}`} />;
+    return <IconText icon={icon} text={displayText} />;
 }
 
 export default StatusCountIcon;

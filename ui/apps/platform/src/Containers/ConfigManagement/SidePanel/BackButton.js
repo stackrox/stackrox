@@ -1,13 +1,15 @@
 import React from 'react';
-import ReactRouterPropTypes from 'react-router-prop-types';
 import PropTypes from 'prop-types';
-import { withRouter, Link } from 'react-router-dom';
+import { Link, useLocation, useRouteMatch } from 'react-router-dom';
 import URLService from 'utils/URLService';
 
 import { ArrowLeft } from 'react-feather';
 import EntityIcon from 'Components/EntityIcon';
 
-const BackButton = ({ match, location, entityType1, entityListType2, entityId2 }) => {
+const BackButton = ({ entityType1, entityListType2, entityId2 }) => {
+    const location = useLocation();
+    const match = useRouteMatch();
+
     if (entityListType2 || entityId2) {
         const link = URLService.getURL(match, location).pop().url();
         return (
@@ -29,8 +31,6 @@ const BackButton = ({ match, location, entityType1, entityListType2, entityId2 }
 };
 
 BackButton.propTypes = {
-    match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired,
     entityType1: PropTypes.string,
     entityListType2: PropTypes.string,
     entityId2: PropTypes.string,
@@ -42,4 +42,4 @@ BackButton.defaultProps = {
     entityId2: null,
 };
 
-export default withRouter(BackButton);
+export default BackButton;

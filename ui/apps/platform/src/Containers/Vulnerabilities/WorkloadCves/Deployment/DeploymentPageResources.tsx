@@ -16,6 +16,7 @@ import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 
+import { getPaginationParams } from 'utils/searchUtils';
 import { getDefaultWorkloadSortOption, getWorkloadSortFields } from '../../utils/sortUtils';
 import ImageResourceTable, { ImageResources, imageResourcesFragment } from './ImageResourceTable';
 
@@ -51,11 +52,7 @@ function DeploymentPageResources({ deploymentId, pagination }: DeploymentPageRes
         variables: {
             id: deploymentId,
             query: '',
-            pagination: {
-                offset: (page - 1) * perPage,
-                limit: perPage,
-                sortOption,
-            },
+            pagination: getPaginationParams({ page, perPage, sortOption }),
         },
     });
 

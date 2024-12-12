@@ -1,13 +1,12 @@
 import React from 'react';
 import { gql } from '@apollo/client';
 import Loader from 'Components/Loader';
-import { Link, withRouter } from 'react-router-dom';
+import { Link, useLocation, useRouteMatch } from 'react-router-dom';
 import URLService from 'utils/URLService';
 import entityTypes from 'constants/entityTypes';
 import networkStatuses from 'constants/networkStatuses';
 import Query from 'Components/ThrowingQuery';
 import Widget from 'Components/Widget';
-import ReactRouterPropTypes from 'react-router-prop-types';
 
 import Lollipop from './Lollipop';
 
@@ -24,7 +23,10 @@ const QUERY = gql`
     }
 `;
 
-const UsersWithMostClusterAdminRoles = ({ match, location }) => {
+const UsersWithMostClusterAdminRoles = () => {
+    const match = useRouteMatch();
+    const location = useLocation();
+
     function processData(data) {
         if (!data || !data.clusters) {
             return [];
@@ -115,9 +117,4 @@ const UsersWithMostClusterAdminRoles = ({ match, location }) => {
     );
 };
 
-UsersWithMostClusterAdminRoles.propTypes = {
-    match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired,
-};
-
-export default withRouter(UsersWithMostClusterAdminRoles);
+export default UsersWithMostClusterAdminRoles;

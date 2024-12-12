@@ -10,7 +10,6 @@ import (
 	"github.com/operator-framework/helm-operator-plugins/pkg/extensions"
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
-	"github.com/stackrox/rox/operator/internal/central/common"
 	utils "github.com/stackrox/rox/operator/internal/utils"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	corev1 "k8s.io/api/core/v1"
@@ -76,12 +75,7 @@ func convertDBPersistenceToPersistence(p *platform.DBPersistence) *platform.Pers
 func getPersistenceByTarget(central *platform.Central, target PVCTarget) *platform.Persistence {
 	switch target {
 	case PVCTargetCentral:
-		persistence := central.Spec.Central.GetPersistence()
-		if persistence == nil {
-			// Make sure we return a non-nil object, otherwise the caller would think there is no claim to reconcile.
-			persistence = &platform.Persistence{}
-		}
-		return persistence
+		return nil
 	case PVCTargetCentralDB:
 		if !central.Spec.Central.ShouldManageDB() {
 			return nil
@@ -134,10 +128,7 @@ type reconcilePVCExtensionRun struct {
 }
 
 func (r *reconcilePVCExtensionRun) Execute() error {
-	if r.centralObj.DeletionTimestamp != nil || r.persistence == nil {
-		return r.handleDelete()
-	}
-	if common.ObsoletePVC(r.centralObj.GetAnnotations()) {
+	if r.centralObj.DeletionTimestamp != nil || r.target == PVCTargetCentral || r.persistence == nil {
 		return r.handleDelete()
 	}
 
@@ -185,11 +176,6 @@ func (r *reconcilePVCExtensionRun) Execute() error {
 	}
 
 	if pvc == nil {
-		// Starting from 4.1, we do not create new PVCs for central.
-		if r.target == PVCTargetCentral {
-			return nil
-		}
-
 		return r.handleCreate(claimName, pvcConfig)
 	}
 

@@ -3,6 +3,7 @@ import qs from 'qs';
 import { SearchFilter } from 'types/search';
 import { SortOption } from 'types/table';
 
+import { getPaginationParams } from 'utils/searchUtils';
 import axios from './instance';
 
 import { Pagination } from './types';
@@ -39,15 +40,11 @@ export type DiscoveredClusterType = (typeof types)[number];
 
 // providerType
 
-// Order of items is for search filter options.
-const providerTypes = [
-    'PROVIDER_TYPE_AWS',
-    'PROVIDER_TYPE_AZURE',
-    'PROVIDER_TYPE_GCP',
-    'PROVIDER_TYPE_UNSPECIFIED',
-] as const; // for isProviderType function
-
-export type DiscoveredClusterProviderType = (typeof providerTypes)[number];
+export type DiscoveredClusterProviderType =
+    | 'PROVIDER_TYPE_AWS'
+    | 'PROVIDER_TYPE_AZURE'
+    | 'PROVIDER_TYPE_GCP'
+    | 'PROVIDER_TYPE_UNSPECIFIED';
 
 // status
 
@@ -113,8 +110,7 @@ export function getListDiscoveredClustersArg({
     sortOption,
 }): ListDiscoveredClustersRequest {
     const filter = getDiscoveredClustersFilter(searchFilter);
-    const offset = (page - 1) * perPage;
-    const pagination: Pagination = { limit: perPage, offset, sortOption };
+    const pagination = getPaginationParams({ page, perPage, sortOption });
     return { filter, pagination };
 }
 

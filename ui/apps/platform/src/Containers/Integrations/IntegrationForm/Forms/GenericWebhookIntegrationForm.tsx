@@ -14,6 +14,7 @@ import {
 import { PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
 import * as yup from 'yup';
 import { FieldArray, FormikProvider } from 'formik';
+import merge from 'lodash/merge';
 
 import usePageState from 'Containers/Integrations/hooks/usePageState';
 import FormMessage from 'Components/PatternFly/FormMessage';
@@ -104,12 +105,10 @@ function GenericWebhookIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<GenericWebhookIntegration>): ReactElement {
-    const formInitialValues = { ...defaultValues, ...initialValues };
+    const formInitialValues = structuredClone(defaultValues);
     if (initialValues) {
-        formInitialValues.notifier = {
-            ...formInitialValues.notifier,
-            ...initialValues,
-        };
+        merge(formInitialValues.notifier, initialValues);
+
         // We want to clear the password because backend returns '******' to represent that there
         // are currently stored credentials
         formInitialValues.notifier.generic.password = '';

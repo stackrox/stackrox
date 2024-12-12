@@ -12,6 +12,11 @@ import DateDistance from 'Components/DateDistance';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import { TableUIState } from 'utils/getTableUIState';
 import ExpandRowTh from 'Components/ExpandRowTh';
+import {
+    generateVisibilityForColumns,
+    getHiddenColumnCount,
+    ManagedColumns,
+} from 'hooks/useManagedColumns';
 import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import DeploymentComponentVulnerabilitiesTable, {
     DeploymentComponentVulnerability,
@@ -21,6 +26,30 @@ import DeploymentComponentVulnerabilitiesTable, {
 } from './DeploymentComponentVulnerabilitiesTable';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import { VulnerabilitySeverityLabel } from '../../types';
+
+export const tableId = 'WorkloadCvesAffectedDeploymentsTable';
+export const defaultColumns = {
+    imagesBySeverity: {
+        title: 'Images by severity',
+        isShownByDefault: true,
+    },
+    cluster: {
+        title: 'Cluster',
+        isShownByDefault: true,
+    },
+    namespace: {
+        title: 'Namespace',
+        isShownByDefault: true,
+    },
+    images: {
+        title: 'Images',
+        isShownByDefault: true,
+    },
+    firstDiscovered: {
+        title: 'First discovered',
+        isShownByDefault: true,
+    },
+} as const;
 
 export type DeploymentForCve = {
     id: string;
@@ -62,9 +91,10 @@ export type AffectedDeploymentsTableProps = {
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
     cve: string;
-    vulnerabilityState: VulnerabilityState | undefined; // TODO Make this required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
+    vulnerabilityState: VulnerabilityState;
     filteredSeverities?: VulnerabilitySeverityLabel[];
     onClearFilters: () => void;
+    tableConfig: ManagedColumns<keyof typeof defaultColumns>['columns'];
 };
 
 function AffectedDeploymentsTable({
@@ -75,30 +105,42 @@ function AffectedDeploymentsTable({
     vulnerabilityState,
     filteredSeverities,
     onClearFilters,
+    tableConfig,
 }: AffectedDeploymentsTableProps) {
+    const getVisibilityClass = generateVisibilityForColumns(tableConfig);
+    const hiddenColumnCount = getHiddenColumnCount(tableConfig);
     const expandedRowSet = useSet<string>();
+
+    const colSpan = 8 + -hiddenColumnCount;
     return (
         <Table variant="compact">
             <Thead noWrap>
                 <Tr>
                     <ExpandRowTh />
                     <Th sort={getSortParams('Deployment')}>Deployment</Th>
-                    <Th>
+                    <Th className={getVisibilityClass('imagesBySeverity')}>
                         Images by severity
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
-                    <Th sort={getSortParams('Cluster')}>Cluster</Th>
-                    <Th sort={getSortParams('Namespace')}>Namespace</Th>
-                    <Th>
+                    <Th className={getVisibilityClass('cluster')} sort={getSortParams('Cluster')}>
+                        Cluster
+                    </Th>
+                    <Th
+                        className={getVisibilityClass('namespace')}
+                        sort={getSortParams('Namespace')}
+                    >
+                        Namespace
+                    </Th>
+                    <Th className={getVisibilityClass('images')}>
                         Images
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
-                    <Th>First discovered</Th>
+                    <Th className={getVisibilityClass('firstDiscovered')}>First discovered</Th>
                 </Tr>
             </Thead>
             <TbodyUnified
                 tableState={tableState}
-                colSpan={8}
+                colSpan={colSpan}
                 emptyProps={{ message: 'No deployments were found that are affected by this CVE' }}
                 filteredEmptyProps={{ onClearFilters }}
                 renderer={({ data }) =>
@@ -148,7 +190,11 @@ function AffectedDeploymentsTable({
                                             </Link>
                                         </Flex>
                                     </Td>
-                                    <Td modifier="nowrap" dataLabel="Images by severity">
+                                    <Td
+                                        className={getVisibilityClass('imagesBySeverity')}
+                                        modifier="nowrap"
+                                        dataLabel="Images by severity"
+                                    >
                                         <SeverityCountLabels
                                             criticalCount={criticalImageCount}
                                             importantCount={importantImageCount}
@@ -157,13 +203,31 @@ function AffectedDeploymentsTable({
                                             filteredSeverities={filteredSeverities}
                                         />
                                     </Td>
-                                    <Td dataLabel="Cluster">{clusterName}</Td>
-                                    <Td dataLabel="Namespace">{namespace}</Td>
-                                    <Td modifier="nowrap" dataLabel="Images">
+                                    <Td
+                                        className={getVisibilityClass('cluster')}
+                                        dataLabel="Cluster"
+                                    >
+                                        {clusterName}
+                                    </Td>
+                                    <Td
+                                        className={getVisibilityClass('namespace')}
+                                        dataLabel="Namespace"
+                                    >
+                                        {namespace}
+                                    </Td>
+                                    <Td
+                                        className={getVisibilityClass('images')}
+                                        modifier="nowrap"
+                                        dataLabel="Images"
+                                    >
                                         {pluralize(images.length, 'image')}
                                     </Td>
 
-                                    <Td modifier="nowrap" dataLabel="First discovered">
+                                    <Td
+                                        className={getVisibilityClass('firstDiscovered')}
+                                        modifier="nowrap"
+                                        dataLabel="First discovered"
+                                    >
                                         <DateDistance date={created} />
                                     </Td>
                                 </Tr>

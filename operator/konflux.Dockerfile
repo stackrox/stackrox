@@ -1,6 +1,6 @@
 # TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
 # We're targeting a floating tag here which should be reasonably safe to do as both RHEL major 8 and Go major.minor 1.20 should provide enough stability.
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.22 as builder
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.22 AS builder
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
@@ -12,9 +12,8 @@ ARG VERSIONS_SUFFIX
 ENV MAIN_TAG_SUFFIX="$VERSIONS_SUFFIX" COLLECTOR_TAG_SUFFIX="$VERSIONS_SUFFIX" SCANNER_TAG_SUFFIX="$VERSIONS_SUFFIX"
 
 # Build the operator binary.
-# TODO(ROX-24276): re-enable release builds for fast stream.
 # TODO(ROX-20240): enable non-release development builds.
-# GOTAGS="release"
+ENV GOTAGS="release"
 ENV CI=1 GOFLAGS="" CGO_ENABLED=1
 
 RUN GOOS=linux GOARCH=$(go env GOARCH) scripts/go-build-file.sh operator/cmd/main.go image/bin/operator
@@ -24,6 +23,7 @@ RUN GOOS=linux GOARCH=$(go env GOARCH) scripts/go-build-file.sh operator/cmd/mai
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 
 ARG MAIN_IMAGE_TAG
+RUN if [[ "$MAIN_IMAGE_TAG" == "" ]]; then >&2 echo "error: required MAIN_IMAGE_TAG arg is unset"; exit 6; fi
 
 LABEL \
     com.redhat.component="rhacs-operator-container" \

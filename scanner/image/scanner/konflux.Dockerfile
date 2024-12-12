@@ -6,12 +6,11 @@ ARG BASE_IMAGE=ubi8-minimal
 ARG BASE_TAG=latest
 
 
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.22 as builder
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.22 AS builder
 
 ENV GOFLAGS=""
-# TODO(ROX-24276): re-enable release builds for fast stream.
 # TODO(ROX-20240): enable non-release development builds.
-# ENV GOTAGS="release"
+ENV GOTAGS="release"
 # TODO(ROX-23335): Properly set the build tag
 ENV BUILD_TAG="dev"
 ENV CI=1
@@ -27,6 +26,7 @@ RUN make -C scanner NODEPS=1 CGO_ENABLED=1 image/scanner/bin/scanner copy-script
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
 
 ARG MAIN_IMAGE_TAG
+RUN if [[ "$MAIN_IMAGE_TAG" == "" ]]; then >&2 echo "error: required MAIN_IMAGE_TAG arg is unset"; exit 6; fi
 
 LABEL \
     com.redhat.component="rhacs-scanner-v4-container" \

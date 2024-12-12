@@ -199,7 +199,7 @@ message ScanStatus {
   string warnings = 3;
 }
 
-// Next Tag: 16
+// Next Tag: 18
 // Scan object per cluster
 message ComplianceOperatorScanV2 {
   string id = 1; // @gotags: sql:"pk"
@@ -218,6 +218,8 @@ message ComplianceOperatorScanV2 {
   string warnings = 14;
   string product_type = 15;
   string scan_ref_id = 16; // @gotags: search:"Scan Ref ID,hidden" sql:"type(uuid)"
+  // last_started_time is the last time the Scan resource was triggered
+  google.protobuf.Timestamp last_started_time = 17; // @gotags: search:"Compliance Scan Last Started Time,hidden"
 }
 
 // ComplianceOperatorScanSettingBindingV2 associates a scan setting with one or more compliance profiles
@@ -281,4 +283,46 @@ message ComplianceOperatorRemediationV2 {
   string outdated_object = 6;
   string enforcement_type = 7;
   string cluster_id = 8; // @gotags: search:"Cluster ID,hidden"
+}
+
+// Next Tag: 8
+message ComplianceOperatorReportSnapshotV2 {
+  string report_id = 1; // @gotags: sql:"pk,id,type(uuid)"
+  string scan_configuration_id = 2; // @gotags: search:"Compliance Scan Config ID" sql:"fk(ComplianceOperatorScanConfigurationV2:id)"
+  string name = 3; // @gotags: search:"Compliance Report Name"
+  string description = 4;
+  ComplianceOperatorReportStatus report_status = 5;
+  SlimUser user = 6;
+
+  message Scan {
+    string scan_ref_id = 1; // @gotags: search:"Scan Ref ID,hidden" sql:"fk(ComplianceOperatorScanV2:scan_ref_id),no-fk-constraint"
+    google.protobuf.Timestamp last_started_time = 2; // @gotags: search:"Compliance Scan Last Started Time,hidden" sql:"fk(ComplianceOperatorScanV2:last_started_time),no-fk-constraint"
+  }
+
+  repeated Scan scans = 7;
+}
+
+// Next Tag: 7
+message ComplianceOperatorReportStatus {
+  enum RunState {
+    WAITING = 0;
+    PREPARING = 1;
+    GENERATED = 2;
+    DELIVERED = 3;
+    FAILURE = 4;
+  }
+  enum NotificationMethod {
+    EMAIL = 0;
+    DOWNLOAD = 1;
+  }
+  enum RunMethod {
+    ON_DEMAND = 0;
+    SCHEDULED = 1;
+  }
+  RunState run_state = 1; // @gotags: search:"Compliance Report State"
+  google.protobuf.Timestamp started_at = 2; // @gotags: search:"Compliance Report Started Time"
+  google.protobuf.Timestamp completed_at = 3; // @gotags: search:"Compliance Report Completed Time"
+  string error_msg = 4;
+  RunMethod report_request_type = 5; // @gotags: search:"Compliance Report Request Type"
+  NotificationMethod report_notification_method = 6; // @gotags: search:"Compliance Report Notification Method"
 }

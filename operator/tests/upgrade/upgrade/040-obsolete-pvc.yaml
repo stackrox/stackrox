@@ -1,6 +1,0 @@
-apiVersion: platform.stackrox.io/v1alpha1
-kind: Central
-metadata:
-  name: stackrox-central-services
-  annotations:
-    platform.stackrox.io/obsolete-central-pvc: "true"

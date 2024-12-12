@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLocation, useRouteMatch } from 'react-router-dom';
 import pluralize from 'pluralize';
 import { format } from 'date-fns';
 
@@ -218,8 +219,6 @@ const buildTableColumns = (match, location, entityContext) => {
 const createTableRows = (data) => data.results;
 
 const Roles = ({
-    match,
-    location,
     className,
     selectedRowId,
     onRowClick,
@@ -228,6 +227,8 @@ const Roles = ({
     totalResults,
     entityContext,
 }) => {
+    const location = useLocation();
+    const match = useRouteMatch();
     const autoFocusSearchInput = !selectedRowId;
     const tableColumns = buildTableColumns(match, location, entityContext);
     const queryText = queryService.objectToWhereClause(query);

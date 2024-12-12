@@ -19,6 +19,7 @@ import useURLSort from 'hooks/useURLSort';
 import PageTitle from 'Components/PageTitle';
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import { SearchFilter } from 'types/search';
 import {
     RequestExpires,
     RequestIDLink,
@@ -76,7 +77,7 @@ function PendingApprovals() {
                     'Expired Request': 'false',
                 },
                 sortOption,
-                page - 1,
+                page,
                 perPage
             ),
         [searchFilter, sortOption, page, perPage]
@@ -91,7 +92,8 @@ function PendingApprovals() {
         searchFilter,
     });
 
-    function onFilterChange() {
+    function onFilterChange(searchFilter: SearchFilter) {
+        setSearchFilter(searchFilter);
         setPage(1);
     }
 
@@ -140,6 +142,7 @@ function PendingApprovals() {
                     </ToolbarItem>
                     <ToolbarGroup aria-label="applied search filters" className="pf-v5-u-w-100">
                         <SearchFilterChips
+                            searchFilter={searchFilter}
                             onFilterChange={onFilterChange}
                             filterChipGroupDescriptors={searchOptions.map(({ label, value }) => {
                                 return {

@@ -424,11 +424,7 @@ EOF
     export SENSOR_SCANNER_SUPPORT=true
 
     # Install old version of the operator & deploy StackRox.
-    (
-      VERSION="${OPERATOR_VERSION_TAG}" make -C operator deploy-previous-via-olm
-      #  cd operator
-      #  ./hack/olm-operator-install.sh stackrox-operator quay.io/rhacs-eng/stackrox-operator 4.3.0 4.3.0
-    )
+    VERSION="${OPERATOR_VERSION_TAG}" make -C operator deploy-previous-via-olm
     ROX_SCANNER_V4="false" _deploy_stackrox "" "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}"
 
     verify_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"

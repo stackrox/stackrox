@@ -1,8 +1,3 @@
-/* eslint-disable @typescript-eslint/no-shadow */
-/* eslint-disable no-param-reassign */
-/* eslint-disable react/no-array-index-key */
-// TODO: remove lint override after @typescript-eslint deps can be resolved to ^5.2.x
-/* eslint-disable react/prop-types */
 import React, { useState } from 'react';
 import { Button, TextInput } from '@patternfly/react-core';
 import { Select, SelectOption } from '@patternfly/react-core/deprecated';
@@ -229,7 +224,7 @@ function DelegatedRegistriesTable({
                     <Th width={40}>Source registry</Th>
                     <Th width={40}>Destination cluster (CLI/API only)</Th>
                     <Th>
-                        <span className="pf-v5-screen-reader">Row deletion</span>
+                        <span className="pf-v5-screen-reader">Row action</span>
                     </Th>
                 </Tr>
             </Thead>
@@ -290,13 +285,16 @@ function DelegatedRegistriesTable({
                                     <>{clusterSelectOptions}</>
                                 </Select>
                             </Td>
-                            <Td dataLabel="Delete row" isActionCell>
+                            <Td dataLabel="Row action" className="pf-v5-u-text-align-right">
                                 <Button
-                                    variant="plain"
-                                    aria-label="Delete row"
+                                    variant="link"
+                                    isInline
+                                    icon={
+                                        <MinusCircleIcon color="var(--pf-v5-global--danger-color--100)" />
+                                    }
                                     onClick={() => deleteRow(rowIndex)}
                                 >
-                                    <MinusCircleIcon />
+                                    Delete row
                                 </Button>
                             </Td>
                         </Tr>

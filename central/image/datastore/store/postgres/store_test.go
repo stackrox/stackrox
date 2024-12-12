@@ -44,6 +44,11 @@ func (s *ImagesStoreSuite) TestStore() {
 
 	image := fixtures.GetImage()
 	s.NoError(testutils.FullInit(image, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	for _, comp := range image.GetScan().GetComponents() {
+		for _, vuln := range comp.GetVulns() {
+			vuln.NvdCvss = 0
+		}
+	}
 
 	foundImage, exists, err := store.Get(ctx, image.GetId())
 	s.NoError(err)

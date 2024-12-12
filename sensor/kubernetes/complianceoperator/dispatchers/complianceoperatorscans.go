@@ -64,9 +64,9 @@ func (c *ScanDispatcher) ProcessEvent(obj, _ interface{}, action central.Resourc
 
 	// Build a V2 event if central is capable of receiving it
 	if centralcaps.Has(centralsensor.ComplianceV2Integrations) {
-		startTime, err := protocompat.ConvertTimeToTimestampOrError(complianceScan.CreationTimestamp.Time)
+		creationTime, err := protocompat.ConvertTimeToTimestampOrError(complianceScan.CreationTimestamp.Time)
 		if err != nil {
-			log.Warnf("unable to convert start time %v", err)
+			log.Warnf("unable to convert creation time %v", err)
 		}
 
 		protoStatus := &central.ComplianceOperatorScanStatusV2{
@@ -76,7 +76,7 @@ func (c *ScanDispatcher) ProcessEvent(obj, _ interface{}, action central.Resourc
 			CurrentIndex:     complianceScan.Status.CurrentIndex,
 			Warnings:         complianceScan.Status.Warnings,
 			RemainingRetries: int64(complianceScan.Status.RemainingRetries),
-			StartTime:        startTime,
+			StartTime:        creationTime,
 		}
 
 		if complianceScan.Status.EndTimestamp != nil {
@@ -85,6 +85,15 @@ func (c *ScanDispatcher) ProcessEvent(obj, _ interface{}, action central.Resourc
 				log.Warnf("unable to convert end time %v", err)
 			} else {
 				protoStatus.EndTime = endTime
+			}
+		}
+
+		if complianceScan.Status.StartTimestamp != nil {
+			startTime, err := protocompat.ConvertTimeToTimestampOrError(complianceScan.Status.StartTimestamp.Time)
+			if err != nil {
+				log.Warnf("unable to convert start time %v", err)
+			} else {
+				protoStatus.LastStartTime = startTime
 			}
 		}
 

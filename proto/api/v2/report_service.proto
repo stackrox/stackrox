@@ -56,6 +56,7 @@ message VulnerabilityReportFilters {
     bool since_last_sent_scheduled_report = 5;
     google.protobuf.Timestamp since_start_date = 6;
   }
+  bool include_nvd_cvss = 7;
 }
 
 message ReportSchedule {

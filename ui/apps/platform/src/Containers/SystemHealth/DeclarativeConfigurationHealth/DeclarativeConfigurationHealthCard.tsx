@@ -97,7 +97,7 @@ function DeclarativeConfigurationHealthCard({
                             <Thead>
                                 <Tr>
                                     <Th width={40}>Name</Th>
-                                    <Th width={40}>Error</Th>
+                                    <Th width={40}>Error message</Th>
                                     <Th width={20}>Date</Th>
                                 </Tr>
                             </Thead>
@@ -111,11 +111,7 @@ function DeclarativeConfigurationHealthCard({
                                         >
                                             {name}
                                         </Td>
-                                        <Td
-                                            dataLabel="Error"
-                                            modifier="breakWord"
-                                            data-testid="error-message"
-                                        >
+                                        <Td dataLabel="Error message" modifier="breakWord">
                                             {errorMessage}
                                         </Td>
                                         <Td dataLabel="Date">{getDateTime(lastTimestamp)}</Td>

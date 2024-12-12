@@ -10,7 +10,7 @@ TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 EARLIER_TAG="4.1.3"
 EARLIER_SHA="8a4677e3d45ebc4f065ec052d1d66d6ead2084bb"
 CURRENT_TAG="$(make --quiet --no-print-directory tag)"
-PREVIOUS_RELEASES=("4.1.3" "4.2.5" "4.3.8" "4.4.5" "4.5.1")
+PREVIOUS_RELEASES=("4.1.3" "4.2.5" "4.3.8" "4.4.6" "4.5.5")
 
 # shellcheck source=../../scripts/lib.sh
 source "$TEST_ROOT/scripts/lib.sh"
@@ -220,12 +220,12 @@ test_upgrade_paths() {
     helm uninstall -n stackrox stackrox-secured-cluster-services
 
     # Remove scaled Sensor from Central
-    "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" -e "$API_ENDPOINT" -p "$ROX_PASSWORD" cluster delete --name scale-remote
+    "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" -e "$API_ENDPOINT" cluster delete --name scale-remote
 
     info "Fetching a sensor bundle for cluster 'remote'"
     "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" version
     rm -rf sensor-remote
-    "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" -e "$API_ENDPOINT" -p "$ROX_PASSWORD" sensor get-bundle remote
+    "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" -e "$API_ENDPOINT" sensor get-bundle remote
     [[ -d sensor-remote ]]
 
     info "Installing sensor"
@@ -264,7 +264,7 @@ force_rollback_to_previous_postgres() {
     info "Forcing a rollback to $FORCE_ROLLBACK_VERSION"
 
     local upgradeStatus
-    upgradeStatus=$(curl -sSk -X GET --config <(curl_cfg user "admin:${ROX_PASSWORD}") https://"${API_ENDPOINT}"/v1/centralhealth/upgradestatus)
+    upgradeStatus=$(curl -sSk -X GET --config <(curl_cfg user "admin:${ROX_ADMIN_PASSWORD}") https://"${API_ENDPOINT}"/v1/centralhealth/upgradestatus)
     echo "upgrade status: ${upgradeStatus}"
     test_equals_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.version' -r)" "${CURRENT_TAG}"
     test_equals_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.canRollbackAfterUpgrade' -r)" "true"
@@ -296,7 +296,7 @@ deploy_scaled_workload() {
 
     PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl helm output secured-cluster-services --image-defaults opensource --output-dir /tmp/early-stackrox-secured-services-chart --remove
 
-    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" central init-bundles generate scale-remote --output /tmp/cluster-init-bundle.yaml
+    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl -e "$API_ENDPOINT" central init-bundles generate scale-remote --output /tmp/cluster-init-bundle.yaml
 
     helm install -n stackrox --create-namespace \
         stackrox-secured-cluster-services /tmp/early-stackrox-secured-services-chart \

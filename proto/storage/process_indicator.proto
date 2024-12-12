@@ -64,7 +64,7 @@ message ProcessSignal {
   string container_id = 2; // @gotags: search:"Container ID,hidden"
 
   // Process creation time
-  google.protobuf.Timestamp time = 3; // @gotags: search:"Process Creation Time,hidden"
+  google.protobuf.Timestamp time = 3; // @gotags: search:"Process Creation Time,hidden" sql:"index=btree"
 
   // Process name
   string name = 4; // @gotags: search:"Process Name"

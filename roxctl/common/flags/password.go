@@ -21,3 +21,8 @@ func AddPassword(c *cobra.Command) {
 func Password() string {
 	return flagOrSettingValue(password, *passwordChanged, env.PasswordEnv)
 }
+
+// PasswordChanged returns whether the password is provided as an argument.
+func PasswordChanged() bool {
+	return *passwordChanged
+}

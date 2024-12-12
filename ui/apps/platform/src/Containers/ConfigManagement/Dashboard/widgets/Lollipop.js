@@ -10,12 +10,13 @@ import {
     GradientDefs,
 } from 'react-vis';
 import max from 'lodash/max';
-import { withRouter } from 'react-router-dom';
-import ReactRouterPropTypes from 'react-router-prop-types';
+import { useHistory } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import BarGradient from 'Components/visuals/BarGradient';
 
-const Lollipop = ({ data, history }) => {
+const Lollipop = ({ data }) => {
+    const history = useHistory();
+
     function getGridLineValues() {
         const interval = data.length < 5 ? 1 : 5;
         const values = data.map((datum) => datum.x);
@@ -114,7 +115,6 @@ const Lollipop = ({ data, history }) => {
 
 Lollipop.propTypes = {
     data: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
-    history: ReactRouterPropTypes.history.isRequired,
 };
 
-export default withRouter(Lollipop);
+export default Lollipop;

@@ -2,15 +2,18 @@
 import React, { ReactElement } from 'react';
 import { Checkbox, Form, FormSelect, PageSection, Text, TextInput } from '@patternfly/react-core';
 import * as yup from 'yup';
+import merge from 'lodash/merge';
 
-import { BackupIntegrationBase } from 'services/BackupIntegrationsService';
-
-import usePageState from 'Containers/Integrations/hooks/usePageState';
 import FormMessage from 'Components/PatternFly/FormMessage';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
+import usePageState from 'Containers/Integrations/hooks/usePageState';
+import useMetadata from 'hooks/useMetadata';
+import { BackupIntegrationBase } from 'services/BackupIntegrationsService';
+import { getVersionedDocs } from 'utils/versioning';
+
 import IntegrationHelpIcon from '../Components/IntegrationHelpIcon';
 import useIntegrationForm from '../../useIntegrationForm';
 import { IntegrationFormProps } from '../../integrationFormTypes';
@@ -121,13 +124,10 @@ function S3IntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<S3Integration>): ReactElement {
-    const formInitialValues = { ...defaultValues, ...initialValues };
-
+    const formInitialValues = structuredClone(defaultValues);
     if (initialValues) {
-        formInitialValues.externalBackup = {
-            ...formInitialValues.externalBackup,
-            ...initialValues,
-        };
+        merge(formInitialValues.externalBackup, initialValues);
+
         // We want to clear the password because backend returns '******' to represent that there
         // are currently stored credentials
         formInitialValues.externalBackup.s3.accessKeyId = '';
@@ -154,6 +154,7 @@ function S3IntegrationForm({
         initialValues: formInitialValues,
         validationSchema,
     });
+    const { version } = useMetadata();
     const { isCreating } = usePageState();
 
     function onChange(value, event) {
@@ -409,7 +410,10 @@ function S3IntegrationForm({
                                             For more information, see{' '}
                                             <ExternalLink>
                                                 <a
-                                                    href="https://docs.openshift.com/acs/integration/integrate-using-short-lived-tokens.html"
+                                                    href={getVersionedDocs(
+                                                        version,
+                                                        'integration/integrate-using-short-lived-tokens.html'
+                                                    )}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                 >

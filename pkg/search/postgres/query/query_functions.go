@@ -67,6 +67,7 @@ var datatypeToQueryFunc = map[postgres.DataType]queryFunction{
 	postgres.EnumArray:   queryOnArray(newEnumQuery, getEnumArrayPostTransformFunc),
 	postgres.IntArray:    queryOnArray(newNumericQuery, getIntArrayPostTransformFunc),
 	postgres.UUID:        newUUIDQuery,
+	postgres.CIDR:        newCIDRQuery,
 	// Map is handled separately.
 }
 

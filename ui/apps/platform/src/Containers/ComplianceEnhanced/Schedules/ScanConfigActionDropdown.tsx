@@ -8,7 +8,6 @@ import {
 } from '@patternfly/react-core/deprecated';
 import { CaretDownIcon } from '@patternfly/react-icons';
 
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
 
 import { scanConfigDetailsPath } from './compliance.scanConfigs.routes';
@@ -21,19 +20,25 @@ import { scanConfigDetailsPath } from './compliance.scanConfigs.routes';
 export type ScanConfigActionDropdownProps = {
     handleRunScanConfig: (scanConfigResponse: ComplianceScanConfigurationStatus) => void;
     handleSendReport: (scanConfigResponse: ComplianceScanConfigurationStatus) => void;
+    handleGenerateDownload: (scanConfigResponse: ComplianceScanConfigurationStatus) => void;
     isScanning: boolean;
+    isReportStatusPending: boolean;
     scanConfigResponse: ComplianceScanConfigurationStatus;
+    isReportJobsEnabled: boolean;
+    isComplianceReportingEnabled: boolean;
 };
 
 function ScanConfigActionDropdown({
     handleRunScanConfig,
     handleSendReport,
+    handleGenerateDownload,
     isScanning,
+    isReportStatusPending,
     scanConfigResponse,
+    isReportJobsEnabled,
+    isComplianceReportingEnabled,
 }: ScanConfigActionDropdownProps): ReactElement {
     const history = useHistory();
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isComplianceReportingEnabled = isFeatureFlagEnabled('ROX_COMPLIANCE_REPORTING');
 
     const [isOpen, setIsOpen] = useState(false);
 
@@ -42,6 +47,7 @@ function ScanConfigActionDropdown({
     const scanConfigUrl = generatePath(scanConfigDetailsPath, {
         scanConfigId: id,
     });
+    const isProcessing = isScanning || isReportStatusPending;
 
     function onToggle() {
         setIsOpen((prevValue) => !prevValue);
@@ -56,7 +62,7 @@ function ScanConfigActionDropdown({
             key="Edit scan schedule"
             component="button"
             // description={isScanning ? 'Edit is disabled while scan is running' : ''}
-            // isDisabled={isScanning}
+            isDisabled={isProcessing}
             onClick={() => {
                 history.push({
                     pathname: scanConfigUrl,
@@ -71,7 +77,7 @@ function ScanConfigActionDropdown({
             key="Run scan"
             component="button"
             description={isScanning ? 'Run is disabled while scan is already running' : ''}
-            isDisabled={isScanning}
+            isDisabled={isProcessing}
             onClick={() => {
                 handleRunScanConfig(scanConfigResponse);
             }}
@@ -81,7 +87,6 @@ function ScanConfigActionDropdown({
     ];
 
     if (isComplianceReportingEnabled) {
-        /* eslint-disable no-nested-ternary */
         dropdownItems.push(
             <DropdownItem
                 key="Send report"
@@ -93,7 +98,7 @@ function ScanConfigActionDropdown({
                           ? 'Send is disabled while scan is running' */
                           ''
                 }
-                isDisabled={notifiers.length === 0 /* || isScanning */}
+                isDisabled={notifiers.length === 0 || isProcessing}
                 onClick={() => {
                     handleSendReport(scanConfigResponse);
                 }}
@@ -101,7 +106,21 @@ function ScanConfigActionDropdown({
                 Send report
             </DropdownItem>
         );
-        /* eslint-enable no-nested-ternary */
+    }
+
+    if (isComplianceReportingEnabled && isReportJobsEnabled) {
+        dropdownItems.push(
+            <DropdownItem
+                key="Generate download"
+                component="button"
+                isDisabled={isProcessing}
+                onClick={() => {
+                    handleGenerateDownload(scanConfigResponse);
+                }}
+            >
+                Generate download
+            </DropdownItem>
+        );
     }
 
     return (

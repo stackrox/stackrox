@@ -1,0 +1,38 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: wait-for-image
+  namespace: rh-acs-tenant
+spec:
+  description: Waits until the specified image is found and returns its digest.
+  params:
+  - name: IMAGE
+    description: Image reference.
+    type: string
+  results:
+  - name: IMAGE_DIGEST
+    description: Image digest in the format `sha256:abcdef0123`.
+  steps:
+  - name: wait-for-image
+    image: registry.access.redhat.com/ubi9/skopeo@sha256:f9f5916c4c1c988250b72ce8cc07355bede5c3bc78a082340be53457dfb16922
+    script: |
+      #!/usr/bin/env bash
+
+      set -euo pipefail
+
+      echo "Waiting for image $(params.IMAGE) to become available..."
+      while true; do
+        if skopeo inspect --raw "docker://$(params.IMAGE)"; then
+          break
+        fi
+        sleep 1m
+      done
+
+      echo "Image $(params.IMAGE) found."
+
+      digest="$(skopeo inspect \
+        --retry-times 10 \
+        --format '{{.Digest}}' \
+        --no-tags \
+        "docker://$(params.IMAGE)")"
+      echo -n "$digest" | tee "$(results.IMAGE_DIGEST.path)"

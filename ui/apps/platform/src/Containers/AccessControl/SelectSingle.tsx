@@ -1,5 +1,5 @@
 import React, { ReactElement, useState } from 'react';
-import { Select, SelectVariant } from '@patternfly/react-core/deprecated';
+import { Select } from '@patternfly/react-core/deprecated';
 
 export type SelectSingleProps = {
     id: string;
@@ -26,7 +26,7 @@ function SelectSingle({
 
     return (
         <Select
-            variant={SelectVariant.single}
+            variant="single"
             id={id}
             isDisabled={isDisabled}
             isOpen={isOpen}

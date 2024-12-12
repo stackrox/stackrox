@@ -3,7 +3,8 @@ package microsoftsentinel
 import (
 	"bytes"
 	"context"
-	"fmt"
+	_ "embed"
+	"encoding/base64"
 	"io"
 	"net/http"
 	"testing"
@@ -12,7 +13,10 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/monitor/ingestion/azlogs"
 	"github.com/stackrox/rox/central/notifiers/microsoftsentinel/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
+	pkgNotifiers "github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -26,6 +30,14 @@ const (
 
 	auditStreamName = "Custom-stackrox_audit_CL"
 	auditDcrID      = "aaaaaaaa-bbbb-4022-0000-222222222222"
+)
+
+var (
+	//go:embed testdata/sentinel-ca-key.pem
+	sentinelCaKey string
+
+	//go:embed testdata/sentinel-ca-cert.pem
+	sentinelCaCert string
 )
 
 func TestSentinelNotifier(t *testing.T) {
@@ -103,7 +115,7 @@ func (suite *SentinelTestSuite) TestValidate() {
 		ExpectedErrorMsg            string
 		ExpectedErrorMsgNotContains string
 	}{
-		"Test valid configuration": {
+		"Given a valid configuration validation should pass": {
 			Config: &storage.MicrosoftSentinel{
 				LogIngestionEndpoint: "portal.azure.com",
 				ApplicationClientId:  uuid.NewDummy().String(),
@@ -123,7 +135,7 @@ func (suite *SentinelTestSuite) TestValidate() {
 			ExpectedErrorMsg: "",
 			ValidateSecret:   true,
 		},
-		"Test invalid config": {
+		"given an invalid config validation should fail": {
 			Config: &storage.MicrosoftSentinel{
 				AlertDcrConfig: &storage.MicrosoftSentinel_DataCollectionRuleConfig{
 					Enabled: true,
@@ -132,20 +144,10 @@ func (suite *SentinelTestSuite) TestValidate() {
 					Enabled: true,
 				},
 			},
-			ExpectedErrorMsg: "[Log Ingestion Endpoint must be specified, Audit Logging Data Collection Rule Id must be specified, Audit Logging Stream Name must be specified, Alert Data Collection Rule Id must be specified, Alert Stream Name must be specified, Directory Tenant Id must be specified, Application Client Id must be specified, Secret must be specified]",
+			ExpectedErrorMsg: "[Log Ingestion Endpoint must be specified, Audit Logging Data Collection Rule Id must be specified, Audit Logging Stream Name must be specified, Alert Data Collection Rule Id must be specified, Alert Stream Name must be specified, Directory Tenant Id must be specified, Application Client Id must be specified, Secret or Client Certificate authentication must be specified]",
 			ValidateSecret:   true,
 		},
-		"Test invalid config without secret": {
-			Config: &storage.MicrosoftSentinel{
-				AlertDcrConfig: &storage.MicrosoftSentinel_DataCollectionRuleConfig{
-					Enabled: true,
-				},
-			},
-			ExpectedErrorMsg:            "[Log Ingestion Endpoint must be specified, Alert Data Collection Rule Id must be specified, Alert Stream Name must be specified, Directory Tenant Id must be specified, Application Client Id must be specified]",
-			ExpectedErrorMsgNotContains: "secret",
-			ValidateSecret:              false,
-		},
-		"Test only alert notifier is invalid": {
+		"given alert log dcr config is enabled with an invalid config validation should not pass": {
 			Config: &storage.MicrosoftSentinel{
 				ApplicationClientId:  uuid.NewDummy().String(),
 				DirectoryTenantId:    uuid.NewDummy().String(),
@@ -156,7 +158,7 @@ func (suite *SentinelTestSuite) TestValidate() {
 			},
 			ExpectedErrorMsg: "[Alert Data Collection Rule Id must be specified, Alert Stream Name must be specified]",
 		},
-		"Test only audit log notifier is invalid": {
+		"given audit log dcr config is enabled with an invalid config validation should not pass": {
 			Config: &storage.MicrosoftSentinel{
 				ApplicationClientId:  uuid.NewDummy().String(),
 				DirectoryTenantId:    uuid.NewDummy().String(),
@@ -166,6 +168,63 @@ func (suite *SentinelTestSuite) TestValidate() {
 				},
 			},
 			ExpectedErrorMsg: "[Audit Logging Data Collection Rule Id must be specified, Audit Logging Stream Name must be specified]",
+		},
+		"given client cert authentication validation should pass": {
+			Config: &storage.MicrosoftSentinel{
+				ApplicationClientId:  uuid.NewDummy().String(),
+				DirectoryTenantId:    uuid.NewDummy().String(),
+				LogIngestionEndpoint: "example.com",
+				ClientCertAuthConfig: &storage.MicrosoftSentinel_ClientCertAuthConfig{
+					ClientCert: "cert",
+					PrivateKey: "key",
+				},
+			},
+			ValidateSecret: true,
+		},
+		"given client cert authentication with missing private key validation should not pass": {
+			Config: &storage.MicrosoftSentinel{
+				ApplicationClientId:  uuid.NewDummy().String(),
+				DirectoryTenantId:    uuid.NewDummy().String(),
+				LogIngestionEndpoint: "example.com",
+				ClientCertAuthConfig: &storage.MicrosoftSentinel_ClientCertAuthConfig{
+					ClientCert: "cert",
+					PrivateKey: "",
+				},
+			},
+			ValidateSecret:   true,
+			ExpectedErrorMsg: "Secret or Client Certificate authentication must be specified",
+		},
+		"given client cert authentication with missing client certificate validation should not pass": {
+			Config: &storage.MicrosoftSentinel{
+				ApplicationClientId:  uuid.NewDummy().String(),
+				DirectoryTenantId:    uuid.NewDummy().String(),
+				LogIngestionEndpoint: "example.com",
+				ClientCertAuthConfig: &storage.MicrosoftSentinel_ClientCertAuthConfig{
+					ClientCert: "",
+					PrivateKey: "key",
+				},
+			},
+			ValidateSecret:   true,
+			ExpectedErrorMsg: "Secret or Client Certificate authentication must be specified",
+		},
+		"given only secret authentication validation should not pass": {
+			Config: &storage.MicrosoftSentinel{
+				ApplicationClientId:  uuid.NewDummy().String(),
+				DirectoryTenantId:    uuid.NewDummy().String(),
+				LogIngestionEndpoint: "example.com",
+				Secret:               "secret",
+			},
+			ValidateSecret: true,
+		},
+		"Given authentication configs are missing validation should not pass": {
+			Config: &storage.MicrosoftSentinel{
+				AlertDcrConfig: &storage.MicrosoftSentinel_DataCollectionRuleConfig{
+					Enabled: true,
+				},
+			},
+			ExpectedErrorMsg:            "[Log Ingestion Endpoint must be specified, Alert Data Collection Rule Id must be specified, Alert Stream Name must be specified, Directory Tenant Id must be specified, Application Client Id must be specified]",
+			ExpectedErrorMsgNotContains: "secret",
+			ValidateSecret:              false,
 		},
 	}
 
@@ -177,7 +236,7 @@ func (suite *SentinelTestSuite) TestValidate() {
 			} else {
 				assert.NotContains(t, testCase.ExpectedErrorMsgNotContains, err.Error())
 				if testCase.ExpectedErrorMsg != "" {
-					assert.Equal(t, fmt.Sprintf("Microsoft Sentinel validation errors: %s", testCase.ExpectedErrorMsg), err.Error())
+					assert.Contains(t, err.Error(), testCase.ExpectedErrorMsg)
 				}
 			}
 		})
@@ -234,12 +293,52 @@ func (suite *SentinelTestSuite) TestAuditLogEnabled() {
 
 }
 
+func (suite *SentinelTestSuite) TestNewSentinelNotifier() {
+	config := getNotifierConfig()
+	config.GetMicrosoftSentinel().ClientCertAuthConfig = &storage.MicrosoftSentinel_ClientCertAuthConfig{
+		ClientCert: sentinelCaCert,
+		PrivateKey: sentinelCaKey,
+	}
+
+	notifier, err := newSentinelNotifier(config, nil, "")
+
+	suite.Require().NoError(err)
+	suite.NotNil(notifier)
+}
+
+func (suite *SentinelTestSuite) TestEncryption() {
+	suite.T().Setenv(env.EncNotifierCreds.EnvVar(), "true")
+
+	var exampleKey = []byte("key-string-12345")
+	b64EncodedKey := base64.StdEncoding.EncodeToString(exampleKey)
+	encryptedSecret, err := cryptocodec.NewGCMCryptoCodec().Encrypt(b64EncodedKey, "secret-for-sentinel")
+	suite.Require().NoError(err)
+
+	config := getNotifierConfig()
+	config.NotifierSecret = encryptedSecret
+
+	sentinelNotifier, err := newSentinelNotifier(config, cryptocodec.Singleton(), b64EncodedKey)
+
+	suite.Require().NoError(err)
+	suite.Require().NotNil(sentinelNotifier)
+
+	// test with invalid secret encryption should fail
+	config.NotifierSecret = ""
+
+	sentinelNotifier, err = newSentinelNotifier(config, cryptocodec.Singleton(), b64EncodedKey)
+	suite.ErrorContains(err, "Error decrypting notifier secret for notifier \"microsoft-sentinel\"")
+	suite.Nil(sentinelNotifier)
+}
+
 func getNotifierConfig() *storage.Notifier {
 	return &storage.Notifier{
 		Name: "microsoft-sentinel",
+		Type: pkgNotifiers.MicrosoftSentinelType,
 		Config: &storage.Notifier_MicrosoftSentinel{
 			MicrosoftSentinel: &storage.MicrosoftSentinel{
 				LogIngestionEndpoint: "portal.azure.com",
+				ApplicationClientId:  uuid.NewDummy().String(),
+				DirectoryTenantId:    uuid.NewDummy().String(),
 				AlertDcrConfig: &storage.MicrosoftSentinel_DataCollectionRuleConfig{
 					DataCollectionRuleId: alertDcrID,
 					StreamName:           alertStreamName,

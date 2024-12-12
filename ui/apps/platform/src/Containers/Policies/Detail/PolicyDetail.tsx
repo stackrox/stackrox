@@ -13,6 +13,8 @@ import {
     ToolbarItem,
     Divider,
     PageSection,
+    Flex,
+    FlexItem,
 } from '@patternfly/react-core';
 import {
     Dropdown,
@@ -27,10 +29,12 @@ import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import useToasts, { Toast } from 'hooks/patternfly/useToasts';
 import { policiesBasePath } from 'routePaths';
 import { deletePolicy, exportPolicies } from 'services/PoliciesService';
+import { savePoliciesAsCustomResource } from 'services/PolicyCustomResourceService';
 import { ClientPolicy } from 'types/policy.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import PolicyDetailContent from './PolicyDetailContent';
+import { isExternalPolicy } from '../policies.utils';
 
 function formatUpdateDisabledStateAction(disabled: boolean) {
     return disabled ? 'Enable policy' : 'Disable policy';
@@ -53,6 +57,7 @@ function PolicyDetail({
     const [requestError, setRequestError] = useState<ReactElement | null>(null);
     const [isActionsOpen, setIsActionsOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+    const [isSaveAsCustomResourceOpen, setIsSaveAsCustomResourceOpen] = useState(false);
 
     const { toasts, addToast, removeToast } = useToasts();
 
@@ -93,6 +98,26 @@ function PolicyDetail({
             .finally(() => {
                 setIsRequesting(false);
             });
+    }
+
+    function onConfirmSavePolicyAsCustomResource() {
+        setIsRequesting(true);
+        savePoliciesAsCustomResource([id])
+            .then(() => {
+                addToast('Successfully saved policy as Custom Resource', 'success');
+            })
+            .catch((error) => {
+                const message = getAxiosErrorMessage(error);
+                addToast('Could not save policy as Custom Resource', 'danger', message);
+            })
+            .finally(() => {
+                setIsRequesting(false);
+                setIsSaveAsCustomResourceOpen(false);
+            });
+    }
+
+    function onCancelSavePolicyAsCustomResource() {
+        setIsSaveAsCustomResourceOpen(false);
     }
 
     function onUpdateDisabledState() {
@@ -211,6 +236,19 @@ function PolicyDetail({
                                               >
                                                   Export policy to JSON
                                               </DropdownItem>,
+                                              !isDefault ? (
+                                                  <DropdownItem
+                                                      key="Save as Custom Resource"
+                                                      component="button"
+                                                      onClick={() =>
+                                                          setIsSaveAsCustomResourceOpen(true)
+                                                      }
+                                                  >
+                                                      Save as Custom Resource
+                                                  </DropdownItem>
+                                              ) : (
+                                                  <React.Fragment key="Save as Custom Resource"></React.Fragment>
+                                              ),
                                               <DropdownItem
                                                   key="Enable/Disable policy"
                                                   component="button"
@@ -238,6 +276,19 @@ function PolicyDetail({
                                               >
                                                   Export policy to JSON
                                               </DropdownItem>,
+                                              !isDefault ? (
+                                                  <DropdownItem
+                                                      key="Save as Custom Resource"
+                                                      component="button"
+                                                      onClick={() =>
+                                                          setIsSaveAsCustomResourceOpen(true)
+                                                      }
+                                                  >
+                                                      Save as Custom Resource
+                                                  </DropdownItem>
+                                              ) : (
+                                                  <React.Fragment key="Save as Custom Resource"></React.Fragment>
+                                              ),
                                           ]
                                 }
                             />
@@ -275,6 +326,7 @@ function PolicyDetail({
                 </AlertGroup>
             </PageSection>
             <ConfirmationModal
+                title={'Delete policy?'}
                 ariaLabel="Confirm delete"
                 confirmText="Delete"
                 isLoading={isRequesting}
@@ -282,7 +334,40 @@ function PolicyDetail({
                 onConfirm={onConfirmDeletePolicy}
                 onCancel={onCancelDeletePolicy}
             >
-                Are you sure you want to delete this policy?
+                {isExternalPolicy(policy) ? (
+                    <>
+                        This policy is managed externally and will only be removed from the system
+                        temporarily. The policy will not trigger violations until the next resync.
+                    </>
+                ) : (
+                    <>
+                        This policy will be permanently removed from the system and will no longer
+                        trigger violations.
+                    </>
+                )}
+            </ConfirmationModal>
+            <ConfirmationModal
+                title={`Save policy as Custom Resource?`}
+                ariaLabel="Save as Custom Resource"
+                confirmText="Yes"
+                isLoading={isRequesting}
+                isOpen={isSaveAsCustomResourceOpen}
+                onConfirm={onConfirmSavePolicyAsCustomResource}
+                onCancel={onCancelSavePolicyAsCustomResource}
+                isDestructive={false}
+            >
+                <Flex>
+                    <FlexItem>
+                        Clicking <strong>Yes</strong> will save the policy as a Kubernetes custom
+                        resource (YAML).
+                    </FlexItem>
+                    <FlexItem>
+                        <strong>Important</strong>: If you are committing the saved custom resource
+                        to a source control repository, replace the policy name in the{' '}
+                        <code className="pf-v5-u-font-family-monospace">policyName</code> field to
+                        avoid overwriting existing policies.
+                    </FlexItem>
+                </Flex>
             </ConfirmationModal>
         </>
     );

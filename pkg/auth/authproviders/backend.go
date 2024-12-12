@@ -21,6 +21,8 @@ type AuthResponse struct {
 }
 
 // Backend is a backend for an authentication provider.
+//
+//go:generate mockgen-wrapper
 type Backend interface {
 	Config() map[string]string
 

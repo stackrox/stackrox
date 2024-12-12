@@ -14,9 +14,7 @@ const affectedNodesQuery = gql`
 
 export default function useAffectedNodes({
     query,
-    page,
-    perPage,
-    sortOption,
+    ...pagination
 }: { query: string } & ClientPagination) {
     const affectedNodesRequest = useQuery<
         {
@@ -29,7 +27,7 @@ export default function useAffectedNodes({
     >(affectedNodesQuery, {
         variables: {
             query,
-            pagination: getPaginationParams({ page, perPage, sortOption }),
+            pagination: getPaginationParams(pagination),
         },
     });
 

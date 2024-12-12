@@ -114,6 +114,11 @@ func (w *storeImpl) checkDuplicateName(ctx context.Context, meta *storage.InitBu
 	if err != nil {
 		return err
 	}
+	crsMetas, err := w.GetAllCRS(ctx)
+	if err != nil {
+		return err
+	}
+	metas = append(metas, crsMetas...)
 	for _, m := range metas {
 		if m.GetName() == meta.GetName() && !m.GetIsRevoked() {
 			return ErrInitBundleDuplicateName

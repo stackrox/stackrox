@@ -102,15 +102,19 @@ function ExceptionRequestsPage() {
                     />
                 </Tabs>
                 <Switch>
-                    <Route exact path={pendingRequestsURL} component={PendingRequests} />
-                    <Route exact path={approvedDeferralsURL} component={ApprovedDeferrals} />
-                    <Route
-                        exact
-                        path={approvedFalsePositivesURL}
-                        component={ApprovedFalsePositives}
-                    />
-                    <Route exact path={deniedRequestsURL} component={DeniedRequests} />
-                    <Redirect to={pendingRequestsURL} />
+                    <Route exact path={pendingRequestsURL}>
+                        <PendingRequests />
+                    </Route>
+                    <Route exact path={approvedDeferralsURL}>
+                        <ApprovedDeferrals />
+                    </Route>
+                    <Route exact path={approvedFalsePositivesURL}>
+                        <ApprovedFalsePositives />
+                    </Route>
+                    <Route exact path={deniedRequestsURL}>
+                        <DeniedRequests />
+                    </Route>
+                    <Route render={() => <Redirect to={pendingRequestsURL} />} />
                 </Switch>
             </PageSection>
         </>

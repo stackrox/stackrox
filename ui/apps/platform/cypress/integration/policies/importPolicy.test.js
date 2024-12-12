@@ -1,7 +1,7 @@
 import * as api from '../../constants/apiEndpoints';
 import { selectors } from '../../constants/PoliciesPage';
 import withAuth from '../../helpers/basicAuth';
-import { doPolicyRowAction, visitPolicies } from '../../helpers/policies';
+import { doPolicyRowAction, visitPolicies, importPolicyFromFixture } from '../../helpers/policies';
 
 describe('Import policy', () => {
     withAuth();
@@ -21,45 +21,14 @@ describe('Import policy', () => {
     it('should import policy and then delete it', () => {
         visitPolicies();
 
-        const fileName = 'policies/good_policy_to_import.json';
-        cy.fixture(fileName).then((contents) => {
-            const importedPolicyName = contents.policies[0].name;
-
-            cy.get(`${selectors.table.policyLink}:contains("${importedPolicyName}")`).should(
-                'not.exist'
-            );
-
-            cy.get(selectors.table.importButton).click();
-
-            cy.get(selectors.importUploadModal.fileInput).selectFile(
-                {
-                    contents,
-                    fileName,
-                },
-                { force: true } // because input element has display: none style
-            );
-            cy.get(
-                `${selectors.importUploadModal.policyNames}:nth-child(1):contains("${importedPolicyName}")`
-            );
-
-            cy.intercept('POST', api.policies.import).as('importPolicy');
-            cy.get(selectors.importUploadModal.beginButton).click();
-            cy.wait('@importPolicy');
-
-            cy.get(
-                `${selectors.importSuccessModal.policyNames}:nth-child(1):contains("${importedPolicyName}")`
-            );
-
-            // After 3 seconds, success modal closes, and then table displays imported policy.
-            cy.intercept('GET', `${api.policies.policies}?query=`).as('getPolicies');
-            cy.wait('@getPolicies');
-            cy.get(`${selectors.table.policyLink}:contains("${importedPolicyName}")`);
-
-            const trSelector = `tbody tr:contains("${importedPolicyName}")`;
-            doPolicyRowAction(trSelector, 'Delete policy');
-            cy.get(selectors.confirmationModal.deleteButton).click();
-            cy.get(`${selectors.toast.title}:contains("Successfully deleted policy")`);
-        });
+        importPolicyFromFixture('policies/good_policy_to_import.json').then(
+            ({ importedPolicyName }) => {
+                const trSelector = `tbody tr:contains("${importedPolicyName}")`;
+                doPolicyRowAction(trSelector, 'Delete policy');
+                cy.get(selectors.confirmationModal.deleteButton).click();
+                cy.get(`${selectors.toast.title}:contains("Successfully deleted policy")`);
+            }
+        );
     });
 
     it('it should display options for policy which has duplicate name', () => {
@@ -252,5 +221,13 @@ describe('Import policy', () => {
         cy.get(selectors.importUploadModal.renameInput).click();
         cy.get(selectors.importUploadModal.renameInput).type('Two are better than one');
         cy.get(selectors.importUploadModal.resumeButton).should('be.enabled');
+    });
+
+    it('should have no detectable accessibility violations in the modal', () => {
+        visitPolicies();
+
+        cy.get(selectors.table.importButton).click();
+
+        cy.checkAccessibility(selectors.importUploadModal.modalWrapper);
     });
 });

@@ -21,9 +21,7 @@ const clusterVulnerabilitiesQuery = gql`
 export default function useClusterVulnerabilities({
     clusterId,
     query,
-    page,
-    perPage,
-    sortOption,
+    ...pagination
 }: { clusterId: string; query: string } & ClientPagination) {
     return useQuery<
         {
@@ -41,7 +39,7 @@ export default function useClusterVulnerabilities({
         variables: {
             id: clusterId,
             query,
-            pagination: getPaginationParams({ page, perPage, sortOption }),
+            pagination: getPaginationParams(pagination),
         },
     });
 }

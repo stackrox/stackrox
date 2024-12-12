@@ -4,7 +4,6 @@ import (
 	"context"
 	"math"
 	"testing"
-	"time"
 
 	"github.com/pkg/errors"
 	dataStoreMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
@@ -910,32 +909,6 @@ func (s *patchAlertTests) SetupTest() {
 
 func (s *patchAlertTests) TearDownTest() {
 	s.mockCtrl.Finish()
-}
-
-func (s *patchAlertTests) TestSnoozeAlert() {
-	fakeAlert := alerttest.NewFakeAlert()
-	s.storage.EXPECT().GetAlert(gomock.Any(), alerttest.FakeAlertID).Return(fakeAlert, true, nil)
-	snoozeTill, err := protocompat.ConvertTimeToTimestampOrError(time.Now().Add(1 * time.Hour))
-	s.NoError(err)
-	fakeAlert.SnoozeTill = snoozeTill
-	s.storage.EXPECT().UpsertAlert(gomock.Any(), fakeAlert).Return(nil)
-	// We should get a notification for the snoozed alert.
-	s.notifierMock.EXPECT().ProcessAlert(context.Background(), fakeAlert).Return()
-	_, err = s.service.SnoozeAlert(context.Background(), &v1.SnoozeAlertRequest{Id: alerttest.FakeAlertID, SnoozeTill: snoozeTill})
-	s.NoError(err)
-
-	s.Equal(fakeAlert.State, storage.ViolationState_SNOOZED)
-	assert.Equal(s.T(), fakeAlert.SnoozeTill.AsTime(), snoozeTill.AsTime())
-}
-
-func (s *patchAlertTests) TestSnoozeAlertWithSnoozeTillInThePast() {
-	fakeAlert := alerttest.NewFakeAlert()
-	s.storage.EXPECT().GetAlert(gomock.Any(), alerttest.FakeAlertID).AnyTimes().Return(fakeAlert, true, nil)
-
-	snoozeTill, err := protocompat.ConvertTimeToTimestampOrError(time.Now().Add(-1 * time.Hour))
-	s.NoError(err)
-	_, err = s.service.SnoozeAlert(context.Background(), &v1.SnoozeAlertRequest{Id: alerttest.FakeAlertID, SnoozeTill: snoozeTill})
-	s.EqualError(err, errors.Wrap(errox.InvalidArgs, badSnoozeErrorMsg).Error())
 }
 
 func (s *patchAlertTests) TestResolveAlert() {

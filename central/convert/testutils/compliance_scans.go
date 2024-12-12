@@ -16,8 +16,9 @@ var (
 	// ScanUID -- scan UID used in test objects
 	ScanUID = uuid.NewV4().String()
 
-	startTime = protocompat.TimestampNow()
-	endTime   = protocompat.TimestampNow()
+	createTime = protocompat.TimestampNow()
+	startTime  = protocompat.TimestampNow()
+	endTime    = protocompat.TimestampNow()
 )
 
 // GetScanV2SensorMsg -- returns a V2 message from sensor
@@ -36,7 +37,8 @@ func GetScanV2SensorMsg(_ *testing.T) *central.ComplianceOperatorScanV2 {
 			CurrentIndex:     0,
 			Warnings:         "",
 			RemainingRetries: 0,
-			StartTime:        startTime,
+			LastStartTime:    startTime,
+			StartTime:        createTime,
 			EndTime:          endTime,
 		},
 	}
@@ -76,7 +78,8 @@ func GetScanV2Storage(_ *testing.T) *storage.ComplianceOperatorScanV2 {
 			Result:   "FAIL",
 			Warnings: "",
 		},
-		CreatedTime:      startTime,
+		CreatedTime:      createTime,
+		LastStartedTime:  startTime,
 		LastExecutedTime: endTime,
 		ProductType:      "",
 		ScanRefId:        internaltov2storage.BuildNameRefID(fixtureconsts.Cluster1, "ocp-cis"),

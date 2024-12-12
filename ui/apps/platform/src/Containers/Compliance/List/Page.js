@@ -1,7 +1,6 @@
 import React, { useContext, useState } from 'react';
 import PropTypes from 'prop-types';
-import { withRouter } from 'react-router-dom';
-import ReactRouterPropTypes from 'react-router-prop-types';
+import { useLocation, useRouteMatch } from 'react-router-dom';
 import lowerCase from 'lodash/lowerCase';
 import pluralize from 'pluralize';
 
@@ -12,8 +11,10 @@ import searchContext from 'Containers/searchContext';
 import ComplianceSearchInput from '../ComplianceSearchInput';
 import Header from './Header';
 
-const ComplianceListPage = ({ match, location }) => {
+const ComplianceListPage = () => {
     const [isExporting, setIsExporting] = useState(false);
+    const location = useLocation();
+    const match = useRouteMatch();
     const params = URLService.getParams(match, location);
     const searchParam = useContext(searchContext);
     const query = { ...params.query[searchParam] };
@@ -51,8 +52,6 @@ const ComplianceListPage = ({ match, location }) => {
 };
 
 ComplianceListPage.propTypes = {
-    match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired,
     params: PropTypes.shape({
         entityType: PropTypes.string.isRequired,
     }),
@@ -62,4 +61,4 @@ ComplianceListPage.defaultProps = {
     params: null,
 };
 
-export default withRouter(ComplianceListPage);
+export default ComplianceListPage;

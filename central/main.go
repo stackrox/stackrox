@@ -119,8 +119,10 @@ import (
 	notifierService "github.com/stackrox/rox/central/notifier/service"
 	_ "github.com/stackrox/rox/central/notifiers/all" // These imports are required to register things from the respective packages.
 	pingService "github.com/stackrox/rox/central/ping/service"
+	platformReprocessor "github.com/stackrox/rox/central/platform/reprocessor"
 	podService "github.com/stackrox/rox/central/pod/service"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
+	policyHandler "github.com/stackrox/rox/central/policy/handlers"
 	policyService "github.com/stackrox/rox/central/policy/service"
 	policyCategoryService "github.com/stackrox/rox/central/policycategory/service"
 	probeUploadService "github.com/stackrox/rox/central/probeupload/service"
@@ -130,10 +132,7 @@ import (
 	processListeningOnPorts "github.com/stackrox/rox/central/processlisteningonport/service"
 	"github.com/stackrox/rox/central/pruning"
 	rbacService "github.com/stackrox/rox/central/rbac/service"
-	reportConfigurationService "github.com/stackrox/rox/central/reports/config/service"
-	vulnReportScheduleManager "github.com/stackrox/rox/central/reports/manager"
 	vulnReportV2Scheduler "github.com/stackrox/rox/central/reports/scheduler/v2"
-	reportService "github.com/stackrox/rox/central/reports/service"
 	reportServiceV2 "github.com/stackrox/rox/central/reports/service/v2"
 	v2Service "github.com/stackrox/rox/central/reports/service/v2"
 	"github.com/stackrox/rox/central/reprocessor"
@@ -364,6 +363,10 @@ func startServices() {
 	gcp.Singleton().Start()
 	administrationEventHandler.Singleton().Start()
 
+	if features.PlatformComponents.Enabled() {
+		platformReprocessor.Singleton().Start()
+	}
+
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 }
 
@@ -443,11 +446,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		servicesToRegister = append(servicesToRegister, backupService.Singleton())
 	}
 
-	if features.VulnReportingEnhancements.Enabled() {
-		servicesToRegister = append(servicesToRegister, reportServiceV2.Singleton())
-	} else {
-		servicesToRegister = append(servicesToRegister, reportService.Singleton(), reportConfigurationService.Singleton())
-	}
+	servicesToRegister = append(servicesToRegister, reportServiceV2.Singleton())
 
 	if features.ComplianceEnhancements.Enabled() {
 		servicesToRegister = append(servicesToRegister, complianceOperatorIntegrationService.Singleton())
@@ -816,6 +815,12 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Compression:   true,
 		},
 		{
+			Route:         "/api/policy/custom-resource/save-as-zip",
+			Authorizer:    user.With(permissions.View(resources.WorkflowAdministration)),
+			ServerHandler: policyHandler.Handler(policyDataStore.Singleton()),
+			Compression:   false,
+		},
+		{
 			Route:         "/api/extensions/clusters/helm-config.yaml",
 			Authorizer:    or.SensorOr(user.With(permissions.View(resources.Cluster))),
 			ServerHandler: clustersHelmConfig.Handler(clusterDataStore.Singleton()),
@@ -865,12 +870,19 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		},
 	)
 
-	if features.VulnReportingEnhancements.Enabled() {
-		// Append report custom routes
+	// Append report custom routes
+	customRoutes = append(customRoutes, routes.CustomRoute{
+		Route:         "/api/reports/jobs/download",
+		Authorizer:    user.With(permissions.Modify(resources.WorkflowAdministration)),
+		ServerHandler: v2Service.NewDownloadHandler(),
+		Compression:   true,
+	})
+
+	if features.ComplianceEnhancements.Enabled() && features.ComplianceReporting.Enabled() && features.ScanScheduleReportJobs.Enabled() {
 		customRoutes = append(customRoutes, routes.CustomRoute{
-			Route:         "/api/reports/jobs/download",
-			Authorizer:    user.With(permissions.Modify(resources.WorkflowAdministration)),
-			ServerHandler: v2Service.NewDownloadHandler(),
+			Route:         "/v2/compliance/scan/configurations/reports/download",
+			Authorizer:    user.With(permissions.Modify(resources.Compliance)),
+			ServerHandler: complianceScanSettings.NewDownloadHandler(),
 			Compression:   true,
 		})
 	}
@@ -924,17 +936,17 @@ func waitForTerminationSignal() {
 		{administrationEventHandler.Singleton(), "administration events handler"},
 	}
 
-	if features.VulnReportingEnhancements.Enabled() {
-		stoppables = append(stoppables,
-			stoppableWithName{vulnReportV2Scheduler.Singleton(), "vuln reports v2 scheduler"})
-	} else {
-		stoppables = append(stoppables,
-			stoppableWithName{vulnReportScheduleManager.Singleton(), "vuln reports v1 schedule manager"})
-	}
+	stoppables = append(stoppables,
+		stoppableWithName{vulnReportV2Scheduler.Singleton(), "vuln reports v2 scheduler"})
 
 	if features.ComplianceReporting.Enabled() {
 		stoppables = append(stoppables,
 			stoppableWithName{complianceReportManager.Singleton(), "compliance reports manager"})
+	}
+
+	if features.PlatformComponents.Enabled() {
+		stoppables = append(stoppables,
+			stoppableWithName{platformReprocessor.Singleton(), "platform components reprocessor"})
 	}
 
 	var wg sync.WaitGroup

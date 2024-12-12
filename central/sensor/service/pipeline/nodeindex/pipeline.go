@@ -13,6 +13,8 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/nodes/enricher"
 )
@@ -56,7 +58,13 @@ func (p pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 	return msg.GetEvent().GetIndexReport() != nil
 }
 
-func (p pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
+func (p pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
+	if !env.NodeIndexEnabled.BooleanSetting() || !features.ScannerV4.Enabled() {
+		// Node Indexing only works correctly when both, itself and Scanner v4 are enabled
+		log.Debugf("Skipping node index message (Node Indexing Enabled: %t, Scanner V4 Enabled: %t",
+			env.NodeIndexEnabled.BooleanSetting(), features.ScannerV4.Enabled())
+		return nil
+	}
 	event := msg.GetEvent()
 	report := event.GetIndexReport()
 	if report == nil {
@@ -68,6 +76,32 @@ func (p pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.Ms
 	}
 	log.Debugf("received node index report for node %s with %d packages from %d content sets",
 		event.GetId(), len(report.GetContents().Packages), len(report.GetContents().Repositories))
+	report = report.CloneVT()
+
+	// Query storage for the node this report comes from
+	nodeId := event.GetId()
+	node, found, err := p.nodeDatastore.GetNode(ctx, nodeId)
+	if err != nil {
+		return errors.WithMessagef(err, "failed to fetch node %s from database", nodeId)
+	}
+	if !found {
+		return errors.WithMessagef(err, "node %s not found in datastore", nodeId)
+	}
+
+	// Send the Node and Index Report to Scanner for enrichment. The result will be persisted in node.NodeScan
+	err = p.enricher.EnrichNodeWithVulnerabilities(node, nil, report)
+	if err != nil {
+		return errors.WithMessagef(err, "enriching node %s with index report", nodeId)
+	}
+	log.Infof("Scanned index report and found %d components for node %s",
+		len(node.GetScan().GetComponents()), nodeDatastore.NodeString(node))
+
+	// Update the whole node in the database with the new and previous information.
+	err = p.riskManager.CalculateRiskAndUpsertNode(node)
+	if err != nil {
+		return errors.Wrapf(err, "failed calculating risk and upserting node %s", nodeDatastore.NodeString(node))
+	}
+
 	return nil
 }
 

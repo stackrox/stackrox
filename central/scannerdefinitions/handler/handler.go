@@ -12,7 +12,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -50,20 +49,13 @@ const (
 	offlineScannerV2DefsBlobName = "/offline/scanner/scanner-defs.zip"
 
 	// scannerV4DefsPrefix helps to search the v4 offline zip bundle for CVEs
-	scannerV4DefsPrefix    = "scanner-v4-defs"
+	scannerV4DefsPrefix    = "v4-definitions-"
 	scannerV4ManifestFile  = "manifest.json"
 	scannerV4VulnSubDir    = "v4/vulnerability-bundles"
 	scannerV4MappingSubDir = "v4/redhat-repository-mappings"
 	scannerV4MappingFile   = "mapping.zip"
 	// offlineScannerV4DefsBlobName represents the blob name of offline/fallback data file for Scanner V4.
 	offlineScannerV4DefsBlobName = "/offline/scanner/v4/scanner-v4-defs.zip"
-
-	// scannerV4AcceptHeader defines the custom HTTP header to identify the content type Scanner V4 desires.
-	// This is used instead of Accept, as we do not map this 1:1 with the returned content type.
-	scannerV4AcceptHeader = "X-Scanner-V4-Accept"
-	// scannerV4MultiBundleContentType is the custom content type representing Scanner V4 wants
-	// the "multi-bundle" ZIP data returned.
-	scannerV4MultiBundleContentType = "application/vnd.stackrox.scanner-v4.multi-bundle+zip"
 
 	// tmpUploadFile is the name of the file to which uploaded data is written, temporarily.
 	tmpUploadFile = "offline-defs.zip"
@@ -97,7 +89,13 @@ var (
 		"name2repos": "repomapping/container-name-repos-map.json",
 		"repo2cpe":   "repomapping/repository-to-cpe.json",
 	}
-	minorVersionPattern = regexp.MustCompile(`^\d+\.\d+`)
+
+	// mainVersionVariants is the set of all main version number variants. It allows
+	// flexibility in specifying accepted versions in bundles. For example, is the
+	// main version is `4.6.x-nightly-20241004`, and the offline bundle accepts
+	// `4.6.x`, the variants would eventually allow us to accept the bundle when
+	// comparing `4.6.x-nightly-20241004`, `4.6.x-nightly` and finally `4.6.x`.
+	mainVersionVariants map[string]bool
 )
 
 type requestedUpdater struct {
@@ -108,7 +106,9 @@ type requestedUpdater struct {
 // manifest represents the manifest.json file
 // containing Scanner V4 related metadata.
 type manifest struct {
-	Version string `json:"version"`
+	VulnerabilityVersion string `json:"version"`
+	ReleaseVersions      string `json:"release_versions"`
+	releaseVersionsList  []string
 }
 
 // httpHandler handles HTTP GET and POST requests for vulnerability data.
@@ -140,6 +140,24 @@ func init() {
 	var err error
 	scannerUpdateBaseURL, err = url.Parse("https://definitions.stackrox.io")
 	utils.CrashOnError(err) // This is very unexpected.
+
+	// Parse the main version number variants, continue in a broken state if version
+	// is not parseable.
+	mainVersionVariants = make(map[string]bool)
+	mainVersion := version.GetMainVersion()
+	if mainVersion == "" {
+		log.Error("v4 offline uploads are blocked: main version is empty")
+		return
+	}
+	variants, err := version.Variants(mainVersion)
+	if utils.ShouldErr(err) != nil {
+		log.Errorf("v4 offline uploads are blocked: invalid main version format %q: %v",
+			mainVersion, err)
+		return
+	}
+	for _, v := range variants {
+		mainVersionVariants[v] = true
+	}
 }
 
 // New creates a new http.Handler to handle vulnerability data.
@@ -207,8 +225,6 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 
 	var uType updaterType
 	var opts openOpts
-	// contentType is set when we have the need to explicitly define the Content-Type header.
-	var contentType string
 
 	switch {
 	case uuid != "":
@@ -231,20 +247,8 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 		opts.offlineBlobName = offlineScannerV4DefsBlobName
 	case fileName == "" && v != "":
 		// If only version is provided, this is for Scanner V4 vulnerabilities.
-		if version.GetVersionKind(v) == version.NightlyKind {
-			// Use the development data for nightly builds.
-			v = "dev"
-		}
 		uType = vulnerabilityUpdaterType
 		bundle := "vulnerabilities.zip"
-		// If the Scanner V4 does not accept the "multi-bundle" ZIP file, then return the legacy
-		// single .json.zst file.
-		if r.Header.Get(scannerV4AcceptHeader) != scannerV4MultiBundleContentType {
-			// http.ServeContent is unable to automatically identify application/zstd at this time,
-			// so we set it ourselves.
-			contentType = "application/zstd"
-			bundle = "vulns.json.zst"
-		}
 		opts.name = v
 		opts.urlPath = path.Join(v, bundle)
 		opts.vulnVersion = v
@@ -266,11 +270,6 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer utils.IgnoreError(f.Close)
-
-	if contentType != "" {
-		w.Header().Set("Content-Type", contentType)
-	}
-
 	serveContent(w, r, f.Name(), f.modTime, f)
 }
 
@@ -285,6 +284,7 @@ func (h *httpHandler) openDefinitions(ctx context.Context, t updaterType, opts o
 	}
 	// If we are in offline-mode, do not bother fetching the latest online data.
 	if !h.online {
+		log.Debugf("offline bundle %s open result (`nil` if not found): %v", opts.offlineBlobName, offline)
 		// Note: It is possible, and ok, the offline file is nil here.
 		return offline, nil
 	}
@@ -341,7 +341,7 @@ func (h *httpHandler) openOfflineDefinitions(ctx context.Context, t updaterType,
 		// We want to find a specific file inside the toplevel online file.
 		fallthrough
 	case mappingUpdaterType:
-		// search mapping file
+		// Search mapping file.
 		fileName := filepath.Base(opts.fileName)
 		targetFile, _, err := h.openFromArchive(offlineBlob.Name(), fileName)
 		if err != nil {
@@ -349,26 +349,30 @@ func (h *httpHandler) openOfflineDefinitions(ctx context.Context, t updaterType,
 		}
 		offlineFile = &vulDefFile{File: targetFile, modTime: offlineBlob.modTime}
 	case vulnerabilityUpdaterType:
-		// check version information in manifest
+		// Check version information in manifest.
 		mf, _, err := h.openFromArchive(offlineBlob.Name(), scannerV4ManifestFile)
 		if err != nil {
+			log.Errorf("open manifest: %v", err)
 			return nil, err
 		}
 		defer utils.IgnoreError(mf.Close)
 
-		v, err := readV4ManifestVersion(mf)
+		mv, err := readV4Manifest(mf)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("reading v4 definitions manifest: %w", err)
 		}
 
-		if v != minorVersionPattern.FindString(opts.vulnVersion) && (opts.vulnVersion != "dev" || buildinfo.ReleaseBuild) {
-			msg := fmt.Sprintf("failed to get Scanner V4 offline data file: the offline data version != requested file version (%s != %s)", v, opts.vulnVersion)
-			log.Error(msg)
-			return nil, errors.New(msg)
+		// Only validate offline definition versions on release builds.
+		if buildinfo.ReleaseBuild && mv.VulnerabilityVersion != opts.vulnVersion {
+			log.Warnf("v4 offline bundle vulnerability version mismatch: "+
+				"the stored version != requested vulnerability version (%s != %s)",
+				mv.VulnerabilityVersion, opts.vulnVersion)
+			return nil, nil
 		}
 
 		vulns, _, err := h.openFromArchive(offlineBlob.Name(), opts.vulnBundle)
 		if err != nil {
+			log.Errorf("open vulnerabilities: %s: %v", opts.vulnBundle, err)
 			return nil, err
 		}
 
@@ -521,12 +525,6 @@ func (h *httpHandler) post(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if features.ScannerV4.Enabled() {
-		if err := h.validateV4DefsVersion(); err != nil {
-			httputil.WriteGRPCStyleError(w, codes.InvalidArgument, err)
-			return
-		}
-	}
 	if err := h.handleZipContentsFromVulnDump(r.Context()); err != nil {
 		httputil.WriteGRPCStyleError(w, codes.InvalidArgument, err)
 		return
@@ -535,96 +533,117 @@ func (h *httpHandler) post(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte("Successfully stored scanner vulnerability definitions"))
 }
 
-func (h *httpHandler) validateV4DefsVersion() error {
+func (h *httpHandler) handleZipContentsFromVulnDump(ctx context.Context) error {
 	zipR, err := zip.OpenReader(h.uploadPath)
 	if err != nil {
-		return errors.Wrap(err, "couldn't open file as zip")
+		return fmt.Errorf("failed to open offline zip: %w", err)
 	}
 	defer utils.IgnoreError(zipR.Close)
 
-	validate := func(zipF *zip.File) error {
+	checkV4Manifest := func(zipF *zip.File) (bool, error) {
 		// Extract the Scanner V4 file out of the ZIP.
 		defs, size, err := h.openFromArchive(h.uploadPath, zipF.Name)
 		if err != nil {
-			return errors.Wrap(err, "opening Scanner V4 definitions")
+			return false, fmt.Errorf("failed to open definitions zip: %w", err)
 		}
 		defer utils.IgnoreError(defs.Close)
 		// Extract the manifest file out of the extracted Scanner V4 defs file.
 		// Use readFromArchive, as the defs file was already closed via openFromArchive.
 		mf, err := h.readFromArchive(defs, size, scannerV4ManifestFile)
 		if err != nil {
-			return errors.Wrap(err, "opening Scanner V4 definitions manifest")
+			return false, fmt.Errorf("failed to open definitions manifest: %w", err)
 		}
 		defer utils.IgnoreError(mf.Close)
-		offlineV, err := readV4ManifestVersion(mf)
+
+		mv, err := readV4Manifest(mf)
 		if err != nil {
-			return errors.Wrap(err, "reading v4 offline definitions version")
+			return false, fmt.Errorf("failed to read definitions manifest: %w", err)
 		}
-		v := minorVersionPattern.FindString(version.GetMainVersion())
-		if offlineV != "dev" && offlineV != v {
-			msg := fmt.Sprintf("failed to upload offline file bundle, uploaded file is version: %s and system version is: %s; "+
-				"please upload an offline bundle version: %s, consider using command roxctl scanner download-db", offlineV, version.GetMainVersion(), v)
-			log.Error(msg)
-			return errors.New(msg)
+
+		// Returns true if this manifest supports this release as provided by its main
+		// version number.
+		for _, v := range mv.releaseVersionsList {
+			if mainVersionVariants[v] {
+				return true, nil
+			}
 		}
-		return nil
+		return false, nil
 	}
 
-	// Search for the Scanner V4 related file.
-	// It will have a specific prefix, but the full name is unknown.
-	var found bool
-	for _, zipF := range zipR.File {
-		if !strings.HasPrefix(zipF.Name, scannerV4DefsPrefix) {
-			continue
-		}
-		if found {
-			return errors.New("found multiple Scanner V4 versions")
-		}
-		if err := validate(zipF); err != nil {
-			return err
-		}
-		found = true
-	}
-	return nil
-}
+	// Map of offline definitions to add.
+	defs := make(map[string]*zip.File)
 
-func (h *httpHandler) handleZipContentsFromVulnDump(ctx context.Context) error {
-	zipR, err := zip.OpenReader(h.uploadPath)
-	if err != nil {
-		return errors.Wrap(err, "couldn't open file as zip")
-	}
-	defer utils.IgnoreError(zipR.Close)
-	var count int
-	// It is expected a ZIP file be uploaded with both Scanner V2 and V4 vulnerability definitions.
-	// scanner-defs.zip contains data required by Scanner V2.
-	// scanner-v4-defs-*.zip contains data required by Scanner v4.
-	// In the future, we may decide to support other files (like we have in the past), which is why we
-	// loop through this ZIP of ZIPs.
+	// Currently, we expect the offline ZIP to contain both Scanner V2 and V4 offline
+	// definitions. We want to keep the door open to support other file types, so
+	// keep the following loop sensible to structural changes in the zip.
 	for _, zipF := range zipR.File {
 		switch {
 		case zipF.Name == scannerV2DefsFile:
-			if err := h.handleScannerDefsFile(ctx, zipF, offlineScannerV2DefsBlobName); err != nil {
-				return errors.Wrap(err, "couldn't handle scanner-defs sub file")
+			if _, ok := defs[offlineScannerV2DefsBlobName]; ok {
+				return fmt.Errorf("v2 definitions: found duplicate definition: %s", zipF.Name)
 			}
-			log.Debugf("Successfully processed file: %s", zipF.Name)
-			count++
-		case strings.HasPrefix(zipF.Name, scannerV4DefsPrefix):
-			if err := h.handleScannerDefsFile(ctx, zipF, offlineScannerV4DefsBlobName); err != nil {
-				return errors.Wrap(err, "couldn't handle scanner-v4-defs sub file")
+			log.Infof("v2 definitions: found supported bundle: %s", zipF.Name)
+			defs[offlineScannerV2DefsBlobName] = zipF
+		case features.ScannerV4.Enabled() && strings.HasPrefix(zipF.Name, scannerV4DefsPrefix):
+			ok, err := checkV4Manifest(zipF)
+			if err != nil {
+				// If we cannot check if the V4 definitions is supported, then we assume the
+				// bundle is not good, which is not entirely accurate but simplifies error
+				// handling.
+				return fmt.Errorf("invalid v4 definition: %s: %w", zipF.Name, err)
 			}
-			log.Debugf("Successfully processed file: %s", zipF.Name)
-			count++
+			if !ok {
+				// Ignore unsupported bundles.
+				log.Debugf("v4 definitions: ignoring unsupported bundle: %s", zipF.Name)
+				continue
+			}
+			if prev, ok := defs[offlineScannerV4DefsBlobName]; ok {
+				return fmt.Errorf("v4 definitions: found more than one supported definitions file: %s and %s",
+					prev.Name, zipF.Name)
+			}
+			log.Infof("v4 definitions: found supported bundle: %s", zipF.Name)
+			defs[offlineScannerV4DefsBlobName] = zipF
 		default:
 			// Ignore any other files which may be in the ZIP.
 		}
 	}
-	// Just do a simple check for at least one valid file.
-	// Anything stricter may come with incompatibilities.
-	if count > 0 {
-		return nil
+
+	// Check bundle compatibility.
+	var incompatible bool
+	if _, ok := defs[offlineScannerV4DefsBlobName]; features.ScannerV4.Enabled() && !ok {
+		incompatible = true
+		log.Debugf("offline bundle compatibility check: missing V4 definitions (and V4 is enabled)")
+	}
+	if _, ok := defs[offlineScannerV2DefsBlobName]; !ok {
+		incompatible = true
+		log.Debugf("offline bundle compatibility check: missing V2 definitions")
+	}
+	if incompatible {
+		// If the expected definitions were not found, we assume the bundle is incompatible.
+		return fmt.Errorf("the uploaded "+
+			"bundle is incompatible with release version number '%s' "+
+			"please upload an offline bundle that supports this "+
+			"release, and consider using `roxctl scanner download-db`",
+			version.GetMainVersion())
 	}
 
-	return errors.New("scanner defs file(s) not found in upload zip: incorrect zip?")
+	var errList []error
+	for blobName := range defs {
+		zipF := defs[blobName]
+		if err := h.handleScannerDefsFile(ctx, zipF, blobName); err != nil {
+			err = fmt.Errorf("failed to load %s: %w", zipF.Name, err)
+			log.Error(err)
+			errList = append(errList, err)
+		}
+		log.Infof("Successfully loaded offline definition: %s", zipF.Name)
+	}
+
+	if len(errList) > 0 {
+		return fmt.Errorf("failed to load %d out of %d scanner defs file(s): %v",
+			len(errList), len(defs), errList)
+	}
+
+	return nil
 }
 
 func (h *httpHandler) handleScannerDefsFile(ctx context.Context, zipF *zip.File, blobName string) error {
@@ -731,13 +750,14 @@ func (h *httpHandler) openFromZipReader(zipReader *zip.Reader, fileName string) 
 	return tmpFile, size, nil
 }
 
-func readV4ManifestVersion(mf io.Reader) (string, error) {
+func readV4Manifest(mf io.Reader) (*manifest, error) {
 	var m manifest
 	err := json.NewDecoder(mf).Decode(&m)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return m.Version, nil
+	m.releaseVersionsList = strings.Fields(strings.TrimSpace(m.ReleaseVersions))
+	return &m, nil
 }
 
 func serveContent(w http.ResponseWriter, r *http.Request, name string, modTime time.Time, content io.ReadSeeker) {

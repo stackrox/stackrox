@@ -201,6 +201,15 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
                     integration.syslog.tcpConfig.skipTlsVerify ? 'Yes (Insecure)' : 'No (Secure)',
             },
         ],
+        microsoftSentinel: [
+            { accessor: 'name', Header: 'Name' },
+            {
+                accessor: 'microsoftSentinel.logIngestionEndpoint',
+                Header: 'Log ingestion endpoint',
+            },
+            { accessor: 'microsoftSentinel.directoryTenantId', Header: 'Directory tenant ID' },
+            { accessor: 'microsoftSentinel.applicationClientId', Header: 'Application client ID' },
+        ],
     },
     imageIntegrations: {
         docker: [
@@ -252,6 +261,11 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
             { accessor: 'name', Header: 'Name' },
             { accessor: 'scannerV4.indexerEndpoint', Header: 'Indexer Endpoint' },
             { accessor: 'scannerV4.matcherEndpoint', Header: 'Matcher Endpoint' },
+        ],
+        ghcr: [
+            { accessor: 'name', Header: 'Name' },
+            { accessor: 'docker.endpoint', Header: 'Endpoint' },
+            { accessor: 'docker.username', Header: 'Username' },
         ],
         google: [
             { accessor: 'name', Header: 'Name' },

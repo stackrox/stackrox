@@ -22,7 +22,12 @@ message CloudSource {
   Type type = 3;
 
   message Credentials {
+    // Used for single-valued authentication via long-lived tokens.
     string secret = 1; // @gotags: scrub:"always"
+    // Used for client authentication in combination with client_secret.
+    string client_id = 2; // @gotags: scrub:"always"
+    // Used for client authentication in combination with client_id.
+    string client_secret = 3; // @gotags: scrub:"always"
   }
   Credentials credentials = 4;
 

@@ -126,6 +126,8 @@ type apiImpl struct {
 
 	grpcServer         *grpc.Server
 	shutdownInProgress *atomic.Bool
+
+	debugLog *debugLoggerImpl
 }
 
 // A Config configures the server.
@@ -193,10 +195,22 @@ func (a *apiImpl) Stop() bool {
 	a.listenersLock.Lock()
 	defer a.listenersLock.Unlock()
 
+	a.debugLog.Logf("Stopping %d listeners", len(a.listeners))
 	for _, listener := range a.listeners {
-		if listener.stopper != nil {
-			listener.stopper()
+		debugMsg := "unknown listener type: "
+		switch listener.srv.(type) {
+		case *grpc.Server:
+			debugMsg = "gRPC server listener: "
+		case *http.Server:
+			debugMsg = "http handler listener: "
 		}
+		if listener.stopper != nil {
+			debugMsg += "stopped"
+			listener.stopper()
+		} else {
+			debugMsg += fmt.Sprintf("not stopped in loop. Comparing with grpcServer pointer with listener.srv pointer (%p : %p)", a.grpcServer, listener.srv)
+		}
+		a.debugLog.Log(debugMsg)
 	}
 	return true
 }
@@ -304,6 +318,13 @@ func (a *apiImpl) connectToLocalEndpoint(dialCtxFunc pipeconn.DialContextFunc) (
 		}),
 		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxResponseMsgSize())),
 		grpc.WithUserAgent(clientconn.GetUserAgent()))
+}
+
+func noCacheHeaderWrapper(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		writer.Header().Set("Cache-Control", "no-store, no-cache")
+		h.ServeHTTP(writer, request)
+	})
 }
 
 func allowPrettyQueryParameter(h http.Handler) http.Handler {
@@ -414,8 +435,8 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 			}
 		}
 	}
-	mux.Handle("/v1/", allowPrettyQueryParameter(gziphandler.GzipHandler(gwMux)))
-	mux.Handle("/v2/", allowPrettyQueryParameter(gziphandler.GzipHandler(gwMux)))
+	mux.Handle("/v1/", noCacheHeaderWrapper(allowPrettyQueryParameter(gziphandler.GzipHandler(gwMux))))
+	mux.Handle("/v2/", noCacheHeaderWrapper(allowPrettyQueryParameter(gziphandler.GzipHandler(gwMux))))
 	if err := prometheus.Register(mux); err != nil {
 		log.Warnf("failed to register Prometheus collector: %v", err)
 	}
@@ -423,6 +444,7 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 }
 
 func (a *apiImpl) run(startedSig *concurrency.ErrorSignal) {
+	defer printSocketInfo(nil)
 	if len(a.config.Endpoints) == 0 {
 		panic(errors.New("server has no endpoints"))
 	}

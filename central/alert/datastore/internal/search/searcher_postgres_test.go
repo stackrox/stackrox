@@ -46,6 +46,9 @@ func (s *AlertsSearchSuite) TearDownTest() {
 
 func (s *AlertsSearchSuite) TestSearch() {
 	alert := fixtures.GetAlert()
+	alert.EntityType = storage.Alert_DEPLOYMENT
+	alert.PlatformComponent = false
+
 	foundAlert, exists, err := s.store.Get(ctx, alert.GetId())
 	s.NoError(err)
 	s.False(exists)
@@ -70,4 +73,19 @@ func (s *AlertsSearchSuite) TestSearch() {
 	results, err = s.searcher.Search(ctx, q)
 	s.NoError(err)
 	s.Len(results, 1)
+
+	q = search.NewQueryBuilder().
+		AddBools(search.PlatformComponent, false).
+		AddExactMatches(search.EntityType, storage.Alert_DEPLOYMENT.String()).
+		ProtoQuery()
+	results, err = s.searcher.Search(ctx, q)
+	s.NoError(err)
+	s.Len(results, 1)
+
+	q = search.NewQueryBuilder().
+		AddBools(search.PlatformComponent, true).
+		ProtoQuery()
+	results, err = s.searcher.Search(ctx, q)
+	s.NoError(err)
+	s.Len(results, 0)
 }

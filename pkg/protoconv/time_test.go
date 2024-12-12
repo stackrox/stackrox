@@ -24,6 +24,10 @@ func TestConvertTimeString(t *testing.T) {
 			output: nil,
 		},
 		{
+			input:  "2018-02-07T23:29:00.000",
+			output: protocompat.GetProtoTimestampFromSeconds(1518046140),
+		},
+		{
 			input:  "2018-02-07T23:29Z",
 			output: protocompat.GetProtoTimestampFromSeconds(1518046140),
 		},

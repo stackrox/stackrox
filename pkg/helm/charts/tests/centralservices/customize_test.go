@@ -63,6 +63,10 @@ func (s *customizeSuite) TestCustomizeMetadata() {
 			typeSig := fmt.Sprintf("%s-%s", globalSig, obj.GetKind())
 			objSig := fmt.Sprintf("%s-%s", typeSig, obj.GetName())
 
+			if obj.GetKind() == "CustomResourceDefinition" {
+				continue
+			}
+
 			expectedMD := map[string]string{
 				globalKeyNamePrefix: globalSig,
 				fmt.Sprintf("%sToOverrideByType", globalKeyNamePrefix): typeSig,
@@ -110,6 +114,10 @@ func (s *customizeSuite) TestCustomizeMetadata() {
 	for i := range objs {
 		obj := objs[i]
 		for _, mdType := range []string{"labels", "annotations"} {
+			if obj.GetKind() == "CustomResourceDefinition" {
+				continue
+			}
+
 			objRef := k8sobjects.RefOf(&obj)
 			expectedMD := maputil.ShallowClone(expectedMDs[mdType][objRef])
 

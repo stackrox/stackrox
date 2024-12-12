@@ -16,6 +16,7 @@ import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 
+import { getPaginationParams } from 'utils/searchUtils';
 import { getDefaultWorkloadSortOption, getWorkloadSortFields } from '../../utils/sortUtils';
 import DeploymentResourceTable, {
     DeploymentResources,
@@ -54,11 +55,7 @@ function ImagePageResources({ imageId, pagination }: ImagePageResourcesProps) {
         variables: {
             id: imageId,
             query: '',
-            pagination: {
-                offset: (page - 1) * perPage,
-                limit: perPage,
-                sortOption,
-            },
+            pagination: getPaginationParams({ page, perPage, sortOption }),
         },
     });
 

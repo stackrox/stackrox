@@ -112,6 +112,7 @@ admissionControl:
   tolerations: null # [dict]
   hostAliases: null # [dict]
   priorityClassName: null # string
+  namespaceSelector: null # dict
 collector:
   forceCollectionMethod: null # bool
   collectionMethod: null # string
@@ -136,7 +137,7 @@ collector:
     enabled: null # bool
   crio:
     enabled: null # bool
-  runtime_config:
+  runtimeConfig:
     enabled: null # bool
 auditLogs:
   disableCollection: null # bool

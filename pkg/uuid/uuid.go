@@ -16,6 +16,9 @@ type UUID struct {
 	uuid uuid.UUID
 }
 
+// Length is the string length of an UUID
+var StringLength = len(NewV4().String())
+
 // Nil UUID is special form of UUID that is specified to have all
 // 128 bits set to zero.
 var Nil = UUID{

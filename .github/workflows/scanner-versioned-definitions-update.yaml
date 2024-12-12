@@ -17,7 +17,7 @@ on:
         - nvd-api
         - nvd-feeds
         required: true
-        default: nvd-api
+        default: nvd-feeds
 
 jobs:
   parse-versions:
@@ -53,7 +53,7 @@ jobs:
       run: |
         set -eu
         since_time=$(date -u -d '24 hours ago' '+%a, %d %b %Y %H:%M:%S GMT')
-        NVD_BUNDLE_TYPE=${{ github.event.inputs.job || 'nvd-api' }}
+        NVD_BUNDLE_TYPE=${{ github.event.inputs.job || 'nvd-feeds' }}
         case "$NVD_BUNDLE_TYPE" in
             nvd-api)
                 nvd_file=nvd-api.zip
@@ -62,7 +62,7 @@ jobs:
                 nvd_file=nvd-feeds.zip
                 ;;
             *)
-                echo >&2 "error: invalid NVD bundle type '$NVD_BUNDLE_TYPE'"
+                echo >&2 "Warning: invalid NVD bundle type '$NVD_BUNDLE_TYPE'"
                 exit 1
         esac
         url="https://definitions.stackrox.io/v4/nvd/$nvd_file"
@@ -166,8 +166,9 @@ jobs:
         echo "STACKROX_NVD_ZIP_PATH=$path" >> "$GITHUB_ENV"
 
     - name: Run Updater (single bundle)
+      if: ${{ env.SCANNER_BUNDLE_VERSION == 'v1' }}
       run: |
-        scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" "definitions/${{ env.SCANNER_BUNDLE_VERSION }}"
+        scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" "definitions/${SCANNER_BUNDLE_VERSION}"
 
     - name: Run updater (multi bundle)
       run: |
@@ -245,10 +246,6 @@ jobs:
     - name: Create bundle output directory
       run: mkdir -p definitions/${{ github.event.pull_request.number }}
 
-    - name: Run Updater (single bundle)
-      run: |
-        scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" "definitions/${{ github.event.pull_request.number }}"
-
     - name: Run updater (multi bundle)
       run: |
         scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" --split bundles
@@ -260,6 +257,11 @@ jobs:
         branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
         # Replace / with -, so the branch name isn't truncated when pushed to GCS.
         dir=${branch////-}
+        case "$dir" in
+        dev|1.0.0)
+          echo "Error: branch $dir is protected. Choose a different branch name."
+          exit 1
+        esac
         mkdir -p "$dir"
         cp -r "definitions/${{ github.event.pull_request.number }}/." "$dir/"
         gsutil -m cp -r "$dir" "gs://scanner-v4-test/vulnerability-bundles/"
@@ -298,10 +300,37 @@ jobs:
         ls -lr definitions_files
         for dir in definitions_files/*; do
           if [ -d "$dir" ]; then
+            echo "Copy $dir"
             gsutil -m cp -r "$dir" gs://definitions.stackrox.io/v4/vulnerability-bundles/
           fi
         done
+        echo "Copy upstream dev (dev) to downstream dev (1.0.0)"
         gsutil cp -r gs://definitions.stackrox.io/v4/vulnerability-bundles/dev/* gs://definitions.stackrox.io/v4/vulnerability-bundles/1.0.0/
+
+    - name: Copy v1 to pre-versioned bundles
+      run: |
+        # Using v1 bundle for released versions listed in RELEASE_VERSION.
+        single=gs://definitions.stackrox.io/v4/vulnerability-bundles/v1/vulns.json.zst
+        multi=gs://definitions.stackrox.io/v4/vulnerability-bundles/v1/vulnerabilities.zip
+        # Parse all supported pre-4.6 releases and copy the versioned bundle v1 to ensure
+        # these releases get updates.
+        grep -E "^4\.(4|5)\.[0-9]+$" scanner/updater/version/RELEASE_VERSION | while read -r release; do
+          case "$release" in
+          4.4.*)
+            gsutil cp "$single" "gs://definitions.stackrox.io/v4/vulnerability-bundles/$release/"
+            ;;
+          4.5.*)
+            gsutil cp "$single" "gs://definitions.stackrox.io/v4/vulnerability-bundles/$release/"
+            gsutil cp "$multi" "gs://definitions.stackrox.io/v4/vulnerability-bundles/$release/"
+            ;;
+          *)
+            echo "Should not happen!"
+            echo "Error: unexpected release version: $release"
+            echo "Ignoring..."
+            ;;
+          esac
+          echo "Copied v1 into $release"
+        done
 
   send-notification:
     needs:

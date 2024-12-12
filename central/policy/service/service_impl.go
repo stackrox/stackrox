@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	_ "embed"
 	"slices"
 	"strings"
 	"time"
@@ -717,10 +718,10 @@ func (s *serviceImpl) ExportPolicies(ctx context.Context, request *v1.ExportPoli
 	if err != nil {
 		return nil, err
 	}
-	errDetails := &v1.ExportPoliciesErrorList{}
+	errDetails := &v1.PolicyOperationErrorList{}
 	for _, missingIndex := range missingIndices {
 		policyID := request.PolicyIds[missingIndex]
-		errDetails.Errors = append(errDetails.Errors, &v1.ExportPolicyError{
+		errDetails.Errors = append(errDetails.Errors, &v1.PolicyOperationError{
 			PolicyId: policyID,
 			Error: &v1.PolicyError{
 				Error: "not found",

@@ -3,7 +3,7 @@
 # Opens cypress with environment variables for feature flags and auth
 api_endpoint="${UI_BASE_URL:-https://localhost:8000}"
 
-if [[ -z "$ROX_USERNAME" || -z "$ROX_PASSWORD" ]]; then
+if [[ -z "$ROX_USERNAME" || -z "$ROX_ADMIN_PASSWORD" ]]; then
   # basic auth creds weren't set (e.g. by CI), assume local k8s deployment
   # shellcheck source=../../../../scripts/k8s/export-basic-auth-creds.sh
   source ../../../scripts/k8s/export-basic-auth-creds.sh ../../../deploy/k8s
@@ -13,8 +13,8 @@ curl_cfg() { # Use built-in echo to not expose $2 in the process list.
   echo -n "$1 = \"${2//[\"\\]/\\&}\""
 }
 
-if [[ -n "$ROX_PASSWORD" ]]; then
-  readarray -t arr < <(curl -sk --config <(curl_cfg user "admin:$ROX_PASSWORD") ${api_endpoint}/v1/featureflags | jq -cr '.featureFlags[] | {name: .envVar, enabled: .enabled}')
+if [[ -n "$ROX_ADMIN_PASSWORD" ]]; then
+  readarray -t arr < <(curl -sk --config <(curl_cfg user "admin:$ROX_ADMIN_PASSWORD") ${api_endpoint}/v1/featureflags | jq -cr '.featureFlags[] | {name: .envVar, enabled: .enabled}')
   for i in "${arr[@]}"; do
     name=$(echo $i | jq -rc .name)
     val=$(echo $i | jq -rc .enabled)

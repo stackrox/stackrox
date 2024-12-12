@@ -2,8 +2,6 @@ import React from 'react';
 import {
     Alert,
     Bullseye,
-    Card,
-    CardBody,
     DescriptionListDescription,
     DescriptionListGroup,
     DescriptionListTerm,
@@ -11,9 +9,9 @@ import {
     Spinner,
 } from '@patternfly/react-core';
 
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import NotifierConfigurationView from 'Components/NotifierConfiguration/NotifierConfigurationView';
+import { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
 import {
     getBodyDefault,
     getSubjectDefault,
@@ -23,12 +21,21 @@ import ScanConfigParametersView from './ScanConfigParametersView';
 import ScanConfigClustersTable from './ScanConfigClustersTable';
 import ScanConfigProfilesView from './ScanConfigProfilesView';
 
+export type ConfigDetailsProps = {
+    scanConfig?: ComplianceScanConfigurationStatus;
+    isLoading?: boolean;
+    error?: Error | string | null;
+    isComplianceReportingEnabled: boolean;
+};
+
 const headingLevel = 'h2';
 
-function ConfigDetails({ isLoading, error, scanConfig }) {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isComplianceReportingEnabled = isFeatureFlagEnabled('ROX_COMPLIANCE_REPORTING');
-
+function ConfigDetails({
+    isLoading,
+    error,
+    scanConfig,
+    isComplianceReportingEnabled,
+}: ConfigDetailsProps) {
     if (isLoading) {
         return (
             <Bullseye>
@@ -47,56 +54,48 @@ function ConfigDetails({ isLoading, error, scanConfig }) {
 
     if (scanConfig) {
         return (
-            <Card>
-                <CardBody>
-                    <Flex
-                        direction={{ default: 'column' }}
-                        spaceItems={{ default: 'spaceItemsLg' }}
-                    >
-                        <ScanConfigParametersView
-                            headingLevel={headingLevel}
-                            scanName={scanConfig.scanName}
-                            description={scanConfig.scanConfig.description}
-                            scanSchedule={scanConfig.scanConfig.scanSchedule}
-                        >
-                            <DescriptionListGroup>
-                                <DescriptionListTerm>Last run</DescriptionListTerm>
-                                <DescriptionListDescription>
-                                    {scanConfig.lastExecutedTime
-                                        ? getTimeWithHourMinuteFromISO8601(
-                                              scanConfig.lastExecutedTime
-                                          )
-                                        : 'Scan is in progress'}
-                                </DescriptionListDescription>
-                            </DescriptionListGroup>
-                            <DescriptionListGroup>
-                                <DescriptionListTerm>Last updated</DescriptionListTerm>
-                                <DescriptionListDescription>
-                                    {getTimeWithHourMinuteFromISO8601(scanConfig.lastUpdatedTime)}
-                                </DescriptionListDescription>
-                            </DescriptionListGroup>
-                        </ScanConfigParametersView>
-                        <ScanConfigClustersTable
-                            headingLevel={headingLevel}
-                            clusterScanStatuses={scanConfig.clusterStatus}
-                        />
-                        <ScanConfigProfilesView
-                            headingLevel={headingLevel}
-                            profiles={scanConfig.scanConfig.profiles}
-                        />
-                        {isComplianceReportingEnabled && (
-                            <NotifierConfigurationView
-                                customBodyDefault={getBodyDefault(scanConfig.scanConfig.profiles)}
-                                customSubjectDefault={getSubjectDefault(
-                                    scanConfig.scanName,
-                                    scanConfig.scanConfig.profiles
-                                )}
-                                notifierConfigurations={scanConfig.scanConfig.notifiers}
-                            />
+            <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsLg' }}>
+                <ScanConfigParametersView
+                    headingLevel={headingLevel}
+                    scanName={scanConfig.scanName}
+                    description={scanConfig.scanConfig.description}
+                    scanSchedule={scanConfig.scanConfig.scanSchedule}
+                >
+                    <DescriptionListGroup>
+                        <DescriptionListTerm>Last scanned</DescriptionListTerm>
+                        <DescriptionListDescription>
+                            {scanConfig.lastExecutedTime
+                                ? getTimeWithHourMinuteFromISO8601(scanConfig.lastExecutedTime)
+                                : 'Scan is in progress'}
+                        </DescriptionListDescription>
+                    </DescriptionListGroup>
+                    <DescriptionListGroup>
+                        <DescriptionListTerm>Last updated</DescriptionListTerm>
+                        <DescriptionListDescription>
+                            {getTimeWithHourMinuteFromISO8601(scanConfig.lastUpdatedTime)}
+                        </DescriptionListDescription>
+                    </DescriptionListGroup>
+                </ScanConfigParametersView>
+                <ScanConfigClustersTable
+                    headingLevel={headingLevel}
+                    clusterScanStatuses={scanConfig.clusterStatus}
+                />
+                <ScanConfigProfilesView
+                    headingLevel={headingLevel}
+                    profiles={scanConfig.scanConfig.profiles}
+                />
+                {isComplianceReportingEnabled && (
+                    <NotifierConfigurationView
+                        headingLevel={headingLevel}
+                        customBodyDefault={getBodyDefault(scanConfig.scanConfig.profiles)}
+                        customSubjectDefault={getSubjectDefault(
+                            scanConfig.scanName,
+                            scanConfig.scanConfig.profiles
                         )}
-                    </Flex>
-                </CardBody>
-            </Card>
+                        notifierConfigurations={scanConfig.scanConfig.notifiers}
+                    />
+                )}
+            </Flex>
         );
     }
 }

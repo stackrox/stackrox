@@ -1,6 +1,5 @@
 import React, { useContext } from 'react';
-import { withRouter } from 'react-router-dom';
-import ReactRouterPropTypes from 'react-router-prop-types';
+import { useHistory } from 'react-router-dom';
 
 import usePermissions from 'hooks/usePermissions';
 import entityTypes from 'constants/entityTypes';
@@ -29,7 +28,8 @@ const entityMenuTypes = [
     entityTypes.IMAGE_COMPONENT,
 ];
 
-const VulnDashboardPage = ({ history }) => {
+const VulnDashboardPage = () => {
+    const history = useHistory();
     const { hasReadAccess } = usePermissions();
     const hasReadAccessForIntegration = hasReadAccess('Integration');
     const workflowState = useContext(workflowStateContext);
@@ -72,7 +72,12 @@ const VulnDashboardPage = ({ history }) => {
             <PageTitle title="Vulnerability Management - Dashboard" />
             <div className="flex items-center">
                 <div className="flex h-full mr-3 pr-3 border-r-2 border-base-400">
-                    <div className="flex mr-2">
+                    <div
+                        className="flex mr-2"
+                        style={{
+                            backgroundColor: 'var(--pf-v5-global--palette--red-50)',
+                        }}
+                    >
                         <CvesMenu />
                     </div>
                     <NodesCountTile />
@@ -126,8 +131,4 @@ const VulnDashboardPage = ({ history }) => {
     );
 };
 
-VulnDashboardPage.propTypes = {
-    history: ReactRouterPropTypes.history.isRequired,
-};
-
-export default withRouter(VulnDashboardPage);
+export default VulnDashboardPage;

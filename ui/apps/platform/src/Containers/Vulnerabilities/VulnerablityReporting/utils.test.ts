@@ -1,4 +1,4 @@
-import { ReportStatus } from 'services/ReportsService.types';
+import { ReportStatus } from 'types/reportJob';
 import { getReportStatusText, getCVEsDiscoveredSinceText } from './utils';
 import { ReportParametersFormValues } from './forms/useReportFormValues';
 
@@ -81,6 +81,7 @@ describe('utils', () => {
                 cveSeverities: [],
                 cveStatus: [],
                 imageType: [],
+                includeNvdCvss: false,
                 cvesDiscoveredSince: 'ALL_VULN',
                 cvesDiscoveredStartDate: undefined,
                 reportScope: null,
@@ -98,6 +99,7 @@ describe('utils', () => {
                 cveSeverities: [],
                 cveStatus: [],
                 imageType: [],
+                includeNvdCvss: false,
                 cvesDiscoveredSince: 'SINCE_LAST_REPORT',
                 cvesDiscoveredStartDate: undefined,
                 reportScope: null,
@@ -115,6 +117,7 @@ describe('utils', () => {
                 cveSeverities: [],
                 cveStatus: [],
                 imageType: [],
+                includeNvdCvss: false,
                 cvesDiscoveredSince: 'START_DATE',
                 cvesDiscoveredStartDate: '2023-10-02',
                 reportScope: null,

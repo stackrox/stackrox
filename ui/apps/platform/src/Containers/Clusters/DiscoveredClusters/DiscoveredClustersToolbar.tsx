@@ -128,14 +128,17 @@ function DiscoveredClustersToolbar({
                             perPage={perPage}
                             onSetPage={(_, newPage) => setPage(newPage)}
                             onPerPageSelect={(_, newPerPage) => {
-                                setPage(1);
                                 setPerPage(newPerPage);
                             }}
                         />
                     </ToolbarItem>
                 </ToolbarGroup>
                 <ToolbarGroup className="pf-v5-u-w-100">
-                    <SearchFilterChips filterChipGroupDescriptors={searchFilterChipDescriptors} />
+                    <SearchFilterChips
+                        searchFilter={searchFilter}
+                        onFilterChange={setSearchFilter}
+                        filterChipGroupDescriptors={searchFilterChipDescriptors}
+                    />
                 </ToolbarGroup>
             </ToolbarContent>
         </Toolbar>

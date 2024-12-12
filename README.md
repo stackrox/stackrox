@@ -102,13 +102,14 @@ helm search repo stackrox
 ```
 To install stackrox-central-services, you will need a secure password. This password will be needed later for UI login and when creating an init bundle.
 ```sh
-STACKROX_ADMIN_PASSWORD="$(openssl rand -base64 20 | tr -d '/=+')"
+ROX_ADMIN_PASSWORD="$(openssl rand -base64 20 | tr -d '/=+')"
 ```
 From here, you can install stackrox-central-services to get Central and Scanner components deployed on your cluster. Note that you need only one deployed instance of stackrox-central-services even if you plan to secure multiple clusters.
 ```sh
 helm upgrade --install -n stackrox --create-namespace stackrox-central-services \
   stackrox/stackrox-central-services \
-  --set central.adminPassword.value="${STACKROX_ADMIN_PASSWORD}"
+  --set central.adminPassword.value="${ROX_ADMIN_PASSWORD}"
+  --set central.persistence.none="true"
 ```
 
 #### Install Central in Clusters With Limited Resources
@@ -130,7 +131,8 @@ helm upgrade -n stackrox stackrox-central-services stackrox/stackrox-central-ser
   --set scanner.resources.requests.memory=500Mi \
   --set scanner.resources.requests.cpu=500m \
   --set scanner.resources.limits.memory=2500Mi \
-  --set scanner.resources.limits.cpu=2000m
+  --set scanner.resources.limits.cpu=2000m \
+  --set central.persistence.none="true"
 ```
 
 </details>
@@ -142,9 +144,9 @@ Next, the secured cluster component will need to be deployed to collect informat
 
 Generate an init bundle containing initialization secrets. The init bundle will be saved in `stackrox-init-bundle.yaml`, and you will use it to provision secured clusters as shown below.
 ```sh
-kubectl -n stackrox exec deploy/central -- roxctl --insecure-skip-tls-verify \
-  --password "${STACKROX_ADMIN_PASSWORD}" \
-  central init-bundles generate stackrox-init-bundle --output - > stackrox-init-bundle.yaml
+echo "$ROX_ADMIN_PASSWORD" | \
+kubectl -n stackrox exec -i deploy/central -- bash -c 'ROX_ADMIN_PASSWORD=$(cat) roxctl --insecure-skip-tls-verify \
+  central init-bundles generate stackrox-init-bundle --output -' > stackrox-init-bundle.yaml
 ```
 Set a meaningful cluster name for your secured cluster in the `CLUSTER_NAME` shell variable. The cluster will be identified by this name in the clusters list of the StackRox UI.
 ```sh
@@ -277,7 +279,7 @@ Then go to https://localhost:8000/ in your web browser.
 
 **Username** = The default user is `admin`
 
-**Password (Helm)**   = The password is in `$STACKROX_ADMIN_PASSWORD` after a manual installation, or printed at the end of the quick installation script.
+**Password (Helm)**   = The password is in `$ROX_ADMIN_PASSWORD` after a manual installation, or printed at the end of the quick installation script.
 
 **Password (Script)** = The password will be located in the `/deploy/<orchestrator>/central-deploy/password.txt` folder for the script install.
 
@@ -292,7 +294,7 @@ Then go to https://localhost:8000/ in your web browser.
 
 - **Pull request guidelines**: [contributing.md](./.github/contributing.md)
 
-- **Go coding style guide**: [go-coding-style.md](./.github/go-coding-style.md) 
+- **Go coding style guide**: [go-coding-style.md](./.github/go-coding-style.md)
 
 ### Quickstart
 

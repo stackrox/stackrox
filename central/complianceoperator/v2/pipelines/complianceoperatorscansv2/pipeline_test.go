@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	reportMgrMocks "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/mocks"
 	v2ScanMocks "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore/mocks"
 	"github.com/stackrox/rox/central/convert/testutils"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
@@ -21,9 +22,10 @@ func TestPipeline(t *testing.T) {
 
 type PipelineTestSuite struct {
 	suite.Suite
-	pipeline *pipelineImpl
-	v2ScanDS *v2ScanMocks.MockDataStore
-	mockCtrl *gomock.Controller
+	pipeline  *pipelineImpl
+	v2ScanDS  *v2ScanMocks.MockDataStore
+	reportMgr *reportMgrMocks.MockManager
+	mockCtrl  *gomock.Controller
 }
 
 func (s *PipelineTestSuite) SetupSuite() {
@@ -38,7 +40,8 @@ func (s *PipelineTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 
 	s.v2ScanDS = v2ScanMocks.NewMockDataStore(s.mockCtrl)
-	s.pipeline = NewPipeline(s.v2ScanDS).(*pipelineImpl)
+	s.reportMgr = reportMgrMocks.NewMockManager(s.mockCtrl)
+	s.pipeline = NewPipeline(s.v2ScanDS, s.reportMgr).(*pipelineImpl)
 }
 
 func (s *PipelineTestSuite) TearDownTest() {
@@ -49,6 +52,7 @@ func (s *PipelineTestSuite) TestRunCreate() {
 	ctx := context.Background()
 
 	s.v2ScanDS.EXPECT().UpsertScan(ctx, testutils.GetScanV2Storage(s.T())).Return(nil).Times(1)
+	s.reportMgr.EXPECT().HandleScan(gomock.Any(), gomock.Any()).Times(1)
 
 	msg := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
@@ -69,6 +73,7 @@ func (s *PipelineTestSuite) TestRunCreate() {
 func (s *PipelineTestSuite) TestRunDelete() {
 	ctx := context.Background()
 
+	s.reportMgr.EXPECT().HandleScanRemove(testutils.ScanUID).Return(nil).Times(1)
 	s.v2ScanDS.EXPECT().DeleteScan(ctx, testutils.ScanUID).Return(nil).Times(1)
 
 	msg := &central.MsgFromSensor{

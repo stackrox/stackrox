@@ -1,5 +1,6 @@
 import withAuth from '../../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../../helpers/features';
+import { verifyColumnManagement } from '../../../helpers/tableHelpers';
 
 import {
     applyLocalSeverityFilters,
@@ -120,5 +121,12 @@ describe('Workload CVE Deployment Single page', () => {
 
         // Check that table rows are filtered
         cy.get(selectors.filteredViewLabel);
+    });
+
+    describe('Column management tests', () => {
+        it('should allow the user to hide and show columns on the CVE table', () => {
+            visitFirstDeployment();
+            verifyColumnManagement({ tableSelector: 'table' });
+        });
     });
 });

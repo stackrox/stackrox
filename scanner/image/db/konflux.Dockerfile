@@ -1,6 +1,7 @@
 FROM registry.redhat.io/rhel8/postgresql-15:latest
 
 ARG MAIN_IMAGE_TAG
+RUN if [[ "$MAIN_IMAGE_TAG" == "" ]]; then >&2 echo "error: required MAIN_IMAGE_TAG arg is unset"; exit 6; fi
 
 LABEL \
     com.redhat.component="rhacs-scanner-v4-db-container" \

@@ -12,13 +12,12 @@ import {
 } from '@patternfly/react-core';
 import { DropdownItem } from '@patternfly/react-core/deprecated';
 import { gql, useQuery } from '@apollo/client';
-import sum from 'lodash/sum';
 
 import useURLSearch from 'hooks/useURLSearch';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 import { Pagination as PaginationParam } from 'services/types';
-import { getHasSearchApplied } from 'utils/searchUtils';
+import { getHasSearchApplied, getPaginationParams } from 'utils/searchUtils';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useMap from 'hooks/useMap';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
@@ -30,13 +29,15 @@ import {
 } from 'Containers/Vulnerabilities/components/SummaryCardLayout';
 import { getTableUIState } from 'utils/getTableUIState';
 import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/AdvancedFiltersToolbar';
-import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
+import { createFilterTracker } from 'utils/analyticsEventTracking';
 import useAnalytics, { WORKLOAD_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
 import useHasRequestExceptionsAbility from 'Containers/Vulnerabilities/hooks/useHasRequestExceptionsAbility';
 import {
     imageComponentSearchFilterConfig,
     imageCVESearchFilterConfig,
 } from 'Containers/Vulnerabilities/searchFilterConfig';
+import { filterManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
+import ColumnManagementButton from 'Components/ColumnManagementButton';
 import {
     SearchOption,
     IMAGE_CVE_SEARCH_OPTION,
@@ -50,7 +51,9 @@ import CvesByStatusSummaryCard, {
 } from '../SummaryCards/CvesByStatusSummaryCard';
 import ImageVulnerabilitiesTable, {
     ImageVulnerability,
+    defaultColumns,
     imageVulnerabilitiesFragment,
+    tableId,
 } from '../Tables/ImageVulnerabilitiesTable';
 import {
     getHiddenSeverities,
@@ -83,6 +86,7 @@ export const imageVulnerabilitiesQuery = gql`
     ) {
         image(id: $id) {
             ...ImageMetadataContext
+            imageVulnerabilityCount(query: $query)
             imageCVECountBySeverity(query: $query) {
                 ...ResourceCountsByCVESeverityAndStatus
             }
@@ -146,6 +150,7 @@ function ImagePageVulnerabilities({
         {
             image: ImageMetadataContext & {
                 imageCVECountBySeverity: ResourceCountByCveSeverityAndStatus;
+                imageVulnerabilityCount: number;
                 imageVulnerabilities: ImageVulnerability[];
             };
         },
@@ -159,11 +164,7 @@ function ImagePageVulnerabilities({
         variables: {
             id: imageId,
             query: getVulnStateScopedQueryString(querySearchFilter, currentVulnerabilityState),
-            pagination: {
-                offset: (page - 1) * perPage,
-                limit: perPage,
-                sortOption,
-            },
+            pagination: getPaginationParams({ page, perPage, sortOption }),
             statusesForExceptionCount: getStatusesForExceptionCount(currentVulnerabilityState),
         },
     });
@@ -191,15 +192,16 @@ function ImagePageVulnerabilities({
         searchFilter,
     });
 
+    const isNvdCvssColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
+    const filteredColumns = filterManagedColumns(
+        defaultColumns,
+        (key) => key !== 'nvdCvss' || isNvdCvssColumnEnabled
+    );
+    const managedColumnState = useManagedColumns(tableId, filteredColumns);
+
     const hiddenSeverities = getHiddenSeverities(querySearchFilter);
     const hiddenStatuses = getHiddenStatuses(querySearchFilter);
-    const severityCounts = data?.image.imageCVECountBySeverity;
-    const totalVulnerabilityCount = sum([
-        severityCounts?.critical.total ?? 0,
-        severityCounts?.important.total ?? 0,
-        severityCounts?.moderate.total ?? 0,
-        severityCounts?.low.total ?? 0,
-    ]);
+    const totalVulnerabilityCount = data?.image?.imageVulnerabilityCount ?? 0;
 
     return (
         <>
@@ -286,7 +288,7 @@ function ImagePageVulnerabilities({
                     </SummaryCardLayout>
                     <Divider />
                     <div className="pf-v5-u-p-lg">
-                        <Split className="pf-v5-u-pb-lg pf-v5-u-align-items-baseline">
+                        <Split hasGutter className="pf-v5-u-pb-lg pf-v5-u-align-items-baseline">
                             <SplitItem isFilled>
                                 <Flex alignItems={{ default: 'alignItemsCenter' }}>
                                     <Title headingLevel="h2">
@@ -295,6 +297,9 @@ function ImagePageVulnerabilities({
                                     </Title>
                                     {isFiltered && <DynamicTableLabel />}
                                 </Flex>
+                            </SplitItem>
+                            <SplitItem>
+                                <ColumnManagementButton managedColumnState={managedColumnState} />
                             </SplitItem>
                             {canSelectRows && (
                                 <>
@@ -362,6 +367,7 @@ function ImagePageVulnerabilities({
                                     setSearchFilter({});
                                     setPage(1);
                                 }}
+                                tableConfig={managedColumnState.columns}
                             />
                         </div>
                     </div>

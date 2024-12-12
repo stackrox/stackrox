@@ -4,8 +4,10 @@ package views
 type ReadOptions struct {
 	SkipGetImagesBySeverity        bool
 	SkipGetTopCVSS                 bool
+	SkipGetTopNVDCVSS              bool
 	SkipGetAffectedImages          bool
 	SkipGetFirstDiscoveredInSystem bool
+	SkipPublishedDate              bool
 }
 
 // IsDefault returns true if all readoptions are set to default/false.

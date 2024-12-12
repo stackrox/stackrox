@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/pkg/cpe"
+	"github.com/quay/claircore/toolkit/types/cpe"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/protoassert"
@@ -226,6 +226,11 @@ func (s *matcherServiceTestSuite) Test_matcherService_notes() {
 			DID:       "alpine",
 			VersionID: "",
 			Version:   "3.18",
+		},
+		{
+			DID:       "alpine",
+			VersionID: "3.19",
+			Version:   "",
 		},
 	}
 

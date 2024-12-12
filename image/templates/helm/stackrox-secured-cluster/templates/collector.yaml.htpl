@@ -45,6 +45,31 @@ spec:
       hostAliases: {{ toYaml ._rox.collector.hostAliases | nindent 8 }}
       {{- end }}
       serviceAccountName: collector
+      {{- if ._rox._securedClusterCertRefresh }}
+      initContainers:
+      - name: init-tls-certs
+        image: {{ quote ._rox.image.main.fullRef }}
+        command:
+        - /stackrox/bin/init-tls-certs
+        args:
+        - --legacy=/run/secrets/stackrox.io/certs-legacy/
+        - --new=/run/secrets/stackrox.io/certs-new/
+        - --destination=/run/secrets/stackrox.io/certs/
+        resources:
+          {{- ._rox.collector._resources | nindent 12 }}
+        securityContext:
+          runAsNonRoot: true
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - name: certs-legacy
+          mountPath: /run/secrets/stackrox.io/certs-legacy/
+          readOnly: true
+        - name: certs-new
+          mountPath: /run/secrets/stackrox.io/certs-new/
+          readOnly: true
+        - name: certs
+          mountPath: /run/secrets/stackrox.io/certs/
+      {{- end }}
       containers:
       {{- if ne ._rox.collector.collectionMethod "NO_COLLECTION"}}
       - name: collector
@@ -70,7 +95,7 @@ spec:
           value: "sensor.stackrox.svc"
         [<- if .FeatureFlags.ROX_COLLECTOR_RUNTIME_CONFIG >]
         - name: ROX_COLLECTOR_RUNTIME_FILTERS_ENABLED
-          value: "{{ ._rox.collector.runtime_config.enabled }}"
+          value: "{{ ._rox.collector.runtimeConfig.enabled }}"
         [<- end >]
         {{- include "srox.envVars" (list . "daemonset" "collector" "collector") | nindent 8 }}
         resources:
@@ -117,6 +142,9 @@ spec:
           mountPropagation: HostToContainer
         {{- end }}
         [<- end >]
+        - mountPath: "/etc/stackrox"
+          name: collector-config
+          readOnly: true
       {{- end }}
       - command:
         - stackrox/compliance
@@ -132,7 +160,7 @@ spec:
         - name: ROX_CALL_NODE_INVENTORY_ENABLED
           value: {{ if eq ._rox.env.openshift 4 }}"true"{{ else }}"false"{{ end }}
         - name: ROX_NODE_INDEX_ENABLED
-          value: {{ eq ._rox.env.openshift 4 | quote }}
+          value: "false"
       {{- if eq ._rox.env.openshift 4 }}
         - name: ROX_NODE_INDEX_HOST_PATH
           value: "/hostindex"
@@ -234,9 +262,13 @@ spec:
       - hostPath:
           path: /dev
         name: dev-ro
+      {{- if ._rox._securedClusterCertRefresh }}
       - name: certs
+        emptyDir: {}
+      - name: certs-legacy
         secret:
           secretName: collector-tls
+          optional: true
           items:
           - key: collector-cert.pem
             path: cert.pem
@@ -244,6 +276,23 @@ spec:
             path: key.pem
           - key: ca.pem
             path: ca.pem
+      - name: certs-new
+        secret:
+          secretName: tls-cert-collector
+          optional: true
+      {{- else }}
+      - name: certs
+        secret:
+          secretName: collector-tls
+          optional: true
+          items:
+          - key: collector-cert.pem
+            path: cert.pem
+          - key: collector-key.pem
+            path: key.pem
+          - key: ca.pem
+            path: ca.pem
+      {{- end }}
       - hostPath:
           path: /
         name: host-root-ro
@@ -276,3 +325,7 @@ spec:
           path: /run/crio/crio.sock
       {{- end }}
       [<- end >]
+      - name: collector-config
+        configMap:
+          name: collector-config
+          optional: true

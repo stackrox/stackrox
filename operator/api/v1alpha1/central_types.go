@@ -75,6 +75,10 @@ type CentralSpec struct {
 	// Network configuration.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Network,order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	Network *GlobalNetworkSpec `json:"network,omitempty"`
+
+	// Config-as-Code configuration.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Config-as-Code,order=11,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	ConfigAsCode *ConfigAsCodeSpec `json:"configAsCode,omitempty"`
 }
 
 // Egress defines settings related to outgoing network traffic.
@@ -128,26 +132,25 @@ type CentralComponentSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
 	Monitoring *Monitoring `json:"monitoring,omitempty"`
 
-	// Configures how Central should store its persistent data. You can choose between using a persistent
-	// volume claim (recommended default), and a host path.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5
+	// Unused field. This field exists solely for backward compatibility starting from version v4.6.0.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	Persistence *Persistence `json:"persistence,omitempty"`
 
 	// Settings for Central DB, which is responsible for data persistence.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=6,displayName="Central DB Settings"
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5,displayName="Central DB Settings"
 	DB *CentralDBSpec `json:"db,omitempty"`
 
 	// Configures telemetry settings for Central. If enabled, Central transmits telemetry and diagnostic
 	// data to a remote storage backend.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=7,displayName="Telemetry",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=6,displayName="Telemetry",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	Telemetry *Telemetry `json:"telemetry,omitempty"`
 
 	// Configures resources within Central in a declarative manner.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=8,displayName="Declarative Configuration",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=7,displayName="Declarative Configuration",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	DeclarativeConfiguration *DeclarativeConfiguration `json:"declarativeConfiguration,omitempty"`
 
 	// Configures the encryption of notifier secrets stored in the Central DB.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=9,displayName="Notifier Secrets Encryption",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=8,displayName="Notifier Secrets Encryption",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	NotifierSecretsEncryption *NotifierSecretsEncryption `json:"notifierSecretsEncryption,omitempty"`
 
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=99
@@ -160,14 +163,6 @@ func (c *CentralComponentSpec) GetDB() *CentralDBSpec {
 		return nil
 	}
 	return c.DB
-}
-
-// GetPersistence returns Central's persistence config
-func (c *CentralComponentSpec) GetPersistence() *Persistence {
-	if c == nil {
-		return nil
-	}
-	return c.Persistence
 }
 
 // GetAdminPasswordSecret provides a way to retrieve the admin password that is safe to use on a nil receiver object.
@@ -609,6 +604,24 @@ const (
 	ScannerV4ComponentEnabled ScannerV4ComponentPolicy = "Enabled"
 	// ScannerV4ComponentDisabled explicitly disables the Scanner V4 component.
 	ScannerV4ComponentDisabled ScannerV4ComponentPolicy = "Disabled"
+)
+
+type ConfigAsCodeSpec struct {
+	// If you want to deploy the Config as Code component, set this to "Enabled"
+	//+kubebuilder:default=Enabled
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Config as Code component"
+	ComponentPolicy *ConfigAsCodeComponentPolicy `json:"configAsCodeComponent,omitempty"`
+}
+
+// ConfigAsCodeComponentPolicy is a type for values of spec.configAsCode.configAsCodeComponent
+// +kubebuilder:validation:Enum=Enabled;Disabled
+type ConfigAsCodeComponentPolicy string
+
+const (
+	// ConfigAsCodeComponentEnabled explicitly enables the Config as Code component.
+	ConfigAsCodeComponentEnabled ConfigAsCodeComponentPolicy = "Enabled"
+	// ConfigAsCodeComponentDisabled explicitly disables the Config as Code component.
+	ConfigAsCodeComponentDisabled ConfigAsCodeComponentPolicy = "Disabled"
 )
 
 // -------------------------------------------------------------

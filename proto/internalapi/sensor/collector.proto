@@ -13,3 +13,21 @@ message CollectorRegisterRequest {
   // A unique identifier for an instance of collector.
   string instance_id = 2;
 }
+
+// CollectorConfig controls which type of data is reported by collector
+// and how it is processed by collector. These configurations are used
+// to fine-tune collector's performance on large scale clusters.
+// At this time it only controls if external IPs are aggregated at the
+// cluster level.
+message CollectorConfig {
+  message ExternalIPs {
+    bool enable = 1;
+  }
+
+  message Networking {
+    ExternalIPs external_ips = 1;
+    int64 per_container_rate_limit = 2;
+  }
+
+  Networking networking = 1;
+}

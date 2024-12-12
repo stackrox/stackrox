@@ -6,7 +6,7 @@
 #
 # TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
 # We're targeting a floating tag here which should be reasonably safe to do as both RHEL major 8 and Go major.minor 1.22 should provide enough stability.
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.22 as builder
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.22 AS builder
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
@@ -20,9 +20,8 @@ ARG VERSIONS_SUFFIX
 ENV MAIN_TAG_SUFFIX="$VERSIONS_SUFFIX" COLLECTOR_TAG_SUFFIX="$VERSIONS_SUFFIX" SCANNER_TAG_SUFFIX="$VERSIONS_SUFFIX"
 
 ENV CI=1 GOFLAGS=""
-# TODO(ROX-24276): re-enable release builds for fast stream.
 # TODO(ROX-20240): enable non-release development builds.
-# ENV GOTAGS="release"
+ENV GOTAGS="release"
 
 RUN RACE=0 CGO_ENABLED=1 GOOS=linux GOARCH=$(go env GOARCH) scripts/go-build.sh ./roxctl && \
     cp bin/linux_$(go env GOARCH)/roxctl image/bin/roxctl
@@ -42,6 +41,7 @@ RUN microdnf upgrade -y --nobest && \
 COPY LICENSE /licenses/LICENSE
 
 ARG MAIN_IMAGE_TAG
+RUN if [[ "$MAIN_IMAGE_TAG" == "" ]]; then >&2 echo "error: required MAIN_IMAGE_TAG arg is unset"; exit 6; fi
 
 LABEL \
     com.redhat.component="rhacs-roxctl-container" \

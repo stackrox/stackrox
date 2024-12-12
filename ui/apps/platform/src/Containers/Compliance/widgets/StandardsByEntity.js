@@ -1,7 +1,6 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
-import ReactRouterPropTypes from 'react-router-prop-types';
-import { withRouter } from 'react-router-dom';
+import { useLocation, useRouteMatch } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
 import capitalize from 'lodash/capitalize';
 import sortBy from 'lodash/sortBy';
@@ -91,8 +90,10 @@ function getLabelLinks(match, location, data, entityType) {
     return labelLinks;
 }
 
-const StandardsByEntity = ({ match, location, entityType, bodyClassName, className }) => {
+const StandardsByEntity = ({ entityType, bodyClassName, className }) => {
     const searchParam = useContext(searchContext);
+    const match = useRouteMatch();
+    const location = useLocation();
     const headerText = `Passing standards by ${entityNounOrdinaryCaseSingular[entityType]}`;
 
     const variables = {
@@ -164,8 +165,6 @@ const StandardsByEntity = ({ match, location, entityType, bodyClassName, classNa
     );
 };
 StandardsByEntity.propTypes = {
-    match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired,
     entityType: PropTypes.string.isRequired,
     bodyClassName: PropTypes.string,
     className: PropTypes.string,
@@ -176,4 +175,4 @@ StandardsByEntity.defaultProps = {
     className: '',
 };
 
-export default withRouter(StandardsByEntity);
+export default StandardsByEntity;

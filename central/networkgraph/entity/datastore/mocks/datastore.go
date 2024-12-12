@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -21,6 +22,7 @@ import (
 type MockEntityDataStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockEntityDataStoreMockRecorder
+	isgomock struct{}
 }
 
 // MockEntityDataStoreMockRecorder is the mock recorder for MockEntityDataStore.
@@ -176,6 +178,21 @@ func (m *MockEntityDataStore) GetEntity(ctx context.Context, id string) (*storag
 func (mr *MockEntityDataStoreMockRecorder) GetEntity(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEntity", reflect.TypeOf((*MockEntityDataStore)(nil).GetEntity), ctx, id)
+}
+
+// GetEntityByQuery mocks base method.
+func (m *MockEntityDataStore) GetEntityByQuery(ctx context.Context, query *v1.Query) ([]*storage.NetworkEntity, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetEntityByQuery", ctx, query)
+	ret0, _ := ret[0].([]*storage.NetworkEntity)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetEntityByQuery indicates an expected call of GetEntityByQuery.
+func (mr *MockEntityDataStoreMockRecorder) GetEntityByQuery(ctx, query any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEntityByQuery", reflect.TypeOf((*MockEntityDataStore)(nil).GetEntityByQuery), ctx, query)
 }
 
 // GetIDs mocks base method.

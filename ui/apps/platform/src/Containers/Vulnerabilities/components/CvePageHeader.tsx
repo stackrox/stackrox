@@ -12,6 +12,7 @@ import HeaderLoadingSkeleton from './HeaderLoadingSkeleton';
 export type CveMetadata = {
     cve: string;
     firstDiscoveredInSystem: string | null;
+    publishedOn: string | null;
     distroTuples: {
         summary: string;
         link: string;
@@ -42,9 +43,13 @@ function CvePageHeader({ data }: CvePageHeaderProps) {
                 {data.cve}
             </Title>
             {data.firstDiscoveredInSystem && (
-                <LabelGroup numLabels={1}>
+                <LabelGroup numLabels={2}>
                     <Label>
                         First discovered in system: {getDateTime(data.firstDiscoveredInSystem)}
+                    </Label>
+                    <Label>
+                        Published:{' '}
+                        {data.publishedOn ? getDateTime(data.publishedOn) : 'Not available'}
                     </Label>
                 </LabelGroup>
             )}

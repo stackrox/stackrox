@@ -1,10 +1,11 @@
-/* eslint-disable no-nested-ternary */
 import React, { useState } from 'react';
 import {
     Alert,
     AlertActionCloseButton,
     Breadcrumb,
     BreadcrumbItem,
+    Card,
+    CardBody,
     Divider,
     Flex,
     FlexItem,
@@ -14,28 +15,31 @@ import {
     TabTitleText,
     Title,
 } from '@patternfly/react-core';
+import { useParams } from 'react-router-dom';
 
 import { complianceEnhancedSchedulesPath } from 'routePaths';
-import PageTitle from 'Components/PageTitle';
-import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import useAlert from 'hooks/useAlert';
+import useURLStringUnion from 'hooks/useURLStringUnion';
 import {
     ComplianceScanConfigurationStatus,
     runComplianceReport,
     runComplianceScanConfiguration,
 } from 'services/ComplianceScanConfigurationService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-
-import useFeatureFlags from 'hooks/useFeatureFlags';
-import { JobContextTab } from 'types/reportJob';
-import { ensureJobContextTab } from 'utils/reportJob';
+import PageTitle from 'Components/PageTitle';
+import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
+import ReportJobsHelpAction from 'Components/ReportJob/ReportJobsHelpAction';
+import { jobContextTabs } from 'Components/ReportJob/types';
+import useAnalytics from 'hooks/useAnalytics';
 import ScanConfigActionDropdown from './ScanConfigActionDropdown';
 import ConfigDetails from './components/ConfigDetails';
 import ReportJobs from './components/ReportJobs';
-import ReportJobsHelpAction from '../../../Components/ReportJobsHelpAction';
+import useWatchLastSnapshotForComplianceReports from './hooks/useWatchLastSnapshotForComplianceReports';
 
 type ViewScanConfigDetailProps = {
     hasWriteAccessForCompliance: boolean;
+    isReportJobsEnabled: boolean;
+    isComplianceReportingEnabled: boolean;
     scanConfig?: ComplianceScanConfigurationStatus;
     isLoading: boolean;
     error?: Error | string | null;
@@ -46,17 +50,28 @@ const allReportJobsTabId = 'ComplianceScanConfigReportJobs';
 
 function ViewScanConfigDetail({
     hasWriteAccessForCompliance,
+    isReportJobsEnabled,
+    isComplianceReportingEnabled,
     scanConfig,
     isLoading,
     error = null,
 }: ViewScanConfigDetailProps): React.ReactElement {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isReportJobsEnabled = isFeatureFlagEnabled('ROX_SCAN_SCHEDULE_REPORT_JOBS');
+    const { scanConfigId } = useParams();
+    const { analyticsTrack } = useAnalytics();
 
-    const [selectedTab, setSelectedTab] = useState<JobContextTab>('CONFIGURATION_DETAILS');
+    const [activeScanConfigTab, setActiveScanConfigTab] = useURLStringUnion(
+        'scanConfigTab',
+        jobContextTabs
+    );
     const [isTriggeringRescan, setIsTriggeringRescan] = useState(false);
 
     const { alertObj, setAlertObj, clearAlertObj } = useAlert();
+    const { complianceReportSnapshots } = useWatchLastSnapshotForComplianceReports(scanConfig);
+    const lastSnapshot = complianceReportSnapshots[scanConfigId];
+
+    const isReportStatusPending =
+        lastSnapshot?.reportStatus.runState === 'PREPARING' ||
+        lastSnapshot?.reportStatus.runState === 'WAITING';
 
     function handleRunScanConfig(scanConfigResponse: ComplianceScanConfigurationStatus) {
         clearAlertObj();
@@ -68,7 +83,6 @@ function ViewScanConfigDetail({
                     type: 'success',
                     title: 'Successfully triggered a re-scan',
                 });
-                // TODO verify is lastExecutedTime expected to change? therefore, refetch?
             })
             .catch((error) => {
                 setAlertObj({
@@ -84,11 +98,37 @@ function ViewScanConfigDetail({
 
     function handleSendReport(scanConfigResponse: ComplianceScanConfigurationStatus) {
         clearAlertObj();
-        runComplianceReport(scanConfigResponse.id)
+        runComplianceReport(scanConfigResponse.id, 'EMAIL')
             .then(() => {
+                analyticsTrack({
+                    event: 'Compliance Report Manual Send Triggered',
+                    properties: { source: 'Details page' },
+                });
                 setAlertObj({
                     type: 'success',
                     title: 'Successfully requested to send a report',
+                });
+            })
+            .catch((error) => {
+                setAlertObj({
+                    type: 'danger',
+                    title: 'Could not send a report',
+                    children: getAxiosErrorMessage(error),
+                });
+            });
+    }
+
+    function handleGenerateDownload(scanConfigResponse: ComplianceScanConfigurationStatus) {
+        clearAlertObj();
+        runComplianceReport(scanConfigResponse.id, 'DOWNLOAD')
+            .then(() => {
+                analyticsTrack({
+                    event: 'Compliance Report Download Generation Triggered',
+                    properties: { source: 'Details page' },
+                });
+                setAlertObj({
+                    type: 'success',
+                    title: 'The report generation has started and will be available for download once complete',
                 });
             })
             .catch((error) => {
@@ -129,11 +169,12 @@ function ViewScanConfigDetail({
                                     <ScanConfigActionDropdown
                                         handleRunScanConfig={handleRunScanConfig}
                                         handleSendReport={handleSendReport}
-                                        isScanning={
-                                            isTriggeringRescan /* ||
-                                            scanConfig.lastExecutedTime === null */
-                                        }
+                                        handleGenerateDownload={handleGenerateDownload}
+                                        isScanning={isTriggeringRescan}
+                                        isReportStatusPending={isReportStatusPending}
                                         scanConfigResponse={scanConfig}
+                                        isReportJobsEnabled={isReportJobsEnabled}
+                                        isComplianceReportingEnabled={isComplianceReportingEnabled}
                                     />
                                 </FlexItem>
                             )}
@@ -143,6 +184,7 @@ function ViewScanConfigDetail({
                                 title={alertObj.title}
                                 component="p"
                                 variant={alertObj.type}
+                                isInline
                                 className="pf-v5-u-mb-lg pf-v5-u-mx-lg"
                                 actionClose={<AlertActionCloseButton onClose={clearAlertObj} />}
                             >
@@ -155,9 +197,12 @@ function ViewScanConfigDetail({
             {isReportJobsEnabled && (
                 <PageSection variant="light" className="pf-v5-u-py-0">
                     <Tabs
-                        activeKey={selectedTab}
+                        activeKey={activeScanConfigTab}
                         onSelect={(_e, tab) => {
-                            setSelectedTab(ensureJobContextTab(tab));
+                            setActiveScanConfigTab(tab);
+                            if (tab === 'ALL_REPORT_JOBS') {
+                                analyticsTrack('Compliance Report Jobs Table Viewed');
+                            }
                         }}
                         aria-label="Scan schedule details tabs"
                     >
@@ -175,14 +220,26 @@ function ViewScanConfigDetail({
                     </Tabs>
                 </PageSection>
             )}
-            {selectedTab === 'CONFIGURATION_DETAILS' && (
+            {activeScanConfigTab === 'CONFIGURATION_DETAILS' && (
                 <PageSection isCenterAligned id={configDetailsTabId}>
-                    <ConfigDetails isLoading={isLoading} error={error} scanConfig={scanConfig} />
+                    <Card isFlat>
+                        <CardBody>
+                            <ConfigDetails
+                                isLoading={isLoading}
+                                error={error}
+                                scanConfig={scanConfig}
+                                isComplianceReportingEnabled={isComplianceReportingEnabled}
+                            />
+                        </CardBody>
+                    </Card>
                 </PageSection>
             )}
-            {selectedTab === 'ALL_REPORT_JOBS' && (
+            {activeScanConfigTab === 'ALL_REPORT_JOBS' && scanConfig?.id && (
                 <PageSection isCenterAligned id={allReportJobsTabId}>
-                    <ReportJobs />
+                    <ReportJobs
+                        scanConfigId={scanConfig.id}
+                        isComplianceReportingEnabled={isComplianceReportingEnabled}
+                    />
                 </PageSection>
             )}
         </>

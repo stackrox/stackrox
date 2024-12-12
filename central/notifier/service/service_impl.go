@@ -48,6 +48,8 @@ var (
 	})
 )
 
+const errSecureNotifierString = "Error securing notifier"
+
 // ClusterService is the struct that manages the cluster API
 type serviceImpl struct {
 	v1.UnimplementedNotifierServiceServer
@@ -145,8 +147,9 @@ func (s *serviceImpl) UpdateNotifier(ctx context.Context, request *v1.UpdateNoti
 	if request.GetUpdatePassword() {
 		err := notifierUtils.SecureNotifier(request.GetNotifier(), s.cryptoKey)
 		if err != nil {
-			// Don't send out error from crypto lib
-			return nil, errors.New("Error securing notifier")
+			// Don't send out error from crypto lib but log it.
+			log.Errorf("%s: %s", errSecureNotifierString, err.Error())
+			return nil, errors.New(errSecureNotifierString)
 		}
 	}
 	notifier, err := notifierCreator(request.GetNotifier())
@@ -174,8 +177,9 @@ func (s *serviceImpl) PostNotifier(ctx context.Context, request *storage.Notifie
 	}
 	err := notifierUtils.SecureNotifier(request, s.cryptoKey)
 	if err != nil {
-		// Don't send out error from crypto lib
-		return nil, errors.New("Error securing notifier")
+		// Don't send out error from crypto lib but log it.
+		log.Errorf("%s: %s", errSecureNotifierString, err.Error())
+		return nil, errors.New(errSecureNotifierString)
 	}
 	notifier, err := pkgNotifiers.CreateNotifier(request)
 	if err != nil {
@@ -213,8 +217,9 @@ func (s *serviceImpl) TestUpdatedNotifier(ctx context.Context, request *v1.Updat
 	if request.GetUpdatePassword() {
 		err := notifierUtils.SecureNotifier(request.GetNotifier(), s.cryptoKey)
 		if err != nil {
-			// Don't send out error from crypto lib
-			return nil, errors.New("Error securing notifier")
+			// Don't send out error from crypto lib but log it.
+			log.Errorf("%s: %s", errSecureNotifierString, err.Error())
+			return nil, errors.New(errSecureNotifierString)
 		}
 	}
 	notifier, err := pkgNotifiers.CreateNotifier(request.GetNotifier())

@@ -1,7 +1,6 @@
 import React, { useState, useContext } from 'react';
 import PropTypes from 'prop-types';
-import ReactRouterPropTypes from 'react-router-prop-types';
-import { withRouter } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import resolvePath from 'object-resolve-path';
 
 import workflowStateContext from 'Containers/workflowStateContext';
@@ -11,7 +10,6 @@ import TablePagination from 'Components/TablePagination';
 import Table, { DEFAULT_PAGE_SIZE } from 'Components/Table';
 
 const TableWidget = ({
-    history,
     header,
     entityType,
     pageSize,
@@ -21,6 +19,7 @@ const TableWidget = ({
     ...rest
 }) => {
     const workflowState = useContext(workflowStateContext);
+    const history = useHistory();
     const [localPage, setLocalPage] = useState(0);
     const {
         columns,
@@ -98,7 +97,6 @@ const TableWidget = ({
 
 TableWidget.propTypes = {
     header: PropTypes.oneOfType([PropTypes.element, PropTypes.string]).isRequired,
-    history: ReactRouterPropTypes.history.isRequired,
     idAttribute: PropTypes.string,
     pageSize: PropTypes.number,
     parentPageState: PropTypes.shape({
@@ -118,4 +116,5 @@ TableWidget.defaultProps = {
     currentSort: null,
     sortHandler: null,
 };
-export default withRouter(TableWidget);
+
+export default TableWidget;

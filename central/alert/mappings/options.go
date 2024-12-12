@@ -14,7 +14,7 @@ var OptionsMap search.OptionsMap
 
 func init() {
 	OptionsMap = search.Walk(v1.SearchCategory_ALERTS, "list_alert", (*storage.ListAlert)(nil))
-	alertOptions := schema.AlertsSchema.OptionsMap
+	alertOptions := schema.AlertsSchema.OptionsMap.Clone()
 
 	// There are more search terms in the alert proto due to the embeddings of policies.
 	// This pruning of options ensures that the search options are stable between RocksDB and Postgres

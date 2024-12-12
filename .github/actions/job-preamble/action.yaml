@@ -20,6 +20,9 @@ runs:
         git config --global --add safe.directory "$(pwd)"
       shell: bash
 
+    - name: Set up gcloud CLI
+      uses: 'google-github-actions/setup-gcloud@v2'
+
     - name: Record job info
       uses: gacts/run-and-post-run@674528335da98a7afc80915ff2b4b860a0b3553a # v1.4.0
       env:

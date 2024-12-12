@@ -165,7 +165,7 @@ function yupNameRuleObject({ field }: ByNameResourceSelector) {
 function yupResourceSelectorObject() {
     return yup.lazy((ruleObject: ScopedResourceSelector) => {
         switch (ruleObject.type) {
-            case 'All':
+            case 'NoneSpecified':
                 return yup.object().shape({});
             case 'ByName':
                 return yupNameRuleObject(ruleObject);

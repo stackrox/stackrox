@@ -5,7 +5,7 @@ run:
   - sql_integration
   - test_e2e
   modules-download-mode: readonly
-  go: "1.21"
+  go: "1.22"
 
 output:
   formats:
@@ -20,7 +20,6 @@ issues:
 
   exclude-dirs:
   - pkg/complianceoperator/api
-  - scanner/updater/rhel        # TODO(ROX-21539): Remove when CSAF/VEX arrives
   exclude-rules:
     - path: "(central|compliance|integration-tests|local|migrator|operator|pkg|scanner|sensor|tests|tools|scale)/"
       linters:

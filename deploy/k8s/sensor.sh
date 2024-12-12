@@ -19,9 +19,6 @@ if [[ -z $CLUSTER ]]; then
 fi
 echo "CLUSTER set to $CLUSTER"
 
-if [[ -z "${ROX_ADMIN_PASSWORD}" ]]; then
-    export ROX_ADMIN_PASSWORD="${ROX_PASSWORD:-}"
-fi
 if [[ -z "$ROX_ADMIN_PASSWORD" && -f "${K8S_DIR}/central-deploy/password" ]]; then
 	# shellcheck disable=SC2086
 	ROX_ADMIN_PASSWORD="$(cat ${K8S_DIR}/central-deploy/password)"

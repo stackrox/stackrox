@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { withRouter } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import startCase from 'lodash/startCase';
 
 import SidePanelAnimatedArea from 'Components/animations/SidePanelAnimatedArea';
@@ -7,7 +7,6 @@ import PageHeader from 'Components/PageHeader';
 import EntitiesMenu from 'Components/workflow/EntitiesMenu';
 import ExportButton from 'Components/ExportButton';
 import BackdropExporting from 'Components/PatternFly/BackdropExporting';
-import { useTheme } from 'Containers/ThemeProvider';
 import workflowStateContext from 'Containers/workflowStateContext';
 import entityTypes from 'constants/entityTypes';
 import parseURL from 'utils/URLParser';
@@ -24,9 +23,9 @@ import WorkflowSidePanel from '../WorkflowSidePanel';
 import EntityComponent from './VulnMgmtEntity';
 import EntityTabs from './EntityTabs';
 
-const WorkflowEntityPageLayout = ({ location }) => {
+const WorkflowEntityPageLayout = () => {
     const [isExporting, setIsExporting] = useState(false);
-    const { isDarkMode } = useTheme();
+    const location = useLocation();
 
     const workflowState = parseURL(location);
     const { stateStack, useCase, search } = workflowState;
@@ -133,7 +132,7 @@ const WorkflowEntityPageLayout = ({ location }) => {
                         />
                     </div>
 
-                    <SidePanelAnimatedArea isDarkMode={isDarkMode} isOpen={!!sidePanelEntityId}>
+                    <SidePanelAnimatedArea isOpen={!!sidePanelEntityId}>
                         <WorkflowSidePanel>
                             <EntityComponent
                                 entityId={sidePanelEntityId}
@@ -155,4 +154,4 @@ const WorkflowEntityPageLayout = ({ location }) => {
     );
 };
 
-export default withRouter(WorkflowEntityPageLayout);
+export default WorkflowEntityPageLayout;

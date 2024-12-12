@@ -31,7 +31,7 @@ export function getColumnsForClusters({
                 <RowActionButton
                     text="Delete cluster"
                     icon={<Trash2 className="my-1 h-4 w-4" />}
-                    className="hover:bg-alert-200 text-alert-600 hover:text-alert-700"
+                    className="pf-v5-u-danger-color-100"
                     onClick={rowActions.onDeleteHandler(cluster)}
                 />
             </div>

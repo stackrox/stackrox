@@ -70,12 +70,12 @@ export function isSupportedSelectorField(field: SelectorField): field is Support
     return isByNameField(field) || isByLabelField(field);
 }
 
-export const selectorOptions = ['All', 'ByName', 'ByLabel'] as const;
+export const selectorOptions = ['NoneSpecified', 'ByName', 'ByLabel'] as const;
 
 export type RuleSelectorOption = (typeof selectorOptions)[number];
 
-export type AllResourceSelector = {
-    type: 'All';
+export type NoneSpecifiedResourceSelector = {
+    type: 'NoneSpecified';
 };
 export type ByNameResourceSelector = {
     type: 'ByName';
@@ -88,7 +88,7 @@ export type ByLabelResourceSelector = {
     rules: LabelSelectorRule[];
 };
 export type ScopedResourceSelector =
-    | AllResourceSelector
+    | NoneSpecifiedResourceSelector
     | ByNameResourceSelector
     | ByLabelResourceSelector;
 

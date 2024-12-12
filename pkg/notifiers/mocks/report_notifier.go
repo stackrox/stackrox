@@ -23,6 +23,7 @@ import (
 type MockReportNotifier struct {
 	ctrl     *gomock.Controller
 	recorder *MockReportNotifierMockRecorder
+	isgomock struct{}
 }
 
 // MockReportNotifierMockRecorder is the mock recorder for MockReportNotifier.
@@ -71,17 +72,17 @@ func (mr *MockReportNotifierMockRecorder) ProtoNotifier() *gomock.Call {
 }
 
 // ReportNotify mocks base method.
-func (m *MockReportNotifier) ReportNotify(arg0 context.Context, arg1 *bytes.Buffer, arg2 []string, arg3, arg4 string) error {
+func (m *MockReportNotifier) ReportNotify(ctx context.Context, zippedReportData *bytes.Buffer, recipients []string, subject, messageText, reportName string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ReportNotify", arg0, arg1, arg2, arg3, arg4)
+	ret := m.ctrl.Call(m, "ReportNotify", ctx, zippedReportData, recipients, subject, messageText, reportName)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ReportNotify indicates an expected call of ReportNotify.
-func (mr *MockReportNotifierMockRecorder) ReportNotify(arg0, arg1, arg2, arg3, arg4 any) *gomock.Call {
+func (mr *MockReportNotifierMockRecorder) ReportNotify(ctx, zippedReportData, recipients, subject, messageText, reportName any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReportNotify", reflect.TypeOf((*MockReportNotifier)(nil).ReportNotify), arg0, arg1, arg2, arg3, arg4)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReportNotify", reflect.TypeOf((*MockReportNotifier)(nil).ReportNotify), ctx, zippedReportData, recipients, subject, messageText, reportName)
 }
 
 // Test mocks base method.

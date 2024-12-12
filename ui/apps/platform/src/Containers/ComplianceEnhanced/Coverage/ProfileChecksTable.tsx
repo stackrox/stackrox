@@ -3,14 +3,11 @@ import { Link } from 'react-router-dom';
 import {
     Divider,
     Pagination,
-    Progress,
-    ProgressMeasureLocation,
     Text,
     TextVariants,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
-    Tooltip,
 } from '@patternfly/react-core';
 import {
     ExpandableRowContent,
@@ -25,13 +22,16 @@ import {
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
+import useURLSearch from 'hooks/useURLSearch';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import { ComplianceCheckResultStatusCount } from 'services/ComplianceCommon';
 import { TableUIState } from 'utils/getTableUIState';
+import { getPercentage } from 'utils/mathUtils';
 
-import { CHECK_NAME_QUERY } from './compliance.coverage.constants';
+import { CHECK_NAME_QUERY, CHECK_STATUS_QUERY } from './compliance.coverage.constants';
 import { coverageCheckDetailsPath } from './compliance.coverage.routes';
-import { calculateCompliancePercentage, getStatusCounts } from './compliance.coverage.utils';
+import { getStatusCounts } from './compliance.coverage.utils';
+import ComplianceProgressBar from './components/ComplianceProgressBar';
 import ControlLabels from './components/ControlLabels';
 import ProfilesTableToggleGroup from './components/ProfilesTableToggleGroup';
 import StatusCountIcon from './components/StatusCountIcon';
@@ -57,6 +57,7 @@ function ProfileChecksTable({
     /* eslint-disable no-nested-ternary */
     const { generatePathWithScanConfig } = useScanConfigRouter();
     const [expandedRows, setExpandedRows] = useState<number[]>([]);
+    const { searchFilter } = useURLSearch();
     const { page, perPage, setPage, setPerPage } = pagination;
 
     function toggleRow(selectedRowIndex: number) {
@@ -69,6 +70,18 @@ function ProfileChecksTable({
     useEffect(() => {
         setExpandedRows([]);
     }, [page, perPage, tableState]);
+
+    function isComplianceStatusFiltered() {
+        return CHECK_STATUS_QUERY in searchFilter;
+    }
+
+    function shouldDisableIcon(statuses) {
+        const statusFilter = searchFilter[CHECK_STATUS_QUERY];
+        if (!statusFilter) {
+            return false;
+        }
+        return !statuses.some((status) => statusFilter.includes(status));
+    }
 
     return (
         <>
@@ -106,7 +119,14 @@ function ProfileChecksTable({
                             <Th modifier="fitContent">Fail status</Th>
                             <Th modifier="fitContent">Manual status</Th>
                             <Th modifier="fitContent">Other status</Th>
-                            <Th modifier="fitContent" width={30}>
+                            <Th
+                                modifier="fitContent"
+                                width={30}
+                                info={{
+                                    tooltip:
+                                        'Compliance is calculated as the percentage of passing checks out of the total checks. Compliance cannot be calculated when status filters are applied.',
+                                }}
+                            >
                                 Compliance
                             </Th>
                         </Tr>
@@ -133,10 +153,7 @@ function ProfileChecksTable({
                                         otherCount,
                                         totalCount,
                                     } = getStatusCounts(checkStats);
-                                    const passPercentage = calculateCompliancePercentage(
-                                        passCount,
-                                        totalCount
-                                    );
+                                    const passPercentage = getPercentage(passCount, totalCount);
                                     const progressBarId = `progress-bar-${checkName}`;
                                     const isRowExpanded = expandedRows.includes(rowIndex);
 
@@ -156,10 +173,10 @@ function ProfileChecksTable({
                                                         {checkName}
                                                     </Link>
                                                     {/*
-                                                grid display is required to prevent the cell from
-                                                expanding to the text length. The Truncate PF component
-                                                is not used here because it displays a tooltip on hover
-                                            */}
+                                                        grid display is required to prevent the cell from
+                                                        expanding to the text length. The Truncate PF component
+                                                        is not used here because it displays a tooltip on hover
+                                                    */}
                                                     <div style={{ display: 'grid' }}>
                                                         <Text
                                                             component={TextVariants.small}
@@ -197,6 +214,7 @@ function ProfileChecksTable({
                                                         text="cluster"
                                                         status="pass"
                                                         count={passCount}
+                                                        disabled={shouldDisableIcon(['Pass'])}
                                                     />
                                                 </Td>
                                                 <Td dataLabel="Fail status" modifier="fitContent">
@@ -204,6 +222,7 @@ function ProfileChecksTable({
                                                         text="cluster"
                                                         status="fail"
                                                         count={failCount}
+                                                        disabled={shouldDisableIcon(['Fail'])}
                                                     />
                                                 </Td>
                                                 <Td dataLabel="Manual status" modifier="fitContent">
@@ -211,6 +230,7 @@ function ProfileChecksTable({
                                                         text="cluster"
                                                         status="manual"
                                                         count={manualCount}
+                                                        disabled={shouldDisableIcon(['Manual'])}
                                                     />
                                                 </Td>
                                                 <Td dataLabel="Other status" modifier="fitContent">
@@ -218,28 +238,22 @@ function ProfileChecksTable({
                                                         text="cluster"
                                                         status="other"
                                                         count={otherCount}
+                                                        disabled={shouldDisableIcon([
+                                                            'Error',
+                                                            'Info',
+                                                            'Not Applicable',
+                                                            'Inconsistent',
+                                                            'Unset Check Status',
+                                                        ])}
                                                     />
                                                 </Td>
                                                 <Td dataLabel="Compliance">
-                                                    <Progress
-                                                        id={progressBarId}
-                                                        value={passPercentage}
-                                                        measureLocation={
-                                                            ProgressMeasureLocation.outside
-                                                        }
-                                                        aria-label={`${checkName} compliance percentage`}
-                                                    />
-                                                    <Tooltip
-                                                        content={
-                                                            <div>
-                                                                {`${passCount} / ${totalCount} clusters are passing this check`}
-                                                            </div>
-                                                        }
-                                                        triggerRef={() =>
-                                                            document.getElementById(
-                                                                progressBarId
-                                                            ) as HTMLButtonElement
-                                                        }
+                                                    <ComplianceProgressBar
+                                                        ariaLabel={`${checkName} compliance percentage`}
+                                                        isDisabled={isComplianceStatusFiltered()}
+                                                        passPercentage={passPercentage}
+                                                        progressBarId={progressBarId}
+                                                        tooltipText={`${passCount} / ${totalCount} clusters are passing this check`}
                                                     />
                                                 </Td>
                                             </Tr>

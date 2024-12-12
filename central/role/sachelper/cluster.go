@@ -10,13 +10,13 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 )
 
-// listClusterIDsInScope consolidates the list of cluster IDs in the user scopes associated
+// ListClusterIDsInScope consolidates the list of cluster IDs in the user scopes associated
 // with the requested resources and access level.
 // - If one of the allowed scopes is unrestricted, then the string set is returned empty
 // and the returned boolean is true.
 // - If no allowed scope is unrestricted, the string set contains the cluster IDs allowed by
 // the user scopes associated with the requested resources, and the returned boolean is false.
-func listClusterIDsInScope(
+func ListClusterIDsInScope(
 	ctx context.Context,
 	resourcesWithAccess []permissions.ResourceWithAccess,
 ) (set.StringSet, bool, error) {

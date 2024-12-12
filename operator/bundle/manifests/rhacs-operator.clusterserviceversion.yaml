@@ -21,7 +21,7 @@ metadata:
     features.operators.openshift.io/cni: 'false'
     features.operators.openshift.io/csi: 'false'
     features.operators.openshift.io/disconnected: 'true'
-    features.operators.openshift.io/fips-compliant: 'false'
+    features.operators.openshift.io/fips-compliant: 'true'
     features.operators.openshift.io/proxy-aware: 'true'
     features.operators.openshift.io/tls-profiles: 'false'
     features.operators.openshift.io/token-auth-aws: 'false'
@@ -107,6 +107,11 @@ spec:
         path: network
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: Config-as-Code configuration.
+        displayName: Config-as-Code
+        path: configAsCode
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
       - description: 'Deprecated field. This field will be removed in a future release.
 
           Miscellaneous settings.'
@@ -147,12 +152,6 @@ spec:
           Prometheus compatible format.'
         displayName: Monitoring
         path: central.monitoring
-      - description: 'Configures how Central should store its persistent data. You
-          can choose between using a persistent
-
-          volume claim (recommended default), and a host path.'
-        displayName: Persistence
-        path: central.persistence
       - description: Settings for Central DB, which is responsible for data persistence.
         displayName: Central DB Settings
         path: central.db
@@ -204,6 +203,12 @@ spec:
           authentication methods.'
         displayName: Admin Password Generation Disabled
         path: central.adminPasswordGenerationDisabled
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Unused field. This field exists solely for backward compatibility
+          starting from version v4.6.0.
+        displayName: Persistence
+        path: central.persistence
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: The name of the referenced secret.
@@ -457,6 +462,10 @@ spec:
       - description: Storage API key. If not set, telemetry is disabled.
         displayName: Key
         path: central.telemetry.storage.key
+      - description: If you want to deploy the Config as Code component, set this
+          to "Enabled"
+        displayName: Config as Code component
+        path: configAsCode.configAsCodeComponent
       - description: Custom labels to set on all managed objects.
         displayName: Labels
         path: customize.labels
@@ -1562,31 +1571,6 @@ spec:
           - platform.stackrox.io
           resources:
           - centrals
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - platform.stackrox.io
-          resources:
-          - centrals/finalizers
-          verbs:
-          - update
-        - apiGroups:
-          - platform.stackrox.io
-          resources:
-          - centrals/status
-          verbs:
-          - get
-          - patch
-          - update
-        - apiGroups:
-          - platform.stackrox.io
-          resources:
           - securedclusters
           verbs:
           - create
@@ -1599,12 +1583,14 @@ spec:
         - apiGroups:
           - platform.stackrox.io
           resources:
+          - centrals/finalizers
           - securedclusters/finalizers
           verbs:
           - update
         - apiGroups:
           - platform.stackrox.io
           resources:
+          - centrals/status
           - securedclusters/status
           verbs:
           - get

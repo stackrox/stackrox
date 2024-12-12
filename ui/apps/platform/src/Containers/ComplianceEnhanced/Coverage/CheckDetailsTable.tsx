@@ -41,6 +41,7 @@ export type CheckDetailsTableProps = {
     getSortParams: UseURLSortResult['getSortParams'];
     searchFilterConfig: CompoundSearchFilterConfig;
     searchFilter: SearchFilter;
+    onFilterChange: (newFilter: SearchFilter) => void;
     onSearch: (payload: OnSearchPayload) => void;
     onCheckStatusSelect: (
         filterType: 'Compliance Check Status',
@@ -59,6 +60,7 @@ function CheckDetailsTable({
     getSortParams,
     searchFilterConfig,
     searchFilter,
+    onFilterChange,
     onSearch,
     onCheckStatusSelect,
     onClearFilters,
@@ -96,6 +98,8 @@ function CheckDetailsTable({
                     </ToolbarGroup>
                     <ToolbarGroup className="pf-v5-u-w-100">
                         <SearchFilterChips
+                            searchFilter={searchFilter}
+                            onFilterChange={onFilterChange}
                             filterChipGroupDescriptors={[
                                 {
                                     displayName: 'Cluster',

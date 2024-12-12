@@ -149,6 +149,42 @@
         ]
       }
     },
+    "/v1/networkgraph/cluster/{clusterId}/externalentities/flows/{deploymentId}": {
+      "get": {
+        "operationId": "NetworkGraphService_GetExternalNetworkFlows",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetExternalNetworkFlowsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "clusterId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "deploymentId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "NetworkGraphService"
+        ]
+      }
+    },
     "/v1/networkgraph/config": {
       "get": {
         "operationId": "NetworkGraphService_GetNetworkGraphConfig",
@@ -291,7 +327,12 @@
           "type": "string"
         },
         "default": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "`default` indicates whether the external source is user-generated or system-generated."
+        },
+        "discovered": {
+          "type": "boolean",
+          "description": "`discovered` indicates whether the external source is harvested from monitored traffic."
         }
       },
       "description": "Update normalizeDupNameExtSrcs(...) in `central/networkgraph/aggregator/aggregator.go` whenever this message is updated."
@@ -426,6 +467,43 @@
         }
       }
     },
+    "storageNetworkFlow": {
+      "type": "object",
+      "properties": {
+        "props": {
+          "$ref": "#/definitions/storageNetworkFlowProperties"
+        },
+        "lastSeenTimestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "clusterId": {
+          "type": "string",
+          "title": "Need the clusterID as that is part of the key in RocksDB"
+        }
+      }
+    },
+    "storageNetworkFlowProperties": {
+      "type": "object",
+      "properties": {
+        "srcEntity": {
+          "$ref": "#/definitions/storageNetworkEntityInfo",
+          "title": "The source deployment ID of the network flow"
+        },
+        "dstEntity": {
+          "$ref": "#/definitions/storageNetworkEntityInfo",
+          "title": "The destination deployment ID of the network flow"
+        },
+        "dstPort": {
+          "type": "integer",
+          "format": "int64",
+          "description": "may be 0 if not applicable (e.g., icmp)."
+        },
+        "l4protocol": {
+          "$ref": "#/definitions/storageL4Protocol"
+        }
+      }
+    },
     "storageNetworkGraphConfig": {
       "type": "object",
       "properties": {
@@ -448,6 +526,18 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageNetworkEntity"
+          }
+        }
+      }
+    },
+    "v1GetExternalNetworkFlowsResponse": {
+      "type": "object",
+      "properties": {
+        "flows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageNetworkFlow"
           }
         }
       }

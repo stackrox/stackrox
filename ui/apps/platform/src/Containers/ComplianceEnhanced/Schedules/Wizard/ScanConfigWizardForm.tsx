@@ -5,6 +5,10 @@ import { FormikProvider } from 'formik';
 import { complianceEnhancedSchedulesPath } from 'routePaths';
 import isEqual from 'lodash/isEqual';
 
+import useAnalytics, {
+    COMPLIANCE_SCHEDULES_WIZARD_SAVE_CLICKED,
+    COMPLIANCE_SCHEDULES_WIZARD_STEP_CHANGED,
+} from 'hooks/useAnalytics';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useRestQuery from 'hooks/useRestQuery';
 import { saveScanConfig } from 'services/ComplianceScanConfigurationService';
@@ -37,6 +41,7 @@ type ScanConfigWizardFormProps = {
 };
 
 function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps): ReactElement {
+    const { analyticsTrack } = useAnalytics();
     const history = useHistory();
     const formik = useFormikScanConfig(initialFormValues);
     const [isCreating, setIsCreating] = useState(false);
@@ -64,8 +69,22 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
 
         try {
             await saveScanConfig(complianceScanConfig);
+            analyticsTrack({
+                event: COMPLIANCE_SCHEDULES_WIZARD_SAVE_CLICKED,
+                properties: {
+                    success: true,
+                    errorMessage: '',
+                },
+            });
             history.push(complianceEnhancedSchedulesPath);
         } catch (error) {
+            analyticsTrack({
+                event: COMPLIANCE_SCHEDULES_WIZARD_SAVE_CLICKED,
+                properties: {
+                    success: false,
+                    errorMessage: getAxiosErrorMessage(error),
+                },
+            });
             setCreateScanConfigError(getAxiosErrorMessage(error));
         } finally {
             setIsCreating(false);
@@ -78,7 +97,15 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
         }
     }
 
-    function wizardStepChanged() {
+    function wizardStepChanged(step: WizardStep) {
+        if (typeof step.id === 'string') {
+            analyticsTrack({
+                event: COMPLIANCE_SCHEDULES_WIZARD_STEP_CHANGED,
+                properties: {
+                    step: step.id,
+                },
+            });
+        }
         handleProfilesUpdate();
         setCreateScanConfigError('');
     }

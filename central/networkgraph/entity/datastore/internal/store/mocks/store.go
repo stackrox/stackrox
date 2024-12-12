@@ -22,6 +22,7 @@ import (
 type MockEntityStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockEntityStoreMockRecorder
+	isgomock struct{}
 }
 
 // MockEntityStoreMockRecorder is the mock recorder for MockEntityStore.
@@ -98,6 +99,21 @@ func (m *MockEntityStore) Get(ctx context.Context, id string) (*storage.NetworkE
 func (mr *MockEntityStoreMockRecorder) Get(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockEntityStore)(nil).Get), ctx, id)
+}
+
+// GetByQuery mocks base method.
+func (m *MockEntityStore) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.NetworkEntity, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByQuery", ctx, query)
+	ret0, _ := ret[0].([]*storage.NetworkEntity)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByQuery indicates an expected call of GetByQuery.
+func (mr *MockEntityStoreMockRecorder) GetByQuery(ctx, query any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByQuery", reflect.TypeOf((*MockEntityStore)(nil).GetByQuery), ctx, query)
 }
 
 // GetIDs mocks base method.

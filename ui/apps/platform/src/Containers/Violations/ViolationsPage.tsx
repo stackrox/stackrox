@@ -9,9 +9,15 @@ import ViolationNotFoundPage from './ViolationNotFoundPage';
 function ViolationsPage(): ReactElement {
     return (
         <Switch>
-            <Route exact path={violationsBasePath} component={ViolationsTablePage} />
-            <Route path={violationsPath} component={ViolationDetailsPage} />
-            <Route component={ViolationNotFoundPage} />
+            <Route exact path={violationsBasePath}>
+                <ViolationsTablePage />
+            </Route>
+            <Route path={violationsPath}>
+                <ViolationDetailsPage />
+            </Route>
+            <Route>
+                <ViolationNotFoundPage />
+            </Route>
         </Switch>
     );
 }

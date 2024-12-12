@@ -6,6 +6,7 @@ import (
 
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	v2ResultMocks "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/mocks"
+	reportMgrMocks "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/mocks"
 	"github.com/stackrox/rox/central/convert/internaltov2storage"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -38,6 +39,7 @@ type PipelineTestSuite struct {
 
 	v2ResultDS *v2ResultMocks.MockDataStore
 	clusterDS  *clusterMocks.MockDataStore
+	reportMgr  *reportMgrMocks.MockManager
 	mockCtrl   *gomock.Controller
 }
 
@@ -53,6 +55,7 @@ func (suite *PipelineTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.v2ResultDS = v2ResultMocks.NewMockDataStore(suite.mockCtrl)
 	suite.clusterDS = clusterMocks.NewMockDataStore(suite.mockCtrl)
+	suite.reportMgr = reportMgrMocks.NewMockManager(suite.mockCtrl)
 }
 
 func (suite *PipelineTestSuite) TearDownTest() {
@@ -64,7 +67,8 @@ func (suite *PipelineTestSuite) TestRunCreate() {
 
 	suite.clusterDS.EXPECT().GetClusterName(ctx, fixtureconsts.Cluster1).Return("cluster1", true, nil).Times(1)
 	suite.v2ResultDS.EXPECT().UpsertResult(ctx, getTestRec(fixtureconsts.Cluster1)).Return(nil).Times(1)
-	pipeline := NewPipeline(suite.v2ResultDS, suite.clusterDS)
+	suite.reportMgr.EXPECT().HandleResult(gomock.Any(), gomock.Any()).Times(1)
+	pipeline := NewPipeline(suite.v2ResultDS, suite.clusterDS, suite.reportMgr)
 
 	msg := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
@@ -103,7 +107,7 @@ func (suite *PipelineTestSuite) TestRunDelete() {
 	ctx := context.Background()
 
 	suite.v2ResultDS.EXPECT().DeleteResult(ctx, id).Return(nil).Times(1)
-	pipeline := NewPipeline(suite.v2ResultDS, suite.clusterDS)
+	pipeline := NewPipeline(suite.v2ResultDS, suite.clusterDS, suite.reportMgr)
 
 	msg := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{

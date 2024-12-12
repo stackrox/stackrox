@@ -1,8 +1,8 @@
 #! /usr/bin/env bash
 
-# This test script requires ROX_PASSWORD to be set in the environment.
+# This test script requires ROX_ADMIN_PASSWORD to be set in the environment.
 
-[ -n "$ROX_PASSWORD" ]
+[ -n "$ROX_ADMIN_PASSWORD" ]
 
 FAILURES=0
 
@@ -35,7 +35,7 @@ test_roxctl_cmd() {
   echo "New context:" "$(kubectl config current-context)"
 
   # Verify central whoami using current k8s context.
-  OUTPUT=$(roxctl -p "$ROX_PASSWORD" central whoami --use-current-k8s-context 2>&1) || true
+  OUTPUT=$(roxctl central whoami --use-current-k8s-context 2>&1) || true
   if [[ "$OUTPUT" == "ERROR:"*"could not get endpoint"*"cannot list resource"* ]] ; then
       echo "[OK] roxctl central whoami using current k8s context and insufficient role fails"
   else
@@ -54,7 +54,7 @@ test_roxctl_cmd() {
   echo "Switching back to the limited context..."
   kubectl config use-context port-forward-context
   # Verify central whoami using current k8s context.
-  if OUTPUT=$(roxctl -p "$ROX_PASSWORD" central whoami --use-current-k8s-context \
+  if OUTPUT=$(roxctl central whoami --use-current-k8s-context \
     2>&1); then
       echo "[OK] roxctl central whoami using current k8s context works"
   else

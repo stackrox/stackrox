@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import max from 'lodash/max';
-import { withRouter } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 
 import {
     FlexibleXYPlot,
@@ -37,7 +37,8 @@ function getLabelData(data) {
     }));
 }
 
-const LabeledBarGraph = ({ data, title, history }) => {
+const LabeledBarGraph = ({ data, title }) => {
+    const history = useHistory();
     const { onValueMouseOver, onValueMouseOut } = useGraphHoverHint();
 
     const upperBoundX = max([...data.map((datum) => datum.x)]);
@@ -93,9 +94,7 @@ const LabeledBarGraph = ({ data, title, history }) => {
     );
 };
 
-const HOCLabeledBarGraph = withRouter(LabeledBarGraph);
-
-HOCLabeledBarGraph.propTypes = {
+LabeledBarGraph.propTypes = {
     data: PropTypes.arrayOf(
         PropTypes.shape({
             color: PropTypes.string,
@@ -107,9 +106,9 @@ HOCLabeledBarGraph.propTypes = {
     title: PropTypes.string,
 };
 
-HOCLabeledBarGraph.defaultProps = {
+LabeledBarGraph.defaultProps = {
     data: [],
     title: null,
 };
 
-export default HOCLabeledBarGraph;
+export default LabeledBarGraph;

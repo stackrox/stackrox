@@ -19,6 +19,7 @@ import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import PageTitle from 'Components/PageTitle';
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import { SearchFilter } from 'types/search';
 import {
     RequestExpires,
     RequestIDLink,
@@ -75,7 +76,7 @@ function DeniedRequests() {
                     'Request Status': ['DENIED'],
                 },
                 sortOption,
-                page - 1,
+                page,
                 perPage
             ),
         [searchFilter, sortOption, page, perPage]
@@ -90,7 +91,8 @@ function DeniedRequests() {
         searchFilter,
     });
 
-    function onFilterChange() {
+    function onFilterChange(searchFilter: SearchFilter) {
+        setSearchFilter(searchFilter);
         setPage(1);
     }
 
@@ -139,6 +141,7 @@ function DeniedRequests() {
                     </ToolbarItem>
                     <ToolbarGroup aria-label="applied search filters" className="pf-v5-u-w-100">
                         <SearchFilterChips
+                            searchFilter={searchFilter}
                             onFilterChange={onFilterChange}
                             filterChipGroupDescriptors={searchOptions.map(({ label, value }) => {
                                 return {

@@ -9,11 +9,24 @@ import (
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/alpine"
+	"github.com/quay/claircore/aws"
+	"github.com/quay/claircore/debian"
+	"github.com/quay/claircore/gobin"
+	"github.com/quay/claircore/java"
 	"github.com/quay/claircore/libvuln"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/matchers/registry"
 	"github.com/quay/claircore/nodejs"
+	"github.com/quay/claircore/oracle"
+	"github.com/quay/claircore/photon"
 	"github.com/quay/claircore/pkg/ctxlock"
+	"github.com/quay/claircore/python"
+	"github.com/quay/claircore/rhel"
+	"github.com/quay/claircore/rhel/rhcc"
+	"github.com/quay/claircore/ruby"
+	"github.com/quay/claircore/suse"
+	"github.com/quay/claircore/ubuntu"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/scanner/config"
@@ -21,25 +34,26 @@ import (
 	"github.com/stackrox/rox/scanner/enricher/fixedby"
 	"github.com/stackrox/rox/scanner/enricher/nvd"
 	"github.com/stackrox/rox/scanner/internal/httputil"
-	"github.com/stackrox/rox/scanner/matcher/updater/distribution"
 	"github.com/stackrox/rox/scanner/matcher/updater/vuln"
 )
 
 // matcherNames specifies the ClairCore matchers to use.
+//
+// Note: Do NOT hardcode the names. It's very easy to mess up...
 var matcherNames = []string{
-	"alpine-matcher",
-	"aws-matcher",
-	"debian-matcher",
-	"gobin",
-	"java-maven",
-	"oracle",
-	"photon",
-	"python",
-	"rhel-container-matcher",
-	"rhel",
-	"ruby-gem",
-	"suse",
-	"ubuntu-matcher",
+	(*alpine.Matcher)(nil).Name(),
+	(*aws.Matcher)(nil).Name(),
+	(*debian.Matcher)(nil).Name(),
+	(*gobin.Matcher)(nil).Name(),
+	(*java.Matcher)(nil).Name(),
+	(*oracle.Matcher)(nil).Name(),
+	(*photon.Matcher)(nil).Name(),
+	(*python.Matcher)(nil).Name(),
+	rhcc.Matcher.Name(),
+	(*rhel.Matcher)(nil).Name(),
+	(*ruby.Matcher)(nil).Name(),
+	(*suse.Matcher)(nil).Name(),
+	(*ubuntu.Matcher)(nil).Name(),
 }
 
 func init() {
@@ -68,8 +82,7 @@ type matcherImpl struct {
 	metadataStore postgres.MatcherMetadataStore
 	pool          *pgxpool.Pool
 
-	vulnUpdater   *vuln.Updater
-	distroUpdater *distribution.Updater
+	vulnUpdater *vuln.Updater
 }
 
 // NewMatcher creates a new matcher.
@@ -154,7 +167,6 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 	vulnUpdater, err := vuln.New(ctx, vuln.Opts{
 		Store:         store,
 		Locker:        locker,
-		Pool:          pool,
 		MetadataStore: metadataStore,
 		Client:        client,
 		URL:           cfg.VulnerabilitiesURL,
@@ -162,18 +174,6 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 	if err != nil {
 		return nil, fmt.Errorf("creating vuln updater: %w", err)
 	}
-
-	distroUpdater, err := distribution.New(ctx, store, vulnUpdater.Initialized)
-	if err != nil {
-		return nil, fmt.Errorf("creating known-distribution updater: %w", err)
-	}
-
-	// Start the known-distributions updater.
-	go func() {
-		if err := distroUpdater.Start(); err != nil {
-			zlog.Error(ctx).Err(err).Msg("known-distributions updater failed")
-		}
-	}()
 
 	// Start the vulnerability updater.
 	go func() {
@@ -188,8 +188,7 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		metadataStore: metadataStore,
 		pool:          pool,
 
-		vulnUpdater:   vulnUpdater,
-		distroUpdater: distroUpdater,
+		vulnUpdater: vulnUpdater,
 	}, nil
 }
 
@@ -204,13 +203,13 @@ func (m *matcherImpl) GetLastVulnerabilityUpdate(ctx context.Context) (time.Time
 }
 
 func (m *matcherImpl) GetKnownDistributions(_ context.Context) []claircore.Distribution {
-	return m.distroUpdater.Known()
+	return m.vulnUpdater.KnownDistributions()
 }
 
 // Close closes the matcher.
 func (m *matcherImpl) Close(ctx context.Context) error {
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/matcher.Close")
-	err := errors.Join(m.distroUpdater.Stop(), m.vulnUpdater.Stop(), m.libVuln.Close(ctx))
+	err := errors.Join(m.vulnUpdater.Stop(), m.libVuln.Close(ctx))
 	m.pool.Close()
 	return err
 }

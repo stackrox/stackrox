@@ -16,7 +16,7 @@ import { gql, useQuery } from '@apollo/client';
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import useTableSort from 'hooks/patternfly/useTableSort';
 import { SearchFilter } from 'types/search';
-import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
 const deploymentQuery = gql`
     query getDeploymentsForPolicyGeneration($query: String!, $pagination: Pagination!) {
@@ -52,11 +52,7 @@ function DeploymentScopeModal({
         skip: !isOpen,
         variables: {
             query: getRequestQueryStringForSearchFilter(searchFilter),
-            pagination: {
-                offset: (page - 1) * perPage,
-                limit: perPage,
-                sortOption,
-            },
+            pagination: getPaginationParams({ page, perPage, sortOption }),
         },
     };
     const { data, previousData, loading, error } = useQuery<
@@ -94,9 +90,6 @@ function DeploymentScopeModal({
                             perPage={perPage}
                             onSetPage={(_, newPage) => setPage(newPage)}
                             onPerPageSelect={(_, newPerPage) => {
-                                if (scopeDeploymentCount < (page - 1) * newPerPage) {
-                                    setPage(1);
-                                }
                                 setPerPage(newPerPage);
                             }}
                         />

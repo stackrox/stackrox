@@ -30,7 +30,7 @@ describe('Listening endpoints page table', () => {
         cy.get(
             `${centralDbProcessTableSelector} ${selectors.tableRowWithValueForColumn(
                 'Exec file path',
-                '/usr/pgsql-13/bin/postgres'
+                '/usr/bin/postgres'
             )}`
         );
         cy.get(

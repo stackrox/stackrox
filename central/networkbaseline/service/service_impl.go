@@ -5,6 +5,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
+	deploymentUtils "github.com/stackrox/rox/central/deployment/utils"
 	"github.com/stackrox/rox/central/networkbaseline/datastore"
 	"github.com/stackrox/rox/central/networkbaseline/manager"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -154,6 +155,8 @@ func (s *serviceImpl) getStatusesForPeers(
 	return statuses
 }
 
+// getBaselinePeerByEntityID indexes the peers from the provided baseline
+// by their (type, ID) information.
 func (s *serviceImpl) getBaselinePeerByEntityID(
 	baseline *storage.NetworkBaseline,
 ) map[networkgraph.Entity]*storage.NetworkBaselinePeer {
@@ -161,11 +164,30 @@ func (s *serviceImpl) getBaselinePeerByEntityID(
 
 	peers := baseline.GetPeers()
 	for _, peer := range peers {
+		peerType := peer.GetEntity().GetInfo().GetType()
+		peerId := peer.GetEntity().GetInfo().GetId()
 		key := networkgraph.Entity{
-			Type: peer.GetEntity().GetInfo().GetType(),
-			ID:   peer.GetEntity().GetInfo().GetId(),
+			Type: peerType,
+			ID:   peerId,
 		}
 		result[key] = peer
+		// In UI flows, the peers for flow comparison to the baseline are
+		// the ones received from the network graph call.
+		// Scoped Access Control masking in network graph generates new
+		// identifiers for entities that are not in the allowed scope of
+		// the requested, and this in a deterministic way.
+		// Here, the peer is also referenced by the ID that would be
+		// generated for the network graph, so that flows coming from or
+		// targeting masked entities would still be flagged as belonging to
+		// the network baseline.
+		if peerType == storage.NetworkEntityInfo_DEPLOYMENT {
+			deploymentName := peer.GetEntity().GetInfo().GetDeployment().GetName()
+			maskedKey := networkgraph.Entity{
+				Type: peerType,
+				ID:   deploymentUtils.GetMaskedDeploymentID(peerId, deploymentName),
+			}
+			result[maskedKey] = peer
+		}
 	}
 
 	return result

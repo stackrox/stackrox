@@ -1,7 +1,6 @@
 import React from 'react';
 import URLService from 'utils/URLService';
-import { withRouter } from 'react-router-dom';
-import ReactRouterPropTypes from 'react-router-prop-types';
+import { useLocation, useRouteMatch } from 'react-router-dom';
 import entityTypes from 'constants/entityTypes';
 import { gql, useQuery } from '@apollo/client';
 import logError from 'utils/logError';
@@ -14,12 +13,14 @@ const NUM_CIS_CONTROLS = gql`
     }
 `;
 
-const CISControlsTile = ({ match, location }) => {
+const CISControlsTile = () => {
     const { loading, error, data } = useQuery(NUM_CIS_CONTROLS);
     if (error) {
         logError(error);
     }
 
+    const match = useRouteMatch();
+    const location = useLocation();
     const controlsURL = URLService.getURL(match, location).base(entityTypes.CONTROL).url();
 
     const numCISControls = data?.executedControlCount || 0;
@@ -35,9 +36,4 @@ const CISControlsTile = ({ match, location }) => {
     );
 };
 
-CISControlsTile.propTypes = {
-    match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired,
-};
-
-export default withRouter(CISControlsTile);
+export default CISControlsTile;

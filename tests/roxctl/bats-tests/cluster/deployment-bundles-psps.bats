@@ -10,7 +10,7 @@ setup_file() {
     echo "Testing roxctl version: '$(roxctl-release version)'" >&3
 
     [[ -n "${API_ENDPOINT}" ]] || fail "Environment variable 'API_ENDPOINT' required"
-    [[ -n "${ROX_PASSWORD}" ]] || fail "Environment variable 'ROX_PASSWORD' required"
+    [[ -n "${ROX_ADMIN_PASSWORD}" ]] || fail "Environment variable 'ROX_ADMIN_PASSWORD' required"
 }
 
 setup() {
@@ -21,13 +21,13 @@ setup() {
 
 teardown() {
     rm -rf "$out_dir"
-    roxctl-release -e "$API_ENDPOINT" -p "$ROX_PASSWORD" cluster delete --name="${sensor_name}"
+    roxctl-release -e "$API_ENDPOINT" cluster delete --name="${sensor_name}"
 }
 
 sensor_bundle_psp_enabled() {
     local cluster_type="$1"
     shift
-    roxctl-release -e "$API_ENDPOINT" -p "$ROX_PASSWORD" sensor generate "${cluster_type}" --name="${sensor_name}" "$@" --output-dir="${bundle_dir}"
+    roxctl-release -e "$API_ENDPOINT" sensor generate "${cluster_type}" --name="${sensor_name}" "$@" --output-dir="${bundle_dir}"
     run grep -rq "kind: PodSecurityPolicy" "${bundle_dir}"
     assert_success
 }
@@ -35,7 +35,7 @@ sensor_bundle_psp_enabled() {
 sensor_bundle_psp_disabled() {
     local cluster_type="$1"
     shift
-    roxctl-release -e "$API_ENDPOINT" -p "$ROX_PASSWORD" sensor generate "${cluster_type}" --name="${sensor_name}" "$@" --output-dir="${bundle_dir}"
+    roxctl-release -e "$API_ENDPOINT" sensor generate "${cluster_type}" --name="${sensor_name}" "$@" --output-dir="${bundle_dir}"
     run grep -rq "kind: PodSecurityPolicy" "${bundle_dir}"
     assert_failure
 }

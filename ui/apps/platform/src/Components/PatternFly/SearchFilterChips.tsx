@@ -1,9 +1,7 @@
 import React from 'react';
 import { Button, ChipGroup, Chip, Flex, FlexItem, ToolbarChip } from '@patternfly/react-core';
-import noop from 'lodash/noop';
 import { Globe } from 'react-feather';
 
-import useURLSearch from 'hooks/useURLSearch';
 import { SearchFilter } from 'types/search';
 import { searchValueAsArray } from 'utils/searchUtils';
 
@@ -38,8 +36,10 @@ export type FilterChipGroupDescriptor = {
 export type SearchFilterChipsProps = {
     /** The search filter categories to display */
     filterChipGroupDescriptors: FilterChipGroupDescriptor[];
+    /** The current search filter */
+    searchFilter: SearchFilter;
     /** Callback for when the search filter changes */
-    onFilterChange?: (searchFilter: SearchFilter) => void;
+    onFilterChange: (searchFilter: SearchFilter) => void;
 };
 
 /**
@@ -48,12 +48,10 @@ export type SearchFilterChipsProps = {
  */
 function SearchFilterChips({
     filterChipGroupDescriptors,
-    onFilterChange = noop,
+    searchFilter,
+    onFilterChange,
 }: SearchFilterChipsProps) {
-    const { searchFilter, setSearchFilter } = useURLSearch();
-
     function onChangeSearchFilter(newFilter: SearchFilter) {
-        setSearchFilter(newFilter);
         onFilterChange(newFilter);
     }
 

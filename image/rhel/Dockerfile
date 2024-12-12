@@ -13,7 +13,7 @@ WORKDIR /
 COPY download.sh /download.sh
 RUN /download.sh
 
-FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} as stackrox_data
+FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} AS stackrox_data
 
 RUN mkdir /stackrox-data
 RUN microdnf upgrade --nobest -y  && microdnf install -y zip
@@ -85,6 +85,7 @@ COPY bin/kubernetes-sensor  /stackrox/bin/kubernetes-sensor
 COPY bin/sensor-upgrader    /stackrox/bin/sensor-upgrader
 COPY bin/admission-control  /stackrox/bin/admission-control
 COPY bin/config-controller  /stackrox/bin/config-controller
+COPY bin/init-tls-certs     /stackrox/bin/init-tls-certs
 COPY bin/roxctl*            /assets/downloads/cli/
 
 RUN ln -s /assets/downloads/cli/roxctl-linux-${TARGET_ARCH} /stackrox/roxctl && \

@@ -7,7 +7,6 @@ import (
 	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	"github.com/stackrox/rox/central/reports/validation"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -31,9 +30,6 @@ func initialize() {
 
 // Singleton will return a singleton instance of the v2 report scheduler
 func Singleton() Scheduler {
-	if !features.VulnReportingEnhancements.Enabled() {
-		return nil
-	}
 	once.Do(initialize)
 	return sched
 }

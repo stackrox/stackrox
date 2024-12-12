@@ -23,4 +23,6 @@ type EntityStore interface {
 
 	Walk(ctx context.Context, fn func(obj *storage.NetworkEntity) error) error
 	WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj *storage.NetworkEntity) error) error
+
+	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.NetworkEntity, error)
 }

@@ -1,17 +1,27 @@
 import React from 'react';
 import { useQuery } from '@apollo/client';
-import { Divider } from '@patternfly/react-core';
+import { Divider, ToolbarItem } from '@patternfly/react-core';
 
 import useURLSort from 'hooks/useURLSort';
 import useURLPagination from 'hooks/useURLPagination';
-import useURLSearch from 'hooks/useURLSearch';
 
 import { getTableUIState } from 'utils/getTableUIState';
-import DeploymentsTable, { Deployment, deploymentListQuery } from '../Tables/DeploymentsTable';
+import { getPaginationParams } from 'utils/searchUtils';
+import { SearchFilter } from 'types/search';
+import { useManagedColumns } from 'hooks/useManagedColumns';
+import ColumnManagementButton from 'Components/ColumnManagementButton';
+import DeploymentsTable, {
+    defaultColumns,
+    Deployment,
+    deploymentListQuery,
+    tableId,
+} from '../Tables/DeploymentOverviewTable';
 import TableEntityToolbar, { TableEntityToolbarProps } from '../../components/TableEntityToolbar';
 import { VulnerabilitySeverityLabel } from '../../types';
 
 type DeploymentsTableContainerProps = {
+    searchFilter: SearchFilter;
+    onFilterChange: (searchFilter: SearchFilter) => void;
     filterToolbar: TableEntityToolbarProps['filterToolbar'];
     entityToggleGroup: TableEntityToolbarProps['entityToggleGroup'];
     rowCount: number;
@@ -23,6 +33,8 @@ type DeploymentsTableContainerProps = {
 };
 
 function DeploymentsTableContainer({
+    searchFilter,
+    onFilterChange,
     filterToolbar,
     entityToggleGroup,
     rowCount,
@@ -32,7 +44,6 @@ function DeploymentsTableContainer({
     isFiltered,
     showCveDetailFields,
 }: DeploymentsTableContainerProps) {
-    const { searchFilter, setSearchFilter } = useURLSearch();
     const { page, perPage } = pagination;
     const { sortOption, getSortParams } = sort;
 
@@ -41,11 +52,7 @@ function DeploymentsTableContainer({
     }>(deploymentListQuery, {
         variables: {
             query: workloadCvesScopedQueryString,
-            pagination: {
-                offset: (page - 1) * perPage,
-                limit: perPage,
-                sortOption,
-            },
+            pagination: getPaginationParams({ page, perPage, sortOption }),
         },
     });
 
@@ -56,6 +63,8 @@ function DeploymentsTableContainer({
         searchFilter,
     });
 
+    const managedColumnState = useManagedColumns(tableId, defaultColumns);
+
     return (
         <>
             <TableEntityToolbar
@@ -64,7 +73,11 @@ function DeploymentsTableContainer({
                 pagination={pagination}
                 tableRowCount={rowCount}
                 isFiltered={isFiltered}
-            />
+            >
+                <ToolbarItem align={{ default: 'alignRight' }}>
+                    <ColumnManagementButton managedColumnState={managedColumnState} />
+                </ToolbarItem>
+            </TableEntityToolbar>
             <Divider component="div" />
             <div
                 className="workload-cves-table-container"
@@ -78,9 +91,10 @@ function DeploymentsTableContainer({
                     filteredSeverities={searchFilter.SEVERITY as VulnerabilitySeverityLabel[]}
                     showCveDetailFields={showCveDetailFields}
                     onClearFilters={() => {
-                        setSearchFilter({});
+                        onFilterChange({});
                         pagination.setPage(1);
                     }}
+                    columnVisibilityState={managedColumnState.columns}
                 />
             </div>
         </>

@@ -4,7 +4,6 @@ package datastore
 
 import (
 	"context"
-	"strconv"
 	"testing"
 
 	"github.com/stackrox/rox/central/auth/m2m/mocks"
@@ -15,7 +14,6 @@ import (
 	accessScopePostgresStore "github.com/stackrox/rox/central/role/store/simpleaccessscope/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -91,15 +89,6 @@ func (s *datastorePostgresTestSuite) TearDownTest() {
 }
 
 func (s *datastorePostgresTestSuite) TestKubeServiceAccountConfig() {
-	s.kubeServiceAccountConfigTest(true, func(call *gomock.Call) { call.Times(1) })
-}
-
-func (s *datastorePostgresTestSuite) TestKubeServiceAccountConfigDisabledFeature() {
-	s.kubeServiceAccountConfigTest(false, func(call *gomock.Call) { call.Times(0) })
-}
-
-func (s *datastorePostgresTestSuite) kubeServiceAccountConfigTest(exchangerShouldExist bool, setFetcherCallCount func(call *gomock.Call)) {
-	s.T().Setenv(features.PolicyAsCode.EnvVar(), strconv.FormatBool(exchangerShouldExist))
 	controller := gomock.NewController(s.T())
 	defer controller.Finish()
 	store := store.New(s.pool.DB)
@@ -107,8 +96,8 @@ func (s *datastorePostgresTestSuite) kubeServiceAccountConfigTest(exchangerShoul
 	mockSet := mocks.NewMockTokenExchangerSet(controller)
 	issuerFetcher := mocks.NewMockServiceAccountIssuerFetcher(controller)
 
-	setFetcherCallCount(issuerFetcher.EXPECT().GetServiceAccountIssuer().Return(testIssuer, nil))
-	setFetcherCallCount(mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), gomock.Any()).Return(nil))
+	issuerFetcher.EXPECT().GetServiceAccountIssuer().Return(testIssuer, nil).Times(1)
+	mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
 	authDataStore := New(store, mockSet, issuerFetcher)
 	s.NoError(authDataStore.InitializeTokenExchangers())

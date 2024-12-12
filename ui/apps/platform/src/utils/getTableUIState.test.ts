@@ -58,24 +58,6 @@ describe('getTableUIState', () => {
         });
     });
 
-    it('should show the POLLING state', () => {
-        const data = [{ text: 'Test 1' }];
-        const args: GetTableUIStateProps<DataType> = {
-            isLoading: true,
-            isPolling: true,
-            data,
-            error: undefined,
-            searchFilter: {},
-        };
-
-        const tableUIState = getTableUIState<DataType>(args);
-
-        expect(tableUIState).toEqual({
-            type: 'POLLING',
-            data,
-        });
-    });
-
     it('should show the EMPTY state', () => {
         const args: GetTableUIStateProps<DataType> = {
             isLoading: false,

@@ -12,11 +12,12 @@ import ExceptionRequestDetailsPage from './ExceptionRequestDetailsPage';
 function ExceptionManagementPage() {
     return (
         <Switch>
-            <Route
-                path={`${exceptionManagementPath}/requests/:requestId`}
-                component={ExceptionRequestDetailsPage}
-            />
-            <Route path={exceptionManagementPath} component={ExceptionRequestsPage} />
+            <Route path={`${exceptionManagementPath}/requests/:requestId`}>
+                <ExceptionRequestDetailsPage />
+            </Route>
+            <Route path={exceptionManagementPath}>
+                <ExceptionRequestsPage />
+            </Route>
             <Route>
                 <PageSection variant="light">
                     <PageTitle title="Exception requests - Not Found" />

@@ -1,6 +1,12 @@
 import qs from 'qs';
 
-import { SearchEntry, ApiSortOption, GraphQLSortOption, SearchFilter } from 'types/search';
+import {
+    SearchEntry,
+    ApiSortOption,
+    GraphQLSortOption,
+    SearchFilter,
+    ApiSortOptionSingle,
+} from 'types/search';
 import { Pagination } from 'services/types';
 import { ValueOf } from './type.utils';
 import { safeGeneratePath } from './urlUtils';
@@ -70,14 +76,19 @@ export function convertToRestSearch(workflowSearch: Record<string, string>): Sea
     return restSearch;
 }
 
-export function convertSortToGraphQLFormat({ field, reversed }: ApiSortOption): GraphQLSortOption {
+export function convertSortToGraphQLFormat({
+    field,
+    reversed,
+}: ApiSortOptionSingle): GraphQLSortOption {
     return {
         id: field,
         desc: reversed,
     };
 }
 
-export function convertSortToRestFormat(graphqlSort: GraphQLSortOption[]): Partial<ApiSortOption> {
+export function convertSortToRestFormat(
+    graphqlSort: GraphQLSortOption[]
+): Partial<ApiSortOptionSingle> {
     return {
         field: graphqlSort[0]?.id,
         reversed: graphqlSort[0]?.desc,
@@ -192,30 +203,27 @@ export function flattenFilterValue<UndefinedFallback>(
  * Function to convert the standard list API pagination and query parameters into a
  * URL query string.
  *
- * @param searchFilter The `SearchFilter` to apply to the list query
- * @param sortOption The field to sort results by and whether to sort ascending or descending
- * @param page The page offset to return
- * @param pageSize The number of items per page
+ * @param options.searchFilter The `SearchFilter` to apply to the list query
+ * @param options.sortOption The field to sort results by and whether to sort ascending or descending
+ * @param options.page The page offset to return, pages are 1-indexed
+ * @param options.perPage The number of items per page
  */
-export function getListQueryParams(
-    searchFilter: SearchFilter,
-    sortOption: ApiSortOption,
-    page?: number,
-    pageSize?: number
-): string {
-    let offset: number | undefined;
-    if (typeof page === 'number' && typeof pageSize === 'number') {
-        offset = page > 0 ? page * pageSize : 0;
-    }
+export function getListQueryParams({
+    searchFilter,
+    sortOption,
+    page,
+    perPage,
+}: {
+    searchFilter: SearchFilter;
+    sortOption: ApiSortOption;
+    page: number;
+    perPage: number;
+}): string {
     const query = getRequestQueryStringForSearchFilter(searchFilter);
     return qs.stringify(
         {
             query,
-            pagination: {
-                offset,
-                limit: pageSize,
-                sortOption,
-            },
+            pagination: getPaginationParams({ page, perPage, sortOption }),
         },
         { allowDots: true }
     );
@@ -234,13 +242,24 @@ export function getPaginationParams({
     perPage: number;
     sortOption?: ApiSortOption;
 }): Pagination {
-    const sortObject = sortOption ? { sortOption } : {};
-
-    return {
-        offset: (page - 1) * perPage,
-        limit: perPage,
-        ...sortObject,
+    const safePage = Math.max(1, page); // Prevent negative page numbers, page numbers are 1-indexed
+    const safePerPage = Math.max(0, perPage); // Prevent negative perPage values
+    const paginationBase = {
+        offset: (safePage - 1) * safePerPage,
+        limit: safePerPage,
     };
+
+    if (typeof sortOption === 'undefined') {
+        return paginationBase;
+    }
+
+    // When using multiple sort options, the API expects an array of sort options and the
+    // plural form of `sortOption` is used.
+    if (Array.isArray(sortOption)) {
+        return { ...paginationBase, sortOptions: sortOption };
+    }
+
+    return { ...paginationBase, sortOption };
 }
 
 /**

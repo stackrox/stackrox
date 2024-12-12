@@ -4,15 +4,16 @@ import {
     ReportConfiguration,
     ReportHistoryResponse,
     ReportSnapshot,
-    ReportNotificationMethod,
-    ReportStatus,
     RunReportResponse,
 } from 'services/ReportsService.types';
 import { ApiSortOption } from 'types/search';
+import { getPaginationParams } from 'utils/searchUtils';
+import { ReportNotificationMethod, ReportStatus } from 'types/reportJob';
 import axios from './instance';
 import { Empty } from './types';
 
 // The following functions are built around the new VM Reporting Enhancements
+export const reportDownloadURL = '/api/reports/jobs/download';
 
 // @TODO: Same logic is used in fetchReportConfigurations. Maybe consider something more DRY
 export function fetchReportConfigurationsCount({
@@ -47,11 +48,7 @@ export function fetchReportConfigurations({
     const params = queryString.stringify(
         {
             query,
-            pagination: {
-                limit: perPage,
-                offset: (page - 1) * perPage,
-                sortOption,
-            },
+            pagination: getPaginationParams({ page, perPage, sortOption }),
         },
         { arrayFormat: 'repeat', allowDots: true }
     );
@@ -107,11 +104,7 @@ export function fetchReportHistory({
         {
             reportParamQuery: {
                 query,
-                pagination: {
-                    limit: perPage,
-                    offset: (page - 1) * perPage,
-                    sortOption,
-                },
+                pagination: getPaginationParams({ page, perPage, sortOption }),
             },
         },
         { arrayFormat: 'repeat', allowDots: true }

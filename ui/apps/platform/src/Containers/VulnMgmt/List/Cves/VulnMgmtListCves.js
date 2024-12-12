@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { gql } from '@apollo/client';
 import * as Icon from 'react-feather';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 
 import {
     defaultHeaderClassName,
@@ -280,7 +280,6 @@ export function renderCveDescription(row) {
 }
 
 const VulnMgmtCves = ({
-    history,
     selectedRowId,
     search,
     sort,
@@ -292,6 +291,7 @@ const VulnMgmtCves = ({
     refreshTrigger,
     setRefreshTrigger,
 }) => {
+    const history = useHistory();
     const { analyticsTrack } = useAnalytics();
     const isRouteEnabled = useIsRouteEnabled();
     const { hasReadWriteAccess } = usePermissions();
@@ -308,7 +308,6 @@ const VulnMgmtCves = ({
         hasReadWriteAccess('VulnerabilityManagementRequests');
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isUnifiedDeferralEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL');
     const isLegacySnoozeEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_LEGACY_SNOOZE');
 
     const [selectedCveIds, setSelectedCveIds] = useState([]);
@@ -319,17 +318,13 @@ const VulnMgmtCves = ({
     const cveType = workflowState.getCurrentEntityType();
 
     // Only allow snooze mutations when:
-    // 1. Unified deferrals is disabled, and the CVE is an image CVE, or
-    // 2. Legacy snooze is enabled, and the CVE is a Node or Platform CVE
+    // Legacy snooze is enabled, and the CVE is a Node or Platform CVE
     const shouldRenderGlobalSnoozeAction =
-        (!isUnifiedDeferralEnabled && cveType === entityTypes.IMAGE_CVE) ||
-        (isLegacySnoozeEnabled && cveType !== entityTypes.IMAGE_CVE);
+        isLegacySnoozeEnabled && cveType !== entityTypes.IMAGE_CVE;
 
     // Allow the ability to toggle the snoozed/unsnoozed view when:
-    // 1. Unified deferrals is disabled and the CVE is an image CVE, or
-    // 2. Always when the CVE is a Node or Platform CVE
-    const shouldRenderGlobalSnoozeView =
-        !isUnifiedDeferralEnabled || cveType !== entityTypes.IMAGE_CVE;
+    // Always when the CVE is a Node or Platform CVE
+    const shouldRenderGlobalSnoozeView = cveType !== entityTypes.IMAGE_CVE;
 
     let cveQuery = '';
 
@@ -654,4 +649,4 @@ const mapDispatchToProps = {
     removeToast: notificationActions.removeOldestNotification,
 };
 
-export default withRouter(connect(null, mapDispatchToProps)(VulnMgmtCves));
+export default connect(null, mapDispatchToProps)(VulnMgmtCves);

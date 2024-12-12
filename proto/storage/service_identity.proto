@@ -6,7 +6,7 @@ option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
 
 message ServiceIdentity {
-  string serial_str = 4; // The serial number in decimal representation. // @gotags: sql:"pk"
+  string serial_str = 4; // The serial number in decimal representation. @gotags: sql:"pk"
   oneof srl {
     int64 serial = 1 [deprecated = true];
   }

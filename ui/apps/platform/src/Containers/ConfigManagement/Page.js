@@ -13,9 +13,15 @@ import EntityPage from './Entity/Page';
 const Page = () => (
     <searchContext.Provider value={searchParams.page}>
         <Switch>
-            <Route exact path={workflowPaths.DASHBOARD} component={DashboardPage} />
-            <Route path={workflowPaths.ENTITY} component={EntityPage} />
-            <Route path={workflowPaths.LIST} component={ListPage} />
+            <Route exact path={workflowPaths.DASHBOARD}>
+                <DashboardPage />
+            </Route>
+            <Route path={workflowPaths.ENTITY}>
+                <EntityPage />
+            </Route>
+            <Route path={workflowPaths.LIST}>
+                <ListPage />
+            </Route>
             <Route>
                 <PageNotFound useCase={useCases.CONFIG_MANAGEMENT} />
             </Route>

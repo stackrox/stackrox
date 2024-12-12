@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -130,16 +129,14 @@ func insertIntoSecrets(batch *pgx.Batch, obj *storage.Secret) error {
 
 	var query string
 
-	if features.Flags["ROX_SECRET_FILE_SEARCH"].Enabled() {
-		for childIndex, child := range obj.GetFiles() {
-			if err := insertIntoSecretsFiles(batch, child, obj.GetId(), childIndex); err != nil {
-				return err
-			}
+	for childIndex, child := range obj.GetFiles() {
+		if err := insertIntoSecretsFiles(batch, child, obj.GetId(), childIndex); err != nil {
+			return err
 		}
-
-		query = "delete from secrets_files where secrets_Id = $1 AND idx >= $2"
-		batch.Queue(query, pgutils.NilOrUUID(obj.GetId()), len(obj.GetFiles()))
 	}
+
+	query = "delete from secrets_files where secrets_Id = $1 AND idx >= $2"
+	batch.Queue(query, pgutils.NilOrUUID(obj.GetId()), len(obj.GetFiles()))
 	return nil
 }
 

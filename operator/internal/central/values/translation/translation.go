@@ -10,8 +10,6 @@ import (
 
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
-	"github.com/stackrox/rox/operator/internal/central/common"
-	"github.com/stackrox/rox/operator/internal/central/extensions"
 	"github.com/stackrox/rox/operator/internal/values/translation"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
@@ -83,16 +81,9 @@ func (t Translator) translate(ctx context.Context, c platform.Central) (chartuti
 		centralSpec = &platform.CentralComponentSpec{}
 	}
 
-	obsoletePVC := common.ObsoletePVC(c.GetAnnotations())
-	checker := &pvcStateChecker{
-		ctx:       ctx,
-		client:    t.client,
-		namespace: c.GetNamespace(),
-	}
-
 	monitoring := c.Spec.Monitoring
 	v.AddChild("monitoring", translation.GetGlobalMonitoring(monitoring))
-	central, err := getCentralComponentValues(centralSpec, checker, obsoletePVC)
+	central, err := getCentralComponentValues(centralSpec)
 	if err != nil {
 		return nil, err
 	}
@@ -111,6 +102,10 @@ func (t Translator) translate(ctx context.Context, c platform.Central) (chartuti
 
 	if c.Spec.Network != nil {
 		v.AddChild("network", translation.GetGlobalNetwork(c.Spec.Network))
+	}
+
+	if c.Spec.ConfigAsCode != nil {
+		v.AddChild("configAsCode", translation.GetConfigAsCode(c.Spec.ConfigAsCode))
 	}
 
 	return v.Build()
@@ -169,44 +164,7 @@ func getCentralDBPersistenceValues(p *platform.DBPersistence) *translation.Value
 	return &persistence
 }
 
-func getCentralPersistenceValues(p *platform.Persistence, checker *pvcStateChecker, obsoletePVC bool) (*translation.ValuesBuilder, error) {
-	persistence := translation.NewValuesBuilder()
-	// Check pvcs which should exist in cluster.
-	if obsoletePVC {
-		persistence.SetBoolValue("none", true)
-		return &persistence, nil
-	}
-
-	if hostPath := p.GetHostPath(); hostPath != "" {
-		persistence.SetStringValue("hostPath", hostPath)
-	} else {
-		pvc := p.GetPersistentVolumeClaim()
-		lookupName := extensions.DefaultCentralPVCName
-		if pvc != nil {
-			lookupName = pointer.StringDeref(pvc.ClaimName, extensions.DefaultCentralPVCName)
-		}
-		// Do not mount PVC if it does not exist.
-		exists, err := checker.pvcExists(lookupName)
-		if err != nil {
-			return nil, err
-		}
-		if !exists {
-			persistence.SetBoolValue("none", true)
-			return &persistence, nil
-		}
-
-		pvcBuilder := translation.NewValuesBuilder()
-		pvcBuilder.SetBoolValue("createClaim", false)
-		if pvc != nil {
-			pvcBuilder.SetString("claimName", pvc.ClaimName)
-		}
-
-		persistence.AddChild("persistentVolumeClaim", &pvcBuilder)
-	}
-	return &persistence, nil
-}
-
-func getCentralComponentValues(c *platform.CentralComponentSpec, checker *pvcStateChecker, obsoletePVC bool) (*translation.ValuesBuilder, error) {
+func getCentralComponentValues(c *platform.CentralComponentSpec) (*translation.ValuesBuilder, error) {
 	cv := translation.NewValuesBuilder()
 
 	cv.AddChild(translation.ResourcesKey, translation.GetResources(c.Resources))
@@ -217,15 +175,6 @@ func getCentralComponentValues(c *platform.CentralComponentSpec, checker *pvcSta
 	cv.SetBoolValue("exposeMonitoring", c.Monitoring.IsEnabled())
 	cv.SetStringMap("nodeSelector", c.NodeSelector)
 	cv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, c.Tolerations))
-
-	// TODO(ROX-7147): design CentralEndpointSpec, see central_types.go
-
-	persistence, err := getCentralPersistenceValues(c.GetPersistence(), checker, obsoletePVC)
-	if err != nil {
-		return nil, err
-	}
-
-	cv.AddChild("persistence", persistence)
 
 	if c.Exposure != nil {
 		exposure := translation.NewValuesBuilder()

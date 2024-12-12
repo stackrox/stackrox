@@ -28,7 +28,7 @@ const requestedLocationKey = 'requested_location';
  */
 export class AuthHttpError extends Error {
     code: number;
-    cause: Error; // eslint-disable-line @typescript-eslint/lines-between-class-members
+    cause: Error;
 
     constructor(message: string, code: number, cause: Error) {
         super(message);
@@ -287,7 +287,7 @@ export function exchangeAuthToken(
 export async function logout() {
     try {
         await axios.post(logoutUrl);
-    } catch (e) {
+    } catch {
         // regardless of the result proceed with token deletion
     }
     accessTokenManager.clearToken();

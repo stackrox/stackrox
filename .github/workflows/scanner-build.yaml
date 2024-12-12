@@ -183,8 +183,6 @@ jobs:
         QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
         QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
         QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
-        # If true, scanner-db image will ship with the DB init bundle.
-        SCANNER_DB_INIT_BUNDLE_ENABLED: ${{ contains(github.event.pull_request.labels.*.name, 'pr-scanner-db-init-bundle') }}
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -346,18 +344,11 @@ jobs:
         roxctl image scan --retries=10 --retry-delay=15 --force --severity=IMPORTANT,CRITICAL --output=sarif \
           --image="quay.io/rhacs-eng/${{ matrix.image }}:${release_tag}" \
           > results.sarif
+        cat results.sarif
 
-    - name: Upload roxctl scan results to GitHub Security tab
-      uses: github/codeql-action/upload-sarif@v3
-      with:
-        category: ${{ matrix.image }}
-        sarif_file: results.sarif
-
-  run-e2e-tests:
-    name: Run standalone E2E test
-    # The test requires the DB init bundle.
-    if: ${{ contains(github.event.pull_request.labels.*.name, 'pr-scanner-db-init-bundle') }}
-    needs:
-      - push-scanner-manifests
-    uses: ./.github/workflows/scanner-e2e-test.yaml
-    secrets: inherit
+    # TODO: re-enable roxctl scan results upload once quota issue has been resolved
+    # - name: Upload roxctl scan results to GitHub Security tab
+    #   uses: github/codeql-action/upload-sarif@v3
+    #   with:
+    #     category: ${{ matrix.image }}
+    #     sarif_file: results.sarif

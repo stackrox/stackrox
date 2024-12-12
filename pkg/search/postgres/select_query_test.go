@@ -418,6 +418,41 @@ func TestSelectQuery(t *testing.T) {
 			desc: "nil query",
 			q:    nil,
 		},
+		{
+			desc: "Order by a field from joined table where the field not present in dst struct",
+			q: search.NewQueryBuilder().
+				AddSelectFields(
+					search.NewQuerySelect(search.TestString),
+					search.NewQuerySelect(search.TestTimestamp),
+				).WithPagination(
+				search.NewPagination().
+					AddSortOption(search.NewSortOption(search.TestNestedString).Reversed(true)),
+			).ProtoQuery(),
+			resultStruct: Struct5{},
+			expectedQuery: "select test_structs.String_ as test_string, test_structs.Timestamp as test_timestamp, " +
+				"test_structs_nesteds.Nested as test_nested_string " +
+				"from test_structs inner join test_structs_nesteds " +
+				"on test_structs.Key1 = test_structs_nesteds.test_structs_Key1 " +
+				"order by test_structs_nesteds.Nested desc",
+			expectedResult: []*Struct5{
+				{
+					TestString:    "bcs",
+					TestTimestamp: nil,
+				},
+				{
+					TestString:    "bcs",
+					TestTimestamp: nil,
+				},
+				{
+					TestString:    "bcs",
+					TestTimestamp: nil,
+				},
+				{
+					TestString:    "acs",
+					TestTimestamp: nil,
+				},
+			},
+		},
 	} {
 		t.Run(c.desc, func(t *testing.T) {
 			runTest(ctx, t, testDB, c)

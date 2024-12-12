@@ -129,6 +129,12 @@ customize:
       podLabels: {} # dict
       podAnnotations: {} # dict
       envVars: {} # dict
+  config-controller:
+    labels: {} # dict
+    annotations: {} # dict
+    podLabels: {} # dict
+    podAnnotations: {} # dict
+    envVars: {} # dict
   scanner:
     labels: {} # dict
     annotations: {} # dict
@@ -164,6 +170,8 @@ allowNonstandardNamespace: null # bool
 allowNonstandardReleaseName: null # bool
 allowUnsupportedHelmVersion: null # bool
 enableOpenShiftMonitoring: null # bool
+configAsCode:
+  enabled: null # bool
 monitoring:
   openshift:
     enabled: null # bool

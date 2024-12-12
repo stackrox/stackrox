@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
 import pluralize from 'pluralize';
-import { Alert, Button, Flex, Modal, ModalVariant, Text } from '@patternfly/react-core';
+import { Alert, Button, Flex, Modal, Text } from '@patternfly/react-core';
 
 import { excludeDeployments } from 'services/PoliciesService';
 import { DeploymentListAlert, ListAlert } from 'types/alert.proto';
@@ -64,7 +64,7 @@ function ExcludeConfirmation({
     return (
         <Modal
             isOpen={isOpen}
-            variant={ModalVariant.medium}
+            variant="medium"
             actions={[
                 <Button
                     key="confirm"

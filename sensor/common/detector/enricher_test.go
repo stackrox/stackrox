@@ -297,3 +297,41 @@ func (s *enricherSuite) TestUpdateImageNoLock() {
 		protoassert.SliceContains(t, cValue.image.Names, name3)
 	})
 }
+
+func (s *enricherSuite) TestGetPullSecrets() {
+	imagePullSecs := []string{"sec1", "sec2"}
+	ns := "fake-ns" // namespace
+	sa := "fake-sa" // service account
+
+	// Get only secrets from pod spec if defined.
+	deployment := &storage.Deployment{
+		ImagePullSecrets: imagePullSecs,
+		Namespace:        ns,
+		ServiceAccount:   sa,
+	}
+	secs := s.enricher.getPullSecrets(deployment)
+	s.Len(secs, 2)
+	s.Equal("sec1", secs[0])
+	s.Equal("sec2", secs[1])
+
+	// Get service account pull secrets otherwise.
+	deployment = &storage.Deployment{
+		Namespace:      ns,
+		ServiceAccount: sa,
+	}
+
+	s.mockServiceAccountStore.EXPECT().GetImagePullSecrets(ns, sa).Return(
+		[]string{"not", "from", "spec"},
+	)
+
+	secs = s.enricher.getPullSecrets(deployment)
+	s.Len(secs, 3)
+	s.Equal("not", secs[0])
+	s.Equal("from", secs[1])
+	s.Equal("spec", secs[2])
+
+	// on empty input expect empty responses and no panics.
+	s.mockServiceAccountStore.EXPECT().GetImagePullSecrets(gomock.Any(), gomock.Any()).AnyTimes()
+	s.Nil(s.enricher.getPullSecrets(nil))
+	s.Nil(s.enricher.getPullSecrets(&storage.Deployment{}))
+}

@@ -1,5 +1,4 @@
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../helpers/features';
 import { getRegExpForTitleWithBranding } from '../../helpers/title';
 import { getHelperElementByLabel, getInputByLabel } from '../../helpers/formHelpers';
 
@@ -11,12 +10,6 @@ import {
 
 describe('Compliance Schedules', () => {
     withAuth();
-
-    before(function () {
-        if (!hasFeatureFlag('ROX_COMPLIANCE_ENHANCEMENTS')) {
-            this.skip();
-        }
-    });
 
     it('should visit schedules using the left nav', () => {
         visitComplianceEnhancedSchedulesFromLeftNav();
@@ -32,7 +25,7 @@ describe('Compliance Schedules', () => {
 
         cy.get('th[scope="col"]:contains("Name")');
         cy.get('th[scope="col"]:contains("Schedule")');
-        cy.get('th[scope="col"]:contains("Last run")');
+        cy.get('th[scope="col"]:contains("Last scanned")');
         cy.get('th[scope="col"]:contains("Clusters")');
         cy.get('th[scope="col"]:contains("Profiles")');
 

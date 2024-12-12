@@ -13,7 +13,7 @@ import {
     HelperText,
     HelperTextItem,
 } from '@patternfly/react-core';
-import { Select, SelectVariant, SelectOption } from '@patternfly/react-core/deprecated';
+import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 
 import { ClientPolicy } from 'types/policy.proto';
 import { ListImage } from 'types/image.proto';
@@ -76,7 +76,7 @@ function PolicyScopeForm() {
         // TODO from ROX-14643 and stackrox/stackrox/issues/2725
         // Move request to exclusion card to add restSearch for cluster or namespace if specified in exclusion scope.
         // Search element to support creatable deployment names.
-        const restSort = { field: 'Deployment' }; // ascending by name
+        const restSort = { field: 'Deployment', reversed: false }; // ascending by name
         fetchDeploymentsWithProcessInfo([], restSort, 0, 0)
             .then((response) => {
                 const deploymentList = response
@@ -191,7 +191,7 @@ function PolicyScopeForm() {
                         <Select
                             onToggle={() => setIsExcludeImagesOpen(!isExcludeImagesOpen)}
                             isOpen={isExcludeImagesOpen}
-                            variant={SelectVariant.typeaheadMulti}
+                            variant="typeaheadmulti"
                             selections={excludedImageNames}
                             onSelect={handleChangeMultiSelect}
                             isCreatable

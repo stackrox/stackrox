@@ -253,6 +253,38 @@ class QuayImageIntegration implements ImageIntegration {
     }
 }
 
+class GHCRImageIntegration implements ImageIntegration {
+
+    static String name() { "GitHub Container Registry" }
+
+    static Boolean isTestable() {
+        return true
+    }
+
+    static ImageIntegrationOuterClass.ImageIntegration.Builder getCustomBuilder(Map customArgs = [:]) {
+        Map defaultArgs = [
+                name: "ghcr",
+                endpoint: "https://ghcr.io",
+                username: Env.mustGet("GHCR_REGISTRY_USER"),
+                password: Env.mustGet("GHCR_REGISTRY_PASSWORD"),
+        ]
+        Map args = defaultArgs + customArgs
+
+        ImageIntegrationOuterClass.DockerConfig.Builder config =
+                ImageIntegrationOuterClass.DockerConfig.newBuilder()
+                        .setEndpoint(args.endpoint as String)
+                        .setUsername(args.username as String)
+                        .setPassword(args.password as String)
+
+        return ImageIntegrationOuterClass.ImageIntegration.newBuilder()
+                .setName(args.name as String)
+                .setType("ghcr")
+                .clearCategories()
+                .addAllCategories([ImageIntegrationOuterClass.ImageIntegrationCategory.REGISTRY])
+                .setDocker(config)
+    }
+}
+
 class GoogleArtifactRegistry implements ImageIntegration {
 
     static String name() { "Google Artifact Registry" }

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
-import { withRouter } from 'react-router-dom';
 import debounce from 'lodash/debounce';
 import clamp from 'lodash/clamp';
 
@@ -120,4 +119,4 @@ TablePagination.defaultProps = {
     dataLength: 0,
 };
 
-export default withRouter(TablePagination);
+export default TablePagination;

@@ -557,4 +557,41 @@ describe('Image Integrations', () => {
 
         // Test does not delete, because it did not create.
     });
+
+    it('should create a new GitHub container registry integration', () => {
+        const integrationName = generateNameWithDate('GitHub Container Registry Test');
+        const integrationType = 'ghcr';
+
+        visitIntegrationsTable(integrationSource, integrationType);
+        clickCreateNewIntegrationInTable(integrationSource, integrationType);
+
+        // Step 0, should start out with disabled Save and Test buttons
+        cy.get(selectors.buttons.test).should('be.disabled');
+        cy.get(selectors.buttons.save).should('be.disabled');
+
+        // Step 1, check empty fields
+        getInputByLabel('Integration name').clear().type(' ');
+        getInputByLabel('Endpoint').clear().type(' ');
+        getInputByLabel('User').clear().type(' ');
+        getInputByLabel('GitHub token').clear().type(' ').blur();
+
+        getHelperElementByLabel('Integration name').contains('An integration name is required');
+        getHelperElementByLabel('Endpoint').contains('An endpoint is required');
+        cy.get(selectors.buttons.test).should('be.disabled');
+        cy.get(selectors.buttons.save).should('be.disabled');
+
+        // Step 2, check valid from and save
+        getInputByLabel('Integration name').clear().type(integrationName);
+        getInputByLabel('Endpoint').clear().type('test.endpoint');
+        getInputByLabel('Username').clear().type('admin');
+        getInputByLabel('GitHub token').type('password');
+
+        testIntegrationInFormWithStoredCredentials(
+            integrationSource,
+            integrationType,
+            staticResponseForTest
+        );
+
+        saveCreatedIntegrationInForm(integrationSource, integrationType, staticResponseForPOST);
+    });
 });

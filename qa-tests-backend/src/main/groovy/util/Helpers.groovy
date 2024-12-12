@@ -168,6 +168,15 @@ class Helpers {
         log.debug "Ran: ${cmd}\nExit: ${proc.exitValue()}\nStdout: $sout\nStderr: $serr"
     }
 
+    static int shellCmdExitValue(String cmd) {
+        def sout = new StringBuilder(), serr = new StringBuilder()
+        def proc = cmd.execute(null, new File(".."))
+        proc.consumeProcessOutput(sout, serr)
+        proc.waitFor()
+        log.debug "Ran: ${cmd}\nExit: ${proc.exitValue()}\nStdout: $sout\nStderr: $serr"
+        return proc.exitValue()
+    }
+
     private static boolean collectDebug() {
         if ((Env.IN_CI || Env.GATHER_QA_TEST_DEBUG_LOGS) && (Env.QA_TEST_DEBUG_LOGS != "")) {
             return true

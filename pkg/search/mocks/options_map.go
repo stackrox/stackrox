@@ -21,6 +21,7 @@ import (
 type MockOptionsMap struct {
 	ctrl     *gomock.Controller
 	recorder *MockOptionsMapMockRecorder
+	isgomock struct{}
 }
 
 // MockOptionsMapMockRecorder is the mock recorder for MockOptionsMap.
@@ -52,6 +53,20 @@ func (m *MockOptionsMap) Add(label search.FieldLabel, field *search.Field) searc
 func (mr *MockOptionsMapMockRecorder) Add(label, field any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockOptionsMap)(nil).Add), label, field)
+}
+
+// Clone mocks base method.
+func (m *MockOptionsMap) Clone() search.OptionsMap {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Clone")
+	ret0, _ := ret[0].(search.OptionsMap)
+	return ret0
+}
+
+// Clone indicates an expected call of Clone.
+func (mr *MockOptionsMapMockRecorder) Clone() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Clone", reflect.TypeOf((*MockOptionsMap)(nil).Clone))
 }
 
 // Get mocks base method.

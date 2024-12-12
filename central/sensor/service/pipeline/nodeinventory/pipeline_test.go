@@ -78,7 +78,7 @@ func Test_pipelineImpl_Run(t *testing.T) {
 				a.injector = &recordingInjector{}
 				gomock.InOrder(
 					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(node.GetId())).Times(1).Return(&node, true, nil),
-					m.enricher.EXPECT().EnrichNodeWithInventory(gomock.Any(), gomock.Any()).Times(1).Return(nil),
+					m.enricher.EXPECT().EnrichNodeWithVulnerabilities(gomock.Any(), gomock.Any(), nil).Times(1).Return(nil),
 					m.riskManager.EXPECT().CalculateRiskAndUpsertNode(gomock.Any()).Times(1).Return(nil),
 				)
 			},
@@ -93,7 +93,7 @@ func Test_pipelineImpl_Run(t *testing.T) {
 				a.injector = nil
 				gomock.InOrder(
 					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(node.GetId())).Times(1).Return(&node, true, nil),
-					m.enricher.EXPECT().EnrichNodeWithInventory(gomock.Any(), gomock.Any()).Times(1).Return(nil),
+					m.enricher.EXPECT().EnrichNodeWithVulnerabilities(gomock.Any(), gomock.Any(), nil).Times(1).Return(nil),
 					m.riskManager.EXPECT().CalculateRiskAndUpsertNode(gomock.Any()).Times(1).Return(nil),
 				)
 			},

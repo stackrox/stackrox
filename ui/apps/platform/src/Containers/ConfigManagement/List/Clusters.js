@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLocation, useRouteMatch } from 'react-router-dom';
 import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
 
@@ -208,7 +209,9 @@ const buildTableColumns = (match, location) => {
 
 const createTableRows = (data) => data.results;
 
-const Clusters = ({ match, location, className, selectedRowId, onRowClick, query, data }) => {
+const Clusters = ({ className, selectedRowId, onRowClick, query, data }) => {
+    const location = useLocation();
+    const match = useRouteMatch();
     const autoFocusSearchInput = !selectedRowId;
     const tableColumns = buildTableColumns(match, location);
     const { [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus, ...restQuery } = query || {};

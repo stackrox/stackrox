@@ -21,6 +21,17 @@ func newTimeQuery(ctx *queryAndFieldContext) (*QueryEntry, error) {
 	if len(ctx.queryModifiers) > 0 {
 		return nil, errors.New("modifiers not supported for time query")
 	}
+	if isWildCardOrNullStringQuery(ctx.value) {
+		existenceStr := ""
+		if ctx.value == search.WildcardString {
+			existenceStr = "not"
+		}
+		return qeWithSelectFieldIfNeeded(ctx, &WhereClause{
+			Query:  fmt.Sprintf("%s is %s null", ctx.qualifiedColumnName, existenceStr),
+			Values: []interface{}{},
+		}, nil), nil
+	}
+
 	from, to, ok, err := parseTimeRange(ctx.value)
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing time range")

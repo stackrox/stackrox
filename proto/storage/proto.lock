@@ -328,6 +328,26 @@
             ]
           },
           {
+            "name": "Alert.EntityType",
+            "enum_fields": [
+              {
+                "name": "UNSET"
+              },
+              {
+                "name": "DEPLOYMENT",
+                "integer": 1
+              },
+              {
+                "name": "CONTAINER_IMAGE",
+                "integer": 2
+              },
+              {
+                "name": "RESOURCE",
+                "integer": 3
+              }
+            ]
+          },
+          {
             "name": "ListAlert.ResourceType",
             "enum_fields": [
               {
@@ -370,10 +390,6 @@
                 "name": "ACTIVE"
               },
               {
-                "name": "SNOOZED",
-                "integer": 1
-              },
-              {
                 "name": "RESOLVED",
                 "integer": 2
               },
@@ -381,6 +397,12 @@
                 "name": "ATTEMPTED",
                 "integer": 3
               }
+            ],
+            "reserved_ids": [
+              1
+            ],
+            "reserved_names": [
+              "SNOOZED"
             ]
           }
         ],
@@ -478,13 +500,22 @@
                 "type": "ViolationState"
               },
               {
-                "id": 12,
-                "name": "snooze_till",
-                "type": "google.protobuf.Timestamp"
+                "id": 22,
+                "name": "platform_component",
+                "type": "bool"
+              },
+              {
+                "id": 23,
+                "name": "entity_type",
+                "type": "EntityType"
               }
             ],
             "reserved_ids": [
+              12,
               14
+            ],
+            "reserved_names": [
+              "snooze_till"
             ],
             "messages": [
               {
@@ -1443,6 +1474,16 @@
                   {
                     "id": 1,
                     "name": "secret",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "client_id",
+                    "type": "string"
+                  },
+                  {
+                    "id": 3,
+                    "name": "client_secret",
                     "type": "string"
                   }
                 ]
@@ -3768,6 +3809,54 @@
                 "integer": 7
               }
             ]
+          },
+          {
+            "name": "ComplianceOperatorReportStatus.RunState",
+            "enum_fields": [
+              {
+                "name": "WAITING"
+              },
+              {
+                "name": "PREPARING",
+                "integer": 1
+              },
+              {
+                "name": "GENERATED",
+                "integer": 2
+              },
+              {
+                "name": "DELIVERED",
+                "integer": 3
+              },
+              {
+                "name": "FAILURE",
+                "integer": 4
+              }
+            ]
+          },
+          {
+            "name": "ComplianceOperatorReportStatus.NotificationMethod",
+            "enum_fields": [
+              {
+                "name": "EMAIL"
+              },
+              {
+                "name": "DOWNLOAD",
+                "integer": 1
+              }
+            ]
+          },
+          {
+            "name": "ComplianceOperatorReportStatus.RunMethod",
+            "enum_fields": [
+              {
+                "name": "ON_DEMAND"
+              },
+              {
+                "name": "SCHEDULED",
+                "integer": 1
+              }
+            ]
           }
         ],
         "messages": [
@@ -4452,6 +4541,11 @@
                 "id": 16,
                 "name": "scan_ref_id",
                 "type": "string"
+              },
+              {
+                "id": 17,
+                "name": "last_started_time",
+                "type": "google.protobuf.Timestamp"
               }
             ],
             "maps": [
@@ -4653,6 +4747,99 @@
                 "id": 8,
                 "name": "cluster_id",
                 "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "ComplianceOperatorReportSnapshotV2",
+            "fields": [
+              {
+                "id": 1,
+                "name": "report_id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "scan_configuration_id",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "description",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "report_status",
+                "type": "ComplianceOperatorReportStatus"
+              },
+              {
+                "id": 6,
+                "name": "user",
+                "type": "SlimUser"
+              },
+              {
+                "id": 7,
+                "name": "scans",
+                "type": "Scan",
+                "is_repeated": true
+              }
+            ],
+            "messages": [
+              {
+                "name": "Scan",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "scan_ref_id",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "last_started_time",
+                    "type": "google.protobuf.Timestamp"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "ComplianceOperatorReportStatus",
+            "fields": [
+              {
+                "id": 1,
+                "name": "run_state",
+                "type": "RunState"
+              },
+              {
+                "id": 2,
+                "name": "started_at",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 3,
+                "name": "completed_at",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 4,
+                "name": "error_msg",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "report_request_type",
+                "type": "RunMethod"
+              },
+              {
+                "id": 6,
+                "name": "report_notification_method",
+                "type": "NotificationMethod"
               }
             ]
           }
@@ -5140,6 +5327,22 @@
               {
                 "name": "SOURCE_NVD",
                 "integer": 3
+              }
+            ]
+          },
+          {
+            "name": "CvssScoreVersion",
+            "enum_fields": [
+              {
+                "name": "UNKNOWN_VERSION"
+              },
+              {
+                "name": "V2",
+                "integer": 1
+              },
+              {
+                "name": "V3",
+                "integer": 2
               }
             ]
           },
@@ -5720,6 +5923,11 @@
                 "name": "cvss_metrics",
                 "type": "CVSSScore",
                 "is_repeated": true
+              },
+              {
+                "id": 12,
+                "name": "nvd_score_version",
+                "type": "CvssScoreVersion"
               }
             ]
           },
@@ -6437,6 +6645,11 @@
                 "id": 29,
                 "name": "risk_score",
                 "type": "float"
+              },
+              {
+                "id": 35,
+                "name": "platform_component",
+                "type": "bool"
               }
             ],
             "maps": [
@@ -10125,6 +10338,11 @@
                     "id": 3,
                     "name": "default",
                     "type": "bool"
+                  },
+                  {
+                    "id": 4,
+                    "name": "discovered",
+                    "type": "bool"
                   }
                 ]
               }
@@ -10559,6 +10777,18 @@
             ]
           },
           {
+            "name": "NodeScan.Scanner",
+            "enum_fields": [
+              {
+                "name": "SCANNER"
+              },
+              {
+                "name": "SCANNER_V4",
+                "integer": 1
+              }
+            ]
+          },
+          {
             "name": "NodeInventory.Note",
             "enum_fields": [
               {
@@ -10766,6 +10996,11 @@
                 "name": "notes",
                 "type": "Note",
                 "is_repeated": true
+              },
+              {
+                "id": 5,
+                "name": "scanner_version",
+                "type": "Scanner"
               }
             ]
           },
@@ -11067,6 +11302,12 @@
                 "id": 4,
                 "name": "clairify",
                 "type": "ClairifyConfig",
+                "oneof_parent": "IntegrationConfig"
+              },
+              {
+                "id": 5,
+                "name": "scannerv4",
+                "type": "ScannerV4Config",
                 "oneof_parent": "IntegrationConfig"
               }
             ]
@@ -11641,6 +11882,11 @@
                 "id": 6,
                 "name": "audit_log_dcr_config",
                 "type": "DataCollectionRuleConfig"
+              },
+              {
+                "id": 7,
+                "name": "client_cert_auth_config",
+                "type": "ClientCertAuthConfig"
               }
             ],
             "messages": [
@@ -11661,6 +11907,21 @@
                     "id": 3,
                     "name": "enabled",
                     "type": "bool"
+                  }
+                ]
+              },
+              {
+                "name": "ClientCertAuthConfig",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "client_cert",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "private_key",
+                    "type": "string"
                   }
                 ]
               }
@@ -13769,6 +14030,11 @@
                 "name": "access_scope_rules",
                 "type": "SimpleAccessScope.Rules",
                 "is_repeated": true
+              },
+              {
+                "id": 9,
+                "name": "include_nvd_cvss",
+                "type": "bool"
               }
             ]
           },
@@ -17686,6 +17952,11 @@
                 "name": "cvss_metrics",
                 "type": "CVSSScore",
                 "is_repeated": true
+              },
+              {
+                "id": 22,
+                "name": "nvd_cvss",
+                "type": "float"
               }
             ],
             "reserved_ids": [

@@ -4,7 +4,6 @@ import {
     Alert,
     AlertActionCloseButton,
     AlertGroup,
-    AlertVariant,
     PageSection,
     Title,
     Divider,
@@ -45,9 +44,9 @@ import NotFoundMessage from 'Components/NotFoundMessage/NotFoundMessage';
 import usePermissions from 'hooks/usePermissions';
 import useToasts, { Toast } from 'hooks/patternfly/useToasts';
 
-import ReportJobsHelpAction from 'Components/ReportJobsHelpAction';
-import { JobContextTab } from 'types/reportJob';
-import { ensureJobContextTab } from 'utils/reportJob';
+import ReportJobsHelpAction from 'Components/ReportJob/ReportJobsHelpAction';
+import { JobContextTab } from 'Components/ReportJob/types';
+import { ensureJobContextTab } from 'Components/ReportJob/utils';
 import EmailTemplatePreview from '../components/EmailTemplatePreview';
 import ReportParametersDetails from '../components/ReportParametersDetails';
 import ScheduleDetails from '../components/ScheduleDetails';
@@ -63,6 +62,8 @@ export type TabTitleProps = {
 
 const configDetailsTabId = 'VulnReportsConfigDetails';
 const allReportJobsTabId = 'VulnReportsConfigReportJobs';
+
+const headingLevel = 'h2';
 
 function ViewVulnReportPage() {
     const history = useHistory();
@@ -168,9 +169,7 @@ function ViewVulnReportPage() {
                     </Alert>
                 ))}
             </AlertGroup>
-            {runError && (
-                <Alert variant={AlertVariant.danger} isInline title={runError} component="p" />
-            )}
+            {runError && <Alert variant="danger" isInline title={runError} component="p" />}
             <PageTitle title="View vulnerability report" />
             <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
@@ -213,7 +212,7 @@ function ViewVulnReportPage() {
                                     </DropdownItem>,
                                     <DropdownSeparator key="separator" />,
                                     <DropdownItem
-                                        key="Send report now"
+                                        key="Send report"
                                         component="button"
                                         onClick={() => runReport(reportId, 'EMAIL')}
                                         isDisabled={
@@ -227,7 +226,7 @@ function ViewVulnReportPage() {
                                                 : ''
                                         }
                                     >
-                                        Send report now
+                                        Send report
                                     </DropdownItem>,
                                     <DropdownItem
                                         key="Generate download"
@@ -289,9 +288,13 @@ function ViewVulnReportPage() {
                 <PageSection isCenterAligned id={configDetailsTabId}>
                     <Card>
                         <CardBody>
-                            <ReportParametersDetails formValues={reportFormValues} />
+                            <ReportParametersDetails
+                                headingLevel={headingLevel}
+                                formValues={reportFormValues}
+                            />
                             <Divider component="div" className="pf-v5-u-py-md" />
                             <NotifierConfigurationView
+                                headingLevel={headingLevel}
                                 customBodyDefault={defaultEmailBody}
                                 customSubjectDefault={getDefaultEmailSubject(
                                     reportFormValues.reportParameters.reportName,
@@ -334,7 +337,7 @@ function ViewVulnReportPage() {
                         return (
                             <Alert
                                 isInline
-                                variant={AlertVariant.danger}
+                                variant="danger"
                                 title={`Failed to delete "${reportConfiguration.name}"`}
                                 component="p"
                                 className="pf-v5-u-mb-sm"

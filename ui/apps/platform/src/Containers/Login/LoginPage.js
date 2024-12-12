@@ -39,7 +39,7 @@ class LoginPage extends Component {
     static propTypes = {
         authStatus: PropTypes.oneOf(Object.keys(AUTH_STATUS).map((key) => AUTH_STATUS[key]))
             .isRequired,
-        authProviders: PropTypes.arrayOf(PropTypes.object).isRequired,
+        authProviders: PropTypes.arrayOf(PropTypes.object),
         authProviderResponse: PropTypes.shape({
             error: PropTypes.string,
             error_description: PropTypes.string,
@@ -58,6 +58,7 @@ class LoginPage extends Component {
 
     static defaultProps = {
         authorizeRoxctlMode: false,
+        authProviders: [],
     };
 
     constructor(props) {
@@ -320,7 +321,7 @@ const Form = reduxForm({
 // which are based on the Redux state. Yet because initialValues matter only when
 // component is mounted, we cannot mount a component until we have everything to populate
 // initial values (in this case the list of auth providers)
-const LoadingOrForm = ({ authProviders, authorizeRoxctlMode = false }) => {
+const LoadingOrForm = ({ authProviders = [], authorizeRoxctlMode = false }) => {
     if (!authProviders.length) {
         return <LoadingSection message="Loading..." />;
     }

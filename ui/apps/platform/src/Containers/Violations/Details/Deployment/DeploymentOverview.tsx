@@ -13,7 +13,7 @@ import FlatObjectDescriptionList from './FlatObjectDescriptionList';
 
 export type DeploymentOverviewProps = {
     alertDeployment: AlertDeployment;
-    deployment?: Deployment;
+    deployment: Deployment | null;
 };
 
 function DeploymentOverview({

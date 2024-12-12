@@ -1,7 +1,6 @@
 import React from 'react';
-import ReactRouterPropTypes from 'react-router-prop-types';
 import PropTypes from 'prop-types';
-import { withRouter } from 'react-router-dom';
+import { useLocation, useRouteMatch } from 'react-router-dom';
 import URLService from 'utils/URLService';
 import entityTypes from 'constants/entityTypes';
 
@@ -12,7 +11,10 @@ import ControlPage from './Control';
 import DeploymentPage from './Deployment';
 import StandardPage from './Standard';
 
-const ComplianceEntityPage = ({ match, location }) => {
+const ComplianceEntityPage = () => {
+    const location = useLocation();
+    const match = useRouteMatch();
+
     const params = URLService.getParams(match, location);
 
     const pageProps = {
@@ -39,8 +41,6 @@ const ComplianceEntityPage = ({ match, location }) => {
 };
 
 ComplianceEntityPage.propTypes = {
-    match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired,
     params: PropTypes.shape({
         entityId: PropTypes.string,
         entityType: PropTypes.string,
@@ -53,4 +53,4 @@ ComplianceEntityPage.defaultProps = {
     sidePanelMode: false,
 };
 
-export default withRouter(ComplianceEntityPage);
+export default ComplianceEntityPage;

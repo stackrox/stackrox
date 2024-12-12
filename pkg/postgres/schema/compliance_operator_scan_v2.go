@@ -62,5 +62,6 @@ type ComplianceOperatorScanV2 struct {
 	LastExecutedTime    *time.Time `gorm:"column:lastexecutedtime;type:timestamp"`
 	ScanName            string     `gorm:"column:scanname;type:varchar"`
 	ScanRefID           string     `gorm:"column:scanrefid;type:uuid"`
+	LastStartedTime     *time.Time `gorm:"column:laststartedtime;type:timestamp"`
 	Serialized          []byte     `gorm:"column:serialized;type:bytea"`
 }

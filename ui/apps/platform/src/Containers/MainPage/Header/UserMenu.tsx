@@ -1,6 +1,5 @@
 import React, { useState, CSSProperties } from 'react';
 import PropTypes from 'prop-types';
-import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import initials from 'initials';
@@ -77,7 +76,6 @@ function UserMenu({ logout, setInviteModalVisibility, userData }) {
     ];
 
     const inviteMenuItem = (
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         <DropdownItem key="open-invite" onClick={onClickInviteUsers}>
             Invite users
         </DropdownItem>
@@ -139,4 +137,4 @@ const mapDispatchToProps = (dispatch) => ({
     logout: () => dispatch(authActions.logout()),
 });
 
-export default withRouter(connect(mapStateToProps, mapDispatchToProps)(UserMenu));
+export default connect(mapStateToProps, mapDispatchToProps)(UserMenu);

@@ -18,6 +18,7 @@ import {
 import { PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
 import * as yup from 'yup';
 import { FieldArray, FormikProvider } from 'formik';
+import merge from 'lodash/merge';
 
 import { SyslogNotifierIntegration as SyslogIntegration } from 'types/notifier.proto';
 
@@ -81,10 +82,7 @@ function SyslogIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<SyslogIntegration>): ReactElement {
-    const formInitialValues = initialValues
-        ? { ...defaultValues, ...initialValues }
-        : defaultValues;
-
+    const formInitialValues: SyslogIntegration = merge({}, defaultValues, initialValues);
     const formik = useIntegrationForm<SyslogIntegration>({
         initialValues: formInitialValues,
         validationSchema,

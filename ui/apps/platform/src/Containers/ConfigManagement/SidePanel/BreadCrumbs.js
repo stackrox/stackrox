@@ -1,10 +1,9 @@
 import React from 'react';
-import ReactRouterPropTypes from 'react-router-prop-types';
 import PropTypes from 'prop-types';
 import pluralize from 'pluralize';
 import upperFirst from 'lodash/upperFirst';
 import { ChevronRight } from 'react-feather';
-import { Link, withRouter } from 'react-router-dom';
+import { Link, useLocation, useRouteMatch } from 'react-router-dom';
 
 import useEntityName from 'hooks/useEntityName';
 import entityLabels from 'messages/entity';
@@ -85,10 +84,11 @@ const getMaxWidthClass = (length) => {
 };
 
 const BreadCrumbLinks = (props) => {
+    const location = useLocation();
+    const match = useRouteMatch();
+
     // disable because unused history might be specified for rest spread idiom.
-    /* eslint-disable no-unused-vars */
-    const { className, match, location, history, ...params } = props;
-    /* eslint-enable no-unused-vars */
+    const { className, ...params } = props;
     const { entityType1, entityId1, entityListType2, entityId2 } = params;
     if (!entityId1) {
         return null;
@@ -139,9 +139,6 @@ const BreadCrumbLinks = (props) => {
 };
 
 BreadCrumbLinks.propTypes = {
-    match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired,
-    history: ReactRouterPropTypes.history.isRequired,
     className: PropTypes.string,
 };
 
@@ -150,9 +147,9 @@ BreadCrumbLinks.defaultProps = {
 };
 
 const BreadCrumbs = (props) => {
-    // disable because unused className, match, location might be specified for rest spread idiom.
+    // disable because unused className might be specified for rest spread idiom.
     /* eslint-disable no-unused-vars */
-    const { className, match, location, ...params } = props;
+    const { className, ...params } = props;
     /* eslint-enable no-unused-vars */
     const { entityType1, entityId1, entityType2, entityListType2, entityId2 } = params;
 
@@ -187,8 +184,6 @@ const BreadCrumbs = (props) => {
 };
 
 BreadCrumbs.propTypes = {
-    match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired,
     className: PropTypes.string,
     entityType1: PropTypes.string,
     entityId1: PropTypes.string,
@@ -206,4 +201,4 @@ BreadCrumbs.defaultProps = {
     entityId2: null,
 };
 
-export default withRouter(BreadCrumbs);
+export default BreadCrumbs;

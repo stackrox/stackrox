@@ -78,7 +78,7 @@ const createPDFTable = (tableData, entityType, query, pdfId, tableColumns) => {
         // Throwing error sometimes but not related to this PR, #2603
         try {
             parent.removeChild(table);
-        } catch (err) {
+        } catch {
             return;
         }
     }
@@ -128,7 +128,7 @@ const createPDFTable = (tableData, entityType, query, pdfId, tableColumns) => {
                             String(flattenedObj[key]).replace(/\s+/g, ' ').trim()) ||
                         'N/A';
                 }
-                td.innerHTML = colValue;
+                td.innerHTML = colValue.replace(/<\/?[^>]+(>|$)/g, '');
                 tr.appendChild(td);
             });
             tbdy.appendChild(tr);

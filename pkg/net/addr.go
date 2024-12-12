@@ -289,7 +289,7 @@ func (d IPNetwork) String() string {
 	return ipNet.String()
 }
 
-// IPNetworkFromCIDR converts a CIDR string string to an `IPNetwork`. In case of invalid string, an invalid IPNetwork is returned.
+// IPNetworkFromCIDR converts a CIDR string to an `IPNetwork`. In case of invalid string, an invalid IPNetwork is returned.
 func IPNetworkFromCIDR(cidr string) IPNetwork {
 	_, ipNet, err := net.ParseCIDR(cidr)
 	if err != nil {
@@ -330,4 +330,16 @@ func IPNetworkFromCIDRBytes(cidr []byte) IPNetwork {
 		IP:   cidr[:n-1],
 		Mask: net.CIDRMask(int(cidr[n-1]), (n-1)*8),
 	})
+}
+
+// IPNetworkFromNetworkPeerID extracts an IPNetwork from a NetworkPeerID.
+// IPNetwork is the prefered way to convey IP addresses, but NetworkPeerID can contain a legacy Address.
+func IPNetworkFromNetworkPeerID(peerID NetworkPeerID) IPNetwork {
+	if peerID.IPNetwork.IsValid() {
+		return peerID.IPNetwork
+	}
+	return IPNetwork{
+		ip:        peerID.Address,
+		prefixLen: byte(peerID.Address.Family().Bits()),
+	}
 }

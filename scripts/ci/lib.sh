@@ -150,9 +150,8 @@ get_central_debug_dump() {
     local output_dir="$1"
 
     require_environment "API_ENDPOINT"
-    require_environment "ROX_PASSWORD"
-
-    roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" --insecure-skip-tls-verify central debug dump --output-dir "${output_dir}"
+    require_environment "ROX_ADMIN_PASSWORD"
+    roxctl -e "${API_ENDPOINT}" --insecure-skip-tls-verify central debug dump --output-dir "${output_dir}"
     ls -l "${output_dir}"
 }
 
@@ -211,9 +210,8 @@ get_central_diagnostics() {
     local output_dir="$1"
 
     require_environment "API_ENDPOINT"
-    require_environment "ROX_PASSWORD"
-
-    roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central debug download-diagnostics --output-dir "${output_dir}" --insecure-skip-tls-verify
+    require_environment "ROX_ADMIN_PASSWORD"
+    roxctl -e "${API_ENDPOINT}" central debug download-diagnostics --output-dir "${output_dir}" --insecure-skip-tls-verify
     ls -l "${output_dir}"
 }
 
@@ -721,10 +719,59 @@ _image_prefetcher_system_await() {
 image_prefetcher_await_set() {
     local ns="prefetch-images"
     local name="$1"
+    local extra_fields='{"build_id": "'"${BUILD_ID:-}"'", "job_name": "'"${JOB_NAME:-}"'", "orchestrator": "'"${ORCHESTRATOR_FLAVOR:-}"'", "build_tag": "'"${STACKROX_BUILD_TAG:-}"'"}'
 
     info "Waiting for image prefetcher set ${name} to complete..."
-    kubectl rollout status daemonset "$name" -n "$ns" --timeout 15m
-    info "All images in the set are now pre-fetched, now retrieving metrics..."
+    if kubectl rollout status daemonset "$name" -n "$ns" --timeout 15m; then
+        info "All images in the set are now pre-fetched."
+    else
+        info "WARNING: Pre-fetching failed to complete in time."
+        info "To investigate closer, go to https://console.cloud.google.com/bigquery and run a query such as:"
+        local query
+        query=$(mktemp)
+        cat > "${query}" <<- EOM
+
+            SELECT started_at, duration_ms, image, error
+            FROM \`acs-san-stackroxci.ci_metrics.stackrox_image_prefetches\`
+            WHERE error IS NOT NULL AND
+            $(echo "${extra_fields}" | jq -r '[to_entries | .[] | select(.value != "") | (.key + "=\"" + .value + "\"")] | join(" AND ")')
+            ORDER BY started_at DESC LIMIT 1000
+
+EOM
+        cat "${query}"
+        info "Note: The data is imported into the table periodically: https://github.com/stackrox/stackrox/actions/workflows/batch-load-test-metrics.yml"
+
+        if [[ -n ${ARTIFACT_DIR:-} ]]; then
+            local prefetcher_help="$ARTIFACT_DIR/image-pre-fetcher-${name}-failure-summary.html"
+            cat > "${prefetcher_help}" <<- EOM
+                <html>
+                <head>
+                <title>Image pre-fetcher ${name} failure</title>
+                <style>
+                  body { color: #e8e8e8; background-color: #424242; font-family: "Roboto", "Helvetica", "Arial", sans-serif }
+                  a { color: #ff8caa }
+                  a:visited { color: #ff8caa }
+                </style>
+                </head>
+                <body>
+
+                Waiting for image prefetcher set ${name} to complete timed out.<br>
+                To investigate closer, go to <a target="_blank" href="https://console.cloud.google.com/bigquery">BigQuery</a> and run a query such as the following:
+                <br>
+                <pre>
+EOM
+            cat >> "${prefetcher_help}" "${query}"
+            cat >> "${prefetcher_help}" <<- EOM
+                </pre>
+                Note: The data is imported into the table <a target="_blank" href="https://github.com/stackrox/stackrox/actions/workflows/batch-load-test-metrics.yml">periodically</a>.
+                <br><br>
+                </body>
+                </html>
+EOM
+        fi
+        rm -f "${query}"
+    fi
+    info "Now retrieving prefetcher metrics..."
     local attempt=0
     local service="service/${name}-metrics"
     while [[ -z $(kubectl -n "${ns}" get "${service}" -o jsonpath="{.status.loadBalancer.ingress}" 2>/dev/null) ]]; do
@@ -742,18 +789,29 @@ image_prefetcher_await_set() {
     fetcher_metrics="$(mktemp --suffix=.csv)"
     local fetcher_metrics_json
     fetcher_metrics_json="$(mktemp --suffix=.json)"
-    curl --silent --show-error --fail --retry 3 --retry-connrefused  "http://${endpoint}:8080/metrics" > "${fetcher_metrics_json}"
+    local metrics_url="http://${endpoint}:8080/metrics"
+    if ! curl --silent --show-error --fail --retry 3 --retry-connrefused "${metrics_url}" > "${fetcher_metrics_json}"; then
+        die "Failed to fetch prefetcher metrics from ${metrics_url}"
+    fi
     # See the stackrox_image_prefetches table definition in https://github.com/stackrox/automation-iac/blob/main/resources/testing/stackrox-ci/metrics.tf
     # for the order of columns.
-    jq --raw-output \
+    if ! jq --raw-output \
       --argjson cols '["attempt_id", "started_at", "image", "duration_ms", "node", "size_bytes", "error", "build_id", "job_name", "orchestrator", "build_tag"]' \
-      --argjson extra '{"build_id": "'"${BUILD_ID:-}"'", "job_name": "'"${JOB_NAME:-}"'", "orchestrator": "'"${ORCHESTRATOR_FLAVOR:-}"'", "build_tag": "'"${STACKROX_BUILD_TAG:-}"'"}' \
+      --argjson extra "${extra_fields}" \
       'map(.started_at = (.started_at | todate) | ($extra+.) as $row | $cols | map($row[.])) as $rows | $cols, $rows[] | @csv' \
-      "${fetcher_metrics_json}" > "${fetcher_metrics}"
+      "${fetcher_metrics_json}" > "${fetcher_metrics}"; then
+        info "WARNING: Failed to convert image prefetcher metrics to CSV with extra fields ${extra_fields}"
+        info "Dumping the input JSON file:"
+        jq . < "${fetcher_metrics_json}"
+        die "Failed to convert image prefetcher metrics to CSV, aborting."
+    fi
     rm -f "${fetcher_metrics_json}"
 
-    save_image_prefetches_metrics "${fetcher_metrics}"
-    info "Image pre-fetcher metrics retrieved and saved."
+    if save_image_prefetches_metrics "${fetcher_metrics}"; then
+        info "Image pre-fetcher metrics retrieved and saved."
+    else
+        info "WARNING: failed to save image pre-fetcher metrics."
+    fi
     rm -f "${fetcher_metrics}"
 }
 
@@ -1310,7 +1368,7 @@ openshift_ci_mods() {
     fi
 
     # Target a tag if HEAD is tagged.
-    BUILD_TAG="$(git tag --sort=creatordate --contains | tail -1)" || echo "Warning: Cannot get tag"
+    BUILD_TAG="$(git describe --exact-match --tags HEAD)" || echo "Warning: Cannot get tag"
     export BUILD_TAG
 
     # For gradle
@@ -1499,6 +1557,7 @@ store_test_results() {
     local dest
     dest="$(stored_test_results "$to")"
 
+    mkdir -p "$dest"
     cp -a "$from" "$dest" || true # (best effort)
 }
 
@@ -1561,7 +1620,7 @@ post_process_test_results() {
         # we will fallback to short commit
         base_link="$(echo "$JOB_SPEC" | jq ".refs.base_link | select( . != null )" -r)"
         calculated_base_link="https://github.com/stackrox/stackrox/commit/$(make --quiet --no-print-directory shortcommit)"
-        curl --retry 5 --retry-connrefused -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.20/junit2jira -o junit2jira && \
+        curl --retry 5 --retry-connrefused -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.22/junit2jira -o junit2jira && \
         chmod +x junit2jira && \
         ./junit2jira \
             -base-link "${base_link:-$calculated_base_link}" \
@@ -1903,7 +1962,8 @@ slack_workflow_failure() {
     repo=$(jq -r <<<"${github_context}" '.repository')
     run_id=$(jq -r <<<"${github_context}" '.run_id')
 
-    local mention_author="true"
+    # If global "mention_author" is set use that value.
+    local mention_author="${mention_author:-true}"
     local slack_mention=""
     _make_slack_mention
 

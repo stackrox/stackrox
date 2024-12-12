@@ -15,5 +15,6 @@ message NodeIntegration {
 
   oneof IntegrationConfig {
     ClairifyConfig clairify = 4;
+    ScannerV4Config scannerv4 = 5;
   }
 }

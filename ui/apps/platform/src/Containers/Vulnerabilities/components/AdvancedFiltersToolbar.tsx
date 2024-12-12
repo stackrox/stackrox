@@ -8,7 +8,6 @@ import CompoundSearchFilter, {
 import { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
 import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils/utils';
 import SearchFilterChips, { FilterChip } from 'Components/PatternFly/SearchFilterChips';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import { SearchFilter } from 'types/search';
 import { getHasSearchApplied, searchValueAsArray } from 'utils/searchUtils';
 
@@ -42,7 +41,7 @@ const emptyDefaultFilters = {
 type AdvancedFiltersToolbarProps = {
     searchFilterConfig: CompoundSearchFilterProps['config'];
     searchFilter: SearchFilter;
-    onFilterChange: (searchFilter: SearchFilter, payload: OnSearchPayload) => void;
+    onFilterChange: (searchFilter: SearchFilter, payload?: OnSearchPayload) => void;
     cveStatusFilterField?: 'FIXABLE' | 'CLUSTER CVE FIXABLE';
     className?: string;
     defaultFilters?: DefaultFilters;
@@ -68,9 +67,6 @@ function AdvancedFiltersToolbar({
     // TODO We need to be able to apply the autocomplete search context to the advanced filters component
     // autocompleteSearchContext,
 }: AdvancedFiltersToolbarProps) {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isFixabilityFiltersEnabled = isFeatureFlagEnabled('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS');
-
     const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig)
         .concat({
             displayName: 'CVE snoozed',
@@ -85,7 +81,7 @@ function AdvancedFiltersToolbar({
                 : []
         )
         .concat(
-            includeCveStatusFilters && isFixabilityFiltersEnabled
+            includeCveStatusFilters
                 ? [
                       makeDefaultFilterDescriptor(defaultFilters, {
                           displayName: 'CVE status',
@@ -127,8 +123,7 @@ function AdvancedFiltersToolbar({
                         defaultEntity={defaultSearchFilterEntity}
                     />
                 </ToolbarGroup>
-                {(includeCveSeverityFilters ||
-                    (includeCveStatusFilters && isFixabilityFiltersEnabled)) && (
+                {(includeCveSeverityFilters || includeCveStatusFilters) && (
                     <ToolbarGroup>
                         {includeCveSeverityFilters && (
                             <CVESeverityDropdown
@@ -142,7 +137,7 @@ function AdvancedFiltersToolbar({
                                 }
                             />
                         )}
-                        {includeCveStatusFilters && isFixabilityFiltersEnabled && (
+                        {includeCveStatusFilters && (
                             <CVEStatusDropdown
                                 filterField={cveStatusFilterField}
                                 searchFilter={searchFilter}
@@ -160,6 +155,8 @@ function AdvancedFiltersToolbar({
                 {getHasSearchApplied(searchFilter) && (
                     <ToolbarGroup aria-label="applied search filters" className="pf-v5-u-w-100">
                         <SearchFilterChips
+                            searchFilter={searchFilter}
+                            onFilterChange={onFilterChange}
                             filterChipGroupDescriptors={filterChipGroupDescriptors}
                         />
                     </ToolbarGroup>

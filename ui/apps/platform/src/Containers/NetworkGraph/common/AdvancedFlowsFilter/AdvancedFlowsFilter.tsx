@@ -4,7 +4,6 @@ import {
     SelectGroup,
     SelectOption,
     SelectPosition,
-    SelectVariant,
 } from '@patternfly/react-core/deprecated';
 
 import useMultiSelect from 'hooks/useMultiSelect';
@@ -71,7 +70,7 @@ function AdvancedFlowsFilter({
     return (
         <Select
             className="advanced-flows-filters-select"
-            variant={SelectVariant.checkbox}
+            variant="checkbox"
             onToggle={(_event, isOpen: boolean) => onFilterDropdownToggle(isOpen)}
             onSelect={onTrafficFilterSelect}
             selections={selections}
@@ -92,7 +91,7 @@ function AdvancedFlowsFilter({
             <SelectGroup label="Ports">
                 <Select
                     className="pf-v5-u-px-md"
-                    variant={SelectVariant.typeaheadMulti}
+                    variant="typeaheadmulti"
                     toggleAriaLabel="Select ports"
                     onToggle={onTogglePortsSelect}
                     onSelect={onSelectPorts}
