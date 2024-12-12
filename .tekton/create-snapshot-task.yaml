@@ -61,6 +61,7 @@ spec:
           }
         }
       }
+      EOF
 
       echo "--- direct ---"
       cat snapshot-template.json
