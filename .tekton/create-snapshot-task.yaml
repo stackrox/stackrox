@@ -61,7 +61,7 @@ spec:
 
 
       def construct_snapshot(snapshot_name_prefix, application, components):
-          snapshot_name = snapshot_name_prefix + "-" + int(time.time())
+          snapshot_name = f"{snapshot_name_prefix}-{int(time.time())}"
           return {
               "apiVersion": "appstudio.redhat.com/v1alpha1",
               "kind": "Snapshot",
