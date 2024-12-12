@@ -281,7 +281,7 @@ func Test_ToProtoV4VulnerabilityReport(t *testing.T) {
 				},
 				PackageVulnerabilities: map[string]*v4.StringList{
 					"sample pkg id": {
-						Values: []string{"0", "1"},
+						Values: []string{"1", "0"}, // "1" has a higher severity
 					},
 				},
 				Contents: &v4.Contents{},
@@ -1668,6 +1668,234 @@ func Test_versionID(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			versionID := VersionID(tt.d)
 			assert.Equal(t, tt.versionID, versionID)
+		})
+	}
+}
+
+func Test_getMaxBaseScore(t *testing.T) {
+	type args struct {
+		cvssMetrics []*v4.VulnerabilityReport_Vulnerability_CVSS
+	}
+	tests := []struct {
+		name string
+		args args
+		want float32
+	}{
+		{
+			name: "single V3 score",
+			args: args{
+				cvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+					{
+						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{BaseScore: 9.8},
+					},
+				},
+			},
+			want: 9.8,
+		},
+		{
+			name: "single V2 score",
+			args: args{
+				cvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+					{
+						V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{BaseScore: 7.5},
+					},
+				},
+			},
+			want: 7.5,
+		},
+		{
+			name: "multiple scores/highest V3",
+			args: args{
+				cvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+					{
+						V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{BaseScore: 6.0},
+						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{BaseScore: 9.0},
+					},
+				},
+			},
+			want: 9.0,
+		},
+		{
+			name: "multiple scores/highest V2",
+			args: args{
+				cvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+					{
+						V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{BaseScore: 8.5},
+						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{BaseScore: 7.0},
+					},
+				},
+			},
+			want: 7.0,
+		},
+		{
+			name: "nil CVSS metrics",
+			args: args{
+				cvssMetrics: nil,
+			},
+			want: 0.0,
+		},
+		{
+			name: "empty CVSS metrics",
+			args: args{
+				cvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{},
+			},
+			want: 0.0,
+		},
+		{
+			name: "nil V3 and V2 in CVSS metrics",
+			args: args{
+				cvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+					{
+						V3: nil,
+						V2: nil,
+					},
+				},
+			},
+			want: 0.0,
+		},
+		{
+			name: "multiple first is selected",
+			args: args{
+				cvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+					{
+						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{BaseScore: 4.0},
+					},
+					{
+						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{BaseScore: 8.0},
+					},
+				},
+			},
+			want: 4.0,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equalf(t, tt.want, baseScore(tt.args.cvssMetrics), "baseScore(%v)", tt.args.cvssMetrics)
+		})
+	}
+}
+
+func Test_sortBySeverity(t *testing.T) {
+	type args struct {
+		ids             []string
+		vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerability
+	}
+	tests := []struct {
+		name string
+		args args
+		want []string
+	}{
+		{
+			name: "sort by severity descending",
+			args: args{
+				ids: []string{"111", "222", "333"},
+				vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"111": {NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_LOW},
+					"222": {NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_CRITICAL},
+					"333": {NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT},
+				},
+			},
+			want: []string{"222", "333", "111"},
+		},
+		{
+			name: "sort by severity with ties resolved by CVSS score",
+			args: args{
+				ids: []string{"111", "222", "333"},
+				vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"111": {
+						NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_CRITICAL,
+						CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+							{V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{BaseScore: 8.0}},
+						},
+					},
+					"222": {
+						NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_CRITICAL,
+						CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+							{V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{BaseScore: 9.5}},
+						},
+					},
+					"333": {
+						NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
+					},
+				},
+			},
+			want: []string{"222", "111", "333"},
+		},
+		{
+			name: "nil vulnerabilities/nil first",
+			args: args{
+				ids: []string{"111", "222", "333"},
+				vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"111": nil,
+					"222": {NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE},
+					"333": {NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_LOW},
+				},
+			},
+			want: []string{"222", "333", "111"},
+		},
+		{
+			name: "nil vulnerabilities/nil after",
+			args: args{
+				ids: []string{"111", "222", "333"},
+				vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"111": {NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE},
+					"222": {NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_LOW},
+					"333": nil,
+				},
+			},
+			want: []string{"111", "222", "333"},
+		},
+		{
+			name: "nil vulnerabilities/all keep order",
+			args: args{
+				ids: []string{"222", "111"},
+				vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"111": nil,
+					"222": nil,
+				},
+			},
+			want: []string{"222", "111"},
+		},
+		{
+			name: "Empty input",
+			args: args{
+				ids:             []string{},
+				vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{},
+			},
+			want: []string{},
+		},
+		{
+			name: "All vulnerabilities with same severity and CVSS",
+			args: args{
+				ids: []string{"111", "222", "333"},
+				vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"111": {
+						NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_LOW,
+						CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+							{V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{BaseScore: 4.0}},
+						},
+					},
+					"222": {
+						NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_LOW,
+						CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+							{V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{BaseScore: 4.0}},
+						},
+					},
+					"3": {
+						NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_LOW,
+						CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+							{V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{BaseScore: 4.0}},
+						},
+					},
+				},
+			},
+			want: []string{"111", "222", "333"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sortBySeverity(tt.args.ids, tt.args.vulnerabilities)
+			assert.Equalf(t, tt.want, tt.args.ids, "sortBySeverity(%v, %v)", tt.args.ids, tt.args.vulnerabilities)
 		})
 	}
 }
