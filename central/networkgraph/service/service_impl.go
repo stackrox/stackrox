@@ -45,6 +45,7 @@ var (
 			"/v1.NetworkGraphService/GetNetworkGraph",
 			"/v1.NetworkGraphService/GetExternalNetworkEntities",
 			"/v1.NetworkGraphService/GetExternalNetworkFlows",
+			"/v1.NetworkGraphService/GetFlowsByEntity",
 		},
 		user.With(permissions.Modify(resources.NetworkGraph)): {
 			"/v1.NetworkGraphService/CreateExternalNetworkEntity",
@@ -156,6 +157,27 @@ func (s *serviceImpl) GetExternalNetworkFlows(ctx context.Context, request *v1.G
 	}
 
 	return &v1.GetExternalNetworkFlowsResponse{
+		Flows: flows,
+	}, nil
+}
+
+func (s *serviceImpl) GetFlowsByEntity(ctx context.Context, request *v1.GetFlowsByEntityRequest) (*v1.GetFlowsByEntityResponse, error) {
+	entity, found, err := s.entityDS.GetEntity(ctx, request.GetEntityId())
+	if err != nil || !found {
+		return nil, err
+	}
+
+	store, err := s.getFlowStore(ctx, request.GetClusterId())
+	if err != nil {
+		return nil, err
+	}
+
+	flows, err := store.GetFlowsByEntity(ctx, entity.GetInfo().GetId())
+	if err != nil {
+		return nil, err
+	}
+
+	return &v1.GetFlowsByEntityResponse{
 		Flows: flows,
 	}, nil
 }
