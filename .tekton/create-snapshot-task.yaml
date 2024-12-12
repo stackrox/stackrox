@@ -38,8 +38,9 @@ spec:
     script: |
       #!/usr/bin/env python3
 
-      import os
       import json
+      import os
+      import time
 
 
       def load_image_refs():
@@ -59,7 +60,8 @@ spec:
           }
 
 
-      def construct_snapshot(snapshot_name, application, components):
+      def construct_snapshot(snapshot_name_prefix, application, components):
+          snapshot_name = snapshot_name_prefix + "-" + int(time.time())
           return {
               "apiVersion": "appstudio.redhat.com/v1alpha1",
               "kind": "Snapshot",
@@ -74,11 +76,12 @@ spec:
 
 
       if __name__ == '__main__':
+          application = os.getenv("APPLICATION", "")
           image_refs = load_image_refs()
           components = [process_component(c) for c in image_refs]
           snapshot = construct_snapshot(
-              "tm-acs-4-6-0",
-              os.getenv("APPLICATION", ""),
+              f"tm-{application}",
+              application,
               components
           )
 
@@ -88,13 +91,9 @@ spec:
               json.dump(snapshot, f)
 
   - name: apply-snapshot
-    image: registry.access.redhat.com/ubi9/ubi:latest
+    image: registry.redhat.io/openshift4/ose-cli@sha256:4d58b5a47a84f843e646c5272e32b2dbefac67fd56e283cb60635d792e6348f9
     workingDir: /var/workdir/source
     script: |
       #!/usr/bin/env bash
 
-      set -euo pipefail
-      dnf -y upgrade --nobest
-      dnf -y install jq
-
-      cat snapshot.json | jq
+      oc apply -f snapshot.json

@@ -296,8 +296,14 @@ spec:
       value: |
         [
           {
-            "component": "scanner-v4-4-6",
-            "ref": "quay.io/rhacs-eng/scanner-v4@sha256:c2ada6227ad865379387ddfdfaa91d281898aaf59d39c898246b700638b4d585",
+            "component": "stackrox-operator",
+            "ref": "$(params.operator-image-build-repo)@sha256:22650fb5e066b6b4297494bda1b03e2d1d691dd7017d0ec043dec1f07c5930da",
+            "repository": "$(params.git-url)",
+            "revision": "$(params.revision)"
+          },
+          {
+            "component": "main",
+            "containerImage": "$(params.main-image-build-repo)@sha256:803d57f11ae1a718e1a1298a03f6377a383e058cb15cbeff631129c30dea0809"
             "repository": "$(params.git-url)",
             "revision": "$(params.revision)"
           }
