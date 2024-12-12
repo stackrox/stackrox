@@ -24,18 +24,14 @@ func NewSecuredClusterTLSIssuer(
 	sensorNamespace string,
 	sensorPodName string,
 ) common.SensorComponent {
-	msgToCentralC := make(chan *message.ExpiringMessage)
-	msgFromCentralC := make(chan *central.IssueSecuredClusterCertsResponse)
 	return &securedClusterTLSIssuerImpl{
 		sensorNamespace:              sensorNamespace,
 		sensorPodName:                sensorPodName,
 		k8sClient:                    k8sClient,
-		msgToCentralC:                msgToCentralC,
-		msgFromCentralC:              msgFromCentralC,
 		certRefreshBackoff:           certRefreshBackoff,
 		getCertificateRefresherFn:    newCertificatesRefresher,
 		getServiceCertificatesRepoFn: securedcluster.NewServiceCertificatesRepo,
-		certRequester:                certificates.NewSecuredClusterCertificateRequester(msgToCentralC, msgFromCentralC),
+		certRequester:                certificates.NewSecuredClusterCertificateRequester(),
 	}
 }
 
@@ -43,8 +39,6 @@ type securedClusterTLSIssuerImpl struct {
 	sensorNamespace              string
 	sensorPodName                string
 	k8sClient                    kubernetes.Interface
-	msgToCentralC                chan *message.ExpiringMessage
-	msgFromCentralC              chan *central.IssueSecuredClusterCertsResponse
 	certRefreshBackoff           wait.Backoff
 	getCertificateRefresherFn    certificateRefresherGetter
 	getServiceCertificatesRepoFn serviceCertificatesRepoGetter
@@ -110,29 +104,19 @@ func (i *securedClusterTLSIssuerImpl) Capabilities() []centralsensor.SensorCapab
 // ResponsesC is called "responses" because for other SensorComponents it is Central that
 // initiates the interaction. However, here it is Sensor which sends a request to Central.
 func (i *securedClusterTLSIssuerImpl) ResponsesC() <-chan *message.ExpiringMessage {
-	return i.msgToCentralC
+	return i.certRequester.MsgToCentralC()
 }
 
 // ProcessMessage dispatches Central's messages to Sensor received via the Central receiver.
 // This method must not block as it would prevent centralReceiverImpl from sending messages
 // to other SensorComponents.
 func (i *securedClusterTLSIssuerImpl) ProcessMessage(msg *central.MsgToSensor) error {
-	switch m := msg.GetMsg().(type) {
-	case *central.MsgToSensor_IssueSecuredClusterCertsResponse:
-		response := m.IssueSecuredClusterCertsResponse
+	if m, ok := msg.GetMsg().(*central.MsgToSensor_IssueSecuredClusterCertsResponse); ok {
 		go func() {
-			ctx, cancel := context.WithTimeout(context.Background(), processMessageTimeout)
-			defer cancel()
-			select {
-			case <-ctx.Done():
-				// certRefresher will retry.
-				log.Errorf("timeout forwarding response %s from central: %s", response, ctx.Err())
-			case i.msgFromCentralC <- response:
-			}
+			i.certRequester.DispatchResponse(certificates.NewResponseFromSecuredClusterCerts(m.IssueSecuredClusterCertsResponse))
 		}()
-		return nil
-	default:
-		// messages not supported by this component are ignored because unknown messages types are handled by the Central receiver.
-		return nil
 	}
+
+	// messages not supported by this component are ignored
+	return nil
 }
