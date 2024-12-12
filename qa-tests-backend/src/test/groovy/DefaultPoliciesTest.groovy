@@ -472,6 +472,8 @@ class DefaultPoliciesTest extends BaseSpecification {
     }
 
     @Tag("BAT")
+    // ROX-27302 Test is failing for AKS platform since 2024-12-09 (K8S API update to v1.30)
+    @IgnoreIf({ Env.CI_JOB_NAME ==~ /^aks-.*/ })
     def "Verify that built-in services don't trigger unexpected alerts"() {
         expect:
         "Verify unexpected policies are not violated within the kube-system namespace"
