@@ -6,7 +6,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/utils"
@@ -17,8 +16,6 @@ var (
 	ErrUnexpectedScopeKey = errors.New("unexpected scope key")
 	// ErrUnknownResource is returned when resource is unknown.
 	ErrUnknownResource = errors.New("unknown resource")
-
-	log = logging.LoggerForModule()
 )
 
 type globalResourceFullAccessScopeCheckerCore struct {
