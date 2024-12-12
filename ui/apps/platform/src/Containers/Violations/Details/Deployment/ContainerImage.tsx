@@ -1,8 +1,7 @@
 import React, { ReactElement } from 'react';
 import { Link } from 'react-router-dom';
 
-import { vulnManagementPath, vulnerabilitiesWorkloadCvesPath } from 'routePaths';
-import useFeatureFlags from 'hooks/useFeatureFlags';
+import { vulnerabilitiesWorkloadCvesPath } from 'routePaths';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
 
@@ -20,12 +19,7 @@ type ContainerImageProps = {
 };
 
 function ContainerImage({ image }: ContainerImageProps): ReactElement {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const areVMMiscImprovementsEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_2_GA');
-
-    const imageDetailsPageURL = areVMMiscImprovementsEnabled
-        ? `${vulnerabilitiesWorkloadCvesPath}/images/${image.id}`
-        : `${vulnManagementPath}/image/${image.id}`;
+    const imageDetailsPageURL = `${vulnerabilitiesWorkloadCvesPath}/images/${image.id}`;
 
     if (image.id === '' || image.notPullable) {
         const unavailableText = image.notPullable
