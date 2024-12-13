@@ -352,6 +352,7 @@ const rules = {
             docs: {
                 description: 'Forbid prop value that has string literal in redundant braces',
             },
+            fixable: 'code',
             schema: [],
         },
         create(context) {
@@ -374,6 +375,14 @@ const rules = {
                             context.report({
                                 node,
                                 message: `Replace redundant braces in ${braces} prop with double quotes ${double}`,
+                                fix: Array.isArray(node.value.range)
+                                    ? (fixer) => {
+                                          return fixer.replaceTextRange(
+                                              node.value.range,
+                                              `"${raw.slice(1, -1)}"`
+                                          );
+                                      }
+                                    : undefined,
                             });
                         } else {
                             const braces = `${name}={'…'}`;
