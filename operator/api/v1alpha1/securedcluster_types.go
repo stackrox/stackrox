@@ -317,6 +317,22 @@ type CollectorContainerSpec struct {
 
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
 	ContainerSpec `json:",inline"`
+
+	RuntimeConfig *CollectorRuntimeConfig `json:"runtimeConfig,omitempty"`
+}
+
+type CollectorRuntimeConfig struct {
+	Enabled    *bool                `json:"enabled,omitempty"`
+	Networking *CollectorNetworking `json:"networking"`
+}
+
+type CollectorNetworking struct {
+	PerContainerRateLimit *int32                `json:"perContainerRateLimit,omitempty"`
+	ExternalIPs           *CollectorExternalIPs `json:"externalIps,omitempty"`
+}
+
+type CollectorExternalIPs struct {
+	Enabled *bool `json:"enabled,omitempty"`
 }
 
 // ContainerSpec defines container settings.
