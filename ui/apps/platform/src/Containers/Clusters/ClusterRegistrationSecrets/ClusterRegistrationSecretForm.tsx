@@ -7,29 +7,20 @@ import {
     Divider,
     Flex,
     Form,
-    FormGroup,
-    FormHelperText,
-    HelperText,
-    HelperTextItem,
     PageSection,
-    Radio,
     TextInput,
 } from '@patternfly/react-core';
-import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
-import useAnalytics, { DOWNLOAD_CLUSTER_REGISTRATION_SECRET as DOWNLOAD_CLUSTER_REGISTRATION_SECRET } from 'hooks/useAnalytics';
+import useAnalytics, { DOWNLOAD_CLUSTER_REGISTRATION_SECRET } from 'hooks/useAnalytics';
 import { generateClusterRegistrationSecret } from 'services/ClustersService'; // ClusterRegistrationSecret
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import ClusterRegistrationSecretsHeader from './ClusterRegistrationSecretsHeader';
 
-import {
-    downloadClusterRegistrationSecret,
-} from './ClusterRegistrationSecretForm.utils';
+import { downloadClusterRegistrationSecret } from './ClusterRegistrationSecretForm.utils';
 
 export type ClusterRegistrationSecretFormValues = {
     name: string;
@@ -63,7 +54,6 @@ function ClusterRegistrationSecretForm(): ReactElement {
         isSubmitting,
         isValid,
         setFieldValue,
-        setValues,
         submitForm,
         touched,
         values,
@@ -87,7 +77,6 @@ function ClusterRegistrationSecretForm(): ReactElement {
         validateOnMount: true, // disable Next when Name is empty
         validationSchema,
     });
-    const { isOpen, onToggle } = useSelectToggle();
 
     function goBack() {
         history.goBack(); // to InputBundlesTable or NoClustersPage

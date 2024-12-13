@@ -7,8 +7,6 @@ import {
     DescriptionListGroup,
     DescriptionListTerm,
     Flex,
-    List,
-    ListItem,
     Modal,
 } from '@patternfly/react-core';
 
@@ -24,17 +22,19 @@ export type RevokeClusterRegistrationSecretModalProps = {
     onCloseModal: (wasRevoked: boolean) => void;
 };
 
-function RevokeClusterRegistrationSecretModal({ clusterRegistrationSecret: clusterRegistrationSecret, onCloseModal }: RevokeClusterRegistrationSecretModalProps): ReactElement {
+function RevokeClusterRegistrationSecretModal({
+    clusterRegistrationSecret,
+    onCloseModal,
+}: RevokeClusterRegistrationSecretModalProps): ReactElement {
     const { analyticsTrack } = useAnalytics();
     const [errorMessage, setErrorMessage] = useState('');
-    const [isRevokingClusterRegistrationSecret, setIsRevokingClusterRegistrationSecret] = useState(false);
+    const [isRevokingClusterRegistrationSecret, setIsRevokingClusterRegistrationSecret] =
+        useState(false);
 
     function onRevokeClusterRegistrationSecret() {
         setErrorMessage('');
         setIsRevokingClusterRegistrationSecret(true);
-        revokeClusterRegistrationSecrets(
-            [clusterRegistrationSecret.id],
-        )
+        revokeClusterRegistrationSecrets([clusterRegistrationSecret.id])
             .then(({ crsRevocationErrors }) => {
                 if (crsRevocationErrors.length === 0) {
                     onCloseModal(true);
@@ -64,7 +64,7 @@ function RevokeClusterRegistrationSecretModal({ clusterRegistrationSecret: clust
             actions={[
                 <Button
                     key="Revoke cluster registration secret"
-                    variant='primary'
+                    variant="primary"
                     onClick={onRevokeClusterRegistrationSecret}
                     isDisabled={isRevokingClusterRegistrationSecret}
                 >
@@ -84,11 +84,18 @@ function RevokeClusterRegistrationSecretModal({ clusterRegistrationSecret: clust
                 <DescriptionList isHorizontal>
                     <DescriptionListGroup>
                         <DescriptionListTerm>Name</DescriptionListTerm>
-                        <DescriptionListDescription>{clusterRegistrationSecret.name}</DescriptionListDescription>
+                        <DescriptionListDescription>
+                            {clusterRegistrationSecret.name}
+                        </DescriptionListDescription>
                     </DescriptionListGroup>
                 </DescriptionList>
                 {errorMessage && (
-                    <Alert title="Revoke cluster registration secret failed" variant="danger" isInline component="p">
+                    <Alert
+                        title="Revoke cluster registration secret failed"
+                        variant="danger"
+                        isInline
+                        component="p"
+                    >
                         {errorMessage}
                     </Alert>
                 )}

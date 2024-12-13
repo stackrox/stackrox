@@ -32,7 +32,12 @@ function ClusterRegistrationSecretsRoute(): ReactElement {
 
     if (id) {
         return (
-            <ClusterRegistrationSecretPage hasWriteAccessForClusterRegistrationSecrets={hasWriteAccessForClusterRegistrationSecrets} id={id} />
+            <ClusterRegistrationSecretPage
+                hasWriteAccessForClusterRegistrationSecrets={
+                    hasWriteAccessForClusterRegistrationSecrets
+                }
+                id={id}
+            />
         );
     }
 
@@ -40,7 +45,13 @@ function ClusterRegistrationSecretsRoute(): ReactElement {
         return <ClusterRegistrationSecretForm />;
     }
 
-    return <ClusterRegistrationSecretsPage hasWriteAccessForClusterRegistrationSecrets={hasWriteAccessForClusterRegistrationSecrets} />;
+    return (
+        <ClusterRegistrationSecretsPage
+            hasWriteAccessForClusterRegistrationSecrets={
+                hasWriteAccessForClusterRegistrationSecrets
+            }
+        />
+    );
 }
 
 export default ClusterRegistrationSecretsRoute;

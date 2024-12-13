@@ -243,7 +243,9 @@ export function fetchClusterInitBundles(): Promise<{ response: { items: ClusterI
         });
 }
 
-export function fetchClusterRegistrationSecrets(): Promise<{ response: { items: ClusterRegistrationSecret[] } }> {
+export function fetchClusterRegistrationSecrets(): Promise<{
+    response: { items: ClusterRegistrationSecret[] };
+}> {
     return axios
         .get<{ items: ClusterRegistrationSecret[] }>(`${clusterInitUrl}/crs`)
         .then((response) => {
@@ -331,7 +333,7 @@ export function revokeClusterInitBundles(
 }
 
 export function revokeClusterRegistrationSecrets(
-    ids: string[],
+    ids: string[]
 ): Promise<ClusterRegistrationSecretRevokeResponse> {
     return axios
         .patch<ClusterRegistrationSecretRevokeResponse>(`${clusterInitUrl}/crs/revoke`, {

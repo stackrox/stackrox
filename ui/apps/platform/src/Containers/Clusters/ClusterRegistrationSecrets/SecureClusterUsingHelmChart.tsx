@@ -11,10 +11,6 @@ import {
     Title,
 } from '@patternfly/react-core';
 
-import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
-import useMetadata from 'hooks/useMetadata';
-import { getVersionedDocs } from 'utils/versioning';
-
 const codeBlock = [
     'helm install -n stackrox --create-namespace \\',
     'stackrox-secured-cluster-services rhacs/secured-cluster-services \\',
@@ -32,7 +28,6 @@ export type SecureClusterUsingHelmChartProps = {
 function SecureClusterUsingHelmChart({
     headingLevel,
 }: SecureClusterUsingHelmChartProps): ReactElement {
-    const { version } = useMetadata();
     const subHeadingLevel = headingLevel === 'h2' ? 'h3' : 'h4';
     const [wasCopied, setWasCopied] = useState(false);
 
@@ -77,9 +72,7 @@ function SecureClusterUsingHelmChart({
                     </ClipboardCopy>
                 </ListItem>
                 <ListItem>
-                    <p>
-                        You must download the YAML file for a cluster registration secret.
-                    </p>
+                    <p>You must download the YAML file for a cluster registration secret.</p>
                 </ListItem>
                 <ListItem>
                     <p>

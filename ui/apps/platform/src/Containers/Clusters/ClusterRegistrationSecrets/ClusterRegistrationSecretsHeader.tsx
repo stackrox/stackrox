@@ -20,7 +20,10 @@ export type ClusterRegistrationSecretsHeaderProps = {
     title: string;
 };
 
-function ClusterRegistrationSecretsHeader({ headerActions, title }: ClusterRegistrationSecretsHeaderProps): ReactElement {
+function ClusterRegistrationSecretsHeader({
+    headerActions,
+    title,
+}: ClusterRegistrationSecretsHeaderProps): ReactElement {
     return (
         <PageSection component="div" variant="light">
             <PageTitle title={title} />
@@ -41,8 +44,8 @@ function ClusterRegistrationSecretsHeader({ headerActions, title }: ClusterRegis
                     >
                         <Title headingLevel="h1">{title}</Title>
                         <Text>
-                            Cluster registration secrets contain secrets for secured cluster services to
-                            establish initial trust with Central.
+                            Cluster registration secrets contain secrets for secured cluster
+                            services to establish initial trust with Central.
                         </Text>
                     </Flex>
                     {headerActions && (

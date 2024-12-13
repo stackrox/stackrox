@@ -12,7 +12,9 @@ export type ClusterRegistrationSecretDescriptionProps = {
     clusterRegistrationSecret: ClusterRegistrationSecret;
 };
 
-function ClusterRegistrationSecretDescription({ clusterRegistrationSecret }: ClusterRegistrationSecretDescriptionProps): ReactElement {
+function ClusterRegistrationSecretDescription({
+    clusterRegistrationSecret,
+}: ClusterRegistrationSecretDescriptionProps): ReactElement {
     return (
         <DescriptionList
             isCompact
@@ -21,11 +23,15 @@ function ClusterRegistrationSecretDescription({ clusterRegistrationSecret }: Clu
         >
             <DescriptionListGroup>
                 <DescriptionListTerm>Name</DescriptionListTerm>
-                <DescriptionListDescription>{clusterRegistrationSecret.name}</DescriptionListDescription>
+                <DescriptionListDescription>
+                    {clusterRegistrationSecret.name}
+                </DescriptionListDescription>
             </DescriptionListGroup>
             <DescriptionListGroup>
                 <DescriptionListTerm>Created by</DescriptionListTerm>
-                <DescriptionListDescription>{clusterRegistrationSecret.createdBy.id}</DescriptionListDescription>
+                <DescriptionListDescription>
+                    {clusterRegistrationSecret.createdBy.id}
+                </DescriptionListDescription>
             </DescriptionListGroup>
             {clusterRegistrationSecret.createdBy.attributes.map((attribute) => {
                 return (
@@ -37,11 +43,15 @@ function ClusterRegistrationSecretDescription({ clusterRegistrationSecret }: Clu
             })}
             <DescriptionListGroup>
                 <DescriptionListTerm>Created at</DescriptionListTerm>
-                <DescriptionListDescription>{clusterRegistrationSecret.createdAt}</DescriptionListDescription>
+                <DescriptionListDescription>
+                    {clusterRegistrationSecret.createdAt}
+                </DescriptionListDescription>
             </DescriptionListGroup>
             <DescriptionListGroup>
                 <DescriptionListTerm>Expires at</DescriptionListTerm>
-                <DescriptionListDescription>{clusterRegistrationSecret.expiresAt}</DescriptionListDescription>
+                <DescriptionListDescription>
+                    {clusterRegistrationSecret.expiresAt}
+                </DescriptionListDescription>
             </DescriptionListGroup>
         </DescriptionList>
     );

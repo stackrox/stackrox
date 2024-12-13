@@ -174,7 +174,11 @@ function ClustersTablePanel({
                     properties: { source: 'Secure a Cluster Dropdown' },
                 });
             }}
-            component={<Link to={clustersSecureClusterCrsPath}>Cluster registration secret installation methods</Link>}
+            component={
+                <Link to={clustersSecureClusterCrsPath}>
+                    Cluster registration secret installation methods
+                </Link>
+            }
         />,
         <DropdownItem
             key="legacy"

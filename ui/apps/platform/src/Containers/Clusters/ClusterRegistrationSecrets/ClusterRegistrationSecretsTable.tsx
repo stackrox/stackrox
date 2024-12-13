@@ -8,7 +8,9 @@ import { clustersClusterRegistrationSecretsPath } from 'routePaths';
 export type ClusterRegistrationSecretsTableProps = {
     hasWriteAccessForClusterRegistrationSecrets: boolean;
     clusterRegistrationSecrets: ClusterRegistrationSecret[];
-    setClusterRegistrationSecretToRevoke: (clusterRegistrationSecret: ClusterRegistrationSecret) => void;
+    setClusterRegistrationSecretToRevoke: (
+        clusterRegistrationSecret: ClusterRegistrationSecret
+    ) => void;
 };
 
 function ClusterRegistrationSecretsTable({
@@ -38,7 +40,9 @@ function ClusterRegistrationSecretsTable({
                     return (
                         <Tr key={id}>
                             <Td dataLabel="Name">
-                                <Link to={`${clustersClusterRegistrationSecretsPath}/${id}`}>{name}</Link>
+                                <Link to={`${clustersClusterRegistrationSecretsPath}/${id}`}>
+                                    {name}
+                                </Link>
                             </Td>
                             <Td dataLabel="Created by">{createdBy.id}</Td>
                             <Td dataLabel="Created at">{createdAt}</Td>
@@ -51,7 +55,9 @@ function ClusterRegistrationSecretsTable({
                                             {
                                                 title: 'Revoke cluster registration secret',
                                                 onClick: () => {
-                                                    setClusterRegistrationSecretToRevoke(clusterRegistrationSecret);
+                                                    setClusterRegistrationSecretToRevoke(
+                                                        clusterRegistrationSecret
+                                                    );
                                                 },
                                             },
                                         ]}

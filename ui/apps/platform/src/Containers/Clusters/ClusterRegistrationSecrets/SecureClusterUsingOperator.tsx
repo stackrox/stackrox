@@ -1,10 +1,6 @@
 import React, { ReactElement } from 'react';
 import { ClipboardCopy, Flex, List, ListItem, Title } from '@patternfly/react-core';
 
-import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
-import useMetadata from 'hooks/useMetadata';
-import { getVersionedDocs } from 'utils/versioning';
-
 export type SecureClusterUsingOperatorProps = {
     headingLevel: 'h2' | 'h3';
 };
@@ -12,7 +8,6 @@ export type SecureClusterUsingOperatorProps = {
 function SecureClusterUsingOperator({
     headingLevel,
 }: SecureClusterUsingOperatorProps): ReactElement {
-    const { version } = useMetadata();
     const subHeadingLevel = headingLevel === 'h2' ? 'h3' : 'h4';
 
     return (
@@ -25,8 +20,8 @@ function SecureClusterUsingOperator({
             <List component="ul">
                 <ListItem>
                     <p>
-                        In the RHACS web portal, you have created a cluster registration secret and downloaded the
-                        YAML file for the cluster registration secret.
+                        In the RHACS web portal, you have created a cluster registration secret and
+                        download the YAML file for the cluster registration secret.
                     </p>
                 </ListItem>
                 <ListItem>
@@ -42,7 +37,8 @@ function SecureClusterUsingOperator({
                 <ListItem>
                     <p>Apply the cluster registration secret on the secured cluster. </p>
                     <p>
-                        Perform one of the following tasks to apply the cluster registration secrets:
+                        Perform one of the following tasks to apply the cluster registration
+                        secrets:
                     </p>
                     <List component="ul">
                         <ListItem>
@@ -52,8 +48,9 @@ function SecureClusterUsingOperator({
                                 the <strong>Import YAML</strong> page.
                             </p>
                             <p>
-                                You can drag the cluster registration secret file or copy and paste its contents
-                                into the editor, and then click <strong>Create</strong>.
+                                You can drag the cluster registration secret file or copy and paste
+                                its contents into the editor, and then click <strong>Create</strong>
+                                .
                             </p>
                         </ListItem>
                         <ListItem>

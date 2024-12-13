@@ -4,11 +4,16 @@ import { Alert, Bullseye, Button, PageSection, Spinner } from '@patternfly/react
 import LinkShim from 'Components/PatternFly/LinkShim';
 import useAnalytics, { CREATE_CLUSTER_REGISTRATION_SECRET_CLICKED } from 'hooks/useAnalytics';
 import useRestQuery from 'hooks/useRestQuery';
-import { ClusterRegistrationSecret, fetchClusterRegistrationSecrets } from 'services/ClustersService';
+import {
+    ClusterRegistrationSecret,
+    fetchClusterRegistrationSecrets,
+} from 'services/ClustersService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { clustersClusterRegistrationSecretsPath } from 'routePaths';
 
-import ClusterRegistrationSecretsHeader, { titleClusterRegistrationSecrets } from './ClusterRegistrationSecretsHeader';
+import ClusterRegistrationSecretsHeader, {
+    titleClusterRegistrationSecrets,
+} from './ClusterRegistrationSecretsHeader';
 import ClusterRegistrationSecretsTable from './ClusterRegistrationSecretsTable';
 import RevokeClusterRegistrationSecretModal from './RevokeClusterRegistrationSecretModal';
 
@@ -16,9 +21,12 @@ export type ClusterRegistrationSecretsPageProps = {
     hasWriteAccessForClusterRegistrationSecrets: boolean;
 };
 
-function ClusterRegistrationSecretsPage({ hasWriteAccessForClusterRegistrationSecrets }: ClusterRegistrationSecretsPageProps): ReactElement {
+function ClusterRegistrationSecretsPage({
+    hasWriteAccessForClusterRegistrationSecrets,
+}: ClusterRegistrationSecretsPageProps): ReactElement {
     const { analyticsTrack } = useAnalytics();
-    const [clusterRegistrationSecretToRevoke, setClusterRegistrationSecretToRevoke] = useState<ClusterRegistrationSecret | null>(null);
+    const [clusterRegistrationSecretToRevoke, setClusterRegistrationSecretToRevoke] =
+        useState<ClusterRegistrationSecret | null>(null);
     const headerActions = hasWriteAccessForClusterRegistrationSecrets ? (
         <Button
             variant="primary"
@@ -52,7 +60,10 @@ function ClusterRegistrationSecretsPage({ hasWriteAccessForClusterRegistrationSe
     /* eslint-disable no-nested-ternary */
     return (
         <>
-            <ClusterRegistrationSecretsHeader headerActions={headerActions} title={titleClusterRegistrationSecrets} />
+            <ClusterRegistrationSecretsHeader
+                headerActions={headerActions}
+                title={titleClusterRegistrationSecrets}
+            />
             <PageSection component="div">
                 {isFetching ? (
                     <Bullseye>
@@ -70,9 +81,13 @@ function ClusterRegistrationSecretsPage({ hasWriteAccessForClusterRegistrationSe
                 ) : (
                     <>
                         <ClusterRegistrationSecretsTable
-                            hasWriteAccessForClusterRegistrationSecrets={hasWriteAccessForClusterRegistrationSecrets}
+                            hasWriteAccessForClusterRegistrationSecrets={
+                                hasWriteAccessForClusterRegistrationSecrets
+                            }
                             clusterRegistrationSecrets={dataForFetch?.response?.items ?? []}
-                            setClusterRegistrationSecretToRevoke={setClusterRegistrationSecretToRevoke}
+                            setClusterRegistrationSecretToRevoke={
+                                setClusterRegistrationSecretToRevoke
+                            }
                         />
                         {clusterRegistrationSecretToRevoke && (
                             <RevokeClusterRegistrationSecretModal
