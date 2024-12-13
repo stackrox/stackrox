@@ -314,13 +314,14 @@ func (c *sensorConnection) handleMessage(ctx context.Context, msg *central.MsgFr
 }
 
 func shallDedupe(msg *central.MsgFromSensor) bool {
-	// Special handling of node inventory and node indexes for Sensor version 4.6 and earlier:
-	// they shall be treated similar as CREATE.
-	if msg.GetEvent().GetAction() == central.ResourceAction_UNSET_ACTION_RESOURCE {
-		return false
+	// Special handling of node inventory and node indexes for Sensor version 4.6 and earlier
+	ev := msg.GetEvent()
+	if ev.GetAction() == central.ResourceAction_UNSET_ACTION_RESOURCE {
+		if ev.GetNodeInventory() != nil || ev.GetIndexReport() != nil {
+			return false
+		}
 	}
-	// Only dedupe on non-creates
-	return msg.GetEvent().GetAction() != central.ResourceAction_CREATE_RESOURCE
+	return ev.GetAction() != central.ResourceAction_CREATE_RESOURCE
 }
 
 func (c *sensorConnection) processComplianceResponse(ctx context.Context, msg *central.ComplianceResponse) error {
