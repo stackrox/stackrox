@@ -6,10 +6,11 @@ import time
 
 
 def load_image_refs():
-    return json.loads(os.getenv("IMAGE_REFS", '[{"component": "scanner", "ref": "", "revision": "", "repository": ""}]'))
+    return json.loads(os.getenv("IMAGE_REFS", '[]'))
 
 
 def process_component(component, name_suffix):
+    print(component)
     if name_suffix != "":
         name = f"{component["component"]}-{name_suffix}"
     else:
