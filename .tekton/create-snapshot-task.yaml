@@ -39,4 +39,4 @@ spec:
       #!/usr/bin/env bash
 
       .konflux/scripts/render_snapshot.py
-      oc apply -f snapshot.json
+      oc create -f snapshot.json

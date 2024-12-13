@@ -10,6 +10,10 @@ spec:
     description: Image reference.
     type: string
   results:
+  - name: GIT_REF
+    description: Git commit for the image's source code if provided as `vcs-ref` image label.
+  - name: GIT_REPO
+    description: Git repository URL for the image's source code if provided as `source-location` image label.
   - name: IMAGE_DIGEST
     description: Image digest in the format `sha256:abcdef0123`.
   steps:
@@ -36,3 +40,17 @@ spec:
         --no-tags \
         "docker://$(params.IMAGE)")"
       echo -n "$digest" | tee "$(results.IMAGE_DIGEST.path)"
+
+      git_ref="$(skopeo inspect \
+        --retry-times 10 \
+        --format '{{ index .Labels "vcs-ref" }}')" \
+        --no-tags
+        "docker://$(params.image)")"
+      echo -n "$git_ref" | tee "$(results.GIT_REF.path)"
+
+      git_repo="$(skopeo inspect \
+        --retry-times 10 \
+        --format '{{ index .Labels "source-location" }}')" \
+        --no-tags
+        "docker://$(params.image)")"
+      echo -n "$git_repo" | tee "$(results.GIT_REPO.path)"

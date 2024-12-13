@@ -288,6 +288,26 @@ spec:
     - name: basic-auth
       workspace: git-auth
 
+  - name: determine-main-image-tag
+    params:
+    - name: TAG_SUFFIX
+      value: $(params.output-tag-suffix)
+    - name: SOURCE_ARTIFACT
+      value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
+    - name: MAKEFILE_DIRECTORY
+      value: "."
+    taskRef:
+      name: determine-image-tag
+
+  - name: wait-for-scanner-image
+    params:
+    - name: IMAGE
+      value: "$(params.scanner-image-build-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+    taskRef:
+      name: wait-for-image
+    # This timeout must be the same as the pipeline timeout in `scanner-retag.yaml`
+    timeout: 40m
+
   - name: create-acs-style-snapshot
     params:
     - name: SOURCE_ARTIFACT
@@ -296,16 +316,10 @@ spec:
       value: |
         [
           {
-            "component": "stackrox-operator",
-            "ref": "$(params.operator-image-build-repo)@sha256:22650fb5e066b6b4297494bda1b03e2d1d691dd7017d0ec043dec1f07c5930da",
-            "repository": "$(params.git-url)",
-            "revision": "$(params.revision)"
-          },
-          {
-            "component": "main",
-            "ref": "$(params.main-image-build-repo)@sha256:803d57f11ae1a718e1a1298a03f6377a383e058cb15cbeff631129c30dea0809",
-            "repository": "$(params.git-url)",
-            "revision": "$(params.revision)"
+            "component": "scanner",
+            "ref": "$(params.scanner-image-build-repo)@$(tasks.wait-for-scanner-image.results.IMAGE_DIGEST)",
+            "repository": "$(tasks.wait-for-scanner-image.results.GIT_REPO)",
+            "revision": "$(tasks.wait-for-scanner-image.results.GIT_REF)"
           }
         ]
     taskRef:
