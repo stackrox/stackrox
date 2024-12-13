@@ -301,7 +301,6 @@ export const clusterRegistrationSecretDescriptor: AuthProviderDescriptor = {
     type: 'clusterRegistrationSecret',
 };
 
-
 export const machineAccessDescriptor: AuthProviderDescriptor = {
     image: logo,
     label: 'Machine access configuration',

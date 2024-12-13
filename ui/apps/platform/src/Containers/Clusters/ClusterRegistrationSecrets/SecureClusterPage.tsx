@@ -15,7 +15,11 @@ import {
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
 import TabNav from 'Components/TabNav/TabNav';
-import { clustersBasePath, clustersClusterRegistrationSecretsPath, clustersSecureClusterCrsPath } from 'routePaths';
+import {
+    clustersBasePath,
+    clustersClusterRegistrationSecretsPath,
+    clustersSecureClusterCrsPath,
+} from 'routePaths';
 
 import SecureClusterUsingHelmChart from './SecureClusterUsingHelmChart';
 import SecureClusterUsingOperator from './SecureClusterUsingOperator';
@@ -55,7 +59,9 @@ function SecureClusterPage(): ReactElement {
                             </BreadcrumbItemLink>
                             <BreadcrumbItem isActive>{title}</BreadcrumbItem>
                         </Breadcrumb>
-                        <Title headingLevel="h1">Secure a cluster with a cluster registration secret</Title>
+                        <Title headingLevel="h1">
+                            Secure a cluster with a cluster registration secret
+                        </Title>
                     </Flex>
                     <FlexItem>
                         <TabNav

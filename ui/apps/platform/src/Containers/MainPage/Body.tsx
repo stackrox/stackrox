@@ -127,7 +127,12 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
     },
     // Cluster registration secrets must precede generic Clusters.
     'clusters/cluster-registration-secrets': {
-        component: asyncComponent(() => import('Containers/Clusters/ClusterRegistrationSecrets/ClusterRegistrationSecretsRoute')),
+        component: asyncComponent(
+            () =>
+                import(
+                    'Containers/Clusters/ClusterRegistrationSecrets/ClusterRegistrationSecretsRoute'
+                )
+        ),
         path: clustersClusterRegistrationSecretsPathWithParam,
     },
     // Cluster secure-a-cluster must precede generic Clusters.

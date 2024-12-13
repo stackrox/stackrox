@@ -15,7 +15,10 @@ export type ClusterRegistrationSecretPageProps = {
     id: string;
 };
 
-function ClusterRegistrationSecretPage({ hasWriteAccessForClusterRegistrationSecrets, id }: ClusterRegistrationSecretPageProps): ReactElement {
+function ClusterRegistrationSecretPage({
+    hasWriteAccessForClusterRegistrationSecrets,
+    id,
+}: ClusterRegistrationSecretPageProps): ReactElement {
     const history = useHistory();
     const [isRevoking, setIsRevoking] = useState(false);
 
@@ -55,7 +58,10 @@ function ClusterRegistrationSecretPage({ hasWriteAccessForClusterRegistrationSec
     /* eslint-disable no-nested-ternary */
     return (
         <>
-            <ClusterRegistrationSecretsHeader headerActions={headerActions} title="Cluster registration secret" />
+            <ClusterRegistrationSecretsHeader
+                headerActions={headerActions}
+                title="Cluster registration secret"
+            />
             <PageSection component="div">
                 {isFetching ? (
                     <Bullseye>
@@ -72,10 +78,12 @@ function ClusterRegistrationSecretPage({ hasWriteAccessForClusterRegistrationSec
                     </Alert>
                 ) : clusterRegistrationSecret ? (
                     <>
-                        <ClusterRegistrationSecretDescription clusterRegistrationSecret={clusterRegistrationSecret} />
+                        <ClusterRegistrationSecretDescription
+                            clusterRegistrationSecret={clusterRegistrationSecret}
+                        />
                         {isRevoking && (
                             <RevokeClusterRegistrationSecretModal
-                            clusterRegistrationSecret={clusterRegistrationSecret}
+                                clusterRegistrationSecret={clusterRegistrationSecret}
                                 onCloseModal={onCloseModal}
                             />
                         )}

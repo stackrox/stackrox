@@ -59,7 +59,8 @@ export const LEGACY_CLUSTER_DOWNLOAD_YAML = 'Legacy Cluster Download YAML';
 export const LEGACY_CLUSTER_DOWNLOAD_HELM_VALUES = 'Legacy Cluster Download Helm Values';
 
 // cluster-registration-secrets
-export const CREATE_CLUSTER_REGISTRATION_SECRET_CLICKED = 'Create Cluster Registration Secret Clicked';
+export const CREATE_CLUSTER_REGISTRATION_SECRET_CLICKED =
+    'Create Cluster Registration Secret Clicked';
 export const DOWNLOAD_CLUSTER_REGISTRATION_SECRET = 'Download Cluster Registration Secret';
 export const REVOKE_CLUSTER_REGISTRATION_SECRET = 'Revoke Cluster Registration Secret';
 
