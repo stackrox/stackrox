@@ -12,7 +12,7 @@ def load_image_refs():
 def process_component(component, name_suffix):
     print(component)
     if name_suffix != "":
-        name = f"{component["component"]}-{name_suffix}"
+        name = f"{component['component']}-{name_suffix}"
     else:
         name = component["component"]
     return {
