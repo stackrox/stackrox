@@ -29,8 +29,10 @@ import (
 	"github.com/quay/claircore/ubuntu"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/scanner/config"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
+	"github.com/stackrox/rox/scanner/enricher/csaf"
 	"github.com/stackrox/rox/scanner/enricher/fixedby"
 	"github.com/stackrox/rox/scanner/enricher/nvd"
 	"github.com/stackrox/rox/scanner/internal/httputil"
@@ -127,14 +129,18 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		Transport: httputil.DenyTransport,
 	}
 
+	enrichers := []driver.Enricher{
+		&nvd.Enricher{},
+		&fixedby.Enricher{},
+	}
+	if !features.ScannerV4RedHatCVEs.Enabled() {
+		enrichers = append(enrichers, &csaf.Enricher{})
+	}
 	libVuln, err := libvuln.New(ctx, &libvuln.Options{
-		Store:        store,
-		Locker:       locker,
-		MatcherNames: matcherNames,
-		Enrichers: []driver.Enricher{
-			&nvd.Enricher{},
-			&fixedby.Enricher{},
-		},
+		Store:                    store,
+		Locker:                   locker,
+		MatcherNames:             matcherNames,
+		Enrichers:                enrichers,
 		UpdateRetention:          libvuln.DefaultUpdateRetention,
 		DisableBackgroundUpdates: true,
 		Client:                   ccClient,
