@@ -43,14 +43,14 @@ spec:
 
       git_ref="$(skopeo inspect \
         --retry-times 10 \
-        --format '{{ index .Labels "vcs-ref" }}')" \
+        --format '{{ index .Labels "vcs-ref" }}' \
         --no-tags \
         "docker://$(params.IMAGE)")"
       echo -n "$git_ref" | tee "$(results.GIT_REF.path)"
 
       git_repo="$(skopeo inspect \
         --retry-times 10 \
-        --format '{{ index .Labels "source-location" }}')" \
+        --format '{{ index .Labels "source-location" }}' \
         --no-tags \
         "docker://$(params.IMAGE)")"
       echo -n "$git_repo" | tee "$(results.GIT_REPO.path)"
