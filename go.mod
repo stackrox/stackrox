@@ -52,7 +52,6 @@ require (
 	github.com/go-logr/logr v1.4.2
 	github.com/go-logr/zapr v1.3.0
 	github.com/godbus/dbus/v5 v5.1.0
-	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/golang-jwt/jwt/v4 v4.5.1
 	github.com/google/certificate-transparency-go v1.2.1
 	github.com/google/gnostic-models v0.6.9
