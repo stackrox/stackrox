@@ -85,6 +85,8 @@ class SummaryTest extends BaseSpecification {
         for (Node stackroxNode : stackroxNodes) {
             objects.Node orchestratorNode = orchestratorNodes.find { it.uid == stackroxNode.id }
             assert stackroxNode.clusterId == ClusterService.getClusterId()
+            // TODO: Testing only
+            assert stackroxNode.clusterId != ClusterService.getClusterId()
             assert stackroxNode.name == orchestratorNode.name
             if (stackroxNode.labelsMap != orchestratorNode.labels) {
                 log.info "There is a node label difference"
