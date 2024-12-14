@@ -306,13 +306,13 @@ func Destroy(ctx context.Context, db postgres.DB) {
 }
 
 func dropTableTestStructs(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS test_structs CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE test_structs CASCADE")
 	dropTableTestStructsNesteds(ctx, db)
 
 }
 
 func dropTableTestStructsNesteds(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS test_structs_nesteds CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE test_structs_nesteds CASCADE")
 
 }
 

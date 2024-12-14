@@ -265,13 +265,13 @@ func Destroy(ctx context.Context, db postgres.DB) {
 }
 
 func dropTableReportConfigurations(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS report_configurations CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE report_configurations CASCADE")
 	dropTableReportConfigurationsNotifiers(ctx, db)
 
 }
 
 func dropTableReportConfigurationsNotifiers(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS report_configurations_notifiers CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE report_configurations_notifiers CASCADE")
 
 }
 

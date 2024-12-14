@@ -176,7 +176,7 @@ func Destroy(ctx context.Context, db postgres.DB) {
 }
 
 func dropTableServiceIdentities(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS service_identities CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE service_identities CASCADE")
 
 }
 

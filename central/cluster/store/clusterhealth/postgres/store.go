@@ -196,7 +196,7 @@ func Destroy(ctx context.Context, db postgres.DB) {
 }
 
 func dropTableClusterHealthStatuses(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS cluster_health_statuses CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE cluster_health_statuses CASCADE")
 
 }
 

@@ -646,7 +646,7 @@ func (s *flowStoreImpl) RemoveStaleFlows(ctx context.Context) error {
 //// Used for testing
 
 func dropTableNetworkflow(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS network_flows_v2 CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE network_flows_v2 CASCADE")
 }
 
 // Destroy destroys the tables
