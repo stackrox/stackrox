@@ -1,0 +1,60 @@
+name: Check CRD Compatibility
+on:
+  push:
+    tags:
+    - '*'
+    branches:
+    - master
+    - release-*
+  pull_request:
+    types:
+    - opened
+    - reopened
+    - synchronize
+
+jobs:
+  check-crd-compatibility:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
+    outputs:
+      release_branch: ${{ steps.get_previous_release_branch.outputs.release_branch }}
+    steps:
+    - name: Checkout stackrox/stackrox
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - uses: ./.github/actions/job-preamble
+
+    - name: Checkout crd-schema-checker
+      uses: actions/checkout@v4
+      with:
+        repository: openshift/crd-schema-checker
+        path: .crd-schema-checker
+        ref: master
+
+    - name: Build crd-schema-checker
+      run: |
+        make -C .crd-schema-checker
+
+    - name: Get previous release branch
+      id: get_previous_release_branch
+      run: |
+        version="$(make tag)"
+        version_number="${version%%.x*}"
+        release_branch=release-"${version_number}"
+        echo "release_branch=$release_branch" >> "$GITHUB_OUTPUT"
+
+    - name: Checkout previous release branch
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        ref: ${{ steps.get_previous_release_branch.outputs.release_branch }}
+        path: .old-stackrox
+
+    - name: Run crd-schema-checker
+      run: |
+        .crd-schema-checker/crd-schema-checker check-manifests --existing-crd-filename=.old-stackrox/operator/config/crd/bases/platform.stackrox.io_securedclusters.yaml --new-crd-filename=operator/config/crd/bases/platform.stackrox.io_securedclusters.yaml
+        .crd-schema-checker/crd-schema-checker check-manifests --existing-crd-filename=.old-stackrox/operator/config/crd/bases/platform.stackrox.io_centrals.yaml --new-crd-filename=operator/config/crd/bases/platform.stackrox.io_centrals.yaml
