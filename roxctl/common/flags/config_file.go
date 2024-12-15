@@ -1,7 +1,10 @@
 package flags
 
 import (
+	"fmt"
+
 	"os"
+	"os/user"
 
 	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
@@ -84,10 +87,54 @@ func Endpoint() string {
 	return ""
 }
 
+// checkFilePermissionsAndOwnership is a utility function for checking for 600 file
+// permissions and file ownership.
+func checkFilePermissionsAndOwnership(path string) error {
+
+	// 1. Obtain file info
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		return errors.Wrapf(err, "failed to stat file: %v", err)
+	}
+
+	// 2. Obtain file permissions information
+	fileMode := fileInfo.Mode().Perm()
+	if fileMode != 0o600 {
+		return errors.Wrapf(err, "file does not have 600 permisisons, got: %v", fileMode)
+	}
+
+	// 3. Obtain file ownership info and current user info
+	fileOwner, ok := fileInfo.Sys().(*syscall.Stat_t)
+	if !ok {
+		return errors.Wrapf(err, "failed to get file system info")
+	}
+
+	fileOwnerUid := fmt.Sprintf("%d", fileOwner.Uid)
+
+	currentUser, err := user.Current()
+	if err != nil {
+		return errors.Wrapf(err, "failed to get current user: %v", err)
+	}
+
+	if fileOwnerUid != currentUser.Uid {
+		return errors.Wrapf(err, "file is not owned by current user, instead: %v", fileOwnerUid)
+	}
+
+	return nil
+}
+
 // readConfig is a utilty function for reading YAML-based configuration files
 func readConfig(path string) (*Instance, error) {
 	var conf Instance
+
+	err := checkFilePermissionsAndOwnership(path)
+
+	if err != nil {
+		return nil, errors.Wrapf(err, "file permission or ownership error: %v", err)
+	}
+
 	bytes, err := os.ReadFile(path)
+
 	if err != nil {
 		if os.IsNotExist(err) {
 			return &conf, nil
