@@ -14,7 +14,9 @@ import (
 type Instance struct {
 	InstanceName      string `json:"name"`
 	CaCertificatePath string `json:"caCertPath,omitempty"`
+	CaCertificate     string `json:"caCert,omitempty"`
 	ApiTokenFilePath  string `json:"apiTokenPath,omitempty"`
+	ApiToken          string `json:"apiToken,omitempty"`
 	Endpoint          string `json:"endpoint,omitempty"`
 }
 
