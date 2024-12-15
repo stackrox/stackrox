@@ -65,10 +65,9 @@ func TestPrecedenceConfigVersusFlags(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, testFile1, ConfigurationFileName())
 
+	// 2. Execute the command to trigger PersistentPreRunE
 	err = cmd.PersistentPreRunE(cmd, []string{})
 	assert.True(t, ConfigurationFileChanged())
-
-	// Execute the command to trigger PersistentPreRunE
 	assert.NoError(t, err, "Command execution should not produce an error")
 
 	// 3. Validate that PersistentPreRunE (LoadConfig) ran successfully
@@ -95,13 +94,15 @@ func TestPrecedenceConfigVersusEnv(t *testing.T) {
 
 	testFile1 := "./testdata/test_instance1.yaml"
 
+	// 1. Default, unchanged flag value and setting not set should lead to the
+	// default value being returned.
 	cmd := createTestCommand(t)
 
 	err := cmd.PersistentFlags().Set("config-file", testFile1)
 	assert.NoError(t, err, "Setting a configuration file should not produce an error")
 	assert.Equal(t, testFile1, ConfigurationFileName())
 
-	// Execute the command to trigger PersistentPreRunE
+	// 2. Execute the command to trigger PersistentPreRunE
 	err = cmd.PersistentPreRunE(cmd, []string{})
 	assert.NoError(t, err, "Command execution should not produce an error")
 	assert.True(t, ConfigurationFileChanged())
@@ -129,13 +130,15 @@ func TestPrecedenceConfigVersusFlagsAndEnv(t *testing.T) {
 
 	testFile1 := "./testdata/test_instance1.yaml"
 
+	// 1. Default, unchanged flag value and setting not set should lead to the
+	// default value being returned.
 	cmd := createTestCommand(t)
 
 	err := cmd.PersistentFlags().Set("config-file", testFile1)
 	assert.NoError(t, err, "Setting a configuration file should not produce an error")
 	assert.Equal(t, testFile1, ConfigurationFileName())
 
-	// Execute the command to trigger PersistentPreRunE
+	// 2. Execute the command to trigger PersistentPreRunE
 	err = cmd.PersistentPreRunE(cmd, []string{})
 	assert.NoError(t, err, "Command execution should not produce an error")
 	assert.True(t, ConfigurationFileChanged())
