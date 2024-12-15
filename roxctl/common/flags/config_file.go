@@ -12,6 +12,8 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/pointers"
+
+	"syscall"
 )
 
 type Instance struct {
