@@ -13,9 +13,9 @@ import (
 
 type Instance struct {
 	ProfileName       string `json:"name"`
-	CaCertificatePath string `json:"caCertPath"`
-	ApiTokenFilePath  string `json:"apiTokenPath"`
-	Endpoint          string `json:"endpoint"`
+	CaCertificatePath string `json:"caCertPath,omitempty"`
+	ApiTokenFilePath  string `json:"apiTokenPath,omitempty"`
+	Endpoint          string `json:"endpoint,omitempty"`
 }
 
 type instanceConfig struct {
