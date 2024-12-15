@@ -9,6 +9,8 @@ source "$SCRIPTS_ROOT/scripts/lib.sh"
 source "$SCRIPTS_ROOT/scripts/ci/metrics.sh"
 # shellcheck source=../../scripts/ci/test_state.sh
 source "$SCRIPTS_ROOT/scripts/ci/test_state.sh"
+# shellcheck source=../../scripts/ci/gate-version-compatibility-tests.sh
+source "$SCRIPTS_ROOT/scripts/ci/gate-version-compatibility-tests.sh"
 
 set -euo pipefail
 
@@ -68,6 +70,8 @@ ci_exit_trap() {
     done
 
     handle_dangling_processes
+
+    gate-version-compatibility-tests "${exit_code}"
 }
 
 # handle_dangling_processes() - The OpenShift CI ci-operator will not complete a
