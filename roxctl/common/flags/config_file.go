@@ -70,10 +70,28 @@ func CaCertificatePath() string {
 	return ""
 }
 
+// InlineCaCertificate returns the configuration-defined CA Certificate.
+func InlineCaCertificate() string {
+	if ConfigurationFileChanged() {
+		return config.Instance.CaCertificate
+	}
+
+	return ""
+}
+
 // ApiTokenFilePath returns the configuration-defined API Token file path.
 func ApiTokenFilePath() string {
 	if ConfigurationFileChanged() {
 		return config.Instance.ApiTokenFilePath
+	}
+
+	return ""
+}
+
+// InlineApiToken returns the configuration-defined ApiToken.
+func InlineApiToken() string {
+	if ConfigurationFileChanged() {
+		return config.Instance.ApiToken
 	}
 
 	return ""
