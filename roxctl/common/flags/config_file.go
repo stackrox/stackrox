@@ -12,7 +12,7 @@ import (
 )
 
 type Instance struct {
-	ProfileName       string `json:"name"`
+	InstanceName      string `json:"name"`
 	CaCertificatePath string `json:"caCertPath,omitempty"`
 	ApiTokenFilePath  string `json:"apiTokenPath,omitempty"`
 	Endpoint          string `json:"endpoint,omitempty"`
