@@ -8,11 +8,12 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/pointers"
 )
 
 var (
 	apiTokenFile        string
-	apiTokenFileChanged *bool
+	apiTokenFileChanged = pointers.Bool(false)
 )
 
 // AddAPITokenFile adds the token-file flag to the base command.

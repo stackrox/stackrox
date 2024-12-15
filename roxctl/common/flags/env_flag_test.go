@@ -31,7 +31,14 @@ func TestFlagOrSettingValue(t *testing.T) {
 	assert.Equal(t, "some-test-value", Password())
 }
 
-func TestFlagOrConfigurationValueFlags(t *testing.T) {
+// createTestCommand
+func createTestCommand() {
+}
+
+// TestPrecedenceConfigVersusFlags tests the flagOrConfigurationValue by first
+// setting a configuration file, then sets flag values. The flag values should
+// be returned.
+func TestPrecedenceConfigVersusFlags(t *testing.T) {
 
 	testFile1 := "./testdata/test_instance1.yaml"
 
@@ -46,7 +53,7 @@ func TestFlagOrConfigurationValueFlags(t *testing.T) {
 
 	assert.False(t, ConfigurationFileChanged())
 	assert.False(t, *caCertFileSet)
-	assert.Empty(t, *apiTokenFileChanged)
+	assert.False(t, *apiTokenFileChanged)
 	assert.False(t, *endpointChanged)
 
 	err := cmd.PersistentFlags().Set("config-file", testFile1)
@@ -76,7 +83,10 @@ func TestFlagOrConfigurationValueFlags(t *testing.T) {
 
 }
 
-func TestFlagOrConfigurationValueEnv(t *testing.T) {
+// TestPrecedenceConfigVersusEnv tests the flagOrConfigurationValue by first
+// setting a configuration file, then sets environment values. The config values should
+// be returned.
+func TestPrecedenceConfigVersusEnv(t *testing.T) {
 
 	testFile1 := "./testdata/test_instance1.yaml"
 
@@ -90,7 +100,7 @@ func TestFlagOrConfigurationValueEnv(t *testing.T) {
 
 	assert.False(t, ConfigurationFileChanged())
 	assert.False(t, *caCertFileSet)
-	assert.Empty(t, *apiTokenFileChanged)
+	assert.False(t, *apiTokenFileChanged)
 	assert.False(t, *endpointChanged)
 
 	err := cmd.PersistentFlags().Set("config-file", testFile1)
@@ -118,7 +128,10 @@ func TestFlagOrConfigurationValueEnv(t *testing.T) {
 
 }
 
-func TestFlagOrConfigurationValueFlagsAndEnv(t *testing.T) {
+// TestPrecedenceConfigVersusFlagsAndEnv tests the flagOrConfigurationValue by first
+// setting a configuration file, then sets environment values and flag values.
+// The flag values should be returned.
+func TestPrecedenceConfigVersusFlagsAndEnv(t *testing.T) {
 
 	testFile1 := "./testdata/test_instance1.yaml"
 
@@ -132,7 +145,7 @@ func TestFlagOrConfigurationValueFlagsAndEnv(t *testing.T) {
 
 	assert.False(t, ConfigurationFileChanged())
 	assert.False(t, *caCertFileSet)
-	assert.Empty(t, *apiTokenFileChanged)
+	assert.False(t, *apiTokenFileChanged)
 	assert.False(t, *endpointChanged)
 
 	err := cmd.PersistentFlags().Set("config-file", testFile1)
