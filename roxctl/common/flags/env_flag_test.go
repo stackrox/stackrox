@@ -32,16 +32,7 @@ func TestFlagOrSettingValue(t *testing.T) {
 }
 
 // createTestCommand
-func createTestCommand() {
-}
-
-// TestPrecedenceConfigVersusFlags tests the flagOrConfigurationValue by first
-// setting a configuration file, then sets flag values. The flag values should
-// be returned.
-func TestPrecedenceConfigVersusFlags(t *testing.T) {
-
-	testFile1 := "./testdata/test_instance1.yaml"
-
+func createTestCommand(t *testing.T) *cobra.Command {
 	// 1. Default, unchanged flag value and setting not set should lead to the default value being returned.
 	cmd := &cobra.Command{
 		PersistentPreRunE: LoadConfig,
@@ -55,6 +46,20 @@ func TestPrecedenceConfigVersusFlags(t *testing.T) {
 	assert.False(t, *caCertFileSet)
 	assert.False(t, *apiTokenFileChanged)
 	assert.False(t, *endpointChanged)
+
+	return cmd
+}
+
+// TestPrecedenceConfigVersusFlags tests the flagOrConfigurationValue by first
+// setting a configuration file, then sets flag values. The flag values should
+// be returned.
+func TestPrecedenceConfigVersusFlags(t *testing.T) {
+
+	testFile1 := "./testdata/test_instance1.yaml"
+
+	// 1. Default, unchanged flag value and setting not set should lead to the
+	// default value being returned.
+	cmd := createTestCommand(t)
 
 	err := cmd.PersistentFlags().Set("config-file", testFile1)
 	assert.NoError(t, err)
@@ -90,18 +95,7 @@ func TestPrecedenceConfigVersusEnv(t *testing.T) {
 
 	testFile1 := "./testdata/test_instance1.yaml"
 
-	cmd := &cobra.Command{
-		PersistentPreRunE: LoadConfig,
-	}
-
-	AddAPITokenFile(cmd)
-	AddConnectionFlags(cmd)
-	AddConfigurationFile(cmd)
-
-	assert.False(t, ConfigurationFileChanged())
-	assert.False(t, *caCertFileSet)
-	assert.False(t, *apiTokenFileChanged)
-	assert.False(t, *endpointChanged)
+	cmd := createTestCommand(t)
 
 	err := cmd.PersistentFlags().Set("config-file", testFile1)
 	assert.NoError(t, err, "Setting a configuration file should not produce an error")
@@ -135,18 +129,7 @@ func TestPrecedenceConfigVersusFlagsAndEnv(t *testing.T) {
 
 	testFile1 := "./testdata/test_instance1.yaml"
 
-	cmd := &cobra.Command{
-		PersistentPreRunE: LoadConfig,
-	}
-
-	AddAPITokenFile(cmd)
-	AddConnectionFlags(cmd)
-	AddConfigurationFile(cmd)
-
-	assert.False(t, ConfigurationFileChanged())
-	assert.False(t, *caCertFileSet)
-	assert.False(t, *apiTokenFileChanged)
-	assert.False(t, *endpointChanged)
+	cmd := createTestCommand(t)
 
 	err := cmd.PersistentFlags().Set("config-file", testFile1)
 	assert.NoError(t, err, "Setting a configuration file should not produce an error")
