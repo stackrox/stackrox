@@ -25,7 +25,7 @@ type Instance struct {
 	Endpoint          string `json:"endpoint,omitempty"`
 }
 
-type instanceConfig struct {
+type InstanceConfig struct {
 	Version  string   `json:"version"`
 	Instance Instance `yaml:"instance"`
 }
@@ -33,7 +33,7 @@ type instanceConfig struct {
 var (
 	configFile    string
 	configFileSet = pointers.Bool(false)
-	config        *instanceConfig
+	config        *InstanceConfig
 
 	configEndpointSet     = pointers.Bool(false)
 	configCaCertFileSet   = pointers.Bool(false)
@@ -186,7 +186,7 @@ func LoadConfig(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	config = &instanceConfig{Instance: *instance}
+	config = &InstanceConfig{Instance: *instance}
 
 	// TODO: Should it be file > flag > env?
 
