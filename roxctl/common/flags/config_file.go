@@ -24,6 +24,7 @@ type Instance struct {
 }
 
 type instanceConfig struct {
+	Version  string   `json:"version"`
 	Instance Instance `yaml:"instance"`
 }
 
