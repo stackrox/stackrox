@@ -67,7 +67,8 @@ spec:
                       data persistence.
                     properties:
                       betterConfigOverride:
-                        description: 'TODO:  Obviously fix the name'
+                        description: DBConfigOverride configures the database connection
+                          pool size.
                         properties:
                           effectiveCacheSize:
                             description: Effective Cache size.
