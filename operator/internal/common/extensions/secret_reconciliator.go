@@ -89,17 +89,13 @@ func (r *SecretReconciliator) EnsureSecret(ctx context.Context, name string, val
 	}
 
 	if secret != nil {
-		return r.updateExisting(ctx, secret, validate, generate)
+		return r.updateExisting(ctx, secret, validate, generate, desiredLabels)
 	}
 
 	// Try to generate the secret, in order to fix it.
 	data, err := generate(nil)
 	if err != nil {
 		return generateError(err, name, "new")
-	}
-	labels := commonLabels.DefaultLabels()
-	for k, v := range desiredLabels {
-		labels[k] = v
 	}
 
 	newSecret := &coreV1.Secret{
@@ -109,7 +105,7 @@ func (r *SecretReconciliator) EnsureSecret(ctx context.Context, name string, val
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(r.obj, r.obj.GroupVersionKind()),
 			},
-			Labels: labels,
+			Labels: desiredLabels,
 		},
 		Data: data,
 	}
@@ -117,7 +113,7 @@ func (r *SecretReconciliator) EnsureSecret(ctx context.Context, name string, val
 	return errors.Wrapf(r.Client().Create(ctx, newSecret), "creating new %s secret failed", name)
 }
 
-func (r *SecretReconciliator) updateExisting(ctx context.Context, secret *coreV1.Secret, validate validateSecretDataFunc, generate generateSecretDataFunc) error {
+func (r *SecretReconciliator) updateExisting(ctx context.Context, secret *coreV1.Secret, validate validateSecretDataFunc, generate generateSecretDataFunc, desiredLabels map[string]string) error {
 	isManaged := metav1.IsControlledBy(secret, r.obj)
 	validateErr := validate(secret.Data, isManaged)
 
@@ -139,8 +135,8 @@ func (r *SecretReconciliator) updateExisting(ctx context.Context, secret *coreV1
 		needsUpdate = true
 	}
 
-	labels, needsLabelUpdate := commonLabels.WithDefaults(secret.Labels)
-	secret.Labels = labels
+	desiredLabels, needsLabelUpdate := commonLabels.WithDefaults(secret.Labels)
+	secret.Labels = desiredLabels
 	needsUpdate = needsUpdate || needsLabelUpdate
 	if !needsUpdate || !isManaged {
 		return nil
