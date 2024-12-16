@@ -688,7 +688,7 @@ spec:
             "component": "operator-bundle",
             "ref": "$(tasks.build-container.results.IMAGE_URL)@$(tasks.build-container.results.IMAGE_DIGEST)",
             "repository": "$(params.git-url)",
-            "revision": "$(tasks.revision)"
+            "revision": "$(params.revision)"
           }
         ]
     taskRef:
