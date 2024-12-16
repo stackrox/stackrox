@@ -682,10 +682,28 @@ spec:
       value: |
         [
           {
+            "component": "scanner-db",
+            "ref": "$(params.scanner-db-image-build-repo)@$(tasks.wait-for-scanner-db-image.results.IMAGE_DIGEST)",
+            "repository": "$(tasks.wait-for-scanner-db-image.results.GIT_REPO)",
+            "revision": "$(tasks.wait-for-scanner-db-image.results.GIT_REF)"
+          },
+          {
+            "component": "scanner-db-slim",
+            "ref": "$(params.scanner-db-slim-image-build-repo)@$(tasks.wait-for-scanner-db-slim-image.results.IMAGE_DIGEST)",
+            "repository": "$(tasks.wait-for-scanner-db-slim-image.results.GIT_REPO)",
+            "revision": "$(tasks.wait-for-scanner-db-slim-image.results.GIT_REF)"
+          },
+          {
             "component": "scanner",
             "ref": "$(params.scanner-image-build-repo)@$(tasks.wait-for-scanner-image.results.IMAGE_DIGEST)",
             "repository": "$(tasks.wait-for-scanner-image.results.GIT_REPO)",
             "revision": "$(tasks.wait-for-scanner-image.results.GIT_REF)"
+          },
+          {
+            "component": "scanner-slim",
+            "ref": "$(params.scanner-slim-image-build-repo)@$(tasks.wait-for-scanner-slim-image.results.IMAGE_DIGEST)",
+            "repository": "$(tasks.wait-for-scanner-slim-image.results.GIT_REPO)",
+            "revision": "$(tasks.wait-for-scanner-slim-image.results.GIT_REF)"
           },
           {
             "component": "collector",
@@ -696,8 +714,32 @@ spec:
           {
             "component": "central-db",
             "ref": "$(params.central-db-image-build-repo)@$(tasks.wait-for-central-db-image.results.IMAGE_DIGEST)",
-            "repository": "$(tasks.wait-for-central-db-image.results.GIT_REPO)",
-            "revision": "$(tasks.wait-for-central-db-image.results.GIT_REF)"
+            "repository": "$(params.git-url)",
+            "revision": "$(params.revision)"
+          },
+          {
+            "component": "scanner-v4-db",
+            "ref": "$(params.scanner-v4-db-image-build-repo)@$(tasks.wait-for-scanner-v4-db-image.results.IMAGE_DIGEST)",
+            "repository": "$(params.git-url)",
+            "revision": "$(params.revision)"
+          },
+          {
+            "component": "scanner-v4",
+            "ref": "$(params.scanner-v4-image-build-repo)@$(tasks.wait-for-scanner-v4-image.results.IMAGE_DIGEST)",
+            "repository": "$(params.git-url)",
+            "revision": "$(params.revision)"
+          },
+          {
+            "component": "main",
+            "ref": "$(params.main-image-build-repo)@$(tasks.wait-for-main-image.results.IMAGE_DIGEST)",
+            "repository": "$(params.git-url)",
+            "revision": "$(params.revision)"
+          },
+          {
+            "component": "operator",
+            "ref": "$(params.operator-image-build-repo)@$(tasks.wait-for-operator-image.results.IMAGE_DIGEST)",
+            "repository": "$(params.git-url)",
+            "revision": "$(params.revision)"
           },
           {
             "component": "operator-bundle",
