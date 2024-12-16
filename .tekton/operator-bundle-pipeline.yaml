@@ -674,7 +674,7 @@ spec:
           },
           {
             "component": "collector",
-            "ref": "$(params.collector-image-build-repo)@$(tasks.wait-for-collector-image.results.IMAGE_DIGEST)",
+            "ref": "$(params.collector-full-image-build-repo)@$(tasks.wait-for-collector-image.results.IMAGE_DIGEST)",
             "repository": "$(tasks.wait-for-collector-image.results.GIT_REPO)",
             "revision": "$(tasks.wait-for-collector-image.results.GIT_REF)"
           },
