@@ -15,6 +15,10 @@ var defaultLabels = map[string]string{
 	"app.stackrox.io/managed-by": "operator",
 }
 
+func TLSSecretLabels() map[string]string {
+	return map[string]string{"rhacs.central.com/tls": "true"}
+}
+
 // DefaultLabels defines the default labels the operator should set on resources it creates.
 func DefaultLabels() map[string]string {
 	labels := make(map[string]string, len(defaultLabels))
@@ -43,10 +47,6 @@ func WithDefaults(labels map[string]string) (map[string]string, bool) {
 	}
 
 	return newLabels, updated
-}
-
-func GetTlsSecretLabels() map[string]string {
-	return map[string]string{"rhacs.central.com/tls": "true"}
 }
 
 // NewLabelPostRenderer is a postrenderer for helm operator plugin kube clients to add
