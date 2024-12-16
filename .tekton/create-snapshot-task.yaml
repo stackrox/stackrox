@@ -4,7 +4,7 @@ metadata:
   name: create-snapshot
   namespace: rh-acs-tenant
 spec:
-  description: Creates snapshot
+  description: Creates a snapshot based on the components, image refs and Git information passed to the task.
   params:
   - name: SOURCE_ARTIFACT
     description: The Trusted Artifact URI pointing to the application source code.
@@ -12,6 +12,9 @@ spec:
   - name: IMAGE_REFS
     description: Image references.
     type: string
+  results:
+  - name: SNAPSHOT_NAME
+    description: Name of the snapshot created by this task.
   volumes:
   - name: workdir
     emptyDir: { }
@@ -38,5 +41,5 @@ spec:
     script: |
       #!/usr/bin/env bash
 
-      .konflux/scripts/render_snapshot.py
+      .konflux/scripts/render_snapshot.py | tee "$(results.SNAPSHOT_NAME.path)"
       oc create -f snapshot.json

@@ -56,7 +56,7 @@ if __name__ == '__main__':
         components
     )
 
-    print("Snapshot:", snapshot)
-
     with open("snapshot.json", "w") as f:
         json.dump(snapshot, f)
+
+    print(snapshot["metadata"]["name"], end="")

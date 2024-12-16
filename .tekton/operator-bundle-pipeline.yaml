@@ -230,6 +230,9 @@ spec:
   - description: ""
     name: JAVA_COMMUNITY_DEPENDENCIES
     value: $(tasks.build-container.results.JAVA_COMMUNITY_DEPENDENCIES)
+  - description: ""
+    name: SNAPSHOT_NAME
+    value: $(tasks.create-acs-style-snapshot.results.SNAPSHOT_NAME)
 
   workspaces:
   - name: git-auth
@@ -660,6 +663,18 @@ spec:
       resolver: bundles
 
   - name: create-acs-style-snapshot
+    # Explicitly running after all other tasks to ensure that
+    # - there are no failures that should prevent a release of the operator-bundle image (missing RPMs signatures, deprecated base images, ...)
+    # - the source image is present as it is required by EC
+    runAfter:
+    - apply-tags
+    - build-source-image
+    - clair-scan
+    - clamav-scan
+    - deprecated-base-image-check
+    - rpms-signature-scan
+    - sast-snyk-check
+    - push-dockerfile
     params:
     - name: SOURCE_ARTIFACT
       value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)

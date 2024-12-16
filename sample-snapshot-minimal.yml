@@ -1,0 +1,14 @@
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: Snapshot
+metadata:
+  name: tm-acs-4-6-0-2
+  namespace: rh-acs-tenant
+spec:
+  application: acs-4-6
+  components:
+    - containerImage: quay.io/rhacs-eng/scanner-slim@sha256:7b8e00ffbad318ff0aca32ba484eaf9493335d26195938704fb25efc73d36302
+      name: scanner-slim-4-6
+      source:
+        git:
+          revision: 9d8e7dafce
+          url: https://github.com/stackrox/scanner
