@@ -21,12 +21,12 @@ message CollectorRegisterRequest {
 // cluster level.
 message CollectorConfig {
   message ExternalIPs {
-    bool enabled = 1 [default = false];
+    bool enabled = 1;
   }
 
   message Networking {
     ExternalIPs external_ips = 1;
-    int64 per_container_rate_limit = 2 [default = 1024];
+    int64 per_container_rate_limit = 2;
   }
 
   Networking networking = 1;
