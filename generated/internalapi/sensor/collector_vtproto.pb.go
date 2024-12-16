@@ -43,7 +43,7 @@ func (m *CollectorConfig_ExternalIPs) CloneVT() *CollectorConfig_ExternalIPs {
 		return (*CollectorConfig_ExternalIPs)(nil)
 	}
 	r := new(CollectorConfig_ExternalIPs)
-	r.Enable = m.Enable
+	r.Enabled = m.Enabled
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -118,7 +118,7 @@ func (this *CollectorConfig_ExternalIPs) EqualVT(that *CollectorConfig_ExternalI
 	} else if this == nil || that == nil {
 		return false
 	}
-	if this.Enable != that.Enable {
+	if this.Enabled != that.Enabled {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -249,9 +249,9 @@ func (m *CollectorConfig_ExternalIPs) MarshalToSizedBufferVT(dAtA []byte) (int, 
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.Enable {
+	if m.Enabled {
 		i--
-		if m.Enable {
+		if m.Enabled {
 			dAtA[i] = 1
 		} else {
 			dAtA[i] = 0
@@ -377,7 +377,7 @@ func (m *CollectorConfig_ExternalIPs) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
-	if m.Enable {
+	if m.Enabled {
 		n += 2
 	}
 	n += len(m.unknownFields)
@@ -569,7 +569,7 @@ func (m *CollectorConfig_ExternalIPs) UnmarshalVTUnsafe(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Enable", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Enabled", wireType)
 			}
 			var v int
 			for shift := uint(0); ; shift += 7 {
@@ -586,7 +586,7 @@ func (m *CollectorConfig_ExternalIPs) UnmarshalVTUnsafe(dAtA []byte) error {
 					break
 				}
 			}
-			m.Enable = bool(v != 0)
+			m.Enabled = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
