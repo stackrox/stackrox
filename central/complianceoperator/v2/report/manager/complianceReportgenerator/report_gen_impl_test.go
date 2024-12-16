@@ -11,6 +11,8 @@ import (
 	profileMocks "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore/mocks"
 	remediationMocks "github.com/stackrox/rox/central/complianceoperator/v2/remediations/datastore/mocks"
 	snapshotMocks "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore/mocks"
+	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager/complianceReportgenerator/mocks"
+	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager/complianceReportgenerator/types"
 	ruleMocks "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore/mocks"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/generated/storage"
@@ -34,6 +36,7 @@ type ComplainceReportingTestSuite struct {
 	remediationDS     *remediationMocks.MockDataStore
 	ruleDS            *ruleMocks.MockDataStore
 	notifierProcessor *notifierMocks.MockProcessor
+	reportFormatter   *mocks.MockFormatter
 }
 
 func (s *ComplainceReportingTestSuite) SetupSuite() {
@@ -46,6 +49,7 @@ func (s *ComplainceReportingTestSuite) SetupSuite() {
 	s.remediationDS = remediationMocks.NewMockDataStore(s.mockCtrl)
 	s.ruleDS = ruleMocks.NewMockDataStore(s.mockCtrl)
 	s.notifierProcessor = notifierMocks.NewMockProcessor(s.mockCtrl)
+	s.reportFormatter = mocks.NewMockFormatter(s.mockCtrl)
 
 	s.reportGen = &complianceReportGeneratorImpl{
 		checkResultsDS:        s.checkResultsDS,
@@ -54,6 +58,7 @@ func (s *ComplainceReportingTestSuite) SetupSuite() {
 		remediationDS:         s.remediationDS,
 		complianceRuleDS:      s.ruleDS,
 		notificationProcessor: s.notifierProcessor,
+		reportFormatter:       s.reportFormatter,
 	}
 }
 
@@ -61,15 +66,8 @@ func TestComplianceReporting(t *testing.T) {
 	suite.Run(t, new(ComplainceReportingTestSuite))
 }
 
-func (s *ComplainceReportingTestSuite) TestFormatReport() {
-
-	_, err := format(s.getReportData())
-	s.Require().NoError(err)
-
-}
-
 func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
-	request := &ComplianceReportRequest{
+	request := &types.ComplianceReportRequest{
 		ScanConfigID: "scan-config-1",
 		SnapshotID:   "snapshot-1",
 		ClusterIDs:   []string{"cluster-1"},
@@ -105,6 +103,7 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 			}, true, nil)
 		s.checkResultsDS.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).Times(len(request.ClusterIDs)).
 			Return(nil)
+		s.reportFormatter.EXPECT().FormatCSVReport(gomock.Any()).Times(1)
 		s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
 			DoAndReturn(func(_ any, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
 				s.Require().Equal(storage.ComplianceOperatorReportStatus_GENERATED, snapshot.GetReportStatus().GetRunState())
@@ -121,6 +120,7 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 			}, true, nil)
 		s.checkResultsDS.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).Times(len(request.ClusterIDs)).
 			Return(nil)
+		s.reportFormatter.EXPECT().FormatCSVReport(gomock.Any()).Times(1)
 		gomock.InOrder(
 			s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
 				DoAndReturn(func(_ any, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
@@ -150,6 +150,7 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 			}, true, nil)
 		s.checkResultsDS.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).Times(len(request.ClusterIDs)).
 			Return(nil)
+		s.reportFormatter.EXPECT().FormatCSVReport(gomock.Any()).Times(1)
 		gomock.InOrder(
 			s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
 				DoAndReturn(func(_ any, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
@@ -179,6 +180,7 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 			}, true, nil)
 		s.checkResultsDS.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).Times(len(request.ClusterIDs)).
 			Return(nil)
+		s.reportFormatter.EXPECT().FormatCSVReport(gomock.Any()).Times(1)
 		gomock.InOrder(
 			s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
 				DoAndReturn(func(_ any, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
@@ -198,30 +200,6 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 		s.Require().NoError(s.reportGen.ProcessReportRequest(request))
 		handleWaitGroup(s.T(), &wg, 5*time.Second, "send email failure")
 	})
-}
-
-func (s *ComplainceReportingTestSuite) getReportData() map[string][]*ResultRow {
-	results := make(map[string][]*ResultRow)
-	results["cluster1"] = []*ResultRow{{
-		ClusterName: "test_cluster1",
-		CheckName:   "test_check1",
-		Profile:     "test_profile1",
-		ControlRef:  "test_control_ref1",
-		Description: "description1",
-		Status:      "Pass",
-		Remediation: "remediation1",
-	},
-		{
-			ClusterName: "test_cluster2",
-			CheckName:   "test_check2",
-			Profile:     "test_profile2",
-			ControlRef:  "test_control_ref2",
-			Description: "description2",
-			Status:      "Fail",
-			Remediation: "remediation2",
-		},
-	}
-	return results
 }
 
 func handleWaitGroup(t *testing.T, wg *concurrency.WaitGroup, timeout time.Duration, msg string) {

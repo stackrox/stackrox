@@ -10,9 +10,10 @@
 package mocks
 
 import (
+	bytes "bytes"
 	reflect "reflect"
 
-	complianceReportgenerator "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/complianceReportgenerator"
+	types "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/complianceReportgenerator/types"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -41,7 +42,7 @@ func (m *MockComplianceReportGenerator) EXPECT() *MockComplianceReportGeneratorM
 }
 
 // ProcessReportRequest mocks base method.
-func (m *MockComplianceReportGenerator) ProcessReportRequest(req *complianceReportgenerator.ComplianceReportRequest) error {
+func (m *MockComplianceReportGenerator) ProcessReportRequest(req *types.ComplianceReportRequest) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ProcessReportRequest", req)
 	ret0, _ := ret[0].(error)
@@ -52,4 +53,43 @@ func (m *MockComplianceReportGenerator) ProcessReportRequest(req *complianceRepo
 func (mr *MockComplianceReportGeneratorMockRecorder) ProcessReportRequest(req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessReportRequest", reflect.TypeOf((*MockComplianceReportGenerator)(nil).ProcessReportRequest), req)
+}
+
+// MockFormatter is a mock of Formatter interface.
+type MockFormatter struct {
+	ctrl     *gomock.Controller
+	recorder *MockFormatterMockRecorder
+	isgomock struct{}
+}
+
+// MockFormatterMockRecorder is the mock recorder for MockFormatter.
+type MockFormatterMockRecorder struct {
+	mock *MockFormatter
+}
+
+// NewMockFormatter creates a new mock instance.
+func NewMockFormatter(ctrl *gomock.Controller) *MockFormatter {
+	mock := &MockFormatter{ctrl: ctrl}
+	mock.recorder = &MockFormatterMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockFormatter) EXPECT() *MockFormatterMockRecorder {
+	return m.recorder
+}
+
+// FormatCSVReport mocks base method.
+func (m *MockFormatter) FormatCSVReport(arg0 map[string][]*types.ResultRow) (*bytes.Buffer, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FormatCSVReport", arg0)
+	ret0, _ := ret[0].(*bytes.Buffer)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FormatCSVReport indicates an expected call of FormatCSVReport.
+func (mr *MockFormatterMockRecorder) FormatCSVReport(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FormatCSVReport", reflect.TypeOf((*MockFormatter)(nil).FormatCSVReport), arg0)
 }
