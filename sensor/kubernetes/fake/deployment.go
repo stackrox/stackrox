@@ -45,6 +45,7 @@ func (p *PodCounter) incrementCreate() {
 	defer p.createLock.Unlock()
 
 	p.numCreate++
+	log.Info("CreatePod call")
 }
 
 func (p *PodCounter) incrementDelete() {
