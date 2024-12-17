@@ -327,12 +327,16 @@ type CollectorRuntimeConfigEnabled string
 
 const (
 	// CollectorRuntimeConfigEnabledEnabled means: The collector-config ConfigMap will be created
-	CollectorRuntimeConfigEnabledEnabled = "Enabled"
+	CollectorRuntimeConfigEnabledEnabled CollectorRuntimeConfigEnabled = "Enabled"
 	// CollectorRuntimeConfigEnabledDisabled means: The collector-config ConfigMap will not be created
-	CollectorRuntimeConfigEnabledDisabled = "Disabled"
+	CollectorRuntimeConfigEnabledDisabled CollectorRuntimeConfigEnabled = "Disabled"
 	// CollectorRuntimeConfigEnabledAuto means: The collector-config ConfigMap will not be created
-	CollectorRuntimeConfigEnabledAuto = "Auto"
+	CollectorRuntimeConfigEnabledAuto CollectorRuntimeConfigEnabled = "Auto"
 )
+
+func (c CollectorRuntimeConfigEnabled) Pointer() *CollectorRuntimeConfigEnabled {
+	return &c
+}
 
 type CollectorRuntimeConfig struct {
 	//+kubebuilder:default=Enabled
@@ -362,6 +366,11 @@ const (
 	// CollectorExternalIPsAuto means: don't use the external IPs feature
 	CollectorExternalIPsEnabledAuto CollectorExternalIPsEnabled = "Auto"
 )
+
+// Pointer returns the given CollectorExternalIPsEnabled as pointer
+func (c CollectorExternalIPsEnabled) Pointer() *CollectorExternalIPsEnabled {
+	return &c
+}
 
 type CollectorExternalIPs struct {
 	//+kubebuilder:default=Disabled
