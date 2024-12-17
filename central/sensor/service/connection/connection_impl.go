@@ -314,9 +314,11 @@ func (c *sensorConnection) handleMessage(ctx context.Context, msg *central.MsgFr
 }
 
 func shallDedupe(msg *central.MsgFromSensor) bool {
-	// Special handling of node inventory and node indexes for Sensor version 4.6 and earlier
+	// Special handling of node inventory and node indexes for Sensor version 4.6 and earlier.
+	// NodeInventory and NodeIndex should never be deduped. Despite the packages/images to scan may be the same,
+	// the vulnerabilities database in scanner may get updated and new vulnerabilities may affect those packages.
 	ev := msg.GetEvent()
-	if ev.GetAction() == central.ResourceAction_UNSET_ACTION_RESOURCE {
+	if ev.GetAction() != central.ResourceAction_REMOVE_RESOURCE {
 		if ev.GetNodeInventory() != nil || ev.GetIndexReport() != nil {
 			return false
 		}
