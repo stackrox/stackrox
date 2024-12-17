@@ -148,6 +148,18 @@ func (s *securedClusterTLSIssuerTests) TestSecuredClusterTLSIssuerRefresherStart
 	fixture.assertMockExpectations(s.T())
 }
 
+func TestSecuredClusterTLSIssuerDoesNotStartWhenCentralLacksReissueCapability(t *testing.T) {
+	fixture := newSecuredClusterTLSIssuerFixture(fakeK8sClientConfig{})
+	fixture.mockForStart(mockForStartConfig{})
+
+	startErr := fixture.tlsIssuer.Start()
+	assert.NoError(t, startErr)
+
+	centralcaps.Set([]centralsensor.CentralCapability{})
+	fixture.tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
+	require.Nil(t, fixture.tlsIssuer.certRefresher)
+}
+
 func (s *securedClusterTLSIssuerTests) TestSecuredClusterTLSIssuerStartAlreadyStartedFailure() {
 	fixture := newSecuredClusterTLSIssuerFixture(fakeK8sClientConfig{})
 	fixture.mockForStart(mockForStartConfig{})

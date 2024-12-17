@@ -8,11 +8,13 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/mtls"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certificates"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certrepo"
@@ -123,6 +125,19 @@ func TestLocalScannerTLSIssuerRefresherStartFailure(t *testing.T) {
 	require.Nil(t, fixture.tlsIssuer.certRefresher)
 
 	fixture.assertMockExpectations(t)
+}
+
+func TestLocalScannerTLSIssuerDoesNotStartWhenCentralHasReissueCapability(t *testing.T) {
+	fixture := newLocalScannerTLSIssuerFixture(fakeK8sClientConfig{})
+	fixture.mockForStart(mockForStartConfig{})
+
+	startErr := fixture.tlsIssuer.Start()
+	assert.NoError(t, startErr)
+
+	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.SecuredClusterCertificatesReissue})
+	fixture.tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
+	require.Nil(t, fixture.tlsIssuer.certRefresher)
+	centralcaps.Set([]centralsensor.CentralCapability{})
 }
 
 func TestLocalScannerTLSIssuerStartAlreadyStartedFailure(t *testing.T) {

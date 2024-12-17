@@ -108,7 +108,7 @@ func (i *securedClusterTLSIssuerImpl) Notify(e common.SensorComponentEvent) {
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		if centralcaps.Has(centralsensor.SecuredClusterCertificatesReissue) {
-			log.Info("Central supports SecuredClusterCertificatesReissue")
+			log.Info("Central has the SecuredClusterCertificatesReissue capability")
 			i.goOnline()
 		}
 	case common.SensorComponentEventOfflineMode:
