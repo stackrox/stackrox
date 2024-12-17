@@ -3,7 +3,6 @@ package generator
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"strings"
 	"text/template"
 	"time"
@@ -12,7 +11,6 @@ import (
 	blobDS "github.com/stackrox/rox/central/blob/datastore"
 	benchmarksDS "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore"
 	checkResults "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
-	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/utils"
 	profileDS "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	remediationDS "github.com/stackrox/rox/central/complianceoperator/v2/remediations/datastore"
 	"github.com/stackrox/rox/central/complianceoperator/v2/report"
@@ -30,7 +28,6 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/templates"
 )
 
@@ -50,9 +47,6 @@ type formatBody struct {
 }
 
 const (
-	DATA_NOT_AVAILABLE = "Data Not Available"
-	NO_REMEDIATION     = "No Remediation Available"
-
 	defaultNumberOfTriesOnEmailSend = 3
 )
 
@@ -74,7 +68,8 @@ type complianceReportGeneratorImpl struct {
 	blobStore                blobDS.Datastore
 	numberOfTriesOnEmailSend int
 
-	reportFormatter Formatter
+	reportResultsAggregator ResultsAggregator
+	reportFormatter         Formatter
 }
 
 type ResultEmail struct {
@@ -103,9 +98,9 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *report.Reques
 		}
 	}
 
-	data := rg.getDataforReport(req)
+	reportData := rg.reportResultsAggregator.GetReportData(req)
 
-	zipData, err := rg.reportFormatter.FormatCSVReport(data.ResultCSVs)
+	zipData, err := rg.reportFormatter.FormatCSVReport(reportData.ResultCSVs)
 	if err != nil {
 		if dbErr := reportUtils.UpdateSnapshotOnError(req.Ctx, snapshot, reportUtils.ErrReportGeneration, rg.snapshotDS); dbErr != nil {
 			return errors.Wrap(dbErr, "unable to update the snapshot on report generation failure")
@@ -138,9 +133,9 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *report.Reques
 	formatEmailBody := &formatBody{
 		BrandedPrefix: branding.GetCombinedProductAndShortName(),
 		Profile:       strings.Join(req.Profiles, ","),
-		Pass:          data.TotalPass,
-		Fail:          data.TotalFail,
-		Mixed:         data.TotalMixed,
+		Pass:          reportData.TotalPass,
+		Fail:          reportData.TotalFail,
+		Mixed:         reportData.TotalMixed,
 		Cluster:       len(req.ClusterIDs),
 	}
 
@@ -154,106 +149,6 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *report.Reques
 	log.Infof("Sending email for scan config %s", reportName)
 	go rg.sendEmail(req.Ctx, zipData, formatEmailBody, formatEmailSub, req.Notifiers, reportName, snapshot)
 	return nil
-}
-
-// getDataforReport returns map of cluster id and slice of ResultRow
-func (rg *complianceReportGeneratorImpl) getDataforReport(req *report.Request) *ResultEmail {
-	clusters := req.ClusterIDs
-	resultsCSV := make(map[string][]*report.ResultRow)
-	resultEmailComplianceReport := &ResultEmail{
-		TotalPass:  0,
-		TotalMixed: 0,
-		TotalFail:  0,
-		Clusters:   0,
-	}
-
-	for _, clusterID := range clusters {
-		parsedQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfig, req.ScanConfigID).
-			AddExactMatches(search.ClusterID, clusterID).
-			ProtoQuery()
-		var resultCluster []*report.ResultRow
-
-		err := rg.checkResultsDS.WalkByQuery(req.Ctx, parsedQuery, func(checkResult *storage.ComplianceOperatorCheckResultV2) error {
-			row := &report.ResultRow{
-				ClusterName:  checkResult.GetClusterName(),
-				CheckName:    checkResult.GetCheckName(),
-				Description:  checkResult.GetDescription(),
-				Status:       checkResult.GetStatus().String(),
-				Rationale:    checkResult.GetRationale(),
-				Instructions: checkResult.GetInstructions(),
-			}
-			// get profile for the check result
-			q := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanRef, checkResult.GetScanRefId()).ProtoQuery()
-			profiles, err := rg.profileDS.SearchProfiles(req.Ctx, q)
-			if err != nil {
-				return err
-			}
-			if len(profiles) < 1 {
-				row.Profile = DATA_NOT_AVAILABLE
-				log.Errorf("profile not found for cluster %s and check name %s", clusterID, checkResult.GetCheckName())
-			} else {
-				row.Profile = fmt.Sprintf("%s %s", profiles[0].GetName(), profiles[0].GetProfileVersion())
-			}
-
-			// get remediation for the check result
-			q = search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorCheckName, checkResult.GetCheckName()).AddExactMatches(search.ClusterID, checkResult.GetClusterId()).ProtoQuery()
-			remediations, err := rg.remediationDS.SearchRemediations(req.Ctx, q)
-			if err != nil {
-				row.Remediation = DATA_NOT_AVAILABLE
-				log.Errorf("remediations not found for cluster %s and check name %s. Error returned %s", clusterID, checkResult.GetCheckName(), err)
-			} else if len(remediations) == 0 {
-				row.Remediation = NO_REMEDIATION
-			} else {
-				remediationList := []string{}
-				for _, remediation := range remediations {
-					remediationList = append(remediationList, remediation.GetName())
-				}
-				row.Remediation = strings.Join(remediationList, ",")
-			}
-
-			// get controls for result and profile
-			rules, err := rg.complianceRuleDS.SearchRules(req.Ctx, search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorRuleRef, checkResult.GetRuleRefId()).ProtoQuery())
-			if err != nil {
-				log.Errorf("Unable to retrieve compliance rule for result %q", checkResult.GetCheckName())
-				row.ControlRef = DATA_NOT_AVAILABLE
-			} else if len(rules) != 1 {
-				// A check result of a cluster maps to a single rule of that same cluster so there should only be 1.
-				log.Errorf("Unable to process compliance rule for result %q", checkResult.GetCheckName())
-				row.ControlRef = DATA_NOT_AVAILABLE
-			} else {
-				controls, err := utils.GetControlsForScanResults(req.Ctx, rg.complianceRuleDS, []string{rules[0].GetName()}, profiles[0].GetName(), rg.benchmarkDS)
-				if err != nil {
-					log.Errorf("Unable to retrieve controls for result %q.Error %s", checkResult.GetCheckName(), err)
-					row.ControlRef = DATA_NOT_AVAILABLE
-				} else {
-					controlsList := []string{}
-					for _, ctrl := range controls {
-						controlsList = append(controlsList, fmt.Sprintf("%s %s", ctrl.Standard, ctrl.Control))
-					}
-					row.ControlRef = strings.Join(controlsList, ",")
-				}
-			}
-
-			resultCluster = append(resultCluster, row)
-			if checkResult.GetStatus() == storage.ComplianceOperatorCheckResultV2_FAIL {
-				resultEmailComplianceReport.TotalFail += 1
-			} else if checkResult.GetStatus() == storage.ComplianceOperatorCheckResultV2_PASS {
-				resultEmailComplianceReport.TotalPass += 1
-			} else {
-				resultEmailComplianceReport.TotalMixed += 1
-			}
-			return nil
-		})
-		if err != nil {
-			log.Errorf("Data not found for cluster %s", clusterID)
-		}
-
-		resultsCSV[clusterID] = resultCluster
-	}
-	resultEmailComplianceReport.Clusters = len(req.ClusterIDs)
-	resultEmailComplianceReport.Profiles = req.Profiles
-	resultEmailComplianceReport.ResultCSVs = resultsCSV
-	return resultEmailComplianceReport
 }
 
 func (rg *complianceReportGeneratorImpl) sendEmail(ctx context.Context, zipData *bytes.Buffer, emailBody *formatBody, formatEmailSub *formatSubject, notifiersList []*storage.NotifierConfiguration, reportName string, snapshot *storage.ComplianceOperatorReportSnapshotV2) {
