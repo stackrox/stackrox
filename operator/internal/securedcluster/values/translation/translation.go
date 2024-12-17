@@ -348,10 +348,10 @@ func (t Translator) getRuntimeConfig(runtimeConfig *platform.CollectorRuntimeCon
 
 	if runtimeConfig.Enabled != nil {
 		// TODO This should be an enum before the 4.7 release
-		if *runtimeConfig.Enabled == CollectorRuntimeConfigEnabledEnabled {
-			cv.SetBoolValue("enabled", false)
-		} else {
+		if *runtimeConfig.Enabled == platform.CollectorRuntimeConfigEnabledEnabled {
 			cv.SetBoolValue("enabled", true)
+		} else {
+			cv.SetBoolValue("enabled", false)
 		}
 	}
 
@@ -362,7 +362,7 @@ func (t Translator) getRuntimeConfig(runtimeConfig *platform.CollectorRuntimeCon
 			enabled := externalIps.Enabled
 			if enabled != nil {
 				// TODO This should be an enum before the 4.7 release
-				if *enabled == CollectorExternalIPsEnabledEnabled {
+				if *enabled == platform.CollectorExternalIPsEnabledEnabled {
 					cv.SetPathValue("networking.externalIps.enabled", true)
 				} else {
 					cv.SetPathValue("networking.externalIps.enabled", false)

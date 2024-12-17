@@ -172,10 +172,10 @@ func (s *TranslationTestSuite) TestTranslate() {
 								ImageFlavor: platform.ImageFlavorRegular.Pointer(),
 								Collection:  platform.CollectionCOREBPF.Pointer(),
 								RuntimeConfig: &platform.CollectorRuntimeConfig{
-									Enabled: pointer.Bool(true),
+									Enabled: platform.CollectorRuntimeConfigEnabledEnabled.Pointer(),
 									Networking: &platform.CollectorNetworking{
 										ExternalIPs: &platform.CollectorExternalIPs{
-											Enabled: pointer.Bool(true),
+											Enabled: platform.CollectorExternalIPsEnabledEnabled.Pointer(),
 										},
 										PerContainerRateLimit: pointer.Int32(512),
 									},
