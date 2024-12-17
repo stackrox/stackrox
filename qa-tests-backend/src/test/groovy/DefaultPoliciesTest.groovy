@@ -6,9 +6,6 @@ import java.util.stream.Collectors
 
 import io.grpc.StatusRuntimeException
 
-import io.stackrox.proto.api.v1.AlertServiceOuterClass
-import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsCountsRequest
-import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsCountsRequest.RequestGroup
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsGroupResponse
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.ListAlertsRequest
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass
