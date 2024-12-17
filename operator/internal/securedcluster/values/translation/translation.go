@@ -347,7 +347,12 @@ func (t Translator) getRuntimeConfig(runtimeConfig *platform.CollectorRuntimeCon
 	cv := translation.NewValuesBuilder()
 
 	if runtimeConfig.Enabled != nil {
-		cv.SetBoolValue("enabled", *runtimeConfig.Enabled)
+		// TODO This should be an enum before the 4.7 release
+		if *runtimeConfig.Enabled == CollectorRuntimeConfigEnabledEnabled {
+			cv.SetBoolValue("enabled", false)
+		} else {
+			cv.SetBoolValue("enabled", true)
+		}
 	}
 
 	networking := runtimeConfig.Networking
@@ -356,7 +361,12 @@ func (t Translator) getRuntimeConfig(runtimeConfig *platform.CollectorRuntimeCon
 		if externalIps != nil {
 			enabled := externalIps.Enabled
 			if enabled != nil {
-				cv.SetPathValue("networking.externalIps.enabled", *enabled)
+				// TODO This should be an enum before the 4.7 release
+				if *enabled == CollectorExternalIPsEnabledEnabled {
+					cv.SetPathValue("networking.externalIps.enabled", true)
+				} else {
+					cv.SetPathValue("networking.externalIps.enabled", false)
+				}
 			}
 			perContainerRateLimit := networking.PerContainerRateLimit
 			cv.SetPathValue("networking.perContainerRateLimit", *perContainerRateLimit)
