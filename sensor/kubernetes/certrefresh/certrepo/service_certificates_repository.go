@@ -185,7 +185,11 @@ func (r *ServiceCertificatesRepoSecrets) patchServiceCertificate(ctx context.Con
 		Op:    "replace",
 		Path:  "/data",
 		Value: r.secretDataForCertificate(secretSpec, caPem, cert),
-	}}
+	}, {Op: "replace",
+		Path: "/metadata/labels/rhacs.redhat.com/tls",
+		Value: map[string][]byte{
+			"rhacs.redhat.com/tls": []byte("true"),
+		}}}
 	patchBytes, marshallingErr := json.Marshal(patch)
 	if marshallingErr != nil {
 		return errors.Wrapf(marshallingErr, errForServiceFormat, cert.GetServiceType())
@@ -212,7 +216,7 @@ func (r *ServiceCertificatesRepoSecrets) createSecret(ctx context.Context, caPem
 			Name:            secretSpec.SecretName,
 			Namespace:       r.Namespace,
 			Labels:          desiredLabels,
-			Annotations:     utils.TLSSecretLabels(),
+			Annotations:     utils.GetSensorKubernetesAnnotations(),
 			OwnerReferences: []metav1.OwnerReference{r.OwnerReference},
 		},
 		Data: r.secretDataForCertificate(secretSpec, caPem, certificate),
