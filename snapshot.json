@@ -1,1 +1,0 @@
-{"apiVersion": "appstudio.redhat.com/v1alpha1", "kind": "Snapshot", "metadata": {"name": "tm-acs-4-6-1734082755"}, "spec": {"application": "acs-4-6", "components": [{"containerImage": "", "name": "scanner-4-6", "source": {"git": {"revision": "", "url": ""}}}]}}
