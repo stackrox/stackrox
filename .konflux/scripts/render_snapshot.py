@@ -60,10 +60,10 @@ if __name__ == '__main__':
     name_suffix = determine_component_name_suffix(application)
     components = [process_component(c, name_suffix) for c in image_refs]
     snapshot = construct_snapshot(
-        f"tm-{application}",
-        pipeline_run_name,
-        application,
-        components
+        snapshot_name_prefix=application,
+        pipeline_run_name=pipeline_run_name,
+        application=application,
+        components=components
     )
 
     with open("snapshot.json", "w") as f:
