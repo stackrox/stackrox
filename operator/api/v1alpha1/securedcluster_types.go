@@ -320,7 +320,6 @@ type CollectorContainerSpec struct {
 
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
 	ContainerSpec `json:",inline"`
-
 }
 
 // +kubebuilder:validation:Enum=Enabled,Disabled,Auto
@@ -338,7 +337,7 @@ const (
 type CollectorRuntimeConfig struct {
 	//+kubebuilder:default=Enabled
 	//+operator-sdk:csv:customresourcedefinitions:type=spec
-	Enabled    *CollectorRuntimeConfigEnabled `json:"enabled,omitempty"`
+	Enabled *CollectorRuntimeConfigEnabled `json:"enabled,omitempty"`
 
 	//+operator-sdk:csv:customresourcedefinitions:type=spec
 	Networking *CollectorNetworking `json:"networking"`
@@ -347,9 +346,9 @@ type CollectorRuntimeConfig struct {
 type CollectorNetworking struct {
 	//+kubebuilder:default=1024
 	//+operator-sdk:csv:customresourcedefinitions:type=spec
-	PerContainerRateLimit *int32                `json:"perContainerRateLimit,omitempty"`
+	PerContainerRateLimit *int32 `json:"perContainerRateLimit,omitempty"`
 	//+operator-sdk:csv:customresourcedefinitions:type=spec
-	ExternalIPs           *CollectorExternalIPs `json:"externalIps,omitempty"`
+	ExternalIPs *CollectorExternalIPs `json:"externalIps,omitempty"`
 }
 
 // +kubebuilder:validation:Enum=Enabled,Disabled,Auto
