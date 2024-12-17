@@ -1,4 +1,4 @@
-import { useLocation, useRouteMatch } from 'react-router-dom';
+import { useLocation, useMatch } from 'react-router-dom';
 import {
     integrationCreatePath,
     integrationDetailsPath,
@@ -15,8 +15,6 @@ type Params = {
 };
 
 type Location = { pathname: string };
-
-type Match = { isExact: boolean; params: Params };
 
 export type PageStates = 'LIST' | 'CREATE' | 'EDIT' | 'VIEW_DETAILS';
 
@@ -38,10 +36,10 @@ type UsePageStateResult = {
 
 function usePageState(): UsePageStateResult {
     const location: Location = useLocation();
-    const matchList: Match = useRouteMatch(integrationsListPath);
-    const matchCreate: Match = useRouteMatch(integrationCreatePath);
-    const matchEdit: Match = useRouteMatch(integrationEditPath);
-    const matchViewDetails: Match = useRouteMatch(integrationDetailsPath);
+    const matchList = useMatch(integrationsListPath);
+    const matchCreate = useMatch(integrationCreatePath);
+    const matchEdit = useMatch(integrationEditPath);
+    const matchViewDetails = useMatch(integrationDetailsPath);
 
     function getPathToCreate(source: IntegrationSource, type: IntegrationType): string {
         return `${integrationsPath}/${source}/${type}/create`;
@@ -59,10 +57,10 @@ function usePageState(): UsePageStateResult {
         return `${integrationsPath}/${source}/${type}/view/${id}`;
     }
 
-    if (matchList?.isExact) {
+    if (matchList) {
         return {
             pageState: 'LIST',
-            params: matchList.params,
+            params: matchList.params as Params,
             isList: true,
             isCreating: false,
             isEditing: false,
@@ -72,10 +70,10 @@ function usePageState(): UsePageStateResult {
             getPathToViewDetails,
         };
     }
-    if (matchCreate?.isExact) {
+    if (matchCreate) {
         return {
             pageState: 'CREATE',
-            params: matchCreate.params,
+            params: matchCreate.params as Params,
             isList: false,
             isCreating: true,
             isEditing: false,
@@ -85,10 +83,10 @@ function usePageState(): UsePageStateResult {
             getPathToViewDetails,
         };
     }
-    if (matchEdit?.isExact) {
+    if (matchEdit) {
         return {
             pageState: 'EDIT',
-            params: matchEdit.params,
+            params: matchEdit.params as Params,
             isList: false,
             isCreating: false,
             isEditing: true,
@@ -98,10 +96,10 @@ function usePageState(): UsePageStateResult {
             getPathToViewDetails,
         };
     }
-    if (matchViewDetails?.isExact) {
+    if (matchViewDetails) {
         return {
             pageState: 'VIEW_DETAILS',
-            params: matchViewDetails.params,
+            params: matchViewDetails.params as Params,
             isList: false,
             isCreating: false,
             isEditing: false,

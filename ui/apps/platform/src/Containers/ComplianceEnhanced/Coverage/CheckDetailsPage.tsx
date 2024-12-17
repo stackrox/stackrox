@@ -61,7 +61,7 @@ const searchFilterConfig: CompoundSearchFilterConfig = [
 function CheckDetails() {
     const { scanConfigurationsQuery, selectedScanConfigName, setSelectedScanConfigName } =
         useContext(ScanConfigurationsContext);
-    const { checkName, profileName } = useParams();
+    const { checkName, profileName } = useParams() as { checkName: string; profileName: string };
     const { generatePathWithScanConfig } = useScanConfigRouter();
     const [currentDatetime, setCurrentDatetime] = useState(new Date());
     const pagination = useURLPagination(DEFAULT_COMPLIANCE_PAGE_SIZE);

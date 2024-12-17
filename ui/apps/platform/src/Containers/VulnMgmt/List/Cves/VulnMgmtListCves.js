@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { gql } from '@apollo/client';
 import * as Icon from 'react-feather';
 import { connect } from 'react-redux';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 import {
     defaultHeaderClassName,
@@ -291,7 +291,7 @@ const VulnMgmtCves = ({
     refreshTrigger,
     setRefreshTrigger,
 }) => {
-    const history = useHistory();
+    const navigate = useNavigate();
     const { analyticsTrack } = useAnalytics();
     const isRouteEnabled = useIsRouteEnabled();
     const { hasReadWriteAccess } = usePermissions();
@@ -486,7 +486,7 @@ const VulnMgmtCves = ({
 
         const newWorkflowState = workflowState.setSearch(targetSearchState);
         const newUrl = newWorkflowState.toUrl();
-        history.push(newUrl);
+        navigate(newUrl);
     };
 
     function closeDialog(idsToStaySelected = []) {

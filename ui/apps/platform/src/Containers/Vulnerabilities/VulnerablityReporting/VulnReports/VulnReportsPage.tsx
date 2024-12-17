@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, generatePath, useHistory } from 'react-router-dom';
+import { Link, generatePath, useNavigate } from 'react-router-dom';
 import isEmpty from 'lodash/isEmpty';
 import {
     Alert,
@@ -76,7 +76,7 @@ const sortOptions = {
 const emptyReportArray = [];
 
 function VulnReportsPage() {
-    const history = useHistory();
+    const navigate = useNavigate();
     const { currentUser } = useAuthStatus();
 
     const { hasReadWriteAccess, hasReadAccess } = usePermissions();
@@ -424,7 +424,7 @@ function VulnReportsPage() {
                                                 title: 'Edit report',
                                                 onClick: (event) => {
                                                     event.preventDefault();
-                                                    history.push(`${vulnReportURL}?action=edit`);
+                                                    navigate(`${vulnReportURL}?action=edit`);
                                                 },
                                                 isDisabled: isReportStatusPending,
                                             },
@@ -457,7 +457,7 @@ function VulnReportsPage() {
                                                 title: 'Clone report',
                                                 onClick: (event) => {
                                                     event.preventDefault();
-                                                    history.push(`${vulnReportURL}?action=clone`);
+                                                    navigate(`${vulnReportURL}?action=clone`);
                                                 },
                                             },
                                             {

@@ -33,7 +33,6 @@ export const clustersSecureClusterPath = `${clustersBasePath}/secure-a-cluster`;
 export const collectionsBasePath = `${mainPath}/collections`;
 export const collectionsPath = `${mainPath}/collections/:collectionId?`;
 export const complianceBasePath = `${mainPath}/compliance`;
-export const compliancePath = `${mainPath}/:context(compliance)`;
 export const complianceEnhancedBasePath = `${mainPath}/compliance`;
 export const complianceEnhancedCoveragePath = `${complianceEnhancedBasePath}/coverage`;
 export const complianceEnhancedSchedulesPath = `${complianceEnhancedBasePath}/schedules`;
@@ -153,7 +152,8 @@ export type RouteKey =
     | 'clusters'
     | 'collections'
     | 'compliance'
-    | 'compliance-enhanced'
+    | 'compliance-coverage'
+    | 'compliance-schedules'
     | 'configmanagement'
     | 'dashboard'
     | 'exception-configuration'
@@ -234,7 +234,10 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
             // 'ServiceAccount', // for Cluster and Deployment
         ]),
     },
-    'compliance-enhanced': {
+    'compliance-coverage': {
+        resourceAccessRequirements: everyResource(['Compliance']),
+    },
+    'compliance-schedules': {
         resourceAccessRequirements: everyResource(['Compliance']),
     },
     configmanagement: {
@@ -469,11 +472,8 @@ export const basePathToLabelMap: Record<string, string> = {
     [userBasePath]: 'User Profile',
 };
 
-const entityListTypeMatcher = `(${Object.values(urlEntityListTypes).join('|')})`;
-const entityTypeMatcher = `(${Object.values(urlEntityTypes).join('|')})`;
-
 export const workflowPaths = {
     DASHBOARD: `${mainPath}/:context`,
-    LIST: `${mainPath}/:context/:pageEntityListType${entityListTypeMatcher}/:entityId1?/:entityType2?/:entityId2?`,
-    ENTITY: `${mainPath}/:context/:pageEntityType${entityTypeMatcher}/:pageEntityId?/:entityType1?/:entityId1?/:entityType2?/:entityId2?`,
+    LIST: `${mainPath}/:context/:pageEntityListType/:entityId1?/:entityType2?/:entityId2?`,
+    ENTITY: `${mainPath}/:context/:pageEntityType/:pageEntityId?/:entityType1?/:entityId1?/:entityType2?/:entityId2?`,
 };

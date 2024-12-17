@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
     Chart,
     ChartAxis,
@@ -115,7 +115,7 @@ function makeChartData(
 }
 
 function AgingImagesChart({ searchFilter, timeRanges, timeRangeCounts }: AgingImagesChartProps) {
-    const history = useHistory();
+    const navigate = useNavigate();
     const [widgetContainer, setWidgetContainer] = useState<HTMLDivElement | null>(null);
     const widgetContainerResizeEntry = useResizeObserver(widgetContainer);
     const chartData = makeChartData(searchFilter, timeRanges, timeRangeCounts);
@@ -163,7 +163,7 @@ function AgingImagesChart({ searchFilter, timeRanges, timeRangeCounts }: AgingIm
                             data={barData}
                             labels={({ datum }) => `${Math.round(parseInt(datum.y, 10))}`}
                             style={{ data: { fill } }}
-                            events={[navigateOnClickEvent(history, () => labelLink)]}
+                            events={[navigateOnClickEvent(navigate, () => labelLink)]}
                         />
                     );
                 })}

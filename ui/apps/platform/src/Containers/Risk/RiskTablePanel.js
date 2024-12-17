@@ -1,6 +1,6 @@
 import React, { useContext, useState, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import useDeepCompareEffect from 'use-deep-compare-effect';
 import { Bullseye } from '@patternfly/react-core';
 import { ExclamationTriangleIcon } from '@patternfly/react-icons';
@@ -33,7 +33,7 @@ function RiskTablePanel({
     setIsViewFiltered,
     searchOptions,
 }) {
-    const history = useHistory();
+    const navigate = useNavigate();
     const workflowState = useContext(workflowStateContext);
     const pageSearch = workflowState.search[searchParams.page];
     const sortOption = workflowState.sort[sortParams.page] || DEFAULT_RISK_SORT;
@@ -44,7 +44,7 @@ function RiskTablePanel({
     const [deploymentCount, setDeploymentsCount] = useState(0);
 
     function setPage(newPage) {
-        history.push(workflowState.setPage(newPage).toUrl());
+        navigate(workflowState.setPage(newPage).toUrl());
     }
     const setSortOption = useCallback(
         (newSortOption) => {
@@ -52,9 +52,9 @@ function RiskTablePanel({
 
             const newUrl = workflowState.setSort(convertedSortOption).setPage(0).toUrl();
 
-            history.push(newUrl);
+            navigate(newUrl);
         },
-        [history, workflowState]
+        [navigate, workflowState]
     );
 
     /*

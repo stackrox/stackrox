@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useCallback } from 'react';
-import { generatePath, Link, useHistory } from 'react-router-dom';
+import { generatePath, Link } from 'react-router-dom';
 import pluralize from 'pluralize';
 
 import {

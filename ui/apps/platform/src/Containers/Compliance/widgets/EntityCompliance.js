@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
-import { useRouteMatch, useLocation, useHistory } from 'react-router-dom';
+import { useMatch, useLocation, useNavigate } from 'react-router-dom';
 
 import Widget from 'Components/Widget';
 import ArcSingle from 'Components/visuals/ArcSingle';
@@ -14,15 +14,16 @@ import NoResultsMessage from 'Components/NoResultsMessage';
 import { standardLabels } from 'messages/standards';
 import searchContext from 'Containers/searchContext';
 
+import { workflowPaths } from 'routePaths';
 import { entityNounSentenceCaseSingular } from '../entitiesForCompliance';
 import VerticalBarChart from './VerticalBarChart';
 
 const EntityCompliance = ({ entityType, entityName, clusterName }) => {
     const entityTypeLabel = entityNounSentenceCaseSingular[entityType];
     const searchParam = useContext(searchContext);
-    const match = useRouteMatch();
+    const match = useMatch(workflowPaths.ENTITY);
     const location = useLocation();
-    const history = useHistory();
+    const navigate = useNavigate();
 
     function getBarData(results) {
         return results
@@ -56,7 +57,7 @@ const EntityCompliance = ({ entityType, entityName, clusterName }) => {
             })
             .url();
 
-        history.push(URL);
+        navigate(URL);
     }
 
     const whereClause = { [entityType]: entityName, [entityTypes.CLUSTER]: clusterName };

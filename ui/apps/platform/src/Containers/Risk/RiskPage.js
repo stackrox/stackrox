@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { useHistory, useLocation, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
 
 import { PageBody } from 'Components/Panel';
@@ -13,7 +13,7 @@ import RiskSidePanel from './RiskSidePanel';
 import RiskTablePanel from './RiskTablePanel';
 
 const RiskPage = () => {
-    const history = useHistory();
+    const navigate = useNavigate();
     const location = useLocation();
     const params = useParams();
     const { deploymentId } = params;
@@ -32,9 +32,9 @@ const RiskPage = () => {
 
             const newUrl = newWorkflowState.toUrl();
 
-            history.push(newUrl);
+            navigate(newUrl);
         },
-        [workflowState, history]
+        [workflowState, navigate]
     );
 
     const searchQueryOptions = {
