@@ -322,7 +322,7 @@ type CollectorContainerSpec struct {
 	ContainerSpec `json:",inline"`
 }
 
-// +kubebuilder:validation:Enum=Enabled,Disabled,Auto
+// +kubebuilder:validation:Enum=Enabled;Disabled;Auto
 type CollectorRuntimeConfigEnabled string
 
 const (
@@ -355,7 +355,7 @@ type CollectorNetworking struct {
 	ExternalIPs *CollectorExternalIPs `json:"externalIps,omitempty"`
 }
 
-// +kubebuilder:validation:Enum=Enabled,Disabled,Auto
+// +kubebuilder:validation:Enum=Enabled;Disabled;Auto
 type CollectorExternalIPsEnabled string
 
 const (
