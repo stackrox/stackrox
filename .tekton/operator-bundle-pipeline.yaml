@@ -682,52 +682,16 @@ spec:
       value: |
         [
           {
-            "component": "scanner-db",
-            "ref": "$(params.scanner-db-image-build-repo)@$(tasks.wait-for-scanner-db-image.results.IMAGE_DIGEST)",
-            "repository": "$(tasks.wait-for-scanner-db-image.results.GIT_REPO)",
-            "revision": "$(tasks.wait-for-scanner-db-image.results.GIT_REF)"
-          },
-          {
-            "component": "scanner-db-slim",
-            "ref": "$(params.scanner-db-slim-image-build-repo)@$(tasks.wait-for-scanner-db-slim-image.results.IMAGE_DIGEST)",
-            "repository": "$(tasks.wait-for-scanner-db-slim-image.results.GIT_REPO)",
-            "revision": "$(tasks.wait-for-scanner-db-slim-image.results.GIT_REF)"
-          },
-          {
-            "component": "scanner",
-            "ref": "$(params.scanner-image-build-repo)@$(tasks.wait-for-scanner-image.results.IMAGE_DIGEST)",
-            "repository": "$(tasks.wait-for-scanner-image.results.GIT_REPO)",
-            "revision": "$(tasks.wait-for-scanner-image.results.GIT_REF)"
-          },
-          {
-            "component": "scanner-slim",
-            "ref": "$(params.scanner-slim-image-build-repo)@$(tasks.wait-for-scanner-slim-image.results.IMAGE_DIGEST)",
-            "repository": "$(tasks.wait-for-scanner-slim-image.results.GIT_REPO)",
-            "revision": "$(tasks.wait-for-scanner-slim-image.results.GIT_REF)"
-          },
-          {
-            "component": "collector",
-            "ref": "$(params.collector-full-image-build-repo)@$(tasks.wait-for-collector-full-image.results.IMAGE_DIGEST)",
-            "repository": "$(tasks.wait-for-collector-full-image.results.GIT_REPO)",
-            "revision": "$(tasks.wait-for-collector-full-image.results.GIT_REF)"
-          },
-          {
             "component": "central-db",
             "ref": "$(params.central-db-image-build-repo)@$(tasks.wait-for-central-db-image.results.IMAGE_DIGEST)",
             "repository": "$(params.git-url)",
             "revision": "$(params.revision)"
           },
           {
-            "component": "scanner-v4-db",
-            "ref": "$(params.scanner-v4-db-image-build-repo)@$(tasks.wait-for-scanner-v4-db-image.results.IMAGE_DIGEST)",
-            "repository": "$(params.git-url)",
-            "revision": "$(params.revision)"
-          },
-          {
-            "component": "scanner-v4",
-            "ref": "$(params.scanner-v4-image-build-repo)@$(tasks.wait-for-scanner-v4-image.results.IMAGE_DIGEST)",
-            "repository": "$(params.git-url)",
-            "revision": "$(params.revision)"
+            "component": "collector",
+            "ref": "$(params.collector-full-image-build-repo)@$(tasks.wait-for-collector-full-image.results.IMAGE_DIGEST)",
+            "repository": "$(tasks.wait-for-collector-full-image.results.GIT_REPO)",
+            "revision": "$(tasks.wait-for-collector-full-image.results.GIT_REF)"
           },
           {
             "component": "main",
@@ -744,6 +708,42 @@ spec:
           {
             "component": "operator-bundle",
             "ref": "$(tasks.build-container.results.IMAGE_URL)@$(tasks.build-container.results.IMAGE_DIGEST)",
+            "repository": "$(params.git-url)",
+            "revision": "$(params.revision)"
+          },
+          {
+            "component": "scanner",
+            "ref": "$(params.scanner-image-build-repo)@$(tasks.wait-for-scanner-image.results.IMAGE_DIGEST)",
+            "repository": "$(tasks.wait-for-scanner-image.results.GIT_REPO)",
+            "revision": "$(tasks.wait-for-scanner-image.results.GIT_REF)"
+          },
+          {
+            "component": "scanner-db",
+            "ref": "$(params.scanner-db-image-build-repo)@$(tasks.wait-for-scanner-db-image.results.IMAGE_DIGEST)",
+            "repository": "$(tasks.wait-for-scanner-db-image.results.GIT_REPO)",
+            "revision": "$(tasks.wait-for-scanner-db-image.results.GIT_REF)"
+          },
+          {
+            "component": "scanner-db-slim",
+            "ref": "$(params.scanner-db-slim-image-build-repo)@$(tasks.wait-for-scanner-db-slim-image.results.IMAGE_DIGEST)",
+            "repository": "$(tasks.wait-for-scanner-db-slim-image.results.GIT_REPO)",
+            "revision": "$(tasks.wait-for-scanner-db-slim-image.results.GIT_REF)"
+          },
+          {
+            "component": "scanner-slim",
+            "ref": "$(params.scanner-slim-image-build-repo)@$(tasks.wait-for-scanner-slim-image.results.IMAGE_DIGEST)",
+            "repository": "$(tasks.wait-for-scanner-slim-image.results.GIT_REPO)",
+            "revision": "$(tasks.wait-for-scanner-slim-image.results.GIT_REF)"
+          },
+          {
+            "component": "scanner-v4",
+            "ref": "$(params.scanner-v4-image-build-repo)@$(tasks.wait-for-scanner-v4-image.results.IMAGE_DIGEST)",
+            "repository": "$(params.git-url)",
+            "revision": "$(params.revision)"
+          },
+          {
+            "component": "scanner-v4-db",
+            "ref": "$(params.scanner-v4-db-image-build-repo)@$(tasks.wait-for-scanner-v4-db-image.results.IMAGE_DIGEST)",
             "repository": "$(params.git-url)",
             "revision": "$(params.revision)"
           }
