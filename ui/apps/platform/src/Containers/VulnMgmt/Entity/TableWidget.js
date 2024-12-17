@@ -1,6 +1,6 @@
 import React, { useState, useContext } from 'react';
 import PropTypes from 'prop-types';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import resolvePath from 'object-resolve-path';
 
 import workflowStateContext from 'Containers/workflowStateContext';
@@ -19,7 +19,7 @@ const TableWidget = ({
     ...rest
 }) => {
     const workflowState = useContext(workflowStateContext);
-    const history = useHistory();
+    const navigate = useNavigate();
     const [localPage, setLocalPage] = useState(0);
     const {
         columns,
@@ -57,7 +57,7 @@ const TableWidget = ({
     function onRowClick(row) {
         const id = resolvePath(row, idAttribute);
         const url = workflowState.pushRelatedEntity(entityType, id).toUrl();
-        history.push(url);
+        navigate(url);
     }
 
     return (

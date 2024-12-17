@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
     FlexibleXYPlot,
     XAxis,
@@ -31,7 +31,7 @@ const Scatterplot = ({
     legendData,
 }) => {
     const { onValueMouseOver, onValueMouseOut } = useGraphHoverHint();
-    const history = useHistory();
+    const navigate = useNavigate();
 
     const lowX = lowerX !== null ? lowerX : getLowValue(data, 'x', xMultiple);
     const highX = upperX !== null ? upperX : getHighValue(data, 'x', xMultiple, shouldPadX);
@@ -43,7 +43,7 @@ const Scatterplot = ({
 
     function onValueClickHandler(datum) {
         if (datum.url) {
-            history.push(datum.url);
+            navigate(datum.url);
         }
     }
 

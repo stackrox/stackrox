@@ -9,7 +9,7 @@ import ClustersTablePanel from './ClustersTablePanel';
 import ClusterPage from './ClusterPage';
 
 function ClustersPage(): ReactElement {
-    const { clusterId } = useParams(); // see routePaths for parameter
+    const { clusterId } = useParams() as { clusterId: string }; // see routePaths for parameter
 
     const searchQueryOptions = {
         variables: {

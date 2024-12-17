@@ -1,5 +1,5 @@
 import React, { ReactElement, useRef, useState } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
     Alert,
     AlertActionCloseButton,
@@ -65,7 +65,7 @@ function CollectionsFormPage({
     hasWriteAccessForCollections,
     pageAction,
 }: CollectionsFormPageProps) {
-    const history = useHistory();
+    const navigate = useNavigate();
     const isXLargeScreen = useMediaQuery({ query: '(min-width: 1200px)' }); // --pf-v5-global--breakpoint--xl
     const collectionId = pageAction.type !== 'create' ? pageAction.collectionId : undefined;
 
@@ -96,17 +96,11 @@ function CollectionsFormPage({
     } = useSelectToggle(isXLargeScreen);
 
     function onEditCollection(id: string) {
-        history.push({
-            pathname: `${collectionsBasePath}/${id}`,
-            search: 'action=edit',
-        });
+        navigate(`${collectionsBasePath}/${id}?action=edit`);
     }
 
     function onCloneCollection(id: string) {
-        history.push({
-            pathname: `${collectionsBasePath}/${id}`,
-            search: 'action=clone',
-        });
+        navigate(`${collectionsBasePath}/${id}?action=clone`);
     }
 
     function onConfirmDeleteCollection() {
@@ -115,7 +109,7 @@ function CollectionsFormPage({
         }
         setIsDeleting(true);
         deleteCollection(deleteId)
-            .request.then(history.goBack)
+            .request.then(() => navigate(-1))
             .catch((err) => {
                 const message = getAxiosErrorMessage(err);
                 addToast(
@@ -210,7 +204,7 @@ function CollectionsFormPage({
                 onSubmit={(collection) =>
                     onSubmit(collection)
                         .then(() => {
-                            history.push({ pathname: `${collectionsBasePath}` });
+                            navigate(`${collectionsBasePath}`);
                             if (pageAction.type === 'create') {
                                 analyticsTrack({
                                     event: COLLECTION_CREATED,
@@ -224,7 +218,7 @@ function CollectionsFormPage({
                         })
                 }
                 onCancel={() => {
-                    history.push({ pathname: `${collectionsBasePath}` });
+                    navigate(`${collectionsBasePath}`);
                 }}
                 configError={configError}
                 setConfigError={setConfigError}

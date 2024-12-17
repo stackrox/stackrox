@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
     Chart,
     ChartAxis,
@@ -36,7 +36,7 @@ type ComplianceLevelsByStandardChartProps = {
 function ComplianceLevelsByStandardChart({
     complianceLevelsByStandard,
 }: ComplianceLevelsByStandardChartProps) {
-    const history = useHistory();
+    const navigate = useNavigate();
     const [widgetContainer, setWidgetContainer] = useState<HTMLDivElement | null>(null);
     const widgetContainerResizeEntry = useResizeObserver(widgetContainer);
 
@@ -80,7 +80,7 @@ function ComplianceLevelsByStandardChart({
                             barWidth={defaultChartBarWidth}
                             data={[{ x: name, y: passing, link }]}
                             labels={({ datum }) => `${Math.round(parseInt(datum.y, 10))}%`}
-                            events={[navigateOnClickEvent(history, () => link)]}
+                            events={[navigateOnClickEvent(navigate, () => link)]}
                         />
                     ))}
                 </ChartGroup>
