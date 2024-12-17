@@ -73,6 +73,7 @@ func newSecuredClusterTLSIssuerFixture(k8sClientConfig fakeK8sClientConfig) *sec
 
 func (f *securedClusterTLSIssuerFixture) assertMockExpectations(t *testing.T) {
 	f.certRequester.AssertExpectations(t)
+	f.certRefresher.AssertExpectations(t)
 	f.componentGetter.AssertExpectations(t)
 }
 
@@ -185,7 +186,6 @@ func (s *securedClusterTLSIssuerTests) TestSecuredClusterTLSIssuerFetchSensorDep
 	for tcName, tc := range testCases {
 		s.Run(tcName, func() {
 			fixture := newSecuredClusterTLSIssuerFixture(tc.k8sClientConfig)
-			fixture.certRefresher.On("Stop").Once()
 
 			startErr := fixture.tlsIssuer.Start()
 

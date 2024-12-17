@@ -63,6 +63,7 @@ func newLocalScannerTLSIssuerFixture(k8sClientConfig fakeK8sClientConfig) *local
 
 func (f *localScannerTLSIssuerFixture) assertMockExpectations(t *testing.T) {
 	f.certRequester.AssertExpectations(t)
+	f.certRefresher.AssertExpectations(t)
 	f.componentGetter.AssertExpectations(t)
 }
 
@@ -165,7 +166,6 @@ func TestLocalScannerTLSIssuerFetchSensorDeploymentOwnerRefErrorStartFailure(t *
 	for tcName, tc := range testCases {
 		t.Run(tcName, func(t *testing.T) {
 			fixture := newLocalScannerTLSIssuerFixture(tc.k8sClientConfig)
-			fixture.certRefresher.On("Stop").Once()
 
 			startErr := fixture.tlsIssuer.Start()
 
