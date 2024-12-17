@@ -112,6 +112,9 @@ var (
 	// ScannerV4ReIndex enables Scanner V4 manifest re-indexing.
 	ScannerV4ReIndex = registerFeature("Scanner V4 will re-index and delete unused manifests", "ROX_SCANNER_V4_REINDEX", enabled)
 
+	// ScannerV4RedHatLayers enables displaying vulnerabilities from Red Hat sources, only, for packages found in official Red Hat image layers.
+	ScannerV4RedHatLayers = registerFeature("Scanner V4 will only output vulnerabilities from Red Hat sources, only, for packages found in official Red Hat image layers", "ROX_SCANNER_V4_RED_HAT_LAYERS", enabled)
+
 	// Display RHSA/RHBA/RHEA advisory separately from associated CVE.
 	CVEAdvisorySeparation = registerFeature("Display RHSA/RHBA/RHEA advisory separately from associated CVE", "ROX_CVE_ADVISORY_SEPARATION")
 

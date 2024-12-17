@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/quay/claircore/rhel/rhcc"
+	"github.com/quay/claircore/rhel/vex"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clair"
@@ -14,6 +16,16 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
+)
+
+var (
+	// vexUpdater is the name of the Red Hat VEX updater used by Claircore.
+	vexUpdater = (*vex.Updater)(nil).Name()
+
+	// vexRepoName is the name of the "Gold Repository".
+	vexRepoName = rhcc.GoldRepo.Name
+	// vexRepoURI is the URI of the "Gold Repository".
+	vexRepoURI = rhcc.GoldRepo.URI
 )
 
 func imageScan(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport) *storage.ImageScan {
