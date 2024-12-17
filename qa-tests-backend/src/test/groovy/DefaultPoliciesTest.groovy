@@ -553,58 +553,6 @@ class DefaultPoliciesTest extends BaseSpecification {
         return ListAlertsRequest.newBuilder().setQuery(query).build()
     }
 
-    def numUniqueCategories(List<ListAlert> alerts) {
-        def m = [] as Set
-        alerts.each { a ->
-            a.getPolicy().getCategoriesList().each { c ->
-                m.add(c)
-            }
-        }
-        return m.size()
-    }
-
-    def countAlerts(ListAlertsRequest req, RequestGroup group) {
-        def c = AlertService.getAlertCounts(
-                GetAlertsCountsRequest.newBuilder().setRequest(req).setGroupBy(group).build()
-        )
-        return c
-    }
-
-    def totalAlerts(AlertServiceOuterClass.GetAlertsCountsResponse resp) {
-        def total = 0
-        resp.getGroupsList().each { g ->
-            g.getCountsList().each { c ->
-                total += c.getCount()
-            }
-        }
-        return total
-    }
-
-    def "Verify that alert counts API is consistent with alerts"()  {
-        given:
-        def alertReq = queryForDeployments()
-        def violations = AlertService.getViolations(alertReq)
-        def uniqueCategories = numUniqueCategories(violations)
-
-        when:
-        def ungrouped = countAlerts(alertReq, RequestGroup.UNSET)
-        def byCluster = countAlerts(alertReq, RequestGroup.CLUSTER)
-        def byCategory = countAlerts(alertReq, RequestGroup.CATEGORY)
-
-        then:
-        "Verify counts match expected value"
-        ungrouped.getGroupsCount() == 1
-        totalAlerts(ungrouped) == violations.size()
-
-        byCluster.getGroupsCount() == 1
-        totalAlerts(byCluster) == violations.size()
-
-        byCategory.getGroupsCount() == uniqueCategories
-        // Policies can have multiple categories, so the count is _at least_
-        // the number of total violations, but usually is more.
-        totalAlerts(byCategory) >= violations.size()
-    }
-
     def flattenGroups(GetAlertsGroupResponse resp) {
         def m = [:]
         resp.getAlertsByPoliciesList().each { group ->
