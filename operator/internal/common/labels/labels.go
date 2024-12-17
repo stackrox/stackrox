@@ -16,7 +16,9 @@ var defaultLabels = map[string]string{
 }
 
 func TLSSecretLabels() map[string]string {
-	return map[string]string{"rhacs.central.com/tls": "true"}
+	labels := DefaultLabels()
+	labels["rhacs.redhat.com/tls"] = "true"
+	return labels
 }
 
 // DefaultLabels defines the default labels the operator should set on resources it creates.
