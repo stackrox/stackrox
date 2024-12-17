@@ -301,8 +301,7 @@ spec:
       - name: name
         value: determine-image-tag-stackrox
       - name: bundle
-        # TODO(ROX-27350): switch to latest tag after tasks PR is pushed.
-        value: quay.io/rhacs-eng/konflux-tasks:pr-3@sha256:50d7e4bca7e81fbf09faa749dfad62167b2099884363efb4d9fd0d05a6bc843d
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:50d7e4bca7e81fbf09faa749dfad62167b2099884363efb4d9fd0d05a6bc843d
       - name: kind
         value: task
       resolver: bundles
@@ -349,8 +348,7 @@ spec:
       - name: name
         value: wait-for-image
       - name: bundle
-        # TODO(ROX-27350): switch to latest tag after tasks PR is pushed.
-        value: quay.io/rhacs-eng/konflux-tasks:pr-3@sha256:50d7e4bca7e81fbf09faa749dfad62167b2099884363efb4d9fd0d05a6bc843d
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:50d7e4bca7e81fbf09faa749dfad62167b2099884363efb4d9fd0d05a6bc843d
       - name: kind
         value: task
       resolver: bundles
