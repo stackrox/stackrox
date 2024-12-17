@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
-import { useLocation, useHistory, useRouteMatch, Link } from 'react-router-dom';
+import { useLocation, useNavigate, useMatch, Link } from 'react-router-dom';
 import { ExternalLinkAltIcon } from '@patternfly/react-icons';
 
 import CloseButton from 'Components/CloseButton';
@@ -10,6 +10,7 @@ import Entity from 'Containers/ConfigManagement/Entity';
 import workflowStateContext from 'Containers/workflowStateContext';
 import parseURL from 'utils/URLParser';
 import URLService from 'utils/URLService';
+import { workflowPaths } from 'routePaths';
 import BreadCrumbs from './BreadCrumbs';
 
 const SidePanel = ({
@@ -23,9 +24,9 @@ const SidePanel = ({
     entityId2,
     query,
 }) => {
-    const match = useRouteMatch();
+    const match = useMatch(workflowPaths.LIST);
     const location = useLocation();
-    const history = useHistory();
+    const navigate = useNavigate();
     const workflowState = parseURL(location);
     const searchParam = useContext(searchContext);
     const isList = !entityId1 || (entityListType2 && !entityId2);
@@ -56,7 +57,7 @@ const SidePanel = ({
     }
 
     function onClose() {
-        history.push(URLService.getURL(match, location).clearSidePanelParams().url());
+        navigate(URLService.getURL(match, location).clearSidePanelParams().url());
     }
 
     const entityId = getCurrentEntityId();

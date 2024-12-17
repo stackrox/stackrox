@@ -4,8 +4,9 @@ import entityTypes from 'constants/entityTypes';
 import entityLabels from 'messages/entity';
 import pluralize from 'pluralize';
 import URLService from 'utils/URLService';
-import { useRouteMatch, useLocation } from 'react-router-dom';
+import { useMatch, useLocation } from 'react-router-dom';
 import GroupedTabs from 'Components/GroupedTabs';
+import { workflowPaths } from 'routePaths';
 import entityTabsMap from '../entityTabRelationships';
 
 const TAB_GROUPS = {
@@ -39,7 +40,7 @@ const ENTITY_TO_TAB = {
 };
 
 const EntityTabs = ({ entityType, entityListType, pageEntityId }) => {
-    const match = useRouteMatch();
+    const match = useMatch(workflowPaths.ENTITY);
     const location = useLocation();
 
     function getTab(relationship) {

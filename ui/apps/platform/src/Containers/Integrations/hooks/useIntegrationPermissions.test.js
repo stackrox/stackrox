@@ -45,7 +45,7 @@ const initialStoreNone = {
 
 describe('useIntegrationPermissions', () => {
     it('should return write permissions', () => {
-        const store = configureStore(initialStoreWrite, history);
+        const { store } = configureStore(initialStoreWrite, history);
 
         const { result } = renderHook(() => useIntegrationPermissions(), {
             wrapper: ({ children }) => <Provider store={store}>{children}</Provider>,
@@ -62,7 +62,7 @@ describe('useIntegrationPermissions', () => {
     });
 
     it('should return read permissions', () => {
-        const store = configureStore(initialStoreRead, history);
+        const { store } = configureStore(initialStoreRead, history);
 
         const { result } = renderHook(() => useIntegrationPermissions(), {
             wrapper: ({ children }) => <Provider store={store}>{children}</Provider>,
@@ -79,7 +79,7 @@ describe('useIntegrationPermissions', () => {
     });
 
     it('should return no permissions', () => {
-        const store = configureStore(initialStoreNone, history);
+        const { store } = configureStore(initialStoreNone, history);
 
         const { result } = renderHook(() => useIntegrationPermissions(), {
             wrapper: ({ children }) => <Provider store={store}>{children}</Provider>,

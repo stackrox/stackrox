@@ -54,7 +54,7 @@ function ViewScanConfigDetail({
     isLoading,
     error = null,
 }: ViewScanConfigDetailProps): React.ReactElement {
-    const { scanConfigId } = useParams();
+    const { scanConfigId } = useParams() as { scanConfigId: string };
     const { analyticsTrack } = useAnalytics();
 
     const [activeScanConfigTab, setActiveScanConfigTab] = useURLStringUnion(

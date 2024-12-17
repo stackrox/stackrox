@@ -1,14 +1,15 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Link, useLocation, useRouteMatch } from 'react-router-dom';
+import { Link, useLocation, useMatch } from 'react-router-dom';
 import URLService from 'utils/URLService';
 
 import { ArrowLeft } from 'react-feather';
 import EntityIcon from 'Components/EntityIcon';
+import { workflowPaths } from 'routePaths';
 
 const BackButton = ({ entityType1, entityListType2, entityId2 }) => {
     const location = useLocation();
-    const match = useRouteMatch();
+    const match = useMatch(workflowPaths.LIST);
 
     if (entityListType2 || entityId2) {
         const link = URLService.getURL(match, location).pop().url();

@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLocation, useRouteMatch } from 'react-router-dom';
+import { useLocation, useMatch } from 'react-router-dom';
 import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
 
@@ -16,6 +16,7 @@ import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOp
 import { clusterSortFields } from 'constants/sortFields';
 import queryService from 'utils/queryService';
 import URLService from 'utils/URLService';
+import { workflowPaths } from 'routePaths';
 import { getConfigMgmtPathForEntitiesAndId } from '../entities';
 import List from './List';
 import NoEntitiesIconText from './utilities/NoEntitiesIconText';
@@ -211,7 +212,7 @@ const createTableRows = (data) => data.results;
 
 const Clusters = ({ className, selectedRowId, onRowClick, query, data }) => {
     const location = useLocation();
-    const match = useRouteMatch();
+    const match = useMatch(workflowPaths.LIST);
     const autoFocusSearchInput = !selectedRowId;
     const tableColumns = buildTableColumns(match, location);
     const { [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus, ...restQuery } = query || {};

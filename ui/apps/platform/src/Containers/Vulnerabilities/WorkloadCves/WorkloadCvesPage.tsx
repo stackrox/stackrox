@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Route, Switch } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 import { PageSection } from '@patternfly/react-core';
 
 import PageNotFound from 'Components/PageNotFound';
@@ -118,31 +118,30 @@ function WorkloadCvesPage({ view }: WorkloadCvePageProps) {
     return (
         <WorkloadCveViewContext.Provider value={context}>
             {hasReadAccessForIntegration && <ScannerV4IntegrationBanner />}
-            <Switch>
+            <Routes>
                 {hasReadAccessForNamespaces && (
-                    <Route path={context.getAbsoluteUrl('namespace-view')}>
-                        <NamespaceViewPage />
-                    </Route>
+                    <Route
+                        path={context.getAbsoluteUrl('namespace-view')}
+                        element={<NamespaceViewPage />}
+                    />
                 )}
-                <Route path={context.getAbsoluteUrl('cves/:cveId')}>
-                    <ImageCvePage />
-                </Route>
-                <Route path={context.getAbsoluteUrl('images/:imageId')}>
-                    <ImagePage />
-                </Route>
-                <Route path={context.getAbsoluteUrl('deployments/:deploymentId')}>
-                    <DeploymentPage />
-                </Route>
-                <Route exact path={context.getAbsoluteUrl('')}>
-                    <WorkloadCvesOverviewPage />
-                </Route>
-                <Route>
-                    <PageSection variant="light">
-                        <PageTitle title={`${context.pageTitle} - Not Found`} />
-                        <PageNotFound />
-                    </PageSection>
-                </Route>
-            </Switch>
+                <Route path={context.getAbsoluteUrl('cves/:cveId')} element={<ImageCvePage />} />
+                <Route path={context.getAbsoluteUrl('images/:imageId')} element={<ImagePage />} />
+                <Route
+                    path={context.getAbsoluteUrl('deployments/:deploymentId')}
+                    element={<DeploymentPage />}
+                />
+                <Route index element={<WorkloadCvesOverviewPage />} />
+                <Route
+                    path="*"
+                    element={
+                        <PageSection variant="light">
+                            <PageTitle title={`${context.pageTitle} - Not Found`} />
+                            <PageNotFound />
+                        </PageSection>
+                    }
+                />
+            </Routes>
         </WorkloadCveViewContext.Provider>
     );
 }

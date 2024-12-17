@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import { useRouteMatch, useLocation, useHistory } from 'react-router-dom';
+import { useMatch, useLocation, useNavigate } from 'react-router-dom';
 import pluralize from 'pluralize';
 import resolvePath from 'object-resolve-path';
 
@@ -18,6 +18,7 @@ import { SEARCH_OPTIONS_QUERY } from 'queries/search';
 import isGQLLoading from 'utils/gqlLoading';
 import createPDFTable from 'utils/pdfUtils';
 import URLService from 'utils/URLService';
+import { workflowPaths } from 'routePaths';
 
 const ListFrontendPaginated = ({
     headerText,
@@ -34,15 +35,15 @@ const ListFrontendPaginated = ({
     autoFocusSearchInput,
     noDataText,
 }) => {
-    const match = useRouteMatch();
+    const match = useMatch(workflowPaths.LIST);
     const location = useLocation();
-    const history = useHistory();
+    const navigate = useNavigate();
     const [page, setPage] = useState(0);
 
     function onRowClickHandler(row) {
         const id = resolvePath(row, idAttribute);
         const url = URLService.getURL(match, location).push(id).url();
-        history.push(url);
+        navigate(url);
     }
 
     const categories = [searchCategoryTypes[entityType]];

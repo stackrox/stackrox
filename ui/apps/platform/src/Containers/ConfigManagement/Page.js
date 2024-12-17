@@ -1,31 +1,62 @@
 import React from 'react';
-import { Route, Switch } from 'react-router-dom';
-import { workflowPaths } from 'routePaths';
+import { Route, Routes } from 'react-router-dom';
 import isEqual from 'lodash/isEqual';
 import PageNotFound from 'Components/PageNotFound';
 import searchContext from 'Containers/searchContext';
 import { searchParams } from 'constants/searchParams';
 import useCases from 'constants/useCaseTypes';
+
 import DashboardPage from './Dashboard/Page';
 import ListPage from './List/Page';
 import EntityPage from './Entity/Page';
 
+const listPath = `:entityId1?/:entityType2?/:entityId2?`;
+const entityPath = `:pageEntityId?/:entityType1?/:entityId1?/:entityType2?/:entityId2?`;
+
 const Page = () => (
     <searchContext.Provider value={searchParams.page}>
-        <Switch>
-            <Route exact path={workflowPaths.DASHBOARD}>
-                <DashboardPage />
-            </Route>
-            <Route path={workflowPaths.ENTITY}>
-                <EntityPage />
-            </Route>
-            <Route path={workflowPaths.LIST}>
-                <ListPage />
-            </Route>
-            <Route>
-                <PageNotFound useCase={useCases.CONFIG_MANAGEMENT} />
-            </Route>
-        </Switch>
+        <Routes>
+            <Route index element={<DashboardPage />} />
+            <Route path={`namespace/${entityPath}`} element={<EntityPage />} />
+            <Route path={`cluster/${entityPath}`} element={<EntityPage />} />
+            <Route path={`node/${entityPath}`} element={<EntityPage />} />
+            <Route path={`deployment/${entityPath}`} element={<EntityPage />} />
+            <Route path={`image/${entityPath}`} element={<EntityPage />} />
+            <Route path={`secret/${entityPath}`} element={<EntityPage />} />
+            <Route path={`policy/${entityPath}`} element={<EntityPage />} />
+            <Route path={`cve/${entityPath}`} element={<EntityPage />} />
+            <Route path={`image-cve/${entityPath}`} element={<EntityPage />} />
+            <Route path={`node-cve/${entityPath}`} element={<EntityPage />} />
+            <Route path={`cluster-cve/${entityPath}`} element={<EntityPage />} />
+            <Route path={`component/${entityPath}`} element={<EntityPage />} />
+            <Route path={`node-component/${entityPath}`} element={<EntityPage />} />
+            <Route path={`image-component/${entityPath}`} element={<EntityPage />} />
+            <Route path={`control/${entityPath}`} element={<EntityPage />} />
+            <Route path={`standard/${entityPath}`} element={<EntityPage />} />
+            <Route path={`serviceaccount/${entityPath}`} element={<EntityPage />} />
+            <Route path={`subject/${entityPath}`} element={<EntityPage />} />
+            <Route path={`role/${entityPath}`} element={<EntityPage />} />
+
+            <Route path={`namespaces/${listPath}`} element={<ListPage />} />
+            <Route path={`clusters/${listPath}`} element={<ListPage />} />
+            <Route path={`nodes/${listPath}`} element={<ListPage />} />
+            <Route path={`deployments/${listPath}`} element={<ListPage />} />
+            <Route path={`images/${listPath}`} element={<ListPage />} />
+            <Route path={`secrets/${listPath}`} element={<ListPage />} />
+            <Route path={`policies/${listPath}`} element={<ListPage />} />
+            <Route path={`cves/${listPath}`} element={<ListPage />} />
+            <Route path={`image-cves/${listPath}`} element={<ListPage />} />
+            <Route path={`node-cves/${listPath}`} element={<ListPage />} />
+            <Route path={`cluster-cves/${listPath}`} element={<ListPage />} />
+            <Route path={`components/${listPath}`} element={<ListPage />} />
+            <Route path={`node-components/${listPath}`} element={<ListPage />} />
+            <Route path={`image-components/${listPath}`} element={<ListPage />} />
+            <Route path={`controls/${listPath}`} element={<ListPage />} />
+            <Route path={`serviceaccounts/${listPath}`} element={<ListPage />} />
+            <Route path={`subjects/${listPath}`} element={<ListPage />} />
+            <Route path={`roles/${listPath}`} element={<ListPage />} />
+            <Route path="*" element={<PageNotFound useCase={useCases.CONFIG_MANAGEMENT} />} />
+        </Routes>
     </searchContext.Provider>
 );
 

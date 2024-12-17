@@ -10,10 +10,10 @@ import searchAutoComplete from './searchAutocompleteSagas';
 import metadata from './metadataSagas';
 import groups from './groupSagas';
 
-export default function* root() {
+export default function* root(history) {
     yield all([
         fork(apiTokens),
-        fork(authProviders),
+        fork(authProviders, history),
         fork(machineAccessConfigs),
         fork(integrations),
         fork(cloudSources),

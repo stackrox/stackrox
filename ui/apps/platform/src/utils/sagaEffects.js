@@ -1,5 +1,5 @@
+import { LOCATION_CHANGE } from 'redux-first-history';
 import { take, fork } from 'redux-saga/effects';
-import { LOCATION_CHANGE } from 'connected-react-router';
 import { matchPath } from 'react-router-dom';
 
 /**
@@ -22,13 +22,14 @@ export const takeEveryLocation = (route, saga, ...args) =>
     fork(function* worker() {
         while (true) {
             const action = yield take(LOCATION_CHANGE);
+
             if (action.payload?.location?.pathname) {
                 const {
                     payload: { location },
                 } = action;
-                const match = matchPath(location.pathname, route);
+                const match = matchPath(route, location.pathname);
+
                 if (match) {
-                    // @ts-expect-error TODO: understand what we're doing wrong here...
                     yield fork(saga, ...args.concat({ match, location }));
                 }
             }
@@ -51,13 +52,14 @@ export const takeEveryNewlyMatchedLocation = (route, saga, ...args) =>
         let prevLocationMatched = false;
         while (true) {
             const action = yield take(LOCATION_CHANGE);
+
             if (action.payload?.location?.pathname) {
                 const {
                     payload: { location },
                 } = action;
-                const match = matchPath(location.pathname, route);
+                const match = matchPath(route, location.pathname);
+
                 if (match && !prevLocationMatched) {
-                    // @ts-expect-error TODO: understand what we're doing wrong here...
                     yield fork(saga, ...args.concat({ match, location }));
                 }
                 prevLocationMatched = !!match;

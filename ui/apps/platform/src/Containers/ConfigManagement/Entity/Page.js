@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useHistory, useLocation, useRouteMatch } from 'react-router-dom';
+import { useLocation, useNavigate, useMatch } from 'react-router-dom';
 
 import SidePanelAnimatedArea from 'Components/animations/SidePanelAnimatedArea';
 import BackdropExporting from 'Components/PatternFly/BackdropExporting';
@@ -14,6 +14,7 @@ import useClickOutside from 'hooks/useClickOutside';
 import parseURL from 'utils/URLParser';
 import URLService from 'utils/URLService';
 import { WorkflowState } from 'utils/WorkflowState';
+import { workflowPaths } from 'routePaths';
 import EntityPageHeader from './EntityPageHeader';
 import Tabs from './EntityTabs';
 import SidePanel from '../SidePanel/SidePanel';
@@ -23,8 +24,8 @@ const EntityPage = () => {
     const sidePanelRef = useRef(null);
     const [isExporting, setIsExporting] = useState(false);
     const location = useLocation();
-    const history = useHistory();
-    const match = useRouteMatch();
+    const navigate = useNavigate();
+    const match = useMatch(workflowPaths.ENTITY);
     const workflowState = parseURL(location);
     const { useCase, search, sort, paging } = workflowState;
     const pageState = new WorkflowState(
@@ -53,8 +54,8 @@ const EntityPage = () => {
     useEffect(() => setFadeIn(false), [pageEntityId]);
 
     const closeSidePanel = useCallback(() => {
-        history.push(URLService.getURL(match, location).clearSidePanelParams().url());
-    }, [history, match, location]);
+        navigate(URLService.getURL(match, location).clearSidePanelParams().url());
+    }, [navigate, match, location]);
 
     useClickOutside(sidePanelRef, closeSidePanel, !!entityId1);
 
