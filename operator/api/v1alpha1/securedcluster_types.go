@@ -310,6 +310,9 @@ type CollectorContainerSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
 	ImageFlavor *CollectorImageFlavor `json:"imageFlavor,omitempty"`
 
+	//+operator-sdk:csv:customresourcedefinitions:type=spec
+	RuntimeConfig *CollectorRuntimeConfig `json:"runtimeConfig,omitempty"`
+
 	// Deprecated field. This field will be removed in a future release.
 	//+kubebuilder:default=false
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
@@ -318,21 +321,53 @@ type CollectorContainerSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
 	ContainerSpec `json:",inline"`
 
-	RuntimeConfig *CollectorRuntimeConfig `json:"runtimeConfig,omitempty"`
 }
 
+// +kubebuilder:validation:Enum=Enabled,Disabled,Auto
+type CollectorRuntimeConfigEnabled string
+
+const (
+	// CollectorRuntimeConfigEnabledEnabled means: The collector-config ConfigMap will be created
+	CollectorRuntimeConfigEnabledEnabled = "Enabled"
+	// CollectorRuntimeConfigEnabledDisabled means: The collector-config ConfigMap will not be created
+	CollectorRuntimeConfigEnabledDisabled = "Disabled"
+	// CollectorRuntimeConfigEnabledAuto means: The collector-config ConfigMap will not be created
+	CollectorRuntimeConfigEnabledAuto = "Auto"
+)
+
 type CollectorRuntimeConfig struct {
-	Enabled    *bool                `json:"enabled,omitempty"`
+	//+kubebuilder:default=Enabled
+	//+operator-sdk:csv:customresourcedefinitions:type=spec
+	Enabled    *CollectorRuntimeConfigEnabled `json:"enabled,omitempty"`
+
+	//+operator-sdk:csv:customresourcedefinitions:type=spec
 	Networking *CollectorNetworking `json:"networking"`
 }
 
 type CollectorNetworking struct {
+	//+kubebuilder:default=1024
+	//+operator-sdk:csv:customresourcedefinitions:type=spec
 	PerContainerRateLimit *int32                `json:"perContainerRateLimit,omitempty"`
+	//+operator-sdk:csv:customresourcedefinitions:type=spec
 	ExternalIPs           *CollectorExternalIPs `json:"externalIps,omitempty"`
 }
 
+// +kubebuilder:validation:Enum=Enabled,Disabled,Auto
+type CollectorExternalIPsEnabled string
+
+const (
+	// CollectorExternalIPsEnabled means: use the external IPs feature
+	CollectorExternalIPsEnabledEnabled CollectorExternalIPsEnabled = "Enabled"
+	// CollectorExternalIPsDisabled means: don't use the external IPs feature
+	CollectorExternalIPsEnabledDisabled CollectorExternalIPsEnabled = "Disabled"
+	// CollectorExternalIPsAuto means: don't use the external IPs feature
+	CollectorExternalIPsEnabledAuto CollectorExternalIPsEnabled = "Auto"
+)
+
 type CollectorExternalIPs struct {
-	Enabled *bool `json:"enabled,omitempty"`
+	//+kubebuilder:default=Disabled
+	//+operator-sdk:csv:customresourcedefinitions:type=spec
+	Enabled *CollectorExternalIPsEnabled `json:"enabled,omitempty"`
 }
 
 // ContainerSpec defines container settings.
