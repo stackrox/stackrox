@@ -225,7 +225,7 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
             );
 
             return function WorkloadCvesPage() {
-                return <AsyncWorkloadCvesComponent />;
+                return <AsyncWorkloadCvesComponent view="user-workload" />;
             };
         })(),
         path: vulnerabilitiesWorkloadCvesPath,
