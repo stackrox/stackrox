@@ -334,6 +334,34 @@ func (t Translator) getCollectorContainerValues(collectorContainerSpec *platform
 	}
 
 	cv.AddChild(translation.ResourcesKey, translation.GetResources(collectorContainerSpec.Resources))
+	cv.AddChild("runtimeConfig", t.getRuntimeConfig(collectorContainerSpec.RuntimeConfig))
+
+	return &cv
+}
+
+func (t Translator) getRuntimeConfig(runtimeConfig *platform.CollectorRuntimeConfig) *translation.ValuesBuilder {
+	if runtimeConfig == nil {
+		return nil
+	}
+
+	cv := translation.NewValuesBuilder()
+
+	if runtimeConfig.Enabled != nil {
+		cv.SetBoolValue("enabled", *runtimeConfig.Enabled)
+	}
+
+	networking := runtimeConfig.Networking
+	if networking != nil {
+		externalIps := networking.ExternalIPs
+		if externalIps != nil {
+			enabled := externalIps.Enabled
+			if enabled != nil {
+				cv.SetPathValue("networking.externalIps.enabled", *enabled)
+			}
+			perContainerRateLimit := networking.PerContainerRateLimit
+			cv.SetPathValue("networking.perContainerRateLimit", *perContainerRateLimit)
+		}
+	}
 
 	return &cv
 }
