@@ -23,9 +23,9 @@ export default function ComponentTestProviders({
 
     return (
         <Provider store={reduxStore}>
-            <Router history={history}>
-                <ApolloProvider client={configureApolloClient()}>{children}</ApolloProvider>
-            </Router>
+            {/* <Router history={history}> */}
+            <ApolloProvider client={configureApolloClient()}>{children}</ApolloProvider>
+            {/* </Router> */}
         </Provider>
     );
 }

@@ -3,8 +3,8 @@ import PropTypes from 'prop-types';
 import { Bullseye } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import { useQuery } from '@apollo/client';
-import { useHistory } from 'react-router-dom';
 import Raven from 'raven-js';
+import { useNavigate } from 'react-router-dom';
 
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import PageNotFound from 'Components/PageNotFound';
@@ -43,7 +43,7 @@ const WorkflowListPage = ({
     setSelection,
     renderRowActionButtons,
 }) => {
-    const history = useHistory();
+    const navigate = useNavigate();
     const workflowState = useContext(workflowStateContext);
     const [sortFields, setSortFields] = useState({});
     const { isFeatureFlagEnabled } = useFeatureFlags();
@@ -120,7 +120,7 @@ const WorkflowListPage = ({
         });
 
         const url = workflowState.setSort(workflowSort).setPage(0).toUrl();
-        history.push(url);
+        navigate(url);
     }
 
     return (

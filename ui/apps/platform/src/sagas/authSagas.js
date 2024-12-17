@@ -1,8 +1,8 @@
 import { all, take, call, fork, put, takeLatest, takeEvery, select } from 'redux-saga/effects';
 import { delay } from 'redux-saga';
-import { push } from 'connected-react-router';
 import queryString from 'qs';
 import Raven from 'raven-js';
+import { LOCATION_CHANGE } from 'redux-first-history';
 import { Base64 } from 'js-base64';
 
 import { loginPath, testLoginResultsPath, authResponsePrefix } from 'routePaths';
@@ -14,7 +14,6 @@ import { fetchUserRolePermissions } from 'services/RolesService';
 import { selectors } from 'reducers';
 import { actions, types, AUTH_STATUS } from 'reducers/auth';
 import { actions as groupActions } from 'reducers/groups';
-import { types as locationActionTypes } from 'reducers/routes';
 import { actions as notificationActions } from 'reducers/notifications';
 import { actions as rolesActions } from 'reducers/roles';
 
@@ -228,7 +227,7 @@ function* handleAuthorizeRoxctlLoginResponse(result) {
     window.location.assign(`${parsedCallbackURL.toString()}?${queryString.stringify(query)}`);
 }
 
-function* dispatchAuthResponse(type, location) {
+function* dispatchAuthResponse(type, location, history) {
     // For every handler registered under `/auth/response/<type>`, add a function that returns the token.
     const responseHandlers = {
         oidc: handleOidcResponse,
@@ -262,7 +261,7 @@ function* dispatchAuthResponse(type, location) {
     yield fork(getUserPermissions);
 
     const storedLocation = yield call(AuthService.getAndClearRequestedLocation);
-    yield put(push(storedLocation || '/')); // try to restore requested path
+    history.push(storedLocation || '/'); // try to restore requested path
     yield call(getLoginAuthProviders);
 }
 
@@ -387,20 +386,20 @@ function* fetchAvailableProviderTypes() {
     }
 }
 
-export default function* auth() {
+export default function* auth(history) {
     // start by monitoring auth providers to re-evaluate user access
     yield fork(watchNewAuthProviders);
     yield fork(fetchAvailableProviderTypes);
 
     // take the first location change, i.e. the location where user landed first time
-    const action = yield take(locationActionTypes.LOCATION_CHANGE);
+    const action = yield take(LOCATION_CHANGE);
     const {
         payload: { location },
     } = action;
     if (location.pathname?.startsWith(authResponsePrefix)) {
         // if it was a redirect after authentication, handle it properly
         const authType = location.pathname.substr(authResponsePrefix.length);
-        yield fork(dispatchAuthResponse, authType, location);
+        yield fork(dispatchAuthResponse, authType, location, history);
     } else {
         // otherwise we still need to fetch auth providers to check if user can access the app
         yield fork(getLoginAuthProviders);

@@ -8,7 +8,7 @@ import {
     Divider,
     Flex,
 } from '@patternfly/react-core';
-import { useParams, useHistory } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { connect } from 'react-redux';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
@@ -31,6 +31,8 @@ import {
     getIsMachineAccessConfig,
     getIsSignatureIntegration,
     getIsScannerV4,
+    IntegrationSource,
+    IntegrationType,
 } from '../utils/integrationUtils';
 
 import {
@@ -46,18 +48,18 @@ function IntegrationsListPage({
     deleteMachineAccessConfigs,
     deleteCloudSources,
 }): ReactElement {
-    const { source, type } = useParams();
+    const { source, type } = useParams() as { source: IntegrationSource; type: IntegrationType };
     const integrations = useIntegrations({ source, type });
     const [deletingIntegrationIds, setDeletingIntegrationIds] = useState([]);
 
-    const history = useHistory();
+    const navigate = useNavigate();
 
     const { isCentralCapabilityAvailable } = useCentralCapabilities();
     const canUseCloudBackupIntegrations = isCentralCapabilityAvailable(
         'centralCanUseCloudBackupIntegrations'
     );
     if (!canUseCloudBackupIntegrations && source === 'backups') {
-        history.replace(integrationsPath);
+        navigate(integrationsPath, { replace: true });
     }
 
     const typeLabel = getIntegrationLabel(source, type);

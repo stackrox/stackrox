@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLocation, useRouteMatch } from 'react-router-dom';
+import { useLocation, useMatch } from 'react-router-dom';
 import pluralize from 'pluralize';
 
 import {
@@ -15,6 +15,7 @@ import { SERVICE_ACCOUNTS_QUERY } from 'queries/serviceAccount';
 import { sortValueByLength } from 'sorters/sorters';
 import queryService from 'utils/queryService';
 import URLService from 'utils/URLService';
+import { workflowPaths } from 'routePaths';
 import { getConfigMgmtPathForEntitiesAndId } from '../entities';
 import List from './List';
 
@@ -177,7 +178,7 @@ const ServiceAccounts = ({
     entityContext,
 }) => {
     const location = useLocation();
-    const match = useRouteMatch();
+    const match = useMatch(workflowPaths.LIST);
     const autoFocusSearchInput = !selectedRowId;
     const tableColumns = buildTableColumns(match, location, entityContext);
     const queryText = queryService.objectToWhereClause(query);

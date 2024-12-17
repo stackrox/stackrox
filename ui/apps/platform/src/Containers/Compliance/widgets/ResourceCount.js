@@ -11,15 +11,16 @@ import CountWidget from 'Components/CountWidget';
 import { SEARCH_WITH_CONTROLS as QUERY } from 'queries/search';
 import queryService from 'utils/queryService';
 import { getResourceCountFromAggregatedResults } from 'utils/complianceUtils';
-import { useLocation, useRouteMatch } from 'react-router-dom';
+import { useLocation, useMatch } from 'react-router-dom';
 import useCases from 'constants/useCaseTypes';
 import searchContext from 'Containers/searchContext';
+import { workflowPaths } from 'routePaths';
 
 import { entityNounSentenceCaseSingular } from '../entitiesForCompliance';
 
 const ResourceCount = ({ entityType, relatedToResourceType, relatedToResource, count }) => {
     const searchParam = useContext(searchContext);
-    const match = useRouteMatch();
+    const match = useMatch(workflowPaths.ENTITY);
     const location = useLocation();
 
     function getUrl() {
