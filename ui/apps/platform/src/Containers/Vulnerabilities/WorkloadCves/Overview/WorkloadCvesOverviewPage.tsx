@@ -20,7 +20,6 @@ import PageTitle from 'Components/PageTitle';
 import useURLPagination from 'hooks/useURLPagination';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import usePermissions from 'hooks/usePermissions';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useAnalytics, {
     WATCH_IMAGE_MODAL_OPENED,
     WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED,
@@ -36,16 +35,6 @@ import {
     syncSeveritySortOption,
 } from 'Containers/Vulnerabilities/utils/sortUtils';
 import useURLSort from 'hooks/useURLSort';
-import {
-    SearchOption,
-    IMAGE_SEARCH_OPTION,
-    DEPLOYMENT_SEARCH_OPTION,
-    NAMESPACE_SEARCH_OPTION,
-    CLUSTER_SEARCH_OPTION,
-    IMAGE_CVE_SEARCH_OPTION,
-    COMPONENT_SEARCH_OPTION,
-    COMPONENT_SOURCE_SEARCH_OPTION,
-} from 'Containers/Vulnerabilities/searchOptions';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import { VulnerabilityState } from 'types/cve.proto';
 import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/AdvancedFiltersToolbar';
@@ -86,20 +75,9 @@ import VulnerabilityStateTabs, {
 } from '../components/VulnerabilityStateTabs';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
 import DefaultFilterModal from '../components/DefaultFilterModal';
-import WorkloadCveFilterToolbar from '../components/WorkloadCveFilterToolbar';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
 import ObservedCveModeSelect from './ObservedCveModeSelect';
 import { getViewStateDescription, getViewStateTitle } from './string.utils';
-
-const searchOptions: SearchOption[] = [
-    IMAGE_SEARCH_OPTION,
-    DEPLOYMENT_SEARCH_OPTION,
-    NAMESPACE_SEARCH_OPTION,
-    CLUSTER_SEARCH_OPTION,
-    IMAGE_CVE_SEARCH_OPTION,
-    COMPONENT_SEARCH_OPTION,
-    COMPONENT_SOURCE_SEARCH_OPTION,
-];
 
 export const entityTypeCountsQuery = gql`
     query getEntityTypeCounts($query: String) {
@@ -164,9 +142,6 @@ function WorkloadCvesOverviewPage() {
     const { hasReadAccess, hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForWatchedImage = hasReadWriteAccess('WatchedImage');
     const hasReadAccessForNamespaces = hasReadAccess('Namespace');
-
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isAdvancedFiltersEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_ADVANCED_FILTERS');
 
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
@@ -330,7 +305,7 @@ function WorkloadCvesOverviewPage() {
         return apolloClient.refetchQueries({ include: [imageListQuery] });
     }
 
-    const filterToolbar = isAdvancedFiltersEnabled ? (
+    const filterToolbar = (
         <AdvancedFiltersToolbar
             className="pf-v5-u-py-md"
             searchFilterConfig={searchFilterConfig}
@@ -345,17 +320,6 @@ function WorkloadCvesOverviewPage() {
             includeCveSeverityFilters={isViewingWithCves}
             includeCveStatusFilters={isViewingWithCves}
             defaultSearchFilterEntity={defaultSearchFilterEntity}
-        />
-    ) : (
-        <WorkloadCveFilterToolbar
-            defaultFilters={localStorageValue.preferences.defaultFilters}
-            onFilterChange={() => pagination.setPage(1)}
-            searchOptions={
-                isViewingWithCves
-                    ? searchOptions
-                    : searchOptions.filter((option) => option !== IMAGE_CVE_SEARCH_OPTION)
-            }
-            showCveFilterDropdowns={isViewingWithCves}
         />
     );
 
