@@ -7,14 +7,17 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certificates"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certrepo"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	appsApiv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
@@ -92,6 +95,68 @@ func getFakeK8sClient(conf fakeK8sClientConfig) *fake.Clientset {
 	k8sClient := fake.NewSimpleClientset(objects...)
 
 	return k8sClient
+}
+
+func verifySecrets(ctx context.Context, t require.TestingT,
+	k8sClient kubernetes.Interface, sensorNamespace string, ca mtls.CA, secretsCerts map[string]*mtls.IssuedCert) {
+	ctxDeadline, ok := ctx.Deadline()
+	require.True(t, ok)
+	pollTimeout := time.Until(ctxDeadline)
+	var secrets *v1.SecretList
+	ok = concurrency.PollWithTimeout(func() bool {
+		var err error
+		secrets, err = k8sClient.CoreV1().Secrets(sensorNamespace).List(ctx, metav1.ListOptions{})
+		require.NoError(t, err)
+
+		allSecretsHaveData := true
+		for _, secret := range secrets.Items {
+			if len(secret.Data) == 0 {
+				allSecretsHaveData = false
+				break
+			}
+		}
+		return allSecretsHaveData && len(secrets.Items) == len(secretsCerts)
+	}, 10*time.Millisecond, pollTimeout)
+	require.True(t, ok, "expected exactly %d secrets with non-empty data available in the k8s API", len(secretsCerts))
+
+	for _, secret := range secrets.Items {
+		expectedCert, exists := secretsCerts[secret.GetName()]
+		if !exists {
+			require.Failf(t, "unexpected secret name %q", secret.GetName())
+			continue
+		}
+		require.Equal(t, ca.CertPEM(), secret.Data[mtls.CACertFileName])
+		require.Equal(t, expectedCert.CertPEM, secret.Data[mtls.ServiceCertFileName])
+		require.Equal(t, expectedCert.KeyPEM, secret.Data[mtls.ServiceKeyFileName])
+	}
+}
+
+func deleteAllSecrets(ctx context.Context, t require.TestingT,
+	k8sClient kubernetes.Interface, sensorNamespace string) {
+	secrets, err := k8sClient.CoreV1().Secrets(sensorNamespace).List(ctx, metav1.ListOptions{})
+	require.NoError(t, err, "failed to list secrets")
+
+	for _, secret := range secrets.Items {
+		err := k8sClient.CoreV1().Secrets(sensorNamespace).Delete(ctx, secret.Name, metav1.DeleteOptions{})
+		require.NoError(t, err, "failed to delete secret %q", secret.Name)
+	}
+
+	ctxDeadline, ok := ctx.Deadline()
+	require.True(t, ok)
+	pollTimeout := time.Until(ctxDeadline)
+	ok = concurrency.PollWithTimeout(func() bool {
+		updatedSecrets, err := k8sClient.CoreV1().Secrets(sensorNamespace).List(ctx, metav1.ListOptions{})
+		require.NoError(t, err, "failed to list secrets")
+		return len(updatedSecrets.Items) == 0
+	}, 10*time.Millisecond, pollTimeout)
+
+	require.True(t, ok, "expected 0 secrets in the %q namespace", sensorNamespace)
+}
+
+func getCertificate(t require.TestingT, serviceType storage.ServiceType) *mtls.IssuedCert {
+	cert, err := issueCertificate(serviceType, mtls.WithValidityExpiringInHours())
+	require.NoError(t, err)
+	return cert
 }
 
 type fakeK8sClientConfig struct {

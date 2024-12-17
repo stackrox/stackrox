@@ -22,7 +22,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -281,15 +280,7 @@ func (s *securedClusterTLSIssuerIntegrationTests) TestSuccessfulRefresh() {
 			ca, err := mtls.CAForSigning()
 			s.Require().NoError(err)
 
-			secretsCerts := map[string]*mtls.IssuedCert{
-				sensorSecretName:           s.getCertificate(storage.ServiceType_SENSOR_SERVICE),
-				collectorSecretName:        s.getCertificate(storage.ServiceType_COLLECTOR_SERVICE),
-				admissionControlSecretName: s.getCertificate(storage.ServiceType_ADMISSION_CONTROL_SERVICE),
-				scannerSecretName:          s.getCertificate(storage.ServiceType_SCANNER_SERVICE),
-				scannerDbSecretName:        s.getCertificate(storage.ServiceType_SCANNER_DB_SERVICE),
-				scannerV4IndexerSecretName: s.getCertificate(storage.ServiceType_SCANNER_V4_INDEXER_SERVICE),
-				scannerV4DbSecretName:      s.getCertificate(storage.ServiceType_SCANNER_V4_DB_SERVICE),
-			}
+			secretsCerts := s.getAllSecuredClusterCertificates()
 
 			k8sClient := getFakeK8sClient(tc.k8sClientConfig)
 			tlsIssuer := newSecuredClusterTLSIssuer(s.T(), k8sClient, sensorNamespace, sensorPodName)
@@ -315,34 +306,65 @@ func (s *securedClusterTLSIssuerIntegrationTests) TestSuccessfulRefresh() {
 			err = tlsIssuer.ProcessMessage(response)
 			s.Require().NoError(err)
 
-			var secrets *v1.SecretList
-			ok := concurrency.PollWithTimeout(func() bool {
-				secrets, err = k8sClient.CoreV1().Secrets(sensorNamespace).List(context.Background(), metav1.ListOptions{})
-				s.Require().NoError(err)
-
-				allSecretsHaveData := true
-				for _, secret := range secrets.Items {
-					if len(secret.Data) == 0 {
-						allSecretsHaveData = false
-						break
-					}
-				}
-				return allSecretsHaveData && len(secrets.Items) == len(secretsCerts)
-			}, 10*time.Millisecond, testTimeout)
-			s.Require().True(ok, "expected exactly %d secrets with non-empty data available in the k8s API", len(secretsCerts))
-
-			for _, secret := range secrets.Items {
-				expectedCert, exists := secretsCerts[secret.GetName()]
-				if !exists {
-					s.Require().Failf("unexpected secret name %q", secret.GetName())
-					continue
-				}
-				s.Equal(ca.CertPEM(), secret.Data[mtls.CACertFileName])
-				s.Equal(expectedCert.CertPEM, secret.Data[mtls.ServiceCertFileName])
-				s.Equal(expectedCert.KeyPEM, secret.Data[mtls.ServiceKeyFileName])
-			}
+			verifySecrets(ctx, s.T(), k8sClient, sensorNamespace, ca, secretsCerts)
 		})
 	}
+}
+
+func (s *securedClusterTLSIssuerIntegrationTests) TestSensorOnlineOfflineModes() {
+	testTimeout := 2 * time.Second
+	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
+	defer cancel()
+	ca, err := mtls.CAForSigning()
+	s.Require().NoError(err)
+
+	secretsCerts := s.getAllSecuredClusterCertificates()
+
+	k8sClient := getFakeK8sClient(fakeK8sClientConfig{})
+	tlsIssuer := newSecuredClusterTLSIssuer(s.T(), k8sClient, sensorNamespace, sensorPodName)
+	tlsIssuer.certRefreshBackoff = wait.Backoff{
+		Duration: time.Millisecond,
+	}
+
+	s.Require().NoError(tlsIssuer.Start())
+	tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
+	defer tlsIssuer.Stop(nil)
+	s.Require().NotNil(tlsIssuer.certRefresher)
+	s.Require().False(tlsIssuer.certRefresher.Stopped())
+
+	request := s.waitForRequest(ctx, tlsIssuer)
+	response := getSecuredClusterIssueCertsFailureResponse(request.GetRequestId())
+	err = tlsIssuer.ProcessMessage(response)
+	s.Require().NoError(err)
+
+	tlsIssuer.Notify(common.SensorComponentEventOfflineMode)
+	s.Require().Nil(tlsIssuer.certRefresher)
+
+	tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
+	s.Require().NotNil(tlsIssuer.certRefresher)
+
+	request = s.waitForRequest(ctx, tlsIssuer)
+	response = getSecuredClusterIssueCertsSuccessResponse(request.GetRequestId(), ca.CertPEM(), secretsCerts)
+	err = tlsIssuer.ProcessMessage(response)
+	s.Require().NoError(err)
+
+	verifySecrets(ctx, s.T(), k8sClient, sensorNamespace, ca, secretsCerts)
+
+	tlsIssuer.Notify(common.SensorComponentEventOfflineMode)
+	s.Require().Nil(tlsIssuer.certRefresher)
+
+	// Delete all secrets to force a refresh when Sensor goes back online
+	deleteAllSecrets(ctx, s.T(), k8sClient, sensorNamespace)
+
+	tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
+	s.Require().NotNil(tlsIssuer.certRefresher)
+
+	request = s.waitForRequest(ctx, tlsIssuer)
+	response = getSecuredClusterIssueCertsSuccessResponse(request.GetRequestId(), ca.CertPEM(), secretsCerts)
+	err = tlsIssuer.ProcessMessage(response)
+	s.Require().NoError(err)
+
+	verifySecrets(ctx, s.T(), k8sClient, sensorNamespace, ca, secretsCerts)
 }
 
 func (s *securedClusterTLSIssuerIntegrationTests) TestUnexpectedOwnerStop() {
@@ -387,10 +409,16 @@ func (s *securedClusterTLSIssuerIntegrationTests) TestUnexpectedOwnerStop() {
 	}
 }
 
-func (s *securedClusterTLSIssuerIntegrationTests) getCertificate(serviceType storage.ServiceType) *mtls.IssuedCert {
-	cert, err := issueCertificate(serviceType, mtls.WithValidityExpiringInHours())
-	s.Require().NoError(err)
-	return cert
+func (s *securedClusterTLSIssuerIntegrationTests) getAllSecuredClusterCertificates() map[string]*mtls.IssuedCert {
+	return map[string]*mtls.IssuedCert{
+		sensorSecretName:           getCertificate(s.T(), storage.ServiceType_SENSOR_SERVICE),
+		collectorSecretName:        getCertificate(s.T(), storage.ServiceType_COLLECTOR_SERVICE),
+		admissionControlSecretName: getCertificate(s.T(), storage.ServiceType_ADMISSION_CONTROL_SERVICE),
+		scannerSecretName:          getCertificate(s.T(), storage.ServiceType_SCANNER_SERVICE),
+		scannerDbSecretName:        getCertificate(s.T(), storage.ServiceType_SCANNER_DB_SERVICE),
+		scannerV4IndexerSecretName: getCertificate(s.T(), storage.ServiceType_SCANNER_V4_INDEXER_SERVICE),
+		scannerV4DbSecretName:      getCertificate(s.T(), storage.ServiceType_SCANNER_V4_DB_SERVICE),
+	}
 }
 
 func (s *securedClusterTLSIssuerIntegrationTests) waitForRequest(ctx context.Context, tlsIssuer common.SensorComponent) *central.IssueSecuredClusterCertsRequest {

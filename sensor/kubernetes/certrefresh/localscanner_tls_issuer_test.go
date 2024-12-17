@@ -20,7 +20,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -243,8 +242,8 @@ func (s *localScannerTLSIssuerIntegrationTests) TestSuccessfulRefresh() {
 			defer cancel()
 			ca, err := mtls.CAForSigning()
 			s.Require().NoError(err)
-			scannerCert := s.getCertificate(storage.ServiceType_SCANNER_SERVICE)
-			scannerDBCert := s.getCertificate(storage.ServiceType_SCANNER_DB_SERVICE)
+			scannerCert := getCertificate(s.T(), storage.ServiceType_SCANNER_SERVICE)
+			scannerDBCert := getCertificate(s.T(), storage.ServiceType_SCANNER_DB_SERVICE)
 			k8sClient := getFakeK8sClient(tc.k8sClientConfig)
 			tlsIssuer := newLocalScannerTLSIssuer(s.T(), k8sClient, sensorNamespace, sensorPodName)
 			tlsIssuer.certRefreshBackoff = wait.Backoff{
@@ -269,30 +268,68 @@ func (s *localScannerTLSIssuerIntegrationTests) TestSuccessfulRefresh() {
 			err = tlsIssuer.ProcessMessage(response)
 			s.Require().NoError(err)
 
-			var secrets *v1.SecretList
-			ok := concurrency.PollWithTimeout(func() bool {
-				secrets, err = k8sClient.CoreV1().Secrets(sensorNamespace).List(context.Background(), metav1.ListOptions{})
-				s.Require().NoError(err)
-				return len(secrets.Items) == 2 && len(secrets.Items[0].Data) > 0 && len(secrets.Items[1].Data) > 0
-			}, 10*time.Millisecond, testTimeout)
-			s.Require().True(ok, "expected exactly 2 secrets with non-empty data available in the k8s API")
-			for _, secret := range secrets.Items {
-				var expectedCert *mtls.IssuedCert
-				switch secretName := secret.GetName(); secretName {
-				case "scanner-tls":
-					expectedCert = scannerCert
-				case "scanner-db-tls":
-					expectedCert = scannerDBCert
-				default:
-					s.Require().Failf("expected secret name should be either %q or %q, found %q instead",
-						"scanner-tls", "scanner-db-tls", secretName)
-				}
-				s.Equal(ca.CertPEM(), secret.Data[mtls.CACertFileName])
-				s.Equal(expectedCert.CertPEM, secret.Data[mtls.ServiceCertFileName])
-				s.Equal(expectedCert.KeyPEM, secret.Data[mtls.ServiceKeyFileName])
-			}
+			verifySecrets(ctx, s.T(), k8sClient, sensorNamespace, ca,
+				map[string]*mtls.IssuedCert{"scanner-tls": scannerCert, "scanner-db-tls": scannerDBCert})
 		})
 	}
+}
+
+func (s *localScannerTLSIssuerIntegrationTests) TestSensorOnlineOfflineModes() {
+	testTimeout := 2 * time.Second
+	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
+	defer cancel()
+	ca, err := mtls.CAForSigning()
+	s.Require().NoError(err)
+
+	scannerCert := getCertificate(s.T(), storage.ServiceType_SCANNER_SERVICE)
+	scannerDBCert := getCertificate(s.T(), storage.ServiceType_SCANNER_DB_SERVICE)
+	secretsCerts := map[string]*mtls.IssuedCert{"scanner-tls": scannerCert, "scanner-db-tls": scannerDBCert}
+
+	k8sClient := getFakeK8sClient(fakeK8sClientConfig{})
+	tlsIssuer := newLocalScannerTLSIssuer(s.T(), k8sClient, sensorNamespace, sensorPodName)
+	tlsIssuer.certRefreshBackoff = wait.Backoff{
+		Duration: time.Millisecond,
+	}
+
+	s.Require().NoError(tlsIssuer.Start())
+	tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
+	defer tlsIssuer.Stop(nil)
+	s.Require().NotNil(tlsIssuer.certRefresher)
+	s.Require().False(tlsIssuer.certRefresher.Stopped())
+
+	request := s.waitForRequest(ctx, tlsIssuer)
+	response := getIssueCertsFailureResponse(request.GetRequestId())
+	err = tlsIssuer.ProcessMessage(response)
+	s.Require().NoError(err)
+
+	tlsIssuer.Notify(common.SensorComponentEventOfflineMode)
+	s.Require().Nil(tlsIssuer.certRefresher)
+
+	tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
+	s.Require().NotNil(tlsIssuer.certRefresher)
+
+	request = s.waitForRequest(ctx, tlsIssuer)
+	response = getIssueCertsSuccessResponse(request.GetRequestId(), ca.CertPEM(), scannerCert, scannerDBCert)
+	err = tlsIssuer.ProcessMessage(response)
+	s.Require().NoError(err)
+
+	verifySecrets(ctx, s.T(), k8sClient, sensorNamespace, ca, secretsCerts)
+
+	tlsIssuer.Notify(common.SensorComponentEventOfflineMode)
+	s.Require().Nil(tlsIssuer.certRefresher)
+
+	// Delete all secrets to force a refresh when Sensor goes back online
+	deleteAllSecrets(ctx, s.T(), k8sClient, sensorNamespace)
+
+	tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
+	s.Require().NotNil(tlsIssuer.certRefresher)
+
+	request = s.waitForRequest(ctx, tlsIssuer)
+	response = getIssueCertsSuccessResponse(request.GetRequestId(), ca.CertPEM(), scannerCert, scannerDBCert)
+	err = tlsIssuer.ProcessMessage(response)
+	s.Require().NoError(err)
+
+	verifySecrets(ctx, s.T(), k8sClient, sensorNamespace, ca, secretsCerts)
 }
 
 func (s *localScannerTLSIssuerIntegrationTests) TestUnexpectedOwnerStop() {
@@ -330,12 +367,6 @@ func (s *localScannerTLSIssuerIntegrationTests) TestUnexpectedOwnerStop() {
 			s.True(ok, "cert refresher should be stopped")
 		})
 	}
-}
-
-func (s *localScannerTLSIssuerIntegrationTests) getCertificate(serviceType storage.ServiceType) *mtls.IssuedCert {
-	cert, err := issueCertificate(serviceType, mtls.WithValidityExpiringInHours())
-	s.Require().NoError(err)
-	return cert
 }
 
 func (s *localScannerTLSIssuerIntegrationTests) waitForRequest(ctx context.Context, tlsIssuer common.SensorComponent) *central.IssueLocalScannerCertsRequest {
