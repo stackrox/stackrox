@@ -1,5 +1,6 @@
+/* eslint-disable no-nested-ternary */
 import React from 'react';
-import { Route, Switch, Redirect } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 
 import usePageAction from 'hooks/usePageAction';
 import usePermissions from 'hooks/usePermissions';
@@ -10,8 +11,6 @@ import CreateVulnReportPage from './ModifyVulnReport/CreateVulnReportPage';
 import EditVulnReportPage from './ModifyVulnReport/EditVulnReportPage';
 import CloneVulnReportPage from './ModifyVulnReport/CloneVulnReportPage';
 import ViewVulnReportPage from './ViewVulnReport/ViewVulnReportPage';
-
-import { vulnerabilityReportPath } from './pathsForVulnerabilityReporting';
 
 import './VulnReportingPage.css';
 
@@ -27,34 +26,32 @@ function VulnReportingPage() {
         hasReadAccess('Integration'); // for notifiers
 
     return (
-        <Switch>
+        <Routes>
             <Route
-                exact
-                path={vulnerabilityReportsPath}
-                render={() => {
-                    if (pageAction === 'create' && hasWriteAccessForReport) {
-                        return <CreateVulnReportPage />;
-                    }
-                    if (pageAction === undefined) {
-                        return <VulnReportsPage />;
-                    }
-                    return <Redirect to={vulnerabilityReportsPath} />;
-                }}
+                index
+                element={
+                    pageAction === 'create' && hasWriteAccessForReport ? (
+                        <CreateVulnReportPage />
+                    ) : !pageAction ? (
+                        <VulnReportsPage />
+                    ) : (
+                        <Navigate to={vulnerabilityReportsPath} replace />
+                    )
+                }
             />
             <Route
-                exact
-                path={vulnerabilityReportPath}
-                render={() => {
-                    if (pageAction === 'edit' && hasWriteAccessForReport) {
-                        return <EditVulnReportPage />;
-                    }
-                    if (pageAction === 'clone' && hasWriteAccessForReport) {
-                        return <CloneVulnReportPage />;
-                    }
-                    return <ViewVulnReportPage />;
-                }}
+                path=":reportId"
+                element={
+                    pageAction === 'create' && hasWriteAccessForReport ? (
+                        <EditVulnReportPage />
+                    ) : pageAction === 'clone' && hasWriteAccessForReport ? (
+                        <CloneVulnReportPage />
+                    ) : (
+                        <ViewVulnReportPage />
+                    )
+                }
             />
-        </Switch>
+        </Routes>
     );
 }
 

@@ -1,6 +1,5 @@
 import { combineReducers } from 'redux';
 import { reducer as formReducer } from 'redux-form';
-import { connectRouter } from 'connected-react-router';
 
 import bindSelectors from 'utils/bindSelectors';
 import apiTokens, { selectors as apiTokenSelectors } from './apitokens';
@@ -22,7 +21,6 @@ import serverResponseStatus, {
 } from './serverResponseStatus';
 import metadata, { selectors as metadataSelectors } from './metadata';
 import loading, { selectors as loadingSelectors } from './loading';
-import { selectors as routeSelectors } from './routes';
 import groups, { selectors as groupsSelectors } from './groups';
 import publicConfig, { selectors as publicConfigSelectors } from './publicConfig';
 import telemetryConfig, { selectors as telemetryConfigSelectors } from './telemetryConfig';
@@ -56,9 +54,9 @@ const appReducer = combineReducers({
     cloudSources,
 });
 
-const createRootReducer = (history) => {
+const createRootReducer = (routerReducer) => {
     return combineReducers({
-        router: connectRouter(history),
+        router: routerReducer,
         form: formReducer,
         app: appReducer,
     });
@@ -68,7 +66,6 @@ export default createRootReducer;
 
 // Selectors
 
-const getRoute = (state) => state.router;
 const getApp = (state) => state.app;
 const getAPITokens = (state) => getApp(state).apiTokens;
 const getAuth = (state) => getApp(state).auth;
@@ -103,7 +100,6 @@ const boundSelectors = {
     ...bindSelectors(getFeatureFlags, featureFlagSelectors),
     ...bindSelectors(getPolicies, policySelectors),
     ...bindSelectors(getRoles, roleSelectors),
-    ...bindSelectors(getRoute, routeSelectors),
     ...bindSelectors(getSearchAutocomplete, searchAutoCompleteSelectors),
     ...bindSelectors(getServerResponseStatus, serverResponseStatusSelectors),
     ...bindSelectors(getLoadingStatus, loadingSelectors),

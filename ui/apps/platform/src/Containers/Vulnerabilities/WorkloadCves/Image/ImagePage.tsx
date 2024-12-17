@@ -73,7 +73,7 @@ function ScannerV4RequiredTooltip({ children }: { children: ReactElement }) {
 }
 
 function ImagePage() {
-    const { imageId } = useParams();
+    const { imageId } = useParams() as { imageId: string };
     const { pageTitle } = useWorkloadCveViewContext();
     const { data, error } = useQuery<
         {

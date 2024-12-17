@@ -8,7 +8,7 @@ import {
     Tabs,
     Title,
 } from '@patternfly/react-core';
-import { Route, Switch, Redirect, useLocation, useHistory } from 'react-router-dom';
+import { Route, Routes, Navigate, useLocation, useNavigate } from 'react-router-dom';
 
 import { exceptionManagementPath } from 'routePaths';
 
@@ -38,7 +38,7 @@ const tabKeyURLMap: Record<TabKey, string> = {
 
 function ExceptionRequestsPage() {
     const location = useLocation();
-    const history = useHistory();
+    const navigate = useNavigate();
 
     let activeTabKey: TabKey = 'PENDING_REQUESTS';
 
@@ -57,7 +57,7 @@ function ExceptionRequestsPage() {
         const queryParams = location.search;
         // If you're manipulating the query parameters before navigating, consider improving this URL construction
         const url = `${path}${queryParams}`;
-        history.push(url);
+        navigate(url);
     };
 
     /* eslint-disable accessibility/Tab-empty-contentId */
@@ -101,21 +101,13 @@ function ExceptionRequestsPage() {
                         title={<TabTitleText>Denied requests</TabTitleText>}
                     />
                 </Tabs>
-                <Switch>
-                    <Route exact path={pendingRequestsURL}>
-                        <PendingRequests />
-                    </Route>
-                    <Route exact path={approvedDeferralsURL}>
-                        <ApprovedDeferrals />
-                    </Route>
-                    <Route exact path={approvedFalsePositivesURL}>
-                        <ApprovedFalsePositives />
-                    </Route>
-                    <Route exact path={deniedRequestsURL}>
-                        <DeniedRequests />
-                    </Route>
-                    <Route render={() => <Redirect to={pendingRequestsURL} />} />
-                </Switch>
+                <Routes>
+                    <Route index element={<Navigate to={pendingRequestsURL} replace />} />
+                    <Route path="pending-requests" element={<PendingRequests />} />
+                    <Route path="approved-deferrals" element={<ApprovedDeferrals />} />
+                    <Route path="approved-false-positives" element={<ApprovedFalsePositives />} />
+                    <Route path="denied-requests" element={<DeniedRequests />} />
+                </Routes>
             </PageSection>
         </>
     );

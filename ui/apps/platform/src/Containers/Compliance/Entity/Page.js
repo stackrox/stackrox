@@ -1,8 +1,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { useLocation, useRouteMatch } from 'react-router-dom';
+import { useLocation, useMatch } from 'react-router-dom';
 import URLService from 'utils/URLService';
 import entityTypes from 'constants/entityTypes';
+import { workflowPaths } from 'routePaths';
 
 import NodePage from './Node';
 import NamespacePage from './Namespace';
@@ -13,7 +14,7 @@ import StandardPage from './Standard';
 
 const ComplianceEntityPage = () => {
     const location = useLocation();
-    const match = useRouteMatch();
+    const match = useMatch(workflowPaths.ENTITY);
 
     const params = URLService.getParams(match, location);
 

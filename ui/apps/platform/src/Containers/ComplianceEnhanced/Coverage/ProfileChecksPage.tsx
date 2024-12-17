@@ -16,7 +16,7 @@ import ProfileChecksTable from './ProfileChecksTable';
 import { ScanConfigurationsContext } from './ScanConfigurationsProvider';
 
 function ProfileChecksPage() {
-    const { profileName } = useParams();
+    const { profileName } = useParams() as { profileName: string };
 
     const { selectedScanConfigName } = useContext(ScanConfigurationsContext);
     const pagination = useURLPagination(DEFAULT_COMPLIANCE_PAGE_SIZE);
