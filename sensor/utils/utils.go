@@ -19,6 +19,9 @@ func GetSensorKubernetesLabels() map[string]string {
 		KubernetesLabelName:      "stackrox",
 	}
 }
+func TLSSecretLabels() map[string]string {
+	return map[string]string{"rhacs.central.com/tls": "true"}
+}
 
 // GetSensorKubernetesAnnotations returns the default annotations for resources created by the sensor.
 func GetSensorKubernetesAnnotations() map[string]string {
