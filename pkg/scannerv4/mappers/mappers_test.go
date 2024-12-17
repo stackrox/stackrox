@@ -2,6 +2,7 @@ package mappers
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -416,6 +417,211 @@ func Test_ToProtoV4VulnerabilityReport_FilterNodeJS(t *testing.T) {
 							Environments: []*v4.Environment{
 								{
 									PackageDb: "nodejs:/app/nodejs1",
+								},
+							},
+						},
+					},
+				},
+			},
+			wantErr: "",
+		},
+	}
+	ctx := context.Background()
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			got, err := ToProtoV4VulnerabilityReport(ctx, tt.arg)
+			if tt.wantErr == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.ErrorContains(t, err, tt.wantErr)
+			}
+			protoassert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
+	t.Setenv(features.ScannerV4RedHatLayers.EnvVar(), "true")
+
+	layerA := claircore.MustParseDigest("sha256:" + strings.Repeat("a", 64))
+	layerB := claircore.MustParseDigest("sha256:" + strings.Repeat("b", 64))
+
+	tests := map[string]struct {
+		arg     *claircore.VulnerabilityReport
+		want    *v4.VulnerabilityReport
+		wantErr string
+	}{
+		"filter non-RPM packages in Red Hat layers": {
+			arg: &claircore.VulnerabilityReport{
+				Hash: claircore.MustParseDigest("sha256:9124cd5256c6d674f6b11a4d01fea8148259be1f66ca2cf9dfbaafc83c31874e"),
+				Vulnerabilities: map[string]*claircore.Vulnerability{
+					"0": {
+						ID:      "0",
+						Name:    "0",
+						Updater: "rhel-vex",
+					},
+					"1": {
+						ID:      "1",
+						Name:    "1",
+						Updater: "rhel-vex",
+					},
+					"2": {
+						ID:      "2",
+						Name:    "2",
+						Updater: "something else",
+					},
+					"3": {
+						ID:      "3",
+						Name:    "3",
+						Updater: "something different",
+					},
+				},
+				Packages: map[string]*claircore.Package{
+					"0": {
+						ID:      "0",
+						Name:    "my go binary",
+						Version: "0",
+					},
+					"1": {
+						ID:      "1",
+						Name:    "my java jar",
+						Version: "1",
+					},
+					"2": {
+						ID:      "2",
+						Name:    "my python egg",
+						Version: "2",
+					},
+				},
+				Repositories: map[string]*claircore.Repository{
+					"0": {
+						Name: "Red Hat Container Catalog",
+						URI:  `https://catalog.redhat.com/software/containers/explore`,
+					},
+					"1": {
+						Name: "something else",
+						URI:  "somethingelse.com",
+					},
+				},
+				Environments: map[string][]*claircore.Environment{
+					"0": {
+						{
+							RepositoryIDs: []string{"0", "1"},
+							IntroducedIn:  layerA,
+						},
+					},
+					"1": {
+						{
+							RepositoryIDs: []string{"1"},
+							IntroducedIn:  layerB,
+						},
+					},
+					"2": {
+						{
+							RepositoryIDs: []string{"0"},
+							IntroducedIn:  layerA,
+						},
+					},
+				},
+				PackageVulnerabilities: map[string][]string{
+					"0": {"2", "0", "3", "1"},
+					"1": {"1", "2"},
+					"2": {"2", "3"},
+				},
+			},
+			want: &v4.VulnerabilityReport{
+				// Converter doesn't set HashId to empty.
+				HashId: "",
+				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"0": {
+						Id:   "0",
+						Name: "0",
+					},
+					"1": {
+						Id:   "1",
+						Name: "1",
+					},
+					"2": {
+						Id:   "2",
+						Name: "2",
+					},
+					"3": {
+						Id:   "3",
+						Name: "3",
+					},
+				},
+				PackageVulnerabilities: map[string]*v4.StringList{
+					"0": {
+						Values: []string{"0", "1"},
+					},
+					"1": {
+						Values: []string{"1", "2"},
+					},
+				},
+				Contents: &v4.Contents{
+					Packages: []*v4.Package{
+						{
+							Id:      "0",
+							Name:    "my go binary",
+							Version: "0",
+							NormalizedVersion: &v4.NormalizedVersion{
+								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+							},
+							Cpe: emptyCPE,
+						},
+						{
+							Id:      "1",
+							Name:    "my java jar",
+							Version: "1",
+							NormalizedVersion: &v4.NormalizedVersion{
+								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+							},
+							Cpe: emptyCPE,
+						},
+						{
+							Id:      "2",
+							Name:    "my python egg",
+							Version: "2",
+							NormalizedVersion: &v4.NormalizedVersion{
+								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+							},
+							Cpe: emptyCPE,
+						},
+					},
+					Repositories: []*v4.Repository{
+						{
+							Name: "Red Hat Container Catalog",
+							Uri:  `https://catalog.redhat.com/software/containers/explore`,
+							Cpe:  emptyCPE,
+						},
+						{
+							Name: "something else",
+							Uri:  "somethingelse.com",
+							Cpe:  emptyCPE,
+						},
+					},
+					Environments: map[string]*v4.Environment_List{
+						"0": {
+							Environments: []*v4.Environment{
+								{
+									RepositoryIds: []string{"0", "1"},
+									IntroducedIn:  layerA.String(),
+								},
+							},
+						},
+						"1": {
+							Environments: []*v4.Environment{
+								{
+									RepositoryIds: []string{"1"},
+									IntroducedIn:  layerB.String(),
+								},
+							},
+						},
+						"2": {
+							Environments: []*v4.Environment{
+								{
+									RepositoryIds: []string{"0"},
+									IntroducedIn:  layerA.String(),
 								},
 							},
 						},
