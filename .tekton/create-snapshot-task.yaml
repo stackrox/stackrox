@@ -46,4 +46,7 @@ spec:
       #!/usr/bin/env bash
 
       .konflux/scripts/render_snapshot.py | tee "$(results.SNAPSHOT_NAME.path)"
+
+      # Printing an empty line for separation in the log.
+      echo
       oc create -f snapshot.json
