@@ -8,8 +8,10 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certificates"
+	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certrepo"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/securedcluster"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
@@ -46,6 +48,7 @@ type securedClusterTLSIssuerImpl struct {
 	certRefreshBackoff           wait.Backoff
 	getCertificateRefresherFn    certificateRefresherGetter
 	getServiceCertificatesRepoFn serviceCertificatesRepoGetter
+	certRepository               certrepo.ServiceCertificatesRepo
 	certRequester                certificates.Requester
 	certRefresher                concurrency.RetryTicker
 	msgToCentralC                chan *message.ExpiringMessage
@@ -62,7 +65,7 @@ func (i *securedClusterTLSIssuerImpl) Start() error {
 	ctx, cancel := context.WithTimeout(context.Background(), startTimeout)
 	defer cancel()
 
-	if i.certRefresher != nil {
+	if i.certRepository != nil {
 		return i.abortStart(errors.New("already started"))
 	}
 
@@ -72,14 +75,8 @@ func (i *securedClusterTLSIssuerImpl) Start() error {
 		return i.abortStart(errors.Wrap(fetchSensorDeploymentErr, "fetching sensor deployment"))
 	}
 
-	certsRepo := i.getServiceCertificatesRepoFn(*sensorOwnerReference, i.sensorNamespace,
+	i.certRepository = i.getServiceCertificatesRepoFn(*sensorOwnerReference, i.sensorNamespace,
 		i.k8sClient.CoreV1().Secrets(i.sensorNamespace))
-	i.certRefresher = i.getCertificateRefresherFn("secured cluster certificates", i.certRequester.RequestCertificates, certsRepo,
-		certRefreshTimeout, i.certRefreshBackoff)
-
-	if refreshStartErr := i.certRefresher.Start(); refreshStartErr != nil {
-		return i.abortStart(errors.Wrap(refreshStartErr, "starting certificate certRefresher"))
-	}
 
 	log.Debug("Secured Cluster TLS issuer started.")
 	return nil
@@ -97,11 +94,27 @@ func (i *securedClusterTLSIssuerImpl) Stop(_ error) {
 		i.certRefresher.Stop()
 		i.certRefresher = nil
 	}
+	i.certRepository = nil
 
 	log.Debug("Secured Cluster TLS issuer stopped.")
 }
 
-func (i *securedClusterTLSIssuerImpl) Notify(common.SensorComponentEvent) {}
+func (i *securedClusterTLSIssuerImpl) Notify(e common.SensorComponentEvent) {
+	log.Info(common.LogSensorComponentEvent(e))
+	if i.certRequester == nil {
+		return
+	}
+
+	switch e {
+	case common.SensorComponentEventCentralReachable:
+		if centralcaps.Has(centralsensor.SecuredClusterCertificatesReissue) {
+			log.Info("Central has the SecuredClusterCertificatesReissue capability")
+			i.goOnline()
+		}
+	case common.SensorComponentEventOfflineMode:
+		i.goOffline()
+	}
+}
 
 func (i *securedClusterTLSIssuerImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{centralsensor.SecuredClusterCertificatesRefresh}
@@ -136,4 +149,24 @@ func (i *securedClusterTLSIssuerImpl) msgToCentralHandler(ctx context.Context, m
 	case i.msgToCentralC <- msg:
 		return nil
 	}
+}
+
+func (i *securedClusterTLSIssuerImpl) goOnline() {
+	i.certRequester.NotifySensorOnline()
+
+	i.certRefresher = i.getCertificateRefresherFn("secured cluster certificates", i.certRequester.RequestCertificates, i.certRepository,
+		certRefreshTimeout, i.certRefreshBackoff)
+
+	if refreshStartErr := i.certRefresher.Start(); refreshStartErr != nil {
+		log.Warnf("Could not start Secured Cluster certificate refresher: %v", refreshStartErr)
+		i.Stop(refreshStartErr)
+	}
+}
+
+func (i *securedClusterTLSIssuerImpl) goOffline() {
+	i.certRequester.NotifySensorOffline()
+	if i.certRefresher != nil && !i.certRefresher.Stopped() {
+		i.certRefresher.Stop()
+	}
+	i.certRefresher = nil
 }
