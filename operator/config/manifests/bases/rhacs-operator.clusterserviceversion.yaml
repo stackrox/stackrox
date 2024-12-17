@@ -843,7 +843,6 @@ spec:
         displayName: Collection
         path: perNode.collector.collection
         x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:select:EBPF
         - urn:alm:descriptor:com.tectonic.ui:select:CORE_BPF
         - urn:alm:descriptor:com.tectonic.ui:select:NoCollection
       - description: Controls the number of analyzer replicas and autoscaling.
@@ -927,6 +926,8 @@ spec:
       - description: Deprecated field. This field will be removed in a future release.
         displayName: Image Flavor
         path: perNode.collector.imageFlavor
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Settings for the Compliance container, which is responsible for
           checking host-level configurations.
         displayName: Compliance Settings
