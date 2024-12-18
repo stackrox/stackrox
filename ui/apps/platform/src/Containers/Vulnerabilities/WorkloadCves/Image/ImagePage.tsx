@@ -45,6 +45,7 @@ import ImageDetailBadges, {
 import getImageScanMessage from '../utils/getImageScanMessage';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import { getImageBaseNameDisplay } from '../utils/images';
+import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 
 const workloadCveOverviewImagePath = getOverviewPagePath('Workload', {
     vulnerabilityState: 'OBSERVED',
@@ -73,6 +74,7 @@ function ScannerV4RequiredTooltip({ children }: { children: ReactElement }) {
 
 function ImagePage() {
     const { imageId } = useParams();
+    const { pageTitle } = useWorkloadCveViewContext();
     const { data, error } = useQuery<
         {
             image: {
@@ -246,7 +248,7 @@ function ImagePage() {
 
     return (
         <>
-            <PageTitle title={`Workload CVEs - Image ${imageData ? imageDisplayName : ''}`} />
+            <PageTitle title={`${pageTitle} - Image ${imageData ? imageDisplayName : ''}`} />
             <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={workloadCveOverviewImagePath}>
