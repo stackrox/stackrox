@@ -24,7 +24,6 @@ describe('ReportJobStatus', () => {
                     reportNotificationMethod: 'DOWNLOAD',
                     completedAt: '',
                     errorMsg: '',
-                    failedClusters: [],
                 }}
                 isDownloadAvailable={false}
                 areDownloadActionsDisabled={false}
@@ -48,7 +47,6 @@ describe('ReportJobStatus', () => {
                     reportNotificationMethod: 'DOWNLOAD',
                     completedAt: '',
                     errorMsg: '',
-                    failedClusters: [],
                 }}
                 isDownloadAvailable={false}
                 areDownloadActionsDisabled={false}
@@ -72,7 +70,6 @@ describe('ReportJobStatus', () => {
                     reportNotificationMethod: 'DOWNLOAD',
                     completedAt: '',
                     errorMsg: 'This is an error message',
-                    failedClusters: [],
                 }}
                 isDownloadAvailable={false}
                 areDownloadActionsDisabled={false}
@@ -106,7 +103,6 @@ describe('ReportJobStatus', () => {
                     reportNotificationMethod: 'DOWNLOAD',
                     completedAt: '',
                     errorMsg: '',
-                    failedClusters: [],
                 }}
                 isDownloadAvailable
                 areDownloadActionsDisabled
@@ -148,7 +144,6 @@ describe('ReportJobStatus', () => {
                     reportNotificationMethod: 'DOWNLOAD',
                     completedAt: '',
                     errorMsg: '',
-                    failedClusters: [],
                 }}
                 isDownloadAvailable
                 areDownloadActionsDisabled={false}
@@ -172,7 +167,6 @@ describe('ReportJobStatus', () => {
                     reportNotificationMethod: 'DOWNLOAD',
                     completedAt: '',
                     errorMsg: '',
-                    failedClusters: [],
                 }}
                 isDownloadAvailable={false}
                 areDownloadActionsDisabled={false}
@@ -214,7 +208,6 @@ describe('ReportJobStatus', () => {
                     reportNotificationMethod: 'EMAIL',
                     completedAt: '',
                     errorMsg: '',
-                    failedClusters: [],
                 }}
                 isDownloadAvailable
                 areDownloadActionsDisabled={false}
