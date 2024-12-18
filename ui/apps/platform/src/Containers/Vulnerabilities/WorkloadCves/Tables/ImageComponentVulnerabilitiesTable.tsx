@@ -53,7 +53,6 @@ function ImageComponentVulnerabilitiesTable({
     const sortedComponentVulns = sortTableData(componentVulns, sortOption);
     return (
         <Table
-            className="pf-v5-u-p-md"
             style={{
                 border: '1px solid var(--pf-v5-c-table--BorderColor)',
             }}
