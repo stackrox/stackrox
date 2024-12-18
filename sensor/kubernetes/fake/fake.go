@@ -3,6 +3,7 @@ package fake
 import (
 	"context"
 	"os"
+	"runtime/pprof"
 	"time"
 
 	"github.com/cockroachdb/pebble"
@@ -217,6 +218,7 @@ func (w *WorkloadManager) clearActions() {
 				setValue("objects", nil)
 				setValue("watchers", nil)
 		*/
+		pprof.Lookup("goroutine").WriteTo(os.Stdout, 1)
 	}
 }
 
