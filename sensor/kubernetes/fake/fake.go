@@ -218,7 +218,7 @@ func (w *WorkloadManager) clearActions() {
 				setValue("objects", nil)
 				setValue("watchers", nil)
 		*/
-		pprof.Lookup("goroutine").WriteTo(os.Stdout, 1)
+		log.Infof("Currently running %d go routines", pprof.Lookup("goroutine").Count())
 	}
 }
 
