@@ -138,7 +138,7 @@ func (c *nodeInventoryHandlerImpl) run() (toCentral <-chan *message.ExpiringMess
 			c.stopper.Flow().ReportStopped()
 			close(ch2Central)
 		}()
-		log.Debugf("Node inventory handler is running")
+		log.Debugf("NodeInventory/NodeIndex handler is running")
 		for {
 			select {
 			case <-c.stopper.Flow().StopRequested():

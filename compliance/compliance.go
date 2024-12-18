@@ -113,9 +113,9 @@ func (c *Compliance) Start() {
 		defer wg.Done()
 		if env.NodeIndexEnabled.BooleanSetting() {
 			log.Infof("Node Index v4 enabled")
-			nodeInventoriesC := c.manageNodeIndexScanLoop(ctx)
-			// sending nodeInventories into output toSensorC
-			for n := range nodeInventoriesC {
+			nodeIndexesC := c.manageNodeIndexScanLoop(ctx)
+			// sending node indexes into output toSensorC
+			for n := range nodeIndexesC {
 				toSensorC <- n
 			}
 		}

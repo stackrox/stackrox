@@ -307,14 +307,6 @@ func (c *sensorConnection) handleMessage(ctx context.Context, msg *central.MsgFr
 		// Set the hash key for all values
 		msg.HashKey = msg.GetEvent().GetId()
 
-		// TODO: Remove debug logging
-		if msg.GetEvent().GetAction() == central.ResourceAction_UNSET_ACTION_RESOURCE {
-			if msg.GetEvent().GetIndexReport() != nil {
-				log.Debugf("Got index-report message with UNSET action, msg.DedupeKey=%s, msg.HashKey=%s", msg.DedupeKey, msg.HashKey)
-			} else {
-				log.Debugf("Got node-inventory message with UNSET action, msg.DedupeKey=%s, msg.HashKey=%s", msg.DedupeKey, msg.HashKey)
-			}
-		}
 		c.sensorEventHandler.addMultiplexed(ctx, msg)
 		return nil
 	}
