@@ -25,12 +25,7 @@ import { clustersBasePath } from 'routePaths';
 import ClusterEditForm from './ClusterEditForm';
 import ClusterDeployment from './ClusterDeployment';
 import DownloadHelmValues from './DownloadHelmValues';
-import {
-    clusterDetailPollingInterval,
-    newClusterDefault,
-    centralEnvDefault,
-} from './cluster.helpers';
-import { CentralEnv } from './clusterTypes'; // augmented with successfullyFetched
+import { clusterDetailPollingInterval, newClusterDefault } from './cluster.helpers';
 
 const requiredKeys = ['name', 'type', 'mainImage', 'centralApiEndpoint'];
 
@@ -76,7 +71,6 @@ function ClusterPage({ clusterId }: ClusterPageProps): ReactElement {
     const [selectedCluster, setSelectedCluster] = useState<Cluster>(defaultCluster);
     const [clusterRetentionInfo, setClusterRetentionInfo] =
         useState<DecommissionedClusterRetentionInfo>(null);
-    const [centralEnv, setCentralEnv] = useState<CentralEnv>(centralEnvDefault);
     const [wizardStep, setWizardStep] = useState<WizardStep>('FORM');
     const [loadingCounter, setLoadingCounter] = useState(0);
     const [messageState, setMessageState] = useState<MessageState | null>(null);
@@ -104,10 +98,6 @@ function ClusterPage({ clusterId }: ClusterPageProps): ReactElement {
                         mainImageRepository: mainImage,
                         collectorImageRepository: collectorImage,
                     } = clusterDefaults;
-
-                    setCentralEnv({
-                        successfullyFetched: true,
-                    });
 
                     if (clusterIdToRetrieve === 'new') {
                         const updatedCluster = {
@@ -330,7 +320,6 @@ function ClusterPage({ clusterId }: ClusterPageProps): ReactElement {
                     )}
                     {!isBlocked && wizardStep === 'FORM' && (
                         <ClusterEditForm
-                            centralEnv={centralEnv}
                             centralVersion={metadata.version}
                             clusterRetentionInfo={clusterRetentionInfo}
                             selectedCluster={selectedCluster}
