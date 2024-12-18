@@ -816,7 +816,7 @@ EOM
 }
 
 service_get_endpoint() {
-    jq -r '.status.loadBalancer.ingress // error("List of ingress points of LB " + .metadata.name + " is empty.") | .[] | .hostname // .ip'
+    jq -r '.status.loadBalancer.ingress // error("List of ingress points of LB " + .metadata.name + " is empty.") | .[0] | .hostname // .ip'
 }
 
 populate_prefetcher_image_list() {

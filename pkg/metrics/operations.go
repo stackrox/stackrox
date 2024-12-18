@@ -49,4 +49,6 @@ const (
 
 	Walk
 	WalkByQuery
+
+	Unset
 )

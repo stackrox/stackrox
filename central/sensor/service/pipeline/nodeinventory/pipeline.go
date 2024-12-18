@@ -76,8 +76,8 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	nodeStr := fmt.Sprintf("(node name: %q, node id: %q)", ninv.GetNodeName(), ninv.GetNodeId())
 	log.Debugf("received inventory %s contains %d packages to scan from %d content sets", nodeStr,
 		len(ninv.GetComponents().GetRhelComponents()), len(ninv.GetComponents().GetRhelContentSets()))
-	if event.GetAction() != central.ResourceAction_UNSET_ACTION_RESOURCE {
-		log.Errorf("inventory %s has unsupported action: %q", nodeStr, event.GetAction())
+	if event.GetAction() == central.ResourceAction_REMOVE_RESOURCE {
+		log.Warn("Removal of node inventory is unsupported action")
 		return nil
 	}
 	ninv = ninv.CloneVT()
