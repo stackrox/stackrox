@@ -1193,6 +1193,18 @@ spec:
         path: perNode.collector.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      - displayName: Runtime Config
+        path: perNode.collector.runtimeConfig
+      - displayName: Enabled
+        path: perNode.collector.runtimeConfig.enabled
+      - displayName: Networking
+        path: perNode.collector.runtimeConfig.networking
+      - displayName: External IPs
+        path: perNode.collector.runtimeConfig.networking.externalIps
+      - displayName: Per Container Rate Limit
+        path: perNode.collector.runtimeConfig.networking.perContainerRateLimit
+      - displayName: Enabled
+        path: perNode.collector.runtimeConfig.networking.externalIps.enabled
       - description: 'Allows overriding the default resource settings for this component.
           Please consult the documentation
 
