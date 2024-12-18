@@ -166,14 +166,6 @@ type testState struct {
 }
 
 func (s *NodeInventoryHandlerTestSuite) TestHandlerCentralACKsToCompliance() {
-	ch := make(chan *storage.NodeInventory)
-	defer close(ch)
-	reports := make(chan *index.IndexReportWrap)
-	defer close(reports)
-	h := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{})
-	s.NoError(h.Start())
-	h.Notify(common.SensorComponentEventCentralReachable)
-
 	cases := map[string]struct {
 		centralReply      central.NodeInventoryACK_Action
 		expectedACKCount  int
@@ -192,17 +184,29 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerCentralACKsToCompliance() {
 	}
 
 	for name, tc := range cases {
-		ch <- fakeNodeInventory("node-" + name)
-		s.NoError(mockCentralReply(h, tc.centralReply))
-		result := consumeAndCountCompliance(h.ComplianceC(), 1)
-		s.NoError(result.sc.Stopped().Wait())
-		s.Equal(tc.expectedACKCount, result.ACKCount)
-		s.Equal(tc.expectedNACKCount, result.NACKCount)
+		s.Run(name, func() {
+			ch := make(chan *storage.NodeInventory)
+			defer close(ch)
+			reports := make(chan *index.IndexReportWrap)
+			defer close(reports)
+			h := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{})
+			s.NoError(h.Start())
+			h.Notify(common.SensorComponentEventCentralReachable)
+
+			ch <- fakeNodeInventory("node-" + name)
+			s.NoError(mockCentralReply(h, tc.centralReply))
+			result := consumeAndCountCompliance(s.T(), h.ComplianceC(), 1)
+			s.NoError(result.sc.Stopped().Wait())
+			s.Equal(tc.expectedACKCount, result.ACKCount)
+			s.Equal(tc.expectedNACKCount, result.NACKCount)
+
+			h.Stop(nil)
+			s.T().Logf("waiting for handler to stop")
+			s.NoError(h.Stopped().Wait())
+		})
+
 	}
 
-	h.Stop(nil)
-	s.T().Logf("waiting for handler to stop")
-	s.NoError(h.Stopped().Wait())
 }
 
 // This test simulates a running Sensor loosing connection to Central, followed by a reconnect.
@@ -240,7 +244,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerOfflineACKNACK() {
 		if state.event == common.SensorComponentEventCentralReachable {
 			s.NoError(mockCentralReply(h, central.NodeInventoryACK_ACK))
 		}
-		result := consumeAndCountCompliance(h.ComplianceC(), 1)
+		result := consumeAndCountCompliance(s.T(), h.ComplianceC(), 1)
 		s.NoError(result.sc.Stopped().Wait())
 		s.Equal(state.expectedACKCount, result.ACKCount)
 		s.Equal(state.expectedNACKCount, result.NACKCount)
@@ -314,7 +318,7 @@ type messageStats struct {
 	sc        concurrency.StopperClient
 }
 
-func consumeAndCountCompliance(ch <-chan common.MessageToComplianceWithAddress, numToConsume int) *messageStats {
+func consumeAndCountCompliance(t *testing.T, ch <-chan common.MessageToComplianceWithAddress, numToConsume int) *messageStats {
 	ms := &messageStats{0, 0, nil}
 	st := concurrency.NewStopper()
 	go func() {
@@ -403,7 +407,7 @@ func (s *NodeInventoryHandlerTestSuite) TestInputChannelClosed() {
 	// By closing the channel ch, we mark that the producer finished writing all messages to ch
 	close(ch)
 	// The handler will stop as there are no more messages to handle
-	s.ErrorIs(h.Stopped().Wait(), errInputChanClosed)
+	s.ErrorIs(h.Stopped().Wait(), errInventoryInputChanClosed)
 }
 
 func (s *NodeInventoryHandlerTestSuite) generateNilTestInputNoClose(numToProduce int) (chan *storage.NodeInventory, concurrency.StopperClient) {

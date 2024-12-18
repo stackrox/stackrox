@@ -145,9 +145,9 @@ func sendComplianceAck(ctx context.Context, node *storage.Node, ninv *storage.No
 	}
 	reply := replyCompliance(node.GetClusterId(), ninv.GetNodeName(), central.NodeInventoryACK_ACK)
 	if err := injector.InjectMessage(ctx, reply); err != nil {
-		log.Warnf("Failed sending node-scanning-ACK to Sensor for %s: %v", nodeDatastore.NodeString(node), err)
+		log.Warnf("Failed sending node-inventory-ACK to Sensor for %s: %v", nodeDatastore.NodeString(node), err)
 	} else {
-		log.Debugf("Sent node-scanning-ACK for %s", nodeDatastore.NodeString(node))
+		log.Debugf("Sent node-inventory-ACK for %s", nodeDatastore.NodeString(node))
 	}
 }
 
@@ -155,9 +155,10 @@ func replyCompliance(clusterID, nodeName string, t central.NodeInventoryACK_Acti
 	return &central.MsgToSensor{
 		Msg: &central.MsgToSensor_NodeInventoryAck{
 			NodeInventoryAck: &central.NodeInventoryACK{
-				ClusterId: clusterID,
-				NodeName:  nodeName,
-				Action:    t,
+				ClusterId:   clusterID,
+				NodeName:    nodeName,
+				Action:      t,
+				MessageType: central.NodeInventoryACK_NodeInventory,
 			},
 		},
 	}
