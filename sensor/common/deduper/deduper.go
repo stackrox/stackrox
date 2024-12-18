@@ -53,8 +53,7 @@ func NewDedupingMessageStream(stream messagestream.SensorMessageStream, deduperS
 
 func (d *deduper) Send(msg *central.MsgFromSensor) error {
 	eventMsg, ok := msg.Msg.(*central.MsgFromSensor_Event)
-	if !ok || eventMsg.Event.GetProcessIndicator() != nil || alert.IsRuntimeAlertResult(msg.GetEvent().GetAlertResults()) {
-		// We only dedupe event messages (excluding process indicators and runtime alerts which are always unique), other messages get forwarded directly.
+	if !ok || skipDeduping(eventMsg.Event) {
 		return d.stream.Send(msg)
 	}
 	event := eventMsg.Event
@@ -109,4 +108,15 @@ func (d *deduper) Send(msg *central.MsgFromSensor) error {
 	}
 
 	return nil
+}
+
+func skipDeduping(event *central.SensorEvent) bool {
+	// We only dedupe event messages (excluding process indicators and runtime alerts which are always unique),
+	// other messages get forwarded directly.
+	// NodeInventory and node IndexReport shall never be deduped, as the vulnerability data in scanner might have been
+	// updated and the resulting vulnerabilities may be different for the same message scanned at different time.
+	return event.GetProcessIndicator() != nil ||
+		alert.IsRuntimeAlertResult(event.GetAlertResults()) ||
+		event.GetNodeInventory() != nil ||
+		event.GetIndexReport() != nil
 }
