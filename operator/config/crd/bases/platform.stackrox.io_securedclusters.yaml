@@ -609,6 +609,35 @@ spec:
                               More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
                             type: object
                         type: object
+                      runtimeConfig:
+                        properties:
+                          enabled:
+                            default: Enabled
+                            enum:
+                            - Enabled
+                            - Disabled
+                            - Auto
+                            type: string
+                          networking:
+                            properties:
+                              externalIps:
+                                properties:
+                                  enabled:
+                                    default: Disabled
+                                    enum:
+                                    - Enabled
+                                    - Disabled
+                                    - Auto
+                                    type: string
+                                type: object
+                              perContainerRateLimit:
+                                default: 1024
+                                format: int32
+                                type: integer
+                            type: object
+                        required:
+                        - networking
+                        type: object
                     type: object
                   compliance:
                     description: Settings for the Compliance container, which is responsible
