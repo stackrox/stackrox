@@ -1,11 +1,11 @@
 import React from 'react';
-import { Route, Switch } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 import { PageSection } from '@patternfly/react-core';
 
 import PageNotFound from 'Components/PageNotFound';
 import PageTitle from 'Components/PageTitle';
+import { vulnerabilitiesWorkloadCvesPath } from 'routePaths';
 
-import { vulnerabilitiesWorkloadCvesPath, vulnerabilityNamespaceViewPath } from 'routePaths';
 import ScannerV4IntegrationBanner from 'Components/ScannerV4IntegrationBanner';
 import usePermissions from 'hooks/usePermissions';
 import DeploymentPage from './Deployment/DeploymentPage';
@@ -17,9 +17,9 @@ import { WorkloadCveViewContext } from './WorkloadCveViewContext';
 
 import './WorkloadCvesPage.css';
 
-const vulnerabilitiesWorkloadCveSinglePath = `${vulnerabilitiesWorkloadCvesPath}/cves/:cveId`;
-const vulnerabilitiesWorkloadCveImageSinglePath = `${vulnerabilitiesWorkloadCvesPath}/images/:imageId`;
-const vulnerabilitiesWorkloadCveDeploymentSinglePath = `${vulnerabilitiesWorkloadCvesPath}/deployments/:deploymentId`;
+const vulnerabilitiesWorkloadCveSinglePath = `cves/:cveId`;
+const vulnerabilitiesWorkloadCveImageSinglePath = `images/:imageId`;
+const vulnerabilitiesWorkloadCveDeploymentSinglePath = `deployments/:deploymentId`;
 
 const userWorkloadContext = {
     pageTitle: 'Workload CVEs', // TODO Implement throughout in follow up
@@ -48,31 +48,26 @@ function WorkloadCvesPage({ view }: WorkloadCvePageProps) {
     return (
         <WorkloadCveViewContext.Provider value={context}>
             {hasReadAccessForIntegration && <ScannerV4IntegrationBanner />}
-            <Switch>
+            <Routes>
+                <Route index element={<WorkloadCvesOverviewPage />} />
                 {hasReadAccessForNamespaces && (
-                    <Route path={vulnerabilityNamespaceViewPath}>
-                        <NamespaceViewPage />
-                    </Route>
+                    <Route path={'namespace-view'} element={<NamespaceViewPage />} />
                 )}
-                <Route path={vulnerabilitiesWorkloadCveSinglePath}>
-                    <ImageCvePage />
-                </Route>
-                <Route path={vulnerabilitiesWorkloadCveImageSinglePath}>
-                    <ImagePage />
-                </Route>
-                <Route path={vulnerabilitiesWorkloadCveDeploymentSinglePath}>
-                    <DeploymentPage />
-                </Route>
-                <Route exact path={vulnerabilitiesWorkloadCvesPath}>
-                    <WorkloadCvesOverviewPage />
-                </Route>
-                <Route>
-                    <PageSection variant="light">
-                        <PageTitle title={`${context.pageTitle} - Not Found`} />
-                        <PageNotFound />
-                    </PageSection>
-                </Route>
-            </Switch>
+                <Route path={vulnerabilitiesWorkloadCveSinglePath} element={<ImageCvePage />} />
+                <Route path={vulnerabilitiesWorkloadCveImageSinglePath} element={<ImagePage />} />
+                <Route
+                    path={vulnerabilitiesWorkloadCveDeploymentSinglePath}
+                    element={<DeploymentPage />}
+                />
+                <Route
+                    element={
+                        <PageSection variant="light">
+                            <PageTitle title={`${context.pageTitle} - Not Found`} />
+                            <PageNotFound />
+                        </PageSection>
+                    }
+                />
+            </Routes>
         </WorkloadCveViewContext.Provider>
     );
 }

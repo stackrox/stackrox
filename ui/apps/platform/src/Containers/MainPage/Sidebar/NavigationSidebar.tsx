@@ -69,7 +69,9 @@ type LinkDescription = {
 
 // Encapsulate whether path match for child is specific or generic.
 function isActiveLink(pathname: string, { isActive, path }: LinkDescription) {
-    return typeof isActive === 'function' ? isActive(pathname) : Boolean(matchPath(pathname, path));
+    return typeof isActive === 'function'
+        ? isActive(pathname)
+        : Boolean(matchPath({ path: `${path}/*` }, pathname));
 }
 
 type SeparatorDescription = {
@@ -130,13 +132,13 @@ function getNavDescriptions(): NavDescription[] {
                     type: 'link',
                     content: <NavigationContent variant="TechPreview">Coverage</NavigationContent>,
                     path: complianceEnhancedCoveragePath,
-                    routeKey: 'compliance-enhanced',
+                    routeKey: 'compliance-coverage',
                 },
                 {
                     type: 'link',
                     content: <NavigationContent variant="TechPreview">Schedules</NavigationContent>,
                     path: complianceEnhancedSchedulesPath,
-                    routeKey: 'compliance-enhanced',
+                    routeKey: 'compliance-schedules',
                 },
                 {
                     type: 'separator',
@@ -148,11 +150,9 @@ function getNavDescriptions(): NavDescription[] {
                     path: complianceBasePath,
                     routeKey: 'compliance',
                     isActive: (pathname) =>
-                        Boolean(matchPath(pathname, complianceBasePath)) &&
-                        !matchPath(pathname, [
-                            complianceEnhancedCoveragePath,
-                            complianceEnhancedSchedulesPath,
-                        ]),
+                        Boolean(matchPath({ path: `${complianceBasePath}/*` }, pathname)) &&
+                        !matchPath({ path: `${complianceEnhancedCoveragePath}/*` }, pathname) &&
+                        !matchPath({ path: `${complianceEnhancedSchedulesPath}/*` }, pathname),
                 },
             ],
         },
@@ -205,7 +205,7 @@ function getNavDescriptions(): NavDescription[] {
                     path: vulnManagementPath,
                     routeKey: 'vulnerability-management',
                     isActive: (pathname) =>
-                        Boolean(matchPath(pathname, { vulnManagementPath, exact: true })),
+                        Boolean(matchPath({ path: `${vulnManagementPath}/*` }, pathname)),
                 },
             ],
         },
@@ -357,7 +357,9 @@ function NavigationSidebar({
                             const hasChildMatchPath = children.some(
                                 (childDescription) =>
                                     childDescription.type === 'link' &&
-                                    Boolean(matchPath(pathname, childDescription.path))
+                                    Boolean(
+                                        matchPath({ path: `${childDescription.path}/*` }, pathname)
+                                    )
                             );
                             return (
                                 <NavExpandable

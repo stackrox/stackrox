@@ -1,4 +1,4 @@
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { integrationsPath } from 'routePaths';
 
 import {
@@ -31,7 +31,7 @@ export type UseIntegrationActionsResult = {
 };
 
 function useIntegrationActions(): UseIntegrationActionsResult {
-    const history = useHistory();
+    const navigate = useNavigate();
     const {
         isEditing,
         params: { source, type },
@@ -48,18 +48,18 @@ function useIntegrationActions(): UseIntegrationActionsResult {
                     typeof updatePassword === 'boolean'
                         ? await saveIntegration(source, data, { updatePassword })
                         : await saveIntegrationV2(source, data);
-                history.push(integrationsListPath);
+                navigate(integrationsListPath);
             } else if (type === 'apitoken') {
                 responseData = await generateAPIToken(data);
             } else if (type === 'clusterInitBundle') {
                 responseData = await generateClusterInitBundle(data);
             } else if (type === 'machineAccess') {
                 responseData = await createMachineAccessConfig(data);
-                history.goBack();
+                navigate(-1);
             } else {
                 responseData = await createIntegration(source, data);
                 // we only want to redirect when creating a new (non-apitoken and non-clusterinitbundle) integration
-                history.goBack();
+                navigate(-1);
             }
 
             fetchIntegrations();
@@ -86,7 +86,7 @@ function useIntegrationActions(): UseIntegrationActionsResult {
     }
 
     function onCancel() {
-        history.push(integrationsListPath);
+        navigate(integrationsListPath);
     }
 
     return { onSave, onTest, onCancel };

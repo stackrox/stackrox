@@ -1,6 +1,6 @@
 import React, { useContext, useRef, useLayoutEffect } from 'react';
 import PropTypes from 'prop-types';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import resolvePath from 'object-resolve-path';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
@@ -42,7 +42,7 @@ const EntityList = ({
 }) => {
     const tableRef = useRef(null);
     const workflowState = useContext(workflowStateContext);
-    const history = useHistory();
+    const navigate = useNavigate();
 
     function toggleTableRow(id) {
         const newSelection = toggleRow(id, selection);
@@ -60,7 +60,7 @@ const EntityList = ({
         const id = resolvePath(row, idAttribute);
         const url = workflowState.pushListItem(id).toUrl();
 
-        history.push(url);
+        navigate(url);
     }
 
     function setPage(newPage) {
@@ -68,7 +68,7 @@ const EntityList = ({
             setSelection([]);
         }
 
-        history.push(workflowState.setPage(newPage).toUrl());
+        navigate(workflowState.setPage(newPage).toUrl());
     }
 
     // render section

@@ -20,7 +20,7 @@ function ScanConfigDetailPage({
     isReportJobsEnabled,
     isComplianceReportingEnabled,
 }: ScanConfigDetailPageProps): React.ReactElement {
-    const { scanConfigId } = useParams();
+    const { scanConfigId } = useParams() as { scanConfigId: string };
     const { pageAction } = usePageAction<PageActions>();
 
     const scanConfigFetcher = useCallback(() => {

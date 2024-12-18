@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
     PageSection,
     Bullseye,
@@ -56,7 +56,7 @@ function PoliciesTablePage({
     handleChangeSearchFilter,
     searchFilter,
 }: PoliciesTablePageProps): React.ReactElement {
-    const history = useHistory();
+    const navigate = useNavigate();
     const { getSortParams, sortOption } = useURLSort({ defaultSortOption, sortFields });
 
     const [notifiers, setNotifiers] = useState<NotifierIntegration[]>([]);
@@ -72,7 +72,7 @@ function PoliciesTablePage({
     const query = searchFilter ? getRequestQueryStringForSearchFilter(searchFilter) : '';
 
     function onClickCreatePolicy() {
-        history.push(`${policiesBasePath}/?action=create`);
+        navigate(`${policiesBasePath}/?action=create`);
     }
 
     function onClickImportPolicy() {

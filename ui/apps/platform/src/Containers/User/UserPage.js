@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink, Route, Switch } from 'react-router-dom';
+import { NavLink, Route, Routes } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createStructuredSelector, createSelector } from 'reselect';
@@ -77,20 +77,24 @@ function UserPage({ resourceToAccessByRole, userData }) {
                                 <NavList>
                                     <NavItem>
                                         <NavLink
-                                            exact
                                             to={userBasePath}
-                                            activeClassName="pf-m-current"
+                                            className={({ isActive }) =>
+                                                isActive ? 'pf-m-current' : ''
+                                            }
+                                            end
                                         >
                                             User permissions for roles
                                         </NavLink>
                                     </NavItem>
                                     <NavExpandable title="User roles" isExpanded>
                                         {roles.map((role) => (
-                                            <NavItem key={role.name} activeClassName="pf-m-current">
+                                            <NavItem key={role.name}>
                                                 <NavLink
-                                                    exact
                                                     to={getUserRolePath(role.name)}
-                                                    activeClassName="pf-m-current"
+                                                    className={({ isActive }) =>
+                                                        isActive ? 'pf-m-current' : ''
+                                                    }
+                                                    end
                                                 >
                                                     {role.name}
                                                 </NavLink>
@@ -102,7 +106,7 @@ function UserPage({ resourceToAccessByRole, userData }) {
                         </div>
                     </FlexItem>
                     <FlexItem>
-                        <Switch>
+                        <Routes>
                             <Route
                                 path={userRolePath}
                                 render={({
@@ -136,7 +140,7 @@ function UserPage({ resourceToAccessByRole, userData }) {
                                     resourceToAccessByRole={resourceToAccessByRole}
                                 />
                             </Route>
-                        </Switch>
+                        </Routes>
                     </FlexItem>
                 </Flex>
             </PageSection>
