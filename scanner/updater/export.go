@@ -2,6 +2,7 @@ package updater
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/klauspost/compress/zstd"
 	"github.com/pkg/errors"
+	"github.com/quay/claircore/enricher/epss"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/jsonblob"
 	"github.com/quay/claircore/libvuln/updates"
@@ -63,7 +65,7 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 	} {
 		bundles[uSet] = []updates.ManagerOption{updates.WithEnabled([]string{uSet})}
 	}
-
+	bundles["epss"] = epssOpts(ctx)
 	// Rate limit to ~16 requests/second by default.
 	interval := 62 * time.Millisecond
 	configuredInterval := os.Getenv("STACKROX_SCANNER_V4_UPDATER_INTERVAL")
@@ -216,4 +218,27 @@ func (t *rateLimitedTransport) RoundTrip(req *http.Request) (*http.Response, err
 		return nil, err
 	}
 	return t.transport.RoundTrip(req)
+}
+
+func epssOpts(ctx context.Context) []updates.ManagerOption {
+	enricher := &epss.Enricher{}
+	configJSON, err := json.Marshal(epss.Config{
+		URL: nil, // use default URL for now
+	})
+	if err != nil {
+		log.Printf("Failed to encode EPSS enricher config : %v", err)
+		return nil
+	}
+
+	err = enricher.Configure(ctx, func(config interface{}) error {
+		return json.Unmarshal(configJSON, config)
+	}, &http.Client{})
+	if err != nil {
+		log.Printf("Failed to configure EPSS enricher: %v", err)
+		return nil
+	}
+	return []updates.ManagerOption{
+		updates.WithEnabled([]string{}),
+		updates.WithOutOfTree([]driver.Updater{enricher}),
+	}
 }
