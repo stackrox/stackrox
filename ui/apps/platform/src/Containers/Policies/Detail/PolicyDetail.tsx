@@ -326,7 +326,7 @@ function PolicyDetail({
                 </AlertGroup>
             </PageSection>
             <ConfirmationModal
-                title={'Delete policy?'}
+                title="Delete policy?"
                 ariaLabel="Confirm delete"
                 confirmText="Delete"
                 isLoading={isRequesting}

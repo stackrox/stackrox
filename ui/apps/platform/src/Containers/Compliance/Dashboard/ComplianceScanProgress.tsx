@@ -27,7 +27,7 @@ function ComplianceScanProgress({ runs, ...props }: ComplianceDashboardCurrentPr
                     value={finishedRunCount}
                     min={0}
                     max={runs.length}
-                    measureLocation={'outside'}
+                    measureLocation="outside"
                     label={`${finishedRunCount} of ${runs.length} runs`}
                     valueText={`${finishedRunCount} of ${runs.length} runs`}
                 />
