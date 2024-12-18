@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package sensor;
+
+import "internalapi/sensor/collector.proto";
+import "internalapi/sensor/network_connection_info.proto";
+
+option cc_enable_arenas = true;
+option go_package = "./internalapi/sensor;sensor";
+
+message MsgFromCollector {
+  oneof msg {
+    CollectorRegisterRequest register = 1;
+    NetworkConnectionInfo info = 2;
+    ProcessSignal process_signal = 3;
+  }
+}
+
+message MsgToCollector {
+  oneof msg {
+    IPAddressList public_ip_addresses = 1;
+    IPNetworkList ip_networks = 2;
+  }
+}
+
+service CollectorService {
+  rpc Communicate(stream MsgFromCollector) returns (stream MsgToCollector);
+}
