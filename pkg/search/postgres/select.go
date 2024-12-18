@@ -82,23 +82,23 @@ func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, sch
 	}
 
 	standardizeFieldNamesInQuery(q)
-	innerJoins, dbFields := getJoinsAndFields(schema, q)
+	joins, dbFields := getJoinsAndFields(schema, q)
 	if len(q.GetSelects()) == 0 && q.GetQuery() == nil {
 		return nil, nil
 	}
 
 	if env.ImageCVEEdgeCustomJoin.BooleanSetting() {
-		innerJoins, err = handleImageCveEdgesTableInJoins(schema, innerJoins)
+		joins, err = handleImageCveEdgesTableInJoins(schema, joins)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	parsedQuery := &query{
-		Schema:     schema,
-		QueryType:  queryType,
-		From:       schema.Table,
-		InnerJoins: innerJoins,
+		Schema:    schema,
+		QueryType: queryType,
+		From:      schema.Table,
+		Joins:     joins,
 	}
 
 	if err = populateSelect(parsedQuery, schema, q.GetSelects(), dbFields, nowForQuery); err != nil {
