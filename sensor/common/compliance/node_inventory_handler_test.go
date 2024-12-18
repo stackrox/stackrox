@@ -189,20 +189,23 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerCentralACKsToCompliance() {
 			defer close(ch)
 			reports := make(chan *index.IndexReportWrap)
 			defer close(reports)
-			h := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{})
-			s.NoError(h.Start())
-			h.Notify(common.SensorComponentEventCentralReachable)
+			handler := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{})
+			s.NoError(handler.Start())
+			handler.Notify(common.SensorComponentEventCentralReachable)
+			s.T().Logf("sending Node inventory")
 
 			ch <- fakeNodeInventory("node-" + name)
-			s.NoError(mockCentralReply(h, tc.centralReply))
-			result := consumeAndCountCompliance(s.T(), h.ComplianceC(), 1)
+			s.T().Logf("mocking central reply")
+			s.NoError(mockCentralReply(handler, tc.centralReply))
+			s.T().Logf("awaiting consumption")
+			result := consumeAndCountCompliance(s.T(), handler.ComplianceC(), 1)
 			s.NoError(result.sc.Stopped().Wait())
 			s.Equal(tc.expectedACKCount, result.ACKCount)
 			s.Equal(tc.expectedNACKCount, result.NACKCount)
 
-			h.Stop(nil)
+			handler.Stop(nil)
 			s.T().Logf("waiting for handler to stop")
-			s.NoError(h.Stopped().Wait())
+			s.NoError(handler.Stopped().Wait())
 		})
 
 	}
@@ -258,14 +261,13 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerOfflineACKNACK() {
 func mockCentralReply(h *nodeInventoryHandlerImpl, ackType central.NodeInventoryACK_Action) error {
 	select {
 	case <-h.ResponsesC():
-		err := h.ProcessMessage(&central.MsgToSensor{
+		return h.ProcessMessage(&central.MsgToSensor{
 			Msg: &central.MsgToSensor_NodeInventoryAck{NodeInventoryAck: &central.NodeInventoryACK{
 				ClusterId: "4",
 				NodeName:  "4",
 				Action:    ackType,
 			}},
 		})
-		return err
 	case <-time.After(5 * time.Second):
 		return errors.New("ResponsesC msg didn't arrive after 5 seconds")
 	}
@@ -326,14 +328,18 @@ func consumeAndCountCompliance(t *testing.T, ch <-chan common.MessageToComplianc
 		for i := 0; i < numToConsume; i++ {
 			select {
 			case <-st.Flow().StopRequested():
+				t.Logf("Stop requested")
 				st.LowLevel().ResetStopRequest()
 				st.Flow().StopWithError(fmt.Errorf("consumer consumed %d messages but expected to do %d", i, numToConsume))
 				return
 			case msg, ok := <-ch:
+				t.Logf("Got message: %v", msg)
 				if !ok {
+					t.Logf("CH channel closed")
 					st.Flow().StopWithError(fmt.Errorf("consumer consumed %d messages but expected to do %d", i, numToConsume))
 					return
 				}
+				t.Logf("Executing ++ on action %s", msg.Msg.GetAck().GetAction())
 				switch msg.Msg.GetAck().GetAction() {
 				case sensor.MsgToCompliance_NodeInventoryACK_ACK:
 					ms.ACKCount++
