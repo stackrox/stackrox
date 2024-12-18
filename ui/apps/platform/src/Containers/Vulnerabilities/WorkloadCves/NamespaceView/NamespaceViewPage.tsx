@@ -108,9 +108,9 @@ function NamespaceViewPage() {
     const { pageTitle, baseSearchFilter } = useWorkloadCveViewContext();
     const { searchFilter, setSearchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter({
-        ...searchFilter,
-        ...defaultSearchFilters,
         ...baseSearchFilter,
+        ...defaultSearchFilters,
+        ...searchFilter,
     });
     const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
     const { sortOption, getSortParams } = useURLSort({

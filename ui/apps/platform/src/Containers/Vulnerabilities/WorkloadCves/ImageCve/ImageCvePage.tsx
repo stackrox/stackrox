@@ -222,9 +222,9 @@ function ImageCvePage() {
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const query = getVulnStateScopedQueryString(
         {
-            ...querySearchFilter,
-            ...baseSearchFilter,
             CVE: [exactCveIdSearchRegex],
+            ...baseSearchFilter,
+            ...querySearchFilter,
         },
         currentVulnerabilityState
     );
@@ -278,7 +278,7 @@ function ImageCvePage() {
     });
 
     function getDeploymentSearchQuery(severity?: VulnerabilitySeverity) {
-        const filters = { ...querySearchFilter, ...baseSearchFilter, CVE: [exactCveIdSearchRegex] };
+        const filters = { CVE: [exactCveIdSearchRegex], ...baseSearchFilter, ...querySearchFilter };
         if (severity) {
             filters.SEVERITY = [severity];
         }
@@ -446,8 +446,8 @@ function ImageCvePage() {
                                     trackAppliedFilter(WORKLOAD_CVE_FILTER_APPLIED, searchPayload);
                                 }}
                                 additionalContextFilter={{
-                                    ...baseSearchFilter,
                                     CVE: exactCveIdSearchRegex,
+                                    ...baseSearchFilter,
                                 }}
                             />
                         ) : (

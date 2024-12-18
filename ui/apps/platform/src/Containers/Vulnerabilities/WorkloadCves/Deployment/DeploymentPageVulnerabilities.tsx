@@ -260,8 +260,8 @@ function DeploymentPageVulnerabilities({
                                 trackAppliedFilter(WORKLOAD_CVE_FILTER_APPLIED, searchPayload);
                             }}
                             additionalContextFilter={{
-                                ...baseSearchFilter,
                                 'Deployment ID': deploymentId,
+                                ...baseSearchFilter,
                             }}
                         />
                     ) : (

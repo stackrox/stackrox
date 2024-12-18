@@ -258,8 +258,8 @@ function ImagePageVulnerabilities({
                                 trackAppliedFilter(WORKLOAD_CVE_FILTER_APPLIED, searchPayload);
                             }}
                             additionalContextFilter={{
-                                ...baseSearchFilter,
                                 'Image SHA': imageId,
+                                ...baseSearchFilter,
                             }}
                         />
                     ) : (

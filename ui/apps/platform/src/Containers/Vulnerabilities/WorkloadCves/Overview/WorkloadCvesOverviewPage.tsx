@@ -196,14 +196,14 @@ function WorkloadCvesOverviewPage() {
     const workloadCvesScopedQueryString = isViewingWithCves
         ? getVulnStateScopedQueryString(
               {
-                  ...querySearchFilter,
                   ...baseSearchFilter,
+                  ...querySearchFilter,
               },
               currentVulnerabilityState
           )
         : getZeroCveScopedQueryString({
-              ...querySearchFilter,
               ...baseSearchFilter,
+              ...querySearchFilter,
           });
 
     const getDefaultSortOption = isViewingWithCves
@@ -347,8 +347,8 @@ function WorkloadCvesOverviewPage() {
             searchFilterConfig={searchFilterConfig}
             searchFilter={searchFilter}
             additionalContextFilter={{
-                ...baseSearchFilter,
                 'Image CVE Count': isViewingWithCves ? '>0' : '0',
+                ...baseSearchFilter,
             }}
             defaultFilters={localStorageValue.preferences.defaultFilters}
             onFilterChange={(newFilter, searchPayload) => {
