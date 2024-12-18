@@ -18,17 +18,6 @@ function selectFirstAutocompleteSearchOption() {
 describe('Violations - Search Filter', () => {
     withAuth();
 
-    beforeEach(() => {
-        // clear the filters before every test
-        cy.document().then((doc) => {
-            const button = Cypress.$('button:contains("Clear filters")', doc);
-            if (button.length > 0) {
-                // if button exists, click it
-                cy.wrap(button).click();
-            }
-        });
-    });
-
     it('should filter violations by policy name', () => {
         visitViolations();
 
