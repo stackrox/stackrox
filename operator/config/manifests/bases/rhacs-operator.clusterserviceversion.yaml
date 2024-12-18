@@ -846,6 +846,20 @@ spec:
         - urn:alm:descriptor:com.tectonic.ui:select:EBPF
         - urn:alm:descriptor:com.tectonic.ui:select:CORE_BPF
         - urn:alm:descriptor:com.tectonic.ui:select:NoCollection
+      - displayName: Enabled
+        path: perNode.collector.runtimeConfig.enabled
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:select:Enable
+        - urn:alm:descriptor:com.tectonic.ui:select:Disable
+        - urn:alm:descriptor:com.tectonic.ui:select:Auto
+      - displayName: External IPs
+        path: perNode.collector.runtimeConfig.networking.externalIps
+      - displayName: Enabled
+        path: perNode.collector.runtimeConfig.networking.externalIps.enabled
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:select:Enable
+        - urn:alm:descriptor:com.tectonic.ui:select:Disable
+        - urn:alm:descriptor:com.tectonic.ui:select:Auto
       - description: Controls the number of analyzer replicas and autoscaling.
         displayName: Scaling
         path: scanner.analyzer.scaling
@@ -931,8 +945,10 @@ spec:
           instructions, please refer to the documentation).
         displayName: Image Flavor
         path: perNode.collector.imageFlavor
-      - displayName: Runtime Config
-        path: perNode.collector.runtimeConfig
+      - displayName: Networking
+        path: perNode.collector.runtimeConfig.networking
+      - displayName: Per Container Rate Limit
+        path: perNode.collector.runtimeConfig.networking.perContainerRateLimit
       - description: Settings for the Compliance container, which is responsible for
           checking host-level configurations.
         displayName: Compliance Settings
@@ -971,19 +987,8 @@ spec:
       - description: Name of resource.
         displayName: Name
         path: overlays[0].name
-      - description: Deprecated field. This field will be removed in a future release.
-        displayName: Force Collection
-        path: perNode.collector.forceCollection
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:hidden
-      - displayName: Enabled
-        path: perNode.collector.runtimeConfig.enabled
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:select:Enable
-        - urn:alm:descriptor:com.tectonic.ui:select:Disable
-        - urn:alm:descriptor:com.tectonic.ui:select:Auto
-      - displayName: Networking
-        path: perNode.collector.runtimeConfig.networking
+      - displayName: Runtime Config
+        path: perNode.collector.runtimeConfig
       - description: Settings for the Node-Inventory container, which is responsible
           for scanning the Nodes' filesystem.
         displayName: Node Scanning Settings
@@ -1030,10 +1035,11 @@ spec:
           When Optional is false, and the specified resource does not exist in the output manifests, an error will be thrown.
         displayName: Optional
         path: overlays[0].optional
-      - displayName: External IPs
-        path: perNode.collector.runtimeConfig.networking.externalIps
-      - displayName: Per Container Rate Limit
-        path: perNode.collector.runtimeConfig.networking.perContainerRateLimit
+      - description: Deprecated field. This field will be removed in a future release.
+        displayName: Force Collection
+        path: perNode.collector.forceCollection
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: |-
           To ensure comprehensive monitoring of your cluster activity, Red Hat Advanced Cluster Security
           will run services on every node in the cluster, including tainted nodes by default. If you do
@@ -1070,12 +1076,6 @@ spec:
           (Collector and Compliance).
         displayName: Per Node Settings
         path: perNode
-      - displayName: Enabled
-        path: perNode.collector.runtimeConfig.networking.externalIps.enabled
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:select:Enable
-        - urn:alm:descriptor:com.tectonic.ui:select:Disable
-        - urn:alm:descriptor:com.tectonic.ui:select:Auto
       - description: HostAliases allows configuring additional hostnames to resolve
           in the pod's hosts file.
         displayName: Host Aliases
