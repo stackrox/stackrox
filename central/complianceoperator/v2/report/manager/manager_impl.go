@@ -400,7 +400,7 @@ func (m *managerImpl) handleReadyScan() {
 				}
 				if !wasAlreadyRunning {
 					// if there are no notifiers configured we need to still push the results as they might be on-demand request
-					if err := m.createAutomaticSnapshotAndSubscribe(m.automaticReportingCtx, scanConfig, w); err != nil && err != utils.ErrNoNotifiersConfigured {
+					if err := m.createAutomaticSnapshotAndSubscribe(m.automaticReportingCtx, scanConfig, w); err != nil && !errors.Is(err, utils.ErrNoNotifiersConfigured) {
 						log.Errorf("Unable to create the snapshot: %v", err)
 						continue
 					}
@@ -508,38 +508,41 @@ func (m *managerImpl) handleReadyScanConfig() {
 
 func (m *managerImpl) generateReportsFromWatcherResults(result *watcher.ScanConfigWatcherResults) {
 	for _, snapshot := range result.ReportSnapshot {
-		isOnDemand := snapshot.GetReportStatus().GetReportRequestType() == storage.ComplianceOperatorReportStatus_ON_DEMAND
-		if err := m.validateScanConfigResults(result); err != nil {
-			if dbErr := utils.UpdateSnapshotOnError(m.automaticReportingCtx, snapshot, err, m.snapshotDataStore); dbErr != nil {
-				log.Errorf("Unable to upsert the snapshot %s: %v", snapshot.GetReportId(), err)
-			}
-			if isOnDemand {
-				concurrency.WithLock(&m.mu, func() {
-					delete(m.runningReportConfigs, result.ScanConfig.GetId())
-				})
-			}
-			continue
-		}
-		snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_PREPARING
-		if err := m.snapshotDataStore.UpsertSnapshot(m.automaticReportingCtx, snapshot); err != nil {
-			log.Errorf("Unable to upsert the snapshot %s: %v", snapshot.GetReportId(), err)
-			if isOnDemand {
-				concurrency.WithLock(&m.mu, func() {
-					delete(m.runningReportConfigs, result.ScanConfig.GetId())
-				})
-			}
-			continue
-		}
-		generateReportReq := &reportRequest{
-			ctx:                m.automaticReportingCtx,
-			scanConfig:         result.ScanConfig,
-			snapshotID:         snapshot.GetReportId(),
-			notificationMethod: snapshot.GetReportStatus().GetReportNotificationMethod(),
-		}
-		if err := m.handleReportScheduled(generateReportReq, isOnDemand); err != nil {
-			log.Errorf("Unable to handle the report: %v", err)
+		if err := m.generateSingleReportFromWatcherResults(result, snapshot); err != nil {
+			log.Errorf("unable to generate report: %v", err)
 		}
 	}
+}
+
+func (m *managerImpl) generateSingleReportFromWatcherResults(result *watcher.ScanConfigWatcherResults, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
+	isOnDemand := snapshot.GetReportStatus().GetReportRequestType() == storage.ComplianceOperatorReportStatus_ON_DEMAND
+	defer func() {
+		if isOnDemand {
+			concurrency.WithLock(&m.mu, func() {
+				delete(m.runningReportConfigs, result.ScanConfig.GetId())
+			})
+		}
+	}()
+	if err := m.validateScanConfigResults(result); err != nil {
+		if dbErr := utils.UpdateSnapshotOnError(m.automaticReportingCtx, snapshot, err, m.snapshotDataStore); dbErr != nil {
+			return errors.Errorf("%v; %v", err, errors.Wrapf(dbErr, "unable to upsert the snapshot %s", snapshot.GetReportId()))
+		}
+		return err
+	}
+	snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_PREPARING
+	if err := m.snapshotDataStore.UpsertSnapshot(m.automaticReportingCtx, snapshot); err != nil {
+		return errors.Wrapf(err, "unable to upsert the snapshot %s", snapshot.GetReportId())
+	}
+	generateReportReq := &reportRequest{
+		ctx:                m.automaticReportingCtx,
+		scanConfig:         result.ScanConfig,
+		snapshotID:         snapshot.GetReportId(),
+		notificationMethod: snapshot.GetReportStatus().GetReportNotificationMethod(),
+	}
+	if err := m.handleReportScheduled(generateReportReq, isOnDemand); err != nil {
+		return errors.Wrap(err, "unable to handle the report")
+	}
+	return nil
 }
 
 func (m *managerImpl) handleReportScheduled(request *reportRequest, isOnDemand bool) error {
