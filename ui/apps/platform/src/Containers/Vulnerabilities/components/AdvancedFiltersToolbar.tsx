@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { ReactNode } from 'react';
 import { Toolbar, ToolbarGroup, ToolbarContent } from '@patternfly/react-core';
 import { uniq } from 'lodash';
 
@@ -49,8 +49,7 @@ type AdvancedFiltersToolbarProps = {
     includeCveStatusFilters?: boolean;
     defaultSearchFilterEntity?: string;
     additionalContextFilter?: SearchFilter;
-    // TODO We need to be able to apply the autocomplete search context to the advanced filters component @see FilterAutocomplete.tsx
-    // autocompleteSearchContext?: unknown;
+    children?: ReactNode;
 };
 
 function AdvancedFiltersToolbar({
@@ -64,8 +63,7 @@ function AdvancedFiltersToolbar({
     includeCveStatusFilters = true,
     defaultSearchFilterEntity,
     additionalContextFilter,
-    // TODO We need to be able to apply the autocomplete search context to the advanced filters component
-    // autocompleteSearchContext,
+    children,
 }: AdvancedFiltersToolbarProps) {
     const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig)
         .concat({
@@ -152,6 +150,7 @@ function AdvancedFiltersToolbar({
                         )}
                     </ToolbarGroup>
                 )}
+                {children}
                 {getHasSearchApplied(searchFilter) && (
                     <ToolbarGroup aria-label="applied search filters" className="pf-v5-u-w-100">
                         <SearchFilterChips
