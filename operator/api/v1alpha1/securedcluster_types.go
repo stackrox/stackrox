@@ -310,15 +310,15 @@ type CollectorContainerSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
 	ImageFlavor *CollectorImageFlavor `json:"imageFlavor,omitempty"`
 
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
 	RuntimeConfig *CollectorRuntimeConfig `json:"runtimeConfig,omitempty"`
 
 	// Deprecated field. This field will be removed in a future release.
 	//+kubebuilder:default=false
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	ForceCollection *bool `json:"forceCollection,omitempty"`
 
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5
 	ContainerSpec `json:",inline"`
 }
 
@@ -340,19 +340,19 @@ func (c CollectorRuntimeConfigEnabled) Pointer() *CollectorRuntimeConfigEnabled 
 
 type CollectorRuntimeConfig struct {
 	//+kubebuilder:default=Enabled
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:select:Enable", "urn:alm:descriptor:com.tectonic.ui:select:Disable", "urn:alm:descriptor:com.tectonic.ui:select:Auto"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:select:Enable", "urn:alm:descriptor:com.tectonic.ui:select:Disable", "urn:alm:descriptor:com.tectonic.ui:select:Auto"}
 	Enabled *CollectorRuntimeConfigEnabled `json:"enabled,omitempty"`
 
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
 	Networking *CollectorNetworking `json:"networking"`
 }
 
 type CollectorNetworking struct {
-	//+kubebuilder:default=1024
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
-	PerContainerRateLimit *int32 `json:"perContainerRateLimit,omitempty"`
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
 	ExternalIPs *CollectorExternalIPs `json:"externalIps,omitempty"`
+	//+kubebuilder:default=1024
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
+	PerContainerRateLimit *int32 `json:"perContainerRateLimit,omitempty"`
 }
 
 // +kubebuilder:validation:Enum=Enabled;Disabled;Auto
@@ -374,7 +374,7 @@ func (c CollectorExternalIPsEnabled) Pointer() *CollectorExternalIPsEnabled {
 
 type CollectorExternalIPs struct {
 	//+kubebuilder:default=Disabled
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:select:Enable", "urn:alm:descriptor:com.tectonic.ui:select:Disable", "urn:alm:descriptor:com.tectonic.ui:select:Auto"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:select:Enable", "urn:alm:descriptor:com.tectonic.ui:select:Disable", "urn:alm:descriptor:com.tectonic.ui:select:Auto"}
 	Enabled *CollectorExternalIPsEnabled `json:"enabled,omitempty"`
 }
 
