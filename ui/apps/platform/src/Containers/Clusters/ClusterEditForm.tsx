@@ -10,10 +10,8 @@ import ClusterSummary from './Components/ClusterSummary';
 import StaticConfigurationSection from './StaticConfigurationSection';
 import DynamicConfigurationSection from './DynamicConfigurationSection';
 import ClusterLabelsTable from './ClusterLabelsTable';
-import { CentralEnv } from './clusterTypes'; // augmented with successfullyFetched
 
 type ClusterEditFormProps = {
-    centralEnv: CentralEnv;
     centralVersion: string;
     clusterRetentionInfo: DecommissionedClusterRetentionInfo;
     selectedCluster: Cluster;
@@ -24,7 +22,6 @@ type ClusterEditFormProps = {
 };
 
 function ClusterEditForm({
-    centralEnv,
     centralVersion,
     clusterRetentionInfo,
     selectedCluster,
