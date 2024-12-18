@@ -167,19 +167,27 @@ type testState struct {
 
 func (s *NodeInventoryHandlerTestSuite) TestHandlerCentralACKsToCompliance() {
 	cases := map[string]struct {
-		centralReply      central.NodeInventoryACK_Action
+		centralReplies    []central.NodeInventoryACK_Action
 		expectedACKCount  int
 		expectedNACKCount int
 	}{
 		"Central ACK should be forwarded to Compliance": {
-			centralReply:      central.NodeInventoryACK_ACK,
+			centralReplies:    []central.NodeInventoryACK_Action{central.NodeInventoryACK_ACK},
 			expectedACKCount:  1,
 			expectedNACKCount: 0,
 		},
 		"Central NACK should be forwarded to Compliance": {
-			centralReply:      central.NodeInventoryACK_NACK,
+			centralReplies:    []central.NodeInventoryACK_Action{central.NodeInventoryACK_NACK},
 			expectedACKCount:  0,
 			expectedNACKCount: 1,
+		},
+		"Multiple ACK messages should be forwarded to Compliance": {
+			centralReplies: []central.NodeInventoryACK_Action{
+				central.NodeInventoryACK_ACK, central.NodeInventoryACK_ACK,
+				central.NodeInventoryACK_NACK, central.NodeInventoryACK_NACK,
+			},
+			expectedACKCount:  2,
+			expectedNACKCount: 2,
 		},
 	}
 
@@ -192,13 +200,19 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerCentralACKsToCompliance() {
 			handler := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{})
 			s.NoError(handler.Start())
 			handler.Notify(common.SensorComponentEventCentralReachable)
-			s.T().Logf("sending Node inventory")
 
-			ch <- fakeNodeInventory("node-" + name)
-			s.T().Logf("mocking central reply")
-			s.NoError(mockCentralReply(handler, tc.centralReply))
-			s.T().Logf("awaiting consumption")
-			result := consumeAndCountCompliance(s.T(), handler.ComplianceC(), 1)
+			go func() {
+				for i := 0; i < len(tc.centralReplies); i++ {
+					ch <- fakeNodeInventory(fmt.Sprintf("node-%s-%d", name, i))
+				}
+			}()
+
+			result := consumeAndCountCompliance(s.T(), handler.ComplianceC(), tc.expectedACKCount+tc.expectedNACKCount)
+
+			for _, reply := range tc.centralReplies {
+				s.NoError(mockCentralReply(handler, reply))
+			}
+
 			s.NoError(result.sc.Stopped().Wait())
 			s.Equal(tc.expectedACKCount, result.ACKCount)
 			s.Equal(tc.expectedNACKCount, result.NACKCount)
@@ -244,10 +258,12 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerOfflineACKNACK() {
 	for i, state := range states {
 		h.Notify(state.event)
 		ch <- fakeNodeInventory(fmt.Sprintf("Node-%d", i))
+
+		result := consumeAndCountCompliance(s.T(), h.ComplianceC(), state.expectedACKCount+state.expectedNACKCount)
+
 		if state.event == common.SensorComponentEventCentralReachable {
 			s.NoError(mockCentralReply(h, central.NodeInventoryACK_ACK))
 		}
-		result := consumeAndCountCompliance(s.T(), h.ComplianceC(), 1)
 		s.NoError(result.sc.Stopped().Wait())
 		s.Equal(state.expectedACKCount, result.ACKCount)
 		s.Equal(state.expectedNACKCount, result.NACKCount)
