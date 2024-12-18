@@ -47,15 +47,6 @@ import {
 } from 'Containers/Vulnerabilities/searchFilterConfig';
 import { filterManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
-import {
-    SearchOption,
-    IMAGE_SEARCH_OPTION,
-    DEPLOYMENT_SEARCH_OPTION,
-    NAMESPACE_SEARCH_OPTION,
-    CLUSTER_SEARCH_OPTION,
-    COMPONENT_SEARCH_OPTION,
-    COMPONENT_SOURCE_SEARCH_OPTION,
-} from '../../searchOptions';
 import { WorkloadEntityTab, VulnerabilitySeverityLabel } from '../../types';
 import {
     getHiddenSeverities,
@@ -67,7 +58,6 @@ import {
 import CvePageHeader, { CveMetadata } from '../../components/CvePageHeader';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 
-import WorkloadCveFilterToolbar from '../components/WorkloadCveFilterToolbar';
 import AffectedImagesTable, {
     ImageForCve,
     imagesForCveFragment,
@@ -187,15 +177,6 @@ const defaultSeveritySummary = {
     topCVSS: 0,
 };
 
-const searchOptions: SearchOption[] = [
-    IMAGE_SEARCH_OPTION,
-    DEPLOYMENT_SEARCH_OPTION,
-    NAMESPACE_SEARCH_OPTION,
-    CLUSTER_SEARCH_OPTION,
-    COMPONENT_SEARCH_OPTION,
-    COMPONENT_SOURCE_SEARCH_OPTION,
-];
-
 const searchFilterConfig = [
     imageSearchFilterConfig,
     imageComponentSearchFilterConfig,
@@ -206,7 +187,6 @@ const searchFilterConfig = [
 
 function ImageCvePage() {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isAdvancedFiltersEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_ADVANCED_FILTERS');
 
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
@@ -431,26 +411,16 @@ function ImageCvePage() {
                 />
                 <div className="pf-v5-u-background-color-100">
                     <div className="pf-v5-u-px-sm">
-                        {isAdvancedFiltersEnabled ? (
-                            <AdvancedFiltersToolbar
-                                className="pf-v5-u-py-md"
-                                searchFilterConfig={searchFilterConfig}
-                                searchFilter={searchFilter}
-                                onFilterChange={(newFilter, searchPayload) => {
-                                    setSearchFilter(newFilter);
-                                    setPage(1);
-                                    trackAppliedFilter(WORKLOAD_CVE_FILTER_APPLIED, searchPayload);
-                                }}
-                            />
-                        ) : (
-                            <WorkloadCveFilterToolbar
-                                searchOptions={searchOptions}
-                                autocompleteSearchContext={{
-                                    CVE: exactCveIdSearchRegex,
-                                }}
-                                onFilterChange={() => setPage(1)}
-                            />
-                        )}
+                        <AdvancedFiltersToolbar
+                            className="pf-v5-u-py-md"
+                            searchFilterConfig={searchFilterConfig}
+                            searchFilter={searchFilter}
+                            onFilterChange={(newFilter, searchPayload) => {
+                                setSearchFilter(newFilter);
+                                setPage(1);
+                                trackAppliedFilter(WORKLOAD_CVE_FILTER_APPLIED, searchPayload);
+                            }}
+                        />
                     </div>
                     <SummaryCardLayout
                         error={summaryRequest.error}

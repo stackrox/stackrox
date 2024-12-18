@@ -5,7 +5,6 @@ import {
     applyLocalSeverityFilters,
     selectEntityTab,
     visitWorkloadCveOverview,
-    typeAndSelectCustomSearchFilterValue,
     changeObservedCveViewingMode,
     interactAndWaitForCveList,
     interactAndWaitForImageList,
@@ -28,8 +27,6 @@ import {
 } from '../../../helpers/request';
 
 describe('Workload CVE overview page tests', () => {
-    const isAdvancedFiltersEnabled = hasFeatureFlag('ROX_VULN_MGMT_ADVANCED_FILTERS');
-
     withAuth();
 
     before(function () {
@@ -86,7 +83,7 @@ describe('Workload CVE overview page tests', () => {
             selectEntityTab(entity);
 
             // Ensure that only the correct filter chip is present
-            const filterChipGroupName = isAdvancedFiltersEnabled ? 'CVE severity' : 'Severity';
+            const filterChipGroupName = 'CVE severity';
             cy.get(selectors.filterChipGroupItem(filterChipGroupName, 'Critical'));
             cy.get(selectors.filterChipGroupItems(filterChipGroupName)).should('have.lengthOf', 1);
 
@@ -229,9 +226,9 @@ describe('Workload CVE overview page tests', () => {
         });
 
         it('should apply the correct filters when switching between "with cves" and "without cves" views', () => {
-            const severityChip = isAdvancedFiltersEnabled ? 'CVE severity' : 'Severity';
+            const severityChip = 'CVE severity';
             const cveStatusChip = 'CVE status';
-            const imageNameChip = isAdvancedFiltersEnabled ? 'Image name' : 'Image';
+            const imageNameChip = 'Image name';
 
             // Since we want to test the behavior of the default filters with the two cve views, we
             // do not clear them by default in this case
@@ -239,11 +236,7 @@ describe('Workload CVE overview page tests', () => {
 
             interactAndWaitForCveList(() => {
                 // Add a local filter
-                if (isAdvancedFiltersEnabled) {
-                    typeAndEnterCustomSearchFilterValue('Image', 'Name', 'quay.io/bogus');
-                } else {
-                    typeAndSelectCustomSearchFilterValue('Image', 'quay.io/bogus');
-                }
+                typeAndEnterCustomSearchFilterValue('Image', 'Name', 'quay.io/bogus');
 
                 // Check that default filters and the local filter are present
                 cy.get(selectors.filterChipGroupItem(severityChip, 'Critical'));
@@ -280,11 +273,7 @@ describe('Workload CVE overview page tests', () => {
 
             interactAndWaitForImageList(() => {
                 // Apply a filter in the "without cves" view
-                if (isAdvancedFiltersEnabled) {
-                    typeAndEnterCustomSearchFilterValue('Image', 'Name', 'quay.io/bogus');
-                } else {
-                    typeAndSelectCustomSearchFilterValue('Image', 'quay.io/bogus');
-                }
+                typeAndEnterCustomSearchFilterValue('Image', 'Name', 'quay.io/bogus');
             }).should((xhr) => {
                 // On switching views, all filters, including the defaults should be cleared
                 const requestQuery = xhr.request.body.variables.query.toLowerCase();
