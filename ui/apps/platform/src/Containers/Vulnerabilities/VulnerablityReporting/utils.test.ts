@@ -12,7 +12,6 @@ describe('utils', () => {
                 errorMsg: '',
                 reportRequestType: 'ON_DEMAND',
                 reportNotificationMethod: 'EMAIL',
-                failedClusters: [],
             };
             let isDownloadAvailable = false;
             expect(getReportStatusText(reportStatus, isDownloadAvailable)).toEqual('Emailed');

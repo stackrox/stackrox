@@ -6,11 +6,11 @@ import sortBy from 'lodash/sortBy';
 import { FailedCluster } from 'types/reportJob';
 
 export type PartialReportModalProps = {
-    failedClusters: FailedCluster[];
+    failedClusters?: FailedCluster[];
     onConfirm: () => void;
 };
 
-function PartialReportModal({ failedClusters, onConfirm }: PartialReportModalProps) {
+function PartialReportModal({ failedClusters = [], onConfirm }: PartialReportModalProps) {
     const [isModalOpen, setIsModalOpen] = React.useState(false);
 
     const handleModalToggle = () => {
@@ -52,8 +52,8 @@ function PartialReportModal({ failedClusters, onConfirm }: PartialReportModalPro
             >
                 <Flex>
                     <FlexItem>
-                        Scan on the listed clusters could not be scheduled and report could not be
-                        generated, look at the cluster logs to diagnose this issue.
+                        The scan on the listed clusters could not be scheduled, and the report could
+                        not be generated. Please check the cluster logs to diagnose the issue.
                     </FlexItem>
                     <Table aria-label="Failed clusters table" variant="compact">
                         <Thead>

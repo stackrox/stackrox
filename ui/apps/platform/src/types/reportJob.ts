@@ -15,7 +15,7 @@ export type ReportStatus = {
     errorMsg: string;
     reportRequestType: ReportRequestType;
     reportNotificationMethod: ReportNotificationMethod;
-    failedClusters: FailedCluster[];
+    failedClusters?: FailedCluster[];
 };
 
 export const runStates = {
