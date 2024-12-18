@@ -310,7 +310,7 @@ type CollectorContainerSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
 	ImageFlavor *CollectorImageFlavor `json:"imageFlavor,omitempty"`
 
-	//+operator-sdk:csv:customresourcedefinitions:type=spec
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
 	RuntimeConfig *CollectorRuntimeConfig `json:"runtimeConfig,omitempty"`
 
 	// Deprecated field. This field will be removed in a future release.
@@ -340,18 +340,18 @@ func (c CollectorRuntimeConfigEnabled) Pointer() *CollectorRuntimeConfigEnabled 
 
 type CollectorRuntimeConfig struct {
 	//+kubebuilder:default=Enabled
-	//+operator-sdk:csv:customresourcedefinitions:type=spec
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:select:Enable", "urn:alm:descriptor:com.tectonic.ui:select:Disable", "urn:alm:descriptor:com.tectonic.ui:select:Auto"}
 	Enabled *CollectorRuntimeConfigEnabled `json:"enabled,omitempty"`
 
-	//+operator-sdk:csv:customresourcedefinitions:type=spec
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
 	Networking *CollectorNetworking `json:"networking"`
 }
 
 type CollectorNetworking struct {
 	//+kubebuilder:default=1024
-	//+operator-sdk:csv:customresourcedefinitions:type=spec
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
 	PerContainerRateLimit *int32 `json:"perContainerRateLimit,omitempty"`
-	//+operator-sdk:csv:customresourcedefinitions:type=spec
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
 	ExternalIPs *CollectorExternalIPs `json:"externalIps,omitempty"`
 }
 
@@ -374,7 +374,7 @@ func (c CollectorExternalIPsEnabled) Pointer() *CollectorExternalIPsEnabled {
 
 type CollectorExternalIPs struct {
 	//+kubebuilder:default=Disabled
-	//+operator-sdk:csv:customresourcedefinitions:type=spec
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:select:Enable", "urn:alm:descriptor:com.tectonic.ui:select:Disable", "urn:alm:descriptor:com.tectonic.ui:select:Auto"}
 	Enabled *CollectorExternalIPsEnabled `json:"enabled,omitempty"`
 }
 
