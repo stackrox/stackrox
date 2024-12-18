@@ -1,8 +1,7 @@
 import React from 'react';
-import { Alert, Text } from '@patternfly/react-core';
+import { Alert } from '@patternfly/react-core';
 
 import CollapsibleSection from 'Components/CollapsibleSection';
-import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import ToggleSwitch from 'Components/ToggleSwitch';
 import Select from 'Components/Select';
 import {
@@ -40,7 +39,6 @@ function getSelectComparison(options, key, selectedCluster, handleChange) {
 }
 
 const StaticConfigurationSection = ({
-    centralEnv,
     selectedCluster,
     isManagerTypeNonConfigurable,
     handleChange,
@@ -81,11 +79,6 @@ const StaticConfigurationSection = ({
         }
         onClusterTypeChange(selectedOption);
     }
-
-    const showSlimCollectorWarning =
-        centralEnv?.successfullyFetched &&
-        selectedCluster.slimCollector &&
-        !centralEnv.kernelSupportAvailable;
 
     const isTypeOpenShift3 = selectedCluster?.type === clusterTypes.OPENSHIFT_3;
 

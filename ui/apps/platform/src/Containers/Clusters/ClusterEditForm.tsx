@@ -81,7 +81,6 @@ function ClusterEditForm({
                 data-testid="cluster-form"
             >
                 <StaticConfigurationSection
-                    centralEnv={centralEnv}
                     isManagerTypeNonConfigurable={isManagerTypeNonConfigurable}
                     handleChange={handleChange}
                     selectedCluster={selectedCluster}
