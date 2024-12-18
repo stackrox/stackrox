@@ -7,7 +7,7 @@ import (
 	"io"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager/complianceReportgenerator/types"
+	"github.com/stackrox/rox/central/complianceoperator/v2/report"
 	"github.com/stackrox/rox/pkg/csv"
 )
 
@@ -53,7 +53,7 @@ func NewFormatter() *FormatterImpl {
 	}
 }
 
-func (f *FormatterImpl) FormatCSVReport(results map[string][]*types.ResultRow) (buffRet *bytes.Buffer, errRet error) {
+func (f *FormatterImpl) FormatCSVReport(results map[string][]*report.ResultRow) (buffRet *bytes.Buffer, errRet error) {
 	var buf bytes.Buffer
 	zipWriter := f.newZipWriter(&buf)
 	defer func() {
@@ -72,7 +72,7 @@ func (f *FormatterImpl) FormatCSVReport(results map[string][]*types.ResultRow) (
 	return &buf, nil
 }
 
-func (f *FormatterImpl) createCSVInZip(zipWriter ZipWriter, filename string, clusterResults []*types.ResultRow) error {
+func (f *FormatterImpl) createCSVInZip(zipWriter ZipWriter, filename string, clusterResults []*report.ResultRow) error {
 	w, err := zipWriter.Create(filename)
 	if err != nil {
 		return err
@@ -88,7 +88,7 @@ func (f *FormatterImpl) createCSVInZip(zipWriter ZipWriter, filename string, clu
 	return csvWriter.WriteCSV(w)
 }
 
-func generateRecord(row *types.ResultRow) []string {
+func generateRecord(row *report.ResultRow) []string {
 	return []string{
 		row.ControlRef,
 		row.CheckName,
