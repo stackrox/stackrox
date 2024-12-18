@@ -1180,6 +1180,8 @@ spec:
           instructions, please refer to the documentation).'
         displayName: Image Flavor
         path: perNode.collector.imageFlavor
+      - displayName: Runtime Config
+        path: perNode.collector.runtimeConfig
       - description: Deprecated field. This field will be removed in a future release.
         displayName: Force Collection
         path: perNode.collector.forceCollection
@@ -1193,10 +1195,12 @@ spec:
         path: perNode.collector.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - displayName: Runtime Config
-        path: perNode.collector.runtimeConfig
       - displayName: Enabled
         path: perNode.collector.runtimeConfig.enabled
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:select:Enable
+        - urn:alm:descriptor:com.tectonic.ui:select:Disable
+        - urn:alm:descriptor:com.tectonic.ui:select:Auto
       - displayName: Networking
         path: perNode.collector.runtimeConfig.networking
       - displayName: External IPs
@@ -1205,6 +1209,10 @@ spec:
         path: perNode.collector.runtimeConfig.networking.perContainerRateLimit
       - displayName: Enabled
         path: perNode.collector.runtimeConfig.networking.externalIps.enabled
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:select:Enable
+        - urn:alm:descriptor:com.tectonic.ui:select:Disable
+        - urn:alm:descriptor:com.tectonic.ui:select:Auto
       - description: 'Allows overriding the default resource settings for this component.
           Please consult the documentation
 
