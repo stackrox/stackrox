@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useRouteMatch, useLocation } from 'react-router-dom';
+import { Link, useMatch, useLocation } from 'react-router-dom';
 import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
 import dateFns from 'date-fns';
@@ -9,6 +9,7 @@ import URLService from 'utils/URLService';
 import entityTypes from 'constants/entityTypes';
 import Query from 'Components/ThrowingQuery';
 import Widget from 'Components/Widget';
+import { workflowPaths } from 'routePaths';
 
 const QUERY = gql`
     query secrets {
@@ -66,7 +67,7 @@ const getCertificateStatus = (files) => {
 };
 
 const SecretsMostUsedAcrossDeployments = () => {
-    const match = useRouteMatch();
+    const match = useMatch(workflowPaths.DASHBOARD);
     const location = useLocation();
 
     function processData(data) {

@@ -1,5 +1,5 @@
 import React, { ReactElement, useEffect, useState } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { FormikProvider, useFormik } from 'formik';
 import {
     Alert,
@@ -48,7 +48,7 @@ type PolicyWizardProps = {
 };
 
 function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
-    const history = useHistory();
+    const navigate = useNavigate();
     const [stepId, setStepId] = useState<number | string>(POLICY_DEFINITION_DETAILS_ID);
     const [isValidOnServer, setIsValidOnServer] = useState(false);
     const [policyErrorMessage, setPolicyErrorMessage] = useState('');
@@ -66,7 +66,7 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
                 pageAction === 'edit' ? savePolicy(serverPolicy) : createPolicy(serverPolicy);
             request
                 .then(() => {
-                    history.goBack();
+                    navigate(-1);
                 })
                 .catch((error) => {
                     setPolicyErrorMessage(getAxiosErrorMessage(error));
@@ -92,7 +92,7 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
     } = formik;
 
     function closeWizard(): void {
-        history.goBack();
+        navigate(-1);
     }
 
     function scrollToTop() {

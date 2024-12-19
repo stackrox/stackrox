@@ -1,5 +1,5 @@
 import React, { ReactElement, useState } from 'react';
-import { generatePath, useHistory } from 'react-router-dom';
+import { generatePath, useNavigate } from 'react-router-dom';
 import {
     Dropdown,
     DropdownItem,
@@ -38,7 +38,7 @@ function ScanConfigActionDropdown({
     isReportJobsEnabled,
     isComplianceReportingEnabled,
 }: ScanConfigActionDropdownProps): ReactElement {
-    const history = useHistory();
+    const navigate = useNavigate();
 
     const [isOpen, setIsOpen] = useState(false);
 
@@ -64,10 +64,7 @@ function ScanConfigActionDropdown({
             // description={isScanning ? 'Edit is disabled while scan is running' : ''}
             isDisabled={isProcessing}
             onClick={() => {
-                history.push({
-                    pathname: scanConfigUrl,
-                    search: 'action=edit',
-                });
+                navigate(`${scanConfigUrl}?action=edit`);
             }}
         >
             Edit scan schedule

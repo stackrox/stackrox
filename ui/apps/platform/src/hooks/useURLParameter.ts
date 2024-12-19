@@ -1,12 +1,8 @@
 import { createContext, useCallback, useContext, useRef } from 'react';
-import { useLocation, useHistory } from 'react-router-dom';
+import { Location, NavigateFunction, useLocation, useNavigate } from 'react-router-dom';
 import isEqual from 'lodash/isEqual';
 
 import { getQueryObject, getQueryString } from 'utils/queryStringUtils';
-
-// TODO replace with a more accurate type when we upgrade React Router and 'history'
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type History = any;
 
 export type QueryValue = undefined | string | string[] | qs.ParsedQs | qs.ParsedQs[];
 
@@ -27,12 +23,16 @@ export type UrlParameterUpdate = {
  * @param updates Url parameter updates that need to be applied to the URL
  * @param history The history object to use to apply the updates
  */
-export function applyUpdatesToUrl(updates: UrlParameterUpdate[], history: History) {
+export function applyUpdatesToUrl(
+    updates: UrlParameterUpdate[],
+    location: Location,
+    navigate: NavigateFunction
+) {
     const action = updates.some(({ historyAction }) => historyAction === 'push')
         ? 'push'
         : 'replace';
 
-    const previousQuery = getQueryObject(history.location.search) || {};
+    const previousQuery = getQueryObject(location.search) || {};
     const newQuery = { ...previousQuery };
 
     updates.forEach(({ keyPrefix, newValue }) => {
@@ -46,7 +46,11 @@ export function applyUpdatesToUrl(updates: UrlParameterUpdate[], history: Histor
 
     // Do not change history states if setter is called with current value
     if (!isEqual(previousQuery, newQuery)) {
-        history[action]({ search: getQueryString(newQuery) });
+        if (action === 'push') {
+            navigate(`${location.pathname}${getQueryString(newQuery)}`);
+        } else if (action === 'replace') {
+            navigate(`${location.pathname}${getQueryString(newQuery)}`, { replace: true });
+        }
     }
 }
 
@@ -61,19 +65,23 @@ function makeMicrotaskSchedulingContext() {
     let updates: UrlParameterUpdate[] = [];
     let isUpdateScheduled = false;
 
-    function scheduleAndFlushUpdates(history: History) {
+    function scheduleAndFlushUpdates(location: Location, navigate: NavigateFunction) {
         queueMicrotask(() => {
-            applyUpdatesToUrl(updates, history);
+            applyUpdatesToUrl(updates, location, navigate);
             updates = [];
             isUpdateScheduled = false;
         });
     }
 
     return {
-        addUrlParameterUpdate: (update: UrlParameterUpdate, history: History) => {
+        addUrlParameterUpdate: (
+            update: UrlParameterUpdate,
+            location: Location,
+            navigate: NavigateFunction
+        ) => {
             updates = [...updates, update];
             if (!isUpdateScheduled) {
-                scheduleAndFlushUpdates(history);
+                scheduleAndFlushUpdates(location, navigate);
             }
             isUpdateScheduled = true;
         },
@@ -104,8 +112,8 @@ export type UseURLParameterResult = [
  */
 function useURLParameter(keyPrefix: string, defaultValue: QueryValue): UseURLParameterResult {
     const { addUrlParameterUpdate } = useContext(UrlParameterUpdateContext);
-    const history = useHistory();
     const location = useLocation();
+    const navigate = useNavigate();
     // We use an internal Ref here so that calling code that depends on the
     // value returned by this hook can detect updates. e.g. When used in the
     // dependency array of a `useEffect`.
@@ -115,9 +123,9 @@ function useURLParameter(keyPrefix: string, defaultValue: QueryValue): UseURLPar
 
     const setValue = useCallback(
         (newValue: QueryValue, historyAction: HistoryAction = 'push') => {
-            addUrlParameterUpdate({ historyAction, keyPrefix, newValue }, history);
+            addUrlParameterUpdate({ historyAction, keyPrefix, newValue }, location, navigate);
         },
-        [addUrlParameterUpdate, keyPrefix, history]
+        [addUrlParameterUpdate, keyPrefix, location, navigate]
     );
 
     const nextValue = getQueryObject(location.search)[keyPrefix] || defaultValue;

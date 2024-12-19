@@ -8,7 +8,7 @@ import {
     VerticalBarSeries,
 } from 'react-vis';
 import PropTypes from 'prop-types';
-import { useHistory, Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import DiscreteColorLegend from 'react-vis/dist/legends/discrete-color-legend';
 import merge from 'deepmerge';
 
@@ -26,7 +26,7 @@ function VerticalClusterBar({
     tickFormat = (x) => `${x}%`,
     labelLinks = {},
 }) {
-    const history = useHistory();
+    const navigate = useNavigate();
 
     const getLegendData = () => {
         return Object.keys(data)
@@ -59,7 +59,7 @@ function VerticalClusterBar({
         },
         onValueClick: (datum) => {
             if (datum.link) {
-                history.push(datum.link);
+                navigate(datum.link);
             }
         },
     };

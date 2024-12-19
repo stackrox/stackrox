@@ -1,4 +1,4 @@
-import { History } from 'react-router-dom';
+import { NavigateFunction } from 'react-router-dom';
 import {
     ChartBarProps,
     ChartLabelProps,
@@ -58,7 +58,7 @@ type ChartEventHandler = ValueOf<ChartEventProp['eventHandlers']>;
  * A helper function to generate a chart onClick event that initiates navigation to another page.
  */
 export function navigateOnClickEvent(
-    history: History,
+    navigate: NavigateFunction,
     /** A function that generates the link to navigate to when the entity is clicked */
     linkWith: (props: ChartLabelProps) => string,
     /** An array of Victory onClick event handlers that will be called before navigation is initiated */
@@ -67,7 +67,7 @@ export function navigateOnClickEvent(
     const navigateEventHandler = {
         mutation: (props) => {
             const link = linkWith(props);
-            history.push(link);
+            navigate(link);
             return null;
         },
     };

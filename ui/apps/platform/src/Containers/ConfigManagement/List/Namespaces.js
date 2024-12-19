@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { useLocation, useRouteMatch } from 'react-router-dom';
+import { useLocation, useMatch } from 'react-router-dom';
 import pluralize from 'pluralize';
 
 import PolicyStatusIconText from 'Components/PatternFly/IconText/PolicyStatusIconText';
@@ -17,9 +17,9 @@ import { namespaceSortFields } from 'constants/sortFields';
 import { NAMESPACES_NO_POLICIES_QUERY } from 'queries/namespace';
 import queryService from 'utils/queryService';
 import URLService from 'utils/URLService';
+import { workflowPaths } from 'routePaths';
 import { getConfigMgmtPathForEntitiesAndId } from '../entities';
 import List from './List';
-
 import filterByPolicyStatus from './utilities/filterByPolicyStatus';
 
 export const defaultNamespaceSort = [
@@ -209,7 +209,7 @@ const Namespaces = ({
     entityContext,
 }) => {
     const location = useLocation();
-    const match = useRouteMatch();
+    const match = useMatch(workflowPaths.LIST);
     const searchParam = useContext(searchContext);
 
     const autoFocusSearchInput = !selectedRowId;
