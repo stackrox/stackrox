@@ -29,40 +29,41 @@ func NewLocalScannerTLSIssuer(
 	sensorNamespace string,
 	sensorPodName string,
 ) common.SensorComponent {
-	msgToCentralC := make(chan *message.ExpiringMessage)
-	msgFromCentralC := make(chan *central.IssueLocalScannerCertsResponse)
-	return &localScannerTLSIssuerImpl{
+	tlsIssuer := &localScannerTLSIssuerImpl{
 		sensorNamespace:              sensorNamespace,
 		sensorPodName:                sensorPodName,
 		k8sClient:                    k8sClient,
-		msgToCentralC:                msgToCentralC,
-		msgFromCentralC:              msgFromCentralC,
 		certRefreshBackoff:           certRefreshBackoff,
 		getCertificateRefresherFn:    newCertificatesRefresher,
 		getServiceCertificatesRepoFn: localscanner.NewServiceCertificatesRepo,
-		certRequester:                certificates.NewLocalScannerCertificateRequester(msgToCentralC, msgFromCentralC),
+		msgToCentralC:                make(chan *message.ExpiringMessage),
+		stopSig:                      concurrency.NewErrorSignal(),
 	}
+
+	tlsIssuer.certRequester = certificates.NewLocalScannerCertificateRequester(tlsIssuer.msgToCentralHandler)
+	return tlsIssuer
 }
 
 type localScannerTLSIssuerImpl struct {
 	sensorNamespace              string
 	sensorPodName                string
 	k8sClient                    kubernetes.Interface
-	msgToCentralC                chan *message.ExpiringMessage
-	msgFromCentralC              chan *central.IssueLocalScannerCertsResponse
 	certRefreshBackoff           wait.Backoff
 	getCertificateRefresherFn    certificateRefresherGetter
 	getServiceCertificatesRepoFn serviceCertificatesRepoGetter
 	certRequester                certificates.Requester
 	certRefresher                concurrency.RetryTicker
+	msgToCentralC                chan *message.ExpiringMessage
+	stopSig                      concurrency.ErrorSignal
 }
 
-// Start starts the sensor component and launches a certificate refresher that immediately checks the certificates, and
+// Start starts the Sensor component and launches a certificate refresher that immediately checks the certificates, and
 // that keeps them updated.
 // In case a secret doesn't have the expected owner, this logs a warning and returns nil.
 // In case this component was already started it fails immediately.
 func (i *localScannerTLSIssuerImpl) Start() error {
 	log.Debug("Starting local scanner TLS issuer.")
+	i.stopSig.Reset()
 	ctx, cancel := context.WithTimeout(context.Background(), startTimeout)
 	defer cancel()
 
@@ -81,7 +82,6 @@ func (i *localScannerTLSIssuerImpl) Start() error {
 	i.certRefresher = i.getCertificateRefresherFn("local scanner certificates", i.certRequester.RequestCertificates, certsRepo,
 		certRefreshTimeout, i.certRefreshBackoff)
 
-	i.certRequester.Start()
 	if refreshStartErr := i.certRefresher.Start(); refreshStartErr != nil {
 		return i.abortStart(errors.Wrap(refreshStartErr, "starting certificate certRefresher"))
 	}
@@ -97,12 +97,12 @@ func (i *localScannerTLSIssuerImpl) abortStart(err error) error {
 }
 
 func (i *localScannerTLSIssuerImpl) Stop(_ error) {
+	i.stopSig.Signal()
 	if i.certRefresher != nil {
 		i.certRefresher.Stop()
 		i.certRefresher = nil
 	}
 
-	i.certRequester.Stop()
 	log.Debug("Local Scanner TLS issuer stopped.")
 }
 
@@ -112,32 +112,36 @@ func (i *localScannerTLSIssuerImpl) Capabilities() []centralsensor.SensorCapabil
 	return []centralsensor.SensorCapability{centralsensor.LocalScannerCredentialsRefresh}
 }
 
-// ResponsesC is called "responses" because for other SensorComponent it is central that
-// initiates the interaction. However, here it is sensor which sends a request to central.
+// ResponsesC is called "responses" because for other SensorComponent it is Central that
+// initiates the interaction. However, here it is Sensor which sends a request to Central.
 func (i *localScannerTLSIssuerImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return i.msgToCentralC
 }
 
-// ProcessMessage dispatches Central's messages to Sensor received via the central receiver.
+// ProcessMessage dispatches Central's messages to Sensor received via the Central receiver.
 // This method must not block as it would prevent centralReceiverImpl from sending messages
 // to other SensorComponents.
 func (i *localScannerTLSIssuerImpl) ProcessMessage(msg *central.MsgToSensor) error {
-	switch m := msg.GetMsg().(type) {
-	case *central.MsgToSensor_IssueLocalScannerCertsResponse:
-		response := m.IssueLocalScannerCertsResponse
-		go func() {
-			ctx, cancel := context.WithTimeout(context.Background(), processMessageTimeout)
-			defer cancel()
-			select {
-			case <-ctx.Done():
-				// certRefresher will retry.
-				log.Errorf("timeout forwarding response %s from central: %s", response, ctx.Err())
-			case i.msgFromCentralC <- response:
-			}
-		}()
+	response := msg.GetIssueLocalScannerCertsResponse()
+	if response == nil {
+		// messages not supported by this component are ignored
 		return nil
-	default:
-		// messages not supported by this component are ignored because unknown messages types are handled by the central receiver.
+	}
+
+	go func() {
+		i.certRequester.DispatchResponse(certificates.NewResponseFromLocalScannerCerts(response))
+	}()
+
+	return nil
+}
+
+func (i *localScannerTLSIssuerImpl) msgToCentralHandler(ctx context.Context, msg *message.ExpiringMessage) error {
+	select {
+	case <-i.stopSig.Done():
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	case i.msgToCentralC <- msg:
 		return nil
 	}
 }
