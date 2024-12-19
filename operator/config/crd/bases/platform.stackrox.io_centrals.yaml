@@ -66,6 +66,39 @@ spec:
                     description: Settings for Central DB, which is responsible for
                       data persistence.
                     properties:
+                      advancedConfigOverride:
+                        description: DBConfigOverride configures the database connection
+                          pool size.
+                        properties:
+                          effectiveCacheSize:
+                            description: Effective Cache size.
+                            type: string
+                          hashMemMultiplier:
+                            description: Hash Mem Multiplier.
+                            type: string
+                          maintenanceWorkMem:
+                            description: Maintenance Work Mem.
+                            type: string
+                          maxConnections:
+                            default: 90
+                            description: Maximum number of connections in the connection
+                              pool.
+                            format: int32
+                            minimum: 1
+                            type: integer
+                          maxWalSize:
+                            description: Max Wal Size.
+                            type: string
+                          minWalSize:
+                            description: Min Wal Size.
+                            type: string
+                          sharedBuffers:
+                            description: Shared buffers size.
+                            type: string
+                          workMem:
+                            description: Work mem size.
+                            type: string
+                        type: object
                       configOverride:
                         description: Config map containing postgresql.conf and pg_hba.conf
                           that will be used if modifications need to be applied.

@@ -391,6 +391,8 @@ spec:
         path: scannerV4.matcher.scaling.minReplicas
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.autoScaling:Enabled
+      - displayName: Template values to override postgresql.conf default values
+        path: central.db.advancedConfigOverride
       - description: Config map containing postgresql.conf and pg_hba.conf that will
           be used if modifications need to be applied.
         displayName: Config map that will override postgresql.conf and pg_hba.conf
@@ -685,6 +687,30 @@ spec:
         path: central.adminPasswordSecret.name
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
+      - description: Effective Cache size.
+        displayName: Effective Cache Size
+        path: central.db.advancedConfigOverride.effectiveCacheSize
+      - description: Hash Mem Multiplier.
+        displayName: Hash Mem Multiplier
+        path: central.db.advancedConfigOverride.hashMemMultiplier
+      - description: Maintenance Work Mem.
+        displayName: Maintenance Work Mem
+        path: central.db.advancedConfigOverride.maintenanceWorkMem
+      - description: Maximum number of connections in the connection pool.
+        displayName: Maximum Connections
+        path: central.db.advancedConfigOverride.maxConnections
+      - description: Max Wal Size.
+        displayName: Max Wal Size
+        path: central.db.advancedConfigOverride.maxWalSize
+      - description: Min Wal Size.
+        displayName: Min Wal Size
+        path: central.db.advancedConfigOverride.minWalSize
+      - description: Shared buffers size.
+        displayName: Shared Buffers
+        path: central.db.advancedConfigOverride.sharedBuffers
+      - description: Work mem size.
+        displayName: Work Mem
+        path: central.db.advancedConfigOverride.workMem
       - description: The name of the referenced config map.
         displayName: Name
         path: central.db.configOverride.name

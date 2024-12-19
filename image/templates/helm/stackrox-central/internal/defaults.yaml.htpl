@@ -80,7 +80,16 @@ defaults:
         maxConns: 90
         statementTimeoutMs: 1200000
 
-      postgresConfig: "@config/centraldb/postgresql.conf|config/centraldb/postgresql.conf.default"
+      settings:
+        maxConnections: 63
+        sharedBuffers: 2GB
+        workMem: 40MB
+        hashMemMultiplier: 2.0
+        maintenanceWorkMem: 512MB
+        effectiveCacheSize: 4GB
+        maxWalSize: 5GB
+        minWalSize: 80MB
+
       hbaConfig: "@config/centraldb/pg_hba.conf|config/centraldb/pg_hba.conf.default"
 
       image:

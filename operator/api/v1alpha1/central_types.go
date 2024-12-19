@@ -247,6 +247,9 @@ type CentralDBSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4,displayName="Config map that will override postgresql.conf and pg_hba.conf"
 	ConfigOverride LocalConfigMapReference `json:"configOverride,omitempty"`
 
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4,displayName="Template values to override postgresql.conf default values"
+	AdvancedConfigOverride *DBConfigOverride `json:"advancedConfigOverride,omitempty"`
+
 	// Configures the database connection pool size.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5,displayName="Database Connection Pool Size Settings"
 	ConnectionPoolSize *DBConnectionPoolSize `json:"connectionPoolSize,omitempty"`
@@ -282,6 +285,43 @@ type DBConnectionPoolSize struct {
 	//+kubebuilder:validation:Minimum=1
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Maximum Connections"
 	MaxConnections *int32 `json:"maxConnections"`
+}
+
+// DBConfigOverride configures the database connection pool size.
+type DBConfigOverride struct {
+	// Maximum number of connections in the connection pool.
+	//+kubebuilder:default=90
+	//+kubebuilder:validation:Minimum=1
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Maximum Connections"
+	MaxConnections *int32 `json:"maxConnections,omitempty"`
+
+	// Shared buffers size.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Shared Buffers"
+	SharedBuffers *string `json:"sharedBuffers,omitempty"`
+
+	// Work mem size.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Work Mem"
+	WorkMem *string `json:"workMem,omitempty"`
+
+	// Hash Mem Multiplier.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Hash Mem Multiplier"
+	HashMemMultiplier *string `json:"hashMemMultiplier,omitempty"`
+
+	// Maintenance Work Mem.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Maintenance Work Mem"
+	MaintenanceWorkMem *string `json:"maintenanceWorkMem,omitempty"`
+
+	// Effective Cache size.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Effective Cache Size"
+	EffectiveCacheSize *string `json:"effectiveCacheSize,omitempty"`
+
+	// Max Wal Size.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Max Wal Size"
+	MaxWalSize *string `json:"maxWalSize,omitempty"`
+
+	// Min Wal Size.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Min Wal Size"
+	MinWalSize *string `json:"minWalSize,omitempty"`
 }
 
 // CentralDBEnabledPtr return a pointer for the given CentralDBEnabled value

@@ -69,6 +69,15 @@ func TestTranslate(t *testing.T) {
 		},
 	}
 
+	dbMaxConnections := int32(22)
+	dbSharedBuffers := "1GB"
+	dbWorkMem := "1GB"
+	dbHashMemMultiplier := "3.0"
+	dbMaintenanceWorkMem := "2KB"
+	dbEffectiveCacheSize := "1MB"
+	dbMaxWalSize := "4KB"
+	dbMinWalSize := "400KB"
+
 	tests := map[string]struct {
 		args args
 		want chartutil.Values
@@ -250,6 +259,18 @@ func TestTranslate(t *testing.T) {
 							},
 							NotifierSecretsEncryption: &platform.NotifierSecretsEncryption{
 								Enabled: pointer.Bool(true),
+							},
+							DB: &platform.CentralDBSpec{
+								AdvancedConfigOverride: &platform.DBConfigOverride{
+									MaxConnections:     &dbMaxConnections,
+									SharedBuffers:      &dbSharedBuffers,
+									WorkMem:            &dbWorkMem,
+									HashMemMultiplier:  &dbHashMemMultiplier,
+									MaintenanceWorkMem: &dbMaintenanceWorkMem,
+									EffectiveCacheSize: &dbEffectiveCacheSize,
+									MaxWalSize:         &dbMaxWalSize,
+									MinWalSize:         &dbMinWalSize,
+								},
 							},
 						},
 						Scanner: &platform.ScannerComponentSpec{
@@ -480,6 +501,16 @@ func TestTranslate(t *testing.T) {
 							"persistentVolumeClaim": map[string]interface{}{
 								"createClaim": false,
 							},
+						},
+						"settings": map[string]interface{}{
+							"effectiveCacheSize": "1MB",
+							"hashMemMultiplier":  "3.0",
+							"maintenanceWorkMem": "2KB",
+							"maxConnections":     22,
+							"maxWalSize":         "4KB",
+							"minWalSize":         "400KB",
+							"sharedBuffers":      "1GB",
+							"workMem":            "1GB",
 						},
 					},
 					"resources": map[string]interface{}{

@@ -86,6 +86,15 @@ central:
       minConns: null # int
       maxConns: null # int
       statementTimeoutMs: null #int
+    settings:
+      maxConnections: null # int
+      sharedBuffers: null # string
+      workMem: null # string
+      hashMemMultiplier: null # string
+      maintenanceWorkMem: null # string
+      effectiveCacheSize: null # string
+      maxWalSize: null # string
+      minWalSize: null # string
     configOverride: null # string
     password:
       value: null # string

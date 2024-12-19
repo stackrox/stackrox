@@ -31,6 +31,7 @@ spec:
           {{- $_ := set $annotations "openshift.io/required-scc" "nonroot-v2" -}}
         {{- end }}
         {{- include "srox.podAnnotations" (list . "deployment" "central-db" $annotations) | nindent 8 }}
+        checksum/config: {{- include (print $.Chart.Name "/templates/01-central-08-db-configmap.yaml") . | sha256sum | indent 1 }}
     spec:
       {{- if ._rox.central.db._nodeSelector }}
       nodeSelector:
