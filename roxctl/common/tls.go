@@ -54,7 +54,7 @@ func tlsConfigOptsForCentral() (*clientconn.TLSConfigOptions, error) {
 
 	opts := &clientconn.TLSConfigOptions{
 		ServerName:         serverName,
-		InsecureSkipVerify: flags.SkipTLSValidation() != nil && *flags.SkipTLSValidation(),
+		InsecureSkipVerify: flags.SkipTLSValidation(),
 	}
 
 	if !opts.InsecureSkipVerify {
