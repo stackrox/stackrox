@@ -206,7 +206,7 @@ func (c *nodeInventoryHandlerImpl) handleNodeIndex(
 	}
 	metrics.ObserveNodeScan(index.NodeName, metrics.NodeScanTypeNodeIndex, metrics.NodeScanOperationReceive)
 	if !c.centralReady.IsDone() {
-		log.Warn("Received Index Report but Central is not reachable. Requesting Compliance to resend later.")
+		log.Warn("Received IndexReport but Central is not reachable. Requesting Compliance to resend later.")
 		c.sendAckToCompliance(index.NodeName,
 			sensor.MsgToCompliance_NodeInventoryACK_NACK,
 			sensor.MsgToCompliance_NodeInventoryACK_NodeIndexer,
@@ -222,7 +222,7 @@ func (c *nodeInventoryHandlerImpl) handleNodeIndex(
 			metrics.AckReasonNodeUnknown)
 	} else {
 		index.NodeID = nodeID
-		log.Debugf("Mapping Node Index name '%s' to Node ID '%s'", index.NodeName, nodeID)
+		log.Debugf("Mapping IndexReport name '%s' to Node ID '%s'", index.NodeName, nodeID)
 		c.sendNodeIndex(toCentral, index)
 	}
 }
@@ -281,10 +281,10 @@ func (c *nodeInventoryHandlerImpl) sendNodeInventory(toC chan<- *message.Expirin
 
 func (c *nodeInventoryHandlerImpl) sendNodeIndex(toC chan<- *message.ExpiringMessage, indexWrap *index.IndexReportWrap) {
 	if indexWrap == nil || indexWrap.IndexReport == nil {
-		log.Debugf("Empty index report - not sending to Central")
+		log.Debugf("Empty IndexReport - not sending to Central")
 		return
 	}
-	defer log.Debugf("Finished sending index report to Central")
+	defer log.Debugf("Sending IndexReport to Central...")
 	select {
 	case <-c.stopper.Flow().StopRequested():
 	case toC <- message.New(&central.MsgFromSensor{
@@ -300,6 +300,7 @@ func (c *nodeInventoryHandlerImpl) sendNodeIndex(toC chan<- *message.ExpiringMes
 			},
 		},
 	}):
+		defer log.Debugf("Finished sending IndexReport to Central")
 		metrics.ObserveReceivedNodeIndex(indexWrap.NodeName) // keeping for compatibility. Remove in 4.8
 		metrics.ObserveNodeScan(indexWrap.NodeName, metrics.NodeScanTypeNodeIndex, metrics.NodeScanOperationSendToCentral)
 	}
