@@ -836,7 +836,7 @@ jobs:
         run: |
           cd /tmp
           curl --retry 5 -o oc.tar.gz https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/stable/openshift-client-linux.tar.gz
-          tar xvzf oc.tar.gz
+          tar xvzf oc.tar.gz oc
           mv oc /usr/bin/ || mv oc /usr/local/bin/
           echo "$PATH"
           oc version || true
