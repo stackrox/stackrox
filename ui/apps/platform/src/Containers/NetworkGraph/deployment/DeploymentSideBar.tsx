@@ -1,7 +1,6 @@
 import React, { useEffect, CSSProperties } from 'react';
 import {
     Alert,
-    AlertVariant,
     Bullseye,
     Flex,
     FlexItem,
@@ -124,7 +123,7 @@ function DeploymentSideBar({
                 </StackItem>
                 <StackItem>
                     <Alert
-                        variant={AlertVariant.danger}
+                        variant="danger"
                         title={error.toString()}
                         component="p"
                         className="pf-v5-u-my-lg pf-v5-u-mx-lg"

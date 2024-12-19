@@ -262,6 +262,11 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
             { accessor: 'scannerV4.indexerEndpoint', Header: 'Indexer Endpoint' },
             { accessor: 'scannerV4.matcherEndpoint', Header: 'Matcher Endpoint' },
         ],
+        ghcr: [
+            { accessor: 'name', Header: 'Name' },
+            { accessor: 'docker.endpoint', Header: 'Endpoint' },
+            { accessor: 'docker.username', Header: 'Username' },
+        ],
         google: [
             { accessor: 'name', Header: 'Name' },
             { accessor: 'google.endpoint', Header: 'Endpoint' },

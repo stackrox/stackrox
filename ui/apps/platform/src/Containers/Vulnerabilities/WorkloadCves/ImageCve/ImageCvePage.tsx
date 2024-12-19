@@ -91,6 +91,7 @@ import VulnerabilityStateTabs, {
     vulnStateTabContentId,
 } from '../components/VulnerabilityStateTabs';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
+import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 
 const workloadCveOverviewCvePath = getOverviewPagePath('Workload', {
     vulnerabilityState: 'OBSERVED',
@@ -210,6 +211,8 @@ function ImageCvePage() {
 
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
+
+    const { pageTitle } = useWorkloadCveViewContext();
     const currentVulnerabilityState = useVulnerabilityState();
 
     const urlParams = useParams();
@@ -305,8 +308,7 @@ function ImageCvePage() {
         skip: entityTab !== 'Deployment',
     });
 
-    const isNvdCvssColumnEnabled =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
+    const isNvdCvssColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
     const affectedImagesFilteredColumns = filterManagedColumns(
         affectedImagesDefaultColumns,
         (key) => key !== 'nvdCvss' || isNvdCvssColumnEnabled
@@ -388,12 +390,12 @@ function ImageCvePage() {
     return (
         <>
             <PageTitle
-                title={`Workload CVEs - ImageCVE ${metadataRequest.data?.imageCVE?.cve ?? ''}`}
+                title={`${pageTitle} - ImageCVE ${metadataRequest.data?.imageCVE?.cve ?? ''}`}
             />
             <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={workloadCveOverviewCvePath}>
-                        Workload CVEs
+                        {pageTitle}
                     </BreadcrumbItemLink>
                     {!metadataRequest.error && (
                         <BreadcrumbItem isActive>

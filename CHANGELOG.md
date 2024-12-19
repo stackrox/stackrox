@@ -11,8 +11,21 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Added Features
 
+- ROX-26849: Introduce report caching for RHCOS Node Indexing
+- ROX-25638: Introduce configurable log rotation. `ROX_LOGGING_MAX_ROTATION_FILES` and `ROX_LOGGING_MAX_SIZE_MB` variables allow for configuring the number and the size of a central log rotation file.
+- ROX-14332: Automatic service certificate renewal for Secured Clusters installed using Helm or operator.
+
+### Removed Features
+
+### Deprecated Fatures
+
+### Technical Changes
+
+## [4.6.0]
+
+### Added Features
+
 - ROX-25066: Add new external backup integration for non-AWS S3 compatible providers.
-- ROX-25376: Add the release stage property to the `/v1/featureflags` response.
 - ROX-25451: Secured Cluster Auto-Upgrader is now enabled for all kind of clusters.
 - ROX-26124: Added a `--with-database-only` only to diagnostic bundle.
   - `roxctl central debug download-diagnostics --with-database-only`
@@ -54,9 +67,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-20578: Sensor will now store pull secrets by secret name and registry host (instead of only registry host). This will reduce Delegated Scanning authentication failures when multiple secrets exist for the same registry within a namespace and more closely aligns with k8s secret handling.
   - Setting `ROX_SENSOR_PULL_SECRETS_BY_NAME` to `false` on Sensor will disable this feature and cause secrets to be stored by only registry host.
 - ROX-25981: Scanner V4 now fetches vulnerability data from [Red Hat's VEX files](https://security.access.redhat.com/data/csaf/v2/vex/) instead of [Red Hat's OVAL feed](https://security.access.redhat.com/data/oval/v2/) for RPMs installed in RHEL-based image containers.
-  - Fixed vulnerabilities affecting RHEL-based images are no longer identified by the respective RHSA, RHBA, nor RHEA. Instead, they will be identified by CVE.
+  - Fixed vulnerabilities affecting RHEL-based images are still identified by the respective RHSA, RHBA, or RHEA, by default. They may be identified by CVE, instead, by setting the feature flag `ROX_SCANNER_V4_RED_HAT_CVES` to `true` in Scanner V4 Matcher.
     - This will also apply to vulnerabilities obtained from the [CVE map](https://security.access.redhat.com/data/metrics/cvemap.xml) (used for container-first scanning).
-    - This may potentially disrupt policies created around RHSAs.
+    - Setting the feature flag will disrupt policies created around RHSAs, as RHSAs will no longer be tracked.
   - Scanner V4 now only considers vulnerabilities affecting Red Hat products dated back to 2014.
     - Previously when reading Red Hat's OVAL data, the vulnerabilities dated back to pre-2000, but ClairCore only reads back to 2014.
   - Scanner V4 DB requires less space for vulnerability data, and its initialization time has improved from about 1 hour on SSD to about 10 minutes.
@@ -65,6 +78,17 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - Now the metadata and layers pulled will be based on the digest of the image provided by the container runtime (when available) instead of just the tag.
 - ROX-26748: Replaced 'unsafe' characters in the CSV report file name.
 - The endpoint `/v2/compliance/scan/configurations/reports/run` method has changed from `PUT` to `POST`.
+- ROX-23956, ROX-17355: Scanner V4 Indexer will now re-index manifests/images for one of two reasons: (1) upon Indexer update which knowingly affects manifests/images or (2) after some random amount of time between 7 and 30 days after indexing.
+  - This means Scanner V4 Indexer will now pull images from the registry more than just once.
+  - This will allow image scans to reflect the latest features (for example, we support a new language, we will re-index an image to see if artifacts of the new language exist).
+  - This will also clean up manifests/Index Reports from Scanner V4 DB which are no longer relevant in the environment or may have previously been indexed incorrectly due to a bug or missing data.
+  - Any manifests indexed prior to this change will be deleted upon update to this version to ensure any incorrect Index Reports are amended.
+  - The interval in which manifests are randomly deleted may be modified via `ROX_SCANNER_V4_MANIFEST_DELETE_INTERVAL_START` (default: 7 days) and `ROX_SCANNER_V4_MANIFEST_DELETE_DURATION` (default: 23 days) in Scanner V4 Indexer.
+  - Scanner V4 Indexer periodically checks for expired manifests at the interval specified by `ROX_SCANNER_V4_MANIFEST_GC_INTERVAL` (default: 4 hours).
+  - Each GC process only deletes a subset of expired manifests specified by `ROX_SCANNER_V4_MANIFEST_GC_THROTTLE` (default: 100) in Scanner V4 Indexer.
+  - Scanner V4 Indexer will also run a periodic "full" GC process at the interval specified by `ROX_SCANNER_V4_FULL_MANIFEST_GC_INTERVAL` (default: 24 hours).
+  - Re-indexing may be disabled by setting `ROX_SCANNER_V4_REINDEX` to `false` in the Scanner V4 Indexer.
+- Alpine vulnerabilities will now have a link to https://security.alpinelinux.org instead of https://www.cve.org.
 
 ## [4.5.0]
 

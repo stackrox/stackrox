@@ -86,7 +86,7 @@ export const validationSchema = yup.object().shape({
                         }
                         try {
                             JSON.parse(value as string);
-                        } catch (e) {
+                        } catch {
                             return false;
                         }
                         const trimmedValue = value?.trim();

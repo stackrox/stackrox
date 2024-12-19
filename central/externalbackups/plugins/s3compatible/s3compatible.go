@@ -22,6 +22,8 @@ import (
 	"github.com/stackrox/rox/central/externalbackups/plugins"
 	"github.com/stackrox/rox/central/externalbackups/plugins/types"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/administration/events/codes"
+	"github.com/stackrox/rox/pkg/administration/events/option"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
@@ -29,15 +31,14 @@ import (
 )
 
 const (
-	backupMaxTimeout               = 4 * time.Hour
-	testMaxTimeout                 = 5 * time.Second
+	backupMaxTimeout = 4 * time.Hour
+	// Keep test timeout smaller than the UI timeout (see apps/platform/src/services/instance.js#7).
+	testMaxTimeout                 = 9 * time.Second
 	initialConfigurationMaxTimeout = 5 * time.Minute
 	formatKey                      = "backup_2006-01-02T15:04:05.zip"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
+var log = logging.LoggerForModule(option.EnableAdministrationEvents())
 
 func init() {
 	plugins.Add(types.S3CompatibleType, func(backup *storage.ExternalBackup) (types.ExternalBackup, error) {
@@ -68,6 +69,7 @@ func init() {
 // in 4.5.
 type s3Compatible struct {
 	integration *storage.ExternalBackup
+	bucket      string
 
 	client   *s3.Client
 	uploader *manager.Uploader
@@ -144,6 +146,7 @@ func newS3Compatible(integration *storage.ExternalBackup) (*s3Compatible, error)
 	client := s3.NewFromConfig(awsConfig, clientOpts...)
 	return &s3Compatible{
 		integration: integration,
+		bucket:      integration.GetS3Compatible().GetBucket(),
 		client:      client,
 		uploader:    manager.NewUploader(client),
 	}, nil
@@ -162,12 +165,12 @@ func (s *s3Compatible) Backup(reader io.ReadCloser) error {
 	key := time.Now().Format(formatKey)
 	formattedKey := s.prefixKey(key)
 	if _, err := s.uploader.Upload(ctx, &s3.PutObjectInput{
-		Bucket: aws.String(s.integration.GetS3Compatible().GetBucket()),
+		Bucket: aws.String(s.bucket),
 		Key:    aws.String(formattedKey),
 		Body:   reader,
 	}); err != nil {
-		return s.createError(fmt.Sprintf("error creating backup in bucket %q with key %q",
-			s.integration.GetS3Compatible().GetBucket(), formattedKey), err)
+		return s.createError(fmt.Sprintf("creating backup in bucket %q with key %q",
+			s.bucket, formattedKey), err)
 	}
 	log.Info("Successfully backed up to S3 compatible store")
 	return s.pruneBackupsIfNecessary(ctx)
@@ -177,12 +180,19 @@ func (s *s3Compatible) createError(msg string, err error) error {
 	var apiErr smithy.APIError
 	if errors.As(err, &apiErr) {
 		if apiErr.ErrorMessage() != "" {
-			msg = fmt.Sprintf("%s (code: %s; message: %s)", msg, apiErr.ErrorCode(), apiErr.ErrorMessage())
+			msg = fmt.Sprintf("S3 compatible backup: %s (code: %s; message: %s)",
+				msg, apiErr.ErrorCode(), apiErr.ErrorMessage())
 		} else {
-			msg = fmt.Sprintf("%s (code: %s)", msg, apiErr.ErrorCode())
+			msg = fmt.Sprintf("S3 compatible backup: %s (code: %s)", msg, apiErr.ErrorCode())
 		}
 	}
-	log.Errorf("S3 compatible store backup error: %v", err)
+	log.Errorw(msg,
+		logging.BackupName(s.integration.GetName()),
+		logging.Err(err),
+		logging.ErrCode(codes.S3CompatibleGeneric),
+		logging.String("bucket", s.bucket),
+		logging.String("object-prefix", s.integration.GetS3Compatible().GetObjectPrefix()),
+	)
 	return errors.New(msg)
 }
 
@@ -206,11 +216,11 @@ func sortS3Objects(objects []s3Types.Object) {
 
 func (s *s3Compatible) pruneBackupsIfNecessary(ctx context.Context) error {
 	objects, err := s.client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
-		Bucket: aws.String(s.integration.GetS3Compatible().GetBucket()),
+		Bucket: aws.String(s.bucket),
 		Prefix: aws.String(s.prefixKey("backup")),
 	})
 	if err != nil {
-		return errors.Wrap(err, "failed to list objects from s3 compatible bucket")
+		return s.createError(fmt.Sprintf("listing objects in s3 compatible bucket %q", s.bucket), err)
 	}
 	// If the number of objects in the bucket is smaller than the configured
 	// number of backups to keep, we exit here.
@@ -223,11 +233,13 @@ func (s *s3Compatible) pruneBackupsIfNecessary(ctx context.Context) error {
 	errorList := errorhelpers.NewErrorList("remove objects in S3 compatible store")
 	for _, objToRemove := range objects.Contents[s.integration.GetBackupsToKeep():] {
 		_, err = s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
-			Bucket: aws.String(s.integration.GetS3Compatible().GetBucket()),
+			Bucket: aws.String(s.bucket),
 			Key:    objToRemove.Key,
 		})
 		if err != nil {
-			errorList.AddError(err)
+			errorList.AddError(s.createError(
+				fmt.Sprintf("deleting object %q from bucket %q", *objToRemove.Key, s.bucket), err),
+			)
 		}
 	}
 	return errorList.ToError()
@@ -238,19 +250,19 @@ func (s *s3Compatible) Test() error {
 	defer cancel()
 	formattedKey := s.prefixKey("test")
 	if _, err := s.uploader.Upload(ctx, &s3.PutObjectInput{
-		Bucket: aws.String(s.integration.GetS3Compatible().GetBucket()),
+		Bucket: aws.String(s.bucket),
 		Key:    aws.String(formattedKey),
 		Body:   strings.NewReader("This is a test of the StackRox integration with this bucket"),
 	}); err != nil {
-		return s.createError(fmt.Sprintf("error creating test object %q in bucket %q",
-			formattedKey, s.integration.GetS3Compatible().GetBucket()), err)
+		return s.createError(fmt.Sprintf("creating test object %q in bucket %q",
+			formattedKey, s.bucket), err)
 	}
 	if _, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
-		Bucket: aws.String(s.integration.GetS3Compatible().GetBucket()),
+		Bucket: aws.String(s.bucket),
 		Key:    aws.String(formattedKey),
 	}); err != nil {
-		return s.createError(fmt.Sprintf("failed to remove test object %q from bucket %q",
-			formattedKey, s.integration.GetS3Compatible().GetBucket()), err)
+		return s.createError(fmt.Sprintf("deleting test object %q from bucket %q",
+			formattedKey, s.bucket), err)
 	}
 	return nil
 }

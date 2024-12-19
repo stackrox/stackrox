@@ -9,14 +9,22 @@ metadata:
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "500"
     # TODO(ROX-21073): re-enable for all PR branches
-    pipelinesascode.tekton.dev/on-cel-expression: |
-      (event == "push" && target_branch.matches("^(master|release-.*)$")) ||
-      (event == "pull_request" && (source_branch.matches("(konflux|appstudio|rhtap)") || body.pull_request.labels.exists(l, l.name == "konflux-build")))
+    pipelinesascode.tekton.dev/on-cel-expression: (
+        event == "push" && (
+          source_branch == "master" ||
+          target_branch.startsWith("refs/tags/")
+        )
+      ) || (
+        event == "pull_request" && (
+          source_branch.matches("(konflux|renovate|appstudio|rhtap)") ||
+          body.pull_request.labels.exists(l, l.name == "konflux-build")
+        )
+      )
   labels:
     appstudio.openshift.io/application: acs
     appstudio.openshift.io/component: operator-bundle
     pipelines.appstudio.openshift.io/type: build
-  name: operator-bundle-build
+  name: operator-bundle-on-push
   namespace: rh-acs-tenant
 
 spec:
@@ -31,17 +39,17 @@ spec:
     value: '52w'
   - name: output-image-repo
     value: quay.io/rhacs-eng/stackrox-operator-bundle
-  - name: operator-image-repo
-    value: quay.io/rhacs-eng/stackrox-operator
   - name: revision
     value: '{{revision}}'
   - name: rebuild
     value: 'true'
-  # TODO(ROX-20234): Enable hermetic builds
-  # - name: hermetic
-  #   value: 'true'
+  - name: hermetic
+    value: 'true'
   - name: prefetch-input
-    value: ''
+    value: |
+      [
+        { "type": "pip", "path": "operator/bundle_helpers" }
+      ]
   - name: build-source-image
     value: 'true'
   - name: clone-depth
@@ -57,10 +65,22 @@ spec:
   pipelineRef:
     name: operator-bundle-pipeline
 
+  # When building the operator-bundle, we must resolve image digests for all other ACS product images in order to inject
+  # these digests in the bundle's ClusterServiceVersion file. For this, the bundle pipeline waits for each image to be
+  # built, i.e. its pipeline to complete.
+  #
+  # You must make sure:
+  #
+  # 1. For every `wait-for-image` task in `operator-bundle-pipeline.yaml` the `timeout` is equal to the timeout of the
+  #    corresponding pipeline.
+  #    E.g. if `main-build.yaml` has `spec.timeouts.pipeline` set to `2h40m`, make `wait-for-main-image`'s `timeout`
+  #    (in `operator-bundle-pipeline.yaml`) also `2h40m`.
+  # 2. The timeout for the operator-bundle build itself must be the maximum timeout of `wait-for-image` tasks plus
+  #    30 minutes. Set this value in `spec.timeouts.tasks` (here in `operator-bundle-build.yaml`). Set
+  #    `spec.timeouts.pipeline` to be `spec.timeouts.tasks` plus 10 minutes.
+  #    E.g. if `wait-for-main-image` is the longest and has timeout `2h40m`, operator-bundle's `spec.timeouts.tasks`
+  #    becomes `3h10m` and `spec.timeouts.pipeline` should be `3h20m`.
   timeouts:
-    # The tasks regularly takes 1h to finish. Due to recently hit timeouts,
-    # let's try with 30m more.
-    tasks: 1h30m
-    # Reserve time for final tasks to run.
+    tasks: 3h10m
     finally: 10m
-    pipeline: 1h40m
+    pipeline: 3h20m

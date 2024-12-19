@@ -90,7 +90,7 @@ export const defaultValues: AzureIntegrationFormValues = {
     updatePassword: true,
 };
 
-function ClairifyIntegrationForm({
+function AzureIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<AzureIntegration>): ReactElement {
@@ -235,7 +235,7 @@ function ClairifyIntegrationForm({
                         errors={errors}
                     >
                         <Checkbox
-                            label="Create Integration Without Testing"
+                            label="Create integration without testing"
                             id="config.skipTestIntegration"
                             aria-label="skip test integration"
                             isChecked={values.config.skipTestIntegration}
@@ -271,4 +271,4 @@ function ClairifyIntegrationForm({
     );
 }
 
-export default ClairifyIntegrationForm;
+export default AzureIntegrationForm;

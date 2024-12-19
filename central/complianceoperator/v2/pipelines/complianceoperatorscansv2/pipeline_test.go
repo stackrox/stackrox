@@ -73,6 +73,7 @@ func (s *PipelineTestSuite) TestRunCreate() {
 func (s *PipelineTestSuite) TestRunDelete() {
 	ctx := context.Background()
 
+	s.reportMgr.EXPECT().HandleScanRemove(testutils.ScanUID).Return(nil).Times(1)
 	s.v2ScanDS.EXPECT().DeleteScan(ctx, testutils.ScanUID).Return(nil).Times(1)
 
 	msg := &central.MsgFromSensor{

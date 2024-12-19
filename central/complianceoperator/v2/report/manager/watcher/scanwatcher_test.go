@@ -28,35 +28,48 @@ var (
 
 type testEvent func(*testing.T, ScanWatcher)
 
-func handleScan(id string) func(*testing.T, ScanWatcher) {
+func handleScan(id string, startTime *protocompat.Timestamp) func(*testing.T, ScanWatcher) {
 	return func(t *testing.T, scanWatcher ScanWatcher) {
 		err := scanWatcher.PushScan(&storage.ComplianceOperatorScanV2{
-			Id: id,
+			Id:              id,
+			LastStartedTime: startTime,
 		})
 		require.NoError(t, err)
 	}
 }
 
-func handleScanWithAnnotation(id, checkCount string) func(*testing.T, ScanWatcher) {
+func handleScanWithAnnotation(id, checkCount string, startTime *protocompat.Timestamp) func(*testing.T, ScanWatcher) {
 	return func(t *testing.T, scanWatcher ScanWatcher) {
 		err := scanWatcher.PushScan(&storage.ComplianceOperatorScanV2{
-			Id:          id,
-			Annotations: map[string]string{CheckCountAnnotationKey: checkCount},
+			Id:              id,
+			Annotations:     map[string]string{CheckCountAnnotationKey: checkCount},
+			LastStartedTime: startTime,
 		})
 		require.NoError(t, err)
 	}
 }
 
-func handleResult(id string) func(*testing.T, ScanWatcher) {
+func handleResult(id string, startTime *protocompat.Timestamp) func(*testing.T, ScanWatcher) {
 	return func(t *testing.T, scanWatcher ScanWatcher) {
 		err := scanWatcher.PushCheckResult(&storage.ComplianceOperatorCheckResultV2{
 			CheckId: id,
+			Annotations: map[string]string{
+				LastScannedAnnotationKey: startTime.AsTime().Format(time.RFC3339Nano),
+			},
 		})
 		require.NoError(t, err)
 	}
 }
 
 func TestScanWatcher(t *testing.T) {
+	timestampNow := protocompat.TimestampNow()
+	timeFuture := timestampNow.AsTime().Add(10 * time.Second)
+	timestampFuture, err := protocompat.ConvertTimeToTimestampOrError(timeFuture)
+	require.NoError(t, err)
+	timePast := timestampNow.AsTime().Add(-10 * time.Second)
+	timestampPast, err := protocompat.ConvertTimeToTimestampOrError(timePast)
+	require.NoError(t, err)
+
 	cases := map[string]struct {
 		events          []testEvent
 		assertScanID    string
@@ -64,38 +77,63 @@ func TestScanWatcher(t *testing.T) {
 	}{
 		"scan ready -> result -> result": {
 			events: []testEvent{
-				handleScanWithAnnotation("id-1", "2"),
-				handleResult("id-1"),
-				handleResult("id-2"),
+				handleScanWithAnnotation("id-1", "2", timestampNow),
+				handleResult("id-1", timestampNow),
+				handleResult("id-2", timestampNow),
 			},
 			assertScanID:    "id-1",
 			assertResultIDs: []string{"id-1", "id-2"},
 		},
 		"scan -> result -> result -> scan ready": {
 			events: []testEvent{
-				handleScan("id-1"),
-				handleResult("id-1"),
-				handleResult("id-2"),
-				handleScanWithAnnotation("id-1", "2"),
+				handleScan("id-1", timestampNow),
+				handleResult("id-1", timestampNow),
+				handleResult("id-2", timestampNow),
+				handleScanWithAnnotation("id-1", "2", timestampNow),
 			},
 			assertScanID:    "id-1",
 			assertResultIDs: []string{"id-1", "id-2"},
 		},
 		"scan -> result -> scan ready -> result": {
 			events: []testEvent{
-				handleScan("id-1"),
-				handleResult("id-1"),
-				handleScanWithAnnotation("id-1", "2"),
-				handleResult("id-2"),
+				handleScan("id-1", timestampNow),
+				handleResult("id-1", timestampNow),
+				handleScanWithAnnotation("id-1", "2", timestampNow),
+				handleResult("id-2", timestampNow),
 			},
 			assertScanID:    "id-1",
 			assertResultIDs: []string{"id-1", "id-2"},
 		},
 		"result -> result -> scan ready": {
 			events: []testEvent{
-				handleResult("id-1"),
-				handleResult("id-2"),
-				handleScanWithAnnotation("id-1", "2"),
+				handleResult("id-1", timestampNow),
+				handleResult("id-2", timestampNow),
+				handleScanWithAnnotation("id-1", "2", timestampNow),
+			},
+			assertScanID:    "id-1",
+			assertResultIDs: []string{"id-1", "id-2"},
+		},
+		"scan -> result -> new scan -> new result -> new result -> scan ready": {
+			events: []testEvent{
+				handleScan("id-1", timestampNow),
+				handleResult("id-1", timestampNow),
+				handleScan("id-1", timestampFuture),
+				handleResult("id-1", timestampFuture),
+				handleResult("id-2", timestampFuture),
+				handleScanWithAnnotation("id-1", "2", timestampFuture),
+			},
+			assertScanID:    "id-1",
+			assertResultIDs: []string{"id-1", "id-2"},
+		},
+		"scan -> result -> new scan -> new result -> new result -> old result -> scan ready": {
+			events: []testEvent{
+				handleScan("id-1", timestampNow),
+				handleResult("id-1", timestampNow),
+				handleScan("id-1", timestampFuture),
+				handleResult("id-1", timestampFuture),
+				handleResult("id-2", timestampFuture),
+				handleResult("id-1", timestampPast),
+				handleScanWithAnnotation("id-1", "2", timestampFuture),
 			},
 			assertScanID:    "id-1",
 			assertResultIDs: []string{"id-1", "id-2"},
@@ -132,12 +170,13 @@ func TestScanWatcher(t *testing.T) {
 }
 
 func TestScanWatcherCancel(t *testing.T) {
+	timeNow := protocompat.TimestampNow()
 	watcherID := "id"
 	ctx, cancel := context.WithCancel(context.Background())
 	readyTestQueue := queue.NewQueue[*ScanWatcherResults]()
 	scanWatcher := NewScanWatcher(ctx, ctx, watcherID, readyTestQueue)
-	handleScan("id-1")(t, scanWatcher)
-	handleResult("id-1")(t, scanWatcher)
+	handleScan("id-1", timeNow)(t, scanWatcher)
+	handleResult("id-1", timeNow)(t, scanWatcher)
 	cancel()
 	select {
 	case <-scanWatcher.Finished().Done():
@@ -150,12 +189,13 @@ func TestScanWatcherCancel(t *testing.T) {
 }
 
 func TestScanWatcherStop(t *testing.T) {
+	timeNow := protocompat.TimestampNow()
 	watcherID := "id"
 	readyTestQueue := queue.NewQueue[*ScanWatcherResults]()
 	scanWatcher := NewScanWatcher(context.Background(), context.Background(), watcherID, readyTestQueue)
-	handleScan("id-1")(t, scanWatcher)
-	handleResult("id-1")(t, scanWatcher)
-	scanWatcher.Stop()
+	handleScan("id-1", timeNow)(t, scanWatcher)
+	handleResult("id-1", timeNow)(t, scanWatcher)
+	scanWatcher.Stop(nil)
 	select {
 	case <-scanWatcher.Finished().Done():
 	case <-time.After(100 * time.Millisecond):
@@ -166,7 +206,26 @@ func TestScanWatcherStop(t *testing.T) {
 	assert.ErrorIs(t, result.Error, ErrScanContextCancelled)
 }
 
+func TestScanWatcherStopWithError(t *testing.T) {
+	timeNow := protocompat.TimestampNow()
+	watcherID := "id"
+	readyTestQueue := queue.NewQueue[*ScanWatcherResults]()
+	scanWatcher := NewScanWatcher(context.Background(), context.Background(), watcherID, readyTestQueue)
+	handleScan("id-1", timeNow)(t, scanWatcher)
+	handleResult("id-1", timeNow)(t, scanWatcher)
+	scanWatcher.Stop(ErrScanRemoved)
+	select {
+	case <-scanWatcher.Finished().Done():
+	case <-time.After(100 * time.Millisecond):
+		t.Error("timeout waiting for the watcher to stop")
+	}
+	assert.Equal(t, 1, readyTestQueue.Len())
+	result := readyTestQueue.Pull()
+	assert.ErrorIs(t, result.Error, ErrScanRemoved)
+}
+
 func TestScanWatcherTimeout(t *testing.T) {
+	timeNow := protocompat.TimestampNow()
 	readyTestQueue := queue.NewQueue[*ScanWatcherResults]()
 	ctx, cancel := context.WithCancel(context.Background())
 	finishedSignal := concurrency.NewSignal()
@@ -179,6 +238,7 @@ func TestScanWatcherTimeout(t *testing.T) {
 		ctx:        ctx,
 		sensorCtx:  ctx,
 		cancel:     cancel,
+		timeout:    timeout,
 		scanC:      make(chan *storage.ComplianceOperatorScanV2),
 		resultC:    make(chan *storage.ComplianceOperatorCheckResultV2),
 		stopped:    &finishedSignal,
@@ -189,9 +249,9 @@ func TestScanWatcherTimeout(t *testing.T) {
 			CheckResults: set.NewStringSet(),
 		},
 	}
-	go scanWatcher.run(timeout)
-	handleScan("id-1")(t, scanWatcher)
-	handleResult("id-1")(t, scanWatcher)
+	go scanWatcher.run()
+	handleScan("id-1", timeNow)(t, scanWatcher)
+	handleResult("id-1", timeNow)(t, scanWatcher)
 	// We signal the timeout
 	timeoutC <- time.Now()
 	select {
@@ -264,11 +324,11 @@ func TestGetIDFromScan(t *testing.T) {
 		})
 	id, err := GetWatcherIDFromScan(testDBAccess, scan, snapshotDS, scanConfigDS, nil)
 	assert.NoError(t, err)
-	assert.Equal(t, fmt.Sprintf("%s:%s:%s", scan.ClusterId, scan.Id, scan.LastStartedTime), id)
+	assert.Equal(t, fmt.Sprintf("%s:%s", scan.ClusterId, scan.Id), id)
 	timeNow = protocompat.TimestampNow()
 	id, err = GetWatcherIDFromScan(testDBAccess, scan, snapshotDS, scanConfigDS, timeNow)
 	assert.NoError(t, err)
-	assert.Equal(t, fmt.Sprintf("%s:%s:%s", scan.ClusterId, scan.Id, timeNow), id)
+	assert.Equal(t, fmt.Sprintf("%s:%s", scan.ClusterId, scan.Id), id)
 }
 
 func TestGetIDFromResult(t *testing.T) {
@@ -346,11 +406,9 @@ func TestGetIDFromResult(t *testing.T) {
 	result.Annotations = map[string]string{
 		LastScannedAnnotationKey: futureTime.Format(time.RFC3339Nano),
 	}
-	futureTimeProto, err := protocompat.ConvertTimeToTimestampOrError(futureTime)
-	require.NoError(t, err)
 	id, err := GetWatcherIDFromCheckResult(testDBAccess, result, scanDS, snapshotDS, scanConfigDS)
 	assert.NoError(t, err)
-	assert.Equal(t, fmt.Sprintf("cluster-1:scan-1:%s", futureTimeProto.String()), id)
+	assert.Equal(t, "cluster-1:scan-1", id)
 
 	// The timestamp is the same
 	result.Annotations = map[string]string{
@@ -358,7 +416,7 @@ func TestGetIDFromResult(t *testing.T) {
 	}
 	id, err = GetWatcherIDFromCheckResult(testDBAccess, result, scanDS, snapshotDS, scanConfigDS)
 	assert.NoError(t, err)
-	assert.Equal(t, fmt.Sprintf("cluster-1:scan-1:%s", timeNow.String()), id)
+	assert.Equal(t, "cluster-1:scan-1", id)
 }
 
 func TestIsComplianceOperatorHealthy(t *testing.T) {

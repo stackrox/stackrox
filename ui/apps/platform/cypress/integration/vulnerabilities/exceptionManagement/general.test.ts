@@ -3,7 +3,10 @@ import withAuth from '../../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../../helpers/features';
 import { getRegExpForTitleWithBranding } from '../../../helpers/title';
 import { visit } from '../../../helpers/visit';
-import { cancelAllCveExceptions } from '../workloadCves/WorkloadCves.helpers';
+import {
+    cancelAllCveExceptions,
+    typeAndEnterCustomSearchFilterValue,
+} from '../workloadCves/WorkloadCves.helpers';
 import {
     approvedDeferralsPath,
     approvedFalsePositivesPath,
@@ -18,28 +21,19 @@ describe('Exception Management', () => {
     withAuth();
 
     before(function () {
-        if (
-            !hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') ||
-            !hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
-        ) {
+        if (!hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES')) {
             this.skip();
         }
     });
 
     beforeEach(() => {
-        if (
-            hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') &&
-            hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
-        ) {
+        if (hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES')) {
             cancelAllCveExceptions();
         }
     });
 
     after(() => {
-        if (
-            hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') &&
-            hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
-        ) {
+        if (hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES')) {
             cancelAllCveExceptions();
         }
     });
@@ -92,7 +86,6 @@ describe('Exception Management', () => {
     });
 
     it('should keep filters when navigating between tabs', () => {
-        const filterLabel = 'Filter by Request name';
         const filterText = 'AA-240101-1';
 
         cy.intercept({ method: 'POST', url: graphql('autocomplete') }).as('autocomplete');
@@ -100,12 +93,7 @@ describe('Exception Management', () => {
         visitPendingRequestsTab();
 
         // Add a filter
-        cy.get(`input[aria-label="${filterLabel}"]`).type(filterText);
-        cy.wait('@autocomplete');
-        cy.get(
-            `ul[role="listbox"][aria-label="${filterLabel}"] li button:contains("${filterText}")`
-        ).click();
-        cy.get('body').click('topLeft'); // closes the dropdown menu
+        typeAndEnterCustomSearchFilterValue('Exception', 'Request Name', filterText);
 
         // The filter should be applied
         cy.get('div[aria-label="applied search filters"]').should('exist');

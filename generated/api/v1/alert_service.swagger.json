@@ -514,45 +514,6 @@
         ]
       }
     },
-    "/v1/alerts/{id}/snooze": {
-      "patch": {
-        "summary": "SnoozeAlert is deprecated.",
-        "operationId": "AlertService_SnoozeAlert",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1Empty"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/AlertServiceSnoozeAlertBody"
-            }
-          }
-        ],
-        "tags": [
-          "AlertService"
-        ]
-      }
-    },
     "/v1/alertscount": {
       "get": {
         "summary": "CountAlerts counts how many alerts match the get request.",
@@ -712,15 +673,6 @@
         },
         "addToBaseline": {
           "type": "boolean"
-        }
-      }
-    },
-    "AlertServiceSnoozeAlertBody": {
-      "type": "object",
-      "properties": {
-        "snoozeTill": {
-          "type": "string",
-          "format": "date-time"
         }
       }
     },
@@ -1027,10 +979,6 @@
         },
         "state": {
           "$ref": "#/definitions/storageViolationState"
-        },
-        "snoozeTill": {
-          "type": "string",
-          "format": "date-time"
         },
         "platformComponent": {
           "type": "boolean"
@@ -1704,7 +1652,6 @@
       "type": "string",
       "enum": [
         "ACTIVE",
-        "SNOOZED",
         "RESOLVED",
         "ATTEMPTED"
       ],

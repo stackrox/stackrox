@@ -1,5 +1,14 @@
 import React from 'react';
-import { Flex, PageSection, Text, Title } from '@patternfly/react-core';
+import {
+    Flex,
+    PageSection,
+    Pagination,
+    Text,
+    Title,
+    Toolbar,
+    ToolbarContent,
+    ToolbarItem,
+} from '@patternfly/react-core';
 import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { useQuery } from '@apollo/client';
 import { Link } from 'react-router-dom';
@@ -52,7 +61,7 @@ function RequestCVEsTable({
     expandedRowSet,
     vulnerabilityState,
 }: RequestCVEsTableProps) {
-    const { page, perPage, setPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
+    const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
     const { sortOption, getSortParams } = useURLSort({
         sortFields: getWorkloadSortFields('CVE'),
         defaultSortOption: getDefaultWorkloadSortOption('CVE'),
@@ -89,7 +98,26 @@ function RequestCVEsTable({
     return (
         <PageSection variant="light">
             <Flex direction={{ default: 'column' }}>
-                <Title headingLevel="h2">{data?.imageCVEs.length || 0} results found</Title>
+                <Toolbar>
+                    <ToolbarContent className="pf-v5-u-justify-content-space-between">
+                        <ToolbarItem variant="label">
+                            <Title headingLevel="h2">
+                                {data?.imageCVECount || 0} results found
+                            </Title>
+                        </ToolbarItem>
+                        <ToolbarItem variant="pagination">
+                            <Pagination
+                                itemCount={data?.imageCVECount}
+                                perPage={perPage}
+                                page={page}
+                                onSetPage={(_, newPage) => setPage(newPage)}
+                                onPerPageSelect={(_, newPerPage) => {
+                                    setPerPage(newPerPage);
+                                }}
+                            />
+                        </ToolbarItem>
+                    </ToolbarContent>
+                </Toolbar>
                 <Table variant="compact">
                     <Thead noWrap>
                         <Tr>

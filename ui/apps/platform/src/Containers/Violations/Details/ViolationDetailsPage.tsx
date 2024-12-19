@@ -4,6 +4,8 @@ import startCase from 'lodash/startCase';
 import {
     Bullseye,
     Divider,
+    Label,
+    LabelGroup,
     PageSection,
     Spinner,
     Tab,
@@ -18,6 +20,8 @@ import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
 import { fetchAlert } from 'services/AlertsService';
 import { Alert, isDeploymentAlert, isResourceAlert } from 'types/alert.proto';
+import { getDateTime } from 'utils/dateUtils';
+import { VIOLATION_STATE_LABELS } from 'constants/violationStates';
 
 import DeploymentTabWithReadAccessForDeployment from './Deployment/DeploymentTabWithReadAccessForDeployment';
 import DeploymentTabWithoutReadAccessForDeployment from './Deployment/DeploymentTabWithoutReadAccessForDeployment';
@@ -88,7 +92,19 @@ function ViolationDetailsPage(): ReactElement {
             <ViolationsBreadcrumbs current={title} />
             <PageSection variant="light">
                 <Title headingLevel="h1">{title}</Title>
-                <Title headingLevel="h2">{`in "${entityName}" ${displayedResourceType}`}</Title>
+                <Title
+                    headingLevel="h2"
+                    className="pf-v5-u-mb-sm"
+                >{`in "${entityName}" ${displayedResourceType}`}</Title>
+                <LabelGroup numLabels={2} aria-label="Violation state and resolution">
+                    <Label>State: {VIOLATION_STATE_LABELS[alert.state]}</Label>
+                    {alert.state === 'RESOLVED' && (
+                        <Label>
+                            Resolved on:{' '}
+                            {alert.resolvedAt ? getDateTime(alert.resolvedAt) : 'Not available'}
+                        </Label>
+                    )}
+                </LabelGroup>
             </PageSection>
             <PageSection variant="default" padding={{ default: 'noPadding' }}>
                 <Tabs

@@ -53,6 +53,31 @@ spec:
         fsGroup: 4000
       {{- end }}
       serviceAccountName: admission-control
+      {{- if ._rox._securedClusterCertRefresh }}
+      initContainers:
+      - name: init-tls-certs
+        image: {{ quote ._rox.image.main.fullRef }}
+        command:
+        - /stackrox/bin/init-tls-certs
+        args:
+        - --legacy=/run/secrets/stackrox.io/certs-legacy/
+        - --new=/run/secrets/stackrox.io/certs-new/
+        - --destination=/run/secrets/stackrox.io/certs/
+        resources:
+          {{- ._rox.admissionControl._resources | nindent 12 }}
+        securityContext:
+          runAsNonRoot: true
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - name: certs-legacy
+          mountPath: /run/secrets/stackrox.io/certs-legacy/
+          readOnly: true
+        - name: certs-new
+          mountPath: /run/secrets/stackrox.io/certs-new/
+          readOnly: true
+        - name: certs
+          mountPath: /run/secrets/stackrox.io/certs/
+      {{- end }}
       containers:
         - image: {{ quote ._rox.image.main.fullRef }}
           imagePullPolicy: {{ ._rox.admissionControl.imagePullPolicy }}
@@ -112,7 +137,10 @@ spec:
               readOnly: true
             {{- include "srox.injectedCABundleVolumeMount" . | nindent 12 }}
       volumes:
+        {{- if ._rox._securedClusterCertRefresh }}
         - name: certs
+          emptyDir: {}
+        - name: certs-legacy
           secret:
             secretName: admission-control-tls
             optional: true
@@ -123,6 +151,23 @@ spec:
                 path: key.pem
               - key: ca.pem
                 path: ca.pem
+        - name: certs-new
+          secret:
+            secretName: tls-cert-admission-control
+            optional: true
+        {{- else }}
+        - name: certs
+          secret:
+            secretName: admission-control-tls
+            optional: true
+            items:
+            - key: admission-control-cert.pem
+              path: cert.pem
+            - key: admission-control-key.pem
+              path: key.pem
+            - key: ca.pem
+              path: ca.pem
+        {{- end }}
         - name: ca
           secret:
             secretName: service-ca
@@ -215,6 +260,9 @@ webhooks:
           - deploymentconfigs
           {{- end }}
     namespaceSelector:
+      {{- if ._rox.admissionControl.namespaceSelector }}
+        {{- toYaml ._rox.admissionControl.namespaceSelector | nindent 6 }}
+      {{- else }}
       matchExpressions:
       - key: namespace.metadata.stackrox.io/name
         operator: NotIn
@@ -223,6 +271,7 @@ webhooks:
           - kube-system
           - kube-public
           - istio-system
+      {{- end }}
     failurePolicy: Ignore
     clientConfig:
       caBundle: {{ required "The 'ca.cert' config option MUST be set to StackRox's Service CA certificate in order for the admission controller to be usable" ._rox.ca._cert | b64enc }}

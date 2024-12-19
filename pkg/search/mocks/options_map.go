@@ -21,6 +21,7 @@ import (
 type MockOptionsMap struct {
 	ctrl     *gomock.Controller
 	recorder *MockOptionsMapMockRecorder
+	isgomock struct{}
 }
 
 // MockOptionsMapMockRecorder is the mock recorder for MockOptionsMap.

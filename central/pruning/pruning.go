@@ -35,7 +35,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/maputil"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
@@ -181,10 +180,9 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	g.removeOrphanedRisks()
 	g.removeExpiredVulnRequests()
 	g.collectClusters(pvtConfig)
-	if features.VulnReportingEnhancements.Enabled() {
-		g.removeOldReportHistory(pvtConfig)
-		g.removeOldReportBlobs(pvtConfig)
-	}
+	g.removeOldReportHistory(pvtConfig)
+	g.removeOldComplianceReportHistory(pvtConfig)
+	g.removeOldReportBlobs(pvtConfig)
 	g.removeExpiredAdministrationEvents(pvtConfig)
 	g.removeExpiredDiscoveredClusters()
 	postgres.PruneActiveComponents(pruningCtx, g.postgres)
@@ -636,6 +634,13 @@ func (g *garbageCollectorImpl) removeOldReportHistory(config *storage.PrivateCon
 	reportHistoryRetentionConfig := config.GetReportRetentionConfig().GetHistoryRetentionDurationDays()
 	dur := time.Duration(reportHistoryRetentionConfig) * 24 * time.Hour
 	postgres.PruneReportHistory(pruningCtx, g.postgres, dur)
+}
+
+func (g *garbageCollectorImpl) removeOldComplianceReportHistory(config *storage.PrivateConfig) {
+	defer metrics.SetPruningDuration(time.Now(), "ComplianceReportHistory")
+	reportHistoryRetentionConfig := config.GetReportRetentionConfig().GetHistoryRetentionDurationDays()
+	dur := time.Duration(reportHistoryRetentionConfig) * 24 * time.Hour
+	postgres.PruneComplianceReportHistory(pruningCtx, g.postgres, dur)
 }
 
 func (g *garbageCollectorImpl) removeOldReportBlobs(config *storage.PrivateConfig) {

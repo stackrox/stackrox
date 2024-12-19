@@ -186,16 +186,10 @@ func New() *Resolver {
 			return nil
 		}(),
 		NodeCVEView: func() nodecve.CveView {
-			if features.VulnMgmtNodePlatformCVEs.Enabled() {
-				return nodecve.Singleton()
-			}
-			return nil
+			return nodecve.Singleton()
 		}(),
 		PlatformCVEView: func() platformcve.CveView {
-			if features.VulnMgmtNodePlatformCVEs.Enabled() {
-				return platformcve.Singleton()
-			}
-			return nil
+			return platformcve.Singleton()
 		}(),
 	}
 

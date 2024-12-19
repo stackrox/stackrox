@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -20,6 +21,7 @@ import (
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/scanners/scannerv4"
@@ -31,6 +33,8 @@ const (
 	nvdCVEURLPrefix    = "https://nvd.nist.gov/vuln/detail/"
 	osvCVEURLPrefix    = "https://osv.dev/vulnerability/"
 	redhatCVEURLPrefix = "https://access.redhat.com/security/cve/"
+	// TODO(ROX-26672): Remove this when we stop tracking RHSAs as the vuln name.
+	redhatErrataURLPrefix = "https://access.redhat.com/errata/"
 )
 
 var (
@@ -49,20 +53,28 @@ var (
 	awsUpdaterPrefix = `aws-`
 	osvUpdaterPrefix = `osv/`
 	rhelUpdaterName  = (*vex.Updater)(nil).Name()
+	// TODO(ROX-26672): This won't be needed when we show CVEs as the top-level vuln name.
+	rhccUpdaterName = "rhel-container-updater"
 
 	// Name patterns are regexes to match against vulnerability fields to
 	// extract their name according to their updater.
 
-	awsVulnNamePattern = regexp.MustCompile(`ALAS\d*-\d{4}-\d+`)
+	// alasIDPattern captures Amazon Linux Security Advisories.
+	alasIDPattern = regexp.MustCompile(`ALAS\d*-\d{4}-\d+`)
+	// cveIDPattern captures CVEs.
+	cveIDPattern = regexp.MustCompile(`CVE-\d{4}-\d+`)
+	// rhelVulnNamePattern captures known Red Hat advisory patterns.
+	// TODO(ROX-26672): Remove this and show CVE as the vulnerability name.
+	rhelVulnNamePattern = regexp.MustCompile(`(RHSA|RHBA|RHEA)-\d{4}:\d+`)
 
 	// vulnNamePatterns is a default prioritized list of regexes to match
 	// vulnerability names.
 	vulnNamePatterns = []*regexp.Regexp{
-		// A CVE.
-		regexp.MustCompile(`CVE-\d{4}-\d+`),
+		// CVE
+		cveIDPattern,
 		// GHSA, see: https://github.com/github/advisory-database#ghsa-ids
 		regexp.MustCompile(`GHSA(-[2-9cfghjmpqrvwx]{4}){3}`),
-		// Catchall.
+		// Catchall
 		regexp.MustCompile(`[A-Z]+-\d{4}[-:]\d+`),
 	}
 )
@@ -108,7 +120,7 @@ func ToProtoV4VulnerabilityReport(ctx context.Context, r *claircore.Vulnerabilit
 	}
 	return &v4.VulnerabilityReport{
 		Vulnerabilities:        vulnerabilities,
-		PackageVulnerabilities: toProtoV4PackageVulnerabilitiesMap(r.PackageVulnerabilities, r.Vulnerabilities),
+		PackageVulnerabilities: toProtoV4PackageVulnerabilitiesMap(r.PackageVulnerabilities, r.Vulnerabilities, vulnerabilities),
 		Contents:               contents,
 	}, nil
 }
@@ -281,7 +293,7 @@ func toProtoV4Environment(e *claircore.Environment) *v4.Environment {
 	}
 }
 
-func toProtoV4PackageVulnerabilitiesMap(ccPkgVulnerabilities map[string][]string, ccVulnerabilities map[string]*claircore.Vulnerability) map[string]*v4.StringList {
+func toProtoV4PackageVulnerabilitiesMap(ccPkgVulnerabilities map[string][]string, ccVulnerabilities map[string]*claircore.Vulnerability, vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerability) map[string]*v4.StringList {
 	if ccPkgVulnerabilities == nil {
 		return nil
 	}
@@ -296,8 +308,55 @@ func toProtoV4PackageVulnerabilitiesMap(ccPkgVulnerabilities map[string][]string
 		pkgVulns[id] = &v4.StringList{
 			Values: filterRepeatedVulns(vulnIDs, ccVulnerabilities),
 		}
+		sortBySeverity(pkgVulns[id].GetValues(), vulnerabilities)
 	}
 	return pkgVulns
+}
+
+// baseScore returns the preferred CVSS base score found in the CVSS metrics, prioritizing V3 over V2.
+func baseScore(cvssMetrics []*v4.VulnerabilityReport_Vulnerability_CVSS) float32 {
+	var metric *v4.VulnerabilityReport_Vulnerability_CVSS
+	if len(cvssMetrics) == 0 {
+		return 0.0
+	}
+	metric = cvssMetrics[0] // first one is guaranteed to be the preferred
+	if v3 := metric.GetV3(); v3 != nil {
+		return v3.GetBaseScore()
+	} else if v2 := metric.GetV2(); v2 != nil {
+		return v2.GetBaseScore()
+	}
+	return 0.0
+}
+
+// sortBySeverity sorts the vulnerability IDs based on normalized severity and,
+// if equal, by the highest CVSS base score, decreasing.
+func sortBySeverity(ids []string, vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerability) {
+	sort.SliceStable(ids, func(i, j int) bool {
+		vulnI := vulnerabilities[ids[i]]
+		vulnJ := vulnerabilities[ids[j]]
+
+		// Handle nil vulnerabilities explicitly: nil is considered lower
+		if vulnI == nil && vulnJ == nil {
+			return false // keep the original order
+		}
+		if vulnI == nil {
+			return false // vulnJ non-nil, higher
+		}
+		if vulnJ == nil {
+			return true // vulnI non-nil, higher
+		}
+
+		// Compare by normalized severity (higher severity first).
+		if vulnI.GetNormalizedSeverity() != vulnJ.GetNormalizedSeverity() {
+			return vulnI.GetNormalizedSeverity() > vulnJ.GetNormalizedSeverity()
+		}
+
+		// If severities are equal, compare by the highest CVSS base score.
+		scoreI := baseScore(vulnI.GetCvssMetrics())
+		scoreJ := baseScore(vulnJ.GetCvssMetrics())
+
+		return scoreI > scoreJ
+	})
 }
 
 func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircore.Vulnerability, nvdVulns map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem) (map[string]*v4.VulnerabilityReport_Vulnerability, error) {
@@ -323,21 +382,17 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 		}
 		normalizedSeverity := toProtoV4VulnerabilitySeverity(ctx, v.NormalizedSeverity)
 		name := vulnerabilityName(v)
+		// Determine the related CVE for this vulnerability. This is necessary, as NVD is CVE-based.
+		cve, foundCVE := findName(v, cveIDPattern)
 		// Find the related NVD vuln for this vulnerability name, let it be empty if no
 		// NVD vuln for that name was found.
 		var nvdVuln nvdschema.CVEAPIJSON20CVEItem
 		if nvdCVEs, ok := nvdVulns[v.ID]; ok {
-			if v, ok := nvdCVEs[name]; ok {
+			if v, ok := nvdCVEs[cve]; foundCVE && ok {
 				nvdVuln = *v
-			} else {
-				// Pick the first one as a fallback.
-				for _, v := range nvdCVEs {
-					nvdVuln = *v
-					break
-				}
 			}
 		}
-		metrics, err := cvssMetrics(ctx, v, &nvdVuln)
+		metrics, err := cvssMetrics(ctx, v, name, &nvdVuln)
 		if err != nil {
 			zlog.Debug(ctx).
 				Err(err).
@@ -649,7 +704,9 @@ func pkgFixedBy(enrichments map[string][]json.RawMessage) (map[string]string, er
 // An error is returned when there is a failure to collect CVSS metrics from all sources;
 // however, the returned slice of metrics will still be populated with any successfully gathered metrics.
 // It is up to the caller to ensure the returned slice is populated prior to using it.
-func cvssMetrics(_ context.Context, vuln *claircore.Vulnerability, nvdVuln *nvdschema.CVEAPIJSON20CVEItem) ([]*v4.VulnerabilityReport_Vulnerability_CVSS, error) {
+//
+// TODO(ROX-26672): Remove vulnName parameter. It's a temporary patch until we stop making RHSAs the top-level vulnerability.
+func cvssMetrics(_ context.Context, vuln *claircore.Vulnerability, vulnName string, nvdVuln *nvdschema.CVEAPIJSON20CVEItem) ([]*v4.VulnerabilityReport_Vulnerability_CVSS, error) {
 	var metrics []*v4.VulnerabilityReport_Vulnerability_CVSS
 
 	var preferredCVSS *v4.VulnerabilityReport_Vulnerability_CVSS
@@ -657,6 +714,10 @@ func cvssMetrics(_ context.Context, vuln *claircore.Vulnerability, nvdVuln *nvds
 	switch {
 	case strings.EqualFold(vuln.Updater, rhelUpdaterName):
 		preferredCVSS, preferredErr = vulnCVSS(vuln, v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT)
+		// TODO(ROX-26672): Remove this
+		if !features.ScannerV4RedHatCVEs.Enabled() && preferredCVSS != nil && rhelVulnNamePattern.MatchString(vulnName) {
+			preferredCVSS.Url = redhatErrataURLPrefix + vulnName
+		}
 	case strings.HasPrefix(vuln.Updater, osvUpdaterPrefix) && !isOSVDBSpecificSeverity(vuln.Severity):
 		preferredCVSS, preferredErr = vulnCVSS(vuln, v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_OSV)
 	case strings.EqualFold(vuln.Updater, constants.ManualUpdaterName):
@@ -831,8 +892,15 @@ func vulnerabilityName(vuln *claircore.Vulnerability) string {
 	// Attempt per-updater patterns.
 	switch {
 	case strings.HasPrefix(vuln.Updater, awsUpdaterPrefix):
-		if v, ok := findName(vuln, awsVulnNamePattern); ok {
+		if v, ok := findName(vuln, alasIDPattern); ok {
 			return v
+		}
+	// TODO(ROX-26672): Remove this to show CVE as the vuln name.
+	case strings.EqualFold(vuln.Updater, rhelUpdaterName), strings.EqualFold(vuln.Updater, rhccUpdaterName):
+		if !features.ScannerV4RedHatCVEs.Enabled() {
+			if v, ok := findName(vuln, rhelVulnNamePattern); ok {
+				return v
+			}
 		}
 	}
 	// Default patterns.

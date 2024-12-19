@@ -39,7 +39,7 @@ export type CVEsTableContainerProps = {
     filterToolbar: TableEntityToolbarProps['filterToolbar'];
     entityToggleGroup: TableEntityToolbarProps['entityToggleGroup'];
     rowCount: number;
-    vulnerabilityState?: VulnerabilityState; // TODO Make this required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
+    vulnerabilityState: VulnerabilityState;
     pagination: ReturnType<typeof useURLPagination>;
     sort: ReturnType<typeof useURLSort>;
     workloadCvesScopedQueryString: string;
@@ -78,8 +78,7 @@ function CVEsTableContainer({
     const hasRequestExceptionsAbility = useHasRequestExceptionsAbility();
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isNvdCvssColumnEnabled =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
+    const isNvdCvssColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
     const filteredColumns = filterManagedColumns(
         defaultColumns,
         (key) => key !== 'topNvdCvss' || isNvdCvssColumnEnabled

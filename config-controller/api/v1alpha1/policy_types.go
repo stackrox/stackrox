@@ -17,12 +17,14 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/uuid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/stackrox/rox/generated/storage"
 )
 
 // +kubebuilder:validation:Enum=DEPLOY;BUILD;RUNTIME
@@ -40,10 +42,10 @@ type SecurityPolicySpec struct {
 	// +kubebuilder:validation:Pattern=`^[^\n\r\$]{5,128}$`
 	// PolicyName is the name of the policy as it appears in the API and UI.  Note that changing this value will rename the policy as stored in the database.  This field must be unique.
 	PolicyName string `json:"policyName"`
-	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Pattern=`^[^\$]{0,800}$`
 	// Description is a free-form text description of this policy.
-	Description string `json:"description"`
+	Description string `json:"description,omitempty"`
 	Rationale   string `json:"rationale,omitempty"`
 	// Remediation describes how to remediate a violation of this policy.
 	Remediation string `json:"remediation,omitempty"`
@@ -67,7 +69,7 @@ type SecurityPolicySpec struct {
 	Severity string `json:"severity"`
 	// Enforcement lists the enforcement actions to take when a violation from this policy is identified.  Possible value are UNSET_ENFORCEMENT, SCALE_TO_ZERO_ENFORCEMENT, UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT, KILL_POD_ENFORCEMENT, FAIL_BUILD_ENFORCEMENT, FAIL_KUBE_REQUEST_ENFORCEMENT, FAIL_DEPLOYMENT_CREATE_ENFORCEMENT, and. FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT.
 	EnforcementActions []EnforcementAction `json:"enforcementActions,omitempty"`
-	// Notifiers is a list of IDs of the notifiers that should be triggered when a violation from this policy is identified.  IDs should be in the form of a UUID and are found through the Central API.
+	// Notifiers is a list of IDs or names of the notifiers that should be triggered when a violation from this policy is identified.  IDs should be in the form of a UUID and are found through the Central API.
 	Notifiers []string `json:"notifiers,omitempty"`
 	// +kubebuilder:validation:MinItems=1
 	// PolicySections define the violation criteria for this policy.
@@ -155,8 +157,34 @@ func (p SecurityPolicySpec) IsValid() (bool, error) {
 	return true, nil
 }
 
+// +kubebuilder:object:root=true
+// +kubebuilder:resource:shortName=sp
+// +kubebuilder:subresource:status
+
+// SecurityPolicy is the Schema for the policies API
+type SecurityPolicy struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   SecurityPolicySpec   `json:"spec,omitempty"`
+	Status SecurityPolicyStatus `json:"status,omitempty"`
+}
+
+// +kubebuilder:object:root=true
+
+// SecurityPolicyList contains a list of Policy
+type SecurityPolicyList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []SecurityPolicy `json:"items"`
+}
+
+func init() {
+	SchemeBuilder.Register(&SecurityPolicy{}, &SecurityPolicyList{})
+}
+
 // ToProtobuf converts the SecurityPolicy spec into policy proto
-func (p SecurityPolicySpec) ToProtobuf() *storage.Policy {
+func (p SecurityPolicySpec) ToProtobuf(notifiers map[string]string) (*storage.Policy, error) {
 	proto := storage.Policy{
 		Name:               p.PolicyName,
 		Description:        p.Description,
@@ -164,12 +192,27 @@ func (p SecurityPolicySpec) ToProtobuf() *storage.Policy {
 		Remediation:        p.Remediation,
 		Disabled:           p.Disabled,
 		Categories:         p.Categories,
-		Notifiers:          p.Notifiers,
 		PolicyVersion:      policyversion.CurrentVersion().String(),
 		CriteriaLocked:     p.CriteriaLocked,
 		MitreVectorsLocked: p.MitreVectorsLocked,
 		IsDefault:          p.IsDefault,
 		Source:             storage.PolicySource_DECLARATIVE,
+	}
+
+	proto.Notifiers = make([]string, 0, len(p.Notifiers))
+	for _, notifier := range p.Notifiers {
+		_, err := uuid.FromString(notifier)
+		if err == nil {
+			proto.Notifiers = append(proto.Notifiers, notifier)
+			continue
+		}
+		// spec has notifier names specified
+		id, exists := notifiers[notifier]
+		if exists {
+			proto.Notifiers = append(proto.Notifiers, id)
+			continue
+		}
+		return nil, errors.New(fmt.Sprintf("Notifier '%s' does not exist", notifier))
 	}
 
 	for _, ls := range p.LifecycleStages {
@@ -187,10 +230,9 @@ func (p SecurityPolicySpec) ToProtobuf() *storage.Policy {
 		if exclusion.Expiration != "" {
 			protoTS, err := protocompat.ParseRFC3339NanoTimestamp(exclusion.Expiration)
 			if err != nil {
-				return nil
+				return nil, errors.Wrapf(err, "Error parsing timestamp '%s'", exclusion.Expiration)
 			}
 			protoExclusion.Expiration = protoTS
-
 		}
 
 		if exclusion.Deployment != (Deployment{}) {
@@ -287,31 +329,5 @@ func (p SecurityPolicySpec) ToProtobuf() *storage.Policy {
 		proto.MitreAttackVectors = append(proto.MitreAttackVectors, protoMitreAttackVetor)
 	}
 
-	return &proto
-}
-
-// +kubebuilder:object:root=true
-// +kubebuilder:resource:shortName=sp
-// +kubebuilder:subresource:status
-
-// SecurityPolicy is the Schema for the policies API
-type SecurityPolicy struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec   SecurityPolicySpec   `json:"spec,omitempty"`
-	Status SecurityPolicyStatus `json:"status,omitempty"`
-}
-
-// +kubebuilder:object:root=true
-
-// SecurityPolicyList contains a list of Policy
-type SecurityPolicyList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []SecurityPolicy `json:"items"`
-}
-
-func init() {
-	SchemeBuilder.Register(&SecurityPolicy{}, &SecurityPolicyList{})
+	return &proto, nil
 }

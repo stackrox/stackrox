@@ -6,29 +6,31 @@ import (
 )
 
 const (
-	imageField        = "image"
-	clusterIDField    = "cluster_id"
-	imageIDField      = "image_id"
-	nodeIDField       = "node_id"
-	notifierField     = "notifier"
-	errCodeField      = "err_code"
 	alertIDField      = "alert_id"
 	apiTokenIDField   = "api_token_id"
 	apiTokenNameField = "api_token_name"
+	backupField       = "backup"
+	cloudSourceField  = "cloud_source"
+	clusterIDField    = "cluster_id"
 	clusterNameField  = "cluster_name"
+	errCodeField      = "err_code"
+	imageField        = "image"
+	imageIDField      = "image_id"
+	nodeIDField       = "node_id"
+	notifierField     = "notifier"
 )
 
-var (
-	resourceTypeFields = map[string]string{
-		imageField:        administrationResources.Image,
-		imageIDField:      administrationResources.Image,
-		clusterIDField:    administrationResources.Cluster,
-		nodeIDField:       administrationResources.Node,
-		notifierField:     administrationResources.Notifier,
-		apiTokenIDField:   administrationResources.APIToken,
-		apiTokenNameField: administrationResources.APIToken,
-	}
-)
+var resourceTypeFields = map[string]string{
+	apiTokenIDField:   administrationResources.APIToken,
+	apiTokenNameField: administrationResources.APIToken,
+	backupField:       administrationResources.Backup,
+	cloudSourceField:  administrationResources.CloudSource,
+	clusterIDField:    administrationResources.Cluster,
+	imageField:        administrationResources.Image,
+	imageIDField:      administrationResources.Image,
+	nodeIDField:       administrationResources.Node,
+	notifierField:     administrationResources.Notifier,
+}
 
 // Err wraps err into a zap.Field instance with a well-known name 'error'.
 func Err(err error) zap.Field {
@@ -53,6 +55,16 @@ func ImageID(id string) zap.Field {
 // NodeID provides the node ID as a structured log field.
 func NodeID(id string) zap.Field {
 	return zap.String(nodeIDField, id)
+}
+
+// BackupName provides the backup name as a structured log field.
+func BackupName(name string) zap.Field {
+	return zap.String(backupField, name)
+}
+
+// CloudSourceName provides the cloud source name as a structured log field.
+func CloudSourceName(name string) zap.Field {
+	return zap.String(cloudSourceField, name)
 }
 
 // NotifierName provides the notifier name as a structured log field.
@@ -131,7 +143,9 @@ func getResourceTypeField(field zap.Field) (string, bool) {
 }
 
 func isIDField(fieldName string) bool {
-	return fieldName != imageField &&
-		fieldName != notifierField &&
-		fieldName != apiTokenNameField
+	return fieldName != apiTokenNameField &&
+		fieldName != backupField &&
+		fieldName != cloudSourceField &&
+		fieldName != imageField &&
+		fieldName != notifierField
 }

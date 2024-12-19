@@ -135,7 +135,7 @@ func (r *ServiceCertificatesRepoSecrets) getServiceCertificate(ctx context.Conte
 	}, secretData[secretSpec.CaCertFileName], nil
 }
 
-// EnsureServiceCertificates ensures the services for certificates exists, and that they contain the certificates
+// EnsureServiceCertificates ensures the k8s secrets for the services exist, and that they contain the certificates
 // in their data.
 // This operation is idempotent but not atomic in sense that on error some secrets might be created and updated,
 // while others are not.

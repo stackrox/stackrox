@@ -1,14 +1,7 @@
 import withAuth from '../../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../../helpers/features';
 
 describe('Platform CVEs - Cluster Detail Page', () => {
     withAuth();
-
-    before(function () {
-        if (!hasFeatureFlag('ROX_VULN_MGMT_NODE_PLATFORM_CVES')) {
-            this.skip();
-        }
-    });
 
     it('should restrict access to users with insufficient permissions', () => {
         // check that users without Cluster access cannot access the Cluster Detail page directly

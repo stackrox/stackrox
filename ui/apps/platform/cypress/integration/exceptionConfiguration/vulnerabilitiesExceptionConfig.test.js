@@ -1,6 +1,6 @@
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../helpers/features';
 import {
+    interactAndWaitForCveList,
     selectSingleCveForException,
     visitWorkloadCveOverview,
 } from '../vulnerabilities/workloadCves/WorkloadCves.helpers';
@@ -14,22 +14,12 @@ import { vulnerabilitiesConfigSelectors as selectors } from './ExceptionConfig.s
 describe('Vulnerabilities Exception Configuration', () => {
     withAuth();
 
-    before(function () {
-        if (!hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')) {
-            this.skip();
-        }
-    });
-
     beforeEach(() => {
-        if (hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')) {
-            resetExceptionConfig();
-        }
+        resetExceptionConfig();
     });
 
     after(() => {
-        if (hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')) {
-            resetExceptionConfig();
-        }
+        resetExceptionConfig();
     });
 
     it('should correctly handle RBAC for the vulnerability exception config', () => {
@@ -116,45 +106,48 @@ describe('Vulnerabilities Exception Configuration', () => {
         cy.get(selectors.saveButton).click();
         cy.get('.pf-v5-c-alert:contains("The configuration was updated successfully")');
 
-        // Visit the Workload CVE page, open a deferral modal, and verify that the specified options are available
-        visitWorkloadCveOverview();
-        selectSingleCveForException('DEFERRAL');
-        cy.get('button:contains("Options")').click();
+        // Mock the CVE list response on the Workload CVE page to prevent flakiness when no CVEs are reported
+        interactAndWaitForCveList(() => {
+            // Visit the Workload CVE page, open a deferral modal, and verify that the specified options are available
+            visitWorkloadCveOverview();
+            selectSingleCveForException('DEFERRAL');
+            cy.get('button:contains("Options")').click();
 
-        cy.get('label')
-            .contains(/For \d+ days/)
-            .should('have.length', 0);
-        cy.get("label:contains('When any CVE is fixable')");
-        cy.get("label:contains('When all CVEs are fixable')");
-        cy.get("label:contains('Until a specific date')");
-        cy.get("label:contains('Indefinitely')");
+            cy.get('label')
+                .contains(/For \d+ days/)
+                .should('have.length', 0);
+            cy.get("label:contains('When any CVE is fixable')");
+            cy.get("label:contains('When all CVEs are fixable')");
+            cy.get("label:contains('Until a specific date')");
+            cy.get("label:contains('Indefinitely')");
 
-        // Revisit the config page and enable all day options, and disable the previously enabled options
-        visitExceptionConfig('vulnerabilities');
-        [0, 1, 2, 3].forEach((index) => {
-            cy.get(selectors.dayOptionEnabledSwitch(index)).check({ force: true });
-            cy.get(selectors.dayOptionInput(index)).type(`{selectall}${index + 1}`);
+            // Revisit the config page and enable all day options, and disable the previously enabled options
+            visitExceptionConfig('vulnerabilities');
+            [0, 1, 2, 3].forEach((index) => {
+                cy.get(selectors.dayOptionEnabledSwitch(index)).check({ force: true });
+                cy.get(selectors.dayOptionInput(index)).type(`{selectall}${index + 1}`);
+            });
+            cy.get(selectors.whenAllCveFixableSwitch).uncheck({ force: true });
+            cy.get(selectors.whenAnyCveFixableSwitch).uncheck({ force: true });
+            cy.get(selectors.customDateSwitch).uncheck({ force: true });
+            cy.get(selectors.indefiniteOptionEnabledSwitch).uncheck({ force: true });
+
+            cy.get(selectors.saveButton).click();
+            cy.get('.pf-v5-c-alert:contains("The configuration was updated successfully")');
+
+            // Revisit Workload CVEs and verify that the updated options are available
+            visitWorkloadCveOverview();
+            selectSingleCveForException('DEFERRAL');
+            cy.get('button:contains("Options")').click();
+
+            cy.get('label:contains("For 1 days")');
+            cy.get('label:contains("For 2 days")');
+            cy.get('label:contains("For 3 days")');
+            cy.get('label:contains("For 4 days")');
+            cy.get("label:contains('When any CVE is fixable')").should('not.exist');
+            cy.get("label:contains('When all CVEs are fixable')").should('not.exist');
+            cy.get("label:contains('Until a specific date')").should('not.exist');
+            cy.get("label:contains('Indefinitely')").should('not.exist');
         });
-        cy.get(selectors.whenAllCveFixableSwitch).uncheck({ force: true });
-        cy.get(selectors.whenAnyCveFixableSwitch).uncheck({ force: true });
-        cy.get(selectors.customDateSwitch).uncheck({ force: true });
-        cy.get(selectors.indefiniteOptionEnabledSwitch).uncheck({ force: true });
-
-        cy.get(selectors.saveButton).click();
-        cy.get('.pf-v5-c-alert:contains("The configuration was updated successfully")');
-
-        // Revisit Workload CVEs and verify that the updated options are available
-        visitWorkloadCveOverview();
-        selectSingleCveForException('DEFERRAL');
-        cy.get('button:contains("Options")').click();
-
-        cy.get('label:contains("For 1 days")');
-        cy.get('label:contains("For 2 days")');
-        cy.get('label:contains("For 3 days")');
-        cy.get('label:contains("For 4 days")');
-        cy.get("label:contains('When any CVE is fixable')").should('not.exist');
-        cy.get("label:contains('When all CVEs are fixable')").should('not.exist');
-        cy.get("label:contains('Until a specific date')").should('not.exist');
-        cy.get("label:contains('Indefinitely')").should('not.exist');
     });
 });

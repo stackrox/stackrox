@@ -37,6 +37,7 @@ var (
 		"sensor/admission-control",
 		"sensor/common",
 		"sensor/debugger",
+		"sensor/init-tls-certs",
 		"sensor/kubernetes",
 		"sensor/tests",
 		"sensor/testutils",
@@ -343,7 +344,7 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			"central/globaldb", "central/metrics", "central/postgres", "pkg/sac/resources",
 			"sensor/common/sensor", "sensor/common/centralclient", "sensor/kubernetes/client", "sensor/kubernetes/fake",
 			"sensor/kubernetes/sensor", "sensor/debugger", "sensor/testutils",
-			"compliance/collection/compliance", "compliance/collection/intervals")
+			"compliance", "compliance/utils", "compliance/node")
 	}
 
 	if validImportRoot == "sensor/kubernetes" {

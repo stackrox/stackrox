@@ -46,7 +46,7 @@ function WatchedImagesTable({
                         <Tr>
                             <Th>Image</Th>
                             <Th>
-                                <span className="pf-v5-screen-reader">Remove watched image</span>
+                                <span className="pf-v5-screen-reader">Row action</span>
                             </Th>
                         </Tr>
                     </Thead>
@@ -54,10 +54,7 @@ function WatchedImagesTable({
                         {watchedImages.map(({ name }) => (
                             <Tr key={name}>
                                 <Td dataLabel="Image">{name}</Td>
-                                <Td
-                                    dataLabel="Remove watched image"
-                                    className="pf-v5-u-text-align-right"
-                                >
+                                <Td dataLabel="Row action" className="pf-v5-u-text-align-right">
                                     <Button
                                         variant="link"
                                         isInline

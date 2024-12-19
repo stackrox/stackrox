@@ -16,7 +16,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/k8srbac"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/sac"
@@ -1011,9 +1010,6 @@ func (resolver *orchestratorMetadataResolver) OpenShiftVersion() (string, error)
 func (resolver *clusterResolver) PlatformCVECountByType(ctx context.Context, q RawQuery) (*platformCVECountByTypeResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "PlatformCVECountByType")
 
-	if !features.VulnMgmtNodePlatformCVEs.Enabled() {
-		return nil, errors.Errorf("Feature %s is disabled", features.VulnMgmtWorkloadCVEs.Name())
-	}
 	if err := readClusters(ctx); err != nil {
 		return nil, err
 	}
@@ -1031,9 +1027,6 @@ func (resolver *clusterResolver) PlatformCVECountByType(ctx context.Context, q R
 func (resolver *clusterResolver) PlatformCVECountByFixability(ctx context.Context, q RawQuery) (*platformCVECountByFixabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "PlatformCVECountByFixability")
 
-	if !features.VulnMgmtNodePlatformCVEs.Enabled() {
-		return nil, errors.Errorf("Feature %s is disabled", features.VulnMgmtWorkloadCVEs.Name())
-	}
 	if err := readClusters(ctx); err != nil {
 		return nil, err
 	}

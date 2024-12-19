@@ -2,7 +2,7 @@ import withAuth from '../../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../../helpers/features';
 import {
     cancelAllCveExceptions,
-    typeAndSelectCustomSearchFilterValue,
+    typeAndEnterCustomSearchFilterValue,
     viewCvesByObservationState,
     visitWorkloadCveOverview,
 } from '../workloadCves/WorkloadCves.helpers';
@@ -23,28 +23,19 @@ describe('Exception Management - Approved Deferrals Table', () => {
     withAuth();
 
     before(function () {
-        if (
-            !hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') ||
-            !hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
-        ) {
+        if (!hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES')) {
             this.skip();
         }
     });
 
     beforeEach(() => {
-        if (
-            hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') &&
-            hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
-        ) {
+        if (hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES')) {
             cancelAllCveExceptions();
         }
     });
 
     after(() => {
-        if (
-            hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') &&
-            hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
-        ) {
+        if (hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES')) {
             cancelAllCveExceptions();
         }
     });
@@ -229,10 +220,10 @@ describe('Exception Management - Approved Deferrals Table', () => {
 
         cy.get('table tr:nth(1) td[data-label="Request name"] a').then((element) => {
             const requestName = element.text().trim();
-            typeAndSelectCustomSearchFilterValue('Request name', requestName);
+            typeAndEnterCustomSearchFilterValue('Exception', 'Request Name', requestName);
             cy.get('table tr:nth(1) td[data-label="Request name"] a').should('exist');
             cy.get(vulnSelectors.clearFiltersButton).click();
-            typeAndSelectCustomSearchFilterValue('Request name', 'BLAH');
+            typeAndEnterCustomSearchFilterValue('Exception', 'Request Name', 'BLAH');
             cy.get('table tr:nth(1) td[data-label="Request name"] a').should('not.exist');
         });
     });
@@ -246,10 +237,10 @@ describe('Exception Management - Approved Deferrals Table', () => {
         approveRequest();
         visitApprovedDeferralsTab();
 
-        typeAndSelectCustomSearchFilterValue('Requester', 'ui_tests');
+        typeAndEnterCustomSearchFilterValue('Exception', 'Requester User Name', 'ui_tests');
         cy.get('table tr:nth(1) td[data-label="Request name"] a').should('exist');
         cy.get(vulnSelectors.clearFiltersButton).click();
-        typeAndSelectCustomSearchFilterValue('Requester', 'BLAH');
+        typeAndEnterCustomSearchFilterValue('Exception', 'Requester User Name', 'BLAH');
         cy.get('table tr:nth(1) td[data-label="Request name"] a').should('not.exist');
     });
 });

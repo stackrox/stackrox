@@ -5,14 +5,14 @@ import (
 )
 
 const (
-	reportBlobPathPrefix   = "/central/reports/"
-	reportBlobPathTemplate = reportBlobPathPrefix + "%s/%s"
+	ReportBlobPathPrefix   = "/central/reports/"
+	reportBlobPathTemplate = ReportBlobPathPrefix + "%s/%s"
 
 	// ReportBlobRegex matches all downloadable report blob names
-	ReportBlobRegex = "^" + reportBlobPathPrefix + ".+"
+	ReportBlobRegex = "^(" + ReportBlobPathPrefix + "|" + ComplianceReportBlobPathPrefix + ").+"
 
-	complianceReportBlobPathPrefix   = "/central/compliance/reports/"
-	complianceReportBlobPathTemplate = complianceReportBlobPathPrefix + "%s/%s"
+	ComplianceReportBlobPathPrefix   = "/central/compliance/reports/"
+	complianceReportBlobPathTemplate = ComplianceReportBlobPathPrefix + "%s/%s"
 )
 
 // GetReportBlobPath creates the Blob path for report

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/georgysavva/scany/v2/dbscan"
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -16,7 +17,26 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	pgsearch "github.com/stackrox/rox/pkg/search/postgres/query"
+	"github.com/stackrox/rox/pkg/utils"
 )
+
+var scanAPI = newScanAPI(newDBScanAPI(dbscan.WithAllowUnknownColumns(true)))
+
+func newScanAPI(dbscanAPI *dbscan.API) *pgxscan.API {
+	api, err := pgxscan.NewAPI(dbscanAPI)
+	if err != nil {
+		utils.Must(err)
+	}
+	return api
+}
+
+func newDBScanAPI(opts ...dbscan.APIOption) *dbscan.API {
+	api, err := pgxscan.NewDBScanAPI(opts...)
+	if err != nil {
+		utils.Must(err)
+	}
+	return api
+}
 
 // RunSelectRequestForSchema executes a select request against the database for given schema. The input query must
 // explicitly specify select fields.
@@ -127,7 +147,7 @@ func retryableRunSelectRequestForSchema[T any](ctx context.Context, db postgres.
 	defer rows.Close()
 
 	var scannedRows []*T
-	if err := pgxscan.ScanAll(&scannedRows, rows); err != nil {
+	if err := scanAPI.ScanAll(&scannedRows, rows); err != nil {
 		return nil, err
 	}
 	return scannedRows, rows.Err()

@@ -8,7 +8,6 @@ import SearchFilterChips, {
     FilterChip,
     SearchFilterChipsProps,
 } from 'Components/PatternFly/SearchFilterChips';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useAnalytics, {
     WORKLOAD_CVE_FILTER_APPLIED,
     isSearchCategoryWithFilter,
@@ -43,8 +42,6 @@ function WorkloadCveFilterToolbar({
     onFilterChange = noop,
     showCveFilterDropdowns = true,
 }: WorkloadCveFilterToolbarProps) {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isFixabilityFiltersEnabled = isFeatureFlagEnabled('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS');
     const { analyticsTrack } = useAnalytics();
 
     const { searchFilter, setSearchFilter } = useURLSearch();
@@ -127,10 +124,7 @@ function WorkloadCveFilterToolbar({
                 />
             ),
         },
-    ];
-
-    if (isFixabilityFiltersEnabled) {
-        filterChipGroupDescriptors.push({
+        {
             displayName: 'CVE status',
             searchFilterName: 'FIXABLE',
             render: (filter: string) => (
@@ -139,8 +133,8 @@ function WorkloadCveFilterToolbar({
                     name={filter}
                 />
             ),
-        });
-    }
+        },
+    ];
 
     return (
         <Toolbar>
@@ -159,13 +153,11 @@ function WorkloadCveFilterToolbar({
                 {showCveFilterDropdowns && (
                     <ToolbarGroup>
                         <CVESeverityDropdown searchFilter={searchFilter} onSelect={onSelect} />
-                        {isFixabilityFiltersEnabled && (
-                            <CVEStatusDropdown
-                                filterField="FIXABLE"
-                                searchFilter={searchFilter}
-                                onSelect={onSelect}
-                            />
-                        )}
+                        <CVEStatusDropdown
+                            filterField="FIXABLE"
+                            searchFilter={searchFilter}
+                            onSelect={onSelect}
+                        />
                     </ToolbarGroup>
                 )}
                 <ToolbarGroup aria-label="applied search filters" className="pf-v5-u-w-100">

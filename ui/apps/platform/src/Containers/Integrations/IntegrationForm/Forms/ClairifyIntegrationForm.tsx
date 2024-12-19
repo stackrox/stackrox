@@ -168,7 +168,7 @@ function ClairifyIntegrationForm({
                     <FormLabelGroup
                         label="GRPC endpoint"
                         fieldId="clairify.grpcEndpoint"
-                        helperText="Used For Node Scanning"
+                        helperText="Used for node scanning"
                         touched={touched}
                         errors={errors}
                     >

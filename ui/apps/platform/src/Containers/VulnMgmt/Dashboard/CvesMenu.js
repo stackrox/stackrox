@@ -24,8 +24,6 @@ const cveCountsQuery = gql`
     }
 `;
 
-const errorClasses = 'bg-alert-200 hover:bg-alert-300 border-alert-400';
-
 const CvesMenu = () => {
     const workflowState = useContext(workflowStateContext);
 
@@ -62,7 +60,7 @@ const CvesMenu = () => {
 
     return (
         <Menu
-            buttonClass={`bg-base-100 hover:bg-base-200 border border-base-400 btn-class flex h-full text-center text-base whitespace-nowrap text-base-600 ${errorClasses}`}
+            buttonClass={`border border-base-400 btn-class flex h-full text-center text-base whitespace-nowrap text-base-600`}
             buttonText={loading ? <Loader className="text-base-100" message="" /> : menuTitle}
             options={options}
             className="h-full min-w-24"

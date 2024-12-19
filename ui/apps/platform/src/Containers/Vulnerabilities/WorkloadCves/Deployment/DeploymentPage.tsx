@@ -29,6 +29,7 @@ import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import DeploymentPageResources from './DeploymentPageResources';
 import DeploymentPageVulnerabilities from './DeploymentPageVulnerabilities';
 import DeploymentPageDetails from './DeploymentPageDetails';
+import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 
 const workloadCveOverviewDeploymentsPath = getOverviewPagePath('Workload', {
     vulnerabilityState: 'OBSERVED',
@@ -46,6 +47,7 @@ const deploymentMetadataQuery = gql`
 
 function DeploymentPage() {
     const { deploymentId } = useParams() as { deploymentId: string };
+    const { pageTitle } = useWorkloadCveViewContext();
     const [activeTabKey, setActiveTabKey] = useURLStringUnion('detailsTab', detailsTabValues);
 
     const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
@@ -62,7 +64,7 @@ function DeploymentPage() {
 
     return (
         <>
-            <PageTitle title={`Workload CVEs - Deployment ${deploymentName ?? ''}`} />
+            <PageTitle title={`${pageTitle} - Deployment ${deploymentName ?? ''}`} />
             <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={workloadCveOverviewDeploymentsPath}>

@@ -1,7 +1,6 @@
 import React from 'react';
 import {
     Button,
-    ButtonVariant,
     Divider,
     Flex,
     FlexItem,
@@ -9,7 +8,7 @@ import {
     PageSectionVariants,
     Title,
 } from '@patternfly/react-core';
-import { Table, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
+import { ActionsColumn, Table, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import { useParams, Link } from 'react-router-dom';
 import pluralize from 'pluralize';
 
@@ -119,7 +118,7 @@ function IntegrationsTable({
                             {permissions[source].write && !isReadOnly && (
                                 <FlexItem>
                                     <Button
-                                        variant={ButtonVariant.primary}
+                                        variant="primary"
                                         component={LinkShim}
                                         href={getPathToCreate(source, type)}
                                         data-testid="add-integration"
@@ -214,7 +213,7 @@ function IntegrationsTable({
                                                     column.Header === 'Configuration')
                                             ) {
                                                 return (
-                                                    <Td key="name">
+                                                    <Td key="name" dataLabel={column.Header}>
                                                         <Link
                                                             to={getPathToViewDetails(
                                                                 source,
@@ -231,7 +230,7 @@ function IntegrationsTable({
                                                 );
                                             }
                                             return (
-                                                <Td key={column.Header}>
+                                                <Td key={column.Header} dataLabel={column.Header}>
                                                     <TableCellValue
                                                         row={integration}
                                                         column={column}
@@ -239,15 +238,15 @@ function IntegrationsTable({
                                                 </Td>
                                             );
                                         })}
-                                        <Td
-                                            actions={{
-                                                items: actionItems,
-                                                isDisabled:
+                                        <Td isActionCell>
+                                            <ActionsColumn
+                                                isDisabled={
                                                     !permissions[source].write ||
-                                                    !isUserResource(integration.traits),
-                                            }}
-                                            className="pf-v5-u-text-align-right"
-                                        />
+                                                    !isUserResource(integration.traits)
+                                                }
+                                                items={actionItems}
+                                            />
+                                        </Td>
                                     </Tr>
                                 );
                             })}

@@ -3,8 +3,15 @@ import { hasFeatureFlag } from '../../../helpers/features';
 import {
     getRouteMatcherMapForGraphQL,
     interactAndWaitForResponses,
+    interceptAndOverrideFeatureFlags,
+    interceptAndOverridePermissions,
+    interceptAndWatchRequests,
 } from '../../../helpers/request';
-import { verifyColumnManagement } from '../../../helpers/tableHelpers';
+import {
+    changePerPageOption,
+    sortByTableHeader,
+    verifyColumnManagement,
+} from '../../../helpers/tableHelpers';
 
 import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 import {
@@ -13,8 +20,6 @@ import {
     typeAndEnterSearchFilterValue,
     selectEntityTab,
     visitWorkloadCveOverview,
-    typeAndSelectCustomSearchFilterValue,
-    typeAndEnterCustomSearchFilterValue,
 } from './WorkloadCves.helpers';
 import { selectors } from './WorkloadCves.selectors';
 
@@ -28,25 +33,20 @@ describe('Workload CVE Image Single page', () => {
         }
     });
 
-    function visitFirstImage() {
+    function visitFirstImage(): Promise<string> {
         visitWorkloadCveOverview();
 
         selectEntityTab('Image');
 
-        // If unified deferrals are not enabled, there is a good chance none of the visible images will
-        // have CVEs, so we apply a wildcard filter to ensure only images with CVEs are visible
-        if (!hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')) {
-            if (isAdvancedFiltersEnabled) {
-                typeAndEnterCustomSearchFilterValue('CVE', 'Name', '.*');
-            } else {
-                typeAndSelectCustomSearchFilterValue('CVE', '.*');
-            }
-        }
-
         // Ensure the data in the table has settled
         cy.get(selectors.isUpdatingTable).should('not.exist');
 
-        cy.get('tbody tr td[data-label="Image"] a').first().click();
+        return cy.get('tbody tr td[data-label="Image"] a').then(([$imageLink]) => {
+            const imageName = $imageLink.innerText.replace('\n', '');
+            cy.wrap($imageLink).click();
+            cy.get('h1').contains(imageName);
+            return Promise.resolve(imageName);
+        });
     }
 
     it('should contain the correct search filters in the toolbar', () => {
@@ -314,10 +314,120 @@ describe('Workload CVE Image Single page', () => {
         });
     });
 
+    // See case 03985920 and ROX-27344 for more details
+    it('should receive consistent CVE counts when sorting and paginating the table', () => {
+        const opname = 'getCVEsForImage';
+        const routeMatcherMap = getRouteMatcherMapForGraphQL([opname]);
+
+        // Captures the initial CVE count and the initial query sent when visiting the image details page
+        // and uses these values as a basis of comparison on subsequent requests
+        function createAssertion(initialCount: number, initialQuery: string) {
+            return function (interception) {
+                expect(interception.request.body.variables.query).to.equal(initialQuery);
+                expect(interception.response.body.data.image.imageVulnerabilityCount).to.equal(
+                    initialCount
+                );
+            };
+        }
+
+        // Test count stability with no filters applied
+        interceptAndWatchRequests(routeMatcherMap).then(({ waitForRequests }) => {
+            visitFirstImage();
+            waitForRequests()
+                .then(({ request, response }) => ({
+                    assertCveCountsUnchanged: createAssertion(
+                        response.body.data.image.imageVulnerabilityCount,
+                        request.body.variables.query
+                    ),
+                }))
+                .then(({ assertCveCountsUnchanged }) => {
+                    // Check the initial sort request
+                    sortByTableHeader('CVE');
+                    waitForRequests().then(assertCveCountsUnchanged);
+
+                    // Check the initial perPage change request
+                    changePerPageOption(50);
+                    waitForRequests().then(assertCveCountsUnchanged);
+
+                    // Test another sort back-and-forth
+                    sortByTableHeader('CVE severity');
+                    waitForRequests().then(assertCveCountsUnchanged);
+                    sortByTableHeader('CVE severity');
+                    waitForRequests().then(assertCveCountsUnchanged);
+                    sortByTableHeader('CVE severity');
+                    waitForRequests().then(assertCveCountsUnchanged);
+
+                    // Test changing back to the original pagination
+                    changePerPageOption(20);
+                    waitForRequests().then(assertCveCountsUnchanged);
+
+                    // Test a pagination change after returning to the default
+                    changePerPageOption(10);
+                    waitForRequests().then(assertCveCountsUnchanged);
+
+                    // Test sorting by a column already used as a sort *again*
+                    sortByTableHeader('CVE severity');
+                    waitForRequests().then(assertCveCountsUnchanged);
+
+                    // Test sorting on the only remaining untested column by rapidly changing
+                    // the column value without waiting for a response
+                    sortByTableHeader('CVSS');
+                    sortByTableHeader('CVSS');
+                    sortByTableHeader('CVSS');
+                    sortByTableHeader('CVSS');
+                    waitForRequests().then(assertCveCountsUnchanged);
+                    waitForRequests().then(assertCveCountsUnchanged);
+                    waitForRequests().then(assertCveCountsUnchanged);
+                    waitForRequests().then(assertCveCountsUnchanged);
+                });
+        });
+    });
+
     describe('Column management tests', () => {
         it('should allow the user to hide and show columns on the CVE table', () => {
             visitFirstImage();
             verifyColumnManagement({ tableSelector: 'table' });
+        });
+    });
+
+    describe('SBOM generation tests', () => {
+        const headerSbomModalButton = 'section:has(h1) button:contains("Generate SBOM")';
+        const generateSbomButton = '[role="dialog"] button:contains("Generate SBOM")';
+
+        before(function () {
+            if (!hasFeatureFlag('ROX_SBOM_GENERATION')) {
+                this.skip();
+            }
+        });
+
+        it('should hide the SBOM generation button when the user does not have write access to the Image resource', () => {
+            interceptAndOverridePermissions({ Image: 'READ_ACCESS' });
+
+            visitFirstImage();
+
+            cy.get(headerSbomModalButton).should('not.exist');
+        });
+
+        it('should disable the SBOM generation button when Scanner V4 is not enabled', () => {
+            interceptAndOverrideFeatureFlags({ ROX_SCANNER_V4: false });
+
+            visitFirstImage();
+
+            cy.get(headerSbomModalButton).should('have.attr', 'aria-disabled', 'true');
+        });
+
+        it('should trigger a download of the image SBOM via confirmation modal', function () {
+            if (!hasFeatureFlag('ROX_SCANNER_V4')) {
+                this.skip();
+            }
+
+            visitFirstImage().then((imageFullName) => {
+                cy.get(headerSbomModalButton).click();
+                cy.get(selectors.generateSbomModal).contains(imageFullName);
+                cy.get(generateSbomButton).click();
+                cy.get(':contains("Generating, please do not navigate away from this modal")');
+                cy.get(':contains("Software Bill of Materials (SBOM) generated successfully")');
+            });
         });
     });
 });

@@ -153,8 +153,8 @@ spec:
                   are rendered read-only.
                 type: boolean
               notifiers:
-                description: Notifiers is a list of IDs of the notifiers that should
-                  be triggered when a violation from this policy is identified.  IDs
+                description: Notifiers is a list of IDs or names of the notifiers
+                  that should be triggered when a violation from this policy is identified.  IDs
                   should be in the form of a UUID and are found through the Central
                   API.
                 items:
@@ -253,7 +253,6 @@ spec:
                 type: string
             required:
             - categories
-            - description
             - lifecycleStages
             - policyName
             - policySections

@@ -1,9 +1,3 @@
-export const imageWatchStatuses = {
-    NOT_WATCHED: 'NOT_WATCHED',
-    WATCHED: 'WATCHED',
-    UNKNOWN: 'UNKNOWN',
-};
-
 export const entityPriorityField = {
     CLUSTER: 'Cluster Risk Priority',
     NODE: 'Node Risk Priority',

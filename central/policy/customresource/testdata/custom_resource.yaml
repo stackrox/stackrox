@@ -7,7 +7,6 @@ spec:
   description: Alert if the container contains vulnerabilities
   rationale: This is the rationale
   remediation: This is the remediation
-  disabled: false
   categories:
   - Image Assurance
   - Privileges Capabilities
@@ -15,6 +14,8 @@ spec:
   lifecycleStages:
   - BUILD
   eventSource: NOT_APPLICABLE
+  notifiers:
+  - email-notifier-uuid
   exclusions:
   - name: exclusionName1
     deployment:

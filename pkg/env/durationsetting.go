@@ -5,12 +5,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/utils"
-)
-
-var (
-	log = logging.LoggerForModule()
+	"github.com/stackrox/rox/pkg/utils/panic"
 )
 
 // DurationSetting represents an environment variable which should be parsed into a duration
@@ -38,7 +33,6 @@ func (d *DurationSetting) DurationSetting() time.Duration {
 		if err == nil && validateDuration(dur, d.opts) == nil {
 			return dur
 		}
-		log.Warnf("%s is not a valid environment variable for %s, using default value: %v", val, d.envVar, d.defaultDuration)
 	}
 	return d.defaultDuration
 }
@@ -49,7 +43,9 @@ func registerDurationSetting(envVar string, defaultDuration time.Duration, optio
 		o.apply(&opts)
 	}
 
-	utils.CrashOnError(validateDuration(defaultDuration, opts))
+	if err := validateDuration(defaultDuration, opts); err != nil {
+		panic.HardPanic(fmt.Sprintf("%+v", err))
+	}
 
 	s := &DurationSetting{
 		envVar:          envVar,

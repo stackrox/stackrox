@@ -94,6 +94,7 @@ import (
 	"github.com/stackrox/rox/central/helmcharts"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageService "github.com/stackrox/rox/central/image/service"
+	"github.com/stackrox/rox/central/imageintegration"
 	iiDatastore "github.com/stackrox/rox/central/imageintegration/datastore"
 	imageintegrationsDS "github.com/stackrox/rox/central/imageintegration/datastore"
 	iiService "github.com/stackrox/rox/central/imageintegration/service"
@@ -132,16 +133,14 @@ import (
 	processListeningOnPorts "github.com/stackrox/rox/central/processlisteningonport/service"
 	"github.com/stackrox/rox/central/pruning"
 	rbacService "github.com/stackrox/rox/central/rbac/service"
-	reportConfigurationService "github.com/stackrox/rox/central/reports/config/service"
-	vulnReportScheduleManager "github.com/stackrox/rox/central/reports/manager"
 	vulnReportV2Scheduler "github.com/stackrox/rox/central/reports/scheduler/v2"
-	reportService "github.com/stackrox/rox/central/reports/service"
 	reportServiceV2 "github.com/stackrox/rox/central/reports/service/v2"
 	v2Service "github.com/stackrox/rox/central/reports/service/v2"
 	"github.com/stackrox/rox/central/reprocessor"
 	collectionService "github.com/stackrox/rox/central/resourcecollection/service"
 	"github.com/stackrox/rox/central/risk/handlers/timeline"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
+	"github.com/stackrox/rox/central/role/sachelper"
 	roleService "github.com/stackrox/rox/central/role/service"
 	centralSAC "github.com/stackrox/rox/central/sac"
 	"github.com/stackrox/rox/central/scanner"
@@ -449,11 +448,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		servicesToRegister = append(servicesToRegister, backupService.Singleton())
 	}
 
-	if features.VulnReportingEnhancements.Enabled() {
-		servicesToRegister = append(servicesToRegister, reportServiceV2.Singleton())
-	} else {
-		servicesToRegister = append(servicesToRegister, reportService.Singleton(), reportConfigurationService.Singleton())
-	}
+	servicesToRegister = append(servicesToRegister, reportServiceV2.Singleton())
 
 	if features.ComplianceEnhancements.Enabled() {
 		servicesToRegister = append(servicesToRegister, complianceOperatorIntegrationService.Singleton())
@@ -751,6 +746,12 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Compression:   true,
 		},
 		{
+			Route:         "/api/v1/images/sbom",
+			Authorizer:    user.With(permissions.Modify(permissions.WithLegacyAuthForSAC(resources.Image, true))),
+			ServerHandler: imageService.SBOMHandler(imageintegration.Set(), enrichment.ImageEnricherSingleton(), sachelper.NewClusterSacHelper(clusterDataStore.Singleton())),
+			Compression:   true,
+		},
+		{
 			Route:         "/api/splunk/ta/vulnmgmt",
 			Authorizer:    user.With(permissions.View(resources.Image), permissions.View(resources.Deployment)),
 			ServerHandler: splunk.NewVulnMgmtHandler(deploymentDatastore.Singleton(), imageDatastore.Singleton()),
@@ -824,7 +825,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		{
 			Route:         "/api/policy/custom-resource/save-as-zip",
 			Authorizer:    user.With(permissions.View(resources.WorkflowAdministration)),
-			ServerHandler: policyHandler.Handler(policyDataStore.Singleton()),
+			ServerHandler: policyHandler.Handler(policyDataStore.Singleton(), notifierDS.Singleton()),
 			Compression:   false,
 		},
 		{
@@ -877,15 +878,13 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		},
 	)
 
-	if features.VulnReportingEnhancements.Enabled() {
-		// Append report custom routes
-		customRoutes = append(customRoutes, routes.CustomRoute{
-			Route:         "/api/reports/jobs/download",
-			Authorizer:    user.With(permissions.Modify(resources.WorkflowAdministration)),
-			ServerHandler: v2Service.NewDownloadHandler(),
-			Compression:   true,
-		})
-	}
+	// Append report custom routes
+	customRoutes = append(customRoutes, routes.CustomRoute{
+		Route:         "/api/reports/jobs/download",
+		Authorizer:    user.With(permissions.Modify(resources.WorkflowAdministration)),
+		ServerHandler: v2Service.NewDownloadHandler(),
+		Compression:   true,
+	})
 
 	if features.ComplianceEnhancements.Enabled() && features.ComplianceReporting.Enabled() && features.ScanScheduleReportJobs.Enabled() {
 		customRoutes = append(customRoutes, routes.CustomRoute{
@@ -945,13 +944,8 @@ func waitForTerminationSignal() {
 		{administrationEventHandler.Singleton(), "administration events handler"},
 	}
 
-	if features.VulnReportingEnhancements.Enabled() {
-		stoppables = append(stoppables,
-			stoppableWithName{vulnReportV2Scheduler.Singleton(), "vuln reports v2 scheduler"})
-	} else {
-		stoppables = append(stoppables,
-			stoppableWithName{vulnReportScheduleManager.Singleton(), "vuln reports v1 schedule manager"})
-	}
+	stoppables = append(stoppables,
+		stoppableWithName{vulnReportV2Scheduler.Singleton(), "vuln reports v2 scheduler"})
 
 	if features.ComplianceReporting.Enabled() {
 		stoppables = append(stoppables,

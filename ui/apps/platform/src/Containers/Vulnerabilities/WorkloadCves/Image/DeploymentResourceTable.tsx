@@ -60,7 +60,7 @@ function DeploymentResourceTable({ data, getSortParams }: DeploymentResourceTabl
                         }}
                     >
                         <Tr>
-                            <Td>
+                            <Td dataLabel="Name">
                                 <Link
                                     to={getWorkloadEntityPagePath(
                                         'Deployment',
@@ -71,9 +71,9 @@ function DeploymentResourceTable({ data, getSortParams }: DeploymentResourceTabl
                                     {name}
                                 </Link>
                             </Td>
-                            <Td>{clusterName}</Td>
-                            <Td>{namespace}</Td>
-                            <Td>
+                            <Td dataLabel="Cluster">{clusterName}</Td>
+                            <Td dataLabel="Namespace">{namespace}</Td>
+                            <Td dataLabel="Created">
                                 <DateDistance date={created} />
                             </Td>
                         </Tr>

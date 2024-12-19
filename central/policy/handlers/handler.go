@@ -11,8 +11,9 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
+	notifierDatastore "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/policy/customresource"
-	"github.com/stackrox/rox/central/policy/datastore"
+	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/apiparams"
 	"github.com/stackrox/rox/pkg/httputil"
@@ -32,14 +33,16 @@ var (
 )
 
 // Handler returns a handler for policy http requests
-func Handler(c datastore.DataStore) http.Handler {
+func Handler(p policyDatastore.DataStore, n notifierDatastore.DataStore) http.Handler {
 	return httpHandler{
-		policyStore: c,
+		policyStore:   p,
+		notifierStore: n,
 	}
 }
 
 type httpHandler struct {
-	policyStore datastore.DataStore
+	policyStore   policyDatastore.DataStore
+	notifierStore notifierDatastore.DataStore
 }
 
 func (h httpHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
@@ -57,7 +60,7 @@ func (h httpHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request
 	h.saveAsCustomResources(request.Context(), &params, writer)
 }
 
-// saveAsCustomResources saves the policies, designed by the policy ids, as custome resources
+// saveAsCustomResources saves the policies, designed by the policy ids, as custom resources
 func (h httpHandler) saveAsCustomResources(ctx context.Context, request *apiparams.SaveAsCustomResourcesRequest, writer http.ResponseWriter) {
 	policyList, missingIndices, err := h.policyStore.GetPolicies(ctx, request.IDs)
 	if err != nil {
@@ -73,11 +76,22 @@ func (h httpHandler) saveAsCustomResources(ctx context.Context, request *apipara
 				Error: "not found",
 			},
 		})
-		log.Debugf("A policy error occurred for id %s: not found", policyID)
+		log.Errorf("A policy error occurred for id %s: not found", policyID)
 	}
 	if len(errDetails.GetErrors()) > 0 {
 		writeErrorWithDetails(writer, codes.InvalidArgument, errors.New("Failed to retrieve all policies. Check error details for a list of policies that could not be retrieved."), errDetails)
 		return
+	}
+
+	notifierList, err := h.notifierStore.GetNotifiers(ctx)
+	if err != nil {
+		httputil.WriteGRPCStyleError(writer, codes.Internal, err)
+		return
+	}
+
+	notifiers := make(map[string]string, len(notifierList))
+	for _, n := range notifierList {
+		notifiers[n.GetId()] = n.GetName()
 	}
 
 	zipWriter := zip.NewWriter(writer)
@@ -88,6 +102,17 @@ func (h httpHandler) saveAsCustomResources(ctx context.Context, request *apipara
 	names := set.NewStringSet()
 	for _, policy := range policyList {
 		cr := customresource.ConvertPolicyToCustomResource(policy)
+		// Switch notifier IDs to names
+		notifierNames := make([]string, 0, len(cr.SecurityPolicySpec.Notifiers))
+		for _, id := range cr.SecurityPolicySpec.Notifiers {
+			if name, exists := notifiers[id]; exists {
+				notifierNames = append(notifierNames, name)
+				continue
+			}
+			log.Errorf("Notifier %s in policy %s not found, hence skipped", id, policy.GetName())
+		}
+		cr.SecurityPolicySpec.Notifiers = notifierNames
+
 		// Rename custom resource if its name conflicts with existing resource in the zip archive.
 		crName, ok := cr.Metadata["name"].(string)
 		if !ok {

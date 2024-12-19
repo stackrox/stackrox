@@ -21,7 +21,7 @@ metadata:
     features.operators.openshift.io/cni: 'false'
     features.operators.openshift.io/csi: 'false'
     features.operators.openshift.io/disconnected: 'true'
-    features.operators.openshift.io/fips-compliant: 'false'
+    features.operators.openshift.io/fips-compliant: 'true'
     features.operators.openshift.io/proxy-aware: 'true'
     features.operators.openshift.io/tls-profiles: 'false'
     features.operators.openshift.io/token-auth-aws: 'false'
@@ -1571,31 +1571,6 @@ spec:
           - platform.stackrox.io
           resources:
           - centrals
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - platform.stackrox.io
-          resources:
-          - centrals/finalizers
-          verbs:
-          - update
-        - apiGroups:
-          - platform.stackrox.io
-          resources:
-          - centrals/status
-          verbs:
-          - get
-          - patch
-          - update
-        - apiGroups:
-          - platform.stackrox.io
-          resources:
           - securedclusters
           verbs:
           - create
@@ -1608,12 +1583,14 @@ spec:
         - apiGroups:
           - platform.stackrox.io
           resources:
+          - centrals/finalizers
           - securedclusters/finalizers
           verbs:
           - update
         - apiGroups:
           - platform.stackrox.io
           resources:
+          - centrals/status
           - securedclusters/status
           verbs:
           - get

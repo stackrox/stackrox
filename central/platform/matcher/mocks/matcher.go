@@ -20,6 +20,7 @@ import (
 type MockPlatformMatcher struct {
 	ctrl     *gomock.Controller
 	recorder *MockPlatformMatcherMockRecorder
+	isgomock struct{}
 }
 
 // MockPlatformMatcherMockRecorder is the mock recorder for MockPlatformMatcher.

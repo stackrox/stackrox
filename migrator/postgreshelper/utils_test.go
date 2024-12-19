@@ -88,10 +88,6 @@ func (s *PostgresRestoreSuite) TestUtilities() {
 	// Successfully create active DB from restore DB
 	err = pgadmin.CreateDB(s.sourceMap, s.config, restoreDB, activeDB)
 	s.Nil(err)
-	// Have to terminate connections from the source DB before we can create
-	// the copy.  Make sure connection was terminated.
-	err = restorePool.Ping(s.ctx)
-	s.NotNil(err)
 
 	// Rename database to a database that exists
 	err = RenameDB(s.pool, restoreDB, activeDB)

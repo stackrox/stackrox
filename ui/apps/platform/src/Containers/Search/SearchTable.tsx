@@ -5,7 +5,6 @@ import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import { SearchResult, SearchResultCategory } from 'services/SearchService';
 import { SearchFilter } from 'types/search';
 
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import FilterLinks from './FilterLinks';
 import ViewLinks from './ViewLinks';
 import {
@@ -30,11 +29,7 @@ type SearchTableProps = {
 
 function SearchTable({ navCategory, searchFilter, searchResults }: SearchTableProps): ReactElement {
     const isRouteEnabled = useIsRouteEnabled();
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const searchResultCategoryMap = searchResultCategoryMapFilteredIsRouteEnabled(
-        isRouteEnabled,
-        isFeatureFlagEnabled
-    );
+    const searchResultCategoryMap = searchResultCategoryMapFilteredIsRouteEnabled(isRouteEnabled);
 
     const firstColumnHeading = searchNavMap[navCategory];
     const hasLocationColumn =

@@ -9,14 +9,22 @@ metadata:
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "500"
     # TODO(ROX-21073): re-enable for all PR branches
-    pipelinesascode.tekton.dev/on-cel-expression: |
-      (event == "push" && target_branch.matches("^(master|release-.*)$")) ||
-      (event == "pull_request" && (source_branch.matches("(konflux|appstudio|rhtap)") || body.pull_request.labels.exists(l, l.name == "konflux-build")))
+    pipelinesascode.tekton.dev/on-cel-expression: (
+        event == "push" && (
+          source_branch == "master" ||
+          target_branch.startsWith("refs/tags/")
+        )
+      ) || (
+        event == "pull_request" && (
+          source_branch.matches("(konflux|renovate|appstudio|rhtap)") ||
+          body.pull_request.labels.exists(l, l.name == "konflux-build")
+        )
+      )
   labels:
     appstudio.openshift.io/application: acs
     appstudio.openshift.io/component: scanner-v4
     pipelines.appstudio.openshift.io/type: build
-  name: scanner-v4-build
+  name: scanner-v4-on-push
   namespace: rh-acs-tenant
 
 spec:
@@ -69,6 +77,7 @@ spec:
         requests:
           cpu: 2
 
+  # IMPORTANT: when changing timeouts here, read and follow timeout instructions in operator-bundle-build.yaml.
   timeouts:
     # The tasks regularly takes 1h to finish.
     tasks: 1h

@@ -17,7 +17,7 @@ const (
 	scannerSecretName          = "tls-cert-scanner"            // #nosec G101 not a hardcoded credential
 	scannerDbSecretName        = "tls-cert-scanner-db"         // #nosec G101 not a hardcoded credential
 	scannerV4IndexerSecretName = "tls-cert-scanner-v4-indexer" // #nosec G101 not a hardcoded credential
-	scannerV4DbSecretName      = "tls-cert-scanner-v4-db-tls"  // #nosec G101 not a hardcoded credential
+	scannerV4DbSecretName      = "tls-cert-scanner-v4-db"      // #nosec G101 not a hardcoded credential
 )
 
 // NewServiceCertificatesRepo creates a new ServiceCertificatesRepoSecrets that persists certificates for

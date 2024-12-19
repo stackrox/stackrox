@@ -21,8 +21,8 @@ import (
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/retry"
-	"github.com/stackrox/rox/pkg/ternary"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
+	pkgUtils "github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/scan"
 	"github.com/stretchr/testify/assert"
@@ -457,7 +457,7 @@ func (ts *DelegatedScanningSuite) TestAdHocScans() {
 	withClusterFlag := true
 
 	scanImgReq := func(imageStr string, withClusterFlag bool) *v1.ScanImageRequest {
-		cluster := ternary.String(withClusterFlag, ts.remoteCluster.GetId(), "")
+		cluster := pkgUtils.IfThenElse(withClusterFlag, ts.remoteCluster.GetId(), "")
 		return &v1.ScanImageRequest{
 			ImageName: imageStr,
 			Force:     true,
@@ -867,17 +867,27 @@ func (ts *DelegatedScanningSuite) scanWithRetries(ctx context.Context, service v
 	var err error
 	var img *storage.Image
 
+	retryErrTokens := []string{
+		scan.ErrTooManyParallelScans.Error(),
+		"context deadline exceeded",
+	}
+
 	retryFunc := func() error {
 		img, err = service.ScanImage(ctx, req)
+		if err == nil {
+			return nil
+		}
 
-		if err != nil && strings.Contains(err.Error(), scan.ErrTooManyParallelScans.Error()) {
-			err = retry.MakeRetryable(err)
+		for _, token := range retryErrTokens {
+			if strings.Contains(err.Error(), token) {
+				return retry.MakeRetryable(err)
+			}
 		}
 
 		return err
 	}
 
-	err = ts.withRetries(retryFunc, "Too many parallel scans")
+	err = ts.withRetries(retryFunc, "Timeout or too many parallel scans")
 	return img, err
 }
 

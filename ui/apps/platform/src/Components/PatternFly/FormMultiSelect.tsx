@@ -1,6 +1,6 @@
 /* PatternFly Component */
 import React, { ReactElement, useState } from 'react';
-import { Select, SelectVariant } from '@patternfly/react-core/deprecated';
+import { Select } from '@patternfly/react-core/deprecated';
 
 export type FormMultiSelectProps = {
     id: string;
@@ -42,7 +42,7 @@ const FormMultiSelect = ({
     return (
         <Select
             id={id}
-            variant={SelectVariant.typeaheadMulti}
+            variant="typeaheadmulti"
             selections={values}
             onToggle={(_event, toggleOpen) => onToggle(toggleOpen)}
             onSelect={onSelect}

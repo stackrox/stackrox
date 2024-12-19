@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { Alert, ClipboardCopy, ClipboardCopyVariant, Text } from '@patternfly/react-core';
+import { Alert, ClipboardCopy, Text } from '@patternfly/react-core';
 import { Link } from 'react-router-dom';
 
 import { accessControlBasePath } from 'routePaths';
@@ -79,7 +79,7 @@ function InviteUsersConfirmationNoEmail({
                         isExpanded
                         hoverTip="Copy"
                         clickTip="Copied"
-                        variant={ClipboardCopyVariant.expansion}
+                        variant="expansion"
                         className="pf-v5-u-mb-md"
                     >
                         {emailBuckets.newEmails.join(', ')}
@@ -89,7 +89,7 @@ function InviteUsersConfirmationNoEmail({
                         isExpanded
                         hoverTip="Copy"
                         clickTip="Copied"
-                        variant={ClipboardCopyVariant.expansion}
+                        variant="expansion"
                         className="pf-v5-u-mb-md"
                     >
                         You have been invited to use Red Hat Advanced Cluster Security. Please use

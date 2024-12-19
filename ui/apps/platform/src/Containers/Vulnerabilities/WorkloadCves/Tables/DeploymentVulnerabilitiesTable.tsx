@@ -83,7 +83,7 @@ export type DeploymentVulnerabilitiesTableProps = {
     tableState: TableUIState<FormattedDeploymentVulnerability>;
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
-    vulnerabilityState: VulnerabilityState | undefined; // TODO Make Required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
+    vulnerabilityState: VulnerabilityState;
     onClearFilters: () => void;
     tableConfig: ManagedColumns<keyof typeof defaultColumns>['columns'];
 };

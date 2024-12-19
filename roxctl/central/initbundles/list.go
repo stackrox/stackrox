@@ -3,6 +3,7 @@ package initbundles
 import (
 	"context"
 	"fmt"
+	"io"
 	"sort"
 	"text/tabwriter"
 	"time"
@@ -10,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/protocompat"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
@@ -29,8 +31,6 @@ func listInitBundles(cliEnvironment environment.Environment, timeout time.Durati
 	defer utils.IgnoreError(conn.Close)
 	svc := v1.NewClusterInitServiceClient(conn)
 
-	tabWriter := tabwriter.NewWriter(cliEnvironment.InputOutput().Out(), 4, 8, 2, '\t', 0)
-
 	rsp, err := svc.GetInitBundles(ctx, &v1.Empty{})
 	if err != nil {
 		return errors.Wrap(err, "getting all init bundles")
@@ -38,6 +38,12 @@ func listInitBundles(cliEnvironment environment.Environment, timeout time.Durati
 
 	bundles := rsp.GetItems()
 	sort.Slice(bundles, func(i, j int) bool { return bundles[i].GetName() < bundles[j].GetName() })
+
+	return outputBundles(cliEnvironment.InputOutput().Out(), bundles)
+}
+
+func outputBundles(w io.Writer, bundles []*v1.InitBundleMeta) error {
+	tabWriter := tabwriter.NewWriter(w, 4, 8, 2, '\t', 0)
 
 	fmt.Fprintln(tabWriter, "Name\tCreated at\tExpires at\tCreated By\tID")
 	fmt.Fprintln(tabWriter, "====\t==========\t==========\t==========\t==")
@@ -49,12 +55,13 @@ func listInitBundles(cliEnvironment environment.Environment, timeout time.Durati
 		}
 		fmt.Fprintf(tabWriter, "%s\t%s\t%v\t%s\t%v\n",
 			name,
-			meta.GetCreatedAt(),
-			meta.GetExpiresAt(),
+			protocompat.ConvertTimestampToString(meta.GetCreatedAt(), time.RFC3339Nano),
+			protocompat.ConvertTimestampToString(meta.GetExpiresAt(), time.RFC3339Nano),
 			getPrettyUser(meta.GetCreatedBy()),
 			meta.GetId(),
 		)
 	}
+
 	return errors.Wrap(tabWriter.Flush(), "flushing tabular output")
 }
 

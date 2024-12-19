@@ -1,13 +1,5 @@
 import React, { useState } from 'react';
-import {
-    Alert,
-    AlertVariant,
-    Button,
-    Form,
-    Modal,
-    TextArea,
-    pluralize,
-} from '@patternfly/react-core';
+import { Alert, Button, Form, Modal, TextArea, pluralize } from '@patternfly/react-core';
 import * as yup from 'yup';
 import { useFormik } from 'formik';
 import isEqual from 'lodash/isEqual';
@@ -101,12 +93,7 @@ function RequestApprovalButtonModal({ exception, onSuccess }: RequestApprovalBut
                 showClose={false}
             >
                 {errorMessage && (
-                    <Alert
-                        isInline
-                        variant={AlertVariant.danger}
-                        title={errorMessage}
-                        component="p"
-                    />
+                    <Alert isInline variant="danger" title={errorMessage} component="p" />
                 )}
                 <Form>
                     <FormLabelGroup

@@ -70,8 +70,8 @@ func (p pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSen
 	if report == nil {
 		return errors.Errorf("unexpected resource type %T for index report", event.GetResource())
 	}
-	if event.GetAction() != central.ResourceAction_UNSET_ACTION_RESOURCE {
-		log.Errorf("index report from node %s has unsupported action: %q", event.GetNode().GetName(), event.GetAction())
+	if event.GetAction() == central.ResourceAction_REMOVE_RESOURCE {
+		log.Warn("Removal of node index is unsupported action")
 		return nil
 	}
 	log.Debugf("received node index report for node %s with %d packages from %d content sets",
@@ -89,7 +89,7 @@ func (p pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSen
 	}
 
 	// Send the Node and Index Report to Scanner for enrichment. The result will be persisted in node.NodeScan
-	err = p.enricher.EnrichNodeWithInventory(node, nil, report)
+	err = p.enricher.EnrichNodeWithVulnerabilities(node, nil, report)
 	if err != nil {
 		return errors.WithMessagef(err, "enriching node %s with index report", nodeId)
 	}

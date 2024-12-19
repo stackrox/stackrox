@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/aws/aws-sdk-go/service/ecr"
+	"github.com/aws/aws-sdk-go-v2/service/ecr"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/docker/config"
 )
@@ -14,7 +14,7 @@ import (
 func Test_ecrCredentialsManager_GetDockerConfigEntry(t *testing.T) {
 	type fields struct {
 		dockerConfigEntry *config.DockerConfigEntry
-		ecrClient         *ecr.ECR
+		ecrClient         *ecr.Client
 		expiresAt         time.Time
 		stopSignal        concurrency.Signal
 	}

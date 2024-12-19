@@ -1,6 +1,5 @@
 import withAuth from '../../../helpers/basicAuth';
 import * as filterHelpers from '../../../helpers/compoundFilters';
-import { hasFeatureFlag } from '../../../helpers/features';
 import {
     expectRequestedPagination,
     expectRequestedQuery,
@@ -56,12 +55,6 @@ const mockNodePageUrl = `${nodeBaseUrl}/${mockNodeId}`;
 
 describe('Node CVEs - Node Detail Page', () => {
     withAuth();
-
-    before(function () {
-        if (!hasFeatureFlag('ROX_VULN_MGMT_NODE_PLATFORM_CVES')) {
-            this.skip();
-        }
-    });
 
     it('should restrict access to users with insufficient "Node" permission', () => {
         visitWithStaticResponseForPermissions(mockNodePageUrl, {

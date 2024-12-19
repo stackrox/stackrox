@@ -1556,7 +1556,6 @@ func (s *PruningTestSuite) TestMarkOrphanedAlerts() {
 			initialAlerts: []*storage.ListAlert{
 				newListAlertWithDeployment(fixtureconsts.Alert1, 1*time.Hour, fixtureconsts.Deployment1, storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
 				newListAlertWithDeployment(fixtureconsts.Alert2, 1*time.Hour, fixtureconsts.Deployment2, storage.LifecycleStage_DEPLOY, storage.ViolationState_RESOLVED),
-				newListAlertWithDeployment(fixtureconsts.Alert3, 1*time.Hour, fixtureconsts.Deployment3, storage.LifecycleStage_DEPLOY, storage.ViolationState_SNOOZED),
 			},
 			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment3),
 			expectedDeletions: []string{fixtureconsts.Alert1},

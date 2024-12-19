@@ -31,11 +31,11 @@ var (
 
 // GetPipeline returns an instantiation of this particular pipeline
 func GetPipeline() pipeline.Fragment {
-	return newPipeline(clusterDataStore.Singleton(), nodeDatastore.Singleton(), enrichment.NodeEnricherSingleton(), riskManager.Singleton())
+	return NewPipeline(clusterDataStore.Singleton(), nodeDatastore.Singleton(), enrichment.NodeEnricherSingleton(), riskManager.Singleton())
 }
 
-// newPipeline returns a new instance of Pipeline.
-func newPipeline(clusters clusterDataStore.DataStore, nodes nodeDatastore.DataStore, enricher enricher.NodeEnricher, riskManager riskManager.Manager) pipeline.Fragment {
+// NewPipeline returns a new instance of Pipeline. For an unparametrized version use GetPipeline.
+func NewPipeline(clusters clusterDataStore.DataStore, nodes nodeDatastore.DataStore, enricher enricher.NodeEnricher, riskManager riskManager.Manager) pipeline.Fragment {
 	return &pipelineImpl{
 		clusterStore:  clusters,
 		nodeDatastore: nodes,
@@ -76,8 +76,8 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	nodeStr := fmt.Sprintf("(node name: %q, node id: %q)", ninv.GetNodeName(), ninv.GetNodeId())
 	log.Debugf("received inventory %s contains %d packages to scan from %d content sets", nodeStr,
 		len(ninv.GetComponents().GetRhelComponents()), len(ninv.GetComponents().GetRhelContentSets()))
-	if event.GetAction() != central.ResourceAction_UNSET_ACTION_RESOURCE {
-		log.Errorf("inventory %s has unsupported action: %q", nodeStr, event.GetAction())
+	if event.GetAction() == central.ResourceAction_REMOVE_RESOURCE {
+		log.Warn("Removal of node inventory is unsupported action")
 		return nil
 	}
 	ninv = ninv.CloneVT()
@@ -93,10 +93,7 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 		return errors.WithMessagef(err, "node does not exist: %s", ninv.GetNodeId())
 	}
 
-	// Discard a message if NodeScanning v4 and v2 are running in parallel - v4 scans are prioritized in that case.
-	// The message will be kept if any of the two switches is disabled.
-	// This ensures node scans are updated even if a customer falls back to Scanner v2.
-	if features.ScannerV4.Enabled() && env.NodeIndexEnabled.BooleanSetting() {
+	if shouldDiscardMsg(node) {
 		// To prevent resending the inventory, still acknowledge receipt of it
 		sendComplianceAck(ctx, node, ninv, injector)
 		log.Debug("Discarding v2 NodeScan in favor of v4 NodeScan")
@@ -104,7 +101,7 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	}
 
 	// Call Scanner to enrich the node inventory and attach the results to the node object.
-	err = p.enricher.EnrichNodeWithInventory(node, ninv, nil)
+	err = p.enricher.EnrichNodeWithVulnerabilities(node, ninv, nil)
 	if err != nil {
 		log.Errorf("enriching node %s: %v", nodeDatastore.NodeString(node), err)
 		return errors.WithMessagef(err, "enrinching node %s", nodeDatastore.NodeString(node))
@@ -121,6 +118,25 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 
 	sendComplianceAck(ctx, node, ninv, injector)
 	return nil
+}
+
+// shouldDiscardMsg returns true if the pipeline should discard an incoming message or false if it should keep processing it.
+func shouldDiscardMsg(node *storage.Node) bool {
+	// In a mixed environment, there might be v2-only clusters, so there is no Scanner v4 scan available for that cluster.
+	// If a cluster only ever produces v2 NodeScans, they need to be processed and persisted, even if Node Indexing is enabled.
+	if node.GetScan() == nil || node.GetScan().ScannerVersion != storage.NodeScan_SCANNER_V4 {
+		return false
+	}
+	// Discard this v2 message if NodeScanning v4 and v2 are running in parallel on the same cluster.
+	// v4 scans are prioritized in that case.
+	if features.ScannerV4.Enabled() && env.NodeIndexEnabled.BooleanSetting() {
+		return true
+	}
+	// If either ScannerV4 or the feature flag are disabled, v2 scans are processed and persisted normally,
+	// even if there are already v4 scans in the database.
+	// This is a safety fallback to keep node scanning working if a customer decides to disable v4 node indexing
+	// after it already ran at least once.
+	return false
 }
 
 func sendComplianceAck(ctx context.Context, node *storage.Node, ninv *storage.NodeInventory, injector common.MessageInjector) {

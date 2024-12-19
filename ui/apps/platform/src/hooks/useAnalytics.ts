@@ -1,9 +1,12 @@
 import { useCallback } from 'react';
 import { useSelector } from 'react-redux';
+import Raven from 'raven-js';
+import mapValues from 'lodash/mapValues';
 
 import { Telemetry } from 'types/config.proto';
 import { selectors } from 'reducers';
-import { UnionFrom, tupleTypeGuard } from 'utils/type.utils';
+import { UnionFrom, ensureExhaustive, tupleTypeGuard } from 'utils/type.utils';
+import { getQueryObject, getQueryString } from 'utils/queryStringUtils';
 
 // Event Name Constants
 
@@ -24,7 +27,7 @@ export const CIDR_BLOCK_FORM_OPENED = 'Network Graph: CIDR Block Form Opened';
 export const WATCH_IMAGE_MODAL_OPENED = 'Watch Image Modal Opened';
 export const WATCH_IMAGE_SUBMITTED = 'Watch Image Submitted';
 
-// workflow cves
+// workload cves
 export const WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED = 'Workload CVE Entity Context View';
 export const WORKLOAD_CVE_FILTER_APPLIED = 'Workload CVE Filter Applied';
 export const WORKLOAD_CVE_DEFAULT_FILTERS_CHANGED = 'Workload CVE Default Filters Changed';
@@ -36,6 +39,7 @@ export const COLLECTION_CREATED = 'Collection Created';
 export const VULNERABILITY_REPORT_CREATED = 'Vulnerability Report Created';
 export const VULNERABILITY_REPORT_DOWNLOAD_GENERATED = 'Vulnerability Report Download Generated';
 export const VULNERABILITY_REPORT_SENT_MANUALLY = 'Vulnerability Report Sent Manually';
+export const IMAGE_SBOM_GENERATED = 'Image SBOM Generated';
 
 // node and platform CVEs
 export const GLOBAL_SNOOZE_CVE = 'Global Snooze CVE';
@@ -95,6 +99,14 @@ export const searchCategoriesWithFilter = [
     'Lifecycle Stage',
     'Resource Type',
     'Inactive Deployment',
+    'Control',
+    'Compliance Check Name',
+    'Compliance State',
+    'Cluster Type',
+    'Cluster Platform Type',
+    'Standard',
+    // 'groupBy' is not a real filter, but is used under the 's' key in the URL in old compliance pages
+    'groupBy',
 ] as const;
 
 export const isSearchCategoryWithFilter = tupleTypeGuard(searchCategoriesWithFilter);
@@ -231,6 +243,10 @@ export type AnalyticsEvent =
      * Tracks each time the user sends a vulnerability report manually.
      */
     | typeof VULNERABILITY_REPORT_SENT_MANUALLY
+    /**
+     * Tracks each time the user generates an SBOM for an image.
+     */
+    | typeof IMAGE_SBOM_GENERATED
     /**
      * Tracks each time the user snoozes a Node or Platform CVE via
      * Vulnerability Management 1.0
@@ -380,6 +396,87 @@ export type AnalyticsEvent =
           };
       };
 
+export const redactedHostReplacement = 'redacted.host.invalid';
+export const redactedSearchReplacement = '*****';
+
+// Replace the hostname, port, and search parameters with redacted values
+function redactURL(location: string): string {
+    try {
+        const url = new URL(location);
+        url.host = redactedHostReplacement;
+        url.search = redactSearchParams(location);
+        return url.toString();
+    } catch (error) {
+        Raven.captureException(error);
+        // Do not throw an error during an analytics event. If an error occurs, redact the entire URL.
+        return '';
+    }
+}
+
+type RawQueryStringValue = qs.ParsedQs[keyof qs.ParsedQs];
+
+function isAllowedSearchKey(key: string): boolean {
+    return searchCategoriesWithFilter.some((term) => key.toUpperCase() === term.toUpperCase());
+}
+
+// Given a parsed query string value, redact any properties that are not explicitly allowed
+function redactParsedQs(value: RawQueryStringValue, key: string): RawQueryStringValue {
+    if (typeof value === 'undefined') {
+        return value;
+    }
+    if (Array.isArray(value)) {
+        return (
+            value
+                .map((v: string | qs.ParsedQs) => redactParsedQs(v, key))
+                // Our search structure does not allow nested objects, so we can safely filter out any non-string values
+                // for simplicity
+                .filter((v): v is string => typeof v === 'string')
+        );
+    }
+    if (typeof value === 'object') {
+        return mapValues(value, redactParsedQs);
+    }
+    // The terminal case: if the value is a string, redact it if the key is not allowed
+    if (typeof value === 'string') {
+        return isAllowedSearchKey(key) ? value : redactedSearchReplacement;
+    }
+
+    return ensureExhaustive(value);
+}
+
+// Traverse all defined search keys and redact any properties that are not explicitly allowed
+// in analytics events.
+function redactSearchParams(location: string): string {
+    // Top level URL parameters that can contain user or installation-specific information. Any
+    // key that should have its value redacted should be added to this list.
+    const topLevelSearchKeys = ['s', 's2'];
+
+    try {
+        const url = new URL(location);
+        const queryObject = getQueryObject(url.search);
+        const redactedQueryObject = mapValues(queryObject, (v, k) =>
+            topLevelSearchKeys.includes(k) ? redactParsedQs(v, k) : v
+        );
+        url.search = getQueryString(redactedQueryObject);
+        // Re-convert via URL constructor to ensure URI encoding for search keys that matches how Segment would handle this natively
+        return new URL(url.toString()).search;
+    } catch (error) {
+        Raven.captureException(error);
+        // Do not throw an error during an analytics event. If an error occurs, redact the entire search string.
+        return '';
+    }
+}
+
+// Strip out installation-specific information from the analytics context
+export function getRedactedOriginProperties(location: string) {
+    return {
+        url: redactURL(location),
+        search: redactSearchParams(location),
+        // Referrer is unused, so we remove it entirely here to avoid sending private values to analytics
+        referrer: '',
+    };
+}
+
 const useAnalytics = () => {
     const telemetry = useSelector(selectors.publicConfigTelemetrySelector);
     const { enabled: isTelemetryEnabled } = telemetry || ({} as Telemetry);
@@ -387,7 +484,10 @@ const useAnalytics = () => {
     const analyticsPageVisit = useCallback(
         (type: string, name: string, additionalProperties = {}): void => {
             if (isTelemetryEnabled !== false) {
-                window.analytics?.page(type, name, additionalProperties);
+                window.analytics?.page(type, name, {
+                    ...additionalProperties,
+                    ...getRedactedOriginProperties(window.location.toString()),
+                });
             }
         },
         [isTelemetryEnabled]
@@ -399,10 +499,20 @@ const useAnalytics = () => {
                 return;
             }
 
+            const redactedEventContext = {
+                context: {
+                    page: getRedactedOriginProperties(window.location.toString()),
+                },
+            };
+
             if (typeof analyticsEvent === 'string') {
-                window.analytics?.track(analyticsEvent);
+                window.analytics?.track(analyticsEvent, undefined, redactedEventContext);
             } else {
-                window.analytics?.track(analyticsEvent.event, analyticsEvent.properties);
+                window.analytics?.track(
+                    analyticsEvent.event,
+                    analyticsEvent.properties,
+                    redactedEventContext
+                );
             }
         },
         [isTelemetryEnabled]

@@ -43,7 +43,7 @@ export function isVulnMgmtLocalStorage(value: unknown): value is VulnMgmtLocalSt
     try {
         vulnMgmtLocalStorageSchema.validateSync(value);
         return true;
-    } catch (error) {
+    } catch {
         return false;
     }
 }

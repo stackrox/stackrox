@@ -24,8 +24,7 @@ function ReportConfiguration(): ReactElement {
                         <Title headingLevel="h2">Report</Title>
                     </FlexItem>
                     <FlexItem>
-                        Optionally configure e-mail delivery destinations for manually triggered
-                        reports
+                        Optionally configure e-mail delivery destinations for reports
                     </FlexItem>
                 </Flex>
             </PageSection>

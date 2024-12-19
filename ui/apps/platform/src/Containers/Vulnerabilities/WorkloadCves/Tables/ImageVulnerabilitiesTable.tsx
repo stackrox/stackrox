@@ -40,7 +40,6 @@ import ImageComponentVulnerabilitiesTable, {
     imageComponentVulnerabilitiesFragment,
 } from './ImageComponentVulnerabilitiesTable';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { CveSelectionsProps } from '../../components/ExceptionRequestModal/CveSelections';
 import CVESelectionTh from '../../components/CVESelectionTh';
 import CVESelectionTd from '../../components/CVESelectionTd';
@@ -120,7 +119,7 @@ export type ImageVulnerabilitiesTableProps = {
     isFiltered: boolean;
     canSelectRows: boolean;
     selectedCves: ReturnType<typeof useMap<string, CveSelectionsProps['cves'][number]>>;
-    vulnerabilityState: VulnerabilityState | undefined; // TODO Make Required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
+    vulnerabilityState: VulnerabilityState;
     createTableActions?: (cve: {
         cve: string;
         summary: string;
@@ -145,11 +144,10 @@ function ImageVulnerabilitiesTable({
     const getVisibilityClass = generateVisibilityForColumns(tableConfig);
     const hiddenColumnCount = getHiddenColumnCount(tableConfig);
     const expandedRowSet = useSet<string>();
-    const showExceptionDetailsLink = vulnerabilityState && vulnerabilityState !== 'OBSERVED';
+    const showExceptionDetailsLink = vulnerabilityState !== 'OBSERVED';
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isNvdCvssColumnEnabled =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
+    const isNvdCvssColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
 
     const colSpan =
         (isNvdCvssColumnEnabled ? 7 : 6) +
@@ -198,7 +196,7 @@ function ImageVulnerabilitiesTable({
                     )}
                     {createTableActions && (
                         <Th>
-                            <span className="pf-v5-screen-reader">CVE actions</span>
+                            <span className="pf-v5-screen-reader">Row actions</span>
                         </Th>
                     )}
                 </Tr>
@@ -331,7 +329,7 @@ function ImageVulnerabilitiesTable({
                                         />
                                     )}
                                     {createTableActions && (
-                                        <Td className="pf-v5-u-px-0">
+                                        <Td isActionCell>
                                             <ActionsColumn
                                                 // menuAppendTo={() => document.body}
                                                 items={createTableActions({

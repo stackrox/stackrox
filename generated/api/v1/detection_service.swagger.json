@@ -536,10 +536,6 @@
         "state": {
           "$ref": "#/definitions/storageViolationState"
         },
-        "snoozeTill": {
-          "type": "string",
-          "format": "date-time"
-        },
         "platformComponent": {
           "type": "boolean"
         },
@@ -1525,7 +1521,6 @@
       "type": "string",
       "enum": [
         "ACTIVE",
-        "SNOOZED",
         "RESOLVED",
         "ATTEMPTED"
       ],

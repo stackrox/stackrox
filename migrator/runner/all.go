@@ -43,4 +43,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_205_to_m_206_remove_bad_gorm_index"
 	_ "github.com/stackrox/rox/migrator/migrations/m_206_to_m_207_add_default_policy_edge"
 	_ "github.com/stackrox/rox/migrator/migrations/m_207_to_m_208_initialize_nvd_cvss"
+	_ "github.com/stackrox/rox/migrator/migrations/m_208_to_m_209_policy_updates_for_4_6"
 )

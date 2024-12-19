@@ -2,7 +2,7 @@ import withAuth from '../../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../../helpers/features';
 import {
     cancelAllCveExceptions,
-    typeAndSelectCustomSearchFilterValue,
+    typeAndEnterCustomSearchFilterValue,
 } from '../workloadCves/WorkloadCves.helpers';
 import {
     deferAndVisitRequestDetails,
@@ -21,28 +21,19 @@ describe('Exception Management - Denied Requests Table', () => {
     withAuth();
 
     before(function () {
-        if (
-            !hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') ||
-            !hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
-        ) {
+        if (!hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES')) {
             this.skip();
         }
     });
 
     beforeEach(() => {
-        if (
-            hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') &&
-            hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
-        ) {
+        if (hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES')) {
             cancelAllCveExceptions();
         }
     });
 
     after(() => {
-        if (
-            hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') &&
-            hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
-        ) {
+        if (hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES')) {
             cancelAllCveExceptions();
         }
     });
@@ -224,7 +215,7 @@ describe('Exception Management - Denied Requests Table', () => {
 
         cy.get('table tr:nth(1) td[data-label="Request name"] a').then((element) => {
             const requestName = element.text().trim();
-            typeAndSelectCustomSearchFilterValue('Request name', requestName);
+            typeAndEnterCustomSearchFilterValue('Exception', 'Request Name', requestName);
             cy.get('table tr:nth(1) td[data-label="Request name"] a').should('exist');
         });
     });
@@ -238,10 +229,10 @@ describe('Exception Management - Denied Requests Table', () => {
         denyRequest();
         visitDeniedRequestsTab();
 
-        typeAndSelectCustomSearchFilterValue('Requester', 'ui_tests');
+        typeAndEnterCustomSearchFilterValue('Exception', 'Requester User Name', 'ui_tests');
         cy.get('table tr:nth(1) td[data-label="Request name"] a').should('exist');
         cy.get(vulnSelectors.clearFiltersButton).click();
-        typeAndSelectCustomSearchFilterValue('Requester', 'BLAH');
+        typeAndEnterCustomSearchFilterValue('Exception', 'Requester User Name', 'BLAH');
         cy.get('table tr:nth(1) td[data-label="Request name"] a').should('not.exist');
     });
 });

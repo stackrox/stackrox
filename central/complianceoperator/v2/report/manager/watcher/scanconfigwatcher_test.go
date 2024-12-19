@@ -237,6 +237,8 @@ func (t *testTimer) C() <-chan time.Time {
 	return t.ch
 }
 
+func (t *testTimer) Reset() {}
+
 func TestScanConfigWatcherTimeout(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	scanDS := scanMocks.NewMockDataStore(ctrl)

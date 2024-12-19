@@ -32,11 +32,41 @@ var (
 			"scanner_version",
 		})
 
+	numberOfReportPackages = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.ComplianceSubsystem.String(),
+		Name:      "packages_in_package_report",
+		Help:      "Number of packages discovered by the last v2 Node Inventory or v4 IndexReport (per Node)",
+	},
+		[]string{
+			// The Node this scan belongs to
+			"node_name",
+			// The OS name and version of the Node
+			"os_namespace",
+			// The version of Scanner this metric was generated for
+			"scanner_version",
+		})
+
 	numberOfContentSets = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.ComplianceSubsystem.String(),
 		Name:      "content_sets_in_inventory",
 		Help:      "Number of content sets discovered by the last Node Inventory (per Node)",
+	},
+		[]string{
+			// The Node this scan belongs to
+			"node_name",
+			// The OS name and version of the Node
+			"os_namespace",
+			// The version of Scanner this metric was generated for
+			"scanner_version",
+		})
+
+	numberOfReportContentSets = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.ComplianceSubsystem.String(),
+		Name:      "content_sets_in_package_report",
+		Help:      "Number of content sets discovered by the last v2 Node Inventory or v4 Node Index (per Node)",
 	},
 		[]string{
 			// The Node this scan belongs to
@@ -99,7 +129,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.ComplianceSubsystem.String(),
 		Name:      "rescan_interval_seconds",
-		Help:      "Time in seconds between Node Inventory runs",
+		Help:      "Time in seconds between runs (identical for v2 Node Inventories and v4 Index Reports)",
 	},
 		[]string{
 			// The Node this scan belongs to
@@ -111,6 +141,20 @@ var (
 		Subsystem: metrics.ComplianceSubsystem.String(),
 		Name:      "protobuf_inventory_message_size_bytes",
 		Help:      "Message size of sent Node Inventory gRPC messages (per Node) in bytes",
+		Buckets:   []float64{500, 1000, 10000, 50000, 100000, 500000, 1000000},
+	},
+		[]string{
+			// The Node this scan belongs to
+			"node_name",
+			// The version of Scanner this metric was generated for
+			"scanner_version",
+		})
+
+	protobufReportMessageSize = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.ComplianceSubsystem.String(),
+		Name:      "protobuf_report_message_size_bytes",
+		Help:      "Message size of sent v2 Node Inventory or v4 Node Index gRPC messages (per Node) in bytes",
 		Buckets:   []float64{500, 1000, 10000, 50000, 100000, 500000, 1000000},
 	},
 		[]string{
@@ -146,12 +190,27 @@ var (
 			"scanner_version",
 		})
 
-	// TODO(ROX-26699): Duplicate and rename metric
 	inventoryTransmissions = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.ComplianceSubsystem.String(),
 		Name:      "inventory_transmissions_total",
 		Help:      "Number of node inventory scans sent to sensor",
+	},
+		[]string{
+			// The Node this scan belongs to
+			"node_name",
+			"transmission_type",
+			// The version of Scanner this metric was generated for
+			"scanner_version",
+		})
+
+	// nodePackageReportTransmissions is the new version of inventoryTransmissions that carries a more generic name.
+	// inventoryTransmissions is kept for backwards compatibility so we still get metrics from older clusters.
+	nodePackageReportTransmissions = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.ComplianceSubsystem.String(),
+		Name:      "node_package_reports_total",
+		Help:      "Number of total v2 node inventory scans and v4 index reports sent to sensor",
 	},
 		[]string{
 			// The Node this scan belongs to
@@ -174,21 +233,13 @@ func ObserveNodeInventoryScan(inventory *storage.NodeInventory) {
 	if components.GetRhelComponents() != nil {
 		rhelPackageCount = len(components.GetRhelComponents())
 	}
-	numberOfRHELPackages.With(prometheus.Labels{
-		"node_name":       inventory.GetNodeName(),
-		"os_namespace":    components.GetNamespace(),
-		"scanner_version": ScannerVersionV2,
-	}).Set(float64(rhelPackageCount))
+	observePackages(inventory.GetNodeName(), components.GetNamespace(), ScannerVersionV2, rhelPackageCount)
 
 	rhelContentSets := 0
 	if components.GetRhelContentSets() != nil {
 		rhelContentSets = len(components.GetRhelContentSets())
 	}
-	numberOfContentSets.With(prometheus.Labels{
-		"node_name":       inventory.GetNodeName(),
-		"os_namespace":    components.GetNamespace(),
-		"scanner_version": ScannerVersionV2,
-	}).Set(float64(rhelContentSets))
+	observeContentSets(inventory.GetNodeName(), components.GetNamespace(), ScannerVersionV2, rhelContentSets)
 }
 
 // ObserveNodeIndexReport observes the metric for Scanner v4.
@@ -203,21 +254,43 @@ func ObserveNodeIndexReport(report *v4.IndexReport, nodeName string) {
 	if contents.GetPackages() != nil {
 		rhelPackageCount = len(contents.GetPackages())
 	}
-	numberOfRHELPackages.With(prometheus.Labels{
-		"node_name":       nodeName,
-		"os_namespace":    "", // Not available in node index
-		"scanner_version": ScannerVersionV4,
-	}).Set(float64(rhelPackageCount))
+	observePackages(nodeName, "", ScannerVersionV4, rhelPackageCount)
 
 	rhelContentSets := 0
 	if contents.GetRepositories() != nil {
 		rhelContentSets = len(contents.GetRepositories())
 	}
+	observeContentSets(nodeName, "", ScannerVersionV4, rhelContentSets)
+}
+
+func observePackages(nodeName string, osNamespace string, scannerVersion string, packageCount int) {
+	numberOfReportPackages.With(prometheus.Labels{
+		"node_name":       nodeName,
+		"os_namespace":    osNamespace,
+		"scanner_version": scannerVersion,
+	}).Set(float64(packageCount))
+	// Record the old metric for backwards compatibility
+	// Remove the block below after Scanner v2 is out of support for clusters
+	numberOfRHELPackages.With(prometheus.Labels{
+		"node_name":       nodeName,
+		"os_namespace":    osNamespace,
+		"scanner_version": scannerVersion,
+	}).Set(float64(packageCount))
+}
+
+func observeContentSets(nodeName string, osNamespace string, scannerVersion string, contentSetCount int) {
+	numberOfReportContentSets.With(prometheus.Labels{
+		"node_name":       nodeName,
+		"os_namespace":    osNamespace,
+		"scanner_version": scannerVersion,
+	}).Set(float64(contentSetCount))
+	// Record the old metric for backwards compatibility
+	// Remove the block below after Scanner v2 is out of support for clusters
 	numberOfContentSets.With(prometheus.Labels{
 		"node_name":       nodeName,
-		"os_namespace":    "", // Not available in node index
-		"scanner_version": ScannerVersionV4,
-	}).Set(float64(rhelContentSets))
+		"os_namespace":    osNamespace,
+		"scanner_version": scannerVersion,
+	}).Set(float64(contentSetCount))
 }
 
 // ObserveNodeInventoryCallDuration observes the metric.
@@ -270,8 +343,14 @@ func ObserveIndexesTotal(nodeName string) {
 	}).Inc()
 }
 
-// ObserveInventoryProtobufMessage observes the metric.
-func ObserveInventoryProtobufMessage(cmsg *sensor.MsgFromCompliance, scannerVersion string) {
+// ObserveReportProtobufMessage observes the metric.
+func ObserveReportProtobufMessage(cmsg *sensor.MsgFromCompliance, scannerVersion string) {
+	protobufReportMessageSize.With(prometheus.Labels{
+		"node_name":       cmsg.GetNode(),
+		"scanner_version": scannerVersion,
+	}).Observe(float64(cmsg.SizeVT()))
+	// Record the old metric for backwards compatibility
+	// Remove the block below after Scanner v2 is out of support for clusters
 	protobufMessageSize.With(prometheus.Labels{
 		"node_name":       cmsg.GetNode(),
 		"scanner_version": scannerVersion,
@@ -291,8 +370,15 @@ const (
 	InventoryTransmissionResendingCacheMiss InventoryTransmission = "scanning and resending "
 )
 
-// ObserveNodeInventorySending observes the metric.
-func ObserveNodeInventorySending(nodeName string, sendingType InventoryTransmission, scannerVersion string) {
+// ObserveNodePackageReportTransmissions observes the metric.
+func ObserveNodePackageReportTransmissions(nodeName string, sendingType InventoryTransmission, scannerVersion string) {
+	nodePackageReportTransmissions.With(prometheus.Labels{
+		"node_name":         nodeName,
+		"transmission_type": string(sendingType),
+		"scanner_version":   scannerVersion,
+	}).Inc()
+	// Record the old metric for backwards compatibility
+	// Remove the block below after Scanner v2 is out of support for clusters
 	inventoryTransmissions.With(prometheus.Labels{
 		"node_name":         nodeName,
 		"transmission_type": string(sendingType),
@@ -304,9 +390,13 @@ func init() {
 	prometheus.MustRegister(
 		callToNodeInventoryDuration,
 		inventoryTransmissions,
+		nodePackageReportTransmissions,
 		numberOfRHELPackages,
+		numberOfReportPackages,
 		numberOfContentSets,
+		numberOfReportContentSets,
 		protobufMessageSize,
+		protobufReportMessageSize,
 		rescanInterval,
 		scanDuration,
 		indexDuration,

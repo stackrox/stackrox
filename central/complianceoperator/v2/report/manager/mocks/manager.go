@@ -21,6 +21,7 @@ import (
 type MockManager struct {
 	ctrl     *gomock.Controller
 	recorder *MockManagerMockRecorder
+	isgomock struct{}
 }
 
 // MockManagerMockRecorder is the mock recorder for MockManager.
@@ -66,6 +67,20 @@ func (m *MockManager) HandleScan(ctx context.Context, scan *storage.ComplianceOp
 func (mr *MockManagerMockRecorder) HandleScan(ctx, scan any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleScan", reflect.TypeOf((*MockManager)(nil).HandleScan), ctx, scan)
+}
+
+// HandleScanRemove mocks base method.
+func (m *MockManager) HandleScanRemove(scanID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HandleScanRemove", scanID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// HandleScanRemove indicates an expected call of HandleScanRemove.
+func (mr *MockManagerMockRecorder) HandleScanRemove(scanID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleScanRemove", reflect.TypeOf((*MockManager)(nil).HandleScanRemove), scanID)
 }
 
 // Start mocks base method.

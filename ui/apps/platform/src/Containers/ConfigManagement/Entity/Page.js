@@ -9,7 +9,6 @@ import configMgmtPaginationContext, {
     SIDEPANEL_PAGINATION_PARAMS,
 } from 'Containers/configMgmtPaginationContext';
 import searchContext from 'Containers/searchContext';
-import { useTheme } from 'Containers/ThemeProvider';
 import workflowStateContext from 'Containers/workflowStateContext';
 import useClickOutside from 'hooks/useClickOutside';
 import parseURL from 'utils/URLParser';
@@ -23,7 +22,6 @@ import Entity from '../Entity';
 const EntityPage = () => {
     const sidePanelRef = useRef(null);
     const [isExporting, setIsExporting] = useState(false);
-    const { isDarkMode } = useTheme();
     const location = useLocation();
     const history = useHistory();
     const match = useRouteMatch();
@@ -104,7 +102,7 @@ const EntityPage = () => {
                     </configMgmtPaginationContext.Provider>
                     <searchContext.Provider value={searchParams.sidePanel}>
                         <configMgmtPaginationContext.Provider value={SIDEPANEL_PAGINATION_PARAMS}>
-                            <SidePanelAnimatedArea isDarkMode={isDarkMode} isOpen={!!entityId1}>
+                            <SidePanelAnimatedArea isOpen={!!entityId1}>
                                 <div ref={sidePanelRef}>
                                     <SidePanel
                                         contextEntityId={pageEntityId}
