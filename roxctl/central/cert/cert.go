@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/ioutils"
+	"github.com/stackrox/rox/pkg/logging"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/tlsutils"
 	"github.com/stackrox/rox/pkg/utils"
@@ -62,7 +63,7 @@ func (cmd *centralCertCommand) certs() error {
 	if err != nil {
 		return err
 	}
-
+	logging.Debugf("timeout: %v", cmd.timeout)
 	// Connect to the given server. We're not expecting the endpoint be
 	// trusted, but force the user to use insecure mode if needed.
 	config := tls.Config{
@@ -71,6 +72,7 @@ func (cmd *centralCertCommand) certs() error {
 	}
 	ctx, cancel := context.WithTimeout(pkgCommon.Context(), cmd.timeout)
 	defer cancel()
+	logging.LoggerForModule().Debugf("connecting to tcp %s, server name: %s", endpoint, config.ServerName)
 	conn, err := tlsutils.DialContext(ctx, "tcp", endpoint, &config)
 	if err != nil {
 		return err
