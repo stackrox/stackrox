@@ -75,11 +75,9 @@ type ImageFlavor struct {
 	CentralDBImageTag  string
 	CentralDBImageName string
 
-	CollectorRegistry      string
-	CollectorImageName     string
-	CollectorImageTag      string
-	CollectorSlimImageName string
-	CollectorSlimImageTag  string
+	CollectorRegistry  string
+	CollectorImageName string
+	CollectorImageTag  string
 
 	// ScannerImageTag is used for all scanner* images (scanner, scanner-db, scanner-slim and scanner-db-slim)
 	ScannerImageTag        string
@@ -101,14 +99,10 @@ type ImageFlavor struct {
 // DevelopmentBuildImageFlavor returns image values for `development_build` flavor.
 func DevelopmentBuildImageFlavor() ImageFlavor {
 	v := version.GetAllVersionsDevelopment()
-	collectorTag := v.CollectorVersion + "-latest"
-	collectorSlimName := "collector"
-	collectorSlimTag := v.CollectorVersion + "-slim"
+	collectorTag := v.CollectorVersion
 	if buildinfo.ReleaseBuild {
 		v = version.GetAllVersionsUnified()
 		collectorTag = v.CollectorVersion
-		collectorSlimName = "collector-slim"
-		collectorSlimTag = v.CollectorVersion
 	}
 	return ImageFlavor{
 		MainRegistry:       "quay.io/rhacs-eng",
@@ -117,11 +111,9 @@ func DevelopmentBuildImageFlavor() ImageFlavor {
 		CentralDBImageTag:  v.MainVersion,
 		CentralDBImageName: "central-db",
 
-		CollectorRegistry:      "quay.io/rhacs-eng",
-		CollectorImageName:     "collector",
-		CollectorImageTag:      collectorTag,
-		CollectorSlimImageName: collectorSlimName,
-		CollectorSlimImageTag:  collectorSlimTag,
+		CollectorRegistry:  "quay.io/rhacs-eng",
+		CollectorImageName: "collector",
+		CollectorImageTag:  collectorTag,
 
 		ScannerImageName:       "scanner",
 		ScannerSlimImageName:   "scanner-slim",
@@ -155,11 +147,9 @@ func RHACSReleaseImageFlavor() ImageFlavor {
 		CentralDBImageTag:  v.MainVersion,
 		CentralDBImageName: "rhacs-central-db-rhel8",
 
-		CollectorRegistry:      "registry.redhat.io/advanced-cluster-security",
-		CollectorImageName:     "rhacs-collector-rhel8",
-		CollectorImageTag:      v.CollectorVersion,
-		CollectorSlimImageName: "rhacs-collector-slim-rhel8",
-		CollectorSlimImageTag:  v.CollectorVersion,
+		CollectorRegistry:  "registry.redhat.io/advanced-cluster-security",
+		CollectorImageName: "rhacs-collector-rhel8",
+		CollectorImageTag:  v.CollectorVersion,
 
 		ScannerImageName:       "rhacs-scanner-rhel8",
 		ScannerSlimImageName:   "rhacs-scanner-slim-rhel8",
@@ -190,14 +180,10 @@ func RHACSReleaseImageFlavor() ImageFlavor {
 // Release builds get unified tags like in other release image flavors.
 func OpenSourceImageFlavor() ImageFlavor {
 	v := version.GetAllVersionsDevelopment()
-	collectorTag := v.CollectorVersion + "-latest"
-	collectorSlimName := "collector"
-	collectorSlimTag := v.CollectorVersion + "-slim"
+	collectorTag := v.CollectorVersion
 	if buildinfo.ReleaseBuild {
 		v = version.GetAllVersionsUnified()
 		collectorTag = v.CollectorVersion
-		collectorSlimName = "collector-slim"
-		collectorSlimTag = v.CollectorVersion
 	}
 	return ImageFlavor{
 		MainRegistry:       "quay.io/stackrox-io",
@@ -206,11 +192,9 @@ func OpenSourceImageFlavor() ImageFlavor {
 		CentralDBImageTag:  v.MainVersion,
 		CentralDBImageName: "central-db",
 
-		CollectorRegistry:      "quay.io/stackrox-io",
-		CollectorImageName:     "collector",
-		CollectorImageTag:      collectorTag,
-		CollectorSlimImageName: collectorSlimName,
-		CollectorSlimImageTag:  collectorSlimTag,
+		CollectorRegistry:  "quay.io/stackrox-io",
+		CollectorImageName: "collector",
+		CollectorImageTag:  collectorTag,
 
 		ScannerImageName:       "scanner",
 		ScannerSlimImageName:   "scanner-slim",
@@ -352,21 +336,11 @@ func (f *ImageFlavor) CentralDBImage() string {
 }
 
 // CollectorFullImage is the container image reference (full name) for the "collector" image
-func (f *ImageFlavor) CollectorFullImage() string {
+func (f *ImageFlavor) CollectorImage() string {
 	return fmt.Sprintf("%s/%s:%s", f.CollectorRegistry, f.CollectorImageName, f.CollectorImageTag)
 }
 
-// CollectorSlimImage is the container image reference (full name) for the "collector slim" image
-func (f *ImageFlavor) CollectorSlimImage() string {
-	return fmt.Sprintf("%s/%s:%s", f.CollectorRegistry, f.CollectorSlimImageName, f.CollectorSlimImageTag)
-}
-
-// CollectorSlimImageNoTag is the container image repository (image name including registry, excluding tag) for the "collector slim" image.
-func (f *ImageFlavor) CollectorSlimImageNoTag() string {
-	return fmt.Sprintf("%s/%s", f.CollectorRegistry, f.CollectorSlimImageName)
-}
-
 // CollectorFullImageNoTag is the container image repository (image name including registry, excluding tag) for the  "collector" image.
-func (f *ImageFlavor) CollectorFullImageNoTag() string {
+func (f *ImageFlavor) CollectorImageNoTag() string {
 	return fmt.Sprintf("%s/%s", f.CollectorRegistry, f.CollectorImageName)
 }

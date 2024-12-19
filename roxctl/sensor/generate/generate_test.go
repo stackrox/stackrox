@@ -322,7 +322,7 @@ func (s *sensorGenerateTestSuite) TestSlimCollectorSelection() {
 			serverHasKernelSupport: true,
 			slimCollectorFlag:      nil,
 			warning:                nil,
-			expectSlimMode:         true,
+			expectSlimMode:         false,
 		},
 		"No flags and no kernel support in central: default to full collector": {
 			serverHasKernelSupport: false,
@@ -333,14 +333,14 @@ func (s *sensorGenerateTestSuite) TestSlimCollectorSelection() {
 		"--slim-collector=true and support in central: slim collector": {
 			serverHasKernelSupport: true,
 			slimCollectorFlag:      &slimFlag{true},
-			warning:                nil,
-			expectSlimMode:         true,
+			warning:                &expectedWarning{"Collector's Slim Mode is deprecated. Ignoring."},
+			expectSlimMode:         false,
 		},
 		"--slim-collector=true and no kernel support in central: slim collector + warning": {
 			serverHasKernelSupport: false,
 			slimCollectorFlag:      &slimFlag{true},
-			warning:                &expectedWarning{"The deployment bundle will reference a slim collector image"},
-			expectSlimMode:         true,
+			warning:                &expectedWarning{"Collector's Slim Mode is deprecated. Ignoring."},
+			expectSlimMode:         false,
 		},
 		"--slim-collector=false: collector full": {
 			serverHasKernelSupport: true,
