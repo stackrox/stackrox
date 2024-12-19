@@ -1205,7 +1205,7 @@ spec:
         path: perNode.collector.runtimeConfig.networking
       - displayName: External IPs
         path: perNode.collector.runtimeConfig.networking.externalIps
-      - displayName: Per Container Rate Limit
+      - displayName: Max Connections Per Minute
         path: perNode.collector.runtimeConfig.networking.maxConnectionsPerMinute
       - displayName: Enabled
         path: perNode.collector.runtimeConfig.networking.externalIps.enabled

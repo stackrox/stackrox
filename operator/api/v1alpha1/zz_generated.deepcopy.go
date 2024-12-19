@@ -495,8 +495,8 @@ func (in *CollectorNetworking) DeepCopyInto(out *CollectorNetworking) {
 		*out = new(CollectorExternalIPs)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.PerContainerRateLimit != nil {
-		in, out := &in.PerContainerRateLimit, &out.PerContainerRateLimit
+	if in.MaxConnectionsPerMinute != nil {
+		in, out := &in.MaxConnectionsPerMinute, &out.MaxConnectionsPerMinute
 		*out = new(int32)
 		**out = **in
 	}

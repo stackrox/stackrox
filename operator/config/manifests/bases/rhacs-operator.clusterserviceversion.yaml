@@ -947,7 +947,7 @@ spec:
         path: perNode.collector.imageFlavor
       - displayName: Networking
         path: perNode.collector.runtimeConfig.networking
-      - displayName: Per Container Rate Limit
+      - displayName: Max Connections Per Minute
         path: perNode.collector.runtimeConfig.networking.maxConnectionsPerMinute
       - description: Settings for the Compliance container, which is responsible for
           checking host-level configurations.
