@@ -1,4 +1,4 @@
-package utils
+package results
 
 import (
 	"context"
@@ -40,7 +40,7 @@ type ComplianceResultsAggregatorSuite struct {
 	benchmarkDS    *benchmarkMocks.MockDataStore
 	ruleDS         *ruleMocks.MockDataStore
 
-	aggregator *ResultsAggregator
+	aggregator *Aggregator
 }
 
 type getReportDataTestCase struct {
@@ -386,7 +386,7 @@ func (s *ComplianceResultsAggregatorSuite) SetupTest() {
 	s.benchmarkDS = benchmarkMocks.NewMockDataStore(s.ctrl)
 	s.ruleDS = ruleMocks.NewMockDataStore(s.ctrl)
 
-	s.aggregator = NewResultsAggregator(s.checkResultsDS, s.scanDS, s.profileDS, s.remediationDS, s.benchmarkDS, s.ruleDS)
+	s.aggregator = NewAggregator(s.checkResultsDS, s.scanDS, s.profileDS, s.remediationDS, s.benchmarkDS, s.ruleDS)
 }
 
 func getRequest(ctx context.Context, numClusters, numProfiles int) *report.Request {
