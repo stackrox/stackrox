@@ -630,7 +630,7 @@ spec:
                                     - Auto
                                     type: string
                                 type: object
-                              perContainerRateLimit:
+                              maxConnectionsPerMinute:
                                 default: 1024
                                 format: int32
                                 type: integer

@@ -352,7 +352,7 @@ type CollectorNetworking struct {
 	ExternalIPs *CollectorExternalIPs `json:"externalIps,omitempty"`
 	//+kubebuilder:default=1024
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
-	PerContainerRateLimit *int32 `json:"perContainerRateLimit,omitempty"`
+	MaxConnectionsPerMinute *int32 `json:"maxConnectionsPerMinute,omitempty"`
 }
 
 // +kubebuilder:validation:Enum=Enabled;Disabled;Auto

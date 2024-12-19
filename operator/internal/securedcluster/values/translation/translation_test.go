@@ -177,7 +177,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 										ExternalIPs: &platform.CollectorExternalIPs{
 											Enabled: platform.CollectorExternalIPsEnabledEnabled.Pointer(),
 										},
-										PerContainerRateLimit: pointer.Int32(512),
+										MaxConnectionsPerMinute: pointer.Int32(512),
 									},
 								},
 							},
@@ -223,7 +223,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 							"externalIps": map[string]interface{}{
 								"enabled": true,
 							},
-							"perContainerRateLimit": 512,
+							"maxConnectionsPerMinute": 512,
 						},
 					},
 				},

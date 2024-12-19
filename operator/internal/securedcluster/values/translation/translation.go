@@ -368,8 +368,8 @@ func (t Translator) getRuntimeConfig(runtimeConfig *platform.CollectorRuntimeCon
 					cv.SetPathValue("networking.externalIps.enabled", false)
 				}
 			}
-			perContainerRateLimit := networking.PerContainerRateLimit
-			cv.SetPathValue("networking.perContainerRateLimit", *perContainerRateLimit)
+			maxConnectionsPerMinute := networking.MaxConnectionsPerMinute
+			cv.SetPathValue("networking.maxConnectionsPerMinute", *maxConnectionsPerMinute)
 		}
 	}
 
