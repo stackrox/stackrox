@@ -27,16 +27,17 @@ import (
 
 type ComplainceReportingTestSuite struct {
 	suite.Suite
-	mockCtrl          *gomock.Controller
-	ctx               context.Context
-	reportGen         *complianceReportGeneratorImpl
-	snapshotDS        *snapshotMocks.MockDataStore
-	checkResultsDS    *checkResultsMocks.MockDataStore
-	profileDS         *profileMocks.MockDataStore
-	remediationDS     *remediationMocks.MockDataStore
-	ruleDS            *ruleMocks.MockDataStore
-	notifierProcessor *notifierMocks.MockProcessor
-	reportFormatter   *mocks.MockFormatter
+	mockCtrl            *gomock.Controller
+	ctx                 context.Context
+	reportGen           *complianceReportGeneratorImpl
+	snapshotDS          *snapshotMocks.MockDataStore
+	checkResultsDS      *checkResultsMocks.MockDataStore
+	profileDS           *profileMocks.MockDataStore
+	remediationDS       *remediationMocks.MockDataStore
+	ruleDS              *ruleMocks.MockDataStore
+	notifierProcessor   *notifierMocks.MockProcessor
+	reportFormatter     *mocks.MockFormatter
+	reportDataGenerator *mocks.MockResultsAggregator
 }
 
 func (s *ComplainceReportingTestSuite) SetupSuite() {
@@ -50,15 +51,17 @@ func (s *ComplainceReportingTestSuite) SetupSuite() {
 	s.ruleDS = ruleMocks.NewMockDataStore(s.mockCtrl)
 	s.notifierProcessor = notifierMocks.NewMockProcessor(s.mockCtrl)
 	s.reportFormatter = mocks.NewMockFormatter(s.mockCtrl)
+	s.reportDataGenerator = mocks.NewMockResultsAggregator(s.mockCtrl)
 
 	s.reportGen = &complianceReportGeneratorImpl{
-		checkResultsDS:        s.checkResultsDS,
-		snapshotDS:            s.snapshotDS,
-		profileDS:             s.profileDS,
-		remediationDS:         s.remediationDS,
-		complianceRuleDS:      s.ruleDS,
-		notificationProcessor: s.notifierProcessor,
-		reportFormatter:       s.reportFormatter,
+		checkResultsDS:          s.checkResultsDS,
+		snapshotDS:              s.snapshotDS,
+		profileDS:               s.profileDS,
+		remediationDS:           s.remediationDS,
+		complianceRuleDS:        s.ruleDS,
+		notificationProcessor:   s.notifierProcessor,
+		reportFormatter:         s.reportFormatter,
+		reportResultsAggregator: s.reportDataGenerator,
 	}
 }
 
@@ -101,8 +104,7 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 			Return(&storage.ComplianceOperatorReportSnapshotV2{
 				ReportStatus: &storage.ComplianceOperatorReportStatus{},
 			}, true, nil)
-		s.checkResultsDS.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).Times(len(request.ClusterIDs)).
-			Return(nil)
+		s.reportDataGenerator.EXPECT().GetReportData(gomock.Any()).Times(1).Return(&report.Results{})
 		s.reportFormatter.EXPECT().FormatCSVReport(gomock.Any()).Times(1)
 		s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
 			DoAndReturn(func(_ any, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
@@ -118,8 +120,7 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 			Return(&storage.ComplianceOperatorReportSnapshotV2{
 				ReportStatus: &storage.ComplianceOperatorReportStatus{},
 			}, true, nil)
-		s.checkResultsDS.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).Times(len(request.ClusterIDs)).
-			Return(nil)
+		s.reportDataGenerator.EXPECT().GetReportData(gomock.Any()).Times(1).Return(&report.Results{})
 		s.reportFormatter.EXPECT().FormatCSVReport(gomock.Any()).Times(1)
 		gomock.InOrder(
 			s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
@@ -148,8 +149,7 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 			Return(&storage.ComplianceOperatorReportSnapshotV2{
 				ReportStatus: &storage.ComplianceOperatorReportStatus{},
 			}, true, nil)
-		s.checkResultsDS.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).Times(len(request.ClusterIDs)).
-			Return(nil)
+		s.reportDataGenerator.EXPECT().GetReportData(gomock.Any()).Times(1).Return(&report.Results{})
 		s.reportFormatter.EXPECT().FormatCSVReport(gomock.Any()).Times(1)
 		gomock.InOrder(
 			s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
@@ -178,8 +178,7 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 			Return(&storage.ComplianceOperatorReportSnapshotV2{
 				ReportStatus: &storage.ComplianceOperatorReportStatus{},
 			}, true, nil)
-		s.checkResultsDS.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).Times(len(request.ClusterIDs)).
-			Return(nil)
+		s.reportDataGenerator.EXPECT().GetReportData(gomock.Any()).Times(1).Return(&report.Results{})
 		s.reportFormatter.EXPECT().FormatCSVReport(gomock.Any()).Times(1)
 		gomock.InOrder(
 			s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).

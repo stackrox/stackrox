@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/complianceoperator/v2/report"
 	snapshotDS "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore"
 	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager/format"
+	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager/utils"
 	complianceRuleDS "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore"
 	scanDS "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
 	"github.com/stackrox/rox/pkg/notifier"
@@ -31,6 +32,13 @@ type Formatter interface {
 	FormatCSVReport(map[string][]*report.ResultRow) (*bytes.Buffer, error)
 }
 
+// ResultsAggregator interface is used to generate the report data
+//
+//go:generate mockgen-wrapper
+type ResultsAggregator interface {
+	GetReportData(*report.Request) *report.Results
+}
+
 // New will create a new instance of the ReportGenerator
 func New(checkResultDS checkResults.DataStore, notifierProcessor notifier.Processor, profileDS profileDS.DataStore, remediationDS remediationDS.DataStore, scanDS scanDS.DataStore, benchmarksDS benchmarksDS.DataStore, complianceRuleDS complianceRuleDS.DataStore, snapshotDS snapshotDS.DataStore, blobDS blobDS.Datastore) ComplianceReportGenerator {
 	return &complianceReportGeneratorImpl{
@@ -45,5 +53,6 @@ func New(checkResultDS checkResults.DataStore, notifierProcessor notifier.Proces
 		blobStore:                blobDS,
 		numberOfTriesOnEmailSend: defaultNumberOfTriesOnEmailSend,
 		reportFormatter:          format.NewFormatter(),
+		reportResultsAggregator:  utils.NewReportDataGenerator(checkResultDS, scanDS, profileDS, remediationDS, benchmarksDS, complianceRuleDS),
 	}
 }
