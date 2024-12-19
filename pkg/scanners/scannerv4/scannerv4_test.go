@@ -55,7 +55,7 @@ func TestGetVulnDefinitionsInfo(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			scannerClient := s4ClientMocks.NewMockScanner(ctrl)
 			scannerClient.EXPECT().GetMatcherMetadata(gomock.Any()).Return(tc.clientRet, tc.clientRetErr)
-			s := scannerv4{scannerClient: scannerClient}
+			s := Scannerv4{scannerClient: scannerClient}
 
 			vdi, err := s.GetVulnDefinitionsInfo()
 			if tc.errExpected {
