@@ -668,13 +668,31 @@ spec:
     # - the source image is present as it is required by EC
     runAfter:
     - apply-tags
+    - build-container
     - build-source-image
     - clair-scan
     - clamav-scan
+    - clone-repository
     - deprecated-base-image-check
+    - determine-main-image-tag
+    - determine-operator-image-tag
+    - init
+    - prefetch-dependencies
+    - push-dockerfile
     - rpms-signature-scan
     - sast-snyk-check
-    - push-dockerfile
+    - wait-for-central-db-image
+    - wait-for-collector-full-image
+    - wait-for-collector-slim-image
+    - wait-for-main-image
+    - wait-for-operator-image
+    - wait-for-roxctl-image
+    - wait-for-scanner-db-image
+    - wait-for-scanner-db-slim-image
+    - wait-for-scanner-image
+    - wait-for-scanner-slim-image
+    - wait-for-scanner-v4-db-image
+    - wait-for-scanner-v4-image
     params:
     - name: SOURCE_ARTIFACT
       value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
