@@ -52,6 +52,7 @@ func newDeploymentDispatcher(deploymentType string, handler *deploymentHandler) 
 func (d *deploymentDispatcherImpl) ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) *component.ResourceEvent {
 	// Check owner references and build graph
 	// Every single object should implement this interface
+	log.Info("ProcessEvent call")
 	metaObj, ok := obj.(metaV1.Object)
 	if !ok {
 		log.Errorf("could not process %+v as it does not implement metaV1.Object", obj)
@@ -62,6 +63,7 @@ func (d *deploymentDispatcherImpl) ProcessEvent(obj, oldObj interface{}, action 
 		defer d.handler.hierarchy.Remove(string(metaObj.GetUID()))
 		return d.handler.processWithType(obj, oldObj, action, d.deploymentType)
 	}
+	// print these objects to see if their address match whats sent in fake workloads
 	d.handler.hierarchy.Add(metaObj)
 	return d.handler.processWithType(obj, oldObj, action, d.deploymentType)
 }
