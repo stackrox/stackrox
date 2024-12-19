@@ -17,6 +17,18 @@ import { searchValueAsArray, getRequestQueryStringForSearchFilter } from 'utils/
 import { ensureExhaustive } from 'utils/type.utils';
 
 import { ensureStringArray } from 'utils/ensure';
+
+import {
+    nodeSearchFilterConfig,
+    nodeComponentSearchFilterConfig,
+    imageSearchFilterConfig,
+    imageCVESearchFilterConfig,
+    imageComponentSearchFilterConfig,
+    deploymentSearchFilterConfig,
+    namespaceSearchFilterConfig,
+    clusterSearchFilterConfig,
+} from '../searchFilterConfig';
+
 import {
     FixableStatus,
     NodeEntityTab,
@@ -27,7 +39,6 @@ import {
     isFixableStatus,
     isVulnerabilitySeverityLabel,
 } from '../types';
-import { regexSearchOptions } from '../searchOptions';
 
 export type OverviewPageSearch = {
     s?: SearchFilter;
@@ -228,6 +239,25 @@ export function getStatusesForExceptionCount(
 ): string[] {
     return vulnerabilityState === 'OBSERVED' ? ['PENDING'] : ['APPROVED_PENDING_UPDATE'];
 }
+
+/*
+ Search terms that will default to regex search.
+
+ We only convert to regex search if the search field is of type 'text' or 'autocomplete'
+*/
+const regexSearchOptions = [
+    nodeSearchFilterConfig,
+    nodeComponentSearchFilterConfig,
+    imageSearchFilterConfig,
+    imageCVESearchFilterConfig,
+    imageComponentSearchFilterConfig,
+    deploymentSearchFilterConfig,
+    namespaceSearchFilterConfig,
+    clusterSearchFilterConfig,
+]
+    .flatMap((config) => config.attributes)
+    .filter(({ inputType }) => inputType === 'text' || inputType === 'autocomplete')
+    .map(({ searchTerm }) => searchTerm);
 
 /**
  * Adds the regex search modifier to the search filter for any search options that support it.
