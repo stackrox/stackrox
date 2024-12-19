@@ -13,6 +13,8 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	enricherMock "github.com/stackrox/rox/pkg/images/enricher/mocks"
+	scannerMocks "github.com/stackrox/rox/pkg/scanners/types/mocks"
+	scannerv4Mocks "github.com/stackrox/rox/pkg/scannerv4/client/mocks"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
@@ -24,7 +26,7 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/sbom", nil)
 		recorder := httptest.NewRecorder()
 
-		handler := SBOMHandler(imageintegration.Set(), nil, nil)
+		handler := SBOMHandler(imageintegration.Set(), nil, nil, nil)
 		handler.ServeHTTP(recorder, req)
 
 		res := recorder.Result()
@@ -39,8 +41,27 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 		t.Setenv(features.ScannerV4.EnvVar(), "true")
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
+
+		// mockSbom returns sample sbom
+		sbom := map[string]interface{}{
+			"SPDXID":      "SPDXRef-DOCUMENT",
+			"spdxVersion": "SPDX-2.3",
+			"creationInfo": map[string]interface{}{
+				"created": "2023-08-30T04:40:16Z",
+				"creators": []string{
+					"Organization: Uchiha Cortez",
+					"Tool: FOSSA v0.12.0",
+				},
+			},
+		}
+		sbomBytes, err := json.Marshal(sbom)
+		assert.NoError(t, err)
+
+		// initliaze mocks
 		mockEnricher := enricherMock.NewMockImageEnricher(ctrl)
+		mockSbom := scannerMocks.NewMockSBOM(ctrl)
 		mockEnricher.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).Return(enricher.EnrichmentResult{ImageUpdated: false, ScanResult: enricher.ScanNotDone}, errors.New("Image enrichment failed")).AnyTimes()
+		mockSbom.EXPECT().GetSBOM(gomock.Any()).Return(sbomBytes, nil).AnyTimes()
 
 		reqBody := &sbomRequestBody{
 			ImageName: "test-image",
@@ -51,7 +72,7 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/sbom", bytes.NewReader(reqJson))
 		recorder := httptest.NewRecorder()
 
-		handler := SBOMHandler(imageintegration.Set(), mockEnricher, nil)
+		handler := SBOMHandler(imageintegration.Set(), mockEnricher, nil, nil)
 		handler.ServeHTTP(recorder, req)
 
 		res := recorder.Result()
@@ -66,19 +87,38 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 		t.Setenv(features.ScannerV4.EnvVar(), "true")
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
-		mockEnricher := enricherMock.NewMockImageEnricher(ctrl)
-		mockEnricher.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).Return(enricher.EnrichmentResult{ImageUpdated: true, ScanResult: enricher.ScanSucceeded}, nil).AnyTimes()
 
+		// mockSbom returns sample sbom
+		sbom := map[string]interface{}{
+			"SPDXID":      "SPDXRef-DOCUMENT",
+			"spdxVersion": "SPDX-2.3",
+			"creationInfo": map[string]interface{}{
+				"created": "2023-08-30T04:40:16Z",
+				"creators": []string{
+					"Organization: Uchiha Cortez",
+					"Tool: FOSSA v0.12.0",
+				},
+			},
+		}
+		sbomBytes, err := json.Marshal(sbom)
+		assert.NoError(t, err)
+
+		// initliaze mocks
+		mockEnricher := enricherMock.NewMockImageEnricher(ctrl)
+		mockSbom := scannerv4Mocks.NewMockScanner(ctrl)
+		mockEnricher.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).Return(enricher.EnrichmentResult{ImageUpdated: true, ScanResult: enricher.ScanSucceeded}, nil).AnyTimes()
+		mockSbom.EXPECT().GetSBOM(gomock.Any(), gomock.Any()).Return(sbomBytes, nil).AnyTimes()
 		reqBody := &sbomRequestBody{
-			ImageName: "test-image",
+			ImageName: "quay.io/quay-qetest/nodejs-test-image:latest",
 			Force:     false,
 		}
+
 		reqJson, err := json.Marshal(reqBody)
 		assert.NoError(t, err)
 		req := httptest.NewRequest(http.MethodPost, "/sbom", bytes.NewReader(reqJson))
 		recorder := httptest.NewRecorder()
 
-		handler := SBOMHandler(imageintegration.Set(), mockEnricher, nil)
+		handler := SBOMHandler(imageintegration.Set(), mockEnricher, nil, nil)
 		handler.ServeHTTP(recorder, req)
 
 		res := recorder.Result()
@@ -95,7 +135,7 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/sbom", bytes.NewBufferString(invalidJson))
 		recorder := httptest.NewRecorder()
 
-		handler := SBOMHandler(imageintegration.Set(), nil, nil)
+		handler := SBOMHandler(imageintegration.Set(), nil, nil, nil)
 		handler.ServeHTTP(recorder, req)
 
 		res := recorder.Result()
@@ -110,7 +150,7 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/sbom", nil)
 		recorder := httptest.NewRecorder()
 
-		handler := SBOMHandler(imageintegration.Set(), nil, nil)
+		handler := SBOMHandler(imageintegration.Set(), nil, nil, nil)
 		handler.ServeHTTP(recorder, req)
 
 		res := recorder.Result()
@@ -126,7 +166,7 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/sbom", nil)
 		recorder := httptest.NewRecorder()
 
-		handler := SBOMHandler(imageintegration.Set(), nil, nil)
+		handler := SBOMHandler(imageintegration.Set(), nil, nil, nil)
 		handler.ServeHTTP(recorder, req)
 
 		res := recorder.Result()
@@ -144,7 +184,7 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/sbom", bytes.NewReader(largeRequestBody))
 		recorder := httptest.NewRecorder()
 
-		handler := SBOMHandler(imageintegration.Set(), nil, nil)
+		handler := SBOMHandler(imageintegration.Set(), nil, nil, nil)
 		handler.ServeHTTP(recorder, req)
 
 		res := recorder.Result()

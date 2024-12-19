@@ -583,13 +583,35 @@ func (e *enricherImpl) enrichWithScan(ctx context.Context, enrichmentContext Enr
 
 	errorList := errorhelpers.NewErrorList(fmt.Sprintf("error scanning image: %s", image.GetName().GetFullName()))
 	scanners := e.integrations.ScannerSet()
+
 	if !enrichmentContext.Internal && scanners.IsEmpty() {
 		errorList.AddError(errors.New("no image scanners are integrated"))
 		return ScanNotDone, errorList.ToError()
 	}
 
+	// verify that there is an integration for  scanner specified in enrichContext
+	if enrichmentContext.ScannerTypeHint != "" {
+		found := false
+		for _, scanner := range scanners.GetAll() {
+			scannerType := scanner.GetScanner().Type()
+			if scannerType == enrichmentContext.ScannerTypeHint {
+				found = true
+				break
+			}
+		}
+		if !found {
+			errorList.AddError(errors.New("no image scanners are integrated"))
+			return ScanNotDone, errorList.ToError()
+		}
+	}
+
 	log.Debugf("Scanning image %q (ID %q)", image.GetName().GetFullName(), image.GetId())
 	for _, scanner := range scanners.GetAll() {
+		// if specific scanner type specified in scannerHint then skip other scanners
+		scannerType := scanner.GetScanner().Type()
+		if enrichmentContext.ScannerTypeHint != "" && scannerType != enrichmentContext.ScannerTypeHint {
+			continue
+		}
 		result, err := e.enrichImageWithScanner(ctx, image, scanner)
 		if err != nil {
 			currentScannerErrors := concurrency.WithLock1(&e.scannerErrorsLock, func() int32 {
