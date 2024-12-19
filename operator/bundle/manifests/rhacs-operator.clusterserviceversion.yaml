@@ -242,6 +242,9 @@ spec:
           volume claim (recommended default), and a host path.'
         displayName: Persistence
         path: central.db.persistence
+      - description: 'TODO:  Obviously fix the name'
+        displayName: Template values to override postgresql.conf default values
+        path: central.db.betterConfigOverride
       - description: Config map containing postgresql.conf and pg_hba.conf that will
           be used if modifications need to be applied.
         displayName: Config map that will override postgresql.conf and pg_hba.conf
@@ -280,6 +283,30 @@ spec:
         path: central.db.isEnabled
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Effective Cache size.
+        displayName: Effective Cache Size
+        path: central.db.betterConfigOverride.effectiveCacheSize
+      - description: Hash Mem Multiplier.
+        displayName: Hash Mem Multiplier
+        path: central.db.betterConfigOverride.hashMemMultiplier
+      - description: Maintenance Work Mem.
+        displayName: Maintenance Work Mem
+        path: central.db.betterConfigOverride.maintenanceWorkMem
+      - description: Maximum number of connections in the connection pool.
+        displayName: Maximum Connections
+        path: central.db.betterConfigOverride.maxConnections
+      - description: Max Wal Size.
+        displayName: Max Wal Size
+        path: central.db.betterConfigOverride.maxWalSize
+      - description: Min Wal Size.
+        displayName: Min Wal Size
+        path: central.db.betterConfigOverride.minWalSize
+      - description: Shared buffers size.
+        displayName: Shared Buffers
+        path: central.db.betterConfigOverride.sharedBuffers
+      - description: Work mem size.
+        displayName: Work Mem
+        path: central.db.betterConfigOverride.workMem
       - description: The name of the referenced config map.
         displayName: Name
         path: central.db.configOverride.name
