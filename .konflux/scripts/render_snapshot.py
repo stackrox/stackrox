@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
+import datetime
 import json
 import os
 import time
 
 
-def load_image_refs():
-    return json.loads(os.getenv("IMAGE_REFS", '[]'))
+def parse_image_refs(image_refs):
+    return json.loads(image_refs)
 
 
 def process_component(component, name_suffix):
@@ -28,11 +29,13 @@ def process_component(component, name_suffix):
 
 def construct_snapshot(
     snapshot_name_prefix,
+    snapshot_version_suffix,
     pipeline_run_name,
     application,
     components
 ):
-    snapshot_name = f"{snapshot_name_prefix}-{int(time.time())}"
+    timestamp = datetime.datetime.now(datetime.UTC).strftime("%Y%m%dT%H%M%SZ")
+    snapshot_name = f"{snapshot_name_prefix}_{snapshot_version_suffix}-{timestamp}"
     return {
         "apiVersion": "appstudio.redhat.com/v1alpha1",
         "kind": "Snapshot",
@@ -49,18 +52,21 @@ def construct_snapshot(
     }
 
 
-def determine_component_name_suffix(application):
+def determine_component_version_suffix(application):
+    # TODO: this as a regex
     return application.lstrip("acs-")
 
 
 if __name__ == '__main__':
-    application = os.getenv("APPLICATION", "")
-    pipeline_run_name = os.getenv("PIPELINE_RUN_NAME", "")
-    image_refs = load_image_refs()
-    name_suffix = determine_component_name_suffix(application)
+    application = os.environ["APPLICATION"]
+    pipeline_run_name = os.environ["PIPELINE_RUN_NAME"]
+    image_refs = parse_image_refs(os.environ["IMAGE_REFS"])
+    main_image_tag = os.environ["MAIN_IMAGE_TAG"]
+    name_suffix = determine_component_version_suffix(application)
     components = [process_component(c, name_suffix) for c in image_refs]
     snapshot = construct_snapshot(
         snapshot_name_prefix=application,
+        snapshot_version_suffix=main_image_tag,
         pipeline_run_name=pipeline_run_name,
         application=application,
         components=components

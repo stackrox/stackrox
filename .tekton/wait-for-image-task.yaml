@@ -34,23 +34,12 @@ spec:
 
       echo "Image $(params.IMAGE) found."
 
-      digest="$(skopeo inspect \
+      infos="$(skopeo inspect \
         --retry-times 10 \
-        --format '{{.Digest}}' \
+        --format '{{.Digest}}\n{{ index .Labels "vcs-ref" }}\n{{ index .Labels "source-location" }}' \
         --no-tags \
         "docker://$(params.IMAGE)")"
-      echo -n "$digest" | tee "$(results.IMAGE_DIGEST.path)"
 
-      git_ref="$(skopeo inspect \
-        --retry-times 10 \
-        --format '{{ index .Labels "vcs-ref" }}' \
-        --no-tags \
-        "docker://$(params.IMAGE)")"
-      echo -n "$git_ref" | tee "$(results.GIT_REF.path)"
-
-      git_repo="$(skopeo inspect \
-        --retry-times 10 \
-        --format '{{ index .Labels "source-location" }}' \
-        --no-tags \
-        "docker://$(params.IMAGE)")"
-      echo -n "$git_repo" | tee "$(results.GIT_REPO.path)"
+      cut -f1 -d'\n' <<< "${infos}" | tee "$(results.IMAGE_DIGEST.path)"
+      cut -f2 -d'\n' <<< "${infos}" | tee "$(results.GIT_REF.path)"
+      cut -f3 -d'\n' <<< "${infos}" | tee "$(results.GIT_REPO.path)"

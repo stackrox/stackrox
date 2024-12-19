@@ -12,6 +12,9 @@ spec:
   - name: IMAGE_REFS
     description: Image references.
     type: string
+  - name: MAIN_IMAGE_TAG
+    description: Result from determine-image-tag for the main image.
+    type: string
   results:
   - name: SNAPSHOT_NAME
     description: Name of the snapshot created by this task.
@@ -29,7 +32,7 @@ spec:
     - use
     - $(params.SOURCE_ARTIFACT)=/var/workdir/source
   - name: create-snapshot
-    image: registry.redhat.io/openshift4/ose-cli@sha256:4d58b5a47a84f843e646c5272e32b2dbefac67fd56e283cb60635d792e6348f9
+    image: registry.redhat.io/openshift4/ose-cli-rhel9@sha256:4f822262adc75bff1891bee0bab1611ae62dfb347f98fcf9aa2604129087eb2c
     workingDir: /var/workdir/source
     env:
       - name: APPLICATION
@@ -42,8 +45,11 @@ spec:
             fieldPath: metadata.name
       - name: IMAGE_REFS
         value: $(params.IMAGE_REFS)
+      - name: MAIN_IMAGE_TAG
+        value: $(params.MAIN_IMAGE_TAG)
     script: |
       #!/usr/bin/env bash
+      set -euo pipefail
 
       .konflux/scripts/render_snapshot.py | tee "$(results.SNAPSHOT_NAME.path)"
 
