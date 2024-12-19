@@ -840,6 +840,7 @@ jobs:
           mv oc /usr/bin/ || mv oc /usr/local/bin/
           echo "$PATH"
           oc version || true
+          rm oc.tar.gz
 
       - name: Scan images for FIPS compliance
         run: |
@@ -857,6 +858,7 @@ jobs:
           which podman
           podman -v
           oc version || true
+          fail_count=0
           for image in main roxctl rhacs-operator; do
             if [[ $image == rhacs-operator ]]; then
               pushd ../stackrox
@@ -866,9 +868,11 @@ jobs:
               tag=${release_tag}
             fi
             podman unshare go run main.go scan operator --verbose \
-              --spec "quay.io/rhacs-eng/${image}:${tag}"
+              --spec "quay.io/rhacs-eng/${image}:${tag}" \
+              || (( fail_count++ ))
             date
           done
+          exit "${fail_count}"
 
   slack-on-build-failure:
     env:
