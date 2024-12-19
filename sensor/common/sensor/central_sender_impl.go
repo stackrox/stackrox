@@ -42,9 +42,6 @@ func (s *centralSenderImpl) forwardResponses(from <-chan *message.ExpiringMessag
 			}
 			select {
 			case to <- msg:
-				if msg.GetEvent().GetIndexReport() != nil {
-					log.Debugf("Forwarding NodeIndex to central Sender")
-				}
 			case <-s.stopper.Flow().StopRequested():
 				return
 			}
@@ -108,9 +105,6 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 			// The event's context is canceled if the message is no longer
 			// valid.
 			if msg.IsExpired() {
-				if msg.GetEvent().GetIndexReport() != nil {
-					log.Debugf("NodeIndex message to Central expired")
-				}
 				continue
 			}
 
@@ -122,9 +116,6 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 				log.Infof("Error on sending to stream: %s", err)
 				s.stopper.Flow().StopWithError(err)
 				return
-			}
-			if msg.GetEvent().GetIndexReport() != nil {
-				log.Debugf("NodeIndex has been sent (pushed to stream) to Central")
 			}
 		}
 	}
