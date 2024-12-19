@@ -106,6 +106,51 @@
             "in": "query",
             "required": false,
             "type": "string"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -178,6 +223,51 @@
             "in": "path",
             "required": true,
             "type": "string"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -328,14 +418,14 @@
         },
         "default": {
           "type": "boolean",
-          "description": "`default` indicates whether the external source is user-generated or system-generated."
+          "description": "`default` indicates whether the external source is user-generated or\nsystem-generated."
         },
         "discovered": {
           "type": "boolean",
-          "description": "`discovered` indicates whether the external source is harvested from monitored traffic."
+          "description": "`discovered` indicates whether the external source is harvested from\nmonitored traffic."
         }
       },
-      "description": "Update normalizeDupNameExtSrcs(...) in `central/networkgraph/aggregator/aggregator.go` whenever this message is updated."
+      "description": "Update normalizeDupNameExtSrcs(...) in\n`central/networkgraph/aggregator/aggregator.go` whenever this message is\nupdated."
     },
     "NetworkGraphServiceCreateExternalNetworkEntityBody": {
       "type": "object",
@@ -404,7 +494,7 @@
         },
         "scope": {
           "$ref": "#/definitions/storageNetworkEntityScope",
-          "description": "`scope` represents known cluster network peers to which the flows must be scoped. In future, to restrict flows\nto more granular entities, such as deployment, scope could include deployment ID.\nNote: The highest scope level is cluster."
+          "description": "`scope` represents known cluster network peers to which the flows must be\nscoped. In future, to restrict flows to more granular entities, such as\ndeployment, scope could include deployment ID. Note: The highest scope\nlevel is cluster."
         }
       }
     },
@@ -457,7 +547,7 @@
         "INTERNAL_ENTITIES"
       ],
       "default": "UNKNOWN_TYPE",
-      "title": "- INTERNAL_ENTITIES: INTERNAL_ENTITIES is for grouping all internal entities under a single network graph node"
+      "title": "- INTERNAL_ENTITIES: INTERNAL_ENTITIES is for grouping all internal entities under a single\nnetwork graph node"
     },
     "storageNetworkEntityScope": {
       "type": "object",
@@ -514,6 +604,27 @@
           "type": "boolean"
         }
       }
+    },
+    "v1AggregateBy": {
+      "type": "object",
+      "properties": {
+        "aggrFunc": {
+          "$ref": "#/definitions/v1Aggregation"
+        },
+        "distinct": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v1Aggregation": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "COUNT",
+        "MIN",
+        "MAX"
+      ],
+      "default": "UNSET"
     },
     "v1Empty": {
       "type": "object"
@@ -626,11 +737,50 @@
         }
       }
     },
+    "v1Pagination": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "offset": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "sortOption": {
+          "$ref": "#/definitions/v1SortOption"
+        },
+        "sortOptions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1SortOption"
+          },
+          "description": "This field is under development. It is not supported on any REST APIs."
+        }
+      }
+    },
     "v1PutNetworkGraphConfigRequest": {
       "type": "object",
       "properties": {
         "config": {
           "$ref": "#/definitions/storageNetworkGraphConfig"
+        }
+      }
+    },
+    "v1SortOption": {
+      "type": "object",
+      "properties": {
+        "field": {
+          "type": "string"
+        },
+        "reversed": {
+          "type": "boolean"
+        },
+        "aggregateBy": {
+          "$ref": "#/definitions/v1AggregateBy",
+          "description": "This field is under development. It is not supported on any REST APIs."
         }
       }
     }

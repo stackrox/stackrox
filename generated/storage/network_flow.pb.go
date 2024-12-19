@@ -90,7 +90,8 @@ const (
 	NetworkEntityInfo_INTERNET        NetworkEntityInfo_Type = 2
 	NetworkEntityInfo_LISTEN_ENDPOINT NetworkEntityInfo_Type = 3
 	NetworkEntityInfo_EXTERNAL_SOURCE NetworkEntityInfo_Type = 4
-	// INTERNAL_ENTITIES is for grouping all internal entities under a single network graph node
+	// INTERNAL_ENTITIES is for grouping all internal entities under a single
+	// network graph node
 	NetworkEntityInfo_INTERNAL_ENTITIES NetworkEntityInfo_Type = 5
 )
 
@@ -388,9 +389,10 @@ func (x *NetworkEndpointProperties) GetL4Protocol() L4Protocol {
 type NetworkEntity struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Info  *NetworkEntityInfo     `protobuf:"bytes,1,opt,name=info,proto3" json:"info,omitempty"`
-	// `scope` represents known cluster network peers to which the flows must be scoped. In future, to restrict flows
-	// to more granular entities, such as deployment, scope could include deployment ID.
-	// Note: The highest scope level is cluster.
+	// `scope` represents known cluster network peers to which the flows must be
+	// scoped. In future, to restrict flows to more granular entities, such as
+	// deployment, scope could include deployment ID. Note: The highest scope
+	// level is cluster.
 	Scope         *NetworkEntity_Scope `protobuf:"bytes,2,opt,name=scope,proto3" json:"scope,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -540,7 +542,7 @@ func (*NetworkEntityInfo_ExternalSource_) isNetworkEntityInfo_Desc() {}
 
 type NetworkEntity_Scope struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ClusterId     string                 `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	ClusterId     string                 `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"` // @gotags: search:""
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -652,7 +654,9 @@ func (x *NetworkEntityInfo_Deployment) GetListenPorts() []*NetworkEntityInfo_Dep
 	return nil
 }
 
-// Update normalizeDupNameExtSrcs(...) in `central/networkgraph/aggregator/aggregator.go` whenever this message is updated.
+// Update normalizeDupNameExtSrcs(...) in
+// `central/networkgraph/aggregator/aggregator.go` whenever this message is
+// updated.
 type NetworkEntityInfo_ExternalSource struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Name  string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -660,9 +664,11 @@ type NetworkEntityInfo_ExternalSource struct {
 	//
 	//	*NetworkEntityInfo_ExternalSource_Cidr
 	Source isNetworkEntityInfo_ExternalSource_Source `protobuf_oneof:"source"`
-	// `default` indicates whether the external source is user-generated or system-generated.
+	// `default` indicates whether the external source is user-generated or
+	// system-generated.
 	Default bool `protobuf:"varint,3,opt,name=default,proto3" json:"default,omitempty" search:"Default External Source,hidden"` // @gotags: search:"Default External Source,hidden"
-	// `discovered` indicates whether the external source is harvested from monitored traffic.
+	// `discovered` indicates whether the external source is harvested from
+	// monitored traffic.
 	Discovered    bool `protobuf:"varint,4,opt,name=discovered,proto3" json:"discovered,omitempty" search:"Discovered External Source,hidden"` // @gotags: search:"Discovered External Source,hidden"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -740,7 +746,7 @@ type isNetworkEntityInfo_ExternalSource_Source interface {
 }
 
 type NetworkEntityInfo_ExternalSource_Cidr struct {
-	Cidr string `protobuf:"bytes,2,opt,name=cidr,proto3,oneof" sql:"type(cidr),index" search:"External Source Address,hidden"` // @gotags: sql:"type(cidr),index" search:"External Source Address,hidden"
+	Cidr string `protobuf:"bytes,2,opt,name=cidr,proto3,oneof" sql:"type(cidr),index"` // @gotags: sql:"type(cidr),index" search:"External
 }
 
 func (*NetworkEntityInfo_ExternalSource_Cidr) isNetworkEntityInfo_ExternalSource_Source() {}

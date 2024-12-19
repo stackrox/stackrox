@@ -253,14 +253,14 @@
         },
         "default": {
           "type": "boolean",
-          "description": "`default` indicates whether the external source is user-generated or system-generated."
+          "description": "`default` indicates whether the external source is user-generated or\nsystem-generated."
         },
         "discovered": {
           "type": "boolean",
-          "description": "`discovered` indicates whether the external source is harvested from monitored traffic."
+          "description": "`discovered` indicates whether the external source is harvested from\nmonitored traffic."
         }
       },
-      "description": "Update normalizeDupNameExtSrcs(...) in `central/networkgraph/aggregator/aggregator.go` whenever this message is updated."
+      "description": "Update normalizeDupNameExtSrcs(...) in\n`central/networkgraph/aggregator/aggregator.go` whenever this message is\nupdated."
     },
     "googlerpcStatus": {
       "type": "object",
@@ -390,7 +390,7 @@
         },
         "scope": {
           "$ref": "#/definitions/storageNetworkEntityScope",
-          "description": "`scope` represents known cluster network peers to which the flows must be scoped. In future, to restrict flows\nto more granular entities, such as deployment, scope could include deployment ID.\nNote: The highest scope level is cluster."
+          "description": "`scope` represents known cluster network peers to which the flows must be\nscoped. In future, to restrict flows to more granular entities, such as\ndeployment, scope could include deployment ID. Note: The highest scope\nlevel is cluster."
         }
       }
     },
@@ -443,7 +443,7 @@
         "INTERNAL_ENTITIES"
       ],
       "default": "UNKNOWN_TYPE",
-      "title": "- INTERNAL_ENTITIES: INTERNAL_ENTITIES is for grouping all internal entities under a single network graph node"
+      "title": "- INTERNAL_ENTITIES: INTERNAL_ENTITIES is for grouping all internal entities under a single\nnetwork graph node"
     },
     "storageNetworkEntityScope": {
       "type": "object",
