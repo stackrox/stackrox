@@ -122,13 +122,16 @@ func (i *localScannerTLSIssuerImpl) ResponsesC() <-chan *message.ExpiringMessage
 // This method must not block as it would prevent centralReceiverImpl from sending messages
 // to other SensorComponents.
 func (i *localScannerTLSIssuerImpl) ProcessMessage(msg *central.MsgToSensor) error {
-	if m, ok := msg.GetMsg().(*central.MsgToSensor_IssueLocalScannerCertsResponse); ok {
-		go func() {
-			i.certRequester.DispatchResponse(certificates.NewResponseFromLocalScannerCerts(m.IssueLocalScannerCertsResponse))
-		}()
+	response := msg.GetIssueLocalScannerCertsResponse()
+	if response == nil {
+		// messages not supported by this component are ignored
+		return nil
 	}
 
-	// messages not supported by this component are ignored
+	go func() {
+		i.certRequester.DispatchResponse(certificates.NewResponseFromLocalScannerCerts(response))
+	}()
+
 	return nil
 }
 

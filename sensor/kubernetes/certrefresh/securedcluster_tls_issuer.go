@@ -117,13 +117,16 @@ func (i *securedClusterTLSIssuerImpl) ResponsesC() <-chan *message.ExpiringMessa
 // This method must not block as it would prevent centralReceiverImpl from sending messages
 // to other SensorComponents.
 func (i *securedClusterTLSIssuerImpl) ProcessMessage(msg *central.MsgToSensor) error {
-	if m, ok := msg.GetMsg().(*central.MsgToSensor_IssueSecuredClusterCertsResponse); ok {
-		go func() {
-			i.certRequester.DispatchResponse(certificates.NewResponseFromSecuredClusterCerts(m.IssueSecuredClusterCertsResponse))
-		}()
+	response := msg.GetIssueSecuredClusterCertsResponse()
+	if response == nil {
+		// messages not supported by this component are ignored
+		return nil
 	}
 
-	// messages not supported by this component are ignored
+	go func() {
+		i.certRequester.DispatchResponse(certificates.NewResponseFromSecuredClusterCerts(response))
+	}()
+
 	return nil
 }
 

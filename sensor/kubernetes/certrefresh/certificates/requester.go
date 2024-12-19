@@ -73,7 +73,7 @@ type genericRequester[ReqT any, RespT protobufResponse] struct {
 	responseFromCentral       *Response
 	responseReceived          concurrency.Signal
 	ongoingRequestID          string
-	ongoingRequest            atomic.Bool
+	requestOngoing            atomic.Bool
 	messageFactory            messageFactory
 	requiredCentralCapability *centralsensor.CentralCapability
 }
@@ -112,12 +112,12 @@ func (f *localScannerMessageFactory) newMsgFromSensor(requestID string) *central
 
 // DispatchResponse forwards a response from Central to a RequestCertificates call running in another goroutine
 func (r *genericRequester[ReqT, RespT]) DispatchResponse(response *Response) {
-	if !r.ongoingRequest.Load() {
-		log.Debugf("Received a response for request ID %q, but there is no ongoing RequestCertificates call.", response.RequestId)
+	if !r.requestOngoing.Load() {
+		log.Warnf("Received a response for request ID %q, but there is no ongoing RequestCertificates call.", response.RequestId)
 		return
 	}
 	if r.ongoingRequestID != response.RequestId {
-		log.Debugf("Request ID %q does not match ongoing request ID %q.",
+		log.Warnf("Request ID %q does not match ongoing request ID %q.",
 			response.RequestId, r.ongoingRequestID)
 		return
 	}
@@ -137,17 +137,17 @@ func (r *genericRequester[ReqT, RespT]) RequestCertificates(ctx context.Context)
 		}
 	}
 
-	if r.ongoingRequest.Load() {
+	if !r.requestOngoing.CompareAndSwap(false, true) {
 		return nil, errors.New("concurrent requests are not supported.")
 	}
-	r.ongoingRequest.Store(true)
+
 	defer func() {
-		r.ongoingRequest.Store(false)
+		r.requestOngoing.Store(false)
+		r.responseReceived.Reset()
 	}()
 
 	requestID := uuid.NewV4().String()
 	r.ongoingRequestID = requestID
-	r.responseReceived.Reset()
 
 	if err := r.send(ctx, requestID); err != nil {
 		return nil, err
