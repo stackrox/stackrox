@@ -20,7 +20,6 @@ enum ExternalIpsEnabled {
   AUTO = 2;
 }
 
-
 // CollectorConfig controls which type of data is reported by collector
 // and how it is processed by collector. These configurations are used
 // to fine-tune collector's performance on large scale clusters.
