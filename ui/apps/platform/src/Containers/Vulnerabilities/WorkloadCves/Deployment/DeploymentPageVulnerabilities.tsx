@@ -70,6 +70,7 @@ import VulnerabilityStateTabs, {
     vulnStateTabContentId,
 } from '../components/VulnerabilityStateTabs';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
+import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 
 const summaryQuery = gql`
     ${resourceCountByCveSeverityAndStatusFragment}
@@ -129,6 +130,8 @@ function DeploymentPageVulnerabilities({
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
 
+    const { baseSearchFilter } = useWorkloadCveViewContext();
+
     const currentVulnerabilityState = useVulnerabilityState();
 
     const { searchFilter, setSearchFilter } = useURLSearch();
@@ -148,7 +151,10 @@ function DeploymentPageVulnerabilities({
     const hiddenSeverities = getHiddenSeverities(querySearchFilter);
     const hiddenStatuses = getHiddenStatuses(querySearchFilter);
 
-    const query = getVulnStateScopedQueryString(querySearchFilter, currentVulnerabilityState);
+    const query = getVulnStateScopedQueryString(
+        { ...baseSearchFilter, ...querySearchFilter },
+        currentVulnerabilityState
+    );
 
     const summaryRequest = useQuery<
         {
@@ -252,6 +258,10 @@ function DeploymentPageVulnerabilities({
                                 setSearchFilter(newFilter);
                                 setPage(1);
                                 trackAppliedFilter(WORKLOAD_CVE_FILTER_APPLIED, searchPayload);
+                            }}
+                            additionalContextFilter={{
+                                'Deployment ID': deploymentId,
+                                ...baseSearchFilter,
                             }}
                         />
                     ) : (

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Route, Switch } from 'react-router-dom';
 import { PageSection } from '@patternfly/react-core';
 
@@ -7,6 +7,7 @@ import PageTitle from 'Components/PageTitle';
 
 import { vulnerabilitiesWorkloadCvesPath, vulnerabilityNamespaceViewPath } from 'routePaths';
 import ScannerV4IntegrationBanner from 'Components/ScannerV4IntegrationBanner';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
 import DeploymentPage from './Deployment/DeploymentPage';
 import ImagePage from './Image/ImagePage';
@@ -21,29 +22,25 @@ const vulnerabilitiesWorkloadCveSinglePath = `${vulnerabilitiesWorkloadCvesPath}
 const vulnerabilitiesWorkloadCveImageSinglePath = `${vulnerabilitiesWorkloadCvesPath}/images/:imageId`;
 const vulnerabilitiesWorkloadCveDeploymentSinglePath = `${vulnerabilitiesWorkloadCvesPath}/deployments/:deploymentId`;
 
-const userWorkloadContext = {
-    pageTitle: 'Workload CVEs', // TODO Implement throughout in follow up
-    baseSearchFilter: {}, // TODO Implement throughout in follow up
-    createUrl: (path) => `${vulnerabilitiesWorkloadCvesPath}${path}`, // TODO Implement throughout in follow up
-};
-
-// TODO Update these values for Platform View
-const platformWorkloadContext = {
-    pageTitle: 'Workload CVEs', // TODO Implement throughout in follow up
-    baseSearchFilter: {}, // TODO Implement throughout in follow up
-    createUrl: (path) => `${vulnerabilitiesWorkloadCvesPath}${path}`, // TODO Implement throughout in follow up
-};
-
 export type WorkloadCvePageProps = {
     view: 'user-workload' | 'platform-workload';
 };
 
 function WorkloadCvesPage({ view }: WorkloadCvePageProps) {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
     const { hasReadAccess } = usePermissions();
     const hasReadAccessForIntegration = hasReadAccess('Integration');
     const hasReadAccessForNamespaces = hasReadAccess('Namespace');
 
-    const context = view === 'user-workload' ? userWorkloadContext : platformWorkloadContext;
+    const context = useMemo(() => {
+        const pageTitle = 'Workload CVEs'; // TODO Implement throughout in follow up
+        const baseSearchFilter = isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT')
+            ? { 'Platform Component': [String(view === 'platform-workload')] }
+            : {};
+        const createUrl = (path) => `${vulnerabilitiesWorkloadCvesPath}${path}`; // TODO Implement throughout in follow up
+
+        return { pageTitle, baseSearchFilter, createUrl };
+    }, [view, isFeatureFlagEnabled]);
 
     return (
         <WorkloadCveViewContext.Provider value={context}>

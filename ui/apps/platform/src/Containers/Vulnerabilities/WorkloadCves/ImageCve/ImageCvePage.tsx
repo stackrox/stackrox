@@ -212,7 +212,7 @@ function ImageCvePage() {
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
 
-    const { pageTitle } = useWorkloadCveViewContext();
+    const { pageTitle, baseSearchFilter } = useWorkloadCveViewContext();
     const currentVulnerabilityState = useVulnerabilityState();
 
     const urlParams = useParams();
@@ -222,8 +222,9 @@ function ImageCvePage() {
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const query = getVulnStateScopedQueryString(
         {
-            ...querySearchFilter,
             CVE: [exactCveIdSearchRegex],
+            ...baseSearchFilter,
+            ...querySearchFilter,
         },
         currentVulnerabilityState
     );
@@ -277,7 +278,7 @@ function ImageCvePage() {
     });
 
     function getDeploymentSearchQuery(severity?: VulnerabilitySeverity) {
-        const filters = { ...querySearchFilter, CVE: [exactCveIdSearchRegex] };
+        const filters = { CVE: [exactCveIdSearchRegex], ...baseSearchFilter, ...querySearchFilter };
         if (severity) {
             filters.SEVERITY = [severity];
         }
@@ -443,6 +444,12 @@ function ImageCvePage() {
                                     setSearchFilter(newFilter);
                                     setPage(1);
                                     trackAppliedFilter(WORKLOAD_CVE_FILTER_APPLIED, searchPayload);
+                                }}
+                                additionalContextFilter={{
+                                    // Only allow exact match for CVE ID using quotes, the autocomplete API does not
+                                    // support regex for exact matching
+                                    CVE: `"${cveId}"`,
+                                    ...baseSearchFilter,
                                 }}
                             />
                         ) : (

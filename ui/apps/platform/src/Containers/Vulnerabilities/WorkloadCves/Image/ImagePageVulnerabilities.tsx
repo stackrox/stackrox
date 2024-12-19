@@ -73,6 +73,7 @@ import ExceptionRequestModal, {
 } from '../../components/ExceptionRequestModal/ExceptionRequestModal';
 import CompletedExceptionRequestModal from '../../components/ExceptionRequestModal/CompletedExceptionRequestModal';
 import useExceptionRequestModal from '../../hooks/useExceptionRequestModal';
+import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 
 export const imageVulnerabilitiesQuery = gql`
     ${imageMetadataContextFragment}
@@ -130,6 +131,8 @@ function ImagePageVulnerabilities({
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
 
+    const { baseSearchFilter } = useWorkloadCveViewContext();
+
     const currentVulnerabilityState = useVulnerabilityState();
     const hasRequestExceptionsAbility = useHasRequestExceptionsAbility();
 
@@ -163,7 +166,10 @@ function ImagePageVulnerabilities({
     >(imageVulnerabilitiesQuery, {
         variables: {
             id: imageId,
-            query: getVulnStateScopedQueryString(querySearchFilter, currentVulnerabilityState),
+            query: getVulnStateScopedQueryString(
+                { ...baseSearchFilter, ...querySearchFilter },
+                currentVulnerabilityState
+            ),
             pagination: getPaginationParams({ page, perPage, sortOption }),
             statusesForExceptionCount: getStatusesForExceptionCount(currentVulnerabilityState),
         },
@@ -250,6 +256,10 @@ function ImagePageVulnerabilities({
                                 setSearchFilter(newFilter);
                                 setPage(1);
                                 trackAppliedFilter(WORKLOAD_CVE_FILTER_APPLIED, searchPayload);
+                            }}
+                            additionalContextFilter={{
+                                'Image SHA': imageId,
+                                ...baseSearchFilter,
                             }}
                         />
                     ) : (
