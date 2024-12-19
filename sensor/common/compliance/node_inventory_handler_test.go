@@ -71,7 +71,7 @@ func (s *NodeInventoryHandlerTestSuite) TestCapabilities() {
 	defer close(inventories)
 	reports := make(chan *index.IndexReportWrap)
 	defer close(reports)
-	h := NewNodeInventoryHandler(inventories, reports, &mockAlwaysHitNodeIDMatcher{})
+	h := NewNodeInventoryHandler(inventories, reports, &mockAlwaysHitNodeIDMatcher{}, 1)
 	s.Nil(h.Capabilities())
 }
 
@@ -80,7 +80,7 @@ func (s *NodeInventoryHandlerTestSuite) TestResponsesCShouldPanicWhenNotStarted(
 	defer close(inventories)
 	reports := make(chan *index.IndexReportWrap)
 	defer close(reports)
-	h := NewNodeInventoryHandler(inventories, reports, &mockAlwaysHitNodeIDMatcher{})
+	h := NewNodeInventoryHandler(inventories, reports, &mockAlwaysHitNodeIDMatcher{}, 1)
 	s.Panics(func() {
 		h.ResponsesC()
 	})
@@ -96,7 +96,7 @@ func (s *NodeInventoryHandlerTestSuite) TestStopHandler() {
 	reports := make(chan *index.IndexReportWrap)
 	defer close(reports)
 	producer := concurrency.NewStopper()
-	h := NewNodeInventoryHandler(inventories, reports, &mockAlwaysHitNodeIDMatcher{})
+	h := NewNodeInventoryHandler(inventories, reports, &mockAlwaysHitNodeIDMatcher{}, 1)
 	s.NoError(h.Start())
 	h.Notify(common.SensorComponentEventCentralReachable)
 	consumer := consumeAndCount(h.ResponsesC(), 1)
@@ -127,7 +127,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerRegularRoutine() {
 	defer close(ch)
 	reports := make(chan *index.IndexReportWrap)
 	defer close(reports)
-	h := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{})
+	h := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{}, 1)
 	// Notify is called before Start to avoid race between generateTestInputNoClose and the NodeInventoryHandler
 	h.Notify(common.SensorComponentEventCentralReachable)
 	s.NoError(h.Start())
@@ -144,7 +144,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerStopIgnoresError() {
 	defer close(ch)
 	reports := make(chan *index.IndexReportWrap)
 	defer close(reports)
-	h := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{})
+	h := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{}, 1)
 	// Notify is called before Start to avoid race between generateTestInputNoClose and the NodeInventoryHandler
 	h.Notify(common.SensorComponentEventCentralReachable)
 	s.NoError(h.Start())
@@ -197,7 +197,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerCentralACKsToCompliance() {
 			defer close(ch)
 			reports := make(chan *index.IndexReportWrap)
 			defer close(reports)
-			handler := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{})
+			handler := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{}, 1)
 			s.NoError(handler.Start())
 			handler.Notify(common.SensorComponentEventCentralReachable)
 
@@ -234,7 +234,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerOfflineACKNACK() {
 	defer close(ch)
 	reports := make(chan *index.IndexReportWrap)
 	defer close(reports)
-	h := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{})
+	h := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{}, 1)
 	s.NoError(h.Start())
 
 	states := []testState{
@@ -374,7 +374,7 @@ func (s *NodeInventoryHandlerTestSuite) TestMultipleStartHandler() {
 	defer close(ch)
 	reports := make(chan *index.IndexReportWrap)
 	defer close(reports)
-	h := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{})
+	h := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{}, 1)
 
 	// Notify is called before Start to avoid race between generateTestInputNoClose and the NodeInventoryHandler
 	h.Notify(common.SensorComponentEventCentralReachable)
@@ -400,7 +400,7 @@ func (s *NodeInventoryHandlerTestSuite) TestDoubleStopHandler() {
 	defer close(ch)
 	reports := make(chan *index.IndexReportWrap)
 	defer close(reports)
-	h := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{})
+	h := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{}, 1)
 	// Notify is called before Start to avoid race between generateTestInputNoClose and the NodeInventoryHandler
 	h.Notify(common.SensorComponentEventCentralReachable)
 	s.NoError(h.Start())
@@ -418,7 +418,7 @@ func (s *NodeInventoryHandlerTestSuite) TestInputChannelClosed() {
 	ch, producer := s.generateTestInputNoClose(10)
 	reports := make(chan *index.IndexReportWrap)
 	defer close(reports)
-	h := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{})
+	h := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{}, 1)
 	// Notify is called before Start to avoid race between generateTestInputNoClose and the NodeInventoryHandler
 	h.Notify(common.SensorComponentEventCentralReachable)
 	s.NoError(h.Start())
@@ -453,7 +453,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerNilInput() {
 	defer close(ch)
 	reports := make(chan *index.IndexReportWrap)
 	defer close(reports)
-	h := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{})
+	h := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{}, 1)
 	// Notify is called before Start to avoid race between generateNilTestInputNoClose and the NodeInventoryHandler
 	h.Notify(common.SensorComponentEventCentralReachable)
 	s.NoError(h.Start())
@@ -470,7 +470,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerNodeUnknown() {
 	defer close(ch)
 	reports := make(chan *index.IndexReportWrap)
 	defer close(reports)
-	h := NewNodeInventoryHandler(ch, reports, &mockNeverHitNodeIDMatcher{})
+	h := NewNodeInventoryHandler(ch, reports, &mockNeverHitNodeIDMatcher{}, 1)
 	// Notify is called before Start to avoid race between generateTestInputNoClose and the NodeInventoryHandler
 	h.Notify(common.SensorComponentEventCentralReachable)
 	s.NoError(h.Start())
@@ -491,7 +491,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerCentralNotReady() {
 	defer close(ch)
 	reports := make(chan *index.IndexReportWrap)
 	defer close(reports)
-	h := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{})
+	h := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{}, 1)
 	s.NoError(h.Start())
 	// expect centralConsumer to get 0 messages - sensor should NACK to compliance when the connection with central is not ready
 	centralConsumer := consumeAndCount(h.ResponsesC(), 0)
