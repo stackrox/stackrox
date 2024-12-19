@@ -5,95 +5,7 @@ metadata:
 spec:
 
   finally:
-  - name: create-acs-style-snapshot
-    params:
-    - name: SOURCE_ARTIFACT
-      value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
-    - name: IMAGE_REFS
-      value: |
-        [
-          {
-            "component": "central-db",
-            "ref": "$(params.central-db-image-build-repo)@$(tasks.wait-for-central-db-image.results.IMAGE_DIGEST)",
-            "repository": "$(params.git-url)",
-            "revision": "$(params.revision)"
-          },
-          {
-            "component": "collector",
-            "ref": "$(params.collector-full-image-build-repo)@$(tasks.wait-for-collector-full-image.results.IMAGE_DIGEST)",
-            "repository": "$(tasks.wait-for-collector-full-image.results.GIT_REPO)",
-            "revision": "$(tasks.wait-for-collector-full-image.results.GIT_REF)"
-          },
-          {
-            "component": "main",
-            "ref": "$(params.main-image-build-repo)@$(tasks.wait-for-main-image.results.IMAGE_DIGEST)",
-            "repository": "$(params.git-url)",
-            "revision": "$(params.revision)"
-          },
-          {
-            "component": "operator",
-            "ref": "$(params.operator-image-build-repo)@$(tasks.wait-for-operator-image.results.IMAGE_DIGEST)",
-            "repository": "$(params.git-url)",
-            "revision": "$(params.revision)"
-          },
-          {
-            "component": "operator-bundle",
-            "ref": "$(params.output-image-repo)@$(tasks.build-container.results.IMAGE_DIGEST)",
-            "repository": "$(params.git-url)",
-            "revision": "$(params.revision)"
-          },
-          {
-            "component": "roxctl",
-            "ref": "$(params.roxctl-image-build-repo)@$(tasks.wait-for-roxctl-image.results.IMAGE_DIGEST)",
-            "repository": "$(params.git-url)",
-            "revision": "$(params.revision)"
-          },
-          {
-            "component": "scanner",
-            "ref": "$(params.scanner-image-build-repo)@$(tasks.wait-for-scanner-image.results.IMAGE_DIGEST)",
-            "repository": "$(tasks.wait-for-scanner-image.results.GIT_REPO)",
-            "revision": "$(tasks.wait-for-scanner-image.results.GIT_REF)"
-          },
-          {
-            "component": "scanner-db",
-            "ref": "$(params.scanner-db-image-build-repo)@$(tasks.wait-for-scanner-db-image.results.IMAGE_DIGEST)",
-            "repository": "$(tasks.wait-for-scanner-db-image.results.GIT_REPO)",
-            "revision": "$(tasks.wait-for-scanner-db-image.results.GIT_REF)"
-          },
-          {
-            "component": "scanner-db-slim",
-            "ref": "$(params.scanner-db-slim-image-build-repo)@$(tasks.wait-for-scanner-db-slim-image.results.IMAGE_DIGEST)",
-            "repository": "$(tasks.wait-for-scanner-db-slim-image.results.GIT_REPO)",
-            "revision": "$(tasks.wait-for-scanner-db-slim-image.results.GIT_REF)"
-          },
-          {
-            "component": "scanner-slim",
-            "ref": "$(params.scanner-slim-image-build-repo)@$(tasks.wait-for-scanner-slim-image.results.IMAGE_DIGEST)",
-            "repository": "$(tasks.wait-for-scanner-slim-image.results.GIT_REPO)",
-            "revision": "$(tasks.wait-for-scanner-slim-image.results.GIT_REF)"
-          },
-          {
-            "component": "scanner-v4",
-            "ref": "$(params.scanner-v4-image-build-repo)@$(tasks.wait-for-scanner-v4-image.results.IMAGE_DIGEST)",
-            "repository": "$(params.git-url)",
-            "revision": "$(params.revision)"
-          },
-          {
-            "component": "scanner-v4-db",
-            "ref": "$(params.scanner-v4-db-image-build-repo)@$(tasks.wait-for-scanner-v4-db-image.results.IMAGE_DIGEST)",
-            "repository": "$(params.git-url)",
-            "revision": "$(params.revision)"
-          }
-        ]
-    - name: MAIN_IMAGE_TAG
-      value: $(tasks.determine-main-image-tag.results.IMAGE_TAG)
-    taskRef:
-      name: create-snapshot
-
   - name: slack-notification
-    runAfter:
-    - show-sbom
-    - create-acs-style-snapshot
     params:
     - name: message
       value: ':x: `{{event_type}}` pipeline for <https://console.redhat.com/application-pipeline/workspaces/rh-acs/applications/acs/pipelineruns/$(context.pipelineRun.name)|$(context.pipelineRun.name)> (`$(params.output-image-repo)`, revision <$(params.git-url)/commit/$(params.revision)|$(params.revision)>) has failed.'
@@ -749,3 +661,100 @@ spec:
       - name: kind
         value: task
       resolver: bundles
+
+  - name: create-acs-style-snapshot
+    # Explicitly running after all other tasks to ensure that
+    # - there are no failures that should prevent a release of the operator-bundle image (missing RPMs signatures, deprecated base images, ...)
+    # - the source image is present as it is required by EC
+    runAfter:
+    - apply-tags
+    - build-source-image
+    - clair-scan
+    - clamav-scan
+    - deprecated-base-image-check
+    - rpms-signature-scan
+    - sast-snyk-check
+    - push-dockerfile
+    params:
+    - name: SOURCE_ARTIFACT
+      value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
+    - name: IMAGE_REFS
+      value: |
+        [
+          {
+            "component": "central-db",
+            "ref": "$(params.central-db-image-build-repo)@$(tasks.wait-for-central-db-image.results.IMAGE_DIGEST)",
+            "repository": "$(params.git-url)",
+            "revision": "$(params.revision)"
+          },
+          {
+            "component": "collector",
+            "ref": "$(params.collector-full-image-build-repo)@$(tasks.wait-for-collector-full-image.results.IMAGE_DIGEST)",
+            "repository": "$(tasks.wait-for-collector-full-image.results.GIT_REPO)",
+            "revision": "$(tasks.wait-for-collector-full-image.results.GIT_REF)"
+          },
+          {
+            "component": "main",
+            "ref": "$(params.main-image-build-repo)@$(tasks.wait-for-main-image.results.IMAGE_DIGEST)",
+            "repository": "$(params.git-url)",
+            "revision": "$(params.revision)"
+          },
+          {
+            "component": "operator",
+            "ref": "$(params.operator-image-build-repo)@$(tasks.wait-for-operator-image.results.IMAGE_DIGEST)",
+            "repository": "$(params.git-url)",
+            "revision": "$(params.revision)"
+          },
+          {
+            "component": "operator-bundle",
+            "ref": "$(params.output-image-repo)@$(tasks.build-container.results.IMAGE_DIGEST)",
+            "repository": "$(params.git-url)",
+            "revision": "$(params.revision)"
+          },
+          {
+            "component": "roxctl",
+            "ref": "$(params.roxctl-image-build-repo)@$(tasks.wait-for-roxctl-image.results.IMAGE_DIGEST)",
+            "repository": "$(params.git-url)",
+            "revision": "$(params.revision)"
+          },
+          {
+            "component": "scanner",
+            "ref": "$(params.scanner-image-build-repo)@$(tasks.wait-for-scanner-image.results.IMAGE_DIGEST)",
+            "repository": "$(tasks.wait-for-scanner-image.results.GIT_REPO)",
+            "revision": "$(tasks.wait-for-scanner-image.results.GIT_REF)"
+          },
+          {
+            "component": "scanner-db",
+            "ref": "$(params.scanner-db-image-build-repo)@$(tasks.wait-for-scanner-db-image.results.IMAGE_DIGEST)",
+            "repository": "$(tasks.wait-for-scanner-db-image.results.GIT_REPO)",
+            "revision": "$(tasks.wait-for-scanner-db-image.results.GIT_REF)"
+          },
+          {
+            "component": "scanner-db-slim",
+            "ref": "$(params.scanner-db-slim-image-build-repo)@$(tasks.wait-for-scanner-db-slim-image.results.IMAGE_DIGEST)",
+            "repository": "$(tasks.wait-for-scanner-db-slim-image.results.GIT_REPO)",
+            "revision": "$(tasks.wait-for-scanner-db-slim-image.results.GIT_REF)"
+          },
+          {
+            "component": "scanner-slim",
+            "ref": "$(params.scanner-slim-image-build-repo)@$(tasks.wait-for-scanner-slim-image.results.IMAGE_DIGEST)",
+            "repository": "$(tasks.wait-for-scanner-slim-image.results.GIT_REPO)",
+            "revision": "$(tasks.wait-for-scanner-slim-image.results.GIT_REF)"
+          },
+          {
+            "component": "scanner-v4",
+            "ref": "$(params.scanner-v4-image-build-repo)@$(tasks.wait-for-scanner-v4-image.results.IMAGE_DIGEST)",
+            "repository": "$(params.git-url)",
+            "revision": "$(params.revision)"
+          },
+          {
+            "component": "scanner-v4-db",
+            "ref": "$(params.scanner-v4-db-image-build-repo)@$(tasks.wait-for-scanner-v4-db-image.results.IMAGE_DIGEST)",
+            "repository": "$(params.git-url)",
+            "revision": "$(params.revision)"
+          }
+        ]
+    - name: MAIN_IMAGE_TAG
+      value: $(tasks.determine-main-image-tag.results.IMAGE_TAG)
+    taskRef:
+      name: create-snapshot
