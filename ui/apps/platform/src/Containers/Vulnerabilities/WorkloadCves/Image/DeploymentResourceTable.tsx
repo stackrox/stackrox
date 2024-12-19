@@ -8,6 +8,7 @@ import DateDistance from 'Components/DateDistance';
 import EmptyTableResults from '../components/EmptyTableResults';
 import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
+import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 
 export type DeploymentResources = {
     deploymentCount: number;
@@ -39,6 +40,7 @@ export type DeploymentResourceTableProps = {
 };
 
 function DeploymentResourceTable({ data, getSortParams }: DeploymentResourceTableProps) {
+    const { createUrl } = useWorkloadCveViewContext();
     const vulnerabilityState = useVulnerabilityState();
     return (
         <Table borders={false} variant="compact">
@@ -62,10 +64,12 @@ function DeploymentResourceTable({ data, getSortParams }: DeploymentResourceTabl
                         <Tr>
                             <Td dataLabel="Name">
                                 <Link
-                                    to={getWorkloadEntityPagePath(
-                                        'Deployment',
-                                        id,
-                                        vulnerabilityState
+                                    to={createUrl(
+                                        getWorkloadEntityPagePath(
+                                            'Deployment',
+                                            id,
+                                            vulnerabilityState
+                                        )
                                     )}
                                 >
                                     {name}

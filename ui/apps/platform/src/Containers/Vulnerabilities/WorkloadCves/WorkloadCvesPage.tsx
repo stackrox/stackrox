@@ -37,7 +37,7 @@ function WorkloadCvesPage({ view }: WorkloadCvePageProps) {
         const baseSearchFilter = isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT')
             ? { 'Platform Component': [String(view === 'platform-workload')] }
             : {};
-        const createUrl = (path) => `${vulnerabilitiesWorkloadCvesPath}${path}`; // TODO Implement throughout in follow up
+        const createUrl = (path: string) => `${vulnerabilitiesWorkloadCvesPath}/${path}`;
 
         return { pageTitle, baseSearchFilter, createUrl };
     }, [view, isFeatureFlagEnabled]);

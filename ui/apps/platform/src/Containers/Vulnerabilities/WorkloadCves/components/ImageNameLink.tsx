@@ -6,6 +6,7 @@ import { OutlinedCopyIcon } from '@patternfly/react-icons';
 import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import { getImageBaseNameDisplay } from '../utils/images';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
+import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 
 export type ImageNameLinkProps = {
     name: {
@@ -18,6 +19,7 @@ export type ImageNameLinkProps = {
 };
 
 function ImageNameLink({ name, id, children }: ImageNameLinkProps) {
+    const { createUrl } = useWorkloadCveViewContext();
     const vulnerabilityState = useVulnerabilityState();
     const [copyIconTooltip, setCopyIconTooltip] = useState('Copy image name');
 
@@ -41,7 +43,7 @@ function ImageNameLink({ name, id, children }: ImageNameLinkProps) {
             spaceItems={{ default: 'spaceItemsNone' }}
         >
             <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsNone' }}>
-                <Link to={getWorkloadEntityPagePath('Image', id, vulnerabilityState)}>
+                <Link to={createUrl(getWorkloadEntityPagePath('Image', id, vulnerabilityState))}>
                     <Truncate position="middle" content={baseName} />
                 </Link>{' '}
                 <span className="pf-v5-u-color-200 pf-v5-u-font-size-sm">in {registry}</span>

@@ -47,11 +47,6 @@ import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import { getImageBaseNameDisplay } from '../utils/images';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 
-const workloadCveOverviewImagePath = getOverviewPagePath('Workload', {
-    vulnerabilityState: 'OBSERVED',
-    entityTab: 'Image',
-});
-
 export const imageDetailsQuery = gql`
     ${imageDetailsFragment}
     query getImageDetails($id: ID!) {
@@ -74,7 +69,7 @@ function ScannerV4RequiredTooltip({ children }: { children: ReactElement }) {
 
 function ImagePage() {
     const { imageId } = useParams();
-    const { pageTitle } = useWorkloadCveViewContext();
+    const { createUrl, pageTitle } = useWorkloadCveViewContext();
     const { data, error } = useQuery<
         {
             image: {
@@ -109,6 +104,13 @@ function ImagePage() {
             ? `${imageName.registry}/${getImageBaseNameDisplay(imageData.id, imageName)}`
             : 'NAME UNKNOWN';
     const scanMessage = getImageScanMessage(imageData?.notes || [], imageData?.scanNotes || []);
+
+    const workloadCveOverviewImagePath = createUrl(
+        getOverviewPagePath('Workload', {
+            vulnerabilityState: 'OBSERVED',
+            entityTab: 'Image',
+        })
+    );
 
     let mainContent: ReactNode | null = null;
 
