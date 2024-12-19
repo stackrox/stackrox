@@ -2,6 +2,7 @@ package generator
 
 import (
 	"bytes"
+	"context"
 
 	blobDS "github.com/stackrox/rox/central/blob/datastore"
 	benchmarksDS "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore"
@@ -11,9 +12,11 @@ import (
 	"github.com/stackrox/rox/central/complianceoperator/v2/report"
 	snapshotDS "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore"
 	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager/format"
+	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager/sender"
 	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager/utils"
 	complianceRuleDS "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore"
 	scanDS "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/notifier"
 )
 
@@ -23,6 +26,8 @@ import (
 type ComplianceReportGenerator interface {
 	// ProcessReportRequest will generate a csv report and send notification via email to attached scan config notifiers.
 	ProcessReportRequest(req *report.Request) error
+	// Stop will stop all the sender watchers
+	Stop()
 }
 
 // Formatter interface is used to generate the report zip file containing the csv files
@@ -37,6 +42,11 @@ type Formatter interface {
 //go:generate mockgen-wrapper
 type ResultsAggregator interface {
 	GetReportData(*report.Request) *report.Results
+}
+
+//go:generate mockgen-wrapper
+type ReportSender interface {
+	SendEmail(context.Context, string, *bytes.Buffer, *report.Results, []*storage.NotifierConfiguration) <-chan error
 }
 
 // New will create a new instance of the ReportGenerator
@@ -54,5 +64,8 @@ func New(checkResultDS checkResults.DataStore, notifierProcessor notifier.Proces
 		numberOfTriesOnEmailSend: defaultNumberOfTriesOnEmailSend,
 		formatter:                format.NewFormatter(),
 		resultsAggregator:        utils.NewResultsAggregator(checkResultDS, scanDS, profileDS, remediationDS, benchmarksDS, complianceRuleDS),
+		reportSender:             sender.NewReportSender(notifierProcessor, defaultNumberOfTriesOnEmailSend),
+		senderResponseHandlers:   make(map[string]stoppable[error]),
+		newHandlerFn:             utils.NewAsyncResponseHandler[error],
 	}
 }
