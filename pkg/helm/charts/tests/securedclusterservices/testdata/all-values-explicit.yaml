@@ -43,7 +43,7 @@ collector:
     networking:
       externalIps:
         enabled: true
-    perContainerRateLimit: 1024
+    maxConnectionsPerMinute: 1024
 
 admissionControl:
   serviceTLS:
