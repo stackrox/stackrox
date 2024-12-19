@@ -48,7 +48,7 @@ type securedClusterTLSIssuerFixture struct {
 	certRefresher   *certificateRefresherMock
 	repo            *certsRepoMock
 	componentGetter *componentGetterMock
-	tlsIssuer       *securedClusterTLSIssuerImpl
+	tlsIssuer       *tlsIssuerImpl
 }
 
 func newSecuredClusterTLSIssuerFixture(k8sClientConfig fakeK8sClientConfig) *securedClusterTLSIssuerFixture {
@@ -59,7 +59,10 @@ func newSecuredClusterTLSIssuerFixture(k8sClientConfig fakeK8sClientConfig) *sec
 		componentGetter: &componentGetterMock{},
 		k8sClient:       getFakeK8sClient(k8sClientConfig),
 	}
-	fixture.tlsIssuer = &securedClusterTLSIssuerImpl{
+	fixture.tlsIssuer = &tlsIssuerImpl{
+		componentName:                securedClusterComponentName,
+		sensorCapability:             securedClusterSensorCapability,
+		getResponseFn:                securedClusterResponseFn,
 		sensorNamespace:              sensorNamespace,
 		sensorPodName:                sensorPodName,
 		k8sClient:                    fixture.k8sClient,
@@ -88,7 +91,7 @@ func (f *securedClusterTLSIssuerFixture) mockForStart(conf mockForStartConfig) {
 	f.componentGetter.On("getServiceCertificatesRepo", mock.Anything,
 		mock.Anything, mock.Anything).Once().Return(f.repo, nil)
 
-	f.componentGetter.On("getCertificateRefresher", "secured cluster certificates", mock.Anything, f.repo,
+	f.componentGetter.On("getCertificateRefresher", securedClusterComponentName, mock.Anything, f.repo,
 		certRefreshTimeout, certRefreshBackoff).Once().Return(f.certRefresher)
 }
 
@@ -445,8 +448,8 @@ func newSecuredClusterTLSIssuer(
 	k8sClient kubernetes.Interface,
 	sensorNamespace string,
 	sensorPodName string,
-) *securedClusterTLSIssuerImpl {
+) *tlsIssuerImpl {
 	tlsIssuer := NewSecuredClusterTLSIssuer(k8sClient, sensorNamespace, sensorPodName)
-	require.IsType(t, &securedClusterTLSIssuerImpl{}, tlsIssuer)
-	return tlsIssuer.(*securedClusterTLSIssuerImpl)
+	require.IsType(t, &tlsIssuerImpl{}, tlsIssuer)
+	return tlsIssuer.(*tlsIssuerImpl)
 }

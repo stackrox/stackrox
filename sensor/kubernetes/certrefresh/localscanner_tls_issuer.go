@@ -1,25 +1,22 @@
 package certrefresh
 
 import (
-	"context"
-
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certificates"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/localscanner"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 )
 
 var (
-	log = logging.LoggerForModule()
-
-	_ common.SensorComponent = (*localScannerTLSIssuerImpl)(nil)
+	localScannerComponentName    = "local scanner"
+	localScannerSensorCapability = centralsensor.LocalScannerCredentialsRefresh
+	localScannerResponseFn       = func(msg *central.MsgToSensor) *certificates.Response {
+		return certificates.NewResponseFromLocalScannerCerts(msg.GetIssueLocalScannerCertsResponse())
+	}
 )
 
 // NewLocalScannerTLSIssuer creates a sensor component that will keep the local scanner certificates
@@ -29,7 +26,10 @@ func NewLocalScannerTLSIssuer(
 	sensorNamespace string,
 	sensorPodName string,
 ) common.SensorComponent {
-	tlsIssuer := &localScannerTLSIssuerImpl{
+	tlsIssuer := &tlsIssuerImpl{
+		componentName:                localScannerComponentName,
+		sensorCapability:             localScannerSensorCapability,
+		getResponseFn:                localScannerResponseFn,
 		sensorNamespace:              sensorNamespace,
 		sensorPodName:                sensorPodName,
 		k8sClient:                    k8sClient,
@@ -42,106 +42,4 @@ func NewLocalScannerTLSIssuer(
 
 	tlsIssuer.certRequester = certificates.NewLocalScannerCertificateRequester(tlsIssuer.msgToCentralHandler)
 	return tlsIssuer
-}
-
-type localScannerTLSIssuerImpl struct {
-	sensorNamespace              string
-	sensorPodName                string
-	k8sClient                    kubernetes.Interface
-	certRefreshBackoff           wait.Backoff
-	getCertificateRefresherFn    certificateRefresherGetter
-	getServiceCertificatesRepoFn serviceCertificatesRepoGetter
-	certRequester                certificates.Requester
-	certRefresher                concurrency.RetryTicker
-	msgToCentralC                chan *message.ExpiringMessage
-	stopSig                      concurrency.ErrorSignal
-}
-
-// Start starts the Sensor component and launches a certificate refresher that immediately checks the certificates, and
-// that keeps them updated.
-// In case a secret doesn't have the expected owner, this logs a warning and returns nil.
-// In case this component was already started it fails immediately.
-func (i *localScannerTLSIssuerImpl) Start() error {
-	log.Debug("Starting local scanner TLS issuer.")
-	i.stopSig.Reset()
-	ctx, cancel := context.WithTimeout(context.Background(), startTimeout)
-	defer cancel()
-
-	if i.certRefresher != nil {
-		return i.abortStart(errors.New("already started"))
-	}
-
-	sensorOwnerReference, fetchSensorDeploymentErr := FetchSensorDeploymentOwnerRef(ctx, i.sensorPodName,
-		i.sensorNamespace, i.k8sClient, fetchSensorDeploymentOwnerRefBackoff)
-	if fetchSensorDeploymentErr != nil {
-		return i.abortStart(errors.Wrap(fetchSensorDeploymentErr, "fetching sensor deployment"))
-	}
-
-	certsRepo := i.getServiceCertificatesRepoFn(*sensorOwnerReference, i.sensorNamespace,
-		i.k8sClient.CoreV1().Secrets(i.sensorNamespace))
-	i.certRefresher = i.getCertificateRefresherFn("local scanner certificates", i.certRequester.RequestCertificates, certsRepo,
-		certRefreshTimeout, i.certRefreshBackoff)
-
-	if refreshStartErr := i.certRefresher.Start(); refreshStartErr != nil {
-		return i.abortStart(errors.Wrap(refreshStartErr, "starting certificate certRefresher"))
-	}
-
-	log.Debug("Local Scanner TLS issuer started.")
-	return nil
-}
-
-func (i *localScannerTLSIssuerImpl) abortStart(err error) error {
-	log.Errorf("Local Scanner TLS issuer start aborted due to error: %s", err)
-	i.Stop(err)
-	return err
-}
-
-func (i *localScannerTLSIssuerImpl) Stop(_ error) {
-	i.stopSig.Signal()
-	if i.certRefresher != nil {
-		i.certRefresher.Stop()
-		i.certRefresher = nil
-	}
-
-	log.Debug("Local Scanner TLS issuer stopped.")
-}
-
-func (i *localScannerTLSIssuerImpl) Notify(common.SensorComponentEvent) {}
-
-func (i *localScannerTLSIssuerImpl) Capabilities() []centralsensor.SensorCapability {
-	return []centralsensor.SensorCapability{centralsensor.LocalScannerCredentialsRefresh}
-}
-
-// ResponsesC is called "responses" because for other SensorComponent it is Central that
-// initiates the interaction. However, here it is Sensor which sends a request to Central.
-func (i *localScannerTLSIssuerImpl) ResponsesC() <-chan *message.ExpiringMessage {
-	return i.msgToCentralC
-}
-
-// ProcessMessage dispatches Central's messages to Sensor received via the Central receiver.
-// This method must not block as it would prevent centralReceiverImpl from sending messages
-// to other SensorComponents.
-func (i *localScannerTLSIssuerImpl) ProcessMessage(msg *central.MsgToSensor) error {
-	response := msg.GetIssueLocalScannerCertsResponse()
-	if response == nil {
-		// messages not supported by this component are ignored
-		return nil
-	}
-
-	go func() {
-		i.certRequester.DispatchResponse(certificates.NewResponseFromLocalScannerCerts(response))
-	}()
-
-	return nil
-}
-
-func (i *localScannerTLSIssuerImpl) msgToCentralHandler(ctx context.Context, msg *message.ExpiringMessage) error {
-	select {
-	case <-i.stopSig.Done():
-		return nil
-	case <-ctx.Done():
-		return ctx.Err()
-	case i.msgToCentralC <- msg:
-		return nil
-	}
 }
