@@ -111,15 +111,13 @@ type certificateRequesterMock struct {
 	mock.Mock
 }
 
-func (m *certificateRequesterMock) Start() {
-	m.Called()
-}
-func (m *certificateRequesterMock) Stop() {
-	m.Called()
-}
 func (m *certificateRequesterMock) RequestCertificates(ctx context.Context) (*certificates.Response, error) {
 	args := m.Called(ctx)
 	return args.Get(0).(*certificates.Response), args.Error(1)
+}
+
+func (m *certificateRequesterMock) DispatchResponse(response *certificates.Response) {
+	m.Called(response)
 }
 
 type certificateRefresherMock struct {

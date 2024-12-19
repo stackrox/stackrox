@@ -2,78 +2,24 @@ package certificates
 
 import (
 	"context"
-	"math/rand"
 	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-)
-
-const (
-	numConcurrentRequests = 10
 )
 
 var (
 	testTimeout = time.Second
 )
 
-func TestLocalScannerCertificateRequesterRequestFailureIfStopped(t *testing.T) {
-	testCases := map[string]struct {
-		startRequester bool
-	}{
-		"requester not started":            {false},
-		"requester stopped before request": {true},
-	}
-	for tcName, tc := range testCases {
-		t.Run(tcName, func(t *testing.T) {
-			f := newLocalScannerFixture(0)
-			defer f.tearDown()
-			if tc.startRequester {
-				f.requester.Start()
-				f.requester.Stop()
-			}
-
-			certs, requestErr := f.requester.RequestCertificates(f.ctx)
-			assert.Nil(t, certs)
-			assert.Equal(t, ErrCertificateRequesterStopped, requestErr)
-		})
-	}
-}
-
-func TestSecuredClusterCertificateRequesterRequestFailureIfStopped(t *testing.T) {
-	testCases := map[string]struct {
-		startRequester bool
-	}{
-		"requester not started":            {false},
-		"requester stopped before request": {true},
-	}
-	for tcName, tc := range testCases {
-		t.Run(tcName, func(t *testing.T) {
-			f := newSecuredClusterFixture(0)
-			defer f.tearDown()
-			if tc.startRequester {
-				f.requester.Start()
-				f.requester.Stop()
-			}
-
-			certs, requestErr := f.requester.RequestCertificates(f.ctx)
-			assert.Nil(t, certs)
-			assert.Equal(t, ErrCertificateRequesterStopped, requestErr)
-		})
-	}
-}
-
 func TestLocalScannerCertificateRequesterRequestCancellation(t *testing.T) {
 	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.SecuredClusterCertificatesReissue})
 	f := newLocalScannerFixture(0)
-	f.requester.Start()
 	defer f.tearDown()
 
 	f.cancelCtx()
@@ -85,7 +31,6 @@ func TestLocalScannerCertificateRequesterRequestCancellation(t *testing.T) {
 func TestSecuredClusterCertificateRequesterRequestCancellation(t *testing.T) {
 	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.SecuredClusterCertificatesReissue})
 	f := newSecuredClusterFixture(0)
-	f.requester.Start()
 	defer f.tearDown()
 
 	f.cancelCtx()
@@ -96,10 +41,9 @@ func TestSecuredClusterCertificateRequesterRequestCancellation(t *testing.T) {
 
 func TestLocalScannerCertificateRequesterRequestSuccess(t *testing.T) {
 	f := newLocalScannerFixture(0)
-	f.requester.Start()
 	defer f.tearDown()
 
-	go f.respondRequest(t, 0, nil)
+	go f.respondRequest(t, nil)
 
 	response, err := f.requester.RequestCertificates(f.ctx)
 	assert.NoError(t, err)
@@ -108,24 +52,31 @@ func TestLocalScannerCertificateRequesterRequestSuccess(t *testing.T) {
 
 func TestSecuredClusterCertificateRequesterRequestSuccess(t *testing.T) {
 	f := newSecuredClusterFixture(0)
-	f.requester.Start()
 	defer f.tearDown()
 
-	go f.respondRequest(t, 0, nil)
+	go f.respondRequest(t, nil)
 
 	response, err := f.requester.RequestCertificates(f.ctx)
 	assert.NoError(t, err)
 	assert.Equal(t, f.interceptedRequestID.Load(), response.RequestId)
+	oldRequestId := response.RequestId
+
+	// Check that a second call also works
+	go f.respondRequest(t, nil)
+
+	response, err = f.requester.RequestCertificates(f.ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, f.interceptedRequestID.Load(), response.RequestId)
+	assert.NotEqual(t, oldRequestId, response.RequestId)
 }
 
 func TestLocalScannerCertificateRequesterResponsesWithUnknownIDAreIgnored(t *testing.T) {
 	f := newLocalScannerFixture(100 * time.Millisecond)
-	f.requester.Start()
 	defer f.tearDown()
 
 	response := &central.IssueLocalScannerCertsResponse{RequestId: "UNKNOWN"}
 	// Request with different request ID should be ignored.
-	go f.respondRequest(t, 0, &response)
+	go f.respondRequest(t, &response)
 
 	certs, requestErr := f.requester.RequestCertificates(f.ctx)
 	assert.Nil(t, certs)
@@ -134,63 +85,37 @@ func TestLocalScannerCertificateRequesterResponsesWithUnknownIDAreIgnored(t *tes
 
 func TestSecuredClusterCertificateRequesterResponsesWithUnknownIDAreIgnored(t *testing.T) {
 	f := newSecuredClusterFixture(100 * time.Millisecond)
-	f.requester.Start()
 	defer f.tearDown()
 
 	response := &central.IssueSecuredClusterCertsResponse{RequestId: "UNKNOWN"}
 	// Request with different request ID should be ignored.
-	go f.respondRequest(t, 0, &response)
+	go f.respondRequest(t, &response)
 
 	certs, requestErr := f.requester.RequestCertificates(f.ctx)
 	assert.Nil(t, certs)
 	assert.Equal(t, context.DeadlineExceeded, requestErr)
 }
 
-func TestCertificateRequesterRequestConcurrentRequestDoNotInterfere(t *testing.T) {
-	testCases := map[string]struct {
-		responseDelayFunc func(requestIndex int) (responseDelay time.Duration)
-	}{
-		"decreasing response delay": {func(requestIndex int) (responseDelay time.Duration) {
-			// responses are responded increasingly faster, so always out of order.
-			return time.Duration(numConcurrentRequests-(requestIndex+1)) * 10 * time.Millisecond
-		}},
-		"random response delay": {func(requestIndex int) (responseDelay time.Duration) {
-			// randomly out of order responses.
-			return time.Duration(rand.Intn(100)) * time.Millisecond
-		}},
-	}
-	for tcName, tc := range testCases {
-		t.Run(tcName, func(t *testing.T) {
-			f := newSecuredClusterFixture(0)
-			f.requester.Start()
-			defer f.tearDown()
-			waitGroup := concurrency.NewWaitGroup(numConcurrentRequests)
+func TestSecuredClusterCertificateRequesterNoReplyFromCentral(t *testing.T) {
+	f := newSecuredClusterFixture(200 * time.Millisecond)
+	defer f.tearDown()
 
-			for i := 0; i < numConcurrentRequests; i++ {
-				i := i
-				responseDelay := tc.responseDelayFunc(i)
-				go f.respondRequest(t, responseDelay, nil)
-				go func() {
-					defer waitGroup.Add(-1)
-					_, err := f.requester.RequestCertificates(f.ctx)
-					assert.NoError(t, err)
-				}()
-			}
-			ok := concurrency.WaitWithTimeout(&waitGroup, time.Duration(numConcurrentRequests)*testTimeout)
-			require.True(t, ok)
-		})
-	}
+	certs, requestErr := f.requester.RequestCertificates(f.ctx)
+
+	// No response was set using `f.respondRequest`, which simulates not receiving a reply from Central
+	assert.Nil(t, certs)
+	assert.Equal(t, context.DeadlineExceeded, requestErr)
 }
 
 type certificateRequesterFixture[ReqT any, RespT protobufResponse] struct {
-	sendC                chan *message.ExpiringMessage
-	receiveC             chan RespT
 	requester            Requester
 	interceptedRequestID *atomic.Value
 	ctx                  context.Context
 	cancelCtx            context.CancelFunc
 	getRequestID         requestIDGetter
 	newResponseWithID    func(requestID string) RespT
+	responseFactory      responseFactory[RespT]
+	msgToCentralC        chan *message.ExpiringMessage
 }
 
 func newLocalScannerFixture(timeout time.Duration) *certificateRequesterFixture[*central.IssueLocalScannerCertsRequest,
@@ -223,42 +148,49 @@ func newFixture[ReqT any, RespT protobufResponse](
 	getRequestID requestIDGetter,
 	newResponseWithID func(requestID string) RespT,
 ) *certificateRequesterFixture[ReqT, RespT] {
-	sendC := make(chan *message.ExpiringMessage)
-	receiveC := make(chan RespT)
-	requester := newRequester[ReqT, RespT](sendC, receiveC, messageFactory, responseFactory, nil)
 	var interceptedRequestID atomic.Value
 	if timeout == 0 {
 		timeout = testTimeout
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	return &certificateRequesterFixture[ReqT, RespT]{
-		sendC:                sendC,
-		receiveC:             receiveC,
-		requester:            requester,
+
+	fixture := &certificateRequesterFixture[ReqT, RespT]{
 		ctx:                  ctx,
 		cancelCtx:            cancel,
 		interceptedRequestID: &interceptedRequestID,
 		getRequestID:         getRequestID,
 		newResponseWithID:    newResponseWithID,
+		responseFactory:      responseFactory,
+		msgToCentralC:        make(chan *message.ExpiringMessage),
 	}
+
+	requester := newRequester[ReqT, RespT](messageFactory, nil, fixture.msgToCentralHandler)
+	fixture.requester = requester
+	return fixture
 }
 
 func (f *certificateRequesterFixture[ReqT, RespT]) tearDown() {
 	f.cancelCtx()
-	f.requester.Stop()
 }
 
-// respondRequest reads a request from `f.sendC` and responds with `responseOverwrite` if not nil, or with
-// a response with the same ID as the request otherwise. If `responseDelay` is greater than 0 then this function
-// waits for that time before sending the response.
-// Before sending the response, it stores in `f.interceptedRequestID` the request ID for the requests read from `f.sendC`.
+func (f *certificateRequesterFixture[ReqT, RespT]) msgToCentralHandler(ctx context.Context, msg *message.ExpiringMessage) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case f.msgToCentralC <- msg:
+		return nil
+	}
+}
+
+// respondRequest reads a request from `f.MsgToCentralC` and responds with `responseOverwrite` if not nil,
+// or with a response with the same ID as the request otherwise.
+// Before sending the response, it stores in `f.interceptedRequestID` the ID of the request.
 func (f *certificateRequesterFixture[ReqT, RespT]) respondRequest(
 	t *testing.T,
-	responseDelay time.Duration,
 	responseOverwrite *RespT) {
 	select {
 	case <-f.ctx.Done():
-	case request := <-f.sendC:
+	case request := <-f.msgToCentralC:
 		interceptedRequestID := f.getRequestID(request)
 		assert.NotEmpty(t, interceptedRequestID)
 		var response RespT
@@ -268,18 +200,23 @@ func (f *certificateRequesterFixture[ReqT, RespT]) respondRequest(
 			response = f.newResponseWithID(interceptedRequestID)
 		}
 		f.interceptedRequestID.Store(response.GetRequestId())
-		if responseDelay > 0 {
-			select {
-			case <-f.ctx.Done():
-				return
-			case <-time.After(responseDelay):
-			}
-		}
-		select {
-		case <-f.ctx.Done():
-		case f.receiveC <- response:
-		}
+		f.requester.DispatchResponse(f.responseFactory.convertToResponse(response))
 	}
+}
+
+type responseFactory[RespT any] interface {
+	convertToResponse(response RespT) *Response
+}
+type localScannerResponseFactory struct{}
+
+func (f *localScannerResponseFactory) convertToResponse(response *central.IssueLocalScannerCertsResponse) *Response {
+	return NewResponseFromLocalScannerCerts(response)
+}
+
+type securedClusterResponseFactory struct{}
+
+func (f *securedClusterResponseFactory) convertToResponse(response *central.IssueSecuredClusterCertsResponse) *Response {
+	return NewResponseFromSecuredClusterCerts(response)
 }
 
 type requestIDGetter func(*message.ExpiringMessage) string
