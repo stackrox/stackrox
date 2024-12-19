@@ -58,7 +58,7 @@ func (e *enricherImpl) RemoveNodeIntegration(id string) {
 	delete(e.scanners, id)
 }
 
-// EnrichNodeWithInventory does vulnerability scanning and sets the result in node.NodeScan.
+// EnrichNodeWithVulnerabilities does vulnerability scanning and sets the result in node.NodeScan.
 // node must not be nil - it is caller's responsibility to ensure this
 // nodeInventory can be nil - in that case it is skipped on scanning
 func (e *enricherImpl) EnrichNodeWithVulnerabilities(node *storage.Node, nodeInventory *storage.NodeInventory, indexReport *v4.IndexReport) error {
