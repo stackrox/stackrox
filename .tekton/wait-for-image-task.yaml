@@ -14,7 +14,7 @@ spec:
     description: Image digest in the format `sha256:abcdef0123`.
   steps:
   - name: wait-for-image
-    image: registry.access.redhat.com/ubi9/skopeo@sha256:f9f5916c4c1c988250b72ce8cc07355bede5c3bc78a082340be53457dfb16922
+    image: registry.access.redhat.com/ubi9/skopeo@sha256:cacf073d11823480382ca1c60770639dc477f85b7010cf78b374dadad1962de2
     script: |
       #!/usr/bin/env bash
 
