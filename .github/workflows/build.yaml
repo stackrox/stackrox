@@ -837,15 +837,14 @@ jobs:
           pushd stackrox
           release_tag=$(make tag)
           popd
-          release_tag=${release_tag:-4.6.x-832-g3ee6976d32-amd64}
-          release_tag='4.6.x-832-g3ee6976d32-amd64'
+          echo "$release_tag"
           cd check-payload
           ls -la
           SHELL=/bin/bash
           which podman
           podman -v
           for image in main roxctl rhacs-operator; do
-            if [[ $image == stackrox-operator ]]; then
+            if [[ $image == rhacs-operator ]]; then
               pushd ../stackrox
               tag=$(make -C operator --silent tag)
               popd
@@ -890,3 +889,4 @@ jobs:
         run: |
           source scripts/ci/lib.sh
           slack_workflow_failure
+
