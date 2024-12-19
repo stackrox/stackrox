@@ -22,7 +22,6 @@ var (
 )
 
 type nodeInventoryHandlerImpl struct {
-	bufferSize   uint
 	inventories  <-chan *storage.NodeInventory
 	reportWraps  <-chan *index.IndexReportWrap
 	toCentral    <-chan *message.ExpiringMessage
@@ -65,7 +64,7 @@ func (c *nodeInventoryHandlerImpl) Start() error {
 	if c.toCentral != nil || c.toCompliance != nil {
 		return errStartMoreThanOnce
 	}
-	c.toCompliance = make(chan common.MessageToComplianceWithAddress, c.bufferSize)
+	c.toCompliance = make(chan common.MessageToComplianceWithAddress)
 	c.toCentral = c.run()
 	return nil
 }
