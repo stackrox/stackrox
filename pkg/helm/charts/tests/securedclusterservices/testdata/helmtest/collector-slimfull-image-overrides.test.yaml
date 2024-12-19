@@ -1,4 +1,4 @@
-name: "test explicit image reference specified for slim or full mode (Operator use only)"
+name: "test explicit image reference specified (Operator use only)"
 defs: |
   def collector:
     container(.daemonsets.collector; "collector");
@@ -10,41 +10,10 @@ values:
   imagePullSecrets:
     allowNone: true
 tests:
-- name: "slim mode"
-  set:
-    collector.slimMode: true
+- name: "collector image"
   tests:
-  - name: "default image is used if full ref is specified for full image only"
-    set:
-      image.collector.full.fullRef: "registry.redhat.io/rh-acs/collector:1.2.3-latest"
-    expect: |
-      collector | .image | assertThat(startswith("docker.io/stackrox/collector:") and endswith("-slim"))
   - name: "override image is used if full ref is specified"
     set:
-      image.collector.slim.fullRef: "registry.redhat.io/rh-acs/collector:1.2.3-slim"
-    expect: |
-      collector | .image | assertThat(. == "registry.redhat.io/rh-acs/collector:1.2.3-slim")
-    tests:
-    - name: "for slim image only"
-    - name: "for both images"
-      set:
-        image.collector.full.fullRef: "registry.redhat.io/rh-acs/collector:1.2.3-latest"
-- name: "full mode"
-  set:
-    collector.slimMode: false
-  tests:
-  - name: "default image is used if full ref is specified for slim image only"
-    set:
-      image.collector.slim.fullRef: "registry.redhat.io/rh-acs/collector:1.2.3-slim"
-    expect: |
-      collector | .image | assertThat(startswith("docker.io/stackrox/collector:") and endswith("-latest"))
-  - name: "override image is used if full ref is specified"
-    set:
-      image.collector.full.fullRef: "registry.redhat.io/rh-acs/collector:1.2.3-latest"
+      image.collector.fullRef: "registry.redhat.io/rh-acs/collector:1.2.3-latest"
     expect: |
       collector | .image | assertThat(. == "registry.redhat.io/rh-acs/collector:1.2.3-latest")
-    tests:
-    - name: "for full image only"
-    - name: "for both images"
-      set:
-        image.collector.slim.fullRef: "registry.redhat.io/rh-acs/collector:1.2.3-slim"
