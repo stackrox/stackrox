@@ -14,6 +14,7 @@ import { useQuery } from '@apollo/client';
 import { Link } from 'react-router-dom';
 import pluralize from 'pluralize';
 
+import { vulnerabilitiesWorkloadCvesPath } from 'routePaths';
 import { SetResult } from 'hooks/useSet';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
@@ -186,12 +187,13 @@ function RequestCVEsTable({
                                         IMAGE: queryObject.Image,
                                     },
                                 };
-                                const cveURL = getWorkloadEntityPagePath(
+
+                                const cveURL = `${vulnerabilitiesWorkloadCvesPath}/${getWorkloadEntityPagePath(
                                     'CVE',
                                     cve,
                                     vulnerabilityState,
                                     cveURLQueryOptions
-                                );
+                                )}`;
 
                                 return (
                                     <Tbody key={cve} isExpanded={isExpanded}>

@@ -46,6 +46,7 @@ import CVESelectionTd from '../../components/CVESelectionTd';
 import ExceptionDetailsCell from '../components/ExceptionDetailsCell';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
+import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 
 export const tableId = 'WorkloadCvesImageVulnerabilitiesTable';
 export const defaultColumns = {
@@ -141,6 +142,7 @@ function ImageVulnerabilitiesTable({
     onClearFilters,
     tableConfig,
 }: ImageVulnerabilitiesTableProps) {
+    const { createUrl } = useWorkloadCveViewContext();
     const getVisibilityClass = generateVisibilityForColumns(tableConfig);
     const hiddenColumnCount = getHiddenColumnCount(tableConfig);
     const expandedRowSet = useSet<string>();
@@ -251,10 +253,12 @@ function ImageVulnerabilitiesTable({
                                             vulnerabilityState={vulnerabilityState}
                                         >
                                             <Link
-                                                to={getWorkloadEntityPagePath(
-                                                    'CVE',
-                                                    cve,
-                                                    vulnerabilityState
+                                                to={createUrl(
+                                                    getWorkloadEntityPagePath(
+                                                        'CVE',
+                                                        cve,
+                                                        vulnerabilityState
+                                                    )
                                                 )}
                                             >
                                                 {cve}

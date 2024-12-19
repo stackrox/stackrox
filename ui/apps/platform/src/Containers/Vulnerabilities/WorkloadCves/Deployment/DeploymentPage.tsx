@@ -31,11 +31,6 @@ import DeploymentPageVulnerabilities from './DeploymentPageVulnerabilities';
 import DeploymentPageDetails from './DeploymentPageDetails';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 
-const workloadCveOverviewDeploymentsPath = getOverviewPagePath('Workload', {
-    vulnerabilityState: 'OBSERVED',
-    entityTab: 'Deployment',
-});
-
 const deploymentMetadataQuery = gql`
     ${deploymentMetadataFragment}
     query getDeploymentMetadata($id: ID!) {
@@ -47,8 +42,15 @@ const deploymentMetadataQuery = gql`
 
 function DeploymentPage() {
     const { deploymentId } = useParams() as { deploymentId: string };
-    const { pageTitle } = useWorkloadCveViewContext();
+    const { createUrl, pageTitle } = useWorkloadCveViewContext();
     const [activeTabKey, setActiveTabKey] = useURLStringUnion('detailsTab', detailsTabValues);
+
+    const workloadCveOverviewDeploymentsPath = createUrl(
+        getOverviewPagePath('Workload', {
+            vulnerabilityState: 'OBSERVED',
+            entityTab: 'Deployment',
+        })
+    );
 
     const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
 

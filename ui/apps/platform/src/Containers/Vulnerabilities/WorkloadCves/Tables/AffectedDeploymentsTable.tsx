@@ -26,6 +26,7 @@ import DeploymentComponentVulnerabilitiesTable, {
 } from './DeploymentComponentVulnerabilitiesTable';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import { VulnerabilitySeverityLabel } from '../../types';
+import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 
 export const tableId = 'WorkloadCvesAffectedDeploymentsTable';
 export const defaultColumns = {
@@ -107,6 +108,7 @@ function AffectedDeploymentsTable({
     onClearFilters,
     tableConfig,
 }: AffectedDeploymentsTableProps) {
+    const { createUrl } = useWorkloadCveViewContext();
     const getVisibilityClass = generateVisibilityForColumns(tableConfig);
     const hiddenColumnCount = getHiddenColumnCount(tableConfig);
     const expandedRowSet = useSet<string>();
@@ -180,10 +182,12 @@ function AffectedDeploymentsTable({
                                             spaceItems={{ default: 'spaceItemsNone' }}
                                         >
                                             <Link
-                                                to={getWorkloadEntityPagePath(
-                                                    'Deployment',
-                                                    id,
-                                                    vulnerabilityState
+                                                to={createUrl(
+                                                    getWorkloadEntityPagePath(
+                                                        'Deployment',
+                                                        id,
+                                                        vulnerabilityState
+                                                    )
                                                 )}
                                             >
                                                 <Truncate position="middle" content={name} />
