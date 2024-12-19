@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -22,19 +21,19 @@ import (
 )
 
 const (
-	baseTable = "active_components"
-	storeName = "ActiveComponent"
+	baseTable = "image_component_v2"
+	storeName = "ImageComponentV2"
 )
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ActiveComponentsSchema
-	targetResource = resources.Deployment
+	schema         = pkgSchema.ImageComponentV2Schema
+	targetResource = resources.Image
 )
 
-type storeType = storage.ActiveComponent
+type storeType = storage.ImageComponentV2
 
-// Store is the interface to interact with the storage for storage.ActiveComponent
+// Store is the interface to interact with the storage for storage.ImageComponentV2
 type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
@@ -62,8 +61,8 @@ func New(db postgres.DB) Store {
 		db,
 		schema,
 		pkGetter,
-		insertIntoActiveComponents,
-		copyFromActiveComponents,
+		insertIntoImageComponentV2,
+		copyFromImageComponentV2,
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
 		pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
@@ -85,7 +84,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoActiveComponents(batch *pgx.Batch, obj *storage.ActiveComponent) error {
+func insertIntoImageComponentV2(batch *pgx.Batch, obj *storage.ImageComponentV2) error {
 
 	serialized, marshalErr := obj.MarshalVT()
 	if marshalErr != nil {
@@ -95,45 +94,25 @@ func insertIntoActiveComponents(batch *pgx.Batch, obj *storage.ActiveComponent) 
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetId(),
-		pgutils.NilOrUUID(obj.GetDeploymentId()),
-		obj.GetComponentId(),
-		obj.GetComponentIdV2(),
+		obj.GetName(),
+		obj.GetVersion(),
+		obj.GetPriority(),
+		obj.GetSource(),
+		obj.GetRiskScore(),
+		obj.GetTopCvss(),
+		obj.GetOperatingSystem(),
+		obj.GetImageId(),
+		obj.GetLocation(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO active_components (Id, DeploymentId, ComponentId, ComponentIdV2, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, DeploymentId = EXCLUDED.DeploymentId, ComponentId = EXCLUDED.ComponentId, ComponentIdV2 = EXCLUDED.ComponentIdV2, serialized = EXCLUDED.serialized"
-	batch.Queue(finalStr, values...)
-
-	var query string
-
-	for childIndex, child := range obj.GetActiveContextsSlice() {
-		if err := insertIntoActiveComponentsActiveContextsSlices(batch, child, obj.GetId(), childIndex); err != nil {
-			return err
-		}
-	}
-
-	query = "delete from active_components_active_contexts_slices where active_components_Id = $1 AND idx >= $2"
-	batch.Queue(query, obj.GetId(), len(obj.GetActiveContextsSlice()))
-	return nil
-}
-
-func insertIntoActiveComponentsActiveContextsSlices(batch *pgx.Batch, obj *storage.ActiveComponent_ActiveContext, activeComponentID string, idx int) error {
-
-	values := []interface{}{
-		// parent primary keys start
-		activeComponentID,
-		idx,
-		obj.GetContainerName(),
-		obj.GetImageId(),
-	}
-
-	finalStr := "INSERT INTO active_components_active_contexts_slices (active_components_Id, idx, ContainerName, ImageId) VALUES($1, $2, $3, $4) ON CONFLICT(active_components_Id, idx) DO UPDATE SET active_components_Id = EXCLUDED.active_components_Id, idx = EXCLUDED.idx, ContainerName = EXCLUDED.ContainerName, ImageId = EXCLUDED.ImageId"
+	finalStr := "INSERT INTO image_component_v2 (Id, Name, Version, Priority, Source, RiskScore, TopCvss, OperatingSystem, ImageId, Location, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Version = EXCLUDED.Version, Priority = EXCLUDED.Priority, Source = EXCLUDED.Source, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, OperatingSystem = EXCLUDED.OperatingSystem, ImageId = EXCLUDED.ImageId, Location = EXCLUDED.Location, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
 }
 
-func copyFromActiveComponents(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ActiveComponent) error {
+func copyFromImageComponentV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ImageComponentV2) error {
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)
@@ -146,9 +125,15 @@ func copyFromActiveComponents(ctx context.Context, s pgSearch.Deleter, tx *postg
 
 	copyCols := []string{
 		"id",
-		"deploymentid",
-		"componentid",
-		"componentidv2",
+		"name",
+		"version",
+		"priority",
+		"source",
+		"riskscore",
+		"topcvss",
+		"operatingsystem",
+		"imageid",
+		"location",
 		"serialized",
 	}
 
@@ -165,9 +150,15 @@ func copyFromActiveComponents(ctx context.Context, s pgSearch.Deleter, tx *postg
 
 		inputRows = append(inputRows, []interface{}{
 			obj.GetId(),
-			pgutils.NilOrUUID(obj.GetDeploymentId()),
-			obj.GetComponentId(),
-			obj.GetComponentIdV2(),
+			obj.GetName(),
+			obj.GetVersion(),
+			obj.GetPriority(),
+			obj.GetSource(),
+			obj.GetRiskScore(),
+			obj.GetTopCvss(),
+			obj.GetOperatingSystem(),
+			obj.GetImageId(),
+			obj.GetLocation(),
 			serialized,
 		})
 
@@ -185,58 +176,7 @@ func copyFromActiveComponents(ctx context.Context, s pgSearch.Deleter, tx *postg
 			// clear the inserts and vals for the next batch
 			deletes = deletes[:0]
 
-			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"active_components"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
-				return err
-			}
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	for idx, obj := range objs {
-		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
-
-		if err := copyFromActiveComponentsActiveContextsSlices(ctx, s, tx, obj.GetId(), obj.GetActiveContextsSlice()...); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func copyFromActiveComponentsActiveContextsSlices(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, activeComponentID string, objs ...*storage.ActiveComponent_ActiveContext) error {
-	batchSize := pgSearch.MaxBatchSize
-	if len(objs) < batchSize {
-		batchSize = len(objs)
-	}
-	inputRows := make([][]interface{}, 0, batchSize)
-
-	copyCols := []string{
-		"active_components_id",
-		"idx",
-		"containername",
-		"imageid",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-			"to simply use the object.  %s", obj)
-
-		inputRows = append(inputRows, []interface{}{
-			activeComponentID,
-			idx,
-			obj.GetContainerName(),
-			obj.GetImageId(),
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"active_components_active_contexts_slices"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"image_component_v2"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
 				return err
 			}
 			// clear the input rows for the next batch
@@ -259,17 +199,11 @@ func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB
 
 // Destroy drops the tables associated with the target object type.
 func Destroy(ctx context.Context, db postgres.DB) {
-	dropTableActiveComponents(ctx, db)
+	dropTableImageComponentV2(ctx, db)
 }
 
-func dropTableActiveComponents(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS active_components CASCADE")
-	dropTableActiveComponentsActiveContextsSlices(ctx, db)
-
-}
-
-func dropTableActiveComponentsActiveContextsSlices(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS active_components_active_contexts_slices CASCADE")
+func dropTableImageComponentV2(ctx context.Context, db postgres.DB) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS image_component_v2 CASCADE")
 
 }
 

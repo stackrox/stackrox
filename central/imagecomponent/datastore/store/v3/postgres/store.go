@@ -13,8 +13,8 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
@@ -22,19 +22,19 @@ import (
 )
 
 const (
-	baseTable = "active_components"
-	storeName = "ActiveComponent"
+	baseTable = "image_component_v3"
+	storeName = "ImageComponentV3"
 )
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ActiveComponentsSchema
-	targetResource = resources.Deployment
+	schema         = pkgSchema.ImageComponentV3Schema
+	targetResource = resources.Image
 )
 
-type storeType = storage.ActiveComponent
+type storeType = storage.ImageComponentV3
 
-// Store is the interface to interact with the storage for storage.ActiveComponent
+// Store is the interface to interact with the storage for storage.ImageComponentV3
 type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
@@ -62,8 +62,8 @@ func New(db postgres.DB) Store {
 		db,
 		schema,
 		pkGetter,
-		insertIntoActiveComponents,
-		copyFromActiveComponents,
+		insertIntoImageComponentV3,
+		copyFromImageComponentV3,
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
 		pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
@@ -85,7 +85,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoActiveComponents(batch *pgx.Batch, obj *storage.ActiveComponent) error {
+func insertIntoImageComponentV3(batch *pgx.Batch, obj *storage.ImageComponentV3) error {
 
 	serialized, marshalErr := obj.MarshalVT()
 	if marshalErr != nil {
@@ -95,45 +95,63 @@ func insertIntoActiveComponents(batch *pgx.Batch, obj *storage.ActiveComponent) 
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetId(),
-		pgutils.NilOrUUID(obj.GetDeploymentId()),
-		obj.GetComponentId(),
-		obj.GetComponentIdV2(),
+		obj.GetName(),
+		obj.GetVersion(),
+		obj.GetPriority(),
+		obj.GetSource(),
+		obj.GetRiskScore(),
+		obj.GetTopCvss(),
+		obj.GetOperatingSystem(),
+		obj.GetImageId(),
+		obj.GetLocation(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO active_components (Id, DeploymentId, ComponentId, ComponentIdV2, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, DeploymentId = EXCLUDED.DeploymentId, ComponentId = EXCLUDED.ComponentId, ComponentIdV2 = EXCLUDED.ComponentIdV2, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO image_component_v3 (Id, Name, Version, Priority, Source, RiskScore, TopCvss, OperatingSystem, ImageId, Location, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Version = EXCLUDED.Version, Priority = EXCLUDED.Priority, Source = EXCLUDED.Source, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, OperatingSystem = EXCLUDED.OperatingSystem, ImageId = EXCLUDED.ImageId, Location = EXCLUDED.Location, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	var query string
 
-	for childIndex, child := range obj.GetActiveContextsSlice() {
-		if err := insertIntoActiveComponentsActiveContextsSlices(batch, child, obj.GetId(), childIndex); err != nil {
+	for childIndex, child := range obj.GetCves() {
+		if err := insertIntoImageComponentV3Cves(batch, child, obj.GetId(), childIndex); err != nil {
 			return err
 		}
 	}
 
-	query = "delete from active_components_active_contexts_slices where active_components_Id = $1 AND idx >= $2"
-	batch.Queue(query, obj.GetId(), len(obj.GetActiveContextsSlice()))
+	query = "delete from image_component_v3_cves where image_component_v3_Id = $1 AND idx >= $2"
+	batch.Queue(query, obj.GetId(), len(obj.GetCves()))
 	return nil
 }
 
-func insertIntoActiveComponentsActiveContextsSlices(batch *pgx.Batch, obj *storage.ActiveComponent_ActiveContext, activeComponentID string, idx int) error {
+func insertIntoImageComponentV3Cves(batch *pgx.Batch, obj *storage.ImageCVEV3, imageComponentV3ID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		activeComponentID,
+		imageComponentV3ID,
 		idx,
-		obj.GetContainerName(),
+		obj.GetId(),
 		obj.GetImageId(),
+		obj.GetCveBaseInfo().GetCve(),
+		protocompat.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
+		protocompat.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
+		obj.GetOperatingSystem(),
+		obj.GetCvss(),
+		obj.GetSeverity(),
+		obj.GetImpactScore(),
+		obj.GetNvdcvss(),
+		protocompat.NilOrTime(obj.GetFirstImageOccurrence()),
+		obj.GetState(),
+		obj.GetIsFixable(),
+		obj.GetFixedBy(),
 	}
 
-	finalStr := "INSERT INTO active_components_active_contexts_slices (active_components_Id, idx, ContainerName, ImageId) VALUES($1, $2, $3, $4) ON CONFLICT(active_components_Id, idx) DO UPDATE SET active_components_Id = EXCLUDED.active_components_Id, idx = EXCLUDED.idx, ContainerName = EXCLUDED.ContainerName, ImageId = EXCLUDED.ImageId"
+	finalStr := "INSERT INTO image_component_v3_cves (image_component_v3_Id, idx, Id, ImageId, CveBaseInfo_Cve, CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt, OperatingSystem, Cvss, Severity, ImpactScore, Nvdcvss, FirstImageOccurrence, State, IsFixable, FixedBy) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) ON CONFLICT(image_component_v3_Id, idx) DO UPDATE SET image_component_v3_Id = EXCLUDED.image_component_v3_Id, idx = EXCLUDED.idx, Id = EXCLUDED.Id, ImageId = EXCLUDED.ImageId, CveBaseInfo_Cve = EXCLUDED.CveBaseInfo_Cve, CveBaseInfo_PublishedOn = EXCLUDED.CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt = EXCLUDED.CveBaseInfo_CreatedAt, OperatingSystem = EXCLUDED.OperatingSystem, Cvss = EXCLUDED.Cvss, Severity = EXCLUDED.Severity, ImpactScore = EXCLUDED.ImpactScore, Nvdcvss = EXCLUDED.Nvdcvss, FirstImageOccurrence = EXCLUDED.FirstImageOccurrence, State = EXCLUDED.State, IsFixable = EXCLUDED.IsFixable, FixedBy = EXCLUDED.FixedBy"
 	batch.Queue(finalStr, values...)
 
 	return nil
 }
 
-func copyFromActiveComponents(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ActiveComponent) error {
+func copyFromImageComponentV3(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ImageComponentV3) error {
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)
@@ -146,9 +164,15 @@ func copyFromActiveComponents(ctx context.Context, s pgSearch.Deleter, tx *postg
 
 	copyCols := []string{
 		"id",
-		"deploymentid",
-		"componentid",
-		"componentidv2",
+		"name",
+		"version",
+		"priority",
+		"source",
+		"riskscore",
+		"topcvss",
+		"operatingsystem",
+		"imageid",
+		"location",
 		"serialized",
 	}
 
@@ -165,9 +189,15 @@ func copyFromActiveComponents(ctx context.Context, s pgSearch.Deleter, tx *postg
 
 		inputRows = append(inputRows, []interface{}{
 			obj.GetId(),
-			pgutils.NilOrUUID(obj.GetDeploymentId()),
-			obj.GetComponentId(),
-			obj.GetComponentIdV2(),
+			obj.GetName(),
+			obj.GetVersion(),
+			obj.GetPriority(),
+			obj.GetSource(),
+			obj.GetRiskScore(),
+			obj.GetTopCvss(),
+			obj.GetOperatingSystem(),
+			obj.GetImageId(),
+			obj.GetLocation(),
 			serialized,
 		})
 
@@ -185,7 +215,7 @@ func copyFromActiveComponents(ctx context.Context, s pgSearch.Deleter, tx *postg
 			// clear the inserts and vals for the next batch
 			deletes = deletes[:0]
 
-			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"active_components"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"image_component_v3"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
 				return err
 			}
 			// clear the input rows for the next batch
@@ -196,7 +226,7 @@ func copyFromActiveComponents(ctx context.Context, s pgSearch.Deleter, tx *postg
 	for idx, obj := range objs {
 		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
 
-		if err := copyFromActiveComponentsActiveContextsSlices(ctx, s, tx, obj.GetId(), obj.GetActiveContextsSlice()...); err != nil {
+		if err := copyFromImageComponentV3Cves(ctx, s, tx, obj.GetId(), obj.GetCves()...); err != nil {
 			return err
 		}
 	}
@@ -204,7 +234,7 @@ func copyFromActiveComponents(ctx context.Context, s pgSearch.Deleter, tx *postg
 	return nil
 }
 
-func copyFromActiveComponentsActiveContextsSlices(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, activeComponentID string, objs ...*storage.ActiveComponent_ActiveContext) error {
+func copyFromImageComponentV3Cves(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, imageComponentV3ID string, objs ...*storage.ImageCVEV3) error {
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)
@@ -212,10 +242,22 @@ func copyFromActiveComponentsActiveContextsSlices(ctx context.Context, s pgSearc
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{
-		"active_components_id",
+		"image_component_v3_id",
 		"idx",
-		"containername",
+		"id",
 		"imageid",
+		"cvebaseinfo_cve",
+		"cvebaseinfo_publishedon",
+		"cvebaseinfo_createdat",
+		"operatingsystem",
+		"cvss",
+		"severity",
+		"impactscore",
+		"nvdcvss",
+		"firstimageoccurrence",
+		"state",
+		"isfixable",
+		"fixedby",
 	}
 
 	for idx, obj := range objs {
@@ -225,10 +267,22 @@ func copyFromActiveComponentsActiveContextsSlices(ctx context.Context, s pgSearc
 			"to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
-			activeComponentID,
+			imageComponentV3ID,
 			idx,
-			obj.GetContainerName(),
+			obj.GetId(),
 			obj.GetImageId(),
+			obj.GetCveBaseInfo().GetCve(),
+			protocompat.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
+			protocompat.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
+			obj.GetOperatingSystem(),
+			obj.GetCvss(),
+			obj.GetSeverity(),
+			obj.GetImpactScore(),
+			obj.GetNvdcvss(),
+			protocompat.NilOrTime(obj.GetFirstImageOccurrence()),
+			obj.GetState(),
+			obj.GetIsFixable(),
+			obj.GetFixedBy(),
 		})
 
 		// if we hit our batch size we need to push the data
@@ -236,7 +290,7 @@ func copyFromActiveComponentsActiveContextsSlices(ctx context.Context, s pgSearc
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"active_components_active_contexts_slices"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"image_component_v3_cves"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
 				return err
 			}
 			// clear the input rows for the next batch
@@ -259,17 +313,17 @@ func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB
 
 // Destroy drops the tables associated with the target object type.
 func Destroy(ctx context.Context, db postgres.DB) {
-	dropTableActiveComponents(ctx, db)
+	dropTableImageComponentV3(ctx, db)
 }
 
-func dropTableActiveComponents(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS active_components CASCADE")
-	dropTableActiveComponentsActiveContextsSlices(ctx, db)
+func dropTableImageComponentV3(ctx context.Context, db postgres.DB) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS image_component_v3 CASCADE")
+	dropTableImageComponentV3Cves(ctx, db)
 
 }
 
-func dropTableActiveComponentsActiveContextsSlices(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS active_components_active_contexts_slices CASCADE")
+func dropTableImageComponentV3Cves(ctx context.Context, db postgres.DB) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS image_component_v3_cves CASCADE")
 
 }
 
