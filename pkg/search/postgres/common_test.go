@@ -218,7 +218,7 @@ func TestMultiTableQueries(t *testing.T) {
 				assert.Equal(t, c.expectedWhere, actual.Where)
 				assert.ElementsMatch(t, c.expectedData, actual.Data)
 				var actualJoins []string
-				for _, join := range actual.InnerJoins {
+				for _, join := range actual.Joins {
 					actualJoins = append(actualJoins, join.rightTable)
 				}
 				assert.ElementsMatch(t, c.expectedJoinTables, actualJoins)
