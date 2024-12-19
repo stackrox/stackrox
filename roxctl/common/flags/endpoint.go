@@ -157,15 +157,8 @@ func UseInsecure() bool {
 
 // SkipTLSValidation returns a bool that indicates the value of the `--insecure-skip-tls-verify` flag, with `nil`
 // indicating that it was left at its default value.
-func SkipTLSValidation() *bool {
-	if !*insecureSkipTLSVerifySet {
-		if env.InsecureClientSkipTLSVerifyEnv.BooleanSetting() == env.InsecureClientSkipTLSVerifyEnv.DefaultBooleanSetting() {
-			return nil
-		}
-		envSetting := env.InsecureClientSkipTLSVerifyEnv.BooleanSetting()
-		return &envSetting
-	}
-	return &insecureSkipTLSVerify
+func SkipTLSValidation() bool {
+	return booleanFlagOrSettingValue(insecureSkipTLSVerify, *insecureSkipTLSVerifySet, env.InsecureClientSkipTLSVerifyEnv)
 }
 
 // CAFile returns the file for custom CA certificates.
