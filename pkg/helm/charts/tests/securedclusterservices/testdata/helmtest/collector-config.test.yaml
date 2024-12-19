@@ -24,7 +24,7 @@ tests:
         networking:
           externalIps:
             enabled: true
-          perContainerRateLimit: 512
+          maxConnectionsPerMinute: 512
   expect: |
     .configmaps["collector-config"].data.["runtime_config.yaml"] | fromyaml | .networking.externalIps.enable | assertThat(. == true)
     .configmaps["collector-config"].data.["runtime_config.yaml"] | fromyaml | .networking.perContainerRateLimit | assertThat(. == 512)
@@ -36,7 +36,7 @@ tests:
         networking:
           externalIps:
             enabled: false
-          perContainerRateLimit: 200
+          maxConnectionsPerMinute: 200
   expect: |
     .configmaps["collector-config"].data.["runtime_config.yaml"] | fromyaml | .networking.externalIps.enable | assertThat(. == false)
     .configmaps["collector-config"].data.["runtime_config.yaml"] | fromyaml | .networking.perContainerRateLimit | assertThat(. == 200)

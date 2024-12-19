@@ -117,7 +117,7 @@ collector:
     networking:
       externalIps:
         enabled: false
-      perContainerRateLimit: 1024
+      maxConnectionsPerMinute: 1024
   [<- end >]
 
 auditLogs:

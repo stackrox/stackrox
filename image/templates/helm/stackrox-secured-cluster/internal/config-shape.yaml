@@ -142,7 +142,7 @@ collector:
     networking:
       externalIps:
         enabled: null # bool
-      perContainerRateLimit: null # int
+      maxConnectionsPerMinute: null # int
 auditLogs:
   disableCollection: null # bool
 customize:

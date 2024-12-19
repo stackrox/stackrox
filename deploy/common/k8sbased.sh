@@ -639,8 +639,8 @@ function launch_sensor {
             extra_helm_config+=(--set "collector.runtimeConfig.networking.externalIps.enabled=${ROX_COLLECTOR_EXTERNAL_IPS_ENABLE}")
         fi
 
-        if [[ -n "${ROX_COLLECTOR_NETWORKING_PER_CONTAINER_RATE_LIMIT:-}" ]]; then
-            extra_helm_config+=(--set "collector.runtimeConfig.networking.perContainerRateLimit=${ROX_COLLECTOR_NETWORKING_PER_CONTAINER_RATE_LIMIT}")
+        if [[ -n "${ROX_COLLECTOR_MAX_CONNECTIONS_PER_MINUTE:-}" ]]; then
+            extra_helm_config+=(--set "collector.runtimeConfig.networking.maxConnectionsPerMinute=${ROX_COLLECTOR_MAX_CONNECTIONS_PER_MINUTE}")
         fi
     else
         if [[ "${ROX_COLLECTOR_EXTERNAL_IPS_ENABLE:-false}" == "true" ]]; then
@@ -648,8 +648,8 @@ function launch_sensor {
 	    exit 1
         fi
 
-        if [[ -n "${ROX_COLLECTOR_NETWORKING_PER_CONTAINER_RATE_LIMIT:-}" ]]; then
-	    echo "If ROX_COLLECTOR_NETWORKING_PER_CONTAINER_RATE_LIMIT is set ROX_COLLECTOR_RUNTIME_CONFIG must be true"
+        if [[ -n "${ROX_COLLECTOR_MAX_CONNECTIONS_PER_MINUTE:-}" ]]; then
+	    echo "If ROX_COLLECTOR_MAX_CONNECTIONS_PER_MINUTE is set ROX_COLLECTOR_RUNTIME_CONFIG must be true"
 	    exit 1
         fi
     fi
