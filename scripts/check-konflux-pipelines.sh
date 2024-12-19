@@ -2,13 +2,11 @@
 
 # This script is to ensure that modifications to our Konflux pipelines follow our expectations and conventions.
 
-set -exuo pipefail
+set -euo pipefail
 
 ensure_create_snapshot_runs_last() {
-    pwd
-    ls -lisa
-    expected_runafter="$(yq '.spec.tasks[] | select(.name != "create-acs-style-snapshot") | .name' .tekton/operator-bundle-pipeline.yaml | sort)"
-    actual_runafter="$(yq '.spec.tasks[] | select(.name == "create-acs-style-snapshot") | .runAfter[]' .tekton/operator-bundle-pipeline.yaml)"
+    expected_runafter="$(yq eval '.spec.tasks[] | select(.name != "create-acs-style-snapshot") | .name' .tekton/operator-bundle-pipeline.yaml | sort)"
+    actual_runafter="$(yq eval '.spec.tasks[] | select(.name == "create-acs-style-snapshot") | .runAfter[]' .tekton/operator-bundle-pipeline.yaml)"
 
     if [ "${expected_runafter}" != "${actual_runafter}" ]; then
         echo >&2 -e """
