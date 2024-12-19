@@ -36,10 +36,10 @@ spec:
 
       infos="$(skopeo inspect \
         --retry-times 10 \
-        --format '{{.Digest}}\n{{ index .Labels "vcs-ref" }}\n{{ index .Labels "source-location" }}' \
+        --format '{{.Digest}} {{ index .Labels "vcs-ref" }} {{ index .Labels "source-location" }}' \
         --no-tags \
         "docker://$(params.IMAGE)")"
 
-      cut -f1 -d'\n' <<< "${infos}" | tee "$(results.IMAGE_DIGEST.path)"
-      cut -f2 -d'\n' <<< "${infos}" | tee "$(results.GIT_REF.path)"
-      cut -f3 -d'\n' <<< "${infos}" | tee "$(results.GIT_REPO.path)"
+      cut -f1 -d' ' <<< "${infos}" | tee "$(results.IMAGE_DIGEST.path)"
+      cut -f2 -d' ' <<< "${infos}" | tee "$(results.GIT_REF.path)"
+      cut -f3 -d' ' <<< "${infos}" | tee "$(results.GIT_REPO.path)"
