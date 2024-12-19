@@ -39,6 +39,7 @@ func (resolver *Resolver) wrapPlottedNodeVulnerabilitiesWithContext(ctx context.
 
 // PlottedNodeVulnerabilities - returns node vulns
 func (resolver *Resolver) PlottedNodeVulnerabilities(ctx context.Context, args RawQuery) (*PlottedNodeVulnerabilitiesResolver, error) {
+	log.Info("GraphQL PlottedNodeVulnerabilities resolver")
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
