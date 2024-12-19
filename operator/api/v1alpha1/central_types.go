@@ -322,6 +322,11 @@ type DBConfigOverride struct {
 	// Min Wal Size.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Min Wal Size"
 	MinWalSize *string `json:"minWalSize,omitempty"`
+
+	// Autovacuum Max Workers.
+	//+kubebuilder:default=5
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Autovacuum Max Workers"
+	AutovacuumMaxWorkers *int32 `json:"autovacuumMaxWorkers,omitempty"`
 }
 
 // CentralDBEnabledPtr return a pointer for the given CentralDBEnabled value

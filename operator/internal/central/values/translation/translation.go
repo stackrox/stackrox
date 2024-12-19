@@ -238,6 +238,7 @@ func getCentralDBComponentValues(c *platform.CentralDBSpec) *translation.ValuesB
 		bcv.SetString("effectiveCacheSize", c.AdvancedConfigOverride.EffectiveCacheSize)
 		bcv.SetString("maxWalSize", c.AdvancedConfigOverride.MaxWalSize)
 		bcv.SetString("minWalSize", c.AdvancedConfigOverride.MinWalSize)
+		bcv.SetInt32("autovacuumMaxWorkers", c.AdvancedConfigOverride.AutovacuumMaxWorkers)
 	}
 
 	cv.AddChild("settings", &bcv)

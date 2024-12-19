@@ -89,6 +89,7 @@ defaults:
         effectiveCacheSize: 4GB
         maxWalSize: 5GB
         minWalSize: 80MB
+        autovacuumMaxWorkers: 5
 
       hbaConfig: "@config/centraldb/pg_hba.conf|config/centraldb/pg_hba.conf.default"
 

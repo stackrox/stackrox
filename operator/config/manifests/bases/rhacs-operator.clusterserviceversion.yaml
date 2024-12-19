@@ -687,6 +687,9 @@ spec:
         path: central.adminPasswordSecret.name
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
+      - description: Autovacuum Max Workers.
+        displayName: Autovacuum Max Workers
+        path: central.db.advancedConfigOverride.autovacuumMaxWorkers
       - description: Effective Cache size.
         displayName: Effective Cache Size
         path: central.db.advancedConfigOverride.effectiveCacheSize

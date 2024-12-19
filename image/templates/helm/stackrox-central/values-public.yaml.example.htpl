@@ -280,6 +280,20 @@
 #       maxConns: 90
 #       statementTimeoutMs: 1200000
 #
+#     # Customized Central DB database settings.  These should be evaluated if the memory resources of Central DB
+#     # are updated as suggested in the resources section.
+#     # Default configurations are applied if the configurations are omitted
+#     settings:
+#       maxConnections: 90
+#       sharedBuffers: 2GB
+#       workMem: 40MB
+#       hashMemMultiplier: 2.0
+#       maintenanceWorkMem: 512MB
+#       effectiveCacheSize: 4GB
+#       maxWalSize: 5GB
+#       minWalSize: 80MB
+#       autovacuumMaxWorkers: 5
+#
 #     # Configures the Central DB image to be used. Most users will only need to configure a
 #     # custom registry (if any) at the global scope, and do not require any settings here.
 #     image:
@@ -293,6 +307,11 @@
 #       tag: custom-version
 #
 #     # Custom resource overrides for the Central DB deployment.
+#     # When updating memory resources it is recommended to make the following ukpdates to settings:
+#     #   `sharedBuffers` = 25% of the allocated memory resources
+#     #   `workMem` = Total RAM * 0.25 / max_connections
+#     #   `maintenanceWorkMem` = Total RAM * 0.05
+#     #   `effectiveCacheSize` = 50% of the allocated memory resources
 #     resources:
 #       requests:
 #         memory: "8Gi"

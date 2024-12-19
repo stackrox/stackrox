@@ -282,6 +282,9 @@ spec:
         path: central.db.isEnabled
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Autovacuum Max Workers.
+        displayName: Autovacuum Max Workers
+        path: central.db.advancedConfigOverride.autovacuumMaxWorkers
       - description: Effective Cache size.
         displayName: Effective Cache Size
         path: central.db.advancedConfigOverride.effectiveCacheSize

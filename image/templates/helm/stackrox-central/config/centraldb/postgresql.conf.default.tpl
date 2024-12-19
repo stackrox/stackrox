@@ -56,3 +56,5 @@ log_temp_files = 1024
 # Autovacuum has to keep up with the data growth. Log any autovacuum activity,
 # that took longer than 500ms.
 log_autovacuum_min_duration = 500
+autovacuum_max_workers = {{ ._rox.central.db.settings.autovacuumMaxWorkers }}
+

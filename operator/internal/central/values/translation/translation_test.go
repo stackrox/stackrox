@@ -70,6 +70,7 @@ func TestTranslate(t *testing.T) {
 	}
 
 	dbMaxConnections := int32(22)
+	autoMaxWorkers := int32(5)
 	dbSharedBuffers := "1GB"
 	dbWorkMem := "1GB"
 	dbHashMemMultiplier := "3.0"
@@ -262,14 +263,15 @@ func TestTranslate(t *testing.T) {
 							},
 							DB: &platform.CentralDBSpec{
 								AdvancedConfigOverride: &platform.DBConfigOverride{
-									MaxConnections:     &dbMaxConnections,
-									SharedBuffers:      &dbSharedBuffers,
-									WorkMem:            &dbWorkMem,
-									HashMemMultiplier:  &dbHashMemMultiplier,
-									MaintenanceWorkMem: &dbMaintenanceWorkMem,
-									EffectiveCacheSize: &dbEffectiveCacheSize,
-									MaxWalSize:         &dbMaxWalSize,
-									MinWalSize:         &dbMinWalSize,
+									MaxConnections:       &dbMaxConnections,
+									SharedBuffers:        &dbSharedBuffers,
+									WorkMem:              &dbWorkMem,
+									HashMemMultiplier:    &dbHashMemMultiplier,
+									MaintenanceWorkMem:   &dbMaintenanceWorkMem,
+									EffectiveCacheSize:   &dbEffectiveCacheSize,
+									MaxWalSize:           &dbMaxWalSize,
+									MinWalSize:           &dbMinWalSize,
+									AutovacuumMaxWorkers: &autoMaxWorkers,
 								},
 							},
 						},
@@ -503,14 +505,15 @@ func TestTranslate(t *testing.T) {
 							},
 						},
 						"settings": map[string]interface{}{
-							"effectiveCacheSize": "1MB",
-							"hashMemMultiplier":  "3.0",
-							"maintenanceWorkMem": "2KB",
-							"maxConnections":     22,
-							"maxWalSize":         "4KB",
-							"minWalSize":         "400KB",
-							"sharedBuffers":      "1GB",
-							"workMem":            "1GB",
+							"autovacuumMaxWorkers": 5,
+							"effectiveCacheSize":   "1MB",
+							"hashMemMultiplier":    "3.0",
+							"maintenanceWorkMem":   "2KB",
+							"maxConnections":       22,
+							"maxWalSize":           "4KB",
+							"minWalSize":           "400KB",
+							"sharedBuffers":        "1GB",
+							"workMem":              "1GB",
 						},
 					},
 					"resources": map[string]interface{}{
