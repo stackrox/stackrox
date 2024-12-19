@@ -1,7 +1,6 @@
 package complianceReportgenerator
 
 import (
-	"archive/zip"
 	"bytes"
 	"context"
 	"fmt"
@@ -17,13 +16,13 @@ import (
 	profileDS "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	remediationDS "github.com/stackrox/rox/central/complianceoperator/v2/remediations/datastore"
 	snapshotDataStore "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore"
+	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager/complianceReportgenerator/types"
 	reportUtils "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/utils"
 	complianceRuleDS "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore"
 	scanDS "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
 	"github.com/stackrox/rox/central/reports/common"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/branding"
-	"github.com/stackrox/rox/pkg/csv"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifier"
@@ -39,18 +38,6 @@ var (
 	log = logging.LoggerForModule()
 
 	reportGenCtx = sac.WithAllAccess(context.Background())
-
-	csvHeader = []string{
-		"Control Reference",
-		"Check(CCR)",
-		"Profile(version)",
-		"Check Description",
-		"Cluster",
-		"Status",
-		"Remediation",
-		"Rationale",
-		"Instructions",
-	}
 )
 
 type formatBody struct {
@@ -86,23 +73,12 @@ type complianceReportGeneratorImpl struct {
 	snapshotDS               snapshotDataStore.DataStore
 	blobStore                blobDS.Datastore
 	numberOfTriesOnEmailSend int
-}
 
-// struct which hold all columns of a row
-type ResultRow struct {
-	ClusterName  string
-	CheckName    string
-	Profile      string
-	ControlRef   string
-	Description  string
-	Status       string
-	Remediation  string
-	Rationale    string
-	Instructions string
+	reportFormatter Formatter
 }
 
 type ResultEmail struct {
-	ResultCSVs map[string][]*ResultRow // map of cluster id to slice of *resultRow
+	ResultCSVs map[string][]*types.ResultRow // map of cluster id to slice of *resultRow
 	TotalPass  int
 	TotalFail  int
 	TotalMixed int
@@ -110,7 +86,7 @@ type ResultEmail struct {
 	Clusters   int
 }
 
-func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *ComplianceReportRequest) error {
+func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *types.ComplianceReportRequest) error {
 
 	log.Infof("Processing report request %s", req)
 
@@ -129,7 +105,7 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *ComplianceRep
 
 	data := rg.getDataforReport(req)
 
-	zipData, err := format(data.ResultCSVs)
+	zipData, err := rg.reportFormatter.FormatCSVReport(data.ResultCSVs)
 	if err != nil {
 		if dbErr := reportUtils.UpdateSnapshotOnError(req.Ctx, snapshot, reportUtils.ErrReportGeneration, rg.snapshotDS); dbErr != nil {
 			return errors.Wrap(dbErr, "unable to update the snapshot on report generation failure")
@@ -181,9 +157,9 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *ComplianceRep
 }
 
 // getDataforReport returns map of cluster id and slice of ResultRow
-func (rg *complianceReportGeneratorImpl) getDataforReport(req *ComplianceReportRequest) *ResultEmail {
+func (rg *complianceReportGeneratorImpl) getDataforReport(req *types.ComplianceReportRequest) *ResultEmail {
 	clusters := req.ClusterIDs
-	resultsCSV := make(map[string][]*ResultRow)
+	resultsCSV := make(map[string][]*types.ResultRow)
 	resultEmailComplianceReport := &ResultEmail{
 		TotalPass:  0,
 		TotalMixed: 0,
@@ -195,10 +171,10 @@ func (rg *complianceReportGeneratorImpl) getDataforReport(req *ComplianceReportR
 		parsedQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfig, req.ScanConfigID).
 			AddExactMatches(search.ClusterID, clusterID).
 			ProtoQuery()
-		resultCluster := []*ResultRow{}
+		var resultCluster []*types.ResultRow
 
 		err := rg.checkResultsDS.WalkByQuery(req.Ctx, parsedQuery, func(checkResult *storage.ComplianceOperatorCheckResultV2) error {
-			row := &ResultRow{
+			row := &types.ResultRow{
 				ClusterName:  checkResult.GetClusterName(),
 				CheckName:    checkResult.GetCheckName(),
 				Description:  checkResult.GetDescription(),
@@ -381,50 +357,4 @@ func retryableSendReportResults(numberOfTries int, reportNotifier notifiers.Repo
 			time.Sleep(wait * time.Millisecond)
 		}),
 	)
-}
-
-func format(results map[string][]*ResultRow) (*bytes.Buffer, error) {
-	var zipBuf bytes.Buffer
-	zipWriter := zip.NewWriter(&zipBuf)
-	for clusterID, res := range results {
-		fileName := fmt.Sprintf("cluster_%s.csv", clusterID)
-		err := createCSVInZip(zipWriter, fileName, res)
-		if err != nil {
-			return nil, errors.Wrap(err, "error creating csv report")
-		}
-	}
-
-	err := zipWriter.Close()
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to create a zip file of the vuln report")
-	}
-	return &zipBuf, nil
-}
-
-func createCSVInZip(zipWriter *zip.Writer, filename string, res []*ResultRow) error {
-	w, err := zipWriter.Create(filename)
-	if err != nil {
-		return err
-	}
-
-	csvWriter := csv.NewGenericWriter(csvHeader, true)
-	if len(res) != 0 {
-		for _, checkRes := range res {
-			record := []string{
-				checkRes.ControlRef,
-				checkRes.CheckName,
-				checkRes.Profile,
-				checkRes.Description,
-				checkRes.ClusterName,
-				checkRes.Status,
-				checkRes.Remediation,
-				checkRes.Rationale,
-				checkRes.Instructions,
-			}
-			csvWriter.AddValue(record)
-		}
-	} else {
-		csvWriter.AddValue([]string{"Data not found for the cluster"})
-	}
-	return csvWriter.WriteCSV(w)
 }

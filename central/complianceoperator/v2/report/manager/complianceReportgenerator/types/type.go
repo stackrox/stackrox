@@ -1,4 +1,4 @@
-package complianceReportgenerator
+package types
 
 import (
 	"context"
@@ -15,4 +15,17 @@ type ComplianceReportRequest struct {
 	Ctx                context.Context
 	SnapshotID         string
 	NotificationMethod storage.ComplianceOperatorReportStatus_NotificationMethod
+}
+
+// ResultRow struct which hold all columns of a report row
+type ResultRow struct {
+	ClusterName  string
+	CheckName    string
+	Profile      string
+	ControlRef   string
+	Description  string
+	Status       string
+	Remediation  string
+	Rationale    string
+	Instructions string
 }
