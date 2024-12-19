@@ -1,4 +1,4 @@
-package complianceReportgenerator
+package generator
 
 const (
 	defaultEmailBodyTemplate = "{{.BrandedPrefix}} has scanned your clusters for compliance with the profiles in your scan configuration." +

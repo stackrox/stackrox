@@ -76,7 +76,7 @@ function CVEsTable({ tableState, getSortParams, onClearFilters }: CVEsTableProps
                     <Th sort={getSortParams(CVE_SORT_FIELD)}>CVE</Th>
                     <Th sort={getSortParams(CLUSTER_CVE_STATUS_SORT_FIELD)}>CVE status</Th>
                     <Th sort={getSortParams(CVE_TYPE_SORT_FIELD)}>CVE type</Th>
-                    <Th sort={getSortParams(CVSS_SORT_FIELD)}>CVSS score</Th>
+                    <Th sort={getSortParams(CVSS_SORT_FIELD)}>CVSS</Th>
                 </Tr>
             </Thead>
             <TbodyUnified
@@ -116,7 +116,7 @@ function CVEsTable({ tableState, getSortParams, onClearFilters }: CVEsTableProps
                                     <Td dataLabel="CVE type">
                                         {displayCveType(vulnerabilityType)}
                                     </Td>
-                                    <Td dataLabel="CVSS score">
+                                    <Td dataLabel="CVSS">
                                         <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />
                                     </Td>
                                 </Tr>
