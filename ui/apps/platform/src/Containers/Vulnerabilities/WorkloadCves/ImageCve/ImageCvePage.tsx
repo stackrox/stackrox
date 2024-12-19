@@ -446,7 +446,9 @@ function ImageCvePage() {
                                     trackAppliedFilter(WORKLOAD_CVE_FILTER_APPLIED, searchPayload);
                                 }}
                                 additionalContextFilter={{
-                                    CVE: exactCveIdSearchRegex,
+                                    // Only allow exact match for CVE ID using quotes, the autocomplete API does not
+                                    // support regex for exact matching
+                                    CVE: `"${cveId}"`,
                                     ...baseSearchFilter,
                                 }}
                             />
