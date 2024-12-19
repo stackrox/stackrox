@@ -110,6 +110,105 @@ func Test_DeduperShallNotDedupeSomeMessages(t *testing.T) {
 			key:        "IndexReport:1",
 			wantDedupe: false,
 		},
+		"Identical ProcessIndicators shall not be deduped": {
+			msg: &central.MsgFromSensor{
+				Msg: &central.MsgFromSensor_Event{
+					Event: &central.SensorEvent{
+						Id: "1",
+						Resource: &central.SensorEvent_ProcessIndicator{
+							ProcessIndicator: &storage.ProcessIndicator{
+								Id:                 "1",
+								DeploymentId:       "rrr",
+								ContainerName:      "rrr",
+								PodId:              "aaa",
+								PodUid:             "aaa",
+								Signal:             nil,
+								ClusterId:          "abc",
+								Namespace:          "ns",
+								ContainerStartTime: nil,
+								ImageId:            "bbb",
+							},
+						},
+					},
+				},
+			},
+			key:        "ProcessIndicator:1",
+			wantDedupe: false,
+		},
+		"Identical Runtime AlertResults shall not be deduped": {
+			msg: &central.MsgFromSensor{
+				Msg: &central.MsgFromSensor_Event{
+					Event: &central.SensorEvent{
+						Id: "1",
+						Resource: &central.SensorEvent_AlertResults{
+							AlertResults: &central.AlertResults{
+								DeploymentId: "aaa",
+								Alerts: []*storage.Alert{{
+									Id:                "1",
+									Policy:            nil,
+									LifecycleStage:    0,
+									ClusterId:         "aaa",
+									ClusterName:       "aaa",
+									Namespace:         "ns",
+									NamespaceId:       "aaa",
+									Entity:            nil,
+									Violations:        nil,
+									ProcessViolation:  nil,
+									Enforcement:       nil,
+									Time:              nil,
+									FirstOccurred:     nil,
+									ResolvedAt:        nil,
+									State:             0,
+									PlatformComponent: false,
+									EntityType:        0,
+								}},
+								Stage:  storage.LifecycleStage_RUNTIME,
+								Source: 0,
+							},
+						},
+					},
+				},
+			},
+			key:        "AlertResults:1",
+			wantDedupe: false,
+		},
+		"Identical Deploy AlertResults shall be deduped": {
+			msg: &central.MsgFromSensor{
+				Msg: &central.MsgFromSensor_Event{
+					Event: &central.SensorEvent{
+						Id: "1",
+						Resource: &central.SensorEvent_AlertResults{
+							AlertResults: &central.AlertResults{
+								DeploymentId: "aaa",
+								Alerts: []*storage.Alert{{
+									Id:                "1",
+									Policy:            nil,
+									LifecycleStage:    0,
+									ClusterId:         "aaa",
+									ClusterName:       "aaa",
+									Namespace:         "ns",
+									NamespaceId:       "aaa",
+									Entity:            nil,
+									Violations:        nil,
+									ProcessViolation:  nil,
+									Enforcement:       nil,
+									Time:              nil,
+									FirstOccurred:     nil,
+									ResolvedAt:        nil,
+									State:             0,
+									PlatformComponent: false,
+									EntityType:        0,
+								}},
+								Stage:  storage.LifecycleStage_DEPLOY,
+								Source: 0,
+							},
+						},
+					},
+				},
+			},
+			key:        "AlertResults:1",
+			wantDedupe: true,
+		},
 		"Identical ServiceAccounts shall be deduped": { // as an example of something that should be deduped
 			msg: &central.MsgFromSensor{
 				Msg: &central.MsgFromSensor_Event{
