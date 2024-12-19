@@ -109,6 +109,10 @@ func (s *serviceImpl) GetExternalNetworkEntities(ctx context.Context, request *v
 
 	query, _ = search.FilterQueryWithMap(query, schema.NetworkEntitiesSchema.OptionsMap)
 
+	if pagination := request.GetPagination(); pagination != nil {
+		query.Pagination = search.NewPagination().Limit(pagination.Limit).Offset(pagination.Offset).Proto()
+	}
+
 	entities, err := s.entityDS.GetEntityByQuery(ctx, query)
 	if err != nil {
 		return nil, err

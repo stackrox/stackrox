@@ -220,6 +220,7 @@ func (m *GetExternalNetworkEntitiesRequest) CloneVT() *GetExternalNetworkEntitie
 	r := new(GetExternalNetworkEntitiesRequest)
 	r.ClusterId = m.ClusterId
 	r.Query = m.Query
+	r.Pagination = m.Pagination.CloneVT()
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -265,6 +266,7 @@ func (m *GetExternalNetworkFlowsRequest) CloneVT() *GetExternalNetworkFlowsReque
 	r := new(GetExternalNetworkFlowsRequest)
 	r.ClusterId = m.ClusterId
 	r.DeploymentId = m.DeploymentId
+	r.Pagination = m.Pagination.CloneVT()
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -603,6 +605,9 @@ func (this *GetExternalNetworkEntitiesRequest) EqualVT(that *GetExternalNetworkE
 	if this.Query != that.Query {
 		return false
 	}
+	if !this.Pagination.EqualVT(that.Pagination) {
+		return false
+	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
@@ -662,6 +667,9 @@ func (this *GetExternalNetworkFlowsRequest) EqualVT(that *GetExternalNetworkFlow
 		return false
 	}
 	if this.DeploymentId != that.DeploymentId {
+		return false
+	}
+	if !this.Pagination.EqualVT(that.Pagination) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1276,6 +1284,16 @@ func (m *GetExternalNetworkEntitiesRequest) MarshalToSizedBufferVT(dAtA []byte) 
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.Pagination != nil {
+		size, err := m.Pagination.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x1a
+	}
 	if len(m.Query) > 0 {
 		i -= len(m.Query)
 		copy(dAtA[i:], m.Query)
@@ -1379,6 +1397,16 @@ func (m *GetExternalNetworkFlowsRequest) MarshalToSizedBufferVT(dAtA []byte) (in
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.Pagination != nil {
+		size, err := m.Pagination.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x1a
 	}
 	if len(m.DeploymentId) > 0 {
 		i -= len(m.DeploymentId)
@@ -1717,6 +1745,10 @@ func (m *GetExternalNetworkEntitiesRequest) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
+	if m.Pagination != nil {
+		l = m.Pagination.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -1755,6 +1787,10 @@ func (m *GetExternalNetworkFlowsRequest) SizeVT() (n int) {
 	}
 	l = len(m.DeploymentId)
 	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.Pagination != nil {
+		l = m.Pagination.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -3120,6 +3156,42 @@ func (m *GetExternalNetworkEntitiesRequest) UnmarshalVTUnsafe(dAtA []byte) error
 			}
 			m.Query = stringValue
 			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Pagination", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Pagination == nil {
+				m.Pagination = &Pagination{}
+			}
+			if err := m.Pagination.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -3335,6 +3407,42 @@ func (m *GetExternalNetworkFlowsRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
 			m.DeploymentId = stringValue
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Pagination", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Pagination == nil {
+				m.Pagination = &Pagination{}
+			}
+			if err := m.Pagination.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
