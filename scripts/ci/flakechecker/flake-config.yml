@@ -1,0 +1,11 @@
+# Flake for compatibility tests with Central 4.4
+- matchJobName: pull-ci-stackrox-stackrox-master-gke-version-compatibility-tests
+  ratioJobName: branch-ci-stackrox-stackrox-master-merge-gke-version-compatibility-tests
+  testNameRegex: '.*Central-v400\.4\.z_Sensor-v4\.7\.x.*'
+  classname: AutocompleteTest
+  ratioThreshold: 10
+- matchJobName: pull-ci-stackrox-stackrox-master-gke-version-compatibility-tests
+  ratioJobName: branch-ci-stackrox-stackrox-master-merge-gke-version-compatibility-tests
+  testNameRegex: '.*Central-v400\.4\.z_Sensor-v4\.7\.x.*'
+  classname: SummaryTest
+  ratioThreshold: 30

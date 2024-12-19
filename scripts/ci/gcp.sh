@@ -18,8 +18,14 @@ setup_gcp() {
 
     if [[ "$(gcloud config get-value core/project 2>/dev/null)" == "acs-san-stackroxci" ]]; then
         echo "Current project is already set to acs-san-stackroxci. Assuming configuration already applied."
+
+        # In some cases we have "setup_gcp()" already finished, but exported environment variable is lost.
+        # Here we want to ensure that after running "setup_gcp()" environment is properly set.
+        ci_export GOOGLE_APPLICATION_CREDENTIALS /tmp/gcp.json
+
         return
     fi
+
     gcloud auth activate-service-account --key-file <(echo "$service_account")
     gcloud auth list
     gcloud config set project acs-san-stackroxci
