@@ -172,7 +172,7 @@ function WorkloadCvesOverviewPage() {
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
 
-    const { pageTitle } = useWorkloadCveViewContext();
+    const { pageTitle, baseSearchFilter } = useWorkloadCveViewContext();
     const currentVulnerabilityState = useVulnerabilityState();
 
     const { searchFilter, setSearchFilter: setURLSearchFilter } = useURLSearch();
@@ -194,8 +194,17 @@ function WorkloadCvesOverviewPage() {
     // the selected vulnerability state. If the user is viewing _without_ CVEs, we
     // need to scope the query to only show images/deployments with 0 CVEs.
     const workloadCvesScopedQueryString = isViewingWithCves
-        ? getVulnStateScopedQueryString(querySearchFilter, currentVulnerabilityState)
-        : getZeroCveScopedQueryString(querySearchFilter);
+        ? getVulnStateScopedQueryString(
+              {
+                  ...baseSearchFilter,
+                  ...querySearchFilter,
+              },
+              currentVulnerabilityState
+          )
+        : getZeroCveScopedQueryString({
+              ...baseSearchFilter,
+              ...querySearchFilter,
+          });
 
     const getDefaultSortOption = isViewingWithCves
         ? getDefaultWorkloadSortOption
@@ -337,7 +346,10 @@ function WorkloadCvesOverviewPage() {
             className="pf-v5-u-py-md"
             searchFilterConfig={searchFilterConfig}
             searchFilter={searchFilter}
-            additionalContextFilter={{ 'Image CVE Count': isViewingWithCves ? '>0' : '0' }}
+            additionalContextFilter={{
+                'Image CVE Count': isViewingWithCves ? '>0' : '0',
+                ...baseSearchFilter,
+            }}
             defaultFilters={localStorageValue.preferences.defaultFilters}
             onFilterChange={(newFilter, searchPayload) => {
                 setSearchFilter(newFilter);

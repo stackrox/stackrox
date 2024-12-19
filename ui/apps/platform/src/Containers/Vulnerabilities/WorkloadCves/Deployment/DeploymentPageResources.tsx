@@ -16,9 +16,10 @@ import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 
-import { getPaginationParams } from 'utils/searchUtils';
+import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { getDefaultWorkloadSortOption, getWorkloadSortFields } from '../../utils/sortUtils';
 import ImageResourceTable, { ImageResources, imageResourcesFragment } from './ImageResourceTable';
+import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 
 export type DeploymentPageResourcesProps = {
     deploymentId: string;
@@ -36,6 +37,7 @@ const deploymentResourcesQuery = gql`
 `;
 
 function DeploymentPageResources({ deploymentId, pagination }: DeploymentPageResourcesProps) {
+    const { baseSearchFilter } = useWorkloadCveViewContext();
     const { page, perPage, setPage, setPerPage } = pagination;
     const { sortOption, getSortParams } = useURLSort({
         sortFields: getWorkloadSortFields('Image'),
@@ -51,7 +53,7 @@ function DeploymentPageResources({ deploymentId, pagination }: DeploymentPageRes
     >(deploymentResourcesQuery, {
         variables: {
             id: deploymentId,
-            query: '',
+            query: getRequestQueryStringForSearchFilter(baseSearchFilter),
             pagination: getPaginationParams({ page, perPage, sortOption }),
         },
     });
