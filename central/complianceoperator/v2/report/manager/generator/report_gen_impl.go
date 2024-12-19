@@ -1,4 +1,4 @@
-package complianceReportgenerator
+package generator
 
 import (
 	"bytes"
@@ -15,8 +15,8 @@ import (
 	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/utils"
 	profileDS "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	remediationDS "github.com/stackrox/rox/central/complianceoperator/v2/remediations/datastore"
+	"github.com/stackrox/rox/central/complianceoperator/v2/report"
 	snapshotDataStore "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore"
-	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager/complianceReportgenerator/types"
 	reportUtils "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/utils"
 	complianceRuleDS "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore"
 	scanDS "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
@@ -78,7 +78,7 @@ type complianceReportGeneratorImpl struct {
 }
 
 type ResultEmail struct {
-	ResultCSVs map[string][]*types.ResultRow // map of cluster id to slice of *resultRow
+	ResultCSVs map[string][]*report.ResultRow // map of cluster id to slice of *resultRow
 	TotalPass  int
 	TotalFail  int
 	TotalMixed int
@@ -86,7 +86,7 @@ type ResultEmail struct {
 	Clusters   int
 }
 
-func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *types.ComplianceReportRequest) error {
+func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *report.Request) error {
 
 	log.Infof("Processing report request %s", req)
 
@@ -157,9 +157,9 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *types.Complia
 }
 
 // getDataforReport returns map of cluster id and slice of ResultRow
-func (rg *complianceReportGeneratorImpl) getDataforReport(req *types.ComplianceReportRequest) *ResultEmail {
+func (rg *complianceReportGeneratorImpl) getDataforReport(req *report.Request) *ResultEmail {
 	clusters := req.ClusterIDs
-	resultsCSV := make(map[string][]*types.ResultRow)
+	resultsCSV := make(map[string][]*report.ResultRow)
 	resultEmailComplianceReport := &ResultEmail{
 		TotalPass:  0,
 		TotalMixed: 0,
@@ -171,10 +171,10 @@ func (rg *complianceReportGeneratorImpl) getDataforReport(req *types.ComplianceR
 		parsedQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfig, req.ScanConfigID).
 			AddExactMatches(search.ClusterID, clusterID).
 			ProtoQuery()
-		var resultCluster []*types.ResultRow
+		var resultCluster []*report.ResultRow
 
 		err := rg.checkResultsDS.WalkByQuery(req.Ctx, parsedQuery, func(checkResult *storage.ComplianceOperatorCheckResultV2) error {
-			row := &types.ResultRow{
+			row := &report.ResultRow{
 				ClusterName:  checkResult.GetClusterName(),
 				CheckName:    checkResult.GetCheckName(),
 				Description:  checkResult.GetDescription(),

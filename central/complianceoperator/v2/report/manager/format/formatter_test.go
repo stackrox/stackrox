@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager/complianceReportgenerator/format/mocks"
-	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager/complianceReportgenerator/types"
+	"github.com/stackrox/rox/central/complianceoperator/v2/report"
+	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager/format/mocks"
 	"github.com/stackrox/rox/pkg/csv"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -110,15 +110,15 @@ func (s *ComplianceReportingFormatterSuite) getCSVWriter() func(csv.Header, bool
 	}
 }
 
-func getFakeEmptyReportData() map[string][]*types.ResultRow {
-	results := make(map[string][]*types.ResultRow)
-	results["cluster-1"] = []*types.ResultRow{}
+func getFakeEmptyReportData() map[string][]*report.ResultRow {
+	results := make(map[string][]*report.ResultRow)
+	results["cluster-1"] = []*report.ResultRow{}
 	return results
 }
 
-func getFakeReportData() map[string][]*types.ResultRow {
-	results := make(map[string][]*types.ResultRow)
-	results["cluster-1"] = []*types.ResultRow{
+func getFakeReportData() map[string][]*report.ResultRow {
+	results := make(map[string][]*report.ResultRow)
+	results["cluster-1"] = []*report.ResultRow{
 		{
 			ClusterName: "test_cluster-1",
 			CheckName:   "test_check-1",
@@ -143,7 +143,7 @@ func getFakeReportData() map[string][]*types.ResultRow {
 
 type emptyValueMatcher struct {
 	value string
-	data  map[string][]*types.ResultRow
+	data  map[string][]*report.ResultRow
 	error string
 }
 
@@ -166,7 +166,7 @@ func (m *emptyValueMatcher) String() string {
 
 type valueMatcher struct {
 	recordNumber int
-	data         map[string][]*types.ResultRow
+	data         map[string][]*report.ResultRow
 	error        string
 }
 

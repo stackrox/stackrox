@@ -9,9 +9,9 @@ import (
 	"github.com/pkg/errors"
 	complianceIntegrationDS "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
+	"github.com/stackrox/rox/central/complianceoperator/v2/report"
 	snapshotDS "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore"
-	reportGen "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/complianceReportgenerator"
-	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager/complianceReportgenerator/types"
+	reportGen "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/generator"
 	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager/utils"
 	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager/watcher"
 	scanConfigurationDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
@@ -189,7 +189,7 @@ func (m *managerImpl) generateReportNoLock(req *reportRequest) {
 		profiles = append(profiles, profile.GetProfileName())
 	}
 
-	repRequest := &types.ComplianceReportRequest{
+	repRequest := &report.Request{
 		ScanConfigName:     req.scanConfig.GetScanConfigName(),
 		ScanConfigID:       req.scanConfig.GetId(),
 		Profiles:           profiles,

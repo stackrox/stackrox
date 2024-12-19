@@ -1,4 +1,4 @@
-package complianceReportgenerator
+package generator
 
 import (
 	"bytes"
@@ -10,9 +10,9 @@ import (
 	checkResultsMocks "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/mocks"
 	profileMocks "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore/mocks"
 	remediationMocks "github.com/stackrox/rox/central/complianceoperator/v2/remediations/datastore/mocks"
+	"github.com/stackrox/rox/central/complianceoperator/v2/report"
 	snapshotMocks "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore/mocks"
-	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager/complianceReportgenerator/mocks"
-	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager/complianceReportgenerator/types"
+	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager/generator/mocks"
 	ruleMocks "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore/mocks"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/generated/storage"
@@ -67,7 +67,7 @@ func TestComplianceReporting(t *testing.T) {
 }
 
 func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
-	request := &types.ComplianceReportRequest{
+	request := &report.Request{
 		ScanConfigID: "scan-config-1",
 		SnapshotID:   "snapshot-1",
 		ClusterIDs:   []string{"cluster-1"},

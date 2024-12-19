@@ -1,4 +1,4 @@
-package complianceReportgenerator
+package generator
 
 import (
 	blobDS "github.com/stackrox/rox/central/blob/datastore"

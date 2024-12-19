@@ -1,4 +1,4 @@
-package types
+package report
 
 import (
 	"context"
@@ -6,7 +6,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-type ComplianceReportRequest struct {
+// Request holds the input data for a compliance report request
+type Request struct {
 	ScanConfigID       string
 	Notifiers          []*storage.NotifierConfiguration
 	ClusterIDs         []string
@@ -15,17 +16,4 @@ type ComplianceReportRequest struct {
 	Ctx                context.Context
 	SnapshotID         string
 	NotificationMethod storage.ComplianceOperatorReportStatus_NotificationMethod
-}
-
-// ResultRow struct which hold all columns of a report row
-type ResultRow struct {
-	ClusterName  string
-	CheckName    string
-	Profile      string
-	ControlRef   string
-	Description  string
-	Status       string
-	Remediation  string
-	Rationale    string
-	Instructions string
 }

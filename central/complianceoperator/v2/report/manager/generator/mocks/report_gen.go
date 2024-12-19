@@ -13,7 +13,7 @@ import (
 	bytes "bytes"
 	reflect "reflect"
 
-	types "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/complianceReportgenerator/types"
+	report "github.com/stackrox/rox/central/complianceoperator/v2/report"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -42,7 +42,7 @@ func (m *MockComplianceReportGenerator) EXPECT() *MockComplianceReportGeneratorM
 }
 
 // ProcessReportRequest mocks base method.
-func (m *MockComplianceReportGenerator) ProcessReportRequest(req *types.ComplianceReportRequest) error {
+func (m *MockComplianceReportGenerator) ProcessReportRequest(req *report.Request) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ProcessReportRequest", req)
 	ret0, _ := ret[0].(error)
@@ -80,7 +80,7 @@ func (m *MockFormatter) EXPECT() *MockFormatterMockRecorder {
 }
 
 // FormatCSVReport mocks base method.
-func (m *MockFormatter) FormatCSVReport(arg0 map[string][]*types.ResultRow) (*bytes.Buffer, error) {
+func (m *MockFormatter) FormatCSVReport(arg0 map[string][]*report.ResultRow) (*bytes.Buffer, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FormatCSVReport", arg0)
 	ret0, _ := ret[0].(*bytes.Buffer)
