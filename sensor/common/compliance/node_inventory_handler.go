@@ -11,8 +11,9 @@ import (
 var _ common.ComplianceComponent = (*nodeInventoryHandlerImpl)(nil)
 
 // NewNodeInventoryHandler returns a new instance of a NodeInventoryHandler
-func NewNodeInventoryHandler(ch <-chan *storage.NodeInventory, iw <-chan *index.IndexReportWrap, matcher NodeIDMatcher) *nodeInventoryHandlerImpl {
+func NewNodeInventoryHandler(ch <-chan *storage.NodeInventory, iw <-chan *index.IndexReportWrap, matcher NodeIDMatcher, bufferSize uint) *nodeInventoryHandlerImpl {
 	return &nodeInventoryHandlerImpl{
+		bufferSize:      bufferSize,
 		inventories:     ch,
 		reportWraps:     iw,
 		toCentral:       nil,
