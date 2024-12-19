@@ -1,6 +1,7 @@
 package flags
 
 import (
+	// "fmt"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -28,6 +29,139 @@ func TestFlagOrSettingValue(t *testing.T) {
 	cmd = &cobra.Command{}
 	AddPassword(cmd)
 	assert.Equal(t, "some-test-value", Password())
+}
+
+// createTestCommand
+func createTestCommand(t *testing.T) *cobra.Command {
+	// 1. Default, unchanged flag value and setting not set should lead to the default value being returned.
+	cmd := &cobra.Command{
+		PersistentPreRunE: LoadConfig,
+	}
+
+	AddAPITokenFile(cmd)
+	AddConnectionFlags(cmd)
+	AddConfigurationFile(cmd)
+
+	assert.False(t, ConfigurationFileChanged())
+	assert.False(t, *caCertFileSet)
+	assert.False(t, *apiTokenFileChanged)
+	assert.False(t, *endpointChanged)
+
+	return cmd
+}
+
+// TestPrecedenceConfigVersusFlags tests the flagOrConfigurationValue by first
+// setting a configuration file, then sets flag values. The flag values should
+// be returned.
+func TestPrecedenceConfigVersusFlags(t *testing.T) {
+
+	testFile1 := "./testdata/test_instance1.yaml"
+
+	// 1. Default, unchanged flag value and setting not set should lead to the
+	// default value being returned.
+	cmd := createTestCommand(t)
+
+	err := cmd.PersistentFlags().Set("config-file", testFile1)
+	assert.NoError(t, err)
+	assert.Equal(t, testFile1, ConfigurationFileName())
+
+	// 2. Execute the command to trigger PersistentPreRunE
+	err = cmd.PersistentPreRunE(cmd, []string{})
+	assert.True(t, ConfigurationFileChanged())
+	assert.NoError(t, err, "Command execution should not produce an error")
+
+	// 3. Validate that PersistentPreRunE (LoadConfig) ran successfully
+	assert.NotNil(t, config, "Config should be initialized after LoadConfig runs")
+
+	// 4. Change flag values. The changed flag values should be returned, irrespective if set by configuration.
+	err2 := cmd.PersistentFlags().Set("token-file", "some-test-value")
+	assert.NotEmpty(t, config)
+	assert.NoError(t, err2)
+	assert.Equal(t, "some-test-value", APITokenFile())
+
+	cmd.PersistentFlags().Set("endpoint", "some-other-test-value")
+	assert.Equal(t, "some-other-test-value", endpoint)
+
+	cmd.PersistentFlags().Set("ca", "some-other-other-test-value")
+	assert.Equal(t, "some-other-other-test-value", caCertFile)
+
+}
+
+// TestPrecedenceConfigVersusEnv tests the flagOrConfigurationValue by first
+// setting a configuration file, then sets environment values. The config values should
+// be returned.
+func TestPrecedenceConfigVersusEnv(t *testing.T) {
+
+	testFile1 := "./testdata/test_instance1.yaml"
+
+	// 1. Default, unchanged flag value and setting not set should lead to the
+	// default value being returned.
+	cmd := createTestCommand(t)
+
+	err := cmd.PersistentFlags().Set("config-file", testFile1)
+	assert.NoError(t, err, "Setting a configuration file should not produce an error")
+	assert.Equal(t, testFile1, ConfigurationFileName())
+
+	// 2. Execute the command to trigger PersistentPreRunE
+	err = cmd.PersistentPreRunE(cmd, []string{})
+	assert.NoError(t, err, "Command execution should not produce an error")
+	assert.True(t, ConfigurationFileChanged())
+	assert.NotEmpty(t, config)
+
+	// 3. Validate that PersistentPreRunE (LoadConfig) ran successfully
+	assert.NotNil(t, config, "Config should be initialized after LoadConfig runs")
+
+	// 4. Change environment values. The configuration-defined flag values should be returned, irrespective if set by environment.
+	t.Setenv("ROX_API_TOKEN_FILE", "some-other-test-env-value")
+	assert.Equal(t, "REDACTED", APITokenFile())
+
+	t.Setenv("ROX_ENDPOINT", "some-test-env-value")
+	assert.Equal(t, "localhost:8000", endpoint)
+
+	t.Setenv("ROX_CA_CERT_FILE", "some-other-other-test-env-value")
+	assert.Equal(t, "./deploy/cert", caCertFile)
+
+}
+
+// TestPrecedenceConfigVersusFlagsAndEnv tests the flagOrConfigurationValue by first
+// setting a configuration file, then sets environment values and flag values.
+// The flag values should be returned.
+func TestPrecedenceConfigVersusFlagsAndEnv(t *testing.T) {
+
+	testFile1 := "./testdata/test_instance1.yaml"
+
+	// 1. Default, unchanged flag value and setting not set should lead to the
+	// default value being returned.
+	cmd := createTestCommand(t)
+
+	err := cmd.PersistentFlags().Set("config-file", testFile1)
+	assert.NoError(t, err, "Setting a configuration file should not produce an error")
+	assert.Equal(t, testFile1, ConfigurationFileName())
+
+	// 2. Execute the command to trigger PersistentPreRunE
+	err = cmd.PersistentPreRunE(cmd, []string{})
+	assert.NoError(t, err, "Command execution should not produce an error")
+	assert.True(t, ConfigurationFileChanged())
+	assert.NotEmpty(t, config)
+
+	// 3. Validate that PersistentPreRunE (LoadConfig) ran successfully
+	assert.NotNil(t, config, "Config should be initialized after LoadConfig runs")
+
+	// 4. Change environment values.
+	t.Setenv("ROX_API_TOKEN_FILE", "some-other-test-env-value")
+	t.Setenv("ROX_ENDPOINT", "some-test-env-value")
+	t.Setenv("ROX_CA_CERT_FILE", "some-other-other-test-env-value")
+
+	// 5. Change flag values. Flag values should be returned, irrespective of configuration or environment-defined values.
+	err = cmd.PersistentFlags().Set("token-file", "some-test-value")
+	assert.NoError(t, err, "Setting a configuration file should not produce an error")
+	assert.Equal(t, "some-test-value", APITokenFile())
+
+	cmd.PersistentFlags().Set("endpoint", "some-other-test-value")
+	assert.Equal(t, "some-other-test-value", endpoint)
+
+	cmd.PersistentFlags().Set("ca", "some-other-other-test-value")
+	assert.Equal(t, "some-other-other-test-value", caCertFile)
 }
 
 func TestBooleanFlagOrSettingValue(t *testing.T) {
