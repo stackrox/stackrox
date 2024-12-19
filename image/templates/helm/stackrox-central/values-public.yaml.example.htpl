@@ -284,7 +284,7 @@
 #     # are updated as suggested in the resources section.
 #     # Default configurations are applied if the configurations are omitted
 #     settings:
-#       maxConnections: 90
+#       maxConnections: 100
 #       sharedBuffers: 2GB
 #       workMem: 40MB
 #       hashMemMultiplier: 2.0

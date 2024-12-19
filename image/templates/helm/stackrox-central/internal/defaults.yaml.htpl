@@ -81,7 +81,7 @@ defaults:
         statementTimeoutMs: 1200000
 
       settings:
-        maxConnections: 63
+        maxConnections: 100
         sharedBuffers: 2GB
         workMem: 40MB
         hashMemMultiplier: 2.0

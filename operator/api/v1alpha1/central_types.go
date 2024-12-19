@@ -290,7 +290,7 @@ type DBConnectionPoolSize struct {
 // DBConfigOverride configures the database connection pool size.
 type DBConfigOverride struct {
 	// Maximum number of connections in the connection pool.
-	//+kubebuilder:default=90
+	//+kubebuilder:default=100
 	//+kubebuilder:validation:Minimum=1
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Maximum Connections"
 	MaxConnections *int32 `json:"maxConnections,omitempty"`

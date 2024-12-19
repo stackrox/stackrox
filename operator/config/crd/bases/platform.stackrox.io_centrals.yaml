@@ -85,7 +85,7 @@ spec:
                             description: Maintenance Work Mem.
                             type: string
                           maxConnections:
-                            default: 90
+                            default: 100
                             description: Maximum number of connections in the connection
                               pool.
                             format: int32
