@@ -637,10 +637,10 @@ func (*MsgToCompliance_AuditLogCollectionRequest_StopReq) isMsgToCompliance_Audi
 }
 
 type MsgToCompliance_NodeInventoryACK struct {
-	state         protoimpl.MessageState                  `protogen:"open.v1"`
-	Action        MsgToCompliance_NodeInventoryACK_Action `protobuf:"varint,1,opt,name=action,proto3,enum=sensor.MsgToCompliance_NodeInventoryACK_Action" json:"action,omitempty"`
+	state         protoimpl.MessageState                       `protogen:"open.v1"`
+	Action        MsgToCompliance_NodeInventoryACK_Action      `protobuf:"varint,1,opt,name=action,proto3,enum=sensor.MsgToCompliance_NodeInventoryACK_Action" json:"action,omitempty"`
+	MessageType   MsgToCompliance_NodeInventoryACK_MessageType `protobuf:"varint,2,opt,name=messageType,proto3,enum=sensor.MsgToCompliance_NodeInventoryACK_MessageType" json:"messageType,omitempty"`
 	unknownFields protoimpl.UnknownFields
-	MessageType MsgToCompliance_NodeInventoryACK_MessageType `protobuf:"varint,2,opt,name=messageType,proto3,enum=sensor.MsgToCompliance_NodeInventoryACK_MessageType" json:"messageType,omitempty"`
 	sizeCache     protoimpl.SizeCache
 }
 

@@ -1076,16 +1076,16 @@ func (x *DeduperState) GetTotal() int32 {
 }
 
 type NodeInventoryACK struct {
-	state         protoimpl.MessageState  `protogen:"open.v1"`
-	ClusterId     string                  `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	NodeName      string                  `protobuf:"bytes,2,opt,name=node_name,json=nodeName,proto3" json:"node_name,omitempty"`
-	Action        NodeInventoryACK_Action `protobuf:"varint,3,opt,name=action,proto3,enum=central.NodeInventoryACK_Action" json:"action,omitempty"`
-	unknownFields protoimpl.UnknownFields
+	state     protoimpl.MessageState  `protogen:"open.v1"`
+	ClusterId string                  `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	NodeName  string                  `protobuf:"bytes,2,opt,name=node_name,json=nodeName,proto3" json:"node_name,omitempty"`
+	Action    NodeInventoryACK_Action `protobuf:"varint,3,opt,name=action,proto3,enum=central.NodeInventoryACK_Action" json:"action,omitempty"`
 	// MessageType determines the type of message being acknowledged.
 	// It is a generic way of determining to which component this message is directed to.
 	// In version 4.6 and earlier, the messageType field was missing, because there was only one type and it
 	// was the node-inventory.
-	MessageType NodeInventoryACK_MessageType `protobuf:"varint,4,opt,name=messageType,proto3,enum=central.NodeInventoryACK_MessageType" json:"messageType,omitempty"`
+	MessageType   NodeInventoryACK_MessageType `protobuf:"varint,4,opt,name=messageType,proto3,enum=central.NodeInventoryACK_MessageType" json:"messageType,omitempty"`
+	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
