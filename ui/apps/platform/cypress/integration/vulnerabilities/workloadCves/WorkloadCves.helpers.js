@@ -87,7 +87,7 @@ export function applyLocalStatusFilters(...statuses) {
  * Select a search option from the search options dropdown.
  * @param {('CVE' | 'Image' | 'Deployment' | 'Cluster' | 'Namespace' | 'Requester' | 'Request name')} searchOption
  */
-export function selectSearchOption(searchOption) {
+function selectSearchOption(searchOption) {
     cy.get(selectors.searchOptionsDropdown).click();
     cy.get(selectors.searchOptionsMenuItem(searchOption)).click();
     cy.get(selectors.searchOptionsDropdown).click();
@@ -108,21 +108,6 @@ export function selectAttributeSearchOption(searchAttribute) {
         .contains(new RegExp(`^${searchAttribute}$`))
         .click();
     cy.get(selectors.searchAttributeDropdown).click();
-}
-
-/**
- * Type a value into the filter autocomplete typeahead and select the first matching value.
- * @param {('CVE' | 'Image' | 'Deployment' | 'Cluster' | 'Namespace' | 'Requester' | 'Request name')} searchOption
- * @param {string} value
- */
-export function typeAndSelectSearchFilterValue(searchOption, value) {
-    selectSearchOption(searchOption);
-    cy.get(selectors.searchOptionsValueTypeahead(searchOption)).click();
-    cy.get(selectors.searchOptionsValueTypeahead(searchOption)).type(value);
-    cy.get(selectors.searchOptionsValueMenuItem(searchOption))
-        .contains(new RegExp(`^${value}$`))
-        .click();
-    cy.get(selectors.searchOptionsValueTypeahead(searchOption)).click();
 }
 
 /**

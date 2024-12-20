@@ -16,7 +16,6 @@ import {
 import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 import {
     applyLocalSeverityFilters,
-    typeAndSelectSearchFilterValue,
     typeAndEnterSearchFilterValue,
     selectEntityTab,
     visitWorkloadCveOverview,
@@ -24,7 +23,6 @@ import {
 import { selectors } from './WorkloadCves.selectors';
 
 describe('Workload CVE Image Single page', () => {
-    const isAdvancedFiltersEnabled = hasFeatureFlag('ROX_VULN_MGMT_ADVANCED_FILTERS');
     withAuth();
 
     before(function () {
@@ -53,20 +51,10 @@ describe('Workload CVE Image Single page', () => {
         visitFirstImage();
 
         // Check that only applicable resource menu items are present in the toolbar
-        if (isAdvancedFiltersEnabled) {
-            cy.get(selectors.searchEntityDropdown).click();
-            cy.get(selectors.searchEntityMenuItem).contains('Image');
-            cy.get(selectors.searchEntityMenuItem).contains('Image component');
-            cy.get(selectors.searchEntityDropdown).click();
-        } else {
-            cy.get(selectors.searchOptionsDropdown).click();
-            cy.get(selectors.searchOptionsMenuItem('CVE'));
-            cy.get(selectors.searchOptionsMenuItem('Image')).should('not.exist');
-            cy.get(selectors.searchOptionsMenuItem('Deployment')).should('not.exist');
-            cy.get(selectors.searchOptionsMenuItem('Cluster')).should('not.exist');
-            cy.get(selectors.searchOptionsMenuItem('Namespace')).should('not.exist');
-            cy.get(selectors.searchOptionsDropdown).click();
-        }
+        cy.get(selectors.searchEntityDropdown).click();
+        cy.get(selectors.searchEntityMenuItem).contains('Image');
+        cy.get(selectors.searchEntityMenuItem).contains('Image component');
+        cy.get(selectors.searchEntityDropdown).click();
     });
 
     it('should display consistent data between the cards and the table test', () => {
@@ -155,11 +143,7 @@ describe('Workload CVE Image Single page', () => {
             .then(([$cveNameCell]) => {
                 const cveName = $cveNameCell.innerText;
                 // Enter the CVE name into the CVE filter
-                if (isAdvancedFiltersEnabled) {
-                    typeAndEnterSearchFilterValue('CVE', 'Name', cveName);
-                } else {
-                    typeAndSelectSearchFilterValue('CVE', cveName);
-                }
+                typeAndEnterSearchFilterValue('CVE', 'Name', cveName);
                 // Check that the header above the table shows only one result
                 cy.get(`*:contains("1 result found")`);
                 // Check that the only row in the table has the correct CVE name
