@@ -33,7 +33,7 @@ type Instance struct {
 type Context struct {
 	Name     string `json:"name"`
 	Instance string `json:"instance"`
-	AuthInfo string `json:"user"`
+	AuthInfo string `json:"user,omitempty"`
 }
 
 // AuthInfo contains information that describes identity information. This is used to tell the
