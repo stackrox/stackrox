@@ -53,6 +53,7 @@ func createTestCommand(t *testing.T) *cobra.Command {
 // TestPrecedenceConfigVersusFlags tests the flagOrConfigurationValue by first
 // setting a configuration file, then sets flag values. The flag values should
 // be returned.
+// REMARK: flag > env > config
 func TestPrecedenceConfigVersusFlags(t *testing.T) {
 
 	testFile1 := "./testdata/test_instance1.yaml"
@@ -90,6 +91,7 @@ func TestPrecedenceConfigVersusFlags(t *testing.T) {
 // TestPrecedenceConfigVersusEnv tests the flagOrConfigurationValue by first
 // setting a configuration file, then sets environment values. The config values should
 // be returned.
+// REMARK: flag > env > config
 func TestPrecedenceConfigVersusEnv(t *testing.T) {
 
 	testFile1 := "./testdata/test_instance1.yaml"
@@ -126,6 +128,7 @@ func TestPrecedenceConfigVersusEnv(t *testing.T) {
 // TestPrecedenceConfigVersusFlagsAndEnv tests the flagOrConfigurationValue by first
 // setting a configuration file, then sets environment values and flag values.
 // The flag values should be returned.
+// REMARK: flag > env > config
 func TestPrecedenceConfigVersusFlagsAndEnv(t *testing.T) {
 
 	testFile1 := "./testdata/test_instance1.yaml"
