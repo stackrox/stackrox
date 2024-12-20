@@ -29,6 +29,9 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 )
 
+// localScannerTLSIssuerFixture tests the legacy Local Scanner certificate refresh feature, which will be deprecated.
+// The tests are similar to the ones in securedcluster_tls_issuer_test.go, and improvements to this file should also
+// be made there. Expect these local scanner tests to be deleted soon.
 type localScannerTLSIssuerFixture struct {
 	k8sClient            *fake.Clientset
 	certRefresher        *certificateRefresherMock

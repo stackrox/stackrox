@@ -407,12 +407,6 @@ func (s *securedClusterTLSIssueIntegrationTests) TestUnexpectedOwnerStop() {
 	}
 }
 
-func (s *securedClusterTLSIssueIntegrationTests) getCertificate(serviceType storage.ServiceType) *mtls.IssuedCert {
-	cert, err := issueCertificate(serviceType, mtls.WithValidityExpiringInHours())
-	s.Require().NoError(err)
-	return cert
-}
-
 func getAllSecuredClusterCertificates(t require.TestingT) map[string]*mtls.IssuedCert {
 	return map[string]*mtls.IssuedCert{
 		sensorSecretName:           getCertificate(t, storage.ServiceType_SENSOR_SERVICE),
