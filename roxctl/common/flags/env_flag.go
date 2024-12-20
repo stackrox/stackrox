@@ -94,3 +94,19 @@ func booleanFlagOrSettingValue(flagValue bool, flagChanged bool, setting *env.Bo
 	}
 	return flagValue
 }
+
+// booleanFlagOrConfigurationValue will return either the following:
+// - the flag value, if the flag value is not the default value
+func booleanFlagOrConfigurationValue(flagValue bool, flagChanged bool, configValue bool, configValueChanged bool, setting *env.BooleanSetting) bool {
+
+	if !flagChanged {
+		if setting.BooleanSetting() != setting.DefaultBooleanSetting() {
+			return setting.BooleanSetting()
+		}
+
+		if configValueChanged {
+			return configValue
+		}
+	}
+	return flagValue
+}
