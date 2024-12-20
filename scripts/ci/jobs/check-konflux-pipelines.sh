@@ -1,18 +1,27 @@
 #!/usr/bin/env bash
 
-# This script is intended to be run in CI, and tells you whether modifications to
-# Konflux pipelines follow our expectations and conventions.
-
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. && pwd)"
-# shellcheck source=../../../scripts/ci/lib.sh
-source "$ROOT/scripts/ci/lib.sh"
+# This script is to ensure that modifications to our Konflux pipelines follow our expectations and conventions.
+# This script is intended to be run in CI
 
 set -euo pipefail
 
-check-konflux-pipelines() {
-    echo "Ensure that modifications to our Konflux pipelines follow our expectations and conventions"
+ensure_create_snapshot_runs_last() {
+    expected_runafter="$(yq eval '.spec.tasks[] | select(.name != "create-acs-style-snapshot") | .name' .tekton/operator-bundle-pipeline.yaml | sort)"
+    actual_runafter="$(yq eval '.spec.tasks[] | select(.name == "create-acs-style-snapshot") | .runAfter[]' .tekton/operator-bundle-pipeline.yaml)"
 
-    "$ROOT/scripts/check-konflux-pipelines.sh"
+    if ! DIFF=$(diff <(echo "${expected_runafter}") <(echo "${actual_runafter}")); then
+        echo >&2 -e """
+            ERROR:
+            Ensure that all previous tasks in the operator-bundle pipeline are mentioned
+            in the runAfter parameter for the create-acs-style-snapshot task.
+
+            This is what is different:
+
+            $DIFF
+            """
+        exit 1
+    fi
 }
 
-check-konflux-pipelines
+echo "Ensure that modifications to our Konflux pipelines follow our expectations and conventions"
+ensure_create_snapshot_runs_last
