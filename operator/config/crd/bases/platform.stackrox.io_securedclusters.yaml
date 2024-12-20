@@ -625,8 +625,8 @@ spec:
                                   enabled:
                                     default: Disabled
                                     enum:
-                                    - Enabled
                                     - Disabled
+                                    - Enabled
                                     - Auto
                                     type: string
                                 type: object

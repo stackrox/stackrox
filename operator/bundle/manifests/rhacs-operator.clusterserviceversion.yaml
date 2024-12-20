@@ -1210,8 +1210,8 @@ spec:
       - displayName: Enabled
         path: perNode.collector.runtimeConfig.networking.externalIps.enabled
         x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:select:Enable
         - urn:alm:descriptor:com.tectonic.ui:select:Disable
+        - urn:alm:descriptor:com.tectonic.ui:select:Enable
         - urn:alm:descriptor:com.tectonic.ui:select:Auto
       - description: 'Allows overriding the default resource settings for this component.
           Please consult the documentation

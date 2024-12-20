@@ -857,8 +857,8 @@ spec:
       - displayName: Enabled
         path: perNode.collector.runtimeConfig.networking.externalIps.enabled
         x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:select:Enable
         - urn:alm:descriptor:com.tectonic.ui:select:Disable
+        - urn:alm:descriptor:com.tectonic.ui:select:Enable
         - urn:alm:descriptor:com.tectonic.ui:select:Auto
       - description: Controls the number of analyzer replicas and autoscaling.
         displayName: Scaling
