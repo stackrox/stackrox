@@ -1,0 +1,20 @@
+version: "3.0"
+instances:
+  name: "full-instance"
+  endpoint: "https://full.stackrox.example.com"
+  caCertPath: "/path/to/full/ca.crt"
+  caCert: "full-certificate-content"
+  plaintext: "full-plaintext"
+  directGrpc: false
+  forceHttp: false
+  insecure: false
+  insecureSkipTLSVerify: true
+users:
+  username: "full-user"
+  password: "full-password"
+  apiToken: "full-api-token"
+  apiTokenPath: "/path/to/full/api/token"
+contexts:
+  instance: "full-instance"
+  user: "full-user"
+current-context: "full-instance-context"

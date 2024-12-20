@@ -1,0 +1,13 @@
+version: "2.1"
+instances:
+  name: "plaintext-grpc-instance"
+  endpoint: "https://grpc.stackrox.example.com"
+  plaintext: "plaintext-content"
+  directGrpc: true
+users:
+  username: "grpc-user"
+  password: "grpc-secure-password"
+contexts:
+  instance: "plaintext-grpc-instance"
+  user: "grpc-user"
+current-context: "plaintext-grpc-context"

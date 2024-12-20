@@ -1,13 +1,13 @@
 # Sample config.yaml configuration for StackRox roxctl. 
 version: v1
 instances: 
-  - name: endpoint 
+    name: endpoint 
     endpoint: "hello" 
 users: 
-  - name: developer 
+    name: developer 
     username: test1 
 contexts: 
-  - context: 
-    user: developer 
-    instance: endpoint   
-    name: context1 
+  context: 
+  user: developer 
+  instance: endpoint   
+  name: context1 
