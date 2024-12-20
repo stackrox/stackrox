@@ -188,12 +188,23 @@ func TestNewReadConfig(t *testing.T) {
 				require.NoError(t, err)
 			} else {
 				assert.EqualError(t, err, tc.err)
+				errors.Wrapf(err, "got: %v instead", err)
 			}
 
-			assert.Equal(t, tc.expectedInstanceName, instance.InstanceName)
-			assert.Equal(t, tc.expectedCaCertPath, instance.CaCertificatePath)
-			assert.Equal(t, tc.expectedApiTokenFile, instance.ApiTokenFilePath)
-			assert.Equal(t, tc.expectedEndpoint, instance.Endpoint)
+			version := tc.configVersion
+			instances := tc.instances
+			users := tc.users
+			contexts := tc.contexts
+			currContext := tc.currContext
+
+			fmt.Printf("This is the configuration object: %v", instance)
+			assert.NotEmpty(t, instance)
+
+			assert.Equal(t, version, instance.Version)
+			assert.Equal(t, instances, *instance.Instances)
+			assert.Equal(t, users, *instance.AuthInfo)
+			assert.Equal(t, contexts, *instance.Contexts)
+			assert.Equal(t, currContext, instance.CurrContext)
 		})
 	}
 }
