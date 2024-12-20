@@ -51,6 +51,8 @@ spec:
         value: $(params.IMAGE_REFS)
       - name: MAIN_IMAGE_TAG
         value: $(params.MAIN_IMAGE_TAG)
+      - name: SNAPSHOT_NAME_RESULTS_PATH
+        value: $(results.SNAPSHOT_NAME.path)
     script: |
       #!/usr/bin/env bash
       set -euo pipefail
