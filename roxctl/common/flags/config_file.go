@@ -21,7 +21,7 @@ type Instance struct {
 	Endpoint              string `json:"endpoint,omitempty"`
 	CaCertificatePath     string `json:"caCertPath,omitempty"`
 	CaCertificate         string `json:"caCert,omitempty"`
-	Plaintext             string `json:"plaintext,omitempty"`
+	Plaintext             bool   `json:"plaintext,omitempty"`
 	DirectGRPC            bool   `json:"directGrpc,omitempty"`
 	ForceHTTP1            bool   `json:"forceHttp,omitempty"`
 	Insecure              bool   `json:"insecure,omitempty"`
