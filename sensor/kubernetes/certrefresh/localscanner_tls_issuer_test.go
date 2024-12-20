@@ -20,7 +20,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -30,6 +29,9 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 )
 
+// localScannerTLSIssuerFixture tests the legacy Local Scanner certificate refresh feature, which will be deprecated.
+// The tests are similar to the ones in securedcluster_tls_issuer_test.go, and improvements to this file should also
+// be made there. Expect these tests to be deleted soon.
 type localScannerTLSIssuerFixture struct {
 	k8sClient            *fake.Clientset
 	certRefresher        *certificateRefresherMock
@@ -309,8 +311,8 @@ func (s *localScannerTLSIssueIntegrationTests) TestSuccessfulRefresh() {
 			defer cancel()
 			ca, err := mtls.CAForSigning()
 			s.Require().NoError(err)
-			scannerCert := s.getCertificate(storage.ServiceType_SCANNER_SERVICE)
-			scannerDBCert := s.getCertificate(storage.ServiceType_SCANNER_DB_SERVICE)
+			scannerCert := getCertificate(s.T(), storage.ServiceType_SCANNER_SERVICE)
+			scannerDBCert := getCertificate(s.T(), storage.ServiceType_SCANNER_DB_SERVICE)
 			k8sClient := getFakeK8sClient(tc.k8sClientConfig)
 			tlsIssuer := newLocalScannerTLSIssuer(s.T(), k8sClient, sensorNamespace, sensorPodName)
 			tlsIssuer.certRefreshBackoff = wait.Backoff{
@@ -334,29 +336,8 @@ func (s *localScannerTLSIssueIntegrationTests) TestSuccessfulRefresh() {
 			err = tlsIssuer.ProcessMessage(response)
 			s.Require().NoError(err)
 
-			var secrets *v1.SecretList
-			ok := concurrency.PollWithTimeout(func() bool {
-				secrets, err = k8sClient.CoreV1().Secrets(sensorNamespace).List(context.Background(), metav1.ListOptions{})
-				s.Require().NoError(err)
-				return len(secrets.Items) == 2 && len(secrets.Items[0].Data) > 0 && len(secrets.Items[1].Data) > 0
-			}, 10*time.Millisecond, testTimeout)
-			s.Require().True(ok, "expected exactly 2 secrets with non-empty data available in the k8s API")
-			for _, secret := range secrets.Items {
-				var expectedCert *mtls.IssuedCert
-				switch secretName := secret.GetName(); secretName {
-				case "scanner-tls":
-					expectedCert = scannerCert
-				case "scanner-db-tls":
-					expectedCert = scannerDBCert
-				default:
-					s.Require().Failf("missing secrets",
-						"expected secret name should be either %q or %q, found %q instead",
-						"scanner-tls", "scanner-db-tls", secretName)
-				}
-				s.Equal(ca.CertPEM(), secret.Data[mtls.CACertFileName])
-				s.Equal(expectedCert.CertPEM, secret.Data[mtls.ServiceCertFileName])
-				s.Equal(expectedCert.KeyPEM, secret.Data[mtls.ServiceKeyFileName])
-			}
+			verifySecrets(ctx, s.T(), k8sClient, sensorNamespace, ca,
+				map[string]*mtls.IssuedCert{"scanner-tls": scannerCert, "scanner-db-tls": scannerDBCert})
 		})
 	}
 }
@@ -395,13 +376,6 @@ func (s *localScannerTLSIssueIntegrationTests) TestUnexpectedOwnerStop() {
 			s.True(ok, "cert refresher should be stopped")
 		})
 	}
-}
-
-func (s *localScannerTLSIssueIntegrationTests) getCertificate(serviceType storage.ServiceType) *mtls.IssuedCert {
-	// TODO(ROX-9463): use short expiration for testing renewal when ROX-9010 implementing `WithCustomCertLifetime` is merged
-	cert, err := issueCertificate(serviceType, mtls.WithValidityExpiringInHours())
-	s.Require().NoError(err)
-	return cert
 }
 
 func (s *localScannerTLSIssueIntegrationTests) waitForRequest(ctx context.Context, tlsIssuer common.SensorComponent) *central.IssueLocalScannerCertsRequest {
