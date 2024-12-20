@@ -698,6 +698,12 @@ class Enforcement extends BaseSpecification {
         assert lockProcessBaselines.size() ==  1
         assert  lockProcessBaselines.get(0).getElementsList().
                 find { it.element.processName.equalsIgnoreCase("/usr/sbin/nginx") } != null
+
+        // Wait for the baseline to be synced with Sensor.
+        // If this tests flakes again log statements were added in Central and Sensor to investigate if a
+        // baseline was synced with sensor at a specific point in time.
+        sleep 10000
+
         orchestrator.execInContainer(d, "pwd")
         assert waitForViolation(d.name, ALERT_AND_KILL_ENFORCEMENT_BASELINE_PROCESS, WAIT_FOR_VIOLATION_TIMEOUT)
 
