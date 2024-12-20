@@ -31,6 +31,7 @@ type Instance struct {
 // Context is a tuple of references to a Stackrox instance (ie, how I communicate with a Stackrox
 // instance) and a user (ie, how I identify myself)
 type Context struct {
+	Name     string `json:"name"`
 	Instance string `json:"instance"`
 	AuthInfo string `json:"user"`
 }
