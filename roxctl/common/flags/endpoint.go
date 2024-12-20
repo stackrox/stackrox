@@ -91,7 +91,7 @@ func AddConnectionFlags(c *cobra.Command) {
 func EndpointAndPlaintextSetting() (string, bool, error) {
 	endpoint = flagOrConfigurationValue(endpoint,
 		*endpointChanged,
-		Endpoint(),
+		ConfigEndpoint(),
 		*configEndpointSet,
 		env.EndpointEnv)
 
@@ -144,19 +144,22 @@ func ServerName() string {
 }
 
 // UseDirectGRPC returns whether to use gRPC directly, i.e., without a proxy.
+// TODO(1): Write tests
 func UseDirectGRPC() bool {
-	return booleanFlagOrSettingValue(directGRPC, *directGRPCSet, env.DirectGRPCEnv) ||
+	return booleanFlagOrConfigurationValue(directGRPC, *directGRPCSet, ConfigUseDirectGRPC(), *configDirectGRPCSet, env.DirectGRPCEnv) ||
 		UseKubeContext()
 }
 
 // ForceHTTP1 indicates that the HTTP/1 should be used for all outgoing connections.
+// TODO(1): Write tests
 func ForceHTTP1() bool {
-	return booleanFlagOrSettingValue(forceHTTP1, *forceHTTP1Set, env.ClientForceHTTP1Env)
+	return booleanFlagOrConfigurationValue(forceHTTP1, *forceHTTP1Set, ConfigForceHTTP1(), *configForceHTTP1Set, env.ClientForceHTTP1Env)
 }
 
 // UseInsecure returns whether to use insecure connection behavior.
+// TODO(1): Write tests
 func UseInsecure() bool {
-	return booleanFlagOrSettingValue(insecure, *insecureSet, env.InsecureClientEnv)
+	return booleanFlagOrConfigurationValue(insecure, *insecureSet, ConfigUseInsecure(), *configUseInsecureSet, env.InsecureClientEnv)
 }
 
 // SkipTLSValidation returns a bool that indicates the value of the `--insecure-skip-tls-verify` flag, with `nil`
@@ -173,12 +176,15 @@ func SkipTLSValidation() *bool {
 }
 
 // CAFile returns the file for custom CA certificates.
+// TODO(1): Write tests
 func CAFile() string {
-	return flagOrConfigurationValue(
+	return flagOrConfigurationValueWithFilepathOption(
 		caCertFile,
 		*caCertFileSet,
-		CaCertificatePath(),
-		*configCaCertFileSet,
+		ConfigInlineCaCertificate(),
+		*configInlineCaCertificateSet,
+		ConfigCaCertificatePath(),
+		*configCaCertificatePathSet,
 		env.CACertFileEnv)
 }
 
