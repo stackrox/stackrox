@@ -2,9 +2,9 @@ package flags
 
 import (
 	"fmt"
-
 	"os"
 	"os/user"
+	"syscall"
 
 	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
@@ -12,8 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/pointers"
-
-	"syscall"
 )
 
 type Instance struct {
