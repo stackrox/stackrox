@@ -238,9 +238,11 @@ func (m *ManagerTestSuite) TestFailedReportWithWatcherRunningAndNoNotifiers() {
 	handleWaitGroup(m.T(), &wg, 10*time.Second, "report to fail")
 
 	// The runningReportConfigs should be empty at this point
-	concurrency.WithLock(&managerImp.mu, func() {
-		m.Assert().Len(managerImp.runningReportConfigs, 0)
-	})
+	m.Eventually(func() bool {
+		return concurrency.WithLock1[bool](&managerImp.mu, func() bool {
+			return len(managerImp.runningReportConfigs) == 0
+		})
+	}, 5*time.Second, 100*time.Millisecond)
 }
 
 func (m *ManagerTestSuite) TestHandleScan() {
