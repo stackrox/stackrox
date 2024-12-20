@@ -3,18 +3,28 @@
 import datetime
 import json
 import os
-import time
 
 
 def parse_image_refs(image_refs):
     return json.loads(image_refs)
 
 
+def validate_component(component):
+    assert (
+        component["component"] != ""
+        or component["ref"] != ""
+        or component["revision"] != ""
+        or component["repository"] != ""
+    ), "Component must have component name, ref, revision and repository set. Check container image labels."
+
+
 def process_component(component, name_suffix):
+    validate_component(component)
     if name_suffix != "":
         name = f"{component['component']}-{name_suffix}"
     else:
         name = component["component"]
+
     return {
         "containerImage": component["ref"],
         "name": name,
