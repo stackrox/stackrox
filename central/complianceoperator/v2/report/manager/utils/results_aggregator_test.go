@@ -516,32 +516,34 @@ func assertResult(t *testing.T, tcase walkByQueryTestCase, row *report.ResultRow
 			assert.Equal(t, strings.Join(expRemediationNames, ","), row.Remediation)
 		}
 	}
-	if tcase.expectedRules != nil {
-		expRules, _ := tcase.expectedRules()
-		if len(expRules) != 1 {
-			assert.Equal(t, DATA_NOT_AVAILABLE, row.ControlRef)
-		} else {
-			if tcase.expectedBenchmarks == nil {
-				assert.Equal(t, DATA_NOT_AVAILABLE, row.ControlRef)
-			} else {
-				expBench, _ := tcase.expectedBenchmarks()
-				if len(expBench) == 0 {
-					assert.Equal(t, DATA_NOT_AVAILABLE, row.ControlRef)
-				} else {
-					if tcase.expectedControls != nil {
-						expControls, _ := tcase.expectedControls()
-						if len(expControls) == 0 {
-							assert.Equal(t, DATA_NOT_AVAILABLE, row.ControlRef)
-						} else {
-							expControlInfos := make([]string, 0, len(expControls))
-							for _, c := range expControls {
-								expControlInfos = append(expControlInfos, fmt.Sprintf("%s %s", c.Standard, c.Control))
-							}
-							assert.Equal(t, strings.Join(expControlInfos, ","), row.ControlRef)
-						}
-					}
-				}
-			}
-		}
+	if tcase.expectedRules == nil {
+		return
 	}
+	expRules, _ := tcase.expectedRules()
+	if len(expRules) != 1 {
+		assert.Equal(t, DATA_NOT_AVAILABLE, row.ControlRef)
+		return
+	}
+	if tcase.expectedBenchmarks == nil {
+		assert.Equal(t, DATA_NOT_AVAILABLE, row.ControlRef)
+		return
+	}
+	expBench, _ := tcase.expectedBenchmarks()
+	if len(expBench) == 0 {
+		assert.Equal(t, DATA_NOT_AVAILABLE, row.ControlRef)
+		return
+	}
+	if tcase.expectedControls == nil {
+		return
+	}
+	expControls, _ := tcase.expectedControls()
+	if len(expControls) == 0 {
+		assert.Equal(t, DATA_NOT_AVAILABLE, row.ControlRef)
+		return
+	}
+	expControlInfos := make([]string, 0, len(expControls))
+	for _, c := range expControls {
+		expControlInfos = append(expControlInfos, fmt.Sprintf("%s %s", c.Standard, c.Control))
+	}
+	assert.Equal(t, strings.Join(expControlInfos, ","), row.ControlRef)
 }
