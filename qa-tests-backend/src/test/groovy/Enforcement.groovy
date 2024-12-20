@@ -699,8 +699,8 @@ class Enforcement extends BaseSpecification {
         assert  lockProcessBaselines.get(0).getElementsList().
                 find { it.element.processName.equalsIgnoreCase("/usr/sbin/nginx") } != null
 
-        // Waiting for 5 seconds to wait for the baseline to be synced with Sensor.
-        // If this tests flakes again log statements were added to investigate if a
+        // Wait for the baseline to be synced with Sensor.
+        // If this tests flakes again log statements were added in Central and Sensor to investigate if a
         // baseline was synced with sensor at a specific point in time.
         sleep 10000
 
