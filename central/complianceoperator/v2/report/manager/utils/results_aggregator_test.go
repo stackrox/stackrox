@@ -94,7 +94,7 @@ func (s *ComplianceResultsAggregatorSuite) Test_GetReportData() {
 					}
 					return tcase.expectedErr
 				})
-			s.aggregator.walkByQuery = mockWalkByQueryWrapper
+			s.aggregator.aggreateResults = mockWalkByQueryWrapper
 			res := s.aggregator.GetReportData(req)
 			assertResults(s.T(), tcase, res)
 		})

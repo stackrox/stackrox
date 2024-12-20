@@ -35,7 +35,7 @@ type ResultsAggregator struct {
 	benchmarkDS      benchmarksDS.DataStore
 	complianceRuleDS complianceRuleDS.DataStore
 
-	walkByQuery aggregateResultsFn
+	aggreateResults aggregateResultsFn
 }
 
 func NewResultsAggregator(
@@ -54,7 +54,7 @@ func NewResultsAggregator(
 		benchmarkDS:      benchmarksDS,
 		complianceRuleDS: complianceRuleDS,
 	}
-	ret.walkByQuery = ret.AggregateResults
+	ret.aggreateResults = ret.AggregateResults
 	return ret
 }
 
@@ -92,7 +92,7 @@ func (g *ResultsAggregator) getReportDataForCluster(ctx context.Context, scanCon
 		totalFail:  0,
 		totalMixed: 0,
 	}
-	err := g.checkResultsDS.WalkByQuery(ctx, scanConfigQuery, g.walkByQuery(ctx, clusterID, &ret, statuses))
+	err := g.checkResultsDS.WalkByQuery(ctx, scanConfigQuery, g.aggreateResults(ctx, clusterID, &ret, statuses))
 	return ret, statuses, err
 }
 
