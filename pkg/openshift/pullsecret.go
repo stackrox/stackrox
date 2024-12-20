@@ -4,6 +4,7 @@ import "github.com/stackrox/rox/generated/storage"
 
 const (
 	// GlobalPullSecretNamespace contains the namespace name where the global pull secret exists.
+	//#nosec G101 -- This is a false positive
 	GlobalPullSecretNamespace = "openshift-config"
 
 	// GlobalPullSecretName contains the name of the OCP global pull secret.
