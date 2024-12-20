@@ -72,20 +72,23 @@ def construct_snapshot(
     }
 
 
-def write_snapshot(snapshot):
+def write_snapshot(snapshot, results_path):
     with open("snapshot.json", "w") as f:
         json.dump(snapshot, f)
-    print(snapshot["metadata"]["name"], end="")
+    with open(results_path, "w", newline="") as f:
+        f.write(snapshot["metadata"]["name"])
 
 
 if __name__ == '__main__':
-    application = os.environ["APPLICATION"]
-    pipeline_run_name = os.environ["PIPELINE_RUN_NAME"]
-    namespace = os.environ["NAMESPACE"]
-    image_refs = parse_image_refs(os.environ["IMAGE_REFS"])
-    main_image_tag = os.environ["MAIN_IMAGE_TAG"]
+    application = os.environ["APPLICATION"] # 1
     name_suffix = determine_component_version_suffix(application)
+    image_refs = parse_image_refs(os.environ["IMAGE_REFS"]) # 2
     components = [process_component(c, name_suffix) for c in image_refs]
+
+    main_image_tag = os.environ["MAIN_IMAGE_TAG"] # 3
+    pipeline_run_name = os.environ["PIPELINE_RUN_NAME"] # 4
+    namespace = os.environ["NAMESPACE"] # 5
+
     snapshot = construct_snapshot(
         snapshot_name_prefix=application,
         snapshot_version_suffix=main_image_tag,
@@ -95,4 +98,5 @@ if __name__ == '__main__':
         components=components
     )
 
-    write_snapshot(snapshot)
+    snapshot_name_results_path = os.environ["SNAPSHOT_NAME_RESULTS_PATH"]
+    write_snapshot(snapshot, snapshot_name_results_path)

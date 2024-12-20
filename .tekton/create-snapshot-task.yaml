@@ -31,8 +31,8 @@ spec:
     args:
     - use
     - $(params.SOURCE_ARTIFACT)=/var/workdir/source
-  - name: create-snapshot
-    image: registry.redhat.io/openshift4/ose-cli-rhel9@sha256:4f822262adc75bff1891bee0bab1611ae62dfb347f98fcf9aa2604129087eb2c
+  - name: render-snapshot
+    image: registry.access.redhat.com/ubi9:latest@sha256:1057dab827c782abcfb9bda0c3900c0966b5066e671d54976a7bcb3a2d1a5e53
     workingDir: /var/workdir/source
     env:
       - name: APPLICATION
@@ -55,8 +55,13 @@ spec:
       #!/usr/bin/env bash
       set -euo pipefail
 
-      .konflux/scripts/render_snapshot.py | tee "$(results.SNAPSHOT_NAME.path)"
+      .konflux/scripts/render_snapshot.py
 
-      # Printing an empty line for separation in the log.
-      echo
+  - name: create-snapshot
+    image: registry.redhat.io/openshift4/ose-cli-rhel9@sha256:4f822262adc75bff1891bee0bab1611ae62dfb347f98fcf9aa2604129087eb2c
+    workingDir: /var/workdir/source
+    script: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+
       oc create -f snapshot.json
