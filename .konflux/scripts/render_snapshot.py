@@ -31,6 +31,7 @@ def construct_snapshot(
     snapshot_name_prefix,
     snapshot_version_suffix,
     pipeline_run_name,
+    namespace,
     application,
     components
 ):
@@ -41,6 +42,7 @@ def construct_snapshot(
         "kind": "Snapshot",
         "metadata": {
             "name": snapshot_name,
+            "namespace": namespace,
             "labels": {
                 "appstudio.openshift.io/build-pipelinerun": pipeline_run_name
             }
@@ -60,6 +62,7 @@ def determine_component_version_suffix(application):
 if __name__ == '__main__':
     application = os.environ["APPLICATION"]
     pipeline_run_name = os.environ["PIPELINE_RUN_NAME"]
+    namespace = os.environ["NAMESPACE"]
     image_refs = parse_image_refs(os.environ["IMAGE_REFS"])
     main_image_tag = os.environ["MAIN_IMAGE_TAG"]
     name_suffix = determine_component_version_suffix(application)
@@ -68,6 +71,7 @@ if __name__ == '__main__':
         snapshot_name_prefix=application,
         snapshot_version_suffix=main_image_tag,
         pipeline_run_name=pipeline_run_name,
+        namespace=namespace,
         application=application,
         components=components
     )
