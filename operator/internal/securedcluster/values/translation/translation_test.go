@@ -218,10 +218,10 @@ func (s *TranslationTestSuite) TestTranslate() {
 					"forceCollectionMethod": true,
 					"slimMode":              false,
 					"runtimeConfig": map[string]interface{}{
-						"enabled": true,
+						"enabled": "Enabled",
 						"networking": map[string]interface{}{
 							"externalIps": map[string]interface{}{
-								"enabled": true,
+								"enabled": "Enabled",
 							},
 							"maxConnectionsPerMinute": 512,
 						},
