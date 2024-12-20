@@ -3,6 +3,7 @@
 import datetime
 import json
 import os
+import re
 
 
 def parse_image_refs(image_refs):
@@ -18,10 +19,17 @@ def validate_component(component):
     ), "Component must have component name, ref, revision and repository set. Check container image labels."
 
 
+def determine_component_version_suffix(application):
+    match = re.search(r"acs-(?P<version>\d+-\d+)", application)
+    if match:
+        return match.group('version')
+    return ""
+
+
 def process_component(component, name_suffix):
     validate_component(component)
     if name_suffix != "":
-        name = f"{component['component']}-{name_suffix}"
+        name = f"{component["name"]}{name_suffix}"
     else:
         name = component["name"]
 
@@ -64,9 +72,10 @@ def construct_snapshot(
     }
 
 
-def determine_component_version_suffix(application):
-    # TODO: this as a regex
-    return application.lstrip("acs-")
+def write_snapshot(snapshot):
+    with open("snapshot.json", "w") as f:
+        json.dump(snapshot, f)
+    print(snapshot["metadata"]["name"], end="")
 
 
 if __name__ == '__main__':
@@ -86,7 +95,4 @@ if __name__ == '__main__':
         components=components
     )
 
-    with open("snapshot.json", "w") as f:
-        json.dump(snapshot, f)
-
-    print(snapshot["metadata"]["name"], end="")
+    write_snapshot(snapshot)
