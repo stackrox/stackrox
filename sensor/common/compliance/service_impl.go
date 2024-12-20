@@ -149,15 +149,14 @@ func (s *serviceImpl) startSendingLoop(stopper concurrency.Stopper) {
 					}
 				})
 			} else {
-				con, ok := s.connectionManager.connectionMap[msg.Hostname]
-				if !ok {
+				con, found := s.connectionManager.connectionMap[msg.Hostname]
+				if found {
+					err := con.Send(msg.Msg)
+					if err != nil {
+						log.Errorf("Error sending MessageToComplianceWithAddress to node %q: %v", msg.Hostname, err)
+					}
+				} else {
 					log.Errorf("Unable to find connection to compliance: %q", msg.Hostname)
-					return
-				}
-				err := con.Send(msg.Msg)
-				if err != nil {
-					log.Errorf("Error sending MessageToComplianceWithAddress to node %q: %v", msg.Hostname, err)
-					return
 				}
 			}
 		}

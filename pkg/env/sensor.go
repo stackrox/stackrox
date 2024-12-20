@@ -78,4 +78,7 @@ var (
 	// DiagnosticDataCollectionTimeout defines the timeout for the diagnostic data collection on Sensor side.
 	DiagnosticDataCollectionTimeout = registerDurationSetting("ROX_DIAGNOSTIC_DATA_COLLECTION_TIMEOUT",
 		2*time.Minute)
+
+	// SensorComplianceChannelBufferSize defines how many node scanning ACK messages may be buffered before sending them to Compliance
+	SensorComplianceChannelBufferSize = RegisterIntegerSetting("ROX_SENSOR_COMPLIANCE_CHANNEL_BUFFER_SIZE", 2)
 )

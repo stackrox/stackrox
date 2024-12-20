@@ -103,6 +103,17 @@ message NodeInventoryACK {
     ACK = 0;
     NACK = 1;
   }
+
+  // MessageType determines the type of message being acknowledged.
+  // It is a generic way of determining to which component this message is directed to.
+  // In version 4.6 and earlier, the messageType field was missing, because there was only one type and it
+  // was the node-inventory.
+  MessageType messageType = 4;
+
+  enum MessageType {
+    NodeInventory = 0;
+    NodeIndexer = 1;
+  }
 }
 
 message AuditLogSync {

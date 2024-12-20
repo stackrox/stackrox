@@ -134,6 +134,8 @@ var (
 		[]string{
 			// The Node this scan belongs to
 			"node_name",
+			// The version of Scanner this metric was generated for
+			"scanner_version",
 		})
 
 	protobufMessageSize = prometheus.NewHistogramVec(prometheus.HistogramOpts{
@@ -321,9 +323,10 @@ func ObserveIndexDuration(d time.Duration, nodeName string, e error) {
 }
 
 // ObserveRescanInterval observes the metric.
-func ObserveRescanInterval(d time.Duration, nodeName string) {
+func ObserveRescanInterval(d time.Duration, nodeName, scannerVersion string) {
 	rescanInterval.With(prometheus.Labels{
-		"node_name": nodeName,
+		"node_name":       nodeName,
+		"scanner_version": scannerVersion,
 	}).Set(d.Seconds())
 }
 
