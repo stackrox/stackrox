@@ -6,7 +6,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
-	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certificates"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/localscanner"
 	"k8s.io/client-go/kubernetes"
 )
@@ -14,8 +13,8 @@ import (
 var (
 	localScannerComponentName    = "local scanner"
 	localScannerSensorCapability = centralsensor.LocalScannerCredentialsRefresh
-	localScannerResponseFn       = func(msg *central.MsgToSensor) *certificates.Response {
-		return certificates.NewResponseFromLocalScannerCerts(msg.GetIssueLocalScannerCertsResponse())
+	localScannerResponseFn       = func(msg *central.MsgToSensor) *Response {
+		return NewResponseFromLocalScannerCerts(msg.GetIssueLocalScannerCertsResponse())
 	}
 )
 
@@ -26,7 +25,7 @@ func NewLocalScannerTLSIssuer(
 	sensorNamespace string,
 	sensorPodName string,
 ) common.SensorComponent {
-	tlsIssuer := &tlsIssuerImpl{
+	return &tlsIssuerImpl{
 		componentName:                localScannerComponentName,
 		sensorCapability:             localScannerSensorCapability,
 		getResponseFn:                localScannerResponseFn,
@@ -38,8 +37,18 @@ func NewLocalScannerTLSIssuer(
 		getServiceCertificatesRepoFn: localscanner.NewServiceCertificatesRepo,
 		msgToCentralC:                make(chan *message.ExpiringMessage),
 		stopSig:                      concurrency.NewErrorSignal(),
+		newMsgFromSensorFn:           newLocalScannerMsgFromSensor,
+		responseReceived:             concurrency.NewSignal(),
+		requiredCentralCapability:    nil,
 	}
+}
 
-	tlsIssuer.certRequester = certificates.NewLocalScannerCertificateRequester(tlsIssuer.msgToCentralHandler)
-	return tlsIssuer
+func newLocalScannerMsgFromSensor(requestID string) *central.MsgFromSensor {
+	return &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_IssueLocalScannerCertsRequest{
+			IssueLocalScannerCertsRequest: &central.IssueLocalScannerCertsRequest{
+				RequestId: requestID,
+			},
+		},
+	}
 }

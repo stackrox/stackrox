@@ -6,7 +6,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
-	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certificates"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/securedcluster"
 	"k8s.io/client-go/kubernetes"
 )
@@ -14,8 +13,8 @@ import (
 var (
 	securedClusterComponentName    = "secured cluster"
 	securedClusterSensorCapability = centralsensor.SecuredClusterCertificatesRefresh
-	securedClusterResponseFn       = func(msg *central.MsgToSensor) *certificates.Response {
-		return certificates.NewResponseFromSecuredClusterCerts(msg.GetIssueSecuredClusterCertsResponse())
+	securedClusterResponseFn       = func(msg *central.MsgToSensor) *Response {
+		return NewResponseFromSecuredClusterCerts(msg.GetIssueSecuredClusterCertsResponse())
 	}
 )
 
@@ -26,7 +25,7 @@ func NewSecuredClusterTLSIssuer(
 	sensorNamespace string,
 	sensorPodName string,
 ) common.SensorComponent {
-	tlsIssuer := &tlsIssuerImpl{
+	return &tlsIssuerImpl{
 		componentName:                securedClusterComponentName,
 		sensorCapability:             securedClusterSensorCapability,
 		getResponseFn:                securedClusterResponseFn,
@@ -38,8 +37,21 @@ func NewSecuredClusterTLSIssuer(
 		getServiceCertificatesRepoFn: securedcluster.NewServiceCertificatesRepo,
 		msgToCentralC:                make(chan *message.ExpiringMessage),
 		stopSig:                      concurrency.NewErrorSignal(),
+		newMsgFromSensorFn:           newSecuredClusterMsgFromSensor,
+		responseReceived:             concurrency.NewSignal(),
+		requiredCentralCapability: func() *centralsensor.CentralCapability {
+			centralCap := centralsensor.CentralCapability(centralsensor.SecuredClusterCertificatesReissue)
+			return &centralCap
+		}(),
 	}
+}
 
-	tlsIssuer.certRequester = certificates.NewSecuredClusterCertificateRequester(tlsIssuer.msgToCentralHandler)
-	return tlsIssuer
+func newSecuredClusterMsgFromSensor(requestID string) *central.MsgFromSensor {
+	return &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_IssueSecuredClusterCertsRequest{
+			IssueSecuredClusterCertsRequest: &central.IssueSecuredClusterCertsRequest{
+				RequestId: requestID,
+			},
+		},
+	}
 }

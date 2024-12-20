@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certificates"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certrepo"
 	"github.com/stretchr/testify/mock"
 	appsApiv1 "k8s.io/api/apps/v1"
@@ -107,17 +106,9 @@ type fakeK8sClientConfig struct {
 	secretsOwner *metav1.OwnerReference
 }
 
-type certificateRequesterMock struct {
-	mock.Mock
-}
-
-func (m *certificateRequesterMock) RequestCertificates(ctx context.Context) (*certificates.Response, error) {
-	args := m.Called(ctx)
-	return args.Get(0).(*certificates.Response), args.Error(1)
-}
-
-func (m *certificateRequesterMock) DispatchResponse(response *certificates.Response) {
-	m.Called(response)
+type mockForStartConfig struct {
+	getCertsErr       error
+	refresherStartErr error
 }
 
 type certificateRefresherMock struct {

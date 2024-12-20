@@ -2,6 +2,7 @@ package certrefresh
 
 import (
 	"context"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -16,7 +17,6 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/message"
-	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certificates"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certrepo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -43,17 +43,16 @@ const (
 )
 
 type securedClusterTLSIssuerFixture struct {
-	k8sClient       *fake.Clientset
-	certRequester   *certificateRequesterMock
-	certRefresher   *certificateRefresherMock
-	repo            *certsRepoMock
-	componentGetter *componentGetterMock
-	tlsIssuer       *tlsIssuerImpl
+	k8sClient            *fake.Clientset
+	certRefresher        *certificateRefresherMock
+	repo                 *certsRepoMock
+	componentGetter      *componentGetterMock
+	tlsIssuer            *tlsIssuerImpl
+	interceptedRequestID atomic.Value
 }
 
 func newSecuredClusterTLSIssuerFixture(k8sClientConfig fakeK8sClientConfig) *securedClusterTLSIssuerFixture {
 	fixture := &securedClusterTLSIssuerFixture{
-		certRequester:   &certificateRequesterMock{},
 		certRefresher:   &certificateRefresherMock{},
 		repo:            &certsRepoMock{},
 		componentGetter: &componentGetterMock{},
@@ -69,15 +68,17 @@ func newSecuredClusterTLSIssuerFixture(k8sClientConfig fakeK8sClientConfig) *sec
 		certRefreshBackoff:           certRefreshBackoff,
 		getCertificateRefresherFn:    fixture.componentGetter.getCertificateRefresher,
 		getServiceCertificatesRepoFn: fixture.componentGetter.getServiceCertificatesRepo,
-		certRequester:                fixture.certRequester,
+		stopSig:                      concurrency.NewErrorSignal(),
+		msgToCentralC:                make(chan *message.ExpiringMessage),
+		newMsgFromSensorFn:           newSecuredClusterMsgFromSensor,
+		responseReceived:             concurrency.NewSignal(),
+		requiredCentralCapability:    nil,
 	}
 
 	return fixture
 }
 
 func (f *securedClusterTLSIssuerFixture) assertMockExpectations(t *testing.T) {
-	f.certRequester.AssertExpectations(t)
-	f.certRequester.AssertExpectations(t)
 	f.componentGetter.AssertExpectations(t)
 }
 
@@ -93,6 +94,28 @@ func (f *securedClusterTLSIssuerFixture) mockForStart(conf mockForStartConfig) {
 
 	f.componentGetter.On("getCertificateRefresher", securedClusterComponentName, mock.Anything, f.repo,
 		certRefreshTimeout, certRefreshBackoff).Once().Return(f.certRefresher)
+}
+
+// respondRequest reads a request from `f.tlsIssuer.MsgToCentralC` and responds with `responseOverwrite` if not nil,
+// or with a response with the same ID as the request otherwise.
+// Before sending the response, it stores in `f.interceptedRequestID` the ID of the request.
+func (f *securedClusterTLSIssuerFixture) respondRequest(
+	ctx context.Context, t *testing.T,
+	responseOverwrite *central.IssueSecuredClusterCertsResponse) {
+	select {
+	case <-ctx.Done():
+	case request := <-f.tlsIssuer.msgToCentralC:
+		interceptedRequestID := request.GetIssueSecuredClusterCertsRequest().GetRequestId()
+		assert.NotEmpty(t, interceptedRequestID)
+		var response *central.IssueSecuredClusterCertsResponse
+		if responseOverwrite != nil {
+			response = responseOverwrite
+		} else {
+			response = &central.IssueSecuredClusterCertsResponse{RequestId: interceptedRequestID}
+		}
+		f.interceptedRequestID.Store(response.GetRequestId())
+		f.tlsIssuer.dispatch(NewResponseFromSecuredClusterCerts(response))
+	}
 }
 
 func TestSecuredClusterTLSIssuerStartStopSuccess(t *testing.T) {
@@ -175,20 +198,13 @@ func TestSecuredClusterTLSIssuerProcessMessageKnownMessage(t *testing.T) {
 		},
 	}
 
-	done := make(chan struct{})
-	fixture.certRequester.On("DispatchResponse",
-		certificates.NewResponseFromSecuredClusterCerts(expectedResponse)).Run(func(args mock.Arguments) {
-		close(done)
-	}).Once().Return()
+	fixture.tlsIssuer.ongoingRequestID = expectedResponse.RequestId
+	fixture.tlsIssuer.requestOngoing.Store(true)
 
 	assert.NoError(t, fixture.tlsIssuer.ProcessMessage(msg))
-
-	select {
-	case <-done:
-		fixture.certRequester.AssertExpectations(t)
-	case <-time.After(5 * time.Second):
-		t.Fatalf("Test timed out waiting for DispatchResponse to be called")
-	}
+	assert.Eventually(t, func() bool {
+		return fixture.tlsIssuer.responseReceived.IsDone()
+	}, 2*time.Second, 100*time.Millisecond)
 }
 
 func TestSecuredClusterTLSIssuerProcessMessageUnknownMessage(t *testing.T) {
@@ -198,9 +214,69 @@ func TestSecuredClusterTLSIssuerProcessMessageUnknownMessage(t *testing.T) {
 	}
 
 	assert.NoError(t, fixture.tlsIssuer.ProcessMessage(msg))
+	assert.Never(t, func() bool {
+		return fixture.tlsIssuer.responseReceived.IsDone()
+	}, 200*time.Millisecond, 50*time.Millisecond)
+}
 
-	time.Sleep(100 * time.Millisecond)
-	fixture.certRequester.AssertNotCalled(t, "DispatchResponse", mock.Anything)
+func TestSecuredClusterTLSIssuerRequestCancellation(t *testing.T) {
+	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.SecuredClusterCertificatesReissue})
+	f := newSecuredClusterTLSIssuerFixture(fakeK8sClientConfig{})
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	cancel()
+
+	certs, requestErr := f.tlsIssuer.requestCertificates(ctx)
+	assert.Nil(t, certs)
+	assert.Equal(t, context.Canceled, requestErr)
+}
+
+func TestSecuredClusterTLSIssuerRequestSuccess(t *testing.T) {
+	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.SecuredClusterCertificatesReissue})
+	f := newSecuredClusterTLSIssuerFixture(fakeK8sClientConfig{})
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	go f.respondRequest(ctx, t, nil)
+
+	response, err := f.tlsIssuer.requestCertificates(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, f.interceptedRequestID.Load(), response.RequestId)
+	oldRequestId := response.RequestId
+
+	// Check that a second call also works
+	go f.respondRequest(ctx, t, nil)
+
+	response, err = f.tlsIssuer.requestCertificates(ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, f.interceptedRequestID.Load(), response.RequestId)
+	assert.NotEqual(t, oldRequestId, response.RequestId)
+}
+
+func TestSecuredClusterTLSIssuerResponsesWithUnknownIDAreIgnored(t *testing.T) {
+	f := newSecuredClusterTLSIssuerFixture(fakeK8sClientConfig{})
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
+
+	response := &central.IssueSecuredClusterCertsResponse{RequestId: "UNKNOWN"}
+	// Request with different request ID should be ignored.
+	go f.respondRequest(ctx, t, response)
+
+	certs, requestErr := f.tlsIssuer.requestCertificates(ctx)
+	assert.Nil(t, certs)
+	assert.Equal(t, context.DeadlineExceeded, requestErr)
+}
+
+func TestSecuredClusterCertificateRequesterNoReplyFromCentral(t *testing.T) {
+	f := newSecuredClusterTLSIssuerFixture(fakeK8sClientConfig{})
+	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
+	defer cancel()
+
+	certs, requestErr := f.tlsIssuer.requestCertificates(ctx)
+
+	// No response was set using `f.respondRequest`, which simulates not receiving a reply from Central
+	assert.Nil(t, certs)
+	assert.Equal(t, context.DeadlineExceeded, requestErr)
 }
 
 func TestSecuredClusterTLSIssuerIntegrationTests(t *testing.T) {

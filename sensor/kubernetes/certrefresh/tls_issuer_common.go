@@ -2,6 +2,8 @@ package certrefresh
 
 import (
 	"context"
+	"fmt"
+	"sync/atomic"
 	"time"
 
 	"github.com/pkg/errors"
@@ -9,9 +11,10 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/message"
-	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certificates"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certrepo"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -47,20 +50,27 @@ type certificateRefresherGetter func(certsDescription string, requestCertificate
 type serviceCertificatesRepoGetter func(ownerReference metav1.OwnerReference, namespace string,
 	secretsClient corev1.SecretInterface) certrepo.ServiceCertificatesRepo
 
+type newMsgFromSensor func(requestID string) *central.MsgFromSensor
+
 type tlsIssuerImpl struct {
 	componentName                string
 	sensorCapability             centralsensor.SensorCapability
-	getResponseFn                func(*central.MsgToSensor) *certificates.Response
+	getResponseFn                func(*central.MsgToSensor) *Response
 	sensorNamespace              string
 	sensorPodName                string
 	k8sClient                    kubernetes.Interface
 	certRefreshBackoff           wait.Backoff
 	getCertificateRefresherFn    certificateRefresherGetter
 	getServiceCertificatesRepoFn serviceCertificatesRepoGetter
-	certRequester                certificates.Requester
 	certRefresher                concurrency.RetryTicker
 	msgToCentralC                chan *message.ExpiringMessage
 	stopSig                      concurrency.ErrorSignal
+	responseFromCentral          *Response
+	responseReceived             concurrency.Signal
+	ongoingRequestID             string
+	requestOngoing               atomic.Bool
+	newMsgFromSensorFn           newMsgFromSensor
+	requiredCentralCapability    *centralsensor.CentralCapability
 }
 
 // Start starts the Sensor component and launches a certificate refresher that immediately checks the certificates, and
@@ -85,7 +95,7 @@ func (i *tlsIssuerImpl) Start() error {
 
 	certsRepo := i.getServiceCertificatesRepoFn(*sensorOwnerReference, i.sensorNamespace,
 		i.k8sClient.CoreV1().Secrets(i.sensorNamespace))
-	i.certRefresher = i.getCertificateRefresherFn(i.componentName, i.certRequester.RequestCertificates, certsRepo,
+	i.certRefresher = i.getCertificateRefresherFn(i.componentName, i.requestCertificates, certsRepo,
 		certRefreshTimeout, i.certRefreshBackoff)
 
 	if refreshStartErr := i.certRefresher.Start(); refreshStartErr != nil {
@@ -134,20 +144,72 @@ func (i *tlsIssuerImpl) ProcessMessage(msg *central.MsgToSensor) error {
 		return nil
 	}
 
-	go func() {
-		i.certRequester.DispatchResponse(response)
-	}()
-
+	go i.dispatch(response)
 	return nil
 }
 
-func (i *tlsIssuerImpl) msgToCentralHandler(ctx context.Context, msg *message.ExpiringMessage) error {
+func (i *tlsIssuerImpl) dispatch(response *Response) {
+	if !i.requestOngoing.Load() {
+		log.Warnf("Received a response for request ID %q, but there is no ongoing RequestCertificates call.", response.RequestId)
+		return
+	}
+	if i.ongoingRequestID != response.RequestId {
+		log.Warnf("Request ID %q does not match ongoing request ID %q.",
+			response.RequestId, i.ongoingRequestID)
+		return
+	}
+
+	i.responseFromCentral = response
+	i.responseReceived.Signal()
+}
+
+// requestCertificates makes a new request for a new set of secured cluster certificates from Central.
+// Concurrent requests are *not* supported.
+func (i *tlsIssuerImpl) requestCertificates(ctx context.Context) (*Response, error) {
+	if i.requiredCentralCapability != nil {
+		// Central capabilities are only available after this component is created,
+		// which is why this check is done here
+		if !centralcaps.Has(*i.requiredCentralCapability) {
+			return nil, fmt.Errorf("TLS certificate refresh failed: missing Central capability '%s'", *i.requiredCentralCapability)
+		}
+	}
+
+	if !i.requestOngoing.CompareAndSwap(false, true) {
+		return nil, errors.New("concurrent requests are not supported.")
+	}
+
+	defer func() {
+		i.requestOngoing.Store(false)
+		i.responseReceived.Reset()
+	}()
+
+	requestID := uuid.NewV4().String()
+	i.ongoingRequestID = requestID
+
+	if err := i.send(ctx, requestID); err != nil {
+		return nil, err
+	}
+	return i.receive(ctx)
+}
+
+// send a cert refresh request to Central
+func (i *tlsIssuerImpl) send(ctx context.Context, requestID string) error {
 	select {
 	case <-i.stopSig.Done():
 		return nil
 	case <-ctx.Done():
 		return ctx.Err()
-	case i.msgToCentralC <- msg:
+	case i.msgToCentralC <- message.New(i.newMsgFromSensorFn(requestID)):
 		return nil
+	}
+}
+
+// receive handles the response to a specific certificate request
+func (i *tlsIssuerImpl) receive(ctx context.Context) (*Response, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case <-i.responseReceived.Done():
+		return i.responseFromCentral, nil
 	}
 }
