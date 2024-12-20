@@ -213,12 +213,27 @@ central:
 #      value: null
 #      generate: null
 #
+#     # Customized Central DB database settings.  These should be evaluated if the memory resources of Central DB
+#     # are updated as suggested in the resources section.
+#     # Default configurations are applied if the configurations are omitted
+#     settings:
+#       maxConnections: 90
+#       sharedBuffers: 2GB
+#       workMem: 40MB
+#       hashMemMultiplier: 2.0
+#       maintenanceWorkMem: 512MB
+#       effectiveCacheSize: 4GB
+#       maxWalSize: 5GB
+#       minWalSize: 80MB
+#       autovacuumMaxWorkers: 5
+#
+#    # This takes precedence over the settings section above and allows a complete overwrite of the DB configuration file.
 #    postgresConfig: "@config/centraldb/postgresql.conf|config/centraldb/postgresql.conf.default"
 #    hbaConfig: "@config/centraldb/pg_hba.conf|config/centraldb/pg_hba.conf.default"
 #
 #    # Specifying configOverride mounts the specified config map in the same namespace which must contain
-#    # both pg_hba.conf and postgresql.conf. This should only be used when the default settings are not
-#    # sufficient and manual override is required.
+#    # both pg_hba.conf and postgresql.conf. This should only be used when the default settings AND exposed options in
+#    # the `settings` section above are not sufficient and manual override is required.
 #    configOverride: null
 #
 #    nodeSelector: null
