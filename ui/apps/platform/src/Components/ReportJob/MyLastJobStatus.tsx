@@ -1,7 +1,7 @@
 import React from 'react';
 import { Spinner } from '@patternfly/react-core';
 
-import ReportJobStatus from 'Containers/Vulnerabilities/VulnerablityReporting/ViewVulnReport/ReportJobStatus';
+import ReportJobStatus from 'Components/ReportJob/ReportJobStatus';
 import { onDownloadReport } from 'Components/ReportJob/utils';
 import { Snapshot } from 'types/reportJob';
 
