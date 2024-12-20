@@ -29,7 +29,7 @@ def determine_component_version_suffix(application):
 def process_component(component, name_suffix):
     validate_component(component)
     if name_suffix != "":
-        name = f"{component["name"]}{name_suffix}"
+        name = f"{component['name']}{name_suffix}"
     else:
         name = component["name"]
 
