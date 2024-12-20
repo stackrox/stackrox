@@ -11,8 +11,8 @@ def parse_image_refs(image_refs):
 
 def validate_component(component):
     assert (
-        component["component"] != ""
-        and component["ref"] != ""
+        component["name"] != ""
+        and component["containerImage"] != ""
         and component["revision"] != ""
         and component["repository"] != ""
     ), "Component must have component name, ref, revision and repository set. Check container image labels."
@@ -23,10 +23,10 @@ def process_component(component, name_suffix):
     if name_suffix != "":
         name = f"{component['component']}-{name_suffix}"
     else:
-        name = component["component"]
+        name = component["name"]
 
     return {
-        "containerImage": component["ref"],
+        "containerImage": component["containerImage"],
         "name": name,
         "source": {
             "git": {
