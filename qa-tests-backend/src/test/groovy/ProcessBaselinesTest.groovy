@@ -227,7 +227,7 @@ class ProcessBaselinesTest extends BaseSpecification {
         assert (!StringUtils.isEmpty(lockProcessBaselines.get(0).getElements(0).getElement().processName))
 
         // sleep 5 seconds to allow for propagation to sensor
-        sleep 5000
+        sleep 10000
         orchestrator.execInContainer(deployment, "pwd")
 
         log.info "Locked Process Baseline after pwd: ${lockProcessBaselines}"

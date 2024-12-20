@@ -313,6 +313,7 @@ func (s *serviceImpl) ResolveAlert(ctx context.Context, req *v1.ResolveAlertRequ
 			if err != nil {
 				log.Errorf("Error syncing baseline with cluster %q: %v", alert.GetDeployment().GetClusterId(), err)
 			}
+			log.Infof("Successfully sent process baseline to cluster %q: %s", alert.GetDeployment().GetClusterId(), baseline.GetId())
 		}
 	}
 
