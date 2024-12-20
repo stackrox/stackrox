@@ -35,10 +35,10 @@ type ResultsAggregator struct {
 	benchmarkDS      benchmarksDS.DataStore
 	complianceRuleDS complianceRuleDS.DataStore
 
-	walkByQuery walkByQueryWrapper
+	walkByQuery aggregateResultsFn
 }
 
-func NewReportDataGenerator(
+func NewResultsAggregator(
 	checkResultsDS checkResults.DataStore,
 	scanDS scanDS.DataStore,
 	profileDS profileDS.DataStore,
@@ -54,12 +54,12 @@ func NewReportDataGenerator(
 		benchmarkDS:      benchmarksDS,
 		complianceRuleDS: complianceRuleDS,
 	}
-	ret.walkByQuery = ret.WalkByQuery
+	ret.walkByQuery = ret.AggregateResults
 	return ret
 }
 
 type checkResultWalkByQuery func(*storage.ComplianceOperatorCheckResultV2) error
-type walkByQueryWrapper func(context.Context, string, *[]*report.ResultRow, *checkStatus) checkResultWalkByQuery
+type aggregateResultsFn func(context.Context, string, *[]*report.ResultRow, *checkStatus) checkResultWalkByQuery
 
 // GetReportData returns map of cluster id and slice of ResultRow
 func (g *ResultsAggregator) GetReportData(req *report.Request) *report.Results {
@@ -96,7 +96,7 @@ func (g *ResultsAggregator) getReportDataForCluster(ctx context.Context, scanCon
 	return ret, statuses, err
 }
 
-func (g *ResultsAggregator) WalkByQuery(ctx context.Context, clusterID string, clusterResults *[]*report.ResultRow, checkStatus *checkStatus) checkResultWalkByQuery {
+func (g *ResultsAggregator) AggregateResults(ctx context.Context, clusterID string, clusterResults *[]*report.ResultRow, checkStatus *checkStatus) checkResultWalkByQuery {
 	return func(checkResult *storage.ComplianceOperatorCheckResultV2) error {
 		row := &report.ResultRow{
 			ClusterName:  checkResult.GetClusterName(),

@@ -68,8 +68,8 @@ type complianceReportGeneratorImpl struct {
 	blobStore                blobDS.Datastore
 	numberOfTriesOnEmailSend int
 
-	reportResultsAggregator ResultsAggregator
-	reportFormatter         Formatter
+	resultsAggregator ResultsAggregator
+	formatter         Formatter
 }
 
 type ResultEmail struct {
@@ -98,9 +98,9 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *report.Reques
 		}
 	}
 
-	reportData := rg.reportResultsAggregator.GetReportData(req)
+	reportData := rg.resultsAggregator.GetReportData(req)
 
-	zipData, err := rg.reportFormatter.FormatCSVReport(reportData.ResultCSVs)
+	zipData, err := rg.formatter.FormatCSVReport(reportData.ResultCSVs)
 	if err != nil {
 		if dbErr := reportUtils.UpdateSnapshotOnError(req.Ctx, snapshot, reportUtils.ErrReportGeneration, rg.snapshotDS); dbErr != nil {
 			return errors.Wrap(dbErr, "unable to update the snapshot on report generation failure")

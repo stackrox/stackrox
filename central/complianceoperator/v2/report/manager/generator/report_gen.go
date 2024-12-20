@@ -52,7 +52,7 @@ func New(checkResultDS checkResults.DataStore, notifierProcessor notifier.Proces
 		snapshotDS:               snapshotDS,
 		blobStore:                blobDS,
 		numberOfTriesOnEmailSend: defaultNumberOfTriesOnEmailSend,
-		reportFormatter:          format.NewFormatter(),
-		reportResultsAggregator:  utils.NewReportDataGenerator(checkResultDS, scanDS, profileDS, remediationDS, benchmarksDS, complianceRuleDS),
+		formatter:                format.NewFormatter(),
+		resultsAggregator:        utils.NewResultsAggregator(checkResultDS, scanDS, profileDS, remediationDS, benchmarksDS, complianceRuleDS),
 	}
 }

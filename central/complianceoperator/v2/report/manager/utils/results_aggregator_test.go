@@ -40,7 +40,7 @@ type ComplianceResultsAggregatorSuite struct {
 	benchmarkDS    *benchmarkMocks.MockDataStore
 	ruleDS         *ruleMocks.MockDataStore
 
-	generator *ResultsAggregator
+	aggregator *ResultsAggregator
 }
 
 type getReportDataTestCase struct {
@@ -94,8 +94,8 @@ func (s *ComplianceResultsAggregatorSuite) Test_GetReportData() {
 					}
 					return tcase.expectedErr
 				})
-			s.generator.walkByQuery = mockWalkByQueryWrapper
-			res := s.generator.GetReportData(req)
+			s.aggregator.walkByQuery = mockWalkByQueryWrapper
+			res := s.aggregator.GetReportData(req)
 			assertResults(s.T(), tcase, res)
 		})
 	}
@@ -364,7 +364,7 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			}
 			var results []*report.ResultRow
 			status := &checkStatus{}
-			err := s.generator.WalkByQuery(context.Background(), clusterID, &results, status)(tcase.check)
+			err := s.aggregator.AggregateResults(context.Background(), clusterID, &results, status)(tcase.check)
 			if tcase.expectError {
 				assert.Error(s.T(), err)
 			} else {
@@ -386,7 +386,7 @@ func (s *ComplianceResultsAggregatorSuite) SetupTest() {
 	s.benchmarkDS = benchmarkMocks.NewMockDataStore(s.ctrl)
 	s.ruleDS = ruleMocks.NewMockDataStore(s.ctrl)
 
-	s.generator = NewReportDataGenerator(s.checkResultsDS, s.scanDS, s.profileDS, s.remediationDS, s.benchmarkDS, s.ruleDS)
+	s.aggregator = NewResultsAggregator(s.checkResultsDS, s.scanDS, s.profileDS, s.remediationDS, s.benchmarkDS, s.ruleDS)
 }
 
 func getRequest(ctx context.Context, numClusters, numProfiles int) *report.Request {
