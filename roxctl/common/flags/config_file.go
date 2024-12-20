@@ -120,7 +120,7 @@ func ConfigurationFileChanged() bool {
 }
 
 func ConfigurationInstancesChanged() bool {
-	return ConfigurationFileChanged() && (configInstancesSet != nil && *configUseInsecureSet)
+	return ConfigurationFileChanged() && (configInstancesSet != nil && *configInstancesSet)
 }
 
 func ConfigurationAuthInfoChanged() bool {
