@@ -98,7 +98,7 @@ func TestConvertLocalScannerCertsResponse(t *testing.T) {
 	}
 }
 
-func TestConvertSecuredClusterCertrsResponse(t *testing.T) {
+func TestConvertSecuredClusterCertsResponse(t *testing.T) {
 	errorMessage := "error message"
 	certificatesSet := createCertificatesSet()
 

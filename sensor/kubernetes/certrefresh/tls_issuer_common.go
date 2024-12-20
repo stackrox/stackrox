@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
@@ -65,9 +66,10 @@ type tlsIssuerImpl struct {
 	certRefresher                concurrency.RetryTicker
 	msgToCentralC                chan *message.ExpiringMessage
 	stopSig                      concurrency.ErrorSignal
-	responseFromCentral          *Response
+	responseFromCentral          atomic.Pointer[Response]
 	responseReceived             concurrency.Signal
 	ongoingRequestID             string
+	ongoingRequestIDMutex        sync.Mutex
 	requestOngoing               atomic.Bool
 	newMsgFromSensorFn           newMsgFromSensor
 	requiredCentralCapability    *centralsensor.CentralCapability
@@ -138,6 +140,10 @@ func (i *tlsIssuerImpl) ResponsesC() <-chan *message.ExpiringMessage {
 // This method must not block as it would prevent centralReceiverImpl from sending messages
 // to other SensorComponents.
 func (i *tlsIssuerImpl) ProcessMessage(msg *central.MsgToSensor) error {
+	if i.getResponseFn == nil {
+		return errors.New("getResponseFn is not set")
+	}
+
 	response := i.getResponseFn(msg)
 	if response == nil {
 		// messages not supported by this component are ignored
@@ -153,13 +159,14 @@ func (i *tlsIssuerImpl) dispatch(response *Response) {
 		log.Warnf("Received a response for request ID %q, but there is no ongoing RequestCertificates call.", response.RequestId)
 		return
 	}
-	if i.ongoingRequestID != response.RequestId {
+	ongoingRequestID := i.getOngoingRequestID()
+	if ongoingRequestID != response.RequestId {
 		log.Warnf("Request ID %q does not match ongoing request ID %q.",
-			response.RequestId, i.ongoingRequestID)
+			response.RequestId, ongoingRequestID)
 		return
 	}
 
-	i.responseFromCentral = response
+	i.responseFromCentral.Store(response)
 	i.responseReceived.Signal()
 }
 
@@ -170,7 +177,7 @@ func (i *tlsIssuerImpl) requestCertificates(ctx context.Context) (*Response, err
 		// Central capabilities are only available after this component is created,
 		// which is why this check is done here
 		if !centralcaps.Has(*i.requiredCentralCapability) {
-			return nil, fmt.Errorf("TLS certificate refresh failed: missing Central capability '%s'", *i.requiredCentralCapability)
+			return nil, fmt.Errorf("TLS certificate refresh failed: missing Central capability %q", *i.requiredCentralCapability)
 		}
 	}
 
@@ -184,7 +191,7 @@ func (i *tlsIssuerImpl) requestCertificates(ctx context.Context) (*Response, err
 	}()
 
 	requestID := uuid.NewV4().String()
-	i.ongoingRequestID = requestID
+	i.setOngoingRequestID(requestID)
 
 	if err := i.send(ctx, requestID); err != nil {
 		return nil, err
@@ -210,6 +217,20 @@ func (i *tlsIssuerImpl) receive(ctx context.Context) (*Response, error) {
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	case <-i.responseReceived.Done():
-		return i.responseFromCentral, nil
+		return i.responseFromCentral.Load(), nil
 	}
+}
+
+func (i *tlsIssuerImpl) setOngoingRequestID(requestID string) {
+	i.ongoingRequestIDMutex.Lock()
+	defer i.ongoingRequestIDMutex.Unlock()
+
+	i.ongoingRequestID = requestID
+}
+
+func (i *tlsIssuerImpl) getOngoingRequestID() string {
+	i.ongoingRequestIDMutex.Lock()
+	defer i.ongoingRequestIDMutex.Unlock()
+
+	return i.ongoingRequestID
 }
