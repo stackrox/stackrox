@@ -39,10 +39,10 @@ collector:
     cert: "DUMMY COLLECTOR CERT"
     key: "DUMMY COLLECTOR KEY"
   runtimeConfig:
-    enabled: true
+    enabled: "Enabled"
     networking:
       externalIps:
-        enabled: true
+        enabled: "Disabled"
     maxConnectionsPerMinute: 1024
 
 admissionControl:
