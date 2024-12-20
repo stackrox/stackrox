@@ -171,11 +171,15 @@ func (m *managerImpl) Stop() {
 		}
 		m.watchingScanConfigs = make(map[string]watcher.ScanConfigWatcher)
 	})
+
+	m.reportGen.Stop()
+
 	m.stopper.Client().Stop()
 	err := m.stopper.Client().Stopped().Wait()
 	if err != nil {
 		logging.Errorf("Error stopping compliance report manager : %v", err)
 	}
+
 }
 
 func (m *managerImpl) generateReportNoLock(req *reportRequest) {
