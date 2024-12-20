@@ -45,7 +45,7 @@ def construct_snapshot(
     application,
     components
 ):
-    timestamp = datetime.datetime.now(datetime.UTC).strftime("%Y%m%dT%H%M%SZ")
+    timestamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     snapshot_name = f"{snapshot_name_prefix}_{snapshot_version_suffix}-{timestamp}"
     return {
         "apiVersion": "appstudio.redhat.com/v1alpha1",
