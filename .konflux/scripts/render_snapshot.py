@@ -100,3 +100,4 @@ if __name__ == '__main__':
 
     snapshot_name_results_path = os.environ["SNAPSHOT_NAME_RESULTS_PATH"]
     write_snapshot(snapshot, snapshot_name_results_path)
+    print("Rendered snapshot written to workspace.")

@@ -35,6 +35,7 @@ spec:
     image: registry.access.redhat.com/ubi9:latest@sha256:1057dab827c782abcfb9bda0c3900c0966b5066e671d54976a7bcb3a2d1a5e53
     workingDir: /var/workdir/source
     env:
+      # For these vars, args: will not work
       - name: APPLICATION
         valueFrom:
           fieldRef:
@@ -47,6 +48,7 @@ spec:
         valueFrom:
           fieldRef:
             fieldPath: metadata.name
+      # It might work for these vars
       - name: IMAGE_REFS
         value: $(params.IMAGE_REFS)
       - name: MAIN_IMAGE_TAG
