@@ -340,7 +340,7 @@ func (c CollectorRuntimeConfigEnabled) Pointer() *CollectorRuntimeConfigEnabled 
 
 type CollectorRuntimeConfig struct {
 	//+kubebuilder:default=Enabled
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:select:Enable", "urn:alm:descriptor:com.tectonic.ui:select:Disable", "urn:alm:descriptor:com.tectonic.ui:select:Auto"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:select:Enabled", "urn:alm:descriptor:com.tectonic.ui:select:Disabled", "urn:alm:descriptor:com.tectonic.ui:select:Auto"}
 	Enabled *CollectorRuntimeConfigEnabled `json:"enabled,omitempty"`
 
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
@@ -374,7 +374,7 @@ func (c CollectorExternalIPsEnabled) Pointer() *CollectorExternalIPsEnabled {
 
 type CollectorExternalIPs struct {
 	//+kubebuilder:default=Disabled
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:select:Disable", "urn:alm:descriptor:com.tectonic.ui:select:Enable", "urn:alm:descriptor:com.tectonic.ui:select:Auto"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:select:Disabled", "urn:alm:descriptor:com.tectonic.ui:select:Enabled", "urn:alm:descriptor:com.tectonic.ui:select:Auto"}
 	Enabled *CollectorExternalIPsEnabled `json:"enabled,omitempty"`
 }
 
