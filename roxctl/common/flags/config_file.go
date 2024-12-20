@@ -227,7 +227,7 @@ func ConfigPassword() string {
 
 // ApiTokenFilePath returns the configuration-defined API Token file path.
 func ConfigApiTokenFilePath() string {
-	if ConfigurationFileChanged() {
+	if ConfigurationAuthInfoChanged() {
 		return config.AuthInfo.ApiTokenFilePath
 	}
 
@@ -236,7 +236,7 @@ func ConfigApiTokenFilePath() string {
 
 // InlineApiToken returns the configuration-defined ApiToken.
 func ConfigInlineApiToken() string {
-	if ConfigurationFileChanged() {
+	if ConfigurationAuthInfoChanged() {
 		return config.AuthInfo.ApiToken
 	}
 
