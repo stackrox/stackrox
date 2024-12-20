@@ -355,14 +355,14 @@ type CollectorNetworking struct {
 	MaxConnectionsPerMinute *int32 `json:"maxConnectionsPerMinute,omitempty"`
 }
 
-// +kubebuilder:validation:Enum=Enabled;Disabled;Auto
+// +kubebuilder:validation:Enum=Disabled;Enabled;Auto
 type CollectorExternalIPsEnabled string
 
 const (
-	// CollectorExternalIPsEnabled means: use the external IPs feature
-	CollectorExternalIPsEnabledEnabled CollectorExternalIPsEnabled = "Enabled"
 	// CollectorExternalIPsDisabled means: don't use the external IPs feature
 	CollectorExternalIPsEnabledDisabled CollectorExternalIPsEnabled = "Disabled"
+	// CollectorExternalIPsEnabled means: use the external IPs feature
+	CollectorExternalIPsEnabledEnabled CollectorExternalIPsEnabled = "Enabled"
 	// CollectorExternalIPsAuto means: don't use the external IPs feature
 	CollectorExternalIPsEnabledAuto CollectorExternalIPsEnabled = "Auto"
 )
@@ -374,7 +374,7 @@ func (c CollectorExternalIPsEnabled) Pointer() *CollectorExternalIPsEnabled {
 
 type CollectorExternalIPs struct {
 	//+kubebuilder:default=Disabled
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:select:Enable", "urn:alm:descriptor:com.tectonic.ui:select:Disable", "urn:alm:descriptor:com.tectonic.ui:select:Auto"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:select:Disable", "urn:alm:descriptor:com.tectonic.ui:select:Enable", "urn:alm:descriptor:com.tectonic.ui:select:Auto"}
 	Enabled *CollectorExternalIPsEnabled `json:"enabled,omitempty"`
 }
 
