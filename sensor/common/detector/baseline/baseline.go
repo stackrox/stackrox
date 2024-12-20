@@ -52,7 +52,7 @@ func (w *baselineEvaluator) AddBaseline(baseline *storage.ProcessBaseline) {
 		defer w.baselineLock.Unlock()
 
 		delete(w.baselines[baseline.GetKey().GetDeploymentId()], baseline.GetKey().GetContainerName())
-		log.Infof("Deleted baseline %s", baseline.GetId())
+		log.Infof("Deleted process baseline %s", baseline.GetId())
 		return
 	}
 
@@ -75,7 +75,7 @@ func (w *baselineEvaluator) AddBaseline(baseline *storage.ProcessBaseline) {
 	}
 	containerNameMap[baseline.GetKey().GetContainerName()] = baselineSet
 
-	log.Infof("Successfully added baseline %s", baseline.GetId())
+	log.Infof("Successfully added process baseline %s", baseline.GetId())
 }
 
 // IsInBaseline checks if the process indicator is within a locked baseline

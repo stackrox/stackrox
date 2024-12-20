@@ -243,7 +243,7 @@ class ProcessBaselinesTest extends BaseSpecification {
                 alertId = alert.id
                 AlertService.resolveAlert(alertId, addToBaseline)
                 // again, allow the new baseline that contains pwd to propagate
-                sleep 5000
+                sleep 10000
             }
          }
         orchestrator.execInContainer(deployment, "pwd")
