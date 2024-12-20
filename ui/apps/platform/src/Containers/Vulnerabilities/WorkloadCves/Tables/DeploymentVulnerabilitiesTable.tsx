@@ -97,7 +97,7 @@ function DeploymentVulnerabilitiesTable({
     onClearFilters,
     tableConfig,
 }: DeploymentVulnerabilitiesTableProps) {
-    const { createUrl } = useWorkloadCveViewContext();
+    const { getAbsoluteUrl } = useWorkloadCveViewContext();
     const getVisibilityClass = generateVisibilityForColumns(tableConfig);
     const hiddenColumnCount = getHiddenColumnCount(tableConfig);
     const expandedRowSet = useSet<string>();
@@ -168,7 +168,7 @@ function DeploymentVulnerabilitiesTable({
                                             vulnerabilityState={vulnerabilityState}
                                         >
                                             <Link
-                                                to={createUrl(
+                                                to={getAbsoluteUrl(
                                                     getWorkloadEntityPagePath(
                                                         'CVE',
                                                         cve,

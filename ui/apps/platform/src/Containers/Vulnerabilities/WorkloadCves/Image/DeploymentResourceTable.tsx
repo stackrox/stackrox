@@ -40,7 +40,7 @@ export type DeploymentResourceTableProps = {
 };
 
 function DeploymentResourceTable({ data, getSortParams }: DeploymentResourceTableProps) {
-    const { createUrl } = useWorkloadCveViewContext();
+    const { getAbsoluteUrl } = useWorkloadCveViewContext();
     const vulnerabilityState = useVulnerabilityState();
     return (
         <Table borders={false} variant="compact">
@@ -64,7 +64,7 @@ function DeploymentResourceTable({ data, getSortParams }: DeploymentResourceTabl
                         <Tr>
                             <Td dataLabel="Name">
                                 <Link
-                                    to={createUrl(
+                                    to={getAbsoluteUrl(
                                         getWorkloadEntityPagePath(
                                             'Deployment',
                                             id,

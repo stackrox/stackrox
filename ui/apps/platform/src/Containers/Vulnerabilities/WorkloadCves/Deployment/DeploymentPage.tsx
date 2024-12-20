@@ -42,10 +42,10 @@ const deploymentMetadataQuery = gql`
 
 function DeploymentPage() {
     const { deploymentId } = useParams() as { deploymentId: string };
-    const { createUrl, pageTitle } = useWorkloadCveViewContext();
+    const { getAbsoluteUrl, pageTitle } = useWorkloadCveViewContext();
     const [activeTabKey, setActiveTabKey] = useURLStringUnion('detailsTab', detailsTabValues);
 
-    const workloadCveOverviewDeploymentsPath = createUrl(
+    const workloadCveOverviewDeploymentsPath = getAbsoluteUrl(
         getOverviewPagePath('Workload', {
             vulnerabilityState: 'OBSERVED',
             entityTab: 'Deployment',

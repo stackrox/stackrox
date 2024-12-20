@@ -207,7 +207,7 @@ function ImageCvePage() {
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
 
-    const { createUrl, pageTitle, baseSearchFilter } = useWorkloadCveViewContext();
+    const { getAbsoluteUrl, pageTitle, baseSearchFilter } = useWorkloadCveViewContext();
     const currentVulnerabilityState = useVulnerabilityState();
 
     const urlParams = useParams();
@@ -364,7 +364,7 @@ function ImageCvePage() {
         );
     }
 
-    const workloadCveOverviewCvePath = createUrl(
+    const workloadCveOverviewCvePath = getAbsoluteUrl(
         getOverviewPagePath('Workload', {
             vulnerabilityState: 'OBSERVED',
             entityTab: 'CVE',

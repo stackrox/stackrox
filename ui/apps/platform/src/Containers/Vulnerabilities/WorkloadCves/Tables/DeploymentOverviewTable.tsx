@@ -108,7 +108,7 @@ function DeploymentOverviewTable({
     onClearFilters,
     columnVisibilityState,
 }: DeploymentOverviewTableProps) {
-    const { createUrl } = useWorkloadCveViewContext();
+    const { getAbsoluteUrl } = useWorkloadCveViewContext();
     const vulnerabilityState = useVulnerabilityState();
     const getVisibilityClass = generateVisibilityForColumns(columnVisibilityState);
     const hiddenColumnCount = getHiddenColumnCount(columnVisibilityState);
@@ -179,7 +179,7 @@ function DeploymentOverviewTable({
                                 <Tr>
                                     <Td dataLabel="Deployment">
                                         <Link
-                                            to={createUrl(
+                                            to={getAbsoluteUrl(
                                                 getWorkloadEntityPagePath(
                                                     'Deployment',
                                                     id,

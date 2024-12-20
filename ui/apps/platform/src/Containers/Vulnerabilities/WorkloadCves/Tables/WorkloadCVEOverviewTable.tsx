@@ -187,7 +187,7 @@ function WorkloadCVEOverviewTable({
     onClearFilters,
     columnVisibilityState,
 }: WorkloadCVEOverviewTableProps) {
-    const { createUrl } = useWorkloadCveViewContext();
+    const { getAbsoluteUrl } = useWorkloadCveViewContext();
     const expandedRowSet = useSet<string>();
     const showExceptionDetailsLink = vulnerabilityState !== 'OBSERVED';
     const getVisibilityClass = generateVisibilityForColumns(columnVisibilityState);
@@ -340,7 +340,7 @@ function WorkloadCVEOverviewTable({
                                                 vulnerabilityState={vulnerabilityState}
                                             >
                                                 <Link
-                                                    to={createUrl(
+                                                    to={getAbsoluteUrl(
                                                         getWorkloadEntityPagePath(
                                                             'CVE',
                                                             cve,

@@ -142,7 +142,7 @@ function ImageVulnerabilitiesTable({
     onClearFilters,
     tableConfig,
 }: ImageVulnerabilitiesTableProps) {
-    const { createUrl } = useWorkloadCveViewContext();
+    const { getAbsoluteUrl } = useWorkloadCveViewContext();
     const getVisibilityClass = generateVisibilityForColumns(tableConfig);
     const hiddenColumnCount = getHiddenColumnCount(tableConfig);
     const expandedRowSet = useSet<string>();
@@ -253,7 +253,7 @@ function ImageVulnerabilitiesTable({
                                             vulnerabilityState={vulnerabilityState}
                                         >
                                             <Link
-                                                to={createUrl(
+                                                to={getAbsoluteUrl(
                                                     getWorkloadEntityPagePath(
                                                         'CVE',
                                                         cve,

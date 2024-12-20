@@ -39,6 +39,10 @@ const baseUrlForCveMap = {
     Platform: vulnerabilitiesPlatformCvesPath,
 } as const;
 
+export function getNamespaceViewPagePath(): string {
+    return 'namespace-view';
+}
+
 export function getOverviewPagePath(
     cveBase: 'Workload' | 'Node' | 'Platform',
     pageSearch: OverviewPageSearch

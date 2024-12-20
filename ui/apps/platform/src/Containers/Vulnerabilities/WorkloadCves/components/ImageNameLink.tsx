@@ -19,7 +19,7 @@ export type ImageNameLinkProps = {
 };
 
 function ImageNameLink({ name, id, children }: ImageNameLinkProps) {
-    const { createUrl } = useWorkloadCveViewContext();
+    const { getAbsoluteUrl } = useWorkloadCveViewContext();
     const vulnerabilityState = useVulnerabilityState();
     const [copyIconTooltip, setCopyIconTooltip] = useState('Copy image name');
 
@@ -43,7 +43,9 @@ function ImageNameLink({ name, id, children }: ImageNameLinkProps) {
             spaceItems={{ default: 'spaceItemsNone' }}
         >
             <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsNone' }}>
-                <Link to={createUrl(getWorkloadEntityPagePath('Image', id, vulnerabilityState))}>
+                <Link
+                    to={getAbsoluteUrl(getWorkloadEntityPagePath('Image', id, vulnerabilityState))}
+                >
                     <Truncate position="middle" content={baseName} />
                 </Link>{' '}
                 <span className="pf-v5-u-color-200 pf-v5-u-font-size-sm">in {registry}</span>

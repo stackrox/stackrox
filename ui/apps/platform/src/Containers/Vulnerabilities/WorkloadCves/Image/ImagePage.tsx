@@ -69,7 +69,7 @@ function ScannerV4RequiredTooltip({ children }: { children: ReactElement }) {
 
 function ImagePage() {
     const { imageId } = useParams();
-    const { createUrl, pageTitle } = useWorkloadCveViewContext();
+    const { getAbsoluteUrl, pageTitle } = useWorkloadCveViewContext();
     const { data, error } = useQuery<
         {
             image: {
@@ -105,7 +105,7 @@ function ImagePage() {
             : 'NAME UNKNOWN';
     const scanMessage = getImageScanMessage(imageData?.notes || [], imageData?.scanNotes || []);
 
-    const workloadCveOverviewImagePath = createUrl(
+    const workloadCveOverviewImagePath = getAbsoluteUrl(
         getOverviewPagePath('Workload', {
             vulnerabilityState: 'OBSERVED',
             entityTab: 'Image',

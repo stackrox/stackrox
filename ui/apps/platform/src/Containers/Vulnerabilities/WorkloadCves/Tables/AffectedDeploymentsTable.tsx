@@ -108,7 +108,7 @@ function AffectedDeploymentsTable({
     onClearFilters,
     tableConfig,
 }: AffectedDeploymentsTableProps) {
-    const { createUrl } = useWorkloadCveViewContext();
+    const { getAbsoluteUrl } = useWorkloadCveViewContext();
     const getVisibilityClass = generateVisibilityForColumns(tableConfig);
     const hiddenColumnCount = getHiddenColumnCount(tableConfig);
     const expandedRowSet = useSet<string>();
@@ -182,7 +182,7 @@ function AffectedDeploymentsTable({
                                             spaceItems={{ default: 'spaceItemsNone' }}
                                         >
                                             <Link
-                                                to={createUrl(
+                                                to={getAbsoluteUrl(
                                                     getWorkloadEntityPagePath(
                                                         'Deployment',
                                                         id,

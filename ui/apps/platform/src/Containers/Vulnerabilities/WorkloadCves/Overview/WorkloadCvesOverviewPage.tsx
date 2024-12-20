@@ -72,6 +72,7 @@ import {
     parseQuerySearchFilter,
     getVulnStateScopedQueryString,
     getZeroCveScopedQueryString,
+    getNamespaceViewPagePath,
 } from '../../utils/searchUtils';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 
@@ -171,7 +172,7 @@ function WorkloadCvesOverviewPage() {
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
 
-    const { createUrl, pageTitle, baseSearchFilter } = useWorkloadCveViewContext();
+    const { getAbsoluteUrl, pageTitle, baseSearchFilter } = useWorkloadCveViewContext();
     const currentVulnerabilityState = useVulnerabilityState();
 
     const { searchFilter, setSearchFilter: setURLSearchFilter } = useURLSearch();
@@ -461,7 +462,9 @@ function WorkloadCvesOverviewPage() {
                                                 {hasReadAccessForNamespaces && (
                                                     <Button
                                                         variant="secondary"
-                                                        href={createUrl('namespace-view')}
+                                                        href={getAbsoluteUrl(
+                                                            getNamespaceViewPagePath()
+                                                        )}
                                                         component={LinkShim}
                                                     >
                                                         Prioritize by namespace view
