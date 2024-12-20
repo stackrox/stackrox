@@ -40,6 +40,6 @@ spec:
         --no-tags \
         "docker://$(params.IMAGE)")"
 
-      cut -f1 -d' ' <<< "${infos}" | tee "$(results.IMAGE_DIGEST.path)"
-      cut -f2 -d' ' <<< "${infos}" | tee "$(results.GIT_REF.path)"
-      cut -f3 -d' ' <<< "${infos}" | tee "$(results.GIT_REPO.path)"
+      echo -n $(cut -f1 -d' ' <<< "${infos}") | tee "$(results.IMAGE_DIGEST.path)"
+      echo -n $(cut -f2 -d' ' <<< "${infos}") | tee "$(results.GIT_REF.path)"
+      echo -n $(cut -f3 -d' ' <<< "${infos}") | tee "$(results.GIT_REPO.path)"
