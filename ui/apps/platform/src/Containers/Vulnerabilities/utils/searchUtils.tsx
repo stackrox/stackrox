@@ -1,11 +1,7 @@
 import qs from 'qs';
 import { cloneDeep } from 'lodash';
 
-import {
-    vulnerabilitiesNodeCvesPath,
-    vulnerabilitiesPlatformCvesPath,
-    vulnerabilitiesWorkloadCvesPath,
-} from 'routePaths';
+import { vulnerabilitiesNodeCvesPath, vulnerabilitiesPlatformCvesPath } from 'routePaths';
 import {
     VulnerabilitySeverity,
     VulnerabilityState,
@@ -49,10 +45,14 @@ export type OverviewPageSearch = {
 );
 
 const baseUrlForCveMap = {
-    Workload: vulnerabilitiesWorkloadCvesPath,
+    Workload: '', // base URL provided by calling context
     Node: vulnerabilitiesNodeCvesPath,
     Platform: vulnerabilitiesPlatformCvesPath,
 } as const;
+
+export function getNamespaceViewPagePath(): string {
+    return 'namespace-view';
+}
 
 export function getOverviewPagePath(
     cveBase: 'Workload' | 'Node' | 'Platform',
@@ -70,11 +70,11 @@ export function getWorkloadEntityPagePath(
     const queryString = getQueryString({ ...queryOptions, vulnerabilityState });
     switch (workloadCveEntity) {
         case 'CVE':
-            return `${vulnerabilitiesWorkloadCvesPath}/cves/${id}${queryString}`;
+            return `cves/${id}${queryString}`;
         case 'Image':
-            return `${vulnerabilitiesWorkloadCvesPath}/images/${id}${queryString}`;
+            return `images/${id}${queryString}`;
         case 'Deployment':
-            return `${vulnerabilitiesWorkloadCvesPath}/deployments/${id}${queryString}`;
+            return `deployments/${id}${queryString}`;
         default:
             return ensureExhaustive(workloadCveEntity);
     }
