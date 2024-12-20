@@ -137,7 +137,7 @@ func ConfigurationCurrContextChanged() bool {
 
 // Endpoint returns the configuration-defined endpoint.
 func ConfigEndpoint() string {
-	if ConfigurationFileChanged() {
+	if ConfigurationInstancesChanged() {
 		return config.Instances.Endpoint
 	}
 
@@ -146,7 +146,7 @@ func ConfigEndpoint() string {
 
 // CaCertificatePath returns the configuration-defined CA Certificate path.
 func ConfigCaCertificatePath() string {
-	if ConfigurationAuthInfoChanged() {
+	if ConfigurationInstancesChanged() {
 		return config.Instances.CaCertificatePath
 	}
 
@@ -155,7 +155,7 @@ func ConfigCaCertificatePath() string {
 
 // CaCertificate returns the configuration-defined inline CA Certificate.
 func ConfigInlineCaCertificate() string {
-	if ConfigurationContextsChanged() {
+	if ConfigurationInstancesChanged() {
 		return config.Instances.CaCertificate
 	}
 
@@ -164,7 +164,7 @@ func ConfigInlineCaCertificate() string {
 
 // Plaintext returns the configuration-defined plaintext.
 func ConfigPlaintext() string {
-	if ConfigurationContextsChanged() {
+	if ConfigurationInstancesChanged() {
 		return config.Instances.Plaintext
 	}
 
@@ -173,7 +173,7 @@ func ConfigPlaintext() string {
 
 // DirectGRPC returns the configuration-defined Direct GRPC option.
 func ConfigUseDirectGRPC() bool {
-	if ConfigurationContextsChanged() {
+	if ConfigurationInstancesChanged() {
 		return config.Instances.DirectGRPC
 	}
 
@@ -182,7 +182,7 @@ func ConfigUseDirectGRPC() bool {
 
 // ForceHTTP1 returns the configuration-defined Force HTTP option.
 func ConfigForceHTTP1() bool {
-	if ConfigurationContextsChanged() {
+	if ConfigurationInstancesChanged() {
 		return config.Instances.ForceHTTP1
 	}
 
@@ -191,7 +191,7 @@ func ConfigForceHTTP1() bool {
 
 // ConfigUseInsecure returns the configuration-defined Insecure option.
 func ConfigUseInsecure() bool {
-	if ConfigurationContextsChanged() {
+	if ConfigurationInstancesChanged() {
 		return config.Instances.Insecure
 	}
 
@@ -200,7 +200,7 @@ func ConfigUseInsecure() bool {
 
 // InsecureSkipTLSVerify returns the configuration-defined Insecure Skip TLS Verify option.
 func ConfigSkipTLSValidation() bool {
-	if ConfigurationContextsChanged() {
+	if ConfigurationInstancesChanged() {
 		return config.Instances.InsecureSkipTLSVerify
 	}
 
