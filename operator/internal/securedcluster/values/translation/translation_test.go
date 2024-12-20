@@ -160,6 +160,75 @@ func (s *TranslationTestSuite) TestTranslate() {
 				},
 			},
 		},
+		"runtime config": {
+			args: args{
+				client: newDefaultFakeClient(t),
+				sc: platform.SecuredCluster{
+					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+					Spec: platform.SecuredClusterSpec{
+						ClusterName: "test-cluster",
+						PerNode: &platform.PerNodeSpec{
+							Collector: &platform.CollectorContainerSpec{
+								ImageFlavor: platform.ImageFlavorRegular.Pointer(),
+								Collection:  platform.CollectionCOREBPF.Pointer(),
+								RuntimeConfig: &platform.CollectorRuntimeConfig{
+									Enabled: platform.CollectorRuntimeConfigEnabledEnabled.Pointer(),
+									Networking: &platform.CollectorNetworking{
+										ExternalIPs: &platform.CollectorExternalIPs{
+											Enabled: platform.CollectorExternalIPsEnabledEnabled.Pointer(),
+										},
+										MaxConnectionsPerMinute: pointer.Int32(512),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"clusterName":   "test-cluster",
+				"ca":            map[string]string{"cert": "ca central content"},
+				"createSecrets": false,
+				"admissionControl": map[string]interface{}{
+					"dynamic": map[string]interface{}{
+						"enforceOnCreates": true,
+						"enforceOnUpdates": true,
+					},
+					"listenOnCreates": true,
+					"listenOnUpdates": true,
+				},
+				"scanner": map[string]interface{}{
+					"disable": false,
+				},
+				"scannerV4": map[string]interface{}{
+					"disable": true,
+				},
+				"sensor": map[string]interface{}{
+					"localImageScanning": map[string]string{
+						"enabled": "true",
+					},
+				},
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
+				"collector": map[string]interface{}{
+					"collectionMethod":      "CORE_BPF",
+					"forceCollectionMethod": true,
+					"slimMode":              false,
+					"runtimeConfig": map[string]interface{}{
+						"enabled": true,
+						"networking": map[string]interface{}{
+							"externalIps": map[string]interface{}{
+								"enabled": true,
+							},
+							"maxConnectionsPerMinute": 512,
+						},
+					},
+				},
+			},
+		},
 		"local scanner autosense suppression": {
 			args: args{
 				client: newDefaultFakeClientWithCentral(t),
