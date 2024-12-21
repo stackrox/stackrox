@@ -52,6 +52,9 @@ type Scanner interface {
 	// GetMatcherMetadata returns metadata from the matcher.
 	GetMatcherMetadata(context.Context) (*v4.Metadata, error)
 
+	// GetSBOM ...
+	GetSBOM(ctx context.Context, hashID string) ([]byte, bool, error)
+
 	// Close cleans up any resources used by the implementation.
 	Close() error
 }
@@ -246,7 +249,7 @@ func (c *gRPCScanner) IndexAndScanImage(ctx context.Context, ref name.Digest, au
 }
 
 func (c *gRPCScanner) getOrCreateImageIndex(ctx context.Context, ref name.Digest, auth authn.Authenticator, opt ImageRegistryOpt) (*v4.IndexReport, error) {
-	id := getImageManifestID(ref)
+	id := GetImageManifestID(ref)
 	imgURL := &url.URL{
 		Scheme: ref.Context().Scheme(),
 		Host:   ref.RegistryStr(),
@@ -289,7 +292,7 @@ func (c *gRPCScanner) GetVulnerabilities(ctx context.Context, ref name.Digest, c
 		"image", ref.String(),
 	)
 
-	return c.getVulnerabilities(ctx, getImageManifestID(ref), contents)
+	return c.getVulnerabilities(ctx, GetImageManifestID(ref), contents)
 }
 
 func (c *gRPCScanner) getVulnerabilities(ctx context.Context, hashID string, contents *v4.Contents) (*v4.VulnerabilityReport, error) {
@@ -324,7 +327,50 @@ func (c *gRPCScanner) GetMatcherMetadata(ctx context.Context) (*v4.Metadata, err
 	return m, nil
 }
 
-func getImageManifestID(ref name.Digest) string {
+// TODO: convert this using a ref digest instead of a hashID!?
+// that will stray from getvulns, but that may be OK beause also
+func (c *gRPCScanner) GetSBOM(ctx context.Context, hashID string) ([]byte, bool, error) {
+	if c.indexer == nil {
+		return nil, false, errIndexerNotConfigured
+	}
+	if c.matcher == nil {
+		return nil, false, errMatcherNotConfigured
+	}
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "scanner/client",
+		"method", "GetSBOM",
+		"hash_id", hashID,
+	)
+
+	var ir *v4.IndexReport
+	err := retryWithBackoff(ctx, defaultBackoff(), "indexer.GetIndexReport", func() (err error) {
+		ir, err = c.indexer.GetIndexReport(ctx, &v4.GetIndexReportRequest{HashId: hashID})
+		if e, ok := status.FromError(err); ok && e.Code() == codes.NotFound {
+			return nil
+		}
+		return err
+	})
+	if err != nil {
+		return nil, false, fmt.Errorf("get index: %w", err)
+	}
+	// Return not found if report doesn't exist or is unsuccessful.
+	if ir == nil || !ir.GetSuccess() {
+		return nil, false, nil
+	}
+
+	resp, err := c.matcher.GetSBOM(ctx, &v4.GetSBOMRequest{
+		HashId:   hashID,
+		Contents: ir.GetContents(),
+	})
+	if err != nil {
+		return nil, true, fmt.Errorf("get sbom: %w", err)
+	}
+
+	return resp.GetSbom(), true, nil
+
+}
+
+func GetImageManifestID(ref name.Digest) string {
 	return fmt.Sprintf("/v4/containerimage/%s", ref.DigestStr())
 }
 
