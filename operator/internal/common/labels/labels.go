@@ -15,6 +15,12 @@ var defaultLabels = map[string]string{
 	"app.stackrox.io/managed-by": "operator",
 }
 
+func TLSSecretLabels() map[string]string {
+	labels := DefaultLabels()
+	labels["rhacs.redhat.com/tls"] = "true"
+	return labels
+}
+
 // DefaultLabels defines the default labels the operator should set on resources it creates.
 func DefaultLabels() map[string]string {
 	labels := make(map[string]string, len(defaultLabels))
