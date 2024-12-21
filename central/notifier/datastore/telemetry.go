@@ -36,17 +36,18 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 	})
 
 	notifierTypesCount := map[string]int{
-		pkgNotifiers.AWSSecurityHubType: 0,
-		pkgNotifiers.CSCCType:           0,
-		pkgNotifiers.EmailType:          0,
-		pkgNotifiers.GenericType:        0,
-		pkgNotifiers.JiraType:           0,
-		pkgNotifiers.PagerDutyType:      0,
-		pkgNotifiers.SlackType:          0,
-		pkgNotifiers.SplunkType:         0,
-		pkgNotifiers.SumoLogicType:      0,
-		pkgNotifiers.SyslogType:         0,
-		pkgNotifiers.TeamsType:          0,
+		pkgNotifiers.AWSSecurityHubType:    0,
+		pkgNotifiers.CSCCType:              0,
+		pkgNotifiers.EmailType:             0,
+		pkgNotifiers.GenericType:           0,
+		pkgNotifiers.JiraType:              0,
+		pkgNotifiers.MicrosoftSentinelType: 0,
+		pkgNotifiers.PagerDutyType:         0,
+		pkgNotifiers.SlackType:             0,
+		pkgNotifiers.SplunkType:            0,
+		pkgNotifiers.SumoLogicType:         0,
+		pkgNotifiers.SyslogType:            0,
+		pkgNotifiers.TeamsType:             0,
 	}
 
 	cloudCredentialsEnabledNotifiersCount := map[string]int{
