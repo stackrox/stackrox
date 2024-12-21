@@ -43,7 +43,7 @@ func (m *CollectorConfig_ExternalIPs) CloneVT() *CollectorConfig_ExternalIPs {
 		return (*CollectorConfig_ExternalIPs)(nil)
 	}
 	r := new(CollectorConfig_ExternalIPs)
-	r.Enable = m.Enable
+	r.Enabled = m.Enabled
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -61,7 +61,7 @@ func (m *CollectorConfig_Networking) CloneVT() *CollectorConfig_Networking {
 	}
 	r := new(CollectorConfig_Networking)
 	r.ExternalIps = m.ExternalIps.CloneVT()
-	r.PerContainerRateLimit = m.PerContainerRateLimit
+	r.MaxConnectionsPerMinute = m.MaxConnectionsPerMinute
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -118,7 +118,7 @@ func (this *CollectorConfig_ExternalIPs) EqualVT(that *CollectorConfig_ExternalI
 	} else if this == nil || that == nil {
 		return false
 	}
-	if this.Enable != that.Enable {
+	if this.Enabled != that.Enabled {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -140,7 +140,7 @@ func (this *CollectorConfig_Networking) EqualVT(that *CollectorConfig_Networking
 	if !this.ExternalIps.EqualVT(that.ExternalIps) {
 		return false
 	}
-	if this.PerContainerRateLimit != that.PerContainerRateLimit {
+	if this.MaxConnectionsPerMinute != that.MaxConnectionsPerMinute {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -249,13 +249,8 @@ func (m *CollectorConfig_ExternalIPs) MarshalToSizedBufferVT(dAtA []byte) (int, 
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.Enable {
-		i--
-		if m.Enable {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
+	if m.Enabled != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Enabled))
 		i--
 		dAtA[i] = 0x8
 	}
@@ -292,8 +287,8 @@ func (m *CollectorConfig_Networking) MarshalToSizedBufferVT(dAtA []byte) (int, e
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.PerContainerRateLimit != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.PerContainerRateLimit))
+	if m.MaxConnectionsPerMinute != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.MaxConnectionsPerMinute))
 		i--
 		dAtA[i] = 0x10
 	}
@@ -377,8 +372,8 @@ func (m *CollectorConfig_ExternalIPs) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
-	if m.Enable {
-		n += 2
+	if m.Enabled != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.Enabled))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -394,8 +389,8 @@ func (m *CollectorConfig_Networking) SizeVT() (n int) {
 		l = m.ExternalIps.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	if m.PerContainerRateLimit != 0 {
-		n += 1 + protohelpers.SizeOfVarint(uint64(m.PerContainerRateLimit))
+	if m.MaxConnectionsPerMinute != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.MaxConnectionsPerMinute))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -569,9 +564,9 @@ func (m *CollectorConfig_ExternalIPs) UnmarshalVTUnsafe(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Enable", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Enabled", wireType)
 			}
-			var v int
+			m.Enabled = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -581,12 +576,11 @@ func (m *CollectorConfig_ExternalIPs) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int(b&0x7F) << shift
+				m.Enabled |= ExternalIpsEnabled(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.Enable = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -676,9 +670,9 @@ func (m *CollectorConfig_Networking) UnmarshalVTUnsafe(dAtA []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field PerContainerRateLimit", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field MaxConnectionsPerMinute", wireType)
 			}
-			m.PerContainerRateLimit = 0
+			m.MaxConnectionsPerMinute = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -688,7 +682,7 @@ func (m *CollectorConfig_Networking) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.PerContainerRateLimit |= int64(b&0x7F) << shift
+				m.MaxConnectionsPerMinute |= int64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}

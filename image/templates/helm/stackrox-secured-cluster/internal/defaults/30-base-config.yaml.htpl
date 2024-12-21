@@ -114,6 +114,10 @@ collector:
     enabled: {{ ne ._rox.env.openshift 0 }}
   runtimeConfig:
     enabled: true
+    networking:
+      externalIps:
+        enabled: false
+      maxConnectionsPerMinute: 1024
   [<- end >]
 
 auditLogs:
