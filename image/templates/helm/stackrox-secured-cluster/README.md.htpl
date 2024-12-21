@@ -51,6 +51,10 @@ clusters by providing it as an input to the `helm install` command.
 
 ### Generate cluster init bundle
 
+> **NOTE**: Feel free to skip this section and continue with the next one ("Generate cluster
+> registration secret (CRS)").
+> You only need an init bundle *or* a CRS, not both.
+
 Run the following command to generate a **cluster init bundle**:
 ```sh
 roxctl central init-bundles generate <cluster init bundle name> --output cluster-init-bundle.yaml
@@ -61,6 +65,21 @@ roxctl central init-bundles generate <cluster init bundle name> --output cluster
 - Make sure that you store this bundle securely as it contains secrets. You can
   use the same bundle to set up multiple StackRox secured clusters.
 
+### Generate cluster registration secret (CRS)
+
+> **NOTE**: Skip this section if you have already created an init bundle.
+> You only need an init bundle *or* a CRS, not both.
+
+Run the following command to generate a **cluster registration secret**:
+```sh
+roxctl central crs generate <CRS name> --output crs.yaml
+```
+
+- This command creates a **cluster registration secret** and stores it in the file
+  `crs.yaml`.
+- Make sure that you store this file securely as it contains secrets. You can
+  use the same CRS to set up multiple StackRox secured clusters.
+
 ### Deploy Secured Cluster Services
 
 You can use the following command to deploy secured cluster services using
@@ -68,7 +87,7 @@ this Helm chart:
 ```sh
 helm install -n stackrox --create-namespace \
     stackrox-secured-cluster-services stackrox/stackrox-secured-cluster-services \
-    -f <path to cluster-init-bundle.yaml> \
+    [ -f <path to cluster-init-bundle.yaml> | -f crs.file=<path to crs.yaml> ] \
     --set clusterName=<name of the secured cluster> \
     --set centralEndpoint=<endpoint of Central service>
 ```

@@ -15,6 +15,11 @@ func SensorsOnly() authz.Authorizer {
 	return Wrap(serviceType(storage.ServiceType_SENSOR_SERVICE))
 }
 
+// SensorRegistrantsOnly returns a serviceType authorizer that checks for the Registrant type.
+func SensorRegistrantsOnly() authz.Authorizer {
+	return Wrap(serviceType(storage.ServiceType_REGISTRANT_SERVICE))
+}
+
 // ScannerOnly returns a serviceType authorizer that checks for the scanner type.
 func ScannerOnly() authz.Authorizer {
 	return Wrap(serviceType(storage.ServiceType_SCANNER_SERVICE))
