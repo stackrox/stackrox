@@ -571,3 +571,6 @@ replace (
 	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.2.0
 	github.com/mholt/archiver/v3 => github.com/anchore/archiver/v3 v3.5.2
 )
+
+// @stackrox/maple
+replace k8s.io/client-go => github.com/jschnath/k8s-client-go v1.0.8
