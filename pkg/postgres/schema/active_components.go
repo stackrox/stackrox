@@ -60,7 +60,7 @@ const (
 // ActiveComponents holds the Gorm model for Postgres table `active_components`.
 type ActiveComponents struct {
 	ID           string `gorm:"column:id;type:varchar;primaryKey"`
-	DeploymentID string `gorm:"column:deploymentid;type:uuid;index:activecomponents_deploymentid,type:hash"`
+	DeploymentID string `gorm:"column:deploymentid;type:uuid;index:activecomponents_deploymentid,type:hash,option:CONCURRENTLY"`
 	ComponentID  string `gorm:"column:componentid;type:varchar"`
 	Serialized   []byte `gorm:"column:serialized;type:bytea"`
 }
@@ -68,7 +68,7 @@ type ActiveComponents struct {
 // ActiveComponentsActiveContextsSlices holds the Gorm model for Postgres table `active_components_active_contexts_slices`.
 type ActiveComponentsActiveContextsSlices struct {
 	ActiveComponentsID  string           `gorm:"column:active_components_id;type:varchar;primaryKey"`
-	Idx                 int              `gorm:"column:idx;type:integer;primaryKey;index:activecomponentsactivecontextsslices_idx,type:btree"`
+	Idx                 int              `gorm:"column:idx;type:integer;primaryKey;index:activecomponentsactivecontextsslices_idx,type:btree,option:CONCURRENTLY"`
 	ContainerName       string           `gorm:"column:containername;type:varchar"`
 	ImageID             string           `gorm:"column:imageid;type:varchar"`
 	ActiveComponentsRef ActiveComponents `gorm:"foreignKey:active_components_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
