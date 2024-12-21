@@ -195,7 +195,8 @@ func (s *scheduler) runSingleReport(req *reportGen.ReportRequest) {
 	defer s.readyForReports.Signal()
 	defer s.concurrencySema.Release(1)
 	defer s.removeFromRunningReportConfigs(req.ReportSnapshot.GetReportConfigurationId())
-
+	//for testing only
+	time.Sleep(2 * time.Minute)
 	s.reportGenerator.ProcessReportRequest(req)
 }
 
@@ -404,19 +405,19 @@ func (s *scheduler) validateAndPersistSnapshot(ctx context.Context, snapshot *st
 	s.dbLock.Lock()
 	defer s.dbLock.Unlock()
 
-	if snapshot.GetReportStatus().GetReportRequestType() == storage.ReportStatus_ON_DEMAND {
-		userHasAnotherReport, err := s.doesUserHavePendingReport(snapshot.GetReportConfigurationId(), snapshot.GetRequester().GetId())
-		if err != nil {
-			return "", err
-		}
-		if userHasAnotherReport {
-			return "", errors.Wrapf(errox.AlreadyExists, "User already has a report running for config ID '%s'",
-				snapshot.GetReportConfigurationId())
-		}
-	}
-
 	var err error
 	if !reSubmission {
+		if snapshot.GetReportStatus().GetReportRequestType() == storage.ReportStatus_ON_DEMAND {
+			userHasAnotherReport, err := s.doesUserHavePendingReport(snapshot.GetReportConfigurationId(), snapshot.GetRequester().GetId())
+			if err != nil {
+				return "", err
+			}
+			if userHasAnotherReport {
+				return "", errors.Wrapf(errox.AlreadyExists, "User already has a report running for config ID '%s'",
+					snapshot.GetReportConfigurationId())
+			}
+		}
+
 		snapshot.ReportId, err = s.reportSnapshotStore.AddReportSnapshot(ctx, snapshot)
 	} else {
 		err = s.reportSnapshotStore.UpdateReportSnapshot(ctx, snapshot)
