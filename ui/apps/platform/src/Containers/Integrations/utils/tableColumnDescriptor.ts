@@ -293,8 +293,8 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
         ],
         azure: [
             { accessor: 'name', Header: 'Name' },
-            { accessor: 'docker.endpoint', Header: 'Endpoint' },
-            { accessor: 'docker.username', Header: 'Username' },
+            { accessor: 'azure.endpoint', Header: 'Endpoint' },
+            { accessor: 'azure.username', Header: 'Username' },
         ],
         ibm: [
             { accessor: 'name', Header: 'Name' },
