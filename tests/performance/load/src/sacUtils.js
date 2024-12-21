@@ -9,12 +9,26 @@ function getRandomInt(max) {
     return Math.floor(Math.random() * max);
 }
 
+function shuffleStringArray(input) {
+    const output = [];
+    input.forEach(value => output.push(value));
+    const l = output.length;
+    for (let i = 0; i < l; i++) {
+        const ix = getRandomInt(l-i-1);
+        const valix = output[i + ix];
+        const vali = output[i];
+        output[i] = valix;
+        output[ix] = vali;
+    }
+    return output;
+}
+
 // Fetch clusters and all namespaces for them sorted by cluster and namespace.
 function getNamespacesByCluster(host, headers) {
     // We are using GraphQL here, because we can ensure order and less data will be returned.
     const response = http.post(
         `${host}/api/graphql`,
-        '{"query":"{clusters(pagination:{sortOption:{field:\\"Cluster\\",reversed:false}}){namespaces(pagination:{sortOption:{field:\\"Namespace\\",reversed:false}}){metadata{clusterId,name}}}}"}',
+        '{"query":"{clusters(pagination:{sortOption:{field:\\"Cluster\\",reversed:false}}){namespaces(pagination:{sortOption:{field:\\"Namespace\\",reversed:false}}){metadata{clusterName,name}}}}"}',
         {
             headers,
             tags: libTags,
@@ -26,11 +40,11 @@ function getNamespacesByCluster(host, headers) {
     const mapClusterNamespaces = {};
     clusters.forEach(({ namespaces }) => {
         namespaces.forEach((namespace) => {
-            if (!(namespace.metadata.clusterId in mapClusterNamespaces)) {
-                mapClusterNamespaces[namespace.metadata.clusterId] = [];
+            if (!(namespace.metadata.clusterName in mapClusterNamespaces)) {
+                mapClusterNamespaces[namespace.metadata.clusterName] = [];
             }
 
-            mapClusterNamespaces[namespace.metadata.clusterId].push(namespace.metadata.name);
+            mapClusterNamespaces[namespace.metadata.clusterName].push(namespace.metadata.name);
         });
     });
 
@@ -39,33 +53,43 @@ function getNamespacesByCluster(host, headers) {
 
 // Get randomized list of namespaces for access scope.
 function getScopeNamespaces(namespacesByClusterMap, numClusters, numNamespacesPerCluster) {
-    const clusterIDs = Object.keys(namespacesByClusterMap);
+    const clusterNames = Object.keys(namespacesByClusterMap);
+    const shuffledClusterNames = shuffleStringArray(clusterNames);
 
     const usedClusters = new Set();
     const usedNamespaces = new Set();
 
     const includeNamespaces = [];
-    while (usedClusters.size < numClusters && usedClusters.size < clusterIDs.length) {
-        const clusterIndex = getRandomInt(clusterIDs.length);
-        const clusterID = clusterIDs[clusterIndex];
+    let clusterIx = 0;
+    while (usedClusters.size < numClusters && usedClusters.size < clusterNames.length) {
+        // const clusterIndex = getRandomInt(clusterNames.length);
+        // const clusterName = clusterNames[clusterIndex];
+        const clusterName = shuffledClusterNames[clusterIx];
+        clusterIx += 1;
 
-        if (!usedClusters.has(clusterID)) {
-            usedClusters.add(clusterID);
+        if (!usedClusters.has(clusterName)) {
+            usedClusters.add(clusterName);
+
+            const shuffledClusterNamespaces = shuffleStringArray(namespacesByClusterMap[clusterName]);
 
             let namespacesCount = 0;
+            let namespaceIx = 0;
             while (
                 namespacesCount < numNamespacesPerCluster &&
-                namespacesCount < namespacesByClusterMap[clusterID].length
+                // namespacesCount < namespacesByClusterMap[clusterName].length
+                namespacesCount < shuffledClusterNamespaces.length
             ) {
-                const namespaceIndex = getRandomInt(namespacesByClusterMap[clusterID].length);
-                const namespaceName = namespacesByClusterMap[clusterID][namespaceIndex];
+                // const namespaceIndex = getRandomInt(namespacesByClusterMap[clusterName].length);
+                // const namespaceName = namespacesByClusterMap[clusterName][namespaceIndex];
+                const namespaceName = shuffledClusterNamespaces[namespaceIx];
+                namespaceIx++;
 
-                if (!usedNamespaces.has(`${clusterID}:${namespaceName}`)) {
+                if (!usedNamespaces.has(`${clusterName}:${namespaceName}`)) {
                     namespacesCount += 1;
-                    usedNamespaces.add(`${clusterID}:${namespaceName}`);
+                    usedNamespaces.add(`${clusterName}:${namespaceName}`);
 
                     includeNamespaces.push({
-                        clusterName: clusterID,
+                        clusterName: clusterName,
                         namespaceName: namespaceName,
                     });
                 }

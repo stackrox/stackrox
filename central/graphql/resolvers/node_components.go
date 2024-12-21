@@ -95,6 +95,7 @@ func (resolver *Resolver) NodeComponent(ctx context.Context, args IDQuery) (Node
 // NodeComponents returns node components that match the input query.
 func (resolver *Resolver) NodeComponents(ctx context.Context, q PaginatedQuery) ([]NodeComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeComponents")
+	log.Info("GraphQL NodeComponents resolver")
 
 	if err := readNodes(ctx); err != nil {
 		return nil, err
@@ -303,6 +304,7 @@ func (resolver *nodeComponentResolver) NodeVulnerabilityCount(ctx context.Contex
 // NodeVulnerabilityCounter resolves the number of different types of node vulnerabilities contained in a node component
 func (resolver *nodeComponentResolver) NodeVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeComponents, "NodeVulnerabilityCounter")
+	log.Info("GraphQL NodeComponent NodeVulnerabilityCounter resolver")
 	return resolver.root.NodeVulnerabilityCounter(resolver.nodeComponentScopeContext(ctx), args)
 }
 
