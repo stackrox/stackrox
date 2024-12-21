@@ -32,6 +32,7 @@ import (
 	"github.com/stackrox/rox/scanner/indexer"
 	"github.com/stackrox/rox/scanner/internal/version"
 	"github.com/stackrox/rox/scanner/matcher"
+	"github.com/stackrox/rox/scanner/sbomer"
 	"github.com/stackrox/rox/scanner/services"
 	"golang.org/x/sys/unix"
 )
@@ -43,6 +44,8 @@ type Backends struct {
 	Indexer indexer.Indexer
 	// Matcher is the vulnerability matching backend.
 	Matcher matcher.Matcher
+	// SBOMer is the SBOMer generation backend.
+	SBOMer sbomer.SBOMer
 	// RemoteIndexer is the indexing backend located in a remote scanner instance.
 	RemoteIndexer indexer.RemoteIndexer
 }
@@ -226,6 +229,10 @@ func createBackends(ctx context.Context, cfg *config.Config) (*Backends, error) 
 		if err != nil {
 			return nil, fmt.Errorf("matcher: %w", err)
 		}
+
+		// SBOM generation capabilities only avail via matcher backend
+		b.SBOMer = sbomer.NewSBOMer(ctx)
+
 	} else {
 		zlog.Info(ctx).Msg("matcher is disabled")
 	}
@@ -246,7 +253,7 @@ func (b *Backends) APIServices() []grpc.APIService {
 		if getter == nil {
 			getter = b.Indexer
 		}
-		srvs = append(srvs, services.NewMatcherService(b.Matcher, getter))
+		srvs = append(srvs, services.NewMatcherService(b.Matcher, getter, b.SBOMer))
 	}
 	return srvs
 }

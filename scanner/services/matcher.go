@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/quay/claircore"
@@ -19,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/scannerv4/mappers"
 	"github.com/stackrox/rox/scanner/indexer"
 	"github.com/stackrox/rox/scanner/matcher"
+	"github.com/stackrox/rox/scanner/sbomer"
 	"github.com/stackrox/rox/scanner/services/validators"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -29,6 +31,7 @@ var matcherAuth = perrpc.FromMap(map[authz.Authorizer][]string{
 	idcheck.CentralOnly(): {
 		"/scanner.v4.Matcher/GetVulnerabilities",
 		"/scanner.v4.Matcher/GetMetadata",
+		"/scanner.v4.Matcher/GetSBOM",
 	},
 })
 
@@ -39,6 +42,8 @@ type matcherService struct {
 	indexer indexer.ReportGetter
 	// matcher is used to match vulnerabilities with index contents.
 	matcher matcher.Matcher
+	// sbomer ...
+	sbomer sbomer.SBOMer
 	// disableEmptyContents allows the vulnerability matching API to reject requests with empty contents.
 	disableEmptyContents bool
 	// anonymousAuthEnabled specifies if the service should allow for traffic from anonymous users.
@@ -47,10 +52,11 @@ type matcherService struct {
 
 // NewMatcherService creates a new vulnerability matcher gRPC service, to enable
 // empty content in enrich requests, pass a non-nil indexer.
-func NewMatcherService(matcher matcher.Matcher, indexer indexer.ReportGetter) *matcherService {
+func NewMatcherService(matcher matcher.Matcher, indexer indexer.ReportGetter, sbomer sbomer.SBOMer) *matcherService {
 	return &matcherService{
 		matcher:              matcher,
 		indexer:              indexer,
+		sbomer:               sbomer,
 		disableEmptyContents: indexer == nil,
 		anonymousAuthEnabled: env.ScannerV4AnonymousAuth.BooleanSetting(),
 	}
@@ -163,4 +169,36 @@ func (s *matcherService) notes(ctx context.Context, vr *v4.VulnerabilityReport) 
 	}
 
 	return nil
+}
+
+func (s *matcherService) GetSBOM(ctx context.Context, req *v4.GetSBOMRequest) (*v4.GetSBOMResponse, error) {
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/service/matcher.GetSBOM")
+	if err := validators.ValidateGetSBOMRequest(req); err != nil {
+		return nil, errox.InvalidArgs.CausedBy(err)
+	}
+	// TODO: Should we add this? for this initial phase of getting an SBOM, we do not include vulns, so should be OK to omit
+	// if err := s.matcher.Initialized(ctx); err != nil {
+	// 	return nil, status.Errorf(codes.FailedPrecondition, "the matcher is not initialized: %v", err)
+	// }
+
+	zlog.Info(ctx).Msgf("getting SBOM for index report %q with contents (%d dists, %d envs, %d pkgs, %d repos)",
+		req.GetHashId(),
+		len(req.GetContents().GetDistributions()),
+		len(req.GetContents().GetEnvironments()),
+		len(req.GetContents().GetPackages()),
+		len(req.GetContents().GetRepositories()),
+	)
+
+	ir, err := s.parseIndexReport(req.GetContents())
+	if err != nil {
+		zlog.Error(ctx).Err(err).Send()
+		return nil, err
+	}
+	// TODO: do something with this
+	_ = ir
+
+	// call s.matcher.GetSBOM(ir)
+	sbom := fmt.Sprintf(`{"hello":"from matcher", "time":"%v"}`, time.Now().Format(time.RFC3339))
+
+	return &v4.GetSBOMResponse{Sbom: []byte(sbom)}, nil
 }
