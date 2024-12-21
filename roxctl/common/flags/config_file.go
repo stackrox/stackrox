@@ -63,12 +63,28 @@ type InstanceConfig struct {
 	CurrContext string    `json:"current-context"` // TODO: Add current context functionality
 }
 
+// DefaultConfig is a utility that returns the default configuration template.
+func DefaultConfig() *InstanceConfig {
+	return &InstanceConfig{
+		Instances: &Instance{
+			Endpoint:              "",
+			CaCertificatePath:     "",
+			CaCertificate:         "",
+			Plaintext:             false,
+			DirectGRPC:            false,
+			ForceHTTP1:            false,
+			Insecure:              false,
+			InsecureSkipTLSVerify: false,
+		},
+	}
+}
+
 var (
 	configFile    string
 	configFileSet = pointers.Bool(false)
-	config        *InstanceConfig
+	config        = DefaultConfig()
 
-	// Flags related to Instance struct
+	// Flags related to the Instance struct
 	configInstancesSet             = pointers.Bool(false) // Existence flag
 	configEndpointSet              = pointers.Bool(false)
 	configCaCertificatePathSet     = pointers.Bool(false)
@@ -79,7 +95,7 @@ var (
 	configUseInsecureSet           = pointers.Bool(false)
 	configInsecureSkipTLSVerifySet = pointers.Bool(false)
 
-	// Flags related to AuthInfo struct
+	// Flags related to the AuthInfo struct
 	configAuthInfoSet         = pointers.Bool(false) // Existence flag
 	configUsernameSet         = pointers.Bool(false)
 	configPasswordSet         = pointers.Bool(false)
@@ -113,133 +129,69 @@ func ConfigurationFileName() string {
 	return flagOrSettingValue(configFile, ConfigurationFileChanged(), env.ConfigFileEnv)
 }
 
-// ConfigurationFileChanged returns whether the configuration file is provided as an argument.
+// // ConfigurationFileChanged returns whether the configuration file is provided as an argument.
 func ConfigurationFileChanged() bool {
 	return configFileSet != nil && *configFileSet
 }
 
-func ConfigurationInstancesChanged() bool {
-	return ConfigurationFileChanged() && (configInstancesSet != nil && *configInstancesSet)
-}
-
-func ConfigurationAuthInfoChanged() bool {
-	return ConfigurationFileChanged() && (configAuthInfoSet != nil && *configAuthInfoSet)
-}
-
-func ConfigurationContextsChanged() bool {
-	return ConfigurationFileChanged() && (configContextsSet != nil && *configContextsSet)
-}
-
-func ConfigurationCurrContextChanged() bool {
-	return ConfigurationFileChanged() && (configCurrContextSet != nil && *configCurrContextSet)
-}
-
 // Endpoint returns the configuration-defined endpoint.
 func ConfigEndpoint() string {
-	if ConfigurationInstancesChanged() {
-		return config.Instances.Endpoint
-	}
-
-	return ""
+	return config.Instances.Endpoint
 }
 
 // CaCertificatePath returns the configuration-defined CA Certificate path.
 func ConfigCaCertificatePath() string {
-	if ConfigurationInstancesChanged() {
-		return config.Instances.CaCertificatePath
-	}
-
-	return ""
+	return config.Instances.CaCertificatePath
 }
 
 // CaCertificate returns the configuration-defined inline CA Certificate.
 func ConfigInlineCaCertificate() string {
-	if ConfigurationInstancesChanged() {
-		return config.Instances.CaCertificate
-	}
-
-	return ""
+	return config.Instances.CaCertificate
 }
 
 // Plaintext returns the configuration-defined plaintext.
-func ConfigPlaintext() string {
-	if ConfigurationInstancesChanged() {
-		return config.Instances.Plaintext
-	}
-
-	return ""
+func ConfigPlaintext() bool {
+	return config.Instances.Plaintext
 }
 
 // DirectGRPC returns the configuration-defined Direct GRPC option.
 func ConfigUseDirectGRPC() bool {
-	if ConfigurationInstancesChanged() {
-		return config.Instances.DirectGRPC
-	}
-
-	return false // default value
+	return config.Instances.DirectGRPC
 }
 
 // ForceHTTP1 returns the configuration-defined Force HTTP option.
 func ConfigForceHTTP1() bool {
-	if ConfigurationInstancesChanged() {
-		return config.Instances.ForceHTTP1
-	}
-
-	return false
+	return config.Instances.ForceHTTP1
 }
 
 // ConfigUseInsecure returns the configuration-defined Insecure option.
 func ConfigUseInsecure() bool {
-	if ConfigurationInstancesChanged() {
-		return config.Instances.Insecure
-	}
-
-	return false
+	return config.Instances.Insecure
 }
 
 // InsecureSkipTLSVerify returns the configuration-defined Insecure Skip TLS Verify option.
 func ConfigSkipTLSValidation() bool {
-	if ConfigurationInstancesChanged() {
-		return config.Instances.InsecureSkipTLSVerify
-	}
-
-	return false
+	return config.Instances.InsecureSkipTLSVerify
 }
 
 // Username returns the configuration-defined username.
 func ConfigUsername() string {
-	if ConfigurationAuthInfoChanged() {
-		return config.AuthInfo.Username
-	}
-
-	return ""
+	return config.AuthInfo.Username
 }
 
 // Password returns the configuration-defined password.
 func ConfigPassword() string {
-	if ConfigurationAuthInfoChanged() {
-		return config.AuthInfo.Password
-	}
-
-	return ""
+	return config.AuthInfo.Password
 }
 
 // ApiTokenFilePath returns the configuration-defined API Token file path.
 func ConfigApiTokenFilePath() string {
-	if ConfigurationAuthInfoChanged() {
-		return config.AuthInfo.ApiTokenFilePath
-	}
-
-	return ""
+	return config.AuthInfo.ApiTokenFilePath
 }
 
 // InlineApiToken returns the configuration-defined ApiToken.
 func ConfigInlineApiToken() string {
-	if ConfigurationAuthInfoChanged() {
-		return config.AuthInfo.ApiToken
-	}
-
-	return ""
+	return config.AuthInfo.ApiToken
 }
 
 // checkFilePermissionsAndOwnership is a utility function for checking for 600 file
@@ -278,37 +230,98 @@ func checkFilePermissionsAndOwnership(path string) error {
 	return nil
 }
 
-// readConfig is a utilty function for reading YAML-based configuration files
-func readConfig(path string) (*InstanceConfig, error) {
-	var conf InstanceConfig
+// loadEnvSettings is a utility for populating the configuration struct with environment settings.
+func loadEnvSettings() {
+	clientForceHTTP1Env := env.ClientForceHTTP1Env.BooleanSetting()
+	directGRPCEnv := env.DirectGRPCEnv.BooleanSetting()
+	insecureClientEnv := env.InsecureClientEnv.BooleanSetting()
+	insecureClientSkipTLSVerifyEnv := env.InsecureClientSkipTLSVerifyEnv.BooleanSetting()
+	plaintextEnv := env.PlaintextEnv.BooleanSetting()
+
+	if clientForceHTTP1Env {
+		config.Instances.ForceHTTP1 = clientForceHTTP1Env
+	}
+
+	if directGRPCEnv {
+		config.Instances.DirectGRPC = directGRPCEnv
+	}
+
+	if insecureClientEnv {
+		config.Instances.Insecure = insecureClientEnv
+	}
+
+	if insecureClientSkipTLSVerifyEnv {
+		config.Instances.InsecureSkipTLSVerify = insecureClientSkipTLSVerifyEnv
+	}
+
+	if plaintextEnv {
+		config.Instances.Plaintext = plaintextEnv
+	}
+}
+
+// loadFlags is a utility for populating the configuration struct with environment settings.
+func loadFlags() {
+	clientForceHTTP1Env := ForceHTTP1()
+	directGRPCEnv := UseDirectGRPC()
+	insecureClientEnv := UseInsecure()
+	insecureClientSkipTLSVerifyEnv := SkipTLSValidation()
+
+	if insecureClientSkipTLSVerifyEnv == nil {
+		insecureClientSkipTLSVerifyEnv = pointers.Bool(false)
+	}
+	plaintextEnv := booleanFlagOrSettingValue(plaintext, *plaintextSet, env.PlaintextEnv)
+
+	if clientForceHTTP1Env {
+		config.Instances.ForceHTTP1 = clientForceHTTP1Env
+	}
+
+	if directGRPCEnv {
+		config.Instances.DirectGRPC = directGRPCEnv
+	}
+
+	if insecureClientEnv {
+		config.Instances.Insecure = insecureClientEnv
+	}
+
+	if *insecureClientSkipTLSVerifyEnv {
+		config.Instances.InsecureSkipTLSVerify = *insecureClientSkipTLSVerifyEnv
+	}
+
+	if plaintextEnv {
+		config.Instances.Plaintext = plaintextEnv
+	}
+}
+
+// readConfig is a utilty for reading YAML-based configuration files
+func readConfig(path string) error {
 
 	err := checkFilePermissionsAndOwnership(path)
 
 	if err != nil {
-		return nil, errors.Wrapf(err, "file permission or ownership error: %v", err)
+		return errors.Wrapf(err, "file permission or ownership error: %v", err)
 	}
 
 	bytes, err := os.ReadFile(path)
 
 	if err != nil {
 		if os.IsNotExist(err) {
-			return &conf, nil
+			return nil
 		}
-		return nil, errors.Wrapf(err, "failed to retrieve config from file %q", path)
+		return errors.Wrapf(err, "failed to retrieve config from file %q", path)
 	}
-	if err := yaml.Unmarshal(bytes, &conf); err != nil {
-		return nil, errors.Wrapf(err, "failed to retrieve config from file %q", path)
+	if err := yaml.Unmarshal(bytes, &config); err != nil {
+		return errors.Wrapf(err, "failed to retrieve config from file %q", path)
 	}
 
 	fmt.Println("Here")
 
-	fmt.Printf("this is the configuration file struct: %+v\n", conf)
-	fmt.Printf("this is the instances struct: %+v\n", *conf.Instances)
-	fmt.Printf("this is the authinfo struct: %+v\n", *conf.AuthInfo)
-	fmt.Printf("this is the contexts struct: %+v\n", *conf.Contexts)
-	fmt.Printf("this is the current context: %+v\n", conf.CurrContext)
+	fmt.Printf("this is the configuration file struct: %+v\n", config)
+	fmt.Printf("this is the instances struct: %+v\n", *config.Instances)
+	fmt.Printf("this is the authinfo struct: %+v\n", *config.AuthInfo)
+	fmt.Printf("this is the contexts struct: %+v\n", *config.Contexts)
+	fmt.Printf("this is the current context: %+v\n", config.CurrContext)
 
-	return &conf, nil
+	return nil
 }
 
 // Load loads a config file from a given path
@@ -320,15 +333,18 @@ func LoadConfig(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	instance, err := readConfig(configFile)
+	err := readConfig(configFile)
 
-	if err != nil || instance == nil {
-		config = nil
+	if err != nil {
 		log.Errorf("Error reading instance config file: %v", err)
 		return err
 	}
 
-	config = instance
+	// populate config with non-default environment settings
+	loadEnvSettings()
+
+	// populate config with non-default flags
+	loadFlags()
 
 	// TODO(2): Edit for when user submits multiple Instances
 	if config.Instances != nil {
@@ -336,21 +352,21 @@ func LoadConfig(cmd *cobra.Command, args []string) error {
 		config.Instances.digest()
 	}
 
-	// TODO(2): Edit for when user submits multiple AuthInfo
-	if config.AuthInfo != nil {
-		configAuthInfoSet = pointers.Bool(true)
-		config.AuthInfo.digest()
-	}
+	// // TODO(2): Edit for when user submits multiple AuthInfo
+	// if config.AuthInfo != nil {
+	// 	configAuthInfoSet = pointers.Bool(true)
+	// 	config.AuthInfo.digest()
+	// }
 
-	// TODO(2): Edit for when user submits multiple Contexts
-	if config.Contexts != nil {
-		configContextsSet = pointers.Bool(true)
-		config.Contexts.digest()
-	}
+	// // TODO(2): Edit for when user submits multiple Contexts
+	// if config.Contexts != nil {
+	// 	configContextsSet = pointers.Bool(true)
+	// 	config.Contexts.digest()
+	// }
 
-	if config.CurrContext != "" {
-		configCurrContextSet = pointers.Bool(true)
-	}
+	// if config.CurrContext != "" {
+	// 	configCurrContextSet = pointers.Bool(true)
+	// }
 
 	return nil
 }
@@ -361,13 +377,17 @@ func (i Instance) digest() {
 		configEndpointSet = pointers.Bool(true)
 	}
 
+	if config.CurrContext != "" {
+		configCurrContextSet = pointers.Bool(true)
+	}
+
 	if i.CaCertificatePath != "" {
 		configCaCertificatePathSet = pointers.Bool(true)
 	}
 	if i.CaCertificate != "" {
 		configInlineCaCertificateSet = pointers.Bool(true)
 	}
-	if i.Plaintext != "" {
+	if i.Plaintext {
 		configPlaintextSet = pointers.Bool(true)
 	}
 	if i.DirectGRPC {
