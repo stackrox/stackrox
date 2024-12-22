@@ -186,10 +186,9 @@ func (r *ServiceCertificatesRepoSecrets) patchServiceCertificate(ctx context.Con
 		Path:  "/data",
 		Value: r.secretDataForCertificate(secretSpec, caPem, cert),
 	}, {Op: "replace",
-		Path: "/metadata/labels/rhacs.redhat.com/tls",
-		Value: map[string][]byte{
-			"rhacs.redhat.com/tls": []byte("true"),
-		}}}
+		Path:  "/metadata/labels/rhacs.redhat.com~1tls",
+		Value: "true",
+	}}
 	patchBytes, marshallingErr := json.Marshal(patch)
 	if marshallingErr != nil {
 		return errors.Wrapf(marshallingErr, errForServiceFormat, cert.GetServiceType())
@@ -203,9 +202,9 @@ func (r *ServiceCertificatesRepoSecrets) patchServiceCertificate(ctx context.Con
 }
 
 type patchSecretDataByteMap struct {
-	Op    string            `json:"op"`
-	Path  string            `json:"path"`
-	Value map[string][]byte `json:"value"`
+	Op    string      `json:"op"`
+	Path  string      `json:"path"`
+	Value interface{} `json:"value"`
 }
 
 func (r *ServiceCertificatesRepoSecrets) createSecret(ctx context.Context, caPem []byte,

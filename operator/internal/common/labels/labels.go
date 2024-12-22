@@ -31,6 +31,24 @@ func DefaultLabels() map[string]string {
 	return labels
 }
 
+// MergeLabels merges labels
+func MergeLabels(current, newLabels map[string]string) (map[string]string, bool) {
+	updated := false
+	mergedLabels := map[string]string{}
+
+	for k, v := range current {
+		mergedLabels[k] = v
+	}
+	for k, v := range newLabels {
+		if x, exists := mergedLabels[k]; !exists || x != v {
+			updated = true
+			mergedLabels[k] = v
+		}
+
+	}
+	return mergedLabels, updated
+}
+
 // WithDefaults return a copy of the given labels with the default labels added.
 // It returns a bool as second argument to indicate whether default labels had to be added or not.
 func WithDefaults(labels map[string]string) (map[string]string, bool) {
