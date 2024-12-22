@@ -772,14 +772,14 @@ func Destroy(ctx context.Context, db postgres.DB) {
 }
 
 func dropTableDeployments(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS deployments CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE deployments CASCADE")
 	dropTableDeploymentsContainers(ctx, db)
 	dropTableDeploymentsPorts(ctx, db)
 
 }
 
 func dropTableDeploymentsContainers(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS deployments_containers CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE deployments_containers CASCADE")
 	dropTableDeploymentsContainersEnvs(ctx, db)
 	dropTableDeploymentsContainersVolumes(ctx, db)
 	dropTableDeploymentsContainersSecrets(ctx, db)
@@ -787,28 +787,28 @@ func dropTableDeploymentsContainers(ctx context.Context, db postgres.DB) {
 }
 
 func dropTableDeploymentsContainersEnvs(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS deployments_containers_envs CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE deployments_containers_envs CASCADE")
 
 }
 
 func dropTableDeploymentsContainersVolumes(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS deployments_containers_volumes CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE deployments_containers_volumes CASCADE")
 
 }
 
 func dropTableDeploymentsContainersSecrets(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS deployments_containers_secrets CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE deployments_containers_secrets CASCADE")
 
 }
 
 func dropTableDeploymentsPorts(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS deployments_ports CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE deployments_ports CASCADE")
 	dropTableDeploymentsPortsExposureInfos(ctx, db)
 
 }
 
 func dropTableDeploymentsPortsExposureInfos(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS deployments_ports_exposure_infos CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE deployments_ports_exposure_infos CASCADE")
 
 }
 

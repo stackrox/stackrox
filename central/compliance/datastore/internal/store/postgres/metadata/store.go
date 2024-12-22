@@ -207,7 +207,7 @@ func Destroy(ctx context.Context, db postgres.DB) {
 }
 
 func dropTableComplianceRunMetadata(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS compliance_run_metadata CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE compliance_run_metadata CASCADE")
 
 }
 

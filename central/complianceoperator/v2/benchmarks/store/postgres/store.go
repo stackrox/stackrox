@@ -263,13 +263,13 @@ func Destroy(ctx context.Context, db postgres.DB) {
 }
 
 func dropTableComplianceOperatorBenchmarkV2(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS compliance_operator_benchmark_v2 CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE compliance_operator_benchmark_v2 CASCADE")
 	dropTableComplianceOperatorBenchmarkV2Profiles(ctx, db)
 
 }
 
 func dropTableComplianceOperatorBenchmarkV2Profiles(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS compliance_operator_benchmark_v2_profiles CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE compliance_operator_benchmark_v2_profiles CASCADE")
 
 }
 

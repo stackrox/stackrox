@@ -1218,7 +1218,7 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(image 
 //// Used for testing
 
 func dropAllTablesInImageTree(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS images CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE images CASCADE")
 	dropTableImagesLayers(ctx, db)
 	dropTableImageComponents(ctx, db)
 	dropTableImageCVEs(ctx, db)
@@ -1228,27 +1228,27 @@ func dropAllTablesInImageTree(ctx context.Context, db postgres.DB) {
 }
 
 func dropTableImagesLayers(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS images_Layers CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE images_Layers CASCADE")
 }
 
 func dropTableImageComponents(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+imageComponentsTable+" CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE "+imageComponentsTable+" CASCADE")
 }
 
 func dropTableImageCVEs(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+imageCVEsTable+" CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE "+imageCVEsTable+" CASCADE")
 }
 
 func dropTableImageCVEEdges(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+imageCVEEdgesTable+" CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE "+imageCVEEdgesTable+" CASCADE")
 }
 
 func dropTableComponentCVEEdges(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+componentCVEEdgesTable+" CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE "+componentCVEEdgesTable+" CASCADE")
 }
 
 func dropTableImageComponentEdges(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+imageComponentEdgesTable+" CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE "+imageComponentEdgesTable+" CASCADE")
 }
 
 // Destroy drops image table.

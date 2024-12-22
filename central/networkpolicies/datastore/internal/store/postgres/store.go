@@ -203,7 +203,7 @@ func Destroy(ctx context.Context, db postgres.DB) {
 }
 
 func dropTableNetworkpolicies(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS networkpolicies CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE networkpolicies CASCADE")
 
 }
 

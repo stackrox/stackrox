@@ -107,6 +107,10 @@ spec:
           value: "password"
         - name: PGDATA
           value: "/var/lib/postgresql/data/pgdata"
+        - name: POSTGRES_DB
+          value: "central_active"
+        - name: POSTGRES_PASSWORD_FILE
+          value: "/run/secrets/stackrox.io/secrets/password"
         ports:
         - containerPort: 5432
           name: postgresql
@@ -137,6 +141,8 @@ spec:
           mountPath: /run/secrets/stackrox.io/certs
         - mountPath: /dev/shm
           name: shared-memory
+        - name: central-db-password
+          mountPath: /run/secrets/stackrox.io/secrets
       securityContext:
         fsGroup: 70
       volumes:

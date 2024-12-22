@@ -180,7 +180,7 @@ func Destroy(ctx context.Context, db postgres.DB) {
 }
 
 func dropTableAuthProviders(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS auth_providers CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE auth_providers CASCADE")
 
 }
 

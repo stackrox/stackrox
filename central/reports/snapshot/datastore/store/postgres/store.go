@@ -205,7 +205,7 @@ func Destroy(ctx context.Context, db postgres.DB) {
 }
 
 func dropTableReportSnapshots(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS report_snapshots CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE report_snapshots CASCADE")
 
 }
 

@@ -183,7 +183,7 @@ func Destroy(ctx context.Context, db postgres.DB) {
 }
 
 func dropTableClusterInitBundles(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS cluster_init_bundles CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE cluster_init_bundles CASCADE")
 
 }
 

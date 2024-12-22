@@ -203,7 +203,7 @@ func Destroy(ctx context.Context, db postgres.DB) {
 }
 
 func dropTableProcessBaselineResults(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS process_baseline_results CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE process_baseline_results CASCADE")
 
 }
 

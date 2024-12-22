@@ -234,7 +234,7 @@ func Destroy(ctx context.Context, db postgres.DB) {
 }
 
 func dropTableProcessIndicators(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS process_indicators CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE process_indicators CASCADE")
 
 }
 
