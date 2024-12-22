@@ -135,8 +135,8 @@ func (r *SecretReconciliator) updateExisting(ctx context.Context, secret *coreV1
 		needsUpdate = true
 	}
 
-	desiredLabels, needsLabelUpdate := commonLabels.WithDefaults(secret.Labels)
-	secret.Labels = desiredLabels
+	newLabels, needsLabelUpdate := commonLabels.MergeLabels(secret.Labels, desiredLabels)
+	secret.Labels = newLabels
 	needsUpdate = needsUpdate || needsLabelUpdate
 	if !needsUpdate || !isManaged {
 		return nil
