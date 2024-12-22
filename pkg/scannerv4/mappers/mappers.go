@@ -387,6 +387,8 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 		// Find the related NVD vuln for this vulnerability name, let it be empty if no
 		// NVD vuln for that name was found.
 		var nvdVuln nvdschema.CVEAPIJSON20CVEItem
+		fmt.Println("Output: >>>>")
+		fmt.Println(v)
 		if nvdCVEs, ok := nvdVulns[v.ID]; ok {
 			if v, ok := nvdCVEs[cve]; foundCVE && ok {
 				nvdVuln = *v
@@ -642,18 +644,77 @@ func nvdVulnerabilities(enrichments map[string][]json.RawMessage) (map[string]ma
 	// Returns a map of maps keyed by CVE ID due to enrichment matching on multiple
 	// vulnerability fields, potentially including unrelated records--we assume the
 	// caller will know how to filter what is relevant.
+	fmt.Println("nvd enrichments: >>>>")
 	ret := make(map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem)
 	for ccVulnID, list := range items {
 		if len(list) > 0 {
 			m := make(map[string]*nvdschema.CVEAPIJSON20CVEItem)
 			for idx := range list {
 				vulnData := list[idx]
-				m[vulnData.ID] = &vulnData
+				// Print vulnData basic information
+				fmt.Printf("CVE ID: %s, Last Modified: %s, Published: %s\n",
+					vulnData.ID, vulnData.LastModified, vulnData.Published)
+				if vulnData.Metrics != nil {
+					printCveMetrics(vulnData.Metrics)
+				}
+
+				// Copy the value of vulnData to avoid pointer reuse issue
+				vulnCopy := vulnData
+				m[vulnData.ID] = &vulnCopy
 			}
 			ret[ccVulnID] = m
 		}
 	}
+
 	return ret, nil
+}
+
+func printCveMetrics(metrics *nvdschema.CVEAPIJSON20CVEItemMetrics) {
+	if metrics == nil {
+		fmt.Println("No CVE Metrics available")
+		return
+	}
+
+	fmt.Println("=== CVE Metrics ===")
+	// Print CVSS v2 Metrics
+	if len(metrics.CvssMetricV2) > 0 {
+		fmt.Println("-- CVSS v2 Metrics --")
+		for _, cvssv2 := range metrics.CvssMetricV2 {
+			if cvssv2.CvssData != nil {
+				fmt.Printf("Base Score: %.1f, Vector: %s, Severity: %s\n",
+					cvssv2.CvssData.BaseScore, cvssv2.CvssData.VectorString, cvssv2.BaseSeverity)
+			}
+			fmt.Printf("Exploitability Score: %.1f, Impact Score: %.1f\n",
+				cvssv2.ExploitabilityScore, cvssv2.ImpactScore)
+		}
+	}
+
+	// Print CVSS v3.0 Metrics
+	if len(metrics.CvssMetricV30) > 0 {
+		fmt.Println("-- CVSS v3.0 Metrics --")
+		for _, cvssv30 := range metrics.CvssMetricV30 {
+			if cvssv30.CvssData != nil {
+				fmt.Printf("Base Score: %.1f, Vector: %s, Severity: %s\n",
+					cvssv30.CvssData.BaseScore, cvssv30.CvssData.VectorString, cvssv30.CvssData.BaseSeverity)
+			}
+			fmt.Printf("Exploitability Score: %.1f, Impact Score: %.1f\n",
+				cvssv30.ExploitabilityScore, cvssv30.ImpactScore)
+		}
+	}
+
+	// Print CVSS v3.1 Metrics
+	if len(metrics.CvssMetricV31) > 0 {
+		fmt.Println("-- CVSS v3.1 Metrics --")
+		for _, cvssv31 := range metrics.CvssMetricV31 {
+			if cvssv31.CvssData != nil {
+				fmt.Printf("Base Score: %.1f, Vector: %s, Severity: %s\n",
+					cvssv31.CvssData.BaseScore, cvssv31.CvssData.VectorString, cvssv31.CvssData.BaseSeverity)
+			}
+			fmt.Printf("Exploitability Score: %.1f, Impact Score: %.1f\n",
+				cvssv31.ExploitabilityScore, cvssv31.ImpactScore)
+		}
+	}
+	fmt.Println("====================")
 }
 
 // filterPackages filters out packages from the given map.
@@ -851,6 +912,7 @@ func sourceFromLinks(links string) v4.VulnerabilityReport_Vulnerability_CVSS_Sou
 
 // nvdCVSS returns cvssValues based on the given vulnerability and the associated NVD item.
 func nvdCVSS(v *nvdschema.CVEAPIJSON20CVEItem) (*v4.VulnerabilityReport_Vulnerability_CVSS, error) {
+	fmt.Println("nvd Vuln: >>>>")
 	// Sanity check the NVD data.
 	if v.Metrics == nil || (v.Metrics.CvssMetricV31 == nil && v.Metrics.CvssMetricV30 == nil && v.Metrics.CvssMetricV2 == nil) {
 		return nil, errors.New("no NVD CVSS metrics")
@@ -864,18 +926,21 @@ func nvdCVSS(v *nvdschema.CVEAPIJSON20CVEItem) (*v4.VulnerabilityReport_Vulnerab
 	if len(v.Metrics.CvssMetricV30) > 0 {
 		if cvssv30 := v.Metrics.CvssMetricV30[0]; cvssv30 != nil && cvssv30.CvssData != nil {
 			values.v3Score = float32(cvssv30.CvssData.BaseScore)
+			fmt.Println(cvssv30.CvssData.BaseScore)
 			values.v3Vector = cvssv30.CvssData.VectorString
 		}
 	}
 	// If there is both CVSS 3.0 and 3.1 data, use 3.1.
 	if len(v.Metrics.CvssMetricV31) > 0 {
 		if cvssv31 := v.Metrics.CvssMetricV31[0]; cvssv31 != nil && cvssv31.CvssData != nil {
+			fmt.Println(cvssv31.CvssData.BaseScore)
 			values.v3Score = float32(cvssv31.CvssData.BaseScore)
 			values.v3Vector = cvssv31.CvssData.VectorString
 		}
 	}
 	if len(v.Metrics.CvssMetricV2) > 0 {
 		if cvssv2 := v.Metrics.CvssMetricV2[0]; cvssv2 != nil && cvssv2.CvssData != nil {
+			fmt.Println(cvssv2.CvssData.BaseScore)
 			values.v2Score = float32(cvssv2.CvssData.BaseScore)
 			values.v2Vector = cvssv2.CvssData.VectorString
 		}
