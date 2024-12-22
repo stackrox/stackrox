@@ -2061,5 +2061,37 @@
                 ]
             }
         ]
+    },
+    {
+        "image": "quay.io/rhacs-eng/qa:dom4j-CVE-2020-10683",
+        "registry": "https://quay.io",
+        "username": "QUAY_RHACS_ENG_RO_USERNAME",
+        "password": "QUAY_RHACS_ENG_RO_PASSWORD",
+        "source": "NVD",
+        "namespace": "debian:11",
+        "expected_features": [
+            {
+                "Name": "org.dom4j:dom4j",
+                "Version": "1.6.1",
+                "Location": "usr/local/tomcat/webapps/cve-app.war",
+                "AddedBy": "idk",
+                "Vulnerabilities": [
+                    {
+                        "Name": "CVE-2020-10683",
+                        "Description": "dom4j allows External Entities by default which might enable XXE attacks",
+                        "Severity": "Critical",
+                        "Link": "https://nvd.nist.gov/vuln/detail/CVE-2020-10683",
+                        "Metadata": {
+                            "NVD": {
+                                "CVSSv3": {
+                                    "Score": 9.8,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        ]
     }
 ]
