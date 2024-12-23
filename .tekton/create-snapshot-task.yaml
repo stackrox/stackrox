@@ -1,0 +1,71 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: create-snapshot
+  namespace: rh-acs-tenant
+spec:
+  description: Creates a snapshot based on the components, image refs and Git information passed to the task.
+  params:
+  - name: SOURCE_ARTIFACT
+    description: The Trusted Artifact URI pointing to the application source code.
+    type: string
+  - name: IMAGE_REFS
+    description: Image references.
+    type: string
+  - name: MAIN_IMAGE_TAG
+    description: Result from determine-image-tag for the main image.
+    type: string
+  results:
+  - name: SNAPSHOT_NAME
+    description: Name of the snapshot created by this task.
+  volumes:
+  - name: workdir
+    emptyDir: { }
+  stepTemplate:
+    volumeMounts:
+    - mountPath: /var/workdir
+      name: workdir
+  steps:
+  - name: use-trusted-artifact
+    image: quay.io/redhat-appstudio/build-trusted-artifacts:latest@sha256:81c4864dae6bb11595f657be887e205262e70086a05ed16ada827fd6391926ac
+    args:
+    - use
+    - $(params.SOURCE_ARTIFACT)=/var/workdir/source
+  - name: render-snapshot
+    image: registry.access.redhat.com/ubi9:latest@sha256:1057dab827c782abcfb9bda0c3900c0966b5066e671d54976a7bcb3a2d1a5e53
+    workingDir: /var/workdir/source
+    env:
+      # For these vars, args: will not work
+      - name: APPLICATION
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.labels['appstudio.openshift.io/application']
+      - name: NAMESPACE
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.namespace
+      - name: PIPELINE_RUN_NAME
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.name
+      # It might work for these vars
+      - name: IMAGE_REFS
+        value: $(params.IMAGE_REFS)
+      - name: MAIN_IMAGE_TAG
+        value: $(params.MAIN_IMAGE_TAG)
+      - name: SNAPSHOT_NAME_RESULTS_PATH
+        value: $(results.SNAPSHOT_NAME.path)
+    script: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+
+      .konflux/scripts/render_snapshot.py
+
+  - name: create-snapshot
+    image: registry.redhat.io/openshift4/ose-cli-rhel9@sha256:4f822262adc75bff1891bee0bab1611ae62dfb347f98fcf9aa2604129087eb2c
+    workingDir: /var/workdir/source
+    script: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+
+      oc create -f snapshot.json

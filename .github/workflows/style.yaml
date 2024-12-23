@@ -75,6 +75,9 @@ jobs:
     - name: Check Policies
       run: scripts/ci/jobs/policy-checks.sh
 
+    - name: Check Konflux pipeline modifications
+      run: scripts/ci/jobs/check-konflux-pipelines.sh
+
   style-check:
     runs-on: ubuntu-latest
     container:
