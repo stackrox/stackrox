@@ -67,18 +67,18 @@ class ImageManagementTest extends BaseSpecification {
         where:
         "Data inputs are: "
 
-        policyName                        | imageRegistry | imageRemote                      | imageTag     | note
-        "Latest tag"                      | "quay.io"     | "rhacs-eng/qa-multi-arch-nginx"  | "latest"     | ""
+        policyName                                  | imageRegistry | imageRemote                      | imageTag     | note
+        "Latest tag"                                | "quay.io"     | "rhacs-eng/qa-multi-arch-nginx"  | "latest"     | ""
         //intentionally use the same policy twice to make sure alert count does not increment
-        "Latest tag"                      | "quay.io"     | "rhacs-eng/qa-multi-arch-nginx"  | "latest"     | "(repeat)"
-        "90-Day Image Age"                | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
+        "Latest tag"                                | "quay.io"     | "rhacs-eng/qa-multi-arch-nginx"  | "latest"     | "(repeat)"
+        "90-Day Image Age"                          | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
         // verify Azure registry
-        // "90-Day Image Age"             | "stackroxacr.azurecr.io" | "nginx"               | "1.12"       | ""
-        "Ubuntu Package Manager in Image" | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
-        "Curl in Image"                   | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
-        "Fixable CVSS >= 7"               | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "nginx-1.12" | ""
-        "Wget in Image"                   | "quay.io"     | WGET_IMAGE_NS                  | WGET_IMAGE_TAG | ""
-        "Apache Struts: CVE-2017-5638"    | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
+        // "90-Day Image Age"                       | "stackroxacr.azurecr.io" | "nginx"               | "1.12"       | ""
+        "Ubuntu Package Manager in Image"           | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
+        "Curl in Image"                             | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
+        "Containers with fixable CVEs and CVSS >= 7"| "quay.io"     | "rhacs-eng/qa-multi-arch"        | "nginx-1.12" | ""
+        "Wget in Image"                             | "quay.io"     | WGET_IMAGE_NS                  | WGET_IMAGE_TAG | ""
+        "Apache Struts: CVE-2017-5638"              | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
     }
 
     def "Verify two consecutive latest tag image have different scans"() {
