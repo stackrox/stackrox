@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	commonExtensions "github.com/stackrox/rox/operator/internal/common/extensions"
+	commonLabels "github.com/stackrox/rox/operator/internal/common/labels"
 	"github.com/stackrox/rox/operator/internal/types"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/certgen"
@@ -63,7 +64,7 @@ func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
 		// reconcileInitBundleSecrets not called due to ROX-9023. TODO(ROX-9969): call after the init-bundle cert rotation stabilization.
 	}
 
-	if err := r.EnsureSecret(ctx, "central-tls", r.validateAndConsumeCentralTLSData, r.generateCentralTLSData); err != nil {
+	if err := r.EnsureSecret(ctx, "central-tls", r.validateAndConsumeCentralTLSData, r.generateCentralTLSData, commonLabels.TLSSecretLabels()); err != nil {
 		return errors.Wrap(err, "reconciling central-tls secret failed")
 	}
 
@@ -112,7 +113,7 @@ func (r *createCentralTLSExtensionRun) reconcileInitBundleSecrets(ctx context.Co
 		generateFunc := func(_ types.SecretDataMap) (types.SecretDataMap, error) {
 			return r.generateInitBundleTLSData(slugCaseService+"-", serviceType)
 		}
-		if err := r.EnsureSecret(ctx, secretName, validateFunc, generateFunc); err != nil {
+		if err := r.EnsureSecret(ctx, secretName, validateFunc, generateFunc, commonLabels.TLSSecretLabels()); err != nil {
 			return errors.Wrapf(err, "reconciling %s secret failed", secretName)
 		}
 	}
@@ -218,42 +219,42 @@ func validateOrGenerateCA(oldCA mtls.CA, oldFileMap types.SecretDataMap) (mtls.C
 
 func (r *createCentralTLSExtensionRun) reconcileCentralDBTLSSecret(ctx context.Context) error {
 	if r.centralObj.Spec.Central.ShouldManageDB() {
-		return r.EnsureSecret(ctx, "central-db-tls", r.validateCentralDBTLSData, r.generateCentralDBTLSData)
+		return r.EnsureSecret(ctx, "central-db-tls", r.validateCentralDBTLSData, r.generateCentralDBTLSData, commonLabels.TLSSecretLabels())
 	}
 	return r.DeleteSecret(ctx, "central-db-tls")
 }
 
 func (r *createCentralTLSExtensionRun) reconcileScannerTLSSecret(ctx context.Context) error {
 	if r.centralObj.Spec.Scanner.IsEnabled() {
-		return r.EnsureSecret(ctx, "scanner-tls", r.validateScannerTLSData, r.generateScannerTLSData)
+		return r.EnsureSecret(ctx, "scanner-tls", r.validateScannerTLSData, r.generateScannerTLSData, commonLabels.TLSSecretLabels())
 	}
 	return r.DeleteSecret(ctx, "scanner-tls")
 }
 
 func (r *createCentralTLSExtensionRun) reconcileScannerDBTLSSecret(ctx context.Context) error {
 	if r.centralObj.Spec.Scanner.IsEnabled() {
-		return r.EnsureSecret(ctx, "scanner-db-tls", r.validateScannerDBTLSData, r.generateScannerDBTLSData)
+		return r.EnsureSecret(ctx, "scanner-db-tls", r.validateScannerDBTLSData, r.generateScannerDBTLSData, commonLabels.TLSSecretLabels())
 	}
 	return r.DeleteSecret(ctx, "scanner-db-tls")
 }
 
 func (r *createCentralTLSExtensionRun) reconcileScannerV4IndexerTLSSecret(ctx context.Context) error {
 	if r.centralObj.Spec.ScannerV4.IsEnabled() {
-		return r.EnsureSecret(ctx, "scanner-v4-indexer-tls", r.validateScannerV4IndexerTLSData, r.generateScannerV4IndexerTLSData)
+		return r.EnsureSecret(ctx, "scanner-v4-indexer-tls", r.validateScannerV4IndexerTLSData, r.generateScannerV4IndexerTLSData, commonLabels.TLSSecretLabels())
 	}
 	return r.DeleteSecret(ctx, "scanner-v4-indexer-tls")
 }
 
 func (r *createCentralTLSExtensionRun) reconcileScannerV4MatcherTLSSecret(ctx context.Context) error {
 	if r.centralObj.Spec.ScannerV4.IsEnabled() {
-		return r.EnsureSecret(ctx, "scanner-v4-matcher-tls", r.validateScannerV4MatcherTLSData, r.generateScannerV4MatcherTLSData)
+		return r.EnsureSecret(ctx, "scanner-v4-matcher-tls", r.validateScannerV4MatcherTLSData, r.generateScannerV4MatcherTLSData, commonLabels.TLSSecretLabels())
 	}
 	return r.DeleteSecret(ctx, "scanner-v4-matcher-tls")
 }
 
 func (r *createCentralTLSExtensionRun) reconcileScannerV4DBTLSSecret(ctx context.Context) error {
 	if r.centralObj.Spec.ScannerV4.IsEnabled() {
-		return r.EnsureSecret(ctx, "scanner-v4-db-tls", r.validateScannerV4DBTLSData, r.generateScannerV4DBTLSData)
+		return r.EnsureSecret(ctx, "scanner-v4-db-tls", r.validateScannerV4DBTLSData, r.generateScannerV4DBTLSData, commonLabels.TLSSecretLabels())
 	}
 	return r.DeleteSecret(ctx, "scanner-v4-db-tls")
 }
