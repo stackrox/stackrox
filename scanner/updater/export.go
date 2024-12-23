@@ -186,6 +186,7 @@ func epssOpts() []updates.ManagerOption {
 	}
 }
 
+// TODO(ROX-26672): remove this.
 func redhatCSAFOpts() []updates.ManagerOption {
 		return []updates.ManagerOption{
 		// This is required to prevent default updaters from running.
