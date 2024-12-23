@@ -56,7 +56,8 @@ class AdmissionControllerTest extends BaseSpecification {
     private final static String LATEST_TAG = "Latest tag"
     private final static String LATEST_TAG_FOR_TEST = "Latest tag ${CLONED_POLICY_SUFFIX}"
     private final static String SEVERITY = "Containers with fixable CVEs and Severity at least Important"
-    private final static String SEVERITY_FOR_TEST = "Containers with fixable CVEs and Severity at least Important ${CLONED_POLICY_SUFFIX}"
+    private final static String SEVERITY_FOR_TEST =
+                                    "Containers with fixable CVEs and Severity at least Important ${CLONED_POLICY_SUFFIX}"
 
     static final private Deployment SCAN_INLINE_DEPLOYMENT = new Deployment()
             .setName(SCAN_INLINE_DEPLOYMENT_NAME)
