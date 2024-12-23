@@ -62,7 +62,7 @@ function ClusterDeployment({
                             legacy-installed Secured Clusters to work.
                         </Text>
                         <Switch
-                            label="Configured for upgrades: Secured Clusters can be upgraded to match Central's version."
+                            label="Configured for upgrades: Secured Clusters can be upgraded to match Central’s version."
                             labelOff="Not configured for upgrades: Attempts to upgrade Secured Clusters will fail."
                             onChange={toggleSA}
                             isChecked={createUpgraderSA}
