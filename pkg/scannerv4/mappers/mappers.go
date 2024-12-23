@@ -49,6 +49,8 @@ var (
 		claircore.Critical:   v4.VulnerabilityReport_Vulnerability_SEVERITY_CRITICAL,
 	}
 
+	// TODO(ROX-26672): Remove this.
+	// This is currently used to map the CSAF enrichment's severity to the equivalent proto severity.
 	severityFromStringMapping = map[string]v4.VulnerabilityReport_Vulnerability_Severity{
 		"Low":       v4.VulnerabilityReport_Vulnerability_SEVERITY_LOW,
 		"Moderate":  v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
@@ -117,6 +119,10 @@ func ToProtoV4VulnerabilityReport(ctx context.Context, r *claircore.Vulnerabilit
 	if err != nil {
 		return nil, fmt.Errorf("internal error: parsing EPSS items: %w", err)
 	}
+	// TODO(ROX-26672): Remove this line.
+	// The CSAF advisories are currently a temporary solution
+	// until we start showing CVEs for fixed vulnerabilities affecting
+	// Red Hat products.
 	csafAdvisories, err := redhatCSAFAdvisories(ctx, r.Enrichments)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: parsing Red Hat CSAF advisories: %w", err)
@@ -431,7 +437,6 @@ func toProtoV4VulnerabilitiesMap(
 	if !features.ScannerV4RedHatCVEs.Enabled() {
 		rhelEPSSDetails = rhelVulnsEPSS(vulns, epssItems)
 	}
-	uniqueAdvisories := make(map[string]string)
 	for k, v := range vulns {
 		if v == nil {
 			continue
@@ -448,19 +453,10 @@ func toProtoV4VulnerabilitiesMap(
 		if v.Repo != nil {
 			repoID = v.Repo.ID
 		}
-		// TODO(ROX-26672): Remove this line.
-		advisory, advisoryExists := csafAdvisories[v.ID]
-		if id, advisoryUsed := uniqueAdvisories[v.ID]; advisoryExists && advisoryUsed {
-			zlog.Debug(ctx).
-				Str("vuln_id", v.ID).
-				Str("vuln_name", v.Name).
-				Str("vuln_updater", v.Updater).
-				Str("advisory_name", v.Severity).
-				Str("original_vuln_id", id).
-				Msg("skipping vulnerability, as there already exists an advisory for it")
-			continue
-		}
 		normalizedSeverity := toProtoV4VulnerabilitySeverity(ctx, v.NormalizedSeverity)
+		// TODO(ROX-26672): Remove this line.
+		// TODO: need to think about this some more...
+		advisory, advisoryExists := csafAdvisories[v.ID]
 		if advisoryExists {
 			normalizedSeverity = toProtoV4VulnerabilitySeverityFromString(ctx, advisory.Severity)
 		}
@@ -577,6 +573,8 @@ func toProtoV4VulnerabilitySeverity(ctx context.Context, ccSeverity claircore.Se
 	return v4.VulnerabilityReport_Vulnerability_SEVERITY_UNSPECIFIED
 }
 
+// TODO(ROX-26672): Remove this.
+// This is currently used to map the CSAF enrichment's severity to the equivalent proto severity.
 func toProtoV4VulnerabilitySeverityFromString(ctx context.Context, severity string) v4.VulnerabilityReport_Vulnerability_Severity {
 	if mappedSeverity, ok := severityFromStringMapping[severity]; ok {
 		return mappedSeverity
@@ -771,7 +769,13 @@ func nvdVulnerabilities(enrichments map[string][]json.RawMessage) (map[string]ma
 	return ret, nil
 }
 
+// TODO(ROX-26672): Remove this function when we no longer require reading advisory data.
 func redhatCSAFAdvisories(ctx context.Context, enrichments map[string][]json.RawMessage) (map[string]csaf.Record, error) {
+	// Do not read CSAF data if it's not enabled.
+	if !features.ScannerV4RedHatCSAF.Enabled() {
+		return nil, nil
+	}
+	// No reason to read CSAF data when we want to only show CVEs.
 	if features.ScannerV4RedHatCVEs.Enabled() {
 		return nil, nil
 	}
