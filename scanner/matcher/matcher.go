@@ -133,7 +133,7 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		&nvd.Enricher{},
 		&fixedby.Enricher{},
 	}
-	if !features.ScannerV4RedHatCVEs.Enabled() {
+	if features.ScannerV4RedHatCSAF.Enabled() {
 		enrichers = append(enrichers, &csaf.Enricher{})
 	}
 	libVuln, err := libvuln.New(ctx, &libvuln.Options{
