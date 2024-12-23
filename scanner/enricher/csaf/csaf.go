@@ -147,7 +147,6 @@ var (
 	// Updater patterns are used to determine the security updater the
 	// vulnerability was detected.
 
-	awsUpdaterPrefix = `aws-`
 	rhelUpdaterName  = (*vex.Updater)(nil).Name()
 	// TODO(ROX-26672): This won't be needed when we show CVEs as the top-level vuln name.
 	rhccUpdaterName = "rhel-container-updater"
@@ -155,8 +154,6 @@ var (
 	// Name patterns are regexes to match against vulnerability fields to
 	// extract their name according to their updater.
 
-	// alasIDPattern captures Amazon Linux Security Advisories.
-	alasIDPattern = regexp.MustCompile(`ALAS\d*-\d{4}-\d+`)
 	// cveIDPattern captures CVEs.
 	cveIDPattern = regexp.MustCompile(`CVE-\d{4}-\d+`)
 	// rhelVulnNamePattern captures known Red Hat advisory patterns.
@@ -181,10 +178,6 @@ var (
 func vulnerabilityName(vuln *claircore.Vulnerability) string {
 	// Attempt per-updater patterns.
 	switch {
-	case strings.HasPrefix(vuln.Updater, awsUpdaterPrefix):
-		if v, ok := findName(vuln, alasIDPattern); ok {
-			return v
-		}
 	// TODO(ROX-26672): Remove this to show CVE as the vuln name.
 	case strings.EqualFold(vuln.Updater, rhelUpdaterName), strings.EqualFold(vuln.Updater, rhccUpdaterName):
 		if !features.ScannerV4RedHatCVEs.Enabled() {
