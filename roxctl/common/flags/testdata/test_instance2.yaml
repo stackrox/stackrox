@@ -1,0 +1,5 @@
+# Sample instance.yaml configuration for StackRox roxctl.
+name: dev-environment
+caCertPath: "/etc/ssl/certs"
+apiTokenPath: "/var/secrets/api-token"
+endpoint: "localhost:3000"

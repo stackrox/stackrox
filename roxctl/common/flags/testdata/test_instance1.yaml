@@ -1,0 +1,5 @@
+# Sample instance.yaml configuration for StackRox roxctl.
+name: profile-1
+caCertPath: "./deploy/cert"
+apiTokenPath: REDACTED
+endpoint: "localhost:8000"
