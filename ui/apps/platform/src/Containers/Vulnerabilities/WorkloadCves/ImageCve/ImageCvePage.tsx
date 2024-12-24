@@ -83,11 +83,6 @@ import VulnerabilityStateTabs, {
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 
-const workloadCveOverviewCvePath = getOverviewPagePath('Workload', {
-    vulnerabilityState: 'OBSERVED',
-    entityTab: 'CVE',
-});
-
 export const imageCveMetadataQuery = gql`
     query getImageCveMetadata($cve: String!) {
         imageCVE(cve: $cve) {
@@ -192,7 +187,7 @@ function ImageCvePage() {
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
 
-    const { pageTitle, baseSearchFilter } = useWorkloadCveViewContext();
+    const { getAbsoluteUrl, pageTitle, baseSearchFilter } = useWorkloadCveViewContext();
     const currentVulnerabilityState = useVulnerabilityState();
 
     const urlParams = useParams();
@@ -348,6 +343,13 @@ function ImageCvePage() {
             />
         );
     }
+
+    const workloadCveOverviewCvePath = getAbsoluteUrl(
+        getOverviewPagePath('Workload', {
+            vulnerabilityState: 'OBSERVED',
+            entityTab: 'CVE',
+        })
+    );
 
     const cveName = metadataRequest.data?.imageCVE?.cve;
 

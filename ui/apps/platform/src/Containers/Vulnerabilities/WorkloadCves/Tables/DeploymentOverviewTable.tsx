@@ -20,6 +20,7 @@ import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import { VulnerabilitySeverityLabel } from '../../types';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
+import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 
 export const tableId = 'WorkloadCvesDeploymentOverviewTable';
 
@@ -107,6 +108,7 @@ function DeploymentOverviewTable({
     onClearFilters,
     columnVisibilityState,
 }: DeploymentOverviewTableProps) {
+    const { getAbsoluteUrl } = useWorkloadCveViewContext();
     const vulnerabilityState = useVulnerabilityState();
     const getVisibilityClass = generateVisibilityForColumns(columnVisibilityState);
     const hiddenColumnCount = getHiddenColumnCount(columnVisibilityState);
@@ -177,10 +179,12 @@ function DeploymentOverviewTable({
                                 <Tr>
                                     <Td dataLabel="Deployment">
                                         <Link
-                                            to={getWorkloadEntityPagePath(
-                                                'Deployment',
-                                                id,
-                                                vulnerabilityState
+                                            to={getAbsoluteUrl(
+                                                getWorkloadEntityPagePath(
+                                                    'Deployment',
+                                                    id,
+                                                    vulnerabilityState
+                                                )
                                             )}
                                         >
                                             <Truncate position="middle" content={name} />
