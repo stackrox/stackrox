@@ -310,13 +310,72 @@ type CollectorContainerSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
 	ImageFlavor *CollectorImageFlavor `json:"imageFlavor,omitempty"`
 
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
+	RuntimeConfig *CollectorRuntimeConfig `json:"runtimeConfig,omitempty"`
+
 	// Deprecated field. This field will be removed in a future release.
 	//+kubebuilder:default=false
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	ForceCollection *bool `json:"forceCollection,omitempty"`
 
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5
 	ContainerSpec `json:",inline"`
+}
+
+// +kubebuilder:validation:Enum=Enabled;Disabled;Auto
+type CollectorRuntimeConfigEnabled string
+
+const (
+	// CollectorRuntimeConfigEnabledEnabled means: The collector-config ConfigMap will be created
+	CollectorRuntimeConfigEnabledEnabled CollectorRuntimeConfigEnabled = "Enabled"
+	// CollectorRuntimeConfigEnabledDisabled means: The collector-config ConfigMap will not be created
+	CollectorRuntimeConfigEnabledDisabled CollectorRuntimeConfigEnabled = "Disabled"
+	// CollectorRuntimeConfigEnabledAuto means: The collector-config ConfigMap will not be created
+	CollectorRuntimeConfigEnabledAuto CollectorRuntimeConfigEnabled = "Auto"
+)
+
+func (c CollectorRuntimeConfigEnabled) Pointer() *CollectorRuntimeConfigEnabled {
+	return &c
+}
+
+type CollectorRuntimeConfig struct {
+	//+kubebuilder:default=Enabled
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:select:Enabled", "urn:alm:descriptor:com.tectonic.ui:select:Disabled", "urn:alm:descriptor:com.tectonic.ui:select:Auto"}
+	Enabled *CollectorRuntimeConfigEnabled `json:"enabled,omitempty"`
+
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
+	Networking *CollectorNetworking `json:"networking"`
+}
+
+type CollectorNetworking struct {
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
+	ExternalIPs *CollectorExternalIPs `json:"externalIps,omitempty"`
+	//+kubebuilder:default=1024
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
+	MaxConnectionsPerMinute *int32 `json:"maxConnectionsPerMinute,omitempty"`
+}
+
+// +kubebuilder:validation:Enum=Disabled;Enabled;Auto
+type CollectorExternalIPsEnabled string
+
+const (
+	// CollectorExternalIPsDisabled means: don't use the external IPs feature
+	CollectorExternalIPsEnabledDisabled CollectorExternalIPsEnabled = "Disabled"
+	// CollectorExternalIPsEnabled means: use the external IPs feature
+	CollectorExternalIPsEnabledEnabled CollectorExternalIPsEnabled = "Enabled"
+	// CollectorExternalIPsAuto means: don't use the external IPs feature
+	CollectorExternalIPsEnabledAuto CollectorExternalIPsEnabled = "Auto"
+)
+
+// Pointer returns the given CollectorExternalIPsEnabled as pointer
+func (c CollectorExternalIPsEnabled) Pointer() *CollectorExternalIPsEnabled {
+	return &c
+}
+
+type CollectorExternalIPs struct {
+	//+kubebuilder:default=Disabled
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:select:Disabled", "urn:alm:descriptor:com.tectonic.ui:select:Enabled", "urn:alm:descriptor:com.tectonic.ui:select:Auto"}
+	Enabled *CollectorExternalIPsEnabled `json:"enabled,omitempty"`
 }
 
 // ContainerSpec defines container settings.
