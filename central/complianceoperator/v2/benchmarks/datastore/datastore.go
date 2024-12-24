@@ -5,14 +5,18 @@ import (
 	"testing"
 
 	pgStore "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/store/postgres"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 // DataStore is the entry point for storing/retrieving compliance operator scan objects.
 //
 //go:generate mockgen-wrapper
 type DataStore interface {
+	search.Searcher
+
 	// GetBenchmark retrieves the benchmark object from the database
 	GetBenchmark(ctx context.Context, id string) (*storage.ComplianceOperatorBenchmarkV2, bool, error)
 
@@ -24,6 +28,9 @@ type DataStore interface {
 
 	// GetBenchmarksByProfileName returns the benchmarks for the given profile name
 	GetBenchmarksByProfileName(ctx context.Context, profileName string) ([]*storage.ComplianceOperatorBenchmarkV2, error)
+
+	// SearchBenchmarks searches benchmarks used for auto-complete feature
+	SearchBenchmarks(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
 }
 
 // New returns an instance of DataStore.
