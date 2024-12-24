@@ -103,6 +103,7 @@ var (
                 {{- if eq $indexconfig.IndexCategory "unique"}}uniqueIndex{{else}}index{{end -}}:{{- /**/ -}}
                     {{if gt (len $indexconfig.IndexName) 0}}{{$indexconfig.IndexName}}{{else}}{{$schema.Table|lowerCamelCase|lowerCase}}_{{$field.ColumnName|lowerCase}}{{end}}{{- /**/ -}}
                 {{- if ne $indexconfig.IndexCategory "unique"}},type:{{$indexconfig.IndexType}}{{end -}}{{- /**/ -}}
+                ,option:CONCURRENTLY
             {{- end -}}
         {{end}}{{- /**/ -}}
         {{if $field|isSacScoping }};{{- /**/ -}}
