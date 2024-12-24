@@ -233,7 +233,7 @@ func (s *scannerv4) GetNodeVulnerabilityReport(node *storage.Node, indexReport *
 
 	vr, err := s.scannerClient.GetVulnerabilities(ctx, nodeDigest, indexReport.GetContents())
 	if err != nil {
-		return nil, errors.Wrap(err, "Failed to create vulnerability report")
+		return nil, errors.Wrap(err, "Scanner v4 client call to GetVulnerabilities")
 	}
 
 	return vr, nil
