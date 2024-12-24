@@ -674,36 +674,88 @@ function launch_sensor {
         exit 1
       fi
       mkdir "$k8s_dir/sensor-deploy"
-      (umask 077; touch "$k8s_dir/sensor-deploy/init-bundle.yaml")
       local api_resp
       api_resp="$(mktemp)"
-      # Retry with different bundle name to recover from situations where bundle was created on
-      # central but curl failed to read response for whatever reason.
-      for _ in $(seq 10); do
-        if curl_central_once "https://${API_ENDPOINT}/v1/cluster-init/init-bundles" \
-            -o "${api_resp}" \
-            -XPOST -d '{"name":"deploy-'"${CLUSTER}-$(date '+%Y%m%d%H%M%S')"'"}'; then
-          break
-        else
-          : > "${api_resp}"
-        fi
-      done
-      if [[ -s "${api_resp}" ]]; then
-        jq -r '.helmValuesBundle' "${api_resp}" | base64 --decode >"$k8s_dir/sensor-deploy/init-bundle.yaml"
-      else
-        echo >&2 "Failed to fetch cluster init bundle despite retries, see messages above."
-        exit 1
-      fi
-      rm -f "${api_resp}"
 
       curl_central_retry "https://${API_ENDPOINT}/api/extensions/helm-charts/secured-cluster-services.zip" \
           -o "$k8s_dir/sensor-deploy/chart.zip"
       mkdir "$k8s_dir/sensor-deploy/chart"
       unzip "$k8s_dir/sensor-deploy/chart.zip" -d "$k8s_dir/sensor-deploy/chart"
+      local secured_cluster_chart_supports_crs="false"
+      if [[ -e "${k8s_dir}/sensor-deploy/chart/templates/cluster-registration-secret.yaml" ]]; then
+        secured_cluster_chart_supports_crs="true"
+      fi
 
-      init_bundle_path=${ROX_INIT_BUNDLE_PATH:-"$k8s_dir/sensor-deploy/init-bundle.yaml"}
-      helm_args=(
-        -f "$init_bundle_path"
+      if [[ "${secured_cluster_chart_supports_crs}" != "true" ]]; then
+        echo >&2 "======================================================================================="
+        echo >&2 " NOTE: The Helm chart to be installed does not support CRS-based cluster registration."
+        echo >&2 "                    The init-bundle mechanism will be used instead."
+        echo >&2 "======================================================================================="
+        ROX_DEPLOY_SENSOR_WITH_CRS=false
+      fi
+
+      if [[ -z "$CI" && -z "${ROX_DEPLOY_SENSOR_WITH_CRS:-}" && "${secured_cluster_chart_supports_crs}" == "true" ]]; then
+        echo >&2 "================================================================================================="
+        echo >&2 " NOTE: Based on your environment, the new CRS-based flow for cluster-registration will be used."
+        echo >&2 "  To disable the CRS-based flow for cluster registration, set ROX_DEPLOY_SENSOR_WITH_CRS=false"
+        echo >&2 "================================================================================================="
+        ROX_DEPLOY_SENSOR_WITH_CRS=true
+      fi
+
+      if [[ "${ROX_DEPLOY_SENSOR_WITH_CRS:-}" == "true" ]]; then
+        echo "Deploying secured-cluster-services Helm chart using CRS"
+        local crs_path=${ROX_CRS_PATH:-"$k8s_dir/sensor-deploy/crs.yaml"}
+        (umask 077; touch "$crs_path")
+        # Retry with different CRS name to recover from situations where CRS was created on
+        # central but curl failed to read response for whatever reason.
+        for _ in $(seq 10); do
+          if curl_central_once "https://${API_ENDPOINT}/v1/cluster-init/crs" \
+              -o "${api_resp}" \
+              -XPOST -d '{"name":"deploy-'"${CLUSTER}-$(date '+%Y%m%d%H%M%S')"'"}'; then
+            break
+          else
+            : > "${api_resp}"
+          fi
+        done
+        if [[ -s "${api_resp}" ]]; then
+          jq -r '.crs' "${api_resp}" | base64 --decode >"$crs_path"
+        else
+          echo >&2 "Failed to fetch CRS despite retries, see messages above."
+          exit 1
+        fi
+        rm -f "${api_resp}"
+        helm_args+=(--set-file "crs.file=$crs_path")
+      else
+        if [[ "${ROX_DEPLOY_SENSOR_WITH_CRS:-}" == "true" ]]; then
+          echo "NOTE: Deploying SENSOR with CRS requested, but the Helm chart located at '${k8s_dir}/sensor-deploy/chart' does not support CRS."
+        fi
+        echo "Deploying secured-cluster-services Helm chart using init-bundle"
+        local init_bundle_path=${ROX_INIT_BUNDLE_PATH:-"$k8s_dir/sensor-deploy/init-bundle.yaml"}
+        (umask 077; touch "$init_bundle_path")
+        local api_resp
+        api_resp="$(mktemp)"
+        # Retry with different bundle name to recover from situations where bundle was created on
+        # central but curl failed to read response for whatever reason.
+        for _ in $(seq 10); do
+          if curl_central_once "https://${API_ENDPOINT}/v1/cluster-init/init-bundles" \
+              -o "${api_resp}" \
+              -XPOST -d '{"name":"deploy-'"${CLUSTER}-$(date '+%Y%m%d%H%M%S')"'"}'; then
+            break
+          else
+            : > "${api_resp}"
+          fi
+        done
+        if [[ -s "${api_resp}" ]]; then
+          jq -r '.helmValuesBundle' "${api_resp}" | base64 --decode >"$init_bundle_path"
+        else
+          echo >&2 "Failed to fetch cluster init bundle despite retries, see messages above."
+          exit 1
+        fi
+        rm -f "${api_resp}"
+        helm_args+=(-f "$init_bundle_path")
+      fi
+
+      helm_args+=(
         --set "imagePullSecrets.allowNone=true"
         --set "clusterName=${CLUSTER}"
         --set "centralEndpoint=${CLUSTER_API_ENDPOINT}"
@@ -767,9 +819,9 @@ function launch_sensor {
       fi
 
       if [[ -n "$CI" ]]; then
-        helm lint "${helm_chart}"
-        helm lint "${helm_chart}" -n "${sensor_namespace}"
-        helm lint "${helm_chart}" -n "${sensor_namespace}" "${helm_args[@]}" "${extra_helm_config[@]}"
+        helm lint --set ca.cert=PLACEHOLDER_FOR_LINTING "${helm_chart}"
+        helm lint --set ca.cert=PLACEHOLDER_FOR_LINTING "${helm_chart}" -n "${sensor_namespace}"
+        helm lint --set ca.cert=PLACEHOLDER_FOR_LINTING "${helm_chart}" -n "${sensor_namespace}" "${helm_args[@]}" "${extra_helm_config[@]}"
       fi
 
       if [[ "${sensor_namespace}" != "stackrox" ]]; then

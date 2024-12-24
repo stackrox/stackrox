@@ -835,7 +835,8 @@ func (ds *datastoreImpl) updateClusterNoLock(ctx context.Context, cluster *stora
 	return nil
 }
 
-func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, clusterID, bundleID string, hello *central.SensorHello) (*storage.Cluster, error) {
+// registrantID can be the ID of an init bundle or of a CRS.
+func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, clusterID, registrantID string, hello *central.SensorHello) (*storage.Cluster, error) {
 	if err := checkWriteSac(ctx, clusterID); err != nil {
 		return nil, err
 	}
@@ -876,7 +877,7 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 		// A this point, we can be sure that the cluster does not exist.
 		cluster = &storage.Cluster{
 			Name:               clusterName,
-			InitBundleId:       bundleID,
+			InitBundleId:       registrantID,
 			MostRecentSensorId: hello.GetDeploymentIdentification().CloneVT(),
 		}
 		clusterConfig := helmConfig.GetClusterConfig()
@@ -918,7 +919,7 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 			}
 		}
 
-		if cluster.GetInitBundleId() == bundleID &&
+		if cluster.GetInitBundleId() == registrantID &&
 			cluster.GetHelmConfig().GetConfigFingerprint() == helmConfig.GetClusterConfig().GetConfigFingerprint() &&
 			cluster.GetManagedBy() == manager {
 			// No change in either of
@@ -938,7 +939,7 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 
 	cluster = cluster.CloneVT()
 	cluster.ManagedBy = manager
-	cluster.InitBundleId = bundleID
+	cluster.InitBundleId = registrantID
 	if manager == storage.ManagerType_MANAGER_TYPE_MANUAL {
 		cluster.HelmConfig = nil
 	} else {
