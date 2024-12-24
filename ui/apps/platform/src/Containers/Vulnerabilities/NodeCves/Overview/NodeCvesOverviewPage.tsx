@@ -77,8 +77,11 @@ function NodeCvesOverviewPage() {
         onSort: () => pagination.setPage(1),
     });
 
-    const querySearchFilter = parseQuerySearchFilter(searchFilter);
-    const isFiltered = getHasSearchApplied(querySearchFilter);
+    const querySearchFilter = {
+        'CVE Snoozed': ['false'],
+        ...parseQuerySearchFilter(searchFilter),
+    };
+    const isFiltered = getHasSearchApplied(parseQuerySearchFilter(searchFilter));
 
     const isViewingSnoozedCves = querySearchFilter['CVE Snoozed']?.[0] === 'true';
     const hasLegacySnoozeAbility = useHasLegacySnoozeAbility();
