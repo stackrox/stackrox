@@ -1,4 +1,4 @@
-package certificates
+package certrefresh
 
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
