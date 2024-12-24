@@ -71,6 +71,23 @@ func ValidateContainerImageRequest(req *v4.CreateIndexReportRequest) error {
 	return nil
 }
 
+func ValidateGetSBOMRequest(req *v4.GetSBOMRequest) error {
+	if req == nil {
+		return errox.InvalidArgs.New("empty request")
+	}
+	// We only support container image resources for now.
+	if !strings.HasPrefix(req.GetHashId(), "/v4/containerimage/") {
+		return fmt.Errorf("invalid hash id: %q", req.GetHashId())
+	}
+	if req.GetContents() == nil {
+		return errox.InvalidArgs.New("contents empty")
+	}
+	if err := validateContents(req.GetContents()); err != nil {
+		return err
+	}
+	return nil
+}
+
 func validateContents(contents *v4.Contents) error {
 	if contents == nil {
 		return nil

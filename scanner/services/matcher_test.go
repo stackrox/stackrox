@@ -46,16 +46,16 @@ func (s *matcherServiceTestSuite) TestAuthz() {
 
 func (s *matcherServiceTestSuite) Test_matcherService_NewMatcherService() {
 	// when Indexer is nil, empty content is disabled
-	srv := NewMatcherService(s.matcherMock, nil)
+	srv := NewMatcherService(s.matcherMock, nil, nil)
 	s.True(srv.disableEmptyContents)
 	// when Indexer is nil, empty content is disabled
-	srv = NewMatcherService(s.matcherMock, s.indexerMock)
+	srv = NewMatcherService(s.matcherMock, s.indexerMock, nil)
 	s.False(srv.disableEmptyContents)
 }
 
 func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_contents_disbled() {
 	// when empty content is disabled and empty contents then error
-	srv := NewMatcherService(s.matcherMock, nil)
+	srv := NewMatcherService(s.matcherMock, nil, nil)
 	s.matcherMock.
 		EXPECT().
 		Initialized(gomock.Any()).
@@ -70,7 +70,7 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_c
 
 func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_not_initialized() {
 	// when matcher is not initialized then error
-	srv := NewMatcherService(s.matcherMock, nil)
+	srv := NewMatcherService(s.matcherMock, nil, nil)
 	s.matcherMock.
 		EXPECT().
 		Initialized(gomock.Any()).
@@ -108,7 +108,7 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_c
 			EXPECT().
 			Initialized(gomock.Any()).
 			Return(nil)
-		srv := NewMatcherService(s.matcherMock, s.indexerMock)
+		srv := NewMatcherService(s.matcherMock, s.indexerMock, nil)
 		res, err := srv.GetVulnerabilities(s.ctx, &v4.GetVulnerabilitiesRequest{
 			HashId:   hashID,
 			Contents: nil,
@@ -143,7 +143,7 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_c
 			EXPECT().
 			Initialized(gomock.Any()).
 			Return(nil)
-		srv := NewMatcherService(s.matcherMock, nil)
+		srv := NewMatcherService(s.matcherMock, nil, nil)
 		res, err := srv.GetVulnerabilities(s.ctx, &v4.GetVulnerabilitiesRequest{
 			HashId: hashID,
 			Contents: &v4.Contents{Packages: []*v4.Package{
@@ -174,7 +174,7 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetMetadata() {
 		GetLastVulnerabilityUpdate(gomock.Any()).
 		Return(now, nil)
 
-	srv := NewMatcherService(s.matcherMock, nil)
+	srv := NewMatcherService(s.matcherMock, nil, nil)
 	res, err := srv.GetMetadata(s.ctx, protocompat.ProtoEmpty())
 	s.NoError(err)
 	protoassert.Equal(s.T(), &v4.Metadata{
@@ -189,7 +189,7 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetMetadata_error() {
 		GetLastVulnerabilityUpdate(gomock.Any()).
 		Return(time.Time{}, errors.New("some error"))
 
-	srv := NewMatcherService(s.matcherMock, nil)
+	srv := NewMatcherService(s.matcherMock, nil, nil)
 	res, err := srv.GetMetadata(s.ctx, protocompat.ProtoEmpty())
 	s.Error(err)
 	s.Nil(res)
@@ -234,7 +234,7 @@ func (s *matcherServiceTestSuite) Test_matcherService_notes() {
 		},
 	}
 
-	srv := NewMatcherService(s.matcherMock, nil)
+	srv := NewMatcherService(s.matcherMock, nil, nil)
 
 	// Empty notes.
 	s.matcherMock.
