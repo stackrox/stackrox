@@ -32,6 +32,7 @@ var (
 	_ types.Scanner                  = (*scannerv4)(nil)
 	_ types.ImageVulnerabilityGetter = (*scannerv4)(nil)
 	_ types.NodeScanner              = (*scannerv4)(nil)
+	_ types.SBOM                     = (*scannerv4)(nil)
 
 	log = logging.LoggerForModule()
 
@@ -104,6 +105,19 @@ func newScanner(integration *storage.ImageIntegration, activeRegistries registri
 	}
 
 	return scanner, nil
+}
+
+// GetSBOM
+func (s *scannerv4) GetSBOM(image *storage.Image) ([]byte, error) {
+
+	digest, err := pkgscanner.DigestFromImage(image)
+	if err != nil {
+		return nil, err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
+	defer cancel()
+	sbom, err := s.scannerClient.GetSBOM(ctx, digest)
+	return sbom, err
 }
 
 func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
