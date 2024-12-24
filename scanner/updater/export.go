@@ -16,6 +16,7 @@ import (
 	"github.com/quay/claircore/libvuln/jsonblob"
 	"github.com/quay/claircore/libvuln/updates"
 	"github.com/quay/zlog"
+	"github.com/stackrox/rox/scanner/enricher/csaf"
 	"github.com/stackrox/rox/scanner/enricher/nvd"
 	"github.com/stackrox/rox/scanner/updater/manual"
 	"golang.org/x/time/rate"
@@ -47,6 +48,7 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 		return fmt.Errorf("initializing: manual: %w", err)
 	}
 	bundles["nvd"] = nvdOpts()
+	bundles["stackrox-rhel-csaf"] = redhatCSAFOpts()
 
 	// ClairCore updaters.
 	for _, uSet := range []string{
@@ -169,6 +171,17 @@ func nvdOpts() []updates.ManagerOption {
 				}
 				return nil
 			},
+		}),
+	}
+}
+
+// TODO(ROX-26672): remove this.
+func redhatCSAFOpts() []updates.ManagerOption {
+	return []updates.ManagerOption{
+		// This is required to prevent default updaters from running.
+		updates.WithEnabled([]string{}),
+		updates.WithFactories(map[string]driver.UpdaterSetFactory{
+			"stackrox-rhel-csaf": csaf.NewFactory(),
 		}),
 	}
 }
