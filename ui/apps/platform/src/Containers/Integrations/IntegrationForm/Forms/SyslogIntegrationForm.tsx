@@ -211,7 +211,6 @@ function SyslogIntegrationForm({
                                             // because PatternFly does not allow the inner width of the toggle button to be expanded easily
                                             // (setting a min-witch on Toggle Item just adds space to the right of the outlined button)
                                             id="CEF-option"
-                                            key='CEF'
                                             text="CEF"
                                             isSelected={values.syslog.messageFormat === 'CEF'}
                                             onChange={() =>
@@ -219,7 +218,6 @@ function SyslogIntegrationForm({
                                             }
                                         />
                                         <ToggleGroupItem
-                                            key='LEGACY'
                                             text="CEF (legacy field order)"
                                             isSelected={values.syslog.messageFormat === 'LEGACY' || !values.syslog.messageFormat}
                                             onChange={() =>

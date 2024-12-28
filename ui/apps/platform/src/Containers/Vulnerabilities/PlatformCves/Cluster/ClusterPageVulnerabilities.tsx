@@ -93,7 +93,7 @@ function ClusterPageVulnerabilities({ clusterId }: ClusterPageVulnerabilitiesPro
                 />
                 <SummaryCardLayout isLoading={summaryRequest.loading} error={summaryRequest.error}>
                     <SummaryCard
-                        loadingText={'Loading platform CVEs by status summary'}
+                        loadingText="Loading platform CVEs by status summary"
                         data={summaryRequest.data}
                         renderer={({ data }) => (
                             <PlatformCvesByStatusSummaryCard
@@ -103,7 +103,7 @@ function ClusterPageVulnerabilities({ clusterId }: ClusterPageVulnerabilitiesPro
                         )}
                     />
                     <SummaryCard
-                        loadingText={'Loading platform CVEs by type summary'}
+                        loadingText="Loading platform CVEs by type summary"
                         data={summaryRequest.data}
                         renderer={({ data }) => (
                             <PlatformCvesByTypeSummaryCard

@@ -29,7 +29,7 @@ function PolicyMetadataFormSection(): ReactElement {
                 fieldId="name"
                 errors={errors}
                 touched={touched}
-                helperText={'Provide a descriptive and unique policy name'}
+                helperText="Provide a descriptive and unique policy name"
             >
                 <TextInput
                     isRequired
@@ -48,7 +48,7 @@ function PolicyMetadataFormSection(): ReactElement {
                 fieldId="severity"
                 errors={errors}
                 touched={touched}
-                helperText={'Select a severity level for this policy'}
+                helperText="Select a severity level for this policy"
             >
                 <Flex direction={{ default: 'row' }}>
                     <Radio
@@ -95,7 +95,7 @@ function PolicyMetadataFormSection(): ReactElement {
                 fieldId="description"
                 errors={errors}
                 touched={touched}
-                helperText={'Enter a description of the policy'}
+                helperText="Enter a description of the policy"
             >
                 <TextArea
                     id="description"
@@ -110,7 +110,7 @@ function PolicyMetadataFormSection(): ReactElement {
                 fieldId="rationale"
                 errors={errors}
                 touched={touched}
-                helperText={'Enter an explanation about why this policy exists'}
+                helperText="Enter an explanation about why this policy exists"
             >
                 <TextArea
                     id="rationale"
@@ -125,7 +125,7 @@ function PolicyMetadataFormSection(): ReactElement {
                 fieldId="remediation"
                 errors={errors}
                 touched={touched}
-                helperText={'Enter steps to resolve the violations of this policy'}
+                helperText="Enter steps to resolve the violations of this policy"
             >
                 <TextArea
                     id="remediation"
