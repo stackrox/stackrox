@@ -173,7 +173,7 @@ func (r *ServiceCertificatesRepoSecrets) ensureServiceCertificate(ctx context.Co
 	cert *storage.TypedServiceCertificate, secretSpec ServiceCertSecretSpec) error {
 	patchErr := r.patchServiceCertificate(ctx, caPem, cert, secretSpec)
 	if k8sErrors.IsNotFound(patchErr) {
-		_, createErr := r.createSecret(ctx, caPem, cert, secretSpec)
+		_, createErr := r.createSecret(ctx, caPem, cert, secretSpec, utils.TLSSecretLabels())
 		return createErr
 	}
 	return patchErr
@@ -185,6 +185,9 @@ func (r *ServiceCertificatesRepoSecrets) patchServiceCertificate(ctx context.Con
 		Op:    "replace",
 		Path:  "/data",
 		Value: r.secretDataForCertificate(secretSpec, caPem, cert),
+	}, {Op: "replace",
+		Path:  "/metadata/labels/rhacs.redhat.com~1tls",
+		Value: "true",
 	}}
 	patchBytes, marshallingErr := json.Marshal(patch)
 	if marshallingErr != nil {
@@ -199,20 +202,20 @@ func (r *ServiceCertificatesRepoSecrets) patchServiceCertificate(ctx context.Con
 }
 
 type patchSecretDataByteMap struct {
-	Op    string            `json:"op"`
-	Path  string            `json:"path"`
-	Value map[string][]byte `json:"value"`
+	Op    string      `json:"op"`
+	Path  string      `json:"path"`
+	Value interface{} `json:"value"`
 }
 
 func (r *ServiceCertificatesRepoSecrets) createSecret(ctx context.Context, caPem []byte,
-	certificate *storage.TypedServiceCertificate, secretSpec ServiceCertSecretSpec) (*v1.Secret, error) {
+	certificate *storage.TypedServiceCertificate, secretSpec ServiceCertSecretSpec, desiredLabels map[string]string) (*v1.Secret, error) {
 
 	return r.SecretsClient.Create(ctx, &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            secretSpec.SecretName,
 			Namespace:       r.Namespace,
-			Labels:          utils.GetSensorKubernetesLabels(),
-			Annotations:     utils.GetSensorKubernetesLabels(),
+			Labels:          desiredLabels,
+			Annotations:     utils.GetSensorKubernetesAnnotations(),
 			OwnerReferences: []metav1.OwnerReference{r.OwnerReference},
 		},
 		Data: r.secretDataForCertificate(secretSpec, caPem, certificate),
