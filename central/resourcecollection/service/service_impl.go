@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -54,6 +55,8 @@ var (
 		Field:    search.DeploymentName.String(),
 		Reversed: false,
 	}
+
+	log = logging.LoggerForModule()
 )
 
 type collectionRequest interface {
@@ -284,6 +287,7 @@ func resolveQuery(rawQuery *v1.RawQuery, withPagination bool) (*v1.Query, error)
 }
 
 func (s *serviceImpl) ListCollections(ctx context.Context, request *v1.ListCollectionsRequest) (*v1.ListCollectionsResponse, error) {
+	log.Info("List Collections")
 	query, err := resolveQuery(request.GetQuery(), true)
 	if err != nil {
 		return nil, err
@@ -300,6 +304,7 @@ func (s *serviceImpl) ListCollections(ctx context.Context, request *v1.ListColle
 }
 
 func (s *serviceImpl) DryRunCollection(ctx context.Context, request *v1.DryRunCollectionRequest) (*v1.DryRunCollectionResponse, error) {
+	log.Info("DRY RUN COLLECTION")
 	collection, err := collectionRequestToCollection(ctx, request, request.GetId())
 	if err != nil {
 		return nil, err
@@ -314,6 +319,7 @@ func (s *serviceImpl) DryRunCollection(ctx context.Context, request *v1.DryRunCo
 		return nil, err
 	}
 
+	log.Infof("DryRunCollection")
 	deployments, err := s.tryDeploymentMatching(ctx, collection, request.GetOptions())
 	if err != nil {
 		return nil, errors.Wrap(err, "failed resolving deployments")
