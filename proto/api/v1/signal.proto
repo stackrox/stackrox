@@ -3,6 +3,7 @@ syntax = "proto3";
 package v1;
 
 import "storage/process_indicator.proto";
+import "storage/bpf.proto";
 
 option cc_enable_arenas = true;
 option go_package = "./api/v1;v1";
@@ -13,5 +14,6 @@ option java_package = "io.stackrox.proto.api.v1";
 message Signal {
   oneof signal {
     storage.ProcessSignal process_signal = 1;
+    storage.BpfSignal bpf_signal = 2;
   }
 }
