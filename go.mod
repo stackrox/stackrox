@@ -88,7 +88,7 @@ require (
 	github.com/nxadm/tail v1.4.11
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/onsi/ginkgo/v2 v2.22.1
-	github.com/onsi/gomega v1.36.1
+	github.com/onsi/gomega v1.36.2
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0
 	github.com/openshift-online/ocm-sdk-go v0.1.453
@@ -148,7 +148,7 @@ require (
 	google.golang.org/genproto v0.0.0-20241118233622-e639e219e697
 	google.golang.org/grpc v1.69.2
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
-	google.golang.org/protobuf v1.36.0
+	google.golang.org/protobuf v1.36.1
 	gopkg.in/mcuadros/go-syslog.v2 v2.3.0
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
 	gopkg.in/yaml.v3 v3.0.1
