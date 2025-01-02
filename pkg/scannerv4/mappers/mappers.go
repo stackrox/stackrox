@@ -26,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/scanners/scannerv4"
 	"github.com/stackrox/rox/pkg/scannerv4/constants"
+	"github.com/stackrox/rox/scanner/enricher/csaf"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -45,6 +46,15 @@ var (
 		claircore.Medium:     v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
 		claircore.High:       v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
 		claircore.Critical:   v4.VulnerabilityReport_Vulnerability_SEVERITY_CRITICAL,
+	}
+
+	// TODO(ROX-26672): Remove this.
+	// This is currently used to map the CSAF enrichment's severity to the equivalent proto severity.
+	severityFromStringMapping = map[string]v4.VulnerabilityReport_Vulnerability_Severity{
+		"Low":       v4.VulnerabilityReport_Vulnerability_SEVERITY_LOW,
+		"Moderate":  v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
+		"Important": v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
+		"Critical":  v4.VulnerabilityReport_Vulnerability_SEVERITY_CRITICAL,
 	}
 
 	// Updater patterns are used to determine the security updater the
@@ -106,7 +116,15 @@ func ToProtoV4VulnerabilityReport(ctx context.Context, r *claircore.Vulnerabilit
 	if err != nil {
 		return nil, fmt.Errorf("internal error: parsing nvd vulns: %w", err)
 	}
-	vulnerabilities, err := toProtoV4VulnerabilitiesMap(ctx, r.Vulnerabilities, nvdVulns)
+	// TODO(ROX-26672): Remove this line.
+	// The CSAF advisories are currently a temporary solution
+	// until we start showing CVEs for fixed vulnerabilities affecting
+	// Red Hat products.
+	csafAdvisories, err := redhatCSAFAdvisories(ctx, r.Enrichments)
+	if err != nil {
+		return nil, fmt.Errorf("internal error: parsing Red Hat CSAF advisories: %w", err)
+	}
+	vulnerabilities, err := toProtoV4VulnerabilitiesMap(ctx, r.Vulnerabilities, nvdVulns, csafAdvisories)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: %w", err)
 	}
@@ -359,7 +377,12 @@ func sortBySeverity(ids []string, vulnerabilities map[string]*v4.VulnerabilityRe
 	})
 }
 
-func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircore.Vulnerability, nvdVulns map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem) (map[string]*v4.VulnerabilityReport_Vulnerability, error) {
+func toProtoV4VulnerabilitiesMap(
+	ctx context.Context,
+	vulns map[string]*claircore.Vulnerability,
+	nvdVulns map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem,
+	csafAdvisories map[string]csaf.Record,
+) (map[string]*v4.VulnerabilityReport_Vulnerability, error) {
 	if vulns == nil {
 		return nil, nil
 	}
@@ -381,6 +404,12 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 			repoID = v.Repo.ID
 		}
 		normalizedSeverity := toProtoV4VulnerabilitySeverity(ctx, v.NormalizedSeverity)
+		// TODO(ROX-26672): Remove this line.
+		// TODO: need to think about this some more...
+		advisory, advisoryExists := csafAdvisories[v.ID]
+		if advisoryExists {
+			normalizedSeverity = toProtoV4VulnerabilitySeverityFromString(ctx, advisory.Severity)
+		}
 		name := vulnerabilityName(v)
 		// Determine the related CVE for this vulnerability. This is necessary, as NVD is CVE-based.
 		cve, foundCVE := findName(v, cveIDPattern)
@@ -392,7 +421,7 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 				nvdVuln = *v
 			}
 		}
-		metrics, err := cvssMetrics(ctx, v, name, &nvdVuln)
+		metrics, err := cvssMetrics(ctx, v, name, &nvdVuln, advisory)
 		if err != nil {
 			zlog.Debug(ctx).
 				Err(err).
@@ -408,6 +437,9 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 			preferredCVSS = metrics[0]
 		}
 		description := v.Description
+		if advisoryExists {
+			description = advisory.Description
+		}
 		if description == "" {
 			// No description provided, so fall back to NVD.
 			if len(nvdVuln.Descriptions) > 0 {
@@ -469,6 +501,18 @@ func toProtoV4VulnerabilitySeverity(ctx context.Context, ccSeverity claircore.Se
 	zlog.Warn(ctx).
 		Str("claircore_severity", ccSeverity.String()).
 		Msgf("unknown ClairCore severity, mapping to %s", v4.VulnerabilityReport_Vulnerability_SEVERITY_UNSPECIFIED.String())
+	return v4.VulnerabilityReport_Vulnerability_SEVERITY_UNSPECIFIED
+}
+
+// TODO(ROX-26672): Remove this.
+// This is currently used to map the CSAF enrichment's severity to the equivalent proto severity.
+func toProtoV4VulnerabilitySeverityFromString(ctx context.Context, severity string) v4.VulnerabilityReport_Vulnerability_Severity {
+	if mappedSeverity, ok := severityFromStringMapping[severity]; ok {
+		return mappedSeverity
+	}
+	zlog.Warn(ctx).
+		Str("severity_string", severity).
+		Msgf("unknown severity, mapping to %s", v4.VulnerabilityReport_Vulnerability_SEVERITY_UNSPECIFIED.String())
 	return v4.VulnerabilityReport_Vulnerability_SEVERITY_UNSPECIFIED
 }
 
@@ -656,6 +700,44 @@ func nvdVulnerabilities(enrichments map[string][]json.RawMessage) (map[string]ma
 	return ret, nil
 }
 
+// TODO(ROX-26672): Remove this function when we no longer require reading advisory data.
+func redhatCSAFAdvisories(ctx context.Context, enrichments map[string][]json.RawMessage) (map[string]csaf.Record, error) {
+	// Do not read CSAF data if it's not enabled.
+	if !features.ScannerV4RedHatCSAF.Enabled() {
+		return nil, nil
+	}
+	// No reason to read CSAF data when we want to only show CVEs.
+	if features.ScannerV4RedHatCVEs.Enabled() {
+		return nil, nil
+	}
+	enrichmentsList := enrichments[csaf.Type]
+	if len(enrichmentsList) == 0 {
+		return nil, nil
+	}
+	var items map[string][]csaf.Record
+	// The CSAF enrichment always contains only one element.
+	err := json.Unmarshal(enrichmentsList[0], &items)
+	if err != nil {
+		return nil, err
+	}
+	if len(items) == 0 {
+		return nil, nil
+	}
+	// There is only one record per ID, so remove the slice.
+	ret := make(map[string]csaf.Record)
+	for id, records := range items {
+		if len(records) == 0 {
+			// Unexpected, but ok...
+			continue
+		}
+		if len(records) > 1 {
+			zlog.Warn(ctx).Str("vuln_id", id).Msgf("more CSAF enrichment records than expected (%d != 1)", len(records))
+		}
+		ret[id] = records[0]
+	}
+	return ret, nil
+}
+
 // filterPackages filters out packages from the given map.
 func filterPackages(packages map[string]*claircore.Package, environments map[string][]*claircore.Environment, packageVulns map[string][]string) {
 	// We only filter out Node.js packages with no known vulnerabilities (if configured to do so) at this time.
@@ -706,14 +788,25 @@ func pkgFixedBy(enrichments map[string][]json.RawMessage) (map[string]string, er
 // It is up to the caller to ensure the returned slice is populated prior to using it.
 //
 // TODO(ROX-26672): Remove vulnName parameter. It's a temporary patch until we stop making RHSAs the top-level vulnerability.
-func cvssMetrics(_ context.Context, vuln *claircore.Vulnerability, vulnName string, nvdVuln *nvdschema.CVEAPIJSON20CVEItem) ([]*v4.VulnerabilityReport_Vulnerability_CVSS, error) {
+func cvssMetrics(_ context.Context, vuln *claircore.Vulnerability, vulnName string, nvdVuln *nvdschema.CVEAPIJSON20CVEItem, advisory csaf.Record) ([]*v4.VulnerabilityReport_Vulnerability_CVSS, error) {
 	var metrics []*v4.VulnerabilityReport_Vulnerability_CVSS
 
 	var preferredCVSS *v4.VulnerabilityReport_Vulnerability_CVSS
 	var preferredErr error
 	switch {
 	case strings.EqualFold(vuln.Updater, rhelUpdaterName):
-		preferredCVSS, preferredErr = vulnCVSS(vuln, v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT)
+		// If the Name is empty, then the whole advisory is.
+		if advisory.Name == "" {
+			preferredCVSS, preferredErr = vulnCVSS(vuln, v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT)
+		} else {
+			preferredCVSS = toCVSS(cvssValues{
+				v2Vector: advisory.CVSSv2.Vector,
+				v2Score:  advisory.CVSSv2.Score,
+				v3Vector: advisory.CVSSv3.Vector,
+				v3Score:  advisory.CVSSv3.Score,
+				source:   v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
+			})
+		}
 		// TODO(ROX-26672): Remove this
 		if !features.ScannerV4RedHatCVEs.Enabled() && preferredCVSS != nil && rhelVulnNamePattern.MatchString(vulnName) {
 			preferredCVSS.Url = redhatErrataURLPrefix + vulnName
