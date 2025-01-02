@@ -347,12 +347,7 @@ func (t Translator) getRuntimeConfig(runtimeConfig *platform.CollectorRuntimeCon
 	cv := translation.NewValuesBuilder()
 
 	if runtimeConfig.Enabled != nil {
-		// TODO This should be an enum before the 4.7 release
-		if *runtimeConfig.Enabled == platform.CollectorRuntimeConfigEnabledEnabled {
-			cv.SetBoolValue("enabled", true)
-		} else {
-			cv.SetBoolValue("enabled", false)
-		}
+		cv.SetPathValue("enabled", runtimeConfig.Enabled)
 	}
 
 	networking := runtimeConfig.Networking
@@ -361,12 +356,7 @@ func (t Translator) getRuntimeConfig(runtimeConfig *platform.CollectorRuntimeCon
 		if externalIps != nil {
 			enabled := externalIps.Enabled
 			if enabled != nil {
-				// TODO This should be an enum before the 4.7 release
-				if *enabled == platform.CollectorExternalIPsEnabledEnabled {
-					cv.SetPathValue("networking.externalIps.enabled", true)
-				} else {
-					cv.SetPathValue("networking.externalIps.enabled", false)
-				}
+				cv.SetPathValue("networking.externalIps.enabled", enabled)
 			}
 			maxConnectionsPerMinute := networking.MaxConnectionsPerMinute
 			cv.SetPathValue("networking.maxConnectionsPerMinute", *maxConnectionsPerMinute)
