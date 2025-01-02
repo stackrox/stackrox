@@ -16,26 +16,21 @@ def validate_component(component):
         and component["containerImage"] != ""
         and component["revision"] != ""
         and component["repository"] != ""
-    ), "Component must have component name, ref, revision and repository set. Check container image labels."
+    ), "Component must have component name, ref, revision and repository set."
 
 
-def determine_component_version_suffix(application):
-    match = re.search(r"acs-(?P<version>\d+-\d+)", application)
+def determine_product_version_suffix(application):
+    match = re.search(r"(?P<version>-\d+-\d+$)", application)
     if match:
-        return match.group('version')
+        return match.group("version")
     return ""
 
 
-def process_component(component, name_suffix):
+def process_component(component, product_version_suffix):
     validate_component(component)
-    if name_suffix != "":
-        name = f"{component['name']}{name_suffix}"
-    else:
-        name = component["name"]
-
     return {
         "containerImage": component["containerImage"],
-        "name": name,
+        "name": f"{component['name']}{product_version_suffix}",
         "source": {
             "git": {
                 "revision": component["revision"],
@@ -45,16 +40,18 @@ def process_component(component, name_suffix):
     }
 
 
+def determine_snapshot_name(prefix, product_version):
+    timestamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    return f"{prefix}{product_version}-{timestamp}".lower()
+
+
 def construct_snapshot(
-    snapshot_name_prefix,
-    snapshot_version_suffix,
+    snapshot_name,
     pipeline_run_name,
     namespace,
     application,
     components
 ):
-    timestamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    snapshot_name = f"{snapshot_name_prefix}-{snapshot_version_suffix}-{timestamp}".lower()
     return {
         "apiVersion": "appstudio.redhat.com/v1alpha1",
         "kind": "Snapshot",
@@ -81,23 +78,23 @@ def write_snapshot(snapshot, results_path):
 
 if __name__ == '__main__':
     application = os.environ["APPLICATION"] # 1
-    name_suffix = determine_component_version_suffix(application)
+    product_version_suffix = determine_product_version_suffix(application)
+    snapshot_name = determine_snapshot_name(application, product_version_suffix)
     image_refs = parse_image_refs(os.environ["IMAGE_REFS"]) # 2
-    components = [process_component(c, name_suffix) for c in image_refs]
+    components = [process_component(c, product_version_suffix) for c in image_refs]
 
-    main_image_tag = os.environ["MAIN_IMAGE_TAG"] # 3
+    product_version = os.environ["PRODUCT_VERSION"] # 3
     pipeline_run_name = os.environ["PIPELINE_RUN_NAME"] # 4
     namespace = os.environ["NAMESPACE"] # 5
 
     snapshot = construct_snapshot(
-        snapshot_name_prefix=application,
-        snapshot_version_suffix=main_image_tag,
+        snapshot_name=snapshot_name,
         pipeline_run_name=pipeline_run_name,
         namespace=namespace,
         application=application,
         components=components
     )
 
-    snapshot_name_results_path = os.environ["SNAPSHOT_NAME_RESULTS_PATH"]
-    write_snapshot(snapshot, snapshot_name_results_path)
+    snapshot_name_result_path = os.environ["SNAPSHOT_NAME_RESULT_PATH"]
+    write_snapshot(snapshot, snapshot_name_result_path)
     print("Rendered snapshot written to workspace.")
