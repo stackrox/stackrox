@@ -71,12 +71,6 @@ var (
 	// support it but now appear to (ie: Nexus and RHEL).
 	AttemptManifestDigest = registerFeature("Enables attempts to pull manifest digests for all registry integrations", "ROX_ATTEMPT_MANIFEST_DIGEST", enabled)
 
-	// VulnMgmt2GA enables support for migration changes for VM 2.0 GA
-	VulnMgmt2GA = registerFeature("Enables support for migration changes for VM 2.0 GA", "ROX_VULN_MGMT_2_GA", enabled)
-
-	// VulnMgmtAdvancedFilters enables support for advanced filters for VM 2.0 GA
-	VulnMgmtAdvancedFilters = registerFeature("Enables support for advanced filters for VM 2.0 GA", "ROX_VULN_MGMT_ADVANCED_FILTERS", enabled)
-
 	// DelegateWatchedImageReprocessing when set to enabled reprocessing of watched images may be delegated to secured clusters based
 	// on the delegated scanning config.
 	DelegateWatchedImageReprocessing = registerFeature("Enables delegating scans for watched images during reprocessing", "ROX_DELEGATE_WATCHED_IMAGE_REPROCESSING", enabled)

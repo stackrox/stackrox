@@ -38,13 +38,6 @@ import {
 } from 'Containers/Vulnerabilities/searchFilterConfig';
 import { filterManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
-import {
-    SearchOption,
-    IMAGE_CVE_SEARCH_OPTION,
-    COMPONENT_SEARCH_OPTION,
-    COMPONENT_SOURCE_SEARCH_OPTION,
-} from '../../searchOptions';
-import WorkloadCveFilterToolbar from '../components/WorkloadCveFilterToolbar';
 import CvesByStatusSummaryCard, {
     ResourceCountByCveSeverityAndStatus,
     resourceCountByCveSeverityAndStatusFragment,
@@ -73,6 +66,7 @@ import ExceptionRequestModal, {
 } from '../../components/ExceptionRequestModal/ExceptionRequestModal';
 import CompletedExceptionRequestModal from '../../components/ExceptionRequestModal/CompletedExceptionRequestModal';
 import useExceptionRequestModal from '../../hooks/useExceptionRequestModal';
+import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 
 export const imageVulnerabilitiesQuery = gql`
     ${imageMetadataContextFragment}
@@ -99,12 +93,6 @@ export const imageVulnerabilitiesQuery = gql`
 
 const defaultSortFields = ['CVE', 'CVSS', 'Severity'];
 
-const searchOptions: SearchOption[] = [
-    IMAGE_CVE_SEARCH_OPTION,
-    COMPONENT_SEARCH_OPTION,
-    COMPONENT_SOURCE_SEARCH_OPTION,
-];
-
 const searchFilterConfig = [imageCVESearchFilterConfig, imageComponentSearchFilterConfig];
 
 export type ImagePageVulnerabilitiesProps = {
@@ -125,10 +113,11 @@ function ImagePageVulnerabilities({
     pagination,
 }: ImagePageVulnerabilitiesProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isAdvancedFiltersEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_ADVANCED_FILTERS');
 
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
+
+    const { baseSearchFilter } = useWorkloadCveViewContext();
 
     const currentVulnerabilityState = useVulnerabilityState();
     const hasRequestExceptionsAbility = useHasRequestExceptionsAbility();
@@ -163,7 +152,10 @@ function ImagePageVulnerabilities({
     >(imageVulnerabilitiesQuery, {
         variables: {
             id: imageId,
-            query: getVulnStateScopedQueryString(querySearchFilter, currentVulnerabilityState),
+            query: getVulnStateScopedQueryString(
+                { ...baseSearchFilter, ...querySearchFilter },
+                currentVulnerabilityState
+            ),
             pagination: getPaginationParams({ page, perPage, sortOption }),
             statusesForExceptionCount: getStatusesForExceptionCount(currentVulnerabilityState),
         },
@@ -241,26 +233,20 @@ function ImagePageVulnerabilities({
                     }}
                 />
                 <div className="pf-v5-u-px-sm pf-v5-u-background-color-100">
-                    {isAdvancedFiltersEnabled ? (
-                        <AdvancedFiltersToolbar
-                            className="pf-v5-u-pt-lg pf-v5-u-pb-0"
-                            searchFilterConfig={searchFilterConfig}
-                            searchFilter={searchFilter}
-                            onFilterChange={(newFilter, searchPayload) => {
-                                setSearchFilter(newFilter);
-                                setPage(1);
-                                trackAppliedFilter(WORKLOAD_CVE_FILTER_APPLIED, searchPayload);
-                            }}
-                        />
-                    ) : (
-                        <WorkloadCveFilterToolbar
-                            searchOptions={searchOptions}
-                            autocompleteSearchContext={{
-                                'Image SHA': imageId,
-                            }}
-                            onFilterChange={() => setPage(1)}
-                        />
-                    )}
+                    <AdvancedFiltersToolbar
+                        className="pf-v5-u-pt-lg pf-v5-u-pb-0"
+                        searchFilterConfig={searchFilterConfig}
+                        searchFilter={searchFilter}
+                        onFilterChange={(newFilter, searchPayload) => {
+                            setSearchFilter(newFilter);
+                            setPage(1);
+                            trackAppliedFilter(WORKLOAD_CVE_FILTER_APPLIED, searchPayload);
+                        }}
+                        additionalContextFilter={{
+                            'Image SHA': imageId,
+                            ...baseSearchFilter,
+                        }}
+                    />
                 </div>
                 <div className="pf-v5-u-flex-grow-1 pf-v5-u-background-color-100">
                     <SummaryCardLayout error={error} isLoading={loading}>

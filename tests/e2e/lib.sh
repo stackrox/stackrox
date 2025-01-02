@@ -164,8 +164,6 @@ export_test_environment() {
     ci_export ROX_NETWORK_BASELINE_OBSERVATION_PERIOD "${ROX_NETWORK_BASELINE_OBSERVATION_PERIOD:-2m}"
     ci_export ROX_VULN_MGMT_WORKLOAD_CVES "${ROX_VULN_MGMT_WORKLOAD_CVES:-true}"
     ci_export ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL "${ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL:-true}"
-    ci_export ROX_VULN_MGMT_2_GA "${ROX_VULN_MGMT_2_GA:-true}"
-    ci_export ROX_VULN_MGMT_ADVANCED_FILTERS "${ROX_VULN_MGMT_ADVANCED_FILTERS:-true}"
     ci_export ROX_VULN_MGMT_LEGACY_SNOOZE "${ROX_VULN_MGMT_LEGACY_SNOOZE:-true}"
     ci_export ROX_DECLARATIVE_CONFIGURATION "${ROX_DECLARATIVE_CONFIGURATION:-true}"
     ci_export ROX_COMPLIANCE_ENHANCEMENTS "${ROX_COMPLIANCE_ENHANCEMENTS:-true}"
@@ -183,7 +181,7 @@ export_test_environment() {
     ci_export ROX_EPSS_SCORE "${ROX_EPSS_SCORE:-true}"
     ci_export ROX_SBOM_GENERATION "${ROX_SBOM_GENERATION:-true}"
     ci_export ROX_CLUSTERS_PAGE_MIGRATION_UI "${ROX_CLUSTERS_PAGE_MIGRATION_UI:-true}"
-    ci_export ROX_PLATFORM_CVE_SPLIT "${ROX_PLATFORM_CVE_SPLIT:-true}"
+    ci_export ROX_PLATFORM_CVE_SPLIT "${ROX_PLATFORM_CVE_SPLIT:-false}"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
         ci_export FAIL_FAST "true"
@@ -307,10 +305,6 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: '"${ROX_REGISTRY_RESPONSE_TIMEOUT:-90s}"
     customize_envVars+=$'\n      - name: ROX_REGISTRY_CLIENT_TIMEOUT'
     customize_envVars+=$'\n        value: '"${ROX_REGISTRY_CLIENT_TIMEOUT:-120s}"
-    customize_envVars+=$'\n      - name: ROX_VULN_MGMT_2_GA'
-    customize_envVars+=$'\n        value: "true"'
-    customize_envVars+=$'\n      - name: ROX_VULN_MGMT_ADVANCED_FILTERS'
-    customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_VULN_MGMT_LEGACY_SNOOZE'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_SCAN_SCHEDULE_REPORT_JOBS'
@@ -326,7 +320,7 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n      - name: ROX_SBOM_GENERATION'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_PLATFORM_CVE_SPLIT'
-    customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n        value: "false"'
 
     CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr.envsubst.yaml"
     # Different yaml for midstream images

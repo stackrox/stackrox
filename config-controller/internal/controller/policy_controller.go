@@ -41,9 +41,9 @@ var (
 
 // SecurityPolicyReconciler reconciles a SecurityPolicy object
 type SecurityPolicyReconciler struct {
-	K8sClient    ctrlClient.Client
-	Scheme       *runtime.Scheme
-	PolicyClient client.CachedPolicyClient
+	K8sClient     ctrlClient.Client
+	Scheme        *runtime.Scheme
+	CentralClient client.CachedCentralClient
 }
 
 //+kubebuilder:rbac:groups=config.stackrox.io,resources=policies,verbs=get;list;watch;create;update;patch;delete
@@ -67,13 +67,24 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, errors.Wrapf(err, "Invalid policy resource: namespace=%s, name=%s", req.Namespace, req.Name)
 	}
 
-	if err := r.PolicyClient.EnsureFresh(ctx); err != nil {
+	if err := r.CentralClient.EnsureFresh(ctx); err != nil {
 		return ctrl.Result{}, errors.Wrap(err, "Failed to refresh")
 	}
 
-	desiredState := policyCR.Spec.ToProtobuf()
+	desiredState, err := policyCR.Spec.ToProtobuf(r.CentralClient.GetNotifiers())
+	if err != nil {
+		policyCR.Status = configstackroxiov1alpha1.SecurityPolicyStatus{
+			Accepted: false,
+			Message:  err.Error(),
+		}
+		if err := r.K8sClient.Status().Update(ctx, policyCR); err != nil {
+			return ctrl.Result{},
+				errors.Wrap(err, "failed to update SecurityPolicy status")
+		}
+		return ctrl.Result{}, errors.Wrap(err, "Failed to convert policy to protobuf")
+	}
 
-	existingPolicy, exists, err := r.PolicyClient.GetPolicy(ctx, desiredState.GetName())
+	existingPolicy, exists, err := r.CentralClient.GetPolicy(ctx, desiredState.GetName())
 	if err != nil {
 		return ctrl.Result{}, errors.Wrap(err, "Failed to fetch policy")
 	}
@@ -104,7 +115,7 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			// finalizer is present, so lets handle the external dependency of deleting policy in central
 			if policyCR.Status.Accepted {
 				// Only try to delete a policy from Central if the CR has been marked as accepted
-				if err := r.PolicyClient.DeletePolicy(ctx, policyCR.Spec.PolicyName); err != nil {
+				if err := r.CentralClient.DeletePolicy(ctx, policyCR.Spec.PolicyName); err != nil {
 					// if we failed to delete the policy in central, return with error
 					// so that reconciliation can be retried.
 					return ctrl.Result{}, errors.Wrapf(err, "failed to delete policy %q", policyCR.GetName())
@@ -142,7 +153,7 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	var retErr error
 	if desiredState.GetId() != "" {
 		log.Debugf("Updating policy %q (ID: %q)", desiredState.GetName(), desiredState.GetId())
-		if err := r.PolicyClient.UpdatePolicy(ctx, desiredState); err != nil {
+		if err := r.CentralClient.UpdatePolicy(ctx, desiredState); err != nil {
 			retErr = errors.Wrap(err, fmt.Sprintf("Failed to update policy '%s'", desiredState.GetName()))
 			policyCR.Status = configstackroxiov1alpha1.SecurityPolicyStatus{
 				Accepted: false,
@@ -157,7 +168,7 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		}
 	} else {
 		log.Debugf("Creating policy with name %q", desiredState.GetName())
-		if createdPolicy, err := r.PolicyClient.CreatePolicy(ctx, desiredState); err != nil {
+		if createdPolicy, err := r.CentralClient.CreatePolicy(ctx, desiredState); err != nil {
 			retErr = errors.Wrap(err, fmt.Sprintf("Failed to create policy '%s'", desiredState.GetName()))
 			policyCR.Status = configstackroxiov1alpha1.SecurityPolicyStatus{
 				Accepted: false,
@@ -175,7 +186,7 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 	if retErr != nil {
 		// Perhaps the cache is stale, ignore errors since this is best effort
-		_ = r.PolicyClient.FlushCache(ctx)
+		_ = r.CentralClient.FlushCache(ctx)
 	}
 
 	if err := r.K8sClient.Status().Update(ctx, policyCR); err != nil {

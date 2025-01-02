@@ -3,8 +3,7 @@ import { Link } from 'react-router-dom';
 import lowerCase from 'lodash/lowerCase';
 import capitalize from 'lodash/capitalize';
 
-import { vulnManagementPath, vulnerabilitiesWorkloadCvesPath } from 'routePaths';
-import useFeatureFlags from 'hooks/useFeatureFlags';
+import { vulnerabilitiesWorkloadCvesPath } from 'routePaths';
 
 import CollapsibleCard from 'Components/CollapsibleCard';
 import KeyValuePairs from './KeyValuePairs';
@@ -26,12 +25,7 @@ const getContainerConfigurations = (container) => {
 };
 
 const ContainerImage = ({ image }) => {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const areVMMiscImprovementsEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_2_GA');
-
-    const imageDetailsPageURL = areVMMiscImprovementsEnabled
-        ? `${vulnerabilitiesWorkloadCvesPath}/images/${image.id}`
-        : `${vulnManagementPath}/image/${image.id}`;
+    const imageDetailsPageURL = `${vulnerabilitiesWorkloadCvesPath}/images/${image.id}`;
 
     if (!image?.name?.fullName) {
         return null;

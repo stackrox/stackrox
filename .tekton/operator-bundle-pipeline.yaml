@@ -299,8 +299,15 @@ spec:
       value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
     - name: MAKEFILE_DIRECTORY
       value: ./operator
-    taskRef:
-      name: determine-image-tag
+    taskRef: &determine-image-tag-ref
+      params:
+      - name: name
+        value: determine-image-tag-stackrox
+      - name: bundle
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:886e1482c717078d11ba7c5d6fc4e8013e3740b4d1282ebe5534db62c9f19428
+      - name: kind
+        value: task
+      resolver: bundles
 
   - name: determine-main-image-tag
     params:
@@ -310,8 +317,7 @@ spec:
       value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
     - name: MAKEFILE_DIRECTORY
       value: "."
-    taskRef:
-      name: determine-image-tag
+    taskRef: *determine-image-tag-ref
 
   - name: prefetch-dependencies
     params:
@@ -421,8 +427,7 @@ spec:
     params:
     - name: IMAGE
       value: "$(params.collector-full-image-build-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
-    taskRef:
-      name: wait-for-image
+    taskRef: wait-for-image
     # The timeout must be the same as the pipeline timeout in `collector-full-retag.yaml`
     timeout: 40m
 

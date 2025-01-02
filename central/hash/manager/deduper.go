@@ -100,6 +100,12 @@ func skipDedupe(msg *central.MsgFromSensor) bool {
 	if eventMsg.Event.GetReprocessDeployment() != nil {
 		return true
 	}
+	if eventMsg.Event.GetIndexReport() != nil {
+		return true
+	}
+	if eventMsg.Event.GetNodeInventory() != nil {
+		return true
+	}
 	return false
 }
 

@@ -87,7 +87,7 @@ export function applyLocalStatusFilters(...statuses) {
  * Select a search option from the search options dropdown.
  * @param {('CVE' | 'Image' | 'Deployment' | 'Cluster' | 'Namespace' | 'Requester' | 'Request name')} searchOption
  */
-export function selectSearchOption(searchOption) {
+function selectSearchOption(searchOption) {
     cy.get(selectors.searchOptionsDropdown).click();
     cy.get(selectors.searchOptionsMenuItem(searchOption)).click();
     cy.get(selectors.searchOptionsDropdown).click();
@@ -108,21 +108,6 @@ export function selectAttributeSearchOption(searchAttribute) {
         .contains(new RegExp(`^${searchAttribute}$`))
         .click();
     cy.get(selectors.searchAttributeDropdown).click();
-}
-
-/**
- * Type a value into the filter autocomplete typeahead and select the first matching value.
- * @param {('CVE' | 'Image' | 'Deployment' | 'Cluster' | 'Namespace' | 'Requester' | 'Request name')} searchOption
- * @param {string} value
- */
-export function typeAndSelectSearchFilterValue(searchOption, value) {
-    selectSearchOption(searchOption);
-    cy.get(selectors.searchOptionsValueTypeahead(searchOption)).click();
-    cy.get(selectors.searchOptionsValueTypeahead(searchOption)).type(value);
-    cy.get(selectors.searchOptionsValueMenuItem(searchOption))
-        .contains(new RegExp(`^${value}$`))
-        .click();
-    cy.get(selectors.searchOptionsValueTypeahead(searchOption)).click();
 }
 
 /**
@@ -227,16 +212,16 @@ export function selectSingleCveForException(exceptionType) {
             ? selectors.deferCveModal
             : selectors.markCveFalsePositiveModal;
 
-    return cy.get(selectors.firstTableRow).then(($row) => {
-        const cveName = $row.find('td[data-label="CVE"]').text();
-        cy.wrap($row).find(selectors.tableRowMenuToggle).click();
-        cy.get(selectors.menuOption(menuOption)).click();
-
-        cy.get('button:contains("CVE selections")').click();
-        // TODO - Update this code when modal form is completed
-        cy.get(`${modalSelector}:contains("${cveName}")`);
-        return Promise.resolve(cveName);
-    });
+    return cy
+        .get(`${selectors.firstTableRow} td[data-label="CVE"]`)
+        .then(($cell) => $cell.text())
+        .then((cveName) => {
+            cy.get(`${selectors.firstTableRow} ${selectors.tableRowMenuToggle}`).click();
+            cy.get(selectors.menuOption(menuOption)).click();
+            cy.get('button:contains("CVE selections")').click();
+            cy.get(`${modalSelector}:contains("${cveName}")`);
+            return Promise.resolve(cveName);
+        });
 }
 
 /**

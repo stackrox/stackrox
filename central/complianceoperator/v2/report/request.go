@@ -1,4 +1,4 @@
-package complianceReportgenerator
+package report
 
 import (
 	"context"
@@ -6,7 +6,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-type ComplianceReportRequest struct {
+// Request holds the input data for a compliance report request
+type Request struct {
 	ScanConfigID       string
 	Notifiers          []*storage.NotifierConfiguration
 	ClusterIDs         []string

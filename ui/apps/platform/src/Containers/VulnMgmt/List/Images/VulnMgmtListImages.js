@@ -1,7 +1,6 @@
-import React, { useState, useContext } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 import { gql } from '@apollo/client';
-import { Button } from '@patternfly/react-core';
 
 import ImageActiveIconText from 'Components/PatternFly/IconText/ImageActiveIconText';
 import TableCellLink from 'Components/TableCellLink';
@@ -16,17 +15,12 @@ import {
 } from 'Components/Table';
 import entityTypes from 'constants/entityTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
-import workflowStateContext from 'Containers/workflowStateContext';
-import { imageWatchStatuses } from 'Containers/VulnMgmt/VulnMgmt.constants';
 import { IMAGE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import getImageScanMessage from 'Containers/VulnMgmt/VulnMgmt.utils/getImageScanMessage';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 import removeEntityContextColumns from 'utils/tableUtils';
 import { imageSortFields } from 'constants/sortFields';
-import usePermissions from 'hooks/usePermissions';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import queryService from 'utils/queryService';
-import WatchedImagesDialog from './WatchedImagesDialog';
 import WorkflowListPage from '../WorkflowListPage';
 import { getVulnMgmtPathForEntitiesAndId } from '../../VulnMgmt.utils/entities';
 
@@ -37,7 +31,7 @@ export const defaultImageSort = [
     },
 ];
 
-export function getCurriedImageTableColumns(watchedImagesTrigger, isFeatureFlagEnabled) {
+export function getCurriedImageTableColumns() {
     return function getImageTableColumns(workflowState) {
         const tableColumns = [
             {
@@ -156,21 +150,11 @@ export function getCurriedImageTableColumns(watchedImagesTrigger, isFeatureFlagE
                 headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
                 className: `w-1/10 ${defaultColumnClassName} content-center`,
                 Cell: ({ original, pdf }) => {
-                    const { deploymentCount, watchStatus } = original;
+                    const { deploymentCount } = original;
                     const isActive = deploymentCount !== 0;
-                    const isWatched = watchStatus === imageWatchStatuses.WATCHED;
                     return (
                         <div className="flex-col justify-center items-center w-full">
                             <ImageActiveIconText isActive={isActive} isTextOnly={pdf} />
-                            {isWatched && !isFeatureFlagEnabled('ROX_VULN_MGMT_2_GA') && (
-                                <button
-                                    type="button"
-                                    onClick={watchedImagesTrigger}
-                                    className="text-primary-700 text-center underline w-full"
-                                >
-                                    Scanning via watch tag
-                                </button>
-                            )}
                         </div>
                     );
                 },
@@ -209,17 +193,8 @@ const VulnMgmtImages = ({
     data,
     totalResults,
     refreshTrigger,
-    setRefreshTrigger,
 }) => {
-    const { hasReadWriteAccess } = usePermissions();
-    const hasWriteAccessForWatchedImage = hasReadWriteAccess('WatchedImage');
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-
-    const [showWatchedImagesDialog, setShowWatchedImagesDialog] = useState(false);
-    const workflowState = useContext(workflowStateContext);
     const fragmentToUse = IMAGE_LIST_FRAGMENT;
-
-    const inactiveImageScanningEnabled = workflowState.isBaseList(entityTypes.IMAGE);
 
     const query = gql`
         query getImages($query: String, $pagination: Pagination) {
@@ -242,62 +217,32 @@ const VulnMgmtImages = ({
         },
     };
 
-    function toggleWatchedImagesDialog(e) {
-        e.stopPropagation();
-
-        if (showWatchedImagesDialog) {
-            // changing this param value on the query vars, to force the query to refetch
-            setRefreshTrigger(Math.random());
-        }
-
-        setShowWatchedImagesDialog(!showWatchedImagesDialog);
-    }
-    const tableHeaderComponents =
-        hasWriteAccessForWatchedImage &&
-        inactiveImageScanningEnabled &&
-        !isFeatureFlagEnabled('ROX_VULN_MGMT_2_GA') ? (
-            <Button variant="secondary" onClick={toggleWatchedImagesDialog}>
-                Manage watches
-            </Button>
-        ) : null;
-
-    const getImageTableColumns = getCurriedImageTableColumns(
-        toggleWatchedImagesDialog,
-        isFeatureFlagEnabled
-    );
+    const getImageTableColumns = getCurriedImageTableColumns();
 
     return (
-        <>
-            <WorkflowListPage
-                data={data}
-                totalResults={totalResults}
-                query={query}
-                queryOptions={queryOptions}
-                entityListType={entityTypes.IMAGE}
-                getTableColumns={getImageTableColumns}
-                selectedRowId={selectedRowId}
-                search={search}
-                sort={tableSort}
-                page={page}
-                tableHeaderComponents={tableHeaderComponents}
-            />
-            {showWatchedImagesDialog && (
-                <WatchedImagesDialog closeDialog={toggleWatchedImagesDialog} />
-            )}
-        </>
+        <WorkflowListPage
+            data={data}
+            totalResults={totalResults}
+            query={query}
+            queryOptions={queryOptions}
+            entityListType={entityTypes.IMAGE}
+            getTableColumns={getImageTableColumns}
+            selectedRowId={selectedRowId}
+            search={search}
+            sort={tableSort}
+            page={page}
+        />
     );
 };
 
 VulnMgmtImages.propTypes = {
     ...workflowListPropTypes,
     refreshTrigger: PropTypes.number,
-    setRefreshTrigger: PropTypes.func,
 };
 
 VulnMgmtImages.defaultProps = {
     ...workflowListDefaultProps,
     refreshTrigger: 0,
-    setRefreshTrigger: null,
 };
 
 export default VulnMgmtImages;

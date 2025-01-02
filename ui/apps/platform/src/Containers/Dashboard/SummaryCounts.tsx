@@ -8,11 +8,9 @@ import {
     configManagementPath,
     urlEntityListTypes,
     violationsBasePath,
-    vulnManagementImagesPath,
     vulnerabilitiesWorkloadCvesPath,
 } from 'routePaths';
 import { resourceTypes } from 'constants/entityTypes';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import { generatePathWithQuery } from 'utils/searchUtils';
 
 import SummaryCount from './SummaryCount';
@@ -56,22 +54,17 @@ export type SummaryCountsProps = {
 };
 
 function SummaryCounts({ hasReadAccessForResource }: SummaryCountsProps): ReactElement {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const areVMMiscImprovementsEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_2_GA');
-
     // According to current minimalist philosophy, ignore that routes might have additional resource requirements.
     const tileLinks: Record<TileResource, string> = {
         Cluster: clustersBasePath,
         Node: `${configManagementPath}/${urlEntityListTypes[resourceTypes.NODE]}`,
         Alert: violationsBasePath,
         Deployment: `${configManagementPath}/${urlEntityListTypes[resourceTypes.DEPLOYMENT]}`,
-        Image: areVMMiscImprovementsEnabled
-            ? generatePathWithQuery(
-                  vulnerabilitiesWorkloadCvesPath,
-                  {},
-                  { customParams: { entityTab: 'Image' } }
-              )
-            : vulnManagementImagesPath,
+        Image: generatePathWithQuery(
+            vulnerabilitiesWorkloadCvesPath,
+            {},
+            { customParams: { entityTab: 'Image' } }
+        ),
         Secret: `${configManagementPath}/${urlEntityListTypes[resourceTypes.SECRET]}`,
     };
 
@@ -121,7 +114,7 @@ function SummaryCounts({ hasReadAccessForResource }: SummaryCountsProps): ReactE
                         .filter((tileResource) => typeof data[dataKey[tileResource]] === 'number')
                         .map((tileResource) => {
                             const tooltip =
-                                areVMMiscImprovementsEnabled && tileResource === 'Image'
+                                tileResource === 'Image'
                                     ? 'Count includes all images, with or without observed CVEs'
                                     : undefined;
 

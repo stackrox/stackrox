@@ -6,7 +6,6 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
 	"os"
 	"testing"
@@ -16,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/mtls/verifier/mocks"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -131,19 +131,8 @@ func TestMetricsServerPanic(t *testing.T) {
 	}
 }
 
-// getFreePort asks the kernel for a free open port that is ready to use.
-func getFreePort() (port int, err error) {
-	listener, err := net.Listen("tcp", "localhost:0")
-	if err != nil {
-		return 0, err
-	}
-	defer utils.IgnoreError(listener.Close)
-	return listener.Addr().(*net.TCPAddr).Port, nil
-}
-
 func TestMetricsServerHTTPRequest(t *testing.T) {
-	freePort, err := getFreePort()
-	require.NoError(t, err)
+	freePort := testutils.GetFreeTestPort()
 	t.Setenv(env.MetricsPort.EnvVar(), fmt.Sprintf(":%d", freePort))
 	t.Setenv(env.EnableSecureMetrics.EnvVar(), "false")
 	server := NewServer(CentralSubsystem, &nilTLSConfigurer{})
@@ -204,8 +193,7 @@ func testClient() (*http.Client, error) {
 func TestSecureMetricsServerHTTPRequest(t *testing.T) {
 	t.Setenv(env.MetricsPort.EnvVar(), "disabled")
 	t.Setenv(env.EnableSecureMetrics.EnvVar(), "true")
-	freePort, err := getFreePort()
-	require.NoError(t, err)
+	freePort := testutils.GetFreeTestPort()
 	t.Setenv(env.SecureMetricsPort.EnvVar(), fmt.Sprintf(":%d", freePort))
 	t.Setenv(env.SecureMetricsCertDir.EnvVar(), "./testdata")
 	ctrl := gomock.NewController(t)

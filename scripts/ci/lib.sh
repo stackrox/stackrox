@@ -784,7 +784,7 @@ EOM
         fi
     done
     local endpoint
-    endpoint="$(kubectl -n "${ns}" get "${service}" -o json | jq -r '.status.loadBalancer.ingress[] | .ip')"
+    endpoint="$(kubectl -n "${ns}" get "${service}" -o json | service_get_endpoint)"
     local fetcher_metrics
     fetcher_metrics="$(mktemp --suffix=.csv)"
     local fetcher_metrics_json
@@ -813,6 +813,10 @@ EOM
         info "WARNING: failed to save image pre-fetcher metrics."
     fi
     rm -f "${fetcher_metrics}"
+}
+
+service_get_endpoint() {
+    jq -r '.status.loadBalancer.ingress // error("List of ingress points of LB " + .metadata.name + " is empty.") | .[0] | .hostname // .ip'
 }
 
 populate_prefetcher_image_list() {

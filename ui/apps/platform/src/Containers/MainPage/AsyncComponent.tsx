@@ -1,16 +1,17 @@
-import React, { Component, ElementType } from 'react';
+import React, { Component, ComponentProps, ComponentType, ElementType } from 'react';
 import Loader from 'Components/Loader';
 
-type Props = Record<string, never>;
 type State = {
     component: ElementType | null;
 };
 
-export default function asyncComponent(importComponent): ElementType {
-    class AsyncComponent extends Component<Props, State> {
+export default function asyncComponent<T extends ElementType>(
+    importComponent: () => Promise<{ default: T }>
+): ComponentType<ComponentProps<T>> {
+    class AsyncComponent extends Component<ComponentProps<T>, State> {
         isComponentMounted: boolean;
 
-        constructor(props) {
+        constructor(props: ComponentProps<T>) {
             super(props);
             this.state = {
                 component: null,

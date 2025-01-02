@@ -70,8 +70,8 @@ func (p pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSen
 	if report == nil {
 		return errors.Errorf("unexpected resource type %T for index report", event.GetResource())
 	}
-	if event.GetAction() != central.ResourceAction_UNSET_ACTION_RESOURCE {
-		log.Errorf("index report from node %s has unsupported action: %q", event.GetNode().GetName(), event.GetAction())
+	if event.GetAction() == central.ResourceAction_REMOVE_RESOURCE {
+		log.Warn("Removal of node index is unsupported action")
 		return nil
 	}
 	log.Debugf("received node index report for node %s with %d packages from %d content sets",

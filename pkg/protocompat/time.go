@@ -9,6 +9,8 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+const defaultTimeStringFormat = time.RFC3339Nano
+
 var (
 	// TimestampPtrType is a variable containing a nil pointer of Timestamp type
 	TimestampPtrType = reflect.TypeOf((*timestamppb.Timestamp)(nil))
@@ -36,15 +38,18 @@ func TimestampNow() *timestamppb.Timestamp {
 	return timestamppb.Now()
 }
 
-// ConvertTimestampToCSVString converts a proto timestamp to a string for display in a CSV report.
-func ConvertTimestampToCSVString(timestamp *timestamppb.Timestamp) string {
+// ConvertTimestampToString converts a proto timestamp to a string.
+func ConvertTimestampToString(timestamp *timestamppb.Timestamp, format string) string {
 	if timestamp == nil {
 		return "N/A"
 	}
 	if timestamp.CheckValid() != nil {
 		return "ERR"
 	}
-	return timestamp.AsTime().Format(time.RFC1123)
+	if format == "" {
+		format = defaultTimeStringFormat
+	}
+	return timestamp.AsTime().Format(format)
 }
 
 // ConvertTimestampToTimeOrNil converts a proto timestamp to a golang Time, defaulting to nil in case of error.

@@ -219,9 +219,15 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         path: vulnManagementPath,
     },
     'workload-cves': {
-        component: asyncComponent(
-            () => import('Containers/Vulnerabilities/WorkloadCves/WorkloadCvesPage')
-        ),
+        component: (() => {
+            const AsyncWorkloadCvesComponent = asyncComponent(
+                () => import('Containers/Vulnerabilities/WorkloadCves/WorkloadCvesPage')
+            );
+
+            return function WorkloadCvesPage() {
+                return <AsyncWorkloadCvesComponent view="user-workload" />;
+            };
+        })(),
         path: vulnerabilitiesWorkloadCvesPath,
     },
 };

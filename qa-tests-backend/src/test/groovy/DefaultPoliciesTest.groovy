@@ -6,9 +6,6 @@ import java.util.stream.Collectors
 
 import io.grpc.StatusRuntimeException
 
-import io.stackrox.proto.api.v1.AlertServiceOuterClass
-import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsCountsRequest
-import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsCountsRequest.RequestGroup
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsGroupResponse
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.ListAlertsRequest
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass
@@ -472,6 +469,8 @@ class DefaultPoliciesTest extends BaseSpecification {
     }
 
     @Tag("BAT")
+    // ROX-27302 Test is failing for AKS platform since 2024-12-09 (K8S API update to v1.30)
+    @IgnoreIf({ Env.CI_JOB_NAME ==~ /^aks-.*/ })
     def "Verify that built-in services don't trigger unexpected alerts"() {
         expect:
         "Verify unexpected policies are not violated within the kube-system namespace"
@@ -549,58 +548,6 @@ class DefaultPoliciesTest extends BaseSpecification {
         }
         query += names.join(',')
         return ListAlertsRequest.newBuilder().setQuery(query).build()
-    }
-
-    def numUniqueCategories(List<ListAlert> alerts) {
-        def m = [] as Set
-        alerts.each { a ->
-            a.getPolicy().getCategoriesList().each { c ->
-                m.add(c)
-            }
-        }
-        return m.size()
-    }
-
-    def countAlerts(ListAlertsRequest req, RequestGroup group) {
-        def c = AlertService.getAlertCounts(
-                GetAlertsCountsRequest.newBuilder().setRequest(req).setGroupBy(group).build()
-        )
-        return c
-    }
-
-    def totalAlerts(AlertServiceOuterClass.GetAlertsCountsResponse resp) {
-        def total = 0
-        resp.getGroupsList().each { g ->
-            g.getCountsList().each { c ->
-                total += c.getCount()
-            }
-        }
-        return total
-    }
-
-    def "Verify that alert counts API is consistent with alerts"()  {
-        given:
-        def alertReq = queryForDeployments()
-        def violations = AlertService.getViolations(alertReq)
-        def uniqueCategories = numUniqueCategories(violations)
-
-        when:
-        def ungrouped = countAlerts(alertReq, RequestGroup.UNSET)
-        def byCluster = countAlerts(alertReq, RequestGroup.CLUSTER)
-        def byCategory = countAlerts(alertReq, RequestGroup.CATEGORY)
-
-        then:
-        "Verify counts match expected value"
-        ungrouped.getGroupsCount() == 1
-        totalAlerts(ungrouped) == violations.size()
-
-        byCluster.getGroupsCount() == 1
-        totalAlerts(byCluster) == violations.size()
-
-        byCategory.getGroupsCount() == uniqueCategories
-        // Policies can have multiple categories, so the count is _at least_
-        // the number of total violations, but usually is more.
-        totalAlerts(byCategory) >= violations.size()
     }
 
     def flattenGroups(GetAlertsGroupResponse resp) {

@@ -46,6 +46,11 @@ export function sortByTableHeader(headerName: string) {
     return queryTableSortHeader(headerName).click();
 }
 
+export function changePerPageOption(amount: number) {
+    cy.get('button').contains(new RegExp('\\d+ - \\d+ of \\d+')).click();
+    cy.get('button[role="menuitem"]').contains(`${amount} per page`).click();
+}
+
 export function paginateNext() {
     return cy.get('button[aria-label="Go to next page"]').click();
 }

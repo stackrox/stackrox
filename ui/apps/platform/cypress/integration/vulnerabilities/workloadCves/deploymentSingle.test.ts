@@ -11,7 +11,6 @@ import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 import { selectors } from './WorkloadCves.selectors';
 
 describe('Workload CVE Deployment Single page', () => {
-    const isAdvancedFiltersEnabled = hasFeatureFlag('ROX_VULN_MGMT_ADVANCED_FILTERS');
     withAuth();
 
     before(function () {
@@ -31,23 +30,11 @@ describe('Workload CVE Deployment Single page', () => {
         visitFirstDeployment();
 
         // Check that only applicable resource menu items are present in the toolbar
-        if (isAdvancedFiltersEnabled) {
-            cy.get(selectors.searchEntityDropdown).click();
-            cy.get(selectors.searchEntityMenuItem).contains('Image');
-            cy.get(selectors.searchEntityMenuItem).contains('CVE');
-            cy.get(selectors.searchEntityMenuItem).contains('Image component');
-            cy.get(selectors.searchEntityDropdown).click();
-        } else {
-            cy.get(selectors.searchOptionsDropdown).click();
-            cy.get(selectors.searchOptionsMenuItem('CVE'));
-            cy.get(selectors.searchOptionsMenuItem('Image'));
-            cy.get(selectors.searchOptionsMenuItem('Component'));
-            cy.get(selectors.searchOptionsMenuItem('Component source'));
-            cy.get(selectors.searchOptionsMenuItem('Deployment')).should('not.exist');
-            cy.get(selectors.searchOptionsMenuItem('Cluster')).should('not.exist');
-            cy.get(selectors.searchOptionsMenuItem('Namespace')).should('not.exist');
-            cy.get(selectors.searchOptionsDropdown).click();
-        }
+        cy.get(selectors.searchEntityDropdown).click();
+        cy.get(selectors.searchEntityMenuItem).contains('Image');
+        cy.get(selectors.searchEntityMenuItem).contains('CVE');
+        cy.get(selectors.searchEntityMenuItem).contains('Image component');
+        cy.get(selectors.searchEntityDropdown).click();
     });
 
     it('should navigate between vulnerabilities and resources tabs', () => {

@@ -41,6 +41,7 @@ import {
 import { SearchFilter } from 'types/search';
 import { getRegexScopedQueryString, parseQuerySearchFilter } from '../../utils/searchUtils';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
+import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 import DeploymentFilterLink from './DeploymentFilterLink';
 
 type Namespace = {
@@ -104,10 +105,12 @@ const pollInterval = 30000;
 function NamespaceViewPage() {
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
+    const { pageTitle, baseSearchFilter } = useWorkloadCveViewContext();
     const { searchFilter, setSearchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter({
-        ...searchFilter,
+        ...baseSearchFilter,
         ...defaultSearchFilters,
+        ...searchFilter,
     });
     const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
     const { sortOption, getSortParams } = useURLSort({
@@ -161,11 +164,11 @@ function NamespaceViewPage() {
 
     return (
         <>
-            <PageTitle title="Workload CVEs - Namespace view" />
+            <PageTitle title={`${pageTitle} - Namespace view`} />
             <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={vulnerabilitiesWorkloadCvesPath}>
-                        Workload CVEs
+                        {pageTitle}
                     </BreadcrumbItemLink>
                     <BreadcrumbItem isActive>Namespace view</BreadcrumbItem>
                 </Breadcrumb>
