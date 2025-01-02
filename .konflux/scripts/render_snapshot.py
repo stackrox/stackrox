@@ -18,8 +18,8 @@ def determine_snapshot_name(prefix, product_version):
     return f"{prefix}{product_version}-{timestamp}".lower()
 
 
-def parse_image_refs(image_refs):
-    return json.loads(image_refs)
+def parse_components_input(raw_input):
+    return json.loads(raw_input)
 
 
 def validate_component(component):
@@ -77,15 +77,16 @@ def write_snapshot(snapshot, results_path):
 
 
 if __name__ == '__main__':
-    application = os.environ["APPLICATION"] # 1
+    application = os.environ["APPLICATION"]
+    raw_components = parse_components_input(os.environ["COMPONENTS"])
+    namespace = os.environ["NAMESPACE"]
+    pipeline_run_name = os.environ["PIPELINE_RUN_NAME"]
+    product_version = os.environ["PRODUCT_VERSION"]
+    snapshot_name_result_path = os.environ["SNAPSHOT_NAME_RESULT_PATH"]
+
     product_version_suffix = determine_product_version_suffix(application)
     snapshot_name = determine_snapshot_name(application, product_version_suffix)
-    raw_components = parse_image_refs(os.environ["COMPONENTS"]) # 2
     components = [process_component(c, product_version_suffix) for c in raw_components]
-
-    product_version = os.environ["PRODUCT_VERSION"] # 3
-    pipeline_run_name = os.environ["PIPELINE_RUN_NAME"] # 4
-    namespace = os.environ["NAMESPACE"] # 5
 
     snapshot = construct_snapshot(
         snapshot_name=snapshot_name,
@@ -95,6 +96,5 @@ if __name__ == '__main__':
         components=components
     )
 
-    snapshot_name_result_path = os.environ["SNAPSHOT_NAME_RESULT_PATH"]
     write_snapshot(snapshot, snapshot_name_result_path)
     print("Rendered snapshot written to workspace.")

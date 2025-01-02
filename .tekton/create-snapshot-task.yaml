@@ -35,27 +35,24 @@ spec:
     image: registry.access.redhat.com/ubi9:latest@sha256:1057dab827c782abcfb9bda0c3900c0966b5066e671d54976a7bcb3a2d1a5e53
     workingDir: /var/workdir/source
     env:
-      # These values must be provided as environment variables.
-      # They cannot be provided as arguments to the Python script.
-      - name: APPLICATION
-        valueFrom:
-          fieldRef:
-            fieldPath: metadata.labels['appstudio.openshift.io/application']
-      - name: NAMESPACE
-        valueFrom:
-          fieldRef:
-            fieldPath: metadata.namespace
-      - name: PIPELINE_RUN_NAME
-        valueFrom:
-          fieldRef:
-            fieldPath: metadata.labels['tekton.dev/pipeline']
-      # TODO(when inline Python script): refactor below vars to args: attribute
-      - name: COMPONENTS
-        value: $(params.COMPONENTS)
-      - name: PRODUCT_VERSION
-        value: $(params.PRODUCT_VERSION)
-      - name: SNAPSHOT_NAME_RESULT_PATH
-        value: $(results.SNAPSHOT_NAME.path)
+    - name: APPLICATION
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.labels['appstudio.openshift.io/application']
+    - name: NAMESPACE
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.namespace
+    - name: PIPELINE_RUN_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.labels['tekton.dev/pipeline']
+    - name: COMPONENTS
+      value: $(params.COMPONENTS)
+    - name: PRODUCT_VERSION
+      value: $(params.PRODUCT_VERSION)
+    - name: SNAPSHOT_NAME_RESULT_PATH
+      value: $(results.SNAPSHOT_NAME.path)
     script: .konflux/scripts/render_snapshot.py
 
   - name: create-snapshot
