@@ -55,6 +55,36 @@ func mergeComponents(parts ImageParts, image *storage.Image) {
 	}
 }
 
+func mergeComponentsV2(parts ImageParts, image *storage.Image) {
+	// If the image has a nil scan, there is nothing to fill in.
+	if image.GetScan() == nil {
+		return
+	}
+
+	// Use the edges to combine into the parent image.
+	for _, cp := range parts.Children {
+		if cp.ComponentV2 == nil {
+			log.Errorf("UNEXPECTED: nil component when retrieving components for image %q", image.GetId())
+			continue
+		}
+		// Generate an embedded component for the edge and non-embedded version.
+		image.Scan.Components = append(image.Scan.Components, generateEmbeddedComponentV2(image.GetScan().GetOperatingSystem(), cp, parts.ImageCVEEdges))
+	}
+
+	sort.SliceStable(image.GetScan().GetComponents(), func(i, j int) bool {
+		compI, compJ := image.GetScan().GetComponents()[i], image.GetScan().GetComponents()[j]
+		if compI.GetName() != compJ.GetName() {
+			return compI.GetName() < compJ.GetName()
+		}
+		return compI.GetVersion() < compJ.GetVersion()
+	})
+	for _, comp := range image.GetScan().GetComponents() {
+		sort.SliceStable(comp.Vulns, func(i, j int) bool {
+			return comp.Vulns[i].GetCve() < comp.Vulns[j].GetCve()
+		})
+	}
+}
+
 func generateEmbeddedComponent(_ string, cp ComponentParts, imageCVEEdges map[string]*storage.ImageCVEEdge) *storage.EmbeddedImageScanComponent {
 	ret := &storage.EmbeddedImageScanComponent{
 		Name:      cp.Component.GetName(),
@@ -108,6 +138,56 @@ func generateEmbeddedCVE(cp CVEParts, imageCVEEdge *storage.ImageCVEEdge) *stora
 	// The `Suppressed` field is transferred to `State` field (as DEFERRED) in `converter.ProtoCVEToEmbeddedCVE`.
 	// Now visit image-cve edge to derive the state.
 	if state := imageCVEEdge.GetState(); state != storage.VulnerabilityState_OBSERVED {
+		ret.State = state
+	}
+	return ret
+}
+
+func generateEmbeddedComponentV2(_ string, cp ComponentParts, imageCVEEdges map[string]*storage.ImageCVEEdge) *storage.EmbeddedImageScanComponent {
+	ret := &storage.EmbeddedImageScanComponent{
+		Name:      cp.ComponentV2.GetName(),
+		Version:   cp.ComponentV2.GetVersion(),
+		License:   cp.ComponentV2.GetLicense().CloneVT(),
+		Source:    cp.ComponentV2.GetSource(),
+		Location:  cp.ComponentV2.GetLocation(),
+		FixedBy:   cp.ComponentV2.GetFixedBy(),
+		RiskScore: cp.ComponentV2.GetRiskScore(),
+		Priority:  cp.ComponentV2.GetPriority(),
+	}
+
+	if cp.ComponentV2.HasLayerIndex != nil {
+		ret.HasLayerIndex = &storage.EmbeddedImageScanComponent_LayerIndex{
+			LayerIndex: cp.ComponentV2.GetLayerIndex(),
+		}
+	}
+
+	if cp.ComponentV2.GetSetTopCvss() != nil {
+		ret.SetTopCvss = &storage.EmbeddedImageScanComponent_TopCvss{TopCvss: cp.ComponentV2.GetTopCvss()}
+	}
+
+	ret.Vulns = make([]*storage.EmbeddedVulnerability, 0, len(cp.ComponentV2.Cves))
+	for _, cve := range cp.ComponentV2.Cves {
+		if cve == nil {
+			log.Errorf("UNEXPECTED: nil cve when retrieving cves for component %q", cp.Component.GetId())
+			continue
+		}
+		ret.Vulns = append(ret.Vulns, generateEmbeddedCVEV2(cve))
+	}
+	return ret
+}
+
+func generateEmbeddedCVEV2(cp *storage.ImageCVEV2) *storage.EmbeddedVulnerability {
+	ret := utils.ImageCVEV2ToEmbeddedVulnerability(cp)
+	if cp.IsFixable {
+		ret.SetFixedBy = &storage.EmbeddedVulnerability_FixedBy{
+			FixedBy: cp.GetFixedBy(),
+		}
+	}
+	ret.FirstImageOccurrence = cp.GetFirstImageOccurrence()
+
+	// The `Suppressed` field is transferred to `State` field (as DEFERRED) in `converter.ProtoCVEToEmbeddedCVE`.
+	// Now visit image-cve edge to derive the state.
+	if state := cp.GetState(); state != storage.VulnerabilityState_OBSERVED {
 		ret.State = state
 	}
 	return ret

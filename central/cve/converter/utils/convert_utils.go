@@ -221,6 +221,33 @@ func ImageCVEToEmbeddedVulnerability(vuln *storage.ImageCVE) *storage.EmbeddedVu
 	return embeddedCVE
 }
 
+// ImageCVEV2ToEmbeddedVulnerability coverts a Proto CVEs to Embedded Vuln
+// It converts all the fields except Fixed By which gets set depending on the CVE
+func ImageCVEV2ToEmbeddedVulnerability(vuln *storage.ImageCVEV2) *storage.EmbeddedVulnerability {
+	embeddedCVE := &storage.EmbeddedVulnerability{
+		Cve:                   vuln.GetCveBaseInfo().GetCve(),
+		Cvss:                  vuln.GetCvss(),
+		Summary:               vuln.GetCveBaseInfo().GetSummary(),
+		Link:                  vuln.GetCveBaseInfo().GetLink(),
+		CvssV2:                vuln.GetCveBaseInfo().GetCvssV2(),
+		CvssV3:                vuln.GetCveBaseInfo().GetCvssV3(),
+		PublishedOn:           vuln.GetCveBaseInfo().GetPublishedOn(),
+		LastModified:          vuln.GetCveBaseInfo().GetLastModified(),
+		FirstSystemOccurrence: vuln.GetCveBaseInfo().GetCreatedAt(),
+		Severity:              vuln.GetSeverity(),
+		CvssMetrics:           vuln.GetCvssMetrics(),
+		NvdCvss:               vuln.GetNvdcvss(),
+	}
+	if vuln.GetCveBaseInfo().GetCvssV3() != nil {
+		embeddedCVE.ScoreVersion = storage.EmbeddedVulnerability_V3
+	} else {
+		embeddedCVE.ScoreVersion = storage.EmbeddedVulnerability_V2
+	}
+	embeddedCVE.VulnerabilityType = storage.EmbeddedVulnerability_IMAGE_VULNERABILITY
+	embeddedCVE.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY}
+	return embeddedCVE
+}
+
 // NodeCVEToNodeVulnerability coverts a Proto CVEs to Embedded node vulnerability.
 // It converts all the fields except fields that depend on the node context.
 func NodeCVEToNodeVulnerability(protoCVE *storage.NodeCVE) *storage.NodeVulnerability {
