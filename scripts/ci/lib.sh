@@ -433,23 +433,15 @@ push_matching_collector_scanner_images() {
         die "missing arg. usage: push_matching_collector_scanner_images <brand> <arch>"
     fi
 
-    if is_OPENSHIFT_CI; then
-        oc registry login
-    fi
-
     local brand="$1"
     local arch="$2"
 
     local registry
     registry="$(registry_from_branding "$brand")"
 
-    _retag_or_mirror() {
-        if is_OPENSHIFT_CI; then
-            oc_image_mirror "$1" "$2"
-        else
-            retry 5 true \
-                "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "$1" "$2"
-        fi
+    _retag() {
+        retry 5 true \
+            "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "$1" "$2"
     }
 
     if [[ "$arch" != "amd64" ]]; then
@@ -466,17 +458,13 @@ push_matching_collector_scanner_images() {
 
     registry_rw_login "${registry}"
 
-    _retag_or_mirror "${registry}/scanner:${scanner_version}"    "${registry}/scanner:${main_tag}-${arch}"
-    _retag_or_mirror "${registry}/scanner-db:${scanner_version}" "${registry}/scanner-db:${main_tag}-${arch}"
-    _retag_or_mirror "${registry}/scanner-slim:${scanner_version}"    "${registry}/scanner-slim:${main_tag}-${arch}"
-    _retag_or_mirror "${registry}/scanner-db-slim:${scanner_version}" "${registry}/scanner-db-slim:${main_tag}-${arch}"
+    _retag "${registry}/scanner:${scanner_version}"    "${registry}/scanner:${main_tag}-${arch}"
+    _retag "${registry}/scanner-db:${scanner_version}" "${registry}/scanner-db:${main_tag}-${arch}"
+    _retag "${registry}/scanner-slim:${scanner_version}"    "${registry}/scanner-slim:${main_tag}-${arch}"
+    _retag "${registry}/scanner-db-slim:${scanner_version}" "${registry}/scanner-db-slim:${main_tag}-${arch}"
 
-    _retag_or_mirror "${registry}/collector:${collector_version}"      "${registry}/collector:${main_tag}-${arch}"
-    _retag_or_mirror "${registry}/collector:${collector_version}-slim" "${registry}/collector-slim:${main_tag}-${arch}"
-}
-
-oc_image_mirror() {
-    retry 5 true oc image mirror "$1" "$2"
+    _retag "${registry}/collector:${collector_version}"      "${registry}/collector:${main_tag}-${arch}"
+    _retag "${registry}/collector:${collector_version}-slim" "${registry}/collector-slim:${main_tag}-${arch}"
 }
 
 poll_for_system_test_images() {
