@@ -438,7 +438,9 @@ spec:
     params:
     - name: IMAGE
       value: "$(params.collector-full-image-build-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
-    taskRef: wait-for-image
+    taskRef:
+      name: wait-for-image
+      kind: task
     # The timeout must be the same as the pipeline timeout in `collector-full-retag.yaml`
     timeout: 40m
 
