@@ -6,6 +6,18 @@ import os
 import re
 
 
+def determine_product_version_suffix(application):
+    match = re.search(r"(?P<version>-\d+-\d+$)", application)
+    if match:
+        return match.group("version")
+    return ""
+
+
+def determine_snapshot_name(prefix, product_version):
+    timestamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    return f"{prefix}{product_version}-{timestamp}".lower()
+
+
 def parse_image_refs(image_refs):
     return json.loads(image_refs)
 
@@ -17,13 +29,6 @@ def validate_component(component):
         and component["revision"] != ""
         and component["repository"] != ""
     ), "Component must have component name, ref, revision and repository set."
-
-
-def determine_product_version_suffix(application):
-    match = re.search(r"(?P<version>-\d+-\d+$)", application)
-    if match:
-        return match.group("version")
-    return ""
 
 
 def process_component(component, product_version_suffix):
@@ -38,11 +43,6 @@ def process_component(component, product_version_suffix):
             }
         }
     }
-
-
-def determine_snapshot_name(prefix, product_version):
-    timestamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    return f"{prefix}{product_version}-{timestamp}".lower()
 
 
 def construct_snapshot(
