@@ -7,13 +7,13 @@ values:
       listenOnCreate: true
       listenOnUpdates: true
 tests:
-  # - name: "Trying with no bundle"
-  #   values:
-  #     ca:
-  #       cert: null
-  #   expectError: True
-  #   expect: |
-  #     .error | assertThat(contains("A CA certificate must be specified"))
+  - name: "Rendering without init bundle or CRS fails"
+    values:
+      ca:
+        cert: null
+    expectError: true
+    expect: |
+      .error | assertThat(contains("A CA certificate must be specified"))
 
   - name: "With CRS"
     values:
@@ -48,12 +48,9 @@ tests:
       - name: "Validating webhooks contain CA"
         expect: |
           .validatingwebhookconfigurations[].webhooks[].clientConfig.caBundle | assertThat(. != null)
-  # - name: "Trying with CRS"
-  #   values:
-  #     metadata:
-  #       annotations:
-  #         "init-bundle.stackrox.io/name": null
-  #     ca:
-  #       cert: "certification"
-  #   expect: |
-  #     .notes | assertThat(contains("Thank you for using StackRox!"))
+      - name: "and with init bundle causes rendering error"
+        set:
+          ca.cert: "certificate coming from an init bundle"
+        expectError: true
+        expect: |
+          .error | assertThat(contains("please pick only one"))
