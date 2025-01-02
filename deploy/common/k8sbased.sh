@@ -700,6 +700,9 @@ function launch_sensor {
         echo >&2 "  To disable the CRS-based flow for cluster registration, set ROX_DEPLOY_SENSOR_WITH_CRS=false"
         echo >&2 "================================================================================================="
         ROX_DEPLOY_SENSOR_WITH_CRS=true
+        if [[ -z "${SENSOR_HELM_MANAGED:-}" ]]; then
+          SENSOR_HELM_MANAGED=true
+        fi
       fi
 
       if [[ "${ROX_DEPLOY_SENSOR_WITH_CRS:-}" == "true" ]]; then
