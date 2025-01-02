@@ -8754,7 +8754,7 @@
             ]
           },
           {
-            "name": "ImageComponentV3",
+            "name": "ImageComponentV2",
             "fields": [
               {
                 "id": 1,

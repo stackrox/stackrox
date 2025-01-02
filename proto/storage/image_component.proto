@@ -27,7 +27,7 @@ message ImageComponent {
   string operating_system = 10; // @gotags: search:"Operating System"
 }
 
-message ImageComponentV3 {
+message ImageComponentV2 {
   // keeping id similar construction for now during investigation.  May just need to be auto-generated
   string id = 1; // @gotags: search:"Component ID,store,hidden" sql:"pk,id"
   string name = 2; // @gotags: search:"Component,store"

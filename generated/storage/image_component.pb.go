@@ -162,7 +162,7 @@ type ImageComponent_TopCvss struct {
 
 func (*ImageComponent_TopCvss) isImageComponent_SetTopCvss() {}
 
-type ImageComponentV3 struct {
+type ImageComponentV2 struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// keeping id similar construction for now during investigation.  May just need to be auto-generated
 	Id        string     `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Component ID,store,hidden" sql:"pk,id"`           // @gotags: search:"Component ID,store,hidden" sql:"pk,id"
@@ -174,8 +174,8 @@ type ImageComponentV3 struct {
 	RiskScore float32    `protobuf:"fixed32,7,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Component Risk Score,hidden"` // @gotags: search:"Component Risk Score,hidden"
 	// Types that are valid to be assigned to SetTopCvss:
 	//
-	//	*ImageComponentV3_TopCvss
-	SetTopCvss isImageComponentV3_SetTopCvss `protobuf_oneof:"set_top_cvss"`
+	//	*ImageComponentV2_TopCvss
+	SetTopCvss isImageComponentV2_SetTopCvss `protobuf_oneof:"set_top_cvss"`
 	// Component version that fixes all the fixable vulnerabilities in this component.
 	FixedBy         string `protobuf:"bytes,9,opt,name=fixed_by,json=fixedBy,proto3" json:"fixed_by,omitempty"`
 	OperatingSystem string `protobuf:"bytes,10,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty" search:"Operating System"` // @gotags: search:"Operating System"
@@ -185,28 +185,28 @@ type ImageComponentV3 struct {
 	//
 	// Types that are valid to be assigned to HasLayerIndex:
 	//
-	//	*ImageComponentV3_LayerIndex
-	HasLayerIndex isImageComponentV3_HasLayerIndex `protobuf_oneof:"has_layer_index"`
+	//	*ImageComponentV2_LayerIndex
+	HasLayerIndex isImageComponentV2_HasLayerIndex `protobuf_oneof:"has_layer_index"`
 	Location      string                           `protobuf:"bytes,13,opt,name=location,proto3" json:"location,omitempty" search:"Component Location,store,hidden"` // @gotags: search:"Component Location,store,hidden"
 	Cves          []*ImageCVEV2                    `protobuf:"bytes,14,rep,name=cves,proto3" json:"cves,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ImageComponentV3) Reset() {
-	*x = ImageComponentV3{}
+func (x *ImageComponentV2) Reset() {
+	*x = ImageComponentV2{}
 	mi := &file_storage_image_component_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ImageComponentV3) String() string {
+func (x *ImageComponentV2) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ImageComponentV3) ProtoMessage() {}
+func (*ImageComponentV2) ProtoMessage() {}
 
-func (x *ImageComponentV3) ProtoReflect() protoreflect.Message {
+func (x *ImageComponentV2) ProtoReflect() protoreflect.Message {
 	mi := &file_storage_image_component_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -218,146 +218,146 @@ func (x *ImageComponentV3) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ImageComponentV3.ProtoReflect.Descriptor instead.
-func (*ImageComponentV3) Descriptor() ([]byte, []int) {
+// Deprecated: Use ImageComponentV2.ProtoReflect.Descriptor instead.
+func (*ImageComponentV2) Descriptor() ([]byte, []int) {
 	return file_storage_image_component_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *ImageComponentV3) GetId() string {
+func (x *ImageComponentV2) GetId() string {
 	if x != nil {
 		return x.Id
 	}
 	return ""
 }
 
-func (x *ImageComponentV3) GetName() string {
+func (x *ImageComponentV2) GetName() string {
 	if x != nil {
 		return x.Name
 	}
 	return ""
 }
 
-func (x *ImageComponentV3) GetVersion() string {
+func (x *ImageComponentV2) GetVersion() string {
 	if x != nil {
 		return x.Version
 	}
 	return ""
 }
 
-func (x *ImageComponentV3) GetLicense() *License {
+func (x *ImageComponentV2) GetLicense() *License {
 	if x != nil {
 		return x.License
 	}
 	return nil
 }
 
-func (x *ImageComponentV3) GetPriority() int64 {
+func (x *ImageComponentV2) GetPriority() int64 {
 	if x != nil {
 		return x.Priority
 	}
 	return 0
 }
 
-func (x *ImageComponentV3) GetSource() SourceType {
+func (x *ImageComponentV2) GetSource() SourceType {
 	if x != nil {
 		return x.Source
 	}
 	return SourceType_OS
 }
 
-func (x *ImageComponentV3) GetRiskScore() float32 {
+func (x *ImageComponentV2) GetRiskScore() float32 {
 	if x != nil {
 		return x.RiskScore
 	}
 	return 0
 }
 
-func (x *ImageComponentV3) GetSetTopCvss() isImageComponentV3_SetTopCvss {
+func (x *ImageComponentV2) GetSetTopCvss() isImageComponentV2_SetTopCvss {
 	if x != nil {
 		return x.SetTopCvss
 	}
 	return nil
 }
 
-func (x *ImageComponentV3) GetTopCvss() float32 {
+func (x *ImageComponentV2) GetTopCvss() float32 {
 	if x != nil {
-		if x, ok := x.SetTopCvss.(*ImageComponentV3_TopCvss); ok {
+		if x, ok := x.SetTopCvss.(*ImageComponentV2_TopCvss); ok {
 			return x.TopCvss
 		}
 	}
 	return 0
 }
 
-func (x *ImageComponentV3) GetFixedBy() string {
+func (x *ImageComponentV2) GetFixedBy() string {
 	if x != nil {
 		return x.FixedBy
 	}
 	return ""
 }
 
-func (x *ImageComponentV3) GetOperatingSystem() string {
+func (x *ImageComponentV2) GetOperatingSystem() string {
 	if x != nil {
 		return x.OperatingSystem
 	}
 	return ""
 }
 
-func (x *ImageComponentV3) GetImageId() string {
+func (x *ImageComponentV2) GetImageId() string {
 	if x != nil {
 		return x.ImageId
 	}
 	return ""
 }
 
-func (x *ImageComponentV3) GetHasLayerIndex() isImageComponentV3_HasLayerIndex {
+func (x *ImageComponentV2) GetHasLayerIndex() isImageComponentV2_HasLayerIndex {
 	if x != nil {
 		return x.HasLayerIndex
 	}
 	return nil
 }
 
-func (x *ImageComponentV3) GetLayerIndex() int32 {
+func (x *ImageComponentV2) GetLayerIndex() int32 {
 	if x != nil {
-		if x, ok := x.HasLayerIndex.(*ImageComponentV3_LayerIndex); ok {
+		if x, ok := x.HasLayerIndex.(*ImageComponentV2_LayerIndex); ok {
 			return x.LayerIndex
 		}
 	}
 	return 0
 }
 
-func (x *ImageComponentV3) GetLocation() string {
+func (x *ImageComponentV2) GetLocation() string {
 	if x != nil {
 		return x.Location
 	}
 	return ""
 }
 
-func (x *ImageComponentV3) GetCves() []*ImageCVEV2 {
+func (x *ImageComponentV2) GetCves() []*ImageCVEV2 {
 	if x != nil {
 		return x.Cves
 	}
 	return nil
 }
 
-type isImageComponentV3_SetTopCvss interface {
-	isImageComponentV3_SetTopCvss()
+type isImageComponentV2_SetTopCvss interface {
+	isImageComponentV2_SetTopCvss()
 }
 
-type ImageComponentV3_TopCvss struct {
+type ImageComponentV2_TopCvss struct {
 	TopCvss float32 `protobuf:"fixed32,8,opt,name=top_cvss,json=topCvss,proto3,oneof" search:"Component Top CVSS,store"` // @gotags: search:"Component Top CVSS,store"
 }
 
-func (*ImageComponentV3_TopCvss) isImageComponentV3_SetTopCvss() {}
+func (*ImageComponentV2_TopCvss) isImageComponentV2_SetTopCvss() {}
 
-type isImageComponentV3_HasLayerIndex interface {
-	isImageComponentV3_HasLayerIndex()
+type isImageComponentV2_HasLayerIndex interface {
+	isImageComponentV2_HasLayerIndex()
 }
 
-type ImageComponentV3_LayerIndex struct {
+type ImageComponentV2_LayerIndex struct {
 	LayerIndex int32 `protobuf:"varint,12,opt,name=layer_index,json=layerIndex,proto3,oneof"`
 }
 
-func (*ImageComponentV3_LayerIndex) isImageComponentV3_HasLayerIndex() {}
+func (*ImageComponentV2_LayerIndex) isImageComponentV2_HasLayerIndex() {}
 
 var File_storage_image_component_proto protoreflect.FileDescriptor
 
@@ -389,7 +389,7 @@ var file_storage_image_component_proto_rawDesc = []byte{
 	0x6d, 0x18, 0x0a, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0f, 0x6f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x69,
 	0x6e, 0x67, 0x53, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x42, 0x0e, 0x0a, 0x0c, 0x73, 0x65, 0x74, 0x5f,
 	0x74, 0x6f, 0x70, 0x5f, 0x63, 0x76, 0x73, 0x73, 0x22, 0xed, 0x03, 0x0a, 0x10, 0x49, 0x6d, 0x61,
-	0x67, 0x65, 0x43, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74, 0x56, 0x33, 0x12, 0x0e, 0x0a,
+	0x67, 0x65, 0x43, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74, 0x56, 0x32, 0x12, 0x0e, 0x0a,
 	0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x69, 0x64, 0x12, 0x12, 0x0a,
 	0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d,
 	0x65, 0x12, 0x18, 0x0a, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01,
@@ -440,7 +440,7 @@ func file_storage_image_component_proto_rawDescGZIP() []byte {
 var file_storage_image_component_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_storage_image_component_proto_goTypes = []any{
 	(*ImageComponent)(nil),   // 0: storage.ImageComponent
-	(*ImageComponentV3)(nil), // 1: storage.ImageComponentV3
+	(*ImageComponentV2)(nil), // 1: storage.ImageComponentV2
 	(*License)(nil),          // 2: storage.License
 	(SourceType)(0),          // 3: storage.SourceType
 	(*ImageCVEV2)(nil),       // 4: storage.ImageCVEV2
@@ -448,9 +448,9 @@ var file_storage_image_component_proto_goTypes = []any{
 var file_storage_image_component_proto_depIdxs = []int32{
 	2, // 0: storage.ImageComponent.license:type_name -> storage.License
 	3, // 1: storage.ImageComponent.source:type_name -> storage.SourceType
-	2, // 2: storage.ImageComponentV3.license:type_name -> storage.License
-	3, // 3: storage.ImageComponentV3.source:type_name -> storage.SourceType
-	4, // 4: storage.ImageComponentV3.cves:type_name -> storage.ImageCVEV2
+	2, // 2: storage.ImageComponentV2.license:type_name -> storage.License
+	3, // 3: storage.ImageComponentV2.source:type_name -> storage.SourceType
+	4, // 4: storage.ImageComponentV2.cves:type_name -> storage.ImageCVEV2
 	5, // [5:5] is the sub-list for method output_type
 	5, // [5:5] is the sub-list for method input_type
 	5, // [5:5] is the sub-list for extension type_name
@@ -469,8 +469,8 @@ func file_storage_image_component_proto_init() {
 		(*ImageComponent_TopCvss)(nil),
 	}
 	file_storage_image_component_proto_msgTypes[1].OneofWrappers = []any{
-		(*ImageComponentV3_TopCvss)(nil),
-		(*ImageComponentV3_LayerIndex)(nil),
+		(*ImageComponentV2_TopCvss)(nil),
+		(*ImageComponentV2_LayerIndex)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

@@ -61,11 +61,11 @@ func (m *ImageComponent_TopCvss) CloneVT() isImageComponent_SetTopCvss {
 	return r
 }
 
-func (m *ImageComponentV3) CloneVT() *ImageComponentV3 {
+func (m *ImageComponentV2) CloneVT() *ImageComponentV2 {
 	if m == nil {
-		return (*ImageComponentV3)(nil)
+		return (*ImageComponentV2)(nil)
 	}
-	r := new(ImageComponentV3)
+	r := new(ImageComponentV2)
 	r.Id = m.Id
 	r.Name = m.Name
 	r.Version = m.Version
@@ -79,12 +79,12 @@ func (m *ImageComponentV3) CloneVT() *ImageComponentV3 {
 	r.Location = m.Location
 	if m.SetTopCvss != nil {
 		r.SetTopCvss = m.SetTopCvss.(interface {
-			CloneVT() isImageComponentV3_SetTopCvss
+			CloneVT() isImageComponentV2_SetTopCvss
 		}).CloneVT()
 	}
 	if m.HasLayerIndex != nil {
 		r.HasLayerIndex = m.HasLayerIndex.(interface {
-			CloneVT() isImageComponentV3_HasLayerIndex
+			CloneVT() isImageComponentV2_HasLayerIndex
 		}).CloneVT()
 	}
 	if rhs := m.Cves; rhs != nil {
@@ -101,24 +101,24 @@ func (m *ImageComponentV3) CloneVT() *ImageComponentV3 {
 	return r
 }
 
-func (m *ImageComponentV3) CloneMessageVT() proto.Message {
+func (m *ImageComponentV2) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *ImageComponentV3_TopCvss) CloneVT() isImageComponentV3_SetTopCvss {
+func (m *ImageComponentV2_TopCvss) CloneVT() isImageComponentV2_SetTopCvss {
 	if m == nil {
-		return (*ImageComponentV3_TopCvss)(nil)
+		return (*ImageComponentV2_TopCvss)(nil)
 	}
-	r := new(ImageComponentV3_TopCvss)
+	r := new(ImageComponentV2_TopCvss)
 	r.TopCvss = m.TopCvss
 	return r
 }
 
-func (m *ImageComponentV3_LayerIndex) CloneVT() isImageComponentV3_HasLayerIndex {
+func (m *ImageComponentV2_LayerIndex) CloneVT() isImageComponentV2_HasLayerIndex {
 	if m == nil {
-		return (*ImageComponentV3_LayerIndex)(nil)
+		return (*ImageComponentV2_LayerIndex)(nil)
 	}
-	r := new(ImageComponentV3_LayerIndex)
+	r := new(ImageComponentV2_LayerIndex)
 	r.LayerIndex = m.LayerIndex
 	return r
 }
@@ -195,7 +195,7 @@ func (this *ImageComponent_TopCvss) EqualVT(thatIface isImageComponent_SetTopCvs
 	return true
 }
 
-func (this *ImageComponentV3) EqualVT(that *ImageComponentV3) bool {
+func (this *ImageComponentV2) EqualVT(that *ImageComponentV2) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
@@ -208,7 +208,7 @@ func (this *ImageComponentV3) EqualVT(that *ImageComponentV3) bool {
 			return false
 		}
 		if !this.SetTopCvss.(interface {
-			EqualVT(isImageComponentV3_SetTopCvss) bool
+			EqualVT(isImageComponentV2_SetTopCvss) bool
 		}).EqualVT(that.SetTopCvss) {
 			return false
 		}
@@ -220,7 +220,7 @@ func (this *ImageComponentV3) EqualVT(that *ImageComponentV3) bool {
 			return false
 		}
 		if !this.HasLayerIndex.(interface {
-			EqualVT(isImageComponentV3_HasLayerIndex) bool
+			EqualVT(isImageComponentV2_HasLayerIndex) bool
 		}).EqualVT(that.HasLayerIndex) {
 			return false
 		}
@@ -278,15 +278,15 @@ func (this *ImageComponentV3) EqualVT(that *ImageComponentV3) bool {
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *ImageComponentV3) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*ImageComponentV3)
+func (this *ImageComponentV2) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*ImageComponentV2)
 	if !ok {
 		return false
 	}
 	return this.EqualVT(that)
 }
-func (this *ImageComponentV3_TopCvss) EqualVT(thatIface isImageComponentV3_SetTopCvss) bool {
-	that, ok := thatIface.(*ImageComponentV3_TopCvss)
+func (this *ImageComponentV2_TopCvss) EqualVT(thatIface isImageComponentV2_SetTopCvss) bool {
+	that, ok := thatIface.(*ImageComponentV2_TopCvss)
 	if !ok {
 		return false
 	}
@@ -302,8 +302,8 @@ func (this *ImageComponentV3_TopCvss) EqualVT(thatIface isImageComponentV3_SetTo
 	return true
 }
 
-func (this *ImageComponentV3_LayerIndex) EqualVT(thatIface isImageComponentV3_HasLayerIndex) bool {
-	that, ok := thatIface.(*ImageComponentV3_LayerIndex)
+func (this *ImageComponentV2_LayerIndex) EqualVT(thatIface isImageComponentV2_HasLayerIndex) bool {
+	that, ok := thatIface.(*ImageComponentV2_LayerIndex)
 	if !ok {
 		return false
 	}
@@ -435,7 +435,7 @@ func (m *ImageComponent_TopCvss) MarshalToSizedBufferVT(dAtA []byte) (int, error
 	dAtA[i] = 0x45
 	return len(dAtA) - i, nil
 }
-func (m *ImageComponentV3) MarshalVT() (dAtA []byte, err error) {
+func (m *ImageComponentV2) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -448,12 +448,12 @@ func (m *ImageComponentV3) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ImageComponentV3) MarshalToVT(dAtA []byte) (int, error) {
+func (m *ImageComponentV2) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *ImageComponentV3) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *ImageComponentV2) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -573,12 +573,12 @@ func (m *ImageComponentV3) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ImageComponentV3_TopCvss) MarshalToVT(dAtA []byte) (int, error) {
+func (m *ImageComponentV2_TopCvss) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *ImageComponentV3_TopCvss) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *ImageComponentV2_TopCvss) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	i -= 4
 	binary.LittleEndian.PutUint32(dAtA[i:], uint32(math.Float32bits(float32(m.TopCvss))))
@@ -586,12 +586,12 @@ func (m *ImageComponentV3_TopCvss) MarshalToSizedBufferVT(dAtA []byte) (int, err
 	dAtA[i] = 0x45
 	return len(dAtA) - i, nil
 }
-func (m *ImageComponentV3_LayerIndex) MarshalToVT(dAtA []byte) (int, error) {
+func (m *ImageComponentV2_LayerIndex) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *ImageComponentV3_LayerIndex) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *ImageComponentV2_LayerIndex) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	i = protohelpers.EncodeVarint(dAtA, i, uint64(m.LayerIndex))
 	i--
@@ -653,7 +653,7 @@ func (m *ImageComponent_TopCvss) SizeVT() (n int) {
 	n += 5
 	return n
 }
-func (m *ImageComponentV3) SizeVT() (n int) {
+func (m *ImageComponentV2) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -716,7 +716,7 @@ func (m *ImageComponentV3) SizeVT() (n int) {
 	return n
 }
 
-func (m *ImageComponentV3_TopCvss) SizeVT() (n int) {
+func (m *ImageComponentV2_TopCvss) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -725,7 +725,7 @@ func (m *ImageComponentV3_TopCvss) SizeVT() (n int) {
 	n += 5
 	return n
 }
-func (m *ImageComponentV3_LayerIndex) SizeVT() (n int) {
+func (m *ImageComponentV2_LayerIndex) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1061,7 +1061,7 @@ func (m *ImageComponent) UnmarshalVTUnsafe(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ImageComponentV3) UnmarshalVTUnsafe(dAtA []byte) error {
+func (m *ImageComponentV2) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1084,10 +1084,10 @@ func (m *ImageComponentV3) UnmarshalVTUnsafe(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ImageComponentV3: wiretype end group for non-group")
+			return fmt.Errorf("proto: ImageComponentV2: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ImageComponentV3: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ImageComponentV2: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1293,7 +1293,7 @@ func (m *ImageComponentV3) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
 			iNdEx += 4
-			m.SetTopCvss = &ImageComponentV3_TopCvss{TopCvss: float32(math.Float32frombits(v))}
+			m.SetTopCvss = &ImageComponentV2_TopCvss{TopCvss: float32(math.Float32frombits(v))}
 		case 9:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field FixedBy", wireType)
@@ -1421,7 +1421,7 @@ func (m *ImageComponentV3) UnmarshalVTUnsafe(dAtA []byte) error {
 					break
 				}
 			}
-			m.HasLayerIndex = &ImageComponentV3_LayerIndex{LayerIndex: v}
+			m.HasLayerIndex = &ImageComponentV2_LayerIndex{LayerIndex: v}
 		case 13:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Location", wireType)
