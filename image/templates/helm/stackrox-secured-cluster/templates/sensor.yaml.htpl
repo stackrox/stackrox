@@ -59,7 +59,7 @@ spec:
         imagePullPolicy: {{ ._rox.sensor.imagePullPolicy | quote }}
         name: crs
         command:
-          - kubernetes-sensor
+        - kubernetes-sensor
         resources:
           {{- ._rox.sensor._resources | nindent 10 }}
         args:
