@@ -198,8 +198,8 @@ func (w *WorkloadManager) clearActions() {
 			objectctr = objectctr + meta.LenList(list)
 		}
 
-		numObjectsWithoutNamespace, numObjects, numWatchers := w.fakeClient.Tracker().GetNumObjectsWatchers()
-		log.Infof("Found %d objects without namespace, %d objects, and %d watchers in tracker.", numObjectsWithoutNamespace, numObjects, numWatchers)
+		numObjectsWithoutNamespace, numObjects, numWatchersGvrs, numWatchers := w.fakeClient.Tracker().GetNumObjectsWatchers()
+		log.Infof("Found %d objects without namespace, %d objects, %d watchergvrs, and %d watchers in tracker.", numObjectsWithoutNamespace, numObjects, numWatchersGvrs, numWatchers)
 
 		/*
 			log.Infof("Numbers of Reactions: %d - WatchReactions: %d - ProxyReactions: %d", len(w.fakeClient.ReactionChain), len(w.fakeClient.WatchReactionChain), len(w.fakeClient.ProxyReactionChain))
