@@ -274,30 +274,48 @@ The following block checks for the validity of the provided init bundle. (`helm 
 {{- $crsFile := ._rox.crs.file -}}
 {{- if kindIs "string" $crsFile -}}
   {{- if not ._rox._securedClusterCertRefresh -}}
-    {{ include "srox.fail" "A cluster registration secret cannot be used with manually managed (helmManaged=false) clusters." }}
+    {{- include "srox.fail" "A cluster registration secret cannot be used with manually managed (helmManaged=false) clusters." -}}
   {{- end -}}
 
-  {{- if or $operatorInitBundlePresent $helmInitBundlePresent }}
-    {{ include "srox.fail" "A cluster registration secret and an init bundle was provided -- please pick only one." }}
-  {{- end }}
+  {{- if or $operatorInitBundlePresent $helmInitBundlePresent -}}
+    {{- include "srox.fail" "A cluster registration secret and an init bundle was provided -- please pick only one." -}}
+  {{- end -}}
 
   {{- $crs := dict -}}
-  {{- $_ = set ._rox "createSecrets" false -}}
   {{- $crsManifest := $crsFile | fromYaml -}}
-  {{- $_ = set $crs "_secret" $crsManifest -}}
+
+  {{- if not ._rox._securedClusterCertRefresh -}}
+    {{ include "srox.fail" "A cluster registration secret cannot be used with manually managed (helmManaged=false) clusters." -}}
+  {{- end -}}
+
+  {{- if or $operatorInitBundlePresent $helmInitBundlePresent -}}
+    {{ include "srox.fail" "A cluster registration secret and an init bundle was provided -- please pick only one." -}}
+  {{- end -}}
+
+  {{/* First, extract the opaque CRS from the manifest. */}}
   {{- $crsOpaque := dig "data" "crs" "" $crsManifest -}}
-  {{/* FAIL ASSERT */}}
-  {{- $_ = set $crs "_opaque" $crsOpaque -}}
+  {{- if empty $crsOpaque -}}
+    {{ include "srox.fail" "Invalid cluster registration secret manifest: missing field data.crs in CRS secret manifest" -}}
+  {{- end -}}
+
+  {{/* Second, deserialize the opaque CRS. */}}
   {{- $crsDeserialized := $crsOpaque | b64dec | b64dec | fromYaml -}}
-  {{- $_ = set $crs "_deserialized" $crsDeserialized -}}
   {{- $crsCAs := dig "CAs" list $crsDeserialized -}}
-  {{/* FAIL ASSERT */}}
+  {{- if empty $crsCAs -}}
+    {{ include "srox.fail" "Invalid cluster registration secret: no CAs found in CRS" -}}
+  {{- end -}}
   {{- $crsCA := first $crsCAs -}}
+
+  {{- $_ = set $crs "_secret" $crsManifest -}}
+  {{- $_ = set $crs "_opaque" $crsOpaque -}}
+  {{- $_ = set $crs "_deserialized" $crsDeserialized -}}
   {{- $_ = set $crs "_caCert" $crsCA -}}
   {{- $_ = set $crs "_enabled" true -}}
-  {{- $_ = set ._rox.ca "_cert" $crsCA -}}
+
   {{- $_ = set ._rox "crs" $crs -}}
-{{- end }}
+  {{- $_ = set ._rox.ca "_cert" $crsCA -}}
+  {{- $_ = set ._rox "createSecrets" false -}}
+{{- end -}}
 [<- end >]
 
 {{- if empty ._rox.ca._cert }}
