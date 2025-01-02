@@ -115,5 +115,3 @@ elif [[ -n "$ROX_DEFAULT_TLS_KEY_FILE" ]]; then
 else
 	echo "No default TLS certificates provided"
 fi
-
-export ROX_DEPLOY_SENSOR_WITH_CRS="${ROX_DEPLOY_SENSOR_WITH_CRS:-false}"
