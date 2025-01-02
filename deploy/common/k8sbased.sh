@@ -824,7 +824,7 @@ function launch_sensor {
       if [[ -n "$CI" ]]; then
         helm lint --set ca.cert=PLACEHOLDER_FOR_LINTING "${helm_chart}"
         helm lint --set ca.cert=PLACEHOLDER_FOR_LINTING "${helm_chart}" -n "${sensor_namespace}"
-        helm lint --set ca.cert=PLACEHOLDER_FOR_LINTING "${helm_chart}" -n "${sensor_namespace}" "${helm_args[@]}" "${extra_helm_config[@]}"
+        helm lint "${helm_chart}" -n "${sensor_namespace}" "${helm_args[@]}" "${extra_helm_config[@]}"
       fi
 
       if [[ "${sensor_namespace}" != "stackrox" ]]; then
