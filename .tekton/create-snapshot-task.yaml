@@ -50,8 +50,8 @@ spec:
           fieldRef:
             fieldPath: metadata.labels['tekton.dev/pipeline']
       # TODO(when inline Python script): refactor below vars to args: attribute
-      - name: IMAGE_REFS
-        value: $(params.IMAGE_REFS)
+      - name: COMPONENTS
+        value: $(params.COMPONENTS)
       - name: PRODUCT_VERSION
         value: $(params.PRODUCT_VERSION)
       - name: SNAPSHOT_NAME_RESULT_PATH

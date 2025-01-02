@@ -80,8 +80,8 @@ if __name__ == '__main__':
     application = os.environ["APPLICATION"] # 1
     product_version_suffix = determine_product_version_suffix(application)
     snapshot_name = determine_snapshot_name(application, product_version_suffix)
-    image_refs = parse_image_refs(os.environ["IMAGE_REFS"]) # 2
-    components = [process_component(c, product_version_suffix) for c in image_refs]
+    raw_components = parse_image_refs(os.environ["COMPONENTS"]) # 2
+    components = [process_component(c, product_version_suffix) for c in raw_components]
 
     product_version = os.environ["PRODUCT_VERSION"] # 3
     pipeline_run_name = os.environ["PIPELINE_RUN_NAME"] # 4
