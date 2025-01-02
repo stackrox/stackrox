@@ -440,8 +440,7 @@ push_matching_collector_scanner_images() {
     registry="$(registry_from_branding "$brand")"
 
     _retag() {
-        retry 5 true \
-            "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "$1" "$2"
+        retry 5 true "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "$1" "$2"
     }
 
     if [[ "$arch" != "amd64" ]]; then
