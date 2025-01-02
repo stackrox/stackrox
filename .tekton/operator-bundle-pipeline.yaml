@@ -2,8 +2,6 @@ apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
   name: operator-bundle-pipeline
-  annotations:
-    pipelinesascode.tekton.dev/task: "[.tekton/wait-for-image-task.yaml, .tekton/create-snapshot-task.yaml]"
 spec:
 
   finally:
