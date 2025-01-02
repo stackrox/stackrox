@@ -3,7 +3,6 @@ kind: PipelineRun
 
 metadata:
   annotations:
-    pipelinesascode.tekton.dev/pipeline: ".tekton/operator-bundle-pipeline.yaml"
     build.appstudio.openshift.io/repo: https://github.com/stackrox/stackrox?rev={{revision}}
     build.appstudio.redhat.com/commit_sha: '{{revision}}'
     build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
