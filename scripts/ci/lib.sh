@@ -276,10 +276,6 @@ push_main_image_set() {
     local arch="$3"
 
     local main_image_set=("main" "roxctl" "central-db")
-    if is_OPENSHIFT_CI; then
-        local main_image_srcs=("$MAIN_IMAGE" "$ROXCTL_IMAGE" "$CENTRAL_DB_IMAGE")
-        oc registry login
-    fi
 
     _push_main_image_set() {
         local registry="$1"
@@ -301,17 +297,6 @@ push_main_image_set() {
         done
     }
 
-    _mirror_main_image_set() {
-        local registry="$1"
-        local tag="$2"
-
-        local idx=0
-        for image in "${main_image_set[@]}"; do
-            oc_image_mirror "${main_image_srcs[$idx]}" "${registry}/${image}:${tag}"
-            (( idx++ )) || true
-        done
-    }
-
     local registry
     registry="$(registry_from_branding "$brand")"
 
@@ -320,19 +305,12 @@ push_main_image_set() {
 
     registry_rw_login "$registry"
 
-    if is_OPENSHIFT_CI; then
-        _mirror_main_image_set "$registry" "$tag"
-    else
-        _tag_main_image_set "$tag" "$registry" "$tag-$arch"
-        _push_main_image_set "$registry" "$tag-$arch"
-    fi
+    _tag_main_image_set "$tag" "$registry" "$tag-$arch"
+    _push_main_image_set "$registry" "$tag-$arch"
+
     if [[ "$push_context" == "merge-to-master" ]]; then
-        if is_OPENSHIFT_CI; then
-            _mirror_main_image_set "$registry" "latest-${arch}"
-        else
-            _tag_main_image_set "$tag" "$registry" "latest-${arch}"
-            _push_main_image_set "$registry" "latest-${arch}"
-        fi
+        _tag_main_image_set "$tag" "$registry" "latest-${arch}"
+        _push_main_image_set "$registry" "latest-${arch}"
     fi
 }
 
