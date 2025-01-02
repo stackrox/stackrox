@@ -139,6 +139,15 @@ func TestSplitAndMergeImage(t *testing.T) {
 					Name:    "comp1",
 					Version: "ver1",
 				},
+				ComponentV2: &storage.ImageComponentV2{
+					Id:      scancomponent.ComponentID("comp1", "ver1", "sha"),
+					Name:    "comp1",
+					Version: "ver1",
+					ImageId: "sha",
+					HasLayerIndex: &storage.ImageComponentV2_LayerIndex{
+						LayerIndex: 1,
+					},
+				},
 				Edge: &storage.ImageComponentEdge{
 					Id:               pgSearch.IDFromPks([]string{"sha", scancomponent.ComponentID("comp1", "ver1", "")}),
 					ImageId:          "sha",
@@ -154,6 +163,37 @@ func TestSplitAndMergeImage(t *testing.T) {
 					Id:      scancomponent.ComponentID("comp1", "ver2", ""),
 					Name:    "comp1",
 					Version: "ver2",
+				},
+				ComponentV2: &storage.ImageComponentV2{
+					Id:      scancomponent.ComponentID("comp1", "ver2", "sha"),
+					Name:    "comp1",
+					Version: "ver2",
+					ImageId: "sha",
+					HasLayerIndex: &storage.ImageComponentV2_LayerIndex{
+						LayerIndex: 3,
+					},
+					Cves: []*storage.ImageCVEV2{
+						{
+							Id:      cve.ID("cve1", ""),
+							ImageId: "sha",
+							CveBaseInfo: &storage.CVEInfo{
+								Cve: "cve1",
+							},
+							NvdScoreVersion: storage.CvssScoreVersion_UNKNOWN_VERSION,
+						},
+						{
+							Id:      cve.ID("cve2", ""),
+							ImageId: "sha",
+							CveBaseInfo: &storage.CVEInfo{
+								Cve: "cve2",
+							},
+							NvdScoreVersion: storage.CvssScoreVersion_UNKNOWN_VERSION,
+							HasFixedBy: &storage.ImageCVEV2_FixedBy{
+								FixedBy: "ver3",
+							},
+							IsFixable: true,
+						},
+					},
 				},
 				Edge: &storage.ImageComponentEdge{
 					Id:               pgSearch.IDFromPks([]string{"sha", scancomponent.ComponentID("comp1", "ver2", "")}),
@@ -203,6 +243,15 @@ func TestSplitAndMergeImage(t *testing.T) {
 					Id:      scancomponent.ComponentID("comp2", "ver1", ""),
 					Name:    "comp2",
 					Version: "ver1",
+				},
+				ComponentV2: &storage.ImageComponentV2{
+					Id:      scancomponent.ComponentID("comp2", "ver1", "sha"),
+					Name:    "comp2",
+					Version: "ver1",
+					ImageId: "sha",
+					HasLayerIndex: &storage.ImageComponentV2_LayerIndex{
+						LayerIndex: 2,
+					},
 				},
 				Edge: &storage.ImageComponentEdge{
 					Id:               pgSearch.IDFromPks([]string{"sha", scancomponent.ComponentID("comp2", "ver1", "")}),
@@ -258,6 +307,7 @@ func TestSplitAndMergeImage(t *testing.T) {
 	for i, expected := range splitExpected.Children {
 		actual := splitActual.Children[i]
 		protoassert.Equal(t, expected.Component, actual.Component)
+		protoassert.Equal(t, expected.ComponentV2, actual.ComponentV2)
 		protoassert.Equal(t, expected.Edge, actual.Edge)
 
 		assert.Len(t, actual.Children, len(expected.Children))

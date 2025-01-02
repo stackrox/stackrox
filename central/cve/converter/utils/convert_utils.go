@@ -192,7 +192,7 @@ func NVDCVEsToEmbeddedCVEs(cves []*schema.NVDCVEFeedJSON10DefCVEItem, ct CVEType
 }
 
 // ImageCVEToEmbeddedVulnerability coverts a Proto CVEs to Embedded Vuln
-// It converts all the fields except except Fixed By which gets set depending on the CVE
+// It converts all the fields except Fixed By which gets set depending on the CVE
 func ImageCVEToEmbeddedVulnerability(vuln *storage.ImageCVE) *storage.EmbeddedVulnerability {
 	embeddedCVE := &storage.EmbeddedVulnerability{
 		Cve:                   vuln.GetCveBaseInfo().GetCve(),
@@ -207,6 +207,33 @@ func ImageCVEToEmbeddedVulnerability(vuln *storage.ImageCVE) *storage.EmbeddedVu
 		Suppressed:            vuln.GetSnoozed(),
 		SuppressActivation:    vuln.GetSnoozeStart(),
 		SuppressExpiry:        vuln.GetSnoozeExpiry(),
+		Severity:              vuln.GetSeverity(),
+		CvssMetrics:           vuln.GetCvssMetrics(),
+		NvdCvss:               vuln.GetNvdcvss(),
+	}
+	if vuln.GetCveBaseInfo().GetCvssV3() != nil {
+		embeddedCVE.ScoreVersion = storage.EmbeddedVulnerability_V3
+	} else {
+		embeddedCVE.ScoreVersion = storage.EmbeddedVulnerability_V2
+	}
+	embeddedCVE.VulnerabilityType = storage.EmbeddedVulnerability_IMAGE_VULNERABILITY
+	embeddedCVE.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY}
+	return embeddedCVE
+}
+
+// ImageCVEV2ToEmbeddedVulnerability coverts a Proto CVEs to Embedded Vuln
+// It converts all the fields except Fixed By which gets set depending on the CVE
+func ImageCVEV2ToEmbeddedVulnerability(vuln *storage.ImageCVEV2) *storage.EmbeddedVulnerability {
+	embeddedCVE := &storage.EmbeddedVulnerability{
+		Cve:                   vuln.GetCveBaseInfo().GetCve(),
+		Cvss:                  vuln.GetCvss(),
+		Summary:               vuln.GetCveBaseInfo().GetSummary(),
+		Link:                  vuln.GetCveBaseInfo().GetLink(),
+		CvssV2:                vuln.GetCveBaseInfo().GetCvssV2(),
+		CvssV3:                vuln.GetCveBaseInfo().GetCvssV3(),
+		PublishedOn:           vuln.GetCveBaseInfo().GetPublishedOn(),
+		LastModified:          vuln.GetCveBaseInfo().GetLastModified(),
+		FirstSystemOccurrence: vuln.GetCveBaseInfo().GetCreatedAt(),
 		Severity:              vuln.GetSeverity(),
 		CvssMetrics:           vuln.GetCvssMetrics(),
 		NvdCvss:               vuln.GetNvdcvss(),
@@ -309,6 +336,64 @@ func EmbeddedVulnerabilityToImageCVE(os string, from *storage.EmbeddedVulnerabil
 		ret.CveBaseInfo.ScoreVersion = storage.CVEInfo_V2
 		ret.ImpactScore = from.GetCvssV2().GetImpactScore()
 	}
+	return ret
+}
+
+// EmbeddedVulnerabilityToImageCVEV3 converts *storage.EmbeddedVulnerability object to *storage.ImageCVE object
+func EmbeddedVulnerabilityToImageCVEV3(os string, imageID string, from *storage.EmbeddedVulnerability) *storage.ImageCVEV2 {
+	var nvdCvss float32
+	nvdCvss = 0
+	nvdVersion := storage.CvssScoreVersion_UNKNOWN_VERSION
+	for _, score := range from.GetCvssMetrics() {
+		if score.Source == storage.Source_SOURCE_NVD {
+			if score.GetCvssv3() != nil {
+				nvdCvss = score.GetCvssv3().GetScore()
+				nvdVersion = storage.CvssScoreVersion_V3
+
+			} else if score.GetCvssv2() != nil {
+				nvdCvss = score.GetCvssv2().GetScore()
+				nvdVersion = storage.CvssScoreVersion_V2
+			}
+		}
+	}
+	ret := &storage.ImageCVEV2{
+		// TODO(ROX-27401): figure out the ID.
+		Id:              cve.ID(from.GetCve(), imageID),
+		OperatingSystem: os,
+		CveBaseInfo: &storage.CVEInfo{
+			Cve:          from.GetCve(),
+			Summary:      from.GetSummary(),
+			Link:         from.GetLink(),
+			PublishedOn:  from.GetPublishedOn(),
+			CreatedAt:    from.GetFirstSystemOccurrence(),
+			LastModified: from.GetLastModified(),
+			CvssV2:       from.GetCvssV2(),
+			CvssV3:       from.GetCvssV3(),
+		},
+		Cvss:                 from.GetCvss(),
+		Nvdcvss:              nvdCvss,
+		NvdScoreVersion:      nvdVersion,
+		Severity:             from.GetSeverity(),
+		CvssMetrics:          from.GetCvssMetrics(),
+		ImageId:              imageID,
+		FirstImageOccurrence: from.GetFirstImageOccurrence(),
+		State:                from.GetState(),
+		IsFixable:            from.GetFixedBy() != "",
+	}
+	if ret.GetCveBaseInfo().GetCvssV3() != nil {
+		ret.CveBaseInfo.ScoreVersion = storage.CVEInfo_V3
+		ret.ImpactScore = from.GetCvssV3().GetImpactScore()
+	} else if ret.GetCveBaseInfo().GetCvssV2() != nil {
+		ret.CveBaseInfo.ScoreVersion = storage.CVEInfo_V2
+		ret.ImpactScore = from.GetCvssV2().GetImpactScore()
+	}
+
+	if ret.IsFixable {
+		ret.HasFixedBy = &storage.ImageCVEV2_FixedBy{
+			FixedBy: from.GetFixedBy(),
+		}
+	}
+
 	return ret
 }
 

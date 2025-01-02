@@ -32,12 +32,14 @@ func splitComponents(parts ImageParts) []ComponentParts {
 	addedComponents := set.NewStringSet()
 	for _, component := range parts.Image.GetScan().GetComponents() {
 		generatedComponent := GenerateImageComponent(parts.Image.GetScan().GetOperatingSystem(), component)
+		generatedComponentV2 := GenerateImageComponentV2(parts.Image.GetScan().GetOperatingSystem(), parts.Image, component)
 		if !addedComponents.Add(generatedComponent.GetId()) {
 			continue
 		}
 
 		cp := ComponentParts{}
 		cp.Component = generatedComponent
+		cp.ComponentV2 = generatedComponentV2
 		cp.Edge = generateImageComponentEdge(parts.Image, cp.Component, component)
 		cp.Children = splitCVEs(parts, cp, component)
 
@@ -100,6 +102,45 @@ func GenerateImageComponent(os string, from *storage.EmbeddedImageScanComponent)
 	if from.GetSetTopCvss() != nil {
 		ret.SetTopCvss = &storage.ImageComponent_TopCvss{TopCvss: from.GetTopCvss()}
 	}
+	return ret
+}
+
+// GenerateImageComponentV2 returns top-level image component from embedded component.
+func GenerateImageComponentV2(os string, image *storage.Image, from *storage.EmbeddedImageScanComponent) *storage.ImageComponentV2 {
+	ret := &storage.ImageComponentV2{
+		// TODO(ROX-27401): Figure out the keys.
+		Id:              scancomponent.ComponentID(from.GetName(), from.GetVersion(), image.GetId()),
+		Name:            from.GetName(),
+		Version:         from.GetVersion(),
+		License:         from.GetLicense().CloneVT(),
+		Source:          from.GetSource(),
+		FixedBy:         from.GetFixedBy(),
+		RiskScore:       from.GetRiskScore(),
+		Priority:        from.GetPriority(),
+		OperatingSystem: os,
+		ImageId:         image.GetId(),
+		Location:        from.GetLocation(),
+	}
+
+	if from.GetSetTopCvss() != nil {
+		ret.SetTopCvss = &storage.ImageComponentV2_TopCvss{TopCvss: from.GetTopCvss()}
+	}
+
+	if from.HasLayerIndex != nil {
+		ret.HasLayerIndex = &storage.ImageComponentV2_LayerIndex{
+			LayerIndex: from.GetLayerIndex(),
+		}
+	}
+
+	cves := make([]*storage.ImageCVEV2, 0, len(from.GetVulns()))
+	for _, cve := range from.GetVulns() {
+		convertedCVEV3 := utils.EmbeddedVulnerabilityToImageCVEV3(image.GetScan().GetOperatingSystem(), image.GetId(), cve)
+
+		cves = append(cves, convertedCVEV3)
+	}
+
+	ret.Cves = cves
+
 	return ret
 }
 
