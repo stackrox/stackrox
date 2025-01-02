@@ -34,11 +34,11 @@ spec:
 
       echo "Image $(params.IMAGE) found."
 
-      raw_info=( "$(skopeo inspect \
+      raw_info="$(skopeo inspect \
         --retry-times 10 \
         --format '{{.Digest}} {{ index .Labels "vcs-ref" }} {{ index .Labels "source-location" }}' \
         --no-tags \
-        "docker://$(params.IMAGE)")" )
+        "docker://$(params.IMAGE)")"
 
       # Turning raw_info into an array for easier handling.
       infos=( $raw_info )
