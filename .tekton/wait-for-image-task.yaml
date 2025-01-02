@@ -34,12 +34,19 @@ spec:
 
       echo "Image $(params.IMAGE) found."
 
-      infos="$(skopeo inspect \
+      raw_info=( "$(skopeo inspect \
         --retry-times 10 \
         --format '{{.Digest}} {{ index .Labels "vcs-ref" }} {{ index .Labels "source-location" }}' \
         --no-tags \
-        "docker://$(params.IMAGE)")"
+        "docker://$(params.IMAGE)")" )
 
-      echo -n $(cut -f1 -d' ' <<< "${infos}") | tee "$(results.IMAGE_DIGEST.path)"
-      echo -n $(cut -f2 -d' ' <<< "${infos}") | tee "$(results.GIT_REF.path)"
-      echo -n $(cut -f3 -d' ' <<< "${infos}") | tee "$(results.GIT_REPO.path)"
+      # Turning raw_info into an array for easier handling.
+      infos=( $raw_info )
+      if [ ${#infos[@]} -ne 3 ]; then
+        echo "ERROR: Not all required information was found. Verify that the 'vcs-ref' and 'source-location' labels are set on the image $(params.IMAGE)."
+        exit 1
+      fi
+
+      echo -n "${infos[0]}" | tee "$(results.IMAGE_DIGEST.path)"
+      echo -n "${infos[1]}" | tee "$(results.GIT_REF.path)"
+      echo -n "${infos[2]}" | tee "$(results.GIT_REPO.path)"
