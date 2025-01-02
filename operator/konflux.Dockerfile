@@ -34,6 +34,7 @@ LABEL \
     io.openshift.tags="rhacs,operator,stackrox" \
     maintainer="Red Hat, Inc." \
     name="rhacs-rhel8-operator" \
+    # We must set source-location to provide it to our custom Snapshot.
     source-location="https://github.com/stackrox/stackrox" \
     summary="Operator for Red Hat Advanced Cluster Security for Kubernetes" \
     url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
