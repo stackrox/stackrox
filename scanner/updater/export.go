@@ -12,6 +12,7 @@ import (
 
 	"github.com/klauspost/compress/zstd"
 	"github.com/pkg/errors"
+	"github.com/quay/claircore/enricher/epss"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/jsonblob"
 	"github.com/quay/claircore/libvuln/updates"
@@ -47,7 +48,7 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 		return fmt.Errorf("initializing: manual: %w", err)
 	}
 	bundles["nvd"] = nvdOpts()
-
+	bundles["epss"] = epssOpts(ctx)
 	// ClairCore updaters.
 	for _, uSet := range []string{
 		"alpine",
@@ -63,7 +64,6 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 	} {
 		bundles[uSet] = []updates.ManagerOption{updates.WithEnabled([]string{uSet})}
 	}
-
 	// Rate limit to ~16 requests/second by default.
 	interval := 62 * time.Millisecond
 	configuredInterval := os.Getenv("STACKROX_SCANNER_V4_UPDATER_INTERVAL")
@@ -167,6 +167,22 @@ func nvdOpts() []updates.ManagerOption {
 				if key != "" {
 					cfg.APIKey = &key
 				}
+				return nil
+			},
+		}),
+	}
+}
+
+func epssOpts(ctx context.Context) []updates.ManagerOption {
+	return []updates.ManagerOption{
+		updates.WithEnabled([]string{}),
+		updates.WithConfigs(map[string]driver.ConfigUnmarshaler{
+			"clair.epss": func(i interface{}) error {
+				cfg, ok := i.(*epss.Config)
+				if !ok {
+					return errors.New("internal error: config assertion failed")
+				}
+				cfg.URL = nil
 				return nil
 			},
 		}),

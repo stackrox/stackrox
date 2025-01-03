@@ -104,7 +104,7 @@ require (
 	github.com/prometheus/client_golang v1.20.5
 	github.com/prometheus/client_model v0.6.1
 	github.com/prometheus/common v0.61.0
-	github.com/quay/claircore v1.5.32
+	github.com/quay/claircore v1.5.34-0.20250102161509-6bbe356be112
 	github.com/quay/claircore/toolkit v1.2.4
 	github.com/quay/zlog v1.1.8
 	github.com/remind101/migrate v0.0.0-20170729031349-52c1edff7319
@@ -415,7 +415,7 @@ require (
 	github.com/quay/goval-parser v0.8.8 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
-	github.com/rogpeppe/go-internal v1.12.0 // indirect
+	github.com/rogpeppe/go-internal v1.13.1 // indirect
 	github.com/rubenv/sql-migrate v1.5.2 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sagikazarmark/locafero v0.4.0 // indirect
@@ -466,16 +466,17 @@ require (
 	go.etcd.io/bbolt v1.3.10 // indirect
 	go.mongodb.org/mongo-driver v1.14.0 // indirect
 	go.opencensus.io v0.24.0 // indirect
+	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/contrib/detectors/gcp v1.31.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.54.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.54.0 // indirect
-	go.opentelemetry.io/otel v1.31.0 // indirect
+	go.opentelemetry.io/otel v1.33.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.22.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.21.0 // indirect
-	go.opentelemetry.io/otel/metric v1.31.0 // indirect
+	go.opentelemetry.io/otel/metric v1.33.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.31.0 // indirect
 	go.opentelemetry.io/otel/sdk/metric v1.31.0 // indirect
-	go.opentelemetry.io/otel/trace v1.31.0 // indirect
+	go.opentelemetry.io/otel/trace v1.33.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.0.0 // indirect
 	go.starlark.net v0.0.0-20230612165344-9532f5667272 // indirect
 	go.step.sm/crypto v0.44.2 // indirect
@@ -496,7 +497,7 @@ require (
 	modernc.org/libc v1.55.3 // indirect
 	modernc.org/mathutil v1.6.0 // indirect
 	modernc.org/memory v1.8.0 // indirect
-	modernc.org/sqlite v1.33.1 // indirect
+	modernc.org/sqlite v1.34.4 // indirect
 	modernc.org/strutil v1.2.0 // indirect
 	modernc.org/token v1.1.0 // indirect
 	oras.land/oras-go v1.2.5 // indirect
