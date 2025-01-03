@@ -8,11 +8,12 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/pointers"
 )
 
 var (
 	apiTokenFile        string
-	apiTokenFileChanged *bool
+	apiTokenFileChanged = pointers.Bool(false)
 )
 
 // AddAPITokenFile adds the token-file flag to the base command.
@@ -29,7 +30,13 @@ func AddAPITokenFile(c *cobra.Command) {
 
 // APITokenFile returns the currently specified API token file name.
 func APITokenFile() string {
-	return flagOrSettingValue(apiTokenFile, APITokenFileChanged(), env.TokenFileEnv)
+	return flagOrConfigurationValueWithFilepathOption(apiTokenFile,
+		APITokenFileChanged(),
+		ConfigInlineApiToken(),
+		*configInlineApiTokenSet,
+		ConfigApiTokenFilePath(),
+		*configApiTokenFilePathSet,
+		env.TokenFileEnv)
 }
 
 // APITokenFileChanged returns whether the token-file is provided as an argument.
