@@ -356,11 +356,10 @@ jobs:
 
     - name: Scan images for vulnerabilities
       run: |
-        release_tag=$(make tag)
+        release_tag="$(make --quiet --no-print-directory tag)"
         roxctl image scan --retries=10 --retry-delay=15 --force --severity=IMPORTANT,CRITICAL --output=sarif \
-          --image="quay.io/rhacs-eng/${{ matrix.image }}:${release_tag}" \
-          > results.sarif
-        cat results.sarif
+          --image="quay.io/stackrox-io/${{ matrix.image }}:${release_tag}" \
+          | tee results.sarif
 
     # TODO: re-enable roxctl scan results upload once quota issue has been resolved
     # - name: Upload roxctl scan results to GitHub Security tab
