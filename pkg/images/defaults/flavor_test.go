@@ -117,19 +117,15 @@ func (s *imageFlavorTestSuite) TestOpenSourceImageFlavorDevReleaseTags() {
 		s.Equal(f.MainImageTag, "3.0.99.0")
 		s.Equal(f.CentralDBImageTag, "3.0.99.0")
 		s.Equal(f.CollectorImageTag, "3.0.99.0")
-		s.Equal(f.CollectorSlimImageTag, "3.0.99.0")
 		s.Equal(f.ScannerImageTag, "3.0.99.0")
 
-		s.Contains(f.CollectorSlimImageName, "-slim")
 	} else {
 		// Original tags are used
 		s.Equal(f.MainImageTag, "3.0.99.0")
 		s.Equal(f.CentralDBImageTag, "3.0.99.0")
-		s.Equal(f.CollectorImageTag, "99.9.9-latest")
-		s.Equal(f.CollectorSlimImageTag, "99.9.9-slim")
+		s.Equal(f.CollectorImageTag, "99.9.9")
 		s.Equal(f.ScannerImageTag, "99.9.9")
 
-		s.NotContains(f.CollectorSlimImageName, "-slim")
 	}
 }
 
