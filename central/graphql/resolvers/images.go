@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/utils"
@@ -163,7 +164,7 @@ func (resolver *imageResolver) ImageVulnerabilityCount(ctx context.Context, args
 
 func (resolver *imageResolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageVulnerabilityCounter")
-	return resolver.root.ImageVulnerabilityCounter(resolver.withImageScopeContext(ctx), args)
+	return resolver.root.ImageVulnerabilityCounter(resolver.withElevatedImageScopeContext(ctx), args)
 }
 
 func (resolver *imageResolver) ImageCVECountBySeverity(ctx context.Context, q RawQuery) (*resourceCountBySeverityResolver, error) {
@@ -207,6 +208,16 @@ func (resolver *imageResolver) withImageScopeContext(ctx context.Context) contex
 		Level: v1.SearchCategory_IMAGES,
 		ID:    resolver.data.GetId(),
 	})
+}
+
+func (resolver *imageResolver) withElevatedImageScopeContext(ctx context.Context) context.Context {
+	return sac.WithGlobalAccessScopeChecker(
+		resolver.withImageScopeContext(ctx),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Image),
+		),
+	)
 }
 
 func (resolver *Resolver) getImage(ctx context.Context, id string) *storage.Image {
