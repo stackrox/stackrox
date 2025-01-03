@@ -186,8 +186,11 @@ func epssOpts(ctx context.Context) []updates.ManagerOption {
 	return []updates.ManagerOption{
 		updates.WithEnabled([]string{}),
 		updates.WithConfigs(map[string]driver.ConfigUnmarshaler{
-			"clair.epss": func(config interface{}) error {
-				return json.Unmarshal(configJSON, config)
+			"clair.epss": driver.ConfigUnmarshaler{ // Provide an anonymous struct with the Config field
+				Config: &epss.Config{},
+				Unmarshal: func(data []byte, config interface{}) error {
+					return json.Unmarshal(configJSON, config)
+				},
 			},
 		}),
 	}
