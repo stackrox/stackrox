@@ -39,7 +39,8 @@ jobs:
         matrix='{
           "pre_build_scanner_go_binary": { "name":["default"], "goos":["linux"], "goarch":["amd64", "arm64"] },
           "build_and_push_scanner": { },
-          "push_scanner_manifests": { "name":["default"], "registry":[] }
+          "push_scanner_manifests": { "name":["default"], "registry":[] },
+          "scan_images_with_roxctl": { "image":["scanner-v4", "scanner-v4-db"], "registry":[] }
         }'
 
         if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
@@ -64,6 +65,8 @@ jobs:
         matrix="$(jq '.build_and_push_scanner.registry = ["quay.io/stackrox-io", "quay.io/rhacs-eng"]' <<< "$matrix")"
 
         matrix="$(jq '.push_scanner_manifests.registry = ["quay.io/stackrox-io", "quay.io/rhacs-eng"]' <<< "$matrix")"
+
+        matrix="$(jq '.scan_images_with_roxctl.registry = ["quay.io/stackrox-io", "quay.io/rhacs-eng"]' <<< "$matrix")"
 
         echo "Job matrix after conditionals:"
         jq <<< "$matrix"
@@ -314,6 +317,7 @@ jobs:
     if: github.event_name == 'push' ||
       contains(github.event.pull_request.labels.*.name, 'scan-images-with-roxctl')
     needs:
+    - define-scanner-job-matrix
     - build-and-push-scanner
     - push-scanner-manifests
     name: Check images for vulnerabilities
@@ -324,12 +328,7 @@ jobs:
       security-events: write
     strategy:
       fail-fast: false
-      matrix:
-        image:
-          [
-            "scanner-v4",
-            "scanner-v4-db",
-          ]
+      matrix: ${{ fromJson(needs.define-scanner-job-matrix.outputs.matrix).scan_images_with_roxctl }}
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -358,7 +357,7 @@ jobs:
       run: |
         release_tag="$(make --quiet --no-print-directory tag)"
         roxctl image scan --retries=10 --retry-delay=15 --force --severity=IMPORTANT,CRITICAL --output=sarif \
-          --image="quay.io/stackrox-io/${{ matrix.image }}:${release_tag}" \
+          --image="${{ matrix.registry }}/${{ matrix.image }}:${release_tag}" \
           | tee results.sarif
 
     # TODO: re-enable roxctl scan results upload once quota issue has been resolved
