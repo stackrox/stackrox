@@ -746,7 +746,8 @@ jobs:
         directory: 'junit-reports'
 
   scan-images-with-roxctl:
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' ||
+      contains(github.event.pull_request.labels.*.name, 'scan-images-with-roxctl')
     needs:
       - define-job-matrix
       - build-and-push-main
