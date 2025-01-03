@@ -55,7 +55,7 @@ spec:
       serviceAccountName: sensor
       {{- if ._rox._securedClusterCertRefresh }}
       initContainers:
-      {{- if ._rox._securedClusterCertRefresh }}
+      {{- if ._rox.crs._enabled }}
       - image: {{ ._rox.image.main.fullRef | quote }}
         imagePullPolicy: {{ ._rox.sensor.imagePullPolicy | quote }}
         name: crs
@@ -310,10 +310,12 @@ spec:
           - key: ca.pem
             path: ca.pem
       {{- end }}
+      {{- if ._rox.crs._enabled }}
       - name: crs
         secret:
           secretName: cluster-registration-secret
           optional: true
+      {{- end }}
       - name: sensor-etc-ssl-volume
         emptyDir: {}
       - name: sensor-etc-pki-volume
