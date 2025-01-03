@@ -90,7 +90,7 @@ LABEL io.k8s.display-name="operator-bundle"
 LABEL io.openshift.tags="rhacs,operator-bundle,stackrox"
 LABEL maintainer="Red Hat, Inc."
 LABEL name="rhacs-operator-bundle"
-# We must set source-location to provide it to our custom Snapshot.
+# Custom Snapshot creation in `operator-bundle-pipeline` depends on source-location label to be set correctly.
 LABEL source-location="https://github.com/stackrox/stackrox"
 LABEL summary="Operator Bundle Image for Red Hat Advanced Cluster Security for Kubernetes"
 LABEL url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c"
