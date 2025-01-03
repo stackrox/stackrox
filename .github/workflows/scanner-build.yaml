@@ -36,25 +36,31 @@ jobs:
         source './scripts/ci/lib.sh'
 
         # If goarch is updated, be sure to update architectures in "push-scanner-manifests" below.
-        matrix='{ "build_and_push": { "name":["default"], "goos":["linux"], "goarch":["amd64", "arm64"] }, "push_manifests": { "name":["default"] } }'
+        matrix='{
+          "pre_build_scanner_go_binary": { "name":["default"], "goos":["linux"], "goarch":["amd64", "arm64"] },
+          "build_and_push_scanner": { },
+          "push_manifests": { "name":["default"] }
+        }'
 
         if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
-          matrix="$(jq '.build_and_push.goarch += ["ppc64le", "s390x"]' <<< "$matrix")"
+          matrix="$(jq '.pre_build_scanner_go_binary.goarch += ["ppc64le", "s390x"]' <<< "$matrix")"
         fi;
 
         # Conditionally add a prerelease build (binaries built with GOTAGS=release)
         if ! is_tagged; then
           if ! is_in_PR_context || pr_has_label ci-build-prerelease; then
-            matrix="$(jq '.build_and_push.name += ["prerelease"]' <<< "$matrix")"
+            matrix="$(jq '.pre_build_scanner_go_binary.name += ["prerelease"]' <<< "$matrix")"
             matrix="$(jq '.push_manifests.name += ["prerelease"]' <<< "$matrix")"
           fi
         fi
 
         # Conditionally add a -race debug build (binaries built with -race)
         if ! is_in_PR_context || pr_has_label ci-build-race-condition-debug; then
-          matrix="$(jq '.build_and_push.name += ["race-condition-debug"]' <<< "$matrix")"
+          matrix="$(jq '.pre_build_scanner_go_binary.name += ["race-condition-debug"]' <<< "$matrix")"
           matrix="$(jq '.push_manifests.name += ["race-condition-debug"]' <<< "$matrix")"
         fi
+
+        matrix="$(jq '.build_and_push_scanner = .pre_build_scanner_go_binary' <<< "$matrix")"
 
         echo "Job matrix after conditionals:"
         jq <<< "$matrix"
@@ -70,7 +76,7 @@ jobs:
       # default              - built with environment defaults (see handle-tagged-build & env.mk)
       # prerelease           - built with GOTAGS=release
       # race-condition-debug - built with -race
-      matrix: ${{ fromJson(needs.define-scanner-job-matrix.outputs.matrix).build_and_push }}
+      matrix: ${{ fromJson(needs.define-scanner-job-matrix.outputs.matrix).pre_build_scanner_go_binary }}
     container:
       image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.4
     steps:
@@ -181,7 +187,7 @@ jobs:
       # default              - built with environment defaults (see handle-tagged-build & env.mk)
       # prerelease           - built with GOTAGS=release
       # race-condition-debug - built with -race
-      matrix: ${{ fromJson(needs.define-scanner-job-matrix.outputs.matrix).build_and_push }}
+      matrix: ${{ fromJson(needs.define-scanner-job-matrix.outputs.matrix).build_and_push_scanner }}
     container:
       image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.4
       env:
