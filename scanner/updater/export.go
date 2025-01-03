@@ -2,7 +2,6 @@ package updater
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -175,22 +174,16 @@ func nvdOpts() []updates.ManagerOption {
 }
 
 func epssOpts(ctx context.Context) []updates.ManagerOption {
-	configJSON, err := json.Marshal(epss.Config{
-		URL: nil, // use default URL for now
-	})
-	if err != nil {
-		log.Printf("Failed to encode EPSS enricher config: %v", err)
-		return nil
-	}
-
 	return []updates.ManagerOption{
 		updates.WithEnabled([]string{}),
 		updates.WithConfigs(map[string]driver.ConfigUnmarshaler{
-			"clair.epss": driver.ConfigUnmarshaler{ // Provide an anonymous struct with the Config field
-				Config: &epss.Config{},
-				Unmarshal: func(data []byte, config interface{}) error {
-					return json.Unmarshal(configJSON, config)
-				},
+			"clair.epss": func(i interface{}) error {
+				cfg, ok := i.(*epss.Config)
+				if !ok {
+					return errors.New("internal error: config assertion failed")
+				}
+				cfg.URL = nil
+				return nil
 			},
 		}),
 	}
