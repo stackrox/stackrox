@@ -17,7 +17,7 @@ var (
 // Singleton provides the instance of EntityDataStore to use.
 func Singleton() EntityDataStore {
 	once.Do(func() {
-		storage := pgStore.New(globaldb.GetPostgres())
+		storage := pgStore.NewFullStore(globaldb.GetPostgres())
 		ds = NewEntityDataStore(storage, graphConfigDS.Singleton(), networktree.Singleton(), connection.ManagerSingleton())
 	})
 	return ds
