@@ -39,7 +39,7 @@ jobs:
         matrix='{
           "pre_build_scanner_go_binary": { "name":["default"], "goos":["linux"], "goarch":["amd64", "arm64"] },
           "build_and_push_scanner": { },
-          "push_manifests": { "name":["default"] }
+          "push_scanner_manifests": { "name":["default"] }
         }'
 
         if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
@@ -50,14 +50,14 @@ jobs:
         if ! is_tagged; then
           if ! is_in_PR_context || pr_has_label ci-build-prerelease; then
             matrix="$(jq '.pre_build_scanner_go_binary.name += ["prerelease"]' <<< "$matrix")"
-            matrix="$(jq '.push_manifests.name += ["prerelease"]' <<< "$matrix")"
+            matrix="$(jq '.push_scanner_manifests.name += ["prerelease"]' <<< "$matrix")"
           fi
         fi
 
         # Conditionally add a -race debug build (binaries built with -race)
         if ! is_in_PR_context || pr_has_label ci-build-race-condition-debug; then
           matrix="$(jq '.pre_build_scanner_go_binary.name += ["race-condition-debug"]' <<< "$matrix")"
-          matrix="$(jq '.push_manifests.name += ["race-condition-debug"]' <<< "$matrix")"
+          matrix="$(jq '.push_scanner_manifests.name += ["race-condition-debug"]' <<< "$matrix")"
         fi
 
         matrix="$(jq '.build_and_push_scanner = .pre_build_scanner_go_binary' <<< "$matrix")"
@@ -259,7 +259,7 @@ jobs:
       # default
       # prerelease
       # race-condition-debug
-      matrix: ${{ fromJson(needs.define-scanner-job-matrix.outputs.matrix).push_manifests }}
+      matrix: ${{ fromJson(needs.define-scanner-job-matrix.outputs.matrix).push_scanner_manifests }}
     container:
       image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.4
       env:
