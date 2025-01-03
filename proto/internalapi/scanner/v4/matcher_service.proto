@@ -14,6 +14,15 @@ message GetVulnerabilitiesRequest {
   Contents contents = 2;
 }
 
+message GetSBOMRequest {
+  string hash_id = 1;
+  Contents contents = 2;
+}
+
+message GetSBOMResponse {
+  bytes sbom = 1;
+}
+
 message Metadata {
   google.protobuf.Timestamp LastVulnerabilityUpdate = 1;
 }
@@ -25,4 +34,7 @@ service Matcher {
 
   // GetMetadata returns information on vulnerability metadata, ek.g., last update timestamp.
   rpc GetMetadata(google.protobuf.Empty) returns (Metadata);
+
+  // GetSBOM returns an SBOM from a previously indexed manifest.
+  rpc GetSBOM(GetSBOMRequest) returns (GetSBOMResponse);
 }
