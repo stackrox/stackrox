@@ -12,6 +12,12 @@ on:
     - reopened
     - synchronize
 
+defaults:
+  run:
+    # This enables `-o pipefail` for all jobs as compared to when shell isn't set.
+    # See https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#defaultsrunshell
+    shell: bash
+
 jobs:
   define-job-matrix:
     outputs:
