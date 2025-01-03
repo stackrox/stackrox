@@ -1,0 +1,5 @@
+# Sample instance.yaml configuration for StackRox roxctl.
+name: production-profile
+caCertPath: "/usr/local/share/ca-certificates"
+apiTokenPath: "/home/user/.secrets/api-token"
+endpoint: "https://prod.stackrox.example.com"
