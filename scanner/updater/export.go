@@ -175,25 +175,21 @@ func nvdOpts() []updates.ManagerOption {
 }
 
 func epssOpts(ctx context.Context) []updates.ManagerOption {
-	enricher := &epss.Enricher{}
 	configJSON, err := json.Marshal(epss.Config{
 		URL: nil, // use default URL for now
 	})
 	if err != nil {
-		log.Printf("Failed to encode EPSS enricher config : %v", err)
+		log.Printf("Failed to encode EPSS enricher config: %v", err)
 		return nil
 	}
 
-	err = enricher.Configure(ctx, func(config interface{}) error {
-		return json.Unmarshal(configJSON, config)
-	}, &http.Client{})
-	if err != nil {
-		log.Printf("Failed to configure EPSS enricher: %v", err)
-		return nil
-	}
 	return []updates.ManagerOption{
 		updates.WithEnabled([]string{}),
-		updates.WithOutOfTree([]driver.Updater{enricher}),
+		updates.WithConfigs(map[string]driver.ConfigUnmarshaler{
+			"clair.epss": func(config interface{}) error {
+				return json.Unmarshal(configJSON, config)
+			},
+		}),
 	}
 }
 
