@@ -14,6 +14,7 @@ LABEL \
     io.openshift.tags="rhacs,central-db,stackrox" \
     maintainer="Red Hat, Inc." \
     name="rhacs-central-db-rhel8" \
+    # Custom Snapshot creation in `operator-bundle-pipeline` depends on source-location label to be set correctly.
     source-location="https://github.com/stackrox/stackrox" \
     summary="Central DB for Red Hat Advanced Cluster Security for Kubernetes" \
     url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
