@@ -52,7 +52,6 @@ func newDeploymentDispatcher(deploymentType string, handler *deploymentHandler) 
 func (d *deploymentDispatcherImpl) ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) *component.ResourceEvent {
 	// Check owner references and build graph
 	// Every single object should implement this interface
-	log.Info("ProcessEvent call")
 	metaObj, ok := obj.(metaV1.Object)
 	if !ok {
 		log.Errorf("could not process %+v as it does not implement metaV1.Object", obj)
