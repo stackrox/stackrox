@@ -32,6 +32,7 @@ func init() {
 // DeploymentsWithMostSevereViolations returns deployments with their basic info and policies that are failing on it.
 func (resolver *Resolver) DeploymentsWithMostSevereViolations(ctx context.Context, args PaginatedQuery) ([]*DeploymentsWithMostSevereViolationsResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "DeploymentsWithMostSevereViolations")
+	log.Info("GraphQL DeploymentsWithMostSevereViolations resolver")
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
 	}

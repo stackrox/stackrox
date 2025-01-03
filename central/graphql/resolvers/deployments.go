@@ -68,6 +68,7 @@ func init() {
 // Deployment returns a GraphQL resolver for a given id
 func (resolver *Resolver) Deployment(ctx context.Context, args struct{ *graphql.ID }) (*deploymentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Deployment")
+	log.Info("GraphQL Deployment resolver")
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
 	}
@@ -78,6 +79,7 @@ func (resolver *Resolver) Deployment(ctx context.Context, args struct{ *graphql.
 // Deployments returns GraphQL resolvers all deployments
 func (resolver *Resolver) Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Deployments")
+	log.Info("GraphQL Deployments resolver")
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
 	}
@@ -92,6 +94,7 @@ func (resolver *Resolver) Deployments(ctx context.Context, args PaginatedQuery) 
 // DeploymentCount returns count all deployments across infrastructure
 func (resolver *Resolver) DeploymentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "DeploymentCount")
+	log.Info("GraphQL DeploymentCount resolver")
 	if err := readDeployments(ctx); err != nil {
 		return 0, err
 	}
@@ -723,6 +726,7 @@ func (resolver *deploymentResolver) LatestViolation(ctx context.Context, args Ra
 // PlottedImageVulnerabilities returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
 func (resolver *deploymentResolver) PlottedImageVulnerabilities(ctx context.Context, args RawQuery) (*PlottedImageVulnerabilitiesResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "PlottedImageVulnerabilities")
+	log.Info("GraphQL Deployment PlottedImageVulnerabilities resolver")
 	return resolver.root.PlottedImageVulnerabilities(resolver.withDeploymentScopeContext(ctx), args)
 }
 

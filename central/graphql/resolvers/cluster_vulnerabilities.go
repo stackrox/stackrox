@@ -77,6 +77,7 @@ func (resolver *Resolver) ClusterVulnerability(ctx context.Context, args IDQuery
 // ClusterVulnerabilities resolves a set of image vulnerabilities for the input query
 func (resolver *Resolver) ClusterVulnerabilities(ctx context.Context, q PaginatedQuery) ([]ClusterVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ClusterVulnerabilities")
+	log.Info("GraphQL ClusterVulnerabilities resolver")
 
 	// check permissions
 	if err := readClusters(ctx); err != nil {
@@ -114,6 +115,7 @@ func (resolver *Resolver) ClusterVulnerabilities(ctx context.Context, q Paginate
 // ClusterVulnerabilityCount returns count of image vulnerabilities for the input query
 func (resolver *Resolver) ClusterVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ClusterVulnerabilityCount")
+	log.Info("GraphQL ClusterVulnerabilityCount resolver")
 
 	// check permissions
 	if err := readClusters(ctx); err != nil {
