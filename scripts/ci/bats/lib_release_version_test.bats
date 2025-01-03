@@ -30,6 +30,11 @@ function setup() {
     assert_failure 1
 }
 
+@test "is_release_version() arbitrary tag is not a release" {
+    run is_release_version "random-test-1"
+    assert_failure 1
+}
+
 @test "is_RC_version() expects an arg" {
     run is_RC_version
     assert_failure 1
@@ -48,6 +53,11 @@ function setup() {
 
 @test "is_RC_version() a dev build is not an RC" {
     run is_RC_version "3.68.x-23-g8a2e05d0ec"
+    assert_failure 1
+}
+
+@test "is_RC_version() arbitrary tag is not a release" {
+    run is_RC_version "random-test-1"
     assert_failure 1
 }
 
