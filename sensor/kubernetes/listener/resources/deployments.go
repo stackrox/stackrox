@@ -62,6 +62,7 @@ func (d *deploymentDispatcherImpl) ProcessEvent(obj, oldObj interface{}, action 
 		defer d.handler.hierarchy.Remove(string(metaObj.GetUID()))
 		return d.handler.processWithType(obj, oldObj, action, d.deploymentType)
 	}
+	// print these objects to see if their address match whats sent in fake workloads
 	d.handler.hierarchy.Add(metaObj)
 	return d.handler.processWithType(obj, oldObj, action, d.deploymentType)
 }

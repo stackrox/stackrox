@@ -3,6 +3,7 @@ package fake
 import (
 	"context"
 	"os"
+	"runtime/pprof"
 	"time"
 
 	"github.com/cockroachdb/pebble"
@@ -17,6 +18,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/signal"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"gopkg.in/yaml.v3"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/version"
@@ -36,6 +38,12 @@ const (
 
 var (
 	log = logging.LoggerForModule()
+
+	gvr = schema.GroupVersionResource{
+		Group:    "apiextensions.k8s.io",
+		Version:  "v1",
+		Resource: "customresourcedefinitions",
+	}
 )
 
 func init() {
@@ -99,6 +107,7 @@ type WorkloadManager struct {
 	servicesInitialized concurrency.Signal
 	processes           signal.Pipeline
 	networkManager      manager.Manager
+	namespaces          []string
 }
 
 // WorkloadManagerConfig WorkloadManager's configuration
@@ -173,7 +182,43 @@ func (w *WorkloadManager) SetSignalHandlers(processPipeline signal.Pipeline, net
 func (w *WorkloadManager) clearActions() {
 	t := time.NewTicker(10 * time.Second)
 	for range t.C {
+		log.Infof("Cleared %d Actions from w.fakeClient", len(w.fakeClient.Actions()))
 		w.fakeClient.ClearActions()
+
+		gvk := schema.GroupVersionKind{
+			Kind:    "Pod",
+			Version: "v1",
+		}
+		objectctr := 0
+		for _, namespace := range w.namespaces {
+			list, err := w.fakeClient.Tracker().List(gvr, gvk, namespace)
+			if err != nil {
+				log.Errorf("Failed to gather tracker data for namespace %s", namespace)
+			}
+			objectctr = objectctr + meta.LenList(list)
+		}
+
+		numObjectsWithoutNamespace, numObjects, numWatchersGvrs, numWatchers := w.fakeClient.Tracker().GetNumObjectsWatchers()
+		log.Infof("Found %d objects without namespace, %d objects, %d watchergvrs, and %d watchers in tracker.", numObjectsWithoutNamespace, numObjects, numWatchersGvrs, numWatchers)
+
+		/*
+			log.Infof("Numbers of Reactions: %d - WatchReactions: %d - ProxyReactions: %d", len(w.fakeClient.ReactionChain), len(w.fakeClient.WatchReactionChain), len(w.fakeClient.ProxyReactionChain))
+			log.Infof("Number of resources: %d", len(w.fakeClient.Resources))
+				//tracker := w.fakeClient.Tracker()
+				tracker := reflect.ValueOf(w.fakeClient).Elem().FieldByName("tracker")
+				reflectTracker := reflect.ValueOf(tracker).Elem()
+
+				setValue := func(fieldName string, value interface{}) {
+					field := reflectTracker.FieldByName(fieldName)
+					//#nosec G103
+					field = reflect.NewAt(field.Type(), unsafe.Pointer(field.UnsafeAddr())).Elem()
+					field.Set(reflect.ValueOf(value).Elem())
+				}
+
+				setValue("objects", nil)
+				setValue("watchers", nil)
+		*/
+		log.Infof("Currently running %d go routines", pprof.Lookup("goroutine").Count())
 	}
 }
 
@@ -181,10 +226,11 @@ func (w *WorkloadManager) initializePreexistingResources() {
 	var objects []runtime.Object
 
 	numNamespaces := defaultNamespaceNum
-	if num := w.workload.NumNamespaces; num != 0 {
+	if num := w.workload.NumNamespaces; num > 0 {
 		numNamespaces = num
 	}
 	for _, n := range getNamespaces(numNamespaces, w.getIDsForPrefix(namespacePrefix)) {
+		w.namespaces = append(w.namespaces, n.String())
 		w.writeID(namespacePrefix, n.UID)
 		objects = append(objects, n)
 	}
@@ -241,11 +287,6 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		Platform:     "linux/amd64",
 	}
 	scheme := runtime.NewScheme()
-	gvr := schema.GroupVersionResource{
-		Group:    "apiextensions.k8s.io",
-		Version:  "v1",
-		Resource: "customresourcedefinitions",
-	}
 
 	clientSet := &clientSetImpl{
 		kubernetes: w.fakeClient,
