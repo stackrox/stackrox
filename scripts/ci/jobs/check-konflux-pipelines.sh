@@ -6,10 +6,12 @@
 set -euo pipefail
 
 ensure_create_snapshot_runs_last() {
-    expected_runafter="$(yq eval '.spec.tasks[] | select(.name != "create-acs-style-snapshot") | .name' .tekton/operator-bundle-pipeline.yaml | sort)"
-    actual_runafter="$(yq eval '.spec.tasks[] | select(.name == "create-acs-style-snapshot") | .runAfter[]' .tekton/operator-bundle-pipeline.yaml)"
+    local pipeline_path=".tekton/operator-bundle-pipeline.yaml"
+    local task_name="create-acs-style-snapshot"
+    expected_runafter="$(yq eval '.spec.tasks[] | select(.name != '\"${task_name}\"') | .name' "${pipeline_path}" | sort)"
+    actual_runafter="$(yq eval '.spec.tasks[] | select(.name == '\"${task_name}\"') | .runAfter[]' "${pipeline_path}")"
 
-    echo "➤ .tekton/operator-bundle-pipeline.yaml // checking create-acs-style-snapshot: task's runAfter contents shall match the expected ones (left - expected, right - actual)."
+    echo "➤ ${pipeline_path} // checking create-acs-style-snapshot: task's runAfter contents shall match the expected ones (left - expected, right - actual)."
     if ! diff --side-by-side <(echo "${expected_runafter}") <(echo "${actual_runafter}"); then
         echo >&2 -e """
 ✗ ERROR:
@@ -17,7 +19,7 @@ ensure_create_snapshot_runs_last() {
 The actual runAfter contents do not match the expectations.
 To resolve:
 
-1. Open .tekton/operator-bundle-pipeline.yaml and locate the create-acs-style-snapshot task
+1. Open ${pipeline_path} and locate the ${task_name} task
 2. Update the runAfter attribute of this task to this list of all previous tasks in the pipeline (sorted alphabetically):
 
 ${expected_runafter}

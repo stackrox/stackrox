@@ -42,7 +42,7 @@ spec:
 
       # Turning raw_info into an array for easier handling.
       infos=( $raw_info )
-      if [ ${#infos[@]} -ne 3 ]; then
+      if [[ "${#infos[@]}" -ne 3 ]]; then
         echo "ERROR: Not all required information was found. Verify that the 'vcs-ref' and 'source-location' labels are set on the image $(params.IMAGE)."
         exit 1
       fi

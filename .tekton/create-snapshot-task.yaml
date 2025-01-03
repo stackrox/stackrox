@@ -39,6 +39,8 @@ spec:
       valueFrom:
         fieldRef:
           fieldPath: metadata.labels['appstudio.openshift.io/application']
+    - name: COMPONENTS
+      value: $(params.COMPONENTS)
     - name: NAMESPACE
       valueFrom:
         fieldRef:
@@ -47,8 +49,6 @@ spec:
       valueFrom:
         fieldRef:
           fieldPath: metadata.labels['tekton.dev/pipelineRun']
-    - name: COMPONENTS
-      value: $(params.COMPONENTS)
     - name: PRODUCT_VERSION
       value: $(params.PRODUCT_VERSION)
     - name: SNAPSHOT_NAME_RESULT_PATH

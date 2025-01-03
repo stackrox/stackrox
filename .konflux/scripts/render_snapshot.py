@@ -6,7 +6,11 @@ import os
 import re
 
 
-def determine_product_version_suffix(application):
+def parse_components_input(raw_input):
+    return json.loads(raw_input)
+
+
+def determine_resource_version_suffix(application):
     match = re.search(r"(?P<version>-\d+-\d+$)", application)
     if match:
         return match.group("version")
@@ -19,8 +23,18 @@ def determine_snapshot_name(prefix, product_version):
     return f"{prefix}{product_version}-{timestamp}".lower()
 
 
-def parse_components_input(raw_input):
-    return json.loads(raw_input)
+def process_component(component, resource_version_suffix):
+    validate_component(component)
+    return {
+        "containerImage": component["containerImage"],
+        "name": f"{component['name']}{resource_version_suffix}",
+        "source": {
+            "git": {
+                "revision": component["revision"],
+                "url": component["repository"]
+            }
+        }
+    }
 
 
 def validate_component(component):
@@ -30,20 +44,6 @@ def validate_component(component):
         and component["revision"] != ""
         and component["repository"] != ""
     ), "Component must have component name, containerImage, revision and repository set."
-
-
-def process_component(component, product_version_suffix):
-    validate_component(component)
-    return {
-        "containerImage": component["containerImage"],
-        "name": f"{component['name']}{product_version_suffix}",
-        "source": {
-            "git": {
-                "revision": component["revision"],
-                "url": component["repository"]
-            }
-        }
-    }
 
 
 def construct_snapshot(
@@ -85,9 +85,9 @@ if __name__ == '__main__':
     product_version = os.environ["PRODUCT_VERSION"]
     snapshot_name_result_path = os.environ["SNAPSHOT_NAME_RESULT_PATH"]
 
-    product_version_suffix = determine_product_version_suffix(application)
-    snapshot_name = determine_snapshot_name(application, product_version_suffix)
-    components = [process_component(c, product_version_suffix) for c in raw_components]
+    resource_version_suffix = determine_resource_version_suffix(application)
+    snapshot_name = determine_snapshot_name(application, resource_version_suffix)
+    components = [process_component(c, resource_version_suffix) for c in raw_components]
 
     snapshot = construct_snapshot(
         snapshot_name=snapshot_name,
