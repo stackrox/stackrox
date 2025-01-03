@@ -11,9 +11,9 @@ spec:
     type: string
   results:
   - name: GIT_REF
-    description: Git commit for the image's source code if provided as `vcs-ref` image label.
+    description: Git commit for the image's source code from `vcs-ref` image label.
   - name: GIT_REPO
-    description: Git repository URL for the image's source code if provided as `source-location` image label.
+    description: Git repository URL for the image's source code from `source-location` image label.
   - name: IMAGE_DIGEST
     description: Image digest in the format `sha256:abcdef0123`.
   steps:

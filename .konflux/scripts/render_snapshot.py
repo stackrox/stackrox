@@ -14,6 +14,7 @@ def determine_product_version_suffix(application):
 
 
 def determine_snapshot_name(prefix, product_version):
+    # The timestamp is added to the Snapshot name so that we can differentiate Snapshots from rebuilds of the same commit or tag.
     timestamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     return f"{prefix}{product_version}-{timestamp}".lower()
 
@@ -28,7 +29,7 @@ def validate_component(component):
         and component["containerImage"] != ""
         and component["revision"] != ""
         and component["repository"] != ""
-    ), "Component must have component name, ref, revision and repository set."
+    ), "Component must have component name, containerImage, revision and repository set."
 
 
 def process_component(component, product_version_suffix):

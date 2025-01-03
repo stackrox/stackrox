@@ -46,7 +46,7 @@ spec:
     - name: PIPELINE_RUN_NAME
       valueFrom:
         fieldRef:
-          fieldPath: metadata.labels['tekton.dev/pipeline']
+          fieldPath: metadata.labels['tekton.dev/pipelineRun']
     - name: COMPONENTS
       value: $(params.COMPONENTS)
     - name: PRODUCT_VERSION

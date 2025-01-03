@@ -9,7 +9,7 @@ ensure_create_snapshot_runs_last() {
     expected_runafter="$(yq eval '.spec.tasks[] | select(.name != "create-acs-style-snapshot") | .name' .tekton/operator-bundle-pipeline.yaml | sort)"
     actual_runafter="$(yq eval '.spec.tasks[] | select(.name == "create-acs-style-snapshot") | .runAfter[]' .tekton/operator-bundle-pipeline.yaml)"
 
-    echo "➤ .tekton/operator-bundle-pipeline.yaml // create-acs-style-snapshot: task's runAfter contents shall match the expected ones (left - expected, right - actual)."
+    echo "➤ .tekton/operator-bundle-pipeline.yaml // checking create-acs-style-snapshot: task's runAfter contents shall match the expected ones (left - expected, right - actual)."
     if ! diff --side-by-side <(echo "${expected_runafter}") <(echo "${actual_runafter}"); then
         echo >&2 -e """
 ✗ ERROR:
