@@ -80,11 +80,11 @@ func (ts *TLSChallengeSuite) TestTLSChallenge() {
 	// which results in no Collector container in the pod (only Compliance is present).
 	// That condition makes it impossible for Sensor to parse the Collector image version from
 	// the Collector container because such container is absent. This sends Sensor into an error state
-	// and the said log line is never produced. A fix for that is trivial, but would require a patch release for 3.74
+	// and the said log line is never produced. A fix for that is trivial, but would require a patch release for 3.74,
 	// and we do not do patch releases for this version anymore.
 	// See getCollectorInfo() in sensor/kubernetes/clusterhealth/updater.go for implementation details
 	if os.Getenv("COLLECTION_METHOD") == "NO_COLLECTION" {
-		ts.T().Skipf("The \"COLLECTION_METHOD\" is set to \"NO_COLLECTION\"." +
+		ts.T().Skipf("The \"COLLECTION_METHOD\" is set to \"NO_COLLECTION\". " +
 			"For compatibility tests against Sensor version 3.74.x, \"NO_COLLECTION\" is the only valid setting.")
 	}
 	const (
