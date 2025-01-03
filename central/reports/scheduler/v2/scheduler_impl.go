@@ -406,25 +406,25 @@ func findAndRemoveFromQueue(reportRequestsQueue *list.List, pred func(req *repor
 func (s *scheduler) validateAndPersistSnapshot(ctx context.Context, snapshot *storage.ReportSnapshot, reSubmission bool) (string, error) {
 	s.dbLock.Lock()
 	defer s.dbLock.Unlock()
+	log.Infof("rep snapshot validated is %s", snapshot)
 
-	log.Infof("rep snapshot is %s", snapshot)
+	if snapshot.GetReportStatus().GetReportRequestType() == storage.ReportStatus_ON_DEMAND {
+		userHasAnotherReport, err := s.doesUserHavePendingReport(snapshot.GetReportConfigurationId(), snapshot.GetRequester().GetId())
+		if err != nil {
+			return "", err
+		}
+		if userHasAnotherReport {
+			return "", errors.Wrapf(errox.AlreadyExists, "User already has a report running for config ID '%s'",
+				snapshot.GetReportConfigurationId())
+		}
+	}
+
 	var err error
 	if !reSubmission {
-		log.Info("not resubmission vuln rep job")
-		if snapshot.GetReportStatus().GetReportRequestType() == storage.ReportStatus_ON_DEMAND {
-			userHasAnotherReport, err := s.doesUserHavePendingReport(snapshot.GetReportConfigurationId(), snapshot.GetRequester().GetId())
-			if err != nil {
-				return "", err
-			}
-			if userHasAnotherReport {
-				return "", errors.Wrapf(errox.AlreadyExists, "User already has a report running for config ID '%s'",
-					snapshot.GetReportConfigurationId())
-			}
-		}
-
+		log.Info("job is not resubmitted")
 		snapshot.ReportId, err = s.reportSnapshotStore.AddReportSnapshot(ctx, snapshot)
 	} else {
-		log.Info("resubmitting vuln report job")
+		log.Info("job is resubmitted")
 		err = s.reportSnapshotStore.UpdateReportSnapshot(ctx, snapshot)
 	}
 
