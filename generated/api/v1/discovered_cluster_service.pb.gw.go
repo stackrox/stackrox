@@ -10,6 +10,7 @@ package v1
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
 
@@ -24,135 +25,114 @@ import (
 )
 
 // Suppress "imported and not used" errors
-var _ codes.Code
-var _ io.Reader
-var _ status.Status
-var _ = runtime.String
-var _ = utilities.NewDoubleArray
-var _ = metadata.Join
-
 var (
-	filter_DiscoveredClustersService_CountDiscoveredClusters_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+	_ codes.Code
+	_ io.Reader
+	_ status.Status
+	_ = errors.New
+	_ = runtime.String
+	_ = utilities.NewDoubleArray
+	_ = metadata.Join
 )
 
-func request_DiscoveredClustersService_CountDiscoveredClusters_0(ctx context.Context, marshaler runtime.Marshaler, client DiscoveredClustersServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq CountDiscoveredClustersRequest
-	var metadata runtime.ServerMetadata
+var filter_DiscoveredClustersService_CountDiscoveredClusters_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 
+func request_DiscoveredClustersService_CountDiscoveredClusters_0(ctx context.Context, marshaler runtime.Marshaler, client DiscoveredClustersServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq CountDiscoveredClustersRequest
+		metadata runtime.ServerMetadata
+	)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_DiscoveredClustersService_CountDiscoveredClusters_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.CountDiscoveredClusters(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_DiscoveredClustersService_CountDiscoveredClusters_0(ctx context.Context, marshaler runtime.Marshaler, server DiscoveredClustersServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq CountDiscoveredClustersRequest
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq CountDiscoveredClustersRequest
+		metadata runtime.ServerMetadata
+	)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_DiscoveredClustersService_CountDiscoveredClusters_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.CountDiscoveredClusters(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_DiscoveredClustersService_GetDiscoveredCluster_0(ctx context.Context, marshaler runtime.Marshaler, client DiscoveredClustersServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetDiscoveredClusterRequest
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq GetDiscoveredClusterRequest
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["id"]
+	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-
 	protoReq.Id, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
-
 	msg, err := client.GetDiscoveredCluster(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_DiscoveredClustersService_GetDiscoveredCluster_0(ctx context.Context, marshaler runtime.Marshaler, server DiscoveredClustersServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetDiscoveredClusterRequest
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq GetDiscoveredClusterRequest
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["id"]
+	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-
 	protoReq.Id, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
-
 	msg, err := server.GetDiscoveredCluster(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
-var (
-	filter_DiscoveredClustersService_ListDiscoveredClusters_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
-)
+var filter_DiscoveredClustersService_ListDiscoveredClusters_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 
 func request_DiscoveredClustersService_ListDiscoveredClusters_0(ctx context.Context, marshaler runtime.Marshaler, client DiscoveredClustersServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ListDiscoveredClustersRequest
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq ListDiscoveredClustersRequest
+		metadata runtime.ServerMetadata
+	)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_DiscoveredClustersService_ListDiscoveredClusters_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.ListDiscoveredClusters(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_DiscoveredClustersService_ListDiscoveredClusters_0(ctx context.Context, marshaler runtime.Marshaler, server DiscoveredClustersServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ListDiscoveredClustersRequest
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq ListDiscoveredClustersRequest
+		metadata runtime.ServerMetadata
+	)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_DiscoveredClustersService_ListDiscoveredClusters_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.ListDiscoveredClusters(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 // RegisterDiscoveredClustersServiceHandlerServer registers the http handlers for service DiscoveredClustersService to "mux".
@@ -161,16 +141,13 @@ func local_request_DiscoveredClustersService_ListDiscoveredClusters_0(ctx contex
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterDiscoveredClustersServiceHandlerFromEndpoint instead.
 // GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterDiscoveredClustersServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server DiscoveredClustersServiceServer) error {
-
-	mux.Handle("GET", pattern_DiscoveredClustersService_CountDiscoveredClusters_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_DiscoveredClustersService_CountDiscoveredClusters_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.DiscoveredClustersService/CountDiscoveredClusters", runtime.WithHTTPPathPattern("/v1/count/discovered-clusters"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.DiscoveredClustersService/CountDiscoveredClusters", runtime.WithHTTPPathPattern("/v1/count/discovered-clusters"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -182,20 +159,15 @@ func RegisterDiscoveredClustersServiceHandlerServer(ctx context.Context, mux *ru
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_DiscoveredClustersService_CountDiscoveredClusters_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_DiscoveredClustersService_GetDiscoveredCluster_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_DiscoveredClustersService_GetDiscoveredCluster_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.DiscoveredClustersService/GetDiscoveredCluster", runtime.WithHTTPPathPattern("/v1/discovered-clusters/{id}"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.DiscoveredClustersService/GetDiscoveredCluster", runtime.WithHTTPPathPattern("/v1/discovered-clusters/{id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -207,20 +179,15 @@ func RegisterDiscoveredClustersServiceHandlerServer(ctx context.Context, mux *ru
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_DiscoveredClustersService_GetDiscoveredCluster_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_DiscoveredClustersService_ListDiscoveredClusters_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_DiscoveredClustersService_ListDiscoveredClusters_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.DiscoveredClustersService/ListDiscoveredClusters", runtime.WithHTTPPathPattern("/v1/discovered-clusters"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.DiscoveredClustersService/ListDiscoveredClusters", runtime.WithHTTPPathPattern("/v1/discovered-clusters"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -232,9 +199,7 @@ func RegisterDiscoveredClustersServiceHandlerServer(ctx context.Context, mux *ru
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_DiscoveredClustersService_ListDiscoveredClusters_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
 
 	return nil
@@ -261,7 +226,6 @@ func RegisterDiscoveredClustersServiceHandlerFromEndpoint(ctx context.Context, m
 			}
 		}()
 	}()
-
 	return RegisterDiscoveredClustersServiceHandler(ctx, mux, conn)
 }
 
@@ -277,14 +241,11 @@ func RegisterDiscoveredClustersServiceHandler(ctx context.Context, mux *runtime.
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
 // "DiscoveredClustersServiceClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterDiscoveredClustersServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client DiscoveredClustersServiceClient) error {
-
-	mux.Handle("GET", pattern_DiscoveredClustersService_CountDiscoveredClusters_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_DiscoveredClustersService_CountDiscoveredClusters_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.DiscoveredClustersService/CountDiscoveredClusters", runtime.WithHTTPPathPattern("/v1/count/discovered-clusters"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.DiscoveredClustersService/CountDiscoveredClusters", runtime.WithHTTPPathPattern("/v1/count/discovered-clusters"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -295,18 +256,13 @@ func RegisterDiscoveredClustersServiceHandlerClient(ctx context.Context, mux *ru
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_DiscoveredClustersService_CountDiscoveredClusters_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_DiscoveredClustersService_GetDiscoveredCluster_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_DiscoveredClustersService_GetDiscoveredCluster_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.DiscoveredClustersService/GetDiscoveredCluster", runtime.WithHTTPPathPattern("/v1/discovered-clusters/{id}"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.DiscoveredClustersService/GetDiscoveredCluster", runtime.WithHTTPPathPattern("/v1/discovered-clusters/{id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -317,18 +273,13 @@ func RegisterDiscoveredClustersServiceHandlerClient(ctx context.Context, mux *ru
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_DiscoveredClustersService_GetDiscoveredCluster_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_DiscoveredClustersService_ListDiscoveredClusters_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_DiscoveredClustersService_ListDiscoveredClusters_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.DiscoveredClustersService/ListDiscoveredClusters", runtime.WithHTTPPathPattern("/v1/discovered-clusters"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.DiscoveredClustersService/ListDiscoveredClusters", runtime.WithHTTPPathPattern("/v1/discovered-clusters"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -339,26 +290,19 @@ func RegisterDiscoveredClustersServiceHandlerClient(ctx context.Context, mux *ru
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_DiscoveredClustersService_ListDiscoveredClusters_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
 	return nil
 }
 
 var (
 	pattern_DiscoveredClustersService_CountDiscoveredClusters_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "count", "discovered-clusters"}, ""))
-
-	pattern_DiscoveredClustersService_GetDiscoveredCluster_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "discovered-clusters", "id"}, ""))
-
-	pattern_DiscoveredClustersService_ListDiscoveredClusters_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "discovered-clusters"}, ""))
+	pattern_DiscoveredClustersService_GetDiscoveredCluster_0    = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "discovered-clusters", "id"}, ""))
+	pattern_DiscoveredClustersService_ListDiscoveredClusters_0  = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "discovered-clusters"}, ""))
 )
 
 var (
 	forward_DiscoveredClustersService_CountDiscoveredClusters_0 = runtime.ForwardResponseMessage
-
-	forward_DiscoveredClustersService_GetDiscoveredCluster_0 = runtime.ForwardResponseMessage
-
-	forward_DiscoveredClustersService_ListDiscoveredClusters_0 = runtime.ForwardResponseMessage
+	forward_DiscoveredClustersService_GetDiscoveredCluster_0    = runtime.ForwardResponseMessage
+	forward_DiscoveredClustersService_ListDiscoveredClusters_0  = runtime.ForwardResponseMessage
 )

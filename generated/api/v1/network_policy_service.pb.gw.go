@@ -10,6 +10,7 @@ package v1
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
 
@@ -24,871 +25,632 @@ import (
 )
 
 // Suppress "imported and not used" errors
-var _ codes.Code
-var _ io.Reader
-var _ status.Status
-var _ = runtime.String
-var _ = utilities.NewDoubleArray
-var _ = metadata.Join
+var (
+	_ codes.Code
+	_ io.Reader
+	_ status.Status
+	_ = errors.New
+	_ = runtime.String
+	_ = utilities.NewDoubleArray
+	_ = metadata.Join
+)
 
 func request_NetworkPolicyService_GetNetworkPolicy_0(ctx context.Context, marshaler runtime.Marshaler, client NetworkPolicyServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ResourceByID
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq ResourceByID
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["id"]
+	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-
 	protoReq.Id, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
-
 	msg, err := client.GetNetworkPolicy(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_NetworkPolicyService_GetNetworkPolicy_0(ctx context.Context, marshaler runtime.Marshaler, server NetworkPolicyServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ResourceByID
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq ResourceByID
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["id"]
+	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-
 	protoReq.Id, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
-
 	msg, err := server.GetNetworkPolicy(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
-var (
-	filter_NetworkPolicyService_GetNetworkPolicies_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
-)
+var filter_NetworkPolicyService_GetNetworkPolicies_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 
 func request_NetworkPolicyService_GetNetworkPolicies_0(ctx context.Context, marshaler runtime.Marshaler, client NetworkPolicyServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetNetworkPoliciesRequest
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq GetNetworkPoliciesRequest
+		metadata runtime.ServerMetadata
+	)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_NetworkPolicyService_GetNetworkPolicies_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.GetNetworkPolicies(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_NetworkPolicyService_GetNetworkPolicies_0(ctx context.Context, marshaler runtime.Marshaler, server NetworkPolicyServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetNetworkPoliciesRequest
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq GetNetworkPoliciesRequest
+		metadata runtime.ServerMetadata
+	)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_NetworkPolicyService_GetNetworkPolicies_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.GetNetworkPolicies(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
-var (
-	filter_NetworkPolicyService_GetNetworkGraph_0 = &utilities.DoubleArray{Encoding: map[string]int{"cluster_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
-)
+var filter_NetworkPolicyService_GetNetworkGraph_0 = &utilities.DoubleArray{Encoding: map[string]int{"cluster_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 
 func request_NetworkPolicyService_GetNetworkGraph_0(ctx context.Context, marshaler runtime.Marshaler, client NetworkPolicyServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetNetworkGraphRequest
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq GetNetworkGraphRequest
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["cluster_id"]
+	val, ok := pathParams["cluster_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
 	}
-
 	protoReq.ClusterId, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cluster_id", err)
 	}
-
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_NetworkPolicyService_GetNetworkGraph_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.GetNetworkGraph(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_NetworkPolicyService_GetNetworkGraph_0(ctx context.Context, marshaler runtime.Marshaler, server NetworkPolicyServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetNetworkGraphRequest
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq GetNetworkGraphRequest
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["cluster_id"]
+	val, ok := pathParams["cluster_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
 	}
-
 	protoReq.ClusterId, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cluster_id", err)
 	}
-
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_NetworkPolicyService_GetNetworkGraph_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.GetNetworkGraph(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
-var (
-	filter_NetworkPolicyService_GetNetworkGraphEpoch_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
-)
+var filter_NetworkPolicyService_GetNetworkGraphEpoch_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 
 func request_NetworkPolicyService_GetNetworkGraphEpoch_0(ctx context.Context, marshaler runtime.Marshaler, client NetworkPolicyServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetNetworkGraphEpochRequest
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq GetNetworkGraphEpochRequest
+		metadata runtime.ServerMetadata
+	)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_NetworkPolicyService_GetNetworkGraphEpoch_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.GetNetworkGraphEpoch(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_NetworkPolicyService_GetNetworkGraphEpoch_0(ctx context.Context, marshaler runtime.Marshaler, server NetworkPolicyServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetNetworkGraphEpochRequest
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq GetNetworkGraphEpochRequest
+		metadata runtime.ServerMetadata
+	)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_NetworkPolicyService_GetNetworkGraphEpoch_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.GetNetworkGraphEpoch(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_NetworkPolicyService_ApplyNetworkPolicy_0(ctx context.Context, marshaler runtime.Marshaler, client NetworkPolicyServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ApplyNetworkPolicyYamlRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq.Modification); err != nil && err != io.EOF {
+	var (
+		protoReq ApplyNetworkPolicyYamlRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq.Modification); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["cluster_id"]
+	val, ok := pathParams["cluster_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
 	}
-
 	protoReq.ClusterId, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cluster_id", err)
 	}
-
 	msg, err := client.ApplyNetworkPolicy(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_NetworkPolicyService_ApplyNetworkPolicy_0(ctx context.Context, marshaler runtime.Marshaler, server NetworkPolicyServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ApplyNetworkPolicyYamlRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq.Modification); err != nil && err != io.EOF {
+	var (
+		protoReq ApplyNetworkPolicyYamlRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq.Modification); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["cluster_id"]
+	val, ok := pathParams["cluster_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
 	}
-
 	protoReq.ClusterId, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cluster_id", err)
 	}
-
 	msg, err := server.ApplyNetworkPolicy(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_NetworkPolicyService_GetUndoModification_0(ctx context.Context, marshaler runtime.Marshaler, client NetworkPolicyServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetUndoModificationRequest
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq GetUndoModificationRequest
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["cluster_id"]
+	val, ok := pathParams["cluster_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
 	}
-
 	protoReq.ClusterId, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cluster_id", err)
 	}
-
 	msg, err := client.GetUndoModification(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_NetworkPolicyService_GetUndoModification_0(ctx context.Context, marshaler runtime.Marshaler, server NetworkPolicyServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetUndoModificationRequest
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq GetUndoModificationRequest
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["cluster_id"]
+	val, ok := pathParams["cluster_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
 	}
-
 	protoReq.ClusterId, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cluster_id", err)
 	}
-
 	msg, err := server.GetUndoModification(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
-var (
-	filter_NetworkPolicyService_SimulateNetworkGraph_0 = &utilities.DoubleArray{Encoding: map[string]int{"modification": 0, "cluster_id": 1}, Base: []int{1, 1, 2, 0, 0}, Check: []int{0, 1, 1, 2, 3}}
-)
+var filter_NetworkPolicyService_SimulateNetworkGraph_0 = &utilities.DoubleArray{Encoding: map[string]int{"modification": 0, "cluster_id": 1}, Base: []int{1, 1, 2, 0, 0}, Check: []int{0, 1, 1, 2, 3}}
 
 func request_NetworkPolicyService_SimulateNetworkGraph_0(ctx context.Context, marshaler runtime.Marshaler, client NetworkPolicyServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq SimulateNetworkGraphRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq.Modification); err != nil && err != io.EOF {
+	var (
+		protoReq SimulateNetworkGraphRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq.Modification); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["cluster_id"]
+	val, ok := pathParams["cluster_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
 	}
-
 	protoReq.ClusterId, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cluster_id", err)
 	}
-
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_NetworkPolicyService_SimulateNetworkGraph_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.SimulateNetworkGraph(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_NetworkPolicyService_SimulateNetworkGraph_0(ctx context.Context, marshaler runtime.Marshaler, server NetworkPolicyServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq SimulateNetworkGraphRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq.Modification); err != nil && err != io.EOF {
+	var (
+		protoReq SimulateNetworkGraphRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq.Modification); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["cluster_id"]
+	val, ok := pathParams["cluster_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
 	}
-
 	protoReq.ClusterId, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cluster_id", err)
 	}
-
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_NetworkPolicyService_SimulateNetworkGraph_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.SimulateNetworkGraph(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
-var (
-	filter_NetworkPolicyService_SendNetworkPolicyYAML_0 = &utilities.DoubleArray{Encoding: map[string]int{"modification": 0, "cluster_id": 1}, Base: []int{1, 1, 2, 0, 0}, Check: []int{0, 1, 1, 2, 3}}
-)
+var filter_NetworkPolicyService_SendNetworkPolicyYAML_0 = &utilities.DoubleArray{Encoding: map[string]int{"modification": 0, "cluster_id": 1}, Base: []int{1, 1, 2, 0, 0}, Check: []int{0, 1, 1, 2, 3}}
 
 func request_NetworkPolicyService_SendNetworkPolicyYAML_0(ctx context.Context, marshaler runtime.Marshaler, client NetworkPolicyServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq SendNetworkPolicyYamlRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq.Modification); err != nil && err != io.EOF {
+	var (
+		protoReq SendNetworkPolicyYamlRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq.Modification); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["cluster_id"]
+	val, ok := pathParams["cluster_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
 	}
-
 	protoReq.ClusterId, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cluster_id", err)
 	}
-
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_NetworkPolicyService_SendNetworkPolicyYAML_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.SendNetworkPolicyYAML(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_NetworkPolicyService_SendNetworkPolicyYAML_0(ctx context.Context, marshaler runtime.Marshaler, server NetworkPolicyServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq SendNetworkPolicyYamlRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq.Modification); err != nil && err != io.EOF {
+	var (
+		protoReq SendNetworkPolicyYamlRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq.Modification); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["cluster_id"]
+	val, ok := pathParams["cluster_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
 	}
-
 	protoReq.ClusterId, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cluster_id", err)
 	}
-
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_NetworkPolicyService_SendNetworkPolicyYAML_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.SendNetworkPolicyYAML(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
-var (
-	filter_NetworkPolicyService_GenerateNetworkPolicies_0 = &utilities.DoubleArray{Encoding: map[string]int{"cluster_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
-)
+var filter_NetworkPolicyService_GenerateNetworkPolicies_0 = &utilities.DoubleArray{Encoding: map[string]int{"cluster_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 
 func request_NetworkPolicyService_GenerateNetworkPolicies_0(ctx context.Context, marshaler runtime.Marshaler, client NetworkPolicyServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GenerateNetworkPoliciesRequest
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq GenerateNetworkPoliciesRequest
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["cluster_id"]
+	val, ok := pathParams["cluster_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
 	}
-
 	protoReq.ClusterId, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cluster_id", err)
 	}
-
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_NetworkPolicyService_GenerateNetworkPolicies_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.GenerateNetworkPolicies(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_NetworkPolicyService_GenerateNetworkPolicies_0(ctx context.Context, marshaler runtime.Marshaler, server NetworkPolicyServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GenerateNetworkPoliciesRequest
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq GenerateNetworkPoliciesRequest
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["cluster_id"]
+	val, ok := pathParams["cluster_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
 	}
-
 	protoReq.ClusterId, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cluster_id", err)
 	}
-
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_NetworkPolicyService_GenerateNetworkPolicies_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.GenerateNetworkPolicies(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_NetworkPolicyService_GetBaselineGeneratedNetworkPolicyForDeployment_0(ctx context.Context, marshaler runtime.Marshaler, client NetworkPolicyServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetBaselineGeneratedPolicyForDeploymentRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq GetBaselineGeneratedPolicyForDeploymentRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["deployment_id"]
+	val, ok := pathParams["deployment_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "deployment_id")
 	}
-
 	protoReq.DeploymentId, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "deployment_id", err)
 	}
-
 	msg, err := client.GetBaselineGeneratedNetworkPolicyForDeployment(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_NetworkPolicyService_GetBaselineGeneratedNetworkPolicyForDeployment_0(ctx context.Context, marshaler runtime.Marshaler, server NetworkPolicyServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetBaselineGeneratedPolicyForDeploymentRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq GetBaselineGeneratedPolicyForDeploymentRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["deployment_id"]
+	val, ok := pathParams["deployment_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "deployment_id")
 	}
-
 	protoReq.DeploymentId, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "deployment_id", err)
 	}
-
 	msg, err := server.GetBaselineGeneratedNetworkPolicyForDeployment(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_NetworkPolicyService_GetAllowedPeersFromCurrentPolicyForDeployment_0(ctx context.Context, marshaler runtime.Marshaler, client NetworkPolicyServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ResourceByID
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq ResourceByID
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["id"]
+	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-
 	protoReq.Id, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
-
 	msg, err := client.GetAllowedPeersFromCurrentPolicyForDeployment(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_NetworkPolicyService_GetAllowedPeersFromCurrentPolicyForDeployment_0(ctx context.Context, marshaler runtime.Marshaler, server NetworkPolicyServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ResourceByID
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq ResourceByID
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["id"]
+	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-
 	protoReq.Id, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
-
 	msg, err := server.GetAllowedPeersFromCurrentPolicyForDeployment(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_NetworkPolicyService_ApplyNetworkPolicyYamlForDeployment_0(ctx context.Context, marshaler runtime.Marshaler, client NetworkPolicyServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ApplyNetworkPolicyYamlForDeploymentRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq ApplyNetworkPolicyYamlForDeploymentRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["deployment_id"]
+	val, ok := pathParams["deployment_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "deployment_id")
 	}
-
 	protoReq.DeploymentId, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "deployment_id", err)
 	}
-
 	msg, err := client.ApplyNetworkPolicyYamlForDeployment(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_NetworkPolicyService_ApplyNetworkPolicyYamlForDeployment_0(ctx context.Context, marshaler runtime.Marshaler, server NetworkPolicyServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ApplyNetworkPolicyYamlForDeploymentRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq ApplyNetworkPolicyYamlForDeploymentRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["deployment_id"]
+	val, ok := pathParams["deployment_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "deployment_id")
 	}
-
 	protoReq.DeploymentId, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "deployment_id", err)
 	}
-
 	msg, err := server.ApplyNetworkPolicyYamlForDeployment(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_NetworkPolicyService_GetUndoModificationForDeployment_0(ctx context.Context, marshaler runtime.Marshaler, client NetworkPolicyServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ResourceByID
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq ResourceByID
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["id"]
+	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-
 	protoReq.Id, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
-
 	msg, err := client.GetUndoModificationForDeployment(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_NetworkPolicyService_GetUndoModificationForDeployment_0(ctx context.Context, marshaler runtime.Marshaler, server NetworkPolicyServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ResourceByID
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq ResourceByID
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["id"]
+	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-
 	protoReq.Id, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
-
 	msg, err := server.GetUndoModificationForDeployment(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_NetworkPolicyService_GetDiffFlowsBetweenPolicyAndBaselineForDeployment_0(ctx context.Context, marshaler runtime.Marshaler, client NetworkPolicyServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ResourceByID
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq ResourceByID
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["id"]
+	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-
 	protoReq.Id, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
-
 	msg, err := client.GetDiffFlowsBetweenPolicyAndBaselineForDeployment(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_NetworkPolicyService_GetDiffFlowsBetweenPolicyAndBaselineForDeployment_0(ctx context.Context, marshaler runtime.Marshaler, server NetworkPolicyServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ResourceByID
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq ResourceByID
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["id"]
+	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-
 	protoReq.Id, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
-
 	msg, err := server.GetDiffFlowsBetweenPolicyAndBaselineForDeployment(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_NetworkPolicyService_GetDiffFlowsFromUndoModificationForDeployment_0(ctx context.Context, marshaler runtime.Marshaler, client NetworkPolicyServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ResourceByID
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq ResourceByID
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["id"]
+	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-
 	protoReq.Id, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
-
 	msg, err := client.GetDiffFlowsFromUndoModificationForDeployment(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_NetworkPolicyService_GetDiffFlowsFromUndoModificationForDeployment_0(ctx context.Context, marshaler runtime.Marshaler, server NetworkPolicyServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ResourceByID
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq ResourceByID
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["id"]
+	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-
 	protoReq.Id, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
-
 	msg, err := server.GetDiffFlowsFromUndoModificationForDeployment(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 // RegisterNetworkPolicyServiceHandlerServer registers the http handlers for service NetworkPolicyService to "mux".
@@ -897,16 +659,13 @@ func local_request_NetworkPolicyService_GetDiffFlowsFromUndoModificationForDeplo
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterNetworkPolicyServiceHandlerFromEndpoint instead.
 // GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterNetworkPolicyServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server NetworkPolicyServiceServer) error {
-
-	mux.Handle("GET", pattern_NetworkPolicyService_GetNetworkPolicy_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_NetworkPolicyService_GetNetworkPolicy_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.NetworkPolicyService/GetNetworkPolicy", runtime.WithHTTPPathPattern("/v1/networkpolicies/{id}"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.NetworkPolicyService/GetNetworkPolicy", runtime.WithHTTPPathPattern("/v1/networkpolicies/{id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -918,20 +677,15 @@ func RegisterNetworkPolicyServiceHandlerServer(ctx context.Context, mux *runtime
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_NetworkPolicyService_GetNetworkPolicy_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_NetworkPolicyService_GetNetworkPolicies_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_NetworkPolicyService_GetNetworkPolicies_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.NetworkPolicyService/GetNetworkPolicies", runtime.WithHTTPPathPattern("/v1/networkpolicies"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.NetworkPolicyService/GetNetworkPolicies", runtime.WithHTTPPathPattern("/v1/networkpolicies"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -943,20 +697,15 @@ func RegisterNetworkPolicyServiceHandlerServer(ctx context.Context, mux *runtime
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_NetworkPolicyService_GetNetworkPolicies_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_NetworkPolicyService_GetNetworkGraph_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_NetworkPolicyService_GetNetworkGraph_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.NetworkPolicyService/GetNetworkGraph", runtime.WithHTTPPathPattern("/v1/networkpolicies/cluster/{cluster_id}"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.NetworkPolicyService/GetNetworkGraph", runtime.WithHTTPPathPattern("/v1/networkpolicies/cluster/{cluster_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -968,20 +717,15 @@ func RegisterNetworkPolicyServiceHandlerServer(ctx context.Context, mux *runtime
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_NetworkPolicyService_GetNetworkGraph_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_NetworkPolicyService_GetNetworkGraphEpoch_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_NetworkPolicyService_GetNetworkGraphEpoch_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.NetworkPolicyService/GetNetworkGraphEpoch", runtime.WithHTTPPathPattern("/v1/networkpolicies/graph/epoch"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.NetworkPolicyService/GetNetworkGraphEpoch", runtime.WithHTTPPathPattern("/v1/networkpolicies/graph/epoch"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -993,20 +737,15 @@ func RegisterNetworkPolicyServiceHandlerServer(ctx context.Context, mux *runtime
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_NetworkPolicyService_GetNetworkGraphEpoch_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_NetworkPolicyService_ApplyNetworkPolicy_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_NetworkPolicyService_ApplyNetworkPolicy_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.NetworkPolicyService/ApplyNetworkPolicy", runtime.WithHTTPPathPattern("/v1/networkpolicies/apply/{cluster_id}"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.NetworkPolicyService/ApplyNetworkPolicy", runtime.WithHTTPPathPattern("/v1/networkpolicies/apply/{cluster_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1018,20 +757,15 @@ func RegisterNetworkPolicyServiceHandlerServer(ctx context.Context, mux *runtime
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_NetworkPolicyService_ApplyNetworkPolicy_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_NetworkPolicyService_GetUndoModification_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_NetworkPolicyService_GetUndoModification_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.NetworkPolicyService/GetUndoModification", runtime.WithHTTPPathPattern("/v1/networkpolicies/undo/{cluster_id}"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.NetworkPolicyService/GetUndoModification", runtime.WithHTTPPathPattern("/v1/networkpolicies/undo/{cluster_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1043,20 +777,15 @@ func RegisterNetworkPolicyServiceHandlerServer(ctx context.Context, mux *runtime
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_NetworkPolicyService_GetUndoModification_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_NetworkPolicyService_SimulateNetworkGraph_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_NetworkPolicyService_SimulateNetworkGraph_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.NetworkPolicyService/SimulateNetworkGraph", runtime.WithHTTPPathPattern("/v1/networkpolicies/simulate/{cluster_id}"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.NetworkPolicyService/SimulateNetworkGraph", runtime.WithHTTPPathPattern("/v1/networkpolicies/simulate/{cluster_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1068,20 +797,15 @@ func RegisterNetworkPolicyServiceHandlerServer(ctx context.Context, mux *runtime
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_NetworkPolicyService_SimulateNetworkGraph_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_NetworkPolicyService_SendNetworkPolicyYAML_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_NetworkPolicyService_SendNetworkPolicyYAML_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.NetworkPolicyService/SendNetworkPolicyYAML", runtime.WithHTTPPathPattern("/v1/networkpolicies/simulate/{cluster_id}/notify"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.NetworkPolicyService/SendNetworkPolicyYAML", runtime.WithHTTPPathPattern("/v1/networkpolicies/simulate/{cluster_id}/notify"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1093,20 +817,15 @@ func RegisterNetworkPolicyServiceHandlerServer(ctx context.Context, mux *runtime
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_NetworkPolicyService_SendNetworkPolicyYAML_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_NetworkPolicyService_GenerateNetworkPolicies_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_NetworkPolicyService_GenerateNetworkPolicies_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.NetworkPolicyService/GenerateNetworkPolicies", runtime.WithHTTPPathPattern("/v1/networkpolicies/generate/{cluster_id}"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.NetworkPolicyService/GenerateNetworkPolicies", runtime.WithHTTPPathPattern("/v1/networkpolicies/generate/{cluster_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1118,20 +837,15 @@ func RegisterNetworkPolicyServiceHandlerServer(ctx context.Context, mux *runtime
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_NetworkPolicyService_GenerateNetworkPolicies_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_NetworkPolicyService_GetBaselineGeneratedNetworkPolicyForDeployment_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_NetworkPolicyService_GetBaselineGeneratedNetworkPolicyForDeployment_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.NetworkPolicyService/GetBaselineGeneratedNetworkPolicyForDeployment", runtime.WithHTTPPathPattern("/v1/networkpolicies/generate/baseline/{deployment_id}"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.NetworkPolicyService/GetBaselineGeneratedNetworkPolicyForDeployment", runtime.WithHTTPPathPattern("/v1/networkpolicies/generate/baseline/{deployment_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1143,20 +857,15 @@ func RegisterNetworkPolicyServiceHandlerServer(ctx context.Context, mux *runtime
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_NetworkPolicyService_GetBaselineGeneratedNetworkPolicyForDeployment_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_NetworkPolicyService_GetAllowedPeersFromCurrentPolicyForDeployment_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_NetworkPolicyService_GetAllowedPeersFromCurrentPolicyForDeployment_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.NetworkPolicyService/GetAllowedPeersFromCurrentPolicyForDeployment", runtime.WithHTTPPathPattern("/v1/networkpolicies/allowedpeers/{id}"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.NetworkPolicyService/GetAllowedPeersFromCurrentPolicyForDeployment", runtime.WithHTTPPathPattern("/v1/networkpolicies/allowedpeers/{id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1168,20 +877,15 @@ func RegisterNetworkPolicyServiceHandlerServer(ctx context.Context, mux *runtime
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_NetworkPolicyService_GetAllowedPeersFromCurrentPolicyForDeployment_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_NetworkPolicyService_ApplyNetworkPolicyYamlForDeployment_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_NetworkPolicyService_ApplyNetworkPolicyYamlForDeployment_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.NetworkPolicyService/ApplyNetworkPolicyYamlForDeployment", runtime.WithHTTPPathPattern("/v1/networkpolicies/apply/deployment/{deployment_id}"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.NetworkPolicyService/ApplyNetworkPolicyYamlForDeployment", runtime.WithHTTPPathPattern("/v1/networkpolicies/apply/deployment/{deployment_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1193,20 +897,15 @@ func RegisterNetworkPolicyServiceHandlerServer(ctx context.Context, mux *runtime
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_NetworkPolicyService_ApplyNetworkPolicyYamlForDeployment_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_NetworkPolicyService_GetUndoModificationForDeployment_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_NetworkPolicyService_GetUndoModificationForDeployment_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.NetworkPolicyService/GetUndoModificationForDeployment", runtime.WithHTTPPathPattern("/v1/networkpolicies/undo/deployment/{id}"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.NetworkPolicyService/GetUndoModificationForDeployment", runtime.WithHTTPPathPattern("/v1/networkpolicies/undo/deployment/{id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1218,20 +917,15 @@ func RegisterNetworkPolicyServiceHandlerServer(ctx context.Context, mux *runtime
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_NetworkPolicyService_GetUndoModificationForDeployment_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_NetworkPolicyService_GetDiffFlowsBetweenPolicyAndBaselineForDeployment_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_NetworkPolicyService_GetDiffFlowsBetweenPolicyAndBaselineForDeployment_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.NetworkPolicyService/GetDiffFlowsBetweenPolicyAndBaselineForDeployment", runtime.WithHTTPPathPattern("/v1/networkpolicies/baselinecomparison/{id}"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.NetworkPolicyService/GetDiffFlowsBetweenPolicyAndBaselineForDeployment", runtime.WithHTTPPathPattern("/v1/networkpolicies/baselinecomparison/{id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1243,20 +937,15 @@ func RegisterNetworkPolicyServiceHandlerServer(ctx context.Context, mux *runtime
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_NetworkPolicyService_GetDiffFlowsBetweenPolicyAndBaselineForDeployment_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_NetworkPolicyService_GetDiffFlowsFromUndoModificationForDeployment_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_NetworkPolicyService_GetDiffFlowsFromUndoModificationForDeployment_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.NetworkPolicyService/GetDiffFlowsFromUndoModificationForDeployment", runtime.WithHTTPPathPattern("/v1/networkpolicies/undobaselinecomparison/{id}"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.NetworkPolicyService/GetDiffFlowsFromUndoModificationForDeployment", runtime.WithHTTPPathPattern("/v1/networkpolicies/undobaselinecomparison/{id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1268,9 +957,7 @@ func RegisterNetworkPolicyServiceHandlerServer(ctx context.Context, mux *runtime
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_NetworkPolicyService_GetDiffFlowsFromUndoModificationForDeployment_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
 
 	return nil
@@ -1297,7 +984,6 @@ func RegisterNetworkPolicyServiceHandlerFromEndpoint(ctx context.Context, mux *r
 			}
 		}()
 	}()
-
 	return RegisterNetworkPolicyServiceHandler(ctx, mux, conn)
 }
 
@@ -1313,14 +999,11 @@ func RegisterNetworkPolicyServiceHandler(ctx context.Context, mux *runtime.Serve
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
 // "NetworkPolicyServiceClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterNetworkPolicyServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client NetworkPolicyServiceClient) error {
-
-	mux.Handle("GET", pattern_NetworkPolicyService_GetNetworkPolicy_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_NetworkPolicyService_GetNetworkPolicy_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.NetworkPolicyService/GetNetworkPolicy", runtime.WithHTTPPathPattern("/v1/networkpolicies/{id}"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.NetworkPolicyService/GetNetworkPolicy", runtime.WithHTTPPathPattern("/v1/networkpolicies/{id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1331,18 +1014,13 @@ func RegisterNetworkPolicyServiceHandlerClient(ctx context.Context, mux *runtime
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_NetworkPolicyService_GetNetworkPolicy_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_NetworkPolicyService_GetNetworkPolicies_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_NetworkPolicyService_GetNetworkPolicies_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.NetworkPolicyService/GetNetworkPolicies", runtime.WithHTTPPathPattern("/v1/networkpolicies"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.NetworkPolicyService/GetNetworkPolicies", runtime.WithHTTPPathPattern("/v1/networkpolicies"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1353,18 +1031,13 @@ func RegisterNetworkPolicyServiceHandlerClient(ctx context.Context, mux *runtime
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_NetworkPolicyService_GetNetworkPolicies_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_NetworkPolicyService_GetNetworkGraph_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_NetworkPolicyService_GetNetworkGraph_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.NetworkPolicyService/GetNetworkGraph", runtime.WithHTTPPathPattern("/v1/networkpolicies/cluster/{cluster_id}"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.NetworkPolicyService/GetNetworkGraph", runtime.WithHTTPPathPattern("/v1/networkpolicies/cluster/{cluster_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1375,18 +1048,13 @@ func RegisterNetworkPolicyServiceHandlerClient(ctx context.Context, mux *runtime
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_NetworkPolicyService_GetNetworkGraph_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_NetworkPolicyService_GetNetworkGraphEpoch_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_NetworkPolicyService_GetNetworkGraphEpoch_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.NetworkPolicyService/GetNetworkGraphEpoch", runtime.WithHTTPPathPattern("/v1/networkpolicies/graph/epoch"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.NetworkPolicyService/GetNetworkGraphEpoch", runtime.WithHTTPPathPattern("/v1/networkpolicies/graph/epoch"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1397,18 +1065,13 @@ func RegisterNetworkPolicyServiceHandlerClient(ctx context.Context, mux *runtime
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_NetworkPolicyService_GetNetworkGraphEpoch_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_NetworkPolicyService_ApplyNetworkPolicy_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_NetworkPolicyService_ApplyNetworkPolicy_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.NetworkPolicyService/ApplyNetworkPolicy", runtime.WithHTTPPathPattern("/v1/networkpolicies/apply/{cluster_id}"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.NetworkPolicyService/ApplyNetworkPolicy", runtime.WithHTTPPathPattern("/v1/networkpolicies/apply/{cluster_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1419,18 +1082,13 @@ func RegisterNetworkPolicyServiceHandlerClient(ctx context.Context, mux *runtime
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_NetworkPolicyService_ApplyNetworkPolicy_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_NetworkPolicyService_GetUndoModification_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_NetworkPolicyService_GetUndoModification_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.NetworkPolicyService/GetUndoModification", runtime.WithHTTPPathPattern("/v1/networkpolicies/undo/{cluster_id}"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.NetworkPolicyService/GetUndoModification", runtime.WithHTTPPathPattern("/v1/networkpolicies/undo/{cluster_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1441,18 +1099,13 @@ func RegisterNetworkPolicyServiceHandlerClient(ctx context.Context, mux *runtime
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_NetworkPolicyService_GetUndoModification_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_NetworkPolicyService_SimulateNetworkGraph_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_NetworkPolicyService_SimulateNetworkGraph_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.NetworkPolicyService/SimulateNetworkGraph", runtime.WithHTTPPathPattern("/v1/networkpolicies/simulate/{cluster_id}"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.NetworkPolicyService/SimulateNetworkGraph", runtime.WithHTTPPathPattern("/v1/networkpolicies/simulate/{cluster_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1463,18 +1116,13 @@ func RegisterNetworkPolicyServiceHandlerClient(ctx context.Context, mux *runtime
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_NetworkPolicyService_SimulateNetworkGraph_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_NetworkPolicyService_SendNetworkPolicyYAML_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_NetworkPolicyService_SendNetworkPolicyYAML_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.NetworkPolicyService/SendNetworkPolicyYAML", runtime.WithHTTPPathPattern("/v1/networkpolicies/simulate/{cluster_id}/notify"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.NetworkPolicyService/SendNetworkPolicyYAML", runtime.WithHTTPPathPattern("/v1/networkpolicies/simulate/{cluster_id}/notify"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1485,18 +1133,13 @@ func RegisterNetworkPolicyServiceHandlerClient(ctx context.Context, mux *runtime
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_NetworkPolicyService_SendNetworkPolicyYAML_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_NetworkPolicyService_GenerateNetworkPolicies_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_NetworkPolicyService_GenerateNetworkPolicies_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.NetworkPolicyService/GenerateNetworkPolicies", runtime.WithHTTPPathPattern("/v1/networkpolicies/generate/{cluster_id}"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.NetworkPolicyService/GenerateNetworkPolicies", runtime.WithHTTPPathPattern("/v1/networkpolicies/generate/{cluster_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1507,18 +1150,13 @@ func RegisterNetworkPolicyServiceHandlerClient(ctx context.Context, mux *runtime
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_NetworkPolicyService_GenerateNetworkPolicies_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_NetworkPolicyService_GetBaselineGeneratedNetworkPolicyForDeployment_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_NetworkPolicyService_GetBaselineGeneratedNetworkPolicyForDeployment_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.NetworkPolicyService/GetBaselineGeneratedNetworkPolicyForDeployment", runtime.WithHTTPPathPattern("/v1/networkpolicies/generate/baseline/{deployment_id}"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.NetworkPolicyService/GetBaselineGeneratedNetworkPolicyForDeployment", runtime.WithHTTPPathPattern("/v1/networkpolicies/generate/baseline/{deployment_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1529,18 +1167,13 @@ func RegisterNetworkPolicyServiceHandlerClient(ctx context.Context, mux *runtime
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_NetworkPolicyService_GetBaselineGeneratedNetworkPolicyForDeployment_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_NetworkPolicyService_GetAllowedPeersFromCurrentPolicyForDeployment_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_NetworkPolicyService_GetAllowedPeersFromCurrentPolicyForDeployment_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.NetworkPolicyService/GetAllowedPeersFromCurrentPolicyForDeployment", runtime.WithHTTPPathPattern("/v1/networkpolicies/allowedpeers/{id}"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.NetworkPolicyService/GetAllowedPeersFromCurrentPolicyForDeployment", runtime.WithHTTPPathPattern("/v1/networkpolicies/allowedpeers/{id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1551,18 +1184,13 @@ func RegisterNetworkPolicyServiceHandlerClient(ctx context.Context, mux *runtime
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_NetworkPolicyService_GetAllowedPeersFromCurrentPolicyForDeployment_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_NetworkPolicyService_ApplyNetworkPolicyYamlForDeployment_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_NetworkPolicyService_ApplyNetworkPolicyYamlForDeployment_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.NetworkPolicyService/ApplyNetworkPolicyYamlForDeployment", runtime.WithHTTPPathPattern("/v1/networkpolicies/apply/deployment/{deployment_id}"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.NetworkPolicyService/ApplyNetworkPolicyYamlForDeployment", runtime.WithHTTPPathPattern("/v1/networkpolicies/apply/deployment/{deployment_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1573,18 +1201,13 @@ func RegisterNetworkPolicyServiceHandlerClient(ctx context.Context, mux *runtime
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_NetworkPolicyService_ApplyNetworkPolicyYamlForDeployment_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_NetworkPolicyService_GetUndoModificationForDeployment_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_NetworkPolicyService_GetUndoModificationForDeployment_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.NetworkPolicyService/GetUndoModificationForDeployment", runtime.WithHTTPPathPattern("/v1/networkpolicies/undo/deployment/{id}"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.NetworkPolicyService/GetUndoModificationForDeployment", runtime.WithHTTPPathPattern("/v1/networkpolicies/undo/deployment/{id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1595,18 +1218,13 @@ func RegisterNetworkPolicyServiceHandlerClient(ctx context.Context, mux *runtime
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_NetworkPolicyService_GetUndoModificationForDeployment_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_NetworkPolicyService_GetDiffFlowsBetweenPolicyAndBaselineForDeployment_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_NetworkPolicyService_GetDiffFlowsBetweenPolicyAndBaselineForDeployment_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.NetworkPolicyService/GetDiffFlowsBetweenPolicyAndBaselineForDeployment", runtime.WithHTTPPathPattern("/v1/networkpolicies/baselinecomparison/{id}"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.NetworkPolicyService/GetDiffFlowsBetweenPolicyAndBaselineForDeployment", runtime.WithHTTPPathPattern("/v1/networkpolicies/baselinecomparison/{id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1617,18 +1235,13 @@ func RegisterNetworkPolicyServiceHandlerClient(ctx context.Context, mux *runtime
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_NetworkPolicyService_GetDiffFlowsBetweenPolicyAndBaselineForDeployment_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_NetworkPolicyService_GetDiffFlowsFromUndoModificationForDeployment_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_NetworkPolicyService_GetDiffFlowsFromUndoModificationForDeployment_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.NetworkPolicyService/GetDiffFlowsFromUndoModificationForDeployment", runtime.WithHTTPPathPattern("/v1/networkpolicies/undobaselinecomparison/{id}"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.NetworkPolicyService/GetDiffFlowsFromUndoModificationForDeployment", runtime.WithHTTPPathPattern("/v1/networkpolicies/undobaselinecomparison/{id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1639,74 +1252,43 @@ func RegisterNetworkPolicyServiceHandlerClient(ctx context.Context, mux *runtime
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_NetworkPolicyService_GetDiffFlowsFromUndoModificationForDeployment_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
 	return nil
 }
 
 var (
-	pattern_NetworkPolicyService_GetNetworkPolicy_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "networkpolicies", "id"}, ""))
-
-	pattern_NetworkPolicyService_GetNetworkPolicies_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "networkpolicies"}, ""))
-
-	pattern_NetworkPolicyService_GetNetworkGraph_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "networkpolicies", "cluster", "cluster_id"}, ""))
-
-	pattern_NetworkPolicyService_GetNetworkGraphEpoch_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v1", "networkpolicies", "graph", "epoch"}, ""))
-
-	pattern_NetworkPolicyService_ApplyNetworkPolicy_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "networkpolicies", "apply", "cluster_id"}, ""))
-
-	pattern_NetworkPolicyService_GetUndoModification_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "networkpolicies", "undo", "cluster_id"}, ""))
-
-	pattern_NetworkPolicyService_SimulateNetworkGraph_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "networkpolicies", "simulate", "cluster_id"}, ""))
-
-	pattern_NetworkPolicyService_SendNetworkPolicyYAML_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v1", "networkpolicies", "simulate", "cluster_id", "notify"}, ""))
-
-	pattern_NetworkPolicyService_GenerateNetworkPolicies_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "networkpolicies", "generate", "cluster_id"}, ""))
-
-	pattern_NetworkPolicyService_GetBaselineGeneratedNetworkPolicyForDeployment_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "networkpolicies", "generate", "baseline", "deployment_id"}, ""))
-
-	pattern_NetworkPolicyService_GetAllowedPeersFromCurrentPolicyForDeployment_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "networkpolicies", "allowedpeers", "id"}, ""))
-
-	pattern_NetworkPolicyService_ApplyNetworkPolicyYamlForDeployment_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "networkpolicies", "apply", "deployment", "deployment_id"}, ""))
-
-	pattern_NetworkPolicyService_GetUndoModificationForDeployment_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "networkpolicies", "undo", "deployment", "id"}, ""))
-
+	pattern_NetworkPolicyService_GetNetworkPolicy_0                                  = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "networkpolicies", "id"}, ""))
+	pattern_NetworkPolicyService_GetNetworkPolicies_0                                = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "networkpolicies"}, ""))
+	pattern_NetworkPolicyService_GetNetworkGraph_0                                   = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "networkpolicies", "cluster", "cluster_id"}, ""))
+	pattern_NetworkPolicyService_GetNetworkGraphEpoch_0                              = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v1", "networkpolicies", "graph", "epoch"}, ""))
+	pattern_NetworkPolicyService_ApplyNetworkPolicy_0                                = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "networkpolicies", "apply", "cluster_id"}, ""))
+	pattern_NetworkPolicyService_GetUndoModification_0                               = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "networkpolicies", "undo", "cluster_id"}, ""))
+	pattern_NetworkPolicyService_SimulateNetworkGraph_0                              = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "networkpolicies", "simulate", "cluster_id"}, ""))
+	pattern_NetworkPolicyService_SendNetworkPolicyYAML_0                             = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v1", "networkpolicies", "simulate", "cluster_id", "notify"}, ""))
+	pattern_NetworkPolicyService_GenerateNetworkPolicies_0                           = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "networkpolicies", "generate", "cluster_id"}, ""))
+	pattern_NetworkPolicyService_GetBaselineGeneratedNetworkPolicyForDeployment_0    = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "networkpolicies", "generate", "baseline", "deployment_id"}, ""))
+	pattern_NetworkPolicyService_GetAllowedPeersFromCurrentPolicyForDeployment_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "networkpolicies", "allowedpeers", "id"}, ""))
+	pattern_NetworkPolicyService_ApplyNetworkPolicyYamlForDeployment_0               = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "networkpolicies", "apply", "deployment", "deployment_id"}, ""))
+	pattern_NetworkPolicyService_GetUndoModificationForDeployment_0                  = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "networkpolicies", "undo", "deployment", "id"}, ""))
 	pattern_NetworkPolicyService_GetDiffFlowsBetweenPolicyAndBaselineForDeployment_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "networkpolicies", "baselinecomparison", "id"}, ""))
-
-	pattern_NetworkPolicyService_GetDiffFlowsFromUndoModificationForDeployment_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "networkpolicies", "undobaselinecomparison", "id"}, ""))
+	pattern_NetworkPolicyService_GetDiffFlowsFromUndoModificationForDeployment_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "networkpolicies", "undobaselinecomparison", "id"}, ""))
 )
 
 var (
-	forward_NetworkPolicyService_GetNetworkPolicy_0 = runtime.ForwardResponseMessage
-
-	forward_NetworkPolicyService_GetNetworkPolicies_0 = runtime.ForwardResponseMessage
-
-	forward_NetworkPolicyService_GetNetworkGraph_0 = runtime.ForwardResponseMessage
-
-	forward_NetworkPolicyService_GetNetworkGraphEpoch_0 = runtime.ForwardResponseMessage
-
-	forward_NetworkPolicyService_ApplyNetworkPolicy_0 = runtime.ForwardResponseMessage
-
-	forward_NetworkPolicyService_GetUndoModification_0 = runtime.ForwardResponseMessage
-
-	forward_NetworkPolicyService_SimulateNetworkGraph_0 = runtime.ForwardResponseMessage
-
-	forward_NetworkPolicyService_SendNetworkPolicyYAML_0 = runtime.ForwardResponseMessage
-
-	forward_NetworkPolicyService_GenerateNetworkPolicies_0 = runtime.ForwardResponseMessage
-
-	forward_NetworkPolicyService_GetBaselineGeneratedNetworkPolicyForDeployment_0 = runtime.ForwardResponseMessage
-
-	forward_NetworkPolicyService_GetAllowedPeersFromCurrentPolicyForDeployment_0 = runtime.ForwardResponseMessage
-
-	forward_NetworkPolicyService_ApplyNetworkPolicyYamlForDeployment_0 = runtime.ForwardResponseMessage
-
-	forward_NetworkPolicyService_GetUndoModificationForDeployment_0 = runtime.ForwardResponseMessage
-
+	forward_NetworkPolicyService_GetNetworkPolicy_0                                  = runtime.ForwardResponseMessage
+	forward_NetworkPolicyService_GetNetworkPolicies_0                                = runtime.ForwardResponseMessage
+	forward_NetworkPolicyService_GetNetworkGraph_0                                   = runtime.ForwardResponseMessage
+	forward_NetworkPolicyService_GetNetworkGraphEpoch_0                              = runtime.ForwardResponseMessage
+	forward_NetworkPolicyService_ApplyNetworkPolicy_0                                = runtime.ForwardResponseMessage
+	forward_NetworkPolicyService_GetUndoModification_0                               = runtime.ForwardResponseMessage
+	forward_NetworkPolicyService_SimulateNetworkGraph_0                              = runtime.ForwardResponseMessage
+	forward_NetworkPolicyService_SendNetworkPolicyYAML_0                             = runtime.ForwardResponseMessage
+	forward_NetworkPolicyService_GenerateNetworkPolicies_0                           = runtime.ForwardResponseMessage
+	forward_NetworkPolicyService_GetBaselineGeneratedNetworkPolicyForDeployment_0    = runtime.ForwardResponseMessage
+	forward_NetworkPolicyService_GetAllowedPeersFromCurrentPolicyForDeployment_0     = runtime.ForwardResponseMessage
+	forward_NetworkPolicyService_ApplyNetworkPolicyYamlForDeployment_0               = runtime.ForwardResponseMessage
+	forward_NetworkPolicyService_GetUndoModificationForDeployment_0                  = runtime.ForwardResponseMessage
 	forward_NetworkPolicyService_GetDiffFlowsBetweenPolicyAndBaselineForDeployment_0 = runtime.ForwardResponseMessage
-
-	forward_NetworkPolicyService_GetDiffFlowsFromUndoModificationForDeployment_0 = runtime.ForwardResponseMessage
+	forward_NetworkPolicyService_GetDiffFlowsFromUndoModificationForDeployment_0     = runtime.ForwardResponseMessage
 )

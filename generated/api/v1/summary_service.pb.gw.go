@@ -10,6 +10,7 @@ package v1
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
 
@@ -24,29 +25,32 @@ import (
 )
 
 // Suppress "imported and not used" errors
-var _ codes.Code
-var _ io.Reader
-var _ status.Status
-var _ = runtime.String
-var _ = utilities.NewDoubleArray
-var _ = metadata.Join
+var (
+	_ codes.Code
+	_ io.Reader
+	_ status.Status
+	_ = errors.New
+	_ = runtime.String
+	_ = utilities.NewDoubleArray
+	_ = metadata.Join
+)
 
 func request_SummaryService_GetSummaryCounts_0(ctx context.Context, marshaler runtime.Marshaler, client SummaryServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq Empty
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq Empty
+		metadata runtime.ServerMetadata
+	)
 	msg, err := client.GetSummaryCounts(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_SummaryService_GetSummaryCounts_0(ctx context.Context, marshaler runtime.Marshaler, server SummaryServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq Empty
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq Empty
+		metadata runtime.ServerMetadata
+	)
 	msg, err := server.GetSummaryCounts(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 // RegisterSummaryServiceHandlerServer registers the http handlers for service SummaryService to "mux".
@@ -55,16 +59,13 @@ func local_request_SummaryService_GetSummaryCounts_0(ctx context.Context, marsha
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterSummaryServiceHandlerFromEndpoint instead.
 // GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterSummaryServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server SummaryServiceServer) error {
-
-	mux.Handle("GET", pattern_SummaryService_GetSummaryCounts_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_SummaryService_GetSummaryCounts_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.SummaryService/GetSummaryCounts", runtime.WithHTTPPathPattern("/v1/summary/counts"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.SummaryService/GetSummaryCounts", runtime.WithHTTPPathPattern("/v1/summary/counts"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -76,9 +77,7 @@ func RegisterSummaryServiceHandlerServer(ctx context.Context, mux *runtime.Serve
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_SummaryService_GetSummaryCounts_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
 
 	return nil
@@ -105,7 +104,6 @@ func RegisterSummaryServiceHandlerFromEndpoint(ctx context.Context, mux *runtime
 			}
 		}()
 	}()
-
 	return RegisterSummaryServiceHandler(ctx, mux, conn)
 }
 
@@ -121,14 +119,11 @@ func RegisterSummaryServiceHandler(ctx context.Context, mux *runtime.ServeMux, c
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
 // "SummaryServiceClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterSummaryServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client SummaryServiceClient) error {
-
-	mux.Handle("GET", pattern_SummaryService_GetSummaryCounts_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_SummaryService_GetSummaryCounts_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.SummaryService/GetSummaryCounts", runtime.WithHTTPPathPattern("/v1/summary/counts"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.SummaryService/GetSummaryCounts", runtime.WithHTTPPathPattern("/v1/summary/counts"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -139,11 +134,8 @@ func RegisterSummaryServiceHandlerClient(ctx context.Context, mux *runtime.Serve
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_SummaryService_GetSummaryCounts_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
 	return nil
 }
 
