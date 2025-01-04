@@ -195,9 +195,7 @@ func (s *scheduler) runSingleReport(req *reportGen.ReportRequest) {
 	defer s.readyForReports.Signal()
 	defer s.concurrencySema.Release(1)
 	defer s.removeFromRunningReportConfigs(req.ReportSnapshot.GetReportConfigurationId())
-	//for testing only
-	log.Infof("sleep for 2 mins to test Vuln reporting")
-	time.Sleep(2 * time.Minute)
+
 	s.reportGenerator.ProcessReportRequest(req)
 }
 
@@ -328,7 +326,6 @@ func (s *scheduler) queuePendingReports() {
 	}
 
 	for _, snap := range pendingReports {
-		log.Infof("pending job is %s", pendingReports)
 		_, found, err := s.reportConfigDatastore.GetReportConfiguration(scheduledCtx, snap.GetReportConfigurationId())
 		if err != nil {
 			log.Errorf("Error rescheduling pending report job for report config ID '%s': %s", snap.GetReportConfigurationId(), err)
@@ -406,25 +403,21 @@ func findAndRemoveFromQueue(reportRequestsQueue *list.List, pred func(req *repor
 func (s *scheduler) validateAndPersistSnapshot(ctx context.Context, snapshot *storage.ReportSnapshot, reSubmission bool) (string, error) {
 	s.dbLock.Lock()
 	defer s.dbLock.Unlock()
-	log.Infof("rep snapshot validated is %s", snapshot)
-
-	if snapshot.GetReportStatus().GetReportRequestType() == storage.ReportStatus_ON_DEMAND {
-		userHasAnotherReport, err := s.doesUserHavePendingReport(snapshot.GetReportConfigurationId(), snapshot.GetRequester().GetId())
-		if err != nil {
-			return "", err
-		}
-		if userHasAnotherReport {
-			return "", errors.Wrapf(errox.AlreadyExists, "User already has a report running for config ID '%s'",
-				snapshot.GetReportConfigurationId())
-		}
-	}
-
 	var err error
 	if !reSubmission {
-		log.Info("job is not resubmitted")
+		if snapshot.GetReportStatus().GetReportRequestType() == storage.ReportStatus_ON_DEMAND {
+			userHasAnotherReport, err := s.doesUserHavePendingReport(snapshot.GetReportConfigurationId(), snapshot.GetRequester().GetId())
+			if err != nil {
+				return "", err
+			}
+			if userHasAnotherReport {
+				return "", errors.Wrapf(errox.AlreadyExists, "User already has a report running for config ID '%s'",
+					snapshot.GetReportConfigurationId())
+			}
+		}
+
 		snapshot.ReportId, err = s.reportSnapshotStore.AddReportSnapshot(ctx, snapshot)
 	} else {
-		log.Info("job is resubmitted")
 		err = s.reportSnapshotStore.UpdateReportSnapshot(ctx, snapshot)
 	}
 
