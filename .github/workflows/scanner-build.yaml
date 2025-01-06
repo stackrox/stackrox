@@ -39,8 +39,8 @@ jobs:
         matrix='{
           "pre_build_scanner_go_binary": { "name":["default"], "goos":["linux"], "goarch":["amd64", "arm64"] },
           "build_and_push_scanner": { },
-          "push_scanner_manifests": { "name":["default"], "registry":[] },
-          "scan_images_with_roxctl": { "image":["scanner-v4", "scanner-v4-db"], "registry":[] }
+          "push_scanner_manifests": { "name":["default"], "registry":["quay.io/stackrox-io", "quay.io/rhacs-eng"] },
+          "scan_images_with_roxctl": { "image":["scanner-v4", "scanner-v4-db"], "registry":["quay.io/stackrox-io", "quay.io/rhacs-eng"] }
         }'
 
         if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
@@ -62,11 +62,7 @@ jobs:
         fi
 
         matrix="$(jq '.build_and_push_scanner = .pre_build_scanner_go_binary' <<< "$matrix")"
-        matrix="$(jq '.build_and_push_scanner.registry = ["quay.io/stackrox-io", "quay.io/rhacs-eng"]' <<< "$matrix")"
-
-        matrix="$(jq '.push_scanner_manifests.registry = ["quay.io/stackrox-io", "quay.io/rhacs-eng"]' <<< "$matrix")"
-
-        matrix="$(jq '.scan_images_with_roxctl.registry = ["quay.io/stackrox-io", "quay.io/rhacs-eng"]' <<< "$matrix")"
+        matrix="$(jq '.build_and_push_scanner.registry = .push_scanner_manifests.registry' <<< "$matrix")"
 
         echo "Job matrix after conditionals:"
         jq <<< "$matrix"
