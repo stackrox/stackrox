@@ -11,9 +11,9 @@ ensure_create_snapshot_runs_last() {
     expected_runafter="$(yq eval '.spec.tasks[] | select(.name != '\"${task_name}\"') | .name' "${pipeline_path}" | sort)"
     actual_runafter="$(yq eval '.spec.tasks[] | select(.name == '\"${task_name}\"') | .runAfter[]' "${pipeline_path}")"
 
-    echo "➤ ${pipeline_path} // checking create-acs-style-snapshot: task's runAfter contents shall match the expected ones (left - expected, right - actual)."
+    echo "➤ ${pipeline_path} // checking ${task_name}: task's runAfter contents shall match the expected ones (left - expected, right - actual)."
     if ! diff --side-by-side <(echo "${expected_runafter}") <(echo "${actual_runafter}"); then
-        echo >&2 -e """
+        echo >&2 -e "
 ✗ ERROR:
 
 The actual runAfter contents do not match the expectations.
@@ -23,7 +23,7 @@ To resolve:
 2. Update the runAfter attribute of this task to this list of all previous tasks in the pipeline (sorted alphabetically):
 
 ${expected_runafter}
-        """
+        "
         exit 1
     else
         echo "✓ No diff detected."
