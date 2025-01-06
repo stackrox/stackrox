@@ -71,6 +71,7 @@ case "$github_login" in
 'vjwilson')         slack_user='U01PKQQF0KY' ;;
 'vladbologa')       slack_user='U03NFNXKPH9' ;;
 'vulerh')           slack_user='U02A9CAR59T' ;;
+'aheflin')          slack_user='U087GT2H45Q' ;;
 esac
 
 echo "${slack_user}"
