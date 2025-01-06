@@ -43,6 +43,7 @@ import {
     vulnerabilitiesPlatformCvesPath,
     deprecatedPoliciesBasePath,
     policiesBasePath,
+    vulnerabilitiesPlatformWorkloadCvesPath,
 } from 'routePaths';
 
 import PageNotFound from 'Components/PageNotFound';
@@ -179,6 +180,18 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
             () => import('Containers/Vulnerabilities/PlatformCves/PlatformCvesPage')
         ),
         path: vulnerabilitiesPlatformCvesPath,
+    },
+    'platform-workload-cves': {
+        component: (() => {
+            const AsyncWorkloadCvesComponent = asyncComponent(
+                () => import('Containers/Vulnerabilities/WorkloadCves/WorkloadCvesPage')
+            );
+
+            return function WorkloadCvesPage() {
+                return <AsyncWorkloadCvesComponent view="platform-workload" />;
+            };
+        })(),
+        path: vulnerabilitiesPlatformWorkloadCvesPath,
     },
     'policy-management': {
         component: asyncComponent(() => import('Containers/PolicyManagement/PolicyManagementPage')),

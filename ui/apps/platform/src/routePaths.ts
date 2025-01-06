@@ -68,6 +68,7 @@ export const violationsBasePath = `${mainPath}/violations`;
 export const violationsPath = `${violationsBasePath}/:alertId?`;
 export const vulnManagementPath = `${mainPath}/vulnerability-management`;
 export const vulnerabilitiesWorkloadCvesPath = `${vulnerabilitiesBasePath}/workload-cves`;
+export const vulnerabilitiesPlatformWorkloadCvesPath = `${vulnerabilitiesBasePath}/platform-workload-cves`;
 export const vulnerabilityNamespaceViewPath = `${vulnerabilitiesWorkloadCvesPath}/namespace-view`;
 export const vulnerabilitiesPlatformCvesPath = `${vulnerabilitiesBasePath}/platform-cves`;
 export const vulnerabilitiesNodeCvesPath = `${vulnerabilitiesBasePath}/node-cves`;
@@ -149,6 +150,7 @@ export type RouteKey =
     | 'network-graph'
     | 'node-cves'
     | 'platform-cves'
+    | 'platform-workload-cves'
     | 'policy-management'
     | 'risk'
     | 'search'
@@ -262,6 +264,10 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     },
     'platform-cves': {
         resourceAccessRequirements: everyResource(['Cluster']),
+    },
+    'platform-workload-cves': {
+        featureFlagRequirements: allEnabled(['ROX_PLATFORM_CVE_SPLIT']),
+        resourceAccessRequirements: everyResource(['Deployment', 'Image']),
     },
     'policy-management': {
         // The resources that are optional to view policies might become required to clone/create/edit a policy.
