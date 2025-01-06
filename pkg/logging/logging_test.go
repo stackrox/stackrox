@@ -1,6 +1,7 @@
 package logging
 
 import (
+	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -137,8 +138,7 @@ func Test_withRotatingCore(t *testing.T) {
 		}
 		assert.NoError(t, logger.Sync())
 		_, err := os.Stat(oldestRoll)
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), oldestRoll+": no such file or directory", oldestRoll)
+		require.ErrorIs(t, err, fs.ErrNotExist)
 		t.Run("ensure there are still only 2 files", func(t *testing.T) {
 			found := 0
 			err = ForEachRotation(logname1, func(_ string) error {
