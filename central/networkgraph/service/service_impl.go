@@ -167,6 +167,10 @@ func (s *serviceImpl) GetFlowsByEntity(ctx context.Context, request *v1.GetFlows
 		return nil, err
 	}
 
+	if entity.GetScope().GetClusterId() != request.GetClusterId() {
+		return nil, errox.NotFound
+	}
+
 	store, err := s.getFlowStore(ctx, request.GetClusterId())
 	if err != nil {
 		return nil, err
