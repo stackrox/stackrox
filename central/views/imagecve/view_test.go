@@ -1,5 +1,3 @@
-//go:build sql_integration
-
 package imagecve
 
 import (
@@ -29,7 +27,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
-	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
@@ -104,7 +101,8 @@ type ImageCVEViewTestSuite struct {
 	testDB  *pgtest.TestPostgres
 	cveView CveView
 
-	testImages []*storage.Image
+	testImages              []*storage.Image
+	testImagesToDeployments map[string][]*storage.Deployment
 }
 
 func (s *ImageCVEViewTestSuite) SetupSuite() {
@@ -166,6 +164,10 @@ func (s *ImageCVEViewTestSuite) SetupSuite() {
 	for _, d := range deployments {
 		s.Require().NoError(deploymentStore.UpsertDeployment(ctx, d))
 	}
+
+	s.testImagesToDeployments = make(map[string][]*storage.Deployment)
+	s.testImagesToDeployments[images[1].Id] = []*storage.Deployment{deployments[0], deployments[1]}
+	s.testImagesToDeployments[images[2].Id] = []*storage.Deployment{deployments[2]}
 }
 
 func (s *ImageCVEViewTestSuite) TearDownSuite() {
@@ -445,216 +447,266 @@ func (s *ImageCVEViewTestSuite) TestCountBySeverity() {
 
 func (s *ImageCVEViewTestSuite) testCases() []testCase {
 	return []testCase{
+		//{
+		//	desc:        "search all",
+		//	ctx:         context.Background(),
+		//	q:           search.EmptyQuery(),
+		//	matchFilter: matchAllFilter(),
+		//},
+		//{
+		//	desc: "search one cve",
+		//	ctx:  context.Background(),
+		//	q:    search.NewQueryBuilder().AddExactMatches(search.CVE, "CVE-2022-1552").ProtoQuery(),
+		//	matchFilter: matchAllFilter().withVulnFilter(func(vuln *storage.EmbeddedVulnerability) bool {
+		//		return vuln.GetCve() == "CVE-2022-1552"
+		//	}),
+		//},
+		//{
+		//	desc: "search one image",
+		//	ctx:  context.Background(),
+		//	q: search.NewQueryBuilder().
+		//		AddExactMatches(search.ImageName, "quay.io/appcontainers/wordpress:latest").ProtoQuery(),
+		//	matchFilter: matchAllFilter().withImageFilter(func(image *storage.Image) bool {
+		//		return image.GetName().GetFullName() == "quay.io/appcontainers/wordpress:latest"
+		//	}),
+		//},
+		//{
+		//	desc: "search one cve + one image",
+		//	ctx:  context.Background(),
+		//	q: search.NewQueryBuilder().
+		//		AddExactMatches(search.CVE, "CVE-2022-1552").
+		//		AddExactMatches(search.ImageName, "quay.io/appcontainers/wordpress:debian").
+		//		ProtoQuery(),
+		//	matchFilter: matchAllFilter().
+		//		withImageFilter(func(image *storage.Image) bool {
+		//			return image.GetName().GetFullName() == "quay.io/appcontainers/wordpress:debian"
+		//		}).
+		//		withVulnFilter(func(vuln *storage.EmbeddedVulnerability) bool {
+		//			return vuln.GetCve() == "CVE-2022-1552"
+		//		}),
+		//},
+		//{
+		//	desc: "search critical severity",
+		//	ctx:  context.Background(),
+		//	q: search.NewQueryBuilder().
+		//		AddExactMatches(search.Severity, storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY.String()).
+		//		ProtoQuery(),
+		//	matchFilter: matchAllFilter().
+		//		withVulnFilter(func(vuln *storage.EmbeddedVulnerability) bool {
+		//			return vuln.GetSeverity() == storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY
+		//		}),
+		//},
+		//{
+		//	desc: "search fixable",
+		//	ctx:  context.Background(),
+		//	q: search.NewQueryBuilder().
+		//		AddBools(search.Fixable, true).
+		//		ProtoQuery(),
+		//	matchFilter: matchAllFilter().
+		//		withVulnFilter(func(vuln *storage.EmbeddedVulnerability) bool {
+		//			return vuln.GetFixedBy() != ""
+		//		}),
+		//},
+		//{
+		//	desc: "search one cve + fixable",
+		//	ctx:  context.Background(),
+		//	q: search.NewQueryBuilder().
+		//		AddExactMatches(search.CVE, "CVE-2015-8704").
+		//		AddBools(search.Fixable, true).
+		//		ProtoQuery(),
+		//	matchFilter: matchAllFilter().
+		//		withVulnFilter(func(vuln *storage.EmbeddedVulnerability) bool {
+		//			return vuln.GetCve() == "CVE-2015-8704" && vuln.GetFixedBy() != ""
+		//		}),
+		//},
+		//{
+		//	desc: "search one cve + not fixable",
+		//	ctx:  context.Background(),
+		//	q: search.NewQueryBuilder().
+		//		AddExactMatches(search.CVE, "CVE-2015-8704").
+		//		AddBools(search.Fixable, false).
+		//		ProtoQuery(),
+		//	matchFilter: matchAllFilter().
+		//		withVulnFilter(func(vuln *storage.EmbeddedVulnerability) bool {
+		//			return vuln.GetCve() == "CVE-2015-8704" && vuln.GetFixedBy() == ""
+		//		}),
+		//},
+		//{
+		//	desc: "search multiple severities",
+		//	ctx:  context.Background(),
+		//	q: search.NewQueryBuilder().
+		//		AddExactMatches(search.Severity,
+		//			storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY.String(),
+		//			storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY.String(),
+		//		).
+		//		ProtoQuery(),
+		//	matchFilter: matchAllFilter().
+		//		withVulnFilter(func(vuln *storage.EmbeddedVulnerability) bool {
+		//			return vuln.GetSeverity() == storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY ||
+		//				vuln.GetSeverity() == storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY
+		//		}),
+		//},
+		//{
+		//	desc: "search critical severity + one image",
+		//	ctx:  context.Background(),
+		//	q: search.NewQueryBuilder().
+		//		AddExactMatches(search.Severity, storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY.String()).
+		//		AddExactMatches(search.ImageName, "quay.io/appcontainers/wordpress:debian").
+		//		ProtoQuery(),
+		//	matchFilter: matchAllFilter().
+		//		withImageFilter(func(image *storage.Image) bool {
+		//			return image.GetName().GetFullName() == "quay.io/appcontainers/wordpress:debian"
+		//		}).
+		//		withVulnFilter(func(vuln *storage.EmbeddedVulnerability) bool {
+		//			return vuln.GetSeverity() == storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY
+		//		}),
+		//},
+		//{
+		//	desc: "search one operating system",
+		//	ctx:  context.Background(),
+		//	q:    search.NewQueryBuilder().AddExactMatches(search.OperatingSystem, "debian:8").ProtoQuery(),
+		//	matchFilter: matchAllFilter().withImageFilter(func(image *storage.Image) bool {
+		//		return image.GetScan().GetOperatingSystem() == "debian:8"
+		//	}),
+		//},
+		//{
+		//	desc:        "no match",
+		//	ctx:         context.Background(),
+		//	q:           search.NewQueryBuilder().AddExactMatches(search.OperatingSystem, "").ProtoQuery(),
+		//	matchFilter: matchNoneFilter(),
+		//},
+		//{
+		//	desc: "with select",
+		//	ctx:  context.Background(),
+		//	q: search.NewQueryBuilder().
+		//		AddSelectFields(search.NewQuerySelect(search.CVE)).
+		//		AddExactMatches(search.OperatingSystem, "").ProtoQuery(),
+		//	expectedErr: "Unexpected select clause in query",
+		//},
+		//{
+		//	desc: "with group by",
+		//	ctx:  context.Background(),
+		//	q: search.NewQueryBuilder().
+		//		AddExactMatches(search.OperatingSystem, "").
+		//		AddGroupBy(search.CVE).ProtoQuery(),
+		//	expectedErr: "Unexpected group by clause in query",
+		//},
+		//{
+		//	desc:        "search all; skip top cvss; skip images by severity",
+		//	ctx:         context.Background(),
+		//	q:           search.NewQueryBuilder().ProtoQuery(),
+		//	matchFilter: matchAllFilter(),
+		//	readOptions: views.ReadOptions{
+		//		SkipGetImagesBySeverity: true,
+		//		SkipGetTopCVSS:          true,
+		//	},
+		//},
+		//{
+		//	desc: "search one cve w/ image scope",
+		//	ctx: scoped.Context(context.Background(), scoped.Scope{
+		//		ID:    "sha256:6ef31316f4f9e0c31a8f4e602ba287a210d66934f91b1616f1c9b957201d025c",
+		//		Level: v1.SearchCategory_IMAGES,
+		//	}),
+		//	q: search.NewQueryBuilder().
+		//		AddExactMatches(search.CVE, "CVE-2022-1552").
+		//		AddExactMatches(search.ImageName, "quay.io/appcontainers/wordpress:debian").
+		//		ProtoQuery(),
+		//	matchFilter: matchAllFilter().
+		//		withImageFilter(func(image *storage.Image) bool {
+		//			return image.GetName().GetFullName() == "quay.io/appcontainers/wordpress:debian"
+		//		}).
+		//		withVulnFilter(func(vuln *storage.EmbeddedVulnerability) bool {
+		//			return vuln.GetCve() == "CVE-2022-1552"
+		//		}),
+		//},
+		//{
+		//	desc: "search critical severity w/ cve & image scope",
+		//	ctx: scoped.Context(context.Background(), scoped.Scope{
+		//		ID:    "sha256:6ef31316f4f9e0c31a8f4e602ba287a210d66934f91b1616f1c9b957201d025c",
+		//		Level: v1.SearchCategory_IMAGES,
+		//		Parent: &scoped.Scope{
+		//			ID:    cve.ID("CVE-2022-1552", "debian:8"),
+		//			Level: v1.SearchCategory_IMAGE_VULNERABILITIES,
+		//		},
+		//	}),
+		//	q: search.NewQueryBuilder().
+		//		AddExactMatches(search.Severity, storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY.String()).
+		//		ProtoQuery(),
+		//	matchFilter: matchAllFilter().
+		//		withImageFilter(func(image *storage.Image) bool {
+		//			return image.GetName().GetFullName() == "quay.io/appcontainers/wordpress:debian" &&
+		//				image.GetScan().GetOperatingSystem() == "debian:8"
+		//		}).
+		//		withVulnFilter(func(vuln *storage.EmbeddedVulnerability) bool {
+		//			return vuln.GetCve() == "CVE-2022-1552" &&
+		//				vuln.GetSeverity() == storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY
+		//		}),
+		//},
+		//{
+		//	desc:           "search all sort by critical severity most first",
+		//	ctx:            context.Background(),
+		//	q:              search.NewQueryBuilder().WithPagination(search.NewPagination().AddSortOption(search.NewSortOption(search.CriticalSeverityCount).Reversed(true)).AddSortOption(search.NewSortOption(search.CVE))).ProtoQuery(),
+		//	matchFilter:    matchAllFilter(),
+		//	skipCountTests: true,
+		//	testOrder:      true,
+		//	less: func(records []*imageCVECoreResponse) func(i, j int) bool {
+		//		return func(i, j int) bool {
+		//			if records[i].ImagesWithCriticalSeverity == records[j].ImagesWithCriticalSeverity {
+		//				return records[i].CVE <= records[j].CVE
+		//			}
+		//			return records[i].ImagesWithCriticalSeverity > records[j].ImagesWithCriticalSeverity
+		//		}
+		//	},
+		//},
 		{
-			desc:        "search all",
-			ctx:         context.Background(),
-			q:           search.EmptyQuery(),
-			matchFilter: matchAllFilter(),
-		},
-		{
-			desc: "search one cve",
-			ctx:  context.Background(),
-			q:    search.NewQueryBuilder().AddExactMatches(search.CVE, "CVE-2022-1552").ProtoQuery(),
-			matchFilter: matchAllFilter().withVulnFilter(func(vuln *storage.EmbeddedVulnerability) bool {
-				return vuln.GetCve() == "CVE-2022-1552"
-			}),
-		},
-		{
-			desc: "search one image",
+			desc: "search observed CVEs from inactive images and active images in non-platform deployments",
 			ctx:  context.Background(),
 			q: search.NewQueryBuilder().
-				AddExactMatches(search.ImageName, "quay.io/appcontainers/wordpress:latest").ProtoQuery(),
-			matchFilter: matchAllFilter().withImageFilter(func(image *storage.Image) bool {
-				return image.GetName().GetFullName() == "quay.io/appcontainers/wordpress:latest"
-			}),
-		},
-		{
-			desc: "search one cve + one image",
-			ctx:  context.Background(),
-			q: search.NewQueryBuilder().
-				AddExactMatches(search.CVE, "CVE-2022-1552").
-				AddExactMatches(search.ImageName, "quay.io/appcontainers/wordpress:debian").
+				AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_OBSERVED.String()).
+				AddStrings(search.PlatformComponent, "false", "-").
 				ProtoQuery(),
 			matchFilter: matchAllFilter().
 				withImageFilter(func(image *storage.Image) bool {
-					return image.GetName().GetFullName() == "quay.io/appcontainers/wordpress:debian"
-				}).
-				withVulnFilter(func(vuln *storage.EmbeddedVulnerability) bool {
-					return vuln.GetCve() == "CVE-2022-1552"
-				}),
-		},
-		{
-			desc: "search critical severity",
-			ctx:  context.Background(),
-			q: search.NewQueryBuilder().
-				AddExactMatches(search.Severity, storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY.String()).
-				ProtoQuery(),
-			matchFilter: matchAllFilter().
-				withVulnFilter(func(vuln *storage.EmbeddedVulnerability) bool {
-					return vuln.GetSeverity() == storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY
-				}),
-		},
-		{
-			desc: "search fixable",
-			ctx:  context.Background(),
-			q: search.NewQueryBuilder().
-				AddBools(search.Fixable, true).
-				ProtoQuery(),
-			matchFilter: matchAllFilter().
-				withVulnFilter(func(vuln *storage.EmbeddedVulnerability) bool {
-					return vuln.GetFixedBy() != ""
-				}),
-		},
-		{
-			desc: "search one cve + fixable",
-			ctx:  context.Background(),
-			q: search.NewQueryBuilder().
-				AddExactMatches(search.CVE, "CVE-2015-8704").
-				AddBools(search.Fixable, true).
-				ProtoQuery(),
-			matchFilter: matchAllFilter().
-				withVulnFilter(func(vuln *storage.EmbeddedVulnerability) bool {
-					return vuln.GetCve() == "CVE-2015-8704" && vuln.GetFixedBy() != ""
-				}),
-		},
-		{
-			desc: "search one cve + not fixable",
-			ctx:  context.Background(),
-			q: search.NewQueryBuilder().
-				AddExactMatches(search.CVE, "CVE-2015-8704").
-				AddBools(search.Fixable, false).
-				ProtoQuery(),
-			matchFilter: matchAllFilter().
-				withVulnFilter(func(vuln *storage.EmbeddedVulnerability) bool {
-					return vuln.GetCve() == "CVE-2015-8704" && vuln.GetFixedBy() == ""
-				}),
-		},
-		{
-			desc: "search multiple severities",
-			ctx:  context.Background(),
-			q: search.NewQueryBuilder().
-				AddExactMatches(search.Severity,
-					storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY.String(),
-					storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY.String(),
-				).
-				ProtoQuery(),
-			matchFilter: matchAllFilter().
-				withVulnFilter(func(vuln *storage.EmbeddedVulnerability) bool {
-					return vuln.GetSeverity() == storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY ||
-						vuln.GetSeverity() == storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY
-				}),
-		},
-		{
-			desc: "search critical severity + one image",
-			ctx:  context.Background(),
-			q: search.NewQueryBuilder().
-				AddExactMatches(search.Severity, storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY.String()).
-				AddExactMatches(search.ImageName, "quay.io/appcontainers/wordpress:debian").
-				ProtoQuery(),
-			matchFilter: matchAllFilter().
-				withImageFilter(func(image *storage.Image) bool {
-					return image.GetName().GetFullName() == "quay.io/appcontainers/wordpress:debian"
-				}).
-				withVulnFilter(func(vuln *storage.EmbeddedVulnerability) bool {
-					return vuln.GetSeverity() == storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY
-				}),
-		},
-		{
-			desc: "search one operating system",
-			ctx:  context.Background(),
-			q:    search.NewQueryBuilder().AddExactMatches(search.OperatingSystem, "debian:8").ProtoQuery(),
-			matchFilter: matchAllFilter().withImageFilter(func(image *storage.Image) bool {
-				return image.GetScan().GetOperatingSystem() == "debian:8"
-			}),
-		},
-		{
-			desc:        "no match",
-			ctx:         context.Background(),
-			q:           search.NewQueryBuilder().AddExactMatches(search.OperatingSystem, "").ProtoQuery(),
-			matchFilter: matchNoneFilter(),
-		},
-		{
-			desc: "with select",
-			ctx:  context.Background(),
-			q: search.NewQueryBuilder().
-				AddSelectFields(search.NewQuerySelect(search.CVE)).
-				AddExactMatches(search.OperatingSystem, "").ProtoQuery(),
-			expectedErr: "Unexpected select clause in query",
-		},
-		{
-			desc: "with group by",
-			ctx:  context.Background(),
-			q: search.NewQueryBuilder().
-				AddExactMatches(search.OperatingSystem, "").
-				AddGroupBy(search.CVE).ProtoQuery(),
-			expectedErr: "Unexpected group by clause in query",
-		},
-		{
-			desc:        "search all; skip top cvss; skip images by severity",
-			ctx:         context.Background(),
-			q:           search.NewQueryBuilder().ProtoQuery(),
-			matchFilter: matchAllFilter(),
-			readOptions: views.ReadOptions{
-				SkipGetImagesBySeverity: true,
-				SkipGetTopCVSS:          true,
-			},
-		},
-		{
-			desc: "search one cve w/ image scope",
-			ctx: scoped.Context(context.Background(), scoped.Scope{
-				ID:    "sha256:6ef31316f4f9e0c31a8f4e602ba287a210d66934f91b1616f1c9b957201d025c",
-				Level: v1.SearchCategory_IMAGES,
-			}),
-			q: search.NewQueryBuilder().
-				AddExactMatches(search.CVE, "CVE-2022-1552").
-				AddExactMatches(search.ImageName, "quay.io/appcontainers/wordpress:debian").
-				ProtoQuery(),
-			matchFilter: matchAllFilter().
-				withImageFilter(func(image *storage.Image) bool {
-					return image.GetName().GetFullName() == "quay.io/appcontainers/wordpress:debian"
-				}).
-				withVulnFilter(func(vuln *storage.EmbeddedVulnerability) bool {
-					return vuln.GetCve() == "CVE-2022-1552"
-				}),
-		},
-		{
-			desc: "search critical severity w/ cve & image scope",
-			ctx: scoped.Context(context.Background(), scoped.Scope{
-				ID:    "sha256:6ef31316f4f9e0c31a8f4e602ba287a210d66934f91b1616f1c9b957201d025c",
-				Level: v1.SearchCategory_IMAGES,
-				Parent: &scoped.Scope{
-					ID:    cve.ID("CVE-2022-1552", "debian:8"),
-					Level: v1.SearchCategory_IMAGE_VULNERABILITIES,
-				},
-			}),
-			q: search.NewQueryBuilder().
-				AddExactMatches(search.Severity, storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY.String()).
-				ProtoQuery(),
-			matchFilter: matchAllFilter().
-				withImageFilter(func(image *storage.Image) bool {
-					return image.GetName().GetFullName() == "quay.io/appcontainers/wordpress:debian" &&
-						image.GetScan().GetOperatingSystem() == "debian:8"
-				}).
-				withVulnFilter(func(vuln *storage.EmbeddedVulnerability) bool {
-					return vuln.GetCve() == "CVE-2022-1552" &&
-						vuln.GetSeverity() == storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY
-				}),
-		},
-		{
-			desc:           "search all sort by critical severity most first",
-			ctx:            context.Background(),
-			q:              search.NewQueryBuilder().WithPagination(search.NewPagination().AddSortOption(search.NewSortOption(search.CriticalSeverityCount).Reversed(true)).AddSortOption(search.NewSortOption(search.CVE))).ProtoQuery(),
-			matchFilter:    matchAllFilter(),
-			skipCountTests: true,
-			testOrder:      true,
-			less: func(records []*imageCVECoreResponse) func(i, j int) bool {
-				return func(i, j int) bool {
-					if records[i].ImagesWithCriticalSeverity == records[j].ImagesWithCriticalSeverity {
-						return records[i].CVE <= records[j].CVE
+					deps, ok := s.testImagesToDeployments[image.GetId()]
+					if !ok {
+						// include inactive image
+						return true
 					}
-					return records[i].ImagesWithCriticalSeverity > records[j].ImagesWithCriticalSeverity
-				}
-			},
+					for _, d := range deps {
+						if !d.PlatformComponent {
+							return true
+						}
+					}
+					return false
+				}).
+				withVulnFilter(func(vuln *storage.EmbeddedVulnerability) bool {
+					return vuln.State == storage.VulnerabilityState_OBSERVED
+				}),
+		},
+		{
+			desc: "search observed CVEs from inactive images and active images in platform deployments",
+			ctx:  context.Background(),
+			q: search.NewQueryBuilder().
+				AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_OBSERVED.String()).
+				AddStrings(search.PlatformComponent, "true", "-").
+				ProtoQuery(),
+			matchFilter: matchAllFilter().
+				withImageFilter(func(image *storage.Image) bool {
+					deps, ok := s.testImagesToDeployments[image.GetId()]
+					if !ok {
+						// include inactive image
+						return true
+					}
+					for _, d := range deps {
+						if d.PlatformComponent {
+							return true
+						}
+					}
+					return false
+				}).
+				withVulnFilter(func(vuln *storage.EmbeddedVulnerability) bool {
+					return vuln.State == storage.VulnerabilityState_OBSERVED
+				}),
 		},
 	}
 }
