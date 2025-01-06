@@ -6,6 +6,7 @@ import (
 	"log"
 
 	"github.com/spf13/cobra"
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/scannerv4/client"
 	"github.com/stackrox/rox/scanner/cmd/scannerctl/authn"
 	"github.com/stackrox/rox/scanner/indexer"
@@ -60,7 +61,8 @@ func sbomCmd(ctx context.Context) *cobra.Command {
 		sbomB, found, err := scanner.GetSBOM(ctx, client.GetImageManifestID(ref))
 		if !found {
 			opt := client.ImageRegistryOpt{InsecureSkipTLSVerify: false}
-			ir, err := scanner.GetOrCreateImageIndex(ctx, ref, auth, opt)
+			var ir *v4.IndexReport
+			ir, err = scanner.GetOrCreateImageIndex(ctx, ref, auth, opt)
 			if err != nil {
 				return fmt.Errorf("scanning: %w", err)
 			}
