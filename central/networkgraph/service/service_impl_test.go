@@ -300,6 +300,9 @@ func (s *NetworkGraphServiceTestSuite) TestGetFlowsByEntity() {
 				},
 			},
 		},
+		Scope: &storage.NetworkEntity_Scope{
+			ClusterId: "mycluster",
+		},
 	}
 
 	external1 := &storage.NetworkEntity{
@@ -314,6 +317,9 @@ func (s *NetworkGraphServiceTestSuite) TestGetFlowsByEntity() {
 					},
 				},
 			},
+		},
+		Scope: &storage.NetworkEntity_Scope{
+			ClusterId: "mycluster",
 		},
 	}
 
