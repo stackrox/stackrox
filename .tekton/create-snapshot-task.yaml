@@ -25,15 +25,10 @@ spec:
     volumeMounts:
     - mountPath: /var/workdir
       name: workdir
+    workingDir: /var/workdir
   steps:
-  - name: use-trusted-artifact
-    image: quay.io/redhat-appstudio/build-trusted-artifacts:latest@sha256:81c4864dae6bb11595f657be887e205262e70086a05ed16ada827fd6391926ac
-    args:
-    - use
-    - $(params.SOURCE_ARTIFACT)=/var/workdir/source
   - name: render-snapshot
     image: registry.access.redhat.com/ubi9:latest@sha256:1057dab827c782abcfb9bda0c3900c0966b5066e671d54976a7bcb3a2d1a5e53
-    workingDir: /var/workdir/source
     env:
     - name: APPLICATION
       valueFrom:
@@ -53,9 +48,109 @@ spec:
       value: $(params.PRODUCT_VERSION)
     - name: SNAPSHOT_NAME_RESULT_PATH
       value: $(results.SNAPSHOT_NAME.path)
-    script: .konflux/scripts/render_snapshot.py
+    script: |
+      #!/usr/bin/env python3
+
+      import datetime
+      import json
+      import os
+      import re
+
+
+      def parse_components_input(raw_input):
+          return json.loads(raw_input)
+
+
+      def determine_resource_version_suffix(application):
+          match = re.search(r"(?P<version>-\d+-\d+$)", application)
+          if match:
+              return match.group("version")
+          return ""
+
+
+      def determine_snapshot_name(prefix, product_version):
+          # The timestamp is added to the Snapshot name so that we can differentiate Snapshots from rebuilds of the same commit or tag.
+          timestamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+          return f"{prefix}{product_version}-{timestamp}".lower()
+
+
+      def process_component(component, resource_version_suffix):
+          validate_component(component)
+          return {
+              "containerImage": component["containerImage"],
+              "name": f"{component['name']}{resource_version_suffix}",
+              "source": {
+                  "git": {
+                      "revision": component["revision"],
+                      "url": component["repository"]
+                  }
+              }
+          }
+
+
+      def validate_component(component):
+          assert (
+              component["name"] != ""
+              and component["containerImage"] != ""
+              and component["revision"] != ""
+              and component["repository"] != ""
+          ), "Component must have component name, containerImage, revision and repository set."
+
+
+      def construct_snapshot(
+          snapshot_name,
+          pipeline_run_name,
+          namespace,
+          application,
+          components
+      ):
+          return {
+              "apiVersion": "appstudio.redhat.com/v1alpha1",
+              "kind": "Snapshot",
+              "metadata": {
+                  "name": snapshot_name,
+                  "namespace": namespace,
+                  "labels": {
+                      "appstudio.openshift.io/build-pipelinerun": pipeline_run_name
+                  }
+              },
+              "spec": {
+                  "application": application,
+                  "components": components
+              }
+          }
+
+
+      def write_snapshot(snapshot, results_path):
+          with open("snapshot.json", "w") as f:
+              json.dump(snapshot, f)
+          with open(results_path, "w", newline="") as f:
+              f.write(snapshot["metadata"]["name"])
+
+
+      if __name__ == '__main__':
+          application = os.environ["APPLICATION"]
+          raw_components = parse_components_input(os.environ["COMPONENTS"])
+          namespace = os.environ["NAMESPACE"]
+          pipeline_run_name = os.environ["PIPELINE_RUN_NAME"]
+          product_version = os.environ["PRODUCT_VERSION"]
+          snapshot_name_result_path = os.environ["SNAPSHOT_NAME_RESULT_PATH"]
+
+          resource_version_suffix = determine_resource_version_suffix(application)
+          snapshot_name = determine_snapshot_name(application, resource_version_suffix)
+          components = [process_component(c, resource_version_suffix) for c in raw_components]
+
+          snapshot = construct_snapshot(
+              snapshot_name=snapshot_name,
+              pipeline_run_name=pipeline_run_name,
+              namespace=namespace,
+              application=application,
+              components=components
+          )
+
+          write_snapshot(snapshot, snapshot_name_result_path)
+          print("Rendered snapshot written to workspace.")
 
   - name: create-snapshot
     image: registry.redhat.io/openshift4/ose-cli-rhel9@sha256:4f822262adc75bff1891bee0bab1611ae62dfb347f98fcf9aa2604129087eb2c
-    workingDir: /var/workdir/source
     script: oc create -f snapshot.json
