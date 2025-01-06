@@ -695,12 +695,11 @@ func (x *GetExternalNetworkFlowsResponse) GetFlows() []*storage.NetworkFlow {
 }
 
 type GetFlowsByEntityRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ClusterId     string                 `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	EntityId      string                 `protobuf:"bytes,2,opt,name=entity_id,json=entityId,proto3" json:"entity_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
-
-	ClusterId string `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	EntityId  string `protobuf:"bytes,2,opt,name=entity_id,json=entityId,proto3" json:"entity_id,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetFlowsByEntityRequest) Reset() {
@@ -748,11 +747,10 @@ func (x *GetFlowsByEntityRequest) GetEntityId() string {
 }
 
 type GetFlowsByEntityResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Flows         []*storage.NetworkFlow `protobuf:"bytes,1,rep,name=flows,proto3" json:"flows,omitempty"`
 	unknownFields protoimpl.UnknownFields
-
-	Flows []*storage.NetworkFlow `protobuf:"bytes,1,rep,name=flows,proto3" json:"flows,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetFlowsByEntityResponse) Reset() {
