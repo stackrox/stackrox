@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/views/imagecve"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -37,8 +36,6 @@ type DeploymentResolversTestSuite struct {
 }
 
 func (s *DeploymentResolversTestSuite) SetupSuite() {
-	s.T().Setenv(features.VulnMgmtWorkloadCVEs.EnvVar(), "true")
-
 	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 	mockCtrl := gomock.NewController(s.T())
 	s.testDB = SetupTestPostgresConn(s.T())
@@ -201,10 +198,6 @@ func (s *DeploymentResolversTestSuite) TestDeployments() {
 				imgCnt, err := dep.ImageCount(ctx, RawQuery{Query: paginatedQ.Query})
 				assert.NoError(t, err)
 				assert.Equal(t, int32(len(images)), imgCnt)
-
-				if !features.VulnMgmtWorkloadCVEs.Enabled() {
-					return
-				}
 
 				// Test ImageCVECountBySeverity for each deployment resolver.
 				expectedCVESevCount := compileExpectedCountBySeverity(images, tc.vulnFilter)
