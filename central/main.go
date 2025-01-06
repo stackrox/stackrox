@@ -975,4 +975,5 @@ func waitForTerminationSignal() {
 		osutils.Restart()
 	}
 	log.Info("Central terminated")
+	log.InnerLogger.Sync()
 }
