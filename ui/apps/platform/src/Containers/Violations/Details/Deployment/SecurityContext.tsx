@@ -13,7 +13,7 @@ function SecurityContext({ deployment }: SecurityContextProps): ReactElement {
 
     if (deployment === null) {
         content =
-            "Security context is unavailable because the alert's deployment no longer exists.";
+            'Security context is unavailable because the alert’s deployment no longer exists.';
     } else {
         const securityContextContainers =
             deployment?.containers?.filter(
