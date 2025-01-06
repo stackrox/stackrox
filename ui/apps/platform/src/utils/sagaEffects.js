@@ -57,7 +57,7 @@ export const takeEveryNewlyMatchedLocation = (route, saga, ...args) =>
                 const {
                     payload: { location },
                 } = action;
-                const match = matchPath(route, location.pathname);
+                const match = matchPath(`${route}/*`, location.pathname);
 
                 if (match && !prevLocationMatched) {
                     yield fork(saga, ...args.concat({ match, location }));
