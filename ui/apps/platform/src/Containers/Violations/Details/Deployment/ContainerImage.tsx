@@ -1,8 +1,6 @@
 import React, { ReactElement } from 'react';
 import { Link } from 'react-router-dom';
 
-import { vulnerabilitiesWorkloadCvesPath } from 'routePaths';
-
 import DescriptionListItem from 'Components/DescriptionListItem';
 
 type ContainerImageProps = {
@@ -16,10 +14,11 @@ type ContainerImageProps = {
         notPullable: boolean;
         id: string;
     };
+    vulnMgmtBasePath: string;
 };
 
-function ContainerImage({ image }: ContainerImageProps): ReactElement {
-    const imageDetailsPageURL = `${vulnerabilitiesWorkloadCvesPath}/images/${image.id}`;
+function ContainerImage({ image, vulnMgmtBasePath }: ContainerImageProps): ReactElement {
+    const imageDetailsPageURL = `${vulnMgmtBasePath}/images/${image.id}`;
 
     if (image.id === '' || image.notPullable) {
         const unavailableText = image.notPullable
