@@ -1,4 +1,5 @@
 import { addDays, format } from 'date-fns';
+import { hasFeatureFlag } from '../../../helpers/features';
 import { getDescriptionListGroup } from '../../../helpers/formHelpers';
 import {
     interactAndWaitForResponses,
@@ -7,8 +8,6 @@ import {
 import { visit } from '../../../helpers/visit';
 import { selectors } from './WorkloadCves.selectors';
 import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
-
-const basePath = '/main/vulnerabilities/workload-cves/';
 
 export function getDateString(date) {
     return format(date, 'MM/DD/YYYY');
@@ -24,6 +23,11 @@ export function getFutureDateByDays(days) {
 }
 
 export function visitWorkloadCveOverview({ clearFiltersOnVisit = true, urlSearch = '' } = {}) {
+    // With Workload CVEs split between User and Platform components, we can only reliably expect
+    // CVEs to be present for the built-in (Platform) components during CI
+    const basePath = hasFeatureFlag('ROX_PLATFORM_CVE_SPLIT')
+        ? '/main/vulnerabilities/platform-workload-cves/'
+        : '/main/vulnerabilities/workload-cves/';
     visit(basePath + urlSearch);
 
     cy.get('h1:contains("Workload CVEs")');
