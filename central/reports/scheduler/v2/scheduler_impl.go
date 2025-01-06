@@ -196,6 +196,9 @@ func (s *scheduler) runSingleReport(req *reportGen.ReportRequest) {
 	defer s.concurrencySema.Release(1)
 	defer s.removeFromRunningReportConfigs(req.ReportSnapshot.GetReportConfigurationId())
 
+	//for testing only
+	log.Infof("sleep for 2 mins to test Vuln reporting")
+	time.Sleep(2 * time.Minute)
 	s.reportGenerator.ProcessReportRequest(req)
 }
 
