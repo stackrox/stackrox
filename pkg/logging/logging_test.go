@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -137,11 +138,20 @@ func Test_withRotatingCore(t *testing.T) {
 			logger.Info("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
 		}
 		assert.NoError(t, logger.Sync())
-		_, err := os.Stat(oldestRoll)
+		// lumberjack removes the old files asynchronously, therefore the test
+		// has to wait for it.
+		var err error
+		pause := 500 * time.Millisecond
+		for retry := 5 * time.Second; retry > 0; retry -= pause {
+			if _, err = os.Stat(oldestRoll); err != nil {
+				break
+			}
+			time.Sleep(pause)
+		}
 		require.ErrorIs(t, err, fs.ErrNotExist)
 		t.Run("ensure there are still only 2 files", func(t *testing.T) {
 			found := 0
-			err = ForEachRotation(logname1, func(_ string) error {
+			err := ForEachRotation(logname1, func(_ string) error {
 				found += 1
 				return nil
 			})
