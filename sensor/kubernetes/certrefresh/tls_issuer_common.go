@@ -159,7 +159,9 @@ func (i *tlsIssuerImpl) dispatch(response *Response) {
 		log.Warnf("Received a response for request ID %q, but there is no ongoing RequestCertificates call.", response.RequestId)
 		return
 	}
-	ongoingRequestID := i.getOngoingRequestID()
+	ongoingRequestID := concurrency.WithLock1(&i.ongoingRequestIDMutex, func() string {
+		return i.ongoingRequestID
+	})
 	if ongoingRequestID != response.RequestId {
 		log.Warnf("Request ID %q does not match ongoing request ID %q.",
 			response.RequestId, ongoingRequestID)
@@ -191,7 +193,9 @@ func (i *tlsIssuerImpl) requestCertificates(ctx context.Context) (*Response, err
 	}()
 
 	requestID := uuid.NewV4().String()
-	i.setOngoingRequestID(requestID)
+	concurrency.WithLock(&i.ongoingRequestIDMutex, func() {
+		i.ongoingRequestID = requestID
+	})
 
 	if err := i.send(ctx, requestID); err != nil {
 		return nil, err
@@ -219,18 +223,4 @@ func (i *tlsIssuerImpl) receive(ctx context.Context) (*Response, error) {
 	case <-i.responseReceived.Done():
 		return i.responseFromCentral.Load(), nil
 	}
-}
-
-func (i *tlsIssuerImpl) setOngoingRequestID(requestID string) {
-	i.ongoingRequestIDMutex.Lock()
-	defer i.ongoingRequestIDMutex.Unlock()
-
-	i.ongoingRequestID = requestID
-}
-
-func (i *tlsIssuerImpl) getOngoingRequestID() string {
-	i.ongoingRequestIDMutex.Lock()
-	defer i.ongoingRequestIDMutex.Unlock()
-
-	return i.ongoingRequestID
 }
