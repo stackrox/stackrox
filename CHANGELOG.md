@@ -24,9 +24,6 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Technical Changes
 
-- Scanner V4 now tracks fewer unnecessary vulnerabilities than before.
-  - This speeds up initialization time for first time users.
-  - This also frees up space in Scanner V4 DB, as the unnecessary vulnerabilities will be deleted.
 - Scanner V4 now uses [Red Hat's VEX files](https://security.access.redhat.com/data/csaf/v2/vex/) instead of the [CVE map](https://security.access.redhat.com/data/metrics/cvemap.xml) for vulnerability data related to non-RPM content inside of official Red Hat images.
 
 ## [4.6.0]
