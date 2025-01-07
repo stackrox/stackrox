@@ -32,6 +32,9 @@ is stated below:
   one of these CVEs which are resolved by the same advisory, then Scanner V4 would output the same advisory multiple times
   with different descriptions, CVSS scores, severities.
 
+[A change](https://github.com/stackrox/stackrox/pull/13559) to alleviate this concern has already been merged and ported to the 4.6.1 release.
+This change definitely improves the situation (the score can only increase and never decrease), but it's not perfect, as the score can still change.
+
 ## Decision
 
 This document attempts to address the Red Hat advisory inconsistencies by introducing a CSAF enricher.
@@ -43,10 +46,10 @@ The enricher will fetch Red Hat advisories and extract data we have determined h
 
 * Description
   * The current implementation takes the description from the CVE, so if a package is affected by two different CVEs
-    associated with the same advisory, then there is a clear inconsistency.
+    associated with the same advisory, then there is a clear inconsistency, as it is unclear which description may be shown.
 * Severity
   * The current implementation takes the severity from the CVE, so if a package is affected by two different CVEs
-    rated with different severities, then there is a clear inconsistency.
+    rated with different severities, then there is a clear inconsistency, as it is unclear which severity may be shown.
   * Claircore does not provide us a way to read the severity at .document.aggregate_severity.text at this time,
     so we must calculate it. Luckily, it is pretty clear how to do so: Red Hat advisories are given the highest severity rating
     based on the associated CVEs.
