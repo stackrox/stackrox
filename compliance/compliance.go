@@ -94,7 +94,7 @@ func (c *Compliance) Start() {
 		c.manageStream(ctx, cli, &stoppedSig, toSensorC)
 	}()
 
-	wg := &sync.WaitGroup{}
+	var wg sync.WaitGroup
 	wg.Add(2)
 
 	go func() {
