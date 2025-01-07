@@ -323,6 +323,8 @@ func (c *Compliance) runRecv(ctx context.Context, client sensor.ComplianceServic
 					c.umhNodeInventory.HandleACK()
 				case sensor.MsgToCompliance_NodeInventoryACK_NodeIndexer:
 					c.umhNodeIndex.HandleACK()
+				default:
+					log.Errorf("Unknown ACK Type: %s", t.Ack.GetMessageType())
 				}
 			case sensor.MsgToCompliance_NodeInventoryACK_NACK:
 				switch t.Ack.GetMessageType() {
@@ -330,7 +332,11 @@ func (c *Compliance) runRecv(ctx context.Context, client sensor.ComplianceServic
 					c.umhNodeInventory.HandleNACK()
 				case sensor.MsgToCompliance_NodeInventoryACK_NodeIndexer:
 					c.umhNodeIndex.HandleNACK()
+				default:
+					log.Errorf("Unknown ACK Type: %s", t.Ack.GetMessageType())
 				}
+			default:
+				log.Errorf("Unknown ACK Action: %s", t.Ack.GetAction())
 			}
 		default:
 			utils.Should(errors.Errorf("Unhandled msg type: %T", t))
