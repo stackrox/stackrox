@@ -5,6 +5,10 @@ import { PageSection } from '@patternfly/react-core';
 import PageNotFound from 'Components/PageNotFound';
 import PageTitle from 'Components/PageTitle';
 
+import {
+    vulnerabilitiesPlatformWorkloadCvesPath,
+    vulnerabilitiesWorkloadCvesPath,
+} from 'routePaths';
 import ScannerV4IntegrationBanner from 'Components/ScannerV4IntegrationBanner';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
@@ -34,8 +38,8 @@ function WorkloadCvesPage({ view }: WorkloadCvePageProps) {
             : {};
         const getAbsoluteUrl = (subPath: string) =>
             view === 'platform-workload'
-                ? `platform-workload-cves/${subPath}/*`
-                : `workload-cves/${subPath}/*`;
+                ? `${vulnerabilitiesPlatformWorkloadCvesPath}/${subPath}`
+                : `${vulnerabilitiesWorkloadCvesPath}/${subPath}`;
 
         return { pageTitle, baseSearchFilter, getAbsoluteUrl };
     }, [view, isFeatureFlagEnabled]);
@@ -45,17 +49,11 @@ function WorkloadCvesPage({ view }: WorkloadCvePageProps) {
             {hasReadAccessForIntegration && <ScannerV4IntegrationBanner />}
             <Routes>
                 {hasReadAccessForNamespaces && (
-                    <Route
-                        path={context.getAbsoluteUrl('namespace-view')}
-                        element={<NamespaceViewPage />}
-                    />
+                    <Route path={'namespace-view'} element={<NamespaceViewPage />} />
                 )}
-                <Route path={context.getAbsoluteUrl('cves/:cveId')} element={<ImageCvePage />} />
-                <Route path={context.getAbsoluteUrl('images/:imageId')} element={<ImagePage />} />
-                <Route
-                    path={context.getAbsoluteUrl('deployments/:deploymentId')}
-                    element={<DeploymentPage />}
-                />
+                <Route path={'cves/:cveId'} element={<ImageCvePage />} />
+                <Route path={'images/:imageId'} element={<ImagePage />} />
+                <Route path={'deployments/:deploymentId'} element={<DeploymentPage />} />
                 <Route index element={<WorkloadCvesOverviewPage />} />
                 <Route
                     path="*"
