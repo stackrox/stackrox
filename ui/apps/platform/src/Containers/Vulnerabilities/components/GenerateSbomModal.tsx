@@ -9,9 +9,11 @@ import {
     Flex,
     Modal,
     Text,
+    Title,
 } from '@patternfly/react-core';
 import Raven from 'raven-js';
 
+import TechPreviewLabel from 'Components/PatternFly/TechPreviewLabel';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useAnalytics, { IMAGE_SBOM_GENERATED } from 'hooks/useAnalytics';
 import useRestMutation from 'hooks/useRestMutation';
@@ -38,8 +40,17 @@ function GenerateSbomModal(props: GenerateSbomModalProps) {
         <Modal
             isOpen
             onClose={onClose}
-            title="Generate Software Bill of Materials (SBOM)"
             variant="medium"
+            header={
+                <Flex
+                    className="pf-v5-u-mr-md"
+                    justifyContent={{ default: 'justifyContentSpaceBetween' }}
+                    alignItems={{ default: 'alignItemsCenter' }}
+                >
+                    <Title headingLevel="h1">Generate Software Bill of Materials (SBOM)</Title>
+                    <TechPreviewLabel />
+                </Flex>
+            }
             actions={[
                 <Button
                     key="generate-sbom-action"

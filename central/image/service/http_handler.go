@@ -21,7 +21,7 @@ import (
 
 type sbomRequestBody struct {
 	Cluster   string `json:"cluster"`
-	ImageName string `json:"image_name"`
+	ImageName string `json:"imageName"`
 	Force     bool   `json:"force"`
 }
 
