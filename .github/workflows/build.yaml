@@ -39,7 +39,7 @@ jobs:
             "build_and_push_main": { "name":[], "arch":[] },
             "push_main_multiarch_manifests": { "name":[] },
             "build_and_push_operator": { "name":[] },
-            "scan_images_with_roxctl": { "name":[], "image":[], "exclude":[] }
+            "scan_images_with_roxctl": { "name":[], "image":[], "exclude":[] },
             "scan_images_for_fips": { "name":[], "image":[], "exclude":[] }
           }'
 
