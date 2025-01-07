@@ -351,7 +351,7 @@ spec:
       - name: name
         value: wait-for-image
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:pr-22@sha256:4ac1b0ae69c8fcb0acc147a6c5f5b9ebbfa14a4cf9ad4194b0c1544879de13d4
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:3811d015320129588caf7629533a5b51b8c405b3b92e8d37165384f6750f9b66
       - name: kind
         value: task
       resolver: bundles
@@ -665,6 +665,7 @@ spec:
       resolver: bundles
 
   - name: create-acs-style-snapshot
+    description: Creates a Snapshot representing a valid set of ACS containers unlike the Snapshots created by Konflux automatically
     # Explicitly running after all other tasks to ensure that
     # - there are no failures that should prevent a release of the operator-bundle image (missing RPMs signatures, deprecated base images, ...)
     # - the source image is present as it is required by EC
@@ -786,7 +787,7 @@ spec:
       - name: name
         value: create-snapshot
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:pr-22@sha256:4ac1b0ae69c8fcb0acc147a6c5f5b9ebbfa14a4cf9ad4194b0c1544879de13d4
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:3811d015320129588caf7629533a5b51b8c405b3b92e8d37165384f6750f9b66
       - name: kind
         value: task
       resolver: bundles
