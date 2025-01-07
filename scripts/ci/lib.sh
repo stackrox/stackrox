@@ -318,7 +318,7 @@ push_scanner_image_manifest_lists() {
     info "Pushing scanner-v4 and scanner-v4-db images as manifest lists"
 
     if [[ "$#" -ne 2 ]]; then
-        die "missing arg. usage: push_scanner_image_manifest_lists <resgistry> <architectures (CSV)>"
+        die "missing arg. usage: push_scanner_image_manifest_lists <registry> <architectures (CSV)>"
     fi
 
     local registry="$1"
