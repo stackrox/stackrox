@@ -70,7 +70,12 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 		// Node Indexing only works correctly when both, itself and Scanner v4 are enabled
 		log.Debugf("Skipping node index message (Node Indexing Enabled: %t, Scanner V4 Enabled: %t",
 			env.NodeIndexEnabled.BooleanSetting(), features.ScannerV4.Enabled())
-		// ACK the message to prevent frequent retries
+		// ACK the message to prevent frequent retries.
+		// If support for NodeIndex is disabled on Central or Scanner V4 is missing, but NodeIndex msg arrives to Central,
+		// then we must acknowledge the reception to prevent the compliance container resending the message, as
+		// this could flood Sensor and Central unnecessarily.
+		// Such situations may occur when some secured clusters have NodeIndexing enabled, while Central has it disabled,
+		// or Scanner V4 is not deployed.
 		sendComplianceAck(ctx, msg.GetEvent().GetNode(), injector)
 		return nil
 	}
