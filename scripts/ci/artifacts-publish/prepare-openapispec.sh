@@ -13,6 +13,7 @@ die() {
 copy_swagger_json_from_image() {
   container_id="$(docker create "quay.io/stackrox-io/main:${version}")"
   docker cp "${container_id}:/stackrox/static-data/docs/api/v1/swagger.json" "${target_dir}/"
+  docker cp "${container_id}:/stackrox/static-data/docs/api/v2/swagger.json" "${target_dir}/"
   docker rm "${container_id}" >/dev/null
 }
 
