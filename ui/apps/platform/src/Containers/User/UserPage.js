@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink, Route, Routes } from 'react-router-dom';
+import { NavLink, Route, Routes, useParams } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createStructuredSelector, createSelector } from 'reselect';
@@ -43,6 +43,24 @@ function UserPage({ resourceToAccessByRole, userData }) {
     const { email, name, roles, usedAuthProvider } = new User(userData);
     const authProviderName =
         usedAuthProvider?.type === 'basic' ? 'Basic' : (usedAuthProvider?.name ?? '');
+
+    const UserRoleRoute = () => {
+        const { roleName } = useParams();
+        console.log('roleName ', roleName);
+        const role = roles.find((_role) => _role.name === roleName);
+        console.log('role ', role);
+
+        if (role) {
+            return <UserPermissionsTable permissions={role?.resourceToAccess ?? {}} />;
+        }
+
+        return (
+            <EmptyState>
+                <EmptyStateHeader titleText="Role not found for user" headingLevel="h4" />
+                <EmptyStateBody>{`Role name: ${roleName}`}</EmptyStateBody>
+            </EmptyState>
+        );
+    };
 
     return (
         <>
@@ -107,39 +125,15 @@ function UserPage({ resourceToAccessByRole, userData }) {
                     </FlexItem>
                     <FlexItem>
                         <Routes>
+                            <Route path={'roles/:roleName'} element={<UserRoleRoute />} />
                             <Route
-                                path={userRolePath}
-                                render={({
-                                    match: {
-                                        params: { roleName },
-                                    },
-                                }) => {
-                                    const role = roles.find((_role) => _role.name === roleName);
-
-                                    if (role) {
-                                        return (
-                                            <UserPermissionsTable
-                                                permissions={role?.resourceToAccess ?? {}}
-                                            />
-                                        );
-                                    }
-
-                                    return (
-                                        <EmptyState>
-                                            <EmptyStateHeader
-                                                titleText="Role not found for user"
-                                                headingLevel="h4"
-                                            />
-                                            <EmptyStateBody>{`Role name: ${roleName}`}</EmptyStateBody>
-                                        </EmptyState>
-                                    );
-                                }}
+                                index
+                                element={
+                                    <UserPermissionsForRolesTable
+                                        resourceToAccessByRole={resourceToAccessByRole}
+                                    />
+                                }
                             />
-                            <Route path={userBasePath}>
-                                <UserPermissionsForRolesTable
-                                    resourceToAccessByRole={resourceToAccessByRole}
-                                />
-                            </Route>
                         </Routes>
                     </FlexItem>
                 </Flex>

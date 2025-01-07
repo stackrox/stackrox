@@ -19,8 +19,6 @@ const Page = () => (
         <Route path={`node/${vulnerabilitiesEntityPath}`} element={<EntityPage />} />
         <Route path={`deployment/${vulnerabilitiesEntityPath}`} element={<EntityPage />} />
         <Route path={`image/${vulnerabilitiesEntityPath}`} element={<EntityPage />} />
-        <Route path={`secret/${vulnerabilitiesEntityPath}`} element={<EntityPage />} />
-        <Route path={`policy/${vulnerabilitiesEntityPath}`} element={<EntityPage />} />
         <Route path={`cve/${vulnerabilitiesEntityPath}`} element={<EntityPage />} />
         <Route path={`image-cve/${vulnerabilitiesEntityPath}`} element={<EntityPage />} />
         <Route path={`node-cve/${vulnerabilitiesEntityPath}`} element={<EntityPage />} />
@@ -28,11 +26,6 @@ const Page = () => (
         <Route path={`component/${vulnerabilitiesEntityPath}`} element={<EntityPage />} />
         <Route path={`node-component/${vulnerabilitiesEntityPath}`} element={<EntityPage />} />
         <Route path={`image-component/${vulnerabilitiesEntityPath}`} element={<EntityPage />} />
-        <Route path={`control/${vulnerabilitiesEntityPath}`} element={<EntityPage />} />
-        <Route path={`standard/${vulnerabilitiesEntityPath}`} element={<EntityPage />} />
-        <Route path={`serviceaccount/${vulnerabilitiesEntityPath}`} element={<EntityPage />} />
-        <Route path={`subject/${vulnerabilitiesEntityPath}`} element={<EntityPage />} />
-        <Route path={`role/${vulnerabilitiesEntityPath}`} element={<EntityPage />} />
 
         <Route path={`namespaces/${vulnerabilitiesListPath}`} element={<ListPage />} />
         <Route path={`clusters/${vulnerabilitiesListPath}`} element={<ListPage />} />
