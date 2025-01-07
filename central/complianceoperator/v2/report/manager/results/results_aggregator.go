@@ -66,7 +66,7 @@ func (g *Aggregator) GetReportData(req *report.Request) *report.Results {
 	resultsCSV := make(map[string][]*report.ResultRow)
 	reportResults := &report.Results{}
 	for _, clusterID := range req.ClusterIDs {
-		clusterResults, clusterStatus, err := g.getReportDataForCluster(req.Ctx, req.ScanConfigID, clusterID)
+		clusterResults, clusterStatus, err := g.getReportDataForCluster(req.Ctx, req.ScanConfigID, clusterID, req.FailedClusters)
 		if err != nil {
 			log.Errorf("Data not found for cluster %s", clusterID)
 			continue
@@ -82,16 +82,19 @@ func (g *Aggregator) GetReportData(req *report.Request) *report.Results {
 	return reportResults
 }
 
-func (g *Aggregator) getReportDataForCluster(ctx context.Context, scanConfigID, clusterID string) ([]*report.ResultRow, *checkStatus, error) {
+func (g *Aggregator) getReportDataForCluster(ctx context.Context, scanConfigID, clusterID string, failedClusters map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster) ([]*report.ResultRow, *checkStatus, error) {
 	var ret []*report.ResultRow
-	scanConfigQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfig, scanConfigID).
-		AddExactMatches(search.ClusterID, clusterID).
-		ProtoQuery()
 	statuses := &checkStatus{
 		totalPass:  0,
 		totalFail:  0,
 		totalMixed: 0,
 	}
+	if _, ok := failedClusters[clusterID]; ok {
+		return ret, statuses, nil
+	}
+	scanConfigQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfig, scanConfigID).
+		AddExactMatches(search.ClusterID, clusterID).
+		ProtoQuery()
 	err := g.checkResultsDS.WalkByQuery(ctx, scanConfigQuery, g.aggreateResults(ctx, clusterID, &ret, statuses))
 	return ret, statuses, err
 }

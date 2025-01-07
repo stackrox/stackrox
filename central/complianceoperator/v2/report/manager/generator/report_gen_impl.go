@@ -82,7 +82,7 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *report.Reques
 
 	reportData := rg.resultsAggregator.GetReportData(req)
 
-	zipData, err := rg.formatter.FormatCSVReport(reportData.ResultCSVs)
+	zipData, err := rg.formatter.FormatCSVReport(reportData.ResultCSVs, req.FailedClusters)
 	if err != nil {
 		if dbErr := reportUtils.UpdateSnapshotOnError(req.Ctx, snapshot, report.ErrReportGeneration, rg.snapshotDS); dbErr != nil {
 			return errors.Wrap(dbErr, "unable to update the snapshot on report generation failure")
@@ -92,6 +92,12 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *report.Reques
 
 	if snapshot != nil {
 		snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_GENERATED
+		if len(req.FailedClusters) > 0 {
+			snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_PARTIAL_ERROR
+			if len(req.FailedClusters) == len(req.ClusterIDs) {
+				snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_FAILURE
+			}
+		}
 		if err := rg.snapshotDS.UpsertSnapshot(req.Ctx, snapshot); err != nil {
 			return errors.Wrap(err, "unable to update snapshot on report generation success")
 		}
@@ -104,7 +110,6 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *report.Reques
 				return errors.Wrap(err, "unable to save the report download")
 			}
 			snapshot.GetReportStatus().CompletedAt = protocompat.TimestampNow()
-			snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_DELIVERED
 			if err := rg.snapshotDS.UpsertSnapshot(req.Ctx, snapshot); err != nil {
 				return errors.Wrap(err, "unable to update snapshot on report download ready")
 			}
@@ -116,17 +121,19 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *report.Reques
 	log.Infof("Sending email for scan config %s", reportName)
 	errC := rg.reportSender.SendEmail(reportGenCtx, reportName, zipData, reportData, req.Notifiers)
 	handler, err := rg.newHandlerFn(func(err error) error {
+		concurrency.WithLock(&rg.handlersMutex, func() {
+			delete(rg.senderResponseHandlers, snapshot.GetReportId())
+		})
 		if err != nil {
 			return err
 		}
-		snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_DELIVERED
+		if snapshot.GetReportStatus().GetRunState() == storage.ComplianceOperatorReportStatus_GENERATED {
+			snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_DELIVERED
+		}
 		snapshot.GetReportStatus().CompletedAt = protocompat.TimestampNow()
 		if dbErr := rg.snapshotDS.UpsertSnapshot(req.Ctx, snapshot); dbErr != nil {
 			log.Errorf("Unable to update snapshot on send email success: %v", dbErr)
 		}
-		concurrency.WithLock(&rg.handlersMutex, func() {
-			delete(rg.senderResponseHandlers, snapshot.GetReportId())
-		})
 		return err
 	}, func() {
 		if dbErr := reportUtils.UpdateSnapshotOnError(req.Ctx, snapshot, report.ErrSendingEmail, rg.snapshotDS); dbErr != nil {
