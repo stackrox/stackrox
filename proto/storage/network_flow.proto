@@ -40,14 +40,13 @@ message NetworkEndpointProperties {
 
 message NetworkEntity {
   message Scope {
-    string cluster_id = 1; // @gotags: search:""
+    string cluster_id = 1;
   }
 
   NetworkEntityInfo info = 1;
-  // `scope` represents known cluster network peers to which the flows must be
-  // scoped. In future, to restrict flows to more granular entities, such as
-  // deployment, scope could include deployment ID. Note: The highest scope
-  // level is cluster.
+  // `scope` represents known cluster network peers to which the flows must be scoped. In future, to restrict flows
+  // to more granular entities, such as deployment, scope could include deployment ID.
+  // Note: The highest scope level is cluster.
   Scope scope = 2;
 }
 
@@ -58,8 +57,7 @@ message NetworkEntityInfo {
     INTERNET = 2;
     LISTEN_ENDPOINT = 3;
     EXTERNAL_SOURCE = 4;
-    // INTERNAL_ENTITIES is for grouping all internal entities under a single
-    // network graph node
+    // INTERNAL_ENTITIES is for grouping all internal entities under a single network graph node
     INTERNAL_ENTITIES = 5;
   }
 
@@ -76,20 +74,15 @@ message NetworkEntityInfo {
     repeated ListenPort listen_ports = 4;
   }
 
-  // Update normalizeDupNameExtSrcs(...) in
-  // `central/networkgraph/aggregator/aggregator.go` whenever this message is
-  // updated.
+  // Update normalizeDupNameExtSrcs(...) in `central/networkgraph/aggregator/aggregator.go` whenever this message is updated.
   message ExternalSource {
     string name = 1;
     oneof source {
-      string cidr = 2; // @gotags: sql:"type(cidr),index" search:"External
-      // Source Address,hidden"
+      string cidr = 2; // @gotags: sql:"type(cidr),index" search:"External Source Address,hidden"
     }
-    // `default` indicates whether the external source is user-generated or
-    // system-generated.
+    // `default` indicates whether the external source is user-generated or system-generated.
     bool default = 3; // @gotags: search:"Default External Source,hidden"
-    // `discovered` indicates whether the external source is harvested from
-    // monitored traffic.
+    // `discovered` indicates whether the external source is harvested from monitored traffic.
     bool discovered = 4; // @gotags: search:"Discovered External Source,hidden"
   }
 

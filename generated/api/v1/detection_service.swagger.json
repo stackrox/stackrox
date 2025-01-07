@@ -1049,7 +1049,7 @@
         "INTERNAL_ENTITIES"
       ],
       "default": "UNKNOWN_TYPE",
-      "title": "- INTERNAL_ENTITIES: INTERNAL_ENTITIES is for grouping all internal entities under a single\nnetwork graph node"
+      "title": "- INTERNAL_ENTITIES: INTERNAL_ENTITIES is for grouping all internal entities under a single network graph node"
     },
     "storagePermissionLevel": {
       "type": "string",

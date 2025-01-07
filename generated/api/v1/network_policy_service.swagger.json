@@ -641,14 +641,14 @@
         },
         "default": {
           "type": "boolean",
-          "description": "`default` indicates whether the external source is user-generated or\nsystem-generated."
+          "description": "`default` indicates whether the external source is user-generated or system-generated."
         },
         "discovered": {
           "type": "boolean",
-          "description": "`discovered` indicates whether the external source is harvested from\nmonitored traffic."
+          "description": "`discovered` indicates whether the external source is harvested from monitored traffic."
         }
       },
-      "description": "Update normalizeDupNameExtSrcs(...) in\n`central/networkgraph/aggregator/aggregator.go` whenever this message is\nupdated."
+      "description": "Update normalizeDupNameExtSrcs(...) in `central/networkgraph/aggregator/aggregator.go` whenever this message is updated."
     },
     "NetworkPolicyServiceApplyNetworkPolicyYamlForDeploymentBody": {
       "type": "object",
@@ -843,7 +843,7 @@
         "INTERNAL_ENTITIES"
       ],
       "default": "UNKNOWN_TYPE",
-      "title": "- INTERNAL_ENTITIES: INTERNAL_ENTITIES is for grouping all internal entities under a single\nnetwork graph node"
+      "title": "- INTERNAL_ENTITIES: INTERNAL_ENTITIES is for grouping all internal entities under a single network graph node"
     },
     "storageNetworkPolicy": {
       "type": "object",
