@@ -140,15 +140,11 @@ func Test_withRotatingCore(t *testing.T) {
 		assert.NoError(t, logger.Sync())
 		// lumberjack removes the old files asynchronously, therefore the test
 		// has to wait for it.
-		var err error
-		pause := 500 * time.Millisecond
-		for retry := 5 * time.Second; retry > 0; retry -= pause {
-			if _, err = os.Stat(oldestRoll); err != nil {
-				break
-			}
-			time.Sleep(pause)
-		}
-		require.ErrorIs(t, err, fs.ErrNotExist)
+		require.EventuallyWithT(t, func(c *assert.CollectT) {
+			_, err := os.Stat(oldestRoll)
+			require.ErrorIs(c, err, fs.ErrNotExist)
+		}, 5*time.Second, 500*time.Millisecond)
+
 		t.Run("ensure there are still only 2 files", func(t *testing.T) {
 			found := 0
 			err := ForEachRotation(logname1, func(_ string) error {

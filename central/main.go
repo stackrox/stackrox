@@ -269,6 +269,8 @@ func runSafeMode() {
 }
 
 func main() {
+	defer utils.IgnoreError(log.InnerLogger.Sync)
+
 	premain.StartMain()
 
 	conf := config.GetConfig()
@@ -975,5 +977,4 @@ func waitForTerminationSignal() {
 		osutils.Restart()
 	}
 	log.Info("Central terminated")
-	log.InnerLogger.Sync()
 }
