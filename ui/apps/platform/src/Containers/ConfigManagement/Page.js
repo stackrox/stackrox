@@ -25,14 +25,7 @@ const Page = () => (
             <Route path={`secret/${entityPath}`} element={<EntityPage />} />
             <Route path={`policy/${entityPath}`} element={<EntityPage />} />
             <Route path={`cve/${entityPath}`} element={<EntityPage />} />
-            <Route path={`image-cve/${entityPath}`} element={<EntityPage />} />
-            <Route path={`node-cve/${entityPath}`} element={<EntityPage />} />
-            <Route path={`cluster-cve/${entityPath}`} element={<EntityPage />} />
-            <Route path={`component/${entityPath}`} element={<EntityPage />} />
-            <Route path={`node-component/${entityPath}`} element={<EntityPage />} />
-            <Route path={`image-component/${entityPath}`} element={<EntityPage />} />
             <Route path={`control/${entityPath}`} element={<EntityPage />} />
-            <Route path={`standard/${entityPath}`} element={<EntityPage />} />
             <Route path={`serviceaccount/${entityPath}`} element={<EntityPage />} />
             <Route path={`subject/${entityPath}`} element={<EntityPage />} />
             <Route path={`role/${entityPath}`} element={<EntityPage />} />

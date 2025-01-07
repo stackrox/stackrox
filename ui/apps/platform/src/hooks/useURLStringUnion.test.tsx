@@ -1,156 +1,168 @@
-// import React, { ReactNode } from 'react';
-// import { MemoryRouter, Route, RouteComponentProps } from 'react-router-dom';
-// import { renderHook, act } from '@testing-library/react';
+import React, { ReactNode } from 'react';
+import { Location, MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
+import { renderHook, act } from '@testing-library/react';
 
-// import { URLSearchParams } from 'url';
-// import useURLStringUnion from './useURLStringUnion';
+import { URLSearchParams } from 'url';
+import useURLStringUnion from './useURLStringUnion';
 
-// type WrapperProps = {
-//     children: ReactNode;
-//     onRouteRender: (renderResult: RouteComponentProps) => void;
-//     initialEntries: string[];
-// };
+type WrapperProps = {
+    children: ReactNode;
+    onRouteRender: (location: Location) => void;
+    initialEntries: string[];
+};
 
-// // This Wrapper component allows the hook to simulate the browser's
-// // URL bar in JSDom via the MemoryRouter
-// function Wrapper({ children, onRouteRender, initialEntries = [] }: WrapperProps) {
-//     return (
-//         <MemoryRouter
-//             initialEntries={initialEntries}
-//             initialIndex={Math.max(0, initialEntries.length - 1)}
-//         >
-//             <Route path="*" render={onRouteRender} />
-//             {children}
-//         </MemoryRouter>
-//     );
-// }
+// This Wrapper component allows the hook to simulate the browser's
+// URL bar in JSDom via the MemoryRouter
+function Wrapper({ children, onRouteRender, initialEntries = [] }: WrapperProps) {
+    const RouteWatcher = () => {
+        const location = useLocation();
+        onRouteRender(location);
+        return null;
+    };
 
-// const createWrapper = (props) => {
-//     return function CreatedWrapper({ children }) {
-//         return <Wrapper {...props}>{children}</Wrapper>;
-//     };
-// };
+    return (
+        <MemoryRouter
+            initialEntries={initialEntries}
+            initialIndex={Math.max(0, initialEntries.length - 1)}
+        >
+            <Routes>
+                <Route path="*" element={<RouteWatcher />} />
+            </Routes>
+            {children}
+        </MemoryRouter>
+    );
+}
 
-// beforeAll(() => {
-//     jest.useFakeTimers();
-// });
+const createWrapper = (props) => {
+    return function CreatedWrapper({ children }) {
+        return <Wrapper {...props}>{children}</Wrapper>;
+    };
+};
 
-// function actAndRunTicks(callback) {
-//     return act(() => {
-//         callback();
-//         jest.runAllTicks();
-//     });
-// }
+beforeAll(() => {
+    jest.useFakeTimers();
+});
 
-// test('should read/write only the specified set of strings to the URL parameter', async () => {
-//     let params;
-//     let testLocation;
+function actAndRunTicks(callback) {
+    return act(() => {
+        callback();
+        jest.runAllTicks();
+    });
+}
 
-//     const possibleUrlValues = ['Alpha', 'Beta', 'Delta'] as const;
+test('should read/write only the specified set of strings to the URL parameter', async () => {
+    let params;
+    let testLocation;
 
-//     const { result } = renderHook(() => useURLStringUnion('urlKey', possibleUrlValues), {
-//         wrapper: createWrapper({
-//             children: [],
-//             onRouteRender: ({ location }) => {
-//                 testLocation = location;
-//             },
-//             initialEntries: [''],
-//         }),
-//     });
-//     actAndRunTicks(() => {});
+    const possibleUrlValues = ['Alpha', 'Beta', 'Delta'] as const;
 
-//     // Check that default value is applied correctly
-//     params = new URLSearchParams(testLocation.search);
-//     expect(result.current[0]).toBe('Alpha');
-//     expect(params.get('urlKey')).toBe('Alpha');
+    const { result } = renderHook(
+        () => {
+            testLocation = useLocation();
+            return useURLStringUnion('urlKey', possibleUrlValues);
+        },
+        {
+            wrapper: ({ children }) => (
+                <MemoryRouter initialEntries={['']}>{children}</MemoryRouter>
+            ),
+        }
+    );
 
-//     // Check that setting the value changes the parameter
-//     actAndRunTicks(() => {
-//         const [, setParam] = result.current;
-//         setParam('Delta');
-//     });
-//     params = new URLSearchParams(testLocation.search);
-//     expect(result.current[0]).toBe('Delta');
-//     expect(params.get('urlKey')).toBe('Delta');
+    actAndRunTicks(() => {});
 
-//     // Check that passing an invalid value does not update the parameter
-//     const invalidValues = [
-//         'Omega',
-//         '',
-//         'alpha',
-//         0,
-//         Infinity,
-//         { test: 'Object' },
-//         new Error('Test error'),
-//         null,
-//         undefined,
-//     ];
+    // Check that default value is applied correctly
+    params = new URLSearchParams(testLocation.search);
+    expect(result.current[0]).toBe('Alpha');
+    expect(params.get('urlKey')).toBe('Alpha');
 
-//     invalidValues.forEach((invalid) => {
-//         actAndRunTicks(() => {
-//             const [, setParam] = result.current;
-//             setParam(invalid);
-//         });
-//         params = new URLSearchParams(testLocation.search);
-//         expect(result.current[0]).toBe('Delta');
-//         expect(params.get('urlKey')).toBe('Delta');
-//     });
+    // Check that setting the value changes the parameter
+    actAndRunTicks(() => {
+        const [, setParam] = result.current;
+        setParam('Delta');
+    });
+    params = new URLSearchParams(testLocation.search);
+    expect(result.current[0]).toBe('Delta');
+    expect(params.get('urlKey')).toBe('Delta');
 
-//     // Check setting a valid value after invalid attempts correctly sets the new value
-//     actAndRunTicks(() => {
-//         const [, setParam] = result.current;
-//         setParam('Beta');
-//     });
-//     params = new URLSearchParams(testLocation.search);
-//     expect(result.current[0]).toBe('Beta');
-//     expect(params.get('urlKey')).toBe('Beta');
-// });
+    // Check that passing an invalid value does not update the parameter
+    const invalidValues = [
+        'Omega',
+        '',
+        'alpha',
+        0,
+        Infinity,
+        { test: 'Object' },
+        new Error('Test error'),
+        null,
+        undefined,
+    ];
 
-// test('should default to the current URL parameter value on initialization, if it is valid', async () => {
-//     let testLocation;
+    invalidValues.forEach((invalid) => {
+        actAndRunTicks(() => {
+            const [, setParam] = result.current;
+            setParam(invalid);
+        });
+        params = new URLSearchParams(testLocation.search);
+        expect(result.current[0]).toBe('Delta');
+        expect(params.get('urlKey')).toBe('Delta');
+    });
 
-//     const possibleUrlValues = ['Alpha', 'Beta', 'Delta'] as const;
+    // Check setting a valid value after invalid attempts correctly sets the new value
+    actAndRunTicks(() => {
+        const [, setParam] = result.current;
+        setParam('Beta');
+    });
+    params = new URLSearchParams(testLocation.search);
+    expect(result.current[0]).toBe('Beta');
+    expect(params.get('urlKey')).toBe('Beta');
+});
 
-//     const { result: initialValidResult } = renderHook(
-//         () => useURLStringUnion('urlKey', possibleUrlValues),
-//         {
-//             wrapper: createWrapper({
-//                 children: [],
-//                 onRouteRender: ({ location }) => {
-//                     testLocation = location;
-//                 },
-//                 initialEntries: ['?urlKey=Beta'],
-//             }),
-//         }
-//     );
-//     actAndRunTicks(() => {});
+test('should default to the current URL parameter value on initialization, if it is valid', async () => {
+    let testLocation;
 
-//     // Check that default value is not applied if the URL param already contains a valid value
-//     const params = new URLSearchParams(testLocation.search);
-//     expect(initialValidResult.current[0]).toBe('Beta');
-//     expect(params.get('urlKey')).toBe('Beta');
-// });
+    const possibleUrlValues = ['Alpha', 'Beta', 'Delta'] as const;
 
-// test('should use the default value when an invalid value is entered directly into the URL', async () => {
-//     let testLocation;
+    const { result: initialValidResult } = renderHook(
+        () => {
+            testLocation = useLocation();
+            return useURLStringUnion('urlKey', possibleUrlValues);
+        },
+        {
+            wrapper: ({ children }) => (
+                <MemoryRouter initialEntries={['?urlKey=Beta']}>{children}</MemoryRouter>
+            ),
+        }
+    );
 
-//     const possibleUrlValues = ['Alpha', 'Beta', 'Delta'] as const;
-//     const { result: initialInvalidResult } = renderHook(
-//         () => useURLStringUnion('urlKey', possibleUrlValues),
-//         {
-//             wrapper: createWrapper({
-//                 children: [],
-//                 onRouteRender: ({ location }) => {
-//                     testLocation = location;
-//                 },
-//                 initialEntries: ['?urlKey=Bogus'],
-//             }),
-//         }
-//     );
-//     actAndRunTicks(() => {});
+    actAndRunTicks(() => {});
 
-//     // Check that default value is applied correctly when the URL param is invalid
-//     const params = new URLSearchParams(testLocation.search);
-//     expect(initialInvalidResult.current[0]).toBe('Alpha');
-//     expect(params.get('urlKey')).toBe('Alpha');
-// });
+    // Check that default value is not applied if the URL param already contains a valid value
+    const params = new URLSearchParams(testLocation.search);
+    expect(initialValidResult.current[0]).toBe('Beta');
+    expect(params.get('urlKey')).toBe('Beta');
+});
+
+test('should use the default value when an invalid value is entered directly into the URL', async () => {
+    let testLocation;
+
+    const possibleUrlValues = ['Alpha', 'Beta', 'Delta'] as const;
+
+    const { result: initialInvalidResult } = renderHook(
+        () => {
+            testLocation = useLocation();
+            return useURLStringUnion('urlKey', possibleUrlValues);
+        },
+        {
+            wrapper: ({ children }) => (
+                <MemoryRouter initialEntries={['?urlKey=Bogus']}>{children}</MemoryRouter>
+            ),
+        }
+    );
+
+    actAndRunTicks(() => {});
+
+    // Check that default value is applied correctly when the URL param is invalid
+    const params = new URLSearchParams(testLocation.search);
+    expect(initialInvalidResult.current[0]).toBe('Alpha');
+    expect(params.get('urlKey')).toBe('Alpha');
+});
