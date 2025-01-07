@@ -429,14 +429,16 @@ func TestIsComplianceOperatorHealthy(t *testing.T) {
 		DoAndReturn(func(_, _ any) ([]*storage.ComplianceIntegration, error) {
 			return []*storage.ComplianceIntegration{}, ErrComplianceOperatorIntegrationDataStore
 		})
-	assert.Error(t, IsComplianceOperatorHealthy(testDBAccess, clusterID, ds))
+	_, err := IsComplianceOperatorHealthy(testDBAccess, clusterID, ds)
+	assert.Error(t, err)
 
 	// No integrations retrieved
 	ds.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), gomock.Any()).Times(1).
 		DoAndReturn(func(_, _ any) ([]*storage.ComplianceIntegration, error) {
 			return []*storage.ComplianceIntegration{}, ErrComplianceOperatorIntegrationZeroIntegrations
 		})
-	assert.Error(t, IsComplianceOperatorHealthy(testDBAccess, clusterID, ds))
+	_, err = IsComplianceOperatorHealthy(testDBAccess, clusterID, ds)
+	assert.Error(t, err)
 
 	// Compliance Operator not installed
 	ds.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), gomock.Any()).Times(1).
@@ -447,7 +449,7 @@ func TestIsComplianceOperatorHealthy(t *testing.T) {
 				},
 			}, nil
 		})
-	err := IsComplianceOperatorHealthy(testDBAccess, clusterID, ds)
+	_, err = IsComplianceOperatorHealthy(testDBAccess, clusterID, ds)
 	assert.Error(t, err)
 	assert.Error(t, ErrComplianceOperatorNotInstalled, err)
 
@@ -461,7 +463,7 @@ func TestIsComplianceOperatorHealthy(t *testing.T) {
 				},
 			}, nil
 		})
-	err = IsComplianceOperatorHealthy(testDBAccess, clusterID, ds)
+	_, err = IsComplianceOperatorHealthy(testDBAccess, clusterID, ds)
 	assert.Error(t, err)
 	assert.Equal(t, ErrComplianceOperatorVersion, err)
 
@@ -475,5 +477,6 @@ func TestIsComplianceOperatorHealthy(t *testing.T) {
 				},
 			}, nil
 		})
-	assert.NoError(t, IsComplianceOperatorHealthy(testDBAccess, clusterID, ds))
+	_, err = IsComplianceOperatorHealthy(testDBAccess, clusterID, ds)
+	assert.NoError(t, err)
 }

@@ -63,6 +63,7 @@ func (f *FormatterImpl) FormatCSVReport(results map[string][]*report.ResultRow) 
 		}
 	}()
 	for clusterID, res := range results {
+		// TODO(lvm): write a file with the reason of the failure if the cluster failed
 		fileName := fmt.Sprintf("cluster_%s.csv", clusterID)
 		err := f.createCSVInZip(zipWriter, fileName, res)
 		if err != nil {
