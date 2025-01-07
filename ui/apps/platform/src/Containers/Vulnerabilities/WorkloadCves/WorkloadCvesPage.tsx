@@ -120,17 +120,11 @@ function WorkloadCvesPage({ view }: WorkloadCvePageProps) {
             {hasReadAccessForIntegration && <ScannerV4IntegrationBanner />}
             <Routes>
                 {hasReadAccessForNamespaces && (
-                    <Route
-                        path={context.getAbsoluteUrl('namespace-view')}
-                        element={<NamespaceViewPage />}
-                    />
+                    <Route path={'namespace-view'} element={<NamespaceViewPage />} />
                 )}
-                <Route path={context.getAbsoluteUrl('cves/:cveId')} element={<ImageCvePage />} />
-                <Route path={context.getAbsoluteUrl('images/:imageId')} element={<ImagePage />} />
-                <Route
-                    path={context.getAbsoluteUrl('deployments/:deploymentId')}
-                    element={<DeploymentPage />}
-                />
+                <Route path={'cves/:cveId'} element={<ImageCvePage />} />
+                <Route path={'images/:imageId'} element={<ImagePage />} />
+                <Route path={'deployments/:deploymentId'} element={<DeploymentPage />} />
                 <Route index element={<WorkloadCvesOverviewPage />} />
                 <Route
                     path="*"
