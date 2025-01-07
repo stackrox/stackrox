@@ -1221,8 +1221,8 @@ github.com/openshift/runtime-utils v0.0.0-20230921210328-7bdb5b9c177b h1:oXzC1N6
 github.com/openshift/runtime-utils v0.0.0-20230921210328-7bdb5b9c177b/go.mod h1:l9/qeKZuAmYUMl0yicJlbkPGDsIycGhwxOvOAWyaP0E=
 github.com/opentracing/opentracing-go v1.2.0 h1:uEJPy/1a5RIPAJ0Ov+OIO8OxWu77jEv+1B0VhjKrZUs=
 github.com/opentracing/opentracing-go v1.2.0/go.mod h1:GxEUsuufX4nBwe+T+Wl9TAgYrxe9dPLANfrWvHYVTgc=
-github.com/operator-framework/operator-lib v0.14.0 h1:er+BgZymZD1im2wytLJiPLZpGALAX6N0gXaHx3PKbO4=
-github.com/operator-framework/operator-lib v0.14.0/go.mod h1:wUu4Xb9xzXnIpglvaZ3yucTMSlqGXHIoUEH9+5gWiu0=
+github.com/operator-framework/operator-lib v0.15.0 h1:0QeRM4PMtThqINpcFGCEBnIV3Z8u7/8fYLEx6mUtdcM=
+github.com/operator-framework/operator-lib v0.15.0/go.mod h1:ZxLvFuQ7bRWiTNBOqodbuNvcsy/Iq0kOygdxhlbNdI0=
 github.com/owenrumney/go-sarif v1.1.1/go.mod h1:dNDiPlF04ESR/6fHlPyq7gHKmrM0sHUvAGjsoh8ZH0U=
 github.com/owenrumney/go-sarif/v2 v2.3.3 h1:ubWDJcF5i3L/EIOER+ZyQ03IfplbSU1BLOE26uKQIIU=
 github.com/owenrumney/go-sarif/v2 v2.3.3/go.mod h1:MSqMMx9WqlBSY7pXoOZWgEsVB4FDNfhcaXDA1j6Sr+w=

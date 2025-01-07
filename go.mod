@@ -409,7 +409,7 @@ require (
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/opencontainers/runtime-spec v1.2.0 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
-	github.com/operator-framework/operator-lib v0.14.0 // indirect
+	github.com/operator-framework/operator-lib v0.15.0 // indirect
 	github.com/package-url/packageurl-go v0.1.3 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.2 // indirect
