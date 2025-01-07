@@ -113,7 +113,7 @@ func TestConfigMapContextCancelled(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.TODO(), 50*time.Millisecond)
 			defer cancel()
 			cfgWatcher.Watch(ctx, cfgNamespace, cfgName)
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(300 * time.Millisecond)
 
 			cm := &v1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{Name: cfgName, Namespace: cfgNamespace},
