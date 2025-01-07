@@ -62,8 +62,6 @@ class K8sRbacTest extends BaseSpecification {
 
     @Tag("BAT")
     @Tag("COMPATIBILITY")
-    // ROX-25270 Test is failing for OSD on AWS
-    @IgnoreIf({ Env.CI_JOB_NAME ==~ /.*osd-aws.*/ })
     def "Verify scraped service accounts"() {
         given:
         List<K8sServiceAccount> orchestratorSAs = null
@@ -73,7 +71,7 @@ class K8sRbacTest extends BaseSpecification {
         "SR should have the same service accounts"
         // Make sure the qa namespace SA exists before running the test. That SA should be the most recent added.
         // This will ensure scrapping is complete if this test spec is run first
-        withRetry(120, 5) {  // allow 10 minutes
+        withRetry(60, 5) {  // allow 10 minutes
             stackroxSAs = ServiceAccountService.getServiceAccounts()
             // list of service accounts from the orchestrator
             orchestratorSAs = orchestrator.getServiceAccounts()
