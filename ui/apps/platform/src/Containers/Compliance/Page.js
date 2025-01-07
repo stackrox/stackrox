@@ -29,7 +29,7 @@ const Page = () => (
             <Route path={`node/${complianceEntityPath}`} element={<Entity />} />
             <Route path={`standard/${complianceEntityPath}`} element={<Entity />} />
 
-            <Route element={<PageNotFound useCase="compliance" />} />
+            <Route path="*" element={<PageNotFound useCase="compliance" />} />
         </Routes>
     </searchContext.Provider>
 );
