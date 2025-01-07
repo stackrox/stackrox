@@ -13,7 +13,7 @@ function PortConfiguration({ deployment }: PortConfigurationProps): ReactElement
 
     if (deployment === null) {
         content =
-            "Port configurations are unavailable because the alert's deployment no longer exists.";
+            'Port configurations are unavailable because the alert’s deployment no longer exists.';
     } else if (deployment.ports.length !== 0) {
         content = deployment.ports.map((port, i) => {
             /* eslint-disable react/no-array-index-key */

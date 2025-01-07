@@ -638,7 +638,7 @@ function AuthProviderForm({
                             <Alert
                                 isInline
                                 variant="info"
-                                title="Note: the claim mappings are used to map claims returned in underlying identity provider's token to ACS token."
+                                title="Note: the claim mappings are used to map claims returned in underlying identity provider’s token to ACS token."
                                 component="p"
                             >
                                 <p>

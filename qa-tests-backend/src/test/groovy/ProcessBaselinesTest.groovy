@@ -116,7 +116,7 @@ class ProcessBaselinesTest extends BaseSpecification {
 
         log.info "Baseline Before after observation: ${baseline}"
 
-        // sleep 10 seconds to allow for propagation to sensor
+        // wait for propagation to sensor
         sleep 10000
         orchestrator.execInContainer(deployment, "pwd")
 
@@ -226,8 +226,8 @@ class ProcessBaselinesTest extends BaseSpecification {
                  lockProcessBaselines(clusterId, deployment, containerName, true)
         assert (!StringUtils.isEmpty(lockProcessBaselines.get(0).getElements(0).getElement().processName))
 
-        // sleep 5 seconds to allow for propagation to sensor
-        sleep 5000
+        // wait for propagation to sensor
+        sleep 10000
         orchestrator.execInContainer(deployment, "pwd")
 
         log.info "Locked Process Baseline after pwd: ${lockProcessBaselines}"
@@ -243,7 +243,7 @@ class ProcessBaselinesTest extends BaseSpecification {
                 alertId = alert.id
                 AlertService.resolveAlert(alertId, addToBaseline)
                 // again, allow the new baseline that contains pwd to propagate
-                sleep 5000
+                sleep 10000
             }
          }
         orchestrator.execInContainer(deployment, "pwd")
@@ -476,7 +476,7 @@ class ProcessBaselinesTest extends BaseSpecification {
 
         log.info "Process Baseline before pwd: ${baselineAfterDelete}"
 
-        // sleep 10 seconds to allow for propagation to sensor
+        // wait for propagation to sensor
         sleep 10000
         orchestrator.execInContainer(deployment, "pwd")
 

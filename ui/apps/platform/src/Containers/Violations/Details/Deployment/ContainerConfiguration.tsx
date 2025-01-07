@@ -13,7 +13,7 @@ function ContainerConfiguration({ deployment }: ContainerConfigurationProps): Re
 
     if (deployment === null) {
         content =
-            "Container configurations are unavailable because the alert's deployment no longer exists.";
+            'Container configurations are unavailable because the alert’s deployment no longer exists.';
     } else if (deployment.containers.length !== 0) {
         content = deployment.containers.map((container, i) => (
             <React.Fragment key={container.id}>

@@ -1,4 +1,5 @@
 import { addDays, format } from 'date-fns';
+import { hasFeatureFlag } from '../../../helpers/features';
 import { getDescriptionListGroup } from '../../../helpers/formHelpers';
 import {
     interactAndWaitForResponses,
@@ -7,8 +8,6 @@ import {
 import { visit } from '../../../helpers/visit';
 import { selectors } from './WorkloadCves.selectors';
 import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
-
-const basePath = '/main/vulnerabilities/workload-cves/';
 
 export function getDateString(date) {
     return format(date, 'MM/DD/YYYY');
@@ -24,6 +23,11 @@ export function getFutureDateByDays(days) {
 }
 
 export function visitWorkloadCveOverview({ clearFiltersOnVisit = true, urlSearch = '' } = {}) {
+    // With Workload CVEs split between User and Platform components, we can only reliably expect
+    // CVEs to be present for the built-in (Platform) components during CI
+    const basePath = hasFeatureFlag('ROX_PLATFORM_CVE_SPLIT')
+        ? '/main/vulnerabilities/platform-workload-cves/'
+        : '/main/vulnerabilities/workload-cves/';
     visit(basePath + urlSearch);
 
     cy.get('h1:contains("Workload CVEs")');
@@ -87,7 +91,7 @@ export function applyLocalStatusFilters(...statuses) {
  * Select a search option from the search options dropdown.
  * @param {('CVE' | 'Image' | 'Deployment' | 'Cluster' | 'Namespace' | 'Requester' | 'Request name')} searchOption
  */
-export function selectSearchOption(searchOption) {
+function selectSearchOption(searchOption) {
     cy.get(selectors.searchOptionsDropdown).click();
     cy.get(selectors.searchOptionsMenuItem(searchOption)).click();
     cy.get(selectors.searchOptionsDropdown).click();
@@ -108,21 +112,6 @@ export function selectAttributeSearchOption(searchAttribute) {
         .contains(new RegExp(`^${searchAttribute}$`))
         .click();
     cy.get(selectors.searchAttributeDropdown).click();
-}
-
-/**
- * Type a value into the filter autocomplete typeahead and select the first matching value.
- * @param {('CVE' | 'Image' | 'Deployment' | 'Cluster' | 'Namespace' | 'Requester' | 'Request name')} searchOption
- * @param {string} value
- */
-export function typeAndSelectSearchFilterValue(searchOption, value) {
-    selectSearchOption(searchOption);
-    cy.get(selectors.searchOptionsValueTypeahead(searchOption)).click();
-    cy.get(selectors.searchOptionsValueTypeahead(searchOption)).type(value);
-    cy.get(selectors.searchOptionsValueMenuItem(searchOption))
-        .contains(new RegExp(`^${value}$`))
-        .click();
-    cy.get(selectors.searchOptionsValueTypeahead(searchOption)).click();
 }
 
 /**

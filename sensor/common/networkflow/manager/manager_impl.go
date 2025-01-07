@@ -508,25 +508,26 @@ func (m *networkFlowManager) enrichAndSendProcesses() {
 }
 
 func (m *networkFlowManager) handleContainerNotFound(conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) error {
-	var failReasons error
-	failReasons = multierror.Append(failReasons, fmt.Errorf("ContainerID %s unknown", conn.containerID))
 	timeElapsedSinceFirstSeen := timestamp.Now().ElapsedSince(status.firstSeen)
-	// Expire the connection if the container cannot be found within the clusterEntityResolutionWaitPeriod
-	if timeElapsedSinceFirstSeen > maxContainerResolutionWaitPeriod {
-		if activeConn, found := m.activeConnections[*conn]; found {
-			enrichedConnections[*activeConn] = timestamp.Now()
-			delete(m.activeConnections, *conn)
-			flowMetrics.SetActiveFlowsTotalGauge(len(m.activeConnections))
-			return nil // connection has been enriched
-		}
+	failReason := fmt.Errorf("ContainerID %s unknown", conn.containerID)
+	if timeElapsedSinceFirstSeen <= maxContainerResolutionWaitPeriod {
+		return multierror.Append(failReason, fmt.Errorf("time for container resolution (%s) not elapsed yet", maxContainerResolutionWaitPeriod))
+	}
+
+	activeConn, found := m.activeConnections[*conn]
+	if !found {
+		// Expire the connection if the container cannot be found within the clusterEntityResolutionWaitPeriod
 		status.rotten = true
 		// Only increment metric once the connection is marked rotten
 		flowMetrics.ContainerIDMisses.Inc()
-		log.Debugf("Unable to fetch deployment information for container %s: no deployment found", conn.containerID)
-	} else {
-		failReasons = multierror.Append(failReasons, fmt.Errorf("time for container resolution (%s) not elapsed yet", maxContainerResolutionWaitPeriod))
+		log.Debugf("Can't find deployment information for container %s", conn.containerID)
+		return failReason
 	}
-	return failReasons
+	// Active connection found - enrichment can be done.
+	enrichedConnections[*activeConn] = timestamp.Now()
+	delete(m.activeConnections, *conn)
+	flowMetrics.SetActiveFlowsTotalGauge(len(m.activeConnections))
+	return nil
 }
 
 func formatMultiErrorOneline(errs []error) string {

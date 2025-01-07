@@ -12,3 +12,13 @@ type ResultRow struct {
 	Rationale    string
 	Instructions string
 }
+
+// Results struct which holds the results of a report.
+type Results struct {
+	ResultCSVs map[string][]*ResultRow // map of cluster id to slice of *resultRow
+	TotalPass  int
+	TotalFail  int
+	TotalMixed int
+	Profiles   []string
+	Clusters   int
+}
