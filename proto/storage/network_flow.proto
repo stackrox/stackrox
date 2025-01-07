@@ -10,8 +10,7 @@ option java_package = "io.stackrox.proto.storage";
 message NetworkFlow {
   NetworkFlowProperties props = 1;
 
-  google.protobuf.Timestamp last_seen_timestamp =
-      2; // @gotags: sql:"index=brin"
+  google.protobuf.Timestamp last_seen_timestamp = 2; // @gotags: sql:"index=brin"
 
   // Need the clusterID as that is part of the key in RocksDB
   string cluster_id = 3; // @gotags: sql:"pk,type(uuid)"
@@ -23,7 +22,7 @@ message NetworkFlowProperties {
   // The destination deployment ID of the network flow
   NetworkEntityInfo dst_entity = 2;
   // may be 0 if not applicable (e.g., icmp).
-  uint32 dst_port = 3;       // @gotags: sql:"pk"
+  uint32 dst_port = 3; // @gotags: sql:"pk"
   L4Protocol l4protocol = 4; // @gotags: sql:"pk"
 }
 
@@ -72,7 +71,7 @@ message NetworkEntityInfo {
 
     string name = 1;
     string namespace = 2;
-    string cluster = 3 [ deprecated = true ];
+    string cluster = 3 [deprecated = true];
 
     repeated ListenPort listen_ports = 4;
   }
@@ -84,7 +83,7 @@ message NetworkEntityInfo {
     string name = 1;
     oneof source {
       string cidr = 2; // @gotags: sql:"type(cidr),index" search:"External
-                       // Source Address,hidden"
+      // Source Address,hidden"
     }
     // `default` indicates whether the external source is user-generated or
     // system-generated.
