@@ -36,6 +36,12 @@ enum CvssScoreVersion {
   V3 = 2;
 }
 
+// EPSS Score stores two epss metrics returned by scanner - epss probability and epss percentile
+message EPSS {
+  float epss_probability = 1; // @gotags: search:"EPSS Probability,store"
+  float epss_percentile = 2;
+}
+
 // ******************************
 // This proto is deprecated.
 // ******************************
@@ -152,6 +158,7 @@ message ImageCVE {
   // cvss_metrics stores list of cvss metrics from different sources like Redhat, NVD etc
   repeated CVSSScore cvss_metrics = 11;
   CvssScoreVersion nvd_score_version = 12;
+  EPSS epss_score = 13;
 }
 
 message NodeCVE {

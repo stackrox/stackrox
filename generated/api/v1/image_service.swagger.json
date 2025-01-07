@@ -1027,6 +1027,20 @@
         }
       }
     },
+    "storageEPSS": {
+      "type": "object",
+      "properties": {
+        "epssProbability": {
+          "type": "number",
+          "format": "float"
+        },
+        "epssPercentile": {
+          "type": "number",
+          "format": "float"
+        }
+      },
+      "title": "EPSS Score stores two epss metrics returned by scanner - epss probability and epss percentile"
+    },
     "storageEmbeddedImageScanComponent": {
       "type": "object",
       "properties": {
@@ -1182,6 +1196,9 @@
         "nvdCvss": {
           "type": "number",
           "format": "float"
+        },
+        "epssScore": {
+          "$ref": "#/definitions/storageEPSS"
         }
       },
       "title": "Next Tag: 22"
