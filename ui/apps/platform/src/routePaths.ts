@@ -144,13 +144,9 @@ export type RouteKey =
     | 'configmanagement'
     | 'dashboard'
     | 'exception-configuration'
-    | 'exception-management'
     | 'integrations'
     | 'listening-endpoints'
     | 'network-graph'
-    | 'node-cves'
-    | 'platform-cves'
-    | 'platform-workload-cves'
     | 'policy-management'
     | 'risk'
     | 'search'
@@ -158,9 +154,13 @@ export type RouteKey =
     | 'systemconfig'
     | 'user'
     | 'violations'
-    | 'vulnerabilities/reports' // add prefix because reports might become ambiguous in the future
+    | 'vulnerabilities/exception-management'
+    | 'vulnerabilities/node-cves'
+    | 'vulnerabilities/reports'
+    | 'vulnerabilities/platform-cves'
+    | 'vulnerabilities/platform-workload-cves'
+    | 'vulnerabilities/workload-cves'
     | 'vulnerability-management'
-    | 'workload-cves'
     ;
 
 // Add properties in same order as type to minimize merge conflicts when multiple people add strings.
@@ -244,12 +244,6 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     'exception-configuration': {
         resourceAccessRequirements: everyResource(['Administration']),
     },
-    'exception-management': {
-        resourceAccessRequirements: someResource([
-            'VulnerabilityManagementRequests',
-            'VulnerabilityManagementApprovals',
-        ]),
-    },
     integrations: {
         resourceAccessRequirements: everyResource(['Integration']),
     },
@@ -258,16 +252,6 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     },
     'network-graph': {
         resourceAccessRequirements: everyResource(nonGlobalResourceNamesForNetworkGraph),
-    },
-    'node-cves': {
-        resourceAccessRequirements: everyResource(['Cluster', 'Node']),
-    },
-    'platform-cves': {
-        resourceAccessRequirements: everyResource(['Cluster']),
-    },
-    'platform-workload-cves': {
-        featureFlagRequirements: allEnabled(['ROX_PLATFORM_CVE_SPLIT']),
-        resourceAccessRequirements: everyResource(['Deployment', 'Image']),
     },
     'policy-management': {
         // The resources that are optional to view policies might become required to clone/create/edit a policy.
@@ -310,6 +294,24 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     violations: {
         resourceAccessRequirements: everyResource(['Alert']),
     },
+    'vulnerabilities/exception-management': {
+        resourceAccessRequirements: someResource([
+            'VulnerabilityManagementRequests',
+            'VulnerabilityManagementApprovals',
+        ]),
+    },
+    'vulnerabilities/node-cves': {
+        resourceAccessRequirements: everyResource(['Cluster', 'Node']),
+    },
+    'vulnerabilities/platform-cves': {
+        resourceAccessRequirements: everyResource(['Cluster']),
+    },
+    'vulnerabilities/platform-workload-cves': {
+        featureFlagRequirements: allEnabled(['ROX_PLATFORM_CVE_SPLIT']),
+        // "platform-workload-cves" uses the same code as "workload-cves", so should have
+        // identical resource requirements until the two sections diverge
+        resourceAccessRequirements: everyResource(['Deployment', 'Image']),
+    },
     'vulnerabilities/reports': {
         resourceAccessRequirements: everyResource(['WorkflowAdministration']),
     },
@@ -324,7 +326,7 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
             // 'WatchedImage', // for Image
         ]),
     },
-    'workload-cves': {
+    'vulnerabilities/workload-cves': {
         featureFlagRequirements: allEnabled(['ROX_VULN_MGMT_WORKLOAD_CVES']),
         resourceAccessRequirements: everyResource(['Deployment', 'Image']),
     },
