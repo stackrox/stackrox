@@ -6,7 +6,7 @@ import (
 
 // APICallCampaignCriterium defines a criterium for an API interception of a telemetry
 // campaign. Requests parameters need to match all fields for the request to
-// be tracked.
+// be tracked. Any request matches empty criterium.
 type APICallCampaignCriterium struct {
 	UserAgents   []string `json:"userAgents,omitempty"`
 	PathPatterns []string `json:"pathPatterns,omitempty"`

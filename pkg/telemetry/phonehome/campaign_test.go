@@ -7,75 +7,100 @@ import (
 )
 
 func TestCampaignFulfilled(t *testing.T) {
-	campaigns := map[string]APICallCampaign{
-		"Code": []APICallCampaignCriterium{
-			{
-				Codes: []int32{202},
-			},
-		},
-		"Codes": []APICallCampaignCriterium{
-			{
-				Codes: []int32{100, 202, 400},
-			},
-		},
-		"Method": []APICallCampaignCriterium{
-			{
-				Methods: []string{"get"},
-			},
-		},
-		"Methods": []APICallCampaignCriterium{
-			{
-				Methods: []string{"post", "get", "put"},
-			},
-		},
-		"PathPattern": []APICallCampaignCriterium{
-			{
-				PathPatterns: []string{"/some/test*"},
-			},
-		},
-		"PathPatterns": []APICallCampaignCriterium{
-			{
-				PathPatterns: []string{"/x", "/some/test*", "/y"},
-			},
-		},
-		"UserAgent": []APICallCampaignCriterium{
-			{
-				UserAgents: []string{"test"},
-			},
-		},
-		"UserAgents": []APICallCampaignCriterium{
-			{
-				UserAgents: []string{"x", "test", "y"},
-			},
-		},
-	}
-
-	t.Run("Test fulfilled", func(t *testing.T) {
+	t.Run("Empty campaign", func(t *testing.T) {
+		campaign := APICallCampaign{}
 		rp := &RequestParams{
 			UserAgent: "some test user-agent",
 			Method:    "GeT",
 			Path:      "/some/test/path",
 			Code:      202,
 		}
-		for name, campaign := range campaigns {
-			t.Run(name, func(t *testing.T) {
-				assert.True(t, campaign.IsFulfilled(rp))
-			})
+		assert.False(t, campaign.IsFulfilled(rp))
+	})
+	t.Run("Empty criterium", func(t *testing.T) {
+		campaign := APICallCampaign{
+			APICallCampaignCriterium{},
 		}
+		rp := &RequestParams{
+			UserAgent: "some test user-agent",
+			Method:    "GeT",
+			Path:      "/some/test/path",
+			Code:      202,
+		}
+		assert.True(t, campaign.IsFulfilled(rp))
 	})
 
-	t.Run("Test not fulfilled", func(t *testing.T) {
-		rp := &RequestParams{
-			UserAgent: "some user-agent",
-			Method:    "delete",
-			Path:      "/test/path",
-			Code:      305,
+	t.Run("Single criterium", func(t *testing.T) {
+		campaigns := map[string]APICallCampaign{
+			"Code": []APICallCampaignCriterium{
+				{
+					Codes: []int32{202},
+				},
+			},
+			"Codes": []APICallCampaignCriterium{
+				{
+					Codes: []int32{100, 202, 400},
+				},
+			},
+			"Method": []APICallCampaignCriterium{
+				{
+					Methods: []string{"get"},
+				},
+			},
+			"Methods": []APICallCampaignCriterium{
+				{
+					Methods: []string{"post", "get", "put"},
+				},
+			},
+			"PathPattern": []APICallCampaignCriterium{
+				{
+					PathPatterns: []string{"/some/test*"},
+				},
+			},
+			"PathPatterns": []APICallCampaignCriterium{
+				{
+					PathPatterns: []string{"/x", "/some/test*", "/y"},
+				},
+			},
+			"UserAgent": []APICallCampaignCriterium{
+				{
+					UserAgents: []string{"test"},
+				},
+			},
+			"UserAgents": []APICallCampaignCriterium{
+				{
+					UserAgents: []string{"x", "test", "y"},
+				},
+			},
 		}
-		for name, campaign := range campaigns {
-			t.Run(name, func(t *testing.T) {
-				assert.False(t, campaign.IsFulfilled(rp))
-			})
-		}
+
+		t.Run("Test fulfilled", func(t *testing.T) {
+			rp := &RequestParams{
+				UserAgent: "some test user-agent",
+				Method:    "GeT",
+				Path:      "/some/test/path",
+				Code:      202,
+			}
+			for name, campaign := range campaigns {
+				t.Run(name, func(t *testing.T) {
+					assert.True(t, campaign.IsFulfilled(rp))
+				})
+			}
+		})
+
+		t.Run("Test not fulfilled", func(t *testing.T) {
+			rp := &RequestParams{
+				UserAgent: "some user-agent",
+				Method:    "delete",
+				Path:      "/test/path",
+				Code:      305,
+			}
+			for name, campaign := range campaigns {
+				t.Run(name, func(t *testing.T) {
+					assert.False(t, campaign.IsFulfilled(rp))
+				})
+			}
+		})
 	})
 
 	t.Run("All criteria", func(t *testing.T) {
