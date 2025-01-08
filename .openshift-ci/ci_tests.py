@@ -290,20 +290,20 @@ class ScaleTest(BaseTest):
         )
 
 
-class ScannerV4Test(BaseTest):
+class ScannerV4InstallTest(BaseTest):
     TEST_TIMEOUT = 240 * 60
     TEST_OUTPUT_DIR = "/tmp/scanner-v4-logs"
 
     def run(self):
-        print("Executing the ScannerV4 Test")
+        print("Executing the Scanner V4 Test")
 
         def set_dirs_after_start():
             # let post test know where results are
-            self.test_outputs = [ScannerV4Test.TEST_OUTPUT_DIR]
+            self.test_outputs = [ScannerV4InstallTest.TEST_OUTPUT_DIR]
 
         self.run_with_graceful_kill(
-            ["tests/e2e/run-scanner-v4.sh", ScannerV4Test.TEST_OUTPUT_DIR],
-            ScannerV4Test.TEST_TIMEOUT,
+            ["tests/e2e/run-scanner-v4-install.sh", ScannerV4InstallTest.TEST_OUTPUT_DIR],
+            ScannerV4InstallTest.TEST_TIMEOUT,
             post_start_hook=set_dirs_after_start,
         )
 
