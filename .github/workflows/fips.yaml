@@ -1,5 +1,4 @@
 name: FIPS check-payload
-description: Run check-payload on an image
 on:
   pull_request:
     types:
