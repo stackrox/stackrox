@@ -42,8 +42,10 @@ func getRuntimeConfig() (*phonehome.RuntimeConfig, error) {
 	if env.OfflineModeEnv.BooleanSetting() {
 		return nil, nil
 	}
-	runtimeCfg, err := phonehome.GetRuntimeConfig(env.TelemetryStorageKey.Setting(),
-		env.TelemetryConfigURL.Setting())
+	runtimeCfg, err := phonehome.GetRuntimeConfig(
+		env.TelemetryConfigURL.Setting(),
+		env.TelemetryStorageKey.Setting(),
+	)
 	return runtimeCfg, errors.Wrap(err, "failed to get telemetry key")
 }
 

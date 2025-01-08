@@ -23,10 +23,10 @@ type RuntimeConfig struct {
 	APICallCampaign APICallCampaign `json:"api_call_campaign,omitempty"`
 }
 
-// GetRuntimeConfig checks the provided defaultKey, and returns a better value in some
-// cases, potentially downloaded from the cfgURL, same value, or empty value if
-// telemetry has to be disabled.
-func GetRuntimeConfig(defaultKey, cfgURL string) (*RuntimeConfig, error) {
+// GetRuntimeConfig checks the provided defaultKey, and returns the adjusted
+// runtime configuration, potentially downloaded from the cfgURL, or nil value
+// if telemetry has to be disabled.
+func GetRuntimeConfig(cfgURL, defaultKey string) (*RuntimeConfig, error) {
 	key := defaultKey
 	if key == DisabledKey {
 		return nil, nil

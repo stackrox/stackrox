@@ -134,7 +134,7 @@ func Test_GetKey(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, err := GetRuntimeConfig(tt.defaultKey, tt.cfgURL)
+			got, err := GetRuntimeConfig(tt.cfgURL, tt.defaultKey)
 			if tt.expectedErr != nil {
 				assert.ErrorContains(t, err, tt.expectedErr.Error())
 			} else {
