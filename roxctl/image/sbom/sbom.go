@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"time"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -27,8 +27,8 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c := &cobra.Command{
 		Use:   "sbom",
-		Short: "Generate an SBOM for the specified image.",
-		Long:  "Generate an SBOM for the specified image from an image scan. Optionally, force a rescan of the image. You must have write permissions for the `Image` resource.",
+		Short: "Generate an SBOM from an image scan.",
+		Long:  "Generate an SBOM from an image scan. Optionally, force a rescan of the image. You must have write permissions for the `Image` resource.",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			if err := imageSBOMCmd.construct(c); err != nil {
 				return err
@@ -48,32 +48,33 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 // imageSBOMCommand holds all configurations and metadata to generate an SBOM.
 type imageSBOMCommand struct {
-	image string
-	force bool
-
-	timeout time.Duration
+	image   string
+	force   bool
 	cluster string
 
-	env     environment.Environment
-	client  common.RoxctlHTTPClient
-	reqBody []byte
+	env    environment.Environment
+	client common.RoxctlHTTPClient
+
+	// The HTTP request body to send to Central.
+	requestBody []byte
 }
 
 // construct ensures all flag values are valid and HTTP client/request built.
-func (i *imageSBOMCommand) construct(cmd *cobra.Command) error {
+func (i *imageSBOMCommand) construct(cobraCmd *cobra.Command) error {
 	var err error
-	i.timeout = flags.Timeout(cmd)
 
+	// Validate the image reference.
 	if err := imageUtils.IsValidImageString(i.image); err != nil {
-		return common.ErrInvalidCommandOption.CausedBy(err)
+		return common.ErrInvalidCommandOption.CausedBy(errors.Wrap(err, "image"))
 	}
 
-	i.client, err = i.env.HTTPClient(i.timeout)
+	// Create the HTTP client.
+	i.client, err = i.env.HTTPClient(flags.Timeout(cobraCmd))
 	if err != nil {
 		return errors.Wrap(err, "creating HTTP client")
 	}
 
-	// Build HTTP request body.
+	// Create the request body.
 	req := struct {
 		Cluster   string `json:"cluster"`
 		ImageName string `json:"image_name"`
@@ -84,7 +85,7 @@ func (i *imageSBOMCommand) construct(cmd *cobra.Command) error {
 		Force:     i.force,
 	}
 
-	i.reqBody, err = json.Marshal(req)
+	i.requestBody, err = json.Marshal(req)
 	if err != nil {
 		return errors.Wrap(err, "creating request body")
 	}
@@ -93,16 +94,23 @@ func (i *imageSBOMCommand) construct(cmd *cobra.Command) error {
 }
 
 func (i *imageSBOMCommand) GenerateSBOM() error {
-	// TODO: Add retries
 	// Send HTTP request and verify response status code.
 	resp, err := i.client.DoReqAndVerifyStatusCode(
 		imageSBOMAPIPath,
 		http.MethodPost,
 		http.StatusOK,
-		bytes.NewReader(i.reqBody),
+		bytes.NewReader(i.requestBody),
 	)
 	if err != nil {
 		return errors.Wrap(err, "generating SBOM")
+	}
+	defer utils.IgnoreError(resp.Body.Close)
+
+	// Central returns a 200 response with Content-Type text/html for any unimplemented '/api/*' endpoints,
+	// catch this and return an error.
+	contentType := resp.Header.Get("Content-Type")
+	if strings.Contains(contentType, "text/html") {
+		return errors.Errorf("unexpected Content-Type %q from Central, confirm Central version supports SBOM generation", contentType)
 	}
 
 	// Output the raw SBOM.
