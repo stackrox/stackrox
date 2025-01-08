@@ -5,7 +5,7 @@ go 1.22.5
 require (
 	cloud.google.com/go/artifactregistry v1.16.1
 	cloud.google.com/go/compute/metadata v0.6.0
-	cloud.google.com/go/containeranalysis v0.13.2
+	cloud.google.com/go/containeranalysis v0.13.3
 	cloud.google.com/go/securitycenter v1.35.3
 	cloud.google.com/go/storage v1.49.0
 	github.com/Azure/azure-sdk-for-go-extensions v0.1.8
@@ -38,7 +38,7 @@ require (
 	github.com/cloudflare/cfssl v1.6.5
 	github.com/cockroachdb/pebble v1.1.3
 	github.com/containers/image/v5 v5.32.2
-	github.com/coreos/go-oidc/v3 v3.11.0
+	github.com/coreos/go-oidc/v3 v3.12.0
 	github.com/coreos/go-systemd/v22 v22.5.0
 	github.com/dave/jennifer v1.7.1
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
@@ -148,7 +148,7 @@ require (
 	google.golang.org/genproto v0.0.0-20241118233622-e639e219e697
 	google.golang.org/grpc v1.69.2
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
-	google.golang.org/protobuf v1.36.1
+	google.golang.org/protobuf v1.36.2
 	gopkg.in/mcuadros/go-syslog.v2 v2.3.0
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
 	gopkg.in/yaml.v3 v3.0.1

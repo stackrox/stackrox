@@ -2,6 +2,11 @@ import React, { ReactElement } from 'react';
 import { Card, CardBody, CardTitle, Title } from '@patternfly/react-core';
 
 import { Deployment } from 'types/deployment.proto';
+import useFeatureFlags from 'hooks/useFeatureFlags';
+import {
+    vulnerabilitiesPlatformWorkloadCvesPath,
+    vulnerabilitiesWorkloadCvesPath,
+} from 'routePaths';
 import ContainerConfigurationDescriptionList from './ContainerConfigurationDescriptionList';
 
 export type ContainerConfigurationProps = {
@@ -9,6 +14,16 @@ export type ContainerConfigurationProps = {
 };
 
 function ContainerConfiguration({ deployment }: ContainerConfigurationProps): ReactElement {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+
+    const hasPlatformWorkloadCveLink =
+        isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT') &&
+        deployment &&
+        deployment.platformComponent;
+    const vulnMgmtBasePath = hasPlatformWorkloadCveLink
+        ? vulnerabilitiesPlatformWorkloadCvesPath
+        : vulnerabilitiesWorkloadCvesPath;
+
     let content: JSX.Element[] | string = 'None';
 
     if (deployment === null) {
@@ -18,7 +33,11 @@ function ContainerConfiguration({ deployment }: ContainerConfigurationProps): Re
         content = deployment.containers.map((container, i) => (
             <React.Fragment key={container.id}>
                 <Title headingLevel="h4" className="pf-v5-u-mb-md">{`containers[${i}]`}</Title>
-                <ContainerConfigurationDescriptionList key={container.id} container={container} />
+                <ContainerConfigurationDescriptionList
+                    key={container.id}
+                    container={container}
+                    vulnMgmtBasePath={vulnMgmtBasePath}
+                />
             </React.Fragment>
         ));
     }
