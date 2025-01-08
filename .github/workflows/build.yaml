@@ -848,7 +848,7 @@ jobs:
           repository: 'stackrox/openshift-check-payload'
           fetch-depth: 0
           path: check-payload
-          branch: development
+          ref: development
 
       - uses: actions/setup-go@v4
 
