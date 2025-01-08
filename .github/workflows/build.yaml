@@ -887,13 +887,14 @@ jobs:
           echo "tag: ${tag}" \
             | tee -a $GITHUB_STEP_SUMMARY
           podman unshare go run main.go scan operator --verbose \
-            --spec "quay.io/rhacs-eng/${image}:${tag}" \
+            --spec "quay.io/rhacs-eng/${image}:${tag}" 2>&1 \
             | tee /tmp/scan.log
           ls -la /tmp/scan.log
           cat /tmp/scan.log
           grep 'status="\(failed\|warning\)"$' /tmp/scan.log \
             | grep -o 'path=.*error="[^"]*"' \
-            >> $GITHUB_STEP_SUMMARY
+            >> $GITHUB_STEP_SUMMARY \
+            || true  # allow none found
 
   slack-on-build-failure:
     env:
