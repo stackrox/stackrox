@@ -903,7 +903,12 @@ jobs:
             | grep -o 'path=.*error="[^"]*"' \
             >> "$GITHUB_STEP_SUMMARY" \
             || true  # allow no errors found
-          exit "${exitcode}"
+          if [[ $exitcode -ne 0 ]]; then
+            exit "${exitcode}"
+          else
+            echo "" > "$GITHUB_STEP_SUMMARY"  # empty it
+          fi
+
 
   slack-on-build-failure:
     env:
