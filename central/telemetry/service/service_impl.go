@@ -73,9 +73,21 @@ func (s *serviceImpl) GetConfig(ctx context.Context, _ *v1.Empty) (*central.Tele
 	if err != nil {
 		return nil, err
 	}
+	/*
+		var cc = make([]*central.TelemetryCampaignAPICallCriterium, 0, len(cfg.APICallCampaign))
+		for _, c := range cfg.APICallCampaign {
+			cc = append(cc, &central.TelemetryCampaignAPICallCriterium{
+				PathPatterns: c.PathPatterns,
+				Methods:      c.Methods,
+				UserAgents:   c.UserAgents,
+				Codes:        c.Codes,
+			})
+		}
+	*/
 	return &central.TelemetryConfig{
 		UserId:       cfg.HashUserAuthID(id),
 		Endpoint:     cfg.Endpoint,
 		StorageKeyV1: cfg.StorageKey,
+		//		Campaign:     cc,
 	}, nil
 }

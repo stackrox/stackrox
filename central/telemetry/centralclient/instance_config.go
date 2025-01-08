@@ -155,7 +155,7 @@ func readExtraTelemetryCampaignFile(filename string) error {
 	if err != nil {
 		return errors.WithMessage(err, "read error")
 	}
-	var extraCampaign Campaign
+	var extraCampaign phonehome.APICallCampaign
 	if err := json.Unmarshal(data, &extraCampaign); err != nil {
 		return errors.WithMessage(err, "parse error")
 	}

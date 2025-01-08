@@ -10,7 +10,7 @@ import (
 var (
 	ignoredPaths = []string{"/v1/ping", "/v1.PingService/Ping", "/v1/metadata", "/static/*"}
 
-	telemetryCampaign = Campaign{
+	telemetryCampaign = phonehome.APICallCampaign{
 		{UserAgents: []string{"roxctl"}},
 		{UserAgents: []string{"ServiceNow"}, PathPatterns: []string{"/v1/clusters"}},
 		{PathPatterns: strings.Split(apiWhiteList.Setting(), ",")},
@@ -44,5 +44,5 @@ func addDefaultProps(rp *phonehome.RequestParams, props map[string]any) bool {
 // User-Agent containing the substrings specified in the trackedUserAgents, and
 // have no match in the ignoredPaths list.
 func apiCall(rp *phonehome.RequestParams, _ map[string]any) bool {
-	return telemetryCampaign.IsFulfilled(rp)
+	return !rp.HasPathIn(ignoredPaths) && telemetryCampaign.IsFulfilled(rp)
 }

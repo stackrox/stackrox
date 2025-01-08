@@ -1,50 +1,49 @@
-package centralclient
+package phonehome
 
 import (
 	"testing"
 
-	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestCampaignFulfilled(t *testing.T) {
-	campaigns := map[string]Campaign{
-		"Code": []CampaignCriterium{
+	campaigns := map[string]APICallCampaign{
+		"Code": []APICallCampaignCriterium{
 			{
-				Codes: []int{202},
+				Codes: []int32{202},
 			},
 		},
-		"Codes": []CampaignCriterium{
+		"Codes": []APICallCampaignCriterium{
 			{
-				Codes: []int{100, 202, 400},
+				Codes: []int32{100, 202, 400},
 			},
 		},
-		"Method": []CampaignCriterium{
+		"Method": []APICallCampaignCriterium{
 			{
 				Methods: []string{"get"},
 			},
 		},
-		"Methods": []CampaignCriterium{
+		"Methods": []APICallCampaignCriterium{
 			{
 				Methods: []string{"post", "get", "put"},
 			},
 		},
-		"PathPattern": []CampaignCriterium{
+		"PathPattern": []APICallCampaignCriterium{
 			{
 				PathPatterns: []string{"/some/test*"},
 			},
 		},
-		"PathPatterns": []CampaignCriterium{
+		"PathPatterns": []APICallCampaignCriterium{
 			{
 				PathPatterns: []string{"/x", "/some/test*", "/y"},
 			},
 		},
-		"UserAgent": []CampaignCriterium{
+		"UserAgent": []APICallCampaignCriterium{
 			{
 				UserAgents: []string{"test"},
 			},
 		},
-		"UserAgents": []CampaignCriterium{
+		"UserAgents": []APICallCampaignCriterium{
 			{
 				UserAgents: []string{"x", "test", "y"},
 			},
@@ -52,7 +51,7 @@ func TestCampaignFulfilled(t *testing.T) {
 	}
 
 	t.Run("Test fulfilled", func(t *testing.T) {
-		rp := &phonehome.RequestParams{
+		rp := &RequestParams{
 			UserAgent: "some test user-agent",
 			Method:    "GeT",
 			Path:      "/some/test/path",
@@ -66,7 +65,7 @@ func TestCampaignFulfilled(t *testing.T) {
 	})
 
 	t.Run("Test not fulfilled", func(t *testing.T) {
-		rp := &phonehome.RequestParams{
+		rp := &RequestParams{
 			UserAgent: "some user-agent",
 			Method:    "delete",
 			Path:      "/test/path",
@@ -80,22 +79,22 @@ func TestCampaignFulfilled(t *testing.T) {
 	})
 
 	t.Run("All criteria", func(t *testing.T) {
-		campaign := Campaign{
+		campaign := APICallCampaign{
 			{
-				Codes:        []int{200, 400},
+				Codes:        []int32{200, 400},
 				Methods:      []string{"get", "post"},
 				PathPatterns: []string{"/v1/test*", "/v2/test*"},
 				UserAgents:   []string{"test", "toast"},
 			},
 			{
-				Codes:        []int{300, 500},
+				Codes:        []int32{300, 500},
 				Methods:      []string{"delete", "options"},
 				PathPatterns: []string{"/v3/test*", "/v4/test*"},
 				UserAgents:   []string{"teeth", "tooth"},
 			},
 		}
 		t.Run("All pass", func(t *testing.T) {
-			rps := []phonehome.RequestParams{
+			rps := []RequestParams{
 				{
 					UserAgent: "some test user-agent 1",
 					Method:    "get",
@@ -127,7 +126,7 @@ func TestCampaignFulfilled(t *testing.T) {
 		})
 
 		t.Run("All not pass", func(t *testing.T) {
-			rps := []phonehome.RequestParams{
+			rps := []RequestParams{
 				{
 					UserAgent: "some test user-agent 1",
 					Method:    "get",
