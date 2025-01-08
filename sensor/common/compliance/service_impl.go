@@ -165,7 +165,7 @@ func (s *serviceImpl) handleSendingMessage(msg common.MessageToComplianceWithAdd
 
 	}
 	if err := conn.Send(msg.Msg); err != nil {
-		return fmt.Errorf("sending message to compliance on node %q: %v", msg.Hostname, err)
+		return fmt.Errorf("sending message to compliance on node %q: %w", msg.Hostname, err)
 	}
 	return nil
 }
