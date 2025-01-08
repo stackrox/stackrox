@@ -819,8 +819,11 @@ function launch_sensor {
       fi
 
       if [[ -n "$CI" ]]; then
+        echo "Linting Helm chart ${helm_chart}".
         helm lint --set ca.cert=PLACEHOLDER_FOR_LINTING "${helm_chart}"
+        echo "Linting Helm chart ${helm_chart}, using namespace ${sensor_namespace}"
         helm lint --set ca.cert=PLACEHOLDER_FOR_LINTING "${helm_chart}" -n "${sensor_namespace}"
+        echo "Linting Helm chart ${helm_chart}, using namespace ${sensor_namespace} and additional arguments" "${helm_args[@]}" "${extra_helm_config[@]}"
         helm lint "${helm_chart}" -n "${sensor_namespace}" "${helm_args[@]}" "${extra_helm_config[@]}"
       fi
 
