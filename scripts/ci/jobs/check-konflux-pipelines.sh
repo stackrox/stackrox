@@ -10,8 +10,8 @@ FAIL_FLAG="/tmp/fail"
 ensure_create_snapshot_runs_last() {
     local pipeline_path=".tekton/operator-bundle-pipeline.yaml"
     local task_name="create-acs-style-snapshot"
-    expected_runafter="$(yq '.spec.tasks[] | select(.name != '\"${task_name}\"') | .name' "${pipeline_path}" | sort)"
-    actual_runafter="$(yq '.spec.tasks[] | select(.name == '\"${task_name}\"') | .runAfter[]' "${pipeline_path}")"
+    expected_runafter="$(yq eval '.spec.tasks[] | select(.name != '\"${task_name}\"') | .name' "${pipeline_path}" | sort)"
+    actual_runafter="$(yq eval '.spec.tasks[] | select(.name == '\"${task_name}\"') | .runAfter[]' "${pipeline_path}")"
 
     echo "➤ ${pipeline_path} // checking ${task_name}: task's runAfter contents shall match the expected ones (left - expected, right - actual)."
     if ! diff --side-by-side <(echo "${expected_runafter}") <(echo "${actual_runafter}"); then
@@ -36,8 +36,8 @@ check_all_components_part_of_custom_snapshot() {
     local pipeline_path=".tekton/operator-bundle-pipeline.yaml"
     local task_name="create-acs-style-snapshot"
 
-    actual_components="$(yq '.spec.tasks[] | select(.name == '\"${task_name}\"') | .params[] | select(.name == "COMPONENTS") | .value' "${pipeline_path}" | yq '.[].name' | tr " " "\n" | sort)"
-    expected_components_from_images="$(yq '.spec.tasks[] | select(.name == "wait-for-*-image") | .name | sub("(wait-for-|-image)", "")' .tekton/operator-bundle-pipeline.yaml)"
+    actual_components="$(yq eval '.spec.tasks[] | select(.name == '\"${task_name}\"') | .params[] | select(.name == "COMPONENTS") | .value' "${pipeline_path}" | yq eval '.[].name' | tr " " "\n" | sort)"
+    expected_components_from_images="$(yq eval '.spec.tasks[] | select(.name == "wait-for-*-image") | .name | sub("(wait-for-|-image)", "")' .tekton/operator-bundle-pipeline.yaml)"
     expected_components=$(echo "${expected_components_from_images} operator-bundle" | tr " " "\n" | sort)
 
     echo "➤ ${pipeline_path} // checking ${task_name}: COMPONENTS contents shall include all ACS images (left - expected, right - actual)."
