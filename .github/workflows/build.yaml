@@ -893,11 +893,12 @@ jobs:
           exitcode=$?
 
           for status_type in warning error; do
-            grep --silent "status=\"${status_type}\"$" /tmp/scan.log \
+            grep --silent "status=\"${status_type}\"" /tmp/scan.log \
               && echo "${status_type}s:" \
               | tee -a "$GITHUB_STEP_SUMMARY"
-            grep "status=\"${status_type}\"$" /tmp/scan.log \
+            grep "status=\"${status_type}\"" /tmp/scan.log \
               | grep -o 'path=.*error="[^"]*"' \
+              | tee >(cat >&2) \
               | tee -a "$GITHUB_STEP_SUMMARY" \
               | while read -r path error; do
                 file=${path//\"/}
