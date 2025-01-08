@@ -94,7 +94,7 @@ this Helm chart:
 ```sh
 helm install -n stackrox --create-namespace \
     stackrox-secured-cluster-services stackrox/stackrox-secured-cluster-services \
-    [ -f <path to cluster-init-bundle.yaml> | -f crs.file=<path to crs.yaml> ] \
+    [ -f <path to cluster-init-bundle.yaml> | --set-file crs.file=<path to crs.yaml> ] \
     --set clusterName=<name of the secured cluster> \
     --set centralEndpoint=<endpoint of Central service>
 ```
