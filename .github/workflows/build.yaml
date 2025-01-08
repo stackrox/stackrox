@@ -900,11 +900,6 @@ jobs:
               | grep -o 'path=.*error="[^"]*"' \
               | tee >(cat >&2) \
               | tee -a "$GITHUB_STEP_SUMMARY" \
-              | while read -r path error; do
-                file=${path//\"/}
-                file=${file#*=}
-                echo "::${status_type//failed/error} file=${file},title=${status_type//failed/error}::${error}"
-              done \
               || true  # allow none found
           done
 
