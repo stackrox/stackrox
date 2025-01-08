@@ -175,6 +175,7 @@ func nvdOpts() []updates.ManagerOption {
 
 func epssOpts() []updates.ManagerOption {
 	return []updates.ManagerOption{
+		// This is required to prevent default updaters from running.
 		updates.WithEnabled([]string{}),
 		updates.WithFactories(map[string]driver.UpdaterSetFactory{
 			"clair.epss": epss.NewFactory(),
