@@ -3,6 +3,8 @@ package centralclient
 import (
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/env"
@@ -76,4 +78,19 @@ func TestInstanceConfig(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_readExtraTelemetryCampaignFile(t *testing.T) {
+	dir := t.TempDir()
+	filename := path.Join(dir, "extraTelemetryCampaign.json")
+	t.Setenv(telemetryCampaignFile.EnvVar(), filename)
+	require.NoError(t, os.WriteFile(telemetryCampaignFile.Setting(), []byte(`[
+	{"userAgents": ["test"], "codes": [500]},
+	{"methods": ["delete"], "pathPatterns": ["/v1/*"]}
+	]`), 0666))
+	assert.Len(t, telemetryCampaign, 4, "built-in campaign")
+	require.NoError(t, readExtraTelemetryCampaignFile(filename))
+	require.Len(t, telemetryCampaign, 6)
+	assert.Equal(t, "test", telemetryCampaign[4].UserAgents[0])
+	assert.Equal(t, "/v1/*", telemetryCampaign[5].PathPatterns[0])
 }

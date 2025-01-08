@@ -2,7 +2,8 @@ package centralclient
 
 import (
 	"context"
-	"strings"
+	"encoding/json"
+	"os"
 	"time"
 
 	"github.com/pkg/errors"
@@ -25,8 +26,9 @@ import (
 )
 
 var (
-	apiWhiteList   = env.RegisterSetting("ROX_TELEMETRY_API_WHITELIST", env.AllowEmpty())
-	userAgentsList = env.RegisterSetting("ROX_TELEMETRY_USERAGENT_LIST", env.WithDefault("ServiceNow"), env.AllowEmpty())
+	apiWhiteList          = env.RegisterSetting("ROX_TELEMETRY_API_WHITELIST", env.AllowEmpty())
+	userAgentsList        = env.RegisterSetting("ROX_TELEMETRY_USERAGENT_LIST", env.AllowEmpty())
+	telemetryCampaignFile = env.RegisterSetting("ROX_TELEMETRY_CAMPAIGN_FILE", env.AllowEmpty())
 
 	config *phonehome.Config
 	once   sync.Once
@@ -57,9 +59,6 @@ func getInstanceConfig(id string, key string) (*phonehome.Config, map[string]any
 			}
 		}
 	}
-
-	trackedPaths = strings.Split(apiWhiteList.Setting(), ",")
-	trackedUserAgents = strings.Split(userAgentsList.Setting(), ",")
 
 	orchestrator := storage.ClusterType_KUBERNETES_CLUSTER.String()
 	if env.Openshift.BooleanSetting() {
@@ -122,12 +121,17 @@ func InstanceConfig() *phonehome.Config {
 			return
 		}
 
+		if err := readExtraTelemetryCampaignFile(telemetryCampaignFile.Setting()); err != nil {
+			log.Errorf("Failed to read the extra telemetry campaign file '%s': %v",
+				telemetryCampaignFile.Setting(), err)
+		}
+
 		var props map[string]any
 		config, props = getInstanceConfig(ii.Id, key)
 		log.Info("Central ID: ", config.ClientID)
 		log.Info("Tenant ID: ", config.GroupID)
-		log.Info("API path telemetry enabled for: ", trackedPaths)
-		log.Info("API User-Agent telemetry enabled for: ", trackedUserAgents)
+		log.Infof("API Telemetry campaign: %v", telemetryCampaign)
+		log.Infof("API Telemetry ignored paths: %v", ignoredPaths)
 
 		config.Gatherer().AddGatherer(func(ctx context.Context) (map[string]any, error) {
 			return props, nil
@@ -141,6 +145,22 @@ func InstanceConfig() *phonehome.Config {
 		return nil
 	}
 	return config
+}
+
+func readExtraTelemetryCampaignFile(filename string) error {
+	if filename == "" {
+		return nil
+	}
+	data, err := os.ReadFile(filename)
+	if err != nil {
+		return errors.WithMessage(err, "read error")
+	}
+	var extraCampaign Campaign
+	if err := json.Unmarshal(data, &extraCampaign); err != nil {
+		return errors.WithMessage(err, "parse error")
+	}
+	telemetryCampaign = append(telemetryCampaign, extraCampaign...)
+	return nil
 }
 
 // GetConfig returns the client configuration, whether the collection is enabled
