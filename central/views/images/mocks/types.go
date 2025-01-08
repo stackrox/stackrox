@@ -23,6 +23,7 @@ import (
 type MockImageCore struct {
 	ctrl     *gomock.Controller
 	recorder *MockImageCoreMockRecorder
+	isgomock struct{}
 }
 
 // MockImageCoreMockRecorder is the mock recorder for MockImageCore.
@@ -74,6 +75,7 @@ func (mr *MockImageCoreMockRecorder) GetImageID() *gomock.Call {
 type MockImageView struct {
 	ctrl     *gomock.Controller
 	recorder *MockImageViewMockRecorder
+	isgomock struct{}
 }
 
 // MockImageViewMockRecorder is the mock recorder for MockImageView.
