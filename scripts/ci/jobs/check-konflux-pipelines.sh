@@ -36,7 +36,7 @@ check_all_components_part_of_custom_snapshot() {
     local pipeline_path=".tekton/operator-bundle-pipeline.yaml"
     local task_name="create-acs-style-snapshot"
 
-    actual_components="$(yq eval '.spec.tasks[] | select(.name == '\"${task_name}\"') | .params[] | select(.name == "COMPONENTS") | .value' "${pipeline_path}" | yq eval '.[].name' | tr " " "\n" | sort)"
+    actual_components="$(yq eval '.spec.tasks[] | select(.name == '\"${task_name}\"') | .params[] | select(.name == "COMPONENTS") | .value' "${pipeline_path}" | yq eval '.[].name' - | tr " " "\n" | sort)"
     expected_components_from_images="$(yq eval '.spec.tasks[] | select(.name == "wait-for-*-image") | .name | sub("(wait-for-|-image)", "")' .tekton/operator-bundle-pipeline.yaml)"
     expected_components=$(echo "${expected_components_from_images} operator-bundle" | tr " " "\n" | sort)
 
