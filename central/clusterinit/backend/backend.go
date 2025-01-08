@@ -25,9 +25,10 @@ type InitBundleWithMeta struct {
 
 // CRS contains a Cluster Registration Secret.
 type CRS struct {
-	CAs  []string `json:"CAs"`
-	Cert string   `json:"cert"`
-	Key  string   `json:"key"`
+	Version int      `json:"version"`
+	CAs     []string `json:"CAs"`
+	Cert    string   `json:"cert"`
+	Key     string   `json:"key"`
 }
 
 // CRSWithMeta contains a CRS alongside its meta data.
