@@ -814,6 +814,7 @@ jobs:
     if: |
       contains(github.event.pull_request.labels.*.name, 'fips')
     needs:
+      - define-job-matrix
       - build-and-push-main
       - build-and-push-operator
       - push-main-manifests
