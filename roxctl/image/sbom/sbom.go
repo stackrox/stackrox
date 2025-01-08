@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -42,6 +43,8 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.Flags().StringVarP(&imageSBOMCmd.image, "image", "i", "", "Image name and reference. (e.g. nginx:latest or nginx@sha256:...)")
 	c.Flags().BoolVarP(&imageSBOMCmd.force, "force", "f", false, "Bypass Central's cache for the image and force a new pull from the Scanner")
 	c.Flags().StringVar(&imageSBOMCmd.cluster, "cluster", "", "Cluster name or ID to delegate image scan to")
+	c.Flags().IntVarP(&imageSBOMCmd.retryDelay, "retry-delay", "d", 3, "Set time to wait between retries in seconds")
+	c.Flags().IntVarP(&imageSBOMCmd.retryCount, "retries", "r", 3, "Number of retries before exiting as error")
 
 	utils.Must(c.MarkFlagRequired("image"))
 	return c
@@ -49,9 +52,11 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 // imageSBOMCommand holds all configurations and metadata to generate an SBOM.
 type imageSBOMCommand struct {
-	image   string
-	force   bool
-	cluster string
+	image      string
+	force      bool
+	cluster    string
+	retryDelay int
+	retryCount int
 
 	env    environment.Environment
 	client common.RoxctlHTTPClient
@@ -70,7 +75,15 @@ func (i *imageSBOMCommand) construct(cobraCmd *cobra.Command) error {
 	}
 
 	// Create the HTTP client.
-	i.client, err = i.env.HTTPClient(flags.Timeout(cobraCmd))
+	i.client, err = i.env.HTTPClient(
+		flags.Timeout(cobraCmd),
+		// Disable exponential backoff so that roxctl does not appear stuck.
+		common.WithDisableBackoff(true),
+		// Ensure error response is made available for troubleshooting failures.
+		common.WithReturnErrorResponseBody(true),
+		common.WithRetryDelay(time.Duration(i.retryDelay)*time.Second),
+		common.WithRetryCount(i.retryCount),
+	)
 	if err != nil {
 		return errors.Wrap(err, "creating HTTP client")
 	}
