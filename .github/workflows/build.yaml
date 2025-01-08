@@ -866,36 +866,22 @@ jobs:
           set +e
           pwd
           ls -la
-          pushd stackrox
-          release_tag=$(make tag)
-          popd
-          echo "$release_tag"
           cd check-payload
           ls -la
           SHELL=/bin/bash
           which podman
           podman -v
           oc version || true
-          fail_count=0
           image="${{ matrix.image }}"
+          echo "image: ${image}"
           if [[ "$image" =~ "operator" ]]; then
-            release_tag="$(make -C operator --quiet --no-print-directory tag)"
+            tag="$(make -C ../stackrox/operator --quiet --no-print-directory tag)"
+          else
+            tag="$(make -C ../stackrox --quiet --no-print-directory tag)"
           fi
-          tag=${release_tag}
-          #for image in main roxctl stackrox-operator; do
-            #if [[ $image == *"-operator" ]]; then
-            #  pushd ../stackrox
-            #  tag=$(make -C operator --silent tag)
-            #  popd
-            #else
-            #  tag=${release_tag}
-            #fi
-            podman unshare go run main.go scan operator --verbose \
-              --spec "quay.io/rhacs-eng/${image}:${tag}" \
-              || (( fail_count++ ))
-            date
-          #done
-          exit "${fail_count}"
+          echo "tag: ${tag}"
+          podman unshare go run main.go scan operator --verbose \
+            --spec "quay.io/rhacs-eng/${image}:${tag}"
 
   slack-on-build-failure:
     env:
