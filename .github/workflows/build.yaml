@@ -892,27 +892,20 @@ jobs:
             | tee /tmp/scan.log
           exitcode=$?
 
-          grep --silent 'status="warning"$' /tmp/scan.log \
-            && echo "warnings:" \
-            >> "$GITHUB_STEP_SUMMARY"
-          grep 'status="warning"$' /tmp/scan.log \
-            | grep -o 'path=.*error="[^"]*"' \
-            | tee -a "$GITHUB_STEP_SUMMARY" \
-            | while read -r path error other; do
-              echo "::warning file=${path},title=warning::${error}"
-            done \
-            || true  # allow no warnings found
-
-          grep --silent 'status="error"$' /tmp/scan.log \
-            && echo "errors:" \
-            >> "$GITHUB_STEP_SUMMARY"
-          grep 'status="failed"$' /tmp/scan.log \
-            | grep -o 'path=.*error="[^"]*"' \
-            | tee -a "$GITHUB_STEP_SUMMARY" \
-            | while read -r path error other; do
-              echo "::warning file=${path},title=error::${error}"
-            done \
-            || true  # allow no errors found
+          for status_type in warning error; do
+            grep --silent "status=\"${status_type}\"\$" /tmp/scan.log \
+              && echo "${status_type}s:" \
+              >> "$GITHUB_STEP_SUMMARY"
+            grep "status=\"${status_type}\"\$" /tmp/scan.log \
+              | grep -o 'path=.*error="[^"]*"' \
+              | tee -a "$GITHUB_STEP_SUMMARY" \
+              | while read -r path error; do
+                file=${path//"/}
+                file=${file#*=}
+                echo "::${status_type} file=${file},title=${status_type}::${error}"
+              done \
+              || true  # allow none found
+          done
 
           if [[ $exitcode -ne 0 ]]; then
             exit "${exitcode}"
