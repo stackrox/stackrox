@@ -889,7 +889,7 @@ jobs:
             | tee -a "$GITHUB_STEP_SUMMARY"
           podman unshare go run main.go scan operator --verbose \
             --spec "quay.io/rhacs-eng/${image}:${tag}" 2>&1 \
-            | tee /tmp/scan.log || true
+            | tee /tmp/scan.log
           exitcode=$?
 
           for status_type in warning error; do
