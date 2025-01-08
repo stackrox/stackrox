@@ -51,6 +51,7 @@ clusters by providing it as an input to the `helm install` command.
 
 ### Generate cluster init bundle
 
+[<- if .FeatureFlags.ROX_CLUSTER_REGISTRATION_SECRETS >]
 > **NOTE**: Beginning with StackRox/ACS 4.6 there exists a modern alternative to init bundles which goes
 > by the name of cluster registration secrets (or 'CRS' for short) and will at some point replace
 > init bundles entirely. Cluster registration secrets and init bundles differ in their specific usage
@@ -61,6 +62,7 @@ clusters by providing it as an input to the `helm install` command.
 > cluster.
 >
 > In any case, you only need an init bundle *or* a CRS, not both.
+[<- end >]
 
 Run the following command to generate a **cluster init bundle**:
 ```sh
@@ -72,6 +74,7 @@ roxctl central init-bundles generate <cluster init bundle name> --output cluster
 - Make sure that you store this bundle securely as it contains secrets. You can
   use the same bundle to set up multiple StackRox secured clusters.
 
+[<- if .FeatureFlags.ROX_CLUSTER_REGISTRATION_SECRETS >]
 ### Generate cluster registration secret (CRS)
 
 > **NOTE**: Skip this section if you have already created an init bundle.
@@ -86,6 +89,7 @@ roxctl central crs generate <CRS name> --output crs.yaml
   `crs.yaml`.
 - Make sure that you store this file securely as it contains secrets. You can
   use the same CRS to set up multiple StackRox secured clusters.
+[<- end >]
 
 ### Deploy Secured Cluster Services
 
@@ -94,7 +98,11 @@ this Helm chart:
 ```sh
 helm install -n stackrox --create-namespace \
     stackrox-secured-cluster-services stackrox/stackrox-secured-cluster-services \
+[<- if .FeatureFlags.ROX_CLUSTER_REGISTRATION_SECRETS >]
     [ -f <path to cluster-init-bundle.yaml> | --set-file crs.file=<path to crs.yaml> ] \
+[<- else >]
+    -f <path to cluster-init-bundle.yaml> \
+[<- end >]
     --set clusterName=<name of the secured cluster> \
     --set centralEndpoint=<endpoint of Central service>
 ```
