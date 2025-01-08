@@ -35,18 +35,6 @@ ${expected_runafter}
 check_all_components_part_of_custom_snapshot() {
     local pipeline_path=".tekton/operator-bundle-pipeline.yaml"
     local task_name="create-acs-style-snapshot"
-    # I realized one other thing.
-    # We check that create-acs-style-snapshot runs last but we don't have a check that all product's Components are passed to the Snapshot.
-    # Imagine when we introduce a new container. We'll add it to Helm charts, we'll add it to the Operator bundle but we may forget to add
-    # it to the Snapshot creation because not many folks besides us three know what Snapshots are and what role they play.
-
-    # I'd suggest to extend check-konflux-pipelines.sh to validate that.
-    # Maybe it's best to do in a follow-up PR/JIRA task to not delay this PR #13577 for even longer.
-    # Besides unwrapping a string from COMPONENTS value (YAML is a superset of JSON so I think yq can parse COMPONENTS raw value),
-    # the tricky thing is what to compare that to.
-    # I suggest that we can compare components names with wait-for-*-image tasks in the pipeline.
-    # The idea is that folks will likely remember to add the new image to the operator-bundle by the time of release and the
-    # check will remind them to include it in the Snapshot too.
 
     actual_components="$(yq '.spec.tasks[] | select(.name == '\"${task_name}\"') | .params[] | select(.name == "COMPONENTS") | .value' "${pipeline_path}" | yq '.[].name' | tr " " "\n" | sort)"
     expected_components_from_images="$(yq '.spec.tasks[] | select(.name == "wait-for-*-image") | .name | sub("(wait-for-|-image)", "")' .tekton/operator-bundle-pipeline.yaml)"
