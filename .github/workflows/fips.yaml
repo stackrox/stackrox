@@ -1,0 +1,94 @@
+name: FIPS check-payload
+description: Run check-payload on an image
+on:
+  pull_request:
+    types:
+    - opened
+    - reopened
+    - synchronize
+  workflow_dispatch:
+    inputs:
+      image:
+        description: 'The image to check like "brew.registry.redhat.io/rh-osbs/rhacs-main-rhel8:4.5.4-5".'
+        required: true
+        type: string
+
+env:
+  QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+  QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+  user=${RH_REGISTRY_USERNAME_RO}
+  pass=${RH_REGISTRY_PASSWORD_RO}
+
+#run-name: ${{ format('FIPS check {0}', inputs.image) }}
+
+jobs:
+  check-payload:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          repository: 'stackrox/openshift-check-payload'
+          fetch-depth: 0
+          path: check-payload
+          ref: development
+
+      - uses: actions/setup-go@v4
+
+      - name: install oc-cli
+        run: |
+          cd /tmp
+          curl --retry 5 -o oc.tar.gz https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/stable/openshift-client-linux.tar.gz
+          tar xvzf oc.tar.gz oc
+          mv oc /usr/bin/ || mv oc /usr/local/bin/
+          echo "$PATH"
+          oc version || true
+          rm oc.tar.gz
+
+      - name: install podman
+        run: |
+          sudo apt-get -y install podman || true
+          which podman || sudo apt-get -y install podman || true
+          podman -v
+
+      - name: Login to Quay.io
+        uses: docker/login-action@v3
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+
+      - name: Login to registry.redhat.io
+        uses: docker/login-action@v3
+        with:
+          registry: registry.redhat.io
+          username: ${{ secrets.RH_REGISTRY_USERNAME_RO }}
+          password: ${{ secrets.RH_REGISTRY_PASSWORD_RO }}
+
+      - name: Scan image for FIPS compliance
+        run: |
+          set -x
+          set +e
+          cd check-payload
+          git log -1
+          image="${{ inputs.image }}"
+          image="${image:-brew.registry.redhat.io/rh-osbs/rhacs-main-rhel8:4.5.4-5}"
+          echo "image: ${image}"
+          podman pull "${image}" || true
+          podman unshare go run main.go scan operator --verbose \
+            --spec "${image}" 2>&1 \
+            | tee /tmp/scan.log
+          exitcode=$?
+
+          for status_type in warning failed; do
+            grep --silent "status=\"${status_type}\"" /tmp/scan.log \
+              && echo "${status_type}:"
+            grep "status=\"${status_type}\"" /tmp/scan.log \
+              | grep -o 'path=.*error="[^"]*"' \
+              | tee >(cat >&2) \
+              || true  # allow none found
+          done
+
+          if [[ $exitcode -ne 0 ]]; then
+            exit "${exitcode}"
+          fi
