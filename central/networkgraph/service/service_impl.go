@@ -2,10 +2,10 @@ package service
 
 import (
 	"context"
-	"golang.org/x/exp/maps"
 	"slices"
 	"time"
 
+	"golang.org/x/exp/maps"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
