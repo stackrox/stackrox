@@ -729,9 +729,6 @@ function launch_sensor {
         rm -f "${api_resp}"
         helm_args+=(--set-file "crs.file=$crs_path")
       else
-        if [[ "${ROX_DEPLOY_SENSOR_WITH_CRS:-}" == "true" ]]; then
-          echo "NOTE: Deploying SENSOR with CRS requested, but the Helm chart located at '${k8s_dir}/sensor-deploy/chart' does not support CRS."
-        fi
         echo "Deploying secured-cluster-services Helm chart using init-bundle"
         local init_bundle_path=${ROX_INIT_BUNDLE_PATH:-"$k8s_dir/sensor-deploy/init-bundle.yaml"}
         (umask 077; touch "$init_bundle_path")
