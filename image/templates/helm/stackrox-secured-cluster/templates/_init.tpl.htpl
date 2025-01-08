@@ -283,6 +283,9 @@ The following block checks for the validity of the provided init bundle. (`helm 
 
   {{- $crs := dict -}}
   {{- $crsManifest := $crsFile | fromYaml -}}
+  {{- if hasKey $crsManifest "Error" -}}
+    {{- include "srox.fail" (printf "Cluster registration secret file is invalid: %s" (get $crsManifest "Error")) -}}
+  {{- end -}}
 
   {{- if not ._rox._securedClusterCertRefresh -}}
     {{ include "srox.fail" "A cluster registration secret cannot be used with manually managed (helmManaged=false) clusters." -}}
