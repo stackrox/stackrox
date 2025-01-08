@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/url"
 	"regexp"
 	"sort"
@@ -15,6 +16,7 @@ import (
 	"github.com/facebookincubator/nvdtools/cvss2"
 	"github.com/facebookincubator/nvdtools/cvss3"
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/enricher/epss"
 	"github.com/quay/claircore/rhel/vex"
 	"github.com/quay/claircore/toolkit/types/cpe"
 	"github.com/quay/zlog"
@@ -77,6 +79,14 @@ var (
 	}
 )
 
+type epssDetail struct {
+	ModelVersion string  `json:"ModelVersion"`
+	CVE          string  `json:"CVE"`
+	Date         string  `json:"Date"` // Use string as there's no need to manipulate the Date as a time.Time object
+	EPSS         float64 `json:"EPSS"`
+	Percentile   float64 `json:"Percentile"`
+}
+
 // ToProtoV4IndexReport maps claircore.IndexReport to v4.IndexReport.
 func ToProtoV4IndexReport(r *claircore.IndexReport) (*v4.IndexReport, error) {
 	if r == nil {
@@ -104,7 +114,11 @@ func ToProtoV4VulnerabilityReport(ctx context.Context, r *claircore.Vulnerabilit
 	if err != nil {
 		return nil, fmt.Errorf("internal error: parsing nvd vulns: %w", err)
 	}
-	vulnerabilities, err := toProtoV4VulnerabilitiesMap(ctx, r.Vulnerabilities, nvdVulns)
+	pkgEPSS, err := pkgEPSS(r.Enrichments)
+	if err != nil {
+		return nil, fmt.Errorf("internal error: parsing package-level EPSS details: %w", err)
+	}
+	vulnerabilities, err := toProtoV4VulnerabilitiesMap(ctx, r.Vulnerabilities, nvdVulns, pkgEPSS)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: %w", err)
 	}
@@ -357,11 +371,57 @@ func sortBySeverity(ids []string, vulnerabilities map[string]*v4.VulnerabilityRe
 	})
 }
 
-func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircore.Vulnerability, nvdVulns map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem) (map[string]*v4.VulnerabilityReport_Vulnerability, error) {
+// rhelVulnsEPSS gets highest EPSS score for each rhel advisory name
+// TODO(ROX-26672): Remove this
+func rhelVulnsEPSS(vulns map[string]*claircore.Vulnerability, pkgEpss map[string]epssDetail) map[string]epssDetail {
+	if vulns == nil || pkgEpss == nil {
+		return nil
+	}
+	rhelEPSSMap := make(map[string]epssDetail)
+	for _, v := range vulns {
+		if v == nil {
+			continue
+		}
+		cve, foundCVE := findName(v, cveIDPattern)
+		if !foundCVE {
+			continue // continue if it's not a CVE
+		}
+		rhelName, foundRHEL := findName(v, rhelVulnNamePattern)
+		if !foundRHEL {
+			continue // continue if it's not a RHSA
+		}
+		cveEPSS, ok := pkgEpss[cve]
+		if !ok {
+			continue // no EPSS score
+		}
+		// if both CVE and rhsa names exist
+		rhelEPSS, ok := rhelEPSSMap[rhelName]
+		if !ok {
+			rhelEPSSMap[rhelName] = cveEPSS
+		} else {
+			if cveEPSS.EPSS > rhelEPSS.EPSS {
+				rhelEPSSMap[rhelName] = cveEPSS
+			}
+		}
+		log.Printf(">>>> rhsa epss details: %+v\n", rhelEPSS)
+	}
+
+	return rhelEPSSMap
+}
+
+func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircore.Vulnerability,
+	nvdVulns map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem,
+	pkgEpss map[string]epssDetail) (map[string]*v4.VulnerabilityReport_Vulnerability, error) {
 	if vulns == nil {
 		return nil, nil
 	}
 	var vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerability
+
+	// TODO(ROX-26672): Remove this
+	var rhelEPSSDetails map[string]epssDetail
+	if !features.ScannerV4RedHatCVEs.Enabled() {
+		rhelEPSSDetails = rhelVulnsEPSS(vulns, pkgEpss)
+	}
 	for k, v := range vulns {
 		if v == nil {
 			continue
@@ -405,6 +465,17 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 			// The preferred CVSS metrics will always be stored at the first index.
 			preferredCVSS = metrics[0]
 		}
+
+		var vulnEPSS epssDetail
+		// TODO(ROX-26672): Remove this
+		if len(rhelEPSSDetails) > 0 {
+			if rhelEPSS, ok := rhelEPSSDetails[name]; ok {
+				vulnEPSS = rhelEPSS
+			}
+		} else if epss, ok := pkgEpss[cve]; ok {
+			vulnEPSS = epss
+		}
+
 		description := v.Description
 		if description == "" {
 			// No description provided, so fall back to NVD.
@@ -441,6 +512,12 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 			FixedInVersion:     fixedInVersion(v),
 			Cvss:               preferredCVSS,
 			CvssMetrics:        metrics,
+		}
+		if vulnEPSS != (epssDetail{}) {
+			vulnerabilities[k].EpssMetrics.ModelVersion = vulnEPSS.ModelVersion
+			vulnerabilities[k].EpssMetrics.Date = vulnEPSS.Date
+			vulnerabilities[k].EpssMetrics.Probability = float32(vulnEPSS.EPSS)
+			vulnerabilities[k].EpssMetrics.Percentile = float32(vulnEPSS.Percentile)
 		}
 	}
 	return vulnerabilities, nil
@@ -693,6 +770,37 @@ func pkgFixedBy(enrichments map[string][]json.RawMessage) (map[string]string, er
 		return nil, nil
 	}
 	return pkgFixedBys, nil
+}
+
+// pkgEPSS unmarshals and returns the EPSS enrichment, if it exists.
+func pkgEPSS(enrichments map[string][]json.RawMessage) (map[string]epssDetail, error) {
+		enrichmentsList := enrichments[epss.Type]
+		if len(enrichmentsList) == 0 {
+			return nil, nil
+		}
+
+		// Log the content of enrichmentsList
+		log.Printf(">>>> enrichmentsList content: %s\n", enrichmentsList)
+		var pkgEPSSs map[string][]epssDetail
+		err := json.Unmarshal(enrichmentsList[0], &pkgEPSSs)
+		if err != nil {
+			log.Printf("Error unmarshaling enrichmentsList[0]: %v\n", err)
+			return nil, err
+		}
+
+		if len(pkgEPSSs) == 0 {
+			return nil, nil
+		}
+
+		result := make(map[string]epssDetail)
+		for key, details := range pkgEPSSs {
+			if len(details) > 0 {
+				result[key] = details[0] // Take the first element
+			}
+		}
+		return result, nil
+	}
+
 }
 
 // cvssMetrics processes the CVSS metrics and severity for a given vulnerability.

@@ -12,6 +12,7 @@ import (
 	"github.com/quay/claircore/alpine"
 	"github.com/quay/claircore/aws"
 	"github.com/quay/claircore/debian"
+	"github.com/quay/claircore/enricher/epss"
 	"github.com/quay/claircore/gobin"
 	"github.com/quay/claircore/java"
 	"github.com/quay/claircore/libvuln"
@@ -137,6 +138,7 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		Enrichers: []driver.Enricher{
 			&nvd.Enricher{},
 			&fixedby.Enricher{},
+			&epss.Enricher{},
 		},
 		UpdateRetention:          libvuln.DefaultUpdateRetention,
 		DisableBackgroundUpdates: true,

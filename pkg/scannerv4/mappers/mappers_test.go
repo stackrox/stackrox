@@ -1512,7 +1512,8 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				enableRedHatCVEs = "true"
 			}
 			t.Setenv(features.ScannerV4RedHatCVEs.EnvVar(), enableRedHatCVEs)
-			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities, tt.nvdVulns)
+			// update test in this PR
+			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities, tt.nvdVulns, nil)
 			assert.NoError(t, err)
 			protoassert.MapEqual(t, tt.want, got)
 		})
