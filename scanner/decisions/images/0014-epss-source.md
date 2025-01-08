@@ -104,8 +104,8 @@ message VulnerabilityReport {
      message EPSS { <-- new proto
       string date = 1;
       string model_version = 2;
-      float score = 3;
-      float probability = 4;
+      float probability = 3;
+      float percentile = 4;
     }
     EPSS epss = 14; <-- new field
   }
