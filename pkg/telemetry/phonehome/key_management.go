@@ -17,42 +17,49 @@ const (
 	selfManagedKey = "eDd6QP8uWm0jCkAowEvijOPgeqtlulwR"
 )
 
-type remoteConfig struct {
-	Key string `json:"storage_key_v1,omitempty"`
+// RuntimeConfig defines some runtime features.
+type RuntimeConfig struct {
+	Key             string          `json:"storage_key_v1,omitempty"`
+	APICallCampaign APICallCampaign `json:"api_call_campaign,omitempty"`
 }
 
-// GetKey checks the provided defaultKey, and returns a better value in some
+// GetRuntimeConfig checks the provided defaultKey, and returns a better value in some
 // cases, potentially downloaded from the cfgURL, same value, or empty value if
 // telemetry has to be disabled.
-func GetKey(defaultKey, cfgURL string) (string, error) {
+func GetRuntimeConfig(defaultKey, cfgURL string) (*RuntimeConfig, error) {
 	key := defaultKey
 	if key == DisabledKey {
-		return "", nil
+		return nil, nil
 	}
 
+	remoteCfg := &RuntimeConfig{
+		Key: key,
+	}
 	if toDownload(version.IsReleaseVersion(), key, cfgURL) {
-		remoteCfg, err := downloadConfig(cfgURL)
+		var err error
+		remoteCfg, err = downloadConfig(cfgURL)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 		if useRemoteKey(version.IsReleaseVersion(), remoteCfg, key) {
-			key = remoteCfg.Key
 			log.Info("Telemetry configuration has been downloaded from ", cfgURL)
+		} else {
+			remoteCfg.Key = key
 		}
 	}
 
 	// The downloaded key can be empty or 'DISABLED', so check again here.
-	if key == "" || key == DisabledKey {
-		return "", nil
+	if remoteCfg == nil || remoteCfg.Key == "" || remoteCfg.Key == DisabledKey {
+		return nil, nil
 	}
-	return key, nil
+	return remoteCfg, nil
 }
 
 // downloadConfig downloads the configuration from the provided url.
-func downloadConfig(u string) (*remoteConfig, error) {
+func downloadConfig(u string) (*RuntimeConfig, error) {
 	if u == "hardcoded" {
 		// TODO(ROX-17726): Use the hardcoded key for now.
-		return &remoteConfig{Key: selfManagedKey}, nil
+		return &RuntimeConfig{Key: selfManagedKey}, nil
 	}
 	client := http.Client{
 		Timeout:   5 * time.Second,
@@ -62,7 +69,7 @@ func downloadConfig(u string) (*remoteConfig, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot download telemetry configuration")
 	}
-	var cfg *remoteConfig
+	var cfg *RuntimeConfig
 	err = json.NewDecoder(resp.Body).Decode(&cfg)
 	return cfg, errors.Wrap(err, "cannot decode telemetry configuration")
 }
@@ -91,7 +98,7 @@ func toDownload(isRelease bool, key, cfgURL string) bool {
 // has to match the one from the downloaded configuration for development
 // installations.
 // See unit tests for the examples.
-func useRemoteKey(isRelease bool, cfg *remoteConfig, localKey string) bool {
+func useRemoteKey(isRelease bool, cfg *RuntimeConfig, localKey string) bool {
 	if cfg == nil {
 		return false
 	}

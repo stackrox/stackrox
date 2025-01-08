@@ -2,8 +2,6 @@ package centralclient
 
 import (
 	"context"
-	"encoding/json"
-	"os"
 	"time"
 
 	"github.com/pkg/errors"
@@ -38,15 +36,15 @@ var (
 	enabled  bool
 )
 
-// getKey returns the configured key. If returned key is empty, telemetry should
-// be disabled.
-func getKey() (string, error) {
+// getRuntimeConfig returns the runtime configuration with the configured key.
+// If returns nil or error, telemetry should be disabled.
+func getRuntimeConfig() (*phonehome.RuntimeConfig, error) {
 	if env.OfflineModeEnv.BooleanSetting() {
-		return "", nil
+		return nil, nil
 	}
-	key, err := phonehome.GetKey(env.TelemetryStorageKey.Setting(),
+	runtimeCfg, err := phonehome.GetRuntimeConfig(env.TelemetryStorageKey.Setting(),
 		env.TelemetryConfigURL.Setting())
-	return key, errors.Wrap(err, "failed to get telemetry key")
+	return runtimeCfg, errors.Wrap(err, "failed to get telemetry key")
 }
 
 func getInstanceConfig(id string, key string) (*phonehome.Config, map[string]any) {
@@ -101,12 +99,12 @@ func getInstanceConfig(id string, key string) (*phonehome.Config, map[string]any
 // telemetry client. Returns nil if data collection is disabled.
 func InstanceConfig() *phonehome.Config {
 	once.Do(func() {
-		key, err := getKey()
+		runtimeCfg, err := getRuntimeConfig()
 		if err != nil {
 			log.Errorf("Failed to configure telemetry: %v.", err)
 			return
 		}
-		if key == "" {
+		if runtimeCfg == nil {
 			return
 		}
 
@@ -121,13 +119,10 @@ func InstanceConfig() *phonehome.Config {
 			return
 		}
 
-		if err := readExtraTelemetryCampaignFile(telemetryCampaignFile.Setting()); err != nil {
-			log.Errorf("Failed to read the extra telemetry campaign file '%s': %v",
-				telemetryCampaignFile.Setting(), err)
-		}
+		telemetryCampaign = append(telemetryCampaign, runtimeCfg.APICallCampaign...)
 
 		var props map[string]any
-		config, props = getInstanceConfig(ii.Id, key)
+		config, props = getInstanceConfig(ii.Id, runtimeCfg.Key)
 		log.Info("Central ID: ", config.ClientID)
 		log.Info("Tenant ID: ", config.GroupID)
 		log.Infof("API Telemetry campaign: %v", telemetryCampaign)
@@ -145,22 +140,6 @@ func InstanceConfig() *phonehome.Config {
 		return nil
 	}
 	return config
-}
-
-func readExtraTelemetryCampaignFile(filename string) error {
-	if filename == "" {
-		return nil
-	}
-	data, err := os.ReadFile(filename)
-	if err != nil {
-		return errors.WithMessage(err, "read error")
-	}
-	var extraCampaign phonehome.APICallCampaign
-	if err := json.Unmarshal(data, &extraCampaign); err != nil {
-		return errors.WithMessage(err, "parse error")
-	}
-	telemetryCampaign = append(telemetryCampaign, extraCampaign...)
-	return nil
 }
 
 // GetConfig returns the client configuration, whether the collection is enabled

@@ -48,8 +48,6 @@ type Config struct {
 	// The period of identity gathering. Default is 1 hour.
 	GatherPeriod time.Duration
 
-	APICallCampaign APICallCampaign
-
 	telemeter telemeter.Telemeter
 	gatherer  Gatherer
 

@@ -46,22 +46,22 @@ func Test_toDownload(t *testing.T) {
 func Test_useRemoteKey(t *testing.T) {
 	tests := map[string]struct {
 		release  bool
-		cfg      *remoteConfig
+		cfg      *RuntimeConfig
 		localKey string
 
 		useRemote bool
 	}{
 		"a": {release: false, cfg: nil, localKey: "", useRemote: false},
-		"b": {release: false, cfg: &remoteConfig{Key: "abc"}, localKey: "", useRemote: false},
+		"b": {release: false, cfg: &RuntimeConfig{Key: "abc"}, localKey: "", useRemote: false},
 		"c": {release: false, cfg: nil, localKey: "", useRemote: false},
-		"d": {release: false, cfg: &remoteConfig{Key: "abc"}, localKey: "abc", useRemote: true},
-		"e": {release: false, cfg: &remoteConfig{Key: "abc"}, localKey: "def", useRemote: false},
+		"d": {release: false, cfg: &RuntimeConfig{Key: "abc"}, localKey: "abc", useRemote: true},
+		"e": {release: false, cfg: &RuntimeConfig{Key: "abc"}, localKey: "def", useRemote: false},
 
 		"f": {release: true, cfg: nil, localKey: "", useRemote: false},
-		"g": {release: true, cfg: &remoteConfig{Key: "abc"}, localKey: "", useRemote: true},
+		"g": {release: true, cfg: &RuntimeConfig{Key: "abc"}, localKey: "", useRemote: true},
 		"h": {release: true, cfg: nil, localKey: "", useRemote: false},
-		"i": {release: true, cfg: &remoteConfig{Key: "abc"}, localKey: "abc", useRemote: true},
-		"j": {release: true, cfg: &remoteConfig{Key: "abc"}, localKey: "def", useRemote: true},
+		"i": {release: true, cfg: &RuntimeConfig{Key: "abc"}, localKey: "abc", useRemote: true},
+		"j": {release: true, cfg: &RuntimeConfig{Key: "abc"}, localKey: "def", useRemote: true},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -134,13 +134,17 @@ func Test_GetKey(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, err := GetKey(tt.defaultKey, tt.cfgURL)
+			got, err := GetRuntimeConfig(tt.defaultKey, tt.cfgURL)
 			if tt.expectedErr != nil {
 				assert.ErrorContains(t, err, tt.expectedErr.Error())
 			} else {
 				assert.NoError(t, err)
 			}
-			assert.Equal(t, tt.expectedKey, got, name)
+			if tt.expectedKey == "" {
+				assert.Nil(t, got, name)
+			} else {
+				assert.Equal(t, tt.expectedKey, got.Key, name)
+			}
 		})
 	}
 }
