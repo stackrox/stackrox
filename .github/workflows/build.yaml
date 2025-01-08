@@ -817,7 +817,6 @@ jobs:
       - define-job-matrix
       - build-and-push-main
       - build-and-push-operator
-      - push-main-manifests
     name: Check images for FIPS compliance
     runs-on: ubuntu-latest
     strategy:
