@@ -64,6 +64,7 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 	} {
 		bundles[uSet] = []updates.ManagerOption{updates.WithEnabled([]string{uSet})}
 	}
+
 	// Rate limit to ~16 requests/second by default.
 	interval := 62 * time.Millisecond
 	configuredInterval := os.Getenv("STACKROX_SCANNER_V4_UPDATER_INTERVAL")

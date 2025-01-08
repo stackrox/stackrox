@@ -104,7 +104,7 @@ require (
 	github.com/prometheus/client_golang v1.20.5
 	github.com/prometheus/client_model v0.6.1
 	github.com/prometheus/common v0.61.0
-	github.com/quay/claircore v1.5.34-0.20250106224302-61550ea693de
+	github.com/quay/claircore v1.5.34
 	github.com/quay/claircore/toolkit v1.2.4
 	github.com/quay/zlog v1.1.8
 	github.com/remind101/migrate v0.0.0-20170729031349-52c1edff7319
