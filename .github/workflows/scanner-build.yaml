@@ -54,6 +54,9 @@ jobs:
         echo -e "\n  current log: "
         git log --max-count=6 || echo "git log failed"
 
+        echo -e "\n  Here comes the content:"
+        cat .github/workflows/scanner-build.yaml
+
         echo -e "\nEnd of debug output\n"
 
         source './scripts/ci/lib.sh'
