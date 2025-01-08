@@ -25,7 +25,6 @@ import (
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/protoutils"
-	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 	"google.golang.org/grpc/metadata"
@@ -86,6 +85,8 @@ func (c *Compliance) Start() {
 	ctx = metadata.AppendToOutgoingContext(ctx, "rox-compliance-nodename", c.nodeNameProvider.GetNodeName())
 
 	stoppedSig := concurrency.NewSignal()
+	signalsC := make(chan os.Signal, 1)
+	signal.Notify(signalsC, syscall.SIGINT, syscall.SIGTERM)
 
 	toSensorC := make(chan *sensor.MsgFromCompliance)
 	defer close(toSensorC)
@@ -94,11 +95,11 @@ func (c *Compliance) Start() {
 		c.manageStream(ctx, cli, &stoppedSig, toSensorC)
 	}()
 
-	var wg sync.WaitGroup
+	var wg concurrency.WaitGroup
 	wg.Add(2)
 
-	go func() {
-		defer wg.Done()
+	go func(ctx context.Context) {
+		defer wg.Add(-1)
 		if c.nodeScanner.IsActive() {
 			log.Infof("Node Inventory v2 enabled")
 			nodeInventoriesC := c.manageNodeInventoryScanLoop(ctx)
@@ -107,10 +108,10 @@ func (c *Compliance) Start() {
 				toSensorC <- n
 			}
 		}
-	}()
+	}(ctx)
 
-	go func() {
-		defer wg.Done()
+	go func(ctx context.Context) {
+		defer wg.Add(-1)
 		if env.NodeIndexEnabled.BooleanSetting() {
 			log.Infof("Node Index v4 enabled")
 			nodeIndexesC := c.manageNodeIndexScanLoop(ctx)
@@ -119,17 +120,19 @@ func (c *Compliance) Start() {
 				toSensorC <- n
 			}
 		}
+	}(ctx)
+
+	// Wait for the terminate signal
+	go func() {
+		sig := <-signalsC
+		log.Infof("Caught %s signal. Shutting down", sig)
+		// Stop generation of node inventories and node indexes
+		cancel()
 	}()
 
-	wg.Wait()
+	<-wg.Done()
+	log.Infof("Generation of node inventories and node indexes stopped")
 
-	signalsC := make(chan os.Signal, 1)
-	signal.Notify(signalsC, syscall.SIGINT, syscall.SIGTERM)
-	// Wait for a signal to terminate
-	sig := <-signalsC
-	log.Infof("Caught %s signal. Shutting down", sig)
-
-	cancel()
 	stoppedSig.Wait()
 	log.Info("Successfully closed Sensor communication")
 }
