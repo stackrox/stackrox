@@ -36,7 +36,8 @@ type ComplainceReportingTestSuite struct {
 	remediationDS     *remediationMocks.MockDataStore
 	ruleDS            *ruleMocks.MockDataStore
 	notifierProcessor *notifierMocks.MockProcessor
-	reportFormatter   *mocks.MockFormatter
+	formatter         *mocks.MockFormatter
+	resultsAggregator *mocks.MockResultsAggregator
 }
 
 func (s *ComplainceReportingTestSuite) SetupSuite() {
@@ -49,7 +50,8 @@ func (s *ComplainceReportingTestSuite) SetupSuite() {
 	s.remediationDS = remediationMocks.NewMockDataStore(s.mockCtrl)
 	s.ruleDS = ruleMocks.NewMockDataStore(s.mockCtrl)
 	s.notifierProcessor = notifierMocks.NewMockProcessor(s.mockCtrl)
-	s.reportFormatter = mocks.NewMockFormatter(s.mockCtrl)
+	s.formatter = mocks.NewMockFormatter(s.mockCtrl)
+	s.resultsAggregator = mocks.NewMockResultsAggregator(s.mockCtrl)
 
 	s.reportGen = &complianceReportGeneratorImpl{
 		checkResultsDS:        s.checkResultsDS,
@@ -58,7 +60,8 @@ func (s *ComplainceReportingTestSuite) SetupSuite() {
 		remediationDS:         s.remediationDS,
 		complianceRuleDS:      s.ruleDS,
 		notificationProcessor: s.notifierProcessor,
-		reportFormatter:       s.reportFormatter,
+		formatter:             s.formatter,
+		resultsAggregator:     s.resultsAggregator,
 	}
 }
 
@@ -101,9 +104,8 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 			Return(&storage.ComplianceOperatorReportSnapshotV2{
 				ReportStatus: &storage.ComplianceOperatorReportStatus{},
 			}, true, nil)
-		s.checkResultsDS.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).Times(len(request.ClusterIDs)).
-			Return(nil)
-		s.reportFormatter.EXPECT().FormatCSVReport(gomock.Any()).Times(1)
+		s.resultsAggregator.EXPECT().GetReportData(gomock.Any()).Times(1).Return(&report.Results{})
+		s.formatter.EXPECT().FormatCSVReport(gomock.Any()).Times(1)
 		s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
 			DoAndReturn(func(_ any, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
 				s.Require().Equal(storage.ComplianceOperatorReportStatus_GENERATED, snapshot.GetReportStatus().GetRunState())
@@ -118,9 +120,8 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 			Return(&storage.ComplianceOperatorReportSnapshotV2{
 				ReportStatus: &storage.ComplianceOperatorReportStatus{},
 			}, true, nil)
-		s.checkResultsDS.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).Times(len(request.ClusterIDs)).
-			Return(nil)
-		s.reportFormatter.EXPECT().FormatCSVReport(gomock.Any()).Times(1)
+		s.resultsAggregator.EXPECT().GetReportData(gomock.Any()).Times(1).Return(&report.Results{})
+		s.formatter.EXPECT().FormatCSVReport(gomock.Any()).Times(1)
 		gomock.InOrder(
 			s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
 				DoAndReturn(func(_ any, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
@@ -148,9 +149,8 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 			Return(&storage.ComplianceOperatorReportSnapshotV2{
 				ReportStatus: &storage.ComplianceOperatorReportStatus{},
 			}, true, nil)
-		s.checkResultsDS.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).Times(len(request.ClusterIDs)).
-			Return(nil)
-		s.reportFormatter.EXPECT().FormatCSVReport(gomock.Any()).Times(1)
+		s.resultsAggregator.EXPECT().GetReportData(gomock.Any()).Times(1).Return(&report.Results{})
+		s.formatter.EXPECT().FormatCSVReport(gomock.Any()).Times(1)
 		gomock.InOrder(
 			s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
 				DoAndReturn(func(_ any, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
@@ -178,9 +178,8 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 			Return(&storage.ComplianceOperatorReportSnapshotV2{
 				ReportStatus: &storage.ComplianceOperatorReportStatus{},
 			}, true, nil)
-		s.checkResultsDS.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).Times(len(request.ClusterIDs)).
-			Return(nil)
-		s.reportFormatter.EXPECT().FormatCSVReport(gomock.Any()).Times(1)
+		s.resultsAggregator.EXPECT().GetReportData(gomock.Any()).Times(1).Return(&report.Results{})
+		s.formatter.EXPECT().FormatCSVReport(gomock.Any()).Times(1)
 		gomock.InOrder(
 			s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
 				DoAndReturn(func(_ any, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {

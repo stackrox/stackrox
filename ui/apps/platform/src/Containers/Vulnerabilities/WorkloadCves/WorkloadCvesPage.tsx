@@ -5,7 +5,10 @@ import { PageSection } from '@patternfly/react-core';
 import PageNotFound from 'Components/PageNotFound';
 import PageTitle from 'Components/PageTitle';
 
-import { vulnerabilitiesWorkloadCvesPath, vulnerabilityNamespaceViewPath } from 'routePaths';
+import {
+    vulnerabilitiesPlatformWorkloadCvesPath,
+    vulnerabilitiesWorkloadCvesPath,
+} from 'routePaths';
 import ScannerV4IntegrationBanner from 'Components/ScannerV4IntegrationBanner';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
@@ -17,10 +20,6 @@ import NamespaceViewPage from './NamespaceView/NamespaceViewPage';
 import { WorkloadCveViewContext } from './WorkloadCveViewContext';
 
 import './WorkloadCvesPage.css';
-
-const vulnerabilitiesWorkloadCveSinglePath = `${vulnerabilitiesWorkloadCvesPath}/cves/:cveId`;
-const vulnerabilitiesWorkloadCveImageSinglePath = `${vulnerabilitiesWorkloadCvesPath}/images/:imageId`;
-const vulnerabilitiesWorkloadCveDeploymentSinglePath = `${vulnerabilitiesWorkloadCvesPath}/deployments/:deploymentId`;
 
 export type WorkloadCvePageProps = {
     view: 'user-workload' | 'platform-workload';
@@ -37,7 +36,10 @@ function WorkloadCvesPage({ view }: WorkloadCvePageProps) {
         const baseSearchFilter = isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT')
             ? { 'Platform Component': [String(view === 'platform-workload')] }
             : {};
-        const getAbsoluteUrl = (subPath: string) => `${vulnerabilitiesWorkloadCvesPath}/${subPath}`;
+        const getAbsoluteUrl = (subPath: string) =>
+            view === 'platform-workload'
+                ? `${vulnerabilitiesPlatformWorkloadCvesPath}/${subPath}`
+                : `${vulnerabilitiesWorkloadCvesPath}/${subPath}`;
 
         return { pageTitle, baseSearchFilter, getAbsoluteUrl };
     }, [view, isFeatureFlagEnabled]);
@@ -47,20 +49,20 @@ function WorkloadCvesPage({ view }: WorkloadCvePageProps) {
             {hasReadAccessForIntegration && <ScannerV4IntegrationBanner />}
             <Switch>
                 {hasReadAccessForNamespaces && (
-                    <Route path={vulnerabilityNamespaceViewPath}>
+                    <Route path={context.getAbsoluteUrl('namespace-view')}>
                         <NamespaceViewPage />
                     </Route>
                 )}
-                <Route path={vulnerabilitiesWorkloadCveSinglePath}>
+                <Route path={context.getAbsoluteUrl('cves/:cveId')}>
                     <ImageCvePage />
                 </Route>
-                <Route path={vulnerabilitiesWorkloadCveImageSinglePath}>
+                <Route path={context.getAbsoluteUrl('images/:imageId')}>
                     <ImagePage />
                 </Route>
-                <Route path={vulnerabilitiesWorkloadCveDeploymentSinglePath}>
+                <Route path={context.getAbsoluteUrl('deployments/:deploymentId')}>
                     <DeploymentPage />
                 </Route>
-                <Route exact path={vulnerabilitiesWorkloadCvesPath}>
+                <Route exact path={context.getAbsoluteUrl('')}>
                     <WorkloadCvesOverviewPage />
                 </Route>
                 <Route>
