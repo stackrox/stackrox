@@ -22,8 +22,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
       with:
-        ref: ${{ github.event.pull_request.head.sha }}
-        # ref: ${{ github.head_ref }}
+        ref: ${{ github.head_ref }}
 
     - name: Define the matrix for build jobs
       id: define-scanner-job-matrix
