@@ -59,8 +59,8 @@ jobs:
           # TODO(ROX-27191): remove the exclusion once there's a community operator.
           matrix="$(jq '.scan_images_with_roxctl.exclude += [{ "name": "STACKROX_BRANDING", "image": "stackrox-operator" }]' <<< "$matrix")"
 
-          matrix="$(jq '.scan_images_for_fips.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
-          matrix="$(jq '.scan_images_for_fips.image += ["central-db", "collector", "collector-slim", "main", "roxctl", "scanner", "scanner-db", "scanner-db-slim", "scanner-slim", "stackrox-operator"]' <<< "$matrix")"
+          matrix="$(jq '.scan_images_for_fips.name += ["RHACS_BRANDING"]' <<< "$matrix")"
+          matrix="$(jq '.scan_images_for_fips.image += ["collector", "main", "roxctl", "stackrox-operator"]' <<< "$matrix")"
 
           if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
             matrix="$(jq '.pre_build_go_binaries.arch += ["ppc64le", "s390x"]' <<< "$matrix")"
@@ -817,6 +817,7 @@ jobs:
       - define-job-matrix
       - build-and-push-main
       - build-and-push-operator
+      - push-main-manifests
     name: Check images for FIPS compliance
     runs-on: ubuntu-latest
     strategy:
