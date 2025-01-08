@@ -871,7 +871,7 @@ jobs:
           cd check-payload
           ls -la
           SHELL=/bin/bash
-          which podman
+          which podman || sudo apt-get -y install podman || true
           podman -v
           oc version || true
           image="${{ matrix.image }}"
