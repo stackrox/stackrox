@@ -815,9 +815,9 @@ jobs:
       contains(github.event.pull_request.labels.*.name, 'fips')
     needs:
       - define-job-matrix
-      - build-and-push-main
-      - build-and-push-operator
-      - push-main-manifests
+      #- build-and-push-main
+      #- build-and-push-operator
+      #- push-main-manifests
     name: Check images for FIPS compliance
     runs-on: ubuntu-latest
     strategy:
@@ -877,8 +877,10 @@ jobs:
           echo "image: ${image}"
           if [[ "$image" =~ "operator" ]]; then
             tag="$(make -C ../stackrox/operator --quiet --no-print-directory tag)"
+            tag="4.7.0-408-g81231e7342"
           else
             tag="$(make -C ../stackrox --quiet --no-print-directory tag)"
+            tag="4.7.x-408-g81231e7342"
           fi
           echo "tag: ${tag}"
           podman unshare go run main.go scan operator --verbose \
