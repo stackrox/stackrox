@@ -69,7 +69,7 @@ class K8sRbacTest extends BaseSpecification {
         "SR should have the same service accounts"
         // Make sure the qa namespace SA exists before running the test. That SA should be the most recent added.
         // This will ensure scraping is complete if this test spec is run first
-        withRetry(24, 5) {  // allow 2 minutes
+        withRetry(36, 5) {  // allow 3 minutes
             stackroxSAs = ServiceAccountService.getServiceAccounts()
             // list of service accounts from the orchestrator
             orchestratorSAs = orchestrator.getServiceAccounts()
