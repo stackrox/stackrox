@@ -130,7 +130,7 @@ func createServer(t *testing.T, retErr bool, htmlResponse bool) *httptest.Server
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		if retErr {
 			rw.WriteHeader(http.StatusInternalServerError)
-			rw.Write([]byte(`{"code":13,"message":"Error From Request Body"}`))
+			_, _ = rw.Write([]byte(`{"code":13,"message":"Error From Request Body"}`))
 			return
 		}
 

@@ -100,8 +100,8 @@ func WithTimeout(timeout time.Duration) HttpClientOption {
 }
 
 // WithUseInsecure sets if HTTP1 should be forced.
-func WithUseInsecure(force bool) HttpClientOption {
+func WithUseInsecure(useInsecure bool) HttpClientOption {
 	return func(hco *HttpClientConfig) {
-		hco.ForceHTTP1 = force
+		hco.UseInsecure = useInsecure
 	}
 }
