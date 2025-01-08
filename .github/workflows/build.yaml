@@ -892,9 +892,9 @@ jobs:
             | tee /tmp/scan.log
           exitcode=$?
 
-          for status_type in warning error; do
+          for status_type in warning failed; do
             grep --silent "status=\"${status_type}\"" /tmp/scan.log \
-              && echo "${status_type}s:" \
+              && echo "${status_type}:" \
               | tee -a "$GITHUB_STEP_SUMMARY"
             grep "status=\"${status_type}\"" /tmp/scan.log \
               | grep -o 'path=.*error="[^"]*"' \
@@ -903,7 +903,7 @@ jobs:
               | while read -r path error; do
                 file=${path//\"/}
                 file=${file#*=}
-                echo "::${status_type} file=${file},title=${status_type}::${error}"
+                echo "::${status_type//failed/error} file=${file},title=${status_type//failed/error}::${error}"
               done \
               || true  # allow none found
           done
