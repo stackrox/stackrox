@@ -173,6 +173,30 @@ func (s *ImageViewTestSuite) TestGetImagesCore() {
 		},
 		{
 			ctx:  contextMap[testutils.UnrestrictedReadWriteCtx],
+			desc: "filtered query with order by risk score",
+			query: search.NewQueryBuilder().
+				AddBools(search.Fixable, true).
+				WithPagination(
+					search.NewPagination().AddSortOption(search.NewSortOption(search.ImageRiskScore).Reversed(true)),
+				).
+				ProtoQuery(),
+			hasVulnFilter: true,
+			matchFilter: matchAllFilter().withVulnFilter(func(vuln *storage.EmbeddedVulnerability) bool {
+				return vuln.GetFixedBy() != ""
+			}),
+			less: func(records []*imageResponse) func(i int, j int) bool {
+				return func(i int, j int) bool {
+					scorei := s.testImagesMap[records[i].ImageID].RiskScore
+					scorej := s.testImagesMap[records[j].ImageID].RiskScore
+					if scorei == scorej {
+						return records[i].ImageID < records[j].ImageID
+					}
+					return scorei > scorej
+				}
+			},
+		},
+		{
+			ctx:  contextMap[testutils.UnrestrictedReadWriteCtx],
 			desc: "order by number of critical CVEs",
 			query: search.NewQueryBuilder().
 				WithPagination(

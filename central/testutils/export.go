@@ -37,7 +37,7 @@ var (
 // export APIs (takes over the data injection).
 type ExportServicePostgresTestHelper struct {
 	Ctx         context.Context
-	Pool        *pgtest.TestPostgres
+	pool        *pgtest.TestPostgres
 	Deployments deploymentDataStore.DataStore
 	Images      imageDataStore.DataStore
 	ImageView   imagesView.ImageView
@@ -52,21 +52,21 @@ func (h *ExportServicePostgresTestHelper) SetupTest(tb testing.TB) error {
 			sac.ResourceScopeKeys(resources.Deployment, resources.Image),
 		),
 	)
-	h.Pool = pgtest.ForT(tb)
-	deploymentStore, err := deploymentDataStore.GetTestPostgresDataStore(tb, h.Pool)
+	h.pool = pgtest.ForT(tb)
+	deploymentStore, err := deploymentDataStore.GetTestPostgresDataStore(tb, h.pool)
 	if err != nil {
 		return err
 	}
 	h.Deployments = deploymentStore
-	h.Images = imageDataStore.GetTestPostgresDataStore(tb, h.Pool.DB)
-	h.ImageView = imagesView.NewImageView(h.Pool)
+	h.Images = imageDataStore.GetTestPostgresDataStore(tb, h.pool)
+	h.ImageView = imagesView.NewImageView(h.pool)
 	return nil
 }
 
 // TearDownTest cleans up the ExportServicePostgresTestHelper resources after testing.
 func (h *ExportServicePostgresTestHelper) TearDownTest(tb testing.TB) {
-	h.Pool.Teardown(tb)
-	h.Pool.Close()
+	h.pool.Teardown(tb)
+	h.pool.Close()
 }
 
 func getImageSetPath() (string, error) {
