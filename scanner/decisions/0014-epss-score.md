@@ -1,4 +1,4 @@
-# 0014 - EPSS Source
+# 0014 - EPSS Score
 
 - **Author(s):** Yi Li
 - **Created:** [2025-01-08 Wednesday]
@@ -9,13 +9,13 @@ Status: Accepted
 
 ## Context
 
-The Exploit Prediction Scoring System (EPSS) is a data-driven approach to estimating the likelihood (probability) that a software vulnerability will be exploited in the wild.
-Many users now rely on EPSS scores to better prioritize vulnerability remediation efforts and Scanner V4 integrates EPSS scores into its vulnerability reports.
+EPSS predicts the likelihood of a vulnerability being exploited within 30 days, assigning a probability from 0% to 100%. A higher score means greater risk. 
+EPSS also provides a percentile ranking to indicate how the vulnerability compares to others in terms of threat level.
+Many users now consult EPSS scores to better prioritize vulnerability remediation efforts and Scanner V4 will integrate EPSS scores into its vulnerability reports.
 
 The primary focus is on CVEs, along with RHSAs, RHEAs, and RHBAs. This document does not cover other types of advisories, such as Ubuntu's USNs.
 
 The current API looks like the following:
-
 ```
 message VulnerabilityReport {
   message Vulnerability {
@@ -63,11 +63,9 @@ All EPSS data integrated by Scanner V4 are fetched from https://epss.cyentia.com
 
 The [`claircore.EPSS`](https://github.com/quay/claircore/blob/main/enricher/epss/epss.go) is used for data fetching, parsing and enriching, as a component of Scanner V4.
 
-All EPSS data is CVE-centric, aligning with Scanner V4's recent adaptation to VEX data for vulnerability matching in RHEL-based images.
-
 All EPSS data integrated to Scanner V4 corresponds to the day prior to the current date, as this approach reduces the likelihood of failure compared to fetching the current date's data, which may not always be ready.
 
-The Api will be extended to:
+To include the EPSS details in Scanner V4, the Api will be extended to:
 
 ```
 message VulnerabilityReport {
@@ -80,9 +78,7 @@ message VulnerabilityReport {
     message CVSS {
       enum Source {
         SOURCE_UNKNOWN = 0;
-        SOURCE_RED_HAT = 1;
-        SOURCE_OSV = 2;
-        SOURCE_NVD = 3;
+        ...
       }
       message V2 {
         float base_score = 1;
@@ -107,8 +103,8 @@ message VulnerabilityReport {
      message EPSS { <-- new proto
       string date = 1;
       string model_version = 2;
-      float score = 3;
-      float probability = 4;
+      float probability = 3;
+      float percentile = 4;
     }
     EPSS epss = 14; <-- new field
   }
@@ -118,8 +114,14 @@ message VulnerabilityReport {
 ```
 ### Handling RHSA/RHBA/RHEA
 
+Without loss of generality, RHSA/RHBA/RHEA will just be referred to as the more well-known RHSA variant of the three.
+Scanner V4 currently displays RHSA as the top-level entity rather than the related CVE(s) when the CVE(s) are fixed. 
+Meanwhile, all EPSS data are CVE-centric. In Scanner V4, the EPSS score for an RHSA will be the highest EPSS score among all CVEs linked to that RHSA, as multiple CVEs can be associated with a single RHSA.
 
 ## Consequences
 
 * We would need to ensure the [ First organization's data source](https://epss.cyentia.com/epss_scores-YYYY-MM-DD.csv.gz) remains consistently accessible. 
 Additionally, we should be prepared to change the data updating process if any API key requirements or request throttling are introduced in the future.
+
+* As noted earlier, the EPSS score displayed in Scanner V4 for an RHSA will correspond to the highest EPSS score among the CVEs linked to that RHSA.
+This may change when Scanner V4 introduces CVEs as top-level entities, allowing each CVE to have its own EPSS score, if applicable.
