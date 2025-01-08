@@ -120,6 +120,7 @@ func createServer(t *testing.T, retErr bool, htmlResponse bool) *httptest.Server
 	}))
 
 	t.Setenv("ROX_ENDPOINT", server.URL)
+	t.Setenv("ROX_API_TOKEN", "fake")
 
 	return server
 }
