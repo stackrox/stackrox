@@ -897,7 +897,10 @@ jobs:
             >> "$GITHUB_STEP_SUMMARY"
           grep 'status="warning"$' /tmp/scan.log \
             | grep -o 'path=.*error="[^"]*"' \
-            >> "$GITHUB_STEP_SUMMARY" \
+            | tee -a "$GITHUB_STEP_SUMMARY" \
+            | while read -r path error other; do
+              echo "::warning file=${path},title=warning::${error}"
+            done \
             || true  # allow no warnings found
 
           grep --silent 'status="error"$' /tmp/scan.log \
@@ -905,13 +908,16 @@ jobs:
             >> "$GITHUB_STEP_SUMMARY"
           grep 'status="failed"$' /tmp/scan.log \
             | grep -o 'path=.*error="[^"]*"' \
-            >> "$GITHUB_STEP_SUMMARY" \
+            | tee -a "$GITHUB_STEP_SUMMARY" \
+            | while read -r path error other; do
+              echo "::warning file=${path},title=error::${error}"
+            done \
             || true  # allow no errors found
 
           if [[ $exitcode -ne 0 ]]; then
             exit "${exitcode}"
           else
-            echo "" > "$GITHUB_STEP_SUMMARY"  # empty it
+            rm "$GITHUB_STEP_SUMMARY"
           fi
 
 
