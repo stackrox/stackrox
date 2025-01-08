@@ -889,7 +889,9 @@ jobs:
           podman unshare go run main.go scan operator --verbose \
             --spec "quay.io/rhacs-eng/${image}:${tag}" \
             | tee /tmp/scan.log
-          grep 'status="\(failed\|warning\)"' /tmp/scan.log \
+          ls -la /tmp/scan.log
+          cat /tmp/scan.log
+          grep 'status="\(failed\|warning\)"$' /tmp/scan.log \
             | grep -o 'path=.*error="[^"]*"' \
             >> $GITHUB_STEP_SUMMARY
 
