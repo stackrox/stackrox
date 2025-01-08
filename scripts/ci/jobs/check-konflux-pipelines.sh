@@ -49,7 +49,7 @@ The actual COMPONENTS contents do not match the expectations.
 To resolve:
 
 1. Open ${pipeline_path} and locate the ${task_name} task
-2. Update the COMPONENTS parameter of this task to include entries for the missing components or remove references to deprecated components. COMPONENTS should include entries for (sorted alphabetically):
+2. Update the COMPONENTS parameter of this task to include entries for the missing components or delete references to removed components. COMPONENTS should include entries for (sorted alphabetically):
 
 ${expected_components}
         "
