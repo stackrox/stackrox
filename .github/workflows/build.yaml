@@ -875,7 +875,8 @@ jobs:
           podman -v
           oc version || true
           image="${{ matrix.image }}"
-          echo "image: ${image}"
+          echo "image: ${image}" \
+            | tee -a $GITHUB_STEP_SUMMARY
           if [[ "$image" =~ "operator" ]]; then
             tag="$(make -C ../stackrox/operator --quiet --no-print-directory tag)"
             tag="4.7.0-408-g81231e7342"
@@ -883,9 +884,14 @@ jobs:
             tag="$(make -C ../stackrox --quiet --no-print-directory tag)"
             tag="4.7.x-408-g81231e7342"
           fi
-          echo "tag: ${tag}"
+          echo "tag: ${tag}" \
+            | tee -a $GITHUB_STEP_SUMMARY
           podman unshare go run main.go scan operator --verbose \
-            --spec "quay.io/rhacs-eng/${image}:${tag}"
+            --spec "quay.io/rhacs-eng/${image}:${tag}" \
+            | tee /tmp/scan.log
+          grep 'status="\(failed\|warning\)"' /tmp/scan.log \
+            | grep -o 'path=.*error="[^"]*"' \
+            >> $GITHUB_STEP_SUMMARY
 
   slack-on-build-failure:
     env:
