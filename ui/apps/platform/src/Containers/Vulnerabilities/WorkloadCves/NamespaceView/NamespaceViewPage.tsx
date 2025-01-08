@@ -105,7 +105,7 @@ const pollInterval = 30000;
 function NamespaceViewPage() {
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
-    const { pageTitle, baseSearchFilter } = useWorkloadCveViewContext();
+    const { pageTitle, baseSearchFilter, getAbsoluteUrl } = useWorkloadCveViewContext();
     const { searchFilter, setSearchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter({
         ...baseSearchFilter,
@@ -272,6 +272,7 @@ function NamespaceViewPage() {
                                                     deploymentCount={deploymentCount}
                                                     namespaceName={name}
                                                     clusterName={clusterName}
+                                                    vulnMgmtBaseUrl={getAbsoluteUrl('')}
                                                 />
                                             </Td>
                                             <Td dataLabel="Labels">
