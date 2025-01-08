@@ -891,18 +891,23 @@ jobs:
             --spec "quay.io/rhacs-eng/${image}:${tag}" 2>&1 \
             | tee /tmp/scan.log
           exitcode=$?
-          echo "warnings:" \
+
+          grep --silent 'status="warning"$' /tmp/scan.log \
+            && echo "warnings:" \
             >> "$GITHUB_STEP_SUMMARY"
           grep 'status="warning"$' /tmp/scan.log \
             | grep -o 'path=.*error="[^"]*"' \
             >> "$GITHUB_STEP_SUMMARY" \
             || true  # allow no warnings found
-          echo "errors:" \
+
+          grep --silent 'status="error"$' /tmp/scan.log \
+            && echo "errors:" \
             >> "$GITHUB_STEP_SUMMARY"
           grep 'status="failed"$' /tmp/scan.log \
             | grep -o 'path=.*error="[^"]*"' \
             >> "$GITHUB_STEP_SUMMARY" \
             || true  # allow no errors found
+
           if [[ $exitcode -ne 0 ]]; then
             exit "${exitcode}"
           else
