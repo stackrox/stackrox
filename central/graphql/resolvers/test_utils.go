@@ -33,7 +33,7 @@ func testDeployments() []*storage.Deployment {
 			Name:        "dep1name",
 			Namespace:   "namespace1name",
 			NamespaceId: "namespace1id",
-			ClusterId:   "cluster1id",
+			ClusterId:   fixtureconsts.Cluster1,
 			ClusterName: "cluster1name",
 			Containers: []*storage.Container{
 				{
@@ -51,7 +51,7 @@ func testDeployments() []*storage.Deployment {
 			Name:        "dep2name",
 			Namespace:   "namespace1name",
 			NamespaceId: "namespace1id",
-			ClusterId:   "cluster1id",
+			ClusterId:   fixtureconsts.Cluster1,
 			ClusterName: "cluster1name",
 			Containers: []*storage.Container{
 				{
@@ -65,7 +65,7 @@ func testDeployments() []*storage.Deployment {
 			Name:        "dep3name",
 			Namespace:   "namespace2name",
 			NamespaceId: "namespace2id",
-			ClusterId:   "cluster2id",
+			ClusterId:   fixtureconsts.Cluster2,
 			ClusterName: "cluster2name",
 			Containers: []*storage.Container{
 				{
