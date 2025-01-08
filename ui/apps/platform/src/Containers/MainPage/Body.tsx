@@ -43,6 +43,7 @@ import {
     vulnerabilitiesPlatformCvesPath,
     deprecatedPoliciesBasePath,
     policiesBasePath,
+    vulnerabilitiesPlatformWorkloadCvesPath,
 } from 'routePaths';
 
 import PageNotFound from 'Components/PageNotFound';
@@ -150,12 +151,6 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         ),
         path: exceptionConfigurationPath,
     },
-    'exception-management': {
-        component: asyncComponent(
-            () => import('Containers/Vulnerabilities/ExceptionManagement/ExceptionManagementPage')
-        ),
-        path: exceptionManagementPath,
-    },
     integrations: {
         component: asyncComponent(() => import('Containers/Integrations/IntegrationsPage')),
         path: integrationsPath,
@@ -169,16 +164,6 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
     'network-graph': {
         component: asyncComponent(() => import('Containers/NetworkGraph/NetworkGraphPage')),
         path: networkPath,
-    },
-    'node-cves': {
-        component: asyncComponent(() => import('Containers/Vulnerabilities/NodeCves/NodeCvesPage')),
-        path: vulnerabilitiesNodeCvesPath,
-    },
-    'platform-cves': {
-        component: asyncComponent(
-            () => import('Containers/Vulnerabilities/PlatformCves/PlatformCvesPage')
-        ),
-        path: vulnerabilitiesPlatformCvesPath,
     },
     'policy-management': {
         component: asyncComponent(() => import('Containers/PolicyManagement/PolicyManagementPage')),
@@ -208,17 +193,41 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         component: asyncComponent(() => import('Containers/Violations/ViolationsPage')),
         path: violationsPath,
     },
+    'vulnerabilities/exception-management': {
+        component: asyncComponent(
+            () => import('Containers/Vulnerabilities/ExceptionManagement/ExceptionManagementPage')
+        ),
+        path: exceptionManagementPath,
+    },
+    'vulnerabilities/node-cves': {
+        component: asyncComponent(() => import('Containers/Vulnerabilities/NodeCves/NodeCvesPage')),
+        path: vulnerabilitiesNodeCvesPath,
+    },
+    'vulnerabilities/platform-cves': {
+        component: asyncComponent(
+            () => import('Containers/Vulnerabilities/PlatformCves/PlatformCvesPage')
+        ),
+        path: vulnerabilitiesPlatformCvesPath,
+    },
+    'vulnerabilities/platform-workload-cves': {
+        component: (() => {
+            const AsyncWorkloadCvesComponent = asyncComponent(
+                () => import('Containers/Vulnerabilities/WorkloadCves/WorkloadCvesPage')
+            );
+
+            return function WorkloadCvesPage() {
+                return <AsyncWorkloadCvesComponent view="platform-workload" />;
+            };
+        })(),
+        path: vulnerabilitiesPlatformWorkloadCvesPath,
+    },
     'vulnerabilities/reports': {
         component: asyncComponent(
             () => import('Containers/Vulnerabilities/VulnerablityReporting/VulnReportingPage')
         ),
         path: vulnerabilityReportsPath,
     },
-    'vulnerability-management': {
-        component: asyncComponent(() => import('Containers/VulnMgmt/WorkflowLayout')),
-        path: vulnManagementPath,
-    },
-    'workload-cves': {
+    'vulnerabilities/workload-cves': {
         component: (() => {
             const AsyncWorkloadCvesComponent = asyncComponent(
                 () => import('Containers/Vulnerabilities/WorkloadCves/WorkloadCvesPage')
@@ -229,6 +238,10 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
             };
         })(),
         path: vulnerabilitiesWorkloadCvesPath,
+    },
+    'vulnerability-management': {
+        component: asyncComponent(() => import('Containers/VulnMgmt/WorkflowLayout')),
+        path: vulnManagementPath,
     },
 };
 

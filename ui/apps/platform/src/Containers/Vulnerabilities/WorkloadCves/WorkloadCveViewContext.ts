@@ -2,7 +2,7 @@ import { createContext } from 'react';
 import { QuerySearchFilter } from '../types';
 
 export type WorkloadCveView = {
-    createUrl: (path: string) => string;
+    getAbsoluteUrl: (path: string) => string;
     baseSearchFilter: QuerySearchFilter;
     pageTitle: string;
 };

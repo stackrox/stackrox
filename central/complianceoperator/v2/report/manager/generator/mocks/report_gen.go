@@ -93,3 +93,41 @@ func (mr *MockFormatterMockRecorder) FormatCSVReport(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FormatCSVReport", reflect.TypeOf((*MockFormatter)(nil).FormatCSVReport), arg0)
 }
+
+// MockResultsAggregator is a mock of ResultsAggregator interface.
+type MockResultsAggregator struct {
+	ctrl     *gomock.Controller
+	recorder *MockResultsAggregatorMockRecorder
+	isgomock struct{}
+}
+
+// MockResultsAggregatorMockRecorder is the mock recorder for MockResultsAggregator.
+type MockResultsAggregatorMockRecorder struct {
+	mock *MockResultsAggregator
+}
+
+// NewMockResultsAggregator creates a new mock instance.
+func NewMockResultsAggregator(ctrl *gomock.Controller) *MockResultsAggregator {
+	mock := &MockResultsAggregator{ctrl: ctrl}
+	mock.recorder = &MockResultsAggregatorMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockResultsAggregator) EXPECT() *MockResultsAggregatorMockRecorder {
+	return m.recorder
+}
+
+// GetReportData mocks base method.
+func (m *MockResultsAggregator) GetReportData(arg0 *report.Request) *report.Results {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetReportData", arg0)
+	ret0, _ := ret[0].(*report.Results)
+	return ret0
+}
+
+// GetReportData indicates an expected call of GetReportData.
+func (mr *MockResultsAggregatorMockRecorder) GetReportData(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetReportData", reflect.TypeOf((*MockResultsAggregator)(nil).GetReportData), arg0)
+}

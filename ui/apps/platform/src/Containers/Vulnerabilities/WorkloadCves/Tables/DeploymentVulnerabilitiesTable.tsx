@@ -26,6 +26,7 @@ import DeploymentComponentVulnerabilitiesTable, {
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
 import { FormattedDeploymentVulnerability } from './table.utils';
+import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 
 export const tableId = 'WorkloadCvesDeploymentVulnerabilitiesTable';
 export const defaultColumns = {
@@ -96,6 +97,7 @@ function DeploymentVulnerabilitiesTable({
     onClearFilters,
     tableConfig,
 }: DeploymentVulnerabilitiesTableProps) {
+    const { getAbsoluteUrl } = useWorkloadCveViewContext();
     const getVisibilityClass = generateVisibilityForColumns(tableConfig);
     const hiddenColumnCount = getHiddenColumnCount(tableConfig);
     const expandedRowSet = useSet<string>();
@@ -166,10 +168,12 @@ function DeploymentVulnerabilitiesTable({
                                             vulnerabilityState={vulnerabilityState}
                                         >
                                             <Link
-                                                to={getWorkloadEntityPagePath(
-                                                    'CVE',
-                                                    cve,
-                                                    vulnerabilityState
+                                                to={getAbsoluteUrl(
+                                                    getWorkloadEntityPagePath(
+                                                        'CVE',
+                                                        cve,
+                                                        vulnerabilityState
+                                                    )
                                                 )}
                                             >
                                                 {cve}
