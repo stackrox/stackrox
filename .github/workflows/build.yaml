@@ -889,7 +889,7 @@ jobs:
             | tee -a "$GITHUB_STEP_SUMMARY"
           podman unshare go run main.go scan operator --verbose \
             --spec "quay.io/rhacs-eng/${image}:${tag}" 2>&1 \
-            | tee /tmp/scan.log
+            | tee /tmp/scan.log || true
           exitcode=$?
 
           for status_type in warning error; do
@@ -900,7 +900,7 @@ jobs:
               | grep -o 'path=.*error="[^"]*"' \
               | tee -a "$GITHUB_STEP_SUMMARY" \
               | while read -r path error; do
-                file=${path//"/}
+                file=${path//\"/}
                 file=${file#*=}
                 echo "::${status_type} file=${file},title=${status_type}::${error}"
               done \
