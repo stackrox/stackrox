@@ -164,6 +164,14 @@ func (resolver *imageResolver) ImageVulnerabilityCount(ctx context.Context, args
 
 func (resolver *imageResolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageVulnerabilityCounter")
+	// In this function, the resolver is obtained by a call to either Image or Images from the root resolver,
+	// applying scoped access control to avoid exposing images the requester should not be aware of.
+	// The image ID is added to the context (by withImageScopeContext) to restrict the vulnerability search
+	// to the CVEs linked to the image.
+	// If no context elevation is done, then scoped access control is applied again on top of the image ID filtering
+	// leading to additional table joins in DB and poor performance.
+	// The context is elevated to bypass the scoped access control and improve the performance,
+	// considering the fact that the image ID was obtained by applying scoped access control rules.
 	return resolver.root.ImageVulnerabilityCounter(resolver.withElevatedImageScopeContext(ctx), args)
 }
 
