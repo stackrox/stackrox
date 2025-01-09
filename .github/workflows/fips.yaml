@@ -76,8 +76,7 @@ jobs:
           set -x
           works="$image"
           exitcode=0
-          for image in rhel8-operator operator-bundle {central-db,collector,collector-slim,main,roxctl,scanner,scanner-db,scanner-db-slim,scanner-slim,scanner-
-v4,scanner-v4-db}-rhel8; do
+          for image in rhel8-operator operator-bundle {central-db,collector,collector-slim,main,roxctl,scanner,scanner-db,scanner-db-slim,scanner-slim,scanner-v4,scanner-v4-db}-rhel8; do
             image="brew.registry.redhat.io/rh-osbs/rhacs-${image}"
             echo "image: ${image}" \
               | tee -a "$GITHUB_STEP_SUMMARY"
