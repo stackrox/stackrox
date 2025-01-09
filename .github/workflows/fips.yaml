@@ -8,9 +8,12 @@ on:
   workflow_dispatch:
     inputs:
       image:
-        description: 'The image to check like "brew.registry.redhat.io/rh-osbs/rhacs-main-rhel8:4.5.4-5".'
+        description: 'The image to scan with check-payload'
+        default: 'brew.registry.redhat.io/rh-osbs/rhacs-main-rhel8'
         required: true
         type: string
+
+run-name: ${{ format('Verify FIPS-compliant {0}', inputs.image) }}
 
 jobs:
   check-payload:
@@ -27,12 +30,15 @@ jobs:
       - name: install oc-cli
         run: |
           cd /tmp
+          oc version && exit 0
           curl --retry 5 -o oc.tar.gz https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/stable/openshift-client-linux.tar.gz
           tar xvzf oc.tar.gz oc
-          mv oc /usr/bin/ || mv oc /usr/local/bin/
-          echo "$PATH"
-          oc version || true
           rm oc.tar.gz
+          echo "$PATH"
+          chmod ugo+x oc
+          mv oc /usr/bin/ || mv oc /usr/local/bin/
+          which oc
+          oc version || true
 
       - name: install podman
         run: |
@@ -65,10 +71,17 @@ jobs:
           set +e
           git log -1
           image="${{ inputs.image }}"
-          image="${image:-brew.registry.redhat.io/rh-osbs/rhacs-main-rhel8:4.5.4-5}"
-          echo "image: ${image}" \
-            | tee -a "$GITHUB_STEP_SUMMARY"
-          podman pull "${image}" || true
+          default='brew.registry.redhat.io/rh-osbs/rhacs-main-rhel8'
+          image="${image:-${default}}"
+          set -x
+          works="$image"
+          for image in 'brew.registry.redhat.io/rh-osbs/rhacs-main-rhel8'{'',:latest,:stable,:4.7,:4.7.0,:4.6,:4.6.0}; do
+            echo "image: ${image}" \
+              | tee -a "$GITHUB_STEP_SUMMARY"
+            podman pull "${image}" && works="$image" || true
+          done
+          echo "works=${works}"
+          image="${works}"
           podman unshare go run main.go scan operator --verbose \
             --spec "${image}" 2>&1 \
             | tee /tmp/scan.log
