@@ -1,4 +1,3 @@
-
 package schema
 
 import (
@@ -105,7 +104,6 @@ type ImageComponentV2 struct {
 
 // ImageComponentV2Cves holds the Gorm model for Postgres table `image_component_v2_cves`.
 type ImageComponentV2Cves struct {
-<<<<<<< HEAD
 	ImageComponentV2ID             string                        `gorm:"column:image_component_v2_id;type:varchar;primaryKey"`
 	Idx                            int                           `gorm:"column:idx;type:integer;primaryKey;index:imagecomponentv2cves_idx,type:btree"`
 	ID                             string                        `gorm:"column:id;type:varchar"`
@@ -125,7 +123,6 @@ type ImageComponentV2Cves struct {
 	FixedBy                        string                        `gorm:"column:fixedby;type:varchar"`
 	ImageComponentV2Ref            ImageComponentV2              `gorm:"foreignKey:image_component_v2_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 	ImagesRef                      Images                        `gorm:"foreignKey:imageid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
-=======
 	ImageComponentV2ID     string                        `gorm:"column:image_component_v2_id;type:varchar;primaryKey"`
 	Idx                    int                           `gorm:"column:idx;type:integer;primaryKey;index:imagecomponentv2cves_idx,type:btree"`
 	ID                     string                        `gorm:"column:id;type:varchar"`
@@ -145,5 +142,7 @@ type ImageComponentV2Cves struct {
 	ImageComponentV2Ref    ImageComponentV2              `gorm:"foreignKey:image_component_v2_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 	ImagesRef              Images                        `gorm:"foreignKey:imageid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 >>>>>>> baec3e8b51 (X-Smart-Squash: Squashed 9 commits:)
+=======
+>>>>>>> 4e3ee609f4 (X-Smart-Squash: Squashed 4 commits:)
 }
 >>>>>>> 9a652b9c15 (X-Smart-Squash: Squashed 10 commits:)

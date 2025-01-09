@@ -138,10 +138,8 @@ func insertIntoImageComponentV2Cves(batch *pgx.Batch, obj *storage.ImageCVEV2, i
 		obj.GetCveBaseInfo().GetCve(),
 		protocompat.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
 		protocompat.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
-<<<<<<< HEAD
 		obj.GetCveBaseInfo().GetEpss().GetEpssProbability(),
-=======
->>>>>>> baec3e8b51 (X-Smart-Squash: Squashed 9 commits:)
+		obj.GetCveBaseInfo().GetEpss().GetEpssProbability(),
 		obj.GetOperatingSystem(),
 		obj.GetCvss(),
 		obj.GetSeverity(),
@@ -153,11 +151,13 @@ func insertIntoImageComponentV2Cves(batch *pgx.Batch, obj *storage.ImageCVEV2, i
 		obj.GetFixedBy(),
 	}
 
-<<<<<<< HEAD
 	finalStr := "INSERT INTO image_component_v2_cves (image_component_v2_Id, idx, Id, ImageId, CveBaseInfo_Cve, CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability, OperatingSystem, Cvss, Severity, ImpactScore, Nvdcvss, FirstImageOccurrence, State, IsFixable, FixedBy) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) ON CONFLICT(image_component_v2_Id, idx) DO UPDATE SET image_component_v2_Id = EXCLUDED.image_component_v2_Id, idx = EXCLUDED.idx, Id = EXCLUDED.Id, ImageId = EXCLUDED.ImageId, CveBaseInfo_Cve = EXCLUDED.CveBaseInfo_Cve, CveBaseInfo_PublishedOn = EXCLUDED.CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt = EXCLUDED.CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability = EXCLUDED.CveBaseInfo_Epss_EpssProbability, OperatingSystem = EXCLUDED.OperatingSystem, Cvss = EXCLUDED.Cvss, Severity = EXCLUDED.Severity, ImpactScore = EXCLUDED.ImpactScore, Nvdcvss = EXCLUDED.Nvdcvss, FirstImageOccurrence = EXCLUDED.FirstImageOccurrence, State = EXCLUDED.State, IsFixable = EXCLUDED.IsFixable, FixedBy = EXCLUDED.FixedBy"
 =======
 	finalStr := "INSERT INTO image_component_v2_cves (image_component_v2_Id, idx, Id, ImageId, CveBaseInfo_Cve, CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt, OperatingSystem, Cvss, Severity, ImpactScore, Nvdcvss, FirstImageOccurrence, State, IsFixable, FixedBy) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) ON CONFLICT(image_component_v2_Id, idx) DO UPDATE SET image_component_v2_Id = EXCLUDED.image_component_v2_Id, idx = EXCLUDED.idx, Id = EXCLUDED.Id, ImageId = EXCLUDED.ImageId, CveBaseInfo_Cve = EXCLUDED.CveBaseInfo_Cve, CveBaseInfo_PublishedOn = EXCLUDED.CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt = EXCLUDED.CveBaseInfo_CreatedAt, OperatingSystem = EXCLUDED.OperatingSystem, Cvss = EXCLUDED.Cvss, Severity = EXCLUDED.Severity, ImpactScore = EXCLUDED.ImpactScore, Nvdcvss = EXCLUDED.Nvdcvss, FirstImageOccurrence = EXCLUDED.FirstImageOccurrence, State = EXCLUDED.State, IsFixable = EXCLUDED.IsFixable, FixedBy = EXCLUDED.FixedBy"
 >>>>>>> baec3e8b51 (X-Smart-Squash: Squashed 9 commits:)
+=======
+	finalStr := "INSERT INTO image_component_v2_cves (image_component_v2_Id, idx, Id, ImageId, CveBaseInfo_Cve, CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability, OperatingSystem, Cvss, Severity, ImpactScore, Nvdcvss, FirstImageOccurrence, State, IsFixable, FixedBy) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) ON CONFLICT(image_component_v2_Id, idx) DO UPDATE SET image_component_v2_Id = EXCLUDED.image_component_v2_Id, idx = EXCLUDED.idx, Id = EXCLUDED.Id, ImageId = EXCLUDED.ImageId, CveBaseInfo_Cve = EXCLUDED.CveBaseInfo_Cve, CveBaseInfo_PublishedOn = EXCLUDED.CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt = EXCLUDED.CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability = EXCLUDED.CveBaseInfo_Epss_EpssProbability, OperatingSystem = EXCLUDED.OperatingSystem, Cvss = EXCLUDED.Cvss, Severity = EXCLUDED.Severity, ImpactScore = EXCLUDED.ImpactScore, Nvdcvss = EXCLUDED.Nvdcvss, FirstImageOccurrence = EXCLUDED.FirstImageOccurrence, State = EXCLUDED.State, IsFixable = EXCLUDED.IsFixable, FixedBy = EXCLUDED.FixedBy"
+>>>>>>> 4e3ee609f4 (X-Smart-Squash: Squashed 4 commits:)
 	batch.Queue(finalStr, values...)
 
 >>>>>>> 9a652b9c15 (X-Smart-Squash: Squashed 10 commits:)
@@ -264,10 +264,8 @@ func copyFromImageComponentV2Cves(ctx context.Context, s pgSearch.Deleter, tx *p
 		"cvebaseinfo_cve",
 		"cvebaseinfo_publishedon",
 		"cvebaseinfo_createdat",
-<<<<<<< HEAD
 		"cvebaseinfo_epss_epssprobability",
-=======
->>>>>>> baec3e8b51 (X-Smart-Squash: Squashed 9 commits:)
+		"cvebaseinfo_epss_epssprobability",
 		"operatingsystem",
 		"cvss",
 		"severity",
@@ -293,10 +291,8 @@ func copyFromImageComponentV2Cves(ctx context.Context, s pgSearch.Deleter, tx *p
 			obj.GetCveBaseInfo().GetCve(),
 			protocompat.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
 			protocompat.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
-<<<<<<< HEAD
 			obj.GetCveBaseInfo().GetEpss().GetEpssProbability(),
-=======
->>>>>>> baec3e8b51 (X-Smart-Squash: Squashed 9 commits:)
+			obj.GetCveBaseInfo().GetEpss().GetEpssProbability(),
 			obj.GetOperatingSystem(),
 			obj.GetCvss(),
 			obj.GetSeverity(),
