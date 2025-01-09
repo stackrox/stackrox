@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 >>>>>>> 8ad8e67206 (X-Smart-Squash: Squashed 16 commits:)
 =======
 >>>>>>> 90f2c751ff (X-Smart-Squash: Squashed 10 commits:)
@@ -10,6 +9,8 @@
 =======
 >>>>>>> 4e2e053d78 (X-Smart-Squash: Squashed 13 commits:)
 
+=======
+>>>>>>> 8cca5a6f70 (X-Smart-Squash: Squashed 4 commits:)
 package schema
 
 import (
@@ -126,14 +127,20 @@ type ImageComponentV2 struct {
 type ImageComponentV2Cves struct {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 92fbc45d25 (X-Smart-Squash: Squashed 4 commits:)
 =======
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
 >>>>>>> 4e3ee609f4 (X-Smart-Squash: Squashed 4 commits:)
 >>>>>>> 8cca5a6f70 (X-Smart-Squash: Squashed 4 commits:)
+<<<<<<< HEAD
 =======
 >>>>>>> 399dafd1bb (X-Smart-Squash: Squashed 10 commits:)
+=======
+>>>>>>> 92fbc45d25 (X-Smart-Squash: Squashed 4 commits:)
 	ImageComponentV2ID             string                        `gorm:"column:image_component_v2_id;type:varchar;primaryKey"`
 	Idx                            int                           `gorm:"column:idx;type:integer;primaryKey;index:imagecomponentv2cves_idx,type:btree"`
 	ID                             string                        `gorm:"column:id;type:varchar"`
@@ -156,6 +163,9 @@ type ImageComponentV2Cves struct {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 92fbc45d25 (X-Smart-Squash: Squashed 4 commits:)
 =======
 <<<<<<< HEAD
 =======
@@ -181,8 +191,11 @@ type ImageComponentV2Cves struct {
 =======
 >>>>>>> 4e3ee609f4 (X-Smart-Squash: Squashed 4 commits:)
 >>>>>>> 8cca5a6f70 (X-Smart-Squash: Squashed 4 commits:)
+<<<<<<< HEAD
 =======
 >>>>>>> 4e2e053d78 (X-Smart-Squash: Squashed 13 commits:)
+=======
+>>>>>>> 92fbc45d25 (X-Smart-Squash: Squashed 4 commits:)
 }
 >>>>>>> 9a652b9c15 (X-Smart-Squash: Squashed 10 commits:)
 <<<<<<< HEAD
