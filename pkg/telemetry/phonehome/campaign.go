@@ -8,7 +8,7 @@ import (
 // campaign. Requests parameters need to match all fields for the request to
 // be tracked. Any request matches empty criterium.
 type APICallCampaignCriterium struct {
-	UserAgents   []string `json:"user_gents,omitempty"`
+	UserAgents   []string `json:"user_agents,omitempty"`
 	PathPatterns []string `json:"path_patterns,omitempty"`
 	Methods      []string `json:"methods,omitempty"`
 	Codes        []int32  `json:"codes,omitempty"`
