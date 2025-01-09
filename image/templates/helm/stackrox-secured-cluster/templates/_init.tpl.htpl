@@ -306,9 +306,12 @@ The following block checks for the validity of the provided init bundle. (`helm 
   {{- $_ = set $crs "_deserialized" $crsDeserialized -}}
   {{- $_ = set $crs "_caCert" $crsCA -}}
   {{- $_ = set $crs "_enabled" true -}}
+  {{- $_ = set $crs "_create" true -}}
 
   {{- $_ = set ._rox.ca "_cert" $crsCA -}}
   {{- $_ = set ._rox "createSecrets" false -}}
+{{- else if ._rox.crs.enabled -}}
+  {{- $_ = set $crs "_enabled" true -}}
 {{- end -}}
 [<- end >]
 
