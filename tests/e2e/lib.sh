@@ -1044,6 +1044,7 @@ remove_existing_stackrox_resources() {
         done
 
         kubectl delete "${global_resource_types}" -l "app.kubernetes.io/name=stackrox" --wait
+        kubectl delete crd securitypolicies.config.stackrox.io --wait
 
         helm list -o json | jq -r '.[] | .name' | while read -r name; do
             case "$name" in

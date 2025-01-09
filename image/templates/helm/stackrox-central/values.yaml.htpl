@@ -552,6 +552,14 @@ central:
 ## default name, and make it a little harder to deviate from that.
 #allowNonstandardReleaseName: false
 #
+## This option is meant to be a very explicit acknowledgement by a user that that they understand
+## the implications of installing more than one instance of Central on a single cluster, particularly
+## around CRD management.
+##
+## To enable the option, please review the readme section titled "Multiple Installations of Central"
+## and update the option value accordingly.
+#allowUnsupportedMultipleCentralsUsingHelm: no
+#
 #meta:
 #  # This controls whether the built-in `lookup` function will be used. If you see an error
 #  # about there being no function `lookup`, set this to `false` (might be required on Helm
