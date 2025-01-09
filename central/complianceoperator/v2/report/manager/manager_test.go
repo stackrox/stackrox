@@ -10,7 +10,7 @@ import (
 	integrationMocks "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore/mocks"
 	profileMocks "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore/mocks"
 	snapshotMocks "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore/mocks"
-	reportGen "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/complianceReportgenerator/mocks"
+	reportGen "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/generator/mocks"
 	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager/watcher"
 	scanConfigurationDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
 	scanMocks "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore/mocks"
@@ -18,6 +18,8 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/assert"
@@ -77,7 +79,11 @@ func (m *ManagerTestSuite) TearDownTest() {
 
 func (m *ManagerTestSuite) TestHandleReportRequest() {
 	m.T().Setenv(env.ReportExecutionMaxConcurrency.EnvVar(), "1")
-	ctx := context.Background()
+	identity := mocks.NewMockIdentity(m.mockCtrl)
+	identity.EXPECT().UID().AnyTimes().Return("user-id")
+	identity.EXPECT().FullName().AnyTimes().Return("user-name")
+	identity.EXPECT().FriendlyName().AnyTimes().Return("user-friendly-name")
+	ctx := authn.ContextWithIdentity(context.Background(), identity, m.T())
 
 	m.Run("Successful report, no watchers running", func() {
 		manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.reportGen)
@@ -115,11 +121,7 @@ func (m *ManagerTestSuite) TestHandleReportRequest() {
 		now := protocompat.TimestampNow()
 		m.scanConfigDataStore.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).AnyTimes().
 			Return(
-				[]*storage.ComplianceOperatorScanConfigurationV2{
-					{
-						Id: "scan-config-id",
-					},
-				}, nil,
+				[]*storage.ComplianceOperatorScanConfigurationV2{getTestScanConfig()}, nil,
 			)
 		m.pushScansAndResults(manager, getTestScanConfig(), now)
 
@@ -160,6 +162,87 @@ func (m *ManagerTestSuite) TestHandleReportRequest() {
 
 		handleWaitGroup(m.T(), &wg, 500*time.Millisecond, "reports to be generated")
 	})
+
+}
+
+func (m *ManagerTestSuite) TestFailedReportWithWatcherRunningAndNoNotifiers() {
+	m.T().Setenv(env.ReportExecutionMaxConcurrency.EnvVar(), "1")
+	identity := mocks.NewMockIdentity(m.mockCtrl)
+	identity.EXPECT().UID().AnyTimes().Return("user-id")
+	identity.EXPECT().FullName().AnyTimes().Return("user-name")
+	identity.EXPECT().FriendlyName().AnyTimes().Return("user-friendly-name")
+	ctx := authn.ContextWithIdentity(context.Background(), identity, m.T())
+
+	// Set the timeouts to 1 and 2 seconds so the scan watchers timeout fast
+	m.T().Setenv(env.ComplianceScanWatcherTimeout.EnvVar(), "1s")
+	m.T().Setenv(env.ComplianceScanScheduleWatcherTimeout.EnvVar(), "2s")
+
+	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.reportGen)
+	manager.Start()
+	now := protocompat.TimestampNow()
+	scanConfig := getTestScanConfig()
+	scanConfig.Notifiers = nil
+	m.scanConfigDataStore.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).AnyTimes().
+		Return([]*storage.ComplianceOperatorScanConfigurationV2{scanConfig}, nil)
+	m.pushScansAndResults(manager, scanConfig, now)
+
+	wg := concurrency.NewWaitGroup(1)
+	scans := getTestScansFromScanConfig(scanConfig, now)
+	scan := getTestScan(scans[0].GetId(), scans[0].GetClusterId(), now, true)
+	m.finishFirstScan(manager, scan, scanConfig)
+
+	// The rest of the scan should time out after 1s
+
+	m.scanConfigDataStore.EXPECT().GetScanConfigurationByName(gomock.Any(), gomock.Any()).Times(len(scans)-1).
+		Return(scanConfig, nil)
+	m.complianceIntegrationDataStore.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), gomock.Any()).
+		AnyTimes().
+		Return([]*storage.ComplianceIntegration{
+			{
+				OperatorInstalled: true,
+				Version:           "v1.6.0",
+			},
+		}, nil)
+	m.Eventually(func() bool {
+		managerImp, ok := manager.(*managerImpl)
+		m.Require().True(ok)
+		return concurrency.WithLock1[bool](&managerImp.watchingScanConfigsLock, func() bool {
+			return len(managerImp.watchingScanConfigs) > 0
+		})
+	}, 100*time.Millisecond, 10*time.Millisecond)
+	gomock.InOrder(
+		// The first upsert happens when the download is requested
+		// The next upsert is the first scan handling
+		// The next three upsert are the next three scans timing out
+		m.snapshotDataStore.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(4).Return(nil),
+		// We assert that the last upsert has the state as FAILURE
+		m.snapshotDataStore.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).
+			Times(1).
+			DoAndReturn(func(_ any, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
+				assert.Equal(m.T(), storage.ComplianceOperatorReportStatus_FAILURE, snapshot.GetReportStatus().GetRunState())
+				wg.Add(-1)
+				return nil
+			}),
+	)
+	err := manager.SubmitReportRequest(ctx, scanConfig, storage.ComplianceOperatorReportStatus_DOWNLOAD)
+	m.Require().NoError(err)
+
+	managerImp, ok := manager.(*managerImpl)
+	m.Require().True(ok)
+	m.Eventually(func() bool {
+		return concurrency.WithLock1[bool](&managerImp.watchingScanConfigsLock, func() bool {
+			return len(managerImp.watchingScanConfigs) == 0
+		})
+	}, 10*time.Second, 10*time.Millisecond)
+
+	handleWaitGroup(m.T(), &wg, 10*time.Second, "report to fail")
+
+	// The runningReportConfigs should be empty at this point
+	m.Eventually(func() bool {
+		return concurrency.WithLock1[bool](&managerImp.mu, func() bool {
+			return len(managerImp.runningReportConfigs) == 0
+		})
+	}, 5*time.Second, 100*time.Millisecond)
 }
 
 func (m *ManagerTestSuite) TestHandleScan() {
@@ -426,7 +509,7 @@ func (m *ManagerTestSuite) finishFirstScan(manager Manager, scan *storage.Compli
 	m.snapshotDataStore.EXPECT().SearchSnapshots(gomock.Any(), gomock.Any()).Times(2).
 		Return([]*storage.ComplianceOperatorReportSnapshotV2{}, nil)
 	m.scanConfigDataStore.EXPECT().GetScanConfigurationByName(gomock.Any(), gomock.Any()).Times(1).
-		Return(getTestScanConfig(), nil)
+		Return(sc, nil)
 	err := manager.HandleScan(ctx, scan)
 	require.NoError(m.T(), err)
 }

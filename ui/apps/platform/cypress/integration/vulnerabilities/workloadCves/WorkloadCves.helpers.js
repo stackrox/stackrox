@@ -1,4 +1,5 @@
 import { addDays, format } from 'date-fns';
+import { hasFeatureFlag } from '../../../helpers/features';
 import { getDescriptionListGroup } from '../../../helpers/formHelpers';
 import {
     interactAndWaitForResponses,
@@ -7,8 +8,6 @@ import {
 import { visit } from '../../../helpers/visit';
 import { selectors } from './WorkloadCves.selectors';
 import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
-
-const basePath = '/main/vulnerabilities/workload-cves/';
 
 export function getDateString(date) {
     return format(date, 'MM/DD/YYYY');
@@ -24,6 +23,11 @@ export function getFutureDateByDays(days) {
 }
 
 export function visitWorkloadCveOverview({ clearFiltersOnVisit = true, urlSearch = '' } = {}) {
+    // With Workload CVEs split between User and Platform components, we can only reliably expect
+    // CVEs to be present for the built-in (Platform) components during CI
+    const basePath = hasFeatureFlag('ROX_PLATFORM_CVE_SPLIT')
+        ? '/main/vulnerabilities/platform-workload-cves/'
+        : '/main/vulnerabilities/workload-cves/';
     visit(basePath + urlSearch);
 
     cy.get('h1:contains("Workload CVEs")');
@@ -87,7 +91,7 @@ export function applyLocalStatusFilters(...statuses) {
  * Select a search option from the search options dropdown.
  * @param {('CVE' | 'Image' | 'Deployment' | 'Cluster' | 'Namespace' | 'Requester' | 'Request name')} searchOption
  */
-export function selectSearchOption(searchOption) {
+function selectSearchOption(searchOption) {
     cy.get(selectors.searchOptionsDropdown).click();
     cy.get(selectors.searchOptionsMenuItem(searchOption)).click();
     cy.get(selectors.searchOptionsDropdown).click();
@@ -108,21 +112,6 @@ export function selectAttributeSearchOption(searchAttribute) {
         .contains(new RegExp(`^${searchAttribute}$`))
         .click();
     cy.get(selectors.searchAttributeDropdown).click();
-}
-
-/**
- * Type a value into the filter autocomplete typeahead and select the first matching value.
- * @param {('CVE' | 'Image' | 'Deployment' | 'Cluster' | 'Namespace' | 'Requester' | 'Request name')} searchOption
- * @param {string} value
- */
-export function typeAndSelectSearchFilterValue(searchOption, value) {
-    selectSearchOption(searchOption);
-    cy.get(selectors.searchOptionsValueTypeahead(searchOption)).click();
-    cy.get(selectors.searchOptionsValueTypeahead(searchOption)).type(value);
-    cy.get(selectors.searchOptionsValueMenuItem(searchOption))
-        .contains(new RegExp(`^${value}$`))
-        .click();
-    cy.get(selectors.searchOptionsValueTypeahead(searchOption)).click();
 }
 
 /**
@@ -201,16 +190,18 @@ export function cancelAllCveExceptions() {
 
     cy.request({ url: '/v2/vulnerability-exceptions', auth }).as('vulnExceptions');
 
-    cy.get('@vulnExceptions').then((res) => {
-        res.body.exceptions.forEach(({ id, expired }) => {
-            if (!expired) {
-                cy.request({
-                    url: `/v2/vulnerability-exceptions/${id}/cancel`,
-                    auth,
-                    method: 'POST',
-                });
-            }
-        });
+    return cy.get('@vulnExceptions').then((res) => {
+        return Promise.all(
+            res.body.exceptions.map(({ id, expired, requester }) => {
+                return requester?.name === 'ui_tests' && !expired
+                    ? cy.request({
+                          url: `/v2/vulnerability-exceptions/${id}/cancel`,
+                          auth,
+                          method: 'POST',
+                      })
+                    : Promise.resolve();
+            })
+        );
     });
 }
 
@@ -225,20 +216,16 @@ export function selectSingleCveForException(exceptionType) {
             ? selectors.deferCveModal
             : selectors.markCveFalsePositiveModal;
 
-    return cy.get(selectors.firstTableRow).then(($row) => {
-        const cveName = $row.find('td[data-label="CVE"]').text();
-        cy.wrap($row)
-            .find(selectors.tableRowMenuToggle, { timeout: 10000 })
-            .should('exist')
-            .and('be.visible')
-            .click();
-        cy.get(selectors.menuOption(menuOption)).click();
-
-        cy.get('button:contains("CVE selections")').click();
-        // TODO - Update this code when modal form is completed
-        cy.get(`${modalSelector}:contains("${cveName}")`);
-        return Promise.resolve(cveName);
-    });
+    return cy
+        .get(`${selectors.firstTableRow} td[data-label="CVE"]`)
+        .then(($cell) => $cell.text())
+        .then((cveName) => {
+            cy.get(`${selectors.firstTableRow} ${selectors.tableRowMenuToggle}`).click();
+            cy.get(selectors.menuOption(menuOption)).click();
+            cy.get('button:contains("CVE selections")').click();
+            cy.get(`${modalSelector}:contains("${cveName}")`);
+            return Promise.resolve(cveName);
+        });
 }
 
 /**
@@ -293,10 +280,25 @@ export function verifySelectedCvesInModal(cveNames) {
     });
 }
 
-export function visitAnyImageSinglePageWithMockedCves() {
+/**
+ * Visits an image single page via the workload CVE overview page and mocks the responses for the image
+ * details and CVE list. We need to mock the CVE list to ensure that multiple CVEs are present for the image. We
+ * also need to mock the image details to ensure Apollo does not duplicate CVE requests due to mismatched
+ * image IDs.
+ *
+ * @returns {Cypress.Chainable} - The image name
+ */
+export function visitImageSinglePageWithMockedResponses() {
+    const imageDetailsOpname = 'getImageDetails';
     const cveListOpname = 'getCVEsForImage';
-    const routeMatcherMapForImageCves = getRouteMatcherMapForGraphQL([cveListOpname]);
+    const routeMatcherMapForImageCves = getRouteMatcherMapForGraphQL([
+        imageDetailsOpname,
+        cveListOpname,
+    ]);
     const staticResponseMapForImageCves = {
+        [imageDetailsOpname]: {
+            fixture: 'vulnerabilities/workloadCves/imageWithMultipleCves.json',
+        },
         [cveListOpname]: { fixture: 'vulnerabilities/workloadCves/multipleCvesForImage.json' },
     };
 

@@ -1,0 +1,64 @@
+{
+  "apiVersion": "v1",
+  "kind": "Service",
+  "metadata": {
+    "annotations": {
+      "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"kind\":\"Service\",\"metadata\":{\"annotations\":{},\"name\":\"stackrox-images-metrics\",\"namespace\":\"prefetch-images\"},\"spec\":{\"ports\":[{\"name\":\"grpc\",\"port\":8443,\"protocol\":\"TCP\"},{\"name\":\"http\",\"port\":8080,\"protocol\":\"TCP\"}],\"selector\":{\"app\":\"stackrox-images-metrics\"},\"type\":\"LoadBalancer\"}}\n"
+    },
+    "creationTimestamp": "2024-12-11T10:14:48Z",
+    "finalizers": [
+      "service.kubernetes.io/load-balancer-cleanup"
+    ],
+    "name": "stackrox-images-metrics",
+    "namespace": "prefetch-images",
+    "resourceVersion": "4257",
+    "uid": "8384c7e4-c927-4725-9030-f1f00bf1cfbf"
+  },
+  "spec": {
+    "allocateLoadBalancerNodePorts": true,
+    "clusterIP": "34.118.224.111",
+    "clusterIPs": [
+      "34.118.224.111"
+    ],
+    "externalTrafficPolicy": "Cluster",
+    "internalTrafficPolicy": "Cluster",
+    "ipFamilies": [
+      "IPv4"
+    ],
+    "ipFamilyPolicy": "SingleStack",
+    "ports": [
+      {
+        "name": "grpc",
+        "nodePort": 31474,
+        "port": 8443,
+        "protocol": "TCP",
+        "targetPort": 8443
+      },
+      {
+        "name": "http",
+        "nodePort": 30670,
+        "port": 8080,
+        "protocol": "TCP",
+        "targetPort": 8080
+      }
+    ],
+    "selector": {
+      "app": "stackrox-images-metrics"
+    },
+    "sessionAffinity": "None",
+    "type": "LoadBalancer"
+  },
+  "status": {
+    "loadBalancer": {
+      "ingress": [
+        {
+          "ip": "35.193.73.252",
+          "ipMode": "VIP"
+        },
+        {
+          "hostname": "a210901dccf824daf8118d5aa9993115-2055499247.us-east-2.elb.amazonaws.com"
+        }
+      ]
+    }
+  }
+}

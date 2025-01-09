@@ -45,9 +45,8 @@ ENV MAIN_TAG_SUFFIX="$VERSIONS_SUFFIX" COLLECTOR_TAG_SUFFIX="$VERSIONS_SUFFIX" S
 
 ENV GOFLAGS=""
 ENV CGO_ENABLED=1
-# TODO(ROX-24276): re-enable release builds for fast stream.
 # TODO(ROX-20240): enable non-release development builds.
-# ENV GOTAGS="release"
+ENV GOTAGS="release"
 ENV CI=1
 
 RUN # TODO(ROX-13200): make sure roxctl cli is built without running go mod tidy. \
@@ -97,6 +96,7 @@ COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/kubern
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/sensor-upgrader /stackrox/bin/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/admission-control /stackrox/bin/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/config-controller /stackrox/bin/
+COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/init-tls-certs /stackrox/bin/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/static-bin/* /stackrox/
 RUN GOARCH=$(uname -m) ; \
     case $GOARCH in x86_64) GOARCH=amd64 ;; aarch64) GOARCH=arm64 ;; esac ; \
@@ -116,6 +116,7 @@ LABEL \
     io.openshift.tags="rhacs,main,stackrox" \
     maintainer="Red Hat, Inc." \
     name="rhacs-main-rhel8" \
+    # Custom Snapshot creation in `operator-bundle-pipeline` depends on source-location label to be set correctly.
     source-location="https://github.com/stackrox/stackrox" \
     summary="Main Image for Red Hat Advanced Cluster Security for Kubernetes" \
     url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \

@@ -20,9 +20,8 @@ ARG VERSIONS_SUFFIX
 ENV MAIN_TAG_SUFFIX="$VERSIONS_SUFFIX" COLLECTOR_TAG_SUFFIX="$VERSIONS_SUFFIX" SCANNER_TAG_SUFFIX="$VERSIONS_SUFFIX"
 
 ENV CI=1 GOFLAGS=""
-# TODO(ROX-24276): re-enable release builds for fast stream.
 # TODO(ROX-20240): enable non-release development builds.
-# ENV GOTAGS="release"
+ENV GOTAGS="release"
 
 RUN RACE=0 CGO_ENABLED=1 GOOS=linux GOARCH=$(go env GOARCH) scripts/go-build.sh ./roxctl && \
     cp bin/linux_$(go env GOARCH)/roxctl image/bin/roxctl
@@ -53,6 +52,7 @@ LABEL \
     io.openshift.tags="rhacs,roxctl,stackrox" \
     maintainer="Red Hat, Inc." \
     name="rhacs-roxctl-rhel8" \
+    # Custom Snapshot creation in `operator-bundle-pipeline` depends on source-location label to be set correctly.
     source-location="https://github.com/stackrox/stackrox" \
     summary="The CLI for Red Hat Advanced Cluster Security for Kubernetes" \
     url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \

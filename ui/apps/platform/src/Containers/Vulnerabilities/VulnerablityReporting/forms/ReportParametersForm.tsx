@@ -42,8 +42,7 @@ export type ReportParametersFormParams = {
 
 function ReportParametersForm({ title, formik }: ReportParametersFormParams): ReactElement {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isIncludeNvdCvssEnabled =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
+    const isIncludeNvdCvssEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
 
     const handleTextChange =
         (fieldName: string) =>

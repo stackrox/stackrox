@@ -18,6 +18,13 @@ export function getTableRowActionButtonByName(name: string) {
         });
 }
 
+export function openTableRowActionMenu(
+    rowSelector: string,
+    menuButtonAriaLabel: string = 'Kebab toggle'
+) {
+    return cy.get(`${rowSelector} button[aria-label="${menuButtonAriaLabel}"]`).click();
+}
+
 export function editIntegration(name: string) {
     cy.get(`tr:contains('${name}') td.pf-v5-c-table__action button`).click();
     cy.get(
@@ -37,6 +44,11 @@ export function queryTableSortHeader(headerName: string) {
 
 export function sortByTableHeader(headerName: string) {
     return queryTableSortHeader(headerName).click();
+}
+
+export function changePerPageOption(amount: number) {
+    cy.get('button').contains(new RegExp('\\d+ - \\d+ of \\d+')).click();
+    cy.get('button[role="menuitem"]').contains(`${amount} per page`).click();
 }
 
 export function paginateNext() {

@@ -94,6 +94,7 @@ import (
 	"github.com/stackrox/rox/central/helmcharts"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageService "github.com/stackrox/rox/central/image/service"
+	"github.com/stackrox/rox/central/imageintegration"
 	iiDatastore "github.com/stackrox/rox/central/imageintegration/datastore"
 	imageintegrationsDS "github.com/stackrox/rox/central/imageintegration/datastore"
 	iiService "github.com/stackrox/rox/central/imageintegration/service"
@@ -139,6 +140,7 @@ import (
 	collectionService "github.com/stackrox/rox/central/resourcecollection/service"
 	"github.com/stackrox/rox/central/risk/handlers/timeline"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
+	"github.com/stackrox/rox/central/role/sachelper"
 	roleService "github.com/stackrox/rox/central/role/service"
 	centralSAC "github.com/stackrox/rox/central/sac"
 	"github.com/stackrox/rox/central/scanner"
@@ -267,6 +269,8 @@ func runSafeMode() {
 }
 
 func main() {
+	defer utils.IgnoreError(log.InnerLogger.Sync)
+
 	premain.StartMain()
 
 	conf := config.GetConfig()
@@ -744,6 +748,12 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Compression:   true,
 		},
 		{
+			Route:         "/api/v1/images/sbom",
+			Authorizer:    user.With(permissions.Modify(permissions.WithLegacyAuthForSAC(resources.Image, true))),
+			ServerHandler: imageService.SBOMHandler(imageintegration.Set(), enrichment.ImageEnricherSingleton(), sachelper.NewClusterSacHelper(clusterDataStore.Singleton())),
+			Compression:   true,
+		},
+		{
 			Route:         "/api/splunk/ta/vulnmgmt",
 			Authorizer:    user.With(permissions.View(resources.Image), permissions.View(resources.Deployment)),
 			ServerHandler: splunk.NewVulnMgmtHandler(deploymentDatastore.Singleton(), imageDatastore.Singleton()),
@@ -817,7 +827,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		{
 			Route:         "/api/policy/custom-resource/save-as-zip",
 			Authorizer:    user.With(permissions.View(resources.WorkflowAdministration)),
-			ServerHandler: policyHandler.Handler(policyDataStore.Singleton()),
+			ServerHandler: policyHandler.Handler(policyDataStore.Singleton(), notifierDS.Singleton()),
 			Compression:   false,
 		},
 		{

@@ -4,7 +4,9 @@ import pluralize from 'pluralize';
 import dateFns from 'date-fns';
 import startCase from 'lodash/startCase';
 import { Flex, FlexItem, Tooltip } from '@patternfly/react-core';
+import { ExclamationCircleIcon } from '@patternfly/react-icons';
 
+import IconText from 'Components/PatternFly/IconText/IconText';
 import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverityIconText';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { lifecycleStageLabels } from 'messages/common';
@@ -67,7 +69,12 @@ type EnforcementTableCellProps = {
 function EnforcementColumn({ original }: EnforcementTableCellProps): ReactElement {
     if (BLOCKING_ENFORCEMENT_ACTIONS.has(original.enforcementAction)) {
         const message = `${ENFORCEMENT_ACTIONS_AS_PAST_TENSE[original?.enforcementAction]}`;
-        return <div className="text-alert-700">{message}</div>;
+        return (
+            <IconText
+                icon={<ExclamationCircleIcon color="var(--pf-v5-global--danger-color--100)" />}
+                text={message}
+            />
+        );
     }
 
     const count = original?.enforcementCount;

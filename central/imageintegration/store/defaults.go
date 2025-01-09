@@ -112,6 +112,18 @@ var DefaultImageIntegrations = []*storage.ImageIntegration{
 			},
 		},
 	},
+	{
+		Id:         "48a1b014-fa42-4e3f-b45d-518c3b129f2e",
+		Name:       "Public GitHub Container Registry",
+		Type:       registryTypes.GHCRType,
+		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
+		IntegrationConfig: &storage.ImageIntegration_Docker{
+			Docker: &storage.DockerConfig{
+				Endpoint: "ghcr.io",
+			},
+		},
+		SkipTestIntegration: true, // /v2 endpoint requires authentication.
+	},
 }
 
 // DefaultScannerV4Integration is the default Scanner V4 integration.

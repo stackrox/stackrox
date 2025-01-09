@@ -164,8 +164,6 @@ export_test_environment() {
     ci_export ROX_NETWORK_BASELINE_OBSERVATION_PERIOD "${ROX_NETWORK_BASELINE_OBSERVATION_PERIOD:-2m}"
     ci_export ROX_VULN_MGMT_WORKLOAD_CVES "${ROX_VULN_MGMT_WORKLOAD_CVES:-true}"
     ci_export ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL "${ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL:-true}"
-    ci_export ROX_VULN_MGMT_2_GA "${ROX_VULN_MGMT_2_GA:-true}"
-    ci_export ROX_VULN_MGMT_ADVANCED_FILTERS "${ROX_VULN_MGMT_ADVANCED_FILTERS:-true}"
     ci_export ROX_VULN_MGMT_LEGACY_SNOOZE "${ROX_VULN_MGMT_LEGACY_SNOOZE:-true}"
     ci_export ROX_DECLARATIVE_CONFIGURATION "${ROX_DECLARATIVE_CONFIGURATION:-true}"
     ci_export ROX_COMPLIANCE_ENHANCEMENTS "${ROX_COMPLIANCE_ENHANCEMENTS:-true}"
@@ -179,10 +177,12 @@ export_test_environment() {
     ci_export ROX_REGISTRY_CLIENT_TIMEOUT "${ROX_REGISTRY_CLIENT_TIMEOUT:-120s}"
     ci_export ROX_SCAN_SCHEDULE_REPORT_JOBS "${ROX_SCAN_SCHEDULE_REPORT_JOBS:-true}"
     ci_export ROX_PLATFORM_COMPONENTS "${ROX_PLATFORM_COMPONENTS:-true}"
-    ci_export ROX_NVD_CVSS "${ROX_NVD_CVSS_UI:-true}"
     ci_export ROX_CVE_ADVISORY_SEPARATION "${ROX_CVE_ADVISORY_SEPARATION:-true}"
+    ci_export ROX_EPSS_SCORE "${ROX_EPSS_SCORE:-true}"
     ci_export ROX_SBOM_GENERATION "${ROX_SBOM_GENERATION:-true}"
     ci_export ROX_CLUSTERS_PAGE_MIGRATION_UI "${ROX_CLUSTERS_PAGE_MIGRATION_UI:-true}"
+    ci_export ROX_PLATFORM_CVE_SPLIT "${ROX_PLATFORM_CVE_SPLIT:-false}"
+    ci_export ROX_FLATTEN_CVE_DATA "${ROX_FLATTEN_CVE_DATA:-false}"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
         ci_export FAIL_FAST "true"
@@ -306,24 +306,24 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: '"${ROX_REGISTRY_RESPONSE_TIMEOUT:-90s}"
     customize_envVars+=$'\n      - name: ROX_REGISTRY_CLIENT_TIMEOUT'
     customize_envVars+=$'\n        value: '"${ROX_REGISTRY_CLIENT_TIMEOUT:-120s}"
-    customize_envVars+=$'\n      - name: ROX_VULN_MGMT_2_GA'
-    customize_envVars+=$'\n        value: "true"'
-    customize_envVars+=$'\n      - name: ROX_VULN_MGMT_ADVANCED_FILTERS'
-    customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_VULN_MGMT_LEGACY_SNOOZE'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_SCAN_SCHEDULE_REPORT_JOBS'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_PLATFORM_COMPONENTS'
     customize_envVars+=$'\n        value: "true"'
-    customize_envVars+=$'\n      - name: ROX_NVD_CVSS_UI'
-    customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_CVE_ADVISORY_SEPARATION'
+    customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_EPSS_SCORE'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_CLUSTERS_PAGE_MIGRATION_UI'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_SBOM_GENERATION'
     customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_PLATFORM_CVE_SPLIT'
+    customize_envVars+=$'\n        value: "false"'
+    customize_envVars+=$'\n      - name: ROX_FLATTEN_CVE_DATA'
+    customize_envVars+=$'\n        value: "false"'
 
     CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr.envsubst.yaml"
     # Different yaml for midstream images
@@ -594,7 +594,7 @@ wait_for_collectors_to_be_operational() {
                 echo "$pod is deemed ready"
             else
                 info "$pod is not ready"
-                kubectl -n "${sensor_namespace}" logs -c collector "$pod"
+                kubectl -n "${sensor_namespace}" logs -c collector "$pod" || true
                 all_ready="false"
                 break
             fi
@@ -1068,7 +1068,9 @@ wait_for_api() {
         # OCP Interop tests are run on minimal instances and will take longer
         # Allow override with MAX_WAIT_SECONDS
         max_seconds=${MAX_WAIT_SECONDS:-600}
+        info "Waiting ${max_seconds}s (increased for openshift-ci provisioned clusters) for central api and $(( max_seconds * 6 )) for ingress..."
     fi
+    max_ingress_seconds=$(( max_seconds * 6 ))
 
     while true; do
         central_json="$(kubectl -n "${central_namespace}" get deploy/central -o json)"
@@ -1101,12 +1103,12 @@ wait_for_api() {
     LOAD_BALANCER="${LOAD_BALANCER:-}"
     case "${LOAD_BALANCER}" in
         lb)
-            get_ingress_endpoint "${central_namespace}" svc/central-loadbalancer '.status.loadBalancer.ingress[0] | .ip // .hostname'
+            get_ingress_endpoint "${central_namespace}" svc/central-loadbalancer '.status.loadBalancer.ingress[0] | .ip // .hostname' "${max_ingress_seconds}"
             API_HOSTNAME="${ingress_endpoint}"
             API_PORT=443
             ;;
         route)
-            get_ingress_endpoint "${central_namespace}" routes/central '.spec.host'
+            get_ingress_endpoint "${central_namespace}" routes/central '.spec.host' "${max_ingress_seconds}"
             API_HOSTNAME="${ingress_endpoint}"
             API_PORT=443
             ;;

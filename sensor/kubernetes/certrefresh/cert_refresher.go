@@ -8,7 +8,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certificates"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certrepo"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -25,7 +24,7 @@ func newCertificatesRefresher(certsDescription string, requestCertificates reque
 	}, timeout, backoff)
 }
 
-type requestCertificatesFunc func(ctx context.Context) (*certificates.Response, error)
+type requestCertificatesFunc func(ctx context.Context) (*Response, error)
 type getCertsRenewalTimeFunc func(certificates *storage.TypedServiceCertificateSet) (time.Time, error)
 
 // refreshCertificates refreshes the certificate secrets if needed, and returns the time

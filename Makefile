@@ -486,6 +486,7 @@ main-build-dockerized: build-volumes
 main-build-nodeps: central-build-nodeps migrator-build-nodeps config-controller-build-nodeps
 	$(GOBUILD) sensor/kubernetes sensor/admission-control compliance/cmd/compliance
 	$(GOBUILD) sensor/upgrader
+	$(GOBUILD) sensor/init-tls-certs
 ifndef CI
 	CGO_ENABLED=0 $(GOBUILD) roxctl
 endif
@@ -541,7 +542,7 @@ sensor-integration-test: build-prep test-prep
 	set -eo pipefail ; \
 	rm -rf  $(GO_TEST_OUTPUT_PATH); \
 	for package in $(shell git ls-files ./sensor/tests | grep '_test.go' | xargs -n 1 dirname | uniq | sort | sed -e 's/sensor\/tests\///'); do \
-		CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test scripts/go-test.sh -p 4 -race -cover -coverprofile test-output/coverage.out -v ./sensor/tests/$$package \
+		CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 LOGLEVEL=debug GOTAGS=$(GOTAGS),test scripts/go-test.sh -p 4 -race -cover -coverprofile test-output/coverage.out -v ./sensor/tests/$$package \
 		| tee -a $(GO_TEST_OUTPUT_PATH); \
 	done \
 
@@ -673,6 +674,7 @@ endif
 endif
 	cp bin/linux_$(GOARCH)/migrator image/rhel/bin/migrator
 	cp bin/linux_$(GOARCH)/kubernetes        image/rhel/bin/kubernetes-sensor
+	cp bin/linux_$(GOARCH)/init-tls-certs    image/rhel/bin/init-tls-certs
 	cp bin/linux_$(GOARCH)/upgrader          image/rhel/bin/sensor-upgrader
 	cp bin/linux_$(GOARCH)/admission-control image/rhel/bin/admission-control
 	cp bin/linux_$(GOARCH)/compliance        image/rhel/bin/compliance

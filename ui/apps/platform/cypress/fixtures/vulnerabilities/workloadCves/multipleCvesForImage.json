@@ -49,7 +49,7 @@
             "imageVulnerabilities": [
                 {
                     "severity": "IMPORTANT_VULNERABILITY_SEVERITY",
-                    "cve": "CVE-2023-0464",
+                    "cve": "MOCK-2023-0464",
                     "summary": "This is a mocked CVE in a Cypress test",
                     "cvss": 7.5,
                     "scoreVersion": "V3",
@@ -80,7 +80,7 @@
                 },
                 {
                     "severity": "IMPORTANT_VULNERABILITY_SEVERITY",
-                    "cve": "CVE-2023-5363",
+                    "cve": "MOCK-2023-5363",
                     "summary": "This is a mocked CVE in a Cypress test",
                     "cvss": 7.5,
                     "scoreVersion": "V3",

@@ -9,9 +9,8 @@ ARG BASE_TAG=latest
 FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.22 AS builder
 
 ENV GOFLAGS=""
-# TODO(ROX-24276): re-enable release builds for fast stream.
 # TODO(ROX-20240): enable non-release development builds.
-# ENV GOTAGS="release"
+ENV GOTAGS="release"
 # TODO(ROX-23335): Properly set the build tag
 ENV BUILD_TAG="dev"
 ENV CI=1
@@ -38,6 +37,7 @@ LABEL \
     io.openshift.tags="rhacs,scanner-v4,stackrox" \
     maintainer="Red Hat, Inc." \
     name="rhacs-scanner-v4-rhel8" \
+    # Custom Snapshot creation in `operator-bundle-pipeline` depends on source-location label to be set correctly.
     source-location="https://github.com/stackrox/stackrox" \
     summary="The image scanner v4 for Red Hat Advanced Cluster Security for Kubernetes" \
     url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \

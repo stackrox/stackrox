@@ -6,6 +6,7 @@ import azure from 'images/azure.svg';
 import clair from 'images/clair.svg';
 import docker from 'images/docker.svg';
 import email from 'images/email.svg';
+import ghcr from 'images/ghcr.svg';
 import google from 'images/google-cloud.svg';
 import googleartifact from 'images/google-artifact.svg';
 import googleregistry from 'images/google-container.svg';
@@ -171,6 +172,12 @@ export const imageIntegrationsDescriptors: ImageIntegrationDescriptor[] = [
         image: redhat,
         label: 'Red Hat',
         type: 'rhel',
+    },
+    {
+        categories: 'Registry',
+        image: ghcr,
+        label: 'GitHub Container Registry',
+        type: 'ghcr',
     },
 ];
 

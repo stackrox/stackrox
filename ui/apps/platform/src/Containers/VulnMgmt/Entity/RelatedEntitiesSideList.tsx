@@ -1,7 +1,6 @@
 import React, { ReactNode, useContext } from 'react';
 
 import { defaultCountKeyMap as countKeyMap } from 'constants/workflowPages.constants';
-import { useTheme } from 'Containers/ThemeProvider';
 import workflowStateContext from 'Containers/workflowStateContext';
 import {
     VulnerabilityManagementEntityType,
@@ -21,7 +20,6 @@ function RelatedEntitiesSideList({
     data,
     entityContext,
 }: RelatedEntitiesSideListProps): ReactNode {
-    const { isDarkMode } = useTheme();
     const workflowState = useContext(workflowStateContext);
     const { useCase } = workflowState;
     if (!useCase) {
@@ -61,11 +59,7 @@ function RelatedEntitiesSideList({
         return null;
     }
     return (
-        <div
-            className={`h-full relative border-base-100 border-l max-w-43 ${
-                !isDarkMode ? 'bg-primary-300' : 'bg-base-100'
-            }`}
-        >
+        <div className="h-full relative border-base-300 border-l max-w-43 bg-base-200">
             <div className="sticky top-0 py-4">
                 <h2 className="mb-3 p-2 rounded-l text-lg text-base-600 text-center font-700">
                     Related entities

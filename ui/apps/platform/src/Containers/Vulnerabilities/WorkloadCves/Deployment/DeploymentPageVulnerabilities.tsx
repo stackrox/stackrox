@@ -25,7 +25,6 @@ import {
     SummaryCard,
 } from 'Containers/Vulnerabilities/components/SummaryCardLayout';
 import { getTableUIState } from 'utils/getTableUIState';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/AdvancedFiltersToolbar';
 import { createFilterTracker } from 'utils/analyticsEventTracking';
 import useAnalytics, { WORKLOAD_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
@@ -36,14 +35,6 @@ import {
 } from 'Containers/Vulnerabilities/searchFilterConfig';
 import { useManagedColumns } from 'hooks/useManagedColumns';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
-import {
-    SearchOption,
-    COMPONENT_SEARCH_OPTION,
-    COMPONENT_SOURCE_SEARCH_OPTION,
-    IMAGE_CVE_SEARCH_OPTION,
-    IMAGE_SEARCH_OPTION,
-} from '../../searchOptions';
-import WorkloadCveFilterToolbar from '../components/WorkloadCveFilterToolbar';
 import BySeveritySummaryCard from '../../components/BySeveritySummaryCard';
 import CvesByStatusSummaryCard, {
     resourceCountByCveSeverityAndStatusFragment,
@@ -70,6 +61,7 @@ import VulnerabilityStateTabs, {
     vulnStateTabContentId,
 } from '../components/VulnerabilityStateTabs';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
+import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 
 const summaryQuery = gql`
     ${resourceCountByCveSeverityAndStatusFragment}
@@ -101,13 +93,6 @@ export const deploymentVulnerabilitiesQuery = gql`
 
 const defaultSortFields = ['CVE', 'Severity'];
 
-const searchOptions: SearchOption[] = [
-    IMAGE_SEARCH_OPTION,
-    IMAGE_CVE_SEARCH_OPTION,
-    COMPONENT_SEARCH_OPTION,
-    COMPONENT_SOURCE_SEARCH_OPTION,
-];
-
 const searchFilterConfig = [
     imageSearchFilterConfig,
     imageCVESearchFilterConfig,
@@ -123,11 +108,10 @@ function DeploymentPageVulnerabilities({
     deploymentId,
     pagination,
 }: DeploymentPageVulnerabilitiesProps) {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isAdvancedFiltersEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_ADVANCED_FILTERS');
-
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
+
+    const { baseSearchFilter } = useWorkloadCveViewContext();
 
     const currentVulnerabilityState = useVulnerabilityState();
 
@@ -148,7 +132,10 @@ function DeploymentPageVulnerabilities({
     const hiddenSeverities = getHiddenSeverities(querySearchFilter);
     const hiddenStatuses = getHiddenStatuses(querySearchFilter);
 
-    const query = getVulnStateScopedQueryString(querySearchFilter, currentVulnerabilityState);
+    const query = getVulnStateScopedQueryString(
+        { ...baseSearchFilter, ...querySearchFilter },
+        currentVulnerabilityState
+    );
 
     const summaryRequest = useQuery<
         {
@@ -243,26 +230,20 @@ function DeploymentPageVulnerabilities({
                     }}
                 />
                 <div className="pf-v5-u-px-sm pf-v5-u-background-color-100">
-                    {isAdvancedFiltersEnabled ? (
-                        <AdvancedFiltersToolbar
-                            className="pf-v5-u-pt-lg pf-v5-u-pb-0"
-                            searchFilterConfig={searchFilterConfig}
-                            searchFilter={searchFilter}
-                            onFilterChange={(newFilter, searchPayload) => {
-                                setSearchFilter(newFilter);
-                                setPage(1);
-                                trackAppliedFilter(WORKLOAD_CVE_FILTER_APPLIED, searchPayload);
-                            }}
-                        />
-                    ) : (
-                        <WorkloadCveFilterToolbar
-                            autocompleteSearchContext={{
-                                'Deployment ID': deploymentId,
-                            }}
-                            searchOptions={searchOptions}
-                            onFilterChange={() => setPage(1)}
-                        />
-                    )}
+                    <AdvancedFiltersToolbar
+                        className="pf-v5-u-pt-lg pf-v5-u-pb-0"
+                        searchFilterConfig={searchFilterConfig}
+                        searchFilter={searchFilter}
+                        onFilterChange={(newFilter, searchPayload) => {
+                            setSearchFilter(newFilter);
+                            setPage(1);
+                            trackAppliedFilter(WORKLOAD_CVE_FILTER_APPLIED, searchPayload);
+                        }}
+                        additionalContextFilter={{
+                            'Deployment ID': deploymentId,
+                            ...baseSearchFilter,
+                        }}
+                    />
                 </div>
                 <SummaryCardLayout error={summaryRequest.error} isLoading={summaryRequest.loading}>
                     <SummaryCard

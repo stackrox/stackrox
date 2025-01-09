@@ -131,6 +131,7 @@ func (s *serviceImpl) sendBaselineToSensor(pw *storage.ProcessBaseline) {
 	if err != nil {
 		log.Errorf("Error sending process baseline to cluster %q: %v", pw.GetKey().GetClusterId(), err)
 	}
+	log.Infof("Successfully sent process baseline to cluster %q: %s", pw.GetKey().GetClusterId(), pw.GetId())
 }
 
 func (s *serviceImpl) reprocessDeploymentRisks(keys []*storage.ProcessBaselineKey) {

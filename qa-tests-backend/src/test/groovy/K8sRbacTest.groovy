@@ -68,8 +68,8 @@ class K8sRbacTest extends BaseSpecification {
         expect:
         "SR should have the same service accounts"
         // Make sure the qa namespace SA exists before running the test. That SA should be the most recent added.
-        // This will ensure scrapping is complete if this test spec is run first
-        withRetry(15, 3) {
+        // This will ensure scraping is complete if this test spec is run first
+        withRetry(60, 3) {  // allow 3 minutes
             stackroxSAs = ServiceAccountService.getServiceAccounts()
             // list of service accounts from the orchestrator
             orchestratorSAs = orchestrator.getServiceAccounts()
@@ -304,9 +304,8 @@ class K8sRbacTest extends BaseSpecification {
         assert stackroxSubjects.size() == orchestratorSubjects.size()
         for (Rbac.Subject sub : stackroxSubjects) {
             K8sSubject subject = orchestratorSubjects.find {
-                it.name == sub.name &&
-                        it.namespace == sub.namespace &&
-                        it.kind.toLowerCase() == sub.kind.toString().toLowerCase()
+                // orchestratorSubjects contains only User and Group kind where namespace is not relevant.
+                it.name == sub.name && it.kind.toLowerCase() == sub.kind.toString().toLowerCase()
             }
             assert subject
         }

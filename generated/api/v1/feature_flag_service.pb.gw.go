@@ -10,6 +10,7 @@ package v1
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
 
@@ -24,29 +25,32 @@ import (
 )
 
 // Suppress "imported and not used" errors
-var _ codes.Code
-var _ io.Reader
-var _ status.Status
-var _ = runtime.String
-var _ = utilities.NewDoubleArray
-var _ = metadata.Join
+var (
+	_ codes.Code
+	_ io.Reader
+	_ status.Status
+	_ = errors.New
+	_ = runtime.String
+	_ = utilities.NewDoubleArray
+	_ = metadata.Join
+)
 
 func request_FeatureFlagService_GetFeatureFlags_0(ctx context.Context, marshaler runtime.Marshaler, client FeatureFlagServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq Empty
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq Empty
+		metadata runtime.ServerMetadata
+	)
 	msg, err := client.GetFeatureFlags(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_FeatureFlagService_GetFeatureFlags_0(ctx context.Context, marshaler runtime.Marshaler, server FeatureFlagServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq Empty
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq Empty
+		metadata runtime.ServerMetadata
+	)
 	msg, err := server.GetFeatureFlags(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 // RegisterFeatureFlagServiceHandlerServer registers the http handlers for service FeatureFlagService to "mux".
@@ -55,16 +59,13 @@ func local_request_FeatureFlagService_GetFeatureFlags_0(ctx context.Context, mar
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterFeatureFlagServiceHandlerFromEndpoint instead.
 // GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterFeatureFlagServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server FeatureFlagServiceServer) error {
-
-	mux.Handle("GET", pattern_FeatureFlagService_GetFeatureFlags_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_FeatureFlagService_GetFeatureFlags_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.FeatureFlagService/GetFeatureFlags", runtime.WithHTTPPathPattern("/v1/featureflags"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.FeatureFlagService/GetFeatureFlags", runtime.WithHTTPPathPattern("/v1/featureflags"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -76,9 +77,7 @@ func RegisterFeatureFlagServiceHandlerServer(ctx context.Context, mux *runtime.S
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_FeatureFlagService_GetFeatureFlags_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
 
 	return nil
@@ -105,7 +104,6 @@ func RegisterFeatureFlagServiceHandlerFromEndpoint(ctx context.Context, mux *run
 			}
 		}()
 	}()
-
 	return RegisterFeatureFlagServiceHandler(ctx, mux, conn)
 }
 
@@ -121,14 +119,11 @@ func RegisterFeatureFlagServiceHandler(ctx context.Context, mux *runtime.ServeMu
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
 // "FeatureFlagServiceClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterFeatureFlagServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client FeatureFlagServiceClient) error {
-
-	mux.Handle("GET", pattern_FeatureFlagService_GetFeatureFlags_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_FeatureFlagService_GetFeatureFlags_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.FeatureFlagService/GetFeatureFlags", runtime.WithHTTPPathPattern("/v1/featureflags"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.FeatureFlagService/GetFeatureFlags", runtime.WithHTTPPathPattern("/v1/featureflags"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -139,11 +134,8 @@ func RegisterFeatureFlagServiceHandlerClient(ctx context.Context, mux *runtime.S
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_FeatureFlagService_GetFeatureFlags_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
 	return nil
 }
 

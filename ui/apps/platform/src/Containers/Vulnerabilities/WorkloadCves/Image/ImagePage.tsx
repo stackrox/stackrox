@@ -1,8 +1,10 @@
-import React, { ReactNode } from 'react';
+import React, { ReactElement, ReactNode, useState } from 'react';
 import {
+    Alert,
     Breadcrumb,
     BreadcrumbItem,
     Bullseye,
+    Button,
     ClipboardCopy,
     Divider,
     Flex,
@@ -13,7 +15,7 @@ import {
     Tabs,
     TabTitleText,
     Title,
-    Alert,
+    Tooltip,
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import { useParams } from 'react-router-dom';
@@ -25,11 +27,14 @@ import PageTitle from 'Components/PageTitle';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import useIsScannerV4Enabled from 'hooks/useIsScannerV4Enabled';
 import useURLPagination from 'hooks/useURLPagination';
 
 import HeaderLoadingSkeleton from '../../components/HeaderLoadingSkeleton';
+import GenerateSbomModal from '../../components/GenerateSbomModal';
 import { getOverviewPagePath } from '../../utils/searchUtils';
 import useInvalidateVulnerabilityQueries from '../../hooks/useInvalidateVulnerabilityQueries';
+import useHasGenerateSbomAbility from '../../hooks/useHasGenerateSBOMAbility';
 import ImagePageVulnerabilities from './ImagePageVulnerabilities';
 import ImagePageResources from './ImagePageResources';
 import { detailsTabValues } from '../../types';
@@ -40,11 +45,7 @@ import ImageDetailBadges, {
 import getImageScanMessage from '../utils/getImageScanMessage';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import { getImageBaseNameDisplay } from '../utils/images';
-
-const workloadCveOverviewImagePath = getOverviewPagePath('Workload', {
-    vulnerabilityState: 'OBSERVED',
-    entityTab: 'Image',
-});
+import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 
 export const imageDetailsQuery = gql`
     ${imageDetailsFragment}
@@ -55,14 +56,20 @@ export const imageDetailsQuery = gql`
                 registry
                 remote
                 tag
+                fullName
             }
             ...ImageDetails
         }
     }
 `;
 
+function ScannerV4RequiredTooltip({ children }: { children: ReactElement }) {
+    return <Tooltip content="SBOM generation requires Scanner V4">{children}</Tooltip>;
+}
+
 function ImagePage() {
     const { imageId } = useParams();
+    const { getAbsoluteUrl, pageTitle } = useWorkloadCveViewContext();
     const { data, error } = useQuery<
         {
             image: {
@@ -71,6 +78,7 @@ function ImagePage() {
                     registry: string;
                     remote: string;
                     tag: string;
+                    fullName: string;
                 } | null;
             } & ImageDetails;
         },
@@ -85,6 +93,10 @@ function ImagePage() {
 
     const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
 
+    const hasGenerateSbomAbility = useHasGenerateSbomAbility();
+    const isScannerV4Enabled = useIsScannerV4Enabled();
+    const [sbomTargetImage, setSbomTargetImage] = useState<string>();
+
     const imageData = data && data.image;
     const imageName = imageData?.name;
     const imageDisplayName =
@@ -92,6 +104,13 @@ function ImagePage() {
             ? `${imageName.registry}/${getImageBaseNameDisplay(imageData.id, imageName)}`
             : 'NAME UNKNOWN';
     const scanMessage = getImageScanMessage(imageData?.notes || [], imageData?.scanNotes || []);
+
+    const workloadCveOverviewImagePath = getAbsoluteUrl(
+        getOverviewPagePath('Workload', {
+            vulnerabilityState: 'OBSERVED',
+            entityTab: 'Image',
+        })
+    );
 
     let mainContent: ReactNode | null = null;
 
@@ -109,6 +128,7 @@ function ImagePage() {
             </PageSection>
         );
     } else {
+        const SbomButtonWrapper = isScannerV4Enabled ? React.Fragment : ScannerV4RequiredTooltip;
         const sha = imageData?.id;
         mainContent = (
             <>
@@ -116,22 +136,48 @@ function ImagePage() {
                     {imageData ? (
                         <Flex
                             direction={{ default: 'column' }}
-                            alignItems={{ default: 'alignItemsFlexStart' }}
+                            alignItems={{ default: 'alignItemsStretch' }}
                         >
-                            <Title headingLevel="h1" className="pf-v5-u-m-0">
-                                {imageDisplayName}
-                            </Title>
-                            {sha && (
-                                <ClipboardCopy
-                                    hoverTip="Copy SHA"
-                                    clickTip="Copied!"
-                                    variant="inline-compact"
-                                    className="pf-v5-u-display-inline-flex pf-v5-u-align-items-center pf-v5-u-mt-sm pf-v5-u-mb-md pf-v5-u-font-size-sm"
+                            <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }}>
+                                <Flex
+                                    direction={{ default: 'column' }}
+                                    spaceItems={{ default: 'spaceItemsSm' }}
                                 >
-                                    {sha}
-                                </ClipboardCopy>
-                            )}
-                            <ImageDetailBadges imageData={imageData} />
+                                    <Title headingLevel="h1">{imageDisplayName}</Title>
+                                    {sha && (
+                                        <ClipboardCopy
+                                            hoverTip="Copy SHA"
+                                            clickTip="Copied!"
+                                            variant="inline-compact"
+                                            className="pf-v5-u-font-size-sm"
+                                        >
+                                            {sha}
+                                        </ClipboardCopy>
+                                    )}
+                                    <ImageDetailBadges imageData={imageData} />
+                                </Flex>
+                                {hasGenerateSbomAbility && (
+                                    <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
+                                        <SbomButtonWrapper>
+                                            <Button
+                                                variant="secondary"
+                                                onClick={() => {
+                                                    setSbomTargetImage(imageData.name?.fullName);
+                                                }}
+                                                isAriaDisabled={!isScannerV4Enabled}
+                                            >
+                                                Generate SBOM
+                                            </Button>
+                                        </SbomButtonWrapper>
+                                        {sbomTargetImage && (
+                                            <GenerateSbomModal
+                                                onClose={() => setSbomTargetImage(undefined)}
+                                                imageName={sbomTargetImage}
+                                            />
+                                        )}
+                                    </FlexItem>
+                                )}
+                            </Flex>
                             {!isEmpty(scanMessage) && (
                                 <Alert
                                     className="pf-v5-u-w-100"
@@ -204,7 +250,7 @@ function ImagePage() {
 
     return (
         <>
-            <PageTitle title={`Workload CVEs - Image ${imageData ? imageDisplayName : ''}`} />
+            <PageTitle title={`${pageTitle} - Image ${imageData ? imageDisplayName : ''}`} />
             <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={workloadCveOverviewImagePath}>

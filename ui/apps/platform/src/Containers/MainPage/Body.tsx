@@ -43,8 +43,8 @@ import {
     vulnerabilitiesPlatformCvesPath,
     deprecatedPoliciesBasePath,
     policiesBasePath,
+    vulnerabilitiesPlatformWorkloadCvesPath,
 } from 'routePaths';
-import { useTheme } from 'Containers/ThemeProvider';
 
 import PageNotFound from 'Components/PageNotFound';
 import PageTitle from 'Components/PageTitle';
@@ -151,12 +151,6 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         ),
         path: exceptionConfigurationPath,
     },
-    'exception-management': {
-        component: asyncComponent(
-            () => import('Containers/Vulnerabilities/ExceptionManagement/ExceptionManagementPage')
-        ),
-        path: exceptionManagementPath,
-    },
     integrations: {
         component: asyncComponent(() => import('Containers/Integrations/IntegrationsPage')),
         path: integrationsPath,
@@ -170,16 +164,6 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
     'network-graph': {
         component: asyncComponent(() => import('Containers/NetworkGraph/NetworkGraphPage')),
         path: networkPath,
-    },
-    'node-cves': {
-        component: asyncComponent(() => import('Containers/Vulnerabilities/NodeCves/NodeCvesPage')),
-        path: vulnerabilitiesNodeCvesPath,
-    },
-    'platform-cves': {
-        component: asyncComponent(
-            () => import('Containers/Vulnerabilities/PlatformCves/PlatformCvesPage')
-        ),
-        path: vulnerabilitiesPlatformCvesPath,
     },
     'policy-management': {
         component: asyncComponent(() => import('Containers/PolicyManagement/PolicyManagementPage')),
@@ -209,21 +193,55 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         component: asyncComponent(() => import('Containers/Violations/ViolationsPage')),
         path: violationsPath,
     },
+    'vulnerabilities/exception-management': {
+        component: asyncComponent(
+            () => import('Containers/Vulnerabilities/ExceptionManagement/ExceptionManagementPage')
+        ),
+        path: exceptionManagementPath,
+    },
+    'vulnerabilities/node-cves': {
+        component: asyncComponent(() => import('Containers/Vulnerabilities/NodeCves/NodeCvesPage')),
+        path: vulnerabilitiesNodeCvesPath,
+    },
+    'vulnerabilities/platform-cves': {
+        component: asyncComponent(
+            () => import('Containers/Vulnerabilities/PlatformCves/PlatformCvesPage')
+        ),
+        path: vulnerabilitiesPlatformCvesPath,
+    },
+    'vulnerabilities/platform-workload-cves': {
+        component: (() => {
+            const AsyncWorkloadCvesComponent = asyncComponent(
+                () => import('Containers/Vulnerabilities/WorkloadCves/WorkloadCvesPage')
+            );
+
+            return function WorkloadCvesPage() {
+                return <AsyncWorkloadCvesComponent view="platform-workload" />;
+            };
+        })(),
+        path: vulnerabilitiesPlatformWorkloadCvesPath,
+    },
     'vulnerabilities/reports': {
         component: asyncComponent(
             () => import('Containers/Vulnerabilities/VulnerablityReporting/VulnReportingPage')
         ),
         path: vulnerabilityReportsPath,
     },
+    'vulnerabilities/workload-cves': {
+        component: (() => {
+            const AsyncWorkloadCvesComponent = asyncComponent(
+                () => import('Containers/Vulnerabilities/WorkloadCves/WorkloadCvesPage')
+            );
+
+            return function WorkloadCvesPage() {
+                return <AsyncWorkloadCvesComponent view="user-workload" />;
+            };
+        })(),
+        path: vulnerabilitiesWorkloadCvesPath,
+    },
     'vulnerability-management': {
         component: asyncComponent(() => import('Containers/VulnMgmt/WorkflowLayout')),
         path: vulnManagementPath,
-    },
-    'workload-cves': {
-        component: asyncComponent(
-            () => import('Containers/Vulnerabilities/WorkloadCves/WorkloadCvesPage')
-        ),
-        path: vulnerabilitiesWorkloadCvesPath,
     },
 };
 
@@ -242,16 +260,10 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
     const hasWriteAccessForInviting = hasReadWriteAccess('Access');
     const showInviteModal = useSelector(selectors.inviteSelector);
 
-    const { isDarkMode } = useTheme();
-
     const routePredicates = { hasReadAccess, isFeatureFlagEnabled };
 
     return (
-        <div
-            className={`flex flex-col h-full w-full relative overflow-auto ${
-                isDarkMode ? 'bg-base-0' : 'bg-base-100'
-            }`}
-        >
+        <div className="flex flex-col h-full w-full relative overflow-auto bg-base-100">
             <ErrorBoundary>
                 <Switch>
                     <Route path="/" exact render={() => <Redirect to={dashboardPath} />} />

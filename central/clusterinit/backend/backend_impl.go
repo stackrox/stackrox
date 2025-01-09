@@ -18,6 +18,10 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 )
 
+const (
+	currentCrsVersion = 1
+)
+
 var _ authn.ValidateCertChain = (*backendImpl)(nil)
 
 type backendImpl struct {
@@ -194,9 +198,10 @@ func (b *backendImpl) IssueCRS(ctx context.Context, name string) (*CRSWithMeta, 
 
 	return &CRSWithMeta{
 		CRS: &crs.CRS{
-			CAs:  []string{caCert},
-			Cert: string(cert.CertPEM),
-			Key:  string(cert.KeyPEM),
+			CAs:     []string{caCert},
+			Cert:    string(cert.CertPEM),
+			Key:     string(cert.KeyPEM),
+			Version: currentCrsVersion,
 		},
 		Meta: meta,
 	}, nil

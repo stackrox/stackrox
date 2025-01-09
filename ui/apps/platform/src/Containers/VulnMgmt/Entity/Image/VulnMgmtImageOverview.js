@@ -3,6 +3,7 @@ import pluralize from 'pluralize';
 import cloneDeep from 'lodash/cloneDeep';
 import { Alert, Button } from '@patternfly/react-core';
 
+import { vulnerabilitiesWorkloadCvesPath } from 'routePaths';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import CollapsibleSection from 'Components/CollapsibleSection';
 import Metadata from 'Components/Metadata';
@@ -174,7 +175,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                                     <Button
                                         component={LinkShim}
                                         variant="link"
-                                        href={getWorkloadEntityPagePath('Image', data.id)}
+                                        href={`${vulnerabilitiesWorkloadCvesPath}${getWorkloadEntityPagePath('Image', data.id)}`}
                                         isInline
                                     >
                                         in Workload CVEs

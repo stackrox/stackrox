@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
 	eventPkg "github.com/stackrox/rox/pkg/sensor/event"
 	"github.com/stackrox/rox/pkg/sensor/hash"
@@ -84,6 +85,49 @@ func TestDeduper(t *testing.T) {
 								Resource: &central.SensorEvent_AlertResults{
 									AlertResults: &central.AlertResults{
 										Stage: storage.LifecycleStage_RUNTIME,
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+			},
+		},
+		{
+			testName: "duplicate node indexes should not be deduped",
+			testEvents: []testEvents{
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "1",
+								Resource: &central.SensorEvent_IndexReport{
+									IndexReport: &v4.IndexReport{
+										HashId:   "a",
+										State:    "7",
+										Success:  true,
+										Err:      "",
+										Contents: nil,
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "1",
+								Resource: &central.SensorEvent_IndexReport{
+									IndexReport: &v4.IndexReport{
+										HashId:   "a",
+										State:    "7",
+										Success:  true,
+										Err:      "",
+										Contents: nil,
 									},
 								},
 							},

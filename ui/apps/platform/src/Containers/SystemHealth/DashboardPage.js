@@ -3,8 +3,8 @@ import { Flex, FlexItem, Grid, GridItem, PageSection, Title } from '@patternfly/
 
 import useCentralCapabilities from 'hooks/useCentralCapabilities';
 import useInterval from 'hooks/useInterval';
+import useIsScannerV4Enabled from 'hooks/useIsScannerV4Enabled';
 import usePermissions from 'hooks/usePermissions';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 
 import CertificateCard from './CertificateHealth/CertificateCard';
 import ClustersHealthCards from './ClustersHealth/ClustersHealthCards';
@@ -28,8 +28,7 @@ const SystemHealthDashboardPage = () => {
     const hasReadAccessForCluster = hasReadAccess('Cluster');
     const hasReadAccessForIntegration = hasReadAccess('Integration');
 
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isScannerV4Enabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
+    const isScannerV4Enabled = useIsScannerV4Enabled();
 
     const [pollingCountFaster, setPollingCountFaster] = useState(0);
     const [pollingCountSlower, setPollingCountSlower] = useState(0);

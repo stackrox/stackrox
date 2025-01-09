@@ -10,6 +10,7 @@ package v1
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
 
@@ -24,330 +25,291 @@ import (
 )
 
 // Suppress "imported and not used" errors
-var _ codes.Code
-var _ io.Reader
-var _ status.Status
-var _ = runtime.String
-var _ = utilities.NewDoubleArray
-var _ = metadata.Join
-
 var (
-	filter_ImageService_GetImage_0 = &utilities.DoubleArray{Encoding: map[string]int{"id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	_ codes.Code
+	_ io.Reader
+	_ status.Status
+	_ = errors.New
+	_ = runtime.String
+	_ = utilities.NewDoubleArray
+	_ = metadata.Join
 )
 
+var filter_ImageService_GetImage_0 = &utilities.DoubleArray{Encoding: map[string]int{"id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+
 func request_ImageService_GetImage_0(ctx context.Context, marshaler runtime.Marshaler, client ImageServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetImageRequest
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq GetImageRequest
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["id"]
+	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-
 	protoReq.Id, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
-
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ImageService_GetImage_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.GetImage(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_ImageService_GetImage_0(ctx context.Context, marshaler runtime.Marshaler, server ImageServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetImageRequest
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq GetImageRequest
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["id"]
+	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-
 	protoReq.Id, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
-
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ImageService_GetImage_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.GetImage(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
-var (
-	filter_ImageService_CountImages_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
-)
+var filter_ImageService_CountImages_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 
 func request_ImageService_CountImages_0(ctx context.Context, marshaler runtime.Marshaler, client ImageServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq RawQuery
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq RawQuery
+		metadata runtime.ServerMetadata
+	)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ImageService_CountImages_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.CountImages(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_ImageService_CountImages_0(ctx context.Context, marshaler runtime.Marshaler, server ImageServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq RawQuery
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq RawQuery
+		metadata runtime.ServerMetadata
+	)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ImageService_CountImages_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.CountImages(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
-var (
-	filter_ImageService_ListImages_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
-)
+var filter_ImageService_ListImages_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 
 func request_ImageService_ListImages_0(ctx context.Context, marshaler runtime.Marshaler, client ImageServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq RawQuery
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq RawQuery
+		metadata runtime.ServerMetadata
+	)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ImageService_ListImages_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.ListImages(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_ImageService_ListImages_0(ctx context.Context, marshaler runtime.Marshaler, server ImageServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq RawQuery
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq RawQuery
+		metadata runtime.ServerMetadata
+	)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ImageService_ListImages_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.ListImages(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_ImageService_ScanImage_0(ctx context.Context, marshaler runtime.Marshaler, client ImageServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ScanImageRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq ScanImageRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.ScanImage(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_ImageService_ScanImage_0(ctx context.Context, marshaler runtime.Marshaler, server ImageServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ScanImageRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq ScanImageRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.ScanImage(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_ImageService_InvalidateScanAndRegistryCaches_0(ctx context.Context, marshaler runtime.Marshaler, client ImageServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq Empty
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq Empty
+		metadata runtime.ServerMetadata
+	)
 	msg, err := client.InvalidateScanAndRegistryCaches(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_ImageService_InvalidateScanAndRegistryCaches_0(ctx context.Context, marshaler runtime.Marshaler, server ImageServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq Empty
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq Empty
+		metadata runtime.ServerMetadata
+	)
 	msg, err := server.InvalidateScanAndRegistryCaches(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
-var (
-	filter_ImageService_DeleteImages_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
-)
+var filter_ImageService_DeleteImages_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 
 func request_ImageService_DeleteImages_0(ctx context.Context, marshaler runtime.Marshaler, client ImageServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq DeleteImagesRequest
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq DeleteImagesRequest
+		metadata runtime.ServerMetadata
+	)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ImageService_DeleteImages_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.DeleteImages(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_ImageService_DeleteImages_0(ctx context.Context, marshaler runtime.Marshaler, server ImageServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq DeleteImagesRequest
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq DeleteImagesRequest
+		metadata runtime.ServerMetadata
+	)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ImageService_DeleteImages_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.DeleteImages(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_ImageService_WatchImage_0(ctx context.Context, marshaler runtime.Marshaler, client ImageServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq WatchImageRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq WatchImageRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.WatchImage(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_ImageService_WatchImage_0(ctx context.Context, marshaler runtime.Marshaler, server ImageServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq WatchImageRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq WatchImageRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.WatchImage(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
-var (
-	filter_ImageService_UnwatchImage_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
-)
+var filter_ImageService_UnwatchImage_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 
 func request_ImageService_UnwatchImage_0(ctx context.Context, marshaler runtime.Marshaler, client ImageServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq UnwatchImageRequest
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq UnwatchImageRequest
+		metadata runtime.ServerMetadata
+	)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ImageService_UnwatchImage_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.UnwatchImage(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_ImageService_UnwatchImage_0(ctx context.Context, marshaler runtime.Marshaler, server ImageServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq UnwatchImageRequest
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq UnwatchImageRequest
+		metadata runtime.ServerMetadata
+	)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ImageService_UnwatchImage_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.UnwatchImage(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_ImageService_GetWatchedImages_0(ctx context.Context, marshaler runtime.Marshaler, client ImageServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq Empty
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq Empty
+		metadata runtime.ServerMetadata
+	)
 	msg, err := client.GetWatchedImages(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_ImageService_GetWatchedImages_0(ctx context.Context, marshaler runtime.Marshaler, server ImageServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq Empty
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq Empty
+		metadata runtime.ServerMetadata
+	)
 	msg, err := server.GetWatchedImages(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
-var (
-	filter_ImageService_ExportImages_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
-)
+var filter_ImageService_ExportImages_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 
 func request_ImageService_ExportImages_0(ctx context.Context, marshaler runtime.Marshaler, client ImageServiceClient, req *http.Request, pathParams map[string]string) (ImageService_ExportImagesClient, runtime.ServerMetadata, error) {
-	var protoReq ExportImageRequest
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq ExportImageRequest
+		metadata runtime.ServerMetadata
+	)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ImageService_ExportImages_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	stream, err := client.ExportImages(ctx, &protoReq)
 	if err != nil {
 		return nil, metadata, err
@@ -358,7 +320,6 @@ func request_ImageService_ExportImages_0(ctx context.Context, marshaler runtime.
 	}
 	metadata.HeaderMD = header
 	return stream, metadata, nil
-
 }
 
 // RegisterImageServiceHandlerServer registers the http handlers for service ImageService to "mux".
@@ -367,16 +328,13 @@ func request_ImageService_ExportImages_0(ctx context.Context, marshaler runtime.
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterImageServiceHandlerFromEndpoint instead.
 // GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterImageServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server ImageServiceServer) error {
-
-	mux.Handle("GET", pattern_ImageService_GetImage_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_ImageService_GetImage_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.ImageService/GetImage", runtime.WithHTTPPathPattern("/v1/images/{id}"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.ImageService/GetImage", runtime.WithHTTPPathPattern("/v1/images/{id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -388,20 +346,15 @@ func RegisterImageServiceHandlerServer(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ImageService_GetImage_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_ImageService_CountImages_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_ImageService_CountImages_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.ImageService/CountImages", runtime.WithHTTPPathPattern("/v1/imagescount"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.ImageService/CountImages", runtime.WithHTTPPathPattern("/v1/imagescount"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -413,20 +366,15 @@ func RegisterImageServiceHandlerServer(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ImageService_CountImages_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_ImageService_ListImages_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_ImageService_ListImages_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.ImageService/ListImages", runtime.WithHTTPPathPattern("/v1/images"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.ImageService/ListImages", runtime.WithHTTPPathPattern("/v1/images"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -438,20 +386,15 @@ func RegisterImageServiceHandlerServer(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ImageService_ListImages_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_ImageService_ScanImage_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_ImageService_ScanImage_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.ImageService/ScanImage", runtime.WithHTTPPathPattern("/v1/images/scan"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.ImageService/ScanImage", runtime.WithHTTPPathPattern("/v1/images/scan"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -463,20 +406,15 @@ func RegisterImageServiceHandlerServer(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ImageService_ScanImage_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_ImageService_InvalidateScanAndRegistryCaches_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_ImageService_InvalidateScanAndRegistryCaches_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.ImageService/InvalidateScanAndRegistryCaches", runtime.WithHTTPPathPattern("/v1/images/cache/invalidate"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.ImageService/InvalidateScanAndRegistryCaches", runtime.WithHTTPPathPattern("/v1/images/cache/invalidate"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -488,20 +426,15 @@ func RegisterImageServiceHandlerServer(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ImageService_InvalidateScanAndRegistryCaches_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("DELETE", pattern_ImageService_DeleteImages_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodDelete, pattern_ImageService_DeleteImages_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.ImageService/DeleteImages", runtime.WithHTTPPathPattern("/v1/images"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.ImageService/DeleteImages", runtime.WithHTTPPathPattern("/v1/images"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -513,20 +446,15 @@ func RegisterImageServiceHandlerServer(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ImageService_DeleteImages_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_ImageService_WatchImage_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_ImageService_WatchImage_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.ImageService/WatchImage", runtime.WithHTTPPathPattern("/v1/watchedimages"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.ImageService/WatchImage", runtime.WithHTTPPathPattern("/v1/watchedimages"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -538,20 +466,15 @@ func RegisterImageServiceHandlerServer(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ImageService_WatchImage_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("DELETE", pattern_ImageService_UnwatchImage_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodDelete, pattern_ImageService_UnwatchImage_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.ImageService/UnwatchImage", runtime.WithHTTPPathPattern("/v1/watchedimages"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.ImageService/UnwatchImage", runtime.WithHTTPPathPattern("/v1/watchedimages"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -563,20 +486,15 @@ func RegisterImageServiceHandlerServer(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ImageService_UnwatchImage_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_ImageService_GetWatchedImages_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_ImageService_GetWatchedImages_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.ImageService/GetWatchedImages", runtime.WithHTTPPathPattern("/v1/watchedimages"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.ImageService/GetWatchedImages", runtime.WithHTTPPathPattern("/v1/watchedimages"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -588,12 +506,10 @@ func RegisterImageServiceHandlerServer(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ImageService_GetWatchedImages_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
 
-	mux.Handle("GET", pattern_ImageService_ExportImages_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_ImageService_ExportImages_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
 		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
@@ -624,7 +540,6 @@ func RegisterImageServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.S
 			}
 		}()
 	}()
-
 	return RegisterImageServiceHandler(ctx, mux, conn)
 }
 
@@ -640,14 +555,11 @@ func RegisterImageServiceHandler(ctx context.Context, mux *runtime.ServeMux, con
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
 // "ImageServiceClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterImageServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client ImageServiceClient) error {
-
-	mux.Handle("GET", pattern_ImageService_GetImage_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_ImageService_GetImage_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.ImageService/GetImage", runtime.WithHTTPPathPattern("/v1/images/{id}"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.ImageService/GetImage", runtime.WithHTTPPathPattern("/v1/images/{id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -658,18 +570,13 @@ func RegisterImageServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ImageService_GetImage_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_ImageService_CountImages_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_ImageService_CountImages_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.ImageService/CountImages", runtime.WithHTTPPathPattern("/v1/imagescount"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.ImageService/CountImages", runtime.WithHTTPPathPattern("/v1/imagescount"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -680,18 +587,13 @@ func RegisterImageServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ImageService_CountImages_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_ImageService_ListImages_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_ImageService_ListImages_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.ImageService/ListImages", runtime.WithHTTPPathPattern("/v1/images"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.ImageService/ListImages", runtime.WithHTTPPathPattern("/v1/images"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -702,18 +604,13 @@ func RegisterImageServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ImageService_ListImages_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_ImageService_ScanImage_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_ImageService_ScanImage_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.ImageService/ScanImage", runtime.WithHTTPPathPattern("/v1/images/scan"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.ImageService/ScanImage", runtime.WithHTTPPathPattern("/v1/images/scan"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -724,18 +621,13 @@ func RegisterImageServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ImageService_ScanImage_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_ImageService_InvalidateScanAndRegistryCaches_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_ImageService_InvalidateScanAndRegistryCaches_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.ImageService/InvalidateScanAndRegistryCaches", runtime.WithHTTPPathPattern("/v1/images/cache/invalidate"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.ImageService/InvalidateScanAndRegistryCaches", runtime.WithHTTPPathPattern("/v1/images/cache/invalidate"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -746,18 +638,13 @@ func RegisterImageServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ImageService_InvalidateScanAndRegistryCaches_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("DELETE", pattern_ImageService_DeleteImages_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodDelete, pattern_ImageService_DeleteImages_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.ImageService/DeleteImages", runtime.WithHTTPPathPattern("/v1/images"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.ImageService/DeleteImages", runtime.WithHTTPPathPattern("/v1/images"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -768,18 +655,13 @@ func RegisterImageServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ImageService_DeleteImages_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_ImageService_WatchImage_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_ImageService_WatchImage_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.ImageService/WatchImage", runtime.WithHTTPPathPattern("/v1/watchedimages"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.ImageService/WatchImage", runtime.WithHTTPPathPattern("/v1/watchedimages"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -790,18 +672,13 @@ func RegisterImageServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ImageService_WatchImage_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("DELETE", pattern_ImageService_UnwatchImage_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodDelete, pattern_ImageService_UnwatchImage_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.ImageService/UnwatchImage", runtime.WithHTTPPathPattern("/v1/watchedimages"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.ImageService/UnwatchImage", runtime.WithHTTPPathPattern("/v1/watchedimages"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -812,18 +689,13 @@ func RegisterImageServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ImageService_UnwatchImage_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_ImageService_GetWatchedImages_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_ImageService_GetWatchedImages_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.ImageService/GetWatchedImages", runtime.WithHTTPPathPattern("/v1/watchedimages"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.ImageService/GetWatchedImages", runtime.WithHTTPPathPattern("/v1/watchedimages"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -834,18 +706,13 @@ func RegisterImageServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ImageService_GetWatchedImages_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_ImageService_ExportImages_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_ImageService_ExportImages_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.ImageService/ExportImages", runtime.WithHTTPPathPattern("/v1/export/images"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.ImageService/ExportImages", runtime.WithHTTPPathPattern("/v1/export/images"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -856,54 +723,33 @@ func RegisterImageServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ImageService_ExportImages_0(annotatedContext, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
-
 	})
-
 	return nil
 }
 
 var (
-	pattern_ImageService_GetImage_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "images", "id"}, ""))
-
-	pattern_ImageService_CountImages_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "imagescount"}, ""))
-
-	pattern_ImageService_ListImages_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "images"}, ""))
-
-	pattern_ImageService_ScanImage_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "images", "scan"}, ""))
-
+	pattern_ImageService_GetImage_0                        = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "images", "id"}, ""))
+	pattern_ImageService_CountImages_0                     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "imagescount"}, ""))
+	pattern_ImageService_ListImages_0                      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "images"}, ""))
+	pattern_ImageService_ScanImage_0                       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "images", "scan"}, ""))
 	pattern_ImageService_InvalidateScanAndRegistryCaches_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v1", "images", "cache", "invalidate"}, ""))
-
-	pattern_ImageService_DeleteImages_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "images"}, ""))
-
-	pattern_ImageService_WatchImage_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "watchedimages"}, ""))
-
-	pattern_ImageService_UnwatchImage_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "watchedimages"}, ""))
-
-	pattern_ImageService_GetWatchedImages_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "watchedimages"}, ""))
-
-	pattern_ImageService_ExportImages_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "export", "images"}, ""))
+	pattern_ImageService_DeleteImages_0                    = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "images"}, ""))
+	pattern_ImageService_WatchImage_0                      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "watchedimages"}, ""))
+	pattern_ImageService_UnwatchImage_0                    = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "watchedimages"}, ""))
+	pattern_ImageService_GetWatchedImages_0                = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "watchedimages"}, ""))
+	pattern_ImageService_ExportImages_0                    = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "export", "images"}, ""))
 )
 
 var (
-	forward_ImageService_GetImage_0 = runtime.ForwardResponseMessage
-
-	forward_ImageService_CountImages_0 = runtime.ForwardResponseMessage
-
-	forward_ImageService_ListImages_0 = runtime.ForwardResponseMessage
-
-	forward_ImageService_ScanImage_0 = runtime.ForwardResponseMessage
-
+	forward_ImageService_GetImage_0                        = runtime.ForwardResponseMessage
+	forward_ImageService_CountImages_0                     = runtime.ForwardResponseMessage
+	forward_ImageService_ListImages_0                      = runtime.ForwardResponseMessage
+	forward_ImageService_ScanImage_0                       = runtime.ForwardResponseMessage
 	forward_ImageService_InvalidateScanAndRegistryCaches_0 = runtime.ForwardResponseMessage
-
-	forward_ImageService_DeleteImages_0 = runtime.ForwardResponseMessage
-
-	forward_ImageService_WatchImage_0 = runtime.ForwardResponseMessage
-
-	forward_ImageService_UnwatchImage_0 = runtime.ForwardResponseMessage
-
-	forward_ImageService_GetWatchedImages_0 = runtime.ForwardResponseMessage
-
-	forward_ImageService_ExportImages_0 = runtime.ForwardResponseStream
+	forward_ImageService_DeleteImages_0                    = runtime.ForwardResponseMessage
+	forward_ImageService_WatchImage_0                      = runtime.ForwardResponseMessage
+	forward_ImageService_UnwatchImage_0                    = runtime.ForwardResponseMessage
+	forward_ImageService_GetWatchedImages_0                = runtime.ForwardResponseMessage
+	forward_ImageService_ExportImages_0                    = runtime.ForwardResponseStream
 )

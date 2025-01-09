@@ -20,7 +20,6 @@ import PageTitle from 'Components/PageTitle';
 import useURLPagination from 'hooks/useURLPagination';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import usePermissions from 'hooks/usePermissions';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useAnalytics, {
     WATCH_IMAGE_MODAL_OPENED,
     WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED,
@@ -28,7 +27,6 @@ import useAnalytics, {
 } from 'hooks/useAnalytics';
 import useLocalStorage from 'hooks/useLocalStorage';
 import { SearchFilter } from 'types/search';
-import { vulnerabilityNamespaceViewPath } from 'routePaths';
 import {
     getDefaultWorkloadSortOption,
     getDefaultZeroCveSortOption,
@@ -36,16 +34,6 @@ import {
     syncSeveritySortOption,
 } from 'Containers/Vulnerabilities/utils/sortUtils';
 import useURLSort from 'hooks/useURLSort';
-import {
-    SearchOption,
-    IMAGE_SEARCH_OPTION,
-    DEPLOYMENT_SEARCH_OPTION,
-    NAMESPACE_SEARCH_OPTION,
-    CLUSTER_SEARCH_OPTION,
-    IMAGE_CVE_SEARCH_OPTION,
-    COMPONENT_SEARCH_OPTION,
-    COMPONENT_SOURCE_SEARCH_OPTION,
-} from 'Containers/Vulnerabilities/searchOptions';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import { VulnerabilityState } from 'types/cve.proto';
 import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/AdvancedFiltersToolbar';
@@ -73,6 +61,7 @@ import {
     parseQuerySearchFilter,
     getVulnStateScopedQueryString,
     getZeroCveScopedQueryString,
+    getNamespaceViewPagePath,
 } from '../../utils/searchUtils';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 
@@ -85,21 +74,11 @@ import VulnerabilityStateTabs, {
     vulnStateTabContentId,
 } from '../components/VulnerabilityStateTabs';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
+import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 import DefaultFilterModal from '../components/DefaultFilterModal';
-import WorkloadCveFilterToolbar from '../components/WorkloadCveFilterToolbar';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
 import ObservedCveModeSelect from './ObservedCveModeSelect';
 import { getViewStateDescription, getViewStateTitle } from './string.utils';
-
-const searchOptions: SearchOption[] = [
-    IMAGE_SEARCH_OPTION,
-    DEPLOYMENT_SEARCH_OPTION,
-    NAMESPACE_SEARCH_OPTION,
-    CLUSTER_SEARCH_OPTION,
-    IMAGE_CVE_SEARCH_OPTION,
-    COMPONENT_SEARCH_OPTION,
-    COMPONENT_SOURCE_SEARCH_OPTION,
-];
 
 export const entityTypeCountsQuery = gql`
     query getEntityTypeCounts($query: String) {
@@ -165,12 +144,10 @@ function WorkloadCvesOverviewPage() {
     const hasWriteAccessForWatchedImage = hasReadWriteAccess('WatchedImage');
     const hasReadAccessForNamespaces = hasReadAccess('Namespace');
 
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isAdvancedFiltersEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_ADVANCED_FILTERS');
-
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
 
+    const { getAbsoluteUrl, pageTitle, baseSearchFilter } = useWorkloadCveViewContext();
     const currentVulnerabilityState = useVulnerabilityState();
 
     const { searchFilter, setSearchFilter: setURLSearchFilter } = useURLSearch();
@@ -192,8 +169,17 @@ function WorkloadCvesOverviewPage() {
     // the selected vulnerability state. If the user is viewing _without_ CVEs, we
     // need to scope the query to only show images/deployments with 0 CVEs.
     const workloadCvesScopedQueryString = isViewingWithCves
-        ? getVulnStateScopedQueryString(querySearchFilter, currentVulnerabilityState)
-        : getZeroCveScopedQueryString(querySearchFilter);
+        ? getVulnStateScopedQueryString(
+              {
+                  ...baseSearchFilter,
+                  ...querySearchFilter,
+              },
+              currentVulnerabilityState
+          )
+        : getZeroCveScopedQueryString({
+              ...baseSearchFilter,
+              ...querySearchFilter,
+          });
 
     const getDefaultSortOption = isViewingWithCves
         ? getDefaultWorkloadSortOption
@@ -330,12 +316,15 @@ function WorkloadCvesOverviewPage() {
         return apolloClient.refetchQueries({ include: [imageListQuery] });
     }
 
-    const filterToolbar = isAdvancedFiltersEnabled ? (
+    const filterToolbar = (
         <AdvancedFiltersToolbar
             className="pf-v5-u-py-md"
             searchFilterConfig={searchFilterConfig}
             searchFilter={searchFilter}
-            additionalContextFilter={{ 'Image CVE Count': isViewingWithCves ? '>0' : '0' }}
+            additionalContextFilter={{
+                'Image CVE Count': isViewingWithCves ? '>0' : '0',
+                ...baseSearchFilter,
+            }}
             defaultFilters={localStorageValue.preferences.defaultFilters}
             onFilterChange={(newFilter, searchPayload) => {
                 setSearchFilter(newFilter);
@@ -345,17 +334,6 @@ function WorkloadCvesOverviewPage() {
             includeCveSeverityFilters={isViewingWithCves}
             includeCveStatusFilters={isViewingWithCves}
             defaultSearchFilterEntity={defaultSearchFilterEntity}
-        />
-    ) : (
-        <WorkloadCveFilterToolbar
-            defaultFilters={localStorageValue.preferences.defaultFilters}
-            onFilterChange={() => pagination.setPage(1)}
-            searchOptions={
-                isViewingWithCves
-                    ? searchOptions
-                    : searchOptions.filter((option) => option !== IMAGE_CVE_SEARCH_OPTION)
-            }
-            showCveFilterDropdowns={isViewingWithCves}
         />
     );
 
@@ -371,13 +349,13 @@ function WorkloadCvesOverviewPage() {
 
     return (
         <>
-            <PageTitle title="Workload CVEs Overview" />
+            <PageTitle title={`${pageTitle} Overview`} />
             <PageSection
                 className="pf-v5-u-display-flex pf-v5-u-flex-direction-row pf-v5-u-align-items-center"
                 variant="light"
             >
                 <Flex direction={{ default: 'column' }} className="pf-v5-u-flex-grow-1">
-                    <Title headingLevel="h1">Workload CVEs</Title>
+                    <Title headingLevel="h1">{pageTitle}</Title>
                     <FlexItem>
                         Prioritize and manage scanned CVEs across images and deployments
                     </FlexItem>
@@ -448,7 +426,9 @@ function WorkloadCvesOverviewPage() {
                                                 {hasReadAccessForNamespaces && (
                                                     <Button
                                                         variant="secondary"
-                                                        href={vulnerabilityNamespaceViewPath}
+                                                        href={getAbsoluteUrl(
+                                                            getNamespaceViewPagePath()
+                                                        )}
                                                         component={LinkShim}
                                                     >
                                                         Prioritize by namespace view

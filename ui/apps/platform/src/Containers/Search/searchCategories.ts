@@ -9,21 +9,15 @@ import {
     policiesBasePath,
     riskBasePath,
     violationsBasePath,
-    vulnManagementPath,
     vulnerabilitiesNodeCvesPath,
     vulnerabilitiesWorkloadCvesPath,
     vulnerabilityNamespaceViewPath,
 } from 'routePaths';
-import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import { getQueryString } from 'utils/queryStringUtils';
 
 const configManagementRolesPath = `${configManagementPath}/roles`;
 const configManagementSecretsPath = `${configManagementPath}/secrets`;
 const configManagementServiceAccountsPath = `${configManagementPath}/serviceaccounts`;
-
-const vulnManagementImagesPath = `${vulnManagementPath}/images`;
-const vulnManagementNamespacesPath = `${vulnManagementPath}/namespaces`;
-const vulnManagementNodesPath = `${vulnManagementPath}/nodes`;
 
 type SearchResultCategoryDescriptor = {
     filterOn: FilterOnDescriptor | null;
@@ -62,10 +56,7 @@ export type SearchResultCategoryMap = Record<SearchResultCategory, SearchResultC
 // Global search route has conditional rendering according to resourceAccessRequirements in routePaths.ts file.
 // Therefore update that property if response ever adds search categories.
 
-function getSearchResultCategoryMap(
-    isFeatureFlagEnabled: IsFeatureFlagEnabled
-): SearchResultCategoryMap {
-    const isVm2Ga = isFeatureFlagEnabled('ROX_VULN_MGMT_2_GA');
+function getSearchResultCategoryMap(): SearchResultCategoryMap {
     return {
         ALERTS: {
             filterOn: null,
@@ -107,9 +98,7 @@ function getSearchResultCategoryMap(
             },
             viewLinks: [
                 {
-                    basePath: isVm2Ga
-                        ? `${vulnerabilitiesWorkloadCvesPath}/images/:id`
-                        : `${vulnManagementImagesPath}/:id`,
+                    basePath: `${vulnerabilitiesWorkloadCvesPath}/images/:id`,
                     linkText: 'Images',
                     routeKey: 'vulnerability-management',
                 },
@@ -119,15 +108,12 @@ function getSearchResultCategoryMap(
             filterOn: null,
             viewLinks: [
                 {
-                    basePath: isVm2Ga
-                        ? `${vulnerabilityNamespaceViewPath}${getQueryString({
-                              // TODO - Add regex searching support for namespace view ROX-24484 when ROX_VULN_MGMT_2_GA is enabled
-                              s: {
-                                  NAMESPACE: [':name'],
-                                  CLUSTER: [':locationTextForCategory'],
-                              },
-                          })}`
-                        : `${vulnManagementNamespacesPath}/:id`,
+                    basePath: `${vulnerabilityNamespaceViewPath}${getQueryString({
+                        s: {
+                            Namespace: ['^:name$'],
+                            Cluster: ['^:locationTextForCategory$'],
+                        },
+                    })}`,
                     linkText: 'Vulnerability Management',
                     routeKey: 'vulnerability-management',
                 },
@@ -137,9 +123,7 @@ function getSearchResultCategoryMap(
             filterOn: null,
             viewLinks: [
                 {
-                    basePath: isVm2Ga
-                        ? `${vulnerabilitiesNodeCvesPath}/nodes/:id`
-                        : `${vulnManagementNodesPath}/:id`,
+                    basePath: `${vulnerabilitiesNodeCvesPath}/nodes/:id`,
                     linkText: 'Vulnerability Management',
                     routeKey: 'vulnerability-management',
                 },
@@ -209,10 +193,9 @@ function getSearchResultCategoryMap(
 // Given isRouteEnabled predicate function from useIsRouteEnabled hook,
 // return copy of map with filter and view links only for routes that are enabled.
 export function searchResultCategoryMapFilteredIsRouteEnabled(
-    isRouteEnabled: IsRouteEnabled,
-    isFeatureFlagEnabled: IsFeatureFlagEnabled
+    isRouteEnabled: IsRouteEnabled
 ): SearchResultCategoryMap {
-    const searchResultCategoryMap = getSearchResultCategoryMap(isFeatureFlagEnabled);
+    const searchResultCategoryMap = getSearchResultCategoryMap();
     const searchResultCategoryMapFiltered = cloneDeep(searchResultCategoryMap);
 
     Object.keys(searchResultCategoryMapFiltered).forEach((searchResultKey) => {

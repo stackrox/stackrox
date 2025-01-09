@@ -50,6 +50,7 @@ import CVESelectionTd from '../../components/CVESelectionTd';
 import ExceptionDetailsCell from '../components/ExceptionDetailsCell';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
+import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 
 export const tableId = 'WorkloadCveOverviewTable';
 export const defaultColumns = {
@@ -85,6 +86,7 @@ export const cveListQuery = gql`
         $pagination: Pagination
         $statusesForExceptionCount: [String!]
     ) {
+        imageCVECount(query: $query)
         imageCVEs(query: $query, pagination: $pagination) {
             cve
             affectedImageCountBySeverity {
@@ -126,6 +128,7 @@ export const unfilteredImageCountQuery = gql`
 `;
 
 export type CVEListQueryResult = {
+    imageCVECount: number;
     imageCVEs: ImageCVE[];
 };
 
@@ -184,14 +187,14 @@ function WorkloadCVEOverviewTable({
     onClearFilters,
     columnVisibilityState,
 }: WorkloadCVEOverviewTableProps) {
+    const { getAbsoluteUrl } = useWorkloadCveViewContext();
     const expandedRowSet = useSet<string>();
     const showExceptionDetailsLink = vulnerabilityState !== 'OBSERVED';
     const getVisibilityClass = generateVisibilityForColumns(columnVisibilityState);
     const hiddenColumnCount = getHiddenColumnCount(columnVisibilityState);
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isNvdCvssColumnEnabled =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
+    const isNvdCvssColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
 
     const colSpan =
         (isNvdCvssColumnEnabled ? 7 : 6) +
@@ -337,10 +340,12 @@ function WorkloadCVEOverviewTable({
                                                 vulnerabilityState={vulnerabilityState}
                                             >
                                                 <Link
-                                                    to={getWorkloadEntityPagePath(
-                                                        'CVE',
-                                                        cve,
-                                                        vulnerabilityState
+                                                    to={getAbsoluteUrl(
+                                                        getWorkloadEntityPagePath(
+                                                            'CVE',
+                                                            cve,
+                                                            vulnerabilityState
+                                                        )
                                                     )}
                                                 >
                                                     {cve}

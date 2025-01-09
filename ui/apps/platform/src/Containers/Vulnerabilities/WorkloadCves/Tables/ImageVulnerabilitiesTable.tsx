@@ -46,6 +46,7 @@ import CVESelectionTd from '../../components/CVESelectionTd';
 import ExceptionDetailsCell from '../components/ExceptionDetailsCell';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
+import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 
 export const tableId = 'WorkloadCvesImageVulnerabilitiesTable';
 export const defaultColumns = {
@@ -141,14 +142,14 @@ function ImageVulnerabilitiesTable({
     onClearFilters,
     tableConfig,
 }: ImageVulnerabilitiesTableProps) {
+    const { getAbsoluteUrl } = useWorkloadCveViewContext();
     const getVisibilityClass = generateVisibilityForColumns(tableConfig);
     const hiddenColumnCount = getHiddenColumnCount(tableConfig);
     const expandedRowSet = useSet<string>();
     const showExceptionDetailsLink = vulnerabilityState !== 'OBSERVED';
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isNvdCvssColumnEnabled =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
+    const isNvdCvssColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
 
     const colSpan =
         (isNvdCvssColumnEnabled ? 7 : 6) +
@@ -252,10 +253,12 @@ function ImageVulnerabilitiesTable({
                                             vulnerabilityState={vulnerabilityState}
                                         >
                                             <Link
-                                                to={getWorkloadEntityPagePath(
-                                                    'CVE',
-                                                    cve,
-                                                    vulnerabilityState
+                                                to={getAbsoluteUrl(
+                                                    getWorkloadEntityPagePath(
+                                                        'CVE',
+                                                        cve,
+                                                        vulnerabilityState
+                                                    )
                                                 )}
                                             >
                                                 {cve}

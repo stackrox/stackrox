@@ -47,15 +47,6 @@ import {
 } from 'Containers/Vulnerabilities/searchFilterConfig';
 import { filterManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
-import {
-    SearchOption,
-    IMAGE_SEARCH_OPTION,
-    DEPLOYMENT_SEARCH_OPTION,
-    NAMESPACE_SEARCH_OPTION,
-    CLUSTER_SEARCH_OPTION,
-    COMPONENT_SEARCH_OPTION,
-    COMPONENT_SOURCE_SEARCH_OPTION,
-} from '../../searchOptions';
 import { WorkloadEntityTab, VulnerabilitySeverityLabel } from '../../types';
 import {
     getHiddenSeverities,
@@ -67,7 +58,6 @@ import {
 import CvePageHeader, { CveMetadata } from '../../components/CvePageHeader';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 
-import WorkloadCveFilterToolbar from '../components/WorkloadCveFilterToolbar';
 import AffectedImagesTable, {
     ImageForCve,
     imagesForCveFragment,
@@ -91,11 +81,7 @@ import VulnerabilityStateTabs, {
     vulnStateTabContentId,
 } from '../components/VulnerabilityStateTabs';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
-
-const workloadCveOverviewCvePath = getOverviewPagePath('Workload', {
-    vulnerabilityState: 'OBSERVED',
-    entityTab: 'CVE',
-});
+import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 
 export const imageCveMetadataQuery = gql`
     query getImageCveMetadata($cve: String!) {
@@ -187,15 +173,6 @@ const defaultSeveritySummary = {
     topCVSS: 0,
 };
 
-const searchOptions: SearchOption[] = [
-    IMAGE_SEARCH_OPTION,
-    DEPLOYMENT_SEARCH_OPTION,
-    NAMESPACE_SEARCH_OPTION,
-    CLUSTER_SEARCH_OPTION,
-    COMPONENT_SEARCH_OPTION,
-    COMPONENT_SOURCE_SEARCH_OPTION,
-];
-
 const searchFilterConfig = [
     imageSearchFilterConfig,
     imageComponentSearchFilterConfig,
@@ -206,10 +183,11 @@ const searchFilterConfig = [
 
 function ImageCvePage() {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isAdvancedFiltersEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_ADVANCED_FILTERS');
 
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
+
+    const { getAbsoluteUrl, pageTitle, baseSearchFilter } = useWorkloadCveViewContext();
     const currentVulnerabilityState = useVulnerabilityState();
 
     const urlParams = useParams();
@@ -219,8 +197,9 @@ function ImageCvePage() {
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const query = getVulnStateScopedQueryString(
         {
-            ...querySearchFilter,
             CVE: [exactCveIdSearchRegex],
+            ...baseSearchFilter,
+            ...querySearchFilter,
         },
         currentVulnerabilityState
     );
@@ -274,7 +253,7 @@ function ImageCvePage() {
     });
 
     function getDeploymentSearchQuery(severity?: VulnerabilitySeverity) {
-        const filters = { ...querySearchFilter, CVE: [exactCveIdSearchRegex] };
+        const filters = { CVE: [exactCveIdSearchRegex], ...baseSearchFilter, ...querySearchFilter };
         if (severity) {
             filters.SEVERITY = [severity];
         }
@@ -305,8 +284,7 @@ function ImageCvePage() {
         skip: entityTab !== 'Deployment',
     });
 
-    const isNvdCvssColumnEnabled =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
+    const isNvdCvssColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
     const affectedImagesFilteredColumns = filterManagedColumns(
         affectedImagesDefaultColumns,
         (key) => key !== 'nvdCvss' || isNvdCvssColumnEnabled
@@ -366,6 +344,13 @@ function ImageCvePage() {
         );
     }
 
+    const workloadCveOverviewCvePath = getAbsoluteUrl(
+        getOverviewPagePath('Workload', {
+            vulnerabilityState: 'OBSERVED',
+            entityTab: 'CVE',
+        })
+    );
+
     const cveName = metadataRequest.data?.imageCVE?.cve;
 
     const isFiltered = getHasSearchApplied(querySearchFilter);
@@ -388,12 +373,12 @@ function ImageCvePage() {
     return (
         <>
             <PageTitle
-                title={`Workload CVEs - ImageCVE ${metadataRequest.data?.imageCVE?.cve ?? ''}`}
+                title={`${pageTitle} - ImageCVE ${metadataRequest.data?.imageCVE?.cve ?? ''}`}
             />
             <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={workloadCveOverviewCvePath}>
-                        Workload CVEs
+                        {pageTitle}
                     </BreadcrumbItemLink>
                     {!metadataRequest.error && (
                         <BreadcrumbItem isActive>
@@ -432,26 +417,22 @@ function ImageCvePage() {
                 />
                 <div className="pf-v5-u-background-color-100">
                     <div className="pf-v5-u-px-sm">
-                        {isAdvancedFiltersEnabled ? (
-                            <AdvancedFiltersToolbar
-                                className="pf-v5-u-py-md"
-                                searchFilterConfig={searchFilterConfig}
-                                searchFilter={searchFilter}
-                                onFilterChange={(newFilter, searchPayload) => {
-                                    setSearchFilter(newFilter);
-                                    setPage(1);
-                                    trackAppliedFilter(WORKLOAD_CVE_FILTER_APPLIED, searchPayload);
-                                }}
-                            />
-                        ) : (
-                            <WorkloadCveFilterToolbar
-                                searchOptions={searchOptions}
-                                autocompleteSearchContext={{
-                                    CVE: exactCveIdSearchRegex,
-                                }}
-                                onFilterChange={() => setPage(1)}
-                            />
-                        )}
+                        <AdvancedFiltersToolbar
+                            className="pf-v5-u-py-md"
+                            searchFilterConfig={searchFilterConfig}
+                            searchFilter={searchFilter}
+                            onFilterChange={(newFilter, searchPayload) => {
+                                setSearchFilter(newFilter);
+                                setPage(1);
+                                trackAppliedFilter(WORKLOAD_CVE_FILTER_APPLIED, searchPayload);
+                            }}
+                            additionalContextFilter={{
+                                // Only allow exact match for CVE ID using quotes, the autocomplete API does not
+                                // support regex for exact matching
+                                CVE: `"${cveId}"`,
+                                ...baseSearchFilter,
+                            }}
+                        />
                     </div>
                     <SummaryCardLayout
                         error={summaryRequest.error}

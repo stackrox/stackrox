@@ -11,9 +11,10 @@ import (
 
 // CRS holds all core data which is required for a cluster registration secret.
 type CRS struct {
-	CAs  []string `json:"CAs"`
-	Cert string   `json:"cert"`
-	Key  string   `json:"key"`
+	Version int      `json:"version"`
+	CAs     []string `json:"CAs"`
+	Cert    string   `json:"cert"`
+	Key     string   `json:"key"`
 }
 
 // SerializeSecret serializes the given CRS into its opaque form.

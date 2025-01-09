@@ -17,7 +17,7 @@ on:
         - nvd-api
         - nvd-feeds
         required: true
-        default: nvd-api
+        default: nvd-feeds
 
 jobs:
   parse-versions:
@@ -33,6 +33,7 @@ jobs:
     - name: Parse VULNERABILITY_BUNDLE_VERSION
       id: set-versions
       run: |
+        set -o pipefail
         EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
         echo "versions<<$EOF" >> "$GITHUB_OUTPUT"
         ./.github/workflows/scripts/scanner-get-released-tags.sh | tee -a "$GITHUB_OUTPUT"
@@ -53,7 +54,7 @@ jobs:
       run: |
         set -eu
         since_time=$(date -u -d '24 hours ago' '+%a, %d %b %Y %H:%M:%S GMT')
-        NVD_BUNDLE_TYPE=${{ github.event.inputs.job || 'nvd-api' }}
+        NVD_BUNDLE_TYPE=${{ github.event.inputs.job || 'nvd-feeds' }}
         case "$NVD_BUNDLE_TYPE" in
             nvd-api)
                 nvd_file=nvd-api.zip

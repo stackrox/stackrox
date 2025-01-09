@@ -229,13 +229,7 @@ push_image_manifest_lists() {
     local main_image_set=("main" "roxctl" "central-db")
 
     local registry
-    if [[ "$brand" == "STACKROX_BRANDING" ]]; then
-        registry="quay.io/stackrox-io"
-    elif [[ "$brand" == "RHACS_BRANDING" ]]; then
-        registry="quay.io/rhacs-eng"
-    else
-        die "$brand is not a supported brand"
-    fi
+    registry="$(registry_from_branding "$brand")"
 
     local tag
     tag="$(make --quiet --no-print-directory tag)"
@@ -258,6 +252,18 @@ push_image_manifest_lists() {
     done
 }
 
+registry_from_branding() {
+    local branding="$1"
+    if [[ "$branding" == "STACKROX_BRANDING" ]]; then
+        registry="quay.io/stackrox-io"
+    elif [[ "$branding" == "RHACS_BRANDING" ]]; then
+        registry="quay.io/rhacs-eng"
+    else
+        die "$branding is not a supported branding"
+    fi
+    echo "$registry"
+}
+
 push_main_image_set() {
     info "Pushing main, roxctl and central-db images"
 
@@ -270,10 +276,6 @@ push_main_image_set() {
     local arch="$3"
 
     local main_image_set=("main" "roxctl" "central-db")
-    if is_OPENSHIFT_CI; then
-        local main_image_srcs=("$MAIN_IMAGE" "$ROXCTL_IMAGE" "$CENTRAL_DB_IMAGE")
-        oc registry login
-    fi
 
     _push_main_image_set() {
         local registry="$1"
@@ -295,77 +297,52 @@ push_main_image_set() {
         done
     }
 
-    _mirror_main_image_set() {
-        local registry="$1"
-        local tag="$2"
-
-        local idx=0
-        for image in "${main_image_set[@]}"; do
-            oc_image_mirror "${main_image_srcs[$idx]}" "${registry}/${image}:${tag}"
-            (( idx++ )) || true
-        done
-    }
-
-    if [[ "$brand" == "STACKROX_BRANDING" ]]; then
-        local destination_registries=("quay.io/stackrox-io")
-    elif [[ "$brand" == "RHACS_BRANDING" ]]; then
-        local destination_registries=("quay.io/rhacs-eng")
-    else
-        die "$brand is not a supported brand"
-    fi
+    local registry
+    registry="$(registry_from_branding "$brand")"
 
     local tag
     tag="$(make --quiet --no-print-directory tag)"
-    for registry in "${destination_registries[@]}"; do
-        registry_rw_login "$registry"
 
-        if is_OPENSHIFT_CI; then
-            _mirror_main_image_set "$registry" "$tag"
-        else
-            _tag_main_image_set "$tag" "$registry" "$tag-$arch"
-            _push_main_image_set "$registry" "$tag-$arch"
-        fi
-        if [[ "$push_context" == "merge-to-master" ]]; then
-            if is_OPENSHIFT_CI; then
-                _mirror_main_image_set "$registry" "latest-${arch}"
-            else
-                _tag_main_image_set "$tag" "$registry" "latest-${arch}"
-                _push_main_image_set "$registry" "latest-${arch}"
-            fi
-        fi
-    done
+    registry_rw_login "$registry"
+
+    _tag_main_image_set "$tag" "$registry" "$tag-$arch"
+    _push_main_image_set "$registry" "$tag-$arch"
+
+    if [[ "$push_context" == "merge-to-master" ]]; then
+        _tag_main_image_set "$tag" "$registry" "latest-${arch}"
+        _push_main_image_set "$registry" "latest-${arch}"
+    fi
 }
 
 push_scanner_image_manifest_lists() {
     info "Pushing scanner-v4 and scanner-v4-db images as manifest lists"
 
-    if [[ "$#" -ne 1 ]]; then
-        die "missing arg. usage: push_scanner_image_manifest_lists <architectures (CSV)>"
+    if [[ "$#" -ne 2 ]]; then
+        die "missing arg. usage: push_scanner_image_manifest_lists <registry> <architectures (CSV)>"
     fi
 
-    local architectures="$1"
+    local registry="$1"
+    local architectures="$2"
     local scanner_image_set=("scanner-v4" "scanner-v4-db")
-    local registries=("quay.io/rhacs-eng" "quay.io/stackrox-io")
 
     local tag
     tag="$(make --quiet --no-print-directory -C scanner tag)"
-    for registry in "${registries[@]}"; do
-        registry_rw_login "$registry"
-        for image in "${scanner_image_set[@]}"; do
-            retry 5 true \
-              "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:${tag}" "$architectures" | cat
-        done
+    registry_rw_login "$registry"
+    for image in "${scanner_image_set[@]}"; do
+        retry 5 true \
+          "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:${tag}" "$architectures" | cat
     done
 }
 
 push_scanner_image_set() {
     info "Pushing scanner-v4 and scanner-v4-db images"
 
-    if [[ "$#" -ne 1 ]]; then
-        die "missing arg. usage: push_scanner_image_set <arch>"
+    if [[ "$#" -ne 2 ]]; then
+        die "missing arg. usage: push_scanner_image_set <registry> <arch>"
     fi
 
-    local arch="$1"
+    local registry="$1"
+    local arch="$2"
 
     local scanner_image_set=("scanner-v4" "scanner-v4-db")
 
@@ -389,16 +366,13 @@ push_scanner_image_set() {
         done
     }
 
-    local registries=("quay.io/rhacs-eng" "quay.io/stackrox-io")
-
     local tag
     tag="$(make --quiet --no-print-directory -C scanner tag)"
-    for registry in "${registries[@]}"; do
-        registry_rw_login "$registry"
 
-        _tag_scanner_image_set "$tag" "$registry" "$tag-$arch"
-        _push_scanner_image_set "$registry" "$tag-$arch"
-    done
+    registry_rw_login "$registry"
+
+    _tag_scanner_image_set "$tag" "$registry" "$tag-$arch"
+    _push_scanner_image_set "$registry" "$tag-$arch"
 }
 
 registry_rw_login() {
@@ -455,30 +429,14 @@ push_matching_collector_scanner_images() {
         die "missing arg. usage: push_matching_collector_scanner_images <brand> <arch>"
     fi
 
-    if is_OPENSHIFT_CI; then
-        oc registry login
-    fi
-
     local brand="$1"
     local arch="$2"
 
-    if [[ "$brand" == "STACKROX_BRANDING" ]]; then
-        local source_registry="quay.io/stackrox-io"
-        local target_registries=( "quay.io/stackrox-io" )
-    elif [[ "$brand" == "RHACS_BRANDING" ]]; then
-        local source_registry="quay.io/rhacs-eng"
-        local target_registries=( "quay.io/rhacs-eng" )
-    else
-        die "$brand is not a supported brand"
-    fi
+    local registry
+    registry="$(registry_from_branding "$brand")"
 
-    _retag_or_mirror() {
-        if is_OPENSHIFT_CI; then
-            oc_image_mirror "$1" "$2"
-        else
-            retry 5 true \
-                "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "$1" "$2"
-        fi
+    _retag() {
+        retry 5 true "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "$1" "$2"
     }
 
     if [[ "$arch" != "amd64" ]]; then
@@ -493,21 +451,15 @@ push_matching_collector_scanner_images() {
     local collector_version
     collector_version="$(make --quiet --no-print-directory collector-tag)"
 
-    for target_registry in "${target_registries[@]}"; do
-        registry_rw_login "${target_registry}"
+    registry_rw_login "${registry}"
 
-        _retag_or_mirror "${source_registry}/scanner:${scanner_version}"    "${target_registry}/scanner:${main_tag}-${arch}"
-        _retag_or_mirror "${source_registry}/scanner-db:${scanner_version}" "${target_registry}/scanner-db:${main_tag}-${arch}"
-        _retag_or_mirror "${source_registry}/scanner-slim:${scanner_version}"    "${target_registry}/scanner-slim:${main_tag}-${arch}"
-        _retag_or_mirror "${source_registry}/scanner-db-slim:${scanner_version}" "${target_registry}/scanner-db-slim:${main_tag}-${arch}"
+    _retag "${registry}/scanner:${scanner_version}"    "${registry}/scanner:${main_tag}-${arch}"
+    _retag "${registry}/scanner-db:${scanner_version}" "${registry}/scanner-db:${main_tag}-${arch}"
+    _retag "${registry}/scanner-slim:${scanner_version}"    "${registry}/scanner-slim:${main_tag}-${arch}"
+    _retag "${registry}/scanner-db-slim:${scanner_version}" "${registry}/scanner-db-slim:${main_tag}-${arch}"
 
-        _retag_or_mirror "${source_registry}/collector:${collector_version}"      "${target_registry}/collector:${main_tag}-${arch}"
-        _retag_or_mirror "${source_registry}/collector:${collector_version}-slim" "${target_registry}/collector-slim:${main_tag}-${arch}"
-    done
-}
-
-oc_image_mirror() {
-    retry 5 true oc image mirror "$1" "$2"
+    _retag "${registry}/collector:${collector_version}"      "${registry}/collector:${main_tag}-${arch}"
+    _retag "${registry}/collector:${collector_version}-slim" "${registry}/collector-slim:${main_tag}-${arch}"
 }
 
 poll_for_system_test_images() {
@@ -719,10 +671,59 @@ _image_prefetcher_system_await() {
 image_prefetcher_await_set() {
     local ns="prefetch-images"
     local name="$1"
+    local extra_fields='{"build_id": "'"${BUILD_ID:-}"'", "job_name": "'"${JOB_NAME:-}"'", "orchestrator": "'"${ORCHESTRATOR_FLAVOR:-}"'", "build_tag": "'"${STACKROX_BUILD_TAG:-}"'"}'
 
     info "Waiting for image prefetcher set ${name} to complete..."
-    kubectl rollout status daemonset "$name" -n "$ns" --timeout 15m
-    info "All images in the set are now pre-fetched, now retrieving metrics..."
+    if kubectl rollout status daemonset "$name" -n "$ns" --timeout 15m; then
+        info "All images in the set are now pre-fetched."
+    else
+        info "WARNING: Pre-fetching failed to complete in time."
+        info "To investigate closer, go to https://console.cloud.google.com/bigquery and run a query such as:"
+        local query
+        query=$(mktemp)
+        cat > "${query}" <<- EOM
+
+            SELECT started_at, duration_ms, image, error
+            FROM \`acs-san-stackroxci.ci_metrics.stackrox_image_prefetches\`
+            WHERE error IS NOT NULL AND
+            $(echo "${extra_fields}" | jq -r '[to_entries | .[] | select(.value != "") | (.key + "=\"" + .value + "\"")] | join(" AND ")')
+            ORDER BY started_at DESC LIMIT 1000
+
+EOM
+        cat "${query}"
+        info "Note: The data is imported into the table periodically: https://github.com/stackrox/stackrox/actions/workflows/batch-load-test-metrics.yml"
+
+        if [[ -n ${ARTIFACT_DIR:-} ]]; then
+            local prefetcher_help="$ARTIFACT_DIR/image-pre-fetcher-${name}-failure-summary.html"
+            cat > "${prefetcher_help}" <<- EOM
+                <html>
+                <head>
+                <title>Image pre-fetcher ${name} failure</title>
+                <style>
+                  body { color: #e8e8e8; background-color: #424242; font-family: "Roboto", "Helvetica", "Arial", sans-serif }
+                  a { color: #ff8caa }
+                  a:visited { color: #ff8caa }
+                </style>
+                </head>
+                <body>
+
+                Waiting for image prefetcher set ${name} to complete timed out.<br>
+                To investigate closer, go to <a target="_blank" href="https://console.cloud.google.com/bigquery">BigQuery</a> and run a query such as the following:
+                <br>
+                <pre>
+EOM
+            cat >> "${prefetcher_help}" "${query}"
+            cat >> "${prefetcher_help}" <<- EOM
+                </pre>
+                Note: The data is imported into the table <a target="_blank" href="https://github.com/stackrox/stackrox/actions/workflows/batch-load-test-metrics.yml">periodically</a>.
+                <br><br>
+                </body>
+                </html>
+EOM
+        fi
+        rm -f "${query}"
+    fi
+    info "Now retrieving prefetcher metrics..."
     local attempt=0
     local service="service/${name}-metrics"
     while [[ -z $(kubectl -n "${ns}" get "${service}" -o jsonpath="{.status.loadBalancer.ingress}" 2>/dev/null) ]]; do
@@ -735,24 +736,39 @@ image_prefetcher_await_set() {
         fi
     done
     local endpoint
-    endpoint="$(kubectl -n "${ns}" get "${service}" -o json | jq -r '.status.loadBalancer.ingress[] | .ip')"
+    endpoint="$(kubectl -n "${ns}" get "${service}" -o json | service_get_endpoint)"
     local fetcher_metrics
     fetcher_metrics="$(mktemp --suffix=.csv)"
     local fetcher_metrics_json
     fetcher_metrics_json="$(mktemp --suffix=.json)"
-    curl --silent --show-error --fail --retry 3 --retry-connrefused  "http://${endpoint}:8080/metrics" > "${fetcher_metrics_json}"
+    local metrics_url="http://${endpoint}:8080/metrics"
+    if ! curl --silent --show-error --fail --retry 3 --retry-connrefused "${metrics_url}" > "${fetcher_metrics_json}"; then
+        die "Failed to fetch prefetcher metrics from ${metrics_url}"
+    fi
     # See the stackrox_image_prefetches table definition in https://github.com/stackrox/automation-iac/blob/main/resources/testing/stackrox-ci/metrics.tf
     # for the order of columns.
-    jq --raw-output \
+    if ! jq --raw-output \
       --argjson cols '["attempt_id", "started_at", "image", "duration_ms", "node", "size_bytes", "error", "build_id", "job_name", "orchestrator", "build_tag"]' \
-      --argjson extra '{"build_id": "'"${BUILD_ID:-}"'", "job_name": "'"${JOB_NAME:-}"'", "orchestrator": "'"${ORCHESTRATOR_FLAVOR:-}"'", "build_tag": "'"${STACKROX_BUILD_TAG:-}"'"}' \
+      --argjson extra "${extra_fields}" \
       'map(.started_at = (.started_at | todate) | ($extra+.) as $row | $cols | map($row[.])) as $rows | $cols, $rows[] | @csv' \
-      "${fetcher_metrics_json}" > "${fetcher_metrics}"
+      "${fetcher_metrics_json}" > "${fetcher_metrics}"; then
+        info "WARNING: Failed to convert image prefetcher metrics to CSV with extra fields ${extra_fields}"
+        info "Dumping the input JSON file:"
+        jq . < "${fetcher_metrics_json}"
+        die "Failed to convert image prefetcher metrics to CSV, aborting."
+    fi
     rm -f "${fetcher_metrics_json}"
 
-    save_image_prefetches_metrics "${fetcher_metrics}"
-    info "Image pre-fetcher metrics retrieved and saved."
+    if save_image_prefetches_metrics "${fetcher_metrics}"; then
+        info "Image pre-fetcher metrics retrieved and saved."
+    else
+        info "WARNING: failed to save image pre-fetcher metrics."
+    fi
     rm -f "${fetcher_metrics}"
+}
+
+service_get_endpoint() {
+    jq -r '.status.loadBalancer.ingress // error("List of ingress points of LB " + .metadata.name + " is empty.") | .[0] | .hostname // .ip'
 }
 
 populate_prefetcher_image_list() {

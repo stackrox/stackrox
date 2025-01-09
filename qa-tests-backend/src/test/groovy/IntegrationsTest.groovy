@@ -14,6 +14,7 @@ import objects.ClairScannerIntegration
 import objects.Deployment
 import objects.ECRRegistryIntegration
 import objects.EmailNotifier
+import objects.GHCRImageIntegration
 import objects.GoogleArtifactRegistry
 import objects.GCRImageIntegration
 import objects.GenericNotifier
@@ -497,7 +498,9 @@ class IntegrationsTest extends BaseSpecification {
         then:
         "verify test integration"
         // Test integration for S3 performs test backup (and rollback).
-        ExternalBackupService.getExternalBackupClient().testExternalBackup(backup)
+        withRetry(3, 10) {
+            assert ExternalBackupService.getExternalBackupClient().testExternalBackup(backup)
+        }
 
         where:
         "configurations are:"
@@ -526,7 +529,9 @@ class IntegrationsTest extends BaseSpecification {
         then:
         "verify test integration"
         // Test integration for S3 compatible performs test backup (and rollback).
-        ExternalBackupService.getExternalBackupClient().testExternalBackup(backup)
+        withRetry(3, 10) {
+            assert ExternalBackupService.getExternalBackupClient().testExternalBackup(backup)
+        }
 
         where:
         "configurations are:"
@@ -558,7 +563,9 @@ class IntegrationsTest extends BaseSpecification {
         then:
         "verify test integration"
         // Test integration for GCS performs test backup (and rollback).
-        ExternalBackupService.getExternalBackupClient().testExternalBackup(backup)
+        withRetry(3, 10) {
+            assert ExternalBackupService.getExternalBackupClient().testExternalBackup(backup)
+        }
 
         where:
         "configurations are:"
@@ -706,6 +713,7 @@ class IntegrationsTest extends BaseSpecification {
         new StackroxScannerIntegration() | [:]                | "default config"
         new ClairScannerIntegration()    | [:]                | "default config"
         new QuayImageIntegration()       | [:]                | "default config"
+        new GHCRImageIntegration()       | [:]                | "default config"
         new GoogleArtifactRegistry()     | [:]                | "default config"
         new GoogleArtifactRegistry()     | [wifEnabled: true]
                                                               | "requires workload identity"

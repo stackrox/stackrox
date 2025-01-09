@@ -38,6 +38,7 @@ import {
     vulnManagementPath,
     vulnerabilitiesNodeCvesPath,
     vulnerabilitiesPlatformCvesPath,
+    vulnerabilitiesPlatformWorkloadCvesPath,
     vulnerabilitiesWorkloadCvesPath,
     vulnerabilityReportsPath,
 } from 'routePaths';
@@ -89,7 +90,111 @@ type ParentDescription = {
 type NavDescription = LinkDescription | ParentDescription;
 
 function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDescription[] {
-    const isVulnMgmt2GAEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_2_GA');
+    const isPlatformCveSplitEnabled = isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT');
+
+    const vulnerabilityManagementChildren: ChildDescription[] = isPlatformCveSplitEnabled
+        ? [
+              {
+                  type: 'link',
+                  content: 'User Workloads',
+                  path: vulnerabilitiesWorkloadCvesPath,
+                  routeKey: 'vulnerabilities/workload-cves',
+              },
+              {
+                  type: 'link',
+                  content: 'Platform Components',
+                  path: vulnerabilitiesPlatformWorkloadCvesPath,
+                  routeKey: 'vulnerabilities/platform-workload-cves',
+              },
+              {
+                  type: 'link',
+                  content: 'Kubernetes Components',
+                  path: vulnerabilitiesPlatformCvesPath,
+                  routeKey: 'vulnerabilities/platform-cves',
+              },
+              {
+                  type: 'link',
+                  content: 'Nodes',
+                  path: vulnerabilitiesNodeCvesPath,
+                  routeKey: 'vulnerabilities/node-cves',
+              },
+              {
+                  type: 'separator',
+                  key: 'following-workload-cves',
+              },
+              {
+                  type: 'link',
+                  content: 'Exception Management',
+                  path: exceptionManagementPath,
+                  routeKey: 'vulnerabilities/exception-management',
+              },
+              {
+                  type: 'link',
+                  content: 'Vulnerability Reporting',
+                  path: vulnerabilityReportsPath,
+                  routeKey: 'vulnerabilities/reports',
+              },
+              {
+                  type: 'separator',
+                  key: 'following-node-cves',
+              },
+              {
+                  type: 'link',
+                  content: <NavigationContent variant="Deprecated">Dashboard</NavigationContent>,
+                  path: vulnManagementPath,
+                  routeKey: 'vulnerability-management',
+                  isActive: (pathname) =>
+                      Boolean(matchPath(pathname, { vulnManagementPath, exact: true })),
+              },
+          ]
+        : [
+              {
+                  type: 'link',
+                  content: 'Workload CVEs',
+                  path: vulnerabilitiesWorkloadCvesPath,
+                  routeKey: 'vulnerabilities/workload-cves',
+              },
+              {
+                  type: 'link',
+                  content: 'Exception Management',
+                  path: exceptionManagementPath,
+                  routeKey: 'vulnerabilities/exception-management',
+              },
+              {
+                  type: 'link',
+                  content: 'Vulnerability Reporting',
+                  path: vulnerabilityReportsPath,
+                  routeKey: 'vulnerabilities/reports',
+              },
+              {
+                  type: 'separator',
+                  key: 'following-workload-cves',
+              },
+              {
+                  type: 'link',
+                  content: 'Platform CVEs',
+                  path: vulnerabilitiesPlatformCvesPath,
+                  routeKey: 'vulnerabilities/platform-cves',
+              },
+              {
+                  type: 'link',
+                  content: 'Node CVEs',
+                  path: vulnerabilitiesNodeCvesPath,
+                  routeKey: 'vulnerabilities/node-cves',
+              },
+              {
+                  type: 'separator',
+                  key: 'following-node-cves',
+              },
+              {
+                  type: 'link',
+                  content: <NavigationContent variant="Deprecated">Dashboard</NavigationContent>,
+                  path: vulnManagementPath,
+                  routeKey: 'vulnerability-management',
+                  isActive: (pathname) =>
+                      Boolean(matchPath(pathname, { vulnManagementPath, exact: true })),
+              },
+          ];
 
     return [
         {
@@ -162,70 +267,7 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
             type: 'parent',
             title: 'Vulnerability Management',
             key: keyForVulnerabilities,
-            children: [
-                {
-                    type: 'link',
-                    content: isVulnMgmt2GAEnabled ? (
-                        'Workload CVEs'
-                    ) : (
-                        <NavigationContent variant="TechPreview">Workload CVEs</NavigationContent>
-                    ),
-                    path: vulnerabilitiesWorkloadCvesPath,
-                    routeKey: 'workload-cves',
-                },
-                {
-                    type: 'link',
-                    content: 'Exception Management',
-                    path: exceptionManagementPath,
-                    routeKey: 'exception-management',
-                },
-                {
-                    type: 'link',
-                    content: 'Vulnerability Reporting',
-                    path: vulnerabilityReportsPath,
-                    routeKey: 'vulnerabilities/reports',
-                },
-                {
-                    type: 'separator',
-                    key: 'following-workload-cves',
-                },
-                {
-                    type: 'link',
-                    content: isVulnMgmt2GAEnabled ? (
-                        'Platform CVEs'
-                    ) : (
-                        <NavigationContent variant="TechPreview">Platform CVEs</NavigationContent>
-                    ),
-                    path: vulnerabilitiesPlatformCvesPath,
-                    routeKey: 'platform-cves',
-                },
-                {
-                    type: 'link',
-                    content: isVulnMgmt2GAEnabled ? (
-                        'Node CVEs'
-                    ) : (
-                        <NavigationContent variant="TechPreview">Node CVEs</NavigationContent>
-                    ),
-                    path: vulnerabilitiesNodeCvesPath,
-                    routeKey: 'node-cves',
-                },
-                {
-                    type: 'separator',
-                    key: 'following-node-cves',
-                },
-                {
-                    type: 'link',
-                    content: isVulnMgmt2GAEnabled ? (
-                        <NavigationContent variant="Deprecated">Dashboard</NavigationContent>
-                    ) : (
-                        'Dashboard'
-                    ),
-                    path: vulnManagementPath,
-                    routeKey: 'vulnerability-management',
-                    isActive: (pathname) =>
-                        Boolean(matchPath(pathname, { vulnManagementPath, exact: true })),
-                },
-            ],
+            children: vulnerabilityManagementChildren,
         },
         {
             type: 'link',
