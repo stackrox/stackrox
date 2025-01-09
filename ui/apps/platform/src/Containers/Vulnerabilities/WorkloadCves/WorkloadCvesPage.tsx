@@ -33,8 +33,13 @@ function WorkloadCvesPage({ view }: WorkloadCvePageProps) {
 
     const context = useMemo(() => {
         const pageTitle = 'Workload CVEs'; // TODO Implement throughout in follow up
+        const platformComponentFilters =
+            view === 'platform-workload'
+                ? ['true']
+                : // The '-' filter is used to include inactive images in the "user-workload" view
+                  ['false', '-'];
         const baseSearchFilter = isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT')
-            ? { 'Platform Component': [String(view === 'platform-workload')] }
+            ? { 'Platform Component': platformComponentFilters }
             : {};
         const getAbsoluteUrl = (subPath: string) =>
             view === 'platform-workload'
