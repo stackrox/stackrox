@@ -319,6 +319,7 @@ message ComplianceOperatorReportStatus {
     GENERATED = 2;
     DELIVERED = 3;
     FAILURE = 4;
+    PARTIAL_ERROR = 5;
   }
   enum NotificationMethod {
     EMAIL = 0;
