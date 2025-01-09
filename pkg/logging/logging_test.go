@@ -1,11 +1,13 @@
 package logging
 
 import (
+	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -136,12 +138,16 @@ func Test_withRotatingCore(t *testing.T) {
 			logger.Info("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
 		}
 		assert.NoError(t, logger.Sync())
-		_, err := os.Stat(oldestRoll)
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), oldestRoll+": no such file or directory", oldestRoll)
+		// lumberjack removes the old files asynchronously, therefore the test
+		// has to wait for it.
+		require.EventuallyWithT(t, func(c *assert.CollectT) {
+			_, err := os.Stat(oldestRoll)
+			require.ErrorIs(c, err, fs.ErrNotExist)
+		}, 5*time.Second, 500*time.Millisecond)
+
 		t.Run("ensure there are still only 2 files", func(t *testing.T) {
 			found := 0
-			err = ForEachRotation(logname1, func(_ string) error {
+			err := ForEachRotation(logname1, func(_ string) error {
 				found += 1
 				return nil
 			})

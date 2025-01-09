@@ -14,12 +14,17 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-26849: Introduce report caching for RHCOS Node Indexing
 - ROX-25638: Introduce configurable log rotation. `ROX_LOGGING_MAX_ROTATION_FILES` and `ROX_LOGGING_MAX_SIZE_MB` variables allow for configuring the number and the size of a central log rotation file.
 - ROX-14332: Automatic service certificate renewal for Secured Clusters installed using Helm or operator.
+- Scanner V4 adds supports for openSUSE Leap 15.5 and 15.6
 
 ### Removed Features
 
-### Deprecated Fatures
+- Scanner V4 drops support for openSUSE Leap 15.0 and 15.1
+
+### Deprecated Features
 
 ### Technical Changes
+
+- Scanner V4 now uses [Red Hat's VEX files](https://security.access.redhat.com/data/csaf/v2/vex/) instead of the [CVE map](https://security.access.redhat.com/data/metrics/cvemap.xml) for vulnerability data related to non-RPM content inside of official Red Hat images.
 
 ## [4.6.0]
 
@@ -242,9 +247,6 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
     - Secret, Secret Path
 - The following search terms will be disabled in the next release and removed from the secret context in 2 releases. They can be removed in the current release by setting ROX_SECRET_FILE_SEARCH=false:
   - Secret Type, Cert Expiration, Image Pull Secret Registry
-- The `/v1/availableAuthProviders` endpoint will in a future release require authentication and at least READ permission on the `Access` resource.
-  Ensure that any flow interacting with it is authenticated and has the proper permissions going forward.
-- The `/v1/tls-challenge` will  require authentication, ensure that all interactions with these endpoints include proper authentication going forward.
 - The Helm setting `central.db.persistence.hostPath` for hostPath storage will be deprecated in 2 releases. It is recommended to switch to an alternative persistent storage.
 - Users running ACS version 3.74.x or earlier must stop at version 4.4.x before upgrading to 4.5 or later. In version 4.0.0, ACS switched the underlying datastore to PostgreSQL. On an upgrade, data would be automatically migrated to PostgresSQL from the previous store.
   In 4.5.0 this previous store will no longer be available, thus any existing data will not be migrated over if users jump from 3.74.x directly to 4.5.0. By stopping at any version from 4.0.0 to 4.4.x, users can ensure that the data will be properly migrated.
@@ -271,6 +273,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-19814: As announced in 4.2, the /v1/resources endpoint now requires authenticated access.
 - The default policy "systemctl Execution" has been updated to not trigger when the process argument `--version` is used. This does not pose a security issue because the information printed relates to features supported by systemd at the build time and not the capabilities of the host OS.
 - The default policy "No resource requests or limits specified" has been renamed to "No CPU request or memory limit specified" and now no longer checks CPU limit or memory request. Rather it only detects that the CPU request and memory limits are set.
+- The `/v1/availableAuthProviders` endpoint will in a future release require authentication and at least READ permission on the `Access` resource.
+  Ensure that any flow interacting with it is authenticated and has the proper permissions going forward.
+- The `/v1/tls-challenge` will  require authentication, ensure that all interactions with these endpoints include proper authentication going forward.
 
 ## [4.3.0]
 
