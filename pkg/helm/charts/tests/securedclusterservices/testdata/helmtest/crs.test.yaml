@@ -51,6 +51,7 @@ tests:
       - name: "and with init bundle causes rendering error"
         set:
           ca.cert: "certificate coming from an init bundle"
+          sensor.serviceTLS.cert: "certificate coming from an init bundle"
         expectError: true
         expect: |
           .error | assertThat(contains("please pick only one"))

@@ -261,7 +261,7 @@ The following block checks for the validity of the provided init bundle. (`helm 
 2. Warn if the user specified both init bundles, e.g. `helm install ... -f <helm-init-bundle.yaml> -f <operator-init-bundle.yaml>`
 */}}
 {{ $operatorInitBundlePresent := hasKey (._rox.metadata).annotations "init-bundle.stackrox.io/name" }}
-{{ $helmInitBundlePresent := not (empty ._rox.ca._cert) }}
+{{ $helmInitBundlePresent := and (not (empty ._rox.ca._cert)) (not (empty ._rox.sensor.serviceTLS._cert)) }}
 {{- if and $operatorInitBundlePresent (not $helmInitBundlePresent) }}
     {{ include "srox.fail" "It seems an init bundle in the operator format has been provided. Note that this bundle format is ignored by the Helm chart. Make sure to provide an init bundle for Helm chart installation." }}
 {{- else if and $helmInitBundlePresent $operatorInitBundlePresent }}
@@ -271,17 +271,17 @@ The following block checks for the validity of the provided init bundle. (`helm 
 {{ include "srox.setSecuredClusterCertRefresh" (list $) }}
 
 [<- if .FeatureFlags.ROX_CLUSTER_REGISTRATION_SECRETS >]
-{{- $crsFile := ._rox.crs.file -}}
-{{- if kindIs "string" $crsFile -}}
+{{- $crs := ._rox.crs -}}
+{{- $crsFile := get $crs "file" -}}
+{{- if and (kindIs "string" $crsFile) (not (empty $crsFile)) -}}
   {{- if not ._rox._securedClusterCertRefresh -}}
     {{- include "srox.fail" "A cluster registration secret cannot be used with manually managed (helmManaged=false) clusters." -}}
   {{- end -}}
 
-  {{- if or $operatorInitBundlePresent $helmInitBundlePresent -}}
+  {{- if $helmInitBundlePresent -}}
     {{- include "srox.fail" "A cluster registration secret and an init bundle was provided -- please pick only one." -}}
   {{- end -}}
 
-  {{- $crs := dict -}}
   {{- $crsManifest := $crsFile | fromYaml -}}
   {{- if hasKey $crsManifest "Error" -}}
     {{- include "srox.fail" (printf "Cluster registration secret file is invalid: %s" (get $crsManifest "Error")) -}}
@@ -289,10 +289,6 @@ The following block checks for the validity of the provided init bundle. (`helm 
 
   {{- if not ._rox._securedClusterCertRefresh -}}
     {{ include "srox.fail" "A cluster registration secret cannot be used with manually managed (helmManaged=false) clusters." -}}
-  {{- end -}}
-
-  {{- if or $operatorInitBundlePresent $helmInitBundlePresent -}}
-    {{ include "srox.fail" "A cluster registration secret and an init bundle was provided -- please pick only one." -}}
   {{- end -}}
 
   {{/* First, extract the opaque CRS from the manifest. */}}
@@ -315,7 +311,6 @@ The following block checks for the validity of the provided init bundle. (`helm 
   {{- $_ = set $crs "_caCert" $crsCA -}}
   {{- $_ = set $crs "_enabled" true -}}
 
-  {{- $_ = set ._rox "crs" $crs -}}
   {{- $_ = set ._rox.ca "_cert" $crsCA -}}
   {{- $_ = set ._rox "createSecrets" false -}}
 {{- end -}}
