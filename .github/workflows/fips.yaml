@@ -67,7 +67,8 @@ jobs:
           git log -1
           image="${{ inputs.image }}"
           image="${image:-brew.registry.redhat.io/rh-osbs/rhacs-main-rhel8:4.5.4-5}"
-          echo "image: ${image}"
+          echo "image: ${image}" \
+            | tee -a "$GITHUB_STEP_SUMMARY"
           podman pull "${image}" || true
           podman unshare go run main.go scan operator --verbose \
             --spec "${image}" 2>&1 \
@@ -76,13 +77,17 @@ jobs:
 
           for status_type in warning failed; do
             grep --silent "status=\"${status_type}\"" /tmp/scan.log \
-              && echo "${status_type}:"
+              && echo "${status_type}:" \
+              | tee -a "$GITHUB_STEP_SUMMARY"
             grep "status=\"${status_type}\"" /tmp/scan.log \
               | grep -o 'path=.*error="[^"]*"' \
               | tee >(cat >&2) \
+              | tee -a "$GITHUB_STEP_SUMMARY" \
               || true  # allow none found
           done
 
           if [[ $exitcode -ne 0 ]]; then
             exit "${exitcode}"
+          else
+            rm "$GITHUB_STEP_SUMMARY"
           fi
