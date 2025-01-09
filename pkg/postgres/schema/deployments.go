@@ -108,20 +108,20 @@ type Deployments struct {
 	ID                            string                  `gorm:"column:id;type:uuid;primaryKey"`
 	Name                          string                  `gorm:"column:name;type:varchar"`
 	Type                          string                  `gorm:"column:type;type:varchar"`
-	Namespace                     string                  `gorm:"column:namespace;type:varchar;index:deployment_dashboard_sac,type:,priority:3;index:deployments_sac_filter,type:btree"`
+	Namespace                     string                  `gorm:"column:namespace;type:varchar;index:deployment_dashboard_sac,type:btree,priority:3;index:deployments_sac_filter,type:btree"`
 	NamespaceID                   string                  `gorm:"column:namespaceid;type:uuid"`
 	OrchestratorComponent         bool                    `gorm:"column:orchestratorcomponent;type:bool"`
 	Labels                        map[string]string       `gorm:"column:labels;type:jsonb"`
 	PodLabels                     map[string]string       `gorm:"column:podlabels;type:jsonb"`
 	Created                       *time.Time              `gorm:"column:created;type:timestamp"`
-	ClusterID                     string                  `gorm:"column:clusterid;type:uuid;index:deployment_dashboard_sac,type:,priority:2;index:deployments_sac_filter,type:btree"`
+	ClusterID                     string                  `gorm:"column:clusterid;type:uuid;index:deployment_dashboard_sac,type:btree,priority:2;index:deployments_sac_filter,type:btree"`
 	ClusterName                   string                  `gorm:"column:clustername;type:varchar"`
 	Annotations                   map[string]string       `gorm:"column:annotations;type:jsonb"`
 	Priority                      int64                   `gorm:"column:priority;type:bigint"`
 	ImagePullSecrets              *pq.StringArray         `gorm:"column:imagepullsecrets;type:text[]"`
 	ServiceAccount                string                  `gorm:"column:serviceaccount;type:varchar"`
 	ServiceAccountPermissionLevel storage.PermissionLevel `gorm:"column:serviceaccountpermissionlevel;type:integer"`
-	RiskScore                     float32                 `gorm:"column:riskscore;type:numeric;index:deployment_dashboard_sac,type:,priority:1"`
+	RiskScore                     float32                 `gorm:"column:riskscore;type:numeric;index:deployment_dashboard_sac,type:btree,priority:1"`
 	PlatformComponent             bool                    `gorm:"column:platformcomponent;type:bool"`
 	Serialized                    []byte                  `gorm:"column:serialized;type:bytea"`
 }
