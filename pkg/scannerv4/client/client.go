@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/url"
@@ -184,7 +183,7 @@ func createGRPCConn(ctx context.Context, o connOptions) (*grpc.ClientConn, error
 func (c *gRPCScanner) GetSBOM(ctx context.Context, ref name.Digest) ([]byte, bool, error) {
 	// verify index report exists for the image
 	hashId := getImageManifestID(ref)
-	_, found, err := c.GetImageIndex(ctx, hashId)
+	ir, found, err := c.GetImageIndex(ctx, hashId)
 	if err != nil {
 		return nil, false, err
 	}
@@ -192,23 +191,11 @@ func (c *gRPCScanner) GetSBOM(ctx context.Context, ref name.Digest) ([]byte, boo
 		return nil, false, nil
 	}
 
-	// for testing only
-	sbom := map[string]interface{}{
-		"SPDXID":      "SPDXRef-DOCUMENT",
-		"spdxVersion": "SPDX-2.3",
-		"creationInfo": map[string]interface{}{
-			"created": "2023-08-30T04:40:16Z",
-			"creators": []string{
-				"Organization: Xyz",
-				"Tool: FOSSA v0.12.0",
-			},
-		},
-	}
-	sbomBytes, err := json.Marshal(sbom)
-	if err != nil {
-		return nil, false, err
-	}
-	return sbomBytes, true, nil
+	resp, err := c.matcher.GetSBOM(ctx, &v4.GetSBOMRequest{
+		HashId:   ir.GetHashId(),
+		Contents: ir.GetContents(),
+	})
+	return resp.GetSbom(), true, err
 }
 
 // GetImageIndex calls the Indexer's gRPC endpoint GetIndexReport.
