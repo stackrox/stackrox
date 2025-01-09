@@ -77,7 +77,7 @@ jobs:
           exitcode=0
           podman search --limit=100 "${image_prefix}"
           for image in $(podman search --limit=100 "${image_prefix}" --format "{{.Name}}"); do
-            podman search --limit=4 "${image_prefix}" --list-tags || true
+            podman search --limit=4 "${image}" --list-tags || true
           done
           #for image in rhel8-operator operator-bundle {central-db,collector,collector-slim,main,roxctl,scanner,scanner-db,scanner-db-slim,scanner-slim,scanner-v4,scanner-v4-db}-rhel8; do
           for image in $(podman search --limit=100 "${image_prefix}" --format "{{.Name}}"); do
