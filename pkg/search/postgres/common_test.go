@@ -4,7 +4,6 @@ package postgres
 
 import (
 	"context"
-	"reflect"
 	"strings"
 	"testing"
 
@@ -14,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	mappings "github.com/stackrox/rox/pkg/search/options/deployments"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -22,7 +20,10 @@ import (
 )
 
 var (
-	deploymentBaseSchema = walker.Walk(reflect.TypeOf((*storage.Deployment)(nil)), "deployments")
+	deploymentBaseSchema = schema.DeploymentsSchema
+	imagesSchema         = schema.ImagesSchema
+	imageCVEsSchema      = schema.ImageCvesSchema
+	_                    = schema.ImageCveEdgesSchema
 )
 
 func TestReplaceVars(t *testing.T) {
@@ -71,20 +72,21 @@ func BenchmarkReplaceVars(b *testing.B) {
 func TestMultiTableQueries(t *testing.T) {
 	t.Parallel()
 
-	deploymentBaseSchema.SetOptionsMap(mappings.OptionsMap)
 	for _, c := range []struct {
 		desc                 string
 		q                    *v1.Query
+		schema               *walker.Schema
 		expectedQueryPortion string
 		expectedFrom         string
 		expectedWhere        string
 		expectedData         []interface{}
-		expectedJoinTables   []string
+		expectedJoinTables   map[string]JoinType
 		expectedError        string
 	}{
 		{
 			desc:          "base schema query",
 			q:             search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
+			schema:        deploymentBaseSchema,
 			expectedFrom:  "deployments",
 			expectedWhere: "deployments.Name = $$",
 			expectedData:  []interface{}{"central"},
@@ -92,9 +94,10 @@ func TestMultiTableQueries(t *testing.T) {
 		{
 			desc:               "child schema query",
 			q:                  search.NewQueryBuilder().AddExactMatches(search.ImageName, "stackrox").ProtoQuery(),
+			schema:             deploymentBaseSchema,
 			expectedFrom:       "deployments",
 			expectedWhere:      "deployments_containers.Image_Name_FullName = $$",
-			expectedJoinTables: []string{"deployments_containers"},
+			expectedJoinTables: map[string]JoinType{"deployments_containers": Inner},
 			expectedData:       []interface{}{"stackrox"},
 		},
 		{
@@ -102,9 +105,10 @@ func TestMultiTableQueries(t *testing.T) {
 			q: search.NewQueryBuilder().
 				AddExactMatches(search.ImageName, "stackrox").
 				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
+			schema:             deploymentBaseSchema,
 			expectedFrom:       "deployments",
 			expectedWhere:      "(deployments.Name = $$ and deployments_containers.Image_Name_FullName = $$)",
-			expectedJoinTables: []string{"deployments_containers"},
+			expectedJoinTables: map[string]JoinType{"deployments_containers": Inner},
 			expectedData:       []interface{}{"central", "stackrox"},
 		},
 		{
@@ -113,10 +117,10 @@ func TestMultiTableQueries(t *testing.T) {
 				search.NewQueryBuilder().AddExactMatches(search.ImageName, "stackrox").ProtoQuery(),
 				search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
 			),
-
+			schema:             deploymentBaseSchema,
 			expectedFrom:       "deployments",
 			expectedWhere:      "(deployments_containers.Image_Name_FullName = $$ or deployments.Name = $$)",
-			expectedJoinTables: []string{"deployments_containers"},
+			expectedJoinTables: map[string]JoinType{"deployments_containers": Inner},
 			expectedData:       []interface{}{"central", "stackrox"},
 		},
 		{
@@ -125,10 +129,10 @@ func TestMultiTableQueries(t *testing.T) {
 				search.NewQueryBuilder().AddExactMatches(search.ImageName, "stackrox").ProtoQuery(),
 				search.NewQueryBuilder().AddExactMatches(search.PortProtocol, "tcp").ProtoQuery(),
 			),
-
+			schema:             deploymentBaseSchema,
 			expectedFrom:       "deployments",
 			expectedWhere:      "(deployments_containers.Image_Name_FullName = $$ and deployments_ports.Protocol = $$)",
-			expectedJoinTables: []string{"deployments_containers", "deployments_ports"},
+			expectedJoinTables: map[string]JoinType{"deployments_containers": Inner, "deployments_ports": Inner},
 			expectedData:       []interface{}{"tcp", "stackrox"},
 		},
 		{
@@ -137,9 +141,10 @@ func TestMultiTableQueries(t *testing.T) {
 				search.NewQueryBuilder().AddExactMatches(search.ImageName, "stackrox").ProtoQuery(),
 				search.NewQueryBuilder().AddExactMatches(search.PortProtocol, "tcp").ProtoQuery(),
 			),
+			schema:             deploymentBaseSchema,
 			expectedFrom:       "deployments",
 			expectedWhere:      "(deployments_containers.Image_Name_FullName = $$ or deployments_ports.Protocol = $$)",
-			expectedJoinTables: []string{"deployments_containers", "deployments_ports"},
+			expectedJoinTables: map[string]JoinType{"deployments_containers": Inner, "deployments_ports": Inner},
 			expectedData:       []interface{}{"tcp", "stackrox"},
 		},
 		{
@@ -148,22 +153,25 @@ func TestMultiTableQueries(t *testing.T) {
 				search.NewQueryBuilder().AddBools(search.Privileged, true).ProtoQuery(),
 				search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
 			),
+			schema:             deploymentBaseSchema,
 			expectedFrom:       "deployments",
 			expectedWhere:      "(deployments_containers.SecurityContext_Privileged = $$ or deployments.Name = $$)",
-			expectedJoinTables: []string{"deployments_containers"},
+			expectedJoinTables: map[string]JoinType{"deployments_containers": Inner},
 			expectedData:       []interface{}{"central", "true"},
 		},
 		{
 			desc:               "negated child schema query",
 			q:                  search.NewQueryBuilder().AddStrings(search.ImageName, "!central").ProtoQuery(),
+			schema:             deploymentBaseSchema,
 			expectedFrom:       "deployments",
 			expectedWhere:      "NOT (deployments_containers.Image_Name_FullName ilike $$)",
-			expectedJoinTables: []string{"deployments_containers"},
+			expectedJoinTables: map[string]JoinType{"deployments_containers": Inner},
 			expectedData:       []interface{}{"central%"},
 		},
 		{
 			desc:          "nil query",
 			q:             nil,
+			schema:        deploymentBaseSchema,
 			expectedFrom:  "deployments",
 			expectedWhere: "",
 			expectedData:  []interface{}{},
@@ -174,6 +182,7 @@ func TestMultiTableQueries(t *testing.T) {
 				search.NewQueryBuilder().AddDocIDs("123").ProtoQuery(),
 				search.MatchNoneQuery(),
 			),
+			schema:        deploymentBaseSchema,
 			expectedFrom:  "deployments",
 			expectedWhere: "(deployments.Id = ANY($$::uuid[]) and false)",
 			expectedData:  []interface{}{[]string{"123"}},
@@ -183,9 +192,10 @@ func TestMultiTableQueries(t *testing.T) {
 			q: search.NewQueryBuilder().
 				AddExactMatches(search.ImageName, "stackrox").
 				AddExactMatches(search.DeploymentID, uuid.NewDummy().String()).ProtoQuery(),
+			schema:             deploymentBaseSchema,
 			expectedFrom:       "deployments",
 			expectedWhere:      "(deployments.Id = $$ and deployments_containers.Image_Name_FullName = $$)",
-			expectedJoinTables: []string{"deployments_containers"},
+			expectedJoinTables: map[string]JoinType{"deployments_containers": Inner},
 			expectedData:       []interface{}{uuid.NewDummy(), "stackrox"},
 		},
 		{
@@ -193,6 +203,7 @@ func TestMultiTableQueries(t *testing.T) {
 			q: search.NewQueryBuilder().
 				AddExactMatches(search.ImageName, "stackrox").
 				AddExactMatches(search.DeploymentID, "not a uuid").ProtoQuery(),
+			schema: deploymentBaseSchema,
 			expectedError: `uuid: incorrect UUID length 10 in string "not a uuid"
         	            	value "not a uuid" in search query must be valid UUID`,
 		},
@@ -202,14 +213,34 @@ func TestMultiTableQueries(t *testing.T) {
 				[]search.FieldLabel{search.ImageName, search.EnvironmentKey},
 				[]string{search.WildcardString, search.WildcardString}).
 				ProtoQuery(),
+			schema:             deploymentBaseSchema,
 			expectedFrom:       "deployments",
 			expectedWhere:      "(deployments_containers.Image_Name_FullName is not null and deployments_containers_envs.Key is not null)",
-			expectedJoinTables: []string{"deployments_containers", "deployments_containers_envs"},
+			expectedJoinTables: map[string]JoinType{"deployments_containers": Inner, "deployments_containers_envs": Inner},
+		},
+		{
+			desc: "search active and inactive images with observed CVEs in non-platform deployments",
+			q: search.NewQueryBuilder().
+				AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_OBSERVED.String()).
+				AddStrings(search.PlatformComponent, "false", "-").
+				ProtoQuery(),
+			schema:        imagesSchema,
+			expectedFrom:  "images",
+			expectedWhere: "((deployments.PlatformComponent = $$ or deployments.PlatformComponent is null) and (image_cve_edges.State = $$))",
+			expectedJoinTables: map[string]JoinType{
+				"image_component_edges":     Inner,
+				"image_component_cve_edges": Inner,
+				"image_cves":                Inner,
+				"image_cve_edges":           Inner,
+				"deployments_containers":    Left,
+				"deployments":               Left,
+			},
+			expectedData: []interface{}{"false", "0"},
 		},
 	} {
 		t.Run(c.desc, func(t *testing.T) {
 			ctx := sac.WithAllAccess(context.Background())
-			actual, err := standardizeQueryAndPopulatePath(ctx, c.q, deploymentBaseSchema, SEARCH)
+			actual, err := standardizeQueryAndPopulatePath(ctx, c.q, c.schema, SEARCH)
 			if c.expectedError != "" {
 				assert.Error(t, err, c.expectedError)
 			} else {
@@ -217,11 +248,15 @@ func TestMultiTableQueries(t *testing.T) {
 				assert.Equal(t, c.expectedFrom, actual.From)
 				assert.Equal(t, c.expectedWhere, actual.Where)
 				assert.ElementsMatch(t, c.expectedData, actual.Data)
-				var actualJoins []string
-				for _, join := range actual.InnerJoins {
-					actualJoins = append(actualJoins, join.rightTable)
+
+				var actualJoins map[string]JoinType
+				if len(actual.Joins) > 0 {
+					actualJoins = make(map[string]JoinType)
+					for _, join := range actual.Joins {
+						actualJoins[join.rightTable] = join.joinType
+					}
 				}
-				assert.ElementsMatch(t, c.expectedJoinTables, actualJoins)
+				assert.Equal(t, c.expectedJoinTables, actualJoins)
 			}
 		})
 	}
@@ -234,6 +269,7 @@ func TestSelectQueries(t *testing.T) {
 		desc          string
 		ctx           context.Context
 		q             *v1.Query
+		schema        *walker.Schema
 		expectedError string
 		expectedQuery string
 	}{
@@ -241,12 +277,14 @@ func TestSelectQueries(t *testing.T) {
 			desc: "base schema; no select",
 			q: search.NewQueryBuilder().
 				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
+			schema:        deploymentBaseSchema,
 			expectedError: "select portion of the query cannot be empty",
 		},
 		{
 			desc: "base schema; select",
 			q: search.NewQueryBuilder().
 				AddSelectFields(search.NewQuerySelect(search.DeploymentName)).ProtoQuery(),
+			schema:        deploymentBaseSchema,
 			expectedQuery: "select deployments.Name as deployment from deployments",
 		},
 		{
@@ -254,6 +292,7 @@ func TestSelectQueries(t *testing.T) {
 			q: search.NewQueryBuilder().
 				AddSelectFields(search.NewQuerySelect(search.DeploymentName)).
 				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
+			schema:        deploymentBaseSchema,
 			expectedQuery: "select deployments.Name as deployment from deployments where deployments.Name = $1",
 		},
 		{
@@ -264,6 +303,7 @@ func TestSelectQueries(t *testing.T) {
 					search.NewQuerySelect(search.ImageName),
 				).
 				AddExactMatches(search.ImageName, "stackrox").ProtoQuery(),
+			schema: deploymentBaseSchema,
 			expectedQuery: "select deployments_containers.SecurityContext_Privileged as privileged, " +
 				"deployments_containers.Image_Name_FullName as image " +
 				"from deployments inner join deployments_containers " +
@@ -279,6 +319,7 @@ func TestSelectQueries(t *testing.T) {
 				).
 				AddExactMatches(search.ImageName, "stackrox").
 				AddGroupBy(search.Cluster, search.Namespace).ProtoQuery(),
+			schema: deploymentBaseSchema,
 			expectedQuery: "select jsonb_agg(deployments_containers.SecurityContext_Privileged) as privileged, " +
 				"jsonb_agg(deployments_containers.Image_Name_FullName) as image, " +
 				"deployments.ClusterName as cluster, deployments.Namespace as namespace " +
@@ -294,6 +335,7 @@ func TestSelectQueries(t *testing.T) {
 					search.NewQuerySelect(search.DeploymentName),
 					search.NewQuerySelect(search.ImageName),
 				).ProtoQuery(),
+			schema: deploymentBaseSchema,
 			expectedQuery: "select deployments.Name as deployment, deployments_containers.Image_Name_FullName as image " +
 				"from deployments inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id",
 		},
@@ -306,6 +348,7 @@ func TestSelectQueries(t *testing.T) {
 				).
 				AddExactMatches(search.ImageName, "stackrox").
 				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
+			schema: deploymentBaseSchema,
 			expectedQuery: "select deployments.Name as deployment, deployments_containers.Image_Name_FullName as image " +
 				"from deployments inner join deployments_containers " +
 				"on deployments.Id = deployments_containers.deployments_Id " +
@@ -317,6 +360,7 @@ func TestSelectQueries(t *testing.T) {
 				AddSelectFields(
 					search.NewQuerySelect(search.DeploymentName).AggrFunc(aggregatefunc.Count).Distinct(),
 				).ProtoQuery(),
+			schema:        deploymentBaseSchema,
 			expectedQuery: "select count(distinct(deployments.Name)) as deployment_count from deployments",
 		},
 		{
@@ -327,14 +371,16 @@ func TestSelectQueries(t *testing.T) {
 				).
 				AddExactMatches(search.ImageName, "stackrox").
 				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
+			schema: deploymentBaseSchema,
 			expectedQuery: "select count(distinct(deployments.Name)) as deployment_count " +
 				"from deployments inner join deployments_containers " +
 				"on deployments.Id = deployments_containers.deployments_Id " +
 				"where (deployments.Name = $1 and deployments_containers.Image_Name_FullName = $2)",
 		},
 		{
-			desc: "nil query",
-			q:    nil,
+			desc:   "nil query",
+			q:      nil,
+			schema: deploymentBaseSchema,
 		},
 		{
 			desc: "base schema; select w/ conjunction",
@@ -348,6 +394,7 @@ func TestSelectQueries(t *testing.T) {
 				q.Selects = []*v1.QuerySelect{search.NewQuerySelect(search.DeploymentName).Proto()}
 				return q
 			}(),
+			schema:        deploymentBaseSchema,
 			expectedQuery: "select deployments.Name as deployment from deployments where (deployments.Name = $1 and deployments.Namespace = $2)",
 		},
 		{
@@ -359,6 +406,7 @@ func TestSelectQueries(t *testing.T) {
 			q: search.NewQueryBuilder().
 				AddSelectFields(search.NewQuerySelect(search.DeploymentName)).
 				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
+			schema: deploymentBaseSchema,
 			expectedQuery: "select deployments.Name as deployment from deployments " +
 				"inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id " +
 				"where (deployments.Name = $1 and deployments_containers.Image_Id = $2)",
@@ -376,8 +424,33 @@ func TestSelectQueries(t *testing.T) {
 			q: search.NewQueryBuilder().
 				AddSelectFields(search.NewQuerySelect(search.DeploymentName)).
 				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
+			schema: deploymentBaseSchema,
 			expectedQuery: "select deployments.Name as deployment from deployments " +
 				"where (deployments.Name = $1 and (deployments.NamespaceId = $2 and deployments.ClusterId = $3))",
+		},
+		{
+			desc: "select query with filters that will add left joins to the query",
+			q: search.NewQueryBuilder().
+				AddSelectFields(
+					search.NewQuerySelect(search.CVE),
+					search.NewQuerySelect(search.CVEID).Distinct(),
+					search.NewQuerySelect(search.CVSS).AggrFunc(aggregatefunc.Max),
+					search.NewQuerySelect(search.ImageSHA).AggrFunc(aggregatefunc.Count).Distinct(),
+				).
+				AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_OBSERVED.String()).
+				AddStrings(search.PlatformComponent, "true", "-").
+				ProtoQuery(),
+			schema: imageCVEsSchema,
+			expectedQuery: "select image_cves.CveBaseInfo_Cve as cve, " +
+				"distinct(image_cves.Id) as cve_id, max(image_cves.Cvss) as cvss_max, " +
+				"count(distinct(images.Id)) as image_sha_count " +
+				"from image_cves " +
+				"inner join image_component_cve_edges on image_cves.Id = image_component_cve_edges.ImageCveId " +
+				"inner join image_component_edges on image_component_cve_edges.ImageComponentId = image_component_edges.ImageComponentId " +
+				"inner join images on image_component_edges.ImageId = images.Id left join deployments_containers on images.Id = deployments_containers.Image_Id " +
+				"left join deployments on deployments_containers.deployments_Id = deployments.Id " +
+				"inner join image_cve_edges on(image_component_edges.ImageId = image_cve_edges.ImageId and image_cves.Id = image_cve_edges.ImageCveId) " +
+				"where ((deployments.PlatformComponent = $1 or deployments.PlatformComponent is null) and (image_cve_edges.State = $2))",
 		},
 	} {
 		t.Run(c.desc, func(t *testing.T) {
@@ -386,7 +459,7 @@ func TestSelectQueries(t *testing.T) {
 				ctx = context.Background()
 			}
 
-			actualQ, err := standardizeSelectQueryAndPopulatePath(ctx, c.q, schema.DeploymentsSchema, SELECT)
+			actualQ, err := standardizeSelectQueryAndPopulatePath(ctx, c.q, c.schema, SELECT)
 			if c.expectedError != "" {
 				assert.Error(t, err, c.expectedError)
 				return

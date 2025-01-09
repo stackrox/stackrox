@@ -104,7 +104,8 @@ type ImageCVEViewTestSuite struct {
 	testDB  *pgtest.TestPostgres
 	cveView CveView
 
-	testImages []*storage.Image
+	testImages              []*storage.Image
+	testImagesToDeployments map[string][]*storage.Deployment
 }
 
 func (s *ImageCVEViewTestSuite) SetupSuite() {
@@ -166,6 +167,10 @@ func (s *ImageCVEViewTestSuite) SetupSuite() {
 	for _, d := range deployments {
 		s.Require().NoError(deploymentStore.UpsertDeployment(ctx, d))
 	}
+
+	s.testImagesToDeployments = make(map[string][]*storage.Deployment)
+	s.testImagesToDeployments[images[1].Id] = []*storage.Deployment{deployments[0], deployments[1]}
+	s.testImagesToDeployments[images[2].Id] = []*storage.Deployment{deployments[2]}
 }
 
 func (s *ImageCVEViewTestSuite) TearDownSuite() {
@@ -655,6 +660,56 @@ func (s *ImageCVEViewTestSuite) testCases() []testCase {
 					return records[i].ImagesWithCriticalSeverity > records[j].ImagesWithCriticalSeverity
 				}
 			},
+		},
+		{
+			desc: "search observed CVEs from inactive images and active images in non-platform deployments",
+			ctx:  context.Background(),
+			q: search.NewQueryBuilder().
+				AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_OBSERVED.String()).
+				AddStrings(search.PlatformComponent, "false", "-").
+				ProtoQuery(),
+			matchFilter: matchAllFilter().
+				withImageFilter(func(image *storage.Image) bool {
+					deps, ok := s.testImagesToDeployments[image.GetId()]
+					if !ok {
+						// include inactive image
+						return true
+					}
+					for _, d := range deps {
+						if !d.PlatformComponent {
+							return true
+						}
+					}
+					return false
+				}).
+				withVulnFilter(func(vuln *storage.EmbeddedVulnerability) bool {
+					return vuln.State == storage.VulnerabilityState_OBSERVED
+				}),
+		},
+		{
+			desc: "search observed CVEs from inactive images and active images in platform deployments",
+			ctx:  context.Background(),
+			q: search.NewQueryBuilder().
+				AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_OBSERVED.String()).
+				AddStrings(search.PlatformComponent, "true", "-").
+				ProtoQuery(),
+			matchFilter: matchAllFilter().
+				withImageFilter(func(image *storage.Image) bool {
+					deps, ok := s.testImagesToDeployments[image.GetId()]
+					if !ok {
+						// include inactive image
+						return true
+					}
+					for _, d := range deps {
+						if d.PlatformComponent {
+							return true
+						}
+					}
+					return false
+				}).
+				withVulnFilter(func(vuln *storage.EmbeddedVulnerability) bool {
+					return vuln.State == storage.VulnerabilityState_OBSERVED
+				}),
 		},
 	}
 }
