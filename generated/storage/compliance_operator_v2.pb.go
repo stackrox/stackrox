@@ -248,11 +248,12 @@ func (ComplianceOperatorCheckResultV2_CheckStatus) EnumDescriptor() ([]byte, []i
 type ComplianceOperatorReportStatus_RunState int32
 
 const (
-	ComplianceOperatorReportStatus_WAITING   ComplianceOperatorReportStatus_RunState = 0
-	ComplianceOperatorReportStatus_PREPARING ComplianceOperatorReportStatus_RunState = 1
-	ComplianceOperatorReportStatus_GENERATED ComplianceOperatorReportStatus_RunState = 2
-	ComplianceOperatorReportStatus_DELIVERED ComplianceOperatorReportStatus_RunState = 3
-	ComplianceOperatorReportStatus_FAILURE   ComplianceOperatorReportStatus_RunState = 4
+	ComplianceOperatorReportStatus_WAITING       ComplianceOperatorReportStatus_RunState = 0
+	ComplianceOperatorReportStatus_PREPARING     ComplianceOperatorReportStatus_RunState = 1
+	ComplianceOperatorReportStatus_GENERATED     ComplianceOperatorReportStatus_RunState = 2
+	ComplianceOperatorReportStatus_DELIVERED     ComplianceOperatorReportStatus_RunState = 3
+	ComplianceOperatorReportStatus_FAILURE       ComplianceOperatorReportStatus_RunState = 4
+	ComplianceOperatorReportStatus_PARTIAL_ERROR ComplianceOperatorReportStatus_RunState = 5
 )
 
 // Enum value maps for ComplianceOperatorReportStatus_RunState.
@@ -263,13 +264,15 @@ var (
 		2: "GENERATED",
 		3: "DELIVERED",
 		4: "FAILURE",
+		5: "PARTIAL_ERROR",
 	}
 	ComplianceOperatorReportStatus_RunState_value = map[string]int32{
-		"WAITING":   0,
-		"PREPARING": 1,
-		"GENERATED": 2,
-		"DELIVERED": 3,
-		"FAILURE":   4,
+		"WAITING":       0,
+		"PREPARING":     1,
+		"GENERATED":     2,
+		"DELIVERED":     3,
+		"FAILURE":       4,
+		"PARTIAL_ERROR": 5,
 	}
 )
 
@@ -3076,7 +3079,7 @@ const file_storage_compliance_operator_v2_proto_rawDesc = "" +
 	"cluster_id\x18\x01 \x01(\tR\tclusterId\x12!\n" +
 	"\fcluster_name\x18\x02 \x01(\tR\vclusterName\x12\x16\n" +
 	"\x06reason\x18\x03 \x01(\tR\x06reason\x12)\n" +
-	"\x10operator_version\x18\x04 \x01(\tR\x0foperatorVersion\"\x90\x05\n" +
+	"\x10operator_version\x18\x04 \x01(\tR\x0foperatorVersion\"\xa3\x05\n" +
 	"\x1eComplianceOperatorReportStatus\x12M\n" +
 	"\trun_state\x18\x01 \x01(\x0e20.storage.ComplianceOperatorReportStatus.RunStateR\brunState\x129\n" +
 	"\n" +
@@ -3084,13 +3087,14 @@ const file_storage_compliance_operator_v2_proto_rawDesc = "" +
 	"\fcompleted_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\vcompletedAt\x12\x1b\n" +
 	"\terror_msg\x18\x04 \x01(\tR\berrorMsg\x12a\n" +
 	"\x13report_request_type\x18\x05 \x01(\x0e21.storage.ComplianceOperatorReportStatus.RunMethodR\x11reportRequestType\x12x\n" +
-	"\x1areport_notification_method\x18\x06 \x01(\x0e2:.storage.ComplianceOperatorReportStatus.NotificationMethodR\x18reportNotificationMethod\"Q\n" +
+	"\x1areport_notification_method\x18\x06 \x01(\x0e2:.storage.ComplianceOperatorReportStatus.NotificationMethodR\x18reportNotificationMethod\"d\n" +
 	"\bRunState\x12\v\n" +
 	"\aWAITING\x10\x00\x12\r\n" +
 	"\tPREPARING\x10\x01\x12\r\n" +
 	"\tGENERATED\x10\x02\x12\r\n" +
 	"\tDELIVERED\x10\x03\x12\v\n" +
-	"\aFAILURE\x10\x04\"-\n" +
+	"\aFAILURE\x10\x04\x12\x11\n" +
+	"\rPARTIAL_ERROR\x10\x05\"-\n" +
 	"\x12NotificationMethod\x12\t\n" +
 	"\x05EMAIL\x10\x00\x12\f\n" +
 	"\bDOWNLOAD\x10\x01\")\n" +
