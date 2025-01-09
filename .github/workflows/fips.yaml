@@ -82,7 +82,7 @@ v4,scanner-v4-db}-rhel8; do
             echo "image: ${image}" \
               | tee -a "$GITHUB_STEP_SUMMARY"
             podman pull "${image}" || continue
-            docker run -it "${image}" ls / || true
+            docker run --rm -it "${image}" ls / || true
             if ! podman unshare go run main.go scan operator --verbose \
               --spec "${image}" 2>&1 \
               | tee /tmp/scan.log; then
