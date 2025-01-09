@@ -19,7 +19,7 @@ message Deployment {
   reserved 3;
   uint64 hash = 26; // @gotags: hash:"ignore" sensorhash:"ignore"
   string type = 4; // @gotags: search:"Deployment Type"
-  string namespace = 5; // @gotags: search:"Namespace,store"
+  string namespace = 5; // @gotags: search:"Namespace,store" sql:"index=name:deployment_dashboard_sac;priority:3"
   string namespace_id = 23; // @gotags: search:"Namespace ID" sql:"fk(NamespaceMetadata:id),no-fk-constraint,type(uuid)"
   bool orchestrator_component = 33; // @gotags: search:"Orchestrator Component"
   int64 replicas = 6; // @gotags: policy:"Replicas"
@@ -27,7 +27,7 @@ message Deployment {
   map<string, string> pod_labels = 19; // @gotags: search:"Pod Label,store"
   LabelSelector label_selector = 20;
   google.protobuf.Timestamp created = 8; // @gotags: search:"Created,store,hidden" hash:"ignore"
-  string cluster_id = 9; // @gotags: search:"Cluster ID,store,hidden" sql:"type(uuid)"
+  string cluster_id = 9; // @gotags: search:"Cluster ID,store,hidden" sql:"type(uuid),index=name:deployment_dashboard_sac;priority:2"
   string cluster_name = 10; // @gotags: search:"Cluster,store"
   repeated Container containers = 11;
   reserved 12;
@@ -46,7 +46,7 @@ message Deployment {
   repeated PortConfig ports = 24; // @gotags: policy:"Ports"
 
   int64 state_timestamp = 27; // Internal use only @gotags: hash:"ignore" sensorhash:"ignore"
-  float risk_score = 29; // @gotags: search:"Deployment Risk Score,hidden" policy:",ignore"
+  float risk_score = 29; // @gotags: search:"Deployment Risk Score,hidden" policy:",ignore" sql:"index=name:deployment_dashboard_sac;priority:1"
 
   reserved 30; // was tags
 
