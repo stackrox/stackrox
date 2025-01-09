@@ -77,32 +77,27 @@ jobs:
           exitcode=0
           podman search --limit=100 "${image_prefix}"
           for image in $(podman search --limit=100 "${image_prefix}" --format "{{.Name}}"); do
-            podman search --limit=4 "${image}" --list-tags || true
+            podman search --limit=4 "${image}" --list-tags
           done
           #for image in rhel8-operator operator-bundle {central-db,collector,collector-slim,main,roxctl,scanner,scanner-db,scanner-db-slim,scanner-slim,scanner-v4,scanner-v4-db}-rhel8; do
           for image in $(podman search --limit=100 "${image_prefix}" --format "{{.Name}}"); do
-            echo "image: ${image}" \
-              | tee -a "$GITHUB_STEP_SUMMARY"
-            podman pull "${image}" || continue
-            docker run --rm -t "${image}" ls / || true
-            if ! podman unshare go run main.go scan operator --verbose \
-              --spec "${image}" 2>&1 \
-              | tee /tmp/scan.log; then
+            logfile="/tmp/scan-${image##*/}.log"
+            if ! podman unshare go run main.go \
+              scan operator --verbose --spec "${image}" 2>&1 \
+              | tee "${logfile}"; then
               (( exitcode++ ))
             fi
             for status_type in warning failed; do
-              grep --silent "status=\"${status_type}\"" /tmp/scan.log \
-                && echo "${status_type}:" \
+              grep --silent "status=\"${status_type}\"" "${logfile}" \
+                && echo "${image} ${status_type}:" \
                 | tee -a "$GITHUB_STEP_SUMMARY"
-              grep "status=\"${status_type}\"" /tmp/scan.log \
+              grep "status=\"${status_type}\"" "${logfile}" \
                 | grep -o 'path=.*error="[^"]*"' \
-                | tee -a "$GITHUB_STEP_SUMMARY" \
-                || true  # allow none found
+                | tee -a "$GITHUB_STEP_SUMMARY"
             done
+            rm "${logfile}"
           done
 
           if [[ $exitcode -ne 0 ]]; then
             exit "${exitcode}"
-          else
-            rm "$GITHUB_STEP_SUMMARY"
           fi
