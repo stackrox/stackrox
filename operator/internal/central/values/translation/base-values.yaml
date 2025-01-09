@@ -45,3 +45,4 @@ scannerV4:
       generate: false
 allowNonstandardReleaseName: true
 allowNonstandardNamespace: true
+allowUnsupportedMultipleCentralsUsingHelm: documentationWasReadAndUnderstood
