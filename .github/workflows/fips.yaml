@@ -80,7 +80,7 @@ jobs:
             echo "image: ${image}" \
               | tee -a "$GITHUB_STEP_SUMMARY"
             podman pull "${image}" || continue
-            docker run --rm -it "${image}" ls / || true
+            docker run --rm -t "${image}" ls / || true
             if ! podman unshare go run main.go scan operator --verbose \
               --spec "${image}" 2>&1 \
               | tee /tmp/scan.log; then
