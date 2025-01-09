@@ -49,30 +49,9 @@ spec:
       {{- if ._rox.scanner.priorityClassName }}
       priorityClassName: {{ ._rox.scanner.priorityClassName }}
       {{- end }}
-      {{- if ._rox._securedClusterCertRefresh }}
       initContainers:
-      - name: init-tls-certs
-        image: {{ quote ._rox.image.main.fullRef }}
-        command:
-        - /stackrox/bin/init-tls-certs
-        args:
-        - --legacy=/run/secrets/stackrox.io/certs-legacy/
-        - --new=/run/secrets/stackrox.io/certs-new/
-        - --destination=/run/secrets/stackrox.io/certs/
-        resources:
-          {{- ._rox.scanner._resources | nindent 12 }}
-        securityContext:
-          runAsNonRoot: true
-          readOnlyRootFilesystem: true
-        volumeMounts:
-        - name: certs-legacy
-          mountPath: /run/secrets/stackrox.io/certs-legacy/
-          readOnly: true
-        - name: certs-new
-          mountPath: /run/secrets/stackrox.io/certs-new/
-          readOnly: true
-        - name: certs
-          mountPath: /run/secrets/stackrox.io/certs/
+      {{- if ._rox._securedClusterCertRefresh }}
+      - {{ include "srox.tlsCertsInitContainer" (list .  ._rox.scanner._resources) | indent 8 | trim }}
       {{- end }}
       containers:
       - name: scanner
@@ -174,16 +153,7 @@ spec:
         configMap:
           name: scanner-config
       {{- if ._rox._securedClusterCertRefresh }}
-      - name: certs
-        emptyDir: {}
-      - name: certs-legacy
-        secret:
-          secretName: scanner-tls
-          optional: true
-      - name: certs-new
-        secret:
-          secretName: tls-cert-scanner
-          optional: true
+      {{- include "srox.tlsCertsInitContainerVolumes" (list "scanner") | indent 6 }}
       {{- else }}
       - name: certs
         secret:
@@ -281,28 +251,7 @@ spec:
       {{- end }}
       initContainers:
       {{- if ._rox._securedClusterCertRefresh }}
-      - name: init-tls-certs
-        image: {{ quote ._rox.image.main.fullRef }}
-        command:
-        - /stackrox/bin/init-tls-certs
-        args:
-        - --legacy=/run/secrets/stackrox.io/certs-legacy/
-        - --new=/run/secrets/stackrox.io/certs-new/
-        - --destination=/run/secrets/stackrox.io/certs/
-        resources:
-          {{- ._rox.scanner._dbResources | nindent 12 }}
-        securityContext:
-          runAsNonRoot: true
-          readOnlyRootFilesystem: true
-        volumeMounts:
-        - name: certs-legacy
-          mountPath: /run/secrets/stackrox.io/certs-legacy/
-          readOnly: true
-        - name: certs-new
-          mountPath: /run/secrets/stackrox.io/certs-new/
-          readOnly: true
-        - name: certs
-          mountPath: /run/secrets/stackrox.io/certs/
+      - {{ include "srox.tlsCertsInitContainer" (list .  ._rox.scanner._dbResources) | indent 8 | trim }}
       {{- end }}
       - name: init-db
         {{ if eq ._rox.scanner.mode "slim" -}}

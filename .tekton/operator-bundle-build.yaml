@@ -34,9 +34,8 @@ spec:
     value: operator/konflux.bundle.Dockerfile
   - name: git-url
     value: '{{source_url}}'
-  # TODO(ROX-24530): return expiration for non-released images to 13w
   - name: image-expires-after
-    value: '52w'
+    value: '13w'
   - name: output-image-repo
     value: quay.io/rhacs-eng/stackrox-operator-bundle
   - name: revision
