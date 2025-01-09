@@ -56,7 +56,6 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 		"oracle",
 		"osv",
 		"photon",
-		"rhcc",
 		"rhel-vex",
 		"suse",
 		"ubuntu",

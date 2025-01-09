@@ -14,12 +14,17 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-26849: Introduce report caching for RHCOS Node Indexing
 - ROX-25638: Introduce configurable log rotation. `ROX_LOGGING_MAX_ROTATION_FILES` and `ROX_LOGGING_MAX_SIZE_MB` variables allow for configuring the number and the size of a central log rotation file.
 - ROX-14332: Automatic service certificate renewal for Secured Clusters installed using Helm or operator.
+- Scanner V4 adds supports for openSUSE Leap 15.5 and 15.6
 
 ### Removed Features
 
-### Deprecated Fatures
+- Scanner V4 drops support for openSUSE Leap 15.0 and 15.1
+
+### Deprecated Features
 
 ### Technical Changes
+
+- Scanner V4 now uses [Red Hat's VEX files](https://security.access.redhat.com/data/csaf/v2/vex/) instead of the [CVE map](https://security.access.redhat.com/data/metrics/cvemap.xml) for vulnerability data related to non-RPM content inside of official Red Hat images.
 
 ## [4.6.0]
 
