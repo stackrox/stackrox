@@ -70,18 +70,17 @@ jobs:
         run: |
           set +e
           git log -1
-          image="${{ inputs.image }}"
-          default='brew.registry.redhat.io/rh-osbs/rhacs-main-rhel8'
-          image="${image:-${default}}"
+          image_prefix="${{ inputs.image }}"
+          default_image_prefix='brew.registry.redhat.io/rh-osbs/rhacs'
+          image_prefix="${image_prefix:-${default_image_prefix}}"
           set -x
           exitcode=0
-          podman search --limit=100 "brew.registry.redhat.io/rh-osbs/"
-          for image in $(podman search --limit=100 "brew.registry.redhat.io/rh-osbs/" --format "{{.Name}}"); do
-            podman search --limit=4 "${image}" --list-tags || true
+          podman search --limit=100 "${image_prefix}"
+          for image in $(podman search --limit=100 "${image_prefix}" --format "{{.Name}}"); do
+            podman search --limit=4 "${image_prefix}" --list-tags || true
           done
           #for image in rhel8-operator operator-bundle {central-db,collector,collector-slim,main,roxctl,scanner,scanner-db,scanner-db-slim,scanner-slim,scanner-v4,scanner-v4-db}-rhel8; do
-          for image in $(podman search --limit=100 "brew.registry.redhat.io/rh-osbs/" --format "{{.Name}}"); do
-            image="brew.registry.redhat.io/rh-osbs/rhacs-${image}"
+          for image in $(podman search --limit=100 "${image_prefix}" --format "{{.Name}}"); do
             echo "image: ${image}" \
               | tee -a "$GITHUB_STEP_SUMMARY"
             podman pull "${image}" || continue
