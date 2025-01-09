@@ -62,7 +62,6 @@ jobs:
 
       - name: Scan image for FIPS compliance
         run: |
-          set -x
           set +e
           git log -1
           image="${{ inputs.image }}"
@@ -81,7 +80,6 @@ jobs:
               | tee -a "$GITHUB_STEP_SUMMARY"
             grep "status=\"${status_type}\"" /tmp/scan.log \
               | grep -o 'path=.*error="[^"]*"' \
-              | tee >(cat >&2) \
               | tee -a "$GITHUB_STEP_SUMMARY" \
               || true  # allow none found
           done
