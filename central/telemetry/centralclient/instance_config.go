@@ -2,6 +2,7 @@ package centralclient
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/pkg/errors"
@@ -126,7 +127,8 @@ func InstanceConfig() *phonehome.Config {
 		config, props = getInstanceConfig(ii.Id, runtimeCfg.Key)
 		log.Info("Central ID: ", config.ClientID)
 		log.Info("Tenant ID: ", config.GroupID)
-		log.Infof("API Telemetry campaign: %v", telemetryCampaign)
+		jc, _ := json.Marshal(telemetryCampaign)
+		log.Info("API Telemetry campaign: ", string(jc))
 		log.Infof("API Telemetry ignored paths: %v", ignoredPaths)
 
 		config.Gatherer().AddGatherer(func(ctx context.Context) (map[string]any, error) {
