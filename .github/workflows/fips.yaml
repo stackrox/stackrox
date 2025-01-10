@@ -79,7 +79,7 @@ jobs:
           username: ${{ secrets.RH_REGISTRY_USERNAME_RO }}
           password: ${{ secrets.RH_REGISTRY_PASSWORD_RO }}
 
-      - name: Verify all artifacts are published
+      - name: Run FIPS check-payload on image(s)
         run: |
           set -uo pipefail
           gh api -H "$ACCEPT_RAW" "${{ env.script_url }}" | bash -s -- \
