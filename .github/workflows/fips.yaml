@@ -87,7 +87,9 @@ jobs:
             break
           done
           skopeo inspect docker://brew.registry.redhat.io/rh-osbs/rhacs-main-rhel8:4.5.4-5 || true
+          skopeo inspect docker://brew.registry.redhat.io/rh-osbs/rhacs-main-rhel8:4.7 || true
           skopeo inspect docker://brew.registry.redhat.io/rh-osbs/rhacs-main-rhel8:4.6 || true
+          skopeo inspect docker://brew.registry.redhat.io/rh-osbs/rhacs-main-rhel8:4.6.1 || true
           skopeo inspect docker://brew.registry.redhat.io/rh-osbs/rhacs-main-rhel8:4 || true
           podman pull brew.registry.redhat.io/rh-osbs/rhacs-main-rhel8:4.5.4-5 || true
           #for image in rhel8-operator operator-bundle {central-db,collector,collector-slim,main,roxctl,scanner,scanner-db,scanner-db-slim,scanner-slim,scanner-v4,scanner-v4-db}-rhel8; do
