@@ -77,35 +77,24 @@ jobs:
           image_prefix="${image_prefix:-${default_image_prefix}}"
           set -x
           exitcode=0
-          podman search --limit=100 "${image_prefix}"
-          for image in $(podman search --limit=100 "${image_prefix}" --format "{{.Name}}"); do
-            podman search --limit=10000 "${image}" --format json --list-tags > logfile
-            wc -l <logfile
-            head -10 logfile
-            shuf -n100 logfile
-            tail -10 logfile
-            break
-          done
-          skopeo inspect docker://brew.registry.redhat.io/rh-osbs/rhacs-main-rhel8:4.5.4-5 || true
-          skopeo inspect docker://brew.registry.redhat.io/rh-osbs/rhacs-main-rhel8:4.7 || true
-          skopeo inspect docker://brew.registry.redhat.io/rh-osbs/rhacs-main-rhel8:4.6 || true
-          skopeo inspect docker://brew.registry.redhat.io/rh-osbs/rhacs-main-rhel8:4.6.1 || true
-          skopeo inspect docker://brew.registry.redhat.io/rh-osbs/rhacs-main-rhel8:4 || true
-          podman pull brew.registry.redhat.io/rh-osbs/rhacs-main-rhel8:4.5.4-5 || true
           #for image in rhel8-operator operator-bundle {central-db,collector,collector-slim,main,roxctl,scanner,scanner-db,scanner-db-slim,scanner-slim,scanner-v4,scanner-v4-db}-rhel8; do
           for image in $(podman search --limit=100 "${image_prefix}" --format "{{.Name}}"); do
             logfile="/tmp/scan-${image##*/}.log"
+            #podman search --limit=1000000 "${image}" --list-tags --format json \
+            #  | tee podman.log \
+            #  | jq -r '.[]|.Tags|.[]' | grep '^[0-9\.\-]*$' | sort -rV | head -1
             skopeo inspect --no-tags "docker://${image}" | tee inspect.log || true
+            newest_tag=$(jq -r '.RepoTags|.[]' <inspect.log | grep '^[0-9\.\-]*$' | sort -rV | head -1)
             created=$(jq -r '.Created' <inspect.log)
-            sha=$(podman pull "${image}")
+            sha=$(podman pull "${image}:${newest_tag}")
             if ! podman unshare go run main.go \
-              scan operator --verbose --spec "${image}" 2>&1 \
+              scan operator --verbose --spec "${image}:${newest_tag}" 2>&1 \
               | tee "${logfile}"; then
               (( exitcode++ ))
             fi
             for status_type in warning failed; do
               grep --silent "status=\"${status_type}\"" "${logfile}" \
-                && echo "${image}@sha256:${sha} (created:${created}) ${status_type}:" \
+                && echo "${image}:${newest_tag} @sha256:${sha} (created:${created}) ${status_type}:" \
                 | tee -a "$GITHUB_STEP_SUMMARY"
               grep "status=\"${status_type}\"" "${logfile}" \
                 | grep -o 'path=.*error="[^"]*"' \
