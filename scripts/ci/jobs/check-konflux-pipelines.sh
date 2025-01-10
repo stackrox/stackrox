@@ -5,7 +5,8 @@
 
 set -euo pipefail
 
-FAIL_FLAG="/tmp/fail"
+FAIL_FLAG="$(mktemp)"
+trap 'rm -f $FAIL_FLAG' EXIT
 
 ensure_create_snapshot_runs_last() {
     local pipeline_path=".tekton/operator-bundle-pipeline.yaml"
@@ -36,8 +37,10 @@ check_all_components_part_of_custom_snapshot() {
     local pipeline_path=".tekton/operator-bundle-pipeline.yaml"
     local task_name="create-acs-style-snapshot"
 
+    # Actual components are based on the COMPONENTS parameter and stored as sorted multi-line string.
     actual_components="$(yq eval '.spec.tasks[] | select(.name == '\"${task_name}\"') | .params[] | select(.name == "COMPONENTS") | .value' "${pipeline_path}" | yq eval '.[].name' - | tr " " "\n" | sort)"
-    expected_components_from_images="$(yq eval '.spec.tasks[] | select(.name == "wait-for-*-image") | .name | sub("(wait-for-|-image)", "")' .tekton/operator-bundle-pipeline.yaml)"
+    # Expected components are based on the wait-for-*-image task plus the operator-bundle and stored as a sorted multi-line string.
+    expected_components_from_images="$(yq eval '.spec.tasks[] | select(.name == "wait-for-*-image") | .name | sub("(wait-for-|-image)", "")' ${pipeline_path})"
     expected_components=$(echo "${expected_components_from_images} operator-bundle" | tr " " "\n" | sort)
 
     echo "➤ ${pipeline_path} // checking ${task_name}: COMPONENTS contents shall include all ACS images (left - expected, right - actual)."
@@ -63,7 +66,7 @@ echo "Ensure consistency of our Konflux pipelines."
 ensure_create_snapshot_runs_last || { echo "ensure_create_snapshot_runs_last" >> "${FAIL_FLAG}"; }
 check_all_components_part_of_custom_snapshot || { echo "check_all_components_part_of_custom_snapshot" >> "${FAIL_FLAG}"; }
 
-if [[ -e "$FAIL_FLAG" ]]; then
+if [[ -s "$FAIL_FLAG" ]]; then
     echo "ERROR: Some Konflux pipeline consistency checks failed:"
     cat "$FAIL_FLAG"
     exit 1
