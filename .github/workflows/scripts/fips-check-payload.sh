@@ -44,6 +44,11 @@ function fips_scan() {
     logfile="/tmp/scan-${image##*/}.log"
     ref="${image}${newest_tag:+:}${newest_tag}"
     sha=$(podman pull --arch amd64 --os linux "${ref}")
+    if [[ -z "${sha}" ]]; then
+      echo "Error pulling ${ref}." \
+        | tee -a "$GITHUB_STEP_SUMMARY"
+      continue
+    fi
     echo "${newest_tag:-latest} ${image}@sha256:${sha} (created:${created})" \
       | tee -a "$GITHUB_STEP_SUMMARY"
     if ! podman unshare check-payload \
