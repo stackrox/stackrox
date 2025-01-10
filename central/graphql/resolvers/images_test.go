@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -69,10 +70,6 @@ func (s *ImageResolversTestSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
 }
 
-func sameContext(ctx context.Context) context.Context {
-	return ctx
-}
-
 func sacAllowOnlyCluster2Namespace2(ctx context.Context) context.Context {
 	return sac.WithGlobalAccessScopeChecker(
 		ctx,
@@ -80,17 +77,18 @@ func sacAllowOnlyCluster2Namespace2(ctx context.Context) context.Context {
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Image, resources.Deployment),
 			sac.ClusterScopeKeys(fixtureconsts.Cluster2),
-			sac.NamespaceScopeKeys("namespace2name"),
+			sac.NamespaceScopeKeys(namespace2name),
 		),
 	)
 }
 
 func (s *ImageResolversTestSuite) TestDeployments() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
+	sacCtx := sacAllowOnlyCluster2Namespace2(ctx)
 
 	for _, tc := range []struct {
 		desc            string
-		ctxAdjustment   func(context.Context) context.Context
+		ctx             context.Context
 		q               PaginatedQuery
 		deploymentFiler func(d *storage.Deployment) bool
 		imageFilter     func(img *storage.Image) bool
@@ -98,16 +96,16 @@ func (s *ImageResolversTestSuite) TestDeployments() {
 	}{
 		{
 			desc:            "no filter",
-			ctxAdjustment:   sameContext,
+			ctx:             ctx,
 			q:               PaginatedQuery{},
 			deploymentFiler: func(_ *storage.Deployment) bool { return true },
 			imageFilter:     func(_ *storage.Image) bool { return true },
 			vulnFilter:      func(_ *storage.EmbeddedVulnerability) bool { return true },
 		},
 		{
-			desc:          "filter by namespace",
-			ctxAdjustment: sameContext,
-			q:             PaginatedQuery{Query: pointers.String("Namespace:namespace1name")},
+			desc: "filter by namespace",
+			ctx:  ctx,
+			q:    PaginatedQuery{Query: pointers.String("Namespace:namespace1name")},
 			deploymentFiler: func(d *storage.Deployment) bool {
 				return strings.HasPrefix(d.GetNamespace(), "namespace1name")
 			},
@@ -115,9 +113,9 @@ func (s *ImageResolversTestSuite) TestDeployments() {
 			vulnFilter:  func(_ *storage.EmbeddedVulnerability) bool { return true },
 		},
 		{
-			desc:          "filter by deployment",
-			ctxAdjustment: sameContext,
-			q:             PaginatedQuery{Query: pointers.String("Deployment:dep1name")},
+			desc: "filter by deployment",
+			ctx:  ctx,
+			q:    PaginatedQuery{Query: pointers.String("Deployment:dep1name")},
 			deploymentFiler: func(d *storage.Deployment) bool {
 				return d.GetName() == "dep1name"
 			},
@@ -126,7 +124,7 @@ func (s *ImageResolversTestSuite) TestDeployments() {
 		},
 		{
 			desc:            "filter by image",
-			ctxAdjustment:   sameContext,
+			ctx:             ctx,
 			q:               PaginatedQuery{Query: pointers.String("Image:reg1/img1")},
 			deploymentFiler: func(d *storage.Deployment) bool { return true },
 			imageFilter: func(img *storage.Image) bool {
@@ -136,7 +134,7 @@ func (s *ImageResolversTestSuite) TestDeployments() {
 		},
 		{
 			desc:            "filter by cve",
-			ctxAdjustment:   sameContext,
+			ctx:             ctx,
 			q:               PaginatedQuery{Query: pointers.String("CVE:cve-2019-2")},
 			deploymentFiler: func(d *storage.Deployment) bool { return true },
 			imageFilter: func(img *storage.Image) bool {
@@ -154,9 +152,9 @@ func (s *ImageResolversTestSuite) TestDeployments() {
 			},
 		},
 		{
-			desc:          "filter by deployment+cve",
-			ctxAdjustment: sameContext,
-			q:             PaginatedQuery{Query: pointers.String("Deployment:dep2name+CVE:cve-2019-2")},
+			desc: "filter by deployment+cve",
+			ctx:  ctx,
+			q:    PaginatedQuery{Query: pointers.String("Deployment:dep2name+CVE:cve-2019-2")},
 			deploymentFiler: func(d *storage.Deployment) bool {
 				return strings.HasPrefix(d.GetName(), "dep2name")
 			},
@@ -176,7 +174,7 @@ func (s *ImageResolversTestSuite) TestDeployments() {
 		},
 		{
 			desc:            "filter by severity",
-			ctxAdjustment:   sameContext,
+			ctx:             ctx,
 			q:               PaginatedQuery{Query: pointers.String("Severity:CRITICAL_VULNERABILITY_SEVERITY")},
 			deploymentFiler: func(d *storage.Deployment) bool { return true },
 			imageFilter: func(img *storage.Image) bool {
@@ -195,7 +193,7 @@ func (s *ImageResolversTestSuite) TestDeployments() {
 		},
 		{
 			desc:            "filter by severity+fixable",
-			ctxAdjustment:   sameContext,
+			ctx:             ctx,
 			q:               PaginatedQuery{Query: pointers.String("Severity:UNSET_VULNERABILITY_SEVERITY+Fixable:true")},
 			deploymentFiler: func(d *storage.Deployment) bool { return true },
 			imageFilter: func(img *storage.Image) bool {
@@ -214,17 +212,9 @@ func (s *ImageResolversTestSuite) TestDeployments() {
 			},
 		},
 		{
-			desc:            "no filter",
-			ctxAdjustment:   sameContext,
-			q:               PaginatedQuery{},
-			deploymentFiler: func(_ *storage.Deployment) bool { return true },
-			imageFilter:     func(_ *storage.Image) bool { return true },
-			vulnFilter:      func(_ *storage.EmbeddedVulnerability) bool { return true },
-		},
-		{
-			desc:          "sac filter namespace 2",
-			ctxAdjustment: sacAllowOnlyCluster2Namespace2,
-			q:             PaginatedQuery{},
+			desc: "sac filter namespace 2",
+			ctx:  sacCtx,
+			q:    PaginatedQuery{},
 			deploymentFiler: func(d *storage.Deployment) bool {
 				return d.GetClusterId() == fixtureconsts.Cluster2 && d.GetNamespace() == "namespace2name"
 			},
@@ -234,7 +224,7 @@ func (s *ImageResolversTestSuite) TestDeployments() {
 	} {
 		s.T().Run(tc.desc, func(t *testing.T) {
 			paginatedQ := tc.q
-			testCtx := tc.ctxAdjustment(ctx)
+			testCtx := tc.ctx
 
 			// Test ImageCount query.
 			expectedImages, expectedDeploymentsPerImage := compileExpectedForImageGraphQL(s.testDeployments, s.testImages, tc.deploymentFiler, tc.imageFilter)
@@ -244,7 +234,7 @@ func (s *ImageResolversTestSuite) TestDeployments() {
 
 			// Test Images query.
 			actualImages, err := s.resolver.Images(testCtx, paginatedQ)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			var expectedIDs []string
 			for _, dep := range expectedImages {
 				expectedIDs = append(expectedIDs, dep.GetId())
@@ -266,16 +256,16 @@ func (s *ImageResolversTestSuite) TestDeployments() {
 				// Test ImageCVECountBySeverity for each deployment resolver.
 				expectedCVESevCount := compileExpectedCountBySeverity([]*storage.Image{expectedImages[imageID]}, tc.vulnFilter)
 				actualCVECnt, err := image.ImageCVECountBySeverity(testCtx, RawQuery{Query: paginatedQ.Query})
-				assert.NoError(t, err)
+				require.NoError(t, err)
 
 				critical, err := actualCVECnt.Critical(testCtx)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				important, err := actualCVECnt.Important(testCtx)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				moderate, err := actualCVECnt.Moderate(testCtx)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				low, err := actualCVECnt.Low(testCtx)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 
 				assert.Equal(t, int32(expectedCVESevCount.critical), critical.Total(testCtx))
 				assert.Equal(t, int32(expectedCVESevCount.important), important.Total(testCtx))
@@ -285,17 +275,10 @@ func (s *ImageResolversTestSuite) TestDeployments() {
 				// Test image -> deployments -> images
 				imageDeployments, err := image.Deployments(testCtx, paginatedQ)
 				assert.NoError(t, err)
+				retrievedDeploymentIDs := make([]graphql.ID, 0, len(imageDeployments))
+				expectedDeploymentIDs := make([]graphql.ID, 0, len(expectedDeployments))
 				for _, d := range imageDeployments {
-					deploymentFound := false
-					deploymentID := d.Id(testCtx)
-					for _, expectedDeployment := range expectedDeployments {
-						ID := graphql.ID(expectedDeployment.GetId())
-						if deploymentID == ID {
-							deploymentFound = true
-							break
-						}
-					}
-					assert.True(t, deploymentFound)
+					retrievedDeploymentIDs = append(retrievedDeploymentIDs, d.Id(testCtx))
 					deploymentImages, err := d.Images(testCtx, paginatedQ)
 					assert.NoError(t, err)
 					// Ensure deploymentImages only contains the caller/scoping image
@@ -304,6 +287,10 @@ func (s *ImageResolversTestSuite) TestDeployments() {
 						assert.Equal(t, image.Id(testCtx), img.Id(testCtx))
 					}
 				}
+				for _, d := range expectedDeployments {
+					expectedDeploymentIDs = append(expectedDeploymentIDs, graphql.ID(d.Id))
+				}
+				assert.ElementsMatch(t, expectedDeploymentIDs, retrievedDeploymentIDs)
 
 				// Test image -> image vulnerabilities -> images
 				imageCVEs, err := image.ImageVulnerabilities(testCtx, paginatedQ)
