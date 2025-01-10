@@ -16,7 +16,7 @@ on:
 run-name: ${{ format('Verify FIPS-compliant {0}', inputs.image) }}
 
 env:
-  script_url: /repos/${{ github.repository }}/contents/.github/workflows/scripts/common.sh?ref=${{ github.ref_name }}
+  script_url: /repos/${{ github.repository }}/contents/.github/workflows/scripts/common.sh?ref=${{ github.head_ref || github.ref_name }}
   ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
   GH_TOKEN: ${{ github.token }}
   GH_NO_UPDATE_NOTIFIER: 1
