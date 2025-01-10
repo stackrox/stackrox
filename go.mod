@@ -9,7 +9,7 @@ require (
 	cloud.google.com/go/securitycenter v1.35.3
 	cloud.google.com/go/storage v1.49.0
 	github.com/Azure/azure-sdk-for-go-extensions v0.1.8
-	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.16.0
+	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.17.0
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.8.0
 	github.com/Azure/azure-sdk-for-go/sdk/monitor/ingestion/azlogs v1.0.0
 	github.com/BurntSushi/toml v1.4.0
