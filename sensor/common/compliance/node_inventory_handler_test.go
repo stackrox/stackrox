@@ -166,15 +166,6 @@ type testState struct {
 }
 
 func (s *NodeInventoryHandlerTestSuite) TestHandlerCentralACKsToCompliance() {
-
-	ch := make(chan *storage.NodeInventory)
-	defer close(ch)
-	reports := make(chan *index.IndexReportWrap)
-	defer close(reports)
-	h := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{}, &mockRHCOSNodeMatcher{})
-	s.NoError(h.Start())
-	h.Notify(common.SensorComponentEventCentralReachable)
-
 	cases := map[string]struct {
 		centralReplies    []central.NodeInventoryACK_Action
 		expectedACKCount  int
