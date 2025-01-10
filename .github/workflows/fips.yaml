@@ -86,10 +86,15 @@ jobs:
             tail -10 logfile
             break
           done
+          podman search --format json --list-tags brew.registry.redhat.io/rh-osbs/rhacs-main-rhel8:4.5.4-5 || true
+          podman search --format json --list-tags brew.registry.redhat.io/rh-osbs/rhacs-main-rhel8:4.6 || true
+          podman search --format json --limit=1000 --list-tags brew.registry.redhat.io/rh-osbs/rhacs-main-rhel8:4 || true
+          skopeo inspect brew.registry.redhat.io/rh-osbs/rhacs-main-rhel8:4.5.4-5 || true
+          podman pull brew.registry.redhat.io/rh-osbs/rhacs-main-rhel8:4.5.4-5 || true
           #for image in rhel8-operator operator-bundle {central-db,collector,collector-slim,main,roxctl,scanner,scanner-db,scanner-db-slim,scanner-slim,scanner-v4,scanner-v4-db}-rhel8; do
           for image in $(podman search --limit=100 "${image_prefix}" --format "{{.Name}}"); do
             logfile="/tmp/scan-${image##*/}.log"
-            skopeo inspect --no-tags "docker://${image}:stable" | tee inspect.log || true
+            skopeo inspect --no-tags "docker://${image}" | tee inspect.log || true
             created=$(jq -r '.Created' <inspect.log)
             sha=$(podman pull "${image}")
             if ! podman unshare go run main.go \
