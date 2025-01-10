@@ -9,7 +9,7 @@
 # Development images:
 # quay.io/rhacs-eng/
 
-set +e -o pipefail
+set +e -xuo pipefail
 
 GITHUB_STEP_SUMMARY=${GITHUB_STEP_SUMMARY:-/dev/null}
 
