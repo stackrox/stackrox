@@ -83,7 +83,7 @@ jobs:
             #podman search --limit=1000000 "${image}" --list-tags --format json \
             #  | tee podman.log \
             #  | jq -r '.[]|.Tags|.[]' | grep '^[0-9\.\-]*$' | sort -rV | head -1
-            skopeo inspect --no-tags "docker://${image}" | tee inspect.log || true
+            skopeo inspect "docker://${image}" | tee inspect.log || true
             newest_tag=$(jq -r '.RepoTags|.[]' <inspect.log | grep '^[0-9\.\-]*$' | sort -rV | head -1)
             created=$(jq -r '.Created' <inspect.log)
             sha=$(podman pull "${image}:${newest_tag}")
