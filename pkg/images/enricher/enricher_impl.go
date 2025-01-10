@@ -600,6 +600,7 @@ func (e *enricherImpl) enrichWithScan(ctx context.Context, enrichmentContext Enr
 		}
 		if !found {
 			errorList.AddError(errors.Errorf("no scanner integration found for scannerTypeHint %s", enrichmentContext.ScannerTypeHint))
+			return ScanNotDone, errorList.ToError()
 		}
 	}
 

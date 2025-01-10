@@ -54,7 +54,7 @@ type Scanner interface {
 	GetMatcherMetadata(context.Context) (*v4.Metadata, error)
 
 	// GetSBOM to get sbom for an image
-	GetSBOM(ctx context.Context, ref name.Digest) ([]byte, error, bool)
+	GetSBOM(ctx context.Context, ref name.Digest) ([]byte, bool, error)
 
 	// Close cleans up any resources used by the implementation.
 	Close() error
@@ -181,15 +181,15 @@ func createGRPCConn(ctx context.Context, o connOptions) (*grpc.ClientConn, error
 }
 
 // GetSBOM verifies that index report exists and calls matcher to return sbom for an image
-func (c *gRPCScanner) GetSBOM(ctx context.Context, ref name.Digest) ([]byte, error, bool) {
+func (c *gRPCScanner) GetSBOM(ctx context.Context, ref name.Digest) ([]byte, bool, error) {
 	// verify index report exists for the image
 	hashId := getImageManifestID(ref)
 	_, found, err := c.GetImageIndex(ctx, hashId)
 	if err != nil {
-		return nil, err, false
+		return nil, false, err
 	}
 	if !found {
-		return nil, nil, false
+		return nil, false, nil
 	}
 
 	// for testing only
@@ -199,16 +199,16 @@ func (c *gRPCScanner) GetSBOM(ctx context.Context, ref name.Digest) ([]byte, err
 		"creationInfo": map[string]interface{}{
 			"created": "2023-08-30T04:40:16Z",
 			"creators": []string{
-				"Organization: Uchiha Cortez",
+				"Organization: Xyz",
 				"Tool: FOSSA v0.12.0",
 			},
 		},
 	}
 	sbomBytes, err := json.Marshal(sbom)
 	if err != nil {
-		return nil, err, false
+		return nil, false, err
 	}
-	return sbomBytes, nil, true
+	return sbomBytes, true, nil
 }
 
 // GetImageIndex calls the Indexer's gRPC endpoint GetIndexReport.

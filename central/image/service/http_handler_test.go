@@ -24,8 +24,6 @@ import (
 	"github.com/stackrox/rox/pkg/registries/types"
 	scannerMocks "github.com/stackrox/rox/pkg/scanners/mocks"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
-	scannerTypeMocks "github.com/stackrox/rox/pkg/scanners/types/mocks"
-	scannerv4Mocks "github.com/stackrox/rox/pkg/scannerv4/client/mocks"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 	"golang.org/x/sync/semaphore"
@@ -43,8 +41,13 @@ func (*fakeScanner) MaxConcurrentScanSemaphore() *semaphore.Weighted {
 	return semaphore.NewWeighted(1)
 }
 
-func (f *fakeScanner) GetSBOM(_ *storage.Image) ([]byte, error, bool) {
-	return []byte{}, nil, true
+func (f *fakeScanner) GetSBOM(_ *storage.Image) ([]byte, bool, error) {
+	sbom := createMockSbom()
+	sbomBytes, err := json.Marshal(sbom)
+	if err != nil {
+		return nil, false, err
+	}
+	return sbomBytes, true, nil
 }
 
 func (f *fakeScanner) GetScan(_ *storage.Image) (*storage.ImageScan, error) {
@@ -157,6 +160,21 @@ func (f *fakeRegistryScanner) Source() *storage.ImageIntegration {
 	}
 }
 
+func createMockSbom() map[string]interface{} {
+
+	return map[string]interface{}{
+		"SPDXID":      "SPDXRef-DOCUMENT",
+		"spdxVersion": "SPDX-2.3",
+		"creationInfo": map[string]interface{}{
+			"created": "2023-08-30T04:40:16Z",
+			"creators": []string{
+				"Organization: xyz",
+				"Tool: FOSSA v0.12.0",
+			},
+		},
+	}
+}
+
 func TestHttpHandler_ServeHTTP(t *testing.T) {
 
 	// Test case: Invalid request method
@@ -179,27 +197,9 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 		t.Setenv(features.ScannerV4.EnvVar(), "true")
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
-
-		// mockSbom returns sample sbom
-		sbom := map[string]interface{}{
-			"SPDXID":      "SPDXRef-DOCUMENT",
-			"spdxVersion": "SPDX-2.3",
-			"creationInfo": map[string]interface{}{
-				"created": "2023-08-30T04:40:16Z",
-				"creators": []string{
-					"Organization: Uchiha Cortez",
-					"Tool: FOSSA v0.12.0",
-				},
-			},
-		}
-		sbomBytes, err := json.Marshal(sbom)
-		assert.NoError(t, err)
-
 		// initliaze mocks
 		mockEnricher := enricherMock.NewMockImageEnricher(ctrl)
-		mockSbom := scannerTypeMocks.NewMockSBOMer(ctrl)
 		mockEnricher.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).Return(enricher.EnrichmentResult{ImageUpdated: false, ScanResult: enricher.ScanNotDone}, errors.New("Image enrichment failed")).AnyTimes()
-		mockSbom.EXPECT().GetSBOM(gomock.Any()).Return(sbomBytes, nil, true).AnyTimes()
 
 		reqBody := &apiparams.SbomRequestBody{
 			ImageName: "test-image",
@@ -226,27 +226,12 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
-		// mockSbom returns sample sbom
-		sbom := map[string]interface{}{
-			"SPDXID":      "SPDXRef-DOCUMENT",
-			"spdxVersion": "SPDX-2.3",
-			"creationInfo": map[string]interface{}{
-				"created": "2023-08-30T04:40:16Z",
-				"creators": []string{
-					"Organization: Uchiha Cortez",
-					"Tool: FOSSA v0.12.0",
-				},
-			},
-		}
-		sbomBytes, err := json.Marshal(sbom)
-		assert.NoError(t, err)
-
 		// initliaze mocks
 		scannerSet := scannerMocks.NewMockSet(ctrl)
 		mockEnricher := enricherMock.NewMockImageEnricher(ctrl)
-		mockSbom := scannerv4Mocks.NewMockScanner(ctrl)
 		mockEnricher.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).Return(enricher.EnrichmentResult{ImageUpdated: true, ScanResult: enricher.ScanSucceeded}, nil).AnyTimes()
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 		reqBody := &apiparams.SbomRequestBody{
 			ImageName: "test-image",
@@ -254,6 +239,8 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 		var _ scannerTypes.Scanner = (*fakeScanner)(nil)
 
 		mockSbom.EXPECT().GetSBOM(gomock.Any(), gomock.Any()).Return(sbomBytes, nil, true).AnyTimes()
+=======
+>>>>>>> 53168d49c7 (Fixed comments)
 		set := mocks.NewMockSet(ctrl)
 		fsr := newFakeRegistryScanner(opts{})
 		scannerSet.EXPECT().GetAll().Return([]scannerTypes.ImageScannerWithDataSource{fsr}).AnyTimes()

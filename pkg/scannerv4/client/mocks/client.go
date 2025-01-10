@@ -105,12 +105,12 @@ func (mr *MockScannerMockRecorder) GetOrCreateImageIndex(ctx, ref, auth, opt any
 }
 
 // GetSBOM mocks base method.
-func (m *MockScanner) GetSBOM(ctx context.Context, ref name.Digest) ([]byte, error, bool) {
+func (m *MockScanner) GetSBOM(ctx context.Context, ref name.Digest) ([]byte, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetSBOM", ctx, ref)
 	ret0, _ := ret[0].([]byte)
-	ret1, _ := ret[1].(error)
-	ret2, _ := ret[2].(bool)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 

@@ -108,16 +108,15 @@ func newScanner(integration *storage.ImageIntegration, activeRegistries registri
 }
 
 // GetSBOM returns sbom of an image as a byte array. It also returns a boolean indicating if the index report for the image was found.
-func (s *scannerv4) GetSBOM(image *storage.Image) ([]byte, error, bool) {
-
+func (s *scannerv4) GetSBOM(image *storage.Image) ([]byte, bool, error) {
 	digest, err := pkgscanner.DigestFromImage(image)
 	if err != nil {
-		return nil, err, false
+		return nil, false, err
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
 	defer cancel()
-	sbom, err, found := s.scannerClient.GetSBOM(ctx, digest)
-	return sbom, err, found
+	sbom, found, err := s.scannerClient.GetSBOM(ctx, digest)
+	return sbom, found, err
 }
 
 func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {

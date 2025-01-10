@@ -35,7 +35,7 @@ type Scanner interface {
 // SBOM is the interface that contains the StackRox SBOM methods
 type SBOMer interface {
 	// GetSBOM to get sbom for an image
-	GetSBOM(image *storage.Image) ([]byte, error, bool)
+	GetSBOM(image *storage.Image) ([]byte, bool, error)
 }
 
 // ImageScannerWithDataSource provides a GetScanner to retrieve the underlying Scanner and

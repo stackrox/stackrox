@@ -170,12 +170,12 @@ func (m *MockSBOMer) EXPECT() *MockSBOMerMockRecorder {
 }
 
 // GetSBOM mocks base method.
-func (m *MockSBOMer) GetSBOM(image *storage.Image) ([]byte, error, bool) {
+func (m *MockSBOMer) GetSBOM(image *storage.Image) ([]byte, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetSBOM", image)
 	ret0, _ := ret[0].([]byte)
-	ret1, _ := ret[1].(error)
-	ret2, _ := ret[2].(bool)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
