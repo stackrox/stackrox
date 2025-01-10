@@ -83,9 +83,9 @@ jobs:
             #podman search --limit=1000000 "${image}" --list-tags --format json \
             #  | tee podman.log \
             #  | jq -r '.[]|.Tags|.[]' | grep '^[0-9\.\-]*$' | sort -rV | head -1
-            skopeo inspect "docker://${image}" | tee inspect.log || true
-            newest_tag=$(jq -r '.RepoTags|.[]' <inspect.log | grep '^[0-9\.\-]*$' | sort -rV | head -1)
-            created=$(jq -r '.Created' <inspect.log)
+            skopeo inspect "docker://${image}" > inspect.json || true
+            newest_tag=$(jq -r '.RepoTags|.[]' < inspect.json | grep '^[0-9\.\-]*$' | sort -rV | head -1)
+            created=$(jq -r '.Created' < inspect.json)
             sha=$(podman pull "${image}:${newest_tag}")
             if ! podman unshare go run main.go \
               scan operator --verbose --spec "${image}:${newest_tag}" 2>&1 \
