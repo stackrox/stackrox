@@ -1426,7 +1426,14 @@ setup_automation_flavor_e2e_cluster() {
         oc login "$CLUSTER_API_ENDPOINT" \
                 --username "$CLUSTER_USERNAME" \
                 --password "$CLUSTER_PASSWORD" \
-                --insecure-skip-tls-verify=true
+                --insecure-skip-tls-verify=true \
+                --loglevel 5 \
+          ||  \
+        oc login "$CLUSTER_API_ENDPOINT" \
+                --username "$CLUSTER_USERNAME" \
+                --password "$CLUSTER_PASSWORD" \
+                --insecure-skip-tls-verify=true \
+                --loglevel 10
     fi
 }
 
