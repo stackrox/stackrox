@@ -92,7 +92,7 @@ jobs:
               | tee "${logfile}"; then
               (( exitcode++ ))
             fi
-            echo "${image}:${newest_tag} @sha256:${sha} (created:${created})" \
+            echo "${image}:${newest_tag} @sha256:${sha} (created:${created})"
             for status_type in warning failed; do
               grep --silent "status=\"${status_type}\"" "${logfile}" \
                 && echo "${status_type}:" \
