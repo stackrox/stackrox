@@ -2,6 +2,7 @@ package compliance
 
 import (
 	"context"
+	"fmt"
 	"sync/atomic"
 
 	metautils "github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
@@ -140,28 +141,33 @@ func (s *serviceImpl) startSendingLoop(stopper concurrency.Stopper) {
 				log.Error("the complianceC was closed unexpectedly")
 				return
 			}
-			if msg.Broadcast {
-				s.connectionManager.forEach(func(node string, server sensor.ComplianceService_CommunicateServer) {
-					err := server.Send(msg.Msg)
-					if err != nil {
-						log.Errorf("Error sending broadcast MessageToComplianceWithAddress to node %q: %v", node, err)
-						return
-					}
-				})
-			} else {
-				con, ok := s.connectionManager.connectionMap[msg.Hostname]
-				if !ok {
-					log.Errorf("Unable to find connection to compliance: %q", msg.Hostname)
-					return
-				}
-				err := con.Send(msg.Msg)
-				if err != nil {
-					log.Errorf("Error sending MessageToComplianceWithAddress to node %q: %v", msg.Hostname, err)
-					return
-				}
+			if err := s.handleSendingMessage(msg); err != nil {
+				log.Errorf("Error sending message to compliance: %v", err)
 			}
 		}
 	}
+}
+
+func (s *serviceImpl) handleSendingMessage(msg common.MessageToComplianceWithAddress) error {
+	if msg.Broadcast {
+		s.connectionManager.forEach(func(node string, server sensor.ComplianceService_CommunicateServer) {
+			err := server.Send(msg.Msg)
+			if err != nil {
+				log.Errorf("Error sending broadcast compliance-message to node %q: %v", node, err)
+				return
+			}
+		})
+		return nil
+	}
+	conn, found := s.connectionManager.connectionMap[msg.Hostname]
+	if !found {
+		return fmt.Errorf("unable to find connection to compliance: %q", msg.Hostname)
+
+	}
+	if err := conn.Send(msg.Msg); err != nil {
+		return fmt.Errorf("sending message to compliance on node %q: %w", msg.Hostname, err)
+	}
+	return nil
 }
 
 func (s *serviceImpl) RunScrape(msg *sensor.MsgToCompliance) int {

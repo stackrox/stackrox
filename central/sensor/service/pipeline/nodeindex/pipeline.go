@@ -6,16 +6,19 @@ import (
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/enrichment"
+	countMetrics "github.com/stackrox/rox/central/metrics"
 	nodeDatastore "github.com/stackrox/rox/central/node/datastore"
 	riskManager "github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/nodes/enricher"
 )
 
@@ -47,24 +50,37 @@ type pipelineImpl struct {
 	riskManager   riskManager.Manager
 }
 
-func (p pipelineImpl) OnFinish(_ string) {
+func (p *pipelineImpl) OnFinish(_ string) {
 }
 
-func (p pipelineImpl) Capabilities() []centralsensor.CentralCapability {
+func (p *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
 	return nil
 }
 
-func (p pipelineImpl) Match(msg *central.MsgFromSensor) bool {
+func (p *pipelineImpl) Reconcile(_ context.Context, _ string, _ *reconciliation.StoreMap) error {
+	return nil
+}
+
+func (p *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 	return msg.GetEvent().GetIndexReport() != nil
 }
 
-func (p pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
+func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSensor, injector common.MessageInjector) error {
 	if !env.NodeIndexEnabled.BooleanSetting() || !features.ScannerV4.Enabled() {
 		// Node Indexing only works correctly when both, itself and Scanner v4 are enabled
 		log.Debugf("Skipping node index message (Node Indexing Enabled: %t, Scanner V4 Enabled: %t",
 			env.NodeIndexEnabled.BooleanSetting(), features.ScannerV4.Enabled())
+		// ACK the message to prevent frequent retries.
+		// If support for NodeIndex is disabled on Central or Scanner V4 is missing, but NodeIndex msg arrives to Central,
+		// then we must acknowledge the reception to prevent the compliance container resending the message, as
+		// this could flood Sensor and Central unnecessarily.
+		// Such situations may occur when some secured clusters have NodeIndexing enabled, while Central has it disabled,
+		// or Scanner V4 is not deployed.
+		sendComplianceAck(ctx, msg.GetEvent().GetNode(), injector)
 		return nil
 	}
+	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.NodeIndex)
+
 	event := msg.GetEvent()
 	report := event.GetIndexReport()
 	if report == nil {
@@ -74,7 +90,7 @@ func (p pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSen
 		log.Warn("Removal of node index is unsupported action")
 		return nil
 	}
-	log.Debugf("received node index report for node %s with %d packages from %d content sets",
+	log.Debugf("Received node index report for node %s with %d packages from %d content sets",
 		event.GetId(), len(report.GetContents().Packages), len(report.GetContents().Repositories))
 	report = report.CloneVT()
 
@@ -102,9 +118,31 @@ func (p pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSen
 		return errors.Wrapf(err, "failed calculating risk and upserting node %s", nodeDatastore.NodeString(node))
 	}
 
+	sendComplianceAck(ctx, node, injector)
 	return nil
 }
 
-func (p pipelineImpl) Reconcile(_ context.Context, _ string, _ *reconciliation.StoreMap) error {
-	return nil
+func sendComplianceAck(ctx context.Context, node *storage.Node, injector common.MessageInjector) {
+	if injector == nil {
+		return
+	}
+	reply := replyCompliance(node.GetClusterId(), node.GetName(), central.NodeInventoryACK_ACK)
+	if err := injector.InjectMessage(ctx, reply); err != nil {
+		log.Warnf("Failed sending node-indexing-ACK to Sensor for %s: %v", nodeDatastore.NodeString(node), err)
+	} else {
+		log.Debugf("Sent node-indexing-ACK for %s", nodeDatastore.NodeString(node))
+	}
+}
+
+func replyCompliance(clusterID, nodeName string, t central.NodeInventoryACK_Action) *central.MsgToSensor {
+	return &central.MsgToSensor{
+		Msg: &central.MsgToSensor_NodeInventoryAck{
+			NodeInventoryAck: &central.NodeInventoryACK{
+				ClusterId:   clusterID,
+				NodeName:    nodeName,
+				Action:      t,
+				MessageType: central.NodeInventoryACK_NodeIndexer,
+			},
+		},
+	}
 }

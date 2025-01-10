@@ -1,10 +1,12 @@
 package compliance
 
 import (
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/channelmultiplexer"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
 )
@@ -82,7 +84,7 @@ func (c *Multiplexer) AddComponentWithComplianceC(comp ...common.ComplianceCompo
 // for ALL channels before calling Start()
 func (c *Multiplexer) addChannel(channel <-chan common.MessageToComplianceWithAddress) {
 	if channel == nil {
-		panic("Multiplexer.AddChannel() cannot work with nil channels")
+		utils.Must(errors.New("Multiplexer.AddChannel() cannot work with nil channels"))
 	}
 	c.mp.AddChannel(channel)
 }

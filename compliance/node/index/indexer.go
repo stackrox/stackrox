@@ -72,7 +72,7 @@ func NewNodeIndexer(config *NodeIndexerConfig) node.NodeIndexer {
 	return &localNodeIndexer{config: config}
 }
 
-// GetIntervals
+// GetIntervals returns the scanning intervals configured through env.
 func (l *localNodeIndexer) GetIntervals() *utils.NodeScanIntervals {
 	i := utils.NewNodeScanIntervalFromEnv()
 	return &i

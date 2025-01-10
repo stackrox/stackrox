@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/compliance/index"
 	"github.com/stackrox/rox/sensor/common/detector/metrics"
@@ -15,8 +16,9 @@ import (
 )
 
 var (
-	errInputChanClosed   = errors.New("channel receiving node inventories is closed")
-	errStartMoreThanOnce = errors.New("unable to start the component more than once")
+	errInventoryInputChanClosed = errors.New("channel receiving node inventories is closed")
+	errIndexInputChanClosed     = errors.New("channel receiving node indexes is closed")
+	errStartMoreThanOnce        = errors.New("unable to start the component more than once")
 )
 
 type nodeInventoryHandlerImpl struct {
@@ -26,7 +28,7 @@ type nodeInventoryHandlerImpl struct {
 	centralReady concurrency.Signal
 	// acksFromCentral is for connecting the replies from Central with the toCompliance chan
 	acksFromCentral chan common.MessageToComplianceWithAddress
-	toCompliance    <-chan common.MessageToComplianceWithAddress
+	toCompliance    chan common.MessageToComplianceWithAddress
 	nodeMatcher     NodeIDMatcher
 	// lock prevents the race condition between Start() [writer] and ResponsesC() [reader]
 	lock    *sync.Mutex
@@ -62,17 +64,14 @@ func (c *nodeInventoryHandlerImpl) Start() error {
 	if c.toCentral != nil || c.toCompliance != nil {
 		return errStartMoreThanOnce
 	}
-	c.acksFromCentral = make(chan common.MessageToComplianceWithAddress)
-	c.toCentral, c.toCompliance = c.run()
+	c.toCompliance = make(chan common.MessageToComplianceWithAddress)
+	c.toCentral = c.run()
 	return nil
 }
 
 func (c *nodeInventoryHandlerImpl) Stop(_ error) {
 	if !c.stopper.Client().Stopped().IsDone() {
-		defer func() {
-			_ = c.stopper.Client().Stopped().Wait()
-			close(c.acksFromCentral)
-		}()
+		defer utils.IgnoreError(c.stopper.Client().Stopped().Wait)
 	}
 	c.stopper.Client().Stop()
 }
@@ -94,110 +93,165 @@ func (c *nodeInventoryHandlerImpl) ProcessMessage(msg *central.MsgToSensor) erro
 	if ackMsg == nil {
 		return nil
 	}
-	log.Debugf("Received node-scanning-ACK message: %v", ackMsg)
-	metrics.ObserveNodeInventoryAck(ackMsg.GetNodeName(), ackMsg.GetAction().String(),
-		metrics.AckReasonUnknown, metrics.AckOriginCentral)
+	log.Debugf("Received node-scanning-ACK message of type %s, action %s for node %s",
+		ackMsg.GetMessageType(), ackMsg.GetAction(), ackMsg.GetNodeName())
+	metrics.ObserveNodeScanningAck(ackMsg.GetNodeName(),
+		ackMsg.GetAction().String(),
+		ackMsg.GetMessageType().String(),
+		metrics.AckOperationReceive,
+		"", metrics.AckOriginSensor)
 	switch ackMsg.GetAction() {
 	case central.NodeInventoryACK_ACK:
-		c.sendAckToCompliance(c.acksFromCentral, ackMsg.GetNodeName(), sensor.MsgToCompliance_NodeInventoryACK_ACK)
+		switch ackMsg.GetMessageType() {
+		case central.NodeInventoryACK_NodeIndexer:
+			c.sendAckToCompliance(ackMsg.GetNodeName(),
+				sensor.MsgToCompliance_NodeInventoryACK_ACK,
+				sensor.MsgToCompliance_NodeInventoryACK_NodeIndexer, metrics.AckReasonForwardingFromCentral)
+		default:
+			// If Central version is behind Sensor, then MessageType field will be unset - then default to NodeInventory.
+			c.sendAckToCompliance(ackMsg.GetNodeName(),
+				sensor.MsgToCompliance_NodeInventoryACK_ACK,
+				sensor.MsgToCompliance_NodeInventoryACK_NodeInventory, metrics.AckReasonForwardingFromCentral)
+		}
 	case central.NodeInventoryACK_NACK:
-		c.sendAckToCompliance(c.acksFromCentral, ackMsg.GetNodeName(), sensor.MsgToCompliance_NodeInventoryACK_NACK)
+		switch ackMsg.GetMessageType() {
+		case central.NodeInventoryACK_NodeIndexer:
+			c.sendAckToCompliance(ackMsg.GetNodeName(),
+				sensor.MsgToCompliance_NodeInventoryACK_NACK,
+				sensor.MsgToCompliance_NodeInventoryACK_NodeIndexer, metrics.AckReasonForwardingFromCentral)
+		default:
+			// If Central version is behind Sensor, then MessageType field will be unset - then default to NodeInventory.
+			c.sendAckToCompliance(ackMsg.GetNodeName(),
+				sensor.MsgToCompliance_NodeInventoryACK_NACK,
+				sensor.MsgToCompliance_NodeInventoryACK_NodeInventory, metrics.AckReasonForwardingFromCentral)
+		}
 	}
 	return nil
 }
 
 // run handles the messages from Compliance and forwards them to Central
 // This is the only goroutine that writes into the toCentral channel, thus it is responsible for creating and closing that chan
-func (c *nodeInventoryHandlerImpl) run() (<-chan *message.ExpiringMessage, <-chan common.MessageToComplianceWithAddress) {
-	toCentral := make(chan *message.ExpiringMessage)
-	toCompliance := make(chan common.MessageToComplianceWithAddress)
-
-	go c.nodeInventoryHandlingLoop(toCentral, toCompliance)
-
-	return toCentral, toCompliance
-}
-
-func (c *nodeInventoryHandlerImpl) nodeInventoryHandlingLoop(toCentral chan *message.ExpiringMessage, toCompliance chan common.MessageToComplianceWithAddress) {
-	defer c.stopper.Flow().ReportStopped()
-	defer close(toCentral)
-	defer close(toCompliance)
-	for {
-		select {
-		case <-c.stopper.Flow().StopRequested():
-			return
-		case ackMsg, ok := <-c.acksFromCentral:
-			if !ok {
-				log.Debug("Channel for reading node-scanning-ACK messages (acksFromCentral) is closed")
-			}
-			log.Debugf("Forwarding node-scanning-ACK message from Central to Compliance: %v", ackMsg)
-			toCompliance <- ackMsg
-		case inventory, ok := <-c.inventories:
-			if !ok {
-				c.stopper.Flow().StopWithError(errInputChanClosed)
+func (c *nodeInventoryHandlerImpl) run() (toCentral <-chan *message.ExpiringMessage) {
+	ch2Central := make(chan *message.ExpiringMessage)
+	go func() {
+		defer func() {
+			c.stopper.Flow().ReportStopped()
+			close(ch2Central)
+		}()
+		log.Debugf("NodeInventory/NodeIndex handler is running")
+		for {
+			select {
+			case <-c.stopper.Flow().StopRequested():
 				return
-			}
-			if !c.centralReady.IsDone() {
-				log.Warn("Received NodeInventory but Central is not reachable. Requesting Compliance to resend NodeInventory later")
-				c.sendAckToCompliance(toCompliance, inventory.GetNodeName(), sensor.MsgToCompliance_NodeInventoryACK_NACK)
-				metrics.ObserveNodeInventoryAck(inventory.GetNodeName(),
-					sensor.MsgToCompliance_NodeInventoryACK_NACK.String(),
-					metrics.AckReasonCentralUnreachable, metrics.AckOriginSensor)
-				continue
-			}
-			if inventory == nil {
-				log.Warn("Received nil node inventory: not sending to Central")
-				break
-			}
-			if nodeID, err := c.nodeMatcher.GetNodeID(inventory.GetNodeName()); err != nil {
-				log.Warnf("Node %q unknown to Sensor. Requesting Compliance to resend NodeInventory later", inventory.GetNodeName())
-				c.sendAckToCompliance(toCompliance, inventory.GetNodeName(), sensor.MsgToCompliance_NodeInventoryACK_NACK)
-				metrics.ObserveNodeInventoryAck(inventory.GetNodeName(), sensor.MsgToCompliance_NodeInventoryACK_NACK.String(),
-					metrics.AckReasonNodeUnknown, metrics.AckOriginSensor)
-
-			} else {
-				inventory.NodeId = nodeID
-				metrics.ObserveReceivedNodeInventory(inventory)
-				log.Debugf("Mapping NodeInventory name '%s' to Node ID '%s'", inventory.GetNodeName(), nodeID)
-				c.sendNodeInventory(toCentral, inventory)
-			}
-		case wrap, ok := <-c.reportWraps:
-			if !ok {
-				log.Warn("Report wraps channel is closed")
-				c.stopper.Flow().StopWithError(errInputChanClosed)
-				return
-			}
-			if !c.centralReady.IsDone() {
-				log.Warn("Received Index Report but Central is not reachable. Skipping for now")
-				continue
-			}
-			if wrap == nil || wrap.IndexReport == nil {
-				log.Warn("Received nil index report: not sending to Central")
-				break
-			}
-			if nodeID, err := c.nodeMatcher.GetNodeID(wrap.NodeName); err != nil {
-				log.Warnf("Node %q unknown to Sensor.", wrap.NodeName)
-			} else {
-				log.Debugf("Sending Index Report to Central")
-				wrap.NodeID = nodeID
-				c.sendNodeIndex(toCentral, wrap)
+			case inventory, ok := <-c.inventories:
+				if !ok {
+					c.stopper.Flow().StopWithError(errInventoryInputChanClosed)
+					return
+				}
+				c.handleNodeInventory(inventory, ch2Central)
+			case wrap, ok := <-c.reportWraps:
+				if !ok {
+					c.stopper.Flow().StopWithError(errIndexInputChanClosed)
+					return
+				}
+				c.handleNodeIndex(wrap, ch2Central)
 			}
 		}
+	}()
+	return ch2Central
+}
+
+func (c *nodeInventoryHandlerImpl) handleNodeInventory(
+	inventory *storage.NodeInventory,
+	toCentral chan *message.ExpiringMessage,
+) {
+	log.Debugf("Handling NodeInventory...")
+	if inventory == nil {
+		log.Warn("Received nil node inventory: not sending to Central")
+		metrics.ObserveNodeScan("nil", metrics.NodeScanTypeNodeInventory, metrics.NodeScanOperationReceive)
+		return
+	}
+	metrics.ObserveNodeScan(inventory.GetNodeName(), metrics.NodeScanTypeNodeInventory, metrics.NodeScanOperationReceive)
+	if !c.centralReady.IsDone() {
+		log.Warn("Received NodeInventory but Central is not reachable. Requesting Compliance to resend NodeInventory later")
+		c.sendAckToCompliance(inventory.GetNodeName(),
+			sensor.MsgToCompliance_NodeInventoryACK_NACK,
+			sensor.MsgToCompliance_NodeInventoryACK_NodeInventory, metrics.AckReasonCentralUnreachable)
+		return
+	}
+
+	if nodeID, err := c.nodeMatcher.GetNodeID(inventory.GetNodeName()); err != nil {
+		log.Warnf("Node %q unknown to Sensor. Requesting Compliance to resend NodeInventory later", inventory.GetNodeName())
+		c.sendAckToCompliance(inventory.GetNodeName(),
+			sensor.MsgToCompliance_NodeInventoryACK_NACK,
+			sensor.MsgToCompliance_NodeInventoryACK_NodeInventory,
+			metrics.AckReasonNodeUnknown)
+
+	} else {
+		inventory.NodeId = nodeID
+		log.Debugf("Mapping NodeInventory name '%s' to Node ID '%s'", inventory.GetNodeName(), nodeID)
+		c.sendNodeInventory(toCentral, inventory)
 	}
 }
 
-func (c *nodeInventoryHandlerImpl) sendAckToCompliance(complianceC chan<- common.MessageToComplianceWithAddress,
-	nodeName string, action sensor.MsgToCompliance_NodeInventoryACK_Action) {
-	complianceC <- common.MessageToComplianceWithAddress{
+func (c *nodeInventoryHandlerImpl) handleNodeIndex(
+	index *index.IndexReportWrap,
+	toCentral chan *message.ExpiringMessage,
+) {
+	if index == nil || index.IndexReport == nil {
+		log.Warn("Received nil index report: not sending to Central")
+		metrics.ObserveNodeScan("nil", metrics.NodeScanTypeNodeIndex, metrics.NodeScanOperationReceive)
+		return
+	}
+	metrics.ObserveNodeScan(index.NodeName, metrics.NodeScanTypeNodeIndex, metrics.NodeScanOperationReceive)
+	if !c.centralReady.IsDone() {
+		log.Warn("Received IndexReport but Central is not reachable. Requesting Compliance to resend later.")
+		c.sendAckToCompliance(index.NodeName,
+			sensor.MsgToCompliance_NodeInventoryACK_NACK,
+			sensor.MsgToCompliance_NodeInventoryACK_NodeIndexer,
+			metrics.AckReasonCentralUnreachable)
+		return
+	}
+
+	if nodeID, err := c.nodeMatcher.GetNodeID(index.NodeName); err != nil {
+		log.Warnf("Received Index Report from Node %q that is unknown to Sensor. Requesting Compliance to resend later.", index.NodeName)
+		c.sendAckToCompliance(index.NodeName,
+			sensor.MsgToCompliance_NodeInventoryACK_NACK,
+			sensor.MsgToCompliance_NodeInventoryACK_NodeIndexer,
+			metrics.AckReasonNodeUnknown)
+	} else {
+		index.NodeID = nodeID
+		log.Debugf("Mapping IndexReport name '%s' to Node ID '%s'", index.NodeName, nodeID)
+		c.sendNodeIndex(toCentral, index)
+	}
+}
+
+func (c *nodeInventoryHandlerImpl) sendAckToCompliance(
+	nodeName string,
+	action sensor.MsgToCompliance_NodeInventoryACK_Action,
+	messageType sensor.MsgToCompliance_NodeInventoryACK_MessageType,
+	reason metrics.AckReason,
+) {
+	select {
+	case <-c.stopper.Flow().StopRequested():
+	case c.toCompliance <- common.MessageToComplianceWithAddress{
 		Msg: &sensor.MsgToCompliance{
 			Msg: &sensor.MsgToCompliance_Ack{
 				Ack: &sensor.MsgToCompliance_NodeInventoryACK{
-					Action: action,
+					Action:      action,
+					MessageType: messageType,
 				},
 			},
 		},
 		Hostname:  nodeName,
 		Broadcast: nodeName == "",
+	}:
 	}
+	metrics.ObserveNodeScanningAck(nodeName,
+		action.String(),
+		messageType.String(),
+		metrics.AckOperationSend,
+		reason, metrics.AckOriginSensor)
 }
 
 func (c *nodeInventoryHandlerImpl) sendNodeInventory(toC chan<- *message.ExpiringMessage, inventory *storage.NodeInventory) {
@@ -219,14 +273,16 @@ func (c *nodeInventoryHandlerImpl) sendNodeInventory(toC chan<- *message.Expirin
 			},
 		},
 	}):
+		metrics.ObserveReceivedNodeInventory(inventory) // keeping for compatibility with 4.6. Remove in 4.8
+		metrics.ObserveNodeScan(inventory.GetNodeName(), metrics.NodeScanTypeNodeInventory, metrics.NodeScanOperationSendToCentral)
 	}
 }
 
 func (c *nodeInventoryHandlerImpl) sendNodeIndex(toC chan<- *message.ExpiringMessage, indexWrap *index.IndexReportWrap) {
 	if indexWrap == nil || indexWrap.IndexReport == nil {
+		log.Debugf("Empty IndexReport - not sending to Central")
 		return
 	}
-
 	select {
 	case <-c.stopper.Flow().StopRequested():
 	case toC <- message.New(&central.MsgFromSensor{
@@ -242,5 +298,8 @@ func (c *nodeInventoryHandlerImpl) sendNodeIndex(toC chan<- *message.ExpiringMes
 			},
 		},
 	}):
+		defer log.Debugf("Sent IndexReport to Central")
+		metrics.ObserveReceivedNodeIndex(indexWrap.NodeName) // keeping for compatibility with 4.6. Remove in 4.8
+		metrics.ObserveNodeScan(indexWrap.NodeName, metrics.NodeScanTypeNodeIndex, metrics.NodeScanOperationSendToCentral)
 	}
 }
