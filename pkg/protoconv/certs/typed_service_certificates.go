@@ -33,7 +33,7 @@ func ConvertTypedServiceCertificateSetToFileMap(certSet *storage.TypedServiceCer
 	if caCert != nil {
 		fileMap[caCertKey] = string(caCert)
 	}
-	for _, cert := range certSet.GetServiceCerts() {
+	for _, cert := range serviceCerts {
 		serviceName := services.ServiceTypeToSlugName(cert.ServiceType)
 		if serviceName == "" {
 			return nil, errors.Errorf("failed to obtain slug-name for service type %v", cert.ServiceType)
