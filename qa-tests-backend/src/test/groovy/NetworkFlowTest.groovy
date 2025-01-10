@@ -256,9 +256,6 @@ class NetworkFlowTest extends BaseSpecification {
         String targetUid = deployments.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
         assert targetUid != null
         String sourceUid = deployments.find { it.name == SINGLECONNECTIONSOURCE }?.deploymentUid
-        log.info "${targetUid}"
-        log.info "${sourceUid}"
-        sleep 100000
         assert sourceUid != null
 
         when:
