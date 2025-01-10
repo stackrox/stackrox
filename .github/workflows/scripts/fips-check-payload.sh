@@ -39,11 +39,6 @@ function latest_tags() {
     | sort -V
 }
 
-function print_line() {
-  echo "${1}: ${newest_tag:-latest} ${image}@sha256:${sha} ${created}" \
-    | tee -a "$GITHUB_STEP_SUMMARY"
-}
-
 function fips_scan() {
   ret=0
   while read -r newest_tag image created; do
@@ -59,9 +54,11 @@ function fips_scan() {
       scan operator --verbose --spec "${ref}" 2>&1 \
       | tee "${logfile}"; then
       (( ret++ ))  # count images failing fips check
-      print_line failed
+      echo "failed: ${newest_tag:-latest} ${image}@sha256:${sha} ${created}" \
+        | tee -a "$GITHUB_STEP_SUMMARY"
     else
-      print_line success
+      echo "success: ${newest_tag:-latest} ${image}@sha256:${sha} ${created}" \
+        | tee -a "$GITHUB_STEP_SUMMARY"
     fi
     for status_type in warning failed; do
       grep --silent "status=\"${status_type}\"" "${logfile}" \
