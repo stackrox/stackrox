@@ -38,6 +38,11 @@ function latest_tags() {
     | sort -V
 }
 
+function print_line() {
+  echo "**${1}:** ${newest_tag:-latest} ${image}@sha256:${sha} ${created}" \
+    | tee -a "$GITHUB_STEP_SUMMARY"
+}
+
 function fips_scan() {
   ret=0
   while read -r newest_tag image created; do
@@ -49,12 +54,13 @@ function fips_scan() {
         | tee -a "$GITHUB_STEP_SUMMARY"
       continue
     fi
-    echo "${newest_tag:-latest} ${image}@sha256:${sha} (created:${created})" \
-      | tee -a "$GITHUB_STEP_SUMMARY"
     if ! podman unshare check-payload \
       scan operator --verbose --spec "${ref}" 2>&1 \
       | tee "${logfile}"; then
       (( ret++ ))  # count images failing fips check
+      print_line failed
+    else
+      print_line success
     fi
     for status_type in warning failed; do
       grep --silent "status=\"${status_type}\"" "${logfile}" \
