@@ -12,6 +12,11 @@ on:
         default: 'brew.registry.redhat.io/rh-osbs/rhacs-main-rhel8'
         required: true
         type: string
+      image_match:
+        description: 'Regex of image names to include'
+        default: 'rhel8$'
+        required: false
+        type: string
       tag_filter:
         description: 'Regex of tags to exclude'
         default: '^[0-3]\.'
@@ -90,4 +95,5 @@ jobs:
           gh api -H "$ACCEPT_RAW" "${{ env.script_url }}" | bash -s -- \
             fips-check-payload \
             "${{ github.event.inputs.image }}" \
+            "${{ github.event.inputs.image_match }}"
             "${{ github.event.inputs.tag_filter }}"

@@ -17,10 +17,17 @@ image_prefix="${1:-}"
 default_image_prefix='brew.registry.redhat.io/rh-osbs/rhacs'
 image_prefix="${image_prefix:-${default_image_prefix}}"
 
-version_filter="${2:-^[0-3]\.}"
+image_match="${2:-rhel8$}"
+version_filter="${3:-^[0-3]\.}"
+
+
+function find_images() {
+  podman search --limit=100 "${1}" --format "{{.Name}}" \
+    | tee >(cat >&2)
+}
 
 function latest_tags() {
-  for image in $(podman search --limit=100 "${image_prefix}" --format "{{.Name}}" | tee >(cat >&2)); do
+  while read image; do
     skopeo inspect --override-arch=amd64 --override-os=linux "docker://${image}" > inspect.json
     newest_tag=$(jq -r '.RepoTags|.[]' < inspect.json | grep '^[0-9\.\-]*$' | sort -rV | head -1)
     created=$(jq -r '.Created' < inspect.json)
@@ -58,6 +65,9 @@ function fips_scan() {
   return "${ret}"  # return count of failed images
 }
 
-latest_tags "${image_prefix}" \
+
+find_images "${image_prefix}" \
+  | grep "${image_match}" \
+  | latest_tags \
   | grep -v "${version_filter}" \
   | fips_scan
