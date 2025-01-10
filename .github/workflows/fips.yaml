@@ -43,10 +43,17 @@ jobs:
 
       - uses: actions/setup-go@v5
 
+      - uses: actions/cache@v4
+        id: cache-check-payload
+        with:
+          path: check-payload
+          key: ${{ runner.os }}-check-payload
+
       - name: compile check-payload
+        if: steps.cache-check-payload.outputs.cache-hit != 'true'
         run: |
           make
-          mv ./check-payload /usr/bin/ || mv ./check-payload /usr/local/bin/
+          cp ./check-payload /usr/local/bin/
 
       - name: install oc-cli
         run: |
