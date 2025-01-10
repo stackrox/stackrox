@@ -37,18 +37,20 @@ type Compliance struct {
 	nodeNameProvider node.NodeNameProvider
 	nodeScanner      node.NodeScanner
 	nodeIndexer      node.NodeIndexer
-	umh              node.UnconfirmedMessageHandler
+	umhNodeInventory node.UnconfirmedMessageHandler
+	umhNodeIndex     node.UnconfirmedMessageHandler
 	cache            *sensor.MsgFromCompliance
 }
 
-// NewComplianceApp contsructs the Compliance app object
+// NewComplianceApp constructs the Compliance app object
 func NewComplianceApp(nnp node.NodeNameProvider, scanner node.NodeScanner, nodeIndexer node.NodeIndexer,
-	srh node.UnconfirmedMessageHandler) *Compliance {
+	umhNodeInv, umhNodeIndex node.UnconfirmedMessageHandler) *Compliance {
 	return &Compliance{
 		nodeNameProvider: nnp,
 		nodeScanner:      scanner,
 		nodeIndexer:      nodeIndexer,
-		umh:              srh,
+		umhNodeInventory: umhNodeInv,
+		umhNodeIndex:     umhNodeIndex,
 		cache:            nil,
 	}
 }
@@ -83,6 +85,8 @@ func (c *Compliance) Start() {
 	ctx = metadata.AppendToOutgoingContext(ctx, "rox-compliance-nodename", c.nodeNameProvider.GetNodeName())
 
 	stoppedSig := concurrency.NewSignal()
+	signalsC := make(chan os.Signal, 1)
+	signal.Notify(signalsC, syscall.SIGINT, syscall.SIGTERM)
 
 	toSensorC := make(chan *sensor.MsgFromCompliance)
 	defer close(toSensorC)
@@ -91,25 +95,44 @@ func (c *Compliance) Start() {
 		c.manageStream(ctx, cli, &stoppedSig, toSensorC)
 	}()
 
-	if c.nodeScanner.IsActive() || env.NodeIndexEnabled.BooleanSetting() {
-		nodeInventoriesC := c.manageNodeScanLoop(ctx)
-		// sending nodeInventories into output toSensorC
-		for n := range nodeInventoriesC {
-			toSensorC <- n
+	var wg concurrency.WaitGroup
+	wg.Add(2)
+
+	go func(ctx context.Context) {
+		defer wg.Add(-1)
+		if c.nodeScanner.IsActive() {
+			log.Infof("Node Inventory v2 enabled")
+			nodeInventoriesC := c.manageNodeInventoryScanLoop(ctx)
+			// sending nodeInventories into output toSensorC
+			for n := range nodeInventoriesC {
+				toSensorC <- n
+			}
 		}
-	}
+	}(ctx)
 
-	if env.NodeIndexEnabled.BooleanSetting() {
-		log.Infof("Node Index v4 enabled")
-	}
+	go func(ctx context.Context) {
+		defer wg.Add(-1)
+		if env.NodeIndexEnabled.BooleanSetting() {
+			log.Infof("Node Index v4 enabled")
+			nodeIndexesC := c.manageNodeIndexScanLoop(ctx)
+			// sending node indexes into output toSensorC
+			for n := range nodeIndexesC {
+				toSensorC <- n
+			}
+		}
+	}(ctx)
 
-	signalsC := make(chan os.Signal, 1)
-	signal.Notify(signalsC, syscall.SIGINT, syscall.SIGTERM)
-	// Wait for a signal to terminate
-	sig := <-signalsC
-	log.Infof("Caught %s signal. Shutting down", sig)
+	// Wait for the terminate signal
+	go func() {
+		sig := <-signalsC
+		log.Infof("Caught %s signal. Shutting down", sig)
+		// Stop generation of node inventories and node indexes
+		cancel()
+	}()
 
-	cancel()
+	<-wg.Done()
+	log.Infof("Generation of node inventories and node indexes stopped")
+
 	stoppedSig.Wait()
 	log.Info("Successfully closed Sensor communication")
 }
@@ -121,7 +144,7 @@ func (c *Compliance) createIndexMsg(report *v4.IndexReport, nodeName string) *se
 	}
 }
 
-func (c *Compliance) manageNodeScanLoop(ctx context.Context) <-chan *sensor.MsgFromCompliance {
+func (c *Compliance) manageNodeInventoryScanLoop(ctx context.Context) <-chan *sensor.MsgFromCompliance {
 	nodeInventoriesC := make(chan *sensor.MsgFromCompliance)
 	nodeName := c.nodeNameProvider.GetNodeName()
 	go func() {
@@ -132,7 +155,7 @@ func (c *Compliance) manageNodeScanLoop(ctx context.Context) <-chan *sensor.MsgF
 			select {
 			case <-ctx.Done():
 				return
-			case _, ok := <-c.umh.RetryCommand():
+			case _, ok := <-c.umhNodeInventory.RetryCommand():
 				if c.cache == nil {
 					log.Debug("Requested to retry but cache is empty. Resetting scan timer.")
 					cmetrics.ObserveNodePackageReportTransmissions(nodeName, cmetrics.InventoryTransmissionResendingCacheMiss, cmetrics.ScannerVersionV2)
@@ -148,20 +171,49 @@ func (c *Compliance) manageNodeScanLoop(ctx context.Context) <-chan *sensor.MsgF
 						nodeInventoriesC <- inventory
 					}
 				}
-
-				if env.NodeIndexEnabled.BooleanSetting() {
-					index := c.runNodeIndex(ctx)
-					if index != nil {
-						nodeInventoriesC <- index
-					}
-				}
 				interval := i.Next()
-				cmetrics.ObserveRescanInterval(interval, nodeName)
+				cmetrics.ObserveRescanInterval(interval, nodeName, cmetrics.ScannerVersionV2)
 				t.Reset(interval)
 			}
 		}
 	}()
 	return nodeInventoriesC
+}
+
+func (c *Compliance) manageNodeIndexScanLoop(ctx context.Context) <-chan *sensor.MsgFromCompliance {
+	nodeIndexesC := make(chan *sensor.MsgFromCompliance)
+	nodeName := c.nodeNameProvider.GetNodeName()
+	go func() {
+		defer close(nodeIndexesC)
+		i := c.nodeIndexer.GetIntervals()
+		t := time.NewTicker(i.Initial())
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case _, ok := <-c.umhNodeIndex.RetryCommand():
+				if c.cache == nil {
+					log.Debug("Requested to retry but cache is empty. Resetting scan timer.")
+					cmetrics.ObserveNodePackageReportTransmissions(nodeName, cmetrics.InventoryTransmissionResendingCacheMiss, cmetrics.ScannerVersionV4)
+					t.Reset(time.Second)
+				} else if ok {
+					nodeIndexesC <- c.cache
+					cmetrics.ObserveNodePackageReportTransmissions(nodeName, cmetrics.InventoryTransmissionResendingCacheHit, cmetrics.ScannerVersionV4)
+				}
+			case <-t.C:
+				if env.NodeIndexEnabled.BooleanSetting() {
+					index := c.runNodeIndex(ctx)
+					if index != nil {
+						nodeIndexesC <- index
+					}
+				}
+				interval := i.Next()
+				cmetrics.ObserveRescanInterval(interval, nodeName, cmetrics.ScannerVersionV4)
+				t.Reset(interval)
+			}
+		}
+	}()
+	return nodeIndexesC
 }
 
 func (c *Compliance) runNodeInventoryScan(ctx context.Context) *sensor.MsgFromCompliance {
@@ -173,7 +225,7 @@ func (c *Compliance) runNodeInventoryScan(ctx context.Context) *sensor.MsgFromCo
 	}
 	cmetrics.ObserveNodeInventoryScan(msg.GetNodeInventory())
 	cmetrics.ObserveNodePackageReportTransmissions(nodeName, cmetrics.InventoryTransmissionScan, cmetrics.ScannerVersionV2)
-	c.umh.ObserveSending()
+	c.umhNodeInventory.ObserveSending()
 	c.cache = msg.CloneVT()
 	return msg
 }
@@ -190,6 +242,7 @@ func (c *Compliance) runNodeIndex(ctx context.Context) *sensor.MsgFromCompliance
 		log.Errorf("Error creating node index: %v", err)
 		return nil
 	}
+	c.umhNodeIndex.ObserveSending()
 	cmetrics.ObserveNodeIndexReport(report, nodeName)
 	msg := c.createIndexMsg(report, nodeName)
 	cmetrics.ObserveReportProtobufMessage(msg, cmetrics.ScannerVersionV4)
@@ -268,9 +321,25 @@ func (c *Compliance) runRecv(ctx context.Context, client sensor.ComplianceServic
 		case *sensor.MsgToCompliance_Ack:
 			switch t.Ack.GetAction() {
 			case sensor.MsgToCompliance_NodeInventoryACK_ACK:
-				c.umh.HandleACK()
+				switch t.Ack.GetMessageType() {
+				case sensor.MsgToCompliance_NodeInventoryACK_NodeInventory:
+					c.umhNodeInventory.HandleACK()
+				case sensor.MsgToCompliance_NodeInventoryACK_NodeIndexer:
+					c.umhNodeIndex.HandleACK()
+				default:
+					log.Errorf("Unknown ACK Type: %s", t.Ack.GetMessageType())
+				}
 			case sensor.MsgToCompliance_NodeInventoryACK_NACK:
-				c.umh.HandleNACK()
+				switch t.Ack.GetMessageType() {
+				case sensor.MsgToCompliance_NodeInventoryACK_NodeInventory:
+					c.umhNodeInventory.HandleNACK()
+				case sensor.MsgToCompliance_NodeInventoryACK_NodeIndexer:
+					c.umhNodeIndex.HandleNACK()
+				default:
+					log.Errorf("Unknown ACK Type: %s", t.Ack.GetMessageType())
+				}
+			default:
+				log.Errorf("Unknown ACK Action: %s", t.Ack.GetAction())
 			}
 		default:
 			utils.Should(errors.Errorf("Unhandled msg type: %T", t))

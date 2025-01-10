@@ -78,7 +78,7 @@ func (suite *UnconfirmedMessageHandlerTestSuite) TestWithRetryable() {
 
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
-			umh := NewUnconfirmedMessageHandler(ctx, cc.baseDuration)
+			umh := NewUnconfirmedMessageHandler(ctx, "test", cc.baseDuration)
 			// sending loop
 			for _, tt := range cc.sendAfter {
 				go func(tt time.Duration) {
