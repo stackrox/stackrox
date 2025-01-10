@@ -14,7 +14,7 @@ set +e -xuo pipefail
 GITHUB_STEP_SUMMARY=${GITHUB_STEP_SUMMARY:-/dev/null}
 
 image_prefix="${1:-}"
-default_image_prefix='brew.registry.redhat.io/rh-osbs/rhacs*rhel8'
+default_image_prefix='brew.registry.redhat.io/rh-osbs/rhacs'
 image_prefix="${image_prefix:-${default_image_prefix}}"
 
 function latest_tags() {
