@@ -77,10 +77,17 @@ jobs:
           image_prefix="${image_prefix:-${default_image_prefix}}"
           set -x
           exitcode=0
+          podman search --limit=100 "${image_prefix}"
+          for image in $(podman search --limit=100 "${image_prefix}" --format "{{.Name}}"); do
+            podman search --limit=10000 "${image}" --format json --list-tags > logfile
+            wc -l <logfile
+            head logfile
+            tail logfile
+          done
           #for image in rhel8-operator operator-bundle {central-db,collector,collector-slim,main,roxctl,scanner,scanner-db,scanner-db-slim,scanner-slim,scanner-v4,scanner-v4-db}-rhel8; do
           for image in $(podman search --limit=100 "${image_prefix}" --format "{{.Name}}"); do
             logfile="/tmp/scan-${image##*/}.log"
-            skopeo inspect --no-tags "docker://${image}" | tee inspect.log || true
+            skopeo inspect --no-tags "docker://${image}:stable" | tee inspect.log || true
             created=$(jq -r '.Created' <inspect.log)
             sha=$(podman pull "${image}")
             if ! podman unshare go run main.go \
