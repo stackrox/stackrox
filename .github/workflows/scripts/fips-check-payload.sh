@@ -17,7 +17,7 @@ image_prefix="${1:-}"
 default_image_prefix='brew.registry.redhat.io/rh-osbs/rhacs'
 image_prefix="${image_prefix:-${default_image_prefix}}"
 
-image_match="${2:-rhel8$}"
+image_match="${2:-\(bundle\|operator\|rhel8\)$}"
 version_filter="${3:-^[0-3]\.}"
 
 
@@ -39,7 +39,7 @@ function latest_tags() {
 }
 
 function print_line() {
-  echo "**${1}:** ${newest_tag:-latest} ${image}@sha256:${sha} ${created}" \
+  echo "${1}: ${newest_tag:-latest} ${image}@sha256:${sha} ${created}" \
     | tee -a "$GITHUB_STEP_SUMMARY"
 }
 
@@ -50,7 +50,7 @@ function fips_scan() {
     ref="${image}${newest_tag:+:}${newest_tag}"
     sha=$(podman pull --arch amd64 --os linux "${ref}")
     if [[ -z "${sha}" ]]; then
-      echo "Error pulling ${ref}." \
+      echo "**error:** pulling ${ref}." \
         | tee -a "$GITHUB_STEP_SUMMARY"
       continue
     fi

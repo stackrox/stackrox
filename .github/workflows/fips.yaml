@@ -14,7 +14,7 @@ on:
         type: string
       image_match:
         description: 'Regex of image names to include'
-        default: 'rhel8$'
+        default: '\(bundle\|operator\|rhel8\)$'
         required: false
         type: string
       tag_filter:
