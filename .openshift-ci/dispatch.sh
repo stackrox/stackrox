@@ -29,6 +29,7 @@ ci_job="$1"
 shift
 ci_export CI_JOB_NAME "$ci_job"
 echo "CI_JOB_NAME: ${ci_job}"
+set | grep -i interop
 
 case "$ci_job" in
     gke*qa-e2e-tests|gke*nongroovy-e2e-tests|gke*upgrade-tests|gke-ui-e2e-tests|\
