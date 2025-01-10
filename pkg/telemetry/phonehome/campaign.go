@@ -37,8 +37,8 @@ func (c *APICallCampaignCriterium) IsFulfilled(rp *RequestParams) bool {
 	}
 
 	return codeMatches && methodMatches &&
-		(len(c.PathPatterns) == 0 || rp.HasPathIn(c.PathPatterns)) &&
-		(len(c.UserAgents) == 0 || rp.HasUserAgentWith(c.UserAgents))
+		(c.PathPatterns == nil || rp.HasPathIn(c.PathPatterns)) &&
+		(c.UserAgents == nil || rp.HasUserAgentWith(c.UserAgents))
 }
 
 func (c APICallCampaign) IsFulfilled(rp *RequestParams) bool {

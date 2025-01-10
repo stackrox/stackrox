@@ -13,8 +13,10 @@ var (
 	telemetryCampaign = phonehome.APICallCampaign{
 		{UserAgents: []string{"roxctl"}},
 		{UserAgents: []string{"ServiceNow"}, PathPatterns: []string{"/v1/clusters"}},
-		{PathPatterns: strings.Split(apiWhiteList.Setting(), ",")},
-		{UserAgents: strings.Split(userAgentsList.Setting(), ",")},
+		{PathPatterns: strings.FieldsFunc(apiWhiteList.Setting(),
+			func(r rune) bool { return r == ',' })},
+		{UserAgents: strings.FieldsFunc(userAgentsList.Setting(),
+			func(r rune) bool { return r == ',' })},
 	}
 
 	interceptors = map[string][]phonehome.Interceptor{
