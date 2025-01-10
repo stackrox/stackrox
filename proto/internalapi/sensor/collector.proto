@@ -17,7 +17,6 @@ message CollectorRegisterRequest {
 enum ExternalIpsEnabled {
   DISABLED = 0;
   ENABLED = 1;
-  AUTO = 2;
 }
 
 // CollectorConfig controls which type of data is reported by collector
@@ -25,7 +24,7 @@ enum ExternalIpsEnabled {
 // to fine-tune collector's performance on large scale clusters.
 // At this time it only controls if external IPs are aggregated at the
 // cluster level and the maximum number of open connections reported
-// for each container.
+// for each container per minute.
 message CollectorConfig {
   message ExternalIPs {
     ExternalIpsEnabled enabled = 1;
