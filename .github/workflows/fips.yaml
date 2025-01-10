@@ -15,6 +15,12 @@ on:
 
 run-name: ${{ format('Verify FIPS-compliant {0}', inputs.image) }}
 
+env:
+  script_url: /repos/${{ github.repository }}/contents/.github/workflows/scripts/common.sh?ref=${{ github.ref_name }}
+  ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
+  GH_TOKEN: ${{ github.token }}
+  GH_NO_UPDATE_NOTIFIER: 1
+
 jobs:
   check-payload:
     runs-on: ubuntu-latest
@@ -26,6 +32,11 @@ jobs:
           ref: development
 
       - uses: actions/setup-go@v5
+
+      - name: compile check-payload
+        run: |
+          make
+          mv ./check-payload /usr/bin/ || mv ./check-payload /usr/local/bin/
 
       - name: install oc-cli
         run: |
@@ -68,43 +79,9 @@ jobs:
           username: ${{ secrets.RH_REGISTRY_USERNAME_RO }}
           password: ${{ secrets.RH_REGISTRY_PASSWORD_RO }}
 
-      - name: Scan image for FIPS compliance
+      - name: Verify all artifacts are published
         run: |
-          set +e
-          git log -1
-          image_prefix="${{ inputs.image }}"
-          default_image_prefix='brew.registry.redhat.io/rh-osbs/rhacs'
-          image_prefix="${image_prefix:-${default_image_prefix}}"
-          set -x
-          exitcode=0
-          #for image in rhel8-operator operator-bundle {central-db,collector,collector-slim,main,roxctl,scanner,scanner-db,scanner-db-slim,scanner-slim,scanner-v4,scanner-v4-db}-rhel8; do
-          for image in $(podman search --limit=100 "${image_prefix}" --format "{{.Name}}"); do
-            logfile="/tmp/scan-${image##*/}.log"
-            #podman search --limit=1000000 "${image}" --list-tags --format json \
-            #  | tee podman.log \
-            #  | jq -r '.[]|.Tags|.[]' | grep '^[0-9\.\-]*$' | sort -rV | head -1
-            skopeo inspect "docker://${image}" > inspect.json || true
-            newest_tag=$(jq -r '.RepoTags|.[]' < inspect.json | grep '^[0-9\.\-]*$' | sort -rV | head -1)
-            created=$(jq -r '.Created' < inspect.json)
-            sha=$(podman pull "${image}:${newest_tag}")
-            if ! podman unshare go run main.go \
-              scan operator --verbose --spec "${image}:${newest_tag}" 2>&1 \
-              | tee "${logfile}"; then
-              (( exitcode++ ))
-            fi
-            echo "${image}:${newest_tag} @sha256:${sha} (created:${created})" \
-              | tee -a "$GITHUB_STEP_SUMMARY"
-            for status_type in warning failed; do
-              grep --silent "status=\"${status_type}\"" "${logfile}" \
-                && echo "${status_type}:" \
-                | tee -a "$GITHUB_STEP_SUMMARY"
-              grep "status=\"${status_type}\"" "${logfile}" \
-                | grep -o 'path=.*error="[^"]*"' \
-                | tee -a "$GITHUB_STEP_SUMMARY"
-            done
-            rm "${logfile}"
-          done
-
-          if [[ $exitcode -ne 0 ]]; then
-            exit "${exitcode}"
-          fi
+          set -uo pipefail
+          gh api -H "$ACCEPT_RAW" "${{ env.script_url }}" | bash -s -- \
+            fips-check-payload \
+            "${{ github.event.inputs.image }}"
