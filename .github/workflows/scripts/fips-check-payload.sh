@@ -27,7 +27,7 @@ function find_images() {
 }
 
 function latest_tags() {
-  while read image; do
+  while read -r image; do
     skopeo inspect --override-arch=amd64 --override-os=linux "docker://${image}" > inspect.json
     newest_tag=$(jq -r '.RepoTags|.[]' < inspect.json | grep '^[0-9\.\-]*$' | sort -rV | head -1)
     created=$(jq -r '.Created' < inspect.json)
