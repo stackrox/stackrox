@@ -53,7 +53,6 @@ jobs:
         if: steps.cache-check-payload.outputs.cache-hit != 'true'
         run: |
           make
-          cp ./check-payload /usr/local/bin/
 
       - name: install oc-cli
         run: |
@@ -98,6 +97,7 @@ jobs:
 
       - name: Run FIPS check-payload on image(s)
         run: |
+          export PATH=${PATH}:${PWD}
           gh api -H "$ACCEPT_RAW" "${{ env.script_url }}" | bash -s -- \
             fips-check-payload \
             "${{ github.event.inputs.image }}" \
