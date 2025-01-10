@@ -33,7 +33,7 @@ function fips_scan() {
   while read -r newest_tag image created; do
     logfile="/tmp/scan-${image##*/}.log"
     ref="${image}${newest_tag:+:}${newest_tag}"
-    sha=$(echo shahere) #podman pull --arch amd64 --os linux "${ref}")
+    sha=$(podman pull --arch amd64 --os linux "${ref}")
     echo "${newest_tag:-latest} ${image}@sha256:${sha} (created:${created})" \
       | tee -a "$GITHUB_STEP_SUMMARY"
     if ! podman unshare check-payload \
