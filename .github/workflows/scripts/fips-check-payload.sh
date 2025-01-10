@@ -32,7 +32,7 @@ function latest_tags() {
     newest_tag=$(jq -r '.RepoTags|.[]' < inspect.json | grep '^[0-9\.\-]*$' | sort -rV | head -1)
     created=$(jq -r '.Created' < inspect.json)
     rm inspect.json
-    echo -e "${newest_tag}\t${image}\t${created}"
+    echo -e "${newest_tag:-latest}\t${image}\t${created}"
   done \
     | tee >(cat >&2) \
     | sort -V
