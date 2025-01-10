@@ -81,8 +81,10 @@ jobs:
           for image in $(podman search --limit=100 "${image_prefix}" --format "{{.Name}}"); do
             podman search --limit=10000 "${image}" --format json --list-tags > logfile
             wc -l <logfile
-            head logfile
-            tail logfile
+            head -10 logfile
+            shuf -n100 logfile
+            tail -10 logfile
+            break
           done
           #for image in rhel8-operator operator-bundle {central-db,collector,collector-slim,main,roxctl,scanner,scanner-db,scanner-db-slim,scanner-slim,scanner-v4,scanner-v4-db}-rhel8; do
           for image in $(podman search --limit=100 "${image_prefix}" --format "{{.Name}}"); do
