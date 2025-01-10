@@ -1423,6 +1423,8 @@ setup_automation_flavor_e2e_cluster() {
     if [[ "$ci_job" =~ ^osd ]]; then
         info "Logging in to an OSD cluster"
         source "${SHARED_DIR}/dotenv"
+        cat "${SHARED_DIR}/dotenv"
+        set -x
         oc login "$CLUSTER_API_ENDPOINT" \
                 --username "$CLUSTER_USERNAME" \
                 --password "$CLUSTER_PASSWORD" \
@@ -1434,6 +1436,8 @@ setup_automation_flavor_e2e_cluster() {
                 --password "$CLUSTER_PASSWORD" \
                 --insecure-skip-tls-verify=true \
                 --loglevel 10
+        oc get csr -A || true
+        set +x
     fi
 }
 
