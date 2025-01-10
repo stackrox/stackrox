@@ -20,10 +20,8 @@ import objects.K8sServiceAccount
 import objects.K8sSubject
 import services.RbacService
 import services.ServiceAccountService
-import util.Env
 import util.Helpers
 
-import spock.lang.IgnoreIf
 import spock.lang.Stepwise
 import spock.lang.Tag
 
@@ -62,8 +60,6 @@ class K8sRbacTest extends BaseSpecification {
 
     @Tag("BAT")
     @Tag("COMPATIBILITY")
-    // ROX-25270 Test is failing for OSD on AWS
-    @IgnoreIf({ Env.CI_JOB_NAME ==~ /.*osd-aws.*/ })
     def "Verify scraped service accounts"() {
         given:
         List<K8sServiceAccount> orchestratorSAs = null
@@ -72,8 +68,8 @@ class K8sRbacTest extends BaseSpecification {
         expect:
         "SR should have the same service accounts"
         // Make sure the qa namespace SA exists before running the test. That SA should be the most recent added.
-        // This will ensure scrapping is complete if this test spec is run first
-        withRetry(15, 3) {
+        // This will ensure scraping is complete if this test spec is run first
+        withRetry(60, 3) {  // allow 3 minutes
             stackroxSAs = ServiceAccountService.getServiceAccounts()
             // list of service accounts from the orchestrator
             orchestratorSAs = orchestrator.getServiceAccounts()

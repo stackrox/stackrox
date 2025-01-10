@@ -41,6 +41,7 @@ body {
 button[data-testid="related-entity-list-count-value"],
 button[data-testid="related-entity-value"],
 [data-testid="cluster-page"] a,
+[data-testid="panel"] a,
 [data-testid="side-panel"] > div:first-child a,
 [data-testid="widget-header"] + div a,
 [data-testid="widget-body"] a,
@@ -57,6 +58,7 @@ button[data-testid="related-entity-list-count-value"]:hover {
 
 button[data-testid="related-entity-value"]:hover,
 [data-testid="cluster-page"] a:hover,
+[data-testid="panel"] a:hover,
 [data-testid="side-panel"] > div:first-child a:hover,
 [data-testid="widget-header"] + div a:hover,
 [data-testid="widget-body"] a:hover,

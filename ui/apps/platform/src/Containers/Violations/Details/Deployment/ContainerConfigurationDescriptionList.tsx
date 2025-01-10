@@ -24,16 +24,18 @@ function MultilineDescription({ descArr }) {
 
 type ContainerConfigurationDescriptionListProps = {
     container: Container;
+    vulnMgmtBasePath: string;
 };
 
 function ContainerConfigurationDescriptionList({
     container,
+    vulnMgmtBasePath,
 }: ContainerConfigurationDescriptionListProps): ReactElement {
     const { resources, volumes, secrets, config, image } = container;
     const { command, args } = config || {};
     return (
         <DescriptionList isCompact isHorizontal>
-            <ContainerImage image={image} />
+            <ContainerImage image={image} vulnMgmtBasePath={vulnMgmtBasePath} />
             <DescriptionListItem
                 term="Commands"
                 desc={command?.length > 0 ? <MultilineDescription descArr={command} /> : 'None'}

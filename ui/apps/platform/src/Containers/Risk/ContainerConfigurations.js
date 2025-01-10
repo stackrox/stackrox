@@ -3,9 +3,13 @@ import { Link } from 'react-router-dom';
 import lowerCase from 'lodash/lowerCase';
 import capitalize from 'lodash/capitalize';
 
-import { vulnerabilitiesWorkloadCvesPath } from 'routePaths';
+import {
+    vulnerabilitiesPlatformWorkloadCvesPath,
+    vulnerabilitiesWorkloadCvesPath,
+} from 'routePaths';
 
 import CollapsibleCard from 'Components/CollapsibleCard';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import KeyValuePairs from './KeyValuePairs';
 
 const containerConfigMap = {
@@ -24,8 +28,8 @@ const getContainerConfigurations = (container) => {
     return { command, args, ports, volumes, secrets };
 };
 
-const ContainerImage = ({ image }) => {
-    const imageDetailsPageURL = `${vulnerabilitiesWorkloadCvesPath}/images/${image.id}`;
+const ContainerImage = ({ image, vulnMgmtBasePath }) => {
+    const imageDetailsPageURL = `${vulnMgmtBasePath}/images/${image.id}`;
 
     if (!image?.name?.fullName) {
         return null;
@@ -113,6 +117,15 @@ const ContainerSecrets = ({ secrets }) => {
 
 const ContainerConfigurations = ({ deployment }) => {
     const title = 'Container configuration';
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const usePlatformWorkloadCvePath =
+        isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT') &&
+        deployment &&
+        deployment.platformComponent;
+    const vulnMgmtBasePath = usePlatformWorkloadCvePath
+        ? vulnerabilitiesPlatformWorkloadCvesPath
+        : vulnerabilitiesWorkloadCvesPath;
+
     let containers = [];
     if (deployment.containers) {
         containers = deployment.containers.map((container) => {
@@ -120,7 +133,7 @@ const ContainerConfigurations = ({ deployment }) => {
             const { id, resources, volumes, secrets } = container;
             return (
                 <div key={id} data-testid="deployment-container-configuration">
-                    <ContainerImage image={container.image} />
+                    <ContainerImage image={container.image} vulnMgmtBasePath={vulnMgmtBasePath} />
                     {data && <KeyValuePairs data={data} keyValueMap={containerConfigMap} />}
                     {!!resources && !!volumes && !!secrets && (
                         <>

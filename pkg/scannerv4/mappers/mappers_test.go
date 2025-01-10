@@ -1610,19 +1610,6 @@ func Test_vulnerabilityName(t *testing.T) {
 			expected: "ALAS-2023-356",
 			updater:  "aws-foobar-",
 		},
-		"RHSA for RHCC updater when Red Hat CVEs disabled": {
-			name:     "RHSA-2024:2941",
-			updater:  "rhel-container-updater",
-			links:    "https://access.redhat.com/errata/RHSA-2024:2941 https://access.redhat.com/security/cve/CVE-2024-29180",
-			expected: "RHSA-2024:2941",
-		},
-		"CVE for RHCC updater when Red Hat CVEs enabled": {
-			name:             "RHSA-2024:2941",
-			updater:          "rhel-container-updater",
-			links:            "https://access.redhat.com/errata/RHSA-2024:2941 https://access.redhat.com/security/cve/CVE-2024-29180",
-			expected:         "CVE-2024-29180",
-			enableRedHatCVEs: true,
-		},
 	}
 	for name, testcase := range testcases {
 		t.Run(name, func(t *testing.T) {

@@ -269,6 +269,8 @@ func runSafeMode() {
 }
 
 func main() {
+	defer utils.IgnoreError(log.InnerLogger.Sync)
+
 	premain.StartMain()
 
 	conf := config.GetConfig()

@@ -59,7 +59,13 @@ func init() {
 
 func main() {
 	configPath := flag.String("conf", "", "Path to scanner's configuration file.")
+	printVersion := flag.Bool("version", false,
+		"Print the build version tag and the vulnerability schema version, then exit.")
 	flag.Parse()
+	if *printVersion {
+		fmt.Println(version.Version, version.VulnerabilityVersion)
+		os.Exit(0)
+	}
 	cfg, err := config.Read(*configPath)
 	if err != nil {
 		golog.Fatalf("failed to load configuration %q: %v", *configPath, err)

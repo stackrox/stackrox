@@ -6,7 +6,11 @@ import isObject from 'lodash/isObject';
 import isArray from 'lodash/isArray';
 import isEmpty from 'lodash/isEmpty';
 
-import { vulnManagementPath } from 'routePaths';
+import {
+    vulnerabilitiesPlatformWorkloadCvesPath,
+    vulnerabilitiesWorkloadCvesPath,
+} from 'routePaths';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 
 const isNumeric = (x) => (typeof x === 'number' || typeof x === 'string') && Number(x) >= 0;
 
@@ -17,10 +21,12 @@ class KeyValuePairs extends Component {
             label: PropTypes.string,
             className: PropTypes.string,
         }),
+        isFeatureFlagEnabled: PropTypes.func.isRequired,
     };
 
     static defaultProps = {
         keyValueMap: {},
+        isFeatureFlagEnabled: () => false,
     };
 
     getKeys = () => Object.keys(this.props.data);
@@ -51,7 +57,7 @@ class KeyValuePairs extends Component {
 
     render() {
         const keys = this.getKeys();
-        const { data } = this.props;
+        const { data, isFeatureFlagEnabled } = this.props;
         const mapping = this.props.keyValueMap;
         return keys.map((key) => {
             if (!data[key] || !mapping[key] || (isObject(data[key]) && isEmpty(data[key]))) {
@@ -66,6 +72,17 @@ class KeyValuePairs extends Component {
                 return '';
             }
 
+            const usePlatformWorkloadCvePath =
+                isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT') &&
+                typeof data === 'object' &&
+                'platformComponent' in data &&
+                // eslint-disable-next-line react/prop-types
+                data.platformComponent;
+
+            const vulnMgmtBasePath = usePlatformWorkloadCvePath
+                ? vulnerabilitiesPlatformWorkloadCvesPath
+                : vulnerabilitiesWorkloadCvesPath;
+
             return (
                 <div
                     className="py-3 pb-2 leading-normal border-b border-base-300 last:border-b-0"
@@ -76,7 +93,7 @@ class KeyValuePairs extends Component {
                         {isObject(value) || isArray(value) ? (
                             <div className="ml-2">{this.getNestedValue(value)}</div>
                         ) : label === 'Deployment ID' && typeof value === 'string' ? (
-                            <Link to={`${vulnManagementPath}/deployment/${value}`}>{value}</Link>
+                            <Link to={`${vulnMgmtBasePath}/deployments/${value}`}>{value}</Link>
                         ) : (
                             value.toString()
                         )}
@@ -87,4 +104,9 @@ class KeyValuePairs extends Component {
     }
 }
 
-export default KeyValuePairs;
+function KeyValuePairsHoC(props) {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    return <KeyValuePairs isFeatureFlagEnabled={isFeatureFlagEnabled} {...props} />;
+}
+
+export default KeyValuePairsHoC;

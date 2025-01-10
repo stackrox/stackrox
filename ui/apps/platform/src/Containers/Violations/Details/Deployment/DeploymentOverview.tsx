@@ -5,7 +5,11 @@ import { DescriptionList } from '@patternfly/react-core';
 
 import dateTimeFormat from 'constants/dateTimeFormat';
 import DescriptionListItem from 'Components/DescriptionListItem';
-import { vulnManagementPath } from 'routePaths';
+import {
+    vulnerabilitiesPlatformWorkloadCvesPath,
+    vulnerabilitiesWorkloadCvesPath,
+} from 'routePaths';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { AlertDeployment } from 'types/alert.proto';
 import { Deployment } from 'types/deployment.proto';
 
@@ -20,12 +24,23 @@ function DeploymentOverview({
     alertDeployment,
     deployment,
 }: DeploymentOverviewProps): ReactElement {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const hasPlatformWorkloadCveLink =
+        isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT') &&
+        deployment &&
+        deployment.platformComponent;
     return (
         <DescriptionList isCompact isHorizontal>
             <DescriptionListItem
                 term="Deployment ID"
                 desc={
-                    <Link to={`${vulnManagementPath}/deployment/${alertDeployment.id}`}>
+                    <Link
+                        to={
+                            hasPlatformWorkloadCveLink
+                                ? `${vulnerabilitiesPlatformWorkloadCvesPath}/deployments/${alertDeployment.id}`
+                                : `${vulnerabilitiesWorkloadCvesPath}/deployments/${alertDeployment.id}`
+                        }
+                    >
                         {alertDeployment.id}
                     </Link>
                 }

@@ -50,6 +50,7 @@ import CVESelectionTd from '../../components/CVESelectionTd';
 import ExceptionDetailsCell from '../components/ExceptionDetailsCell';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
+import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 
 export const tableId = 'WorkloadCveOverviewTable';
 export const defaultColumns = {
@@ -186,6 +187,7 @@ function WorkloadCVEOverviewTable({
     onClearFilters,
     columnVisibilityState,
 }: WorkloadCVEOverviewTableProps) {
+    const { getAbsoluteUrl } = useWorkloadCveViewContext();
     const expandedRowSet = useSet<string>();
     const showExceptionDetailsLink = vulnerabilityState !== 'OBSERVED';
     const getVisibilityClass = generateVisibilityForColumns(columnVisibilityState);
@@ -338,10 +340,12 @@ function WorkloadCVEOverviewTable({
                                                 vulnerabilityState={vulnerabilityState}
                                             >
                                                 <Link
-                                                    to={getWorkloadEntityPagePath(
-                                                        'CVE',
-                                                        cve,
-                                                        vulnerabilityState
+                                                    to={getAbsoluteUrl(
+                                                        getWorkloadEntityPagePath(
+                                                            'CVE',
+                                                            cve,
+                                                            vulnerabilityState
+                                                        )
                                                     )}
                                                 >
                                                     {cve}

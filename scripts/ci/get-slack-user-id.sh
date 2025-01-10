@@ -27,6 +27,7 @@ case "$github_login" in
 'RTann')            slack_user='U01NZ6U730X' ;;
 'SimonBaeumer')     slack_user='U01Q5RMEHCK' ;;
 'Stringy')          slack_user='U02KJKREKPY' ;;
+'ajheflin')         slack_user='U087GT2H45Q' ;;
 'akameric')         slack_user='U076CG62KL4' ;;
 'alanonthegit')     slack_user='U01PZFFSZRB' ;;
 'alwayshooin')      slack_user='U01PLAWUU8N' ;;
