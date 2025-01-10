@@ -12,6 +12,11 @@ on:
         default: 'brew.registry.redhat.io/rh-osbs/rhacs-main-rhel8'
         required: true
         type: string
+      tag_filter:
+        description: 'Regex of tags to exclude'
+        default: '^[0-3]\.'
+        required: false
+        type: string
 
 run-name: ${{ format('Verify FIPS-compliant {0}', inputs.image) }}
 
@@ -84,4 +89,5 @@ jobs:
           set -uo pipefail
           gh api -H "$ACCEPT_RAW" "${{ env.script_url }}" | bash -s -- \
             fips-check-payload \
-            "${{ github.event.inputs.image }}"
+            "${{ github.event.inputs.image }}" \
+            "${{ github.event.inputs.tag_filter }}"

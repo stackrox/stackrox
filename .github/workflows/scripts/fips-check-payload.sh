@@ -17,6 +17,8 @@ image_prefix="${1:-}"
 default_image_prefix='brew.registry.redhat.io/rh-osbs/rhacs'
 image_prefix="${image_prefix:-${default_image_prefix}}"
 
+version_filter="${2:-^[0-3]\.}"
+
 function latest_tags() {
   for image in $(podman search --limit=100 "${image_prefix}" --format "{{.Name}}" | tee >(cat >&2)); do
     skopeo inspect --override-arch=amd64 --override-os=linux "docker://${image}" > inspect.json
@@ -57,4 +59,5 @@ function fips_scan() {
 }
 
 latest_tags "${image_prefix}" \
+  | grep -v "${version_filter}" \
   | fips_scan
