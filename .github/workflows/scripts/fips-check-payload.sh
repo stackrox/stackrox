@@ -18,13 +18,14 @@ default_image_prefix='brew.registry.redhat.io/rh-osbs/rhacs'
 image_prefix="${image_prefix:-${default_image_prefix}}"
 
 function latest_tags() {
-  for image in $(podman search --limit=100 "${image_prefix}" --format "{{.Name}}"); do
+  for image in $(podman search --limit=100 "${image_prefix}" --format "{{.Name}}" | tee >(cat >&2)); do
     skopeo inspect --override-arch=amd64 --override-os=linux "docker://${image}" > inspect.json
     newest_tag=$(jq -r '.RepoTags|.[]' < inspect.json | grep '^[0-9\.\-]*$' | sort -rV | head -1)
     created=$(jq -r '.Created' < inspect.json)
     rm inspect.json
     echo -e "${newest_tag}\t${image}\t${created}"
   done \
+    | tee >(cat >&2) \
     | sort -V
 }
 
