@@ -92,9 +92,10 @@ jobs:
               | tee "${logfile}"; then
               (( exitcode++ ))
             fi
+            echo "${image}:${newest_tag} @sha256:${sha} (created:${created})" \
             for status_type in warning failed; do
               grep --silent "status=\"${status_type}\"" "${logfile}" \
-                && echo "${image}:${newest_tag} @sha256:${sha} (created:${created}) ${status_type}:" \
+                && echo "${status_type}:" \
                 | tee -a "$GITHUB_STEP_SUMMARY"
               grep "status=\"${status_type}\"" "${logfile}" \
                 | grep -o 'path=.*error="[^"]*"' \
