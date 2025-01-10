@@ -81,7 +81,7 @@ jobs:
 
       - name: Run FIPS check-payload on image(s)
         run: |
-          set -xuo pipefail
-          gh api -H "$ACCEPT_RAW" "${{ env.script_url }}" | bash -x -s -- \
+          set -uo pipefail
+          gh api -H "$ACCEPT_RAW" "${{ env.script_url }}" | bash -s -- \
             fips-check-payload \
             "${{ github.event.inputs.image }}"
