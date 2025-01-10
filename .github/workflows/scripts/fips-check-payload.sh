@@ -3,7 +3,7 @@
 # Published images:
 # registry.redhat.io/advanced-cluster-security/rhacs
 #
-# Staged images (downstream builds):
+# Pre-release images (downstream builds):
 # brew.registry.redhat.io/rh-osbs/rhacs
 #
 # Development images:
