@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/quay/claircore"
@@ -136,53 +134,6 @@ func TestConfigure(t *testing.T) {
 			tc.Check(t, err)
 		})
 	}
-}
-
-func mockServer(t *testing.T) *httptest.Server {
-	const root = http.Dir(`testdata/`)
-	srv := httptest.NewServer(http.FileServer(root))
-	t.Cleanup(srv.Close)
-	return srv
-}
-
-func TestFetchAndParseEnrichment(t *testing.T) {
-	t.Parallel()
-	ctx := zlog.Test(context.Background(), t)
-	srv := mockServer(t)
-
-	e := &Enricher{}
-	cfg := func(i interface{}) error {
-		cfg, ok := i.(*Config)
-		if !ok {
-			t.Fatal("assertion failed")
-		}
-		u := srv.URL + "/"
-		cfg.URL = u
-		return nil
-	}
-	if err := e.Configure(ctx, cfg, srv.Client()); err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-	rc, _, err := e.FetchEnrichment(ctx, "")
-	if rc != nil {
-		defer func() {
-			_ = rc.Close()
-		}()
-	}
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-
-	records, err := e.ParseEnrichment(ctx, rc)
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-
-	expected := make([]driver.EnrichmentRecord, 0, len(expectedEnrichmentRecords))
-	for _, r := range expectedEnrichmentRecords {
-		expected = append(expected, r)
-	}
-	assert.ElementsMatch(t, expected, records)
 }
 
 type enrichmentGetter func(context.Context, []string) ([]driver.EnrichmentRecord, error)

@@ -1,5 +1,5 @@
-// Package csaf provides a CSAF enricher.
-// The contents are strongly based on https://github.com/quay/claircore/tree/v1.5.33/rhel/vex.
+// Package csaf provides a Red Hat CSAF enricher.
+// The contents are strongly based on https://github.com/quay/claircore/tree/v1.5.34/rhel/vex.
 //
 // This exists as a temporary solution at this point, but there is potential for repurposing.
 // TODO(ROX-26672): This enricher may no longer be needed one this is done.
@@ -34,7 +34,7 @@ const (
 
 	updaterVersion = "1"
 
-	// The following consts match Claircore's VEX https://github.com/quay/claircore/blob/v1.5.33/rhel/vex/updater.go.
+	// The following consts match Claircore's VEX https://github.com/quay/claircore/blob/v1.5.34/rhel/vex/updater.go.
 
 	latestFile     = "archive_latest.txt"
 	changesFile    = "changes.csv"
@@ -55,7 +55,7 @@ type CVSS struct {
 	Vector string  `json:"vector"`
 }
 
-// Enricher provides NVD CVE data as enrichments to a VulnerabilityReport.
+// Enricher provides Red Hat CSAF data as enrichments to a VulnerabilityReport.
 //
 // Configure must be called before any other methods.
 type Enricher struct {
@@ -103,7 +103,7 @@ func (e *Enricher) Configure(_ context.Context, f driver.ConfigUnmarshaler, c *h
 
 // Name implements driver.Enricher and driver.EnrichmentUpdater.
 func (*Enricher) Name() string {
-	return "stackrox-rhel-csaf"
+	return "stackrox.rhel-csaf"
 }
 
 // Enrich implements driver.Enricher.
@@ -144,12 +144,13 @@ func (e *Enricher) Enrich(ctx context.Context, g driver.EnrichmentGetter, r *cla
 }
 
 var (
+	// The following vars match pkg/scannerv4/mappers/mappers.go and are copied here to prevent
+	// circular dependencies.
+
 	// Updater patterns are used to determine the security updater the
 	// vulnerability was detected.
 
-	rhelUpdaterName  = (*vex.Updater)(nil).Name()
-	// TODO(ROX-26672): This won't be needed when we show CVEs as the top-level vuln name.
-	rhccUpdaterName = "rhel-container-updater"
+	rhelUpdaterName = (*vex.Updater)(nil).Name()
 
 	// Name patterns are regexes to match against vulnerability fields to
 	// extract their name according to their updater.
@@ -175,11 +176,15 @@ var (
 // vulnerabilityName searches the best known candidate for the vulnerability name
 // in the vulnerability details. It works by matching data against well-known
 // name patterns, and defaults to the original name if nothing is found.
+//
+// TODO: This is modified from pkg/scannerv4/mappers/mappers.go to prevent circular dependencies.
+// We should either combine these two, or better yet, remove the need for these.
+// Any changes done here should be considered for the source, too.
 func vulnerabilityName(vuln *claircore.Vulnerability) string {
 	// Attempt per-updater patterns.
 	switch {
 	// TODO(ROX-26672): Remove this to show CVE as the vuln name.
-	case strings.EqualFold(vuln.Updater, rhelUpdaterName), strings.EqualFold(vuln.Updater, rhccUpdaterName):
+	case strings.EqualFold(vuln.Updater, rhelUpdaterName):
 		if !features.ScannerV4RedHatCVEs.Enabled() {
 			if v, ok := findName(vuln, rhelVulnNamePattern); ok {
 				return v
@@ -197,6 +202,10 @@ func vulnerabilityName(vuln *claircore.Vulnerability) string {
 
 // findName searches for a vulnerability name using the specified regex in
 // pre-determined fields of the vulnerability, returning the name if found.
+//
+// TODO: This is modified from pkg/scannerv4/mappers/mappers.go to prevent circular dependencies.
+// We should either combine these two, or better yet, remove the need for these.
+// Any changes done here should be considered for the source, too.
 func findName(vuln *claircore.Vulnerability, p *regexp.Regexp) (string, bool) {
 	v := p.FindString(vuln.Name)
 	if v != "" {
