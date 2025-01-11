@@ -567,14 +567,14 @@ func toProtoV4VulnerabilitySeverity(ctx context.Context, ccSeverity claircore.Se
 // TODO(ROX-26672): Remove this.
 // This is currently used to map the CSAF enrichment's severity to the equivalent proto severity.
 func toProtoV4VulnerabilitySeverityFromString(ctx context.Context, severity string) v4.VulnerabilityReport_Vulnerability_Severity {
-	switch severity {
-	case "low", "Low":
+	switch {
+	case strings.EqualFold("low", severity):
 		return v4.VulnerabilityReport_Vulnerability_SEVERITY_LOW
-	case "moderate", "Moderate":
+	case strings.EqualFold("moderate", severity):
 		return v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE
-	case "high", "High":
+	case strings.EqualFold("important", severity):
 		return v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT
-	case "critical", "Critical":
+	case strings.EqualFold("critical", severity):
 		return v4.VulnerabilityReport_Vulnerability_SEVERITY_CRITICAL
 	default:
 		zlog.Warn(ctx).
