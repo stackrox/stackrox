@@ -192,7 +192,7 @@ func redhatCSAFOpts() []updates.ManagerOption {
 		// This is required to prevent default updaters from running.
 		updates.WithEnabled([]string{}),
 		updates.WithFactories(map[string]driver.UpdaterSetFactory{
-			"stackrox-rhel-csaf": csaf.NewFactory(),
+			"stackrox.rhel-csaf": csaf.NewFactory(),
 		}),
 	}
 }
