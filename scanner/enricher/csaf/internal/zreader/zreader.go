@@ -1,6 +1,6 @@
 // Package zreader implements a transparently decompressing [io.Reader].
 //
-// This is directly copied from https://github.com/quay/claircore/tree/v1.5.33/internal/zreader
+// This is directly copied from https://github.com/quay/claircore/tree/v1.5.34/internal/zreader
 // allowed under the Apache-2.0 License.
 package zreader
 

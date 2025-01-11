@@ -1088,6 +1088,10 @@ func nvdCVSS(v *nvdschema.CVEAPIJSON20CVEItem) (*v4.VulnerabilityReport_Vulnerab
 // vulnerabilityName searches the best known candidate for the vulnerability name
 // in the vulnerability details. It works by matching data against well-known
 // name patterns, and defaults to the original name if nothing is found.
+//
+// TODO: This is modified in scanner/enricher/csaf/csaf.go to prevent circular dependencies.
+// We should either combine these two, or better yet, remove the need for these.
+// Any changes done here should be considered for the other location, too.
 func vulnerabilityName(vuln *claircore.Vulnerability) string {
 	// Attempt per-updater patterns.
 	switch {
@@ -1114,6 +1118,10 @@ func vulnerabilityName(vuln *claircore.Vulnerability) string {
 
 // findName searches for a vulnerability name using the specified regex in
 // pre-determined fields of the vulnerability, returning the name if found.
+//
+// TODO: This is modified in scanner/enricher/csaf/csaf.go to prevent circular dependencies.
+// We should either combine these two, or better yet, remove the need for these.
+// Any changes done here should be considered for the source, too.
 func findName(vuln *claircore.Vulnerability, p *regexp.Regexp) (string, bool) {
 	v := p.FindString(vuln.Name)
 	if v != "" {
