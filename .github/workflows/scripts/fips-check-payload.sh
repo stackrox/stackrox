@@ -10,6 +10,7 @@
 # quay.io/rhacs-eng/
 
 set +e -uo pipefail
+set -x
 
 GITHUB_STEP_SUMMARY=${GITHUB_STEP_SUMMARY:-/dev/null}
 
@@ -29,10 +30,17 @@ function find_images() {
 
 function latest_tags() {
   while read -r image; do
-    skopeo inspect --override-arch=amd64 --override-os=linux "docker://${image}" > inspect.json
-    newest_tag=$(jq -r '.RepoTags|.[]' < inspect.json | grep '^[0-9\.\-]*$' | sort -rV | head -1)
+    if skopeo inspect --override-arch=amd64 --override-os=linux "docker://${image}" > inspect.json; then
+      newest_tag=$(jq -r '.RepoTags|.[]' < inspect.json | grep '^[0-9\.\-]*$' | sort -rV | head -1)
+    else
+      newest_tag=$(podman search --limit=1000000 "${image}" --list-tags --format json \
+        | tee inspect.json \
+        | jq -r '.[]|.Tags|.[]' | grep '^[0-9\.\-]*$' | sort -rV | head -1)
+      skopeo inspect --override-arch=amd64 --override-os=linux "docker://${image}:${newest_tag}" > inspect.json
+    fi
     created=$(jq -r '.Created' < inspect.json)
     rm inspect.json
+    break
     echo -e "${newest_tag:-latest}\t${image}\t${created}"
   done \
     | tee >(cat >&2) \
