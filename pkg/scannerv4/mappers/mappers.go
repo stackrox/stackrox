@@ -49,15 +49,6 @@ var (
 		claircore.Critical:   v4.VulnerabilityReport_Vulnerability_SEVERITY_CRITICAL,
 	}
 
-	// TODO(ROX-26672): Remove this.
-	// This is currently used to map the CSAF enrichment's severity to the equivalent proto severity.
-	severityFromStringMapping = map[string]v4.VulnerabilityReport_Vulnerability_Severity{
-		"Low":       v4.VulnerabilityReport_Vulnerability_SEVERITY_LOW,
-		"Moderate":  v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
-		"Important": v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
-		"Critical":  v4.VulnerabilityReport_Vulnerability_SEVERITY_CRITICAL,
-	}
-
 	// Updater patterns are used to determine the security updater the
 	// vulnerability was detected.
 
@@ -576,13 +567,21 @@ func toProtoV4VulnerabilitySeverity(ctx context.Context, ccSeverity claircore.Se
 // TODO(ROX-26672): Remove this.
 // This is currently used to map the CSAF enrichment's severity to the equivalent proto severity.
 func toProtoV4VulnerabilitySeverityFromString(ctx context.Context, severity string) v4.VulnerabilityReport_Vulnerability_Severity {
-	if mappedSeverity, ok := severityFromStringMapping[severity]; ok {
-		return mappedSeverity
+	switch severity {
+	case "low", "Low":
+		return v4.VulnerabilityReport_Vulnerability_SEVERITY_LOW
+	case "moderate", "Moderate":
+		return v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE
+	case "high", "High":
+		return v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT
+	case "critical", "Critical":
+		return v4.VulnerabilityReport_Vulnerability_SEVERITY_CRITICAL
+	default:
+		zlog.Warn(ctx).
+			Str("severity_string", severity).
+			Msgf("unknown severity, mapping to %s", v4.VulnerabilityReport_Vulnerability_SEVERITY_UNSPECIFIED.String())
+		return v4.VulnerabilityReport_Vulnerability_SEVERITY_UNSPECIFIED
 	}
-	zlog.Warn(ctx).
-		Str("severity_string", severity).
-		Msgf("unknown severity, mapping to %s", v4.VulnerabilityReport_Vulnerability_SEVERITY_UNSPECIFIED.String())
-	return v4.VulnerabilityReport_Vulnerability_SEVERITY_UNSPECIFIED
 }
 
 func toCPEString(c cpe.WFN) string {
