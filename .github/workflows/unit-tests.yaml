@@ -20,7 +20,7 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.4
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.4-1-g3d8b2602ec
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -86,7 +86,7 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.4
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.4-1-g3d8b2602ec
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -139,7 +139,7 @@ jobs:
   go-bench:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.4
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.4-1-g3d8b2602ec
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -182,7 +182,7 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.4
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.4-1-g3d8b2602ec
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -223,7 +223,7 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.4
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.4-1-g3d8b2602ec
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -264,7 +264,7 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.4
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.4-1-g3d8b2602ec
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -298,7 +298,7 @@ jobs:
   openshift-ci-unit-tests:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.4
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.4-1-g3d8b2602ec
     steps:
       - name: Checkout
         uses: actions/checkout@v4
