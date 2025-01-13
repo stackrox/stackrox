@@ -54,7 +54,30 @@ func TestConvertTypedServiceCertificateSetToFileMap(t *testing.T) {
 		description     string
 		input           *storage.TypedServiceCertificateSet
 		expectedFileMap map[string][]byte
+		expectedErr     bool
 	}{
+		{
+			description: "empty",
+			input:       &storage.TypedServiceCertificateSet{},
+			expectedErr: true,
+		},
+		{
+			description: "no CA",
+			input: &storage.TypedServiceCertificateSet{
+				ServiceCerts: []*storage.TypedServiceCertificate{
+					makeTypedServiceCert(storage.ServiceType_SENSOR_SERVICE, sensorCert, sensorKey),
+					makeTypedServiceCert(storage.ServiceType_COLLECTOR_SERVICE, collectorCert, collectorKey),
+				},
+			},
+			expectedErr: true,
+		},
+		{
+			description: "no service certificates",
+			input: &storage.TypedServiceCertificateSet{
+				CaPem: caCert,
+			},
+			expectedErr: true,
+		},
 		{
 			description: "two certs",
 			input: &storage.TypedServiceCertificateSet{
@@ -80,7 +103,13 @@ func TestConvertTypedServiceCertificateSetToFileMap(t *testing.T) {
 			inputCa := inputTypedServiceCertificateSet.GetCaPem()
 			inputCerts := inputTypedServiceCertificateSet.GetServiceCerts()
 			fileMap, err := ConvertTypedServiceCertificateSetToFileMap(inputTypedServiceCertificateSet)
-			assert.NoError(t, err)
+			if c.expectedErr {
+				assert.Error(t, err)
+				assert.Nil(t, fileMap)
+				return
+			} else {
+				assert.NoError(t, err)
+			}
 			assert.Equal(t, c.expectedFileMap, fileMap)
 
 			// Convert FileMap back to TypedServiceCertificateSet.

@@ -29,8 +29,14 @@ const (
 // It returns error in case a service type contained in the input failed to be converted into
 // its associated slug-name representation.
 func ConvertTypedServiceCertificateSetToFileMap(certSet *storage.TypedServiceCertificateSet) (map[string][]byte, error) {
-	serviceCerts := certSet.GetServiceCerts()
 	caCert := certSet.GetCaPem()
+	if len(caCert) == 0 {
+		return nil, errors.New("no CA certificate in typed service certificate set")
+	}
+	serviceCerts := certSet.GetServiceCerts()
+	if len(serviceCerts) == 0 {
+		return nil, errors.New("no service certificates in typed service certificate set")
+	}
 
 	fileMap := make(map[string][]byte, 1+2*len(serviceCerts)) // 1 for CA cert, and key+cert for each service
 	if caCert != nil {
