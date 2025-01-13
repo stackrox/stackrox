@@ -123,12 +123,6 @@ describe('Workload CVE overview page tests', () => {
         const rowMenuSbomModalButton = 'button[role="menuitem"]:contains("Generate SBOM")';
         const generateSbomButton = '[role="dialog"] button:contains("Generate SBOM")';
 
-        before(function () {
-            if (!hasFeatureFlag('ROX_SBOM_GENERATION')) {
-                this.skip();
-            }
-        });
-
         it('should hide the SBOM generation menu item when the user does not have write access to the Image resource', () => {
             interceptAndOverridePermissions({ Image: 'READ_ACCESS' });
 
