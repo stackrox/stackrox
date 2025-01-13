@@ -290,7 +290,7 @@ The following block checks for the validity of the provided init bundle. (`helm 
   {{/* First, extract the opaque CRS from the manifest. */}}
   {{- $crsOpaque := dig "data" "crs" "" $crsManifest -}}
   {{- if empty $crsOpaque -}}
-    {{ include "srox.fail" "Invalid cluster registration secret manifest: missing field data.crs in CRS secret manifest" -}}
+    {{ include "srox.fail" "Invalid cluster registration secret manifest: missing field data.crs in CRS secret manifest." -}}
   {{- end -}}
 
   {{/* Second, deserialize the opaque CRS. */}}
