@@ -2188,6 +2188,12 @@
                 "id": 30,
                 "name": "managed_by",
                 "type": "ManagerType"
+              },
+              {
+                "id": 31,
+                "name": "sensor_capabilities",
+                "type": "string",
+                "is_repeated": true
               }
             ],
             "maps": [
