@@ -287,10 +287,6 @@ The following block checks for the validity of the provided init bundle. (`helm 
     {{- include "srox.fail" (printf "Cluster registration secret file is invalid: %s" (get $crsManifest "Error")) -}}
   {{- end -}}
 
-  {{- if not ._rox._securedClusterCertRefresh -}}
-    {{ include "srox.fail" "A cluster registration secret cannot be used with manually managed (helmManaged=false) clusters." -}}
-  {{- end -}}
-
   {{/* First, extract the opaque CRS from the manifest. */}}
   {{- $crsOpaque := dig "data" "crs" "" $crsManifest -}}
   {{- if empty $crsOpaque -}}
