@@ -30,6 +30,12 @@ function JobStatusPopoverContent() {
             </FlexItem>
             <FlexItem>
                 <p>
+                    <strong>Partial report:</strong>
+                </p>
+                <p>The report is partially complete and ready for download.</p>
+            </FlexItem>
+            <FlexItem>
+                <p>
                     <strong>Successfully sent:</strong>
                 </p>
                 <p>The report has been successfully emailed.</p>

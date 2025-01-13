@@ -15,7 +15,7 @@ import useAuthStatus from 'hooks/useAuthStatus';
 import { Snapshot } from 'types/reportJob';
 import { saveFile } from 'services/DownloadService';
 import { getDateTime } from 'utils/dateUtils';
-import ReportJobStatus from 'Containers/Vulnerabilities/VulnerablityReporting/ViewVulnReport/ReportJobStatus';
+import ReportJobStatus from 'Components/ReportJob/ReportJobStatus';
 import { GetSortParams } from 'hooks/useURLSort';
 import { TableUIState } from 'utils/getTableUIState';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';

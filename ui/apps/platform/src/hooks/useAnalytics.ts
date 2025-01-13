@@ -379,7 +379,14 @@ export type AnalyticsEvent =
     | {
           event: typeof COMPLIANCE_REPORT_RUN_STATE_FILTERED;
           properties: {
-              value: ('WAITING' | 'PREPARING' | 'GENERATED' | 'DELIVERED' | 'FAILURE')[];
+              value: (
+                  | 'WAITING'
+                  | 'PREPARING'
+                  | 'GENERATED'
+                  | 'DELIVERED'
+                  | 'FAILURE'
+                  | 'PARTIAL_ERROR'
+              )[];
           };
       }
     | {

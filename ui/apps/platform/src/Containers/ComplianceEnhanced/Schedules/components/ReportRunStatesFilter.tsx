@@ -72,6 +72,14 @@ function ReportRunStatesFilter({ reportRunStates, onChange }: ReportRunStatesFil
                     Download generated
                 </SelectOption>
                 <SelectOption
+                    key={runStates.PARTIAL_ERROR}
+                    value={runStates.PARTIAL_ERROR}
+                    hasCheckbox
+                    isSelected={reportRunStates.includes(runStates.PARTIAL_ERROR)}
+                >
+                    Partial download
+                </SelectOption>
+                <SelectOption
                     key={runStates.DELIVERED}
                     value={runStates.DELIVERED}
                     hasCheckbox
