@@ -19,6 +19,24 @@ import useAnalytics, { IMAGE_SBOM_GENERATED } from 'hooks/useAnalytics';
 import useRestMutation from 'hooks/useRestMutation';
 import { generateAndSaveSbom } from 'services/ImageSbomService';
 
+export function getSbomGenerationStatusMessage({
+    isScannerV4Enabled,
+    hasScanMessage,
+}: {
+    isScannerV4Enabled: boolean;
+    hasScanMessage: boolean;
+}): string | undefined {
+    if (!isScannerV4Enabled) {
+        return 'SBOM generation requires Scanner V4';
+    }
+
+    if (hasScanMessage) {
+        return 'SBOM generation is unavailable due to incomplete scan data';
+    }
+
+    return undefined;
+}
+
 export type GenerateSbomModalProps = {
     onClose: () => void;
     imageName: string;
