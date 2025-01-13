@@ -17,7 +17,7 @@ repositories {
 
 def grpcVersion = '1.57.2'
 // If the proto versions are changed, be sure it is also changed in make/protogen.mk.
-def protobufVersion = '4.27.0'
+def protobufVersion = '4.29.3'
 def nettyTcNativeVersion = '2.0.61.Final'
 def fabric8Version = '6.12.1'
 def jacksonVersion = '2.14.2'
@@ -59,7 +59,7 @@ sourceSets.each { ss ->
 dependencies {
     // grpc and protobuf
     implementation 'com.google.code.gson:gson:2.10.1'
-    implementation "com.google.api.grpc:proto-google-common-protos:2.39.1"
+    implementation "com.google.api.grpc:proto-google-common-protos:2.50.1"
     implementation "io.grpc:grpc-alts:${grpcVersion}"
     implementation "io.grpc:grpc-netty:${grpcVersion}"
     implementation "io.grpc:grpc-protobuf:${grpcVersion}"
@@ -85,14 +85,12 @@ dependencies {
     implementation "io.fabric8:kubernetes-client:${fabric8Version}"
     implementation "io.fabric8:openshift-client:${fabric8Version}"
 
-    implementation 'io.kubernetes:client-java:20.0.1-legacy'
+    implementation 'io.kubernetes:client-java:22.0.0'
 
     implementation group: 'com.github.docker-java', name: 'docker-java', version: '3.3.6'
 
     implementation group: 'commons-httpclient', name: 'commons-httpclient', version: '3.1'
     implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.14'
-
-    implementation 'com.google.api.grpc:googleapis-common-protos:0.0.3'
 
     implementation group: 'com.opencsv', name: 'opencsv', version: '5.9'
 
