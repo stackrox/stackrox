@@ -3,6 +3,7 @@ import { SelectList, SelectOption } from '@patternfly/react-core';
 import { FilterIcon } from '@patternfly/react-icons';
 
 import CheckboxSelect from 'Components/CheckboxSelect';
+import { ValueOf } from 'utils/type.utils';
 
 export const reportJobStatuses = {
     WAITING: 'WAITING',
@@ -13,7 +14,11 @@ export const reportJobStatuses = {
     PARTIAL_ERROR: 'PARTIAL_ERROR',
 } as const;
 
-export type ReportJobStatus = (typeof reportJobStatuses)[keyof typeof reportJobStatuses];
+export type ReportJobStatus = ValueOf<typeof reportJobStatuses>;
+
+function isReportJobStatus(value: string): value is ReportJobStatus {
+    return value in reportJobStatuses;
+}
 
 /**
  * Ensures that the given search filter value is converted to an array of valid report job status values.
@@ -32,10 +37,7 @@ export function ensureReportJobStatuses(
     searchFilterValue: string | string[] | undefined
 ): ReportJobStatus[] {
     if (Array.isArray(searchFilterValue)) {
-        const filteredStatuses = searchFilterValue.filter(
-            (value) => reportJobStatuses[value]
-        ) as ReportJobStatus[];
-        return filteredStatuses;
+        return searchFilterValue.filter((value) => isReportJobStatus(value));
     }
     return [];
 }
@@ -47,7 +49,10 @@ export type ReportJobStatusFilterProps = {
 
 function ReportJobStatusFilter({ selectedStatuses, onChange }: ReportJobStatusFilterProps) {
     function onChangeHandler(checked: boolean, value: string) {
-        onChange(checked, value as ReportJobStatus);
+        if (!isReportJobStatus(value)) {
+            return;
+        }
+        onChange(checked, value);
     }
 
     return (
