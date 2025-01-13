@@ -4,8 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/google/go-containerregistry/pkg/name"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 )
@@ -21,8 +24,11 @@ func nodeScanCmd(ctx context.Context) *cobra.Command {
 		if err != nil {
 			return fmt.Errorf("create client: %w", err)
 		}
+		if len(args) != 2 {
+			return errors.New("expected two arguments: pkgType <binary|source> version")
+		}
 
-		var ir = createIndexReport()
+		var ir = createIndexReport(args[0], args[1])
 		nodeDigest, err := name.NewDigest("registry.redhat.io/rhcos@" + ir.GetHashId())
 		if err != nil {
 			return fmt.Errorf("failed to parse const node digest %w", err)
@@ -48,20 +54,38 @@ func nodeScanCmd(ctx context.Context) *cobra.Command {
 		for s, vulnerability := range vr.GetVulnerabilities() {
 			fmt.Printf("VULN ID=%s: NAME=%s\n", s, vulnerability.GetName())
 		}
-		for s, vulnerability := range vr.GetPackageVulnerabilities() {
-			fmt.Printf("PKG-VULN ID=%s: VALUES=%s\n", s, vulnerability.GetValues())
-		}
 		return nil
 	}
 	return &cmd
 }
 
-func createIndexReport() *v4.IndexReport {
+func normalizeVersion(version string) []int32 {
+	fields := strings.Split(version, ".")
+	switch len(fields) {
+	case 0:
+		return []int32{0, 0, 0}
+	case 1:
+		i, err := strconv.Atoi(fields[0])
+		if err == nil {
+			return []int32{int32(i), 0, 0}
+		}
+	default:
+		i1, err1 := strconv.Atoi(fields[0])
+		i2, err2 := strconv.Atoi(fields[1])
+		// Only two first fields matter for the matcher
+		if err1 == nil && err2 == nil {
+			return []int32{int32(i1), int32(i2), 0}
+		}
+	}
+	return []int32{0, 0, 0}
+}
+
+func createIndexReport(kind, version string) *v4.IndexReport {
 	const goldenName = "Red Hat Container Catalog"
 	const goldenURI = `https://catalog.redhat.com/software/containers/explore`
 
 	return &v4.IndexReport{
-		HashId:  "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		HashId:  "sha256:11cf2360bc7d8d4fef440b3fa97ce49cd648318632328f42ecbfb071b823ae14",
 		State:   "7", // IndexFinished
 		Success: true,
 		Err:     "",
@@ -70,17 +94,18 @@ func createIndexReport() *v4.IndexReport {
 				{
 					Id:      "6",
 					Name:    "rhcos",
-					Version: "411.94.2024", // this will be read!
+					Version: version, // this will be read!
 					NormalizedVersion: &v4.NormalizedVersion{ // required due to Kind
 						Kind: "rhctag",
+						V:    normalizeVersion(version),
 					},
 					FixedInVersion: "",
-					Kind:           "binary",
+					Kind:           kind,
 					Source: &v4.Package{
 						Id:  "6",
 						Cpe: "cpe:2.3:*", // required to pass validation
 					},
-					Arch: "x86_64",
+					Arch: "",
 					Cpe:  "cpe:2.3:*", // required to pass validation
 				},
 			},
@@ -99,7 +124,7 @@ func createIndexReport() *v4.IndexReport {
 					Environments: []*v4.Environment{
 						{
 							PackageDb:     "",
-							IntroducedIn:  "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+							IntroducedIn:  "sha256:11cf2360bc7d8d4fef440b3fa97ce49cd648318632328f42ecbfb071b823ae14",
 							RepositoryIds: []string{"6"},
 						},
 					},

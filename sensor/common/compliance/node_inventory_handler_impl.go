@@ -2,6 +2,8 @@ package compliance
 
 import (
 	"regexp"
+	"strconv"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -342,6 +344,27 @@ func (c *nodeInventoryHandlerImpl) sendNodeIndex(toC chan<- *message.ExpiringMes
 	}
 }
 
+func normalizeVersion(version string) []int32 {
+	fields := strings.Split(version, ".")
+	switch len(fields) {
+	case 0:
+		return []int32{0, 0, 0}
+	case 1:
+		i, err := strconv.Atoi(fields[0])
+		if err == nil {
+			return []int32{int32(i), 0, 0}
+		}
+	default:
+		i1, err1 := strconv.Atoi(fields[0])
+		i2, err2 := strconv.Atoi(fields[1])
+		// Only two first fields matter for the matcher
+		if err1 == nil && err2 == nil {
+			return []int32{int32(i1), int32(i2), 0}
+		}
+	}
+	return []int32{0, 0, 0}
+}
+
 func createRHCOSIndexReport(Id, version string, rpm *v4.IndexReport) *v4.IndexReport {
 	const goldenName = "Red Hat Container Catalog"
 	const goldenURI = `https://catalog.redhat.com/software/containers/explore`
@@ -357,9 +380,10 @@ func createRHCOSIndexReport(Id, version string, rpm *v4.IndexReport) *v4.IndexRe
 				{
 					Id:      Id,
 					Name:    "rhcos",
-					Version: version, // This will be read and parsed into NormalizedVersion
-					NormalizedVersion: &v4.NormalizedVersion{ // required due to Kind
+					Version: version,
+					NormalizedVersion: &v4.NormalizedVersion{ // required both values!
 						Kind: "rhctag",
+						V:    normalizeVersion(version), // only two first fields matter for rhel-vex
 					},
 					FixedInVersion: "",
 					Kind:           "binary",
