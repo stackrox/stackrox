@@ -67,7 +67,7 @@ ensure_create_snapshot_runs_last || { echo "ensure_create_snapshot_runs_last" >>
 check_all_components_part_of_custom_snapshot || { echo "check_all_components_part_of_custom_snapshot" >> "${FAIL_FLAG}"; }
 
 if [[ -s "$FAIL_FLAG" ]]; then
-    echo "ERROR: Some Konflux pipeline consistency checks failed:"
-    cat "$FAIL_FLAG"
+    echo >&2 "ERROR: Some Konflux pipeline consistency checks failed:"
+    cat >&2 "$FAIL_FLAG"
     exit 1
 fi
