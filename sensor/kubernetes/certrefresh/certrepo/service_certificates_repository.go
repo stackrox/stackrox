@@ -173,7 +173,7 @@ func (r *ServiceCertificatesRepoSecrets) ensureServiceCertificate(ctx context.Co
 	cert *storage.TypedServiceCertificate, secretSpec ServiceCertSecretSpec) error {
 	patchErr := r.patchServiceCertificate(ctx, caPem, cert, secretSpec)
 	if k8sErrors.IsNotFound(patchErr) {
-		_, createErr := r.createSecret(ctx, caPem, cert, secretSpec, utils.TLSSecretLabels())
+		_, createErr := r.createSecret(ctx, caPem, cert, secretSpec)
 		return createErr
 	}
 	return patchErr
@@ -185,7 +185,7 @@ func (r *ServiceCertificatesRepoSecrets) patchServiceCertificate(ctx context.Con
 		Op:    "replace",
 		Path:  "/data",
 		Value: r.secretDataForCertificate(secretSpec, caPem, cert),
-	}, {Op: "replace",
+	}, {Op: "add",
 		Path:  "/metadata/labels/rhacs.redhat.com~1tls",
 		Value: "true",
 	}}
@@ -208,13 +208,13 @@ type patchSecretDataByteMap struct {
 }
 
 func (r *ServiceCertificatesRepoSecrets) createSecret(ctx context.Context, caPem []byte,
-	certificate *storage.TypedServiceCertificate, secretSpec ServiceCertSecretSpec, desiredLabels map[string]string) (*v1.Secret, error) {
+	certificate *storage.TypedServiceCertificate, secretSpec ServiceCertSecretSpec) (*v1.Secret, error) {
 
 	return r.SecretsClient.Create(ctx, &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            secretSpec.SecretName,
 			Namespace:       r.Namespace,
-			Labels:          desiredLabels,
+			Labels:          utils.TLSSecretLabels(),
 			Annotations:     utils.GetSensorKubernetesAnnotations(),
 			OwnerReferences: []metav1.OwnerReference{r.OwnerReference},
 		},
