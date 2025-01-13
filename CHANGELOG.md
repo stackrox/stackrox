@@ -15,6 +15,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-25638: Introduce configurable log rotation. `ROX_LOGGING_MAX_ROTATION_FILES` and `ROX_LOGGING_MAX_SIZE_MB` variables allow for configuring the number and the size of a central log rotation file.
 - ROX-14332: Automatic service certificate renewal for Secured Clusters installed using Helm or operator.
 - Scanner V4 adds supports for openSUSE Leap 15.5 and 15.6
+- ROX-27596: ROX_EXTERNAL_IPS feature flag enabled by default. Note: Collector will still need to be configured for external IPs for this to have an effect.
 
 ### Removed Features
 
