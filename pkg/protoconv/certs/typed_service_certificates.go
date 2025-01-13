@@ -6,6 +6,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/certgen"
+	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/services"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -26,20 +28,21 @@ const (
 //
 // It returns error in case a service type contained in the input failed to be converted into
 // its associated slug-name representation.
-func ConvertTypedServiceCertificateSetToFileMap(certSet *storage.TypedServiceCertificateSet) (map[string]string, error) {
+func ConvertTypedServiceCertificateSetToFileMap(certSet *storage.TypedServiceCertificateSet) (map[string][]byte, error) {
 	serviceCerts := certSet.GetServiceCerts()
 	caCert := certSet.GetCaPem()
-	fileMap := make(map[string]string, 1+2*len(serviceCerts)) // 1 for CA cert, and key+cert for each service
+
+	fileMap := make(map[string][]byte, 1+2*len(serviceCerts)) // 1 for CA cert, and key+cert for each service
 	if caCert != nil {
-		fileMap[caCertKey] = string(caCert)
+		fileMap[caCertKey] = caCert
 	}
 	for _, cert := range serviceCerts {
 		serviceName := services.ServiceTypeToSlugName(cert.ServiceType)
 		if serviceName == "" {
 			return nil, errors.Errorf("failed to obtain slug-name for service type %v", cert.ServiceType)
 		}
-		fileMap[serviceName+"-cert.pem"] = string(cert.Cert.CertPem)
-		fileMap[serviceName+"-key.pem"] = string(cert.Cert.KeyPem)
+		fileMap[serviceName+"-cert.pem"] = cert.Cert.CertPem
+		fileMap[serviceName+"-key.pem"] = cert.Cert.KeyPem
 	}
 	return fileMap, nil
 }
@@ -58,12 +61,12 @@ func ConvertTypedServiceCertificateSetToFileMap(certSet *storage.TypedServiceCer
 //
 // It returns error in case the input map contains keys of unexpected shape or in case it was
 // not possible to derive proper service types from the respective file name.
-func ConvertFileMapToTypedServiceCertificateSet(fileMap map[string]string) (*storage.TypedServiceCertificateSet, []string, error) {
-	var caPem []byte
+func ConvertFileMapToTypedServiceCertificateSet(fileMap map[string][]byte) (*storage.TypedServiceCertificateSet, []string, error) {
 	var unknownServices set.Set[string]
 
-	if caCert := fileMap[caCertKey]; caCert != "" {
-		caPem = []byte(caCert)
+	ca, err := mtls.LoadCAForValidation(fileMap[caCertKey])
+	if err != nil {
+		return nil, nil, errors.New("invalid CA certificate in file map")
 	}
 
 	serviceCertMap := make(map[storage.ServiceType]*storage.ServiceCertificate)
@@ -78,10 +81,10 @@ func ConvertFileMapToTypedServiceCertificateSet(fileMap map[string]string) (*sto
 
 		if strings.HasSuffix(fileName, "-cert.pem") {
 			serviceSlugName = strings.TrimSuffix(fileName, "-cert.pem")
-			certPem = []byte(pemData)
+			certPem = pemData
 		} else if strings.HasSuffix(fileName, "-key.pem") {
 			serviceSlugName = strings.TrimSuffix(fileName, "-key.pem")
-			keyPem = []byte(pemData)
+			keyPem = pemData
 		} else {
 			return nil, nil, errors.Errorf("unexpected file name %q in file map", fileName)
 		}
@@ -103,21 +106,40 @@ func ConvertFileMapToTypedServiceCertificateSet(fileMap map[string]string) (*sto
 		if keyPem != nil {
 			serviceCertMap[serviceType].KeyPem = keyPem
 		}
-	}
-
-	var typedServiceCerts []*storage.TypedServiceCertificate
-	if len(serviceCertMap) != 0 {
-		typedServiceCerts = make([]*storage.TypedServiceCertificate, 0, len(serviceCertMap))
-		for serviceType, serviceCert := range serviceCertMap {
-			typedServiceCerts = append(typedServiceCerts, &storage.TypedServiceCertificate{
-				ServiceType: serviceType,
-				Cert:        serviceCert,
-			})
+		// When certificate and key have been retrieved from the file map, validate them against the CA.
+		if len(serviceCertMap[serviceType].CertPem) > 0 && len(serviceCertMap[serviceType].KeyPem) > 0 {
+			keyAndCert := map[string][]byte{
+				mtls.ServiceCertFileName: serviceCertMap[serviceType].CertPem,
+				mtls.ServiceKeyFileName:  serviceCertMap[serviceType].KeyPem,
+			}
+			err = certgen.VerifyServiceCertAndKey(keyAndCert, "", ca, serviceType)
+			if err != nil {
+				return nil, nil, errors.Wrapf(err, "verifying service certificate for service %s", serviceType.String())
+			}
 		}
 	}
 
+	var typedServiceCerts []*storage.TypedServiceCertificate
+	if len(serviceCertMap) == 0 {
+		// We are expecting a non-zero number of services in valid `TypedServiceCertificateSet`.
+		return nil, nil, errors.New("no known service certificates in file map")
+	}
+	typedServiceCerts = make([]*storage.TypedServiceCertificate, 0, len(serviceCertMap))
+	for serviceType, serviceCert := range serviceCertMap {
+		if len(serviceCert.CertPem) == 0 {
+			return nil, nil, errors.Errorf("missing certificate for service %s in file map", serviceType.String())
+		}
+		if len(serviceCert.KeyPem) == 0 {
+			return nil, nil, errors.Errorf("missing key for service %s in file map", serviceType.String())
+		}
+		typedServiceCerts = append(typedServiceCerts, &storage.TypedServiceCertificate{
+			ServiceType: serviceType,
+			Cert:        serviceCert,
+		})
+	}
+
 	certSet := storage.TypedServiceCertificateSet{
-		CaPem:        caPem,
+		CaPem:        fileMap[caCertKey],
 		ServiceCerts: typedServiceCerts,
 	}
 
