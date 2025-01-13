@@ -347,6 +347,12 @@
         },
         "managedBy": {
           "$ref": "#/definitions/storageManagerType"
+        },
+        "sensorCapabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
@@ -562,6 +568,12 @@
         },
         "managedBy": {
           "$ref": "#/definitions/storageManagerType"
+        },
+        "sensorCapabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },

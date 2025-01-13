@@ -282,6 +282,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"name: String!",
 		"priority: Int!",
 		"runtimeSupport: Boolean!",
+		"sensorCapabilities: [String!]!",
 		"slimCollector: Boolean!",
 		"status: ClusterStatus",
 		"tolerationsConfig: TolerationsConfig",
@@ -4074,6 +4075,11 @@ func (resolver *clusterResolver) Priority(ctx context.Context) int32 {
 
 func (resolver *clusterResolver) RuntimeSupport(ctx context.Context) bool {
 	value := resolver.data.GetRuntimeSupport()
+	return value
+}
+
+func (resolver *clusterResolver) SensorCapabilities(ctx context.Context) []string {
+	value := resolver.data.GetSensorCapabilities()
 	return value
 }
 
