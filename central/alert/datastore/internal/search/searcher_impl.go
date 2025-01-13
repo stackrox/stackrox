@@ -37,7 +37,7 @@ func (ds *searcherImpl) SearchAlerts(ctx context.Context, q *v1.Query) ([]*v1.Se
 	return protoResults, nil
 }
 
-// SearchListAlerts retrieves list alerts from the storage
+// SearchListAlerts retrieves list alerts from the storage, passing excludeResolved = true will exclude resolved alerts unless the query has explicitly added Violation State = Resolved to the filter
 func (ds *searcherImpl) SearchListAlerts(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*storage.ListAlert, error) {
 	if excludeResolved {
 		q = applyDefaultState(q)
