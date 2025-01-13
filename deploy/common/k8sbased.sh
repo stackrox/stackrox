@@ -674,8 +674,6 @@ function launch_sensor {
         exit 1
       fi
       mkdir "$k8s_dir/sensor-deploy"
-      local api_resp
-      api_resp="$(mktemp)"
 
       curl_central_retry "https://${API_ENDPOINT}/api/extensions/helm-charts/secured-cluster-services.zip" \
           -o "$k8s_dir/sensor-deploy/chart.zip"
@@ -709,6 +707,8 @@ function launch_sensor {
         echo "Deploying secured-cluster-services Helm chart using CRS"
         local crs_path=${ROX_CRS_PATH:-"$k8s_dir/sensor-deploy/crs.yaml"}
         (umask 077; touch "$crs_path")
+        local api_resp
+        api_resp="$(mktemp)"
         # Retry with different CRS name to recover from situations where CRS was created on
         # central but curl failed to read response for whatever reason.
         for _ in $(seq 10); do
