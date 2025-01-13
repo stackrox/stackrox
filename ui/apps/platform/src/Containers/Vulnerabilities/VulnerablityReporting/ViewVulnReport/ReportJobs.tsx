@@ -31,6 +31,7 @@ import { ExclamationCircleIcon, FilterIcon } from '@patternfly/react-icons';
 
 import { ReportConfiguration } from 'services/ReportsService.types';
 import { getDateTime } from 'utils/dateUtils';
+import { sanitizeFilename } from 'utils/fileUtils';
 import { getReportFormValuesFromConfiguration } from 'Containers/Vulnerabilities/VulnerablityReporting/utils';
 import useSet from 'hooks/useSet';
 import useURLPagination from 'hooks/useURLPagination';
@@ -65,8 +66,6 @@ const sortOptions = {
     sortFields: ['Report Completion Time'],
     defaultSortOption: { field: 'Report Completion Time', direction: 'desc' } as const,
 };
-
-const filenameSanitizerRegex = new RegExp('(:)|(/)|(\\s)', 'gi');
 
 const headingLevel = 'h2';
 
@@ -263,10 +262,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                         function onDownload() {
                             const { completedAt } = reportStatus;
                             const filename = `${name}-${completedAt}`;
-                            const sanitizedFilename = filename.replaceAll(
-                                filenameSanitizerRegex,
-                                '_'
-                            );
+                            const sanitizedFilename = sanitizeFilename(filename);
                             return saveFile({
                                 method: 'get',
                                 url: `/api/reports/jobs/download?id=${reportJobId}`,

@@ -91,7 +91,7 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 	t.Run("invalid json body", func(t *testing.T) {
 		t.Setenv(features.SBOMGeneration.EnvVar(), "true")
 		t.Setenv(features.ScannerV4.EnvVar(), "true")
-		invalidJson := `{"cluster": "test-cluster", "image_name": "test-image", "force": true,`
+		invalidJson := `{"cluster": "test-cluster", "imageName": "test-image", "force": true,`
 		req := httptest.NewRequest(http.MethodPost, "/sbom", bytes.NewBufferString(invalidJson))
 		recorder := httptest.NewRecorder()
 
@@ -140,7 +140,7 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 		t.Setenv(features.SBOMGeneration.EnvVar(), "true")
 		t.Setenv(features.ScannerV4.EnvVar(), "true")
 		t.Setenv(env.SBOMGenerationMaxReqSizeBytes.EnvVar(), "2")
-		largeRequestBody := []byte(`{"cluster": "test-cluster", "image_name": "test-image", "force": true}`)
+		largeRequestBody := []byte(`{"cluster": "test-cluster", "imageName": "test-image", "force": true}`)
 		req := httptest.NewRequest(http.MethodPost, "/sbom", bytes.NewReader(largeRequestBody))
 		recorder := httptest.NewRecorder()
 

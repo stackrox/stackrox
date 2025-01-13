@@ -16,12 +16,13 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/images/integration"
+	"github.com/stackrox/rox/pkg/zip"
 	"google.golang.org/grpc/codes"
 )
 
 type sbomRequestBody struct {
 	Cluster   string `json:"cluster"`
-	ImageName string `json:"image_name"`
+	ImageName string `json:"imageName"`
 	Force     bool   `json:"force"`
 }
 
@@ -76,7 +77,7 @@ func (h sbomHttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Tell the browser this is a download.
-	w.Header().Add("Content-Disposition", "attachment; sbom.json")
+	w.Header().Add("Content-Disposition", fmt.Sprintf("attachment; filename=%s.%s", zip.GetSafeFilename(params.ImageName), "json"))
 	w.Header().Add("Content-Type", "application/json")
 	w.Header().Add("Content-Length", fmt.Sprint(len(bytes)))
 	_, _ = w.Write(bytes)
