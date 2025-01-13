@@ -147,4 +147,11 @@ spec:
     - name: OUTPUT_IMAGE_TAG
       value: $(tasks.determine-output-image-tag.results.IMAGE_TAG)
     taskRef:
-      name: retag-image
+      params:
+      - name: name
+        value: retag-image
+      - name: bundle
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:886e1482c717078d11ba7c5d6fc4e8013e3740b4d1282ebe5534db62c9f19428
+      - name: kind
+        value: task
+      resolver: bundles
