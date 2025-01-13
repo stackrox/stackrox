@@ -172,6 +172,7 @@ func (m *CVEInfo) CloneVT() *CVEInfo {
 	r.ScoreVersion = m.ScoreVersion
 	r.CvssV2 = m.CvssV2.CloneVT()
 	r.CvssV3 = m.CvssV3.CloneVT()
+	r.EpssScore = m.EpssScore.CloneVT()
 	if rhs := m.References; rhs != nil {
 		tmpContainer := make([]*CVEInfo_Reference, len(rhs))
 		for k, v := range rhs {
@@ -213,7 +214,6 @@ func (m *ImageCVE) CloneVT() *ImageCVE {
 	r.SnoozeExpiry = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.SnoozeExpiry).CloneVT())
 	r.Nvdcvss = m.Nvdcvss
 	r.NvdScoreVersion = m.NvdScoreVersion
-	r.EpssScore = m.EpssScore.CloneVT()
 	if rhs := m.CvssMetrics; rhs != nil {
 		tmpContainer := make([]*CVSSScore, len(rhs))
 		for k, v := range rhs {
@@ -665,6 +665,9 @@ func (this *CVEInfo) EqualVT(that *CVEInfo) bool {
 			}
 		}
 	}
+	if !this.EpssScore.EqualVT(that.EpssScore) {
+		return false
+	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
@@ -729,9 +732,6 @@ func (this *ImageCVE) EqualVT(that *ImageCVE) bool {
 		}
 	}
 	if this.NvdScoreVersion != that.NvdScoreVersion {
-		return false
-	}
-	if !this.EpssScore.EqualVT(that.EpssScore) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1492,6 +1492,16 @@ func (m *CVEInfo) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.EpssScore != nil {
+		size, err := m.EpssScore.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x62
+	}
 	if len(m.CvssMetrics) > 0 {
 		for iNdEx := len(m.CvssMetrics) - 1; iNdEx >= 0; iNdEx-- {
 			size, err := m.CvssMetrics[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
@@ -1624,16 +1634,6 @@ func (m *ImageCVE) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
-	}
-	if m.EpssScore != nil {
-		size, err := m.EpssScore.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x6a
 	}
 	if m.NvdScoreVersion != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.NvdScoreVersion))
@@ -2484,6 +2484,10 @@ func (m *CVEInfo) SizeVT() (n int) {
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
+	if m.EpssScore != nil {
+		l = m.EpssScore.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -2537,10 +2541,6 @@ func (m *ImageCVE) SizeVT() (n int) {
 	}
 	if m.NvdScoreVersion != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.NvdScoreVersion))
-	}
-	if m.EpssScore != nil {
-		l = m.EpssScore.SizeVT()
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -4419,6 +4419,42 @@ func (m *CVEInfo) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 12:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EpssScore", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.EpssScore == nil {
+				m.EpssScore = &EPSS{}
+			}
+			if err := m.EpssScore.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -4775,42 +4811,6 @@ func (m *ImageCVE) UnmarshalVTUnsafe(dAtA []byte) error {
 					break
 				}
 			}
-		case 13:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field EpssScore", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.EpssScore == nil {
-				m.EpssScore = &EPSS{}
-			}
-			if err := m.EpssScore.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

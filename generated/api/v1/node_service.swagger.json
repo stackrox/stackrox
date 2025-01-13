@@ -273,6 +273,9 @@
             "$ref": "#/definitions/storageCVSSScore"
           },
           "title": "cvss_metrics stores list of cvss scores from different sources like nvd, Redhat etc"
+        },
+        "epssScore": {
+          "$ref": "#/definitions/storageEPSS"
         }
       }
     },

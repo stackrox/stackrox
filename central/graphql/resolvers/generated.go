@@ -174,6 +174,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"cvssMetrics: [CVSSScore]!",
 		"cvssV2: CVSSV2",
 		"cvssV3: CVSSV3",
+		"epssScore: EPSS",
 		"lastModified: Time",
 		"link: String!",
 		"publishedOn: Time",
@@ -692,7 +693,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"cveBaseInfo: CVEInfo",
 		"cvss: Float!",
 		"cvssMetrics: [CVSSScore]!",
-		"epssScore: EPSS",
 		"id: ID!",
 		"impactScore: Float!",
 		"nvdScoreVersion: CvssScoreVersion!",
@@ -3081,6 +3081,11 @@ func (resolver *cVEInfoResolver) CvssV2(ctx context.Context) (*cVSSV2Resolver, e
 func (resolver *cVEInfoResolver) CvssV3(ctx context.Context) (*cVSSV3Resolver, error) {
 	value := resolver.data.GetCvssV3()
 	return resolver.root.wrapCVSSV3(value, true, nil)
+}
+
+func (resolver *cVEInfoResolver) EpssScore(ctx context.Context) (*ePSSResolver, error) {
+	value := resolver.data.GetEpssScore()
+	return resolver.root.wrapEPSS(value, true, nil)
 }
 
 func (resolver *cVEInfoResolver) LastModified(ctx context.Context) (*graphql.Time, error) {
@@ -8287,11 +8292,6 @@ func (resolver *imageCVEResolver) Cvss(ctx context.Context) float64 {
 func (resolver *imageCVEResolver) CvssMetrics(ctx context.Context) ([]*cVSSScoreResolver, error) {
 	value := resolver.data.GetCvssMetrics()
 	return resolver.root.wrapCVSSScores(value, nil)
-}
-
-func (resolver *imageCVEResolver) EpssScore(ctx context.Context) (*ePSSResolver, error) {
-	value := resolver.data.GetEpssScore()
-	return resolver.root.wrapEPSS(value, true, nil)
 }
 
 func (resolver *imageCVEResolver) Id(ctx context.Context) graphql.ID {

@@ -139,6 +139,7 @@ message CVEInfo {
 
   // cvss_metrics stores list of cvss scores from different sources like nvd, Redhat etc
   repeated CVSSScore cvss_metrics = 11;
+  EPSS epss_score = 12;
 }
 
 message ImageCVE {
@@ -158,7 +159,6 @@ message ImageCVE {
   // cvss_metrics stores list of cvss metrics from different sources like Redhat, NVD etc
   repeated CVSSScore cvss_metrics = 11;
   CvssScoreVersion nvd_score_version = 12;
-  EPSS epss_score = 13;
 }
 
 message NodeCVE {
