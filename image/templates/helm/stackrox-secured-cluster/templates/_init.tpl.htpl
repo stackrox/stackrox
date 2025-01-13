@@ -297,7 +297,7 @@ The following block checks for the validity of the provided init bundle. (`helm 
   {{- $crsDeserialized := $crsOpaque | b64dec | b64dec | fromYaml -}}
   {{- $crsCAs := dig "CAs" list $crsDeserialized -}}
   {{- if empty $crsCAs -}}
-    {{ include "srox.fail" "Invalid cluster registration secret: no CAs found in CRS" -}}
+    {{ include "srox.fail" "Invalid cluster registration secret: no CAs found in CRS." -}}
   {{- end -}}
   {{- $crsCA := first $crsCAs -}}
 
