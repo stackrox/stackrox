@@ -174,7 +174,7 @@ func openCentralConnection() (*grpcUtil.LazyClientConn, error) {
 	case <-okSig.Done():
 	}
 
-	log.Info("Central connection ready.")
+	log.Info("Connection setup for gRPC connection to Central finished.")
 	return centralConnection, nil
 }
 
