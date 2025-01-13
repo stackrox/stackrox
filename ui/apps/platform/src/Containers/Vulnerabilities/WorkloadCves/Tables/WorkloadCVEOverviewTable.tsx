@@ -66,6 +66,10 @@ export const defaultColumns = {
         title: 'Top NVD CVSS',
         isShownByDefault: true,
     },
+    epssProbability: {
+        title: 'EPSS probability',
+        isShownByDefault: true,
+    },
     affectedImages: {
         title: 'Affected images',
         isShownByDefault: true,
@@ -195,6 +199,8 @@ function WorkloadCVEOverviewTable({
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isNvdCvssColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
+    const isEpssProbabilityColumnEnabled =
+        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_EPSS_SCORE');
 
     const colSpan =
         (isNvdCvssColumnEnabled ? 7 : 6) +
@@ -235,6 +241,9 @@ function WorkloadCVEOverviewTable({
                         >
                             Top NVD CVSS
                         </TooltipTh>
+                    )}
+                    {isEpssProbabilityColumnEnabled && (
+                        <Th className={getVisibilityClass('epssProbability')}>EPSS probability</Th>
                     )}
                     <TooltipTh
                         className={getVisibilityClass('affectedImages')}
@@ -386,6 +395,14 @@ function WorkloadCVEOverviewTable({
                                                     cvss={topNvdCVSS ?? 0}
                                                     scoreVersion={nvdScoreVersions.join('/')}
                                                 />
+                                            </Td>
+                                        )}
+                                        {isEpssProbabilityColumnEnabled && (
+                                            <Td
+                                                className={getVisibilityClass('epssProbability')}
+                                                dataLabel="EPSS probability"
+                                            >
+                                                Not available
                                             </Td>
                                         )}
                                         <Td
