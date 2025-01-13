@@ -13,9 +13,15 @@ import (
 )
 
 // searcherImpl provides an intermediary implementation layer for AlertStorage.
+
+type AlertSearcher interface {
+	Search(ctx context.Context, q *v1.Query, active bool) ([]search.Result, error)
+	Count(ctx context.Context, q *v1.Query, active bool) (int, error)
+}
+
 type searcherImpl struct {
 	storage           store.Store
-	formattedSearcher search.Searcher
+	formattedSearcher AlertSearcher
 }
 
 // SearchAlerts retrieves SearchResults from the storage
@@ -32,8 +38,10 @@ func (ds *searcherImpl) SearchAlerts(ctx context.Context, q *v1.Query) ([]*v1.Se
 }
 
 // SearchListAlerts retrieves list alerts from the storage
-func (ds *searcherImpl) SearchListAlerts(ctx context.Context, q *v1.Query) ([]*storage.ListAlert, error) {
-	q = applyDefaultState(q)
+func (ds *searcherImpl) SearchListAlerts(ctx context.Context, q *v1.Query, active bool) ([]*storage.ListAlert, error) {
+	if active {
+		q = applyDefaultState(q)
+	}
 	alerts, err := ds.storage.GetByQuery(ctx, q)
 	if err != nil {
 		return nil, err
@@ -53,7 +61,7 @@ func (ds *searcherImpl) SearchRawAlerts(ctx context.Context, q *v1.Query) ([]*st
 }
 
 func (ds *searcherImpl) searchListAlerts(ctx context.Context, q *v1.Query) ([]*storage.ListAlert, []search.Result, error) {
-	results, err := ds.Search(ctx, q)
+	results, err := ds.Search(ctx, q, true)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -75,13 +83,13 @@ func (ds *searcherImpl) searchAlerts(ctx context.Context, q *v1.Query) ([]*stora
 }
 
 // Search takes a SearchRequest and finds any matches
-func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	return ds.formattedSearcher.Search(ctx, q)
+func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query, active bool) ([]search.Result, error) {
+	return ds.formattedSearcher.Search(ctx, q, active)
 }
 
 // Count returns the number of search results from the query
-func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	return ds.formattedSearcher.Count(ctx, q)
+func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query, active bool) (int, error) {
+	return ds.formattedSearcher.Count(ctx, q, active)
 }
 
 // convertAlert returns proto search result from an alert object and the internal search result
@@ -116,7 +124,7 @@ func convertAlert(alert *storage.ListAlert, result search.Result) *v1.SearchResu
 // Helper functions which format our searching.
 ///////////////////////////////////////////////
 
-func formatSearcher(searcher search.Searcher) search.Searcher {
+func formatSearcher(searcher search.Searcher) AlertSearcher {
 	withDefaultViolationState := withDefaultActiveViolations(searcher)
 	return withDefaultViolationState
 }
@@ -146,7 +154,7 @@ func applyDefaultState(q *v1.Query) *v1.Query {
 }
 
 // If no active violation field is set, add one by default.
-func withDefaultActiveViolations(searcher search.Searcher) search.Searcher {
+func withDefaultActiveViolations(searcher search.Searcher) AlertSearcher {
 	return &defaultViolationStateSearcher{
 		searcher: searcher,
 	}
@@ -156,12 +164,16 @@ type defaultViolationStateSearcher struct {
 	searcher search.Searcher
 }
 
-func (ds *defaultViolationStateSearcher) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	q = applyDefaultState(q)
+func (ds *defaultViolationStateSearcher) Search(ctx context.Context, q *v1.Query, active bool) ([]search.Result, error) {
+	if active {
+		q = applyDefaultState(q)
+	}
 	return ds.searcher.Search(ctx, q)
 }
 
-func (ds *defaultViolationStateSearcher) Count(ctx context.Context, q *v1.Query) (int, error) {
-	q = applyDefaultState(q)
+func (ds *defaultViolationStateSearcher) Count(ctx context.Context, q *v1.Query, active bool) (int, error) {
+	if active {
+		q = applyDefaultState(q)
+	}
 	return ds.searcher.Count(ctx, q)
 }

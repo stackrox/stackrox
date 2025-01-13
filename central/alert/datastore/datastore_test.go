@@ -82,7 +82,7 @@ func (s *alertDataStoreTestSuite) TestSearchRawAlerts() {
 func (s *alertDataStoreTestSuite) TestSearchListAlerts() {
 	s.searcher.EXPECT().SearchListAlerts(s.hasReadCtx, &v1.Query{}).Return(alerttest.NewFakeListAlertSlice(), errFake)
 
-	result, err := s.dataStore.SearchListAlerts(s.hasReadCtx, &v1.Query{})
+	result, err := s.dataStore.SearchListAlerts(s.hasReadCtx, &v1.Query{}, true)
 
 	s.Equal(errFake, err)
 	protoassert.SlicesEqual(s.T(), alerttest.NewFakeListAlertSlice(), result)

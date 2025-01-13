@@ -185,7 +185,7 @@ func (resolver *policyResolver) failingDeployments(ctx context.Context, q *v1.Qu
 		search.NewQueryBuilder().AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery())
 
 	alertsQuery = paginated.FillDefaultSortOption(alertsQuery, paginated.GetViolationTimeSortOption())
-	listAlerts, err := resolver.root.ViolationsDataStore.SearchListAlerts(ctx, alertsQuery)
+	listAlerts, err := resolver.root.ViolationsDataStore.SearchListAlerts(ctx, alertsQuery, true)
 	if err != nil {
 		return nil, err
 	}

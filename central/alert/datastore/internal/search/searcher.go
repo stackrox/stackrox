@@ -15,9 +15,9 @@ import (
 type Searcher interface {
 	SearchAlerts(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
 	SearchRawAlerts(ctx context.Context, q *v1.Query) ([]*storage.Alert, error)
-	SearchListAlerts(ctx context.Context, q *v1.Query) ([]*storage.ListAlert, error)
-	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
-	Count(ctx context.Context, q *v1.Query) (int, error)
+	SearchListAlerts(ctx context.Context, q *v1.Query, active bool) ([]*storage.ListAlert, error)
+	Search(ctx context.Context, q *v1.Query, active bool) ([]search.Result, error)
+	Count(ctx context.Context, q *v1.Query, active bool) (int, error)
 }
 
 // New returns a new instance of Searcher for the given storage.

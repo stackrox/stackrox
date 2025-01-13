@@ -373,7 +373,7 @@ func (resolver *deploymentResolver) FailingPolicyCounter(ctx context.Context, ar
 		return nil, err
 	}
 
-	alerts, err := resolver.root.ViolationsDataStore.SearchListAlerts(ctx, q)
+	alerts, err := resolver.root.ViolationsDataStore.SearchListAlerts(ctx, q, true)
 	if err != nil {
 		return nil, nil
 	}

@@ -143,7 +143,7 @@ func (s *serviceImpl) ListAlerts(ctx context.Context, request *v1.ListAlertsRequ
 	if err != nil {
 		return nil, err
 	}
-	alerts, err := s.dataStore.SearchListAlerts(ctx, q)
+	alerts, err := s.dataStore.SearchListAlerts(ctx, q, true)
 	if err != nil {
 		return nil, err
 	}
@@ -184,7 +184,7 @@ func (s *serviceImpl) GetAlertsGroup(ctx context.Context, request *v1.ListAlerts
 	if err != nil {
 		return nil, err
 	}
-	alerts, err := s.dataStore.SearchListAlerts(ctx, q)
+	alerts, err := s.dataStore.SearchListAlerts(ctx, q, true)
 	if err != nil {
 		log.Error(err)
 		return nil, err
@@ -263,7 +263,7 @@ func (s *serviceImpl) GetAlertTimeseries(ctx context.Context, req *v1.ListAlerts
 		return nil, err
 	}
 
-	alerts, err := s.dataStore.SearchListAlerts(ctx, q)
+	alerts, err := s.dataStore.SearchListAlerts(ctx, q, true)
 	if err != nil {
 		return nil, err
 	}

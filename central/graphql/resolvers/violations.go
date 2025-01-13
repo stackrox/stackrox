@@ -38,7 +38,7 @@ func (resolver *Resolver) Violations(ctx context.Context, args PaginatedQuery) (
 
 	q = paginated.FillDefaultSortOption(q, paginated.GetViolationTimeSortOption())
 	return resolver.wrapListAlerts(
-		resolver.ViolationsDataStore.SearchListAlerts(ctx, q))
+		resolver.ViolationsDataStore.SearchListAlerts(ctx, q, true))
 }
 
 // ViolationCount returns count of all violations, or those that match the requested query
