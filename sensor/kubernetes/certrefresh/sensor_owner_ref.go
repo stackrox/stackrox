@@ -2,6 +2,7 @@ package certrefresh
 
 import (
 	"context"
+	"time"
 
 	"github.com/pkg/errors"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -11,12 +12,32 @@ import (
 	"k8s.io/client-go/util/retry"
 )
 
+var (
+	defaultFetchSensorDeploymentOwnerRefBackoff = wait.Backoff{
+		Duration: 10 * time.Millisecond,
+		Factor:   3,
+		Jitter:   0.1,
+		Steps:    10,
+		Cap:      defaultContextDeadline, // Cap might be updated based on a provided context.
+	}
+	defaultContextDeadline = 10 * time.Minute
+)
+
 // FetchSensorDeploymentOwnerRef retrieves the OwnerReference of the Deployment that controls a specific sensor Pod.
 // It follows the owner hierarchy of the pod and its ReplicaSet to return the top-level Deployment reference.
+// If the provided backoff is empty, a sensible default backoff strategy will be used, which is time-capped
+// according to the provided context.
 func FetchSensorDeploymentOwnerRef(ctx context.Context, sensorPodName, sensorNamespace string,
 	k8sClient kubernetes.Interface, backoff wait.Backoff) (*metav1.OwnerReference, error) {
 	if sensorPodName == "" {
 		return nil, errors.New("fetching sensor deployment: empty pod name")
+	}
+	if backoff == (wait.Backoff{}) {
+		defaultBackoff, err := fetchSensorDeploymentOwnerRefDefaultBackoff(ctx)
+		if err != nil {
+			return nil, err
+		}
+		backoff = defaultBackoff
 	}
 
 	podsClient := k8sClient.CoreV1().Pods(sensorNamespace)
@@ -86,4 +107,16 @@ func getObjectMetaWithRetries(
 	})
 
 	return object, getErr
+}
+
+func fetchSensorDeploymentOwnerRefDefaultBackoff(ctx context.Context) (wait.Backoff, error) {
+	backoff := defaultFetchSensorDeploymentOwnerRefBackoff
+	if deadline, deadlineSet := ctx.Deadline(); deadlineSet {
+		cap := time.Until(deadline)
+		if cap <= 0 {
+			return wait.Backoff{}, context.DeadlineExceeded
+		}
+		backoff.Cap = cap
+	}
+	return backoff, nil
 }

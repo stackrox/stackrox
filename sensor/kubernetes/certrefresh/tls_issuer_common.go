@@ -27,14 +27,7 @@ var (
 	log                        = logging.LoggerForModule()
 	_   common.SensorComponent = (*tlsIssuerImpl)(nil)
 
-	startTimeout                         = 6 * time.Minute
-	fetchSensorDeploymentOwnerRefBackoff = wait.Backoff{
-		Duration: 10 * time.Millisecond,
-		Factor:   3,
-		Jitter:   0.1,
-		Steps:    10,
-		Cap:      startTimeout,
-	}
+	startTimeout       = 6 * time.Minute
 	certRefreshTimeout = 5 * time.Minute
 	certRefreshBackoff = wait.Backoff{
 		Duration: 5 * time.Second,
@@ -90,7 +83,7 @@ func (i *tlsIssuerImpl) Start() error {
 	}
 
 	sensorOwnerReference, fetchSensorDeploymentErr := FetchSensorDeploymentOwnerRef(ctx, i.sensorPodName,
-		i.sensorNamespace, i.k8sClient, fetchSensorDeploymentOwnerRefBackoff)
+		i.sensorNamespace, i.k8sClient, wait.Backoff{})
 	if fetchSensorDeploymentErr != nil {
 		return i.abortStart(errors.Wrap(fetchSensorDeploymentErr, "fetching sensor deployment"))
 	}

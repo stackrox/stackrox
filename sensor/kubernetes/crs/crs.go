@@ -38,15 +38,8 @@ import (
 )
 
 var (
-	log = logging.LoggerForModule()
-
-	fetchSensorDeploymentOwnerRefBackoff = wait.Backoff{
-		Duration: 10 * time.Millisecond,
-		Factor:   3,
-		Jitter:   0.1,
-		Steps:    10,
-		Cap:      6 * time.Minute,
-	}
+	log                        = logging.LoggerForModule()
+	clusterRegistrationTimeout = 2 * time.Minute
 )
 
 // EnsureServiceCertificatesPresent initiates the CRS-based cluster registration flow to retrieve the
@@ -87,7 +80,8 @@ func EnsureServiceCertificatesPresent() error {
 //   - expects to receive a centralHello response containing newly issued service certificates+keys
 //     which are then stored as Kubernetes secrets named `tls-cert-<service slug name>`.
 func registerCluster() error {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), clusterRegistrationTimeout)
+	defer cancel()
 
 	log.Infof("Trying to load Cluster Registration Secret.")
 	crs, err := crs.Load()
@@ -184,7 +178,7 @@ func openCentralConnection() (*grpcUtil.LazyClientConn, error) {
 
 // centralHandshake performs the hello-handshake with Central and returns Central's CentralHello reponse on success.
 func centralHandshake(ctx context.Context, k8sClient kubernetes.Interface, centralConnection *grpcUtil.LazyClientConn) (*central.CentralHello, error) {
-	sensorHello, err := prepareSensorHelloMessage(k8sClient)
+	sensorHello, err := prepareSensorHelloMessage(ctx, k8sClient)
 	if err != nil {
 		return nil, errors.Wrap(err, "preparing SensorHello message")
 	}
@@ -267,7 +261,7 @@ func persistCertificates(ctx context.Context, certsFileMap map[string]string, k8
 		unknownServicesJoined := strings.Join(unknownServices, ", ")
 		log.Warnf("Central's certificate bundle contained certificates for the following unknown services: %s.", unknownServicesJoined)
 	}
-	ownerRef, err := certrefresh.FetchSensorDeploymentOwnerRef(ctx, podName, sensorNamespace, k8sClient, fetchSensorDeploymentOwnerRefBackoff)
+	ownerRef, err := certrefresh.FetchSensorDeploymentOwnerRef(ctx, podName, sensorNamespace, k8sClient, wait.Backoff{})
 	if err != nil {
 		return errors.Wrap(err, "fetching sensor deployment owner reference")
 	}
@@ -292,8 +286,8 @@ func getServiceTypeNames(serviceCertificates []*storage.TypedServiceCertificate)
 }
 
 // prepareSensorHelloMessage assembles the SensorHello message to be sent to Central for the hello-handshake.
-func prepareSensorHelloMessage(k8sClient kubernetes.Interface) (*central.SensorHello, error) {
-	deploymentIdentification := sensor.FetchDeploymentIdentification(context.Background(), k8sClient)
+func prepareSensorHelloMessage(ctx context.Context, k8sClient kubernetes.Interface) (*central.SensorHello, error) {
+	deploymentIdentification := sensor.FetchDeploymentIdentification(ctx, k8sClient)
 	log.Infof("Sensor deployment identification for this secured cluster: %s.", protoutils.NewWrapper(deploymentIdentification))
 	helmManagedConfigInit, err := helm.GetHelmManagedConfig(storage.ServiceType_REGISTRANT_SERVICE)
 	if err != nil {
