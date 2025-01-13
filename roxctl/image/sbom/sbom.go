@@ -77,7 +77,7 @@ func (i *imageSBOMCommand) construct(cobraCmd *cobra.Command) error {
 	// Create the request body.
 	req := struct {
 		Cluster   string `json:"cluster"`
-		ImageName string `json:"image_name"`
+		ImageName string `json:"imageName"`
 		Force     bool   `json:"force"`
 	}{
 		Cluster:   i.cluster,
