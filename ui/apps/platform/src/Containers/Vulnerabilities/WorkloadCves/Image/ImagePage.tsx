@@ -65,7 +65,7 @@ export const imageDetailsQuery = gql`
     }
 `;
 
-function GenerateSbomButtonTooltip({
+function OptionalSbomButtonTooltip({
     children,
     message,
 }: {
@@ -169,7 +169,7 @@ function ImagePage() {
                                 </Flex>
                                 {hasGenerateSbomAbility && (
                                     <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
-                                        <GenerateSbomButtonTooltip
+                                        <OptionalSbomButtonTooltip
                                             message={getSbomGenerationStatusMessage({
                                                 isScannerV4Enabled,
                                                 hasScanMessage,
@@ -186,7 +186,7 @@ function ImagePage() {
                                             >
                                                 Generate SBOM
                                             </Button>
-                                        </GenerateSbomButtonTooltip>
+                                        </OptionalSbomButtonTooltip>
                                         {sbomTargetImage && (
                                             <GenerateSbomModal
                                                 onClose={() => setSbomTargetImage(undefined)}
