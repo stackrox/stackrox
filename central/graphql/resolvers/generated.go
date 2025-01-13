@@ -174,7 +174,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"cvssMetrics: [CVSSScore]!",
 		"cvssV2: CVSSV2",
 		"cvssV3: CVSSV3",
-		"epssScore: EPSS",
+		"epss: EPSS",
 		"lastModified: Time",
 		"link: String!",
 		"publishedOn: Time",
@@ -3083,8 +3083,8 @@ func (resolver *cVEInfoResolver) CvssV3(ctx context.Context) (*cVSSV3Resolver, e
 	return resolver.root.wrapCVSSV3(value, true, nil)
 }
 
-func (resolver *cVEInfoResolver) EpssScore(ctx context.Context) (*ePSSResolver, error) {
-	value := resolver.data.GetEpssScore()
+func (resolver *cVEInfoResolver) Epss(ctx context.Context) (*ePSSResolver, error) {
+	value := resolver.data.GetEpss()
 	return resolver.root.wrapEPSS(value, true, nil)
 }
 

@@ -172,7 +172,7 @@ func (m *CVEInfo) CloneVT() *CVEInfo {
 	r.ScoreVersion = m.ScoreVersion
 	r.CvssV2 = m.CvssV2.CloneVT()
 	r.CvssV3 = m.CvssV3.CloneVT()
-	r.EpssScore = m.EpssScore.CloneVT()
+	r.Epss = m.Epss.CloneVT()
 	if rhs := m.References; rhs != nil {
 		tmpContainer := make([]*CVEInfo_Reference, len(rhs))
 		for k, v := range rhs {
@@ -665,7 +665,7 @@ func (this *CVEInfo) EqualVT(that *CVEInfo) bool {
 			}
 		}
 	}
-	if !this.EpssScore.EqualVT(that.EpssScore) {
+	if !this.Epss.EqualVT(that.Epss) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1492,8 +1492,8 @@ func (m *CVEInfo) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.EpssScore != nil {
-		size, err := m.EpssScore.MarshalToSizedBufferVT(dAtA[:i])
+	if m.Epss != nil {
+		size, err := m.Epss.MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -2484,8 +2484,8 @@ func (m *CVEInfo) SizeVT() (n int) {
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
-	if m.EpssScore != nil {
-		l = m.EpssScore.SizeVT()
+	if m.Epss != nil {
+		l = m.Epss.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -4421,7 +4421,7 @@ func (m *CVEInfo) UnmarshalVTUnsafe(dAtA []byte) error {
 			iNdEx = postIndex
 		case 12:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field EpssScore", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Epss", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -4448,10 +4448,10 @@ func (m *CVEInfo) UnmarshalVTUnsafe(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.EpssScore == nil {
-				m.EpssScore = &EPSS{}
+			if m.Epss == nil {
+				m.Epss = &EPSS{}
 			}
-			if err := m.EpssScore.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Epss.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

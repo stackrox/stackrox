@@ -274,7 +274,7 @@
           },
           "title": "cvss_metrics stores list of cvss scores from different sources like nvd, Redhat etc"
         },
-        "epssScore": {
+        "epss": {
           "$ref": "#/definitions/storageEPSS"
         }
       }
@@ -633,7 +633,7 @@
           "type": "number",
           "format": "float"
         },
-        "epssScore": {
+        "epss": {
           "$ref": "#/definitions/storageEPSS"
         }
       },

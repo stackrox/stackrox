@@ -64,7 +64,7 @@ func (s *ImagesStoreSuite) TestStore() {
 		for _, vuln := range component.GetVulns() {
 			vuln.FirstSystemOccurrence = foundImage.GetLastUpdated()
 			vuln.FirstImageOccurrence = foundImage.GetLastUpdated()
-			vuln.EpssScore = nil
+			vuln.Epss = nil
 		}
 	}
 

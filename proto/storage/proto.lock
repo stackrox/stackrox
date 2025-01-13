@@ -5609,7 +5609,7 @@
         ],
         "messages": [
           {
-            "name": "EPSSScore",
+            "name": "EPSS",
             "fields": [
               {
                 "id": 1,
@@ -5620,11 +5620,6 @@
                 "id": 2,
                 "name": "epss_percentile",
                 "type": "float"
-              },
-              {
-                "id": 3,
-                "name": "isValid",
-                "type": "bool"
               }
             ]
           },
@@ -5846,6 +5841,11 @@
                 "name": "cvss_metrics",
                 "type": "CVSSScore",
                 "is_repeated": true
+              },
+              {
+                "id": 12,
+                "name": "epss",
+                "type": "EPSS"
               }
             ],
             "messages": [
@@ -5948,11 +5948,6 @@
                 "id": 12,
                 "name": "nvd_score_version",
                 "type": "CvssScoreVersion"
-              },
-              {
-                "id": 13,
-                "name": "epss_score",
-                "type": "EPSSScore"
               }
             ]
           },
@@ -17985,8 +17980,8 @@
               },
               {
                 "id": 23,
-                "name": "epss_score",
-                "type": "EPSSScore"
+                "name": "epss",
+                "type": "EPSS"
               }
             ],
             "reserved_ids": [

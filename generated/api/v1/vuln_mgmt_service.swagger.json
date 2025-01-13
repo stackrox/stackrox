@@ -904,7 +904,7 @@
           "type": "number",
           "format": "float"
         },
-        "epssScore": {
+        "epss": {
           "$ref": "#/definitions/storageEPSS"
         }
       },
