@@ -2,21 +2,49 @@ package protoconv
 
 import (
 	"cmp"
+	"embed"
 	"fmt"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoutils"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 )
 
-func makeTypedServiceCert(serviceType storage.ServiceType, certPem string, keyPem string) *storage.TypedServiceCertificate {
+//go:embed testdata/*
+var testdata embed.FS
+
+type TypedServiceCertificateSuite struct {
+	suite.Suite
+}
+
+func testFile(name string) []byte {
+	path := fmt.Sprintf("testdata/%s", name)
+	content, err := testdata.ReadFile(path)
+	utils.Must(err)
+	content = []byte(strings.ReplaceAll(string(content), "PRIVATE TEST KEY", "PRIVATE KEY"))
+	return content
+}
+
+var (
+	caCert        = testFile("ca-cert.pem")
+	collectorCert = testFile("collector-cert.pem")
+	collectorKey  = testFile("collector-key.pem")
+	sensorCert    = testFile("sensor-cert.pem")
+	sensorKey     = testFile("sensor-key.pem")
+	bogusCert     = testFile("bogus-cert.pem")
+)
+
+func makeTypedServiceCert(serviceType storage.ServiceType, certPem []byte, keyPem []byte) *storage.TypedServiceCertificate {
 	return &storage.TypedServiceCertificate{
 		ServiceType: serviceType,
 		Cert: &storage.ServiceCertificate{
-			CertPem: []byte(certPem),
-			KeyPem:  []byte(keyPem),
+			CertPem: certPem,
+			KeyPem:  keyPem,
 		},
 	}
 }
@@ -25,30 +53,23 @@ func TestConvertTypedServiceCertificateSetToFileMap(t *testing.T) {
 	cases := []struct {
 		description     string
 		input           *storage.TypedServiceCertificateSet
-		expectedFileMap map[string]string
+		expectedFileMap map[string][]byte
 	}{
-		{
-			description: "empty",
-			input: &storage.TypedServiceCertificateSet{
-				ServiceCerts: []*storage.TypedServiceCertificate{},
-			},
-			expectedFileMap: map[string]string{},
-		},
 		{
 			description: "two certs",
 			input: &storage.TypedServiceCertificateSet{
-				CaPem: []byte("ca cert"),
+				CaPem: caCert,
 				ServiceCerts: []*storage.TypedServiceCertificate{
-					makeTypedServiceCert(storage.ServiceType_ADMISSION_CONTROL_SERVICE, "cert 1", "key 1"),
-					makeTypedServiceCert(storage.ServiceType_SCANNER_V4_INDEXER_SERVICE, "cert 2", "key 2"),
+					makeTypedServiceCert(storage.ServiceType_SENSOR_SERVICE, sensorCert, sensorKey),
+					makeTypedServiceCert(storage.ServiceType_COLLECTOR_SERVICE, collectorCert, collectorKey),
 				},
 			},
-			expectedFileMap: map[string]string{
-				"ca-cert.pem":                 "ca cert",
-				"admission-control-cert.pem":  "cert 1",
-				"admission-control-key.pem":   "key 1",
-				"scanner-v4-indexer-cert.pem": "cert 2",
-				"scanner-v4-indexer-key.pem":  "key 2",
+			expectedFileMap: map[string][]byte{
+				"ca-cert.pem":        caCert,
+				"collector-cert.pem": collectorCert,
+				"collector-key.pem":  collectorKey,
+				"sensor-cert.pem":    sensorCert,
+				"sensor-key.pem":     sensorKey,
 			},
 		},
 	}
@@ -86,59 +107,89 @@ func TestConvertTypedServiceCertificateSetToFileMap(t *testing.T) {
 func TestConvertFileMapToTypedServiceCertificateSet(t *testing.T) {
 	cases := []struct {
 		description                        string
-		input                              map[string]string
+		input                              map[string][]byte
 		expectedErr                        bool
 		expectedUnknownServices            []string
 		expectedTypedServiceCertificateSet *storage.TypedServiceCertificateSet
 	}{
 		{
 			description:                        "empty",
-			input:                              map[string]string{},
-			expectedErr:                        false,
+			input:                              map[string][]byte{},
+			expectedErr:                        true,
+			expectedUnknownServices:            nil,
+			expectedTypedServiceCertificateSet: nil,
+		},
+		{
+			description: "missing CA",
+			input: map[string][]byte{
+				"collector-cert.pem": collectorCert,
+				"collector-key.pem":  collectorKey,
+			},
+			expectedErr:                        true,
 			expectedUnknownServices:            nil,
 			expectedTypedServiceCertificateSet: nil,
 		},
 		{
 			description: "known services",
-			input: map[string]string{
-				"admission-control-cert.pem": "cert 1",
-				"admission-control-key.pem":  "key 1",
+			input: map[string][]byte{
+				"ca-cert.pem":        caCert,
+				"collector-cert.pem": collectorCert,
+				"collector-key.pem":  collectorKey,
 			},
 			expectedErr:             false,
 			expectedUnknownServices: nil,
 			expectedTypedServiceCertificateSet: &storage.TypedServiceCertificateSet{
-				CaPem: nil,
+				CaPem: caCert,
 				ServiceCerts: []*storage.TypedServiceCertificate{
 					{
-						ServiceType: storage.ServiceType_ADMISSION_CONTROL_SERVICE,
+						ServiceType: storage.ServiceType_COLLECTOR_SERVICE,
 						Cert: &storage.ServiceCertificate{
-							CertPem: []byte("cert 1"),
-							KeyPem:  []byte("key 1"),
+							CertPem: collectorCert,
+							KeyPem:  collectorKey,
 						},
 					},
 				},
 			},
 		},
 		{
+			description: "invalid key",
+			input: map[string][]byte{
+				"ca-cert.pem":        caCert,
+				"collector-cert.pem": collectorCert,
+				"collector-key.pem":  []byte("invalid key"),
+			},
+			expectedErr: true,
+		},
+		{
+			description: "wrong-cert",
+			input: map[string][]byte{
+				"ca-cert.pem":        caCert,
+				"collector-cert.pem": bogusCert,
+				"collector-key.pem":  collectorKey,
+			},
+			expectedErr: true,
+		},
+		{
 			description: "mixed known and unknown",
-			input: map[string]string{
-				"admission-control-cert.pem": "cert 1",
-				"admission-control-key.pem":  "key 1",
-				"foo-cert.pem":               "cert 2",
-				"foo-key.pem":                "key 2",
-				"bar-cert.pem":               "cert 3",
-				"bar-key.pem":                "key 3",
+			input: map[string][]byte{
+				"ca-cert.pem":        caCert,
+				"collector-cert.pem": collectorCert,
+				"collector-key.pem":  collectorKey,
+				"foo-cert.pem":       []byte("cert 2"),
+				"foo-key.pem":        []byte("key 2"),
+				"bar-cert.pem":       []byte("cert 3"),
+				"bar-key.pem":        []byte("key 3"),
 			},
 			expectedErr:             false,
 			expectedUnknownServices: []string{"foo", "bar"},
 			expectedTypedServiceCertificateSet: &storage.TypedServiceCertificateSet{
-				CaPem: nil,
+				CaPem: caCert,
 				ServiceCerts: []*storage.TypedServiceCertificate{
 					{
-						ServiceType: storage.ServiceType_ADMISSION_CONTROL_SERVICE,
+						ServiceType: storage.ServiceType_COLLECTOR_SERVICE,
 						Cert: &storage.ServiceCertificate{
-							CertPem: []byte("cert 1"),
-							KeyPem:  []byte("key 1"),
+							CertPem: collectorCert,
+							KeyPem:  collectorKey,
 						},
 					},
 				},
@@ -146,9 +197,9 @@ func TestConvertFileMapToTypedServiceCertificateSet(t *testing.T) {
 		},
 		{
 			description: "invalid file names",
-			input: map[string]string{
-				"admission-control-cert.pem": "cert 1",
-				"admission-control.pem":      "bogus file name",
+			input: map[string][]byte{
+				"collector-cert.pem": collectorCert,
+				"collector.pem":      collectorKey,
 			},
 			expectedErr:             true,
 			expectedUnknownServices: nil,
@@ -157,8 +208,7 @@ func TestConvertFileMapToTypedServiceCertificateSet(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.description, func(t *testing.T) {
 			// Convert input FileMap into a TypedServiceCertificateSet.
-			inputFileMap := c.input
-			typedServiceCertificateSet, unknownServices, err := ConvertFileMapToTypedServiceCertificateSet(inputFileMap)
+			typedServiceCertificateSet, unknownServices, err := ConvertFileMapToTypedServiceCertificateSet(c.input)
 			if c.expectedErr {
 				assert.Error(t, err)
 				assert.Nil(t, typedServiceCertificateSet)
@@ -189,7 +239,7 @@ func TestConvertFileMapToTypedServiceCertificateSet(t *testing.T) {
 				// Convert TypedServiceCertificateSet back to FileMap.
 				roundTripFileMap, err := ConvertTypedServiceCertificateSetToFileMap(typedServiceCertificateSet)
 				assert.NoError(t, err)
-				assert.Equal(t, inputFileMap, roundTripFileMap)
+				assert.Equal(t, c.input, roundTripFileMap)
 			}
 		})
 	}
