@@ -595,7 +595,7 @@ func countListAlertsResultsPerClusterAndNamespace(results []*storage.ListAlert) 
 
 func (s *alertDatastoreSACTestSuite) runSearchListAlertsTest(testparams alertSACSearchResult) {
 	ctx := s.testContexts[testparams.scopeKey]
-	searchResults, err := s.datastore.SearchListAlerts(ctx, nil)
+	searchResults, err := s.datastore.SearchListAlerts(ctx, nil, true)
 	s.NoError(err)
 	resultsDistribution := countListAlertsResultsPerClusterAndNamespace(searchResults)
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, testparams.resultCounts, resultsDistribution)
@@ -619,7 +619,7 @@ func (s *alertDatastoreSACTestSuite) TestAlertUnrestrictedSearchListAlerts() {
 
 func (s *alertDatastoreSACTestSuite) runListAlertsTest(testparams alertSACSearchResult) {
 	ctx := s.testContexts[testparams.scopeKey]
-	searchResults, err := s.datastore.SearchListAlerts(ctx, searchPkg.EmptyQuery())
+	searchResults, err := s.datastore.SearchListAlerts(ctx, searchPkg.EmptyQuery(), true)
 	s.NoError(err)
 	resultsDistribution := countListAlertsResultsPerClusterAndNamespace(searchResults)
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, testparams.resultCounts, resultsDistribution)

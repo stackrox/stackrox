@@ -61,7 +61,7 @@ func (s *AlertsSearchSuite) TestSearch() {
 	protoassert.Equal(s.T(), alert, foundAlert)
 
 	// Common alert searches
-	results, err := s.searcher.Search(ctx, search.NewQueryBuilder().AddExactMatches(search.DeploymentID, alert.GetDeployment().GetId()).ProtoQuery())
+	results, err := s.searcher.Search(ctx, search.NewQueryBuilder().AddExactMatches(search.DeploymentID, alert.GetDeployment().GetId()).ProtoQuery(), true)
 	s.NoError(err)
 	s.Len(results, 1)
 
@@ -70,7 +70,7 @@ func (s *AlertsSearchSuite) TestSearch() {
 		AddExactMatches(search.PolicyID, alert.GetPolicy().GetId()).
 		AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).
 		ProtoQuery()
-	results, err = s.searcher.Search(ctx, q)
+	results, err = s.searcher.Search(ctx, q, true)
 	s.NoError(err)
 	s.Len(results, 1)
 
@@ -78,14 +78,14 @@ func (s *AlertsSearchSuite) TestSearch() {
 		AddBools(search.PlatformComponent, false).
 		AddExactMatches(search.EntityType, storage.Alert_DEPLOYMENT.String()).
 		ProtoQuery()
-	results, err = s.searcher.Search(ctx, q)
+	results, err = s.searcher.Search(ctx, q, true)
 	s.NoError(err)
 	s.Len(results, 1)
 
 	q = search.NewQueryBuilder().
 		AddBools(search.PlatformComponent, true).
 		ProtoQuery()
-	results, err = s.searcher.Search(ctx, q)
+	results, err = s.searcher.Search(ctx, q, true)
 	s.NoError(err)
 	s.Len(results, 0)
 }

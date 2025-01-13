@@ -170,7 +170,7 @@ func (s *listAlertsTests) TestListAlerts() {
 	}
 	fakeContext := context.Background()
 
-	s.datastoreMock.EXPECT().SearchListAlerts(fakeContext, fakeQueryProto).Return(s.fakeListAlertSlice, nil)
+	s.datastoreMock.EXPECT().SearchListAlerts(fakeContext, fakeQueryProto, true).Return(s.fakeListAlertSlice, nil)
 	result, err := s.service.ListAlerts(fakeContext, &v1.ListAlertsRequest{
 		Query: fakeQuery.Query(),
 	})
@@ -189,7 +189,7 @@ func (s *listAlertsTests) TestListAlertsWhenTheDataLayerFails() {
 			paginated.GetViolationTimeSortOption(),
 		},
 	}
-	s.datastoreMock.EXPECT().SearchListAlerts(fakeContext, protoQuery).Return(nil, errFake)
+	s.datastoreMock.EXPECT().SearchListAlerts(fakeContext, protoQuery, true).Return(nil, errFake)
 
 	result, err := s.service.ListAlerts(fakeContext, &v1.ListAlertsRequest{
 		Query: "",
@@ -348,7 +348,7 @@ func (s *getAlertsGroupsTests) testGetAlertsGroupFor(fakeListAlertSlice []*stora
 	protoQuery.Pagination = &v1.QueryPagination{
 		Limit: math.MaxInt32,
 	}
-	s.datastoreMock.EXPECT().SearchListAlerts(fakeContext, protoQuery).Return(fakeListAlertSlice, nil)
+	s.datastoreMock.EXPECT().SearchListAlerts(fakeContext, protoQuery, true).Return(fakeListAlertSlice, nil)
 
 	result, err := s.service.GetAlertsGroup(fakeContext, &v1.ListAlertsRequest{
 		Query: "",
@@ -364,7 +364,7 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupWhenTheDataAccessLayerFails() {
 	protoQuery.Pagination = &v1.QueryPagination{
 		Limit: math.MaxInt32,
 	}
-	s.datastoreMock.EXPECT().SearchListAlerts(fakeContext, protoQuery).Return(nil, errFake)
+	s.datastoreMock.EXPECT().SearchListAlerts(fakeContext, protoQuery, true).Return(nil, errFake)
 
 	result, err := s.service.GetAlertsGroup(fakeContext, &v1.ListAlertsRequest{
 		Query: "",
@@ -864,7 +864,7 @@ func (s *getAlertTimeseriesTests) TestGetAlertTimeseries() {
 	}
 	fakeContext := context.Background()
 	protoQuery := search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(math.MaxInt32)).ProtoQuery()
-	s.datastoreMock.EXPECT().SearchListAlerts(fakeContext, protoQuery).Return(alerts, nil)
+	s.datastoreMock.EXPECT().SearchListAlerts(fakeContext, protoQuery, true).Return(alerts, nil)
 
 	result, err := s.service.GetAlertTimeseries(fakeContext, &v1.ListAlertsRequest{
 		Query: "",
@@ -877,7 +877,7 @@ func (s *getAlertTimeseriesTests) TestGetAlertTimeseries() {
 func (s *getAlertTimeseriesTests) TestGetAlertTimeseriesWhenTheDataAccessLayerFails() {
 	fakeContext := context.Background()
 	protoQuery := search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(math.MaxInt32)).ProtoQuery()
-	s.datastoreMock.EXPECT().SearchListAlerts(fakeContext, protoQuery).Return(nil, errFake)
+	s.datastoreMock.EXPECT().SearchListAlerts(fakeContext, protoQuery, true).Return(nil, errFake)
 
 	result, err := s.service.GetAlertTimeseries(fakeContext, &v1.ListAlertsRequest{
 		Query: "",

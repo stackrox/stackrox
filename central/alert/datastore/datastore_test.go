@@ -80,7 +80,7 @@ func (s *alertDataStoreTestSuite) TestSearchRawAlerts() {
 }
 
 func (s *alertDataStoreTestSuite) TestSearchListAlerts() {
-	s.searcher.EXPECT().SearchListAlerts(s.hasReadCtx, &v1.Query{}).Return(alerttest.NewFakeListAlertSlice(), errFake)
+	s.searcher.EXPECT().SearchListAlerts(s.hasReadCtx, &v1.Query{}, true).Return(alerttest.NewFakeListAlertSlice(), errFake)
 
 	result, err := s.dataStore.SearchListAlerts(s.hasReadCtx, &v1.Query{}, true)
 
@@ -90,7 +90,7 @@ func (s *alertDataStoreTestSuite) TestSearchListAlerts() {
 
 func (s *alertDataStoreTestSuite) TestCountAlerts_Success() {
 	expectedQ := search.NewQueryBuilder().AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery()
-	s.searcher.EXPECT().Count(s.hasReadCtx, expectedQ).Return(1, nil)
+	s.searcher.EXPECT().Count(s.hasReadCtx, expectedQ, true).Return(1, nil)
 
 	result, err := s.dataStore.CountAlerts(s.hasReadCtx)
 
@@ -100,7 +100,7 @@ func (s *alertDataStoreTestSuite) TestCountAlerts_Success() {
 
 func (s *alertDataStoreTestSuite) TestCountAlerts_Error() {
 	expectedQ := search.NewQueryBuilder().AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery()
-	s.searcher.EXPECT().Count(s.hasReadCtx, expectedQ).Return(0, errFake)
+	s.searcher.EXPECT().Count(s.hasReadCtx, expectedQ, true).Return(0, errFake)
 
 	_, err := s.dataStore.CountAlerts(s.hasReadCtx)
 

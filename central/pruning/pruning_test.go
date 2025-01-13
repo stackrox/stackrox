@@ -1146,7 +1146,7 @@ func (s *PruningTestSuite) TestAlertPruning() {
 			gc.collectAlerts(privateConfig)
 
 			// Grab the actual remaining alerts and make sure they match the alerts expected to be remaining
-			remainingAlerts, err := alerts.SearchListAlerts(ctx, getAllAlerts())
+			remainingAlerts, err := alerts.SearchListAlerts(ctx, getAllAlerts(), true)
 			require.NoError(t, err)
 
 			log.Infof("Remaining alerts: %v", remainingAlerts)
