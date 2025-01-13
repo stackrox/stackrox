@@ -59,18 +59,18 @@ func (mr *MockDataStoreMockRecorder) Count(ctx, q any) *gomock.Call {
 }
 
 // CountActive mocks base method.
-func (m *MockDataStore) CountActive(ctx context.Context, q *v1.Query, active bool) (int, error) {
+func (m *MockDataStore) CountActive(ctx context.Context, q *v1.Query, excludeResolved bool) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CountActive", ctx, q, active)
+	ret := m.ctrl.Call(m, "CountActive", ctx, q, excludeResolved)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CountActive indicates an expected call of CountActive.
-func (mr *MockDataStoreMockRecorder) CountActive(ctx, q, active any) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) CountActive(ctx, q, excludeResolved any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountActive", reflect.TypeOf((*MockDataStore)(nil).CountActive), ctx, q, active)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountActive", reflect.TypeOf((*MockDataStore)(nil).CountActive), ctx, q, excludeResolved)
 }
 
 // CountAlerts mocks base method.
@@ -193,18 +193,18 @@ func (mr *MockDataStoreMockRecorder) Search(ctx, q any) *gomock.Call {
 }
 
 // SearchActive mocks base method.
-func (m *MockDataStore) SearchActive(ctx context.Context, q *v1.Query, active bool) ([]search.Result, error) {
+func (m *MockDataStore) SearchActive(ctx context.Context, q *v1.Query, excludeResolved bool) ([]search.Result, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SearchActive", ctx, q, active)
+	ret := m.ctrl.Call(m, "SearchActive", ctx, q, excludeResolved)
 	ret0, _ := ret[0].([]search.Result)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SearchActive indicates an expected call of SearchActive.
-func (mr *MockDataStoreMockRecorder) SearchActive(ctx, q, active any) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) SearchActive(ctx, q, excludeResolved any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchActive", reflect.TypeOf((*MockDataStore)(nil).SearchActive), ctx, q, active)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchActive", reflect.TypeOf((*MockDataStore)(nil).SearchActive), ctx, q, excludeResolved)
 }
 
 // SearchAlerts mocks base method.
@@ -223,18 +223,18 @@ func (mr *MockDataStoreMockRecorder) SearchAlerts(ctx, q any) *gomock.Call {
 }
 
 // SearchListAlerts mocks base method.
-func (m *MockDataStore) SearchListAlerts(ctx context.Context, q *v1.Query, active bool) ([]*storage.ListAlert, error) {
+func (m *MockDataStore) SearchListAlerts(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*storage.ListAlert, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SearchListAlerts", ctx, q, active)
+	ret := m.ctrl.Call(m, "SearchListAlerts", ctx, q, excludeResolved)
 	ret0, _ := ret[0].([]*storage.ListAlert)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SearchListAlerts indicates an expected call of SearchListAlerts.
-func (mr *MockDataStoreMockRecorder) SearchListAlerts(ctx, q, active any) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) SearchListAlerts(ctx, q, excludeResolved any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchListAlerts", reflect.TypeOf((*MockDataStore)(nil).SearchListAlerts), ctx, q, active)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchListAlerts", reflect.TypeOf((*MockDataStore)(nil).SearchListAlerts), ctx, q, excludeResolved)
 }
 
 // SearchRawAlerts mocks base method.
