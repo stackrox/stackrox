@@ -415,7 +415,7 @@ spec:
     # The timeout must be the same as the pipeline timeout in `collector-slim-retag.yaml`
     timeout: 40m
 
-  - name: wait-for-collector-full-image
+  - name: wait-for-collector-image
     params:
     - name: IMAGE
       value: "$(params.collector-full-image-build-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
@@ -468,7 +468,9 @@ spec:
       - RELATED_IMAGE_SCANNER_V4=$(params.scanner-v4-image-catalog-repo)@$(tasks.wait-for-scanner-v4-image.results.IMAGE_DIGEST)
       - RELATED_IMAGE_SCANNER_V4_DB=$(params.scanner-v4-db-image-catalog-repo)@$(tasks.wait-for-scanner-v4-db-image.results.IMAGE_DIGEST)
       - RELATED_IMAGE_COLLECTOR_SLIM=$(params.collector-slim-image-catalog-repo)@$(tasks.wait-for-collector-slim-image.results.IMAGE_DIGEST)
-      - RELATED_IMAGE_COLLECTOR_FULL=$(params.collector-full-image-catalog-repo)@$(tasks.wait-for-collector-full-image.results.IMAGE_DIGEST)
+      # TODO(ROX-27612): change to RELATED_IMAGE_COLLECTOR and delete RELATED_IMAGE_COLLECTOR_SLIM
+      # once https://github.com/stackrox/stackrox/pull/13350 is merged.
+      - RELATED_IMAGE_COLLECTOR_FULL=$(params.collector-full-image-catalog-repo)@$(tasks.wait-for-collector-image.results.IMAGE_DIGEST)
       - RELATED_IMAGE_ROXCTL=$(params.roxctl-image-catalog-repo)@$(tasks.wait-for-roxctl-image.results.IMAGE_DIGEST)
       - RELATED_IMAGE_CENTRAL_DB=$(params.central-db-image-catalog-repo)@$(tasks.wait-for-central-db-image.results.IMAGE_DIGEST)
     - name: SOURCE_ARTIFACT
@@ -679,7 +681,7 @@ spec:
     - rpms-signature-scan
     - sast-snyk-check
     - wait-for-central-db-image
-    - wait-for-collector-full-image
+    - wait-for-collector-image
     - wait-for-collector-slim-image
     - wait-for-main-image
     - wait-for-operator-image
@@ -704,9 +706,9 @@ spec:
           },
           {
             "name": "collector",
-            "containerImage": "$(params.collector-full-image-build-repo)@$(tasks.wait-for-collector-full-image.results.IMAGE_DIGEST)",
-            "repository": "$(tasks.wait-for-collector-full-image.results.GIT_REPO)",
-            "revision": "$(tasks.wait-for-collector-full-image.results.GIT_REF)"
+            "containerImage": "$(params.collector-full-image-build-repo)@$(tasks.wait-for-collector-image.results.IMAGE_DIGEST)",
+            "repository": "$(tasks.wait-for-collector-image.results.GIT_REPO)",
+            "revision": "$(tasks.wait-for-collector-image.results.GIT_REF)"
           },
           {
             "name": "collector-slim",
