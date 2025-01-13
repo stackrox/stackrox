@@ -76,16 +76,16 @@ func (mr *MockSearcherMockRecorder) Search(ctx, q, active any) *gomock.Call {
 // SearchAlerts mocks base method.
 func (m *MockSearcher) SearchAlerts(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SearchAlerts", ctx, q, active)
+	ret := m.ctrl.Call(m, "SearchAlerts", ctx, q)
 	ret0, _ := ret[0].([]*v1.SearchResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SearchAlerts indicates an expected call of SearchAlerts.
-func (mr *MockSearcherMockRecorder) SearchAlerts(ctx, q, active any) *gomock.Call {
+func (mr *MockSearcherMockRecorder) SearchAlerts(ctx, q any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchAlerts", reflect.TypeOf((*MockSearcher)(nil).SearchAlerts), ctx, q, active)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchAlerts", reflect.TypeOf((*MockSearcher)(nil).SearchAlerts), ctx, q)
 }
 
 // SearchListAlerts mocks base method.
