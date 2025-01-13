@@ -15,8 +15,8 @@ import (
 // searcherImpl provides an intermediary implementation layer for AlertStorage.
 
 type AlertSearcher interface {
-	Search(ctx context.Context, q *v1.Query, active bool) ([]search.Result, error)
-	Count(ctx context.Context, q *v1.Query, active bool) (int, error)
+	Search(ctx context.Context, q *v1.Query, excludeResolved bool) ([]search.Result, error)
+	Count(ctx context.Context, q *v1.Query, excludeResolved bool) (int, error)
 }
 
 type searcherImpl struct {
@@ -38,8 +38,8 @@ func (ds *searcherImpl) SearchAlerts(ctx context.Context, q *v1.Query) ([]*v1.Se
 }
 
 // SearchListAlerts retrieves list alerts from the storage
-func (ds *searcherImpl) SearchListAlerts(ctx context.Context, q *v1.Query, active bool) ([]*storage.ListAlert, error) {
-	if active {
+func (ds *searcherImpl) SearchListAlerts(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*storage.ListAlert, error) {
+	if excludeResolved {
 		q = applyDefaultState(q)
 	}
 	alerts, err := ds.storage.GetByQuery(ctx, q)
@@ -83,13 +83,13 @@ func (ds *searcherImpl) searchAlerts(ctx context.Context, q *v1.Query) ([]*stora
 }
 
 // Search takes a SearchRequest and finds any matches
-func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query, active bool) ([]search.Result, error) {
-	return ds.formattedSearcher.Search(ctx, q, active)
+func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query, excludeResolved bool) ([]search.Result, error) {
+	return ds.formattedSearcher.Search(ctx, q, excludeResolved)
 }
 
 // Count returns the number of search results from the query
-func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query, active bool) (int, error) {
-	return ds.formattedSearcher.Count(ctx, q, active)
+func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query, excludeResolved bool) (int, error) {
+	return ds.formattedSearcher.Count(ctx, q, excludeResolved)
 }
 
 // convertAlert returns proto search result from an alert object and the internal search result
@@ -164,15 +164,15 @@ type defaultViolationStateSearcher struct {
 	searcher search.Searcher
 }
 
-func (ds *defaultViolationStateSearcher) Search(ctx context.Context, q *v1.Query, active bool) ([]search.Result, error) {
-	if active {
+func (ds *defaultViolationStateSearcher) Search(ctx context.Context, q *v1.Query, excludeResolved bool) ([]search.Result, error) {
+	if excludeResolved {
 		q = applyDefaultState(q)
 	}
 	return ds.searcher.Search(ctx, q)
 }
 
-func (ds *defaultViolationStateSearcher) Count(ctx context.Context, q *v1.Query, active bool) (int, error) {
-	if active {
+func (ds *defaultViolationStateSearcher) Count(ctx context.Context, q *v1.Query, excludeResolved bool) (int, error) {
+	if excludeResolved {
 		q = applyDefaultState(q)
 	}
 	return ds.searcher.Count(ctx, q)

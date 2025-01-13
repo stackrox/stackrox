@@ -46,10 +46,10 @@ func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchCommo
 	return ds.SearchActive(ctx, q, true)
 }
 
-func (ds *datastoreImpl) SearchActive(ctx context.Context, q *v1.Query, active bool) ([]searchCommon.Result, error) {
+func (ds *datastoreImpl) SearchActive(ctx context.Context, q *v1.Query, excludeResolved bool) ([]searchCommon.Result, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "Search")
 
-	return ds.searcher.Search(ctx, q, active)
+	return ds.searcher.Search(ctx, q, excludeResolved)
 }
 
 // Count returns the number of search results from the query
@@ -57,16 +57,16 @@ func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	return ds.CountActive(ctx, q, true)
 }
 
-func (ds *datastoreImpl) CountActive(ctx context.Context, q *v1.Query, active bool) (int, error) {
+func (ds *datastoreImpl) CountActive(ctx context.Context, q *v1.Query, excludeResolved bool) (int, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "Count")
 
-	return ds.searcher.Count(ctx, q, active)
+	return ds.searcher.Count(ctx, q, excludeResolved)
 }
 
-func (ds *datastoreImpl) SearchListAlerts(ctx context.Context, q *v1.Query, active bool) ([]*storage.ListAlert, error) {
+func (ds *datastoreImpl) SearchListAlerts(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*storage.ListAlert, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "SearchListAlerts")
 
-	return ds.searcher.SearchListAlerts(ctx, q, active)
+	return ds.searcher.SearchListAlerts(ctx, q, excludeResolved)
 }
 
 // SearchAlerts returns search results for the given request.
