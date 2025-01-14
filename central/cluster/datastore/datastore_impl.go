@@ -920,10 +920,12 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 			}
 		}
 
-		if cluster.GetInitBundleId() == registrantID &&
+		if !sensorCapabilitiesChanged(cluster, hello) &&
+			cluster.GetInitBundleId() == registrantID &&
 			cluster.GetHelmConfig().GetConfigFingerprint() == helmConfig.GetClusterConfig().GetConfigFingerprint() &&
 			cluster.GetManagedBy() == manager {
 			// No change in either of
+			// * sensor capabilities
 			// * fingerprint of the Helm configuration
 			// * in init bundle ID
 			// * manager type
@@ -957,6 +959,20 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 	}
 
 	return cluster, nil
+}
+
+func sensorCapabilitiesChanged(cluster *storage.Cluster, hello *central.SensorHello) bool {
+	if len(cluster.SensorCapabilities) != len(hello.GetCapabilities()) {
+		return true
+	}
+	for i, receivedCap := range hello.GetCapabilities() {
+		storedCap := cluster.SensorCapabilities[i]
+		if receivedCap != storedCap {
+			return true
+		}
+	}
+
+	return false
 }
 
 func normalizeCluster(cluster *storage.Cluster) error {
