@@ -128,6 +128,11 @@ service AlertService {
     option (google.api.http) = {get: "/v1/alerts/summary/counts"};
   }
 
+  // GetAlertsGroupedCounts returns the number of alerts in the requested cluster or category.
+  rpc GetAlertsGroupedCounts(GetAlertsCountsRequest) returns (GetAlertsCountsResponse) {
+    option (google.api.http) = {get: "/v1/alerts/summary/groupedcounts"};
+  }
+
   // GetAlertTimeseries returns the alerts sorted by time.
   rpc GetAlertTimeseries(ListAlertsRequest) returns (GetAlertTimeseriesResponse) {
     option (google.api.http) = {get: "/v1/alerts/summary/timeseries"};
