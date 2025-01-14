@@ -80,18 +80,37 @@ func Test_apiCall(t *testing.T) {
 }
 
 func Test_addCustomHeaders(t *testing.T) {
-	rp := &phonehome.RequestParams{
-		UserAgent: "RHACS Integration ServiceNow client",
-		Method:    "GET",
-		Path:      "/v1/whatever",
-		Code:      200,
-		Headers: func(h string) []string {
-			return map[string][]string{
-				"RHACS-Integration": {"v1.0.3", "beta"},
-			}[h]
-		},
-	}
-	props := map[string]any{}
-	addCustomHeaders(rp, props)
-	assert.Equal(t, "v1.0.3; beta", props["RHACS-Integration"])
+	t.Run("RHACS-Integration", func(t *testing.T) {
+		rp := &phonehome.RequestParams{
+			UserAgent: "RHACS Integration ServiceNow client",
+			Method:    "GET",
+			Path:      "/v1/clusters",
+			Code:      200,
+			Headers: func(h string) []string {
+				return map[string][]string{
+					"RHACS-Integration": {"v1.0.3", "beta"},
+				}[h]
+			},
+		}
+		props := map[string]any{}
+		addCustomHeaders(rp, props)
+		assert.Len(t, props, 1)
+		assert.Equal(t, "v1.0.3; beta", props["RHACS-Integration"])
+	})
+	t.Run("3rd-party Integration", func(t *testing.T) {
+		rp := &phonehome.RequestParams{
+			UserAgent: "ServiceNow",
+			Method:    "GET",
+			Path:      "/v1/clusters",
+			Code:      200,
+			Headers: func(h string) []string {
+				return map[string][]string{
+					"3rd-party-integration": {"v1.0.3", "beta"},
+				}[h]
+			},
+		}
+		props := map[string]any{}
+		addCustomHeaders(rp, props)
+		assert.Empty(t, props)
+	})
 }

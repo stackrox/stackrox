@@ -68,7 +68,8 @@ func hasValueMatching(values []string, expression string) bool {
 }
 
 // HasHeader returns true if for each header pattern there is at least one
-// matching value.
+// matching value. A request without the expected header matches empty pattern
+// for this header.
 func (rp *RequestParams) HasHeader(patterns map[string]string) bool {
 	if rp.Headers == nil && len(patterns) != 0 {
 		return false

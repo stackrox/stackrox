@@ -12,8 +12,13 @@ var (
 
 	telemetryCampaign = phonehome.APICallCampaign{
 		{UserAgents: []string{"roxctl"}},
-		{UserAgents: []string{"ServiceNow"}, PathPatterns: []string{"/v1/clusters"}},
-		{UserAgents: []string{"ServiceNow"}, HeaderPatterns: map[string]string{"RHACS-Integration": ""}},
+		{
+			UserAgents:   []string{"ServiceNow"},
+			PathPatterns: []string{"/v1/clusters"},
+			// Adds RHACS-Integration property to the event with the value from
+			// the header, if there is such header.
+			HeaderPatterns: map[string]string{"RHACS-Integration": ""},
+		},
 		{PathPatterns: strings.FieldsFunc(apiWhiteList.Setting(),
 			func(r rune) bool { return r == ',' })},
 		{UserAgents: strings.FieldsFunc(userAgentsList.Setting(),
@@ -55,7 +60,10 @@ func apiCall(rp *phonehome.RequestParams, _ map[string]any) bool {
 func addCustomHeaders(rp *phonehome.RequestParams, props map[string]any) bool {
 	for _, c := range telemetryCampaign {
 		for header := range c.HeaderPatterns {
-			props[header] = strings.Join(rp.Headers(header), "; ")
+			values := rp.Headers(header)
+			if len(values) != 0 {
+				props[header] = strings.Join(values, "; ")
+			}
 		}
 	}
 	return true

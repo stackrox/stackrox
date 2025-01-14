@@ -143,6 +143,12 @@ func TestHasHeader(t *testing.T) {
 			},
 			expected: true,
 		},
+		"unknown empty": {
+			patterns: map[string]string{
+				"third": "",
+			},
+			expected: true,
+		},
 		"one": {
 			patterns: map[string]string{
 				"one": "on.",
