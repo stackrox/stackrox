@@ -407,7 +407,7 @@ func TestCountQueries(t *testing.T) {
 				AddExactMatches(search.DeploymentID, "not a uuid").ProtoQuery(),
 			schema: deploymentBaseSchema,
 			expectedError: `uuid: incorrect UUID length 10 in string "not a uuid"
-        	            	value "not a uuid" in search query must be valid UUID`,
+				value "not a uuid" in search query must be valid UUID`,
 		},
 		{
 			desc: "search of child schema mutliple results for base ID",
