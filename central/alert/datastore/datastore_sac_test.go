@@ -466,7 +466,7 @@ var alertUnrestrictedSACObjectSearchTestCases = map[string]alertSACSearchResult{
 
 func (s *alertDatastoreSACTestSuite) runSearchTest(testparams alertSACSearchResult) {
 	ctx := s.testContexts[testparams.scopeKey]
-	searchResults, err := s.datastore.Search(ctx, nil)
+	searchResults, err := s.datastore.Search(ctx, nil, true)
 	s.NoError(err)
 	results := make([]sac.NamespaceScopedObject, 0, len(searchResults))
 	for _, r := range searchResults {

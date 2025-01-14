@@ -666,7 +666,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCluster() {
 
 func (s *getAlertsCountsTests) testGetAlertCounts(fakeSearchResultsSlice []search.Result, groupBy v1.GetAlertsCountsRequest_RequestGroup, expected *v1.GetAlertsCountsResponse) {
 	fakeContext := context.Background()
-	s.datastoreMock.EXPECT().Search(fakeContext, gomock.Any()).Return(fakeSearchResultsSlice, nil)
+	s.datastoreMock.EXPECT().Search(fakeContext, gomock.Any(), true).Return(fakeSearchResultsSlice, nil)
 
 	result, err := s.service.GetAlertsCounts(fakeContext, &v1.GetAlertsCountsRequest{Request: &v1.ListAlertsRequest{
 		Query: "",

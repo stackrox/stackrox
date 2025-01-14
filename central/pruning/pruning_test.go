@@ -1133,7 +1133,7 @@ func (s *PruningTestSuite) TestAlertPruning() {
 			for _, deployment := range c.deployments {
 				require.NoError(t, deployments.UpsertDeployment(ctx, deployment))
 			}
-			all, err := alerts.Search(ctx, getAllAlerts())
+			all, err := alerts.Search(ctx, getAllAlerts(), true)
 			if err != nil {
 				t.Error(err)
 			}
