@@ -13,6 +13,7 @@ var (
 	telemetryCampaign = phonehome.APICallCampaign{
 		{UserAgents: []string{"roxctl"}},
 		{UserAgents: []string{"ServiceNow"}, PathPatterns: []string{"/v1/clusters"}},
+		{UserAgents: []string{"ServiceNow"}, HeaderPatterns: map[string]string{"RHACS-Integration": ""}},
 		{PathPatterns: strings.FieldsFunc(apiWhiteList.Setting(),
 			func(r rune) bool { return r == ',' })},
 		{UserAgents: strings.FieldsFunc(userAgentsList.Setting(),
@@ -20,7 +21,7 @@ var (
 	}
 
 	interceptors = map[string][]phonehome.Interceptor{
-		"API Call": {apiCall, addDefaultProps},
+		"API Call": {apiCall, addDefaultProps, addCustomHeaders},
 	}
 )
 
@@ -47,4 +48,15 @@ func addDefaultProps(rp *phonehome.RequestParams, props map[string]any) bool {
 // have no match in the ignoredPaths list.
 func apiCall(rp *phonehome.RequestParams, _ map[string]any) bool {
 	return !rp.HasPathIn(ignoredPaths) && telemetryCampaign.IsFulfilled(rp)
+}
+
+// addCustomHeaders adds additional properties to the event if the telemetry
+// campaign contains a header pattern condition.
+func addCustomHeaders(rp *phonehome.RequestParams, props map[string]any) bool {
+	for _, c := range telemetryCampaign {
+		for header := range c.HeaderPatterns {
+			props[header] = strings.Join(rp.Headers(header), "; ")
+		}
+	}
+	return true
 }

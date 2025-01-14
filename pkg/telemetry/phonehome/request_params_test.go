@@ -112,3 +112,81 @@ func TestHasUserAgentIn(t *testing.T) {
 		})
 	}
 }
+
+func TestHasHeader(t *testing.T) {
+	rp := RequestParams{
+		Headers: func(s string) []string {
+			headers := map[string][]string{
+				"empty": {},
+				"one":   {"one"},
+				"two":   {"one", "two"},
+			}
+			return headers[s]
+		},
+	}
+	tests := map[string]struct {
+		patterns map[string]string
+		expected bool
+	}{
+		"empty": {
+			expected: true,
+		},
+		"empty not matching": {
+			patterns: map[string]string{
+				"empty": "with value",
+			},
+			expected: false,
+		},
+		"empty matching": {
+			patterns: map[string]string{
+				"empty": "",
+			},
+			expected: true,
+		},
+		"one": {
+			patterns: map[string]string{
+				"one": "on.",
+			},
+			expected: true,
+		},
+		"one-two": {
+			patterns: map[string]string{
+				"two": "^two$",
+			},
+			expected: true,
+		},
+		"no match": {
+			patterns: map[string]string{
+				"three": "x.*",
+			},
+			expected: false,
+		},
+		"one of multiple match": {
+			patterns: map[string]string{
+				"one": "on.",
+				"two": "x",
+			},
+			expected: false,
+		},
+		"all of multiple match": {
+			patterns: map[string]string{
+				"one": "on.",
+				"two": "^two$",
+			},
+			expected: true,
+		},
+		"one of multiple doesn't exist": {
+			patterns: map[string]string{
+				"one":   "on.",
+				"two":   "^two$",
+				"three": "th.*",
+			},
+			expected: false,
+		},
+	}
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, test.expected, rp.HasHeader(test.patterns))
+		})
+	}
+}

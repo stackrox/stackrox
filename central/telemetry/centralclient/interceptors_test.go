@@ -57,10 +57,41 @@ func Test_apiCall(t *testing.T) {
 			},
 			expected: false,
 		},
+		"ServiceNow from integration": {
+			rp: &phonehome.RequestParams{
+				UserAgent: "RHACS Integration ServiceNow client",
+				Method:    "GET",
+				Path:      "/v1/whatever",
+				Code:      200,
+				Headers: func(h string) []string {
+					return map[string][]string{
+						"RHACS-Integration": {"v1.0.3"},
+					}[h]
+				},
+			},
+			expected: true,
+		},
 	}
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			assert.Equal(t, c.expected, apiCall(c.rp, nil))
 		})
 	}
+}
+
+func Test_addCustomHeaders(t *testing.T) {
+	rp := &phonehome.RequestParams{
+		UserAgent: "RHACS Integration ServiceNow client",
+		Method:    "GET",
+		Path:      "/v1/whatever",
+		Code:      200,
+		Headers: func(h string) []string {
+			return map[string][]string{
+				"RHACS-Integration": {"v1.0.3", "beta"},
+			}[h]
+		},
+	}
+	props := map[string]any{}
+	addCustomHeaders(rp, props)
+	assert.Equal(t, "v1.0.3; beta", props["RHACS-Integration"])
 }

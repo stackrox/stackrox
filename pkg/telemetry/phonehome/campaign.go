@@ -8,10 +8,11 @@ import (
 // campaign. Requests parameters need to match all fields for the request to
 // be tracked. Any request matches empty criterium.
 type APICallCampaignCriterium struct {
-	UserAgents   []string `json:"user_agents,omitempty"`
-	PathPatterns []string `json:"path_patterns,omitempty"`
-	Methods      []string `json:"methods,omitempty"`
-	Codes        []int32  `json:"codes,omitempty"`
+	UserAgents     []string          `json:"user_agents,omitempty"`
+	PathPatterns   []string          `json:"path_patterns,omitempty"`
+	Methods        []string          `json:"methods,omitempty"`
+	Codes          []int32           `json:"codes,omitempty"`
+	HeaderPatterns map[string]string `json:"header_patterns,omitempty"`
 }
 
 // APICallCampaign defines an API interception telemetry campaign as a list of
@@ -38,7 +39,8 @@ func (c *APICallCampaignCriterium) IsFulfilled(rp *RequestParams) bool {
 
 	return codeMatches && methodMatches &&
 		(c.PathPatterns == nil || rp.HasPathIn(c.PathPatterns)) &&
-		(c.UserAgents == nil || rp.HasUserAgentWith(c.UserAgents))
+		(c.UserAgents == nil || rp.HasUserAgentWith(c.UserAgents)) &&
+		(c.HeaderPatterns == nil || rp.HasHeader(c.HeaderPatterns))
 }
 
 func (c APICallCampaign) IsFulfilled(rp *RequestParams) bool {

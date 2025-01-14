@@ -3,6 +3,7 @@ package phonehome
 import (
 	"context"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -55,6 +56,36 @@ func (rp *RequestParams) HasUserAgentWith(substrings []string) bool {
 		}
 	}
 	return false
+}
+
+func hasValueMatching(values []string, expression string) bool {
+	for _, value := range values {
+		if ok, _ := regexp.MatchString(expression, value); ok {
+			return true
+		}
+	}
+	return false
+}
+
+// HasHeader returns true if for each header pattern there is at least one
+// matching value.
+func (rp *RequestParams) HasHeader(patterns map[string]string) bool {
+	if rp.Headers == nil && len(patterns) != 0 {
+		return false
+	}
+	for header, expression := range patterns {
+		values := rp.Headers(header)
+		if len(values) == 0 {
+			if expression == "" {
+				continue
+			}
+			return false
+		}
+		if !hasValueMatching(values, expression) {
+			return false
+		}
+	}
+	return true
 }
 
 // Is checks wether the request targets the service method: either gRPC or HTTP.

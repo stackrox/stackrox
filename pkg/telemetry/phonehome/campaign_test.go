@@ -117,6 +117,15 @@ func TestCampaignFulfilled(t *testing.T) {
 				PathPatterns: []string{"/v3/test*", "/v4/test*"},
 				UserAgents:   []string{"teeth", "tooth"},
 			},
+			{
+				Codes:        []int32{100},
+				Methods:      []string{"put"},
+				PathPatterns: []string{"/v5/*"},
+				UserAgents:   []string{"another"},
+				HeaderPatterns: map[string]string{
+					"header": "val.*",
+				},
+			},
 		}
 		t.Run("All pass", func(t *testing.T) {
 			rps := []RequestParams{
@@ -143,6 +152,17 @@ func TestCampaignFulfilled(t *testing.T) {
 					Method:    "options",
 					Path:      "/v4/test/path",
 					Code:      500,
+				},
+				{
+					UserAgent: "some another user-agent",
+					Method:    "PUT",
+					Code:      100,
+					Path:      "/v5/test",
+					Headers: func(h string) []string {
+						return map[string][]string{
+							"header": {"value"},
+						}[h]
+					},
 				},
 			}
 			for _, rp := range rps {
@@ -175,6 +195,13 @@ func TestCampaignFulfilled(t *testing.T) {
 					Method:    "get",
 					Path:      "/v4/test/path",
 					Code:      500,
+				},
+				{
+					UserAgent: "some another user-agent 5",
+					Method:    "put",
+					Path:      "/v5/test/path",
+					Code:      100,
+					Headers:   func(_ string) []string { return []string{"---"} },
 				},
 			}
 			for _, rp := range rps {
