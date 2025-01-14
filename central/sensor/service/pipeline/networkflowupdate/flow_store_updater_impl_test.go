@@ -61,6 +61,8 @@ func (suite *FlowStoreUpdaterTestSuite) TearDownTest() {
 }
 
 func (suite *FlowStoreUpdaterTestSuite) TestUpdateNoExternalIPs() {
+	suite.T().Setenv(features.ExternalIPs.EnvVar(), "false")
+
 	firstTimestamp := time.Now()
 	storedFlows := []*storage.NetworkFlow{
 		{

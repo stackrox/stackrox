@@ -4,6 +4,7 @@ import pluralize from 'pluralize';
 import { ActionsColumn, IAction, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { Flex, Label } from '@patternfly/react-core';
 import { EyeIcon } from '@patternfly/react-icons';
+import isEmpty from 'lodash/isEmpty';
 
 import { UseURLSortResult } from 'hooks/useURLSort';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
@@ -19,11 +20,14 @@ import {
 } from 'hooks/useManagedColumns';
 import useIsScannerV4Enabled from 'hooks/useIsScannerV4Enabled';
 import useHasGenerateSBOMAbility from '../../hooks/useHasGenerateSBOMAbility';
-import GenerateSbomModal from '../../components/GenerateSbomModal';
+import GenerateSbomModal, {
+    getSbomGenerationStatusMessage,
+} from '../../components/GenerateSbomModal';
 import ImageNameLink from '../components/ImageNameLink';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import { VulnerabilitySeverityLabel, WatchStatus } from '../../types';
 import ImageScanningIncompleteLabel from '../components/ImageScanningIncompleteLabelLayout';
+import getImageScanMessage from '../utils/getImageScanMessage';
 
 export const tableId = 'WorkloadCvesImageOverviewTable';
 
@@ -221,6 +225,9 @@ function ImageOverviewTable({
                         const watchImageMenuText = isWatchedImage ? 'Unwatch image' : 'Watch image';
                         const watchImageMenuAction = isWatchedImage ? onUnwatchImage : onWatchImage;
 
+                        const scanMessage = getImageScanMessage(notes, scanNotes);
+                        const hasScanMessage = !isEmpty(scanMessage);
+
                         const rowActions: IAction[] = [];
 
                         if (hasWriteAccessForWatchedImage && name?.tag) {
@@ -234,12 +241,16 @@ function ImageOverviewTable({
                         }
 
                         if (hasGenerateSBOMAbility) {
+                            const isAriaDisabled = !isScannerV4Enabled || hasScanMessage;
+                            const description = getSbomGenerationStatusMessage({
+                                isScannerV4Enabled,
+                                hasScanMessage,
+                            });
+
                             rowActions.push({
                                 title: 'Generate SBOM',
-                                isAriaDisabled: !isScannerV4Enabled,
-                                description: !isScannerV4Enabled
-                                    ? 'SBOM generation requires Scanner V4'
-                                    : undefined,
+                                isAriaDisabled,
+                                description,
                                 onClick: () => {
                                     setSbomTargetImage(name?.fullName);
                                 },
@@ -268,10 +279,9 @@ function ImageOverviewTable({
                                                         Watched image
                                                     </Label>
                                                 )}
-                                                {(notes.length !== 0 || scanNotes.length !== 0) && (
+                                                {hasScanMessage && (
                                                     <ImageScanningIncompleteLabel
-                                                        imageNotes={notes}
-                                                        scanNotes={scanNotes}
+                                                        scanMessage={scanMessage}
                                                     />
                                                 )}
                                             </ImageNameLink>

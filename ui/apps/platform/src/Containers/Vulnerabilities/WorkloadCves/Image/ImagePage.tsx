@@ -31,7 +31,9 @@ import useIsScannerV4Enabled from 'hooks/useIsScannerV4Enabled';
 import useURLPagination from 'hooks/useURLPagination';
 
 import HeaderLoadingSkeleton from '../../components/HeaderLoadingSkeleton';
-import GenerateSbomModal from '../../components/GenerateSbomModal';
+import GenerateSbomModal, {
+    getSbomGenerationStatusMessage,
+} from '../../components/GenerateSbomModal';
 import { getOverviewPagePath } from '../../utils/searchUtils';
 import useInvalidateVulnerabilityQueries from '../../hooks/useInvalidateVulnerabilityQueries';
 import useHasGenerateSbomAbility from '../../hooks/useHasGenerateSBOMAbility';
@@ -63,8 +65,17 @@ export const imageDetailsQuery = gql`
     }
 `;
 
-function ScannerV4RequiredTooltip({ children }: { children: ReactElement }) {
-    return <Tooltip content="SBOM generation requires Scanner V4">{children}</Tooltip>;
+function OptionalSbomButtonTooltip({
+    children,
+    message,
+}: {
+    children: ReactElement;
+    message?: string;
+}) {
+    if (!message) {
+        return children;
+    }
+    return <Tooltip content={message}>{children}</Tooltip>;
 }
 
 function ImagePage() {
@@ -104,6 +115,7 @@ function ImagePage() {
             ? `${imageName.registry}/${getImageBaseNameDisplay(imageData.id, imageName)}`
             : 'NAME UNKNOWN';
     const scanMessage = getImageScanMessage(imageData?.notes || [], imageData?.scanNotes || []);
+    const hasScanMessage = !isEmpty(scanMessage);
 
     const workloadCveOverviewImagePath = getAbsoluteUrl(
         getOverviewPagePath('Workload', {
@@ -128,7 +140,6 @@ function ImagePage() {
             </PageSection>
         );
     } else {
-        const SbomButtonWrapper = isScannerV4Enabled ? React.Fragment : ScannerV4RequiredTooltip;
         const sha = imageData?.id;
         mainContent = (
             <>
@@ -158,17 +169,24 @@ function ImagePage() {
                                 </Flex>
                                 {hasGenerateSbomAbility && (
                                     <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
-                                        <SbomButtonWrapper>
+                                        <OptionalSbomButtonTooltip
+                                            message={getSbomGenerationStatusMessage({
+                                                isScannerV4Enabled,
+                                                hasScanMessage,
+                                            })}
+                                        >
                                             <Button
                                                 variant="secondary"
                                                 onClick={() => {
                                                     setSbomTargetImage(imageData.name?.fullName);
                                                 }}
-                                                isAriaDisabled={!isScannerV4Enabled}
+                                                isAriaDisabled={
+                                                    !isScannerV4Enabled || hasScanMessage
+                                                }
                                             >
                                                 Generate SBOM
                                             </Button>
-                                        </SbomButtonWrapper>
+                                        </OptionalSbomButtonTooltip>
                                         {sbomTargetImage && (
                                             <GenerateSbomModal
                                                 onClose={() => setSbomTargetImage(undefined)}
@@ -178,7 +196,7 @@ function ImagePage() {
                                     </FlexItem>
                                 )}
                             </Flex>
-                            {!isEmpty(scanMessage) && (
+                            {hasScanMessage && (
                                 <Alert
                                     className="pf-v5-u-w-100"
                                     variant="warning"

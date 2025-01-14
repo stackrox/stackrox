@@ -15,10 +15,11 @@ import useAuthStatus from 'hooks/useAuthStatus';
 import { Snapshot } from 'types/reportJob';
 import { saveFile } from 'services/DownloadService';
 import { getDateTime } from 'utils/dateUtils';
-import ReportJobStatus from 'Containers/Vulnerabilities/VulnerablityReporting/ViewVulnReport/ReportJobStatus';
+import ReportJobStatus from 'Components/ReportJob/ReportJobStatus';
 import { GetSortParams } from 'hooks/useURLSort';
 import { TableUIState } from 'utils/getTableUIState';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import { sanitizeFilename } from 'utils/fileUtils';
 
 export type ReportJobsTableProps<T> = {
     tableState: TableUIState<T>;
@@ -30,12 +31,10 @@ export type ReportJobsTableProps<T> = {
     renderExpandableRowContent: (snapshot: T) => React.ReactNode;
 };
 
-const filenameSanitizerRegex = new RegExp('(:)|(/)|(\\s)', 'gi');
-
 const onDownload = (snapshot: Snapshot, jobId: string, configName: string) => () => {
     const { completedAt } = snapshot.reportStatus;
     const filename = `${configName}-${completedAt}`;
-    const sanitizedFilename = filename.replaceAll(filenameSanitizerRegex, '_');
+    const sanitizedFilename = sanitizeFilename(filename);
     return saveFile({
         method: 'get',
         url: `/v2/compliance/scan/configurations/reports/download?id=${jobId}`,
