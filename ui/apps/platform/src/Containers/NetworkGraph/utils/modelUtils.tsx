@@ -243,6 +243,8 @@ export function transformActiveData(
     const deploymentNodes: Record<string, DeploymentNodeModel> = {};
     const activeEdgeMap: Record<string, CustomEdgeModel> = {};
 
+    let hasExternalEntitiesNode = false;
+
     nodes.forEach(({ entity, outEdges }) => {
         const { type, id } = entity;
         const { networkPolicyState } = policyNodeMap[id]?.data || {};
@@ -281,9 +283,23 @@ export function transformActiveData(
 
         // to group external entities and cidr blocks to external grouping
         if (type === 'EXTERNAL_SOURCE' || type === 'INTERNET') {
-            const externalNode = getExternalNodeModel(entity, outEdges);
-            if (!externalNodes[id]) {
-                externalNodes[id] = externalNode;
+            // if is an external ip
+            if (!entity?.externalSource?.default && entity?.externalSource?.discovered) {
+                if (!hasExternalEntitiesNode) {
+                    hasExternalEntitiesNode = true;
+                    const baseNode = getBaseNode(entity.id);
+                    externalNodes[id] = {
+                        ...baseNode,
+                        shape: NodeShape.rect,
+                        label: 'External Entities',
+                        data: { ...entity, type: 'EXTERNAL_ENTITIES', outEdges, isFadedOut: false },
+                    };
+                }
+            } else {
+                const externalNode = getExternalNodeModel(entity, outEdges);
+                if (!externalNodes[id]) {
+                    externalNodes[id] = externalNode;
+                }
             }
         }
 
