@@ -115,9 +115,9 @@ func (s *ImageResolversTestSuite) TestDeployments() {
 		{
 			desc: "filter by deployment",
 			ctx:  ctx,
-			q:    PaginatedQuery{Query: pointers.String("Deployment:dep1name")},
+			q:    PaginatedQuery{Query: pointers.String("Deployment:" + dep1name)},
 			deploymentFiler: func(d *storage.Deployment) bool {
-				return d.GetName() == "dep1name"
+				return d.GetName() == dep1name
 			},
 			imageFilter: func(_ *storage.Image) bool { return true },
 			vulnFilter:  func(_ *storage.EmbeddedVulnerability) bool { return true },
