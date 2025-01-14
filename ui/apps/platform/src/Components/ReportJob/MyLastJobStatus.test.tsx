@@ -16,6 +16,7 @@ const baseReportSnapshot: Omit<ReportSnapshot, 'reportStatus' | 'isDownloadAvail
         fixability: 'FIXABLE',
         severities: ['LOW_VULNERABILITY_SEVERITY'],
         imageTypes: ['DEPLOYED'],
+        includeEpssProbability: false,
         includeNvdCvss: false,
         allVuln: true,
     },

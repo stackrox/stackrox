@@ -29,7 +29,9 @@ function ReportParametersDetails({
     formValues,
 }: ReportParametersDetailsProps): ReactElement {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isIncludeNvdCvssEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
+    const isIncludeEpssProbabilityEnabled =
+        !isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_EPSS_SCORE');
+    const isIncludeNvdCvssEnabled = !isFeatureFlagEnabled('ROX_SCANNER_V4');
 
     const cveSeverities =
         formValues.reportParameters.cveSeverities.length !== 0 ? (
@@ -114,12 +116,23 @@ function ReportParametersDetails({
                             {getCVEsDiscoveredSinceText(formValues.reportParameters)}
                         </DescriptionListDescription>
                     </DescriptionListGroup>
-                    {isIncludeNvdCvssEnabled && formValues.reportParameters.includeNvdCvss && (
+                    {((isIncludeNvdCvssEnabled && formValues.reportParameters.includeNvdCvss) ||
+                        (isIncludeEpssProbabilityEnabled &&
+                            formValues.reportParameters.includeEpssProbability)) && (
                         <DescriptionListGroup>
                             <DescriptionListTerm>Optional columns</DescriptionListTerm>
-                            <DescriptionListDescription>
-                                Include NVD CVSS
-                            </DescriptionListDescription>
+                            {isIncludeNvdCvssEnabled &&
+                                formValues.reportParameters.includeNvdCvss && (
+                                    <DescriptionListDescription>
+                                        Include NVD CVSS
+                                    </DescriptionListDescription>
+                                )}
+                            {isIncludeEpssProbabilityEnabled &&
+                                formValues.reportParameters.includeEpssProbability && (
+                                    <DescriptionListDescription>
+                                        Include EPSS probability
+                                    </DescriptionListDescription>
+                                )}
                         </DescriptionListGroup>
                     )}
                 </DescriptionList>
