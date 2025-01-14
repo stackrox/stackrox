@@ -2051,16 +2051,17 @@ func (x *ComplianceOperatorRemediationV2) GetClusterId() string {
 	return ""
 }
 
-// Next Tag: 8
+// Next Tag: 9
 type ComplianceOperatorReportSnapshotV2 struct {
-	state               protoimpl.MessageState                     `protogen:"open.v1"`
-	ReportId            string                                     `protobuf:"bytes,1,opt,name=report_id,json=reportId,proto3" json:"report_id,omitempty" sql:"pk,id,type(uuid)"`                                    // @gotags: sql:"pk,id,type(uuid)"
-	ScanConfigurationId string                                     `protobuf:"bytes,2,opt,name=scan_configuration_id,json=scanConfigurationId,proto3" json:"scan_configuration_id,omitempty" search:"Compliance Scan Config ID" sql:"fk(ComplianceOperatorScanConfigurationV2:id)"` // @gotags: search:"Compliance Scan Config ID" sql:"fk(ComplianceOperatorScanConfigurationV2:id)"
-	Name                string                                     `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty" search:"Compliance Report Name"`                                                            // @gotags: search:"Compliance Report Name"
-	Description         string                                     `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
-	ReportStatus        *ComplianceOperatorReportStatus            `protobuf:"bytes,5,opt,name=report_status,json=reportStatus,proto3" json:"report_status,omitempty"`
-	User                *SlimUser                                  `protobuf:"bytes,6,opt,name=user,proto3" json:"user,omitempty"`
-	Scans               []*ComplianceOperatorReportSnapshotV2_Scan `protobuf:"bytes,7,rep,name=scans,proto3" json:"scans,omitempty"`
+	state               protoimpl.MessageState                         `protogen:"open.v1"`
+	ReportId            string                                         `protobuf:"bytes,1,opt,name=report_id,json=reportId,proto3" json:"report_id,omitempty" sql:"pk,id,type(uuid)"`                                    // @gotags: sql:"pk,id,type(uuid)"
+	ScanConfigurationId string                                         `protobuf:"bytes,2,opt,name=scan_configuration_id,json=scanConfigurationId,proto3" json:"scan_configuration_id,omitempty" search:"Compliance Scan Config ID" sql:"fk(ComplianceOperatorScanConfigurationV2:id)"` // @gotags: search:"Compliance Scan Config ID" sql:"fk(ComplianceOperatorScanConfigurationV2:id)"
+	Name                string                                         `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty" search:"Compliance Report Name"`                                                            // @gotags: search:"Compliance Report Name"
+	Description         string                                         `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
+	ReportStatus        *ComplianceOperatorReportStatus                `protobuf:"bytes,5,opt,name=report_status,json=reportStatus,proto3" json:"report_status,omitempty"`
+	User                *SlimUser                                      `protobuf:"bytes,6,opt,name=user,proto3" json:"user,omitempty"`
+	Scans               []*ComplianceOperatorReportSnapshotV2_Scan     `protobuf:"bytes,7,rep,name=scans,proto3" json:"scans,omitempty"`
+	ReportData          *ComplianceOperatorReportSnapshotV2_ScanConfig `protobuf:"bytes,8,opt,name=report_data,json=reportData,proto3" json:"report_data,omitempty" search:"-"` // @gotags: search:"-"
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -2140,6 +2141,13 @@ func (x *ComplianceOperatorReportSnapshotV2) GetUser() *SlimUser {
 func (x *ComplianceOperatorReportSnapshotV2) GetScans() []*ComplianceOperatorReportSnapshotV2_Scan {
 	if x != nil {
 		return x.Scans
+	}
+	return nil
+}
+
+func (x *ComplianceOperatorReportSnapshotV2) GetReportData() *ComplianceOperatorReportSnapshotV2_ScanConfig {
+	if x != nil {
+		return x.ReportData
 	}
 	return nil
 }
@@ -2513,6 +2521,389 @@ func (x *ComplianceOperatorReportSnapshotV2_Scan) GetScanRefId() string {
 func (x *ComplianceOperatorReportSnapshotV2_Scan) GetLastStartedTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.LastStartedTime
+	}
+	return nil
+}
+
+type ComplianceOperatorReportSnapshotV2_NotifierInfo struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Types that are valid to be assigned to NotifierConfig:
+	//
+	//	*ComplianceOperatorReportSnapshotV2_NotifierInfo_EmailConfig
+	NotifierConfig isComplianceOperatorReportSnapshotV2_NotifierInfo_NotifierConfig `protobuf_oneof:"notifier_config"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *ComplianceOperatorReportSnapshotV2_NotifierInfo) Reset() {
+	*x = ComplianceOperatorReportSnapshotV2_NotifierInfo{}
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[35]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ComplianceOperatorReportSnapshotV2_NotifierInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ComplianceOperatorReportSnapshotV2_NotifierInfo) ProtoMessage() {}
+
+func (x *ComplianceOperatorReportSnapshotV2_NotifierInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[35]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ComplianceOperatorReportSnapshotV2_NotifierInfo.ProtoReflect.Descriptor instead.
+func (*ComplianceOperatorReportSnapshotV2_NotifierInfo) Descriptor() ([]byte, []int) {
+	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{15, 1}
+}
+
+func (x *ComplianceOperatorReportSnapshotV2_NotifierInfo) GetNotifierConfig() isComplianceOperatorReportSnapshotV2_NotifierInfo_NotifierConfig {
+	if x != nil {
+		return x.NotifierConfig
+	}
+	return nil
+}
+
+func (x *ComplianceOperatorReportSnapshotV2_NotifierInfo) GetEmailConfig() *EmailNotifierConfiguration {
+	if x != nil {
+		if x, ok := x.NotifierConfig.(*ComplianceOperatorReportSnapshotV2_NotifierInfo_EmailConfig); ok {
+			return x.EmailConfig
+		}
+	}
+	return nil
+}
+
+type isComplianceOperatorReportSnapshotV2_NotifierInfo_NotifierConfig interface {
+	isComplianceOperatorReportSnapshotV2_NotifierInfo_NotifierConfig()
+}
+
+type ComplianceOperatorReportSnapshotV2_NotifierInfo_EmailConfig struct {
+	EmailConfig *EmailNotifierConfiguration `protobuf:"bytes,1,opt,name=email_config,json=emailConfig,proto3,oneof"`
+}
+
+func (*ComplianceOperatorReportSnapshotV2_NotifierInfo_EmailConfig) isComplianceOperatorReportSnapshotV2_NotifierInfo_NotifierConfig() {
+}
+
+// Next available tag: 6
+type ComplianceOperatorReportSnapshotV2_BaseSettings struct {
+	state         protoimpl.MessageState                             `protogen:"open.v1"`
+	OneTimeScan   bool                                               `protobuf:"varint,1,opt,name=one_time_scan,json=oneTimeScan,proto3" json:"one_time_scan,omitempty"`
+	Profiles      []string                                           `protobuf:"bytes,2,rep,name=profiles,proto3" json:"profiles,omitempty"`
+	ScanSchedule  *Schedule                                          `protobuf:"bytes,3,opt,name=scan_schedule,json=scanSchedule,proto3" json:"scan_schedule,omitempty"`
+	Description   string                                             `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
+	Notifiers     []*ComplianceOperatorReportSnapshotV2_NotifierInfo `protobuf:"bytes,5,rep,name=notifiers,proto3" json:"notifiers,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ComplianceOperatorReportSnapshotV2_BaseSettings) Reset() {
+	*x = ComplianceOperatorReportSnapshotV2_BaseSettings{}
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[36]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ComplianceOperatorReportSnapshotV2_BaseSettings) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ComplianceOperatorReportSnapshotV2_BaseSettings) ProtoMessage() {}
+
+func (x *ComplianceOperatorReportSnapshotV2_BaseSettings) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[36]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ComplianceOperatorReportSnapshotV2_BaseSettings.ProtoReflect.Descriptor instead.
+func (*ComplianceOperatorReportSnapshotV2_BaseSettings) Descriptor() ([]byte, []int) {
+	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{15, 2}
+}
+
+func (x *ComplianceOperatorReportSnapshotV2_BaseSettings) GetOneTimeScan() bool {
+	if x != nil {
+		return x.OneTimeScan
+	}
+	return false
+}
+
+func (x *ComplianceOperatorReportSnapshotV2_BaseSettings) GetProfiles() []string {
+	if x != nil {
+		return x.Profiles
+	}
+	return nil
+}
+
+func (x *ComplianceOperatorReportSnapshotV2_BaseSettings) GetScanSchedule() *Schedule {
+	if x != nil {
+		return x.ScanSchedule
+	}
+	return nil
+}
+
+func (x *ComplianceOperatorReportSnapshotV2_BaseSettings) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *ComplianceOperatorReportSnapshotV2_BaseSettings) GetNotifiers() []*ComplianceOperatorReportSnapshotV2_NotifierInfo {
+	if x != nil {
+		return x.Notifiers
+	}
+	return nil
+}
+
+// Next available tag: 5
+type ComplianceOperatorReportSnapshotV2_SuiteStatus struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	Phase              string                 `protobuf:"bytes,1,opt,name=phase,proto3" json:"phase,omitempty"`
+	Result             string                 `protobuf:"bytes,2,opt,name=result,proto3" json:"result,omitempty"`
+	ErrorMessage       string                 `protobuf:"bytes,3,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	LastTransitionTime *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=last_transition_time,json=lastTransitionTime,proto3" json:"last_transition_time,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *ComplianceOperatorReportSnapshotV2_SuiteStatus) Reset() {
+	*x = ComplianceOperatorReportSnapshotV2_SuiteStatus{}
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[37]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ComplianceOperatorReportSnapshotV2_SuiteStatus) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ComplianceOperatorReportSnapshotV2_SuiteStatus) ProtoMessage() {}
+
+func (x *ComplianceOperatorReportSnapshotV2_SuiteStatus) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[37]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ComplianceOperatorReportSnapshotV2_SuiteStatus.ProtoReflect.Descriptor instead.
+func (*ComplianceOperatorReportSnapshotV2_SuiteStatus) Descriptor() ([]byte, []int) {
+	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{15, 3}
+}
+
+func (x *ComplianceOperatorReportSnapshotV2_SuiteStatus) GetPhase() string {
+	if x != nil {
+		return x.Phase
+	}
+	return ""
+}
+
+func (x *ComplianceOperatorReportSnapshotV2_SuiteStatus) GetResult() string {
+	if x != nil {
+		return x.Result
+	}
+	return ""
+}
+
+func (x *ComplianceOperatorReportSnapshotV2_SuiteStatus) GetErrorMessage() string {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return ""
+}
+
+func (x *ComplianceOperatorReportSnapshotV2_SuiteStatus) GetLastTransitionTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.LastTransitionTime
+	}
+	return nil
+}
+
+// Next available tag: 5
+type ComplianceOperatorReportSnapshotV2_ClusterStatus struct {
+	state         protoimpl.MessageState                          `protogen:"open.v1"`
+	ClusterId     string                                          `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	Errors        []string                                        `protobuf:"bytes,2,rep,name=errors,proto3" json:"errors,omitempty"`
+	ClusterName   string                                          `protobuf:"bytes,3,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
+	SuiteStatus   *ComplianceOperatorReportSnapshotV2_SuiteStatus `protobuf:"bytes,4,opt,name=suite_status,json=suiteStatus,proto3" json:"suite_status,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ComplianceOperatorReportSnapshotV2_ClusterStatus) Reset() {
+	*x = ComplianceOperatorReportSnapshotV2_ClusterStatus{}
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[38]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ComplianceOperatorReportSnapshotV2_ClusterStatus) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ComplianceOperatorReportSnapshotV2_ClusterStatus) ProtoMessage() {}
+
+func (x *ComplianceOperatorReportSnapshotV2_ClusterStatus) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[38]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ComplianceOperatorReportSnapshotV2_ClusterStatus.ProtoReflect.Descriptor instead.
+func (*ComplianceOperatorReportSnapshotV2_ClusterStatus) Descriptor() ([]byte, []int) {
+	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{15, 4}
+}
+
+func (x *ComplianceOperatorReportSnapshotV2_ClusterStatus) GetClusterId() string {
+	if x != nil {
+		return x.ClusterId
+	}
+	return ""
+}
+
+func (x *ComplianceOperatorReportSnapshotV2_ClusterStatus) GetErrors() []string {
+	if x != nil {
+		return x.Errors
+	}
+	return nil
+}
+
+func (x *ComplianceOperatorReportSnapshotV2_ClusterStatus) GetClusterName() string {
+	if x != nil {
+		return x.ClusterName
+	}
+	return ""
+}
+
+func (x *ComplianceOperatorReportSnapshotV2_ClusterStatus) GetSuiteStatus() *ComplianceOperatorReportSnapshotV2_SuiteStatus {
+	if x != nil {
+		return x.SuiteStatus
+	}
+	return nil
+}
+
+// Next available tag: 9
+type ComplianceOperatorReportSnapshotV2_ScanConfig struct {
+	state            protoimpl.MessageState                              `protogen:"open.v1"`
+	Id               string                                              `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	ScanName         string                                              `protobuf:"bytes,2,opt,name=scan_name,json=scanName,proto3" json:"scan_name,omitempty"`
+	ScanConfig       *ComplianceOperatorReportSnapshotV2_BaseSettings    `protobuf:"bytes,3,opt,name=scan_config,json=scanConfig,proto3" json:"scan_config,omitempty"`
+	ClusterStatus    []*ComplianceOperatorReportSnapshotV2_ClusterStatus `protobuf:"bytes,4,rep,name=cluster_status,json=clusterStatus,proto3" json:"cluster_status,omitempty"`
+	CreatedTime      *timestamppb.Timestamp                              `protobuf:"bytes,5,opt,name=created_time,json=createdTime,proto3" json:"created_time,omitempty"`
+	LastUpdatedTime  *timestamppb.Timestamp                              `protobuf:"bytes,6,opt,name=last_updated_time,json=lastUpdatedTime,proto3" json:"last_updated_time,omitempty"`
+	ModifiedBy       *SlimUser                                           `protobuf:"bytes,7,opt,name=modified_by,json=modifiedBy,proto3" json:"modified_by,omitempty"`
+	LastExecutedTime *timestamppb.Timestamp                              `protobuf:"bytes,8,opt,name=last_executed_time,json=lastExecutedTime,proto3" json:"last_executed_time,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *ComplianceOperatorReportSnapshotV2_ScanConfig) Reset() {
+	*x = ComplianceOperatorReportSnapshotV2_ScanConfig{}
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[39]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ComplianceOperatorReportSnapshotV2_ScanConfig) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ComplianceOperatorReportSnapshotV2_ScanConfig) ProtoMessage() {}
+
+func (x *ComplianceOperatorReportSnapshotV2_ScanConfig) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[39]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ComplianceOperatorReportSnapshotV2_ScanConfig.ProtoReflect.Descriptor instead.
+func (*ComplianceOperatorReportSnapshotV2_ScanConfig) Descriptor() ([]byte, []int) {
+	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{15, 5}
+}
+
+func (x *ComplianceOperatorReportSnapshotV2_ScanConfig) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *ComplianceOperatorReportSnapshotV2_ScanConfig) GetScanName() string {
+	if x != nil {
+		return x.ScanName
+	}
+	return ""
+}
+
+func (x *ComplianceOperatorReportSnapshotV2_ScanConfig) GetScanConfig() *ComplianceOperatorReportSnapshotV2_BaseSettings {
+	if x != nil {
+		return x.ScanConfig
+	}
+	return nil
+}
+
+func (x *ComplianceOperatorReportSnapshotV2_ScanConfig) GetClusterStatus() []*ComplianceOperatorReportSnapshotV2_ClusterStatus {
+	if x != nil {
+		return x.ClusterStatus
+	}
+	return nil
+}
+
+func (x *ComplianceOperatorReportSnapshotV2_ScanConfig) GetCreatedTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedTime
+	}
+	return nil
+}
+
+func (x *ComplianceOperatorReportSnapshotV2_ScanConfig) GetLastUpdatedTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.LastUpdatedTime
+	}
+	return nil
+}
+
+func (x *ComplianceOperatorReportSnapshotV2_ScanConfig) GetModifiedBy() *SlimUser {
+	if x != nil {
+		return x.ModifiedBy
+	}
+	return nil
+}
+
+func (x *ComplianceOperatorReportSnapshotV2_ScanConfig) GetLastExecutedTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.LastExecutedTime
 	}
 	return nil
 }
@@ -2981,7 +3372,7 @@ var file_storage_compliance_operator_v2_proto_rawDesc = []byte{
 	0x65, 0x18, 0x07, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0f, 0x65, 0x6e, 0x66, 0x6f, 0x72, 0x63, 0x65,
 	0x6d, 0x65, 0x6e, 0x74, 0x54, 0x79, 0x70, 0x65, 0x12, 0x1d, 0x0a, 0x0a, 0x63, 0x6c, 0x75, 0x73,
 	0x74, 0x65, 0x72, 0x5f, 0x69, 0x64, 0x18, 0x08, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x63, 0x6c,
-	0x75, 0x73, 0x74, 0x65, 0x72, 0x49, 0x64, 0x22, 0xd8, 0x03, 0x0a, 0x22, 0x43, 0x6f, 0x6d, 0x70,
+	0x75, 0x73, 0x74, 0x65, 0x72, 0x49, 0x64, 0x22, 0x98, 0x0e, 0x0a, 0x22, 0x43, 0x6f, 0x6d, 0x70,
 	0x6c, 0x69, 0x61, 0x6e, 0x63, 0x65, 0x4f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72, 0x52, 0x65,
 	0x70, 0x6f, 0x72, 0x74, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x56, 0x32, 0x12, 0x1b,
 	0x0a, 0x09, 0x72, 0x65, 0x70, 0x6f, 0x72, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28,
@@ -3004,13 +3395,97 @@ var file_storage_compliance_operator_v2_proto_rawDesc = []byte{
 	0x61, 0x67, 0x65, 0x2e, 0x43, 0x6f, 0x6d, 0x70, 0x6c, 0x69, 0x61, 0x6e, 0x63, 0x65, 0x4f, 0x70,
 	0x65, 0x72, 0x61, 0x74, 0x6f, 0x72, 0x52, 0x65, 0x70, 0x6f, 0x72, 0x74, 0x53, 0x6e, 0x61, 0x70,
 	0x73, 0x68, 0x6f, 0x74, 0x56, 0x32, 0x2e, 0x53, 0x63, 0x61, 0x6e, 0x52, 0x05, 0x73, 0x63, 0x61,
-	0x6e, 0x73, 0x1a, 0x6e, 0x0a, 0x04, 0x53, 0x63, 0x61, 0x6e, 0x12, 0x1e, 0x0a, 0x0b, 0x73, 0x63,
-	0x61, 0x6e, 0x5f, 0x72, 0x65, 0x66, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52,
-	0x09, 0x73, 0x63, 0x61, 0x6e, 0x52, 0x65, 0x66, 0x49, 0x64, 0x12, 0x46, 0x0a, 0x11, 0x6c, 0x61,
-	0x73, 0x74, 0x5f, 0x73, 0x74, 0x61, 0x72, 0x74, 0x65, 0x64, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x18,
-	0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d,
-	0x70, 0x52, 0x0f, 0x6c, 0x61, 0x73, 0x74, 0x53, 0x74, 0x61, 0x72, 0x74, 0x65, 0x64, 0x54, 0x69,
+	0x6e, 0x73, 0x12, 0x57, 0x0a, 0x0b, 0x72, 0x65, 0x70, 0x6f, 0x72, 0x74, 0x5f, 0x64, 0x61, 0x74,
+	0x61, 0x18, 0x08, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x36, 0x2e, 0x73, 0x74, 0x6f, 0x72, 0x61, 0x67,
+	0x65, 0x2e, 0x43, 0x6f, 0x6d, 0x70, 0x6c, 0x69, 0x61, 0x6e, 0x63, 0x65, 0x4f, 0x70, 0x65, 0x72,
+	0x61, 0x74, 0x6f, 0x72, 0x52, 0x65, 0x70, 0x6f, 0x72, 0x74, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68,
+	0x6f, 0x74, 0x56, 0x32, 0x2e, 0x53, 0x63, 0x61, 0x6e, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x52,
+	0x0a, 0x72, 0x65, 0x70, 0x6f, 0x72, 0x74, 0x44, 0x61, 0x74, 0x61, 0x1a, 0x6e, 0x0a, 0x04, 0x53,
+	0x63, 0x61, 0x6e, 0x12, 0x1e, 0x0a, 0x0b, 0x73, 0x63, 0x61, 0x6e, 0x5f, 0x72, 0x65, 0x66, 0x5f,
+	0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x73, 0x63, 0x61, 0x6e, 0x52, 0x65,
+	0x66, 0x49, 0x64, 0x12, 0x46, 0x0a, 0x11, 0x6c, 0x61, 0x73, 0x74, 0x5f, 0x73, 0x74, 0x61, 0x72,
+	0x74, 0x65, 0x64, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a,
+	0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66,
+	0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x0f, 0x6c, 0x61, 0x73, 0x74,
+	0x53, 0x74, 0x61, 0x72, 0x74, 0x65, 0x64, 0x54, 0x69, 0x6d, 0x65, 0x1a, 0x6b, 0x0a, 0x0c, 0x4e,
+	0x6f, 0x74, 0x69, 0x66, 0x69, 0x65, 0x72, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x48, 0x0a, 0x0c, 0x65,
+	0x6d, 0x61, 0x69, 0x6c, 0x5f, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x23, 0x2e, 0x73, 0x74, 0x6f, 0x72, 0x61, 0x67, 0x65, 0x2e, 0x45, 0x6d, 0x61, 0x69,
+	0x6c, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x65, 0x72, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x75,
+	0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x48, 0x00, 0x52, 0x0b, 0x65, 0x6d, 0x61, 0x69, 0x6c, 0x43,
+	0x6f, 0x6e, 0x66, 0x69, 0x67, 0x42, 0x11, 0x0a, 0x0f, 0x6e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x65,
+	0x72, 0x5f, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x1a, 0x80, 0x02, 0x0a, 0x0c, 0x42, 0x61, 0x73,
+	0x65, 0x53, 0x65, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x73, 0x12, 0x22, 0x0a, 0x0d, 0x6f, 0x6e, 0x65,
+	0x5f, 0x74, 0x69, 0x6d, 0x65, 0x5f, 0x73, 0x63, 0x61, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x08,
+	0x52, 0x0b, 0x6f, 0x6e, 0x65, 0x54, 0x69, 0x6d, 0x65, 0x53, 0x63, 0x61, 0x6e, 0x12, 0x1a, 0x0a,
+	0x08, 0x70, 0x72, 0x6f, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x09, 0x52,
+	0x08, 0x70, 0x72, 0x6f, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x12, 0x36, 0x0a, 0x0d, 0x73, 0x63, 0x61,
+	0x6e, 0x5f, 0x73, 0x63, 0x68, 0x65, 0x64, 0x75, 0x6c, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x11, 0x2e, 0x73, 0x74, 0x6f, 0x72, 0x61, 0x67, 0x65, 0x2e, 0x53, 0x63, 0x68, 0x65, 0x64,
+	0x75, 0x6c, 0x65, 0x52, 0x0c, 0x73, 0x63, 0x61, 0x6e, 0x53, 0x63, 0x68, 0x65, 0x64, 0x75, 0x6c,
+	0x65, 0x12, 0x20, 0x0a, 0x0b, 0x64, 0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e,
+	0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x64, 0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74,
+	0x69, 0x6f, 0x6e, 0x12, 0x56, 0x0a, 0x09, 0x6e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x65, 0x72, 0x73,
+	0x18, 0x05, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x38, 0x2e, 0x73, 0x74, 0x6f, 0x72, 0x61, 0x67, 0x65,
+	0x2e, 0x43, 0x6f, 0x6d, 0x70, 0x6c, 0x69, 0x61, 0x6e, 0x63, 0x65, 0x4f, 0x70, 0x65, 0x72, 0x61,
+	0x74, 0x6f, 0x72, 0x52, 0x65, 0x70, 0x6f, 0x72, 0x74, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f,
+	0x74, 0x56, 0x32, 0x2e, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x65, 0x72, 0x49, 0x6e, 0x66, 0x6f,
+	0x52, 0x09, 0x6e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x65, 0x72, 0x73, 0x1a, 0xae, 0x01, 0x0a, 0x0b,
+	0x53, 0x75, 0x69, 0x74, 0x65, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x14, 0x0a, 0x05, 0x70,
+	0x68, 0x61, 0x73, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x70, 0x68, 0x61, 0x73,
+	0x65, 0x12, 0x16, 0x0a, 0x06, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x06, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x12, 0x23, 0x0a, 0x0d, 0x65, 0x72, 0x72,
+	0x6f, 0x72, 0x5f, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x0c, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x4c,
+	0x0a, 0x14, 0x6c, 0x61, 0x73, 0x74, 0x5f, 0x74, 0x72, 0x61, 0x6e, 0x73, 0x69, 0x74, 0x69, 0x6f,
+	0x6e, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67,
+	0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54,
+	0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x12, 0x6c, 0x61, 0x73, 0x74, 0x54, 0x72,
+	0x61, 0x6e, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x54, 0x69, 0x6d, 0x65, 0x1a, 0xc5, 0x01, 0x0a,
+	0x0d, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x1d,
+	0x0a, 0x0a, 0x63, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x09, 0x63, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x49, 0x64, 0x12, 0x16, 0x0a,
+	0x06, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x09, 0x52, 0x06, 0x65,
+	0x72, 0x72, 0x6f, 0x72, 0x73, 0x12, 0x21, 0x0a, 0x0c, 0x63, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72,
+	0x5f, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x63, 0x6c, 0x75,
+	0x73, 0x74, 0x65, 0x72, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x5a, 0x0a, 0x0c, 0x73, 0x75, 0x69, 0x74,
+	0x65, 0x5f, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x37,
+	0x2e, 0x73, 0x74, 0x6f, 0x72, 0x61, 0x67, 0x65, 0x2e, 0x43, 0x6f, 0x6d, 0x70, 0x6c, 0x69, 0x61,
+	0x6e, 0x63, 0x65, 0x4f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72, 0x52, 0x65, 0x70, 0x6f, 0x72,
+	0x74, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x56, 0x32, 0x2e, 0x53, 0x75, 0x69, 0x74,
+	0x65, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x0b, 0x73, 0x75, 0x69, 0x74, 0x65, 0x53, 0x74,
+	0x61, 0x74, 0x75, 0x73, 0x1a, 0xfb, 0x03, 0x0a, 0x0a, 0x53, 0x63, 0x61, 0x6e, 0x43, 0x6f, 0x6e,
+	0x66, 0x69, 0x67, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x02, 0x69, 0x64, 0x12, 0x1b, 0x0a, 0x09, 0x73, 0x63, 0x61, 0x6e, 0x5f, 0x6e, 0x61, 0x6d, 0x65,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x73, 0x63, 0x61, 0x6e, 0x4e, 0x61, 0x6d, 0x65,
+	0x12, 0x59, 0x0a, 0x0b, 0x73, 0x63, 0x61, 0x6e, 0x5f, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x18,
+	0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x38, 0x2e, 0x73, 0x74, 0x6f, 0x72, 0x61, 0x67, 0x65, 0x2e,
+	0x43, 0x6f, 0x6d, 0x70, 0x6c, 0x69, 0x61, 0x6e, 0x63, 0x65, 0x4f, 0x70, 0x65, 0x72, 0x61, 0x74,
+	0x6f, 0x72, 0x52, 0x65, 0x70, 0x6f, 0x72, 0x74, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74,
+	0x56, 0x32, 0x2e, 0x42, 0x61, 0x73, 0x65, 0x53, 0x65, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x73, 0x52,
+	0x0a, 0x73, 0x63, 0x61, 0x6e, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x12, 0x60, 0x0a, 0x0e, 0x63,
+	0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x5f, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x18, 0x04, 0x20,
+	0x03, 0x28, 0x0b, 0x32, 0x39, 0x2e, 0x73, 0x74, 0x6f, 0x72, 0x61, 0x67, 0x65, 0x2e, 0x43, 0x6f,
+	0x6d, 0x70, 0x6c, 0x69, 0x61, 0x6e, 0x63, 0x65, 0x4f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72,
+	0x52, 0x65, 0x70, 0x6f, 0x72, 0x74, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x56, 0x32,
+	0x2e, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x0d,
+	0x63, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x3d, 0x0a,
+	0x0c, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x64, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x05, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52,
+	0x0b, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x64, 0x54, 0x69, 0x6d, 0x65, 0x12, 0x46, 0x0a, 0x11,
+	0x6c, 0x61, 0x73, 0x74, 0x5f, 0x75, 0x70, 0x64, 0x61, 0x74, 0x65, 0x64, 0x5f, 0x74, 0x69, 0x6d,
+	0x65, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65,
+	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74,
+	0x61, 0x6d, 0x70, 0x52, 0x0f, 0x6c, 0x61, 0x73, 0x74, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x64,
+	0x54, 0x69, 0x6d, 0x65, 0x12, 0x32, 0x0a, 0x0b, 0x6d, 0x6f, 0x64, 0x69, 0x66, 0x69, 0x65, 0x64,
+	0x5f, 0x62, 0x79, 0x18, 0x07, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x11, 0x2e, 0x73, 0x74, 0x6f, 0x72,
+	0x61, 0x67, 0x65, 0x2e, 0x53, 0x6c, 0x69, 0x6d, 0x55, 0x73, 0x65, 0x72, 0x52, 0x0a, 0x6d, 0x6f,
+	0x64, 0x69, 0x66, 0x69, 0x65, 0x64, 0x42, 0x79, 0x12, 0x48, 0x0a, 0x12, 0x6c, 0x61, 0x73, 0x74,
+	0x5f, 0x65, 0x78, 0x65, 0x63, 0x75, 0x74, 0x65, 0x64, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x08,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70,
+	0x52, 0x10, 0x6c, 0x61, 0x73, 0x74, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x65, 0x64, 0x54, 0x69,
 	0x6d, 0x65, 0x22, 0x90, 0x05, 0x0a, 0x1e, 0x43, 0x6f, 0x6d, 0x70, 0x6c, 0x69, 0x61, 0x6e, 0x63,
 	0x65, 0x4f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72, 0x52, 0x65, 0x70, 0x6f, 0x72, 0x74, 0x53,
 	0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x4d, 0x0a, 0x09, 0x72, 0x75, 0x6e, 0x5f, 0x73, 0x74, 0x61,
@@ -3089,7 +3564,7 @@ func file_storage_compliance_operator_v2_proto_rawDescGZIP() []byte {
 }
 
 var file_storage_compliance_operator_v2_proto_enumTypes = make([]protoimpl.EnumInfo, 7)
-var file_storage_compliance_operator_v2_proto_msgTypes = make([]protoimpl.MessageInfo, 35)
+var file_storage_compliance_operator_v2_proto_msgTypes = make([]protoimpl.MessageInfo, 40)
 var file_storage_compliance_operator_v2_proto_goTypes = []any{
 	(NodeRole)(0),     // 0: storage.NodeRole
 	(ScanType)(0),     // 1: storage.ScanType
@@ -3132,11 +3607,17 @@ var file_storage_compliance_operator_v2_proto_goTypes = []any{
 	nil, // 38: storage.ComplianceOperatorScanV2.AnnotationsEntry
 	nil, // 39: storage.ComplianceOperatorScanSettingBindingV2.LabelsEntry
 	nil, // 40: storage.ComplianceOperatorScanSettingBindingV2.AnnotationsEntry
-	(*ComplianceOperatorReportSnapshotV2_Scan)(nil), // 41: storage.ComplianceOperatorReportSnapshotV2.Scan
-	(*Schedule)(nil),              // 42: storage.Schedule
-	(*timestamppb.Timestamp)(nil), // 43: google.protobuf.Timestamp
-	(*SlimUser)(nil),              // 44: storage.SlimUser
-	(*NotifierConfiguration)(nil), // 45: storage.NotifierConfiguration
+	(*ComplianceOperatorReportSnapshotV2_Scan)(nil),          // 41: storage.ComplianceOperatorReportSnapshotV2.Scan
+	(*ComplianceOperatorReportSnapshotV2_NotifierInfo)(nil),  // 42: storage.ComplianceOperatorReportSnapshotV2.NotifierInfo
+	(*ComplianceOperatorReportSnapshotV2_BaseSettings)(nil),  // 43: storage.ComplianceOperatorReportSnapshotV2.BaseSettings
+	(*ComplianceOperatorReportSnapshotV2_SuiteStatus)(nil),   // 44: storage.ComplianceOperatorReportSnapshotV2.SuiteStatus
+	(*ComplianceOperatorReportSnapshotV2_ClusterStatus)(nil), // 45: storage.ComplianceOperatorReportSnapshotV2.ClusterStatus
+	(*ComplianceOperatorReportSnapshotV2_ScanConfig)(nil),    // 46: storage.ComplianceOperatorReportSnapshotV2.ScanConfig
+	(*Schedule)(nil),                   // 47: storage.Schedule
+	(*timestamppb.Timestamp)(nil),      // 48: google.protobuf.Timestamp
+	(*SlimUser)(nil),                   // 49: storage.SlimUser
+	(*NotifierConfiguration)(nil),      // 50: storage.NotifierConfiguration
+	(*EmailNotifierConfiguration)(nil), // 51: storage.EmailNotifierConfiguration
 }
 var file_storage_compliance_operator_v2_proto_depIdxs = []int32{
 	24, // 0: storage.ComplianceOperatorProfileV2.labels:type_name -> storage.ComplianceOperatorProfileV2.LabelsEntry
@@ -3151,48 +3632,60 @@ var file_storage_compliance_operator_v2_proto_depIdxs = []int32{
 	31, // 9: storage.ComplianceOperatorScanConfigurationV2.annotations:type_name -> storage.ComplianceOperatorScanConfigurationV2.AnnotationsEntry
 	32, // 10: storage.ComplianceOperatorScanConfigurationV2.profiles:type_name -> storage.ComplianceOperatorScanConfigurationV2.ProfileName
 	0,  // 11: storage.ComplianceOperatorScanConfigurationV2.node_roles:type_name -> storage.NodeRole
-	42, // 12: storage.ComplianceOperatorScanConfigurationV2.schedule:type_name -> storage.Schedule
-	43, // 13: storage.ComplianceOperatorScanConfigurationV2.created_time:type_name -> google.protobuf.Timestamp
-	43, // 14: storage.ComplianceOperatorScanConfigurationV2.last_updated_time:type_name -> google.protobuf.Timestamp
-	44, // 15: storage.ComplianceOperatorScanConfigurationV2.modified_by:type_name -> storage.SlimUser
+	47, // 12: storage.ComplianceOperatorScanConfigurationV2.schedule:type_name -> storage.Schedule
+	48, // 13: storage.ComplianceOperatorScanConfigurationV2.created_time:type_name -> google.protobuf.Timestamp
+	48, // 14: storage.ComplianceOperatorScanConfigurationV2.last_updated_time:type_name -> google.protobuf.Timestamp
+	49, // 15: storage.ComplianceOperatorScanConfigurationV2.modified_by:type_name -> storage.SlimUser
 	33, // 16: storage.ComplianceOperatorScanConfigurationV2.clusters:type_name -> storage.ComplianceOperatorScanConfigurationV2.Cluster
-	45, // 17: storage.ComplianceOperatorScanConfigurationV2.notifiers:type_name -> storage.NotifierConfiguration
-	43, // 18: storage.ComplianceOperatorClusterScanConfigStatus.last_updated_time:type_name -> google.protobuf.Timestamp
+	50, // 17: storage.ComplianceOperatorScanConfigurationV2.notifiers:type_name -> storage.NotifierConfiguration
+	48, // 18: storage.ComplianceOperatorClusterScanConfigStatus.last_updated_time:type_name -> google.protobuf.Timestamp
 	34, // 19: storage.ComplianceOperatorBenchmarkV2.profiles:type_name -> storage.ComplianceOperatorBenchmarkV2.Profile
 	3,  // 20: storage.ComplianceOperatorCheckResultV2.status:type_name -> storage.ComplianceOperatorCheckResultV2.CheckStatus
 	2,  // 21: storage.ComplianceOperatorCheckResultV2.severity:type_name -> storage.RuleSeverity
 	35, // 22: storage.ComplianceOperatorCheckResultV2.labels:type_name -> storage.ComplianceOperatorCheckResultV2.LabelsEntry
 	36, // 23: storage.ComplianceOperatorCheckResultV2.annotations:type_name -> storage.ComplianceOperatorCheckResultV2.AnnotationsEntry
-	43, // 24: storage.ComplianceOperatorCheckResultV2.created_time:type_name -> google.protobuf.Timestamp
+	48, // 24: storage.ComplianceOperatorCheckResultV2.created_time:type_name -> google.protobuf.Timestamp
 	7,  // 25: storage.ComplianceOperatorScanV2.profile:type_name -> storage.ProfileShim
 	37, // 26: storage.ComplianceOperatorScanV2.labels:type_name -> storage.ComplianceOperatorScanV2.LabelsEntry
 	38, // 27: storage.ComplianceOperatorScanV2.annotations:type_name -> storage.ComplianceOperatorScanV2.AnnotationsEntry
 	1,  // 28: storage.ComplianceOperatorScanV2.scan_type:type_name -> storage.ScanType
 	0,  // 29: storage.ComplianceOperatorScanV2.node_selector:type_name -> storage.NodeRole
 	15, // 30: storage.ComplianceOperatorScanV2.status:type_name -> storage.ScanStatus
-	43, // 31: storage.ComplianceOperatorScanV2.created_time:type_name -> google.protobuf.Timestamp
-	43, // 32: storage.ComplianceOperatorScanV2.last_executed_time:type_name -> google.protobuf.Timestamp
-	43, // 33: storage.ComplianceOperatorScanV2.last_started_time:type_name -> google.protobuf.Timestamp
+	48, // 31: storage.ComplianceOperatorScanV2.created_time:type_name -> google.protobuf.Timestamp
+	48, // 32: storage.ComplianceOperatorScanV2.last_executed_time:type_name -> google.protobuf.Timestamp
+	48, // 33: storage.ComplianceOperatorScanV2.last_started_time:type_name -> google.protobuf.Timestamp
 	39, // 34: storage.ComplianceOperatorScanSettingBindingV2.labels:type_name -> storage.ComplianceOperatorScanSettingBindingV2.LabelsEntry
 	40, // 35: storage.ComplianceOperatorScanSettingBindingV2.annotations:type_name -> storage.ComplianceOperatorScanSettingBindingV2.AnnotationsEntry
 	19, // 36: storage.ComplianceOperatorScanSettingBindingV2.status:type_name -> storage.ComplianceOperatorStatus
-	43, // 37: storage.ComplianceOperatorCondition.last_transition_time:type_name -> google.protobuf.Timestamp
+	48, // 37: storage.ComplianceOperatorCondition.last_transition_time:type_name -> google.protobuf.Timestamp
 	18, // 38: storage.ComplianceOperatorStatus.conditions:type_name -> storage.ComplianceOperatorCondition
 	19, // 39: storage.ComplianceOperatorSuiteV2.status:type_name -> storage.ComplianceOperatorStatus
 	23, // 40: storage.ComplianceOperatorReportSnapshotV2.report_status:type_name -> storage.ComplianceOperatorReportStatus
-	44, // 41: storage.ComplianceOperatorReportSnapshotV2.user:type_name -> storage.SlimUser
+	49, // 41: storage.ComplianceOperatorReportSnapshotV2.user:type_name -> storage.SlimUser
 	41, // 42: storage.ComplianceOperatorReportSnapshotV2.scans:type_name -> storage.ComplianceOperatorReportSnapshotV2.Scan
-	4,  // 43: storage.ComplianceOperatorReportStatus.run_state:type_name -> storage.ComplianceOperatorReportStatus.RunState
-	43, // 44: storage.ComplianceOperatorReportStatus.started_at:type_name -> google.protobuf.Timestamp
-	43, // 45: storage.ComplianceOperatorReportStatus.completed_at:type_name -> google.protobuf.Timestamp
-	6,  // 46: storage.ComplianceOperatorReportStatus.report_request_type:type_name -> storage.ComplianceOperatorReportStatus.RunMethod
-	5,  // 47: storage.ComplianceOperatorReportStatus.report_notification_method:type_name -> storage.ComplianceOperatorReportStatus.NotificationMethod
-	43, // 48: storage.ComplianceOperatorReportSnapshotV2.Scan.last_started_time:type_name -> google.protobuf.Timestamp
-	49, // [49:49] is the sub-list for method output_type
-	49, // [49:49] is the sub-list for method input_type
-	49, // [49:49] is the sub-list for extension type_name
-	49, // [49:49] is the sub-list for extension extendee
-	0,  // [0:49] is the sub-list for field type_name
+	46, // 43: storage.ComplianceOperatorReportSnapshotV2.report_data:type_name -> storage.ComplianceOperatorReportSnapshotV2.ScanConfig
+	4,  // 44: storage.ComplianceOperatorReportStatus.run_state:type_name -> storage.ComplianceOperatorReportStatus.RunState
+	48, // 45: storage.ComplianceOperatorReportStatus.started_at:type_name -> google.protobuf.Timestamp
+	48, // 46: storage.ComplianceOperatorReportStatus.completed_at:type_name -> google.protobuf.Timestamp
+	6,  // 47: storage.ComplianceOperatorReportStatus.report_request_type:type_name -> storage.ComplianceOperatorReportStatus.RunMethod
+	5,  // 48: storage.ComplianceOperatorReportStatus.report_notification_method:type_name -> storage.ComplianceOperatorReportStatus.NotificationMethod
+	48, // 49: storage.ComplianceOperatorReportSnapshotV2.Scan.last_started_time:type_name -> google.protobuf.Timestamp
+	51, // 50: storage.ComplianceOperatorReportSnapshotV2.NotifierInfo.email_config:type_name -> storage.EmailNotifierConfiguration
+	47, // 51: storage.ComplianceOperatorReportSnapshotV2.BaseSettings.scan_schedule:type_name -> storage.Schedule
+	42, // 52: storage.ComplianceOperatorReportSnapshotV2.BaseSettings.notifiers:type_name -> storage.ComplianceOperatorReportSnapshotV2.NotifierInfo
+	48, // 53: storage.ComplianceOperatorReportSnapshotV2.SuiteStatus.last_transition_time:type_name -> google.protobuf.Timestamp
+	44, // 54: storage.ComplianceOperatorReportSnapshotV2.ClusterStatus.suite_status:type_name -> storage.ComplianceOperatorReportSnapshotV2.SuiteStatus
+	43, // 55: storage.ComplianceOperatorReportSnapshotV2.ScanConfig.scan_config:type_name -> storage.ComplianceOperatorReportSnapshotV2.BaseSettings
+	45, // 56: storage.ComplianceOperatorReportSnapshotV2.ScanConfig.cluster_status:type_name -> storage.ComplianceOperatorReportSnapshotV2.ClusterStatus
+	48, // 57: storage.ComplianceOperatorReportSnapshotV2.ScanConfig.created_time:type_name -> google.protobuf.Timestamp
+	48, // 58: storage.ComplianceOperatorReportSnapshotV2.ScanConfig.last_updated_time:type_name -> google.protobuf.Timestamp
+	49, // 59: storage.ComplianceOperatorReportSnapshotV2.ScanConfig.modified_by:type_name -> storage.SlimUser
+	48, // 60: storage.ComplianceOperatorReportSnapshotV2.ScanConfig.last_executed_time:type_name -> google.protobuf.Timestamp
+	61, // [61:61] is the sub-list for method output_type
+	61, // [61:61] is the sub-list for method input_type
+	61, // [61:61] is the sub-list for extension type_name
+	61, // [61:61] is the sub-list for extension extendee
+	0,  // [0:61] is the sub-list for field type_name
 }
 
 func init() { file_storage_compliance_operator_v2_proto_init() }
@@ -3203,13 +3696,16 @@ func file_storage_compliance_operator_v2_proto_init() {
 	file_storage_report_notifier_configuration_proto_init()
 	file_storage_schedule_proto_init()
 	file_storage_user_proto_init()
+	file_storage_compliance_operator_v2_proto_msgTypes[35].OneofWrappers = []any{
+		(*ComplianceOperatorReportSnapshotV2_NotifierInfo_EmailConfig)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_storage_compliance_operator_v2_proto_rawDesc,
 			NumEnums:      7,
-			NumMessages:   35,
+			NumMessages:   40,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

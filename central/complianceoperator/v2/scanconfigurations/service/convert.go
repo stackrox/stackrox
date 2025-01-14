@@ -248,6 +248,68 @@ func getLatestBindingError(status *storage.ComplianceOperatorStatus) string {
 	return ""
 }
 
+func convertStorageReportSnapshotScanConfigToV2ScanStatus(ctx context.Context, scanConfig *storage.ComplianceOperatorReportSnapshotV2_ScanConfig, notifierDS notifierDS.DataStore) (*v2.ComplianceScanConfigurationStatus, error) {
+	if scanConfig == nil {
+		return nil, nil
+	}
+	notifiers := make([]*v2.NotifierConfiguration, 0, len(scanConfig.GetScanConfig().GetNotifiers()))
+	for _, notifierConfig := range scanConfig.GetScanConfig().GetNotifiers() {
+		notifier, found, err := notifierDS.GetNotifier(ctx, notifierConfig.GetEmailConfig().GetNotifierId())
+		if err != nil {
+			return nil, err
+		}
+		if !found {
+			return nil, errors.Errorf("Notifier with ID %s no longer exists", notifierConfig.GetEmailConfig().GetNotifierId())
+		}
+		notifiers = append(notifiers, &v2.NotifierConfiguration{
+			NotifierName: notifier.GetName(),
+			NotifierConfig: &v2.NotifierConfiguration_EmailConfig{
+				EmailConfig: &v2.EmailNotifierConfiguration{
+					NotifierId:    notifierConfig.GetEmailConfig().GetNotifierId(),
+					MailingLists:  notifierConfig.GetEmailConfig().GetMailingLists(),
+					CustomSubject: notifierConfig.GetEmailConfig().GetCustomSubject(),
+					CustomBody:    notifierConfig.GetEmailConfig().GetCustomBody(),
+				},
+			},
+		})
+	}
+	return &v2.ComplianceScanConfigurationStatus{
+		Id:       scanConfig.GetId(),
+		ScanName: scanConfig.GetScanName(),
+		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
+			OneTimeScan:  scanConfig.GetScanConfig().GetOneTimeScan(),
+			Profiles:     scanConfig.GetScanConfig().GetProfiles(),
+			ScanSchedule: convertProtoScheduleToV2(scanConfig.GetScanConfig().GetScanSchedule()),
+			Description:  scanConfig.GetScanConfig().GetDescription(),
+			Notifiers:    notifiers,
+		},
+		ClusterStatus: func() []*v2.ClusterScanStatus {
+			ret := make([]*v2.ClusterScanStatus, 0, len(scanConfig.GetClusterStatus()))
+			for _, cluster := range scanConfig.GetClusterStatus() {
+				ret = append(ret, &v2.ClusterScanStatus{
+					ClusterId:   cluster.GetClusterId(),
+					ClusterName: cluster.GetClusterName(),
+					Errors:      cluster.GetErrors(),
+					SuiteStatus: &v2.ClusterScanStatus_SuiteStatus{
+						Phase:              cluster.GetSuiteStatus().GetPhase(),
+						Result:             cluster.GetSuiteStatus().GetResult(),
+						ErrorMessage:       cluster.GetSuiteStatus().GetErrorMessage(),
+						LastTransitionTime: cluster.GetSuiteStatus().GetLastTransitionTime(),
+					},
+				})
+			}
+			return ret
+		}(),
+		CreatedTime:     scanConfig.GetCreatedTime(),
+		LastUpdatedTime: scanConfig.GetLastUpdatedTime(),
+		ModifiedBy: &v2.SlimUser{
+			Id:   scanConfig.GetModifiedBy().GetId(),
+			Name: scanConfig.GetModifiedBy().GetName(),
+		},
+		LastExecutedTime: scanConfig.GetLastExecutedTime(),
+	}, nil
+}
+
 func convertStorageScanConfigToV2ScanStatus(ctx context.Context,
 	scanConfig *storage.ComplianceOperatorScanConfigurationV2, configDS complianceDS.DataStore,
 	bindingsDS bindingsDS.DataStore, suiteDS suiteDS.DataStore, notifierDS notifierDS.DataStore) (*v2.ComplianceScanConfigurationStatus, error) {
@@ -416,9 +478,15 @@ func convertStorageSnapshotToV2Snapshot(ctx context.Context, snapshot *storage.C
 	if !found {
 		return nil, errors.New("ScanConfiguration not found")
 	}
-	configStatus, err := convertStorageScanConfigToV2ScanStatus(ctx, config, configDS, bindingDS, suiteDS, notifierDS)
+	configStatus, err := convertStorageReportSnapshotScanConfigToV2ScanStatus(ctx, snapshot.GetReportData(), notifierDS)
 	if err != nil {
-		return nil, errors.Wrap(err, "Unable to convert ScanConfiguration to ScanStatus")
+		log.Warnf("unable to convert the report snapshot scan config to v2: %v", err)
+	}
+	if configStatus == nil {
+		configStatus, err = convertStorageScanConfigToV2ScanStatus(ctx, config, configDS, bindingDS, suiteDS, notifierDS)
+		if err != nil {
+			return nil, errors.Wrap(err, "Unable to convert ScanConfiguration to ScanStatus")
+		}
 	}
 	isDownloadReady := false
 	if shallCheckDownload(snapshot.GetReportStatus()) {

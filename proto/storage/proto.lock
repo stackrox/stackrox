@@ -4788,6 +4788,11 @@
                 "name": "scans",
                 "type": "Scan",
                 "is_repeated": true
+              },
+              {
+                "id": 8,
+                "name": "report_data",
+                "type": "ScanConfig"
               }
             ],
             "messages": [
@@ -4802,6 +4807,146 @@
                   {
                     "id": 2,
                     "name": "last_started_time",
+                    "type": "google.protobuf.Timestamp"
+                  }
+                ]
+              },
+              {
+                "name": "NotifierInfo",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "email_config",
+                    "type": "EmailNotifierConfiguration",
+                    "oneof_parent": "notifier_config"
+                  }
+                ]
+              },
+              {
+                "name": "BaseSettings",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "one_time_scan",
+                    "type": "bool"
+                  },
+                  {
+                    "id": 2,
+                    "name": "profiles",
+                    "type": "string",
+                    "is_repeated": true
+                  },
+                  {
+                    "id": 3,
+                    "name": "scan_schedule",
+                    "type": "Schedule"
+                  },
+                  {
+                    "id": 4,
+                    "name": "description",
+                    "type": "string"
+                  },
+                  {
+                    "id": 5,
+                    "name": "notifiers",
+                    "type": "NotifierInfo",
+                    "is_repeated": true
+                  }
+                ]
+              },
+              {
+                "name": "SuiteStatus",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "phase",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "result",
+                    "type": "string"
+                  },
+                  {
+                    "id": 3,
+                    "name": "error_message",
+                    "type": "string"
+                  },
+                  {
+                    "id": 4,
+                    "name": "last_transition_time",
+                    "type": "google.protobuf.Timestamp"
+                  }
+                ]
+              },
+              {
+                "name": "ClusterStatus",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "cluster_id",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "errors",
+                    "type": "string",
+                    "is_repeated": true
+                  },
+                  {
+                    "id": 3,
+                    "name": "cluster_name",
+                    "type": "string"
+                  },
+                  {
+                    "id": 4,
+                    "name": "suite_status",
+                    "type": "SuiteStatus"
+                  }
+                ]
+              },
+              {
+                "name": "ScanConfig",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "id",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "scan_name",
+                    "type": "string"
+                  },
+                  {
+                    "id": 3,
+                    "name": "scan_config",
+                    "type": "BaseSettings"
+                  },
+                  {
+                    "id": 4,
+                    "name": "cluster_status",
+                    "type": "ClusterStatus",
+                    "is_repeated": true
+                  },
+                  {
+                    "id": 5,
+                    "name": "created_time",
+                    "type": "google.protobuf.Timestamp"
+                  },
+                  {
+                    "id": 6,
+                    "name": "last_updated_time",
+                    "type": "google.protobuf.Timestamp"
+                  },
+                  {
+                    "id": 7,
+                    "name": "modified_by",
+                    "type": "SlimUser"
+                  },
+                  {
+                    "id": 8,
+                    "name": "last_executed_time",
                     "type": "google.protobuf.Timestamp"
                   }
                 ]
