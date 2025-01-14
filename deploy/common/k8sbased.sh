@@ -692,9 +692,9 @@ function launch_sensor {
         ROX_DEPLOY_SENSOR_WITH_CRS=false
       fi
 
-      if [[ -z "$CI" && -z "${ROX_DEPLOY_SENSOR_WITH_CRS:-}" && "${secured_cluster_chart_supports_crs}" == "true" ]]; then
+      if [[ -z "${ROX_DEPLOY_SENSOR_WITH_CRS:-}" && "${secured_cluster_chart_supports_crs}" == "true" ]]; then
         echo >&2 "================================================================================================="
-        echo >&2 " NOTE: Based on your environment, the new CRS-based flow for cluster-registration will be used."
+        echo >&2 "             NOTE: The new CRS-based flow for cluster-registration will be used."
         echo >&2 "  To disable the CRS-based flow for cluster registration, set ROX_DEPLOY_SENSOR_WITH_CRS=false"
         echo >&2 "================================================================================================="
         ROX_DEPLOY_SENSOR_WITH_CRS=true
