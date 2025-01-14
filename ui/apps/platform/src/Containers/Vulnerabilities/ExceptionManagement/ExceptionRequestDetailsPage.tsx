@@ -19,9 +19,15 @@ import {
 } from '@patternfly/react-core';
 import { useParams } from 'react-router-dom';
 
-import { exceptionManagementPath } from 'routePaths';
+import {
+    exceptionManagementPath,
+    vulnerabilitiesPlatformWorkloadCvesPath,
+    vulnerabilitiesWorkloadCvesPath,
+} from 'routePaths';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useSet from 'hooks/useSet';
 import useRestQuery from 'hooks/useRestQuery';
+import useURLPagination from 'hooks/useURLPagination';
 import usePermissions from 'hooks/usePermissions';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useAuthStatus from 'hooks/useAuthStatus';
@@ -44,11 +50,14 @@ import RequestApprovalButtonModal from './components/RequestApprovalButtonModal'
 import RequestDenialButtonModal from './components/RequestDenialButtonModal';
 import RequestCancelButtonModal from './components/RequestCancelButtonModal';
 import RequestUpdateButtonModal from './components/RequestUpdateButtonModal';
-import { getVulnerabilityState } from './utils';
+import { getImageScopeSearchValue, getVulnerabilityState } from './utils';
 
 import './ExceptionRequestDetailsPage.css';
+import { DEFAULT_VM_PAGE_SIZE } from '../constants';
 
 export const contextValues = ['CURRENT', 'PENDING_UPDATE'] as const;
+
+const cveTableContextValues = ['USER_WORKLOADS', 'PLATFORM_COMPONENTS'] as const;
 
 function getSubtitleText(exception: VulnerabilityException) {
     const numCVEs = `${pluralize(exception.cves.length, 'CVE')}`;
@@ -77,16 +86,24 @@ export function getCVEsForUpdatedRequest(exception: VulnerabilityException): str
 }
 
 const tabContentId = 'ExceptionRequestDetails';
+const cveTableTabContentId = 'ExceptionRequestCveTable';
 
 function ExceptionRequestDetailsPage() {
     const { requestId } = useParams();
     const { hasReadWriteAccess } = usePermissions();
     const { currentUser } = useAuthStatus();
     const hasWriteAccessForApproving = hasReadWriteAccess('VulnerabilityManagementApprovals');
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isPlatformCveSplitEnabled = isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT');
 
     const [selectedContext, setSelectedContext] = useURLStringUnion('context', contextValues);
     const expandedRowSet = useSet<string>();
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const [activeCveTableTabKey, setActiveCveTableTabKey] = useURLStringUnion(
+        'cveTableContext',
+        cveTableContextValues
+    );
+    const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
 
     const vulnerabilityExceptionByIdFn = useCallback(
         () => fetchVulnerabilityExceptionById(requestId),
@@ -101,6 +118,13 @@ function ExceptionRequestDetailsPage() {
 
     function handleTabClick(event, value) {
         setSelectedContext(value);
+    }
+
+    function handleCveTableTabClick(event, value) {
+        if (value !== activeCveTableTabKey) {
+            pagination.setPage(1);
+        }
+        setActiveCveTableTabKey(value);
     }
 
     function onApprovalSuccess() {
@@ -170,6 +194,21 @@ function ExceptionRequestDetailsPage() {
 
     const vulnerabilityState = getVulnerabilityState(vulnerabilityException);
 
+    const searchFilter = {
+        CVE: relevantCVEs.join(','),
+        Image: getImageScopeSearchValue(scope),
+    };
+
+    if (isPlatformCveSplitEnabled) {
+        searchFilter['Platform component'] =
+            activeCveTableTabKey === 'USER_WORKLOADS' ? ['false', '-'] : ['true'];
+    }
+
+    const vulnMgmtBaseUrl =
+        isPlatformCveSplitEnabled && activeCveTableTabKey === 'PLATFORM_COMPONENTS'
+            ? vulnerabilitiesPlatformWorkloadCvesPath
+            : vulnerabilitiesWorkloadCvesPath;
+
     return (
         <>
             <PageTitle title="Exception Management - Request Details" />
@@ -184,8 +223,8 @@ function ExceptionRequestDetailsPage() {
             )}
             {expired && (
                 <Alert variant="warning" isInline title="Request Canceled." component="p">
-                    You are viewing a canceled request. If this cancelation was not intended, please
-                    submit a new request
+                    You are viewing a canceled request. If this cancellation was not intended,
+                    please submit a new request
                 </Alert>
             )}
             <PageSection variant="light" className="pf-v5-u-py-md">
@@ -255,13 +294,35 @@ function ExceptionRequestDetailsPage() {
                             context={selectedContext}
                         />
                     </PageSection>
-                    <PageSection>
-                        <RequestCVEsTable
-                            cves={relevantCVEs}
-                            scope={scope}
-                            expandedRowSet={expandedRowSet}
-                            vulnerabilityState={vulnerabilityState}
-                        />
+                    <PageSection className="pf-v5-u-pt-0">
+                        <Tabs
+                            activeKey={activeCveTableTabKey}
+                            onSelect={handleCveTableTabClick}
+                            isBox
+                            aria-label="Exception request CVEs split by affected image scope"
+                            role="region"
+                            className={isPlatformCveSplitEnabled ? '' : 'pf-v5-u-display-none'}
+                        >
+                            <Tab
+                                eventKey={'USER_WORKLOADS'}
+                                title={<TabTitleText>User workloads</TabTitleText>}
+                                tabContentId={cveTableTabContentId}
+                            />
+                            <Tab
+                                eventKey={'PLATFORM_COMPONENTS'}
+                                title={<TabTitleText>Platform components</TabTitleText>}
+                                tabContentId={cveTableTabContentId}
+                            />
+                        </Tabs>
+                        <TabContent id={cveTableTabContentId}>
+                            <RequestCVEsTable
+                                searchFilter={searchFilter}
+                                vulnMgmtBaseUrl={vulnMgmtBaseUrl}
+                                pagination={pagination}
+                                expandedRowSet={expandedRowSet}
+                                vulnerabilityState={vulnerabilityState}
+                            />
+                        </TabContent>
                     </PageSection>
                 </TabContent>
             </PageSection>
