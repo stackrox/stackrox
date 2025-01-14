@@ -55,6 +55,7 @@ func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query, excludeResolved
 	return ds.searcher.Count(ctx, q, excludeResolved)
 }
 
+// DefaultStateAlertDataStoreImpl will always return unresolved alerts unless Violation State=Resolved is explicitly provided by the query
 type DefaultStateAlertDataStoreImpl struct {
 	DataStore *DataStore
 }
