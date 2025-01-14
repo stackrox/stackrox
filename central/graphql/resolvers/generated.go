@@ -174,6 +174,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"cvssMetrics: [CVSSScore]!",
 		"cvssV2: CVSSV2",
 		"cvssV3: CVSSV3",
+		"epss: EPSS",
 		"lastModified: Time",
 		"link: String!",
 		"publishedOn: Time",
@@ -591,6 +592,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"admissionControllerConfig: AdmissionControllerConfig",
 		"disableAuditLogs: Boolean!",
 		"registryOverride: String!",
+	}))
+	utils.Must(builder.AddType("EPSS", []string{
+		"epssPercentile: Float!",
+		"epssProbability: Float!",
 	}))
 	utils.Must(builder.AddType("Email", []string{
 		"allowUnauthenticatedSmtp: Boolean!",
@@ -3076,6 +3081,11 @@ func (resolver *cVEInfoResolver) CvssV2(ctx context.Context) (*cVSSV2Resolver, e
 func (resolver *cVEInfoResolver) CvssV3(ctx context.Context) (*cVSSV3Resolver, error) {
 	value := resolver.data.GetCvssV3()
 	return resolver.root.wrapCVSSV3(value, true, nil)
+}
+
+func (resolver *cVEInfoResolver) Epss(ctx context.Context) (*ePSSResolver, error) {
+	value := resolver.data.GetEpss()
+	return resolver.root.wrapEPSS(value, true, nil)
 }
 
 func (resolver *cVEInfoResolver) LastModified(ctx context.Context) (*graphql.Time, error) {
@@ -7157,6 +7167,58 @@ func (resolver *dynamicClusterConfigResolver) DisableAuditLogs(ctx context.Conte
 func (resolver *dynamicClusterConfigResolver) RegistryOverride(ctx context.Context) string {
 	value := resolver.data.GetRegistryOverride()
 	return value
+}
+
+type ePSSResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.EPSS
+}
+
+func (resolver *Resolver) wrapEPSS(value *storage.EPSS, ok bool, err error) (*ePSSResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &ePSSResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapEPSSs(values []*storage.EPSS, err error) ([]*ePSSResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*ePSSResolver, len(values))
+	for i, v := range values {
+		output[i] = &ePSSResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapEPSSWithContext(ctx context.Context, value *storage.EPSS, ok bool, err error) (*ePSSResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &ePSSResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapEPSSsWithContext(ctx context.Context, values []*storage.EPSS, err error) ([]*ePSSResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*ePSSResolver, len(values))
+	for i, v := range values {
+		output[i] = &ePSSResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *ePSSResolver) EpssPercentile(ctx context.Context) float64 {
+	value := resolver.data.GetEpssPercentile()
+	return float64(value)
+}
+
+func (resolver *ePSSResolver) EpssProbability(ctx context.Context) float64 {
+	value := resolver.data.GetEpssProbability()
+	return float64(value)
 }
 
 type emailResolver struct {
