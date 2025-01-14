@@ -734,7 +734,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 	}
 
 	fakeContext := context.Background()
-	s.datastoreMock.EXPECT().Search(fakeContext, gomock.Any()).Return(fakeSearchResultsSlice, nil)
+	s.datastoreMock.EXPECT().Search(fakeContext, gomock.Any(), true).Return(fakeSearchResultsSlice, nil)
 
 	result, err := s.service.GetAlertsCounts(fakeContext, &v1.GetAlertsCountsRequest{Request: &v1.ListAlertsRequest{
 		Query: "",
@@ -746,7 +746,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 
 func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheDataAccessLayerFails() {
 	fakeContext := context.Background()
-	s.datastoreMock.EXPECT().Search(fakeContext, gomock.Any()).Return(nil, errFake)
+	s.datastoreMock.EXPECT().Search(fakeContext, gomock.Any(), true).Return(nil, errFake)
 
 	result, err := s.service.GetAlertsCounts(fakeContext, &v1.GetAlertsCountsRequest{Request: &v1.ListAlertsRequest{
 		Query: "",
@@ -974,7 +974,7 @@ func (s *baseSuite) TestDeleteAlerts() {
 		Limit: math.MaxInt32,
 	}
 
-	s.datastoreMock.EXPECT().Search(context.Background(), expectedQuery).Return([]search.Result{}, nil)
+	s.datastoreMock.EXPECT().Search(context.Background(), expectedQuery, true).Return([]search.Result{}, nil)
 
 	_, err := s.service.DeleteAlerts(context.Background(), &v1.DeleteAlertsRequest{
 		Query: &v1.RawQuery{

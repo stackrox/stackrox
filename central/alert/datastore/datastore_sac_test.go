@@ -497,7 +497,7 @@ func (s *alertDatastoreSACTestSuite) TestAlertUnrestrictedSearch() {
 
 func (s *alertDatastoreSACTestSuite) runCountTest(testparams alertSACSearchResult) {
 	ctx := s.testContexts[testparams.scopeKey]
-	resultCount, err := s.datastore.Count(ctx, nil)
+	resultCount, err := s.datastore.Count(ctx, nil, true)
 	s.NoError(err)
 	expectedResultCount := testutils.AggregateCounts(s.T(), testparams.resultCounts)
 	s.Equal(expectedResultCount, resultCount)
