@@ -51,13 +51,40 @@ func TestConstruct(t *testing.T) {
 		assert.ErrorContains(t, err, "invalid reference")
 	})
 
-	t.Run("http client error", func(t *testing.T) {
+	t.Run("error on invalid image digest algorithm - sha1", func(t *testing.T) {
+		cmd, c := buildCmds(t, env)
+		cmd.image = "registry.invalid/repo@sha1:0"
+		err := cmd.construct(c)
+		assert.ErrorContains(t, err, "invalid reference format")
+	})
+
+	t.Run("error on invalid image digest algorithm - sha257", func(t *testing.T) {
+		cmd, c := buildCmds(t, env)
+		cmd.image = "registry.invalid/repo@sha257:00000000000000000000000000000000000000000000000000000000000000000"
+		err := cmd.construct(c)
+		assert.ErrorContains(t, err, "unsupported digest algorithm")
+	})
+
+	t.Run("no error on valid image digest algorithm - sha256", func(t *testing.T) {
+		cmd, c := buildCmds(t, env)
+		cmd.image = "registry.invalid/repo@sha256:0000000000000000000000000000000000000000000000000000000000000000"
+		err := cmd.construct(c)
+		assert.NoError(t, err)
+	})
+
+	t.Run("no error on valid image digest algorithm - sha512", func(t *testing.T) {
+		cmd, c := buildCmds(t, env)
+		cmd.image = "registry.invalid/repo@sha512:00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+		err := cmd.construct(c)
+		assert.NoError(t, err)
+	})
+
+	t.Run("error on invalid api endpoint", func(t *testing.T) {
 		t.Setenv("ROX_ENDPOINT", "fake.invalid") // missing port breaks http client
 		cmd, c := buildCmds(t, env)
 		err := cmd.construct(c)
 		assert.ErrorContains(t, err, "HTTP client")
 	})
-
 }
 
 func TestGenerateSBOM(t *testing.T) {

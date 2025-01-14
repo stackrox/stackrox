@@ -27,8 +27,8 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c := &cobra.Command{
 		Use:   "sbom",
-		Short: "Generate an SBOM from an image scan.",
-		Long:  "Generate an SBOM from an image scan. Optionally, force a rescan of the image. You must have write permissions for the `Image` resource.",
+		Short: "Generate an SPDX 2.3 SBOM from an image scan.",
+		Long:  "Generate an SPDX 2.3 SBOM from an image scan. You must have write permissions for the `Image` resource.",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			if err := imageSBOMCmd.construct(c); err != nil {
 				return err
@@ -39,7 +39,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	}
 
 	c.Flags().StringVarP(&imageSBOMCmd.image, "image", "i", "", "Image name and reference. (e.g. nginx:latest or nginx@sha256:...)")
-	c.Flags().BoolVarP(&imageSBOMCmd.force, "force", "f", false, "The --force flag ignores Central's cache for the scan and forces a fresh re-pull from Scanner")
+	c.Flags().BoolVarP(&imageSBOMCmd.force, "force", "f", false, "Bypass Central's cache for the image and force a new pull from the Scanner")
 	c.Flags().StringVar(&imageSBOMCmd.cluster, "cluster", "", "Cluster name or ID to delegate image scan to")
 
 	utils.Must(c.MarkFlagRequired("image"))
