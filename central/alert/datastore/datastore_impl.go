@@ -42,25 +42,29 @@ type datastoreImpl struct {
 	platformMatcher platformmatcher.PlatformMatcher
 }
 
-func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchCommon.Result, error) {
-	return ds.SearchActive(ctx, q, true)
-}
-
-func (ds *datastoreImpl) SearchActive(ctx context.Context, q *v1.Query, excludeResolved bool) ([]searchCommon.Result, error) {
+func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query, excludeResolved bool) ([]searchCommon.Result, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "Search")
 
 	return ds.searcher.Search(ctx, q, excludeResolved)
 }
 
 // Count returns the number of search results from the query
-func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	return ds.CountActive(ctx, q, true)
-}
-
-func (ds *datastoreImpl) CountActive(ctx context.Context, q *v1.Query, excludeResolved bool) (int, error) {
+func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query, excludeResolved bool) (int, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "Count")
 
 	return ds.searcher.Count(ctx, q, excludeResolved)
+}
+
+type DefaultStateAlertDataStoreImpl struct {
+	DataStore *DataStore
+}
+
+func (ds *DefaultStateAlertDataStoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchCommon.Result, error) {
+	return (*ds.DataStore).Search(ctx, q, true)
+}
+
+func (ds *DefaultStateAlertDataStoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+	return (*ds.DataStore).Count(ctx, q, true)
 }
 
 func (ds *datastoreImpl) SearchListAlerts(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*storage.ListAlert, error) {
@@ -99,7 +103,7 @@ func (ds *datastoreImpl) GetAlert(ctx context.Context, id string) (*storage.Aler
 // CountAlerts returns the number of alerts that are active
 func (ds *datastoreImpl) CountAlerts(ctx context.Context) (int, error) {
 	activeQuery := searchCommon.NewQueryBuilder().AddExactMatches(searchCommon.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery()
-	return ds.Count(ctx, activeQuery)
+	return ds.Count(ctx, activeQuery, true)
 }
 
 // UpsertAlert inserts an alert into storage

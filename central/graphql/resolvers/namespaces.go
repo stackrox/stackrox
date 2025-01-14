@@ -456,7 +456,7 @@ func (resolver *namespaceResolver) PolicyStatusOnly(ctx context.Context, args Ra
 	results, err := resolver.root.ViolationsDataStore.Search(ctx, search.ConjunctionQuery(q,
 		search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetMetadata().GetClusterId()).
 			AddExactMatches(search.Namespace, resolver.data.GetMetadata().GetName()).
-			AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery()))
+			AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery()), true)
 	if err != nil {
 		return "", err
 	}

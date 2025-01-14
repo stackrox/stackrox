@@ -51,7 +51,7 @@ func (resolver *Resolver) ViolationCount(ctx context.Context, args RawQuery) (in
 	if err != nil {
 		return 0, err
 	}
-	count, err := resolver.ViolationsDataStore.Count(ctx, q)
+	count, err := resolver.ViolationsDataStore.Count(ctx, q, true)
 	if err != nil {
 		return 0, err
 	}
@@ -125,6 +125,6 @@ func anyActiveDeployAlerts(ctx context.Context, root *Resolver, q *v1.Query) (bo
 		Limit: 1,
 	}
 
-	results, err := root.ViolationsDataStore.Search(ctx, q)
+	results, err := root.ViolationsDataStore.Search(ctx, q, true)
 	return len(results) != 0, err
 }

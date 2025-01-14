@@ -88,7 +88,7 @@ func BenchmarkAlertDatabaseOps(b *testing.B) {
 }
 
 func runSearchAndGroupResults(ctx context.Context, t testing.TB, datastore DataStore, query *v1.Query, expected []*violationsBySeverity) {
-	results, err := datastore.Search(ctx, query)
+	results, err := datastore.Search(ctx, query, true)
 	require.NoError(t, err)
 	require.NotNil(t, results)
 
@@ -109,7 +109,7 @@ func runSearchAndGroupResults(ctx context.Context, t testing.TB, datastore DataS
 }
 
 func runSearch(ctx context.Context, t testing.TB, datastore DataStore, query *v1.Query) {
-	results, err := datastore.Search(ctx, query)
+	results, err := datastore.Search(ctx, query, true)
 	require.NoError(t, err)
 	require.NotNil(t, results)
 }

@@ -245,7 +245,7 @@ func (resolver *policyResolver) FailingDeploymentCount(ctx context.Context, args
 
 	q = search.ConjunctionQuery(q, resolver.getPolicyQuery(),
 		search.NewQueryBuilder().AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery())
-	count, err := resolver.root.ViolationsDataStore.Count(ctx, q)
+	count, err := resolver.root.ViolationsDataStore.Count(ctx, q, true)
 	if err != nil {
 		return 0, err
 	}

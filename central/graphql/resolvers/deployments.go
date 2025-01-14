@@ -193,7 +193,7 @@ func (resolver *deploymentResolver) DeployAlertCount(ctx context.Context, args R
 		return 0, err
 	}
 
-	count, err := resolver.root.ViolationsDataStore.Count(ctx, q)
+	count, err := resolver.root.ViolationsDataStore.Count(ctx, q, true)
 	if err != nil {
 		return 0, err
 	}
@@ -326,7 +326,7 @@ func (resolver *deploymentResolver) FailingPolicyCount(ctx context.Context, args
 	if err != nil {
 		return 0, err
 	}
-	count, err := resolver.root.ViolationsDataStore.Count(ctx, query)
+	count, err := resolver.root.ViolationsDataStore.Count(ctx, query, true)
 	if err != nil {
 		return 0, nil
 	}
@@ -349,7 +349,7 @@ func (resolver *deploymentResolver) FailingRuntimePolicyCount(ctx context.Contex
 	}
 	query = search.ConjunctionQuery(query,
 		search.NewQueryBuilder().AddExactMatches(search.LifecycleStage, storage.LifecycleStage_RUNTIME.String()).ProtoQuery())
-	count, err := resolver.root.ViolationsDataStore.Count(ctx, query)
+	count, err := resolver.root.ViolationsDataStore.Count(ctx, query, true)
 	if err != nil {
 		return 0, err
 	}
@@ -671,7 +671,7 @@ func (resolver *deploymentResolver) unresolvedAlertsExists(ctx context.Context, 
 		return false, err
 	}
 	q.Pagination = &v1.QueryPagination{Limit: 1}
-	results, err := resolver.root.ViolationsDataStore.Search(ctx, q)
+	results, err := resolver.root.ViolationsDataStore.Search(ctx, q, true)
 	if err != nil {
 		return false, err
 	}

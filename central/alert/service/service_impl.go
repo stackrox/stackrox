@@ -158,7 +158,7 @@ func (s *serviceImpl) CountAlerts(ctx context.Context, request *v1.RawQuery) (*v
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
-	count, err := s.dataStore.Count(ctx, parsedQuery)
+	count, err := s.dataStore.Count(ctx, parsedQuery, true)
 	if err != nil {
 		return nil, err
 	}
@@ -242,7 +242,7 @@ func (s *serviceImpl) GetAlertsCounts(ctx context.Context, request *v1.GetAlerts
 		requestQ = search.ConjunctionQuery(requestQ, conjunct)
 	}
 
-	alerts, err := s.dataStore.Search(ctx, requestQ)
+	alerts, err := s.dataStore.Search(ctx, requestQ, true)
 	if err != nil {
 		return nil, err
 	}
@@ -440,7 +440,7 @@ func (s *serviceImpl) DeleteAlerts(ctx context.Context, request *v1.DeleteAlerts
 		return nil, errors.Wrapf(errox.InvalidArgs, "please specify Violation State:%s in the query to confirm deletion", storage.ViolationState_RESOLVED.String())
 	}
 
-	results, err := s.dataStore.Search(ctx, query)
+	results, err := s.dataStore.Search(ctx, query, true)
 	if err != nil {
 		return nil, err
 	}
