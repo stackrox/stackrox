@@ -7,7 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 )
 
-const snowIntegrationHeader = "Rh-SNow-Integration"
+const snowIntegrationHeader = "Rh-ServiceNow-Integration"
 const anyValueOrMissing = ""
 
 var (
