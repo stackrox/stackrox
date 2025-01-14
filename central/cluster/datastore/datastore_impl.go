@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/cluster/datastore/internal/search"
 	clusterStore "github.com/stackrox/rox/central/cluster/store/cluster"
 	clusterHealthStore "github.com/stackrox/rox/central/cluster/store/clusterhealth"
+	clusterInitStore "github.com/stackrox/rox/central/clusterinit/store"
 	compliancePruning "github.com/stackrox/rox/central/complianceoperator/v2/pruner"
 	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
@@ -64,6 +65,7 @@ var (
 
 type datastoreImpl struct {
 	clusterStorage            clusterStore.Store
+	clusterInitStore          clusterInitStore.Store
 	clusterHealthStorage      clusterHealthStore.Store
 	clusterCVEDataStore       clusterCVEDS.DataStore
 	alertDataStore            alertDataStore.DataStore
@@ -891,6 +893,11 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 
 		if _, err := ds.addClusterNoLock(ctx, cluster); err != nil {
 			return nil, errors.Wrapf(err, "failed to dynamically add cluster with name %q", clusterName)
+		}
+
+		if err := ds.clusterInitStore.RecordRegistration(ctx, registrantID); err != nil {
+			log.Warnf("cluster %q has been added, but recording the cluster registration using registrant ID %q failed", clusterName, registrantID)
+			return nil, errors.Wrapf(err, "recording cluster registration for registrant ID %q", registrantID)
 		}
 	} else {
 		return nil, errors.New("neither a cluster ID nor a cluster name was specified")

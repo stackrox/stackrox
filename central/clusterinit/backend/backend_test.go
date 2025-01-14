@@ -301,11 +301,11 @@ func (s *clusterInitBackendTestSuite) TestCRSNameMustBeUnique() {
 	).AnyTimes()
 
 	// Issue new CRS.
-	_, err := s.backend.IssueCRS(ctx, crsName)
+	_, err := s.backend.IssueCRS(ctx, crsName, 0)
 	s.Require().NoError(err)
 
 	// Attempt to issue again with same name.
-	_, err = s.backend.IssueCRS(ctx, crsName)
+	_, err = s.backend.IssueCRS(ctx, crsName, 0)
 	s.Require().Error(err)
 	s.Require().ErrorIs(err, store.ErrInitBundleDuplicateName)
 }
@@ -317,7 +317,7 @@ func (s *clusterInitBackendTestSuite) TestCRSLifecycle() {
 	s.certProvider.EXPECT().GetCRSCert().Return(s.crsCert, uuid.NewV4(), nil).AnyTimes()
 
 	// Issue new CRS.
-	crsWithMeta, err := s.backend.IssueCRS(ctx, crsName)
+	crsWithMeta, err := s.backend.IssueCRS(ctx, crsName, 0)
 	s.Require().NoError(err)
 	id := crsWithMeta.Meta.Id
 

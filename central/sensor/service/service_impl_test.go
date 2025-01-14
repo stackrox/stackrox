@@ -7,6 +7,7 @@ import (
 	"time"
 
 	clusterMock "github.com/stackrox/rox/central/cluster/datastore/mocks"
+	clusterInitMock "github.com/stackrox/rox/central/clusterinit/store/mocks"
 	installationMock "github.com/stackrox/rox/central/installation/store/mocks"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	connectionMock "github.com/stackrox/rox/central/sensor/service/connection/mocks"
@@ -288,6 +289,9 @@ func newSensorService(ctx context.Context, ctrl *gomock.Controller) (Service, *m
 			},
 		)
 
-	sensorService := New(mockConnetionManager, pipelineFactory, clustersDataStore, mockInstallation)
+	mockClusterInitStore := clusterInitMock.NewMockStore(ctrl)
+	// TODO(mc): add actual test?
+
+	sensorService := New(mockConnetionManager, pipelineFactory, clustersDataStore, mockInstallation, mockClusterInitStore)
 	return sensorService, mockServer
 }

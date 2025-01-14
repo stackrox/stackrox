@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"math"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -20,12 +21,15 @@ var (
 )
 
 // Store interface for managing persisted cluster init bundles.
+//
+//go:generate mockgen-wrapper
 type Store interface {
 	GetAll(ctx context.Context) ([]*storage.InitBundleMeta, error)
 	GetAllCRS(ctx context.Context) ([]*storage.InitBundleMeta, error)
 	Get(ctx context.Context, id string) (*storage.InitBundleMeta, error)
 	Add(ctx context.Context, bundleMeta *storage.InitBundleMeta) error
 	Revoke(ctx context.Context, id string) error
+	RecordRegistration(ctx context.Context, id string) error
 }
 
 // UnderlyingStore is the base store that actually accesses the data
@@ -142,6 +146,47 @@ func (w *storeImpl) Revoke(ctx context.Context, id string) error {
 	meta.IsRevoked = true
 	if err := w.store.Upsert(ctx, meta); err != nil {
 		return err
+	}
+	return nil
+}
+
+func (w *storeImpl) RecordRegistration(ctx context.Context, id string) error {
+	w.uniqueUpdateMutex.Lock()
+	defer w.uniqueUpdateMutex.Unlock()
+
+	crsMeta, err := w.Get(ctx, id)
+	if err != nil {
+		return errors.Wrapf(err, "retrieving cluster registration secret meta data for %q", id)
+	}
+	if crsMeta.GetVersion() != storage.InitBundleMeta_CRS {
+		// The caller of this function doesn't know if it holds the ID of an init bundle or the ID of a CRS.
+		// Hence, we will silently skip init bundles here instead of caring about how to implement
+		// registration counting logic for init bundles.
+		return nil
+	}
+
+	maxRegistrations := crsMeta.GetMaxRegistrations()
+	registrationsDone := crsMeta.GetRegistrationsDone()
+
+	// maxRegistrations == 0 means no restrictions on the number of cluster registrations.
+	if maxRegistrations == 0 {
+		// We stop recording at MaxUint32 to prevent overflows.
+		if registrationsDone < math.MaxUint32 {
+			crsMeta.RegistrationsDone = registrationsDone + 1
+		}
+	} else {
+		if registrationsDone == maxRegistrations {
+			return errors.New("maximum number of allowed cluster registrations reached")
+		}
+		if registrationsDone == maxRegistrations {
+			crsMeta.IsRevoked = true
+		}
+		crsMeta.RegistrationsDone = registrationsDone + 1
+	}
+
+	err = w.store.Upsert(ctx, crsMeta)
+	if err != nil {
+		return errors.Wrapf(err, "updating meta data for cluster registration secret %q", id)
 	}
 	return nil
 }

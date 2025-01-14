@@ -84,6 +84,8 @@ func (m *CRSMeta) CloneVT() *CRSMeta {
 	r.Name = m.Name
 	r.CreatedAt = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.CreatedAt).CloneVT())
 	r.ExpiresAt = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.ExpiresAt).CloneVT())
+	r.MaxRegistrations = m.MaxRegistrations
+	r.RegistrationsDone = m.RegistrationsDone
 	if rhs := m.CreatedBy; rhs != nil {
 		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.User }); ok {
 			r.CreatedBy = vtpb.CloneVT()
@@ -241,6 +243,7 @@ func (m *CRSGenRequest) CloneVT() *CRSGenRequest {
 	}
 	r := new(CRSGenRequest)
 	r.Name = m.Name
+	r.MaxRegistrations = m.MaxRegistrations
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -497,6 +500,12 @@ func (this *CRSMeta) EqualVT(that *CRSMeta) bool {
 	if !(*timestamppb1.Timestamp)(this.ExpiresAt).EqualVT((*timestamppb1.Timestamp)(that.ExpiresAt)) {
 		return false
 	}
+	if this.MaxRegistrations != that.MaxRegistrations {
+		return false
+	}
+	if this.RegistrationsDone != that.RegistrationsDone {
+		return false
+	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
@@ -665,6 +674,9 @@ func (this *CRSGenRequest) EqualVT(that *CRSGenRequest) bool {
 		return false
 	}
 	if this.Name != that.Name {
+		return false
+	}
+	if this.MaxRegistrations != that.MaxRegistrations {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1059,6 +1071,16 @@ func (m *CRSMeta) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.RegistrationsDone != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.RegistrationsDone))
+		i--
+		dAtA[i] = 0x40
+	}
+	if m.MaxRegistrations != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.MaxRegistrations))
+		i--
+		dAtA[i] = 0x38
+	}
 	if m.ExpiresAt != nil {
 		size, err := (*timestamppb1.Timestamp)(m.ExpiresAt).MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
@@ -1424,6 +1446,11 @@ func (m *CRSGenRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.MaxRegistrations != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.MaxRegistrations))
+		i--
+		dAtA[i] = 0x10
 	}
 	if len(m.Name) > 0 {
 		i -= len(m.Name)
@@ -1834,6 +1861,12 @@ func (m *CRSMeta) SizeVT() (n int) {
 		l = (*timestamppb1.Timestamp)(m.ExpiresAt).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
+	if m.MaxRegistrations != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.MaxRegistrations))
+	}
+	if m.RegistrationsDone != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.RegistrationsDone))
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -1947,6 +1980,9 @@ func (m *CRSGenRequest) SizeVT() (n int) {
 	l = len(m.Name)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.MaxRegistrations != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.MaxRegistrations))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -2689,6 +2725,44 @@ func (m *CRSMeta) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 7:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MaxRegistrations", wireType)
+			}
+			m.MaxRegistrations = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.MaxRegistrations |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 8:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RegistrationsDone", wireType)
+			}
+			m.RegistrationsDone = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RegistrationsDone |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -3382,6 +3456,25 @@ func (m *CRSGenRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.Name = stringValue
 			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MaxRegistrations", wireType)
+			}
+			m.MaxRegistrations = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.MaxRegistrations |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

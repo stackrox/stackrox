@@ -318,6 +318,10 @@
       "properties": {
         "name": {
           "type": "string"
+        },
+        "maxRegistrations": {
+          "type": "integer",
+          "format": "int64"
         }
       }
     },
@@ -352,6 +356,14 @@
         "expiresAt": {
           "type": "string",
           "format": "date-time"
+        },
+        "maxRegistrations": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "registrationsDone": {
+          "type": "integer",
+          "format": "int64"
         }
       }
     },

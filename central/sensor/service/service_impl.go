@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	clusterInit "github.com/stackrox/rox/central/clusterinit/store"
 	installationStore "github.com/stackrox/rox/central/installation/store"
 	"github.com/stackrox/rox/central/metrics/telemetry"
 	"github.com/stackrox/rox/central/securedclustercertgen"
@@ -45,19 +46,21 @@ var (
 type serviceImpl struct {
 	central.UnimplementedSensorServiceServer
 
-	manager      connection.Manager
-	pf           pipeline.Factory
-	clusters     clusterDataStore.DataStore
-	installation installationStore.Store
+	manager          connection.Manager
+	pf               pipeline.Factory
+	clusters         clusterDataStore.DataStore
+	installation     installationStore.Store
+	clusterInitStore clusterInit.Store
 }
 
 // New creates a new Service using the given manager.
-func New(manager connection.Manager, pf pipeline.Factory, clusters clusterDataStore.DataStore, installation installationStore.Store) Service {
+func New(manager connection.Manager, pf pipeline.Factory, clusters clusterDataStore.DataStore, installation installationStore.Store, clusterInitStore clusterInit.Store) Service {
 	return &serviceImpl{
-		manager:      manager,
-		pf:           pf,
-		clusters:     clusters,
-		installation: installation,
+		manager:          manager,
+		pf:               pf,
+		clusters:         clusters,
+		installation:     installation,
+		clusterInitStore: clusterInitStore,
 	}
 }
 
