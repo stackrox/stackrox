@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 
@@ -70,12 +71,20 @@ func normalizeVersion(version string) []int32 {
 			return []int32{int32(i), 0, 0}
 		}
 	default:
-		i1, err1 := strconv.Atoi(fields[0])
-		i2, err2 := strconv.Atoi(fields[1])
-		// Only two first fields matter for the matcher
-		if err1 == nil && err2 == nil {
-			return []int32{int32(i1), int32(i2), 0}
+		i1, err1 := strconv.ParseInt(fields[0], 10, 32)
+		if err1 != nil {
+			i1 = 0
 		}
+		i2, err2 := strconv.ParseInt(fields[1], 10, 32)
+		if err2 != nil {
+			i2 = 0
+		}
+		i3, err3 := strconv.ParseInt(fields[2], 10, 32)
+		if err3 != nil {
+			i3 = 0
+		}
+		// Only two first fields matter for the matcher
+		return []int32{int32(i1), int32(i2), int32(i3)}
 	}
 	return []int32{0, 0, 0}
 }
@@ -83,9 +92,12 @@ func normalizeVersion(version string) []int32 {
 func createIndexReport(kind, version string) *v4.IndexReport {
 	const goldenName = "Red Hat Container Catalog"
 	const goldenURI = `https://catalog.redhat.com/software/containers/explore`
+	normVersion := normalizeVersion(version)
+	fmt.Fprintf(os.Stderr, "Version: %s, Normalized version: %v\n", version, normVersion)
 
 	return &v4.IndexReport{
-		HashId:  "sha256:11cf2360bc7d8d4fef440b3fa97ce49cd648318632328f42ecbfb071b823ae14",
+		HashId: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		//HashId:  "sha256:11cf2360bc7d8d4fef440b3fa97ce49cd648318632328f42ecbfb071b823ae14",
 		State:   "7", // IndexFinished
 		Success: true,
 		Err:     "",
@@ -95,9 +107,9 @@ func createIndexReport(kind, version string) *v4.IndexReport {
 					Id:      "6",
 					Name:    "rhcos",
 					Version: version, // this will be read!
-					NormalizedVersion: &v4.NormalizedVersion{ // required due to Kind
+					NormalizedVersion: &v4.NormalizedVersion{ // both are required
 						Kind: "rhctag",
-						V:    normalizeVersion(version),
+						V:    normVersion,
 					},
 					FixedInVersion: "",
 					Kind:           kind,
@@ -124,7 +136,7 @@ func createIndexReport(kind, version string) *v4.IndexReport {
 					Environments: []*v4.Environment{
 						{
 							PackageDb:     "",
-							IntroducedIn:  "sha256:11cf2360bc7d8d4fef440b3fa97ce49cd648318632328f42ecbfb071b823ae14",
+							IntroducedIn:  "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 							RepositoryIds: []string{"6"},
 						},
 					},

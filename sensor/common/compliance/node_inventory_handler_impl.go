@@ -355,12 +355,20 @@ func normalizeVersion(version string) []int32 {
 			return []int32{int32(i), 0, 0}
 		}
 	default:
-		i1, err1 := strconv.Atoi(fields[0])
-		i2, err2 := strconv.Atoi(fields[1])
-		// Only two first fields matter for the matcher
-		if err1 == nil && err2 == nil {
-			return []int32{int32(i1), int32(i2), 0}
+		i1, err1 := strconv.ParseInt(fields[0], 10, 32)
+		if err1 != nil {
+			i1 = 0
 		}
+		i2, err2 := strconv.ParseInt(fields[1], 10, 32)
+		if err2 != nil {
+			i2 = 0
+		}
+		i3, err3 := strconv.ParseInt(fields[2], 10, 32)
+		if err3 != nil {
+			i3 = 0
+		}
+		// Only two first fields matter for the matcher
+		return []int32{int32(i1), int32(i2), int32(i3)}
 	}
 	return []int32{0, 0, 0}
 }
