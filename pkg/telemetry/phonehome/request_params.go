@@ -71,18 +71,15 @@ func hasValueMatching(values []string, expression string) bool {
 // matching value. A request without the expected header matches empty pattern
 // for this header.
 func (rp *RequestParams) HasHeader(patterns map[string]string) bool {
-	if rp.Headers == nil && len(patterns) != 0 {
-		return false
-	}
 	for header, expression := range patterns {
-		values := rp.Headers(header)
-		if len(values) == 0 {
-			if expression == "" {
-				continue
-			}
+		if expression == "" {
+			continue
+		}
+		if rp.Headers == nil {
 			return false
 		}
-		if !hasValueMatching(values, expression) {
+		values := rp.Headers(header)
+		if len(values) == 0 || !hasValueMatching(values, expression) {
 			return false
 		}
 	}

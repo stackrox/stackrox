@@ -7,17 +7,28 @@ import (
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 )
 
+const snowIntegrationHeader = "Rh-SNow-Integration"
+
 var (
 	ignoredPaths = []string{"/v1/ping", "/v1.PingService/Ping", "/v1/metadata", "/static/*"}
 
 	telemetryCampaign = phonehome.APICallCampaign{
-		{UserAgents: []string{"roxctl"}},
+		{
+			UserAgents: []string{"roxctl"},
+			HeaderPatterns: map[string]string{
+				clientconn.RoxctlCommandHeader:      "",
+				clientconn.RoxctlCommandIndexHeader: "",
+				clientconn.ExecutionEnvironment:     "",
+			},
+		},
 		{
 			UserAgents:   []string{"ServiceNow"},
 			PathPatterns: []string{"/v1/clusters"},
 			// Adds RHACS-Integration property to the event with the value from
 			// the header, if there is such header.
-			HeaderPatterns: map[string]string{"RHACS-Integration": ""},
+			HeaderPatterns: map[string]string{
+				snowIntegrationHeader: "",
+			},
 		},
 		{PathPatterns: strings.FieldsFunc(apiWhiteList.Setting(),
 			func(r rune) bool { return r == ',' })},
@@ -35,15 +46,6 @@ func addDefaultProps(rp *phonehome.RequestParams, props map[string]any) bool {
 	props["Code"] = rp.Code
 	props["Method"] = rp.Method
 	props["User-Agent"] = rp.UserAgent
-	if cmd := phonehome.GetFirst(rp.Headers, clientconn.RoxctlCommandHeader); cmd != "" {
-		props["roxctl Command"] = cmd
-	}
-	if index := phonehome.GetFirst(rp.Headers, clientconn.RoxctlCommandIndexHeader); index != "" {
-		props["roxctl Command Index"] = index
-	}
-	if execEnv := phonehome.GetFirst(rp.Headers, clientconn.ExecutionEnvironment); execEnv != "" {
-		props["Execution Environment"] = execEnv
-	}
 	return true
 }
 

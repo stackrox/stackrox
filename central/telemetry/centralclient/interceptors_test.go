@@ -3,6 +3,7 @@ package centralclient
 import (
 	"testing"
 
+	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stretchr/testify/assert"
 )
@@ -61,11 +62,11 @@ func Test_apiCall(t *testing.T) {
 			rp: &phonehome.RequestParams{
 				UserAgent: "RHACS Integration ServiceNow client",
 				Method:    "GET",
-				Path:      "/v1/whatever",
+				Path:      "/v1/clusters",
 				Code:      200,
 				Headers: func(h string) []string {
 					return map[string][]string{
-						"RHACS-Integration": {"v1.0.3"},
+						snowIntegrationHeader: {"v1.0.3"},
 					}[h]
 				},
 			},
@@ -80,7 +81,7 @@ func Test_apiCall(t *testing.T) {
 }
 
 func Test_addCustomHeaders(t *testing.T) {
-	t.Run("RHACS-Integration", func(t *testing.T) {
+	t.Run(snowIntegrationHeader, func(t *testing.T) {
 		rp := &phonehome.RequestParams{
 			UserAgent: "RHACS Integration ServiceNow client",
 			Method:    "GET",
@@ -88,14 +89,14 @@ func Test_addCustomHeaders(t *testing.T) {
 			Code:      200,
 			Headers: func(h string) []string {
 				return map[string][]string{
-					"RHACS-Integration": {"v1.0.3", "beta"},
+					snowIntegrationHeader: {"v1.0.3", "beta"},
 				}[h]
 			},
 		}
 		props := map[string]any{}
 		addCustomHeaders(rp, props)
 		assert.Len(t, props, 1)
-		assert.Equal(t, "v1.0.3; beta", props["RHACS-Integration"])
+		assert.Equal(t, "v1.0.3; beta", props[snowIntegrationHeader])
 	})
 	t.Run("3rd-party Integration", func(t *testing.T) {
 		rp := &phonehome.RequestParams{
@@ -112,5 +113,26 @@ func Test_addCustomHeaders(t *testing.T) {
 		props := map[string]any{}
 		addCustomHeaders(rp, props)
 		assert.Empty(t, props)
+	})
+	t.Run("roxctl", func(t *testing.T) {
+		rp := &phonehome.RequestParams{
+			UserAgent: "roxctl",
+			Method:    "GET",
+			Path:      "/v1/clusters",
+			Code:      200,
+			Headers: func(h string) []string {
+				return map[string][]string{
+					clientconn.RoxctlCommandHeader:      {"central"},
+					clientconn.RoxctlCommandIndexHeader: {"1"},
+					clientconn.ExecutionEnvironment:     {"github"},
+				}[h]
+			},
+		}
+		props := map[string]any{}
+		addCustomHeaders(rp, props)
+		assert.Len(t, props, 3)
+		assert.Equal(t, "central", props[clientconn.RoxctlCommandHeader])
+		assert.Equal(t, "1", props[clientconn.RoxctlCommandIndexHeader])
+		assert.Equal(t, "github", props[clientconn.ExecutionEnvironment])
 	})
 }

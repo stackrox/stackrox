@@ -124,6 +124,11 @@ func TestHasHeader(t *testing.T) {
 			return headers[s]
 		},
 	}
+
+	assert.True(t, (&RequestParams{}).HasHeader(nil))
+	assert.False(t, (&RequestParams{}).HasHeader(map[string]string{"header": "value"}))
+	assert.True(t, (&RequestParams{}).HasHeader(map[string]string{"header": ""}))
+
 	tests := map[string]struct {
 		patterns map[string]string
 		expected bool
