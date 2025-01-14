@@ -72,10 +72,8 @@ var (
 		},
 		user.With(permissions.Modify(resources.Image)): {
 			"/v1.ImageService/DeleteImages",
-			"/v1.ImageService/ScanImage",
-		},
-		user.With(permissions.View(resources.Image)): {
 			"/v1.ImageService/InvalidateScanAndRegistryCaches",
+			"/v1.ImageService/ScanImage",
 		},
 		user.With(permissions.View(resources.WatchedImage)): {
 			"/v1.ImageService/GetWatchedImages",
