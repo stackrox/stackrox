@@ -245,7 +245,12 @@ function WorkloadCVEOverviewTable({
                         </TooltipTh>
                     )}
                     {isEpssProbabilityColumnEnabled && (
-                        <Th className={getVisibilityClass('epssProbability')}>EPSS probability</Th>
+                        <Th
+                            className={getVisibilityClass('epssProbability')}
+                            sort={getSortParams('EPSS Probability')}
+                        >
+                            EPSS probability
+                        </Th>
                     )}
                     <TooltipTh
                         className={getVisibilityClass('affectedImages')}

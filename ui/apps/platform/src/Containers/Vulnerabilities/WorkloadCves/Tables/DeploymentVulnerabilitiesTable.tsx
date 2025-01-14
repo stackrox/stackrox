@@ -130,7 +130,12 @@ function DeploymentVulnerabilitiesTable({
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
                     {isEpssProbabilityColumnEnabled && (
-                        <Th className={getVisibilityClass('epssProbability')}>EPSS probability</Th>
+                        <Th
+                            className={getVisibilityClass('epssProbability')}
+                            sort={getSortParams('EPSS Probability')}
+                        >
+                            EPSS probability
+                        </Th>
                     )}
                     <Th className={getVisibilityClass('affectedComponents')}>
                         Affected components
