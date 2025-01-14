@@ -110,7 +110,7 @@ function DeploymentVulnerabilitiesTable({
     const isEpssProbabilityColumnEnabled =
         isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_EPSS_SCORE');
 
-    const colSpan = 7 - hiddenColumnCount;
+    const colSpan = 7 + (isEpssProbabilityColumnEnabled ? 1 : 0) - hiddenColumnCount;
 
     return (
         <Table variant="compact">

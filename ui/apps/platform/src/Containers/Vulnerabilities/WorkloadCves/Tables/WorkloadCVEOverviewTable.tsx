@@ -203,7 +203,9 @@ function WorkloadCVEOverviewTable({
         isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_EPSS_SCORE');
 
     const colSpan =
-        (isNvdCvssColumnEnabled ? 7 : 6) +
+        6 +
+        (isNvdCvssColumnEnabled ? 1 : 0) +
+        (isEpssProbabilityColumnEnabled ? 1 : 0) +
         (canSelectRows ? 1 : 0) +
         (createTableActions ? 1 : 0) +
         (showExceptionDetailsLink ? 1 : 0) +
