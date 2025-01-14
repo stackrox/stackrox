@@ -8,6 +8,7 @@ import (
 )
 
 const snowIntegrationHeader = "Rh-SNow-Integration"
+const anyValueOrMissing = ""
 
 var (
 	ignoredPaths = []string{"/v1/ping", "/v1.PingService/Ping", "/v1/metadata", "/static/*"}
@@ -16,18 +17,16 @@ var (
 		{
 			UserAgents: []string{"roxctl"},
 			HeaderPatterns: map[string]string{
-				clientconn.RoxctlCommandHeader:      "",
-				clientconn.RoxctlCommandIndexHeader: "",
-				clientconn.ExecutionEnvironment:     "",
+				clientconn.RoxctlCommandHeader:      anyValueOrMissing,
+				clientconn.RoxctlCommandIndexHeader: anyValueOrMissing,
+				clientconn.ExecutionEnvironment:     anyValueOrMissing,
 			},
 		},
 		{
 			UserAgents:   []string{"ServiceNow"},
 			PathPatterns: []string{"/v1/clusters"},
-			// Adds RHACS-Integration property to the event with the value from
-			// the header, if there is such header.
 			HeaderPatterns: map[string]string{
-				snowIntegrationHeader: "",
+				snowIntegrationHeader: anyValueOrMissing,
 			},
 		},
 		{PathPatterns: strings.FieldsFunc(apiWhiteList.Setting(),
