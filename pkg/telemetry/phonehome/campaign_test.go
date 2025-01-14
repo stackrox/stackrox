@@ -17,9 +17,9 @@ func TestCampaignFulfilled(t *testing.T) {
 		}
 		assert.False(t, campaign.IsFulfilled(rp))
 	})
-	t.Run("Empty criterium", func(t *testing.T) {
+	t.Run("Empty criterion", func(t *testing.T) {
 		campaign := APICallCampaign{
-			APICallCampaignCriterium{},
+			APICallCampaignCriterion{},
 		}
 		rp := &RequestParams{
 			UserAgent: "some test user-agent",
@@ -30,44 +30,44 @@ func TestCampaignFulfilled(t *testing.T) {
 		assert.True(t, campaign.IsFulfilled(rp))
 	})
 
-	t.Run("Single criterium", func(t *testing.T) {
+	t.Run("Single criterion", func(t *testing.T) {
 		campaigns := map[string]APICallCampaign{
-			"Code": []APICallCampaignCriterium{
+			"Code": []APICallCampaignCriterion{
 				{
 					Codes: []int32{202},
 				},
 			},
-			"Codes": []APICallCampaignCriterium{
+			"Codes": []APICallCampaignCriterion{
 				{
 					Codes: []int32{100, 202, 400},
 				},
 			},
-			"Method": []APICallCampaignCriterium{
+			"Method": []APICallCampaignCriterion{
 				{
 					Methods: []string{"get"},
 				},
 			},
-			"Methods": []APICallCampaignCriterium{
+			"Methods": []APICallCampaignCriterion{
 				{
 					Methods: []string{"post", "get", "put"},
 				},
 			},
-			"PathPattern": []APICallCampaignCriterium{
+			"PathPattern": []APICallCampaignCriterion{
 				{
 					PathPatterns: []string{"/some/test*"},
 				},
 			},
-			"PathPatterns": []APICallCampaignCriterium{
+			"PathPatterns": []APICallCampaignCriterion{
 				{
 					PathPatterns: []string{"/x", "/some/test*", "/y"},
 				},
 			},
-			"UserAgent": []APICallCampaignCriterium{
+			"UserAgent": []APICallCampaignCriterion{
 				{
 					UserAgents: []string{"test"},
 				},
 			},
-			"UserAgents": []APICallCampaignCriterium{
+			"UserAgents": []APICallCampaignCriterion{
 				{
 					UserAgents: []string{"x", "test", "y"},
 				},

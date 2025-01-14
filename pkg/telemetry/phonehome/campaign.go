@@ -4,10 +4,10 @@ import (
 	"strings"
 )
 
-// APICallCampaignCriterium defines a criterium for an API interception of a telemetry
+// APICallCampaignCriterion defines a criterion for an API interception of a telemetry
 // campaign. Requests parameters need to match all fields for the request to
-// be tracked. Any request matches empty criterium.
-type APICallCampaignCriterium struct {
+// be tracked. Any request matches empty criterion.
+type APICallCampaignCriterion struct {
 	UserAgents     []string          `json:"user_agents,omitempty"`
 	PathPatterns   []string          `json:"path_patterns,omitempty"`
 	Methods        []string          `json:"methods,omitempty"`
@@ -16,11 +16,11 @@ type APICallCampaignCriterium struct {
 }
 
 // APICallCampaign defines an API interception telemetry campaign as a list of
-// criterium to fulfil for an API call to be intercepted.
-// A request should fulfil at least one of the criterium to be tracked.
-type APICallCampaign []APICallCampaignCriterium
+// criteria to fulfil for an API call to be intercepted.
+// A request should fulfil at least one of the criterion to be tracked.
+type APICallCampaign []APICallCampaignCriterion
 
-func (c *APICallCampaignCriterium) IsFulfilled(rp *RequestParams) bool {
+func (c *APICallCampaignCriterion) IsFulfilled(rp *RequestParams) bool {
 	codeMatches := len(c.Codes) == 0
 	for _, code := range c.Codes {
 		if rp.Code == int(code) {
