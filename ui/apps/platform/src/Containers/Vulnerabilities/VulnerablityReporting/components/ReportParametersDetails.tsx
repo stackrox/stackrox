@@ -30,8 +30,8 @@ function ReportParametersDetails({
 }: ReportParametersDetailsProps): ReactElement {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isIncludeEpssProbabilityEnabled =
-        !isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_EPSS_SCORE');
-    const isIncludeNvdCvssEnabled = !isFeatureFlagEnabled('ROX_SCANNER_V4');
+        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_EPSS_SCORE');
+    const isIncludeNvdCvssEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
 
     const cveSeverities =
         formValues.reportParameters.cveSeverities.length !== 0 ? (
