@@ -70,11 +70,11 @@ var (
 			"/v1.ImageService/EnrichLocalImageInternal",
 			"/v1.ImageService/UpdateLocalScanStatusInternal",
 		},
-		user.With(permissions.Modify(permissions.WithLegacyAuthForSAC(resources.Image, true))): {
+		user.With(permissions.Modify(resources.Image)): {
 			"/v1.ImageService/DeleteImages",
 			"/v1.ImageService/ScanImage",
 		},
-		user.With(permissions.View(permissions.WithLegacyAuthForSAC(resources.Image, true))): {
+		user.With(permissions.View(resources.Image)): {
 			"/v1.ImageService/InvalidateScanAndRegistryCaches",
 		},
 		user.With(permissions.View(resources.WatchedImage)): {
