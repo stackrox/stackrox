@@ -1,4 +1,3 @@
-// protoc-gen-go-vtproto version: v0.6.1-0.20240409071808-615f978279ca
 // source: storage/cve.proto
 
 package storage
@@ -248,9 +247,15 @@ func (m *ImageCVEV2) CloneVT() *ImageCVEV2 {
 	r.FirstImageOccurrence = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.FirstImageOccurrence).CloneVT())
 	r.State = m.State
 	r.IsFixable = m.IsFixable
+<<<<<<< HEAD
 	r.ComponentId = m.ComponentId
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+=======
+>>>>>>> 672686754e (X-Smart-Squash: Squashed 5 commits:)
+>>>>>>> 3d13a8993a (X-Smart-Squash: Squashed 5 commits:)
 	if rhs := m.CvssMetrics; rhs != nil {
 		tmpContainer := make([]*CVSSScore, len(rhs))
 		for k, v := range rhs {
@@ -870,9 +875,12 @@ func (this *ImageCVEV2) EqualVT(that *ImageCVEV2) bool {
 	if this.IsFixable != that.IsFixable {
 		return false
 	}
+<<<<<<< HEAD
 	if this.ComponentId != that.ComponentId {
 		return false
 	}
+=======
+>>>>>>> 672686754e (X-Smart-Squash: Squashed 5 commits:)
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
@@ -1927,6 +1935,7 @@ func (m *ImageCVEV2) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		}
 		i -= size
 	}
+<<<<<<< HEAD
 	if len(m.ComponentId) > 0 {
 		i -= len(m.ComponentId)
 		copy(dAtA[i:], m.ComponentId)
@@ -1938,6 +1947,8 @@ func (m *ImageCVEV2) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		dAtA[i] = 0x7a
 >>>>>>> 9cec9c9d85 (X-Smart-Squash: Squashed 7 commits:)
 	}
+=======
+>>>>>>> 672686754e (X-Smart-Squash: Squashed 5 commits:)
 	if m.IsFixable {
 		i--
 		if m.IsFixable {
@@ -2944,10 +2955,13 @@ func (m *ImageCVEV2) SizeVT() (n int) {
 	if vtmsg, ok := m.HasFixedBy.(interface{ SizeVT() int }); ok {
 		n += vtmsg.SizeVT()
 	}
+<<<<<<< HEAD
 	l = len(m.ComponentId)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
+=======
+>>>>>>> 672686754e (X-Smart-Squash: Squashed 5 commits:)
 	n += len(m.unknownFields)
 	return n
 }
@@ -9385,8 +9399,11 @@ func (m *ImageCVEV2) UnmarshalVTUnsafe(dAtA []byte) error {
 			m.HasFixedBy = &ImageCVEV2_FixedBy{FixedBy: stringValue}
 			iNdEx = postIndex
 <<<<<<< HEAD
+<<<<<<< HEAD
 		case 14:
 =======
+=======
+>>>>>>> 3d13a8993a (X-Smart-Squash: Squashed 5 commits:)
 		case 15:
 >>>>>>> 9cec9c9d85 (X-Smart-Squash: Squashed 7 commits:)
 			if wireType != 2 {
@@ -9424,6 +9441,8 @@ func (m *ImageCVEV2) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.ComponentId = stringValue
 			iNdEx = postIndex
+=======
+>>>>>>> 672686754e (X-Smart-Squash: Squashed 5 commits:)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
