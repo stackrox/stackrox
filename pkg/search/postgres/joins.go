@@ -86,7 +86,15 @@ func (j *joinTreeNode) toJoins() []Join {
 }
 
 func (j *joinTreeNode) appendJoinsHelper(joins *[]Join) {
-	for child, columnPairs := range j.children {
+	// Ensure the joins are added in a deterministic order to the query
+	// for testing purposes.
+	children := make([]*joinTreeNode, 0, len(j.children))
+	for child := range j.children {
+		children = append(children, child)
+	}
+	sort.Slice(children, func(i, j int) bool { return children[i].currNode.Table < children[j].currNode.Table })
+	for _, child := range children {
+		columnPairs := j.children[child]
 		*joins = append(*joins, Join{
 			leftTable:       j.currNode.Table,
 			rightTable:      child.currNode.Table,
@@ -95,11 +103,6 @@ func (j *joinTreeNode) appendJoinsHelper(joins *[]Join) {
 		})
 		child.appendJoinsHelper(joins)
 	}
-	// Ensure the joins are added in a deterministic order to the query
-	// for testing purposes.
-	sort.Slice(*joins, func(i, j int) bool {
-		return (*joins)[i].rightTable < (*joins)[j].rightTable
-	})
 }
 
 type joinPathElem struct {

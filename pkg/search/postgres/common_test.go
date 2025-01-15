@@ -432,10 +432,10 @@ func TestCountQueries(t *testing.T) {
 				ProtoQuery(),
 			schema: imagesSchema,
 			expectedStatement: "select count(distinct(images.Id)) from images " +
-				"left join deployments on deployments_containers.deployments_Id = deployments.Id " +
 				"left join deployments_containers on images.Id = deployments_containers.Image_Id " +
-				"inner join image_component_cve_edges on image_component_edges.ImageComponentId = image_component_cve_edges.ImageComponentId " +
+				"left join deployments on deployments_containers.deployments_Id = deployments.Id " +
 				"inner join image_component_edges on images.Id = image_component_edges.ImageId " +
+				"inner join image_component_cve_edges on image_component_edges.ImageComponentId = image_component_cve_edges.ImageComponentId " +
 				"inner join image_cves on image_component_cve_edges.ImageCveId = image_cves.Id " +
 				"inner join image_cve_edges on(images.Id = image_cve_edges.ImageId and image_component_cve_edges.ImageCveId = image_cve_edges.ImageCveId) " +
 				"where ((deployments.PlatformComponent = $1 or deployments.PlatformComponent is null) and (image_cve_edges.State = $2))",
