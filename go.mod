@@ -32,7 +32,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.38.4
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.72.2
 	github.com/aws/aws-sdk-go-v2/service/securityhub v1.55.3
-	github.com/aws/aws-sdk-go-v2/service/sts v1.33.6
+	github.com/aws/aws-sdk-go-v2/service/sts v1.33.7
 	github.com/aws/smithy-go v1.22.1
 	github.com/cenkalti/backoff/v3 v3.2.2
 	github.com/cloudflare/cfssl v1.6.5
