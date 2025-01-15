@@ -58,7 +58,7 @@ sourceSets.each { ss ->
 
 dependencies {
     // grpc and protobuf
-    implementation 'com.google.code.gson:gson:2.10.1'
+    implementation 'com.google.code.gson:gson:2.11.0'
     implementation "com.google.api.grpc:proto-google-common-protos:2.50.1"
     implementation "io.grpc:grpc-alts:${grpcVersion}"
     implementation "io.grpc:grpc-netty:${grpcVersion}"
@@ -115,7 +115,7 @@ dependencies {
         "codenarc"("org.codehaus.groovy:groovy-xml:2.5.23")
     }
 
-    implementation 'org.javers:javers-core:7.4.2'
+    implementation 'org.javers:javers-core:7.4.3'
     implementation group: 'org.picocontainer', name: 'picocontainer', version: '2.15'
 
     implementation 'commons-codec:commons-codec:1.17.0'
