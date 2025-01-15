@@ -83,6 +83,7 @@ func (s *managerTestSuite) testConnectionWithManager(mgr *managerImpl, acceptedS
 	s.Require().NoError(err)
 
 	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	s.Require().NoError(err)
 	server := tls.NewListener(lis, serverTLSConf)
 
 	serverErrC := make(chan error, 1)
