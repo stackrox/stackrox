@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cloudflare/cfssl/helpers"
 	"github.com/stackrox/rox/central/clusterinit/backend/access"
 	"github.com/stackrox/rox/central/clusterinit/backend/certificate"
 	"github.com/stackrox/rox/central/clusterinit/store"
@@ -239,6 +240,45 @@ func (s *clusterInitBackendTestSuite) TestCRSNameMustBeUnique() {
 	_, err = s.backend.IssueCRS(ctx, crsName, 0, time.Time{}, time.Duration(0))
 	s.Require().Error(err)
 	s.Require().ErrorIs(err, store.ErrInitBundleDuplicateName)
+}
+
+func (s *clusterInitBackendTestSuite) TestCRSExpirationValidUntil() {
+	ctx := s.ctx
+	crsName := "crs-expiration-valid-until"
+
+	validUntil, err := time.Parse(time.RFC3339, "2106-01-02T15:04:05Z")
+	s.Require().NoError(err)
+
+	crsWithMeta, err := s.backend.IssueCRS(ctx, crsName, 0, validUntil, time.Duration(0))
+	s.Require().NoError(err)
+
+	certPEM := []byte(crsWithMeta.CRS.Cert)
+	certs, _, err := helpers.ParseOneCertificateFromPEM(certPEM)
+	s.Require().Len(certs, 1)
+	cert := certs[0]
+	s.Require().Equal(validUntil, cert.NotAfter)
+}
+
+func (s *clusterInitBackendTestSuite) TestCRSExpirationValidFor() {
+	ctx := s.ctx
+	crsName := "crs-expiration-valid-until"
+
+	validFor, err := time.ParseDuration("2h15m10s")
+	s.Require().NoError(err)
+
+	expectedNotAfter := time.Now().Add(validFor)
+	crsWithMeta, err := s.backend.IssueCRS(ctx, crsName, 0, time.Time{}, validFor)
+	s.Require().NoError(err)
+
+	certPEM := []byte(crsWithMeta.CRS.Cert)
+	certs, _, err := helpers.ParseOneCertificateFromPEM(certPEM)
+	s.Require().Len(certs, 1)
+	cert := certs[0]
+
+	epsilon, err := time.ParseDuration("10s")
+	utils.Must(err)
+
+	s.Require().Less(cert.NotAfter.Sub(expectedNotAfter).Abs(), epsilon)
 }
 
 func (s *clusterInitBackendTestSuite) TestCRSLifecycle() {
