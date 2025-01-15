@@ -30,7 +30,7 @@ function find_images() {
 
 function latest_tags() {
   while read -r image; do
-    if [[ $image != *"registry.redhat.io"* ]] && skopeo inspect --override-arch=amd64 --override-os=linux "docker://${image}" > inspect.json; then
+    if [[ $image != "registry.redhat.io"* ]] && skopeo inspect --override-arch=amd64 --override-os=linux "docker://${image}" > inspect.json; then
       newest_tag=$(jq -r '.RepoTags|.[]' < inspect.json | grep '^[0-9\.\-]*$' | sort -rV | head -1)
     else
       newest_tag=$(podman search --limit=1000000 "${image}" --list-tags --format json \
