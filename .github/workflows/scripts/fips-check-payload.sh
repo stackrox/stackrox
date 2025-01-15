@@ -40,7 +40,6 @@ function latest_tags() {
     fi
     created=$(jq -r '.Created' < inspect.json)
     rm inspect.json
-    break
     echo -e "${newest_tag:-latest}\t${image}\t${created}"
   done \
     | tee >(cat >&2) \
