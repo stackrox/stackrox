@@ -23,7 +23,7 @@ which are outside the scope of this document. So, for the 4.6.0 release, we opte
 but simply change the name and link for fixed vulnerabilities affecting Red Hat products to the associated advisory,
 essentially making it look like there was no change in data sources. This change was done in [this PR](https://github.com/stackrox/stackrox/pull/13052).
 
-When testing ACS 4.6.0, we found RHSA data would be inconsistent. After further investigation, it became clear
+When testing StackRox 4.6.0, we found RHSA data would be inconsistent. After further investigation, it became clear
 the culprit was the quick (and perhaps under-tested) patch done in the PR referenced above. That PR
 solely swapped the vulnerability's name and link, but kept everything else the same. This is problematic. One reason
 is stated below:
@@ -37,12 +37,12 @@ This change definitely improves the situation (the score can only increase and n
 
 ## Decision
 
-This document attempts to address the Red Hat advisory inconsistencies by introducing a CSAF enricher.
+This document outlines how we will address the Red Hat advisory inconsistencies by introducing a CSAF enricher.
 
 Red Hat offers [CSAF data](https://security.access.redhat.com/data/csaf/v2/advisories/), which is advisory-centric (ie one file per advisory).
-Scanner V4 will add another enricher, `rhel-csaf`, which will enrich Vulnerability Reports with Red Hat's CSAF data.
+Scanner V4 will add another enricher, `stackrox.rhel-csaf`, which will enrich Vulnerability Reports with Red Hat's CSAF data.
 
-The enricher will fetch Red Hat advisories and extract data we have determined has been inconsistent:
+The enricher will fetch Red Hat advisories and extract data we have determined has been inconsistent in current StackRox 4.6 releases:
 
 * Description
   * The current implementation takes the description from the CVE, so if a package is affected by two different CVEs
@@ -50,9 +50,6 @@ The enricher will fetch Red Hat advisories and extract data we have determined h
 * Severity
   * The current implementation takes the severity from the CVE, so if a package is affected by two different CVEs
     rated with different severities, then there is a clear inconsistency, as it is unclear which severity may be shown.
-  * Claircore does not provide us a way to read the severity at .document.aggregate_severity.text at this time,
-    so we must calculate it. Luckily, it is pretty clear how to do so: Red Hat advisories are given the highest severity rating
-    based on the associated CVEs.
   * Note: it is very possible a CVE has two different severity ratings, depending on the product.
     For example: https://access.redhat.com/security/cve/CVE-2023-3899 is rated Important, in general,
     but Moderate for subscription-manager in RHEL 7. For this case, the OVAL v2 entry in 
@@ -87,5 +84,8 @@ Adding this data to Scanner V4 is backwards compatible, so we will not need to b
 
 * Though the change is backwards compatible, it will add this data to Scanner V4 versions relying on vulnerability v2 data
   even if they do not utilize this data. This added data is expected to be rather negligible, though.
-* Should we decide to remove this enricher in the future, Claircore may not automatically GC the enricher's data.
-  We would have to notify and provide users instructions to manually delete the unnecessary entries in Scanner V4 DB.
+* Should we decide to remove this enricher in the future, we will have to implement a migration.
+  * Because this enricher is not native to Claircore, we may not want to do the traditional method of creating
+    a `.sql` file and adding it to the slice of matcher migrations, as to not interfere with native Claircore migrations.
+    One option would be to just run the deletion query upon Scanner V4 Matcher startup after the usual migrations
+    but before anything else.
