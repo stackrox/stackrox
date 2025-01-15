@@ -327,7 +327,6 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         ]),
     },
     'vulnerabilities/workload-cves': {
-        featureFlagRequirements: allEnabled(['ROX_VULN_MGMT_WORKLOAD_CVES']),
         resourceAccessRequirements: everyResource(['Deployment', 'Image']),
     },
 };

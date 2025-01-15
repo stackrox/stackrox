@@ -29,12 +29,6 @@ import {
 describe('Workload CVE overview page tests', () => {
     withAuth();
 
-    before(function () {
-        if (!hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES')) {
-            this.skip();
-        }
-    });
-
     it('should satisfy initial page load defaults', () => {
         visitWorkloadCveOverview();
 
