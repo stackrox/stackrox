@@ -149,14 +149,16 @@ jobs:
         run: |
           git config user.name "${{github.event.sender.login}}"
           git config user.email noreply@github.com
-      - name: Create and annotate branch ${{needs.variables.outputs.branch}}
+      - name: Create release branch ${{needs.variables.outputs.branch}}
         if: steps.check-existing.outputs.branch-exists == 'false'
         run: |
           git switch --create "${{needs.variables.outputs.branch}}"
           git commit --allow-empty --message \
             "Empty commit to diverge ${{needs.variables.outputs.release}} from ${{env.main_branch}}"
+      - name: Tag release branch with rc.0 ${{needs.variables.outputs.branch}}
+        run: |
           git tag --annotate --message "Upstream automation" \
-            "${{needs.variables.outputs.release}}.0-rc.0" HEAD
+            "${{needs.variables.outputs.release}}.${{needs.variables.outputs.patch}}-rc.0" HEAD
       - name: Update the changelog
         if: steps.check-existing.outputs.branch-exists == 'false'
         run: |
