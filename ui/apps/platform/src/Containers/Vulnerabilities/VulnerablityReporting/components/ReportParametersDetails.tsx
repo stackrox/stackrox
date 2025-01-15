@@ -31,7 +31,10 @@ function ReportParametersDetails({
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isIncludeEpssProbabilityEnabled =
         isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_EPSS_SCORE');
+    const hasIncludeEpssProbability =
+        isIncludeEpssProbabilityEnabled && formValues.reportParameters.includeEpssProbability;
     const isIncludeNvdCvssEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
+    const hasIncludeNvdCvss = isIncludeNvdCvssEnabled && formValues.reportParameters.includeNvdCvss;
 
     const cveSeverities =
         formValues.reportParameters.cveSeverities.length !== 0 ? (
@@ -116,23 +119,19 @@ function ReportParametersDetails({
                             {getCVEsDiscoveredSinceText(formValues.reportParameters)}
                         </DescriptionListDescription>
                     </DescriptionListGroup>
-                    {((isIncludeNvdCvssEnabled && formValues.reportParameters.includeNvdCvss) ||
-                        (isIncludeEpssProbabilityEnabled &&
-                            formValues.reportParameters.includeEpssProbability)) && (
+                    {(hasIncludeNvdCvss || hasIncludeEpssProbability) && (
                         <DescriptionListGroup>
                             <DescriptionListTerm>Optional columns</DescriptionListTerm>
-                            {isIncludeNvdCvssEnabled &&
-                                formValues.reportParameters.includeNvdCvss && (
-                                    <DescriptionListDescription>
-                                        Include NVD CVSS
-                                    </DescriptionListDescription>
-                                )}
-                            {isIncludeEpssProbabilityEnabled &&
-                                formValues.reportParameters.includeEpssProbability && (
-                                    <DescriptionListDescription>
-                                        Include EPSS probability
-                                    </DescriptionListDescription>
-                                )}
+                            {hasIncludeNvdCvss && (
+                                <DescriptionListDescription>
+                                    Include NVD CVSS
+                                </DescriptionListDescription>
+                            )}
+                            {hasIncludeEpssProbability && (
+                                <DescriptionListDescription>
+                                    Include EPSS probability
+                                </DescriptionListDescription>
+                            )}
                         </DescriptionListGroup>
                     )}
                 </DescriptionList>
