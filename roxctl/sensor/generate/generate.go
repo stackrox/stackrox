@@ -26,6 +26,9 @@ import (
 )
 
 const (
+	infoDefaultingToSlimCollector          = `Defaulting to slim collector image since kernel probes seem to be available for central.`
+	infoDefaultingToComprehensiveCollector = `Defaulting to comprehensive collector image since kernel probes seem to be unavailable for central.`
+
 	warningDeprecatedAdmControllerCreateSet = `The --create-admission-controller flag has been deprecated and will be removed in future versions of roxctl.
 Please use --admission-controller-listen-on-creates instead to suppress this warning text and avoid breakages in the future.`
 
@@ -36,7 +39,6 @@ Please use --admission-controller-enforce-on-creates instead to suppress this wa
 	slimCollector       = "slim-collector"
 
 	warningCentralEnvironmentError = "It was not possible to retrieve Central's runtime environment information: %v. Will use fallback defaults for " + mainImageRepository + " and " + slimCollector + " settings."
-	warningSlimCollectorConfigured = "Collector's Slim Mode is deprecated. Ignoring."
 )
 
 type sensorGenerateCommand struct {
@@ -95,9 +97,10 @@ func (s *sensorGenerateCommand) setClusterDefaults(envDefaults *util.CentralEnv)
 	// Here we only set the cluster property, which will be persisted by central.
 	// This is not directly related to fetching the bundle.
 	// It should only be used when the request to download a bundle does not contain a `slimCollector` setting.
-	s.cluster.SlimCollector = false
 	if s.slimCollectorP != nil {
-		s.env.Logger().WarnfLn(warningSlimCollectorConfigured)
+		s.cluster.SlimCollector = *s.slimCollectorP
+	} else {
+		s.cluster.SlimCollector = envDefaults.KernelSupportAvailable
 	}
 
 	if s.cluster.MainImage == "" {
@@ -166,6 +169,16 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 		return errors.Wrap(err, "error getting cluster zip file")
 	}
 
+	if s.slimCollectorP != nil {
+		if s.cluster.SlimCollector && !env.KernelSupportAvailable {
+			s.env.Logger().WarnfLn(util.WarningSlimCollectorModeWithoutKernelSupport)
+		}
+	} else if s.cluster.GetSlimCollector() {
+		s.env.Logger().InfofLn(infoDefaultingToSlimCollector)
+	} else {
+		s.env.Logger().InfofLn(infoDefaultingToComprehensiveCollector)
+	}
+
 	return nil
 }
 
@@ -210,7 +223,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c.PersistentFlags().BoolVar(&generateCmd.cluster.GetTolerationsConfig().Disabled, "disable-tolerations", false, "Disable tolerations for tainted nodes")
 
-	autobool.NewFlag(c.PersistentFlags(), &generateCmd.slimCollectorP, slimCollector, "[Deprecated] this argument is ignored")
+	autobool.NewFlag(c.PersistentFlags(), &generateCmd.slimCollectorP, slimCollector, "Use slim collector in deployment bundle. This option is ignored Centrals newer than 4.6.")
 
 	c.PersistentFlags().BoolVar(&generateCmd.cluster.AdmissionController, "create-admission-controller", false, "Whether or not to use an admission controller for enforcement (WARNING: deprecated; admission controller will be deployed by default")
 	utils.Must(c.PersistentFlags().MarkHidden("create-admission-controller"))
