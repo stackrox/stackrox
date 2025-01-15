@@ -421,7 +421,6 @@ func (s *SubjectSearcherTestSuite) resultsToV1SearchResults(results []search.Res
 func (s *SubjectSearcherTestSuite) standardizeResults(results []search.Result) []search.Result {
 	newResults := make([]search.Result, 0, len(results))
 	for _, r := range results {
-		r.Fields = nil
 		newResults = append(newResults, r)
 	}
 	return newResults
