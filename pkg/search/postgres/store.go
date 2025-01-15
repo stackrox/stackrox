@@ -61,6 +61,7 @@ func doNothingDurationTimeSetter(_ time.Time, _ ops.Op) {}
 type Store[T any, PT pgutils.Unmarshaler[T]] interface {
 	Exists(ctx context.Context, id string) (bool, error)
 	Count(ctx context.Context, q *v1.Query) (int, error)
+	CountBy(ctx context.Context, q *v1.Query) ([]search.CountByWrapper, error)
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 	Walk(ctx context.Context, fn func(obj PT) error) error
 	WalkByQuery(ctx context.Context, q *v1.Query, fn func(obj PT) error) error
@@ -180,6 +181,13 @@ func (s *genericStore[T, PT]) Count(ctx context.Context, q *v1.Query) (int, erro
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Count)
 
 	return RunCountRequestForSchema(ctx, s.schema, q, s.db)
+}
+
+// CountBy returns the number of objects in the store, grouped by field value.
+func (s *genericStore[T, PT]) CountBy(ctx context.Context, q *v1.Query) ([]search.CountByWrapper, error) {
+	defer s.setPostgresOperationDurationTime(time.Now(), ops.Count)
+
+	return RunCountByRequestForSchema(ctx, s.schema, q, s.db)
 }
 
 func (s *genericStore[T, PT]) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {

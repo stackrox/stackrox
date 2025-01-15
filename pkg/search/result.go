@@ -12,6 +12,13 @@ type Result struct {
 	Score   float64
 }
 
+// CountByWrapper wraps around the result of a CountBy query.
+// It stores the values of the count by field tuples in ByFields and the related count in Count.
+type CountByWrapper struct {
+	ByFields Result
+	Count    int
+}
+
 // NewResult returns a new search result
 func NewResult() *Result {
 	return &Result{

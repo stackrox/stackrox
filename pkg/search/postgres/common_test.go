@@ -527,6 +527,430 @@ func TestCountQueries(t *testing.T) {
 	}
 }
 
+func TestCountByQueries(t *testing.T) {
+	baseCtx := sac.WithAllAccess(context.Background())
+
+	disjunctionQueryWithGroup := search.DisjunctionQuery(
+		search.NewQueryBuilder().AddExactMatches(search.ImageName, "stackrox").ProtoQuery(),
+		search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
+	)
+	disjunctionQueryWithGroup.GroupBy = &v1.QueryGroupBy{Fields: []string{search.Namespace.String()}}
+
+	conjunctionQueryWithGroup := search.ConjunctionQuery(
+		search.NewQueryBuilder().AddExactMatches(search.ImageName, "stackrox").ProtoQuery(),
+		search.NewQueryBuilder().AddExactMatches(search.PortProtocol, "tcp").ProtoQuery(),
+	)
+	conjunctionQueryWithGroup.GroupBy = &v1.QueryGroupBy{Fields: []string{search.Namespace.String()}}
+
+	multiChildDisjunctionQueryWithGroup := search.DisjunctionQuery(
+		search.NewQueryBuilder().AddExactMatches(search.ImageName, "stackrox").ProtoQuery(),
+		search.NewQueryBuilder().AddExactMatches(search.PortProtocol, "tcp").ProtoQuery(),
+	)
+	multiChildDisjunctionQueryWithGroup.GroupBy = &v1.QueryGroupBy{Fields: []string{search.Namespace.String()}}
+
+	baseAndChildDisjunctionQueryWithGroup := search.DisjunctionQuery(
+		search.NewQueryBuilder().AddBools(search.Privileged, true).ProtoQuery(),
+		search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
+	)
+	baseAndChildDisjunctionQueryWithGroup.GroupBy = &v1.QueryGroupBy{Fields: []string{search.Namespace.String()}}
+
+	emptyQueryWithGroup := search.EmptyQuery().CloneVT()
+	emptyQueryWithGroup.GroupBy = &v1.QueryGroupBy{Fields: []string{search.Namespace.String()}}
+
+	idAndMatchNoneQueryWithGrouping := search.ConjunctionQuery(
+		search.NewQueryBuilder().AddDocIDs("123").ProtoQuery(),
+		search.MatchNoneQuery(),
+	)
+	idAndMatchNoneQueryWithGrouping.GroupBy = &v1.QueryGroupBy{Fields: []string{search.Namespace.String()}}
+
+	for _, c := range []struct {
+		desc              string
+		ctx               context.Context
+		q                 *v1.Query
+		schema            *walker.Schema
+		expectedStatement string
+		expectedData      []interface{}
+		expectedError     string
+	}{
+		{
+			desc:              "base schema query",
+			ctx:               baseCtx,
+			q:                 search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
+			schema:            deploymentBaseSchema,
+			expectedStatement: "select count(*) from deployments where deployments.Name = $1",
+			expectedData:      []interface{}{"central"},
+		},
+		{
+			desc:   "child schema query",
+			ctx:    baseCtx,
+			q:      search.NewQueryBuilder().AddExactMatches(search.ImageName, "stackrox").ProtoQuery(),
+			schema: deploymentBaseSchema,
+			expectedStatement: "select count(distinct(deployments.Id)) from deployments " +
+				"inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id " +
+				"where deployments_containers.Image_Name_FullName = $1",
+			expectedData: []interface{}{"stackrox"},
+		},
+		{
+			desc: "base schema and child schema conjunction query",
+			ctx:  baseCtx,
+			q: search.NewQueryBuilder().
+				AddExactMatches(search.ImageName, "stackrox").
+				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
+			schema: deploymentBaseSchema,
+			expectedStatement: "select count(distinct(deployments.Id)) from deployments " +
+				"inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id " +
+				"where (deployments.Name = $1 and deployments_containers.Image_Name_FullName = $2)",
+			expectedData: []interface{}{"central", "stackrox"},
+		},
+		{
+			desc: "base schema and child schema disjunction query",
+			ctx:  baseCtx,
+			q: search.DisjunctionQuery(
+				search.NewQueryBuilder().AddExactMatches(search.ImageName, "stackrox").ProtoQuery(),
+				search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
+			),
+			schema: deploymentBaseSchema,
+			expectedStatement: "select count(distinct(deployments.Id)) from deployments " +
+				"inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id " +
+				"where (deployments_containers.Image_Name_FullName = $1 or deployments.Name = $2)",
+			expectedData: []interface{}{"stackrox", "central"},
+		},
+		{
+			desc: "multiple child schema query",
+			ctx:  baseCtx,
+			q: search.ConjunctionQuery(
+				search.NewQueryBuilder().AddExactMatches(search.ImageName, "stackrox").ProtoQuery(),
+				search.NewQueryBuilder().AddExactMatches(search.PortProtocol, "tcp").ProtoQuery(),
+			),
+			schema: deploymentBaseSchema,
+			expectedStatement: "select count(distinct(deployments.Id)) from deployments " +
+				"inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id " +
+				"inner join deployments_ports on deployments.Id = deployments_ports.deployments_Id " +
+				"where (deployments_containers.Image_Name_FullName = $1 and deployments_ports.Protocol = $2)",
+			expectedData: []interface{}{"stackrox", "tcp"},
+		},
+		{
+			desc: "multiple child schema disjunction query",
+			ctx:  baseCtx,
+			q: search.DisjunctionQuery(
+				search.NewQueryBuilder().AddExactMatches(search.ImageName, "stackrox").ProtoQuery(),
+				search.NewQueryBuilder().AddExactMatches(search.PortProtocol, "tcp").ProtoQuery(),
+			),
+			schema: deploymentBaseSchema,
+			expectedStatement: "select count(distinct(deployments.Id)) from deployments " +
+				"inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id " +
+				"inner join deployments_ports on deployments.Id = deployments_ports.deployments_Id " +
+				"where (deployments_containers.Image_Name_FullName = $1 or deployments_ports.Protocol = $2)",
+			expectedData: []interface{}{"stackrox", "tcp"},
+		},
+		{
+			desc: "base schema and child schema disjunction query; bool+match",
+			ctx:  baseCtx,
+			q: search.DisjunctionQuery(
+				search.NewQueryBuilder().AddBools(search.Privileged, true).ProtoQuery(),
+				search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
+			),
+			schema: deploymentBaseSchema,
+			expectedStatement: "select count(distinct(deployments.Id)) from deployments " +
+				"inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id " +
+				"where (deployments_containers.SecurityContext_Privileged = $1 or deployments.Name = $2)",
+			expectedData: []interface{}{"true", "central"},
+		},
+		{
+			desc:   "negated child schema query",
+			ctx:    baseCtx,
+			q:      search.NewQueryBuilder().AddStrings(search.ImageName, "!central").ProtoQuery(),
+			schema: deploymentBaseSchema,
+			expectedStatement: "select count(distinct(deployments.Id)) from deployments " +
+				"inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id " +
+				"where NOT (deployments_containers.Image_Name_FullName ilike $1)",
+			expectedData: []interface{}{"central%"},
+		},
+		{
+			desc:              "nil query",
+			ctx:               baseCtx,
+			q:                 nil,
+			schema:            deploymentBaseSchema,
+			expectedStatement: "select count(*) from deployments",
+			expectedData:      []interface{}(nil),
+		},
+		{
+			desc: "id and match non query",
+			ctx:  baseCtx,
+			q: search.ConjunctionQuery(
+				search.NewQueryBuilder().AddDocIDs("123").ProtoQuery(),
+				search.MatchNoneQuery(),
+			),
+			schema: deploymentBaseSchema,
+			expectedStatement: "select count(*) from deployments " +
+				"where (deployments.Id = ANY($1::uuid[]) and false)",
+			expectedData: []interface{}{[]string{"123"}},
+		},
+		{
+			desc: "base schema and child schema conjunction query on base ID",
+			ctx:  baseCtx,
+			q: search.NewQueryBuilder().
+				AddExactMatches(search.ImageName, "stackrox").
+				AddExactMatches(search.DeploymentID, uuid.NewDummy().String()).ProtoQuery(),
+			schema: deploymentBaseSchema,
+			expectedStatement: "select count(distinct(deployments.Id)) from deployments " +
+				"inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id " +
+				"where (deployments.Id = $1 and deployments_containers.Image_Name_FullName = $2)",
+			expectedData: []interface{}{uuid.NewDummy(), "stackrox"},
+		},
+		{
+			desc: "base schema and child schema conjunction query on base invalid ID",
+			ctx:  baseCtx,
+			q: search.NewQueryBuilder().
+				AddExactMatches(search.ImageName, "stackrox").
+				AddExactMatches(search.DeploymentID, "not a uuid").ProtoQuery(),
+			schema: deploymentBaseSchema,
+			expectedError: `uuid: incorrect UUID length 10 in string "not a uuid"
+				value "not a uuid" in search query must be valid UUID`,
+		},
+		{
+			desc: "search of child schema mutliple results for base ID",
+			ctx:  baseCtx,
+			q: search.NewQueryBuilder().AddLinkedFieldsHighlighted(
+				[]search.FieldLabel{search.ImageName, search.EnvironmentKey},
+				[]string{search.WildcardString, search.WildcardString}).
+				ProtoQuery(),
+			schema: deploymentBaseSchema,
+			expectedStatement: "select count(distinct(deployments.Id)) from deployments " +
+				"inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id " +
+				"inner join deployments_containers_envs on deployments_containers.deployments_Id = deployments_containers_envs.deployments_Id " +
+				"and deployments_containers.idx = deployments_containers_envs.deployments_containers_idx " +
+				"where (deployments_containers.Image_Name_FullName is not null and deployments_containers_envs.Key is not null)",
+		},
+		{
+			desc: "search active and inactive images with observed CVEs in non-platform deployments",
+			ctx:  baseCtx,
+			q: search.NewQueryBuilder().
+				AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_OBSERVED.String()).
+				AddStrings(search.PlatformComponent, "false", "-").
+				ProtoQuery(),
+			schema: imagesSchema,
+			expectedStatement: "select count(distinct(images.Id)) from images " +
+				"left join deployments_containers on images.Id = deployments_containers.Image_Id " +
+				"left join deployments on deployments_containers.deployments_Id = deployments.Id " +
+				"inner join image_component_edges on images.Id = image_component_edges.ImageId " +
+				"inner join image_component_cve_edges on image_component_edges.ImageComponentId = image_component_cve_edges.ImageComponentId " +
+				"inner join image_cves on image_component_cve_edges.ImageCveId = image_cves.Id " +
+				"inner join image_cve_edges on(images.Id = image_cve_edges.ImageId and image_component_cve_edges.ImageCveId = image_cve_edges.ImageCveId) " +
+				"where ((deployments.PlatformComponent = $1 or deployments.PlatformComponent is null) and (image_cve_edges.State = $2))",
+			expectedData: []interface{}{"false", "0"},
+		},
+		{
+			desc: "base schema query with grouping",
+			ctx:  baseCtx,
+			q: search.NewQueryBuilder().
+				AddExactMatches(search.DeploymentName, "central").
+				AddGroupBy(search.Namespace).
+				ProtoQuery(),
+			schema: deploymentBaseSchema,
+			expectedStatement: "select deployments.Namespace as namespace, count(*) from deployments " +
+				"where deployments.Name = $1 group by deployments.Namespace",
+			expectedData: []interface{}{"central"},
+		},
+		{
+			desc: "child schema query with grouping",
+			ctx:  baseCtx,
+			q: search.NewQueryBuilder().
+				AddExactMatches(search.ImageName, "stackrox").
+				AddGroupBy(search.Namespace).
+				ProtoQuery(),
+			schema: deploymentBaseSchema,
+			expectedStatement: "select deployments.Namespace as namespace, count(distinct(deployments.Id)) from deployments " +
+				"inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id " +
+				"where deployments_containers.Image_Name_FullName = $1 " +
+				"group by deployments.Namespace",
+			expectedData: []interface{}{"stackrox"},
+		},
+		{
+			desc: "base schema and child schema conjunction query with grouping",
+			ctx:  baseCtx,
+			q: search.NewQueryBuilder().
+				AddExactMatches(search.ImageName, "stackrox").
+				AddExactMatches(search.DeploymentName, "central").
+				AddGroupBy(search.Namespace).
+				ProtoQuery(),
+			schema: deploymentBaseSchema,
+			expectedStatement: "select deployments.Namespace as namespace, count(distinct(deployments.Id)) from deployments " +
+				"inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id " +
+				"where (deployments.Name = $1 and deployments_containers.Image_Name_FullName = $2) " +
+				"group by deployments.Namespace",
+			expectedData: []interface{}{"central", "stackrox"},
+		},
+		{
+			desc:   "base schema and child schema disjunction query with grouping",
+			ctx:    baseCtx,
+			q:      disjunctionQueryWithGroup,
+			schema: deploymentBaseSchema,
+			expectedStatement: "select deployments.Namespace as namespace, count(distinct(deployments.Id)) from deployments " +
+				"inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id " +
+				"where (deployments_containers.Image_Name_FullName = $1 or deployments.Name = $2) " +
+				"group by deployments.Namespace",
+			expectedData: []interface{}{"stackrox", "central"},
+		},
+		{
+			desc:   "multiple child schema query with grouping",
+			ctx:    baseCtx,
+			q:      conjunctionQueryWithGroup,
+			schema: deploymentBaseSchema,
+			expectedStatement: "select deployments.Namespace as namespace, count(distinct(deployments.Id)) from deployments " +
+				"inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id " +
+				"inner join deployments_ports on deployments.Id = deployments_ports.deployments_Id " +
+				"where (deployments_containers.Image_Name_FullName = $1 and deployments_ports.Protocol = $2) " +
+				"group by deployments.Namespace",
+			expectedData: []interface{}{"stackrox", "tcp"},
+		},
+		{
+			desc:   "multiple child schema disjunction query with grouping",
+			ctx:    baseCtx,
+			q:      multiChildDisjunctionQueryWithGroup,
+			schema: deploymentBaseSchema,
+			expectedStatement: "select deployments.Namespace as namespace, count(distinct(deployments.Id)) from deployments " +
+				"inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id " +
+				"inner join deployments_ports on deployments.Id = deployments_ports.deployments_Id " +
+				"where (deployments_containers.Image_Name_FullName = $1 or deployments_ports.Protocol = $2) " +
+				"group by deployments.Namespace",
+			expectedData: []interface{}{"stackrox", "tcp"},
+		},
+		{
+			desc:   "base schema and child schema disjunction query; bool+match with grouping",
+			ctx:    baseCtx,
+			q:      baseAndChildDisjunctionQueryWithGroup,
+			schema: deploymentBaseSchema,
+			expectedStatement: "select deployments.Namespace as namespace, count(distinct(deployments.Id)) from deployments " +
+				"inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id " +
+				"where (deployments_containers.SecurityContext_Privileged = $1 or deployments.Name = $2) " +
+				"group by deployments.Namespace",
+			expectedData: []interface{}{"true", "central"},
+		},
+		{
+			desc: "negated child schema query with grouping",
+			ctx:  baseCtx,
+			q: search.NewQueryBuilder().
+				AddStrings(search.ImageName, "!central").
+				AddGroupBy(search.Namespace).
+				ProtoQuery(),
+			schema: deploymentBaseSchema,
+			expectedStatement: "select deployments.Namespace as namespace, count(distinct(deployments.Id)) from deployments " +
+				"inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id " +
+				"where NOT (deployments_containers.Image_Name_FullName ilike $1) " +
+				"group by deployments.Namespace",
+			expectedData: []interface{}{"central%"},
+		},
+		{
+			desc:   "empty query with grouping",
+			ctx:    baseCtx,
+			q:      emptyQueryWithGroup,
+			schema: deploymentBaseSchema,
+			expectedStatement: "select deployments.Namespace as namespace, count(*) from deployments " +
+				"group by deployments.Namespace",
+			expectedData: []interface{}(nil),
+		},
+		{
+			desc:   "id and match non query with grouping",
+			ctx:    baseCtx,
+			q:      idAndMatchNoneQueryWithGrouping,
+			schema: deploymentBaseSchema,
+			expectedStatement: "select deployments.Namespace as namespace, count(*) from deployments " +
+				"where (deployments.Id = ANY($1::uuid[]) and false) " +
+				"group by deployments.Namespace",
+			expectedData: []interface{}{[]string{"123"}},
+		},
+		{
+			desc: "base schema and child schema conjunction query on base ID with grouping",
+			ctx:  baseCtx,
+			q: search.NewQueryBuilder().
+				AddExactMatches(search.ImageName, "stackrox").
+				AddExactMatches(search.DeploymentID, uuid.NewDummy().String()).
+				AddGroupBy(search.Namespace).
+				ProtoQuery(),
+			schema: deploymentBaseSchema,
+			expectedStatement: "select deployments.Namespace as namespace, count(distinct(deployments.Id)) from deployments " +
+				"inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id " +
+				"where (deployments.Id = $1 and deployments_containers.Image_Name_FullName = $2) " +
+				"group by deployments.Namespace",
+			expectedData: []interface{}{uuid.NewDummy(), "stackrox"},
+		},
+		{
+			desc: "base schema and child schema conjunction query on base invalid ID with grouping",
+			ctx:  baseCtx,
+			q: search.NewQueryBuilder().
+				AddExactMatches(search.ImageName, "stackrox").
+				AddExactMatches(search.DeploymentID, "not a uuid").
+				AddGroupBy(search.Namespace).
+				ProtoQuery(),
+			schema: deploymentBaseSchema,
+			expectedError: `uuid: incorrect UUID length 10 in string "not a uuid"
+				value "not a uuid" in search query must be valid UUID`,
+		},
+		{
+			desc: "search of child schema mutliple results for base ID with grouping",
+			ctx:  baseCtx,
+			q: search.NewQueryBuilder().AddLinkedFieldsHighlighted(
+				[]search.FieldLabel{search.ImageName, search.EnvironmentKey},
+				[]string{search.WildcardString, search.WildcardString}).
+				AddGroupBy(search.Namespace).
+				ProtoQuery(),
+			schema: deploymentBaseSchema,
+			expectedStatement: "select deployments.Namespace as namespace, count(distinct(deployments.Id)) from deployments " +
+				"inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id " +
+				"inner join deployments_containers_envs on deployments_containers.deployments_Id = deployments_containers_envs.deployments_Id " +
+				"and deployments_containers.idx = deployments_containers_envs.deployments_containers_idx " +
+				"where (deployments_containers.Image_Name_FullName is not null and deployments_containers_envs.Key is not null) " +
+				"group by deployments.Namespace",
+		},
+		{
+			desc: "base schema query, multiple grouping",
+			ctx:  baseCtx,
+			q: search.NewQueryBuilder().
+				AddExactMatches(search.DeploymentName, "central").
+				AddGroupBy(search.ClusterID, search.Namespace).
+				ProtoQuery(),
+			schema: deploymentBaseSchema,
+			expectedStatement: "select deployments.ClusterId::text as cluster_id, " +
+				"deployments.Namespace as namespace, count(*) " +
+				"from deployments where deployments.Name = $1 " +
+				"group by deployments.ClusterId::text, deployments.Namespace",
+			expectedData: []interface{}{"central"},
+		},
+		{
+			desc: "search active and inactive images with observed CVEs in non-platform deployments with grouping",
+			ctx:  baseCtx,
+			q: search.NewQueryBuilder().
+				AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_OBSERVED.String()).
+				AddStrings(search.PlatformComponent, "false", "-").
+				AddGroupBy(search.Namespace).
+				ProtoQuery(),
+			schema: imagesSchema,
+			expectedStatement: "select deployments.Namespace as namespace, count(distinct(images.Id)) from images " +
+				"left join deployments_containers on images.Id = deployments_containers.Image_Id " +
+				"left join deployments on deployments_containers.deployments_Id = deployments.Id " +
+				"inner join image_component_edges on images.Id = image_component_edges.ImageId " +
+				"inner join image_component_cve_edges on image_component_edges.ImageComponentId = image_component_cve_edges.ImageComponentId " +
+				"inner join image_cves on image_component_cve_edges.ImageCveId = image_cves.Id " +
+				"inner join image_cve_edges on(images.Id = image_cve_edges.ImageId and image_component_cve_edges.ImageCveId = image_cve_edges.ImageCveId) " +
+				"where ((deployments.PlatformComponent = $1 or deployments.PlatformComponent is null) and (image_cve_edges.State = $2)) " +
+				"group by deployments.Namespace",
+			expectedData: []interface{}{"false", "0"},
+		},
+	} {
+		t.Run(c.desc, func(it *testing.T) {
+			actual, err := standardizeQueryAndPopulatePath(c.ctx, c.q, c.schema, COUNTBY)
+			if c.expectedError != "" {
+				assert.Error(it, err, c.expectedError)
+			} else {
+				assert.NoError(it, err)
+				assert.Equal(it, c.expectedStatement, actual.AsSQL())
+				assert.Equal(it, c.expectedData, actual.Data)
+			}
+		})
+	}
+}
+
 func TestSelectQueries(t *testing.T) {
 	t.Parallel()
 
