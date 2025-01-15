@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/namespaces"
-	"github.com/stackrox/rox/pkg/netutil/pipeconn"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -83,7 +82,7 @@ func (s *managerTestSuite) testConnectionWithManager(mgr *managerImpl, acceptedS
 	serverTLSConf, err := configurer.TLSConfig()
 	s.Require().NoError(err)
 
-	lis, dialContext := pipeconn.NewPipeListener()
+	lis, err := net.Listen("tcp", ":0")
 	server := tls.NewListener(lis, serverTLSConf)
 
 	serverErrC := make(chan error, 1)
@@ -105,7 +104,7 @@ func (s *managerTestSuite) testConnectionWithManager(mgr *managerImpl, acceptedS
 		if !s.NoError(err) {
 			continue
 		}
-		conn, err := dialContext(serverCtx)
+		conn, err := net.Dial(lis.Addr().Network(), lis.Addr().String())
 		if !s.NoError(err) {
 			continue
 		}
@@ -121,7 +120,7 @@ func (s *managerTestSuite) testConnectionWithManager(mgr *managerImpl, acceptedS
 		if !s.NoError(err) {
 			continue
 		}
-		conn, err := dialContext(serverCtx)
+		conn, err := net.Dial(lis.Addr().Network(), lis.Addr().String())
 		if !s.NoError(err) {
 			continue
 		}
@@ -132,5 +131,5 @@ func (s *managerTestSuite) testConnectionWithManager(mgr *managerImpl, acceptedS
 
 	s.Require().NoError(server.Close())
 	err = <-serverErrC
-	s.ErrorIs(err, pipeconn.ErrClosed)
+	s.ErrorIs(err, net.ErrClosed)
 }
