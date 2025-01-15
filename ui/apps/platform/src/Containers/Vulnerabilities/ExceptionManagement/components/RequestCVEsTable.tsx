@@ -76,6 +76,7 @@ function RequestCVEsTable({
             query,
             pagination: getPaginationParams({ page, perPage, sortOption }),
         },
+        fetchPolicy: 'no-cache',
     });
 
     const tableState = getTableUIState({
