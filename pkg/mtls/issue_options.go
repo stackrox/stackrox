@@ -43,6 +43,7 @@ func WithValidityExpiringInDays() IssueCertOption {
 func WithCrsProfile() IssueCertOption {
 	return func(o *issueOptions) {
 		o.signerProfile = crsProfile
+		o.expiresAt = time.Now().Add(crsProfileDefaultValidityPeriod)
 	}
 }
 

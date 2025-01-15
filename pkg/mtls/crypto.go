@@ -314,8 +314,9 @@ func issueNewCertFromSigner(subj Subject, signer cfsigner.Signer, opts []IssueCe
 			Names:        []cfcsr.Name{subj.Name()},
 			SerialNumber: serial.String(),
 		},
-		Serial:  serial,
-		Profile: issueOpts.signerProfile,
+		Serial:   serial,
+		Profile:  issueOpts.signerProfile,
+		NotAfter: issueOpts.expiresAt,
 	}
 	certBytes, err := signer.Sign(req)
 	if err != nil {
