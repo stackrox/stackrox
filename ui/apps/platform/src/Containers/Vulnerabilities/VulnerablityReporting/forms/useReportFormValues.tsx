@@ -49,6 +49,7 @@ export type ReportParametersFormValues = {
     imageType: ImageType[];
     cvesDiscoveredSince: CVESDiscoveredSince;
     cvesDiscoveredStartDate: CVESDiscoveredStartDate;
+    includeEpssProbability: boolean;
     includeNvdCvss: boolean;
     reportScope: ReportScope | null;
 };
@@ -78,6 +79,7 @@ export const defaultReportFormValues: ReportFormValues = {
         imageType: ['DEPLOYED', 'WATCHED'],
         cvesDiscoveredSince: 'ALL_VULN',
         cvesDiscoveredStartDate: undefined,
+        includeEpssProbability: false,
         includeNvdCvss: false,
         reportScope: null,
     },
