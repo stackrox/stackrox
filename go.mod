@@ -160,10 +160,10 @@ require (
 	k8s.io/apiextensions-apiserver v0.31.2
 	k8s.io/apimachinery v0.31.2
 	k8s.io/apiserver v0.31.2
-	k8s.io/cli-runtime v0.30.3
+	k8s.io/cli-runtime v0.31.2
 	k8s.io/client-go v0.31.2
-	k8s.io/kubectl v0.30.3
-	k8s.io/kubelet v0.29.3
+	k8s.io/kubectl v0.31.2
+	k8s.io/kubelet v0.31.2
 	k8s.io/utils v0.0.0-20240711033017-18e509b52bc8
 	sigs.k8s.io/controller-runtime v0.18.7
 	sigs.k8s.io/controller-tools v0.16.5
@@ -504,8 +504,8 @@ require (
 	oras.land/oras-go v1.2.5 // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.30.3 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
-	sigs.k8s.io/kustomize/api v0.13.5-0.20230601165947-6ce0bf390ce3 // indirect
-	sigs.k8s.io/kustomize/kyaml v0.16.0 // indirect
+	sigs.k8s.io/kustomize/api v0.17.2 // indirect
+	sigs.k8s.io/kustomize/kyaml v0.17.1 // indirect
 	sigs.k8s.io/release-utils v0.7.7 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 )
