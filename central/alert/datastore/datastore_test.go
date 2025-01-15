@@ -71,9 +71,9 @@ func (s *alertDataStoreTestSuite) TestSearchAlerts() {
 }
 
 func (s *alertDataStoreTestSuite) TestSearchRawAlerts() {
-	s.searcher.EXPECT().SearchRawAlerts(s.hasReadCtx, &v1.Query{}).Return([]*storage.Alert{{Id: alerttest.FakeAlertID}}, errFake)
+	s.searcher.EXPECT().SearchRawAlerts(s.hasReadCtx, &v1.Query{}, true).Return([]*storage.Alert{{Id: alerttest.FakeAlertID}}, errFake)
 
-	result, err := s.dataStore.SearchRawAlerts(s.hasReadCtx, &v1.Query{})
+	result, err := s.dataStore.SearchRawAlerts(s.hasReadCtx, &v1.Query{}, true)
 
 	s.Equal(errFake, err)
 	protoassert.SlicesEqual(s.T(), []*storage.Alert{{Id: alerttest.FakeAlertID}}, result)

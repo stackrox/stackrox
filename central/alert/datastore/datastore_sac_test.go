@@ -671,7 +671,7 @@ func countSearchRawAlertsResultsPerClusterAndNamespace(results []*storage.Alert)
 
 func (s *alertDatastoreSACTestSuite) runSearchRawAlertsTest(testparams alertSACSearchResult) {
 	ctx := s.testContexts[testparams.scopeKey]
-	searchResults, err := s.datastore.SearchRawAlerts(ctx, nil)
+	searchResults, err := s.datastore.SearchRawAlerts(ctx, nil, true)
 	s.NoError(err)
 	resultsDistribution := countSearchRawAlertsResultsPerClusterAndNamespace(searchResults)
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, testparams.resultCounts, resultsDistribution)

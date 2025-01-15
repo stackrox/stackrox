@@ -100,7 +100,7 @@ func getLatestViolationTime(ctx context.Context, root *Resolver, q *v1.Query) (*
 		Offset: 0,
 	}
 
-	alerts, err := root.ViolationsDataStore.SearchRawAlerts(ctx, q)
+	alerts, err := root.ViolationsDataStore.SearchRawAlerts(ctx, q, true)
 	if err != nil || len(alerts) == 0 || alerts[0] == nil {
 		return nil, err
 	}

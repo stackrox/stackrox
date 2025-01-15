@@ -55,8 +55,8 @@ func (ds *searcherImpl) SearchListAlerts(ctx context.Context, q *v1.Query, exclu
 }
 
 // SearchRawAlerts retrieves Alerts from the storage
-func (ds *searcherImpl) SearchRawAlerts(ctx context.Context, q *v1.Query) ([]*storage.Alert, error) {
-	alerts, err := ds.searchAlerts(ctx, q)
+func (ds *searcherImpl) SearchRawAlerts(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*storage.Alert, error) {
+	alerts, err := ds.searchAlerts(ctx, q, excludeResolved)
 	return alerts, err
 }
 
@@ -77,8 +77,10 @@ func (ds *searcherImpl) searchListAlerts(ctx context.Context, q *v1.Query) ([]*s
 	return listAlerts, results, nil
 }
 
-func (ds *searcherImpl) searchAlerts(ctx context.Context, q *v1.Query) ([]*storage.Alert, error) {
-	q = applyDefaultState(q)
+func (ds *searcherImpl) searchAlerts(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*storage.Alert, error) {
+	if excludeResolved {
+		q = applyDefaultState(q)
+	}
 	return ds.storage.GetByQuery(ctx, q)
 }
 

@@ -55,7 +55,7 @@ func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query, excludeResolved
 	return ds.searcher.Count(ctx, q, excludeResolved)
 }
 
-// DefaultStateAlertDataStoreImpl will always return unresolved alerts unless Violation State=Resolved is explicitly provided by the query
+// DefaultStateAlertDataStoreImpl will only return unresolved alerts unless Violation State=Resolved is explicitly provided by the query
 type DefaultStateAlertDataStoreImpl struct {
 	DataStore *DataStore
 }
@@ -82,10 +82,10 @@ func (ds *datastoreImpl) SearchAlerts(ctx context.Context, q *v1.Query) ([]*v1.S
 }
 
 // SearchRawAlerts returns search results for the given request in the form of a slice of alerts.
-func (ds *datastoreImpl) SearchRawAlerts(ctx context.Context, q *v1.Query) ([]*storage.Alert, error) {
+func (ds *datastoreImpl) SearchRawAlerts(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*storage.Alert, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "SearchRawAlerts")
 
-	return ds.searcher.SearchRawAlerts(ctx, q)
+	return ds.searcher.SearchRawAlerts(ctx, q, excludeResolved)
 }
 
 // GetAlert returns an alert by id.

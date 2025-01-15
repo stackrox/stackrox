@@ -753,7 +753,7 @@ func (ds *datastoreImpl) getAlerts(ctx context.Context, deploymentID string) ([]
 	q := pkgSearch.NewQueryBuilder().
 		AddExactMatches(pkgSearch.ViolationState, storage.ViolationState_ACTIVE.String()).
 		AddExactMatches(pkgSearch.DeploymentID, deploymentID).ProtoQuery()
-	return ds.alertDataStore.SearchRawAlerts(ctx, q)
+	return ds.alertDataStore.SearchRawAlerts(ctx, q, true)
 }
 
 func (ds *datastoreImpl) markAlertsStale(ctx context.Context, alerts []*storage.Alert) error {

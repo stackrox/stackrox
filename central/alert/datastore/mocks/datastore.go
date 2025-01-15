@@ -208,18 +208,18 @@ func (mr *MockDataStoreMockRecorder) SearchListAlerts(ctx, q, excludeResolved an
 }
 
 // SearchRawAlerts mocks base method.
-func (m *MockDataStore) SearchRawAlerts(ctx context.Context, q *v1.Query) ([]*storage.Alert, error) {
+func (m *MockDataStore) SearchRawAlerts(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*storage.Alert, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SearchRawAlerts", ctx, q)
+	ret := m.ctrl.Call(m, "SearchRawAlerts", ctx, q, excludeResolved)
 	ret0, _ := ret[0].([]*storage.Alert)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SearchRawAlerts indicates an expected call of SearchRawAlerts.
-func (mr *MockDataStoreMockRecorder) SearchRawAlerts(ctx, q any) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) SearchRawAlerts(ctx, q, excludeResolved any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawAlerts", reflect.TypeOf((*MockDataStore)(nil).SearchRawAlerts), ctx, q)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawAlerts", reflect.TypeOf((*MockDataStore)(nil).SearchRawAlerts), ctx, q, excludeResolved)
 }
 
 // UpsertAlert mocks base method.

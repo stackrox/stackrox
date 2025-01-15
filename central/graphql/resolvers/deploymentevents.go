@@ -352,7 +352,7 @@ func (resolver *Resolver) getPolicyViolationEvents(ctx context.Context, query *v
 	}
 
 	query = paginated.FillDefaultSortOption(query, paginated.GetViolationTimeSortOption())
-	alerts, err := resolver.ViolationsDataStore.SearchRawAlerts(ctx, query)
+	alerts, err := resolver.ViolationsDataStore.SearchRawAlerts(ctx, query, true)
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving alerts from search")
 	}

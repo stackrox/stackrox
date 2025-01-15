@@ -27,7 +27,7 @@ type DataStore interface {
 	Search(ctx context.Context, q *v1.Query, excludeResolved bool) ([]searchPkg.Result, error)
 	Count(ctx context.Context, q *v1.Query, excludeResolved bool) (int, error)
 	SearchAlerts(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
-	SearchRawAlerts(ctx context.Context, q *v1.Query) ([]*storage.Alert, error)
+	SearchRawAlerts(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*storage.Alert, error)
 	SearchListAlerts(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*storage.ListAlert, error)
 
 	GetByQuery(ctx context.Context, q *v1.Query) ([]*storage.Alert, error)
