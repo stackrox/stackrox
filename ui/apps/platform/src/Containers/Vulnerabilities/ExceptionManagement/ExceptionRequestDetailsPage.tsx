@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, ReactNode } from 'react';
 import {
     Alert,
     AlertActionCloseButton,
@@ -87,6 +87,20 @@ export function getCVEsForUpdatedRequest(exception: VulnerabilityException): str
 
 const tabContentId = 'ExceptionRequestDetails';
 const cveTableTabContentId = 'ExceptionRequestCveTable';
+
+function CveTableTabWrapper({
+    children,
+    isPlatformCveSplitEnabled,
+}: {
+    children: ReactNode;
+    isPlatformCveSplitEnabled: boolean;
+}) {
+    if (!isPlatformCveSplitEnabled) {
+        return children;
+    }
+
+    return <TabContent id={cveTableTabContentId}>{children}</TabContent>;
+}
 
 function ExceptionRequestDetailsPage() {
     const { requestId } = useParams();
@@ -208,7 +222,6 @@ function ExceptionRequestDetailsPage() {
         isPlatformCveSplitEnabled && activeCveTableTabKey === 'PLATFORM_COMPONENTS'
             ? vulnerabilitiesPlatformWorkloadCvesPath
             : vulnerabilitiesWorkloadCvesPath;
-
     return (
         <>
             <PageTitle title="Exception Management - Request Details" />
@@ -295,26 +308,27 @@ function ExceptionRequestDetailsPage() {
                         />
                     </PageSection>
                     <PageSection className="pf-v5-u-pt-0">
-                        <Tabs
-                            activeKey={activeCveTableTabKey}
-                            onSelect={handleCveTableTabClick}
-                            isBox
-                            aria-label="Exception request CVEs split by affected image scope"
-                            role="region"
-                            className={isPlatformCveSplitEnabled ? '' : 'pf-v5-u-display-none'}
-                        >
-                            <Tab
-                                eventKey={'USER_WORKLOADS'}
-                                title={<TabTitleText>User workloads</TabTitleText>}
-                                tabContentId={cveTableTabContentId}
-                            />
-                            <Tab
-                                eventKey={'PLATFORM_COMPONENTS'}
-                                title={<TabTitleText>Platform components</TabTitleText>}
-                                tabContentId={cveTableTabContentId}
-                            />
-                        </Tabs>
-                        <TabContent id={cveTableTabContentId}>
+                        {isPlatformCveSplitEnabled && (
+                            <Tabs
+                                activeKey={activeCveTableTabKey}
+                                onSelect={handleCveTableTabClick}
+                                isBox
+                                aria-label="Exception request CVEs split by affected image scope"
+                                role="region"
+                            >
+                                <Tab
+                                    eventKey={'USER_WORKLOADS'}
+                                    title={<TabTitleText>User workloads</TabTitleText>}
+                                    tabContentId={cveTableTabContentId}
+                                />
+                                <Tab
+                                    eventKey={'PLATFORM_COMPONENTS'}
+                                    title={<TabTitleText>Platform components</TabTitleText>}
+                                    tabContentId={cveTableTabContentId}
+                                />
+                            </Tabs>
+                        )}
+                        <CveTableTabWrapper isPlatformCveSplitEnabled={isPlatformCveSplitEnabled}>
                             <RequestCVEsTable
                                 searchFilter={searchFilter}
                                 vulnMgmtBaseUrl={vulnMgmtBaseUrl}
@@ -322,7 +336,7 @@ function ExceptionRequestDetailsPage() {
                                 expandedRowSet={expandedRowSet}
                                 vulnerabilityState={vulnerabilityState}
                             />
-                        </TabContent>
+                        </CveTableTabWrapper>
                     </PageSection>
                 </TabContent>
             </PageSection>
