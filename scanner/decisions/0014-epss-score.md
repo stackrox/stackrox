@@ -9,7 +9,7 @@ Status: Accepted
 
 ## Context
 
-EPSS predicts the likelihood of a vulnerability being exploited within 30 days, assigning a probability from 0% to 100%. A higher score means greater risk. 
+[EPSS](https://www.first.org/epss/) predicts the likelihood of a vulnerability being exploited within 30 days, assigning a CVE a probability from 0% to 100%. A higher probability means a greater risk. 
 EPSS also provides a percentile ranking to indicate how the vulnerability compares to others in terms of threat level.
 Many users now consult EPSS scores to better prioritize vulnerability remediation efforts and Scanner V4 will integrate EPSS scores into its vulnerability reports.
 
@@ -61,11 +61,11 @@ message VulnerabilityReport {
 
 All EPSS data integrated by Scanner V4 are fetched from https://epss.cyentia.com/epss_scores-YYYY-MM-DD.csv.gz, originating from the [First Organization](https://www.first.org/epss/api). 
 
-The [`claircore.EPSS`](https://github.com/quay/claircore/blob/main/enricher/epss/epss.go) is used for data fetching, parsing and enriching, as a component of Scanner V4.
+The [`claircore.EPSS` enricher](https://github.com/quay/claircore/blob/main/enricher/epss/epss.go) is used for data fetching, parsing and enriching, as a component of Scanner V4.
 
 All EPSS data integrated to Scanner V4 corresponds to the day prior to the current date, as this approach reduces the likelihood of failure compared to fetching the current date's data, which may not always be ready.
 
-To include the EPSS details in Scanner V4, the Api will be extended to:
+To include the EPSS details in Scanner V4, the protobuf message will be extended to:
 
 ```
 message VulnerabilityReport {
@@ -120,7 +120,7 @@ Meanwhile, all EPSS data are CVE-centric. In Scanner V4, the EPSS score for an R
 
 ## Consequences
 
-* We would need to ensure the [ First organization's data source](https://epss.cyentia.com/epss_scores-YYYY-MM-DD.csv.gz) remains consistently accessible. 
+* We would need to ensure the [First organization's data source](https://epss.cyentia.com/epss_scores-YYYY-MM-DD.csv.gz) remains consistently accessible. 
 Additionally, we should be prepared to change the data updating process if any API key requirements or request throttling are introduced in the future.
 
 * As noted earlier, the EPSS score displayed in Scanner V4 for an RHSA will correspond to the highest EPSS score among the CVEs linked to that RHSA.
