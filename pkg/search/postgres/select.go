@@ -175,6 +175,7 @@ func populateSelect(querySoFar *query, schema *walker.Schema, querySelects []*v1
 			querySoFar.SelectedFields = append(querySoFar.SelectedFields,
 				selectQueryField(field.GetName(), dbField, field.GetDistinct(), aggregatefunc.GetAggrFunc(field.GetAggregateFunc()), ""),
 			)
+			querySoFar.DistinctAppliedToSelects = querySoFar.DistinctAppliedToSelects || field.GetDistinct()
 			continue
 		}
 
@@ -194,6 +195,7 @@ func populateSelect(querySoFar *query, schema *walker.Schema, querySelects []*v1
 		querySoFar.Data = append(querySoFar.Data, qe.Where.Values...)
 
 		selectField := selectQueryField(field.GetName(), dbField, field.GetDistinct(), aggregatefunc.GetAggrFunc(field.GetAggregateFunc()), qe.Where.Query)
+		querySoFar.DistinctAppliedToSelects = querySoFar.DistinctAppliedToSelects || field.GetDistinct()
 		if alias := filter.GetName(); alias != "" {
 			selectField.Alias = alias
 		} else {
