@@ -294,18 +294,18 @@ func (s *clusterInitBackendTestSuite) TestCRSNameMustBeUnique() {
 	ctx := s.ctx
 	crsName := "test1"
 
-	s.certProvider.EXPECT().GetCRSCert().DoAndReturn(
+	s.certProvider.EXPECT().GetCRSCert(time.Time{}, time.Duration(0)).DoAndReturn(
 		func() (*mtls.IssuedCert, uuid.UUID, error) {
 			return s.crsCert, uuid.NewV4(), nil
 		},
 	).AnyTimes()
 
 	// Issue new CRS.
-	_, err := s.backend.IssueCRS(ctx, crsName, 0)
+	_, err := s.backend.IssueCRS(ctx, crsName, 0, time.Time{}, time.Duration(0))
 	s.Require().NoError(err)
 
 	// Attempt to issue again with same name.
-	_, err = s.backend.IssueCRS(ctx, crsName, 0)
+	_, err = s.backend.IssueCRS(ctx, crsName, 0, time.Time{}, time.Duration(0))
 	s.Require().Error(err)
 	s.Require().ErrorIs(err, store.ErrInitBundleDuplicateName)
 }
@@ -314,10 +314,10 @@ func (s *clusterInitBackendTestSuite) TestCRSLifecycle() {
 	ctx := s.ctx
 	crsName := "test1"
 
-	s.certProvider.EXPECT().GetCRSCert().Return(s.crsCert, uuid.NewV4(), nil).AnyTimes()
+	s.certProvider.EXPECT().GetCRSCert(time.Time{}, time.Duration(0)).Return(s.crsCert, uuid.NewV4(), nil).AnyTimes()
 
 	// Issue new CRS.
-	crsWithMeta, err := s.backend.IssueCRS(ctx, crsName, 0)
+	crsWithMeta, err := s.backend.IssueCRS(ctx, crsName, 0, time.Time{}, time.Duration(0))
 	s.Require().NoError(err)
 	id := crsWithMeta.Meta.Id
 
@@ -328,7 +328,7 @@ func (s *clusterInitBackendTestSuite) TestCRSLifecycle() {
 	caCert, err := s.certProvider.GetCA()
 	s.Require().NoError(err)
 
-	cert, _, err := s.certProvider.GetCRSCert()
+	cert, _, err := s.certProvider.GetCRSCert(time.Time{}, time.Duration(0))
 	s.Require().NoError(err)
 
 	s.Require().Len(crsWithMeta.CRS.CAs, 1, "CRS does not contain exactly 1 CA")

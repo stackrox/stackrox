@@ -5,6 +5,7 @@ package v1;
 import "api/v1/empty.proto";
 import weak "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
 import "storage/user.proto";
 
 option go_package = "./api/v1;v1";
@@ -64,6 +65,8 @@ message InitBundleGenRequest {
 message CRSGenRequest {
   string name = 1;
   uint32 max_registrations = 2;
+  google.protobuf.Timestamp valid_until = 3;
+  google.protobuf.Duration valid_for = 4;
 }
 
 message InitBundleRevokeRequest {
