@@ -108,12 +108,6 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
               },
               {
                   type: 'link',
-                  content: 'Kubernetes Components',
-                  path: vulnerabilitiesPlatformCvesPath,
-                  routeKey: 'vulnerabilities/platform-cves',
-              },
-              {
-                  type: 'link',
                   content: 'Nodes',
                   path: vulnerabilitiesNodeCvesPath,
                   routeKey: 'vulnerabilities/node-cves',
@@ -145,6 +139,14 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
                   routeKey: 'vulnerability-management',
                   isActive: (pathname) =>
                       Boolean(matchPath(pathname, { vulnManagementPath, exact: true })),
+              },
+              {
+                  type: 'link',
+                  content: (
+                      <NavigationContent variant="Deprecated">Platform CVEs</NavigationContent>
+                  ),
+                  path: vulnerabilitiesPlatformCvesPath,
+                  routeKey: 'vulnerabilities/platform-cves',
               },
           ]
         : [

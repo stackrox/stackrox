@@ -32,7 +32,7 @@ function WorkloadCvesPage({ view }: WorkloadCvePageProps) {
     const hasReadAccessForNamespaces = hasReadAccess('Namespace');
 
     const context = useMemo(() => {
-        const pageTitle = 'Workload CVEs'; // TODO Implement throughout in follow up
+        const pageTitle = view === 'platform-workload' ? 'Platform components' : 'User workloads';
         const platformComponentFilters =
             view === 'platform-workload'
                 ? ['true']
