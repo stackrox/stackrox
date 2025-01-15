@@ -493,6 +493,9 @@ networking:
 
         List<Edge> edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
         assert edges
+	log.info "${edges}"
+	def graph = NetworkGraphService.getNetworkGraph(null, null)
+	log.info "${graph}"
 
         CONFIG_MAP_DATA = [
            "runtime_config.yaml": """
@@ -505,6 +508,10 @@ networking:
 
         assert waitForEdgeToBeClosed(edges.get(0), 165)
         edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
+	log.info "${edges}"
+        log.info "asdf"
+	graph = NetworkGraphService.getNetworkGraph(null, null)
+	log.info "${graph}"
 
         CONFIG_MAP_DATA = [
            "runtime_config.yaml": """
@@ -516,6 +523,8 @@ networking:
 
         orchestrator.createConfigMap(CONFIG_MAP_NAME, CONFIG_MAP_DATA, "stackrox")
         assert waitForEdgeUpdate(edges.get(0), 90)
+	graph = NetworkGraphService.getNetworkGraph(null, null)
+	log.info "${graph}"
     }
 
     @Tag("NetworkFlowVisualization")
