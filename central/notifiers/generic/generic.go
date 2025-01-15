@@ -179,7 +179,7 @@ func (g *generic) Test(ctx context.Context) *notifiers.NotifierError {
 }
 
 func (g *generic) constructJSON(message protocompat.Message, msgKey string) (io.Reader, error) {
-	msgStr := protojson.Format(message)
+	msgStr := protojson.MarshalOptions{}.Format(message)
 
 	var strJSON string
 	// No extra fields append so that the payload is something like {"alert": {...}}
