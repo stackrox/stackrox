@@ -118,9 +118,14 @@ func (s *ImagesStoreSuite) TestNVDCVSS() {
 			},
 		},
 	}
+	epss := &storage.EPSS{
+		EpssPercentile:  90.0,
+		EpssProbability: 0.3,
+	}
 	for _, component := range image.GetScan().GetComponents() {
 		for _, vuln := range component.GetVulns() {
 			vuln.CvssMetrics = []*storage.CVSSScore{nvdCvss}
+			vuln.Epss = epss
 		}
 
 	}
@@ -142,4 +147,5 @@ func (s *ImagesStoreSuite) TestNVDCVSS() {
 	s.Equal(float32(10), imageCve.GetNvdcvss())
 	s.Require().NotEmpty(imageCve.GetCvssMetrics())
 	protoassert.Equal(s.T(), nvdCvss, imageCve.GetCvssMetrics()[0])
+	protoassert.Equal(s.T(), epss, imageCve.GetCveBaseInfo().GetEpss())
 }
