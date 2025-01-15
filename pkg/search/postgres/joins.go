@@ -103,11 +103,6 @@ func (j *joinTreeNode) appendJoinsHelper(joins *[]Join) {
 		})
 		child.appendJoinsHelper(joins)
 	}
-	// Ensure the joins are added in a deterministic order to the query
-	// for testing purposes.
-	sort.Slice(*joins, func(i, j int) bool {
-		return (*joins)[i].rightTable < (*joins)[j].rightTable
-	})
 }
 
 type joinPathElem struct {
