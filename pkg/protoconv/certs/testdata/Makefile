@@ -42,7 +42,7 @@ ca: setup
 	openssl req -new -x509 -days 3650 -key ca-key.pem -sha256 -out ca-cert.pem -subj "/CN=StackRox Certificate Authority"
 
 %-key.pem:
-	openssl genpkey -algorithm RSA -out /dev/stdout | sed -e 's/PRIiXSVATE KEY/PRIVATE TEST KEY/' > $@
+	openssl genpkey -algorithm RSA -out $@
 
 %-csr.pem: %-key.pem
 	openssl req -new -key $< -out $@ -subj "/O=f63cc867-44c7-401a-b5de-696cc9fb6629/OU=$(SERVICE_NAME)/CN=$(SERVICE_NAME): 00000000-0000-0000-0000-000000000000"
