@@ -48,7 +48,7 @@ function ExternalEntitiesSideBar({
                             {entityNode?.label}
                         </Title>
                         <Text className="pf-v5-u-font-size-sm pf-v5-u-color-200">
-                            Connected Entities Outside Your Cluster
+                            Connected entities outside your cluster
                         </Text>
                     </FlexItem>
                 </Flex>

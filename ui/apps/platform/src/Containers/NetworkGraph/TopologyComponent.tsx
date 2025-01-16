@@ -86,7 +86,7 @@ const TopologyComponent = ({
 }: TopologyComponentProps) => {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isExternalIpsEnabled = isFeatureFlagEnabled('ROX_EXTERNAL_IPS');
-    
+
     const { hasReadAccess } = usePermissions();
     const hasReadAccessForNetworkPolicy = hasReadAccess('NetworkPolicy');
 
@@ -243,8 +243,9 @@ const TopologyComponent = ({
                             flowTableLabel="Cidr block flows"
                         />
                     )}
-                    {selectedNode && isNodeOfType('EXTERNAL_ENTITIES', selectedNode) && (
-                        isExternalIpsEnabled ? (
+                    {selectedNode &&
+                        isNodeOfType('EXTERNAL_ENTITIES', selectedNode) &&
+                        (isExternalIpsEnabled ? (
                             <ExternalEntitiesSideBar
                                 labelledById={labelledById}
                                 id={selectedNode.id}
@@ -260,11 +261,10 @@ const TopologyComponent = ({
                                 edges={model?.edges || []}
                                 onNodeSelect={onNodeSelect}
                                 EntityHeaderIcon={<ExternalEntitiesIcon />}
-                                sidebarTitle={'Connected Entities Outside Your Cluster'}
+                                sidebarTitle={'Connected entities outside your cluster'}
                                 flowTableLabel="External entities flows"
                             />
-                        )
-                    )}
+                        ))}
                     {selectedNode && isNodeOfType('INTERNAL_ENTITIES', selectedNode) && (
                         <GenericEntitiesSideBar
                             labelledById={labelledById}
