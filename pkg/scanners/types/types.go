@@ -38,6 +38,15 @@ type SBOMer interface {
 	GetSBOM(image *storage.Image) ([]byte, bool, error)
 }
 
+// ScannerSBOMer represents a Scanner with SBOM generation capabilities. This
+// was initially created for mock generation to simplify tests.
+//
+//go:generate mockgen-wrapper
+type ScannerSBOMer interface {
+	Scanner
+	SBOMer
+}
+
 // ImageScannerWithDataSource provides a GetScanner to retrieve the underlying Scanner and
 // a DataSource function to describe which integration formed the interface.
 //

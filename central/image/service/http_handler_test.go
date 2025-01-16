@@ -2,7 +2,6 @@ package service
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -11,153 +10,34 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/imageintegration"
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"github.com/stackrox/rox/pkg/apiparams"
 =======
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 >>>>>>> 660b15f188 (Add image enrichment to handler)
+=======
+	"github.com/stackrox/rox/pkg/apiparams"
+>>>>>>> e87c06c130 (Fixed comments)
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	enricherMock "github.com/stackrox/rox/pkg/images/enricher/mocks"
-	"github.com/stackrox/rox/pkg/images/integration/mocks"
-	"github.com/stackrox/rox/pkg/registries/types"
+	intergrationMocks "github.com/stackrox/rox/pkg/images/integration/mocks"
 	scannerMocks "github.com/stackrox/rox/pkg/scanners/mocks"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
+	scannerTypesMocks "github.com/stackrox/rox/pkg/scanners/types/mocks"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
-	"golang.org/x/sync/semaphore"
 )
 
-var _ scannerTypes.Scanner = (*fakeScanner)(nil)
-var _ scannerTypes.SBOMer = (*fakeScanner)(nil)
-
-type fakeScanner struct {
-	requestedScan bool
-	notMatch      bool
-}
-
-func (*fakeScanner) MaxConcurrentScanSemaphore() *semaphore.Weighted {
-	return semaphore.NewWeighted(1)
-}
-
-func (f *fakeScanner) GetSBOM(_ *storage.Image) ([]byte, bool, error) {
+func getFakeSbom(_ any) ([]byte, bool, error) {
 	sbom := createMockSbom()
 	sbomBytes, err := json.Marshal(sbom)
 	if err != nil {
 		return nil, false, err
 	}
 	return sbomBytes, true, nil
-}
-
-func (f *fakeScanner) GetScan(_ *storage.Image) (*storage.ImageScan, error) {
-	f.requestedScan = true
-	return &storage.ImageScan{
-		Components: []*storage.EmbeddedImageScanComponent{
-			{
-				Vulns: []*storage.EmbeddedVulnerability{
-					{
-						Cve: "CVE-2020-1234",
-					},
-				},
-			},
-		},
-	}, nil
-}
-
-func (f *fakeScanner) Match(*storage.ImageName) bool {
-	return !f.notMatch
-}
-
-func (*fakeScanner) Test() error {
-	return nil
-}
-
-func (*fakeScanner) Type() string {
-	return scannerTypes.ScannerV4
-}
-
-func (*fakeScanner) Name() string {
-	return "name"
-}
-
-func (*fakeScanner) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
-	return &v1.VulnDefinitionsInfo{}, nil
-}
-
-var (
-	_ scannerTypes.ImageScannerWithDataSource = (*fakeRegistryScanner)(nil)
-	_ types.ImageRegistry                     = (*fakeRegistryScanner)(nil)
-)
-
-type fakeRegistryScanner struct {
-	scanner           *fakeScanner
-	requestedMetadata bool
-	notMatch          bool
-}
-
-type opts struct {
-	requestedScan     bool
-	requestedMetadata bool
-	notMatch          bool
-}
-
-func newFakeRegistryScanner(opts opts) *fakeRegistryScanner {
-	return &fakeRegistryScanner{
-		scanner: &fakeScanner{
-			requestedScan: opts.requestedScan,
-			notMatch:      opts.notMatch,
-		},
-		requestedMetadata: opts.requestedMetadata,
-		notMatch:          opts.notMatch,
-	}
-}
-
-func (f *fakeRegistryScanner) Metadata(*storage.Image) (*storage.ImageMetadata, error) {
-	f.requestedMetadata = true
-	return &storage.ImageMetadata{}, nil
-}
-
-func (f *fakeRegistryScanner) Config(_ context.Context) *types.Config {
-	return nil
-}
-
-func (f *fakeRegistryScanner) Match(*storage.ImageName) bool {
-	return !f.notMatch
-}
-
-func (*fakeRegistryScanner) Test() error {
-	return nil
-}
-
-func (*fakeRegistryScanner) Type() string {
-	return "type"
-}
-
-func (*fakeRegistryScanner) Name() string {
-	return "name"
-}
-
-func (*fakeRegistryScanner) HTTPClient() *http.Client {
-	return nil
-}
-
-func (f *fakeRegistryScanner) GetScanner() scannerTypes.Scanner {
-	return f.scanner
-}
-
-func (f *fakeRegistryScanner) DataSource() *storage.DataSource {
-	return &storage.DataSource{
-		Id:   "id",
-		Name: f.Name(),
-	}
-}
-
-func (f *fakeRegistryScanner) Source() *storage.ImageIntegration {
-	return &storage.ImageIntegration{
-		Id:   "id",
-		Name: f.Name(),
-	}
 }
 
 func createMockSbom() map[string]interface{} {
@@ -228,9 +108,12 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 
 		// initliaze mocks
 		scannerSet := scannerMocks.NewMockSet(ctrl)
+		set := intergrationMocks.NewMockSet(ctrl)
 		mockEnricher := enricherMock.NewMockImageEnricher(ctrl)
-		mockEnricher.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).Return(enricher.EnrichmentResult{ImageUpdated: true, ScanResult: enricher.ScanSucceeded}, nil).AnyTimes()
+		scanner := scannerTypesMocks.NewMockScannerSBOMer(ctrl)
+		fsr := scannerTypesMocks.NewMockImageScannerWithDataSource(ctrl)
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 		reqBody := &apiparams.SbomRequestBody{
@@ -244,8 +127,16 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 		set := mocks.NewMockSet(ctrl)
 		fsr := newFakeRegistryScanner(opts{})
 		scannerSet.EXPECT().GetAll().Return([]scannerTypes.ImageScannerWithDataSource{fsr}).AnyTimes()
+=======
+		mockEnricher.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).Return(enricher.EnrichmentResult{ImageUpdated: true, ScanResult: enricher.ScanSucceeded}, nil).AnyTimes()
+		scanner.EXPECT().Type().Return(scannerTypes.ScannerV4).AnyTimes()
+		scanner.EXPECT().GetSBOM(gomock.Any()).DoAndReturn(getFakeSbom).AnyTimes()
+>>>>>>> e87c06c130 (Fixed comments)
 		set.EXPECT().ScannerSet().Return(scannerSet).AnyTimes()
-		reqBody := &sbomRequestBody{
+		fsr.EXPECT().GetScanner().Return(scanner).AnyTimes()
+		scannerSet.EXPECT().GetAll().Return([]scannerTypes.ImageScannerWithDataSource{fsr}).AnyTimes()
+
+		reqBody := &apiparams.SbomRequestBody{
 			ImageName: "quay.io/quay-qetest/nodejs-test-image:latest",
 >>>>>>> 660b15f188 (Add image enrichment to handler)
 			Force:     false,

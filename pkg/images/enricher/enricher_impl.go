@@ -599,8 +599,7 @@ func (e *enricherImpl) enrichWithScan(ctx context.Context, enrichmentContext Enr
 			}
 		}
 		if !found {
-			errorList.AddError(errors.Errorf("no scanner integration found for scannerTypeHint %s", enrichmentContext.ScannerTypeHint))
-			return ScanNotDone, errorList.ToError()
+			return ScanNotDone, errors.Errorf("no scanner integration found for scannerTypeHint %q", enrichmentContext.ScannerTypeHint)
 		}
 	}
 
@@ -662,7 +661,6 @@ func (e *enricherImpl) enrichWithScan(ctx context.Context, enrichmentContext Enr
 			return result, nil
 		}
 	}
-	log.Infof("scanner type is %s", image.GetScan().GetDataSource().GetName())
 	return ScanNotDone, errorList.ToError()
 }
 
