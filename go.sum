@@ -1221,8 +1221,8 @@ github.com/openshift/runtime-utils v0.0.0-20230921210328-7bdb5b9c177b h1:oXzC1N6
 github.com/openshift/runtime-utils v0.0.0-20230921210328-7bdb5b9c177b/go.mod h1:l9/qeKZuAmYUMl0yicJlbkPGDsIycGhwxOvOAWyaP0E=
 github.com/opentracing/opentracing-go v1.2.0 h1:uEJPy/1a5RIPAJ0Ov+OIO8OxWu77jEv+1B0VhjKrZUs=
 github.com/opentracing/opentracing-go v1.2.0/go.mod h1:GxEUsuufX4nBwe+T+Wl9TAgYrxe9dPLANfrWvHYVTgc=
-github.com/operator-framework/operator-lib v0.14.0 h1:er+BgZymZD1im2wytLJiPLZpGALAX6N0gXaHx3PKbO4=
-github.com/operator-framework/operator-lib v0.14.0/go.mod h1:wUu4Xb9xzXnIpglvaZ3yucTMSlqGXHIoUEH9+5gWiu0=
+github.com/operator-framework/operator-lib v0.16.0 h1:nVMdOGETGK/aBRfFwrxJBIWhyOCduFhPIEOwS2j6F1U=
+github.com/operator-framework/operator-lib v0.16.0/go.mod h1:DyiABYNFJn2cUfVihuhjWYfQMFkW5SDAHEINPRMz0x0=
 github.com/owenrumney/go-sarif v1.1.1/go.mod h1:dNDiPlF04ESR/6fHlPyq7gHKmrM0sHUvAGjsoh8ZH0U=
 github.com/owenrumney/go-sarif/v2 v2.3.3 h1:ubWDJcF5i3L/EIOER+ZyQ03IfplbSU1BLOE26uKQIIU=
 github.com/owenrumney/go-sarif/v2 v2.3.3/go.mod h1:MSqMMx9WqlBSY7pXoOZWgEsVB4FDNfhcaXDA1j6Sr+w=
@@ -1431,8 +1431,8 @@ github.com/stackrox/dotnet-scraper v0.0.0-20201023051640-72ef543323dd h1:vEjp7Q6
 github.com/stackrox/dotnet-scraper v0.0.0-20201023051640-72ef543323dd/go.mod h1:HILeV3i/EyJz844GcrC3+oU7oZONhjfujaIYBMJ/bZE=
 github.com/stackrox/external-network-pusher v0.0.0-20231115153210-b82d72f500a2 h1:gRDa1g3wlX7UDjv8nwkXcvnMbjFQkLPa6kDZJ6WpyZo=
 github.com/stackrox/external-network-pusher v0.0.0-20231115153210-b82d72f500a2/go.mod h1:M22zIb5zuZCYbYwcn9iOWswNBrxE+YPkAHU5Bkg5XE4=
-github.com/stackrox/helm-operator v0.0.12-0.20240905075134-4f1b67d62ed9 h1:6Ny4QDXEY99h6q06mMdLPG+KleW6woSjA4PMvBFgrLE=
-github.com/stackrox/helm-operator v0.0.12-0.20240905075134-4f1b67d62ed9/go.mod h1:ZwaQHLS1xPUjTVtRroFEpET3Qy2zzZGK/2zGPpe+gEE=
+github.com/stackrox/helm-operator v0.0.12-0.20250116101612-2c6d3cdb6a85 h1:s03LC6SPH7Sj2KK4S3KtMLN5rHZsnUM7yXOktfhcJmw=
+github.com/stackrox/helm-operator v0.0.12-0.20250116101612-2c6d3cdb6a85/go.mod h1:pLaYK4pye7O/AO0GkIDyCkNLq5fpi086WpxSYhqD/9k=
 github.com/stackrox/helmtest v0.0.1 h1:vWodNu/Ml24iaSqBMIiATC5BdJn3v7RDZevfemhUEfA=
 github.com/stackrox/helmtest v0.0.1/go.mod h1:MJJs41ADMAtOCLgYVcoAITCY+4YCHjvjxk3ABYFmOVE=
 github.com/stackrox/istio-cves v0.0.0-20221007013142-0bde9b541ec8 h1:rUIvoAHokPcd92aJT2gJwVeyE8tMuaqS5l5s3cEgXFY=

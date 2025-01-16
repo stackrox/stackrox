@@ -124,7 +124,7 @@ func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, c
 // HandleSiblings returns an event handler which generates reconcile requests for
 // every (in our case typically one) resource of specified gvk, which resides in the same namespace as the
 // observed resource of type T.
-func HandleSiblings[T ctrlClient.Object](gvk schema.GroupVersionKind, manager ctrl.Manager) handler.TypedEventHandler[T] {
+func HandleSiblings[T ctrlClient.Object](gvk schema.GroupVersionKind, manager ctrl.Manager) handler.TypedEventHandler[T, reconcile.Request] {
 	return handler.TypedEnqueueRequestsFromMapFunc[T](func(ctx context.Context, object T) []reconcile.Request {
 		list := &unstructured.UnstructuredList{}
 		list.SetGroupVersionKind(gvk)
