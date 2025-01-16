@@ -2,6 +2,7 @@ package mappers
 
 import (
 	"context"
+	"strconv"
 	"testing"
 	"time"
 
@@ -18,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/scannerv4/constants"
 	"github.com/stackrox/rox/scanner/enricher/csaf"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var (
@@ -1763,7 +1765,9 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				},
 			},
 		},
-		"when multiple Red Hat CVEs relate to same RHSA return single RHSA": {
+		// Note: Scanner V4 should ultimately return a single RHSA, but this is handled via manipulation to PackageVulnerabilities
+		// through filterRepeatedProtoAdvisories.
+		"when multiple Red Hat CVEs relate to same RHSA return each RHSA": {
 			ccVulnerabilities: map[string]*claircore.Vulnerability{
 				"foo": {
 					ID:                 "foo",
@@ -1807,40 +1811,55 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
 				"foo": {
 					Id:                 "foo",
-					Name:               "RHSA-2021:5132",
+					Name:               "RHSA-2024:10775",
 					Description:        "RHSA description",
-					Link:               "https://access.redhat.com/security/cve/CVE-2021-44228 https://access.redhat.com/errata/RHSA-2021:5132",
+					Link:               "https://access.redhat.com/security/cve/CVE-2024-24789 https://access.redhat.com/errata/RHSA-2024:10775",
 					Issued:             protoNow,
-					Severity:           "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+					Severity:           "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
 					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
 					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
 						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
-							BaseScore: 9.1,
-							Vector:    "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N",
+							BaseScore: 7.5,
+							Vector:    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
 						},
 						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
-						Url:    "https://access.redhat.com/errata/RHSA-2021:5132",
+						Url:    "https://access.redhat.com/errata/RHSA-2024:10775",
 					},
 					CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
 						{
 							V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
-								BaseScore: 9.1,
-								Vector:    "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N",
-							},
-							V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
-								BaseScore: 9.4,
-								Vector:    "AV:N/AC:L/Au:N/C:C/I:C/A:N",
+								BaseScore: 7.5,
+								Vector:    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
 							},
 							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
-							Url:    "https://access.redhat.com/errata/RHSA-2021:5132",
+							Url:    "https://access.redhat.com/errata/RHSA-2024:10775",
 						},
+					},
+				},
+				"bar": {
+					Id:                 "bar",
+					Name:               "RHSA-2024:10775",
+					Description:        "RHSA description",
+					Link:               "https://access.redhat.com/security/cve/CVE-2024-24790 https://access.redhat.com/errata/RHSA-2024:10775",
+					Issued:             protoNow,
+					Severity:           "CVSS:3.1/AV:L/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:N",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
+					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
+						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+							BaseScore: 7.5,
+							Vector:    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
+						},
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
+						Url:    "https://access.redhat.com/errata/RHSA-2024:10775",
+					},
+					CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
 						{
 							V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
-								BaseScore: 10.0,
-								Vector:    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+								BaseScore: 7.5,
+								Vector:    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
 							},
-							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
-							Url:    "https://nvd.nist.gov/vuln/detail/CVE-2021-44228",
+							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
+							Url:    "https://access.redhat.com/errata/RHSA-2024:10775",
 						},
 					},
 				},
@@ -2226,6 +2245,125 @@ func Test_sortBySeverity(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			sortBySeverity(tt.args.ids, tt.args.vulnerabilities)
 			assert.Equalf(t, tt.want, tt.args.ids, "sortBySeverity(%v, %v)", tt.args.ids, tt.args.vulnerabilities)
+		})
+	}
+}
+
+func Test_filterRepeatedProtoAdvisories(t *testing.T) {
+	now := timestamppb.Now()
+
+	testcases := []struct {
+		name     string
+		csafEnabled bool
+		vulnIDs []string
+		vulns map[string]*v4.VulnerabilityReport_Vulnerability
+		expected []string
+	}{
+		{
+			name: "CSAF disabled",
+			csafEnabled: false,
+			vulnIDs: []string{"0", "1", "2", "3", "4"},
+			vulns: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"0": {
+					Id: "0",
+					Name: "RHSA-2021:0735",
+					Description: "Red Hat Security Advisory: nodejs:10 security update",
+					Issued: now,
+					Link: "https://access.redhat.com/errata/RHSA-2021:0735",
+					Severity: "Important",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
+				},
+				"1": {
+					Id: "1",
+					Name: "RHSA-2021:0735",
+					Description: "Red Hat Security Advisory: nodejs:10 security update",
+					Issued: now,
+					Link: "https://access.redhat.com/errata/RHSA-2021:0735",
+					Severity: "Important",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
+				},
+				"2": {
+					Id: "2",
+					Name: "RHSA-2021:0548",
+					Description: "Red Hat Security Advisory: nodejs:10 security update",
+					Issued: now,
+					Link: "https://access.redhat.com/errata/RHSA-2021:0548",
+					Severity: "Moderate",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
+				},
+				"3": {
+					Id: "3",
+					Name: "CVE-2025-12342",
+					Description: "very vulnerable",
+				},
+				"4": {
+					Id: "4",
+					Name: "RHSA-2021:0548",
+					Description: "Red Hat Security Advisory: nodejs:10 security update",
+					Issued: now,
+					Link: "https://access.redhat.com/errata/RHSA-2021:0548",
+					Severity: "Moderate",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
+				},
+			},
+			expected: []string{"0", "1", "2", "3", "4"},
+		},
+		{
+			name: "CSAF enabled",
+			csafEnabled: true,
+			vulnIDs: []string{"0", "1", "2", "3"},
+			vulns: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"0": {
+					Id: "0",
+					Name: "RHSA-2021:0735",
+					Description: "Red Hat Security Advisory: nodejs:10 security update",
+					Issued: now,
+					Link: "https://access.redhat.com/errata/RHSA-2021:0735",
+					Severity: "Important",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
+				},
+				"1": {
+					Id: "1",
+					Name: "RHSA-2021:0735",
+					Description: "Red Hat Security Advisory: nodejs:10 security update",
+					Issued: now,
+					Link: "https://access.redhat.com/errata/RHSA-2021:0735",
+					Severity: "Important",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
+				},
+				"2": {
+					Id: "2",
+					Name: "RHSA-2021:0548",
+					Description: "Red Hat Security Advisory: nodejs:10 security update",
+					Issued: now,
+					Link: "https://access.redhat.com/errata/RHSA-2021:0548",
+					Severity: "Moderate",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
+				},
+				"3": {
+					Id: "3",
+					Name: "CVE-2025-12342",
+					Description: "very vulnerable",
+				},
+				"4": {
+					Id: "4",
+					Name: "RHSA-2021:0548",
+					Description: "Red Hat Security Advisory: nodejs:10 security update",
+					Issued: now,
+					Link: "https://access.redhat.com/errata/RHSA-2021:0548",
+					Severity: "Moderate",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
+				},
+			},
+			expected: []string{"0", "2", "3"},
+		},
+	}
+
+	for _, tt := range testcases {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Setenv(features.ScannerV4RedHatCSAF.EnvVar(), strconv.FormatBool(tt.csafEnabled))
+			got := filterRepeatedProtoAdvisories(tt.vulnIDs, tt.vulns)
+			assert.ElementsMatch(t, tt.expected, got)
 		})
 	}
 }
