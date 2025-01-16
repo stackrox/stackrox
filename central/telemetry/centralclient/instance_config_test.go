@@ -7,6 +7,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/images/defaults"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -40,10 +41,12 @@ func Test_getRuntimeConfig(t *testing.T) {
 	t.Setenv(env.TelemetryStorageKey.EnvVar(), remoteKey)
 	cfg, err := getRuntimeConfig()
 	require.NoError(t, err)
-	require.NotNil(t, cfg)
-	assert.Equal(t, remoteKey, cfg.Key)
-	require.Len(t, cfg.APICallCampaign, 1)
-	assert.Equal(t, "put", cfg.APICallCampaign[0].Methods[0])
+	assert.Equal(t, &phonehome.RuntimeConfig{
+		Key: "remotekey",
+		APICallCampaign: phonehome.APICallCampaign{
+			{Methods: []string{"put", "delete"}},
+		},
+	}, cfg)
 }
 
 func TestInstanceConfig(t *testing.T) {
