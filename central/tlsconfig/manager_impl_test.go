@@ -105,7 +105,7 @@ func (s *managerTestSuite) testConnectionWithManager(mgr *managerImpl, acceptedS
 		if !s.NoError(err) {
 			continue
 		}
-		conn, err := net.Dial(lis.Addr().Network(), lis.Addr().String())
+		conn, err := (&net.Dialer{}).DialContext(serverCtx, lis.Addr().Network(), lis.Addr().String())
 		if !s.NoError(err) {
 			continue
 		}
@@ -121,7 +121,7 @@ func (s *managerTestSuite) testConnectionWithManager(mgr *managerImpl, acceptedS
 		if !s.NoError(err) {
 			continue
 		}
-		conn, err := net.Dial(lis.Addr().Network(), lis.Addr().String())
+		conn, err := (&net.Dialer{}).DialContext(serverCtx, lis.Addr().Network(), lis.Addr().String())
 		if !s.NoError(err) {
 			continue
 		}
