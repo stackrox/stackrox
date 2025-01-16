@@ -1,4 +1,3 @@
-
 <<<<<<< HEAD
 <<<<<<< HEAD
 >>>>>>> de967dabd7 (X-Smart-Squash: Squashed 13 commits:)
@@ -22,6 +21,10 @@ import (
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+<<<<<<< HEAD
+=======
+	"github.com/stackrox/rox/pkg/protocompat"
+>>>>>>> 9a652b9c15 (X-Smart-Squash: Squashed 10 commits:)
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
@@ -121,8 +124,11 @@ func insertIntoImageComponentV2(batch *pgx.Batch, obj *storage.ImageComponentV2)
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 90f2c751ff (X-Smart-Squash: Squashed 10 commits:)
+=======
+>>>>>>> 399dafd1bb (X-Smart-Squash: Squashed 10 commits:)
 =======
 	var query string
 
@@ -149,6 +155,7 @@ func insertIntoImageComponentV2Cves(batch *pgx.Batch, obj *storage.ImageCVEV2, i
 		protocompat.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
 		protocompat.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
 <<<<<<< HEAD
+<<<<<<< HEAD
 		obj.GetCveBaseInfo().GetEpss().GetEpssProbability(),
 =======
 <<<<<<< HEAD
@@ -160,6 +167,9 @@ func insertIntoImageComponentV2Cves(batch *pgx.Batch, obj *storage.ImageCVEV2, i
 		obj.GetCveBaseInfo().GetEpss().GetEpssProbability(),
 >>>>>>> 4e3ee609f4 (X-Smart-Squash: Squashed 4 commits:)
 >>>>>>> 8cca5a6f70 (X-Smart-Squash: Squashed 4 commits:)
+=======
+		obj.GetCveBaseInfo().GetEpss().GetEpssProbability(),
+>>>>>>> 399dafd1bb (X-Smart-Squash: Squashed 10 commits:)
 		obj.GetOperatingSystem(),
 		obj.GetCvss(),
 		obj.GetSeverity(),
@@ -171,6 +181,7 @@ func insertIntoImageComponentV2Cves(batch *pgx.Batch, obj *storage.ImageCVEV2, i
 		obj.GetFixedBy(),
 	}
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 	finalStr := "INSERT INTO image_component_v2_cves (image_component_v2_Id, idx, Id, ImageId, CveBaseInfo_Cve, CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability, OperatingSystem, Cvss, Severity, ImpactScore, Nvdcvss, FirstImageOccurrence, State, IsFixable, FixedBy) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) ON CONFLICT(image_component_v2_Id, idx) DO UPDATE SET image_component_v2_Id = EXCLUDED.image_component_v2_Id, idx = EXCLUDED.idx, Id = EXCLUDED.Id, ImageId = EXCLUDED.ImageId, CveBaseInfo_Cve = EXCLUDED.CveBaseInfo_Cve, CveBaseInfo_PublishedOn = EXCLUDED.CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt = EXCLUDED.CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability = EXCLUDED.CveBaseInfo_Epss_EpssProbability, OperatingSystem = EXCLUDED.OperatingSystem, Cvss = EXCLUDED.Cvss, Severity = EXCLUDED.Severity, ImpactScore = EXCLUDED.ImpactScore, Nvdcvss = EXCLUDED.Nvdcvss, FirstImageOccurrence = EXCLUDED.FirstImageOccurrence, State = EXCLUDED.State, IsFixable = EXCLUDED.IsFixable, FixedBy = EXCLUDED.FixedBy"
 =======
@@ -194,6 +205,12 @@ func insertIntoImageComponentV2Cves(batch *pgx.Batch, obj *storage.ImageCVEV2, i
 >>>>>>> 90f2c751ff (X-Smart-Squash: Squashed 10 commits:)
 =======
 >>>>>>> 367b120c6d (X-Smart-Squash: Squashed 27 commits:)
+=======
+	finalStr := "INSERT INTO image_component_v2_cves (image_component_v2_Id, idx, Id, ImageId, CveBaseInfo_Cve, CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability, OperatingSystem, Cvss, Severity, ImpactScore, Nvdcvss, FirstImageOccurrence, State, IsFixable, FixedBy) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) ON CONFLICT(image_component_v2_Id, idx) DO UPDATE SET image_component_v2_Id = EXCLUDED.image_component_v2_Id, idx = EXCLUDED.idx, Id = EXCLUDED.Id, ImageId = EXCLUDED.ImageId, CveBaseInfo_Cve = EXCLUDED.CveBaseInfo_Cve, CveBaseInfo_PublishedOn = EXCLUDED.CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt = EXCLUDED.CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability = EXCLUDED.CveBaseInfo_Epss_EpssProbability, OperatingSystem = EXCLUDED.OperatingSystem, Cvss = EXCLUDED.Cvss, Severity = EXCLUDED.Severity, ImpactScore = EXCLUDED.ImpactScore, Nvdcvss = EXCLUDED.Nvdcvss, FirstImageOccurrence = EXCLUDED.FirstImageOccurrence, State = EXCLUDED.State, IsFixable = EXCLUDED.IsFixable, FixedBy = EXCLUDED.FixedBy"
+	batch.Queue(finalStr, values...)
+
+>>>>>>> 9a652b9c15 (X-Smart-Squash: Squashed 10 commits:)
+>>>>>>> 399dafd1bb (X-Smart-Squash: Squashed 10 commits:)
 	return nil
 }
 
@@ -273,8 +290,11 @@ func copyFromImageComponentV2(ctx context.Context, s pgSearch.Deleter, tx *postg
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 90f2c751ff (X-Smart-Squash: Squashed 10 commits:)
+=======
+>>>>>>> 399dafd1bb (X-Smart-Squash: Squashed 10 commits:)
 =======
 	for idx, obj := range objs {
 		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
@@ -303,6 +323,7 @@ func copyFromImageComponentV2Cves(ctx context.Context, s pgSearch.Deleter, tx *p
 		"cvebaseinfo_publishedon",
 		"cvebaseinfo_createdat",
 <<<<<<< HEAD
+<<<<<<< HEAD
 		"cvebaseinfo_epss_epssprobability",
 =======
 <<<<<<< HEAD
@@ -314,6 +335,9 @@ func copyFromImageComponentV2Cves(ctx context.Context, s pgSearch.Deleter, tx *p
 		"cvebaseinfo_epss_epssprobability",
 >>>>>>> 4e3ee609f4 (X-Smart-Squash: Squashed 4 commits:)
 >>>>>>> 8cca5a6f70 (X-Smart-Squash: Squashed 4 commits:)
+=======
+		"cvebaseinfo_epss_epssprobability",
+>>>>>>> 399dafd1bb (X-Smart-Squash: Squashed 10 commits:)
 		"operatingsystem",
 		"cvss",
 		"severity",
@@ -340,6 +364,7 @@ func copyFromImageComponentV2Cves(ctx context.Context, s pgSearch.Deleter, tx *p
 			protocompat.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
 			protocompat.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
 <<<<<<< HEAD
+<<<<<<< HEAD
 			obj.GetCveBaseInfo().GetEpss().GetEpssProbability(),
 =======
 <<<<<<< HEAD
@@ -351,6 +376,9 @@ func copyFromImageComponentV2Cves(ctx context.Context, s pgSearch.Deleter, tx *p
 			obj.GetCveBaseInfo().GetEpss().GetEpssProbability(),
 >>>>>>> 4e3ee609f4 (X-Smart-Squash: Squashed 4 commits:)
 >>>>>>> 8cca5a6f70 (X-Smart-Squash: Squashed 4 commits:)
+=======
+			obj.GetCveBaseInfo().GetEpss().GetEpssProbability(),
+>>>>>>> 399dafd1bb (X-Smart-Squash: Squashed 10 commits:)
 			obj.GetOperatingSystem(),
 			obj.GetCvss(),
 			obj.GetSeverity(),
@@ -377,12 +405,15 @@ func copyFromImageComponentV2Cves(ctx context.Context, s pgSearch.Deleter, tx *p
 
 >>>>>>> 9a652b9c15 (X-Smart-Squash: Squashed 10 commits:)
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 8ad8e67206 (X-Smart-Squash: Squashed 16 commits:)
 =======
 >>>>>>> 90f2c751ff (X-Smart-Squash: Squashed 10 commits:)
 =======
 >>>>>>> 367b120c6d (X-Smart-Squash: Squashed 27 commits:)
+=======
+>>>>>>> 399dafd1bb (X-Smart-Squash: Squashed 10 commits:)
 	return nil
 }
 
@@ -403,6 +434,15 @@ func Destroy(ctx context.Context, db postgres.DB) {
 
 func dropTableImageComponentV2(ctx context.Context, db postgres.DB) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS image_component_v2 CASCADE")
+<<<<<<< HEAD
+=======
+	dropTableImageComponentV2Cves(ctx, db)
+
+}
+
+func dropTableImageComponentV2Cves(ctx context.Context, db postgres.DB) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS image_component_v2_cves CASCADE")
+>>>>>>> 9a652b9c15 (X-Smart-Squash: Squashed 10 commits:)
 
 }
 
