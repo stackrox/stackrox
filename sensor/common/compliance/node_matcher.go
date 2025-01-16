@@ -2,10 +2,13 @@ package compliance
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/stackrox/rox/sensor/common/store"
 )
+
+var rhcosOSImageRegexp = regexp.MustCompile(`(Red Hat Enterprise Linux) (CoreOS) ([0-9.-]+)`)
 
 // NodeIDMatcher helps finding NodeWrap by name
 type NodeIDMatcher interface {

@@ -1,7 +1,6 @@
 package compliance
 
 import (
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -24,8 +23,6 @@ var (
 	errInventoryInputChanClosed = errors.New("channel receiving node inventories is closed")
 	errIndexInputChanClosed     = errors.New("channel receiving node indexes is closed")
 	errStartMoreThanOnce        = errors.New("unable to start the component more than once")
-	rhcosOSImageRegexp          = regexp.MustCompile(`(Red Hat Enterprise Linux) (CoreOS) ([0-9.-]+)`)
-	rhcosPackageId              = 666
 )
 
 const (
@@ -314,7 +311,7 @@ func (c *nodeInventoryHandlerImpl) sendNodeIndex(toC chan<- *message.ExpiringMes
 			metrics.ObserveReceivedNodeIndex(indexWrap.NodeName) // keeping for compatibility with 4.6. Remove in 4.8
 			metrics.ObserveNodeScan(indexWrap.NodeName, metrics.NodeScanTypeNodeIndex, metrics.NodeScanOperationSendToCentral)
 		}()
-		irWrapperFunc := passthruRPM
+		irWrapperFunc := noop
 		if isRHCOS {
 			log.Debugf("Attaching OCI entry for 'rhcos' to index-report: version=%s", version)
 			irWrapperFunc = attachRPMtoRHCOS
@@ -359,7 +356,7 @@ func normalizeVersion(version string) []int32 {
 	return []int32{int32(i1), int32(i2), 0}
 }
 
-func passthruRPM(_ string, rpm *v4.IndexReport) *v4.IndexReport {
+func noop(_ string, rpm *v4.IndexReport) *v4.IndexReport {
 	return rpm
 }
 
@@ -369,7 +366,7 @@ func idOK[T any](m map[string]T, id int) bool {
 }
 
 func attachRPMtoRHCOS(version string, rpm *v4.IndexReport) *v4.IndexReport {
-	idCandidate := rhcosPackageId
+	idCandidate := 600 // Arbitrary selected. RHCOS has usually 520-560 rpm packages.
 	for !idOK(rpm.GetContents().GetEnvironments(), idCandidate) {
 		idCandidate++
 	}
