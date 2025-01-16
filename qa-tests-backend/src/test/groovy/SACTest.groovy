@@ -358,7 +358,7 @@ class SACTest extends BaseSpecification {
         if ( 2 * qa1AccessAlertsCount != allAccessAlertsCount ) {
             allAccessAlerts = alertsSearch(ALLACCESSTOKEN)
             qa1AccessAlerts = alertsSearch("getSummaryCountsToken")
-            ListAlertsResponse[] qa1AccessAlertsFromAll
+            ListAlertsResponse[] qa1AccessAlertsFromAll = []
             for ( alert in allAccessAlerts ) {
                 if ( alert.deployment.name == DEPLOYMENT_QA1.name ) {
                     qa1AccessAlertsFromAll.add(alert)
