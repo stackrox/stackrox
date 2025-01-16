@@ -11,6 +11,7 @@ import (
 	clusterUtil "github.com/stackrox/rox/central/cluster/util"
 	"github.com/stackrox/rox/central/role/sachelper"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/apiparams"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/httputil"
@@ -19,12 +20,6 @@ import (
 	"github.com/stackrox/rox/pkg/zip"
 	"google.golang.org/grpc/codes"
 )
-
-type sbomRequestBody struct {
-	Cluster   string `json:"cluster"`
-	ImageName string `json:"imageName"`
-	Force     bool   `json:"force"`
-}
 
 type sbomHttpHandler struct {
 	integration      integration.Set
@@ -59,7 +54,7 @@ func (h sbomHttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteGRPCStyleError(w, codes.Unimplemented, errors.New("SBOM feature is not enabled"))
 		return
 	}
-	var params sbomRequestBody
+	var params apiparams.SbomRequestBody
 	sbomGenMaxReqSizeBytes := env.SBOMGenerationMaxReqSizeBytes.IntegerSetting()
 	// timeout api after 10 minutes
 	lr := io.LimitReader(r.Body, int64(sbomGenMaxReqSizeBytes))
@@ -83,7 +78,7 @@ func (h sbomHttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(bytes)
 }
 
-func (h sbomHttpHandler) enrichImage(ctx context.Context, params sbomRequestBody) (*storage.Image, error) {
+func (h sbomHttpHandler) enrichImage(ctx context.Context, params apiparams.SbomRequestBody) (*storage.Image, error) {
 	enrichmentCtx := enricher.EnrichmentContext{
 		FetchOpt:  enricher.UseCachesIfPossible,
 		Delegable: true,
@@ -110,7 +105,7 @@ func (h sbomHttpHandler) enrichImage(ctx context.Context, params sbomRequestBody
 	return img, nil
 }
 
-func (h sbomHttpHandler) getSbom(ctx context.Context, params sbomRequestBody) ([]byte, error) {
+func (h sbomHttpHandler) getSbom(ctx context.Context, params apiparams.SbomRequestBody) ([]byte, error) {
 	// enrich image checks image metadata cache if fetchopt = UseCachesIfPossible otherwise fetches metdata from registry
 	// enrich image calls get scans on image which creates index report for image if it does not exsist
 	_, err := h.enrichImage(ctx, params)

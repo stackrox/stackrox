@@ -9,6 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/imageintegration"
+	"github.com/stackrox/rox/pkg/apiparams"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/enricher"
@@ -42,7 +43,7 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 		mockEnricher := enricherMock.NewMockImageEnricher(ctrl)
 		mockEnricher.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).Return(enricher.EnrichmentResult{ImageUpdated: false, ScanResult: enricher.ScanNotDone}, errors.New("Image enrichment failed")).AnyTimes()
 
-		reqBody := &sbomRequestBody{
+		reqBody := &apiparams.SbomRequestBody{
 			ImageName: "test-image",
 			Force:     false,
 		}
@@ -69,7 +70,7 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 		mockEnricher := enricherMock.NewMockImageEnricher(ctrl)
 		mockEnricher.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).Return(enricher.EnrichmentResult{ImageUpdated: true, ScanResult: enricher.ScanSucceeded}, nil).AnyTimes()
 
-		reqBody := &sbomRequestBody{
+		reqBody := &apiparams.SbomRequestBody{
 			ImageName: "test-image",
 			Force:     false,
 		}
