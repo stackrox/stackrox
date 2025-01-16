@@ -93,6 +93,12 @@ message VulnerabilityReport {
       Source source = 3;
       string url = 4;
     }
+    message EPSS { <-- new proto
+      string date = 1;
+      string model_version = 2;
+      float probability = 3;
+      float percentile = 4;
+    }
     string id = 1;
     string name = 2;
     string description = 3;
@@ -100,12 +106,6 @@ message VulnerabilityReport {
     string link = 5 [deprecated = true]; // link is duplicated with CVSS URL field, the exact deprecation date is undecided
     ...
     repeated CVSS cvss_metrics = 13;
-     message EPSS { <-- new proto
-      string date = 1;
-      string model_version = 2;
-      float probability = 3;
-      float percentile = 4;
-    }
     EPSS epss = 14; <-- new field
   }
   ...
