@@ -355,7 +355,7 @@ class SACTest extends BaseSpecification {
         // getSummaryCountsToken has access only to QA1 deployment while
         // ALLACCESSTOKEN has access to QA1 and QA2. Since deployments are identical
         // number of alerts for ALLACCESSTOKEN should be twice of getSummaryCountsToken.
-        if 2 * qa1AccessAlertsCount != allAccessAlertsCount {
+        if ( 2 * qa1AccessAlertsCount != allAccessAlertsCount ) {
             allAccessAlerts = alertsSearch(ALLACCESSTOKEN)
             qa1AccessAlerts = alertsSearch("getSummaryCountsToken")
             ListAlertsResponse[] qa1AccessAlertsFromAll
