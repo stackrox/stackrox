@@ -214,7 +214,7 @@ function ExceptionRequestDetailsPage() {
     };
 
     if (isPlatformCveSplitEnabled) {
-        searchFilter['Platform component'] =
+        searchFilter['Platform Component'] =
             activeCveTableTabKey === 'USER_WORKLOADS' ? ['false', '-'] : ['true'];
     }
 
