@@ -82,7 +82,7 @@ func GetRoxctlHTTPClient(config *HttpClientConfig) (RoxctlHTTPClient, error) {
 	// Silence the default log output of the HTTP retry client to not pollute output.
 	retryClient.Logger = nil
 
-	if config.DisableBackoff {
+	if !config.RetryExponentialBackoff {
 		// Disable the exponential backoff, in some scenarios the backoff makes roxctl appear
 		// stuck (partially due to the logger being disabled).
 		retryClient.Backoff = func(min, max time.Duration, attemptNum int, resp *http.Response) time.Duration { return min }

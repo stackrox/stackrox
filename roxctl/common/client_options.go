@@ -14,24 +14,25 @@ type HttpClientOption func(*HttpClientConfig)
 
 // HttpClientConfig is used for configuring the abstracted HTTP client.
 type HttpClientConfig struct {
-	AuthMethod            auth.Method
-	DisableBackoff        bool
-	ForceHTTP1            bool
-	Logger                logger.Logger
-	RetryCount            int
-	RetryDelay            time.Duration
-	ReturnRespBodyOnError bool
-	Timeout               time.Duration
-	UseInsecure           bool
+	AuthMethod              auth.Method
+	ForceHTTP1              bool
+	Logger                  logger.Logger
+	RetryExponentialBackoff bool
+	RetryCount              int
+	RetryDelay              time.Duration
+	ReturnRespBodyOnError   bool
+	Timeout                 time.Duration
+	UseInsecure             bool
 }
 
 // NewHttpClientConfig returns a default config modified by options.
 func NewHttpClientConfig(options ...HttpClientOption) *HttpClientConfig {
 	opts := &HttpClientConfig{
-		ForceHTTP1:  flags.ForceHTTP1(),
-		UseInsecure: flags.UseInsecure(),
-		RetryCount:  env.ClientMaxRetries.IntegerSetting(),
-		RetryDelay:  10 * time.Second,
+		ForceHTTP1:              flags.ForceHTTP1(),
+		UseInsecure:             flags.UseInsecure(),
+		RetryCount:              env.ClientMaxRetries.IntegerSetting(),
+		RetryDelay:              10 * time.Second,
+		RetryExponentialBackoff: true,
 	}
 
 	for _, optFunc := range options {
@@ -48,10 +49,10 @@ func WithAuthMethod(am auth.Method) HttpClientOption {
 	}
 }
 
-// WithDisableBackoff disables exponential backoff.
-func WithDisableBackoff(disable bool) HttpClientOption {
+// WithRetryExponentialBackoff disables/enables exponential backoff.
+func WithRetryExponentialBackoff(value bool) HttpClientOption {
 	return func(hco *HttpClientConfig) {
-		hco.DisableBackoff = disable
+		hco.RetryExponentialBackoff = value
 	}
 }
 

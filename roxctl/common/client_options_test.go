@@ -20,9 +20,9 @@ func TestFunctionalOptions(t *testing.T) {
 	WithAuthMethod(auth.Anonymous())(cfg)
 	assert.NotZero(t, cfg.AuthMethod)
 
-	assert.Zero(t, cfg.DisableBackoff)
-	WithDisableBackoff(true)(cfg)
-	assert.NotZero(t, cfg.DisableBackoff)
+	assert.Zero(t, cfg.RetryExponentialBackoff)
+	WithRetryExponentialBackoff(true)(cfg)
+	assert.NotZero(t, cfg.RetryExponentialBackoff)
 
 	assert.Zero(t, cfg.ForceHTTP1)
 	WithForceHTTP1(true)(cfg)
