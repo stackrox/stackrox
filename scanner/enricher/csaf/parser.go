@@ -38,6 +38,10 @@ func (e *Enricher) ParseEnrichment(ctx context.Context, contents io.ReadCloser) 
 			// to fetch c.Document.Notes which would have more in-depth descriptions.
 			// The title is a decent compromise for now.
 			Description: c.Document.Title,
+			// The initial_release_date is the date when the advisory was published.
+			// The current_release_date is the last-updated date, so
+			// we use initial_release_date here.
+			ReleaseDate: c.Document.Tracking.InitialReleaseDate,
 			// Obtain the aggregate severity rating of all related CVEs for this advisory,
 			// which tends to be the highest severity of all related CVEs.
 			// This matches the severity we'd obtain from OVAL.

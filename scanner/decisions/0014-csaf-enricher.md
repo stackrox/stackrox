@@ -47,6 +47,9 @@ The enricher will fetch Red Hat advisories and extract data we have determined h
 * Description
   * The current implementation takes the description from the CVE, so if a package is affected by two different CVEs
     associated with the same advisory, then there is a clear inconsistency, as it is unclear which description may be shown.
+* Published Date
+  * The current implementation takes the published date from the CVE, so if a package is affected by two different CVEs
+    associated with the same advisory, then there is a clear inconsistency, as it is unclear which published date may be shown.
 * Severity
   * The current implementation takes the severity from the CVE, so if a package is affected by two different CVEs
     rated with different severities, then there is a clear inconsistency, as it is unclear which severity may be shown.

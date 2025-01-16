@@ -27,6 +27,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/scanners/scannerv4"
 	"github.com/stackrox/rox/pkg/scannerv4/constants"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/scanner/enricher/csaf"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -317,8 +318,10 @@ func toProtoV4PackageVulnerabilitiesMap(ccPkgVulnerabilities map[string][]string
 		if vulnIDs == nil {
 			continue
 		}
+		vulnIDs = filterRepeatedCCVulns(vulnIDs, ccVulnerabilities)
+		vulnIDs = filterRepeatedProtoAdvisories(vulnIDs, vulnerabilities)
 		pkgVulns[id] = &v4.StringList{
-			Values: filterRepeatedVulns(vulnIDs, ccVulnerabilities),
+			Values: vulnIDs,
 		}
 		sortBySeverity(pkgVulns[id].GetValues(), vulnerabilities)
 	}
@@ -498,14 +501,16 @@ func toProtoV4VulnerabilitiesMap(
 				description = nvdVuln.Descriptions[0].Value
 			}
 		}
-		issued := issuedTime(v.Issued, nvdVuln.Published)
+		issued := issuedTime(advisory.ReleaseDate, v.Issued, nvdVuln.Published)
 		if issued == nil {
 			zlog.Warn(ctx).
 				Str("vuln_id", v.ID).
 				Str("vuln_name", v.Name).
 				Str("vuln_updater", v.Updater).
+				Bool("advisory_exists", advisoryExists).
 				// Use Str instead of Time because the latter will format the time into
 				// RFC3339 form, which may not be valid for this.
+				Str("advisory_release_date", advisory.ReleaseDate.String()).
 				Str("claircore_issued", v.Issued.String()).
 				Str("nvd_published", nvdVuln.Published).
 				Msg("issued time invalid: leaving empty")
@@ -543,7 +548,10 @@ func toProtoV4VulnerabilitiesMap(
 // issuedTime attempts to return the issued time for the vulnerability.
 // If ccTime is non-zero, that time is preferred. Otherwise, if the nvdTime is populated, then use that.
 // Otherwise, return nil.
-func issuedTime(ccTime time.Time, nvdTime string) *timestamppb.Timestamp {
+func issuedTime(advisoryTime, ccTime time.Time, nvdTime string) *timestamppb.Timestamp {
+	if !advisoryTime.IsZero() {
+		return protocompat.ConvertTimeToTimestampOrNil(&advisoryTime)
+	}
 	if !ccTime.IsZero() {
 		return protocompat.ConvertTimeToTimestampOrNil(&ccTime)
 	}
@@ -893,7 +901,8 @@ func cveEPSS(ctx context.Context, enrichments map[string][]json.RawMessage) (map
 // however, the returned slice of metrics will still be populated with any successfully gathered metrics.
 // It is up to the caller to ensure the returned slice is populated prior to using it.
 //
-// TODO(ROX-26672): Remove vulnName parameter. It's a temporary patch until we stop making RHSAs the top-level vulnerability.
+// TODO(ROX-26672): Remove vulnName and advisory parameters.
+// They are part of a temporary patch until we stop making RHSAs the top-level vulnerability.
 func cvssMetrics(_ context.Context, vuln *claircore.Vulnerability, vulnName string, nvdVuln *nvdschema.CVEAPIJSON20CVEItem, advisory csaf.Record) ([]*v4.VulnerabilityReport_Vulnerability_CVSS, error) {
 	var metrics []*v4.VulnerabilityReport_Vulnerability_CVSS
 
@@ -1133,9 +1142,9 @@ func findName(vuln *claircore.Vulnerability, p *regexp.Regexp) (string, bool) {
 	return "", false
 }
 
-// filterRepeatedVulns filters repeat vulnerabilities out of vulnIDs and returns the result.
+// filterRepeatedCCVulns filters repeat vulnerabilities out of vulnIDs and returns the result.
 // This function does not guarantee ordering is preserved.
-func filterRepeatedVulns(vulnIDs []string, ccVulnerabilities map[string]*claircore.Vulnerability) []string {
+func filterRepeatedCCVulns(vulnIDs []string, ccVulnerabilities map[string]*claircore.Vulnerability) []string {
 	// Group each vulnerability by name.
 	// This maps each name to a slice of vulnerabilities to protect against the possibility
 	// Claircore finds multiple vulnerabilities with the same name for this package from different vulnerability streams.
@@ -1192,4 +1201,33 @@ func vulnsEqual(a, b *claircore.Vulnerability) bool {
 		a.Severity == b.Severity &&
 		a.NormalizedSeverity == b.NormalizedSeverity &&
 		a.FixedInVersion == b.FixedInVersion
+}
+
+// filterRepeatedProtoAdvisories filters repeat advisories out of vulnIDs and returns the result.
+// This function will only filter if ROX_SCANNER_V4_RED_HAT_CSAF is enabled; otherwise,
+// it'll just return the original slice of vulnIDs.
+// This function does not guarantee order is preserved.
+func filterRepeatedProtoAdvisories(vulnIDs []string, protoVulns map[string]*v4.VulnerabilityReport_Vulnerability) []string {
+	if !features.ScannerV4RedHatCSAF.Enabled() {
+		return vulnIDs
+	}
+
+	filtered := make([]string, 0, len(vulnIDs))
+	// advisories tracks the unique advisories.
+	advisories := set.NewStringSet()
+	for _, vulnID := range vulnIDs {
+		vuln := protoVulns[vulnID]
+		if vuln == nil {
+			continue
+		}
+
+		name := vuln.GetName()
+		if rhelVulnNamePattern.MatchString(name) && !advisories.Add(name) {
+			continue
+		}
+
+		filtered = append(filtered, vulnID)
+	}
+
+	return filtered
 }

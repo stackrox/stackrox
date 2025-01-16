@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
@@ -43,11 +44,12 @@ const (
 )
 
 type Record struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Severity    string `json:"severity"`
-	CVSSv3      CVSS   `json:"cvssv3"`
-	CVSSv2      CVSS   `json:"cvssv2"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	ReleaseDate time.Time `json:"release_date"`
+	Severity    string    `json:"severity"`
+	CVSSv3      CVSS      `json:"cvssv3"`
+	CVSSv2      CVSS      `json:"cvssv2"`
 }
 
 type CVSS struct {
