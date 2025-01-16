@@ -61,10 +61,6 @@ func (h sbomHttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteGRPCStyleError(w, codes.Unimplemented, errors.New("SBOM feature is not enabled"))
 		return
 	}
-<<<<<<< HEAD
-
-=======
->>>>>>> e87c06c130 (Fixed comments)
 	var params apiparams.SbomRequestBody
 	sbomGenMaxReqSizeBytes := env.SBOMGenerationMaxReqSizeBytes.IntegerSetting()
 	// timeout api after 10 minutes
@@ -79,12 +75,6 @@ func (h sbomHttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	bytes, err := h.getSbom(ctx, params)
 	if err != nil {
 		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrap(err, "generating SBOM"))
-
-		return
-	}
-
-	if len(bytes) == 0 {
-		httputil.WriteGRPCStyleError(w, codes.Internal, errors.New("SBOM not found for the image"))
 		return
 	}
 	if len(bytes) == 0 {
@@ -100,22 +90,7 @@ func (h sbomHttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 // enrichImage enriches the image with the given name and based on the given enrichment context
-<<<<<<< HEAD
-<<<<<<< HEAD
 func (h sbomHttpHandler) enrichImage(ctx context.Context, enrichmentCtx enricher.EnrichmentContext, imgName string) (*storage.Image, bool, error) {
-	// forcedEnrichment is set to true when enrichImage forces an enrichment.
-	forceEnrichment := false
-	img, err := enricher.EnrichImageByName(ctx, h.enricher, enrichmentCtx, imgName)
-	if err != nil {
-		return nil, forceEnrichment, err
-	}
-	// verify that image is scanned by scanner v4 if not force enrichment using scanner v4
-	scannedByV4 := h.scannedByScannerv4(img)
-=======
-func (h sbomHttpHandler) enrichImage(ctx context.Context, enrichmentCtx enricher.EnrichmentContext, imgName string) (*storage.Image, error, bool) {
-=======
-func (h sbomHttpHandler) enrichImage(ctx context.Context, enrichmentCtx enricher.EnrichmentContext, imgName string) (*storage.Image, bool, error) {
->>>>>>> e87c06c130 (Fixed comments)
 
 	// forcedEnrichment is set to true when enrichImage forces an enrichment.
 	forceEnrichment := false
@@ -124,31 +99,15 @@ func (h sbomHttpHandler) enrichImage(ctx context.Context, enrichmentCtx enricher
 		return nil, forceEnrichment, err
 	}
 	// verify that image is scanned by scanner v4 if not force enrichment using scanner v4
-<<<<<<< HEAD
-	scannedbyV4 := h.scannedByScannerv4(img)
->>>>>>> 53168d49c7 (Fixed comments)
-=======
 	scannedByV4 := h.scannedByScannerv4(img)
->>>>>>> e87c06c130 (Fixed comments)
 
 	if enrichmentCtx.FetchOpt != enricher.UseImageNamesRefetchCachedValues && !scannedByV4 {
 		// force scan by scanner v4
 		addForceToEnrichmentContext(&enrichmentCtx)
-<<<<<<< HEAD
-		enrichmentCtx.ScannerTypeHint = scannerTypes.ScannerV4
-		img, err = enricher.EnrichImageByName(ctx, h.enricher, enrichmentCtx, imgName)
-		if err != nil {
-			return nil, forceEnrichment, err
-=======
 		forceEnrichment = true
 		img, err = enricher.EnrichImageByName(ctx, h.enricher, enrichmentCtx, imgName)
 		if err != nil {
-<<<<<<< HEAD
-			return nil, err, forceEnrichment
->>>>>>> 53168d49c7 (Fixed comments)
-=======
 			return nil, forceEnrichment, err
->>>>>>> e87c06c130 (Fixed comments)
 		}
 	}
 
@@ -156,23 +115,6 @@ func (h sbomHttpHandler) enrichImage(ctx context.Context, enrichmentCtx enricher
 	img.Id = utils.GetSHA(img)
 	if img.GetId() != "" {
 		if err := h.saveImage(img); err != nil {
-<<<<<<< HEAD
-<<<<<<< HEAD
-			return nil, forceEnrichment, err
-		}
-	}
-
-	return img, forceEnrichment, nil
-=======
-			return nil, err, forceEnrichment
-		}
-	}
-
-	return img, nil, forceEnrichment
->>>>>>> 53168d49c7 (Fixed comments)
-}
-
-=======
 			return nil, forceEnrichment, err
 		}
 	}
@@ -181,7 +123,6 @@ func (h sbomHttpHandler) enrichImage(ctx context.Context, enrichmentCtx enricher
 }
 
 // getSbom generates an SBOM for the specified parameters
->>>>>>> e87c06c130 (Fixed comments)
 func (h sbomHttpHandler) getSbom(ctx context.Context, params apiparams.SbomRequestBody) ([]byte, error) {
 	enrichmentCtx := enricher.EnrichmentContext{
 		FetchOpt:        enricher.UseCachesIfPossible,
@@ -191,10 +132,6 @@ func (h sbomHttpHandler) getSbom(ctx context.Context, params apiparams.SbomReque
 
 	if params.Force {
 		addForceToEnrichmentContext(&enrichmentCtx)
-<<<<<<< HEAD
-		enrichmentCtx.ScannerTypeHint = scannerTypes.ScannerV4
-=======
->>>>>>> 53168d49c7 (Fixed comments)
 	}
 
 	if params.Cluster != "" {
@@ -205,15 +142,7 @@ func (h sbomHttpHandler) getSbom(ctx context.Context, params apiparams.SbomReque
 		}
 		enrichmentCtx.ClusterID = clusterID
 	}
-<<<<<<< HEAD
-<<<<<<< HEAD
 	img, alreadyForcedEnrichment, err := h.enrichImage(ctx, enrichmentCtx, params.ImageName)
-=======
-	img, err, forceEnrichment := h.enrichImage(ctx, enrichmentCtx, params.ImageName)
->>>>>>> 53168d49c7 (Fixed comments)
-=======
-	img, alreadyForcedEnrichment, err := h.enrichImage(ctx, enrichmentCtx, params.ImageName)
->>>>>>> e87c06c130 (Fixed comments)
 	if err != nil {
 		return nil, err
 	}
@@ -227,40 +156,20 @@ func (h sbomHttpHandler) getSbom(ctx context.Context, params apiparams.SbomReque
 	if err != nil {
 		return nil, err
 	}
-<<<<<<< HEAD
-<<<<<<< HEAD
-
 	if !found && !params.Force && !alreadyForcedEnrichment {
 		// since index report for image does not exist force scan by scanner v4
 		addForceToEnrichmentContext(&enrichmentCtx)
-		enrichmentCtx.ScannerTypeHint = scannerTypes.ScannerV4
-=======
-	if !found && !params.Force && !forceEnrichment {
-=======
-	if !found && !params.Force && !alreadyForcedEnrichment {
->>>>>>> e87c06c130 (Fixed comments)
-		// since index report for image does not exist force scan by scanner v4
-		addForceToEnrichmentContext(&enrichmentCtx)
->>>>>>> 53168d49c7 (Fixed comments)
 		_, err = enricher.EnrichImageByName(ctx, h.enricher, enrichmentCtx, params.ImageName)
 		if err != nil {
 			return nil, err
 		}
-<<<<<<< HEAD
-=======
 		sbom, _, err = scannerV4.GetSBOM(img)
 
 		if err != nil {
 			return nil, err
 		}
 
->>>>>>> 53168d49c7 (Fixed comments)
 	}
-	sbom, _, err = scannerV4.GetSBOM(img)
-	if err != nil {
-		return nil, err
-	}
-
 	return sbom, nil
 }
 
@@ -279,14 +188,6 @@ func (h sbomHttpHandler) getScannerV4SBOMIntegration() (scannerTypes.SBOMer, err
 		}
 	}
 	return nil, errors.New("Scanner v4 integration not found")
-<<<<<<< HEAD
-}
-
-// scannedByScannerv4 checks if image is scanned by scanner v4
-func (h sbomHttpHandler) scannedByScannerv4(img *storage.Image) bool {
-	return img.GetScan().GetDataSource().GetId() == iiStore.DefaultScannerV4Integration.GetId()
-=======
->>>>>>> 53168d49c7 (Fixed comments)
 }
 
 // scannedByScannerv4 checks if image is scanned by scanner v4

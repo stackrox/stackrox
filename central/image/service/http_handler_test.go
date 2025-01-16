@@ -9,16 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/imageintegration"
-<<<<<<< HEAD
-<<<<<<< HEAD
 	"github.com/stackrox/rox/pkg/apiparams"
-=======
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
->>>>>>> 660b15f188 (Add image enrichment to handler)
-=======
-	"github.com/stackrox/rox/pkg/apiparams"
->>>>>>> e87c06c130 (Fixed comments)
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/enricher"
@@ -113,32 +104,15 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 		scanner := scannerTypesMocks.NewMockScannerSBOMer(ctrl)
 		fsr := scannerTypesMocks.NewMockImageScannerWithDataSource(ctrl)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-		reqBody := &apiparams.SbomRequestBody{
-			ImageName: "test-image",
-=======
-		var _ scannerTypes.Scanner = (*fakeScanner)(nil)
-
-		mockSbom.EXPECT().GetSBOM(gomock.Any(), gomock.Any()).Return(sbomBytes, nil, true).AnyTimes()
-=======
->>>>>>> 53168d49c7 (Fixed comments)
-		set := mocks.NewMockSet(ctrl)
-		fsr := newFakeRegistryScanner(opts{})
-		scannerSet.EXPECT().GetAll().Return([]scannerTypes.ImageScannerWithDataSource{fsr}).AnyTimes()
-=======
 		mockEnricher.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).Return(enricher.EnrichmentResult{ImageUpdated: true, ScanResult: enricher.ScanSucceeded}, nil).AnyTimes()
 		scanner.EXPECT().Type().Return(scannerTypes.ScannerV4).AnyTimes()
 		scanner.EXPECT().GetSBOM(gomock.Any()).DoAndReturn(getFakeSbom).AnyTimes()
->>>>>>> e87c06c130 (Fixed comments)
 		set.EXPECT().ScannerSet().Return(scannerSet).AnyTimes()
 		fsr.EXPECT().GetScanner().Return(scanner).AnyTimes()
 		scannerSet.EXPECT().GetAll().Return([]scannerTypes.ImageScannerWithDataSource{fsr}).AnyTimes()
 
 		reqBody := &apiparams.SbomRequestBody{
 			ImageName: "quay.io/quay-qetest/nodejs-test-image:latest",
->>>>>>> 660b15f188 (Add image enrichment to handler)
 			Force:     false,
 		}
 
