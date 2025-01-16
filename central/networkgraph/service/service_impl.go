@@ -167,7 +167,10 @@ func (s *serviceImpl) GetFlowsByEntity(ctx context.Context, request *v1.GetFlows
 		return nil, err
 	}
 
-	if entity.GetScope().GetClusterId() != request.GetClusterId() {
+	// Could be a global entity (clusterId == "") but verify against the
+	// request if it isn't.
+	entityClusterId := entity.GetScope().GetClusterId()
+	if entityClusterId != "" && entityClusterId != request.GetClusterId() {
 		return nil, errox.NotFound
 	}
 
