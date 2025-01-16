@@ -873,11 +873,12 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 
 		cluster = clusterByID
 	} else if clusterName != "" {
-		// A this point, we can be sure that the cluster does not exist.
+		// At this point, we can be sure that the cluster does not exist.
 		cluster = &storage.Cluster{
 			Name:               clusterName,
 			InitBundleId:       bundleID,
 			MostRecentSensorId: hello.GetDeploymentIdentification().CloneVT(),
+			SensorCapabilities: hello.GetCapabilities(),
 		}
 		clusterConfig := helmConfig.GetClusterConfig()
 		configureFromHelmConfig(cluster, clusterConfig)
@@ -918,10 +919,12 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 			}
 		}
 
-		if cluster.GetInitBundleId() == bundleID &&
+		if !sensorCapabilitiesChanged(cluster, hello) &&
+			cluster.GetInitBundleId() == bundleID &&
 			cluster.GetHelmConfig().GetConfigFingerprint() == helmConfig.GetClusterConfig().GetConfigFingerprint() &&
 			cluster.GetManagedBy() == manager {
 			// No change in either of
+			// * sensor capabilities
 			// * fingerprint of the Helm configuration
 			// * in init bundle ID
 			// * manager type
@@ -939,6 +942,7 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 	cluster = cluster.CloneVT()
 	cluster.ManagedBy = manager
 	cluster.InitBundleId = bundleID
+	cluster.SensorCapabilities = hello.GetCapabilities()
 	if manager == storage.ManagerType_MANAGER_TYPE_MANUAL {
 		cluster.HelmConfig = nil
 	} else {
@@ -954,6 +958,20 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 	}
 
 	return cluster, nil
+}
+
+func sensorCapabilitiesChanged(cluster *storage.Cluster, hello *central.SensorHello) bool {
+	if len(cluster.SensorCapabilities) != len(hello.GetCapabilities()) {
+		return true
+	}
+	for i, receivedCap := range hello.GetCapabilities() {
+		storedCap := cluster.SensorCapabilities[i]
+		if receivedCap != storedCap {
+			return true
+		}
+	}
+
+	return false
 }
 
 func normalizeCluster(cluster *storage.Cluster) error {
