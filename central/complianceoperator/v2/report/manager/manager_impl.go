@@ -618,8 +618,8 @@ func (m *managerImpl) validateScanConfigResults(result *watcher.ScanConfigWatche
 	return errList.ToError()
 }
 
-func (m *managerImpl) getReportData(scanConfig *storage.ComplianceOperatorScanConfigurationV2) *storage.ComplianceOperatorReportSnapshotV2_ScanConfig {
-	reportData, err := helpers.ConvertScanConfigurationToReportSnapshotScanConfig(m.automaticReportingCtx, scanConfig, m.scanConfigDataStore, m.suiteDataStore, m.bindingsDataStore)
+func (m *managerImpl) getReportData(scanConfig *storage.ComplianceOperatorScanConfigurationV2) *storage.ComplianceOperatorReportData {
+	reportData, err := helpers.ConvertScanConfigurationToReportData(m.automaticReportingCtx, scanConfig, m.scanConfigDataStore, m.suiteDataStore, m.bindingsDataStore)
 	if err != nil {
 		log.Warnf("Unable to convert ScanConfiguration %s to ReportData: %v", scanConfig.GetId(), err)
 		return nil

@@ -301,21 +301,11 @@ message ComplianceOperatorReportSnapshotV2 {
 
   repeated Scan scans = 7;
 
-  message NotifierInfo {
-    oneof notifier_config {
-      EmailNotifierConfiguration email_config = 1;
-    }
-  }
+  ComplianceOperatorReportData report_data = 8; // @gotags: search:"-"
+}
 
-  // Next available tag: 6
-  message BaseSettings {
-    bool one_time_scan = 1;
-    repeated string profiles = 2;
-    Schedule scan_schedule = 3;
-    string description = 4;
-    repeated NotifierInfo notifiers = 5;
-  }
-
+// Next available tag: 4
+message ComplianceOperatorReportData {
   // Next available tag: 5
   message SuiteStatus {
     string phase = 1;
@@ -333,20 +323,9 @@ message ComplianceOperatorReportSnapshotV2 {
     SuiteStatus suite_status = 4;
   }
 
-  // Next available tag: 9
-  message ScanConfig {
-    string id = 1;
-    string scan_name = 2;
-
-    BaseSettings scan_config = 3;
-
-    repeated ClusterStatus cluster_status = 4;
-    google.protobuf.Timestamp created_time = 5;
-    google.protobuf.Timestamp last_updated_time = 6;
-    SlimUser modified_by = 7;
-    google.protobuf.Timestamp last_executed_time = 8;
-  }
-  ScanConfig report_data = 8; // @gotags: search:"-"
+  ComplianceOperatorScanConfigurationV2 scan_configuration = 1; // @gotags: search:"-" sql:"-"
+  repeated ClusterStatus cluster_status = 2;
+  google.protobuf.Timestamp last_executed_time = 3;
 }
 
 // Next Tag: 7

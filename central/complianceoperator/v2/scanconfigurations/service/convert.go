@@ -248,44 +248,44 @@ func getLatestBindingError(status *storage.ComplianceOperatorStatus) string {
 	return ""
 }
 
-func convertStorageReportSnapshotScanConfigToV2ScanStatus(ctx context.Context, scanConfig *storage.ComplianceOperatorReportSnapshotV2_ScanConfig, notifierDS notifierDS.DataStore) (*v2.ComplianceScanConfigurationStatus, error) {
-	if scanConfig == nil {
+func convertStorageReportDataToV2ScanStatus(ctx context.Context, reportData *storage.ComplianceOperatorReportData, notifierDS notifierDS.DataStore) (*v2.ComplianceScanConfigurationStatus, error) {
+	if reportData == nil {
 		return nil, nil
 	}
-	notifiers := make([]*v2.NotifierConfiguration, 0, len(scanConfig.GetScanConfig().GetNotifiers()))
-	for _, notifierConfig := range scanConfig.GetScanConfig().GetNotifiers() {
-		notifier, found, err := notifierDS.GetNotifier(ctx, notifierConfig.GetEmailConfig().GetNotifierId())
+	notifiers := make([]*v2.NotifierConfiguration, 0, len(reportData.GetScanConfiguration().GetNotifiers()))
+	for _, notifierConfig := range reportData.GetScanConfiguration().GetNotifiers() {
+		notifier, found, err := notifierDS.GetNotifier(ctx, notifierConfig.GetId())
 		if err != nil {
 			return nil, err
 		}
 		if !found {
 			return nil, errors.Errorf("Notifier with ID %s no longer exists", notifierConfig.GetEmailConfig().GetNotifierId())
 		}
-		notifiers = append(notifiers, &v2.NotifierConfiguration{
-			NotifierName: notifier.GetName(),
-			NotifierConfig: &v2.NotifierConfiguration_EmailConfig{
-				EmailConfig: &v2.EmailNotifierConfiguration{
-					NotifierId:    notifierConfig.GetEmailConfig().GetNotifierId(),
-					MailingLists:  notifierConfig.GetEmailConfig().GetMailingLists(),
-					CustomSubject: notifierConfig.GetEmailConfig().GetCustomSubject(),
-					CustomBody:    notifierConfig.GetEmailConfig().GetCustomBody(),
-				},
-			},
-		})
+		notifierV2, err := convertProtoNotifierConfigToV2(notifierConfig, notifier.GetName())
+		if err != nil {
+			return nil, err
+		}
+		notifiers = append(notifiers, notifierV2)
 	}
 	return &v2.ComplianceScanConfigurationStatus{
-		Id:       scanConfig.GetId(),
-		ScanName: scanConfig.GetScanName(),
+		Id:       reportData.GetScanConfiguration().GetId(),
+		ScanName: reportData.GetScanConfiguration().GetScanConfigName(),
 		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
-			OneTimeScan:  scanConfig.GetScanConfig().GetOneTimeScan(),
-			Profiles:     scanConfig.GetScanConfig().GetProfiles(),
-			ScanSchedule: convertProtoScheduleToV2(scanConfig.GetScanConfig().GetScanSchedule()),
-			Description:  scanConfig.GetScanConfig().GetDescription(),
+			OneTimeScan: reportData.GetScanConfiguration().GetOneTimeScan(),
+			Profiles: func() []string {
+				ret := make([]string, 0, len(reportData.GetScanConfiguration().GetProfiles()))
+				for _, profile := range reportData.GetScanConfiguration().GetProfiles() {
+					ret = append(ret, profile.GetProfileName())
+				}
+				return ret
+			}(),
+			ScanSchedule: convertProtoScheduleToV2(reportData.GetScanConfiguration().GetSchedule()),
+			Description:  reportData.GetScanConfiguration().GetDescription(),
 			Notifiers:    notifiers,
 		},
 		ClusterStatus: func() []*v2.ClusterScanStatus {
-			ret := make([]*v2.ClusterScanStatus, 0, len(scanConfig.GetClusterStatus()))
-			for _, cluster := range scanConfig.GetClusterStatus() {
+			ret := make([]*v2.ClusterScanStatus, 0, len(reportData.GetClusterStatus()))
+			for _, cluster := range reportData.GetClusterStatus() {
 				ret = append(ret, &v2.ClusterScanStatus{
 					ClusterId:   cluster.GetClusterId(),
 					ClusterName: cluster.GetClusterName(),
@@ -300,13 +300,13 @@ func convertStorageReportSnapshotScanConfigToV2ScanStatus(ctx context.Context, s
 			}
 			return ret
 		}(),
-		CreatedTime:     scanConfig.GetCreatedTime(),
-		LastUpdatedTime: scanConfig.GetLastUpdatedTime(),
+		CreatedTime:     reportData.GetScanConfiguration().GetCreatedTime(),
+		LastUpdatedTime: reportData.GetScanConfiguration().GetLastUpdatedTime(),
 		ModifiedBy: &v2.SlimUser{
-			Id:   scanConfig.GetModifiedBy().GetId(),
-			Name: scanConfig.GetModifiedBy().GetName(),
+			Id:   reportData.GetScanConfiguration().GetModifiedBy().GetId(),
+			Name: reportData.GetScanConfiguration().GetModifiedBy().GetName(),
 		},
-		LastExecutedTime: scanConfig.GetLastExecutedTime(),
+		LastExecutedTime: reportData.GetLastExecutedTime(),
 	}, nil
 }
 
@@ -478,7 +478,7 @@ func convertStorageSnapshotToV2Snapshot(ctx context.Context, snapshot *storage.C
 	if !found {
 		return nil, errors.New("ScanConfiguration not found")
 	}
-	configStatus, err := convertStorageReportSnapshotScanConfigToV2ScanStatus(ctx, snapshot.GetReportData(), notifierDS)
+	configStatus, err := convertStorageReportDataToV2ScanStatus(ctx, snapshot.GetReportData(), notifierDS)
 	if err != nil {
 		log.Warnf("unable to convert the report snapshot scan config to v2: %v", err)
 	}

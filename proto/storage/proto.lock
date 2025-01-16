@@ -4792,7 +4792,7 @@
               {
                 "id": 8,
                 "name": "report_data",
-                "type": "ScanConfig"
+                "type": "ComplianceOperatorReportData"
               }
             ],
             "messages": [
@@ -4810,50 +4810,30 @@
                     "type": "google.protobuf.Timestamp"
                   }
                 ]
+              }
+            ]
+          },
+          {
+            "name": "ComplianceOperatorReportData",
+            "fields": [
+              {
+                "id": 1,
+                "name": "scan_configuration",
+                "type": "ComplianceOperatorScanConfigurationV2"
               },
               {
-                "name": "NotifierInfo",
-                "fields": [
-                  {
-                    "id": 1,
-                    "name": "email_config",
-                    "type": "EmailNotifierConfiguration",
-                    "oneof_parent": "notifier_config"
-                  }
-                ]
+                "id": 2,
+                "name": "cluster_status",
+                "type": "ClusterStatus",
+                "is_repeated": true
               },
               {
-                "name": "BaseSettings",
-                "fields": [
-                  {
-                    "id": 1,
-                    "name": "one_time_scan",
-                    "type": "bool"
-                  },
-                  {
-                    "id": 2,
-                    "name": "profiles",
-                    "type": "string",
-                    "is_repeated": true
-                  },
-                  {
-                    "id": 3,
-                    "name": "scan_schedule",
-                    "type": "Schedule"
-                  },
-                  {
-                    "id": 4,
-                    "name": "description",
-                    "type": "string"
-                  },
-                  {
-                    "id": 5,
-                    "name": "notifiers",
-                    "type": "NotifierInfo",
-                    "is_repeated": true
-                  }
-                ]
-              },
+                "id": 3,
+                "name": "last_executed_time",
+                "type": "google.protobuf.Timestamp"
+              }
+            ],
+            "messages": [
               {
                 "name": "SuiteStatus",
                 "fields": [
@@ -4902,52 +4882,6 @@
                     "id": 4,
                     "name": "suite_status",
                     "type": "SuiteStatus"
-                  }
-                ]
-              },
-              {
-                "name": "ScanConfig",
-                "fields": [
-                  {
-                    "id": 1,
-                    "name": "id",
-                    "type": "string"
-                  },
-                  {
-                    "id": 2,
-                    "name": "scan_name",
-                    "type": "string"
-                  },
-                  {
-                    "id": 3,
-                    "name": "scan_config",
-                    "type": "BaseSettings"
-                  },
-                  {
-                    "id": 4,
-                    "name": "cluster_status",
-                    "type": "ClusterStatus",
-                    "is_repeated": true
-                  },
-                  {
-                    "id": 5,
-                    "name": "created_time",
-                    "type": "google.protobuf.Timestamp"
-                  },
-                  {
-                    "id": 6,
-                    "name": "last_updated_time",
-                    "type": "google.protobuf.Timestamp"
-                  },
-                  {
-                    "id": 7,
-                    "name": "modified_by",
-                    "type": "SlimUser"
-                  },
-                  {
-                    "id": 8,
-                    "name": "last_executed_time",
-                    "type": "google.protobuf.Timestamp"
                   }
                 ]
               }
