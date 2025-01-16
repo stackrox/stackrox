@@ -330,7 +330,7 @@ class SACTest extends BaseSpecification {
                 "Deployment:${DEPLOYMENT_QA1.name},${DEPLOYMENT_QA2.name}"
         ).build()
 
-        def listQuery = ASOC.ListAlertsRequest.newBuilder.setQuery(
+        def listQuery = ASOC.ListAlertsRequest.newBuilder().setQuery(
                 "Deployment:${DEPLOYMENT_QA1.name},${DEPLOYMENT_QA2.name}"
         ).build()
 
