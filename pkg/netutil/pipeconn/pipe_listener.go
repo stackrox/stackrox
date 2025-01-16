@@ -39,6 +39,8 @@ type pipeListener struct {
 
 // NewPipeListener returns a net.Listener that accepts connections which are local pipe connections (i.e., via
 // net.Pipe()). It also returns a function that implements a context-aware dial.
+// Note: due to lack of buffering, this mechanism might be inappropriate for some protocols, such as TLS.
+// See https://github.com/golang/go/issues/71269#issuecomment-2592638836
 func NewPipeListener() (net.Listener, DialContextFunc) {
 	lis := &pipeListener{
 		closed:       concurrency.NewSignal(),
