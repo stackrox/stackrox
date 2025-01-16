@@ -3,22 +3,22 @@ package phonehome
 import (
 	"context"
 	"net/http"
-	"regexp"
-	"strings"
 
+	"github.com/gobwas/glob"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 )
 
+const NoHeaderOrAnyValuePattern = "*"
+
 // RequestParams holds intercepted call parameters.
 type RequestParams struct {
-	UserAgent string
-	UserID    authn.Identity
-	Method    string
-	Path      string
-	Code      int
-	GRPCReq   any
-	HTTPReq   *http.Request
-	// HTTP Headers or, for pure gRPC, the metadata.
+	UserID  authn.Identity
+	Method  string
+	Path    string
+	Code    int
+	GRPCReq any
+	HTTPReq *http.Request
+	// HTTP Headers or, for pure gRPC, the metadata. Includes the User-Agent.
 	Headers func(string) []string
 }
 
@@ -29,13 +29,10 @@ type ServiceMethod struct {
 	HTTPPath   string
 }
 
-// PathMatches returns true if Path equals to pattern or matches '*'-terminating
-// wildcard. E.g. path '/v1/object/id' will match pattern '/v1/object/*'.
+// PathMatches returns true if Path matches the glob pattern.
+// E.g. path '/v1/object/id' matches pattern '*/object/*'.
 func (rp *RequestParams) PathMatches(pattern string) bool {
-	if strings.HasSuffix(pattern, "*") {
-		return strings.HasPrefix(rp.Path, pattern[0:len(pattern)-1])
-	}
-	return rp.Path == pattern
+	return glob.MustCompile(pattern).Match(rp.Path)
 }
 
 // HasPathIn returns true if Path matches an element in patterns.
@@ -48,19 +45,9 @@ func (rp *RequestParams) HasPathIn(patterns []string) bool {
 	return false
 }
 
-// HasUserAgentWith returns true if UserAgent contains any of the sub-strings.
-func (rp *RequestParams) HasUserAgentWith(substrings []string) bool {
-	for _, pattern := range substrings {
-		if strings.Contains(rp.UserAgent, pattern) {
-			return true
-		}
-	}
-	return false
-}
-
 func hasValueMatching(values []string, expression string) bool {
 	for _, value := range values {
-		if ok, _ := regexp.MatchString(expression, value); ok {
+		if glob.MustCompile(expression).Match(value) {
 			return true
 		}
 	}
@@ -72,7 +59,7 @@ func hasValueMatching(values []string, expression string) bool {
 // for this header.
 func (rp *RequestParams) HasHeader(patterns map[string]string) bool {
 	for header, expression := range patterns {
-		if expression == "" {
+		if expression == NoHeaderOrAnyValuePattern {
 			continue
 		}
 		if rp.Headers == nil {

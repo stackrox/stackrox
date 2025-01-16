@@ -19,7 +19,7 @@ func Test_getKey(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func Test_agetRuntimeConfig(t *testing.T) {
+func Test_getRuntimeConfig(t *testing.T) {
 	const devVersion = "4.4.1-dev"
 	const remoteKey = "remotekey"
 

@@ -4,15 +4,14 @@ import (
 	"strings"
 )
 
-// APICallCampaignCriterion defines a criterion for an API interception of a telemetry
-// campaign. Requests parameters need to match all fields for the request to
-// be tracked. Any request matches empty criterion.
+// APICallCampaignCriterion defines a criterion for an API interception of a
+// telemetry campaign. Requests parameters need to match all fields for the
+// request to be tracked. Any request matches empty criterion.
 type APICallCampaignCriterion struct {
-	UserAgents     []string          `json:"user_agents,omitempty"`
-	PathPatterns   []string          `json:"path_patterns,omitempty"`
-	Methods        []string          `json:"methods,omitempty"`
-	Codes          []int32           `json:"codes,omitempty"`
-	HeaderPatterns map[string]string `json:"header_patterns,omitempty"`
+	Paths   []string          `json:"paths,omitempty"`
+	Methods []string          `json:"methods,omitempty"`
+	Codes   []int32           `json:"codes,omitempty"`
+	Headers map[string]string `json:"headers,omitempty"`
 }
 
 // APICallCampaign defines an API interception telemetry campaign as a list of
@@ -38,9 +37,8 @@ func (c *APICallCampaignCriterion) IsFulfilled(rp *RequestParams) bool {
 	}
 
 	return codeMatches && methodMatches &&
-		(c.PathPatterns == nil || rp.HasPathIn(c.PathPatterns)) &&
-		(c.UserAgents == nil || rp.HasUserAgentWith(c.UserAgents)) &&
-		(c.HeaderPatterns == nil || rp.HasHeader(c.HeaderPatterns))
+		(c.Paths == nil || rp.HasPathIn(c.Paths)) &&
+		(c.Headers == nil || rp.HasHeader(c.Headers))
 }
 
 func (c APICallCampaign) IsFulfilled(rp *RequestParams) bool {

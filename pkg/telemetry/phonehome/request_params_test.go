@@ -2,7 +2,6 @@ package phonehome
 
 import (
 	"net/http"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -79,7 +78,7 @@ func Test_hasPathIn(t *testing.T) {
 		{"abc", []string{"abcd"}},
 		{"abc", []string{"x*"}},
 		{"abc", []string{"def", "abcd"}},
-		{"abc", []string{"ab*c"}},
+		{"abc", []string{"ab?c"}},
 		{"abc", []string{"ab"}},
 		{"*", []string{"abc"}},
 	}
@@ -87,29 +86,6 @@ func Test_hasPathIn(t *testing.T) {
 	for _, pp := range falseCases {
 		rp.Path = pp.path
 		assert.False(t, rp.HasPathIn(pp.paths), pp.path, " in ", pp.paths)
-	}
-}
-
-func TestHasUserAgentIn(t *testing.T) {
-	rp := RequestParams{
-		UserAgent: "Some Agent Value",
-	}
-	tests := map[string]bool{
-		"Ogent,Agent,Ugent":  true,
-		"Ogent,Xgent,Ugent":  false,
-		"Ogent,Agen,Ugent":   true,
-		"Ogent,AgentX,Ugent": false,
-		"Agen":               true,
-		"gent":               true,
-		"Some":               true,
-		"Value":              true,
-		"Some Agent":         true,
-		"A,Ag,Age":           true,
-	}
-	for substrings, match := range tests {
-		t.Run(substrings, func(t *testing.T) {
-			assert.Equal(t, match, rp.HasUserAgentWith(strings.Split(substrings, ",")))
-		})
 	}
 }
 
@@ -127,7 +103,7 @@ func TestHasHeader(t *testing.T) {
 
 	assert.True(t, (&RequestParams{}).HasHeader(nil))
 	assert.False(t, (&RequestParams{}).HasHeader(map[string]string{"header": "value"}))
-	assert.True(t, (&RequestParams{}).HasHeader(map[string]string{"header": ""}))
+	assert.True(t, (&RequestParams{}).HasHeader(map[string]string{"header": NoHeaderOrAnyValuePattern}))
 
 	tests := map[string]struct {
 		patterns map[string]string
@@ -144,53 +120,53 @@ func TestHasHeader(t *testing.T) {
 		},
 		"empty matching": {
 			patterns: map[string]string{
-				"empty": "",
+				"empty": NoHeaderOrAnyValuePattern,
 			},
 			expected: true,
 		},
 		"unknown empty": {
 			patterns: map[string]string{
-				"third": "",
+				"third": NoHeaderOrAnyValuePattern,
 			},
 			expected: true,
 		},
 		"one": {
 			patterns: map[string]string{
-				"one": "on.",
+				"one": "on?",
 			},
 			expected: true,
 		},
 		"one-two": {
 			patterns: map[string]string{
-				"two": "^two$",
+				"two": "two",
 			},
 			expected: true,
 		},
 		"no match": {
 			patterns: map[string]string{
-				"three": "x.*",
+				"three": "x*",
 			},
 			expected: false,
 		},
 		"one of multiple match": {
 			patterns: map[string]string{
-				"one": "on.",
+				"one": "on?",
 				"two": "x",
 			},
 			expected: false,
 		},
 		"all of multiple match": {
 			patterns: map[string]string{
-				"one": "on.",
-				"two": "^two$",
+				"one": "on?",
+				"two": "two",
 			},
 			expected: true,
 		},
 		"one of multiple doesn't exist": {
 			patterns: map[string]string{
-				"one":   "on.",
-				"two":   "^two$",
-				"three": "th.*",
+				"one":   "on?",
+				"two":   "two",
+				"three": "th*",
 			},
 			expected: false,
 		},

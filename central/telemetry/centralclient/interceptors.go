@@ -7,44 +7,64 @@ import (
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 )
 
+// The header is set by the RHACS ServiceNow integration.
 const snowIntegrationHeader = "Rh-ServiceNow-Integration"
-const anyValueOrMissing = ""
+const userAgentHeaderKey = "User-Agent"
 
 var (
 	ignoredPaths = []string{"/v1/ping", "/v1.PingService/Ping", "/v1/metadata", "/static/*"}
 
-	telemetryCampaign = phonehome.APICallCampaign{
+	telemetryCampaign = append(phonehome.APICallCampaign{
 		{
-			UserAgents: []string{"roxctl"},
-			HeaderPatterns: map[string]string{
-				clientconn.RoxctlCommandHeader:      anyValueOrMissing,
-				clientconn.RoxctlCommandIndexHeader: anyValueOrMissing,
-				clientconn.ExecutionEnvironment:     anyValueOrMissing,
+			Headers: map[string]string{
+				userAgentHeaderKey:                  "*roxctl*",
+				clientconn.RoxctlCommandHeader:      phonehome.NoHeaderOrAnyValuePattern,
+				clientconn.RoxctlCommandIndexHeader: phonehome.NoHeaderOrAnyValuePattern,
+				clientconn.ExecutionEnvironment:     phonehome.NoHeaderOrAnyValuePattern,
 			},
 		},
 		{
-			UserAgents:   []string{"ServiceNow"},
-			PathPatterns: []string{"/v1/clusters"},
-			HeaderPatterns: map[string]string{
-				snowIntegrationHeader: anyValueOrMissing,
+			Paths: []string{"/v1/clusters"},
+			Headers: map[string]string{
+				userAgentHeaderKey:    "*ServiceNow*",
+				snowIntegrationHeader: phonehome.NoHeaderOrAnyValuePattern,
 			},
 		},
-		{PathPatterns: strings.FieldsFunc(apiWhiteList.Setting(),
-			func(r rune) bool { return r == ',' })},
-		{UserAgents: strings.FieldsFunc(userAgentsList.Setting(),
-			func(r rune) bool { return r == ',' })},
-	}
+		{
+			Paths: splitString(apiWhiteList.Setting(), ','),
+			Headers: map[string]string{
+				userAgentHeaderKey: phonehome.NoHeaderOrAnyValuePattern,
+			},
+		},
+	}, userAgentsCampaigns()...)
 
 	interceptors = map[string][]phonehome.Interceptor{
 		"API Call": {apiCall, addDefaultProps, addCustomHeaders},
 	}
 )
 
+// splitString splits the string s by the sep separator, returning an empty
+// slice for empty input string.
+func splitString(s string, sep rune) []string {
+	return strings.FieldsFunc(s, func(r rune) bool { return r == sep })
+}
+
+func userAgentsCampaigns() []phonehome.APICallCampaignCriterion {
+	result := []phonehome.APICallCampaignCriterion{}
+	for _, ua := range splitString(userAgentsList.Setting(), ',') {
+		result = append(result, phonehome.APICallCampaignCriterion{
+			Headers: map[string]string{
+				userAgentHeaderKey: ua,
+			},
+		})
+	}
+	return result
+}
+
 func addDefaultProps(rp *phonehome.RequestParams, props map[string]any) bool {
 	props["Path"] = rp.Path
 	props["Code"] = rp.Code
 	props["Method"] = rp.Method
-	props["User-Agent"] = rp.UserAgent
 	return true
 }
 
@@ -59,8 +79,11 @@ func apiCall(rp *phonehome.RequestParams, _ map[string]any) bool {
 // addCustomHeaders adds additional properties to the event if the telemetry
 // campaign contains a header pattern condition.
 func addCustomHeaders(rp *phonehome.RequestParams, props map[string]any) bool {
+	if rp.Headers == nil {
+		return true
+	}
 	for _, c := range telemetryCampaign {
-		for header := range c.HeaderPatterns {
+		for header := range c.Headers {
 			values := rp.Headers(header)
 			if len(values) != 0 {
 				props[header] = strings.Join(values, "; ")
