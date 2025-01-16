@@ -749,7 +749,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		},
 		{
 			Route:         "/api/v1/images/sbom",
-			Authorizer:    user.With(permissions.Modify(permissions.WithLegacyAuthForSAC(resources.Image, true))),
+			Authorizer:    user.With(permissions.Modify(resources.Image)),
 			ServerHandler: imageService.SBOMHandler(imageintegration.Set(), enrichment.ImageEnricherSingleton(), sachelper.NewClusterSacHelper(clusterDataStore.Singleton())),
 			Compression:   true,
 		},
