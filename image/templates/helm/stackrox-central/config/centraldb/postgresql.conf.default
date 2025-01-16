@@ -12,7 +12,7 @@ shared_buffers = 2GB
 work_mem = 40MB
 maintenance_work_mem = 512MB
 effective_cache_size = 4GB
-hashMemMultiplier = 2.0
+hash_mem_multiplier = 2.0
 
 dynamic_shared_memory_type = posix
 max_wal_size = 5GB
