@@ -302,7 +302,7 @@ func (c *nodeInventoryHandlerImpl) sendNodeIndex(toC chan<- *message.ExpiringMes
 	isRHCOS, version, err := c.nodeRHCOSMatcher.GetRHCOSVersion(indexWrap.NodeName)
 	if err != nil {
 		log.Warnf("Unable to determine RHCOS version for node %q: %v", indexWrap.NodeName, err)
-		return
+		isRHCOS = false
 	}
 	log.Debugf("Node=%q discovered RHCOS=%t rhcos-version=%q", indexWrap.NodeName, isRHCOS, version)
 
