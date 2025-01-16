@@ -87,7 +87,8 @@ func isUnimplemented(err error) bool {
 	return spb.Code() == codes.Unimplemented
 }
 
-func communicateWithAutoSensedEncoding(ctx context.Context, client central.SensorServiceClient) (central.SensorService_CommunicateClient, error) {
+// CommunicateWithAutoSensedEncoding creates a bidirectional stream (optionally using gzip compression) for a given SensorServiceClient.
+func CommunicateWithAutoSensedEncoding(ctx context.Context, client central.SensorServiceClient) (central.SensorService_CommunicateClient, error) {
 	opts := []grpc.CallOption{grpc.UseCompressor(gzip.Name)}
 
 	for {
@@ -180,7 +181,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 		return
 	}
 
-	stream, err = communicateWithAutoSensedEncoding(ctx, client)
+	stream, err = CommunicateWithAutoSensedEncoding(ctx, client)
 	if err != nil {
 		s.stopper.Flow().StopWithError(err)
 		return

@@ -66,4 +66,8 @@ const (
 
 	// SecuredClusterCertificatesRefresh identifies the capability to maintain the Secured Cluster TLS certificates refreshed
 	SecuredClusterCertificatesRefresh SensorCapability = "SecuredClusterCertificatesRefresh"
+
+	// ClusterRegistrationSecretSupported identifies the capability of Central to register new secured clusters
+	// using a Cluster Registration Secret (CRS).
+	ClusterRegistrationSecretSupported = "ClusterRegistrationSecretSupported"
 )
