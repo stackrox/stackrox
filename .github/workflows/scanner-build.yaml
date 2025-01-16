@@ -240,7 +240,7 @@ jobs:
       run: echo "BUILD_TAG=$(make -C scanner --quiet --no-print-directory tag)-rcd" >> "$GITHUB_ENV"
 
     - name: Build Scanner and ScannerDB images
-      run: make -C scanner GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} images
+      run: scripts/lib.sh retry 6 true make -C scanner GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} images
 
     - name: Push Scanner and ScannerDB images
       # Skip for external contributions.
