@@ -16,9 +16,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Test output from central is streamed to stdout as is.
-// Test cli flags are part of http request and flags are recived by server
-
 var (
 	fakeSBOM   = `{"fake":"sbom"}`
 	fakeImgRef = "image.invalid/noexist:latest"

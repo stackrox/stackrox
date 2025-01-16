@@ -9,6 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/pkg/apiparams"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
@@ -74,12 +75,8 @@ func (i *imageSBOMCommand) construct(cobraCmd *cobra.Command) error {
 		return errors.Wrap(err, "creating HTTP client")
 	}
 
-	// Create the request body.
-	req := struct {
-		Cluster   string `json:"cluster"`
-		ImageName string `json:"imageName"`
-		Force     bool   `json:"force"`
-	}{
+	// Create the request.
+	req := apiparams.SbomRequestBody{
 		Cluster:   i.cluster,
 		ImageName: i.image,
 		Force:     i.force,
