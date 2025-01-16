@@ -8,8 +8,10 @@ import (
 
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store/postgres"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
@@ -88,4 +90,54 @@ func (s *AlertsSearchSuite) TestSearch() {
 	results, err = s.searcher.Search(ctx, q, true)
 	s.NoError(err)
 	s.Len(results, 0)
+}
+
+func (s *AlertsSearchSuite) TestSearchResolved() {
+	ids := []string{fixtureconsts.Alert1, fixtureconsts.Alert2, fixtureconsts.Alert3, fixtureconsts.Alert4}
+	for i, id := range ids {
+		alert := fixtures.GetAlert()
+		alert.Id = id
+		alert.EntityType = storage.Alert_DEPLOYMENT
+		alert.PlatformComponent = false
+		if i >= 2 {
+			alert.State = storage.ViolationState_RESOLVED
+		}
+		s.NoError(s.store.Upsert(ctx, alert))
+		foundAlert, exists, err := s.store.Get(ctx, id)
+		s.True(exists)
+		s.NoError(err)
+		protoassert.Equal(s.T(), alert, foundAlert)
+	}
+	results, err := s.searcher.Search(ctx, &v1.Query{}, false)
+	s.NoError(err)
+	s.Len(results, 4)
+
+	results, err = s.searcher.Search(ctx, &v1.Query{}, true)
+	s.NoError(err)
+	s.Len(results, 2)
+}
+
+func (s *AlertsSearchSuite) TestCountResolved() {
+	ids := []string{fixtureconsts.Alert1, fixtureconsts.Alert2, fixtureconsts.Alert3, fixtureconsts.Alert4}
+	for i, id := range ids {
+		alert := fixtures.GetAlert()
+		alert.Id = id
+		alert.EntityType = storage.Alert_DEPLOYMENT
+		alert.PlatformComponent = false
+		if i >= 2 {
+			alert.State = storage.ViolationState_RESOLVED
+		}
+		s.NoError(s.store.Upsert(ctx, alert))
+		foundAlert, exists, err := s.store.Get(ctx, id)
+		s.True(exists)
+		s.NoError(err)
+		protoassert.Equal(s.T(), alert, foundAlert)
+	}
+	results, err := s.searcher.Count(ctx, &v1.Query{}, false)
+	s.NoError(err)
+	s.Equal(results, 4)
+
+	results, err = s.searcher.Count(ctx, &v1.Query{}, true)
+	s.NoError(err)
+	s.Equal(results, 2)
 }
