@@ -11,6 +11,7 @@ import orchestratormanager.OrchestratorTypes
 
 import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
 import io.stackrox.proto.api.v1.NamespaceServiceOuterClass
+import io.stackrox.proto.api.v1.AlertServiceOuterClass as ASOC
 import io.stackrox.proto.api.v1.SearchServiceOuterClass as SSOC
 import io.stackrox.proto.storage.DeploymentOuterClass
 import io.stackrox.proto.storage.RoleOuterClass
@@ -329,6 +330,10 @@ class SACTest extends BaseSpecification {
                 "Deployment:${DEPLOYMENT_QA1.name},${DEPLOYMENT_QA2.name}"
         ).build()
 
+        def listQuery = ASOC.ListAlertsRequest.newBuilder.setQuery(
+                "Deployment:${DEPLOYMENT_QA1.name},${DEPLOYMENT_QA2.name}"
+        ).build()
+
         when:
         def alertsCount = { String tokenName ->
             BaseService.useBasicAuth()
@@ -336,12 +341,32 @@ class SACTest extends BaseSpecification {
             AlertService.alertClient.countAlerts(query).count
         }
 
+        def alertsSearch = { String tokenName ->
+            BaseService.useBasicAuth()
+            useToken(tokenName)
+            AlertService.alertClient.listAlerts(listQuery).alerts
+        }
+
         then:
         assert alertsCount(NOACCESSTOKEN) == 0
+
+        allAccessAlertsCount = alertsCount(ALLACCESSTOKEN)
+        qa1AccessAlertsCount = alertsCount("getSummaryCountsToken")
         // getSummaryCountsToken has access only to QA1 deployment while
         // ALLACCESSTOKEN has access to QA1 and QA2. Since deployments are identical
         // number of alerts for ALLACCESSTOKEN should be twice of getSummaryCountsToken.
+        if 2 * qa1AccessAlertsCount != allAccessAlertsCount {
+            allAccessAlerts = alertsSearch(ALLACCESSTOKEN)
+            qa1AccessAlerts = alertsSearch("getSummaryCountsToken")
+            ListAlertsResponse[] qa1AccessAlertsFromAll
+            for ( alert in allAccessAlerts ) {
+                if alert.deployment.name == DEPLOYMENT_QA1.name {
+                    qa1AccessAlertsFromAll.add(alert)
+                }
+            }
+            assert qa1AccessAlerts == qa1AccessAlertsFromAll
         assert 2 * alertsCount("getSummaryCountsToken") == alertsCount(ALLACCESSTOKEN)
+        }
     }
 
     def "Verify ListSecrets using a token without access receives no results"() {
