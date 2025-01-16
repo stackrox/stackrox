@@ -113,6 +113,7 @@ admissionControl:
   hostAliases: null # [dict]
   priorityClassName: null # string
   namespaceSelector: null # dict
+  failurePolicy: null # string
 collector:
   forceCollectionMethod: null # bool
   collectionMethod: null # string
