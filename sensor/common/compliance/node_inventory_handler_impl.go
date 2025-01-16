@@ -25,10 +25,14 @@ var (
 	errIndexInputChanClosed     = errors.New("channel receiving node indexes is closed")
 	errStartMoreThanOnce        = errors.New("unable to start the component more than once")
 	rhcosOSImageRegexp          = regexp.MustCompile(`(Red Hat Enterprise Linux) (CoreOS) ([0-9.-]+)`)
+	rhcosPackageId              = 666
 )
 
 const (
 	rhcosFullName = "Red Hat Enterprise Linux CoreOS"
+	// From ClairCore rhel-vex matcher
+	goldenName = "Red Hat Container Catalog"
+	goldenURI  = `https://catalog.redhat.com/software/containers/explore`
 )
 
 type nodeInventoryHandlerImpl struct {
@@ -310,33 +314,20 @@ func (c *nodeInventoryHandlerImpl) sendNodeIndex(toC chan<- *message.ExpiringMes
 			metrics.ObserveReceivedNodeIndex(indexWrap.NodeName) // keeping for compatibility with 4.6. Remove in 4.8
 			metrics.ObserveNodeScan(indexWrap.NodeName, metrics.NodeScanTypeNodeIndex, metrics.NodeScanOperationSendToCentral)
 		}()
-		if !isRHCOS {
-			log.Debugf("Node %q is not RHCOS. OS=%s", indexWrap.NodeName, version)
-			// Send the regular rpm node-index
-			toC <- message.New(&central.MsgFromSensor{
-				Msg: &central.MsgFromSensor_Event{
-					Event: &central.SensorEvent{
-						Id: indexWrap.NodeID,
-						// ResourceAction_UNSET_ACTION_RESOURCE is the only one supported by Central 4.6 and older.
-						// This can be changed to CREATE or UPDATE for Sensor 4.8 or when Central 4.6 is out of support.
-						Action: central.ResourceAction_UNSET_ACTION_RESOURCE,
-						Resource: &central.SensorEvent_IndexReport{
-							IndexReport: indexWrap.IndexReport,
-						},
-					},
-				},
-			})
-			return
+		irWrapperFunc := passthruRPM
+		if isRHCOS {
+			log.Debugf("Attaching OCI entry for 'rhcos' to index-report: version=%s", version)
+			irWrapperFunc = attachRPMtoRHCOS
 		}
-		log.Debugf("Attaching OCI entry for 'rhcos' to index-report: version=%s", version)
-		// Combine rpm index with rhcos OCI index
 		toC <- message.New(&central.MsgFromSensor{
 			Msg: &central.MsgFromSensor_Event{
 				Event: &central.SensorEvent{
-					Id:     indexWrap.NodeID,
+					Id: indexWrap.NodeID,
+					// ResourceAction_UNSET_ACTION_RESOURCE is the only one supported by Central 4.6 and older.
+					// This can be changed to CREATE or UPDATE for Sensor 4.8 or when Central 4.6 is out of support.
 					Action: central.ResourceAction_UNSET_ACTION_RESOURCE,
 					Resource: &central.SensorEvent_IndexReport{
-						IndexReport: createRHCOSIndexReport("666", version, indexWrap.IndexReport),
+						IndexReport: irWrapperFunc(version, indexWrap.IndexReport),
 					},
 				},
 			},
@@ -363,18 +354,40 @@ func normalizeVersion(version string) []int32 {
 	if err2 != nil {
 		i2 = 0
 	}
-	// Only two first fields matter for the db query.
-	// Final decision is done with full string compare.
+	// Only two first fields matter for the initial db query.
+	// The results of that query will be filtered further using string compare of the Version field.
 	return []int32{int32(i1), int32(i2), 0}
 }
 
-func createRHCOSIndexReport(Id, version string, rpm *v4.IndexReport) *v4.IndexReport {
-	const goldenName = "Red Hat Container Catalog"
-	const goldenURI = `https://catalog.redhat.com/software/containers/explore`
+func passthruRPM(_ string, rpm *v4.IndexReport) *v4.IndexReport {
+	return rpm
+}
 
-	oci := &v4.IndexReport{
+func idOK[T any](m map[string]T, id int) bool {
+	_, exists := m[strconv.Itoa(id)]
+	return exists
+}
+
+func attachRPMtoRHCOS(version string, rpm *v4.IndexReport) *v4.IndexReport {
+	idCandidate := rhcosPackageId
+	for !idOK(rpm.GetContents().GetEnvironments(), idCandidate) {
+		idCandidate++
+	}
+	strID := strconv.Itoa(idCandidate)
+	oci := buildRHCOSIndexReport(strID, version)
+	oci.Contents.Packages = append(oci.Contents.Packages, rpm.GetContents().GetPackages()...)
+	oci.Contents.Repositories = append(oci.Contents.Repositories, rpm.GetContents().GetRepositories()...)
+	for envId, list := range rpm.GetContents().GetEnvironments() {
+		oci.Contents.Environments[envId] = list
+	}
+	oci.Contents.Distributions = rpm.GetContents().GetDistributions()
+	return oci
+}
+
+func buildRHCOSIndexReport(Id, version string) *v4.IndexReport {
+	return &v4.IndexReport{
 		// This hashId is arbitrary. The value doesn't play a role for matcher, but must be valid sha256.
-		HashId:  "sha256:e0029d0072ef47a27d4dc34e317eedd232a9fa5e1082d75be51798b53f898070",
+		HashId:  "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 		State:   Id, // IndexFinished
 		Success: true,
 		Err:     "",
@@ -384,9 +397,9 @@ func createRHCOSIndexReport(Id, version string, rpm *v4.IndexReport) *v4.IndexRe
 					Id:      Id,
 					Name:    "rhcos",
 					Version: version,
-					NormalizedVersion: &v4.NormalizedVersion{ // required both values!
+					NormalizedVersion: &v4.NormalizedVersion{
 						Kind: "rhctag",
-						V:    normalizeVersion(version), // only two first fields matter for rhel-vex
+						V:    normalizeVersion(version), // Only two first fields matter for the db-query.
 					},
 					FixedInVersion: "",
 					Kind:           "binary",
@@ -394,7 +407,7 @@ func createRHCOSIndexReport(Id, version string, rpm *v4.IndexReport) *v4.IndexRe
 						Id:  Id,
 						Cpe: "cpe:2.3:*", // required to pass validation of scanner V4 API
 					},
-					Arch: "x86_64",
+					Arch: "",
 					Cpe:  "cpe:2.3:*", // required to pass validation of scanner V4 API
 				},
 			},
@@ -413,7 +426,7 @@ func createRHCOSIndexReport(Id, version string, rpm *v4.IndexReport) *v4.IndexRe
 					Environments: []*v4.Environment{
 						{
 							PackageDb: "",
-							// IntroducedIn must be a valid sha256, but value is not important.
+							// IntroducedIn must be a valid sha256, but the value is not important.
 							IntroducedIn:  "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 							RepositoryIds: []string{Id},
 						},
@@ -422,16 +435,4 @@ func createRHCOSIndexReport(Id, version string, rpm *v4.IndexReport) *v4.IndexRe
 			},
 		},
 	}
-	// TODO: check for potential ID collisions
-	oci.Contents.Packages = append(oci.Contents.Packages, rpm.GetContents().GetPackages()...)
-	oci.Contents.Repositories = append(oci.Contents.Repositories, rpm.GetContents().GetRepositories()...)
-	for envId, list := range rpm.GetContents().GetEnvironments() {
-		if _, exists := oci.Contents.Environments[envId]; exists {
-			log.Warnf("Environment ID %q already exists in index-report. FIXME!", envId)
-		} else {
-			oci.Contents.Environments[envId] = list
-		}
-	}
-	oci.Contents.Distributions = rpm.GetContents().GetDistributions()
-	return oci
 }
