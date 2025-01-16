@@ -63,8 +63,8 @@ All EPSS data integrated by Scanner V4 are fetched from https://epss.cyentia.com
 
 The [`claircore.EPSS` enricher](https://github.com/quay/claircore/blob/main/enricher/epss/epss.go) is used for data fetching, parsing and enriching, as a component of Scanner V4.
 
-All EPSS data integrated to Scanner V4 corresponds to the day prior to the current date, as this approach reduces the likelihood of failure compared to fetching the current date's data, which may not always be ready.
-
+All workflows in GitHub Actions, including those running cron jobs, operate in UTC. Similarly, the EPSS data example aligns with UTC, as shown in the timestamp: `score_date:2025-01-10T00:00:00+0000`. 
+All EPSS data integrated into Scanner V4 corresponds to the previous day in UTC. This approach minimizes the risk of failures caused by fetching data for the current UTC date, which may not yet be available.
 To include the EPSS details in Scanner V4, the protobuf message will be extended to:
 
 ```
@@ -117,6 +117,7 @@ message VulnerabilityReport {
 Without loss of generality, RHSA/RHBA/RHEA will just be referred to as the more well-known RHSA variant of the three.
 Scanner V4 currently displays RHSA as the top-level entity rather than the related CVE(s) when the CVE(s) are fixed. 
 Meanwhile, all EPSS data are CVE-centric. In Scanner V4, the EPSS score for an RHSA will be the highest EPSS score among all CVEs linked to that RHSA, as multiple CVEs can be associated with a single RHSA.
+This approach matches our current scheme for assigning an RHSA a CVSS score
 
 ## Consequences
 
