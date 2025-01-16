@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/klauspost/compress/snappy"
 	"github.com/quay/zlog"
@@ -27,6 +28,7 @@ func TestParseEnrichment(t *testing.T) {
 		filename            string
 		expectedName        string
 		expectedDescription string
+		expectedReleaseDate time.Time
 		expectedSeverity    string
 		expectedCVSSv3      CVSS
 	}{
@@ -35,6 +37,7 @@ func TestParseEnrichment(t *testing.T) {
 			filename:            "testdata/rhba-2024_0599.jsonl",
 			expectedName:        "RHBA-2024:0599",
 			expectedDescription: "Red Hat Bug Fix Advisory: Migration Toolkit for Applications bug fix and enhancement update",
+			expectedReleaseDate: time.Date(2024, time.January, 30, 13, 46, 48, 0, time.UTC),
 			expectedSeverity:    "Important",
 			expectedCVSSv3: CVSS{
 				Score:  7.5,
@@ -46,6 +49,7 @@ func TestParseEnrichment(t *testing.T) {
 			filename:            "testdata/rhsa-2024_0024.jsonl",
 			expectedName:        "RHSA-2024:0024",
 			expectedDescription: "Red Hat Security Advisory: firefox security update",
+			expectedReleaseDate: time.Date(2024, time.January, 2, 8, 30, 42, 0, time.UTC),
 			expectedSeverity:    "Important",
 			expectedCVSSv3: CVSS{
 				Score:  8.8,
@@ -107,6 +111,9 @@ func TestParseEnrichment(t *testing.T) {
 			}
 			if record.Description != tc.expectedDescription {
 				t.Errorf("expected %s but got %s", tc.expectedDescription, record.Description)
+			}
+			if record.ReleaseDate != tc.expectedReleaseDate {
+				t.Errorf("expected %s but got %s", tc.expectedReleaseDate, record.ReleaseDate)
 			}
 			if record.Severity != tc.expectedSeverity {
 				t.Errorf("expected %s but got %s", tc.expectedSeverity, record.Severity)
