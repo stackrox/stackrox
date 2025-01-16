@@ -1,93 +1,10 @@
 package phonehome
 
 import (
-	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
-
-func TestRequestParams_Is(t *testing.T) {
-	assert.True(t, (&RequestParams{}).
-		Is(&ServiceMethod{}),
-	)
-	assert.True(t, (&RequestParams{Method: "/v1.service/method"}).
-		Is(&ServiceMethod{GRPCMethod: "/v1.service/method"}),
-	)
-	assert.True(t, (&RequestParams{Method: "CONNECT", Path: "/v1/method"}).
-		Is(&ServiceMethod{HTTPMethod: http.MethodConnect, HTTPPath: "/v1/method"}),
-	)
-	assert.True(t, (&RequestParams{Method: "CONNECT", Path: "/v1/method"}).
-		Is(&ServiceMethod{GRPCMethod: "different", HTTPMethod: http.MethodConnect, HTTPPath: "/v1/method"}),
-	)
-	assert.True(t, (&RequestParams{Method: "PUT", Path: "/v1/object/id"}).
-		Is(&ServiceMethod{HTTPMethod: http.MethodPut, HTTPPath: "/v1/object/*"}),
-	)
-	assert.True(t, (&RequestParams{Method: "PUT", Path: "/v1/object/id"}).
-		Is(&ServiceMethod{GRPCMethod: "different", HTTPMethod: http.MethodPut, HTTPPath: "/v1/object/*"}),
-	)
-
-	assert.False(t, (&RequestParams{Method: "some path"}).
-		Is(&ServiceMethod{}),
-	)
-	assert.False(t, (&RequestParams{Path: "/v2.service/method"}).
-		Is(&ServiceMethod{GRPCMethod: "/v1.service/method"}),
-	)
-	assert.False(t, (&RequestParams{Method: "CONNECT", Path: "/v2/method"}).
-		Is(&ServiceMethod{HTTPMethod: http.MethodConnect, HTTPPath: "/v1/method"}),
-	)
-	assert.False(t, (&RequestParams{Method: "GET", Path: "/v1/method"}).
-		Is(&ServiceMethod{HTTPMethod: http.MethodConnect, HTTPPath: "/v1/method"}),
-	)
-	assert.False(t, (&RequestParams{Method: "GET", Path: "/v1/method"}).
-		Is(&ServiceMethod{GRPCMethod: "/v1/method"}),
-	)
-	assert.False(t, (&RequestParams{Method: "PUT", Path: "/v1/objects"}).
-		Is(&ServiceMethod{HTTPMethod: http.MethodPut, HTTPPath: "/v1/object/id"}),
-	)
-	assert.False(t, (&RequestParams{Method: "PUT", Path: "/v1/objects"}).
-		Is(&ServiceMethod{GRPCMethod: "/v1/objects"}),
-	)
-	assert.False(t, (&RequestParams{Method: "PUT", Path: "/v1/objects"}).
-		Is(&ServiceMethod{GRPCMethod: "/v1/object/*"}),
-	)
-}
-
-func Test_hasPathIn(t *testing.T) {
-	trueCases := []struct {
-		path  string
-		paths []string
-	}{
-		{"abc", []string{"abc"}},
-		{"abc", []string{"*"}},
-		{"abc", []string{"def", "abc"}},
-		{"abc", []string{"ab*"}},
-		{"abc", []string{"ab*"}},
-	}
-
-	rp := RequestParams{}
-	for _, pp := range trueCases {
-		rp.Path = pp.path
-		assert.True(t, rp.HasPathIn(pp.paths), pp.path, " in ", pp.paths)
-	}
-
-	falseCases := []struct {
-		path  string
-		paths []string
-	}{
-		{"abc", []string{"abcd"}},
-		{"abc", []string{"x*"}},
-		{"abc", []string{"def", "abcd"}},
-		{"abc", []string{"ab?c"}},
-		{"abc", []string{"ab"}},
-		{"*", []string{"abc"}},
-	}
-
-	for _, pp := range falseCases {
-		rp.Path = pp.path
-		assert.False(t, rp.HasPathIn(pp.paths), pp.path, " in ", pp.paths)
-	}
-}
 
 func TestHasHeader(t *testing.T) {
 	rp := RequestParams{
@@ -102,68 +19,68 @@ func TestHasHeader(t *testing.T) {
 	}
 
 	assert.True(t, (&RequestParams{}).HasHeader(nil))
-	assert.False(t, (&RequestParams{}).HasHeader(map[string]string{"header": "value"}))
-	assert.True(t, (&RequestParams{}).HasHeader(map[string]string{"header": NoHeaderOrAnyValuePattern}))
+	assert.False(t, (&RequestParams{}).HasHeader(map[string]Pattern{"header": "value"}))
+	assert.True(t, (&RequestParams{}).HasHeader(map[string]Pattern{"header": NoHeaderOrAnyValuePattern}))
 
 	tests := map[string]struct {
-		patterns map[string]string
+		patterns map[string]Pattern
 		expected bool
 	}{
 		"empty": {
 			expected: true,
 		},
 		"empty not matching": {
-			patterns: map[string]string{
+			patterns: map[string]Pattern{
 				"empty": "with value",
 			},
 			expected: false,
 		},
 		"empty matching": {
-			patterns: map[string]string{
+			patterns: map[string]Pattern{
 				"empty": NoHeaderOrAnyValuePattern,
 			},
 			expected: true,
 		},
 		"unknown empty": {
-			patterns: map[string]string{
+			patterns: map[string]Pattern{
 				"third": NoHeaderOrAnyValuePattern,
 			},
 			expected: true,
 		},
 		"one": {
-			patterns: map[string]string{
+			patterns: map[string]Pattern{
 				"one": "on?",
 			},
 			expected: true,
 		},
 		"one-two": {
-			patterns: map[string]string{
+			patterns: map[string]Pattern{
 				"two": "two",
 			},
 			expected: true,
 		},
 		"no match": {
-			patterns: map[string]string{
+			patterns: map[string]Pattern{
 				"three": "x*",
 			},
 			expected: false,
 		},
 		"one of multiple match": {
-			patterns: map[string]string{
+			patterns: map[string]Pattern{
 				"one": "on?",
 				"two": "x",
 			},
 			expected: false,
 		},
 		"all of multiple match": {
-			patterns: map[string]string{
+			patterns: map[string]Pattern{
 				"one": "on?",
 				"two": "two",
 			},
 			expected: true,
 		},
 		"one of multiple doesn't exist": {
-			patterns: map[string]string{
+			patterns: map[string]Pattern{
 				"one":   "on?",
 				"two":   "two",
 				"three": "th*",
@@ -172,6 +89,9 @@ func TestHasHeader(t *testing.T) {
 		},
 	}
 	for name, test := range tests {
+		for _, pattern := range test.patterns {
+			globCache[pattern], _ = pattern.compile()
+		}
 		t.Run(name, func(t *testing.T) {
 			assert.Equal(t, test.expected, rp.HasHeader(test.patterns))
 		})

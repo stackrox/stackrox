@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 	k8sVersion "k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/kubernetes"
@@ -121,7 +122,12 @@ func InstanceConfig() *phonehome.Config {
 			return
 		}
 
-		telemetryCampaign = append(telemetryCampaign, runtimeCfg.APICallCampaign...)
+		utils.Must(telemetryCampaign.Compile())
+		if err := runtimeCfg.APICallCampaign.Compile(); err != nil {
+			log.Errorf("Failed to initialize runtime telemetry campaign: %v", err)
+		} else {
+			telemetryCampaign = append(telemetryCampaign, runtimeCfg.APICallCampaign...)
+		}
 
 		var props map[string]any
 		config, props = getInstanceConfig(ii.Id, runtimeCfg.Key)

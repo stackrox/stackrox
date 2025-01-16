@@ -7,14 +7,15 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func withUserAgent(_ *testing.T, headers map[string][]string, ua string) func(string) []string {
-	return func(s string) []string {
-		if http.CanonicalHeaderKey(s) == userAgentHeaderKey {
+	return func(key string) []string {
+		if http.CanonicalHeaderKey(key) == userAgentHeaderKey {
 			return []string{ua}
 		}
-		return headers[s]
+		return headers[key]
 	}
 }
 
@@ -45,7 +46,7 @@ func Test_apiCall(t *testing.T) {
 			rp: &phonehome.RequestParams{
 				Headers: withUserAgent(t, nil, "Some roxctl client"),
 				Method:  "GET",
-				Path:    ignoredPaths[0],
+				Path:    "/v1/ping",
 				Code:    200,
 			},
 			expected: false,
@@ -80,6 +81,7 @@ func Test_apiCall(t *testing.T) {
 			expected: true,
 		},
 	}
+	require.NoError(t, telemetryCampaign.Compile())
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			assert.Equal(t, c.expected, apiCall(c.rp, nil))

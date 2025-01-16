@@ -3,6 +3,7 @@ package centralclient
 import (
 	"strings"
 
+	"github.com/gobwas/glob"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 )
@@ -12,11 +13,11 @@ const snowIntegrationHeader = "Rh-ServiceNow-Integration"
 const userAgentHeaderKey = "User-Agent"
 
 var (
-	ignoredPaths = []string{"/v1/ping", "/v1.PingService/Ping", "/v1/metadata", "/static/*"}
+	ignoredPaths = glob.MustCompile("{/v1/ping,/v1.PingService/Ping,/v1/metadata,/static/*}")
 
-	telemetryCampaign = append(phonehome.APICallCampaign{
+	telemetryCampaign = phonehome.APICallCampaign{
 		{
-			Headers: map[string]string{
+			Headers: map[string]phonehome.Pattern{
 				userAgentHeaderKey:                  "*roxctl*",
 				clientconn.RoxctlCommandHeader:      phonehome.NoHeaderOrAnyValuePattern,
 				clientconn.RoxctlCommandIndexHeader: phonehome.NoHeaderOrAnyValuePattern,
@@ -24,41 +25,49 @@ var (
 			},
 		},
 		{
-			Paths: []string{"/v1/clusters"},
-			Headers: map[string]string{
+			Paths: phonehome.Pattern("/v1/clusters").Pointer(),
+			Headers: map[string]phonehome.Pattern{
 				userAgentHeaderKey:    "*ServiceNow*",
 				snowIntegrationHeader: phonehome.NoHeaderOrAnyValuePattern,
 			},
 		},
 		{
-			Paths: splitString(apiWhiteList.Setting(), ','),
-			Headers: map[string]string{
+			Paths: phonehome.Pattern(apiWhiteList.Setting()).Pointer(),
+			Headers: map[string]phonehome.Pattern{
 				userAgentHeaderKey: phonehome.NoHeaderOrAnyValuePattern,
 			},
 		},
-	}, userAgentsCampaigns()...)
+		apiPathsCampaign(),
+		userAgentsCampaign(),
+	}
 
 	interceptors = map[string][]phonehome.Interceptor{
 		"API Call": {apiCall, addDefaultProps, addCustomHeaders},
 	}
 )
 
-// splitString splits the string s by the sep separator, returning an empty
-// slice for empty input string.
-func splitString(s string, sep rune) []string {
-	return strings.FieldsFunc(s, func(r rune) bool { return r == sep })
+// apiPathsCampaign constructs an API paths campaign from the apiWhiteList
+// environment variable.
+func apiPathsCampaign() *phonehome.APICallCampaignCriterion {
+	if pattern := apiWhiteList.Setting(); pattern != "" {
+		return &phonehome.APICallCampaignCriterion{
+			Paths: phonehome.Pattern("{" + pattern + "}").Pointer(),
+		}
+	}
+	return nil
 }
 
-func userAgentsCampaigns() []phonehome.APICallCampaignCriterion {
-	result := []phonehome.APICallCampaignCriterion{}
-	for _, ua := range splitString(userAgentsList.Setting(), ',') {
-		result = append(result, phonehome.APICallCampaignCriterion{
-			Headers: map[string]string{
-				userAgentHeaderKey: ua,
+// userAgentsCampaign constructs an User-Agent campaign from the userAgentsList
+// environment variable.
+func userAgentsCampaign() *phonehome.APICallCampaignCriterion {
+	if pattern := userAgentsList.Setting(); pattern != "" {
+		return &phonehome.APICallCampaignCriterion{
+			Headers: map[string]phonehome.Pattern{
+				userAgentHeaderKey: phonehome.Pattern("{" + pattern + "}"),
 			},
-		})
+		}
 	}
-	return result
+	return nil
 }
 
 func addDefaultProps(rp *phonehome.RequestParams, props map[string]any) bool {
@@ -73,7 +82,7 @@ func addDefaultProps(rp *phonehome.RequestParams, props map[string]any) bool {
 // User-Agent containing the substrings specified in the trackedUserAgents, and
 // have no match in the ignoredPaths list.
 func apiCall(rp *phonehome.RequestParams, _ map[string]any) bool {
-	return !rp.HasPathIn(ignoredPaths) && telemetryCampaign.IsFulfilled(rp)
+	return !ignoredPaths.Match(rp.Path) && telemetryCampaign.IsFulfilled(rp)
 }
 
 // addCustomHeaders adds additional properties to the event if the telemetry
@@ -83,10 +92,12 @@ func addCustomHeaders(rp *phonehome.RequestParams, props map[string]any) bool {
 		return true
 	}
 	for _, c := range telemetryCampaign {
-		for header := range c.Headers {
-			values := rp.Headers(header)
-			if len(values) != 0 {
-				props[header] = strings.Join(values, "; ")
+		if c != nil {
+			for header := range c.Headers {
+				values := rp.Headers(header)
+				if len(values) != 0 {
+					props[header] = strings.Join(values, "; ")
+				}
 			}
 		}
 	}

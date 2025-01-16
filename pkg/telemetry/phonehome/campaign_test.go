@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func withUserAgent(_ *testing.T, headers map[string][]string, ua string) func(string) []string {
@@ -29,7 +30,7 @@ func TestCampaignFulfilled(t *testing.T) {
 	})
 	t.Run("Empty criterion", func(t *testing.T) {
 		campaign := APICallCampaign{
-			APICallCampaignCriterion{},
+			&APICallCampaignCriterion{},
 		}
 		rp := &RequestParams{
 			Headers: withUserAgent(t, nil, "some test user-agent"),
@@ -39,54 +40,66 @@ func TestCampaignFulfilled(t *testing.T) {
 		}
 		assert.True(t, campaign.IsFulfilled(rp))
 	})
+	t.Run("Nil criterion", func(t *testing.T) {
+		campaign := APICallCampaign{
+			nil,
+		}
+		rp := &RequestParams{
+			Headers: withUserAgent(t, nil, "some test user-agent"),
+			Method:  "GET",
+			Path:    "/some/test/path",
+			Code:    202,
+		}
+		assert.False(t, campaign.IsFulfilled(rp))
+	})
 
 	t.Run("Single criterion", func(t *testing.T) {
 		campaigns := map[string]APICallCampaign{
-			"Code": []APICallCampaignCriterion{
+			"Code": []*APICallCampaignCriterion{
 				{
 					Codes: []int32{202},
 				},
 			},
-			"Codes": []APICallCampaignCriterion{
+			"Codes": []*APICallCampaignCriterion{
 				{
 					Codes: []int32{100, 202, 400},
 				},
 			},
-			"Method": []APICallCampaignCriterion{
+			"Method": []*APICallCampaignCriterion{
 				{
-					Methods: []string{"get"},
+					Methods: Pattern("GET").Pointer(),
 				},
 			},
-			"Methods": []APICallCampaignCriterion{
+			"Methods": []*APICallCampaignCriterion{
 				{
-					Methods: []string{"post", "get", "put"},
+					Methods: Pattern("{POST,GET,PUT}").Pointer(),
 				},
 			},
-			"PathPattern": []APICallCampaignCriterion{
+			"PathPattern": []*APICallCampaignCriterion{
 				{
-					Paths: []string{"/some/test*"},
+					Paths: Pattern("/some/test*").Pointer(),
 				},
 			},
-			"PathPatterns": []APICallCampaignCriterion{
+			"PathPatterns": []*APICallCampaignCriterion{
 				{
-					Paths: []string{"/x", "/some/test*", "/y"},
+					Paths: Pattern("{/x,/some/test*,/y}").Pointer(),
 				},
 			},
-			"UserAgent": []APICallCampaignCriterion{
+			"UserAgent": []*APICallCampaignCriterion{
 				{
-					Headers: map[string]string{
+					Headers: map[string]Pattern{
 						"User-Agent": "*test*",
 					},
 				},
 			},
-			"UserAgents": []APICallCampaignCriterion{
+			"UserAgents": []*APICallCampaignCriterion{
 				{
-					Headers: map[string]string{"User-Agent": "*x*"},
+					Headers: map[string]Pattern{"User-Agent": "*x*"},
 				},
 				{
-					Headers: map[string]string{"User-Agent": "*test*"},
+					Headers: map[string]Pattern{"User-Agent": "*test*"},
 				}, {
-					Headers: map[string]string{"User-Agent": "*y*"},
+					Headers: map[string]Pattern{"User-Agent": "*y*"},
 				},
 			},
 		}
@@ -94,12 +107,13 @@ func TestCampaignFulfilled(t *testing.T) {
 		t.Run("Test fulfilled", func(t *testing.T) {
 			rp := &RequestParams{
 				Headers: withUserAgent(t, nil, "some test user-agent"),
-				Method:  "GeT",
+				Method:  "GET",
 				Path:    "/some/test/path",
 				Code:    202,
 			}
 			for name, campaign := range campaigns {
 				t.Run(name, func(t *testing.T) {
+					require.NoError(t, campaign.Compile())
 					assert.True(t, campaign.IsFulfilled(rp))
 				})
 			}
@@ -108,7 +122,7 @@ func TestCampaignFulfilled(t *testing.T) {
 		t.Run("Test not fulfilled", func(t *testing.T) {
 			rp := &RequestParams{
 				Headers: withUserAgent(t, nil, "some user-agent"),
-				Method:  "delete",
+				Method:  "DELETE",
 				Path:    "/test/path",
 				Code:    305,
 			}
@@ -124,55 +138,56 @@ func TestCampaignFulfilled(t *testing.T) {
 		campaign := APICallCampaign{
 			{
 				Codes:   []int32{200, 400},
-				Methods: []string{"get", "post"},
-				Paths:   []string{"/v1/test*", "/v2/test*"},
-				Headers: map[string]string{"User-Agent": "*test*"},
+				Methods: Pattern("{GET,POST}").Pointer(),
+				Paths:   Pattern("{/v1/test*,/v2/test*}").Pointer(),
+				Headers: map[string]Pattern{"User-Agent": "*test*"},
 			},
 			{
 				Codes:   []int32{200, 400},
-				Methods: []string{"get", "post"},
-				Paths:   []string{"/v1/test*", "/v2/test*"},
-				Headers: map[string]string{"User-Agent": "*toast*"},
+				Methods: Pattern("{GET,POST}").Pointer(),
+				Paths:   Pattern("{/v1/test*,/v2/test*}").Pointer(),
+				Headers: map[string]Pattern{"User-Agent": "*toast*"},
 			},
 			{
 				Codes:   []int32{300, 500},
-				Methods: []string{"delete", "options"},
-				Paths:   []string{"/v3/test*", "/v4/test*"},
-				Headers: map[string]string{"User-Agent": "*teeth*"},
+				Methods: Pattern("{DELETE,OPTIONS}").Pointer(),
+				Paths:   Pattern("{/v3/test*,/v4/test*}").Pointer(),
+				Headers: map[string]Pattern{"User-Agent": "{*tooth*,*teeth*}"},
 			},
 			{
 				Codes:   []int32{100},
-				Methods: []string{"put"},
-				Paths:   []string{"/v5/*"},
-				Headers: map[string]string{
+				Methods: Pattern("PUT").Pointer(),
+				Paths:   Pattern("/v5/*").Pointer(),
+				Headers: map[string]Pattern{
 					"User-Agent": "*another*",
 					"header":     "val*",
 				},
 			},
 		}
+		require.NoError(t, campaign.Compile())
 		t.Run("All pass", func(t *testing.T) {
 			rps := []RequestParams{
 				{
 					Headers: withUserAgent(t, nil, "some test user-agent 1"),
-					Method:  "get",
+					Method:  "GET",
 					Path:    "/v1/test/path",
 					Code:    200,
 				},
 				{
 					Headers: withUserAgent(t, nil, "some toast user-agent 2"),
-					Method:  "post",
+					Method:  "POST",
 					Path:    "/v2/test/path",
 					Code:    400,
 				},
 				{
 					Headers: withUserAgent(t, nil, "some teeth user-agent 3"),
-					Method:  "delete",
+					Method:  "DELETE",
 					Path:    "/v3/test/path",
 					Code:    300,
 				},
 				{
 					Headers: withUserAgent(t, nil, "some teeth user-agent 4"),
-					Method:  "options",
+					Method:  "OPTIONS",
 					Path:    "/v4/test/path",
 					Code:    500,
 				},
@@ -197,30 +212,30 @@ func TestCampaignFulfilled(t *testing.T) {
 			rps := []RequestParams{
 				{
 					Headers: withUserAgent(t, nil, "some test user-agent 1"),
-					Method:  "get",
+					Method:  "GET",
 					Path:    "/v1/test/path",
 					Code:    300,
 				},
 				{
 					Headers: withUserAgent(t, nil, "some toast user-agent 2"),
-					Method:  "delete",
+					Method:  "DELETE",
 					Path:    "/v2/test/path",
 					Code:    400,
 				},
 				{
 					Headers: withUserAgent(t, nil, "some teeth user-agent 3"),
-					Method:  "delete",
+					Method:  "DELETE",
 					Path:    "/v3/test/path",
 					Code:    200,
 				},
 				{
 					Headers: withUserAgent(t, nil, "some tooth user-agent 4"),
-					Method:  "get",
+					Method:  "GET",
 					Path:    "/v4/test/path",
 					Code:    500,
 				},
 				{
-					Method: "put",
+					Method: "PUT",
 					Path:   "/v5/test/path",
 					Code:   100,
 					Headers: withUserAgent(t,
@@ -233,4 +248,33 @@ func TestCampaignFulfilled(t *testing.T) {
 			}
 		})
 	})
+}
+
+func TestCompile(t *testing.T) {
+	cases := []struct {
+		criterion    APICallCampaignCriterion
+		errorMessage string
+	}{
+		{
+			criterion:    APICallCampaignCriterion{},
+			errorMessage: "",
+		},
+		{
+			criterion: APICallCampaignCriterion{
+				Paths: Pattern("[b-a]").Pointer(),
+			},
+			errorMessage: `error parsing path pattern: failed to compile "[b-a]": hi character 'a' should be greater than lo 'b'`,
+		},
+	}
+
+	for _, test := range cases {
+		t.Run(test.errorMessage, func(t *testing.T) {
+			err := test.criterion.Compile()
+			if err == nil {
+				assert.Empty(t, test.errorMessage)
+			} else {
+				assert.Equal(t, test.errorMessage, err.Error())
+			}
+		})
+	}
 }
