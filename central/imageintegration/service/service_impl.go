@@ -316,6 +316,18 @@ func (s *serviceImpl) testNodeScannerIntegration(integration *storage.NodeIntegr
 	return nil
 }
 
+func (s *serviceImpl) migrateAzureIntegration(request *storage.ImageIntegration) {
+	if dockerCfg := request.GetDocker(); dockerCfg != nil {
+		request.IntegrationConfig = &storage.ImageIntegration_Azure{
+			Azure: &storage.AzureConfig{
+				Endpoint: dockerCfg.GetEndpoint(),
+				Username: dockerCfg.GetUsername(),
+				Password: dockerCfg.GetPassword(),
+			},
+		}
+	}
+}
+
 func (s *serviceImpl) validateIntegration(ctx context.Context, request *storage.ImageIntegration) error {
 	if request == nil {
 		return errors.New("empty integration")
@@ -364,6 +376,14 @@ func (s *serviceImpl) reconcileUpdateImageIntegrationRequest(ctx context.Context
 		if newType != oldType && (newType == scannerTypes.ScannerV4 || oldType == scannerTypes.ScannerV4) {
 			return errors.Wrap(errox.InvalidArgs, "cannot change integration type to/from scanner V4")
 		}
+
+		// Note that integrations of type "azure" support both `DockerConfig` (deprecated in 4.7) and `AzureConfig`.
+		// Here we migrate requests with type "azure" and `DockerConfig` on the fly to type `AzureConfig`.
+		// TODO(ROX-27720): remove support for `DockerConfig`.
+		if cfg := updateRequest.GetConfig(); cfg.GetType() == types.AzureType && cfg.GetAzure() != nil {
+			s.migrateAzureIntegration(integration)
+		}
+
 	}
 
 	if updateRequest.GetUpdatePassword() {

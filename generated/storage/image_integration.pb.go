@@ -81,6 +81,8 @@ type ImageIntegration struct {
 	Name       string                     `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique"` // @gotags: sql:"unique"
 	Type       string                     `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
 	Categories []ImageIntegrationCategory `protobuf:"varint,6,rep,packed,name=categories,proto3,enum=storage.ImageIntegrationCategory" json:"categories,omitempty"`
+	// Custom configuration based on the image integration type.
+	//
 	// Types that are valid to be assigned to IntegrationConfig:
 	//
 	//	*ImageIntegration_Clairify
@@ -636,6 +638,9 @@ func (x *ClairifyConfig) GetNumConcurrentScans() int32 {
 	return 0
 }
 
+// Docker registry configuration. Used by integrations of type "docker" and other docker compliant registries without dedicated configuration type.
+//
+// Use of type "azure" with `DockerConfig` has been deprecated in 4.7. Use `AzureConfig` instead.
 type DockerConfig struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
 	Endpoint string                 `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty" scrub:"dependent" validate:"nolocalendpoint"` // @gotags: scrub:"dependent" validate:"nolocalendpoint"
@@ -952,13 +957,15 @@ func (x *ScannerV4Config) GetMatcherEndpoint() string {
 	return ""
 }
 
+// Azure container registry configuration. Used by integrations of type "azure".
 type AzureConfig struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
-	Endpoint string                 `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty" scrub:"dependent" validate:"nolocalendpoint"` // @gotags: scrub:"dependent" validate:"nolocalendpoint"
+	Endpoint string                 `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty" validate:"nolocalendpoint"` // @gotags: validate:"nolocalendpoint"
 	Username string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty" scrub:"dependent"` // @gotags: scrub:"dependent"
 	// The password for the integration. The server will mask the value of this credential in responses and logs.
-	Password      string `protobuf:"bytes,3,opt,name=password,proto3" json:"password,omitempty" scrub:"always"` // @gotags: scrub:"always"
-	WifEnabled    bool   `protobuf:"varint,4,opt,name=wif_enabled,json=wifEnabled,proto3" json:"wif_enabled,omitempty"`
+	Password string `protobuf:"bytes,3,opt,name=password,proto3" json:"password,omitempty" scrub:"always"` // @gotags: scrub:"always"
+	// Enables authentication with short-lived tokens using Azure managed identities or Azure workload identities.
+	WifEnabled    bool `protobuf:"varint,4,opt,name=wif_enabled,json=wifEnabled,proto3" json:"wif_enabled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

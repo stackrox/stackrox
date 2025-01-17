@@ -29,6 +29,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Deprecated Features
 
+- The Azure integration payload in `/v1/imageintegrations` has been changed from `{..., "type": "azure", "docker": {...}}` to `{..., "type": "azure", "azure": {...}}`. The former schema is still supported, but is now considered deprecated.
+
 ### Technical Changes
 
 - Scanner V4 now uses [Red Hat's VEX files](https://security.access.redhat.com/data/csaf/v2/vex/) instead of the [CVE map](https://security.access.redhat.com/data/metrics/cvemap.xml) for vulnerability data related to non-RPM content inside of official Red Hat images.
