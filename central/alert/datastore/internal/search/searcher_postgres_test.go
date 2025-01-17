@@ -152,9 +152,9 @@ func (s *AlertsSearchSuite) TestCountResolved() {
 	}
 	results, err := s.searcher.Count(ctx, search.EmptyQuery(), false)
 	s.NoError(err)
-	s.Equal(results, 4)
+	s.Equal(4, results)
 
 	results, err = s.searcher.Count(ctx, search.EmptyQuery(), true)
 	s.NoError(err)
-	s.Equal(results, 2)
+	s.Equal(2, results)
 }
