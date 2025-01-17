@@ -3,12 +3,12 @@ package clusterentities
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"net/http"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"golang.org/x/exp/maps"
 )
 
 // StartDebugServer starts HTTP server that allows to look inside the clusterentities store.
