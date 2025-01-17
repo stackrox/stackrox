@@ -18,10 +18,12 @@ Secured Cluster Configuration Summary:
 {{- end }}
 
 [<- if .FeatureFlags.ROX_CLUSTER_REGISTRATION_SECRETS >]
-{{- if ._rox.crs._enabled }}
+{{- if eq ._rox.env.installMethod "helm" }}
+  {{- if ._rox.crs._enabled }}
   Bootstrapping Method:                        Cluster Registration Secret (CRS)
-{{- else if ._rox.ca._cert }}
+  {{- else if ._rox.ca._cert }}
   Bootstrapping Method:                        Init Bundle
+  {{- end }}
 {{- end }}
 [<- end >]
 
