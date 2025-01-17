@@ -1765,8 +1765,8 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				},
 			},
 		},
-		// Note: Scanner V4 should ultimately return a single RHSA, but this is handled via manipulation to PackageVulnerabilities
-		// through filterRepeatedProtoAdvisories.
+		// Note: Scanner V4 should ultimately return a single RHSA, but this is handled via manipulation to
+		// PackageVulnerabilities through dedupeAdvisories.
 		"when multiple Red Hat CVEs relate to same RHSA return each RHSA": {
 			ccVulnerabilities: map[string]*claircore.Vulnerability{
 				"foo": {
@@ -2249,7 +2249,7 @@ func Test_sortBySeverity(t *testing.T) {
 	}
 }
 
-func Test_filterRepeatedProtoAdvisories(t *testing.T) {
+func Test_dedupeAdvisories(t *testing.T) {
 	now := timestamppb.Now()
 
 	testcases := []struct {
@@ -2362,7 +2362,7 @@ func Test_filterRepeatedProtoAdvisories(t *testing.T) {
 	for _, tt := range testcases {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Setenv(features.ScannerV4RedHatCSAF.EnvVar(), strconv.FormatBool(tt.csafEnabled))
-			got := filterRepeatedProtoAdvisories(tt.vulnIDs, tt.vulns)
+			got := dedupeAdvisories(tt.vulnIDs, tt.vulns)
 			assert.ElementsMatch(t, tt.expected, got)
 		})
 	}
