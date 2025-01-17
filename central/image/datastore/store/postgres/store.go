@@ -143,10 +143,10 @@ func (s *storeImpl) insertIntoImages(
 	}
 
 	if !scanUpdated {
-		sensorEventsDeduperCounter.With(prometheus.Labels{"status": "deduped"}).Inc()
+		common.SensorEventsDeduperCounter.With(prometheus.Labels{"status": "deduped"}).Inc()
 		return nil
 	}
-	sensorEventsDeduperCounter.With(prometheus.Labels{"status": "passed"}).Inc()
+	common.SensorEventsDeduperCounter.With(prometheus.Labels{"status": "passed"}).Inc()
 
 	// DO NOT CHANGE THE ORDER.
 	if err := copyFromImageComponentEdges(ctx, tx, cloned.GetId(), parts.imageComponentEdges...); err != nil {

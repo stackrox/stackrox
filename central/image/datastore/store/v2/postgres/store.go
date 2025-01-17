@@ -147,10 +147,10 @@ func (s *storeImpl) insertIntoImages(
 	}
 
 	if !scanUpdated {
-		sensorEventsDeduperCounter.With(prometheus.Labels{"status": "deduped"}).Inc()
+		common.SensorEventsDeduperCounter.With(prometheus.Labels{"status": "deduped"}).Inc()
 		return nil
 	}
-	sensorEventsDeduperCounter.With(prometheus.Labels{"status": "passed"}).Inc()
+	common.SensorEventsDeduperCounter.With(prometheus.Labels{"status": "passed"}).Inc()
 
 	return copyFromImageComponentsV2(ctx, tx, iTime, componentCVEMap, parts.componentsV2...)
 }
@@ -570,7 +570,7 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*po
 func getImageComponents(ctx context.Context, tx *postgres.Tx, imageIDs string) ([]*storage.ImageComponentV2, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageComponents")
 
-	rows, err := tx.Query(ctx, "SELECT serialized FROM "+imageComponentsV2Table+" WHERE image_id = $1", imageIDs)
+	rows, err := tx.Query(ctx, "SELECT serialized FROM "+imageComponentsV2Table+" WHERE imageid = $1", imageIDs)
 	if err != nil {
 		return nil, err
 	}
