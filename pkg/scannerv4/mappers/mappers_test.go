@@ -2262,7 +2262,7 @@ func Test_dedupeAdvisories(t *testing.T) {
 		{
 			name:        "CSAF disabled",
 			csafEnabled: false,
-			vulnIDs:     []string{"0", "1", "2", "3", "4"},
+			vulnIDs:     []string{"0", "1", "2", "3", "4", "5"},
 			vulns: map[string]*v4.VulnerabilityReport_Vulnerability{
 				"0": {
 					Id:                 "0",
@@ -2305,13 +2305,18 @@ func Test_dedupeAdvisories(t *testing.T) {
 					Severity:           "Moderate",
 					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
 				},
+				"5": {
+					Id:          "5",
+					Name:        "CVE-2025-12342",
+					Description: "very vulnerable",
+				},
 			},
-			expected: []string{"0", "1", "2", "3", "4"},
+			expected: []string{"0", "1", "2", "3", "4", "5"},
 		},
 		{
 			name:        "CSAF enabled",
 			csafEnabled: true,
-			vulnIDs:     []string{"0", "1", "2", "3"},
+			vulnIDs:     []string{"0", "1", "2", "3", "4", "5"},
 			vulns: map[string]*v4.VulnerabilityReport_Vulnerability{
 				"0": {
 					Id:                 "0",
@@ -2354,8 +2359,13 @@ func Test_dedupeAdvisories(t *testing.T) {
 					Severity:           "Moderate",
 					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
 				},
+				"5": {
+					Id:          "5",
+					Name:        "CVE-2025-12342",
+					Description: "very vulnerable",
+				},
 			},
-			expected: []string{"0", "2", "3"},
+			expected: []string{"0", "2", "3", "5"},
 		},
 	}
 
