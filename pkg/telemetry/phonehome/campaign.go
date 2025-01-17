@@ -10,9 +10,9 @@ import (
 // telemetry campaign. Requests parameters need to match all fields for the
 // request to be tracked. Any request matches empty criterion.
 type APICallCampaignCriterion struct {
-	Paths   *Pattern           `json:"paths,omitempty"`
-	Methods *Pattern           `json:"methods,omitempty"`
-	Codes   []int32            `json:"codes,omitempty"`
+	Path    *Pattern           `json:"path,omitempty"`
+	Method  *Pattern           `json:"method,omitempty"`
+	Code    []int32            `json:"code,omitempty"`
 	Headers map[string]Pattern `json:"headers,omitempty"`
 }
 
@@ -31,10 +31,10 @@ func (c *APICallCampaignCriterion) Compile() error {
 			return errors.WithMessage(err, "error parsing header pattern")
 		}
 	}
-	if err := c.Paths.compile(); err != nil {
+	if err := c.Path.compile(); err != nil {
 		return errors.WithMessage(err, "error parsing path pattern")
 	}
-	if err := c.Methods.compile(); err != nil {
+	if err := c.Method.compile(); err != nil {
 		return errors.WithMessage(err, "error parsing methods pattern")
 	}
 	return nil
@@ -42,9 +42,9 @@ func (c *APICallCampaignCriterion) Compile() error {
 
 func (c *APICallCampaignCriterion) isFulfilled(rp *RequestParams) bool {
 	return c != nil &&
-		(len(c.Codes) == 0 || slices.Contains(c.Codes, int32(rp.Code))) &&
-		(c.Paths == nil || (*c.Paths).Match(rp.Path)) &&
-		(c.Methods == nil || (*c.Methods).Match(rp.Method)) &&
+		(len(c.Code) == 0 || slices.Contains(c.Code, int32(rp.Code))) &&
+		(c.Path == nil || (*c.Path).Match(rp.Path)) &&
+		(c.Method == nil || (*c.Method).Match(rp.Method)) &&
 		(c.Headers == nil || rp.HasHeader(c.Headers))
 }
 

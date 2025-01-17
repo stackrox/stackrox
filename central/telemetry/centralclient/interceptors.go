@@ -25,7 +25,7 @@ var (
 			},
 		},
 		{
-			Paths: phonehome.Pattern("/v1/clusters").Ptr(),
+			Path: phonehome.Pattern("/v1/clusters").Ptr(),
 			Headers: map[string]phonehome.Pattern{
 				userAgentHeaderKey:    "*ServiceNow*",
 				snowIntegrationHeader: phonehome.NoHeaderOrAnyValue,
@@ -45,7 +45,7 @@ var (
 func apiPathsCampaign() *phonehome.APICallCampaignCriterion {
 	if pattern := apiWhiteList.Setting(); pattern != "" {
 		return &phonehome.APICallCampaignCriterion{
-			Paths: phonehome.Pattern("{" + pattern + "}").Ptr(),
+			Path: phonehome.Pattern("{" + pattern + "}").Ptr(),
 			Headers: map[string]phonehome.Pattern{
 				userAgentHeaderKey: phonehome.NoHeaderOrAnyValue,
 			},

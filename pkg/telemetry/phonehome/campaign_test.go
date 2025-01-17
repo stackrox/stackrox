@@ -57,32 +57,32 @@ func TestCampaignFulfilled(t *testing.T) {
 		campaigns := map[string]APICallCampaign{
 			"Code": []*APICallCampaignCriterion{
 				{
-					Codes: []int32{202},
+					Code: []int32{202},
 				},
 			},
 			"Codes": []*APICallCampaignCriterion{
 				{
-					Codes: []int32{100, 202, 400},
+					Code: []int32{100, 202, 400},
 				},
 			},
 			"Method": []*APICallCampaignCriterion{
 				{
-					Methods: Pattern("GET").Ptr(),
+					Method: Pattern("GET").Ptr(),
 				},
 			},
 			"Methods": []*APICallCampaignCriterion{
 				{
-					Methods: Pattern("{POST,GET,PUT}").Ptr(),
+					Method: Pattern("{POST,GET,PUT}").Ptr(),
 				},
 			},
 			"PathPattern": []*APICallCampaignCriterion{
 				{
-					Paths: Pattern("/some/test*").Ptr(),
+					Path: Pattern("/some/test*").Ptr(),
 				},
 			},
 			"PathPatterns": []*APICallCampaignCriterion{
 				{
-					Paths: Pattern("{/x,/some/test*,/y}").Ptr(),
+					Path: Pattern("{/x,/some/test*,/y}").Ptr(),
 				},
 			},
 			"UserAgent": []*APICallCampaignCriterion{
@@ -137,27 +137,27 @@ func TestCampaignFulfilled(t *testing.T) {
 	t.Run("All criteria", func(t *testing.T) {
 		campaign := APICallCampaign{
 			{
-				Codes:   []int32{200, 400},
-				Methods: Pattern("{GET,POST}").Ptr(),
-				Paths:   Pattern("{/v1/test*,/v2/test*}").Ptr(),
+				Code:    []int32{200, 400},
+				Method:  Pattern("{GET,POST}").Ptr(),
+				Path:    Pattern("{/v1/test*,/v2/test*}").Ptr(),
 				Headers: map[string]Pattern{"User-Agent": "*test*"},
 			},
 			{
-				Codes:   []int32{200, 400},
-				Methods: Pattern("{GET,POST}").Ptr(),
-				Paths:   Pattern("{/v1/test*,/v2/test*}").Ptr(),
+				Code:    []int32{200, 400},
+				Method:  Pattern("{GET,POST}").Ptr(),
+				Path:    Pattern("{/v1/test*,/v2/test*}").Ptr(),
 				Headers: map[string]Pattern{"User-Agent": "*toast*"},
 			},
 			{
-				Codes:   []int32{300, 500},
-				Methods: Pattern("{DELETE,OPTIONS}").Ptr(),
-				Paths:   Pattern("{/v3/test*,/v4/test*}").Ptr(),
+				Code:    []int32{300, 500},
+				Method:  Pattern("{DELETE,OPTIONS}").Ptr(),
+				Path:    Pattern("{/v3/test*,/v4/test*}").Ptr(),
 				Headers: map[string]Pattern{"User-Agent": "{*tooth*,*teeth*}"},
 			},
 			{
-				Codes:   []int32{100},
-				Methods: Pattern("PUT").Ptr(),
-				Paths:   Pattern("/v5/*").Ptr(),
+				Code:   []int32{100},
+				Method: Pattern("PUT").Ptr(),
+				Path:   Pattern("/v5/*").Ptr(),
 				Headers: map[string]Pattern{
 					"User-Agent": "*another*",
 					"header":     "val*",
@@ -261,7 +261,7 @@ func TestCompile(t *testing.T) {
 		},
 		{
 			criterion: APICallCampaignCriterion{
-				Paths: Pattern("[b-a]").Ptr(),
+				Path: Pattern("[b-a]").Ptr(),
 			},
 			errorMessage: `error parsing path pattern: failed to compile "[b-a]": hi character 'a' should be greater than lo 'b'`,
 		},

@@ -29,7 +29,7 @@ func Test_getRuntimeConfig(t *testing.T) {
 		_, _ = w.Write([]byte(`{
 			"storage_key_v1": "` + remoteKey + `",
 			"api_call_campaign": [
-				{"methods": "{put,delete}"},
+				{"method": "{put,delete}"},
 				{"headers": {"Accept-Encoding": "*json*"}}
 			]
 		}`))
@@ -45,7 +45,7 @@ func Test_getRuntimeConfig(t *testing.T) {
 	assert.Equal(t, &phonehome.RuntimeConfig{
 		Key: "remotekey",
 		APICallCampaign: phonehome.APICallCampaign{
-			{Methods: phonehome.Pattern("{put,delete}").Ptr()},
+			{Method: phonehome.Pattern("{put,delete}").Ptr()},
 			{Headers: map[string]phonehome.Pattern{"Accept-Encoding": phonehome.Pattern("*json*")}},
 		},
 	}, cfg)
