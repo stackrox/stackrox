@@ -40,6 +40,7 @@ var (
 			v1.SearchCategory_IMAGE_VULNERABILITIES,
 			v1.SearchCategory_COMPONENT_VULN_EDGE,
 			v1.SearchCategory_IMAGE_COMPONENTS,
+			v1.SearchCategory_IMAGE_COMPONENTS_V2,
 			v1.SearchCategory_IMAGE_COMPONENT_EDGE,
 			v1.SearchCategory_IMAGE_VULN_EDGE,
 			v1.SearchCategory_IMAGES,
