@@ -55,19 +55,6 @@ func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query, excludeResolved
 	return ds.searcher.Count(ctx, q, excludeResolved)
 }
 
-// DefaultStateAlertDataStoreImpl will only return unresolved alerts unless Violation State=Resolved is explicitly provided by the query
-type DefaultStateAlertDataStoreImpl struct {
-	DataStore *DataStore
-}
-
-func (ds *DefaultStateAlertDataStoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchCommon.Result, error) {
-	return (*ds.DataStore).Search(ctx, q, true)
-}
-
-func (ds *DefaultStateAlertDataStoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	return (*ds.DataStore).Count(ctx, q, true)
-}
-
 func (ds *datastoreImpl) SearchListAlerts(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*storage.ListAlert, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "SearchListAlerts")
 
@@ -318,4 +305,17 @@ func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(*storage.ListAlert
 		})
 	}
 	return pgutils.RetryIfPostgres(ctx, walkFn)
+}
+
+// DefaultStateAlertDataStoreImpl will only return unresolved alerts unless Violation State=Resolved is explicitly provided by the query
+type DefaultStateAlertDataStoreImpl struct {
+	DataStore *DataStore
+}
+
+func (ds *DefaultStateAlertDataStoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchCommon.Result, error) {
+	return (*ds.DataStore).Search(ctx, q, true)
+}
+
+func (ds *DefaultStateAlertDataStoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+	return (*ds.DataStore).Count(ctx, q, true)
 }
