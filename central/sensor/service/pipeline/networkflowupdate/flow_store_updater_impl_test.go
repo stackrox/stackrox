@@ -53,7 +53,7 @@ func (suite *FlowStoreUpdaterTestSuite) SetupTest() {
 	suite.mockFlows = nfDSMocks.NewMockFlowDataStore(suite.mockCtrl)
 	suite.mockBaselines = baselineMocks.NewMockManager(suite.mockCtrl)
 	suite.mockEntities = entityMocks.NewMockEntityDataStore(suite.mockCtrl)
-	suite.tested = newFlowPersister(suite.mockFlows, suite.mockBaselines, suite.mockEntities)
+	suite.tested = newFlowPersister(suite.mockFlows, suite.mockBaselines, suite.mockEntities, "cluster")
 }
 
 func (suite *FlowStoreUpdaterTestSuite) TearDownTest() {
