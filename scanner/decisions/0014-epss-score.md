@@ -116,7 +116,7 @@ message VulnerabilityReport {
 
 Without loss of generality, RHSA/RHBA/RHEA will just be referred to as the more well-known RHSA variant of the three.
 Scanner V4 currently displays RHSA as the top-level entity rather than the related CVE(s) when the CVE(s) are fixed. 
-Meanwhile, all EPSS data are CVE-centric. In Scanner V4, the EPSS score for an RHSA will be the highest EPSS score among all CVEs linked to that RHSA, as multiple CVEs can be associated with a single RHSA.
+Meanwhile, all EPSS data are CVE-centric. In Scanner V4, the EPSS score for an RHSA will be the highest EPSS score among all CVEs linked to that RHSA of a given image, as multiple CVEs can be associated with a single RHSA.
 This approach matches our current scheme for assigning an RHSA a CVSS score
 
 ## Consequences
