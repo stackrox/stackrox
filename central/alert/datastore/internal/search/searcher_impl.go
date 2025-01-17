@@ -12,13 +12,12 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
-// searcherImpl provides an intermediary implementation layer for AlertStorage.
-
 type AlertSearcher interface {
 	Search(ctx context.Context, q *v1.Query, excludeResolved bool) ([]search.Result, error)
 	Count(ctx context.Context, q *v1.Query, excludeResolved bool) (int, error)
 }
 
+// searcherImpl provides an intermediary implementation layer for AlertStorage.
 type searcherImpl struct {
 	storage           store.Store
 	formattedSearcher AlertSearcher
