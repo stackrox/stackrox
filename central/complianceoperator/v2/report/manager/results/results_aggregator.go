@@ -1,4 +1,4 @@
-package utils
+package results
 
 import (
 	"context"
@@ -27,7 +27,7 @@ var (
 	log = logging.LoggerForModule()
 )
 
-type ResultsAggregator struct {
+type Aggregator struct {
 	checkResultsDS   checkResults.DataStore
 	scanDS           scanDS.DataStore
 	profileDS        profileDS.DataStore
@@ -38,15 +38,15 @@ type ResultsAggregator struct {
 	aggreateResults aggregateResultsFn
 }
 
-func NewResultsAggregator(
+func NewAggregator(
 	checkResultsDS checkResults.DataStore,
 	scanDS scanDS.DataStore,
 	profileDS profileDS.DataStore,
 	remediationDS remediationDS.DataStore,
 	benchmarksDS benchmarksDS.DataStore,
 	complianceRuleDS complianceRuleDS.DataStore,
-) *ResultsAggregator {
-	ret := &ResultsAggregator{
+) *Aggregator {
+	ret := &Aggregator{
 		checkResultsDS:   checkResultsDS,
 		scanDS:           scanDS,
 		profileDS:        profileDS,
@@ -62,7 +62,7 @@ type checkResultWalkByQuery func(*storage.ComplianceOperatorCheckResultV2) error
 type aggregateResultsFn func(context.Context, string, *[]*report.ResultRow, *checkStatus) checkResultWalkByQuery
 
 // GetReportData returns map of cluster id and slice of ResultRow
-func (g *ResultsAggregator) GetReportData(req *report.Request) *report.Results {
+func (g *Aggregator) GetReportData(req *report.Request) *report.Results {
 	resultsCSV := make(map[string][]*report.ResultRow)
 	reportResults := &report.Results{}
 	for _, clusterID := range req.ClusterIDs {
@@ -82,7 +82,7 @@ func (g *ResultsAggregator) GetReportData(req *report.Request) *report.Results {
 	return reportResults
 }
 
-func (g *ResultsAggregator) getReportDataForCluster(ctx context.Context, scanConfigID, clusterID string) ([]*report.ResultRow, *checkStatus, error) {
+func (g *Aggregator) getReportDataForCluster(ctx context.Context, scanConfigID, clusterID string) ([]*report.ResultRow, *checkStatus, error) {
 	var ret []*report.ResultRow
 	scanConfigQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfig, scanConfigID).
 		AddExactMatches(search.ClusterID, clusterID).
@@ -96,7 +96,7 @@ func (g *ResultsAggregator) getReportDataForCluster(ctx context.Context, scanCon
 	return ret, statuses, err
 }
 
-func (g *ResultsAggregator) AggregateResults(ctx context.Context, clusterID string, clusterResults *[]*report.ResultRow, checkStatus *checkStatus) checkResultWalkByQuery {
+func (g *Aggregator) AggregateResults(ctx context.Context, clusterID string, clusterResults *[]*report.ResultRow, checkStatus *checkStatus) checkResultWalkByQuery {
 	return func(checkResult *storage.ComplianceOperatorCheckResultV2) error {
 		row := &report.ResultRow{
 			ClusterName:  checkResult.GetClusterName(),
@@ -127,7 +127,7 @@ func (g *ResultsAggregator) AggregateResults(ctx context.Context, clusterID stri
 	}
 }
 
-func (g *ResultsAggregator) getProfileInfo(ctx context.Context, checkResult *storage.ComplianceOperatorCheckResultV2, clusterID string) (string, string, error) {
+func (g *Aggregator) getProfileInfo(ctx context.Context, checkResult *storage.ComplianceOperatorCheckResultV2, clusterID string) (string, string, error) {
 	q := search.NewQueryBuilder().
 		AddExactMatches(search.ComplianceOperatorScanRef, checkResult.GetScanRefId()).
 		ProtoQuery()
@@ -142,7 +142,7 @@ func (g *ResultsAggregator) getProfileInfo(ctx context.Context, checkResult *sto
 	return fmt.Sprintf("%s %s", profiles[0].GetName(), profiles[0].GetProfileVersion()), profiles[0].GetName(), nil
 }
 
-func (g *ResultsAggregator) getRemediationInfo(ctx context.Context, checkResult *storage.ComplianceOperatorCheckResultV2, clusterID string) (string, error) {
+func (g *Aggregator) getRemediationInfo(ctx context.Context, checkResult *storage.ComplianceOperatorCheckResultV2, clusterID string) (string, error) {
 	q := search.NewQueryBuilder().
 		AddExactMatches(search.ComplianceOperatorCheckName, checkResult.GetCheckName()).
 		AddExactMatches(search.ClusterID, checkResult.GetClusterId()).
@@ -162,7 +162,7 @@ func (g *ResultsAggregator) getRemediationInfo(ctx context.Context, checkResult 
 	return strings.Join(remediationList, ","), nil
 }
 
-func (g *ResultsAggregator) getControlsInfo(ctx context.Context, checkResult *storage.ComplianceOperatorCheckResultV2, profileName string) (string, error) {
+func (g *Aggregator) getControlsInfo(ctx context.Context, checkResult *storage.ComplianceOperatorCheckResultV2, profileName string) (string, error) {
 	rules, err := g.complianceRuleDS.SearchRules(ctx, search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorRuleRef, checkResult.GetRuleRefId()).ProtoQuery())
 	if err != nil {
 		log.Errorf("Unable to retrieve compliance rule for result %q", checkResult.GetCheckName())

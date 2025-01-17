@@ -103,7 +103,7 @@ var (
 	SensorPullSecretsByName = registerFeature("Sensor will capture pull secrets by name and registry host instead of just registry host", "ROX_SENSOR_PULL_SECRETS_BY_NAME", enabled)
 
 	// ExternalIPs enables storing detailed discovered external IPs
-	ExternalIPs = registerFeature("Central will work with discovered external IPs", "ROX_EXTERNAL_IPS")
+	ExternalIPs = registerFeature("Central will work with discovered external IPs", "ROX_EXTERNAL_IPS", enabled)
 
 	// NetworkGraphExternalIPs enables displaying external (discovered) entities in the network graph
 	NetworkGraphExternalIPs = registerFeature("Enables display of external IPs in the network graph UI", "ROX_NETWORK_GRAPH_EXTERNAL_IPS")
@@ -122,10 +122,10 @@ var (
 	EPSSScore = registerFeature("Display Exploit Prediction Scoring System (EPSS) score", "ROX_EPSS_SCORE")
 
 	// Add the ability to generate an SBOM from an image
-	SBOMGeneration = registerFeature("Add the ability to generate an SBOM from an image", "ROX_SBOM_GENERATION")
+	SBOMGeneration = registerFeature("Add the ability to generate an SBOM from an image", "ROX_SBOM_GENERATION", enabled)
 
 	// Splits Image CVEs into Workload CVE and Platform CVE sections in the UI
-	PlatformCVESplit = registerFeature("Splits Image CVEs into Workload CVE and Platform CVE sections in the UI", "ROX_PLATFORM_CVE_SPLIT")
+	PlatformCVESplit = registerFeature("Splits Image CVEs into Workload CVE and Platform CVE sections in the UI", "ROX_PLATFORM_CVE_SPLIT", enabled)
 
 	// Flattens CVE Data Model for improved accuracy and performance
 	FlattenCVEData = registerFeature("Uses a flattened CVE Data Model improved accuracy and performance", "ROX_FLATTEN_CVE_DATA")

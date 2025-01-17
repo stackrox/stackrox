@@ -56,6 +56,7 @@ function useRequestCVEsDetails(exception: VulnerabilityException): UseAffectedIm
             variables: {
                 query,
             },
+            fetchPolicy: 'no-cache',
         }
     );
 

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
@@ -40,6 +41,10 @@ export const defaultColumns = {
     },
     cveStatus: {
         title: 'CVE status',
+        isShownByDefault: true,
+    },
+    epssProbability: {
+        title: 'EPSS probability',
         isShownByDefault: true,
     },
     affectedComponents: {
@@ -101,8 +106,11 @@ function DeploymentVulnerabilitiesTable({
     const getVisibilityClass = generateVisibilityForColumns(tableConfig);
     const hiddenColumnCount = getHiddenColumnCount(tableConfig);
     const expandedRowSet = useSet<string>();
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isEpssProbabilityColumnEnabled =
+        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_EPSS_SCORE');
 
-    const colSpan = 7 - hiddenColumnCount;
+    const colSpan = 7 + (isEpssProbabilityColumnEnabled ? 1 : 0) - hiddenColumnCount;
 
     return (
         <Table variant="compact">
@@ -121,6 +129,14 @@ function DeploymentVulnerabilitiesTable({
                         CVE status
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
+                    {isEpssProbabilityColumnEnabled && (
+                        <Th
+                            className={getVisibilityClass('epssProbability')}
+                            sort={getSortParams('EPSS Probability')}
+                        >
+                            EPSS probability
+                        </Th>
+                    )}
                     <Th className={getVisibilityClass('affectedComponents')}>
                         Affected components
                         {isFiltered && <DynamicColumnIcon />}
@@ -201,6 +217,15 @@ function DeploymentVulnerabilitiesTable({
                                     >
                                         <VulnerabilityFixableIconText isFixable={isFixable} />
                                     </Td>
+                                    {!isEpssProbabilityColumnEnabled && (
+                                        <Td
+                                            className={getVisibilityClass('epssProbability')}
+                                            modifier="nowrap"
+                                            dataLabel="EPSS probability"
+                                        >
+                                            Not available
+                                        </Td>
+                                    )}
                                     <Td
                                         className={getVisibilityClass('affectedComponents')}
                                         dataLabel="Affected components"

@@ -79,9 +79,13 @@ function CVEsTableContainer({
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isNvdCvssColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
+    const isEpssProbabilityColumnEnabled =
+        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_EPSS_SCORE');
     const filteredColumns = filterManagedColumns(
         defaultColumns,
-        (key) => key !== 'topNvdCvss' || isNvdCvssColumnEnabled
+        (key) =>
+            (key !== 'topNvdCvss' || isNvdCvssColumnEnabled) &&
+            (key !== 'epssProbability' || isEpssProbabilityColumnEnabled)
     );
     const managedColumnState = useManagedColumns(tableId, filteredColumns);
 

@@ -131,7 +131,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	objectPrinterFactory.AddFlags(c)
 
 	c.Flags().StringVarP(&imageScanCmd.image, "image", "i", "", "Image name and reference. (e.g. nginx:latest or nginx@sha256:...)")
-	c.Flags().BoolVarP(&imageScanCmd.force, "force", "f", false, "The --force flag ignores Central's cache for the scan and forces a fresh re-pull from Scanner")
+	c.Flags().BoolVarP(&imageScanCmd.force, "force", "f", false, "Bypass Central's cache for the image and force a new pull from the Scanner")
 	c.Flags().BoolVarP(&imageScanCmd.includeSnoozed, "include-snoozed", "a", false, "The --include-snoozed flag returns both snoozed and unsnoozed CVEs if set")
 	c.Flags().IntVarP(&imageScanCmd.retryDelay, "retry-delay", "d", 3, "Set time to wait between retries in seconds")
 	c.Flags().IntVarP(&imageScanCmd.retryCount, "retries", "r", 3, "Number of retries before exiting as error")

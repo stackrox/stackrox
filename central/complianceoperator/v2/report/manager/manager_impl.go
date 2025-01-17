@@ -12,7 +12,7 @@ import (
 	"github.com/stackrox/rox/central/complianceoperator/v2/report"
 	snapshotDS "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore"
 	reportGen "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/generator"
-	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager/utils"
+	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager/helpers"
 	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager/watcher"
 	scanConfigurationDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	scanDS "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
@@ -171,11 +171,15 @@ func (m *managerImpl) Stop() {
 		}
 		m.watchingScanConfigs = make(map[string]watcher.ScanConfigWatcher)
 	})
+
+	m.reportGen.Stop()
+
 	m.stopper.Client().Stop()
 	err := m.stopper.Client().Stopped().Wait()
 	if err != nil {
 		logging.Errorf("Error stopping compliance report manager : %v", err)
 	}
+
 }
 
 func (m *managerImpl) generateReportNoLock(req *reportRequest) {
@@ -282,7 +286,7 @@ func (m *managerImpl) handleReportRequest(request *reportRequest) (bool, error) 
 	// This means we cannot generate the report at this moment.
 	// We subscribe to the watcher to later generate the report once it's finished.
 	if err := w.Subscribe(snapshot); err != nil {
-		if dbErr := utils.UpdateSnapshotOnError(request.ctx, snapshot, utils.ErrUnableToSubscribeToWatcher, m.snapshotDataStore); dbErr != nil {
+		if dbErr := helpers.UpdateSnapshotOnError(request.ctx, snapshot, report.ErrUnableToSubscribeToWatcher, m.snapshotDataStore); dbErr != nil {
 			return false, errors.Wrap(dbErr, "unable to upsert snapshot on watcher subscription failure")
 		}
 		return false, errors.New("unable to subscribe to the scan configuration watcher")
@@ -401,7 +405,7 @@ func (m *managerImpl) handleReadyScan() {
 				}
 				if !wasAlreadyRunning {
 					// if there are no notifiers configured we need to still push the results as they might be on-demand request
-					if err := m.createAutomaticSnapshotAndSubscribe(m.automaticReportingCtx, scanConfig, w); err != nil && !errors.Is(err, utils.ErrNoNotifiersConfigured) {
+					if err := m.createAutomaticSnapshotAndSubscribe(m.automaticReportingCtx, scanConfig, w); err != nil && !errors.Is(err, report.ErrNoNotifiersConfigured) {
 						log.Errorf("Unable to create the snapshot: %v", err)
 						continue
 					}
@@ -454,7 +458,7 @@ func (m *managerImpl) createAutomaticSnapshotAndSubscribe(ctx context.Context, s
 	// If there aren't any notifiers configured we cannot report
 	if len(sc.GetNotifiers()) == 0 {
 		log.Warnf("The scan configuration %s has not configured notifiers", sc.GetScanConfigName())
-		return utils.ErrNoNotifiersConfigured
+		return report.ErrNoNotifiersConfigured
 	}
 	// If the watcher is not running we need to create a new snapshot
 	snapshot := &storage.ComplianceOperatorReportSnapshotV2{
@@ -472,10 +476,10 @@ func (m *managerImpl) createAutomaticSnapshotAndSubscribe(ctx context.Context, s
 	}
 	if err := w.Subscribe(snapshot); err != nil {
 		log.Errorf("Unable to subscribe to the scan configuration watcher")
-		if dbErr := utils.UpdateSnapshotOnError(ctx, snapshot, utils.ErrUnableToSubscribeToWatcher, m.snapshotDataStore); dbErr != nil {
+		if dbErr := helpers.UpdateSnapshotOnError(ctx, snapshot, report.ErrUnableToSubscribeToWatcher, m.snapshotDataStore); dbErr != nil {
 			return errors.Wrap(dbErr, "unable to upsert the snapshot")
 		}
-		return errors.Wrap(err, utils.ErrUnableToSubscribeToWatcher.Error())
+		return errors.Wrap(err, report.ErrUnableToSubscribeToWatcher.Error())
 	}
 	if scans := w.GetScans(); len(scans) > 0 {
 		snapshot.Scans = scans
@@ -524,7 +528,7 @@ func (m *managerImpl) generateReportsFromWatcherResults(result *watcher.ScanConf
 
 func (m *managerImpl) generateSingleReportFromWatcherResults(result *watcher.ScanConfigWatcherResults, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
 	if err := m.validateScanConfigResults(result); err != nil {
-		if dbErr := utils.UpdateSnapshotOnError(m.automaticReportingCtx, snapshot, err, m.snapshotDataStore); dbErr != nil {
+		if dbErr := helpers.UpdateSnapshotOnError(m.automaticReportingCtx, snapshot, err, m.snapshotDataStore); dbErr != nil {
 			return errors.Errorf("%v; %v", err, errors.Wrapf(dbErr, "unable to upsert the snapshot %s", snapshot.GetReportId()))
 		}
 		return err
@@ -566,9 +570,9 @@ func (m *managerImpl) handleReportScheduled(request *reportRequest, isOnDemand b
 func (m *managerImpl) validateScanConfigResults(result *watcher.ScanConfigWatcherResults) error {
 	if result.Error != nil {
 		if errors.Is(result.Error, watcher.ErrScanConfigTimeout) {
-			return utils.ErrScanConfigWatcherTimeout
+			return report.ErrScanConfigWatcherTimeout
 		}
-		return utils.ErrScanWatchersFailed
+		return report.ErrScanWatchersFailed
 	}
 
 	errList := errorhelpers.NewErrorList("Scan result errors")

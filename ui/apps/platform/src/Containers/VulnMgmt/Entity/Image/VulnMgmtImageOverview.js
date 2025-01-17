@@ -18,6 +18,7 @@ import CvesByCvssScore from 'Containers/VulnMgmt/widgets/CvesByCvssScore';
 import entityTypes from 'constants/entityTypes';
 import DateTimeField from 'Components/DateTimeField';
 import { entityToColumns } from 'constants/listColumns';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 
 import { entityGridContainerClassName } from '../WorkflowEntityPage';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
@@ -43,6 +44,8 @@ const emptyImage = {
 };
 
 const VulnMgmtImageOverview = ({ data, entityContext }) => {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isPlatformCveSplitEnabled = isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT');
     // guard against incomplete GraphQL-cached data
     const safeData = { ...emptyImage, ...data };
     const { metadata, scan, topVuln, priority, notes } = safeData;
@@ -171,14 +174,16 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                             isInline
                             title={
                                 <>
-                                    View this image{' '}
+                                    View this image in{' '}
                                     <Button
                                         component={LinkShim}
                                         variant="link"
-                                        href={`${vulnerabilitiesWorkloadCvesPath}${getWorkloadEntityPagePath('Image', data.id)}`}
+                                        href={`${vulnerabilitiesWorkloadCvesPath}/${getWorkloadEntityPagePath('Image', data.id)}`}
                                         isInline
                                     >
-                                        in Workload CVEs
+                                        {isPlatformCveSplitEnabled
+                                            ? 'User Workloads'
+                                            : 'Workload CVEs'}
                                     </Button>{' '}
                                     for a detailed breakdown of detected vulnerabilities
                                 </>

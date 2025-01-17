@@ -21,13 +21,13 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
+	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
-	"google.golang.org/protobuf/encoding/protojson"
 )
 
 const (
@@ -179,7 +179,10 @@ func (g *generic) Test(ctx context.Context) *notifiers.NotifierError {
 }
 
 func (g *generic) constructJSON(message protocompat.Message, msgKey string) (io.Reader, error) {
-	msgStr := protojson.Format(message)
+	msgStr, err := jsonutil.MarshalToCompactString(message)
+	if err != nil {
+		return nil, err
+	}
 
 	var strJSON string
 	// No extra fields append so that the payload is something like {"alert": {...}}

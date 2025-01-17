@@ -197,3 +197,5 @@ network:
   enableNetworkPolicies: null # bool
 system:
   enablePodSecurityPolicies: null # bool
+crs:
+  file: null # string

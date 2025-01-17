@@ -8,6 +8,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
+	imagesView "github.com/stackrox/rox/central/views/images"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -52,6 +53,7 @@ func (s *GraphQLImageVulnerabilityTestSuite) SetupSuite() {
 	mockCtrl := gomock.NewController(s.T())
 	s.testDB = SetupTestPostgresConn(s.T())
 	resolver, _ := SetupTestResolver(s.T(),
+		imagesView.NewImageView(s.testDB.DB),
 		CreateTestImageDatastore(s.T(), s.testDB, mockCtrl),
 		CreateTestImageComponentDatastore(s.T(), s.testDB, mockCtrl),
 		CreateTestImageCVEDatastore(s.T(), s.testDB),

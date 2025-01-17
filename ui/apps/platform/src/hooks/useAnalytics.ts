@@ -69,7 +69,7 @@ export const COMPLIANCE_REPORT_DOWNLOAD_GENERATION_TRIGGERED =
 export const COMPLIANCE_REPORT_MANUAL_SEND_TRIGGERED = 'Compliance Report Manual Send Triggered';
 export const COMPLIANCE_REPORT_JOBS_TABLE_VIEWED = 'Compliance Report Jobs Table Viewed';
 export const COMPLIANCE_REPORT_JOBS_VIEW_TOGGLED = 'Compliance Report Jobs View Toggled';
-export const COMPLIANCE_REPORT_RUN_STATE_FILTERED = 'Compliance Report Run State Filtered';
+export const COMPLIANCE_REPORT_JOB_STATUS_FILTERED = 'Compliance Report Job Status Filtered';
 export const COMPLIANCE_SCHEDULES_WIZARD_SAVE_CLICKED = 'Compliance Schedules Wizard Save Clicked';
 export const COMPLIANCE_SCHEDULES_WIZARD_STEP_CHANGED = 'Compliance Schedules Wizard Step Changed';
 
@@ -377,9 +377,16 @@ export type AnalyticsEvent =
      * Tracks each time the user filters by report run state
      */
     | {
-          event: typeof COMPLIANCE_REPORT_RUN_STATE_FILTERED;
+          event: typeof COMPLIANCE_REPORT_JOB_STATUS_FILTERED;
           properties: {
-              value: ('WAITING' | 'PREPARING' | 'GENERATED' | 'DELIVERED' | 'FAILURE')[];
+              value: (
+                  | 'WAITING'
+                  | 'PREPARING'
+                  | 'DOWNLOAD_GENERATED'
+                  | 'EMAIL_DELIVERED'
+                  | 'ERROR'
+                  | 'PARTIAL_ERROR'
+              )[];
           };
       }
     | {

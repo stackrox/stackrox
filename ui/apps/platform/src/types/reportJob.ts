@@ -15,6 +15,7 @@ export type ReportStatus = {
     errorMsg: string;
     reportRequestType: ReportRequestType;
     reportNotificationMethod: ReportNotificationMethod;
+    failedClusters?: FailedCluster[];
 };
 
 export const runStates = {
@@ -23,6 +24,7 @@ export const runStates = {
     GENERATED: 'GENERATED',
     DELIVERED: 'DELIVERED',
     FAILURE: 'FAILURE',
+    PARTIAL_ERROR: 'PARTIAL_ERROR',
 } as const;
 
 export type RunState = (typeof runStates)[keyof typeof runStates];
@@ -30,3 +32,10 @@ export type RunState = (typeof runStates)[keyof typeof runStates];
 export type ReportRequestType = 'ON_DEMAND' | 'SCHEDULED';
 
 export type ReportNotificationMethod = 'UNSET' | 'EMAIL' | 'DOWNLOAD';
+
+export type FailedCluster = {
+    clusterId: string;
+    clusterName: string;
+    reason: string;
+    operatorVersion: string;
+};

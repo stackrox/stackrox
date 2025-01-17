@@ -66,6 +66,10 @@ export const defaultColumns = {
         title: 'NVD CVSS',
         isShownByDefault: true,
     },
+    epssProbability: {
+        title: 'EPSS probability',
+        isShownByDefault: true,
+    },
     affectedComponents: {
         title: 'Affected components',
         isShownByDefault: true,
@@ -150,9 +154,13 @@ function ImageVulnerabilitiesTable({
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isNvdCvssColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
+    const isEpssProbabilityColumnEnabled =
+        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_EPSS_SCORE');
 
     const colSpan =
-        (isNvdCvssColumnEnabled ? 7 : 6) +
+        7 +
+        (isNvdCvssColumnEnabled ? 1 : 0) +
+        (isEpssProbabilityColumnEnabled ? 1 : 0) +
         (canSelectRows ? 1 : 0) +
         (createTableActions ? 1 : 0) +
         (showExceptionDetailsLink ? 1 : 0) +
@@ -180,6 +188,14 @@ function ImageVulnerabilitiesTable({
                     </Th>
                     {isNvdCvssColumnEnabled && (
                         <Th className={getVisibilityClass('nvdCvss')}>NVD CVSS</Th>
+                    )}
+                    {isEpssProbabilityColumnEnabled && (
+                        <Th
+                            className={getVisibilityClass('epssProbability')}
+                            sort={getSortParams('EPSS Probability')}
+                        >
+                            EPSS probability
+                        </Th>
                     )}
                     <Th className={getVisibilityClass('affectedComponents')}>
                         Affected components
@@ -300,6 +316,15 @@ function ImageVulnerabilitiesTable({
                                                 cvss={nvdCvss ?? 0}
                                                 scoreVersion={nvdScoreVersion ?? 'UNKNOWN_VERSION'}
                                             />
+                                        </Td>
+                                    )}
+                                    {isEpssProbabilityColumnEnabled && (
+                                        <Td
+                                            className={getVisibilityClass('epssProbability')}
+                                            modifier="nowrap"
+                                            dataLabel="EPSS probability"
+                                        >
+                                            Not available
                                         </Td>
                                     )}
                                     <Td

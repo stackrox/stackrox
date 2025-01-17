@@ -100,7 +100,7 @@ spec:
       - name: name
         value: git-clone-oci-ta
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.1@sha256:4bf48d038ff12d25bdeb5ab3e98dc2271818056f454c83d7393ebbd413028147
+        value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.1@sha256:f72fcca6732516339d55ac5f01660e287968e64e857a40a8608db27e298b5126
       - name: kind
         value: task
       resolver: bundles
@@ -121,7 +121,7 @@ spec:
       - name: name
         value: determine-image-tag-stackrox
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:886e1482c717078d11ba7c5d6fc4e8013e3740b4d1282ebe5534db62c9f19428
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:098fb3f43bd32d61874e67adc830cae0845f59fbc06cb52ddcc820f5c2c8be2d
       - name: kind
         value: task
       resolver: bundles
@@ -147,4 +147,11 @@ spec:
     - name: OUTPUT_IMAGE_TAG
       value: $(tasks.determine-output-image-tag.results.IMAGE_TAG)
     taskRef:
-      name: retag-image
+      params:
+      - name: name
+        value: retag-image
+      - name: bundle
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:098fb3f43bd32d61874e67adc830cae0845f59fbc06cb52ddcc820f5c2c8be2d
+      - name: kind
+        value: task
+      resolver: bundles

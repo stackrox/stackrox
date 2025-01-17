@@ -109,6 +109,9 @@ type query struct {
 	// we order the results by the primary key of the schema.
 	GroupByPrimaryKey bool
 	GroupBys          []groupByEntry
+
+	// This field indicates if 'Distinct' is applied in the select portion of the query
+	DistinctAppliedToSelects bool
 }
 
 type groupByEntry struct {
@@ -119,7 +122,7 @@ type groupByEntry struct {
 // We don't care about actually reading the values of these fields, they're
 // there to make SQL happy.
 func (q *query) ExtraSelectedFieldPaths() []pgsearch.SelectQueryField {
-	if !q.DistinctAppliedOnPrimaryKeySelect() && !q.groupByNonPKFields() {
+	if !q.isDistinctAppliedToSelects() && !q.groupByNonPKFields() {
 		return nil
 	}
 
@@ -200,6 +203,7 @@ func (q *query) populatePrimaryKeySelectFields() {
 		SelectPath: fmt.Sprintf("distinct(%s)", stringutils.JoinNonEmpty(",", outStr...)),
 		Alias:      alias,
 	})
+	q.DistinctAppliedToSelects = true
 }
 
 func (q *query) getPortionBeforeFromClause() string {
@@ -259,6 +263,10 @@ func (q *query) DistinctAppliedOnPrimaryKeySelect() bool {
 // groupByNonPKFields returns true if a group by clause based on fields other than primary keys is present in the query.
 func (q *query) groupByNonPKFields() bool {
 	return len(q.GroupBys) > 0 && !q.GroupByPrimaryKey
+}
+
+func (q *query) isDistinctAppliedToSelects() bool {
+	return q != nil && q.DistinctAppliedToSelects
 }
 
 func (q *query) AsSQL() string {

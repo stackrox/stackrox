@@ -46,7 +46,7 @@ message Deployment {
   repeated PortConfig ports = 24; // @gotags: policy:"Ports"
 
   int64 state_timestamp = 27; // Internal use only @gotags: hash:"ignore" sensorhash:"ignore"
-  float risk_score = 29; // @gotags: search:"Deployment Risk Score,hidden" policy:",ignore"
+  float risk_score = 29; // @gotags: search:"Deployment Risk Score,hidden" policy:",ignore" sql:"index=btree"
 
   reserved 30; // was tags
 

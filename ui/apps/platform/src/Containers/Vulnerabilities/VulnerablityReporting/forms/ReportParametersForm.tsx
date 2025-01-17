@@ -42,6 +42,8 @@ export type ReportParametersFormParams = {
 
 function ReportParametersForm({ title, formik }: ReportParametersFormParams): ReactElement {
     const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isIncludeEpssProbabilityEnabled =
+        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_EPSS_SCORE');
     const isIncludeNvdCvssEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
 
     const handleTextChange =
@@ -283,14 +285,24 @@ function ReportParametersForm({ title, formik }: ReportParametersFormParams): Re
                         />
                     </FormLabelGroup>
                 )}
-                {isIncludeNvdCvssEnabled && (
-                    <FormGroup label="Optional columns" isInline>
-                        <Checkbox
-                            label="Include NVD CVSS"
-                            id="reportParameters.includeNvdCvss"
-                            isChecked={formik.values.reportParameters.includeNvdCvss}
-                            onChange={onChange}
-                        />
+                {(isIncludeNvdCvssEnabled || isIncludeEpssProbabilityEnabled) && (
+                    <FormGroup label="Optional columns" isInline isStack>
+                        {isIncludeNvdCvssEnabled && (
+                            <Checkbox
+                                label="Include NVD CVSS"
+                                id="reportParameters.includeNvdCvss"
+                                isChecked={formik.values.reportParameters.includeNvdCvss}
+                                onChange={onChange}
+                            />
+                        )}
+                        {isIncludeEpssProbabilityEnabled && (
+                            <Checkbox
+                                label="Include EPSS probability"
+                                id="reportParameters.includeEpssProbability"
+                                isChecked={formik.values.reportParameters.includeEpssProbability}
+                                onChange={onChange}
+                            />
+                        )}
                     </FormGroup>
                 )}
                 <FormLabelGroup
