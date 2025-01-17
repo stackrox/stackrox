@@ -30,16 +30,26 @@ func (e *Store) Debug() []byte {
 	m["endpoints"] = e.endpointsStore.debug()
 	m["IPs"] = e.podIPsStore.debug()
 	m["containerIDs"] = e.containerIDsStore.debug()
-	// json pretty-printer will sort it for us
-	concurrency.WithRLock(&e.traceMutex, func() {
-		m["events"] = e.trace
-	})
+	// json pretty-printer will sort it for us.
+	// We need to copy the trace map, otherwise json.Marshal might panic when
+	// reading the map if track is called at the same time.
+	m["events"] = e.getTrace()
 
 	ret, err := json.Marshal(m)
 	if err != nil {
 		log.Errorf("Error marshalling store debug: %v", err)
 	}
 	return ret
+}
+
+func (e *Store) getTrace() map[string]string {
+	dbg := make(map[string]string)
+	concurrency.WithLock(&e.traceMutex, func() {
+		for timestamp, event := range e.trace {
+			dbg[timestamp] = event
+		}
+	})
+	return dbg
 }
 
 func (e *Store) track(format string, vals ...interface{}) {
