@@ -3,11 +3,13 @@ package phonehome
 import (
 	"context"
 	"net/http"
+	"slices"
 
 	"github.com/stackrox/rox/pkg/grpc/authn"
 )
 
-const NoHeaderOrAnyValuePattern = "*"
+// NoHeaderOrAnyValue pattern allows no header or a header with any value.
+const NoHeaderOrAnyValue Pattern = ""
 
 // RequestParams holds intercepted call parameters.
 type RequestParams struct {
@@ -21,34 +23,19 @@ type RequestParams struct {
 	Headers func(string) []string
 }
 
-// PathMatches returns true if Path matches the glob pattern.
-// E.g. path '/v1/object/id' matches pattern '*/object/*'.
-func (rp *RequestParams) PathMatches(pattern Pattern) bool {
-	return globCache[pattern].Match(rp.Path)
-}
-
-func hasValueMatching(values []string, pattern Pattern) bool {
-	for _, value := range values {
-		if globCache[pattern].Match(value) {
-			return true
-		}
-	}
-	return false
-}
-
 // HasHeader returns true if for each header pattern there is at least one
-// matching value. A request without the expected header matches empty pattern
-// for this header.
+// request header with at least one matching value. A request without the
+// expected header matches NoHeaderOrAnyValue pattern for this header.
 func (rp *RequestParams) HasHeader(patterns map[string]Pattern) bool {
 	for header, expression := range patterns {
-		if expression == NoHeaderOrAnyValuePattern {
+		if expression == NoHeaderOrAnyValue {
 			continue
 		}
 		if rp.Headers == nil {
 			return false
 		}
 		values := rp.Headers(header)
-		if len(values) == 0 || !hasValueMatching(values, expression) {
+		if len(values) == 0 || !slices.ContainsFunc(values, expression.Match) {
 			return false
 		}
 	}

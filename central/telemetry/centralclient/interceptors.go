@@ -19,22 +19,22 @@ var (
 		{
 			Headers: map[string]phonehome.Pattern{
 				userAgentHeaderKey:                  "*roxctl*",
-				clientconn.RoxctlCommandHeader:      phonehome.NoHeaderOrAnyValuePattern,
-				clientconn.RoxctlCommandIndexHeader: phonehome.NoHeaderOrAnyValuePattern,
-				clientconn.ExecutionEnvironment:     phonehome.NoHeaderOrAnyValuePattern,
+				clientconn.RoxctlCommandHeader:      phonehome.NoHeaderOrAnyValue,
+				clientconn.RoxctlCommandIndexHeader: phonehome.NoHeaderOrAnyValue,
+				clientconn.ExecutionEnvironment:     phonehome.NoHeaderOrAnyValue,
 			},
 		},
 		{
-			Paths: phonehome.Pattern("/v1/clusters").Pointer(),
+			Paths: phonehome.Pattern("/v1/clusters").Ptr(),
 			Headers: map[string]phonehome.Pattern{
 				userAgentHeaderKey:    "*ServiceNow*",
-				snowIntegrationHeader: phonehome.NoHeaderOrAnyValuePattern,
+				snowIntegrationHeader: phonehome.NoHeaderOrAnyValue,
 			},
 		},
 		{
-			Paths: phonehome.Pattern(apiWhiteList.Setting()).Pointer(),
+			Paths: phonehome.Pattern(apiWhiteList.Setting()).Ptr(),
 			Headers: map[string]phonehome.Pattern{
-				userAgentHeaderKey: phonehome.NoHeaderOrAnyValuePattern,
+				userAgentHeaderKey: phonehome.NoHeaderOrAnyValue,
 			},
 		},
 		apiPathsCampaign(),
@@ -51,7 +51,7 @@ var (
 func apiPathsCampaign() *phonehome.APICallCampaignCriterion {
 	if pattern := apiWhiteList.Setting(); pattern != "" {
 		return &phonehome.APICallCampaignCriterion{
-			Paths: phonehome.Pattern("{" + pattern + "}").Pointer(),
+			Paths: phonehome.Pattern("{" + pattern + "}").Ptr(),
 		}
 	}
 	return nil

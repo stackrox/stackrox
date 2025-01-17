@@ -3,25 +3,8 @@ package phonehome
 import (
 	"slices"
 
-	"github.com/gobwas/glob"
 	"github.com/pkg/errors"
 )
-
-type Pattern string
-
-func (p *Pattern) compile() (glob.Glob, error) {
-	g, err := glob.Compile(string(*p))
-	if err != nil {
-		return nil, errors.WithMessagef(err, "failed to compile %q", string(*p))
-	}
-	return g, nil
-}
-
-func (p Pattern) Pointer() *Pattern {
-	return &p
-}
-
-var globCache = make(map[Pattern]glob.Glob)
 
 // APICallCampaignCriterion defines a criterion for an API interception of a
 // telemetry campaign. Requests parameters need to match all fields for the
@@ -38,25 +21,21 @@ type APICallCampaignCriterion struct {
 // A request should fulfil at least one of the criterion to be tracked.
 type APICallCampaign []*APICallCampaignCriterion
 
+// Compile compiles and caches all glob patterns of the criterion.
 func (c *APICallCampaignCriterion) Compile() error {
 	if c == nil {
 		return nil
 	}
-	var err error
 	for _, pattern := range c.Headers {
-		if globCache[pattern], err = pattern.compile(); err != nil {
+		if err := pattern.compile(); err != nil {
 			return errors.WithMessage(err, "error parsing header pattern")
 		}
 	}
-	if c.Paths != nil {
-		if globCache[*c.Paths], err = c.Paths.compile(); err != nil {
-			return errors.WithMessage(err, "error parsing path pattern")
-		}
+	if err := c.Paths.compile(); err != nil {
+		return errors.WithMessage(err, "error parsing path pattern")
 	}
-	if c.Methods != nil {
-		if globCache[*c.Methods], err = c.Methods.compile(); err != nil {
-			return errors.WithMessage(err, "error parsing methods pattern")
-		}
+	if err := c.Methods.compile(); err != nil {
+		return errors.WithMessage(err, "error parsing methods pattern")
 	}
 	return nil
 }
@@ -64,11 +43,12 @@ func (c *APICallCampaignCriterion) Compile() error {
 func (c *APICallCampaignCriterion) isFulfilled(rp *RequestParams) bool {
 	return c != nil &&
 		(len(c.Codes) == 0 || slices.Contains(c.Codes, int32(rp.Code))) &&
-		(c.Paths == nil || globCache[*c.Paths].Match(rp.Path)) &&
-		(c.Methods == nil || globCache[*c.Methods].Match(rp.Method)) &&
+		(c.Paths == nil || (*c.Paths).Match(rp.Path)) &&
+		(c.Methods == nil || (*c.Methods).Match(rp.Method)) &&
 		(c.Headers == nil || rp.HasHeader(c.Headers))
 }
 
+// Compile compiles and caches all glob patterns of the campaign.
 func (c APICallCampaign) Compile() error {
 	for _, cc := range c {
 		if err := cc.Compile(); err != nil {
