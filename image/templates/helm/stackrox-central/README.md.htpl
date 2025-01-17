@@ -219,7 +219,7 @@ cluster must have sufficient computing resources available to host both scanner 
 The default resource configuration for Scanner V4 components can be found in the file
 internal/defaults.yaml.
 
-### Multi-Tenancy
+### Multiple Installations of Central
 
 Because the StackRox Central installation includes a `SecurityPolicy` custom resource definition (CRD) in its template,
 only one installation can "own" the CRD.  This means that any other installation on the same cluster will fail to install if it tries to install the CRD with an error like:
@@ -235,9 +235,9 @@ There is an option to exclude the CRD from the template, but there are a few oth
 
 1. Upgrades to the first installation will also upgrade the CRD used by any other installation, introducing the potential for versioning mismatches.
 2. Uninstallation of the first installation will remove the CRD, thus removing all custom `SecurityPolicy` resources from ALL Central installations.
-3. Downdgrading of the first installation could remove the CRD as well.
+3. Downgrading of the first installation could remove the CRD as well.
 4. These concerns are the responsiblity of the user to handle.  Thus, multi-tenant CRD management issues are considered unsupported!
 
-If, after understanding these risks, you still want to install multiple Central installations on the same cluster, it can be done with the following flag:
+If, after understanding these risks, you still want to install multiple Central installations on the same cluster using Helm, it can be done with the following flag:
 
-    allowUnsupportedMultipleCentralsUsingHelm=documentationWasReadAndUnderstood
+    --set allowUnsupportedMultipleCentralsUsingHelm=documentationWasReadAndUnderstood

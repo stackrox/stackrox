@@ -556,23 +556,9 @@ central:
 ## the implications of installing more than one instance of Central on a single cluster, particularly
 ## around CRD management.
 ##
-## Because the StackRox Central installation includes a `SecurityPolicy` custom resource definition
-## (CRD) in its template, only one installation can "own" the CRD.  This means that any other
-## installation on the same cluster will fail to install if it tries to install the CRD.
-##
-## There is an option to exclude the CRD from the template, but there are a few other concerns to be
-## aware of when managing multiple Central installations on one cluster:
-##
-##  1. Upgrades to the first installation will also upgrade the CRD used by any other installation,
-##     introducing the potential for versioning mismatches.
-##  2. Uninstallation of the first installation will remove the CRD, thus removing all custom
-##     `SecurityPolicy` resources from ALL Central installations.
-##  3. Downdgrading of the first installation could remove the CRD as well.
-##  4. These concerns are the responsiblity of the user to handle.  Thus, multi-tenant CRD
-##     management issues are considered unsupported!
-##
-## To enable the option, it needs to be set to the value "documentationWasReadAndUnderstood".
-#allowUnsupportedMultipleCentralsUsingHelm: false
+## To enable the option, please review the readme section titled "Multiple Installations of Central"
+## and update the option value accordingly.
+#allowUnsupportedMultipleCentralsUsingHelm: no
 #
 #meta:
 #  # This controls whether the built-in `lookup` function will be used. If you see an error
