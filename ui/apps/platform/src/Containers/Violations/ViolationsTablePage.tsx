@@ -1,12 +1,14 @@
 import React, { useEffect, useMemo, useState, ReactElement } from 'react';
 import {
-    PageSection,
-    Bullseye,
     Alert,
-    Title,
+    Bullseye,
+    Flex,
+    PageSection,
     Tabs,
     Tab,
     TabTitleText,
+    Text,
+    Title,
     Spinner,
 } from '@patternfly/react-core';
 
@@ -30,11 +32,12 @@ import useURLSearch from 'hooks/useURLSearch';
 import useURLPagination from 'hooks/useURLPagination';
 import useInterval from 'hooks/useInterval';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import { ensureExhaustive } from 'utils/type.utils';
 import FilteredWorkflowViewSelector from 'Components/FilteredWorkflowViewSelector/FilteredWorkflowViewSelector';
 import useFilteredWorkflowViewURLState from 'Components/FilteredWorkflowViewSelector/useFilteredWorkflowViewURLState';
 import ViolationsTablePanel from './ViolationsTablePanel';
 import tableColumnDescriptor from './violationTableColumnDescriptors';
-import { violationStateTabs } from './types';
+import { ViolationStateTab, violationStateTabs } from './types';
 
 import './ViolationsTablePage.css';
 
@@ -57,6 +60,21 @@ function getFilteredWorkflowViewSearchFilter(
         case 'Full view':
         default:
             return {};
+    }
+}
+
+function getDescriptionForSelectedViolationState(
+    selectedViolationState: ViolationStateTab
+): string {
+    switch (selectedViolationState) {
+        case 'ACTIVE':
+            return 'Observed policy violations in need of resolution';
+        case 'RESOLVED':
+            return 'Formerly active policy violations that have been resolved';
+        case 'ATTEMPTED':
+            return 'Attempted policy violations prevented by enforcement';
+        default:
+            return ensureExhaustive(selectedViolationState);
     }
 }
 
@@ -116,6 +134,7 @@ function ViolationsTablePage(): ReactElement {
         setFilteredWorkflowView(value);
         setSearchFilter({});
         setPage(1);
+        setSelectedViolationStateTab('ACTIVE');
         analyticsTrack({ event: 'Filtered Workflow View Selected', properties: { value } });
     };
 
@@ -221,16 +240,24 @@ function ViolationsTablePage(): ReactElement {
     return (
         <>
             <PageSection variant="light" id="violations-table">
-                <Title headingLevel="h1">Violations</Title>
+                <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
+                    <Title headingLevel="h1">Violations</Title>
+                    {isPlatformComponentsEnabled && (
+                        <FilteredWorkflowViewSelector
+                            filteredWorkflowView={filteredWorkflowView}
+                            onChangeFilteredWorkflowView={onChangeFilteredWorkflowView}
+                        />
+                    )}
+                </Flex>
             </PageSection>
-            <PageSection variant="light" className="pf-v5-u-py-0">
+            <PageSection variant="light" padding={{ default: 'noPadding' }}>
                 <Tabs
+                    className="pf-v5-u-px-lg"
                     activeKey={selectedViolationStateTab}
                     onSelect={(_e, tab) => {
                         setIsLoadingAlerts(true);
                         setSearchFilter({});
                         setPage(1);
-                        setFilteredWorkflowView('Applications view');
                         setSelectedViolationStateTab(tab);
                     }}
                     aria-label="Violation state tabs"
@@ -252,14 +279,9 @@ function ViolationsTablePage(): ReactElement {
                     />
                 </Tabs>
             </PageSection>
-            {isPlatformComponentsEnabled && (
-                <PageSection className="pf-v5-u-py-md" component="div" variant="light">
-                    <FilteredWorkflowViewSelector
-                        filteredWorkflowView={filteredWorkflowView}
-                        onChangeFilteredWorkflowView={onChangeFilteredWorkflowView}
-                    />
-                </PageSection>
-            )}
+            <PageSection variant="light">
+                <Text>{getDescriptionForSelectedViolationState(selectedViolationStateTab)}</Text>
+            </PageSection>
             <PageSection variant="default" id={tabContentId}>
                 {isLoadingAlerts && (
                     <Bullseye>
