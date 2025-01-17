@@ -6,7 +6,7 @@
 #
 # TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
 # We're targeting a floating tag here which should be reasonably safe to do as both RHEL major 8 and Go major.minor 1.22 should provide enough stability.
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.22 AS builder
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.23 AS builder
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
