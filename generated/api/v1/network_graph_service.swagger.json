@@ -149,7 +149,7 @@
         ]
       }
     },
-    "/v1/networkgraph/cluster/{clusterId}/externalentities/flows/{deploymentId}": {
+    "/v1/networkgraph/cluster/{clusterId}/externalentities/flows": {
       "get": {
         "operationId": "NetworkGraphService_GetExternalNetworkFlows",
         "responses": {
@@ -175,8 +175,14 @@
           },
           {
             "name": "deploymentId",
-            "in": "path",
-            "required": true,
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
             "type": "string"
           }
         ],
