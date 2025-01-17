@@ -94,6 +94,8 @@ func (s *AlertsSearchSuite) TestSearch() {
 
 func (s *AlertsSearchSuite) TestSearchResolved() {
 	ids := []string{fixtureconsts.Alert1, fixtureconsts.Alert2, fixtureconsts.Alert3, fixtureconsts.Alert4}
+	allAlertIds := make(map[string]bool)
+	unresolvedAlertIds := make(map[string]bool)
 	for i, id := range ids {
 		alert := fixtures.GetAlert()
 		alert.Id = id
@@ -101,7 +103,10 @@ func (s *AlertsSearchSuite) TestSearchResolved() {
 		alert.PlatformComponent = false
 		if i >= 2 {
 			alert.State = storage.ViolationState_RESOLVED
+		} else {
+			unresolvedAlertIds[alert.Id] = true
 		}
+		allAlertIds[alert.Id] = true
 		s.NoError(s.store.Upsert(ctx, alert))
 		foundAlert, exists, err := s.store.Get(ctx, id)
 		s.True(exists)
@@ -110,11 +115,22 @@ func (s *AlertsSearchSuite) TestSearchResolved() {
 	}
 	results, err := s.searcher.Search(ctx, &v1.Query{}, false)
 	s.NoError(err)
-	s.Len(results, 4)
-
+	for _, result := range results {
+		s.Equal(allAlertIds[result.ID], true)
+		allAlertIds[result.ID] = false
+	}
+	for entry := range allAlertIds {
+		s.False(allAlertIds[entry])
+	}
 	results, err = s.searcher.Search(ctx, &v1.Query{}, true)
 	s.NoError(err)
-	s.Len(results, 2)
+	for _, result := range results {
+		s.True(unresolvedAlertIds[result.ID])
+		unresolvedAlertIds[result.ID] = false
+	}
+	for entry := range unresolvedAlertIds {
+		s.False(unresolvedAlertIds[entry])
+	}
 }
 
 func (s *AlertsSearchSuite) TestCountResolved() {
