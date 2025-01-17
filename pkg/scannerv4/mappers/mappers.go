@@ -318,8 +318,8 @@ func toProtoV4PackageVulnerabilitiesMap(ccPkgVulnerabilities map[string][]string
 		if vulnIDs == nil {
 			continue
 		}
-		vulnIDs = filterRepeatedCCVulns(vulnIDs, ccVulnerabilities)
-		vulnIDs = filterRepeatedProtoAdvisories(vulnIDs, vulnerabilities)
+		vulnIDs = dedupeVulns(vulnIDs, ccVulnerabilities)
+		vulnIDs = dedupeAdvisories(vulnIDs, vulnerabilities)
 		pkgVulns[id] = &v4.StringList{
 			Values: vulnIDs,
 		}
@@ -1142,9 +1142,9 @@ func findName(vuln *claircore.Vulnerability, p *regexp.Regexp) (string, bool) {
 	return "", false
 }
 
-// filterRepeatedCCVulns filters repeat vulnerabilities out of vulnIDs and returns the result.
+// dedupeVulns deduplicates repeat vulnerabilities out of vulnIDs and returns the result.
 // This function does not guarantee ordering is preserved.
-func filterRepeatedCCVulns(vulnIDs []string, ccVulnerabilities map[string]*claircore.Vulnerability) []string {
+func dedupeVulns(vulnIDs []string, ccVulnerabilities map[string]*claircore.Vulnerability) []string {
 	// Group each vulnerability by name.
 	// This maps each name to a slice of vulnerabilities to protect against the possibility
 	// Claircore finds multiple vulnerabilities with the same name for this package from different vulnerability streams.
@@ -1203,11 +1203,11 @@ func vulnsEqual(a, b *claircore.Vulnerability) bool {
 		a.FixedInVersion == b.FixedInVersion
 }
 
-// filterRepeatedProtoAdvisories filters repeat advisories out of vulnIDs and returns the result.
+// dedupeAdvisories deduplicates repeat advisories out of vulnIDs and returns the result.
 // This function will only filter if ROX_SCANNER_V4_RED_HAT_CSAF is enabled; otherwise,
 // it'll just return the original slice of vulnIDs.
 // This function does not guarantee order is preserved.
-func filterRepeatedProtoAdvisories(vulnIDs []string, protoVulns map[string]*v4.VulnerabilityReport_Vulnerability) []string {
+func dedupeAdvisories(vulnIDs []string, protoVulns map[string]*v4.VulnerabilityReport_Vulnerability) []string {
 	if !features.ScannerV4RedHatCSAF.Enabled() {
 		return vulnIDs
 	}
