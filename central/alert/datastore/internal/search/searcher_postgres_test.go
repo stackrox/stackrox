@@ -8,7 +8,6 @@ import (
 
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store/postgres"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
@@ -113,7 +112,7 @@ func (s *AlertsSearchSuite) TestSearchResolved() {
 		s.NoError(err)
 		protoassert.Equal(s.T(), alert, foundAlert)
 	}
-	results, err := s.searcher.Search(ctx, &v1.Query{}, false)
+	results, err := s.searcher.Search(ctx, search.EmptyQuery(), false)
 	s.NoError(err)
 	// check that the result is in the allAlertIds map, then set the value to false, indicating it has already been found
 	for _, result := range results {
@@ -124,7 +123,7 @@ func (s *AlertsSearchSuite) TestSearchResolved() {
 	for entry := range allAlertIds {
 		s.False(allAlertIds[entry])
 	}
-	results, err = s.searcher.Search(ctx, &v1.Query{}, true)
+	results, err = s.searcher.Search(ctx, search.EmptyQuery(), true)
 	s.NoError(err)
 	for _, result := range results {
 		s.True(unresolvedAlertIds[result.ID])
@@ -151,11 +150,11 @@ func (s *AlertsSearchSuite) TestCountResolved() {
 		s.NoError(err)
 		protoassert.Equal(s.T(), alert, foundAlert)
 	}
-	results, err := s.searcher.Count(ctx, &v1.Query{}, false)
+	results, err := s.searcher.Count(ctx, search.EmptyQuery(), false)
 	s.NoError(err)
 	s.Equal(results, 4)
 
-	results, err = s.searcher.Count(ctx, &v1.Query{}, true)
+	results, err = s.searcher.Count(ctx, search.EmptyQuery(), true)
 	s.NoError(err)
 	s.Equal(results, 2)
 }
