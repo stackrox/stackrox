@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	clusterInitStore "github.com/stackrox/rox/central/clusterinit/store"
 	installationStore "github.com/stackrox/rox/central/installation/store"
 	"github.com/stackrox/rox/central/metrics/telemetry"
 	"github.com/stackrox/rox/central/securedclustercertgen"
@@ -45,19 +46,27 @@ var (
 type serviceImpl struct {
 	central.UnimplementedSensorServiceServer
 
-	manager      connection.Manager
-	pf           pipeline.Factory
-	clusters     clusterDataStore.DataStore
-	installation installationStore.Store
+	manager          connection.Manager
+	pf               pipeline.Factory
+	clusters         clusterDataStore.DataStore
+	installation     installationStore.Store
+	clusterInitStore clusterInitStore.Store
 }
 
 // New creates a new Service using the given manager.
-func New(manager connection.Manager, pf pipeline.Factory, clusters clusterDataStore.DataStore, installation installationStore.Store) Service {
+func New(
+	manager connection.Manager,
+	pf pipeline.Factory,
+	clusters clusterDataStore.DataStore,
+	installation installationStore.Store,
+	clusterInitStore clusterInitStore.Store,
+) Service {
 	return &serviceImpl{
-		manager:      manager,
-		pf:           pf,
-		clusters:     clusters,
-		installation: installation,
+		manager:          manager,
+		pf:               pf,
+		clusters:         clusters,
+		installation:     installation,
+		clusterInitStore: clusterInitStore,
 	}
 }
 
@@ -176,6 +185,15 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 	if svcType == storage.ServiceType_REGISTRANT_SERVICE {
 		// Terminate connection which uses a CRS certificate at this point.
 		return nil
+	}
+
+	// Sensor has initially connected with a real service certificate, not just with a CRS.
+	// Hence we check if we need to update the revocation state of the CRS used for this cluster.
+	if cluster.GetHealthStatus().GetLastContact() == nil {
+		if err := s.clusterInitStore.UpdateRevocationState(clusterDSSAC, cluster.GetInitBundleId()); err != nil {
+			log.Errorf("Failed to update revocation state of cluster registration secret %q: %v", cluster.GetInitBundleId(), err)
+			// We will not prevent connecting the cluster in case the updating of the revocation state failed.
+		}
 	}
 
 	if expiryStatus, err := getCertExpiryStatus(identity); err != nil {
