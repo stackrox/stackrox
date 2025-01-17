@@ -2,6 +2,7 @@ package crs
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
@@ -22,6 +23,7 @@ import (
 // file specified by `outFilename` (if it is non-empty) or to stdout (if `outFilename` is empty).
 func generateCRS(cliEnvironment environment.Environment, name string,
 	outFilename string, timeout time.Duration, retryTimeout time.Duration,
+	maxRegistrations uint64,
 ) error {
 	var err error
 	var outFile *os.File
@@ -51,7 +53,10 @@ func generateCRS(cliEnvironment environment.Environment, name string,
 		}()
 	}
 
-	req := v1.CRSGenRequest{Name: name}
+	req := v1.CRSGenRequest{
+		Name:             name,
+		MaxRegistrations: maxRegistrations,
+	}
 	resp, err := svc.GenerateCRS(ctx, &req)
 	if err != nil {
 		if errStatus, ok := status.FromError(err); ok && errStatus.Code() == codes.Unimplemented {
@@ -63,13 +68,19 @@ func generateCRS(cliEnvironment environment.Environment, name string,
 	crs := resp.GetCrs()
 	meta := resp.GetMeta()
 
+	registrationLimit := "(no limit)"
+	if maxRegistrations := meta.GetMaxRegistrations(); maxRegistrations > 0 {
+		registrationLimit = fmt.Sprintf("%d", maxRegistrations)
+	}
+
 	cliEnvironment.Logger().InfofLn("Successfully generated new CRS")
 	cliEnvironment.Logger().InfofLn("")
-	cliEnvironment.Logger().InfofLn("  Name:       %s", meta.GetName())
-	cliEnvironment.Logger().InfofLn("  Created at: %s", meta.GetCreatedAt().AsTime().Format(time.RFC3339))
-	cliEnvironment.Logger().InfofLn("  Expires at: %s", meta.GetExpiresAt().AsTime().Format(time.RFC3339))
-	cliEnvironment.Logger().InfofLn("  Created By: %s", getPrettyUser(meta.GetCreatedBy()))
-	cliEnvironment.Logger().InfofLn("  ID:         %s", meta.GetId())
+	cliEnvironment.Logger().InfofLn("  Name:                          %s", meta.GetName())
+	cliEnvironment.Logger().InfofLn("  Created at:                    %s", meta.GetCreatedAt().AsTime().Format(time.RFC3339))
+	cliEnvironment.Logger().InfofLn("  Expires at:                    %s", meta.GetExpiresAt().AsTime().Format(time.RFC3339))
+	cliEnvironment.Logger().InfofLn("  Created By:                    %s", getPrettyUser(meta.GetCreatedBy()))
+	cliEnvironment.Logger().InfofLn("  ID:                            %s", meta.GetId())
+	cliEnvironment.Logger().InfofLn("  Allowed cluster registrations: %s", registrationLimit)
 
 	_, err = outWriter.Write(crs)
 	if err != nil {
@@ -90,6 +101,7 @@ func generateCRS(cliEnvironment environment.Environment, name string,
 // generateCommand implements the command for generating new CRSs.
 func generateCommand(cliEnvironment environment.Environment) *cobra.Command {
 	var outputFile string
+	var maxRegistrations uint64
 
 	c := &cobra.Command{
 		Use:   "generate <CRS name>",
@@ -104,10 +116,11 @@ func generateCommand(cliEnvironment environment.Environment) *cobra.Command {
 			if outputFile == "-" {
 				outputFile = ""
 			}
-			return generateCRS(cliEnvironment, name, outputFile, flags.Timeout(cmd), flags.RetryTimeout(cmd))
+			return generateCRS(cliEnvironment, name, outputFile, flags.Timeout(cmd), flags.RetryTimeout(cmd), maxRegistrations)
 		},
 	}
 	c.PersistentFlags().StringVarP(&outputFile, "output", "o", "", "File to be used for storing the newly generated CRS (- for stdout)")
+	c.PersistentFlags().Uint64Var(&maxRegistrations, "max-registrations", 1, "Specify after how many cluster registrations the CRS will be revoked automatically, use 0 for no limit (default: 1)")
 
 	return c
 }
