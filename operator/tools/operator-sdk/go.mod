@@ -1,8 +1,8 @@
 module github.com/stackrox/rox/operator/tools/operator-sdk
 
-go 1.22
+go 1.22.5
 
-toolchain go1.22.5
+toolchain go1.22.11
 
 require (
 	github.com/operator-framework/operator-lifecycle-manager v0.30.0
