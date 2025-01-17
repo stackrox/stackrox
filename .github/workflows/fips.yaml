@@ -38,8 +38,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          repository: 'stackrox/openshift-check-payload'
-          ref: development
+          repository: 'openshift/check-payload'
+          ref: main
 
       - uses: actions/setup-go@v5
 
