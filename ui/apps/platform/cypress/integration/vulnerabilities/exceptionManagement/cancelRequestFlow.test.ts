@@ -50,7 +50,7 @@ describe('Exception Management Request Details Page', () => {
         );
         cy.get('div.pf-v5-c-alert.pf-m-warning').should(
             'contain',
-            'You are viewing a canceled request. If this cancelation was not intended, please submit a new request'
+            'You are viewing a canceled request. If this cancellation was not intended, please submit a new request'
         );
     });
 
