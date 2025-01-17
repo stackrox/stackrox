@@ -8,7 +8,6 @@ type ReadOptions struct {
 	SkipGetAffectedImages          bool
 	SkipGetFirstDiscoveredInSystem bool
 	SkipPublishedDate              bool
-	SkipEPSSProbability            bool
 }
 
 // IsDefault returns true if all readoptions are set to default/false.
