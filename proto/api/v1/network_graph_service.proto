@@ -74,6 +74,7 @@ message GetExternalNetworkEntitiesResponse {
 message GetExternalNetworkFlowsRequest {
   string cluster_id = 1;
   string deployment_id = 2;
+  string query = 3;
 }
 
 message GetExternalNetworkFlowsResponse {
@@ -94,7 +95,7 @@ service NetworkGraphService {
   }
 
   rpc GetExternalNetworkFlows(GetExternalNetworkFlowsRequest) returns (GetExternalNetworkFlowsResponse) {
-    option (google.api.http) = {get: "/v1/networkgraph/cluster/{cluster_id}/externalentities/flows/{deployment_id}"};
+    option (google.api.http) = {get: "/v1/networkgraph/cluster/{cluster_id}/externalentities/flows"};
   }
 
   rpc CreateExternalNetworkEntity(CreateNetworkEntityRequest) returns (storage.NetworkEntity) {
