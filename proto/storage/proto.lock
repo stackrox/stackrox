@@ -2599,6 +2599,16 @@
                 "id": 7,
                 "name": "version",
                 "type": "InitBundleVersion"
+              },
+              {
+                "id": 8,
+                "name": "max_registrations",
+                "type": "uint32"
+              },
+              {
+                "id": 9,
+                "name": "registrations_done",
+                "type": "uint32"
               }
             ]
           }

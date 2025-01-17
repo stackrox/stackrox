@@ -34,6 +34,8 @@ func (m *InitBundleMeta) CloneVT() *InitBundleMeta {
 	r.IsRevoked = m.IsRevoked
 	r.ExpiresAt = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.ExpiresAt).CloneVT())
 	r.Version = m.Version
+	r.MaxRegistrations = m.MaxRegistrations
+	r.RegistrationsDone = m.RegistrationsDone
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -70,6 +72,12 @@ func (this *InitBundleMeta) EqualVT(that *InitBundleMeta) bool {
 		return false
 	}
 	if this.Version != that.Version {
+		return false
+	}
+	if this.MaxRegistrations != that.MaxRegistrations {
+		return false
+	}
+	if this.RegistrationsDone != that.RegistrationsDone {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -111,6 +119,16 @@ func (m *InitBundleMeta) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.RegistrationsDone != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.RegistrationsDone))
+		i--
+		dAtA[i] = 0x48
+	}
+	if m.MaxRegistrations != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.MaxRegistrations))
+		i--
+		dAtA[i] = 0x40
 	}
 	if m.Version != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Version))
@@ -205,6 +223,12 @@ func (m *InitBundleMeta) SizeVT() (n int) {
 	}
 	if m.Version != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.Version))
+	}
+	if m.MaxRegistrations != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.MaxRegistrations))
+	}
+	if m.RegistrationsDone != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.RegistrationsDone))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -454,6 +478,44 @@ func (m *InitBundleMeta) UnmarshalVTUnsafe(dAtA []byte) error {
 				b := dAtA[iNdEx]
 				iNdEx++
 				m.Version |= InitBundleMeta_InitBundleVersion(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 8:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MaxRegistrations", wireType)
+			}
+			m.MaxRegistrations = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.MaxRegistrations |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 9:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RegistrationsDone", wireType)
+			}
+			m.RegistrationsDone = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RegistrationsDone |= uint32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
