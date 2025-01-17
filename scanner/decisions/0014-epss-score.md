@@ -106,7 +106,7 @@ message VulnerabilityReport {
     string link = 5 [deprecated = true]; // link is duplicated with CVSS URL field, the exact deprecation date is undecided
     ...
     repeated CVSS cvss_metrics = 13;
-    EPSS epss = 14; <-- new field
+    EPSS epss_metrics = 14; <-- new field
   }
   ...
   repeated Note notes = 5;
@@ -124,5 +124,6 @@ This approach matches our current scheme for assigning an RHSA a CVSS score
 * We would need to ensure the [First organization's data source](https://epss.cyentia.com/epss_scores-YYYY-MM-DD.csv.gz) remains consistently accessible. 
 Additionally, we should be prepared to change the data updating process if any API key requirements or request throttling are introduced in the future.
 
-* As noted earlier, the EPSS score displayed in Scanner V4 for an RHSA will correspond to the highest EPSS score among the CVEs linked to that RHSA.
-This may change when Scanner V4 introduces CVEs as top-level entities, allowing each CVE to have its own EPSS score, if applicable.
+* As noted earlier, the EPSS score displayed in Scanner V4 for an RHSA corresponds to the highest EPSS score among the CVEs linked to that RHSA in a specific image. This approach does not provide the highest EPSS score for a given RHSA, and we know Central can overwrite the EPSS score for an RHSA across different images.
+An improvement would be to use the CSAF enricher to retrieve the CVE list for an RHSA, allowing us to calculate the highest EPSS score among all associated CVEs. However, this ADR does not address that improvement at this time.
+When Scanner V4 introduces CVEs as top-level entities, we can have each CVE to have its own EPSS score, if applicable. So the RHSA EPSS score calculation will not longer needed.
