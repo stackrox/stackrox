@@ -308,7 +308,18 @@ describe('Image Integrations', () => {
         cy.get(selectors.buttons.test).should('be.disabled');
         cy.get(selectors.buttons.save).should('be.disabled');
 
-        // Step 2, check valid from and save
+        // Step 2, check conditional fields.
+
+        // Step 2.1, enable workload identity, this should remove the credential fields.
+        getInputByLabel('Use workload identity').click();
+        getInputByLabel('Username').should('be.disabled');
+        getInputByLabel('Password').should('be.disabled');
+        // Step 2.2, disable workload identity, this should render the credential fields again.
+        getInputByLabel('Use workload identity').click();
+        getInputByLabel('Username').should('be.enabled');
+        getInputByLabel('Password').should('be.enabled');
+
+        // Step 3, test and save.
         getInputByLabel('Integration name').clear().type(integrationName);
         getInputByLabel('Endpoint').clear().type('test.endpoint');
         getInputByLabel('Username').clear().type('admin');
