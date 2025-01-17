@@ -371,7 +371,7 @@ func copyFromImageCves(ctx context.Context, tx *postgres.Tx, iTime time.Time, ob
 		} else {
 			obj.CveBaseInfo.CreatedAt = protocompat.ConvertTimeToTimestampOrNil(&iTime)
 		}
-		
+
 		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
 			return marshalErr
