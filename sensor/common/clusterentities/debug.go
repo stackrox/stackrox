@@ -8,6 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"golang.org/x/exp/maps"
 )
 
 // StartDebugServer starts HTTP server that allows to look inside the clusterentities store.
@@ -31,25 +32,17 @@ func (e *Store) Debug() []byte {
 	m["IPs"] = e.podIPsStore.debug()
 	m["containerIDs"] = e.containerIDsStore.debug()
 	// json pretty-printer will sort it for us.
-	// We need to copy the trace map, otherwise json.Marshal might panic when
-	// reading the map if track is called at the same time.
-	m["events"] = e.getTrace()
+	concurrency.WithLock(&e.traceMutex, func() {
+		// We need to clone the trace map, otherwise json.Marshal might panic when
+		// reading the map if track is called at the same time.
+		m["events"] = maps.Clone(e.trace)
+	})
 
 	ret, err := json.Marshal(m)
 	if err != nil {
 		log.Errorf("Error marshalling store debug: %v", err)
 	}
 	return ret
-}
-
-func (e *Store) getTrace() map[string]string {
-	dbg := make(map[string]string)
-	concurrency.WithLock(&e.traceMutex, func() {
-		for timestamp, event := range e.trace {
-			dbg[timestamp] = event
-		}
-	})
-	return dbg
 }
 
 func (e *Store) track(format string, vals ...interface{}) {
