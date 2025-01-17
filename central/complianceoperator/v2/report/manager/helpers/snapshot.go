@@ -45,11 +45,13 @@ func ConvertScanConfigurationToReportData(ctx context.Context, scanConfig *stora
 	if err != nil {
 		return nil, err
 	}
+
 	suiteClusters, err := suiteDS.GetSuites(ctx, search.NewQueryBuilder().
 		AddExactMatches(search.ComplianceOperatorSuiteName, scanConfig.GetScanConfigName()).ProtoQuery())
 	if err != nil {
 		return nil, err
 	}
+
 	var lastExecutedTime *timestamppb.Timestamp
 	clusterToSuiteMap := make(map[string]*storage.ComplianceOperatorReportData_SuiteStatus, len(suiteClusters))
 	for _, suite := range suiteClusters {
@@ -58,17 +60,21 @@ func ConvertScanConfigurationToReportData(ctx context.Context, scanConfig *stora
 			Result:       suite.GetStatus().GetResult(),
 			ErrorMessage: suite.GetStatus().GetErrorMessage(),
 		}
+
 		conditions := suite.GetStatus().GetConditions()
 		for _, c := range conditions {
 			if status.GetLastTransitionTime() == nil || protoutils.After(c.GetLastTransitionTime(), status.GetLastTransitionTime()) {
 				status.LastTransitionTime = c.LastTransitionTime
 			}
 		}
+
 		if suite.GetStatus().GetPhase() == "DONE" && (lastExecutedTime == nil || protoutils.After(status.GetLastTransitionTime(), lastExecutedTime)) {
 			lastExecutedTime = status.GetLastTransitionTime()
 		}
+
 		clusterToSuiteMap[suite.GetClusterId()] = status
 	}
+
 	return &storage.ComplianceOperatorReportData{
 		ScanConfiguration: scanConfig,
 		ClusterStatus: func() []*storage.ComplianceOperatorReportData_ClusterStatus {
@@ -81,12 +87,14 @@ func ConvertScanConfigurationToReportData(ctx context.Context, scanConfig *stora
 				if err != nil {
 					continue
 				}
+
 				if len(bindings) != 0 {
 					bindingError := getLatestBindingError(bindings[0].GetStatus())
 					if bindingError != "" {
 						clusterErrors = append(clusterErrors, bindingError)
 					}
 				}
+
 				clusterStatutes = append(clusterStatutes, &storage.ComplianceOperatorReportData_ClusterStatus{
 					ClusterId:   cluster.GetClusterId(),
 					ClusterName: cluster.GetClusterName(),

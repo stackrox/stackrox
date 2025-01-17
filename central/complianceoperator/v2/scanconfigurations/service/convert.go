@@ -252,8 +252,12 @@ func convertStorageReportDataToV2ScanStatus(ctx context.Context, reportData *sto
 	if reportData == nil {
 		return nil, nil
 	}
+
 	notifiers := make([]*v2.NotifierConfiguration, 0, len(reportData.GetScanConfiguration().GetNotifiers()))
 	for _, notifierConfig := range reportData.GetScanConfiguration().GetNotifiers() {
+
+		// The storage.NotifierConfiguration does not contain the notifier name.
+		// We need to retrieve the storage.Notifier from the data store to grab the notifier name.
 		notifier, found, err := notifierDS.GetNotifier(ctx, notifierConfig.GetId())
 		if err != nil {
 			return nil, err
@@ -261,18 +265,21 @@ func convertStorageReportDataToV2ScanStatus(ctx context.Context, reportData *sto
 		if !found {
 			return nil, errors.Errorf("Notifier with ID %s no longer exists", notifierConfig.GetEmailConfig().GetNotifierId())
 		}
+
 		notifierV2, err := convertProtoNotifierConfigToV2(notifierConfig, notifier.GetName())
 		if err != nil {
 			return nil, err
 		}
 		notifiers = append(notifiers, notifierV2)
 	}
+
 	return &v2.ComplianceScanConfigurationStatus{
 		Id:       reportData.GetScanConfiguration().GetId(),
 		ScanName: reportData.GetScanConfiguration().GetScanConfigName(),
 		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
 			OneTimeScan: reportData.GetScanConfiguration().GetOneTimeScan(),
 			Profiles: func() []string {
+
 				ret := make([]string, 0, len(reportData.GetScanConfiguration().GetProfiles()))
 				for _, profile := range reportData.GetScanConfiguration().GetProfiles() {
 					ret = append(ret, profile.GetProfileName())
@@ -284,6 +291,7 @@ func convertStorageReportDataToV2ScanStatus(ctx context.Context, reportData *sto
 			Notifiers:    notifiers,
 		},
 		ClusterStatus: func() []*v2.ClusterScanStatus {
+
 			ret := make([]*v2.ClusterScanStatus, 0, len(reportData.GetClusterStatus()))
 			for _, cluster := range reportData.GetClusterStatus() {
 				ret = append(ret, &v2.ClusterScanStatus{
