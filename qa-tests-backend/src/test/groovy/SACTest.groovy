@@ -384,19 +384,20 @@ class SACTest extends BaseSpecification {
         "A search is performed using the given token"
         def query = getSpecificQuery(category)
         useToken(tokenName)
-        def result = SearchService.search(query)
 
         then:
         "Verify the specified number of results are returned"
-        assert result.resultsCount == numResults
+        withRetry(30, 5) {
+            def result = SearchService.search(query)
+            assert result.resultsCount == numResults
+        }
 
         where:
         "Data inputs are: "
         tokenName                | category     | numResults
         NOACCESSTOKEN            | "Cluster"    | 0
         "searchDeploymentsToken" | "Deployment" | 1
-        // ROX-26729 - it's failing ~5 times a week. Disabled for now.
-        // "searchImagesToken"      | "Image"      | 1
+        "searchImagesToken"      | "Image"      | 1
     }
 
     @Unroll
@@ -447,10 +448,12 @@ class SACTest extends BaseSpecification {
         "Search is called using a token without view access to Deployments"
         def query = getSpecificQuery(category)
         useToken(tokenName)
-        def result = SearchService.autocomplete(query)
         then:
-        "Verify no results are returned by Search"
-        assert result.getValuesCount() == numResults
+        "Verify results returned by Search"
+        withRetry(30, 5) {
+            def result = SearchService.autocomplete(query)
+            assert result.getValuesCount() == numResults
+        }
 
         where:
         "Data inputs are: "
@@ -458,8 +461,7 @@ class SACTest extends BaseSpecification {
         NOACCESSTOKEN            | "Deployment" | 0
         NOACCESSTOKEN            | "Image"      | 0
         "searchDeploymentsToken" | "Deployment" | 1
-        // ROX-27478 - it's failing since 2024-12-19. Disabled for now. Could be related to: ROX-26729.
-        // "searchImagesToken"      | "Image"      | 1
+        "searchImagesToken"      | "Image"      | 1
         "searchNamespacesToken"  | "Namespace"  | 1
     }
 
@@ -469,10 +471,12 @@ class SACTest extends BaseSpecification {
         "Autocomplete is called using the given token"
         def query = getSpecificQuery(category)
         useToken(tokenName)
-        def result = SearchService.autocomplete(query)
         then:
         "Verify exactly the expected number of results are returned"
-        assert result.getValuesCount() >= minReturned
+        withRetry(30, 5) {
+            def result = SearchService.autocomplete(query)
+            assert result.getValuesCount() >= minReturned
+        }
 
         where:
         "Data inputs are: "
