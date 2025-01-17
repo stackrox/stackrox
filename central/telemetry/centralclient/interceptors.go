@@ -31,12 +31,6 @@ var (
 				snowIntegrationHeader: phonehome.NoHeaderOrAnyValue,
 			},
 		},
-		{
-			Paths: phonehome.Pattern(apiWhiteList.Setting()).Ptr(),
-			Headers: map[string]phonehome.Pattern{
-				userAgentHeaderKey: phonehome.NoHeaderOrAnyValue,
-			},
-		},
 		apiPathsCampaign(),
 		userAgentsCampaign(),
 	}
@@ -52,6 +46,9 @@ func apiPathsCampaign() *phonehome.APICallCampaignCriterion {
 	if pattern := apiWhiteList.Setting(); pattern != "" {
 		return &phonehome.APICallCampaignCriterion{
 			Paths: phonehome.Pattern("{" + pattern + "}").Ptr(),
+			Headers: map[string]phonehome.Pattern{
+				userAgentHeaderKey: phonehome.NoHeaderOrAnyValue,
+			},
 		}
 	}
 	return nil
