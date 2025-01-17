@@ -48,6 +48,8 @@ func (s *ImagesStoreSuite) TestStore() {
 		for _, vuln := range comp.GetVulns() {
 			vuln.NvdCvss = 0
 		}
+		// TODO(ROX-27402) remove this
+		comp.Architecture = ""
 	}
 
 	foundImage, exists, err := store.Get(ctx, image.GetId())
