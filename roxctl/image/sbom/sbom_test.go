@@ -109,7 +109,7 @@ func TestGenerateSBOM(t *testing.T) {
 		require.NoError(t, cmd.construct(c))
 
 		err := cmd.GenerateSBOM()
-		require.ErrorContains(t, err, "generating SBOM")
+		require.ErrorContains(t, err, "Error From Request Body")
 	})
 
 	t.Run("error on text/html response", func(t *testing.T) {
@@ -130,6 +130,7 @@ func createServer(t *testing.T, retErr bool, htmlResponse bool) *httptest.Server
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		if retErr {
 			rw.WriteHeader(http.StatusInternalServerError)
+			_, _ = rw.Write([]byte(`{"code":13,"message":"Error From Request Body"}`))
 			return
 		}
 
