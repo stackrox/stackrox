@@ -115,10 +115,12 @@ func (s *AlertsSearchSuite) TestSearchResolved() {
 	}
 	results, err := s.searcher.Search(ctx, &v1.Query{}, false)
 	s.NoError(err)
+	// check that the result is in the allAlertIds map, then set the value to false, indicating it has already been found
 	for _, result := range results {
-		s.Equal(allAlertIds[result.ID], true)
+		s.True(allAlertIds[result.ID])
 		allAlertIds[result.ID] = false
 	}
+	// check that all ids were found
 	for entry := range allAlertIds {
 		s.False(allAlertIds[entry])
 	}
