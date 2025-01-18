@@ -27,6 +27,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Technical Changes
 
 - Scanner V4 now uses [Red Hat's VEX files](https://security.access.redhat.com/data/csaf/v2/vex/) instead of the [CVE map](https://security.access.redhat.com/data/metrics/cvemap.xml) for vulnerability data related to non-RPM content inside of official Red Hat images.
+- ROX-27253: Scanner V4 now reads [Red Hat's CSAF data](https://security.access.redhat.com/data/csaf/v2/advisories/) to alleviate inconsistent Red Hat advisory (RHSA/RHBA/RHEA) data.
+  - This may add extra data into Scanner V4 versions which cannot utilize this data, but this not expected to be a noticeable change in storage usage.
 
 ## [4.6.0]
 
