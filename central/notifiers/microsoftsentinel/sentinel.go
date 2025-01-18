@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
+	"net/http"
 	"time"
 
 	azureErrors "github.com/Azure/azure-sdk-for-go-extensions/pkg/errors"
@@ -21,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -104,11 +106,25 @@ func newSentinelNotifier(notifier *storage.Notifier, cryptoCodec cryptocodec.Cry
 		}
 	}
 
-	// Tries to build authentication token for Client Cert Auth, if this is not possible proceed to create token credentials
-	// for secrets.
+	// Tries to build authentication token in the following order:
+	// 1. Azure default credential chain if workload identity is enabled.
+	// 2. Client certificate authentication.
+	// 3. Static client secret credentials.
 	var azureTokenCredential azcore.TokenCredential
-	var authErrList = errorhelpers.NewErrorList("Sentinel authentication")
-	if config.GetClientCertAuthConfig().GetClientCert() != "" {
+	authErrList := errorhelpers.NewErrorList("Sentinel authentication")
+	if config.GetWifEnabled() {
+		credOpts := &azidentity.DefaultAzureCredentialOptions{
+			ClientOptions: azcore.ClientOptions{
+				Transport: &http.Client{Transport: proxy.RoundTripper()},
+			},
+		}
+		azureTokenCredential, err = azidentity.NewDefaultAzureCredential(credOpts)
+		if err != nil {
+			return nil, errors.Wrap(err, "obtaining Azure default credentials")
+		}
+	}
+
+	if config.GetClientCertAuthConfig().GetClientCert() != "" && azureTokenCredential == nil {
 		certs, err := x509utils.ConvertPEMTox509Certs([]byte(config.GetClientCertAuthConfig().GetClientCert()))
 		if err != nil {
 			return nil, errors.Wrap(err, "invalid cert")
@@ -120,14 +136,25 @@ func newSentinelNotifier(notifier *storage.Notifier, cryptoCodec cryptocodec.Cry
 			return nil, errors.Errorf("PEM was not valid, could not parse all data: %s", string(rest))
 		}
 		if keyBlock == nil {
-			return nil, errors.New("Could not parse empty key")
+			return nil, errors.New("could not parse empty key")
 		}
 		privateKey, err := x509.ParsePKCS8PrivateKey(keyBlock.Bytes)
 		if err != nil {
 			return nil, errors.Wrap(err, "could not parse azure sentinel private key")
 		}
 
-		azureTokenCredential, err = azidentity.NewClientCertificateCredential(config.GetDirectoryTenantId(), config.GetApplicationClientId(), certs, privateKey, &azidentity.ClientCertificateCredentialOptions{})
+		credOpts := &azidentity.ClientCertificateCredentialOptions{
+			ClientOptions: azcore.ClientOptions{
+				Transport: &http.Client{Transport: proxy.RoundTripper()},
+			},
+		}
+		azureTokenCredential, err = azidentity.NewClientCertificateCredential(
+			config.GetDirectoryTenantId(),
+			config.GetApplicationClientId(),
+			certs,
+			privateKey,
+			credOpts,
+		)
 		if err != nil {
 			authErrList.AddError(errors.Wrap(err, "could not create azure sentinel credentials with client cert"))
 		}
@@ -136,13 +163,23 @@ func newSentinelNotifier(notifier *storage.Notifier, cryptoCodec cryptocodec.Cry
 	// If client cert authentication is not configured use secret auth.
 	if config.GetClientCertAuthConfig().GetClientCert() == "" && azureTokenCredential == nil {
 		var err error
-		azureTokenCredential, err = azidentity.NewClientSecretCredential(config.GetDirectoryTenantId(), config.GetApplicationClientId(), secret, &azidentity.ClientSecretCredentialOptions{})
+		credOpts := &azidentity.ClientSecretCredentialOptions{
+			ClientOptions: azcore.ClientOptions{
+				Transport: &http.Client{Transport: proxy.RoundTripper()},
+			},
+		}
+		azureTokenCredential, err = azidentity.NewClientSecretCredential(
+			config.GetDirectoryTenantId(),
+			config.GetApplicationClientId(),
+			secret,
+			credOpts,
+		)
 		if err != nil {
 			authErrList.AddError(errors.Wrap(err, "could not create azure credentials with secret"))
 		}
 	}
 
-	// if no token was created authentication failed
+	// If no token was created then authentication failed.
 	if azureTokenCredential == nil {
 		return nil, authErrList
 	}
@@ -307,12 +344,12 @@ func Validate(sentinel *storage.MicrosoftSentinel, validateSecret bool) error {
 		errorList.AddString("Directory Tenant Id must be specified")
 	}
 
-	if sentinel.GetApplicationClientId() == "" {
+	if !sentinel.GetWifEnabled() && sentinel.GetApplicationClientId() == "" {
 		errorList.AddString("Application Client Id must be specified")
 	}
 
-	if (sentinel.GetSecret() == "" && (sentinel.GetClientCertAuthConfig().GetClientCert() == "" || sentinel.GetClientCertAuthConfig().GetPrivateKey() == "")) && validateSecret {
-		errorList.AddString("Secret or Client Certificate authentication must be specified")
+	if (!sentinel.GetWifEnabled() && sentinel.GetSecret() == "" && (sentinel.GetClientCertAuthConfig().GetClientCert() == "" || sentinel.GetClientCertAuthConfig().GetPrivateKey() == "")) && validateSecret {
+		errorList.AddString("Secret, Client Certificate or Workload Identity authentication must be specified")
 	}
 
 	if !errorList.Empty() {

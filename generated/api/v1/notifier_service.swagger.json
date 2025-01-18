@@ -736,6 +736,10 @@
         },
         "clientCertAuthConfig": {
           "$ref": "#/definitions/MicrosoftSentinelClientCertAuthConfig"
+        },
+        "wifEnabled": {
+          "type": "boolean",
+          "description": "Enables authentication with short-lived tokens using Azure managed identities\nor Azure workload identities.\nThe toggle exists to make the use of Azure default credentials explicit rather\nthan always using them as a fallback. The explicit behavior is more consistent\nwith other integrations."
         }
       }
     },

@@ -844,6 +844,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"directoryTenantId: String!",
 		"logIngestionEndpoint: String!",
 		"secret: String!",
+		"wifEnabled: Boolean!",
 	}))
 	utils.Must(builder.AddType("MicrosoftSentinel_ClientCertAuthConfig", []string{
 		"clientCert: String!",
@@ -9836,6 +9837,11 @@ func (resolver *microsoftSentinelResolver) LogIngestionEndpoint(ctx context.Cont
 
 func (resolver *microsoftSentinelResolver) Secret(ctx context.Context) string {
 	value := resolver.data.GetSecret()
+	return value
+}
+
+func (resolver *microsoftSentinelResolver) WifEnabled(ctx context.Context) bool {
+	value := resolver.data.GetWifEnabled()
 	return value
 }
 
