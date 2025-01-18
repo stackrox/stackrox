@@ -185,6 +185,42 @@
         ]
       }
     },
+    "/v1/networkgraph/cluster/{clusterId}/flows/{entityId}": {
+      "get": {
+        "operationId": "NetworkGraphService_GetFlowsByEntity",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetFlowsByEntityResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "clusterId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "entityId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "NetworkGraphService"
+        ]
+      }
+    },
     "/v1/networkgraph/config": {
       "get": {
         "operationId": "NetworkGraphService_GetNetworkGraphConfig",
@@ -531,6 +567,18 @@
       }
     },
     "v1GetExternalNetworkFlowsResponse": {
+      "type": "object",
+      "properties": {
+        "flows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageNetworkFlow"
+          }
+        }
+      }
+    },
+    "v1GetFlowsByEntityResponse": {
       "type": "object",
       "properties": {
         "flows": {
