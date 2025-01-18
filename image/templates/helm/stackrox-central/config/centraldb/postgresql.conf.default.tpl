@@ -1,6 +1,6 @@
 hba_file = '/etc/stackrox.d/config/pg_hba.conf'
 listen_addresses = '*'
-max_connections = 200
+max_connections = {{ ._rox.central.db.settings.maxConnections }}
 password_encryption = scram-sha-256
 
 ssl = on
@@ -8,25 +8,26 @@ ssl_ca_file = '/run/secrets/stackrox.io/certs/root.crt'
 ssl_cert_file = '/run/secrets/stackrox.io/certs/server.crt'
 ssl_key_file = '/run/secrets/stackrox.io/certs/server.key'
 
-shared_buffers = 2GB
-work_mem = 40MB
-maintenance_work_mem = 512MB
-effective_cache_size = 4GB
+shared_buffers = {{ ._rox.central.db.settings.sharedBuffers }}
+work_mem = {{ ._rox.central.db.settings.workMem }}
+hash_mem_multiplier = {{ ._rox.central.db.settings.hashMemMultiplier }}
+maintenance_work_mem = {{ ._rox.central.db.settings.maintenanceWorkMem }}
+effective_cache_size = {{ ._rox.central.db.settings.effectiveCacheSize }}
 
 dynamic_shared_memory_type = posix
-max_wal_size = 5GB
-min_wal_size = 80MB
+max_wal_size = {{ ._rox.central.db.settings.maxWalSize }}
+min_wal_size = {{ ._rox.central.db.settings.minWalSize }}
 
 log_timezone = 'Etc/UTC'
 datestyle = 'iso, mdy'
 timezone = 'Etc/UTC'
 lc_messages = 'en_US.utf8'
-lc_monetary = 'en_US.utf8'          # locale for monetary formatting
-lc_numeric = 'en_US.utf8'           # locale for number formatting
-lc_time = 'en_US.utf8'              # locale for time formatting
+lc_monetary = 'en_US.utf8' # locale for monetary formatting
+lc_numeric = 'en_US.utf8' # locale for number formatting
+lc_time = 'en_US.utf8' # locale for time formatting
 
 default_text_search_config = 'pg_catalog.english'
-shared_preload_libraries = 'pg_stat_statements'     # StackRox customized
+shared_preload_libraries = 'pg_stat_statements' # StackRox customized
 
 # Logging. For more details, see
 # https://www.postgresql.org/docs/current/runtime-config-logging.html
@@ -55,3 +56,4 @@ log_temp_files = 1024
 # Autovacuum has to keep up with the data growth. Log any autovacuum activity,
 # that took longer than 500ms.
 log_autovacuum_min_duration = 500
+autovacuum_max_workers = {{ ._rox.central.db.settings.autovacuumMaxWorkers }}
