@@ -1,6 +1,7 @@
 package clusterid
 
 import (
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/clusterid"
@@ -42,6 +43,23 @@ func Get() string {
 		}
 	})
 	return GetNoWait()
+}
+
+// GetWithWait waits until we receive the cluster ID from Central or the given waitable is triggered.
+func GetWithWait(waitable concurrency.Waitable) (string, error) {
+	// Trigger the sync.Once function by calling Get asynchronously.
+	// We cannot trust the results because a second call to Get will skip the
+	// sync.Once function and call GetNoWait which will return "" if the ID is not available yet.
+	go func() {
+		_ = Get()
+	}()
+	select {
+	case <-clusterIDAvailable.Done():
+	case <-waitable.Done():
+		return "", errors.New("context cancelled")
+	}
+	// At this point we know for sure we got the cluster id from central.
+	return GetNoWait(), nil
 }
 
 // GetNoWait returns the cluster id without waiting until it is available.
