@@ -118,18 +118,32 @@ func (mr *MockBackendMockRecorder) Issue(ctx, name any) *gomock.Call {
 }
 
 // IssueCRS mocks base method.
-func (m *MockBackend) IssueCRS(ctx context.Context, name string) (*backend.CRSWithMeta, error) {
+func (m *MockBackend) IssueCRS(ctx context.Context, name string, maxRegistrations uint32) (*backend.CRSWithMeta, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IssueCRS", ctx, name)
+	ret := m.ctrl.Call(m, "IssueCRS", ctx, name, maxRegistrations)
 	ret0, _ := ret[0].(*backend.CRSWithMeta)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // IssueCRS indicates an expected call of IssueCRS.
-func (mr *MockBackendMockRecorder) IssueCRS(ctx, name any) *gomock.Call {
+func (mr *MockBackendMockRecorder) IssueCRS(ctx, name, maxRegistrations any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IssueCRS", reflect.TypeOf((*MockBackend)(nil).IssueCRS), ctx, name)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IssueCRS", reflect.TypeOf((*MockBackend)(nil).IssueCRS), ctx, name, maxRegistrations)
+}
+
+// RecordRegistration mocks base method.
+func (m *MockBackend) RecordRegistration(ctx context.Context, id string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RecordRegistration", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RecordRegistration indicates an expected call of RecordRegistration.
+func (mr *MockBackendMockRecorder) RecordRegistration(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordRegistration", reflect.TypeOf((*MockBackend)(nil).RecordRegistration), ctx, id)
 }
 
 // Revoke mocks base method.
@@ -144,6 +158,20 @@ func (m *MockBackend) Revoke(ctx context.Context, id string) error {
 func (mr *MockBackendMockRecorder) Revoke(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Revoke", reflect.TypeOf((*MockBackend)(nil).Revoke), ctx, id)
+}
+
+// UpdateRevocationState mocks base method.
+func (m *MockBackend) UpdateRevocationState(ctx context.Context, id string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateRevocationState", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateRevocationState indicates an expected call of UpdateRevocationState.
+func (mr *MockBackendMockRecorder) UpdateRevocationState(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRevocationState", reflect.TypeOf((*MockBackend)(nil).UpdateRevocationState), ctx, id)
 }
 
 // ValidateClientCertificate mocks base method.
