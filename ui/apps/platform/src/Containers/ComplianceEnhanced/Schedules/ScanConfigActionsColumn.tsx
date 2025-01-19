@@ -95,11 +95,7 @@ function ScanConfigActionsColumn({
             isSeparator: true,
         },
         {
-            title: (
-                <span className={/* isScanning ? '' : */ 'pf-v5-u-danger-color-100'}>
-                    Delete scan schedule
-                </span>
-            ),
+            title: 'Delete scan schedule', // TODO Trash icon
             // description: isScanning ? 'Delete is disabled while scan is running' : '',
             // isDisabled: isScanning,
             onClick: (event) => {

@@ -92,7 +92,7 @@ function ClairifyIntegrationForm({
                 <Alert
                     title="Deprecation notice"
                     component="p"
-                    variant={'warning'}
+                    variant="warning"
                     isInline
                     className="pf-v5-u-mb-lg"
                 >

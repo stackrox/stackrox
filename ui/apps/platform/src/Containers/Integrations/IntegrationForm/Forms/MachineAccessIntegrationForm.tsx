@@ -146,12 +146,8 @@ function MachineAccessIntegrationForm({
                                 direction="down"
                                 isDisabled={!isEditable}
                             >
-                                <SelectOption key={'GENERIC'} value={'GENERIC'}>
-                                    Generic
-                                </SelectOption>
-                                <SelectOption key={'GITHUB_ACTIONS'} value={'GITHUB_ACTIONS'}>
-                                    GitHub action
-                                </SelectOption>
+                                <SelectOption value="GENERIC">Generic</SelectOption>
+                                <SelectOption value="GITHUB_ACTIONS">GitHub action</SelectOption>
                             </SelectSingle>
                         </FormLabelGroup>
                         <FormLabelGroup

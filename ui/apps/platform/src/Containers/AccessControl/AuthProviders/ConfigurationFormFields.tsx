@@ -608,9 +608,7 @@ function ConfigurationFormFields({
                                         onChange={onChange}
                                         isDisabled={isViewing || isActiveModificationsDisabled}
                                         isRequired={config.configurationType === 'static'}
-                                        placeholder={
-                                            '-----BEGIN CERTIFICATE-----\nYour certificate data\n-----END CERTIFICATE-----'
-                                        }
+                                        placeholder="-----BEGIN CERTIFICATE-----\nYour certificate data\n-----END CERTIFICATE-----"
                                         onBlur={onBlur}
                                         validated={
                                             showIdpCertPemError ? ValidatedOptions.error : 'default'
@@ -664,9 +662,7 @@ function ConfigurationFormFields({
                             onChange={onChange}
                             isDisabled={isViewing || isActiveModificationsDisabled}
                             isRequired
-                            placeholder={
-                                '-----BEGIN CERTIFICATE-----\nAuthority certificate data\n-----END CERTIFICATE-----'
-                            }
+                            placeholder="-----BEGIN CERTIFICATE-----\nAuthority certificate data\n-----END CERTIFICATE-----"
                             onBlur={onBlur}
                             validated={showUserPkiKeysError ? ValidatedOptions.error : 'default'}
                         />
