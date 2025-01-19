@@ -899,6 +899,104 @@ func Test_toProtoV4Contents(t *testing.T) {
 	}
 }
 
+func Test_toProtoV4VulnerabilitiesMapWithEPSS(t *testing.T) {
+	now := time.Now()
+	protoNow, err := protocompat.ConvertTimeToTimestampOrError(now)
+	assert.NoError(t, err)
+
+	tests := map[string]struct {
+		ccVulnerabilities map[string]*claircore.Vulnerability
+		nvdVulns          map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem
+		pkgEpss           map[string]epssDetail
+		enableRedHatCVEs  bool
+		want              map[string]*v4.VulnerabilityReport_Vulnerability
+	}{
+		"EPSS OK": {
+			ccVulnerabilities: map[string]*claircore.Vulnerability{
+				"foo": {
+					ID:      "foo",
+					Name:    "Name contains CVE-1234-567",
+					Issued:  now,
+					Updater: "unknown updater",
+				},
+			},
+			nvdVulns: map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem{
+				"foo": {
+					"CVE-9999-999": {
+						ID: "CVE-9999-999",
+					},
+					"CVE-1234-567": {
+						ID: "CVE-1234-567",
+						Metrics: &nvdschema.CVEAPIJSON20CVEItemMetrics{
+							CvssMetricV31: []*nvdschema.CVEAPIJSON20CVSSV31{
+								{
+									CvssData: &nvdschema.CVSSV31{
+										Version:      "3.1",
+										VectorString: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			pkgEpss: map[string]epssDetail{
+				"CVE-1234-567": {
+					ModelVersion: "v2023.03.01",
+					CVE:          "CVE-1234-567",
+					Date:         "2025-01-15T00:00:00+0000",
+					EPSS:         0.00215,
+					Percentile:   0.59338,
+				},
+			},
+			want: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"foo": {
+					EpssMetrics: &v4.VulnerabilityReport_Vulnerability_EPSS{
+						ModelVersion: "v2023.03.01",
+						Date:         "2025-01-15T00:00:00+0000",
+						Probability:  0.00215,
+						Percentile:   0.59338,
+					},
+					Id:     "foo",
+					Issued: protoNow,
+					Name:   "CVE-1234-567",
+					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
+						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+							Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+						},
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+						Url:    "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
+					},
+					CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+						{
+							V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+								Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+							},
+							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+							Url:    "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	ctx := context.Background()
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			enableRedHatCVEs := "false"
+			if tt.enableRedHatCVEs {
+				enableRedHatCVEs = "true"
+			}
+			t.Setenv(features.ScannerV4RedHatCVEs.EnvVar(), enableRedHatCVEs)
+
+			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities, tt.nvdVulns, tt.pkgEpss)
+			assert.NoError(t, err)
+			protoassert.MapEqual(t, tt.want, got)
+		})
+	}
+}
+
 func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 	now := time.Now()
 	protoNow, err := protocompat.ConvertTimeToTimestampOrError(now)
@@ -1512,7 +1610,6 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				enableRedHatCVEs = "true"
 			}
 			t.Setenv(features.ScannerV4RedHatCVEs.EnvVar(), enableRedHatCVEs)
-			// update test in this PR
 			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities, tt.nvdVulns, nil)
 			assert.NoError(t, err)
 			protoassert.MapEqual(t, tt.want, got)
