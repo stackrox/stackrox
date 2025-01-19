@@ -55,8 +55,9 @@ class AdmissionControllerTest extends BaseSpecification {
     private final static String CLONED_POLICY_SUFFIX = "(${TEST_NAMESPACE})"
     private final static String LATEST_TAG = "Latest tag"
     private final static String LATEST_TAG_FOR_TEST = "Latest tag ${CLONED_POLICY_SUFFIX}"
-    private final static String SEVERITY = "Fixable Severity at least Important"
-    private final static String SEVERITY_FOR_TEST = "Fixable Severity at least Important ${CLONED_POLICY_SUFFIX}"
+    private final static String SEVERITY = "Containers with fixable CVEs and Severity at least Important"
+    private final static String SEVERITY_FOR_TEST =
+            "Containers with fixable CVEs and Severity at least Important ${CLONED_POLICY_SUFFIX}"
 
     static final private Deployment SCAN_INLINE_DEPLOYMENT = new Deployment()
             .setName(SCAN_INLINE_DEPLOYMENT_NAME)
@@ -87,8 +88,8 @@ class AdmissionControllerTest extends BaseSpecification {
         clusterId = ClusterService.getClusterId()
         assert clusterId
 
-        // Create namespace scoped policies for test based on "Latest Tag" and
-        // "Fixable Severity at least Important"
+        // Create namespace scoped policies for test based on `LATEST_TAG` and
+        // `SEVERITY` policies.
         createdPolicyIds = []
         for (policy : [Services.getPolicyByName(LATEST_TAG), Services.getPolicyByName(SEVERITY)]) {
             def scopedPolicyForTest = policy.toBuilder()
