@@ -1,6 +1,3 @@
-ARG MAPPINGS_REGISTRY=registry.access.redhat.com
-ARG MAPPINGS_BASE_IMAGE=ubi8
-ARG MAPPINGS_BASE_TAG=latest
 ARG BASE_REGISTRY=registry.access.redhat.com
 ARG BASE_IMAGE=ubi8-minimal
 ARG BASE_TAG=latest
