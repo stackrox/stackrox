@@ -371,8 +371,8 @@ func sortBySeverity(ids []string, vulnerabilities map[string]*v4.VulnerabilityRe
 	})
 }
 
-// rhelVulnsEPSS gets highest EPSS score for each rhel advisory name
-// TODO(ROX-26672): Remove this
+// rhelVulnsEPSS gets highest EPSS score for each rhel advisory name in a given image
+// TODO(ROX-27729): get the highest EPSS score for an RHSA across all CVEs associated with that RHSA
 func rhelVulnsEPSS(vulns map[string]*claircore.Vulnerability, pkgEpss map[string]epssDetail) map[string]epssDetail {
 	if vulns == nil || pkgEpss == nil {
 		return nil
@@ -774,33 +774,33 @@ func pkgFixedBy(enrichments map[string][]json.RawMessage) (map[string]string, er
 
 // pkgEPSS unmarshals and returns the EPSS enrichment, if it exists.
 func pkgEPSS(enrichments map[string][]json.RawMessage) (map[string]epssDetail, error) {
-		enrichmentsList := enrichments[epss.Type]
-		if len(enrichmentsList) == 0 {
-			return nil, nil
-		}
-
-		// Log the content of enrichmentsList
-		log.Printf(">>>> enrichmentsList content: %s\n", enrichmentsList)
-		var pkgEPSSs map[string][]epssDetail
-		err := json.Unmarshal(enrichmentsList[0], &pkgEPSSs)
-		if err != nil {
-			log.Printf("Error unmarshaling enrichmentsList[0]: %v\n", err)
-			return nil, err
-		}
-
-		if len(pkgEPSSs) == 0 {
-			return nil, nil
-		}
-
-		result := make(map[string]epssDetail)
-		for key, details := range pkgEPSSs {
-			if len(details) > 0 {
-				result[key] = details[0] // Take the first element
-			}
-		}
-		return result, nil
+	enrichmentsList := enrichments[epss.Type]
+	if len(enrichmentsList) == 0 {
+		log.Println(">>>> enrichmentsList is empty")
+		return nil, nil
 	}
 
+	log.Printf(">>>> enrichmentsList content: %s\n", enrichmentsList)
+	var pkgEPSSs map[string][]epssDetail
+	err := json.Unmarshal(enrichmentsList[0], &pkgEPSSs)
+	if err != nil {
+		log.Printf("Error unmarshaling enrichmentsList[0]: %v. Content: %s", err, string(enrichmentsList[0]))
+		return nil, err
+	}
+
+	if len(pkgEPSSs) == 0 {
+		return nil, nil
+	}
+
+	result := make(map[string]epssDetail)
+	for key, details := range pkgEPSSs {
+		if len(details) == 0 {
+			continue
+		}
+		// The EPSS enrichment always contains only one element.
+		result[key] = details[0]
+	}
+	return result, nil
 }
 
 // cvssMetrics processes the CVSS metrics and severity for a given vulnerability.
