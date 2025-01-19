@@ -1,7 +1,6 @@
 import React, { ReactElement } from 'react';
 import { Alert, Button, Flex, FlexItem, Switch, Text, Title } from '@patternfly/react-core';
 import { DownloadIcon } from '@patternfly/react-icons';
-import { CheckCircle } from 'react-feather';
 import { ClipLoader } from 'react-spinners';
 
 import { ClusterManagerType } from 'types/cluster.proto';
@@ -98,16 +97,14 @@ function ClusterDeployment({
                 </>
             )}
             {(!editing || !clusterCheckedIn) && (
-                <div className="flex flex-col text-primary-500 p-4">
+                <div className="flex flex-col">
                     {clusterCheckedIn ? (
-                        <div className="flex text-success-600 bg-success-200 border border-solid border-success-400 p-4 items-center">
-                            <div className="flex-1 text-center">
-                                <CheckCircle />
-                            </div>
-                            <div className="flex-3 pl-2">
-                                Success! The cluster has been recognized.
-                            </div>
-                        </div>
+                        <Alert
+                            variant="success"
+                            isInline
+                            title="Success! The cluster has been recognized."
+                            component="p"
+                        />
                     ) : (
                         <div className="flex text-primary-600 bg-primary-200 border border-solid border-primary-400 p-4 items-center">
                             <div className="text-center px-4">
