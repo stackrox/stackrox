@@ -218,3 +218,26 @@ Note that because Scanner V4 currently runs simultaneously with StackRox Scanner
 cluster must have sufficient computing resources available to host both scanner components at the same time.
 The default resource configuration for Scanner V4 components can be found in the file
 internal/defaults.yaml.
+
+### Multiple Installations of Central
+
+Because the StackRox Central installation includes a `SecurityPolicy` custom resource definition (CRD) in its template,
+only one installation can "own" the CRD.  This means that any other installation on the same cluster will fail to install if it tries to install the CRD with an error like:
+
+    Error: INSTALLATION FAILED: Unable to continue with install:
+        CustomResourceDefinition "securitypolicies.config.stackrox.io" in namespace "" exists and cannot be imported into the current release:
+        invalid ownership metadata; annotation validation error: key "meta.helm.sh/release-name" must equal "my-release-name":
+        current value is "stackrox-central-services"; annotation validation error:
+        key "meta.helm.sh/release-namespace" must equal "my-namespace":
+        current value is "stackrox"
+
+There is an option to exclude the CRD from the template, but there are a few other concerns to be aware of when managing multiple Central installations on one cluster:
+
+1. Upgrades to the first installation will also upgrade the CRD used by any other installation, introducing the potential for versioning mismatches.
+2. Uninstallation of the first installation will remove the CRD, thus removing all custom `SecurityPolicy` resources from ALL Central installations.
+3. Downgrading of the first installation could remove the CRD as well.
+4. These concerns are the responsiblity of the user to handle.  Thus, multi-tenant CRD management issues are considered unsupported!
+
+If, after understanding these risks, you still want to install multiple Central installations on the same cluster using Helm, it can be done with the following flag:
+
+    --set allowUnsupportedMultipleCentralsUsingHelm=documentationWasReadAndUnderstood
