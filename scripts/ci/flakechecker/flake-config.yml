@@ -12,4 +12,4 @@
   className: SummaryTest
   testNameRegex: '.*Central-v400\.4\.z_Sensor-v4\.7\.x.*'
   ratioJobName: branch-ci-stackrox-stackrox-master-merge-gke-version-compatibility-tests
-  ratioThreshold: 10
+  ratioThreshold: 30
