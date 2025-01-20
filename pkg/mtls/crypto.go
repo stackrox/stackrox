@@ -49,13 +49,13 @@ const (
 	defaultCertFilePath = CertsPrefix + ServiceCertFileName
 	// defaultKeyFilePath is where the key is stored.
 	defaultKeyFilePath = CertsPrefix + ServiceKeyFileName
-
-	// centralDBPrefix is the prefix of files storing central-db's certificates and keys
-	centralDBPrefix = "central-db-"
+	
+	// CentralDBCertsPrefix is the filesystem prefix under which central-db service certificates and keys are stored
+	CentralDBCertsPrefix = "/run/secrets/stackrox.io/central-db-certs/"
 	// defaultCentralDBCertFilePath is where the public part of central-db certificate is stored
-	defaultCentralDBCertFilePath = CertsPrefix + centralDBPrefix + ServiceCertFileName
+	defaultCentralDBCertFilePath = CentralDBCertsPrefix + ServiceCertFileName
 	// defaultCentralDBKeyFilePath is where the key for central-db certificate is stored
-	defaultCentralDBKeyFilePath = CertsPrefix + centralDBPrefix + ServiceKeyFileName
+	defaultCentralDBKeyFilePath = CentralDBCertsPrefix + ServiceKeyFileName
 
 	// To account for clock skew, set certificates to be valid some time in the past.
 	beforeGracePeriod = 1 * time.Hour
