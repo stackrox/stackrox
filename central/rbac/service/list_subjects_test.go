@@ -300,7 +300,7 @@ func (s *SubjectSearcherTestSuite) TestSearcher() {
 			s.mockBindingsStore.EXPECT().SearchRawRoleBindings(s.ctx, tc.query).Times(3).Return(tc.expectedBindings, nil)
 			results, err := s.subjectSearcher.Search(s.ctx, tc.query)
 			s.NoError(err)
-			s.ElementsMatch(tc.expected, s.standardizeResults(results))
+			s.ElementsMatch(tc.expected, results)
 
 			count, err := s.subjectSearcher.Count(s.ctx, tc.query)
 			s.NoError(err)
@@ -416,13 +416,4 @@ func (s *SubjectSearcherTestSuite) resultsToV1SearchResults(results []search.Res
 		})
 	}
 	return v1SearchResults
-}
-
-func (s *SubjectSearcherTestSuite) standardizeResults(results []search.Result) []search.Result {
-	newResults := make([]search.Result, 0, len(results))
-	for _, r := range results {
-		r.Fields = nil
-		newResults = append(newResults, r)
-	}
-	return newResults
 }
