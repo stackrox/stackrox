@@ -278,7 +278,7 @@ func TestCountQueries(t *testing.T) {
 			ctx:               baseCtx,
 			q:                 search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
 			schema:            deploymentBaseSchema,
-			expectedStatement: "select count(*) from deployments where deployments.Name = $1",
+			expectedStatement: normalizeStatement(`select count(*) from deployments where deployments.Name = $1`),
 			expectedData:      []interface{}{"central"},
 		},
 		{
@@ -294,9 +294,9 @@ func TestCountQueries(t *testing.T) {
 			ctx:    baseCtx,
 			q:      search.NewQueryBuilder().AddExactMatches(search.ImageName, "stackrox").ProtoQuery(),
 			schema: deploymentBaseSchema,
-			expectedStatement: "select count(distinct(deployments.Id)) from deployments " +
-				"inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id " +
-				"where deployments_containers.Image_Name_FullName = $1",
+			expectedStatement: normalizeStatement(`select count(distinct(deployments.Id)) from deployments 
+				inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id 
+				where deployments_containers.Image_Name_FullName = $1`),
 			expectedData: []interface{}{"stackrox"},
 		},
 		{
@@ -306,9 +306,9 @@ func TestCountQueries(t *testing.T) {
 				AddExactMatches(search.ImageName, "stackrox").
 				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
 			schema: deploymentBaseSchema,
-			expectedStatement: "select count(distinct(deployments.Id)) from deployments " +
-				"inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id " +
-				"where (deployments.Name = $1 and deployments_containers.Image_Name_FullName = $2)",
+			expectedStatement: normalizeStatement(`select count(distinct(deployments.Id)) from deployments 
+				inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id 
+				where (deployments.Name = $1 and deployments_containers.Image_Name_FullName = $2)`),
 			expectedData: []interface{}{"central", "stackrox"},
 		},
 		{
@@ -319,9 +319,9 @@ func TestCountQueries(t *testing.T) {
 				search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
 			),
 			schema: deploymentBaseSchema,
-			expectedStatement: "select count(distinct(deployments.Id)) from deployments " +
-				"inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id " +
-				"where (deployments_containers.Image_Name_FullName = $1 or deployments.Name = $2)",
+			expectedStatement: normalizeStatement(`select count(distinct(deployments.Id)) from deployments 
+				inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id 
+				where (deployments_containers.Image_Name_FullName = $1 or deployments.Name = $2)`),
 			expectedData: []interface{}{"stackrox", "central"},
 		},
 		{
@@ -367,10 +367,10 @@ func TestCountQueries(t *testing.T) {
 				search.NewQueryBuilder().AddExactMatches(search.PortProtocol, "tcp").ProtoQuery(),
 			),
 			schema: deploymentBaseSchema,
-			expectedStatement: "select count(distinct(deployments.Id)) from deployments " +
-				"inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id " +
-				"inner join deployments_ports on deployments.Id = deployments_ports.deployments_Id " +
-				"where (deployments_containers.Image_Name_FullName = $1 and deployments_ports.Protocol = $2)",
+			expectedStatement: normalizeStatement(`select count(distinct(deployments.Id)) from deployments 
+				inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id 
+				inner join deployments_ports on deployments.Id = deployments_ports.deployments_Id 
+				where (deployments_containers.Image_Name_FullName = $1 and deployments_ports.Protocol = $2)`),
 			expectedData: []interface{}{"stackrox", "tcp"},
 		},
 		{
@@ -381,10 +381,10 @@ func TestCountQueries(t *testing.T) {
 				search.NewQueryBuilder().AddExactMatches(search.PortProtocol, "tcp").ProtoQuery(),
 			),
 			schema: deploymentBaseSchema,
-			expectedStatement: "select count(distinct(deployments.Id)) from deployments " +
-				"inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id " +
-				"inner join deployments_ports on deployments.Id = deployments_ports.deployments_Id " +
-				"where (deployments_containers.Image_Name_FullName = $1 or deployments_ports.Protocol = $2)",
+			expectedStatement: normalizeStatement(`select count(distinct(deployments.Id)) from deployments 
+				inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id 
+				inner join deployments_ports on deployments.Id = deployments_ports.deployments_Id 
+				where (deployments_containers.Image_Name_FullName = $1 or deployments_ports.Protocol = $2)`),
 			expectedData: []interface{}{"stackrox", "tcp"},
 		},
 		{
@@ -395,9 +395,9 @@ func TestCountQueries(t *testing.T) {
 				search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
 			),
 			schema: deploymentBaseSchema,
-			expectedStatement: "select count(distinct(deployments.Id)) from deployments " +
-				"inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id " +
-				"where (deployments_containers.SecurityContext_Privileged = $1 or deployments.Name = $2)",
+			expectedStatement: normalizeStatement(`select count(distinct(deployments.Id)) from deployments 
+				inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id 
+				where (deployments_containers.SecurityContext_Privileged = $1 or deployments.Name = $2)`),
 			expectedData: []interface{}{"true", "central"},
 		},
 		{
@@ -405,9 +405,9 @@ func TestCountQueries(t *testing.T) {
 			ctx:    baseCtx,
 			q:      search.NewQueryBuilder().AddStrings(search.ImageName, "!central").ProtoQuery(),
 			schema: deploymentBaseSchema,
-			expectedStatement: "select count(distinct(deployments.Id)) from deployments " +
-				"inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id " +
-				"where NOT (deployments_containers.Image_Name_FullName ilike $1)",
+			expectedStatement: normalizeStatement(`select count(distinct(deployments.Id)) from deployments 
+				inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id 
+				where NOT (deployments_containers.Image_Name_FullName ilike $1)`),
 			expectedData: []interface{}{"central%"},
 		},
 		{
@@ -415,7 +415,7 @@ func TestCountQueries(t *testing.T) {
 			ctx:               baseCtx,
 			q:                 nil,
 			schema:            deploymentBaseSchema,
-			expectedStatement: "select count(*) from deployments",
+			expectedStatement: normalizeStatement(`select count(*) from deployments`),
 			expectedData:      []interface{}(nil),
 		},
 		{
@@ -426,8 +426,8 @@ func TestCountQueries(t *testing.T) {
 				search.MatchNoneQuery(),
 			),
 			schema: deploymentBaseSchema,
-			expectedStatement: "select count(*) from deployments " +
-				"where (deployments.Id = ANY($1::uuid[]) and false)",
+			expectedStatement: normalizeStatement(`select count(*) from deployments 
+				where (deployments.Id = ANY($1::uuid[]) and false)`),
 			expectedData: []interface{}{[]string{"123"}},
 		},
 		{
@@ -437,9 +437,9 @@ func TestCountQueries(t *testing.T) {
 				AddExactMatches(search.ImageName, "stackrox").
 				AddExactMatches(search.DeploymentID, uuid.NewDummy().String()).ProtoQuery(),
 			schema: deploymentBaseSchema,
-			expectedStatement: "select count(distinct(deployments.Id)) from deployments " +
-				"inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id " +
-				"where (deployments.Id = $1 and deployments_containers.Image_Name_FullName = $2)",
+			expectedStatement: normalizeStatement(`select count(distinct(deployments.Id)) from deployments 
+				inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id 
+				where (deployments.Id = $1 and deployments_containers.Image_Name_FullName = $2)`),
 			expectedData: []interface{}{uuid.NewDummy(), "stackrox"},
 		},
 		{
@@ -460,11 +460,11 @@ func TestCountQueries(t *testing.T) {
 				[]string{search.WildcardString, search.WildcardString}).
 				ProtoQuery(),
 			schema: deploymentBaseSchema,
-			expectedStatement: "select count(distinct(deployments.Id)) from deployments " +
-				"inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id " +
-				"inner join deployments_containers_envs on deployments_containers.deployments_Id = deployments_containers_envs.deployments_Id " +
-				"and deployments_containers.idx = deployments_containers_envs.deployments_containers_idx " +
-				"where (deployments_containers.Image_Name_FullName is not null and deployments_containers_envs.Key is not null)",
+			expectedStatement: normalizeStatement(`select count(distinct(deployments.Id)) from deployments 
+				inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id 
+				inner join deployments_containers_envs on deployments_containers.deployments_Id = deployments_containers_envs.deployments_Id 
+				and deployments_containers.idx = deployments_containers_envs.deployments_containers_idx 
+				where (deployments_containers.Image_Name_FullName is not null and deployments_containers_envs.Key is not null)`),
 		},
 		{
 			desc: "search active and inactive images with observed CVEs in non-platform deployments",
@@ -474,14 +474,14 @@ func TestCountQueries(t *testing.T) {
 				AddStrings(search.PlatformComponent, "false", "-").
 				ProtoQuery(),
 			schema: imagesSchema,
-			expectedStatement: "select count(distinct(images.Id)) from images " +
-				"left join deployments_containers on images.Id = deployments_containers.Image_Id " +
-				"left join deployments on deployments_containers.deployments_Id = deployments.Id " +
-				"inner join image_component_edges on images.Id = image_component_edges.ImageId " +
-				"inner join image_component_cve_edges on image_component_edges.ImageComponentId = image_component_cve_edges.ImageComponentId " +
-				"inner join image_cves on image_component_cve_edges.ImageCveId = image_cves.Id " +
-				"inner join image_cve_edges on(images.Id = image_cve_edges.ImageId and image_component_cve_edges.ImageCveId = image_cve_edges.ImageCveId) " +
-				"where ((deployments.PlatformComponent = $1 or deployments.PlatformComponent is null) and image_cve_edges.State = $2)",
+			expectedStatement: normalizeStatement(`select count(distinct(images.Id)) from images 
+				left join deployments_containers on images.Id = deployments_containers.Image_Id 
+				left join deployments on deployments_containers.deployments_Id = deployments.Id 
+				inner join image_component_edges on images.Id = image_component_edges.ImageId 
+				inner join image_component_cve_edges on image_component_edges.ImageComponentId = image_component_cve_edges.ImageComponentId 
+				inner join image_cves on image_component_cve_edges.ImageCveId = image_cves.Id 
+				inner join image_cve_edges on(images.Id = image_cve_edges.ImageId and image_component_cve_edges.ImageCveId = image_cve_edges.ImageCveId) 
+				where ((deployments.PlatformComponent = $1 or deployments.PlatformComponent is null) and image_cve_edges.State = $2)`),
 			expectedData: []interface{}{"false", "0"},
 		},
 	} {
@@ -1075,4 +1075,8 @@ func TestDeleteReturningIDsQueries(t *testing.T) {
 			assert.Equal(t, c.expectedQuery, actual)
 		})
 	}
+}
+
+func normalizeStatement(statement string) string {
+	return strings.ReplaceAll(strings.ReplaceAll(statement, "\t", ""), "\n", " ")
 }
