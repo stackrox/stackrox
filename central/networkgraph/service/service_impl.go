@@ -112,18 +112,6 @@ func (s *serviceImpl) GetExternalNetworkEntities(ctx context.Context, request *v
 }
 
 func (s *serviceImpl) GetExternalNetworkFlows(ctx context.Context, request *v1.GetExternalNetworkFlowsRequest) (*v1.GetExternalNetworkFlowsResponse, error) {
-	// verify SAC for the requested deployment.
-	// elevate to get the deployment, then verify the provided
-	// context has access.
-
-	// elevatedCtx := sac.WithGlobalAccessScopeChecker(
-	// 	ctx,
-	// 	sac.AllowFixedScopes(
-	// 		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-	// 		sac.ResourceScopeKeys(resources.Deployment),
-	// 	),
-	// )
-
 	deploymentQuery, scopeQuery, err := networkgraph.GetFilterAndScopeQueries(request.GetClusterId(), request.GetQuery(), &v1.NetworkGraphScope{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to construct filter and scope queries")
@@ -211,8 +199,8 @@ func (s *serviceImpl) GetExternalNetworkFlows(ctx context.Context, request *v1.G
 		return networkgraph.AnyDeploymentInFilter(src, dst, deploymentsMap)
 	}
 
-	since := time.Now().Add(defaultSince)
-	flows, _, err := flowStore.GetMatchingFlows(networkGraphGenElevatedCtx, pred, &since)
+	since := protocompat.ConvertTimestampToTimeOrNil(request.GetSince())
+	flows, _, err := flowStore.GetMatchingFlows(networkGraphGenElevatedCtx, pred, since)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get matching flows")
 	}
