@@ -54,6 +54,8 @@ func (s *serviceImpl) GetCertExpiry(ctx context.Context, request *v1.GetCertExpi
 		return s.getScannerCertExpiry(ctx)
 	case v1.GetCertExpiry_SCANNER_V4:
 		return s.getScannerV4CertExpiry(ctx)
+	case v1.GetCertExpiry_CENTRAL_DB:
+		return s.getCentralDBCertExpiry()
 	}
 	return nil, errors.Wrapf(errox.InvalidArgs, "invalid component: %v", request.GetComponent())
 }
@@ -63,6 +65,18 @@ func (s *serviceImpl) getCentralCertExpiry() (*v1.GetCertExpiry_Response, error)
 	if err != nil {
 		return nil, errors.Errorf("failed to retrieve leaf certificate: %v", err)
 	}
+	return s.parseCertAndGetExpiry(cert)
+}
+
+func (s *serviceImpl) getCentralDBCertExpiry() (*v1.GetCertExpiry_Response, error) {
+	cert, err := mtls.LeafCentralDBCertificateFromFile()
+	if err != nil {
+		return nil, errors.Errorf("failed to retrieve leaf certificate: %v", err)
+	}
+	return s.parseCertAndGetExpiry(cert)
+}
+
+func (s *serviceImpl) parseCertAndGetExpiry(cert tls.Certificate) (*v1.GetCertExpiry_Response, error) {
 	if len(cert.Certificate) == 0 {
 		return nil, errors.New("no central cert found")
 	}
