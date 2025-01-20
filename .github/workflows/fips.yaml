@@ -17,9 +17,9 @@ on:
         default: '\(bundle\|operator\|rhel8\)$'
         required: false
         type: string
-      tag_filter:
-        description: 'Regex of tags to exclude'
-        default: '^[0-3]\.'
+      tag_match:
+        description: 'Regex of tags to include'
+        default: '^[^0-3]\.'
         required: false
         type: string
 
@@ -37,7 +37,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image: [ '4.4', '4.5', '4.6', '' ]
+        tag_match: [ '^4.4', '^4.5', '' ]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -104,6 +104,6 @@ jobs:
           export PATH=${PATH}:${PWD}
           gh api -H "$ACCEPT_RAW" "${{ env.script_url }}" | bash -s -- \
             fips-check-payload \
-            "${{ matrix.image }}" \
+            "${{ github.event.inputs.image }}" \
             "${{ github.event.inputs.image_match }}" \
-            "${{ github.event.inputs.tag_filter }}"
+            "${{ matrix.tag_match}}" \
