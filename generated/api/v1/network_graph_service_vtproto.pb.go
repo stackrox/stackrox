@@ -266,6 +266,7 @@ func (m *GetExternalNetworkFlowsRequest) CloneVT() *GetExternalNetworkFlowsReque
 	r.ClusterId = m.ClusterId
 	r.DeploymentId = m.DeploymentId
 	r.Query = m.Query
+	r.Since = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.Since).CloneVT())
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -666,6 +667,9 @@ func (this *GetExternalNetworkFlowsRequest) EqualVT(that *GetExternalNetworkFlow
 		return false
 	}
 	if this.Query != that.Query {
+		return false
+	}
+	if !(*timestamppb1.Timestamp)(this.Since).EqualVT((*timestamppb1.Timestamp)(that.Since)) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1384,6 +1388,16 @@ func (m *GetExternalNetworkFlowsRequest) MarshalToSizedBufferVT(dAtA []byte) (in
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.Since != nil {
+		size, err := (*timestamppb1.Timestamp)(m.Since).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x22
+	}
 	if len(m.Query) > 0 {
 		i -= len(m.Query)
 		copy(dAtA[i:], m.Query)
@@ -1770,6 +1784,10 @@ func (m *GetExternalNetworkFlowsRequest) SizeVT() (n int) {
 	}
 	l = len(m.Query)
 	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.Since != nil {
+		l = (*timestamppb1.Timestamp)(m.Since).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -3386,6 +3404,42 @@ func (m *GetExternalNetworkFlowsRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
 			m.Query = stringValue
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Since", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Since == nil {
+				m.Since = &timestamppb.Timestamp{}
+			}
+			if err := (*timestamppb1.Timestamp)(m.Since).UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
