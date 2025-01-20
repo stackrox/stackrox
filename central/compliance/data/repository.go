@@ -269,7 +269,7 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 		return errors.Errorf("no flows found for cluster %q", domain.Cluster().ID())
 	}
 
-	r.flowsWithDeploymentDst, _, err = flowStore.GetMatchingFlows(ctx, deploymentIngressFlowsPredicate, nil)
+	r.flowsWithDeploymentDst, _, err = flowStore.GetMatchingFlows(ctx, deploymentIngressFlowsPredicate, nil, nil)
 	if err != nil {
 		return err
 	}

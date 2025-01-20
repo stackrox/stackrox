@@ -146,7 +146,7 @@ func (g *generator) generateGraph(ctx context.Context, clusterID string, query *
 	flows, _, err := clusterFlowStore.GetMatchingFlows(networkGraphGenElevatedCtx, func(flowProps *storage.NetworkFlowProperties) bool {
 		dstEnt := flowProps.GetDstEntity()
 		return dstEnt.GetType() == storage.NetworkEntityInfo_DEPLOYMENT && relevantDeploymentsMap[dstEnt.GetId()] != nil
-	}, since)
+	}, since, nil)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not obtain network flow information for cluster %q", clusterID)
 	}

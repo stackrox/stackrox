@@ -21,13 +21,16 @@ class NetworkGraphService extends BaseService {
             .withMaxOutboundMessageSize(2*4194304)
     }
 
-    static getNetworkGraph(Timestamp since = null, String query = null, String scopeQuery = null) {
+    static getNetworkGraph(Timestamp since = null, Timestamp until = null, String query = null, String scopeQuery = null) {
         try {
             NetworkGraphRequest.Builder request =
                     NetworkGraphRequest.newBuilder()
                             .setClusterId(ClusterService.getClusterId())
             if (since != null) {
                 request.setSince(since)
+            }
+            if (until != null) {
+                request.setUntil(until)
             }
             if (query != null) {
                 request.setQuery(query)

@@ -82,16 +82,16 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	err = suite.tested.UpsertFlows(context.Background(), flows, updateTS)
 	suite.NoError(err, "upsert should succeed on first insert")
 
-	readFlows, _, err := suite.tested.GetAllFlows(context.Background(), nil)
+	readFlows, _, err := suite.tested.GetAllFlows(context.Background(), nil, nil)
 	suite.Require().NoError(err)
 	suite.ElementsMatch(readFlows, flows)
 
-	readFlows, _, err = suite.tested.GetAllFlows(context.Background(), &t2)
+	readFlows, _, err = suite.tested.GetAllFlows(context.Background(), &t2, nil)
 	suite.Require().NoError(err)
 	suite.ElementsMatch(readFlows, flows[1:])
 
 	now := time.Now().UTC()
-	readFlows, _, err = suite.tested.GetAllFlows(context.Background(), &now)
+	readFlows, _, err = suite.tested.GetAllFlows(context.Background(), &now, nil)
 	suite.Require().NoError(err)
 	suite.ElementsMatch(readFlows, flows[2:])
 
@@ -116,7 +116,7 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	suite.NoError(err, "remove should succeed when not present")
 
 	var actualFlows []*storage.NetworkFlow
-	actualFlows, _, err = suite.tested.GetAllFlows(context.Background(), nil)
+	actualFlows, _, err = suite.tested.GetAllFlows(context.Background(), nil, nil)
 	suite.NoError(err)
 	suite.ElementsMatch(actualFlows, flows[1:])
 
@@ -124,7 +124,7 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	err = suite.tested.UpsertFlows(context.Background(), flows, updateTS)
 	suite.NoError(err, "upsert should succeed")
 
-	actualFlows, _, err = suite.tested.GetAllFlows(context.Background(), nil)
+	actualFlows, _, err = suite.tested.GetAllFlows(context.Background(), nil, nil)
 	suite.NoError(err)
 	suite.ElementsMatch(actualFlows, flows)
 
@@ -136,7 +136,7 @@ func (suite *FlowStoreTestSuite) TestStore() {
 			return true
 		}
 		return false
-	}, nil)
+	}, nil, nil)
 	suite.NoError(err)
 	suite.ElementsMatch(node1Flows, flows[:1])
 }

@@ -12,8 +12,8 @@ import (
 //
 //go:generate mockgen-wrapper
 type FlowDataStore interface {
-	GetAllFlows(ctx context.Context, since *time.Time) ([]*storage.NetworkFlow, *time.Time, error)
-	GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *time.Time) ([]*storage.NetworkFlow, *time.Time, error)
+	GetAllFlows(ctx context.Context, since *time.Time, until *time.Time) ([]*storage.NetworkFlow, *time.Time, error)
+	GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *time.Time, until *time.Time) ([]*storage.NetworkFlow, *time.Time, error)
 	// GetFlowsForDeployment returns all flows referencing a specific deployment id
 	GetFlowsForDeployment(ctx context.Context, deploymentID string, adjustForGraph bool) ([]*storage.NetworkFlow, error)
 	// GetExternalFlowsForDeployment returns all external flows referencing a specific deployment id

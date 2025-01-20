@@ -468,8 +468,9 @@ func (s *serviceImpl) addDeploymentFlowsToGraph(
 	}
 
 	since := protocompat.ConvertTimestampToTimeOrNil(request.GetSince())
+	until := protocompat.ConvertTimestampToTimeOrNil(request.GetUntil())
 
-	flows, _, err := flowStore.GetMatchingFlows(networkGraphGenElevatedCtx, pred, since)
+	flows, _, err := flowStore.GetMatchingFlows(networkGraphGenElevatedCtx, pred, since, until)
 	if err != nil {
 		return err
 	}

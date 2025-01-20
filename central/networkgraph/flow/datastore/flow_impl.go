@@ -26,8 +26,8 @@ type flowDataStoreImpl struct {
 	deletedDeploymentsCache   cache.DeletedDeployments
 }
 
-func (fds *flowDataStoreImpl) GetAllFlows(ctx context.Context, since *time.Time) ([]*storage.NetworkFlow, *time.Time, error) {
-	flows, ts, err := fds.storage.GetAllFlows(ctx, since)
+func (fds *flowDataStoreImpl) GetAllFlows(ctx context.Context, since *time.Time, until *time.Time) ([]*storage.NetworkFlow, *time.Time, error) {
+	flows, ts, err := fds.storage.GetAllFlows(ctx, since, until)
 	if err != nil {
 		return nil, nil, nil
 	}
@@ -39,8 +39,8 @@ func (fds *flowDataStoreImpl) GetAllFlows(ctx context.Context, since *time.Time)
 	return flows, ts, nil
 }
 
-func (fds *flowDataStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *time.Time) ([]*storage.NetworkFlow, *time.Time, error) {
-	flows, ts, err := fds.storage.GetMatchingFlows(ctx, pred, since)
+func (fds *flowDataStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *time.Time, until *time.Time) ([]*storage.NetworkFlow, *time.Time, error) {
+	flows, ts, err := fds.storage.GetMatchingFlows(ctx, pred, since, until)
 	if err != nil {
 		return nil, nil, nil
 	}

@@ -74,7 +74,7 @@ func (s *flowPersisterImpl) update(ctx context.Context, newFlows []*storage.Netw
 }
 
 func (s *flowPersisterImpl) markExistingFlowsAsTerminatedIfNotSeen(ctx context.Context, currentFlows map[networkgraph.NetworkConnIndicator]timestamp.MicroTS) error {
-	existingFlows, lastUpdateTS, err := s.flowStore.GetAllFlows(ctx, nil)
+	existingFlows, lastUpdateTS, err := s.flowStore.GetAllFlows(ctx, nil, nil)
 	if err != nil {
 		return err
 	}

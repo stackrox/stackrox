@@ -607,12 +607,13 @@ class SACTest extends BaseSpecification {
         "The network graphs retrieved by admin with a query and the SAC restricted token with and without query"
         // Default behaviour is to use flows for last 5 mins. That can produce different results between calls.
         def since = Timestamp.newBuilder().setSeconds(System.currentTimeSeconds() - 600).build()
+        def until = Timestamp.newBuilder().setSeconds(System.currentTimeSeconds()).build()
 
         // Make all service calls in a short succession to avoid potential new flows between calls.
-        def networkGraphWithAllAccess = NetworkGraphService.getNetworkGraph(since, "Namespace:stackrox")
+        def networkGraphWithAllAccess = NetworkGraphService.getNetworkGraph(since, until, "Namespace:stackrox")
         useToken("stackroxNetFlowsToken")
-        def networkGraphWithSAC = NetworkGraphService.getNetworkGraph(since, "Namespace:stackrox")
-        def networkGraphWithSACNoQuery = NetworkGraphService.getNetworkGraph(since)
+        def networkGraphWithSAC = NetworkGraphService.getNetworkGraph(since, until, "Namespace:stackrox")
+        def networkGraphWithSACNoQuery = NetworkGraphService.getNetworkGraph(since, until)
 
         when:
         "The network graph for the StackRox namespace with all access"

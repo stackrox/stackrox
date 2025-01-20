@@ -58,6 +58,14 @@ const (
 	nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId::text
 	FROM %s nf ` + joinStmt +
 		` WHERE (nf.LastSeenTimestamp >= $1 OR nf.LastSeenTimestamp IS NULL)`
+	getUntilStmt = `SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type,
+	nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId::text
+	FROM %s nf ` + joinStmt +
+		` WHERE (nf.LastSeenTimestamp < $1 OR nf.LastSeenTimestamp IS NULL)`
+	getSinceAndUntilStmt = `SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type,
+	nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId::text
+	FROM %s nf ` + joinStmt +
+		` WHERE ((nf.LastSeenTimestamp >= $1 AND nf.LastSeenTimestamp < $2) OR nf.LastSeenTimestamp IS NULL)`
 	deleteSrcDeploymentStmt = "DELETE FROM network_flows_v2 WHERE ClusterId = $1 AND Props_SrcEntity_Type = 1 AND Props_SrcEntity_Id = $2"
 	deleteDstDeploymentStmt = "DELETE FROM network_flows_v2 WHERE ClusterId = $1 AND Props_DstEntity_Type = 1 AND Props_DstEntity_Id = $2"
 
@@ -426,15 +434,15 @@ func (s *flowStoreImpl) removeDeploymentFlows(ctx context.Context, deleteStmt st
 }
 
 // GetAllFlows returns the object, if it exists from the store, timestamp and error
-func (s *flowStoreImpl) GetAllFlows(ctx context.Context, since *time.Time) ([]*storage.NetworkFlow, *time.Time, error) {
+func (s *flowStoreImpl) GetAllFlows(ctx context.Context, since *time.Time, until *time.Time) ([]*storage.NetworkFlow, *time.Time, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "NetworkFlow")
 
 	return pgutils.Retry3(ctx, func() ([]*storage.NetworkFlow, *time.Time, error) {
-		return s.retryableGetAllFlows(ctx, since)
+		return s.retryableGetAllFlows(ctx, since, until)
 	})
 }
 
-func (s *flowStoreImpl) retryableGetAllFlows(ctx context.Context, since *time.Time) ([]*storage.NetworkFlow, *time.Time, error) {
+func (s *flowStoreImpl) retryableGetAllFlows(ctx context.Context, since *time.Time, until *time.Time) ([]*storage.NetworkFlow, *time.Time, error) {
 	var rows pgx.Rows
 	var err error
 	// Default to Now as that is when we are reading them
@@ -444,12 +452,18 @@ func (s *flowStoreImpl) retryableGetAllFlows(ctx context.Context, since *time.Ti
 	defer cancel()
 
 	// handling case when since is nil.  Assumption is we want everything in that case vs when date is not null
-	if since == nil {
+	if since == nil && until == nil {
 		partitionWalkStmt := fmt.Sprintf(walkStmt, s.partitionName, s.partitionName)
 		rows, err = s.db.Query(ctx, partitionWalkStmt)
-	} else {
+	} else if until == nil {
 		partitionSinceStmt := fmt.Sprintf(getSinceStmt, s.partitionName, s.partitionName)
 		rows, err = s.db.Query(ctx, partitionSinceStmt, since)
+	} else if since == nil {
+		partitionSinceStmt := fmt.Sprintf(getUntilStmt, s.partitionName, s.partitionName)
+		rows, err = s.db.Query(ctx, partitionSinceStmt, until)
+	} else {
+		partitionSinceStmt := fmt.Sprintf(getSinceAndUntilStmt, s.partitionName, s.partitionName)
+		rows, err = s.db.Query(ctx, partitionSinceStmt, since, until)
 	}
 	if err != nil {
 		return nil, nil, pgutils.ErrNilIfNoRows(err)
@@ -465,15 +479,15 @@ func (s *flowStoreImpl) retryableGetAllFlows(ctx context.Context, since *time.Ti
 }
 
 // GetMatchingFlows iterates over all of the objects in the store and applies the closure
-func (s *flowStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *time.Time) ([]*storage.NetworkFlow, *time.Time, error) {
+func (s *flowStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *time.Time, until *time.Time) ([]*storage.NetworkFlow, *time.Time, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NetworkFlow")
 
 	return pgutils.Retry3(ctx, func() ([]*storage.NetworkFlow, *time.Time, error) {
-		return s.retryableGetMatchingFlows(ctx, pred, since)
+		return s.retryableGetMatchingFlows(ctx, pred, since, until)
 	})
 }
 
-func (s *flowStoreImpl) retryableGetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *time.Time) ([]*storage.NetworkFlow, *time.Time, error) {
+func (s *flowStoreImpl) retryableGetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *time.Time, until *time.Time) ([]*storage.NetworkFlow, *time.Time, error) {
 	var rows pgx.Rows
 	var err error
 
@@ -484,12 +498,19 @@ func (s *flowStoreImpl) retryableGetMatchingFlows(ctx context.Context, pred func
 	defer cancel()
 
 	// handling case when since is nil.  Assumption is we want everything in that case vs when date is not null
-	if since == nil {
+	if since == nil && until == nil {
 		partitionWalkStmt := fmt.Sprintf(walkStmt, s.partitionName, s.partitionName)
 		rows, err = s.db.Query(ctx, partitionWalkStmt)
-	} else {
+	} else if until == nil {
 		partitionSinceStmt := fmt.Sprintf(getSinceStmt, s.partitionName, s.partitionName)
 		rows, err = s.db.Query(ctx, partitionSinceStmt, since)
+	} else if since == nil {
+		partitionSinceStmt := fmt.Sprintf(getUntilStmt, s.partitionName, s.partitionName)
+		rows, err = s.db.Query(ctx, partitionSinceStmt, until)
+	} else {
+		partitionSinceStmt := fmt.Sprintf(getSinceAndUntilStmt, s.partitionName, s.partitionName)
+		rows, err = s.db.Query(ctx, partitionSinceStmt, since, until)
+
 	}
 
 	if err != nil {
