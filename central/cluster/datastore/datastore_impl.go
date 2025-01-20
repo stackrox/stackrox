@@ -43,6 +43,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/simplecache"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -962,17 +963,19 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 }
 
 func sensorCapabilitiesChanged(cluster *storage.Cluster, hello *central.SensorHello) bool {
-	if len(cluster.SensorCapabilities) != len(hello.GetCapabilities()) {
-		return true
-	}
-	for i, receivedCap := range hello.GetCapabilities() {
-		storedCap := cluster.SensorCapabilities[i]
-		if receivedCap != storedCap {
-			return true
-		}
+	storedCapabilities := cluster.GetSensorCapabilities()
+	storedSet := set.Set[string]{}
+	if storedCapabilities != nil {
+		storedSet.AddAll(storedCapabilities...)
 	}
 
-	return false
+	newCapabilities := hello.GetCapabilities()
+	newSet := set.Set[string]{}
+	if newCapabilities != nil {
+		newSet.AddAll(newCapabilities...)
+	}
+
+	return !storedSet.Equal(newSet)
 }
 
 func normalizeCluster(cluster *storage.Cluster) error {
