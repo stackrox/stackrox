@@ -91,7 +91,8 @@ func shouldDeleteIntegration(ii *storage.ImageIntegration, autogenEnabled, sourc
 	}
 
 	if ii.GetSource() == nil {
-		// If the integration doesn't have a source, then it should not be deleted.
+		// The conditions following this one assume the integration has a source. If this integration doesn't
+		// have a source then it should not be deleted.
 		return false
 	}
 
@@ -101,7 +102,8 @@ func shouldDeleteIntegration(ii *storage.ImageIntegration, autogenEnabled, sourc
 	}
 
 	if !sourcedAutogenEnabled && globalPullAutogenEnabled && !openshift.GlobalPullSecretIntegration(ii) {
-		// If only generating sourced integrations from the OCP global pull secret and this integration has a different source, delete it.
+		// If only generating sourced integrations from the OCP global pull secret and this integration
+		// is not from the OCP global pull secret, delete it.
 		return true
 	}
 
