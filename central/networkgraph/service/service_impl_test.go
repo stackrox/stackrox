@@ -181,8 +181,8 @@ func (s *NetworkGraphServiceTestSuite) TestGetExternalNetworkFlows() {
 	es1aID, _ := externalsrcs.NewClusterScopedID("mycluster", "192.168.0.1/32")
 	es1bID, _ := externalsrcs.NewClusterScopedID("mycluster", "192.168.0.2/32")
 
-	es1a := testutils.GetExtSrcNetworkEntityInfo(es1aID.String(), "net1", "192.168.0.1/32", false, false)
-	es1b := testutils.GetExtSrcNetworkEntityInfo(es1bID.String(), "net2", "192.168.0.2/32", false, false)
+	es1a := testutils.GetExtSrcNetworkEntityInfo(es1aID.String(), "net1", "192.168.0.1/32", false)
+	es1b := testutils.GetExtSrcNetworkEntityInfo(es1bID.String(), "net2", "192.168.0.2/32", false)
 
 	entities := []*storage.NetworkEntity{
 		{
@@ -197,16 +197,14 @@ func (s *NetworkGraphServiceTestSuite) TestGetExternalNetworkFlows() {
 
 	mockFlowStore.EXPECT().GetMatchingFlows(gomock.Any(), gomock.Any(), gomock.Any()).Return(
 		[]*storage.NetworkFlow{
-			testutils.ExtFlow(es1aID.String(), "mydeployment"),
-			testutils.ExtFlow(es1bID.String(), "mydeployment"),
+			extFlow(es1aID.String(), "mydeployment"),
+			extFlow(es1bID.String(), "mydeployment"),
 		},
 		nil,
 		nil,
 	)
 
 	networkTree, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{es1a, es1b})
-	s.NoError(err)
-
 	s.networkTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), gomock.Any()).Return(networkTree)
 	s.networkTreeMgr.EXPECT().GetDefaultNetworkTree(gomock.Any()).Return(networkTree)
 
