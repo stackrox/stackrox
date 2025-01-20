@@ -34,8 +34,9 @@ import (
 
 func TestGetCertExpiryStatus(t *testing.T) {
 	type testCase struct {
-		notBefore, notAfter time.Time
-		expectedStatus      *storage.ClusterCertExpiryStatus
+		notBefore, notAfter                  time.Time
+		hasSecuredClusterCertificatesRefresh bool
+		expectedStatus                       *storage.ClusterCertExpiryStatus
 	}
 	testCases := map[string]testCase{
 		"should return nil when no dates": {
@@ -44,34 +45,85 @@ func TestGetCertExpiryStatus(t *testing.T) {
 		"should fill not before only if expiry is not set": {
 			notBefore: time.Unix(1646870400, 0), // Thu Mar 10 2022 00:00:00 GMT+0000
 			expectedStatus: &storage.ClusterCertExpiryStatus{
-				SensorCertNotBefore: protocompat.GetProtoTimestampFromSeconds(1646870400),
+				SensorCertNotBefore:   protocompat.GetProtoTimestampFromSeconds(1646870400),
+				SensorCertAutoRefresh: false,
 			},
 		},
 		"should fill expiry only if notbefore is not set": {
 			notAfter: time.Unix(1646956799, 0), // Thu Mar 10 2022 23:59:59 GMT+0000
 			expectedStatus: &storage.ClusterCertExpiryStatus{
-				SensorCertExpiry: protocompat.GetProtoTimestampFromSeconds(1646956799),
+				SensorCertExpiry:      protocompat.GetProtoTimestampFromSeconds(1646956799),
+				SensorCertAutoRefresh: false,
 			},
 		},
 		"should fill status if both bounds are set": {
 			notBefore: time.Unix(1646870400, 0), // Thu Mar 10 2022 00:00:00 GMT+0000
 			notAfter:  time.Unix(1646956799, 0), // Thu Mar 10 2022 23:59:59 GMT+0000
 			expectedStatus: &storage.ClusterCertExpiryStatus{
-				SensorCertNotBefore: protocompat.GetProtoTimestampFromSeconds(1646870400),
-				SensorCertExpiry:    protocompat.GetProtoTimestampFromSeconds(1646956799),
+				SensorCertNotBefore:   protocompat.GetProtoTimestampFromSeconds(1646870400),
+				SensorCertExpiry:      protocompat.GetProtoTimestampFromSeconds(1646956799),
+				SensorCertAutoRefresh: false,
+			},
+		},
+		"should fill auto refresh if enabled": {
+			notBefore:                            time.Unix(1646870400, 0), // Thu Mar 10 2022 00:00:00 GMT+0000
+			notAfter:                             time.Unix(1646956799, 0), // Thu Mar 10 2022 23:59:59 GMT+0000
+			hasSecuredClusterCertificatesRefresh: true,
+			expectedStatus: &storage.ClusterCertExpiryStatus{
+				SensorCertNotBefore:   protocompat.GetProtoTimestampFromSeconds(1646870400),
+				SensorCertExpiry:      protocompat.GetProtoTimestampFromSeconds(1646956799),
+				SensorCertAutoRefresh: true,
 			},
 		},
 	}
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
+			sensorHello := &central.SensorHello{}
+			if tc.hasSecuredClusterCertificatesRefresh {
+				sensorHello.Capabilities = []string{string(centralsensor.SecuredClusterCertificatesRefresh)}
+			}
+
 			identity := service.WrapMTLSIdentity(mtls.IdentityFromCert(mtls.CertInfo{
 				NotBefore: tc.notBefore,
 				NotAfter:  tc.notAfter,
 			}))
-			result, err := getCertExpiryStatus(identity)
+			result, err := getCertExpiryStatus(identity, sensorHello)
 			assert.NoError(t, err)
 			protoassert.Equal(t, tc.expectedStatus, result)
+		})
+	}
+}
+
+func TestHasSecuredClusterCertificatesRefresh(t *testing.T) {
+	type testCase struct {
+		capabilities   []string
+		expectedResult bool
+	}
+	testCases := map[string]testCase{
+		"Capability present": {
+			capabilities:   []string{string(centralsensor.SecuredClusterCertificatesRefresh), "other.capability"},
+			expectedResult: true,
+		},
+		"Capability absent": {
+			capabilities:   []string{"other.capability"},
+			expectedResult: false,
+		},
+		"Empty capabilities": {
+			capabilities:   []string{},
+			expectedResult: false,
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			sensorHello := &central.SensorHello{}
+			sensorHello.Capabilities = tc.capabilities
+
+			result := hasSecuredClusterCertificatesRefresh(sensorHello)
+			if result != tc.expectedResult {
+				t.Errorf("expected %v, got %v", tc.expectedResult, result)
+			}
 		})
 	}
 }

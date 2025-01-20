@@ -178,7 +178,7 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 		return nil
 	}
 
-	if expiryStatus, err := getCertExpiryStatus(identity); err != nil {
+	if expiryStatus, err := getCertExpiryStatus(identity, sensorHello); err != nil {
 		notBefore, notAfter := identity.ValidityPeriod()
 		log.Warnf("Failed to convert expiry status of sensor cert (NotBefore: %v, Expiry: %v) from cluster %s to proto: %v",
 			notBefore, notAfter, cluster.GetId(), err)
@@ -193,14 +193,16 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 	return s.manager.HandleConnection(server.Context(), sensorHello, cluster, eventPipeline, server)
 }
 
-func getCertExpiryStatus(identity authn.Identity) (*storage.ClusterCertExpiryStatus, error) {
+func getCertExpiryStatus(identity authn.Identity, sensorHello *central.SensorHello) (*storage.ClusterCertExpiryStatus, error) {
 	notBefore, notAfter := identity.ValidityPeriod()
 
 	if notAfter.IsZero() && notBefore.IsZero() {
 		return nil, nil
 	}
 
-	expiryStatus := &storage.ClusterCertExpiryStatus{}
+	expiryStatus := &storage.ClusterCertExpiryStatus{
+		SensorCertAutoRefresh: hasSecuredClusterCertificatesRefresh(sensorHello),
+	}
 
 	var multiErr error
 
@@ -221,6 +223,15 @@ func getCertExpiryStatus(identity authn.Identity) (*storage.ClusterCertExpirySta
 		}
 	}
 	return expiryStatus, multiErr
+}
+
+func hasSecuredClusterCertificatesRefresh(sensorHello *central.SensorHello) bool {
+	for _, capability := range sensorHello.GetCapabilities() {
+		if capability == string(centralsensor.SecuredClusterCertificatesRefresh) {
+			return true
+		}
+	}
+	return false
 }
 
 func (s *serviceImpl) getClusterForConnection(sensorHello *central.SensorHello, serviceID *storage.ServiceIdentity) (*storage.Cluster, error) {
