@@ -300,6 +300,15 @@ message ComplianceOperatorReportSnapshotV2 {
   }
 
   repeated Scan scans = 7;
+
+  message FailedCluster {
+    string cluster_id = 1;
+    string cluster_name = 2;
+    string reason = 3;
+    string operator_version = 4;
+  }
+
+  repeated FailedCluster failed_clusters = 8;
 }
 
 // Next Tag: 7
@@ -310,6 +319,7 @@ message ComplianceOperatorReportStatus {
     GENERATED = 2;
     DELIVERED = 3;
     FAILURE = 4;
+    PARTIAL_ERROR = 5;
   }
   enum NotificationMethod {
     EMAIL = 0;
