@@ -1,9 +1,9 @@
-import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
-import { HasReadAccess } from 'hooks/usePermissions';
 import { ReactElement } from 'react';
 import { matchPath } from 'react-router-dom';
 
 import { isRouteEnabled, RouteKey } from 'routePaths';
+import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
+import { HasReadAccess } from 'hooks/usePermissions';
 
 // Child example; Compliance (1.0) if Compliance (2.0) is rendered and Compliance otherwise.
 // Parent example: Vulnerability Management (1.0) if Vulnerability Management (2.0) is rendered and so on.

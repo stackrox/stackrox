@@ -61,31 +61,17 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
         ? [
               {
                   type: 'link',
-                  content: 'User Workloads',
+                  content: 'Results',
                   path: vulnerabilitiesWorkloadCvesPath,
                   routeKey: 'vulnerabilities/workload-cves',
-              },
-              {
-                  type: 'link',
-                  content: 'Platform Components',
-                  path: vulnerabilitiesPlatformWorkloadCvesPath,
-                  routeKey: 'vulnerabilities/platform-workload-cves',
-              },
-              {
-                  type: 'link',
-                  content: 'Kubernetes Components',
-                  path: vulnerabilitiesPlatformCvesPath,
-                  routeKey: 'vulnerabilities/platform-cves',
-              },
-              {
-                  type: 'link',
-                  content: 'Nodes',
-                  path: vulnerabilitiesNodeCvesPath,
-                  routeKey: 'vulnerabilities/node-cves',
-              },
-              {
-                  type: 'separator',
-                  key: 'following-workload-cves',
+                  isActive: (pathname) =>
+                      Boolean(
+                          matchPath(pathname, [
+                              vulnerabilitiesWorkloadCvesPath,
+                              vulnerabilitiesPlatformWorkloadCvesPath,
+                              vulnerabilitiesNodeCvesPath,
+                          ])
+                      ),
               },
               {
                   type: 'link',
@@ -102,6 +88,17 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
               {
                   type: 'separator',
                   key: 'following-node-cves',
+              },
+
+              {
+                  type: 'link',
+                  content: 'Platform CVEs',
+                  path: vulnerabilitiesPlatformCvesPath,
+                  routeKey: 'vulnerabilities/platform-cves',
+              },
+              {
+                  type: 'separator',
+                  key: 'following-workload-cves',
               },
               {
                   type: 'link',

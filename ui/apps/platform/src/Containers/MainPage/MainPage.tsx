@@ -15,6 +15,7 @@ import { clustersBasePath } from 'routePaths';
 import Header from './Header/Header';
 import PublicConfigFooter from './PublicConfig/PublicConfigFooter';
 import NavigationSidebar from './Navigation/NavigationSidebar';
+import HorizontalSubnav from './Navigation/HorizontalSubnav';
 
 import Body from './Body';
 import AcsFeedbackModal from './AcsFeedbackModal';
@@ -101,6 +102,10 @@ function MainPage(): ReactElement {
                         />
                     }
                 >
+                    <HorizontalSubnav
+                        hasReadAccess={hasReadAccess}
+                        isFeatureFlagEnabled={isFeatureFlagEnabled}
+                    />
                     <Body
                         hasReadAccess={hasReadAccess}
                         isFeatureFlagEnabled={isFeatureFlagEnabled}
