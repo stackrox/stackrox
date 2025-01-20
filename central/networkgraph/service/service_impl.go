@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"slices"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -34,6 +35,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
+	"golang.org/x/exp/maps"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -109,6 +111,10 @@ func (s *serviceImpl) GetExternalNetworkEntities(ctx context.Context, request *v
 
 	query, _ = search.FilterQueryWithMap(query, schema.NetworkEntitiesSchema.OptionsMap)
 
+	if pagination := request.GetPagination(); pagination != nil {
+		query.Pagination = search.NewPagination().Limit(pagination.Limit).Offset(pagination.Offset).Proto()
+	}
+
 	entities, err := s.entityDS.GetEntityByQuery(ctx, query)
 	if err != nil {
 		return nil, err
@@ -150,7 +156,7 @@ func (s *serviceImpl) GetExternalNetworkFlows(ctx context.Context, request *v1.G
 	}
 
 	// Populate entities.
-	err = s.enrichFlowsWithExternalEntityDetails(ctx, &flows)
+	err = s.enrichFlowsWithExternalEntityDetails(ctx, request.GetClusterId(), &flows)
 	if err != nil {
 		return nil, err
 	}
@@ -670,13 +676,10 @@ func (s *serviceImpl) getExternalFlowsForDeployment(ctx context.Context, cluster
 	return flowStore.GetExternalFlowsForDeployment(ctx, deploymentId)
 }
 
-func (s *serviceImpl) enrichFlowsWithExternalEntityDetails(ctx context.Context, flows *[]*storage.NetworkFlow) error {
-	// This could probably be implemented in the DB query for better efficiency,
-	// but is simply implemented here for now.
-	for _, flow := range *flows {
-		var toGet string
-		var toSet **storage.NetworkEntityInfo
+func (s *serviceImpl) enrichFlowsWithExternalEntityDetails(ctx context.Context, clusterId string, flows *[]*storage.NetworkFlow) error {
+	entitiesToGet := make(map[string]**storage.NetworkEntityInfo)
 
+	for _, flow := range *flows {
 		props := flow.GetProps()
 		if props == nil {
 			continue
@@ -685,23 +688,26 @@ func (s *serviceImpl) enrichFlowsWithExternalEntityDetails(ctx context.Context, 
 		src, dst := props.GetSrcEntity(), props.GetDstEntity()
 
 		if src != nil && src.GetType() == storage.NetworkEntityInfo_EXTERNAL_SOURCE {
-			toGet = src.GetId()
-			toSet = &props.SrcEntity
+			entitiesToGet[src.GetId()] = &props.SrcEntity
 		}
 
 		if dst != nil && dst.GetType() == storage.NetworkEntityInfo_EXTERNAL_SOURCE {
-			toGet = dst.GetId()
-			toSet = &props.DstEntity
-		}
-
-		if toGet != "" {
-			entity, _, err := s.entityDS.GetEntity(ctx, toGet)
-			if err != nil {
-				return err
-			}
-
-			*toSet = entity.GetInfo()
+			entitiesToGet[dst.GetId()] = &props.DstEntity
 		}
 	}
+
+	ids := maps.Keys(entitiesToGet)
+	entities, error := s.entityDS.GetAllMatchingEntities(ctx, func(entity *storage.NetworkEntity) bool {
+		return slices.Contains(ids, entity.GetInfo().GetId()) && entity.GetScope().GetClusterId() == clusterId
+	})
+
+	if error != nil {
+		return error
+	}
+
+	for _, entity := range entities {
+		*entitiesToGet[entity.GetInfo().GetId()] = entity.GetInfo()
+	}
+
 	return nil
 }

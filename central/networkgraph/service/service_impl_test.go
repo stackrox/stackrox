@@ -241,8 +241,7 @@ func (s *NetworkGraphServiceTestSuite) TestGetExternalNetworkFlows() {
 		},
 	}
 
-	s.entities.EXPECT().GetEntity(ctx, "ExternalEntity1").Return(entities[0], true, nil)
-	s.entities.EXPECT().GetEntity(ctx, "ExternalEntity2").Return(entities[1], true, nil)
+	s.entities.EXPECT().GetAllMatchingEntities(ctx, gomock.Any()).Return(entities, nil)
 
 	mockFlowStore.EXPECT().GetExternalFlowsForDeployment(ctx, gomock.Any()).Return(
 		[]*storage.NetworkFlow{
