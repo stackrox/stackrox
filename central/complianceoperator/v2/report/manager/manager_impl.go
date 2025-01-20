@@ -16,6 +16,8 @@ import (
 	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager/watcher"
 	scanConfigurationDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	scanDS "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
+	bindingsDS "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore"
+	suiteDS "github.com/stackrox/rox/central/complianceoperator/v2/suites/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
@@ -52,6 +54,8 @@ type managerImpl struct {
 	profileDataStore     profileDatastore.DataStore
 	snapshotDataStore    snapshotDS.DataStore
 	integrationDataStore complianceIntegrationDS.DataStore
+	suiteDataStore       suiteDS.DataStore
+	bindingsDataStore    bindingsDS.DataStore
 
 	runningReportConfigs map[string]*reportRequest
 	// channel for report job requests
@@ -82,13 +86,15 @@ type managerImpl struct {
 	scanConfigReadyQueue *queue.Queue[*watcher.ScanConfigWatcherResults]
 }
 
-func New(scanConfigDS scanConfigurationDS.DataStore, scanDataStore scanDS.DataStore, profileDataStore profileDatastore.DataStore, snapshotDatastore snapshotDS.DataStore, complianceIntegration complianceIntegrationDS.DataStore, reportGen reportGen.ComplianceReportGenerator) Manager {
+func New(scanConfigDS scanConfigurationDS.DataStore, scanDataStore scanDS.DataStore, profileDataStore profileDatastore.DataStore, snapshotDatastore snapshotDS.DataStore, complianceIntegration complianceIntegrationDS.DataStore, suiteDataStore suiteDS.DataStore, bindingsDataStore bindingsDS.DataStore, reportGen reportGen.ComplianceReportGenerator) Manager {
 	return &managerImpl{
 		scanConfigDataStore:   scanConfigDS,
 		scanDataStore:         scanDataStore,
 		profileDataStore:      profileDataStore,
 		snapshotDataStore:     snapshotDatastore,
 		integrationDataStore:  complianceIntegration,
+		suiteDataStore:        suiteDataStore,
+		bindingsDataStore:     bindingsDataStore,
 		stopper:               concurrency.NewStopper(),
 		runningReportConfigs:  make(map[string]*reportRequest, maxRequests),
 		reportRequests:        make(chan *reportRequest, maxRequests),
@@ -267,6 +273,7 @@ func (m *managerImpl) handleReportRequest(request *reportRequest) (bool, error) 
 			ReportRequestType:        storage.ComplianceOperatorReportStatus_ON_DEMAND,
 			ReportNotificationMethod: request.notificationMethod,
 		},
+		ReportData: m.getReportData(request.scanConfig),
 		User: &storage.SlimUser{
 			Id:   requesterID.UID(),
 			Name: stringutils.FirstNonEmpty(requesterID.FullName(), requesterID.FriendlyName()),
@@ -472,7 +479,8 @@ func (m *managerImpl) createAutomaticSnapshotAndSubscribe(ctx context.Context, s
 			ReportRequestType:        storage.ComplianceOperatorReportStatus_SCHEDULED,
 			ReportNotificationMethod: storage.ComplianceOperatorReportStatus_EMAIL,
 		},
-		User: sc.GetModifiedBy(),
+		ReportData: m.getReportData(sc),
+		User:       sc.GetModifiedBy(),
 	}
 	if err := w.Subscribe(snapshot); err != nil {
 		log.Errorf("Unable to subscribe to the scan configuration watcher")
@@ -534,6 +542,8 @@ func (m *managerImpl) generateSingleReportFromWatcherResults(result *watcher.Sca
 		return err
 	}
 	snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_PREPARING
+	// Update ReportData
+	snapshot.ReportData = m.getReportData(result.ScanConfig)
 	if err := m.snapshotDataStore.UpsertSnapshot(m.automaticReportingCtx, snapshot); err != nil {
 		return errors.Wrapf(err, "unable to upsert the snapshot %s", snapshot.GetReportId())
 	}
@@ -606,4 +616,13 @@ func (m *managerImpl) validateScanConfigResults(result *watcher.ScanConfigWatche
 	}
 
 	return errList.ToError()
+}
+
+func (m *managerImpl) getReportData(scanConfig *storage.ComplianceOperatorScanConfigurationV2) *storage.ComplianceOperatorReportData {
+	reportData, err := helpers.ConvertScanConfigurationToReportData(m.automaticReportingCtx, scanConfig, m.scanConfigDataStore, m.suiteDataStore, m.bindingsDataStore)
+	if err != nil {
+		log.Warnf("Unable to convert ScanConfiguration %s to ReportData: %v", scanConfig.GetId(), err)
+		return nil
+	}
+	return reportData
 }

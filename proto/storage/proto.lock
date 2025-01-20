@@ -4788,6 +4788,11 @@
                 "name": "scans",
                 "type": "Scan",
                 "is_repeated": true
+              },
+              {
+                "id": 8,
+                "name": "report_data",
+                "type": "ComplianceOperatorReportData"
               }
             ],
             "messages": [
@@ -4803,6 +4808,80 @@
                     "id": 2,
                     "name": "last_started_time",
                     "type": "google.protobuf.Timestamp"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "ComplianceOperatorReportData",
+            "fields": [
+              {
+                "id": 1,
+                "name": "scan_configuration",
+                "type": "ComplianceOperatorScanConfigurationV2"
+              },
+              {
+                "id": 2,
+                "name": "cluster_status",
+                "type": "ClusterStatus",
+                "is_repeated": true
+              },
+              {
+                "id": 3,
+                "name": "last_executed_time",
+                "type": "google.protobuf.Timestamp"
+              }
+            ],
+            "messages": [
+              {
+                "name": "SuiteStatus",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "phase",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "result",
+                    "type": "string"
+                  },
+                  {
+                    "id": 3,
+                    "name": "error_message",
+                    "type": "string"
+                  },
+                  {
+                    "id": 4,
+                    "name": "last_transition_time",
+                    "type": "google.protobuf.Timestamp"
+                  }
+                ]
+              },
+              {
+                "name": "ClusterStatus",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "cluster_id",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "errors",
+                    "type": "string",
+                    "is_repeated": true
+                  },
+                  {
+                    "id": 3,
+                    "name": "cluster_name",
+                    "type": "string"
+                  },
+                  {
+                    "id": 4,
+                    "name": "suite_status",
+                    "type": "SuiteStatus"
                   }
                 ]
               }
