@@ -307,7 +307,7 @@ export function formatVulnerabilityData(
 }
 
 // Given probability as float fraction, return as percent with 3 decimal digits.
-export function formatEpssProbabilityAsPercent(epssProbability: unknown) {
+export function formatEpssProbabilityAsPercent(epssProbability: number | undefined) {
     if (typeof epssProbability === 'number' && epssProbability >= 0 && epssProbability <= 1) {
         const epssPercent = epssProbability * 100;
         return `${epssPercent.toFixed(3)}%`;
