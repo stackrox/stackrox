@@ -420,6 +420,8 @@ func (rs *Store) UpsertSecret(namespace, secretName string, dockerConfig config.
 }
 
 func (rs *Store) upsertSecretByHost(namespace, secretName string, dockerConfig config.DockerConfig, serviceAcctName string) {
+	isGlobalPullSecret := openshift.GlobalPullSecret(namespace, secretName)
+
 	// In Kubernetes, the `default` service account always exists in each namespace (it is recreated upon deletion).
 	// The default service account always contains an API token.
 	// In OpenShift, the default service account also contains credentials for the
@@ -452,7 +454,7 @@ func (rs *Store) upsertSecretByHost(namespace, secretName string, dockerConfig c
 		}
 
 		var err error
-		if openshift.GlobalPullSecret(namespace, secretName) {
+		if isGlobalPullSecret {
 			err = rs.upsertGlobalRegistry(registryAddr, dce)
 		} else {
 			err = rs.upsertRegistry(namespace, registryAddr, dce)
@@ -464,6 +466,8 @@ func (rs *Store) upsertSecretByHost(namespace, secretName string, dockerConfig c
 }
 
 func (rs *Store) upsertSecretByName(namespace, secretName string, dockerConfig config.DockerConfig, serviceAcctName string) {
+	isGlobalPullSecret := openshift.GlobalPullSecret(namespace, secretName)
+
 	// hasBoundServiceAccount indicates that this secret is bound to a service account,
 	// which means the secret is managed by OCP and its lifecycle is tied to that of
 	// the associated service account (ie: if the service account is deleted so is the secret).
@@ -490,7 +494,7 @@ func (rs *Store) upsertSecretByName(namespace, secretName string, dockerConfig c
 			continue
 		}
 
-		if openshift.GlobalPullSecret(namespace, secretName) {
+		if isGlobalPullSecret {
 			if err := rs.upsertGlobalRegistry(registryAddr, dce); err != nil {
 				log.Errorf("Upserting global registry for pull secret %q, namespace %q, address %q: %v", secretName, namespace, registryAddr, err)
 			}

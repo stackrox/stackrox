@@ -269,7 +269,7 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 
 	s.processSecretForLocalScanning(secret, action, dockerConfig, ocpServiceAccountName)
 
-	// A sourced integration is one which icludes the cluster, namespace, and secret name from which it came from.
+	// A sourced integration is one which includes the cluster, namespace, and secret name from which it came from.
 	sourcedIntegration := shouldCreateSourcedIntegration(secret)
 
 	newIntegrationSet := set.NewStringSet()
@@ -311,8 +311,8 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 
 		sensorEvents = append(sensorEvents, &central.SensorEvent{
 			// Only update is supported at this time for integrations without a source.
-			// Set the Id for sourced integrations so that Sensor's deduper will NOT suppress
-			// subsequent secret remove events.
+			// Set the Id for sourced integrations so that Sensor's deduper (sensor/common/deduper Send())
+			// will NOT suppress subsequent secret remove events.
 			Id:     utils.IfThenElse(sourcedIntegration, ii.GetId(), ""),
 			Action: action,
 			Resource: &central.SensorEvent_ImageIntegration{
