@@ -11,7 +11,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Added Features
 
-- ROX-26849: Introduce report caching for RHCOS Node Indexing
+- ROX-25625: RHCOS Node Scanning with Scanner V4 can now detect vulnerabilities for the containerized image of the RHCOS itself.
+- ROX-26849: Introduce report caching for RHCOS Node Indexing.
 - ROX-25638: Introduce configurable log rotation. `ROX_LOGGING_MAX_ROTATION_FILES` and `ROX_LOGGING_MAX_SIZE_MB` variables allow for configuring the number and the size of a central log rotation file.
 - ROX-14332: Automatic service certificate renewal for Secured Clusters installed using Helm or operator.
 - Scanner V4 adds supports for openSUSE Leap 15.5 and 15.6
