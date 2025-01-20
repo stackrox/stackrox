@@ -26,9 +26,9 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 If this is unset and the flag "secret" is also unset, the created YAML will be printed to stdout instead`)
 	c.PersistentFlags().String(k8sobject.SecretFlag, "", `Secret to which the declarative config YAML should be written to.
 Secrets should be used in case sensitive data is contained within the declarative configuration, e.g. within auth providers.
-If this is unset and the flag "config-map" is also unset, the created YAML will be printed to stdout instead.`)
+If this is unset and the flag "config-map" is also unset, the created YAML will be printed to stdout instead`)
 	c.PersistentFlags().String(k8sobject.NamespaceFlag, "", `Only required in case the declarative config YAML should be written to a Config Map or secret.
-If left empty, the default namespace in the current kube config will be used.`)
+If left empty, the default namespace in the current kube config will be used`)
 
 	c.MarkFlagsMutuallyExclusive(k8sobject.ConfigMapFlag, k8sobject.SecretFlag)
 	flags.HideInheritedFlags(c)

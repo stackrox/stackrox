@@ -32,7 +32,7 @@ func Command(cliEnvironment environment.Environment, full *bool) *cobra.Command 
 
 	c := &cobra.Command{
 		Use:   "backup",
-		Short: "Create a backup of the StackRox database and certificates.",
+		Short: "Create a backup of the StackRox database and certificates",
 		Long: `Create a backup of the StackRox database, certificates and keys (.zip file).
 You can use it to restore central service and the database.`,
 		SilenceUsage: true,
@@ -44,9 +44,9 @@ You can use it to restore central service and the database.`,
 	c.Flags().StringVar(&centralBackupCmd.output, "output", "", `Where to write the backup.
 If the provided path is a file path, the backup will be written to the file, overwriting it if it already exists. (The directory MUST exist.)
 If the provided path is a directory, the backup will be saved in that directory with the server-provided filename.
-If this argument is omitted, the backup will be saved in the current working directory with the server-provided filename.`)
+If this argument is omitted, the backup will be saved in the current working directory with the server-provided filename`)
 	c.Flags().BoolVar(&centralBackupCmd.certsOnly, "certs-only", false, `Only backs up the certs.
-If using an external database this will be how a backup bundle with certs is generated.`)
+If using an external database this will be how a backup bundle with certs is generated`)
 	flags.AddTimeoutWithDefault(c, 1*time.Hour)
 	return c
 }

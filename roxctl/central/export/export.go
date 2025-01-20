@@ -21,7 +21,7 @@ const (
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "export",
-		Short: "(Technology Preview) Commands related to exporting data from Central.",
+		Short: "(Technology Preview) Commands related to exporting data from Central",
 		Long:  "Commands related to exporting data from Central." + common.TechPreviewLongText,
 	}
 	c.AddCommand(

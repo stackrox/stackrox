@@ -60,7 +60,7 @@ func openshift(generateCmd *sensorGenerateCommand) *cobra.Command {
 	openshiftCommand := sensorGenerateOpenShiftCommand{sensorGenerateCommand: generateCmd}
 	c := &cobra.Command{
 		Use:   "openshift",
-		Short: "Generate the required files to deploy StackRox services into an OpenShift cluster.",
+		Short: "Generate the required files to deploy StackRox services into an OpenShift cluster",
 		Long:  "Generate the required YAML configuration files to deploy StackRox Sensor and Collector into an OpenShift cluster.",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			if err := openshiftCommand.ConstructOpenShift(); err != nil {

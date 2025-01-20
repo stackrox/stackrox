@@ -11,7 +11,7 @@ import (
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "helm",
-		Short: "Commands related to StackRox Helm Charts.",
+		Short: "Commands related to StackRox Helm Charts",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			return nil
 		},

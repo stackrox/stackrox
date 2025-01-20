@@ -23,7 +23,7 @@ import (
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "central",
-		Short: "Commands related to the Central service.",
+		Short: "Commands related to the Central service",
 	}
 	c.AddCommand(
 		cert.Command(cliEnvironment),
