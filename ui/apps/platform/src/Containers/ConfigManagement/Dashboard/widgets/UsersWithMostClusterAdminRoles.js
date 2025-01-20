@@ -1,12 +1,13 @@
 import React from 'react';
 import { gql } from '@apollo/client';
 import Loader from 'Components/Loader';
-import { Link, useLocation, useRouteMatch } from 'react-router-dom';
+import { Link, useLocation, useMatch } from 'react-router-dom';
 import URLService from 'utils/URLService';
 import entityTypes from 'constants/entityTypes';
 import networkStatuses from 'constants/networkStatuses';
 import Query from 'Components/ThrowingQuery';
 import Widget from 'Components/Widget';
+import { workflowPaths } from 'routePaths';
 
 import Lollipop from './Lollipop';
 
@@ -24,7 +25,7 @@ const QUERY = gql`
 `;
 
 const UsersWithMostClusterAdminRoles = () => {
-    const match = useRouteMatch();
+    const match = useMatch(workflowPaths.DASHBOARD);
     const location = useLocation();
 
     function processData(data) {

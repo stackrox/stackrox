@@ -5,8 +5,9 @@ import entityTypes from 'constants/entityTypes';
 import useCases from 'constants/useCaseTypes';
 import { AGGREGATED_RESULTS as QUERY } from 'queries/controls';
 import queryService from 'utils/queryService';
-import { useLocation, useRouteMatch, Link } from 'react-router-dom';
+import { useLocation, useMatch, Link } from 'react-router-dom';
 import searchContext from 'Containers/searchContext';
+import { workflowPaths } from 'routePaths';
 
 import { entityNounOrdinaryCase } from '../entitiesForCompliance';
 import LinkListWidget from './LinkListWidget';
@@ -22,7 +23,7 @@ const ControlRelatedEntitiesList = ({
     const linkContext = useCases.COMPLIANCE;
     const searchParam = useContext(searchContext);
     const location = useLocation();
-    const match = useRouteMatch();
+    const match = useMatch(workflowPaths.ENTITY);
 
     function processData(data) {
         if (!data || !data.results) {

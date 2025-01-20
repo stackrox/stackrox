@@ -1,5 +1,5 @@
 import React, { useEffect, useState, ReactElement } from 'react';
-import { useHistory, useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
     Alert,
     Bullseye,
@@ -34,7 +34,7 @@ import {
 import './SearchPage.css';
 
 function SearchPage(): ReactElement {
-    const history = useHistory();
+    const navigate = useNavigate();
     const { search } = useLocation();
 
     /*
@@ -114,9 +114,9 @@ function SearchPage(): ReactElement {
 
             // If the current search filter is empty, then replace, else push.
             if (stringifiedSearchFilter.length === 0) {
-                history.replace(searchPathWithQueryString);
+                navigate(searchPathWithQueryString, { replace: true });
             } else {
-                history.push(searchPathWithQueryString);
+                navigate(searchPathWithQueryString);
             }
         }
 

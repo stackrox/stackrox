@@ -103,7 +103,7 @@ function CveTableTabWrapper({
 }
 
 function ExceptionRequestDetailsPage() {
-    const { requestId } = useParams();
+    const { requestId } = useParams() as { requestId: string };
     const { hasReadWriteAccess } = usePermissions();
     const { currentUser } = useAuthStatus();
     const hasWriteAccessForApproving = hasReadWriteAccess('VulnerabilityManagementApprovals');
@@ -184,7 +184,7 @@ function ExceptionRequestDetailsPage() {
         return (
             <NotFoundMessage
                 title="404: We couldn't find that page"
-                message={`A request with ID ${requestId as string} could not be found.`}
+                message={`A request with ID ${requestId} could not be found.`}
             />
         );
     }

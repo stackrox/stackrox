@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 import usePermissions from 'hooks/usePermissions';
 import entityTypes from 'constants/entityTypes';
@@ -29,7 +29,7 @@ const entityMenuTypes = [
 ];
 
 const VulnDashboardPage = () => {
-    const history = useHistory();
+    const navigate = useNavigate();
     const { hasReadAccess } = usePermissions();
     const hasReadAccessForIntegration = hasReadAccess('Integration');
     const workflowState = useContext(workflowStateContext);
@@ -62,7 +62,7 @@ const VulnDashboardPage = () => {
             targetUrl = workflowState.setSearch(allSearch).toUrl();
         }
 
-        history.push(targetUrl);
+        navigate(targetUrl);
     }
 
     const cveFilter = searchState.Fixable ? 'Fixable' : 'All';

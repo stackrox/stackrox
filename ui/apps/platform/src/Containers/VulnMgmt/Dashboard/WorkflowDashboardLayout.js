@@ -1,8 +1,9 @@
 import React from 'react';
 import URLService from 'utils/URLService';
 import useCaseTypes from 'constants/useCaseTypes';
-import { useLocation, useRouteMatch } from 'react-router-dom';
+import { useLocation, useMatch } from 'react-router-dom';
 import parseURL from 'utils/URLParser';
+import { workflowPaths } from 'routePaths';
 import workflowStateContext from 'Containers/workflowStateContext';
 
 import VulnMgmtDashboardPage from 'Containers/VulnMgmt/Dashboard/VulnMgmtDashboardPage';
@@ -13,7 +14,7 @@ const DashboardMap = {
 
 const WorkflowDashboardLayout = () => {
     const location = useLocation();
-    const match = useRouteMatch();
+    const match = useMatch(workflowPaths.DASHBOARD);
 
     const params = URLService.getParams(match, location);
     const workflowState = parseURL(location);
