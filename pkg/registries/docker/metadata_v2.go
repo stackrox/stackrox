@@ -14,7 +14,7 @@ func handleManifestLists(r *Registry, remote, ref string, manifests []manifestli
 		return nil, errors.Errorf("no valid manifests found for %s:%s", remote, ref)
 	}
 	if len(manifests) == 1 {
-		return handleManifests(r, manifests[0].MediaType, remote, manifests[0].Digest.String())
+		return handleManifests(r, manifests[0].MediaType, remote, manifests[0].Digest)
 	}
 	var amdManifest manifestlist.ManifestDescriptor
 	var foundAMD bool
@@ -24,7 +24,7 @@ func handleManifestLists(r *Registry, remote, ref string, manifests []manifestli
 		}
 		// Matching platform for GOARCH takes priority so return immediately
 		if m.Platform.Architecture == runtime.GOARCH {
-			return handleManifests(r, m.MediaType, remote, m.Digest.String())
+			return handleManifests(r, m.MediaType, remote, m.Digest)
 		}
 		if m.Platform.Architecture == "amd64" {
 			foundAMD = true
@@ -32,7 +32,7 @@ func handleManifestLists(r *Registry, remote, ref string, manifests []manifestli
 		}
 	}
 	if foundAMD {
-		return handleManifests(r, amdManifest.MediaType, remote, amdManifest.Digest.String())
+		return handleManifests(r, amdManifest.MediaType, remote, amdManifest.Digest)
 	}
 	return nil, errors.Errorf("no manifest in list matched linux and amd64 or %s architectures: %q", runtime.GOARCH, ref)
 }
