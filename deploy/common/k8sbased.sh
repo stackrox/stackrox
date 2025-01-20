@@ -820,13 +820,15 @@ function launch_sensor {
         extra_helm_config+=(--set "collector.forceCollectionMethod=true")
       fi
 
-      if [[ -n "$CI" ]]; then
-        echo "Linting Helm chart ${helm_chart}".
-        helm lint --set ca.cert=PLACEHOLDER_FOR_LINTING "${helm_chart}"
-        echo "Linting Helm chart ${helm_chart}, using namespace ${sensor_namespace}"
-        helm lint --set ca.cert=PLACEHOLDER_FOR_LINTING "${helm_chart}" -n "${sensor_namespace}"
-        echo "Linting Helm chart ${helm_chart}, using namespace ${sensor_namespace} and additional arguments" "${helm_args[@]}" "${extra_helm_config[@]}"
-        helm lint "${helm_chart}" -n "${sensor_namespace}" "${helm_args[@]}" "${extra_helm_config[@]}"
+      # We skip linting if the Helm chart is overriden, because we should only care about the validity
+      # of the Helm chart version for the current commit.
+      if [[ -n "$CI" && -z "$SENSOR_CHART_DIR_OVERRIDE" ]]; then
+        echo "Linting Helm chart ${sensor_helm_chart}".
+        helm lint --set ca.cert=PLACEHOLDER_FOR_LINTING "${sensor_helm_chart}"
+        echo "Linting Helm chart ${sensor_helm_chart}, using namespace ${sensor_namespace}"
+        helm lint --set ca.cert=PLACEHOLDER_FOR_LINTING "${sensor_helm_chart}" -n "${sensor_namespace}"
+        echo "Linting Helm chart ${sensor_helm_chart}, using namespace ${sensor_namespace} and additional arguments" "${helm_args[@]}" "${extra_helm_config[@]}"
+        helm lint "${sensor_helm_chart}" -n "${sensor_namespace}" "${helm_args[@]}" "${extra_helm_config[@]}"
       fi
 
       if [[ "${sensor_namespace}" != "stackrox" ]]; then
