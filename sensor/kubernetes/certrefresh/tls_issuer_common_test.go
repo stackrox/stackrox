@@ -189,7 +189,6 @@ func verifySecrets(ctx context.Context, t require.TestingT,
 		expectedCert, exists := secretsCerts[secret.GetName()]
 		if !exists {
 			require.Failf(t, "unexpected secret name %q", secret.GetName())
-			continue
 		}
 		require.Equal(t, ca.CertPEM(), secret.Data[mtls.CACertFileName])
 		require.Equal(t, expectedCert.CertPEM, secret.Data[mtls.ServiceCertFileName])
