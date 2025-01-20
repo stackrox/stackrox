@@ -1,5 +1,8 @@
 import React, { ReactElement, useState } from 'react';
 import {
+    Breadcrumb,
+    BreadcrumbItem,
+    Button,
     Divider,
     Flex,
     FlexItem,
@@ -34,6 +37,7 @@ function ExternalEntitiesSideBar({
     onNodeSelect,
 }: ExternalEntitiesSideBarProps): ReactElement {
     const [selectedView, setSelectedView] = useState<ExternalEntitiesView>('external-ips');
+    const [selectedExternalIP, setSelectedExternalIP] = useState<string | null>(null);
     const entityNode = getNodeById(nodes, id);
 
     return (
@@ -44,9 +48,28 @@ function ExternalEntitiesSideBar({
                         <ExternalEntitiesIcon />
                     </FlexItem>
                     <FlexItem>
-                        <Title headingLevel="h2" id={labelledById}>
-                            {entityNode?.label}
-                        </Title>
+                        {selectedExternalIP ? (
+                            <Breadcrumb>
+                                <BreadcrumbItem
+                                    component="button"
+                                    onClick={() => setSelectedExternalIP(null)}
+                                >
+                                    <Title headingLevel="h2" id={labelledById}>
+                                        {entityNode?.label}
+                                    </Title>
+                                </BreadcrumbItem>
+                                <BreadcrumbItem isActive>
+                                    <Text className="pf-v5-u-font-size-lg">
+                                        {selectedExternalIP}
+                                    </Text>
+                                </BreadcrumbItem>
+                            </Breadcrumb>
+                        ) : (
+                            <Title headingLevel="h2" id={labelledById}>
+                                {entityNode?.label}
+                            </Title>
+                        )}
+
                         <Text className="pf-v5-u-font-size-sm pf-v5-u-color-200">
                             Connected entities outside your cluster
                         </Text>
@@ -74,7 +97,12 @@ function ExternalEntitiesSideBar({
             <StackItem isFilled style={{ overflow: 'auto' }}>
                 <Stack className="pf-v5-u-p-md">
                     {selectedView === 'external-ips' ? (
-                        <div>external ips</div>
+                        <Button
+                            variant="primary"
+                            onClick={() => setSelectedExternalIP('192.168.0.0')}
+                        >
+                            See external IP
+                        </Button>
                     ) : (
                         <ExternalFlowsTable
                             nodes={nodes}
