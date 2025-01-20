@@ -17,7 +17,7 @@ import (
 )
 
 const k8sObjectFlagTemplate = `%s from which to read the declarative configuration from.
-In case this is not set, the declarative configuration will be read from the YAML file provided via the --file flag.`
+In case this is not set, the declarative configuration will be read from the YAML file provided via the --file flag`
 
 // Command provides the lint command for declarative configuration.
 func Command(cliEnvironment environment.Environment) *cobra.Command {

@@ -11,7 +11,7 @@ import (
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "cluster",
-		Short: "Commands related to a cluster.",
+		Short: "Commands related to a cluster",
 	}
 
 	c.AddCommand(delete.Command(cliEnvironment))

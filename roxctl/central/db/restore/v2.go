@@ -46,7 +46,7 @@ func V2Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "restore <file>",
 		Args:  cobra.ExactArgs(1),
-		Short: "Restore the StackRox database from a previous backup.",
+		Short: "Restore the StackRox database from a previous backup",
 		Long:  "Restore the StackRox database from a backup (.zip file) that you created by using the `roxctl central db backup` command.",
 		RunE: func(c *cobra.Command, args []string) error {
 			if err := validate(c); err != nil {
