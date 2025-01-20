@@ -49,13 +49,6 @@ const (
 	defaultCertFilePath = CertsPrefix + ServiceCertFileName
 	// defaultKeyFilePath is where the key is stored.
 	defaultKeyFilePath = CertsPrefix + ServiceKeyFileName
-	
-	// CentralDBCertsPrefix is the filesystem prefix under which central-db service certificates and keys are stored
-	CentralDBCertsPrefix = "/run/secrets/stackrox.io/central-db-certs/"
-	// defaultCentralDBCertFilePath is where the public part of central-db certificate is stored
-	defaultCentralDBCertFilePath = CentralDBCertsPrefix + ServiceCertFileName
-	// defaultCentralDBKeyFilePath is where the key for central-db certificate is stored
-	defaultCentralDBKeyFilePath = CentralDBCertsPrefix + ServiceKeyFileName
 
 	// To account for clock skew, set certificates to be valid some time in the past.
 	beforeGracePeriod = 1 * time.Hour
@@ -156,11 +149,6 @@ func CACertPEM() ([]byte, error) {
 		Type:  "CERTIFICATE",
 		Bytes: caDER,
 	}), nil
-}
-
-// LeafCentralDBCertificateFromFile reads the central-db certificate (including private key and cert)
-func LeafCentralDBCertificateFromFile() (tls.Certificate, error) {
-	return tls.LoadX509KeyPair(centraldbCertFilePathSetting.Setting(), centraldbKeyFilePathSetting.Setting())
 }
 
 func readCAKey() ([]byte, error) {

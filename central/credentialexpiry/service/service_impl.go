@@ -14,6 +14,7 @@ import (
 	iiDStore "github.com/stackrox/rox/central/imageintegration/datastore"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
@@ -35,6 +36,7 @@ var (
 			v1.CredentialExpiryService_GetCertExpiry_FullMethodName,
 		},
 	})
+	centralDBEndpoint = fmt.Sprintf("central-db.%s.svc:5432", env.Namespace.Setting())
 )
 
 // ClusterService is the struct that manages the cluster API
@@ -42,7 +44,7 @@ type serviceImpl struct {
 	v1.UnimplementedCredentialExpiryServiceServer
 
 	imageIntegrations iiDStore.DataStore
-	scannerConfigs    map[mtls.Subject]*tls.Config
+	tlsConfigs        map[mtls.Subject]*tls.Config
 	expiryFunc        func(ctx context.Context, subject mtls.Subject, tlsConfig *tls.Config, endpoint string) (*time.Time, error)
 }
 
@@ -55,7 +57,7 @@ func (s *serviceImpl) GetCertExpiry(ctx context.Context, request *v1.GetCertExpi
 	case v1.GetCertExpiry_SCANNER_V4:
 		return s.getScannerV4CertExpiry(ctx)
 	case v1.GetCertExpiry_CENTRAL_DB:
-		return s.getCentralDBCertExpiry()
+		return s.getCentralDBCertExpiry(ctx)
 	}
 	return nil, errors.Wrapf(errox.InvalidArgs, "invalid component: %v", request.GetComponent())
 }
@@ -65,18 +67,7 @@ func (s *serviceImpl) getCentralCertExpiry() (*v1.GetCertExpiry_Response, error)
 	if err != nil {
 		return nil, errors.Errorf("failed to retrieve leaf certificate: %v", err)
 	}
-	return s.parseCertAndGetExpiry(cert)
-}
 
-func (s *serviceImpl) getCentralDBCertExpiry() (*v1.GetCertExpiry_Response, error) {
-	cert, err := mtls.LeafCentralDBCertificateFromFile()
-	if err != nil {
-		return nil, errors.Errorf("failed to retrieve leaf certificate: %v", err)
-	}
-	return s.parseCertAndGetExpiry(cert)
-}
-
-func (s *serviceImpl) parseCertAndGetExpiry(cert tls.Certificate) (*v1.GetCertExpiry_Response, error) {
 	if len(cert.Certificate) == 0 {
 		return nil, errors.New("no central cert found")
 	}
@@ -89,6 +80,26 @@ func (s *serviceImpl) parseCertAndGetExpiry(cert tls.Certificate) (*v1.GetCertEx
 		return nil, errors.Errorf("failed to convert timestamp: %v", err)
 	}
 	return &v1.GetCertExpiry_Response{Expiry: expiry}, nil
+}
+
+func (s *serviceImpl) getCentralDBCertExpiry(ctx context.Context) (*v1.GetCertExpiry_Response, error) {
+	centralDBConfig := s.tlsConfigs[mtls.CentralDBSubject]
+	if centralDBConfig == nil {
+		return nil, errors.New("could not load TLS config to talk to central-db")
+	}
+
+	expiry, err := maybeGetExpiryFromServiceAt(ctx, mtls.CentralDBSubject, centralDBConfig, centralDBEndpoint)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to determine Central DB cert expiry")
+	}
+	if expiry == nil {
+		return &v1.GetCertExpiry_Response{Expiry: nil}, nil
+	}
+	certExpiry, err := protocompat.ConvertTimeToTimestampOrError(*expiry)
+	if err != nil {
+		return nil, err
+	}
+	return &v1.GetCertExpiry_Response{Expiry: certExpiry}, nil
 }
 
 // ensureTLSAndReturnAddr returns an address from endpoint that can be passed to tls.Dial,
@@ -107,10 +118,10 @@ func ensureTLSAndReturnAddr(endpoint string) (string, error) {
 	return fmt.Sprintf("%s:443", server), nil
 }
 
-func maybeGetExpiryFromScannerAt(ctx context.Context, subject mtls.Subject, tlsConfig *tls.Config, endpoint string) (*time.Time, error) {
+func maybeGetExpiryFromServiceAt(ctx context.Context, subject mtls.Subject, tlsConfig *tls.Config, endpoint string) (*time.Time, error) {
 	conn, err := tlsutils.DialContext(ctx, "tcp", endpoint, tlsConfig)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to contact scanner at %s", endpoint)
+		return nil, errors.Wrapf(err, "failed to contact service at %s", endpoint)
 	}
 	defer utils.IgnoreError(conn.Close)
 	certs := conn.ConnectionState().PeerCertificates
@@ -125,7 +136,7 @@ func maybeGetExpiryFromScannerAt(ctx context.Context, subject mtls.Subject, tlsC
 }
 
 func (s *serviceImpl) getScannerCertExpiry(ctx context.Context) (*v1.GetCertExpiry_Response, error) {
-	scannerConfig := s.scannerConfigs[mtls.ScannerSubject]
+	scannerConfig := s.tlsConfigs[mtls.ScannerSubject]
 	if scannerConfig == nil {
 		return nil, errors.New("could not load TLS config to talk to scanner")
 	}
@@ -192,8 +203,8 @@ func (s *serviceImpl) getScannerV4CertExpiry(ctx context.Context) (*v1.GetCertEx
 	if !features.ScannerV4.Enabled() {
 		return nil, errors.Wrap(errox.InvalidArgs, "Scanner V4 is not enabled/integrated")
 	}
-	indexerConfig := s.scannerConfigs[mtls.ScannerV4IndexerSubject]
-	matcherConfig := s.scannerConfigs[mtls.ScannerV4MatcherSubject]
+	indexerConfig := s.tlsConfigs[mtls.ScannerV4IndexerSubject]
+	matcherConfig := s.tlsConfigs[mtls.ScannerV4MatcherSubject]
 	if indexerConfig == nil && matcherConfig == nil {
 		return nil, errors.New("could not load TLS configs to talk to Scanner V4 indexer and matcher")
 	}
@@ -220,7 +231,7 @@ func (s *serviceImpl) getScannerV4CertExpiry(ctx context.Context) (*v1.GetCertEx
 	errC := make(chan error, numEndpoints)
 	expiryC := make(chan *time.Time, numEndpoints)
 	getExpiry := func(subject mtls.Subject, endpoint string) {
-		expiry, err := s.expiryFunc(ctx, subject, s.scannerConfigs[subject], endpoint)
+		expiry, err := s.expiryFunc(ctx, subject, s.tlsConfigs[subject], endpoint)
 		if err != nil {
 			errC <- err
 			return
