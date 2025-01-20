@@ -13,7 +13,7 @@ import (
 var OptionsMap search.OptionsMap
 
 func init() {
-	OptionsMap = search.Walk(v1.SearchCategory_ALERTS, "list_alert", (*storage.ListAlert)(nil))
+	OptionsMap = search.Walk(v1.SearchCategory_ALERTS, "alert", (*storage.Alert)(nil))
 	alertOptions := schema.AlertsSchema.OptionsMap.Clone()
 
 	// There are more search terms in the alert proto due to the embeddings of policies.
