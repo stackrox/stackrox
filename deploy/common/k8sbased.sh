@@ -681,7 +681,7 @@ function launch_sensor {
       unzip "$k8s_dir/sensor-deploy/chart.zip" -d "$k8s_dir/sensor-deploy/chart"
 
       local sensor_helm_chart="$k8s_dir/sensor-deploy/chart"
-      if [[ -n "${SENSOR_CHART_DIR_OVERRIDE}" ]]; then
+      if [[ -n "${SENSOR_CHART_DIR_OVERRIDE:-}" ]]; then
         echo "Using override sensor helm chart from ${SENSOR_CHART_DIR_OVERRIDE}"
         sensor_helm_chart="${SENSOR_CHART_DIR_OVERRIDE}"
       fi
@@ -693,20 +693,32 @@ function launch_sensor {
         secured_cluster_chart_supports_crs="true"
       fi
 
+      local central_supports_crs="false"
+      if central_can_issue_crs; then
+        central_supports_crs="true"
+      fi
+
       if [[ "${secured_cluster_chart_supports_crs}" != "true" ]]; then
         echo >&2 "======================================================================================="
         echo >&2 " NOTE: The Helm chart to be installed does not support CRS-based cluster registration."
         echo >&2 "                    The init-bundle mechanism will be used instead."
         echo >&2 "======================================================================================="
         ROX_DEPLOY_SENSOR_WITH_CRS=false
-      fi
-
-      if [[ -z "${ROX_DEPLOY_SENSOR_WITH_CRS:-}" && "${secured_cluster_chart_supports_crs}" == "true" ]]; then
+      elif [[ "${central_supports_crs}" != "true" ]]; then
+        echo >&2 "======================================================================================="
+        echo >&2 "                      NOTE: Central does not support CRS issuing."
+        echo >&2 "                    The init-bundle mechanism will be used instead."
+        echo >&2 "======================================================================================="
+        ROX_DEPLOY_SENSOR_WITH_CRS=false
+      elif [[ -z "${ROX_DEPLOY_SENSOR_WITH_CRS:-}" ]]; then
+        # The Helm chart to be used supports CRS and the Central version running supports CRS issuing, hence
+        # we use CRS for installing the secured cluster.
         echo >&2 "================================================================================================="
         echo >&2 "             NOTE: The new CRS-based flow for cluster-registration will be used."
         echo >&2 "  To disable the CRS-based flow for cluster registration, set ROX_DEPLOY_SENSOR_WITH_CRS=false"
         echo >&2 "================================================================================================="
         ROX_DEPLOY_SENSOR_WITH_CRS=true
+        # This is required for CRS as well.
         if [[ -z "${SENSOR_HELM_MANAGED:-}" ]]; then
           SENSOR_HELM_MANAGED=true
         fi
@@ -919,4 +931,10 @@ function launch_sensor {
     fi
 
     echo
+}
+
+central_can_issue_crs() {
+  local crs_name="check-$RANDOM"
+  curl_central_once "https://${API_ENDPOINT}/v1/cluster-init/crs" \
+    --fail -o /dev/null -XPOST -d "{\"name\":\"${crs_name}\"}"
 }
