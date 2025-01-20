@@ -294,7 +294,7 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 		search.NewQueryBuilder().AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery(),
 	)
 	alertQuery.Pagination = infPagination
-	r.unresolvedAlerts, err = f.alertStore.SearchListAlerts(ctx, alertQuery)
+	r.unresolvedAlerts, err = f.alertStore.SearchListAlerts(ctx, alertQuery, true)
 	if err != nil {
 		return err
 	}

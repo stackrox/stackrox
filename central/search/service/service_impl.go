@@ -93,7 +93,7 @@ func (s *serviceImpl) getSearchFuncs() map[v1.SearchCategory]SearchFunc {
 
 func (s *serviceImpl) getAutocompleteSearchers() map[v1.SearchCategory]search.Searcher {
 	searchers := map[v1.SearchCategory]search.Searcher{
-		v1.SearchCategory_ALERTS:             s.alerts,
+		v1.SearchCategory_ALERTS:             &alertDataStore.DefaultStateAlertDataStoreImpl{DataStore: &s.alerts},
 		v1.SearchCategory_DEPLOYMENTS:        s.deployments,
 		v1.SearchCategory_IMAGES:             s.images,
 		v1.SearchCategory_POLICIES:           s.policies,

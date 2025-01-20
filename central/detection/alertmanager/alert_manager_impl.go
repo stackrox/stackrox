@@ -139,7 +139,7 @@ func (d *alertManagerImpl) shouldDebounceNotification(ctx context.Context, alert
 		AddExactMatches(search.PolicyID, alert.GetPolicy().GetId()).
 		AddExactMatches(search.ViolationState, storage.ViolationState_RESOLVED.String()).
 		ProtoQuery()
-	resolvedAlerts, err := d.alerts.SearchRawAlerts(ctx, q)
+	resolvedAlerts, err := d.alerts.SearchRawAlerts(ctx, q, false)
 	if err != nil {
 		log.Errorf("Error fetching formerly resolved alerts for alert %s: %v", alert.GetId(), err)
 		return false
@@ -318,7 +318,7 @@ func (d *alertManagerImpl) mergeManyAlerts(
 	for _, filter := range oldAlertFilters {
 		filter.apply(qb)
 	}
-	previousAlerts, err := d.alerts.SearchRawAlerts(ctx, qb.ProtoQuery())
+	previousAlerts, err := d.alerts.SearchRawAlerts(ctx, qb.ProtoQuery(), true)
 	if err != nil {
 		err = errors.Wrapf(err, "couldn't load previous alerts (query was %s)", qb.Query())
 		return
