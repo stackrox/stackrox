@@ -36,7 +36,7 @@ var (
 			v1.CredentialExpiryService_GetCertExpiry_FullMethodName,
 		},
 	})
-	centralDBEndpoint = fmt.Sprintf("central-db.%s.svc:5432", env.Namespace.Setting())
+	centralDBEndpoint = fmt.Sprintf("central-db.%s:5432", env.Namespace.Setting())
 )
 
 // ClusterService is the struct that manages the cluster API
