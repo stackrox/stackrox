@@ -32,6 +32,7 @@ import (
 // localScannerTLSIssuerFixture tests the legacy Local Scanner certificate refresh feature, which will be deprecated.
 // The tests are similar to the ones in securedcluster_tls_issuer_test.go, and improvements to this file should also
 // be made there. Expect these tests to be deleted soon.
+// TODO(ROX-27734): Remove local scanner certificate refresh from Sensor
 type localScannerTLSIssuerFixture struct {
 	k8sClient            *fake.Clientset
 	certRefresher        *certificateRefresherMock
