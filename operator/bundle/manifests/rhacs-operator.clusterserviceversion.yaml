@@ -984,7 +984,6 @@ spec:
           for object updates.
 
 
-
           Note: this will not have any effect unless ''Listen On Creates'' is set
           to ''true'' as well.'
         displayName: Listen On Updates
