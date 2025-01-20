@@ -72,7 +72,7 @@ func fetchCACommand(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "fetch-ca",
 		Short: "Fetch the StackRox CA Configuration to be used with Helm",
-		Long:  "Fetch the StackRox CA Configuration to be used with Helm (use this if you are pre-creating secrets rather than using an init bundle)",
+		Long:  "Fetch the StackRox CA Configuration to be used with Helm (use this if you are pre-creating secrets rather than using an init bundle).",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if outputFile == "" {

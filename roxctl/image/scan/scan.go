@@ -101,7 +101,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c := &cobra.Command{
 		Use:   "scan",
-		Short: "Scan the specified image, and return scan results.",
+		Short: "Scan the specified image, and return scan results",
 		Long:  "Scan the specified image and return the fully enriched image. Optionally, force a rescan of the image. You must have write permissions for the `Image` resource.",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			if err := imageScanCmd.Construct(nil, c, objectPrinterFactory); err != nil {
@@ -136,7 +136,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	// TODO(ROX-8303): Remove this once we have fully deprecated the old output format and are sure we do not break existing customer scripts
 	// The error message will be prefixed by "command <command-name> has been deprecated,"
 	// Fully deprecated "pretty" format, since we can assume no customer has built scripting around its loose format
-	c.Flags().StringVarP(&imageScanCmd.format, "format", "", "json", "Format of the output. Choose output format from json and csv.")
+	c.Flags().StringVarP(&imageScanCmd.format, "format", "", "json", "Format of the output. Choose output format from json and csv")
 	utils.Must(c.Flags().MarkDeprecated("format", deprecationNote))
 
 	utils.Must(c.MarkFlagRequired("image"))

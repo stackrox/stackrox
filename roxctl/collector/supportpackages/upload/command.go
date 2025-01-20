@@ -31,7 +31,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	collectorSPUploadCmd := &collectorSPUploadCommand{env: cliEnvironment}
 	c := &cobra.Command{
 		Use:   "upload <package-file>",
-		Short: "Upload files from a Collector support package to Central.",
+		Short: "Upload files from a Collector support package to Central",
 		Long:  uploadHelpLong,
 		RunE: func(c *cobra.Command, args []string) error {
 			if err := validate(args); err != nil {

@@ -29,7 +29,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c := &cobra.Command{
 		Use:   "sbom",
-		Short: "Generate an SPDX 2.3 SBOM from an image scan.",
+		Short: "Generate an SPDX 2.3 SBOM from an image scan",
 		Long:  "Generate an SPDX 2.3 SBOM from an image scan. You must have write permissions for the `Image` resource.",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			if err := imageSBOMCmd.construct(c); err != nil {

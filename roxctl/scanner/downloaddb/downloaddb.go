@@ -255,7 +255,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c := &cobra.Command{
 		Use:   "download-db",
-		Short: "Download the offline vulnerability database for StackRox Scanner and/or Scanner V4.",
+		Short: "Download the offline vulnerability database for StackRox Scanner and/or Scanner V4",
 		Long: `Download the offline vulnerability database for StackRox Scanner and/or Scanner V4.
 
 Download version specific offline vulnerability bundles. Will contact

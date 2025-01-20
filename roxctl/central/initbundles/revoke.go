@@ -134,7 +134,7 @@ func revokeCommand(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "revoke <init bundle ID or name> [<init bundle ID or name> ...]",
 		Short: "Revoke a cluster init bundle",
-		Long:  "Revoke an init bundle for bootstrapping new StackRox secured clusters",
+		Long:  "Revoke an init bundle for bootstrapping new StackRox secured clusters.",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			force, err := cmd.Flags().GetBool("force")
