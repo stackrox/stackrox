@@ -71,6 +71,34 @@ func (s *serviceImpl) centralHandler(w http.ResponseWriter, r *http.Request) {
 	writeFile(w, rendered, "central-tls.yaml")
 }
 
+func (s *serviceImpl) centralDBHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		httputil.WriteErrorf(w, http.StatusMethodNotAllowed, "invalid method %s, only POST allowed", r.Method)
+		return
+	}
+
+	secrets, ca, err := initializeSecretsWithCACertAndKey()
+	if err != nil {
+		httputil.WriteGRPCStyleError(w, codes.Internal, err)
+		return
+	}
+	if err := certgen.IssueOtherServiceCerts(secrets, ca, []mtls.Subject{mtls.CentralDBSubject}); err != nil {
+		httputil.WriteGRPCStyleError(w, codes.Internal, err)
+		return
+	}
+
+	rendered, err := renderer.RenderCentralTLSSecretOnly(renderer.Config{
+		K8sConfig:      &renderer.K8sConfig{},
+		SecretsByteMap: secrets,
+	}, defaults.GetImageFlavorFromEnv())
+	if err != nil {
+		httputil.WriteGRPCStyleErrorf(w, codes.Internal, "failed to render central-db TLS file: %v", err)
+		return
+	}
+
+	writeFile(w, rendered, "central-db-tls.yaml")
+}
+
 func (s *serviceImpl) scannerHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		httputil.WriteErrorf(w, http.StatusMethodNotAllowed, "invalid method %s, only POST allowed", r.Method)
