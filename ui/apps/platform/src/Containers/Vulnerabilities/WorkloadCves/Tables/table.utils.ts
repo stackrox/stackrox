@@ -305,3 +305,14 @@ export function formatVulnerabilityData(
         };
     });
 }
+
+// Given probability as float fraction, return as percent with 3 decimal digits.
+export function formatEpssProbabilityAsPercent(epssProbability: unknown) {
+    if (typeof epssProbability === 'number' && epssProbability >= 0 && epssProbability <= 1) {
+        const epssPercent = epssProbability * 100;
+        return `${epssPercent.toFixed(3)}%`;
+    }
+
+    // For any of the following: null, undefined, or number out of range
+    return 'Not available';
+}

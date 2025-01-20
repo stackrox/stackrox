@@ -47,6 +47,7 @@ import ExceptionDetailsCell from '../components/ExceptionDetailsCell';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
+import { formatEpssProbabilityAsPercent } from './table.utils';
 
 export const tableId = 'WorkloadCvesImageVulnerabilitiesTable';
 export const defaultColumns = {
@@ -243,6 +244,7 @@ function ImageVulnerabilitiesTable({
                             (imageComponent) => imageComponent.imageVulnerabilities
                         );
                         const isFixableInImage = getIsSomeVulnerabilityFixable(vulnerabilities);
+                        const epssProbability = undefined; // ccveBaseInfo?.epss?.epssProbability
                         const isExpanded = expandedRowSet.has(cve);
 
                         return (
@@ -324,7 +326,7 @@ function ImageVulnerabilitiesTable({
                                             modifier="nowrap"
                                             dataLabel="EPSS probability"
                                         >
-                                            Not available
+                                            {formatEpssProbabilityAsPercent(epssProbability)}
                                         </Td>
                                     )}
                                     <Td
