@@ -45,6 +45,7 @@ type Store interface {
 	PruneMany(ctx context.Context, identifiers []string) error
 
 	Count(ctx context.Context, q *v1.Query) (int, error)
+	CountBy(ctx context.Context, q *v1.Query) ([]search.CountByWrapper, error)
 	Exists(ctx context.Context, reportID string) (bool, error)
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 

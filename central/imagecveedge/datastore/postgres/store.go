@@ -35,6 +35,7 @@ type storeType = storage.ImageCVEEdge
 // Store is the interface to interact with the storage for storage.ImageCVEEdge
 type Store interface {
 	Count(ctx context.Context, q *v1.Query) (int, error)
+	CountBy(ctx context.Context, q *v1.Query) ([]search.CountByWrapper, error)
 	Exists(ctx context.Context, id string) (bool, error)
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 
