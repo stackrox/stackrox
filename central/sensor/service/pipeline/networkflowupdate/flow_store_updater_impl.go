@@ -165,7 +165,7 @@ func (s *flowPersisterImpl) fixupExternalNetworkEntityIdIfDiscovered(ctx context
 
 	id, err := externalsrcs.NewClusterScopedID(s.clusterID, entityInfo.GetExternalSource().GetCidr())
 
-	if err != nil {
+	if err == nil {
 		entityInfo.Id = id.String()
 	}
 
