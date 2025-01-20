@@ -34,6 +34,9 @@ env:
 jobs:
   check-payload:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        image: [ '4.4', '4.5', '4.6', '' ]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -100,6 +103,6 @@ jobs:
           export PATH=${PATH}:${PWD}
           gh api -H "$ACCEPT_RAW" "${{ env.script_url }}" | bash -s -- \
             fips-check-payload \
-            "${{ github.event.inputs.image }}" \
+            "${{ matrix.image }}" \
             "${{ github.event.inputs.image_match }}" \
             "${{ github.event.inputs.tag_filter }}"
