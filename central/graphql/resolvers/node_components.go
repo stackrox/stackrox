@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/central/node/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/cve"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
@@ -177,9 +176,9 @@ func getNodeCVEResolvers(ctx context.Context, root *Resolver, os string, vulns [
 		if !predicate.Matches(vuln) {
 			continue
 		}
-		id := cve.ID(vuln.GetCveBaseInfo().GetCve(), os)
+		converted := cveConverter.NodeVulnerabilityToNodeCVE(os, vuln)
+		id := converted.Id // cve.ID(vuln.GetCveBaseInfo().GetCve(), os)
 		if _, exists := idToVals[id]; !exists {
-			converted := cveConverter.NodeVulnerabilityToNodeCVE(os, vuln)
 			resolver, err := root.wrapNodeCVE(converted, true, nil)
 			if err != nil {
 				return nil, err
