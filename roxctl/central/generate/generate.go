@@ -310,7 +310,7 @@ func OutputZip(logger logger.Logger, io io2.IO, config renderer.Config) error {
 func (cmd *centralGenerateCommand) interactive() *cobra.Command {
 	return &cobra.Command{
 		Use:   "interactive",
-		Short: "Run the command in interactive mode where it prompts you to provide additional information.",
+		Short: "Run the command in interactive mode where it prompts you to provide additional information",
 		Long:  "Run the command in interactive mode where it prompts you to provide additional information. You can press `Enter` to accept the default value for the prompts.",
 		RunE: util.RunENoArgs(func(*cobra.Command) error {
 			c := Command(cmd.env)
@@ -336,7 +336,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c := &cobra.Command{
 		Use:   "generate",
-		Short: "Generate the required YAML configuration files containing the orchestrator objects to deploy StackRox Central.",
+		Short: "Generate the required YAML configuration files containing the orchestrator objects to deploy StackRox Central",
 	}
 
 	c.PersistentFlags().BoolVar(&centralGenerateCmd.rendererConfig.PasswordDisabled, "disable-admin-password", false,
@@ -364,7 +364,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c.PersistentFlags().VarPF(
 		flags.ForSetting(env.PlaintextEndpoints, cliEnvironment.Logger()), "plaintext-endpoints", "",
-		"The ports or endpoints to use for plaintext (unencrypted) exposure; comma-separated list.")
+		"The ports or endpoints to use for plaintext (unencrypted) exposure; comma-separated list")
 	utils.Must(
 		c.PersistentFlags().SetAnnotation("plaintext-endpoints", flags.NoInteractiveKey, []string{"true"}))
 

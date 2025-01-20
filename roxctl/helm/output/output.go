@@ -29,7 +29,7 @@ func Command(cliEnvironment env.Environment) *cobra.Command {
 
 	c := &cobra.Command{
 		Use:       fmt.Sprintf("output <%s>", common.PrettyChartNameList),
-		Short:     "Output a Helm Chart.",
+		Short:     "Output a Helm Chart",
 		ValidArgs: []string{common.ChartCentralServices, common.ChartSecuredClusterServices},
 		Args:      cobra.ExactValidArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

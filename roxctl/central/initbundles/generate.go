@@ -105,7 +105,7 @@ func generateCommand(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "generate <init bundle name>",
 		Short: "Generate a new cluster init bundle",
-		Long:  "Generate a new init bundle for bootstrapping a new StackRox secured cluster",
+		Long:  "Generate a new init bundle for bootstrapping a new StackRox secured cluster.",
 		Args:  common.ExactArgsWithCustomErrMessage(1, "No name for the init bundle specified"),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			name := args[0]

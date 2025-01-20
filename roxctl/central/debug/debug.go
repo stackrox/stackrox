@@ -55,7 +55,7 @@ func logLevelCommand(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "log",
 		Short: `"log" to get current log level; "log --level=<level>" to set log level`,
-		Long:  `"log" to get current log level; "log --level=<level>" to set log level`,
+		Long:  `"log" to get current log level; "log --level=<level>" to set log level.`,
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			levelCmd.timeout = flags.Timeout(c)
 			levelCmd.retryTimeout = flags.RetryTimeout(c)
