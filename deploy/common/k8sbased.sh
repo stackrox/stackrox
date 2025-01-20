@@ -679,8 +679,17 @@ function launch_sensor {
           -o "$k8s_dir/sensor-deploy/chart.zip"
       mkdir "$k8s_dir/sensor-deploy/chart"
       unzip "$k8s_dir/sensor-deploy/chart.zip" -d "$k8s_dir/sensor-deploy/chart"
+
+      local sensor_helm_chart="$k8s_dir/sensor-deploy/chart"
+      if [[ -n "${SENSOR_CHART_DIR_OVERRIDE}" ]]; then
+        echo "Using override sensor helm chart from ${SENSOR_CHART_DIR_OVERRIDE}"
+        sensor_helm_chart="${SENSOR_CHART_DIR_OVERRIDE}"
+      fi
+
+      echo "Using secured-cluster-services Helm chart at ${sensor_helm_chart}"
+
       local secured_cluster_chart_supports_crs="false"
-      if [[ -e "${k8s_dir}/sensor-deploy/chart/templates/cluster-registration-secret.yaml" ]]; then
+      if [[ -e "${sensor_helm_chart}/templates/cluster-registration-secret.yaml" ]]; then
         secured_cluster_chart_supports_crs="true"
       fi
 
@@ -806,13 +815,6 @@ function launch_sensor {
         )
       fi
 
-      local helm_chart="$k8s_dir/sensor-deploy/chart"
-
-      if [[ -n "${SENSOR_CHART_DIR_OVERRIDE}" ]]; then
-        echo "Using override sensor helm chart from ${SENSOR_CHART_DIR_OVERRIDE}"
-        helm_chart="${SENSOR_CHART_DIR_OVERRIDE}"
-      fi
-
       if [[ "${FORCE_COLLECTION_METHOD:-false}" == "true" ]]; then
         echo "Forcing collection method"
         extra_helm_config+=(--set "collector.forceCollectionMethod=true")
@@ -832,7 +834,7 @@ function launch_sensor {
         kubectl -n "${sensor_namespace}" get secret stackrox &>/dev/null || kubectl -n "${sensor_namespace}" create -f - < <("${common_dir}/pull-secret.sh" stackrox docker.io)
       fi
 
-      helm upgrade --install -n "${sensor_namespace}" --create-namespace stackrox-secured-cluster-services "${helm_chart}" \
+      helm upgrade --install -n "${sensor_namespace}" --create-namespace stackrox-secured-cluster-services "${sensor_helm_chart}" \
           "${helm_args[@]}" "${extra_helm_config[@]}"
     else
       if [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
