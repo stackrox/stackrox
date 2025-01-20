@@ -20,7 +20,7 @@ default_image_prefix='brew.registry.redhat.io/rh-osbs/rhacs'
 image_prefix="${image_prefix:-${default_image_prefix}}"
 
 image_match="${2:-\(bundle\|operator\|rhel8\)$}"
-version_filter="${3:-^[0-3]\.}"
+version_match="${3:-^[^0-3]\.}"
 
 
 function find_images() {
@@ -29,13 +29,23 @@ function find_images() {
 }
 
 function latest_tags() {
+  local version_match=${1:-^[^0-3]\.}
+
   while read -r image; do
     if [[ $image != "registry.redhat.io"* ]] && skopeo inspect --override-arch=amd64 --override-os=linux "docker://${image}" > inspect.json; then
-      newest_tag=$(jq -r '.RepoTags|.[]' < inspect.json | grep '^[0-9\.\-]*$' | sort -rV | head -1)
+      newest_tag=$(jq -r '.RepoTags|.[]' < inspect.json \
+        | grep '^[0-9\.\-]*$' \
+        | grep "${version_match}" \
+        | sort -rV \
+        | head -1)
     else
       newest_tag=$(podman search --limit=1000000 "${image}" --list-tags --format json \
         | tee inspect.json \
-        | jq -r '.[]|.Tags|.[]' | grep '^[0-9\.\-]*$' | sort -rV | head -1)
+        | jq -r '.[]|.Tags|.[]' \
+        | grep '^[0-9\.\-]*$' \
+        | grep "${version_match}" \
+        | sort -rV \
+        | head -1)
       skopeo inspect --override-arch=amd64 --override-os=linux "docker://${image}:${newest_tag}" > inspect.json
     fi
     created=$(jq -r '.Created' < inspect.json)
@@ -84,6 +94,5 @@ function fips_scan() {
 
 find_images "${image_prefix}" \
   | grep "${image_match}" \
-  | latest_tags \
-  | grep -v "${version_filter}" \
+  | latest_tags "${version_match}" \
   | fips_scan
