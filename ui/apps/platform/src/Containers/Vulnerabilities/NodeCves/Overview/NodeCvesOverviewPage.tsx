@@ -165,7 +165,7 @@ function NodeCvesOverviewPage() {
             >
                 <Flex alignItems={{ default: 'alignItemsCenter' }} className="pf-v5-u-flex-grow-1">
                     <Flex direction={{ default: 'column' }} className="pf-v5-u-flex-grow-1">
-                        <Title headingLevel="h1">Node CVEs</Title>
+                        <Title headingLevel="h1">Nodes</Title>
                         <FlexItem>Prioritize and manage scanned CVEs across nodes</FlexItem>
                     </Flex>
                     <FlexItem>
