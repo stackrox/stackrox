@@ -37,7 +37,13 @@ jobs:
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-unit-tests
 
-    - uses: codecov/codecov-action@v3
+    - name: Upload test results to Codecov
+      if: ${{ !cancelled() }}
+      uses: codecov/test-results-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+
+    - uses: codecov/codecov-action@v5
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         flags: go-unit-tests
@@ -111,7 +117,13 @@ jobs:
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-postgres-unit-tests
 
-    - uses: codecov/codecov-action@v3
+    - name: Upload test results to Codecov
+      if: ${{ !cancelled() }}
+      uses: codecov/test-results-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+
+    - uses: codecov/codecov-action@v5
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         flags: go-unit-tests
@@ -196,6 +208,17 @@ jobs:
 
     - name: UI Unit Tests
       run: make ui-test
+
+    - name: Upload test results to Codecov
+      if: ${{ !cancelled() }}
+      uses: codecov/test-results-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+
+    - uses: codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        flags: ui-unit-tests
 
     - name: Publish Test Report
       uses: test-summary/action@v2
