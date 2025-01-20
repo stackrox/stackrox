@@ -900,6 +900,67 @@ func Test_toProtoV4Contents(t *testing.T) {
 	}
 }
 
+func TestEPSS_toProtoV4VulnerabilitiesMap(t *testing.T) {
+	now := time.Now()
+	protoNow, err := protocompat.ConvertTimeToTimestampOrError(now)
+	assert.NoError(t, err)
+
+	tests := map[string]struct {
+		ccVulnerabilities map[string]*claircore.Vulnerability
+		nvdVulns          map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem
+		pkgEpss           map[string]epssDetail
+		enableRedHatCVEs  bool
+		want              map[string]*v4.VulnerabilityReport_Vulnerability
+	}{
+		"when vuln has EPSS scores then include in output": {
+			ccVulnerabilities: map[string]*claircore.Vulnerability{
+				"foo": {
+					Name:     "CVE-2021-1234",
+					Issued:   now,
+					Severity: "Critical",
+				},
+			},
+			pkgEpss: map[string]epssDetail{
+				"CVE-2021-1234": {
+					ModelVersion: "v2023.03.01",
+					CVE:          "CVE-2021-1234",
+					Date:         "2025-01-15T00:00:00+0000",
+					EPSS:         0.00215,
+					Percentile:   0.59338,
+				},
+			},
+			want: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"foo": {
+					Name:     "CVE-2021-1234",
+					Issued:   protoNow,
+					Severity: "Critical",
+					EpssMetrics: &v4.VulnerabilityReport_Vulnerability_EPSS{
+						ModelVersion: "v2023.03.01",
+						Date:         "2025-01-15T00:00:00+0000",
+						Probability:  0.00215,
+						Percentile:   0.59338,
+					},
+				},
+			},
+		},
+	}
+
+	ctx := context.Background()
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			enableRedHatCVEs := "false"
+			if tt.enableRedHatCVEs {
+				enableRedHatCVEs = "true"
+			}
+			t.Setenv(features.ScannerV4RedHatCVEs.EnvVar(), enableRedHatCVEs)
+
+			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities, nil, tt.pkgEpss)
+			assert.NoError(t, err)
+			protoassert.MapEqual(t, tt.want, got)
+		})
+	}
+}
+
 func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 	now := time.Now()
 	protoNow, err := protocompat.ConvertTimeToTimestampOrError(now)
@@ -1513,7 +1574,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				enableRedHatCVEs = "true"
 			}
 			t.Setenv(features.ScannerV4RedHatCVEs.EnvVar(), enableRedHatCVEs)
-			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities, tt.nvdVulns)
+			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities, tt.nvdVulns, nil)
 			assert.NoError(t, err)
 			protoassert.MapEqual(t, tt.want, got)
 		})
