@@ -87,7 +87,7 @@ func (s *serviceImpl) centralDBHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rendered, err := renderer.RenderCentralTLSSecretOnly(renderer.Config{
+	rendered, err := renderer.RenderCentralDBTLSSecretOnly(renderer.Config{
 		K8sConfig:      &renderer.K8sConfig{},
 		SecretsByteMap: secrets,
 	}, defaults.GetImageFlavorFromEnv())

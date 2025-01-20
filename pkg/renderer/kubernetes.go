@@ -178,6 +178,11 @@ func RenderCentralTLSSecretOnly(c Config, imageFlavor defaults.ImageFlavor) ([]b
 	return renderAndExtractSingleFileContents(c, centralTLSOnly, imageFlavor)
 }
 
+// RenderCentralDBTLSSecretOnly renders just the file that contains the central-db-tls secret
+func RenderCentralDBTLSSecretOnly(c Config, imageFlavor defaults.ImageFlavor) ([]byte, error) {
+	return renderAndExtractSingleFileContents(c, centralDBOnly, imageFlavor)
+}
+
 // RenderScannerTLSSecretOnly renders just the file that contains the scanner-tls secret.
 func RenderScannerTLSSecretOnly(c Config, imageFlavor defaults.ImageFlavor) ([]byte, error) {
 	return renderAndExtractSingleFileContents(c, scannerTLSOnly, imageFlavor)
