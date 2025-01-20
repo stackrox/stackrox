@@ -299,6 +299,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"type: CVE_CVEType!",
 	}))
 	utils.Must(builder.AddType("ClusterCertExpiryStatus", []string{
+		"sensorCertAutoRefresh: Boolean!",
 		"sensorCertExpiry: Time",
 		"sensorCertNotBefore: Time",
 	}))
@@ -4224,6 +4225,11 @@ func (resolver *Resolver) wrapClusterCertExpiryStatusesWithContext(ctx context.C
 		output[i] = &clusterCertExpiryStatusResolver{ctx: ctx, root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *clusterCertExpiryStatusResolver) SensorCertAutoRefresh(ctx context.Context) bool {
+	value := resolver.data.GetSensorCertAutoRefresh()
+	return value
 }
 
 func (resolver *clusterCertExpiryStatusResolver) SensorCertExpiry(ctx context.Context) (*graphql.Time, error) {

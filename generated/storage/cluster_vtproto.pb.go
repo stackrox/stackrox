@@ -371,6 +371,7 @@ func (m *ClusterCertExpiryStatus) CloneVT() *ClusterCertExpiryStatus {
 	r := new(ClusterCertExpiryStatus)
 	r.SensorCertExpiry = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.SensorCertExpiry).CloneVT())
 	r.SensorCertNotBefore = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.SensorCertNotBefore).CloneVT())
+	r.SensorCertAutoRefresh = m.SensorCertAutoRefresh
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -1273,6 +1274,9 @@ func (this *ClusterCertExpiryStatus) EqualVT(that *ClusterCertExpiryStatus) bool
 		return false
 	}
 	if !(*timestamppb1.Timestamp)(this.SensorCertNotBefore).EqualVT((*timestamppb1.Timestamp)(that.SensorCertNotBefore)) {
+		return false
+	}
+	if this.SensorCertAutoRefresh != that.SensorCertAutoRefresh {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -2979,6 +2983,16 @@ func (m *ClusterCertExpiryStatus) MarshalToSizedBufferVT(dAtA []byte) (int, erro
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.SensorCertAutoRefresh {
+		i--
+		if m.SensorCertAutoRefresh {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x18
+	}
 	if m.SensorCertNotBefore != nil {
 		size, err := (*timestamppb1.Timestamp)(m.SensorCertNotBefore).MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
@@ -4238,6 +4252,9 @@ func (m *ClusterCertExpiryStatus) SizeVT() (n int) {
 	if m.SensorCertNotBefore != nil {
 		l = (*timestamppb1.Timestamp)(m.SensorCertNotBefore).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.SensorCertAutoRefresh {
+		n += 2
 	}
 	n += len(m.unknownFields)
 	return n
@@ -7783,6 +7800,26 @@ func (m *ClusterCertExpiryStatus) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SensorCertAutoRefresh", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.SensorCertAutoRefresh = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

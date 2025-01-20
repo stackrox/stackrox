@@ -188,6 +188,7 @@ enum ManagerType {
 message ClusterCertExpiryStatus {
   google.protobuf.Timestamp sensor_cert_expiry = 1;
   google.protobuf.Timestamp sensor_cert_not_before = 2;
+  bool sensor_cert_auto_refresh = 3;
 }
 
 message ClusterStatus {

@@ -2230,6 +2230,11 @@
                 "id": 2,
                 "name": "sensor_cert_not_before",
                 "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 3,
+                "name": "sensor_cert_auto_refresh",
+                "type": "bool"
               }
             ]
           },

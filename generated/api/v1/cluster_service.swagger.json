@@ -575,6 +575,9 @@
         "sensorCertNotBefore": {
           "type": "string",
           "format": "date-time"
+        },
+        "sensorCertAutoRefresh": {
+          "type": "boolean"
         }
       }
     },
