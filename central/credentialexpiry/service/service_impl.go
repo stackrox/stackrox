@@ -35,7 +35,7 @@ var (
 			"/v1.CredentialExpiryService/GetCertExpiry",
 		},
 	})
-	centralDBEndpoint = "postgres://central-db.stackrox.svc:5432"
+	centralDBEndpoint = "central-db.stackrox.svc:5432"
 )
 
 // ClusterService is the struct that manages the cluster API
