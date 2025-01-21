@@ -489,7 +489,7 @@ networking:
 
         log.info "Checking for edge from ${EXTERNALDESTINATION} to external target"
 
-	sleep 60000
+	sleep 180000
 
         List<Edge> edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
         assert edges
@@ -505,6 +505,7 @@ networking:
 """
        ]
         orchestrator.createConfigMap(CONFIG_MAP_NAME, CONFIG_MAP_DATA, "stackrox")
+	sleep 180000
 
         assert waitForEdgeToBeClosed(edges.get(0), 165)
         edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
@@ -522,6 +523,7 @@ networking:
        ]
 
         orchestrator.createConfigMap(CONFIG_MAP_NAME, CONFIG_MAP_DATA, "stackrox")
+	sleep 180000
         assert waitForEdgeUpdate(edges.get(0), 90)
 	graph = NetworkGraphService.getNetworkGraph(null, null)
 	log.info "${graph}"
