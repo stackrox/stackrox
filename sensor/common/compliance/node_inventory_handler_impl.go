@@ -62,6 +62,7 @@ func (c *nodeInventoryHandlerImpl) ResponsesC() <-chan *message.ExpiringMessage 
 	if c.toCentral == nil {
 		log.Panic("Start must be called before ResponsesC")
 	}
+	log.Debugf("nodeInventoryHandler returning 'toCentral' in ResponsesC")
 	return c.toCentral
 }
 
@@ -78,6 +79,7 @@ func (c *nodeInventoryHandlerImpl) Start() error {
 	}
 	c.toCompliance = make(chan common.MessageToComplianceWithAddress)
 	c.toCentral = c.run()
+	log.Debugf("nodeInventoryHandler started")
 	return nil
 }
 
@@ -147,6 +149,7 @@ func (c *nodeInventoryHandlerImpl) run() (toCentral <-chan *message.ExpiringMess
 	ch2Central := make(chan *message.ExpiringMessage)
 	go func() {
 		defer func() {
+			log.Debugf("NodeInventory/NodeIndex handler 'run' goroutine exited")
 			c.stopper.Flow().ReportStopped()
 			close(ch2Central)
 		}()
@@ -210,6 +213,7 @@ func (c *nodeInventoryHandlerImpl) handleNodeIndex(
 	index *index.IndexReportWrap,
 	toCentral chan *message.ExpiringMessage,
 ) {
+	defer log.Debugf("Done handleNodeIndex")
 	if index == nil || index.IndexReport == nil {
 		log.Warn("Received nil index report: not sending to Central")
 		metrics.ObserveNodeScan("nil", metrics.NodeScanTypeNodeIndex, metrics.NodeScanOperationReceive)
@@ -291,6 +295,7 @@ func (c *nodeInventoryHandlerImpl) sendNodeInventory(toC chan<- *message.Expirin
 }
 
 func (c *nodeInventoryHandlerImpl) sendNodeIndex(toC chan<- *message.ExpiringMessage, indexWrap *index.IndexReportWrap) {
+	defer log.Debugf("Done sendNodeIndex")
 	if indexWrap == nil || indexWrap.IndexReport == nil {
 		log.Debugf("Empty IndexReport - not sending to Central")
 		return
