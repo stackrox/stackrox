@@ -250,8 +250,8 @@ func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.Fake
 //
 // If a KUBECONFIG file is provided, then local-sensor will use that file to connect to a remote cluster.
 func main() {
-	if err := continuousprofiling.SetupContinuousProfilingClient(continuousprofiling.DefaultConfig().
-		WithAppName("sensor")); err != nil {
+	if err := continuousprofiling.SetupContinuousProfilingClient(continuousprofiling.DefaultConfig(),
+		continuousprofiling.WithAppName("sensor")); err != nil {
 		log.Printf("unable to start continuous profiling: %v", err)
 	}
 	localConfig := mustGetCommandLineArgs()

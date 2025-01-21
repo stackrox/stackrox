@@ -9,108 +9,113 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 )
 
-const (
-	ProfileCPU           ProfileType = "cpu"
-	ProfileAllocObjects  ProfileType = "alloc-objects"
-	ProfileAllocSpace    ProfileType = "alloc-space"
-	ProfileInuseObjects  ProfileType = "inuse-objects"
-	ProfileInuseSpace    ProfileType = "inuse-space"
-	ProfileGoroutines    ProfileType = "goroutines"
-	ProfileMutexCount    ProfileType = "mutex-count"
-	ProfileMutexDuration ProfileType = "mutex-duration"
-	ProfileBlockCount    ProfileType = "block-count"
-	ProfileBlockDuration ProfileType = "block-duration"
-)
-
 var (
 	ErrApplicationName           = errors.New("the ApplicationName must be defined")
 	ErrServerAddress             = errors.New("the ServerAddress must be defined")
 	ErrAtLeastOneProfileIsNeeded = errors.New("at least one profile is needed")
-	ErrUnknownProfileType        = errors.New("unknown profile type")
 
 	log = logging.LoggerForModule()
 
-	DefaultProfiles = []ProfileType{
-		ProfileCPU,
-		ProfileAllocObjects,
-		ProfileAllocSpace,
-		ProfileInuseObjects,
-		ProfileInuseSpace,
-		ProfileGoroutines,
-		ProfileMutexCount,
-		ProfileMutexDuration,
-		ProfileBlockCount,
-		ProfileBlockDuration,
+	DefaultProfiles = []pyroscope.ProfileType{
+		pyroscope.ProfileCPU,
+		pyroscope.ProfileAllocObjects,
+		pyroscope.ProfileAllocSpace,
+		pyroscope.ProfileInuseObjects,
+		pyroscope.ProfileInuseSpace,
+		pyroscope.ProfileGoroutines,
+		pyroscope.ProfileMutexCount,
+		pyroscope.ProfileMutexDuration,
+		pyroscope.ProfileBlockCount,
+		pyroscope.ProfileBlockDuration,
 	}
 )
 
-type ProfileType string
-
-type ProfilerConfiguration struct {
-	ApplicationName   string
-	ServerAddress     string
-	BasicAuthUser     string
-	BasicAuthPassword string
-	ProfilerTypes     []ProfileType
-	WithLogs          bool
-}
-
 // DefaultConfig creates a new configuration with default properties.
-func DefaultConfig() *ProfilerConfiguration {
-	return &ProfilerConfiguration{
+func DefaultConfig() *pyroscope.Config {
+	return &pyroscope.Config{
 		ApplicationName:   "AppName",
 		ServerAddress:     env.ContinuousProfilingServerAddress.Setting(),
 		BasicAuthUser:     env.ContinuousProfilingBasicAuthUser.Setting(),
 		BasicAuthPassword: env.ContinuousProfilingBasicAuthPassword.Setting(),
-		ProfilerTypes:     DefaultProfiles,
-		WithLogs:          false,
+		ProfileTypes:      DefaultProfiles,
+		Logger:            nil,
 	}
 }
 
+type OptionFunc func(*pyroscope.Config)
+
 // WithAppName sets the ApplicationName
 // Default: AppName
-func (cfg *ProfilerConfiguration) WithAppName(appName string) *ProfilerConfiguration {
-	cfg.ApplicationName = appName
-	if env.ContinuousProfilingAppName.Setting() != "" {
-		// If ROX_CONTINUOUS_PROFILING_APP_NAME is set, we override the appName
-		cfg.ApplicationName = env.ContinuousProfilingAppName.Setting()
+func WithAppName(appName string) OptionFunc {
+	return func(cfg *pyroscope.Config) {
+		cfg.ApplicationName = appName
+		if env.ContinuousProfilingAppName.Setting() != "" {
+			// If ROX_CONTINUOUS_PROFILING_APP_NAME is set, we override the appName
+			cfg.ApplicationName = env.ContinuousProfilingAppName.Setting()
+		}
 	}
-	return cfg
 }
 
 // WithProfiles sets the ProfilerTypes
 // Default: ProfileCPU, ProfileAllocObjects, ProfileAllocSpace, ProfileInuseObjects, ProfileInuseSpace
-func (cfg *ProfilerConfiguration) WithProfiles(profiles ...ProfileType) *ProfilerConfiguration {
-	cfg.ProfilerTypes = profiles
-	return cfg
+func WithProfiles(profiles ...pyroscope.ProfileType) OptionFunc {
+	return func(cfg *pyroscope.Config) {
+		cfg.ProfileTypes = profiles
+	}
+}
+
+// WithLogging enables logging
+// Default: nil
+func WithLogging() OptionFunc {
+	return func(cfg *pyroscope.Config) {
+		cfg.Logger = log
+	}
+}
+
+func validateConfig(cfg *pyroscope.Config) error {
+	if cfg.ApplicationName == "" {
+		return ErrApplicationName
+	}
+	if cfg.ServerAddress == "" {
+		return ErrServerAddress
+	}
+	if len(cfg.ProfileTypes) == 0 {
+		return ErrAtLeastOneProfileIsNeeded
+	}
+	return nil
 }
 
 // SetupContinuousProfilingClient setups the pyroscope client to start the continuous profiling.
-func SetupContinuousProfilingClient(cfg *ProfilerConfiguration) error {
+func SetupContinuousProfilingClient(cfg *pyroscope.Config, opts ...OptionFunc) error {
 	if !env.ContinuousProfiling.BooleanSetting() {
 		return nil
 	}
 
-	if isInProfiles(ProfileMutexCount, cfg.ProfilerTypes...) {
+	if isInProfiles(pyroscope.ProfileMutexCount, cfg.ProfileTypes...) {
 		runtime.SetMutexProfileFraction(5)
 	}
 
-	if isInProfiles(ProfileBlockCount, cfg.ProfilerTypes...) {
+	if isInProfiles(pyroscope.ProfileBlockCount, cfg.ProfileTypes...) {
 		runtime.SetBlockProfileRate(5)
 	}
 
-	pyroscopeCfg, err := convertToPyroscopeConfig(cfg)
+	for _, o := range opts {
+		o(cfg)
+	}
+
+	if err := validateConfig(cfg); err != nil {
+		return err
+	}
+
+	_, err := pyroscope.Start(*cfg)
 	if err != nil {
 		return err
 	}
-	_, err = pyroscope.Start(*pyroscopeCfg)
-	if err != nil {
-		return err
-	}
-	return err
+	log.Info("Continuous Profiling enabled")
+	return nil
 }
 
-func isInProfiles(profile ProfileType, profiles ...ProfileType) bool {
+func isInProfiles(profile pyroscope.ProfileType, profiles ...pyroscope.ProfileType) bool {
 	for _, p := range profiles {
 		if p == profile {
 			return true
