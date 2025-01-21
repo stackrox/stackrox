@@ -338,10 +338,12 @@ class SACTest extends BaseSpecification {
 
         then:
         assert alertsCount(NOACCESSTOKEN) == 0
-        // getSummaryCountsToken has access only to QA1 deployment while
-        // ALLACCESSTOKEN has access to QA1 and QA2. Since deployments are identical
-        // number of alerts for ALLACCESSTOKEN should be twice of getSummaryCountsToken.
-        assert 2 * alertsCount("getSummaryCountsToken") == alertsCount(ALLACCESSTOKEN)
+        WithRetry(30, 5) {
+            // getSummaryCountsToken has access only to QA1 deployment while
+            // ALLACCESSTOKEN has access to QA1 and QA2. Since deployments are identical
+            // number of alerts for ALLACCESSTOKEN should be twice of getSummaryCountsToken.
+            assert 2 * alertsCount("getSummaryCountsToken") == alertsCount(ALLACCESSTOKEN)
+        }
     }
 
     def "Verify ListSecrets using a token without access receives no results"() {
