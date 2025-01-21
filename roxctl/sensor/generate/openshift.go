@@ -73,9 +73,9 @@ func openshift(generateCmd *sensorGenerateCommand) *cobra.Command {
 			return openshiftCommand.fullClusterCreation()
 		}),
 	}
-	c.PersistentFlags().IntVar(&openshiftCommand.openshiftVersion, "openshift-version", 0, "OpenShift major version to generate deployment files for")
-	flags.OptBoolFlagVarPF(c.PersistentFlags(), &openshiftCommand.admissionControllerEvents, "admission-controller-listen-on-events", "", "Enable admission controller webhook to listen on Kubernetes events", "auto")
-	flags.OptBoolFlagVarPF(c.PersistentFlags(), &openshiftCommand.disableAuditLogCollection, "disable-audit-logs", "", "Disable audit log collection for runtime detection", "auto")
+	c.PersistentFlags().IntVar(&openshiftCommand.openshiftVersion, "openshift-version", 0, "OpenShift major version to generate deployment files for.")
+	flags.OptBoolFlagVarPF(c.PersistentFlags(), &openshiftCommand.admissionControllerEvents, "admission-controller-listen-on-events", "", "Enable admission controller webhook to listen on Kubernetes events.", "auto")
+	flags.OptBoolFlagVarPF(c.PersistentFlags(), &openshiftCommand.disableAuditLogCollection, "disable-audit-logs", "", "Disable audit log collection for runtime detection.", "auto")
 
 	return c
 }

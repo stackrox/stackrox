@@ -118,25 +118,25 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	objectPrinterFactory.AddFlags(c)
 
-	c.Flags().StringVarP(&imageScanCmd.image, "image", "i", "", "Image name and reference. (e.g. nginx:latest or nginx@sha256:...)")
-	c.Flags().BoolVarP(&imageScanCmd.force, "force", "f", false, "Bypass Central's cache for the image and force a new pull from the Scanner")
-	c.Flags().BoolVarP(&imageScanCmd.includeSnoozed, "include-snoozed", "a", false, "The --include-snoozed flag returns both snoozed and unsnoozed CVEs if set")
-	c.Flags().IntVarP(&imageScanCmd.retryDelay, "retry-delay", "d", 3, "Set time to wait between retries in seconds")
-	c.Flags().IntVarP(&imageScanCmd.retryCount, "retries", "r", 3, "Number of retries before exiting as error")
-	c.Flags().StringVar(&imageScanCmd.cluster, "cluster", "", "Cluster name or ID to delegate image scan to")
+	c.Flags().StringVarP(&imageScanCmd.image, "image", "i", "", "Image name and reference. (e.g. nginx:latest or nginx@sha256:...).")
+	c.Flags().BoolVarP(&imageScanCmd.force, "force", "f", false, "Bypass Central's cache for the image and force a new pull from the Scanner.")
+	c.Flags().BoolVarP(&imageScanCmd.includeSnoozed, "include-snoozed", "a", false, "The --include-snoozed flag returns both snoozed and unsnoozed CVEs if set.")
+	c.Flags().IntVarP(&imageScanCmd.retryDelay, "retry-delay", "d", 3, "Set time to wait between retries in seconds.")
+	c.Flags().IntVarP(&imageScanCmd.retryCount, "retries", "r", 3, "Number of retries before exiting as error.")
+	c.Flags().StringVar(&imageScanCmd.cluster, "cluster", "", "Cluster name or ID to delegate image scan to.")
 	c.Flags().StringSliceVar(&imageScanCmd.severities, "severity", []string{
 		lowCVESeverity.String(),
 		moderateCVESeverity.String(),
 		importantCVESeverity.String(),
 		criticalCVESeverity.String(),
-	}, "List of severities to include in the output. Use this to filter for specific severities")
-	c.Flags().BoolVarP(&imageScanCmd.failOnFinding, "fail", "", false, "Fail if vulnerabilities have been found")
+	}, "List of severities to include in the output. Use this to filter for specific severities.")
+	c.Flags().BoolVarP(&imageScanCmd.failOnFinding, "fail", "", false, "Fail if vulnerabilities have been found.")
 
 	// Deprecated flag
 	// TODO(ROX-8303): Remove this once we have fully deprecated the old output format and are sure we do not break existing customer scripts
 	// The error message will be prefixed by "command <command-name> has been deprecated,"
 	// Fully deprecated "pretty" format, since we can assume no customer has built scripting around its loose format
-	c.Flags().StringVarP(&imageScanCmd.format, "format", "", "json", "Format of the output. Choose output format from json and csv")
+	c.Flags().StringVarP(&imageScanCmd.format, "format", "", "json", "Format of the output. Choose output format from json and csv.")
 	utils.Must(c.Flags().MarkDeprecated("format", deprecationNote))
 
 	utils.Must(c.MarkFlagRequired("image"))

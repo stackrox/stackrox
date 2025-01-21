@@ -41,7 +41,7 @@ func init() {
 
 // AddImageDefaults adds the image-defaults flag to the command.
 func AddImageDefaults(pf *pflag.FlagSet, destination *string) {
-	imageFlavorHelpStr := fmt.Sprintf("Default container images settings (%v); it controls repositories from where to download the images, image names and tags format",
+	imageFlavorHelpStr := fmt.Sprintf("Default container images settings (%v); it controls repositories from where to download the images, image names and tags format.",
 		strings.Join(defaults.GetVisibleImageFlavorNames(buildinfo.ReleaseBuild), ", "))
 	pf.StringVar(destination, FlagNameImageDefaults, imageFlavorDefault, imageFlavorHelpStr)
 }

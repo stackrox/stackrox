@@ -66,8 +66,8 @@ func logLevelCommand(cliEnvironment environment.Environment) *cobra.Command {
 		}),
 	}
 	c.Flags().StringVarP(&levelCmd.level, "level", "l", "",
-		fmt.Sprintf("The log level to set the modules to (%s) ", levelList))
-	c.Flags().StringSliceVarP(&levelCmd.modules, "modules", "m", nil, "The modules to which to apply the command")
+		fmt.Sprintf("The log level to set the modules to (%s).", levelList))
+	c.Flags().StringSliceVarP(&levelCmd.modules, "modules", "m", nil, "The modules to which to apply the command.")
 	flags.AddTimeout(c)
 	flags.AddRetryTimeout(c)
 	return c

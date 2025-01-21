@@ -15,6 +15,6 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	var full bool
 	c := centralBackup.Command(cliEnvironment, &full)
 	c.Deprecated = warningDeprecatedDbBackup
-	c.Flags().BoolVarP(&full, "full", "", false, "Create backup with certificates. User admin required")
+	c.Flags().BoolVarP(&full, "full", "", false, "Create backup with certificates. User admin required.")
 	return c
 }
