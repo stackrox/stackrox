@@ -35,7 +35,7 @@ var (
 			v1.CredentialExpiryService_GetCertExpiry_FullMethodName,
 		},
 	})
-	centralDBEndpoint = "central-db.stackrox.svc:5432"
+	centralDBEndpoint = "https://central-db.stackrox.svc:5432"
 )
 
 // ClusterService is the struct that manages the cluster API
@@ -85,6 +85,11 @@ func (s *serviceImpl) getCentralDBCertExpiry(ctx context.Context) (*v1.GetCertEx
 	centralDBConfig := s.tlsConfigs[mtls.CentralDBSubject]
 	if centralDBConfig == nil {
 		return nil, errors.New("could not load TLS config to talk to central-db")
+	}
+
+	endpoint, err := ensureTLSAndReturnAddr(centralDBEndpoint)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to determine Central DB cert expiry")
 	}
 
 	expiry, err := maybeGetExpiryFromServiceAt(ctx, mtls.CentralDBSubject, centralDBConfig, centralDBEndpoint)
