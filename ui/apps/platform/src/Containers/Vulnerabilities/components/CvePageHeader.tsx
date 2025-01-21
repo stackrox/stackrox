@@ -3,8 +3,10 @@ import { Flex, LabelGroup, Label, Text, Title, List, ListItem } from '@patternfl
 import uniqBy from 'lodash/uniqBy';
 
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { getDateTime } from 'utils/dateUtils';
 
+import { formatEpssProbabilityAsPercent } from '../WorkloadCves/Tables/table.utils';
 import { getDistroLinkText } from '../utils/textUtils';
 import { sortCveDistroList } from '../utils/sortUtils';
 import HeaderLoadingSkeleton from './HeaderLoadingSkeleton';
@@ -25,6 +27,10 @@ export type CvePageHeaderProps = {
 };
 
 function CvePageHeader({ data }: CvePageHeaderProps) {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isEpssProbabilityColumnEnabled =
+        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_EPSS_SCORE');
+
     if (!data) {
         return (
             <HeaderLoadingSkeleton
@@ -34,23 +40,38 @@ function CvePageHeader({ data }: CvePageHeaderProps) {
         );
     }
 
+    // TODO adjust conditional rendering depending whether or not Node CVE has cveBaseInfo property.
+    const hasEpssProbabilityLabel = isEpssProbabilityColumnEnabled && 'cveBaseInfo' in data;
+    const epssProbability = undefined; // data.cveBaseInfo?.epss?.epssProbability
     const prioritizedDistros = uniqBy(sortCveDistroList(data.distroTuples), getDistroLinkText);
     const topDistro = prioritizedDistros[0];
+
+    const numLabels = (hasEpssProbabilityLabel ? 1 : 0) + (data.firstDiscoveredInSystem ? 2 : 0);
 
     return (
         <Flex direction={{ default: 'column' }} alignItems={{ default: 'alignItemsFlexStart' }}>
             <Title headingLevel="h1" className="pf-v5-u-mb-sm">
                 {data.cve}
             </Title>
-            {data.firstDiscoveredInSystem && (
-                <LabelGroup numLabels={2}>
-                    <Label>
-                        First discovered in system: {getDateTime(data.firstDiscoveredInSystem)}
-                    </Label>
-                    <Label>
-                        Published:{' '}
-                        {data.publishedOn ? getDateTime(data.publishedOn) : 'Not available'}
-                    </Label>
+            {numLabels !== 0 && (
+                <LabelGroup numLabels={numLabels}>
+                    {hasEpssProbabilityLabel && (
+                        <Label>
+                            EPSS probability: {formatEpssProbabilityAsPercent(epssProbability)}
+                        </Label>
+                    )}
+                    {data.firstDiscoveredInSystem && (
+                        <>
+                            <Label>
+                                First discovered in system:{' '}
+                                {getDateTime(data.firstDiscoveredInSystem)}
+                            </Label>
+                            <Label>
+                                Published:{' '}
+                                {data.publishedOn ? getDateTime(data.publishedOn) : 'Not available'}
+                            </Label>
+                        </>
+                    )}
                 </LabelGroup>
             )}
             {topDistro && (

@@ -26,8 +26,8 @@ import DeploymentComponentVulnerabilitiesTable, {
 } from './DeploymentComponentVulnerabilitiesTable';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
-import { FormattedDeploymentVulnerability } from './table.utils';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
+import { FormattedDeploymentVulnerability, formatEpssProbabilityAsPercent } from './table.utils';
 
 export const tableId = 'WorkloadCvesDeploymentVulnerabilitiesTable';
 export const defaultColumns = {
@@ -165,6 +165,7 @@ function DeploymentVulnerabilitiesTable({
                             publishedOn,
                             pendingExceptionCount,
                         } = vulnerability;
+                        const epssProbability = undefined; // ccveBaseInfo?.epss?.epssProbability
                         const isExpanded = expandedRowSet.has(vulnerabilityId);
 
                         return (
@@ -217,13 +218,13 @@ function DeploymentVulnerabilitiesTable({
                                     >
                                         <VulnerabilityFixableIconText isFixable={isFixable} />
                                     </Td>
-                                    {!isEpssProbabilityColumnEnabled && (
+                                    {isEpssProbabilityColumnEnabled && (
                                         <Td
                                             className={getVisibilityClass('epssProbability')}
                                             modifier="nowrap"
                                             dataLabel="EPSS probability"
                                         >
-                                            Not available
+                                            {formatEpssProbabilityAsPercent(epssProbability)}
                                         </Td>
                                     )}
                                     <Td

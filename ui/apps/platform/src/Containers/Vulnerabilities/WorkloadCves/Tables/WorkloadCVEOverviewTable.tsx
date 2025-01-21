@@ -51,6 +51,7 @@ import ExceptionDetailsCell from '../components/ExceptionDetailsCell';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
+import { formatEpssProbabilityAsPercent } from './table.utils';
 
 export const tableId = 'WorkloadCveOverviewTable';
 export const defaultColumns = {
@@ -319,6 +320,7 @@ function WorkloadCVEOverviewTable({
                                 topNvdCVSS,
                                 distroTuples
                             );
+                            const epssProbability = undefined; // ccveBaseInfo?.epss?.epssProbability
                             const summary =
                                 prioritizedDistros.length > 0 ? prioritizedDistros[0].summary : '';
 
@@ -409,7 +411,7 @@ function WorkloadCVEOverviewTable({
                                                 className={getVisibilityClass('epssProbability')}
                                                 dataLabel="EPSS probability"
                                             >
-                                                Not available
+                                                {formatEpssProbabilityAsPercent(epssProbability)}
                                             </Td>
                                         )}
                                         <Td
