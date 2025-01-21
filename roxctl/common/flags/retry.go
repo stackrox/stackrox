@@ -13,7 +13,7 @@ const (
 
 // AddRetryTimeoutWithDefault adds a retry timeout flag to the given command with the given default.
 func AddRetryTimeoutWithDefault(c *cobra.Command, defaultDuration time.Duration) {
-	c.PersistentFlags().Duration(retryTimeoutFlagName, defaultDuration, "Timeout after which API requests are retried; zero means the full request duration is awaited without retry")
+	c.PersistentFlags().Duration(retryTimeoutFlagName, defaultDuration, "Timeout after which API requests are retried; zero means the full request duration is awaited without retry.")
 }
 
 // AddRetryTimeout adds a retry timeout flag to the given command with the global default value.

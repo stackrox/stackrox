@@ -41,9 +41,9 @@ The access token will be stored in the roxctl configuration file and used for au
 		}),
 	}
 	cmd.Flags().StringVar(&exchangeCmd.token, "token", "",
-		"OIDC identity token to exchange for a short-lived access token")
+		"OIDC identity token to exchange for a short-lived access token.")
 	cmd.Flags().StringVar(&exchangeCmd.tokenFile, "token-file", "",
-		"File containing an OIDC identity token to exchange for a short-lived access token")
+		"File containing an OIDC identity token to exchange for a short-lived access token.")
 	cmd.MarkFlagsOneRequired("token", "token-file")
 	cmd.MarkFlagsMutuallyExclusive("token", "token-file")
 	flags.AddTimeoutWithDefault(cmd, 1*time.Minute)

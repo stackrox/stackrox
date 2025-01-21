@@ -59,7 +59,7 @@ This is a sample for a multi-line detailed description for the sample command`,
 
 	// Each custom flag for a command **must** be bound to the struct holding
 	// all relevant properties for a command.
-	cmd.Flags().StringVarP(&sampleCmd.name, "name", "n", "", "name to say hello to")
+	cmd.Flags().StringVarP(&sampleCmd.name, "name", "n", "", "name to say hello to.")
 
 	return cmd
 }
@@ -153,7 +153,7 @@ Also, please use the new-sample command since this one is deprecated.`,
 		},
 	}
 
-	cmd.Flags().StringVarP(&sampleCmd.name, "name", "n", "", "name to say hello to")
+	cmd.Flags().StringVarP(&sampleCmd.name, "name", "n", "", "name to say hello to.")
 	return cmd
 }
 
@@ -170,7 +170,7 @@ This is a sample for a multi-line detailed description for the sample command`,
 		RunE: sampleCmd.RunE,
 	}
 
-	cmd.Flags().StringVarP(&sampleCmd.name, "name", "n", "", "name to say hello to")
+	cmd.Flags().StringVarP(&sampleCmd.name, "name", "n", "", "name to say hello to.")
 	return cmd
 }
 

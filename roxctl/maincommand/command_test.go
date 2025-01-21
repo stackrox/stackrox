@@ -19,10 +19,10 @@ func isCapitalized(s string) bool {
 }
 
 func hasNoTrailingPeriod(s string) bool {
-	return !strings.HasSuffix(s, ".")
+	return !strings.HasSuffix(s, ".") && !strings.HasSuffix(s, "!")
 }
 
-var allChecks = map[string]func(string) bool{
+var shortChecks = map[string]func(string) bool{
 	"must be capitalized":           isCapitalized,
 	"must not have trailing period": hasNoTrailingPeriod,
 }
@@ -30,6 +30,10 @@ var allChecks = map[string]func(string) bool{
 var longChecks = map[string]func(string) bool{
 	"must be capitalized":       isCapitalized,
 	"must have trailing period": func(s string) bool { return s == "" || !hasNoTrailingPeriod(s) },
+}
+
+var isCapitalizedCheck = map[string]func(string) bool{
+	"must be capitalized": isCapitalized,
 }
 
 func runChecks(message string, checks map[string]func(string) bool) error {
@@ -55,16 +59,16 @@ func getCommandPath(command *cobra.Command) string {
 
 func checkUsageStyle(t *testing.T, command *cobra.Command) {
 	command.LocalFlags().VisitAll(func(flag *pflag.Flag) {
-		assert.NoErrorf(t, runChecks(flag.Usage, allChecks),
+		assert.NoErrorf(t, runChecks(flag.Usage, longChecks),
 			`"%s --%s" flag usage: %q`, getCommandPath(command), flag.Name, flag.Usage)
 
 	})
-	assert.NoErrorf(t, runChecks(command.Short, allChecks),
+	assert.NoErrorf(t, runChecks(command.Short, shortChecks),
 		"%q, short usage: %q", getCommandPath(command), command.Short)
 
 	if command.Use == "doc [man|md|yaml|rest]" {
-		assert.NoErrorf(t, runChecks(command.Long, map[string]func(string) bool{
-			"must be capitalized": isCapitalized}),
+		// This command long description ends with a list, hence exception.
+		assert.NoErrorf(t, runChecks(command.Long, isCapitalizedCheck),
 			"%q, long usage: %q", getCommandPath(command), command.Long)
 	} else {
 		assert.NoErrorf(t, runChecks(command.Long, longChecks),

@@ -145,7 +145,7 @@ func revokeCommand(cliEnvironment environment.Environment) *cobra.Command {
 		},
 	}
 
-	c.Flags().BoolP("force", "f", false, "Force revocation without confirmation")
+	c.Flags().BoolP("force", "f", false, "Force revocation without confirmation.")
 
 	return c
 }

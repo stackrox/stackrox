@@ -60,6 +60,6 @@ func (v Value) String() string {
 // setting the new flag's `NoOptDefVal` property to `true` so the user can simply use `--name`
 // instead of `--name=true` as it is generally expected for boolean flags.
 func NewFlag(flags *pflag.FlagSet, val **bool, name string, usage string) {
-	flags.Var(New(nil, val), name, fmt.Sprintf("%s (auto, true, false)", usage))
+	flags.Var(New(nil, val), name, fmt.Sprintf("%s (auto, true, false).", usage))
 	flags.Lookup(name).NoOptDefVal = "true"
 }

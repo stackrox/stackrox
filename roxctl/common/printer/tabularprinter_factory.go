@@ -44,14 +44,14 @@ func NewTabularPrinterFactoryWithAutoMerge(headers []string, columnsToMerge []st
 
 // AddFlags will add all tabular printer specific flags to the cobra.Command
 func (t *TabularPrinterFactory) AddFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().BoolVar(&t.Merge, "merge-output", t.Merge, "Merge duplicate cells in prettified tabular output")
-	cmd.PersistentFlags().StringSliceVar(&t.Headers, "headers", t.Headers, "Headers to print in tabular output")
+	cmd.PersistentFlags().BoolVar(&t.Merge, "merge-output", t.Merge, "Merge duplicate cells in prettified tabular output.")
+	cmd.PersistentFlags().StringSliceVar(&t.Headers, "headers", t.Headers, "Headers to print in tabular output.")
 	cmd.PersistentFlags().StringVar(&t.RowJSONPathExpression, "row-jsonpath-expressions", t.RowJSONPathExpression,
 		"JSON Path expression to create a row from the JSON object. This leverages gJSON (https://github.com/tidwall/gjson)."+
-			" NOTE: The amount of expressions within the multi-path has to match the amount of provided headers")
-	cmd.PersistentFlags().BoolVar(&t.NoHeader, "no-header", t.NoHeader, "Print no headers for tabular output")
+			" NOTE: The amount of expressions within the multi-path has to match the amount of provided headers.")
+	cmd.PersistentFlags().BoolVar(&t.NoHeader, "no-header", t.NoHeader, "Print no headers for tabular output.")
 	cmd.PersistentFlags().BoolVar(&t.HeaderAsComment, "headers-as-comments", t.HeaderAsComment, "Print headers "+
-		"as comments in CSV tabular output")
+		"as comments in CSV tabular output.")
 }
 
 // SupportedFormats returns the supported printer format that can be created by TabularPrinterFactory
