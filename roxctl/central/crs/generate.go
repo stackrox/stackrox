@@ -107,7 +107,7 @@ func generateCommand(cliEnvironment environment.Environment) *cobra.Command {
 			return generateCRS(cliEnvironment, name, outputFile, flags.Timeout(cmd), flags.RetryTimeout(cmd))
 		},
 	}
-	c.PersistentFlags().StringVarP(&outputFile, "output", "o", "", "File to be used for storing the newly generated CRS (- for stdout)")
+	c.PersistentFlags().StringVarP(&outputFile, "output", "o", "", "File to be used for storing the newly generated CRS (- for stdout).")
 
 	return c
 }

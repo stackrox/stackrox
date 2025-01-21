@@ -134,8 +134,8 @@ func generateCommand(cliEnvironment environment.Environment) *cobra.Command {
 			return generateInitBundle(cliEnvironment, name, outputs, flags.Timeout(cmd), flags.RetryTimeout(cmd))
 		},
 	}
-	c.PersistentFlags().StringVar(&outputFile, "output", "", "File to be used for storing the newly generated init bundle in Helm configuration form (- for stdout)")
-	c.PersistentFlags().StringVar(&secretsOutputFile, "output-secrets", "", "File to be used for storing the newly generated init bundle in Kubernetes secrets form (- for stdout)")
+	c.PersistentFlags().StringVar(&outputFile, "output", "", "File to be used for storing the newly generated init bundle in Helm configuration form (- for stdout).")
+	c.PersistentFlags().StringVar(&secretsOutputFile, "output-secrets", "", "File to be used for storing the newly generated init bundle in Kubernetes secrets form (- for stdout).")
 
 	return c
 }

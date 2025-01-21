@@ -279,11 +279,11 @@ from the example above).`,
 		},
 	}
 
-	c.Flags().StringVar(&scannerDownloadDBCmd.version, "version", "", "Download a specific version (or version variant) of the vulnerability database (default: auto-detect)")
-	c.Flags().StringVar(&scannerDownloadDBCmd.filename, "scanner-db-file", "", "Output file to save the vulnerability database to (default: remote filename)")
-	c.Flags().BoolVar(&scannerDownloadDBCmd.force, "force", false, "Force overwriting the output file if it already exists")
-	c.Flags().BoolVar(&scannerDownloadDBCmd.skipCentral, "skip-central", false, "Do not contact Central when detecting version")
-	c.Flags().BoolVar(&scannerDownloadDBCmd.skipVariants, "skip-variants", false, "Do not attempt to process variants of the determined version")
+	c.Flags().StringVar(&scannerDownloadDBCmd.version, "version", "", "Download a specific version (or version variant) of the vulnerability database (default: auto-detect).")
+	c.Flags().StringVar(&scannerDownloadDBCmd.filename, "scanner-db-file", "", "Output file to save the vulnerability database to (default: remote filename).")
+	c.Flags().BoolVar(&scannerDownloadDBCmd.force, "force", false, "Force overwriting the output file if it already exists.")
+	c.Flags().BoolVar(&scannerDownloadDBCmd.skipCentral, "skip-central", false, "Do not contact Central when detecting version.")
+	c.Flags().BoolVar(&scannerDownloadDBCmd.skipVariants, "skip-variants", false, "Do not attempt to process variants of the determined version.")
 	flags.AddTimeoutWithDefault(c, 10*time.Minute)
 
 	return c

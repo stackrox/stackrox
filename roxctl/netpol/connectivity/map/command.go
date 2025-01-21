@@ -78,13 +78,13 @@ func (cmd *Cmd) RunE(_ *cobra.Command, args []string) error {
 
 // AddFlags is for parsing flags and storing their values
 func (cmd *Cmd) AddFlags(c *cobra.Command) *cobra.Command {
-	c.Flags().BoolVar(&cmd.treatWarningsAsErrors, "strict", false, "Treat warnings as errors")
-	c.Flags().BoolVar(&cmd.stopOnFirstError, "fail", false, "Fail on the first encountered error")
-	c.Flags().BoolVar(&cmd.removeOutputPath, "remove", false, "Remove the output path if it already exists")
-	c.Flags().BoolVar(&cmd.outputToFile, "save-to-file", false, "Whether to save connections list output into default file")
-	c.Flags().StringVarP(&cmd.outputFilePath, "output-file", "f", "", "Save connections list output into specific file")
-	c.Flags().StringVarP(&cmd.focusWorkload, "focus-workload", "", "", "Focus on connections of specified workload name in the output")
-	c.Flags().StringVarP(&cmd.outputFormat, "output-format", "o", defaultOutputFormat, "Configure the connections list in specific format, supported formats: txt|json|md|dot|csv")
-	c.Flags().BoolVar(&cmd.exposure, "exposure", false, "Enhance the analysis of permitted connectivity with exposure analysis")
+	c.Flags().BoolVar(&cmd.treatWarningsAsErrors, "strict", false, "Treat warnings as errors.")
+	c.Flags().BoolVar(&cmd.stopOnFirstError, "fail", false, "Fail on the first encountered error.")
+	c.Flags().BoolVar(&cmd.removeOutputPath, "remove", false, "Remove the output path if it already exists.")
+	c.Flags().BoolVar(&cmd.outputToFile, "save-to-file", false, "Whether to save connections list output into default file.")
+	c.Flags().StringVarP(&cmd.outputFilePath, "output-file", "f", "", "Save connections list output into specific file.")
+	c.Flags().StringVarP(&cmd.focusWorkload, "focus-workload", "", "", "Focus on connections of specified workload name in the output.")
+	c.Flags().StringVarP(&cmd.outputFormat, "output-format", "o", defaultOutputFormat, "Configure the connections list in specific format, supported formats: txt|json|md|dot|csv.")
+	c.Flags().BoolVar(&cmd.exposure, "exposure", false, "Enhance the analysis of permitted connectivity with exposure analysis.")
 	return c
 }

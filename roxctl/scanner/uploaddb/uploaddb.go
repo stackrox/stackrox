@@ -72,7 +72,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		},
 	}
 
-	c.Flags().StringVar(&scannerUploadDBCmd.filename, "scanner-db-file", "", "File containing the dumped Scanner definitions DB")
+	c.Flags().StringVar(&scannerUploadDBCmd.filename, "scanner-db-file", "", "File containing the dumped Scanner definitions DB.")
 	flags.AddTimeoutWithDefault(c, 10*time.Minute)
 	utils.Must(c.MarkFlagRequired("scanner-db-file"))
 

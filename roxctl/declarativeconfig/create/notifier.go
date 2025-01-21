@@ -31,7 +31,7 @@ func notifierCommand(cliEnvironment environment.Environment) *cobra.Command {
 		Short: "Commands to create a declarative configuration for a notifier",
 	}
 
-	cmd.PersistentFlags().StringVar(&notifierCommand.notifier.Name, "name", "", "Name of the notifier")
+	cmd.PersistentFlags().StringVar(&notifierCommand.notifier.Name, "name", "", "Name of the notifier.")
 	cmd.AddCommand(
 		notifierCommand.genericCommand(),
 		notifierCommand.splunkCommand())
@@ -51,23 +51,23 @@ func (n *notifierCmd) genericCommand() *cobra.Command {
 	genericFlags := cmd.Flags()
 	n.gc = &declarativeconfig.GenericConfig{}
 	genericFlags.BoolVar(&n.gc.AuditLoggingEnabled, "audit-logging", false,
-		"Audit logging enabled")
+		"Audit logging enabled.")
 	genericFlags.StringVar(&n.gc.Endpoint, "webhook-endpoint", "",
-		"Webhook endpoint URL")
+		"Webhook endpoint URL.")
 	genericFlags.StringVar(&n.gc.Username, "webhook-username", "",
 		"Username for the webhook endpoint basic authentication. "+
-			"No authentication if not provided. Requires --webhook-password")
+			"No authentication if not provided. Requires --webhook-password.")
 	genericFlags.StringVar(&n.gc.Password, "webhook-password", "",
 		"Password for the webhook endpoint basic authentication. "+
-			"No authentication if not provided. Requires --webhook-username")
+			"No authentication if not provided. Requires --webhook-username.")
 	genericFlags.StringVar(&n.gc.CACertPEM, "webhook-cacert-file", "",
-		"Endpoint CA certificate file name (PEM format)")
+		"Endpoint CA certificate file name (PEM format).")
 	genericFlags.StringToStringVar(&n.gcHeaders, "headers", nil,
-		"Headers (comma separated key=value pairs)")
+		"Headers (comma separated key=value pairs).")
 	genericFlags.StringToStringVar(&n.gcExtraFields, "extra-fields", nil,
-		"Extra fields (comma separated key=value pairs)")
+		"Extra fields (comma separated key=value pairs).")
 	genericFlags.BoolVar(&n.gc.SkipTLSVerify, "webhook-skip-tls-verify", false,
-		"Skip webhook TLS verification")
+		"Skip webhook TLS verification.")
 	n.genericFlagSet = genericFlags
 
 	cmd.Flags().AddFlagSet(genericFlags)
@@ -90,17 +90,17 @@ func (n *notifierCmd) splunkCommand() *cobra.Command {
 	splunkFlags := cmd.Flags()
 	n.sc = &declarativeconfig.SplunkConfig{}
 	splunkFlags.BoolVar(&n.sc.AuditLoggingEnabled, "audit-logging", false,
-		"Audit logging enabled")
+		"Audit logging enabled.")
 	splunkFlags.StringVar(&n.sc.HTTPToken, "splunk-token", "",
-		"Splunk HTTP token (required)")
+		"Splunk HTTP token (required).")
 	splunkFlags.StringVar(&n.sc.HTTPEndpoint, "splunk-endpoint", "",
-		"Splunk HTTP endpoint (required)")
+		"Splunk HTTP endpoint (required).")
 	splunkFlags.BoolVar(&n.sc.Insecure, "splunk-skip-tls-verify", false,
-		"Insecure connection to Splunk")
+		"Insecure connection to Splunk.")
 	splunkFlags.Int64Var(&n.sc.Truncate, "truncate", 0,
-		"Splunk truncate limit (default 10000)")
+		"Splunk truncate limit (default 10000).")
 	splunkFlags.StringToStringVar(&n.scSourceTypes, "source-types", nil,
-		"Splunk source types (comma separated key=value pairs)")
+		"Splunk source types (comma separated key=value pairs).")
 	n.splunkFlagSet = splunkFlags
 
 	cmd.Flags().AddFlagSet(splunkFlags)

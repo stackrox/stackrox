@@ -48,7 +48,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		}),
 	}
 
-	c.Flags().StringVar(&module, "module", "logconvert", "Specifies the module for logging purposes")
-	c.Flags().StringVar(&levelLabel, "level", "info", "Specifies the log level in {error, warn, info, debug}")
+	c.Flags().StringVar(&module, "module", "logconvert", "Specifies the module for logging purposes.")
+	c.Flags().StringVar(&levelLabel, "level", "info", "Specifies the log level in {error, warn, info, debug}.")
 	return c
 }

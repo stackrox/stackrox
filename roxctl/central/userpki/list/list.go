@@ -42,7 +42,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 			return centralUserPkiListCmd.listProviders()
 		},
 	}
-	c.Flags().BoolVarP(&centralUserPkiListCmd.json, "json", "j", false, "Enable JSON output")
+	c.Flags().BoolVarP(&centralUserPkiListCmd.json, "json", "j", false, "Enable JSON output.")
 	flags.AddTimeout(c)
 	flags.AddRetryTimeout(c)
 	return c

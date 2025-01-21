@@ -57,9 +57,9 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 			return centralUserPkiCreateCmd.createProvider()
 		},
 	}
-	c.Flags().StringSliceVarP(&centralUserPkiCreateCmd.pemFiles, "cert", "c", nil, "Root CA certificate PEM files (can supply multiple)")
+	c.Flags().StringSliceVarP(&centralUserPkiCreateCmd.pemFiles, "cert", "c", nil, "Root CA certificate PEM files (can supply multiple).")
 	utils.Must(c.MarkFlagRequired("cert"))
-	c.Flags().StringVarP(&centralUserPkiCreateCmd.roleName, "role", "r", "", "Minimum access role for users of this provider")
+	c.Flags().StringVarP(&centralUserPkiCreateCmd.roleName, "role", "r", "", "Minimum access role for users of this provider.")
 	utils.Must(c.MarkFlagRequired("role"))
 	flags.AddTimeout(c)
 	flags.AddRetryTimeout(c)
