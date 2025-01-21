@@ -26,6 +26,7 @@ import services.ClusterService
 import services.DeploymentService
 import services.NetworkGraphService
 import services.NetworkPolicyService
+import util.CollectorUtil
 import util.Env
 import util.Helpers
 import util.NetworkGraphUtil
@@ -480,6 +481,68 @@ class NetworkFlowTest extends BaseSpecification {
         log.info "Checking for edge from ${EXTERNALDESTINATION} to external target"
         List<Edge> edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
         assert edges
+    }
+
+    @Tag("NetworkFlowVisualization")
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
+    def "Verify external network flow inspection"() {
+        when:
+        "Deployment A, where A communicates to an external target"
+        String deploymentUid = deployments.find { it.name == EXTERNALDESTINATION }?.deploymentUid
+        assert deploymentUid != null
+
+        CollectorUtil.enableExternalIps(orchestrator)
+
+        and:
+        "Check for external flow"
+
+        def extIp
+        // retrying the first case, to wait for the network flows to appear,
+        // then subsequent test cases are querying the same data in different ways
+        withRetry(10, 30) {
+            log.info "Checking for flow from ${EXTERNALDESTINATION} to ${NGINXCONNECTIONTARGET}"
+            def response = NetworkGraphService.getExternalNetworkFlows("Namespace:qa+DeploymentName:${EXTERNALDESTINATION}")
+
+            assert response.getFlowsList()?.size() == 1
+
+            // retrieve the IP. We can use this to filter later
+            extIp = response.getFlows(0)?.getProps()?.getDstEntity()?.getExternalSource()?.getCidr()
+            assert extIp != null
+        }
+
+        // construct some subnets to use to verify filtering of
+        // expected external entity
+        def octets = extIp.tokenize(".")
+        def widerNet = "${octets[0]}.${octets[1]}.0.0/16"
+        def narrowerNet = "${octets[0]}.${octets[1]}.${octets[2]}.254/31"
+
+        and: "Get no flows with CIDR filter"
+        def cidrFilteredFlows = NetworkGraphService.getExternalNetworkFlows("Namespace:qa+External Source Address:123.123.123.0/24")
+
+        and: "Get flows with wide subnet filter"
+        def widerNetFlows = NetworkGraphService.getExternalNetworkFlows("Namespace:qa+External Source Address:${widerNet}")
+
+        and: "Get flows with narrow subnet filter"
+        def narrowerNetFlows = NetworkGraphService.getExternalNetworkFlows("Namespace:qa+External Source Address:${narrowerNet}")
+
+        and: "Get flows for non-existent namespace"
+        def noNamespaceFlows = NetworkGraphService.getExternalNetworkFlows("Namespace:empty")
+
+        then:
+        assert cidrFilteredFlows?.getFlowsList().size() == 0
+
+        and:
+        assert widerNetFlows?.getFlowsList().size() == 1
+        assert widerNetFlows.getFlows(0)?.getProps()?.getDstEntity()?.getExternalSource()?.getCidr() == extIp
+
+        and:
+        assert narrowerNetFlows?.getFlowsList().size() == 0
+
+        and:
+        assert noNamespaceFlows?.getFlowsList().size() == 0
+
+        cleanup:
+        CollectorUtil.disableExternalIps()
     }
 
     @Tag("NetworkFlowVisualization")

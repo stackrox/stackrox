@@ -4,6 +4,7 @@ import com.google.protobuf.Timestamp
 import groovy.util.logging.Slf4j
 import io.stackrox.proto.api.v1.Common.ResourceByID
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.CreateNetworkEntityRequest
+import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.GetExternalNetworkFlowsRequest;
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.GetExternalNetworkEntitiesRequest
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.GetExternalNetworkEntitiesResponse
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.NetworkGraphRequest
@@ -38,6 +39,25 @@ class NetworkGraphService extends BaseService {
             return getNetworkGraphClient().getNetworkGraph(request.build())
         } catch (Exception e) {
             log.error("Exception fetching network graph", e)
+        }
+    }
+
+    static getExternalNetworkFlows(String query = null, Timestamp since = null) {
+        try {
+            GetExternalNetworkFlowsRequest.Builder request =
+                GetExternalNetworkFlowsRequest.newBuilder()
+                    .setClusterId(ClusterService.getClusterId())
+
+            if (since != null) {
+                request.setSince(since)
+            }
+
+            if (query != null) {
+                request.setQuery(query)
+            }
+            return getNetworkGraphClient().getExternalNetworkFlows(request.build())
+        } catch (Exception e) {
+            log.error("Exception fetching external network flows", e)
         }
     }
 
