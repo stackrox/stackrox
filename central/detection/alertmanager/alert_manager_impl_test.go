@@ -186,11 +186,11 @@ func (suite *AlertManagerTestSuite) TestNotifyAndUpdateBatch() {
 	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx,
 		testutils.PredMatcher("query for dep 1", func(q *v1.Query) bool {
 			return strings.Contains(protocompat.MarshalTextString(q), "Dep1")
-		}), true).Return([]*storage.Alert{resolvedAlerts[0]}, nil)
+		}), false).Return([]*storage.Alert{resolvedAlerts[0]}, nil)
 	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx,
 		testutils.PredMatcher("query for dep 2", func(q *v1.Query) bool {
 			return strings.Contains(protocompat.MarshalTextString(q), "Dep2")
-		}), true).Return([]*storage.Alert{resolvedAlerts[1]}, nil)
+		}), false).Return([]*storage.Alert{resolvedAlerts[1]}, nil)
 
 	// Only the first alert will get notified
 	suite.notifierMock.EXPECT().ProcessAlert(suite.ctx, alerts[0])
