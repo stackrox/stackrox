@@ -12,7 +12,7 @@ import (
 type APICallCampaignCriterion struct {
 	Path    *Pattern           `json:"path,omitempty"`
 	Method  *Pattern           `json:"method,omitempty"`
-	Code    []int32            `json:"code,omitempty"`
+	Codes   []int32            `json:"codes,omitempty"`
 	Headers map[string]Pattern `json:"headers,omitempty"`
 }
 
@@ -42,7 +42,7 @@ func (c *APICallCampaignCriterion) Compile() error {
 
 func (c *APICallCampaignCriterion) isFulfilled(rp *RequestParams) bool {
 	return c != nil &&
-		(len(c.Code) == 0 || slices.Contains(c.Code, int32(rp.Code))) &&
+		(len(c.Codes) == 0 || slices.Contains(c.Codes, int32(rp.Code))) &&
 		(c.Path == nil || (*c.Path).Match(rp.Path)) &&
 		(c.Method == nil || (*c.Method).Match(rp.Method)) &&
 		(c.Headers == nil || rp.HasHeader(c.Headers))

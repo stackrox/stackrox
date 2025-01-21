@@ -57,12 +57,12 @@ func TestCampaignFulfilled(t *testing.T) {
 		campaigns := map[string]APICallCampaign{
 			"Code": []*APICallCampaignCriterion{
 				{
-					Code: []int32{202},
+					Codes: []int32{202},
 				},
 			},
 			"Codes": []*APICallCampaignCriterion{
 				{
-					Code: []int32{100, 202, 400},
+					Codes: []int32{100, 202, 400},
 				},
 			},
 			"Method": []*APICallCampaignCriterion{
@@ -137,25 +137,25 @@ func TestCampaignFulfilled(t *testing.T) {
 	t.Run("All criteria", func(t *testing.T) {
 		campaign := APICallCampaign{
 			{
-				Code:    []int32{200, 400},
+				Codes:   []int32{200, 400},
 				Method:  Pattern("{GET,POST}").Ptr(),
 				Path:    Pattern("{/v1/test*,/v2/test*}").Ptr(),
 				Headers: map[string]Pattern{"User-Agent": "*test*"},
 			},
 			{
-				Code:    []int32{200, 400},
+				Codes:   []int32{200, 400},
 				Method:  Pattern("{GET,POST}").Ptr(),
 				Path:    Pattern("{/v1/test*,/v2/test*}").Ptr(),
 				Headers: map[string]Pattern{"User-Agent": "*toast*"},
 			},
 			{
-				Code:    []int32{300, 500},
+				Codes:   []int32{300, 500},
 				Method:  Pattern("{DELETE,OPTIONS}").Ptr(),
 				Path:    Pattern("{/v3/test*,/v4/test*}").Ptr(),
 				Headers: map[string]Pattern{"User-Agent": "{*tooth*,*teeth*}"},
 			},
 			{
-				Code:   []int32{100},
+				Codes:  []int32{100},
 				Method: Pattern("PUT").Ptr(),
 				Path:   Pattern("/v5/*").Ptr(),
 				Headers: map[string]Pattern{

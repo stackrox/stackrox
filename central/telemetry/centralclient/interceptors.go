@@ -9,6 +9,7 @@ import (
 )
 
 // The header is set by the RHACS ServiceNow integration.
+// See https://github.com/stackrox/service-now/blob/9d1df943f5f0b3052df97c6272814e2303f17685/52616ff6938a1a50c52a72856aba10fd/update/sys_script_include_2b362bbe938a1a50c52a72856aba10b3.xml#L80.
 const snowIntegrationHeader = "Rh-ServiceNow-Integration"
 const userAgentHeaderKey = "User-Agent"
 
@@ -27,6 +28,9 @@ var (
 		{
 			Path: phonehome.Pattern("/v1/clusters").Ptr(),
 			Headers: map[string]phonehome.Pattern{
+				// ServiceNow default User-Agent includes "ServiceNow", but
+				// customers are free to change it.
+				// See https://support.servicenow.com/kb?id=kb_article_view&sysparm_article=KB1511513.
 				userAgentHeaderKey:    "*ServiceNow*",
 				snowIntegrationHeader: phonehome.NoHeaderOrAnyValue,
 			},
