@@ -19,7 +19,7 @@ class CloudSourcesTest extends BaseSpecification {
         // In case API service is not temporally available, we should add longer retry times to give API service
         // enough time to recover. Our options are limited here, because we depend on 3rd party service availability.
         def cloudSourceId
-        withRetry(5, 20) {
+        withRetry(10, 30) {
             cloudSourceId = CloudSourcesService.createCloudSource(CloudSourceService.CloudSource.newBuilder().
                 setName(CLOUD_SOURCE_NAME).
                 setType(CloudSourceService.CloudSource.Type.TYPE_OCM).
@@ -37,7 +37,7 @@ class CloudSourcesTest extends BaseSpecification {
         "verify we have discovered clusters"
         // The initial sync may take a bit since we are connecting to the "Red Hat1" OCM organization which hosts
         // a lot of clusters.
-        withRetry(30, 10) {
+        withRetry(10, 30) {
             def count = DiscoveredClustersService.countDiscoveredClusters()
             assert count > 0
         }
