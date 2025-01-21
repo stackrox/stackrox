@@ -14,7 +14,6 @@ import (
 	iiDStore "github.com/stackrox/rox/central/imageintegration/datastore"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
@@ -36,7 +35,7 @@ var (
 			v1.CredentialExpiryService_GetCertExpiry_FullMethodName,
 		},
 	})
-	centralDBEndpoint = fmt.Sprintf("central-db.%s:5432", env.Namespace.Setting())
+	centralDBEndpoint = "postgres://central-db.stackrox.svc:5432"
 )
 
 // ClusterService is the struct that manages the cluster API
