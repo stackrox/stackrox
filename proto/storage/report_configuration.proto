@@ -70,6 +70,7 @@ message VulnerabilityReportFilters {
   }
   repeated SimpleAccessScope.Rules access_scope_rules = 8;
   bool include_nvd_cvss = 9;
+  bool include_epss_probability = 10;
 }
 
 message ResourceScope {
