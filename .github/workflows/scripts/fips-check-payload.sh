@@ -16,7 +16,6 @@ GITHUB_STEP_SUMMARY=${GITHUB_STEP_SUMMARY:-/dev/null}
 
 image_prefix="${1:-}"
 default_image_prefix='brew.registry.redhat.io/rh-osbs/rhacs'
-default_image_prefix='quay.io/rhacs-eng/'
 #default_image_prefix='registry.redhat.io/advanced-cluster-security/rhacs'
 image_prefix="${image_prefix:-${default_image_prefix}}"
 
