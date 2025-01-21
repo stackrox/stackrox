@@ -14,6 +14,10 @@ var OptionsMap search.OptionsMap
 
 func init() {
 	OptionsMap = search.Walk(v1.SearchCategory_ALERTS, "alert", (*storage.Alert)(nil))
+	toRemove := []search.FieldLabel{"SORT_Lifecycle Stage", "SORT_Enforcement"}
+	for _, opt := range toRemove {
+		OptionsMap.Remove(opt)
+	}
 	alertOptions := schema.AlertsSchema.OptionsMap.Clone()
 
 	// There are more search terms in the alert proto due to the embeddings of policies.
