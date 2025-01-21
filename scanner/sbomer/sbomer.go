@@ -2,11 +2,10 @@ package sbomer
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-	"time"
+	"io"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/sbom/spdx"
 )
 
 //go:generate mockgen-wrapper
@@ -21,30 +20,28 @@ type sbomerImpl struct {
 var _ SBOMer = (*sbomerImpl)(nil)
 
 func NewSBOMer(ctx context.Context) SBOMer {
-	// TODO(ROX-27145): initialize libsbom as needed.
 	return &sbomerImpl{}
 }
 
 func (s *sbomerImpl) GetSBOM(ctx context.Context, imageDigest claircore.Digest, ir *claircore.IndexReport) ([]byte, error) {
-	// TODO(ROX-27145): remove static response and use claircore to create SBOM.
-	// Start: temporary static response
-	fakeResp := struct {
-		Msg         string `json:"msg"`
-		ImageDigest string `json:"imageDigest"`
-		NumPackages int    `json:"pkgs"`
-		NumDists    int    `json:"dists"`
-		NumRepos    int    `json:"repos"`
-		NumEnvs     int    `json:"envs"`
-	}{
-		Msg:         fmt.Sprintf("This fake response generated from Scanner V4 matcher on %q", time.Now().Format(time.RFC3339)),
-		ImageDigest: imageDigest.String(),
-		NumPackages: len(ir.Packages),
-		NumDists:    len(ir.Distributions),
-		NumRepos:    len(ir.Repositories),
-		NumEnvs:     len(ir.Environments),
+	encoder := spdx.Encoder{
+		Version: spdx.V2_3,
+		Format:  spdx.JSON,
+		Creators: []spdx.Creator{
+			{Creator: "David Caravello", CreatorType: "Person"},
+			{Creator: "Brad Lugo", CreatorType: "Person"},
+			{Creator: "David Vail", CreatorType: "Person"},
+			{Creator: "Surabhi LNU", CreatorType: "Person"},
+		},
+		DocumentName:      imageDigest.String(),
+		DocumentNamespace: "DocumentNamespace?",
+		DocumentComment:   "Bug Bash Demo",
 	}
-	sbomB, err := json.Marshal(fakeResp)
-	// End: temporary static response
 
-	return []byte(sbomB), err
+	reader, err := encoder.Encode(ctx, ir)
+	if err != nil {
+		return nil, err
+	}
+
+	return io.ReadAll(reader)
 }
