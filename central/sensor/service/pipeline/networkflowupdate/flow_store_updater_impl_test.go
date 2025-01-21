@@ -171,7 +171,7 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdateNoExternalIPs() {
 	}
 
 	// Return storedFlows on DB read.
-	suite.mockFlows.EXPECT().GetAllFlows(suite.hasWriteCtx, gomock.Any()).Return(storedFlows, &firstTimestamp, nil)
+	suite.mockFlows.EXPECT().GetAllFlows(suite.hasWriteCtx, gomock.Any(), gomock.Any()).Return(storedFlows, &firstTimestamp, nil)
 
 	suite.mockBaselines.EXPECT().ProcessFlowUpdate(testutils.PredMatcher("equivalent map except for timestamp", func(got map[networkgraph.NetworkConnIndicator]timestamp.MicroTS) bool {
 		expectedMap := map[networkgraph.NetworkConnIndicator]timestamp.MicroTS{
@@ -317,7 +317,7 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdateWithExternalIPs() {
 	}
 
 	// Return storedFlows on DB read.
-	suite.mockFlows.EXPECT().GetAllFlows(suite.hasWriteCtx, gomock.Any()).Return(storedFlows, &firstTimestamp, nil)
+	suite.mockFlows.EXPECT().GetAllFlows(suite.hasWriteCtx, gomock.Any(), gomock.Any()).Return(storedFlows, &firstTimestamp, nil)
 
 	suite.mockBaselines.EXPECT().ProcessFlowUpdate(testutils.PredMatcher("equivalent map except for timestamp", func(got map[networkgraph.NetworkConnIndicator]timestamp.MicroTS) bool {
 		expectedMap := map[networkgraph.NetworkConnIndicator]timestamp.MicroTS{

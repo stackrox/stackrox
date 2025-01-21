@@ -324,7 +324,7 @@ func (s *generatorTestSuite) TestGenerate() {
 			sac.ClusterScopeKey("mycluster"),
 		})
 
-	mockFlowStore.EXPECT().GetMatchingFlows(ctxHasNetworkFlowAccessMatcher, gomock.Any(), gomock.Eq(&now)).Return(
+	mockFlowStore.EXPECT().GetMatchingFlows(ctxHasNetworkFlowAccessMatcher, gomock.Any(), gomock.Eq(&now), gomock.Any()).Return(
 		[]*storage.NetworkFlow{
 			{
 				Props: &storage.NetworkFlowProperties{
@@ -649,7 +649,7 @@ func (s *generatorTestSuite) TestGenerateWithMaskedUnselectedAndDeleted() {
 			sac.ClusterScopeKey("mycluster"),
 		})
 
-	mockFlowStore.EXPECT().GetMatchingFlows(ctxHasClusterWideNetworkFlowAccessMatcher, gomock.Any(), gomock.Eq(&now)).Return(
+	mockFlowStore.EXPECT().GetMatchingFlows(ctxHasClusterWideNetworkFlowAccessMatcher, gomock.Any(), gomock.Eq(&now), gomock.Any()).Return(
 		[]*storage.NetworkFlow{
 			depFlow("depA", "depB"),
 			depFlow("depA", "depD"),

@@ -85,7 +85,7 @@ func (s *NetworkflowStoreSuite) TestStore() {
 	}
 	zeroTs := timestamp.MicroTS(0)
 
-	foundNetworkFlows, _, err := s.store.GetAllFlows(s.ctx, nil)
+	foundNetworkFlows, _, err := s.store.GetAllFlows(s.ctx, nil, nil)
 	s.NoError(err)
 	s.Len(foundNetworkFlows, 0)
 
@@ -93,19 +93,19 @@ func (s *NetworkflowStoreSuite) TestStore() {
 	s.NoError(s.store.UpsertFlows(s.ctx, []*storage.NetworkFlow{networkFlow}, zeroTs))
 	networkFlow.LastSeenTimestamp = protocompat.GetProtoTimestampFromSeconds(2)
 	s.NoError(s.store.UpsertFlows(s.ctx, []*storage.NetworkFlow{networkFlow}, zeroTs))
-	foundNetworkFlows, _, err = s.store.GetAllFlows(s.ctx, nil)
+	foundNetworkFlows, _, err = s.store.GetAllFlows(s.ctx, nil, nil)
 	s.NoError(err)
 	s.Len(foundNetworkFlows, 1)
 	protoassert.Equal(s.T(), networkFlow, foundNetworkFlows[0])
 
 	// Check the get all flows by since time
 	time3 := time.Unix(3, 0)
-	foundNetworkFlows, _, err = s.store.GetAllFlows(s.ctx, &time3)
+	foundNetworkFlows, _, err = s.store.GetAllFlows(s.ctx, &time3, nil)
 	s.NoError(err)
 	s.Len(foundNetworkFlows, 0)
 
 	s.NoError(s.store.RemoveFlow(s.ctx, networkFlow.GetProps()))
-	foundNetworkFlows, _, err = s.store.GetAllFlows(s.ctx, nil)
+	foundNetworkFlows, _, err = s.store.GetAllFlows(s.ctx, nil, nil)
 	s.NoError(err)
 	s.Len(foundNetworkFlows, 0)
 
@@ -114,7 +114,7 @@ func (s *NetworkflowStoreSuite) TestStore() {
 	err = s.store.RemoveFlowsForDeployment(s.ctx, networkFlow.GetProps().GetSrcEntity().GetId())
 	s.NoError(err)
 
-	foundNetworkFlows, _, err = s.store.GetAllFlows(s.ctx, nil)
+	foundNetworkFlows, _, err = s.store.GetAllFlows(s.ctx, nil, nil)
 	s.NoError(err)
 	s.Len(foundNetworkFlows, 0)
 
@@ -128,12 +128,12 @@ func (s *NetworkflowStoreSuite) TestStore() {
 
 	s.NoError(s.store.UpsertFlows(s.ctx, networkFlows, zeroTs))
 
-	foundNetworkFlows, _, err = s.store.GetAllFlows(s.ctx, nil)
+	foundNetworkFlows, _, err = s.store.GetAllFlows(s.ctx, nil, nil)
 	s.NoError(err)
 	s.Len(foundNetworkFlows, flowCount)
 
 	// Make sure store for second cluster does not find any flows
-	foundNetworkFlows, _, err = store2.GetAllFlows(s.ctx, nil)
+	foundNetworkFlows, _, err = store2.GetAllFlows(s.ctx, nil, nil)
 	s.NoError(err)
 	s.Len(foundNetworkFlows, 0)
 
@@ -141,19 +141,19 @@ func (s *NetworkflowStoreSuite) TestStore() {
 	networkFlow.ClusterId = secondCluster
 	s.NoError(store2.UpsertFlows(s.ctx, []*storage.NetworkFlow{networkFlow}, zeroTs))
 
-	foundNetworkFlows, _, err = store2.GetAllFlows(s.ctx, nil)
+	foundNetworkFlows, _, err = store2.GetAllFlows(s.ctx, nil, nil)
 	s.NoError(err)
 	s.Len(foundNetworkFlows, 1)
 
 	pred := func(props *storage.NetworkFlowProperties) bool {
 		return true
 	}
-	foundNetworkFlows, _, err = store2.GetMatchingFlows(s.ctx, pred, nil)
+	foundNetworkFlows, _, err = store2.GetMatchingFlows(s.ctx, pred, nil, nil)
 	s.NoError(err)
 	s.Len(foundNetworkFlows, 1)
 
 	// Store 1 flows should remain
-	foundNetworkFlows, _, err = s.store.GetAllFlows(s.ctx, nil)
+	foundNetworkFlows, _, err = s.store.GetAllFlows(s.ctx, nil, nil)
 	s.NoError(err)
 	s.Len(foundNetworkFlows, flowCount)
 }
@@ -331,7 +331,7 @@ func (s *NetworkflowStoreSuite) TestGetMatching() {
 
 	// Normalize flow timestamps
 
-	filteredFlows, _, err := s.store.GetMatchingFlows(s.ctx, deploymentIngressFlowsPredicate, nil)
+	filteredFlows, _, err := s.store.GetMatchingFlows(s.ctx, deploymentIngressFlowsPredicate, nil, nil)
 	s.Nil(err)
 	protoassert.ElementsMatch(s.T(), []*storage.NetworkFlow{flows[1], flows[2]}, filteredFlows)
 }

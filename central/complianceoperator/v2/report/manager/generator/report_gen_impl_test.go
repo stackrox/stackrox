@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager/sender"
-
 	"github.com/pkg/errors"
 	checkResultsMocks "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/mocks"
 	profileMocks "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore/mocks"
