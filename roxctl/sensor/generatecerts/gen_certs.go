@@ -92,7 +92,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		},
 	}
 
-	c.PersistentFlags().StringVar(&outputDir, "output-dir", ".", "Output directory for the YAML file")
+	c.PersistentFlags().StringVar(&outputDir, "output-dir", ".", "Output directory for the YAML file.")
 
 	return c
 }

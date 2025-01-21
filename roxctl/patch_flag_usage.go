@@ -12,7 +12,7 @@ func processFlag(flag *pflag.Flag) {
 }
 
 func processCommand(command *cobra.Command) {
-	if command.Long == "" {
+	if command.Long == "" && command.Short != "" {
 		command.Long = command.Short + "."
 	}
 	// LocalFlags() calls mergePersistentFlags() so PersistentFlags are merged
