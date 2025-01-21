@@ -92,7 +92,7 @@ func (s *serviceImpl) getCentralDBCertExpiry(ctx context.Context) (*v1.GetCertEx
 		return nil, errors.Wrap(err, "failed to determine Central DB cert expiry")
 	}
 
-	expiry, err := maybeGetExpiryFromServiceAt(ctx, mtls.CentralDBSubject, centralDBConfig, centralDBEndpoint)
+	expiry, err := maybeGetExpiryFromServiceAt(ctx, mtls.CentralDBSubject, centralDBConfig, endpoint)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to determine Central DB cert expiry")
 	}
