@@ -501,7 +501,9 @@ class NetworkFlowTest extends BaseSpecification {
         // then subsequent test cases are querying the same data in different ways
         withRetry(10, 30) {
             log.info "Checking for flow from ${EXTERNALDESTINATION} to ${NGINXCONNECTIONTARGET}"
-            def response = NetworkGraphService.getExternalNetworkFlows("Namespace:qa+DeploymentName:${EXTERNALDESTINATION}")
+            def response = NetworkGraphService.getExternalNetworkFlows(
+                "Namespace:qa+DeploymentName:${EXTERNALDESTINATION}"
+            )
 
             assert response.getFlowsList()?.size() == 1
 
@@ -517,16 +519,24 @@ class NetworkFlowTest extends BaseSpecification {
         def narrowerNet = "${octets[0]}.${octets[1]}.${octets[2]}.254/31"
 
         and: "Get no flows with CIDR filter"
-        def cidrFilteredFlows = NetworkGraphService.getExternalNetworkFlows("Namespace:qa+External Source Address:123.123.123.0/24")
+        def cidrFilteredFlows = NetworkGraphService.getExternalNetworkFlows(
+            "Namespace:qa+External Source Address:123.123.123.0/24"
+        )
 
         and: "Get flows with wide subnet filter"
-        def widerNetFlows = NetworkGraphService.getExternalNetworkFlows("Namespace:qa+External Source Address:${widerNet}")
+        def widerNetFlows = NetworkGraphService.getExternalNetworkFlows(
+            "Namespace:qa+External Source Address:${widerNet}"
+        )
 
         and: "Get flows with narrow subnet filter"
-        def narrowerNetFlows = NetworkGraphService.getExternalNetworkFlows("Namespace:qa+External Source Address:${narrowerNet}")
+        def narrowerNetFlows = NetworkGraphService.getExternalNetworkFlows(
+            "Namespace:qa+External Source Address:${narrowerNet}"
+        )
 
         and: "Get flows for non-existent namespace"
-        def noNamespaceFlows = NetworkGraphService.getExternalNetworkFlows("Namespace:empty")
+        def noNamespaceFlows = NetworkGraphService.getExternalNetworkFlows(
+            "Namespace:empty"
+        )
 
         then:
         assert cidrFilteredFlows?.getFlowsList().size() == 0

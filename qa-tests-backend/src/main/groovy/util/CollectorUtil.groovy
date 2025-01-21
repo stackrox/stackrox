@@ -9,8 +9,6 @@ class CollectorUtil {
     static final RUNTIME_CONFIG_MAP_NAME = "collector-config"
     static final RUNTIME_CONFIG_MAP_KEY = "runtime_config.yaml"
 
-
-
     static enableExternalIps(OrchestratorMain orchestrator) {
         setExternalIps(orchestrator, true)
     }
@@ -20,15 +18,15 @@ class CollectorUtil {
     }
 
     static private setExternalIps(OrchestratorMain orchestrator, boolean state) {
-    String runtime_config = """\
+        String runtimeConfig = """\
 networking:
   externalIps:
     enabled: ${state}
 """
-        def Map<String, String> map_data = [
-            (RUNTIME_CONFIG_MAP_KEY): runtime_config,
+        Map<String, String> data = [
+            (RUNTIME_CONFIG_MAP_KEY): runtimeConfig,
         ]
 
-        orchestrator.createConfigMap(RUNTIME_CONFIG_MAP_NAME, map_data, "stackrox")
+        orchestrator.createConfigMap(RUNTIME_CONFIG_MAP_NAME, data, "stackrox")
     }
 }

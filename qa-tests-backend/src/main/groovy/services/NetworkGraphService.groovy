@@ -4,7 +4,7 @@ import com.google.protobuf.Timestamp
 import groovy.util.logging.Slf4j
 import io.stackrox.proto.api.v1.Common.ResourceByID
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.CreateNetworkEntityRequest
-import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.GetExternalNetworkFlowsRequest;
+import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.GetExternalNetworkFlowsRequest
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.GetExternalNetworkEntitiesRequest
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.GetExternalNetworkEntitiesResponse
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.NetworkGraphRequest
