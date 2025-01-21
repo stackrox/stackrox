@@ -388,7 +388,7 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {
 	s.flows.EXPECT().GetFlowStore(ctxHasClusterWideNetworkFlowAccessMatcher, "mycluster").Return(mockFlowStore, nil)
 
 	mockFlowStore.EXPECT().GetMatchingFlows(ctxHasClusterWideNetworkFlowAccessMatcher, gomock.Any(), gomock.Eq(&now), gomock.Any()).DoAndReturn(
-		func(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, _ *time.Time) ([]*storage.NetworkFlow, *time.Time, error) {
+		func(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, _ *time.Time, _ *time.Time) ([]*storage.NetworkFlow, *time.Time, error) {
 			flows := []*storage.NetworkFlow{depFlow("depA", "depB"),
 				depFlow("depA", "depD"),
 				depFlow("depA", "depE"),
@@ -949,7 +949,7 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSACDeterminis
 	s.flows.EXPECT().GetFlowStore(ctxHasClusterWideNetworkFlowAccessMatcher, "mycluster").Return(mockFlowStore, nil)
 
 	mockFlowStore.EXPECT().GetMatchingFlows(ctxHasClusterWideNetworkFlowAccessMatcher, gomock.Any(), gomock.Eq(&now), gomock.Any()).DoAndReturn(
-		func(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, _ *time.Time) ([]*storage.NetworkFlow, *time.Time, error) {
+		func(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, _ *time.Time, _ *time.Time) ([]*storage.NetworkFlow, *time.Time, error) {
 			now := time.Now()
 			return networkgraph.FilterFlowsByPredicate(flowsOrdered, pred), &now, nil
 		})
@@ -993,7 +993,7 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSACDeterminis
 	s.flows.EXPECT().GetFlowStore(ctxHasClusterWideNetworkFlowAccessMatcher, "mycluster").Return(mockFlowStore, nil)
 
 	mockFlowStore.EXPECT().GetMatchingFlows(ctxHasClusterWideNetworkFlowAccessMatcher, gomock.Any(), gomock.Eq(&now), gomock.Any()).DoAndReturn(
-		func(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, _ *time.Time) ([]*storage.NetworkFlow, *time.Time, error) {
+		func(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, _ *time.Time, _ *time.Time) ([]*storage.NetworkFlow, *time.Time, error) {
 			now := time.Now()
 			return networkgraph.FilterFlowsByPredicate(flowsShuffled, pred), &now, nil
 		})
@@ -1119,7 +1119,7 @@ func (s *NetworkGraphServiceTestSuite) testGenerateNetworkGraphAllAccess(withLis
 		})
 
 	mockFlowStore.EXPECT().GetMatchingFlows(ctxHasClusterWideNetworkFlowAccessMatcher, gomock.Any(), gomock.Eq(&now), gomock.Any()).DoAndReturn(
-		func(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, _ *time.Time) ([]*storage.NetworkFlow, *time.Time, error) {
+		func(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, _ *time.Time, _ *time.Time) ([]*storage.NetworkFlow, *time.Time, error) {
 			flows := []*storage.NetworkFlow{
 				depFlow("depA", "depB"),
 				depFlow("depA", "depD"),
