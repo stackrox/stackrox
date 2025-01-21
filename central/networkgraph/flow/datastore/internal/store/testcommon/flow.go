@@ -185,7 +185,7 @@ func (suite *FlowStoreTestSuite) TestRemoveAllMatching() {
 	err := suite.tested.UpsertFlows(context.Background(), flows, updateTS)
 	suite.NoError(err)
 
-	currFlows, _, err := suite.tested.GetAllFlows(context.Background(), nil)
+	currFlows, _, err := suite.tested.GetAllFlows(context.Background(), nil, nil)
 	suite.NoError(err)
 	suite.ElementsMatch(flows, currFlows)
 
@@ -193,7 +193,7 @@ func (suite *FlowStoreTestSuite) TestRemoveAllMatching() {
 	err = suite.tested.RemoveOrphanedFlows(context.Background(), &utc)
 	suite.NoError(err)
 
-	currFlows, _, err = suite.tested.GetAllFlows(context.Background(), nil)
+	currFlows, _, err = suite.tested.GetAllFlows(context.Background(), nil, nil)
 	suite.NoError(err)
 	suite.ElementsMatch(flows[2:], currFlows)
 }
