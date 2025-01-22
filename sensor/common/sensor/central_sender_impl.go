@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/deduperkey"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/deduper"
@@ -40,10 +41,25 @@ func (s *centralSenderImpl) forwardResponses(from <-chan *message.ExpiringMessag
 			if !ok {
 				return
 			}
-			select {
-			case to <- msg:
-			case <-s.stopper.Flow().StopRequested():
-				return
+			// if the `to` is not buffered we do not drop messages
+			if cap(to) == 0 {
+				select {
+				case to <- msg:
+					metrics.IncResponsesChannelSize()
+				case <-s.stopper.Flow().StopRequested():
+					return
+				}
+			} else {
+				select {
+				case to <- msg:
+					metrics.IncResponsesChannelSize()
+				case <-s.stopper.Flow().StopRequested():
+					return
+				default:
+					// The channel is full. Dropping message
+					// TODO: change the metric to store the type of message
+					metrics.IncResponsesChannelDroppedCount()
+				}
 			}
 		case <-s.stopper.Flow().StopRequested():
 			return
@@ -71,7 +87,7 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 	// reads and writes.
 	// Ideally, if you're going to continue to hold a reference to the object, you want to proto.Clone it before
 	// sending it to this function.
-	componentMsgsC := make(chan *message.ExpiringMessage)
+	componentMsgsC := make(chan *message.ExpiringMessage, env.ResponsesChannelBufferSize.IntegerSetting())
 	for _, component := range s.senders {
 		if responsesC := component.ResponsesC(); responsesC != nil {
 			go s.forwardResponses(responsesC, componentMsgsC)
@@ -96,6 +112,7 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 			s.stopper.Flow().StopWithError(stream.Context().Err())
 			return
 		}
+		metrics.DecResponsesChannelSize()
 		if msg != nil && msg.MsgFromSensor != nil {
 			// If the connection restarted, there could be messages stuck
 			// in channels in Sensor pipeline, that will be attempted to

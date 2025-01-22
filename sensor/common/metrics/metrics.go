@@ -285,6 +285,22 @@ var (
 		},
 		[]string{"central_id", "hosting", "install_method", "sensor_id"},
 	)
+
+	// responsesChannelSize a gauge to track the responses channel size
+	responsesChannelSize = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "responses_channel_size",
+		Help:      "A gauge to track the responses channel size",
+	})
+
+	// responsesChannelDroppedCount keeps track of the number of messages dropped in the responses channel.
+	responsesChannelDroppedCount = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "responses_channel_dropped_total",
+		Help:      "A counter of the total number of messages that were dropped if the responses channel is full",
+	})
 )
 
 // IncrementEntityNotFound increments an instance of entity not found
@@ -436,6 +452,21 @@ func IncOutputChannelSize() {
 // DecOutputChannelSize decreases the outputChannel by 1
 func DecOutputChannelSize() {
 	outputChannelSize.Dec()
+}
+
+// IncResponsesChannelSize increases the responsesChannelSize by 1
+func IncResponsesChannelSize() {
+	responsesChannelSize.Inc()
+}
+
+// DecResponsesChannelSize decreases the responsesChannelSize by 1
+func DecResponsesChannelSize() {
+	responsesChannelSize.Dec()
+}
+
+// IncResponsesChannelDroppedCount increases the responsesChannelDroppedCount by 1
+func IncResponsesChannelDroppedCount() {
+	responsesChannelDroppedCount.Inc()
 }
 
 // SetTelemetryMetrics sets the cluster metrics for the telemetry metrics.
