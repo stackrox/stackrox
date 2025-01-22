@@ -10,12 +10,14 @@ import (
 // TODO: [ROX-10206] Reconcile storage.ListAlert search terms with storage.Alert
 
 // OptionsMap is exposed for e2e test.
-var OptionsMap search.OptionsMap
+var (
+	OptionsMap      search.OptionsMap
+	optionsToRemove = [...]search.FieldLabel{"SORT_Lifecycle Stage", "SORT_Enforcement"}
+)
 
 func init() {
 	OptionsMap = search.Walk(v1.SearchCategory_ALERTS, "alert", (*storage.Alert)(nil))
-	toRemove := []search.FieldLabel{"SORT_Lifecycle Stage", "SORT_Enforcement"}
-	for _, opt := range toRemove {
+	for _, opt := range optionsToRemove {
 		OptionsMap.Remove(opt)
 	}
 	alertOptions := schema.AlertsSchema.OptionsMap.Clone()
