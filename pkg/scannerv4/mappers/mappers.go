@@ -771,7 +771,6 @@ func pkgFixedBy(enrichments map[string][]json.RawMessage) (map[string]string, er
 }
 
 // cveEPSS unmarshals and returns the EPSS enrichment, if it exists.
-// cveEPSS unmarshals and returns the EPSS enrichment, if it exists.
 func cveEPSS(enrichments map[string][]json.RawMessage) (map[string]epssDetail, error) {
 	enrichmentsList := enrichments[epss.Type]
 	if len(enrichmentsList) == 0 {
