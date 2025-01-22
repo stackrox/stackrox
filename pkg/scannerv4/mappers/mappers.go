@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/url"
 	"regexp"
 	"sort"
@@ -114,7 +113,7 @@ func ToProtoV4VulnerabilityReport(ctx context.Context, r *claircore.Vulnerabilit
 	if err != nil {
 		return nil, fmt.Errorf("internal error: parsing nvd vulns: %w", err)
 	}
-	cveEPSS, err := cveEPSS(r.Enrichments)
+	cveEPSS, err := cveEPSS(r.Enrichments, ctx)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: parsing package-level EPSS details: %w", err)
 	}
@@ -415,11 +414,7 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 		return nil, nil
 	}
 	var vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerability
-	log.Printf(">>>> EPSS enrichment from cveEPSS: %v", cveEPSS)
 	var rhelEPSSDetails map[string]epssDetail
-	if !features.ScannerV4RedHatCVEs.Enabled() {
-		rhelEPSSDetails = rhelVulnsEPSS(vulns, cveEPSS)
-	}
 	for k, v := range vulns {
 		if v == nil {
 			continue
@@ -464,15 +459,19 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 			preferredCVSS = metrics[0]
 		}
 
+		if !features.ScannerV4RedHatCVEs.Enabled() {
+			rhelEPSSDetails = rhelVulnsEPSS(vulns, cveEPSS)
+		}
 		var vulnEPSS epssDetail
+		if epss, ok := cveEPSS[cve]; ok {
+			vulnEPSS = epss
+		}
 		if len(rhelEPSSDetails) > 0 {
+			// overwrite with RHSA EPSS score if it exists
 			if rhelEPSS, ok := rhelEPSSDetails[name]; ok {
 				vulnEPSS = rhelEPSS
 			}
-		} else if epss, ok := cveEPSS[cve]; ok {
-			vulnEPSS = epss
 		}
-		log.Printf(">>>> vuln EPSS is: %v", vulnEPSS)
 		description := v.Description
 		if description == "" {
 			// No description provided, so fall back to NVD.
@@ -511,11 +510,12 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 			CvssMetrics:        metrics,
 		}
 		if vulnEPSS != (epssDetail{}) {
-			vulnerabilities[k].EpssMetrics = &v4.VulnerabilityReport_Vulnerability_EPSS{}
-			vulnerabilities[k].EpssMetrics.ModelVersion = vulnEPSS.ModelVersion
-			vulnerabilities[k].EpssMetrics.Date = vulnEPSS.Date
-			vulnerabilities[k].EpssMetrics.Probability = float32(vulnEPSS.EPSS)
-			vulnerabilities[k].EpssMetrics.Percentile = float32(vulnEPSS.Percentile)
+			vulnerabilities[k].EpssMetrics = &v4.VulnerabilityReport_Vulnerability_EPSS{
+				ModelVersion: vulnEPSS.ModelVersion,
+				Date:         vulnEPSS.Date,
+				Probability:  float32(vulnEPSS.EPSS),
+				Percentile:   float32(vulnEPSS.Percentile),
+			}
 		}
 	}
 	return vulnerabilities, nil
@@ -771,16 +771,19 @@ func pkgFixedBy(enrichments map[string][]json.RawMessage) (map[string]string, er
 }
 
 // cveEPSS unmarshals and returns the EPSS enrichment, if it exists.
-func cveEPSS(enrichments map[string][]json.RawMessage) (map[string]epssDetail, error) {
-	enrichmentsList := enrichments[epss.Type]
-	if len(enrichmentsList) == 0 {
+func cveEPSS(enrichments map[string][]json.RawMessage, ctx context.Context) (map[string]epssDetail, error) {
+	enrichmentList := enrichments[epss.Type]
+	if len(enrichmentList) == 0 {
+		zlog.Warn(ctx).
+			Str("enrichments:", epss.Type).
+			Msg("no EPSS enrichments found")
 		return nil, nil
 	}
 
 	var epssMap map[string][]epssDetail
-	err := json.Unmarshal(enrichmentsList[0], &epssMap)
+	err := json.Unmarshal(enrichmentList[0], &epssMap)
 	if err != nil {
-		return nil, fmt.Errorf("error unmarshaling EPSS enrichment: %w; raw content: %s", err, string(enrichmentsList[0]))
+		return nil, fmt.Errorf("error unmarshaling EPSS enrichment: %w", err)
 	}
 
 	if len(epssMap) == 0 {
@@ -788,7 +791,7 @@ func cveEPSS(enrichments map[string][]json.RawMessage) (map[string]epssDetail, e
 	}
 
 	res := make(map[string]epssDetail)
-	for _, details := range epssMap {
+	for k, details := range epssMap {
 		if len(details) == 0 {
 			continue
 		}
@@ -796,6 +799,9 @@ func cveEPSS(enrichments map[string][]json.RawMessage) (map[string]epssDetail, e
 		// assume the first element is the relevant EPSS detail
 		detail := details[0]
 		if detail.CVE == "" {
+			zlog.Warn(ctx).
+				Str("package:", k).
+				Msg("no CVE linked to an EPSS score")
 			continue
 		}
 

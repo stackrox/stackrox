@@ -911,7 +911,7 @@ func Test_toProtoV4VulnerabilitiesMapWithEPSS(t *testing.T) {
 		enableRedHatCVEs  bool
 		want              map[string]*v4.VulnerabilityReport_Vulnerability
 	}{
-		"EPSS OK": {
+		"EPSS OK with NVD": {
 			ccVulnerabilities: map[string]*claircore.Vulnerability{
 				"foo": {
 					ID:      "foo",
@@ -976,6 +976,125 @@ func Test_toProtoV4VulnerabilitiesMapWithEPSS(t *testing.T) {
 							Url:    "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
 						},
 					},
+				},
+			},
+		},
+		"RHSA EPSS OK": {
+			ccVulnerabilities: map[string]*claircore.Vulnerability{
+				"foo": {
+					ID:      "foo",
+					Name:    "Name contains CVE-1234-567",
+					Issued:  now,
+					Updater: "rhel-vex",
+					Links:   "https://access.redhat.com/errata/RHSA-2021:1234",
+				},
+				"bar": {
+					ID:      "bar",
+					Name:    "Name contains CVE-7654-321",
+					Issued:  now,
+					Updater: "rhel-vex",
+					Links:   "https://access.redhat.com/errata/RHSA-2021:1234",
+				},
+			},
+			nvdVulns: nil,
+			pkgEpss: map[string]epssDetail{
+				"CVE-1234-567": {
+					ModelVersion: "v2023.03.01",
+					CVE:          "CVE-1234-567",
+					Date:         "2025-01-15T00:00:00+0000",
+					EPSS:         0.00215,
+					Percentile:   0.59338,
+				},
+				"CVE-7654-321": {
+					ModelVersion: "v2023.03.01",
+					CVE:          "CVE-7654-321",
+					Date:         "2025-01-15T00:00:00+0000",
+					EPSS:         0.04215,
+					Percentile:   0.69338,
+				},
+			},
+			want: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"foo": {
+					EpssMetrics: &v4.VulnerabilityReport_Vulnerability_EPSS{
+						ModelVersion: "v2023.03.01",
+						Date:         "2025-01-15T00:00:00+0000",
+						Probability:  0.04215,
+						Percentile:   0.69338,
+					},
+					Id:          "foo",
+					Issued:      protoNow,
+					Name:        "RHSA-2021:1234",
+					Cvss:        nil,
+					CvssMetrics: nil,
+					Link:        "https://access.redhat.com/errata/RHSA-2021:1234",
+				},
+				"bar": {
+					EpssMetrics: &v4.VulnerabilityReport_Vulnerability_EPSS{
+						ModelVersion: "v2023.03.01",
+						Date:         "2025-01-15T00:00:00+0000",
+						Probability:  0.04215,
+						Percentile:   0.69338,
+					},
+					Id:          "bar",
+					Issued:      protoNow,
+					Name:        "RHSA-2021:1234",
+					Cvss:        nil,
+					CvssMetrics: nil,
+					Link:        "https://access.redhat.com/errata/RHSA-2021:1234",
+				},
+			},
+		},
+		"EPSS Missing": {
+			ccVulnerabilities: map[string]*claircore.Vulnerability{
+				"bar": {
+					ID:      "bar",
+					Name:    "Name contains CVE-5678-1234",
+					Issued:  now,
+					Updater: "unknown updater",
+				},
+			},
+			nvdVulns: map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem{
+				"bar": {
+					"CVE-5678-1234": {
+						ID: "CVE-5678-1234",
+						Metrics: &nvdschema.CVEAPIJSON20CVEItemMetrics{
+							CvssMetricV31: []*nvdschema.CVEAPIJSON20CVSSV31{
+								{
+									CvssData: &nvdschema.CVSSV31{
+										Version:      "3.1",
+										VectorString: "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:L/A:N",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			pkgEpss: map[string]epssDetail{
+				// No EPSS entry for CVE-5678-1234
+			},
+			want: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"bar": {
+					Id:     "bar",
+					Name:   "CVE-5678-1234",
+					Issued: protoNow,
+					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
+						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+							Vector: "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:L/A:N",
+						},
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+						Url:    "https://nvd.nist.gov/vuln/detail/CVE-5678-1234",
+					},
+					CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+						{
+							V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+								Vector: "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:L/A:N",
+							},
+							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+							Url:    "https://nvd.nist.gov/vuln/detail/CVE-5678-1234",
+						},
+					},
+					// No EpssMetrics because pkgEpss has no entry for CVE-5678-1234
 				},
 			},
 		},
@@ -1610,6 +1729,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				enableRedHatCVEs = "true"
 			}
 			t.Setenv(features.ScannerV4RedHatCVEs.EnvVar(), enableRedHatCVEs)
+			// EPSS scores are intentionally not covered here
 			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities, tt.nvdVulns, nil)
 			assert.NoError(t, err)
 			protoassert.MapEqual(t, tt.want, got)
