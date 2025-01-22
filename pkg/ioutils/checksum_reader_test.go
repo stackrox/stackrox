@@ -197,7 +197,6 @@ func TestChecksumReader(t *testing.T) {
 	}
 
 	for algoName, algo := range algos {
-		algo := algo
 		t.Run(algoName, func(t *testing.T) {
 			t.Parallel()
 

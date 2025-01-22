@@ -48,7 +48,6 @@ func (d *connectivityMapCommandSuite) TestValidate() {
 	}
 
 	for _, tt := range cases {
-		tt := tt
 		d.Run(tt.name, func() {
 			env, _, _ := mocks.NewEnvWithConn(nil, d.T())
 			analyzeNetpolCmd := Cmd{

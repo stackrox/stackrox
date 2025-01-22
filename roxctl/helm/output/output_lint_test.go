@@ -78,7 +78,6 @@ func (s *HelmChartTestSuite) TestOutputHelmChart() {
 	env := environment.NewTestCLIEnvironment(s.T(), testIO, printer.DefaultColorPrinter())
 
 	for _, tt := range tests {
-		tt := tt
 		for chartName := range common.ChartTemplates {
 			s.Run(fmt.Sprintf("%s-rhacs-%t-flavorProvided-%t-image-defaults-%s", chartName, tt.rhacs, tt.flavorProvided, tt.flavor), func() {
 				outputDir := s.T().TempDir()

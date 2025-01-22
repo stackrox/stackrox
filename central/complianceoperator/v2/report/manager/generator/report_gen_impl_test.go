@@ -5,8 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager/sender"
-
 	"github.com/pkg/errors"
 	checkResultsMocks "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/mocks"
 	profileMocks "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore/mocks"
@@ -14,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/complianceoperator/v2/report"
 	snapshotMocks "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore/mocks"
 	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager/generator/mocks"
+	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager/sender"
 	ruleMocks "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore/mocks"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/generated/storage"

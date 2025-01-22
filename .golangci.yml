@@ -153,6 +153,7 @@ linters:
   enable:
     - asciicheck
     # - bodyclose
+    - copyloopvar
     # - deadcode
     # - depguard
     # - dogsled
@@ -164,7 +165,6 @@ linters:
     # - gochecknoinits
     # - gocognit
     # - goconst
-    - exportloopref
     - gocritic
     # - gocyclo
     # - godot

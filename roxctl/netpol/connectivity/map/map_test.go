@@ -169,7 +169,6 @@ func (d *connectivityMapTestSuite) TestAnalyzeNetpol() {
 	}
 
 	for name, tt := range cases {
-		tt := tt
 		d.Run(name, func() {
 			env, _, _ := mocks.NewEnvWithConn(nil, d.T())
 			analyzeNetpolCmd := Cmd{
