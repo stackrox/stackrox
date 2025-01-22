@@ -316,12 +316,14 @@ func (c *nodeInventoryHandlerImpl) sendNodeIndex(toC chan<- *message.ExpiringMes
 			metrics.ObserveReceivedNodeIndex(indexWrap.NodeName) // keeping for compatibility with 4.6. Remove in 4.8
 			metrics.ObserveNodeScan(indexWrap.NodeName, metrics.NodeScanTypeNodeIndex, metrics.NodeScanOperationSendToCentral)
 		}()
+		log.Debugf("executing default switch-branch in sendNodeIndex")
 		irWrapperFunc := noop
 		if isRHCOS {
 			log.Debugf("Attaching OCI entry for 'rhcos' to index-report: version=%s", version)
 			irWrapperFunc = attachRPMtoRHCOS
 		}
-		toC <- message.New(&central.MsgFromSensor{
+		log.Debugf("building a message to central")
+		msg := message.New(&central.MsgFromSensor{
 			Msg: &central.MsgFromSensor_Event{
 				Event: &central.SensorEvent{
 					Id: indexWrap.NodeID,
@@ -334,6 +336,9 @@ func (c *nodeInventoryHandlerImpl) sendNodeIndex(toC chan<- *message.ExpiringMes
 				},
 			},
 		})
+		log.Debugf("sending the message to central (toC <- msg)")
+		toC <- msg
+		log.Debugf("DONE sending the message to central (toC <- msg)")
 	}
 }
 
