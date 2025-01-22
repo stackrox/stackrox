@@ -161,3 +161,21 @@ tests:
                 - istio-system
       expect: |
         .validatingwebhookconfigurations[].webhooks[].namespaceSelector.matchExpressions | assertThat(length == 2)
+
+- name: "Admission Controller Failure Policy"
+  tests:
+    - name: "default failure policy ignore"
+      values:
+        admissionControl:
+          listenOnCreates: true
+          listenOnEvents: false
+      expect: |
+        .validatingwebhookconfigurations[].webhooks[].failurePolicy | assertThat(. == "Ignore")
+    - name: "override failurePolicy to fail"
+      values:
+        admissionControl:
+          listenOnCreates: true
+          listenOnEvents: false
+          failurePolicy: "Fail"
+      expect: |
+        .validatingwebhookconfigurations[].webhooks[].failurePolicy | assertThat(. == "Fail")

@@ -307,6 +307,10 @@
 #    cert: null
 #    key: null
 #
+#  # Failure Policy from the admission configuration
+#  # Available values: Ignore|Fail
+#  failurePolicy: Ignore
+#
 ## Collector specific configuration.
 #collector:
 #
