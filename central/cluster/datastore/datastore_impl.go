@@ -921,7 +921,7 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 			}
 		}
 
-		if !sensorCapabilitiesChanged(cluster, hello) &&
+		if sensorCapabilitiesEqual(cluster, hello) &&
 			cluster.GetInitBundleId() == registrantID &&
 			cluster.GetHelmConfig().GetConfigFingerprint() == helmConfig.GetClusterConfig().GetConfigFingerprint() &&
 			cluster.GetManagedBy() == manager {
@@ -962,20 +962,8 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 	return cluster, nil
 }
 
-func sensorCapabilitiesChanged(cluster *storage.Cluster, hello *central.SensorHello) bool {
-	storedCapabilities := cluster.GetSensorCapabilities()
-	storedSet := set.Set[string]{}
-	if storedCapabilities != nil {
-		storedSet.AddAll(storedCapabilities...)
-	}
-
-	newCapabilities := hello.GetCapabilities()
-	newSet := set.Set[string]{}
-	if newCapabilities != nil {
-		newSet.AddAll(newCapabilities...)
-	}
-
-	return !storedSet.Equal(newSet)
+func sensorCapabilitiesEqual(cluster *storage.Cluster, hello *central.SensorHello) bool {
+	return set.NewSet(cluster.GetSensorCapabilities()...).Equal(set.NewSet(hello.GetCapabilities()...))
 }
 
 func normalizeCluster(cluster *storage.Cluster) error {
