@@ -15,11 +15,13 @@ import {
 } from '@patternfly/react-topology';
 
 import { networkBasePath } from 'routePaths';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
 import useFetchDeploymentCount from 'hooks/useFetchDeploymentCount';
 import DeploymentSideBar from './deployment/DeploymentSideBar';
 import NamespaceSideBar from './namespace/NamespaceSideBar';
 import GenericEntitiesSideBar from './genericEntities/GenericEntitiesSideBar';
+import ExternalEntitiesSideBar from './external/ExternalEntitiesSideBar';
 import ExternalGroupSideBar from './external/ExternalGroupSideBar';
 import NetworkPolicySimulatorSidePanel, {
     clearSimulationQuery,
@@ -82,6 +84,9 @@ const TopologyComponent = ({
     edgeState,
     scopeHierarchy,
 }: TopologyComponentProps) => {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isExternalIpsEnabled = isFeatureFlagEnabled('ROX_EXTERNAL_IPS');
+
     const { hasReadAccess } = usePermissions();
     const hasReadAccessForNetworkPolicy = hasReadAccess('NetworkPolicy');
 
@@ -238,18 +243,28 @@ const TopologyComponent = ({
                             flowTableLabel="Cidr block flows"
                         />
                     )}
-                    {selectedNode && isNodeOfType('EXTERNAL_ENTITIES', selectedNode) && (
-                        <GenericEntitiesSideBar
-                            labelledById={labelledById}
-                            id={selectedNode.id}
-                            nodes={model?.nodes || []}
-                            edges={model?.edges || []}
-                            onNodeSelect={onNodeSelect}
-                            EntityHeaderIcon={<ExternalEntitiesIcon />}
-                            sidebarTitle={'Connected Entities Outside Your Cluster'}
-                            flowTableLabel="External entities flows"
-                        />
-                    )}
+                    {selectedNode &&
+                        isNodeOfType('EXTERNAL_ENTITIES', selectedNode) &&
+                        (isExternalIpsEnabled ? (
+                            <ExternalEntitiesSideBar
+                                labelledById={labelledById}
+                                id={selectedNode.id}
+                                nodes={model?.nodes || []}
+                                edges={model?.edges || []}
+                                onNodeSelect={onNodeSelect}
+                            />
+                        ) : (
+                            <GenericEntitiesSideBar
+                                labelledById={labelledById}
+                                id={selectedNode.id}
+                                nodes={model?.nodes || []}
+                                edges={model?.edges || []}
+                                onNodeSelect={onNodeSelect}
+                                EntityHeaderIcon={<ExternalEntitiesIcon />}
+                                sidebarTitle={'Connected entities outside your cluster'}
+                                flowTableLabel="External entities flows"
+                            />
+                        ))}
                     {selectedNode && isNodeOfType('INTERNAL_ENTITIES', selectedNode) && (
                         <GenericEntitiesSideBar
                             labelledById={labelledById}
