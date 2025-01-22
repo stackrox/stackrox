@@ -360,14 +360,14 @@ func noop(_ string, rpm *v4.IndexReport) *v4.IndexReport {
 	return rpm
 }
 
-func idOK[T any](m map[string]T, id int) bool {
+func idTaken[T any](m map[string]T, id int) bool {
 	_, exists := m[strconv.Itoa(id)]
 	return exists
 }
 
 func attachRPMtoRHCOS(version string, rpm *v4.IndexReport) *v4.IndexReport {
 	idCandidate := 600 // Arbitrary selected. RHCOS has usually 520-560 rpm packages.
-	for !idOK(rpm.GetContents().GetEnvironments(), idCandidate) {
+	for idTaken(rpm.GetContents().GetEnvironments(), idCandidate) {
 		idCandidate++
 	}
 	strID := strconv.Itoa(idCandidate)
