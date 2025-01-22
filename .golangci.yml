@@ -2,6 +2,7 @@ run:
   timeout: 240m
   build-tags:
   - integration
+  - scanner_db_integration
   - sql_integration
   - test_e2e
   modules-download-mode: readonly
