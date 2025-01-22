@@ -36,7 +36,6 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - `ROX_NODE_INDEX_CONTAINER_API` is no longer a valid environment variable to set in the Compliance pod.
   - The node scanner never reached out to the Red Hat Container Catalog, so this variable was never used.
 - ROX-27253: Scanner V4 now reads [Red Hat's CSAF data](https://security.access.redhat.com/data/csaf/v2/advisories/) to alleviate inconsistent Red Hat advisory (RHSA/RHBA/RHEA) data.
-  - This may add extra data into Scanner V4 versions which cannot utilize this data, but this not expected to be a noticeable change in storage usage.
 
 ## [4.6.0]
 

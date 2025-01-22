@@ -501,7 +501,11 @@ func toProtoV4VulnerabilitiesMap(
 				description = nvdVuln.Descriptions[0].Value
 			}
 		}
-		issued := issuedTime(advisory.ReleaseDate, v.Issued, nvdVuln.Published)
+		vulnPublished := v.Issued
+		if advisoryExists {
+			vulnPublished = advisory.ReleaseDate
+		}
+		issued := issuedTime(vulnPublished, nvdVuln.Published)
 		if issued == nil {
 			zlog.Warn(ctx).
 				Str("vuln_id", v.ID).
@@ -546,17 +550,14 @@ func toProtoV4VulnerabilitiesMap(
 }
 
 // issuedTime attempts to return the issued time for the vulnerability.
-// If ccTime is non-zero, that time is preferred. Otherwise, if the nvdTime is populated, then use that.
+// If issued is non-zero, that time is preferred. Otherwise, if the nvdIssued is populated, then use that.
 // Otherwise, return nil.
-func issuedTime(advisoryTime, ccTime time.Time, nvdTime string) *timestamppb.Timestamp {
-	if !advisoryTime.IsZero() {
-		return protocompat.ConvertTimeToTimestampOrNil(&advisoryTime)
+func issuedTime(issued time.Time, nvdIssued string) *timestamppb.Timestamp {
+	if !issued.IsZero() {
+		return protocompat.ConvertTimeToTimestampOrNil(&issued)
 	}
-	if !ccTime.IsZero() {
-		return protocompat.ConvertTimeToTimestampOrNil(&ccTime)
-	}
-	if nvdTime != "" {
-		return protoconv.ConvertTimeString(nvdTime)
+	if nvdIssued != "" {
+		return protoconv.ConvertTimeString(nvdIssued)
 	}
 
 	return nil
@@ -802,12 +803,18 @@ func redhatCSAFAdvisories(ctx context.Context, enrichments map[string][]json.Raw
 	// There is only one record per ID, so remove the slice.
 	ret := make(map[string]csaf.Record)
 	for id, records := range items {
+		if len(records) != 1 {
+			zlog.Warn(ctx).Str("vuln_id", id).Msgf("unexpected number of CSAF enrichment records than expected (%d != 1)", len(records))
+		}
 		if len(records) == 0 {
-			// Unexpected, but ok...
+			// Unexpected, but ok... Ignore this.
 			continue
 		}
-		if len(records) > 1 {
-			zlog.Warn(ctx).Str("vuln_id", id).Msgf("more CSAF enrichment records than expected (%d != 1)", len(records))
+		record := records[0]
+		if record.Name == "" {
+			// Unexpected, but ok... Ignore this.
+			zlog.Warn(ctx).Str("vuln_id", id).Msg("advisory incomplete")
+			continue
 		}
 		ret[id] = records[0]
 	}
@@ -914,6 +921,7 @@ func cvssMetrics(_ context.Context, vuln *claircore.Vulnerability, vulnName stri
 		if advisory.Name == "" {
 			preferredCVSS, preferredErr = vulnCVSS(vuln, v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT)
 		} else {
+			// TODO(ROX-26462): add CVSS v4 support.
 			preferredCVSS = toCVSS(cvssValues{
 				v2Vector: advisory.CVSSv2.Vector,
 				v2Score:  advisory.CVSSv2.Score,
