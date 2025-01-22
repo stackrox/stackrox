@@ -311,7 +311,7 @@ class NetworkFlowTest extends BaseSpecification {
     def "Verify ports are greater than 0"() {
         given:
         "ACS is running"
-        def graph = NetworkGraphService.getNetworkGraph(null, null)
+        def graph = NetworkGraphService.getNetworkGraph(null, null, null)
         def nodes = graph.nodesList
 
         nodes.each { node ->
@@ -412,7 +412,7 @@ class NetworkFlowTest extends BaseSpecification {
 
         when:
         "Network graph is filtered on \"#filter\" and scoped to \"#scope\""
-        def graph = NetworkGraphService.getNetworkGraph(null, filter, scope)
+        def graph = NetworkGraphService.getNetworkGraph(null, null, filter, scope)
 
         then:
         "Network graph #desc"
@@ -718,7 +718,7 @@ class NetworkFlowTest extends BaseSpecification {
         given:
         "Get current state of edges and current timestamp"
         def queryString = "Deployment:" + deployments.name.join(",")
-        NetworkGraph currentGraph = NetworkGraphService.getNetworkGraph(null, queryString)
+        NetworkGraph currentGraph = NetworkGraphService.getNetworkGraph(null, null, queryString)
         long currentTime = System.currentTimeMillis()
 
         expect:

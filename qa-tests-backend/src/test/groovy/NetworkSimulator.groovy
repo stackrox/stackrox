@@ -391,7 +391,7 @@ class NetworkSimulator extends BaseSpecification {
                 .addIngressNamespaceSelector()
         orchestrator.applyNetworkPolicy(policy2)
         assert NetworkPolicyService.waitForNetworkPolicy(policy2.uid)
-        def baseline = NetworkGraphService.getNetworkGraph(null, scope)
+        def baseline = NetworkGraphService.getNetworkGraph(null, null, scope)
 
         and:
         "compile list of to delete policies"
