@@ -248,14 +248,15 @@ func TestRegistryStore_GlobalStore(t *testing.T) {
 
 		regStore := NewRegistryStore(alwaysInsecureCheckTLS)
 
-		_, err := regStore.GetGlobalRegistry(fakeImgName)
+		regs, err := regStore.GetGlobalRegistries(fakeImgName)
+		require.Empty(t, regs)
 		require.Error(t, err, "error is expected on empty store")
 
 		regStore.UpsertSecret(openshiftConfigNamespace, openshiftConfigPullSecret, dc, "")
-		reg, err := regStore.GetGlobalRegistry(fakeImgName)
+		regs, err = regStore.GetGlobalRegistries(fakeImgName)
 		require.NoError(t, err, "should be no error on valid get")
-		assert.NotNil(t, reg)
-		assert.Equal(t, reg.Config(bgCtx).Username, dce.Username)
+		assert.NotNil(t, regs)
+		assert.Equal(t, regs[0].Config(bgCtx).Username, dce.Username)
 
 		return regStore
 	}
@@ -517,7 +518,7 @@ func TestDataRaceAtCleanup(t *testing.T) {
 					regStore.getRegistries(fakeNamespace)
 					regStore.IsLocal(&storage.ImageName{})
 					regStore.GetCentralRegistries(&storage.ImageName{})
-					_, _ = regStore.GetGlobalRegistry(&storage.ImageName{})
+					_, _ = regStore.GetGlobalRegistries(&storage.ImageName{})
 				}
 			}
 		}()

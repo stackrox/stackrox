@@ -175,20 +175,20 @@ func (rs *Store) getRegistries(namespace string) registries.Set {
 	return regs
 }
 
-func createImageIntegration(registry string, dce config.DockerConfigEntry, name string) *storage.ImageIntegration {
+func createImageIntegration(endpoint string, dce config.DockerConfigEntry, name string) *storage.ImageIntegration {
 	registryType := types.DockerType
-	if rhelFactory.RedHatRegistryEndpoints.Contains(urlfmt.TrimHTTPPrefixes(registry)) {
+	if rhelFactory.RedHatRegistryEndpoints.Contains(urlfmt.TrimHTTPPrefixes(endpoint)) {
 		registryType = types.RedHatType
 	}
 
 	return &storage.ImageIntegration{
-		Id:         registry,
+		Id:         name,
 		Name:       name,
 		Type:       registryType,
 		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
 		IntegrationConfig: &storage.ImageIntegration_Docker{
 			Docker: &storage.DockerConfig{
-				Endpoint: registry,
+				Endpoint: endpoint,
 				Username: dce.Username,
 				Password: dce.Password,
 			},
@@ -215,15 +215,10 @@ func genIntegrationName(prefix, namespace, secretName, registry string) string {
 }
 
 // upsertRegistry upserts the given registry with the given credentials in the given namespace into the store.
-func (rs *Store) upsertRegistry(namespace, registry string, dce config.DockerConfigEntry) error {
+func (rs *Store) upsertRegistry(namespace, registry, endpoint string, dce config.DockerConfigEntry) error {
 	regs := rs.getRegistries(namespace)
-
-	// remove http/https prefixes from registry, matching may fail otherwise, the created registry.url will have
-	// the appropriate prefix
-	registry = urlfmt.TrimHTTPPrefixes(registry)
 	name := genIntegrationName(pullSecretNamePrefix, namespace, "", registry)
-
-	ii := createImageIntegration(registry, dce, name)
+	ii := createImageIntegration(endpoint, dce, name)
 	inserted, err := regs.UpdateImageIntegration(ii)
 	if err != nil {
 		return errors.Wrapf(err, "updating registry store with registry %q", registry)
@@ -267,10 +262,9 @@ func (rs *Store) getRegistryForImageInNamespace(image *storage.ImageName, namesp
 }
 
 // upsertGlobalRegistry will store a new registry with the given credentials into the global registry store.
-func (rs *Store) upsertGlobalRegistry(registry string, dce config.DockerConfigEntry) error {
-	var err error
+func (rs *Store) upsertGlobalRegistry(registry, endpoint string, dce config.DockerConfigEntry) error {
 	name := genIntegrationName(globalRegNamePrefix, "", "", registry)
-	_, err = rs.globalRegistries.UpdateImageIntegration(createImageIntegration(registry, dce, name))
+	_, err := rs.globalRegistries.UpdateImageIntegration(createImageIntegration(endpoint, dce, name))
 	if err != nil {
 		return errors.Wrapf(err, "updating registry store with registry %q", registry)
 	}
@@ -282,18 +276,21 @@ func (rs *Store) upsertGlobalRegistry(registry string, dce config.DockerConfigEn
 	return nil
 }
 
-// GetGlobalRegistry returns the relevant global registry for image.
+// GetGlobalRegistries returns the relevant global registry for image.
 //
 // An error is returned if the registry is unknown.
-func (rs *Store) GetGlobalRegistry(image *storage.ImageName) (types.ImageRegistry, error) {
+func (rs *Store) GetGlobalRegistries(image *storage.ImageName) ([]types.ImageRegistry, error) {
 	reg := image.GetRegistry()
-	regs := rs.globalRegistries
-	if regs != nil {
-		for _, r := range regs.GetAll() {
+	matchedRegs := []types.ImageRegistry{}
+	if rs.globalRegistries != nil {
+		for _, r := range rs.globalRegistries.GetAll() {
 			if r.Config(bgContext).GetRegistryHostname() == reg {
-				return r, nil
+				matchedRegs = append(matchedRegs, r)
 			}
 		}
+	}
+	if len(matchedRegs) > 0 {
+		return matchedRegs, nil
 	}
 
 	return nil, errors.Errorf("unknown image registry: %q", reg)
@@ -316,7 +313,7 @@ func (rs *Store) IsLocal(image *storage.ImageName) bool {
 	}
 
 	if rs.hasClusterLocalRegistryHost(image.GetRegistry()) {
-		// This host is always cluster local irregardless of the DelegatedRegistryConfig (ie: OCP internal registry).
+		// This host is always cluster local regardless of the DelegatedRegistryConfig (ie: OCP internal registry).
 		return true
 	}
 
@@ -349,13 +346,11 @@ func (rs *Store) IsLocal(image *storage.ImageName) bool {
 // registries that are only accessible from this cluster. These hosts will be factored
 // into IsLocal decisions. Is OK to call repeatedly for the same host.
 func (rs *Store) addClusterLocalRegistryHost(host string) {
-	trimmed := urlfmt.TrimHTTPPrefixes(host)
-
 	rs.clusterLocalRegistryHostsMutex.Lock()
 	defer rs.clusterLocalRegistryHostsMutex.Unlock()
 
-	if rs.clusterLocalRegistryHosts.Add(trimmed) {
-		log.Infof("Added cluster local registry host %q", trimmed)
+	if rs.clusterLocalRegistryHosts.Add(host) {
+		log.Infof("Added cluster local registry host %q", host)
 
 		metrics.SetClusterLocalHostsCount(len(rs.clusterLocalRegistryHosts))
 	}
@@ -430,15 +425,20 @@ func (rs *Store) upsertSecretByHost(namespace, secretName string, dockerConfig c
 	// OpenShift Container Registry, which is an internal image registry.
 	fromDefaultSA := serviceAcctName == defaultSA
 
-	for registryAddress, dce := range dockerConfig {
-		registryAddr := strings.TrimSpace(registryAddress)
+	for registryRecord, dce := range dockerConfig {
+		// Remove http/https prefixes and path from registry, matching may fail otherwise.
+		// The created registry.url will have the appropriate prefix.
+		registry := strings.TrimSpace(registryRecord)
+		endpoint := urlfmt.GetServerFromURL(
+			urlfmt.FormatURL(registry, urlfmt.HTTPS, urlfmt.NoTrailingSlash),
+		)
 
 		if fromDefaultSA {
 			// Registries found in the `dockercfg` secret associated with the `default`
 			// service account are assumed to reference the OCP internal registry.
-			rs.addClusterLocalRegistryHost(registryAddr)
-			if err := rs.upsertRegistry(namespace, registryAddr, dce); err != nil {
-				log.Errorf("Unable to upsert registry %q into store: %v", registryAddr, err)
+			rs.addClusterLocalRegistryHost(endpoint)
+			if err := rs.upsertRegistry(namespace, registry, endpoint, dce); err != nil {
+				log.Errorf("Unable to upsert registry %q into store: %v", registry, err)
 			}
 			continue
 		}
@@ -457,12 +457,12 @@ func (rs *Store) upsertSecretByHost(namespace, secretName string, dockerConfig c
 
 		var err error
 		if isGlobalPullSecret {
-			err = rs.upsertGlobalRegistry(registryAddr, dce)
+			err = rs.upsertGlobalRegistry(registry, endpoint, dce)
 		} else {
-			err = rs.upsertRegistry(namespace, registryAddr, dce)
+			err = rs.upsertRegistry(namespace, registry, endpoint, dce)
 		}
 		if err != nil {
-			log.Errorf("unable to upsert registry %q into store: %v", registryAddr, err)
+			log.Errorf("unable to upsert registry %q into store: %v", registry, err)
 		}
 	}
 }
@@ -479,14 +479,19 @@ func (rs *Store) upsertSecretByName(namespace, secretName string, dockerConfig c
 	rs.storeMutux.Lock()
 	defer rs.storeMutux.Unlock()
 
-	for registryAddress, dce := range dockerConfig {
-		registryAddr := strings.TrimSpace(registryAddress)
+	for registryRecord, dce := range dockerConfig {
+		// Remove http/https prefixes and path from registry, matching may fail otherwise.
+		// The created registry.url will have the appropriate prefix.
+		registry := strings.TrimSpace(registryRecord)
+		endpoint := urlfmt.GetServerFromURL(
+			urlfmt.FormatURL(registry, urlfmt.HTTPS, urlfmt.NoTrailingSlash),
+		)
 
 		if hasBoundServiceAccount {
 			// Registries found in any `dockercfg` secret bound a service account
 			// are assumed to reference the OCP internal registry.
-			rs.upsertPullSecretByNameNoLock(namespace, secretName, registryAddr, dce)
-			rs.addClusterLocalRegistryHost(registryAddr)
+			rs.upsertPullSecretByNameNoLock(namespace, secretName, registry, endpoint, dce)
+			rs.addClusterLocalRegistryHost(endpoint)
 			continue
 		}
 
@@ -497,28 +502,26 @@ func (rs *Store) upsertSecretByName(namespace, secretName string, dockerConfig c
 		}
 
 		if isGlobalPullSecret {
-			if err := rs.upsertGlobalRegistry(registryAddr, dce); err != nil {
-				log.Errorf("Upserting global registry for pull secret %q, namespace %q, address %q: %v", secretName, namespace, registryAddr, err)
+			if err := rs.upsertGlobalRegistry(registry, endpoint, dce); err != nil {
+				log.Errorf("Upserting global registry for pull secret %q, namespace %q, registry %q, address %q: %v", secretName, namespace, registry, endpoint, err)
 			}
 		}
 
 		// Regardless if this secret is the global pull secret, we still store it
 		// in case there is a workload that directly references it by name.
-		rs.upsertPullSecretByNameNoLock(namespace, secretName, registryAddr, dce)
+		rs.upsertPullSecretByNameNoLock(namespace, secretName, registry, endpoint, dce)
 	}
 
 	log.Debugf("Upserted %d entries from secret %q in namespace %q", len(dockerConfig), secretName, namespace)
 }
 
-func (rs *Store) upsertPullSecretByNameNoLock(namespace, secretName, registryAddr string, dce config.DockerConfigEntry) {
-	registryAddr = urlfmt.TrimHTTPPrefixes(registryAddr)
-
-	name := genIntegrationName(pullSecretNamePrefix, namespace, secretName, registryAddr)
-	ii := createImageIntegration(registryAddr, dce, name)
+func (rs *Store) upsertPullSecretByNameNoLock(namespace, secretName, registry, endpoint string, dce config.DockerConfigEntry) {
+	name := genIntegrationName(pullSecretNamePrefix, namespace, secretName, registry)
+	ii := createImageIntegration(endpoint, dce, name)
 
 	reg, err := rs.factory.CreateRegistry(ii, types.WithGCPTokenManager(gcp.Singleton()))
 	if err != nil {
-		log.Errorf("Creating registry for pull secret %q, namespace %q, address %q: %v", secretName, namespace, registryAddr, err)
+		log.Errorf("Creating registry for pull secret %q, namespace %q, registry %q, address %q: %v", secretName, namespace, registry, endpoint, err)
 		return
 	}
 
@@ -534,7 +537,7 @@ func (rs *Store) upsertPullSecretByNameNoLock(namespace, secretName, registryAdd
 		secretNameToHost[secretName] = hostToRegistry
 	}
 
-	oldreg, ok := hostToRegistry[registryAddr]
+	oldreg, ok := hostToRegistry[registry]
 	if !ok {
 		metrics.IncrementPullSecretEntriesCount(1)
 		metrics.IncrementPullSecretEntriesSize(reg.Source().SizeVT())
@@ -543,7 +546,7 @@ func (rs *Store) upsertPullSecretByNameNoLock(namespace, secretName, registryAdd
 		metrics.IncrementPullSecretEntriesSize(reg.Source().SizeVT() - oldreg.Source().SizeVT())
 	}
 
-	hostToRegistry[registryAddr] = reg
+	hostToRegistry[registry] = reg
 }
 
 // DeleteSecret returns true when a secret is deleted from the store, false otherwise.
