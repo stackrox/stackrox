@@ -34,6 +34,13 @@ is stated below:
 
 [A change](https://github.com/stackrox/stackrox/pull/13559) to alleviate this concern has already been merged and ported to the 4.6.1 release.
 This change definitely improves the situation (the score can only increase and never decrease), but it's not perfect, as the score can still change.
+One example of how this may happen follows:
+
+* A package in an image is affected by some vulnerability, CVE-2025-1234, which is resolved by RHSA-2025:1234. This CVE
+  has a severity of `Important`, so StackRox Central will store RHSA-2025:1234 with severity `Important`.
+* The same package in a different image is affected by a different vulnerability, CVE-2025-12345, which is resolved by
+  RHSA-2025:1234, as well. This CVE has a severity of `Moderate`, so StackRox Central will now overwrite the severity
+  it previously stored for RHSA-2025:1234 with the new one, `Moderate`.
 
 ## Decision
 
