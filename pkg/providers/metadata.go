@@ -37,7 +37,7 @@ func GetMetadata(ctx context.Context) *storage.ProviderMetadata {
 	errors.AddWrap(err, "Azure")
 
 	if err := errors.ToError(); err != nil {
-		log.Warn(err)
+		log.Warn(err.Error())
 	}
 
 	return nil
