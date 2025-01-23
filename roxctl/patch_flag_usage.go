@@ -1,13 +1,15 @@
 package main
 
 import (
+	"strings"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
 func processFlag(flag *pflag.Flag) {
 	if flag.Value.Type() == "bool" && flag.DefValue == "false" && flag.Name != "help" {
-		flag.Usage += " (default false)"
+		flag.Usage = strings.TrimSuffix(flag.Usage, ".") + " (default false)."
 	}
 }
 
