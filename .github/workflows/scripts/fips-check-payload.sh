@@ -15,28 +15,30 @@ set -x
 GITHUB_STEP_SUMMARY=${GITHUB_STEP_SUMMARY:-/dev/null}
 
 image_prefix="${1:-}"
-default_image_prefix='brew.registry.redhat.io/rh-osbs/rhacs'
+#default_image_prefix='brew.registry.redhat.io/rh-osbs/rhacs'
 #default_image_prefix='registry.redhat.io/advanced-cluster-security/rhacs'
+default_image_prefix='quay.io/rhacs-eng'
 image_prefix="${image_prefix:-${default_image_prefix}}"
 
-image_match="${2:-\(bundle\|operator\|rhel8\|stackrox\)$}"
-version_match="${3:-^[^0-3]\.}"
-
+#image_match="${2:-\(bundle\|operator\|rhel8\|stackrox\)$}"
+image_match="${2:-^\(main\|collector\|scanner\|roxctl\|stackrox\)}"
+tag_match="${3:-^[^0-3]\.}"
+tag_match='g0bb5541ed3-fast$'
 
 
 function find_images() {
-  podman search --limit=100 "${1}" --format "{{.Name}}" \
+  podman search --limit=1000 "${1}" --format "{{.Name}}" \
     | tee >(cat >&2)
 }
 
 function latest_tags() {
-  local version_match=${1:-^[^0-3]\.}
+  local tag_match=${1:-^[^0-3]\.}
 
   while read -r image; do
     if [[ $image != "registry.redhat.io"* ]] && skopeo inspect --override-arch=amd64 --override-os=linux "docker://${image}" > inspect.json; then
       newest_tag=$(jq -r '.RepoTags|.[]' < inspect.json \
         | grep '^[0-9\.\-]*$' \
-        | grep "${version_match}" \
+        | grep "${tag_match}" \
         | sort -rV \
         | head -1)
     else
@@ -44,7 +46,7 @@ function latest_tags() {
         | tee inspect.json \
         | jq -r '.[]|.Tags|.[]' \
         | grep '^[0-9\.\-]*$' \
-        | grep "${version_match}" \
+        | grep "${tag_match}" \
         | sort -rV \
         | head -1)
       skopeo inspect --override-arch=amd64 --override-os=linux "docker://${image}:${newest_tag}" > inspect.json
@@ -95,5 +97,5 @@ function fips_scan() {
 
 find_images "${image_prefix}" \
   | grep "${image_match}" \
-  | latest_tags "${version_match}" \
+  | latest_tags "${tag_match}" \
   | fips_scan
