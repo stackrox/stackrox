@@ -86,6 +86,15 @@ message GetExternalNetworkFlowsResponse {
   repeated ExternalEntityFlowsMap entities_map = 1;
 }
 
+message ExternalNetworkFlowMetadata {
+  storage.NetworkEntityInfo entity = 1;
+  int32 flowsCount = 2;
+}
+
+message GetExternalNetworkFlowsMetadataResponse {
+  repeated ExternalNetworkFlowMetadata data = 1;
+}
+
 message PutNetworkGraphConfigRequest {
   storage.NetworkGraphConfig config = 1;
 }
@@ -101,6 +110,10 @@ service NetworkGraphService {
 
   rpc GetExternalNetworkFlows(GetExternalNetworkFlowsRequest) returns (GetExternalNetworkFlowsResponse) {
     option (google.api.http) = {get: "/v1/networkgraph/cluster/{cluster_id}/externalentities/flows"};
+  }
+
+  rpc GetExternalNetworkFlowsMetadata(GetExternalNetworkFlowsRequest) returns (GetExternalNetworkFlowsMetadataResponse) {
+    option (google.api.http) = {get: "/v1/networkgraph/cluster/{cluster_id}/externalentities/metadata"};
   }
 
   rpc CreateExternalNetworkEntity(CreateNetworkEntityRequest) returns (storage.NetworkEntity) {
