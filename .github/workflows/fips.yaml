@@ -1,4 +1,4 @@
-name: FIPS check-payload
+name: FIPS check-payloa
 on:
   pull_request:
     types:
@@ -9,17 +9,17 @@ on:
     inputs:
       image:
         description: 'The image to scan with check-payload'
-        default: 'brew.registry.redhat.io/rh-osbs/rhacs-main-rhel8'
+        default: 'quay.io/rhacs-eng/'
         required: true
         type: string
       image_match:
         description: 'Regex of image names to include'
-        default: '\(bundle\|operator\|rhel8\)$'
+        default: '^\(main\|collector\|scanner\|roxctl\|stackrox\)'
         required: false
         type: string
       tag_match:
         description: 'Regex of tags to include'
-        default: '^[^0-3]\.'
+        default: 'g0bb5541ed3-fast$'
         required: false
         type: string
 
@@ -34,10 +34,6 @@ env:
 jobs:
   check-payload:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        tag_match: [ '', '^4.5', '^4.4' ]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -106,4 +102,4 @@ jobs:
             fips-check-payload \
             "${{ github.event.inputs.image }}" \
             "${{ github.event.inputs.image_match }}" \
-            "${{ matrix.tag_match}}" \
+            "${{ github.event.inputs.tag_match}}" \
