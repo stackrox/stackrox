@@ -46,6 +46,7 @@ var (
 			v1.NetworkGraphService_GetNetworkGraph_FullMethodName,
 			v1.NetworkGraphService_GetExternalNetworkEntities_FullMethodName,
 			v1.NetworkGraphService_GetExternalNetworkFlows_FullMethodName,
+			v1.NetworkGraphService_GetExternalNetworkFlowsMetadata_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.NetworkGraph)): {
 			v1.NetworkGraphService_CreateExternalNetworkEntity_FullMethodName,
@@ -259,6 +260,147 @@ func (s *serviceImpl) GetExternalNetworkFlows(ctx context.Context, request *v1.G
 
 	return &v1.GetExternalNetworkFlowsResponse{
 		EntitiesMap: maps.Values(entityFlowMap),
+	}, nil
+}
+
+func (s *serviceImpl) GetExternalNetworkFlowsMetadata(ctx context.Context, request *v1.GetExternalNetworkFlowsRequest) (*v1.GetExternalNetworkFlowsMetadataResponse, error) {
+	deploymentQuery, _, err := networkgraph.GetFilterAndScopeQueries(request.GetClusterId(), request.GetQuery(), &v1.NetworkGraphScope{})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to construct filter and scope queries")
+	}
+
+	count, err := s.deployments.Count(ctx, deploymentQuery)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to count deployments")
+	}
+
+	if count > maxNumberOfDeploymentsInGraphEnv.IntegerSetting() {
+		log.Warnf("Number of deployments is too high to be rendered in Network Graph: %d", count)
+		return nil, errors.Errorf(
+			"number of deployments (%d) exceeds maximum allowed for Network Graph: %d",
+			count,
+			maxNumberOfDeploymentsInGraphEnv.IntegerSetting(),
+		)
+	}
+
+	deployments, err := s.deployments.SearchListDeployments(ctx, deploymentQuery)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to search list deployments")
+	}
+
+	// External sources should be shown only wrt to deployments.
+	if len(deployments) == 0 {
+		return &v1.GetExternalNetworkFlowsMetadataResponse{}, nil
+	}
+
+	networkFlowsChecker := networkGraphSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ClusterID(request.GetClusterId())
+	filteredDeployments := sac.FilterSlice(networkFlowsChecker, deployments, func(deployment *storage.ListDeployment) sac.ScopePredicate {
+		return sac.ScopeSuffix{sac.NamespaceScopeKey(deployment.GetNamespace())}
+	})
+	deploymentsWithFlows := objects.ListDeploymentsMapByID(filteredDeployments)
+	deploymentsMap := objects.ListDeploymentsMapByID(deployments)
+
+	// We can see all relevant flows if no deployments were filtered out in the previous step.
+	canSeeAllFlows := len(deploymentsMap) == len(deploymentsWithFlows)
+
+	// Temporarily elevate permissions to obtain all network flows in cluster.
+	networkGraphGenElevatedCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.NetworkGraph),
+			sac.ClusterScopeKeys(request.GetClusterId())))
+
+	flowStore, err := s.getFlowStore(networkGraphGenElevatedCtx, request.GetClusterId())
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get flow store")
+	}
+
+	// get entities that match the query to allow filtering by CIDR block
+	// and we can use this to filter flows later
+	matchingEntities, err := s.getEntitiesByQuery(ctx, request.GetClusterId(), request.GetQuery())
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get matching entities")
+	}
+
+	entityFilter := set.NewStringSet()
+	for _, entity := range matchingEntities {
+		entityFilter.Add(entity.GetInfo().GetId())
+	}
+
+	pred := func(props *storage.NetworkFlowProperties) bool {
+		src := props.GetSrcEntity()
+		dst := props.GetDstEntity()
+
+		if !networkgraph.AnyExternal(src, dst) && !networkgraph.AllExternal(src, dst) {
+			// only looking for external flows, and not external pairs
+			return false
+		}
+
+		if !networkgraph.AnyExternalInFilter(src, dst, entityFilter) {
+			return false
+		}
+
+		// If we cannot see all flows of all relevant deployments, filter out flows where we can't see network flows
+		// on both ends (this takes care of the relevant network flow filtering).
+		if !canSeeAllFlows {
+			if !networkgraph.AnyDeploymentInFilter(src, dst, deploymentsWithFlows) {
+				return false
+			}
+		}
+
+		return networkgraph.AnyDeploymentInFilter(src, dst, deploymentsMap)
+	}
+
+	since := protocompat.ConvertTimestampToTimeOrNil(request.GetSince())
+	flows, _, err := flowStore.GetMatchingFlows(networkGraphGenElevatedCtx, pred, since)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get matching flows")
+	}
+
+	networkTree := tree.NewMultiNetworkTree(
+		s.networkTreeMgr.GetReadOnlyNetworkTree(ctx, request.GetClusterId()),
+		s.networkTreeMgr.GetDefaultNetworkTree(ctx),
+	)
+
+	flows, _ = networkgraph.UpdateFlowsWithEntityDesc(flows, deploymentsMap,
+		func(id string) *storage.NetworkEntityInfo {
+			if networkTree == nil {
+				return nil
+			}
+			return networkTree.Get(id)
+		},
+	)
+
+	entityMeta := make(map[string]*v1.ExternalNetworkFlowMetadata, 0)
+	for _, flow := range flows {
+		props := flow.GetProps()
+		src, dst := props.GetSrcEntity(), props.GetDstEntity()
+
+		if src.GetType() == storage.NetworkEntityInfo_EXTERNAL_SOURCE {
+			if m, ok := entityMeta[src.GetId()]; ok {
+				m.FlowsCount++
+			} else {
+				entityMeta[src.GetId()] = &v1.ExternalNetworkFlowMetadata{
+					Entity:     src,
+					FlowsCount: 1,
+				}
+			}
+		}
+
+		if dst.GetType() == storage.NetworkEntityInfo_EXTERNAL_SOURCE {
+			if m, ok := entityMeta[dst.GetId()]; ok {
+				m.FlowsCount++
+			} else {
+				entityMeta[dst.GetId()] = &v1.ExternalNetworkFlowMetadata{
+					Entity:     dst,
+					FlowsCount: 1,
+				}
+			}
+		}
+	}
+
+	return &v1.GetExternalNetworkFlowsMetadataResponse{
+		Data: maps.Values(entityMeta),
 	}, nil
 }
 

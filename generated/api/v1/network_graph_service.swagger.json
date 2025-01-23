@@ -192,6 +192,49 @@
         ]
       }
     },
+    "/v1/networkgraph/cluster/{clusterId}/externalentities/metadata": {
+      "get": {
+        "operationId": "NetworkGraphService_GetExternalNetworkFlowsMetadata",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetExternalNetworkFlowsMetadataResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "clusterId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "since",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          }
+        ],
+        "tags": [
+          "NetworkGraphService"
+        ]
+      }
+    },
     "/v1/networkgraph/config": {
       "get": {
         "operationId": "NetworkGraphService_GetNetworkGraphConfig",
@@ -540,6 +583,18 @@
         }
       }
     },
+    "v1ExternalNetworkFlowMetadata": {
+      "type": "object",
+      "properties": {
+        "entity": {
+          "$ref": "#/definitions/storageNetworkEntityInfo"
+        },
+        "flowsCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
     "v1GetExternalNetworkEntitiesResponse": {
       "type": "object",
       "properties": {
@@ -548,6 +603,18 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageNetworkEntity"
+          }
+        }
+      }
+    },
+    "v1GetExternalNetworkFlowsMetadataResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1ExternalNetworkFlowMetadata"
           }
         }
       }
