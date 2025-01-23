@@ -11,6 +11,10 @@ import (
 )
 
 func enumEquality(columnName string, enumValues []int32) (WhereClause, error) {
+	if len(enumValues) == 0 {
+		return WhereClause{}, fmt.Errorf("missing values for %q", columnName)
+	}
+
 	var queries []string
 	var values []interface{}
 	for _, s := range enumValues {
@@ -21,8 +25,12 @@ func enumEquality(columnName string, enumValues []int32) (WhereClause, error) {
 		queries = append(queries, entry.Query)
 		values = append(values, entry.Values...)
 	}
+	query := queries[0]
+	if len(queries) > 1 {
+		query = fmt.Sprintf("%s IN (%s$$)", columnName, strings.Join(make([]string, len(queries)), "$$, "))
+	}
 	return WhereClause{
-		Query:  strings.Join(queries, " or "),
+		Query:  query,
 		Values: values,
 		equivalentGoFunc: func(foundValue interface{}) bool {
 			asInt := int32(foundValue.(int))
