@@ -528,11 +528,16 @@ func combineDisjunction(entries []*pgsearch.QueryEntry) *pgsearch.QueryEntry {
 		return entries[0]
 	}
 
+	exactQuerySuffix := " = $$"
+
 	seenQueries := set.StringSet{}
 	seenSelectFields := set.StringSet{}
 	values := make([]any, 0, len(entries))
 	for _, entry := range entries {
-		if entry.Having != nil || len(entry.GroupBy) != 0 || len(entry.Where.Values) != 1 {
+		if entry.Having != nil ||
+			len(entry.GroupBy) != 0 ||
+			len(entry.Where.Values) != 1 ||
+			!strings.HasSuffix(entry.Where.Query, exactQuerySuffix) {
 			return combineQueryEntries(entries, " or ")
 		}
 		for _, selectedField := range entry.SelectedFields {
@@ -547,7 +552,7 @@ func combineDisjunction(entries []*pgsearch.QueryEntry) *pgsearch.QueryEntry {
 	}
 
 	where := seenQueries.GetArbitraryElem()
-	where = where[:len(where)-len(" = $$")]
+	where = strings.TrimSuffix(where, exactQuerySuffix)
 
 	return &pgsearch.QueryEntry{
 		Where: pgsearch.WhereClause{

@@ -509,6 +509,14 @@ func TestSelectQueries(t *testing.T) {
 			expectedQuery: "select deployments.Name as deployment from deployments where deployments.Name = $1",
 		},
 		{
+			desc: "base schema; select w/ regexes",
+			q: search.NewQueryBuilder().
+				AddSelectFields(search.NewQuerySelect(search.DeploymentName)).
+				AddRegexes(search.DeploymentName, "A", "B").ProtoQuery(),
+			schema:        deploymentBaseSchema,
+			expectedQuery: "select deployments.Name as deployment from deployments where (deployments.Name ~* $1 or deployments.Name ~* $2)",
+		},
+		{
 			desc: "child schema; multiple select w/ where",
 			q: search.NewQueryBuilder().
 				AddSelectFields(
