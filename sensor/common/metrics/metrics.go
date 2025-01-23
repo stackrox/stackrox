@@ -1,6 +1,9 @@
 package metrics
 
 import (
+	"reflect"
+	"strings"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/branding"
@@ -286,21 +289,21 @@ var (
 		[]string{"central_id", "hosting", "install_method", "sensor_id"},
 	)
 
-	// responsesChannelSize a gauge to track the responses channel size
-	responsesChannelSize = prometheus.NewGauge(prometheus.GaugeOpts{
+	// responsesChannelOperationCount a counter to track the operations in the responses channel
+	responsesChannelOperationCount = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "responses_channel_size",
-		Help:      "A gauge to track the responses channel size",
-	})
+		Name:      "num_messages_waiting_for_transmission_to_central",
+		Help:      "A counter that tracks the operations in the responses channel",
+	}, []string{"Operation"})
 
 	// responsesChannelDroppedCount keeps track of the number of messages dropped in the responses channel.
-	responsesChannelDroppedCount = prometheus.NewCounter(prometheus.CounterOpts{
+	responsesChannelDroppedCount = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "responses_channel_dropped_total",
-		Help:      "A counter of the total number of messages that were dropped if the responses channel is full",
-	})
+		Help:      "A counter for the total number of messages that were dropped if the responses channel is full",
+	}, []string{"MessageType"})
 )
 
 // IncrementEntityNotFound increments an instance of entity not found
@@ -454,19 +457,26 @@ func DecOutputChannelSize() {
 	outputChannelSize.Dec()
 }
 
-// IncResponsesChannelSize increases the responsesChannelSize by 1
-func IncResponsesChannelSize() {
-	responsesChannelSize.Inc()
+// ResponsesChannelAdd increases the responsesChannelOperationCount's Add operation by 1
+func ResponsesChannelAdd() {
+	responsesChannelOperationCount.With(prometheus.Labels{"Operation": metrics.Add.String()}).Inc()
 }
 
-// DecResponsesChannelSize decreases the responsesChannelSize by 1
-func DecResponsesChannelSize() {
-	responsesChannelSize.Dec()
+// ResponsesChannelRemove increases the responsesChannelOperationCount's Remove operation by 1
+func ResponsesChannelRemove() {
+	responsesChannelOperationCount.With(prometheus.Labels{"Operation": metrics.Remove.String()}).Inc()
 }
 
 // IncResponsesChannelDroppedCount increases the responsesChannelDroppedCount by 1
-func IncResponsesChannelDroppedCount() {
-	responsesChannelDroppedCount.Inc()
+func IncResponsesChannelDroppedCount(msg *central.MsgFromSensor) {
+	msgType := "nil"
+	if msg.GetMsg() != nil {
+		msgType = strings.TrimPrefix(reflect.TypeOf(msg.GetMsg()).String(), "*central.MsgFromSensor_")
+	}
+	labels := prometheus.Labels{
+		"MessageType": msgType,
+	}
+	responsesChannelDroppedCount.With(labels).Inc()
 }
 
 // SetTelemetryMetrics sets the cluster metrics for the telemetry metrics.

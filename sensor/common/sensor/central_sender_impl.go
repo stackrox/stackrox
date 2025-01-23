@@ -45,20 +45,19 @@ func (s *centralSenderImpl) forwardResponses(from <-chan *message.ExpiringMessag
 			if cap(to) == 0 {
 				select {
 				case to <- msg:
-					metrics.IncResponsesChannelSize()
+					metrics.ResponsesChannelAdd()
 				case <-s.stopper.Flow().StopRequested():
 					return
 				}
 			} else {
 				select {
 				case to <- msg:
-					metrics.IncResponsesChannelSize()
+					metrics.ResponsesChannelAdd()
 				case <-s.stopper.Flow().StopRequested():
 					return
 				default:
 					// The channel is full. Dropping message
-					// TODO: change the metric to store the type of message
-					metrics.IncResponsesChannelDroppedCount()
+					metrics.IncResponsesChannelDroppedCount(msg.MsgFromSensor)
 				}
 			}
 		case <-s.stopper.Flow().StopRequested():
@@ -112,7 +111,7 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 			s.stopper.Flow().StopWithError(stream.Context().Err())
 			return
 		}
-		metrics.DecResponsesChannelSize()
+		metrics.ResponsesChannelRemove()
 		if msg != nil && msg.MsgFromSensor != nil {
 			// If the connection restarted, there could be messages stuck
 			// in channels in Sensor pipeline, that will be attempted to

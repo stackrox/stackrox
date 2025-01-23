@@ -42,7 +42,7 @@ func init() {
 		telemetrySecuredNodes,
 		telemetrySecuredVCPU,
 		deploymentEnhancementQueueSize,
-		responsesChannelSize,
+		responsesChannelOperationCount,
 		responsesChannelDroppedCount,
 	)
 }
