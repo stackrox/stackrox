@@ -22,7 +22,7 @@ func enumEquality(columnName string, enumValues []int32) (WhereClause, error) {
 		values = append(values, entry.Values...)
 	}
 	return WhereClause{
-		Query:  fmt.Sprintf("(%s)", strings.Join(queries, " or ")),
+		Query:  fmt.Sprintf("%s", strings.Join(queries, " or ")),
 		Values: values,
 		equivalentGoFunc: func(foundValue interface{}) bool {
 			asInt := int32(foundValue.(int))
