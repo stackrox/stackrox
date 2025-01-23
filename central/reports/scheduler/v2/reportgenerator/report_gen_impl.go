@@ -149,13 +149,13 @@ func (rg *reportGeneratorImpl) ProcessReportRequest(req *ReportRequest) {
 func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error {
 	// Get the results of running the report query
 	reportData, err := rg.getReportDataSQF(req.ReportSnapshot, req.Collection, req.DataStartTime)
-	if err != nil {
+	if err != nil
 		return err
 	}
 
 	// Format results into CSV
-	includeNvd := req.ReportSnapshot.GetVulnReportFilters().GetIncludeNvdCvss()
-	zippedCSVData, err := GenerateCSV(reportData.CVEResponses, req.ReportSnapshot.Name, includeNvd)
+	optionalColumns := req.ReportSnapshot.GetVulnReportFilters()
+	zippedCSVData, err := GenerateCSV(reportData.CVEResponses, req.ReportSnapshot.Name, optionalColumns)
 	if err != nil {
 		return err
 	}
