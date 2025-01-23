@@ -1,5 +1,4 @@
 import withAuth from '../../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../../helpers/features';
 import { verifyColumnManagement } from '../../../helpers/tableHelpers';
 
 import {
@@ -12,12 +11,6 @@ import { selectors } from './WorkloadCves.selectors';
 
 describe('Workload CVE Deployment Single page', () => {
     withAuth();
-
-    before(function () {
-        if (!hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES')) {
-            this.skip();
-        }
-    });
 
     function visitFirstDeployment() {
         visitWorkloadCveOverview();
