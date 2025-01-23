@@ -4,6 +4,7 @@ import (
 	"context"
 	"math"
 
+	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/graphql/resolvers/inputtypes"
 	"github.com/stackrox/rox/central/graphql/resolvers/searchers"
 	"github.com/stackrox/rox/central/rbac/service"
@@ -122,7 +123,7 @@ func (r RawQuery) IsEmpty() bool {
 
 func (resolver *Resolver) getAutoCompleteSearchers() map[v1.SearchCategory]search.Searcher {
 	searchers := map[v1.SearchCategory]search.Searcher{
-		v1.SearchCategory_ALERTS:                  resolver.ViolationsDataStore,
+		v1.SearchCategory_ALERTS:                  &alertDataStore.DefaultStateAlertDataStoreImpl{DataStore: &resolver.ViolationsDataStore},
 		v1.SearchCategory_CLUSTERS:                resolver.ClusterDataStore,
 		v1.SearchCategory_DEPLOYMENTS:             resolver.DeploymentDataStore,
 		v1.SearchCategory_IMAGES:                  resolver.ImageDataStore,

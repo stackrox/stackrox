@@ -396,7 +396,7 @@ func (resolver *namespaceResolver) FailingPolicyCounter(ctx context.Context, arg
 		return nil, err
 	}
 
-	alerts, err := resolver.root.ViolationsDataStore.SearchListAlerts(ctx, q)
+	alerts, err := resolver.root.ViolationsDataStore.SearchListAlerts(ctx, q, true)
 	if err != nil {
 		return nil, nil
 	}
@@ -453,11 +453,10 @@ func (resolver *namespaceResolver) PolicyStatusOnly(ctx context.Context, args Ra
 	q.Pagination = &v1.QueryPagination{
 		Limit: 1,
 	}
-	results, err := resolver.root.ViolationsDataStore.Search(ctx,
-		search.ConjunctionQuery(q,
-			search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetMetadata().GetClusterId()).
-				AddExactMatches(search.Namespace, resolver.data.GetMetadata().GetName()).
-				AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery()))
+	results, err := resolver.root.ViolationsDataStore.Search(ctx, search.ConjunctionQuery(q,
+		search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetMetadata().GetClusterId()).
+			AddExactMatches(search.Namespace, resolver.data.GetMetadata().GetName()).
+			AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery()), true)
 	if err != nil {
 		return "", err
 	}
@@ -481,7 +480,7 @@ func (resolver *namespaceResolver) getActiveDeployAlerts(ctx context.Context, q 
 			AddExactMatches(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).ProtoQuery())
 	q = paginated.FillDefaultSortOption(q, paginated.GetViolationTimeSortOption())
 
-	return resolver.root.ViolationsDataStore.SearchListAlerts(ctx, q)
+	return resolver.root.ViolationsDataStore.SearchListAlerts(ctx, q, true)
 }
 
 func (resolver *namespaceResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {

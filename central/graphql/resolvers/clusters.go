@@ -252,7 +252,7 @@ func (resolver *clusterResolver) FailingPolicyCounter(ctx context.Context, args 
 		return nil, err
 	}
 
-	alerts, err := resolver.root.ViolationsDataStore.SearchListAlerts(ctx, q)
+	alerts, err := resolver.root.ViolationsDataStore.SearchListAlerts(ctx, q, true)
 	if err != nil {
 		return nil, nil
 	}
@@ -897,7 +897,7 @@ func (resolver *clusterResolver) getActiveDeployAlerts(ctx context.Context, q *v
 		search.ConjunctionQuery(q,
 			search.NewQueryBuilder().AddExactMatches(search.ClusterID, cluster.GetId()).
 				AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).
-				AddExactMatches(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).ProtoQuery()))
+				AddExactMatches(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).ProtoQuery()), true)
 }
 
 func (resolver *clusterResolver) Risk(ctx context.Context) (*riskResolver, error) {

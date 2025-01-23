@@ -351,7 +351,7 @@ func (s *PruningTestSuite) generateClusterDataStructures() (configDatastore.Data
 	namespaceDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).AnyTimes().Return([]search.Result{}, nil)
 	podDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	imageIntegrationDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
-	alertDataStore.EXPECT().SearchRawAlerts(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
+	alertDataStore.EXPECT().SearchRawAlerts(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	notifierMock.EXPECT().ProcessAlert(gomock.Any(), gomock.Any()).AnyTimes().Return()
 	podDataStore.EXPECT().RemovePod(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 	imageIntegrationDataStore.EXPECT().RemoveImageIntegration(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
@@ -1133,7 +1133,7 @@ func (s *PruningTestSuite) TestAlertPruning() {
 			for _, deployment := range c.deployments {
 				require.NoError(t, deployments.UpsertDeployment(ctx, deployment))
 			}
-			all, err := alerts.Search(ctx, getAllAlerts())
+			all, err := alerts.Search(ctx, getAllAlerts(), false)
 			if err != nil {
 				t.Error(err)
 			}
@@ -1146,7 +1146,7 @@ func (s *PruningTestSuite) TestAlertPruning() {
 			gc.collectAlerts(privateConfig)
 
 			// Grab the actual remaining alerts and make sure they match the alerts expected to be remaining
-			remainingAlerts, err := alerts.SearchListAlerts(ctx, getAllAlerts())
+			remainingAlerts, err := alerts.SearchListAlerts(ctx, getAllAlerts(), false)
 			require.NoError(t, err)
 
 			log.Infof("Remaining alerts: %v", remainingAlerts)
