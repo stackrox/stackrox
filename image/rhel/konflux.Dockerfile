@@ -3,7 +3,7 @@ ARG FINAL_STAGE_PATH="/mnt/final"
 # TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
 FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.22 AS go-builder
 
-RUN dnf -y install --allowerasing --nobest make automake gcc gcc-c++ coreutils binutils diffutils zlib-devel bzip2-devel lz4-devel cmake jq
+RUN dnf -y install --allowerasing --nobest make automake gcc gcc-c++ coreutils-single binutils diffutils zlib-devel bzip2-devel lz4-devel cmake jq
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 

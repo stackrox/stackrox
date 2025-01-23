@@ -4,11 +4,13 @@ packages:
   - automake
   - gcc
   - gcc-c++
-  - coreutils
+  - libstdc++
+  - coreutils-single
   - binutils
   - diffutils
   - zlib-devel
   - bzip2-devel
+  - bzip2-libs
   - lz4-devel
   - cmake
   - jq
@@ -20,7 +22,7 @@ contentOrigin:
 context:
   containerfile:
     file: ../../../image/rhel/konflux.Dockerfile
-    stageName: application
+    stageName: go-builder
 arches:
   - aarch64
   - ppc64le
