@@ -34,26 +34,21 @@ func buildClusterLevelSACQueryFilter(root *effectiveaccessscope.ScopeTree, verbo
 		return getMatchNoneQuery(), nil
 	}
 	clusterIDs := root.GetClusterIDs()
-	clusterFilters := make([]*v1.Query, 0, len(clusterIDs))
+	clusterFilters := make([]string, 0, len(clusterIDs))
 	for _, clusterID := range clusterIDs {
 		clusterAccessScope := root.GetClusterByID(clusterID)
-		if clusterAccessScope == nil {
+		if clusterAccessScope == nil ||
+			clusterAccessScope.State == effectiveaccessscope.Excluded ||
+			(clusterAccessScope.State == effectiveaccessscope.Partial && len(clusterAccessScope.Namespaces) == 0) {
 			continue
 		}
-		if clusterAccessScope.State == effectiveaccessscope.Included {
-			clusterFilters = append(clusterFilters, getClusterMatchQuery(clusterID, verbose))
-		} else if clusterAccessScope.State == effectiveaccessscope.Partial &&
-			len(clusterAccessScope.Namespaces) > 0 {
-			clusterFilters = append(clusterFilters, getClusterMatchQuery(clusterID, verbose))
-		}
+		clusterFilters = append(clusterFilters, clusterID)
 	}
 	switch len(clusterFilters) {
 	case 0:
 		return getMatchNoneQuery(), nil
-	case 1:
-		return clusterFilters[0], nil
 	default:
-		return search.DisjunctionQuery(clusterFilters...), nil
+		return getClusterMatchQuery(verbose, clusterFilters...), nil
 	}
 }
 
@@ -86,29 +81,31 @@ func buildClusterNamespaceLevelSACQueryFilter(root *effectiveaccessscope.ScopeTr
 		if clusterAccessScope == nil {
 			continue
 		}
-		if clusterAccessScope.State == effectiveaccessscope.Included {
-			var clusterQuery *v1.Query
+
+		clusterQuery := getClusterMatchQuery(verbose, clusterID)
+
+		switch clusterAccessScope.State {
+		case effectiveaccessscope.Included:
 			if verbose {
-				clusterQuery = search.ConjunctionQuery(getClusterMatchQuery(clusterID, verbose),
+				clusterQuery = search.ConjunctionQuery(clusterQuery,
 					getAnyNamespaceMatchQuery())
-			} else {
-				clusterQuery = getClusterMatchQuery(clusterID, verbose)
 			}
 			clusterFilters = append(clusterFilters, clusterQuery)
-		} else if clusterAccessScope.State == effectiveaccessscope.Partial {
-			clusterQuery := getClusterMatchQuery(clusterID, verbose)
+		case effectiveaccessscope.Partial:
 			namespaces := clusterAccessScope.Namespaces
-			namespaceFilters := make([]*v1.Query, 0, len(namespaces))
+			namespaceFilters := make([]string, 0, len(namespaces))
 			for namespaceName, namespaceAccessScope := range namespaces {
 				if namespaceAccessScope.State == effectiveaccessscope.Included {
-					namespaceFilters = append(namespaceFilters, getNamespaceMatchQuery(namespaceName, verbose))
+					namespaceFilters = append(namespaceFilters, namespaceName)
 				}
 			}
 			if len(namespaceFilters) > 0 {
-				namespaceSubQuery := search.DisjunctionQuery(namespaceFilters...)
+				namespaceSubQuery := getNamespaceMatchQuery(verbose, namespaceFilters...)
 				clusterFilter := search.ConjunctionQuery(clusterQuery, namespaceSubQuery)
 				clusterFilters = append(clusterFilters, clusterFilter)
 			}
+		case effectiveaccessscope.Excluded:
+			continue
 		}
 	}
 	switch len(clusterFilters) {
@@ -133,18 +130,18 @@ func getMatchNoneQuery() *v1.Query {
 	}
 }
 
-func getClusterMatchQuery(clusterID string, verbose bool) *v1.Query {
+func getClusterMatchQuery(verbose bool, clusterID ...string) *v1.Query {
 	if verbose {
-		return search.NewQueryBuilder().AddExactMatches(clusterIDField, clusterID).MarkHighlighted(clusterIDField).ProtoQuery()
+		return search.NewQueryBuilder().AddExactMatches(clusterIDField, clusterID...).MarkHighlighted(clusterIDField).ProtoQuery()
 	}
-	return search.NewQueryBuilder().AddExactMatches(clusterIDField, clusterID).ProtoQuery()
+	return search.NewQueryBuilder().AddExactMatches(clusterIDField, clusterID...).ProtoQuery()
 }
 
-func getNamespaceMatchQuery(namespace string, verbose bool) *v1.Query {
+func getNamespaceMatchQuery(verbose bool, namespace ...string) *v1.Query {
 	if verbose {
-		return search.NewQueryBuilder().AddExactMatches(namespaceField, namespace).MarkHighlighted(namespaceField).ProtoQuery()
+		return search.NewQueryBuilder().AddExactMatches(namespaceField, namespace...).MarkHighlighted(namespaceField).ProtoQuery()
 	}
-	return search.NewQueryBuilder().AddExactMatches(namespaceField, namespace).ProtoQuery()
+	return search.NewQueryBuilder().AddExactMatches(namespaceField, namespace...).ProtoQuery()
 }
 
 func getAnyNamespaceMatchQuery() *v1.Query {
