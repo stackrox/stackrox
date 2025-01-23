@@ -35,11 +35,6 @@ WORKDIR /go/src/github.com/stackrox/rox/app
 
 COPY . .
 
-# Ensure there will be no unintended -dirty suffix. package and package-lock are restored
-# because they are touched by Cachi2.
-RUN git restore ui/apps/platform/package.json ui/apps/platform/package-lock.json && \
-    .konflux/scripts/fail-build-if-git-is-dirty.sh
-
 ARG BUILD_TAG
 RUN if [[ "$BUILD_TAG" == "" ]]; then >&2 echo "error: required BUILD_TAG arg is unset"; exit 6; fi
 ENV BUILD_TAG="$BUILD_TAG"

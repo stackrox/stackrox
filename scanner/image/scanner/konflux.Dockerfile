@@ -20,8 +20,6 @@ ENV CI=1
 COPY . /src
 WORKDIR /src
 
-RUN .konflux/scripts/fail-build-if-git-is-dirty.sh
-
 RUN make -C scanner NODEPS=1 CGO_ENABLED=1 image/scanner/bin/scanner copy-scripts
 
 

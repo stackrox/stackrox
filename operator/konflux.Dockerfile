@@ -6,8 +6,6 @@ WORKDIR /go/src/github.com/stackrox/rox/app
 
 COPY . .
 
-RUN .konflux/scripts/fail-build-if-git-is-dirty.sh
-
 ARG BUILD_TAG
 RUN if [[ "$BUILD_TAG" == "" ]]; then >&2 echo "error: required BUILD_TAG arg is unset"; exit 6; fi
 ENV BUILD_TAG="$BUILD_TAG"

@@ -12,8 +12,6 @@ WORKDIR /go/src/github.com/stackrox/rox/app
 
 COPY . .
 
-RUN .konflux/scripts/fail-build-if-git-is-dirty.sh
-
 RUN mkdir -p image/bin
 
 ARG BUILD_TAG
