@@ -74,32 +74,17 @@ message GetExternalNetworkEntitiesResponse {
 
 message GetExternalNetworkFlowsRequest {
   string cluster_id = 1;
-  string deployment_id = 2;
   string query = 3;
   google.protobuf.Timestamp since = 4;
 }
 
+message ExternalEntityFlowsMap {
+  storage.NetworkEntityInfo entity = 1;
+  repeated storage.NetworkFlow flows = 2;
+}
+
 message GetExternalNetworkFlowsResponse {
-  storage.NetworkEntityInfo entity = 1;
-  int32 total_flows = 2;
-  repeated storage.NetworkFlow flows = 3;
-}
-
-message GetExternalNetworkFlowsMetadataRequest {
-  string cluster_id = 1;
-  string query = 2;
-  google.protobuf.Timestamp since = 3;
-  Pagination pagination = 4;
-}
-
-message ExternalNetworkFlowMetadata {
-  storage.NetworkEntityInfo entity = 1;
-  int32 flowsCount = 2;
-}
-
-message GetExternalNetworkFlowsMetadataResponse {
-  repeated ExternalNetworkFlowMetadata entities = 1;
-  int32 total_entities = 2;
+  repeated ExternalEntityFlowsMap entities_map = 1;
 }
 
 message PutNetworkGraphConfigRequest {

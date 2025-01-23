@@ -225,8 +225,40 @@ func (s *serviceImpl) GetExternalNetworkFlows(ctx context.Context, request *v1.G
 		return nil, errors.Wrap(err, "failed to filter flows")
 	}
 
+	entityFlowMap := make(map[string]*v1.ExternalEntityFlowsMap, 0)
+	for _, flow := range filteredFlows {
+		props := flow.GetProps()
+		src, dst := props.GetSrcEntity(), props.GetDstEntity()
+
+		if src.GetType() == storage.NetworkEntityInfo_EXTERNAL_SOURCE {
+			if m, ok := entityFlowMap[src.GetId()]; ok {
+				m.Flows = append(m.Flows, flow)
+			} else {
+				entityFlowMap[src.GetId()] = &v1.ExternalEntityFlowsMap{
+					Entity: src,
+					Flows: []*storage.NetworkFlow{
+						flow,
+					},
+				}
+			}
+		}
+
+		if dst.GetType() == storage.NetworkEntityInfo_EXTERNAL_SOURCE {
+			if m, ok := entityFlowMap[dst.GetId()]; ok {
+				m.Flows = append(m.Flows, flow)
+			} else {
+				entityFlowMap[dst.GetId()] = &v1.ExternalEntityFlowsMap{
+					Entity: dst,
+					Flows: []*storage.NetworkFlow{
+						flow,
+					},
+				}
+			}
+		}
+	}
+
 	return &v1.GetExternalNetworkFlowsResponse{
-		Flows: filteredFlows,
+		EntitiesMap: maps.Values(entityFlowMap),
 	}, nil
 }
 
