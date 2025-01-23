@@ -12,16 +12,6 @@ on:
         default: 'quay.io/rhacs-eng/'
         required: true
         type: string
-      image_match:
-        description: 'Regex of image names to include'
-        default: '^\(main\|collector\|scanner\|roxctl\|stackrox\)'
-        required: false
-        type: string
-      tag_match:
-        description: 'Regex of tags to include'
-        default: 'g0bb5541ed3-fast$'
-        required: false
-        type: string
 
 run-name: ${{ format('Verify FIPS-compliant {0}', inputs.image) }}
 
@@ -38,8 +28,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          repository: 'stackrox/openshift-check-payload'
-          ref: development
+          repository: 'openshift/check-payload'
 
       - uses: actions/setup-go@v5
 
@@ -53,6 +42,7 @@ jobs:
         if: steps.cache-check-payload.outputs.cache-hit != 'true'
         run: |
           make
+          make install
 
       - name: install oc-cli
         run: |
@@ -97,9 +87,7 @@ jobs:
 
       - name: Run FIPS check-payload on image(s)
         run: |
-          export PATH=${PATH}:${PWD}
-          gh api -H "$ACCEPT_RAW" "${{ env.script_url }}" | bash -s -- \
-            fips-check-payload \
-            "${{ github.event.inputs.image }}" \
-            "${{ github.event.inputs.image_match }}" \
-            "${{ github.event.inputs.tag_match}}" \
+          ref='${{ github.event.inputs.image }}'
+          ref=${ref:-quay.io/rhacs-eng/main:4.7.x-478-g0bb5541ed3-fast}
+          podman unshare check-payload \
+            scan operator --verbose --spec "${ref}"
