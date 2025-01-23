@@ -1,0 +1,123 @@
+import React, { useState } from 'react';
+import { Button, SelectOption, TextInput } from '@patternfly/react-core';
+import { ArrowRightIcon } from '@patternfly/react-icons';
+
+import { NonEmptyArray } from 'utils/type.utils';
+import SimpleSelect from './SimpleSelect';
+
+// Potentially reusable for condition-number and date-picker components.
+type ConditionEntry = [conditionKey: string, conditionText: string];
+type ConditionInputProps = {
+    conditionEntries: NonEmptyArray<ConditionEntry>; // first item has default conditionKey
+};
+
+type TextInputProps = {
+    convertFromExternalToInternalText: (externalText: string) => string; // from TextInput element to query string
+    convertFromInternalToExternalText: (internalText: string) => string; // from query string to FilterChip element
+    externalTextDefault: string; // initial value for TextInput element
+    validateExternalText: (imputText: string) => boolean; // for search Button element
+    validateInternalText: (queryText: string) => boolean; // for FilterChip element
+};
+
+export type ConditionTextInputProps = {
+    conditionProps: ConditionInputProps;
+    textProps: TextInputProps;
+};
+
+function joinConditionText(conditionKey: string, text: string) {
+    return `${conditionKey}${text}`;
+}
+
+// For filter chip: split, convert, and then join.
+export function convertFromInternalToExternalConditionText(
+    inputProps: ConditionTextInputProps,
+    internalConditionText: string
+) {
+    const {
+        conditionProps: { conditionEntries },
+        textProps: { convertFromInternalToExternalText, validateInternalText },
+    } = inputProps;
+
+    // Find the longest prefix, because > is shorter than >= for example.
+    let length = 0;
+    let conditionFound;
+    conditionEntries.forEach((condition) => {
+        const conditionKey = condition[0];
+        if (internalConditionText.startsWith(conditionKey)) {
+            if (conditionKey.length > length) {
+                length = conditionKey.length;
+                conditionFound = condition;
+            }
+        }
+    });
+
+    if (conditionFound) {
+        const conditionKey = conditionFound[0];
+        const internalText = internalConditionText.slice(conditionKey.length);
+        if (validateInternalText(internalText)) {
+            const externalText = convertFromInternalToExternalText(internalText);
+            return joinConditionText(conditionKey, externalText);
+        }
+    }
+
+    return `${internalConditionText} is not valid`; // query string in page address
+}
+
+export type ConditionTextProps = {
+    inputProps: ConditionTextInputProps;
+    onSearch: (value: string) => void;
+};
+
+function ConditionText({ inputProps, onSearch }: ConditionTextProps) {
+    const {
+        conditionProps: { conditionEntries },
+        textProps: { convertFromExternalToInternalText, externalTextDefault, validateExternalText },
+    } = inputProps;
+
+    const [conditionKey, setConditionKey] = useState(conditionEntries[0][0]);
+    const [externalText, setExternalText] = useState(externalTextDefault);
+
+    return (
+        <>
+            <SimpleSelect
+                ariaLabelMenu="Condition selector menu"
+                ariaLabelToggle="Condition selector toggle"
+                onChange={(value) => {
+                    setConditionKey(value as string);
+                }}
+                value={conditionKey}
+            >
+                {conditionEntries.map(([conditionKey, conditionText]) => {
+                    return (
+                        <SelectOption key={conditionKey} value={conditionKey}>
+                            {conditionText}
+                        </SelectOption>
+                    );
+                })}
+            </SimpleSelect>
+            <TextInput
+                aria-label="Condition value input"
+                onChange={(event: React.FormEvent<HTMLInputElement>) => {
+                    const { value: changedText } = event.target as HTMLInputElement;
+                    setExternalText(changedText);
+                }}
+                style={{ maxWidth: '8em' }}
+                validated={validateExternalText(externalText) ? 'success' : 'error'}
+                value={externalText}
+            />
+            <Button
+                aria-label="Apply condition and number input to search"
+                isDisabled={!validateExternalText(externalText)}
+                onClick={() => {
+                    const internalText = convertFromExternalToInternalText(externalText);
+                    onSearch(joinConditionText(conditionKey, internalText));
+                }}
+                variant="control"
+            >
+                <ArrowRightIcon />
+            </Button>
+        </>
+    );
+}
+
+export default ConditionText;
