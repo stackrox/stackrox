@@ -1,4 +1,4 @@
-import React, { ReactElement, useState } from 'react';
+import React, { ReactElement } from 'react';
 import { Flex, SearchInput, SelectOption } from '@patternfly/react-core';
 import SimpleSelect from 'Components/CompoundSearchFilter/components/SimpleSelect';
 
@@ -12,7 +12,10 @@ export type IPMatchFilterResult = {
 };
 
 type IPMatchFilterProps = {
+    filter: IPMatchFilterResult;
+    onChange: ({ matchType, externalIP }: IPMatchFilterResult) => void;
     onSearch: ({ matchType, externalIP }: IPMatchFilterResult) => void;
+    onClear: () => void;
 };
 
 function ensureMatchType(value: unknown): MatchType {
@@ -22,10 +25,7 @@ function ensureMatchType(value: unknown): MatchType {
     return 'Equals';
 }
 
-function IPMatchFilter({ onSearch }: IPMatchFilterProps): ReactElement {
-    const [matchType, setMatchType] = useState<MatchType>('Equals');
-    const [externalIP, setExternalIP] = useState('');
-
+function IPMatchFilter({ filter, onChange, onSearch, onClear }: IPMatchFilterProps): ReactElement {
     return (
         <Flex
             direction={{ default: 'row' }}
@@ -34,8 +34,10 @@ function IPMatchFilter({ onSearch }: IPMatchFilterProps): ReactElement {
         >
             <SimpleSelect
                 menuToggleClassName="pf-v5-u-flex-shrink-0"
-                value={matchType}
-                onChange={(value) => setMatchType(ensureMatchType(value))}
+                value={filter.matchType}
+                onChange={(value) => {
+                    onChange({ ...filter, matchType: ensureMatchType(value) });
+                }}
                 ariaLabelMenu="external ip comparison selector menu"
                 ariaLabelToggle="external ip comparison selector toggle"
             >
@@ -48,12 +50,14 @@ function IPMatchFilter({ onSearch }: IPMatchFilterProps): ReactElement {
             </SimpleSelect>
             <SearchInput
                 placeholder="Find by external IP"
-                value={externalIP}
-                onChange={(_event, value) => setExternalIP(value)}
-                onSearch={() => {
-                    onSearch({ matchType, externalIP });
+                value={filter.externalIP}
+                onChange={(_event, value) => {
+                    onChange({ ...filter, externalIP: value });
                 }}
-                onClear={() => setExternalIP('')}
+                onSearch={() => {
+                    onSearch({ ...filter });
+                }}
+                onClear={onClear}
             />
         </Flex>
     );

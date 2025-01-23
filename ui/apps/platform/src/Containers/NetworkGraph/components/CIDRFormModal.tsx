@@ -14,6 +14,7 @@ import useTimeout from 'hooks/useTimeout';
 import { getHasDuplicateCIDRNames, getHasDuplicateCIDRAddresses } from './cidrFormUtils';
 import DefaultCIDRToggle from './DefaultCIDRToggle';
 import CIDRForm, { emptyCIDRBlockRow, CIDRBlockEntity, CIDRBlockEntities } from './CIDRForm';
+import { useCIDRFormModal } from './CIDRFormModalProvider';
 
 const validationSchema = Yup.object().shape({
     entities: Yup.array().of(
@@ -40,12 +41,10 @@ const emptyFormCallout = {
 
 type CIDRFormModalProps = {
     selectedClusterId: string;
-    isOpen: boolean;
-    onClose: () => void;
     // updateNetworkNodes: () => void;
 };
 
-function CIDRFormModal({ selectedClusterId, isOpen, onClose }: CIDRFormModalProps) {
+function CIDRFormModal({ selectedClusterId }: CIDRFormModalProps) {
     const [CIDRBlocks, setCIDRBlocks] = useState<CIDRBlockEntities>({
         entities: [],
     });
@@ -55,14 +54,34 @@ function CIDRFormModal({ selectedClusterId, isOpen, onClose }: CIDRFormModalProp
         message: string;
     }>(emptyFormCallout);
     const [CIDRBlocksToDelete, setCIDRBlocksToDelete] = useState<string[]>([]);
+    const {
+        isCIDRFormModalOpen: isOpen,
+        toggleCIDRFormModal,
+        initialCIDRFormValue,
+        setInitialCIDRFormValue,
+    } = useCIDRFormModal();
 
     const CIDRBlockMap: Record<string, CIDRBlockEntity> = {};
     CIDRBlocks.entities?.forEach(({ entity }) => {
         CIDRBlockMap[entity.id] = entity;
     });
 
-    const initialValues =
-        CIDRBlocks.entities.length !== 0 ? CIDRBlocks : { entities: [emptyCIDRBlockRow] };
+    const initialCIDRBlockRow = initialCIDRFormValue
+        ? {
+              entity: {
+                  cidr: initialCIDRFormValue,
+                  name: '',
+                  id: '',
+              },
+          }
+        : emptyCIDRBlockRow;
+
+    const initialValues = {
+        entities:
+            CIDRBlocks.entities.length > 0
+                ? [...CIDRBlocks.entities]
+                : [...CIDRBlocks.entities, initialCIDRBlockRow],
+    };
 
     const formik = useFormik({
         initialValues,
@@ -185,7 +204,8 @@ function CIDRFormModal({ selectedClusterId, isOpen, onClose }: CIDRFormModalProp
         resetForm();
         setFormCallout(emptyFormCallout);
         setCIDRBlocksToDelete([]);
-        onClose();
+        setInitialCIDRFormValue('');
+        toggleCIDRFormModal();
     }
 
     return (
