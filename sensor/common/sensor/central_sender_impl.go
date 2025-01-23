@@ -41,24 +41,10 @@ func (s *centralSenderImpl) forwardResponses(from <-chan *message.ExpiringMessag
 			if !ok {
 				return
 			}
-			// if the `to` is not buffered we do not drop messages
-			if cap(to) == 0 {
-				select {
-				case to <- msg:
-					metrics.ResponsesChannelAdd()
-				case <-s.stopper.Flow().StopRequested():
-					return
-				}
-			} else {
-				select {
-				case to <- msg:
-					metrics.ResponsesChannelAdd()
-				case <-s.stopper.Flow().StopRequested():
-					return
-				default:
-					// The channel is full. Dropping message
-					metrics.IncResponsesChannelDroppedCount(msg.MsgFromSensor)
-				}
+			select {
+			case to <- msg:
+			case <-s.stopper.Flow().StopRequested():
+				return
 			}
 		case <-s.stopper.Flow().StopRequested():
 			return
@@ -73,7 +59,10 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 		s.finished.Done()
 	}()
 
-	wrappedStream := metrics.NewSizingEventStream(stream)
+	bufferedC := make(chan *central.MsgFromSensor, env.ResponsesChannelBufferSize.IntegerSetting())
+	defer close(bufferedC)
+	wrappedStream, streamErrC := NewBufferedStream(stream, bufferedC, s.stopper.LowLevel().GetStopRequestSignal())
+	wrappedStream = metrics.NewSizingEventStream(wrappedStream)
 	wrappedStream = metrics.NewCountingEventStream(wrappedStream, "unique")
 	wrappedStream = metrics.NewTimingEventStream(wrappedStream, "unique")
 	wrappedStream = deduper.NewDedupingMessageStream(wrappedStream, s.initialDeduperState, sendUnchangedIDs)
@@ -86,7 +75,7 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 	// reads and writes.
 	// Ideally, if you're going to continue to hold a reference to the object, you want to proto.Clone it before
 	// sending it to this function.
-	componentMsgsC := make(chan *message.ExpiringMessage, env.ResponsesChannelBufferSize.IntegerSetting())
+	componentMsgsC := make(chan *message.ExpiringMessage)
 	for _, component := range s.senders {
 		if responsesC := component.ResponsesC(); responsesC != nil {
 			go s.forwardResponses(responsesC, componentMsgsC)
@@ -110,8 +99,13 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 			log.Info("Context done")
 			s.stopper.Flow().StopWithError(stream.Context().Err())
 			return
+		case err := <-streamErrC:
+			if err != nil {
+				log.Infof("Error on sending to stream: %s", err)
+				s.stopper.Flow().StopWithError(err)
+				return
+			}
 		}
-		metrics.ResponsesChannelRemove()
 		if msg != nil && msg.MsgFromSensor != nil {
 			// If the connection restarted, there could be messages stuck
 			// in channels in Sensor pipeline, that will be attempted to
@@ -132,6 +126,22 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 				log.Infof("Error on sending to stream: %s", err)
 				s.stopper.Flow().StopWithError(err)
 				return
+			}
+			select {
+			case <-s.stopper.Flow().StopRequested():
+				log.Info("Stop flow requested")
+				return
+			case <-stream.Context().Done():
+				log.Info("Context done")
+				s.stopper.Flow().StopWithError(stream.Context().Err())
+				return
+			case err := <-streamErrC:
+				if err != nil {
+					log.Infof("Error on sending to stream: %s", err)
+					s.stopper.Flow().StopWithError(err)
+					return
+				}
+			default:
 			}
 		}
 	}
