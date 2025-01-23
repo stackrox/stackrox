@@ -198,13 +198,10 @@ var filter_NetworkGraphService_GetExternalNetworkFlowsMetadata_0 = &utilities.Do
 
 func request_NetworkGraphService_GetExternalNetworkFlowsMetadata_0(ctx context.Context, marshaler runtime.Marshaler, client NetworkGraphServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq GetExternalNetworkFlowsMetadataRequest
+		protoReq GetExternalNetworkFlowsRequest
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	if req.Body != nil {
-		_, _ = io.Copy(io.Discard, req.Body)
-	}
 	val, ok := pathParams["cluster_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
@@ -225,7 +222,7 @@ func request_NetworkGraphService_GetExternalNetworkFlowsMetadata_0(ctx context.C
 
 func local_request_NetworkGraphService_GetExternalNetworkFlowsMetadata_0(ctx context.Context, marshaler runtime.Marshaler, server NetworkGraphServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq GetExternalNetworkFlowsMetadataRequest
+		protoReq GetExternalNetworkFlowsRequest
 		metadata runtime.ServerMetadata
 		err      error
 	)
@@ -807,14 +804,15 @@ func RegisterNetworkGraphServiceHandlerClient(ctx context.Context, mux *runtime.
 }
 
 var (
-	pattern_NetworkGraphService_GetNetworkGraph_0             = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "networkgraph", "cluster", "cluster_id"}, ""))
-	pattern_NetworkGraphService_GetExternalNetworkEntities_0  = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v1", "networkgraph", "cluster", "cluster_id", "externalentities"}, ""))
-	pattern_NetworkGraphService_GetExternalNetworkFlows_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4, 2, 5}, []string{"v1", "networkgraph", "cluster", "cluster_id", "externalentities", "flows"}, ""))
-	pattern_NetworkGraphService_CreateExternalNetworkEntity_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v1", "networkgraph", "cluster", "cluster_id", "externalentities"}, ""))
-	pattern_NetworkGraphService_PatchExternalNetworkEntity_0  = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "networkgraph", "externalentities", "id"}, ""))
-	pattern_NetworkGraphService_DeleteExternalNetworkEntity_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "networkgraph", "externalentities", "id"}, ""))
-	pattern_NetworkGraphService_GetNetworkGraphConfig_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "networkgraph", "config"}, ""))
-	pattern_NetworkGraphService_PutNetworkGraphConfig_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "networkgraph", "config"}, ""))
+	pattern_NetworkGraphService_GetNetworkGraph_0                 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "networkgraph", "cluster", "cluster_id"}, ""))
+	pattern_NetworkGraphService_GetExternalNetworkEntities_0      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v1", "networkgraph", "cluster", "cluster_id", "externalentities"}, ""))
+	pattern_NetworkGraphService_GetExternalNetworkFlows_0         = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4, 2, 5}, []string{"v1", "networkgraph", "cluster", "cluster_id", "externalentities", "flows"}, ""))
+	pattern_NetworkGraphService_GetExternalNetworkFlowsMetadata_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4, 2, 5}, []string{"v1", "networkgraph", "cluster", "cluster_id", "externalentities", "metadata"}, ""))
+	pattern_NetworkGraphService_CreateExternalNetworkEntity_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v1", "networkgraph", "cluster", "cluster_id", "externalentities"}, ""))
+	pattern_NetworkGraphService_PatchExternalNetworkEntity_0      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "networkgraph", "externalentities", "id"}, ""))
+	pattern_NetworkGraphService_DeleteExternalNetworkEntity_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "networkgraph", "externalentities", "id"}, ""))
+	pattern_NetworkGraphService_GetNetworkGraphConfig_0           = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "networkgraph", "config"}, ""))
+	pattern_NetworkGraphService_PutNetworkGraphConfig_0           = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "networkgraph", "config"}, ""))
 )
 
 var (
