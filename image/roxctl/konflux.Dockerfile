@@ -16,8 +16,9 @@ RUN .konflux/scripts/fail-build-if-git-is-dirty.sh
 
 RUN mkdir -p image/bin
 
-ARG VERSIONS_SUFFIX
-ENV MAIN_TAG_SUFFIX="$VERSIONS_SUFFIX" COLLECTOR_TAG_SUFFIX="$VERSIONS_SUFFIX" SCANNER_TAG_SUFFIX="$VERSIONS_SUFFIX"
+ARG MAIN_IMAGE_TAG
+RUN if [[ "$MAIN_IMAGE_TAG" == "" ]]; then >&2 echo "error: required MAIN_IMAGE_TAG arg is unset"; exit 6; fi
+ENV BUILD_TAG="$MAIN_IMAGE_TAG"
 
 ENV CI=1 GOFLAGS=""
 # TODO(ROX-20240): enable non-release development builds.
@@ -41,7 +42,6 @@ RUN microdnf upgrade -y --nobest && \
 COPY LICENSE /licenses/LICENSE
 
 ARG MAIN_IMAGE_TAG
-RUN if [[ "$MAIN_IMAGE_TAG" == "" ]]; then >&2 echo "error: required MAIN_IMAGE_TAG arg is unset"; exit 6; fi
 
 LABEL \
     com.redhat.component="rhacs-roxctl-container" \
