@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -880,14 +881,12 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 			Name:               clusterName,
 			InitBundleId:       registrantID,
 			MostRecentSensorId: hello.GetDeploymentIdentification().CloneVT(),
-			SensorCapabilities: hello.GetCapabilities(),
+			SensorCapabilities: sortedSensorCapabilities(hello),
 		}
 		clusterConfig := helmConfig.GetClusterConfig()
 		configureFromHelmConfig(cluster, clusterConfig)
 
-		// Unless we know for sure that we are not Helm-managed we do store the Helm configuration,
-		// in particular this also applies to the UNKNOWN case.
-		if manager != storage.ManagerType_MANAGER_TYPE_MANUAL {
+		if securedClusterIsNotManagedManually(helmConfig) {
 			cluster.HelmConfig = clusterConfig.CloneVT()
 		}
 
@@ -932,8 +931,6 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 			// * manager type
 			//
 			// => there is no need to update the cluster, return immediately.
-			//
-			// Note: this also is the case if the cluster was newly added.
 			return cluster, nil
 		}
 	}
@@ -944,12 +941,12 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 	cluster = cluster.CloneVT()
 	cluster.ManagedBy = manager
 	cluster.InitBundleId = registrantID
-	cluster.SensorCapabilities = hello.GetCapabilities()
-	if manager == storage.ManagerType_MANAGER_TYPE_MANUAL {
-		cluster.HelmConfig = nil
-	} else {
+	cluster.SensorCapabilities = sortedSensorCapabilities(hello)
+	if securedClusterIsNotManagedManually(helmConfig) {
 		configureFromHelmConfig(cluster, clusterConfig)
 		cluster.HelmConfig = clusterConfig.CloneVT()
+	} else {
+		cluster.HelmConfig = nil
 	}
 
 	if !currentCluster.EqualVT(cluster) {
@@ -960,6 +957,18 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 	}
 
 	return cluster, nil
+}
+
+func securedClusterIsNotManagedManually(helmManagedConfig *central.HelmManagedConfigInit) bool {
+	return helmManagedConfig.GetManagedBy() != storage.ManagerType_MANAGER_TYPE_UNKNOWN &&
+		helmManagedConfig.GetManagedBy() != storage.ManagerType_MANAGER_TYPE_MANUAL
+}
+
+func sortedSensorCapabilities(sensorHello *central.SensorHello) []string {
+	sorted := make([]string, len(sensorHello.GetCapabilities()))
+	copy(sorted, sensorHello.GetCapabilities())
+	sort.Strings(sorted)
+	return sorted
 }
 
 func sensorCapabilitiesEqual(cluster *storage.Cluster, hello *central.SensorHello) bool {
