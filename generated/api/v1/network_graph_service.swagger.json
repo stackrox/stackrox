@@ -174,12 +174,6 @@
             "type": "string"
           },
           {
-            "name": "deploymentId",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
             "name": "query",
             "in": "query",
             "required": false,
@@ -531,6 +525,21 @@
     "v1Empty": {
       "type": "object"
     },
+    "v1ExternalEntityFlowsMap": {
+      "type": "object",
+      "properties": {
+        "entity": {
+          "$ref": "#/definitions/storageNetworkEntityInfo"
+        },
+        "flows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageNetworkFlow"
+          }
+        }
+      }
+    },
     "v1GetExternalNetworkEntitiesResponse": {
       "type": "object",
       "properties": {
@@ -546,11 +555,11 @@
     "v1GetExternalNetworkFlowsResponse": {
       "type": "object",
       "properties": {
-        "flows": {
+        "entitiesMap": {
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/storageNetworkFlow"
+            "$ref": "#/definitions/v1ExternalEntityFlowsMap"
           }
         }
       }

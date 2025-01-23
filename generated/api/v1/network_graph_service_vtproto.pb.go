@@ -264,7 +264,6 @@ func (m *GetExternalNetworkFlowsRequest) CloneVT() *GetExternalNetworkFlowsReque
 	}
 	r := new(GetExternalNetworkFlowsRequest)
 	r.ClusterId = m.ClusterId
-	r.DeploymentId = m.DeploymentId
 	r.Query = m.Query
 	r.Since = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.Since).CloneVT())
 	if len(m.unknownFields) > 0 {
@@ -278,11 +277,20 @@ func (m *GetExternalNetworkFlowsRequest) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *GetExternalNetworkFlowsResponse) CloneVT() *GetExternalNetworkFlowsResponse {
+func (m *ExternalEntityFlowsMap) CloneVT() *ExternalEntityFlowsMap {
 	if m == nil {
-		return (*GetExternalNetworkFlowsResponse)(nil)
+		return (*ExternalEntityFlowsMap)(nil)
 	}
-	r := new(GetExternalNetworkFlowsResponse)
+	r := new(ExternalEntityFlowsMap)
+	if rhs := m.Entity; rhs != nil {
+		if vtpb, ok := interface{}(rhs).(interface {
+			CloneVT() *storage.NetworkEntityInfo
+		}); ok {
+			r.Entity = vtpb.CloneVT()
+		} else {
+			r.Entity = proto.Clone(rhs).(*storage.NetworkEntityInfo)
+		}
+	}
 	if rhs := m.Flows; rhs != nil {
 		tmpContainer := make([]*storage.NetworkFlow, len(rhs))
 		for k, v := range rhs {
@@ -293,6 +301,29 @@ func (m *GetExternalNetworkFlowsResponse) CloneVT() *GetExternalNetworkFlowsResp
 			}
 		}
 		r.Flows = tmpContainer
+	}
+	if len(m.unknownFields) > 0 {
+		r.unknownFields = make([]byte, len(m.unknownFields))
+		copy(r.unknownFields, m.unknownFields)
+	}
+	return r
+}
+
+func (m *ExternalEntityFlowsMap) CloneMessageVT() proto.Message {
+	return m.CloneVT()
+}
+
+func (m *GetExternalNetworkFlowsResponse) CloneVT() *GetExternalNetworkFlowsResponse {
+	if m == nil {
+		return (*GetExternalNetworkFlowsResponse)(nil)
+	}
+	r := new(GetExternalNetworkFlowsResponse)
+	if rhs := m.EntitiesMap; rhs != nil {
+		tmpContainer := make([]*ExternalEntityFlowsMap, len(rhs))
+		for k, v := range rhs {
+			tmpContainer[k] = v.CloneVT()
+		}
+		r.EntitiesMap = tmpContainer
 	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
@@ -663,9 +694,6 @@ func (this *GetExternalNetworkFlowsRequest) EqualVT(that *GetExternalNetworkFlow
 	if this.ClusterId != that.ClusterId {
 		return false
 	}
-	if this.DeploymentId != that.DeploymentId {
-		return false
-	}
 	if this.Query != that.Query {
 		return false
 	}
@@ -682,10 +710,19 @@ func (this *GetExternalNetworkFlowsRequest) EqualMessageVT(thatMsg proto.Message
 	}
 	return this.EqualVT(that)
 }
-func (this *GetExternalNetworkFlowsResponse) EqualVT(that *GetExternalNetworkFlowsResponse) bool {
+func (this *ExternalEntityFlowsMap) EqualVT(that *ExternalEntityFlowsMap) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
+		return false
+	}
+	if equal, ok := interface{}(this.Entity).(interface {
+		EqualVT(*storage.NetworkEntityInfo) bool
+	}); ok {
+		if !equal.EqualVT(that.Entity) {
+			return false
+		}
+	} else if !proto.Equal(this.Entity, that.Entity) {
 		return false
 	}
 	if len(this.Flows) != len(that.Flows) {
@@ -707,6 +744,39 @@ func (this *GetExternalNetworkFlowsResponse) EqualVT(that *GetExternalNetworkFlo
 					return false
 				}
 			} else if !proto.Equal(p, q) {
+				return false
+			}
+		}
+	}
+	return string(this.unknownFields) == string(that.unknownFields)
+}
+
+func (this *ExternalEntityFlowsMap) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*ExternalEntityFlowsMap)
+	if !ok {
+		return false
+	}
+	return this.EqualVT(that)
+}
+func (this *GetExternalNetworkFlowsResponse) EqualVT(that *GetExternalNetworkFlowsResponse) bool {
+	if this == that {
+		return true
+	} else if this == nil || that == nil {
+		return false
+	}
+	if len(this.EntitiesMap) != len(that.EntitiesMap) {
+		return false
+	}
+	for i, vx := range this.EntitiesMap {
+		vy := that.EntitiesMap[i]
+		if p, q := vx, vy; p != q {
+			if p == nil {
+				p = &ExternalEntityFlowsMap{}
+			}
+			if q == nil {
+				q = &ExternalEntityFlowsMap{}
+			}
+			if !p.EqualVT(q) {
 				return false
 			}
 		}
@@ -1405,17 +1475,89 @@ func (m *GetExternalNetworkFlowsRequest) MarshalToSizedBufferVT(dAtA []byte) (in
 		i--
 		dAtA[i] = 0x1a
 	}
-	if len(m.DeploymentId) > 0 {
-		i -= len(m.DeploymentId)
-		copy(dAtA[i:], m.DeploymentId)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.DeploymentId)))
-		i--
-		dAtA[i] = 0x12
-	}
 	if len(m.ClusterId) > 0 {
 		i -= len(m.ClusterId)
 		copy(dAtA[i:], m.ClusterId)
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ClusterId)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ExternalEntityFlowsMap) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ExternalEntityFlowsMap) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *ExternalEntityFlowsMap) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if len(m.Flows) > 0 {
+		for iNdEx := len(m.Flows) - 1; iNdEx >= 0; iNdEx-- {
+			if vtmsg, ok := interface{}(m.Flows[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.Flows[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			}
+			i--
+			dAtA[i] = 0x12
+		}
+	}
+	if m.Entity != nil {
+		if vtmsg, ok := interface{}(m.Entity).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Entity)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
 		i--
 		dAtA[i] = 0xa
 	}
@@ -1452,26 +1594,14 @@ func (m *GetExternalNetworkFlowsResponse) MarshalToSizedBufferVT(dAtA []byte) (i
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if len(m.Flows) > 0 {
-		for iNdEx := len(m.Flows) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := interface{}(m.Flows[iNdEx]).(interface {
-				MarshalToSizedBufferVT([]byte) (int, error)
-			}); ok {
-				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-			} else {
-				encoded, err := proto.Marshal(m.Flows[iNdEx])
-				if err != nil {
-					return 0, err
-				}
-				i -= len(encoded)
-				copy(dAtA[i:], encoded)
-				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+	if len(m.EntitiesMap) > 0 {
+		for iNdEx := len(m.EntitiesMap) - 1; iNdEx >= 0; iNdEx-- {
+			size, err := m.EntitiesMap[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
 			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0xa
 		}
@@ -1778,10 +1908,6 @@ func (m *GetExternalNetworkFlowsRequest) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	l = len(m.DeploymentId)
-	if l > 0 {
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
 	l = len(m.Query)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
@@ -1794,12 +1920,22 @@ func (m *GetExternalNetworkFlowsRequest) SizeVT() (n int) {
 	return n
 }
 
-func (m *GetExternalNetworkFlowsResponse) SizeVT() (n int) {
+func (m *ExternalEntityFlowsMap) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
+	if m.Entity != nil {
+		if size, ok := interface{}(m.Entity).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Entity)
+		}
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
 	if len(m.Flows) > 0 {
 		for _, e := range m.Flows {
 			if size, ok := interface{}(e).(interface {
@@ -1809,6 +1945,22 @@ func (m *GetExternalNetworkFlowsResponse) SizeVT() (n int) {
 			} else {
 				l = proto.Size(e)
 			}
+			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+		}
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
+func (m *GetExternalNetworkFlowsResponse) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.EntitiesMap) > 0 {
+		for _, e := range m.EntitiesMap {
+			l = e.SizeVT()
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
@@ -3333,42 +3485,6 @@ func (m *GetExternalNetworkFlowsRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.ClusterId = stringValue
 			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field DeploymentId", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			var stringValue string
-			if intStringLen > 0 {
-				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
-			}
-			m.DeploymentId = stringValue
-			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Query", wireType)
@@ -3463,7 +3579,7 @@ func (m *GetExternalNetworkFlowsRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetExternalNetworkFlowsResponse) UnmarshalVTUnsafe(dAtA []byte) error {
+func (m *ExternalEntityFlowsMap) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3486,13 +3602,57 @@ func (m *GetExternalNetworkFlowsResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: GetExternalNetworkFlowsResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: ExternalEntityFlowsMap: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: GetExternalNetworkFlowsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ExternalEntityFlowsMap: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Entity", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Entity == nil {
+				m.Entity = &storage.NetworkEntityInfo{}
+			}
+			if unmarshal, ok := interface{}(m.Entity).(interface {
+				UnmarshalVTUnsafe([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Entity); err != nil {
+					return err
+				}
+			}
+			iNdEx = postIndex
+		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Flows", wireType)
 			}
@@ -3532,6 +3692,91 @@ func (m *GetExternalNetworkFlowsResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Flows[len(m.Flows)-1]); err != nil {
 					return err
 				}
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetExternalNetworkFlowsResponse) UnmarshalVTUnsafe(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetExternalNetworkFlowsResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetExternalNetworkFlowsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EntitiesMap", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.EntitiesMap = append(m.EntitiesMap, &ExternalEntityFlowsMap{})
+			if err := m.EntitiesMap[len(m.EntitiesMap)-1].UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
 			}
 			iNdEx = postIndex
 		default:
