@@ -129,10 +129,9 @@ LABEL \
 
 EXPOSE 8443
 
-# TODO(ROX-22245): set proper image flavor for user-facing GA Fast Stream images.
 ENV PATH="/stackrox:$PATH" \
     ROX_ROXCTL_IN_MAIN_IMAGE="true" \
-    ROX_IMAGE_FLAVOR="development_build" \
+    ROX_IMAGE_FLAVOR="rhacs" \
     ROX_PRODUCT_BRANDING="RHACS_BRANDING"
 
 COPY .konflux/stackrox-data/external-networks/external-networks.zip /stackrox/static-data/external-networks/external-networks.zip
