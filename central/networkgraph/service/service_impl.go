@@ -235,6 +235,9 @@ func (s *serviceImpl) GetExternalNetworkFlows(ctx context.Context, request *v1.G
 					},
 				}
 			}
+
+			// remove src entity, since it's redundant
+			props.SrcEntity = nil
 		}
 
 		if dst.GetType() == storage.NetworkEntityInfo_EXTERNAL_SOURCE {
@@ -248,6 +251,9 @@ func (s *serviceImpl) GetExternalNetworkFlows(ctx context.Context, request *v1.G
 					},
 				}
 			}
+
+			// remove dst entity, since it's redundant
+			props.DstEntity = nil
 		}
 	}
 
