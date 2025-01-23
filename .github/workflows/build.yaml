@@ -224,7 +224,7 @@ jobs:
             GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 make build-prep main-build-nodeps
           else
             echo "Building amd binary"
-            GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=1 make build-prep main-build-nodeps
+            GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 make build-prep main-build-nodeps
           fi
 
       - name: Bundle the build to preserve permissions
