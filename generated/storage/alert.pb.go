@@ -693,11 +693,11 @@ func (*ListAlert_Resource) isListAlert_Entity() {}
 
 type ListAlertPolicy struct {
 	state       protoimpl.MessageState `protogen:"open.v1"`
-	Id          string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Policy ID,store,hidden"`                                    // @gotags: search:"Policy ID,store,hidden"
-	Name        string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Policy,store"`                                // @gotags: search:"Policy,store"
-	Severity    Severity               `protobuf:"varint,3,opt,name=severity,proto3,enum=storage.Severity" json:"severity,omitempty" search:"Severity,store"` // @gotags: search:"Severity,store"
+	Id          string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name        string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Severity    Severity               `protobuf:"varint,3,opt,name=severity,proto3,enum=storage.Severity" json:"severity,omitempty"`
 	Description string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
-	Categories  []string               `protobuf:"bytes,5,rep,name=categories,proto3" json:"categories,omitempty" search:"Category,store"` // @gotags: search:"Category,store"
+	Categories  []string               `protobuf:"bytes,5,rep,name=categories,proto3" json:"categories,omitempty"`
 	// For internal use only.
 	DeveloperInternalFields *ListAlertPolicy_DevFields `protobuf:"bytes,6,opt,name=developer_internal_fields,json=developerInternalFields,proto3" json:"developer_internal_fields,omitempty"`
 	unknownFields           protoimpl.UnknownFields
@@ -778,8 +778,8 @@ func (x *ListAlertPolicy) GetDeveloperInternalFields() *ListAlertPolicy_DevField
 
 type ListAlertDeployment struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Deployment ID,store,hidden"`     // @gotags: search:"Deployment ID,store,hidden"
-	Name  string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Deployment,store"` // @gotags: search:"Deployment,store"
+	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name  string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// This field is deprecated and can be found in CommonEntityInfo. It will be removed from here in a future release.
 	//
 	// Deprecated: Marked as deprecated in storage/alert.proto.
@@ -792,7 +792,7 @@ type ListAlertDeployment struct {
 	//
 	// Deprecated: Marked as deprecated in storage/alert.proto.
 	ClusterId string `protobuf:"bytes,6,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"` // This field has moved to CommonEntityInfo
-	Inactive  bool   `protobuf:"varint,7,opt,name=inactive,proto3" json:"inactive,omitempty" search:"Inactive Deployment"`                   // @gotags: search:"Inactive Deployment"
+	Inactive  bool   `protobuf:"varint,7,opt,name=inactive,proto3" json:"inactive,omitempty"`
 	// This field is deprecated and can be found in CommonEntityInfo. It will be removed from here in a future release.
 	//
 	// Deprecated: Marked as deprecated in storage/alert.proto.
@@ -1722,7 +1722,7 @@ func (x *ListAlert_ResourceEntity) GetName() string {
 
 type ListAlertPolicy_DevFields struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	SORTName      string                 `protobuf:"bytes,6,opt,name=SORT_name,json=SORTName,proto3" json:"SORT_name,omitempty" search:"SORT_Policy,hidden,analyzer=keyword"` // @gotags: search:"SORT_Policy,hidden,analyzer=keyword"
+	SORTName      string                 `protobuf:"bytes,6,opt,name=SORT_name,json=SORTName,proto3" json:"SORT_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
