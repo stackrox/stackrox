@@ -534,16 +534,20 @@ func combineDisjunction(entries []*pgsearch.QueryEntry) *pgsearch.QueryEntry {
 	seenSelectFields := set.StringSet{}
 	values := make([]any, 0, len(entries))
 	for _, entry := range entries {
+
+		whereQuery := strings.TrimPrefix(entry.Where.Query, "(")
+		whereQuery = strings.TrimSuffix(whereQuery, ")")
+
 		if entry.Having != nil ||
 			len(entry.GroupBy) != 0 ||
 			len(entry.Where.Values) != 1 ||
-			!strings.HasSuffix(entry.Where.Query, exactQuerySuffix) {
+			!strings.HasSuffix(whereQuery, exactQuerySuffix) {
 			return combineQueryEntries(entries, " or ")
 		}
 		for _, selectedField := range entry.SelectedFields {
 			seenSelectFields.Add(selectedField.SelectPath)
 		}
-		seenQueries.Add(entry.Where.Query)
+		seenQueries.Add(whereQuery)
 		values = append(values, fmt.Sprintf("%s", entry.Where.Values[0]))
 	}
 

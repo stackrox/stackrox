@@ -7,6 +7,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac"
@@ -21,6 +22,7 @@ var (
 	deploymentBaseSchema = schema.DeploymentsSchema
 	imagesSchema         = schema.ImagesSchema
 	imageCVEsSchema      = schema.ImageCvesSchema
+	alertSchema          = schema.AlertsSchema
 	_                    = schema.ImageCveEdgesSchema
 )
 
@@ -335,6 +337,27 @@ func TestCountQueries(t *testing.T) {
 				"inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id " +
 				"where (deployments_containers.Image_Name_FullName IN ($1, $2) or deployments.Name IN ($3, $4, $5) or deployments.Name = $6)",
 			expectedData: []interface{}{"A", "B", "X", "Y", "Z", "X"},
+		},
+		{
+			desc: "base schema mix of conjunction and disjunction queries",
+			ctx:  baseCtx,
+			q: search.ConjunctionQuery(
+				search.ConjunctionQuery(
+					search.NewQueryBuilder().AddExactMatches(search.ClusterID, fixtureconsts.Cluster1).ProtoQuery(),
+					search.NewQueryBuilder().AddExactMatches(search.Namespace, "namespace").ProtoQuery(),
+				),
+				search.NewQueryBuilder().
+					AddExactMatches(
+						search.ViolationState,
+						storage.ViolationState_ATTEMPTED.String(),
+						storage.ViolationState_ACTIVE.String(),
+					).
+					ProtoQuery(),
+			),
+			schema: alertSchema,
+			expectedStatement: "select count(*) from alerts " +
+				"where ((alerts.ClusterId = $1 and alerts.Namespace = $2) and alerts.State IN ($3, $4))",
+			expectedData: []interface{}{uuid.FromStringOrPanic("caaaaaaa-bbbb-4011-0000-111111111111"), "namespace", "3", "0"},
 		},
 		{
 			desc: "multiple child schema query",
