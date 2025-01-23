@@ -99,6 +99,7 @@ func (c *centralCommunicationSuite) Test_StartCentralCommunication() {
 		c.Assert().NotNil(msg.GetEvent().GetSynced())
 		return nil
 	})
+	c.mockService.client.EXPECT().CloseSend().AnyTimes()
 
 	reachable := concurrency.Flag{}
 	syncDone := concurrency.NewSignal()
