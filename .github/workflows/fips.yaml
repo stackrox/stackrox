@@ -1,4 +1,4 @@
-name: FIPS check-payloa
+name: FIPS check-payload
 on:
   pull_request:
     types:

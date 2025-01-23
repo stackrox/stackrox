@@ -94,6 +94,9 @@ function fips_scan() {
   return "${ret}"  # return count of failed images
 }
 
+ref='quay.io/rhacs-eng/main:4.7.x-478-g0bb5541ed3-fast'
+podman unshare check-payload \
+      scan operator --verbose --spec "${ref}" || true
 
 find_images "${image_prefix}" \
   | grep "${image_match}" \
