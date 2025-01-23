@@ -15,24 +15,18 @@ func enumEquality(columnName string, enumValues []int32) (WhereClause, error) {
 		return WhereClause{}, fmt.Errorf("missing values for %q", columnName)
 	}
 
-	var queries []string
-	var values []interface{}
+	values := make([]any, 0, len(enumValues))
 	for _, s := range enumValues {
-		entry, err := newStringQueryWhereClause(columnName, strconv.Itoa(int(s)), pkgSearch.Equality)
-		if err != nil {
-			return WhereClause{}, err
-		}
-		queries = append(queries, entry.Query)
-		values = append(values, entry.Values...)
+		values = append(values, strconv.Itoa(int(s)))
 	}
-	query := queries[0]
-	if len(queries) > 1 {
-		query = fmt.Sprintf("%s IN (%s$$)", columnName, strings.Join(make([]string, len(queries)), "$$, "))
+	query := fmt.Sprintf("%s = $$", columnName)
+	if len(values) > 1 {
+		query = fmt.Sprintf("%s IN (%s$$)", columnName, strings.Join(make([]string, len(values)), "$$, "))
 	}
 	return WhereClause{
 		Query:  query,
 		Values: values,
-		equivalentGoFunc: func(foundValue interface{}) bool {
+		equivalentGoFunc: func(foundValue any) bool {
 			asInt := int32(foundValue.(int))
 			for _, enumValue := range enumValues {
 				if enumValue == asInt {
