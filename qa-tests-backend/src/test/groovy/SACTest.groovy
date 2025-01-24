@@ -603,59 +603,63 @@ class SACTest extends BaseSpecification {
     }
 
     def "Verify that SAC has the same effect as query restriction for network flows"() {
-        when:
+        given:
         "The network graphs retrieved by admin with a query and the SAC restricted token with and without query"
         // Default behaviour is to use flows for last 5 mins. That can produce different results between calls.
         def since = Timestamp.newBuilder().setSeconds(System.currentTimeSeconds() - 600).build()
 
-        then:
-        withRetry(30, 5) {
-            // Make all service calls in a short succession to avoid potential new flows between calls.
-            def networkGraphWithAllAccess = NetworkGraphService.getNetworkGraph(since, "Namespace:stackrox")
-            useToken("stackroxNetFlowsToken")
-            def networkGraphWithSAC = NetworkGraphService.getNetworkGraph(since, "Namespace:stackrox")
-            def networkGraphWithSACNoQuery = NetworkGraphService.getNetworkGraph(since)
+        // Make all service calls in a short succession to avoid potential new flows between calls.
+        def networkGraphWithAllAccess = NetworkGraphService.getNetworkGraph(since, "Namespace:stackrox")
+        useToken("stackroxNetFlowsToken")
+        def networkGraphWithSAC = NetworkGraphService.getNetworkGraph(since, "Namespace:stackrox")
+        def networkGraphWithSACNoQuery = NetworkGraphService.getNetworkGraph(since)
 
-            // "The network graph for the StackRox namespace with all access"
-            def allAccessFlows = NetworkGraphUtil.flowStrings(networkGraphWithAllAccess)
-            allAccessFlows.removeAll(UNSTABLE_FLOWS)
-            log.info "allAccessFlows: ${allAccessFlows}"
+        when:
+        "The network graph for the StackRox namespace with all access"
+        def allAccessFlows = NetworkGraphUtil.flowStrings(networkGraphWithAllAccess)
+        allAccessFlows.removeAll(UNSTABLE_FLOWS)
+        log.info "allAccessFlows: ${allAccessFlows}"
 
-            def allAccessFlowsWithoutNeighbors = allAccessFlows.findAll {
-                it.matches("(stackrox/.*|INTERNET) -> (stackrox/.*|INTERNET)")
-            }
-            log.info "allAccessFlowsWithoutNeighbors: ${allAccessFlowsWithoutNeighbors}"
-
-            // "The network graph for the StackRox namespace with a SAC restricted token"
-            def sacFlows = NetworkGraphUtil.flowStrings(networkGraphWithSAC)
-            sacFlows.removeAll(UNSTABLE_FLOWS)
-            log.info "sacFlows: ${sacFlows}"
-
-            // "The network graph for the StackRox namespace with a SAC restricted token and no query"
-            def sacFlowsNoQuery = NetworkGraphUtil.flowStrings(networkGraphWithSACNoQuery)
-            sacFlowsNoQuery.removeAll(UNSTABLE_FLOWS)
-            log.info "sacFlowsNoQuery: ${sacFlowsNoQuery}"
-
-            // "Query-restricted and non-restricted flows should be equal under SAC"
-            assert sacFlows == sacFlowsNoQuery
-
-            // "The flows should be equal to the flows obtained with all access after removing masked endpoints"
-            Set<String> sacFlowsFiltered = sacFlows.findAll { !it.contains("masked deployment") }
-            Set<String> sacFlowsNoQueryFiltered = sacFlowsNoQuery.findAll { !it.contains("masked deployment") }
-
-            assert allAccessFlowsWithoutNeighbors == sacFlowsFiltered
-            assert allAccessFlowsWithoutNeighbors == sacFlowsNoQueryFiltered
-
-            // "The flows obtained with SAC should contain some masked deployments"
-            assert sacFlowsFiltered.size() < sacFlows.size()
-            assert sacFlowsNoQueryFiltered.size() < sacFlowsNoQuery.size()
-
-            // "The masked deployments should be external to stackrox namespace"
-            assert sacFlows.intersect(sacFlowsFiltered) ==
-                        allAccessFlows.intersect(allAccessFlowsWithoutNeighbors)
-            assert sacFlowsNoQuery.intersect(sacFlowsNoQueryFiltered) ==
-                        allAccessFlows.intersect(allAccessFlowsWithoutNeighbors)
+        def allAccessFlowsWithoutNeighbors = allAccessFlows.findAll {
+            it.matches("(stackrox/.*|INTERNET) -> (stackrox/.*|INTERNET)")
         }
+        log.info "allAccessFlowsWithoutNeighbors: ${allAccessFlowsWithoutNeighbors}"
+
+        and:
+        "The network graph for the StackRox namespace with a SAC restricted token"
+        def sacFlows = NetworkGraphUtil.flowStrings(networkGraphWithSAC)
+        sacFlows.removeAll(UNSTABLE_FLOWS)
+        log.info "sacFlows: ${sacFlows}"
+
+        and:
+        "The network graph for the StackRox namespace with a SAC restricted token and no query"
+        def sacFlowsNoQuery = NetworkGraphUtil.flowStrings(networkGraphWithSACNoQuery)
+        sacFlowsNoQuery.removeAll(UNSTABLE_FLOWS)
+        log.info "sacFlowsNoQuery: ${sacFlowsNoQuery}"
+
+        then:
+        "Query-restricted and non-restricted flows should be equal under SAC"
+        assert sacFlows == sacFlowsNoQuery
+
+        and:
+        "The flows should be equal to the flows obtained with all access after removing masked endpoints"
+        Set<String> sacFlowsFiltered = sacFlows.findAll { !it.contains("masked deployment") }
+        Set<String> sacFlowsNoQueryFiltered = sacFlowsNoQuery.findAll { !it.contains("masked deployment") }
+
+        assert allAccessFlowsWithoutNeighbors == sacFlowsFiltered
+        assert allAccessFlowsWithoutNeighbors == sacFlowsNoQueryFiltered
+
+        and:
+        "The flows obtained with SAC should contain some masked deployments"
+        assert sacFlowsFiltered.size() < sacFlows.size()
+        assert sacFlowsNoQueryFiltered.size() < sacFlowsNoQuery.size()
+
+        and:
+        "The masked deployments should be external to stackrox namespace"
+        assert sacFlows.intersect(sacFlowsFiltered) ==
+                allAccessFlows.intersect(allAccessFlowsWithoutNeighbors)
+        assert sacFlowsNoQuery.intersect(sacFlowsNoQueryFiltered) ==
+                allAccessFlows.intersect(allAccessFlowsWithoutNeighbors)
     }
 
     def "test role aggregation should not combine permissions sets"() {
