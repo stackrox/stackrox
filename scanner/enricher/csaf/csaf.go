@@ -39,19 +39,24 @@ const (
 
 	latestFile     = "archive_latest.txt"
 	changesFile    = "changes.csv"
-	deletionsFile  = "deletions.csv"
 	lookBackToYear = 2014
 )
 
+// Record represents a CSAF enrichment record.
+// It tracks attributes which should be consistent
+// each time the RHSA is output.
 type Record struct {
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
 	ReleaseDate time.Time `json:"release_date"`
 	Severity    string    `json:"severity"`
-	CVSSv3      CVSS      `json:"cvssv3"`
-	CVSSv2      CVSS      `json:"cvssv2"`
+	// CVEs tracks all the CVEs related to this advisory.
+	CVEs   []string `json:"cves"`
+	CVSSv3 CVSS     `json:"cvssv3"`
+	CVSSv2 CVSS     `json:"cvssv2"`
 }
 
+// CVSS represents CVSS metrics we care to track for the advisory.
 type CVSS struct {
 	Score  float32 `json:"score"`
 	Vector string  `json:"vector"`
