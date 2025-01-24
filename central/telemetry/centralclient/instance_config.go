@@ -111,15 +111,15 @@ func appendRuntimeCampaign(runtimeCfg *phonehome.RuntimeConfig) {
 }
 
 func applyConfig() (bool, error) {
-	if err := getInstanceId(); err != nil {
-		return false, err
-	}
 	runtimeCfg, err := getRuntimeConfig()
 	if err != nil {
 		return false, err
 	}
 	if runtimeCfg == nil {
 		return false, nil
+	}
+	if err := getInstanceId(); err != nil {
+		return false, err
 	}
 	applyRemoteConfig(runtimeCfg)
 	return true, nil
