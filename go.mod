@@ -28,7 +28,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.29.1
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.54
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.24
-	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.17.52
+	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.17.53
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.38.6
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.74.0
 	github.com/aws/aws-sdk-go-v2/service/securityhub v1.55.5
