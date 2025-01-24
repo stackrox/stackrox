@@ -9,18 +9,8 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func clusterVerboseMatch(_ *testing.T, clusterID string) *v1.Query {
-	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).MarkHighlighted(search.ClusterID)
-	return query.ProtoQuery()
-}
-
 func clusterNonVerboseMatch(_ *testing.T, clusterID string) *v1.Query {
 	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID)
-	return query.ProtoQuery()
-}
-
-func namespaceVerboseMatch(_ *testing.T, namespace string) *v1.Query {
-	query := search.NewQueryBuilder().AddExactMatches(search.Namespace, namespace).MarkHighlighted(search.Namespace)
 	return query.ProtoQuery()
 }
 
