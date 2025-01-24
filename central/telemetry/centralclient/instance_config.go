@@ -102,7 +102,7 @@ func getInstanceConfig(key string) (*phonehome.Config, map[string]any) {
 func appendRuntimeCampaign(runtimeCfg *phonehome.RuntimeConfig) {
 	telemetryCampaign = permanentTelemetryCampaign
 	if err := runtimeCfg.APICallCampaign.Compile(); err != nil {
-		log.Errorf("Failed to initialize runtime telemetry campaign: %v", err)
+		log.Errorf("Failed to initialize runtime telemetry campaign: %v.", err)
 	} else {
 		telemetryCampaign = append(telemetryCampaign, runtimeCfg.APICallCampaign...)
 	}
@@ -172,9 +172,13 @@ func InstanceConfig() *phonehome.Config {
 			return
 		}
 		go periodicReload()
-		log.Info("Central ID: ", config.ClientID)
-		log.Info("Tenant ID: ", config.GroupID)
-		log.Infof("API Telemetry ignored paths: %v", ignoredPaths)
+		startMux.RLock()
+		defer startMux.RUnlock()
+		if config != nil {
+			log.Info("Central ID: ", config.ClientID)
+			log.Info("Tenant ID: ", config.GroupID)
+			log.Infof("API Telemetry ignored paths: %v", ignoredPaths)
+		}
 	})
 	startMux.RLock()
 	defer startMux.RUnlock()
