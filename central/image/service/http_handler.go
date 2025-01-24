@@ -8,7 +8,6 @@ import (
 	"net/http"
 
 	"github.com/pkg/errors"
-	clusterUtil "github.com/stackrox/rox/central/cluster/util"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/sachelper"
@@ -134,14 +133,15 @@ func (h sbomHttpHandler) getSbom(ctx context.Context, params apiparams.SbomReque
 		addForceToEnrichmentContext(&enrichmentCtx)
 	}
 
-	if params.Cluster != "" {
-		// The request indicates enrichment should be delegated to a specific cluster.
-		clusterID, err := clusterUtil.GetClusterIDFromNameOrID(ctx, h.clusterSACHelper, params.Cluster, delegateScanPermissions)
-		if err != nil {
-			return nil, err
-		}
-		enrichmentCtx.ClusterID = clusterID
-	}
+	//ROX-27784 - comment out cluster flag in 4.7 since delegated scanning is not supported
+	//if params.Cluster != "" {
+	//	// The request indicates enrichment should be delegated to a specific cluster.
+	//	clusterID, err := clusterUtil.GetClusterIDFromNameOrID(ctx, h.clusterSACHelper, params.Cluster, delegateScanPermissions)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//	enrichmentCtx.ClusterID = clusterID
+	//}
 	img, alreadyForcedEnrichment, err := h.enrichImage(ctx, enrichmentCtx, params.ImageName)
 	if err != nil {
 		return nil, err
