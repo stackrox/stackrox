@@ -338,13 +338,10 @@ class SACTest extends BaseSpecification {
 
         then:
         assert alertsCount(NOACCESSTOKEN) == 0
-        WithRetry(30, 5) {
+        withRetry(30, 5) {
             // getSummaryCountsToken has access only to QA1 deployment while
             // ALLACCESSTOKEN has access to QA1 and QA2. Since deployments are identical
             // number of alerts for ALLACCESSTOKEN should be twice of getSummaryCountsToken.
-            def sacCount = alertsCount("getSummaryCountsToken")
-            def queryCount = alertsCount(ALLACCESSTOKEN)
-            assert 2 * sacCount == queryCount
             assert 2 * alertsCount("getSummaryCountsToken") == alertsCount(ALLACCESSTOKEN)
         }
     }
