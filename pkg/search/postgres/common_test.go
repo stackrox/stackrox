@@ -224,7 +224,7 @@ func TestMultiTableQueries(t *testing.T) {
 				ProtoQuery(),
 			schema:        imagesSchema,
 			expectedFrom:  "images",
-			expectedWhere: "((deployments.PlatformComponent = $$ or deployments.PlatformComponent is null) and (image_cve_edges.State = $$))",
+			expectedWhere: "((deployments.PlatformComponent = $$ or deployments.PlatformComponent is null) and image_cve_edges.State = $$)",
 			expectedJoinTables: map[string]JoinType{
 				"image_component_edges":     Inner,
 				"image_component_cve_edges": Inner,
@@ -436,7 +436,7 @@ func TestCountQueries(t *testing.T) {
 				"inner join image_component_cve_edges on image_component_edges.ImageComponentId = image_component_cve_edges.ImageComponentId " +
 				"inner join image_cves on image_component_cve_edges.ImageCveId = image_cves.Id " +
 				"inner join image_cve_edges on(images.Id = image_cve_edges.ImageId and image_component_cve_edges.ImageCveId = image_cve_edges.ImageCveId) " +
-				"where ((deployments.PlatformComponent = $1 or deployments.PlatformComponent is null) and (image_cve_edges.State = $2))",
+				"where ((deployments.PlatformComponent = $1 or deployments.PlatformComponent is null) and image_cve_edges.State = $2)",
 			expectedData: []interface{}{"false", "0"},
 		},
 	} {
@@ -641,7 +641,24 @@ func TestSelectQueries(t *testing.T) {
 				"inner join images on image_component_edges.ImageId = images.Id left join deployments_containers on images.Id = deployments_containers.Image_Id " +
 				"left join deployments on deployments_containers.deployments_Id = deployments.Id " +
 				"inner join image_cve_edges on(image_component_edges.ImageId = image_cve_edges.ImageId and image_cves.Id = image_cve_edges.ImageCveId) " +
-				"where ((deployments.PlatformComponent = $1 or deployments.PlatformComponent is null) and (image_cve_edges.State = $2))",
+				"where ((deployments.PlatformComponent = $1 or deployments.PlatformComponent is null) and image_cve_edges.State = $2)",
+		},
+		{
+			desc: "select with multiple enum values with IN operator",
+			q: search.NewQueryBuilder().
+				AddSelectFields(
+					search.NewQuerySelect(search.CVE),
+				).
+				AddRegexes(search.VulnerabilityState, ".+ED").
+				ProtoQuery(),
+			schema: imageCVEsSchema,
+			expectedQuery: "select image_cves.CveBaseInfo_Cve as cve " +
+				"from image_cves " +
+				"inner join image_component_cve_edges on image_cves.Id = image_component_cve_edges.ImageCveId " +
+				"inner join image_component_edges on image_component_cve_edges.ImageComponentId = image_component_edges.ImageComponentId " +
+				"inner join images on image_component_edges.ImageId = images.Id " +
+				"inner join image_cve_edges on(image_component_edges.ImageId = image_cve_edges.ImageId and image_cves.Id = image_cve_edges.ImageCveId) " +
+				"where image_cve_edges.State IN ($1, $2)",
 		},
 	} {
 		t.Run(c.desc, func(t *testing.T) {
