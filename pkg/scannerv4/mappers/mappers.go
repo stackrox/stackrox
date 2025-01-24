@@ -454,6 +454,7 @@ func toProtoV4VulnerabilitiesMap(
 		if advisoryExists {
 			normalizedSeverity = toProtoV4VulnerabilitySeverityFromString(ctx, advisory.Severity)
 		}
+		// TODO: Handle EPSS score...
 		name := vulnerabilityName(v)
 		// Determine the related CVE for this vulnerability. This is necessary, as NVD is CVE-based.
 		cve, foundCVE := findName(v, cveIDPattern)

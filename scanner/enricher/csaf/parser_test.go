@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/klauspost/compress/snappy"
 	"github.com/quay/zlog"
 )
@@ -29,6 +30,7 @@ func TestParseEnrichment(t *testing.T) {
 		expectedName        string
 		expectedDescription string
 		expectedReleaseDate time.Time
+		expectedCVEs        []string
 		expectedSeverity    string
 		expectedCVSSv3      CVSS
 	}{
@@ -38,6 +40,7 @@ func TestParseEnrichment(t *testing.T) {
 			expectedName:        "RHBA-2024:0599",
 			expectedDescription: "Red Hat Bug Fix Advisory: Migration Toolkit for Applications bug fix and enhancement update",
 			expectedReleaseDate: time.Date(2024, time.January, 30, 13, 46, 48, 0, time.UTC),
+			expectedCVEs:        []string{"CVE-2023-39325", "CVE-2023-44487"},
 			expectedSeverity:    "Important",
 			expectedCVSSv3: CVSS{
 				Score:  7.5,
@@ -50,6 +53,7 @@ func TestParseEnrichment(t *testing.T) {
 			expectedName:        "RHSA-2024:0024",
 			expectedDescription: "Red Hat Security Advisory: firefox security update",
 			expectedReleaseDate: time.Date(2024, time.January, 2, 8, 30, 42, 0, time.UTC),
+			expectedCVEs:        []string{"CVE-2023-6856", "CVE-2023-6857", "CVE-2023-6858", "CVE-2023-6859", "CVE-2023-6860", "CVE-2023-6861", "CVE-2023-6862", "CVE-2023-6863", "CVE-2023-6864", "CVE-2023-6865", "CVE-2023-6867"},
 			expectedSeverity:    "Important",
 			expectedCVSSv3: CVSS{
 				Score:  8.8,
@@ -114,6 +118,9 @@ func TestParseEnrichment(t *testing.T) {
 			}
 			if record.ReleaseDate != tc.expectedReleaseDate {
 				t.Errorf("expected %s but got %s", tc.expectedReleaseDate, record.ReleaseDate)
+			}
+			if !cmp.Equal(record.CVEs, tc.expectedCVEs) {
+				t.Errorf("expected %v but got %v", tc.expectedCVEs, record.CVEs)
 			}
 			if record.Severity != tc.expectedSeverity {
 				t.Errorf("expected %s but got %s", tc.expectedSeverity, record.Severity)
