@@ -9,11 +9,12 @@ import {
     policiesBasePath,
     riskBasePath,
     violationsBasePath,
+    vulnerabilitiesAllImagesPath,
     vulnerabilitiesNodeCvesPath,
     vulnerabilitiesWorkloadCvesPath,
-    vulnerabilityNamespaceViewPath,
 } from 'routePaths';
 import { getQueryString } from 'utils/queryStringUtils';
+import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 
 const configManagementRolesPath = `${configManagementPath}/roles`;
 const configManagementSecretsPath = `${configManagementPath}/secrets`;
@@ -56,7 +57,9 @@ export type SearchResultCategoryMap = Record<SearchResultCategory, SearchResultC
 // Global search route has conditional rendering according to resourceAccessRequirements in routePaths.ts file.
 // Therefore update that property if response ever adds search categories.
 
-function getSearchResultCategoryMap(): SearchResultCategoryMap {
+function getSearchResultCategoryMap(
+    isFeatureFlagEnabled: IsFeatureFlagEnabled
+): SearchResultCategoryMap {
     return {
         ALERTS: {
             filterOn: null,
@@ -108,7 +111,11 @@ function getSearchResultCategoryMap(): SearchResultCategoryMap {
             filterOn: null,
             viewLinks: [
                 {
-                    basePath: `${vulnerabilityNamespaceViewPath}${getQueryString({
+                    basePath: `${
+                        isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT')
+                            ? vulnerabilitiesAllImagesPath
+                            : vulnerabilitiesWorkloadCvesPath
+                    }/namespace-view${getQueryString({
                         s: {
                             Namespace: ['^:name$'],
                             Cluster: ['^:locationTextForCategory$'],
@@ -193,9 +200,10 @@ function getSearchResultCategoryMap(): SearchResultCategoryMap {
 // Given isRouteEnabled predicate function from useIsRouteEnabled hook,
 // return copy of map with filter and view links only for routes that are enabled.
 export function searchResultCategoryMapFilteredIsRouteEnabled(
-    isRouteEnabled: IsRouteEnabled
+    isRouteEnabled: IsRouteEnabled,
+    isFeatureFlagEnabled: IsFeatureFlagEnabled
 ): SearchResultCategoryMap {
-    const searchResultCategoryMap = getSearchResultCategoryMap();
+    const searchResultCategoryMap = getSearchResultCategoryMap(isFeatureFlagEnabled);
     const searchResultCategoryMapFiltered = cloneDeep(searchResultCategoryMap);
 
     Object.keys(searchResultCategoryMapFiltered).forEach((searchResultKey) => {

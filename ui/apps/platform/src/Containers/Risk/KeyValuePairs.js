@@ -6,10 +6,7 @@ import isObject from 'lodash/isObject';
 import isArray from 'lodash/isArray';
 import isEmpty from 'lodash/isEmpty';
 
-import {
-    vulnerabilitiesPlatformWorkloadCvesPath,
-    vulnerabilitiesWorkloadCvesPath,
-} from 'routePaths';
+import { vulnerabilitiesPlatformPath, vulnerabilitiesWorkloadCvesPath } from 'routePaths';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 
 const isNumeric = (x) => (typeof x === 'number' || typeof x === 'string') && Number(x) >= 0;
@@ -80,7 +77,7 @@ class KeyValuePairs extends Component {
                 data.platformComponent;
 
             const vulnMgmtBasePath = usePlatformWorkloadCvePath
-                ? vulnerabilitiesPlatformWorkloadCvesPath
+                ? vulnerabilitiesPlatformPath
                 : vulnerabilitiesWorkloadCvesPath;
 
             return (

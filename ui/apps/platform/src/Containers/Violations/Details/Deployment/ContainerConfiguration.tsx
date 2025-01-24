@@ -3,10 +3,7 @@ import { Card, CardBody, CardTitle, Title } from '@patternfly/react-core';
 
 import { Deployment } from 'types/deployment.proto';
 import useFeatureFlags from 'hooks/useFeatureFlags';
-import {
-    vulnerabilitiesPlatformWorkloadCvesPath,
-    vulnerabilitiesWorkloadCvesPath,
-} from 'routePaths';
+import { vulnerabilitiesPlatformPath, vulnerabilitiesWorkloadCvesPath } from 'routePaths';
 import ContainerConfigurationDescriptionList from './ContainerConfigurationDescriptionList';
 
 export type ContainerConfigurationProps = {
@@ -21,7 +18,7 @@ function ContainerConfiguration({ deployment }: ContainerConfigurationProps): Re
         deployment &&
         deployment.platformComponent;
     const vulnMgmtBasePath = hasPlatformWorkloadCveLink
-        ? vulnerabilitiesPlatformWorkloadCvesPath
+        ? vulnerabilitiesPlatformPath
         : vulnerabilitiesWorkloadCvesPath;
 
     let content: JSX.Element[] | string = 'None';
