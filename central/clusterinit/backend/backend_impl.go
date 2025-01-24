@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/crs"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -228,7 +229,7 @@ func (b *backendImpl) Revoke(ctx context.Context, id string) error {
 	}
 
 	if err := b.store.Revoke(ctx, id); err != nil {
-		return errors.Wrapf(err, "revoking init bundle %q", id)
+		return errors.Wrapf(err, "revoking init bundle or cluster registration secret %q", id)
 	}
 
 	return nil
@@ -241,7 +242,7 @@ func (b *backendImpl) CheckRevoked(ctx context.Context, id string) error {
 
 	bundleMeta, err := b.store.Get(ctx, id)
 	if err != nil {
-		return errors.Wrapf(err, "retrieving init bundle %q", id)
+		return errors.Wrapf(err, "retrieving init bundle or cluster registration secret %q", id)
 	}
 
 	if bundleMeta.GetIsRevoked() {
@@ -257,12 +258,13 @@ func (b *backendImpl) ValidateClientCertificate(ctx context.Context, chain []mtl
 	}
 
 	leaf := chain[0]
-	bundleID := leaf.Subject.Organization
+	organization := leaf.Subject.Organization
 	// check if leaf cert is part of an init bundle
-	if len(bundleID) == 0 {
-		log.Debugf("Init bundle ID was not found in certificate %q", leaf.Subject.OrganizationalUnit)
+	if len(organization) == 0 {
+		log.Debugf("Init bundle or cluster registration secret ID was not found in certificate %q", leaf.Subject.OrganizationalUnit)
 		return nil
 	}
+	registrantID := organization[0]
 
 	subject := mtls.SubjectFromCommonName(leaf.Subject.CommonName)
 	if subject.Identifier == centralsensor.EphemeralInitCertClusterID {
@@ -270,12 +272,15 @@ func (b *backendImpl) ValidateClientCertificate(ctx context.Context, chain []mtl
 		return nil
 	}
 
-	if err := b.CheckRevoked(sac.WithAllAccess(ctx), bundleID[0]); err != nil {
-		if errors.Is(ErrInitBundleIsRevoked, err) {
-			log.Errorf("init bundle cert is revoked: %q", bundleID)
-			return errors.Wrapf(err, "init bundle verification failed %q", bundleID[0])
+	if err := b.CheckRevoked(sac.WithAllAccess(ctx), registrantID); err != nil {
+		if errors.Is(err, ErrInitBundleIsRevoked) {
+			log.Errorf("init bundle or cluster registration secret is revoked: %q", registrantID)
+			return errors.Wrapf(err, "init bundle verification failed %q", registrantID)
+		} else if errors.Is(err, store.ErrInitBundleNotFound) && features.AllowExternallyIssuedClusterRegistrationCertificates.Enabled() {
+			log.Infof("Init bundle or cluster registration secret %q could not be found in data store, treating as externally issued and not revoked", registrantID)
+			return nil
 		}
-		return errors.Wrapf(err, "failed checking init bundle status %q", bundleID[0])
+		return errors.Wrapf(err, "failed checking init bundle or cluster registration secret status %q", registrantID)
 	}
 
 	return nil

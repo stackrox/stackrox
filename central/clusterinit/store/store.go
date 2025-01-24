@@ -9,8 +9,8 @@ import (
 )
 
 var (
-	// ErrInitBundleNotFound signals that a requested init bundle could not be located in the store.
-	ErrInitBundleNotFound = errors.New("init bundle not found")
+	// ErrInitBundleNotFound signals that a requested init bundle or cluster registration secret could not be located in the store.
+	ErrInitBundleNotFound = errors.New("init bundle or cluster registration secret not found")
 
 	// ErrInitBundleIDCollision signals that an init bundle could not be added to the store due to an ID collision.
 	ErrInitBundleIDCollision = errors.New("init bundle ID collision")
