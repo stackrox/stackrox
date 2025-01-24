@@ -1,6 +1,7 @@
 module github.com/stackrox/rox
 
 go 1.22.5
+toolchain go1.23.5
 
 require (
 	cloud.google.com/go/artifactregistry v1.16.1
@@ -57,7 +58,7 @@ require (
 	github.com/google/certificate-transparency-go v1.3.1
 	github.com/google/gnostic-models v0.6.9
 	github.com/google/go-cmp v0.6.0
-	github.com/google/go-containerregistry v0.20.2
+	github.com/google/go-containerregistry v0.20.3
 	github.com/google/go-github/v60 v60.0.0
 	github.com/google/uuid v1.6.0
 	github.com/googleapis/gax-go/v2 v2.14.1
@@ -261,16 +262,16 @@ require (
 	github.com/containerd/containerd v1.7.18 // indirect
 	github.com/containerd/errdefs v0.1.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
-	github.com/containerd/stargz-snapshotter/estargz v0.15.1 // indirect
+	github.com/containerd/stargz-snapshotter/estargz v0.16.3 // indirect
 	github.com/containers/storage v1.55.0 // indirect
-	github.com/cpuguy83/go-md2man/v2 v2.0.4 // indirect
+	github.com/cpuguy83/go-md2man/v2 v2.0.6 // indirect
 	github.com/cyberphone/json-canonicalization v0.0.0-20231217050601-ba74d44ecf5f // indirect
 	github.com/cyphar/filepath-securejoin v0.3.6 // indirect
 	github.com/digitorus/pkcs7 v0.0.0-20230818184609-3a137a874352 // indirect
 	github.com/digitorus/timestamp v0.0.0-20231217203849-220c5c2851b7 // indirect
 	github.com/dimchansky/utfbom v1.1.1 // indirect
-	github.com/docker/cli v27.1.1+incompatible // indirect
-	github.com/docker/docker v27.1.1+incompatible // indirect
+	github.com/docker/cli v27.5.0+incompatible // indirect
+	github.com/docker/docker v27.5.0+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.8.2 // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-metrics v0.0.1 // indirect
@@ -451,7 +452,7 @@ require (
 	github.com/transparency-dev/merkle v0.0.2 // indirect
 	github.com/trivago/tgo v1.0.7 // indirect
 	github.com/ulikunitz/xz v0.5.12 // indirect
-	github.com/vbatts/tar-split v0.11.5 // indirect
+	github.com/vbatts/tar-split v0.11.6 // indirect
 	github.com/weppos/publicsuffix-go v0.30.3-0.20240411085455-21202160c2ed // indirect
 	github.com/xanzy/go-gitlab v0.102.0 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
@@ -468,12 +469,12 @@ require (
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/contrib/detectors/gcp v1.32.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.54.0 // indirect
-	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.54.0 // indirect
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.58.0 // indirect
 	go.opentelemetry.io/otel v1.33.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.24.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.24.0 // indirect
 	go.opentelemetry.io/otel/metric v1.33.0 // indirect
-	go.opentelemetry.io/otel/sdk v1.32.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.33.0 // indirect
 	go.opentelemetry.io/otel/sdk/metric v1.32.0 // indirect
 	go.opentelemetry.io/otel/trace v1.33.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.1.0 // indirect
