@@ -17,7 +17,7 @@ import useFeatureFlags from 'hooks/useFeatureFlags';
 import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
-import { EPSS, VulnerabilityState, isVulnerabilitySeverity } from 'types/cve.proto';
+import { CveBaseInfo, VulnerabilityState, isVulnerabilitySeverity } from 'types/cve.proto';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import useMap from 'hooks/useMap';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
@@ -117,9 +117,7 @@ export type ImageVulnerability = {
     scoreVersion: string;
     nvdCvss: number;
     nvdScoreVersion: string; // for example, V3 or UNKNOWN_VERSION
-    cveBaseInfo: {
-        epss: EPSS | null;
-    };
+    cveBaseInfo?: CveBaseInfo; // or maybe null (investigate when and why it might be absent)
     discoveredAtImage: string | null;
     publishedOn: string | null;
     pendingExceptionCount: number;

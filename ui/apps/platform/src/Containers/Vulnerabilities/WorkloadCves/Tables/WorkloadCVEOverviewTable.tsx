@@ -18,7 +18,7 @@ import useFeatureFlags from 'hooks/useFeatureFlags';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import useSet from 'hooks/useSet';
 import useMap from 'hooks/useMap';
-import { VulnerabilityState } from 'types/cve.proto';
+import { CveBaseInfo, VulnerabilityState } from 'types/cve.proto';
 import TooltipTh from 'Components/TooltipTh';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import CvssFormatted from 'Components/CvssFormatted';
@@ -51,7 +51,7 @@ import ExceptionDetailsCell from '../components/ExceptionDetailsCell';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
-import { formatEpssProbabilityAsPercent } from './table.utils';
+import { formatEpssProbabilityAsPercent, getCveBaseInfoFromDistroTuples } from './table.utils';
 
 export const tableId = 'WorkloadCveOverviewTable';
 export const defaultColumns = {
@@ -120,6 +120,11 @@ export const cveListQuery = gql`
                 scoreVersion
                 nvdCvss
                 nvdScoreVersion
+                cveBaseInfo {
+                    epss {
+                        epssProbability
+                    }
+                }
             }
             pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
         }
@@ -157,6 +162,7 @@ export type ImageCVE = {
         scoreVersion: string;
         nvdCvss: number;
         nvdScoreVersion: string; // for example, V3 or UNKNOWN_VERSION
+        cveBaseInfo?: CveBaseInfo; // or maybe null (investigate when and why it might be absent)
     }[];
     pendingExceptionCount: number;
 };
@@ -320,7 +326,8 @@ function WorkloadCVEOverviewTable({
                                 topNvdCVSS,
                                 distroTuples
                             );
-                            const epssProbability = undefined; // ccveBaseInfo?.epss?.epssProbability
+                            const cveBaseInfo = getCveBaseInfoFromDistroTuples(distroTuples);
+                            const epssProbability = cveBaseInfo?.epss?.epssProbability;
                             const summary =
                                 prioritizedDistros.length > 0 ? prioritizedDistros[0].summary : '';
 

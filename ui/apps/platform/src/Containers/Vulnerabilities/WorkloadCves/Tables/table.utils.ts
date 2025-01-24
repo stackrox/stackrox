@@ -2,7 +2,7 @@ import { gql } from '@apollo/client';
 import { min, parse } from 'date-fns';
 import sortBy from 'lodash/sortBy';
 import uniq from 'lodash/uniq';
-import { EPSS, VulnerabilitySeverity, isVulnerabilitySeverity } from 'types/cve.proto';
+import { CveBaseInfo, VulnerabilitySeverity, isVulnerabilitySeverity } from 'types/cve.proto';
 import { SourceType } from 'types/image.proto';
 import { ApiSortOptionSingle } from 'types/search';
 
@@ -216,9 +216,7 @@ export type DeploymentWithVulnerabilities = {
     imageVulnerabilities: {
         vulnerabilityId: string;
         cve: string;
-        cveBaseInfo: {
-            epss: EPSS | null;
-        };
+        cveBaseInfo?: CveBaseInfo; // or maybe null (investigate when and why it might be absent)
         operatingSystem: string;
         publishedOn: string | null;
         summary: string;
@@ -238,9 +236,7 @@ type DeploymentVulnerabilityImageMapping = {
 export type FormattedDeploymentVulnerability = {
     vulnerabilityId: string;
     cve: string;
-    cveBaseInfo: {
-        epss: EPSS | null;
-    };
+    cveBaseInfo?: CveBaseInfo; // or maybe null (investigate when and why it might be absent)
     operatingSystem: string;
     severity: VulnerabilitySeverity;
     isFixable: boolean;
@@ -318,6 +314,14 @@ export function formatVulnerabilityData(
             pendingExceptionCount,
         };
     });
+}
+
+export function getCveBaseInfoFromDistroTuples(
+    distroTuples: { cveBaseInfo?: CveBaseInfo }[]
+): CveBaseInfo | undefined {
+    // or maybe null (investigate when and why cveBaseInfo might be absent)
+    // Assume that epss property has same value for each of multiple items.
+    return distroTuples?.[0]?.cveBaseInfo;
 }
 
 // Given probability as float fraction, return as percent with 3 decimal digits.

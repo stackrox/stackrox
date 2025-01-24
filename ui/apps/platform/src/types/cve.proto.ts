@@ -26,6 +26,10 @@ export type EPSS = {
     epssPercentile: number; // float fraction between 0 and 1 inclusive
 };
 
+export type CveBaseInfo = {
+    epss: EPSS | null;
+};
+
 export type CVSSV2 = {
     vector: string;
     attackVector: AttackVectorV2;
