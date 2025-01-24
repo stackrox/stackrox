@@ -54,8 +54,7 @@ RUN microdnf upgrade -y --nobest && \
 
 COPY LICENSE /licenses/LICENSE
 
-# TODO(ROX-22245): set proper image flavor for user-facing GA Fast Stream images.
-ENV ROX_IMAGE_FLAVOR="development_build"
+ENV ROX_IMAGE_FLAVOR="rhacs"
 
 # The following are numeric uid and gid of `nobody` user in UBI.
 # We can't use symbolic names because otherwise k8s will fail to start the pod with an error like this:
