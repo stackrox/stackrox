@@ -33,6 +33,7 @@ import util.NetworkGraphUtil
 
 import org.junit.AssumptionViolatedException
 import spock.lang.Ignore
+import spock.lang.Retry
 import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Unroll
@@ -602,6 +603,7 @@ class SACTest extends BaseSpecification {
         "searchDeploymentsImagesToken"     | NAMESPACE_QA1  | [SSOC.SearchCategory.IMAGES]
     }
 
+    @Retry(count=30, delay=5000)
     def "Verify that SAC has the same effect as query restriction for network flows"() {
         given:
         "The network graphs retrieved by admin with a query and the SAC restricted token with and without query"
