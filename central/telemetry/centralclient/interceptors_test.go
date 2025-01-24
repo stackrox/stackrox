@@ -105,6 +105,8 @@ func Test_apiCall(t *testing.T) {
 		Path: phonehome.Pattern("*test*").Ptr(),
 	})
 	require.NoError(t, telemetryCampaign.Compile())
+	require.NoError(t, permanentTelemetryCampaign.Compile())
+	appendRuntimeCampaign(&phonehome.RuntimeConfig{})
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			props := make(map[string]any)

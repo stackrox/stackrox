@@ -5,6 +5,7 @@ import (
 
 	"github.com/gobwas/glob"
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 )
 
@@ -16,7 +17,7 @@ const userAgentHeaderKey = "User-Agent"
 var (
 	ignoredPaths = glob.MustCompile("{/v1/ping,/v1.PingService/Ping,/v1/metadata,/static/*}")
 
-	telemetryCampaign = phonehome.APICallCampaign{
+	permanentTelemetryCampaign = phonehome.APICallCampaign{
 		{
 			Headers: map[string]phonehome.Pattern{
 				userAgentHeaderKey:                  "*roxctl*",
@@ -38,6 +39,8 @@ var (
 		apiPathsCampaign(),
 		userAgentsCampaign(),
 	}
+	campaignMux       = sync.RWMutex{}
+	telemetryCampaign phonehome.APICallCampaign
 
 	interceptors = map[string][]phonehome.Interceptor{
 		"API Call": {apiCall, addDefaultProps},
@@ -83,6 +86,8 @@ func addDefaultProps(rp *phonehome.RequestParams, props map[string]any) bool {
 // User-Agent containing the substrings specified in the trackedUserAgents, and
 // have no match in the ignoredPaths list.
 func apiCall(rp *phonehome.RequestParams, props map[string]any) bool {
+	campaignMux.RLock()
+	defer campaignMux.RUnlock()
 	return !ignoredPaths.Match(rp.Path) && telemetryCampaign.CountFulfilled(rp,
 		func(cc *phonehome.APICallCampaignCriterion) {
 			addCustomHeaders(rp, cc, props)
@@ -95,6 +100,8 @@ func addCustomHeaders(rp *phonehome.RequestParams, cc *phonehome.APICallCampaign
 	if rp.Headers == nil || cc == nil {
 		return
 	}
+	campaignMux.RLock()
+	defer campaignMux.RUnlock()
 	for header := range cc.Headers {
 		values := rp.Headers(header)
 		if len(values) != 0 {

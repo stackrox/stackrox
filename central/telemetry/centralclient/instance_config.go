@@ -33,8 +33,11 @@ var (
 	once   sync.Once
 	log    = logging.LoggerForModule()
 
-	startMux sync.RWMutex
-	enabled  bool
+	startMux   sync.RWMutex
+	enabled    bool
+	instanceId string
+
+	runtimeConfigurationReloadTicker = time.NewTicker(1 * time.Hour)
 )
 
 // getRuntimeConfig returns the runtime configuration with the configured key.
@@ -47,10 +50,10 @@ func getRuntimeConfig() (*phonehome.RuntimeConfig, error) {
 		env.TelemetryConfigURL.Setting(),
 		env.TelemetryStorageKey.Setting(),
 	)
-	return runtimeCfg, errors.Wrap(err, "failed to get telemetry key")
+	return runtimeCfg, errors.WithMessage(err, "failed to fetch runtime telemetry config")
 }
 
-func getInstanceConfig(id string, key string) (*phonehome.Config, map[string]any) {
+func getInstanceConfig(key string) (*phonehome.Config, map[string]any) {
 	// k8s apiserver is not accessible in cloud service environment.
 	v := &k8sVersion.Info{GitVersion: "unknown"}
 	if rc, err := rest.InClusterConfig(); err == nil {
@@ -69,7 +72,7 @@ func getInstanceConfig(id string, key string) (*phonehome.Config, map[string]any
 	tenantID := env.TenantID.Setting()
 	// Consider on-prem central a tenant of itself:
 	if tenantID == "" {
-		tenantID = id
+		tenantID = instanceId
 	}
 
 	return &phonehome.Config{
@@ -78,7 +81,7 @@ func getInstanceConfig(id string, key string) (*phonehome.Config, map[string]any
 			// the number of (none) values, appearing on Amplitude charts, by
 			// introducing a slight delay between consequent events.
 			BatchSize:     1,
-			ClientID:      id,
+			ClientID:      instanceId,
 			ClientName:    "Central",
 			ClientVersion: version.GetMainVersion(),
 			GroupType:     "Tenant",
@@ -96,50 +99,82 @@ func getInstanceConfig(id string, key string) (*phonehome.Config, map[string]any
 		}
 }
 
+func appendRuntimeCampaign(runtimeCfg *phonehome.RuntimeConfig) {
+	telemetryCampaign = permanentTelemetryCampaign
+	if err := runtimeCfg.APICallCampaign.Compile(); err != nil {
+		log.Errorf("Failed to initialize runtime telemetry campaign: %v", err)
+	} else {
+		telemetryCampaign = append(telemetryCampaign, runtimeCfg.APICallCampaign...)
+	}
+	jc, _ := json.Marshal(telemetryCampaign)
+	log.Info("API Telemetry campaign: ", string(jc))
+}
+
+func applyConfig() (bool, error) {
+	if err := getInstanceId(); err != nil {
+		return false, err
+	}
+	runtimeCfg, err := getRuntimeConfig()
+	if err != nil {
+		return false, err
+	}
+	if runtimeCfg == nil {
+		return false, nil
+	}
+	applyRemoteConfig(runtimeCfg)
+	return true, nil
+}
+
+func applyRemoteConfig(runtimeCfg *phonehome.RuntimeConfig) {
+	startMux.Lock()
+	defer startMux.Unlock()
+	appendRuntimeCampaign(runtimeCfg)
+	if config == nil {
+		var props map[string]any
+		config, props = getInstanceConfig(runtimeCfg.Key)
+		config.Gatherer().AddGatherer(func(ctx context.Context) (map[string]any, error) {
+			return props, nil
+		})
+	} else {
+		config.StorageKey = runtimeCfg.Key
+	}
+}
+
+func getInstanceId() error {
+	startMux.Lock()
+	defer startMux.Unlock()
+	if instanceId != "" {
+		return nil
+	}
+
+	ii, _, err := store.Singleton().Get(
+		sac.WithGlobalAccessScopeChecker(context.Background(),
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.InstallationInfo))))
+
+	if err != nil || ii == nil {
+		return errors.WithMessagef(err, "failed to get installation information")
+	}
+	instanceId = ii.Id
+	return nil
+}
+
 // InstanceConfig collects the central instance telemetry configuration from
 // central Deployment labels and environment variables, installation store and
 // orchestrator properties. The collected data is used for configuring the
 // telemetry client. Returns nil if data collection is disabled.
 func InstanceConfig() *phonehome.Config {
 	once.Do(func() {
-		runtimeCfg, err := getRuntimeConfig()
-		if err != nil {
-			log.Errorf("Failed to configure telemetry: %v.", err)
+		utils.Must(permanentTelemetryCampaign.Compile())
+		if _, err := applyConfig(); err != nil {
+			log.Errorf("Failed to apply telemetry configuration: %v.", err)
 			return
 		}
-		if runtimeCfg == nil {
-			return
-		}
-
-		ii, _, err := store.Singleton().Get(
-			sac.WithGlobalAccessScopeChecker(context.Background(),
-				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-					sac.ResourceScopeKeys(resources.InstallationInfo))))
-
-		if err != nil || ii == nil {
-			log.Errorf("Failed to get installation information: %v.", err)
-			return
-		}
-
-		utils.Must(telemetryCampaign.Compile())
-		if err := runtimeCfg.APICallCampaign.Compile(); err != nil {
-			log.Errorf("Failed to initialize runtime telemetry campaign: %v", err)
-		} else {
-			telemetryCampaign = append(telemetryCampaign, runtimeCfg.APICallCampaign...)
-		}
-
-		var props map[string]any
-		config, props = getInstanceConfig(ii.Id, runtimeCfg.Key)
+		go periodicReload()
 		log.Info("Central ID: ", config.ClientID)
 		log.Info("Tenant ID: ", config.GroupID)
-		jc, _ := json.Marshal(telemetryCampaign)
-		log.Info("API Telemetry campaign: ", string(jc))
 		log.Infof("API Telemetry ignored paths: %v", ignoredPaths)
-
-		config.Gatherer().AddGatherer(func(ctx context.Context) (map[string]any, error) {
-			return props, nil
-		})
 	})
 	startMux.RLock()
 	defer startMux.RUnlock()
@@ -237,4 +272,20 @@ func Enable() *phonehome.Config {
 	log.Info("Telemetry collection has been enabled.")
 	cfg.Telemeter().Track("Telemetry Enabled", nil)
 	return cfg
+}
+
+func reload() {
+	if enable, err := applyConfig(); err != nil {
+		log.Errorf("Failed to reconfigure telemetry: %v.", err)
+	} else if enable {
+		Enable()
+	} else {
+		Disable()
+	}
+}
+
+func periodicReload() {
+	for _, ok := <-runtimeConfigurationReloadTicker.C; ok; {
+		reload()
+	}
 }
