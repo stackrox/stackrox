@@ -37,6 +37,7 @@ func buildClusterLevelSACQueryFilter(root *effectiveaccessscope.ScopeTree, verbo
 	clusterFilters := make([]string, 0, len(clusterIDs))
 	for _, clusterID := range clusterIDs {
 		clusterAccessScope := root.GetClusterByID(clusterID)
+		// skip if cluster is excluded or partially included with no namespaces
 		if clusterAccessScope == nil ||
 			clusterAccessScope.State == effectiveaccessscope.Excluded ||
 			(clusterAccessScope.State == effectiveaccessscope.Partial && len(clusterAccessScope.Namespaces) == 0) {
