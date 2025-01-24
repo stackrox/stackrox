@@ -57,7 +57,8 @@ FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS application
 
 # Install packages for the final stage.
 # find is used in /stackrox/import-additional-cas
-RUN microdnf -y install findutils postgresql && \
+RUN microdnf module enable postgresql:13 && \
+    microdnf -y install findutils postgresql && \
     # We can do usual cleanup while we're here: remove packages that would trigger violations. \
     microdnf -y clean all && \
     rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
