@@ -481,7 +481,7 @@ class NetworkFlowTest extends BaseSpecification {
            "runtime_config.yaml": """
 networking:
     externalIps:
-        enable: false
+        enabled: DISABLED
 """
         ]
 
@@ -501,7 +501,7 @@ networking:
            "runtime_config.yaml": """
 networking:
     externalIps:
-        enable: true
+        enabled: ENABLED
 """
        ]
         orchestrator.createConfigMap(CONFIG_MAP_NAME, CONFIG_MAP_DATA, "stackrox")
@@ -518,7 +518,7 @@ networking:
            "runtime_config.yaml": """
 networking:
     externalIps:
-        enable: false
+        enabled: DISABLED
 """
        ]
 
@@ -527,6 +527,64 @@ networking:
         assert waitForEdgeUpdate(edges.get(0), 90)
 	graph = NetworkGraphService.getNetworkGraph(null, null)
 	log.info "${graph}"
+    }
+
+    @Tag("NetworkFlowVisualization")
+    //ROX-21491 skipping test case for p/z
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
+    def "Verify external IPs"() {
+        given:
+        "Deployment A, where A communicates to an external target"
+        String deploymentUid = deployments.find { it.name == EXTERNALDESTINATION }?.deploymentUid
+        assert deploymentUid != null
+
+        def Map<String, String> CONFIG_MAP_DATA = [
+           "runtime_config.yaml": """
+networking:
+    externalIps:
+        enabled: DISABLED
+"""
+        ]
+
+        orchestrator.createConfigMap(CONFIG_MAP_NAME, CONFIG_MAP_DATA, "stackrox")
+
+        log.info "Checking for edge from ${EXTERNALDESTINATION} to external target"
+
+	sleep 180000
+
+        def externalEntities = NetworkGraphService.getExternalNetworkEntities(null)
+	log.info "external entities with external ips disabled"
+        log.info "${externalEntities}"
+
+        CONFIG_MAP_DATA = [
+           "runtime_config.yaml": """
+networking:
+    externalIps:
+        enabled: ENABLED
+"""
+       ]
+        orchestrator.createConfigMap(CONFIG_MAP_NAME, CONFIG_MAP_DATA, "stackrox")
+	sleep 180000
+
+        externalEntities = NetworkGraphService.getExternalNetworkEntities(null)
+	log.info "external entities with external ips enabled"
+        log.info "${externalEntities}"
+
+
+        CONFIG_MAP_DATA = [
+           "runtime_config.yaml": """
+networking:
+    externalIps:
+        enabled: DISABLED
+"""
+       ]
+
+        orchestrator.createConfigMap(CONFIG_MAP_NAME, CONFIG_MAP_DATA, "stackrox")
+	sleep 180000
+
+        externalEntities = NetworkGraphService.getExternalNetworkEntities(null)
+	log.info "external entities with external ips disabled"
+        log.info "${externalEntities}"
     }
 
     @Tag("NetworkFlowVisualization")
