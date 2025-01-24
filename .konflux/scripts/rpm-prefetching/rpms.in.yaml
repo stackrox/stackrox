@@ -29,3 +29,5 @@ arches:
   - ppc64le
   - s390x
   - x86_64
+moduleEnable:
+  - postgresql:13

@@ -179,13 +179,13 @@ arches:
     name: perl-libnet
     evr: 3.11-3.el8
     sourcerpm: perl-libnet-3.11-3.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/p/postgresql-10.23-4.module+el8.9.0+21317+d2c6bf8a.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/p/postgresql-13.18-1.module+el8.10.0+22549+cf2ec3d9.aarch64.rpm
     repoid: rhel-8-for-aarch64-appstream-rpms
-    size: 1557167
-    checksum: sha256:7dee87c8029162f0d2026b0b3cf239890d643e21fe1782f6db346f0584fbe67d
+    size: 1586863
+    checksum: sha256:8fff32dc96fe20317208bbcdf35676e7c8b0132618e1e63e26ff0eeba9c9618a
     name: postgresql
-    evr: 10.23-4.module+el8.9.0+21317+d2c6bf8a
-    sourcerpm: postgresql-10.23-4.module+el8.9.0+21317+d2c6bf8a.src.rpm
+    evr: 13.18-1.module+el8.10.0+22549+cf2ec3d9
+    sourcerpm: postgresql-13.18-1.module+el8.10.0+22549+cf2ec3d9.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/v/vim-filesystem-8.0.1763-19.el8_6.4.noarch.rpm
     repoid: rhel-8-for-aarch64-appstream-rpms
     size: 51660
@@ -852,13 +852,13 @@ arches:
     name: perl-libnet
     evr: 3.11-3.el8
     sourcerpm: perl-libnet-3.11-3.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/p/postgresql-10.23-4.module+el8.9.0+21317+d2c6bf8a.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/p/postgresql-13.18-1.module+el8.10.0+22549+cf2ec3d9.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-appstream-rpms
-    size: 1660283
-    checksum: sha256:c5e5cfbba047dbc8a64568b7ae56b564befbfe44ba056aa4048700fe807a02a3
+    size: 1693811
+    checksum: sha256:38e4468c017f393d4612494886cc6783f5d2448d8bc9e7748061819c0710f83f
     name: postgresql
-    evr: 10.23-4.module+el8.9.0+21317+d2c6bf8a
-    sourcerpm: postgresql-10.23-4.module+el8.9.0+21317+d2c6bf8a.src.rpm
+    evr: 13.18-1.module+el8.10.0+22549+cf2ec3d9
+    sourcerpm: postgresql-13.18-1.module+el8.10.0+22549+cf2ec3d9.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/v/vim-filesystem-8.0.1763-19.el8_6.4.noarch.rpm
     repoid: rhel-8-for-ppc64le-appstream-rpms
     size: 51660
@@ -1525,13 +1525,13 @@ arches:
     name: perl-libnet
     evr: 3.11-3.el8
     sourcerpm: perl-libnet-3.11-3.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/p/postgresql-10.23-4.module+el8.9.0+21317+d2c6bf8a.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/p/postgresql-13.18-1.module+el8.10.0+22549+cf2ec3d9.s390x.rpm
     repoid: rhel-8-for-s390x-appstream-rpms
-    size: 1542687
-    checksum: sha256:e03f8119ebc59e48411c4b46ce9228c0df83e50eb5330da3a2c8a32ffda70d98
+    size: 1568795
+    checksum: sha256:bad166b12df776480c3021fd56e82c62c3bef3fcbbbfa629847e36a63e2a863e
     name: postgresql
-    evr: 10.23-4.module+el8.9.0+21317+d2c6bf8a
-    sourcerpm: postgresql-10.23-4.module+el8.9.0+21317+d2c6bf8a.src.rpm
+    evr: 13.18-1.module+el8.10.0+22549+cf2ec3d9
+    sourcerpm: postgresql-13.18-1.module+el8.10.0+22549+cf2ec3d9.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/v/vim-filesystem-8.0.1763-19.el8_6.4.noarch.rpm
     repoid: rhel-8-for-s390x-appstream-rpms
     size: 51660
@@ -2198,13 +2198,13 @@ arches:
     name: perl-libnet
     evr: 3.11-3.el8
     sourcerpm: perl-libnet-3.11-3.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/p/postgresql-10.23-4.module+el8.9.0+21317+d2c6bf8a.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/p/postgresql-13.18-1.module+el8.10.0+22549+cf2ec3d9.x86_64.rpm
     repoid: rhel-8-for-x86_64-appstream-rpms
-    size: 1577787
-    checksum: sha256:b20d1902196708ca05e920923716dbb3a44ff6b7339119e3e16d1f58ea3229b2
+    size: 1611403
+    checksum: sha256:fef27ee70a184fabe668ed777d0a3233548fdcf205fe63b53fd25102af015d04
     name: postgresql
-    evr: 10.23-4.module+el8.9.0+21317+d2c6bf8a
-    sourcerpm: postgresql-10.23-4.module+el8.9.0+21317+d2c6bf8a.src.rpm
+    evr: 13.18-1.module+el8.10.0+22549+cf2ec3d9
+    sourcerpm: postgresql-13.18-1.module+el8.10.0+22549+cf2ec3d9.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/v/vim-filesystem-8.0.1763-19.el8_6.4.noarch.rpm
     repoid: rhel-8-for-x86_64-appstream-rpms
     size: 51660
