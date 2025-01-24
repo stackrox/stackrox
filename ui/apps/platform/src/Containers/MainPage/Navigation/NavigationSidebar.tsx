@@ -14,7 +14,6 @@ import { HasReadAccess } from 'hooks/usePermissions';
 
 // Import path variables in alphabetical order to minimize merge conflicts when multiple people add routes.
 import {
-    RouteKey,
     accessControlBasePath,
     administrationEventsBasePath,
     clustersBasePath,
@@ -27,7 +26,6 @@ import {
     exceptionConfigurationPath,
     exceptionManagementPath,
     integrationsPath,
-    isRouteEnabled, // predicate function
     listeningEndpointsBasePath,
     networkBasePath,
     policyManagementBasePath,
@@ -45,12 +43,9 @@ import {
 
 import NavigationContent from './NavigationContent';
 import NavigationItem from './NavigationItem';
+import { NavDescription, ChildDescription, isActiveLink, filterNavDescriptions } from './utils';
 
 import './NavigationSidebar.css';
-
-// Child example; Compliance (1.0) if Compliance (2.0) is rendered and Compliance otherwise.
-// Parent example: Vulnerability Management (1.0) if Vulnerability Management (2.0) is rendered and so on.
-type TitleCallback = (navDescriptionFiltered: NavDescription[]) => string | ReactElement;
 
 // Child conditional title finds path to decide presence or absence of counterpart child.
 // Parent conditional title finds key to decide presence or absence of counterpart parent.
@@ -58,36 +53,6 @@ const keyForNetwork = 'Network';
 const keyForPlatformConfiguration = 'Platform Configuration';
 const keyForCompliance = 'Compliance';
 const keyForVulnerabilities = 'Vulnerability Management';
-type IsActiveCallback = (pathname: string) => boolean;
-
-type LinkDescription = {
-    type: 'link';
-    content: string | TitleCallback | ReactElement;
-    path: string;
-    routeKey: RouteKey;
-    isActive?: IsActiveCallback; // for example, exact match
-};
-
-// Encapsulate whether path match for child is specific or generic.
-function isActiveLink(pathname: string, { isActive, path }: LinkDescription) {
-    return typeof isActive === 'function' ? isActive(pathname) : Boolean(matchPath(pathname, path));
-}
-
-type SeparatorDescription = {
-    type: 'separator';
-    key: string; // corresponds to React key prop
-};
-
-type ChildDescription = LinkDescription | SeparatorDescription;
-
-type ParentDescription = {
-    type: 'parent';
-    title: string | ReactElement | TitleCallback;
-    key: string; // for key prop and especially for title callback
-    children: ChildDescription[];
-};
-
-type NavDescription = LinkDescription | ParentDescription;
 
 function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDescription[] {
     const isPlatformCveSplitEnabled = isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT');
@@ -357,51 +322,10 @@ function NavigationSidebar({
     const { pathname } = useLocation();
     const routePredicates = { hasReadAccess, isFeatureFlagEnabled };
 
-    function isChildLinkEnabled(childDescription: ChildDescription) {
-        return childDescription.type === 'link'
-            ? isRouteEnabled(routePredicates, childDescription.routeKey)
-            : true;
-    }
-
-    function isChildSeparatorRelevant(
-        childDescription: ChildDescription,
-        index: number,
-        array: ChildDescription[]
-    ) {
-        // A separator is relevant if it is preceded and followed by a link whose route is enabled.
-        return childDescription.type === 'separator'
-            ? index !== 0 && index !== array.length - 1 && array[index + 1].type === 'link'
-            : true;
-    }
-
-    const navDescriptionsFiltered = getNavDescriptions(isFeatureFlagEnabled)
-        .map((navDescription) => {
-            switch (navDescription.type) {
-                case 'parent': {
-                    // Filter second-level children.
-                    return {
-                        ...navDescription,
-                        children: navDescription.children
-                            .filter(isChildLinkEnabled)
-                            .filter(isChildSeparatorRelevant),
-                    };
-                }
-                default: {
-                    return navDescription;
-                }
-            }
-        })
-        .filter((navDescription) => {
-            // Filter first-level parents and children.
-            switch (navDescription.type) {
-                case 'parent': {
-                    return navDescription.children.length !== 0;
-                }
-                default: {
-                    return isRouteEnabled(routePredicates, navDescription.routeKey);
-                }
-            }
-        });
+    const navDescriptionsFiltered = filterNavDescriptions(
+        getNavDescriptions(isFeatureFlagEnabled),
+        routePredicates
+    );
 
     const Navigation = (
         <Nav>
@@ -417,7 +341,8 @@ function NavigationSidebar({
                             const hasChildMatchPath = children.some(
                                 (childDescription) =>
                                     childDescription.type === 'link' &&
-                                    Boolean(matchPath(pathname, childDescription.path))
+                                    (Boolean(matchPath(pathname, childDescription.path)) ||
+                                        isActiveLink(pathname, childDescription))
                             );
                             return (
                                 <NavExpandable

@@ -14,7 +14,7 @@ import { clustersBasePath } from 'routePaths';
 
 import Header from './Header/Header';
 import PublicConfigFooter from './PublicConfig/PublicConfigFooter';
-import NavigationSidebar from './Sidebar/NavigationSidebar';
+import NavigationSidebar from './Navigation/NavigationSidebar';
 
 import Body from './Body';
 import AcsFeedbackModal from './AcsFeedbackModal';
