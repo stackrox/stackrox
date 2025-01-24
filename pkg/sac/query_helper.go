@@ -107,14 +107,10 @@ func getMatchNoneQuery() *v1.Query {
 	}
 }
 
-func getClusterMatchQuery(clusterID... string) *v1.Query {
+func getClusterMatchQuery(clusterID ...string) *v1.Query {
 	return search.NewQueryBuilder().AddExactMatches(clusterIDField, clusterID...).ProtoQuery()
 }
 
-func getNamespaceMatchQuery(namespace... string) *v1.Query {
+func getNamespaceMatchQuery(namespace ...string) *v1.Query {
 	return search.NewQueryBuilder().AddExactMatches(namespaceField, namespace...).ProtoQuery()
-}
-
-func getAnyNamespaceMatchQuery() *v1.Query {
-	return search.NewQueryBuilder().AddStringsHighlighted(namespaceField, search.WildcardString).ProtoQuery()
 }
