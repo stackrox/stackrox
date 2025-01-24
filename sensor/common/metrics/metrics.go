@@ -295,15 +295,7 @@ var (
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "num_messages_waiting_for_transmission_to_central",
 		Help:      "A counter that tracks the operations in the responses channel",
-	}, []string{"Operation"})
-
-	// responsesChannelDroppedCount keeps track of the number of messages dropped in the responses channel.
-	responsesChannelDroppedCount = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "responses_channel_dropped_total",
-		Help:      "A counter for the total number of messages that were dropped if the responses channel is full",
-	}, []string{"MessageType"})
+	}, []string{"Operation", "MessageType"})
 )
 
 // IncrementEntityNotFound increments an instance of entity not found
@@ -457,26 +449,30 @@ func DecOutputChannelSize() {
 	outputChannelSize.Dec()
 }
 
-// ResponsesChannelAdd increases the responsesChannelOperationCount's Add operation by 1
-func ResponsesChannelAdd() {
-	responsesChannelOperationCount.With(prometheus.Labels{"Operation": metrics.Add.String()}).Inc()
-}
-
-// ResponsesChannelRemove increases the responsesChannelOperationCount's Remove operation by 1
-func ResponsesChannelRemove() {
-	responsesChannelOperationCount.With(prometheus.Labels{"Operation": metrics.Remove.String()}).Inc()
-}
-
-// IncResponsesChannelDroppedCount increases the responsesChannelDroppedCount by 1
-func IncResponsesChannelDroppedCount(msg *central.MsgFromSensor) {
+func getResponsesChannelLabel(op string, msg *central.MsgFromSensor) prometheus.Labels {
 	msgType := "nil"
 	if msg.GetMsg() != nil {
 		msgType = strings.TrimPrefix(reflect.TypeOf(msg.GetMsg()).String(), "*central.MsgFromSensor_")
 	}
-	labels := prometheus.Labels{
+	return prometheus.Labels{
 		"MessageType": msgType,
+		"Operation":   op,
 	}
-	responsesChannelDroppedCount.With(labels).Inc()
+}
+
+// ResponsesChannelAdd increases the responsesChannelOperationCount's Add operation by 1
+func ResponsesChannelAdd(msg *central.MsgFromSensor) {
+	responsesChannelOperationCount.With(getResponsesChannelLabel(metrics.Add.String(), msg)).Inc()
+}
+
+// ResponsesChannelRemove increases the responsesChannelOperationCount's Remove operation by 1
+func ResponsesChannelRemove(msg *central.MsgFromSensor) {
+	responsesChannelOperationCount.With(getResponsesChannelLabel(metrics.Remove.String(), msg)).Inc()
+}
+
+// ResponsesChannelDrop increases the responsesChannelDroppedCount by 1
+func ResponsesChannelDrop(msg *central.MsgFromSensor) {
+	responsesChannelOperationCount.With(getResponsesChannelLabel(metrics.Dropped.String(), msg)).Inc()
 }
 
 // SetTelemetryMetrics sets the cluster metrics for the telemetry metrics.

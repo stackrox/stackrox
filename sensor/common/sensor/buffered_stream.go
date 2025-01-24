@@ -16,10 +16,10 @@ type bufferedStream struct {
 func (s bufferedStream) Send(msg *central.MsgFromSensor) error {
 	select {
 	case s.buffer <- msg:
-		metrics.ResponsesChannelAdd()
+		metrics.ResponsesChannelAdd(msg)
 	default:
 		// The buffer is full, we drop the message and return
-		metrics.IncResponsesChannelDroppedCount(msg)
+		metrics.ResponsesChannelDrop(msg)
 		return nil
 	}
 	return nil
@@ -51,10 +51,9 @@ func (s bufferedStream) run() <-chan error {
 				if !ok {
 					return
 				}
-				metrics.ResponsesChannelRemove()
-				err := s.stream.Send(msg)
+				metrics.ResponsesChannelRemove(msg)
 				select {
-				case errC <- err:
+				case errC <- s.stream.Send(msg):
 				case <-s.stopC.Done():
 					return
 				}
