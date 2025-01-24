@@ -36,8 +36,8 @@ func main() {
 
 	devmode.StartOnDevBuilds("bin/kubernetes-sensor")
 
-	if err := continuousprofiling.SetupContinuousProfilingClient(continuousprofiling.DefaultConfig(),
-		continuousprofiling.WithAppName("sensor")); err != nil {
+	if err := continuousprofiling.SetupClient(continuousprofiling.DefaultConfig(),
+		continuousprofiling.WithDefaultAppName("sensor")); err != nil {
 		log.Errorf("unable to start continuous profiling: %v", err)
 	}
 

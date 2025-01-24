@@ -275,8 +275,8 @@ func main() {
 
 	premain.StartMain()
 
-	if err := continuousprofiling.SetupContinuousProfilingClient(continuousprofiling.DefaultConfig(),
-		continuousprofiling.WithAppName("central")); err != nil {
+	if err := continuousprofiling.SetupClient(continuousprofiling.DefaultConfig(),
+		continuousprofiling.WithDefaultAppName("central")); err != nil {
 		log.Errorf("unable to start continuous profiling: %v", err)
 	}
 
