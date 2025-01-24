@@ -22,7 +22,8 @@ contentOrigin:
 context:
   containerfile:
     file: ../../../image/rhel/konflux.Dockerfile
-    stageName: go-builder
+    # stageName: go-builder
+    stageName: application
 arches:
   - aarch64
   - ppc64le
