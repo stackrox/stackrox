@@ -287,8 +287,8 @@ github.com/aws/aws-sdk-go-v2/credentials v1.17.54 h1:4UmqeOqJPvdvASZWrKlhzpRahAu
 github.com/aws/aws-sdk-go-v2/credentials v1.17.54/go.mod h1:RTdfo0P0hbbTxIhmQrOsC/PquBZGabEPnCaxxKRPSnI=
 github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.24 h1:5grmdTdMsovn9kPZPI23Hhvp0ZyNm5cRO+IZFIYiAfw=
 github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.24/go.mod h1:zqi7TVKTswH3Ozq28PkmBmgzG1tona7mo9G2IJg4Cis=
-github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.17.52 h1:6kI83R98XOnnyzHv9g9KTYXFawMyeQq8NeEERWMAwJk=
-github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.17.52/go.mod h1:Juj7unpf3CIrWpEyJZhRJ6rJl9IYX7Hd8HOlwaZq/LE=
+github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.17.53 h1:3jYpOndmkKtmlPOhMNIV7Q92GD61x/KNjmxUcB95btw=
+github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.17.53/go.mod h1:+s7tPUl4uy7FMpT5qnjkY5YJNuKU2HZL6trkYxQNtb4=
 github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.43/go.mod h1:auo+PiyLl0n1l8A0e8RIeR8tOzYPfZZH/JNlrJ8igTQ=
 github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.28 h1:igORFSiH3bfq4lxKFkTSYDhJEUCYo6C8VKiWJjYwQuQ=
 github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.28/go.mod h1:3So8EA/aAYm36L7XIvCVwLa0s5N0P7o2b1oqnx/2R4g=
