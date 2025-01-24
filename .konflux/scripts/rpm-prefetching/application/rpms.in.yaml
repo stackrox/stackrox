@@ -1,0 +1,16 @@
+packages:
+  - findutils
+  - postgresql
+contentOrigin:
+  repofiles: ["redhat.repo"]
+context:
+  containerfile:
+    file: ../../../../image/rhel/konflux.Dockerfile
+    stageName: application
+arches:
+  - aarch64
+  - ppc64le
+  - s390x
+  - x86_64
+moduleEnable:
+  - postgresql:13

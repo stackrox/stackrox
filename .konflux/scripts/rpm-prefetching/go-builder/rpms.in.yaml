@@ -1,33 +1,24 @@
 packages:
-  # Go Builder
   - make
   - automake
   - gcc
   - gcc-c++
-  - libstdc++
   - coreutils-single
   - binutils
   - diffutils
   - zlib-devel
   - bzip2-devel
-  - bzip2-libs
   - lz4-devel
   - cmake
   - jq
-  # App
-  - findutils
-  - postgresql
 contentOrigin:
   repofiles: ["redhat.repo"]
 context:
   containerfile:
-    file: ../../../image/rhel/konflux.Dockerfile
-    # stageName: go-builder
-    stageName: application
+    file: ../../../../image/rhel/konflux.Dockerfile
+    stageName: go-builder
 arches:
   - aarch64
   - ppc64le
   - s390x
   - x86_64
-moduleEnable:
-  - postgresql:13

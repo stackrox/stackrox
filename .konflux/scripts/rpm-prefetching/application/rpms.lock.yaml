@@ -1,0 +1,120 @@
+---
+lockfileVersion: 1
+lockfileVendor: redhat
+arches:
+- arch: aarch64
+  packages:
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/l/libpq-13.11-1.el8.aarch64.rpm
+    repoid: rhel-8-for-aarch64-appstream-rpms
+    size: 197304
+    checksum: sha256:403153700246ffca90fae77c75434b3144efd7015a92fec7de76d60ea46f2838
+    name: libpq
+    evr: 13.11-1.el8
+    sourcerpm: libpq-13.11-1.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/p/postgresql-13.18-1.module+el8.10.0+22549+cf2ec3d9.aarch64.rpm
+    repoid: rhel-8-for-aarch64-appstream-rpms
+    size: 1586863
+    checksum: sha256:8fff32dc96fe20317208bbcdf35676e7c8b0132618e1e63e26ff0eeba9c9618a
+    name: postgresql
+    evr: 13.18-1.module+el8.10.0+22549+cf2ec3d9
+    sourcerpm: postgresql-13.18-1.module+el8.10.0+22549+cf2ec3d9.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/f/findutils-4.6.0-23.el8_10.aarch64.rpm
+    repoid: rhel-8-for-aarch64-baseos-rpms
+    size: 537232
+    checksum: sha256:eb493cd562274cf498265a7d1afef06f22424ad5dff90c66f990e2edfbb40f8a
+    name: findutils
+    evr: 1:4.6.0-23.el8_10
+    sourcerpm: findutils-4.6.0-23.el8_10.src.rpm
+  source: []
+  module_metadata:
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/repodata/52fa9bcefae4a91fcc60343c615b59df4ce1bf8f5de3eeb040fb03f5c0e8c045-modules.yaml.gz
+    repoid: rhel-8-for-aarch64-appstream-rpms
+    size: 693974
+    checksum: sha256:52fa9bcefae4a91fcc60343c615b59df4ce1bf8f5de3eeb040fb03f5c0e8c045
+- arch: ppc64le
+  packages:
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/l/libpq-13.11-1.el8.ppc64le.rpm
+    repoid: rhel-8-for-ppc64le-appstream-rpms
+    size: 219004
+    checksum: sha256:c80d63500a22110f9144aa448ac07e0fcf4094a972818917af2e101c5cb1ee3f
+    name: libpq
+    evr: 13.11-1.el8
+    sourcerpm: libpq-13.11-1.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/p/postgresql-13.18-1.module+el8.10.0+22549+cf2ec3d9.ppc64le.rpm
+    repoid: rhel-8-for-ppc64le-appstream-rpms
+    size: 1693811
+    checksum: sha256:38e4468c017f393d4612494886cc6783f5d2448d8bc9e7748061819c0710f83f
+    name: postgresql
+    evr: 13.18-1.module+el8.10.0+22549+cf2ec3d9
+    sourcerpm: postgresql-13.18-1.module+el8.10.0+22549+cf2ec3d9.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/f/findutils-4.6.0-23.el8_10.ppc64le.rpm
+    repoid: rhel-8-for-ppc64le-baseos-rpms
+    size: 555032
+    checksum: sha256:e082308da55a744cba3ceba76539c9ce8174d01ce9c6f2f3ec4bba625d8d612f
+    name: findutils
+    evr: 1:4.6.0-23.el8_10
+    sourcerpm: findutils-4.6.0-23.el8_10.src.rpm
+  source: []
+  module_metadata:
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/repodata/07efb312b92dbb3b4564aab8903fe6a3732f219316cccf41fbec0f3f0265c516-modules.yaml.gz
+    repoid: rhel-8-for-ppc64le-appstream-rpms
+    size: 686449
+    checksum: sha256:07efb312b92dbb3b4564aab8903fe6a3732f219316cccf41fbec0f3f0265c516
+- arch: s390x
+  packages:
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/l/libpq-13.11-1.el8.s390x.rpm
+    repoid: rhel-8-for-s390x-appstream-rpms
+    size: 196104
+    checksum: sha256:6994894d46ab9d75bea9bad68c93a4c3b620a57f7d6a7affa9e5282c9336c4f5
+    name: libpq
+    evr: 13.11-1.el8
+    sourcerpm: libpq-13.11-1.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/p/postgresql-13.18-1.module+el8.10.0+22549+cf2ec3d9.s390x.rpm
+    repoid: rhel-8-for-s390x-appstream-rpms
+    size: 1568795
+    checksum: sha256:bad166b12df776480c3021fd56e82c62c3bef3fcbbbfa629847e36a63e2a863e
+    name: postgresql
+    evr: 13.18-1.module+el8.10.0+22549+cf2ec3d9
+    sourcerpm: postgresql-13.18-1.module+el8.10.0+22549+cf2ec3d9.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/f/findutils-4.6.0-23.el8_10.s390x.rpm
+    repoid: rhel-8-for-s390x-baseos-rpms
+    size: 535572
+    checksum: sha256:b23855a924a4df2772243a707899f96220f5072443cfb57f80ed3a8db5e9d4e4
+    name: findutils
+    evr: 1:4.6.0-23.el8_10
+    sourcerpm: findutils-4.6.0-23.el8_10.src.rpm
+  source: []
+  module_metadata:
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/repodata/aff6009b9aaa0b82d2aff42bad6491587367edc1922fee6e376b2df9d8d72740-modules.yaml.gz
+    repoid: rhel-8-for-s390x-appstream-rpms
+    size: 688398
+    checksum: sha256:aff6009b9aaa0b82d2aff42bad6491587367edc1922fee6e376b2df9d8d72740
+- arch: x86_64
+  packages:
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/l/libpq-13.11-1.el8.x86_64.rpm
+    repoid: rhel-8-for-x86_64-appstream-rpms
+    size: 202564
+    checksum: sha256:745c5a5e7eb03a53f2ec5d3a3a2cdba0faf02ffa0427655915b5d32a795d3b6c
+    name: libpq
+    evr: 13.11-1.el8
+    sourcerpm: libpq-13.11-1.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/p/postgresql-13.18-1.module+el8.10.0+22549+cf2ec3d9.x86_64.rpm
+    repoid: rhel-8-for-x86_64-appstream-rpms
+    size: 1611403
+    checksum: sha256:fef27ee70a184fabe668ed777d0a3233548fdcf205fe63b53fd25102af015d04
+    name: postgresql
+    evr: 13.18-1.module+el8.10.0+22549+cf2ec3d9
+    sourcerpm: postgresql-13.18-1.module+el8.10.0+22549+cf2ec3d9.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/f/findutils-4.6.0-23.el8_10.x86_64.rpm
+    repoid: rhel-8-for-x86_64-baseos-rpms
+    size: 540248
+    checksum: sha256:cb645de7da1bd495a6df969de4b0f84f10ccf8d299c26099f1cd9075ed9c32cb
+    name: findutils
+    evr: 1:4.6.0-23.el8_10
+    sourcerpm: findutils-4.6.0-23.el8_10.src.rpm
+  source: []
+  module_metadata:
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/repodata/7f7186dcdced867c201daeca8d77aed7327c975a1db706dd083251c7fc96da2e-modules.yaml.gz
+    repoid: rhel-8-for-x86_64-appstream-rpms
+    size: 712005
+    checksum: sha256:7f7186dcdced867c201daeca8d77aed7327c975a1db706dd083251c7fc96da2e
