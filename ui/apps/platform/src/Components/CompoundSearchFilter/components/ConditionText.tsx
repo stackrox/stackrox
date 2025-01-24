@@ -6,9 +6,10 @@ import { NonEmptyArray } from 'utils/type.utils';
 import SimpleSelect from './SimpleSelect';
 
 // Potentially reusable for condition-number and date-picker components.
-type ConditionEntry = [conditionKey: string, conditionText: string];
-type ConditionInputProps = {
-    conditionEntries: NonEmptyArray<ConditionEntry>; // first item has default conditionKey
+export type ConditionEntry = [conditionKey: string, conditionText: string];
+export type ConditionEntries = NonEmptyArray<ConditionEntry>; // first item has default conditionKey
+export type ConditionInputProps = {
+    conditionEntries: ConditionEntries;
 };
 
 type TextInputProps = {
