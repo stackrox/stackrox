@@ -2,7 +2,7 @@ import { gql } from '@apollo/client';
 import { min, parse } from 'date-fns';
 import sortBy from 'lodash/sortBy';
 import uniq from 'lodash/uniq';
-import { VulnerabilitySeverity, isVulnerabilitySeverity } from 'types/cve.proto';
+import { EPSS, VulnerabilitySeverity, isVulnerabilitySeverity } from 'types/cve.proto';
 import { SourceType } from 'types/image.proto';
 import { ApiSortOptionSingle } from 'types/search';
 
@@ -216,6 +216,9 @@ export type DeploymentWithVulnerabilities = {
     imageVulnerabilities: {
         vulnerabilityId: string;
         cve: string;
+        cveBaseInfo: {
+            epss: EPSS | null;
+        };
         operatingSystem: string;
         publishedOn: string | null;
         summary: string;
@@ -235,6 +238,9 @@ type DeploymentVulnerabilityImageMapping = {
 export type FormattedDeploymentVulnerability = {
     vulnerabilityId: string;
     cve: string;
+    cveBaseInfo: {
+        epss: EPSS | null;
+    };
     operatingSystem: string;
     severity: VulnerabilitySeverity;
     isFixable: boolean;
@@ -257,8 +263,15 @@ export function formatVulnerabilityData(
     });
 
     return deployment.imageVulnerabilities.map((vulnerability) => {
-        const { vulnerabilityId, cve, operatingSystem, summary, images, pendingExceptionCount } =
-            vulnerability;
+        const {
+            vulnerabilityId,
+            cve,
+            cveBaseInfo,
+            operatingSystem,
+            summary,
+            images,
+            pendingExceptionCount,
+        } = vulnerability;
         // Severity, Fixability, and Discovered date are all based on the aggregate value of all components
         const allVulnerableComponents = vulnerability.images.flatMap((img) => img.imageComponents);
         const allVulnerabilities = allVulnerableComponents.flatMap((c) => c.imageVulnerabilities);
@@ -293,6 +306,7 @@ export function formatVulnerabilityData(
         return {
             vulnerabilityId,
             cve,
+            cveBaseInfo,
             operatingSystem,
             severity: highestVulnSeverity,
             isFixable: isFixableInDeployment,

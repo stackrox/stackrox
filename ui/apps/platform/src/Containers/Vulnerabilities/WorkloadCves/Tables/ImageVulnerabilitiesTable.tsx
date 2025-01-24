@@ -17,7 +17,7 @@ import useFeatureFlags from 'hooks/useFeatureFlags';
 import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
-import { VulnerabilityState, isVulnerabilitySeverity } from 'types/cve.proto';
+import { EPSS, VulnerabilityState, isVulnerabilitySeverity } from 'types/cve.proto';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import useMap from 'hooks/useMap';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
@@ -95,6 +95,11 @@ export const imageVulnerabilitiesFragment = gql`
         scoreVersion
         nvdCvss
         nvdScoreVersion
+        cveBaseInfo {
+            epss {
+                epssProbability
+            }
+        }
         discoveredAtImage
         publishedOn
         pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
@@ -112,6 +117,9 @@ export type ImageVulnerability = {
     scoreVersion: string;
     nvdCvss: number;
     nvdScoreVersion: string; // for example, V3 or UNKNOWN_VERSION
+    cveBaseInfo: {
+        epss: EPSS | null;
+    };
     discoveredAtImage: string | null;
     publishedOn: string | null;
     pendingExceptionCount: number;
@@ -235,6 +243,7 @@ function ImageVulnerabilitiesTable({
                             scoreVersion,
                             nvdCvss,
                             nvdScoreVersion,
+                            cveBaseInfo,
                             imageComponents,
                             discoveredAtImage,
                             publishedOn,
@@ -244,7 +253,7 @@ function ImageVulnerabilitiesTable({
                             (imageComponent) => imageComponent.imageVulnerabilities
                         );
                         const isFixableInImage = getIsSomeVulnerabilityFixable(vulnerabilities);
-                        const epssProbability = undefined; // ccveBaseInfo?.epss?.epssProbability
+                        const epssProbability = cveBaseInfo.epss?.epssProbability;
                         const isExpanded = expandedRowSet.has(cve);
 
                         return (
