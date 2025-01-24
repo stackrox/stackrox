@@ -61,8 +61,8 @@ var (
 		},
 	})
 
-	defaultSince    = -5 * time.Minute
-	networkGraphSAC = sac.ForResource(resources.NetworkGraph)
+	defaultSince              = -5 * time.Minute
+	networkGraphSAC           = sac.ForResource(resources.NetworkGraph)
 )
 
 // serviceImpl provides APIs for alerts.
@@ -107,269 +107,37 @@ func (s *serviceImpl) GetExternalNetworkEntities(ctx context.Context, request *v
 }
 
 func (s *serviceImpl) GetExternalNetworkFlows(ctx context.Context, request *v1.GetExternalNetworkFlowsRequest) (*v1.GetExternalNetworkFlowsResponse, error) {
-	deploymentQuery, scopeQuery, err := networkgraph.GetFilterAndScopeQueries(request.GetClusterId(), request.GetQuery(), &v1.NetworkGraphScope{})
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to construct filter and scope queries")
-	}
-
-	count, err := s.deployments.Count(ctx, deploymentQuery)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to count deployments")
-	}
-
-	if count > maxNumberOfDeploymentsInGraphEnv.IntegerSetting() {
-		log.Warnf("Number of deployments is too high to be rendered in Network Graph: %d", count)
-		return nil, errors.Errorf(
-			"number of deployments (%d) exceeds maximum allowed for Network Graph: %d",
-			count,
-			maxNumberOfDeploymentsInGraphEnv.IntegerSetting(),
-		)
-	}
-
-	deployments, err := s.deployments.SearchListDeployments(ctx, deploymentQuery)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to search list deployments")
-	}
-
-	// External sources should be shown only wrt to deployments.
-	if len(deployments) == 0 {
-		return &v1.GetExternalNetworkFlowsResponse{}, nil
-	}
-
-	networkFlowsChecker := networkGraphSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ClusterID(request.GetClusterId())
-	filteredDeployments := sac.FilterSlice(networkFlowsChecker, deployments, func(deployment *storage.ListDeployment) sac.ScopePredicate {
-		return sac.ScopeSuffix{sac.NamespaceScopeKey(deployment.GetNamespace())}
-	})
-	deploymentsWithFlows := objects.ListDeploymentsMapByID(filteredDeployments)
-	deploymentsMap := objects.ListDeploymentsMapByID(deployments)
-
-	// We can see all relevant flows if no deployments were filtered out in the previous step.
-	canSeeAllFlows := len(deploymentsMap) == len(deploymentsWithFlows)
-
-	// Temporarily elevate permissions to obtain all network flows in cluster.
-	networkGraphGenElevatedCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.NetworkGraph),
-			sac.ClusterScopeKeys(request.GetClusterId())))
-
-	flowStore, err := s.getFlowStore(networkGraphGenElevatedCtx, request.GetClusterId())
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get flow store")
-	}
-
-	// get entities that match the query to allow filtering by CIDR block
-	// and we can use this to filter flows later
-	matchingEntities, err := s.getEntitiesByQuery(ctx, request.GetClusterId(), request.GetQuery())
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get matching entities")
-	}
-
-	entityFilter := set.NewStringSet()
-	for _, entity := range matchingEntities {
-		entityFilter.Add(entity.GetInfo().GetId())
-	}
-
-	pred := func(props *storage.NetworkFlowProperties) bool {
-		src := props.GetSrcEntity()
-		dst := props.GetDstEntity()
-
-		if !networkgraph.AnyExternal(src, dst) && !networkgraph.AllExternal(src, dst) {
-			// only looking for external flows, and not external pairs
-			return false
-		}
-
-		if !networkgraph.AnyExternalInFilter(src, dst, entityFilter) {
-			return false
-		}
-
-		// If we cannot see all flows of all relevant deployments, filter out flows where we can't see network flows
-		// on both ends (this takes care of the relevant network flow filtering).
-		if !canSeeAllFlows {
-			if !networkgraph.AnyDeploymentInFilter(src, dst, deploymentsWithFlows) {
-				return false
-			}
-		}
-
-		return networkgraph.AnyDeploymentInFilter(src, dst, deploymentsMap)
-	}
-
 	since := protocompat.ConvertTimestampToTimeOrNil(request.GetSince())
-	flows, _, err := flowStore.GetMatchingFlows(networkGraphGenElevatedCtx, pred, since)
+	if since == nil {
+		t := time.Now().Add(defaultSince)
+		since = &t
+	}
+
+	flows, entities, err := s.getExternalFlowsAndEntitiesByQuery(ctx, request.GetClusterId(), request.GetQuery(), request.GetEntityId(), since)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get matching flows")
+		return nil, err
 	}
 
-	networkTree := tree.NewMultiNetworkTree(
-		s.networkTreeMgr.GetReadOnlyNetworkTree(ctx, request.GetClusterId()),
-		s.networkTreeMgr.GetDefaultNetworkTree(ctx),
-	)
-
-	flows, _ = networkgraph.UpdateFlowsWithEntityDesc(flows, deploymentsMap,
-		func(id string) *storage.NetworkEntityInfo {
-			if networkTree == nil {
-				return nil
-			}
-			return networkTree.Get(id)
-		},
-	)
-
-	filteredFlows, _, _, err := filterFlowsAndMaskScopeAlienDeployments(ctx,
-		request.GetClusterId(), scopeQuery, flows, deploymentsMap, s.deployments)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to filter flows")
-	}
-
-	entityFlowMap := make(map[string]*v1.ExternalEntityFlowsMap, 0)
-	for _, flow := range filteredFlows {
-		props := flow.GetProps()
-		src, dst := props.GetSrcEntity(), props.GetDstEntity()
-
-		if src.GetType() == storage.NetworkEntityInfo_EXTERNAL_SOURCE {
-			if m, ok := entityFlowMap[src.GetId()]; ok {
-				m.Flows = append(m.Flows, flow)
-			} else {
-				entityFlowMap[src.GetId()] = &v1.ExternalEntityFlowsMap{
-					Entity: src,
-					Flows: []*storage.NetworkFlow{
-						flow,
-					},
-				}
-			}
-
-			// remove src entity, since it's redundant
-			props.SrcEntity = nil
-		}
-
-		if dst.GetType() == storage.NetworkEntityInfo_EXTERNAL_SOURCE {
-			if m, ok := entityFlowMap[dst.GetId()]; ok {
-				m.Flows = append(m.Flows, flow)
-			} else {
-				entityFlowMap[dst.GetId()] = &v1.ExternalEntityFlowsMap{
-					Entity: dst,
-					Flows: []*storage.NetworkFlow{
-						flow,
-					},
-				}
-			}
-
-			// remove dst entity, since it's redundant
-			props.DstEntity = nil
-		}
-	}
+	log.Info(entities)
+	log.Info(flows)
 
 	return &v1.GetExternalNetworkFlowsResponse{
-		EntitiesMap: maps.Values(entityFlowMap),
+		Entity: entities[0].GetInfo(),
+		Flows:  paginate(request.GetPagination(), flows),
 	}, nil
 }
 
 func (s *serviceImpl) GetExternalNetworkFlowsMetadata(ctx context.Context, request *v1.GetExternalNetworkFlowsRequest) (*v1.GetExternalNetworkFlowsMetadataResponse, error) {
-	deploymentQuery, _, err := networkgraph.GetFilterAndScopeQueries(request.GetClusterId(), request.GetQuery(), &v1.NetworkGraphScope{})
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to construct filter and scope queries")
-	}
-
-	count, err := s.deployments.Count(ctx, deploymentQuery)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to count deployments")
-	}
-
-	if count > maxNumberOfDeploymentsInGraphEnv.IntegerSetting() {
-		log.Warnf("Number of deployments is too high to be rendered in Network Graph: %d", count)
-		return nil, errors.Errorf(
-			"number of deployments (%d) exceeds maximum allowed for Network Graph: %d",
-			count,
-			maxNumberOfDeploymentsInGraphEnv.IntegerSetting(),
-		)
-	}
-
-	deployments, err := s.deployments.SearchListDeployments(ctx, deploymentQuery)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to search list deployments")
-	}
-
-	// External sources should be shown only wrt to deployments.
-	if len(deployments) == 0 {
-		return &v1.GetExternalNetworkFlowsMetadataResponse{}, nil
-	}
-
-	networkFlowsChecker := networkGraphSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ClusterID(request.GetClusterId())
-	filteredDeployments := sac.FilterSlice(networkFlowsChecker, deployments, func(deployment *storage.ListDeployment) sac.ScopePredicate {
-		return sac.ScopeSuffix{sac.NamespaceScopeKey(deployment.GetNamespace())}
-	})
-	deploymentsWithFlows := objects.ListDeploymentsMapByID(filteredDeployments)
-	deploymentsMap := objects.ListDeploymentsMapByID(deployments)
-
-	// We can see all relevant flows if no deployments were filtered out in the previous step.
-	canSeeAllFlows := len(deploymentsMap) == len(deploymentsWithFlows)
-
-	// Temporarily elevate permissions to obtain all network flows in cluster.
-	networkGraphGenElevatedCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.NetworkGraph),
-			sac.ClusterScopeKeys(request.GetClusterId())))
-
-	flowStore, err := s.getFlowStore(networkGraphGenElevatedCtx, request.GetClusterId())
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get flow store")
-	}
-
-	// get entities that match the query to allow filtering by CIDR block
-	// and we can use this to filter flows later
-	matchingEntities, err := s.getEntitiesByQuery(ctx, request.GetClusterId(), request.GetQuery())
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get matching entities")
-	}
-
-	entityFilter := set.NewStringSet()
-	for _, entity := range matchingEntities {
-		entityFilter.Add(entity.GetInfo().GetId())
-	}
-
-	pred := func(props *storage.NetworkFlowProperties) bool {
-		src := props.GetSrcEntity()
-		dst := props.GetDstEntity()
-
-		if !networkgraph.AnyExternal(src, dst) && !networkgraph.AllExternal(src, dst) {
-			// only looking for external flows, and not external pairs
-			return false
-		}
-
-		if !networkgraph.AnyExternalInFilter(src, dst, entityFilter) {
-			return false
-		}
-
-		// If we cannot see all flows of all relevant deployments, filter out flows where we can't see network flows
-		// on both ends (this takes care of the relevant network flow filtering).
-		if !canSeeAllFlows {
-			if !networkgraph.AnyDeploymentInFilter(src, dst, deploymentsWithFlows) {
-				return false
-			}
-		}
-
-		return networkgraph.AnyDeploymentInFilter(src, dst, deploymentsMap)
-	}
-
 	since := protocompat.ConvertTimestampToTimeOrNil(request.GetSince())
-	flows, _, err := flowStore.GetMatchingFlows(networkGraphGenElevatedCtx, pred, since)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get matching flows")
+	if since == nil {
+		t := time.Now().Add(defaultSince)
+		since = &t
 	}
 
-	networkTree := tree.NewMultiNetworkTree(
-		s.networkTreeMgr.GetReadOnlyNetworkTree(ctx, request.GetClusterId()),
-		s.networkTreeMgr.GetDefaultNetworkTree(ctx),
-	)
-
-	flows, _ = networkgraph.UpdateFlowsWithEntityDesc(flows, deploymentsMap,
-		func(id string) *storage.NetworkEntityInfo {
-			if networkTree == nil {
-				return nil
-			}
-			return networkTree.Get(id)
-		},
-	)
+	flows, _, err := s.getExternalFlowsAndEntitiesByQuery(ctx, request.GetClusterId(), request.GetQuery(), request.GetEntityId(), since)
+	if err != nil {
+		return nil, err
+	}
 
 	entityMeta := make(map[string]*v1.ExternalNetworkFlowMetadata, 0)
 	for _, flow := range flows {
@@ -399,8 +167,10 @@ func (s *serviceImpl) GetExternalNetworkFlowsMetadata(ctx context.Context, reque
 		}
 	}
 
+	result := maps.Values(entityMeta)
+
 	return &v1.GetExternalNetworkFlowsMetadataResponse{
-		Data: maps.Values(entityMeta),
+		Data: paginate(request.GetPagination(), result),
 	}, nil
 }
 
@@ -971,4 +741,165 @@ func (s *serviceImpl) getEntitiesByQuery(ctx context.Context, clusterId, query s
 	q, _ = search.FilterQueryWithMap(q, schema.NetworkEntitiesSchema.OptionsMap)
 
 	return s.entityDS.GetEntityByQuery(ctx, q)
+}
+
+func (s *serviceImpl) getExternalFlowsAndEntitiesByQuery(ctx context.Context, clusterId, query, entityId string, since *time.Time) ([]*storage.NetworkFlow, []*storage.NetworkEntity, error) {
+	deploymentQuery, scopeQuery, err := networkgraph.GetFilterAndScopeQueries(clusterId, query, &v1.NetworkGraphScope{})
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to construct filter and scope queries")
+	}
+
+	count, err := s.deployments.Count(ctx, deploymentQuery)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to count deployments")
+	}
+
+	if count > maxNumberOfDeploymentsInGraphEnv.IntegerSetting() {
+		log.Warnf("Number of deployments is too high to be rendered in Network Graph: %d", count)
+		return nil, nil, errors.Errorf(
+			"number of deployments (%d) exceeds maximum allowed for Network Graph: %d",
+			count,
+			maxNumberOfDeploymentsInGraphEnv.IntegerSetting(),
+		)
+	}
+
+	deployments, err := s.deployments.SearchListDeployments(ctx, deploymentQuery)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to search list deployments")
+	}
+
+	// External sources should be shown only wrt to deployments.
+	if len(deployments) == 0 {
+		return []*storage.NetworkFlow{}, []*storage.NetworkEntity{}, nil
+	}
+
+	networkFlowsChecker := networkGraphSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ClusterID(clusterId)
+	filteredDeployments := sac.FilterSlice(networkFlowsChecker, deployments, func(deployment *storage.ListDeployment) sac.ScopePredicate {
+		return sac.ScopeSuffix{sac.NamespaceScopeKey(deployment.GetNamespace())}
+	})
+	deploymentsWithFlows := objects.ListDeploymentsMapByID(filteredDeployments)
+	deploymentsMap := objects.ListDeploymentsMapByID(deployments)
+
+	// We can see all relevant flows if no deployments were filtered out in the previous step.
+	canSeeAllFlows := len(deploymentsMap) == len(deploymentsWithFlows)
+
+	// Temporarily elevate permissions to obtain all network flows in cluster.
+	networkGraphGenElevatedCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.NetworkGraph),
+			sac.ClusterScopeKeys(clusterId)))
+
+	flowStore, err := s.getFlowStore(networkGraphGenElevatedCtx, clusterId)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to get flow store")
+	}
+
+	var entities []*storage.NetworkEntity
+	if entityId != "" {
+		entity, found, err := s.entityDS.GetEntity(ctx, entityId)
+		if !found || err != nil {
+			return nil, nil, errox.NotFound
+		}
+
+		entities = []*storage.NetworkEntity{entity}
+	} else {
+		// get entities that match the query to allow filtering by CIDR block
+		// and we can use this to filter flows later
+		entities, err = s.getEntitiesByQuery(ctx, clusterId, query)
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "failed to get matching entities")
+		}
+	}
+
+	entityFilter := set.NewStringSet()
+	for _, entity := range entities {
+		entityFilter.Add(entity.GetInfo().GetId())
+	}
+
+	pred := func(props *storage.NetworkFlowProperties) bool {
+		src := props.GetSrcEntity()
+		dst := props.GetDstEntity()
+
+		if !networkgraph.AnyExternal(src, dst) || networkgraph.AllExternal(src, dst) {
+			// only looking for external flows, and not external pairs
+			return false
+		}
+
+		if !networkgraph.AnyExternalInFilter(src, dst, entityFilter) {
+			return false
+		}
+
+		// If we cannot see all flows of all relevant deployments, filter out flows where we can't see network flows
+		// on both ends (this takes care of the relevant network flow filtering).
+		if !canSeeAllFlows {
+			if !networkgraph.AnyDeploymentInFilter(src, dst, deploymentsWithFlows) {
+				return false
+			}
+		}
+
+		return networkgraph.AnyDeploymentInFilter(src, dst, deploymentsMap)
+	}
+
+	flows, _, err := flowStore.GetMatchingFlows(networkGraphGenElevatedCtx, pred, since)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to get matching flows")
+	}
+
+	networkTree := tree.NewMultiNetworkTree(
+		s.networkTreeMgr.GetReadOnlyNetworkTree(ctx, clusterId),
+		s.networkTreeMgr.GetDefaultNetworkTree(ctx),
+	)
+
+	flows, _ = networkgraph.UpdateFlowsWithEntityDesc(flows, deploymentsMap,
+		func(id string) *storage.NetworkEntityInfo {
+			if networkTree == nil {
+				return nil
+			}
+			return networkTree.Get(id)
+		},
+	)
+
+	filteredFlows, _, _, err := filterFlowsAndMaskScopeAlienDeployments(ctx,
+		clusterId, scopeQuery, flows, deploymentsMap, s.deployments)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to filter flows")
+	}
+
+	return filteredFlows, entities, nil
+}
+
+func paginate[T any](pagination *v1.Pagination, results []*T) []*T {
+	if len(results) == 0 {
+		return nil
+	}
+
+	var offset, limit int
+	if pagination == nil {
+		offset = 0
+		limit = len(results)
+	} else {
+		offset, limit = int(pagination.GetOffset()), int(pagination.GetLimit())
+	}
+
+	if offset < 0 {
+		offset = 0
+	}
+	if limit < 0 {
+		limit = 0
+	}
+
+	remnants := len(results) - offset
+	if remnants <= 0 {
+		return nil
+	}
+
+	var end int
+	if limit == 0 || remnants < limit {
+		end = offset + remnants
+	} else {
+		end = offset + limit
+	}
+
+	return results[offset:end]
 }
