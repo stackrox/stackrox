@@ -253,7 +253,7 @@ function ImageVulnerabilitiesTable({
                             (imageComponent) => imageComponent.imageVulnerabilities
                         );
                         const isFixableInImage = getIsSomeVulnerabilityFixable(vulnerabilities);
-                        const epssProbability = cveBaseInfo.epss?.epssProbability;
+                        const epssProbability = cveBaseInfo?.epss?.epssProbability;
                         const isExpanded = expandedRowSet.has(cve);
 
                         return (
