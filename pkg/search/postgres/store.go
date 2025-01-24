@@ -535,7 +535,7 @@ func (s *genericStore[T, PT]) deleteMany(ctx context.Context, identifiers []stri
 		q := search.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery()
 
 		if err := RunDeleteRequestForSchema(ctx, s.schema, q, s.db); err != nil {
-			if !continueOnError {
+			if !continueOnError || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 				return errors.Wrap(err, "unable to delete the records")
 			}
 			log.Errorf("unable to prune the records: %v", err)
