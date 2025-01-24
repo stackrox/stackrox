@@ -37,8 +37,9 @@ jobs:
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-unit-tests
 
-    - uses: codecov/codecov-action@v3
+    - uses: codecov/codecov-action@v5
       with:
+        use_pypi: true
         token: ${{ secrets.CODECOV_TOKEN }}
         flags: go-unit-tests
 
@@ -111,8 +112,9 @@ jobs:
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-postgres-unit-tests
 
-    - uses: codecov/codecov-action@v3
+    - uses: codecov/codecov-action@v5
       with:
+        use_pypi: true
         token: ${{ secrets.CODECOV_TOKEN }}
         flags: go-unit-tests
 
