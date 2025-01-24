@@ -7,6 +7,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac"
@@ -21,6 +22,7 @@ var (
 	deploymentBaseSchema = schema.DeploymentsSchema
 	imagesSchema         = schema.ImagesSchema
 	imageCVEsSchema      = schema.ImageCvesSchema
+	alertSchema          = schema.AlertsSchema
 	_                    = schema.ImageCveEdgesSchema
 )
 
@@ -280,6 +282,14 @@ func TestCountQueries(t *testing.T) {
 			expectedData:      []interface{}{"central"},
 		},
 		{
+			desc:              "base schema query",
+			ctx:               baseCtx,
+			q:                 search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "A", "B").ProtoQuery(),
+			schema:            deploymentBaseSchema,
+			expectedStatement: "select count(*) from deployments where deployments.Name IN ($1, $2)",
+			expectedData:      []interface{}{"A", "B"},
+		},
+		{
 			desc:   "child schema query",
 			ctx:    baseCtx,
 			q:      search.NewQueryBuilder().AddExactMatches(search.ImageName, "stackrox").ProtoQuery(),
@@ -313,6 +323,41 @@ func TestCountQueries(t *testing.T) {
 				"inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id " +
 				"where (deployments_containers.Image_Name_FullName = $1 or deployments.Name = $2)",
 			expectedData: []interface{}{"stackrox", "central"},
+		},
+		{
+			desc: "base schema and child schema disjunction query multiple values",
+			ctx:  baseCtx,
+			q: search.DisjunctionQuery(
+				search.NewQueryBuilder().AddExactMatches(search.ImageName, "A", "B").ProtoQuery(),
+				search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "X", "Y", "Z").ProtoQuery(),
+				search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "X").ProtoQuery(),
+			),
+			schema: deploymentBaseSchema,
+			expectedStatement: "select count(distinct(deployments.Id)) from deployments " +
+				"inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id " +
+				"where (deployments_containers.Image_Name_FullName IN ($1, $2) or deployments.Name IN ($3, $4, $5) or deployments.Name = $6)",
+			expectedData: []interface{}{"A", "B", "X", "Y", "Z", "X"},
+		},
+		{
+			desc: "base schema mix of conjunction and disjunction queries",
+			ctx:  baseCtx,
+			q: search.ConjunctionQuery(
+				search.ConjunctionQuery(
+					search.NewQueryBuilder().AddExactMatches(search.ClusterID, fixtureconsts.Cluster1).ProtoQuery(),
+					search.NewQueryBuilder().AddExactMatches(search.Namespace, "namespace").ProtoQuery(),
+				),
+				search.NewQueryBuilder().
+					AddExactMatches(
+						search.ViolationState,
+						storage.ViolationState_ATTEMPTED.String(),
+						storage.ViolationState_ACTIVE.String(),
+					).
+					ProtoQuery(),
+			),
+			schema: alertSchema,
+			expectedStatement: "select count(*) from alerts " +
+				"where ((alerts.ClusterId = $1 and alerts.Namespace = $2) and alerts.State IN ($3, $4))",
+			expectedData: []interface{}{uuid.FromStringOrPanic("caaaaaaa-bbbb-4011-0000-111111111111"), "namespace", "3", "0"},
 		},
 		{
 			desc: "multiple child schema query",
@@ -487,6 +532,14 @@ func TestSelectQueries(t *testing.T) {
 			expectedQuery: "select deployments.Name as deployment from deployments where deployments.Name = $1",
 		},
 		{
+			desc: "base schema; select w/ regexes",
+			q: search.NewQueryBuilder().
+				AddSelectFields(search.NewQuerySelect(search.DeploymentName)).
+				AddRegexes(search.DeploymentName, "A", "B").ProtoQuery(),
+			schema:        deploymentBaseSchema,
+			expectedQuery: "select deployments.Name as deployment from deployments where (deployments.Name ~* $1 or deployments.Name ~* $2)",
+		},
+		{
 			desc: "child schema; multiple select w/ where",
 			q: search.NewQueryBuilder().
 				AddSelectFields(
@@ -500,6 +553,22 @@ func TestSelectQueries(t *testing.T) {
 				"from deployments inner join deployments_containers " +
 				"on deployments.Id = deployments_containers.deployments_Id " +
 				"where deployments_containers.Image_Name_FullName = $1",
+		},
+		{
+			desc: "child schema; multiple values highlighted (IN)",
+			q: search.NewQueryBuilder().
+				AddSelectFields(
+					search.NewQuerySelect(search.Privileged),
+					search.NewQuerySelect(search.ImageName),
+				).
+				AddExactMatches(search.ImageName, "A", "B").MarkHighlighted(search.ImageName).ProtoQuery(),
+			schema: deploymentBaseSchema,
+			expectedQuery: "select deployments_containers.SecurityContext_Privileged as privileged, " +
+				"deployments_containers.Image_Name_FullName as image, " +
+				"deployments_containers.Image_Name_FullName " +
+				"from deployments inner join deployments_containers " +
+				"on deployments.Id = deployments_containers.deployments_Id " +
+				"where deployments_containers.Image_Name_FullName IN ($1, $2)",
 		},
 		{
 			desc: "child schema; multiple select w/ where & group by",
