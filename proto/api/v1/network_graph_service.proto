@@ -73,6 +73,7 @@ message GetExternalNetworkEntitiesResponse {
 
 message GetExternalNetworkFlowsRequest {
   string cluster_id = 1;
+  string entity_id = 2;
   string query = 3;
   google.protobuf.Timestamp since = 4;
 }
@@ -109,7 +110,7 @@ service NetworkGraphService {
   }
 
   rpc GetExternalNetworkFlows(GetExternalNetworkFlowsRequest) returns (GetExternalNetworkFlowsResponse) {
-    option (google.api.http) = {get: "/v1/networkgraph/cluster/{cluster_id}/externalentities/flows"};
+    option (google.api.http) = {get: "/v1/networkgraph/cluster/{cluster_id}/externalentities/{entity_id}/flows"};
   }
 
   rpc GetExternalNetworkFlowsMetadata(GetExternalNetworkFlowsRequest) returns (GetExternalNetworkFlowsMetadataResponse) {

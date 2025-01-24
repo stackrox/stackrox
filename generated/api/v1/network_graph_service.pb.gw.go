@@ -135,7 +135,7 @@ func local_request_NetworkGraphService_GetExternalNetworkEntities_0(ctx context.
 	return msg, metadata, err
 }
 
-var filter_NetworkGraphService_GetExternalNetworkFlows_0 = &utilities.DoubleArray{Encoding: map[string]int{"cluster_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+var filter_NetworkGraphService_GetExternalNetworkFlows_0 = &utilities.DoubleArray{Encoding: map[string]int{"cluster_id": 0, "entity_id": 1}, Base: []int{1, 1, 2, 0, 0}, Check: []int{0, 1, 1, 2, 3}}
 
 func request_NetworkGraphService_GetExternalNetworkFlows_0(ctx context.Context, marshaler runtime.Marshaler, client NetworkGraphServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
@@ -150,6 +150,14 @@ func request_NetworkGraphService_GetExternalNetworkFlows_0(ctx context.Context, 
 	protoReq.ClusterId, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cluster_id", err)
+	}
+	val, ok = pathParams["entity_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "entity_id")
+	}
+	protoReq.EntityId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "entity_id", err)
 	}
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
@@ -174,6 +182,14 @@ func local_request_NetworkGraphService_GetExternalNetworkFlows_0(ctx context.Con
 	protoReq.ClusterId, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cluster_id", err)
+	}
+	val, ok = pathParams["entity_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "entity_id")
+	}
+	protoReq.EntityId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "entity_id", err)
 	}
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
@@ -449,7 +465,7 @@ func RegisterNetworkGraphServiceHandlerServer(ctx context.Context, mux *runtime.
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.NetworkGraphService/GetExternalNetworkFlows", runtime.WithHTTPPathPattern("/v1/networkgraph/cluster/{cluster_id}/externalentities/flows"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.NetworkGraphService/GetExternalNetworkFlows", runtime.WithHTTPPathPattern("/v1/networkgraph/cluster/{cluster_id}/externalentities/{entity_id}/flows"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -661,7 +677,7 @@ func RegisterNetworkGraphServiceHandlerClient(ctx context.Context, mux *runtime.
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.NetworkGraphService/GetExternalNetworkFlows", runtime.WithHTTPPathPattern("/v1/networkgraph/cluster/{cluster_id}/externalentities/flows"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.NetworkGraphService/GetExternalNetworkFlows", runtime.WithHTTPPathPattern("/v1/networkgraph/cluster/{cluster_id}/externalentities/{entity_id}/flows"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -782,7 +798,7 @@ func RegisterNetworkGraphServiceHandlerClient(ctx context.Context, mux *runtime.
 var (
 	pattern_NetworkGraphService_GetNetworkGraph_0                 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "networkgraph", "cluster", "cluster_id"}, ""))
 	pattern_NetworkGraphService_GetExternalNetworkEntities_0      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v1", "networkgraph", "cluster", "cluster_id", "externalentities"}, ""))
-	pattern_NetworkGraphService_GetExternalNetworkFlows_0         = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4, 2, 5}, []string{"v1", "networkgraph", "cluster", "cluster_id", "externalentities", "flows"}, ""))
+	pattern_NetworkGraphService_GetExternalNetworkFlows_0         = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4, 1, 0, 4, 1, 5, 5, 2, 6}, []string{"v1", "networkgraph", "cluster", "cluster_id", "externalentities", "entity_id", "flows"}, ""))
 	pattern_NetworkGraphService_GetExternalNetworkFlowsMetadata_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4, 2, 5}, []string{"v1", "networkgraph", "cluster", "cluster_id", "externalentities", "metadata"}, ""))
 	pattern_NetworkGraphService_CreateExternalNetworkEntity_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v1", "networkgraph", "cluster", "cluster_id", "externalentities"}, ""))
 	pattern_NetworkGraphService_PatchExternalNetworkEntity_0      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "networkgraph", "externalentities", "id"}, ""))

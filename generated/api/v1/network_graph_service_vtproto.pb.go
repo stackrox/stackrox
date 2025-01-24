@@ -264,6 +264,7 @@ func (m *GetExternalNetworkFlowsRequest) CloneVT() *GetExternalNetworkFlowsReque
 	}
 	r := new(GetExternalNetworkFlowsRequest)
 	r.ClusterId = m.ClusterId
+	r.EntityId = m.EntityId
 	r.Query = m.Query
 	r.Since = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.Since).CloneVT())
 	if len(m.unknownFields) > 0 {
@@ -741,6 +742,9 @@ func (this *GetExternalNetworkFlowsRequest) EqualVT(that *GetExternalNetworkFlow
 		return false
 	}
 	if this.ClusterId != that.ClusterId {
+		return false
+	}
+	if this.EntityId != that.EntityId {
 		return false
 	}
 	if this.Query != that.Query {
@@ -1585,6 +1589,13 @@ func (m *GetExternalNetworkFlowsRequest) MarshalToSizedBufferVT(dAtA []byte) (in
 		i--
 		dAtA[i] = 0x1a
 	}
+	if len(m.EntityId) > 0 {
+		i -= len(m.EntityId)
+		copy(dAtA[i:], m.EntityId)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.EntityId)))
+		i--
+		dAtA[i] = 0x12
+	}
 	if len(m.ClusterId) > 0 {
 		i -= len(m.ClusterId)
 		copy(dAtA[i:], m.ClusterId)
@@ -2120,6 +2131,10 @@ func (m *GetExternalNetworkFlowsRequest) SizeVT() (n int) {
 	var l int
 	_ = l
 	l = len(m.ClusterId)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	l = len(m.EntityId)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
@@ -3738,6 +3753,42 @@ func (m *GetExternalNetworkFlowsRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
 			m.ClusterId = stringValue
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EntityId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.EntityId = stringValue
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
