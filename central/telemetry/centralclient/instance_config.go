@@ -274,18 +274,22 @@ func Enable() *phonehome.Config {
 	return cfg
 }
 
-func reload() {
+// Reload fetches and applies the remote configuration. It will not enable an
+// explicitely disabled configuraiton.
+func Reload() error {
 	if enable, err := applyConfig(); err != nil {
 		log.Errorf("Failed to reconfigure telemetry: %v.", err)
-	} else if enable {
+		return err
+	} else if enable && enabled {
 		Enable()
 	} else {
 		Disable()
 	}
+	return nil
 }
 
 func periodicReload() {
 	for _, ok := <-runtimeConfigurationReloadTicker.C; ok; {
-		reload()
+		_ = Reload()
 	}
 }

@@ -28,6 +28,7 @@ var (
 		},
 		user.Authenticated(): {
 			v1.TelemetryService_GetConfig_FullMethodName,
+			v1.TelemetryService_PostConfigReload_FullMethodName,
 		},
 	})
 )
@@ -78,4 +79,8 @@ func (s *serviceImpl) GetConfig(ctx context.Context, _ *v1.Empty) (*central.Tele
 		Endpoint:     cfg.Endpoint,
 		StorageKeyV1: cfg.StorageKey,
 	}, nil
+}
+
+func (s *serviceImpl) PostConfigReload(ctx context.Context, _ *v1.Empty) (*v1.Empty, error) {
+	return nil, centralclient.Reload()
 }

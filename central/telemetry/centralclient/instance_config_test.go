@@ -187,4 +187,17 @@ func Test_reloadConfig(t *testing.T) {
 		require.NoError(t, err)
 		assert.False(t, enable)
 	})
+	t.Run("reload when not enabled", func(t *testing.T) {
+		t.Setenv(env.TelemetryStorageKey.EnvVar(), remoteKey)
+		runtimeConfigJSON = `{"storage_key_v1": "` + remoteKey + `"}`
+		Enable()
+		require.NoError(t, Reload())
+		assert.True(t, enabled)
+		assert.True(t, config.Enabled())
+		Disable()
+		assert.False(t, enabled)
+		require.NoError(t, Reload())
+		assert.False(t, enabled)
+		assert.True(t, config.Enabled(), "config should still be good")
+	})
 }
