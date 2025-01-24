@@ -61,8 +61,8 @@ var (
 		},
 	})
 
-	defaultSince              = -5 * time.Minute
-	networkGraphSAC           = sac.ForResource(resources.NetworkGraph)
+	defaultSince    = -5 * time.Minute
+	networkGraphSAC = sac.ForResource(resources.NetworkGraph)
 )
 
 // serviceImpl provides APIs for alerts.
