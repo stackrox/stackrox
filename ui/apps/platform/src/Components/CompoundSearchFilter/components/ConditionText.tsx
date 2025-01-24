@@ -65,7 +65,7 @@ export function convertFromInternalToExternalConditionText(
 
 export type ConditionTextProps = {
     inputProps: ConditionTextInputProps;
-    onSearch: (value: string) => void;
+    onSearch: (internalConditionText: string) => void;
 };
 
 function ConditionText({ inputProps, onSearch }: ConditionTextProps) {
