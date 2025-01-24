@@ -26,7 +26,7 @@ func enumEquality(columnName string, enumValues []int32) (WhereClause, error) {
 	return WhereClause{
 		Query:  query,
 		Values: values,
-		equivalentGoFunc: func(foundValue any) bool {
+		equivalentGoFunc: func(foundValue interface{}) bool {
 			asInt := int32(foundValue.(int))
 			for _, enumValue := range enumValues {
 				if enumValue == asInt {

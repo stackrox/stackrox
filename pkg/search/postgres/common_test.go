@@ -643,6 +643,23 @@ func TestSelectQueries(t *testing.T) {
 				"inner join image_cve_edges on(image_component_edges.ImageId = image_cve_edges.ImageId and image_cves.Id = image_cve_edges.ImageCveId) " +
 				"where ((deployments.PlatformComponent = $1 or deployments.PlatformComponent is null) and image_cve_edges.State = $2)",
 		},
+		{
+			desc: "select with multiple enum values with IN operator",
+			q: search.NewQueryBuilder().
+				AddSelectFields(
+					search.NewQuerySelect(search.CVE),
+				).
+				AddRegexes(search.VulnerabilityState, ".+ED").
+				ProtoQuery(),
+			schema: imageCVEsSchema,
+			expectedQuery: "select image_cves.CveBaseInfo_Cve as cve " +
+				"from image_cves " +
+				"inner join image_component_cve_edges on image_cves.Id = image_component_cve_edges.ImageCveId " +
+				"inner join image_component_edges on image_component_cve_edges.ImageComponentId = image_component_edges.ImageComponentId " +
+				"inner join images on image_component_edges.ImageId = images.Id " +
+				"inner join image_cve_edges on(image_component_edges.ImageId = image_cve_edges.ImageId and image_cves.Id = image_cve_edges.ImageCveId) " +
+				"where image_cve_edges.State IN ($1, $2)",
+		},
 	} {
 		t.Run(c.desc, func(t *testing.T) {
 			ctx := c.ctx
