@@ -18,6 +18,10 @@ const (
 	defaultQueueName = "Queue"
 )
 
+type RateManager interface {
+	Record()
+}
+
 // Queue provides a thread-safe queue for type T.
 // The queue allows to push, pull, and blocking pull.
 // Additionally, it exposes safety guards such as a max size as well as metrics to track the queue growth and size.
@@ -26,6 +30,7 @@ type Queue[T comparable] struct {
 	maxSize        int
 	counterMetric  *prometheus.CounterVec
 	droppedMetric  prometheus.Counter
+	rateManager    RateManager
 	queue          *list.List
 	notEmptySignal concurrency.Signal
 	mutex          sync.Mutex
@@ -62,6 +67,13 @@ func WithMaxSize[T comparable](size int) OptionFunc[T] {
 func WithQueueName[T comparable](name string) OptionFunc[T] {
 	return func(queue *Queue[T]) {
 		queue.name = name
+	}
+}
+
+// WithDropRateManager provides a rate manager that will handle item drop
+func WithDropRateManager[T comparable](manager RateManager) OptionFunc[T] {
+	return func(queue *Queue[T]) {
+		queue.rateManager = manager
 	}
 }
 
@@ -128,7 +140,10 @@ func (q *Queue[T]) Push(item T) {
 	defer q.mutex.Unlock()
 
 	if q.maxSize != 0 && q.queue.Len() >= q.maxSize {
-		log.Warnf("Queue (%s) size limit reached (%d). New items added to the queue will be dropped.", q.name, q.maxSize)
+		q.rateManager.Record()
+		if q.rateManager == nil {
+			log.Warnf("Queue (%s) size limit reached (%d). New items added to the queue will be dropped.", q.name, q.maxSize)
+		}
 		if q.droppedMetric != nil {
 			q.droppedMetric.Inc()
 		}

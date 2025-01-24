@@ -19,6 +19,8 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
+	"github.com/stackrox/rox/sensor/common/internalmessage"
+	"github.com/stackrox/rox/sensor/common/internalmessage/rate"
 	"github.com/stackrox/rox/sensor/common/message"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -259,14 +261,16 @@ func (u *updaterImpl) ctx() context.Context {
 
 // NewUpdater returns a new ready-to-use updater.
 // updateInterval is optional argument, default 30 seconds interval is used.
-func NewUpdater(client kubernetes.Interface, updateInterval time.Duration) common.SensorComponent {
+func NewUpdater(client kubernetes.Interface, updateInterval time.Duration, pubSub *internalmessage.MessageSubscriber) common.SensorComponent {
+	_ = pubSub.Subscribe(internalmessage.SensorMessageDropRateHigh, func(msg *internalmessage.SensorInternalMessage) {})
+	_ = pubSub.Subscribe(internalmessage.SensorMessageDropRateNormal, func(msg *internalmessage.SensorInternalMessage) {})
 	interval := updateInterval
 	if interval == 0 {
 		interval = defaultInterval
 	}
 	updateTicker := time.NewTicker(interval)
 	updateTicker.Stop()
-	return &updaterImpl{
+	ret := &updaterImpl{
 		client:         client,
 		updates:        make(chan *message.ExpiringMessage),
 		stopSig:        concurrency.NewSignal(),
@@ -274,4 +278,31 @@ func NewUpdater(client kubernetes.Interface, updateInterval time.Duration) commo
 		namespace:      pods.GetPodNamespace(),
 		updateTicker:   updateTicker,
 	}
+	if pubSub != nil {
+		if err := pubSub.Subscribe(internalmessage.SensorMessageDropRateHigh, ret.onDropRateHigh); err != nil {
+			log.Errorf("unable to subscribe: %v", err)
+		}
+		if err := pubSub.Subscribe(internalmessage.SensorMessageDropRateNormal, ret.onDropRateNormal); err != nil {
+			log.Errorf("unable to subscribe: %v", err)
+		}
+	}
+	return ret
+}
+
+func (u *updaterImpl) onDropRateHigh(msg *internalmessage.SensorInternalMessage) {
+	payload, ok := msg.Payload.(*rate.Payload)
+	if !ok {
+		return
+	}
+	// TODO: add queue to degraded map
+	log.Infof("onDropRateHigh message received: %s size %d dropped %d", payload.QueueName, payload.QueueSize, payload.NumDropped)
+}
+
+func (u *updaterImpl) onDropRateNormal(msg *internalmessage.SensorInternalMessage) {
+	payload, ok := msg.Payload.(*rate.Payload)
+	if !ok {
+		return
+	}
+	// TODO: remove queue from degraded map
+	log.Infof("onDropRateNormal message received: %s size %d dropped %d", payload.QueueName, payload.QueueSize, payload.NumDropped)
 }
