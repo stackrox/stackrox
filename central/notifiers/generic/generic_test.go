@@ -3,7 +3,6 @@ package generic
 import (
 	"encoding/json"
 	"io"
-	"strings"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -141,7 +140,7 @@ func TestJSONDoesNotContainNewlines(t *testing.T) {
 
 			jsonBytes, err := io.ReadAll(reader)
 			require.NoError(t, err)
-			assert.False(t, strings.Contains(string(jsonBytes), "\n"))
+			assert.NotContains(t, string(jsonBytes), "\n")
 		})
 	}
 }
