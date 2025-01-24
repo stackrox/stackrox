@@ -15,8 +15,8 @@ type TextInputProps = {
     convertFromExternalToInternalText: (externalText: string) => string; // from TextInput element to query string
     convertFromInternalToExternalText: (internalText: string) => string; // from query string to FilterChip element
     externalTextDefault: string; // initial value for TextInput element
-    validateExternalText: (imputText: string) => boolean; // for search Button element
-    validateInternalText: (queryText: string) => boolean; // for FilterChip element
+    validateExternalText: (externalText: string) => boolean; // for search Button element
+    validateInternalText: (internalText: string) => boolean; // for FilterChip element
 };
 
 export type ConditionTextInputProps = {
