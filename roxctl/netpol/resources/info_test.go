@@ -56,7 +56,6 @@ func TestProcessInput(t *testing.T) {
 	}
 
 	for name, tt := range cases {
-		tt := tt
 		t.Run(name, func(t *testing.T) {
 			_, warns, errs := GetK8sInfos(tt.inputFolderPath1, tt.stopOnFirstError, tt.treatWarningsAsErrors)
 			npg.AssertErrorsContain(t, tt.expectedErr, errs, "errors")

@@ -174,7 +174,6 @@ func Test_TwoPipelines_Run(t *testing.T) {
 		},
 	}
 	for name, tt := range tests {
-		tt := tt
 		t.Run(name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			tt.mocks = &usedMocks{

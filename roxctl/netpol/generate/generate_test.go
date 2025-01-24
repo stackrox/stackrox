@@ -139,7 +139,6 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 	}
 
 	for name, tt := range cases {
-		tt := tt
 		d.Run(name, func() {
 			testCmd := &cobra.Command{Use: "test"}
 			testCmd.Flags().String("output-dir", "", "")

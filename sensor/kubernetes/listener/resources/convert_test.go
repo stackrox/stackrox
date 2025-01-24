@@ -89,7 +89,6 @@ func TestPopulateNonStaticFieldWithPod(t *testing.T) {
 	}
 	storeProvider := InitializeStore()
 	for _, c := range cases {
-		c := c
 		ph := references.NewParentHierarchy()
 		newDeploymentEventFromResource(c.inputObj, &c.action, "Pod", testClusterID, nil,
 			mockNamespaceStore, ph, "", storeProvider.orchestratorNamespaces)
@@ -1293,7 +1292,6 @@ func TestConvert(t *testing.T) {
 
 	storeProvider := InitializeStore()
 	for _, c := range cases {
-		c := c
 		t.Run(c.name, func(t *testing.T) {
 			actual := newDeploymentEventFromResource(c.inputObj, &c.action, c.deploymentType, testClusterID,
 				c.podLister, mockNamespaceStore, hierarchyFromPodLister(c.podLister), "",
