@@ -54,6 +54,21 @@ func (m *Signal_ProcessSignal) CloneVT() isSignal_Signal {
 	return r
 }
 
+func (m *Signal_BpfSignal) CloneVT() isSignal_Signal {
+	if m == nil {
+		return (*Signal_BpfSignal)(nil)
+	}
+	r := new(Signal_BpfSignal)
+	if rhs := m.BpfSignal; rhs != nil {
+		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.BpfSignal }); ok {
+			r.BpfSignal = vtpb.CloneVT()
+		} else {
+			r.BpfSignal = proto.Clone(rhs).(*storage.BpfSignal)
+		}
+	}
+	return r
+}
+
 func (this *Signal) EqualVT(that *Signal) bool {
 	if this == that {
 		return true
@@ -101,6 +116,35 @@ func (this *Signal_ProcessSignal) EqualVT(thatIface isSignal_Signal) bool {
 		if equal, ok := interface{}(p).(interface {
 			EqualVT(*storage.ProcessSignal) bool
 		}); ok {
+			if !equal.EqualVT(q) {
+				return false
+			}
+		} else if !proto.Equal(p, q) {
+			return false
+		}
+	}
+	return true
+}
+
+func (this *Signal_BpfSignal) EqualVT(thatIface isSignal_Signal) bool {
+	that, ok := thatIface.(*Signal_BpfSignal)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if p, q := this.BpfSignal, that.BpfSignal; p != q {
+		if p == nil {
+			p = &storage.BpfSignal{}
+		}
+		if q == nil {
+			q = &storage.BpfSignal{}
+		}
+		if equal, ok := interface{}(p).(interface{ EqualVT(*storage.BpfSignal) bool }); ok {
 			if !equal.EqualVT(q) {
 				return false
 			}
@@ -188,6 +232,41 @@ func (m *Signal_ProcessSignal) MarshalToSizedBufferVT(dAtA []byte) (int, error) 
 	}
 	return len(dAtA) - i, nil
 }
+func (m *Signal_BpfSignal) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *Signal_BpfSignal) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.BpfSignal != nil {
+		if vtmsg, ok := interface{}(m.BpfSignal).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.BpfSignal)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
+		i--
+		dAtA[i] = 0x12
+	} else {
+		i = protohelpers.EncodeVarint(dAtA, i, 0)
+		i--
+		dAtA[i] = 0x12
+	}
+	return len(dAtA) - i, nil
+}
 func (m *Signal) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -214,6 +293,26 @@ func (m *Signal_ProcessSignal) SizeVT() (n int) {
 			l = size.SizeVT()
 		} else {
 			l = proto.Size(m.ProcessSignal)
+		}
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	} else {
+		n += 2
+	}
+	return n
+}
+func (m *Signal_BpfSignal) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.BpfSignal != nil {
+		if size, ok := interface{}(m.BpfSignal).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.BpfSignal)
 		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	} else {
@@ -305,6 +404,63 @@ func (m *Signal) UnmarshalVTUnsafe(dAtA []byte) error {
 					}
 				}
 				m.Signal = &Signal_ProcessSignal{ProcessSignal: v}
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BpfSignal", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Signal.(*Signal_BpfSignal); ok {
+				if unmarshal, ok := interface{}(oneof.BpfSignal).(interface {
+					UnmarshalVTUnsafe([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.BpfSignal); err != nil {
+						return err
+					}
+				}
+			} else {
+				v := &storage.BpfSignal{}
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVTUnsafe([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
+				}
+				m.Signal = &Signal_BpfSignal{BpfSignal: v}
 			}
 			iNdEx = postIndex
 		default:
