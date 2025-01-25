@@ -15,8 +15,12 @@ message GetVulnerabilitiesRequest {
 }
 
 message GetSBOMRequest {
-  string hash_id = 1;
-  Contents contents = 2;
+  // id is a unique identiifer (ie: sha256 digest) that represents the contents.
+  string id = 1;
+  // name is the user requested name for the contents (ie: if contents represents an image, then the images full name with tag).
+  string name = 2;
+  // contents is the packages, versions, etc. that will be converted to an SBOM.
+  Contents contents = 3;
 }
 
 message GetSBOMResponse {

@@ -204,15 +204,26 @@ func Test_validateGetSBOMRequest(t *testing.T) {
 		"error on nil req": {
 			wantErr: "empty request",
 		},
-		"error on invalid empty contents": {
+		"error on no id": {
 			req:     &v4.GetSBOMRequest{},
-			wantErr: "contents empty",
+			wantErr: "id is required",
+		},
+		"error on no name": {
+			req:     &v4.GetSBOMRequest{Id: "id"},
+			wantErr: "name is required",
+		},
+		"error on empty contentx": {
+			req: &v4.GetSBOMRequest{Id: "id", Name: "name"},
+
+			wantErr: "contents are required",
 		},
 		// This test ensures that the validation logic is executed on the request contents.
 		// We do not exercise every possible path where contents are invalid since
 		// those paths are already tested as part of Test_validateGetVulnerabilitiesRequest.
 		"error on invalid contents": {
 			req: &v4.GetSBOMRequest{
+				Id:   "id",
+				Name: "name",
 				Contents: &v4.Contents{
 					Packages: []*v4.Package{
 						{},
@@ -223,6 +234,8 @@ func Test_validateGetSBOMRequest(t *testing.T) {
 		},
 		"no error on valid req": {
 			req: &v4.GetSBOMRequest{
+				Id:       "id",
+				Name:     "name",
 				Contents: &v4.Contents{},
 			},
 		},

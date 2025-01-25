@@ -75,9 +75,15 @@ func ValidateGetSBOMRequest(req *v4.GetSBOMRequest) error {
 	if req == nil {
 		return errox.InvalidArgs.New("empty request")
 	}
+	if req.GetId() == "" {
+		return errox.InvalidArgs.New("id is required")
+	}
+	if req.GetName() == "" {
+		return errox.InvalidArgs.New("name is required")
+	}
 	// The SBOM request requires Contents to be populated.
 	if req.GetContents() == nil {
-		return errox.InvalidArgs.New("contents empty")
+		return errox.InvalidArgs.New("contents are required")
 	}
 	if err := validateContents(req.GetContents()); err != nil {
 		return err

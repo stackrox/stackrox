@@ -16,7 +16,7 @@ import (
 func sbomCmd(ctx context.Context) *cobra.Command {
 	cmd := cobra.Command{
 		Use:   "sbom http(s)://<image-reference>",
-		Short: "Generate SBOMs.",
+		Short: "Generate SBOM for an image. Will index the image if not already indexed.",
 		Args:  cobra.ExactArgs(1),
 	}
 
@@ -59,8 +59,8 @@ func sbomCmd(ctx context.Context) *cobra.Command {
 				ref.DigestStr(), *imageDigest)
 		}
 
-		sbomB, found, err := scanner.GetSBOM(ctx, ref)
-		if !found {
+		sbom, found, err := scanner.GetSBOM(ctx, imageURL, ref)
+		if !found && err == nil {
 			opt := client.ImageRegistryOpt{InsecureSkipTLSVerify: false}
 
 			var ir *v4.IndexReport
@@ -72,13 +72,13 @@ func sbomCmd(ctx context.Context) *cobra.Command {
 				return errors.New("index report missing or unsuccessful")
 			}
 
-			sbomB, _, err = scanner.GetSBOM(ctx, ref)
+			sbom, _, err = scanner.GetSBOM(ctx, imageURL, ref)
 		}
 		if err != nil {
 			return fmt.Errorf("generating sbom: %w", err)
 		}
 
-		fmt.Println(string(sbomB))
+		fmt.Println(string(sbom))
 		return nil
 	}
 	return &cmd

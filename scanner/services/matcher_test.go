@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	indexermocks "github.com/stackrox/rox/scanner/indexer/mocks"
 	matchermocks "github.com/stackrox/rox/scanner/matcher/mocks"
-	sbomermocks "github.com/stackrox/rox/scanner/sbomer/mocks"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -24,7 +23,6 @@ type matcherServiceTestSuite struct {
 	ctx         context.Context
 	matcherMock *matchermocks.MockMatcher
 	indexerMock *indexermocks.MockIndexer
-	sbomerMock  *sbomermocks.MockSBOMer
 	mockCtrl    *gomock.Controller
 }
 
@@ -36,7 +34,6 @@ func (s *matcherServiceTestSuite) SetupTest() {
 	s.ctx = context.Background()
 	s.matcherMock = matchermocks.NewMockMatcher(s.mockCtrl)
 	s.indexerMock = indexermocks.NewMockIndexer(s.mockCtrl)
-	s.sbomerMock = sbomermocks.NewMockSBOMer(s.mockCtrl)
 }
 
 func (s *matcherServiceTestSuite) TearDownTest() {
@@ -49,16 +46,16 @@ func (s *matcherServiceTestSuite) TestAuthz() {
 
 func (s *matcherServiceTestSuite) Test_matcherService_NewMatcherService() {
 	// when Indexer is nil, empty content is disabled
-	srv := NewMatcherService(s.matcherMock, nil, nil)
+	srv := NewMatcherService(s.matcherMock, nil)
 	s.True(srv.disableEmptyContents)
 	// when Indexer is nil, empty content is disabled
-	srv = NewMatcherService(s.matcherMock, s.indexerMock, nil)
+	srv = NewMatcherService(s.matcherMock, s.indexerMock)
 	s.False(srv.disableEmptyContents)
 }
 
 func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_contents_disabled() {
 	// when empty content is disabled and empty contents then error
-	srv := NewMatcherService(s.matcherMock, nil, nil)
+	srv := NewMatcherService(s.matcherMock, nil)
 	s.matcherMock.
 		EXPECT().
 		Initialized(gomock.Any()).
@@ -73,7 +70,7 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_c
 
 func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_not_initialized() {
 	// when matcher is not initialized then error
-	srv := NewMatcherService(s.matcherMock, nil, nil)
+	srv := NewMatcherService(s.matcherMock, nil)
 	s.matcherMock.
 		EXPECT().
 		Initialized(gomock.Any()).
@@ -111,7 +108,7 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_c
 			EXPECT().
 			Initialized(gomock.Any()).
 			Return(nil)
-		srv := NewMatcherService(s.matcherMock, s.indexerMock, nil)
+		srv := NewMatcherService(s.matcherMock, s.indexerMock)
 		res, err := srv.GetVulnerabilities(s.ctx, &v4.GetVulnerabilitiesRequest{
 			HashId:   hashID,
 			Contents: nil,
@@ -146,7 +143,7 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_c
 			EXPECT().
 			Initialized(gomock.Any()).
 			Return(nil)
-		srv := NewMatcherService(s.matcherMock, nil, nil)
+		srv := NewMatcherService(s.matcherMock, nil)
 		res, err := srv.GetVulnerabilities(s.ctx, &v4.GetVulnerabilitiesRequest{
 			HashId: hashID,
 			Contents: &v4.Contents{Packages: []*v4.Package{
@@ -177,7 +174,7 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetMetadata() {
 		GetLastVulnerabilityUpdate(gomock.Any()).
 		Return(now, nil)
 
-	srv := NewMatcherService(s.matcherMock, nil, nil)
+	srv := NewMatcherService(s.matcherMock, nil)
 	res, err := srv.GetMetadata(s.ctx, protocompat.ProtoEmpty())
 	s.NoError(err)
 	protoassert.Equal(s.T(), &v4.Metadata{
@@ -192,7 +189,7 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetMetadata_error() {
 		GetLastVulnerabilityUpdate(gomock.Any()).
 		Return(time.Time{}, errors.New("some error"))
 
-	srv := NewMatcherService(s.matcherMock, nil, nil)
+	srv := NewMatcherService(s.matcherMock, nil)
 	res, err := srv.GetMetadata(s.ctx, protocompat.ProtoEmpty())
 	s.Error(err)
 	s.Nil(res)
@@ -237,7 +234,7 @@ func (s *matcherServiceTestSuite) Test_matcherService_notes() {
 		},
 	}
 
-	srv := NewMatcherService(s.matcherMock, nil, nil)
+	srv := NewMatcherService(s.matcherMock, nil)
 
 	// Empty notes.
 	s.matcherMock.
@@ -309,35 +306,42 @@ func (s *matcherServiceTestSuite) Test_matcherService_notes() {
 }
 
 func (s *matcherServiceTestSuite) Test_matcherService_GetSBOM() {
-	s.Run("error on invalid request", func() {
-		srv := NewMatcherService(nil, nil, nil)
+	s.Run("error on empty request", func() {
+		srv := NewMatcherService(nil, nil)
 		_, err := srv.GetSBOM(s.ctx, nil)
 		s.ErrorContains(err, "empty request")
 	})
 
-	s.Run("error on invalid hash id prefix", func() {
-		srv := NewMatcherService(nil, nil, nil)
-		_, err := srv.GetSBOM(s.ctx, &v4.GetSBOMRequest{
-			HashId:   "/v4/notAnImage/id",
-			Contents: &v4.Contents{},
-		})
-		s.ErrorContains(err, "invalid hash id")
+	s.Run("error on no id", func() {
+		srv := NewMatcherService(nil, nil)
+		_, err := srv.GetSBOM(s.ctx, &v4.GetSBOMRequest{})
+		s.ErrorContains(err, "id is required")
 	})
 
-	s.Run("error on invalid hash id digest", func() {
-		srv := NewMatcherService(nil, nil, nil)
+	s.Run("error on no name", func() {
+		srv := NewMatcherService(nil, nil)
 		_, err := srv.GetSBOM(s.ctx, &v4.GetSBOMRequest{
-			HashId:   "/v4/containerimage/id",
-			Contents: &v4.Contents{},
+			Id: "id",
 		})
-		s.ErrorContains(err, "invalid digest")
+		s.ErrorContains(err, "name is required")
+	})
+
+	s.Run("error on empty contents", func() {
+		srv := NewMatcherService(nil, nil)
+		_, err := srv.GetSBOM(s.ctx, &v4.GetSBOMRequest{
+			Id:   "id",
+			Name: "name",
+		})
+		s.ErrorContains(err, "contents are required")
+
 	})
 
 	s.Run("error when sbom generation fails", func() {
-		s.sbomerMock.EXPECT().GetSBOM(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("broken"))
-		srv := NewMatcherService(nil, nil, s.sbomerMock)
+		s.matcherMock.EXPECT().GetSBOM(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("broken"))
+		srv := NewMatcherService(s.matcherMock, nil)
 		_, err := srv.GetSBOM(s.ctx, &v4.GetSBOMRequest{
-			HashId:   "/v4/containerimage/sha256:0000000000000000000000000000000000000000000000000000000000000000",
+			Id:       "id",
+			Name:     "name",
 			Contents: &v4.Contents{},
 		})
 		s.ErrorContains(err, "broken")
@@ -345,13 +349,14 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetSBOM() {
 
 	s.Run("success", func() {
 		fakeSbomB := []byte("fake sbom")
-		s.sbomerMock.EXPECT().GetSBOM(gomock.Any(), gomock.Any(), gomock.Any()).Return(fakeSbomB, nil)
-		srv := NewMatcherService(nil, nil, s.sbomerMock)
+		s.matcherMock.EXPECT().GetSBOM(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(fakeSbomB, nil)
+		srv := NewMatcherService(s.matcherMock, nil)
 		res, err := srv.GetSBOM(s.ctx, &v4.GetSBOMRequest{
-			HashId:   "/v4/containerimage/sha256:0000000000000000000000000000000000000000000000000000000000000000",
+			Id:       "id",
+			Name:     "name",
 			Contents: &v4.Contents{},
 		})
-		s.NoError(err)
+		s.Require().NoError(err)
 		s.Equal(res.Sbom, fakeSbomB)
 	})
 }
