@@ -88,10 +88,10 @@ spec:
                       type: object
                     type: array
                   listenOnCreates:
-                    default: true
+                    default: "true"
                     description: Set this to 'true' to enable preventive policy enforcement
                       for object creations.
-                    type: boolean
+                    type: string
                   listenOnEvents:
                     default: true
                     description: Set this to 'true' to enable monitoring and enforcement
