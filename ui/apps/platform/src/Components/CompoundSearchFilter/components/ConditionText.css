@@ -1,0 +1,4 @@
+/* 100.000% rounded up to 10em overrides 100% */
+.pf-v5-c-form-control.ConditionTextInput {
+    --pf-v5-c-form-control--Width: 8em;
+}

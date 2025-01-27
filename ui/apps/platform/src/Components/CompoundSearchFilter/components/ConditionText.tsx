@@ -1,9 +1,18 @@
 import React, { useState } from 'react';
-import { Button, SelectOption, TextInput } from '@patternfly/react-core';
+import {
+    Button,
+    MenuToggle,
+    MenuToggleElement,
+    Select,
+    SelectList,
+    SelectOption,
+    TextInput,
+} from '@patternfly/react-core';
 import { ArrowRightIcon } from '@patternfly/react-icons';
 
 import { NonEmptyArray } from 'utils/type.utils';
-import SimpleSelect from './SimpleSelect';
+
+import './ConditionText.css';
 
 // Potentially reusable for condition-number and date-picker components.
 export type ConditionEntry = [conditionKey: string, conditionText: string];
@@ -79,31 +88,63 @@ function ConditionText({ inputProps, onSearch }: ConditionTextProps) {
     const [conditionKey, setConditionKey] = useState(conditionEntries[0][0]);
     const [externalText, setExternalText] = useState(externalTextDefault);
 
+    // Adapt SimpleSelect because its MenuToggle renders conditionKey instead of conditionText.
+    const [isOpen, setIsOpen] = React.useState(false);
+
+    const onToggleClick = () => {
+        setIsOpen(!isOpen);
+    };
+
+    const onSelect = (
+        _event: React.MouseEvent<Element, MouseEvent> | undefined,
+        value: string | number | undefined
+    ) => {
+        setConditionKey(value as string);
+        setIsOpen(false);
+    };
+
+    // Interesting dilemma that map might be more convenient here,
+    // but less convenient for initial state and se;ect list.
+    const conditionSelected =
+        conditionEntries.find((condition) => condition[0] === conditionKey) ?? conditionEntries[0];
+
+    const toggle = (toggleRef: React.Ref<MenuToggleElement>) => (
+        <MenuToggle
+            className="pf-v5-u-flex-shrink-0"
+            aria-label="Condition selector toggle"
+            ref={toggleRef}
+            onClick={onToggleClick}
+            isExpanded={isOpen}
+        >
+            {conditionSelected[1]}
+        </MenuToggle>
+    );
+
     return (
         <>
-            <SimpleSelect
-                ariaLabelMenu="Condition selector menu"
-                ariaLabelToggle="Condition selector toggle"
-                onChange={(value) => {
-                    setConditionKey(value as string);
-                }}
-                value={conditionKey}
+            <Select
+                isOpen={isOpen}
+                selected={conditionKey}
+                onSelect={onSelect}
+                onOpenChange={(isOpen) => setIsOpen(isOpen)}
+                toggle={toggle}
+                shouldFocusToggleOnSelect
             >
-                {conditionEntries.map(([conditionKey, conditionText]) => {
-                    return (
+                <SelectList aria-label="Condition selector menu">
+                    {conditionEntries.map(([conditionKey, conditionText]) => (
                         <SelectOption key={conditionKey} value={conditionKey}>
                             {conditionText}
                         </SelectOption>
-                    );
-                })}
-            </SimpleSelect>
+                    ))}
+                </SelectList>
+            </Select>
             <TextInput
                 aria-label="Condition value input"
+                className="ConditionTextInput"
                 onChange={(event: React.FormEvent<HTMLInputElement>) => {
                     const { value: changedText } = event.target as HTMLInputElement;
                     setExternalText(changedText);
                 }}
-                style={{ maxWidth: '8em' }}
                 validated={validateExternalText(externalText) ? 'success' : 'error'}
                 value={externalText}
             />
