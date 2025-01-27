@@ -18,7 +18,7 @@ func TestQueue(t *testing.T) {
 }
 
 func (s *queueSuite) createAndStartQueue(stopper concurrency.Stopper, size int) *Queue[*string] {
-	q := NewQueue[*string](stopper, "queue", size, nil, nil)
+	q := NewQueue[*string](stopper, "queue", size, nil, nil, nil)
 	q.Start()
 	return q
 }

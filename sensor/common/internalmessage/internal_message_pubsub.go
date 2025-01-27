@@ -11,6 +11,12 @@ const (
 
 	// SensorMessageResourceSyncFinished is a message kind where components require the resource sync to be finished.
 	SensorMessageResourceSyncFinished = "SensorMessage_ResourceSyncFinished"
+
+	// SensorMessageDropRateHigh is a message kind that indicates a given component is dropping message at a high rate.
+	SensorMessageDropRateHigh = "SensorMessage_DropRateHigh"
+
+	// SensorMessageDropRateNormal is a message kind that indicates a given component stop dropping message at a high rate.
+	SensorMessageDropRateNormal = "SensorMessage_DropRateNormalize"
 )
 
 // SensorInternalMessageCallback is the callback used by subscribers.
@@ -22,6 +28,8 @@ func NewMessageSubscriber() *MessageSubscriber {
 		subscribers: map[string][]SensorInternalMessageCallback{
 			SensorMessageSoftRestart:          {},
 			SensorMessageResourceSyncFinished: {},
+			SensorMessageDropRateHigh:         {},
+			SensorMessageDropRateNormal:       {},
 		},
 		lock: &sync.RWMutex{},
 	}

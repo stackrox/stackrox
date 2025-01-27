@@ -1,10 +1,14 @@
 package queue
 
 import (
+	"time"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/queue"
+	"github.com/stackrox/rox/sensor/common/droprate"
+	"github.com/stackrox/rox/sensor/common/internalmessage"
 )
 
 // InternalQueue defines the pkg/queue that holds the items.
@@ -23,7 +27,7 @@ type Queue[T comparable] struct {
 }
 
 // NewQueue creates a new Queue.
-func NewQueue[T comparable](stopper concurrency.Stopper, name string, size int, counter *prometheus.CounterVec, dropped prometheus.Counter) *Queue[T] {
+func NewQueue[T comparable](stopper concurrency.Stopper, name string, size int, counter *prometheus.CounterVec, dropped prometheus.Counter, itemDropC chan struct{}, rateTime time.Duration, rateLimit int, pubSub *internalmessage.MessageSubscriber) *Queue[T] {
 	var opts []queue.OptionFunc[T]
 	if size > 0 {
 		opts = append(opts, queue.WithMaxSize[T](size))
@@ -36,6 +40,9 @@ func NewQueue[T comparable](stopper concurrency.Stopper, name string, size int, 
 	}
 	if name != "" {
 		opts = append(opts, queue.WithQueueName[T](name))
+	}
+	if itemDropC != nil {
+		opts = append(opts, queue.WithDropRateManager[T](droprate.NewRateManager(name, size, itemDropC, stopper.LowLevel().GetStopRequestSignal(), rateTime, rateLimit, pubSub)))
 	}
 	return &Queue[T]{
 		queue:     queue.NewQueue[T](opts...),

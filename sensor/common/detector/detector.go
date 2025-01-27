@@ -36,6 +36,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/enforcer"
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
 	"github.com/stackrox/rox/sensor/common/image/cache"
+	"github.com/stackrox/rox/sensor/common/internalmessage"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/common/registry"
@@ -73,8 +74,11 @@ type Detector interface {
 // New returns a new detector
 func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.SettingsManager,
 	deploymentStore store.DeploymentStore, serviceAccountStore store.ServiceAccountStore, cache cache.Image, auditLogEvents chan *sensor.AuditEvents,
-	auditLogUpdater updater.Component, networkPolicyStore store.NetworkPolicyStore, registryStore *registry.Store, localScan *scan.LocalScan) Detector {
+	auditLogUpdater updater.Component, networkPolicyStore store.NetworkPolicyStore, registryStore *registry.Store, localScan *scan.LocalScan, pubSub *internalmessage.MessageSubscriber) Detector {
 	detectorStopper := concurrency.NewStopper()
+	// TODO: add these channel to the detector structure and close it on Stop
+	netFlowRecordDropC := make(chan struct{})
+	piRecordDropC := make(chan struct{})
 	netFlowQueueSize := 0
 	piQueueSize := 0
 	if features.SensorCapturesIntermediateEvents.Enabled() {
@@ -87,6 +91,10 @@ func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.Sett
 		netFlowQueueSize,
 		detectorMetrics.DetectorNetworkFlowBufferSize,
 		detectorMetrics.DetectorNetworkFlowDroppedCount,
+		netFlowRecordDropC,
+		5*time.Second,
+		1,
+		pubSub,
 	)
 	piQueue := queue.NewQueue[*queue.IndicatorQueueItem](
 		detectorStopper,
@@ -94,6 +102,10 @@ func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.Sett
 		piQueueSize,
 		detectorMetrics.DetectorProcessIndicatorBufferSize,
 		detectorMetrics.DetectorProcessIndicatorDroppedCount,
+		piRecordDropC,
+		5*time.Second,
+		1,
+		pubSub,
 	)
 
 	return &detectorImpl{

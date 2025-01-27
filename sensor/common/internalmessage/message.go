@@ -9,6 +9,7 @@ type SensorInternalMessage struct {
 	Kind     string
 	Validity concurrency.Waitable
 	Text     string
+	Payload  any
 }
 
 // IsExpired is a helper function that checks if the context already expired without blocking.

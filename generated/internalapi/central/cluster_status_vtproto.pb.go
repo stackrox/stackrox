@@ -87,11 +87,29 @@ func (m *ClusterStatusUpdate_DeploymentEnvUpdate) CloneVT() isClusterStatusUpdat
 	return r
 }
 
+func (m *SensorHealthInfo) CloneVT() *SensorHealthInfo {
+	if m == nil {
+		return (*SensorHealthInfo)(nil)
+	}
+	r := new(SensorHealthInfo)
+	r.SensorStatus = m.SensorStatus
+	if len(m.unknownFields) > 0 {
+		r.unknownFields = make([]byte, len(m.unknownFields))
+		copy(r.unknownFields, m.unknownFields)
+	}
+	return r
+}
+
+func (m *SensorHealthInfo) CloneMessageVT() proto.Message {
+	return m.CloneVT()
+}
+
 func (m *RawClusterHealthInfo) CloneVT() *RawClusterHealthInfo {
 	if m == nil {
 		return (*RawClusterHealthInfo)(nil)
 	}
 	r := new(RawClusterHealthInfo)
+	r.SensorHealthInfo = m.SensorHealthInfo.CloneVT()
 	if rhs := m.CollectorHealthInfo; rhs != nil {
 		if vtpb, ok := interface{}(rhs).(interface {
 			CloneVT() *storage.CollectorHealthInfo
@@ -255,6 +273,25 @@ func (this *ClusterStatusUpdate_DeploymentEnvUpdate) EqualVT(thatIface isCluster
 	return true
 }
 
+func (this *SensorHealthInfo) EqualVT(that *SensorHealthInfo) bool {
+	if this == that {
+		return true
+	} else if this == nil || that == nil {
+		return false
+	}
+	if this.SensorStatus != that.SensorStatus {
+		return false
+	}
+	return string(this.unknownFields) == string(that.unknownFields)
+}
+
+func (this *SensorHealthInfo) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*SensorHealthInfo)
+	if !ok {
+		return false
+	}
+	return this.EqualVT(that)
+}
 func (this *RawClusterHealthInfo) EqualVT(that *RawClusterHealthInfo) bool {
 	if this == that {
 		return true
@@ -286,6 +323,9 @@ func (this *RawClusterHealthInfo) EqualVT(that *RawClusterHealthInfo) bool {
 			return false
 		}
 	} else if !proto.Equal(this.ScannerHealthInfo, that.ScannerHealthInfo) {
+		return false
+	}
+	if !this.SensorHealthInfo.EqualVT(that.SensorHealthInfo) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -456,6 +496,44 @@ func (m *ClusterStatusUpdate_DeploymentEnvUpdate) MarshalToSizedBufferVT(dAtA []
 	}
 	return len(dAtA) - i, nil
 }
+func (m *SensorHealthInfo) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *SensorHealthInfo) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *SensorHealthInfo) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.SensorStatus != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.SensorStatus))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *RawClusterHealthInfo) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -485,6 +563,16 @@ func (m *RawClusterHealthInfo) MarshalToSizedBufferVT(dAtA []byte) (int, error) 
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.SensorHealthInfo != nil {
+		size, err := m.SensorHealthInfo.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x22
 	}
 	if m.ScannerHealthInfo != nil {
 		if vtmsg, ok := interface{}(m.ScannerHealthInfo).(interface {
@@ -651,6 +739,19 @@ func (m *ClusterStatusUpdate_DeploymentEnvUpdate) SizeVT() (n int) {
 	}
 	return n
 }
+func (m *SensorHealthInfo) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.SensorStatus != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.SensorStatus))
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
 func (m *RawClusterHealthInfo) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -685,6 +786,10 @@ func (m *RawClusterHealthInfo) SizeVT() (n int) {
 		} else {
 			l = proto.Size(m.ScannerHealthInfo)
 		}
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.SensorHealthInfo != nil {
+		l = m.SensorHealthInfo.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -937,6 +1042,76 @@ func (m *ClusterStatusUpdate) UnmarshalVTUnsafe(dAtA []byte) error {
 	}
 	return nil
 }
+func (m *SensorHealthInfo) UnmarshalVTUnsafe(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SensorHealthInfo: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SensorHealthInfo: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SensorStatus", wireType)
+			}
+			m.SensorStatus = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.SensorStatus |= SensorHealthInfo_HealthStatusLabel(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *RawClusterHealthInfo) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -1096,6 +1271,42 @@ func (m *RawClusterHealthInfo) UnmarshalVTUnsafe(dAtA []byte) error {
 				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.ScannerHealthInfo); err != nil {
 					return err
 				}
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SensorHealthInfo", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.SensorHealthInfo == nil {
+				m.SensorHealthInfo = &SensorHealthInfo{}
+			}
+			if err := m.SensorHealthInfo.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
 			}
 			iNdEx = postIndex
 		default:

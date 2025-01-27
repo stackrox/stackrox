@@ -58,11 +58,17 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	sInfo := msg.GetClusterHealthInfo().GetScannerHealthInfo()
 
 	conn := connection.FromContext(ctx)
+	sensorHealth := storage.ClusterHealthStatus_HEALTHY
+	if msg.GetClusterHealthInfo().GetSensorHealthInfo() != nil {
+		if msg.GetClusterHealthInfo().GetSensorHealthInfo().GetSensorStatus() == central.SensorHealthInfo_DEGRADED {
+			sensorHealth = storage.ClusterHealthStatus_DEGRADED
+		}
+	}
 	clusterHealthStatus := &storage.ClusterHealthStatus{
 		CollectorHealthInfo:          cInfo,
 		AdmissionControlHealthInfo:   aInfo,
 		ScannerHealthInfo:            sInfo,
-		SensorHealthStatus:           storage.ClusterHealthStatus_HEALTHY,
+		SensorHealthStatus:           sensorHealth,
 		CollectorHealthStatus:        clusterhealth.PopulateCollectorStatus(cInfo),
 		AdmissionControlHealthStatus: clusterhealth.PopulateAdmissionControlStatus(aInfo),
 		ScannerHealthStatus:          clusterhealth.PopulateLocalScannerStatus(sInfo),
