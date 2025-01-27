@@ -40,7 +40,6 @@ var (
 		},
 		user.With(permissions.Modify(resources.Access)): {
 			v1.RoleService_CreateRole_FullMethodName,
-			v1.RoleService_SetDefaultRole_FullMethodName,
 			v1.RoleService_UpdateRole_FullMethodName,
 			v1.RoleService_DeleteRole_FullMethodName,
 			v1.RoleService_PostPermissionSet_FullMethodName,

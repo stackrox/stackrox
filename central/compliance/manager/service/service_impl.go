@@ -26,7 +26,6 @@ var (
 			v1.ComplianceManagementService_GetRunStatuses_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.Compliance)): {
-			v1.ComplianceManagementService_TriggerRun_FullMethodName,
 			v1.ComplianceManagementService_TriggerRuns_FullMethodName,
 		},
 	})

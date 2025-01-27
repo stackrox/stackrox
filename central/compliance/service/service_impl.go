@@ -27,7 +27,6 @@ var (
 		user.With(permissions.View(resources.Compliance)): {
 			v1.ComplianceService_GetStandards_FullMethodName,
 			v1.ComplianceService_GetStandard_FullMethodName,
-			v1.ComplianceService_GetComplianceStatistics_FullMethodName,
 			v1.ComplianceService_GetRunResults_FullMethodName,
 			v1.ComplianceService_GetAggregatedResults_FullMethodName,
 		},
