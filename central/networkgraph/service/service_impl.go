@@ -118,9 +118,6 @@ func (s *serviceImpl) GetExternalNetworkFlows(ctx context.Context, request *v1.G
 		return nil, err
 	}
 
-	log.Info(entities)
-	log.Info(flows)
-
 	return &v1.GetExternalNetworkFlowsResponse{
 		Entity: entities[0].GetInfo(),
 		Flows:  paginate(request.GetPagination(), flows),

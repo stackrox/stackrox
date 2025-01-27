@@ -44,5 +44,5 @@ func GetTestPostgresClusterDataStore(t testing.TB, pool postgres.DB) (ClusterDat
 	if err != nil {
 		return nil, err
 	}
-	return NewClusterDataStore(dbstore, configStore, networkTreeMgr, nil), nil
+	return NewClusterDataStore(dbstore, configStore, networkTreeMgr, cache.DeletedDeploymentsSingleton()), nil
 }
