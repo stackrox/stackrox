@@ -27,7 +27,7 @@ type Service interface {
 
 // New returns a new Service instance using the given DataStore.
 func New(imageIntegrations imageIntegrationStore.DataStore) Service {
-	subjects := []mtls.Subject{mtls.ScannerSubject, mtls.CentralDBSubject}
+	subjects := []mtls.Subject{mtls.ScannerSubject}
 	if features.ScannerV4.Enabled() {
 		subjects = append(subjects, mtls.ScannerV4IndexerSubject, mtls.ScannerV4MatcherSubject)
 	}
@@ -52,7 +52,7 @@ func New(imageIntegrations imageIntegrationStore.DataStore) Service {
 
 	return &serviceImpl{
 		imageIntegrations: imageIntegrations,
-		tlsConfigs:        tlsConfigs,
-		expiryFunc:        maybeGetExpiryFromServiceAt,
+		scannerConfigs:    tlsConfigs,
+		expiryFunc:        maybeGetExpiryFromScannerAt,
 	}
 }
