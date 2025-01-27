@@ -284,37 +284,24 @@ spec:
     - name: basic-auth
       workspace: git-auth
 
-  - name: determine-operator-image-tag
+  - name: determine-image-tag
     params:
     - name: TAG_SUFFIX
       value: $(params.output-tag-suffix)
     - name: SOURCE_ARTIFACT
       value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
-    - name: MAKEFILE_DIRECTORY
-      value: ./operator
     - name: SOURCE_BRANCH
       value: '{{source_branch}}'
-    taskRef: &determine-image-tag-ref
+    taskRef:
       params:
       - name: name
         value: determine-image-tag
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:76c8fbd2abac06ce895a765c41be73d14925b00a660b1b5fa6564a50a15cf2ba
+        # TODO(ROX-22250): switch to latest
+        value: quay.io/rhacs-eng/konflux-tasks:pr-30@sha256:3dfb865398b12d2c0671daabc3a5af0e2353050e1a2abf2286f998a7309ad516
       - name: kind
         value: task
       resolver: bundles
-
-  - name: determine-main-image-tag
-    params:
-    - name: TAG_SUFFIX
-      value: $(params.output-tag-suffix)
-    - name: SOURCE_ARTIFACT
-      value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
-    - name: MAKEFILE_DIRECTORY
-      value: "."
-    - name: SOURCE_BRANCH
-      value: '{{source_branch}}'
-    taskRef: *determine-image-tag-ref
 
   - name: prefetch-dependencies
     params:
@@ -342,7 +329,7 @@ spec:
   - name: wait-for-operator-image
     params:
     - name: IMAGE
-      value: "$(params.operator-image-build-repo):$(tasks.determine-operator-image-tag.results.IMAGE_TAG)"
+      value: "$(params.operator-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
     taskRef: &wait-for-image-ref
       params:
       - name: name
@@ -358,7 +345,7 @@ spec:
   - name: wait-for-main-image
     params:
     - name: IMAGE
-      value: "$(params.main-image-build-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+      value: "$(params.main-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
     taskRef: *wait-for-image-ref
     # This timeout must be the same as the pipeline timeout in `main-build.yaml`.
     timeout: 2h40m
@@ -366,7 +353,7 @@ spec:
   - name: wait-for-scanner-image
     params:
     - name: IMAGE
-      value: "$(params.scanner-image-build-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+      value: "$(params.scanner-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
     taskRef: *wait-for-image-ref
     # This timeout must be the same as the pipeline timeout in `scanner-retag.yaml`
     timeout: 40m
@@ -374,7 +361,7 @@ spec:
   - name: wait-for-scanner-db-image
     params:
     - name: IMAGE
-      value: "$(params.scanner-db-image-build-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+      value: "$(params.scanner-db-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
     taskRef: *wait-for-image-ref
     # This timeout must be the same as the pipeline timeout in `scanner-db-retag.yaml`
     timeout: 40m
@@ -382,7 +369,7 @@ spec:
   - name: wait-for-scanner-slim-image
     params:
     - name: IMAGE
-      value: "$(params.scanner-slim-image-build-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+      value: "$(params.scanner-slim-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
     taskRef: *wait-for-image-ref
     # This timeout must be the same as the pipeline timeout in `scanner-slim-retag.yaml`
     timeout: 40m
@@ -390,7 +377,7 @@ spec:
   - name: wait-for-scanner-db-slim-image
     params:
     - name: IMAGE
-      value: "$(params.scanner-db-slim-image-build-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+      value: "$(params.scanner-db-slim-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
     taskRef: *wait-for-image-ref
     # This timeout must be the same as the pipeline timeout in `scanner-db-slim-retag.yaml`
     timeout: 40m
@@ -398,7 +385,7 @@ spec:
   - name: wait-for-scanner-v4-image
     params:
     - name: IMAGE
-      value: "$(params.scanner-v4-image-build-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+      value: "$(params.scanner-v4-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
     taskRef: *wait-for-image-ref
     # This timeout must be the same as the pipeline timeout in `scanner-v4-build.yaml`.
     timeout: 1h10m
@@ -406,7 +393,7 @@ spec:
   - name: wait-for-scanner-v4-db-image
     params:
     - name: IMAGE
-      value: "$(params.scanner-v4-db-image-build-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+      value: "$(params.scanner-v4-db-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
     taskRef: *wait-for-image-ref
     # This timeout must be the same as the pipeline timeout in `scanner-v4-db-build.yaml`.
     timeout: 1h10m
@@ -414,7 +401,7 @@ spec:
   - name: wait-for-collector-slim-image
     params:
     - name: IMAGE
-      value: "$(params.collector-slim-image-build-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+      value: "$(params.collector-slim-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
     taskRef: *wait-for-image-ref
     # The timeout must be the same as the pipeline timeout in `collector-slim-retag.yaml`
     timeout: 40m
@@ -422,7 +409,7 @@ spec:
   - name: wait-for-collector-image
     params:
     - name: IMAGE
-      value: "$(params.collector-full-image-build-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+      value: "$(params.collector-full-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
     taskRef: *wait-for-image-ref
     # The timeout must be the same as the pipeline timeout in `collector-full-retag.yaml`
     timeout: 40m
@@ -430,7 +417,7 @@ spec:
   - name: wait-for-roxctl-image
     params:
     - name: IMAGE
-      value: "$(params.roxctl-image-build-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+      value: "$(params.roxctl-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
     taskRef: *wait-for-image-ref
     # This timeout must be the same as the pipeline timeout in `roxctl-build.yaml`.
     timeout: 1h10m
@@ -438,7 +425,7 @@ spec:
   - name: wait-for-central-db-image
     params:
     - name: IMAGE
-      value: "$(params.central-db-image-build-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+      value: "$(params.central-db-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
     taskRef: *wait-for-image-ref
     # This timeout must be the same as the pipeline timeout in `central-db-build.yaml`.
     timeout: 1h40m
@@ -447,7 +434,7 @@ spec:
     params:
     - name: IMAGE
       # Note the operator bundle tag is prefixed with "v".
-      value: $(params.output-image-repo):v$(tasks.determine-operator-image-tag.results.IMAGE_TAG)
+      value: $(params.output-image-repo):v$(tasks.determine-image-tag.results.IMAGE_TAG)
     - name: DOCKERFILE
       value: $(params.dockerfile)
     - name: CONTEXT
@@ -462,7 +449,7 @@ spec:
       value: $(tasks.clone-repository.results.commit)
     - name: BUILD_ARGS
       value:
-      - OPERATOR_IMAGE_TAG=$(tasks.determine-operator-image-tag.results.IMAGE_TAG)
+      - OPERATOR_IMAGE_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
       - OPERATOR_IMAGE_REF=$(params.operator-image-catalog-repo)@$(tasks.wait-for-operator-image.results.IMAGE_DIGEST)
       - RELATED_IMAGE_MAIN=$(params.main-image-catalog-repo)@$(tasks.wait-for-main-image.results.IMAGE_DIGEST)
       - RELATED_IMAGE_SCANNER=$(params.scanner-image-catalog-repo)@$(tasks.wait-for-scanner-image.results.IMAGE_DIGEST)
@@ -677,8 +664,7 @@ spec:
     - clamav-scan
     - clone-repository
     - deprecated-base-image-check
-    - determine-main-image-tag
-    - determine-operator-image-tag
+    - determine-image-tag
     - init
     - prefetch-dependencies
     - push-dockerfile
@@ -698,7 +684,7 @@ spec:
     - wait-for-scanner-v4-image
     params:
     - name: PRODUCT_VERSION
-      value: $(tasks.determine-main-image-tag.results.IMAGE_TAG)
+      value: $(tasks.determine-image-tag.results.IMAGE_TAG)
     - name: COMPONENTS
       value: |
         [
