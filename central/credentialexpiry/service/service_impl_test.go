@@ -86,12 +86,12 @@ func TestGetScannerV4CertExpiry(t *testing.T) {
 
 	errorExpiryFunc := genGetExpiryFunc(nil)
 
-	allTlsConfigs := map[mtls.Subject]*tls.Config{
+	allScannerConfigs := map[mtls.Subject]*tls.Config{
 		mtls.ScannerV4IndexerSubject: {},
 		mtls.ScannerV4MatcherSubject: {},
 	}
 
-	noTlsConfigs := map[mtls.Subject]*tls.Config{}
+	noScannerConfigs := map[mtls.Subject]*tls.Config{}
 
 	// For readability.
 	feature := true
@@ -103,7 +103,7 @@ func TestGetScannerV4CertExpiry(t *testing.T) {
 		desc                string
 		featureEnabled      bool
 		errorExpected       bool
-		tlsConfigs          map[mtls.Subject]*tls.Config
+		scannerConfigs      map[mtls.Subject]*tls.Config
 		getIntegrationError bool
 		integrationExists   bool
 		expiryFunc          func(context.Context, mtls.Subject, *tls.Config, string) (*time.Time, error)
@@ -111,35 +111,35 @@ func TestGetScannerV4CertExpiry(t *testing.T) {
 	}{
 		{
 			"error if feature disabled",
-			!feature, errorExpected, allTlsConfigs, !getIntegrationError, integrationExists, successExpiryFunc, &expiryOld,
+			!feature, errorExpected, allScannerConfigs, !getIntegrationError, integrationExists, successExpiryFunc, &expiryOld,
 		},
 		{
 			"error if scanner config missing",
-			feature, errorExpected, noTlsConfigs, !getIntegrationError, integrationExists, successExpiryFunc, &expiryOld,
+			feature, errorExpected, noScannerConfigs, !getIntegrationError, integrationExists, successExpiryFunc, &expiryOld,
 		},
 		{
 			"error if failure getting scanner v4 integration",
-			feature, errorExpected, allTlsConfigs, getIntegrationError, integrationExists, successExpiryFunc, &expiryOld,
+			feature, errorExpected, allScannerConfigs, getIntegrationError, integrationExists, successExpiryFunc, &expiryOld,
 		},
 		{
 			"error if no scanner v4 integration",
-			feature, errorExpected, allTlsConfigs, !getIntegrationError, !integrationExists, successExpiryFunc, &expiryOld,
+			feature, errorExpected, allScannerConfigs, !getIntegrationError, !integrationExists, successExpiryFunc, &expiryOld,
 		},
 		{
 			"error if fail contacting both indexer and matcher",
-			feature, errorExpected, allTlsConfigs, !getIntegrationError, integrationExists, errorExpiryFunc, &expiryOld,
+			feature, errorExpected, allScannerConfigs, !getIntegrationError, integrationExists, errorExpiryFunc, &expiryOld,
 		},
 		{
 			"success if indexer and matcher able to be contacted",
-			feature, !errorExpected, allTlsConfigs, !getIntegrationError, integrationExists, successExpiryFunc, &expiryOld,
+			feature, !errorExpected, allScannerConfigs, !getIntegrationError, integrationExists, successExpiryFunc, &expiryOld,
 		},
 		{
 			"success if contacted matcher but failed contacting indexer",
-			feature, !errorExpected, allTlsConfigs, !getIntegrationError, integrationExists, matcherSuccessExpiryFunc, &expiryCur,
+			feature, !errorExpected, allScannerConfigs, !getIntegrationError, integrationExists, matcherSuccessExpiryFunc, &expiryCur,
 		},
 		{
 			"success if contacted indexer but failed contacting matcher",
-			feature, !errorExpected, allTlsConfigs, !getIntegrationError, integrationExists, indexerSuccessExpiryFunc, &expiryOld,
+			feature, !errorExpected, allScannerConfigs, !getIntegrationError, integrationExists, indexerSuccessExpiryFunc, &expiryOld,
 		},
 	}
 	for _, tc := range testCases {
@@ -162,7 +162,7 @@ func TestGetScannerV4CertExpiry(t *testing.T) {
 
 			s := &serviceImpl{
 				imageIntegrations: iiDSMock,
-				tlsConfigs:        tc.tlsConfigs,
+				scannerConfigs:    tc.scannerConfigs,
 				expiryFunc:        tc.expiryFunc,
 			}
 			actual, err := s.getScannerV4CertExpiry(context.Background())
@@ -180,7 +180,6 @@ func TestGetScannerV4CertExpiry(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func genGetExpiryFunc(expiries map[mtls.Subject]*time.Time) func(context.Context, mtls.Subject, *tls.Config, string) (*time.Time, error) {
