@@ -113,6 +113,21 @@ func DiscoveredExternalEntity(address net.IPNetwork) Entity {
 	}
 }
 
+// DiscoveredExternalEntityClusterScoped returns an EXTERNAL_SOURCE entity refering to the provided
+// cluster, and network address.
+// It is marked as "Discovered" to constrast with Entities defined by the user or the default ones.
+func DiscoveredExternalEntityClusterScoped(clusterId string, address net.IPNetwork) Entity {
+	id, err := externalsrcs.NewClusterScopedID(clusterId, address.String())
+	utils.Should(errors.Wrapf(err, "generating id for cluster/network %s/%s", clusterId, address.String()))
+
+	return Entity{
+		Type:                  storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+		ID:                    id.String(),
+		ExternalEntityAddress: address,
+		Discovered:            true,
+	}
+}
+
 // InternetProtoWithDesc returns storage.NetworkEntityInfo proto object with Desc field filled in.
 func InternetProtoWithDesc(family net.Family) *storage.NetworkEntityInfo {
 	var cidr string
