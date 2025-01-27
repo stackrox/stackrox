@@ -22,7 +22,6 @@ import (
 	"github.com/stackrox/rox/central/role/sachelper"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	apiV1 "github.com/stackrox/rox/generated/api/v1"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
@@ -64,11 +63,11 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Detection)): {
-			v1.DetectionService_DetectBuildTime_FullMethodName,
-			v1.DetectionService_DetectDeployTimeFromYAML_FullMethodName,
+			apiV1.DetectionService_DetectBuildTime_FullMethodName,
+			apiV1.DetectionService_DetectDeployTimeFromYAML_FullMethodName,
 		},
 		or.SensorOr(user.With(permissions.Modify(resources.Detection))): {
-			v1.DetectionService_DetectDeployTime_FullMethodName,
+			apiV1.DetectionService_DetectDeployTime_FullMethodName,
 		},
 	})
 
