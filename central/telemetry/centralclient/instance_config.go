@@ -2,7 +2,6 @@ package centralclient
 
 import (
 	"context"
-	"encoding/json"
 	"time"
 
 	"github.com/pkg/errors"
@@ -36,22 +35,7 @@ var (
 	startMux   sync.RWMutex
 	enabled    bool
 	instanceId string
-
-	runtimeConfigurationReloadTicker = time.NewTicker(1 * time.Hour)
 )
-
-// getRuntimeConfig returns the runtime configuration with the configured key.
-// If returns nil or error, telemetry should be disabled.
-func getRuntimeConfig() (*phonehome.RuntimeConfig, error) {
-	if env.OfflineModeEnv.BooleanSetting() {
-		return nil, nil
-	}
-	runtimeCfg, err := phonehome.GetRuntimeConfig(
-		env.TelemetryConfigURL.Setting(),
-		env.TelemetryStorageKey.Setting(),
-	)
-	return runtimeCfg, errors.WithMessage(err, "failed to fetch runtime telemetry config")
-}
 
 func getInstanceConfig(key string) (*phonehome.Config, map[string]any) {
 	// k8s apiserver is not accessible in cloud service environment.
@@ -99,47 +83,6 @@ func getInstanceConfig(key string) (*phonehome.Config, map[string]any) {
 		}
 }
 
-func appendRuntimeCampaign(runtimeCfg *phonehome.RuntimeConfig) {
-	telemetryCampaign = permanentTelemetryCampaign
-	if err := runtimeCfg.APICallCampaign.Compile(); err != nil {
-		log.Errorf("Failed to initialize runtime telemetry campaign: %v.", err)
-	} else {
-		telemetryCampaign = append(telemetryCampaign, runtimeCfg.APICallCampaign...)
-	}
-	jc, _ := json.Marshal(telemetryCampaign)
-	log.Info("API Telemetry campaign: ", string(jc))
-}
-
-func applyConfig() (bool, error) {
-	runtimeCfg, err := getRuntimeConfig()
-	if err != nil {
-		return false, err
-	}
-	if runtimeCfg == nil {
-		return false, nil
-	}
-	if err := getInstanceId(); err != nil {
-		return false, err
-	}
-	applyRemoteConfig(runtimeCfg)
-	return true, nil
-}
-
-func applyRemoteConfig(runtimeCfg *phonehome.RuntimeConfig) {
-	startMux.Lock()
-	defer startMux.Unlock()
-	appendRuntimeCampaign(runtimeCfg)
-	if config == nil {
-		var props map[string]any
-		config, props = getInstanceConfig(runtimeCfg.Key)
-		config.Gatherer().AddGatherer(func(ctx context.Context) (map[string]any, error) {
-			return props, nil
-		})
-	} else {
-		config.StorageKey = runtimeCfg.Key
-	}
-}
-
 func getInstanceId() error {
 	startMux.Lock()
 	defer startMux.Unlock()
@@ -171,7 +114,7 @@ func InstanceConfig() *phonehome.Config {
 			log.Errorf("Failed to apply telemetry configuration: %v.", err)
 			return
 		}
-		go periodicReload()
+		go periodicReload(time.NewTicker(1 * time.Hour).C)
 		startMux.RLock()
 		defer startMux.RUnlock()
 		if config != nil {
@@ -183,6 +126,7 @@ func InstanceConfig() *phonehome.Config {
 	startMux.RLock()
 	defer startMux.RUnlock()
 	if !enabled {
+		log.Info("Telemetry collection is disabled")
 		// This will make InstanceConfig().Enabled() to return false, while
 		// keeping the config configured for eventual Start().
 		return nil
@@ -276,24 +220,4 @@ func Enable() *phonehome.Config {
 	log.Info("Telemetry collection has been enabled.")
 	cfg.Telemeter().Track("Telemetry Enabled", nil)
 	return cfg
-}
-
-// Reload fetches and applies the remote configuration. It will not enable an
-// explicitely disabled configuraiton.
-func Reload() error {
-	if enable, err := applyConfig(); err != nil {
-		log.Errorf("Failed to reconfigure telemetry: %v.", err)
-		return err
-	} else if enable && enabled {
-		Enable()
-	} else {
-		Disable()
-	}
-	return nil
-}
-
-func periodicReload() {
-	for _, ok := <-runtimeConfigurationReloadTicker.C; ok; {
-		_ = Reload()
-	}
 }
