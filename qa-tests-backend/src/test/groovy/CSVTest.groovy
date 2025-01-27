@@ -21,8 +21,6 @@ import spock.lang.Unroll
 @Tag("PZ")
 class CSVTest extends BaseSpecification {
 
-    private static final IMAGE_SHA = "sha256:6bf47794f923462389f5a2cda49cf5777f736db8563edc3ff78fb9d87e6e22ec"
-
     private static final CVE_FIELDS_FRAGEMENT = """
     fragment cveFields on EmbeddedVulnerability {
       id: cve
@@ -151,7 +149,7 @@ class CSVTest extends BaseSpecification {
 
     private static final Deployment CVE_DEPLOYMENT = new Deployment()
             .setName("nginx-deployment")
-            .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx")
+            .setImage(TEST_IMAGE)
             .addLabel("app", "test")
 
     def setupSpec() {
@@ -308,7 +306,7 @@ class CSVTest extends BaseSpecification {
         "Data is"
 
         description                        | id                           | query
-        "FIXABLE_CVES_IN_IMAGE_QUERY"      | IMAGE_SHA                    | "Image Sha:${IMAGE_SHA}+Fixable:true"
+        "FIXABLE_CVES_IN_IMAGE_QUERY"      | TEST_IMAGE_SHA               | "Image Sha:${TEST_IMAGE_SHA}+Fixable:true"
         "FIXABLE_CVES_IN_COMPONENT_QUERY"  | getComponentId()             | getComponentQuery()
         "FIXABLE_CVES_IN_DEPLOYMENT_QUERY" | CVE_DEPLOYMENT.deploymentUid |
                 "Deployment ID:${CVE_DEPLOYMENT.deploymentUid}+Fixable:true"

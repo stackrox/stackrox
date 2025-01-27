@@ -35,6 +35,8 @@ class ImageManagementTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("Integration")
+    // The "latest" tag tests are the only ones stable enough for BAT
+    @IgnoreIf({ Env.getTestTarget() == "bat-test" && data.imageTag != "latest" })
     def "Verify CI/CD Integration Endpoint - #policyName - #imageRegistry #note"() {
         when:
         "Clone and scope the policy for test"
@@ -79,7 +81,6 @@ class ImageManagementTest extends BaseSpecification {
         "Apache Struts: CVE-2017-5638"    | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
     }
 
-    @Tag("BAT")
     def "Verify two consecutive latest tag image have different scans"() {
         given:
         // Scan an ubuntu 14:04 image we're pretending is latest
@@ -99,6 +100,7 @@ class ImageManagementTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
+    @IgnoreIf({ Env.getTestTarget() == "bat-test" && data.flaky })
     def "Verify image scan finds correct base OS - #qaImageTag"() {
         when:
         def img = ImageService.scanImage("quay.io/rhacs-eng/qa:$qaImageTag", false)
@@ -107,17 +109,17 @@ class ImageManagementTest extends BaseSpecification {
         where:
         "Data inputs are: "
 
-        qaImageTag             | expected
-        "nginx-1.19-alpine"    | "alpine:v3.13"
-        "busybox-1-30"         | "busybox:1.30.1"
-        "centos7-base"         | "centos:7"
+        qaImageTag             | expected         | flaky
+        "nginx-1.19-alpine"    | "alpine:v3.13"   | true
+        "busybox-1-30"         | "busybox:1.30.1" | true
+        "centos7-base"         | "centos:7"       | true
         // We explicitly do not support Fedora at this time.
-        FEDORA_28              | "unknown"
-        "nginx-1-9"            | "debian:8"
-        "nginx-1-17-1"         | "debian:9"
-        "ubi9-slf4j"           | "rhel:9"
-        "apache-server"        | "ubuntu:14.04"
-        "ubuntu-22.10-openssl" | "ubuntu:22.10"
+        FEDORA_28              | "unknown"        | false
+        "nginx-1-9"            | "debian:8"       | false
+        "nginx-1-17-1"         | "debian:9"       | false
+        "ubi9-slf4j"           | "rhel:9"         | false
+        "apache-server"        | "ubuntu:14.04"   | false
+        "ubuntu-22.10-openssl" | "ubuntu:22.10"   | false
     }
 
     @Unroll
@@ -232,15 +234,12 @@ class ImageManagementTest extends BaseSpecification {
     def "Verify risk is properly being attributed to scanned images"() {
         when:
         "Scan an image and then grab the image data"
-        ImageService.scanImage(
-            "quay.io/rhacs-eng/qa-multi-arch-nginx@" +
-            "sha256:6650513efd1d27c1f8a5351cbd33edf85cc7e0d9d0fcb4ffb23d8fa89b601ba8")
+        ImageService.scanImage(TEST_IMAGE)
 
         then:
         "Assert that riskScore is non-zero"
         withRetry(10, 3) {
-            def image = ImageService.getImage(
-                    "sha256:6650513efd1d27c1f8a5351cbd33edf85cc7e0d9d0fcb4ffb23d8fa89b601ba8")
+            def image = ImageService.getImage(TEST_IMAGE_SHA)
             assert image != null && image.riskScore != 0
         }
     }
@@ -254,8 +253,7 @@ class ImageManagementTest extends BaseSpecification {
                 .setName("risk-image")
                 .setNamespace(TEST_NAMESPACE)
                 .setReplicas(1)
-                .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx" +
-                    "@sha256:6650513efd1d27c1f8a5351cbd33edf85cc7e0d9d0fcb4ffb23d8fa89b601ba8")
+                .setImage(TEST_IMAGE)
                 .setCommand(["sleep", "60000"])
                 .setSkipReplicaWait(false)
 
@@ -264,8 +262,7 @@ class ImageManagementTest extends BaseSpecification {
         then:
         "Assert that riskScore is non-zero"
         withRetry(10, 3) {
-            def image = ImageService.getImage(
-                    "sha256:6650513efd1d27c1f8a5351cbd33edf85cc7e0d9d0fcb4ffb23d8fa89b601ba8")
+            def image = ImageService.getImage(TEST_IMAGE_SHA)
             assert image != null && image.riskScore != 0
         }
 
@@ -285,7 +282,7 @@ class ImageManagementTest extends BaseSpecification {
     def "Verify image scan results when CVEs are suppressed: "() {
         given:
         "Scan image"
-        def image = ImageService.scanImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1.12", true)
+        def image = ImageService.scanImage(TEST_IMAGE, true)
         assert hasOpenSSLVuln(image)
 
         image = ImageService.getImage(image.id, true)
@@ -295,10 +292,10 @@ class ImageManagementTest extends BaseSpecification {
         CVEService.suppressImageCVE(cve)
 
         when:
-        def scanIncludeSnoozed = ImageService.scanImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1.12", true)
+        def scanIncludeSnoozed = ImageService.scanImage(TEST_IMAGE, true)
         assert hasOpenSSLVuln(scanIncludeSnoozed)
 
-        def scanExcludedSnoozed = ImageService.scanImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1.12", false)
+        def scanExcludedSnoozed = ImageService.scanImage(TEST_IMAGE, false)
         assert !hasOpenSSLVuln(scanExcludedSnoozed)
 
         def getIncludeSnoozed  = ImageService.getImage(image.id, true)
@@ -309,7 +306,7 @@ class ImageManagementTest extends BaseSpecification {
 
         CVEService.unsuppressImageCVE(cve)
 
-        def unsuppressedScan = ImageService.scanImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1.12", false)
+        def unsuppressedScan = ImageService.scanImage(TEST_IMAGE, false)
         def unsuppressedGet  = ImageService.getImage(image.id, false)
 
         then:

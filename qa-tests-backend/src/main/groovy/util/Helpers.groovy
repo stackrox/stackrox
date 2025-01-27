@@ -93,6 +93,11 @@ class Helpers {
             return
         }
 
+        if (exception && exception.getMessage()?.contains("Ignored via @IgnoreIf")) {
+            log.info("Won't collect logs for: " + exception)
+            return
+        }
+
         if (exception) {
             log.error("An exception occurred in test", exception)
         }

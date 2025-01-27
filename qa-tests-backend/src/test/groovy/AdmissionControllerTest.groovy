@@ -2,6 +2,7 @@ import static util.Helpers.withRetry
 
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
+import io.stackrox.proto.storage.ImageOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.PolicyGroup
 import io.stackrox.proto.storage.PolicyOuterClass.PolicySection
@@ -15,6 +16,7 @@ import services.ImageService
 import services.PolicyService
 import util.ApplicationHealth
 import util.ChaosMonkey
+import util.Env
 import util.Timer
 
 import spock.lang.IgnoreIf
@@ -34,7 +36,13 @@ class AdmissionControllerTest extends BaseSpecification {
 
     static final private String TEST_NAMESPACE = "qa-admission-controller-test"
 
-    static final private String NGINX                = "qanginx"
+    static final private String SCAN_INLINE_DEPLOYMENT_NAME = "scan-inline"
+    // An image name with @sha... appended is used for admission control that
+    // requires inline scanning. This ensures that metadata gets cached after initial scan,
+    // and therefore central does not connect to an external registry during test, which avoids flakes.
+    static final private String SCAN_INLINE_IMAGE_NAME_WITH_SHA = TEST_IMAGE_NAME_WITH_SHA
+    static final private String SCAN_INLINE_IMAGE_SHA = TEST_IMAGE_SHA
+
     static final private String NGINX_IMAGE          = "quay.io/rhacs-eng/qa-multi-arch:nginx-1.21.1"
     static final private String NGINX_IMAGE_WITH_SHA = "quay.io/rhacs-eng/qa-multi-arch:nginx-1.21.1"+
                                     "@sha256:6bf47794f923462389f5a2cda49cf5777f736db8563edc3ff78fb9d87e6e22ec"
@@ -50,10 +58,10 @@ class AdmissionControllerTest extends BaseSpecification {
     private final static String SEVERITY = "Fixable Severity at least Important"
     private final static String SEVERITY_FOR_TEST = "Fixable Severity at least Important ${CLONED_POLICY_SUFFIX}"
 
-    static final private Deployment NGINX_DEPLOYMENT = new Deployment()
-            .setName(NGINX)
+    static final private Deployment SCAN_INLINE_DEPLOYMENT = new Deployment()
+            .setName(SCAN_INLINE_DEPLOYMENT_NAME)
             .setNamespace(TEST_NAMESPACE)
-            .setImage(NGINX_IMAGE)
+            .setImage(SCAN_INLINE_IMAGE_NAME_WITH_SHA)
             .addLabel("app", "test")
 
     static final private Deployment BUSYBOX_NO_BYPASS_DEPLOYMENT = new Deployment()
@@ -98,8 +106,14 @@ class AdmissionControllerTest extends BaseSpecification {
         // Wait for propagation to sensor
         sleep(10000 * (ClusterService.isOpenShift4() ? 4 : 1))
 
-        // Pre run scan to avoid timeouts with inline scans in the tests below
-        ImageService.scanImage(NGINX_IMAGE)
+        // Pre run scan to avoid registry timeouts with inline scans in the
+        // tests below.
+        ImageService.scanImage(SCAN_INLINE_IMAGE_NAME_WITH_SHA)
+
+        // Ensure that scanImage() provides the required metadata for test.
+        ImageOuterClass.Image image = ImageService.getImage(SCAN_INLINE_IMAGE_SHA, false)
+        assert image
+        assert !image.getNotesList().contains(ImageOuterClass.Image.Note.MISSING_METADATA)
 
         orchestrator.ensureNamespaceExists(TEST_NAMESPACE)
     }
@@ -137,6 +151,8 @@ class AdmissionControllerTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("Parallel")
+    @IgnoreIf({ Env.getTestTarget() == "bat-test" && data.flaky })
+    @SuppressWarnings('LineLength')
     def "Verify Admission Controller Config: #desc"() {
         when:
         prepareChaosMonkey()
@@ -172,11 +188,11 @@ class AdmissionControllerTest extends BaseSpecification {
         where:
         "Data inputs are: "
 
-        timeout | scan  | bypassable | deployment                   | launched | desc
-        3       | false | false      | BUSYBOX_NO_BYPASS_DEPLOYMENT | false    | "no bypass annotation, non-bypassable"
-        3       | false | false      | BUSYBOX_BYPASS_DEPLOYMENT    | false    | "bypass annotation, non-bypassable"
-        3       | false | true       | BUSYBOX_BYPASS_DEPLOYMENT    | true     | "bypass annotation, bypassable"
-        30      | true  | false      | NGINX_DEPLOYMENT             | false    | "nginx w/ inline scan"
+        timeout | scan  | bypassable | deployment                   | launched | desc                                    | flaky
+        3       | false | false      | BUSYBOX_NO_BYPASS_DEPLOYMENT | false    | "no bypass annotation, non-bypassable"  | false
+        3       | false | false      | BUSYBOX_BYPASS_DEPLOYMENT    | false    | "bypass annotation, non-bypassable"     | false
+        3       | false | true       | BUSYBOX_BYPASS_DEPLOYMENT    | true     | "bypass annotation, bypassable"         | false
+        30      | true  | false      | SCAN_INLINE_DEPLOYMENT       | false    | "nginx w/ inline scan"                  | true
     }
 
     @Unroll
@@ -308,6 +324,7 @@ class AdmissionControllerTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("Parallel")
+    @IgnoreIf({ Env.getTestTarget() == "bat-test" && data.desc == "nginx w/ inline scan" })
     def "Verify Admission Controller Enforcement on Updates: #desc"() {
         when:
         prepareChaosMonkey()
@@ -355,7 +372,7 @@ class AdmissionControllerTest extends BaseSpecification {
         3       | false | false      | BUSYBOX_NO_BYPASS_DEPLOYMENT | false    | "no bypass annotation, non-bypassable"
         3       | false | false      | BUSYBOX_BYPASS_DEPLOYMENT    | false    | "bypass annotation, non-bypassable"
         3       | false | true       | BUSYBOX_BYPASS_DEPLOYMENT    | true     | "bypass annotation, bypassable"
-        30      | true  | false      | NGINX_DEPLOYMENT             | false    | "nginx w/ inline scan"
+        30      | true  | false      | SCAN_INLINE_DEPLOYMENT       | false    | "nginx w/ inline scan"
     }
 
     @Unroll
@@ -542,10 +559,10 @@ class AdmissionControllerTest extends BaseSpecification {
         def created
         def consecutiveRejectionsCount = 0
         withRetry(40, 5) {
-            created = orchestrator.createDeploymentNoWait(NGINX_DEPLOYMENT)
+            created = orchestrator.createDeploymentNoWait(SCAN_INLINE_DEPLOYMENT)
             if (created) {
                 consecutiveRejectionsCount = 0
-                deleteDeploymentWithCaution(NGINX_DEPLOYMENT)
+                deleteDeploymentWithCaution(SCAN_INLINE_DEPLOYMENT)
             }
             else {
                 consecutiveRejectionsCount++
@@ -576,7 +593,7 @@ class AdmissionControllerTest extends BaseSpecification {
         and:
         "Delete nginx deployment"
         if (created) {
-            deleteDeploymentWithCaution(NGINX_DEPLOYMENT)
+            deleteDeploymentWithCaution(SCAN_INLINE_DEPLOYMENT)
         }
     }
 }

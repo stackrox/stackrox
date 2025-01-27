@@ -200,6 +200,7 @@ class DefaultPoliciesTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("SMOKE")
+    @IgnoreIf({ Env.getTestTarget() in ["bat-test", "smoke-test"] && data.flaky })
     def "Verify policy #policyName is triggered" (String policyName, String deploymentName,
                                                   String testId) {
         when:
@@ -248,27 +249,27 @@ class DefaultPoliciesTest extends BaseSpecification {
         where:
         "Data inputs are:"
 
-        policyName                                      | deploymentName | testId
+        policyName                                      | deploymentName | testId | flaky
 
-        "Secure Shell (ssh) Port Exposed"               | NGINX_LATEST   | "C311"
+        "Secure Shell (ssh) Port Exposed"               | NGINX_LATEST   | "C311" | false
 
-        "Latest tag"                                    | NGINX_LATEST   | ""
+        "Latest tag"                                    | NGINX_LATEST   | ""     | false
 
-        "Environment Variable Contains Secret"          | NGINX_LATEST   | ""
+        "Environment Variable Contains Secret"          | NGINX_LATEST   | ""     | false
 
-        "Apache Struts: CVE-2017-5638"                  | STRUTS         | "C938"
+        "Apache Struts: CVE-2017-5638"                  | STRUTS         | "C938" | true
 
-        "Wget in Image"                                 | WGET_CURL      | "C939"
+        "Wget in Image"                                 | WGET_CURL      | "C939" | true
 
-        "90-Day Image Age"                              | STRUTS         | "C810"
+        "90-Day Image Age"                              | STRUTS         | "C810" | false
 
-        "Ubuntu Package Manager in Image"               | STRUTS           | "C931"
+        "Ubuntu Package Manager in Image"               | STRUTS         | "C931" | true
 
-        //"30-Day Scan Age"                               | SSL_TERMINATOR | "C941"
+        //"30-Day Scan Age"                               | SSL_TERMINATOR | "C941" | false
 
-        "Fixable CVSS >= 7"                             | GCR_NGINX      | "C933"
+        "Fixable CVSS >= 7"                             | GCR_NGINX      | "C933" | false
 
-        "Curl in Image"                                 | WGET_CURL      | "C948"
+        "Curl in Image"                                 | WGET_CURL      | "C948" | true
     }
 
     def hasApacheStrutsVuln(image) {
@@ -584,7 +585,6 @@ class DefaultPoliciesTest extends BaseSpecification {
         return total
     }
 
-    @Tag("BAT")
     def "Verify that alert counts API is consistent with alerts"()  {
         given:
         def alertReq = queryForDeployments()

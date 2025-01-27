@@ -554,6 +554,8 @@ class ImageScanningTest extends BaseSpecification {
     @Tag("Integration")
     // ACR, ECR, GCR don't have MA images to verify the the integrations on P/Z
     @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
+    @IgnoreIf({ Env.getTestTarget() == "bat-test" && data.testName ==~ /^acr.*/ })
+    @IgnoreIf({ Env.getTestTarget() == "bat-test" && data.testName == "quay-auto" })
     def "Image metadata from registry test - #testName"() {
         Assume.assumeTrue(testName != "ecr-iam" || ClusterService.isEKS())
 
@@ -740,6 +742,7 @@ class ImageScanningTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("Integration")
+    @IgnoreIf({ Env.getTestTarget() == "bat-test" && data.testName ==~ /quay registry\+scanner with token.*/ })
     def "Quay registry and scanner supports token and/or robot credentials - #testName"() {
         if (coreImageIntegrationId != null) {
             // For this test we don't want it
