@@ -50,7 +50,7 @@ ENV ROX_PRODUCT_BRANDING="RHACS_BRANDING"
 # In the case of building the `rhacs-main-container`, all of these install scripts can be safely ignored.
 ENV UI_PKG_INSTALL_EXTRA_ARGS="--ignore-scripts"
 
-# RUN make -C ui build
+RUN make -C ui build
 
 # TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS application
@@ -64,7 +64,7 @@ RUN microdnf module enable postgresql:13 && \
     rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     rm -rf "/var/cache/dnf" "/var/cache/yum"
 
-# COPY --from=ui-builder /go/src/github.com/stackrox/rox/app/ui/build /ui/
+COPY --from=ui-builder /go/src/github.com/stackrox/rox/app/ui/build /ui/
 
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/migrator /stackrox/bin/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/central /stackrox/
