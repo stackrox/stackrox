@@ -10,6 +10,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
@@ -237,7 +238,11 @@ func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
 func withSelectCVECoreResponseQuery(q *v1.Query, cveIDsToFilter []string, options views.ReadOptions) *v1.Query {
 	cloned := q.CloneVT()
 	if len(cveIDsToFilter) > 0 {
-		cloned = search.ConjunctionQuery(cloned, search.NewQueryBuilder().AddDocIDs(cveIDsToFilter...).ProtoQuery())
+		if features.FlattenCVEData.Enabled() {
+			cloned = search.ConjunctionQuery(cloned, search.NewQueryBuilder().AddExactMatches(search.CVEID, cveIDsToFilter...).ProtoQuery())
+		} else {
+			cloned = search.ConjunctionQuery(cloned, search.NewQueryBuilder().AddDocIDs(cveIDsToFilter...).ProtoQuery())
+		}
 		cloned.Pagination = q.GetPagination()
 	}
 	cloned.Selects = []*v1.QuerySelect{
