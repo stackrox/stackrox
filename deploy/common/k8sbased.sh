@@ -904,7 +904,8 @@ function launch_sensor {
             hotload_binary bin/kubernetes-sensor kubernetes sensor "${sensor_namespace}"
         fi
         if [[ -z "${IS_RACE_BUILD}" ]]; then
-           kubectl -n "${sensor_namespace}" patch deploy/sensor --patch '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"limits":{"cpu":"500m","memory":"500Mi"},"requests":{"cpu":"500m","memory":"500Mi"}}}]}}}}'
+            kubectl -n "${sensor_namespace}" patch deploy/sensor --patch '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"limits":{"cpu":"500m","memory":"500Mi"},"requests":{"cpu":"500m","memory":"500Mi"}}}]}}}}'
+            kubectl -n "${sensor_namespace}" patch deploy/sensor --patch '{"spec":{"template":{"spec":{"initContainers":[{"name":"crs","resources":{"limits":{"cpu":"500m","memory":"500Mi"},"requests":{"cpu":"500m","memory":"500Mi"}}}]}}}}'
         fi
     fi
 
@@ -912,6 +913,7 @@ function launch_sensor {
     if [[ -n "${CI}" || "${SENSOR_DEV_RESOURCES}" == "true" ]]; then
         if [[ -z "${IS_RACE_BUILD}" ]]; then
             kubectl -n "${sensor_namespace}" patch deploy/sensor --patch '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"limits":{"cpu":"500m","memory":"500Mi"},"requests":{"cpu":"500m","memory":"500Mi"}}}]}}}}'
+            kubectl -n "${sensor_namespace}" patch deploy/sensor --patch '{"spec":{"template":{"spec":{"initContainers":[{"name":"crs","resources":{"limits":{"cpu":"500m","memory":"500Mi"},"requests":{"cpu":"500m","memory":"500Mi"}}}]}}}}'
         fi
     fi
 
