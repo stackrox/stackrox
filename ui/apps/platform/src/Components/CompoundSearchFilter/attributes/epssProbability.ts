@@ -35,8 +35,6 @@ export function validateExternalText(externalText: string) {
 export const internalTextRegExp = /^(\.\d+|\d+(?:\.\d*)?)$/;
 
 export function validateInternalText(internalText: string) {
-    // Assume internalText was serialized by String (see above).
-    // Leading zero followed by optional decimal point and digits.
     if (!internalTextRegExp.test(internalText.trim())) {
         return false;
     }

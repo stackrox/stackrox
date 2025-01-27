@@ -61,7 +61,8 @@ export function convertFromInternalToExternalConditionText(
         }
     }
 
-    return `${internalConditionText} is not valid`; // query string in page address
+    // Enclose text in typographical quotes in case it is clearer.
+    return `“${internalConditionText}” is not valid`; // query string in page address
 }
 
 export type ConditionTextProps = {
