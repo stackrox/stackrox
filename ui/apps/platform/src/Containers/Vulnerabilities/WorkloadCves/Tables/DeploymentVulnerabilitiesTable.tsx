@@ -71,6 +71,11 @@ export const deploymentWithVulnerabilitiesFragment = gql`
         imageVulnerabilities(query: $query, pagination: $pagination) {
             vulnerabilityId: id
             cve
+            cveBaseInfo {
+                epss {
+                    epssProbability
+                }
+            }
             operatingSystem
             publishedOn
             summary
@@ -155,6 +160,7 @@ function DeploymentVulnerabilitiesTable({
                         const {
                             vulnerabilityId,
                             cve,
+                            cveBaseInfo,
                             operatingSystem,
                             severity,
                             summary,
@@ -165,7 +171,7 @@ function DeploymentVulnerabilitiesTable({
                             publishedOn,
                             pendingExceptionCount,
                         } = vulnerability;
-                        const epssProbability = undefined; // ccveBaseInfo?.epss?.epssProbability
+                        const epssProbability = cveBaseInfo?.epss?.epssProbability;
                         const isExpanded = expandedRowSet.has(vulnerabilityId);
 
                         return (

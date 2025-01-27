@@ -4,9 +4,13 @@ import uniqBy from 'lodash/uniqBy';
 
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import useFeatureFlags from 'hooks/useFeatureFlags';
+import { CveBaseInfo } from 'types/cve.proto';
 import { getDateTime } from 'utils/dateUtils';
 
-import { formatEpssProbabilityAsPercent } from '../WorkloadCves/Tables/table.utils';
+import {
+    formatEpssProbabilityAsPercent,
+    getCveBaseInfoFromDistroTuples,
+} from '../WorkloadCves/Tables/table.utils';
 import { getDistroLinkText } from '../utils/textUtils';
 import { sortCveDistroList } from '../utils/sortUtils';
 import HeaderLoadingSkeleton from './HeaderLoadingSkeleton';
@@ -19,6 +23,7 @@ export type CveMetadata = {
         summary: string;
         link: string;
         operatingSystem: string;
+        cveBaseInfo: CveBaseInfo;
     }[];
 };
 
@@ -40,9 +45,10 @@ function CvePageHeader({ data }: CvePageHeaderProps) {
         );
     }
 
-    // TODO adjust conditional rendering depending whether or not Node CVE has cveBaseInfo property.
-    const hasEpssProbabilityLabel = isEpssProbabilityColumnEnabled && 'cveBaseInfo' in data;
-    const epssProbability = undefined; // data.cveBaseInfo?.epss?.epssProbability
+    const cveBaseInfo = getCveBaseInfoFromDistroTuples(data.distroTuples);
+    const epssProbability = cveBaseInfo?.epss?.epssProbability;
+    const hasEpssProbabilityLabel = isEpssProbabilityColumnEnabled && Boolean(cveBaseInfo); // not (yet) for Node CVE
+
     const prioritizedDistros = uniqBy(sortCveDistroList(data.distroTuples), getDistroLinkText);
     const topDistro = prioritizedDistros[0];
 
