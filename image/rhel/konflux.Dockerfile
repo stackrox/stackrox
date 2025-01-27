@@ -42,7 +42,9 @@ ENV BUILD_TAG="$BUILD_TAG"
 ENV GOFLAGS=""
 ENV CGO_ENABLED=1
 # TODO(ROX-20240): enable non-release development builds.
-ENV GOTAGS="release"
+# TODO(ROX-27054): Remove the redundant strictfipsruntime option if one is found to be so.
+ENV GOTAGS="release,strictfipsruntime"
+ENV GOEXPERIMENT=strictfipsruntime
 ENV CI=1
 
 RUN # TODO(ROX-13200): make sure roxctl cli is built without running go mod tidy. \

@@ -11,7 +11,9 @@ RUN if [[ "$BUILD_TAG" == "" ]]; then >&2 echo "error: required BUILD_TAG arg is
 ENV BUILD_TAG="$BUILD_TAG"
 
 # TODO(ROX-20240): enable non-release development builds.
-ENV GOTAGS="release"
+# TODO(ROX-27054): Remove the redundant strictfipsruntime option if one is found to be so.
+ENV GOTAGS="release,strictfipsruntime"
+ENV GOEXPERIMENT=strictfipsruntime
 ENV CI=1 GOFLAGS="" CGO_ENABLED=1
 
 RUN GOOS=linux GOARCH=$(go env GOARCH) scripts/go-build-file.sh operator/cmd/main.go image/bin/operator

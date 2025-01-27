@@ -14,7 +14,9 @@ ENV BUILD_TAG="$BUILD_TAG"
 
 ENV GOFLAGS=""
 # TODO(ROX-20240): enable non-release development builds.
-ENV GOTAGS="release"
+# TODO(ROX-27054): Remove the redundant strictfipsruntime option if one is found to be so.
+ENV GOTAGS="release,strictfipsruntime"
+ENV GOEXPERIMENT=strictfipsruntime
 ENV CI=1
 
 COPY . /src
