@@ -8,25 +8,24 @@ ARG BASE_TAG=latest
 
 FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.22 AS builder
 
+ARG BUILD_TAG
+RUN if [[ "$BUILD_TAG" == "" ]]; then >&2 echo "error: required BUILD_TAG arg is unset"; exit 6; fi
+ENV BUILD_TAG="$BUILD_TAG"
+
 ENV GOFLAGS=""
 # TODO(ROX-20240): enable non-release development builds.
 ENV GOTAGS="release"
-# TODO(ROX-23335): Properly set the build tag
-ENV BUILD_TAG="dev"
 ENV CI=1
 
 COPY . /src
 WORKDIR /src
-
-RUN .konflux/scripts/fail-build-if-git-is-dirty.sh
 
 RUN make -C scanner NODEPS=1 CGO_ENABLED=1 image/scanner/bin/scanner copy-scripts
 
 
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
 
-ARG MAIN_IMAGE_TAG
-RUN if [[ "$MAIN_IMAGE_TAG" == "" ]]; then >&2 echo "error: required MAIN_IMAGE_TAG arg is unset"; exit 6; fi
+ARG BUILD_TAG
 
 LABEL \
     com.redhat.component="rhacs-scanner-v4-container" \
@@ -42,7 +41,7 @@ LABEL \
     summary="The image scanner v4 for Red Hat Advanced Cluster Security for Kubernetes" \
     url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
     # We must set version label to prevent inheriting value set in the base stage.
-    version="${MAIN_IMAGE_TAG}" \
+    version="${BUILD_TAG}" \
     # Release label is required by EC although has no practical semantics.
     # We also set it to not inherit one from a base stage in case it's RHEL or UBI.
     release="1"

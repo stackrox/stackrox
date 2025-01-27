@@ -35,13 +35,9 @@ WORKDIR /go/src/github.com/stackrox/rox/app
 
 COPY . .
 
-# Ensure there will be no unintended -dirty suffix. package and package-lock are restored
-# because they are touched by Cachi2.
-RUN git restore ui/apps/platform/package.json ui/apps/platform/package-lock.json && \
-    .konflux/scripts/fail-build-if-git-is-dirty.sh
-
-ARG VERSIONS_SUFFIX
-ENV MAIN_TAG_SUFFIX="$VERSIONS_SUFFIX" COLLECTOR_TAG_SUFFIX="$VERSIONS_SUFFIX" SCANNER_TAG_SUFFIX="$VERSIONS_SUFFIX"
+ARG BUILD_TAG
+RUN if [[ "$BUILD_TAG" == "" ]]; then >&2 echo "error: required BUILD_TAG arg is unset"; exit 6; fi
+ENV BUILD_TAG="$BUILD_TAG"
 
 ENV GOFLAGS=""
 ENV CGO_ENABLED=1
@@ -103,8 +99,7 @@ RUN GOARCH=$(uname -m) ; \
     ln -s /assets/downloads/cli/roxctl-linux-$GOARCH /stackrox/roxctl ; \
     ln -s /assets/downloads/cli/roxctl-linux-$GOARCH /assets/downloads/cli/roxctl-linux
 
-ARG MAIN_IMAGE_TAG
-RUN if [[ "$MAIN_IMAGE_TAG" == "" ]]; then >&2 echo "error: required MAIN_IMAGE_TAG arg is unset"; exit 6; fi
+ARG BUILD_TAG
 
 LABEL \
     com.redhat.component="rhacs-main-container" \
@@ -122,7 +117,7 @@ LABEL \
     url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
     vendor="Red Hat, Inc." \
     # We must set version label to prevent inheriting value set in the base stage.
-    version="${MAIN_IMAGE_TAG}" \
+    version="${BUILD_TAG}" \
     # Release label is required by EC although has no practical semantics.
     # We also set it to not inherit one from a base stage in case it's RHEL or UBI.
     release="1"
