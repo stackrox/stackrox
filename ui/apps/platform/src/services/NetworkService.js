@@ -1,7 +1,7 @@
 import queryString from 'qs';
 
 import { ORCHESTRATOR_COMPONENTS_KEY } from 'utils/orchestratorComponents';
-import { convertToExactMatch } from 'utils/searchUtils';
+import { convertToExactMatch, getListQueryParams } from 'utils/searchUtils';
 
 import axios from './instance';
 
@@ -455,6 +455,30 @@ export function applyNetworkPolicyModification(clusterId, modification) {
     return axios(options).then((response) => ({
         response: response.data,
     }));
+}
+
+/**
+ * Fetches external IPs metadata.
+ *
+ * @returns {Promise<Object, Error>}
+ */
+export function getExternalNetworkFlowsMetadata(
+    clusterId,
+    namespaces,
+    deployments,
+    { sortOption, page, perPage, searchFilter }
+) {
+    const allFilters = {
+        Namespace: namespaces.length > 0 ? `Namespace:${namespaces.join(',')}` : '',
+        Deployment: deployments.length > 0 ? `Deployment:${deployments.join(',')}` : '',
+        'Default External Source': false,
+        'Discovered External Source': true,
+        ...searchFilter,
+    };
+    const params = getListQueryParams({ searchFilter: allFilters, sortOption, page, perPage });
+    return axios
+        .get(`${networkFlowBaseUrl}/cluster/${clusterId}/externalentities/metadata?${params}`)
+        .then((response) => response.data);
 }
 
 /**
