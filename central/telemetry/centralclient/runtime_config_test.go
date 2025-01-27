@@ -145,7 +145,7 @@ func Test_reloadConfig(t *testing.T) {
 		assert.True(t, enabled)
 		require.True(t, config.Enabled())
 
-		go periodicReload(tickChan)
+		go PeriodicReload(tickChan)
 		tickChan <- time.Now()
 		assert.EventuallyWithT(t, func(collect *assert.CollectT) {
 			assert.True(t, enabled)

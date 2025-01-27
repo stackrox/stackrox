@@ -114,7 +114,6 @@ func InstanceConfig() *phonehome.Config {
 			log.Errorf("Failed to apply telemetry configuration: %v.", err)
 			return
 		}
-		go periodicReload(time.NewTicker(1 * time.Hour).C)
 		startMux.RLock()
 		defer startMux.RUnlock()
 		if config != nil {

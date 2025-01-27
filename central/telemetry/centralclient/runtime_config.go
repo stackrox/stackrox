@@ -81,8 +81,10 @@ func Reload() error {
 	return nil
 }
 
-func periodicReload(ticks <-chan time.Time) {
-	for ok := true; ok; _, ok = <-ticks {
-		_ = Reload()
+// PeriodicReload reloads the telemetry configuration from a configured URL on
+// ticker.
+func PeriodicReload(ticks <-chan time.Time) {
+	for ok := true; ok; _ = Reload() {
+		_, ok = <-ticks
 	}
 }
