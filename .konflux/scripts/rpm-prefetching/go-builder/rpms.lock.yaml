@@ -1,0 +1,433 @@
+---
+lockfileVersion: 1
+lockfileVendor: redhat
+arches:
+- arch: aarch64
+  packages:
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/c/cmake-3.26.5-2.el8.aarch64.rpm
+    repoid: rhel-8-for-aarch64-appstream-rpms
+    size: 12405864
+    checksum: sha256:cfe6ef128341e7fe74512028f82edc9cfa0cfe9b486cfb48e4cf4a997e98d375
+    name: cmake
+    evr: 3.26.5-2.el8
+    sourcerpm: cmake-3.26.5-2.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/c/cmake-data-3.26.5-2.el8.noarch.rpm
+    repoid: rhel-8-for-aarch64-appstream-rpms
+    size: 1996464
+    checksum: sha256:c62da3f90f9f40b3511419ffdc7db46b210d6c8eb1570be788cd5d3aa7061cad
+    name: cmake-data
+    evr: 3.26.5-2.el8
+    sourcerpm: cmake-3.26.5-2.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/c/cmake-filesystem-3.26.5-2.el8.aarch64.rpm
+    repoid: rhel-8-for-aarch64-appstream-rpms
+    size: 46068
+    checksum: sha256:2da8d378b338e49b819fc3d9577a846043d1208a63faeecc1b93228124afdefc
+    name: cmake-filesystem
+    evr: 3.26.5-2.el8
+    sourcerpm: cmake-3.26.5-2.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/c/cmake-rpm-macros-3.26.5-2.el8.noarch.rpm
+    repoid: rhel-8-for-aarch64-appstream-rpms
+    size: 45164
+    checksum: sha256:2a91c1cf84fefb94dbc444edd37a5c9649544a2707db1e727244b60e9a8e3d61
+    name: cmake-rpm-macros
+    evr: 3.26.5-2.el8
+    sourcerpm: cmake-3.26.5-2.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/c/cpp-8.5.0-22.el8_10.aarch64.rpm
+    repoid: rhel-8-for-aarch64-appstream-rpms
+    size: 9381240
+    checksum: sha256:55732d035e76e44ebc85f24823774299e9b071e66630c2fe59b2b4b7553f4673
+    name: cpp
+    evr: 8.5.0-22.el8_10
+    sourcerpm: gcc-8.5.0-22.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/g/gcc-8.5.0-22.el8_10.aarch64.rpm
+    repoid: rhel-8-for-aarch64-appstream-rpms
+    size: 20317660
+    checksum: sha256:d0a6c6ee968049b851d9a4fa3e82800c8a461c5027b94fe24dc589f7e2fe31a7
+    name: gcc
+    evr: 8.5.0-22.el8_10
+    sourcerpm: gcc-8.5.0-22.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/g/gcc-c++-8.5.0-22.el8_10.aarch64.rpm
+    repoid: rhel-8-for-aarch64-appstream-rpms
+    size: 11238844
+    checksum: sha256:1eb67de93c1b4348a790db38ba403e311a25cffaa580c3d99051a1693a8f99e0
+    name: gcc-c++
+    evr: 8.5.0-22.el8_10
+    sourcerpm: gcc-8.5.0-22.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/j/jq-1.6-9.el8_10.aarch64.rpm
+    repoid: rhel-8-for-aarch64-appstream-rpms
+    size: 193804
+    checksum: sha256:0c474feed0023434aa44e751bf98da006fdbc01df6e58cadc4eada90aeba6efc
+    name: jq
+    evr: 1.6-9.el8_10
+    sourcerpm: jq-1.6-9.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/l/libstdc++-devel-8.5.0-22.el8_10.aarch64.rpm
+    repoid: rhel-8-for-aarch64-appstream-rpms
+    size: 2150972
+    checksum: sha256:7cc1122b93b38ab13d0ce5f62bd249ebf865c2489514c277edc7536d973e8cd3
+    name: libstdc++-devel
+    evr: 8.5.0-22.el8_10
+    sourcerpm: gcc-8.5.0-22.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/l/libuv-1.41.1-2.el8_10.aarch64.rpm
+    repoid: rhel-8-for-aarch64-appstream-rpms
+    size: 153692
+    checksum: sha256:401aa5201bc1c6e209fa7039ae2b6ee3318e102bd7f684ad7726b8c4f6010025
+    name: libuv
+    evr: 1:1.41.1-2.el8_10
+    sourcerpm: libuv-1.41.1-2.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/o/oniguruma-6.8.2-3.el8.aarch64.rpm
+    repoid: rhel-8-for-aarch64-appstream-rpms
+    size: 185652
+    checksum: sha256:ef5cbd14f7e46e55b6a8f51b5060b15170110a5c4cfa3042f22e4835a1634aa6
+    name: oniguruma
+    evr: 6.8.2-3.el8
+    sourcerpm: oniguruma-6.8.2-3.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/v/vim-filesystem-8.0.1763-19.el8_6.4.noarch.rpm
+    repoid: rhel-8-for-aarch64-appstream-rpms
+    size: 51660
+    checksum: sha256:9507b5f76eba9e4cf0e08d736c9093144a9040f649e974dcc79043e9c1e937b4
+    name: vim-filesystem
+    evr: 2:8.0.1763-19.el8_6.4
+    sourcerpm: vim-8.0.1763-19.el8_6.4.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/b/bzip2-devel-1.0.6-27.el8_10.aarch64.rpm
+    repoid: rhel-8-for-aarch64-baseos-rpms
+    size: 229996
+    checksum: sha256:bbbdca46b89ea2777a1e77b105d59bd201a8e72795d30fdd593206b0976469fb
+    name: bzip2-devel
+    evr: 1.0.6-27.el8_10
+    sourcerpm: bzip2-1.0.6-27.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/b/bzip2-libs-1.0.6-27.el8_10.aarch64.rpm
+    repoid: rhel-8-for-aarch64-baseos-rpms
+    size: 49552
+    checksum: sha256:448ee45862b530d388df2126a65bffe1e25e5780cc911b8dcdf7c6cc3a0cbd0a
+    name: bzip2-libs
+    evr: 1.0.6-27.el8_10
+    sourcerpm: bzip2-1.0.6-27.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/l/libgcc-8.5.0-22.el8_10.aarch64.rpm
+    repoid: rhel-8-for-aarch64-baseos-rpms
+    size: 76600
+    checksum: sha256:e7ce4e1d68700252bfe9036d4885c21b718f9edda65a7332f1483813603c5c49
+    name: libgcc
+    evr: 8.5.0-22.el8_10
+    sourcerpm: gcc-8.5.0-22.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/l/libgomp-8.5.0-22.el8_10.aarch64.rpm
+    repoid: rhel-8-for-aarch64-baseos-rpms
+    size: 205236
+    checksum: sha256:f8b5ca26da6ce82adfbd2725951f3a9a78f763ddcbaf9de3c5f71f7305a0f75d
+    name: libgomp
+    evr: 8.5.0-22.el8_10
+    sourcerpm: gcc-8.5.0-22.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/l/libstdc++-8.5.0-22.el8_10.aarch64.rpm
+    repoid: rhel-8-for-aarch64-baseos-rpms
+    size: 435452
+    checksum: sha256:9e6a95b1d3be33d9df8f82d04f2b921fb6ce5a44f4ae03d75a4dcc1bcb7ded18
+    name: libstdc++
+    evr: 8.5.0-22.el8_10
+    sourcerpm: gcc-8.5.0-22.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/l/lz4-devel-1.8.3-3.el8_4.aarch64.rpm
+    repoid: rhel-8-for-aarch64-baseos-rpms
+    size: 32224
+    checksum: sha256:2e12f487dede06c295d0474276f1d86d8d7e9b7a75edf17e710e32f4f01ff11e
+    name: lz4-devel
+    evr: 1.8.3-3.el8_4
+    sourcerpm: lz4-1.8.3-3.el8_4.src.rpm
+  source: []
+  module_metadata: []
+- arch: ppc64le
+  packages:
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/c/cmake-3.26.5-2.el8.ppc64le.rpm
+    repoid: rhel-8-for-ppc64le-appstream-rpms
+    size: 14001872
+    checksum: sha256:eca1b9f18988901675b44648e1e4c251a583788adf3735b57c448357831d6ef1
+    name: cmake
+    evr: 3.26.5-2.el8
+    sourcerpm: cmake-3.26.5-2.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/c/cmake-data-3.26.5-2.el8.noarch.rpm
+    repoid: rhel-8-for-ppc64le-appstream-rpms
+    size: 1996464
+    checksum: sha256:c62da3f90f9f40b3511419ffdc7db46b210d6c8eb1570be788cd5d3aa7061cad
+    name: cmake-data
+    evr: 3.26.5-2.el8
+    sourcerpm: cmake-3.26.5-2.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/c/cmake-filesystem-3.26.5-2.el8.ppc64le.rpm
+    repoid: rhel-8-for-ppc64le-appstream-rpms
+    size: 46088
+    checksum: sha256:b86fafbae968e96093c7de99fbc1aba1f6ef02b8fc44287675499924d375f1b9
+    name: cmake-filesystem
+    evr: 3.26.5-2.el8
+    sourcerpm: cmake-3.26.5-2.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/c/cmake-rpm-macros-3.26.5-2.el8.noarch.rpm
+    repoid: rhel-8-for-ppc64le-appstream-rpms
+    size: 45164
+    checksum: sha256:2a91c1cf84fefb94dbc444edd37a5c9649544a2707db1e727244b60e9a8e3d61
+    name: cmake-rpm-macros
+    evr: 3.26.5-2.el8
+    sourcerpm: cmake-3.26.5-2.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/c/cpp-8.5.0-22.el8_10.ppc64le.rpm
+    repoid: rhel-8-for-ppc64le-appstream-rpms
+    size: 11094324
+    checksum: sha256:c55ce9afb4f562bcda3f27af1bc01ea45a2441033d5ca99afe21f147da835f61
+    name: cpp
+    evr: 8.5.0-22.el8_10
+    sourcerpm: gcc-8.5.0-22.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/g/gcc-8.5.0-22.el8_10.ppc64le.rpm
+    repoid: rhel-8-for-ppc64le-appstream-rpms
+    size: 21887264
+    checksum: sha256:51f41a3fb9e276b49a5e007c47bfa78ed66eebe9e170aa2a07c43615b9aef108
+    name: gcc
+    evr: 8.5.0-22.el8_10
+    sourcerpm: gcc-8.5.0-22.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/g/gcc-c++-8.5.0-22.el8_10.ppc64le.rpm
+    repoid: rhel-8-for-ppc64le-appstream-rpms
+    size: 13145592
+    checksum: sha256:528a9874c87426233c431dfa9faca791f8374d1e95da790bee7fb8669fb183c1
+    name: gcc-c++
+    evr: 8.5.0-22.el8_10
+    sourcerpm: gcc-8.5.0-22.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/j/jq-1.6-9.el8_10.ppc64le.rpm
+    repoid: rhel-8-for-ppc64le-appstream-rpms
+    size: 221404
+    checksum: sha256:606776449fbb2b9f371c588450db2c197d2548e10f46b3aab06d9887aea317d1
+    name: jq
+    evr: 1.6-9.el8_10
+    sourcerpm: jq-1.6-9.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/l/libstdc++-devel-8.5.0-22.el8_10.ppc64le.rpm
+    repoid: rhel-8-for-ppc64le-appstream-rpms
+    size: 2158728
+    checksum: sha256:c81f95e4f7f8ce29a402efb92432a97867ac670c4f686ae80f5a65fbe6ceb504
+    name: libstdc++-devel
+    evr: 8.5.0-22.el8_10
+    sourcerpm: gcc-8.5.0-22.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/l/libuv-1.41.1-2.el8_10.ppc64le.rpm
+    repoid: rhel-8-for-ppc64le-appstream-rpms
+    size: 166704
+    checksum: sha256:39e6eaf3c7da068174e341e7d05774c85fde103fd86825454f58e2c19056b226
+    name: libuv
+    evr: 1:1.41.1-2.el8_10
+    sourcerpm: libuv-1.41.1-2.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/o/oniguruma-6.8.2-3.el8.ppc64le.rpm
+    repoid: rhel-8-for-ppc64le-appstream-rpms
+    size: 204564
+    checksum: sha256:7a2b3ea4ea7a0a17ce3ece31a11fc6a21556ccba4250cd757486e07e5bf3ff3b
+    name: oniguruma
+    evr: 6.8.2-3.el8
+    sourcerpm: oniguruma-6.8.2-3.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/v/vim-filesystem-8.0.1763-19.el8_6.4.noarch.rpm
+    repoid: rhel-8-for-ppc64le-appstream-rpms
+    size: 51660
+    checksum: sha256:9507b5f76eba9e4cf0e08d736c9093144a9040f649e974dcc79043e9c1e937b4
+    name: vim-filesystem
+    evr: 2:8.0.1763-19.el8_6.4
+    sourcerpm: vim-8.0.1763-19.el8_6.4.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/b/bzip2-devel-1.0.6-27.el8_10.ppc64le.rpm
+    repoid: rhel-8-for-ppc64le-baseos-rpms
+    size: 230008
+    checksum: sha256:62253ecd2dfbd6b8e29f22cf4a3d3955bbc01203803c83944b1a2f94b19c1806
+    name: bzip2-devel
+    evr: 1.0.6-27.el8_10
+    sourcerpm: bzip2-1.0.6-27.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/b/bzip2-libs-1.0.6-27.el8_10.ppc64le.rpm
+    repoid: rhel-8-for-ppc64le-baseos-rpms
+    size: 54440
+    checksum: sha256:f949225ffb789720b26a78135659c5084be1408fb5aee3648320ab6f9c405ac8
+    name: bzip2-libs
+    evr: 1.0.6-27.el8_10
+    sourcerpm: bzip2-1.0.6-27.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/l/libgcc-8.5.0-22.el8_10.ppc64le.rpm
+    repoid: rhel-8-for-ppc64le-baseos-rpms
+    size: 72168
+    checksum: sha256:1c99cd0f0a0434f8dae2fbf31c037b62c1aadb6535612d125737fe3bfc7837b0
+    name: libgcc
+    evr: 8.5.0-22.el8_10
+    sourcerpm: gcc-8.5.0-22.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/l/libgomp-8.5.0-22.el8_10.ppc64le.rpm
+    repoid: rhel-8-for-ppc64le-baseos-rpms
+    size: 218580
+    checksum: sha256:78fd514600e8427bf1116144350845b58a5a349031b2f3d3c368ba733e09d7cb
+    name: libgomp
+    evr: 8.5.0-22.el8_10
+    sourcerpm: gcc-8.5.0-22.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/l/libstdc++-8.5.0-22.el8_10.ppc64le.rpm
+    repoid: rhel-8-for-ppc64le-baseos-rpms
+    size: 509880
+    checksum: sha256:21b5cea229d9f5d3442a97d2e6fd01f1f421e7ed18feb52b2cf596f5efd466c4
+    name: libstdc++
+    evr: 8.5.0-22.el8_10
+    sourcerpm: gcc-8.5.0-22.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/l/lz4-devel-1.8.3-3.el8_4.ppc64le.rpm
+    repoid: rhel-8-for-ppc64le-baseos-rpms
+    size: 32244
+    checksum: sha256:9e780bb0aa7324b591c5ad3cc96659a0b6926e5b1b706ad881b4fa7fc91923cc
+    name: lz4-devel
+    evr: 1.8.3-3.el8_4
+    sourcerpm: lz4-1.8.3-3.el8_4.src.rpm
+  source: []
+  module_metadata: []
+- arch: s390x
+  packages:
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/c/cmake-3.26.5-2.el8.s390x.rpm
+    repoid: rhel-8-for-s390x-appstream-rpms
+    size: 12463484
+    checksum: sha256:a6b91465d006f6a85ab5c24b51375a4f64946e92bd94535a5436366afad2f967
+    name: cmake
+    evr: 3.26.5-2.el8
+    sourcerpm: cmake-3.26.5-2.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/c/cmake-data-3.26.5-2.el8.noarch.rpm
+    repoid: rhel-8-for-s390x-appstream-rpms
+    size: 1996464
+    checksum: sha256:c62da3f90f9f40b3511419ffdc7db46b210d6c8eb1570be788cd5d3aa7061cad
+    name: cmake-data
+    evr: 3.26.5-2.el8
+    sourcerpm: cmake-3.26.5-2.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/c/cmake-filesystem-3.26.5-2.el8.s390x.rpm
+    repoid: rhel-8-for-s390x-appstream-rpms
+    size: 46080
+    checksum: sha256:974959aa73db5fd4eff7c959f7559d0d5222dea7f4a69cd67c21fa82874713d9
+    name: cmake-filesystem
+    evr: 3.26.5-2.el8
+    sourcerpm: cmake-3.26.5-2.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/c/cmake-rpm-macros-3.26.5-2.el8.noarch.rpm
+    repoid: rhel-8-for-s390x-appstream-rpms
+    size: 45164
+    checksum: sha256:2a91c1cf84fefb94dbc444edd37a5c9649544a2707db1e727244b60e9a8e3d61
+    name: cmake-rpm-macros
+    evr: 3.26.5-2.el8
+    sourcerpm: cmake-3.26.5-2.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/c/cpp-8.5.0-22.el8_10.s390x.rpm
+    repoid: rhel-8-for-s390x-appstream-rpms
+    size: 8614600
+    checksum: sha256:7c8622256c3ac310ff78f0e96150b445babec0a185a0818775b2b9c127e2c9e5
+    name: cpp
+    evr: 8.5.0-22.el8_10
+    sourcerpm: gcc-8.5.0-22.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/g/gcc-8.5.0-22.el8_10.s390x.rpm
+    repoid: rhel-8-for-s390x-appstream-rpms
+    size: 19279292
+    checksum: sha256:04091e7c0db88133d5f8aa152c0dd02d958ce16711a83cd3bfb13f47578cd74c
+    name: gcc
+    evr: 8.5.0-22.el8_10
+    sourcerpm: gcc-8.5.0-22.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/g/gcc-c++-8.5.0-22.el8_10.s390x.rpm
+    repoid: rhel-8-for-s390x-appstream-rpms
+    size: 10430476
+    checksum: sha256:c344cf873daf2692ddc6e7cefeb40b758a00b8f331879428b427ec5d55e8e364
+    name: gcc-c++
+    evr: 8.5.0-22.el8_10
+    sourcerpm: gcc-8.5.0-22.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/j/jq-1.6-9.el8_10.s390x.rpm
+    repoid: rhel-8-for-s390x-appstream-rpms
+    size: 212528
+    checksum: sha256:aad8810d11b39e8e4b035165b311a166af65a202ca31ac8732cbb8ab20952ee3
+    name: jq
+    evr: 1.6-9.el8_10
+    sourcerpm: jq-1.6-9.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/l/libstdc++-devel-8.5.0-22.el8_10.s390x.rpm
+    repoid: rhel-8-for-s390x-appstream-rpms
+    size: 2138824
+    checksum: sha256:b552f2dae5004a611c32dcf00ba5ef8527dfe47e5e981d094fc31706521d6b49
+    name: libstdc++-devel
+    evr: 8.5.0-22.el8_10
+    sourcerpm: gcc-8.5.0-22.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/l/libuv-1.41.1-2.el8_10.s390x.rpm
+    repoid: rhel-8-for-s390x-appstream-rpms
+    size: 154160
+    checksum: sha256:c3d6bf3436b4f0d534ec87d8c7af4ba9048810f9c3bde20599cd1cfb59571fe3
+    name: libuv
+    evr: 1:1.41.1-2.el8_10
+    sourcerpm: libuv-1.41.1-2.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/o/oniguruma-6.8.2-3.el8.s390x.rpm
+    repoid: rhel-8-for-s390x-appstream-rpms
+    size: 188988
+    checksum: sha256:baca7bba0f15b43f62307570e6e9153e6cef5f8cfcad07c5177f1d7a299203d9
+    name: oniguruma
+    evr: 6.8.2-3.el8
+    sourcerpm: oniguruma-6.8.2-3.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/v/vim-filesystem-8.0.1763-19.el8_6.4.noarch.rpm
+    repoid: rhel-8-for-s390x-appstream-rpms
+    size: 51660
+    checksum: sha256:9507b5f76eba9e4cf0e08d736c9093144a9040f649e974dcc79043e9c1e937b4
+    name: vim-filesystem
+    evr: 2:8.0.1763-19.el8_6.4
+    sourcerpm: vim-8.0.1763-19.el8_6.4.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/b/bzip2-devel-1.0.6-27.el8_10.s390x.rpm
+    repoid: rhel-8-for-s390x-baseos-rpms
+    size: 230004
+    checksum: sha256:0c9765012f2369e80e690184109b173a0ec623ec8daf192d1ce2a2dcdd84f0f6
+    name: bzip2-devel
+    evr: 1.0.6-27.el8_10
+    sourcerpm: bzip2-1.0.6-27.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/b/bzip2-libs-1.0.6-27.el8_10.s390x.rpm
+    repoid: rhel-8-for-s390x-baseos-rpms
+    size: 49568
+    checksum: sha256:eb0592106feb69c524196f9b7bcaac48a8b6c55435d6980309552624e0de4752
+    name: bzip2-libs
+    evr: 1.0.6-27.el8_10
+    sourcerpm: bzip2-1.0.6-27.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/l/libgcc-8.5.0-22.el8_10.s390x.rpm
+    repoid: rhel-8-for-s390x-baseos-rpms
+    size: 67356
+    checksum: sha256:5d2d382751ef01a2536e33bdebaf217555c20a994c1e6a1e4a7f3bcffbdb307f
+    name: libgcc
+    evr: 8.5.0-22.el8_10
+    sourcerpm: gcc-8.5.0-22.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/l/libgomp-8.5.0-22.el8_10.s390x.rpm
+    repoid: rhel-8-for-s390x-baseos-rpms
+    size: 207580
+    checksum: sha256:a1308e1ff4daad28e02a531d65556458d1457f349d1a148272c462e69994414c
+    name: libgomp
+    evr: 8.5.0-22.el8_10
+    sourcerpm: gcc-8.5.0-22.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/l/libstdc++-8.5.0-22.el8_10.s390x.rpm
+    repoid: rhel-8-for-s390x-baseos-rpms
+    size: 468744
+    checksum: sha256:6f483c5dcd4675da3bc7d6feda6e788f41189a335120259113c6cb87715cb17c
+    name: libstdc++
+    evr: 8.5.0-22.el8_10
+    sourcerpm: gcc-8.5.0-22.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/l/lz4-devel-1.8.3-3.el8_4.s390x.rpm
+    repoid: rhel-8-for-s390x-baseos-rpms
+    size: 32244
+    checksum: sha256:d4c2226702e4c75cfafb86b67e50d12856ca313cfb87050c4631e9481bc79d94
+    name: lz4-devel
+    evr: 1.8.3-3.el8_4
+    sourcerpm: lz4-1.8.3-3.el8_4.src.rpm
+  source: []
+  module_metadata: []
+- arch: x86_64
+  packages:
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/j/jq-1.6-9.el8_10.x86_64.rpm
+    repoid: rhel-8-for-x86_64-appstream-rpms
+    size: 207896
+    checksum: sha256:baaa3660d87c4f3c12776e051b7f13835fee8918389a57673519e3389eb7aa3b
+    name: jq
+    evr: 1.6-9.el8_10
+    sourcerpm: jq-1.6-9.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/o/oniguruma-6.8.2-3.el8.x86_64.rpm
+    repoid: rhel-8-for-x86_64-appstream-rpms
+    size: 192632
+    checksum: sha256:1c5c91d8a33987892ec7320c08311a31245be91800aa5879e20d137971bd053f
+    name: oniguruma
+    evr: 6.8.2-3.el8
+    sourcerpm: oniguruma-6.8.2-3.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/b/bzip2-devel-1.0.6-27.el8_10.x86_64.rpm
+    repoid: rhel-8-for-x86_64-baseos-rpms
+    size: 230024
+    checksum: sha256:7b30103185e39ab7ea25a206473ec7c18e3ed3c9c235461cce5bd484fc85690d
+    name: bzip2-devel
+    evr: 1.0.6-27.el8_10
+    sourcerpm: bzip2-1.0.6-27.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/b/bzip2-libs-1.0.6-27.el8_10.x86_64.rpm
+    repoid: rhel-8-for-x86_64-baseos-rpms
+    size: 49172
+    checksum: sha256:da8cf8307d2e713c3991d9c45976ef165a37cfe1b6cbf74004e6a728edb79429
+    name: bzip2-libs
+    evr: 1.0.6-27.el8_10
+    sourcerpm: bzip2-1.0.6-27.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/l/lz4-devel-1.8.3-3.el8_4.x86_64.rpm
+    repoid: rhel-8-for-x86_64-baseos-rpms
+    size: 32256
+    checksum: sha256:57534e0547d954c77f79603d8a0602fe0774be6443d158fbe56926c7a6543fc3
+    name: lz4-devel
+    evr: 1.8.3-3.el8_4
+    sourcerpm: lz4-1.8.3-3.el8_4.src.rpm
+  source: []
+  module_metadata: []
