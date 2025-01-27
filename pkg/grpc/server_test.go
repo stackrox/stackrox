@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"strings"
 	"syscall"
@@ -38,7 +39,7 @@ func (a *APIServerSuite) SetupTest() {
 	a.T().Setenv("ROX_MTLS_CA_FILE", "../../tools/local-sensor/certs/caCert.pem")
 	a.T().Setenv("ROX_MTLS_CA_KEY_FILE", "../../tools/local-sensor/certs/caKey.pem")
 
-	setUpPrintSocketInfoFunction(a.T(), testutils.GetFreeTestPort())
+	setUpPrintSocketInfoFunction(a.T())
 }
 
 func Test_APIServerSuite(t *testing.T) {
@@ -62,6 +63,42 @@ func (a *APIServerSuite) TestEnvValues() {
 	}
 }
 
+func waitForPortToBeFree(t *testing.T, port uint64) {
+	ticker := time.NewTicker(10 * time.Millisecond)
+	defer ticker.Stop()
+
+	timer := time.NewTimer(10 * time.Second)
+	defer timer.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			listener, err := net.Listen("tcp4", fmt.Sprintf(":%d", port))
+			if err != nil {
+				t.Logf("Port %d still in use on tcp4", port)
+				continue
+			}
+			if errClose := listener.Close(); errClose != nil {
+				t.Logf("Closing tcp4 listener on port %d failed: %v", port, errClose)
+			}
+
+			listener, err = net.Listen("tcp6", fmt.Sprintf(":%d", port))
+			if err != nil {
+				t.Logf("Port %d still in use on tcp6", port)
+				continue
+			}
+			if errClose := listener.Close(); errClose != nil {
+				t.Logf("Closing tcp6 listener on port %d failed: %v", port, errClose)
+			}
+
+			return
+
+		case <-timer.C:
+			t.Logf("Timed out waiting for free port on: %d", port)
+		}
+	}
+}
+
 func (a *APIServerSuite) Test_TwoTestsStartingAPIs() {
 	testPort := testutils.GetFreeTestPort()
 	api1 := newAPIForTest(a.T(), defaultConf(testPort))
@@ -70,8 +107,9 @@ func (a *APIServerSuite) Test_TwoTestsStartingAPIs() {
 	for i, api := range []API{api1, api2} {
 		// Running two tests that start the API results in failure.
 		a.Run(fmt.Sprintf("API test %d", i), func() {
-			a.T().Cleanup(func() { api.Stop() })
+			waitForPortToBeFree(a.T(), testPort)
 			a.Assert().NoError(api.Start().Wait())
+			a.Require().True(api.Stop())
 		})
 	}
 }
@@ -225,7 +263,7 @@ func newAPIForTest(t *testing.T, config Config) API {
 	return api
 }
 
-func setUpPrintSocketInfoFunction(t *testing.T, ports ...uint64) {
+func setUpPrintSocketInfoFunction(t *testing.T) {
 	printSocketInfo = func(_ *testing.T) {
 		if r := recover(); r != nil {
 			if err, ok := r.(string); ok {
@@ -239,7 +277,7 @@ func setUpPrintSocketInfoFunction(t *testing.T, ports ...uint64) {
 					t.Log("-----------------------------------------------")
 					t.Log(" SOCKET INFO")
 					t.Log("-----------------------------------------------")
-					if printErr := testPrintSocketInfo(t, ports...); printErr != nil {
+					if printErr := testPrintSocketInfo(t, testutils.GetUsedPortsList()...); printErr != nil {
 						t.Log(printErr)
 					}
 					t.Log("-----------------------------------------------")
