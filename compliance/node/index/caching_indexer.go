@@ -17,7 +17,7 @@ var (
 )
 
 type cachingNodeIndexer struct {
-	indexerConfig *NodeIndexerConfig
+	indexerConfig NodeIndexerConfig
 	indexer       node.NodeIndexer
 	cacheDuration time.Duration
 	cachePath     string
@@ -30,7 +30,7 @@ type reportWrap struct {
 }
 
 // NewCachingNodeIndexer creates a new cached node indexer
-func NewCachingNodeIndexer(indexerConfig *NodeIndexerConfig, cacheDuration time.Duration, cachePath string) node.NodeIndexer {
+func NewCachingNodeIndexer(indexerConfig NodeIndexerConfig, cacheDuration time.Duration, cachePath string) node.NodeIndexer {
 	log.Debugf("Creating new cached Node Indexer with cache duration %s and cache path %s",
 		cacheDuration, cachePath)
 	indexer := NewNodeIndexer(indexerConfig)
