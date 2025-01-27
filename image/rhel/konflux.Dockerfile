@@ -1,34 +1,34 @@
-# TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.22 AS go-builder
+# # TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
+# FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.22 AS go-builder
 
-RUN dnf -y install --allowerasing --nobest make automake gcc gcc-c++ coreutils-single binutils diffutils zlib-devel bzip2-devel lz4-devel cmake jq
+# RUN dnf -y install --allowerasing --nobest make automake gcc gcc-c++ coreutils-single binutils diffutils zlib-devel bzip2-devel lz4-devel cmake jq
 
-WORKDIR /go/src/github.com/stackrox/rox/app
+# WORKDIR /go/src/github.com/stackrox/rox/app
 
-COPY . .
+# COPY . .
 
-# Ensure there will be no unintended -dirty suffix. package and package-lock are restored
-# because they are touched by Cachi2.
-RUN git restore ui/apps/platform/package.json ui/apps/platform/package-lock.json && \
-    .konflux/scripts/fail-build-if-git-is-dirty.sh
+# # Ensure there will be no unintended -dirty suffix. package and package-lock are restored
+# # because they are touched by Cachi2.
+# RUN git restore ui/apps/platform/package.json ui/apps/platform/package-lock.json && \
+#     .konflux/scripts/fail-build-if-git-is-dirty.sh
 
-ARG VERSIONS_SUFFIX
-ENV MAIN_TAG_SUFFIX="$VERSIONS_SUFFIX" COLLECTOR_TAG_SUFFIX="$VERSIONS_SUFFIX" SCANNER_TAG_SUFFIX="$VERSIONS_SUFFIX"
+# ARG VERSIONS_SUFFIX
+# ENV MAIN_TAG_SUFFIX="$VERSIONS_SUFFIX" COLLECTOR_TAG_SUFFIX="$VERSIONS_SUFFIX" SCANNER_TAG_SUFFIX="$VERSIONS_SUFFIX"
 
-ENV GOFLAGS=""
-ENV CGO_ENABLED=1
-# TODO(ROX-20240): enable non-release development builds.
-ENV GOTAGS="release"
-ENV CI=1
+# ENV GOFLAGS=""
+# ENV CGO_ENABLED=1
+# # TODO(ROX-20240): enable non-release development builds.
+# ENV GOTAGS="release"
+# ENV CI=1
 
-RUN # TODO(ROX-13200): make sure roxctl cli is built without running go mod tidy. \
-    make main-build-nodeps cli-build && \
-    mkdir -p image/rhel/docs/api/v1 && \
-    ./scripts/mergeswag.sh generated/api/v1 1 >image/rhel/docs/api/v1/swagger.json && \
-    mkdir -p image/rhel/docs/api/v2 && \
-    ./scripts/mergeswag.sh generated/api/v2 2 >image/rhel/docs/api/v2/swagger.json
+# RUN # TODO(ROX-13200): make sure roxctl cli is built without running go mod tidy. \
+#     make main-build-nodeps cli-build && \
+#     mkdir -p image/rhel/docs/api/v1 && \
+#     ./scripts/mergeswag.sh generated/api/v1 1 >image/rhel/docs/api/v1/swagger.json && \
+#     mkdir -p image/rhel/docs/api/v2 && \
+#     ./scripts/mergeswag.sh generated/api/v2 2 >image/rhel/docs/api/v2/swagger.json
 
-RUN make copy-go-binaries-to-image-dir
+# RUN make copy-go-binaries-to-image-dir
 
 # TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
 FROM registry.access.redhat.com/ubi8/nodejs-18:latest AS ui-builder
@@ -52,79 +52,79 @@ ENV UI_PKG_INSTALL_EXTRA_ARGS="--ignore-scripts"
 
 RUN make -C ui build
 
-# TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS application
+# # TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
+# FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS application
 
-# Install packages for the final stage.
-# find is used in /stackrox/import-additional-cas
-RUN microdnf module enable postgresql:13 && \
-    microdnf -y install findutils postgresql && \
-    # We can do usual cleanup while we're here: remove packages that would trigger violations. \
-    microdnf -y clean all && \
-    rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
-    rm -rf "/var/cache/dnf" "/var/cache/yum"
+# # Install packages for the final stage.
+# # find is used in /stackrox/import-additional-cas
+# RUN microdnf module enable postgresql:13 && \
+#     microdnf -y install findutils postgresql && \
+#     # We can do usual cleanup while we're here: remove packages that would trigger violations. \
+#     microdnf -y clean all && \
+#     rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
+#     rm -rf "/var/cache/dnf" "/var/cache/yum"
 
-COPY --from=ui-builder /go/src/github.com/stackrox/rox/app/ui/build /ui/
+# COPY --from=ui-builder /go/src/github.com/stackrox/rox/app/ui/build /ui/
 
-COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/migrator /stackrox/bin/
-COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/central /stackrox/
-COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/compliance /stackrox/bin/
-COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/roxctl* /assets/downloads/cli/
-COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/kubernetes-sensor /stackrox/bin/
-COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/sensor-upgrader /stackrox/bin/
-COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/admission-control /stackrox/bin/
-COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/config-controller /stackrox/bin/
-COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/init-tls-certs /stackrox/bin/
-COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/static-bin/* /stackrox/
-RUN GOARCH=$(uname -m) ; \
-    case $GOARCH in x86_64) GOARCH=amd64 ;; aarch64) GOARCH=arm64 ;; esac ; \
-    ln -s /assets/downloads/cli/roxctl-linux-$GOARCH /stackrox/roxctl ; \
-    ln -s /assets/downloads/cli/roxctl-linux-$GOARCH /assets/downloads/cli/roxctl-linux
+# COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/migrator /stackrox/bin/
+# COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/central /stackrox/
+# COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/compliance /stackrox/bin/
+# COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/roxctl* /assets/downloads/cli/
+# COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/kubernetes-sensor /stackrox/bin/
+# COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/sensor-upgrader /stackrox/bin/
+# COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/admission-control /stackrox/bin/
+# COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/config-controller /stackrox/bin/
+# COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/init-tls-certs /stackrox/bin/
+# COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/static-bin/* /stackrox/
+# RUN GOARCH=$(uname -m) ; \
+#     case $GOARCH in x86_64) GOARCH=amd64 ;; aarch64) GOARCH=arm64 ;; esac ; \
+#     ln -s /assets/downloads/cli/roxctl-linux-$GOARCH /stackrox/roxctl ; \
+#     ln -s /assets/downloads/cli/roxctl-linux-$GOARCH /assets/downloads/cli/roxctl-linux
 
-ARG MAIN_IMAGE_TAG
-RUN if [[ "$MAIN_IMAGE_TAG" == "" ]]; then >&2 echo "error: required MAIN_IMAGE_TAG arg is unset"; exit 6; fi
+# ARG MAIN_IMAGE_TAG
+# RUN if [[ "$MAIN_IMAGE_TAG" == "" ]]; then >&2 echo "error: required MAIN_IMAGE_TAG arg is unset"; exit 6; fi
 
-LABEL \
-    com.redhat.component="rhacs-main-container" \
-    com.redhat.license_terms="https://www.redhat.com/agreements" \
-    description="Main Image for Red Hat Advanced Cluster Security for Kubernetes" \
-    distribution-scope="public" \
-    io.k8s.description="Main Image for Red Hat Advanced Cluster Security for Kubernetes" \
-    io.k8s.display-name="main" \
-    io.openshift.tags="rhacs,main,stackrox" \
-    maintainer="Red Hat, Inc." \
-    name="rhacs-main-rhel8" \
-    # Custom Snapshot creation in `operator-bundle-pipeline` depends on source-location label to be set correctly.
-    source-location="https://github.com/stackrox/stackrox" \
-    summary="Main Image for Red Hat Advanced Cluster Security for Kubernetes" \
-    url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
-    vendor="Red Hat, Inc." \
-    # We must set version label to prevent inheriting value set in the base stage.
-    version="${MAIN_IMAGE_TAG}" \
-    # Release label is required by EC although has no practical semantics.
-    # We also set it to not inherit one from a base stage in case it's RHEL or UBI.
-    release="1"
+# LABEL \
+#     com.redhat.component="rhacs-main-container" \
+#     com.redhat.license_terms="https://www.redhat.com/agreements" \
+#     description="Main Image for Red Hat Advanced Cluster Security for Kubernetes" \
+#     distribution-scope="public" \
+#     io.k8s.description="Main Image for Red Hat Advanced Cluster Security for Kubernetes" \
+#     io.k8s.display-name="main" \
+#     io.openshift.tags="rhacs,main,stackrox" \
+#     maintainer="Red Hat, Inc." \
+#     name="rhacs-main-rhel8" \
+#     # Custom Snapshot creation in `operator-bundle-pipeline` depends on source-location label to be set correctly.
+#     source-location="https://github.com/stackrox/stackrox" \
+#     summary="Main Image for Red Hat Advanced Cluster Security for Kubernetes" \
+#     url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
+#     vendor="Red Hat, Inc." \
+#     # We must set version label to prevent inheriting value set in the base stage.
+#     version="${MAIN_IMAGE_TAG}" \
+#     # Release label is required by EC although has no practical semantics.
+#     # We also set it to not inherit one from a base stage in case it's RHEL or UBI.
+#     release="1"
 
-EXPOSE 8443
+# EXPOSE 8443
 
-# TODO(ROX-22245): set proper image flavor for user-facing GA Fast Stream images.
-ENV PATH="/stackrox:$PATH" \
-    ROX_ROXCTL_IN_MAIN_IMAGE="true" \
-    ROX_IMAGE_FLAVOR="development_build" \
-    ROX_PRODUCT_BRANDING="RHACS_BRANDING"
+# # TODO(ROX-22245): set proper image flavor for user-facing GA Fast Stream images.
+# ENV PATH="/stackrox:$PATH" \
+#     ROX_ROXCTL_IN_MAIN_IMAGE="true" \
+#     ROX_IMAGE_FLAVOR="development_build" \
+#     ROX_PRODUCT_BRANDING="RHACS_BRANDING"
 
-COPY .konflux/stackrox-data/external-networks/external-networks.zip /stackrox/static-data/external-networks/external-networks.zip
+# COPY .konflux/stackrox-data/external-networks/external-networks.zip /stackrox/static-data/external-networks/external-networks.zip
 
-COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/docs/api/v1/swagger.json /stackrox/static-data/docs/api/v1/swagger.json
-COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/docs/api/v2/swagger.json /stackrox/static-data/docs/api/v2/swagger.json
+# COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/docs/api/v1/swagger.json /stackrox/static-data/docs/api/v1/swagger.json
+# COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/docs/api/v2/swagger.json /stackrox/static-data/docs/api/v2/swagger.json
 
-COPY LICENSE /licenses/LICENSE
+# COPY LICENSE /licenses/LICENSE
 
-# The following paths are written to in Central.
-RUN chown -R 4000:4000 /etc/pki/ca-trust /etc/ssl && save-dir-contents /etc/pki/ca-trust /etc/ssl && \
-    mkdir -p /var/lib/stackrox && chown -R 4000:4000 /var/lib/stackrox && \
-    mkdir -p /var/log/stackrox && chown -R 4000:4000 /var/log/stackrox && \
-    mkdir -p /var/cache/stackrox && chown -R 4000:4000 /var/cache/stackrox && \
-    chown -R 4000:4000 /tmp
+# # The following paths are written to in Central.
+# RUN chown -R 4000:4000 /etc/pki/ca-trust /etc/ssl && save-dir-contents /etc/pki/ca-trust /etc/ssl && \
+#     mkdir -p /var/lib/stackrox && chown -R 4000:4000 /var/lib/stackrox && \
+#     mkdir -p /var/log/stackrox && chown -R 4000:4000 /var/log/stackrox && \
+#     mkdir -p /var/cache/stackrox && chown -R 4000:4000 /var/cache/stackrox && \
+#     chown -R 4000:4000 /tmp
 
-USER 4000:4000
+# USER 4000:4000
