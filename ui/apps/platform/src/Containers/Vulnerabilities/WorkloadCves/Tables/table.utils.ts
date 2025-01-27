@@ -216,7 +216,7 @@ export type DeploymentWithVulnerabilities = {
     imageVulnerabilities: {
         vulnerabilityId: string;
         cve: string;
-        cveBaseInfo?: CveBaseInfo; // or maybe null (investigate when and why it might be absent)
+        cveBaseInfo: CveBaseInfo;
         operatingSystem: string;
         publishedOn: string | null;
         summary: string;
@@ -236,7 +236,7 @@ type DeploymentVulnerabilityImageMapping = {
 export type FormattedDeploymentVulnerability = {
     vulnerabilityId: string;
     cve: string;
-    cveBaseInfo?: CveBaseInfo; // or maybe null (investigate when and why it might be absent)
+    cveBaseInfo: CveBaseInfo;
     operatingSystem: string;
     severity: VulnerabilitySeverity;
     isFixable: boolean;
@@ -317,9 +317,8 @@ export function formatVulnerabilityData(
 }
 
 export function getCveBaseInfoFromDistroTuples(
-    distroTuples: { cveBaseInfo?: CveBaseInfo }[]
+    distroTuples: { cveBaseInfo: CveBaseInfo }[]
 ): CveBaseInfo | undefined {
-    // or maybe null (investigate when and why cveBaseInfo might be absent)
     // Assume that epss property has same value for each of multiple items.
     return distroTuples?.[0]?.cveBaseInfo;
 }

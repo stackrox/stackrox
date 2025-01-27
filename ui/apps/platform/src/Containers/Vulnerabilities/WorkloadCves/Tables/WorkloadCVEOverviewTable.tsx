@@ -162,7 +162,7 @@ export type ImageCVE = {
         scoreVersion: string;
         nvdCvss: number;
         nvdScoreVersion: string; // for example, V3 or UNKNOWN_VERSION
-        cveBaseInfo?: CveBaseInfo; // or maybe null (investigate when and why it might be absent)
+        cveBaseInfo: CveBaseInfo;
     }[];
     pendingExceptionCount: number;
 };

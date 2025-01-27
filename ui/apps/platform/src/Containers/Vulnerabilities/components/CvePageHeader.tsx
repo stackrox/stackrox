@@ -23,7 +23,7 @@ export type CveMetadata = {
         summary: string;
         link: string;
         operatingSystem: string;
-        cveBaseInfo?: CveBaseInfo; // or maybe null (investigate when and why it might be absent)
+        cveBaseInfo: CveBaseInfo;
     }[];
 };
 
