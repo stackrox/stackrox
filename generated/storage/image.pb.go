@@ -292,7 +292,7 @@ type Image struct {
 	NotPullable    bool                   `protobuf:"varint,10,opt,name=not_pullable,json=notPullable,proto3" json:"not_pullable,omitempty"`
 	IsClusterLocal bool                   `protobuf:"varint,17,opt,name=is_cluster_local,json=isClusterLocal,proto3" json:"is_cluster_local,omitempty"`
 	Priority       int64                  `protobuf:"varint,11,opt,name=priority,proto3" json:"priority,omitempty" search:"Image Risk Priority,hidden"`                     // @gotags: search:"Image Risk Priority,hidden"
-	RiskScore      float32                `protobuf:"fixed32,12,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Image Risk Score,hidden"` // @gotags: search:"Image Risk Score,hidden"
+	RiskScore      float32                `protobuf:"fixed32,12,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Image Risk Score,hidden" sql:"index=btree"` // @gotags: search:"Image Risk Score,hidden" sql:"index=btree"
 	// Types that are valid to be assigned to SetTopCvss:
 	//
 	//	*Image_TopCvss
