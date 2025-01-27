@@ -15,6 +15,7 @@ import (
 	"github.com/quay/claircore"
 	ccindexer "github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/indexer/controller"
+	"github.com/quay/claircore/pkg/rhctag"
 	"github.com/quay/claircore/rhel"
 	rpm2 "github.com/quay/claircore/rpm"
 	"github.com/quay/zlog"
@@ -154,10 +155,28 @@ func runPackageScanner(ctx context.Context, layer *claircore.Layer) ([]*claircor
 		return nil, errors.Wrap(err, "failed to invoke RPM scanner")
 	}
 	pck = filterPackages(ctx, pck)
+	pck = fillNormalizedVersions(ctx, pck)
 	for i, p := range pck {
 		p.ID = fmt.Sprintf("%d", i)
 	}
 	return pck, nil
+}
+
+func fillNormalizedVersions(_ context.Context, pck []*claircore.Package) []*claircore.Package {
+	var filtered []*claircore.Package
+	for _, pkg := range pck {
+		rhctagVersion, err := rhctag.Parse(pkg.Version)
+		if err != nil {
+			log.Errorf("Failed to parse rhctag version: %v", err)
+			filtered = append(filtered, pkg)
+			continue
+		}
+		minorRange := rhctagVersion.MinorStart()
+		pkg.NormalizedVersion = minorRange.Version(true)
+		log.Debugf("Found normalized version %v for package %s (minorRange: %+v)",
+			pkg.NormalizedVersion.String(), pkg.Name, minorRange)
+	}
+	return filtered
 }
 
 // As we're only interested in the effective running RPM DB,
