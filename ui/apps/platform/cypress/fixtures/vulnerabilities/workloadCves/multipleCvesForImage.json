@@ -55,6 +55,9 @@
                     "scoreVersion": "V3",
                     "nvdCvss": 0,
                     "nvdScoreVersion": "UNKNOWN_VERSION",
+                    "cveBaseInfo": {
+                        "epss": null
+                    },
                     "discoveredAtImage": "2024-03-01T17:45:32.757812569Z",
                     "publishedOn": "2023-03-22T17:15:00Z",
                     "pendingExceptionCount": 0,
@@ -86,6 +89,9 @@
                     "scoreVersion": "V3",
                     "nvdCvss": 0,
                     "nvdScoreVersion": "UNKNOWN_VERSION",
+                    "cveBaseInfo": {
+                        "epss": null
+                    },
                     "discoveredAtImage": "2024-03-01T17:45:32.757812569Z",
                     "publishedOn": "2023-10-25T18:17:00Z",
                     "pendingExceptionCount": 0,
