@@ -203,8 +203,7 @@ spec:
   # `operator` image is tagged) in all cases except for the `operator` builds in `master`.
   # For `operator` in `master`, the image tag will have `.0`: `4.7.0-514-gba6cde5b55-fast`, while the `main` version has
   # `.x`: `4.7.x-514-gba6cde5b55-fast`.
-  # ROX-22250 is to make Konflux image tags always go out with `.0` despite git tag containing `.x` and so this
-  # task may be removed after that is implemented.
+  # TODO(ROX-22250): make Konflux image tags always go with `.0` despite git tag containing `.x` and remove this task.
   - name: determine-main-version
     params:
     - name: MAKEFILE_DIRECTORY
