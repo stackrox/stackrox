@@ -14,12 +14,13 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/klauspost/compress/snappy"
 	"github.com/quay/zlog"
+	"github.com/stackrox/rox/pkg/scannerv4/enricher/csaf"
 )
 
 func TestParseEnrichment(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
-	url, err := url.Parse(BaseURL)
+	url, err := url.Parse(baseURL)
 	if err != nil {
 		t.Error(err)
 	}
@@ -32,7 +33,7 @@ func TestParseEnrichment(t *testing.T) {
 		expectedReleaseDate time.Time
 		expectedCVEs        []string
 		expectedSeverity    string
-		expectedCVSSv3      CVSS
+		expectedCVSSv3      csaf.CVSS
 	}{
 		{
 			name:                "RHBA-2024:0599",
@@ -42,7 +43,7 @@ func TestParseEnrichment(t *testing.T) {
 			expectedReleaseDate: time.Date(2024, time.January, 30, 13, 46, 48, 0, time.UTC),
 			expectedCVEs:        []string{"CVE-2023-39325", "CVE-2023-44487"},
 			expectedSeverity:    "Important",
-			expectedCVSSv3: CVSS{
+			expectedCVSSv3: csaf.CVSS{
 				Score:  7.5,
 				Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
 			},
@@ -55,7 +56,7 @@ func TestParseEnrichment(t *testing.T) {
 			expectedReleaseDate: time.Date(2024, time.January, 2, 8, 30, 42, 0, time.UTC),
 			expectedCVEs:        []string{"CVE-2023-6856", "CVE-2023-6857", "CVE-2023-6858", "CVE-2023-6859", "CVE-2023-6860", "CVE-2023-6861", "CVE-2023-6862", "CVE-2023-6863", "CVE-2023-6864", "CVE-2023-6865", "CVE-2023-6867"},
 			expectedSeverity:    "Important",
-			expectedCVSSv3: CVSS{
+			expectedCVSSv3: csaf.CVSS{
 				Score:  8.8,
 				Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H",
 			},
@@ -104,7 +105,7 @@ func TestParseEnrichment(t *testing.T) {
 			}
 			enrichment := enrichments[0]
 
-			var record Record
+			var record csaf.Record
 			err = json.Unmarshal(enrichment.Enrichment, &record)
 			if err != nil {
 				t.Fatalf("failed to unmarshal record: %v", err)

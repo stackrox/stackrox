@@ -12,13 +12,14 @@ import (
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/toolkit/types/csaf"
 	"github.com/quay/zlog"
+	pkgcsaf "github.com/stackrox/rox/pkg/scannerv4/enricher/csaf"
 )
 
 // ParseEnrichment implements driver.EnrichmentUpdater.
 func (e *Enricher) ParseEnrichment(ctx context.Context, contents io.ReadCloser) ([]driver.EnrichmentRecord, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "enricher/csaf/Enricher/ParseEnrichment")
 
-	records := make(map[string]Record)
+	records := make(map[string]pkgcsaf.Record)
 
 	r := bufio.NewReader(snappy.NewReader(contents))
 	for b, err := r.ReadBytes('\n'); err == nil; b, err = r.ReadBytes('\n') {
@@ -30,7 +31,7 @@ func (e *Enricher) ParseEnrichment(ctx context.Context, contents io.ReadCloser) 
 			continue
 		}
 
-		record := Record{
+		record := pkgcsaf.Record{
 			// This would be the RHSA/RHBA/RHEA ID.
 			Name: c.Document.Tracking.ID,
 			// Use the title as the advisory's description.
