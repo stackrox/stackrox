@@ -26,9 +26,11 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/scanners/scannerv4"
-	"github.com/stackrox/rox/pkg/scannerv4/constants"
+	"github.com/stackrox/rox/pkg/scannerv4/enricher/csaf"
+	"github.com/stackrox/rox/pkg/scannerv4/enricher/fixedby"
+	"github.com/stackrox/rox/pkg/scannerv4/enricher/nvd"
+	"github.com/stackrox/rox/pkg/scannerv4/updater/manual"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/scanner/enricher/csaf"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -748,7 +750,7 @@ func fixedInVersion(v *claircore.Vulnerability) string {
 // nvdVulnerabilities look for NVD CVSS in the vulnerability report enrichments and
 // returns a map of CVEs.
 func nvdVulnerabilities(enrichments map[string][]json.RawMessage) (map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem, error) {
-	enrichmentsList := enrichments[constants.NVDType]
+	enrichmentsList := enrichments[nvd.Type]
 	if len(enrichmentsList) == 0 {
 		return nil, nil
 	}
@@ -847,7 +849,7 @@ func filterPackages(packages map[string]*claircore.Package, environments map[str
 
 // pkgFixedBy unmarshals and returns the package-fixed-by enrichment, if it exists.
 func pkgFixedBy(enrichments map[string][]json.RawMessage) (map[string]string, error) {
-	enrichmentsList := enrichments[constants.FixedByType]
+	enrichmentsList := enrichments[fixedby.Type]
 	if len(enrichmentsList) == 0 {
 		return nil, nil
 	}
@@ -937,7 +939,7 @@ func cvssMetrics(_ context.Context, vuln *claircore.Vulnerability, vulnName stri
 		}
 	case strings.HasPrefix(vuln.Updater, osvUpdaterPrefix) && !isOSVDBSpecificSeverity(vuln.Severity):
 		preferredCVSS, preferredErr = vulnCVSS(vuln, v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_OSV)
-	case strings.EqualFold(vuln.Updater, constants.ManualUpdaterName):
+	case strings.EqualFold(vuln.Updater, manual.UpdaterName):
 		// It is expected manually added vulnerabilities only have a single link.
 		preferredCVSS, preferredErr = vulnCVSS(vuln, sourceFromLinks(vuln.Links))
 	}

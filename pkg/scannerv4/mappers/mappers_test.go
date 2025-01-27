@@ -16,8 +16,8 @@ import (
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
-	"github.com/stackrox/rox/pkg/scannerv4/constants"
-	"github.com/stackrox/rox/scanner/enricher/csaf"
+	"github.com/stackrox/rox/pkg/scannerv4/enricher/csaf"
+	"github.com/stackrox/rox/pkg/scannerv4/updater/manual"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -1556,7 +1556,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 					ID:       "foo",
 					Name:     "CVE-2021-44228",
 					Links:    "https://nvd.nist.gov/vuln/detail/CVE-2021-44228",
-					Updater:  constants.ManualUpdaterName,
+					Updater:  manual.UpdaterName,
 					Severity: "CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
 					Issued:   now,
 				},

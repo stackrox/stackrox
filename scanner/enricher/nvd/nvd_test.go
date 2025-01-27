@@ -18,7 +18,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/zlog"
-	"github.com/stackrox/rox/pkg/scannerv4/constants"
+	"github.com/stackrox/rox/pkg/scannerv4/enricher/nvd"
 )
 
 func TestConfigure(t *testing.T) {
@@ -329,7 +329,7 @@ func TestEnrich(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if got, want := kind, constants.NVDType; got != want {
+	if got, want := kind, nvd.Type; got != want {
 		t.Errorf("got: %q, want: %q", got, want)
 	}
 	want := map[string][]map[string]interface{}{

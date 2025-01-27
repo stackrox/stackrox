@@ -9,16 +9,17 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/zlog"
+	"github.com/stackrox/rox/pkg/scannerv4/enricher/csaf"
 	"github.com/stretchr/testify/assert"
 )
 
 var (
-	expectedRecords = []Record{
+	expectedRecords = []csaf.Record{
 		{
 			Name:        "RHSA-2023:4701",
 			Description: "Red Hat Security Advisory: subscription-manager security update",
 			Severity:    "Moderate",
-			CVSSv3: CVSS{
+			CVSSv3: csaf.CVSS{
 				Score:  6.1,
 				Vector: "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:H/A:L",
 			},
@@ -27,7 +28,7 @@ var (
 			Name:        "RHSA-2023:4706",
 			Description: "Red Hat Security Advisory: subscription-manager security update",
 			Severity:    "Important",
-			CVSSv3: CVSS{
+			CVSSv3: csaf.CVSS{
 				Score:  7.8,
 				Vector: "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
 			},
@@ -36,7 +37,7 @@ var (
 			Name:        "RHSA-2024:10186",
 			Description: "Red Hat Security Advisory: ACS 4.5 enhancement update",
 			Severity:    "Important",
-			CVSSv3: CVSS{
+			CVSSv3: csaf.CVSS{
 				Score:  8.2,
 				Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:L",
 			},
@@ -186,17 +187,17 @@ func TestEnrich(t *testing.T) {
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
-	if kind != Type {
-		t.Errorf("expected kind %q, got %q", Type, kind)
+	if kind != csaf.Type {
+		t.Errorf("expected kind %q, got %q", csaf.Type, kind)
 	}
 
-	var enrichments map[string][]Record
+	var enrichments map[string][]csaf.Record
 	err = json.Unmarshal(es[0], &enrichments)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
 
-	expected := map[string][]Record{
+	expected := map[string][]csaf.Record{
 		"foo": {expectedRecords[0]},
 		"bar": {expectedRecords[1]},
 		"baz": {expectedRecords[2]},

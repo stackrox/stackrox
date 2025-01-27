@@ -12,13 +12,13 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/rhel/vex"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/scannerv4/enricher/csaf"
 )
 
 var (
@@ -27,11 +27,8 @@ var (
 )
 
 const (
-	// Type is the type of data returned from the Enricher's Enrich method.
-	Type = `message/vnd.stackrox.scannerv4.map.csaf; enricher=stackrox.scannerv4.csaf`
-
-	// BaseURL is the base url for the Red Hat CSAF security data.
-	BaseURL = "https://security.access.redhat.com/data/csaf/v2/advisories/"
+	// baseURL is the base url for the Red Hat CSAF security data.
+	baseURL = "https://security.access.redhat.com/data/csaf/v2/advisories/"
 
 	updaterVersion = "1"
 
@@ -41,26 +38,6 @@ const (
 	changesFile    = "changes.csv"
 	lookBackToYear = 2014
 )
-
-// Record represents a CSAF enrichment record.
-// It tracks attributes which should be consistent
-// each time the RHSA is output.
-type Record struct {
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	ReleaseDate time.Time `json:"release_date"`
-	Severity    string    `json:"severity"`
-	// CVEs tracks all the CVEs related to this advisory.
-	CVEs   []string `json:"cves"`
-	CVSSv3 CVSS     `json:"cvssv3"`
-	CVSSv2 CVSS     `json:"cvssv2"`
-}
-
-// CVSS represents CVSS metrics we care to track for the advisory.
-type CVSS struct {
-	Score  float32 `json:"score"`
-	Vector string  `json:"vector"`
-}
 
 // Enricher provides Red Hat CSAF data as enrichments to a VulnerabilityReport.
 //
@@ -93,7 +70,7 @@ func (e *Enricher) Configure(_ context.Context, f driver.ConfigUnmarshaler, c *h
 	if err := f(&cfg); err != nil {
 		return err
 	}
-	u := BaseURL
+	u := baseURL
 	if cfg.URL != "" {
 		u = cfg.URL
 		if !strings.HasSuffix(u, "/") {
@@ -110,7 +87,7 @@ func (e *Enricher) Configure(_ context.Context, f driver.ConfigUnmarshaler, c *h
 
 // Name implements driver.Enricher and driver.EnrichmentUpdater.
 func (*Enricher) Name() string {
-	return "stackrox.rhel-csaf"
+	return csaf.Name
 }
 
 // Enrich implements driver.Enricher.
@@ -141,13 +118,13 @@ func (e *Enricher) Enrich(ctx context.Context, g driver.EnrichmentGetter, r *cla
 		}
 	}
 	if len(m) == 0 {
-		return Type, nil, nil
+		return csaf.Type, nil, nil
 	}
 	b, err := json.Marshal(m)
 	if err != nil {
-		return Type, nil, err
+		return csaf.Type, nil, err
 	}
-	return Type, []json.RawMessage{b}, nil
+	return csaf.Type, []json.RawMessage{b}, nil
 }
 
 var (
