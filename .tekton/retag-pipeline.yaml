@@ -121,7 +121,7 @@ spec:
       - name: name
         value: determine-image-tag
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:76c8fbd2abac06ce895a765c41be73d14925b00a660b1b5fa6564a50a15cf2ba
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:6ac9edaa3bd8c28c943069e267cee550b0bcc2899a6dce3d75fae7feb0ea9208
       - name: kind
         value: task
       resolver: bundles
@@ -139,7 +139,7 @@ spec:
         - name: name
           value: determine-dependency-image-tag
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:76c8fbd2abac06ce895a765c41be73d14925b00a660b1b5fa6564a50a15cf2ba
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:6ac9edaa3bd8c28c943069e267cee550b0bcc2899a6dce3d75fae7feb0ea9208
         - name: kind
           value: task
       resolver: bundles
@@ -159,7 +159,7 @@ spec:
       - name: name
         value: retag-image
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:76c8fbd2abac06ce895a765c41be73d14925b00a660b1b5fa6564a50a15cf2ba
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:6ac9edaa3bd8c28c943069e267cee550b0bcc2899a6dce3d75fae7feb0ea9208
       - name: kind
         value: task
       resolver: bundles
