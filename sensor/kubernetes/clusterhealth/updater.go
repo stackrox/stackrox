@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/pods"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
@@ -55,6 +56,8 @@ type updaterImpl struct {
 	ctxMutex       sync.Mutex
 	pipelineCtx    context.Context
 	cancelCtx      context.CancelFunc
+	queueMapLock   sync.Mutex
+	queueMap       set.StringSet
 }
 
 func (u *updaterImpl) Start() error {
@@ -104,6 +107,15 @@ func (u *updaterImpl) getCurrentContext() context.Context {
 	return u.pipelineCtx
 }
 
+func (u *updaterImpl) getSensorHealth() *central.SensorHealthInfo {
+	u.queueMapLock.Lock()
+	defer u.queueMapLock.Unlock()
+	if len(u.queueMap) == 0 {
+		return &central.SensorHealthInfo{SensorStatus: central.SensorHealthInfo_HEALTHY}
+	}
+	return &central.SensorHealthInfo{SensorStatus: central.SensorHealthInfo_DEGRADED}
+}
+
 func (u *updaterImpl) run(tickerC <-chan time.Time) {
 	for {
 		select {
@@ -111,10 +123,12 @@ func (u *updaterImpl) run(tickerC <-chan time.Time) {
 			collectorHealthInfo := u.getCollectorInfo()
 			admissionControlHealthInfo := u.getAdmissionControlInfo()
 			scannerHealthInfo := u.getLocalScannerInfo()
+			sensorHealth := u.getSensorHealth()
 			select {
 			case u.updates <- message.NewExpiring(u.getCurrentContext(), &central.MsgFromSensor{
 				Msg: &central.MsgFromSensor_ClusterHealthInfo{
 					ClusterHealthInfo: &central.RawClusterHealthInfo{
+						SensorHealthInfo:           sensorHealth,
 						CollectorHealthInfo:        collectorHealthInfo,
 						AdmissionControlHealthInfo: admissionControlHealthInfo,
 						ScannerHealthInfo:          scannerHealthInfo,
@@ -277,6 +291,7 @@ func NewUpdater(client kubernetes.Interface, updateInterval time.Duration, pubSu
 		updateInterval: interval,
 		namespace:      pods.GetPodNamespace(),
 		updateTicker:   updateTicker,
+		queueMap:       set.NewStringSet(),
 	}
 	if pubSub != nil {
 		if err := pubSub.Subscribe(internalmessage.SensorMessageDropRateHigh, ret.onDropRateHigh); err != nil {
@@ -296,6 +311,9 @@ func (u *updaterImpl) onDropRateHigh(msg *internalmessage.SensorInternalMessage)
 	}
 	// TODO: add queue to degraded map
 	log.Infof("onDropRateHigh message received: %s size %d dropped %d", payload.QueueName, payload.QueueSize, payload.NumDropped)
+	u.queueMapLock.Lock()
+	defer u.queueMapLock.Unlock()
+	u.queueMap.Add(payload.QueueName)
 }
 
 func (u *updaterImpl) onDropRateNormal(msg *internalmessage.SensorInternalMessage) {
@@ -305,4 +323,7 @@ func (u *updaterImpl) onDropRateNormal(msg *internalmessage.SensorInternalMessag
 	}
 	// TODO: remove queue from degraded map
 	log.Infof("onDropRateNormal message received: %s size %d dropped %d", payload.QueueName, payload.QueueSize, payload.NumDropped)
+	u.queueMapLock.Lock()
+	defer u.queueMapLock.Unlock()
+	u.queueMap.Remove(payload.QueueName)
 }
