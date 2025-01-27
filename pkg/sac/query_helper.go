@@ -11,9 +11,9 @@ var (
 	namespaceField = search.Namespace
 )
 
-// BuildNonVerboseClusterLevelSACQueryFilter builds a Scoped Access Control query filter that can be
+// BuildClusterLevelSACQueryFilter builds a Scoped Access Control query filter that can be
 // injected in search queries for resource types that have direct cluster scope level.
-func BuildNonVerboseClusterLevelSACQueryFilter(root *effectiveaccessscope.ScopeTree) (*v1.Query, error) {
+func BuildClusterLevelSACQueryFilter(root *effectiveaccessscope.ScopeTree) (*v1.Query, error) {
 	if root == nil {
 		return getMatchNoneQuery(), nil
 	}
@@ -43,9 +43,9 @@ func BuildNonVerboseClusterLevelSACQueryFilter(root *effectiveaccessscope.ScopeT
 	}
 }
 
-// BuildNonVerboseClusterNamespaceLevelSACQueryFilter builds a Scoped Access Control query filter that can be
+// BuildClusterNamespaceLevelSACQueryFilter builds a Scoped Access Control query filter that can be
 // injected in search queries for resource types that have direct namespace scope level.
-func BuildNonVerboseClusterNamespaceLevelSACQueryFilter(root *effectiveaccessscope.ScopeTree) (*v1.Query, error) {
+func BuildClusterNamespaceLevelSACQueryFilter(root *effectiveaccessscope.ScopeTree) (*v1.Query, error) {
 	if root == nil {
 		return getMatchNoneQuery(), nil
 	}

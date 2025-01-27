@@ -31,7 +31,7 @@ type testCase struct {
 	hasError       bool
 }
 
-func TestNonVerboseClusterScopeFilterGeneration(topLevelTest *testing.T) {
+func TestClusterScopeFilterGeneration(topLevelTest *testing.T) {
 	testCases := []testCase{
 		{
 			description:    "nil ScopeTree generates a MatchNone query filter",
@@ -66,40 +66,40 @@ func TestNonVerboseClusterScopeFilterGeneration(topLevelTest *testing.T) {
 		{
 			description:    "Scope tree with one fully included cluster tree generates a Match query filter",
 			scopeGenerator: effectiveaccessscope.TestTreeOneClusterTreeFullyIncluded,
-			expected:       clusterNonVerboseMatch(topLevelTest, planetArrakis),
+			expected:       clusterMatch(topLevelTest, planetArrakis),
 		},
 		{
 			description:    "Scope tree with one fully included cluster node generates a Match query filter",
 			scopeGenerator: effectiveaccessscope.TestTreeOneClusterRootFullyIncluded,
-			expected:       clusterNonVerboseMatch(topLevelTest, planetArrakis),
+			expected:       clusterMatch(topLevelTest, planetArrakis),
 		},
 		{
 			description:    "Scope tree with only partial cluster nodes generates a Disjunction of Match query filter",
 			scopeGenerator: effectiveaccessscope.TestTreeClusterNamespaceMixIncluded,
 			expected: search.DisjunctionQuery(
-				clusterNonVerboseMatch(topLevelTest, planetArrakis),
-				clusterNonVerboseMatch(topLevelTest, planetEarth)),
+				clusterMatch(topLevelTest, planetArrakis),
+				clusterMatch(topLevelTest, planetEarth)),
 		},
 		{
 			description:    "Scope tree with one included cluster tree and partial clusters generate a Disjunction of Match for the included clusters",
 			scopeGenerator: effectiveaccessscope.TestTreeClusterNamespaceFullClusterMixIncluded,
 			expected: search.DisjunctionQuery(
-				clusterNonVerboseMatch(topLevelTest, planetArrakis),
-				clusterNonVerboseMatch(topLevelTest, planetEarth)),
+				clusterMatch(topLevelTest, planetArrakis),
+				clusterMatch(topLevelTest, planetEarth)),
 		},
 		{
 			description:    "Scope tree with multiple included cluster trees generates a Disjunction of Match for the included clusters",
 			scopeGenerator: effectiveaccessscope.TestTreeTwoClustersFullyIncluded,
 			expected: search.DisjunctionQuery(
-				clusterNonVerboseMatch(topLevelTest, planetArrakis),
-				clusterNonVerboseMatch(topLevelTest, planetEarth)),
+				clusterMatch(topLevelTest, planetArrakis),
+				clusterMatch(topLevelTest, planetEarth)),
 		},
 	}
 
 	for _, tc := range testCases {
 		topLevelTest.Run(tc.description, func(t *testing.T) {
 			eas := tc.scopeGenerator(t)
-			filter, err := BuildNonVerboseClusterLevelSACQueryFilter(eas)
+			filter, err := BuildClusterLevelSACQueryFilter(eas)
 			assert.True(t, tc.hasError == (err != nil))
 			correctFilter := isSameQuery(tc.expected, filter)
 			assert.Truef(t, correctFilter, "mismatch between queries")
@@ -111,7 +111,7 @@ func TestNonVerboseClusterScopeFilterGeneration(topLevelTest *testing.T) {
 	}
 }
 
-func TestNonVerboseNamespaceScopeFilterGeneration(topLevelTest *testing.T) {
+func TestNamespaceScopeFilterGeneration(topLevelTest *testing.T) {
 	testCases := []testCase{
 		{
 			description:    "Generated query filter for nil scope tree is MatchNone",
@@ -146,29 +146,29 @@ func TestNonVerboseNamespaceScopeFilterGeneration(topLevelTest *testing.T) {
 		{
 			description:    "Generated query filter for fully included cluster subtree is simple cluster match",
 			scopeGenerator: effectiveaccessscope.TestTreeOneClusterTreeFullyIncluded,
-			expected:       clusterNonVerboseMatch(topLevelTest, planetArrakis),
+			expected:       clusterMatch(topLevelTest, planetArrakis),
 		},
 		{
 			description:    "Generated query filter for included cluster node is simple cluster match",
 			scopeGenerator: effectiveaccessscope.TestTreeOneClusterRootFullyIncluded,
-			expected:       clusterNonVerboseMatch(topLevelTest, planetArrakis),
+			expected:       clusterMatch(topLevelTest, planetArrakis),
 		},
 		{
 			description:    "Generated query filter for single included namespace is the conjunction of the cluster and namespace matches",
 			scopeGenerator: effectiveaccessscope.TestTreeOneClusterNamespacePairOnlyIncluded,
 			expected: search.ConjunctionQuery(
-				clusterNonVerboseMatch(topLevelTest, planetArrakis),
-				namespaceNonVerboseMatch(topLevelTest, nsAtreides),
+				clusterMatch(topLevelTest, planetArrakis),
+				namespaceMatch(topLevelTest, nsAtreides),
 			),
 		},
 		{
 			description:    "Generated query filter for two namespaces in the same cluster is the conjunction of the cluster and the disjunction of the namespaces",
 			scopeGenerator: effectiveaccessscope.TestTreeOneClusterTwoNamespacesIncluded,
 			expected: search.ConjunctionQuery(
-				clusterNonVerboseMatch(topLevelTest, planetArrakis),
+				clusterMatch(topLevelTest, planetArrakis),
 				search.DisjunctionQuery(
-					namespaceNonVerboseMatch(topLevelTest, nsAtreides),
-					namespaceNonVerboseMatch(topLevelTest, nsHarkonnen),
+					namespaceMatch(topLevelTest, nsAtreides),
+					namespaceMatch(topLevelTest, nsHarkonnen),
 				),
 			),
 		},
@@ -176,11 +176,11 @@ func TestNonVerboseNamespaceScopeFilterGeneration(topLevelTest *testing.T) {
 			description:    "Generated query filter for multiple namespaces in the same cluster is the conjunction of the cluster and the disjunction of the namespaces",
 			scopeGenerator: effectiveaccessscope.TestTreeOneClusterMultipleNamespacesIncluded,
 			expected: search.ConjunctionQuery(
-				clusterNonVerboseMatch(topLevelTest, planetEarth),
+				clusterMatch(topLevelTest, planetEarth),
 				search.DisjunctionQuery(
-					namespaceNonVerboseMatch(topLevelTest, nsSkunkWorks),
-					namespaceNonVerboseMatch(topLevelTest, nsFraunhofer),
-					namespaceNonVerboseMatch(topLevelTest, nsCERN),
+					namespaceMatch(topLevelTest, nsSkunkWorks),
+					namespaceMatch(topLevelTest, nsFraunhofer),
+					namespaceMatch(topLevelTest, nsCERN),
 				),
 			),
 		},
@@ -189,12 +189,12 @@ func TestNonVerboseNamespaceScopeFilterGeneration(topLevelTest *testing.T) {
 			scopeGenerator: effectiveaccessscope.TestTreeTwoClusterNamespacePairsIncluded,
 			expected: search.DisjunctionQuery(
 				search.ConjunctionQuery(
-					clusterNonVerboseMatch(topLevelTest, planetEarth),
-					namespaceNonVerboseMatch(topLevelTest, nsSkunkWorks),
+					clusterMatch(topLevelTest, planetEarth),
+					namespaceMatch(topLevelTest, nsSkunkWorks),
 				),
 				search.ConjunctionQuery(
-					clusterNonVerboseMatch(topLevelTest, planetArrakis),
-					namespaceNonVerboseMatch(topLevelTest, nsSpacingGuild),
+					clusterMatch(topLevelTest, planetArrakis),
+					namespaceMatch(topLevelTest, nsSpacingGuild),
 				),
 			),
 		},
@@ -203,14 +203,14 @@ func TestNonVerboseNamespaceScopeFilterGeneration(topLevelTest *testing.T) {
 			scopeGenerator: effectiveaccessscope.TestTreeClusterNamespaceMixIncluded,
 			expected: search.DisjunctionQuery(
 				search.ConjunctionQuery(
-					clusterNonVerboseMatch(topLevelTest, planetArrakis),
-					namespaceNonVerboseMatch(topLevelTest, nsSpacingGuild),
+					clusterMatch(topLevelTest, planetArrakis),
+					namespaceMatch(topLevelTest, nsSpacingGuild),
 				),
 				search.ConjunctionQuery(
-					clusterNonVerboseMatch(topLevelTest, planetEarth),
+					clusterMatch(topLevelTest, planetEarth),
 					search.DisjunctionQuery(
-						namespaceNonVerboseMatch(topLevelTest, nsSkunkWorks),
-						namespaceNonVerboseMatch(topLevelTest, nsJPL)),
+						namespaceMatch(topLevelTest, nsSkunkWorks),
+						namespaceMatch(topLevelTest, nsJPL)),
 				),
 			),
 		},
@@ -218,13 +218,13 @@ func TestNonVerboseNamespaceScopeFilterGeneration(topLevelTest *testing.T) {
 			description:    "Generated query filter for a full and a partial cluster is the disjunction of the full cluster match and the partial cluster tree",
 			scopeGenerator: effectiveaccessscope.TestTreeClusterNamespaceFullClusterMixIncluded,
 			expected: search.DisjunctionQuery(
-				clusterNonVerboseMatch(topLevelTest, planetArrakis),
+				clusterMatch(topLevelTest, planetArrakis),
 				search.ConjunctionQuery(
-					clusterNonVerboseMatch(topLevelTest, planetEarth),
+					clusterMatch(topLevelTest, planetEarth),
 					search.DisjunctionQuery(
-						namespaceNonVerboseMatch(topLevelTest, nsSkunkWorks),
-						namespaceNonVerboseMatch(topLevelTest, nsFraunhofer),
-						namespaceNonVerboseMatch(topLevelTest, nsCERN),
+						namespaceMatch(topLevelTest, nsSkunkWorks),
+						namespaceMatch(topLevelTest, nsFraunhofer),
+						namespaceMatch(topLevelTest, nsCERN),
 					),
 				),
 			),
@@ -233,10 +233,10 @@ func TestNonVerboseNamespaceScopeFilterGeneration(topLevelTest *testing.T) {
 			description:    "Generated query filter for a minimal scope tree matches exactly the tree structure",
 			scopeGenerator: effectiveaccessscope.TestTreeMinimalPartialTree,
 			expected: search.ConjunctionQuery(
-				clusterNonVerboseMatch(topLevelTest, planetArrakis),
+				clusterMatch(topLevelTest, planetArrakis),
 				search.DisjunctionQuery(
-					namespaceNonVerboseMatch(topLevelTest, nsAtreides),
-					namespaceNonVerboseMatch(topLevelTest, nsHarkonnen),
+					namespaceMatch(topLevelTest, nsAtreides),
+					namespaceMatch(topLevelTest, nsHarkonnen),
 				),
 			),
 		},
@@ -244,8 +244,8 @@ func TestNonVerboseNamespaceScopeFilterGeneration(topLevelTest *testing.T) {
 			description:    "Generated query filter for two fully included cluster tree is the disjunction of the cluster ID matches",
 			scopeGenerator: effectiveaccessscope.TestTreeTwoClustersFullyIncluded,
 			expected: search.DisjunctionQuery(
-				clusterNonVerboseMatch(topLevelTest, planetArrakis),
-				clusterNonVerboseMatch(topLevelTest, planetEarth),
+				clusterMatch(topLevelTest, planetArrakis),
+				clusterMatch(topLevelTest, planetEarth),
 			),
 		},
 	}
@@ -253,7 +253,7 @@ func TestNonVerboseNamespaceScopeFilterGeneration(topLevelTest *testing.T) {
 	for _, tc := range testCases {
 		topLevelTest.Run(tc.description, func(t *testing.T) {
 			eas := tc.scopeGenerator(t)
-			filter, err := BuildNonVerboseClusterNamespaceLevelSACQueryFilter(eas)
+			filter, err := BuildClusterNamespaceLevelSACQueryFilter(eas)
 			assert.True(t, tc.hasError == (err != nil))
 			correctFilter := isSameQuery(tc.expected, filter)
 			assert.Truef(t, correctFilter, "mismatch between queries")
