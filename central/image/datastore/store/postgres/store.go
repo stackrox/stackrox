@@ -1320,7 +1320,7 @@ func (s *storeImpl) retryableGetManyImageMetadata(ctx context.Context, ids []str
 	if err != nil {
 		return nil, nil, err
 	}
-	sacQueryFilter, err := sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err := sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
 	if err != nil {
 		return nil, nil, err
 	}

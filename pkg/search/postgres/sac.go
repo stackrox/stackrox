@@ -109,13 +109,13 @@ func getSACQuery(ctx context.Context, targetResource permissions.ResourceMetadat
 		if err != nil {
 			return nil, err
 		}
-		return sac.BuildNonVerboseClusterLevelSACQueryFilter(scopeTree)
+		return sac.BuildClusterLevelSACQueryFilter(scopeTree)
 	case permissions.NamespaceScope:
 		scopeTree, err := scopeChecker.EffectiveAccessScope(action(targetResource))
 		if err != nil {
 			return nil, err
 		}
-		return sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+		return sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
 	}
 	return nil, fmt.Errorf("could not prepare SAC Query for %s", targetResource)
 }

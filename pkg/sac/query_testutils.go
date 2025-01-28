@@ -9,12 +9,12 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func clusterNonVerboseMatch(_ *testing.T, clusterID string) *v1.Query {
+func clusterMatch(_ *testing.T, clusterID string) *v1.Query {
 	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID)
 	return query.ProtoQuery()
 }
 
-func namespaceNonVerboseMatch(_ *testing.T, namespace string) *v1.Query {
+func namespaceMatch(_ *testing.T, namespace string) *v1.Query {
 	query := search.NewQueryBuilder().AddExactMatches(search.Namespace, namespace)
 	return query.ProtoQuery()
 }
