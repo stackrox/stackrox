@@ -20,19 +20,12 @@ export type SlackIntegration = {
     type: 'slack';
 } & NotifierIntegrationBase;
 
-const validWebhookRegex =
-    /^((https?):\/\/)?([a-zA-Z0-9\-.]\.)?[a-zA-Z0-9\-.]{1,}\.[a-zA-Z]{2,}(\.[a-zA-Z]{2,})?(\/services)(\/[a-zA-Z0-9-]+)+$/;
-
 export const validationSchema = yup.object().shape({
     name: yup.string().trim().required('Name is required'),
     labelDefault: yup
         .string()
         .trim()
-        .required('Slack webhook is required')
-        .matches(
-            validWebhookRegex,
-            'Must be a valid Slack webhook URL, like https://hooks.slack.com/services/EXAMPLE'
-        ),
+        .required('Webhook is required, like https://hooks.slack.com/services/EXAMPLE'),
     labelKey: yup.string().trim(),
 });
 
@@ -101,7 +94,7 @@ function SlackIntegrationForm({
                         fieldId="labelDefault"
                         touched={touched}
                         errors={errors}
-                        helperText="https://hooks.slack.com/services/EXAMPLE"
+                        helperText="For example, https://hooks.slack.com/services/EXAMPLE"
                     >
                         <TextInput
                             isRequired

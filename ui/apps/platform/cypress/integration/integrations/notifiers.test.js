@@ -539,24 +539,16 @@ describe('Notifier Integrations', () => {
             getInputByLabel('Annotation key for Slack webhook').click().blur();
 
             getHelperElementByLabel('Integration name').contains('Name is required');
-            getHelperElementByLabel('Default Slack webhook').contains('Slack webhook is required');
-            cy.get(selectors.buttons.test).should('be.disabled');
-            cy.get(selectors.buttons.save).should('be.disabled');
-
-            // Step 2, check fields for invalid formats
-            getInputByLabel('Integration name').clear().type(integrationName);
-            getInputByLabel('Default Slack webhook')
-                .clear()
-                .type('https://hooks.slack.com/services/')
-                .blur();
-
             getHelperElementByLabel('Default Slack webhook').contains(
-                'Must be a valid Slack webhook URL, like https://hooks.slack.com/services/EXAMPLE'
+                'Webhook is required, like https://hooks.slack.com/services/EXAMPLE'
             );
             cy.get(selectors.buttons.test).should('be.disabled');
             cy.get(selectors.buttons.save).should('be.disabled');
 
+            // Step 2, no invalid formats to check
+
             // Step 3, check valid form and save
+            getInputByLabel('Integration name').clear().type(integrationName);
             getInputByLabel('Annotation key for Slack webhook').clear().type('slack');
             getInputByLabel('Default Slack webhook')
                 .clear()
