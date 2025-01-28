@@ -56,9 +56,9 @@ var (
 	layerDigest   = fmt.Sprintf("sha256:%s", strings.Repeat("a", 64))
 	ccLayerDigest = claircore.MustParseDigest(layerDigest)
 
-	clientOnce sync.Once
-	client     *http.Client
-	clientErr  error
+	clientOnce       sync.Once
+	defaultClient    *http.Client
+	defaultClientErr error
 )
 
 func init() {
@@ -72,14 +72,14 @@ func init() {
 	zlog.Set(&l)
 }
 
-func defaultClient() (*http.Client, error) {
+func getDefaultClient() (*http.Client, error) {
 	clientOnce.Do(func() {
 		clientCert, err := mtls.LeafCertificateFromFile()
 		if err != nil {
-			clientErr = errors.Wrap(err, "obtaining client certificate")
+			defaultClientErr = errors.Wrap(err, "obtaining defaultClient certificate")
 			return
 		}
-		client = &http.Client{
+		defaultClient = &http.Client{
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{
 					// TODO: Should this always be set to true...?
@@ -91,7 +91,7 @@ func defaultClient() (*http.Client, error) {
 			Timeout: 30 * time.Second,
 		}
 	})
-	return client, clientErr
+	return defaultClient, defaultClientErr
 }
 
 // NodeIndexerConfig represents Scanner V4 node indexer configuration parameters.
@@ -184,7 +184,7 @@ func runRepositoryScanner(ctx context.Context, cfg NodeIndexerConfig, l *clairco
 	client := cfg.Client
 	if client == nil {
 		var err error
-		client, err = defaultClient()
+		client, err = getDefaultClient()
 		if err != nil {
 			return nil, errors.Wrap(err, "creating repository scanner http client - check TLS config")
 		}
