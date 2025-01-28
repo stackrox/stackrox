@@ -92,7 +92,7 @@ func (resolver *Resolver) ImageVulnerability(ctx context.Context, args IDQuery) 
 // ImageVulnerabilities resolves a set of image vulnerabilities for the input query
 func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilities")
-
+	log.Infof("SHREWS -- ImageVulnerabilities -- query %v", q)
 	// check permissions
 	if err := readImages(ctx); err != nil {
 		return nil, err
@@ -129,7 +129,7 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 // ImageVulnerabilityCount returns count of image vulnerabilities for the input query
 func (resolver *Resolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilityCount")
-
+	log.Infof("SHREWS -- ImageVulnerabilityCount -- query %v", args)
 	// check permissions
 	if err := readImages(ctx); err != nil {
 		return 0, err
@@ -278,6 +278,7 @@ func (resolver *imageCVEResolver) imageVulnerabilityScopeContext(ctx context.Con
 }
 
 func (resolver *imageCVEResolver) getImageCVEQuery() *v1.Query {
+	log.Info("SHREWS -- getImageCVEQuery")
 	return search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.data.GetId()).ProtoQuery()
 }
 
