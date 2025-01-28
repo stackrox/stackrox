@@ -4,6 +4,7 @@ package v1;
 
 import "api/v1/empty.proto";
 import weak "google/api/annotations.proto";
+import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 import "storage/user.proto";
 
@@ -65,6 +66,8 @@ message InitBundleGenRequest {
 message CRSGenRequest {
   string name = 1;
   uint64 max_registrations = 2;
+  google.protobuf.Timestamp valid_until = 3;
+  google.protobuf.Duration valid_for = 4;
 }
 
 message InitBundleRevokeRequest {
