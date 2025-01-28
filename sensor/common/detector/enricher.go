@@ -312,9 +312,13 @@ func (e *enricher) runScan(req *scanImageRequest) imageChanResult {
 	}
 	value := e.imageCache.GetOrSet(key, newValue).(*cacheValue)
 	if forceEnrichImageWithSignatures || newValue == value {
-		metrics.AddScanAndSetCall()
+		reason := "forced"
+		if newValue == value {
+			reason = "new_value"
+		}
+		metrics.AddScanAndSetCall(reason)
 		value.scanAndSet(concurrency.AsContext(&e.stopSig), e.imageSvc, req)
-		metrics.RemoveScanAndSetCall()
+		metrics.RemoveScanAndSetCall(reason)
 	}
 	return imageChanResult{
 		image:        value.WaitAndGet(),

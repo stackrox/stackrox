@@ -141,7 +141,7 @@ var (
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "scan_and_set_call",
 		Help:      "A counter that tracks the operations in scan and set",
-	}, []string{"Operation"})
+	}, []string{"Operation", "Reason"})
 )
 
 func AddBlockingScanCall(path string) {
@@ -165,15 +165,17 @@ func SetScanCallDuration(start time.Time, imageName string) {
 	}).Observe(float64(durMilli))
 }
 
-func AddScanAndSetCall() {
+func AddScanAndSetCall(reason string) {
 	scanAndSetCall.With(prometheus.Labels{
 		"Operation": metrics.Add.String(),
+		"Reason":    reason,
 	}).Inc()
 }
 
-func RemoveScanAndSetCall() {
+func RemoveScanAndSetCall(reason string) {
 	scanAndSetCall.With(prometheus.Labels{
 		"Operation": metrics.Remove.String(),
+		"Reason":    reason,
 	}).Inc()
 }
 
