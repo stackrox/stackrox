@@ -1,25 +1,21 @@
 import React, { useCallback } from 'react';
-import { Toolbar, ToolbarContent, ToolbarItem, Pagination } from '@patternfly/react-core';
-import { InnerScrollContainer, Table, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
+import { Flex, Pagination, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
+import { InnerScrollContainer, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import useMetadata from 'hooks/useMetadata';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
-import { getExternalNetworkFlowsMetadata } from 'services/NetworkService';
+import { getExternalIpsFlowsMetadata } from 'services/NetworkService';
 import { getTableUIState } from 'utils/getTableUIState';
 import { getVersionedDocs } from 'utils/versioning';
-import { ExternalNetworkFlowsMetadata } from 'types/networkFlow.proto';
+import { ExternalNetworkFlowsMetadataResponse } from 'types/networkFlow.proto';
 
 import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 
 export type ExternalIpsTableProps = {
     scopeHierarchy: NetworkScopeHierarchy;
-};
-
-type ExternalNetworkFlowsMetadataResponse = {
-    data: ExternalNetworkFlowsMetadata[];
 };
 
 function ExternalIpsTable({ scopeHierarchy }: ExternalIpsTableProps) {
@@ -28,25 +24,25 @@ function ExternalIpsTable({ scopeHierarchy }: ExternalIpsTableProps) {
     const { page, perPage, setPage, setPerPage } = pagination;
     const clusterId = scopeHierarchy.cluster.id;
     const { namespaces, deployments } = scopeHierarchy;
-    const fetchExternalNetworkFlowsMetadata =
+    const fetchExternalIpsFlowsMetadata =
         useCallback((): Promise<ExternalNetworkFlowsMetadataResponse> => {
-            return getExternalNetworkFlowsMetadata(clusterId, namespaces, deployments, {
+            return getExternalIpsFlowsMetadata(clusterId, namespaces, deployments, {
                 sortOption: {},
                 page,
                 perPage,
-                searchFilter: {},
+                tableFilters: {},
             });
         }, [page, perPage, clusterId, deployments, namespaces]);
 
     const {
-        data: externalNetworkFlowsMetadata,
+        data: externalIpsFlowsMetadata,
         isLoading,
         error,
-    } = useRestQuery(fetchExternalNetworkFlowsMetadata);
+    } = useRestQuery(fetchExternalIpsFlowsMetadata);
 
     const tableState = getTableUIState({
         isLoading,
-        data: externalNetworkFlowsMetadata?.data,
+        data: externalIpsFlowsMetadata?.entities,
         error,
         searchFilter: {},
     });
@@ -57,14 +53,7 @@ function ExternalIpsTable({ scopeHierarchy }: ExternalIpsTableProps) {
                 <ToolbarContent>
                     <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
                         <Pagination
-                            toggleTemplate={({ firstIndex, lastIndex }) => (
-                                <span>
-                                    <b>
-                                        {firstIndex} - {lastIndex}
-                                    </b>{' '}
-                                    of <b>many</b>
-                                </span>
-                            )}
+                            itemCount={externalIpsFlowsMetadata?.totalEntities ?? 0}
                             page={page}
                             perPage={perPage}
                             onSetPage={(_, newPage) => setPage(newPage)}
@@ -75,7 +64,7 @@ function ExternalIpsTable({ scopeHierarchy }: ExternalIpsTableProps) {
                 </ToolbarContent>
             </Toolbar>
             <InnerScrollContainer>
-                <Table>
+                <Table variant="compact">
                     <Thead>
                         <Tr>
                             <Th>Entity</Th>
@@ -91,18 +80,20 @@ function ExternalIpsTable({ scopeHierarchy }: ExternalIpsTableProps) {
                         emptyProps={{
                             message: 'No external ips found. This feature might not be enabled.',
                             children: (
-                                <ExternalLink>
-                                    <a
-                                        href={getVersionedDocs(
-                                            version,
-                                            'operating/visualizing-external-entities'
-                                        )}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                    >
-                                        Enabling external ip collection
-                                    </a>
-                                </ExternalLink>
+                                <Flex alignSelf={{ default: 'alignSelfCenter' }}>
+                                    <ExternalLink>
+                                        <a
+                                            href={getVersionedDocs(
+                                                version,
+                                                'operating/visualizing-external-entities'
+                                            )}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            Enabling external ip collection
+                                        </a>
+                                    </ExternalLink>
+                                </Flex>
                             ),
                         }}
                         renderer={({ data }) => (

@@ -459,23 +459,28 @@ export function applyNetworkPolicyModification(clusterId, modification) {
 
 /**
  * Fetches external IPs metadata.
+ * default=false && discovered=true: shows only external-IPs detected by the Collectors.
  *
  * @returns {Promise<Object, Error>}
  */
-export function getExternalNetworkFlowsMetadata(
+export function getExternalIpsFlowsMetadata(
     clusterId,
     namespaces,
     deployments,
-    { sortOption, page, perPage, searchFilter }
+    { sortOption, page, perPage, tableFilters }
 ) {
-    const allFilters = {
-        Namespace: namespaces.length > 0 ? `Namespace:${namespaces.join(',')}` : '',
-        Deployment: deployments.length > 0 ? `Deployment:${deployments.join(',')}` : '',
+    const combinedFilters = {
+        ...(namespaces.length && {
+            Namespace: namespaces.map(convertToExactMatch).join(','),
+        }),
+        ...(deployments.length && {
+            Deployment: deployments.map(convertToExactMatch).join(','),
+        }),
         'Default External Source': false,
         'Discovered External Source': true,
-        ...searchFilter,
+        ...tableFilters,
     };
-    const params = getListQueryParams({ searchFilter: allFilters, sortOption, page, perPage });
+    const params = getListQueryParams({ searchFilter: combinedFilters, sortOption, page, perPage });
     return axios
         .get(`${networkFlowBaseUrl}/cluster/${clusterId}/externalentities/metadata?${params}`)
         .then((response) => response.data);
