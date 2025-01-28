@@ -31,7 +31,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.17.54
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.38.7
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.74.1
-	github.com/aws/aws-sdk-go-v2/service/securityhub v1.55.5
+	github.com/aws/aws-sdk-go-v2/service/securityhub v1.55.6
 	github.com/aws/aws-sdk-go-v2/service/sts v1.33.10
 	github.com/aws/smithy-go v1.22.2
 	github.com/cenkalti/backoff/v3 v3.2.2
