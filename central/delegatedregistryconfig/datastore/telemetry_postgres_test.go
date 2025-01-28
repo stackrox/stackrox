@@ -26,11 +26,13 @@ func TestGather(t *testing.T) {
 	)
 
 	testCases := map[string]struct {
-		enabledFor storage.DelegatedRegistryConfig_EnabledFor
-		registries []*storage.DelegatedRegistryConfig_DelegatedRegistry
+		enabledFor       storage.DelegatedRegistryConfig_EnabledFor
+		defaultClusterID string
+		registries       []*storage.DelegatedRegistryConfig_DelegatedRegistry
 	}{
 		"enabled for all": {
-			enabledFor: storage.DelegatedRegistryConfig_ALL,
+			enabledFor:       storage.DelegatedRegistryConfig_ALL,
+			defaultClusterID: "my-cluster",
 			registries: []*storage.DelegatedRegistryConfig_DelegatedRegistry{
 				{Path: "quay.io/rhacs-eng/qa"},
 			},
@@ -40,7 +42,8 @@ func TestGather(t *testing.T) {
 			registries: []*storage.DelegatedRegistryConfig_DelegatedRegistry{},
 		},
 		"enabled for specific": {
-			enabledFor: storage.DelegatedRegistryConfig_SPECIFIC,
+			enabledFor:       storage.DelegatedRegistryConfig_SPECIFIC,
+			defaultClusterID: "my-cluster",
 			registries: []*storage.DelegatedRegistryConfig_DelegatedRegistry{
 				{Path: "quay.io/rhacs-eng/qa"},
 				{Path: "quay.io/rhacs-eng/main"},
@@ -63,8 +66,9 @@ func TestGather(t *testing.T) {
 			require.NoError(t, err)
 
 			expectedProps := map[string]any{
-				"Delegated Scanning Config Enabled For": tc.enabledFor.String(),
-				"Total Delegated Scanning Config Registries":  len(tc.registries),
+				"Delegated Scanning Config Enabled For":                  tc.enabledFor.String(),
+				"Delegated Scanning Config Default Cluster ID Populated": tc.defaultClusterID != "",
+				"Total Delegated Scanning Config Registries":             len(tc.registries),
 			}
 			assert.Equal(t, expectedProps, props)
 		})
