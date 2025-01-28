@@ -48,7 +48,7 @@ spec:
       terminationGracePeriodSeconds: 120
       initContainers:
       {{- if ._rox._securedClusterCertRefresh }}
-      - {{ include "srox.tlsCertsInitContainer" (list .  ._rox.scannerV4.db._resources) | indent 8 | trim }}
+      - {{ include "srox.tlsCertsInitContainer" (list .) | indent 8 | trim }}
       {{- end }}
       - name: init-db
         image: {{ ._rox.scannerV4.db.image.fullRef | quote }}

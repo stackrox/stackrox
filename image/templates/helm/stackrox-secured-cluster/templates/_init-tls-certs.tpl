@@ -1,12 +1,11 @@
 {{/*
-    srox.tlsCertsInitContainer $ $initContainerResources
+    srox.tlsCertsInitContainer $
 
     This template produces the specification of the init container to be used
     for initializing the proper TLS certificates for the respective service.
    */}}
 {{- define "srox.tlsCertsInitContainer" }}
 {{- $ := index . 0 -}}
-{{- $initContainerResources := index . 1 -}}
 name: init-tls-certs
 image: {{ quote $._rox.image.main.fullRef }}
 command:

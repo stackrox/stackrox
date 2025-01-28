@@ -47,7 +47,7 @@ spec:
       serviceAccountName: collector
       initContainers:
       {{- if ._rox._securedClusterCertRefresh }}
-      - {{ include "srox.tlsCertsInitContainer" (list .  ._rox.collector._resources) | indent 8 | trim }}
+      - {{ include "srox.tlsCertsInitContainer" (list .) | indent 8 | trim }}
       {{- end }}
       containers:
       {{- if ne ._rox.collector.collectionMethod "NO_COLLECTION"}}

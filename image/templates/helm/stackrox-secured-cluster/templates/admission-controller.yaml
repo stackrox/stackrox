@@ -55,7 +55,7 @@ spec:
       serviceAccountName: admission-control
       initContainers:
       {{- if ._rox._securedClusterCertRefresh }}
-      - {{ include "srox.tlsCertsInitContainer" (list .  ._rox.admissionControl._resources) | indent 8 | trim }}
+      - {{ include "srox.tlsCertsInitContainer" (list .) | indent 8 | trim }}
       {{- end }}
       containers:
         - image: {{ quote ._rox.image.main.fullRef }}

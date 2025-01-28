@@ -146,7 +146,7 @@ spec:
         {{- include "srox.injectedCABundleVolumeMount" . | nindent 8 }}
       {{- end }}
       {{- if ._rox._securedClusterCertRefresh }}
-      - {{ include "srox.tlsCertsInitContainer" (list .  ._rox.sensor._resources) | indent 8 | trim }}
+      - {{ include "srox.tlsCertsInitContainer" (list .) | indent 8 | trim }}
       {{- end }}
       containers:
       - image: {{ quote ._rox.image.main.fullRef }}
