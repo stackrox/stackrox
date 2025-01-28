@@ -7,6 +7,7 @@ type issueOptions struct {
 	signerProfile string
 	// set this value to specify a custom start time for the certificate's validity (default is time.Now() - 5 minutes)
 	notBefore time.Time
+	expiresAt time.Time
 }
 
 func (o *issueOptions) apply(opts []IssueCertOption) {
@@ -44,5 +45,27 @@ func WithValidityExpiringInDays() IssueCertOption {
 func WithValidityNotBefore(notBefore time.Time) IssueCertOption {
 	return func(o *issueOptions) {
 		o.notBefore = notBefore
+	}
+}
+
+// WithCrsProfile ...
+func WithCrsProfile() IssueCertOption {
+	return func(o *issueOptions) {
+		o.signerProfile = crsProfile
+		o.expiresAt = time.Now().Add(crsProfileDefaultValidityPeriod)
+	}
+}
+
+// WithCustomValidityPeriod requests certificates with a custom validity period.
+func WithCustomValidityPeriod(validFor time.Duration) IssueCertOption {
+	return func(o *issueOptions) {
+		o.expiresAt = time.Now().Add(validFor)
+	}
+}
+
+// WithCustomValidityPeriodUntil requests certificates with a custom validity period.
+func WithCustomValidityPeriodUntil(validUntil time.Time) IssueCertOption {
+	return func(o *issueOptions) {
+		o.expiresAt = validUntil
 	}
 }
