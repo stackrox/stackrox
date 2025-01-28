@@ -621,9 +621,7 @@ func startGRPCServer() {
 			if cfg := centralclient.Enable(); cfg.Enabled() {
 				centralclient.RegisterCentralClient(&config, basicAuthProvider.ID())
 				if url := env.TelemetryConfigURL.Setting(); url != "" && url != "hardcoded" {
-					ticker := time.NewTicker(1 * time.Hour)
-					defer ticker.Stop()
-					go centralclient.PeriodicReload(ticker.C)
+					go centralclient.PeriodicReload(time.NewTicker(1 * time.Hour).C)
 				}
 				gs := cfg.Gatherer()
 				gs.AddGatherer(authDS.Gather)
