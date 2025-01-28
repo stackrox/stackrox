@@ -9,6 +9,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ## [NEXT RELEASE]
 
+**HELM USERS**: Please see the ROX-27622 under "technical changes" to avoid upgrade failures!
+
 ### Added Features
 
 - ROX-25625: RHCOS Node Scanning with Scanner V4 can now detect vulnerabilities for the containerized image of the RHCOS itself.
@@ -28,6 +30,16 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Technical Changes
 
 - Scanner V4 now uses [Red Hat's VEX files](https://security.access.redhat.com/data/csaf/v2/vex/) instead of the [CVE map](https://security.access.redhat.com/data/metrics/cvemap.xml) for vulnerability data related to non-RPM content inside of official Red Hat images.
+- ROX-27622: Move `SecurityPolicy` CRD to template directory in Helm chart. **All Helm users will need to take action!**
+  No action is needed for users that use the operator or `roxctl` to install StackRox.
+  This change makes the CRD simpler to maintain for users because it will now be automatically upgraded.
+  To avoid installation failure, Helm users need to apply the following changes to the CRD prior to upgrade:
+
+      kubectl annotate crd/securitypolicies.config.stackrox.io meta.helm.sh/release-name=stackrox-central-services
+      kubectl annotate crd/securitypolicies.config.stackrox.io meta.helm.sh/release-namespace=stackrox
+      kubectl label crd/securitypolicies.config.stackrox.io app.kubernetes.io/managed-by=Helm
+
+  The value of the annotations will need to be updated if you've updated the release name (i.e. "stackrox-central-services") or namespace (i.e. "stackrox").
 
 ## [4.6.0]
 
