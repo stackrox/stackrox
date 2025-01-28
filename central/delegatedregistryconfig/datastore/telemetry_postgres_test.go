@@ -26,9 +26,10 @@ func TestGather(t *testing.T) {
 	)
 
 	testCases := map[string]struct {
-		enabledFor       storage.DelegatedRegistryConfig_EnabledFor
-		defaultClusterID string
-		registries       []*storage.DelegatedRegistryConfig_DelegatedRegistry
+		enabledFor              storage.DelegatedRegistryConfig_EnabledFor
+		defaultClusterID        string
+		registries              []*storage.DelegatedRegistryConfig_DelegatedRegistry
+		registriesWithClusterID int
 	}{
 		"enabled for all": {
 			enabledFor:       storage.DelegatedRegistryConfig_ALL,
@@ -45,9 +46,10 @@ func TestGather(t *testing.T) {
 			enabledFor:       storage.DelegatedRegistryConfig_SPECIFIC,
 			defaultClusterID: "my-cluster",
 			registries: []*storage.DelegatedRegistryConfig_DelegatedRegistry{
-				{Path: "quay.io/rhacs-eng/qa"},
+				{Path: "quay.io/rhacs-eng/qa", ClusterId: "my-cluster"},
 				{Path: "quay.io/rhacs-eng/main"},
 			},
+			registriesWithClusterID: 1,
 		},
 	}
 
@@ -55,8 +57,9 @@ func TestGather(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			err := ds.UpsertConfig(ctx,
 				&storage.DelegatedRegistryConfig{
-					EnabledFor: tc.enabledFor,
-					Registries: tc.registries,
+					EnabledFor:       tc.enabledFor,
+					DefaultClusterId: tc.defaultClusterID,
+					Registries:       tc.registries,
 				},
 			)
 			require.NoError(t, err)
@@ -66,9 +69,10 @@ func TestGather(t *testing.T) {
 			require.NoError(t, err)
 
 			expectedProps := map[string]any{
-				"Delegated Scanning Config Enabled For":                  tc.enabledFor.String(),
-				"Delegated Scanning Config Default Cluster ID Populated": tc.defaultClusterID != "",
-				"Total Delegated Scanning Config Registries":             len(tc.registries),
+				"Delegated Scanning Config Enabled For":                           tc.enabledFor.String(),
+				"Delegated Scanning Config Default Cluster ID Populated":          tc.defaultClusterID != "",
+				"Total Delegated Scanning Config Registries":                      len(tc.registries),
+				"Total Delegated Scanning Config Registries Cluster ID Populated": tc.registriesWithClusterID,
 			}
 			assert.Equal(t, expectedProps, props)
 		})
