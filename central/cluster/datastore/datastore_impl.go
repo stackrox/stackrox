@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 	"fmt"
-	"sort"
 	"strings"
 	"time"
 
@@ -46,6 +45,7 @@ import (
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/simplecache"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -881,7 +881,7 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 			Name:               clusterName,
 			InitBundleId:       registrantID,
 			MostRecentSensorId: hello.GetDeploymentIdentification().CloneVT(),
-			SensorCapabilities: sortedSensorCapabilities(hello),
+			SensorCapabilities: sliceutils.CopySliceSorted(hello.GetCapabilities()),
 		}
 		clusterConfig := helmConfig.GetClusterConfig()
 		configureFromHelmConfig(cluster, clusterConfig)
@@ -941,7 +941,7 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 	cluster = cluster.CloneVT()
 	cluster.ManagedBy = manager
 	cluster.InitBundleId = registrantID
-	cluster.SensorCapabilities = sortedSensorCapabilities(hello)
+	cluster.SensorCapabilities = sliceutils.CopySliceSorted(hello.GetCapabilities())
 	if securedClusterIsNotManagedManually(helmConfig) {
 		configureFromHelmConfig(cluster, clusterConfig)
 		cluster.HelmConfig = clusterConfig.CloneVT()
@@ -962,13 +962,6 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 func securedClusterIsNotManagedManually(helmManagedConfig *central.HelmManagedConfigInit) bool {
 	return helmManagedConfig.GetManagedBy() != storage.ManagerType_MANAGER_TYPE_UNKNOWN &&
 		helmManagedConfig.GetManagedBy() != storage.ManagerType_MANAGER_TYPE_MANUAL
-}
-
-func sortedSensorCapabilities(sensorHello *central.SensorHello) []string {
-	sorted := make([]string, len(sensorHello.GetCapabilities()))
-	copy(sorted, sensorHello.GetCapabilities())
-	sort.Strings(sorted)
-	return sorted
 }
 
 func sensorCapabilitiesEqual(cluster *storage.Cluster, hello *central.SensorHello) bool {
