@@ -167,7 +167,7 @@ func fillNormalizedVersions(_ context.Context, pck []*claircore.Package) []*clai
 	for _, pkg := range pck {
 		rhctagVersion, err := rhctag.Parse(pkg.Version)
 		if err != nil {
-			log.Errorf("Failed to parse rhctag version: %v", err)
+			log.Errorf("Failed to parse rhctag version from %q: %v", pkg.Version, err)
 			filtered = append(filtered, pkg)
 			continue
 		}
