@@ -9,16 +9,20 @@ class CollectorUtil {
     static final String RUNTIME_CONFIG_MAP_NAME = "collector-config"
     static final String RUNTIME_CONFIG_MAP_KEY = "runtime_config.yaml"
 
-    static final String ENABLED_KEY = "ENABLED"
-    static final String DISABLED_KEY = "DISABLED"
+    static final String ENABLED_VALUE = "ENABLED"
+    static final String DISABLED_VALUE = "DISABLED"
 
 
     static enableExternalIps(OrchestratorMain orchestrator) {
-        setExternalIps(orchestrator, ENABLED_KEY)
+        setExternalIps(orchestrator, ENABLED_VALUE)
     }
 
     static disableExternalIps(OrchestratorMain orchestrator) {
-        setExternalIps(orchestrator, DISABLED_KEY)
+        setExternalIps(orchestrator, DISABLED_VALUE)
+    }
+
+    static deleteRuntimeConfig(OrchestratorMain orchestrator) {
+        orchestrator.deleteConfigMap(RUNTIME_CONFIG_MAP_NAME, "stackrox")
     }
 
     static private setExternalIps(OrchestratorMain orchestrator, String state) {
