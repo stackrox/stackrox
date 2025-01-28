@@ -58,10 +58,14 @@ message VulnerabilityReportFilters {
   }
   bool include_nvd_cvss = 7;
 <<<<<<< HEAD
+<<<<<<< HEAD
   bool include_epss_probability = 8;
 =======
   bool includeEpssProbability= 8;
 >>>>>>> c11c7903f6 (Added proto changes for vuln report)
+=======
+  bool include_epss_probability = 8;
+>>>>>>> 4d365e3fc1 (Return pointer for epss score)
 }
 
 message ReportSchedule {

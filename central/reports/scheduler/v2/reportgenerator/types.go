@@ -129,8 +129,8 @@ func (res *ImageCVEQueryResponse) GetNVDCVSS() float64 {
 	return *res.NVDCVSS
 }
 
-func (res *ImageCVEQueryResponse) GetEPSSProbability() float64 {
-	return *res.EPSSProbability
+func (res *ImageCVEQueryResponse) GetEPSSProbability() *float64 {
+	return res.EPSSProbability
 }
 
 func (res *ImageCVEQueryResponse) GetDiscoveredAtImage() string {

@@ -149,7 +149,7 @@ func (rg *reportGeneratorImpl) ProcessReportRequest(req *ReportRequest) {
 func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error {
 	// Get the results of running the report query
 	reportData, err := rg.getReportDataSQF(req.ReportSnapshot, req.Collection, req.DataStartTime)
-	if err != nil
+	if err != nil {
 		return err
 	}
 

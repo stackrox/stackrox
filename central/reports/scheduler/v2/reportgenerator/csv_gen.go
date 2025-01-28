@@ -99,6 +99,11 @@ func addOptionalColumnstoRow(optionalColumns *storage.VulnerabilityReportFilters
 		csvWriter.AppendToValue(row, strconv.FormatFloat(resp.GetNVDCVSS(), 'f', 2, 64))
 	}
 	if optionalColumns.GetIncludeEpssProbability() {
-		csvWriter.AppendToValue(row, strconv.FormatFloat(resp.GetEPSSPrbability()*100, 'f', 3, 64))
+		epssScore := resp.GetEPSSProbability()
+		if epssScore != nil {
+			csvWriter.AppendToValue(row, strconv.FormatFloat(*resp.GetEPSSProbability()*100, 'f', 3, 64))
+		} else {
+			csvWriter.AppendToValue(row, "Not Available")
+		}
 	}
 }
