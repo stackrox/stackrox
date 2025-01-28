@@ -121,7 +121,7 @@ type AdmissionControlComponentSpec struct {
 	// Set this to 'true' to enable preventive policy enforcement for object creations.
 	//+kubebuilder:default=true
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
-	ListenOnCreates *bool `json:"listenOnCreates,omitempty"`
+	ListenOnCreates *string `json:"listenOnCreates,omitempty"`
 
 	// Set this to 'true' to enable preventive policy enforcement for object updates.
 	//

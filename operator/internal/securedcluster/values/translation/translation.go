@@ -261,7 +261,7 @@ func (t Translator) getAdmissionControlValues(admissionControl *platform.Admissi
 	acv := translation.NewValuesBuilder()
 
 	acv.AddChild(translation.ResourcesKey, translation.GetResources(admissionControl.Resources))
-	acv.SetBool("listenOnCreates", admissionControl.ListenOnCreates)
+	acv.SetString("listenOnCreates", admissionControl.ListenOnCreates)
 	acv.SetBool("listenOnUpdates", admissionControl.ListenOnUpdates)
 	acv.SetBool("listenOnEvents", admissionControl.ListenOnEvents)
 	dynamic := translation.NewValuesBuilder()
