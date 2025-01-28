@@ -548,6 +548,7 @@ describe('Notifier Integrations', () => {
             // Step 2, no invalid formats to check
 
             // Step 3, check valid form and save
+            getInputByLabel('Integration name').clear().type(integrationName);
             getInputByLabel('Annotation key for Slack webhook').clear().type('slack');
             getInputByLabel('Default Slack webhook')
                 .clear()
