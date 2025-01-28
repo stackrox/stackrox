@@ -792,10 +792,10 @@ func TestDeleteQueries(t *testing.T) {
 					search.NewQuerySelect(search.ImageName),
 				).
 				AddExactMatches(search.ImageName, "stackrox").ProtoQuery(),
-			expectedQuery: "delete " +
-				"from deployments inner join deployments_containers " +
-				"on deployments.Id = deployments_containers.deployments_Id " +
-				"where deployments_containers.Image_Name_FullName = $1",
+			expectedQuery: normalizeStatement(`delete
+				from deployments inner join deployments_containers
+				on deployments.Id = deployments_containers.deployments_Id
+				where deployments_containers.Image_Name_FullName = $1`),
 		},
 		{
 			desc: "base schema and child schema; delete",
@@ -804,8 +804,8 @@ func TestDeleteQueries(t *testing.T) {
 					search.NewQuerySelect(search.DeploymentName),
 					search.NewQuerySelect(search.ImageName),
 				).ProtoQuery(),
-			expectedQuery: "delete " +
-				"from deployments inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id",
+			expectedQuery: normalizeStatement(`delete
+				from deployments inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id`),
 		},
 		{
 			desc: "base schema and child schema conjunction query; delete w/ where",
@@ -816,10 +816,10 @@ func TestDeleteQueries(t *testing.T) {
 				).
 				AddExactMatches(search.ImageName, "stackrox").
 				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
-			expectedQuery: "delete " +
-				"from deployments inner join deployments_containers " +
-				"on deployments.Id = deployments_containers.deployments_Id " +
-				"where (deployments.Name = $1 and deployments_containers.Image_Name_FullName = $2)",
+			expectedQuery: normalizeStatement(`delete
+				from deployments inner join deployments_containers
+				on deployments.Id = deployments_containers.deployments_Id
+				where (deployments.Name = $1 and deployments_containers.Image_Name_FullName = $2)`),
 		},
 		{
 			desc: "derived field delete",
@@ -837,10 +837,10 @@ func TestDeleteQueries(t *testing.T) {
 				).
 				AddExactMatches(search.ImageName, "stackrox").
 				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
-			expectedQuery: "delete " +
-				"from deployments inner join deployments_containers " +
-				"on deployments.Id = deployments_containers.deployments_Id " +
-				"where (deployments.Name = $1 and deployments_containers.Image_Name_FullName = $2)",
+			expectedQuery: normalizeStatement(`delete
+				from deployments inner join deployments_containers
+				on deployments.Id = deployments_containers.deployments_Id
+				where (deployments.Name = $1 and deployments_containers.Image_Name_FullName = $2)`),
 		},
 		{
 			desc:          "nil query",
@@ -869,8 +869,8 @@ func TestDeleteQueries(t *testing.T) {
 			q: search.NewQueryBuilder().
 				AddSelectFields(search.NewQuerySelect(search.DeploymentName)).
 				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
-			expectedQuery: "delete from deployments " +
-				"where deployments.Name = $1",
+			expectedQuery: normalizeStatement(`delete from deployments
+				where deployments.Name = $1`),
 		},
 		{
 			desc: "base schema; delete w/ multiple scopes",
@@ -885,8 +885,8 @@ func TestDeleteQueries(t *testing.T) {
 			q: search.NewQueryBuilder().
 				AddSelectFields(search.NewQuerySelect(search.DeploymentName)).
 				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
-			expectedQuery: "delete from deployments " +
-				"where deployments.Name = $1",
+			expectedQuery: normalizeStatement(`delete from deployments
+				where deployments.Name = $1`),
 		},
 	} {
 		t.Run(c.desc, func(t *testing.T) {
@@ -924,23 +924,23 @@ func TestDeleteReturningIDsQueries(t *testing.T) {
 			desc: "base schema; delete 1",
 			q: search.NewQueryBuilder().
 				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
-			expectedQuery: "delete from deployments where deployments.Name = $1 " +
-				"returning deployments.Id::text as Deployment_ID",
+			expectedQuery: normalizeStatement(`delete from deployments where deployments.Name = $1
+				returning deployments.Id::text as Deployment_ID`),
 		},
 		{
 			desc: "base schema; delete",
 			q: search.NewQueryBuilder().
 				AddSelectFields(search.NewQuerySelect(search.DeploymentName)).ProtoQuery(),
-			expectedQuery: "delete from deployments " +
-				"returning deployments.Id::text as Deployment_ID",
+			expectedQuery: normalizeStatement(`delete from deployments
+				returning deployments.Id::text as Deployment_ID`),
 		},
 		{
 			desc: "base schema; delete w/ where",
 			q: search.NewQueryBuilder().
 				AddSelectFields(search.NewQuerySelect(search.DeploymentName)).
 				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
-			expectedQuery: "delete from deployments where deployments.Name = $1 " +
-				"returning deployments.Id::text as Deployment_ID",
+			expectedQuery: normalizeStatement(`delete from deployments where deployments.Name = $1
+				returning deployments.Id::text as Deployment_ID`),
 		},
 		{
 			desc: "child schema; multiple delete w/ where",
@@ -950,11 +950,11 @@ func TestDeleteReturningIDsQueries(t *testing.T) {
 					search.NewQuerySelect(search.ImageName),
 				).
 				AddExactMatches(search.ImageName, "stackrox").ProtoQuery(),
-			expectedQuery: "delete " +
-				"from deployments inner join deployments_containers " +
-				"on deployments.Id = deployments_containers.deployments_Id " +
-				"where deployments_containers.Image_Name_FullName = $1 " +
-				"returning distinct(deployments.Id::text) as Deployment_ID",
+			expectedQuery: normalizeStatement(`delete
+				from deployments inner join deployments_containers
+				on deployments.Id = deployments_containers.deployments_Id
+				where deployments_containers.Image_Name_FullName = $1
+				returning distinct(deployments.Id::text) as Deployment_ID`),
 		},
 		{
 			desc: "base schema and child schema; delete",
@@ -963,9 +963,9 @@ func TestDeleteReturningIDsQueries(t *testing.T) {
 					search.NewQuerySelect(search.DeploymentName),
 					search.NewQuerySelect(search.ImageName),
 				).ProtoQuery(),
-			expectedQuery: "delete " +
-				"from deployments inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id " +
-				"returning distinct(deployments.Id::text) as Deployment_ID",
+			expectedQuery: normalizeStatement(`delete
+				from deployments inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id
+				returning distinct(deployments.Id::text) as Deployment_ID`),
 		},
 		{
 			desc: "base schema and child schema conjunction query; delete w/ where",
@@ -976,11 +976,11 @@ func TestDeleteReturningIDsQueries(t *testing.T) {
 				).
 				AddExactMatches(search.ImageName, "stackrox").
 				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
-			expectedQuery: "delete " +
-				"from deployments inner join deployments_containers " +
-				"on deployments.Id = deployments_containers.deployments_Id " +
-				"where (deployments.Name = $1 and deployments_containers.Image_Name_FullName = $2) " +
-				"returning distinct(deployments.Id::text) as Deployment_ID",
+			expectedQuery: normalizeStatement(`delete
+				from deployments inner join deployments_containers
+				on deployments.Id = deployments_containers.deployments_Id
+				where (deployments.Name = $1 and deployments_containers.Image_Name_FullName = $2)
+				returning distinct(deployments.Id::text) as Deployment_ID`),
 		},
 		{
 			desc: "derived field delete",
@@ -988,8 +988,8 @@ func TestDeleteReturningIDsQueries(t *testing.T) {
 				AddSelectFields(
 					search.NewQuerySelect(search.DeploymentName).AggrFunc(aggregatefunc.Count).Distinct(),
 				).ProtoQuery(),
-			expectedQuery: "delete from deployments " +
-				"returning deployments.Id::text as Deployment_ID",
+			expectedQuery: normalizeStatement(`delete from deployments
+				returning deployments.Id::text as Deployment_ID`),
 		},
 		{
 			desc: "derived field delete w/ where",
@@ -999,16 +999,16 @@ func TestDeleteReturningIDsQueries(t *testing.T) {
 				).
 				AddExactMatches(search.ImageName, "stackrox").
 				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
-			expectedQuery: "delete " +
-				"from deployments inner join deployments_containers " +
-				"on deployments.Id = deployments_containers.deployments_Id " +
-				"where (deployments.Name = $1 and deployments_containers.Image_Name_FullName = $2) " +
-				"returning distinct(deployments.Id::text) as Deployment_ID",
+			expectedQuery: normalizeStatement(`delete
+				from deployments inner join deployments_containers
+				on deployments.Id = deployments_containers.deployments_Id
+				where (deployments.Name = $1 and deployments_containers.Image_Name_FullName = $2)
+				returning distinct(deployments.Id::text) as Deployment_ID`),
 		},
 		{
 			desc: "nil query",
-			expectedQuery: "delete from deployments " +
-				"returning deployments.Id::text as Deployment_ID",
+			expectedQuery: normalizeStatement(`delete from deployments
+				returning deployments.Id::text as Deployment_ID`),
 		},
 		{
 			desc: "base schema; delete w/ conjunction",
@@ -1022,8 +1022,8 @@ func TestDeleteReturningIDsQueries(t *testing.T) {
 				q.Selects = []*v1.QuerySelect{search.NewQuerySelect(search.DeploymentName).Proto()}
 				return q
 			}(),
-			expectedQuery: "delete from deployments where (deployments.Name = $1 and deployments.Namespace = $2) " +
-				"returning deployments.Id::text as Deployment_ID",
+			expectedQuery: normalizeStatement(`delete from deployments where (deployments.Name = $1 and deployments.Namespace = $2)
+				returning deployments.Id::text as Deployment_ID`),
 		},
 		{
 			desc: "base schema; delete w/ where; image scope",
@@ -1034,9 +1034,9 @@ func TestDeleteReturningIDsQueries(t *testing.T) {
 			q: search.NewQueryBuilder().
 				AddSelectFields(search.NewQuerySelect(search.DeploymentName)).
 				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
-			expectedQuery: "delete from deployments " +
-				"where deployments.Name = $1 " +
-				"returning deployments.Id::text as Deployment_ID",
+			expectedQuery: normalizeStatement(`delete from deployments
+				where deployments.Name = $1
+				returning deployments.Id::text as Deployment_ID`),
 		},
 		{
 			desc: "base schema; delete w/ multiple scopes",
@@ -1051,9 +1051,9 @@ func TestDeleteReturningIDsQueries(t *testing.T) {
 			q: search.NewQueryBuilder().
 				AddSelectFields(search.NewQuerySelect(search.DeploymentName)).
 				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
-			expectedQuery: "delete from deployments " +
-				"where deployments.Name = $1 " +
-				"returning deployments.Id::text as Deployment_ID",
+			expectedQuery: normalizeStatement(`delete from deployments
+				where deployments.Name = $1
+				returning deployments.Id::text as Deployment_ID`),
 		},
 	} {
 		t.Run(c.desc, func(t *testing.T) {
