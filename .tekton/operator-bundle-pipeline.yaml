@@ -771,7 +771,8 @@ spec:
       - name: name
         value: create-snapshot
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:a2477a53bfb4159cb6fa0d15acd736153e1844a193b6c91f8f2a6672d90e3d12
+        # TODO(ROX-27767): use latest
+        value: quay.io/rhacs-eng/konflux-tasks:pr-31@sha256:e6b69135dff3edfac5b08bc866bd1dc4b485b7455307e31c9a41145192a077a6
       - name: kind
         value: task
       resolver: bundles
