@@ -18,11 +18,10 @@ func init() {
 
 func main() {
 	np := &node.EnvNodeNameProvider{}
-	cfg := index.NewNodeIndexerConfigFromEnv()
 
 	scanner := inventory.NewNodeInventoryComponentScanner(np)
 	scanner.Connect(env.NodeScanningEndpoint.Setting())
-	cachedNodeIndexer := index.NewCachingNodeIndexer(cfg, env.NodeIndexCacheDuration.DurationSetting(), env.NodeIndexCachePath.Setting())
+	cachedNodeIndexer := index.NewCachingNodeIndexer(index.DefaultNodeIndexerConfig, env.NodeIndexCacheDuration.DurationSetting(), env.NodeIndexCachePath.Setting())
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

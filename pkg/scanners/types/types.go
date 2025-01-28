@@ -66,8 +66,9 @@ type ImageVulnerabilityGetter interface {
 type NodeScanner interface {
 	NodeScanSemaphore
 	Name() string
-	GetNodeInventoryScan(node *storage.Node, inv *storage.NodeInventory, ir *v4.IndexReport) (*storage.NodeScan, error)
 	GetNodeScan(node *storage.Node) (*storage.NodeScan, error)
+	GetNodeIndexReportScan(node *storage.Node, ir *v4.IndexReport) (*storage.NodeScan, error)
+	GetNodeInventoryScan(node *storage.Node, inv *storage.NodeInventory) (*storage.NodeScan, error)
 	TestNodeScanner() error
 	Type() string
 }

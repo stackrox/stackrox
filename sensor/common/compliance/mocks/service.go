@@ -107,18 +107,18 @@ func (mr *MockServiceMockRecorder) Communicate(arg0 any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Communicate", reflect.TypeOf((*MockService)(nil).Communicate), arg0)
 }
 
-// IndexReportWraps mocks base method.
-func (m *MockService) IndexReportWraps() <-chan *index.IndexReportWrap {
+// IndexReports mocks base method.
+func (m *MockService) IndexReports() <-chan *index.IndexReport {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IndexReportWraps")
-	ret0, _ := ret[0].(<-chan *index.IndexReportWrap)
+	ret := m.ctrl.Call(m, "IndexReports")
+	ret0, _ := ret[0].(<-chan *index.IndexReport)
 	return ret0
 }
 
-// IndexReportWraps indicates an expected call of IndexReportWraps.
-func (mr *MockServiceMockRecorder) IndexReportWraps() *gomock.Call {
+// IndexReports indicates an expected call of IndexReports.
+func (mr *MockServiceMockRecorder) IndexReports() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndexReportWraps", reflect.TypeOf((*MockService)(nil).IndexReportWraps))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndexReports", reflect.TypeOf((*MockService)(nil).IndexReports))
 }
 
 // NodeInventories mocks base method.

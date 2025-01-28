@@ -34,7 +34,7 @@ const (
 
 type nodeInventoryHandlerImpl struct {
 	inventories  <-chan *storage.NodeInventory
-	reportWraps  <-chan *index.IndexReportWrap
+	indexReports <-chan *index.IndexReport
 	toCentral    <-chan *message.ExpiringMessage
 	centralReady concurrency.Signal
 	// acksFromCentral is for connecting the replies from Central with the toCompliance chan
@@ -161,7 +161,7 @@ func (c *nodeInventoryHandlerImpl) run() (toCentral <-chan *message.ExpiringMess
 					return
 				}
 				c.handleNodeInventory(inventory, ch2Central)
-			case wrap, ok := <-c.reportWraps:
+			case wrap, ok := <-c.indexReports:
 				if !ok {
 					c.stopper.Flow().StopWithError(errIndexInputChanClosed)
 					return
@@ -207,7 +207,7 @@ func (c *nodeInventoryHandlerImpl) handleNodeInventory(
 }
 
 func (c *nodeInventoryHandlerImpl) handleNodeIndex(
-	index *index.IndexReportWrap,
+	index *index.IndexReport,
 	toCentral chan *message.ExpiringMessage,
 ) {
 	if index == nil || index.IndexReport == nil {
@@ -290,7 +290,7 @@ func (c *nodeInventoryHandlerImpl) sendNodeInventory(toC chan<- *message.Expirin
 	}
 }
 
-func (c *nodeInventoryHandlerImpl) sendNodeIndex(toC chan<- *message.ExpiringMessage, indexWrap *index.IndexReportWrap) {
+func (c *nodeInventoryHandlerImpl) sendNodeIndex(toC chan<- *message.ExpiringMessage, indexWrap *index.IndexReport) {
 	if indexWrap == nil || indexWrap.IndexReport == nil {
 		log.Debugf("Empty IndexReport - not sending to Central")
 		return
