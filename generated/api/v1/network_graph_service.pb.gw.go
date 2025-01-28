@@ -205,7 +205,7 @@ var filter_NetworkGraphService_GetExternalNetworkFlowsMetadata_0 = &utilities.Do
 
 func request_NetworkGraphService_GetExternalNetworkFlowsMetadata_0(ctx context.Context, marshaler runtime.Marshaler, client NetworkGraphServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq GetExternalNetworkFlowsRequest
+		protoReq GetExternalNetworkFlowsMetadataRequest
 		metadata runtime.ServerMetadata
 		err      error
 	)
@@ -229,7 +229,7 @@ func request_NetworkGraphService_GetExternalNetworkFlowsMetadata_0(ctx context.C
 
 func local_request_NetworkGraphService_GetExternalNetworkFlowsMetadata_0(ctx context.Context, marshaler runtime.Marshaler, server NetworkGraphServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq GetExternalNetworkFlowsRequest
+		protoReq GetExternalNetworkFlowsMetadataRequest
 		metadata runtime.ServerMetadata
 		err      error
 	)

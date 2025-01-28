@@ -375,18 +375,18 @@ func (s *networkGraphServiceSuite) TestGetExternalNetworkFlowsMetadata() {
 
 	for _, tc := range []struct {
 		name     string
-		request  *v1.GetExternalNetworkFlowsRequest
+		request  *v1.GetExternalNetworkFlowsMetadataRequest
 		expected *v1.GetExternalNetworkFlowsMetadataResponse
 		pass     bool
 	}{
 		{
 			name: "All entities",
-			request: &v1.GetExternalNetworkFlowsRequest{
+			request: &v1.GetExternalNetworkFlowsMetadataRequest{
 				ClusterId: testCluster,
 				Query:     fmt.Sprintf("Namespace:%s", testNamespace),
 			},
 			expected: &v1.GetExternalNetworkFlowsMetadataResponse{
-				Data: []*v1.ExternalNetworkFlowMetadata{
+				Entities: []*v1.ExternalNetworkFlowMetadata{
 					{
 						Entity:     entity.GetInfo(),
 						FlowsCount: 1,
@@ -400,17 +400,18 @@ func (s *networkGraphServiceSuite) TestGetExternalNetworkFlowsMetadata() {
 						FlowsCount: 2,
 					},
 				},
+				TotalEntities: 3,
 			},
 			pass: true,
 		},
 		{
 			name: "Filter CIDR with wide subnet",
-			request: &v1.GetExternalNetworkFlowsRequest{
+			request: &v1.GetExternalNetworkFlowsMetadataRequest{
 				ClusterId: testCluster,
 				Query:     fmt.Sprintf("Namespace:%s+External Source Address:10.0.0.0/8", testNamespace),
 			},
 			expected: &v1.GetExternalNetworkFlowsMetadataResponse{
-				Data: []*v1.ExternalNetworkFlowMetadata{
+				Entities: []*v1.ExternalNetworkFlowMetadata{
 					{
 						Entity:     entity2.GetInfo(),
 						FlowsCount: 1,
@@ -420,44 +421,47 @@ func (s *networkGraphServiceSuite) TestGetExternalNetworkFlowsMetadata() {
 						FlowsCount: 2,
 					},
 				},
+				TotalEntities: 2,
 			},
 			pass: true,
 		},
 		{
 			name: "Filter CIDR with narrow subnet",
-			request: &v1.GetExternalNetworkFlowsRequest{
+			request: &v1.GetExternalNetworkFlowsMetadataRequest{
 				ClusterId: testCluster,
 				Query:     fmt.Sprintf("Namespace:%s+External Source Address:10.0.0.0/24", testNamespace),
 			},
 			expected: &v1.GetExternalNetworkFlowsMetadataResponse{
-				Data: []*v1.ExternalNetworkFlowMetadata{
+				Entities: []*v1.ExternalNetworkFlowMetadata{
 					{
 						Entity:     entity2.GetInfo(),
 						FlowsCount: 1,
 					},
 				},
+				TotalEntities: 1,
 			},
 			pass: true,
 		},
 		{
 			name: "Get metadata from different namespace",
-			request: &v1.GetExternalNetworkFlowsRequest{
+			request: &v1.GetExternalNetworkFlowsMetadataRequest{
 				ClusterId: testCluster,
 				Query:     fmt.Sprintf("Namespace:%s", fixtureconsts.Namespace2),
 			},
 			expected: &v1.GetExternalNetworkFlowsMetadataResponse{
-				Data: []*v1.ExternalNetworkFlowMetadata{
+				Entities: []*v1.ExternalNetworkFlowMetadata{
 					{
 						Entity:     entity3.GetInfo(),
 						FlowsCount: 1,
 					},
 				},
+				TotalEntities: 1,
 			},
 			pass: true,
 		},
 		{
 			name: "Invalid cluster",
-			request: &v1.GetExternalNetworkFlowsRequest{
+			request: &v1.GetExternalNetworkFlowsMetadataRequest{
 				ClusterId: "invalid cluster",
 				Query:     fmt.Sprintf("Namespace:%s", testNamespace),
 			},
@@ -466,18 +470,19 @@ func (s *networkGraphServiceSuite) TestGetExternalNetworkFlowsMetadata() {
 		},
 		{
 			name: "Invalid namespace",
-			request: &v1.GetExternalNetworkFlowsRequest{
+			request: &v1.GetExternalNetworkFlowsMetadataRequest{
 				ClusterId: testCluster,
 				Query:     fmt.Sprintf("Namespace:invalidNamespace"),
 			},
 			expected: &v1.GetExternalNetworkFlowsMetadataResponse{
-				Data: []*v1.ExternalNetworkFlowMetadata{},
+				Entities:      []*v1.ExternalNetworkFlowMetadata{},
+				TotalEntities: 0,
 			},
 			pass: true,
 		},
 		{
 			name: "Paginate the response",
-			request: &v1.GetExternalNetworkFlowsRequest{
+			request: &v1.GetExternalNetworkFlowsMetadataRequest{
 				ClusterId: testCluster,
 				Query:     fmt.Sprintf("Namespace:%s", testNamespace),
 				Pagination: &v1.Pagination{
@@ -486,12 +491,13 @@ func (s *networkGraphServiceSuite) TestGetExternalNetworkFlowsMetadata() {
 				},
 			},
 			expected: &v1.GetExternalNetworkFlowsMetadataResponse{
-				Data: []*v1.ExternalNetworkFlowMetadata{
+				Entities: []*v1.ExternalNetworkFlowMetadata{
 					{
 						Entity:     entity.GetInfo(),
 						FlowsCount: 1,
 					},
 				},
+				TotalEntities: 3,
 			},
 			pass: true,
 		},
@@ -504,9 +510,11 @@ func (s *networkGraphServiceSuite) TestGetExternalNetworkFlowsMetadata() {
 				if tc.request.Pagination != nil {
 					// if paginated response, just verify length, since the
 					// elements themselves are not deterministic
-					s.Assert().Len(response.Data, len(tc.expected.Data))
+					s.Assert().Len(response.Entities, len(tc.expected.Entities))
+					s.Assert().Equal(response.TotalEntities, tc.expected.TotalEntities)
 				} else {
-					protoassert.ElementsMatch(s.T(), tc.expected.Data, response.Data)
+					protoassert.ElementsMatch(s.T(), tc.expected.Entities, response.Entities)
+					s.Assert().Equal(response.TotalEntities, tc.expected.TotalEntities)
 				}
 			} else {
 				s.Error(err)
