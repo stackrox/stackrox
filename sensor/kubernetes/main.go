@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"os/signal"
+	"runtime"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/clientconn"
@@ -35,6 +36,8 @@ func main() {
 	devmode.StartOnDevBuilds("bin/kubernetes-sensor")
 
 	log.Infof("Running StackRox Version: %s", version.GetMainVersion())
+	runtime.SetMutexProfileFraction(5)
+	runtime.SetBlockProfileRate(5)
 
 	features.LogFeatureFlags()
 	// Start the prometheus metrics server
