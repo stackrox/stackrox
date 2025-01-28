@@ -145,7 +145,11 @@ func Test_reloadConfig(t *testing.T) {
 		assert.True(t, enabled)
 		require.True(t, config.Enabled())
 
-		go PeriodicReload(tickChan)
+		go func() {
+			for range tickChan {
+				_ = Reload()
+			}
+		}()
 		tickChan <- time.Now()
 		assert.EventuallyWithT(t, func(collect *assert.CollectT) {
 			startMux.Lock()

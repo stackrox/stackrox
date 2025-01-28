@@ -3,7 +3,6 @@ package centralclient
 import (
 	"context"
 	"encoding/json"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/env"
@@ -79,12 +78,4 @@ func Reload() error {
 		Disable()
 	}
 	return nil
-}
-
-// PeriodicReload reloads the telemetry configuration from a configured URL on
-// ticker.
-func PeriodicReload(ticks <-chan time.Time) {
-	for range ticks {
-		_ = Reload()
-	}
 }
