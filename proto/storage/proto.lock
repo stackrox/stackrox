@@ -14140,6 +14140,11 @@
                 "id": 9,
                 "name": "include_nvd_cvss",
                 "type": "bool"
+              },
+              {
+                "id": 10,
+                "name": "include_epss_probability",
+                "type": "bool"
               }
             ]
           },
