@@ -122,6 +122,8 @@ func (c *cacheValue) scanWithRetries(ctx context.Context, svc v1.ImageServiceCli
 
 	eb.Reset()
 
+	timeNow := time.Now()
+	defer metrics.SetScanCallDuration(timeNow)
 outer:
 	for {
 		// We want to get the time spent in backoff without including the time it took to scan the image.
@@ -303,7 +305,9 @@ func (e *enricher) runScan(req *scanImageRequest) imageChanResult {
 	}
 	value := e.imageCache.GetOrSet(key, newValue).(*cacheValue)
 	if forceEnrichImageWithSignatures || newValue == value {
+		metrics.AddScanAndSetCall()
 		value.scanAndSet(concurrency.AsContext(&e.stopSig), e.imageSvc, req)
+		metrics.RemoveScanAndSetCall()
 	}
 	return imageChanResult{
 		image:        value.WaitAndGet(),

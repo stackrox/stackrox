@@ -120,7 +120,60 @@ var (
 		Name:      "detector_network_flows_dropped_total",
 		Help:      "A counter of the total number of network flows that were dropped if the detector buffer was full",
 	})
+
+	detectorBlockScanCalls = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "block_scan_calls",
+		Help:      "A counter that tracks the operations in blocking scan calls",
+	}, []string{"Operation", "Path"})
+
+	scanCallDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "scan_call_duration",
+		Help:      "Time taken to call scan in milliseconds",
+		Buckets:   prometheus.ExponentialBuckets(4, 2, 8),
+	}, []string{})
+
+	scanAndSetCall = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "scan_and_set_call",
+		Help:      "A counter that tracks the operations in scan and set",
+	}, []string{"Operation"})
 )
+
+func AddBlockingScanCall(path string) {
+	detectorBlockScanCalls.With(prometheus.Labels{
+		"Operation": metrics.Add.String(),
+		"Path":      path,
+	}).Inc()
+}
+func RemoveBlockingScanCall() {
+	detectorBlockScanCalls.With(prometheus.Labels{
+		"Operation": metrics.Remove.String(),
+		"Path":      "",
+	}).Inc()
+}
+
+func SetScanCallDuration(duration time.Time) {
+	now := time.Now().UnixNano()
+	diff := now - duration.UnixNano()
+	scanCallDuration.With(prometheus.Labels{}).Observe(float64(diff / int64(time.Millisecond)))
+}
+
+func AddScanAndSetCall() {
+	scanAndSetCall.With(prometheus.Labels{
+		"Operation": metrics.Add.String(),
+	}).Inc()
+}
+
+func RemoveScanAndSetCall() {
+	scanAndSetCall.With(prometheus.Labels{
+		"Operation": metrics.Remove.String(),
+	}).Inc()
+}
 
 // ObserveTimeSpentInExponentialBackoff observes the metric.
 func ObserveTimeSpentInExponentialBackoff(t time.Duration) {
@@ -166,5 +219,9 @@ func init() {
 		DetectorNetworkFlowBufferSize,
 		DetectorProcessIndicatorBufferSize,
 		DetectorNetworkFlowDroppedCount,
-		DetectorProcessIndicatorDroppedCount)
+		DetectorProcessIndicatorDroppedCount,
+		detectorBlockScanCalls,
+		scanCallDuration,
+		scanAndSetCall,
+	)
 }
