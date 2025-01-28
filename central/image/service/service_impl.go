@@ -238,7 +238,17 @@ func (s *serviceImpl) saveImage(img *storage.Image) error {
 // ScanImageInternal handles an image request from Sensor and Admission Controller.
 func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
 	timeNow := time.Now()
-	defer metrics.SetInternalScanCallDuration(timeNow, request.GetImage().GetName().GetFullName())
+	defer func() {
+		if request.GetImage() == nil {
+			metrics.SetInternalScanCallDuration(timeNow, "empty image")
+			return
+		}
+		if request.GetImage().GetName() == nil {
+			metrics.SetInternalScanCallDuration(timeNow, "empty get name")
+			return
+		}
+		metrics.SetInternalScanCallDuration(timeNow, request.GetImage().GetName().GetFullName())
+	}()
 	err := s.acquireScanSemaphore()
 	if err != nil {
 		return nil, err

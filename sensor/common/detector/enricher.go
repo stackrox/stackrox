@@ -130,6 +130,11 @@ func (c *cacheValue) scanWithRetries(ctx context.Context, svc v1.ImageServiceCli
 			metrics.SetScanCallDuration(timeNow, "empty_request")
 			return
 		}
+		if req.containerImage.GetName() == nil {
+			log.Warn("the scan container image name is nil")
+			metrics.SetScanCallDuration(timeNow, "empty_request")
+			return
+		}
 		metrics.SetScanCallDuration(timeNow, req.containerImage.GetName().GetFullName())
 	}()
 outer:
