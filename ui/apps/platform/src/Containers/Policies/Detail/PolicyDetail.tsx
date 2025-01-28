@@ -1,5 +1,5 @@
 import React, { ReactElement, useState } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
     Alert,
     AlertActionCloseButton,
@@ -51,7 +51,7 @@ function PolicyDetail({
     hasWriteAccessForPolicy,
     policy,
 }: PolicyDetailProps): ReactElement {
-    const history = useHistory();
+    const navigate = useNavigate();
 
     const [isRequesting, setIsRequesting] = useState(false);
     const [requestError, setRequestError] = useState<ReactElement | null>(null);
@@ -72,17 +72,11 @@ function PolicyDetail({
     }
 
     function onEditPolicy() {
-        history.push({
-            pathname: `${policiesBasePath}/${id}`,
-            search: 'action=edit',
-        });
+        navigate(`${policiesBasePath}/${id}?action=edit`);
     }
 
     function onClonePolicy() {
-        history.push({
-            pathname: `${policiesBasePath}/${id}`,
-            search: 'action=clone',
-        });
+        navigate(`${policiesBasePath}/${id}?action=clone`);
     }
 
     function onExportPolicy() {
@@ -151,7 +145,7 @@ function PolicyDetail({
         deletePolicy(id)
             .then(() => {
                 // Route change causes policy table page to request policies.
-                history.goBack();
+                navigate(-1);
             })
             .catch((error) => {
                 setRequestError(

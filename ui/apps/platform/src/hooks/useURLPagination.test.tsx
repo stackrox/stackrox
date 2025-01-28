@@ -1,33 +1,9 @@
-import React, { ReactNode } from 'react';
-import { MemoryRouter, Route, RouteComponentProps } from 'react-router-dom';
+import React from 'react';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import { renderHook, act } from '@testing-library/react';
 
 import { URLSearchParams } from 'url';
 import useURLPagination from './useURLPagination';
-
-type WrapperProps = {
-    children: ReactNode;
-    onRouteRender: (renderResult: RouteComponentProps) => void;
-    initialEntries: string[];
-};
-
-function Wrapper({ children, onRouteRender, initialEntries = [] }: WrapperProps) {
-    return (
-        <MemoryRouter
-            initialEntries={initialEntries}
-            initialIndex={Math.max(0, initialEntries.length - 1)}
-        >
-            <Route path="*" render={onRouteRender} />
-            {children}
-        </MemoryRouter>
-    );
-}
-
-const createWrapper = (props) => {
-    return function CreatedWrapper({ children }) {
-        return <Wrapper {...props}>{children}</Wrapper>;
-    };
-};
 
 beforeAll(() => {
     jest.useFakeTimers();
@@ -44,15 +20,17 @@ test('should update pagination parameters in the URL', async () => {
     let params;
     let testLocation;
 
-    const { result } = renderHook(() => useURLPagination(10), {
-        wrapper: createWrapper({
-            children: [],
-            onRouteRender: ({ location }) => {
-                testLocation = location;
-            },
-            initialEntries: [''],
-        }),
-    });
+    const { result } = renderHook(
+        () => {
+            testLocation = useLocation();
+            return useURLPagination(10);
+        },
+        {
+            wrapper: ({ children }) => (
+                <MemoryRouter initialEntries={['']}>{children}</MemoryRouter>
+            ),
+        }
+    );
 
     // Check new and existing values before setter function is called
     params = new URLSearchParams(testLocation.search);
@@ -90,16 +68,18 @@ test('should not add history states when setting values with a "replace" action'
     let historyLength;
     let testLocation;
 
-    const { result } = renderHook(() => useURLPagination(10), {
-        wrapper: createWrapper({
-            children: [],
-            onRouteRender: ({ location, history }) => {
-                testLocation = location;
-                historyLength = history.length;
-            },
-            initialEntries: [''],
-        }),
-    });
+    const { result } = renderHook(
+        () => {
+            testLocation = useLocation();
+            historyLength = window.history.length;
+            return useURLPagination(10);
+        },
+        {
+            wrapper: ({ children }) => (
+                <MemoryRouter initialEntries={['']}>{children}</MemoryRouter>
+            ),
+        }
+    );
 
     // Check the length of the initial history stack
     params = new URLSearchParams(testLocation.search);
@@ -137,16 +117,18 @@ test('should only add a single history state when setting perPage without an act
     let historyLength;
     let testLocation;
 
-    const { result } = renderHook(() => useURLPagination(10), {
-        wrapper: createWrapper({
-            children: [],
-            onRouteRender: ({ location, history }) => {
-                testLocation = location;
-                historyLength = history.length;
-            },
-            initialEntries: [''],
-        }),
-    });
+    const { result } = renderHook(
+        () => {
+            testLocation = useLocation();
+            historyLength = window.history.length;
+            return useURLPagination(10);
+        },
+        {
+            wrapper: ({ children }) => (
+                <MemoryRouter initialEntries={['']}>{children}</MemoryRouter>
+            ),
+        }
+    );
 
     // Check the length of the initial history stack
     params = new URLSearchParams(testLocation.search);

@@ -10,12 +10,12 @@ import {
     GradientDefs,
 } from 'react-vis';
 import max from 'lodash/max';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import BarGradient from 'Components/visuals/BarGradient';
 
 const Lollipop = ({ data }) => {
-    const history = useHistory();
+    const navigate = useNavigate();
 
     function getGridLineValues() {
         const interval = data.length < 5 ? 1 : 5;
@@ -49,7 +49,7 @@ const Lollipop = ({ data }) => {
 
     function onValueClickHandler(datum) {
         if (datum.link) {
-            history.push(datum.link);
+            navigate(datum.link);
         }
     }
 

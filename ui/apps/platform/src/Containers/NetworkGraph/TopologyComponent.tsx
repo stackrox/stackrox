@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Popover } from '@patternfly/react-core';
 import {
     SELECTION_EVENT,
@@ -91,14 +91,15 @@ const TopologyComponent = ({
     const hasReadAccessForNetworkPolicy = hasReadAccess('NetworkPolicy');
 
     const firstRenderRef = useRef(true);
-    const history = useHistory();
+    const location = useLocation();
+    const navigate = useNavigate();
     const controller = useVisualizationController();
     const [defaultDeploymentTab, setDefaultDeploymentTab] = useState(deploymentTabs.DETAILS);
 
     const closeSidebar = useCallback(() => {
-        const queryString = clearSimulationQuery(history.location.search);
-        history.push(`${networkBasePath}${queryString}`);
-    }, [history]);
+        const queryString = clearSimulationQuery(location.search);
+        navigate(`${networkBasePath}${queryString}`);
+    }, [navigate, location.search]);
 
     function onNodeClick(ids: string[]) {
         const newSelectedId = ids?.[0] || '';
@@ -111,16 +112,16 @@ const TopologyComponent = ({
             setDefaultDeploymentTab(deploymentTabs.DETAILS);
             const { data, id } = newSelectedEntity;
             const [newDetailType, newDetailId] = getUrlParamsForEntity(data.type, id);
-            const queryString = clearSimulationQuery(history.location.search);
+            const queryString = clearSimulationQuery(location.search);
             // if found, and it's not the logical grouping of all external sources, then trigger URL update
             if (newDetailId !== 'EXTERNAL') {
                 const newURL = `${networkBasePath}/${newDetailType}/${encodeURIComponent(
                     newDetailId
                 )}${queryString}`;
-                history.push(newURL);
+                navigate(newURL);
             } else {
                 // otherwise, return to the graph-only state
-                history.push(`${networkBasePath}${queryString}`);
+                navigate(`${networkBasePath}${queryString}`);
             }
         }
     }
@@ -178,11 +179,11 @@ const TopologyComponent = ({
         controller.fromModel(model);
         if (selectedNode) {
             panNodeIntoView(selectedNode);
-        } else if (history.location.pathname !== networkBasePath && !selectedNode) {
+        } else if (location.pathname !== networkBasePath && !selectedNode) {
             // if the path does not reflect the selected node state, sync URL to state
             closeSidebar();
         }
-    }, [controller, model, selectedNode, history, closeSidebar, panNodeIntoView]);
+    }, [controller, location, model, selectedNode, closeSidebar, panNodeIntoView]);
 
     const selectedIds = selectedNode ? [selectedNode.id] : [];
 

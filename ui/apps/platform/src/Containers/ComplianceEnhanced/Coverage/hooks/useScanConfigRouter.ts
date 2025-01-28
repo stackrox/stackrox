@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 import { generatePathWithQuery } from 'utils/searchUtils';
 import { SearchFilter } from 'types/search';
@@ -8,7 +8,7 @@ import { ScanConfigurationsContext } from '../ScanConfigurationsProvider';
 
 const useScanConfigRouter = () => {
     const { selectedScanConfigName } = useContext(ScanConfigurationsContext);
-    const history = useHistory();
+    const navigate = useNavigate();
 
     function generatePathWithScanConfig(
         path,
@@ -34,7 +34,7 @@ const useScanConfigRouter = () => {
         searchFilter = {}
     ) {
         const generatedPath = generatePathWithScanConfig(path, pathParams, searchFilter);
-        history.push(generatedPath);
+        navigate(generatedPath);
     }
 
     return { navigateWithScanConfigQuery, generatePathWithScanConfig };

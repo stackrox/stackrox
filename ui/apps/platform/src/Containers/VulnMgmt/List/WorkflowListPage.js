@@ -1,7 +1,7 @@
 import React, { useContext, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useQuery } from '@apollo/client';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 import PageNotFound from 'Components/PageNotFound';
 import Loader from 'Components/Loader';
@@ -39,7 +39,7 @@ const WorkflowListPage = ({
     setSelection,
     renderRowActionButtons,
 }) => {
-    const history = useHistory();
+    const navigate = useNavigate();
     const workflowState = useContext(workflowStateContext);
     const [sortFields, setSortFields] = useState({});
     const { isFeatureFlagEnabled } = useFeatureFlags();
@@ -95,7 +95,7 @@ const WorkflowListPage = ({
         });
 
         const url = workflowState.setSort(workflowSort).setPage(0).toUrl();
-        history.push(url);
+        navigate(url);
     }
 
     return (

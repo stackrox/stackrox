@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useHistory, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
     PageSection,
     Title,
@@ -36,8 +36,8 @@ const wizardStepNames = [
 ];
 
 function CloneVulnReportPage() {
-    const history = useHistory();
-    const { reportId } = useParams();
+    const navigate = useNavigate();
+    const { reportId } = useParams() as { reportId: string };
 
     const { reportConfiguration, isLoading, error } = useFetchReport(reportId);
     const formik = useReportFormValues();
@@ -48,7 +48,7 @@ function CloneVulnReportPage() {
     } = useCreateReport({
         onCompleted: () => {
             formik.resetForm();
-            history.push(vulnerabilityReportsPath);
+            navigate(vulnerabilityReportsPath);
         },
     });
 
@@ -87,7 +87,7 @@ function CloneVulnReportPage() {
     }
 
     function onClose() {
-        history.push(vulnerabilityReportsPath);
+        navigate(vulnerabilityReportsPath);
     }
 
     const wizardSteps = [

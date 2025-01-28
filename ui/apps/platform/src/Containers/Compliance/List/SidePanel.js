@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { ExternalLinkAltIcon } from '@patternfly/react-icons';
-import { Link, useHistory, useLocation, useRouteMatch } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useMatch } from 'react-router-dom';
 
 import Query from 'Components/CacheFirstQuery';
 import CloseButton from 'Components/CloseButton';
@@ -10,6 +10,7 @@ import { resourceTypes, standardEntityTypes } from 'constants/entityTypes';
 // TODO: this exception will be unnecessary once Compliance pages are re-structured like Config Management
 /* eslint-disable import/no-cycle */
 import ControlPage from 'Containers/Compliance/Entity/Control';
+import { workflowPaths } from 'routePaths';
 import URLService from 'utils/URLService';
 import getEntityName from 'utils/getEntityName';
 import { entityNameQueryMap } from 'utils/queryMap';
@@ -22,9 +23,9 @@ import DeploymentPage from '../Entity/Deployment';
 const MAX_CONTROL_TITLE = 120;
 
 const ComplianceListSidePanel = ({ entityType, entityId }) => {
-    const history = useHistory();
+    const navigate = useNavigate();
     const location = useLocation();
-    const match = useRouteMatch();
+    const match = useMatch(workflowPaths.LIST);
 
     function getEntityPage() {
         switch (entityType) {
@@ -45,7 +46,7 @@ const ComplianceListSidePanel = ({ entityType, entityId }) => {
 
     function closeSidePanel() {
         const baseURL = URLService.getURL(match, location).clearSidePanelParams().url();
-        history.push(baseURL);
+        navigate(baseURL);
     }
     const headerUrl = URLService.getURL(match, location).base(entityType, entityId).url();
 

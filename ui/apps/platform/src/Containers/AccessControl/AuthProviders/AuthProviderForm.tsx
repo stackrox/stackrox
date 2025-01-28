@@ -1,6 +1,6 @@
 /* eslint-disable react/no-array-index-key */
 import React, { ReactElement } from 'react';
-import { useHistory, Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { useFormik, FormikProvider, FieldArray } from 'formik';
@@ -33,8 +33,14 @@ import { InfoCircleIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-ico
 import SelectSingle from 'Components/SelectSingle'; // TODO import from where?
 import { selectors } from 'reducers';
 import { actions as authActions } from 'reducers/auth';
+import { Role } from 'services/RolesService';
+import {
+    AuthProvider,
+    AuthProviderInfo,
+    getIsAuthProviderImmutable,
+    Group,
+} from 'services/AuthService';
 
-import { AuthProvider, getIsAuthProviderImmutable } from 'services/AuthService';
 import ConfigurationFormFields from './ConfigurationFormFields';
 import RuleGroups, { RuleGroupErrors } from './RuleGroups';
 import {
@@ -57,7 +63,14 @@ export type AuthProviderFormProps = {
     onClickEdit: () => void;
 };
 
-const authProviderState = createStructuredSelector({
+type AuthProviderState = {
+    roles: Role[];
+    groups: Group[];
+    saveAuthProviderStatus: { status: string; message: string } | null;
+    availableProviderTypes: AuthProviderInfo[];
+};
+
+const authProviderState = createStructuredSelector<AuthProviderState>({
     roles: selectors.getRoles,
     groups: selectors.getRuleGroups,
     saveAuthProviderStatus: selectors.getSaveAuthProviderStatus,
@@ -93,7 +106,7 @@ function AuthProviderForm({
     onClickCancel,
     onClickEdit,
 }: AuthProviderFormProps): ReactElement {
-    const history = useHistory();
+    const navigate = useNavigate();
     const { groups, roles, saveAuthProviderStatus, availableProviderTypes } =
         useSelector(authProviderState);
     const dispatch = useDispatch();
@@ -268,7 +281,7 @@ function AuthProviderForm({
         dispatch(authActions.setSaveAuthProviderStatus(null));
 
         // Go back from action=create to list.
-        history.goBack();
+        navigate(-1);
     }
     const isSaving = saveAuthProviderStatus?.status === 'saving';
 
