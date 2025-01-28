@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
@@ -16,6 +17,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var (
@@ -134,7 +136,17 @@ func (s *serviceImpl) GenerateCRS(ctx context.Context, request *v1.CRSGenRequest
 		return nil, status.Error(codes.Unimplemented, "support for generating Cluster Registration Secrets (CRS) is not enabled")
 	}
 
-	generated, err := s.backend.IssueCRS(ctx, request.GetName())
+	validUntil := fromProtoTimestamp(request.GetValidUntil())
+	validFor := request.GetValidFor().AsDuration()
+	if !validUntil.IsZero() && validFor != 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "cannot use validUntil and validFor at the same time")
+	}
+
+	if validFor != 0 {
+		validUntil = time.Now().Add(validFor)
+	}
+
+	generated, err := s.backend.IssueCRS(ctx, request.GetName(), validUntil)
 	if err != nil {
 		if errors.Is(err, store.ErrInitBundleDuplicateName) {
 			return nil, status.Errorf(codes.AlreadyExists, "generating new CRS: %s", err)
@@ -152,6 +164,16 @@ func (s *serviceImpl) GenerateCRS(ctx context.Context, request *v1.CRSGenRequest
 		Crs:  bundleK8sManifest,
 		Meta: meta,
 	}, nil
+}
+
+func fromProtoTimestamp(tsProto *timestamppb.Timestamp) time.Time {
+	ts := time.Time{}
+	if tsProto != nil {
+		// Must be careful here: If a proto timestamp is nil, calling  .AsTime() on it, will produce a
+		// time.Time value containing the 1970-01-01 epoch starting point.
+		ts = tsProto.AsTime()
+	}
+	return ts
 }
 
 func (s *serviceImpl) RevokeInitBundle(ctx context.Context, request *v1.InitBundleRevokeRequest) (*v1.InitBundleRevokeResponse, error) {
