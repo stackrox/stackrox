@@ -153,7 +153,12 @@ func (b *backendImpl) Issue(ctx context.Context, name string) (*InitBundleWithMe
 	}, nil
 }
 
-func (b *backendImpl) IssueCRS(ctx context.Context, name string, maxRegistrations uint64) (*CRSWithMeta, error) {
+func (b *backendImpl) IssueCRS(ctx context.Context,
+	name string,
+	maxRegistrations uint64,
+	validUntil time.Time,
+	validFor time.Duration,
+) (*CRSWithMeta, error) {
 	if err := access.CheckAccess(ctx, storage.Access_READ_WRITE_ACCESS); err != nil {
 		return nil, err
 	}
@@ -172,7 +177,7 @@ func (b *backendImpl) IssueCRS(ctx context.Context, name string, maxRegistration
 	}
 
 	user := extractUserIdentity(ctx)
-	cert, id, err := b.certProvider.GetCRSCert()
+	cert, id, err := b.certProvider.GetCRSCert(validUntil, validFor)
 	if err != nil {
 		return nil, errors.Wrap(err, "generating CRS certificates")
 	}
