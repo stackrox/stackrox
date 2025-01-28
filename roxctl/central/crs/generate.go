@@ -17,6 +17,8 @@ import (
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // generateCRS generates a new CRS using Central's API and writes the newly generated CRS into the
@@ -24,6 +26,7 @@ import (
 func generateCRS(cliEnvironment environment.Environment, name string,
 	outFilename string, timeout time.Duration, retryTimeout time.Duration,
 	maxRegistrations uint64,
+	validUntil string, validFor string,
 ) error {
 	var err error
 	var outFile *os.File
@@ -53,9 +56,28 @@ func generateCRS(cliEnvironment environment.Environment, name string,
 		}()
 	}
 
+	var validUntilTimestamp *timestamppb.Timestamp
+	var validForDuration *durationpb.Duration
+
+	if validUntil != "" {
+		validUntilTimestamp, err = parseValidUntil(validUntil)
+		if err != nil {
+			return errors.Wrap(err, "parsing valid-until timestamp")
+		}
+	}
+
+	if validFor != "" {
+		validForDuration, err = parseValidFor(validFor)
+		if err != nil {
+			return errors.Wrap(err, "parsing valid-for duration")
+		}
+	}
+
 	req := v1.CRSGenRequest{
 		Name:             name,
 		MaxRegistrations: maxRegistrations,
+		ValidUntil:       validUntilTimestamp,
+		ValidFor:         validForDuration,
 	}
 	resp, err := svc.GenerateCRS(ctx, &req)
 	if err != nil {
@@ -98,13 +120,37 @@ func generateCRS(cliEnvironment environment.Environment, name string,
 	return nil
 }
 
+func parseValidUntil(str string) (*timestamppb.Timestamp, error) {
+	if str == "" {
+		return nil, errors.New("empty timestamp string")
+	}
+	timestamp, err := time.Parse(time.RFC3339, str)
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing timestamp")
+	}
+	return timestamppb.New(timestamp), nil
+}
+
+func parseValidFor(str string) (*durationpb.Duration, error) {
+	if str == "" {
+		return nil, errors.New("empty duration string")
+	}
+	duration, err := time.ParseDuration(str)
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing duration")
+	}
+	return durationpb.New(duration), nil
+}
+
 // generateCommand implements the command for generating new CRSs.
 func generateCommand(cliEnvironment environment.Environment) *cobra.Command {
 	var outputFile string
 	var maxRegistrations uint64
+	var validUntil string
+	var validFor string
 
 	c := &cobra.Command{
-		Use:   "generate <CRS name>",
+		Use:   "generate --output=<file name> [ --valid-until=<RFC3339 timestamp> | --valid-for=<duration> ] <CRS name>",
 		Short: "Generate a new Cluster Registration Secret",
 		Long:  "Generate a new Cluster Registration Secret (CRS) for bootstrapping a new Secured Cluster",
 		Args:  common.ExactArgsWithCustomErrMessage(1, "No name for the CRS specified"),
@@ -116,11 +162,17 @@ func generateCommand(cliEnvironment environment.Environment) *cobra.Command {
 			if outputFile == "-" {
 				outputFile = ""
 			}
-			return generateCRS(cliEnvironment, name, outputFile, flags.Timeout(cmd), flags.RetryTimeout(cmd), maxRegistrations)
+			if validUntil != "" && validFor != "" {
+				return common.ErrInvalidCommandOption.New("Provide either --valid-until or --valid-for, but not both at the same time")
+			}
+
+			return generateCRS(cliEnvironment, name, outputFile, flags.Timeout(cmd), flags.RetryTimeout(cmd), maxRegistrations, validUntil, validFor)
 		},
 	}
 	c.PersistentFlags().StringVarP(&outputFile, "output", "o", "", "File to be used for storing the newly generated CRS (- for stdout)")
 	c.PersistentFlags().Uint64Var(&maxRegistrations, "max-registrations", 1, "Specify after how many cluster registrations the CRS will be revoked automatically, use 0 for no limit (default: 1)")
+	c.PersistentFlags().StringVarP(&validUntil, "valid-until", "", "", "Specify custom expiration date as an RFC3339 timestamp")
+	c.PersistentFlags().StringVarP(&validFor, "valid-for", "", "", "Specify custom validity duration (e.g. '1h30m')")
 
 	return c
 }
