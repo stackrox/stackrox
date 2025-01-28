@@ -123,7 +123,14 @@ func (c *cacheValue) scanWithRetries(ctx context.Context, svc v1.ImageServiceCli
 	eb.Reset()
 
 	timeNow := time.Now()
-	defer metrics.SetScanCallDuration(timeNow)
+	defer func() {
+		// Just in case to not panic
+		if req == nil {
+			log.Warn("the scan image request is nil")
+			return
+		}
+		metrics.SetScanCallDuration(timeNow, req.containerImage.GetName().GetFullName())
+	}()
 outer:
 	for {
 		// We want to get the time spent in backoff without including the time it took to scan the image.

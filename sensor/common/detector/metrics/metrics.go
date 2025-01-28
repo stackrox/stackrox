@@ -133,8 +133,8 @@ var (
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "scan_call_duration",
 		Help:      "Time taken to call scan in milliseconds",
-		Buckets:   prometheus.ExponentialBuckets(4, 2, 8),
-	}, []string{})
+		Buckets:   prometheus.ExponentialBuckets(4, 2, 16),
+	}, []string{"ImageName"})
 
 	scanAndSetCall = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -157,10 +157,12 @@ func RemoveBlockingScanCall() {
 	}).Inc()
 }
 
-func SetScanCallDuration(duration time.Time) {
-	now := time.Now().UnixNano()
-	diff := now - duration.UnixNano()
-	scanCallDuration.With(prometheus.Labels{}).Observe(float64(diff / int64(time.Millisecond)))
+func SetScanCallDuration(start time.Time, imageName string) {
+	now := time.Now()
+	durMilli := now.Sub(start).Milliseconds()
+	scanCallDuration.With(prometheus.Labels{
+		"ImageName": imageName,
+	}).Observe(float64(durMilli))
 }
 
 func AddScanAndSetCall() {
