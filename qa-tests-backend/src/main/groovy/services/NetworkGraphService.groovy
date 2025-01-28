@@ -8,6 +8,8 @@ import groovy.util.logging.Slf4j
 import io.stackrox.annotations.Retry
 import io.stackrox.proto.api.v1.NetworkGraphServiceGrpc
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.CreateNetworkEntityRequest
+import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.GetExternalNetworkFlowsRequest
+import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.GetExternalNetworkFlowsMetadataRequest
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.GetExternalNetworkEntitiesRequest
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.GetExternalNetworkEntitiesResponse
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.NetworkGraphRequest
@@ -44,15 +46,65 @@ class NetworkGraphService extends BaseService {
         }
     }
 
-    @NullCheck
-    static NetworkEntity createNetworkEntity(String clusterId, String name, String cidr, boolean isSystemGenerated) {
-        // Create entity for request
-        ExternalSource.Builder entity =
-                ExternalSource
-                        .newBuilder()
-                        .setName(name)
-                        .setCidr(cidr)
-                        .setDefault(isSystemGenerated)
+    static getExternalNetworkFlows(String entityId, String query = null, Timestamp since = null) {
+        try {
+            GetExternalNetworkFlowsRequest.Builder request =
+                GetExternalNetworkFlowsRequest.newBuilder()
+                    .setClusterId(ClusterService.getClusterId())
+                    .setEntityId(entityId)
+
+            if (since != null) {
+                request.setSince(since)
+            }
+
+            if (query != null) {
+                request.setQuery(query)
+            }
+
+            return getNetworkGraphClient().getExternalNetworkFlows(request.build())
+        } catch (Exception e) {
+            log.error("Exception fetching external network flows", e)
+        }
+    }
+
+    static getExternalNetworkFlowsMetadata(String query = null, Timestamp since = null) {
+        try {
+            GetExternalNetworkFlowsMetadataRequest.Builder request =
+                GetExternalNetworkFlowsMetadataRequest.newBuilder()
+                    .setClusterId(ClusterService.getClusterId())
+
+            if (since != null) {
+                request.setSince(since)
+            }
+
+            if (query != null) {
+                request.setQuery(query)
+            }
+
+            return getNetworkGraphClient().getExternalNetworkFlowsMetadata(request.build())
+        } catch (Exception e) {
+            log.error("Exception fetching external network flows", e)
+        }
+    }
+
+    static createNetworkEntity(String clusterId, String name, String cidr, Boolean isSystemGenerated) {
+        try {
+            if (clusterId == null) {
+                throw new RuntimeException("Cluster ID is required to create a network entity")
+            }
+            if (name == null) {
+                throw new RuntimeException("Name is required to create a network entity")
+            }
+            if (cidr == null) {
+                throw new RuntimeException("CIDR address needs to be defined to create a network entity")
+            }
+            // Create entity for request
+            ExternalSource.Builder entity =
+                    ExternalSource
+                            .newBuilder()
+                            .setName(name)
+                            .setCidr(cidr)
+                            .setDefault(isSystemGenerated)
 
         // Create request
         CreateNetworkEntityRequest request =
