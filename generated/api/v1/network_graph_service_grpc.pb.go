@@ -38,7 +38,7 @@ type NetworkGraphServiceClient interface {
 	GetNetworkGraph(ctx context.Context, in *NetworkGraphRequest, opts ...grpc.CallOption) (*NetworkGraph, error)
 	GetExternalNetworkEntities(ctx context.Context, in *GetExternalNetworkEntitiesRequest, opts ...grpc.CallOption) (*GetExternalNetworkEntitiesResponse, error)
 	GetExternalNetworkFlows(ctx context.Context, in *GetExternalNetworkFlowsRequest, opts ...grpc.CallOption) (*GetExternalNetworkFlowsResponse, error)
-	GetExternalNetworkFlowsMetadata(ctx context.Context, in *GetExternalNetworkFlowsRequest, opts ...grpc.CallOption) (*GetExternalNetworkFlowsMetadataResponse, error)
+	GetExternalNetworkFlowsMetadata(ctx context.Context, in *GetExternalNetworkFlowsMetadataRequest, opts ...grpc.CallOption) (*GetExternalNetworkFlowsMetadataResponse, error)
 	CreateExternalNetworkEntity(ctx context.Context, in *CreateNetworkEntityRequest, opts ...grpc.CallOption) (*storage.NetworkEntity, error)
 	PatchExternalNetworkEntity(ctx context.Context, in *PatchNetworkEntityRequest, opts ...grpc.CallOption) (*storage.NetworkEntity, error)
 	DeleteExternalNetworkEntity(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
@@ -84,7 +84,7 @@ func (c *networkGraphServiceClient) GetExternalNetworkFlows(ctx context.Context,
 	return out, nil
 }
 
-func (c *networkGraphServiceClient) GetExternalNetworkFlowsMetadata(ctx context.Context, in *GetExternalNetworkFlowsRequest, opts ...grpc.CallOption) (*GetExternalNetworkFlowsMetadataResponse, error) {
+func (c *networkGraphServiceClient) GetExternalNetworkFlowsMetadata(ctx context.Context, in *GetExternalNetworkFlowsMetadataRequest, opts ...grpc.CallOption) (*GetExternalNetworkFlowsMetadataResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetExternalNetworkFlowsMetadataResponse)
 	err := c.cc.Invoke(ctx, NetworkGraphService_GetExternalNetworkFlowsMetadata_FullMethodName, in, out, cOpts...)
@@ -151,7 +151,7 @@ type NetworkGraphServiceServer interface {
 	GetNetworkGraph(context.Context, *NetworkGraphRequest) (*NetworkGraph, error)
 	GetExternalNetworkEntities(context.Context, *GetExternalNetworkEntitiesRequest) (*GetExternalNetworkEntitiesResponse, error)
 	GetExternalNetworkFlows(context.Context, *GetExternalNetworkFlowsRequest) (*GetExternalNetworkFlowsResponse, error)
-	GetExternalNetworkFlowsMetadata(context.Context, *GetExternalNetworkFlowsRequest) (*GetExternalNetworkFlowsMetadataResponse, error)
+	GetExternalNetworkFlowsMetadata(context.Context, *GetExternalNetworkFlowsMetadataRequest) (*GetExternalNetworkFlowsMetadataResponse, error)
 	CreateExternalNetworkEntity(context.Context, *CreateNetworkEntityRequest) (*storage.NetworkEntity, error)
 	PatchExternalNetworkEntity(context.Context, *PatchNetworkEntityRequest) (*storage.NetworkEntity, error)
 	DeleteExternalNetworkEntity(context.Context, *ResourceByID) (*Empty, error)
@@ -175,7 +175,7 @@ func (UnimplementedNetworkGraphServiceServer) GetExternalNetworkEntities(context
 func (UnimplementedNetworkGraphServiceServer) GetExternalNetworkFlows(context.Context, *GetExternalNetworkFlowsRequest) (*GetExternalNetworkFlowsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetExternalNetworkFlows not implemented")
 }
-func (UnimplementedNetworkGraphServiceServer) GetExternalNetworkFlowsMetadata(context.Context, *GetExternalNetworkFlowsRequest) (*GetExternalNetworkFlowsMetadataResponse, error) {
+func (UnimplementedNetworkGraphServiceServer) GetExternalNetworkFlowsMetadata(context.Context, *GetExternalNetworkFlowsMetadataRequest) (*GetExternalNetworkFlowsMetadataResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetExternalNetworkFlowsMetadata not implemented")
 }
 func (UnimplementedNetworkGraphServiceServer) CreateExternalNetworkEntity(context.Context, *CreateNetworkEntityRequest) (*storage.NetworkEntity, error) {
@@ -268,7 +268,7 @@ func _NetworkGraphService_GetExternalNetworkFlows_Handler(srv interface{}, ctx c
 }
 
 func _NetworkGraphService_GetExternalNetworkFlowsMetadata_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetExternalNetworkFlowsRequest)
+	in := new(GetExternalNetworkFlowsMetadataRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -280,7 +280,7 @@ func _NetworkGraphService_GetExternalNetworkFlowsMetadata_Handler(srv interface{
 		FullMethod: NetworkGraphService_GetExternalNetworkFlowsMetadata_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NetworkGraphServiceServer).GetExternalNetworkFlowsMetadata(ctx, req.(*GetExternalNetworkFlowsRequest))
+		return srv.(NetworkGraphServiceServer).GetExternalNetworkFlowsMetadata(ctx, req.(*GetExternalNetworkFlowsMetadataRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

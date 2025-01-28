@@ -174,12 +174,6 @@
             "type": "string"
           },
           {
-            "name": "entityId",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
             "name": "query",
             "in": "query",
             "required": false,
@@ -718,12 +712,16 @@
     "v1GetExternalNetworkFlowsMetadataResponse": {
       "type": "object",
       "properties": {
-        "data": {
+        "entities": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1ExternalNetworkFlowMetadata"
           }
+        },
+        "totalEntities": {
+          "type": "integer",
+          "format": "int32"
         }
       }
     },
@@ -732,6 +730,10 @@
       "properties": {
         "entity": {
           "$ref": "#/definitions/storageNetworkEntityInfo"
+        },
+        "totalFlows": {
+          "type": "integer",
+          "format": "int32"
         },
         "flows": {
           "type": "array",

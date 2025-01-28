@@ -119,19 +119,20 @@ func (s *serviceImpl) GetExternalNetworkFlows(ctx context.Context, request *v1.G
 	}
 
 	return &v1.GetExternalNetworkFlowsResponse{
-		Entity: entities[0].GetInfo(),
-		Flows:  paginate(request.GetPagination(), flows),
+		Entity:     entities[0].GetInfo(),
+		Flows:      paginate(request.GetPagination(), flows),
+		TotalFlows: int32(len(flows)),
 	}, nil
 }
 
-func (s *serviceImpl) GetExternalNetworkFlowsMetadata(ctx context.Context, request *v1.GetExternalNetworkFlowsRequest) (*v1.GetExternalNetworkFlowsMetadataResponse, error) {
+func (s *serviceImpl) GetExternalNetworkFlowsMetadata(ctx context.Context, request *v1.GetExternalNetworkFlowsMetadataRequest) (*v1.GetExternalNetworkFlowsMetadataResponse, error) {
 	since := protocompat.ConvertTimestampToTimeOrNil(request.GetSince())
 	if since == nil {
 		t := time.Now().Add(defaultSince)
 		since = &t
 	}
 
-	flows, _, err := s.getExternalFlowsAndEntitiesByQuery(ctx, request.GetClusterId(), request.GetQuery(), request.GetEntityId(), since)
+	flows, _, err := s.getExternalFlowsAndEntitiesByQuery(ctx, request.GetClusterId(), request.GetQuery(), "", since)
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +168,8 @@ func (s *serviceImpl) GetExternalNetworkFlowsMetadata(ctx context.Context, reque
 	result := maps.Values(entityMeta)
 
 	return &v1.GetExternalNetworkFlowsMetadataResponse{
-		Data: paginate(request.GetPagination(), result),
+		Entities:      paginate(request.GetPagination(), result),
+		TotalEntities: int32(len(result)),
 	}, nil
 }
 

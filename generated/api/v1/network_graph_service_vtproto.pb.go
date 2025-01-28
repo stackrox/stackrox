@@ -284,6 +284,7 @@ func (m *GetExternalNetworkFlowsResponse) CloneVT() *GetExternalNetworkFlowsResp
 		return (*GetExternalNetworkFlowsResponse)(nil)
 	}
 	r := new(GetExternalNetworkFlowsResponse)
+	r.TotalFlows = m.TotalFlows
 	if rhs := m.Entity; rhs != nil {
 		if vtpb, ok := interface{}(rhs).(interface {
 			CloneVT() *storage.NetworkEntityInfo
@@ -312,6 +313,26 @@ func (m *GetExternalNetworkFlowsResponse) CloneVT() *GetExternalNetworkFlowsResp
 }
 
 func (m *GetExternalNetworkFlowsResponse) CloneMessageVT() proto.Message {
+	return m.CloneVT()
+}
+
+func (m *GetExternalNetworkFlowsMetadataRequest) CloneVT() *GetExternalNetworkFlowsMetadataRequest {
+	if m == nil {
+		return (*GetExternalNetworkFlowsMetadataRequest)(nil)
+	}
+	r := new(GetExternalNetworkFlowsMetadataRequest)
+	r.ClusterId = m.ClusterId
+	r.Query = m.Query
+	r.Since = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.Since).CloneVT())
+	r.Pagination = m.Pagination.CloneVT()
+	if len(m.unknownFields) > 0 {
+		r.unknownFields = make([]byte, len(m.unknownFields))
+		copy(r.unknownFields, m.unknownFields)
+	}
+	return r
+}
+
+func (m *GetExternalNetworkFlowsMetadataRequest) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
@@ -346,12 +367,13 @@ func (m *GetExternalNetworkFlowsMetadataResponse) CloneVT() *GetExternalNetworkF
 		return (*GetExternalNetworkFlowsMetadataResponse)(nil)
 	}
 	r := new(GetExternalNetworkFlowsMetadataResponse)
-	if rhs := m.Data; rhs != nil {
+	r.TotalEntities = m.TotalEntities
+	if rhs := m.Entities; rhs != nil {
 		tmpContainer := make([]*ExternalNetworkFlowMetadata, len(rhs))
 		for k, v := range rhs {
 			tmpContainer[k] = v.CloneVT()
 		}
-		r.Data = tmpContainer
+		r.Entities = tmpContainer
 	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
@@ -759,6 +781,9 @@ func (this *GetExternalNetworkFlowsResponse) EqualVT(that *GetExternalNetworkFlo
 	} else if !proto.Equal(this.Entity, that.Entity) {
 		return false
 	}
+	if this.TotalFlows != that.TotalFlows {
+		return false
+	}
 	if len(this.Flows) != len(that.Flows) {
 		return false
 	}
@@ -787,6 +812,34 @@ func (this *GetExternalNetworkFlowsResponse) EqualVT(that *GetExternalNetworkFlo
 
 func (this *GetExternalNetworkFlowsResponse) EqualMessageVT(thatMsg proto.Message) bool {
 	that, ok := thatMsg.(*GetExternalNetworkFlowsResponse)
+	if !ok {
+		return false
+	}
+	return this.EqualVT(that)
+}
+func (this *GetExternalNetworkFlowsMetadataRequest) EqualVT(that *GetExternalNetworkFlowsMetadataRequest) bool {
+	if this == that {
+		return true
+	} else if this == nil || that == nil {
+		return false
+	}
+	if this.ClusterId != that.ClusterId {
+		return false
+	}
+	if this.Query != that.Query {
+		return false
+	}
+	if !(*timestamppb1.Timestamp)(this.Since).EqualVT((*timestamppb1.Timestamp)(that.Since)) {
+		return false
+	}
+	if !this.Pagination.EqualVT(that.Pagination) {
+		return false
+	}
+	return string(this.unknownFields) == string(that.unknownFields)
+}
+
+func (this *GetExternalNetworkFlowsMetadataRequest) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*GetExternalNetworkFlowsMetadataRequest)
 	if !ok {
 		return false
 	}
@@ -826,11 +879,11 @@ func (this *GetExternalNetworkFlowsMetadataResponse) EqualVT(that *GetExternalNe
 	} else if this == nil || that == nil {
 		return false
 	}
-	if len(this.Data) != len(that.Data) {
+	if len(this.Entities) != len(that.Entities) {
 		return false
 	}
-	for i, vx := range this.Data {
-		vy := that.Data[i]
+	for i, vx := range this.Entities {
+		vy := that.Entities[i]
 		if p, q := vx, vy; p != q {
 			if p == nil {
 				p = &ExternalNetworkFlowMetadata{}
@@ -842,6 +895,9 @@ func (this *GetExternalNetworkFlowsMetadataResponse) EqualVT(that *GetExternalNe
 				return false
 			}
 		}
+	}
+	if this.TotalEntities != that.TotalEntities {
+		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
@@ -1615,8 +1671,13 @@ func (m *GetExternalNetworkFlowsResponse) MarshalToSizedBufferVT(dAtA []byte) (i
 				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
 			i--
-			dAtA[i] = 0x12
+			dAtA[i] = 0x1a
 		}
+	}
+	if m.TotalFlows != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.TotalFlows))
+		i--
+		dAtA[i] = 0x10
 	}
 	if m.Entity != nil {
 		if vtmsg, ok := interface{}(m.Entity).(interface {
@@ -1637,6 +1698,73 @@ func (m *GetExternalNetworkFlowsResponse) MarshalToSizedBufferVT(dAtA []byte) (i
 			copy(dAtA[i:], encoded)
 			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *GetExternalNetworkFlowsMetadataRequest) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetExternalNetworkFlowsMetadataRequest) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *GetExternalNetworkFlowsMetadataRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.Pagination != nil {
+		size, err := m.Pagination.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x22
+	}
+	if m.Since != nil {
+		size, err := (*timestamppb1.Timestamp)(m.Since).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.Query) > 0 {
+		i -= len(m.Query)
+		copy(dAtA[i:], m.Query)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Query)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.ClusterId) > 0 {
+		i -= len(m.ClusterId)
+		copy(dAtA[i:], m.ClusterId)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ClusterId)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -1733,9 +1861,14 @@ func (m *GetExternalNetworkFlowsMetadataResponse) MarshalToSizedBufferVT(dAtA []
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if len(m.Data) > 0 {
-		for iNdEx := len(m.Data) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Data[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+	if m.TotalEntities != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.TotalEntities))
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.Entities) > 0 {
+		for iNdEx := len(m.Entities) - 1; iNdEx >= 0; iNdEx-- {
+			size, err := m.Entities[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
@@ -2083,6 +2216,9 @@ func (m *GetExternalNetworkFlowsResponse) SizeVT() (n int) {
 		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
+	if m.TotalFlows != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.TotalFlows))
+	}
 	if len(m.Flows) > 0 {
 		for _, e := range m.Flows {
 			if size, ok := interface{}(e).(interface {
@@ -2094,6 +2230,32 @@ func (m *GetExternalNetworkFlowsResponse) SizeVT() (n int) {
 			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
+func (m *GetExternalNetworkFlowsMetadataRequest) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.ClusterId)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	l = len(m.Query)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.Since != nil {
+		l = (*timestamppb1.Timestamp)(m.Since).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.Pagination != nil {
+		l = m.Pagination.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -2128,11 +2290,14 @@ func (m *GetExternalNetworkFlowsMetadataResponse) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
-	if len(m.Data) > 0 {
-		for _, e := range m.Data {
+	if len(m.Entities) > 0 {
+		for _, e := range m.Entities {
 			l = e.SizeVT()
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
+	}
+	if m.TotalEntities != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.TotalEntities))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -3895,6 +4060,25 @@ func (m *GetExternalNetworkFlowsResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			iNdEx = postIndex
 		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TotalFlows", wireType)
+			}
+			m.TotalFlows = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.TotalFlows |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Flows", wireType)
 			}
@@ -3934,6 +4118,201 @@ func (m *GetExternalNetworkFlowsResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Flows[len(m.Flows)-1]); err != nil {
 					return err
 				}
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetExternalNetworkFlowsMetadataRequest) UnmarshalVTUnsafe(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetExternalNetworkFlowsMetadataRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetExternalNetworkFlowsMetadataRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClusterId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.ClusterId = stringValue
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Query", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.Query = stringValue
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Since", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Since == nil {
+				m.Since = &timestamppb.Timestamp{}
+			}
+			if err := (*timestamppb1.Timestamp)(m.Since).UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Pagination", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Pagination == nil {
+				m.Pagination = &Pagination{}
+			}
+			if err := m.Pagination.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
 			}
 			iNdEx = postIndex
 		default:
@@ -4103,7 +4482,7 @@ func (m *GetExternalNetworkFlowsMetadataResponse) UnmarshalVTUnsafe(dAtA []byte)
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Data", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Entities", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -4130,11 +4509,30 @@ func (m *GetExternalNetworkFlowsMetadataResponse) UnmarshalVTUnsafe(dAtA []byte)
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Data = append(m.Data, &ExternalNetworkFlowMetadata{})
-			if err := m.Data[len(m.Data)-1].UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+			m.Entities = append(m.Entities, &ExternalNetworkFlowMetadata{})
+			if err := m.Entities[len(m.Entities)-1].UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TotalEntities", wireType)
+			}
+			m.TotalEntities = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.TotalEntities |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
