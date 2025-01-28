@@ -322,6 +322,13 @@
         "maxRegistrations": {
           "type": "string",
           "format": "uint64"
+        },
+        "validUntil": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "validFor": {
+          "type": "string"
         }
       }
     },
