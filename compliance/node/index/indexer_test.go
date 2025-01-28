@@ -60,7 +60,8 @@ func (s *nodeIndexerSuite) createTestServer(tlsEnabled bool) *httptest.Server {
 	} else {
 		serverCert, err := tls.LoadX509KeyPair(
 			filepath.Join("testdata", "certs", "server-cert.pem"),
-			filepath.Join("testdata", "certs", "server-key.pem"))
+			filepath.Join("testdata", "certs", "server-key.pem"),
+		)
 		s.Require().NoError(err)
 		caCert, err := os.ReadFile(filepath.Join("testdata", "certs", "ca-cert.pem"))
 		s.Require().NoError(err)
