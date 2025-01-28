@@ -61,7 +61,12 @@ spec:
         command:
         - kubernetes-sensor
         resources:
-          {{- ._rox.sensor._resources | nindent 10 }}
+          requests:
+            memory: "200Mi"
+            cpu: "400m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
         args:
         - ensure-service-certificates
         securityContext:
