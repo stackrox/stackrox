@@ -148,16 +148,19 @@ func Test_reloadConfig(t *testing.T) {
 		go PeriodicReload(tickChan)
 		tickChan <- time.Now()
 		assert.EventuallyWithT(t, func(collect *assert.CollectT) {
-			assert.True(t, enabled)
-			assert.True(t, config.Enabled())
-
-			t.Setenv(env.TelemetryStorageKey.EnvVar(), "DISABLED")
-			runtimeConfigJSON = `{"storage_key_v1": "DISABLED"}`
+			startMux.Lock()
+			defer startMux.Unlock()
+			assert.True(collect, enabled)
+			assert.True(collect, config.Enabled())
 		}, 1*time.Second, 10*time.Millisecond)
+		t.Setenv(env.TelemetryStorageKey.EnvVar(), "DISABLED")
+		runtimeConfigJSON = `{"storage_key_v1": "DISABLED"}`
 		tickChan <- time.Now()
 		assert.EventuallyWithT(t, func(collect *assert.CollectT) {
-			assert.False(t, enabled)
-			assert.True(t, config.Enabled())
+			startMux.Lock()
+			defer startMux.Unlock()
+			assert.False(collect, enabled)
+			assert.True(collect, config.Enabled())
 		}, 1*time.Second, 10*time.Millisecond)
 	})
 }
