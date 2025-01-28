@@ -134,7 +134,12 @@ func (s *serviceImpl) GenerateCRS(ctx context.Context, request *v1.CRSGenRequest
 		return nil, status.Error(codes.Unimplemented, "support for generating Cluster Registration Secrets (CRS) is not enabled")
 	}
 
-	generated, err := s.backend.IssueCRS(ctx, request.GetName(), request.GetMaxRegistrations())
+	generated, err := s.backend.IssueCRS(ctx,
+		request.GetName(),
+		request.GetMaxRegistrations(),
+		request.GetValidUntil().AsTime(),
+		request.GetValidFor().AsDuration(),
+	)
 	if err != nil {
 		if errors.Is(err, store.ErrInitBundleDuplicateName) {
 			return nil, status.Errorf(codes.AlreadyExists, "generating new CRS: %s", err)
