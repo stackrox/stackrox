@@ -17,9 +17,11 @@ import (
 	"github.com/cloudflare/cfssl/signer/local"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/pkg/x509utils"
 )
 
@@ -60,6 +62,9 @@ const (
 
 	ephemeralProfileWithExpirationInDays             = "ephemeralWithExpirationInDays"
 	ephemeralProfileWithExpirationInDaysCertLifetime = 2 * 24 * time.Hour
+
+	crsProfile                      = "clusterRegistrationSecret"
+	crsProfileDefaultValidityPeriod = 1 * time.Hour
 )
 
 var (
@@ -224,12 +229,25 @@ func signer() (cfsigner.Signer, error) {
 	return local.NewSignerFromFile(caFilePathSetting.Setting(), caKeyFilePathSetting.Setting(), createSigningPolicy())
 }
 
+func crsSigner() (cfsigner.Signer, error) {
+	return local.NewSignerFromFile(caFilePathSetting.Setting(), caKeyFilePathSetting.Setting(), createCrsSigningPolicy())
+}
+
 func createSigningPolicy() *config.Signing {
 	return &config.Signing{
 		Default: createSigningProfile(certLifetime, beforeGracePeriod),
 		Profiles: map[string]*config.SigningProfile{
 			ephemeralProfileWithExpirationInHours: createSigningProfile(ephemeralProfileWithExpirationInHoursCertLifetime, 0),
 			ephemeralProfileWithExpirationInDays:  createSigningProfile(ephemeralProfileWithExpirationInDaysCertLifetime, 0),
+		},
+	}
+}
+
+func createCrsSigningPolicy() *config.Signing {
+	return &config.Signing{
+		Default: createSigningProfile(certLifetime, beforeGracePeriod),
+		Profiles: map[string]*config.SigningProfile{
+			crsProfile: createSigningProfile(crsProfileDefaultValidityPeriod, 0),
 		},
 	}
 }
@@ -296,8 +314,9 @@ func issueNewCertFromSigner(subj Subject, signer cfsigner.Signer, opts []IssueCe
 			Names:        []cfcsr.Name{subj.Name()},
 			SerialNumber: serial.String(),
 		},
-		Serial:  serial,
-		Profile: issueOpts.signerProfile,
+		Serial:   serial,
+		Profile:  issueOpts.signerProfile,
+		NotAfter: issueOpts.expiresAt,
 	}
 	certBytes, err := signer.Sign(req)
 	if err != nil {
@@ -326,6 +345,29 @@ func IssueNewCert(subj Subject, opts ...IssueCertOption) (cert *IssuedCert, err 
 		return nil, errors.Wrap(err, "signer creation")
 	}
 	return issueNewCertFromSigner(subj, s, opts)
+}
+
+// IssueNewCrsCert generates a new key and certificate chain for a CRS.
+func IssueNewCrsCert(crsId uuid.UUID, validUntil time.Time, validFor time.Duration) (cert *IssuedCert, err error) {
+	if validUntil != (time.Time{}) && validFor != 0 {
+		return nil, errors.New("conflicting expiration time specification, cannot use validUntil and validFor at the same time")
+	}
+
+	opts := make([]IssueCertOption, 0, 2)
+	opts = append(opts, WithCrsProfile())
+	if validUntil != (time.Time{}) {
+		opts = append(opts, WithCustomValidityPeriodUntil(validUntil))
+	} else if validFor != 0 {
+		opts = append(opts, WithCustomValidityPeriod(validFor))
+	}
+
+	subj := NewInitSubject(centralsensor.RegisteredInitCertClusterID, storage.ServiceType_REGISTRANT_SERVICE, crsId)
+	signer, err := crsSigner()
+	if err != nil {
+		return nil, errors.Wrap(err, "CRS signer creation")
+	}
+
+	return issueNewCertFromSigner(subj, signer, opts)
 }
 
 // RandomSerial returns a new integer that can be used as a certificate serial number (i.e., it is positive and contains
