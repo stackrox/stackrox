@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -175,20 +176,37 @@ func (resolver *Resolver) ImageVulnerabilityCounter(ctx context.Context, args Ra
 	}
 	query = tryUnsuppressedQuery(query)
 
-	// get fixable vulns
-	fixableQuery := search.ConjunctionQuery(query, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery())
-	fixableVulns, err := loader.FromQuery(ctx, fixableQuery)
+	imageCVEEdges, err := resolver.ComponentCVEEdgeDataStore.SearchRawEdges(ctx, query)
 	if err != nil {
 		return nil, err
+	}
+	fixableCVEIDs := set.NewStringSet()
+	unFixableCVEIDs := set.NewStringSet()
+	for _, edge := range imageCVEEdges {
+		if edge.GetIsFixable() {
+			fixableCVEIDs.Add(edge.GetImageCveId())
+		} else {
+			unFixableCVEIDs.Add(edge.GetImageCveId())
+		}
+	}
+	allCVEIDs := set.NewStringSet()
+	allCVEIDs.AddAll(fixableCVEIDs.AsSlice()...)
+	allCVEIDs.AddAll(unFixableCVEIDs.AsSlice()...)
+
+	allVulns, err := loader.FromIDs(ctx, allCVEIDs.AsSlice())
+	if err != nil {
+		return nil, err
+	}
+	fixableVulns := make([]*storage.ImageCVE, 0, fixableCVEIDs.Cardinality())
+	unFixableVulns := make([]*storage.ImageCVE, 0, unFixableCVEIDs.Cardinality())
+	for _, vuln := range allVulns {
+		if fixableCVEIDs.Contains(vuln.GetId()) {
+			fixableVulns = append(fixableVulns, vuln)
+		} else {
+			unFixableVulns = append(unFixableVulns, vuln)
+		}
 	}
 	fixable := imageCveToVulnerabilityWithSeverity(fixableVulns)
-
-	// get unfixable vulns
-	unFixableVulnsQuery := search.ConjunctionQuery(query, search.NewQueryBuilder().AddBools(search.Fixable, false).ProtoQuery())
-	unFixableVulns, err := loader.FromQuery(ctx, unFixableVulnsQuery)
-	if err != nil {
-		return nil, err
-	}
 	unfixable := imageCveToVulnerabilityWithSeverity(unFixableVulns)
 
 	return mapCVEsToVulnerabilityCounter(fixable, unfixable), nil
