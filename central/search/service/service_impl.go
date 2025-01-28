@@ -310,9 +310,9 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 func (s *serviceImpl) initializeAuthorizer() {
 	s.authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.Authenticated(): {
-			"/v1.SearchService/Search",
-			"/v1.SearchService/Options",
-			"/v1.SearchService/Autocomplete",
+			v1.SearchService_Search_FullMethodName,
+			v1.SearchService_Options_FullMethodName,
+			v1.SearchService_Autocomplete_FullMethodName,
 		},
 	})
 }

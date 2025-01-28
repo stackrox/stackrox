@@ -44,17 +44,17 @@ const (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Alert)): {
-			"/v1.AlertService/GetAlert",
-			"/v1.AlertService/ListAlerts",
-			"/v1.AlertService/CountAlerts",
-			"/v1.AlertService/GetAlertsGroup",
-			"/v1.AlertService/GetAlertsCounts",
-			"/v1.AlertService/GetAlertTimeseries",
+			v1.AlertService_GetAlert_FullMethodName,
+			v1.AlertService_ListAlerts_FullMethodName,
+			v1.AlertService_CountAlerts_FullMethodName,
+			v1.AlertService_GetAlertsGroup_FullMethodName,
+			v1.AlertService_GetAlertsCounts_FullMethodName,
+			v1.AlertService_GetAlertTimeseries_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.Alert)): {
-			"/v1.AlertService/ResolveAlert",
-			"/v1.AlertService/ResolveAlerts",
-			"/v1.AlertService/DeleteAlerts",
+			v1.AlertService_ResolveAlert_FullMethodName,
+			v1.AlertService_ResolveAlerts_FullMethodName,
+			v1.AlertService_DeleteAlerts_FullMethodName,
 		},
 	})
 

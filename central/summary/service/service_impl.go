@@ -68,7 +68,7 @@ func (s *serviceImpl) initializeAuthorizer() {
 	s.authorizer = perrpc.FromMap(
 		map[authz.Authorizer][]string{
 			user.With(requiredPermissions...): {
-				"/v1.SummaryService/GetSummaryCounts",
+				v1.SummaryService_GetSummaryCounts_FullMethodName,
 			},
 		},
 	)

@@ -33,17 +33,17 @@ const (
 var (
 	authorizer = or.SensorOr(perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.WorkflowAdministration)): {
-			"/v1.CollectionService/GetCollection",
-			"/v1.CollectionService/GetCollectionCount",
-			"/v1.CollectionService/ListCollections",
-			"/v1.CollectionService/ListCollectionSelectors",
+			v1.CollectionService_GetCollection_FullMethodName,
+			v1.CollectionService_GetCollectionCount_FullMethodName,
+			v1.CollectionService_ListCollections_FullMethodName,
+			v1.CollectionService_ListCollectionSelectors_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.WorkflowAdministration)): {
-			// "/v1.CollectionService/AutoCompleteCollection", TODO ROX-12616
-			"/v1.CollectionService/CreateCollection",
-			"/v1.CollectionService/DeleteCollection",
-			"/v1.CollectionService/UpdateCollection",
-			"/v1.CollectionService/DryRunCollection",
+			// v1.CollectionService_AutoCompleteCollection_FullMethodName, TODO ROX-12616
+			v1.CollectionService_CreateCollection_FullMethodName,
+			v1.CollectionService_DeleteCollection_FullMethodName,
+			v1.CollectionService_UpdateCollection_FullMethodName,
+			v1.CollectionService_DryRunCollection_FullMethodName,
 		},
 	}))
 	defaultCollectionSortOption = &v1.QuerySortOption{

@@ -32,11 +32,11 @@ var (
 
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Administration)): {
-			"/v1.DelegatedRegistryConfigService/GetConfig",
-			"/v1.DelegatedRegistryConfigService/GetClusters",
+			v1.DelegatedRegistryConfigService_GetConfig_FullMethodName,
+			v1.DelegatedRegistryConfigService_GetClusters_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.Administration)): {
-			"/v1.DelegatedRegistryConfigService/UpdateConfig",
+			v1.DelegatedRegistryConfigService_UpdateConfig_FullMethodName,
 		},
 	})
 )
