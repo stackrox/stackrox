@@ -66,26 +66,41 @@ type tlsIssuerImpl struct {
 	requestOngoing               atomic.Bool
 	newMsgFromSensorFn           newMsgFromSensor
 	requiredCentralCapability    *centralsensor.CentralCapability
+	started                      bool
+	online                       bool
 }
 
-// Start starts the Sensor component and launches a certificate refresher that immediately checks the certificates, and
-// that keeps them updated.
-// In case a secret doesn't have the expected owner, this logs a warning and returns nil.
-// In case this component was already started it fails immediately.
+// Start starts the Sensor component and launches a certificate refresher that:
+// * checks the state of the certificates whenever Sensor connects to Central, and several months before they expire
+// * updates the certificates if needed
+// When Sensor is offline this component is not active.
 func (i *tlsIssuerImpl) Start() error {
 	log.Debugf("Starting %s TLS issuer.", i.componentName)
+	i.started = true
+	return i.activate()
+}
+
+func (i *tlsIssuerImpl) activate() error {
+	if !i.started {
+		return nil
+	}
+	if !i.online {
+		return nil
+	}
+	if i.certRefresher != nil {
+		log.Debugf("%s TLS issuer is already started.", i.componentName)
+		return nil
+	}
+
 	i.stopSig.Reset()
 	ctx, cancel := context.WithTimeout(context.Background(), startTimeout)
 	defer cancel()
 
-	if i.certRefresher != nil {
-		return i.abortStart(errors.New("already started"))
-	}
-
 	sensorOwnerReference, fetchSensorDeploymentErr := FetchSensorDeploymentOwnerRef(ctx, i.sensorPodName,
 		i.sensorNamespace, i.k8sClient, wait.Backoff{})
 	if fetchSensorDeploymentErr != nil {
-		return i.abortStart(errors.Wrap(fetchSensorDeploymentErr, "fetching sensor deployment"))
+		i.started = false
+		return fmt.Errorf("fetching sensor deployment: %w", fetchSensorDeploymentErr)
 	}
 
 	certsRepo := i.getServiceCertificatesRepoFn(*sensorOwnerReference, i.sensorNamespace,
@@ -94,30 +109,48 @@ func (i *tlsIssuerImpl) Start() error {
 		certRefreshTimeout, i.certRefreshBackoff)
 
 	if refreshStartErr := i.certRefresher.Start(); refreshStartErr != nil {
-		return i.abortStart(errors.Wrap(refreshStartErr, "starting certificate refresher"))
+		// Starting a RetryTicker should only return an error if already started or stopped, so this should
+		// never happen because i.certRefresher was just created
+		i.started = false
+		return fmt.Errorf("starting certificate refresher: %w", refreshStartErr)
 	}
 
-	log.Debugf("%s TLS issuer started.", i.componentName)
+	log.Debugf("%s TLS issuer is active.", i.componentName)
 	return nil
 }
 
-func (i *tlsIssuerImpl) abortStart(err error) error {
-	log.Errorf("%s TLS issuer start aborted due to error: %s", i.componentName, err)
-	i.Stop(err)
-	return err
+func (i *tlsIssuerImpl) Stop(_ error) {
+	i.started = false
+	i.deactivate()
 }
 
-func (i *tlsIssuerImpl) Stop(_ error) {
+func (i *tlsIssuerImpl) deactivate() {
 	i.stopSig.Signal()
 	if i.certRefresher != nil {
 		i.certRefresher.Stop()
 		i.certRefresher = nil
 	}
 
-	log.Debugf("%s TLS issuer stopped.", i.componentName)
+	log.Debugf("%s TLS issuer is not active.", i.componentName)
 }
 
-func (i *tlsIssuerImpl) Notify(common.SensorComponentEvent) {}
+func (i *tlsIssuerImpl) Notify(e common.SensorComponentEvent) {
+	log.Info(common.LogSensorComponentEvent(e))
+
+	switch e {
+	case common.SensorComponentEventCentralReachable:
+		// At this point we can be sure that Central capabilities have been received
+		if i.requiredCentralCapability != nil && !centralcaps.Has(*i.requiredCentralCapability) {
+			log.Infof("Central does not have the %s capability", i.requiredCentralCapability.String())
+			return
+		}
+		i.online = true
+		i.activate()
+	case common.SensorComponentEventOfflineMode:
+		i.online = false
+		i.deactivate()
+	}
+}
 
 func (i *tlsIssuerImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{i.sensorCapability}
