@@ -29,7 +29,6 @@ func createConfig(hostPath string, client *http.Client, mappingURL string) NodeI
 	return NodeIndexerConfig{
 		HostPath:           hostPath,
 		Client:             client,
-		DisableAPI:         true,
 		Repo2CPEMappingURL: mappingURL,
 		Timeout:            10 * time.Second,
 	}
@@ -64,11 +63,10 @@ func (s *nodeIndexerSuite) createTestServer(tlsEnabled bool) *httptest.Server {
 		s.Require().NoError(err)
 		caCertPool := x509.NewCertPool()
 		caCertPool.AppendCertsFromPEM(caCert)
-		s.Require().NoError(err)
 		server.TLS = &tls.Config{
 			Certificates: []tls.Certificate{serverCert},
-			ClientAuth: tls.RequireAndVerifyClientCert,
-			ClientCAs: caCertPool,
+			ClientAuth:   tls.RequireAndVerifyClientCert,
+			ClientCAs:    caCertPool,
 		}
 		server.StartTLS()
 	}

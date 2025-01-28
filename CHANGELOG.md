@@ -28,6 +28,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Technical Changes
 
 - Scanner V4 now uses [Red Hat's VEX files](https://security.access.redhat.com/data/csaf/v2/vex/) instead of the [CVE map](https://security.access.redhat.com/data/metrics/cvemap.xml) for vulnerability data related to non-RPM content inside of official Red Hat images.
+- `ROX_NODE_INDEX_CONTAINER_API` is no longer a valid environment variable to set in the Compliance pod.
+  - The node scanner never reached out to the Red Hat Container Catalog, so this variable was never used.
 
 ## [4.6.0]
 

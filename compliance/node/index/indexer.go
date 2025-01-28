@@ -52,7 +52,7 @@ var (
 
 	// layerDigest is a dummy digest solely meant as a workaround to use Claircore.
 	// Claircore indexing requires layers to have a digest, which is not stored,
-	// so we use a fake one for all images.
+	// so we use a fake one for all nodes.
 	layerDigest   = fmt.Sprintf("sha256:%s", strings.Repeat("a", 64))
 	ccLayerDigest = claircore.MustParseDigest(layerDigest)
 
@@ -82,6 +82,7 @@ func defaultClient() (*http.Client, error) {
 		client = &http.Client{
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{
+					// TODO: Should this always be set to true...?
 					InsecureSkipVerify: true,
 					Certificates:       []tls.Certificate{clientCert},
 				},
@@ -100,11 +101,6 @@ type NodeIndexerConfig struct {
 	// Client is the HTTP client used to reach out to external data sources.
 	// If unset, a default which uses client-side TLS certificates is used.
 	Client *http.Client
-	// DisableAPI disables use of the Red Hat container catalog API used
-	// when a Red Hat container does not contain repository data (content_sets).
-	DisableAPI bool
-	// API is the URL to talk to the Red Hat Container API.
-	API string
 	// Repo2CPEMappingURL can be used to fetch the repo mapping file.
 	// Consulting the mapping file is preferred over the Container API.
 	Repo2CPEMappingURL string
@@ -114,11 +110,9 @@ type NodeIndexerConfig struct {
 
 // DefaultNodeIndexerConfig is the default configuration for a node indexer.
 var DefaultNodeIndexerConfig = NodeIndexerConfig{
-	HostPath:           env.NodeIndexHostPath.Setting(),
+	HostPath: env.NodeIndexHostPath.Setting(),
 	// The default, mTLS-capable client will be used.
 	Client:             nil,
-	DisableAPI:         true,
-	API:                env.NodeIndexContainerAPI.Setting(),
 	Repo2CPEMappingURL: env.NodeIndexMappingURL.Setting(),
 	Timeout:            10 * time.Second,
 }
@@ -198,8 +192,9 @@ func runRepositoryScanner(ctx context.Context, cfg NodeIndexerConfig, l *clairco
 
 	scanner := rhel.RepositoryScanner{}
 	config := rhel.RepositoryScannerConfig{
-		DisableAPI:         cfg.DisableAPI,
-		API:                cfg.API,
+		// Do not reach out to the Red Hat Container Catalog API.
+		// We do *not* want to reach out to the internet for node scanning.
+		DisableAPI:         true,
 		Repo2CPEMappingURL: cfg.Repo2CPEMappingURL,
 		Timeout:            cfg.Timeout,
 	}
@@ -229,7 +224,7 @@ func runPackageScanner(ctx context.Context, layer *claircore.Layer) ([]*claircor
 		return nil, errors.Wrap(err, "failed to invoke RPM scanner")
 	}
 
-	// Filters out packages in which we are not interested.
+	// Filter out packages in which we are not interested.
 	// At this time, we are only interested in the RHCOS RPM database.
 	filtered := pkgs[:0]
 	for _, pkg := range pkgs {
