@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
@@ -134,7 +135,18 @@ func (s *serviceImpl) GenerateCRS(ctx context.Context, request *v1.CRSGenRequest
 		return nil, status.Error(codes.Unimplemented, "support for generating Cluster Registration Secrets (CRS) is not enabled")
 	}
 
-	generated, err := s.backend.IssueCRS(ctx, request.GetName())
+	validUntil := time.Time{}
+	if reqValidUntil := request.GetValidUntil(); reqValidUntil != nil {
+		// Must be careful here: If `validUntil` is not in the request, i.e. nil, calling
+		// .AsTime() on it, will produce a time.Time value containing the 1970-01-01 epoch starting point.
+		validUntil = reqValidUntil.AsTime()
+	}
+
+	generated, err := s.backend.IssueCRS(ctx,
+		request.GetName(),
+		validUntil,
+		request.GetValidFor().AsDuration(),
+	)
 	if err != nil {
 		if errors.Is(err, store.ErrInitBundleDuplicateName) {
 			return nil, status.Errorf(codes.AlreadyExists, "generating new CRS: %s", err)
