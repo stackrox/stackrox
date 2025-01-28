@@ -16,7 +16,12 @@ args:
 - --new=/run/secrets/stackrox.io/certs-new/
 - --destination=/run/secrets/stackrox.io/certs/
 resources:
-  {{- $initContainerResources | nindent 2 }}
+  requests:
+    memory: "100Mi"
+    cpu: "400m"
+  limits:
+    memory: "200Mi"
+    cpu: "1000m"
 securityContext:
   runAsNonRoot: true
   readOnlyRootFilesystem: true
