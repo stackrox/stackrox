@@ -390,12 +390,12 @@ splunk:
         // times here.
         withRetry(RETRIES, PAUSE_SECS) {
             def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
-            def roleHealth = response.getHealthsList().find {
+            def authProviderHealth = response.getHealthsList().find {
                 it.getName().contains(AUTH_PROVIDER_KEY)
             }
-            assert roleHealth
-            assert roleHealth.getErrorMessage()
-            assert roleHealth.getStatus() == Status.UNHEALTHY
+            assert authProviderHealth
+            assert authProviderHealth.getErrorMessage()
+            assert authProviderHealth.getStatus() == Status.UNHEALTHY
         }
 
         // The previously created auth provider should not exist anymore.
