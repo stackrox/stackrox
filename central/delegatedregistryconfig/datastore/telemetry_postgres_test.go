@@ -63,8 +63,8 @@ func TestGather(t *testing.T) {
 			require.NoError(t, err)
 
 			expectedProps := map[string]any{
-				"Delegated Scanning Enabled For": tc.enabledFor.String(),
-				"Total Delegated Registries":     len(tc.registries),
+				"Delegated Scanning Config Enabled For": tc.enabledFor.String(),
+				"Total Delegated Scanning Config Registries":  len(tc.registries),
 			}
 			assert.Equal(t, expectedProps, props)
 		})

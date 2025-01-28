@@ -24,9 +24,9 @@ func Gather(ds DataStore) phonehome.GatherFunc {
 			return nil, errors.Wrap(err, "failed to get delegated registry config")
 		}
 		props := map[string]any{
-			"Delegated Scanning Enabled For": cfg.GetEnabledFor().String(),
+			"Delegated Scanning Config Enabled For": cfg.GetEnabledFor().String(),
 		}
-		_ = phonehome.AddTotal(ctx, props, "Delegated Registries", func(ctx context.Context) (int, error) {
+		_ = phonehome.AddTotal(ctx, props, "Delegated Scanning Config Registries", func(ctx context.Context) (int, error) {
 			return len(cfg.GetRegistries()), nil
 		})
 		return props, nil
