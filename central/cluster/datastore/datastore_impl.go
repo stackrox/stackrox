@@ -772,7 +772,9 @@ func (ds *datastoreImpl) markAlertsStale(ctx context.Context, alerts []*storage.
 		return err
 	}
 	for _, resolvedAlert := range resolvedAlerts {
-		ds.notifier.ProcessAlert(ctx, resolvedAlert)
+		if ds.notifier != nil {
+			ds.notifier.ProcessAlert(ctx, resolvedAlert)
+		}
 	}
 	return nil
 }
