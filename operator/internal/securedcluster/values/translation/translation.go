@@ -368,17 +368,6 @@ func (t Translator) getCollectorContainerValues(collectorContainerSpec *platform
 		}
 	}
 
-	if collectorContainerSpec.ImageFlavor != nil {
-		flavor := *collectorContainerSpec.ImageFlavor
-		if flavor == platform.ImageFlavorRegular || flavor == platform.ImageFlavorSlim {
-			// Slim images no longer exist.
-			// Disable slim mode to force use of collector image with no suffix.
-			cv.SetBoolValue("slimMode", false)
-		} else {
-			return cv.SetError(fmt.Errorf("invalid spec.collector.collector.imageFlavor %q", *collectorContainerSpec.ImageFlavor))
-		}
-	}
-
 	cv.AddChild(translation.ResourcesKey, translation.GetResources(collectorContainerSpec.Resources))
 
 	return &cv

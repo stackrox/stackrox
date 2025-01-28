@@ -313,7 +313,7 @@ non-standard environments:
 |`image.main.tag`| Tag of `main` image to use.|`null` |
 |`image.collector.tag`| Tag of `collector` image to use.| `null` |
 |`image.main.pullPolicy`| Image pull policy for `main` images.|`IfNotPresent`|
-|`image.collector.pullPolicy`| Image pull policy for `collector` images.| `IfNotPresent` if `slimCollector` is enabled, `Always` otherwise.|
+|`image.collector.pullPolicy`| Image pull policy for `collector` images.|`IfNotPresent`|
 |`sensor.resources`|Resource specification for Sensor.|See below.|
 |`collector.resources`|Resource specification for Collector.|See below.|
 |`collector.complianceResources`|Resource specification for Collector's Compliance container.|See below.|

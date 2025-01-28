@@ -302,7 +302,7 @@ type CollectorContainerSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:select:CORE_BPF", "urn:alm:descriptor:com.tectonic.ui:select:NoCollection"}
 	Collection *CollectionMethod `json:"collection,omitempty"`
 
-	// Deprecated field. This field will be removed in a future release.
+	// Deprecated field.
 	//+kubebuilder:default=Regular
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	ImageFlavor *CollectorImageFlavor `json:"imageFlavor,omitempty"`

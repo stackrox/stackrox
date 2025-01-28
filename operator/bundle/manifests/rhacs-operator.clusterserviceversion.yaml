@@ -1167,7 +1167,7 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:select:CORE_BPF
         - urn:alm:descriptor:com.tectonic.ui:select:NoCollection
-      - description: Deprecated field. This field will be removed in a future release.
+      - description: Deprecated field.
         displayName: Image Flavor
         path: perNode.collector.imageFlavor
         x-descriptors:

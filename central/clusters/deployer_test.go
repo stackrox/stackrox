@@ -278,7 +278,7 @@ func testMetaValueGenerationWithImageFlavor(s *deployerTestSuite, flavor default
 			} else {
 				s.NoError(err)
 				s.Equal(c.expectedMain, getMain(fields), "Main image does not match")
-				s.Equal(c.expectedCollectorRef, getCollectorImage(fields), "Collector full image does not match")
+				s.Equal(c.expectedCollectorRef, getCollectorImage(fields), "Collector image does not match")
 				s.Equal(c.expectedScannerSlimRef, getScannerSlim(fields), "Scanner slim image does not match")
 			}
 		})

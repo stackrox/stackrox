@@ -923,7 +923,7 @@ spec:
           All values are strings but are converted into appropriate type based on schema.
         displayName: Value
         path: overlays[0].patches[0].value
-      - description: Deprecated field. This field will be removed in a future release.
+      - description: Deprecated field.
         displayName: Image Flavor
         path: perNode.collector.imageFlavor
         x-descriptors:

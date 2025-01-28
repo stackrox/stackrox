@@ -545,8 +545,7 @@ spec:
                         type: boolean
                       imageFlavor:
                         default: Regular
-                        description: Deprecated field. This field will be removed
-                          in a future release.
+                        description: Deprecated field.
                         enum:
                         - Regular
                         - Slim
