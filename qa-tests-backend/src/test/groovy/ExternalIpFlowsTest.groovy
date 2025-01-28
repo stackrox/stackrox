@@ -1,36 +1,19 @@
-import static io.restassured.RestAssured.given
 import static util.Helpers.withRetry
 
-import io.grpc.StatusRuntimeException
-import io.restassured.response.Response
 import orchestratormanager.OrchestratorTypes
-import org.yaml.snakeyaml.Yaml
 
-import common.Constants
-import objects.DaemonSet
 import objects.Deployment
-import objects.Edge
 import objects.K8sServiceAccount
-import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
 import objects.Service
-import services.ClusterService
-import services.DeploymentService
 import services.NetworkGraphService
-import services.NetworkPolicyService
 import util.CollectorUtil
 import util.Env
-import util.Helpers
-import util.NetworkGraphUtil
-import util.Timer
 
-import org.junit.Assume
-import spock.lang.Ignore
 import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Stepwise
 import spock.lang.Tag
-import spock.lang.Unroll
 
 @Stepwise
 @Tag("PZ")
