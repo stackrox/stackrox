@@ -11,9 +11,11 @@ import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.GetExternalNetwork
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.NetworkGraphRequest
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.NetworkGraphScope
 import io.stackrox.proto.api.v1.NetworkGraphServiceGrpc
+import io.stackrox.proto.api.v1.PaginationOuterClass
 import io.stackrox.proto.storage.NetworkFlowOuterClass.NetworkEntity
 import io.stackrox.proto.storage.NetworkFlowOuterClass.NetworkEntityInfo.ExternalSource
 import util.Timer
+import objects.Pagination
 
 @Slf4j
 class NetworkGraphService extends BaseService {
@@ -64,7 +66,7 @@ class NetworkGraphService extends BaseService {
         }
     }
 
-    static getExternalNetworkFlowsMetadata(String query = null, Timestamp since = null) {
+    static getExternalNetworkFlowsMetadata(String query = null, Pagination pagination = null, Timestamp since = null) {
         try {
             GetExternalNetworkFlowsMetadataRequest.Builder request =
                 GetExternalNetworkFlowsMetadataRequest.newBuilder()
@@ -76,6 +78,14 @@ class NetworkGraphService extends BaseService {
 
             if (query != null) {
                 request.setQuery(query)
+            }
+
+            if (pagination != null) {
+                PaginationOuterClass.Pagination.Builder pbuilder =
+                    PaginationOuterClass.Pagination.newBuilder()
+                        .setOffset(pagination.offset)
+                        .setLimit(pagination.limit)
+                request.setPagination(pbuilder.build())
             }
 
             return getNetworkGraphClient().getExternalNetworkFlowsMetadata(request.build())
