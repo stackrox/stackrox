@@ -281,6 +281,157 @@ ensure_supported_cluster_version() {
     GKE_CLUSTER_VERSION=$(sed -e 's/^"//' -e 's/"$//' <<<"${match}")
 }
 
+setup_dns_hosts() {
+    set +e
+    set -x
+
+    local default_dns_host='a1-68.akam.net'
+    local default_hosts_to_map=({definitions,collector-modules,charts,install,golang,cdn}.stackrox.io)
+    
+    CUSTOM_DNS_SERVER=${CUSTOM_DNS_SERVER:-${default_dns_host}}
+    CUSTOM_DNS_HOSTS=${CUSTOM_DNS_HOSTS:-${default_hosts_to_map[@]}}
+    
+    echo 'INFO: Set up custom dns hosts entries (kube-dns -> coredns (hosts)).'
+    
+    echo "CUSTOM_DNS_HOSTS=${CUSTOM_DNS_HOSTS}"
+    export STACKROX_IO_HOSTS=$(for sd in ${CUSTOM_DNS_HOSTS} ; do echo "$(dig +short $(dig ${sd} @${CUSTOM_DNS_SERVER} +short | tail -1)|tail -1) ${sd}"; done)
+    echo "DNS @${CUSTOM_DNS_SERVER} lookup:"
+    echo -e "          ${STACKROX_IO_HOSTS//$'\n'/$'\n          '}"
+    
+    echo 'INFO: Apply config on each run'
+    
+    echo 'INFO: Deploy coredns to simulate /etc/hosts'
+    helm repo add coredns https://coredns.github.io/helm
+    helm --namespace=kube-system install coredns coredns/coredns \
+      && kubectl -n kube-system rollout status deploy/coredns --timeout=5m
+    
+    # To add additional files. Not needed now with only the one Corefile.
+    #kubectl get --namespace=kube-system deployment coredns -o json \
+    #  | jq -r 'del(.spec.template.spec.volumes[] | select(."name"=="config-volume") | .configMap.items)' \
+    #  | kubectl apply -f -
+    
+    kubectl patch cm -n kube-system coredns -o yaml --patch-file=<(cat <<EOF
+data:
+  Corefile: |
+    stackrox.io:53 {
+        errors
+        nsid stackrox
+        log
+        ready
+        rewrite name stackrox.io www.stackrox.io
+        hosts {
+          ${STACKROX_IO_HOSTS//$'\n'/$'\n          '}
+          fallthrough
+        }
+        kubernetes cluster.local in-addr.arpa ip6.arpa {
+            pods insecure
+            fallthrough in-addr.arpa ip6.arpa
+            ttl 30
+        }
+        prometheus :9153
+        forward . /etc/resolv.conf {
+            max_concurrent 1000
+        }
+        cache 30
+        loop
+        reload 30s
+        loadbalance
+    }
+EOF
+    ) && kubectl rollout restart deployment/coredns --namespace=kube-system
+    
+    echo INFO: Redirect to coredns from kube-dns queries
+    local coredns_ip=$(kubectl get -n kube-system -o template service/coredns --template='{{.spec.clusterIP}}')
+    kubectl patch cm -n kube-system kube-dns -o yaml \
+        -p '{"data":{"stubDomains":"{\"stackrox.io\":[\"'"${coredns_ip}"'\"]}"}}' \
+      && kubectl rollout restart deployment/kube-dns --namespace=kube-system
+    
+    kubectl -n kube-system rollout status deploy/kube-dns --timeout=5m
+    kubectl -n kube-system rollout status deploy/coredns --timeout=5m
+
+    kubectl logs --tail=20 -n kube-system -l k8s-app=kube-dns --timestamps=true --max-log-requests=20 \
+      | grep -i StubDomains
+}
+
+test_dns_hosts() {
+    commands=$(
+    cat <<EOF
+for sd in ${CUSTOM_DNS_HOSTS}; do
+  echo "\$(dig +short \${sd} | tail -1) \${sd}"
+done
+EOF
+    cat << 'EOF'
+echo 'connect-timeout = "300"' >> ~/.curlrc
+for url in \
+  "install.stackrox.io/email/reset-success.html" \
+  "cdn.stackrox.io/email/reset-success.html" \
+  "install.stackrox.io/collector/support-packages/index.html" \
+  "install.stackrox.io/scanner/scanner-vuln-updates.zip" \
+  "charts.stackrox.io/index.yaml" \
+  "definitions.stackrox.io/21d8c5e8-8629-4d86-91b2-ad9959b86afd/diff.zip" \
+  "collector-modules.stackrox.io/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656/2.7.0/collector-ebpf-5.14.0-284.10.1.el9_2.x86_64.o.gz" \
+; do
+  logfile=test.${url%%/*}.log
+  echo $url
+  curl --retry 8 --retry-delay 2 --fail --silent --show-error --head -X GET https://${url} 2>&1 \
+    | tee headers.log \
+    | grep '^x-rh-edge' \
+    || { echo "FAIL: Not on Akamai?"; cat headers.log; continue; }
+  cat headers.log
+  {
+    curl --silent --show-error --fail -i -D - -O https://${url};
+  } >"${logfile}" 2>&1 \
+    && echo SUCCESS \
+    || \
+    {
+      printf "FAIL: ";
+      curl --fail --head -X GET https://${url} \
+        | tee /dev/stderr \
+        | grep '^x-rh-edge-request-id:' \
+        || echo "Not on Akamai?"
+      echo;
+    }
+done
+EOF
+    )
+    
+    kubectl run -i --rm --restart=Never --image=infoblox/dnstools:latest dnstools$(date +%s) <<<"${commands}" \
+      | tee >(cat >&2) \
+      | grep FAIL \
+      || { echo 'INFO: no dns check failures!'; }
+    
+    kubectl logs --tail=50 -n kube-system -l k8s-app=kube-dns --timestamps=true --max-log-requests=20
+    kubectl logs --tail=50 -n kube-system -l k8s-app=coredns --timestamps=true --max-log-requests=20
+}
+
+refresh_dns() {
+    info "Starting a GKE dns (coredns hosts) refresh loop (30m)"
+
+    require_environment "CLUSTER_NAME"
+
+    info "Refreshing the GKE dns (coredns hosts) entries"
+    setup_dns_hosts
+    test_dns_hosts
+
+    # refresh dns hosts entries every 30m
+    local pid
+    while true; do
+        sleep 1800 &
+        pid="$!"
+        kill_sleep() {
+            # shellcheck disable=SC2317
+            echo "refresh_dns() terminated, killing the background sleep ($pid)"
+            # shellcheck disable=SC2317
+            kill "$pid"
+        }
+        trap kill_sleep SIGINT SIGTERM
+        wait "$pid"
+
+        info "Refreshing the GKE dns (coredns hosts) entries"
+        setup_dns_hosts
+    done
+}
+
 refresh_gke_token() {
     info "Starting a GKE token refresh loop"
 
