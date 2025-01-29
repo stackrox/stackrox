@@ -870,6 +870,7 @@ func (ts *DelegatedScanningSuite) scanWithRetries(ctx context.Context, service v
 	retryErrTokens := []string{
 		scan.ErrTooManyParallelScans.Error(),
 		"context deadline exceeded",
+		"could not advance in the tar archive: archive/tar: invalid tar header",
 	}
 
 	retryFunc := func() error {
