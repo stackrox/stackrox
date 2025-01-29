@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/quay/claircore/indexer/controller"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
@@ -372,6 +373,7 @@ func attachRPMtoRHCOS(version string, rpm *v4.IndexReport) *v4.IndexReport {
 	}
 	strID := strconv.Itoa(idCandidate)
 	oci := buildRHCOSIndexReport(strID, version)
+
 	oci.Contents.Packages = append(oci.Contents.Packages, rpm.GetContents().GetPackages()...)
 	oci.Contents.Repositories = append(oci.Contents.Repositories, rpm.GetContents().GetRepositories()...)
 	for envId, list := range rpm.GetContents().GetEnvironments() {
@@ -385,7 +387,7 @@ func buildRHCOSIndexReport(Id, version string) *v4.IndexReport {
 	return &v4.IndexReport{
 		// This hashId is arbitrary. The value doesn't play a role for matcher, but must be valid sha256.
 		HashId:  "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-		State:   Id, // IndexFinished
+		State:   controller.IndexFinished.String(),
 		Success: true,
 		Err:     "",
 		Contents: &v4.Contents{
