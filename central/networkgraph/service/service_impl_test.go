@@ -244,6 +244,8 @@ func (s *NetworkGraphServiceTestSuite) TestGetExternalNetworkFlows() {
 	)
 
 	networkTree, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{es1a, es1b})
+	s.NoError(err)
+
 	s.networkTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), gomock.Any()).Return(networkTree)
 	s.networkTreeMgr.EXPECT().GetDefaultNetworkTree(gomock.Any()).Return(networkTree)
 
