@@ -287,29 +287,29 @@ setup_dns_hosts() {
 
     local default_dns_host='a1-68.akam.net'
     local default_hosts_to_map=({definitions,collector-modules,charts,install,golang,cdn}.stackrox.io)
-    
+
     CUSTOM_DNS_SERVER=${CUSTOM_DNS_SERVER:-${default_dns_host}}
     CUSTOM_DNS_HOSTS=${CUSTOM_DNS_HOSTS:-${default_hosts_to_map[@]}}
-    
+
     echo 'INFO: Set up custom dns hosts entries (kube-dns -> coredns (hosts)).'
-    
+
     echo "CUSTOM_DNS_HOSTS=${CUSTOM_DNS_HOSTS}"
     export STACKROX_IO_HOSTS=$(for sd in ${CUSTOM_DNS_HOSTS} ; do echo "$(dig +short $(dig ${sd} @${CUSTOM_DNS_SERVER} +short | tail -1)|tail -1) ${sd}"; done)
     echo "DNS @${CUSTOM_DNS_SERVER} lookup:"
     echo -e "          ${STACKROX_IO_HOSTS//$'\n'/$'\n          '}"
-    
+
     echo 'INFO: Apply config on each run'
-    
+
     echo 'INFO: Deploy coredns to simulate /etc/hosts'
     helm repo add coredns https://coredns.github.io/helm
     helm --namespace=kube-system install coredns coredns/coredns \
       && kubectl -n kube-system rollout status deploy/coredns --timeout=5m
-    
+
     # To add additional files. Not needed now with only the one Corefile.
     #kubectl get --namespace=kube-system deployment coredns -o json \
     #  | jq -r 'del(.spec.template.spec.volumes[] | select(."name"=="config-volume") | .configMap.items)' \
     #  | kubectl apply -f -
-    
+
     kubectl patch cm -n kube-system coredns -o yaml --patch-file=<(cat <<EOF
 data:
   Corefile: |
@@ -339,13 +339,13 @@ data:
     }
 EOF
     ) && kubectl rollout restart deployment/coredns --namespace=kube-system
-    
+
     echo INFO: Redirect to coredns from kube-dns queries
     local coredns_ip=$(kubectl get -n kube-system -o template service/coredns --template='{{.spec.clusterIP}}')
     kubectl patch cm -n kube-system kube-dns -o yaml \
         -p '{"data":{"stubDomains":"{\"stackrox.io\":[\"'"${coredns_ip}"'\"]}"}}' \
       && kubectl rollout restart deployment/kube-dns --namespace=kube-system
-    
+
     kubectl -n kube-system rollout status deploy/kube-dns --timeout=5m
     kubectl -n kube-system rollout status deploy/coredns --timeout=5m
 

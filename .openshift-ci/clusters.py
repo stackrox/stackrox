@@ -44,6 +44,7 @@ class GKECluster:
         self.machine_type = machine_type
         self.disk_gb = disk_gb
         self.refresh_token_cmd = None
+        self.refresh_dns_cmd = None
 
     def provision(self):
         set_ci_shared_export(CLUSTER_FLAVOR_VARIANT_VAR, "gke")
@@ -121,7 +122,7 @@ class GKECluster:
         if self.refresh_dns_cmd is not None and not canceled:
             print("Terminating GKE dns refresh")
             try:
-                popen_graceful_kill(self.refresh_dn_cmd)
+                popen_graceful_kill(self.refresh_dns_cmd)
             except Exception as err:
                 print(f"Could not terminate the dns refresh: {err}")
 
