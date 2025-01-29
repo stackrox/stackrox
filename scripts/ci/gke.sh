@@ -416,8 +416,6 @@ refresh_dns() {
     require_environment "CLUSTER_NAME"
 
     info "Refreshing the GKE dns (coredns hosts) entries"
-    setup_dns_hosts
-    test_dns_hosts
 
     # refresh dns hosts entries every 30m
     local pid

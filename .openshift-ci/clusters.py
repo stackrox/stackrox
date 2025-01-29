@@ -96,6 +96,16 @@ class GKECluster:
             [GKECluster.REFRESH_PATH, "refresh_gke_token"]
         )
 
+        subprocess.run(
+            [GKECluster.REFRESH_PATH, "setup_dns_hosts"],
+            check=True,
+            timeout=GKECluster.WAIT_TIMEOUT,
+        )
+        subprocess.run(
+            [GKECluster.REFRESH_PATH, "test_dns_hosts"],
+            check=True,
+            timeout=GKECluster.WAIT_TIMEOUT,
+        )
         # pylint: disable=consider-using-with
         self.refresh_dns_cmd = subprocess.Popen(
             [GKECluster.REFRESH_PATH, "refresh_dns"]
