@@ -373,6 +373,13 @@ describe('convertFromInternalToExternalConditionText negative', () => {
         );
     });
 
+    it('should render equal to as not valid', () => {
+        // Intentionally omit = because potential problem with floating point
+        expect(convertFromInternalToExternalConditionText(inputProps, '=0.5')).toEqual(
+            '“=0.5” is not valid'
+        );
+    });
+
     it('should render unexpected value as not valid', () => {
         expect(convertFromInternalToExternalConditionText(inputProps, '=1.1')).toEqual(
             '“=1.1” is not valid'
@@ -401,9 +408,7 @@ describe('convertFromInternalToExternalConditionText positive', () => {
         );
     });
 
-    it('should split equal to', () => {
-        expect(convertFromInternalToExternalConditionText(inputProps, '=0.5')).toEqual('=50.000%');
-    });
+    // Intentionally omit = because potential problem with floating point
 
     it('should split less than or equal to', () => {
         expect(convertFromInternalToExternalConditionText(inputProps, '<=0.00345')).toEqual(

@@ -4,7 +4,7 @@ import { ConditionEntries } from '../components/ConditionText';
 const conditionEntries: ConditionEntries = [
     ['>', 'Is greater than'],
     ['>=', 'Is greater than or equal to'],
-    ['=', 'Is equal to'],
+    // Intentionally omit = because potential problem with floating point
     ['<=', 'Is less than or equal to'],
     ['<', 'Is less than'],
 ];
