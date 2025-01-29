@@ -230,7 +230,6 @@ function ViolationsTablePage(): ReactElement {
                         setIsLoadingAlerts(true);
                         setSearchFilter({});
                         setPage(1);
-                        setFilteredWorkflowView('Applications view');
                         setSelectedViolationStateTab(tab);
                     }}
                     aria-label="Violation state tabs"
@@ -252,7 +251,7 @@ function ViolationsTablePage(): ReactElement {
                     />
                 </Tabs>
             </PageSection>
-            {isPlatformComponentsEnabled && (
+            {isPlatformComponentsEnabled && !isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT') && (
                 <PageSection className="pf-v5-u-py-md" component="div" variant="light">
                     <FilteredWorkflowViewSelector
                         filteredWorkflowView={filteredWorkflowView}

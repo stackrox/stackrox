@@ -19,6 +19,7 @@ import {
     vulnerabilitiesAllImagesPath,
     vulnerabilitiesInactiveImagesPath,
     vulnerabilitiesImagesWithoutCvesPath,
+    violationsBasePath,
 } from 'routePaths';
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import { HasReadAccess } from 'hooks/usePermissions';
@@ -28,7 +29,7 @@ import { filterNavDescriptions, isActiveLink, NavDescription } from './utils';
 
 import './HorizontalSubnav.css';
 
-type SubnavParentKey = 'vulnerabilities';
+type SubnavParentKey = 'violations' | 'vulnerabilities';
 
 /*
  * Function that returns a key/value object that maps parent routes to a list
@@ -38,6 +39,34 @@ function getSubnavDescriptionGroups(
     isFeatureFlagEnabled: IsFeatureFlagEnabled
 ): Record<SubnavParentKey, NavDescription[]> {
     return {
+        violations: isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT')
+            ? [
+                  {
+                      type: 'link',
+                      content: 'User Workloads',
+                      path: `${violationsBasePath}?filteredWorkflowView=Applications view`,
+                      isActive: (location) =>
+                          location.search.includes(`filteredWorkflowView=Applications view`),
+                      routeKey: 'violations',
+                  },
+                  {
+                      type: 'link',
+                      content: 'Platform',
+                      path: `${violationsBasePath}?filteredWorkflowView=Platform view`,
+                      isActive: (location) =>
+                          location.search.includes(`filteredWorkflowView=Platform view`),
+                      routeKey: 'violations',
+                  },
+                  {
+                      type: 'link',
+                      content: 'All Violations',
+                      path: `${violationsBasePath}?filteredWorkflowView=Full view`,
+                      isActive: (location) =>
+                          location.search.includes(`filteredWorkflowView=Full view`),
+                      routeKey: 'violations',
+                  },
+              ]
+            : [],
         vulnerabilities: isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT')
             ? [
                   {
@@ -94,6 +123,21 @@ function getSubnavDescriptionGroups(
     };
 }
 
+// Since some subnav links may contain URL parameters, we need to strip these
+// parameters off when determining whether or not to show a set of navigation items at the top.
+// This is because react-router's `matchPath` does a strict comparison that wil always fail when
+// our link's URL includes search parameters.
+function matchBasePath({
+    pathname,
+    descriptionPath,
+}: {
+    pathname: string;
+    descriptionPath: string;
+}): boolean {
+    const basePath = descriptionPath.split('?')[0] ?? '';
+    return Boolean(matchPath(pathname, basePath));
+}
+
 /*
  * Given the mapping of parent routes to subnav description groups, return the grouping
  * that contains a child item with a path matching the user's current path
@@ -106,11 +150,13 @@ function getSubnavGroupForCurrentPath(
         Object.values(subnavDescriptionGroups).find((subnavDescriptionGroup) => {
             return subnavDescriptionGroup.some((group) => {
                 if (group.type === 'link') {
-                    return matchPath(pathname, group.path);
+                    return matchBasePath({ pathname, descriptionPath: group.path });
                 }
                 return group.children
                     .filter((child) => child.type === 'link')
-                    .some(({ path }) => matchPath(pathname, path));
+                    .some(({ path }) => {
+                        return matchBasePath({ pathname, descriptionPath: path });
+                    });
             });
         }) ?? []
     );
@@ -123,13 +169,13 @@ export type HorizontalSubnavProps = {
 
 function HorizontalSubnav({ hasReadAccess, isFeatureFlagEnabled }: HorizontalSubnavProps) {
     const history = useHistory();
-    const { pathname } = useLocation();
+    const location = useLocation();
     const routePredicates = { hasReadAccess, isFeatureFlagEnabled };
 
     const subnavDescriptionGroups = getSubnavDescriptionGroups(isFeatureFlagEnabled);
     const subnavDescriptionGroupForCurrentPath = getSubnavGroupForCurrentPath(
         subnavDescriptionGroups,
-        pathname
+        location.pathname
     );
     const subnavDescriptions = filterNavDescriptions(
         subnavDescriptionGroupForCurrentPath,
@@ -164,7 +210,7 @@ function HorizontalSubnav({ hasReadAccess, isFeatureFlagEnabled }: HorizontalSub
                             return (
                                 <NavigationItem
                                     key={path}
-                                    isActive={isActiveLink(pathname, subnavDescription)}
+                                    isActive={isActiveLink(location, subnavDescription)}
                                     path={path}
                                     content={
                                         typeof content === 'function'
@@ -190,7 +236,7 @@ function HorizontalSubnav({ hasReadAccess, isFeatureFlagEnabled }: HorizontalSub
                                             isActive={subnavDescription.children.some(
                                                 (child) =>
                                                     child.type === 'link' &&
-                                                    isActiveLink(pathname, child)
+                                                    isActiveLink(location, child)
                                             )}
                                             onClick={() => onToggleClick(key)}
                                         >
@@ -222,7 +268,7 @@ function HorizontalSubnav({ hasReadAccess, isFeatureFlagEnabled }: HorizontalSub
                                                 <DropdownItem
                                                     component={'a'}
                                                     className={
-                                                        isActiveLink(pathname, child)
+                                                        isActiveLink(location, child)
                                                             ? 'acs-pf-horizontal-subnav-menu__active'
                                                             : ''
                                                     }

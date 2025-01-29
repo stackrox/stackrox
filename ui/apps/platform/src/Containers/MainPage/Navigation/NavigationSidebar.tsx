@@ -69,9 +69,9 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
                   content: 'Results',
                   path: vulnerabilitiesUserWorkloadsPath,
                   routeKey: 'vulnerabilities/user-workloads',
-                  isActive: (pathname) =>
+                  isActive: (location) =>
                       Boolean(
-                          matchPath(pathname, [
+                          matchPath(location.pathname, [
                               vulnerabilitiesWorkloadCvesPath,
                               vulnerabilitiesNodeCvesPath,
                               vulnerabilitiesUserWorkloadsPath,
@@ -115,8 +115,8 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
                   content: <NavigationContent variant="Deprecated">Dashboard</NavigationContent>,
                   path: vulnManagementPath,
                   routeKey: 'vulnerability-management',
-                  isActive: (pathname) =>
-                      Boolean(matchPath(pathname, { vulnManagementPath, exact: true })),
+                  isActive: (location) =>
+                      Boolean(matchPath(location.pathname, { vulnManagementPath, exact: true })),
               },
           ]
         : [
@@ -163,8 +163,8 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
                   content: <NavigationContent variant="Deprecated">Dashboard</NavigationContent>,
                   path: vulnManagementPath,
                   routeKey: 'vulnerability-management',
-                  isActive: (pathname) =>
-                      Boolean(matchPath(pathname, { vulnManagementPath, exact: true })),
+                  isActive: (location) =>
+                      Boolean(matchPath(location.pathname, { vulnManagementPath, exact: true })),
               },
           ];
 
@@ -226,9 +226,9 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
                     content: 'Dashboard',
                     path: complianceBasePath,
                     routeKey: 'compliance',
-                    isActive: (pathname) =>
-                        Boolean(matchPath(pathname, complianceBasePath)) &&
-                        !matchPath(pathname, [
+                    isActive: (location) =>
+                        Boolean(matchPath(location.pathname, complianceBasePath)) &&
+                        !matchPath(location.pathname, [
                             complianceEnhancedCoveragePath,
                             complianceEnhancedSchedulesPath,
                         ]),
@@ -326,7 +326,7 @@ function NavigationSidebar({
     hasReadAccess,
     isFeatureFlagEnabled,
 }: NavigationSidebarProps): ReactElement {
-    const { pathname } = useLocation();
+    const location = useLocation();
     const routePredicates = { hasReadAccess, isFeatureFlagEnabled };
 
     const navDescriptionsFiltered = filterNavDescriptions(
@@ -348,8 +348,8 @@ function NavigationSidebar({
                             const hasChildMatchPath = children.some(
                                 (childDescription) =>
                                     childDescription.type === 'link' &&
-                                    (Boolean(matchPath(pathname, childDescription.path)) ||
-                                        isActiveLink(pathname, childDescription))
+                                    (Boolean(matchPath(location.pathname, childDescription.path)) ||
+                                        isActiveLink(location, childDescription))
                             );
                             return (
                                 <NavExpandable
@@ -369,7 +369,7 @@ function NavigationSidebar({
                                                 <NavigationItem
                                                     key={path}
                                                     isActive={isActiveLink(
-                                                        pathname,
+                                                        location,
                                                         childDescription
                                                     )}
                                                     path={path}
@@ -396,7 +396,7 @@ function NavigationSidebar({
                             return (
                                 <NavigationItem
                                     key={path}
-                                    isActive={isActiveLink(pathname, navDescription)}
+                                    isActive={isActiveLink(location, navDescription)}
                                     path={path}
                                     content={
                                         typeof content === 'function'
