@@ -1,15 +1,12 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Button, Divider, Flex, FlexItem, Stack, StackItem } from '@patternfly/react-core';
 import { PlusCircleIcon } from '@patternfly/react-icons';
 
-import AdvancedFlowsFilter, {
-    defaultAdvancedFlowsFilters,
-} from '../common/AdvancedFlowsFilter/AdvancedFlowsFilter';
-import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
-import { getAllUniquePorts } from '../utils/flowUtils';
 import IPMatchFilter, { MatchType } from '../common/IPMatchFilter';
 import CIDRFormModalButton from '../components/CIDRFormModalButton';
 import { useCIDRFormModal } from '../components/CIDRFormModalProvider';
+import ExternalIpsTable from '../external/ExternalIpsTable';
+import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 
 type ExternalFlowsFilter = {
     matchType: MatchType;
@@ -18,10 +15,10 @@ type ExternalFlowsFilter = {
 
 type InternalFlowsProps = {
     deploymentId: string;
+    scopeHierarchy: NetworkScopeHierarchy;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function ExternalFlows({ deploymentId }: InternalFlowsProps) {
+function ExternalFlows({ deploymentId, scopeHierarchy }: InternalFlowsProps) {
     const { setInitialCIDRFormValue } = useCIDRFormModal();
 
     const [tempFilter, setTempFilter] = useState<ExternalFlowsFilter>({
@@ -32,11 +29,6 @@ function ExternalFlows({ deploymentId }: InternalFlowsProps) {
         matchType: 'Equals',
         externalIP: '',
     });
-    const [advancedFilters, setAdvancedFilters] = React.useState<AdvancedFlowsFilterType>(
-        defaultAdvancedFlowsFilters
-    );
-
-    // TODO: Fetch external IPs connected to a deployment using the deploymentID
 
     const clearFilters = () => {
         setTempFilter((prevFilter) => ({
@@ -53,11 +45,15 @@ function ExternalFlows({ deploymentId }: InternalFlowsProps) {
         setInitialCIDRFormValue(tempFilter.externalIP);
     };
 
-    // TODO: Show all unique ports
-    const allUniquePorts = getAllUniquePorts([]);
     const isFiltered = appliedFilter.externalIP !== '';
 
-    // TODO: Filter network flows based on the match type and external IP
+    const advancedFilters = useMemo(
+        () => ({
+            'Deployment ID': deploymentId,
+            'External Source Address': appliedFilter.externalIP,
+        }),
+        [appliedFilter.externalIP, deploymentId]
+    );
 
     return (
         <Stack hasGutter>
@@ -69,13 +65,6 @@ function ExternalFlows({ deploymentId }: InternalFlowsProps) {
                             onChange={setTempFilter}
                             onSearch={setAppliedFilter}
                             onClear={clearFilters}
-                        />
-                    </FlexItem>
-                    <FlexItem>
-                        <AdvancedFlowsFilter
-                            filters={advancedFilters}
-                            setFilters={setAdvancedFilters}
-                            allUniquePorts={allUniquePorts}
                         />
                     </FlexItem>
                 </Flex>
@@ -103,7 +92,15 @@ function ExternalFlows({ deploymentId }: InternalFlowsProps) {
             )}
 
             <Divider component="hr" />
-            <StackItem isFilled style={{ overflow: 'auto' }}></StackItem>
+            <StackItem isFilled style={{ overflow: 'auto' }}>
+                <ExternalIpsTable
+                    scopeHierarchy={scopeHierarchy}
+                    advancedFilters={advancedFilters}
+                    setSelectedEntity={() => {
+                        // TODO: Set up routing so this will take you to the external ip detail view
+                    }}
+                />
+            </StackItem>
         </Stack>
     );
 }

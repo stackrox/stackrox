@@ -35,6 +35,7 @@ import useSimulation from '../hooks/useSimulation';
 import { EdgeState } from '../components/EdgeStateSelect';
 import { deploymentTabs } from '../utils/deploymentUtils';
 import useFetchNetworkFlows from '../api/useFetchNetworkFlows';
+import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 
 const sidebarHeadingStyleConstant = {
     '--pf-v5-u-max-width--MaxWidth': '26ch',
@@ -48,6 +49,7 @@ type DeploymentSideBarProps = {
     edgeState: EdgeState;
     onNodeSelect: (id: string) => void;
     defaultDeploymentTab: string;
+    scopeHierarchy: NetworkScopeHierarchy;
 };
 
 function DeploymentSideBar({
@@ -58,6 +60,7 @@ function DeploymentSideBar({
     edgeState,
     onNodeSelect,
     defaultDeploymentTab,
+    scopeHierarchy,
 }: DeploymentSideBarProps) {
     // component state
     const { hasReadAccess } = usePermissions();
@@ -228,6 +231,7 @@ function DeploymentSideBar({
                                     networkFlowsError={networkFlowsError}
                                     networkFlows={networkFlows}
                                     refetchFlows={refetchFlows}
+                                    scopeHierarchy={scopeHierarchy}
                                 />
                             )}
                         </TabContent>
