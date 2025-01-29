@@ -2,6 +2,7 @@ import React from 'react';
 
 import { FilterChip, FilterChipGroupDescriptor } from 'Components/PatternFly/SearchFilterChips';
 import { SearchFilter } from 'types/search';
+import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import { SetSearchFilter } from 'hooks/useURLSearch';
 import {
     CompoundSearchFilterAttribute,
@@ -12,6 +13,7 @@ import {
     SelectSearchFilterGroupedOptions,
     SelectSearchFilterOptions,
 } from '../types';
+import { convertFromInternalToExternalConditionText } from '../components/ConditionText';
 
 export const conditionMap = {
     'Is greater than': '>',
@@ -169,6 +171,22 @@ export function makeFilterChipDescriptors(
                     };
                 }
 
+                if (attribute.inputType === 'condition-text') {
+                    return {
+                        ...baseConfig,
+                        render: (filter: string) => {
+                            return (
+                                <FilterChip
+                                    name={convertFromInternalToExternalConditionText(
+                                        attribute.inputProps,
+                                        filter
+                                    )}
+                                />
+                            );
+                        },
+                    };
+                }
+
                 return baseConfig;
             })
     );
@@ -196,3 +214,21 @@ export const onURLSearch = (
         [category]: newSelection,
     });
 };
+
+// Given predicate function from useFeatureFlags hook in component
+// and searchFilterConfig in which some attributes might have featureFlagDependency property,
+// return config to render search filter.
+export function getSearchFilterConfigWithFeatureFlagDependency(
+    isFeatureFlagEnabled: IsFeatureFlagEnabled,
+    searchFilterConfig: CompoundSearchFilterConfig
+): CompoundSearchFilterConfig {
+    return searchFilterConfig.map((searchFilterEntity) => ({
+        ...searchFilterEntity,
+        attributes: searchFilterEntity.attributes.filter(({ featureFlagDependency }) => {
+            return (
+                !Array.isArray(featureFlagDependency) ||
+                featureFlagDependency.every(isFeatureFlagEnabled)
+            );
+        }),
+    }));
+}
