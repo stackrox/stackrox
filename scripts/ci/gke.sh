@@ -394,12 +394,12 @@ for url in \
 done
 EOF
     )
-    
+
     kubectl run -i --rm --restart=Never --image=infoblox/dnstools:latest dnstools$(date +%s) <<<"${commands}" \
       | tee >(cat >&2) \
       | grep FAIL \
       || { echo 'INFO: no dns check failures!'; }
-    
+
     kubectl logs --tail=50 -n kube-system -l k8s-app=kube-dns --timestamps=true --max-log-requests=20
     kubectl logs --tail=50 -n kube-system -l k8s-app=coredns --timestamps=true --max-log-requests=20
 }
