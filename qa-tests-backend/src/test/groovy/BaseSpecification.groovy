@@ -202,7 +202,7 @@ class BaseSpecification extends Specification {
     // confusing junit reports.
     @Rule
     Timeout globalTimeout = new Timeout(
-            isRaceBuild() ? 6000 : 2000,
+            isRaceBuild() ? 6000 : ( (Env.CI_JOB_NAME ==~ /ocp.*/) ? 6000 : 2000),
             TimeUnit.SECONDS
     )
     @Rule
