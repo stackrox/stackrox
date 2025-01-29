@@ -34,7 +34,7 @@ func NewComponentV2Loader(ds datastore.DataStore) ComponentV2Loader {
 
 // GetComponentV2Loader returns the ComponentLoader from the context if it exists.
 func GetComponentV2Loader(ctx context.Context) (ComponentV2Loader, error) {
-	loader, err := GetLoader(ctx, componentLoaderType)
+	loader, err := GetLoader(ctx, componentV2LoaderType)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ type ComponentV2Loader interface {
 	VulnsFromQuery(ctx context.Context, query *v1.Query) ([]*storage.ImageCVEV2, error)
 }
 
-// componentLoaderImpl implements the ComponentDataLoader interface.
+// componentV2LoaderImpl implements the ComponentDataLoader interface.
 type componentV2LoaderImpl struct {
 	lock   sync.RWMutex
 	loaded map[string]*storage.ImageComponentV2
