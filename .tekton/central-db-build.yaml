@@ -43,9 +43,8 @@ spec:
     value: '{{revision}}'
   - name: rebuild
     value: 'true'
-  # TODO(ROX-20234): Enable hermetic builds
-  # - name: hermetic
-  #   value: "true"
+  - name: hermetic
+    value: "true"
   # No language dependencies are required for central-db image.
   - name: prefetch-input
     value: ''

@@ -63,8 +63,7 @@ COPY --from=builder \
 
 COPY .konflux/scanner-data/repository-to-cpe.json .konflux/scanner-data/container-name-repos-map.json /run/mappings/
 
-RUN microdnf upgrade --nobest && \
-    microdnf clean all && \
+RUN microdnf clean all && \
     # (Optional) Remove line below to keep package management utilities
     rpm -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     rm -rf /var/cache/dnf /var/cache/yum && \
