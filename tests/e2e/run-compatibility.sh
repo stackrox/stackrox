@@ -76,12 +76,26 @@ _run_compatibility_tests() {
     fi
     kubectl -n stackrox get pods
     make -C tests compatibility-tests || touch FAIL
+
+    update_junit_prefix_with_central_and_sensor_version "${short_central_tag}" "${short_sensor_tag}"
+
     store_test_results "tests/compatibility-tests-results" "${compatibility_dir}"
     [[ ! -f FAIL ]] || die "compatibility tests failed for Central v${short_central_tag}, Sensor v${short_sensor_tag}"
 
     cd "$ROOT"
 
     collect_and_check_stackrox_logs "/tmp/compatibility-test-logs" "${compatibility_dir}/initial_tests"
+}
+
+update_junit_prefix_with_central_and_sensor_version() {
+    local short_central_tag="$1"
+    local short_sensor_tag="$2"
+
+    result_folder="${ROOT}/tests/compatibility-tests-results"
+    info "Updating all test in $result_folder to have \"Central-v${short_central_tag}_Sensor-v${short_sensor_tag}_\" prefix"
+    for f in "$result_folder"/*.xml; do
+        sed -i "s/testcase name=\"/testcase name=\"[Central-v${short_central_tag}_Sensor-v${short_sensor_tag}] /g" "$f"
+    done
 }
 
 # Duplicate function with run.sh
