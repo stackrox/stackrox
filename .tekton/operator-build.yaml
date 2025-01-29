@@ -9,12 +9,13 @@ metadata:
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "500"
     # TODO(ROX-21073): re-enable for all PR branches
-    pipelinesascode.tekton.dev/on-cel-expression: |
-      (
-        event == "push" && target_branch.matches("^(master|release-.*|refs/tags/.*)$")
+    pipelinesascode.tekton.dev/on-cel-expression: (
+        event == "push" && (
+          source_branch == "master" ||
+          target_branch.startsWith("refs/tags/")
+        )
       ) || (
         event == "pull_request" && (
-          target_branch.startsWith("release-") ||
           source_branch.matches("(konflux|renovate|appstudio|rhtap)") ||
           body.pull_request.labels.exists(l, l.name == "konflux-build")
         )
@@ -43,9 +44,8 @@ spec:
     value: '{{revision}}'
   - name: rebuild
     value: 'true'
-  # TODO(ROX-20234): Enable hermetic builds
-  # - name: hermetic
-  #   value: "true"
+  - name: hermetic
+    value: "true"
   - name: prefetch-input
     value: '{"type": "gomod", "path": "."}'
   - name: build-source-image

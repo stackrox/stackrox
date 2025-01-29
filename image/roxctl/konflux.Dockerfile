@@ -12,17 +12,16 @@ WORKDIR /go/src/github.com/stackrox/rox/app
 
 COPY . .
 
+RUN .konflux/scripts/fail-build-if-git-is-dirty.sh
+
 RUN mkdir -p image/bin
 
-ARG BUILD_TAG
-RUN if [[ "$BUILD_TAG" == "" ]]; then >&2 echo "error: required BUILD_TAG arg is unset"; exit 6; fi
-ENV BUILD_TAG="$BUILD_TAG"
+ARG VERSIONS_SUFFIX
+ENV MAIN_TAG_SUFFIX="$VERSIONS_SUFFIX" COLLECTOR_TAG_SUFFIX="$VERSIONS_SUFFIX" SCANNER_TAG_SUFFIX="$VERSIONS_SUFFIX"
 
 ENV CI=1 GOFLAGS=""
 # TODO(ROX-20240): enable non-release development builds.
-# TODO(ROX-27054): Remove the redundant strictfipsruntime option if one is found to be so.
-ENV GOTAGS="release,strictfipsruntime"
-ENV GOEXPERIMENT=strictfipsruntime
+ENV GOTAGS="release"
 
 RUN RACE=0 CGO_ENABLED=1 GOOS=linux GOARCH=$(go env GOARCH) scripts/go-build.sh ./roxctl && \
     cp bin/linux_$(go env GOARCH)/roxctl image/bin/roxctl
@@ -33,15 +32,14 @@ FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 
 COPY --from=builder /go/src/github.com/stackrox/rox/app/image/bin/roxctl /usr/bin/roxctl
 
-# TODO(ROX-20234): use hermetic builds when installing/updating RPMs becomes hermetic.
-RUN microdnf upgrade -y --nobest && \
-    microdnf clean all && \
+RUN microdnf clean all && \
     rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     rm -rf /var/cache/dnf /var/cache/yum
 
 COPY LICENSE /licenses/LICENSE
 
-ARG BUILD_TAG
+ARG MAIN_IMAGE_TAG
+RUN if [[ "$MAIN_IMAGE_TAG" == "" ]]; then >&2 echo "error: required MAIN_IMAGE_TAG arg is unset"; exit 6; fi
 
 LABEL \
     com.redhat.component="rhacs-roxctl-container" \
@@ -57,7 +55,7 @@ LABEL \
     summary="The CLI for Red Hat Advanced Cluster Security for Kubernetes" \
     url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
     # We must set version label to prevent inheriting value set in the base stage.
-    version="${BUILD_TAG}" \
+    version="${MAIN_IMAGE_TAG}" \
     # Release label is required by EC although has no practical semantics.
     # We also set it to not inherit one from a base stage in case it's RHEL or UBI.
     release="1"
