@@ -65,7 +65,7 @@ func (in *AdmissionControlComponentSpec) DeepCopyInto(out *AdmissionControlCompo
 	*out = *in
 	if in.ListenOnCreates != nil {
 		in, out := &in.ListenOnCreates, &out.ListenOnCreates
-		*out = new(bool)
+		*out = new(string)
 		**out = **in
 	}
 	if in.ListenOnUpdates != nil {
