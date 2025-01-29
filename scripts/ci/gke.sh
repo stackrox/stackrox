@@ -313,7 +313,7 @@ setup_dns_hosts() {
     #  | jq -r 'del(.spec.template.spec.volumes[] | select(."name"=="config-volume") | .configMap.items)' \
     #  | kubectl apply -f -
 
-    kubectl patch cm -n kube-system coredns -o yaml --patch-file=<(cat <<EOF
+    kubectl patch cm -n kube-system coredns -o yaml --patch-file=<(cat <<EOF | tee >(cat >&2)
 data:
   Corefile: |
     stackrox.io:53 {
