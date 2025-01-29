@@ -112,7 +112,7 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 		}
 
 		// get values
-		query = tryUnsuppressedQuery(query)
+		//query = tryUnsuppressedQuery(query)
 		vulns, err := loader.VulnsFromQuery(ctx, query)
 		cveResolvers, err := resolver.wrapImageCVEV2sWithContext(ctx, vulns, err)
 		if err != nil {
