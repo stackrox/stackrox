@@ -343,12 +343,12 @@ spec:
     params:
     - name: IMAGE
       value: "$(params.operator-image-build-repo):$(tasks.determine-operator-image-tag.results.IMAGE_TAG)"
-    taskRef: &wait-for-image-ref
+    taskRef:
       params:
       - name: name
-        value: wait-for-image
+        value: wait-for-image-build-like
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:76c8fbd2abac06ce895a765c41be73d14925b00a660b1b5fa6564a50a15cf2ba
+        value: quay.io/rhacs-eng/konflux-tasks:pr-29@sha256:765ddb533c2c70c88db3641b4a440d6f4f5a0701e494fac738fa85f4826b55f4
       - name: kind
         value: task
       resolver: bundles
@@ -359,7 +359,15 @@ spec:
     params:
     - name: IMAGE
       value: "$(params.main-image-build-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
-    taskRef: *wait-for-image-ref
+    taskRef: &wait-for-image-ref
+      params:
+      - name: name
+        value: wait-for-image
+      - name: bundle
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:76c8fbd2abac06ce895a765c41be73d14925b00a660b1b5fa6564a50a15cf2ba
+      - name: kind
+        value: task
+      resolver: bundles
     # This timeout must be the same as the pipeline timeout in `main-build.yaml`.
     timeout: 2h40m
 
