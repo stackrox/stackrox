@@ -59,6 +59,25 @@ export type ListenPort = {
     l4protocol: L4Protocol;
 };
 
+type ExternalNetworkFlowProperties = {
+    srcEntity: DeploymentNetworkEntityInfo;
+    dstEntity: ExternalSourceNetworkEntityInfo;
+    dstPort: number; // uint32 may be 0 if not applicable (e.g., icmp)
+    l4protocol: L4Protocol;
+};
+
+type ExternalNetworkFlow = {
+    props: ExternalNetworkFlowProperties;
+    lastSeenTimestamp: string; // ISO 8601 date string
+    clusterId: string;
+};
+
+export type ExternalNetworkFlowsResponse = {
+    entity: ExternalSourceNetworkEntityInfo;
+    flows: ExternalNetworkFlow[];
+    totalFlows: number;
+};
+
 export type ExternalNetworkFlowsMetadataResponse = {
     entities: ExternalNetworkFlowsMetadata[];
     totalEntities: number;
