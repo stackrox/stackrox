@@ -9,6 +9,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
@@ -62,6 +63,7 @@ func TestEnricherSuite(t *testing.T) {
 
 func createScanImageRequest(containerID int, imageID string, fullName string, notPullable bool) *scanImageRequest {
 	return &scanImageRequest{
+		ctx:          context.Background(),
 		containerIdx: containerID,
 		containerImage: &storage.ContainerImage{
 			Name: &storage.ImageName{
@@ -139,9 +141,15 @@ type mockImageServiceServer struct {
 	callCounts     map[string]int
 	callCountsLock sync.Mutex
 	returnError    bool
+	replySignal    *concurrency.Signal
 }
 
 func (m *mockImageServiceServer) ScanImageInternal(_ context.Context, req *v1.ScanImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
+	if m.replySignal != nil {
+		// Wait for the signal to be triggered
+		// This allows us to control when the server will reply
+		<-m.replySignal.Done()
+	}
 	if m.callCounts != nil {
 		m.callCountsLock.Lock()
 		defer m.callCountsLock.Unlock()
@@ -334,4 +342,56 @@ func (s *enricherSuite) TestGetPullSecrets() {
 	s.mockServiceAccountStore.EXPECT().GetImagePullSecrets(gomock.Any(), gomock.Any()).AnyTimes()
 	s.Nil(s.enricher.getPullSecrets(nil))
 	s.Nil(s.enricher.getPullSecrets(&storage.Deployment{}))
+}
+
+func (s *enricherSuite) TestStopRunScan() {
+	s.Run("stop due context canceled", func() {
+		replySignal := concurrency.NewSignal()
+		ctx, cancel := context.WithCancel(context.Background())
+		req := createScanImageRequest(0, "nginx-id", "nginx:latest", false)
+		req.ctx = ctx
+		conn, closeFunc := createMockImageService(s.T(), &mockImageServiceServer{replySignal: &replySignal})
+		s.enricher.imageSvc = v1.NewImageServiceClient(conn)
+		defer closeFunc()
+		s.mockCache.RemoveAll()
+		waitGroup := sync.WaitGroup{}
+		waitGroup.Add(1)
+		var result imageChanResult
+		go func() {
+			// runScan will not respond until the replySignal is triggered.
+			// In the context of this test we do not trigger the signal to block
+			// the call until the context is canceled.
+			result = s.enricher.runScan(req)
+			waitGroup.Done()
+		}()
+		// Cancel the context
+		cancel()
+		waitGroup.Wait()
+		s.Assert().Equal(types.ToImage(req.containerImage), result.image)
+	})
+	s.Run("stop due stop signal triggered", func() {
+		replySignal := concurrency.NewSignal()
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		req := createScanImageRequest(0, "nginx-id", "nginx:latest", false)
+		req.ctx = ctx
+		conn, closeFunc := createMockImageService(s.T(), &mockImageServiceServer{replySignal: &replySignal})
+		s.enricher.imageSvc = v1.NewImageServiceClient(conn)
+		defer closeFunc()
+		s.mockCache.RemoveAll()
+		waitGroup := sync.WaitGroup{}
+		waitGroup.Add(1)
+		var result imageChanResult
+		go func() {
+			// runScan will not respond until the replySignal is triggered.
+			// In the context of this test we do not trigger the signal to block
+			// the call until the stopSig is triggered.
+			result = s.enricher.runScan(req)
+			waitGroup.Done()
+		}()
+		// Trigger the stopSig
+		s.enricher.stopSig.Signal()
+		waitGroup.Wait()
+		s.Assert().Equal(types.ToImage(req.containerImage), result.image)
+	})
 }
