@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"sort"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -678,51 +679,6 @@ func filterFlowsAndMaskScopeAlienDeployments(
 	return filtered, visibleNeighbors, masker.GetMaskedDeployments(), nil
 }
 
-func (s *serviceImpl) getExternalFlowsForDeployment(ctx context.Context, clusterId string, deploymentId string) ([]*storage.NetworkFlow, error) {
-	flowStore, err := s.getFlowStore(ctx, clusterId)
-	if err != nil {
-		return nil, err
-	}
-
-	return flowStore.GetExternalFlowsForDeployment(ctx, deploymentId)
-}
-
-func (s *serviceImpl) enrichFlowsWithExternalEntityDetails(ctx context.Context, flows *[]*storage.NetworkFlow) error {
-	// This could probably be implemented in the DB query for better efficiency,
-	// but is simply implemented here for now.
-	for _, flow := range *flows {
-		var toGet string
-		var toSet **storage.NetworkEntityInfo
-
-		props := flow.GetProps()
-		if props == nil {
-			continue
-		}
-
-		src, dst := props.GetSrcEntity(), props.GetDstEntity()
-
-		if src != nil && src.GetType() == storage.NetworkEntityInfo_EXTERNAL_SOURCE {
-			toGet = src.GetId()
-			toSet = &props.SrcEntity
-		}
-
-		if dst != nil && dst.GetType() == storage.NetworkEntityInfo_EXTERNAL_SOURCE {
-			toGet = dst.GetId()
-			toSet = &props.DstEntity
-		}
-
-		if toGet != "" {
-			entity, _, err := s.entityDS.GetEntity(ctx, toGet)
-			if err != nil {
-				return err
-			}
-
-			*toSet = entity.GetInfo()
-		}
-	}
-	return nil
-}
-
 func (s *serviceImpl) getEntitiesByQuery(ctx context.Context, clusterId, query string) ([]*storage.NetworkEntity, error) {
 	q, err := search.ParseQuery(query, search.MatchAllIfEmpty())
 	if err != nil {
@@ -742,6 +698,24 @@ func (s *serviceImpl) getEntitiesByQuery(ctx context.Context, clusterId, query s
 	return s.entityDS.GetEntityByQuery(ctx, q)
 }
 
+// This is similar to addDeploymentFlowsToGraph except it will gather only
+// external flows.
+//
+// The process is:
+// (1) gather deployments in the cluster (filtered by the query)
+// (2) gather external entities (also filtered by the query)
+//
+//	(2.1) if entityId is provided, only one entity is retrieved
+//
+// (3) gather flows that satisfy the following rules:
+//
+//	(3.1) are only external flows (deployment <--> external entity)
+//	(3.2) are associated with one of the deployments from (1)
+//	(3.3) are associated with one of the entities from (2)
+//
+// (4) flows are filtered based on permissions (only deployments are constrained in this way, not entities)
+// (5) flows are sorted by source entity ID
+// (6) entities are sorted by ID
 func (s *serviceImpl) getExternalFlowsAndEntitiesByQuery(ctx context.Context, clusterId, query, entityId string, since *time.Time) ([]*storage.NetworkFlow, []*storage.NetworkEntity, error) {
 	deploymentQuery, scopeQuery, err := networkgraph.GetFilterAndScopeQueries(clusterId, query, &v1.NetworkGraphScope{})
 	if err != nil {
@@ -864,6 +838,21 @@ func (s *serviceImpl) getExternalFlowsAndEntitiesByQuery(ctx context.Context, cl
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to filter flows")
 	}
+
+	// Sorting the flows and entities by ID means that pagination for a given
+	// request will give a deterministic result
+
+	sort.Slice(filteredFlows, func(a, b int) bool {
+		aid := filteredFlows[a].GetProps().GetSrcEntity().GetId()
+		bid := filteredFlows[b].GetProps().GetSrcEntity().GetId()
+		return aid < bid
+	})
+
+	sort.Slice(entities, func(a, b int) bool {
+		aid := entities[a].GetInfo().GetId()
+		bid := entities[b].GetInfo().GetId()
+		return aid < bid
+	})
 
 	return filteredFlows, entities, nil
 }
