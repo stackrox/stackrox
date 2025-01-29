@@ -6,6 +6,7 @@ import { EdgeState } from '../components/EdgeStateSelect';
 import { Flow } from '../types/flow.type';
 import InternalFlows from './InternalFlows';
 import ExternalFlows from './ExternalFlows';
+import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 
 export type DeploymentFlowsView = 'external-flows' | 'internal-flows';
 
@@ -18,6 +19,7 @@ type DeploymentFlowsProps = {
     networkFlowsError: string;
     networkFlows: Flow[];
     refetchFlows: () => void;
+    scopeHierarchy: NetworkScopeHierarchy;
 };
 
 function DeploymentFlows({
@@ -29,6 +31,7 @@ function DeploymentFlows({
     networkFlowsError,
     networkFlows,
     refetchFlows,
+    scopeHierarchy,
 }: DeploymentFlowsProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isExternalIpsEnabled = isFeatureFlagEnabled('ROX_EXTERNAL_IPS');
@@ -85,7 +88,10 @@ function DeploymentFlows({
                                 refetchFlows={refetchFlows}
                             />
                         ) : (
-                            <ExternalFlows deploymentId={deploymentId} />
+                            <ExternalFlows
+                                deploymentId={deploymentId}
+                                scopeHierarchy={scopeHierarchy}
+                            />
                         )}
                     </Stack>
                 </StackItem>
