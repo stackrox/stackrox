@@ -269,7 +269,8 @@ func (t Translator) getAdmissionControlValues(admissionControl *platform.Admissi
 	// the single spec.admissionControl.listenOn* setting in CR. This is because
 	// redeployment is natively part of the CR lifecycle when we have an operator, so
 	// no need to distinguish between the static and dynamic part.
-	dynamic.SetBool("enforceOnCreates", admissionControl.ListenOnCreates)
+	listenOnCreatesBool, _ := strconv.ParseBool(*admissionControl.ListenOnCreates)
+	dynamic.SetBool("enforceOnCreates", &listenOnCreatesBool)
 	dynamic.SetBool("enforceOnUpdates", admissionControl.ListenOnUpdates)
 	if admissionControl.ContactImageScanners != nil {
 		switch *admissionControl.ContactImageScanners {
@@ -446,7 +447,7 @@ func (t Translator) setDefaults(sc *platform.SecuredCluster) {
 		sc.Spec.AdmissionControl = &platform.AdmissionControlComponentSpec{}
 	}
 	if sc.Spec.AdmissionControl.ListenOnCreates == nil {
-		sc.Spec.AdmissionControl.ListenOnCreates = pointers.Bool(true)
+		sc.Spec.AdmissionControl.ListenOnCreates = pointers.String("true")
 	}
 	if sc.Spec.AdmissionControl.ListenOnUpdates == nil {
 		sc.Spec.AdmissionControl.ListenOnUpdates = pointers.Bool(true)

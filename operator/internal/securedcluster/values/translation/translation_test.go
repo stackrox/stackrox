@@ -139,7 +139,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 						"enforceOnCreates": true,
 						"enforceOnUpdates": true,
 					},
-					"listenOnCreates": true,
+					"listenOnCreates": "true",
 					"listenOnUpdates": true,
 				},
 				"scanner": map[string]interface{}{
@@ -185,7 +185,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 						"enforceOnCreates": true,
 						"enforceOnUpdates": true,
 					},
-					"listenOnCreates": true,
+					"listenOnCreates": "true",
 					"listenOnUpdates": true,
 				},
 				"scanner": map[string]interface{}{
@@ -221,7 +221,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 						"enforceOnCreates": true,
 						"enforceOnUpdates": true,
 					},
-					"listenOnCreates": true,
+					"listenOnCreates": "true",
 					"listenOnUpdates": true,
 				},
 				"scanner": map[string]interface{}{
@@ -261,7 +261,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 						"enforceOnCreates": true,
 						"enforceOnUpdates": true,
 					},
-					"listenOnCreates": true,
+					"listenOnCreates": "true",
 					"listenOnUpdates": true,
 				},
 				"scanner": map[string]interface{}{
@@ -308,7 +308,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 							},
 						},
 						AdmissionControl: &platform.AdmissionControlComponentSpec{
-							ListenOnCreates:      pointer.Bool(true),
+							ListenOnCreates:      pointer.String("true"),
 							ListenOnUpdates:      pointer.Bool(false),
 							ListenOnEvents:       pointer.Bool(true),
 							ContactImageScanners: platform.ScanIfMissing.Pointer(),
@@ -595,7 +595,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 						"disableBypass":    false,
 						"timeout":          4,
 					},
-					"listenOnCreates": true,
+					"listenOnCreates": "true",
 					"listenOnUpdates": false,
 					"listenOnEvents":  true,
 					"nodeSelector": map[string]interface{}{
@@ -860,7 +860,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 						"enforceOnCreates": true,
 						"enforceOnUpdates": true,
 					},
-					"listenOnCreates": true,
+					"listenOnCreates": "true",
 					"listenOnUpdates": true,
 				},
 				"scanner": map[string]interface{}{
