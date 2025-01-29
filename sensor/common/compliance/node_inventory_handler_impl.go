@@ -373,6 +373,9 @@ func attachRPMtoRHCOS(version string, rpm *v4.IndexReport) *v4.IndexReport {
 	}
 	strID := strconv.Itoa(idCandidate)
 	oci := buildRHCOSIndexReport(strID, version)
+	log.Debugf("Attaching RHCOS index report to Compliance index report")
+	log.Debugf("Orignial: %+v", rpm)
+	log.Debugf("RHCOS: %+v", oci)
 
 	oci.Contents.Packages = append(oci.Contents.Packages, rpm.GetContents().GetPackages()...)
 	oci.Contents.Repositories = append(oci.Contents.Repositories, rpm.GetContents().GetRepositories()...)
@@ -380,6 +383,9 @@ func attachRPMtoRHCOS(version string, rpm *v4.IndexReport) *v4.IndexReport {
 		oci.Contents.Environments[envId] = list
 	}
 	oci.Contents.Distributions = rpm.GetContents().GetDistributions()
+
+	log.Debugf("Merged: %+v", oci)
+
 	return oci
 }
 
