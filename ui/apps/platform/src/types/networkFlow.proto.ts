@@ -59,6 +59,16 @@ export type ListenPort = {
     l4protocol: L4Protocol;
 };
 
+export type ExternalNetworkFlowsMetadataResponse = {
+    entities: ExternalNetworkFlowsMetadata[];
+    totalEntities: number;
+};
+
+type ExternalNetworkFlowsMetadata = {
+    entity: ExternalSourceNetworkEntityInfo;
+    flowsCount: number;
+};
+
 export type ExternalSourceNetworkEntityInfo = {
     externalSource: {
         name: string;
