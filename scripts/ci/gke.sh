@@ -294,7 +294,10 @@ setup_dns_hosts() {
     echo 'INFO: Set up custom dns hosts entries (kube-dns -> coredns (hosts)).'
 
     echo "CUSTOM_DNS_HOSTS=${CUSTOM_DNS_HOSTS}"
-    export STACKROX_IO_HOSTS=$(for sd in ${CUSTOM_DNS_HOSTS} ; do echo "$(dig +short $(dig ${sd} @${CUSTOM_DNS_SERVER} +short | tail -1)|tail -1) ${sd}"; done)
+    export STACKROX_IO_HOSTS=$(
+        local commands="for sd in ${CUSTOM_DNS_HOSTS}"' ; do echo "$(dig +short $(dig ${sd} @'"${CUSTOM_DNS_SERVER}"' +short | tail -1)|tail -1) ${sd}"; done'
+        kubectl run --quiet -i --rm --restart=Never --image=infoblox/dnstools:latest dnstools$(date +%s) <<<"${commands}"
+    )
     echo "DNS @${CUSTOM_DNS_SERVER} lookup:"
     echo -e "          ${STACKROX_IO_HOSTS//$'\n'/$'\n          '}"
 
