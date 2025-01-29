@@ -380,7 +380,7 @@ for url in \
   curl --retry 8 --retry-delay 2 --fail --silent --show-error --head -X GET https://${url} 2>&1 \
     | tee headers.log \
     | grep '^x-rh-edge' \
-    || { echo "FAIL: Not on Akamai?"; cat headers.log; continue; }
+    || { echo "WARN: Not on Akamai?"; cat headers.log; continue; }
   cat headers.log
   {
     curl --silent --show-error --fail -i -D - -O https://${url};
@@ -388,7 +388,7 @@ for url in \
     && echo SUCCESS \
     || \
     {
-      printf "FAIL: ";
+      printf "WARN: ";
       curl --fail --head -X GET https://${url} \
         | tee /dev/stderr \
         | grep '^x-rh-edge-request-id:' \
@@ -401,7 +401,7 @@ EOF
 
     kubectl run -i --rm --restart=Never --image=infoblox/dnstools:latest dnstools$(date +%s) <<<"${commands}" \
       | tee >(cat >&2) \
-      | grep FAIL \
+      | grep WARN \
       || { echo 'INFO: no dns check failures!'; }
 
     kubectl logs --tail=50 -n kube-system -l k8s-app=kube-dns --timestamps=true --max-log-requests=20
