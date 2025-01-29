@@ -61,6 +61,7 @@ var (
 			search.NewQuerySelect(search.Cluster).Proto(),
 			search.NewQuerySelect(search.Namespace).Proto(),
 			search.NewQuerySelect(search.DeploymentName).Proto(),
+			search.NewQuerySelect(search.EPSSProbablity).Proto(),
 		},
 		Pagination: search.NewPagination().
 			AddSortOption(search.NewSortOption(search.Cluster)).
@@ -80,6 +81,7 @@ var (
 			search.NewQuerySelect(search.CVSS).Proto(),
 			search.NewQuerySelect(search.NVDCVSS).Proto(),
 			search.NewQuerySelect(search.FirstImageOccurrenceTimestamp).Proto(),
+			search.NewQuerySelect(search.EPSSProbablity).Proto(),
 		},
 		Pagination: search.NewPagination().
 			AddSortOption(search.NewSortOption(search.ImageName)).Proto(),
@@ -154,8 +156,7 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 	}
 
 	// Format results into CSV
-	optionalColumns := req.ReportSnapshot.GetVulnReportFilters()
-	zippedCSVData, err := GenerateCSV(reportData.CVEResponses, req.ReportSnapshot.Name, optionalColumns)
+	zippedCSVData, err := GenerateCSV(reportData.CVEResponses, req.ReportSnapshot.Name, req.ReportSnapshot.GetVulnReportFilters())
 	if err != nil {
 		return err
 	}

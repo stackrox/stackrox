@@ -32,8 +32,8 @@ var (
 )
 
 // GenerateCSV takes in the results of vuln report query, converts to CSV and returns zipped data
-func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string, optionalColumns *storage.VulnerabilityReportFilters) (*bytes.Buffer, error) {
-	csvHeaderClone := addOptionalColumnstoHeader(optionalColumns)
+func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string, reportFilters *storage.VulnerabilityReportFilters) (*bytes.Buffer, error) {
+	csvHeaderClone := addOptionalColumnstoHeader(reportFilters)
 	csvWriter := csv.NewGenericWriter(csvHeaderClone, true)
 	for _, r := range cveResponses {
 		row := csv.Value{
@@ -50,7 +50,7 @@ func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string, optio
 			r.GetDiscoveredAtImage(),
 			r.Link,
 		}
-		addOptionalColumnstoRow(optionalColumns, &row, csvWriter, r)
+		addOptionalColumnstoRow(reportFilters, &row, csvWriter, r)
 		csvWriter.AddValue(row)
 	}
 
@@ -84,7 +84,8 @@ func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string, optio
 }
 
 func addOptionalColumnstoHeader(optionalColumns *storage.VulnerabilityReportFilters) []string {
-	csvHeaderClone := csvHeader
+	csvHeaderClone := make([]string, len(csvHeader))
+	copy(csvHeaderClone, csvHeader)
 	if optionalColumns.GetIncludeNvdCvss() {
 		csvHeaderClone = append(csvHeader, "NVDCVSS")
 	}
