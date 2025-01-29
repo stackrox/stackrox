@@ -324,7 +324,7 @@ data:
         ready
         rewrite name stackrox.io www.stackrox.io
         hosts {
-          ${STACKROX_IO_HOSTS}
+${STACKROX_IO_HOSTS}
           fallthrough
         }
         kubernetes cluster.local in-addr.arpa ip6.arpa {
