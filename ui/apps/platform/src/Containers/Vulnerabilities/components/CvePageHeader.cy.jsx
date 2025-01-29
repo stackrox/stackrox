@@ -1,12 +1,26 @@
 import React from 'react';
+import { createStore } from 'redux';
 
 import ComponentTestProviders from 'test-utils/ComponentProviders';
 
 import CvePageHeader from './CvePageHeader';
 
+const readOnlyReduxStore = createStore((s) => s, {
+    app: {
+        featureFlags: {
+            featureFlags: [],
+            loading: false,
+            error: null,
+        },
+    },
+});
 function setup(data) {
+    cy.intercept('GET', '/v1/featureFlags', (req) => {
+        req.reply({ data: { featureFlags: [] } });
+    });
+
     cy.mount(
-        <ComponentTestProviders>
+        <ComponentTestProviders reduxStore={readOnlyReduxStore}>
             <CvePageHeader data={data} />
         </ComponentTestProviders>
     );

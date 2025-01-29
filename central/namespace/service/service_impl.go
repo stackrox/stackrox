@@ -26,8 +26,8 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Namespace)): {
-			"/v1.NamespaceService/GetNamespace",
-			"/v1.NamespaceService/GetNamespaces",
+			v1.NamespaceService_GetNamespace_FullMethodName,
+			v1.NamespaceService_GetNamespaces_FullMethodName,
 		},
 	})
 )

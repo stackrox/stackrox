@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/central/views/imagecve"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/search"
@@ -82,9 +81,6 @@ func (resolver *Resolver) wrapImageCVECoresWithContext(ctx context.Context, valu
 func (resolver *Resolver) ImageCVECount(ctx context.Context, q RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageCVEs")
 
-	if !features.VulnMgmtWorkloadCVEs.Enabled() {
-		return 0, errors.Errorf("%s=false. Set %s=true and retry", features.VulnMgmtWorkloadCVEs.Name(), features.VulnMgmtWorkloadCVEs.Name())
-	}
 	if err := readImages(ctx); err != nil {
 		return 0, err
 	}
@@ -105,9 +101,6 @@ func (resolver *Resolver) ImageCVECount(ctx context.Context, q RawQuery) (int32,
 func (resolver *Resolver) ImageCVEs(ctx context.Context, q PaginatedQuery) ([]*imageCVECoreResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageCVEs")
 
-	if !features.VulnMgmtWorkloadCVEs.Enabled() {
-		return nil, errors.Errorf("%s=false. Set %s=true and retry", features.VulnMgmtWorkloadCVEs.Name(), features.VulnMgmtWorkloadCVEs.Name())
-	}
 	if err := readImages(ctx); err != nil {
 		return nil, err
 	}
@@ -289,9 +282,6 @@ func (resolver *Resolver) ImageCVE(ctx context.Context, args struct {
 }) (*imageCVECoreResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageCVEMetadata")
 
-	if !features.VulnMgmtWorkloadCVEs.Enabled() {
-		return nil, errors.Errorf("%s=false. Set %s=true and retry", features.VulnMgmtWorkloadCVEs.Name(), features.VulnMgmtWorkloadCVEs.Name())
-	}
 	if err := readImages(ctx); err != nil {
 		return nil, err
 	}

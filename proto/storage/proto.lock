@@ -2188,6 +2188,12 @@
                 "id": 30,
                 "name": "managed_by",
                 "type": "ManagerType"
+              },
+              {
+                "id": 31,
+                "name": "sensor_capabilities",
+                "type": "string",
+                "is_repeated": true
               }
             ],
             "maps": [
@@ -4788,6 +4794,11 @@
                 "name": "scans",
                 "type": "Scan",
                 "is_repeated": true
+              },
+              {
+                "id": 8,
+                "name": "report_data",
+                "type": "ComplianceOperatorReportData"
               }
             ],
             "messages": [
@@ -4803,6 +4814,80 @@
                     "id": 2,
                     "name": "last_started_time",
                     "type": "google.protobuf.Timestamp"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "ComplianceOperatorReportData",
+            "fields": [
+              {
+                "id": 1,
+                "name": "scan_configuration",
+                "type": "ComplianceOperatorScanConfigurationV2"
+              },
+              {
+                "id": 2,
+                "name": "cluster_status",
+                "type": "ClusterStatus",
+                "is_repeated": true
+              },
+              {
+                "id": 3,
+                "name": "last_executed_time",
+                "type": "google.protobuf.Timestamp"
+              }
+            ],
+            "messages": [
+              {
+                "name": "SuiteStatus",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "phase",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "result",
+                    "type": "string"
+                  },
+                  {
+                    "id": 3,
+                    "name": "error_message",
+                    "type": "string"
+                  },
+                  {
+                    "id": 4,
+                    "name": "last_transition_time",
+                    "type": "google.protobuf.Timestamp"
+                  }
+                ]
+              },
+              {
+                "name": "ClusterStatus",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "cluster_id",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "errors",
+                    "type": "string",
+                    "is_repeated": true
+                  },
+                  {
+                    "id": 3,
+                    "name": "cluster_name",
+                    "type": "string"
+                  },
+                  {
+                    "id": 4,
+                    "name": "suite_status",
+                    "type": "SuiteStatus"
                   }
                 ]
               }
@@ -5609,6 +5694,21 @@
         ],
         "messages": [
           {
+            "name": "EPSS",
+            "fields": [
+              {
+                "id": 1,
+                "name": "epss_probability",
+                "type": "float"
+              },
+              {
+                "id": 2,
+                "name": "epss_percentile",
+                "type": "float"
+              }
+            ]
+          },
+          {
             "name": "CVE",
             "fields": [
               {
@@ -5826,6 +5926,11 @@
                 "name": "cvss_metrics",
                 "type": "CVSSScore",
                 "is_repeated": true
+              },
+              {
+                "id": 12,
+                "name": "epss",
+                "type": "EPSS"
               }
             ],
             "messages": [
@@ -14035,6 +14140,11 @@
                 "id": 9,
                 "name": "include_nvd_cvss",
                 "type": "bool"
+              },
+              {
+                "id": 10,
+                "name": "include_epss_probability",
+                "type": "bool"
               }
             ]
           },
@@ -17957,6 +18067,11 @@
                 "id": 22,
                 "name": "nvd_cvss",
                 "type": "float"
+              },
+              {
+                "id": 23,
+                "name": "epss",
+                "type": "EPSS"
               }
             ],
             "reserved_ids": [

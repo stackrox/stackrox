@@ -17,7 +17,7 @@ import useFeatureFlags from 'hooks/useFeatureFlags';
 import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
-import { VulnerabilityState, isVulnerabilitySeverity } from 'types/cve.proto';
+import { CveBaseInfo, VulnerabilityState, isVulnerabilitySeverity } from 'types/cve.proto';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import useMap from 'hooks/useMap';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
@@ -47,6 +47,7 @@ import ExceptionDetailsCell from '../components/ExceptionDetailsCell';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
+import { formatEpssProbabilityAsPercent } from './table.utils';
 
 export const tableId = 'WorkloadCvesImageVulnerabilitiesTable';
 export const defaultColumns = {
@@ -94,6 +95,11 @@ export const imageVulnerabilitiesFragment = gql`
         scoreVersion
         nvdCvss
         nvdScoreVersion
+        cveBaseInfo {
+            epss {
+                epssProbability
+            }
+        }
         discoveredAtImage
         publishedOn
         pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
@@ -111,6 +117,7 @@ export type ImageVulnerability = {
     scoreVersion: string;
     nvdCvss: number;
     nvdScoreVersion: string; // for example, V3 or UNKNOWN_VERSION
+    cveBaseInfo: CveBaseInfo;
     discoveredAtImage: string | null;
     publishedOn: string | null;
     pendingExceptionCount: number;
@@ -234,6 +241,7 @@ function ImageVulnerabilitiesTable({
                             scoreVersion,
                             nvdCvss,
                             nvdScoreVersion,
+                            cveBaseInfo,
                             imageComponents,
                             discoveredAtImage,
                             publishedOn,
@@ -243,6 +251,7 @@ function ImageVulnerabilitiesTable({
                             (imageComponent) => imageComponent.imageVulnerabilities
                         );
                         const isFixableInImage = getIsSomeVulnerabilityFixable(vulnerabilities);
+                        const epssProbability = cveBaseInfo?.epss?.epssProbability;
                         const isExpanded = expandedRowSet.has(cve);
 
                         return (
@@ -324,7 +333,7 @@ function ImageVulnerabilitiesTable({
                                             modifier="nowrap"
                                             dataLabel="EPSS probability"
                                         >
-                                            Not available
+                                            {formatEpssProbabilityAsPercent(epssProbability)}
                                         </Td>
                                     )}
                                     <Td

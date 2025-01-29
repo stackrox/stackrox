@@ -1,5 +1,4 @@
 import withAuth from '../../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../../helpers/features';
 import { verifyColumnManagement } from '../../../helpers/tableHelpers';
 import {
     applyLocalSeverityFilters,
@@ -13,12 +12,6 @@ import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 
 describe('Workload CVE Image CVE Single page', () => {
     withAuth();
-
-    before(function () {
-        if (!hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES')) {
-            this.skip();
-        }
-    });
 
     function visitFirstCve() {
         visitWorkloadCveOverview();

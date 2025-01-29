@@ -1,5 +1,4 @@
 import withAuth from '../../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../../helpers/features';
 import {
     cancelAllCveExceptions,
     typeAndEnterCustomSearchFilterValue,
@@ -22,22 +21,12 @@ const scope = 'All images';
 describe('Exception Management - Approved Deferrals Table', () => {
     withAuth();
 
-    before(function () {
-        if (!hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES')) {
-            this.skip();
-        }
-    });
-
     beforeEach(() => {
-        if (hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES')) {
-            cancelAllCveExceptions();
-        }
+        cancelAllCveExceptions();
     });
 
     after(() => {
-        if (hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES')) {
-            cancelAllCveExceptions();
-        }
+        cancelAllCveExceptions();
     });
 
     it('should be able to view approved deferrals', () => {

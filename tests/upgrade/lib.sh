@@ -105,7 +105,8 @@ deploy_earlier_postgres_central() {
          --set central.image.tag="${EARLIER_TAG}" \
          --set central.db.image.tag="${EARLIER_TAG}" \
          --set scanner.image.tag="$(cat SCANNER_VERSION)" \
-         --set scanner.dbImage.tag="$(cat SCANNER_VERSION)"
+         --set scanner.dbImage.tag="$(cat SCANNER_VERSION)" \
+         --set scanner.resources.limits.memory="6Gi"
 
     # Installing this way returns faster than the scripts but everything isn't running when it finishes like with
     # the scripts.  So we will give it a minute for things to get started before we proceed

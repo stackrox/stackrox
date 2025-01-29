@@ -33,6 +33,7 @@ import util.NetworkGraphUtil
 
 import org.junit.AssumptionViolatedException
 import spock.lang.Ignore
+import spock.lang.Retry
 import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Unroll
@@ -338,10 +339,12 @@ class SACTest extends BaseSpecification {
 
         then:
         assert alertsCount(NOACCESSTOKEN) == 0
-        // getSummaryCountsToken has access only to QA1 deployment while
-        // ALLACCESSTOKEN has access to QA1 and QA2. Since deployments are identical
-        // number of alerts for ALLACCESSTOKEN should be twice of getSummaryCountsToken.
-        assert 2 * alertsCount("getSummaryCountsToken") == alertsCount(ALLACCESSTOKEN)
+        withRetry(30, 5) {
+            // getSummaryCountsToken has access only to QA1 deployment while
+            // ALLACCESSTOKEN has access to QA1 and QA2. Since deployments are identical
+            // number of alerts for ALLACCESSTOKEN should be twice of getSummaryCountsToken.
+            assert 2 * alertsCount("getSummaryCountsToken") == alertsCount(ALLACCESSTOKEN)
+        }
     }
 
     def "Verify ListSecrets using a token without access receives no results"() {
@@ -384,19 +387,20 @@ class SACTest extends BaseSpecification {
         "A search is performed using the given token"
         def query = getSpecificQuery(category)
         useToken(tokenName)
-        def result = SearchService.search(query)
 
         then:
         "Verify the specified number of results are returned"
-        assert result.resultsCount == numResults
+        withRetry(30, 5) {
+            def result = SearchService.search(query)
+            assert result.resultsCount == numResults
+        }
 
         where:
         "Data inputs are: "
         tokenName                | category     | numResults
         NOACCESSTOKEN            | "Cluster"    | 0
         "searchDeploymentsToken" | "Deployment" | 1
-        // ROX-26729 - it's failing ~5 times a week. Disabled for now.
-        // "searchImagesToken"      | "Image"      | 1
+        "searchImagesToken"      | "Image"      | 1
     }
 
     @Unroll
@@ -447,10 +451,12 @@ class SACTest extends BaseSpecification {
         "Search is called using a token without view access to Deployments"
         def query = getSpecificQuery(category)
         useToken(tokenName)
-        def result = SearchService.autocomplete(query)
         then:
-        "Verify no results are returned by Search"
-        assert result.getValuesCount() == numResults
+        "Verify results returned by Search"
+        withRetry(30, 5) {
+            def result = SearchService.autocomplete(query)
+            assert result.getValuesCount() == numResults
+        }
 
         where:
         "Data inputs are: "
@@ -468,10 +474,12 @@ class SACTest extends BaseSpecification {
         "Autocomplete is called using the given token"
         def query = getSpecificQuery(category)
         useToken(tokenName)
-        def result = SearchService.autocomplete(query)
         then:
         "Verify exactly the expected number of results are returned"
-        assert result.getValuesCount() >= minReturned
+        withRetry(30, 5) {
+            def result = SearchService.autocomplete(query)
+            assert result.getValuesCount() >= minReturned
+        }
 
         where:
         "Data inputs are: "
@@ -601,6 +609,7 @@ class SACTest extends BaseSpecification {
         "searchDeploymentsImagesToken"     | NAMESPACE_QA1  | [SSOC.SearchCategory.IMAGES]
     }
 
+    @Retry(count=30, delay=5000)
     def "Verify that SAC has the same effect as query restriction for network flows"() {
         given:
         "The network graphs retrieved by admin with a query and the SAC restricted token with and without query"

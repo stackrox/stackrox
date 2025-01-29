@@ -30,7 +30,7 @@ const (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Deployment), permissions.View(resources.Image)): {
-			"/v1.VulnMgmtService/VulnMgmtExportWorkloads",
+			v1.VulnMgmtService_VulnMgmtExportWorkloads_FullMethodName,
 		},
 	})
 	log = logging.LoggerForModule()

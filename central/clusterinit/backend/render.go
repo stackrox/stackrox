@@ -2,14 +2,13 @@ package backend
 
 import (
 	"bytes"
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/crs"
 	"github.com/stackrox/rox/pkg/mtls"
 	"gopkg.in/yaml.v3"
 	v1 "k8s.io/api/core/v1"
@@ -176,7 +175,7 @@ func (b *CRSWithMeta) RenderAsK8sSecret() ([]byte, error) {
 	var buf bytes.Buffer
 	_, _ = fmt.Fprint(&buf, crsHeader)
 
-	crs, err := serializeSecret(b.CRS)
+	crs, err := crs.SerializeSecret(b.CRS)
 	if err != nil {
 		return nil, errors.Wrap(err, "serializing CRS")
 	}
@@ -208,26 +207,4 @@ func (b *CRSWithMeta) RenderAsK8sSecret() ([]byte, error) {
 	}
 
 	return buf.Bytes(), nil
-}
-
-func serializeSecret(crs *CRS) (string, error) {
-	jsonSerialized, err := json.Marshal(crs)
-	if err != nil {
-		return "", errors.Wrap(err, "JSON marshalling CRS")
-	}
-	base64Encoded := base64.StdEncoding.EncodeToString(jsonSerialized)
-	return base64Encoded, nil
-}
-
-func deserializeSecret(serializedCrs string) (*CRS, error) {
-	var deserializedCrs CRS
-	base64Decoded, err := base64.StdEncoding.DecodeString(serializedCrs)
-	if err != nil {
-		return nil, errors.Wrap(err, "base64 decoding CRS")
-	}
-	err = json.Unmarshal(base64Decoded, &deserializedCrs)
-	if err != nil {
-		return nil, errors.Wrap(err, "JSON unmarshalling CRS")
-	}
-	return &deserializedCrs, nil
 }

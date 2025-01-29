@@ -1009,8 +1009,6 @@ func TestStoreGetPermissionLevelForDeployment(t *testing.T) {
 		storeWithNoBindings.RemoveClusterBinding(b)
 	}
 	for _, tc := range testCases {
-		tc := tc
-
 		name := fmt.Sprintf("%q in namespace %q should have %q permision level",
 			tc.deployment.ServiceAccount, tc.deployment.Namespace, tc.expected)
 		t.Run(name, func(t *testing.T) {

@@ -11,11 +11,13 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Added Features
 
-- ROX-26849: Introduce report caching for RHCOS Node Indexing
+- ROX-25625: RHCOS Node Scanning with Scanner V4 can now detect vulnerabilities for the containerized image of the RHCOS itself.
+- ROX-26849: Introduce report caching for RHCOS Node Indexing.
 - ROX-25638: Introduce configurable log rotation. `ROX_LOGGING_MAX_ROTATION_FILES` and `ROX_LOGGING_MAX_SIZE_MB` variables allow for configuring the number and the size of a central log rotation file.
 - ROX-14332: Automatic service certificate renewal for Secured Clusters installed using Helm or operator.
 - Scanner V4 adds supports for openSUSE Leap 15.5 and 15.6
 - ROX-27596: ROX_EXTERNAL_IPS feature flag enabled by default. Note: Collector will still need to be configured for external IPs for this to have an effect.
+- ROX-26088: Introduced Cluster Registration Secrets (CRS) as a successor to init bundles for registering Secured Clusters.
 
 ### Removed Features
 
@@ -26,6 +28,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Technical Changes
 
 - Scanner V4 now uses [Red Hat's VEX files](https://security.access.redhat.com/data/csaf/v2/vex/) instead of the [CVE map](https://security.access.redhat.com/data/metrics/cvemap.xml) for vulnerability data related to non-RPM content inside of official Red Hat images.
+- `ROX_NODE_INDEX_CONTAINER_API` is no longer a valid environment variable to set in the Compliance pod.
+  - The node scanner never reached out to the Red Hat Container Catalog, so this variable was never used.
 
 ## [4.6.0]
 

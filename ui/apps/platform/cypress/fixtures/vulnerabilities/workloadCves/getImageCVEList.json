@@ -35,6 +35,9 @@
                         "scoreVersion": "V3",
                         "nvdCvss": 0,
                         "nvdScoreVersion": "UNKNOWN_VERSION",
+                        "cveBaseInfo": {
+                            "epss": null
+                        },
                         "__typename": "ImageVulnerability"
                     }
                 ],
@@ -75,6 +78,9 @@
                         "scoreVersion": "V3",
                         "nvdCvss": 0,
                         "nvdScoreVersion": "UNKNOWN_VERSION",
+                        "cveBaseInfo": {
+                            "epss": null
+                        },
                         "__typename": "ImageVulnerability"
                     }
                 ],

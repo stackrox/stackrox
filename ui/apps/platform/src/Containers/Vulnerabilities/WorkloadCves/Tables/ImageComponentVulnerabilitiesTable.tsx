@@ -2,7 +2,9 @@ import React from 'react';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useTableSort from 'hooks/patternfly/useTableSort';
+
 import {
     ImageComponentVulnerability,
     ImageMetadataContext,
@@ -13,6 +15,8 @@ import {
 import FixedByVersion from '../components/FixedByVersion';
 import DockerfileLayer from '../components/DockerfileLayer';
 import ComponentLocation from '../components/ComponentLocation';
+
+import AdvisoryLinkOrText from './AdvisoryLinkOrText';
 
 export { imageMetadataContextFragment };
 export type { ImageMetadataContext, ImageComponentVulnerability };
@@ -45,12 +49,18 @@ function ImageComponentVulnerabilitiesTable({
     imageMetadataContext,
     componentVulnerabilities,
 }: ImageComponentVulnerabilitiesTableProps) {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isAdvisoryColumnEnabled =
+        isFeatureFlagEnabled('ROX_SCANNER_V4') &&
+        isFeatureFlagEnabled('ROX_CVE_ADVISORY_SEPARATION');
+
     const { sortOption, getSortParams } = useTableSort({ sortFields, defaultSortOption });
     const componentVulns = flattenImageComponentVulns(
         imageMetadataContext,
         componentVulnerabilities
     );
     const sortedComponentVulns = sortTableData(componentVulns, sortOption);
+
     return (
         <Table
             style={{
@@ -63,6 +73,7 @@ function ImageComponentVulnerabilitiesTable({
                     <Th sort={getSortParams('Component')}>Component</Th>
                     <Th>Version</Th>
                     <Th>CVE fixed in</Th>
+                    {isAdvisoryColumnEnabled && <Th>Advisory</Th>}
                     <Th>Source</Th>
                     <Th>Location</Th>
                 </Tr>
@@ -70,6 +81,7 @@ function ImageComponentVulnerabilitiesTable({
             {sortedComponentVulns.map((componentVuln, index) => {
                 const { image, name, version, fixedByVersion, location, source, layer } =
                     componentVuln;
+                const advisory = undefined; // placeholder until response includes property
                 // No border on the last row
                 const style =
                     index !== componentVulns.length - 1
@@ -84,6 +96,11 @@ function ImageComponentVulnerabilitiesTable({
                             <Td dataLabel="CVE fixed in" modifier="nowrap">
                                 <FixedByVersion fixedByVersion={fixedByVersion} />
                             </Td>
+                            {isAdvisoryColumnEnabled && (
+                                <Td dataLabel="Advisory" modifier="nowrap">
+                                    <AdvisoryLinkOrText advisory={advisory} />
+                                </Td>
+                            )}
                             <Td dataLabel="Source">{source}</Td>
                             <Td dataLabel="Location">
                                 <ComponentLocation location={location} source={source} />

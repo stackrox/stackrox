@@ -325,7 +325,6 @@ func (c *UpgradeContext) List(resourcePurpose resources.Purpose, listOpts *metav
 			}
 
 			for _, item := range listObj.Items {
-				item := item // create a copy to prevent aliasing
 				result = append(result, &item)
 			}
 		}

@@ -28,12 +28,12 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.DeploymentExtension)): {
-			"/v1.ProcessBaselineService/GetProcessBaseline",
+			v1.ProcessBaselineService_GetProcessBaseline_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.DeploymentExtension)): {
-			"/v1.ProcessBaselineService/UpdateProcessBaselines",
-			"/v1.ProcessBaselineService/LockProcessBaselines",
-			"/v1.ProcessBaselineService/DeleteProcessBaselines",
+			v1.ProcessBaselineService_UpdateProcessBaselines_FullMethodName,
+			v1.ProcessBaselineService_LockProcessBaselines_FullMethodName,
+			v1.ProcessBaselineService_DeleteProcessBaselines_FullMethodName,
 		},
 	})
 )

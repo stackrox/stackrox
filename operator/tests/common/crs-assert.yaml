@@ -1,0 +1,6 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cluster-registration-secret
+  annotations:
+    crs.platform.stackrox.io/name: testing-cluster

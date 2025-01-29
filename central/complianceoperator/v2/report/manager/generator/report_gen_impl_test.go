@@ -1,7 +1,6 @@
 package generator
 
 import (
-	"bytes"
 	"context"
 	"testing"
 	"time"
@@ -13,14 +12,15 @@ import (
 	"github.com/stackrox/rox/central/complianceoperator/v2/report"
 	snapshotMocks "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore/mocks"
 	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager/generator/mocks"
+	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager/sender"
 	ruleMocks "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore/mocks"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
 	notifierMocks "github.com/stackrox/rox/pkg/notifier/mocks"
-	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -38,6 +38,7 @@ type ComplainceReportingTestSuite struct {
 	notifierProcessor *notifierMocks.MockProcessor
 	formatter         *mocks.MockFormatter
 	resultsAggregator *mocks.MockResultsAggregator
+	reportSender      *mocks.MockReportSender
 }
 
 func (s *ComplainceReportingTestSuite) SetupSuite() {
@@ -53,15 +54,20 @@ func (s *ComplainceReportingTestSuite) SetupSuite() {
 	s.formatter = mocks.NewMockFormatter(s.mockCtrl)
 	s.resultsAggregator = mocks.NewMockResultsAggregator(s.mockCtrl)
 
+	s.reportSender = mocks.NewMockReportSender(s.mockCtrl)
+
 	s.reportGen = &complianceReportGeneratorImpl{
-		checkResultsDS:        s.checkResultsDS,
-		snapshotDS:            s.snapshotDS,
-		profileDS:             s.profileDS,
-		remediationDS:         s.remediationDS,
-		complianceRuleDS:      s.ruleDS,
-		notificationProcessor: s.notifierProcessor,
-		formatter:             s.formatter,
-		resultsAggregator:     s.resultsAggregator,
+		checkResultsDS:         s.checkResultsDS,
+		snapshotDS:             s.snapshotDS,
+		profileDS:              s.profileDS,
+		remediationDS:          s.remediationDS,
+		complianceRuleDS:       s.ruleDS,
+		notificationProcessor:  s.notifierProcessor,
+		formatter:              s.formatter,
+		resultsAggregator:      s.resultsAggregator,
+		reportSender:           s.reportSender,
+		senderResponseHandlers: make(map[string]stoppable[error]),
+		newHandlerFn:           sender.NewAsyncResponseHandler[error],
 	}
 }
 
@@ -114,7 +120,8 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 		s.Require().Error(s.reportGen.ProcessReportRequest(request))
 	})
 
-	s.Run("Fail to grab the notifiers", func() {
+	s.Run("Fail to notify", func() {
+		s.reportGen.numberOfTriesOnEmailSend = 1
 		wg := concurrency.NewWaitGroup(2)
 		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).Times(1).
 			Return(&storage.ComplianceOperatorReportSnapshotV2{
@@ -136,44 +143,28 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 					return nil
 				}),
 		)
-		s.notifierProcessor.EXPECT().GetNotifier(gomock.Any(), gomock.Any()).Times(len(request.Notifiers)).
-			Return(nil)
+		s.reportSender.EXPECT().SendEmail(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+			Times(1).
+			DoAndReturn(func(_, _, _, _, _ any) <-chan error {
+				errC := make(chan error)
+				go func() {
+					defer close(errC)
+					errC <- errors.New("error")
+				}()
+				return errC
+			})
 		s.Require().NoError(s.reportGen.ProcessReportRequest(request))
-		handleWaitGroup(s.T(), &wg, 500*time.Millisecond, "send email failure")
-	})
-
-	s.Run("Fail to notify", func() {
-		s.reportGen.numberOfTriesOnEmailSend = 1
-		wg := concurrency.NewWaitGroup(3)
-		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).Times(1).
-			Return(&storage.ComplianceOperatorReportSnapshotV2{
-				ReportStatus: &storage.ComplianceOperatorReportStatus{},
-			}, true, nil)
-		s.resultsAggregator.EXPECT().GetReportData(gomock.Any()).Times(1).Return(&report.Results{})
-		s.formatter.EXPECT().FormatCSVReport(gomock.Any()).Times(1)
-		gomock.InOrder(
-			s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
-				DoAndReturn(func(_ any, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
-					s.Require().Equal(storage.ComplianceOperatorReportStatus_GENERATED, snapshot.GetReportStatus().GetRunState())
-					wg.Add(-1)
-					return nil
-				}),
-			s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
-				DoAndReturn(func(_ any, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
-					s.Require().Equal(storage.ComplianceOperatorReportStatus_FAILURE, snapshot.GetReportStatus().GetRunState())
-					wg.Add(-1)
-					return nil
-				}),
-		)
-		s.notifierProcessor.EXPECT().GetNotifier(gomock.Any(), gomock.Any()).Times(len(request.Notifiers)).
-			Return(&fakeNotifierAlwaysFail{&wg})
-		s.Require().NoError(s.reportGen.ProcessReportRequest(request))
+		require.Eventually(s.T(), func() bool {
+			return concurrency.WithLock1[bool](&s.reportGen.handlersMutex, func() bool {
+				return len(s.reportGen.senderResponseHandlers) == 0
+			})
+		}, 500*time.Millisecond, 10*time.Millisecond)
 		handleWaitGroup(s.T(), &wg, 500*time.Millisecond, "send email failure")
 	})
 
 	s.Run("Notify success", func() {
 		s.reportGen.numberOfTriesOnEmailSend = 1
-		wg := concurrency.NewWaitGroup(3)
+		wg := concurrency.NewWaitGroup(2)
 		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).Times(1).
 			Return(&storage.ComplianceOperatorReportSnapshotV2{
 				ReportStatus: &storage.ComplianceOperatorReportStatus{},
@@ -194,9 +185,22 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 					return nil
 				}),
 		)
-		s.notifierProcessor.EXPECT().GetNotifier(gomock.Any(), gomock.Any()).Times(len(request.Notifiers)).
-			Return(&fakeNotifierAlwaysSuccess{&wg})
+		s.reportSender.EXPECT().SendEmail(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+			Times(1).
+			DoAndReturn(func(_, _, _, _, _ any) <-chan error {
+				errC := make(chan error)
+				go func() {
+					defer close(errC)
+					errC <- nil
+				}()
+				return errC
+			})
 		s.Require().NoError(s.reportGen.ProcessReportRequest(request))
+		require.Eventually(s.T(), func() bool {
+			return concurrency.WithLock1[bool](&s.reportGen.handlersMutex, func() bool {
+				return len(s.reportGen.senderResponseHandlers) == 0
+			})
+		}, 500*time.Millisecond, 10*time.Millisecond)
 		handleWaitGroup(s.T(), &wg, 5*time.Second, "send email failure")
 	})
 }
@@ -208,42 +212,4 @@ func handleWaitGroup(t *testing.T, wg *concurrency.WaitGroup, timeout time.Durat
 		t.Fail()
 	case <-wg.Done():
 	}
-}
-
-type fakeNotifierAlwaysSuccess struct {
-	wg *concurrency.WaitGroup
-}
-
-func (f *fakeNotifierAlwaysSuccess) Close(_ context.Context) error {
-	return nil
-}
-func (f *fakeNotifierAlwaysSuccess) ProtoNotifier() *storage.Notifier {
-	return nil
-}
-func (f *fakeNotifierAlwaysSuccess) Test(_ context.Context) *notifiers.NotifierError {
-	return &notifiers.NotifierError{}
-}
-
-func (f *fakeNotifierAlwaysSuccess) ReportNotify(_ context.Context, _ *bytes.Buffer, _ []string, _, _, _ string) error {
-	f.wg.Add(-1)
-	return nil
-}
-
-type fakeNotifierAlwaysFail struct {
-	wg *concurrency.WaitGroup
-}
-
-func (f *fakeNotifierAlwaysFail) Close(_ context.Context) error {
-	return nil
-}
-func (f *fakeNotifierAlwaysFail) ProtoNotifier() *storage.Notifier {
-	return nil
-}
-func (f *fakeNotifierAlwaysFail) Test(_ context.Context) *notifiers.NotifierError {
-	return &notifiers.NotifierError{}
-}
-
-func (f *fakeNotifierAlwaysFail) ReportNotify(_ context.Context, _ *bytes.Buffer, _ []string, _, _, _ string) error {
-	f.wg.Add(-1)
-	return errors.New("some error")
 }

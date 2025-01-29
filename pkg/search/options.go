@@ -63,6 +63,7 @@ var (
 	VulnerabilityState = newFieldLabel("Vulnerability State")
 	CVEOrphaned        = newFieldLabel("CVE Orphaned")
 	CVEOrphanedTime    = newFieldLabel("CVE Orphaned Time")
+	EPSSProbablity     = newFieldLabel("EPSS Probability")
 
 	Component                      = newFieldLabel("Component")
 	ComponentID                    = newFieldLabel("Component ID")

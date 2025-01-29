@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/continuousprofiling"
 	"github.com/stackrox/rox/pkg/devmode"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
@@ -18,6 +19,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/centralclient"
 	"github.com/stackrox/rox/sensor/common/cloudproviders/gcp"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
+	"github.com/stackrox/rox/sensor/kubernetes/crs"
 	"github.com/stackrox/rox/sensor/kubernetes/fake"
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
 	"golang.org/x/sys/unix"
@@ -34,9 +36,24 @@ func main() {
 
 	devmode.StartOnDevBuilds("bin/kubernetes-sensor")
 
+	if err := continuousprofiling.SetupClient(continuousprofiling.DefaultConfig(),
+		continuousprofiling.WithDefaultAppName("sensor")); err != nil {
+		log.Errorf("unable to start continuous profiling: %v", err)
+	}
+
 	log.Infof("Running StackRox Version: %s", version.GetMainVersion())
 
 	features.LogFeatureFlags()
+
+	if len(os.Args) > 1 && os.Args[1] == "ensure-service-certificates" {
+		err := crs.EnsureServiceCertificatesPresent()
+		if err != nil {
+			log.Errorf("Ensuring presence of service certificates for this cluster failed: %v", err)
+			os.Exit(1)
+		}
+		os.Exit(0)
+	}
+
 	// Start the prometheus metrics server
 	metrics.NewServer(metrics.SensorSubsystem, metrics.NewTLSConfigurerFromEnv()).RunForever()
 	metrics.GatherThrottleMetricsForever(metrics.SensorSubsystem.String())

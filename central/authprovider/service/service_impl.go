@@ -30,26 +30,26 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		allow.Anonymous(): {
-			"/v1.AuthProviderService/ListAvailableProviderTypes",
+			v1.AuthProviderService_ListAvailableProviderTypes_FullMethodName,
 			// The GetLoginAuthProviders endpoint is used to render the list of providers
 			// on the UI login screen. At that point, the user is not authenticated or logged in.
 			// Therefore this endpoint should remain anonymously accessible.
-			"/v1.AuthProviderService/GetLoginAuthProviders",
+			v1.AuthProviderService_GetLoginAuthProviders_FullMethodName,
 			// The ExchangeToken endpoint is used by the UI as part of the
 			// user login flow, where user authentication data is not always
 			// available. This endpoint should therefore remain
 			// anonymous / public.
-			"/v1.AuthProviderService/ExchangeToken",
+			v1.AuthProviderService_ExchangeToken_FullMethodName,
 		},
 		user.With(permissions.View(resources.Access)): {
-			"/v1.AuthProviderService/GetAuthProvider",
-			"/v1.AuthProviderService/GetAuthProviders",
+			v1.AuthProviderService_GetAuthProvider_FullMethodName,
+			v1.AuthProviderService_GetAuthProviders_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.Access)): {
-			"/v1.AuthProviderService/PostAuthProvider",
-			"/v1.AuthProviderService/UpdateAuthProvider",
-			"/v1.AuthProviderService/PutAuthProvider",
-			"/v1.AuthProviderService/DeleteAuthProvider",
+			v1.AuthProviderService_PostAuthProvider_FullMethodName,
+			v1.AuthProviderService_UpdateAuthProvider_FullMethodName,
+			v1.AuthProviderService_PutAuthProvider_FullMethodName,
+			v1.AuthProviderService_DeleteAuthProvider_FullMethodName,
 		},
 	})
 )

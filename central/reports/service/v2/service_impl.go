@@ -41,26 +41,26 @@ var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		// V2 API authorization
 		user.With(permissions.View(resources.WorkflowAdministration)): {
-			"/v2.ReportService/ListReportConfigurations",
-			"/v2.ReportService/GetReportConfiguration",
-			"/v2.ReportService/CountReportConfigurations",
+			apiV2.ReportService_ListReportConfigurations_FullMethodName,
+			apiV2.ReportService_GetReportConfiguration_FullMethodName,
+			apiV2.ReportService_CountReportConfigurations_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Integration)): {
-			"/v2.ReportService/PostReportConfiguration",
-			"/v2.ReportService/UpdateReportConfiguration",
+			apiV2.ReportService_PostReportConfiguration_FullMethodName,
+			apiV2.ReportService_UpdateReportConfiguration_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.WorkflowAdministration)): {
-			"/v2.ReportService/DeleteReportConfiguration",
+			apiV2.ReportService_DeleteReportConfiguration_FullMethodName,
 		},
 		user.With(permissions.View(resources.WorkflowAdministration)): {
-			"/v2.ReportService/GetReportStatus",
-			"/v2.ReportService/GetReportHistory",
-			"/v2.ReportService/GetMyReportHistory",
+			apiV2.ReportService_GetReportStatus_FullMethodName,
+			apiV2.ReportService_GetReportHistory_FullMethodName,
+			apiV2.ReportService_GetMyReportHistory_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.WorkflowAdministration)): {
-			"/v2.ReportService/RunReport",
-			"/v2.ReportService/CancelReport",
-			"/v2.ReportService/DeleteReport",
+			apiV2.ReportService_RunReport_FullMethodName,
+			apiV2.ReportService_CancelReport_FullMethodName,
+			apiV2.ReportService_DeleteReport_FullMethodName,
 		},
 	})
 )

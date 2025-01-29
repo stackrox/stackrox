@@ -101,7 +101,6 @@ func (s *misdirectedRequestSuite) testWithEndpoint(name string, baseCfg Endpoint
 		}
 	}()
 	for _, srvAndLis := range servers {
-		srvAndLis := srvAndLis
 		go func() {
 			serverErrs <- srvAndLis.srv.Serve(srvAndLis.listener)
 		}()

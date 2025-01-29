@@ -1013,7 +1013,7 @@ func (s *storeImpl) retryableGetManyNodeMetadata(ctx context.Context, ids []stri
 	if err != nil {
 		return nil, nil, err
 	}
-	sacQueryFilter, err := sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err := sac.BuildClusterLevelSACQueryFilter(scopeTree)
 	if err != nil {
 		return nil, nil, err
 	}

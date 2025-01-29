@@ -11,9 +11,9 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/utils"
@@ -163,15 +163,20 @@ func (resolver *imageResolver) ImageVulnerabilityCount(ctx context.Context, args
 
 func (resolver *imageResolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageVulnerabilityCounter")
-	return resolver.root.ImageVulnerabilityCounter(resolver.withImageScopeContext(ctx), args)
+	// In this function, the resolver is obtained by a call to either Image or Images from the root resolver,
+	// applying scoped access control to avoid exposing images the requester should not be aware of.
+	// The image ID is added to the context (by withImageScopeContext) to restrict the vulnerability search
+	// to the CVEs linked to the image.
+	// If no context elevation is done, then scoped access control is applied again on top of the image ID filtering
+	// leading to additional table joins in DB and poor performance.
+	// The context is elevated to bypass the scoped access control and improve the performance,
+	// considering the fact that the image ID was obtained by applying scoped access control rules.
+	return resolver.root.ImageVulnerabilityCounter(resolver.withElevatedImageScopeContext(ctx), args)
 }
 
 func (resolver *imageResolver) ImageCVECountBySeverity(ctx context.Context, q RawQuery) (*resourceCountBySeverityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageCVECountBySeverity")
 
-	if !features.VulnMgmtWorkloadCVEs.Enabled() {
-		return nil, errors.Errorf("%s=false. Set %s=true and retry", features.VulnMgmtWorkloadCVEs.Name(), features.VulnMgmtWorkloadCVEs.Name())
-	}
 	if err := readImages(ctx); err != nil {
 		return nil, err
 	}
@@ -207,6 +212,16 @@ func (resolver *imageResolver) withImageScopeContext(ctx context.Context) contex
 		Level: v1.SearchCategory_IMAGES,
 		ID:    resolver.data.GetId(),
 	})
+}
+
+func (resolver *imageResolver) withElevatedImageScopeContext(ctx context.Context) context.Context {
+	return sac.WithGlobalAccessScopeChecker(
+		resolver.withImageScopeContext(ctx),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Image),
+		),
+	)
 }
 
 func (resolver *Resolver) getImage(ctx context.Context, id string) *storage.Image {

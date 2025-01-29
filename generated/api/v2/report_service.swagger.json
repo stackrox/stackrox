@@ -1101,6 +1101,9 @@
         },
         "includeNvdCvss": {
           "type": "boolean"
+        },
+        "includeEpssProbability": {
+          "type": "boolean"
         }
       }
     }
