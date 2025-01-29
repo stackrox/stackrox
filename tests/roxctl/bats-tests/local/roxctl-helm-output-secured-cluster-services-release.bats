@@ -30,12 +30,6 @@ teardown() {
 
   helm_template_secured_cluster "$out_dir" "$out_dir/rendered" "$CLUSTER_NAME"
   assert_components_registry "$out_dir/rendered" "quay.io/rhacs-eng" "$any_version" 'collector' 'admission-controller' 'sensor'
-
-  helm_template_secured_cluster "$out_dir" "$out_dir/rendered" "$CLUSTER_NAME"
-  assert_components_registry "$out_dir/rendered" "quay.io/rhacs-eng" "$any_version" 'collector' 'admission-controller' 'sensor'
-
-  helm_template_secured_cluster "$out_dir" "$out_dir/rendered" "$CLUSTER_NAME"
-  assert_components_registry "$out_dir/rendered" "quay.io/rhacs-eng" "$any_version" 'collector' 'admission-controller' 'sensor'
 }
 
 @test "roxctl-release helm output secured-cluster-services (default flavor) should use registry.redhat.io registry (default collector)" {
@@ -54,24 +48,12 @@ teardown() {
 
   helm_template_secured_cluster "$out_dir" "$out_dir/rendered" "$CLUSTER_NAME"
   assert_components_registry "$out_dir/rendered" "registry.redhat.io" "$any_version" 'collector' 'admission-controller' 'sensor'
-
-  helm_template_secured_cluster "$out_dir" "$out_dir/rendered" "$CLUSTER_NAME"
-  assert_components_registry "$out_dir/rendered" "registry.redhat.io" "$any_version" 'collector' 'admission-controller' 'sensor'
-
-  helm_template_secured_cluster "$out_dir" "$out_dir/rendered" "$CLUSTER_NAME"
-  assert_components_registry "$out_dir/rendered" "registry.redhat.io" "$any_version" 'collector' 'admission-controller' 'sensor'
 }
 
 @test "roxctl-release helm output secured-cluster-services --image-defaults=opensource should use quay.io/stackrox-io registry" {
   run roxctl-release helm output secured-cluster-services --image-defaults=opensource --remove --output-dir "$out_dir"
   assert_success
   assert_output --partial "Written Helm chart secured-cluster-services to directory"
-
-  helm_template_secured_cluster "$out_dir" "$out_dir/rendered" "$CLUSTER_NAME"
-  assert_components_registry "$out_dir/rendered" "quay.io/stackrox-io" "$any_version" 'collector' 'admission-controller' 'sensor'
-
-  helm_template_secured_cluster "$out_dir" "$out_dir/rendered" "$CLUSTER_NAME"
-  assert_components_registry "$out_dir/rendered" "quay.io/stackrox-io" "$any_version" 'collector' 'admission-controller' 'sensor'
 
   helm_template_secured_cluster "$out_dir" "$out_dir/rendered" "$CLUSTER_NAME"
   assert_components_registry "$out_dir/rendered" "quay.io/stackrox-io" "$any_version" 'collector' 'admission-controller' 'sensor'
