@@ -322,7 +322,12 @@ splunk:
 
         when:
         // Update the config map to contain an invalid permission set YAML.
-        configMapUID = updateConfigMapValue(CONFIGMAP_NAME, DEFAULT_NAMESPACE, PERMISSION_SET_KEY, INVALID_PERMISSION_SET_YAML)
+        configMapUID = updateConfigMapValue(
+            CONFIGMAP_NAME,
+            DEFAULT_NAMESPACE,
+            PERMISSION_SET_KEY,
+            INVALID_PERMISSION_SET_YAML
+        )
         log.debug "updated declarative permission set to be invalid in configMap " + configMapUID
 
         then:
@@ -344,7 +349,12 @@ splunk:
 
         when:
         // Update the config map to contain an invalid access scope YAML.
-        configMapUID = updateConfigMapValue(CONFIGMAP_NAME, DEFAULT_NAMESPACE, ACCESS_SCOPE_KEY, INVALID_ACCESS_SCOPE_YAML)
+        configMapUID = updateConfigMapValue(
+            CONFIGMAP_NAME,
+            DEFAULT_NAMESPACE,
+            ACCESS_SCOPE_KEY,
+            INVALID_ACCESS_SCOPE_YAML
+        )
         log.debug "updated declarative access scope to be invalid in configMap " + configMapUID
 
         then:
@@ -366,7 +376,12 @@ splunk:
 
         when:
         // Update the config map to contain an invalid role YAML.
-        configMapUID = updateConfigMapValue(CONFIGMAP_NAME, DEFAULT_NAMESPACE, ROLE_KEY, INVALID_ROLE_YAML)
+        configMapUID = updateConfigMapValue(
+            CONFIGMAP_NAME,
+            DEFAULT_NAMESPACE,
+            ROLE_KEY,
+            INVALID_ROLE_YAML
+        )
         log.debug "updated declarative role to be invalid in configMap " + configMapUID
 
         then:
@@ -386,7 +401,12 @@ splunk:
 
         when:
         // Update the config map to contain an invalid auth provider YAML.
-        configMapUID = updateConfigMapValue(CONFIGMAP_NAME, DEFAULT_NAMESPACE, AUTH_PROVIDER_KEY, INVALID_AUTH_PROVIDER_YAML)
+        configMapUID = updateConfigMapValue(
+            CONFIGMAP_NAME,
+            DEFAULT_NAMESPACE,
+            AUTH_PROVIDER_KEY,
+            INVALID_AUTH_PROVIDER_YAML
+        )
         log.debug "updated declarative auth provider to be invalid in configMap " + configMapUID
 
         then:
@@ -591,7 +611,12 @@ splunk:
         )
 
         when:
-        configMapUID = updateConfigMapValue(CONFIGMAP_NAME, DEFAULT_NAMESPACE, PERMISSION_SET_KEY, VALID_PERMISSION_SET_YAML)
+        configMapUID = updateConfigMapValue(
+            CONFIGMAP_NAME,
+            DEFAULT_NAMESPACE,
+            PERMISSION_SET_KEY,
+            VALID_PERMISSION_SET_YAML
+        )
         log.debug "restored a valid declarative permission set with configMap " + configMapUID
 
         then:
@@ -628,7 +653,12 @@ splunk:
         )
 
         when:
-        configMapUID = updateConfigMapValue(CONFIGMAP_NAME, DEFAULT_NAMESPACE, ACCESS_SCOPE_KEY, VALID_ACCESS_SCOPE_YAML)
+        configMapUID = updateConfigMapValue(
+            CONFIGMAP_NAME,
+            DEFAULT_NAMESPACE,
+            ACCESS_SCOPE_KEY,
+            VALID_ACCESS_SCOPE_YAML
+        )
         log.debug "restored a valid declarative access scope with configMap " + configMapUID
 
         then:
@@ -690,7 +720,12 @@ splunk:
         )
 
         when:
-        configMapUID = updateConfigMapValue(CONFIGMAP_NAME, DEFAULT_NAMESPACE, ROLE_KEY, VALID_ROLE_YAML)
+        configMapUID = updateConfigMapValue(
+            CONFIGMAP_NAME,
+            DEFAULT_NAMESPACE,
+            ROLE_KEY,
+            VALID_ROLE_YAML
+        )
         log.debug "restored a valid declarative role with configMap " + configMapUID
 
         then:
