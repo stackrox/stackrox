@@ -19,7 +19,9 @@ import {
     vulnerabilitiesAllImagesPath,
     vulnerabilitiesInactiveImagesPath,
     vulnerabilitiesImagesWithoutCvesPath,
-    violationsBasePath,
+    violationsFullViewPath,
+    violationsPlatformViewPath,
+    violationsUserWorkloadsViewPath,
 } from 'routePaths';
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import { HasReadAccess } from 'hooks/usePermissions';
@@ -44,7 +46,7 @@ function getSubnavDescriptionGroups(
                   {
                       type: 'link',
                       content: 'User Workloads',
-                      path: `${violationsBasePath}?filteredWorkflowView=Applications view`,
+                      path: violationsUserWorkloadsViewPath,
                       isActive: (location) =>
                           location.search.includes(`filteredWorkflowView=Applications view`),
                       routeKey: 'violations',
@@ -52,7 +54,7 @@ function getSubnavDescriptionGroups(
                   {
                       type: 'link',
                       content: 'Platform',
-                      path: `${violationsBasePath}?filteredWorkflowView=Platform view`,
+                      path: violationsPlatformViewPath,
                       isActive: (location) =>
                           location.search.includes(`filteredWorkflowView=Platform view`),
                       routeKey: 'violations',
@@ -60,7 +62,7 @@ function getSubnavDescriptionGroups(
                   {
                       type: 'link',
                       content: 'All Violations',
-                      path: `${violationsBasePath}?filteredWorkflowView=Full view`,
+                      path: violationsFullViewPath,
                       isActive: (location) =>
                           location.search.includes(`filteredWorkflowView=Full view`),
                       routeKey: 'violations',

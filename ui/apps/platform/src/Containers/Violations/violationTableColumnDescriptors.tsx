@@ -18,6 +18,7 @@ import { resourceTypes } from 'constants/entityTypes';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
 import { violationsBasePath } from 'routePaths';
 import { ListAlert } from 'types/alert.proto';
+import { FilteredWorkflowView } from 'Components/FilteredWorkflowViewSelector/types';
 
 type EntityTableCellProps = {
     // original: ListAlert;
@@ -88,73 +89,75 @@ function EnforcementColumn({ original }: EnforcementTableCellProps): ReactElemen
     return <span>{message}</span>;
 }
 
-const tableColumnDescriptor = [
-    {
-        Header: 'Policy',
-        accessor: 'policy.name',
-        sortField: 'Policy',
-        Cell: ({ original }) => {
-            const url = `${violationsBasePath}/${original.id as string}`;
-            return (
-                <Tooltip content={original?.policy?.description || 'No description available'}>
-                    <Link to={url}>{original?.policy?.name}</Link>
-                </Tooltip>
-            );
+function getTableColumnDescriptors(filteredWorkflowView: FilteredWorkflowView) {
+    return [
+        {
+            Header: 'Policy',
+            accessor: 'policy.name',
+            sortField: 'Policy',
+            Cell: ({ original }) => {
+                const url = `${violationsBasePath}/${original.id as string}?filteredWorkflowView=${filteredWorkflowView}`;
+                return (
+                    <Tooltip content={original?.policy?.description || 'No description available'}>
+                        <Link to={url}>{original?.policy?.name}</Link>
+                    </Tooltip>
+                );
+            },
         },
-    },
-    {
-        Header: 'Entity',
-        accessor: 'resource.name',
-        Cell: EntityTableCell,
-    },
-    {
-        Header: 'Type',
-        accessor: 'commonEntityInfo.resourceType',
-        Cell: ({ value, original }): string => {
-            const deployment = original?.deployment || {};
-            if (
-                value === resourceTypes.DEPLOYMENT &&
-                deployment.deploymentType &&
-                typeof deployment.deploymentType === 'string' &&
-                deployment.deploymentType.length > 0
-            ) {
-                return deployment.deploymentType as string;
-            }
-            return startCase(value.toLowerCase());
+        {
+            Header: 'Entity',
+            accessor: 'resource.name',
+            Cell: EntityTableCell,
         },
-    },
-    {
-        Header: 'Enforced',
-        accessor: 'enforcementCount',
-        sortField: 'Enforcement',
-        Cell: EnforcementColumn,
-    },
-    {
-        Header: 'Severity',
-        accessor: 'policy.severity',
-        sortField: 'Severity',
-        Cell: ({ value }) => {
-            return <PolicySeverityIconText severity={value} />;
+        {
+            Header: 'Type',
+            accessor: 'commonEntityInfo.resourceType',
+            Cell: ({ value, original }): string => {
+                const deployment = original?.deployment || {};
+                if (
+                    value === resourceTypes.DEPLOYMENT &&
+                    deployment.deploymentType &&
+                    typeof deployment.deploymentType === 'string' &&
+                    deployment.deploymentType.length > 0
+                ) {
+                    return deployment.deploymentType as string;
+                }
+                return startCase(value.toLowerCase());
+            },
         },
-    },
-    {
-        Header: 'Categories',
-        accessor: 'policy.categories',
-        sortField: 'Category',
-        Cell: CategoriesTableCell,
-    },
-    {
-        Header: 'Lifecycle',
-        accessor: 'lifecycleStage',
-        sortField: 'Lifecycle Stage',
-        Cell: ({ value }): ReactElement => <span>{lifecycleStageLabels[value]}</span>,
-    },
-    {
-        Header: 'Time',
-        accessor: 'time',
-        sortField: 'Violation Time',
-        Cell: ({ value }): string => dateFns.format(value, dateTimeFormat),
-    },
-];
+        {
+            Header: 'Enforced',
+            accessor: 'enforcementCount',
+            sortField: 'Enforcement',
+            Cell: EnforcementColumn,
+        },
+        {
+            Header: 'Severity',
+            accessor: 'policy.severity',
+            sortField: 'Severity',
+            Cell: ({ value }) => {
+                return <PolicySeverityIconText severity={value} />;
+            },
+        },
+        {
+            Header: 'Categories',
+            accessor: 'policy.categories',
+            sortField: 'Category',
+            Cell: CategoriesTableCell,
+        },
+        {
+            Header: 'Lifecycle',
+            accessor: 'lifecycleStage',
+            sortField: 'Lifecycle Stage',
+            Cell: ({ value }): ReactElement => <span>{lifecycleStageLabels[value]}</span>,
+        },
+        {
+            Header: 'Time',
+            accessor: 'time',
+            sortField: 'Violation Time',
+            Cell: ({ value }): string => dateFns.format(value, dateTimeFormat),
+        },
+    ];
+}
 
-export default tableColumnDescriptor;
+export default getTableColumnDescriptors;

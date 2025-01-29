@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, ReactElement } from 'react';
+import React, { useEffect, useState, ReactElement } from 'react';
 import {
     PageSection,
     Bullseye,
@@ -33,7 +33,7 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import FilteredWorkflowViewSelector from 'Components/FilteredWorkflowViewSelector/FilteredWorkflowViewSelector';
 import useFilteredWorkflowViewURLState from 'Components/FilteredWorkflowViewSelector/useFilteredWorkflowViewURLState';
 import ViolationsTablePanel from './ViolationsTablePanel';
-import tableColumnDescriptor from './violationTableColumnDescriptors';
+import getTableColumnDescriptors from './violationTableColumnDescriptors';
 import { violationStateTabs } from './types';
 
 import './ViolationsTablePage.css';
@@ -91,11 +91,8 @@ function ViolationsTablePage(): ReactElement {
     const [pollEpoch, setPollEpoch] = useState(0);
 
     // To handle sort options.
-    const columns = tableColumnDescriptor;
-    const sortFields = useMemo(
-        () => columns.flatMap(({ sortField }) => (sortField ? [sortField] : [])),
-        [columns]
-    );
+    const columns = getTableColumnDescriptors(filteredWorkflowView);
+    const sortFields = columns.flatMap(({ sortField }) => (sortField ? [sortField] : []));
 
     const defaultSortOption: SortOption = {
         field: 'Violation Time',
