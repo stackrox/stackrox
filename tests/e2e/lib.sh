@@ -1123,13 +1123,13 @@ wait_for_api() {
     API_ENDPOINT="${API_HOSTNAME}:${API_PORT}"
     PING_URL="https://${API_ENDPOINT}/v1/ping"
     NUM_SUCCESSES_IN_A_ROW=0
-    SUCCESSES_NEEDED_IN_A_ROW=3
+    SUCCESSES_NEEDED_IN_A_ROW=6
 
     info "Attempting to get ${SUCCESSES_NEEDED_IN_A_ROW} 'ok' responses in a row from ${PING_URL}"
 
     set +e
     # shellcheck disable=SC2034
-    for i in $(seq 1 120); do
+    for i in $(seq 1 150); do
         pong="$(curl -sk --connect-timeout 5 --max-time 10 "${PING_URL}")"
         pong_exitstatus="$?"
         status="$(echo "$pong" | jq -r '.status')"
