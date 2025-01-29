@@ -104,7 +104,7 @@ func (idl *componentV2LoaderImpl) CountAll(ctx context.Context) (int32, error) {
 // VulnsFromQuery loads a set of components that match a query.
 func (idl *componentV2LoaderImpl) VulnsFromQuery(ctx context.Context, query *v1.Query) ([]*storage.ImageCVEV2, error) {
 	var results []*storage.ImageCVEV2
-	results, err := pgSearch.RunSelectRequestForSchema[storage.ImageCVEV2](ctx, globaldb.GetPostgres(), schema.ImageComponentV2Schema, query)
+	results, err := pgSearch.RunGetManyQueryForSchema[storage.ImageCVEV2](ctx, schema.ImageComponentV2Schema, query, globaldb.GetPostgres())
 	if err != nil {
 		return nil, err
 	}
