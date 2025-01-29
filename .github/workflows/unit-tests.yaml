@@ -37,9 +37,7 @@ jobs:
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-unit-tests
 
-    - uses: actions/setup-python@v5 
-      with:
-        python-version: 'pypy3.10' 
+    - run: update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1
 
     - uses: codecov/codecov-action@v5
       with:
@@ -116,9 +114,7 @@ jobs:
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-postgres-unit-tests
 
-    - uses: actions/setup-python@v5
-      with:
-        python-version: 'pypy3.10'
+    - run: update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1
 
     - uses: codecov/codecov-action@v5
       with:
