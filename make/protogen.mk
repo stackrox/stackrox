@@ -194,6 +194,7 @@ ifeq ($(SCANNER_DIR),)
 endif
 	$(SILENT)mkdir -p $(dir $@)
 	$(SILENT)PATH=$(GOTOOLS_BIN) $(PROTOC) \
+		--fatal_warnings \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GOOGLE_API_INCLUDES) \
 		-I$(SCANNER_PROTO_BASE_PATH) \
@@ -210,6 +211,7 @@ ifeq ($(SCANNER_DIR),)
 endif
 	$(SILENT)mkdir -p $(dir $@)
 	$(SILENT)PATH=$(GOTOOLS_BIN) $(PROTOC) \
+		--fatal_warnings \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GOOGLE_API_INCLUDES) \
 		-I$(SCANNER_PROTO_BASE_PATH) \
@@ -227,6 +229,7 @@ ifeq ($(SCANNER_DIR),)
 endif
 	$(SILENT)mkdir -p $(dir $@)
 	$(SILENT)PATH=$(GOTOOLS_BIN) $(PROTOC) \
+		--fatal_warnings \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GOOGLE_API_INCLUDES) \
 		-I$(SCANNER_PROTO_BASE_PATH) \
@@ -245,6 +248,7 @@ ifeq ($(SCANNER_DIR),)
 endif
 	$(SILENT)mkdir -p $(dir $@)
 	$(SILENT)PATH=$(GOTOOLS_BIN) $(PROTOC) \
+		--fatal_warnings \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GOOGLE_API_INCLUDES) \
 		-I$(SCANNER_PROTO_BASE_PATH) \
@@ -261,6 +265,7 @@ ifeq ($(SCANNER_DIR),)
 	$(error Cached directory of scanner dependency not found, run 'go mod tidy')
 endif
 	$(SILENT)PATH=$(GOTOOLS_BIN) $(PROTOC) \
+		--fatal_warnings \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GOOGLE_API_INCLUDES) \
 		-I$(SCANNER_PROTO_BASE_PATH) \
@@ -274,6 +279,7 @@ ifeq ($(SCANNER_DIR),)
 	$(error Cached directory of scanner dependency not found, run 'go mod tidy')
 endif
 	$(SILENT)PATH=$(GOTOOLS_BIN) $(PROTOC) \
+		--fatal_warnings \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GOOGLE_API_INCLUDES) \
 		-I$(SCANNER_PROTO_BASE_PATH) \
