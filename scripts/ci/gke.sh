@@ -388,7 +388,9 @@ for url in \
     && echo SUCCESS \
     || \
     {
-      printf "WARN: ";
+      echo "WARN: First request failed.";
+      cat "${logfile}"
+      printf "Retry: ";
       curl --fail --head -X GET https://${url} \
         | tee /dev/stderr \
         | grep '^x-rh-edge-request-id:' \
