@@ -467,9 +467,9 @@ export function getExternalIpsFlowsMetadata(
     clusterId,
     namespaces,
     deployments,
-    { sortOption, page, perPage, tableFilters }
+    { sortOption, page, perPage, advancedFilters }
 ) {
-    const combinedFilters = {
+    const searchFilter = {
         ...(namespaces.length && {
             Namespace: namespaces.map(convertToExactMatch).join(','),
         }),
@@ -478,9 +478,9 @@ export function getExternalIpsFlowsMetadata(
         }),
         'Default External Source': false,
         'Discovered External Source': true,
-        ...tableFilters,
+        ...advancedFilters,
     };
-    const params = getListQueryParams({ searchFilter: combinedFilters, sortOption, page, perPage });
+    const params = getListQueryParams({ searchFilter, sortOption, page, perPage });
     return axios
         .get(`${networkFlowBaseUrl}/cluster/${clusterId}/externalentities/metadata?${params}`)
         .then((response) => response.data);

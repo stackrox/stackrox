@@ -30,7 +30,7 @@ function ExternalIpsTable({ scopeHierarchy }: ExternalIpsTableProps) {
                 sortOption: {},
                 page,
                 perPage,
-                tableFilters: {},
+                advancedFilters: {},
             });
         }, [page, perPage, clusterId, deployments, namespaces]);
 
