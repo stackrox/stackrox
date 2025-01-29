@@ -7,6 +7,7 @@ import PageTitle from 'Components/PageTitle';
 
 import {
     vulnerabilitiesAllImagesPath,
+    vulnerabilitiesImagesWithoutCvesPath,
     vulnerabilitiesInactiveImagesPath,
     vulnerabilitiesPlatformPath,
     vulnerabilitiesUserWorkloadsPath,
@@ -29,6 +30,7 @@ export const userWorkloadViewId = 'user-workloads';
 export const platformViewId = 'platform';
 export const allImagesViewId = 'all-images';
 export const inactiveImagesViewId = 'inactive-images';
+export const imagesWithoutCvesViewId = 'images-without-cves';
 
 function getWorkloadCveContextFromView(viewId: string, isFeatureFlagEnabled: IsFeatureFlagEnabled) {
     let pageTitle: string = '';
@@ -63,6 +65,12 @@ function getWorkloadCveContextFromView(viewId: string, isFeatureFlagEnabled: IsF
             pageTitle = 'Inactive images only';
             baseSearchFilter = { 'Platform Component': ['-'] };
             getAbsoluteUrl = (subPath: string) => `${vulnerabilitiesInactiveImagesPath}/${subPath}`;
+            break;
+        case imagesWithoutCvesViewId:
+            pageTitle = 'Images without CVEs';
+            baseSearchFilter = { 'Image CVE Count': ['0'] };
+            getAbsoluteUrl = (subPath: string) =>
+                `${vulnerabilitiesImagesWithoutCvesPath}/${subPath}`;
             break;
         default:
         // TODO Handle user-defined views, or error
