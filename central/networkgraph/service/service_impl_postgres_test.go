@@ -8,8 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/suite"
-
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	configDS "github.com/stackrox/rox/central/networkgraph/config/datastore"
@@ -27,6 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stretchr/testify/suite"
 )
 
 const (
@@ -202,9 +201,6 @@ func (s *networkGraphServiceSuite) TestGetExternalNetworkFlows() {
 	err = flowStore.UpsertFlows(globalWriteAccessCtx, flows, timestamp.FromGoTime(time.Now()))
 	s.NoError(err)
 
-	since := time.Now().Add(-1 * time.Hour)
-	flows, _, err = flowStore.GetAllFlows(ctx, &since)
-
 	for _, tc := range []struct {
 		name     string
 		request  *v1.GetExternalNetworkFlowsRequest
@@ -370,9 +366,6 @@ func (s *networkGraphServiceSuite) TestGetExternalNetworkFlowsMetadata() {
 	err = flowStore.UpsertFlows(globalWriteAccessCtx, flows, timestamp.FromGoTime(time.Now()))
 	s.NoError(err)
 
-	since := time.Now().Add(-1 * time.Hour)
-	flows, _, err = flowStore.GetAllFlows(ctx, &since)
-
 	for _, tc := range []struct {
 		name     string
 		request  *v1.GetExternalNetworkFlowsMetadataRequest
@@ -472,7 +465,7 @@ func (s *networkGraphServiceSuite) TestGetExternalNetworkFlowsMetadata() {
 			name: "Invalid namespace",
 			request: &v1.GetExternalNetworkFlowsMetadataRequest{
 				ClusterId: testCluster,
-				Query:     fmt.Sprintf("Namespace:invalidNamespace"),
+				Query:     "Namespace:invalidNamespace",
 			},
 			expected: &v1.GetExternalNetworkFlowsMetadataResponse{
 				Entities:      []*v1.ExternalNetworkFlowMetadata{},
