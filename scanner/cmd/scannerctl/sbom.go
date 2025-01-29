@@ -32,6 +32,11 @@ func sbomCmd(ctx context.Context) *cobra.Command {
 		"Use the specified image digest in "+
 			"the image manifest ID. The default is to retrieve the image digest from "+
 			"the registry and use that.")
+	skipIndexing := flags.Bool(
+		"skip-indexing",
+		false,
+		"Do not index the image when an existing index report is not found",
+	)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		// Create scanner client.
@@ -59,27 +64,42 @@ func sbomCmd(ctx context.Context) *cobra.Command {
 				ref.DigestStr(), *imageDigest)
 		}
 
+		// Attempt to generate the SBOM from an existing index report.
 		sbom, found, err := scanner.GetSBOM(ctx, imageURL, ref)
-		if !found && err == nil {
-			opt := client.ImageRegistryOpt{InsecureSkipTLSVerify: false}
-
-			var ir *v4.IndexReport
-			ir, err = scanner.GetOrCreateImageIndex(ctx, ref, auth, opt)
-			if err != nil {
-				return fmt.Errorf("indexing: %w", err)
-			}
-			if ir == nil || !ir.GetSuccess() {
-				return errors.New("index report missing or unsuccessful")
-			}
-
-			sbom, _, err = scanner.GetSBOM(ctx, imageURL, ref)
-		}
 		if err != nil {
 			return fmt.Errorf("generating sbom: %w", err)
+		}
+		if found {
+			fmt.Println(string(sbom))
+			return nil
+		}
+		if *skipIndexing {
+			return fmt.Errorf("index report not found for %q", ref)
+		}
+
+		// Index the image.
+		var ir *v4.IndexReport
+		opt := client.ImageRegistryOpt{InsecureSkipTLSVerify: false}
+		ir, err = scanner.GetOrCreateImageIndex(ctx, ref, auth, opt)
+		if err != nil {
+			return fmt.Errorf("indexing: %w", err)
+		}
+		if ir == nil || !ir.GetSuccess() {
+			return errors.New("index report missing or unsuccessful")
+		}
+
+		// Re-attempt to generate the SBOM.
+		sbom, found, err = scanner.GetSBOM(ctx, imageURL, ref)
+		if err != nil {
+			return fmt.Errorf("generating sbom: %w", err)
+		}
+		if !found {
+			return fmt.Errorf("index report still not found for %q", ref)
 		}
 
 		fmt.Println(string(sbom))
 		return nil
 	}
+
 	return &cmd
 }
