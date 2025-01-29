@@ -92,7 +92,7 @@ func (resolver *Resolver) ImageVulnerability(ctx context.Context, args IDQuery) 
 // ImageVulnerabilities resolves a set of image vulnerabilities for the input query
 func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilities")
-	log.Infof("SHREWS -- ImageVulnerabilities -- query %v", q)
+	log.Infof("SHREWS -- ImageVulnerabilities -- query %v", q.String())
 	// check permissions
 	if err := readImages(ctx); err != nil {
 		return nil, err
@@ -103,6 +103,7 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 	if err != nil {
 		return nil, err
 	}
+	log.Infof("SHREWS -- ImageVulnerabilities -- query %v", query.String())
 
 	if features.FlattenCVEData.Enabled() {
 		// get loader
@@ -113,7 +114,9 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 
 		// get values
 		//query = tryUnsuppressedQuery(query)
+		log.Info("SHREWS -- about to call VulnsFromQuery")
 		vulns, err := loader.VulnsFromQuery(ctx, query)
+		log.Infof("SHREWS -- back from call VulnsFromQuery -- %v", err)
 		cveResolvers, err := resolver.wrapImageCVEV2sWithContext(ctx, vulns, err)
 		if err != nil {
 			return nil, err
