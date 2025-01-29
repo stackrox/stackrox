@@ -295,11 +295,12 @@ setup_dns_hosts() {
 
     echo "CUSTOM_DNS_HOSTS=${CUSTOM_DNS_HOSTS}"
     export STACKROX_IO_HOSTS=$(
-        local commands="for sd in ${CUSTOM_DNS_HOSTS}"' ; do echo "$(dig +short $(dig ${sd} @'"${CUSTOM_DNS_SERVER}"' +short | tail -1)|tail -1) ${sd}"; done'
+        local commands="for sd in ${CUSTOM_DNS_HOSTS}"' ; do echo "          $(dig +short $(dig ${sd} @'"${CUSTOM_DNS_SERVER}"' +short | tail -1)|tail -1) ${sd}"; done'
         kubectl run --quiet -i --rm --restart=Never --image=infoblox/dnstools:latest dnstools$(date +%s) <<<"${commands}"
     )
     echo "DNS @${CUSTOM_DNS_SERVER} lookup:"
-    echo -e "          ${STACKROX_IO_HOSTS//$'\n'/$'\n          '}"
+    echo "[${STACKROX_IO_HOSTS}]"
+    echo -e "evaluated[${STACKROX_IO_HOSTS}]"
 
     echo 'INFO: Apply config on each run'
 
@@ -323,7 +324,7 @@ data:
         ready
         rewrite name stackrox.io www.stackrox.io
         hosts {
-          ${STACKROX_IO_HOSTS//$'\n'/$'\n          '}
+          ${STACKROX_IO_HOSTS}
           fallthrough
         }
         kubernetes cluster.local in-addr.arpa ip6.arpa {
