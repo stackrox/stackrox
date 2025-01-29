@@ -53,11 +53,9 @@ export function convertFromInternalToExternalConditionText(
     let conditionFound;
     conditionEntries.forEach((condition) => {
         const conditionKey = condition[0];
-        if (internalConditionText.startsWith(conditionKey)) {
-            if (conditionKey.length > length) {
-                length = conditionKey.length;
-                conditionFound = condition;
-            }
+        if (internalConditionText.startsWith(conditionKey) && conditionKey.length > length) {
+            length = conditionKey.length;
+            conditionFound = condition;
         }
     });
 
