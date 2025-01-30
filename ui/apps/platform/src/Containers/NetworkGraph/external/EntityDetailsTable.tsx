@@ -17,7 +17,7 @@ import { getExternalNetworkFlows } from 'services/NetworkService';
 import { getTableUIState } from 'utils/getTableUIState';
 import { ExternalNetworkFlowsResponse } from 'types/networkFlow.proto';
 
-import { protocolLabel } from '../utils/flowUtils';
+import { getDeploymentInfoForExternalEntity, protocolLabel } from '../utils/flowUtils';
 import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 
 export type EntityDetailsTableProps = {
@@ -89,24 +89,35 @@ function EntityDetailsTable({ entityId, scopeHierarchy }: EntityDetailsTableProp
                         renderer={({ data }) => (
                             <Tbody>
                                 {data.map((flow) => {
-                                    const { srcEntity, l4protocol, dstPort } = flow.props;
+                                    const deploymentInfo = getDeploymentInfoForExternalEntity(
+                                        flow.props
+                                    );
+
+                                    if (!deploymentInfo) {
+                                        return null;
+                                    }
+
+                                    const { l4protocol, dstPort } = flow.props;
+                                    const { deployment, direction } = deploymentInfo;
+
                                     return (
-                                        <Tr key={`${srcEntity.id}-${dstPort}-${l4protocol}`}>
+                                        <Tr key={`${deployment.name}-${dstPort}-${l4protocol}`}>
                                             <Td dataLabel="Entity">
-                                                {srcEntity.deployment.name}
+                                                {deployment.name}
                                                 <div>
                                                     <Text
                                                         component="small"
                                                         className="pf-v5-u-color-200 pf-v5-u-text-truncate"
                                                     >
-                                                        in &quot;{srcEntity.deployment.namespace}
+                                                        in &quot;
+                                                        {deployment.namespace}
                                                         &quot;
                                                     </Text>
                                                 </div>
                                             </Td>
-                                            <Td dataLabel="Direction">-</Td>
+                                            <Td dataLabel="Direction">{direction}</Td>
                                             <Td dataLabel="Port/protocol">
-                                                {dstPort}/{protocolLabel[l4protocol]}
+                                                {dstPort} / {protocolLabel[l4protocol]}
                                             </Td>
                                             <Td isActionCell>
                                                 <ActionsColumn

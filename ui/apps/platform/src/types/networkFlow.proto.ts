@@ -44,13 +44,15 @@ export type NetworkEntityInfo =
     | InternetNetworkEntityInfo
     | InternalNetworkEntitiesInfo;
 
+export type DeploymentDetails = {
+    name: string;
+    namespace: string;
+    cluster: string; // deprecated
+    listenPorts: ListenPort[];
+};
+
 export type DeploymentNetworkEntityInfo = {
-    deployment: {
-        name: string;
-        namespace: string;
-        cluster: string; // deprecated
-        listenPorts: ListenPort[];
-    };
+    deployment: DeploymentDetails;
     type: 'DEPLOYMENT';
 } & BaseNetworkEntityInfo;
 
@@ -59,12 +61,22 @@ export type ListenPort = {
     l4protocol: L4Protocol;
 };
 
-type ExternalNetworkFlowProperties = {
-    srcEntity: DeploymentNetworkEntityInfo;
-    dstEntity: ExternalSourceNetworkEntityInfo;
-    dstPort: number; // uint32 may be 0 if not applicable (e.g., icmp)
+type BaseNetworkFlowProperties = {
+    dstPort: number;
     l4protocol: L4Protocol;
 };
+
+export type ExternalNetworkFlowProperties = BaseNetworkFlowProperties &
+    (
+        | {
+              srcEntity: DeploymentNetworkEntityInfo;
+              dstEntity: ExternalSourceNetworkEntityInfo;
+          }
+        | {
+              srcEntity: ExternalSourceNetworkEntityInfo;
+              dstEntity: DeploymentNetworkEntityInfo;
+          }
+    );
 
 type ExternalNetworkFlow = {
     props: ExternalNetworkFlowProperties;
