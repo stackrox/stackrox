@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
@@ -303,17 +304,15 @@ func (e *enricher) runScan(ctx context.Context, req *scanImageRequest) imageChan
 	}
 	value := e.imageCache.GetOrSet(key, newValue).(*cacheValue)
 	if forceEnrichImageWithSignatures || newValue == value {
-		ctxWithCancel, cancel := context.WithCancel(ctx)
-		// If the stopSignal is triggered, the context to scanAndSet should be canceled
-		stopAfterFunc := context.AfterFunc(concurrency.AsContext(&e.stopSig), func() {
-			cancel()
-		})
+		// Merge ctx with the stopSig.
+		// If the stopSignal is triggered, the context used in scanAndSet should be canceled.
+		mergedCtx, stopAfterFunc := contextutil.MergeContext(ctx, concurrency.AsContext(&e.stopSig))
 		defer func() {
 			// Stop the AfterFunc so we don't leak goroutines.
 			// scanAndSet will block, so it's ok to defer the call here.
 			_ = stopAfterFunc()
 		}()
-		value.scanAndSet(ctxWithCancel, e.imageSvc, req)
+		value.scanAndSet(mergedCtx, e.imageSvc, req)
 	}
 	return imageChanResult{
 		image:        value.WaitAndGet(),
