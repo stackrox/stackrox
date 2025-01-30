@@ -5,10 +5,11 @@ package schema
 import (
 	"reflect"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
-	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
@@ -21,7 +22,7 @@ var (
 	// PolicyCategoriesSchema is the go schema for table `policy_categories`.
 	PolicyCategoriesSchema = func() *walker.Schema {
 		schema := walker.Walk(reflect.TypeOf((*storage.PolicyCategory)(nil)), "policy_categories")
-		schema.ScopingResource = resources.WorkflowAdministration
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_POLICY_CATEGORIES, "policycategory", (*storage.PolicyCategory)(nil)))
 		return schema
 	}()
 )
