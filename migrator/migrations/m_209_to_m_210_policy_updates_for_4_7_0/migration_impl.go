@@ -1,51 +1,127 @@
 package m209tom210
 
 import (
+	"context"
+	"embed"
+
+	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/migrator/migrations/m_209_to_m_210_policy_updates_for_4_7_0/conversion"
+	"github.com/stackrox/rox/migrator/migrations/m_209_to_m_210_policy_updates_for_4_7_0/schema"
+	"github.com/stackrox/rox/migrator/migrations/policymigrationhelper"
 	"github.com/stackrox/rox/migrator/types"
+	"gorm.io/gorm"
 )
 
-// TODO(dont-merge): generate/write and import any store required for the migration (skip any unnecessary step):
-//  - create a schema subdirectory
-//  - create a schema/old subdirectory
-//  - create a schema/new subdirectory
-//  - create a stores subdirectory
-//  - create a stores/previous subdirectory
-//  - create a stores/updated subdirectory
-//  - copy the old schemas from pkg/postgres/schema to schema/old
-//  - copy the old stores from their location in central to appropriate subdirectories in stores/previous
-//  - generate the new schemas in pkg/postgres/schema and the new stores where they belong
-//  - copy the newly generated schemas from pkg/postgres/schema to schema/new
-//  - remove the calls to GetSchemaForTable and to RegisterTable from the copied schema files
-//  - remove the xxxTableName constant from the copied schema files
-//  - copy the newly generated stores from their location in central to appropriate subdirectories in stores/updated
-//  - remove any unused function from the copied store files (the minimum for the public API should contain Walk, UpsertMany, DeleteMany)
-//  - remove the scoped access control code from the copied store files
-//  - remove the metrics collection code from the copied store files
+var (
+	//go:embed policies_before_and_after
+	policyDiffFS embed.FS
 
-// TODO(dont-merge): Determine if this change breaks a previous releases database.
-// If so increment the `MinimumSupportedDBVersionSeqNum` to the `CurrentDBVersionSeqNum` of the release immediately
-// following the release that cannot tolerate the change in pkg/migrations/internal/fallback_seq_num.go.
-//
-// For example, in 4.2 a column `column_v2` is added to replace the `column_v1` column in 4.1.
-// All the code from 4.2 onward will not reference `column_v1`. At some point in the future a rollback to 4.1
-// will not longer be supported and we want to remove `column_v1`. To do so, we will upgrade the schema to remove
-// the column and update the `MinimumSupportedDBVersionSeqNum` to be the value of `CurrentDBVersionSeqNum` in 4.2
-// as 4.1 will no longer be supported. The migration process will inform the user of an error when trying to migrate
-// to a software version that can no longer be supported by the database.
+	// We want to migrate only if the existing policy sections, name, and description haven't changed.
+	fieldsToCompare = []policymigrationhelper.FieldComparator{
+		policymigrationhelper.DescriptionComparator,
+		policymigrationhelper.PolicySectionComparator,
+		policymigrationhelper.NameComparator,
+	}
+
+	policyDiffs = []policymigrationhelper.PolicyDiff{
+		{
+			FieldsToCompare: fieldsToCompare,
+			PolicyFileName:  "cvss_6_privileged.json",
+		},
+		{
+			FieldsToCompare: fieldsToCompare,
+			PolicyFileName:  "cvss_7.json",
+		},
+		{
+			FieldsToCompare: fieldsToCompare,
+			PolicyFileName:  "severity_high_privileged.json",
+		},
+		{
+			FieldsToCompare: fieldsToCompare,
+			PolicyFileName:  "severity_important.json",
+		},
+	}
+)
 
 func migrate(database *types.Databases) error {
-	_ = database // TODO(dont-merge): remove this line, it is there to make the compiler happy while the migration code is being written.
-	// Use databases.DBCtx to take advantage of the transaction wrapping present in the migration initiator
+	db := database.GormDB
 
-	// TODO(dont-merge): Migration code comes here
-	// TODO(dont-merge): When using gorm, make sure you use a separate handle for the updates and the query.  Such as:
-	// TODO(dont-merge): db = db.WithContext(database.DBCtx).Table(schema.ListeningEndpointsTableName)
-	// TODO(dont-merge): query := db.WithContext(database.DBCtx).Table(schema.ListeningEndpointsTableName).Select("serialized")
-	// TODO(dont-merge): See README for more details
+	return policymigrationhelper.MigratePoliciesWithDiffsAndStoreV2(
+		policyDiffFS,
+		policyDiffs,
+		// Get policy with specified id
+		func(ctx context.Context, id string) (*storage.Policy, bool, error) {
+			var foundPolicy schema.Policies
+			result := db.WithContext(ctx).Table(schema.PoliciesTableName).Where(&schema.Policies{ID: id}).First(&foundPolicy)
+			if result.Error != nil {
+				if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+					return nil, false, nil
+				}
+				return nil, false, result.Error
+			}
+			storagePolicy, err := conversion.ConvertPolicyToProto(&foundPolicy)
+			if err != nil {
+				return nil, false, err
+			}
+			return storagePolicy, true, nil
+		},
+		// Upsert policy. Technically it should be just an update and not create because in theory policy has been verified to exist
+		func(ctx context.Context, policy *storage.Policy) error {
+			dbPolicy, err := conversion.ConvertPolicyFromProto(policy)
+			if err != nil {
+				return err
+			}
+			result := db.WithContext(ctx).Table(schema.PoliciesTableName).Save(dbPolicy)
+			if result.RowsAffected != 1 {
+				return errors.Errorf("failed to save policy with id %s", policy.GetId())
+			}
+			return result.Error
+		},
+		// Get categories from the DB.
+		func(ctx context.Context) (map[string]string, error) {
+			var results []*schema.PolicyCategories
+			db.WithContext(ctx).Table(schema.PolicyCategoriesTableName).Find(&results)
 
-	return nil
+			categories := make(map[string]string, 0)
+			for _, r := range results {
+				c, err := conversion.ConvertPolicyCategoryToProto(r)
+				if err != nil {
+					return nil, err
+				}
+				categories[c.Name] = c.Id
+			}
+			return categories, nil
+		},
+		func(ctx context.Context, edge *storage.PolicyCategoryEdge) error {
+			dbEdge, err := conversion.ConvertPolicyCategoryEdgeFromProto(edge)
+			if err != nil {
+				return err
+			}
+			result := db.WithContext(ctx).Table(schema.PolicyCategoryEdgesTableName).Save(dbEdge)
+			if result.RowsAffected != 1 {
+				return errors.Errorf("failed to save edge for policy id %s, category id %s: %q",
+					edge.GetPolicyId(), edge.GetCategoryId(), result.Error)
+			}
+			return result.Error
+		},
+		func(ctx context.Context, edge *storage.PolicyCategoryEdge) error {
+			dbEdge, err := conversion.ConvertPolicyCategoryEdgeFromProto(edge)
+			if err != nil {
+				return err
+			}
+			result := db.WithContext(ctx).Table(schema.PolicyCategoryEdgesTableName).Where(&schema.PolicyCategoryEdges{
+				PolicyID:   edge.GetPolicyId(),
+				CategoryID: edge.GetCategoryId(),
+			}).Delete(dbEdge)
+			if result.Error != nil {
+				if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+					return nil
+				}
+				return errors.Errorf("failed to remove edge for policy id %s, category id %s", edge.GetPolicyId(), edge.GetCategoryId())
+
+			}
+			return nil
+		},
+	)
 }
-
-// TODO(dont-merge): Write the additional code to support the migration
-
-// TODO(dont-merge): remove any pending TODO
