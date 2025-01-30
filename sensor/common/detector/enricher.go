@@ -364,6 +364,16 @@ func (e *enricher) getImages(deployment *storage.Deployment) []*storage.Image {
 	for i := 0; i < len(deployment.GetContainers()); i++ {
 		imgResult := <-imageChan
 
+		imageName := imgResult.image.GetName().GetFullName()
+		log.Infof("--------- Debug Info for Image %q ---------", imageName)
+		log.Infof(" Image %q size %d", imageName, imgResult.image.SizeVT())
+		log.Infof(" Image %q components %+v", imageName, imgResult.image.GetComponents())
+		log.Infof(" Image %q cve %+v", imageName, imgResult.image.GetCves())
+		log.Infof(" Image %q scan %+v", imageName, imgResult.image.GetScan())
+		log.Infof(" Image %q signatures %+v", imageName, imgResult.image.GetSignature())
+		log.Infof(" Image %q signatures verifications %+v", imageName, imgResult.image.GetSignatureVerificationData())
+		log.Infof("--------- End Info for Image %q ---------", imageName)
+
 		// This will ensure that when we change the Name of the image
 		// that it will not cause a potential race condition
 		image := *imgResult.image.CloneVT()
