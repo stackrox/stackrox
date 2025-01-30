@@ -2,14 +2,19 @@ import com.google.protobuf.util.JsonFormat
 import groovy.io.FileType
 import io.grpc.StatusRuntimeException
 
+import io.stackrox.proto.api.v1.NamespaceServiceOuterClass
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass
+import io.stackrox.proto.storage.NodeOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
 
+import services.AlertService
 import services.ClusterService
 import services.GraphQLService
+import services.ImageService
+import services.NamespaceService
+import services.NodeService
 import services.PolicyService
-import services.SummaryService
 import util.Env
 
 import spock.lang.Ignore
@@ -56,6 +61,33 @@ class UpgradesTest extends BaseSpecification {
         def cluster = ClusterService.getCluster()
         cluster != null
         assert(cluster.getDynamicConfig().getDisableAuditLogs() == true)
+    }
+    @Tag("Upgrade")
+    def "Verify that APIs returns non-zero values on upgrade"() {
+        expect:
+        "Namespace API returns non-zero values on upgrade"
+        def namespaces = NamespaceService.getNamespaces()
+        assert namespaces.size() != 0
+        int numDeployments = 0
+        int numSecrets = 0
+        for (NamespaceServiceOuterClass.Namespace ns: namespaces) {
+            numDeployments += ns.getNumDeployments()
+            numSecrets += ns.getNumSecrets()
+        }
+        assert numDeployments != 0
+        assert numSecrets != 0
+        "Alert API returns non-zero values on upgrade"
+        def alerts = AlertService.getAlertCounts()
+        assert alerts.getGroupsList().size() != 0
+        "Cluster API returns non-zero values on upgrade"
+        def clusters = ClusterService.getClusters()
+        assert clusters.size() != 0
+        "Node API returns non-zero values on upgrade"
+        def nodes = NodeService.getNodes()
+        assert nodes.size() != 0
+        "Image API returns non-zero values on upgrade"
+        def images = ImageService.getImages()
+        assert images.size() != 0
     }
 
     @Unroll
