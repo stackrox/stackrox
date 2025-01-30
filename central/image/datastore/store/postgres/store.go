@@ -392,14 +392,8 @@ func copyFromImageCves(ctx context.Context, tx *postgres.Tx, iTime time.Time, ob
 			serialized,
 		}
 
-		if epss := obj.GetCveBaseInfo().GetEpss(); epss != nil {
-			row = append(row, epss.GetEpssProbability())
-		} else {
-			row = append(row, nil)
-		}
-
+		row = append(row, pgutils.EpssFloatOrNil(obj.GetCveBaseInfo().GetEpss()))
 		inputRows = append(inputRows, row)
-
 		// Add the id to be deleted.
 		deletes = append(deletes, obj.GetId())
 

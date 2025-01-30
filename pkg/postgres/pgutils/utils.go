@@ -9,6 +9,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/utils"
@@ -48,6 +49,13 @@ func ConvertEnumSliceToIntArray[T ~int32](enumSlice []T) []int32 {
 		resultSlice = append(resultSlice, int32(v))
 	}
 	return resultSlice
+}
+
+func EpssFloatOrNil(epss *storage.EPSS) interface{} {
+	if epss == nil {
+		return nil
+	}
+	return epss.GetEpssProbability()
 }
 
 // NilOrUUID allows for a proto string to be stored as a UUID type in Postgres
