@@ -35,6 +35,9 @@ Please use --admission-controller-listen-on-creates instead to suppress this war
 	warningDeprecatedAdmControllerEnableSet = `The --admission-controller-enabled flag has been deprecated and will be removed in future versions of roxctl.
 Please use --admission-controller-enforce-on-creates instead to suppress this warning text and avoid breakages in the future.`
 
+	warningSlimCollectorModeSet = `The --slim-collector flag has been deprecated and will be removed in future versions of roxctl. It will be ignored by Centrals
+newer than 4.6`
+
 	mainImageRepository = "main-image-repository"
 	slimCollector       = "slim-collector"
 
@@ -87,6 +90,10 @@ func (s *sensorGenerateCommand) Construct(cmd *cobra.Command) error {
 	}
 	if cmd.PersistentFlags().Lookup("admission-controller-enabled").Changed {
 		s.env.Logger().WarnfLn(warningDeprecatedAdmControllerEnableSet)
+	}
+
+	if cmd.PersistentFlags().Lookup(slimCollector).Changed {
+		s.env.Logger().WarnfLn(warningSlimCollectorModeSet)
 	}
 
 	s.getBundleFn = util.GetBundle

@@ -112,6 +112,8 @@ test_collector_image_references_in_deployment_bundles() {
     fi
 }
 
+# these tests are verifying that --slim-collector is ignored now that
+# slim collector has been removed (4.7+, ROX-18384)
 test_collector_image_references_in_deployment_bundles "--slim-collector" "does not have -slim"
 test_collector_image_references_in_deployment_bundles "--slim-collector=auto" "does not have -slim"
 test_collector_image_references_in_deployment_bundles "--slim-collector=false" "does not have -slim"
