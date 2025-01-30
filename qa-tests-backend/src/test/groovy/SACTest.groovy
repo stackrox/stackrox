@@ -27,7 +27,6 @@ import services.NetworkGraphService
 import services.RoleService
 import services.SearchService
 import services.SecretService
-import services.SummaryService
 import util.Env
 import util.NetworkGraphUtil
 
@@ -256,71 +255,6 @@ class SACTest extends BaseSpecification {
         "Data inputs are: "
         sacResource   | _
         NAMESPACE_QA2 | _
-    }
-
-    @Ignore("ROX-24528: This API is deprecated in 4.5. Remove this test once the API is removed")
-    def "Verify GetSummaryCounts using a token without access receives no results"() {
-        when:
-        "GetSummaryCounts is called using a token without access"
-        createSecret(DEPLOYMENT_QA1.namespace)
-        useToken(NOACCESSTOKEN)
-        def result = SummaryService.getCounts()
-        then:
-        "Verify GetSumamryCounts returns no results"
-        assert result.getNumDeployments() == 0
-        assert result.getNumSecrets() == 0
-        assert result.getNumNodes() == 0
-        assert result.getNumClusters() == 0
-        assert result.getNumImages() == 0
-        cleanup:
-        "Cleanup"
-        BaseService.useBasicAuth()
-        deleteSecret(DEPLOYMENT_QA1.namespace)
-    }
-
-    @Ignore("ROX-24528: This API is deprecated in 4.5. Remove this test once the API is removed")
-    def "Verify GetSummaryCounts using a token with partial access receives partial results"() {
-        when:
-        "GetSummaryCounts is called using a token with restricted access"
-        createSecret(DEPLOYMENT_QA1.namespace)
-        createSecret(DEPLOYMENT_QA2.namespace)
-        useToken("getSummaryCountsToken")
-        then:
-        "Verify correct counts are returned by GetSummaryCounts"
-        withRetry(30, 3) {
-            def result = SummaryService.getCounts()
-            assert result.getNumDeployments() == 1
-            assert result.getNumSecrets() == orchestrator.getSecretCount(DEPLOYMENT_QA1.namespace)
-            assert result.getNumImages() == 1
-        }
-        cleanup:
-        "Cleanup"
-        BaseService.useBasicAuth()
-        deleteSecret(DEPLOYMENT_QA1.namespace)
-        deleteSecret(DEPLOYMENT_QA2.namespace)
-    }
-
-    @Ignore("ROX-24528: This API is deprecated in 4.5. Remove this test once the API is removed")
-    def "Verify GetSummaryCounts using a token with all access receives all results"() {
-        when:
-        "GetSummaryCounts is called using a token with all access"
-        createSecret(DEPLOYMENT_QA1.namespace)
-        createSecret(DEPLOYMENT_QA2.namespace)
-        useToken(ALLACCESSTOKEN)
-        def result = SummaryService.getCounts()
-        then:
-        "Verify results are returned in each category"
-        assert result.getNumDeployments() >= 2
-        // These may be created by other tests so it's hard to know the exact number.
-        assert result.getNumSecrets() >= 2
-        assert result.getNumNodes() > 0
-        assert result.getNumClusters() >= 1
-        assert result.getNumImages() >= 1
-        cleanup:
-        "Cleanup"
-        BaseService.useBasicAuth()
-        deleteSecret(DEPLOYMENT_QA1.namespace)
-        deleteSecret(DEPLOYMENT_QA2.namespace)
     }
 
     @Unroll

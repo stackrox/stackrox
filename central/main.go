@@ -159,7 +159,6 @@ import (
 	signatureIntegrationDS "github.com/stackrox/rox/central/signatureintegration/datastore"
 	signatureIntegrationService "github.com/stackrox/rox/central/signatureintegration/service"
 	"github.com/stackrox/rox/central/splunk"
-	summaryService "github.com/stackrox/rox/central/summary/service"
 	"github.com/stackrox/rox/central/systeminfo/listener"
 	"github.com/stackrox/rox/central/telemetry/centralclient"
 	telemetryService "github.com/stackrox/rox/central/telemetry/service"
@@ -443,7 +442,6 @@ func servicesToRegister() []pkgGRPC.APIService {
 		serviceAccountService.Singleton(),
 		siService.Singleton(),
 		signatureIntegrationService.Singleton(),
-		summaryService.Singleton(),
 		telemetryService.Singleton(),
 		userService.Singleton(),
 		vulnMgmtService.Singleton(),
