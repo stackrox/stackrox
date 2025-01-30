@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
@@ -176,17 +177,37 @@ func (resolver *Resolver) ImageVulnerabilityCounter(ctx context.Context, args Ra
 	}
 	query = tryUnsuppressedQuery(query)
 
-	imageCVEEdges, err := resolver.ComponentCVEEdgeDataStore.SearchRawEdges(ctx, query)
+	selects, groupBy, pagination := query.Selects, query.GroupBy, query.Pagination
+	edgeFieldQuery := search.NewQueryBuilder().MarkHighlighted(search.Fixable).MarkHighlighted(search.CVE).ProtoQuery()
+	query = search.ConjunctionQuery(edgeFieldQuery, query)
+	query.Selects, query.GroupBy, query.Pagination = selects, groupBy, pagination
+	results, err := resolver.ComponentCVEEdgeDataStore.Search(ctx, query)
 	if err != nil {
 		return nil, err
 	}
 	fixableCVEIDs := set.NewStringSet()
 	unFixableCVEIDs := set.NewStringSet()
-	for _, edge := range imageCVEEdges {
-		if edge.GetIsFixable() {
-			fixableCVEIDs.Add(edge.GetImageCveId())
+	for _, result := range results {
+		var fixable bool
+		var cveID string
+		fixableField := schema.ImageComponentCveEdgesSchema.OptionsMap.MustGet(search.Fixable.String())
+		vulnerabilityIDField := schema.ImageCvesSchema.OptionsMap.MustGet(search.CVE.String())
+		for key, matches := range result.Matches {
+			switch key {
+			case fixableField.GetFieldPath():
+				if len(matches) > 0 {
+					fixable = matches[0] == "true"
+				}
+			case vulnerabilityIDField.GetFieldPath():
+				if len(matches) > 0 {
+					cveID = matches[0]
+				}
+			}
+		}
+		if fixable {
+			fixableCVEIDs.Add(cveID)
 		} else {
-			unFixableCVEIDs.Add(edge.GetImageCveId())
+			unFixableCVEIDs.Add(cveID)
 		}
 	}
 	allCVEIDs := set.NewStringSet()
