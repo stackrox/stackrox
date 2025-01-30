@@ -15,7 +15,9 @@ import (
 type migrationTestSuite struct {
 	suite.Suite
 
-	db *pghelper.TestPostgres
+	db     *pghelper.TestPostgres
+	gormDB *gorm.DB
+
 	ctx context.Context
 }
 
@@ -23,41 +25,65 @@ func TestMigration(t *testing.T) {
 	suite.Run(t, new(migrationTestSuite))
 }
 
-
 func (s *migrationTestSuite) SetupSuite() {
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.db = pghelper.ForT(s.T(), false)
-	// TODO(dont-merge): Create the schemas and tables required for the pre-migration dataset push to DB
+	s.gormDB = s.db.GetGormDB().WithContext(s.ctx)
+	pgutils.CreateTableFromModel(s.ctx, s.db.GetGormDB(), schema.CreateTablePoliciesStmt)
+
+	// Insert some policies that won't be migrated to set the baseline
+	policies := []*storage.Policy{
+		simplePolicy(uuid.NewV4().String()),
+		simplePolicy(uuid.NewV4().String()),
+	}
+
+	for _, p := range policies {
+		s.addPolicyToDB(p)
+	}
 }
 
 func (s *migrationTestSuite) TearDownSuite() {
 	s.db.Teardown(s.T())
 }
 
-
-
 func (s *migrationTestSuite) TestMigration() {
-	// TODO(dont-merge): instantiate any store required for the pre-migration dataset push to DB
-
-	// TODO(dont-merge): push the pre-migration dataset to DB
-
-	dbs := &types.Databases{
-		GormDB:     s.db.GetGormDB(),
-		PostgresDB: s.db.DB,
-		DBCtx:      s.ctx,
+	// Insert the policies to be migrated
+	for _, diff := range policyDiffs {
+		beforePolicy, err := policymigrationhelper.ReadPolicyFromFile(policyDiffFS, filepath.Join("policies_before_and_after/before", diff.PolicyFileName))
+		s.Require().NoError(err)
+		s.addPolicyToDB(beforePolicy)
 	}
 
-	s.Require().NoError(migration.Run(dbs))
+	// Run the migration
+	s.Require().NoError(migration.Run(&types.Databases{
+		PostgresDB: s.db.DB,
+		GormDB:     s.gormDB,
+	}))
 
-	// TODO(dont-merge): instantiate any store required for the post-migration dataset pull from DB
-
-	// TODO(dont-merge): pull the post-migration dataset from DB
-
-	// TODO(dont-merge): validate that the post-migration dataset has the expected content
-
-	// TODO(dont-merge): validate that pre-migration queries and statements execute against the
-	// post-migration database to ensure backwards compatibility
-
+	// Verify for each policy
+	for _, diff := range policyDiffs {
+		s.Run(fmt.Sprintf("Testing policy %s", diff.PolicyFileName), func() {
+			afterPolicy, _ := policymigrationhelper.ReadPolicyFromFile(policyDiffFS, filepath.Join("policies_before_and_after/after", diff.PolicyFileName))
+			var foundPolicies []schema.Policies
+			result := s.gormDB.Limit(1).Where(&schema.Policies{ID: afterPolicy.GetId()}).Find(&foundPolicies)
+			s.Require().NoError(result.Error)
+			migratedPolicy, err := conversion.ConvertPolicyToProto(&foundPolicies[0])
+			s.Require().NoError(err)
+			protoassert.ElementsMatch(s.T(), migratedPolicy.Exclusions, afterPolicy.Exclusions, "exclusion do not match after migration")
+			protoassert.ElementsMatch(s.T(), migratedPolicy.PolicySections, afterPolicy.PolicySections, "policy sections do not match after migration")
+		})
+	}
 }
 
-// TODO(dont-merge): remove any pending TODO
+func simplePolicy(policyID string) *storage.Policy {
+	return &storage.Policy{
+		Id:   policyID,
+		Name: fmt.Sprintf("Policy with id %s", policyID),
+	}
+}
+
+func (s *migrationTestSuite) addPolicyToDB(policy *storage.Policy) {
+	p, err := conversion.ConvertPolicyFromProto(policy)
+	s.Require().NoError(err)
+	s.Require().NoError(s.gormDB.Create(p).Error)
+}
