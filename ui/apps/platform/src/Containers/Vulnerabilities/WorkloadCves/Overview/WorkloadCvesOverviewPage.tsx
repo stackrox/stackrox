@@ -16,9 +16,11 @@ import isEmpty from 'lodash/isEmpty';
 
 import useURLSearch from 'hooks/useURLSearch';
 import useURLStringUnion from 'hooks/useURLStringUnion';
+import { getSearchFilterConfigWithFeatureFlagDependency } from 'Components/CompoundSearchFilter/utils/utils';
 import PageTitle from 'Components/PageTitle';
 import useURLPagination from 'hooks/useURLPagination';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
 import useAnalytics, {
     WATCH_IMAGE_MODAL_OPENED,
@@ -128,7 +130,7 @@ function getSearchFilterEntityByTab(
     }
 }
 
-const searchFilterConfig = [
+const searchFilterConfigWithFeatureFlagDependency = [
     imageSearchFilterConfig,
     imageCVESearchFilterConfig,
     imageComponentSearchFilterConfig,
@@ -139,6 +141,8 @@ const searchFilterConfig = [
 
 function WorkloadCvesOverviewPage() {
     const apolloClient = useApolloClient();
+
+    const { isFeatureFlagEnabled } = useFeatureFlags();
 
     const { hasReadAccess, hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForWatchedImage = hasReadWriteAccess('WatchedImage');
@@ -315,6 +319,11 @@ function WorkloadCvesOverviewPage() {
     function onWatchedImagesChange() {
         return apolloClient.refetchQueries({ include: [imageListQuery] });
     }
+
+    const searchFilterConfig = getSearchFilterConfigWithFeatureFlagDependency(
+        isFeatureFlagEnabled,
+        searchFilterConfigWithFeatureFlagDependency
+    );
 
     const filterToolbar = (
         <AdvancedFiltersToolbar

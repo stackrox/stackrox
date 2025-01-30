@@ -251,6 +251,7 @@ const TopologyComponent = ({
                                 id={selectedNode.id}
                                 nodes={model?.nodes || []}
                                 edges={model?.edges || []}
+                                scopeHierarchy={scopeHierarchy}
                                 onNodeSelect={onNodeSelect}
                             />
                         ) : (

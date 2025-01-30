@@ -13,6 +13,8 @@ import {
 
 import { ExternalEntitiesIcon } from '../common/NetworkGraphIcons';
 import ExternalFlowsTable from './ExternalFlowsTable';
+import ExternalIpsTable from './ExternalIpsTable';
+import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 import { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
 import { getNodeById } from '../utils/networkGraphUtils';
 
@@ -23,6 +25,7 @@ export type ExternalEntitiesSideBarProps = {
     id: string;
     nodes: CustomNodeModel[];
     edges: CustomEdgeModel[];
+    scopeHierarchy: NetworkScopeHierarchy;
     onNodeSelect: (id: string) => void;
 };
 
@@ -31,6 +34,7 @@ function ExternalEntitiesSideBar({
     id,
     nodes,
     edges,
+    scopeHierarchy,
     onNodeSelect,
 }: ExternalEntitiesSideBarProps): ReactElement {
     const [selectedView, setSelectedView] = useState<ExternalEntitiesView>('external-ips');
@@ -74,7 +78,7 @@ function ExternalEntitiesSideBar({
             <StackItem isFilled style={{ overflow: 'auto' }}>
                 <Stack className="pf-v5-u-p-md">
                     {selectedView === 'external-ips' ? (
-                        <div>external ips</div>
+                        <ExternalIpsTable scopeHierarchy={scopeHierarchy} />
                     ) : (
                         <ExternalFlowsTable
                             nodes={nodes}
