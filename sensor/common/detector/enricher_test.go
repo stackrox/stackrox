@@ -64,7 +64,6 @@ func TestEnricherSuite(t *testing.T) {
 
 func createScanImageRequest(containerID int, imageID string, fullName string, notPullable bool) *scanImageRequest {
 	return &scanImageRequest{
-		ctx:          context.Background(),
 		containerIdx: containerID,
 		containerImage: &storage.ContainerImage{
 			Name: &storage.ImageName{
@@ -94,17 +93,17 @@ func (s *enricherSuite) Test_dataRaceInRunScan() {
 	waitGroup := sync.WaitGroup{}
 	waitGroup.Add(3)
 	go func() {
-		s.enricher.runScan(req)
+		s.enricher.runScan(context.Background(), req)
 		waitGroup.Done()
 	}()
 	// We wait to make sure the first request finishes
 	time.Sleep(2 * time.Second)
 	go func() {
-		s.enricher.runScan(req2)
+		s.enricher.runScan(context.Background(), req2)
 		waitGroup.Done()
 	}()
 	go func() {
-		s.enricher.runScan(req3)
+		s.enricher.runScan(context.Background(), req3)
 		waitGroup.Done()
 	}()
 	waitGroup.Wait()
@@ -220,7 +219,7 @@ func runAsyncScans(e *enricher, reqs []*scanImageRequest) *sync.WaitGroup {
 		for _, req := range reqs {
 			waitGroup.Add(1)
 			go func(req *scanImageRequest) {
-				e.runScan(req)
+				e.runScan(context.Background(), req)
 				waitGroup.Done()
 			}(req)
 		}
@@ -350,7 +349,6 @@ func (s *enricherSuite) TestStopRunScan() {
 		replySignal := concurrency.NewSignal()
 		ctx, cancel := context.WithCancel(context.Background())
 		req := createScanImageRequest(0, "nginx-id", "nginx:latest", false)
-		req.ctx = ctx
 		conn, closeFunc := createMockImageService(s.T(), &mockImageServiceServer{replySignal: &replySignal})
 		s.enricher.imageSvc = v1.NewImageServiceClient(conn)
 		defer closeFunc()
@@ -362,7 +360,7 @@ func (s *enricherSuite) TestStopRunScan() {
 			// runScan will not respond until the replySignal is triggered.
 			// In the context of this test we do not trigger the signal to block
 			// the call until the context is canceled.
-			result = s.enricher.runScan(req)
+			result = s.enricher.runScan(ctx, req)
 			waitGroup.Done()
 		}()
 		// Cancel the context
@@ -375,7 +373,6 @@ func (s *enricherSuite) TestStopRunScan() {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 		req := createScanImageRequest(0, "nginx-id", "nginx:latest", false)
-		req.ctx = ctx
 		conn, closeFunc := createMockImageService(s.T(), &mockImageServiceServer{replySignal: &replySignal})
 		s.enricher.imageSvc = v1.NewImageServiceClient(conn)
 		defer closeFunc()
@@ -387,7 +384,7 @@ func (s *enricherSuite) TestStopRunScan() {
 			// runScan will not respond until the replySignal is triggered.
 			// In the context of this test we do not trigger the signal to block
 			// the call until the stopSig is triggered.
-			result = s.enricher.runScan(req)
+			result = s.enricher.runScan(ctx, req)
 			waitGroup.Done()
 		}()
 		// Trigger the stopSig

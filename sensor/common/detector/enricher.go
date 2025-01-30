@@ -259,7 +259,7 @@ func (e *enricher) getImageFromCache(key cache.Key) (*storage.Image, bool) {
 	return value.WaitAndGet(), true
 }
 
-func (e *enricher) runScan(req *scanImageRequest) imageChanResult {
+func (e *enricher) runScan(ctx context.Context, req *scanImageRequest) imageChanResult {
 	// Cache key is either going to be image full name or image ID.
 	// In case of image full name, we can skip. In case of image ID, we should make sure to check if the image's name
 	// is equal / contained in the images `Names` field.
@@ -303,7 +303,7 @@ func (e *enricher) runScan(req *scanImageRequest) imageChanResult {
 	}
 	value := e.imageCache.GetOrSet(key, newValue).(*cacheValue)
 	if forceEnrichImageWithSignatures || newValue == value {
-		ctx, cancel := context.WithCancel(req.ctx)
+		ctxWithCancel, cancel := context.WithCancel(ctx)
 		// If the stopSignal is triggered, the context to scanAndSet should be canceled
 		stopAfterFunc := context.AfterFunc(concurrency.AsContext(&e.stopSig), func() {
 			cancel()
@@ -313,7 +313,7 @@ func (e *enricher) runScan(req *scanImageRequest) imageChanResult {
 			// scanAndSet will block, so it's ok to defer the call here.
 			_ = stopAfterFunc()
 		}()
-		value.scanAndSet(ctx, e.imageSvc, req)
+		value.scanAndSet(ctxWithCancel, e.imageSvc, req)
 	}
 	return imageChanResult{
 		image:        value.WaitAndGet(),
@@ -322,17 +322,16 @@ func (e *enricher) runScan(req *scanImageRequest) imageChanResult {
 }
 
 type scanImageRequest struct {
-	ctx                  context.Context
 	containerIdx         int
 	containerImage       *storage.ContainerImage
 	clusterID, namespace string
 	pullSecrets          []string
 }
 
-func (e *enricher) runImageScanAsync(imageChan chan<- imageChanResult, req *scanImageRequest) {
+func (e *enricher) runImageScanAsync(ctx context.Context, imageChan chan<- imageChanResult, req *scanImageRequest) {
 	go func() {
 		// unguarded send (push to channel outside a select) is allowed because the imageChan is a buffered channel of exact size
-		imageChan <- e.runScan(req)
+		imageChan <- e.runScan(ctx, req)
 	}()
 }
 
@@ -342,8 +341,7 @@ func (e *enricher) getImages(ctx context.Context, deployment *storage.Deployment
 	pullSecrets := e.getPullSecrets(deployment)
 
 	for idx, container := range deployment.GetContainers() {
-		e.runImageScanAsync(imageChan, &scanImageRequest{
-			ctx:            ctx,
+		e.runImageScanAsync(ctx, imageChan, &scanImageRequest{
 			containerIdx:   idx,
 			containerImage: container.GetImage(),
 			clusterID:      clusterid.Get(),
