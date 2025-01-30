@@ -10,13 +10,18 @@ import (
 	"github.com/stackrox/rox/central/imagecomponent/v2/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-var componentV2LoaderType = reflect.TypeOf(storage.ImageComponentV2{})
+var (
+	componentV2LoaderType = reflect.TypeOf(storage.ImageComponentV2{})
+
+	log = logging.LoggerForModule()
+)
 
 func init() {
 	RegisterTypeFactory(reflect.TypeOf(storage.ImageComponentV2{}), func() interface{} {
@@ -103,15 +108,16 @@ func (idl *componentV2LoaderImpl) CountAll(ctx context.Context) (int32, error) {
 
 // VulnsFromQuery loads a set of components that match a query.
 func (idl *componentV2LoaderImpl) VulnsFromQuery(ctx context.Context, query *v1.Query) ([]*storage.ImageCVEV2, error) {
-	var results []*storage.ImageCVEV2
-	results, err := pgSearch.RunGetManyQueryForSchema[storage.ImageCVEV2](ctx, schema.ImageComponentV2Schema, query, globaldb.GetPostgres())
+	var results []search.Result
+	results, err := pgSearch.RunSearchRequestForSchema(ctx, schema.ImageComponentV2Schema, query, globaldb.GetPostgres())
 	if err != nil {
 		return nil, err
 	}
 	if len(results) == 0 {
 		return nil, nil
 	}
-	return results, nil
+	log.Infof("SHREWS -- results: %v", results)
+	return nil, nil
 }
 
 func (idl *componentV2LoaderImpl) load(ctx context.Context, ids []string) ([]*storage.ImageComponentV2, error) {
