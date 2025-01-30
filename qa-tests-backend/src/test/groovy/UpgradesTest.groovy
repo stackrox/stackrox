@@ -3,7 +3,6 @@ import groovy.io.FileType
 import io.grpc.StatusRuntimeException
 
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass
-import io.stackrox.proto.api.v1.SummaryServiceOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
 
@@ -57,20 +56,6 @@ class UpgradesTest extends BaseSpecification {
         def cluster = ClusterService.getCluster()
         cluster != null
         assert(cluster.getDynamicConfig().getDisableAuditLogs() == true)
-    }
-
-    @Tag("Upgrade")
-    @Ignore("ROX-24528: This API is deprecated in 4.5. Remove this test once the API is removed")
-    def "Verify that summary API returns non-zero values on upgrade"() {
-        expect:
-        "Summary API returns non-zero values on upgrade"
-        SummaryServiceOuterClass.SummaryCountsResponse resp = SummaryService.getCounts()
-        assert resp.numAlerts != 0
-        assert resp.numDeployments != 0
-        assert resp.numSecrets != 0
-        assert resp.numClusters != 0
-        assert resp.numImages != 0
-        assert resp.numNodes != 0
     }
 
     @Unroll
