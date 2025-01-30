@@ -119,7 +119,7 @@ require (
 	github.com/sigstore/sigstore v1.8.4
 	github.com/sourcegraph/conc v0.3.0
 	github.com/spf13/cobra v1.8.1
-	github.com/spf13/pflag v1.0.6-0.20210604193023-d5e0c0615ace
+	github.com/spf13/pflag v1.0.6
 	github.com/stackrox/external-network-pusher v0.0.0-20231115153210-b82d72f500a2
 	github.com/stackrox/helmtest v0.0.1
 	github.com/stackrox/k8s-overlay-patch v0.0.0-20240610103501-74a2a4fd2bae
