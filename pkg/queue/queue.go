@@ -10,10 +10,6 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
-
 const (
 	loggingRateLimiter = "pkg-queue"
 	defaultQueueName   = "Queue"
