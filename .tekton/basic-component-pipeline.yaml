@@ -101,10 +101,6 @@ spec:
     description: This sets the expiration time for intermediate OCI artifacts produced and used during builds after which they can be garbage collected.
     name: oci-artifact-expires-after
     type: string
-  - name: image-tag-makefile-directory
-    description: Directory in which to run "make tag" command.
-    default: "."
-    type: string
 
   results:
   - description: ""
@@ -179,42 +175,21 @@ spec:
 
   - name: determine-image-tag
     params:
-    - name: MAKEFILE_DIRECTORY
-      value: $(params.image-tag-makefile-directory)
     - name: TAG_SUFFIX
       value: $(params.output-tag-suffix)
     - name: SOURCE_ARTIFACT
       value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
     - name: SOURCE_BRANCH
       value: '{{source_branch}}'
-    taskRef: &determine-image-tag-task-ref
+    taskRef:
       params:
       - name: name
         value: determine-image-tag
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:76c8fbd2abac06ce895a765c41be73d14925b00a660b1b5fa6564a50a15cf2ba
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:0c6cd49c7cab12f611986efd494ac5f5ca8a77993129612bdbce9cf9833a5fa6
       - name: kind
         value: task
       resolver: bundles
-
-  # `determine-main-version` produces the same output as `determine-image-tag` for all containers built with this
-  # pipeline except for `operator`. There's a special case for `operator`.
-  # Main version (same as main image tag) will match the result of `determine-image-tag` (i.e. the tag with which the
-  # `operator` image is tagged) in all cases except for the `operator` builds in `master`.
-  # For `operator` in `master`, the image tag will have `.0`: `4.7.0-514-gba6cde5b55-fast`, while the `main` version has
-  # `.x`: `4.7.x-514-gba6cde5b55-fast`.
-  # TODO(ROX-22250): make Konflux image tags always go with `.0` despite git tag containing `.x` and remove this task.
-  - name: determine-main-version
-    params:
-    - name: MAKEFILE_DIRECTORY
-      value: "."
-    - name: TAG_SUFFIX
-      value: $(params.output-tag-suffix)
-    - name: SOURCE_ARTIFACT
-      value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
-    - name: SOURCE_BRANCH
-      value: '{{source_branch}}'
-    taskRef: *determine-image-tag-task-ref
 
   - name: prefetch-dependencies
     params:
@@ -257,7 +232,7 @@ spec:
       value: $(tasks.clone-repository.results.commit)
     - name: BUILD_ARGS
       value:
-      - BUILD_TAG=$(tasks.determine-main-version.results.IMAGE_TAG)
+      - BUILD_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
@@ -294,7 +269,7 @@ spec:
       value: $(tasks.clone-repository.results.commit)
     - name: BUILD_ARGS
       value:
-      - BUILD_TAG=$(tasks.determine-main-version.results.IMAGE_TAG)
+      - BUILD_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
@@ -333,7 +308,7 @@ spec:
       value: $(tasks.clone-repository.results.commit)
     - name: BUILD_ARGS
       value:
-      - BUILD_TAG=$(tasks.determine-main-version.results.IMAGE_TAG)
+      - BUILD_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
@@ -372,7 +347,7 @@ spec:
       value: $(tasks.clone-repository.results.commit)
     - name: BUILD_ARGS
       value:
-      - BUILD_TAG=$(tasks.determine-main-version.results.IMAGE_TAG)
+      - BUILD_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
