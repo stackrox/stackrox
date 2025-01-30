@@ -10,12 +10,9 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
-
 const (
-	defaultQueueName = "Queue"
+	loggingRateLimiter = "pkg-queue"
+	defaultQueueName   = "Queue"
 )
 
 // Queue provides a thread-safe queue for type T.
@@ -128,7 +125,8 @@ func (q *Queue[T]) Push(item T) {
 	defer q.mutex.Unlock()
 
 	if q.maxSize != 0 && q.queue.Len() >= q.maxSize {
-		log.Warnf("Queue (%s) size limit reached (%d). New items added to the queue will be dropped.", q.name, q.maxSize)
+
+		logging.GetRateLimitedLogger().WarnL(loggingRateLimiter, "Queue (%s) size limit reached (%d). New items added to the queue will be dropped.", q.name, q.maxSize)
 		if q.droppedMetric != nil {
 			q.droppedMetric.Inc()
 		}

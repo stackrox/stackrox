@@ -16,6 +16,7 @@ proto/storage/*                     @stackrox/core-workflows
 migrator/**/*                       @stackrox/core-workflows
 pkg/postgres/**/*                   @stackrox/core-workflows
 tests/upgrade/*                     @stackrox/core-workflows
+pkg/search/**/*                     @stackrox/core-workflows
 
 # Merlin's main responsibilities include roxctl, authN (authproviders), authZ (SAC), declarative config,
 # performance testing, administration events, cloud sources, and image signatures.
