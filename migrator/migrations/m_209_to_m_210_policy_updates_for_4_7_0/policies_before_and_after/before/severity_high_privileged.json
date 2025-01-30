@@ -1,0 +1,59 @@
+{
+  "id": "b1df1abb-e5a5-4ff7-98fe-1d28a22b55d8",
+  "name": "Privileged Containers with Important and Critical Fixable CVEs",
+  "description": "Alert on containers running in privileged mode with important or critical fixable vulnerabilities",
+  "rationale": "Known vulnerabilities make it easier for adversaries to exploit your application, and highly-privileged containers pose greater risk. You can fix these high-severity vulnerabilities by updating to a newer version of the affected component(s).",
+  "remediation": "Use your package manager to update to a fixed version in future builds, run your container with lower privileges, or speak with your security team to mitigate the vulnerabilities.",
+  "categories": [
+    "Vulnerability Management",
+    "Privileges"
+  ],
+  "lifecycleStages": [
+    "DEPLOY"
+  ],
+  "exclusions": [
+    {
+      "name": "Don't alert on kube-system namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "kube-system"
+        }
+      }
+    }
+  ],
+  "severity": "HIGH_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Privileged Container",
+          "values": [
+            {
+              "value": "true"
+            }
+          ]
+        },
+        {
+          "fieldName": "Fixed By",
+          "values": [
+            {
+              "value": ".*"
+            }
+          ]
+        },
+        {
+          "fieldName": "Severity",
+          "values": [
+            {
+              "value": ">= IMPORTANT"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}
