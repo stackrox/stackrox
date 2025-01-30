@@ -186,7 +186,7 @@ spec:
       - name: name
         value: determine-image-tag
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:76c8fbd2abac06ce895a765c41be73d14925b00a660b1b5fa6564a50a15cf2ba
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:a2477a53bfb4159cb6fa0d15acd736153e1844a193b6c91f8f2a6672d90e3d12
       - name: kind
         value: task
       resolver: bundles
@@ -206,7 +206,7 @@ spec:
       - name: name
         value: fetch-scanner-v4-vuln-mappings
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:76c8fbd2abac06ce895a765c41be73d14925b00a660b1b5fa6564a50a15cf2ba
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:a2477a53bfb4159cb6fa0d15acd736153e1844a193b6c91f8f2a6672d90e3d12
       - name: kind
         value: task
       resolver: bundles
