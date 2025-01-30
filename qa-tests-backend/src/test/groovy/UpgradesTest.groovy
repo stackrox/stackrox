@@ -4,7 +4,6 @@ import io.grpc.StatusRuntimeException
 
 import io.stackrox.proto.api.v1.NamespaceServiceOuterClass
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass
-import io.stackrox.proto.storage.NodeOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
 
@@ -17,7 +16,6 @@ import services.NodeService
 import services.PolicyService
 import util.Env
 
-import spock.lang.Ignore
 import spock.lang.Tag
 import spock.lang.Unroll
 import spock.lang.IgnoreIf
