@@ -1,0 +1,53 @@
+{
+  "id": "d3e480c1-c6de-4cd2-9006-9a3eb3ad36b6",
+  "name": "Required Image Label",
+  "description": "Alert on deployments with images missing the specified label.",
+  "rationale": "Only images with the specified label should be deployed to ensure all deployments contain approved images.",
+  "remediation": "Request that the maintainer add the required label to the image.",
+  "disabled": true,
+  "categories": [
+    "DevOps Best Practices",
+    "Security Best Practices"
+  ],
+  "lifecycleStages": [
+    "BUILD",
+    "DEPLOY"
+  ],
+  "exclusions": [
+    {
+      "name": "Don't alert on kube-system namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "kube-system"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on istio-system namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "istio-system"
+        }
+      }
+    }
+  ],
+  "severity": "LOW_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Required Image Label",
+          "values": [
+            {
+              "value": "required-label.*=required-value.*"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

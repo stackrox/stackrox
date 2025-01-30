@@ -1,0 +1,68 @@
+{
+  "id": "8ac93556-4ad4-4220-a275-3f518db0ceb9",
+  "name": "Container using read-write root filesystem",
+  "description": "Alert on deployments with containers with read-write root filesystem",
+  "rationale": "Containers running with read-write root filesystem represent greater post-exploitation risk by allowing an attacker to modify important files in the container.",
+  "remediation": "Use a read-only root filesystem, and use volume mounts to allow writes to specific sub-directories depending on your application's needs.",
+  "disabled": true,
+  "categories": [
+    "Privileges",
+    "Docker CIS"
+  ],
+  "lifecycleStages": [
+    "DEPLOY"
+  ],
+  "exclusions": [
+    {
+      "name": "Don't alert on kube-system namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "kube-system"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on istio-system namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "istio-system"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-node namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-node"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-sdn namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-sdn"
+        }
+      }
+    }
+  ],
+  "severity": "MEDIUM_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Read-Only Root Filesystem",
+          "values": [
+            {
+              "value": "false"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}
