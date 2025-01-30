@@ -23,10 +23,26 @@
       }
     },
     {
-      "name": "Don't alert on istio-system namespace",
+      "name": "Don't alert on openshift-kube-apiserver namespace",
       "deployment": {
         "scope": {
-          "namespace": "istio-system"
+          "namespace": "openshift-kube-apiserver"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-kube-scheduler namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-kube-scheduler"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-kube-controller-manager namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-kube-controller-manager"
         }
       }
     },
