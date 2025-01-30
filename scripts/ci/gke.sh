@@ -223,6 +223,8 @@ create_cluster() {
     fi
 
     add_a_maintenance_exclusion
+
+    setup_dns_hosts
 }
 
 add_a_maintenance_exclusion() {
@@ -418,15 +420,18 @@ refresh_dns() {
     info "Refreshing the GKE dns (coredns hosts) entries"
 
     # refresh dns hosts entries every 30m
-    local pid
+    local pid logpid
     while true; do
+        kubectl logs --prefix=true -n kube-system -l k8s-app=coredns --timestamps=true --max-log-requests=20 -f &
+        logpid="$!"
         sleep 1800 &
         pid="$!"
         kill_sleep() {
             # shellcheck disable=SC2317
-            echo "refresh_dns() terminated, killing the background sleep ($pid)"
+            echo "refresh_dns() terminated, killing the background sleep ($pid) and logging {$logpid)"
             # shellcheck disable=SC2317
             kill "$pid"
+            kill "$logpid"
         }
         trap kill_sleep SIGINT SIGTERM
         wait "$pid"
