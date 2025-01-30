@@ -92,10 +92,10 @@ update_junit_prefix_with_central_and_sensor_version() {
     local short_sensor_tag="$2"
 
     result_folder="${ROOT}/tests/compatibility-tests-results"
-    info "Updating all test in $result_folder to have \"Central-v${short_central_tag}_Sensor-v${short_sensor_tag}_\" prefix"
-    for f in "$result_folder"/*.xml; do
-        sed -i "s/testcase name=\"/testcase name=\"[Central-v${short_central_tag}_Sensor-v${short_sensor_tag}] /g" "$f"
-    done
+    info "Updating all test in $result_folder to have \"Central-v${short_central_tag}-Sensor-v${short_sensor_tag}_\" prefix"
+    find "${result_folder}" -type f -name "*.xml" -exec sh -c '
+            sed -i "s/testcase name=\"/testcase name=\"[Central-v${short_central_tag}-Sensor-v${short_sensor_tag}] /g" "$f"
+    ' sh {} \;
 }
 
 # Duplicate function with run.sh
