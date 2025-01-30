@@ -2,6 +2,7 @@ package imagecve
 
 import (
 	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sync"
@@ -16,9 +17,14 @@ var (
 // NewCVEView returns the interface CveView
 // that provides searching image cves stored in the database.
 func NewCVEView(db postgres.DB) CveView {
+	cveSchema := schema.ImageCvesSchema
+	if features.FlattenCVEData.Enabled() {
+		cveSchema = schema.ImageComponentV2Schema
+	}
+
 	return &imageCVECoreViewImpl{
 		db:     db,
-		schema: schema.ImageCvesSchema,
+		schema: cveSchema,
 	}
 }
 

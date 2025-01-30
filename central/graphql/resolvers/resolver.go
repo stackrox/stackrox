@@ -30,6 +30,7 @@ import (
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageComponentDataStore "github.com/stackrox/rox/central/imagecomponent/datastore"
+	imageComponentV2DataStore "github.com/stackrox/rox/central/imagecomponent/v2/datastore"
 	imageComponentEdgeDataStore "github.com/stackrox/rox/central/imagecomponentedge/datastore"
 	imageCVEEdgeDataStore "github.com/stackrox/rox/central/imagecveedge/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
@@ -118,6 +119,7 @@ type Resolver struct {
 	vulnReqQueryMgr               querymgr.VulnReqQueryManager
 	vulnReqStore                  vulnReqDataStore.DataStore
 	AuditLogger                   auditPkg.Auditor
+	ImageComponentV2DataStore     imageComponentV2DataStore.DataStore
 
 	// Views
 	ImageCVEView    imagecve.CveView
@@ -176,6 +178,7 @@ func New() *Resolver {
 		NodeComponentCVEEdgeDataStore: nodeComponentCVEEdgeDataStore.Singleton(),
 		NodeComponentDataStore:        nodeComponentDataStore.Singleton(),
 		PolicyCategoryDataStore:       policyCategoryDatastore.Singleton(),
+		ImageComponentV2DataStore:     imageComponentV2DataStore.Singleton(),
 
 		// Views
 		ImageCVEView: func() imagecve.CveView {
