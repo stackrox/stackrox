@@ -40,6 +40,7 @@ const (
 # It is used for setting up StackRox secured clusters.
 # NOTE: This file contains secret data that allows connecting new secured clusters to central,
 # and needs to be handled and stored accordingly.
+#
 `
 )
 
@@ -174,6 +175,15 @@ func (b *CRSWithMeta) RenderAsK8sSecret() ([]byte, error) {
 
 	var buf bytes.Buffer
 	_, _ = fmt.Fprint(&buf, crsHeader)
+	switch b.Meta.GetMaxRegistrations() {
+	case 0:
+		_, _ = fmt.Fprint(&buf, "# This Cluster Registration Secret can be used for registering any number of clusters.")
+	case 1:
+		_, _ = fmt.Fprint(&buf, "# This Cluster Registration Secret can be used for registering only one cluster.")
+	default:
+		_, _ = fmt.Fprintf(&buf, "# This Cluster Registration Secret can be used for registering at most %v clusters.", b.Meta.GetMaxRegistrations())
+	}
+	_, _ = fmt.Fprintln(&buf)
 
 	crs, err := crs.SerializeSecret(b.CRS)
 	if err != nil {

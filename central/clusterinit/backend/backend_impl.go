@@ -152,7 +152,7 @@ func (b *backendImpl) Issue(ctx context.Context, name string) (*InitBundleWithMe
 	}, nil
 }
 
-func (b *backendImpl) IssueCRS(ctx context.Context, name string) (*CRSWithMeta, error) {
+func (b *backendImpl) IssueCRS(ctx context.Context, name string, maxRegistrations uint32) (*CRSWithMeta, error) {
 	if err := access.CheckAccess(ctx, storage.Access_READ_WRITE_ACCESS); err != nil {
 		return nil, err
 	}
@@ -184,12 +184,13 @@ func (b *backendImpl) IssueCRS(ctx context.Context, name string) (*CRSWithMeta, 
 
 	// On the storage side we are reusing the InitBundleMeta.
 	meta := &storage.InitBundleMeta{
-		Id:        id.String(),
-		Name:      name,
-		CreatedAt: protocompat.TimestampNow(),
-		CreatedBy: user,
-		ExpiresAt: expiryTimestamp,
-		Version:   storage.InitBundleMeta_CRS,
+		Id:               id.String(),
+		Name:             name,
+		CreatedAt:        protocompat.TimestampNow(),
+		CreatedBy:        user,
+		ExpiresAt:        expiryTimestamp,
+		Version:          storage.InitBundleMeta_CRS,
+		MaxRegistrations: maxRegistrations,
 	}
 
 	if err := b.store.Add(ctx, meta); err != nil {
@@ -232,6 +233,30 @@ func (b *backendImpl) Revoke(ctx context.Context, id string) error {
 	}
 
 	return nil
+}
+
+func (b *backendImpl) RegistrationPossible(ctx context.Context, id string) error {
+	if err := access.CheckAccess(ctx, storage.Access_READ_ACCESS); err != nil {
+		return err
+	}
+
+	return b.store.RegistrationPossible(ctx, id)
+}
+
+func (b *backendImpl) RecordRegistration(ctx context.Context, id string) error {
+	if err := access.CheckAccess(ctx, storage.Access_READ_WRITE_ACCESS); err != nil {
+		return err
+	}
+
+	return b.store.RecordRegistration(ctx, id)
+}
+
+func (b *backendImpl) UpdateRevocationState(ctx context.Context, id string) error {
+	if err := access.CheckAccess(ctx, storage.Access_READ_WRITE_ACCESS); err != nil {
+		return err
+	}
+
+	return b.store.UpdateRevocationState(ctx, id)
 }
 
 func (b *backendImpl) CheckRevoked(ctx context.Context, id string) error {

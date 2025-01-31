@@ -45,9 +45,11 @@ type Backend interface {
 	GetAllCRS(ctx context.Context) ([]*storage.InitBundleMeta, error)
 	GetCAConfig(ctx context.Context) (*CAConfig, error)
 	Issue(ctx context.Context, name string) (*InitBundleWithMeta, error)
-	IssueCRS(ctx context.Context, name string) (*CRSWithMeta, error)
+	IssueCRS(ctx context.Context, name string, maxRegistrations uint32) (*CRSWithMeta, error)
 	Revoke(ctx context.Context, id string) error
 	CheckRevoked(ctx context.Context, id string) error
+	RecordRegistration(ctx context.Context, id string) error
+	UpdateRevocationState(ctx context.Context, id string) error
 	authn.ValidateCertChain
 }
 
