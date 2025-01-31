@@ -103,6 +103,32 @@ export type SensorDeploymentIdentification = {
     k8sNodeName: string;
 };
 
+// from pkg/centralsensor/caps_list.go
+export type SensorCapability =
+    | 'PullMetrics'
+    | 'PullTelemetryData'
+    | 'CancelTelemetryPull'
+    | 'SensorDetection'
+    | 'SensorEnhancedDeploymentCheck'
+    | 'ComplianceInNodes'
+    | 'HealthMonitoring'
+    | 'NetworkGraphExternalSrcs'
+    | 'AuditLogEvents'
+    | 'LocalScannerCredentialsRefresh'
+    | 'ScopedImageIntegrations'
+    | 'ListeningEndpointsWithProcesses'
+    | 'DelegatedRegistryCap'
+    | 'SendDeduperStateOnReconnect'
+    | 'ComplianceV2Integrations'
+    | 'ComplianceV2Remediations'
+    | 'ScannerV4Supported'
+    | 'NetworkGraphInternalEntitiesSupported'
+    | 'NetworkGraphDiscoveredExternalEntitiesSupported'
+    | 'ComplianceV2ScanConfigSync'
+    | 'SecuredClusterCertificatesReissue'
+    | 'SecuredClusterCertificatesRefresh'
+    | 'ClusterRegistrationSecretSupported';
+
 export type Cluster = {
     id: string;
     name: string;
@@ -131,6 +157,8 @@ export type Cluster = {
 
     // For internal use only.
     auditLogState: Record<string, AuditLogFileState>;
+
+    sensorCapabilities: SensorCapability[];
 
     initBundleId: string;
     managedBy: ClusterManagerType;
