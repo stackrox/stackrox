@@ -96,9 +96,9 @@ function getSubnavDescriptionGroups(
                       children: [
                           {
                               type: 'link',
-                              content: 'All Images',
+                              content: 'All vulnerable workloads',
                               description:
-                                  'View findings for user and platform images simultaneously',
+                                  'View findings for user, platform, and inactive images simultaneously',
                               path: vulnerabilitiesAllImagesPath,
                               routeKey: 'vulnerabilities/all-images',
                           },
