@@ -48,6 +48,9 @@ function ClusterEditForm({
                     status={selectedCluster.status}
                     centralVersion={centralVersion}
                     clusterId={selectedCluster.id}
+                    autoRefreshEnabled={selectedCluster.sensorCapabilities?.includes(
+                        'SecuredClusterCertificatesRefresh'
+                    )}
                     clusterRetentionInfo={clusterRetentionInfo}
                     isManagerTypeNonConfigurable={isManagerTypeNonConfigurable}
                 />
