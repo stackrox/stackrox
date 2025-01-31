@@ -2,7 +2,7 @@
 // The contents are strongly based on https://github.com/quay/claircore/tree/v1.5.34/rhel/vex.
 //
 // This exists as a temporary solution at this point, but there is potential for repurposing.
-// TODO(ROX-26672): This enricher may no longer be needed one this is done.
+// TODO(ROX-26672): This enricher may no longer be needed once this is done.
 package csaf
 
 import (
