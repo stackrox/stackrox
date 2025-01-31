@@ -49,10 +49,10 @@ export type AzureImageIntegration = {
 } & BaseImageIntegration;
 
 export type AzureConfig = {
-    endpoint: string;
-    username: string; // scrub: always
+    endpoint: string; // scrub: dependent
+    username: string; // scrub: dependent
     password: string; // scrub: always
-    wifEnabled: boolean;
+    wifEnabled: boolean; // scrub: dependent
 };
 
 export type ClairImageIntegration = {

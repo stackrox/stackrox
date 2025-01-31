@@ -16,7 +16,12 @@ import (
 	"github.com/stackrox/rox/pkg/urlfmt"
 )
 
-const earlyExpiry = 5 * time.Minute
+const (
+	earlyExpiry = 5 * time.Minute
+
+	// 000... is the generic username that must be used when converting ACR refresh tokens to docker login credentials.
+	oauthUsername = "00000000-0000-0000-0000-000000000000"
+)
 
 type azureTransport struct {
 	registry.Transport
@@ -58,12 +63,10 @@ func (t *azureTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 // ensureValid refreshes the access token if it is invalid.
 func (t *azureTransport) ensureValid(ctx context.Context) error {
-	if !concurrency.WithRLock1(&t.mutex, t.isValidNoLock) {
-		if err := concurrency.WithLock1(&t.mutex, func() error { return t.refreshNoLock(ctx) }); err != nil {
-			return err
-		}
+	if concurrency.WithRLock1(&t.mutex, t.isValidNoLock) {
+		return nil
 	}
-	return nil
+	return concurrency.WithLock1(&t.mutex, func() error { return t.refreshNoLock(ctx) })
 }
 
 func (t *azureTransport) isValidNoLock() bool {
@@ -94,8 +97,7 @@ func (t *azureTransport) refreshNoLock(ctx context.Context) error {
 	// ACR refresh token are valid for three hours from the time of exchange.
 	rtExpiry := time.Now().Add(3 * time.Hour)
 	t.expiresAt = &rtExpiry
-	// 000... is the generic username that must be used when converting ACR refresh tokens to docker login credentials.
-	t.config.SetCredentials("00000000-0000-0000-0000-000000000000", *rtResp.RefreshToken)
+	t.config.SetCredentials(oauthUsername, *rtResp.RefreshToken)
 	t.Transport = docker.DefaultTransport(t.config)
 	return nil
 }

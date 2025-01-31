@@ -29,7 +29,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Deprecated Features
 
-- The Azure integration payload in `/v1/imageintegrations` has been changed from `{..., "type": "azure", "docker": {...}}` to `{..., "type": "azure", "azure": {...}}`. The former schema is still supported, but is now considered deprecated.
+- The Azure integration payload in `/v1/imageintegrations` has been changed from `{..., "type": "azure", "docker": {...}}` to `{..., "type": "azure", "azure": {...}}`. The former schema is still supported, but is now considered deprecated. If delegated scanning is used in combination with new or updated Azure image integrations, make sure that both Central and Secured Clusters are upgraded to ACS version >= 4.7.
 
 ### Technical Changes
 

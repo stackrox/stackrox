@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/containers/azcontainerregistry"
 	"github.com/pkg/errors"
@@ -63,12 +64,12 @@ func CreatorWithoutRepoList() (string, types.Creator) {
 }
 
 func validate(cfg *storage.AzureConfig) error {
-	errorList := errorhelpers.NewErrorList("Azure container registry validation")
+	errorList := errorhelpers.NewErrorList("azure container registry validation")
 	if cfg.GetEndpoint() == "" {
-		errorList.AddString("Endpoint must be specified for Azure container registry (e.g. <registry>.azurecr.io)")
+		errorList.AddString("endpoint must be specified for Azure container registry (e.g. <registry>.azurecr.io)")
 	}
 	if !cfg.GetWifEnabled() && cfg.GetPassword() == "" {
-		errorList.AddString("Password must be specified for Azure container registry")
+		errorList.AddString("password or workload identity must be specified for Azure container registry")
 	}
 	return errorList.ToError()
 }
@@ -81,7 +82,7 @@ func getACRConfig(integration *storage.ImageIntegration) (*storage.AzureConfig, 
 	if acrCfg == nil {
 		dockerCfg := integration.GetDocker()
 		if dockerCfg == nil {
-			return nil, errors.New("Azure container registry or docker configuration required")
+			return nil, errors.New("azure container registry or docker configuration required")
 		}
 		acrCfg = &storage.AzureConfig{
 			Endpoint: dockerCfg.GetEndpoint(),
@@ -123,14 +124,20 @@ func newRegistry(integration *storage.ImageIntegration, disableRepoList bool,
 	}
 
 	// Read the credentials from the environment via the Azure default chain.
-	credOpts := &azidentity.DefaultAzureCredentialOptions{}
-	credOpts.Transport = &http.Client{Transport: proxy.RoundTripper()}
+	credOpts := &azidentity.DefaultAzureCredentialOptions{
+		ClientOptions: azcore.ClientOptions{
+			Transport: &http.Client{Transport: proxy.RoundTripper()},
+		},
+	}
 	creds, err := azidentity.NewDefaultAzureCredential(credOpts)
 	if err != nil {
 		return nil, errors.Wrap(err, "obtaining Azure default credentials")
 	}
-	authOpts := &azcontainerregistry.AuthenticationClientOptions{}
-	authOpts.Transport = &http.Client{Transport: proxy.RoundTripper()}
+	authOpts := &azcontainerregistry.AuthenticationClientOptions{
+		ClientOptions: azcore.ClientOptions{
+			Transport: &http.Client{Transport: proxy.RoundTripper()},
+		},
+	}
 	// The Azure SDK expects a valid https scheme without slash.
 	authClient, err := azcontainerregistry.NewAuthenticationClient(
 		urlfmt.FormatURL(dockerConfig.Endpoint, urlfmt.HTTPS, urlfmt.NoTrailingSlash), authOpts,
