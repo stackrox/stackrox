@@ -25,7 +25,7 @@ func TestShouldUpsert(t *testing.T) {
 
 	tcs := []struct {
 		name                     string
-		expectedUpserts          set.Set[string]
+		expectedUpserts          set.StringSet
 		sourcedAutogenEnabled    bool
 		globalPullAutogenEnabled bool
 	}{
@@ -46,7 +46,7 @@ func TestShouldUpsert(t *testing.T) {
 		},
 		{
 			"upsert manual integrations and global pull sec integrations when only global pull feature enabled",
-			set.NewSet("Manual-GlobalPull", "Manual-NoSource", "Manual-Source", "Autogen-NoSource", "Autogen-GlobalPull"),
+			set.NewSet("Manual-GlobalPull", "Manual-NoSource", "Manual-Source", "Autogen-GlobalPull", "Autogen-NoSource"),
 			false, true,
 		},
 	}

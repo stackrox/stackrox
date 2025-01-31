@@ -1,7 +1,7 @@
 package openshift
 
 import (
-	"fmt"
+	"strconv"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -21,7 +21,7 @@ func TestGlobalPullSecret(t *testing.T) {
 		{"fake", "fake", false},
 	}
 	for i, tc := range tcs {
-		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			assert.Equal(t, tc.expected, GlobalPullSecret(tc.ns, tc.name))
 
 			assert.Equal(t, tc.expected, GlobalPullSecretIntegration(&storage.ImageIntegration{
