@@ -2,6 +2,7 @@ package crs
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
@@ -67,18 +68,19 @@ func generateCRS(cliEnvironment environment.Environment, name string,
 	crs := resp.GetCrs()
 	meta := resp.GetMeta()
 
+	registrationLimit := "(no limit)"
+	if maxRegistrations := meta.GetMaxRegistrations(); maxRegistrations > 0 {
+		registrationLimit = fmt.Sprintf("%d", maxRegistrations)
+	}
+
 	cliEnvironment.Logger().InfofLn("Successfully generated new CRS")
 	cliEnvironment.Logger().InfofLn("")
-	cliEnvironment.Logger().InfofLn("  Name:       %s", meta.GetName())
-	cliEnvironment.Logger().InfofLn("  Created at: %s", meta.GetCreatedAt().AsTime().Format(time.RFC3339))
-	cliEnvironment.Logger().InfofLn("  Expires at: %s", meta.GetExpiresAt().AsTime().Format(time.RFC3339))
-	cliEnvironment.Logger().InfofLn("  Created By: %s", getPrettyUser(meta.GetCreatedBy()))
-	cliEnvironment.Logger().InfofLn("  ID:         %s", meta.GetId())
-	if maxRegistrations := meta.GetMaxRegistrations(); maxRegistrations != 0 {
-		cliEnvironment.Logger().InfofLn("  Allowed cluster registrations:         %u", maxRegistrations)
-	} else {
-		cliEnvironment.Logger().InfofLn("  Allowed cluster registrations:         (no limit)")
-	}
+	cliEnvironment.Logger().InfofLn("  Name:                          %s", meta.GetName())
+	cliEnvironment.Logger().InfofLn("  Created at:                    %s", meta.GetCreatedAt().AsTime().Format(time.RFC3339))
+	cliEnvironment.Logger().InfofLn("  Expires at:                    %s", meta.GetExpiresAt().AsTime().Format(time.RFC3339))
+	cliEnvironment.Logger().InfofLn("  Created By:                    %s", getPrettyUser(meta.GetCreatedBy()))
+	cliEnvironment.Logger().InfofLn("  ID:                            %s", meta.GetId())
+	cliEnvironment.Logger().InfofLn("  Allowed cluster registrations: %d", registrationLimit)
 
 	_, err = outWriter.Write(crs)
 	if err != nil {
