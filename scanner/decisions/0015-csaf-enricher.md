@@ -33,8 +33,8 @@ is stated below:
   with different descriptions, CVSS scores, severities.
 
 [A change](https://github.com/stackrox/stackrox/pull/13559) to alleviate this concern has already been merged and ported to the 4.6.1 release.
-This change definitely improves the situation (the score can only increase and never decrease), but it's not perfect, as the score can still change.
-One example of how this may happen follows:
+This change definitely improves the situation (the score can usually only increase and only decrease for certain edge cases),
+but it's not perfect, as the score can still change. One example of how this may happen follows:
 
 * A package in an image is affected by some vulnerability, CVE-2025-1234, which is resolved by RHSA-2025:1234. This CVE
   has a severity of `Important`, so StackRox Central will store RHSA-2025:1234 with severity `Important`.
@@ -54,12 +54,15 @@ The enricher will fetch Red Hat advisories and extract data we have determined h
 * Description
   * The current implementation takes the description from the CVE, so if a package is affected by two different CVEs
     associated with the same advisory, then there is a clear inconsistency, as it is unclear which description may be shown.
+    The CSAF enricher will use the advisory's "title" as the description.
 * Published Date
   * The current implementation takes the published date from the CVE, so if a package is affected by two different CVEs
     associated with the same advisory, then there is a clear inconsistency, as it is unclear which published date may be shown.
+    The CSAF enricher will use the advisory's initial release date as the published date.
 * Severity
   * The current implementation takes the severity from the CVE, so if a package is affected by two different CVEs
     rated with different severities, then there is a clear inconsistency, as it is unclear which severity may be shown.
+    The CSAF enricher will use the advisory's aggregate severity field as the severity.
   * Note: it is very possible a CVE has two different severity ratings, depending on the product.
     For example: https://access.redhat.com/security/cve/CVE-2023-3899 is rated Important, in general,
     but Moderate for subscription-manager in RHEL 7. For this case, the OVAL v2 entry in 
@@ -68,7 +71,6 @@ The enricher will fetch Red Hat advisories and extract data we have determined h
     The CSAF entry in https://security.access.redhat.com/data/csaf/v2/advisories/2023/rhsa-2023_4701.json
     also lists the Moderate severity rating under CVE-2023-3899's "threats" entry.
 * CVSS vectors and scores
-  * Same idea as Severity.
   * Red Hat advisories are not given a CVSS score, so we calculate it as done prior to 4.6.0:
     * Pick the highest CVSS scores (v3 and v2) from the associated CVEs.
     * Note: it is very possible a CVE has two different CVSS scores, depending on the product.
@@ -85,8 +87,7 @@ The enricher will fetch Red Hat advisories and extract data we have determined h
 
 If we discover other fields have shown inconsistencies, we will include them, as-needed.
 
-From there, the relevant fields will be replaced with the enricher's data for any vulnerability renamed to a
-Red Hat advisory.
+The relevant fields will be replaced with the enricher's data for any vulnerability renamed to a Red Hat advisory.
 
 Adding this data to Scanner V4 is backwards compatible, so we will not need to bump the vulnerability version up (currently at v2).
 
