@@ -610,7 +610,7 @@ func (u *Updater) fetch(ctx context.Context, prevTimestamp time.Time) (*os.File,
 		}
 		resp, err = u.client.Do(req)
 		zlog.Error(ctx).
-			Str("response status", resp.StatusCode).
+			Str("response status", http.StatusText(resp.StatusCode)).
 			Msg("response status")
 		modTime := resp.Header.Get(lastModifiedHeader)
 		zlog.Error(ctx).
