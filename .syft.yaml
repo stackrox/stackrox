@@ -1,0 +1,2 @@
+exclude:
+- ./compliance/node/index/testdata/usr/share/rpm/rpmdb.sqlite
