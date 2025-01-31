@@ -120,7 +120,64 @@ var (
 		Name:      "detector_network_flows_dropped_total",
 		Help:      "A counter of the total number of network flows that were dropped if the detector buffer was full",
 	})
+
+	detectorBlockScanCalls = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "block_scan_calls",
+		Help:      "A counter that tracks the operations in blocking scan calls",
+	}, []string{"Operation", "Path"})
+
+	scanCallDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "scan_call_duration",
+		Help:      "Time taken to call scan in milliseconds",
+		Buckets:   prometheus.ExponentialBuckets(4, 2, 16),
+	}, []string{"ImageName"})
+
+	scanAndSetCall = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "scan_and_set_call",
+		Help:      "A counter that tracks the operations in scan and set",
+	}, []string{"Operation", "Reason"})
 )
+
+func AddBlockingScanCall(path string) {
+	detectorBlockScanCalls.With(prometheus.Labels{
+		"Operation": metrics.Add.String(),
+		"Path":      path,
+	}).Inc()
+}
+func RemoveBlockingScanCall() {
+	detectorBlockScanCalls.With(prometheus.Labels{
+		"Operation": metrics.Remove.String(),
+		"Path":      "",
+	}).Inc()
+}
+
+func SetScanCallDuration(start time.Time, imageName string) {
+	now := time.Now()
+	durMilli := now.Sub(start).Milliseconds()
+	scanCallDuration.With(prometheus.Labels{
+		"ImageName": imageName,
+	}).Observe(float64(durMilli))
+}
+
+func AddScanAndSetCall(reason string) {
+	scanAndSetCall.With(prometheus.Labels{
+		"Operation": metrics.Add.String(),
+		"Reason":    reason,
+	}).Inc()
+}
+
+func RemoveScanAndSetCall(reason string) {
+	scanAndSetCall.With(prometheus.Labels{
+		"Operation": metrics.Remove.String(),
+		"Reason":    reason,
+	}).Inc()
+}
 
 // ObserveTimeSpentInExponentialBackoff observes the metric.
 func ObserveTimeSpentInExponentialBackoff(t time.Duration) {
@@ -166,5 +223,9 @@ func init() {
 		DetectorNetworkFlowBufferSize,
 		DetectorProcessIndicatorBufferSize,
 		DetectorNetworkFlowDroppedCount,
-		DetectorProcessIndicatorDroppedCount)
+		DetectorProcessIndicatorDroppedCount,
+		detectorBlockScanCalls,
+		scanCallDuration,
+		scanAndSetCall,
+	)
 }

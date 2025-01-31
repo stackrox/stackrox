@@ -11,6 +11,7 @@ import (
 	clusterUtil "github.com/stackrox/rox/central/cluster/util"
 	"github.com/stackrox/rox/central/image/datastore"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
+	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/sachelper"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -236,6 +237,18 @@ func (s *serviceImpl) saveImage(img *storage.Image) error {
 
 // ScanImageInternal handles an image request from Sensor and Admission Controller.
 func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
+	timeNow := time.Now()
+	defer func() {
+		if request.GetImage() == nil {
+			metrics.SetInternalScanCallDuration(timeNow, "empty image")
+			return
+		}
+		if request.GetImage().GetName() == nil {
+			metrics.SetInternalScanCallDuration(timeNow, "empty get name")
+			return
+		}
+		metrics.SetInternalScanCallDuration(timeNow, request.GetImage().GetName().GetFullName())
+	}()
 	err := s.acquireScanSemaphore()
 	if err != nil {
 		return nil, err

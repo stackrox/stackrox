@@ -373,6 +373,7 @@ func (d *detectorImpl) runDetector() {
 		case <-d.detectorStopper.Flow().StopRequested():
 			return
 		case scanOutput := <-d.enricher.outputChan():
+			detectorMetrics.RemoveBlockingScanCall()
 			alerts := d.unifiedDetector.DetectDeployment(deploytime.DetectionContext{}, booleanpolicy.EnhancedDeployment{
 				Deployment:             scanOutput.deployment,
 				Images:                 scanOutput.images,
@@ -516,6 +517,7 @@ func (d *detectorImpl) processDeploymentNoLock(ctx context.Context, deployment *
 	case central.ResourceAction_CREATE_RESOURCE:
 		d.deduper.addDeployment(deployment)
 		d.markDeploymentForProcessing(deployment.GetId())
+		detectorMetrics.AddBlockingScanCall("deployment_create")
 		go d.enricher.blockingScan(ctx, deployment, d.getNetworkPoliciesApplied(deployment), action)
 	case central.ResourceAction_UPDATE_RESOURCE, central.ResourceAction_SYNC_RESOURCE:
 		// Check if the deployment has changes that require detection, which is more expensive than hashing
@@ -525,6 +527,7 @@ func (d *detectorImpl) processDeploymentNoLock(ctx context.Context, deployment *
 			return
 		}
 		d.markDeploymentForProcessing(deployment.GetId())
+		detectorMetrics.AddBlockingScanCall("deployment_update")
 		go d.enricher.blockingScan(ctx, deployment, d.getNetworkPoliciesApplied(deployment), action)
 	}
 }

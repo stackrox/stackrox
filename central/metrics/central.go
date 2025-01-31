@@ -263,7 +263,23 @@ var (
 		Name:      "signature_verification_reprocessor_duration_seconds",
 		Help:      "Duration of the signature verification reprocessor loop in seconds",
 	})
+
+	internalScanCallDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "internal_scan_call_duration",
+		Help:      "Time taken to call scan in milliseconds",
+		Buckets:   prometheus.ExponentialBuckets(4, 2, 16),
+	}, []string{"ImageName"})
 )
+
+func SetInternalScanCallDuration(start time.Time, imageName string) {
+	now := time.Now()
+	durMilli := now.Sub(start).Milliseconds()
+	internalScanCallDuration.With(prometheus.Labels{
+		"ImageName": imageName,
+	}).Observe(float64(durMilli))
+}
 
 func startTimeToMS(t time.Time) float64 {
 	return float64(time.Since(t).Nanoseconds()) / float64(time.Millisecond)

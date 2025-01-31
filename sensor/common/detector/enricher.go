@@ -122,6 +122,21 @@ func (c *cacheValue) scanWithRetries(ctx context.Context, svc v1.ImageServiceCli
 
 	eb.Reset()
 
+	timeNow := time.Now()
+	defer func() {
+		// Just in case to not panic
+		if req == nil {
+			log.Warn("the scan image request is nil")
+			metrics.SetScanCallDuration(timeNow, "empty_request")
+			return
+		}
+		if req.containerImage.GetName() == nil {
+			log.Warn("the scan container image name is nil")
+			metrics.SetScanCallDuration(timeNow, "empty_request")
+			return
+		}
+		metrics.SetScanCallDuration(timeNow, req.containerImage.GetName().GetFullName())
+	}()
 outer:
 	for {
 		// We want to get the time spent in backoff without including the time it took to scan the image.
@@ -303,7 +318,13 @@ func (e *enricher) runScan(req *scanImageRequest) imageChanResult {
 	}
 	value := e.imageCache.GetOrSet(key, newValue).(*cacheValue)
 	if forceEnrichImageWithSignatures || newValue == value {
+		reason := "forced"
+		if newValue == value {
+			reason = "new_value"
+		}
+		metrics.AddScanAndSetCall(reason)
 		value.scanAndSet(concurrency.AsContext(&e.stopSig), e.imageSvc, req)
+		metrics.RemoveScanAndSetCall(reason)
 	}
 	return imageChanResult{
 		image:        value.WaitAndGet(),
@@ -342,6 +363,16 @@ func (e *enricher) getImages(deployment *storage.Deployment) []*storage.Image {
 	images := make([]*storage.Image, len(deployment.GetContainers()))
 	for i := 0; i < len(deployment.GetContainers()); i++ {
 		imgResult := <-imageChan
+
+		imageName := imgResult.image.GetName().GetFullName()
+		log.Infof("--------- Debug Info for Image %q ---------", imageName)
+		log.Infof(" Image %q size %d", imageName, imgResult.image.SizeVT())
+		log.Infof(" Image %q components %+v", imageName, imgResult.image.GetComponents())
+		log.Infof(" Image %q cve %+v", imageName, imgResult.image.GetCves())
+		log.Infof(" Image %q scan %+v", imageName, imgResult.image.GetScan())
+		log.Infof(" Image %q signatures %+v", imageName, imgResult.image.GetSignature())
+		log.Infof(" Image %q signatures verifications %+v", imageName, imgResult.image.GetSignatureVerificationData())
+		log.Infof("--------- End Info for Image %q ---------", imageName)
 
 		// This will ensure that when we change the Name of the image
 		// that it will not cause a potential race condition
