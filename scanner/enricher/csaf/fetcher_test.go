@@ -29,7 +29,11 @@ func TestFetchEnrichment(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error Fetching, cannot continue: %v", err)
 	}
-	defer data.Close()
+	t.Cleanup(func() {
+		if err := data.Close(); err != nil {
+			t.Errorf("error closing data: %v", err)
+		}
+	})
 	// Check fingerprint.
 	f, err := parseFingerprint(fp)
 	if err != nil {

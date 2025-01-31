@@ -21,6 +21,7 @@ import (
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/tmp"
 	"github.com/quay/zlog"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/enricher/csaf/internal/zreader"
 )
 
@@ -141,7 +142,7 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint)
 	if err != nil {
 		return nil, hint, err
 	}
-	defer res.Body.Close()
+	defer utils.IgnoreError(res.Body.Close)
 
 	err = checkResponse(res, http.StatusOK)
 	if err != nil {
@@ -152,7 +153,7 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint)
 	if err != nil {
 		return nil, hint, err
 	}
-	defer z.Close()
+	defer utils.IgnoreError(z.Close)
 	r := tar.NewReader(z)
 
 	var (
@@ -222,7 +223,7 @@ func (e *Enricher) getCompressedFileURL(ctx context.Context) (*url.URL, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer latestRes.Body.Close()
+	defer utils.IgnoreError(latestRes.Body.Close)
 
 	err = checkResponse(latestRes, http.StatusOK)
 	if err != nil {
@@ -253,7 +254,7 @@ func (e *Enricher) getLastModified(ctx context.Context, cu *url.URL) (time.Time,
 	if err != nil {
 		return empty, err
 	}
-	defer res.Body.Close()
+	defer utils.IgnoreError(res.Body.Close)
 
 	err = checkResponse(res, http.StatusOK)
 	if err != nil {
@@ -272,7 +273,7 @@ func (e *Enricher) processChanges(ctx context.Context, w io.Writer, fp *fingerpr
 	if err != nil {
 		return err
 	}
-	defer tf.Close()
+	defer utils.IgnoreError(tf.Close)
 
 	uri, err := e.base.Parse(changesFile)
 	if err != nil {
@@ -289,7 +290,7 @@ func (e *Enricher) processChanges(ctx context.Context, w io.Writer, fp *fingerpr
 	if err != nil {
 		return err
 	}
-	defer res.Body.Close()
+	defer utils.IgnoreError(res.Body.Close)
 
 	switch res.StatusCode {
 	case http.StatusOK:
@@ -361,7 +362,7 @@ func (e *Enricher) processChanges(ctx context.Context, w io.Writer, fp *fingerpr
 			if err != nil {
 				return fmt.Errorf("error making advisory request %w", err)
 			}
-			defer res.Body.Close()
+			defer utils.IgnoreError(res.Body.Close)
 			err = checkResponse(res, http.StatusOK)
 			if err != nil {
 				return fmt.Errorf("unexpected response: %w", err)
@@ -379,7 +380,7 @@ func (e *Enricher) processChanges(ctx context.Context, w io.Writer, fp *fingerpr
 			}
 
 			bc.WriteByte('\n')
-			w.Write(bc.Bytes())
+			_, _ = w.Write(bc.Bytes())
 			l++
 			return nil
 		}()

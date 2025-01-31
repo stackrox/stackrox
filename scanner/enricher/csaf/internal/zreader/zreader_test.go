@@ -86,7 +86,9 @@ func TestShortRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer z.Close()
+	defer func() {
+		_ = z.Close()
+	}()
 	if got, want := d, KindNone; got != want {
 		t.Errorf("wrong compression? got: %v, want %v", got, want)
 	}
