@@ -15,6 +15,10 @@ export const aggregateByCVSS: SortAggregate = {
     aggregateFunc: 'max',
 };
 
+export const aggregateByEPSS: SortAggregate = {
+    aggregateFunc: 'max',
+};
+
 export const aggregateByDistinctCount: SortAggregate = {
     aggregateFunc: 'count',
     distinct: 'true',

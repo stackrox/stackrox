@@ -40,6 +40,7 @@ import {
     getScoreVersionsForTopNvdCVSS,
     sortCveDistroList,
     aggregateByCVSS,
+    aggregateByEPSS,
     aggregateByCreatedTime,
     aggregateByDistinctCount,
     getSeveritySortOptions,
@@ -254,7 +255,7 @@ function WorkloadCVEOverviewTable({
                     {isEpssProbabilityColumnEnabled && (
                         <Th
                             className={getVisibilityClass('epssProbability')}
-                            sort={getSortParams('EPSS Probability')}
+                            sort={getSortParams('EPSS Probability', aggregateByEPSS)}
                         >
                             EPSS probability
                         </Th>
