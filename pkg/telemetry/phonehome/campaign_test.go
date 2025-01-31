@@ -18,6 +18,7 @@ func withUserAgent(_ *testing.T, headers map[string][]string, ua string) func(st
 }
 
 func TestCampaignFulfilled(t *testing.T) {
+	doNothing := func(_ *APICallCampaignCriterion) {}
 	t.Run("Empty campaign", func(t *testing.T) {
 		campaign := APICallCampaign{}
 		rp := &RequestParams{
@@ -26,7 +27,7 @@ func TestCampaignFulfilled(t *testing.T) {
 			Path:    "/some/test/path",
 			Code:    202,
 		}
-		assert.False(t, campaign.ForEachFulfilled(rp))
+		assert.False(t, campaign.ForEachFulfilled(rp, doNothing))
 	})
 	t.Run("Empty criterion", func(t *testing.T) {
 		campaign := APICallCampaign{
@@ -38,7 +39,7 @@ func TestCampaignFulfilled(t *testing.T) {
 			Path:    "/some/test/path",
 			Code:    202,
 		}
-		assert.True(t, campaign.ForEachFulfilled(rp))
+		assert.True(t, campaign.ForEachFulfilled(rp, doNothing))
 	})
 	t.Run("Nil criterion", func(t *testing.T) {
 		campaign := APICallCampaign{
@@ -50,7 +51,7 @@ func TestCampaignFulfilled(t *testing.T) {
 			Path:    "/some/test/path",
 			Code:    202,
 		}
-		assert.False(t, campaign.ForEachFulfilled(rp))
+		assert.False(t, campaign.ForEachFulfilled(rp, doNothing))
 	})
 
 	t.Run("Single criterion", func(t *testing.T) {
@@ -114,7 +115,7 @@ func TestCampaignFulfilled(t *testing.T) {
 			for name, campaign := range campaigns {
 				t.Run(name, func(t *testing.T) {
 					require.NoError(t, campaign.Compile())
-					assert.True(t, campaign.ForEachFulfilled(rp))
+					assert.True(t, campaign.ForEachFulfilled(rp, doNothing))
 				})
 			}
 		})
@@ -128,7 +129,7 @@ func TestCampaignFulfilled(t *testing.T) {
 			}
 			for name, campaign := range campaigns {
 				t.Run(name, func(t *testing.T) {
-					assert.False(t, campaign.ForEachFulfilled(rp))
+					assert.False(t, campaign.ForEachFulfilled(rp, doNothing))
 				})
 			}
 		})
@@ -204,7 +205,7 @@ func TestCampaignFulfilled(t *testing.T) {
 				},
 			}
 			for _, rp := range rps {
-				assert.True(t, campaign.ForEachFulfilled(&rp), rp.Headers(userAgentHeaderKey))
+				assert.True(t, campaign.ForEachFulfilled(&rp, doNothing), rp.Headers(userAgentHeaderKey))
 			}
 		})
 
@@ -244,7 +245,7 @@ func TestCampaignFulfilled(t *testing.T) {
 				},
 			}
 			for _, rp := range rps {
-				assert.False(t, campaign.ForEachFulfilled(&rp), rp.Headers(userAgentHeaderKey))
+				assert.False(t, campaign.ForEachFulfilled(&rp, doNothing), rp.Headers(userAgentHeaderKey))
 			}
 		})
 	})
