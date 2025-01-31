@@ -26,7 +26,8 @@ class ExternalIpFlowsTest extends BaseSpecification {
     static final private int RETRY_COUNT = 5
     static final private int RETRY_INTERVAL = 30
 
-    static final private String DEFAULT_QUERY = "Namespace:qa+Discovered External Source:true"
+    static final private String BERSERKER_SUBNET = "223.42.0.0/24"
+    static final private String DEFAULT_QUERY = "Namespace:qa+Discovered External Source:true+External Source Address:${BERSERKER_SUBNET}"
 
     // Target deployments
     @Shared
@@ -40,20 +41,10 @@ class ExternalIpFlowsTest extends BaseSpecification {
         return [
             new Deployment()
                     .setName(EXTERNALDESTINATION)
-                    .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-15-4-alpine")
+                    .setImage("quay.io/ghutton/berserker:test")
                     .addLabel("app", EXTERNALDESTINATION)
-                    .setCommand(["/bin/sh", "-c",])
-                    .setArgs(["while sleep ${NetworkGraphUtil.NETWORK_FLOW_UPDATE_CADENCE_IN_SECONDS}; " +
-                                      "do wget -S -T 2 http://www.google.com; " +
-                                      "done" as String,]),
-            new Deployment()
-                    .setName("${EXTERNALDESTINATION}-2")
-                    .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-15-4-alpine")
-                    .addLabel("app", EXTERNALDESTINATION)
-                    .setCommand(["/bin/sh", "-c",])
-                    .setArgs(["while sleep ${NetworkGraphUtil.NETWORK_FLOW_UPDATE_CADENCE_IN_SECONDS}; " +
-                                      "do wget -S -T 2 http://www.httpbin.org; " +
-                                      "done" as String,]),
+                    .setHostNetwork(true)
+                    .setPrivilegedFlag(true)
         ]
     }
 
