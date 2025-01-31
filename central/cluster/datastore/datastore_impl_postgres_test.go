@@ -40,6 +40,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -131,9 +132,9 @@ func (s *ClusterPostgresDataStoreTestSuite) SetupSuite() {
 	s.clusterDatastore = clusterDS
 }
 
-//func (s *ClusterPostgresDataStoreTestSuite) TearDownSuite() {
-//	s.db.Teardown(s.T())
-//}
+func (s *ClusterPostgresDataStoreTestSuite) TearDownSuite() {
+	s.db.Teardown(s.T())
+}
 
 // Test that when we try to remove a cluster that does not exist, we return an error.
 func (s *ClusterPostgresDataStoreTestSuite) TestHandlesClusterDoesNotExist() {
@@ -240,7 +241,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestPopulateClusterHealthInfo() {
 	results, err := s.clusterDatastore.SearchRawClusters(ctx, pkgSearch.EmptyQuery())
 	s.NoError(err)
 	for i, result := range results {
-		s.Equal(existingHealths[i], result.HealthStatus)
+		protoassert.Equal(s.T(), existingHealths[i], result.HealthStatus)
 	}
 }
 
@@ -452,7 +453,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestLookupOrCreateClusterFromConfig(
 				s.Equal(c.expectedManagerType, cluster.ManagedBy)
 			}
 			if c.expectedHelmConfig != nil {
-				s.EqualExportedValues(c.expectedHelmConfig, cluster.GetHelmConfig())
+				protoassert.Equal(s.T(), c.expectedHelmConfig, cluster.GetHelmConfig())
 			}
 		})
 	}
@@ -524,7 +525,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestUpdateAuditLogFileStatesLeaveUnm
 	s.NoError(err)
 	s.True(exists)
 
-	s.Equal(expectedStates, realCluster.AuditLogState)
+	protoassert.MapEqual(s.T(), expectedStates, realCluster.AuditLogState)
 }
 
 func (s *ClusterPostgresDataStoreTestSuite) TestUpdateAuditLogFileStatesErrorConditions() {
