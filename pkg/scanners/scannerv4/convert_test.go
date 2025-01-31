@@ -355,14 +355,14 @@ func TestSetEPSS(t *testing.T) {
 				if result != nil {
 					t.Errorf("expected nil, got %+v", result)
 				}
-			} else {
-				if result == nil {
-					t.Errorf("expected %+v, got nil", testcase.expected)
-				} else {
-					if result.EpssProbability != testcase.expected.EpssProbability || result.EpssPercentile != testcase.expected.EpssPercentile {
-						t.Errorf("expected %+v, got %+v", testcase.expected, result)
-					}
-				}
+				return
+			}
+			if result == nil {
+				t.Errorf("expected %+v, got nil", testcase.expected)
+				return
+			}
+			if result.EpssProbability != testcase.expected.EpssProbability || result.EpssPercentile != testcase.expected.EpssPercentile {
+				t.Errorf("expected %+v, got %+v", testcase.expected, result)
 			}
 		})
 	}

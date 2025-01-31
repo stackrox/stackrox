@@ -78,14 +78,6 @@ var (
 	}
 )
 
-type epssDetail struct {
-	ModelVersion string  `json:"ModelVersion"`
-	CVE          string  `json:"CVE"`
-	Date         string  `json:"Date"` // Use string as there's no need to manipulate the Date as a time.Time object
-	EPSS         float64 `json:"EPSS"`
-	Percentile   float64 `json:"Percentile"`
-}
-
 // ToProtoV4IndexReport maps claircore.IndexReport to v4.IndexReport.
 func ToProtoV4IndexReport(r *claircore.IndexReport) (*v4.IndexReport, error) {
 	if r == nil {
@@ -113,9 +105,9 @@ func ToProtoV4VulnerabilityReport(ctx context.Context, r *claircore.Vulnerabilit
 	if err != nil {
 		return nil, fmt.Errorf("internal error: parsing nvd vulns: %w", err)
 	}
-	cveEPSS, err := cveEPSS(r.Enrichments, ctx)
+	cveEPSS, err := cveEPSS(ctx, r.Enrichments)
 	if err != nil {
-		return nil, fmt.Errorf("internal error: parsing package-level EPSS details: %w", err)
+		return nil, fmt.Errorf("internal error: parsing EPSS items: %w", err)
 	}
 	vulnerabilities, err := toProtoV4VulnerabilitiesMap(ctx, r.Vulnerabilities, nvdVulns, cveEPSS)
 	if err != nil {
@@ -370,13 +362,13 @@ func sortBySeverity(ids []string, vulnerabilities map[string]*v4.VulnerabilityRe
 	})
 }
 
-// rhelVulnsEPSS gets highest EPSS score for each rhel advisory name in a given image
+// rhelVulnsEPSS gets highest EPSS score for each Red Hat advisory name
 // TODO(ROX-27729): get the highest EPSS score for an RHSA across all CVEs associated with that RHSA
-func rhelVulnsEPSS(vulns map[string]*claircore.Vulnerability, pkgEpss map[string]epssDetail) map[string]epssDetail {
-	if vulns == nil || pkgEpss == nil {
+func rhelVulnsEPSS(vulns map[string]*claircore.Vulnerability, epssItems map[string]epss.EPSSItem) map[string]epss.EPSSItem {
+	if vulns == nil || epssItems == nil {
 		return nil
 	}
-	rhelEPSSMap := make(map[string]epssDetail)
+	rhsaEPSS := make(map[string]epss.EPSSItem)
 	for _, v := range vulns {
 		if v == nil {
 			continue
@@ -389,32 +381,35 @@ func rhelVulnsEPSS(vulns map[string]*claircore.Vulnerability, pkgEpss map[string
 		if !foundRHEL {
 			continue // continue if it's not a RHSA
 		}
-		cveEPSS, ok := pkgEpss[cve]
+		cveEPSS, ok := epssItems[cve]
 		if !ok {
 			continue // no EPSS score
 		}
 		// if both CVE and rhsa names exist
-		rhelEPSS, ok := rhelEPSSMap[rhelName]
+		rhelEPSS, ok := rhsaEPSS[rhelName]
 		if !ok {
-			rhelEPSSMap[rhelName] = cveEPSS
+			rhsaEPSS[rhelName] = cveEPSS
 		} else {
 			if cveEPSS.EPSS > rhelEPSS.EPSS {
-				rhelEPSSMap[rhelName] = cveEPSS
+				rhsaEPSS[rhelName] = cveEPSS
 			}
 		}
 	}
 
-	return rhelEPSSMap
+	return rhsaEPSS
 }
 
 func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircore.Vulnerability,
 	nvdVulns map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem,
-	cveEPSS map[string]epssDetail) (map[string]*v4.VulnerabilityReport_Vulnerability, error) {
+	epssItems map[string]epss.EPSSItem) (map[string]*v4.VulnerabilityReport_Vulnerability, error) {
 	if vulns == nil {
 		return nil, nil
 	}
 	var vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerability
-	var rhelEPSSDetails map[string]epssDetail
+	var rhelEPSSDetails map[string]epss.EPSSItem
+	if !features.ScannerV4RedHatCVEs.Enabled() {
+		rhelEPSSDetails = rhelVulnsEPSS(vulns, epssItems)
+	}
 	for k, v := range vulns {
 		if v == nil {
 			continue
@@ -459,17 +454,14 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 			preferredCVSS = metrics[0]
 		}
 
-		if !features.ScannerV4RedHatCVEs.Enabled() {
-			rhelEPSSDetails = rhelVulnsEPSS(vulns, cveEPSS)
-		}
-		var vulnEPSS epssDetail
-		if epss, ok := cveEPSS[cve]; ok {
-			vulnEPSS = epss
+		var vulnEPSS *epss.EPSSItem
+		if epss, ok := epssItems[cve]; ok {
+			vulnEPSS = &epss
 		}
 		if len(rhelEPSSDetails) > 0 {
 			// overwrite with RHSA EPSS score if it exists
 			if rhelEPSS, ok := rhelEPSSDetails[name]; ok {
-				vulnEPSS = rhelEPSS
+				vulnEPSS = &rhelEPSS
 			}
 		}
 		description := v.Description
@@ -509,7 +501,7 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 			Cvss:               preferredCVSS,
 			CvssMetrics:        metrics,
 		}
-		if vulnEPSS != (epssDetail{}) {
+		if vulnEPSS != nil {
 			vulnerabilities[k].EpssMetrics = &v4.VulnerabilityReport_Vulnerability_EPSS{
 				ModelVersion: vulnEPSS.ModelVersion,
 				Date:         vulnEPSS.Date,
@@ -771,16 +763,16 @@ func pkgFixedBy(enrichments map[string][]json.RawMessage) (map[string]string, er
 }
 
 // cveEPSS unmarshals and returns the EPSS enrichment, if it exists.
-func cveEPSS(enrichments map[string][]json.RawMessage, ctx context.Context) (map[string]epssDetail, error) {
+func cveEPSS(ctx context.Context, enrichments map[string][]json.RawMessage) (map[string]epss.EPSSItem, error) {
 	enrichmentList := enrichments[epss.Type]
 	if len(enrichmentList) == 0 {
 		zlog.Warn(ctx).
-			Str("enrichments:", epss.Type).
+			Str("enrichments", epss.Type).
 			Msg("no EPSS enrichments found")
 		return nil, nil
 	}
 
-	var epssMap map[string][]epssDetail
+	var epssMap map[string][]epss.EPSSItem
 	err := json.Unmarshal(enrichmentList[0], &epssMap)
 	if err != nil {
 		return nil, fmt.Errorf("error unmarshaling EPSS enrichment: %w", err)
@@ -790,17 +782,17 @@ func cveEPSS(enrichments map[string][]json.RawMessage, ctx context.Context) (map
 		return nil, nil
 	}
 
-	res := make(map[string]epssDetail)
-	for k, details := range epssMap {
+	res := make(map[string]epss.EPSSItem)
+	for p, details := range epssMap {
 		if len(details) == 0 {
 			continue
 		}
 
-		// assume the first element is the relevant EPSS detail
+		// Expecting the EPSS enricher uses only the first element for the EPSS detail.
 		detail := details[0]
 		if detail.CVE == "" {
 			zlog.Warn(ctx).
-				Str("package:", k).
+				Str("package", p).
 				Msg("no CVE linked to an EPSS score")
 			continue
 		}

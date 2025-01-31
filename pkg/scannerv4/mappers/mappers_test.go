@@ -7,6 +7,7 @@ import (
 
 	nvdschema "github.com/facebookincubator/nvdtools/cveapi/nvd/schema"
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/enricher/epss"
 	"github.com/quay/claircore/toolkit/types/cpe"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/env"
@@ -902,16 +903,16 @@ func Test_toProtoV4Contents(t *testing.T) {
 func Test_toProtoV4VulnerabilitiesMapWithEPSS(t *testing.T) {
 	now := time.Now()
 	protoNow, err := protocompat.ConvertTimeToTimestampOrError(now)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	tests := map[string]struct {
 		ccVulnerabilities map[string]*claircore.Vulnerability
 		nvdVulns          map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem
-		pkgEpss           map[string]epssDetail
+		pkgEpss           map[string]epss.EPSSItem
 		enableRedHatCVEs  bool
 		want              map[string]*v4.VulnerabilityReport_Vulnerability
 	}{
-		"EPSS OK with NVD": {
+		"should use EPSS and NVD CVSS scores": {
 			ccVulnerabilities: map[string]*claircore.Vulnerability{
 				"foo": {
 					ID:      "foo",
@@ -940,7 +941,7 @@ func Test_toProtoV4VulnerabilitiesMapWithEPSS(t *testing.T) {
 					},
 				},
 			},
-			pkgEpss: map[string]epssDetail{
+			pkgEpss: map[string]epss.EPSSItem{
 				"CVE-1234-567": {
 					ModelVersion: "v2023.03.01",
 					CVE:          "CVE-1234-567",
@@ -979,7 +980,9 @@ func Test_toProtoV4VulnerabilitiesMapWithEPSS(t *testing.T) {
 				},
 			},
 		},
-		"RHSA EPSS OK": {
+
+		// TODO(ROX-27729): get the highest EPSS score for an RHSA across all CVEs associated with that RHSA
+		"should use EPSS score of highest CVE on multi-CVE RHSAs": {
 			ccVulnerabilities: map[string]*claircore.Vulnerability{
 				"foo": {
 					ID:      "foo",
@@ -997,7 +1000,7 @@ func Test_toProtoV4VulnerabilitiesMapWithEPSS(t *testing.T) {
 				},
 			},
 			nvdVulns: nil,
-			pkgEpss: map[string]epssDetail{
+			pkgEpss: map[string]epss.EPSSItem{
 				"CVE-1234-567": {
 					ModelVersion: "v2023.03.01",
 					CVE:          "CVE-1234-567",
@@ -1070,7 +1073,7 @@ func Test_toProtoV4VulnerabilitiesMapWithEPSS(t *testing.T) {
 					},
 				},
 			},
-			pkgEpss: map[string]epssDetail{
+			pkgEpss: map[string]epss.EPSSItem{
 				// No EPSS entry for CVE-5678-1234
 			},
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
