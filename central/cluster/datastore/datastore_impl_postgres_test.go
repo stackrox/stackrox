@@ -21,7 +21,6 @@ import (
 	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
 	netEntityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	netFlowsDataStore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
-	"github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
 	nodeDataStore "github.com/stackrox/rox/central/node/datastore"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
 	"github.com/stackrox/rox/central/ranking"
@@ -75,7 +74,6 @@ type ClusterPostgresDataStoreTestSuite struct {
 	roleBindingDatastore      k8sRoleBindingDataStore.DataStore
 	imageIntegrationDatastore imageIntegrationDataStore.DataStore
 	clusterDatastore          DataStore
-	mockClusterDatastore      mocks.MockClusterDataStore
 }
 
 func (s *ClusterPostgresDataStoreTestSuite) SetupSuite() {
@@ -149,62 +147,63 @@ func (s *ClusterPostgresDataStoreTestSuite) TestRemoveCluster() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	testCluster := &storage.Cluster{Name: fixtureconsts.ClusterName1, MainImage: mainImage, CentralApiEndpoint: centralEndpoint}
-	clusterId, err := s.clusterDatastore.AddCluster(ctx, testCluster)
+	clusterId, clusterAddErr := s.clusterDatastore.AddCluster(ctx, testCluster)
 	s.NotEmpty(clusterId)
-	s.NoError(err)
+	s.NoError(clusterAddErr)
 	testDeployment := &storage.Deployment{Id: fixtureconsts.Deployment1, ClusterId: clusterId, ClusterName: testCluster.Name}
-	err = s.deploymentDatastore.UpsertDeployment(ctx, testDeployment)
-	s.NoError(err)
+	deploymentUpsertErr := s.deploymentDatastore.UpsertDeployment(ctx, testDeployment)
+	s.NoError(deploymentUpsertErr)
 	testPod := &storage.Pod{Id: fixtureconsts.PodUID1, ClusterId: clusterId}
-	err = s.podDatastore.UpsertPod(ctx, testPod)
-	s.NoError(err)
+	podUpsertErr := s.podDatastore.UpsertPod(ctx, testPod)
+	s.NoError(podUpsertErr)
 	testAlert := &storage.Alert{Id: fixtureconsts.Alert1, ClusterId: clusterId, ClusterName: testCluster.Name, Entity: convert.ToAlertDeployment(testDeployment)}
-	err = s.alertDatastore.UpsertAlert(ctx, testAlert)
-	s.NoError(err)
+	alertUpsertErr := s.alertDatastore.UpsertAlert(ctx, testAlert)
+	s.NoError(alertUpsertErr)
 	testSecret := &storage.Secret{Id: fixtureconsts.AlertFake, ClusterId: clusterId, ClusterName: testCluster.Name}
-	err = s.secretDatastore.UpsertSecret(ctx, testSecret)
-	s.NoError(err)
+	secretUpsertErr := s.secretDatastore.UpsertSecret(ctx, testSecret)
+	s.NoError(secretUpsertErr)
 	testServiceAccount := &storage.ServiceAccount{Id: fixtureconsts.ServiceAccount1, ClusterId: clusterId, ClusterName: testCluster.Name}
-	err = s.serviceAccountDatastore.UpsertServiceAccount(ctx, testServiceAccount)
-	s.NoError(err)
+	serviceAccountUpsertErr := s.serviceAccountDatastore.UpsertServiceAccount(ctx, testServiceAccount)
+	s.NoError(serviceAccountUpsertErr)
 	testRole := &storage.K8SRole{Id: fixtureconsts.Role1, ClusterId: clusterId, ClusterName: testCluster.Name}
-	err = s.roleDatastore.UpsertRole(ctx, testRole)
-	s.NoError(err)
+	roleUpsertErr := s.roleDatastore.UpsertRole(ctx, testRole)
+	s.NoError(roleUpsertErr)
 	testRoleBinding := &storage.K8SRoleBinding{Id: fixtureconsts.RoleBinding1, ClusterId: clusterId, ClusterName: testCluster.Name}
-	err = s.roleBindingDatastore.UpsertRoleBinding(ctx, testRoleBinding)
-	s.NoError(err)
+	roleBindingUpsertErr := s.roleBindingDatastore.UpsertRoleBinding(ctx, testRoleBinding)
+	s.NoError(roleBindingUpsertErr)
 	testImageIntegration := &storage.ImageIntegration{Id: fixtureconsts.AlertFake, ClusterId: clusterId}
-	imageIntegrationId, err := s.imageIntegrationDatastore.AddImageIntegration(ctx, testImageIntegration)
+	imageIntegrationId, imageIntegrationAddErr := s.imageIntegrationDatastore.AddImageIntegration(ctx, testImageIntegration)
 	s.NotEmpty(imageIntegrationId)
-	s.NoError(err)
+	s.NoError(imageIntegrationAddErr)
 	doneSignal := concurrency.NewSignal()
-	err = s.clusterDatastore.RemoveCluster(ctx, clusterId, &doneSignal)
-	s.NoError(err)
+	clusterRemoveErr := s.clusterDatastore.RemoveCluster(ctx, clusterId, &doneSignal)
+	s.NoError(clusterRemoveErr)
 	s.True(concurrency.WaitWithTimeout(&doneSignal, 10*time.Second))
-	_, found, err := s.deploymentDatastore.GetDeployment(ctx, testDeployment.GetId())
-	s.NoError(err)
-	s.False(found)
-	_, found, err = s.podDatastore.GetPod(ctx, testPod.GetId())
-	s.NoError(err)
-	s.False(found)
-	alert, found, err := s.alertDatastore.GetAlert(ctx, testAlert.GetId())
-	s.NoError(err)
+	_, deploymentFound, deploymentGetErr := s.deploymentDatastore.GetDeployment(ctx, testDeployment.GetId())
+	s.NoError(deploymentGetErr)
+	s.False(deploymentFound)
+	_, podFound, podGetErr := s.podDatastore.GetPod(ctx, testPod.GetId())
+	s.NoError(podGetErr)
+	s.False(podFound)
+	alert, alertFound, alertFoundErr := s.alertDatastore.GetAlert(ctx, testAlert.GetId())
+	s.NoError(alertFoundErr)
+	s.True(alertFound)
 	s.Equal(storage.ViolationState_RESOLVED, alert.GetState())
-	_, found, err = s.secretDatastore.GetSecret(ctx, testSecret.GetId())
-	s.NoError(err)
-	s.False(found)
-	_, found, err = s.serviceAccountDatastore.GetServiceAccount(ctx, testServiceAccount.GetId())
-	s.NoError(err)
-	s.False(found)
-	_, found, err = s.roleDatastore.GetRole(ctx, testRole.GetId())
-	s.NoError(err)
-	s.False(found)
-	_, found, err = s.roleBindingDatastore.GetRoleBinding(ctx, testRole.GetId())
-	s.NoError(err)
-	s.False(found)
-	_, found, err = s.imageIntegrationDatastore.GetImageIntegration(ctx, testImageIntegration.GetId())
-	s.NoError(err)
-	s.False(found)
+	_, secretFound, secretGetErr := s.secretDatastore.GetSecret(ctx, testSecret.GetId())
+	s.NoError(secretGetErr)
+	s.False(secretFound)
+	_, serviceAccountFound, serviceAccountGetErr := s.serviceAccountDatastore.GetServiceAccount(ctx, testServiceAccount.GetId())
+	s.NoError(serviceAccountGetErr)
+	s.False(serviceAccountFound)
+	_, roleFound, roleGetErr := s.roleDatastore.GetRole(ctx, testRole.GetId())
+	s.NoError(roleGetErr)
+	s.False(roleFound)
+	_, roleBindingFound, roleBindingGetErr := s.roleBindingDatastore.GetRoleBinding(ctx, testRole.GetId())
+	s.NoError(roleBindingGetErr)
+	s.False(roleBindingFound)
+	_, imageIntegrationFound, imageIntegrationGetErr := s.imageIntegrationDatastore.GetImageIntegration(ctx, testImageIntegration.GetId())
+	s.NoError(imageIntegrationGetErr)
+	s.False(imageIntegrationFound)
 }
 
 func (s *ClusterPostgresDataStoreTestSuite) TestPopulateClusterHealthInfo() {
@@ -227,14 +226,12 @@ func (s *ClusterPostgresDataStoreTestSuite) TestPopulateClusterHealthInfo() {
 			LastContact:        ts,
 		},
 	}
-	var clusters []*storage.Cluster
 	for i, idSuffix := range idSuffixes {
 		cluster := &storage.Cluster{Name: "Cluster" + idSuffix, MainImage: mainImage, CentralApiEndpoint: centralEndpoint}
 		clusterId, err := s.clusterDatastore.AddCluster(ctx, cluster)
 		s.NoError(err)
 		s.NotEmpty(clusterId)
 		cluster.Id = clusterId
-		clusters = append(clusters, cluster)
 		err = s.clusterDatastore.UpdateClusterHealth(ctx, clusterId, existingHealths[i])
 		s.NoError(err)
 	}
@@ -598,21 +595,27 @@ func (s *ClusterPostgresDataStoreTestSuite) TestUpdateAuditLogFileStatesErrorCon
 
 	for _, c := range cases {
 		s.T().Run(c.name, func(t *testing.T) {
+			var clusterID string
+			var cluster *storage.Cluster
+			var found bool
+			var err error
+
 			writeCtx := sac.WithAllAccess(context.Background())
 			if c.clusterIsMissing {
-				cluster, found, _ := s.clusterDatastore.GetCluster(writeCtx, c.clusterID)
+				cluster, found, _ = s.clusterDatastore.GetCluster(writeCtx, c.clusterID)
 				s.Nil(cluster)
 				s.False(found)
 			}
 			if c.realClusterFound {
-				clusterID, err := s.clusterDatastore.AddCluster(writeCtx, fakeCluster)
+				clusterID, err = s.clusterDatastore.AddCluster(writeCtx, fakeCluster)
 				c.clusterID = clusterID
 				s.NoError(err)
-				cluster, found, err := s.clusterDatastore.GetCluster(writeCtx, c.clusterID)
+				cluster, found, err = s.clusterDatastore.GetCluster(writeCtx, c.clusterID)
 				s.True(found)
 				s.NotNil(cluster)
+				s.NoError(err)
 			}
-			err := s.clusterDatastore.UpdateAuditLogFileStates(c.ctx, c.clusterID, c.states)
+			err = s.clusterDatastore.UpdateAuditLogFileStates(c.ctx, c.clusterID, c.states)
 			s.Error(err)
 		})
 	}
@@ -822,7 +825,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestAddExistingCluster() {
 	clusterID, err := s.clusterDatastore.AddCluster(ctx, &cluster)
 	s.NoError(err)
 	s.NotEmpty(clusterID)
-	clusterID, err = s.clusterDatastore.AddCluster(ctx, &cluster)
+	_, err = s.clusterDatastore.AddCluster(ctx, &cluster)
 	s.Error(err)
 	s.ErrorIs(err, errox.AlreadyExists)
 }
