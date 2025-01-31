@@ -141,7 +141,8 @@ function AzureIntegrationForm({
         formInitialValues.config.azure.password = '';
 
         // Don't assume user wants to change password; that has caused confusing UX.
-        formInitialValues.updatePassword = false;
+        // If workload identity is enabled, we always overwrite any existing credentials.
+        formInitialValues.updatePassword = formInitialValues.config.azure.wifEnabled;
     }
     const {
         values,
@@ -169,6 +170,13 @@ function AzureIntegrationForm({
     }
 
     function onUpdateCredentialsChange(value, event) {
+        setFieldValue('config.azure.password', '');
+        return setFieldValue(event.target.id, value);
+    }
+
+    function onUpdateWorkloadIdentityChange(value, event) {
+        setFieldValue('updatePassword', value);
+        setFieldValue('config.azure.username', '');
         setFieldValue('config.azure.password', '');
         return setFieldValue(event.target.id, value);
     }
@@ -260,6 +268,7 @@ function AzureIntegrationForm({
                             />
                         }
                         fieldId="config.azure.wifEnabled"
+                        helperText="Removes any existing username and password"
                         touched={touched}
                         errors={errors}
                     >
@@ -267,7 +276,9 @@ function AzureIntegrationForm({
                             label="Use workload identity"
                             id="config.azure.wifEnabled"
                             isChecked={values.config.azure.wifEnabled}
-                            onChange={(event, value) => onChange(value, event)}
+                            onChange={(event, value) =>
+                                onUpdateWorkloadIdentityChange(value, event)
+                            }
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -355,7 +366,7 @@ function AzureIntegrationForm({
                                 values.config.azure.wifEnabled
                             }
                             placeholder={
-                                values.updatePassword
+                                values.config.azure.wifEnabled || values.updatePassword
                                     ? ''
                                     : 'Currently-stored password will be used.'
                             }

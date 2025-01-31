@@ -137,12 +137,12 @@ message ScannerV4Config {
 
 // Azure container registry configuration. Used by integrations of type "azure".
 message AzureConfig {
-  string endpoint = 1; // @gotags: validate:"nolocalendpoint"
+  string endpoint = 1; // @gotags: scrub:"dependent" validate:"nolocalendpoint"
   string username = 2; // @gotags: scrub:"dependent"
   // The password for the integration. The server will mask the value of this credential in responses and logs.
   string password = 3; // @gotags: scrub:"always"
   // Enables authentication with short-lived tokens using Azure managed identities or Azure workload identities.
-  bool wif_enabled = 4;
+  bool wif_enabled = 4; // @gotags: scrub:"dependent"
 }
 
 enum ImageIntegrationCategory {

@@ -960,12 +960,12 @@ func (x *ScannerV4Config) GetMatcherEndpoint() string {
 // Azure container registry configuration. Used by integrations of type "azure".
 type AzureConfig struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
-	Endpoint string                 `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty" validate:"nolocalendpoint"` // @gotags: validate:"nolocalendpoint"
+	Endpoint string                 `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty" scrub:"dependent" validate:"nolocalendpoint"` // @gotags: scrub:"dependent" validate:"nolocalendpoint"
 	Username string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty" scrub:"dependent"` // @gotags: scrub:"dependent"
 	// The password for the integration. The server will mask the value of this credential in responses and logs.
 	Password string `protobuf:"bytes,3,opt,name=password,proto3" json:"password,omitempty" scrub:"always"` // @gotags: scrub:"always"
 	// Enables authentication with short-lived tokens using Azure managed identities or Azure workload identities.
-	WifEnabled    bool `protobuf:"varint,4,opt,name=wif_enabled,json=wifEnabled,proto3" json:"wif_enabled,omitempty"`
+	WifEnabled    bool `protobuf:"varint,4,opt,name=wif_enabled,json=wifEnabled,proto3" json:"wif_enabled,omitempty" scrub:"dependent"` // @gotags: scrub:"dependent"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
