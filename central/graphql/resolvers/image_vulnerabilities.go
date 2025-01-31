@@ -215,7 +215,7 @@ func (resolver *Resolver) ImageVulnerabilityCounter(ctx context.Context, args Ra
 	allCVEIDs := set.NewStringSet()
 	allCVEIDs.AddAll(fixableCVEIDs.AsSlice()...)
 	allCVEIDs.AddAll(unFixableCVEIDs.AsSlice()...)
-	
+
 	allVulns, err := loader.FromIDs(ctx, allCVEIDs.AsSlice())
 	if err != nil {
 		return nil, err
