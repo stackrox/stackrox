@@ -871,12 +871,13 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 
 		isExisting = true
 
+		cluster = clusterByID
+
 		// If a name is specified, validate it (otherwise, accept any name)
 		if clusterName != "" && clusterName != clusterByID.GetName() {
 			return nil, errors.Errorf("Name mismatch for cluster %q: expected %q, but %q was specified. Set the cluster.name/clusterName attribute in your Helm config to %q, or remove it", clusterID, cluster.GetName(), clusterName, cluster.GetName())
 		}
 
-		cluster = clusterByID
 	} else if clusterName != "" {
 		// At this point, we can be sure that the cluster does not exist.
 		cluster = &storage.Cluster{
