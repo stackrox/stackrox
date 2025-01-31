@@ -15,7 +15,7 @@ fetch_stackrox_data() {
     local download_dir
     download_dir="$(mktemp -d --tmpdir external-networks.XXXXXXXXXX)"
     local latest_prefix
-    latest_prefix="$(curl --fail https://definitions.stackrox.io/external-networks/latest_prefix)"
+    latest_prefix="$(curl --fail https://definitions.stackrox.io/external-networks/latest_prefix | sed 's/ /%20/g')"
     curl --fail --output "${download_dir}/checksum" "https://definitions.stackrox.io/${latest_prefix}/checksum"
     test -s "${download_dir}/checksum"
 
