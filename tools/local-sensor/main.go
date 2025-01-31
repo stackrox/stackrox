@@ -335,6 +335,7 @@ func main() {
 		if err != nil {
 			log.Fatalln(err)
 		}
+		defer utils.IgnoreError(traceRec.Close)
 		sensorConfig.WithTraceWriter(traceRec)
 	}
 

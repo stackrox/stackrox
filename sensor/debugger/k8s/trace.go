@@ -23,7 +23,7 @@ type TraceWriter struct {
 // NewTraceWriter initializes the writer with destination file where we will store the events
 func NewTraceWriter(dest string) (*TraceWriter, error) {
 	if path.Dir(dest) == "" {
-		return nil, errors.New("trace destination must be set")
+		return nil, errors.New("trace destination directory must be set")
 	}
 	err := os.MkdirAll(path.Dir(dest), os.ModePerm)
 	if err != nil {
@@ -39,7 +39,12 @@ func NewTraceWriter(dest string) (*TraceWriter, error) {
 	}, nil
 }
 
-var delimiter = []byte{10}
+// Close closes the file
+func (tw *TraceWriter) Close() error {
+	return errors.Wrap(tw.f.Close(), "error closing trace writer")
+}
+
+var delimiter = []byte{'\n'}
 
 // Write a slice of bytes in the Destination file
 func (tw *TraceWriter) Write(b []byte) (int, error) {
@@ -75,6 +80,6 @@ func (tw *TraceReader) ReadFile() ([][]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	objs := bytes.Split(data, []byte{'\n'})
+	objs := bytes.Split(data, delimiter)
 	return objs, nil
 }
