@@ -106,6 +106,9 @@ export function getColumnsForClusters({
             Cell: ({ original }) => (
                 <CredentialExpiration
                     certExpiryStatus={original.status?.certExpiryStatus}
+                    autoRefreshEnabled={original.sensorCapabilities?.find(
+                        'SecuredClusterCertificatesRefresh'
+                    )}
                     currentDatetime={new Date()}
                     isList
                 />
