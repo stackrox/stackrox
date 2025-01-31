@@ -903,7 +903,7 @@ func Test_toProtoV4Contents(t *testing.T) {
 func Test_toProtoV4VulnerabilitiesMapWithEPSS(t *testing.T) {
 	now := time.Now()
 	protoNow, err := protocompat.ConvertTimeToTimestampOrError(now)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	tests := map[string]struct {
 		ccVulnerabilities map[string]*claircore.Vulnerability
