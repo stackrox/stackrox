@@ -15,40 +15,7 @@ class CollectorUtil {
     static final String ENABLED_VALUE = "ENABLED"
     static final String DISABLED_VALUE = "DISABLED"
 
-
-    static enableExternalIps(OrchestratorMain orchestrator) {
-        setExternalIps(orchestrator, ENABLED_VALUE)
-        def result = introspectionQuery("127.0.0.1", "/state/runtime-config")
-        println new String(result)
-    }
-
-    static disableExternalIps(OrchestratorMain orchestrator) {
-        setExternalIps(orchestrator, DISABLED_VALUE)
-        def result = introspectionQuery("127.0.0.1", "/state/runtime-config")
-        println new String(result)
-    }
-
-    static deleteRuntimeConfig(OrchestratorMain orchestrator) {
-        orchestrator.deleteConfigMap(RUNTIME_CONFIG_MAP_NAME, "stackrox")
-        def result = introspectionQuery("127.0.0.1", "/state/runtime-config")
-        println new String(result)
-    }
-
-    static private setExternalIps(OrchestratorMain orchestrator, String state) {
-        String runtimeConfig = """\
-networking:
-  externalIps:
-    enabled: ${state}
-"""
-        Map<String, String> data = [
-            (RUNTIME_CONFIG_MAP_KEY): runtimeConfig,
-        ]
-
-        orchestrator.createConfigMap(RUNTIME_CONFIG_MAP_NAME, data, "stackrox")
-    }
-
-
-    def introspectionQuery(String collectorIP, String endpoint) {
+    static introspectionQuery(String collectorIP, String endpoint) {
         def uri = "http://${collectorIP}:8080${endpoint}"
         def connection = new URL(uri).openConnection() as HttpURLConnection
     
@@ -66,6 +33,46 @@ networking:
         } finally {
             connection.disconnect()
         }
+    }
+
+
+    static enableExternalIps(OrchestratorMain orchestrator) {
+        setExternalIps(orchestrator, ENABLED_VALUE)
+        def result = introspectionQuery("127.0.0.1", "/state/runtime-config")
+        def body = new String(result)
+        log.info "${result}"
+        log.info "${body}"
+        //println new String(result)
+    }
+
+    static disableExternalIps(OrchestratorMain orchestrator) {
+        setExternalIps(orchestrator, DISABLED_VALUE)
+        def result = introspectionQuery("127.0.0.1", "/state/runtime-config")
+        def body = new String(result)
+        log.info "${result}"
+        log.info "${body}"
+        //println new String(result)
+    }
+
+    static deleteRuntimeConfig(OrchestratorMain orchestrator) {
+        orchestrator.deleteConfigMap(RUNTIME_CONFIG_MAP_NAME, "stackrox")
+        def result = introspectionQuery("127.0.0.1", "/state/runtime-config")
+        def body = new String(result)
+        log.info "${result}"
+        log.info "${body}"
+    }
+
+    static private setExternalIps(OrchestratorMain orchestrator, String state) {
+        String runtimeConfig = """\
+networking:
+  externalIps:
+    enabled: ${state}
+"""
+        Map<String, String> data = [
+            (RUNTIME_CONFIG_MAP_KEY): runtimeConfig,
+        ]
+
+        orchestrator.createConfigMap(RUNTIME_CONFIG_MAP_NAME, data, "stackrox")
     }
     
    //// Example usage:
