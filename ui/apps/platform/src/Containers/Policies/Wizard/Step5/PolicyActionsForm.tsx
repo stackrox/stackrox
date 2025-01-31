@@ -1,16 +1,5 @@
 import React from 'react';
-import {
-    Flex,
-    FlexItem,
-    Title,
-    Divider,
-    Form,
-    FormGroup,
-    FormHelperText,
-    HelperText,
-    HelperTextItem,
-    Radio,
-} from '@patternfly/react-core';
+import { Flex, FlexItem, Title, Divider, Form, FormGroup, Radio } from '@patternfly/react-core';
 import { FormikContextType, useFormikContext } from 'formik';
 
 import { ClientPolicy } from 'types/policy.proto';
@@ -33,7 +22,9 @@ function PolicyActionsForm() {
                 <Flex>
                     <FlexItem flex={{ default: 'flex_1' }}>
                         <Title headingLevel="h3">Activation state</Title>
-                        <div className="pf-v5-u-mt-sm">Select a state for this policy</div>
+                        <div className="pf-v5-u-mt-sm">
+                            Select whether to enable or disable the policy.
+                        </div>
                     </FlexItem>
                 </Flex>
                 <FlexItem>
@@ -59,14 +50,6 @@ function PolicyActionsForm() {
                                     }}
                                 />
                             </Flex>
-                            <FormHelperText>
-                                <HelperText>
-                                    <HelperTextItem>
-                                        Selecting &apos;Disable&apos; will turn off policy alerts
-                                        and monitoring.
-                                    </HelperTextItem>
-                                </HelperText>
-                            </FormHelperText>
                         </FormGroup>
                     </Form>
                 </FlexItem>
