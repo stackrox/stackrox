@@ -22,10 +22,11 @@ type TraceWriter struct {
 
 // NewTraceWriter initializes the writer with destination file where we will store the events
 func NewTraceWriter(dest string) (*TraceWriter, error) {
-	if path.Dir(dest) == "" {
+	dir := path.Dir(dest)
+	if dir == "" {
 		return nil, errors.New("trace destination directory must be set")
 	}
-	err := os.MkdirAll(path.Dir(dest), os.ModePerm)
+	err := os.MkdirAll(dir, os.ModePerm)
 	if err != nil {
 		return nil, errors.Wrap(err, "error creating trace destination directory")
 	}

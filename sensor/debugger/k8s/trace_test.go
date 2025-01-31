@@ -43,6 +43,10 @@ func TestWriter(t *testing.T) {
 	err = writer.Close()
 	assert.Error(t, err)
 
+	n, err = writer.Write([]byte("fail"))
+	assert.Error(t, err)
+	assert.Equal(t, 0, n)
+
 	data, err := os.ReadFile(filePath)
 	assert.NoError(t, err)
 	assert.Equal(t, data, []byte("abc\n1337\n"))
