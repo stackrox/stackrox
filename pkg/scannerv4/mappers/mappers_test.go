@@ -908,7 +908,7 @@ func Test_toProtoV4VulnerabilitiesMapWithEPSS(t *testing.T) {
 	tests := map[string]struct {
 		ccVulnerabilities map[string]*claircore.Vulnerability
 		nvdVulns          map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem
-		pkgEpss           map[string]epss.EPSSItem
+		epssItems         map[string]epss.EPSSItem
 		enableRedHatCVEs  bool
 		want              map[string]*v4.VulnerabilityReport_Vulnerability
 	}{
@@ -941,7 +941,7 @@ func Test_toProtoV4VulnerabilitiesMapWithEPSS(t *testing.T) {
 					},
 				},
 			},
-			pkgEpss: map[string]epss.EPSSItem{
+			epssItems: map[string]epss.EPSSItem{
 				"CVE-1234-567": {
 					ModelVersion: "v2023.03.01",
 					CVE:          "CVE-1234-567",
@@ -1000,7 +1000,7 @@ func Test_toProtoV4VulnerabilitiesMapWithEPSS(t *testing.T) {
 				},
 			},
 			nvdVulns: nil,
-			pkgEpss: map[string]epss.EPSSItem{
+			epssItems: map[string]epss.EPSSItem{
 				"CVE-1234-567": {
 					ModelVersion: "v2023.03.01",
 					CVE:          "CVE-1234-567",
@@ -1073,7 +1073,7 @@ func Test_toProtoV4VulnerabilitiesMapWithEPSS(t *testing.T) {
 					},
 				},
 			},
-			pkgEpss: map[string]epss.EPSSItem{
+			epssItems: map[string]epss.EPSSItem{
 				// No EPSS entry for CVE-5678-1234
 			},
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
@@ -1097,7 +1097,7 @@ func Test_toProtoV4VulnerabilitiesMapWithEPSS(t *testing.T) {
 							Url:    "https://nvd.nist.gov/vuln/detail/CVE-5678-1234",
 						},
 					},
-					// No EpssMetrics because pkgEpss has no entry for CVE-5678-1234
+					// No EpssMetrics because epssItems has no entry for CVE-5678-1234
 				},
 			},
 		},
@@ -1107,12 +1107,9 @@ func Test_toProtoV4VulnerabilitiesMapWithEPSS(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			enableRedHatCVEs := "false"
-			if tt.enableRedHatCVEs {
-				enableRedHatCVEs = "true"
-			}
 			t.Setenv(features.ScannerV4RedHatCVEs.EnvVar(), enableRedHatCVEs)
 
-			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities, tt.nvdVulns, tt.pkgEpss)
+			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities, tt.nvdVulns, tt.epssItems)
 			assert.NoError(t, err)
 			protoassert.MapEqual(t, tt.want, got)
 		})

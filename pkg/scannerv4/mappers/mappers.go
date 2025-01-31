@@ -772,18 +772,18 @@ func cveEPSS(ctx context.Context, enrichments map[string][]json.RawMessage) (map
 		return nil, nil
 	}
 
-	var epssMap map[string][]epss.EPSSItem
-	err := json.Unmarshal(enrichmentList[0], &epssMap)
+	var epssItems map[string][]epss.EPSSItem
+	err := json.Unmarshal(enrichmentList[0], &epssItems)
 	if err != nil {
-		return nil, fmt.Errorf("error unmarshaling EPSS enrichment: %w", err)
+		return nil, fmt.Errorf("unmarshaling EPSS enrichment: %w", err)
 	}
 
-	if len(epssMap) == 0 {
+	if len(epssItems) == 0 {
 		return nil, nil
 	}
 
 	res := make(map[string]epss.EPSSItem)
-	for p, details := range epssMap {
+	for id, details := range epssItems {
 		if len(details) == 0 {
 			continue
 		}
@@ -792,7 +792,7 @@ func cveEPSS(ctx context.Context, enrichments map[string][]json.RawMessage) (map
 		detail := details[0]
 		if detail.CVE == "" {
 			zlog.Warn(ctx).
-				Str("package", p).
+				Str("package", id).
 				Msg("no CVE linked to an EPSS score")
 			continue
 		}
