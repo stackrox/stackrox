@@ -27,6 +27,7 @@ import DeploymentComponentVulnerabilitiesTable, {
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
+import { infoForEpssProbability } from './infoForTh';
 import { FormattedDeploymentVulnerability, formatEpssProbabilityAsPercent } from './table.utils';
 
 export const tableId = 'WorkloadCvesDeploymentVulnerabilitiesTable';
@@ -137,6 +138,7 @@ function DeploymentVulnerabilitiesTable({
                     {isEpssProbabilityColumnEnabled && (
                         <Th
                             className={getVisibilityClass('epssProbability')}
+                            info={infoForEpssProbability}
                             sort={getSortParams('EPSS Probability')}
                         >
                             EPSS probability
