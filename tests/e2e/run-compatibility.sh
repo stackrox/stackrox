@@ -94,7 +94,7 @@ update_junit_prefix_with_central_and_sensor_version() {
     result_folder="${ROOT}/tests/compatibility-tests-results"
     info "Updating all test in $result_folder to have \"Central-v${short_central_tag}-Sensor-v${short_sensor_tag}_\" prefix"
     find "${result_folder}" -type f -name "*.xml" -exec sh -c '
-            sed -i "s/testcase name=\"/testcase name=\"[Central-v${short_central_tag}-Sensor-v${short_sensor_tag}] /g" "$f"
+            sed -i "s/testcase name=\"/testcase name=\"[Central-v${short_central_tag}-Sensor-v${short_sensor_tag}] /g" "$1"
     ' sh {} \;
 }
 
