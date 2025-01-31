@@ -144,6 +144,7 @@ jobs:
           source ./workflow/env.sh
           ./scale/dev/run-many.sh "${SCALE_WORKLOAD_TYPE}" "${SCALE_WORKLOAD_CLUSTERS}"
 
+          ./scale/dev/wait-and-stop-scale-tests.sh
           # Wait for workload generation
           sleep 120
 
