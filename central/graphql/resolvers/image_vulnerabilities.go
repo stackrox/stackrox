@@ -178,7 +178,9 @@ func (resolver *Resolver) ImageVulnerabilityCounter(ctx context.Context, args Ra
 	query = tryUnsuppressedQuery(query)
 
 	selects, groupBy, pagination := query.Selects, query.GroupBy, query.Pagination
-	edgeFieldQuery := search.NewQueryBuilder().MarkHighlighted(search.Fixable).MarkHighlighted(search.CVE).ProtoQuery()
+	edgeFieldQuery := search.NewQueryBuilder().
+		AddBoolsHighlighted(search.Fixable, true, false).
+		AddStringsHighlighted(search.CVEID, "*").ProtoQuery()
 	query = search.ConjunctionQuery(edgeFieldQuery, query)
 	query.Selects, query.GroupBy, query.Pagination = selects, groupBy, pagination
 	results, err := resolver.ComponentCVEEdgeDataStore.Search(ctx, query)
@@ -187,11 +189,11 @@ func (resolver *Resolver) ImageVulnerabilityCounter(ctx context.Context, args Ra
 	}
 	fixableCVEIDs := set.NewStringSet()
 	unFixableCVEIDs := set.NewStringSet()
+	fixableField := schema.ImageComponentCveEdgesSchema.OptionsMap.MustGet(search.Fixable.String())
+	vulnerabilityIDField := schema.ImageCvesSchema.OptionsMap.MustGet(search.CVEID.String())
 	for _, result := range results {
 		var fixable bool
 		var cveID string
-		fixableField := schema.ImageComponentCveEdgesSchema.OptionsMap.MustGet(search.Fixable.String())
-		vulnerabilityIDField := schema.ImageCvesSchema.OptionsMap.MustGet(search.CVE.String())
 		for key, matches := range result.Matches {
 			switch key {
 			case fixableField.GetFieldPath():
@@ -213,7 +215,7 @@ func (resolver *Resolver) ImageVulnerabilityCounter(ctx context.Context, args Ra
 	allCVEIDs := set.NewStringSet()
 	allCVEIDs.AddAll(fixableCVEIDs.AsSlice()...)
 	allCVEIDs.AddAll(unFixableCVEIDs.AsSlice()...)
-
+	
 	allVulns, err := loader.FromIDs(ctx, allCVEIDs.AsSlice())
 	if err != nil {
 		return nil, err
