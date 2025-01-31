@@ -31,7 +31,7 @@ type Store interface {
 	Revoke(ctx context.Context, id string) error
 	RegistrationPossible(ctx context.Context, id string) error
 	RecordRegistration(ctx context.Context, id string) error
-	UpdateRevocationState(ctx context.Context, id string) error
+	RevokeIfMaxRegistrationsReached(ctx context.Context, id string) error
 }
 
 // UnderlyingStore is the base store that actually accesses the data
@@ -213,7 +213,7 @@ func (w *storeImpl) RecordRegistration(ctx context.Context, id string) error {
 	return nil
 }
 
-func (w *storeImpl) UpdateRevocationState(ctx context.Context, id string) error {
+func (w *storeImpl) RevokeIfMaxRegistrationsReached(ctx context.Context, id string) error {
 	w.uniqueUpdateMutex.Lock()
 	defer w.uniqueUpdateMutex.Unlock()
 

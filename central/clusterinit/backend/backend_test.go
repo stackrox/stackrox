@@ -416,7 +416,7 @@ func (s *clusterInitBackendTestSuite) TestCrsAutoRevocation1() {
 	s.Require().NoErrorf(s.backend.CheckRevoked(ctx, id), "CRS %q is revoked", id)
 
 	s.Require().NoErrorf(s.backend.RecordRegistration(ctx, id), "recording registration for CRS %q failed", id)
-	s.Require().NoError(s.backend.UpdateRevocationState(ctx, id), "updating revocation state failed")
+	s.Require().NoError(s.backend.RevokeIfMaxRegistrationsReached(ctx, id), "updating revocation state failed")
 	s.Require().Errorf(s.backend.CheckRevoked(ctx, id), "CRS %q is not revoked", id)
 }
 
@@ -433,11 +433,11 @@ func (s *clusterInitBackendTestSuite) TestCrsAutoRevocation2() {
 	s.Require().NoErrorf(s.backend.CheckRevoked(ctx, id), "CRS %q is revoked", id)
 
 	s.Require().NoErrorf(s.backend.RecordRegistration(ctx, id), "recording registration for CRS %q failed", id)
-	s.Require().NoError(s.backend.UpdateRevocationState(ctx, id), "updating revocation state failed")
+	s.Require().NoError(s.backend.RevokeIfMaxRegistrationsReached(ctx, id), "updating revocation state failed")
 	s.Require().NoErrorf(s.backend.CheckRevoked(ctx, id), "CRS %q is revoked", id)
 
 	s.Require().NoErrorf(s.backend.RecordRegistration(ctx, id), "recording registration for CRS %q failed", id)
-	s.Require().NoError(s.backend.UpdateRevocationState(ctx, id), "updating revocation state failed")
+	s.Require().NoError(s.backend.RevokeIfMaxRegistrationsReached(ctx, id), "updating revocation state failed")
 	s.Require().Errorf(s.backend.CheckRevoked(ctx, id), "CRS %q is not revoked", id)
 }
 

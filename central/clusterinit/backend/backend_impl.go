@@ -251,12 +251,12 @@ func (b *backendImpl) RecordRegistration(ctx context.Context, id string) error {
 	return b.store.RecordRegistration(ctx, id)
 }
 
-func (b *backendImpl) UpdateRevocationState(ctx context.Context, id string) error {
+func (b *backendImpl) RevokeIfMaxRegistrationsReached(ctx context.Context, id string) error {
 	if err := access.CheckAccess(ctx, storage.Access_READ_WRITE_ACCESS); err != nil {
 		return err
 	}
 
-	return b.store.UpdateRevocationState(ctx, id)
+	return b.store.RevokeIfMaxRegistrationsReached(ctx, id)
 }
 
 func (b *backendImpl) CheckRevoked(ctx context.Context, id string) error {

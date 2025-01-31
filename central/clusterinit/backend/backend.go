@@ -49,7 +49,7 @@ type Backend interface {
 	Revoke(ctx context.Context, id string) error
 	CheckRevoked(ctx context.Context, id string) error
 	RecordRegistration(ctx context.Context, id string) error
-	UpdateRevocationState(ctx context.Context, id string) error
+	RevokeIfMaxRegistrationsReached(ctx context.Context, id string) error
 	authn.ValidateCertChain
 }
 

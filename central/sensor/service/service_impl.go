@@ -190,7 +190,7 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 	// Sensor has initially connected with a real service certificate, not just with a CRS.
 	// Hence we check if we need to update the revocation state of the CRS used for this cluster.
 	if cluster.GetHealthStatus().GetLastContact() == nil {
-		if err := s.clusterInitStore.UpdateRevocationState(clusterDSSAC, cluster.GetInitBundleId()); err != nil {
+		if err := s.clusterInitStore.RevokeIfMaxRegistrationsReached(clusterDSSAC, cluster.GetInitBundleId()); err != nil {
 			log.Errorf("Failed to update revocation state of cluster registration secret %q: %v", cluster.GetInitBundleId(), err)
 			// We will not prevent connecting the cluster in case the updating of the revocation state failed.
 		}
