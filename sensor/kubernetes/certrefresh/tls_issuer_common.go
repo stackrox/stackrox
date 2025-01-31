@@ -145,7 +145,9 @@ func (i *tlsIssuerImpl) Notify(e common.SensorComponentEvent) {
 			return
 		}
 		i.online = true
-		i.activate()
+		if err := i.activate(); err != nil {
+			log.Warnf("Failed to activate %s TLS issuer: %v", i.componentName, err)
+		}
 	case common.SensorComponentEventOfflineMode:
 		i.online = false
 		i.deactivate()
