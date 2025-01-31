@@ -40,7 +40,7 @@ var (
 	}
 
 	interceptors = map[string][]phonehome.Interceptor{
-		"API Call": {apiCall, addDefaultProps, addCustomHeaders},
+		"API Call": {apiCall, addDefaultProps},
 	}
 )
 
@@ -82,25 +82,23 @@ func addDefaultProps(rp *phonehome.RequestParams, props map[string]any) bool {
 // trackedPaths ("*" value enables all paths) or for the calls with the
 // User-Agent containing the substrings specified in the trackedUserAgents, and
 // have no match in the ignoredPaths list.
-func apiCall(rp *phonehome.RequestParams, _ map[string]any) bool {
-	return !ignoredPaths.Match(rp.Path) && telemetryCampaign.IsFulfilled(rp)
+func apiCall(rp *phonehome.RequestParams, props map[string]any) bool {
+	return !ignoredPaths.Match(rp.Path) && telemetryCampaign.ForEachFulfilled(rp,
+		func(cc *phonehome.APICallCampaignCriterion) {
+			addCustomHeaders(rp, cc, props)
+		})
 }
 
 // addCustomHeaders adds additional properties to the event if the telemetry
-// campaign contains a header pattern condition.
-func addCustomHeaders(rp *phonehome.RequestParams, props map[string]any) bool {
-	if rp.Headers == nil {
-		return true
+// campaign criterion contains a header pattern condition.
+func addCustomHeaders(rp *phonehome.RequestParams, cc *phonehome.APICallCampaignCriterion, props map[string]any) {
+	if rp.Headers == nil || cc == nil {
+		return
 	}
-	for _, c := range telemetryCampaign {
-		if c != nil {
-			for header := range c.Headers {
-				values := rp.Headers(header)
-				if len(values) != 0 {
-					props[header] = strings.Join(values, "; ")
-				}
-			}
+	for header := range cc.Headers {
+		values := rp.Headers(header)
+		if len(values) != 0 {
+			props[header] = strings.Join(values, "; ")
 		}
 	}
-	return true
 }

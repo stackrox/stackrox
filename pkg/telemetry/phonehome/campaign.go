@@ -58,8 +58,15 @@ func (c APICallCampaign) Compile() error {
 	return nil
 }
 
-func (c APICallCampaign) IsFulfilled(rp *RequestParams) bool {
-	return slices.ContainsFunc(c, func(cc *APICallCampaignCriterion) bool {
-		return cc.isFulfilled(rp)
-	})
+// ForEachFulfilled calls f on each fulfilled criterion and returns true if
+// any of the compaign critera is fulfilled.
+func (c APICallCampaign) ForEachFulfilled(rp *RequestParams, f func(cc *APICallCampaignCriterion)) bool {
+	fulfilled := false
+	for _, cc := range c {
+		if cc.isFulfilled(rp) {
+			f(cc)
+			fulfilled = true
+		}
+	}
+	return fulfilled
 }
