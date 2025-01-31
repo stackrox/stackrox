@@ -7,8 +7,13 @@ import {
     Tabs,
     Tab,
     TabTitleText,
+    Text,
     Spinner,
+    Button,
+    Flex,
+    Tooltip,
 } from '@patternfly/react-core';
+import { OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
 
 import { fetchAlerts, fetchAlertCount } from 'services/AlertsService';
 import { CancelledPromiseError } from 'services/cancellationUtils';
@@ -34,7 +39,7 @@ import FilteredWorkflowViewSelector from 'Components/FilteredWorkflowViewSelecto
 import useFilteredWorkflowViewURLState from 'Components/FilteredWorkflowViewSelector/useFilteredWorkflowViewURLState';
 import ViolationsTablePanel from './ViolationsTablePanel';
 import getTableColumnDescriptors from './violationTableColumnDescriptors';
-import { violationStateTabs } from './types';
+import { ViolationStateTab, violationStateTabs } from './types';
 
 import './ViolationsTablePage.css';
 
@@ -58,6 +63,50 @@ function getFilteredWorkflowViewSearchFilter(
         default:
             return {};
     }
+}
+
+const violationPageText: Record<
+    FilteredWorkflowView,
+    {
+        title: string;
+        description: string;
+    }
+> = {
+    'Applications view': {
+        title: 'User workload violations',
+        description: 'Violations affecting user-managed workloads and images',
+    },
+    'Platform view': {
+        title: 'Platform violations',
+        description:
+            'Violations affecting images and workloads used by the OpenShift Platform and layered services',
+    },
+    'Full view': {
+        title: 'All violations',
+        description:
+            'View violations for both user and platform workloads, as well as audit log violations',
+    },
+};
+
+function getFilteredWorkflowViewText(filteredWorkflowView: FilteredWorkflowView): {
+    title: string;
+    description: string;
+} {
+    return violationPageText[filteredWorkflowView];
+}
+
+const violationsPageDescription: Record<ViolationStateTab, string> = {
+    ACTIVE: 'View Build/Deploy violations for deployments currently in violation, along with unresolved Runtime violations.',
+    RESOLVED:
+        'View Build/Deploy violations for deployments that were removed or modified to be compliant, manually resolved Runtime violations, and violations generated before a policy exclusion was added (all lifecycles)',
+    ATTEMPTED:
+        'View would-be violations that caused deployment attempts to be blocked by the Admission Controller.',
+};
+
+function getDescriptionForSelectedViolationState(
+    selectedViolationState: ViolationStateTab
+): string {
+    return violationsPageDescription[selectedViolationState];
 }
 
 function ViolationsTablePage(): ReactElement {
@@ -215,10 +264,27 @@ function ViolationsTablePage(): ReactElement {
             alert.enforcementAction !== ENFORCEMENT_ACTIONS.FAIL_DEPLOYMENT_CREATE_ENFORCEMENT
     );
 
+    const { title, description } = getFilteredWorkflowViewText(filteredWorkflowView);
+
     return (
         <>
             <PageSection variant="light" id="violations-table">
-                <Title headingLevel="h1">Violations</Title>
+                <Flex
+                    direction={{ default: 'row' }}
+                    alignItems={{ default: 'alignItemsCenter' }}
+                    spaceItems={{ default: 'spaceItemsNone' }}
+                    className="pf-v5-u-flex-grow-1"
+                >
+                    <Title headingLevel="h1">{title}</Title>
+                    <Tooltip aria="none" aria-live="polite" content={description} position="bottom">
+                        <Button
+                            aria-label="More information about the current page"
+                            variant="plain"
+                        >
+                            <OutlinedQuestionCircleIcon />
+                        </Button>
+                    </Tooltip>
+                </Flex>
             </PageSection>
             <PageSection variant="light" className="pf-v5-u-py-0">
                 <Tabs
@@ -256,6 +322,9 @@ function ViolationsTablePage(): ReactElement {
                     />
                 </PageSection>
             )}
+            <PageSection variant="light">
+                <Text>{getDescriptionForSelectedViolationState(selectedViolationStateTab)}</Text>
+            </PageSection>
             <PageSection variant="default" id={tabContentId}>
                 {isLoadingAlerts && (
                     <Bullseye>

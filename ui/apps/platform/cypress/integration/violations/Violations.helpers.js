@@ -29,7 +29,7 @@ export function visitViolationsFromLeftNav() {
     visitFromLeftNav(title, routeMatcherMapForViolations);
 
     cy.location('pathname').should('eq', basePath);
-    cy.get(`h1:contains("${title}")`);
+    cy.get(`h1:contains("User workload violations")`);
 }
 
 /**
@@ -42,7 +42,7 @@ export function visitViolations(staticResponseMap) {
         'have.class',
         'pf-m-current'
     );
-    cy.get(`h1:contains("${title}")`);
+    cy.get(`h1:contains("User workload violations")`);
 }
 
 export function visitViolationsWithFixture(fixturePath) {
@@ -55,7 +55,7 @@ export function visitViolationsWithFixture(fixturePath) {
 
         visit(basePath, routeMatcherMapForViolations, staticResponseMap);
 
-        cy.get(`h1:contains("${title}")`);
+        cy.get(`h1:contains("User workload violations")`);
     });
 }
 
