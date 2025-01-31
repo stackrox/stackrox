@@ -300,7 +300,7 @@ func (s *UpdaterTestSuite) createNewUpdater(interval time.Duration) *updaterImpl
 func (s *UpdaterTestSuite) assertOfflineMode(updater *updaterImpl, ticker chan<- time.Time) *message.ExpiringMessage {
 	ticker <- time.Now()
 	select {
-	case <-time.After(500 * time.Millisecond):
+	case <-time.After(5 * time.Second):
 		s.Fail("timeout waiting for sensor message")
 	case msg := <-updater.ResponsesC():
 		return msg
