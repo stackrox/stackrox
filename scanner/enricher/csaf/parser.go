@@ -11,14 +11,11 @@ import (
 	"github.com/klauspost/compress/snappy"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/toolkit/types/csaf"
-	"github.com/quay/zlog"
 	pkgcsaf "github.com/stackrox/rox/pkg/scannerv4/enricher/csaf"
 )
 
 // ParseEnrichment implements driver.EnrichmentUpdater.
 func (e *Enricher) ParseEnrichment(ctx context.Context, contents io.ReadCloser) ([]driver.EnrichmentRecord, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "enricher/csaf/Enricher/ParseEnrichment")
-
 	records := make(map[string]pkgcsaf.Record)
 
 	r := bufio.NewReader(snappy.NewReader(contents))
