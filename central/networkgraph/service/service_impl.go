@@ -33,6 +33,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"golang.org/x/exp/maps"
@@ -119,10 +120,18 @@ func (s *serviceImpl) GetExternalNetworkFlows(ctx context.Context, request *v1.G
 		return nil, err
 	}
 
+	total := int32(len(flows))
+
+	page := request.GetPagination()
+
+	if page != nil {
+		flows = paginated.PaginateSlice(int(page.GetOffset()), int(page.GetLimit()), flows)
+	}
+
 	return &v1.GetExternalNetworkFlowsResponse{
 		Entity:     entities[0].GetInfo(),
-		Flows:      paginate(request.GetPagination(), flows),
-		TotalFlows: int32(len(flows)),
+		Flows:      flows,
+		TotalFlows: total,
 	}, nil
 }
 
@@ -167,10 +176,16 @@ func (s *serviceImpl) GetExternalNetworkFlowsMetadata(ctx context.Context, reque
 	}
 
 	result := maps.Values(entityMeta)
+	total := int32(len(result))
+
+	page := request.GetPagination()
+	if page != nil {
+		result = paginated.PaginateSlice(int(page.GetOffset()), int(page.GetLimit()), result)
+	}
 
 	return &v1.GetExternalNetworkFlowsMetadataResponse{
-		Entities:      paginate(request.GetPagination(), result),
-		TotalEntities: int32(len(result)),
+		Entities:      result,
+		TotalEntities: total,
 	}, nil
 }
 
@@ -741,7 +756,7 @@ func (s *serviceImpl) getExternalFlowsAndEntitiesByQuery(ctx context.Context, cl
 		return nil, nil, errors.Wrap(err, "failed to search list deployments")
 	}
 
-	// External sources should be shown only wrt to deployments.
+	// External sources should be shown only wrt deployments.
 	if len(deployments) == 0 {
 		return []*storage.NetworkFlow{}, []*storage.NetworkEntity{}, nil
 	}
@@ -805,10 +820,8 @@ func (s *serviceImpl) getExternalFlowsAndEntitiesByQuery(ctx context.Context, cl
 
 		// If we cannot see all flows of all relevant deployments, filter out flows where we can't see network flows
 		// on both ends (this takes care of the relevant network flow filtering).
-		if !canSeeAllFlows {
-			if !networkgraph.AnyDeploymentInFilter(src, dst, deploymentsWithFlows) {
-				return false
-			}
+		if !canSeeAllFlows && !networkgraph.AnyDeploymentInFilter(src, dst, deploymentsWithFlows) {
+			return false
 		}
 
 		return networkgraph.AnyDeploymentInFilter(src, dst, deploymentsMap)
@@ -855,39 +868,4 @@ func (s *serviceImpl) getExternalFlowsAndEntitiesByQuery(ctx context.Context, cl
 	})
 
 	return filteredFlows, entities, nil
-}
-
-func paginate[T any](pagination *v1.Pagination, results []*T) []*T {
-	if len(results) == 0 {
-		return nil
-	}
-
-	var offset, limit int
-	if pagination == nil {
-		offset = 0
-		limit = len(results)
-	} else {
-		offset, limit = int(pagination.GetOffset()), int(pagination.GetLimit())
-	}
-
-	if offset < 0 {
-		offset = 0
-	}
-	if limit < 0 {
-		limit = 0
-	}
-
-	remnants := len(results) - offset
-	if remnants <= 0 {
-		return nil
-	}
-
-	var end int
-	if limit == 0 || remnants < limit {
-		end = offset + remnants
-	} else {
-		end = offset + limit
-	}
-
-	return results[offset:end]
 }

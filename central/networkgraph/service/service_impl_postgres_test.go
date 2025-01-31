@@ -147,93 +147,92 @@ func (s *networkGraphServiceSuite) TestGetExternalNetworkFlows() {
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraph, resources.Deployment)))
 
-	entityID, _ := externalsrcs.NewClusterScopedID(testCluster, "192.168.1.1/32")
+	entityID1, _ := externalsrcs.NewClusterScopedID(testCluster, "192.168.1.1/32")
 	entityID2, _ := externalsrcs.NewClusterScopedID(testCluster, "10.0.0.2/32")
 	entityID3, _ := externalsrcs.NewClusterScopedID(testCluster, "1.1.1.1/32")
 
-	entity := testutils.GetExtSrcNetworkEntity(entityID.String(), "ext1", "192.168.1.1/32", false, testCluster)
-	entity2 := testutils.GetExtSrcNetworkEntity(entityID2.String(), "ext2", "10.0.0.2/32", false, testCluster)
-	entity3 := testutils.GetExtSrcNetworkEntity(entityID3.String(), "ext3", "10.0.100.25/32", false, testCluster)
+	entityIDs := []string{
+		entityID1.String(), entityID2.String(), entityID3.String(),
+	}
 
 	entities := []*storage.NetworkEntity{
-		entity,
-		entity2,
-		entity3,
+		testutils.GetExtSrcNetworkEntity(entityIDs[0], "ext1", "192.168.1.1/32", false, testCluster),
+		testutils.GetExtSrcNetworkEntity(entityIDs[1], "ext2", "10.0.0.2/32", false, testCluster),
+		testutils.GetExtSrcNetworkEntity(entityIDs[2], "ext3", "10.0.100.25/32", false, testCluster),
 	}
 
-	deployment := &storage.Deployment{
-		Id:        fixtureconsts.Deployment1,
-		ClusterId: testCluster,
-		Namespace: testNamespace,
+	deployments := []*storage.Deployment{
+		&storage.Deployment{
+			Id:        fixtureconsts.Deployment1,
+			ClusterId: testCluster,
+			Namespace: testNamespace,
+		},
+
+		&storage.Deployment{
+			Id:        fixtureconsts.Deployment2,
+			ClusterId: testCluster,
+			Namespace: testNamespace,
+		},
 	}
 
-	deployment2 := &storage.Deployment{
-		Id:        fixtureconsts.Deployment2,
-		ClusterId: testCluster,
-		Namespace: testNamespace,
-	}
-
-	err := s.deploymentsDataStore.UpsertDeployment(globalWriteAccessCtx, deployment)
-	s.NoError(err)
-
-	err = s.deploymentsDataStore.UpsertDeployment(globalWriteAccessCtx, deployment2)
-	s.NoError(err)
-
-	for _, e := range entities {
-		err = s.entityDataStore.CreateExternalNetworkEntity(globalWriteAccessCtx, e, true)
+	for _, deployment := range deployments {
+		err := s.deploymentsDataStore.UpsertDeployment(globalWriteAccessCtx, deployment)
 		s.NoError(err)
 	}
 
-	deploymentToEntity1 := externalFlow(deployment, entity, false)
-	deploymentToEntity3 := externalFlow(deployment, entity3, false)
-
-	deployment2ToEntity3 := externalFlow(deployment2, entity3, false)
-
-	// flow from deployment to es1a and es1c but not es1b
-	flows := []*storage.NetworkFlow{
-		deploymentToEntity1, deploymentToEntity3,
-		deployment2ToEntity3,
+	for _, e := range entities {
+		err := s.entityDataStore.CreateExternalNetworkEntity(globalWriteAccessCtx, e, true)
+		s.NoError(err)
 	}
+
+	singleEntityFlow := externalFlow(deployments[0], entities[0], false)
+	multiEntityFlows := []*storage.NetworkFlow{
+		externalFlow(deployments[0], entities[2], false),
+		externalFlow(deployments[1], entities[2], false),
+	}
+
+	allFlows := []*storage.NetworkFlow{singleEntityFlow}
+	allFlows = append(allFlows, multiEntityFlows...)
 
 	flowStore, err := s.flowDataStore.CreateFlowStore(globalWriteAccessCtx, testCluster)
 	s.NoError(err)
 
-	err = flowStore.UpsertFlows(globalWriteAccessCtx, flows, timestamp.FromGoTime(time.Now()))
+	err = flowStore.UpsertFlows(globalWriteAccessCtx, allFlows, timestamp.FromGoTime(time.Now()))
 	s.NoError(err)
 
 	for _, tc := range []struct {
-		name     string
-		request  *v1.GetExternalNetworkFlowsRequest
-		expected *v1.GetExternalNetworkFlowsResponse
-		pass     bool
+		name          string
+		request       *v1.GetExternalNetworkFlowsRequest
+		expected      *v1.GetExternalNetworkFlowsResponse
+		expectSuccess bool
 	}{
 		{
 			name: "Get single entity flows",
 			request: &v1.GetExternalNetworkFlowsRequest{
 				ClusterId: testCluster,
-				EntityId:  entityID.String(),
+				EntityId:  entityIDs[0],
 				Query:     fmt.Sprintf("Namespace:%s", testNamespace),
 			},
 			expected: &v1.GetExternalNetworkFlowsResponse{
-				Entity: entity.GetInfo(),
+				Entity: entities[0].GetInfo(),
 				Flows: []*storage.NetworkFlow{
-					deploymentToEntity1,
+					singleEntityFlow,
 				},
 			},
-			pass: true,
+			expectSuccess: true,
 		},
 		{
 			name: "Entity with no flows",
 			request: &v1.GetExternalNetworkFlowsRequest{
 				ClusterId: testCluster,
-				EntityId:  entityID2.String(),
+				EntityId:  entityIDs[1],
 				Query:     fmt.Sprintf("Namespace:%s", testNamespace),
 			},
 			expected: &v1.GetExternalNetworkFlowsResponse{
-				Entity: entity2.GetInfo(),
+				Entity: entities[1].GetInfo(),
 				Flows:  []*storage.NetworkFlow{},
 			},
-			pass: true,
+			expectSuccess: true,
 		},
 		{
 			name: "Invalid entity ID",
@@ -242,39 +241,36 @@ func (s *networkGraphServiceSuite) TestGetExternalNetworkFlows() {
 				EntityId:  "invalid ID",
 				Query:     fmt.Sprintf("Namespace:%s", testNamespace),
 			},
-			expected: nil,
-			pass:     false,
+			expected:      nil,
+			expectSuccess: false,
 		},
 		{
 			name: "Invalid cluster",
 			request: &v1.GetExternalNetworkFlowsRequest{
 				ClusterId: "invalid cluster",
-				EntityId:  entityID.String(),
+				EntityId:  entityIDs[0],
 				Query:     fmt.Sprintf("Namespace:%s", testNamespace),
 			},
-			expected: nil,
-			pass:     false,
+			expected:      nil,
+			expectSuccess: false,
 		},
 		{
 			name: "entity with multiple flows",
 			request: &v1.GetExternalNetworkFlowsRequest{
 				ClusterId: testCluster,
-				EntityId:  entityID3.String(),
+				EntityId:  entityIDs[2],
 				Query:     fmt.Sprintf("Namespace:%s", testNamespace),
 			},
 			expected: &v1.GetExternalNetworkFlowsResponse{
-				Entity: entity3.GetInfo(),
-				Flows: []*storage.NetworkFlow{
-					deploymentToEntity3,
-					deployment2ToEntity3,
-				},
+				Entity: entities[2].GetInfo(),
+				Flows:  multiEntityFlows,
 			},
-			pass: true,
+			expectSuccess: true,
 		},
 	} {
 		s.Run(tc.name, func() {
 			response, err := s.service.GetExternalNetworkFlows(ctx, tc.request)
-			if tc.pass {
+			if tc.expectSuccess {
 				s.NoError(err)
 				protoassert.Equal(s.T(), tc.expected.Entity, response.Entity)
 				protoassert.ElementsMatch(s.T(), tc.expected.Flows, response.Flows)
@@ -303,61 +299,57 @@ func (s *networkGraphServiceSuite) TestGetExternalNetworkFlowsMetadata() {
 	entityID2, _ := externalsrcs.NewClusterScopedID(testCluster, "10.0.0.2/32")
 	entityID3, _ := externalsrcs.NewClusterScopedID(testCluster, "1.1.1.1/32")
 
-	entity := testutils.GetExtSrcNetworkEntity(entityID.String(), "ext1", "192.168.1.1/32", false, testCluster)
-	entity2 := testutils.GetExtSrcNetworkEntity(entityID2.String(), "ext2", "10.0.0.2/32", false, testCluster)
-	entity3 := testutils.GetExtSrcNetworkEntity(entityID3.String(), "ext3", "10.0.100.25/32", false, testCluster)
+	entityIDs := []string{
+		entityID.String(), entityID2.String(), entityID3.String(),
+	}
 
 	entities := []*storage.NetworkEntity{
-		entity,
-		entity2,
-		entity3,
+		testutils.GetExtSrcNetworkEntity(entityIDs[0], "ext1", "192.168.1.1/32", false, testCluster),
+		testutils.GetExtSrcNetworkEntity(entityIDs[1], "ext2", "10.0.0.2/32", false, testCluster),
+		testutils.GetExtSrcNetworkEntity(entityIDs[2], "ext3", "10.0.100.25/32", false, testCluster),
 	}
 
-	deployment := &storage.Deployment{
-		Id:        fixtureconsts.Deployment1,
-		ClusterId: testCluster,
-		Namespace: testNamespace,
+	deployments := []*storage.Deployment{
+		{
+			Id:        fixtureconsts.Deployment1,
+			ClusterId: testCluster,
+			Namespace: testNamespace,
+		},
+
+		{
+			Id:        fixtureconsts.Deployment2,
+			ClusterId: testCluster,
+			Namespace: testNamespace,
+		},
+
+		{
+			Id:        fixtureconsts.Deployment3,
+			ClusterId: testCluster,
+			Namespace: fixtureconsts.Namespace2,
+		},
 	}
 
-	deployment2 := &storage.Deployment{
-		Id:        fixtureconsts.Deployment2,
-		ClusterId: testCluster,
-		Namespace: testNamespace,
-	}
-
-	deploymentDifferentNamespace := &storage.Deployment{
-		Id:        fixtureconsts.Deployment3,
-		ClusterId: testCluster,
-		Namespace: fixtureconsts.Namespace2,
-	}
-
-	err := s.deploymentsDataStore.UpsertDeployment(globalWriteAccessCtx, deployment)
-	s.NoError(err)
-
-	err = s.deploymentsDataStore.UpsertDeployment(globalWriteAccessCtx, deployment2)
-	s.NoError(err)
-
-	err = s.deploymentsDataStore.UpsertDeployment(globalWriteAccessCtx, deploymentDifferentNamespace)
-	s.NoError(err)
-
-	for _, e := range entities {
-		err = s.entityDataStore.CreateExternalNetworkEntity(globalWriteAccessCtx, e, true)
+	for _, deployment := range deployments {
+		err := s.deploymentsDataStore.UpsertDeployment(globalWriteAccessCtx, deployment)
 		s.NoError(err)
 	}
 
-	deploymentToEntity1 := externalFlow(deployment, entity, false)
-	deploymentToEntity3 := externalFlow(deployment, entity3, false)
+	for _, e := range entities {
+		err := s.entityDataStore.CreateExternalNetworkEntity(globalWriteAccessCtx, e, true)
+		s.NoError(err)
+	}
 
-	deployment2ToEntity3 := externalFlow(deployment2, entity3, false)
-	deployment2ToEntity2 := externalFlow(deployment2, entity2, false)
-
-	deploymentDiffNSToEntity3 := externalFlow(deploymentDifferentNamespace, entity3, false)
-
-	// flow from deployment to es1a and es1c but not es1b
 	flows := []*storage.NetworkFlow{
-		deploymentToEntity1, deploymentToEntity3,
-		deployment2ToEntity2, deployment2ToEntity3,
-		deploymentDiffNSToEntity3,
+		// deployment1 -> 192.168.1.1
+		externalFlow(deployments[0], entities[0], false),
+		externalFlow(deployments[0], entities[2], false),
+
+		// deployment2 -> (10.0.0.2, 10.0.100.25)
+		externalFlow(deployments[1], entities[2], false),
+		externalFlow(deployments[1], entities[1], false),
+
+		// different namespace to 10.0.100.25
+		externalFlow(deployments[2], entities[2], false),
 	}
 
 	flowStore, err := s.flowDataStore.CreateFlowStore(globalWriteAccessCtx, testCluster)
@@ -367,10 +359,10 @@ func (s *networkGraphServiceSuite) TestGetExternalNetworkFlowsMetadata() {
 	s.NoError(err)
 
 	for _, tc := range []struct {
-		name     string
-		request  *v1.GetExternalNetworkFlowsMetadataRequest
-		expected *v1.GetExternalNetworkFlowsMetadataResponse
-		pass     bool
+		name          string
+		request       *v1.GetExternalNetworkFlowsMetadataRequest
+		expected      *v1.GetExternalNetworkFlowsMetadataResponse
+		expectSuccess bool
 	}{
 		{
 			name: "All entities",
@@ -381,21 +373,21 @@ func (s *networkGraphServiceSuite) TestGetExternalNetworkFlowsMetadata() {
 			expected: &v1.GetExternalNetworkFlowsMetadataResponse{
 				Entities: []*v1.ExternalNetworkFlowMetadata{
 					{
-						Entity:     entity.GetInfo(),
+						Entity:     entities[0].GetInfo(),
 						FlowsCount: 1,
 					},
 					{
-						Entity:     entity2.GetInfo(),
+						Entity:     entities[1].GetInfo(),
 						FlowsCount: 1,
 					},
 					{
-						Entity:     entity3.GetInfo(),
+						Entity:     entities[2].GetInfo(),
 						FlowsCount: 2,
 					},
 				},
 				TotalEntities: 3,
 			},
-			pass: true,
+			expectSuccess: true,
 		},
 		{
 			name: "Filter CIDR with wide subnet",
@@ -406,17 +398,17 @@ func (s *networkGraphServiceSuite) TestGetExternalNetworkFlowsMetadata() {
 			expected: &v1.GetExternalNetworkFlowsMetadataResponse{
 				Entities: []*v1.ExternalNetworkFlowMetadata{
 					{
-						Entity:     entity2.GetInfo(),
+						Entity:     entities[1].GetInfo(),
 						FlowsCount: 1,
 					},
 					{
-						Entity:     entity3.GetInfo(),
+						Entity:     entities[2].GetInfo(),
 						FlowsCount: 2,
 					},
 				},
 				TotalEntities: 2,
 			},
-			pass: true,
+			expectSuccess: true,
 		},
 		{
 			name: "Filter CIDR with narrow subnet",
@@ -427,13 +419,13 @@ func (s *networkGraphServiceSuite) TestGetExternalNetworkFlowsMetadata() {
 			expected: &v1.GetExternalNetworkFlowsMetadataResponse{
 				Entities: []*v1.ExternalNetworkFlowMetadata{
 					{
-						Entity:     entity2.GetInfo(),
+						Entity:     entities[1].GetInfo(),
 						FlowsCount: 1,
 					},
 				},
 				TotalEntities: 1,
 			},
-			pass: true,
+			expectSuccess: true,
 		},
 		{
 			name: "Get metadata from different namespace",
@@ -444,13 +436,13 @@ func (s *networkGraphServiceSuite) TestGetExternalNetworkFlowsMetadata() {
 			expected: &v1.GetExternalNetworkFlowsMetadataResponse{
 				Entities: []*v1.ExternalNetworkFlowMetadata{
 					{
-						Entity:     entity3.GetInfo(),
+						Entity:     entities[2].GetInfo(),
 						FlowsCount: 1,
 					},
 				},
 				TotalEntities: 1,
 			},
-			pass: true,
+			expectSuccess: true,
 		},
 		{
 			name: "Invalid cluster",
@@ -458,8 +450,8 @@ func (s *networkGraphServiceSuite) TestGetExternalNetworkFlowsMetadata() {
 				ClusterId: "invalid cluster",
 				Query:     fmt.Sprintf("Namespace:%s", testNamespace),
 			},
-			expected: nil,
-			pass:     false,
+			expected:      nil,
+			expectSuccess: false,
 		},
 		{
 			name: "Invalid namespace",
@@ -471,7 +463,7 @@ func (s *networkGraphServiceSuite) TestGetExternalNetworkFlowsMetadata() {
 				Entities:      []*v1.ExternalNetworkFlowMetadata{},
 				TotalEntities: 0,
 			},
-			pass: true,
+			expectSuccess: true,
 		},
 		{
 			name: "Paginate the response",
@@ -486,18 +478,18 @@ func (s *networkGraphServiceSuite) TestGetExternalNetworkFlowsMetadata() {
 			expected: &v1.GetExternalNetworkFlowsMetadataResponse{
 				Entities: []*v1.ExternalNetworkFlowMetadata{
 					{
-						Entity:     entity.GetInfo(),
+						Entity:     entities[0].GetInfo(),
 						FlowsCount: 1,
 					},
 				},
 				TotalEntities: 3,
 			},
-			pass: true,
+			expectSuccess: true,
 		},
 	} {
 		s.Run(tc.name, func() {
 			response, err := s.service.GetExternalNetworkFlowsMetadata(ctx, tc.request)
-			if tc.pass {
+			if tc.expectSuccess {
 				s.NoError(err)
 
 				if tc.request.Pagination != nil {
