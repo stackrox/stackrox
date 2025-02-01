@@ -105,11 +105,11 @@ func ToProtoV4VulnerabilityReport(ctx context.Context, r *claircore.Vulnerabilit
 	if err != nil {
 		return nil, fmt.Errorf("internal error: parsing nvd vulns: %w", err)
 	}
-	cveEPSS, err := cveEPSS(ctx, r.Enrichments)
+	epssItems, err := cveEPSS(ctx, r.Enrichments)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: parsing EPSS items: %w", err)
 	}
-	vulnerabilities, err := toProtoV4VulnerabilitiesMap(ctx, r.Vulnerabilities, nvdVulns, cveEPSS)
+	vulnerabilities, err := toProtoV4VulnerabilitiesMap(ctx, r.Vulnerabilities, nvdVulns, epssItems)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: %w", err)
 	}
@@ -364,7 +364,7 @@ func sortBySeverity(ids []string, vulnerabilities map[string]*v4.VulnerabilityRe
 
 // rhelVulnsEPSS gets highest EPSS score for each Red Hat advisory name
 // TODO(ROX-27729): get the highest EPSS score for an RHSA across all CVEs associated with that RHSA
-func rhelVulnsEPSS(vulns map[string]*claircore.Vulnerability, epssItems map[string]epss.EPSSItem) map[string]epss.EPSSItem {
+func rhelVulnsEPSS(vulns map[string]*claircore.Vulnerability, epssItems map[string]map[string]*epss.EPSSItem) map[string]epss.EPSSItem {
 	if vulns == nil || epssItems == nil {
 		return nil
 	}
@@ -381,17 +381,22 @@ func rhelVulnsEPSS(vulns map[string]*claircore.Vulnerability, epssItems map[stri
 		if !foundRHEL {
 			continue // continue if it's not a RHSA
 		}
-		cveEPSS, ok := epssItems[cve]
+		vulnEPSSItems, ok := epssItems[v.ID]
 		if !ok {
-			continue // no EPSS score
+			continue //no epss items related to current vuln id
 		}
+		epssItem, ok := vulnEPSSItems[cve]
+		if !ok {
+			continue //no epss score
+		}
+
 		// if both CVE and rhsa names exist
 		rhelEPSS, ok := rhsaEPSS[rhelName]
 		if !ok {
-			rhsaEPSS[rhelName] = cveEPSS
+			rhsaEPSS[rhelName] = *epssItem
 		} else {
-			if cveEPSS.EPSS > rhelEPSS.EPSS {
-				rhsaEPSS[rhelName] = cveEPSS
+			if epssItem.EPSS > rhelEPSS.EPSS {
+				rhsaEPSS[rhelName] = *epssItem
 			}
 		}
 	}
@@ -401,7 +406,7 @@ func rhelVulnsEPSS(vulns map[string]*claircore.Vulnerability, epssItems map[stri
 
 func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircore.Vulnerability,
 	nvdVulns map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem,
-	epssItems map[string]epss.EPSSItem) (map[string]*v4.VulnerabilityReport_Vulnerability, error) {
+	epssItems map[string]map[string]*epss.EPSSItem) (map[string]*v4.VulnerabilityReport_Vulnerability, error) {
 	if vulns == nil {
 		return nil, nil
 	}
@@ -455,14 +460,14 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 		}
 
 		var vulnEPSS *epss.EPSSItem
-		if epss, ok := epssItems[cve]; ok {
-			vulnEPSS = &epss
-		}
-		if len(rhelEPSSDetails) > 0 {
-			// overwrite with RHSA EPSS score if it exists
-			if rhelEPSS, ok := rhelEPSSDetails[name]; ok {
-				vulnEPSS = &rhelEPSS
+		if epssVulnItem, ok := epssItems[v.ID]; ok {
+			if v, ok := epssVulnItem[cve]; ok {
+				vulnEPSS = v
 			}
+		}
+		// overwrite with RHSA EPSS score if it exists
+		if rhelEPSS, ok := rhelEPSSDetails[name]; ok {
+			vulnEPSS = &rhelEPSS
 		}
 		description := v.Description
 		if description == "" {
@@ -763,7 +768,10 @@ func pkgFixedBy(enrichments map[string][]json.RawMessage) (map[string]string, er
 }
 
 // cveEPSS unmarshals and returns the EPSS enrichment, if it exists.
-func cveEPSS(ctx context.Context, enrichments map[string][]json.RawMessage) (map[string]epss.EPSSItem, error) {
+func cveEPSS(ctx context.Context, enrichments map[string][]json.RawMessage) (map[string]map[string]*epss.EPSSItem, error) {
+	if !features.EPSSScore.Enabled() {
+		return nil, nil
+	}
 	enrichmentList := enrichments[epss.Type]
 	if len(enrichmentList) == 0 {
 		zlog.Warn(ctx).
@@ -773,6 +781,7 @@ func cveEPSS(ctx context.Context, enrichments map[string][]json.RawMessage) (map
 	}
 
 	var epssItems map[string][]epss.EPSSItem
+	// The EPSS enrichment always contains only one element.
 	err := json.Unmarshal(enrichmentList[0], &epssItems)
 	if err != nil {
 		return nil, fmt.Errorf("unmarshaling EPSS enrichment: %w", err)
@@ -782,25 +791,23 @@ func cveEPSS(ctx context.Context, enrichments map[string][]json.RawMessage) (map
 		return nil, nil
 	}
 
-	res := make(map[string]epss.EPSSItem)
-	for id, details := range epssItems {
-		if len(details) == 0 {
-			continue
+	ret := make(map[string]map[string]*epss.EPSSItem)
+	for ccVulnID, list := range epssItems {
+		if len(list) > 0 {
+			m := make(map[string]*epss.EPSSItem)
+			for idx := range list {
+				epssData := list[idx]
+				m[epssData.CVE] = &epss.EPSSItem{
+					CVE:          epssData.CVE,
+					Percentile:   epssData.Percentile,
+					EPSS:         epssData.EPSS,
+					ModelVersion: epssData.ModelVersion,
+				}
+			}
+			ret[ccVulnID] = m
 		}
-
-		// Expecting the EPSS enricher uses only the first element for the EPSS detail.
-		detail := details[0]
-		if detail.CVE == "" {
-			zlog.Warn(ctx).
-				Str("package", id).
-				Msg("no CVE linked to an EPSS score")
-			continue
-		}
-
-		res[detail.CVE] = detail
 	}
-
-	return res, nil
+	return ret, nil
 }
 
 // cvssMetrics processes the CVSS metrics and severity for a given vulnerability.

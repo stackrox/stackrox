@@ -908,7 +908,7 @@ func Test_toProtoV4VulnerabilitiesMapWithEPSS(t *testing.T) {
 	tests := map[string]struct {
 		ccVulnerabilities map[string]*claircore.Vulnerability
 		nvdVulns          map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem
-		epssItems         map[string]epss.EPSSItem
+		epssItems         map[string]map[string]*epss.EPSSItem
 		enableRedHatCVEs  bool
 		want              map[string]*v4.VulnerabilityReport_Vulnerability
 	}{
@@ -941,13 +941,15 @@ func Test_toProtoV4VulnerabilitiesMapWithEPSS(t *testing.T) {
 					},
 				},
 			},
-			epssItems: map[string]epss.EPSSItem{
-				"CVE-1234-567": {
-					ModelVersion: "v2023.03.01",
-					CVE:          "CVE-1234-567",
-					Date:         "2025-01-15T00:00:00+0000",
-					EPSS:         0.00215,
-					Percentile:   0.59338,
+			epssItems: map[string]map[string]*epss.EPSSItem{
+				"foo": {
+					"CVE-1234-567": &epss.EPSSItem{
+						ModelVersion: "v2023.03.01",
+						CVE:          "CVE-1234-567",
+						Date:         "2025-01-15T00:00:00+0000",
+						EPSS:         0.00215,
+						Percentile:   0.59338,
+					},
 				},
 			},
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
@@ -1000,21 +1002,37 @@ func Test_toProtoV4VulnerabilitiesMapWithEPSS(t *testing.T) {
 				},
 			},
 			nvdVulns: nil,
-			epssItems: map[string]epss.EPSSItem{
-				"CVE-1234-567": {
-					ModelVersion: "v2023.03.01",
-					CVE:          "CVE-1234-567",
-					Date:         "2025-01-15T00:00:00+0000",
-					EPSS:         0.00215,
-					Percentile:   0.59338,
-				},
-				"CVE-7654-321": {
-					ModelVersion: "v2023.03.01",
-					CVE:          "CVE-7654-321",
-					Date:         "2025-01-15T00:00:00+0000",
-					EPSS:         0.04215,
-					Percentile:   0.69338,
-				},
+			epssItems: map[string]map[string]*epss.EPSSItem{
+				"foo": {
+					"CVE-1234-567": {
+						ModelVersion: "v2023.03.01",
+						CVE:          "CVE-1234-567",
+						Date:         "2025-01-15T00:00:00+0000",
+						EPSS:         0.00215,
+						Percentile:   0.59338,
+					},
+					"CVE-7654-321": {
+						ModelVersion: "v2023.03.01",
+						CVE:          "CVE-7654-321",
+						Date:         "2025-01-15T00:00:00+0000",
+						EPSS:         0.04215,
+						Percentile:   0.69338,
+					}},
+				"bar": {
+					"CVE-1234-567": {
+						ModelVersion: "v2023.03.01",
+						CVE:          "CVE-1234-567",
+						Date:         "2025-01-15T00:00:00+0000",
+						EPSS:         0.00215,
+						Percentile:   0.59338,
+					},
+					"CVE-7654-321": {
+						ModelVersion: "v2023.03.01",
+						CVE:          "CVE-7654-321",
+						Date:         "2025-01-15T00:00:00+0000",
+						EPSS:         0.04215,
+						Percentile:   0.69338,
+					}},
 			},
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
 				"foo": {
@@ -1047,7 +1065,7 @@ func Test_toProtoV4VulnerabilitiesMapWithEPSS(t *testing.T) {
 				},
 			},
 		},
-		"EPSS Missing": {
+		"EPSS Missing": { // it could be the feature is turned off or EPSS data is missing for some reason
 			ccVulnerabilities: map[string]*claircore.Vulnerability{
 				"bar": {
 					ID:      "bar",
@@ -1073,9 +1091,7 @@ func Test_toProtoV4VulnerabilitiesMapWithEPSS(t *testing.T) {
 					},
 				},
 			},
-			epssItems: map[string]epss.EPSSItem{
-				// No EPSS entry for CVE-5678-1234
-			},
+			epssItems: nil,
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
 				"bar": {
 					Id:     "bar",
@@ -1108,7 +1124,8 @@ func Test_toProtoV4VulnerabilitiesMapWithEPSS(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			enableRedHatCVEs := "false"
 			t.Setenv(features.ScannerV4RedHatCVEs.EnvVar(), enableRedHatCVEs)
-
+			enableEPSS := "true"
+			t.Setenv(features.EPSSScore.EnvVar(), enableEPSS)
 			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities, tt.nvdVulns, tt.epssItems)
 			assert.NoError(t, err)
 			protoassert.MapEqual(t, tt.want, got)

@@ -30,6 +30,7 @@ import (
 	"github.com/quay/claircore/ubuntu"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/scanner/config"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stackrox/rox/scanner/enricher/fixedby"
@@ -135,11 +136,16 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		Store:        store,
 		Locker:       locker,
 		MatcherNames: matcherNames,
-		Enrichers: []driver.Enricher{
-			&nvd.Enricher{},
-			&fixedby.Enricher{},
-			&epss.Enricher{},
-		},
+		Enrichers: func() []driver.Enricher {
+			enrichers := []driver.Enricher{
+				&nvd.Enricher{},
+				&fixedby.Enricher{},
+			}
+			if features.EPSSScore.Enabled() {
+				enrichers = append(enrichers, &epss.Enricher{})
+			}
+			return enrichers
+		}(),
 		UpdateRetention:          libvuln.DefaultUpdateRetention,
 		DisableBackgroundUpdates: true,
 		Client:                   ccClient,
