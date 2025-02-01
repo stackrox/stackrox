@@ -4,6 +4,7 @@ package pruning
 
 import (
 	"context"
+	"errors"
 	"slices"
 	"testing"
 	"time"
@@ -555,7 +556,7 @@ func (s *PruningTestSuite) TestImagePruning() {
 			nodes := s.generateNodeDataStructures()
 
 			gc := newGarbageCollector(alerts, nodes, images, nil, deployments, pods,
-				nil, nil, nil, config, nil, nil, nil,
+				nil, nil, nil, nil, config, nil, nil, nil,
 				nil, nil, nil, nil, nil, nil,
 				nil, nil).(*garbageCollectorImpl)
 
@@ -819,7 +820,7 @@ func (s *PruningTestSuite) TestClusterPruning() {
 			gc := newGarbageCollector(nil, nil, nil, clusterDS, deploymentsDS, nil,
 				nil, nil, nil, nil, nil, nil,
 				nil, nil, nil, nil, nil, nil,
-				nil, nil, nil).(*garbageCollectorImpl)
+				nil, nil, nil, nil).(*garbageCollectorImpl)
 			gc.collectClusters(c.config)
 
 			// Now get all clusters and compare the names to ensure only the expected ones exist
@@ -946,7 +947,7 @@ func (s *PruningTestSuite) TestClusterPruningCentralCheck() {
 			gc := newGarbageCollector(nil, nil, nil, clusterDS, deploymentsDS, nil,
 				nil, nil, nil, nil, nil, nil,
 				nil, nil, nil, nil, nil, nil,
-				nil, nil, nil).(*garbageCollectorImpl)
+				nil, nil, nil, nil).(*garbageCollectorImpl)
 			gc.collectClusters(getCluserRetentionConfig(60, 90, 72))
 
 			// Now get all clusters and compare the names to ensure only the expected ones exist
@@ -1122,7 +1123,7 @@ func (s *PruningTestSuite) TestAlertPruning() {
 			nodes := s.generateNodeDataStructures()
 
 			gc := newGarbageCollector(alerts, nodes, images, nil, deployments, nil,
-				nil, nil, nil, config, nil, nil,
+				nil, nil, nil, nil, config, nil, nil,
 				nil, nil, nil, nil, nil, nil,
 				nil, nil, nil).(*garbageCollectorImpl)
 
@@ -1749,6 +1750,25 @@ func (s *PruningTestSuite) TestRemoveOrphanedNetworkFlows() {
 			gci.removeOrphanedNetworkFlows(set.NewFrozenStringSet(fixtureconsts.Cluster1))
 		})
 	}
+}
+
+func (s *PruningTestSuite) TestRemoveOrphanedNetworkEntities() {
+	ctrl := gomock.NewController(s.T())
+	networkEntities := netEntityMocks.NewMockEntityDataStore(ctrl)
+
+	gci := &garbageCollectorImpl{
+		networkentities: networkEntities,
+	}
+
+	networkEntities.EXPECT().RemoveOrphanedEntities(pruningCtx).Return(int64(42), nil)
+
+	gci.removeOrphanedNetworkEntities()
+
+	networkEntities.EXPECT().RemoveOrphanedEntities(pruningCtx).Return(int64(0), errors.New("fake DB error"))
+
+	gci.removeOrphanedNetworkEntities()
+
+	ctrl.Finish()
 }
 
 func (s *PruningTestSuite) TestRemoveOrphanedImageRisks() {
