@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 set -eou pipefail
 
-if [[ -n "${API_ENDPOINT:-}" ]]; then
+if [[ -z "${API_ENDPOINT:-}" ]]; then
   echo "API_ENDPOINT must be set"
   exit 1
 fi
 
-if [[ -n "${ROX_PASSWORD:-}" ]]; then
+if [[ -z "${ROX_PASSWORD:-}" ]]; then
   echo "ROX_PASSWORD must be set"
   exit 1
 fi
