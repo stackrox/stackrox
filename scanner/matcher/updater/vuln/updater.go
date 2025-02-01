@@ -601,7 +601,7 @@ func (u *Updater) fetch(ctx context.Context, prevTimestamp time.Time) (*os.File,
 			return nil, time.Time{}, err
 		}
 		req.Header.Set(ifModifiedSinceHeader, prevTimestamp.Format(http.TimeFormat))
-		zlog.Info(ctx).
+		zlog.Warn(ctx).
 			Str("ifModifiedSinceHeader", prevTimestamp.Format(http.TimeFormat)).
 			Msg("set header with prevTimestamp")
 		// Request multi-bundle if multi-bundle is enabled.
@@ -609,11 +609,11 @@ func (u *Updater) fetch(ctx context.Context, prevTimestamp time.Time) (*os.File,
 			req.Header.Set("X-Scanner-V4-Accept", "application/vnd.stackrox.scanner-v4.multi-bundle+zip")
 		}
 		resp, err = u.client.Do(req)
-		zlog.Error(ctx).
+		zlog.Warn(ctx).
 			Str("response status", http.StatusText(resp.StatusCode)).
 			Msg("response status")
 		modTime := resp.Header.Get(lastModifiedHeader)
-		zlog.Error(ctx).
+		zlog.Warn(ctx).
 			Str("response Last-Modified", modTime).
 			Msg("response header")
 		// If we haven't exhausted our connection refused attempts and the vuln URL is unavailable, retry.
