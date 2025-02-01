@@ -604,6 +604,14 @@ func (u *Updater) fetch(ctx context.Context, prevTimestamp time.Time) (*os.File,
 		zlog.Warn(ctx).
 			Str("ifModifiedSinceHeader", prevTimestamp.Format(http.TimeFormat)).
 			Msg("set header with prevTimestamp")
+		if !prevTimestamp.Before(time.Now()) {
+			zlog.Warn(ctx).
+				Str("url", u.url).
+				Time("prevTimestamp", prevTimestamp).
+				Time("now", time.Now()).
+				Msg("last update time is in the future: re-download expected")
+		}
+
 		// Request multi-bundle if multi-bundle is enabled.
 		if features.ScannerV4MultiBundle.Enabled() {
 			req.Header.Set("X-Scanner-V4-Accept", "application/vnd.stackrox.scanner-v4.multi-bundle+zip")
@@ -611,6 +619,7 @@ func (u *Updater) fetch(ctx context.Context, prevTimestamp time.Time) (*os.File,
 		resp, err = u.client.Do(req)
 		zlog.Warn(ctx).
 			Str("response status", http.StatusText(resp.StatusCode)).
+			Int("httpcode", resp.StatusCode).
 			Msg("response status")
 		modTime := resp.Header.Get(lastModifiedHeader)
 		zlog.Warn(ctx).
