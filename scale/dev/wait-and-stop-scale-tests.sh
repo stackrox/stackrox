@@ -11,6 +11,8 @@ if [[ -z "${ROX_PASSWORD:-}" ]]; then
   exit 1
 fi
 
+max_deployments=${1:-}
+
 kill_sensors() {
   echo "Killing sensors"
   mapfile -t sensor_namespaces < <(kubectl get ns -o custom-columns=:metadata.name | grep -E 'stackrox[0-9]+')
@@ -27,8 +29,6 @@ set_api_token() {
   
   ROX_API_TOKEN="$(echo "$target_url" | sed 's|.*token=||' | sed 's|&type.*||')"
 }
-
-max_deployments=800
 
 set_api_token
 

@@ -132,7 +132,6 @@ jobs:
           echo "API_ENDPOINT=${LB_IP}:443" >> "$GITHUB_ENV"
           echo "::add-mask::${LB_IP}"
 
-      # TODO: Find better way to wait for finished workload generation.
       - name: Generate workload
         env:
           LOAD_BALANCER: lb
@@ -144,9 +143,8 @@ jobs:
           source ./workflow/env.sh
           ./scale/dev/run-many.sh "${SCALE_WORKLOAD_TYPE}" "${SCALE_WORKLOAD_CLUSTERS}"
 
-          ./scale/dev/wait-and-stop-scale-tests.sh
-          # Wait for workload generation
-          sleep 120
+          max_deployments=800
+          ./scale/dev/wait-and-stop-scale-tests.sh "${max_deployments}"
 
       - name: Create result directory
         run: |
