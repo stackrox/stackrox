@@ -50,7 +50,7 @@ class ExternalIpFlowsTest extends BaseSpecification {
     }
 
     def setupSpec() {
-        CollectorUtil.enableExternalIps(orchestrator)
+        CollectorUtil.enableExternalIpsAndWait(orchestrator)
         createDeployments()
     }
 
