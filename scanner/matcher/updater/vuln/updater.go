@@ -603,6 +603,7 @@ func (u *Updater) fetch(ctx context.Context, prevTimestamp time.Time) (*os.File,
 		req.Header.Set(ifModifiedSinceHeader, prevTimestamp.Format(http.TimeFormat))
 		zlog.Warn(ctx).
 			Str("ifModifiedSinceHeader", prevTimestamp.Format(http.TimeFormat)).
+			Time("now", time.Now()).
 			Msg("set header with prevTimestamp")
 		if !prevTimestamp.Before(time.Now()) {
 			zlog.Warn(ctx).
@@ -610,6 +611,12 @@ func (u *Updater) fetch(ctx context.Context, prevTimestamp time.Time) (*os.File,
 				Time("prevTimestamp", prevTimestamp).
 				Time("now", time.Now()).
 				Msg("last update time is in the future: re-download expected")
+		} else {
+			zlog.Info(ctx).
+				Str("url", u.url).
+				Time("prevTimestamp", prevTimestamp).
+				Time("now", time.Now()).
+				Msg("last update time is NOT in the future: 304 expected")
 		}
 
 		// Request multi-bundle if multi-bundle is enabled.
@@ -620,6 +627,9 @@ func (u *Updater) fetch(ctx context.Context, prevTimestamp time.Time) (*os.File,
 		zlog.Warn(ctx).
 			Str("response status", http.StatusText(resp.StatusCode)).
 			Int("httpcode", resp.StatusCode).
+			Time("prevTimestamp", prevTimestamp).
+			Str("response Last-Modified", modTime).
+			Time("now", time.Now()).
 			Msg("response status")
 		modTime := resp.Header.Get(lastModifiedHeader)
 		zlog.Warn(ctx).
