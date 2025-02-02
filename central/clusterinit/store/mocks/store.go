@@ -156,20 +156,6 @@ func (mr *MockStoreMockRecorder) Revoke(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Revoke", reflect.TypeOf((*MockStore)(nil).Revoke), ctx, id)
 }
 
-// RevokeIfMaxRegistrationsReached mocks base method.
-func (m *MockStore) RevokeIfMaxRegistrationsReached(ctx context.Context, id string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RevokeIfMaxRegistrationsReached", ctx, id)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// RevokeIfMaxRegistrationsReached indicates an expected call of RevokeIfMaxRegistrationsReached.
-func (mr *MockStoreMockRecorder) RevokeIfMaxRegistrationsReached(ctx, id any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RevokeIfMaxRegistrationsReached", reflect.TypeOf((*MockStore)(nil).RevokeIfMaxRegistrationsReached), ctx, id)
-}
-
 // MockUnderlyingStore is a mock of UnderlyingStore interface.
 type MockUnderlyingStore struct {
 	ctrl     *gomock.Controller

@@ -188,20 +188,6 @@ func (mr *MockBackendMockRecorder) Revoke(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Revoke", reflect.TypeOf((*MockBackend)(nil).Revoke), ctx, id)
 }
 
-// RevokeIfMaxRegistrationsReached mocks base method.
-func (m *MockBackend) RevokeIfMaxRegistrationsReached(ctx context.Context, id string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RevokeIfMaxRegistrationsReached", ctx, id)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// RevokeIfMaxRegistrationsReached indicates an expected call of RevokeIfMaxRegistrationsReached.
-func (mr *MockBackendMockRecorder) RevokeIfMaxRegistrationsReached(ctx, id any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RevokeIfMaxRegistrationsReached", reflect.TypeOf((*MockBackend)(nil).RevokeIfMaxRegistrationsReached), ctx, id)
-}
-
 // ValidateClientCertificate mocks base method.
 func (m *MockBackend) ValidateClientCertificate(arg0 context.Context, arg1 []mtls.CertInfo) error {
 	m.ctrl.T.Helper()
