@@ -132,18 +132,46 @@ func (mr *MockBackendMockRecorder) IssueCRS(ctx, name, maxRegistrations any) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IssueCRS", reflect.TypeOf((*MockBackend)(nil).IssueCRS), ctx, name, maxRegistrations)
 }
 
-// RecordRegistration mocks base method.
-func (m *MockBackend) RecordRegistration(ctx context.Context, id string) error {
+// RecordCompletedRegistration mocks base method.
+func (m *MockBackend) RecordCompletedRegistration(ctx context.Context, id string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RecordRegistration", ctx, id)
+	ret := m.ctrl.Call(m, "RecordCompletedRegistration", ctx, id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// RecordRegistration indicates an expected call of RecordRegistration.
-func (mr *MockBackendMockRecorder) RecordRegistration(ctx, id any) *gomock.Call {
+// RecordCompletedRegistration indicates an expected call of RecordCompletedRegistration.
+func (mr *MockBackendMockRecorder) RecordCompletedRegistration(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordRegistration", reflect.TypeOf((*MockBackend)(nil).RecordRegistration), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordCompletedRegistration", reflect.TypeOf((*MockBackend)(nil).RecordCompletedRegistration), ctx, id)
+}
+
+// RecordInitiatedRegistration mocks base method.
+func (m *MockBackend) RecordInitiatedRegistration(ctx context.Context, id string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RecordInitiatedRegistration", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RecordInitiatedRegistration indicates an expected call of RecordInitiatedRegistration.
+func (mr *MockBackendMockRecorder) RecordInitiatedRegistration(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordInitiatedRegistration", reflect.TypeOf((*MockBackend)(nil).RecordInitiatedRegistration), ctx, id)
+}
+
+// RegistrationPossible mocks base method.
+func (m *MockBackend) RegistrationPossible(ctx context.Context, id string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RegistrationPossible", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RegistrationPossible indicates an expected call of RegistrationPossible.
+func (mr *MockBackendMockRecorder) RegistrationPossible(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegistrationPossible", reflect.TypeOf((*MockBackend)(nil).RegistrationPossible), ctx, id)
 }
 
 // Revoke mocks base method.

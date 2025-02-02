@@ -100,18 +100,32 @@ func (mr *MockStoreMockRecorder) GetAllCRS(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllCRS", reflect.TypeOf((*MockStore)(nil).GetAllCRS), ctx)
 }
 
-// RecordRegistration mocks base method.
-func (m *MockStore) RecordRegistration(ctx context.Context, id string) error {
+// RecordCompletedRegistration mocks base method.
+func (m *MockStore) RecordCompletedRegistration(ctx context.Context, id string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RecordRegistration", ctx, id)
+	ret := m.ctrl.Call(m, "RecordCompletedRegistration", ctx, id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// RecordRegistration indicates an expected call of RecordRegistration.
-func (mr *MockStoreMockRecorder) RecordRegistration(ctx, id any) *gomock.Call {
+// RecordCompletedRegistration indicates an expected call of RecordCompletedRegistration.
+func (mr *MockStoreMockRecorder) RecordCompletedRegistration(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordRegistration", reflect.TypeOf((*MockStore)(nil).RecordRegistration), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordCompletedRegistration", reflect.TypeOf((*MockStore)(nil).RecordCompletedRegistration), ctx, id)
+}
+
+// RecordInitiatedRegistration mocks base method.
+func (m *MockStore) RecordInitiatedRegistration(ctx context.Context, id string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RecordInitiatedRegistration", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RecordInitiatedRegistration indicates an expected call of RecordInitiatedRegistration.
+func (mr *MockStoreMockRecorder) RecordInitiatedRegistration(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordInitiatedRegistration", reflect.TypeOf((*MockStore)(nil).RecordInitiatedRegistration), ctx, id)
 }
 
 // RegistrationPossible mocks base method.
