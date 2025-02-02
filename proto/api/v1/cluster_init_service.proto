@@ -31,7 +31,7 @@ message CRSMeta {
   storage.User created_by = 4;
   google.protobuf.Timestamp expires_at = 5;
   uint32 max_registrations = 7;
-  uint32 registrations_done = 8;
+  uint32 registrations_completed = 8;
 }
 
 message InitBundleGenResponse {

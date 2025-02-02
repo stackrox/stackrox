@@ -21,5 +21,6 @@ message InitBundleMeta {
   google.protobuf.Timestamp expires_at = 6;
   InitBundleVersion version = 7;
   uint32 max_registrations = 8;
-  uint32 registrations_done = 9;
+  uint32 registrations_initiated = 9;
+  uint32 registrations_completed = 10;
 }
