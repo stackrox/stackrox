@@ -175,15 +175,16 @@ func (b *CRSWithMeta) RenderAsK8sSecret() ([]byte, error) {
 
 	var buf bytes.Buffer
 	_, _ = fmt.Fprint(&buf, crsHeader)
+	var what string
 	switch b.Meta.GetMaxRegistrations() {
 	case 0:
-		_, _ = fmt.Fprint(&buf, "# This Cluster Registration Secret can be used for registering any number of clusters.")
+		what = "any number of clusters."
 	case 1:
-		_, _ = fmt.Fprint(&buf, "# This Cluster Registration Secret can be used for registering only one cluster.")
+		what = "only one cluster."
 	default:
-		_, _ = fmt.Fprintf(&buf, "# This Cluster Registration Secret can be used for registering at most %v clusters.", b.Meta.GetMaxRegistrations())
+		what = fmt.Sprintf("at most %v clusters.", b.Meta.GetMaxRegistrations())
 	}
-	_, _ = fmt.Fprintln(&buf)
+	_, _ = fmt.Fprintf(&buf, "# This Cluster Registration Secret can be used for registering %s.\n", what)
 
 	crs, err := crs.SerializeSecret(b.CRS)
 	if err != nil {
