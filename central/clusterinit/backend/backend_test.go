@@ -4,22 +4,20 @@ package backend
 
 import (
 	"context"
-	"crypto/tls"
-	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"os"
-	"path"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/cloudflare/cfssl/helpers"
 	"github.com/stackrox/rox/central/clusterinit/backend/access"
-	"github.com/stackrox/rox/central/clusterinit/backend/certificate/mocks"
+	"github.com/stackrox/rox/central/clusterinit/backend/certificate"
 	"github.com/stackrox/rox/central/clusterinit/store"
 	pgStore "github.com/stackrox/rox/central/clusterinit/store/postgres"
-	"github.com/stackrox/rox/central/clusters"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/crs"
@@ -33,82 +31,17 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
-	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"sigs.k8s.io/yaml"
 )
 
 const (
-	testData = "testdata"
+	testData = "./testdata"
 )
-
-func readCertAndKey(serviceName string) (*mtls.IssuedCert, error) {
-	certFile := path.Join(testData, fmt.Sprintf("%s-cert.pem", serviceName))
-	keyFile := path.Join(testData, fmt.Sprintf("%s-key.pem", serviceName))
-
-	certPEM, err := os.ReadFile(certFile)
-	if err != nil {
-		return nil, err
-	}
-
-	keyPEM, err := os.ReadFile(keyFile)
-	if err != nil {
-		return nil, err
-	}
-
-	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
-	if err != nil {
-		return nil, err
-	}
-
-	x509Cert, err := x509.ParseCertificate(cert.Certificate[0])
-	if err != nil {
-		return nil, err
-	}
-
-	return &mtls.IssuedCert{
-		CertPEM:  certPEM,
-		KeyPEM:   keyPEM,
-		X509Cert: x509Cert,
-		ID:       nil, // For testing we get away without filling this in.
-	}, nil
-}
-
-func (s *clusterInitBackendTestSuite) initMockData() error {
-	caCertPEM, err := os.ReadFile("testdata/ca-cert.pem")
-	if err != nil {
-		return err
-	}
-
-	sensorIssuedCert, err := readCertAndKey("sensor")
-	if err != nil {
-		return err
-	}
-	collectorIssuedCert, err := readCertAndKey("collector")
-	if err != nil {
-		return err
-	}
-	admissionControlIssuedCert, err := readCertAndKey("admission-control")
-	if err != nil {
-		return err
-	}
-	crsIssuedCert, err := readCertAndKey("crs")
-	if err != nil {
-		return err
-	}
-
-	s.certBundle = map[storage.ServiceType]*mtls.IssuedCert{
-		storage.ServiceType_SENSOR_SERVICE:            sensorIssuedCert,
-		storage.ServiceType_COLLECTOR_SERVICE:         collectorIssuedCert,
-		storage.ServiceType_ADMISSION_CONTROL_SERVICE: admissionControlIssuedCert,
-	}
-	s.caCert = string(caCertPEM)
-	s.crsCert = crsIssuedCert
-
-	return nil
-}
 
 func TestClusterInitBackend(t *testing.T) {
 	t.Parallel()
@@ -120,39 +53,43 @@ type clusterInitBackendTestSuite struct {
 	backend      Backend
 	ctx          context.Context
 	db           postgres.DB
-	certProvider *mocks.MockProvider
+	certProvider certificate.Provider
 	mockCtrl     *gomock.Controller
-	certBundle   clusters.CertBundle
-	caCert       string
-	crsCert      *mtls.IssuedCert
 }
 
 func (s *clusterInitBackendTestSuite) SetupTest() {
-	err := s.initMockData()
-	s.Require().NoError(err, "retrieving test data for mocking")
 	s.mockCtrl = gomock.NewController(s.T())
-	m := mocks.NewMockProvider(s.mockCtrl)
+	certProvider := certificate.NewProvider()
 
 	s.db = pgtest.ForT(s.T())
 
 	pgStore := pgStore.New(s.db)
-	s.Require().NoError(err)
-	s.backend = newBackend(store.NewStore(pgStore), m)
+	s.backend = newBackend(store.NewStore(pgStore), certProvider)
 	s.ctx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
-	s.certProvider = m
+	s.certProvider = certProvider
 
-	// Configure CertificateProvider mock.
-	s.certProvider.EXPECT().GetCA().Return(s.caCert, nil).AnyTimes()
+	utils.Must(os.Setenv(mtls.CAFileEnvName, testData+"/ca-cert.pem"))
+
+	caKeyFile, err := os.CreateTemp("", "test-ca-key.pem")
+	utils.Must(err)
+	content, err := os.ReadFile(testData + "/ca-key.pem")
+	utils.Must(err)
+	contentStr := string(content)
+	contentStr = strings.ReplaceAll(contentStr, "TEST PRIVATE KEY", "PRIVATE KEY")
+	err = os.WriteFile(caKeyFile.Name(), []byte(contentStr), 0600)
+	utils.Must(err)
+	utils.Must(os.Setenv(mtls.CAKeyFileEnvName, caKeyFile.Name()))
 }
 
 func (s *clusterInitBackendTestSuite) TestInitBundleLifecycle() {
 	ctx := s.ctx
 
-	s.certProvider.EXPECT().GetBundle().Return(s.certBundle, uuid.NewV4(), nil).AnyTimes()
-
 	// Issue new init bundle.
 	initBundle, err := s.backend.Issue(ctx, "test1")
 	s.Require().NoError(err)
+	s.Require().NotNil(initBundle.CertBundle[storage.ServiceType_SENSOR_SERVICE])
+	s.Require().NotNil(initBundle.CertBundle[storage.ServiceType_ADMISSION_CONTROL_SERVICE])
+	s.Require().NotNil(initBundle.CertBundle[storage.ServiceType_COLLECTOR_SERVICE])
 	id := initBundle.Meta.Id
 
 	err = s.backend.CheckRevoked(ctx, id)
@@ -161,11 +98,9 @@ func (s *clusterInitBackendTestSuite) TestInitBundleLifecycle() {
 	caCert, err := s.certProvider.GetCA()
 	s.Require().NoError(err)
 
-	certBundle, _, err := s.certProvider.GetBundle()
-	s.Require().NoError(err)
+	certBundle := initBundle.CertBundle
 
 	s.Require().Equal(initBundle.CACert, caCert)
-	s.Require().Equal(initBundle.CertBundle, certBundle)
 
 	// Verify YAML-rendered init bundle looks as expected.
 	expected := map[string]interface{}{
@@ -287,37 +222,69 @@ func (s *clusterInitBackendTestSuite) TestInitBundleLifecycle() {
 		}
 	}
 	s.Require().Nilf(initBundleMeta, "revoked init bundle %q contained in listing", id)
-
 }
 
 func (s *clusterInitBackendTestSuite) TestCRSNameMustBeUnique() {
 	ctx := s.ctx
 	crsName := "test1"
 
-	s.certProvider.EXPECT().GetCRSCert().DoAndReturn(
-		func() (*mtls.IssuedCert, uuid.UUID, error) {
-			return s.crsCert, uuid.NewV4(), nil
-		},
-	).AnyTimes()
-
 	// Issue new CRS.
-	_, err := s.backend.IssueCRS(ctx, crsName)
+	_, err := s.backend.IssueCRS(ctx, crsName, time.Time{}, time.Duration(0))
 	s.Require().NoError(err)
 
 	// Attempt to issue again with same name.
-	_, err = s.backend.IssueCRS(ctx, crsName)
+	_, err = s.backend.IssueCRS(ctx, crsName, time.Time{}, time.Duration(0))
 	s.Require().Error(err)
 	s.Require().ErrorIs(err, store.ErrInitBundleDuplicateName)
+}
+
+func (s *clusterInitBackendTestSuite) TestCRSExpirationValidUntil() {
+	ctx := s.ctx
+	crsName := "crs-expiration-valid-until"
+
+	validUntil, err := time.Parse(time.RFC3339, "2106-01-02T15:04:05Z")
+	s.Require().NoError(err)
+
+	crsWithMeta, err := s.backend.IssueCRS(ctx, crsName, validUntil, time.Duration(0))
+	s.Require().NoError(err)
+
+	certPEM := []byte(crsWithMeta.CRS.Cert)
+	certs, _, err := helpers.ParseOneCertificateFromPEM(certPEM)
+	utils.Must(err)
+	s.Require().Len(certs, 1)
+	cert := certs[0]
+	s.Require().Equal(validUntil, cert.NotAfter)
+}
+
+func (s *clusterInitBackendTestSuite) TestCRSExpirationValidFor() {
+	ctx := s.ctx
+	crsName := "crs-expiration-valid-until"
+
+	validFor, err := time.ParseDuration("2h15m10s")
+	s.Require().NoError(err)
+
+	expectedNotAfter := time.Now().Add(validFor)
+	crsWithMeta, err := s.backend.IssueCRS(ctx, crsName, time.Time{}, validFor)
+	s.Require().NoError(err)
+
+	certPEM := []byte(crsWithMeta.CRS.Cert)
+	certs, _, err := helpers.ParseOneCertificateFromPEM(certPEM)
+	utils.Must(err)
+	s.Require().Len(certs, 1)
+	cert := certs[0]
+
+	epsilon, err := time.ParseDuration("10s")
+	utils.Must(err)
+
+	s.Require().Less(cert.NotAfter.Sub(expectedNotAfter).Abs(), epsilon)
 }
 
 func (s *clusterInitBackendTestSuite) TestCRSLifecycle() {
 	ctx := s.ctx
 	crsName := "test1"
 
-	s.certProvider.EXPECT().GetCRSCert().Return(s.crsCert, uuid.NewV4(), nil).AnyTimes()
-
 	// Issue new CRS.
-	crsWithMeta, err := s.backend.IssueCRS(ctx, crsName)
+	crsWithMeta, err := s.backend.IssueCRS(ctx, crsName, time.Time{}, time.Duration(0))
 	s.Require().NoError(err)
 	id := crsWithMeta.Meta.Id
 
@@ -328,13 +295,8 @@ func (s *clusterInitBackendTestSuite) TestCRSLifecycle() {
 	caCert, err := s.certProvider.GetCA()
 	s.Require().NoError(err)
 
-	cert, _, err := s.certProvider.GetCRSCert()
-	s.Require().NoError(err)
-
 	s.Require().Len(crsWithMeta.CRS.CAs, 1, "CRS does not contain exactly 1 CA")
 	s.Require().Equal(crsWithMeta.CRS.CAs[0], caCert)
-	s.Require().Equal(crsWithMeta.CRS.Cert, string(cert.CertPEM))
-	s.Require().Equal(crsWithMeta.CRS.Cert, string(cert.CertPEM))
 
 	// Verify properties about the generated Kubernetes secret
 	yamlBytes, err := crsWithMeta.RenderAsK8sSecret()
@@ -362,8 +324,8 @@ func (s *clusterInitBackendTestSuite) TestCRSLifecycle() {
 	s.Require().Len(deserializedCrs.CAs, 1, "deserialized CRS does not contain exactly 1 CA")
 	s.Equal(caCert, deserializedCrs.CAs[0])
 
-	s.Equal(string(cert.CertPEM), string(deserializedCrs.Cert))
-	s.Equal(string(cert.KeyPEM), string(deserializedCrs.Key))
+	s.Equal(crsWithMeta.CRS.Cert, deserializedCrs.Cert)
+	s.Equal(crsWithMeta.CRS.Key, deserializedCrs.Key)
 
 	// Verify the newly generated CRS is not listed as an init bundle.
 	initBundles, err := s.backend.GetAll(ctx)
@@ -405,11 +367,9 @@ func (s *clusterInitBackendTestSuite) TestCRSLifecycle() {
 func (s *clusterInitBackendTestSuite) TestIssuingWithDuplicateName() {
 	ctx := s.ctx
 
-	s.certProvider.EXPECT().GetBundle().Return(s.certBundle, uuid.NewV4(), nil)
 	_, err := s.backend.Issue(ctx, "test2")
 	s.Require().NoError(err)
 
-	s.certProvider.EXPECT().GetBundle().Return(s.certBundle, uuid.NewV4(), nil)
 	_, err = s.backend.Issue(ctx, "test2")
 	s.Require().Error(err, "issuing two init bundles with the same name")
 }
@@ -452,8 +412,6 @@ func (s *clusterInitBackendTestSuite) TestValidateClientCertificate() {
 	// To access the revoke check a token should be passed without any access rights.
 	ctxWithoutSAC := context.Background()
 
-	s.certProvider.EXPECT().GetBundle().Return(s.certBundle, uuid.NewV4(), nil)
-
 	meta, err := s.backend.Issue(s.ctx, "revoke-check")
 	s.Require().NoError(err)
 
@@ -491,19 +449,16 @@ func (s *clusterInitBackendTestSuite) TestIssuingAfterRevoking() {
 	name := "test3"
 	ctx := s.ctx
 
-	s.certProvider.EXPECT().GetBundle().Return(s.certBundle, uuid.NewV4(), nil)
 	initBundle, err := s.backend.Issue(ctx, name)
 	id := initBundle.Meta.GetId()
 	s.Require().NoError(err)
 
-	s.certProvider.EXPECT().GetBundle().Return(s.certBundle, uuid.NewV4(), nil)
 	_, err = s.backend.Issue(ctx, name)
 	s.Require().Error(err, "issuing two init bundles with the same name")
 
 	err = s.backend.Revoke(ctx, id)
 	s.Require().NoErrorf(err, "revoking init bundle %q", id)
 
-	s.certProvider.EXPECT().GetBundle().Return(s.certBundle, uuid.NewV4(), nil)
 	_, err = s.backend.Issue(ctx, name)
 	s.Require().NoError(err)
 }
