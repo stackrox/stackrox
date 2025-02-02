@@ -207,6 +207,30 @@ func (s *crsTestSuite) TestCrsFlowFailsAfterLastContact() {
 	s.Error(err, "CRS flow succeeded even after LastContact field was updated.")
 }
 
+func (s *crsTestSuite) TestClusterReissuingWithDifferentDeploymentIdFails() {
+	crsMeta := &storage.InitBundleMeta{
+		Id:               crsRegistrantId,
+		Name:             "xxx",
+		CreatedAt:        timestamppb.New(time.Now()),
+		ExpiresAt:        timestamppb.New(time.Now().Add(10 * time.Minute)),
+		Version:          storage.InitBundleMeta_CRS,
+		MaxRegistrations: 1,
+	}
+
+	sensorService, mockServer := s.newSensorService(s.context, s.mockCtrl, crsMeta)
+
+	mockServer.prepareNewHandshake(defaultSensorHello)
+	err := sensorService.Communicate(mockServer)
+	s.NoError(err)
+
+	// Attempt another cluster registration.
+	helloB := defaultSensorHello.CloneVT()
+	helloB.DeploymentIdentification = sensorDeploymentIdentificationB
+	mockServer.prepareNewHandshake(helloB)
+	err = sensorService.Communicate(mockServer)
+	s.Error(err)
+}
+
 func (s *crsTestSuite) TestClusterRegistrationWithOneShotCrs() {
 	crsMeta := &storage.InitBundleMeta{
 		Id:               crsRegistrantId,
