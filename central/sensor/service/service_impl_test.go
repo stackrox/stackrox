@@ -207,30 +207,6 @@ func (s *crsTestSuite) TestCrsFlowFailsAfterLastContact() {
 	s.Error(err, "CRS flow succeeded even after LastContact field was updated.")
 }
 
-func (s *crsTestSuite) TestClusterReissuingWithDifferentDeploymentIdFails() {
-	crsMeta := &storage.InitBundleMeta{
-		Id:               crsRegistrantId,
-		Name:             "xxx",
-		CreatedAt:        timestamppb.New(time.Now()),
-		ExpiresAt:        timestamppb.New(time.Now().Add(10 * time.Minute)),
-		Version:          storage.InitBundleMeta_CRS,
-		MaxRegistrations: 1,
-	}
-
-	sensorService, mockServer := s.newSensorService(s.context, s.mockCtrl, crsMeta)
-
-	mockServer.prepareNewHandshake(defaultSensorHello)
-	err := sensorService.Communicate(mockServer)
-	s.NoError(err)
-
-	// Attempt another cluster registration.
-	helloB := defaultSensorHello.CloneVT()
-	helloB.DeploymentIdentification = sensorDeploymentIdentificationB
-	mockServer.prepareNewHandshake(helloB)
-	err = sensorService.Communicate(mockServer)
-	s.Error(err)
-}
-
 func (s *crsTestSuite) TestClusterRegistrationWithOneShotCrs() {
 	crsMeta := &storage.InitBundleMeta{
 		Id:               crsRegistrantId,
@@ -345,15 +321,6 @@ func (s *mockServer) SendHeader(header metadata.MD) error {
 	return nil
 }
 
-// func newCluster(clusterName string, hello *central.SensorHello) *storage.Cluster {
-// 	return &storage.Cluster{
-// 		Id:                 uuid.NewV4().String(),
-// 		Name:               clusterName,
-// 		HealthStatus:       &storage.ClusterHealthStatus{},
-// 		MostRecentSensorId: hello.DeploymentIdentification,
-// 	}
-// }
-
 func retrieveCentralHello(s *crsTestSuite, server *mockServer) *central.CentralHello {
 	s.NotEmpty(server.msgsToSensor, "no central response message")
 	centralMsg := server.msgsToSensor[0]
@@ -363,11 +330,6 @@ func retrieveCentralHello(s *crsTestSuite, server *mockServer) *central.CentralH
 }
 
 var crsRegistrantId = uuid.NewV4().String()
-
-// var initBundleRegistrantIdentity = storage.ServiceIdentity{
-// 	Type:         storage.ServiceType_REGISTRANT_SERVICE,
-// 	InitBundleId: initBundleRegistrantId,
-// }
 
 var crsRegistrantIdentity = storage.ServiceIdentity{
 	Type:         storage.ServiceType_REGISTRANT_SERVICE,
