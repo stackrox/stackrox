@@ -2607,7 +2607,12 @@
               },
               {
                 "id": 9,
-                "name": "registrations_done",
+                "name": "registrations_initiated",
+                "type": "uint32"
+              },
+              {
+                "id": 10,
+                "name": "registrations_completed",
                 "type": "uint32"
               }
             ]

@@ -35,7 +35,8 @@ func (m *InitBundleMeta) CloneVT() *InitBundleMeta {
 	r.ExpiresAt = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.ExpiresAt).CloneVT())
 	r.Version = m.Version
 	r.MaxRegistrations = m.MaxRegistrations
-	r.RegistrationsDone = m.RegistrationsDone
+	r.RegistrationsInitiated = m.RegistrationsInitiated
+	r.RegistrationsCompleted = m.RegistrationsCompleted
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -77,7 +78,10 @@ func (this *InitBundleMeta) EqualVT(that *InitBundleMeta) bool {
 	if this.MaxRegistrations != that.MaxRegistrations {
 		return false
 	}
-	if this.RegistrationsDone != that.RegistrationsDone {
+	if this.RegistrationsInitiated != that.RegistrationsInitiated {
+		return false
+	}
+	if this.RegistrationsCompleted != that.RegistrationsCompleted {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -120,8 +124,13 @@ func (m *InitBundleMeta) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.RegistrationsDone != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.RegistrationsDone))
+	if m.RegistrationsCompleted != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.RegistrationsCompleted))
+		i--
+		dAtA[i] = 0x50
+	}
+	if m.RegistrationsInitiated != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.RegistrationsInitiated))
 		i--
 		dAtA[i] = 0x48
 	}
@@ -227,8 +236,11 @@ func (m *InitBundleMeta) SizeVT() (n int) {
 	if m.MaxRegistrations != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.MaxRegistrations))
 	}
-	if m.RegistrationsDone != 0 {
-		n += 1 + protohelpers.SizeOfVarint(uint64(m.RegistrationsDone))
+	if m.RegistrationsInitiated != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.RegistrationsInitiated))
+	}
+	if m.RegistrationsCompleted != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.RegistrationsCompleted))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -503,9 +515,9 @@ func (m *InitBundleMeta) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 		case 9:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field RegistrationsDone", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field RegistrationsInitiated", wireType)
 			}
-			m.RegistrationsDone = 0
+			m.RegistrationsInitiated = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -515,7 +527,26 @@ func (m *InitBundleMeta) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.RegistrationsDone |= uint32(b&0x7F) << shift
+				m.RegistrationsInitiated |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 10:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RegistrationsCompleted", wireType)
+			}
+			m.RegistrationsCompleted = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RegistrationsCompleted |= uint32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}

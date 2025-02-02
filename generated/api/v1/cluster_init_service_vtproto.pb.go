@@ -85,7 +85,7 @@ func (m *CRSMeta) CloneVT() *CRSMeta {
 	r.CreatedAt = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.CreatedAt).CloneVT())
 	r.ExpiresAt = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.ExpiresAt).CloneVT())
 	r.MaxRegistrations = m.MaxRegistrations
-	r.RegistrationsDone = m.RegistrationsDone
+	r.RegistrationsCompleted = m.RegistrationsCompleted
 	if rhs := m.CreatedBy; rhs != nil {
 		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.User }); ok {
 			r.CreatedBy = vtpb.CloneVT()
@@ -503,7 +503,7 @@ func (this *CRSMeta) EqualVT(that *CRSMeta) bool {
 	if this.MaxRegistrations != that.MaxRegistrations {
 		return false
 	}
-	if this.RegistrationsDone != that.RegistrationsDone {
+	if this.RegistrationsCompleted != that.RegistrationsCompleted {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1071,8 +1071,8 @@ func (m *CRSMeta) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.RegistrationsDone != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.RegistrationsDone))
+	if m.RegistrationsCompleted != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.RegistrationsCompleted))
 		i--
 		dAtA[i] = 0x40
 	}
@@ -1864,8 +1864,8 @@ func (m *CRSMeta) SizeVT() (n int) {
 	if m.MaxRegistrations != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.MaxRegistrations))
 	}
-	if m.RegistrationsDone != 0 {
-		n += 1 + protohelpers.SizeOfVarint(uint64(m.RegistrationsDone))
+	if m.RegistrationsCompleted != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.RegistrationsCompleted))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -2746,9 +2746,9 @@ func (m *CRSMeta) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 		case 8:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field RegistrationsDone", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field RegistrationsCompleted", wireType)
 			}
-			m.RegistrationsDone = 0
+			m.RegistrationsCompleted = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -2758,7 +2758,7 @@ func (m *CRSMeta) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.RegistrationsDone |= uint32(b&0x7F) << shift
+				m.RegistrationsCompleted |= uint32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
