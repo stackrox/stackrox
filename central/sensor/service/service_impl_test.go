@@ -349,15 +349,6 @@ var sensorDeploymentIdentificationA = &storage.SensorDeploymentIdentification{
 	K8SNodeName:         "my-node",
 }
 
-var sensorDeploymentIdentificationB = &storage.SensorDeploymentIdentification{
-	SystemNamespaceId:   uuid.NewV4().String(),
-	DefaultNamespaceId:  uuid.NewV4().String(),
-	AppNamespace:        "my-stackrox-namespace-b",
-	AppNamespaceId:      uuid.NewV4().String(),
-	AppServiceaccountId: uuid.NewV4().String(),
-	K8SNodeName:         "my-node",
-}
-
 var defaultSensorHello = &central.SensorHello{
 	SensorVersion:            "1.0",
 	DeploymentIdentification: sensorDeploymentIdentificationA,
