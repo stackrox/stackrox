@@ -32,7 +32,6 @@ type Store interface {
 	RegistrationPossible(ctx context.Context, id string) error
 	RecordInitiatedRegistration(ctx context.Context, id string) error
 	RecordCompletedRegistration(ctx context.Context, id string) error
-	RevokeIfMaxRegistrationsReached(ctx context.Context, id string) error
 }
 
 // UnderlyingStore is the base store that actually accesses the data
@@ -183,9 +182,6 @@ func (w *storeImpl) recordRegistration(
 	getNumRegistrations func(*storage.InitBundleMeta) uint32,
 	setNumRegistrations func(*storage.InitBundleMeta, uint32),
 ) error {
-	w.uniqueUpdateMutex.Lock()
-	defer w.uniqueUpdateMutex.Unlock()
-
 	crsMeta, err := w.Get(ctx, id)
 	if err != nil {
 		return errors.Wrapf(err, "retrieving cluster registration secret meta data for %q", id)
@@ -221,6 +217,9 @@ func (w *storeImpl) recordRegistration(
 }
 
 func (w *storeImpl) RecordInitiatedRegistration(ctx context.Context, id string) error {
+	w.uniqueUpdateMutex.Lock()
+	defer w.uniqueUpdateMutex.Unlock()
+
 	getInitiatedRegistrations := func(crsMeta *storage.InitBundleMeta) uint32 {
 		return crsMeta.GetRegistrationsInitiated()
 	}
@@ -237,6 +236,9 @@ func (w *storeImpl) RecordInitiatedRegistration(ctx context.Context, id string) 
 }
 
 func (w *storeImpl) RecordCompletedRegistration(ctx context.Context, id string) error {
+	w.uniqueUpdateMutex.Lock()
+	defer w.uniqueUpdateMutex.Unlock()
+
 	getCompletedRegistrations := func(crsMeta *storage.InitBundleMeta) uint32 {
 		return crsMeta.GetRegistrationsCompleted()
 	}
@@ -249,13 +251,15 @@ func (w *storeImpl) RecordCompletedRegistration(ctx context.Context, id string) 
 		return errors.Wrap(err, "recording completed registrations")
 	}
 
+	err = w.revokeIfMaxRegistrationsReached(ctx, id)
+	if err != nil {
+		return errors.Wrap(err, "updating revocation state")
+	}
+
 	return nil
 }
 
-func (w *storeImpl) RevokeIfMaxRegistrationsReached(ctx context.Context, id string) error {
-	w.uniqueUpdateMutex.Lock()
-	defer w.uniqueUpdateMutex.Unlock()
-
+func (w *storeImpl) revokeIfMaxRegistrationsReached(ctx context.Context, id string) error {
 	crsMeta, err := w.Get(ctx, id)
 	if err != nil {
 		return errors.Wrapf(err, "retrieving cluster registration secret meta data for %q", id)

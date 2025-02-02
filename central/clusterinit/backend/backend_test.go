@@ -418,7 +418,6 @@ func (s *clusterInitBackendTestSuite) TestCrsAutoRevocationOneShot() {
 	s.Require().NoErrorf(s.backend.RecordInitiatedRegistration(ctx, id), "recording initiated registration for CRS %q failed", id)
 	s.Require().Errorf(s.backend.RegistrationPossible(ctx, id), "cluster registration still possible")
 	s.Require().NoErrorf(s.backend.RecordCompletedRegistration(ctx, id), "recording completed registration for CRS %q failed", id)
-	s.Require().NoError(s.backend.RevokeIfMaxRegistrationsReached(ctx, id), "updating revocation state failed")
 	s.Require().Errorf(s.backend.CheckRevoked(ctx, id), "CRS %q is not revoked", id)
 }
 
@@ -437,13 +436,11 @@ func (s *clusterInitBackendTestSuite) TestCrsAutoRevocationAfterTwoRegistrations
 	s.Require().NoErrorf(s.backend.RecordInitiatedRegistration(ctx, id), "recording initiated registration for CRS %q failed", id)
 	s.Require().NoErrorf(s.backend.RegistrationPossible(ctx, id), "cluster registration not possible")
 	s.Require().NoErrorf(s.backend.RecordCompletedRegistration(ctx, id), "recording completed registration for CRS %q failed", id)
-	s.Require().NoError(s.backend.RevokeIfMaxRegistrationsReached(ctx, id), "updating revocation state failed")
 	s.Require().NoErrorf(s.backend.CheckRevoked(ctx, id), "CRS %q is revoked", id)
 
 	s.Require().NoErrorf(s.backend.RecordInitiatedRegistration(ctx, id), "recording initiated registration for CRS %q failed", id)
 	s.Require().Errorf(s.backend.RegistrationPossible(ctx, id), "cluster registration still possible")
 	s.Require().NoErrorf(s.backend.RecordCompletedRegistration(ctx, id), "recording completed registration for CRS %q failed", id)
-	s.Require().NoError(s.backend.RevokeIfMaxRegistrationsReached(ctx, id), "updating revocation state failed")
 	s.Require().Errorf(s.backend.CheckRevoked(ctx, id), "CRS %q is not revoked", id)
 }
 

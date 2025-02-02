@@ -51,7 +51,6 @@ type Backend interface {
 	RegistrationPossible(ctx context.Context, id string) error
 	RecordInitiatedRegistration(ctx context.Context, id string) error
 	RecordCompletedRegistration(ctx context.Context, id string) error
-	RevokeIfMaxRegistrationsReached(ctx context.Context, id string) error
 	authn.ValidateCertChain
 }
 
