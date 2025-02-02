@@ -48,7 +48,9 @@ type Backend interface {
 	IssueCRS(ctx context.Context, name string, maxRegistrations uint32) (*CRSWithMeta, error)
 	Revoke(ctx context.Context, id string) error
 	CheckRevoked(ctx context.Context, id string) error
-	RecordRegistration(ctx context.Context, id string) error
+	RegistrationPossible(ctx context.Context, id string) error
+	RecordInitiatedRegistration(ctx context.Context, id string) error
+	RecordCompletedRegistration(ctx context.Context, id string) error
 	RevokeIfMaxRegistrationsReached(ctx context.Context, id string) error
 	authn.ValidateCertChain
 }

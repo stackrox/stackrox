@@ -243,12 +243,20 @@ func (b *backendImpl) RegistrationPossible(ctx context.Context, id string) error
 	return b.store.RegistrationPossible(ctx, id)
 }
 
-func (b *backendImpl) RecordRegistration(ctx context.Context, id string) error {
+func (b *backendImpl) RecordInitiatedRegistration(ctx context.Context, id string) error {
 	if err := access.CheckAccess(ctx, storage.Access_READ_WRITE_ACCESS); err != nil {
 		return err
 	}
 
-	return b.store.RecordRegistration(ctx, id)
+	return b.store.RecordInitiatedRegistration(ctx, id)
+}
+
+func (b *backendImpl) RecordCompletedRegistration(ctx context.Context, id string) error {
+	if err := access.CheckAccess(ctx, storage.Access_READ_WRITE_ACCESS); err != nil {
+		return err
+	}
+
+	return b.store.RecordCompletedRegistration(ctx, id)
 }
 
 func (b *backendImpl) RevokeIfMaxRegistrationsReached(ctx context.Context, id string) error {

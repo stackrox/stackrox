@@ -30,7 +30,8 @@ type Store interface {
 	Add(ctx context.Context, bundleMeta *storage.InitBundleMeta) error
 	Revoke(ctx context.Context, id string) error
 	RegistrationPossible(ctx context.Context, id string) error
-	RecordRegistration(ctx context.Context, id string) error
+	RecordInitiatedRegistration(ctx context.Context, id string) error
+	RecordCompletedRegistration(ctx context.Context, id string) error
 	RevokeIfMaxRegistrationsReached(ctx context.Context, id string) error
 }
 
@@ -152,6 +153,8 @@ func (w *storeImpl) Revoke(ctx context.Context, id string) error {
 	return nil
 }
 
+// RegistrationPossible checks if another registration using the CRS with the provided CRS ID is possible,
+// based on the current value of the `RegistrationsInitiated` counter.
 func (w *storeImpl) RegistrationPossible(ctx context.Context, id string) error {
 	w.uniqueUpdateMutex.Lock()
 	defer w.uniqueUpdateMutex.Unlock()
@@ -166,16 +169,20 @@ func (w *storeImpl) RegistrationPossible(ctx context.Context, id string) error {
 		// We don't support registration limits for init bundles.
 		return nil
 	case storage.InitBundleMeta_CRS:
-		if crs.MaxRegistrations == 0 || crs.RegistrationsDone < crs.MaxRegistrations {
+		if crs.MaxRegistrations == 0 || crs.RegistrationsInitiated < crs.MaxRegistrations {
 			return nil
 		}
 	}
 
 	return errors.Errorf("maximum number of clusters registrations (%d/%d) with the provided secret %q/%q reached",
-		crs.RegistrationsDone, crs.MaxRegistrations, crs.Name, crs.Id)
+		crs.RegistrationsInitiated, crs.MaxRegistrations, crs.Name, crs.Id)
 }
 
-func (w *storeImpl) RecordRegistration(ctx context.Context, id string) error {
+func (w *storeImpl) recordRegistration(
+	ctx context.Context, id string,
+	getNumRegistrations func(*storage.InitBundleMeta) uint32,
+	setNumRegistrations func(*storage.InitBundleMeta, uint32),
+) error {
 	w.uniqueUpdateMutex.Lock()
 	defer w.uniqueUpdateMutex.Unlock()
 
@@ -191,25 +198,57 @@ func (w *storeImpl) RecordRegistration(ctx context.Context, id string) error {
 	}
 
 	maxRegistrations := crsMeta.GetMaxRegistrations()
-	registrationsDone := crsMeta.GetRegistrationsDone()
+	numRegistrations := getNumRegistrations(crsMeta)
 
 	// maxRegistrations == 0 means no restrictions on the number of cluster registrations.
 	if maxRegistrations == 0 {
 		// We stop recording at MaxUint32 to prevent overflows.
-		if registrationsDone < math.MaxUint32 {
-			crsMeta.RegistrationsDone = registrationsDone + 1
+		if numRegistrations < math.MaxUint32 {
+			setNumRegistrations(crsMeta, numRegistrations+1)
 		}
 	} else {
-		if registrationsDone >= maxRegistrations { // ">" should never happen.
+		if numRegistrations >= maxRegistrations { // ">" should never happen.
 			return errors.New("maximum number of allowed cluster registrations reached")
 		}
-		crsMeta.RegistrationsDone = registrationsDone + 1
+		setNumRegistrations(crsMeta, numRegistrations+1)
 	}
 
 	err = w.store.Upsert(ctx, crsMeta)
 	if err != nil {
 		return errors.Wrapf(err, "updating meta data for cluster registration secret %q", id)
 	}
+	return nil
+}
+
+func (w *storeImpl) RecordInitiatedRegistration(ctx context.Context, id string) error {
+	getInitiatedRegistrations := func(crsMeta *storage.InitBundleMeta) uint32 {
+		return crsMeta.GetRegistrationsInitiated()
+	}
+	setInitiatedRegistrations := func(crsMeta *storage.InitBundleMeta, n uint32) {
+		crsMeta.RegistrationsInitiated = n
+	}
+
+	err := w.recordRegistration(ctx, id, getInitiatedRegistrations, setInitiatedRegistrations)
+	if err != nil {
+		return errors.Wrap(err, "recording initiated registrations")
+	}
+
+	return nil
+}
+
+func (w *storeImpl) RecordCompletedRegistration(ctx context.Context, id string) error {
+	getCompletedRegistrations := func(crsMeta *storage.InitBundleMeta) uint32 {
+		return crsMeta.GetRegistrationsCompleted()
+	}
+	setCompletedRegistrations := func(crsMeta *storage.InitBundleMeta, n uint32) {
+		crsMeta.RegistrationsCompleted = n
+	}
+
+	err := w.recordRegistration(ctx, id, getCompletedRegistrations, setCompletedRegistrations)
+	if err != nil {
+		return errors.Wrap(err, "recording completed registrations")
+	}
+
 	return nil
 }
 
@@ -234,7 +273,7 @@ func (w *storeImpl) RevokeIfMaxRegistrationsReached(ctx context.Context, id stri
 		// Already revoked.
 		return nil
 	}
-	if crsMeta.GetRegistrationsDone() < crsMeta.GetMaxRegistrations() {
+	if crsMeta.GetRegistrationsCompleted() < crsMeta.GetMaxRegistrations() {
 		// Registration limit not reached yet.
 		return nil
 	}

@@ -900,7 +900,7 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 			return nil, errors.Wrapf(err, "failed to dynamically add cluster with name %q", clusterName)
 		}
 
-		if err := ds.clusterInitStore.RecordRegistration(ctx, registrantID); err != nil {
+		if err := ds.clusterInitStore.RecordInitiatedRegistration(ctx, registrantID); err != nil {
 			log.Warnf("cluster %q has been added, but recording the cluster registration using registrant ID %q failed", clusterName, registrantID)
 			return nil, errors.Wrapf(err, "recording cluster registration for registrant ID %q", registrantID)
 		}
