@@ -408,7 +408,7 @@ func (s *clusterInitBackendTestSuite) TestCrsAutoRevocationOneShot() {
 	ctx := s.ctx
 	s.certProvider.EXPECT().GetCRSCert().Return(s.crsCert, uuid.NewV4(), nil)
 
-	crsName := fmt.Sprintf("test-crs-auto-revocation-1-%d", rand.Intn(100))
+	crsName := fmt.Sprintf("test-crs-auto-revocation-1-%d", rand.Intn(10000))
 	crsWithMeta, err := s.backend.IssueCRS(ctx, crsName, 1)
 	s.Require().NoError(err)
 	id := crsWithMeta.Meta.Id
@@ -426,7 +426,7 @@ func (s *clusterInitBackendTestSuite) TestCrsAutoRevocationAfterTwoRegistrations
 	ctx := s.ctx
 	s.certProvider.EXPECT().GetCRSCert().Return(s.crsCert, uuid.NewV4(), nil)
 
-	crsName := fmt.Sprintf("test-crs-auto-revocation-2-%d", rand.Intn(100))
+	crsName := fmt.Sprintf("test-crs-auto-revocation-2-%d", rand.Intn(10000))
 	crsWithMeta, err := s.backend.IssueCRS(ctx, crsName, 2)
 	s.Require().NoError(err)
 	id := crsWithMeta.Meta.Id
