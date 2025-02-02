@@ -53,3 +53,25 @@ teardown_file() {
     run roxctl_authenticated central crs revoke "i-dont-exist"
     assert_failure
 }
+
+convert_crs_list_to_json() {
+    awk 'NR > 2 { print "{\"name\": \"" $1 "\", \"max_registrations\": " $6 ", \"registrations_completed\": " $7 "}" }'
+}
+
+@test "CRS registration limit is 1 by default" {
+    local crs_name="crs-${RANDOM}-${RANDOM}"
+    local crs_file="${out_dir}/${crs_name}.yaml"
+    local limit="1"
+    roxctl_authenticated central crs generate "${crs_name}" -o "${crs_file}"
+    test -f "${crs_file}"
+    jq -e "select(.name == \"${crs_name}\" and .max_registrations == 1)" <(roxctl_authenticated central crs list | convert_crs_list_to_json)
+}
+
+@test "Specifying registration limit for new CRS" {
+    local crs_name="crs-${RANDOM}-${RANDOM}"
+    local crs_file="${out_dir}/${crs_name}.yaml"
+    local limit=$((RANDOM % 100 + 1))
+    roxctl_authenticated central crs generate "${crs_name}" --max-registrations=${limit} -o "${crs_file}"
+    test -f "${crs_file}"
+    jq -e "select(.name == \"${crs_name}\" and .max_registrations == ${limit})" <(roxctl_authenticated central crs list | convert_crs_list_to_json)
+}
