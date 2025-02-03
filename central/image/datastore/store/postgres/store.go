@@ -840,6 +840,11 @@ func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Image
 }
 
 func (s *storeImpl) populateImage(ctx context.Context, tx *postgres.Tx, image *storage.Image) error {
+	if features.FlattenCVEData.Enabled() {
+		// TODO(ROX-27402)
+		return nil
+	}
+
 	imageCVEEdgeMap, err := getImageCVEEdges(ctx, tx, image.GetId())
 	if err != nil {
 		return err
