@@ -28,7 +28,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/common/trace"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -381,9 +380,9 @@ func (e *enricher) getImages(ctx context.Context, deployment *storage.Deployment
 		imageName := imgResult.image.GetName()
 		deploymentImageName := deployment.GetContainers()[imgResult.containerIdx].GetImage().GetName()
 		image := imgResult.image
-		if !proto.Equal(imageName, deploymentImageName) {
-			// Clone only when we need to mutate the Name to avoid a race
-			// with the cached image.
+		if !compareImageName(imageName, deploymentImageName) {
+			// This will ensure that when we change the Name of the image
+			// that it will not cause a potential race condition
 			image = imgResult.image.CloneVT()
 			image.Name = deploymentImageName
 		}
@@ -424,4 +423,11 @@ func (e *enricher) outputChan() <-chan scanResult {
 
 func (e *enricher) stop() {
 	e.stopSig.Signal()
+}
+
+func compareImageName(x *storage.ImageName, y *storage.ImageName) bool {
+	return x.GetRegistry() == y.GetRegistry() &&
+		x.GetRemote() == y.GetRemote() &&
+		x.GetTag() == y.GetTag() &&
+		x.GetFullName() == y.GetFullName()
 }
