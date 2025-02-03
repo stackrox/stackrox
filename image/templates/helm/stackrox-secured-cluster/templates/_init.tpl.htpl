@@ -193,7 +193,7 @@
 {{ end }}
 
 {{ if $._rox.collector.slimMode }}
-  {{ include "srox.warn" (list $ "collector.slimMode is set to true, but it is deprecated and will be ignored.") }}
+  {{ include "srox.warn" (list $ "collector.slimMode is set to true, but it has been removed in 4.7 after being deprecated since 4.5. This setting will be ignored.") }}
 {{ end }}
 
 {{/* Initial image pull secret setup. */}}

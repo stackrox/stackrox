@@ -35,8 +35,7 @@ Please use --admission-controller-listen-on-creates instead to suppress this war
 	warningDeprecatedAdmControllerEnableSet = `The --admission-controller-enabled flag has been deprecated and will be removed in future versions of roxctl.
 Please use --admission-controller-enforce-on-creates instead to suppress this warning text and avoid breakages in the future.`
 
-	warningSlimCollectorModeSet = `The --slim-collector flag has been deprecated and will be removed in future versions of roxctl. It will be ignored by Centrals
-newer than 4.6`
+	warningSlimCollectorModeSet = `The --slim-collector flag has been deprecated and will be removed in future versions of roxctl. It will be ignored from version 4.7 onwards.`
 
 	mainImageRepository = "main-image-repository"
 	slimCollector       = "slim-collector"

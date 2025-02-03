@@ -230,7 +230,7 @@ func testMetaValueGenerationWithImageFlavor(s *deployerTestSuite, flavor default
 			expectedScannerSlimRef: fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.ScannerSlimImageName, flavor.ScannerImageTag),
 		},
 		/*
-			// These tests are failing right now but should succeed after RS-479 has been implemented
+			// These tests are failing right now but should succeed after ROX-15691 has been implemented
 			"custom main: custom tag / no collector": {
 				cluster:                  makeTestCluster("quay.io/rhacs/main:custom", ""),
 				expectedMain:             fmt.Sprintf("quay.io/rhacs/main:%s", flavor.MainImageTag),
