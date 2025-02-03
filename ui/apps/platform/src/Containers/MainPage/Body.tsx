@@ -47,6 +47,7 @@ import {
     vulnerabilitiesPlatformPath,
     vulnerabilitiesAllImagesPath,
     vulnerabilitiesInactiveImagesPath,
+    vulnerabilitiesImagesWithoutCvesPath,
 } from 'routePaths';
 
 import PageNotFound from 'Components/PageNotFound';
@@ -238,6 +239,10 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
     'vulnerabilities/inactive-images': {
         component: makeVulnMgmtUserWorkloadView('inactive-images'),
         path: vulnerabilitiesInactiveImagesPath,
+    },
+    'vulnerabilities/images-without-cves': {
+        component: makeVulnMgmtUserWorkloadView('images-without-cves'),
+        path: vulnerabilitiesImagesWithoutCvesPath,
     },
     'vulnerabilities/reports': {
         component: asyncComponent(

@@ -18,6 +18,7 @@ import {
     vulnerabilitiesPlatformPath,
     vulnerabilitiesAllImagesPath,
     vulnerabilitiesInactiveImagesPath,
+    vulnerabilitiesImagesWithoutCvesPath,
 } from 'routePaths';
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import { HasReadAccess } from 'hooks/usePermissions';
@@ -77,6 +78,14 @@ function getSubnavDescriptionGroups(
                                   'View findings for images not currently deployed as workloads',
                               path: vulnerabilitiesInactiveImagesPath,
                               routeKey: 'vulnerabilities/inactive-images',
+                          },
+                          {
+                              type: 'link',
+                              content: 'Images without CVEs',
+                              description:
+                                  'Images and workloads without observed CVEs (results might include false negatives due to scanner limitations, such as unsupported operating systems)',
+                              path: vulnerabilitiesImagesWithoutCvesPath,
+                              routeKey: 'vulnerabilities/images-without-cves',
                           },
                       ],
                   },
