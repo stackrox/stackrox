@@ -143,8 +143,15 @@ jobs:
           source ./workflow/env.sh
           ./scale/dev/run-many.sh "${SCALE_WORKLOAD_TYPE}" "${SCALE_WORKLOAD_CLUSTERS}"
 
-          max_deployments=800
-          ./scale/dev/wait-and-stop-scale-tests.sh "${max_deployments}"
+          num_deployments=$(cat "scale/workloads/${SCALE_WORKLOAD_TYPE}.yaml" | yq '.deploymentWorkload[] | select(.deploymentType == "Deployment") | .numDeployments')
+          max_deployments=$(( num_deployments * SCALE_WORKLOAD_CLUSTERS ))
+
+          ./scale/dev/wait-for-deployments.sh "${max_deployments}"
+
+      - name: Stop workload generation
+        run: |
+          source ./workflow/env.sh
+          ./scale/dev/kill-sensors.sh
 
       - name: Create result directory
         run: |
