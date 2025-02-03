@@ -19,8 +19,8 @@ func Gather(ds DataStore) phonehome.GatherFunc {
 				sac.ResourceScopeKeys(resources.Administration),
 			),
 		)
-		cfg, ok, err := ds.GetConfig(ctx)
-		if !ok || err != nil {
+		cfg, _, err := ds.GetConfig(ctx)
+		if err != nil {
 			return nil, errors.Wrap(err, "failed to get delegated registry config")
 		}
 		props := map[string]any{
