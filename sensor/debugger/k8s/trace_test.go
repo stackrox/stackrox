@@ -30,6 +30,9 @@ func TestWriter(t *testing.T) {
 	filePath := path.Join(dir, "test")
 
 	writer, err = NewTraceWriter(filePath)
+	assert.NoError(t, err)
+	assert.NotNil(t, writer)
+
 	n, err := writer.Write([]byte("abc"))
 	assert.NoError(t, err)
 	assert.Equal(t, 4, n)
