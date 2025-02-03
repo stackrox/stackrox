@@ -48,19 +48,24 @@ class CollectorUtil {
     }
 
     static waitForConfigToHaveState(OrchestratorMain orchestrator, String state, int timeoutSeconds = 90, int port = 8080) {
-        def portForward = orchestrator.createCollectorPortForward(port)
+        def portForwards = orchestrator.createCollectorPortForwards(port)
 
+        log.info "Waiting for Collector Config propagation (${portForwards.size()} pods)"
         int intervalSeconds = 1
         int waitTime
         def startTime = System.currentTimeMillis()
         for (waitTime = 0; waitTime <= timeoutSeconds / intervalSeconds; waitTime++) {
-            log.info "Checking Collector config. Attempt ${waitTime} of ${timeoutSeconds / intervalSeconds}"
-            def config = introspectionQuery("127.0.0.1:${portForward.getLocalPort()}", "/state/runtime-config")
+            // if a pod has the right config, remove it from the list
+            // we need to check
+            portForwards.removeAll {
+                def config = introspectionQuery("127.0.0.1:${it.getLocalPort()}", "/state/runtime-config")
 
-            if (config.networking.externalIps.enabled.name() == state) {
-                return true
+                if (config.networking.externalIps.enabled.name() == state) {
+                    return true
+                }
+
+                return false
             }
-
             sleep intervalSeconds * 1000
         }
 

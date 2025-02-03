@@ -174,7 +174,7 @@ interface OrchestratorMain {
     String getSensorContainerName()
     def waitForSensor()
     int getAllDeploymentTypesCount(String ns)
-    def createCollectorPortForward(int port)
+    def createCollectorPortForwards(int port)
 
     ValidatingWebhookConfiguration getAdmissionController()
     def deleteAdmissionController(String name)
