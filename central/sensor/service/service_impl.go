@@ -187,12 +187,22 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 		return nil
 	}
 
-	if cluster.GetHealthStatus().GetLastContact() == nil {
+	if cluster.GetHealthStatus().GetLastContact() == nil && cluster.GetInitBundleId() != "" {
 		// Sensor has initially connected with a real service certificate, not just with a CRS.
-		// This also updates the revocation state of the CRS used for this cluster, if needed.
+		// The call to RecordCompletedRegistration also updates the revocation state of the CRS used for this
+		// cluster, if needed.
+		//
+		// Note: We are currently lacking the ability here to update different datastores atomically.
+		// The following two storage updates should happen atomically.
+		// The worst-case outcome due to missing atomicity would be that a cluster registration succeeded,
+		// but the nulling of the init-bundle/CRS ID for the secured cluster failed and hence the cluster
+		// registration would be counted again on the next connection attempt.
 		if err := s.clusterInitStore.RecordCompletedRegistration(clusterDSSAC, cluster.GetInitBundleId()); err != nil {
-			log.Errorf("Failed to update completed-registrations counter for cluster registration secret %q: %v", cluster.GetInitBundleId(), err)
-			// We will not prevent connecting the cluster in case the updating of the registrations counter failed.
+			return errors.Wrapf(err, "updating completed-registrations counter for cluster registration secret %q", cluster.GetInitBundleId())
+		}
+		cluster.InitBundleId = ""
+		if err := s.clusters.UpdateCluster(clusterDSSAC, cluster); err != nil {
+			return errors.Wrapf(err, "clearing init-bundle/CRS ID for newly created cluster %q", cluster.GetInitBundleId())
 		}
 	}
 
