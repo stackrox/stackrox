@@ -41,7 +41,7 @@ func (u *permissionSetUpdater) Upsert(ctx context.Context, m protocompat.Message
 	return u.roleDS.UpsertPermissionSet(ctx, permissionSet)
 }
 
-func (u *permissionSetUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...string) ([]string, error) {
+func (u *permissionSetUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...string) ([]string, int, error) {
 	permissionSetsToSkip := set.NewFrozenStringSet(resourceIDsToSkip...)
 
 	permissionSets, err := u.roleDS.GetPermissionSetsFiltered(ctx, func(permissionSet *storage.PermissionSet) bool {
@@ -49,11 +49,12 @@ func (u *permissionSetUpdater) DeleteResources(ctx context.Context, resourceIDsT
 			!permissionSetsToSkip.Contains(permissionSet.GetId())
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "retrieving declarative permission sets")
+		return nil, 0, errors.Wrap(err, "retrieving declarative permission sets")
 	}
 
 	var permissionSetDeletionErr *multierror.Error
 	var permissionSetIDs []string
+	deletionCount := 0
 	for _, permissionSet := range permissionSets {
 		if err := u.roleDS.RemovePermissionSet(ctx, permissionSet.GetId()); err != nil {
 			permissionSetDeletionErr = multierror.Append(permissionSetDeletionErr, err)
@@ -67,7 +68,9 @@ func (u *permissionSetUpdater) DeleteResources(ctx context.Context, resourceIDsT
 					permissionSetDeletionErr = multierror.Append(permissionSetDeletionErr, errors.Wrap(err, "setting origin to orphaned"))
 				}
 			}
+		} else {
+			deletionCount++
 		}
 	}
-	return permissionSetIDs, permissionSetDeletionErr.ErrorOrNil()
+	return permissionSetIDs, deletionCount, permissionSetDeletionErr.ErrorOrNil()
 }

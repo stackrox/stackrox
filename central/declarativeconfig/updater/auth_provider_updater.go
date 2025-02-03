@@ -68,7 +68,7 @@ func (u *authProviderUpdater) Upsert(ctx context.Context, m protocompat.Message)
 	return nil
 }
 
-func (u *authProviderUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...string) ([]string, error) {
+func (u *authProviderUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...string) ([]string, int, error) {
 	authProviderIDsToSkip := set.NewFrozenStringSet(resourceIDsToSkip...)
 
 	authProviders, err := u.authProviderDS.GetAuthProvidersFiltered(ctx, func(authProvider *storage.AuthProvider) bool {
@@ -76,11 +76,12 @@ func (u *authProviderUpdater) DeleteResources(ctx context.Context, resourceIDsTo
 			!authProviderIDsToSkip.Contains(authProvider.GetId())
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "retrieving declarative auth providers")
+		return nil, 0, errors.Wrap(err, "retrieving declarative auth providers")
 	}
 
 	var authProviderDeletionErr *multierror.Error
 	authProviderIDs := set.NewStringSet()
+	deletedCount := 0
 	for _, authProvider := range authProviders {
 		referencingGroups, err := u.groupDS.GetFiltered(ctx, func(group *storage.Group) bool {
 			return group.GetProps().GetAuthProviderId() == authProvider.GetId()
@@ -104,9 +105,11 @@ func (u *authProviderUpdater) DeleteResources(ctx context.Context, resourceIDsTo
 		}
 		if err := u.authProviderRegistry.DeleteProvider(ctx, authProvider.GetId(), true, true); err != nil {
 			authProviderDeletionErr, authProviderIDs = u.processDeletionError(ctx, authProviderDeletionErr, err, authProviderIDs, authProvider)
+		} else {
+			deletedCount++
 		}
 	}
-	return authProviderIDs.AsSlice(), authProviderDeletionErr.ErrorOrNil()
+	return authProviderIDs.AsSlice(), deletedCount, authProviderDeletionErr.ErrorOrNil()
 }
 
 func (u *authProviderUpdater) processDeletionError(ctx context.Context, authProviderDeletionErr *multierror.Error,

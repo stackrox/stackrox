@@ -41,7 +41,7 @@ func (u *accessScopeUpdater) Upsert(ctx context.Context, m protocompat.Message) 
 	return u.roleDS.UpsertAccessScope(ctx, accessScope)
 }
 
-func (u *accessScopeUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...string) ([]string, error) {
+func (u *accessScopeUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...string) ([]string, int, error) {
 	resourcesToSkip := set.NewFrozenStringSet(resourceIDsToSkip...)
 
 	scopes, err := u.roleDS.GetAccessScopesFiltered(ctx, func(accessScope *storage.SimpleAccessScope) bool {
@@ -49,11 +49,12 @@ func (u *accessScopeUpdater) DeleteResources(ctx context.Context, resourceIDsToS
 			!resourcesToSkip.Contains(accessScope.GetId())
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "retrieving declarative access scopes")
+		return nil, 0, errors.Wrap(err, "retrieving declarative access scopes")
 	}
 
 	var scopeDeletionErr *multierror.Error
 	var scopeIDs []string
+	deletionCount := 0
 	for _, scope := range scopes {
 		if err := u.roleDS.RemoveAccessScope(ctx, scope.GetId()); err != nil {
 			scopeDeletionErr = multierror.Append(scopeDeletionErr, err)
@@ -68,7 +69,9 @@ func (u *accessScopeUpdater) DeleteResources(ctx context.Context, resourceIDsToS
 					scopeDeletionErr = multierror.Append(scopeDeletionErr, errors.Wrap(err, "setting origin to orphaned"))
 				}
 			}
+		} else {
+			deletionCount++
 		}
 	}
-	return scopeIDs, scopeDeletionErr.ErrorOrNil()
+	return scopeIDs, deletionCount, scopeDeletionErr.ErrorOrNil()
 }

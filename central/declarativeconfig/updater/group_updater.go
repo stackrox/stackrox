@@ -41,7 +41,7 @@ func (u *groupUpdater) Upsert(ctx context.Context, m protocompat.Message) error 
 	return u.groupDS.Upsert(ctx, group)
 }
 
-func (u *groupUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...string) ([]string, error) {
+func (u *groupUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...string) ([]string, int, error) {
 	groupsToSkip := set.NewFrozenStringSet(resourceIDsToSkip...)
 
 	groups, err := u.groupDS.GetFiltered(ctx, func(group *storage.Group) bool {
@@ -49,11 +49,12 @@ func (u *groupUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ..
 			!groupsToSkip.Contains(group.GetProps().GetId())
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "retrieving declarative groups")
+		return nil, 0, errors.Wrap(err, "retrieving declarative groups")
 	}
 
 	var groupDeletionErr *multierror.Error
 	var groupIDs []string
+	deletionCount := 0
 	for _, group := range groups {
 		if err := u.groupDS.Remove(ctx, group.GetProps(), true); err != nil {
 			groupDeletionErr = multierror.Append(groupDeletionErr, err)
@@ -62,7 +63,9 @@ func (u *groupUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ..
 				log.Errorf("Failed to update the declarative config health status %q: %v",
 					group.GetProps().GetId(), err)
 			}
+		} else {
+			deletionCount++
 		}
 	}
-	return groupIDs, groupDeletionErr.ErrorOrNil()
+	return groupIDs, deletionCount, groupDeletionErr.ErrorOrNil()
 }
