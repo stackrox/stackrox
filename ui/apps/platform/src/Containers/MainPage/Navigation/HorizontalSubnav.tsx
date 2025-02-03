@@ -13,9 +13,11 @@ import {
 } from '@patternfly/react-core';
 
 import {
-    vulnerabilitiesWorkloadCvesPath,
-    vulnerabilitiesPlatformWorkloadCvesPath,
     vulnerabilitiesNodeCvesPath,
+    vulnerabilitiesUserWorkloadsPath,
+    vulnerabilitiesPlatformPath,
+    vulnerabilitiesAllImagesPath,
+    vulnerabilitiesInactiveImagesPath,
 } from 'routePaths';
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import { HasReadAccess } from 'hooks/usePermissions';
@@ -40,14 +42,14 @@ function getSubnavDescriptionGroups(
                   {
                       type: 'link',
                       content: 'User Workloads',
-                      path: vulnerabilitiesWorkloadCvesPath,
-                      routeKey: 'vulnerabilities/workload-cves',
+                      path: vulnerabilitiesUserWorkloadsPath,
+                      routeKey: 'vulnerabilities/user-workloads',
                   },
                   {
                       type: 'link',
                       content: 'Platform',
-                      path: vulnerabilitiesPlatformWorkloadCvesPath,
-                      routeKey: 'vulnerabilities/platform-workload-cves',
+                      path: vulnerabilitiesPlatformPath,
+                      routeKey: 'vulnerabilities/platform',
                   },
                   {
                       type: 'link',
@@ -65,9 +67,16 @@ function getSubnavDescriptionGroups(
                               content: 'All Images',
                               description:
                                   'View findings for user and platform images simultaneously',
-                              // TODO Change these
-                              path: '/main/vulnerabilities/TBD',
-                              routeKey: 'vulnerabilities/workload-cves',
+                              path: vulnerabilitiesAllImagesPath,
+                              routeKey: 'vulnerabilities/all-images',
+                          },
+                          {
+                              type: 'link',
+                              content: 'Inactive images',
+                              description:
+                                  'View findings for images not currently deployed as workloads',
+                              path: vulnerabilitiesInactiveImagesPath,
+                              routeKey: 'vulnerabilities/inactive-images',
                           },
                       ],
                   },

@@ -34,9 +34,13 @@ import {
     systemHealthPath,
     violationsBasePath,
     vulnManagementPath,
+    vulnerabilitiesAllImagesPath,
+    vulnerabilitiesInactiveImagesPath,
     vulnerabilitiesNodeCvesPath,
     vulnerabilitiesPlatformCvesPath,
-    vulnerabilitiesPlatformWorkloadCvesPath,
+    vulnerabilitiesPlatformPath,
+    vulnerabilitiesUserWorkloadsPath,
+    vulnerabilitiesViewPath,
     vulnerabilitiesWorkloadCvesPath,
     vulnerabilityReportsPath,
 } from 'routePaths';
@@ -62,14 +66,18 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
               {
                   type: 'link',
                   content: 'Results',
-                  path: vulnerabilitiesWorkloadCvesPath,
-                  routeKey: 'vulnerabilities/workload-cves',
+                  path: vulnerabilitiesUserWorkloadsPath,
+                  routeKey: 'vulnerabilities/user-workloads',
                   isActive: (pathname) =>
                       Boolean(
                           matchPath(pathname, [
                               vulnerabilitiesWorkloadCvesPath,
-                              vulnerabilitiesPlatformWorkloadCvesPath,
                               vulnerabilitiesNodeCvesPath,
+                              vulnerabilitiesUserWorkloadsPath,
+                              vulnerabilitiesPlatformPath,
+                              vulnerabilitiesAllImagesPath,
+                              vulnerabilitiesInactiveImagesPath,
+                              vulnerabilitiesViewPath,
                           ])
                       ),
               },
