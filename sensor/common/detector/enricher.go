@@ -24,7 +24,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/scan"
 	"github.com/stackrox/rox/sensor/common/store"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -356,7 +355,7 @@ func (e *enricher) getImages(ctx context.Context, deployment *storage.Deployment
 		imageName := imgResult.image.GetName()
 		deploymentImageName := deployment.Containers[imgResult.containerIdx].GetImage().GetName()
 		image := imgResult.image
-		if !proto.Equal(imageName, deploymentImageName) {
+		if !compareImageName(imageName, deploymentImageName) {
 			// This will ensure that when we change the Name of the image
 			// that it will not cause a potential race condition
 			image = imgResult.image.CloneVT()
@@ -402,4 +401,11 @@ func (e *enricher) outputChan() <-chan scanResult {
 
 func (e *enricher) stop() {
 	e.stopSig.Signal()
+}
+
+func compareImageName(x *storage.ImageName, y *storage.ImageName) bool {
+	return x.GetRegistry() == y.GetRegistry() &&
+		x.GetRemote() == y.GetRemote() &&
+		x.GetTag() == y.GetTag() &&
+		x.GetFullName() == y.GetFullName()
 }
