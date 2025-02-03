@@ -23,9 +23,9 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Node)): {
-			"/v1.NodeService/GetNode",
-			"/v1.NodeService/ListNodes",
-			"/v1.NodeService/ExportNodes",
+			v1.NodeService_GetNode_FullMethodName,
+			v1.NodeService_ListNodes_FullMethodName,
+			v1.NodeService_ExportNodes_FullMethodName,
 		},
 	})
 )

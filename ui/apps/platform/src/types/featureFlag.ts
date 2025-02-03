@@ -18,5 +18,4 @@ export type FeatureFlagEnvVar =
     | 'ROX_SCAN_SCHEDULE_REPORT_JOBS'
     | 'ROX_SCANNER_V4'
     | 'ROX_VULN_MGMT_LEGACY_SNOOZE'
-    | 'ROX_VULN_MGMT_WORKLOAD_CVES'
     ;

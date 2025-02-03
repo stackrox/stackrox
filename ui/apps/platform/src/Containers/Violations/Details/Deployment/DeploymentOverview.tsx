@@ -5,10 +5,7 @@ import { DescriptionList } from '@patternfly/react-core';
 
 import dateTimeFormat from 'constants/dateTimeFormat';
 import DescriptionListItem from 'Components/DescriptionListItem';
-import {
-    vulnerabilitiesPlatformWorkloadCvesPath,
-    vulnerabilitiesWorkloadCvesPath,
-} from 'routePaths';
+import { vulnerabilitiesPlatformPath, vulnerabilitiesWorkloadCvesPath } from 'routePaths';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import { AlertDeployment } from 'types/alert.proto';
 import { Deployment } from 'types/deployment.proto';
@@ -37,7 +34,7 @@ function DeploymentOverview({
                     <Link
                         to={
                             hasPlatformWorkloadCveLink
-                                ? `${vulnerabilitiesPlatformWorkloadCvesPath}/deployments/${alertDeployment.id}`
+                                ? `${vulnerabilitiesPlatformPath}/deployments/${alertDeployment.id}`
                                 : `${vulnerabilitiesWorkloadCvesPath}/deployments/${alertDeployment.id}`
                         }
                     >

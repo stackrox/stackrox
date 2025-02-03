@@ -171,7 +171,6 @@ func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
 
 	// Test Upsert
 	for _, c := range cases {
-		c := c
 		cluster := c.entity.GetScope().GetClusterId()
 		var pushSig concurrency.Signal
 		if c.pass {
@@ -198,7 +197,6 @@ func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
 		if c.skipGet {
 			continue
 		}
-		c := c
 		actual, found, err := suite.ds.GetEntity(suite.globalReadAccessCtx, c.entity.GetInfo().GetId())
 		if c.pass {
 			suite.NoError(err)
@@ -241,7 +239,6 @@ func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
 
 	// Test Delete
 	for _, c := range cases {
-		c := c
 		cluster := c.entity.GetScope().GetClusterId()
 		if !c.pass {
 			continue
@@ -388,7 +385,6 @@ func (suite *NetworkEntityDataStoreTestSuite) TestSAC() {
 	}
 
 	for _, c := range cases {
-		c := c
 		cluster := c.entity.GetScope().GetClusterId()
 
 		var pushSig concurrency.Signal
@@ -504,7 +500,6 @@ func (suite *NetworkEntityDataStoreTestSuite) TestSAC() {
 	}
 
 	for _, c := range cases {
-		c := c
 		cluster := c.entity.GetScope().GetClusterId()
 
 		var pushSig concurrency.Signal
@@ -583,7 +578,6 @@ func (suite *NetworkEntityDataStoreTestSuite) TestDefaultGraphSetting() {
 	}
 
 	for _, c := range cases {
-		c := c
 		suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(c.graphConfig, nil)
 		actual, err := suite.ds.GetAllEntities(suite.globalReadAccessCtx)
 		suite.NoError(err)

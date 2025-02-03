@@ -2,6 +2,7 @@ import React, { ReactElement } from 'react';
 import { Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { SearchResult, SearchResultCategory } from 'services/SearchService';
 import { SearchFilter } from 'types/search';
 
@@ -28,8 +29,12 @@ type SearchTableProps = {
 };
 
 function SearchTable({ navCategory, searchFilter, searchResults }: SearchTableProps): ReactElement {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
     const isRouteEnabled = useIsRouteEnabled();
-    const searchResultCategoryMap = searchResultCategoryMapFilteredIsRouteEnabled(isRouteEnabled);
+    const searchResultCategoryMap = searchResultCategoryMapFilteredIsRouteEnabled(
+        isRouteEnabled,
+        isFeatureFlagEnabled
+    );
 
     const firstColumnHeading = searchNavMap[navCategory];
     const hasLocationColumn =

@@ -28,10 +28,10 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.DeploymentExtension)): {
-			"/v1.ProcessService/CountProcesses",
-			"/v1.ProcessService/GetProcessesByDeployment",
-			"/v1.ProcessService/GetGroupedProcessByDeployment",
-			"/v1.ProcessService/GetGroupedProcessByDeploymentAndContainer",
+			v1.ProcessService_CountProcesses_FullMethodName,
+			v1.ProcessService_GetProcessesByDeployment_FullMethodName,
+			v1.ProcessService_GetGroupedProcessByDeployment_FullMethodName,
+			v1.ProcessService_GetGroupedProcessByDeploymentAndContainer_FullMethodName,
 		},
 	})
 )

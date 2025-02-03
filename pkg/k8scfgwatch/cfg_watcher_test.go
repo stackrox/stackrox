@@ -43,7 +43,6 @@ func TestConfigMapTrigger(t *testing.T) {
 	}
 
 	for name, c := range cases {
-		c := c
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			k8sClient := fake.NewSimpleClientset()
@@ -96,7 +95,6 @@ func TestConfigMapContextCancelled(t *testing.T) {
 	}
 
 	for name, c := range cases {
-		c := c
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			k8sClient := fake.NewSimpleClientset()

@@ -39,16 +39,16 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		or.SensorOr(user.With(permissions.View(resources.Integration))): {
-			"/v1.ImageIntegrationService/GetImageIntegration",
-			"/v1.ImageIntegrationService/GetImageIntegrations",
+			v1.ImageIntegrationService_GetImageIntegration_FullMethodName,
+			v1.ImageIntegrationService_GetImageIntegrations_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.Integration)): {
-			"/v1.ImageIntegrationService/PostImageIntegration",
-			"/v1.ImageIntegrationService/PutImageIntegration",
-			"/v1.ImageIntegrationService/TestImageIntegration",
-			"/v1.ImageIntegrationService/DeleteImageIntegration",
-			"/v1.ImageIntegrationService/UpdateImageIntegration",
-			"/v1.ImageIntegrationService/TestUpdatedImageIntegration",
+			v1.ImageIntegrationService_PostImageIntegration_FullMethodName,
+			v1.ImageIntegrationService_PutImageIntegration_FullMethodName,
+			v1.ImageIntegrationService_TestImageIntegration_FullMethodName,
+			v1.ImageIntegrationService_DeleteImageIntegration_FullMethodName,
+			v1.ImageIntegrationService_UpdateImageIntegration_FullMethodName,
+			v1.ImageIntegrationService_TestUpdatedImageIntegration_FullMethodName,
 		},
 	})
 )

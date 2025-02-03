@@ -57,30 +57,30 @@ const (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Image)): {
-			"/v1.ImageService/GetImage",
-			"/v1.ImageService/CountImages",
-			"/v1.ImageService/ListImages",
-			"/v1.ImageService/ExportImages",
+			v1.ImageService_GetImage_FullMethodName,
+			v1.ImageService_CountImages_FullMethodName,
+			v1.ImageService_ListImages_FullMethodName,
+			v1.ImageService_ExportImages_FullMethodName,
 		},
 		or.SensorOr(idcheck.AdmissionControlOnly()): {
-			"/v1.ImageService/ScanImageInternal",
+			v1.ImageService_ScanImageInternal_FullMethodName,
 		},
 		idcheck.SensorsOnly(): {
-			"/v1.ImageService/GetImageVulnerabilitiesInternal",
-			"/v1.ImageService/EnrichLocalImageInternal",
-			"/v1.ImageService/UpdateLocalScanStatusInternal",
+			v1.ImageService_GetImageVulnerabilitiesInternal_FullMethodName,
+			v1.ImageService_EnrichLocalImageInternal_FullMethodName,
+			v1.ImageService_UpdateLocalScanStatusInternal_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.Image)): {
-			"/v1.ImageService/DeleteImages",
-			"/v1.ImageService/InvalidateScanAndRegistryCaches",
-			"/v1.ImageService/ScanImage",
+			v1.ImageService_DeleteImages_FullMethodName,
+			v1.ImageService_InvalidateScanAndRegistryCaches_FullMethodName,
+			v1.ImageService_ScanImage_FullMethodName,
 		},
 		user.With(permissions.View(resources.WatchedImage)): {
-			"/v1.ImageService/GetWatchedImages",
+			v1.ImageService_GetWatchedImages_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.WatchedImage)): {
-			"/v1.ImageService/WatchImage",
-			"/v1.ImageService/UnwatchImage",
+			v1.ImageService_WatchImage_FullMethodName,
+			v1.ImageService_UnwatchImage_FullMethodName,
 		},
 	})
 

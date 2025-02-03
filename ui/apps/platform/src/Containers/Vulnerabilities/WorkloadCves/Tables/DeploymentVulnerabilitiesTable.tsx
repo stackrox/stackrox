@@ -26,8 +26,8 @@ import DeploymentComponentVulnerabilitiesTable, {
 } from './DeploymentComponentVulnerabilitiesTable';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
-import { FormattedDeploymentVulnerability } from './table.utils';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
+import { FormattedDeploymentVulnerability, formatEpssProbabilityAsPercent } from './table.utils';
 
 export const tableId = 'WorkloadCvesDeploymentVulnerabilitiesTable';
 export const defaultColumns = {
@@ -71,6 +71,11 @@ export const deploymentWithVulnerabilitiesFragment = gql`
         imageVulnerabilities(query: $query, pagination: $pagination) {
             vulnerabilityId: id
             cve
+            cveBaseInfo {
+                epss {
+                    epssProbability
+                }
+            }
             operatingSystem
             publishedOn
             summary
@@ -155,6 +160,7 @@ function DeploymentVulnerabilitiesTable({
                         const {
                             vulnerabilityId,
                             cve,
+                            cveBaseInfo,
                             operatingSystem,
                             severity,
                             summary,
@@ -165,6 +171,7 @@ function DeploymentVulnerabilitiesTable({
                             publishedOn,
                             pendingExceptionCount,
                         } = vulnerability;
+                        const epssProbability = cveBaseInfo?.epss?.epssProbability;
                         const isExpanded = expandedRowSet.has(vulnerabilityId);
 
                         return (
@@ -217,13 +224,13 @@ function DeploymentVulnerabilitiesTable({
                                     >
                                         <VulnerabilityFixableIconText isFixable={isFixable} />
                                     </Td>
-                                    {!isEpssProbabilityColumnEnabled && (
+                                    {isEpssProbabilityColumnEnabled && (
                                         <Td
                                             className={getVisibilityClass('epssProbability')}
                                             modifier="nowrap"
                                             dataLabel="EPSS probability"
                                         >
-                                            Not available
+                                            {formatEpssProbabilityAsPercent(epssProbability)}
                                         </Td>
                                     )}
                                     <Td

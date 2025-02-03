@@ -19,7 +19,7 @@ import useURLSort from 'hooks/useURLSort';
 import { Pagination as PaginationParam } from 'services/types';
 import { getHasSearchApplied, getPaginationParams } from 'utils/searchUtils';
 import NotFoundMessage from 'Components/NotFoundMessage';
-
+import { getSearchFilterConfigWithFeatureFlagDependency } from 'Components/CompoundSearchFilter/utils/utils';
 import { DynamicTableLabel } from 'Components/DynamicIcon';
 import {
     SummaryCardLayout,
@@ -94,7 +94,7 @@ export const deploymentVulnerabilitiesQuery = gql`
 
 const defaultSortFields = ['CVE', 'Severity'];
 
-const searchFilterConfig = [
+const searchFilterConfigWithFeatureFlagDependency = [
     imageSearchFilterConfig,
     imageCVESearchFilterConfig,
     imageComponentSearchFilterConfig,
@@ -192,6 +192,11 @@ function DeploymentPageVulnerabilities({
         (key) => key !== 'epssProbability' || isEpssProbabilityColumnEnabled
     );
     const managedColumnState = useManagedColumns(tableId, filteredColumns);
+
+    const searchFilterConfig = getSearchFilterConfigWithFeatureFlagDependency(
+        isFeatureFlagEnabled,
+        searchFilterConfigWithFeatureFlagDependency
+    );
 
     const vulnerabilityData = vulnerabilityRequest.data ?? vulnerabilityRequest.previousData;
     const totalVulnerabilityCount = vulnerabilityData?.deployment?.imageVulnerabilityCount ?? 0;

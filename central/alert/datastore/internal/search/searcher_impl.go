@@ -12,10 +12,15 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
+type AlertSearcher interface {
+	Search(ctx context.Context, q *v1.Query, excludeResolved bool) ([]search.Result, error)
+	Count(ctx context.Context, q *v1.Query, excludeResolved bool) (int, error)
+}
+
 // searcherImpl provides an intermediary implementation layer for AlertStorage.
 type searcherImpl struct {
 	storage           store.Store
-	formattedSearcher search.Searcher
+	formattedSearcher AlertSearcher
 }
 
 // SearchAlerts retrieves SearchResults from the storage
@@ -31,9 +36,11 @@ func (ds *searcherImpl) SearchAlerts(ctx context.Context, q *v1.Query) ([]*v1.Se
 	return protoResults, nil
 }
 
-// SearchListAlerts retrieves list alerts from the storage
-func (ds *searcherImpl) SearchListAlerts(ctx context.Context, q *v1.Query) ([]*storage.ListAlert, error) {
-	q = applyDefaultState(q)
+// SearchListAlerts retrieves list alerts from the storage, passing excludeResolved = true will exclude resolved alerts unless the query has explicitly added Violation State = Resolved to the filter
+func (ds *searcherImpl) SearchListAlerts(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*storage.ListAlert, error) {
+	if excludeResolved {
+		q = applyDefaultState(q)
+	}
 	alerts, err := ds.storage.GetByQuery(ctx, q)
 	if err != nil {
 		return nil, err
@@ -47,13 +54,13 @@ func (ds *searcherImpl) SearchListAlerts(ctx context.Context, q *v1.Query) ([]*s
 }
 
 // SearchRawAlerts retrieves Alerts from the storage
-func (ds *searcherImpl) SearchRawAlerts(ctx context.Context, q *v1.Query) ([]*storage.Alert, error) {
-	alerts, err := ds.searchAlerts(ctx, q)
+func (ds *searcherImpl) SearchRawAlerts(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*storage.Alert, error) {
+	alerts, err := ds.searchAlerts(ctx, q, excludeResolved)
 	return alerts, err
 }
 
 func (ds *searcherImpl) searchListAlerts(ctx context.Context, q *v1.Query) ([]*storage.ListAlert, []search.Result, error) {
-	results, err := ds.Search(ctx, q)
+	results, err := ds.Search(ctx, q, true)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -69,19 +76,21 @@ func (ds *searcherImpl) searchListAlerts(ctx context.Context, q *v1.Query) ([]*s
 	return listAlerts, results, nil
 }
 
-func (ds *searcherImpl) searchAlerts(ctx context.Context, q *v1.Query) ([]*storage.Alert, error) {
-	q = applyDefaultState(q)
+func (ds *searcherImpl) searchAlerts(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*storage.Alert, error) {
+	if excludeResolved {
+		q = applyDefaultState(q)
+	}
 	return ds.storage.GetByQuery(ctx, q)
 }
 
 // Search takes a SearchRequest and finds any matches
-func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	return ds.formattedSearcher.Search(ctx, q)
+func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query, excludeResolved bool) ([]search.Result, error) {
+	return ds.formattedSearcher.Search(ctx, q, excludeResolved)
 }
 
 // Count returns the number of search results from the query
-func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	return ds.formattedSearcher.Count(ctx, q)
+func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query, excludeResolved bool) (int, error) {
+	return ds.formattedSearcher.Count(ctx, q, excludeResolved)
 }
 
 // convertAlert returns proto search result from an alert object and the internal search result
@@ -116,7 +125,7 @@ func convertAlert(alert *storage.ListAlert, result search.Result) *v1.SearchResu
 // Helper functions which format our searching.
 ///////////////////////////////////////////////
 
-func formatSearcher(searcher search.Searcher) search.Searcher {
+func formatSearcher(searcher search.Searcher) AlertSearcher {
 	withDefaultViolationState := withDefaultActiveViolations(searcher)
 	return withDefaultViolationState
 }
@@ -146,7 +155,7 @@ func applyDefaultState(q *v1.Query) *v1.Query {
 }
 
 // If no active violation field is set, add one by default.
-func withDefaultActiveViolations(searcher search.Searcher) search.Searcher {
+func withDefaultActiveViolations(searcher search.Searcher) AlertSearcher {
 	return &defaultViolationStateSearcher{
 		searcher: searcher,
 	}
@@ -156,12 +165,16 @@ type defaultViolationStateSearcher struct {
 	searcher search.Searcher
 }
 
-func (ds *defaultViolationStateSearcher) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	q = applyDefaultState(q)
+func (ds *defaultViolationStateSearcher) Search(ctx context.Context, q *v1.Query, excludeResolved bool) ([]search.Result, error) {
+	if excludeResolved {
+		q = applyDefaultState(q)
+	}
 	return ds.searcher.Search(ctx, q)
 }
 
-func (ds *defaultViolationStateSearcher) Count(ctx context.Context, q *v1.Query) (int, error) {
-	q = applyDefaultState(q)
+func (ds *defaultViolationStateSearcher) Count(ctx context.Context, q *v1.Query, excludeResolved bool) (int, error) {
+	if excludeResolved {
+		q = applyDefaultState(q)
+	}
 	return ds.searcher.Count(ctx, q)
 }

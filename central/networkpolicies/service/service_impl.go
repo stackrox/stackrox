@@ -50,29 +50,29 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.NetworkPolicy)): {
-			"/v1.NetworkPolicyService/GetNetworkPolicy",
-			"/v1.NetworkPolicyService/GetNetworkPolicies",
-			"/v1.NetworkPolicyService/SimulateNetworkGraph",
-			"/v1.NetworkPolicyService/GetNetworkGraph",
-			"/v1.NetworkPolicyService/GetNetworkGraphEpoch",
-			"/v1.NetworkPolicyService/GetUndoModification",
-			"/v1.NetworkPolicyService/GetAllowedPeersFromCurrentPolicyForDeployment",
-			"/v1.NetworkPolicyService/GetDiffFlowsBetweenPolicyAndBaselineForDeployment",
-			"/v1.NetworkPolicyService/GetUndoModificationForDeployment",
-			"/v1.NetworkPolicyService/GetDiffFlowsFromUndoModificationForDeployment",
+			v1.NetworkPolicyService_GetNetworkPolicy_FullMethodName,
+			v1.NetworkPolicyService_GetNetworkPolicies_FullMethodName,
+			v1.NetworkPolicyService_SimulateNetworkGraph_FullMethodName,
+			v1.NetworkPolicyService_GetNetworkGraph_FullMethodName,
+			v1.NetworkPolicyService_GetNetworkGraphEpoch_FullMethodName,
+			v1.NetworkPolicyService_GetUndoModification_FullMethodName,
+			v1.NetworkPolicyService_GetAllowedPeersFromCurrentPolicyForDeployment_FullMethodName,
+			v1.NetworkPolicyService_GetDiffFlowsBetweenPolicyAndBaselineForDeployment_FullMethodName,
+			v1.NetworkPolicyService_GetUndoModificationForDeployment_FullMethodName,
+			v1.NetworkPolicyService_GetDiffFlowsFromUndoModificationForDeployment_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.NetworkPolicy)): {
-			"/v1.NetworkPolicyService/ApplyNetworkPolicy",
-			"/v1.NetworkPolicyService/ApplyNetworkPolicyYamlForDeployment",
+			v1.NetworkPolicyService_ApplyNetworkPolicy_FullMethodName,
+			v1.NetworkPolicyService_ApplyNetworkPolicyYamlForDeployment_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.Integration)): {
-			"/v1.NetworkPolicyService/SendNetworkPolicyYAML",
+			v1.NetworkPolicyService_SendNetworkPolicyYAML_FullMethodName,
 		},
 		user.With(permissions.View(resources.NetworkPolicy), permissions.View(resources.NetworkGraph)): {
-			"/v1.NetworkPolicyService/GenerateNetworkPolicies",
+			v1.NetworkPolicyService_GenerateNetworkPolicies_FullMethodName,
 		},
 		user.With(permissions.View(resources.NetworkPolicy), permissions.View(resources.DeploymentExtension)): {
-			"/v1.NetworkPolicyService/GetBaselineGeneratedNetworkPolicyForDeployment",
+			v1.NetworkPolicyService_GetBaselineGeneratedNetworkPolicyForDeployment_FullMethodName,
 		},
 	})
 

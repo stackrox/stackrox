@@ -32,20 +32,20 @@ var (
 			// the user is not authenticated yet. For instance the public
 			// config contains banners that are rendered on the login page.
 			// This endpoint should therefore remain public.
-			"/v1.ConfigService/GetPublicConfig",
+			v1.ConfigService_GetPublicConfig_FullMethodName,
 		},
 		or.Or(
 			user.With(permissions.View(resources.VulnerabilityManagementRequests)),
 			user.With(permissions.View(resources.Administration))): {
-			"/v1.ConfigService/GetVulnerabilityExceptionConfig",
+			v1.ConfigService_GetVulnerabilityExceptionConfig_FullMethodName,
 		},
 		user.With(permissions.View(resources.Administration)): {
-			"/v1.ConfigService/GetConfig",
-			"/v1.ConfigService/GetPrivateConfig",
+			v1.ConfigService_GetConfig_FullMethodName,
+			v1.ConfigService_GetPrivateConfig_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.Administration)): {
-			"/v1.ConfigService/PutConfig",
-			"/v1.ConfigService/UpdateVulnerabilityExceptionConfig",
+			v1.ConfigService_PutConfig_FullMethodName,
+			v1.ConfigService_UpdateVulnerabilityExceptionConfig_FullMethodName,
 		},
 	})
 )

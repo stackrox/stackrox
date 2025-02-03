@@ -27,6 +27,7 @@ import {
 import ConditionNumber from './ConditionNumber';
 import SearchFilterAutocomplete from './SearchFilterAutocomplete';
 import ConditionDate from './ConditionDate';
+import ConditionText from './ConditionText';
 
 export type InputFieldValue =
     | string
@@ -123,6 +124,21 @@ function CompoundSearchFilterInputField({
                         action: 'ADD',
                         category: attribute.searchTerm,
                         value: `${conditionMap[condition]}${number}`,
+                    });
+                }}
+            />
+        );
+    }
+    if (attribute.inputType === 'condition-text') {
+        return (
+            <ConditionText
+                inputProps={attribute.inputProps}
+                onSearch={(internalConditionText) => {
+                    // onChange(newValue); // inputText seems unused in CompoundSearchFilter
+                    onSearch({
+                        action: 'ADD',
+                        category: attribute.searchTerm,
+                        value: internalConditionText,
                     });
                 }}
             />

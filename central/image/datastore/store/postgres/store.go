@@ -349,6 +349,7 @@ func copyFromImageCves(ctx context.Context, tx *postgres.Tx, iTime time.Time, ob
 		"impactscore",
 		"snoozed",
 		"snoozeexpiry",
+		"cvebaseinfo_epss_epssprobability",
 		"serialized",
 	}
 
@@ -388,6 +389,7 @@ func copyFromImageCves(ctx context.Context, tx *postgres.Tx, iTime time.Time, ob
 			obj.GetImpactScore(),
 			obj.GetSnoozed(),
 			protocompat.NilOrTime(obj.GetSnoozeExpiry()),
+			obj.GetCveBaseInfo().GetEpss().GetEpssProbability(),
 			serialized,
 		})
 
@@ -1318,7 +1320,7 @@ func (s *storeImpl) retryableGetManyImageMetadata(ctx context.Context, ids []str
 	if err != nil {
 		return nil, nil, err
 	}
-	sacQueryFilter, err := sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err := sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
 	if err != nil {
 		return nil, nil, err
 	}

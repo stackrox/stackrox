@@ -25,7 +25,6 @@ func TestWithDefaultPort(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		// Test names must not contain colons.
 		t.Run(strings.ReplaceAll(c.input, ":", ";"), func(t *testing.T) {
 			t.Parallel()

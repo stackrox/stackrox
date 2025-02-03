@@ -36,14 +36,13 @@ const (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Compliance)): {
-			"/v2.ComplianceResultsService/GetComplianceScanResults",
-			"/v2.ComplianceResultsService/GetComplianceScanCheckResult",
-			"/v2.ComplianceResultsService/GetComplianceScanConfigurationResults",
-			"/v2.ComplianceResultsService/GetComplianceScanConfigurationResultsCount",
-			"/v2.ComplianceResultsService/GetComplianceProfileResults",
-			"/v2.ComplianceResultsService/GetComplianceProfileCheckResult",
-			"/v2.ComplianceResultsService/GetComplianceProfileClusterResults",
-			"/v2.ComplianceResultsService/GetComplianceProfileCheckDetails",
+			v2.ComplianceResultsService_GetComplianceScanResults_FullMethodName,
+			v2.ComplianceResultsService_GetComplianceScanCheckResult_FullMethodName,
+			v2.ComplianceResultsService_GetComplianceScanConfigurationResults_FullMethodName,
+			v2.ComplianceResultsService_GetComplianceProfileResults_FullMethodName,
+			v2.ComplianceResultsService_GetComplianceProfileCheckResult_FullMethodName,
+			v2.ComplianceResultsService_GetComplianceProfileClusterResults_FullMethodName,
+			v2.ComplianceResultsService_GetComplianceProfileCheckDetails_FullMethodName,
 		},
 	})
 

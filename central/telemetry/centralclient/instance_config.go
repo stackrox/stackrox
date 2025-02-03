@@ -2,7 +2,7 @@ package centralclient
 
 import (
 	"context"
-	"strings"
+	"encoding/json"
 	"time"
 
 	"github.com/pkg/errors"
@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 	k8sVersion "k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/kubernetes"
@@ -26,7 +27,7 @@ import (
 
 var (
 	apiWhiteList   = env.RegisterSetting("ROX_TELEMETRY_API_WHITELIST", env.AllowEmpty())
-	userAgentsList = env.RegisterSetting("ROX_TELEMETRY_USERAGENT_LIST", env.WithDefault("ServiceNow"), env.AllowEmpty())
+	userAgentsList = env.RegisterSetting("ROX_TELEMETRY_USERAGENT_LIST", env.AllowEmpty())
 
 	config *phonehome.Config
 	once   sync.Once
@@ -36,15 +37,17 @@ var (
 	enabled  bool
 )
 
-// getKey returns the configured key. If returned key is empty, telemetry should
-// be disabled.
-func getKey() (string, error) {
+// getRuntimeConfig returns the runtime configuration with the configured key.
+// If returns nil or error, telemetry should be disabled.
+func getRuntimeConfig() (*phonehome.RuntimeConfig, error) {
 	if env.OfflineModeEnv.BooleanSetting() {
-		return "", nil
+		return nil, nil
 	}
-	key, err := phonehome.GetKey(env.TelemetryStorageKey.Setting(),
-		env.TelemetryConfigURL.Setting())
-	return key, errors.Wrap(err, "failed to get telemetry key")
+	runtimeCfg, err := phonehome.GetRuntimeConfig(
+		env.TelemetryConfigURL.Setting(),
+		env.TelemetryStorageKey.Setting(),
+	)
+	return runtimeCfg, errors.Wrap(err, "failed to get telemetry key")
 }
 
 func getInstanceConfig(id string, key string) (*phonehome.Config, map[string]any) {
@@ -57,9 +60,6 @@ func getInstanceConfig(id string, key string) (*phonehome.Config, map[string]any
 			}
 		}
 	}
-
-	trackedPaths = strings.Split(apiWhiteList.Setting(), ",")
-	trackedUserAgents = strings.Split(userAgentsList.Setting(), ",")
 
 	orchestrator := storage.ClusterType_KUBERNETES_CLUSTER.String()
 	if env.Openshift.BooleanSetting() {
@@ -102,12 +102,12 @@ func getInstanceConfig(id string, key string) (*phonehome.Config, map[string]any
 // telemetry client. Returns nil if data collection is disabled.
 func InstanceConfig() *phonehome.Config {
 	once.Do(func() {
-		key, err := getKey()
+		runtimeCfg, err := getRuntimeConfig()
 		if err != nil {
 			log.Errorf("Failed to configure telemetry: %v.", err)
 			return
 		}
-		if key == "" {
+		if runtimeCfg == nil {
 			return
 		}
 
@@ -122,12 +122,20 @@ func InstanceConfig() *phonehome.Config {
 			return
 		}
 
+		utils.Must(telemetryCampaign.Compile())
+		if err := runtimeCfg.APICallCampaign.Compile(); err != nil {
+			log.Errorf("Failed to initialize runtime telemetry campaign: %v", err)
+		} else {
+			telemetryCampaign = append(telemetryCampaign, runtimeCfg.APICallCampaign...)
+		}
+
 		var props map[string]any
-		config, props = getInstanceConfig(ii.Id, key)
+		config, props = getInstanceConfig(ii.Id, runtimeCfg.Key)
 		log.Info("Central ID: ", config.ClientID)
 		log.Info("Tenant ID: ", config.GroupID)
-		log.Info("API path telemetry enabled for: ", trackedPaths)
-		log.Info("API User-Agent telemetry enabled for: ", trackedUserAgents)
+		jc, _ := json.Marshal(telemetryCampaign)
+		log.Info("API Telemetry campaign: ", string(jc))
+		log.Infof("API Telemetry ignored paths: %v", ignoredPaths)
 
 		config.Gatherer().AddGatherer(func(ctx context.Context) (map[string]any, error) {
 			return props, nil

@@ -93,7 +93,7 @@ func (s *serviceImpl) getSearchFuncs() map[v1.SearchCategory]SearchFunc {
 
 func (s *serviceImpl) getAutocompleteSearchers() map[v1.SearchCategory]search.Searcher {
 	searchers := map[v1.SearchCategory]search.Searcher{
-		v1.SearchCategory_ALERTS:             s.alerts,
+		v1.SearchCategory_ALERTS:             &alertDataStore.DefaultStateAlertDataStoreImpl{DataStore: &s.alerts},
 		v1.SearchCategory_DEPLOYMENTS:        s.deployments,
 		v1.SearchCategory_IMAGES:             s.images,
 		v1.SearchCategory_POLICIES:           s.policies,
@@ -310,9 +310,9 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 func (s *serviceImpl) initializeAuthorizer() {
 	s.authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.Authenticated(): {
-			"/v1.SearchService/Search",
-			"/v1.SearchService/Options",
-			"/v1.SearchService/Autocomplete",
+			v1.SearchService_Search_FullMethodName,
+			v1.SearchService_Options_FullMethodName,
+			v1.SearchService_Autocomplete_FullMethodName,
 		},
 	})
 }

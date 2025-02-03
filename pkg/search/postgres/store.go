@@ -538,6 +538,10 @@ func (s *genericStore[T, PT]) deleteMany(ctx context.Context, identifiers []stri
 			if !continueOnError {
 				return errors.Wrap(err, "unable to delete the records")
 			}
+			// We want to stop processing batches if the context was canceled or timed out.
+			if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+				break
+			}
 			log.Errorf("unable to prune the records: %v", err)
 		}
 		deletedCount = deletedCount + len(identifierBatch)

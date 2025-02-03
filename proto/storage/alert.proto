@@ -158,11 +158,11 @@ message Alert {
 message ListAlert {
   // Fields common to all entities that an alert might belong to.
   message CommonEntityInfo {
-    string cluster_name = 1; // @gotags: search:"Cluster,store"
-    string namespace = 2; // @gotags: search:"Namespace,store"
-    string cluster_id = 3; // @gotags: search:"Cluster ID,store" sql:"type(uuid)"
-    string namespace_id = 4; // @gotags: search:"Namespace ID" sql:"type(uuid)"
-    ResourceType resource_type = 5; // @gotags: search:"Resource Type,store"
+    string cluster_name = 1;
+    string namespace = 2;
+    string cluster_id = 3;
+    string namespace_id = 4;
+    ResourceType resource_type = 5;
   }
 
   // A special ListAlert-only enumeration of all resource types. Unlike Alert.Resource.ResourceType this also includes deployment as a type
@@ -179,17 +179,17 @@ message ListAlert {
   }
 
   message ResourceEntity {
-    string name = 1; // @gotags: search:"Resource"
+    string name = 1;
   }
 
   string id = 1;
-  LifecycleStage lifecycle_stage = 2; // @gotags: search:"Lifecycle Stage,store"
-  google.protobuf.Timestamp time = 3; // @gotags: search:"Violation Time"
+  LifecycleStage lifecycle_stage = 2;
+  google.protobuf.Timestamp time = 3;
   ListAlertPolicy policy = 4;
-  ViolationState state = 6; // @gotags: search:"Violation State,store"
+  ViolationState state = 6;
   int32 enforcement_count = 7;
   reserved 8; // was tags
-  storage.EnforcementAction enforcement_action = 9; // @gotags: search:"Enforcement"
+  storage.EnforcementAction enforcement_action = 9;
   CommonEntityInfo common_entity_info = 10;
 
   // Tags 5, 11-15 reserved for this oneof. Next available tag: 12
@@ -206,14 +206,14 @@ message ListAlert {
 }
 
 message ListAlertPolicy {
-  string id = 1; // @gotags: search:"Policy ID,store,hidden"
-  string name = 2; // @gotags: search:"Policy,store"
-  Severity severity = 3; // @gotags: search:"Severity,store"
+  string id = 1;
+  string name = 2;
+  Severity severity = 3;
   string description = 4;
-  repeated string categories = 5; // @gotags: search:"Category,store"
+  repeated string categories = 5;
 
   message DevFields {
-    string SORT_name = 6; // @gotags: search:"SORT_Policy,hidden,analyzer=keyword"
+    string SORT_name = 6;
   }
 
   // For internal use only.
@@ -221,8 +221,8 @@ message ListAlertPolicy {
 }
 
 message ListAlertDeployment {
-  string id = 1; // @gotags: search:"Deployment ID,store,hidden"
-  string name = 2; // @gotags: search:"Deployment,store"
+  string id = 1;
+  string name = 2;
   reserved 3; // was: google.protobuf.Timestamp updated_at
   // This field is deprecated and can be found in CommonEntityInfo. It will be removed from here in a future release.
   string cluster_name = 4 [deprecated = true]; // This field has moved to CommonEntityInfo
@@ -230,7 +230,7 @@ message ListAlertDeployment {
   string namespace = 5 [deprecated = true]; // This field has moved to CommonEntityInfo
   // This field is deprecated and can be found in CommonEntityInfo. It will be removed from here in a future release.
   string cluster_id = 6 [deprecated = true]; // This field has moved to CommonEntityInfo
-  bool inactive = 7; // @gotags: search:"Inactive Deployment"
+  bool inactive = 7;
   // This field is deprecated and can be found in CommonEntityInfo. It will be removed from here in a future release.
   string namespace_id = 8 [deprecated = true]; // This field has moved to CommonEntityInfo
   string deployment_type = 9;

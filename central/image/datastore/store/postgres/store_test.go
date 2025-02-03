@@ -47,6 +47,7 @@ func (s *ImagesStoreSuite) TestStore() {
 	for _, comp := range image.GetScan().GetComponents() {
 		for _, vuln := range comp.GetVulns() {
 			vuln.NvdCvss = 0
+			vuln.Epss = nil
 		}
 	}
 

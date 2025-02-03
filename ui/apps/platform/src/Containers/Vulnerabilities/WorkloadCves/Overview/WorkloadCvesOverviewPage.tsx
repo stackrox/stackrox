@@ -16,9 +16,11 @@ import isEmpty from 'lodash/isEmpty';
 
 import useURLSearch from 'hooks/useURLSearch';
 import useURLStringUnion from 'hooks/useURLStringUnion';
+import { getSearchFilterConfigWithFeatureFlagDependency } from 'Components/CompoundSearchFilter/utils/utils';
 import PageTitle from 'Components/PageTitle';
 import useURLPagination from 'hooks/useURLPagination';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
 import useAnalytics, {
     WATCH_IMAGE_MODAL_OPENED,
@@ -28,9 +30,9 @@ import useAnalytics, {
 import useLocalStorage from 'hooks/useLocalStorage';
 import { SearchFilter } from 'types/search';
 import {
-    getDefaultWorkloadSortOption,
+    getWorkloadCveOverviewDefaultSortOption,
     getDefaultZeroCveSortOption,
-    getWorkloadSortFields,
+    getWorkloadCveOverviewSortFields,
     syncSeveritySortOption,
 } from 'Containers/Vulnerabilities/utils/sortUtils';
 import useURLSort from 'hooks/useURLSort';
@@ -128,7 +130,7 @@ function getSearchFilterEntityByTab(
     }
 }
 
-const searchFilterConfig = [
+const searchFilterConfigWithFeatureFlagDependency = [
     imageSearchFilterConfig,
     imageCVESearchFilterConfig,
     imageComponentSearchFilterConfig,
@@ -139,6 +141,8 @@ const searchFilterConfig = [
 
 function WorkloadCvesOverviewPage() {
     const apolloClient = useApolloClient();
+
+    const { isFeatureFlagEnabled } = useFeatureFlags();
 
     const { hasReadAccess, hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForWatchedImage = hasReadWriteAccess('WatchedImage');
@@ -182,7 +186,7 @@ function WorkloadCvesOverviewPage() {
           });
 
     const getDefaultSortOption = isViewingWithCves
-        ? getDefaultWorkloadSortOption
+        ? getWorkloadCveOverviewDefaultSortOption
         : getDefaultZeroCveSortOption;
 
     const isFiltered = getHasSearchApplied(querySearchFilter);
@@ -220,7 +224,7 @@ function WorkloadCvesOverviewPage() {
     const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
 
     const sort = useURLSort({
-        sortFields: getWorkloadSortFields(activeEntityTabKey),
+        sortFields: getWorkloadCveOverviewSortFields(activeEntityTabKey),
         defaultSortOption: getDefaultSortOption(activeEntityTabKey, searchFilter),
         onSort: () => pagination.setPage(1),
     });
@@ -276,7 +280,7 @@ function WorkloadCvesOverviewPage() {
         // Reset all filters, sorting, and pagination and apply to the current history entry
         setActiveEntityTabKey('CVE');
         setSearchFilter({});
-        sort.setSortOption(getDefaultWorkloadSortOption('CVE'));
+        sort.setSortOption(getWorkloadCveOverviewDefaultSortOption('CVE'));
         pagination.setPage(1);
         setObservedCveMode('WITH_CVES');
 
@@ -315,6 +319,11 @@ function WorkloadCvesOverviewPage() {
     function onWatchedImagesChange() {
         return apolloClient.refetchQueries({ include: [imageListQuery] });
     }
+
+    const searchFilterConfig = getSearchFilterConfigWithFeatureFlagDependency(
+        isFeatureFlagEnabled,
+        searchFilterConfigWithFeatureFlagDependency
+    );
 
     const filterToolbar = (
         <AdvancedFiltersToolbar

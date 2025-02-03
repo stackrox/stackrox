@@ -133,7 +133,6 @@ func TestBuiltInScopeAuthorizerWithTracing(t *testing.T) {
 		},
 	}
 	for _, tc := range tests {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			trace := observe.NewAuthzTrace()
@@ -241,7 +240,6 @@ func TestScopeCheckerWithParallelAccessAndSharedGlobalScopeChecker(t *testing.T)
 		},
 	}
 	for _, tc := range tests {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			scc := subScopeChecker
@@ -688,7 +686,6 @@ func TestEffectiveAccessScope(t *testing.T) {
 		},
 	}
 	for _, tc := range tests {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			scc := newGlobalScopeCheckerCore(clusters, namespaces, tc.roles, nil)
@@ -743,7 +740,6 @@ func TestBuiltInScopeAuthorizerPanicsWhenErrorOnComputeAccessScope(t *testing.T)
 		},
 	}
 	for _, tc := range tests {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			scc := newGlobalScopeCheckerCore(clusters, namespaces, tc.roles, nil)

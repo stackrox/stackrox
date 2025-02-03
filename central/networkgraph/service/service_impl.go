@@ -42,20 +42,20 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.NetworkGraph)): {
-			"/v1.NetworkGraphService/GetNetworkGraph",
-			"/v1.NetworkGraphService/GetExternalNetworkEntities",
-			"/v1.NetworkGraphService/GetExternalNetworkFlows",
+			v1.NetworkGraphService_GetNetworkGraph_FullMethodName,
+			v1.NetworkGraphService_GetExternalNetworkEntities_FullMethodName,
+			v1.NetworkGraphService_GetExternalNetworkFlows_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.NetworkGraph)): {
-			"/v1.NetworkGraphService/CreateExternalNetworkEntity",
-			"/v1.NetworkGraphService/DeleteExternalNetworkEntity",
-			"/v1.NetworkGraphService/PatchExternalNetworkEntity",
+			v1.NetworkGraphService_CreateExternalNetworkEntity_FullMethodName,
+			v1.NetworkGraphService_DeleteExternalNetworkEntity_FullMethodName,
+			v1.NetworkGraphService_PatchExternalNetworkEntity_FullMethodName,
 		},
 		user.With(permissions.View(resources.Administration)): {
-			"/v1.NetworkGraphService/GetNetworkGraphConfig",
+			v1.NetworkGraphService_GetNetworkGraphConfig_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.Administration)): {
-			"/v1.NetworkGraphService/PutNetworkGraphConfig",
+			v1.NetworkGraphService_PutNetworkGraphConfig_FullMethodName,
 		},
 	})
 

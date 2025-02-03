@@ -832,7 +832,6 @@ func Test_toProtoV4Environment(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			got := toProtoV4Environment(tt.arg)
 			protoassert.Equal(t, tt.want, got)

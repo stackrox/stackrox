@@ -57,7 +57,6 @@ func TestFilterMap(t *testing.T) {
 		},
 	}
 	for _, c := range cases {
-		c := c
 		t.Run(c.name, func(t *testing.T) {
 			filterMap(c.inputMap, c.maxSize, &c.currSize)
 			assert.Equal(t, c.expectedMap, c.inputMap)
@@ -98,7 +97,6 @@ func TestFilterProcesses(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(c.name, func(t *testing.T) {
 			for _, p := range c.processes {
 				cleanProcessIndicator(p)
@@ -158,7 +156,6 @@ func TestFilterViolations(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(c.name, func(t *testing.T) {
 			protoassert.SlicesEqual(t, c.violations[:c.expectedNumber], filterViolations(c.violations, c.maxSize, &c.currSize))
 		})

@@ -57,6 +57,7 @@ message VulnerabilityReportFilters {
     google.protobuf.Timestamp since_start_date = 6;
   }
   bool include_nvd_cvss = 7;
+  bool include_epss_probability = 8;
 }
 
 message ReportSchedule {

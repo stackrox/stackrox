@@ -760,8 +760,8 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 						),
 				).ProtoQuery(),
 			resultStruct: DerivedStruct7{},
-			expectedQuery: "select count(test_structs.Key1) filter (where (test_structs.Enum = $1)) as test_string_affected_by_enum1, " +
-				"count(test_structs.Key1) filter (where (test_structs.Enum = $2)) as test_string_affected_by_enum2 " +
+			expectedQuery: "select count(test_structs.Key1) filter (where test_structs.Enum = $1) as test_string_affected_by_enum1, " +
+				"count(test_structs.Key1) filter (where test_structs.Enum = $2) as test_string_affected_by_enum2 " +
 				"from test_structs",
 			expectedResult: []*DerivedStruct7{
 				{2, 2},
@@ -787,8 +787,8 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 						),
 				).AddGroupBy(search.TestBool).ProtoQuery(),
 			resultStruct: DerivedStruct8{},
-			expectedQuery: "select count(test_structs.Key1) filter (where (test_structs.Enum = $1)) as test_string_affected_by_enum1, " +
-				"count(test_structs.Key1) filter (where (test_structs.Enum = $2)) as test_string_affected_by_enum2, " +
+			expectedQuery: "select count(test_structs.Key1) filter (where test_structs.Enum = $1) as test_string_affected_by_enum1, " +
+				"count(test_structs.Key1) filter (where test_structs.Enum = $2) as test_string_affected_by_enum2, " +
 				"test_structs.Bool as test_bool from test_structs " +
 				"group by test_structs.Bool",
 			expectedResult: []*DerivedStruct8{
@@ -819,8 +819,8 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 					AddSortOption(search.NewSortOption(search.TestEnum1Custom)).
 					AddSortOption(search.NewSortOption(search.TestEnum2Custom).Reversed(true))).ProtoQuery(),
 			resultStruct: DerivedStruct8{},
-			expectedQuery: "select count(test_structs.Key1) filter (where (test_structs.Enum = $1)) as test_string_affected_by_enum1, " +
-				"count(test_structs.Key1) filter (where (test_structs.Enum = $2)) as test_string_affected_by_enum2, " +
+			expectedQuery: "select count(test_structs.Key1) filter (where test_structs.Enum = $1) as test_string_affected_by_enum1, " +
+				"count(test_structs.Key1) filter (where test_structs.Enum = $2) as test_string_affected_by_enum2, " +
 				"test_structs.Bool as test_bool from test_structs " +
 				"group by test_structs.Bool order by test_string_affected_by_enum1 asc, test_string_affected_by_enum2 desc",
 			expectedResult: []*DerivedStruct8{
@@ -850,8 +850,8 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 				WithPagination(search.NewPagination().
 					AddSortOption(search.NewSortOption(search.TestInvalidEnumCustom))).ProtoQuery(),
 			resultStruct: DerivedStruct8{},
-			expectedQuery: "select count(test_structs.Key1) filter (where (test_structs.Enum = $1)) as test_string_affected_by_enum1, " +
-				"count(test_structs.Key1) filter (where (test_structs.Enum = $2)) as test_string_affected_by_enum2, " +
+			expectedQuery: "select count(test_structs.Key1) filter (where test_structs.Enum = $1) as test_string_affected_by_enum1, " +
+				"count(test_structs.Key1) filter (where test_structs.Enum = $2) as test_string_affected_by_enum2, " +
 				"test_structs.Bool as test_bool from test_structs " +
 				"group by test_structs.Bool",
 			expectedResult: []*DerivedStruct8{

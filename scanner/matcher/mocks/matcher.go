@@ -85,6 +85,21 @@ func (mr *MockMatcherMockRecorder) GetLastVulnerabilityUpdate(ctx any) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLastVulnerabilityUpdate", reflect.TypeOf((*MockMatcher)(nil).GetLastVulnerabilityUpdate), ctx)
 }
 
+// GetSBOM mocks base method.
+func (m *MockMatcher) GetSBOM(ctx context.Context, ir *claircore.IndexReport, id, name string) ([]byte, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSBOM", ctx, ir, id, name)
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSBOM indicates an expected call of GetSBOM.
+func (mr *MockMatcherMockRecorder) GetSBOM(ctx, ir, id, name any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSBOM", reflect.TypeOf((*MockMatcher)(nil).GetSBOM), ctx, ir, id, name)
+}
+
 // GetVulnerabilities mocks base method.
 func (m *MockMatcher) GetVulnerabilities(ctx context.Context, ir *claircore.IndexReport) (*claircore.VulnerabilityReport, error) {
 	m.ctrl.T.Helper()

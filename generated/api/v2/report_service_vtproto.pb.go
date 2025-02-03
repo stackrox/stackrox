@@ -72,6 +72,7 @@ func (m *VulnerabilityReportFilters) CloneVT() *VulnerabilityReportFilters {
 	r := new(VulnerabilityReportFilters)
 	r.Fixability = m.Fixability
 	r.IncludeNvdCvss = m.IncludeNvdCvss
+	r.IncludeEpssProbability = m.IncludeEpssProbability
 	if rhs := m.Severities; rhs != nil {
 		tmpContainer := make([]VulnerabilityReportFilters_VulnerabilitySeverity, len(rhs))
 		copy(tmpContainer, rhs)
@@ -676,6 +677,9 @@ func (this *VulnerabilityReportFilters) EqualVT(that *VulnerabilityReportFilters
 		}
 	}
 	if this.IncludeNvdCvss != that.IncludeNvdCvss {
+		return false
+	}
+	if this.IncludeEpssProbability != that.IncludeEpssProbability {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1549,6 +1553,16 @@ func (m *VulnerabilityReportFilters) MarshalToSizedBufferVT(dAtA []byte) (int, e
 			return 0, err
 		}
 		i -= size
+	}
+	if m.IncludeEpssProbability {
+		i--
+		if m.IncludeEpssProbability {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x40
 	}
 	if m.IncludeNvdCvss {
 		i--
@@ -2830,6 +2844,9 @@ func (m *VulnerabilityReportFilters) SizeVT() (n int) {
 	if m.IncludeNvdCvss {
 		n += 2
 	}
+	if m.IncludeEpssProbability {
+		n += 2
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -3907,6 +3924,26 @@ func (m *VulnerabilityReportFilters) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			}
 			m.IncludeNvdCvss = bool(v != 0)
+		case 8:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IncludeEpssProbability", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.IncludeEpssProbability = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

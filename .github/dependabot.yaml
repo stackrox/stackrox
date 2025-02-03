@@ -55,6 +55,9 @@ updates:
       include: scope
       prefix: chore
     ignore:
+      # k8s minor releases usually bumps go version to the latest one which we do not use.
+      - dependency-name: "k8s.io/*"
+        update-types: ["version-update:semver-minor"]
       - dependency-name: "github.com/aws/aws-sdk-go"
         update-types: ["version-update:semver-patch"]
       # The Scanner team wants full control over ClairCore updates,

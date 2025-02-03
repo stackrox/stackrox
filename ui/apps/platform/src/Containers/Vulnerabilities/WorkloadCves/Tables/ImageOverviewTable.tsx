@@ -28,6 +28,7 @@ import SeverityCountLabels from '../../components/SeverityCountLabels';
 import { VulnerabilitySeverityLabel, WatchStatus } from '../../types';
 import ImageScanningIncompleteLabel from '../components/ImageScanningIncompleteLabelLayout';
 import getImageScanMessage from '../utils/getImageScanMessage';
+import { getSeveritySortOptions } from '../../utils/sortUtils';
 
 export const tableId = 'WorkloadCvesImageOverviewTable';
 
@@ -163,6 +164,10 @@ function ImageOverviewTable({
                         <TooltipTh
                             className={getVisibilityClass('cvesBySeverity')}
                             tooltip="CVEs by severity across this image"
+                            sort={getSortParams(
+                                'CVEs By Severity',
+                                getSeveritySortOptions(filteredSeverities)
+                            )}
                         >
                             CVEs by severity
                             {isFiltered && <DynamicColumnIcon />}

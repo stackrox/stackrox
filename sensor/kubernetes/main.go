@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/continuousprofiling"
 	"github.com/stackrox/rox/pkg/devmode"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
@@ -34,6 +35,11 @@ func main() {
 	premain.StartMain()
 
 	devmode.StartOnDevBuilds("bin/kubernetes-sensor")
+
+	if err := continuousprofiling.SetupClient(continuousprofiling.DefaultConfig(),
+		continuousprofiling.WithDefaultAppName("sensor")); err != nil {
+		log.Errorf("unable to start continuous profiling: %v", err)
+	}
 
 	log.Infof("Running StackRox Version: %s", version.GetMainVersion())
 

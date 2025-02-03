@@ -21,7 +21,7 @@ import { useParams } from 'react-router-dom';
 
 import {
     exceptionManagementPath,
-    vulnerabilitiesPlatformWorkloadCvesPath,
+    vulnerabilitiesPlatformPath,
     vulnerabilitiesWorkloadCvesPath,
 } from 'routePaths';
 import useFeatureFlags from 'hooks/useFeatureFlags';
@@ -220,7 +220,7 @@ function ExceptionRequestDetailsPage() {
 
     const vulnMgmtBaseUrl =
         isPlatformCveSplitEnabled && activeCveTableTabKey === 'PLATFORM_COMPONENTS'
-            ? vulnerabilitiesPlatformWorkloadCvesPath
+            ? vulnerabilitiesPlatformPath
             : vulnerabilitiesWorkloadCvesPath;
     return (
         <>

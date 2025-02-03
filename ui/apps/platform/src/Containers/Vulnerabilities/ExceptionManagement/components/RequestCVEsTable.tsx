@@ -31,8 +31,8 @@ import {
     aggregateByDistinctCount,
     getScoreVersionsForTopCVSS,
     sortCveDistroList,
-    getWorkloadSortFields,
-    getDefaultWorkloadSortOption,
+    getWorkloadCveOverviewSortFields,
+    getWorkloadCveOverviewDefaultSortOption,
     getSeveritySortOptions,
 } from '../../utils/sortUtils';
 import {
@@ -60,8 +60,8 @@ function RequestCVEsTable({
 }: RequestCVEsTableProps) {
     const { page, perPage, setPage, setPerPage } = pagination;
     const { sortOption, getSortParams } = useURLSort({
-        sortFields: getWorkloadSortFields('CVE'),
-        defaultSortOption: getDefaultWorkloadSortOption('CVE'),
+        sortFields: getWorkloadCveOverviewSortFields('CVE'),
+        defaultSortOption: getWorkloadCveOverviewDefaultSortOption('CVE'),
         onSort: () => setPage(1),
     });
 
