@@ -215,7 +215,7 @@ func (r *ServiceCertificatesRepoSecrets) createSecret(ctx context.Context, caPem
 			Name:            secretSpec.SecretName,
 			Namespace:       r.Namespace,
 			Labels:          utils.GetTLSSecretLabels(),
-			Annotations:     utils.GetSensorKubernetesAnnotations(),
+			Annotations:     utils.GetSensorKubernetesLabels(),
 			OwnerReferences: []metav1.OwnerReference{r.OwnerReference},
 		},
 		Data: r.secretDataForCertificate(secretSpec, caPem, certificate),
