@@ -1953,6 +1953,16 @@ class Kubernetes implements OrchestratorMain {
                 getJobCount(ns).size()
     }
 
+    def createCollectorPortForward(int port) {
+        // since Collector's a daemonset, we can match the behavior of
+        // kubectl, and pick a pod to forward to.
+        def collectorPod = getPods("stackrox", "collector").get(0)
+        return this.client.pods()
+            .inNamespace("stackrox")
+            .withName(collectorPod.getMetadata().getName())
+            .portForward(port)
+    }
+
     /*
         Private K8S Support functions
     */

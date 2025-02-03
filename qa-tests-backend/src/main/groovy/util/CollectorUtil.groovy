@@ -20,19 +20,21 @@ class CollectorUtil {
     static final String DISABLED_VALUE = "DISABLED"
 
     static parseJsonToProtobuf(String json) {
-        def builder = sensor.Collector.CollectorConfig.getMethod("newBuilder").invoke(null)
+        sensor.Collector.CollectorConfig.Builder builder = sensor.Collector.CollectorConfig.newBuilder()
         JsonFormat.parser().merge(json, builder)
         return builder.build()
     }
 
-    static introspectionQuery(String collectorIP, String endpoint) {
-        def uri = "http://${collectorIP}:8080${endpoint}"
-        def connection = new URL(uri).openConnection() as HttpURLConnection
-    
+    static introspectionQuery(String collectorAddress, String endpoint) {
+        String uri = "http://${collectorAddress}${endpoint}"
+        HttpURLConnection connection = new URL(uri).openConnection()
+
+        // this might be unneeded?
+        connection.setRequestMethod("GET")
+
         try {
-            connection.requestMethod = "GET"
             connection.connect()
-    
+
             if (connection.responseCode != HttpURLConnection.HTTP_OK) {
                 throw new RuntimeException("IntrospectionQuery failed with ${connection.responseMessage}")
             }
@@ -45,40 +47,34 @@ class CollectorUtil {
         }
     }
 
-    static waitForConfigToHaveState(String state, int timeoutSeconds = 90) {
+    static waitForConfigToHaveState(OrchestratorMain orchestrator, String state, int timeoutSeconds = 90, int port = 8080) {
+        def portForward = orchestrator.createCollectorPortForward(port)
+
         int intervalSeconds = 1
         int waitTime
         def startTime = System.currentTimeMillis()
         for (waitTime = 0; waitTime <= timeoutSeconds / intervalSeconds; waitTime++) {
-            def config = introspectionQuery("127.0.0.1", "/state/runtime-config")
+            log.info "Checking Collector config. Attempt ${waitTime} of ${timeoutSeconds / intervalSeconds}"
+            def config = introspectionQuery("127.0.0.1:${portForward.getLocalPort()}", "/state/runtime-config")
+
             if (config.networking.externalIps.enabled.name() == state) {
                 return true
             }
+
             sleep intervalSeconds * 1000
         }
 
         return false
     }
 
-    static private setExternalIpsAndWait(OrchestratorMain orchestrator, String state) {
-        setExternalIps(orchestrator, state)
-        waitForConfigToHaveState(state)
-    }
-
-    static enableExternalIpsAndWait(OrchestratorMain orchestrator) {
-        setExternalIpsAndWait(orchestrator, ENABLED_VALUE)
-    }
-
-    static disableExternalIpsAndWait(OrchestratorMain orchestrator) {
-        setExternalIpsAndWait(orchestrator, DISABLED_VALUE)
-    }
-
-    static enableExternalIps(OrchestratorMain orchestrator) {
+    static enableExternalIps(OrchestratorMain orchestrator, int timeoutSeconds = 90) {
         setExternalIps(orchestrator, ENABLED_VALUE)
+        waitForConfigToHaveState(orchestrator, ENABLED_VALUE, timeoutSeconds)
     }
 
-    static disableExternalIps(OrchestratorMain orchestrator) {
+    static disableExternalIps(OrchestratorMain orchestrator, int timeoutSeconds = 90) {
         setExternalIps(orchestrator, DISABLED_VALUE)
+        waitForConfigToHaveState(orchestrator, DISABLED_VALUE, timeoutSeconds)
     }
 
     static deleteRuntimeConfig(OrchestratorMain orchestrator) {
