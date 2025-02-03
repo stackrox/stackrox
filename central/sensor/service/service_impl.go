@@ -116,10 +116,16 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 	// Note: New clusters which have never been properly connected to central have their HealthStatus.LastContact empty.
 	// If, for whatever reason, a cluster needs to re-retrieve CRS-issued service certificates, the cluster can do so
 	// as long as that cluster has never successfully connected to central with proper service certificates
-	// (not ServiceType_REGISTRANT_SERVICE).
-	if svcType == storage.ServiceType_REGISTRANT_SERVICE && cluster.GetHealthStatus().GetLastContact() != nil {
-		log.Errorf("It is forbidden to connect with a Cluster Registration Certificate as already-existing cluster %q.", cluster.GetName())
-		return errox.NotAuthorized.CausedByf("forbidden to use a Cluster Registration Certificate for already-existing cluster %q", cluster.GetName())
+	// (not ServiceType_REGISTRANT_SERVICE) and the deployment identification is the same.
+	if svcType == storage.ServiceType_REGISTRANT_SERVICE {
+		if cluster.GetHealthStatus().GetLastContact() != nil {
+			log.Errorf("It is forbidden to connect with a Cluster Registration Certificate as already-existing cluster %q.", cluster.GetName())
+			return errox.NotAuthorized.CausedByf("forbidden to use a Cluster Registration Certificate for already-existing cluster %q", cluster.GetName())
+		}
+		if !cluster.GetMostRecentSensorId().EqualVT(sensorHello.GetDeploymentIdentification()) {
+			log.Errorf("It is forbidden to use a Cluster Registration Certificate for existing cluster %q with different deployment identification: cluster.MostRecentSensorId = %v, sensorHello.DeploymentIdentification = %v", cluster.GetName(), cluster.GetMostRecentSensorId(), sensorHello.GetDeploymentIdentification())
+			return errox.NotAuthorized.CausedByf("forbidden to use a Cluster Registration Certificate for existing cluster %q with different deployment identification", cluster.GetName())
+		}
 	}
 
 	// Generate a pipeline for the cluster to use.
