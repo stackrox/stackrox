@@ -76,7 +76,7 @@ type ClusterPostgresDataStoreTestSuite struct {
 	clusterDatastore          DataStore
 }
 
-func (s *ClusterPostgresDataStoreTestSuite) SetupSuite() {
+func (s *ClusterPostgresDataStoreTestSuite) SetupTest() {
 
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.db = pgtest.ForT(s.T())
@@ -130,7 +130,7 @@ func (s *ClusterPostgresDataStoreTestSuite) SetupSuite() {
 	s.clusterDatastore = clusterDS
 }
 
-func (s *ClusterPostgresDataStoreTestSuite) TearDownSuite() {
+func (s *ClusterPostgresDataStoreTestSuite) TearDownTest() {
 	s.db.Teardown(s.T())
 }
 
@@ -825,6 +825,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestAddExistingCluster() {
 	clusterID, err := s.clusterDatastore.AddCluster(ctx, &cluster)
 	s.NoError(err)
 	s.NotEmpty(clusterID)
+	cluster.Id = ""
 	_, err = s.clusterDatastore.AddCluster(ctx, &cluster)
 	s.Error(err)
 	s.ErrorIs(err, errox.AlreadyExists)
