@@ -13,7 +13,6 @@ import util.NetworkGraphUtil
 import util.Env
 
 import spock.lang.IgnoreIf
-import spock.lang.Shared
 import spock.lang.Stepwise
 import spock.lang.Tag
 
@@ -29,14 +28,6 @@ class ExternalIpFlowsTest extends BaseSpecification {
     static final private String BERSERKER_SUBNET = "223.42.0.0/24"
     static final private String DEFAULT_QUERY = "Namespace:qa+Discovered External Source:true+External Source Address:${BERSERKER_SUBNET}"
 
-    // Target deployments
-    @Shared
-    private List<Deployment> targetDeployments
-
-    // Source deployments
-    @Shared
-    private List<Deployment> sourceDeployments
-
     def buildSourceDeployments() {
         return [
             new Deployment()
@@ -48,7 +39,6 @@ class ExternalIpFlowsTest extends BaseSpecification {
         ]
     }
 
-    @Shared
     private List<Deployment> deployments
 
     def createDeployments() {
