@@ -77,9 +77,13 @@ func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.Sett
 	detectorStopper := concurrency.NewStopper()
 	netFlowQueueSize := 0
 	piQueueSize := 0
+	deploymentQueueSize := 0
 	if features.SensorCapturesIntermediateEvents.Enabled() {
 		netFlowQueueSize = queueScaler.ScaleSizeOnNonDefault(env.DetectorNetworkFlowBufferSize)
 		piQueueSize = queueScaler.ScaleSizeOnNonDefault(env.DetectorProcessIndicatorBufferSize)
+	}
+	if env.DetectorDeploymentBufferSize.IntegerSetting() > 0 {
+		deploymentQueueSize = queueScaler.ScaleSizeOnNonDefault(env.DetectorDeploymentBufferSize)
 	}
 	netFlowQueue := queue.NewQueue[*queue.FlowQueueItem](
 		detectorStopper,
@@ -94,6 +98,13 @@ func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.Sett
 		piQueueSize,
 		detectorMetrics.DetectorProcessIndicatorBufferSize,
 		detectorMetrics.DetectorProcessIndicatorDroppedCount,
+	)
+	deploymentQueue := queue.NewQueue[*queue.DeploymentQueueItem](
+		detectorStopper,
+		"DeploymentQueue",
+		deploymentQueueSize,
+		detectorMetrics.DetectorDeploymentBufferSize,
+		detectorMetrics.DetectorDeploymentDroppedCount,
 	)
 
 	return &detectorImpl{
@@ -125,6 +136,7 @@ func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.Sett
 
 		networkFlowsQueue: netFlowQueue,
 		indicatorsQueue:   piQueue,
+		deploymentsQueue:  deploymentQueue,
 	}
 }
 
@@ -165,6 +177,7 @@ type detectorImpl struct {
 
 	networkFlowsQueue *queue.Queue[*queue.FlowQueueItem]
 	indicatorsQueue   *queue.Queue[*queue.IndicatorQueueItem]
+	deploymentsQueue  *queue.Queue[*queue.DeploymentQueueItem]
 }
 
 func (d *detectorImpl) Start() error {
@@ -173,8 +186,13 @@ func (d *detectorImpl) Start() error {
 	go d.serializeDeployTimeOutput()
 	go d.processAlertsForFlowOnEntity()
 	go d.processIndicator()
+	go d.processDeployment()
 	d.networkFlowsQueue.Start()
 	d.indicatorsQueue.Start()
+	d.deploymentsQueue.Start()
+	// The deployment queue is not Pause nor Resume on Notify.
+	// We need to call Resume here to trigger the isRunning signal.
+	d.deploymentsQueue.Resume()
 	return nil
 }
 
@@ -475,10 +493,30 @@ func (d *detectorImpl) ProcessDeployment(ctx context.Context, deployment *storag
 		return
 	default:
 	}
+	d.deploymentsQueue.Push(&queue.DeploymentQueueItem{
+		Ctx:        ctx,
+		Deployment: deployment,
+		Action:     action,
+	})
+}
 
-	d.deploymentDetectionLock.Lock()
-	defer d.deploymentDetectionLock.Unlock()
-	d.processDeploymentNoLock(ctx, deployment, action)
+func (d *detectorImpl) processDeployment() {
+	for {
+		select {
+		case <-d.detectorStopper.Flow().StopRequested():
+			return
+		case item, ok := <-d.deploymentsQueue.Pull():
+			if !ok {
+				return
+			}
+			if item == nil {
+				continue
+			}
+			concurrency.WithLock(&d.deploymentDetectionLock, func() {
+				d.processDeploymentNoLock(item.Ctx, item.Deployment, item.Action)
+			})
+		}
+	}
 }
 
 func (d *detectorImpl) ReprocessDeployments(deploymentIDs ...string) {
