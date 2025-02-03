@@ -28,6 +28,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/common/trace"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -377,14 +378,16 @@ func (e *enricher) getImages(ctx context.Context, deployment *storage.Deployment
 	for i := 0; i < len(deployment.GetContainers()); i++ {
 		imgResult := <-imageChan
 
-		// This will ensure that when we change the Name of the image
-		// that it will not cause a potential race condition
-		image := *imgResult.image.CloneVT()
-		// Overwrite the image Name as a workaround to the fact that we fetch the image by ID
-		// The ID may actually have many names that refer to it. e.g. busybox:latest and busybox:1.31 could have the
-		// exact same ID
-		image.Name = deployment.GetContainers()[imgResult.containerIdx].GetImage().GetName()
-		images[imgResult.containerIdx] = &image
+		imageName := imgResult.image.GetName()
+		deploymentImageName := deployment.GetContainers()[imgResult.containerIdx].GetImage().GetName()
+		image := imgResult.image
+		if !proto.Equal(imageName, deploymentImageName) {
+			// Clone only when we need to mutate the Name to avoid a race
+			// with the cached image.
+			image = imgResult.image.CloneVT()
+			image.Name = deploymentImageName
+		}
+		images[imgResult.containerIdx] = image
 	}
 	return images
 }
