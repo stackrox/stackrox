@@ -586,7 +586,9 @@ func (d *detectorImpl) processIndicator() {
 			if item == nil {
 				continue
 			}
-			images := d.enricher.getImages(item.Deployment)
+			// If ROX_CAPTURE_INTERMEDIATE_EVENTS is enabled,
+			// the context will not be canceled with sensor disconnects
+			images := d.enricher.getImages(item.Ctx, item.Deployment)
 
 			// Run detection now
 			alerts := d.unifiedDetector.DetectProcess(booleanpolicy.EnhancedDeployment{
@@ -700,7 +702,9 @@ func (d *detectorImpl) processAlertsForFlowOnEntity() {
 			}
 			log.Debugf("processing network flow for deployment %s with id %s", item.Deployment.GetName(), item.Deployment.GetId())
 
-			images := d.enricher.getImages(item.Deployment)
+			// If ROX_CAPTURE_INTERMEDIATE_EVENTS is enabled,
+			// the context will not be canceled with sensor disconnects
+			images := d.enricher.getImages(item.Ctx, item.Deployment)
 			alerts := d.unifiedDetector.DetectNetworkFlowForDeployment(booleanpolicy.EnhancedDeployment{
 				Deployment:             item.Deployment,
 				Images:                 images,

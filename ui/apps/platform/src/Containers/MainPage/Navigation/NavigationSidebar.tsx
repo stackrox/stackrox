@@ -34,9 +34,13 @@ import {
     systemHealthPath,
     violationsBasePath,
     vulnManagementPath,
+    vulnerabilitiesAllImagesPath,
+    vulnerabilitiesInactiveImagesPath,
     vulnerabilitiesNodeCvesPath,
     vulnerabilitiesPlatformCvesPath,
-    vulnerabilitiesPlatformWorkloadCvesPath,
+    vulnerabilitiesPlatformPath,
+    vulnerabilitiesUserWorkloadsPath,
+    vulnerabilitiesViewPath,
     vulnerabilitiesWorkloadCvesPath,
     vulnerabilityReportsPath,
 } from 'routePaths';
@@ -61,31 +65,21 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
         ? [
               {
                   type: 'link',
-                  content: 'User Workloads',
-                  path: vulnerabilitiesWorkloadCvesPath,
-                  routeKey: 'vulnerabilities/workload-cves',
-              },
-              {
-                  type: 'link',
-                  content: 'Platform Components',
-                  path: vulnerabilitiesPlatformWorkloadCvesPath,
-                  routeKey: 'vulnerabilities/platform-workload-cves',
-              },
-              {
-                  type: 'link',
-                  content: 'Kubernetes Components',
-                  path: vulnerabilitiesPlatformCvesPath,
-                  routeKey: 'vulnerabilities/platform-cves',
-              },
-              {
-                  type: 'link',
-                  content: 'Nodes',
-                  path: vulnerabilitiesNodeCvesPath,
-                  routeKey: 'vulnerabilities/node-cves',
-              },
-              {
-                  type: 'separator',
-                  key: 'following-workload-cves',
+                  content: 'Results',
+                  path: vulnerabilitiesUserWorkloadsPath,
+                  routeKey: 'vulnerabilities/user-workloads',
+                  isActive: (pathname) =>
+                      Boolean(
+                          matchPath(pathname, [
+                              vulnerabilitiesWorkloadCvesPath,
+                              vulnerabilitiesNodeCvesPath,
+                              vulnerabilitiesUserWorkloadsPath,
+                              vulnerabilitiesPlatformPath,
+                              vulnerabilitiesAllImagesPath,
+                              vulnerabilitiesInactiveImagesPath,
+                              vulnerabilitiesViewPath,
+                          ])
+                      ),
               },
               {
                   type: 'link',
@@ -102,6 +96,17 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
               {
                   type: 'separator',
                   key: 'following-node-cves',
+              },
+
+              {
+                  type: 'link',
+                  content: 'Platform CVEs',
+                  path: vulnerabilitiesPlatformCvesPath,
+                  routeKey: 'vulnerabilities/platform-cves',
+              },
+              {
+                  type: 'separator',
+                  key: 'following-workload-cves',
               },
               {
                   type: 'link',

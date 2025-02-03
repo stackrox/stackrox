@@ -17,7 +17,6 @@ import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { gql, useQuery } from '@apollo/client';
 import uniq from 'lodash/uniq';
 
-import { vulnerabilitiesWorkloadCvesPath } from 'routePaths';
 import { getTableUIState } from 'utils/getTableUIState';
 import { getPaginationParams, searchValueAsArray } from 'utils/searchUtils';
 import useURLSearch from 'hooks/useURLSearch';
@@ -167,9 +166,7 @@ function NamespaceViewPage() {
             <PageTitle title={`${pageTitle} - Namespace view`} />
             <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
-                    <BreadcrumbItemLink to={vulnerabilitiesWorkloadCvesPath}>
-                        {pageTitle}
-                    </BreadcrumbItemLink>
+                    <BreadcrumbItemLink to={getAbsoluteUrl('')}>{pageTitle}</BreadcrumbItemLink>
                     <BreadcrumbItem isActive>Namespace view</BreadcrumbItem>
                 </Breadcrumb>
             </PageSection>
