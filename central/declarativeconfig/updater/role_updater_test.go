@@ -135,9 +135,10 @@ func (s *roleUpdaterTestSuite) TestDelete_Successful() {
 		Traits:          &storage.Traits{Origin: storage.Traits_DECLARATIVE},
 	}))
 
-	names, err := s.updater.DeleteResources(s.ctx)
+	names, deletionCount, err := s.updater.DeleteResources(s.ctx)
 	s.NoError(err)
 	s.Empty(names)
+	s.Equal(1, deletionCount)
 }
 
 func (s *roleUpdaterTestSuite) TestDelete_Error() {
@@ -184,9 +185,10 @@ func (s *roleUpdaterTestSuite) TestDelete_Error() {
 		Status: storage.DeclarativeConfigHealth_HEALTHY,
 	}))
 
-	names, err := s.updater.DeleteResources(s.ctx)
+	names, deletionCount, err := s.updater.DeleteResources(s.ctx)
 	s.Contains(names, "test")
 	s.ErrorIs(err, errox.ReferencedByAnotherObject)
+	s.Equal(0, deletionCount)
 	health, exists, err := s.updater.healthDS.GetDeclarativeConfig(s.ctx,
 		declarativeConfigUtils.HealthStatusIDForRole("test"))
 	s.NoError(err)
