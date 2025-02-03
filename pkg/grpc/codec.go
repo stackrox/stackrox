@@ -2,10 +2,8 @@ package grpc
 
 import (
 	"google.golang.org/grpc/encoding"
+	"google.golang.org/grpc/encoding/proto"
 	"google.golang.org/grpc/mem"
-
-	// register original proto codec before so it can be wrapped
-	_ "google.golang.org/grpc/encoding/proto" // nolint:revive
 )
 
 type vtprotoMessage interface {
@@ -58,8 +56,7 @@ func (c *codec) Unmarshal(data mem.BufferSlice, v any) error {
 
 func init() {
 	// Replace the original codec with vt wrapper.
-	//https://github.com/grpc/grpc-go/blob/v1.70.0/encoding/proto/proto.go#L33
 	encoding.RegisterCodecV2(&codec{
-		CodecV2: encoding.GetCodecV2("proto"),
+		CodecV2: encoding.GetCodecV2(proto.Name),
 	})
 }
