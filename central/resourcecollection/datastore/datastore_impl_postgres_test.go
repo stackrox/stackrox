@@ -9,15 +9,22 @@ import (
 	"time"
 
 	"github.com/heimdalr/dag"
+	clusterPostgres "github.com/stackrox/rox/central/cluster/store/cluster/postgres"
+	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
+	namespaceDS "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/search"
 	pgStore "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	postgresSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/testconsts"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -29,11 +36,14 @@ func TestCollectionDataStoreWithPostgres(t *testing.T) {
 type CollectionPostgresDataStoreTestSuite struct {
 	suite.Suite
 
-	ctx       context.Context
-	testDB    *pgtest.TestPostgres
-	store     pgStore.Store
-	datastore DataStore
-	qr        QueryResolver
+	ctx              context.Context
+	testDB           *pgtest.TestPostgres
+	store            pgStore.Store
+	datastore        DataStore
+	qr               QueryResolver
+	clusterPgStorage clusterPostgres.Store
+	namespaceStore   namespaceDS.DataStore
+	deploymentSore   deploymentDS.DataStore
 }
 
 func (s *CollectionPostgresDataStoreTestSuite) SetupSuite() {
@@ -45,6 +55,14 @@ func (s *CollectionPostgresDataStoreTestSuite) SetupSuite() {
 	s.NoError(err)
 	s.datastore = ds
 	s.qr = qs
+
+	s.deploymentSore, err = deploymentDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	s.Require().NoError(err)
+
+	s.namespaceStore, err = namespaceDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	s.Require().NoError(err)
+
+	s.clusterPgStorage = clusterPostgres.CreateTableAndNewStore(s.ctx, s.testDB.DB, s.testDB.GetGormDB(s.T()))
 }
 
 // SetupTest removes the local graph before every test
@@ -54,6 +72,13 @@ func (s *CollectionPostgresDataStoreTestSuite) SetupTest() {
 
 func (s *CollectionPostgresDataStoreTestSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
+}
+
+func (s *CollectionPostgresDataStoreTestSuite) TearDownTest() {
+	s.truncateTable(postgresSchema.DeploymentsTableName)
+	s.truncateTable(postgresSchema.NamespacesTableName)
+	s.truncateTable(postgresSchema.ClustersTableName)
+	s.truncateTable(postgresSchema.CollectionsTableName)
 }
 
 func (s *CollectionPostgresDataStoreTestSuite) TestGraphInit() {
@@ -706,7 +731,7 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionToQueries() {
 		s.T().Run(test.name, func(t *testing.T) {
 			testCollection := getTestCollection("1", nil)
 			testCollection.ResourceSelectors = test.resourceSelectors
-			parsedQueries, err := collectionToQueries(testCollection)
+			parsedQueries, err := collectionToQueries(testCollection, false)
 			if test.expectedQueries == nil {
 				assert.Error(t, err)
 				assert.Nil(s.T(), parsedQueries)
@@ -800,7 +825,7 @@ func (s *CollectionPostgresDataStoreTestSuite) TestResolveCollectionQuery() {
 		},
 	}
 	testObj := getTestCollection("test", []string{objC.GetId()})
-	query, err := s.qr.ResolveCollectionQuery(ctx, testObj)
+	query, err := s.qr.ResolveCollectionQuery(ctx, testObj, false)
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), expectedQuery.String(), query.String())
 
@@ -819,14 +844,185 @@ func (s *CollectionPostgresDataStoreTestSuite) TestResolveCollectionQuery() {
 		},
 	}
 	testObj = getTestCollection("test", []string{objA.GetId(), objB.GetId()})
-	query, err = s.qr.ResolveCollectionQuery(ctx, testObj)
+	query, err = s.qr.ResolveCollectionQuery(ctx, testObj, false)
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), expectedQuery.String(), query.String())
+}
+
+func (s *CollectionPostgresDataStoreTestSuite) TestCollectionMatchingInclusion() {
+	ctx := sac.WithAllAccess(s.ctx)
+	clusters, namespaces, deployments := getTestDataForMatching()
+	err := s.clusterPgStorage.UpsertMany(ctx, clusters)
+	s.Require().NoError(err)
+
+	for _, ns := range namespaces {
+		s.Require().NoError(s.namespaceStore.AddNamespace(ctx, ns))
+	}
+
+	for _, dep := range deployments {
+		s.Require().NoError(s.deploymentSore.UpsertDeployment(ctx, dep))
+	}
+	allDepNames := deploymentsToNames(deployments)
+
+	cases := []struct {
+		desc             string
+		collections      []*storage.ResourceCollection
+		expectedDepNames set.StringSet
+	}{
+		{
+			desc: "Include clusters exactly matching pattern-1#cluster-1",
+			collections: []*storage.ResourceCollection{
+				generateTestCollection(map[pkgSearch.FieldLabel][]*storage.RuleValue{
+					pkgSearch.Cluster: {
+						{Value: "pattern-1#cluster-1", MatchType: storage.MatchType_EXACT},
+					},
+				}),
+			},
+			expectedDepNames: set.NewStringSet("pattern-1#deployment-1"),
+		},
+		{
+			desc: "Include clusters regex matching pattern-1",
+			collections: []*storage.ResourceCollection{
+				generateTestCollection(map[pkgSearch.FieldLabel][]*storage.RuleValue{
+					pkgSearch.Cluster: {
+						{Value: "pattern-1", MatchType: storage.MatchType_REGEX},
+					},
+				}),
+			},
+			expectedDepNames: set.NewStringSet("pattern-1#deployment-1", "pattern-1#deployment-2"),
+		},
+		{
+			desc: "Include clusters w/ label 'ck4:cv4'",
+			collections: []*storage.ResourceCollection{
+				generateTestCollection(map[pkgSearch.FieldLabel][]*storage.RuleValue{
+					pkgSearch.ClusterLabel: {
+						{Value: "ck4=cv4", MatchType: storage.MatchType_EXACT},
+					},
+				}),
+			},
+			expectedDepNames: set.NewStringSet("pattern-1#deployment-2"),
+		},
+		{
+			desc: "Include clusters exactly matching pattern-1#cluster-1 OR pattern-2#cluster-3",
+			collections: []*storage.ResourceCollection{
+				generateTestCollection(map[pkgSearch.FieldLabel][]*storage.RuleValue{
+					pkgSearch.Cluster: {
+						{Value: "pattern-1#cluster-1", MatchType: storage.MatchType_EXACT},
+						{Value: "pattern-2#cluster-3", MatchType: storage.MatchType_EXACT},
+					},
+				}),
+			},
+			expectedDepNames: set.NewStringSet("pattern-1#deployment-1", "pattern-2#deployment-3"),
+		},
+		{
+			desc: "Include clusters w/ labels 'ck2:cv2' OR 'ck4:cv4'",
+			collections: []*storage.ResourceCollection{
+				generateTestCollection(map[pkgSearch.FieldLabel][]*storage.RuleValue{
+					pkgSearch.ClusterLabel: {
+						{Value: "ck4=cv4", MatchType: storage.MatchType_EXACT},
+						{Value: "ck2=cv2", MatchType: storage.MatchType_EXACT},
+					},
+				}),
+			},
+			expectedDepNames: set.NewStringSet("pattern-1#deployment-1", "pattern-1#deployment-2"),
+		},
+		{
+			desc: "Include clusters exact mating (pattern-1#cluster-1 OR pattern-2#cluster-3) AND " +
+				"Namespaces w/ labels ('nsk3:nsv3' OR 'nsk1:nsv2') AND" +
+				"Deployments regex matching pattern-1",
+			collections: []*storage.ResourceCollection{
+				generateTestCollection(map[pkgSearch.FieldLabel][]*storage.RuleValue{
+					pkgSearch.Cluster: {
+						{Value: "pattern-1#cluster-1", MatchType: storage.MatchType_EXACT},
+						{Value: "pattern-2#cluster-3", MatchType: storage.MatchType_EXACT},
+					},
+					pkgSearch.NamespaceLabel: {
+						{Value: "nsk3=nsv3", MatchType: storage.MatchType_EXACT},
+						{Value: "nsk1=nsv2", MatchType: storage.MatchType_EXACT},
+					},
+					pkgSearch.DeploymentName: {
+						{Value: "pattern-1", MatchType: storage.MatchType_REGEX},
+					},
+				}),
+			},
+			expectedDepNames: set.NewStringSet("pattern-1#deployment-1"),
+		},
+		{
+			desc: "Embedded collections with multiple rules",
+			collections: []*storage.ResourceCollection{
+				generateTestCollection(map[pkgSearch.FieldLabel][]*storage.RuleValue{
+					pkgSearch.Cluster: {
+						{Value: "pattern-1#cluster-1", MatchType: storage.MatchType_EXACT},
+						{Value: "pattern-2#cluster-3", MatchType: storage.MatchType_EXACT},
+					},
+					pkgSearch.NamespaceLabel: {
+						{Value: "nsk3=nsv3", MatchType: storage.MatchType_EXACT},
+						{Value: "nsk1=nsv2", MatchType: storage.MatchType_EXACT},
+					},
+					pkgSearch.DeploymentName: {
+						{Value: "pattern-1", MatchType: storage.MatchType_REGEX},
+					},
+				}),
+				generateTestCollection(map[pkgSearch.FieldLabel][]*storage.RuleValue{
+					pkgSearch.Cluster: {
+						{Value: "pattern-1#cluster-1", MatchType: storage.MatchType_EXACT},
+						{Value: "pattern-2#cluster-3", MatchType: storage.MatchType_EXACT},
+					},
+					pkgSearch.NamespaceLabel: {
+						{Value: "nsk3=nsv3", MatchType: storage.MatchType_EXACT},
+						{Value: "nsk1=nsv2", MatchType: storage.MatchType_EXACT},
+					},
+					pkgSearch.DeploymentName: {
+						{Value: "pattern-2", MatchType: storage.MatchType_REGEX},
+					},
+				}),
+			},
+			expectedDepNames: set.NewStringSet("pattern-1#deployment-1", "pattern-2#deployment-3"),
+		},
+	}
+
+	for _, tc := range cases {
+		s.T().Run(tc.desc, func(t *testing.T) {
+			var prevID string
+			var err error
+			for idx, coll := range tc.collections {
+				if idx > 0 {
+					coll.EmbeddedCollections = []*storage.ResourceCollection_EmbeddedResourceCollection{{Id: prevID}}
+				}
+				prevID, err = s.datastore.AddCollection(ctx, coll)
+				assert.NoError(t, err)
+				coll.Id = prevID
+			}
+
+			collection := tc.collections[len(tc.collections)-1]
+
+			// Test using collection as inclusion
+			query, err := s.qr.ResolveCollectionQuery(ctx, collection, false)
+			assert.NoError(t, err)
+			matches, err := s.deploymentSore.SearchRawDeployments(ctx, query)
+			assert.NoError(t, err)
+			assert.ElementsMatch(t, tc.expectedDepNames.AsSlice(), deploymentsToNames(matches).AsSlice())
+
+			// Test using collection as exclusion
+			remainingDepNames := allDepNames.Difference(tc.expectedDepNames)
+			query, err = s.qr.ResolveCollectionQuery(ctx, collection, true)
+			assert.NoError(t, err)
+			matches, err = s.deploymentSore.SearchRawDeployments(ctx, query)
+			assert.NoError(t, err)
+			assert.ElementsMatch(t, remainingDepNames.AsSlice(), deploymentsToNames(matches).AsSlice())
+		})
+	}
 }
 
 func (s *CollectionPostgresDataStoreTestSuite) TestFoo() {
 	// TODO e2e testing ROX-12626
 	// test regex doesn't compile
+}
+
+func (s *CollectionPostgresDataStoreTestSuite) truncateTable(name string) {
+	sql := fmt.Sprintf("TRUNCATE %s CASCADE", name)
+	_, err := s.testDB.Exec(s.ctx, sql)
+	s.NoError(err)
 }
 
 func getTestCollectionWithSelectors(name string, ids []string, selectors []*storage.ResourceSelector) *storage.ResourceCollection {
@@ -876,4 +1072,111 @@ func getBaseQuery(field pkgSearch.FieldLabel, value string) *v1.Query_BaseQuery 
 			},
 		},
 	}
+}
+
+func deploymentsToNames(deps []*storage.Deployment) set.StringSet {
+	ret := set.NewStringSet()
+	for _, d := range deps {
+		ret.Add(d.Name)
+	}
+	return ret
+}
+
+func generateTestCollection(ruleMap map[pkgSearch.FieldLabel][]*storage.RuleValue) *storage.ResourceCollection {
+	name := uuid.NewV4().String()
+	collection := &storage.ResourceCollection{
+		Name: name,
+		ResourceSelectors: []*storage.ResourceSelector{
+			{
+				Rules: []*storage.SelectorRule{},
+			},
+		},
+	}
+
+	for field, values := range ruleMap {
+		collection.ResourceSelectors[0].Rules = append(collection.ResourceSelectors[0].Rules,
+			&storage.SelectorRule{
+				FieldName: field.String(),
+				Values:    values,
+			},
+		)
+	}
+
+	return collection
+}
+
+func getTestDataForMatching() ([]*storage.Cluster, []*storage.NamespaceMetadata, []*storage.Deployment) {
+	clusters := []*storage.Cluster{
+		{
+			Id:     testconsts.Cluster1,
+			Name:   "pattern-1#cluster-1",
+			Labels: map[string]string{"ck1": "cv1", "ck2": "cv2", "ck3": "cv3"},
+		},
+		{
+			Id:     testconsts.Cluster2,
+			Name:   "pattern-1#cluster-2",
+			Labels: map[string]string{"ck2": "cv4", "ck4": "cv4"},
+		},
+		{
+			Id:     testconsts.Cluster3,
+			Name:   "pattern-2#cluster-3",
+			Labels: map[string]string{"ck1": "cv2", "ck3": "cv1", "ck5": "cv5"},
+		},
+	}
+
+	namespaces := []*storage.NamespaceMetadata{
+		{
+			Id:          testconsts.NamespaceA,
+			Name:        "pattern-1#namespace-1",
+			Labels:      map[string]string{"nsk1": "nsv1", "nsk2": "nsv2", "nsk3": "nsv3"},
+			ClusterId:   testconsts.Cluster1,
+			ClusterName: "pattern-1#cluster-1",
+		},
+		{
+			Id:          testconsts.NamespaceB,
+			Name:        "pattern-1#namespace-2",
+			Labels:      map[string]string{"nsk2": "nsv4", "nsk4": "nsv4"},
+			ClusterId:   testconsts.Cluster2,
+			ClusterName: "pattern-1#cluster-2",
+		},
+		{
+			Id:          testconsts.NamespaceC,
+			Name:        "pattern-2#namespace-3",
+			Labels:      map[string]string{"nsk1": "nsv2", "nsk3": "nsv1", "nsk5": "nsv5"},
+			ClusterId:   testconsts.Cluster3,
+			ClusterName: "pattern-2#cluster-3",
+		},
+	}
+
+	deployments := []*storage.Deployment{
+		{
+			Id:          uuid.NewV4().String(),
+			Name:        "pattern-1#deployment-1",
+			Labels:      map[string]string{"depk1": "depv1", "depk2": "depv2", "depk3": "depv3"},
+			ClusterId:   testconsts.Cluster1,
+			ClusterName: "pattern-1#cluster-1",
+			NamespaceId: testconsts.NamespaceA,
+			Namespace:   "pattern-1#namespace-1",
+		},
+		{
+			Id:          uuid.NewV4().String(),
+			Name:        "pattern-1#deployment-2",
+			Labels:      map[string]string{"depk2": "depv4", "depk4": "depv4"},
+			ClusterId:   testconsts.Cluster2,
+			ClusterName: "pattern-1#cluster-2",
+			NamespaceId: testconsts.NamespaceB,
+			Namespace:   "pattern-1#namespace-2",
+		},
+		{
+			Id:          uuid.NewV4().String(),
+			Name:        "pattern-2#deployment-3",
+			Labels:      map[string]string{"depk1": "depv2", "depk3": "depv1", "depk5": "depv5"},
+			ClusterId:   testconsts.Cluster3,
+			ClusterName: "pattern-2#cluster-3",
+			NamespaceId: testconsts.NamespaceC,
+			Namespace:   "pattern-2#namespace-3",
+		},
+	}
+
+	return clusters, namespaces, deployments
 }

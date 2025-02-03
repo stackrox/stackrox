@@ -508,7 +508,7 @@ func (suite *CollectionServiceTestSuite) TestDryRunCollection() {
 	mockID.EXPECT().FriendlyName().Return("name").AnyTimes()
 	ctx = authn.ContextWithIdentity(allAccessCtx, mockID, suite.T())
 	suite.dataStore.EXPECT().DryRunUpdateCollection(ctx, gomock.Any()).Times(1).Return(nil)
-	suite.queryResolver.EXPECT().ResolveCollectionQuery(ctx, gomock.Any()).Times(1).Return(search.EmptyQuery(), nil)
+	suite.queryResolver.EXPECT().ResolveCollectionQuery(ctx, gomock.Any(), gomock.Any()).Times(1).Return(search.EmptyQuery(), nil)
 	suite.deploymentDS.EXPECT().SearchListDeployments(ctx, gomock.Any()).Times(1).Return(expectedResp.Deployments, nil)
 	resp, err = suite.collectionService.DryRunCollection(ctx, request)
 	suite.NoError(err)
@@ -516,7 +516,7 @@ func (suite *CollectionServiceTestSuite) TestDryRunCollection() {
 
 	// test failure to resolve query
 	suite.dataStore.EXPECT().DryRunUpdateCollection(ctx, gomock.Any()).Times(1).Return(nil)
-	suite.queryResolver.EXPECT().ResolveCollectionQuery(ctx, gomock.Any()).Times(1).Return(nil, errors.New("test error"))
+	suite.queryResolver.EXPECT().ResolveCollectionQuery(ctx, gomock.Any(), gomock.Any()).Times(1).Return(nil, errors.New("test error"))
 	resp, err = suite.collectionService.DryRunCollection(ctx, request)
 	suite.Error(err)
 	suite.Nil(resp)
