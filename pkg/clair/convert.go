@@ -150,7 +150,8 @@ func convertFeature(feature clairV1.Feature, os string) *storage.EmbeddedImageSc
 			component.Vulns = append(component.Vulns, convertedVuln)
 		}
 	}
-	if features.ActiveVulnMgmt.Enabled() {
+	// TODO:  Figure out what is happening with Active Vuln Management
+	if features.ActiveVulnMgmt.Enabled() && !features.FlattenCVEData.Enabled() {
 		executables := make([]*storage.EmbeddedImageScanComponent_Executable, 0, len(feature.Executables))
 		for _, executable := range feature.Executables {
 			imageComponentIds := make([]string, 0, len(executable.RequiredFeatures))

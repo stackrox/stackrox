@@ -1,3 +1,4 @@
+{
   "definitions": [
     {
       "protopath": "active_component.proto",
@@ -6109,14 +6110,11 @@
                 "name": "fixed_by",
                 "type": "string",
                 "oneof_parent": "has_fixed_by"
-<<<<<<< HEAD
               },
               {
                 "id": 15,
                 "name": "component_id",
                 "type": "string"
-=======
->>>>>>> 672686754e (X-Smart-Squash: Squashed 5 commits:)
               }
             ]
           },
@@ -8469,6 +8467,11 @@
                 "name": "executables",
                 "type": "Executable",
                 "is_repeated": true
+              },
+              {
+                "id": 13,
+                "name": "architecture",
+                "type": "string"
               }
             ],
             "messages": [
@@ -8937,15 +8940,6 @@
               },
               {
                 "id": 14,
-<<<<<<< HEAD
-=======
-                "name": "cves",
-                "type": "ImageCVEV2",
-                "is_repeated": true
-              },
-              {
-                "id": 15,
->>>>>>> 672686754e (X-Smart-Squash: Squashed 5 commits:)
                 "name": "architecture",
                 "type": "string"
               }
@@ -8953,9 +8947,6 @@
           }
         ],
         "imports": [
-          {
-            "path": "storage/cve.proto"
-          },
           {
             "path": "storage/image.proto"
           }
