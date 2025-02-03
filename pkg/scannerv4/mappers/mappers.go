@@ -383,11 +383,11 @@ func rhelVulnsEPSS(vulns map[string]*claircore.Vulnerability, epssItems map[stri
 		}
 		vulnEPSSItems, ok := epssItems[v.ID]
 		if !ok {
-			continue //no epss items related to current vuln id
+			continue // no epss items related to current vuln id
 		}
 		epssItem, ok := vulnEPSSItems[cve]
 		if !ok {
-			continue //no epss score
+			continue // no epss score
 		}
 
 		// if both CVE and rhsa names exist
@@ -461,7 +461,7 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 
 		var vulnEPSS *epss.EPSSItem
 		if epssVulnItem, ok := epssItems[v.ID]; ok {
-			if v, ok := epssVulnItem[cve]; ok {
+			if v, ok := epssVulnItem[cve]; foundCVE && ok {
 				vulnEPSS = v
 			}
 		}
@@ -797,12 +797,7 @@ func cveEPSS(ctx context.Context, enrichments map[string][]json.RawMessage) (map
 			m := make(map[string]*epss.EPSSItem)
 			for idx := range list {
 				epssData := list[idx]
-				m[epssData.CVE] = &epss.EPSSItem{
-					CVE:          epssData.CVE,
-					Percentile:   epssData.Percentile,
-					EPSS:         epssData.EPSS,
-					ModelVersion: epssData.ModelVersion,
-				}
+				m[epssData.CVE] = &epssData
 			}
 			ret[ccVulnID] = m
 		}
