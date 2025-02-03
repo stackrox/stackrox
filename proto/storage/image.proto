@@ -115,7 +115,7 @@ message ImageSignatureVerificationResult {
   repeated string verified_image_references = 5;
 }
 
-// Next Tag: 13
+// Next Tag: 14
 message EmbeddedImageScanComponent {
   string name = 1; // @gotags: search:"Component,store"
   string version = 2; // @gotags: search:"Component Version,store"
@@ -139,6 +139,7 @@ message EmbeddedImageScanComponent {
   }
   // Values are cleared after moving to cache, remove them from the grpc return as well
   repeated Executable executables = 12; // @gotags: json:"-"
+  string architecture = 13;
 }
 
 enum SourceType {

@@ -20,14 +20,16 @@ type ImageParts struct {
 
 // ComponentParts represents the pieces of data in an image component.
 type ComponentParts struct {
-	Edge      *storage.ImageComponentEdge
-	Component *storage.ImageComponent
+	Edge        *storage.ImageComponentEdge
+	Component   *storage.ImageComponent
+	ComponentV2 *storage.ImageComponentV2
 
 	Children []CVEParts
 }
 
 // CVEParts represents the pieces of data in a CVE.
 type CVEParts struct {
-	Edge *storage.ComponentCVEEdge
-	CVE  *storage.ImageCVE
+	Edge  *storage.ComponentCVEEdge
+	CVE   *storage.ImageCVE
+	CVEV2 *storage.ImageCVEV2
 }
