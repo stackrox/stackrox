@@ -195,32 +195,41 @@ func (s *UpdaterTestSuite) TestExpiredMessages() {
 	s.addNodes(4)
 	s.addDeployment(makeAdmissionControlDeployment())
 	updater := s.createNewUpdater(updateInterval)
-	s.Require().NoError(updater.Start())
+	// Create a fake ticker to control the update execution
+	fakeTicker := make(chan time.Time)
+	defer close(fakeTicker)
+	go updater.run(fakeTicker)
 	defer updater.Stop(nil)
 	var expiredMessages []*message.ExpiringMessage
 	for _, state := range states {
 		updater.Notify(state)
-		if expiredMsg := s.assertOfflineMode(state, updater, updateInterval); expiredMsg != nil {
+		if expiredMsg := s.assertOfflineMode(updater, fakeTicker); expiredMsg != nil {
 			expiredMessages = append(expiredMessages, expiredMsg)
 		}
 	}
+	// We should have exactly the same number of messages as the length of states
+	s.Assert().Len(expiredMessages, len(states))
+	// Notify Central is reachable.
+	// Going back online should cancel the context and expire all messages until now.
 	updater.Notify(common.SensorComponentEventCentralReachable)
 	// All the messages received until now should be expired at this point
 	for _, msg := range expiredMessages {
 		select {
 		case <-msg.Context.Done():
 			continue
-		case <-time.After(time.Second):
+		case <-time.After(500 * time.Millisecond):
 			s.Fail("the messages that were attempted to be sent while offline should be expired")
 		}
 	}
+
+	fakeTicker <- time.Now()
 	// The last message should not be expired
 	select {
 	case msg := <-updater.ResponsesC():
 		select {
 		case <-msg.Context.Done():
 			s.Fail("the last message should not be cancelled")
-		case <-time.After(10 * updateInterval):
+		case <-time.After(500 * time.Millisecond):
 			break
 		}
 	case <-time.After(10 * time.Second):
@@ -288,24 +297,13 @@ func (s *UpdaterTestSuite) createNewUpdater(interval time.Duration) *updaterImpl
 	return updater
 }
 
-func (s *UpdaterTestSuite) assertOfflineMode(state common.SensorComponentEvent, updater *updaterImpl, interval time.Duration) *message.ExpiringMessage {
-	switch state {
-	case common.SensorComponentEventCentralReachable:
-		select {
-		case <-time.After(updateTimeout):
-			s.Fail("timeout waiting for sensor message")
-		case msg := <-updater.ResponsesC():
-			return msg
-		}
-	case common.SensorComponentEventOfflineMode:
-		select {
-		case <-time.After(10 * interval):
-			return nil
-		// Depending on our luck with the internal ticker, we could have a message already waiting in ResponsesC.
-		// If that's the case, we return it here and later assert that the message is cancelled.
-		case msg := <-updater.ResponsesC():
-			return msg
-		}
+func (s *UpdaterTestSuite) assertOfflineMode(updater *updaterImpl, ticker chan<- time.Time) *message.ExpiringMessage {
+	ticker <- time.Now()
+	select {
+	case <-time.After(5 * time.Second):
+		s.Fail("timeout waiting for sensor message")
+	case msg := <-updater.ResponsesC():
+		return msg
 	}
 	return nil
 }
