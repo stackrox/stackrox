@@ -1145,7 +1145,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 	tests := map[string]struct {
 		ccVulnerabilities map[string]*claircore.Vulnerability
 		nvdVulns          map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem
-		advisories        map[string]csaf.Record
+		advisories        map[string]csaf.Advisory
 		enableRedHatCVEs  bool
 		want              map[string]*v4.VulnerabilityReport_Vulnerability
 	}{
@@ -1636,7 +1636,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 					},
 				},
 			},
-			advisories: map[string]csaf.Record{
+			advisories: map[string]csaf.Advisory{
 				"foo": {
 					Name:        "RHSA-2021:5132",
 					Description: "RHSA description",
@@ -1788,7 +1788,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 					Issued:             now,
 				},
 			},
-			advisories: map[string]csaf.Record{
+			advisories: map[string]csaf.Advisory{
 				"foo": {
 					Name:        "RHSA-2024:10775",
 					Description: "RHSA description",

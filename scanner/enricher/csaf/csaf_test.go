@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	expectedRecords = []csaf.Record{
+	expectedRecords = []csaf.Advisory{
 		{
 			Name:        "RHSA-2023:4701",
 			Description: "Red Hat Security Advisory: subscription-manager security update",
@@ -191,13 +191,13 @@ func TestEnrich(t *testing.T) {
 		t.Errorf("expected kind %q, got %q", csaf.Type, kind)
 	}
 
-	var enrichments map[string][]csaf.Record
+	var enrichments map[string][]csaf.Advisory
 	err = json.Unmarshal(es[0], &enrichments)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
 
-	expected := map[string][]csaf.Record{
+	expected := map[string][]csaf.Advisory{
 		"foo": {expectedRecords[0]},
 		"bar": {expectedRecords[1]},
 		"baz": {expectedRecords[2]},
