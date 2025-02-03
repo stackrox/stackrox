@@ -8,6 +8,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -29,6 +30,7 @@ func TestCodec(t *testing.T) {
 	}
 
 	_, err := svc.SuppressCVEs(context.Background(), &request)
+	assert.Error(t, err)
 
 	// create a big message that will be above (>)
 	// buffer pooling threshold
@@ -36,7 +38,7 @@ func TestCodec(t *testing.T) {
 		request.Cves = append(request.Cves, fmt.Sprintf("CVE-%d", i))
 	}
 	_, err = svc.SuppressCVEs(context.Background(), &request)
-	require.Error(t, err)
+	assert.Error(t, err)
 }
 
 func BenchmarkProtoUnmarshal(b *testing.B) {
