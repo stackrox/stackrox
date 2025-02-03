@@ -66,13 +66,7 @@ func BenchmarkProtoUnmarshal(b *testing.B) {
 		}
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			_, _ = svc.SuppressCVEs(context.Background(), &v1.SuppressCVERequest{
-				Cves: []string{"ABC", "XYZ"},
-				Duration: &durationpb.Duration{
-					Seconds: 100,
-					Nanos:   0,
-				},
-			})
+			_, _ = svc.SuppressCVEs(context.Background(), &request)
 		}
 	})
 }
