@@ -12,10 +12,9 @@ const (
 	Type = `message/vnd.stackrox.scannerv4.map.csaf; enricher=` + Name
 )
 
-// Record represents a CSAF enrichment record.
-// It tracks attributes which should be consistent
-// each time the RHSA is output.
-type Record struct {
+// Advisory represents a CSAF enrichment advisory record.
+// It tracks attributes which should be consistent each time the advisory is output.
+type Advisory struct {
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
 	ReleaseDate time.Time `json:"release_date"`

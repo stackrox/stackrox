@@ -105,7 +105,7 @@ func TestParseEnrichment(t *testing.T) {
 			}
 			enrichment := enrichments[0]
 
-			var record csaf.Record
+			var record csaf.Advisory
 			err = json.Unmarshal(enrichment.Enrichment, &record)
 			if err != nil {
 				t.Fatalf("failed to unmarshal record: %v", err)

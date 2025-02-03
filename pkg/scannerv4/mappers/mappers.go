@@ -423,7 +423,7 @@ func toProtoV4VulnerabilitiesMap(
 	vulns map[string]*claircore.Vulnerability,
 	nvdVulns map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem,
 	epssItems map[string]map[string]*epss.EPSSItem,
-	csafAdvisories map[string]csaf.Record,
+	csafAdvisories map[string]csaf.Advisory,
 ) (map[string]*v4.VulnerabilityReport_Vulnerability, error) {
 	if vulns == nil {
 		return nil, nil
@@ -781,7 +781,7 @@ func nvdVulnerabilities(enrichments map[string][]json.RawMessage) (map[string]ma
 }
 
 // TODO(ROX-26672): Remove this function when we no longer require reading advisory data.
-func redhatCSAFAdvisories(ctx context.Context, enrichments map[string][]json.RawMessage) (map[string]csaf.Record, error) {
+func redhatCSAFAdvisories(ctx context.Context, enrichments map[string][]json.RawMessage) (map[string]csaf.Advisory, error) {
 	// Do not read CSAF data if it's not enabled.
 	if !features.ScannerV4RedHatCSAF.Enabled() {
 		return nil, nil
@@ -794,7 +794,7 @@ func redhatCSAFAdvisories(ctx context.Context, enrichments map[string][]json.Raw
 	if len(enrichmentsList) == 0 {
 		return nil, nil
 	}
-	var items map[string][]csaf.Record
+	var items map[string][]csaf.Advisory
 	// The CSAF enrichment always contains only one element.
 	err := json.Unmarshal(enrichmentsList[0], &items)
 	if err != nil {
@@ -804,7 +804,7 @@ func redhatCSAFAdvisories(ctx context.Context, enrichments map[string][]json.Raw
 		return nil, nil
 	}
 	// There is only one record per ID, so remove the slice.
-	ret := make(map[string]csaf.Record)
+	ret := make(map[string]csaf.Advisory)
 	for id, records := range items {
 		if len(records) != 1 {
 			zlog.Warn(ctx).Str("vuln_id", id).Msgf("unexpected number of CSAF enrichment records than expected (%d != 1)", len(records))
@@ -913,7 +913,7 @@ func cveEPSS(ctx context.Context, enrichments map[string][]json.RawMessage) (map
 //
 // TODO(ROX-26672): Remove vulnName and advisory parameters.
 // They are part of a temporary patch until we stop making RHSAs the top-level vulnerability.
-func cvssMetrics(_ context.Context, vuln *claircore.Vulnerability, vulnName string, nvdVuln *nvdschema.CVEAPIJSON20CVEItem, advisory csaf.Record) ([]*v4.VulnerabilityReport_Vulnerability_CVSS, error) {
+func cvssMetrics(_ context.Context, vuln *claircore.Vulnerability, vulnName string, nvdVuln *nvdschema.CVEAPIJSON20CVEItem, advisory csaf.Advisory) ([]*v4.VulnerabilityReport_Vulnerability_CVSS, error) {
 	var metrics []*v4.VulnerabilityReport_Vulnerability_CVSS
 
 	var preferredCVSS *v4.VulnerabilityReport_Vulnerability_CVSS
