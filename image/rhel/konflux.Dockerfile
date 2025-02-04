@@ -57,7 +57,7 @@ RUN # TODO(ROX-13200): make sure roxctl cli is built without running go mod tidy
 RUN make copy-go-binaries-to-image-dir
 
 
-FROM registry.access.redhat.com/ubi8/nodejs-18:latest AS ui-builder
+FROM registry.access.redhat.com/ubi8/nodejs-20:latest AS ui-builder
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
