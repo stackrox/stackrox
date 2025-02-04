@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/quay/claircore/indexer/controller"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
@@ -385,7 +386,7 @@ func buildRHCOSIndexReport(Id, version string) *v4.IndexReport {
 	return &v4.IndexReport{
 		// This hashId is arbitrary. The value doesn't play a role for matcher, but must be valid sha256.
 		HashId:  "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-		State:   Id, // IndexFinished
+		State:   controller.IndexFinished.String(),
 		Success: true,
 		Err:     "",
 		Contents: &v4.Contents{
