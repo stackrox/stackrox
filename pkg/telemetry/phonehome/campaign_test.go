@@ -27,7 +27,7 @@ func TestCampaignFulfilled(t *testing.T) {
 			Path:    "/some/test/path",
 			Code:    202,
 		}
-		assert.False(t, campaign.ForEachFulfilled(rp, doNothing))
+		assert.Zero(t, campaign.CountFulfilled(rp, doNothing))
 	})
 	t.Run("Empty criterion", func(t *testing.T) {
 		campaign := APICallCampaign{
@@ -39,7 +39,7 @@ func TestCampaignFulfilled(t *testing.T) {
 			Path:    "/some/test/path",
 			Code:    202,
 		}
-		assert.True(t, campaign.ForEachFulfilled(rp, doNothing))
+		assert.Equal(t, 1, campaign.CountFulfilled(rp, doNothing))
 	})
 	t.Run("Nil criterion", func(t *testing.T) {
 		campaign := APICallCampaign{
@@ -51,7 +51,7 @@ func TestCampaignFulfilled(t *testing.T) {
 			Path:    "/some/test/path",
 			Code:    202,
 		}
-		assert.False(t, campaign.ForEachFulfilled(rp, doNothing))
+		assert.Zero(t, campaign.CountFulfilled(rp, doNothing))
 	})
 
 	t.Run("Single criterion", func(t *testing.T) {
@@ -115,7 +115,7 @@ func TestCampaignFulfilled(t *testing.T) {
 			for name, campaign := range campaigns {
 				t.Run(name, func(t *testing.T) {
 					require.NoError(t, campaign.Compile())
-					assert.True(t, campaign.ForEachFulfilled(rp, doNothing))
+					assert.Equal(t, 1, campaign.CountFulfilled(rp, doNothing))
 				})
 			}
 		})
@@ -129,12 +129,29 @@ func TestCampaignFulfilled(t *testing.T) {
 			}
 			for name, campaign := range campaigns {
 				t.Run(name, func(t *testing.T) {
-					assert.False(t, campaign.ForEachFulfilled(rp, doNothing))
+					assert.Zero(t, campaign.CountFulfilled(rp, doNothing))
 				})
 			}
 		})
 	})
-
+	t.Run("Test mutiple fulfilled", func(t *testing.T) {
+		rp := &RequestParams{
+			Headers: withUserAgent(t, nil, "some test user-agent"),
+			Method:  "GET",
+			Path:    "/v1/test/path",
+			Code:    202,
+		}
+		campaign := APICallCampaign{
+			{
+				Path: Pattern("/v1/test*").Ptr(),
+			},
+			{
+				Method: Pattern("GET").Ptr(),
+			},
+		}
+		require.NoError(t, campaign.Compile())
+		assert.Equal(t, 2, campaign.CountFulfilled(rp, doNothing))
+	})
 	t.Run("All criteria", func(t *testing.T) {
 		campaign := APICallCampaign{
 			{
@@ -205,7 +222,7 @@ func TestCampaignFulfilled(t *testing.T) {
 				},
 			}
 			for _, rp := range rps {
-				assert.True(t, campaign.ForEachFulfilled(&rp, doNothing), rp.Headers(userAgentHeaderKey))
+				assert.Equal(t, 1, campaign.CountFulfilled(&rp, doNothing), rp.Headers(userAgentHeaderKey))
 			}
 		})
 
@@ -245,7 +262,7 @@ func TestCampaignFulfilled(t *testing.T) {
 				},
 			}
 			for _, rp := range rps {
-				assert.False(t, campaign.ForEachFulfilled(&rp, doNothing), rp.Headers(userAgentHeaderKey))
+				assert.Zero(t, campaign.CountFulfilled(&rp, doNothing), rp.Headers(userAgentHeaderKey))
 			}
 		})
 	})

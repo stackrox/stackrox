@@ -58,14 +58,13 @@ func (c APICallCampaign) Compile() error {
 	return nil
 }
 
-// ForEachFulfilled calls f on each fulfilled criterion and returns true if
-// any of the compaign critera is fulfilled.
-func (c APICallCampaign) ForEachFulfilled(rp *RequestParams, f func(cc *APICallCampaignCriterion)) bool {
-	fulfilled := false
+// CountFulfilled calls f on each fulfilled criterion and returns their number.
+func (c APICallCampaign) CountFulfilled(rp *RequestParams, f func(cc *APICallCampaignCriterion)) int {
+	fulfilled := 0
 	for _, cc := range c {
 		if cc.isFulfilled(rp) {
 			f(cc)
-			fulfilled = true
+			fulfilled++
 		}
 	}
 	return fulfilled

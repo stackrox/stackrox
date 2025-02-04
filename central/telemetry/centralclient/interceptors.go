@@ -83,10 +83,10 @@ func addDefaultProps(rp *phonehome.RequestParams, props map[string]any) bool {
 // User-Agent containing the substrings specified in the trackedUserAgents, and
 // have no match in the ignoredPaths list.
 func apiCall(rp *phonehome.RequestParams, props map[string]any) bool {
-	return !ignoredPaths.Match(rp.Path) && telemetryCampaign.ForEachFulfilled(rp,
+	return !ignoredPaths.Match(rp.Path) && telemetryCampaign.CountFulfilled(rp,
 		func(cc *phonehome.APICallCampaignCriterion) {
 			addCustomHeaders(rp, cc, props)
-		})
+		}) > 0
 }
 
 // addCustomHeaders adds additional properties to the event if the telemetry
