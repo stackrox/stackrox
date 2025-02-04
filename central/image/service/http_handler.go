@@ -61,7 +61,7 @@ func (h sbomHttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var params apiparams.SbomRequestBody
+	var params apiparams.SBOMRequestBody
 	sbomGenMaxReqSizeBytes := env.SBOMGenerationMaxReqSizeBytes.IntegerSetting()
 	lr := io.LimitReader(r.Body, int64(sbomGenMaxReqSizeBytes))
 	err := json.NewDecoder(lr).Decode(&params)
@@ -73,7 +73,7 @@ func (h sbomHttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	ctx, cancel := context.WithTimeout(r.Context(), env.ScanTimeout.DurationSetting())
 	defer cancel()
-	bytes, err := h.getSbom(ctx, params)
+	bytes, err := h.getSBOM(ctx, params)
 	if err != nil {
 		// Using WriteError instead of WriteGRPCStyleError so that the HTTP status
 		// is derived from the error type.
@@ -95,34 +95,35 @@ func (h sbomHttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // enrichImage enriches the image with the given name and based on the given enrichment context.
 func (h sbomHttpHandler) enrichImage(ctx context.Context, enrichmentCtx enricher.EnrichmentContext, imgName string) (*storage.Image, bool, error) {
 	// forcedEnrichment is set to true when enrichImage forces an enrichment.
-	forceEnrichment := false
+	forcedEnrichment := false
 	img, err := enricher.EnrichImageByName(ctx, h.enricher, enrichmentCtx, imgName)
 	if err != nil {
-		return nil, forceEnrichment, err
+		return nil, forcedEnrichment, err
 	}
 
-	// Verify that image is scanned by Scanner V4 if not force enrichment using Scanner V4.
-	scannedByV4 := h.scannedByScannerv4(img)
+	// SBOM generation requires an image to have been scanned by Scanner V4, if the existing image
+	// was scanned by a different scanner we force enrichment using Scanner V4.
+	scannedByV4 := h.scannedByScannerV4(img)
 	if enrichmentCtx.FetchOpt != enricher.UseImageNamesRefetchCachedValues && !scannedByV4 {
 		// Force scan by Scanner V4.
 		addForceToEnrichmentContext(&enrichmentCtx)
-		forceEnrichment = true
+		forcedEnrichment = true
 		img, err = enricher.EnrichImageByName(ctx, h.enricher, enrichmentCtx, imgName)
 		if err != nil {
-			return nil, forceEnrichment, err
+			return nil, forcedEnrichment, err
 		}
 	}
 
 	err = h.saveImage(img)
 	if err != nil {
-		return nil, forceEnrichment, err
+		return nil, forcedEnrichment, err
 	}
 
-	return img, forceEnrichment, nil
+	return img, forcedEnrichment, nil
 }
 
-// getSbom generates an SBOM for the specified parameters.
-func (h sbomHttpHandler) getSbom(ctx context.Context, params apiparams.SbomRequestBody) ([]byte, error) {
+// getSBOM generates an SBOM for the specified parameters.
+func (h sbomHttpHandler) getSBOM(ctx context.Context, params apiparams.SBOMRequestBody) ([]byte, error) {
 	enrichmentCtx := enricher.EnrichmentContext{
 		FetchOpt:        enricher.UseCachesIfPossible,
 		Delegable:       true,
@@ -147,7 +148,7 @@ func (h sbomHttpHandler) getSbom(ctx context.Context, params apiparams.SbomReque
 		return nil, err
 	}
 
-	// Verify that index report exists. if not force image enrichment using Scanner V4.
+	// Verify the Index Report exists. If it doesn't, force image enrichment using Scanner V4.
 	scannerV4, err := h.getScannerV4SBOMIntegration()
 	if err != nil {
 		return nil, err
@@ -159,7 +160,7 @@ func (h sbomHttpHandler) getSbom(ctx context.Context, params apiparams.SbomReque
 	}
 
 	if !found && !params.Force && !alreadyForcedEnrichment {
-		// Since index report for image does not exist force scan by Scanner V4.
+		// Since the Index Report for image does not exist, force scan by Scanner V4.
 		addForceToEnrichmentContext(&enrichmentCtx)
 		img, err = enricher.EnrichImageByName(ctx, h.enricher, enrichmentCtx, params.ImageName)
 		if err != nil {
@@ -197,8 +198,8 @@ func (h sbomHttpHandler) getScannerV4SBOMIntegration() (scannerTypes.SBOMer, err
 	return nil, errors.New("Scanner V4 integration not found")
 }
 
-// scannedByScannerv4 checks if image is scanned by Scanner V4.
-func (h sbomHttpHandler) scannedByScannerv4(img *storage.Image) bool {
+// scannedByScannerV4 checks if image is scanned by Scanner V4.
+func (h sbomHttpHandler) scannedByScannerV4(img *storage.Image) bool {
 	return img.GetScan().GetDataSource().GetId() == iiStore.DefaultScannerV4Integration.GetId()
 }
 

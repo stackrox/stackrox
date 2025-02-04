@@ -26,8 +26,8 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-func getFakeSbom(_ any) ([]byte, bool, error) {
-	sbom := createMockSbom()
+func getFakeSBOM(_ any) ([]byte, bool, error) {
+	sbom := createMockSBOM()
 	sbomBytes, err := json.Marshal(sbom)
 	if err != nil {
 		return nil, false, err
@@ -35,7 +35,7 @@ func getFakeSbom(_ any) ([]byte, bool, error) {
 	return sbomBytes, true, nil
 }
 
-func createMockSbom() map[string]interface{} {
+func createMockSBOM() map[string]interface{} {
 	return map[string]interface{}{
 		"SPDXID":      "SPDXRef-DOCUMENT",
 		"spdxVersion": "SPDX-2.3",
@@ -74,7 +74,7 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 		mockEnricher := enricherMock.NewMockImageEnricher(ctrl)
 		mockEnricher.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).Return(enricher.EnrichmentResult{ImageUpdated: false, ScanResult: enricher.ScanNotDone}, errors.New("Image enrichment failed")).AnyTimes()
 
-		reqBody := &apiparams.SbomRequestBody{
+		reqBody := &apiparams.SBOMRequestBody{
 			ImageName: "test-image",
 			Force:     false,
 		}
@@ -108,12 +108,12 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 
 		mockEnricher.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).Return(enricher.EnrichmentResult{ImageUpdated: true, ScanResult: enricher.ScanSucceeded}, nil).AnyTimes()
 		scanner.EXPECT().Type().Return(scannerTypes.ScannerV4).AnyTimes()
-		scanner.EXPECT().GetSBOM(gomock.Any()).DoAndReturn(getFakeSbom).AnyTimes()
+		scanner.EXPECT().GetSBOM(gomock.Any()).DoAndReturn(getFakeSBOM).AnyTimes()
 		set.EXPECT().ScannerSet().Return(scannerSet).AnyTimes()
 		fsr.EXPECT().GetScanner().Return(scanner).AnyTimes()
 		scannerSet.EXPECT().GetAll().Return([]scannerTypes.ImageScannerWithDataSource{fsr}).AnyTimes()
 
-		reqBody := &apiparams.SbomRequestBody{
+		reqBody := &apiparams.SBOMRequestBody{
 			ImageName: "quay.io/quay-qetest/nodejs-test-image:latest",
 			Force:     false,
 		}
@@ -238,7 +238,7 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 				firstGetSBOMInvocation = false
 				return nil, false, nil
 			}
-			return getFakeSbom(nil)
+			return getFakeSBOM(nil)
 		}
 
 		ctrl := gomock.NewController(t)
@@ -267,7 +267,7 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 		mockRiskManager.EXPECT().CalculateRiskAndUpsertImage(gomock.Any()).Times(2)
 
 		// Prepare the SBOM generation request.
-		reqBody := &apiparams.SbomRequestBody{
+		reqBody := &apiparams.SBOMRequestBody{
 			ImageName: "quay.io/quay-qetest/nodejs-test-image:latest",
 			Force:     false,
 		}
