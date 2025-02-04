@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
-set -eoux pipefail
+set -eou pipefail
+
+if [[ $# -ne 1 ]]; then
+  echo "Usage: $0 <max_deployments>"
+  exit 1
+fi
 
 if [[ -z "${API_ENDPOINT:-}" ]]; then
   echo "API_ENDPOINT must be set"
@@ -11,7 +16,7 @@ if [[ -z "${ROX_PASSWORD:-}" ]]; then
   exit 1
 fi
 
-max_deployments=${1:-30000}
+max_deployments=$1
 
 while true; do
   deployment_count="$(curl --location --silent --user "admin:${ROX_PASSWORD}" --request GET "https://${API_ENDPOINT}/v1/deploymentscount" -k | jq .count)"
