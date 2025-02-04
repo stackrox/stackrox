@@ -7,6 +7,8 @@ import { getUrlQueryStringForSearchFilter } from 'utils/searchUtils';
 import { severityLabels } from 'messages/common';
 import { policySeverityColorMap } from 'constants/severityColors';
 import { policySeverities, PolicySeverity } from 'types/policy.proto';
+import { filteredWorkflowViewKey } from 'Components/FilteredWorkflowViewSelector/useFilteredWorkflowViewURLState';
+import { fullWorkflowView } from 'Components/FilteredWorkflowViewSelector/types';
 import LinkShim from 'Components/PatternFly/LinkShim';
 
 import './SeverityTile.css';
@@ -44,7 +46,7 @@ function linkToViolations(searchFilter, severity) {
         ...searchFilter,
         Severity: severity,
     });
-    return `${violationsBasePath}?${queryString}`;
+    return `${violationsBasePath}?${queryString}&${filteredWorkflowViewKey}=${fullWorkflowView}`;
 }
 
 export type PolicyViolationTilesProps = {
