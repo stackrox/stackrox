@@ -187,14 +187,17 @@ func (m *managerImpl) UpdateDeclarativeConfigContents(handlerID string, contents
 
 	transformedConfigurations := make(map[reflect.Type][]protocompat.Message, len(configurations))
 	var transformationErrors *multierror.Error
+	var transformedMessageCount, transformationErrorCount int
 	for _, configuration := range configurations {
 		transformedConfig, err := m.universalTransformer.Transform(configuration)
 		if err != nil {
 			log.Debugf("Error during transforming declarative configuration %+v: %+v", configuration, err)
 			transformationErrors = multierror.Append(transformationErrors, err)
+			transformationErrorCount++
 			continue
 		}
 		for protoType, protoMessages := range transformedConfig {
+			transformedMessageCount += len(protoMessages)
 			transformedConfigurations[protoType] = append(transformedConfigurations[protoType], protoMessages...)
 			// Register health status for all new messages. Existing messages will not be re-registered.
 			m.registerHealthForMessages(handlerID, protoMessages...)
@@ -204,6 +207,10 @@ func (m *managerImpl) UpdateDeclarativeConfigContents(handlerID string, contents
 		errors.Wrap(transformationErrors.ErrorOrNil(), "during transforming configuration")))
 
 	m.transformedMessagesByHandler[handlerID] = transformedConfigurations
+	if transformedMessageCount > 0 || transformationErrorCount > 0 {
+		log.Infof("Declarative Config - Manager - %d objects pushed for update, "+
+			"%d transformation errors", transformedMessageCount, transformationErrorCount)
+	}
 	m.shortCircuitReconciliationLoop()
 }
 
