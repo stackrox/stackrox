@@ -23,8 +23,8 @@ func getRuntimeConfig() (*phonehome.RuntimeConfig, error) {
 }
 
 func appendRuntimeCampaign(runtimeCfg *phonehome.RuntimeConfig) {
-	campaignMux.RLock()
-	defer campaignMux.RUnlock()
+	campaignMux.Lock()
+	defer campaignMux.Unlock()
 	telemetryCampaign = permanentTelemetryCampaign
 	if err := runtimeCfg.APICallCampaign.Compile(); err != nil {
 		log.Errorf("Failed to initialize runtime telemetry campaign: %v.", err)

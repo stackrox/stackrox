@@ -39,7 +39,7 @@ var (
 		apiPathsCampaign(),
 		userAgentsCampaign(),
 	}
-	campaignMux       = sync.RWMutex{}
+	campaignMux       sync.RWMutex
 	telemetryCampaign phonehome.APICallCampaign
 
 	interceptors = map[string][]phonehome.Interceptor{
