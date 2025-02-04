@@ -175,7 +175,9 @@ function AzureIntegrationForm({
     }
 
     function onUpdateWorkloadIdentityChange(value, event) {
-        setFieldValue('updatePassword', value);
+        if (!isCreating) {
+            setFieldValue('updatePassword', value);
+        }
         setFieldValue('config.azure.username', '');
         setFieldValue('config.azure.password', '');
         return setFieldValue(event.target.id, value);
