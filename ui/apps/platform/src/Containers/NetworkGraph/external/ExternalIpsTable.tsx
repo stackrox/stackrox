@@ -1,27 +1,37 @@
-import React, { useCallback } from 'react';
-import { Flex, Pagination, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
+import React, { useCallback, useState } from 'react';
+import {
+    Button,
+    Flex,
+    Pagination,
+    Toolbar,
+    ToolbarContent,
+    ToolbarItem,
+} from '@patternfly/react-core';
 import { InnerScrollContainer, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import useMetadata from 'hooks/useMetadata';
 import useRestQuery from 'hooks/useRestQuery';
-import useURLPagination from 'hooks/useURLPagination';
 import { getExternalIpsFlowsMetadata } from 'services/NetworkService';
 import { getTableUIState } from 'utils/getTableUIState';
 import { getVersionedDocs } from 'utils/versioning';
-import { ExternalNetworkFlowsMetadataResponse } from 'types/networkFlow.proto';
+import {
+    ExternalSourceNetworkEntityInfo,
+    ExternalNetworkFlowsMetadataResponse,
+} from 'types/networkFlow.proto';
 
 import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 
 export type ExternalIpsTableProps = {
     scopeHierarchy: NetworkScopeHierarchy;
+    setSelectedEntity: (entity: ExternalSourceNetworkEntityInfo) => void;
 };
 
-function ExternalIpsTable({ scopeHierarchy }: ExternalIpsTableProps) {
+function ExternalIpsTable({ scopeHierarchy, setSelectedEntity }: ExternalIpsTableProps) {
     const { version } = useMetadata();
-    const pagination = useURLPagination(10);
-    const { page, perPage, setPage, setPerPage } = pagination;
+    const [page, setPage] = useState(1);
+    const [perPage, setPerPage] = useState(10);
     const clusterId = scopeHierarchy.cluster.id;
     const { namespaces, deployments } = scopeHierarchy;
     const fetchExternalIpsFlowsMetadata =
@@ -101,7 +111,15 @@ function ExternalIpsTable({ scopeHierarchy }: ExternalIpsTableProps) {
                                 {data.map(({ entity, flowsCount }) => {
                                     return (
                                         <Tr key={entity.id}>
-                                            <Td dataLabel="Entity">{entity.externalSource.name}</Td>
+                                            <Td dataLabel="Entity">
+                                                <Button
+                                                    variant="link"
+                                                    isInline
+                                                    onClick={() => setSelectedEntity(entity)}
+                                                >
+                                                    {entity.externalSource.name}
+                                                </Button>
+                                            </Td>
                                             <Td dataLabel="Internal flows">{flowsCount}</Td>
                                         </Tr>
                                     );
