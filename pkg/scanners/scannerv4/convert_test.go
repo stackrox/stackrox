@@ -295,6 +295,79 @@ func TestComponents(t *testing.T) {
 	}
 }
 
+func TestSetEPSS(t *testing.T) {
+	testcases := []struct {
+		name       string
+		epssDetail *v4.VulnerabilityReport_Vulnerability_EPSS
+		expected   *storage.EPSS
+	}{
+		{
+			name: "EPSS OK",
+			epssDetail: &v4.VulnerabilityReport_Vulnerability_EPSS{
+				Date:         "test-date",
+				ModelVersion: "test-model-version",
+				Probability:  0.91963,
+				Percentile:   0.99030,
+			},
+			expected: &storage.EPSS{EpssProbability: 0.91963, EpssPercentile: 0.99030},
+		},
+		{
+			name: "EPSS really small",
+			epssDetail: &v4.VulnerabilityReport_Vulnerability_EPSS{
+				Date:         "test-date",
+				ModelVersion: "test-model-version",
+				Probability:  0.00042,
+				Percentile:   0.003,
+			},
+			expected: &storage.EPSS{EpssProbability: 0.00042, EpssPercentile: 0.003},
+		},
+		{
+			name: "EPSS 0 probability",
+			epssDetail: &v4.VulnerabilityReport_Vulnerability_EPSS{
+				Date:         "test-date",
+				ModelVersion: "test-model-version",
+				Probability:  0,
+				Percentile:   0.003,
+			},
+			expected: &storage.EPSS{EpssProbability: 0, EpssPercentile: 0.003},
+		},
+		{
+			name: "EPSS 0 percentile",
+			epssDetail: &v4.VulnerabilityReport_Vulnerability_EPSS{
+				Date:         "test-date",
+				ModelVersion: "test-model-version",
+				Probability:  0.000426,
+				Percentile:   0,
+			},
+			expected: &storage.EPSS{EpssProbability: 0.000426, EpssPercentile: 0},
+		},
+		{
+			name:       "EPSS nil input",
+			epssDetail: nil,
+			expected:   nil,
+		},
+	}
+
+	for _, testcase := range testcases {
+		t.Run(testcase.name, func(t *testing.T) {
+			result := epss(testcase.epssDetail)
+			if testcase.expected == nil {
+				if result != nil {
+					t.Errorf("expected nil, got %+v", result)
+				}
+				return
+			}
+			if result == nil {
+				t.Errorf("expected %+v, got nil", testcase.expected)
+				return
+			}
+			if result.EpssProbability != testcase.expected.EpssProbability || result.EpssPercentile != testcase.expected.EpssPercentile {
+				t.Errorf("expected %+v, got %+v", testcase.expected, result)
+			}
+		})
+	}
+}
+
 func TestSetScoresAndScoreVersions(t *testing.T) {
 	testcases := []struct {
 		name        string
