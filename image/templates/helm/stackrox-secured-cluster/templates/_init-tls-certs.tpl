@@ -17,7 +17,7 @@ args:
 resources:
   requests:
     memory: "100Mi"
-    cpu: "400m"
+    cpu: "60m"
   limits:
     memory: "200Mi"
     cpu: "1000m"
