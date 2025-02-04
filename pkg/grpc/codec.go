@@ -26,6 +26,14 @@ func (c *codec) Marshal(v any) (mem.BufferSlice, error) {
 	if !ok {
 		return c.CodecV2.Marshal(v)
 	}
+	vt, err := c.marshalVT(m)
+	if err != nil {
+		return c.CodecV2.Marshal(v)
+	}
+	return vt, nil
+}
+
+func (c *codec) marshalVT(m vtprotoMessage) (mem.BufferSlice, error) {
 	size := m.SizeVT()
 	if mem.IsBelowBufferPoolingThreshold(size) {
 		buf := make([]byte, size)
@@ -51,7 +59,11 @@ func (c *codec) Unmarshal(data mem.BufferSlice, v any) error {
 	}
 	buf := data.MaterializeToBuffer(defaultBufferPool)
 	defer buf.Free()
-	return m.UnmarshalVT(buf.ReadOnlyData())
+	err := m.UnmarshalVT(buf.ReadOnlyData())
+	if err != nil {
+		return c.CodecV2.Unmarshal(data, v)
+	}
+	return nil
 }
 
 func init() {
