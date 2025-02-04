@@ -46,6 +46,9 @@ type nodeInventoryHandlerImpl struct {
 	// lock prevents the race condition between Start() [writer] and ResponsesC() [reader]
 	lock    *sync.Mutex
 	stopper concurrency.Stopper
+	// archCache stores an architecture per node, so that it can be used in the index report for
+	// the 'rhcos' package. The arch is discovered once and then reused for subsequent scans.
+	archCache map[string]string
 }
 
 func (c *nodeInventoryHandlerImpl) Stopped() concurrency.ReadOnlyErrorSignal {
@@ -313,8 +316,14 @@ func (c *nodeInventoryHandlerImpl) sendNodeIndex(toC chan<- *message.ExpiringMes
 			metrics.ObserveNodeScan(indexWrap.NodeName, metrics.NodeScanTypeNodeIndex, metrics.NodeScanOperationSendToCentral)
 		}()
 		irWrapperFunc := noop
+		arch := c.archCache[indexWrap.NodeName]
 		if isRHCOS {
 			log.Debugf("Attaching OCI entry for 'rhcos' to index-report: version=%s", version)
+			if _, ok := c.archCache[indexWrap.NodeName]; !ok {
+				arch = extractArch(indexWrap.IndexReport)
+				c.archCache[indexWrap.NodeName] = arch
+			}
+			log.Debugf("Extracted arch for node %s: %s", indexWrap.NodeName, arch)
 			irWrapperFunc = attachRPMtoRHCOS
 		}
 		toC <- message.New(&central.MsgFromSensor{
@@ -325,7 +334,7 @@ func (c *nodeInventoryHandlerImpl) sendNodeIndex(toC chan<- *message.ExpiringMes
 					// This can be changed to CREATE or UPDATE for Sensor 4.8 or when Central 4.6 is out of support.
 					Action: central.ResourceAction_UNSET_ACTION_RESOURCE,
 					Resource: &central.SensorEvent_IndexReport{
-						IndexReport: irWrapperFunc(version, indexWrap.IndexReport),
+						IndexReport: irWrapperFunc(version, arch, indexWrap.IndexReport),
 					},
 				},
 			},
@@ -357,7 +366,7 @@ func normalizeVersion(version string) []int32 {
 	return []int32{int32(i1), int32(i2), 0}
 }
 
-func noop(_ string, rpm *v4.IndexReport) *v4.IndexReport {
+func noop(_, _ string, rpm *v4.IndexReport) *v4.IndexReport {
 	return rpm
 }
 
@@ -366,13 +375,28 @@ func idTaken[T any](m map[string]T, id int) bool {
 	return exists
 }
 
-func attachRPMtoRHCOS(version string, rpm *v4.IndexReport) *v4.IndexReport {
+// extractArch deduces the architecture of the node OS based on the index report containing rpm packages.
+func extractArch(rpm *v4.IndexReport) string {
+	for _, distro := range rpm.GetContents().GetDistributions() {
+		if distro.GetArch() != "" && distro.GetArch() != "noarch" {
+			return distro.GetArch()
+		}
+	}
+	for _, p := range rpm.GetContents().GetPackages() {
+		if p.GetArch() != "" && p.GetArch() != "noarch" {
+			return p.GetArch()
+		}
+	}
+	return "noarch"
+}
+
+func attachRPMtoRHCOS(version, arch string, rpm *v4.IndexReport) *v4.IndexReport {
 	idCandidate := 600 // Arbitrary selected. RHCOS has usually 520-560 rpm packages.
 	for idTaken(rpm.GetContents().GetEnvironments(), idCandidate) {
 		idCandidate++
 	}
 	strID := strconv.Itoa(idCandidate)
-	oci := buildRHCOSIndexReport(strID, version)
+	oci := buildRHCOSIndexReport(strID, version, arch)
 	oci.Contents.Packages = append(oci.Contents.Packages, rpm.GetContents().GetPackages()...)
 	oci.Contents.Repositories = append(oci.Contents.Repositories, rpm.GetContents().GetRepositories()...)
 	for envId, list := range rpm.GetContents().GetEnvironments() {
@@ -382,7 +406,7 @@ func attachRPMtoRHCOS(version string, rpm *v4.IndexReport) *v4.IndexReport {
 	return oci
 }
 
-func buildRHCOSIndexReport(Id, version string) *v4.IndexReport {
+func buildRHCOSIndexReport(Id, version, arch string) *v4.IndexReport {
 	return &v4.IndexReport{
 		// This hashId is arbitrary. The value doesn't play a role for matcher, but must be valid sha256.
 		HashId:  "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
@@ -405,7 +429,7 @@ func buildRHCOSIndexReport(Id, version string) *v4.IndexReport {
 						Id:  Id,
 						Cpe: "cpe:2.3:*", // required to pass validation of scanner V4 API
 					},
-					Arch: "",          // TODO(ROX-27719): Fill this
+					Arch: arch,
 					Cpe:  "cpe:2.3:*", // required to pass validation of scanner V4 API
 				},
 			},
