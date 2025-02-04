@@ -5,7 +5,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/cockroachdb/pebble"
+	"github.com/cockroachdb/pebble/v2"
 	appVersioned "github.com/openshift/client-go/apps/clientset/versioned"
 	configVersioned "github.com/openshift/client-go/config/clientset/versioned"
 	operatorVersioned "github.com/openshift/client-go/operator/clientset/versioned"
