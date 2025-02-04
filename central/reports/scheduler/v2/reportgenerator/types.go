@@ -39,6 +39,7 @@ type ImageCVEQueryResponse struct {
 	Severity          *storage.VulnerabilitySeverity `db:"severity"`
 	CVSS              *float64                       `db:"cvss"`
 	NVDCVSS           *float64                       `db:"nvd_cvss"`
+	EPSSProbability   *float64                       `db:"epss_probability"`
 	DiscoveredAtImage *time.Time                     `db:"first_image_occurrence_timestamp"`
 
 	Link string
@@ -126,6 +127,10 @@ func (res *ImageCVEQueryResponse) GetNVDCVSS() float64 {
 		return 0.0
 	}
 	return *res.NVDCVSS
+}
+
+func (res *ImageCVEQueryResponse) GetEPSSProbability() *float64 {
+	return res.EPSSProbability
 }
 
 func (res *ImageCVEQueryResponse) GetDiscoveredAtImage() string {
