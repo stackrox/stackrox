@@ -7,6 +7,7 @@ import {
     Tabs,
     Tab,
     TabTitleText,
+    Text,
     Spinner,
 } from '@patternfly/react-core';
 
@@ -34,7 +35,7 @@ import FilteredWorkflowViewSelector from 'Components/FilteredWorkflowViewSelecto
 import useFilteredWorkflowViewURLState from 'Components/FilteredWorkflowViewSelector/useFilteredWorkflowViewURLState';
 import ViolationsTablePanel from './ViolationsTablePanel';
 import getTableColumnDescriptors from './violationTableColumnDescriptors';
-import { violationStateTabs } from './types';
+import { ViolationStateTab, violationStateTabs } from './types';
 
 import './ViolationsTablePage.css';
 
@@ -58,6 +59,32 @@ function getFilteredWorkflowViewSearchFilter(
         default:
             return {};
     }
+}
+
+const violationsPageDescription: Record<ViolationStateTab, Record<FilteredWorkflowView, string>> = {
+    ACTIVE: {
+        'Applications view': 'View user workload violations that may require immediate attention',
+        'Platform view': 'View platform violations that may require immediate attention',
+        'Full view': 'View all violations that may require immediate attention',
+    },
+    RESOLVED: {
+        'Applications view':
+            'Review user workload violations that are inactive and may have been addressed',
+        'Platform view': 'Review platform violations that are inactive and may have been addressed',
+        'Full view': 'Review all violations that are inactive and may have been addressed',
+    },
+    ATTEMPTED: {
+        'Applications view': 'Track blocked or unsuccessful user workload violation attempts',
+        'Platform view': 'Track blocked or unsuccessful platform violation attempts',
+        'Full view': 'Track all blocked or unsuccessful violation attempts',
+    },
+};
+
+function getDescriptionForSelectedViolationState(
+    selectedViolationState: ViolationStateTab,
+    filteredWorkflowView: FilteredWorkflowView
+): string {
+    return violationsPageDescription[selectedViolationState][filteredWorkflowView];
 }
 
 function ViolationsTablePage(): ReactElement {
@@ -256,6 +283,14 @@ function ViolationsTablePage(): ReactElement {
                     />
                 </PageSection>
             )}
+            <PageSection variant="light">
+                <Text>
+                    {getDescriptionForSelectedViolationState(
+                        selectedViolationStateTab,
+                        filteredWorkflowView
+                    )}
+                </Text>
+            </PageSection>
             <PageSection variant="default" id={tabContentId}>
                 {isLoadingAlerts && (
                     <Bullseye>
