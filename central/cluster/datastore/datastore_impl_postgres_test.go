@@ -203,34 +203,26 @@ func (s *ClusterPostgresDataStoreTestSuite) TestPopulateClusterHealthInfo() {
 
 	t := time.Now()
 	ts := protoconv.ConvertTimeToTimestamp(t)
-	idSuffixes := []string{"1", "2", "3"}
-	existingHealths := []*storage.ClusterHealthStatus{
-		{
-			SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
+	healthStatuses := []storage.ClusterHealthStatus_HealthStatusLabel{storage.ClusterHealthStatus_UNHEALTHY, storage.ClusterHealthStatus_DEGRADED, storage.ClusterHealthStatus_HEALTHY}
+	expectedHealths := make(map[string]*storage.ClusterHealthStatus)
+	for i, status := range healthStatuses {
+		clusterName := "Cluster" + string(rune(i+1))
+		expectedHealths[clusterName] = &storage.ClusterHealthStatus{
 			LastContact:        ts,
-		},
-		{
-			SensorHealthStatus: storage.ClusterHealthStatus_DEGRADED,
-			LastContact:        ts,
-		},
-		{
-			SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
-			LastContact:        ts,
-		},
-	}
-	for i, idSuffix := range idSuffixes {
-		cluster := &storage.Cluster{Name: "Cluster" + idSuffix, MainImage: mainImage, CentralApiEndpoint: centralEndpoint}
+			SensorHealthStatus: status,
+		}
+		cluster := &storage.Cluster{Name: clusterName, MainImage: mainImage, CentralApiEndpoint: centralEndpoint}
 		clusterId, err := s.clusterDatastore.AddCluster(ctx, cluster)
 		s.NoError(err)
 		s.NotEmpty(clusterId)
 		cluster.Id = clusterId
-		err = s.clusterDatastore.UpdateClusterHealth(ctx, clusterId, existingHealths[i])
+		err = s.clusterDatastore.UpdateClusterHealth(ctx, clusterId, expectedHealths[clusterName])
 		s.NoError(err)
 	}
 	results, err := s.clusterDatastore.SearchRawClusters(ctx, pkgSearch.EmptyQuery())
 	s.NoError(err)
-	for i, result := range results {
-		protoassert.Equal(s.T(), existingHealths[i], result.HealthStatus)
+	for _, result := range results {
+		protoassert.Equal(s.T(), expectedHealths[result.Name], result.HealthStatus)
 	}
 }
 
