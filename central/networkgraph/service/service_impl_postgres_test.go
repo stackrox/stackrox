@@ -162,13 +162,13 @@ func (s *networkGraphServiceSuite) TestGetExternalNetworkFlows() {
 	}
 
 	deployments := []*storage.Deployment{
-		&storage.Deployment{
+		{
 			Id:        fixtureconsts.Deployment1,
 			ClusterId: testCluster,
 			Namespace: testNamespace,
 		},
 
-		&storage.Deployment{
+		{
 			Id:        fixtureconsts.Deployment2,
 			ClusterId: testCluster,
 			Namespace: testNamespace,
