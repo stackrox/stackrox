@@ -165,6 +165,8 @@ func (s *ClusterPostgresDataStoreTestSuite) TestRemoveCluster() {
 	imageIntegrationId, imageIntegrationAddErr := s.imageIntegrationDatastore.AddImageIntegration(ctx, testImageIntegration)
 	s.NotEmpty(imageIntegrationId)
 	s.NoError(imageIntegrationAddErr)
+
+	// Remove cluster and verify that the removal has been cascaded to all related components
 	doneSignal := concurrency.NewSignal()
 	clusterRemoveErr := s.clusterDatastore.RemoveCluster(ctx, clusterId, &doneSignal)
 	s.NoError(clusterRemoveErr)
