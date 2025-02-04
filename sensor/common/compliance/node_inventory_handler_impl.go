@@ -405,7 +405,7 @@ func buildRHCOSIndexReport(Id, version string) *v4.IndexReport {
 						Id:  Id,
 						Cpe: "cpe:2.3:*", // required to pass validation of scanner V4 API
 					},
-					Arch: "",
+					Arch: "",          // TODO(ROX-27719): Fill this
 					Cpe:  "cpe:2.3:*", // required to pass validation of scanner V4 API
 				},
 			},
