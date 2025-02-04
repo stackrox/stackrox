@@ -83,4 +83,5 @@ any_version_slim="${any_version}[0-9]+\-slim"
   generate_bundle k8s "--slim-collector=true" --name "$cluster_name"
   assert_success
   assert_bundle_registry "$out_dir" "collector" "$(registry_from_flavor)/collector:$any_version"
+  delete_cluster "$cluster_name"
 }
