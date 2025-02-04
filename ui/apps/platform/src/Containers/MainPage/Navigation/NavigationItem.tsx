@@ -11,7 +11,7 @@ export type NavigationItemProps = {
 function NavigationItem({ isActive, path, content }: NavigationItemProps): ReactElement {
     return (
         <NavItem isActive={isActive}>
-            <NavLink exact to={path} activeClassName="pf-m-current">
+            <NavLink exact to={path} className={isActive ? 'pf-m-current' : ''}>
                 {content}
             </NavLink>
         </NavItem>

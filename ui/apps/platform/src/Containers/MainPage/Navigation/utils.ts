@@ -9,7 +9,7 @@ import { HasReadAccess } from 'hooks/usePermissions';
 // Parent example: Vulnerability Management (1.0) if Vulnerability Management (2.0) is rendered and so on.
 type TitleCallback = (navDescriptionFiltered: NavDescription[]) => string | ReactElement;
 
-type IsActiveCallback = (pathname: string) => boolean;
+type IsActiveCallback = (location: Location) => boolean;
 
 export type LinkDescription = {
     type: 'link';
@@ -21,8 +21,10 @@ export type LinkDescription = {
 };
 
 // Encapsulate whether path match for child is specific or generic.
-export function isActiveLink(pathname: string, { isActive, path }: LinkDescription) {
-    return typeof isActive === 'function' ? isActive(pathname) : Boolean(matchPath(pathname, path));
+export function isActiveLink(location: Location, { isActive, path }: LinkDescription) {
+    return typeof isActive === 'function'
+        ? isActive(location)
+        : Boolean(matchPath(location.pathname, path));
 }
 
 export type SeparatorDescription = {
