@@ -423,11 +423,12 @@ func buildRHCOSIndexReport(Id, version, arch string) *v4.IndexReport {
 						Kind: "rhctag",
 						V:    normalizeVersion(version), // Only two first fields matter for the db-query.
 					},
-					FixedInVersion: "",
-					Kind:           "binary",
+					Kind: "binary",
 					Source: &v4.Package{
-						Id:  Id,
-						Cpe: "cpe:2.3:*", // required to pass validation of scanner V4 API
+						Id:      Id,
+						Name:    "rhcos",
+						Version: version,
+						Cpe:     "cpe:2.3:*", // required to pass validation of scanner V4 API
 					},
 					Arch: arch,
 					Cpe:  "cpe:2.3:*", // required to pass validation of scanner V4 API
