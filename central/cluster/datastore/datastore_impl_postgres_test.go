@@ -227,7 +227,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestPopulateClusterHealthInfo() {
 }
 
 func (s *ClusterPostgresDataStoreTestSuite) TestLookupOrCreateClusterFromConfig() {
-	const bundleID = "aW5pdC1idW5kbGUtaWQK"
+	const bundleID = "test-bundle-id"
 	const policyVersion = "1"
 	const someHelmConfigJSON = `{
 		"staticConfig": {
@@ -297,7 +297,6 @@ func (s *ClusterPostgresDataStoreTestSuite) TestLookupOrCreateClusterFromConfig(
 		description             string
 		cluster                 *storage.Cluster
 		sensorHello             *central.SensorHello
-		bundleID                string
 		clusterID               string
 		shouldClusterBeUpserted bool
 		shouldHaveLookupError   bool
@@ -312,7 +311,6 @@ func (s *ClusterPostgresDataStoreTestSuite) TestLookupOrCreateClusterFromConfig(
 				ManagedBy:     storage.ManagerType_MANAGER_TYPE_HELM_CHART,
 				ClusterConfig: &someHelmConfig,
 			}, nil),
-			bundleID:                bundleID,
 			shouldClusterBeUpserted: true,
 			shouldHaveLookupError:   true,
 		},
@@ -323,7 +321,6 @@ func (s *ClusterPostgresDataStoreTestSuite) TestLookupOrCreateClusterFromConfig(
 				ClusterConfig: &someHelmConfig,
 				ManagedBy:     storage.ManagerType_MANAGER_TYPE_HELM_CHART,
 			}, nil),
-			bundleID:                bundleID,
 			clusterID:               uuid.NewV4().String(),
 			shouldClusterBeUpserted: false,
 			shouldHaveLookupError:   true,
