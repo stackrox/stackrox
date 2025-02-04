@@ -383,8 +383,8 @@ func TestSkipIntegrationCreate(t *testing.T) {
 	}
 	globalPullSecretDupe := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "installation-pull-secrets",
-			Namespace: "openshift-image-registry",
+			Name:      clusterImgRegistryOperatorSecretName,
+			Namespace: clusterImgRegistryOperatorNamespace,
 		},
 	}
 	someOtherSecret := &v1.Secret{
