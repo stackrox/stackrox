@@ -836,17 +836,16 @@ func (s *ClusterPostgresDataStoreTestSuite) TestAddDefaults() {
 		s.Empty(cluster.GetCollectorImage()) // must not be set
 		s.Equal(centralEndpoint, cluster.GetCentralApiEndpoint())
 		s.Equal(storage.CollectionMethod_CORE_BPF, cluster.GetCollectionMethod())
-		if tc := cluster.GetTolerationsConfig(); s.NotNil(tc) {
-			s.False(tc.GetDisabled())
-		}
-		if dc := cluster.GetDynamicConfig(); s.NotNil(dc) {
-			s.True(dc.GetDisableAuditLogs())
-			if acc := dc.GetAdmissionControllerConfig(); s.NotNil(acc) {
-				s.False(acc.GetEnabled())
-				s.Equal(int32(defaultAdmissionControllerTimeout),
-					acc.GetTimeoutSeconds())
-			}
-		}
+		tc := cluster.GetTolerationsConfig()
+		s.Require().NotNil(tc)
+		s.False(tc.GetDisabled())
+		dc := cluster.GetDynamicConfig()
+		s.Require().NotNil(dc)
+		s.True(dc.GetDisableAuditLogs())
+		acc := dc.GetAdmissionControllerConfig()
+		s.Require().NotNil(acc)
+		s.False(acc.GetEnabled())
+		s.Equal(int32(defaultAdmissionControllerTimeout), acc.GetTimeoutSeconds())
 	})
 
 	s.Run("Provided values are either not overridden or properly updated", func() {
@@ -893,17 +892,17 @@ func (s *ClusterPostgresDataStoreTestSuite) TestAddDefaults() {
 		s.True(cluster.GetAdmissionController())
 		s.True(cluster.GetAdmissionControllerUpdates())
 		s.True(cluster.GetAdmissionControllerEvents())
-		if dc := cluster.GetDynamicConfig(); s.NotNil(dc) {
-			s.Equal("registryOverride", dc.GetRegistryOverride())
-			s.True(dc.GetDisableAuditLogs()) // True for KUBERNETES_CLUSTER
-			if acc := dc.GetAdmissionControllerConfig(); s.NotNil(acc) {
-				s.True(acc.GetEnabled())
-				s.Equal(int32(73), acc.GetTimeoutSeconds())
-			}
-		}
-		if tc := cluster.GetTolerationsConfig(); s.NotNil(tc) {
-			s.True(tc.GetDisabled())
-		}
+		dc := cluster.GetDynamicConfig()
+		s.Require().NotNil(dc)
+		s.Equal("registryOverride", dc.GetRegistryOverride())
+		s.True(dc.GetDisableAuditLogs()) // True for KUBERNETES_CLUSTER
+		acc := dc.GetAdmissionControllerConfig()
+		s.Require().NotNil(acc)
+		s.True(acc.GetEnabled())
+		s.Equal(int32(73), acc.GetTimeoutSeconds())
+		tc := cluster.GetTolerationsConfig()
+		s.Require().NotNil(tc)
+		s.True(tc.GetDisabled())
 		s.Equal(int64(10), cluster.GetPriority())
 		s.True(cluster.SlimCollector)
 		s.NotNil(cluster.GetHelmConfig())
@@ -924,9 +923,9 @@ func (s *ClusterPostgresDataStoreTestSuite) TestAddDefaults() {
 		} {
 			s.Run(name, func() {
 				s.NoError(addDefaults(testCase.cluster))
-				if dc := testCase.cluster.GetDynamicConfig(); s.NotNil(dc) {
-					s.Equal(testCase.expectedDisabledLogs, dc.GetDisableAuditLogs())
-				}
+				dc := testCase.cluster.GetDynamicConfig()
+				s.Require().NotNil(dc)
+				s.Equal(testCase.expectedDisabledLogs, dc.GetDisableAuditLogs())
 			})
 		}
 	})
