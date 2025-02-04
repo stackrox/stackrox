@@ -80,10 +80,10 @@ export const validationSchema = yup.object().shape({
                 ),
             wifEnabled: yup.boolean(),
         }),
-        skipTestIntegration: yup.bool(),
+        skipTestIntegration: yup.boolean(),
         type: yup.string().matches(/azure/),
     }),
-    updatePassword: yup.bool(),
+    updatePassword: yup.boolean(),
 });
 
 export const defaultValues: AzureIntegrationFormValues = {
