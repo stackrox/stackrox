@@ -449,15 +449,17 @@ func toProtoV4VulnerabilitiesMap(
 		if v.Repo != nil {
 			repoID = v.Repo.ID
 		}
-		normalizedSeverity := toProtoV4VulnerabilitySeverity(ctx, v.NormalizedSeverity)
+
+		// TODO: Handle EPSS score...
+		name := vulnerabilityName(v)
 		// TODO(ROX-26672): Remove this line.
-		// TODO: need to think about this some more...
 		advisory, advisoryExists := csafAdvisories[v.ID]
+
+		normalizedSeverity := toProtoV4VulnerabilitySeverity(ctx, v.NormalizedSeverity)
 		if advisoryExists {
 			normalizedSeverity = toProtoV4VulnerabilitySeverityFromString(ctx, advisory.Severity)
 		}
-		// TODO: Handle EPSS score...
-		name := vulnerabilityName(v)
+
 		// Determine the related CVE for this vulnerability. This is necessary, as NVD is CVE-based.
 		cve, foundCVE := findName(v, cveIDPattern)
 		// Find the related NVD vuln for this vulnerability name, let it be empty if no
@@ -494,6 +496,7 @@ func toProtoV4VulnerabilitiesMap(
 		if rhelEPSS, ok := rhelEPSSDetails[name]; ok {
 			vulnEPSS = &rhelEPSS
 		}
+
 		description := v.Description
 		if advisoryExists {
 			description = advisory.Description
@@ -504,6 +507,7 @@ func toProtoV4VulnerabilitiesMap(
 				description = nvdVuln.Descriptions[0].Value
 			}
 		}
+
 		vulnPublished := v.Issued
 		if advisoryExists {
 			vulnPublished = advisory.ReleaseDate
