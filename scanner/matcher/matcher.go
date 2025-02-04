@@ -140,7 +140,7 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 	if features.EPSSScore.Enabled() {
 		enrichers = append(enrichers, &epss.Enricher{})
 	}
-	if features.ScannerV4RedHatCSAF.Enabled() {
+	if features.ScannerV4RedHatCSAF.Enabled() && !features.ScannerV4RedHatCVEs.Enabled() {
 		enrichers = append(enrichers, &csaf.Enricher{})
 	}
 	libVuln, err := libvuln.New(ctx, &libvuln.Options{
