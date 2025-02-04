@@ -4,7 +4,7 @@ import "time"
 
 var (
 	// NodeIndexEnabled defines whether Compliance will actually run indexing code.
-	NodeIndexEnabled = RegisterBooleanSetting("ROX_NODE_INDEX_ENABLED", false)
+	NodeIndexEnabled = RegisterBooleanSetting("ROX_NODE_INDEX_ENABLED", true)
 
 	// NodeIndexHostPath sets the path where the R/O host node filesystem is mounted to the container.
 	// that should be scanned by Scanners NodeIndexer
