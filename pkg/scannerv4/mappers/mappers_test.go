@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/scannerv4/enricher/csaf"
 	"github.com/stackrox/rox/pkg/scannerv4/updater/manual"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -59,7 +60,7 @@ func Test_ToProtoV4IndexReport(t *testing.T) {
 func Test_ToProtoV4VulnerabilityReport(t *testing.T) {
 	now := time.Now()
 	protoNow, err := protocompat.ConvertTimeToTimestampOrError(now)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	tests := map[string]struct {
 		arg     *claircore.VulnerabilityReport
@@ -312,7 +313,7 @@ func Test_ToProtoV4VulnerabilityReport_FilterNodeJS(t *testing.T) {
 
 	now := time.Now()
 	protoNow, err := protocompat.ConvertTimeToTimestampOrError(now)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	tests := map[string]struct {
 		arg     *claircore.VulnerabilityReport
@@ -906,7 +907,7 @@ func Test_toProtoV4Contents(t *testing.T) {
 func Test_toProtoV4VulnerabilitiesMapWithEPSS(t *testing.T) {
 	now := time.Now()
 	protoNow, err := protocompat.ConvertTimeToTimestampOrError(now)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	tests := map[string]struct {
 		ccVulnerabilities map[string]*claircore.Vulnerability
@@ -1139,7 +1140,7 @@ func Test_toProtoV4VulnerabilitiesMapWithEPSS(t *testing.T) {
 func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 	now := time.Now()
 	protoNow, err := protocompat.ConvertTimeToTimestampOrError(now)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	published2021 := "2021-12-10T10:15:09.143"
 	proto2021 := protoconv.ConvertTimeString(published2021)
 	tests := map[string]struct {
