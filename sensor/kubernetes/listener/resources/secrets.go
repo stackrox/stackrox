@@ -31,13 +31,13 @@ import (
 )
 
 const (
-	// ClusterImgRegistryOperatorNamespace is the namespace where the cluster image registry
+	// clusterImgRegistryOperatorNamespace is the namespace where the cluster image registry
 	// operator runs.
-	ClusterImgRegistryOperatorNamespace = "openshift-image-registry"
+	clusterImgRegistryOperatorNamespace = "openshift-image-registry"
 
-	// ClusterImgRegistryOperatorSecretName is the name of the secret used by the cluster image registry
+	// clusterImgRegistryOperatorSecretName is the name of the secret used by the cluster image registry
 	// operator that is a known copy of the OCP global pull secret.
-	ClusterImgRegistryOperatorSecretName = "installation-pull-secrets"
+	clusterImgRegistryOperatorSecretName = "installation-pull-secrets"
 )
 
 var (
@@ -279,7 +279,7 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 
 	s.processSecretForLocalScanning(secret, action, dockerConfig, ocpServiceAccountName)
 
-	// A sourced integration is one which includes the cluster, namespace, and secret name from which it came from.
+	// A sourced integration is one which includes the cluster, namespace, and secret name from which it came.
 	sourcedIntegration := shouldCreateSourcedIntegration(secret)
 
 	newIntegrationSet := set.NewStringSet()
@@ -397,9 +397,10 @@ func skipIntegrationCreate(secret *v1.Secret) bool {
 	}
 
 	if env.AutogenerateGlobalPullSecRegistries.BooleanSetting() &&
-		secret.GetNamespace() == ClusterImgRegistryOperatorNamespace && secret.GetName() == ClusterImgRegistryOperatorSecretName {
+		secret.GetNamespace() == clusterImgRegistryOperatorNamespace && secret.GetName() == clusterImgRegistryOperatorSecretName {
 		// This secret is a copy of the OCP global pull secret, managed by the cluster-image-registry-operator,
-		// skip to avoid unecessary dupes.
+		// skip to avoid unnecessary dupes.
+		// https://github.com/openshift/cluster-image-registry-operator/blob/release-4.20/pkg/resource/pullsecret.go
 		return true
 	}
 
