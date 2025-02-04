@@ -51,6 +51,8 @@ ENV ROX_PRODUCT_BRANDING="RHACS_BRANDING"
 ENV UI_PKG_INSTALL_EXTRA_ARGS="--ignore-scripts"
 
 RUN make -C ui build
+RUN ls -lah cachi2/output/deps/npm/ || true
+RUN cat ui/apps/platform/package-lock.json
 
 # # TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
 # FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS application
