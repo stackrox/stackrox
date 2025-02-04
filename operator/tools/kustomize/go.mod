@@ -1,6 +1,8 @@
 module github.com/stackrox/rox/operator/tools/kustomize
 
-go 1.19
+go 1.23
+
+toolchain go1.23.2
 
 require sigs.k8s.io/kustomize/kustomize/v5 v5.3.0
 
