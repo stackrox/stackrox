@@ -40,7 +40,7 @@ Please use --admission-controller-enforce-on-creates instead to suppress this wa
 	mainImageRepository = "main-image-repository"
 	slimCollector       = "slim-collector"
 
-	warningCentralEnvironmentError = "It was not possible to retrieve Central's runtime environment information: %v. Will use fallback defaults for " + mainImageRepository + " and " + slimCollector + " settings."
+	warningCentralEnvironmentError = "It was not possible to retrieve Central's runtime environment information: %v. Will use fallback defaults for " + mainImageRepository + " setting."
 )
 
 type sensorGenerateCommand struct {
@@ -89,10 +89,6 @@ func (s *sensorGenerateCommand) Construct(cmd *cobra.Command) error {
 	}
 	if cmd.PersistentFlags().Lookup("admission-controller-enabled").Changed {
 		s.env.Logger().WarnfLn(warningDeprecatedAdmControllerEnableSet)
-	}
-
-	if cmd.PersistentFlags().Lookup(slimCollector).Changed {
-		s.env.Logger().WarnfLn(warningSlimCollectorModeSet)
 	}
 
 	s.getBundleFn = util.GetBundle
@@ -229,7 +225,8 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c.PersistentFlags().BoolVar(&generateCmd.cluster.GetTolerationsConfig().Disabled, "disable-tolerations", false, "Disable tolerations for tainted nodes")
 
-	autobool.NewFlag(c.PersistentFlags(), &generateCmd.slimCollectorP, slimCollector, "Use slim collector in deployment bundle. This option is ignored by Centrals newer than 4.6.")
+	autobool.NewFlag(c.PersistentFlags(), &generateCmd.slimCollectorP, slimCollector, "Use slim collector in deployment bundle.")
+	utils.Must(c.PersistentFlags().MarkDeprecated(slimCollector, warningSlimCollectorModeSet))
 
 	c.PersistentFlags().BoolVar(&generateCmd.cluster.AdmissionController, "create-admission-controller", false, "Whether or not to use an admission controller for enforcement (WARNING: deprecated; admission controller will be deployed by default")
 	utils.Must(c.PersistentFlags().MarkHidden("create-admission-controller"))
