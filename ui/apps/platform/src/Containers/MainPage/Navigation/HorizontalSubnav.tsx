@@ -22,6 +22,7 @@ import {
     violationsFullViewPath,
     violationsPlatformViewPath,
     violationsUserWorkloadsViewPath,
+    vulnerabilitiesPlatformCvesPath,
 } from 'routePaths';
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import { HasReadAccess } from 'hooks/usePermissions';
@@ -117,6 +118,14 @@ function getSubnavDescriptionGroups(
                                   'Images and workloads without observed CVEs (results might include false negatives due to scanner limitations, such as unsupported operating systems)',
                               path: vulnerabilitiesImagesWithoutCvesPath,
                               routeKey: 'vulnerabilities/images-without-cves',
+                          },
+                          {
+                              type: 'link',
+                              content: 'Kubernetes components',
+                              description:
+                                  'Vulnerabilities affecting the underlying Kubernetes infrastructure',
+                              path: vulnerabilitiesPlatformCvesPath,
+                              routeKey: 'vulnerabilities/platform-cves',
                           },
                       ],
                   },
