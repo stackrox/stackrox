@@ -84,7 +84,7 @@ type serverAndListener struct {
 	listener net.Listener
 	endpoint *EndpointConfig
 
-	stopper func()
+	stopper func() bool
 }
 
 // APIService is the service interface
@@ -195,6 +195,7 @@ func (a *apiImpl) Stop() bool {
 	a.listenersLock.Lock()
 	defer a.listenersLock.Unlock()
 
+	state := true
 	a.debugLog.Logf("Stopping %d listeners", len(a.listeners))
 	for _, listener := range a.listeners {
 		debugMsg := "unknown listener type: "
@@ -206,13 +207,13 @@ func (a *apiImpl) Stop() bool {
 		}
 		if listener.stopper != nil {
 			debugMsg += "stopped"
-			listener.stopper()
+			state = listener.stopper() && state
 		} else {
 			debugMsg += fmt.Sprintf("not stopped in loop. Comparing with grpcServer pointer with listener.srv pointer (%p : %p)", a.grpcServer, listener.srv)
 		}
 		a.debugLog.Log(debugMsg)
 	}
-	return true
+	return state
 }
 
 func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
