@@ -55,21 +55,22 @@ class CollectorUtil {
         int waitTime
         def startTime = System.currentTimeMillis()
         for (waitTime = 0; waitTime <= timeoutSeconds / intervalSeconds; waitTime++) {
+            if (portForwards.size() == 0) {
+                break
+            }
+
             // if a pod has the right config, remove it from the list
             // we need to check
             portForwards.removeAll {
                 def config = introspectionQuery("127.0.0.1:${it.getLocalPort()}", "/state/runtime-config")
-
-                if (config.networking.externalIps.enabled.name() == state) {
-                    return true
-                }
-
-                return false
+                return config.networking.externalIps.enabled.name() == state
             }
             sleep intervalSeconds * 1000
         }
 
-        return false
+        // if we timed out, some collectors have not updated
+        // the config, so return false
+        return (waitTime <= timeoutSeconds / intervalSeconds)
     }
 
     static enableExternalIps(OrchestratorMain orchestrator, int timeoutSeconds = 90) {
