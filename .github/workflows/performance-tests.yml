@@ -144,7 +144,7 @@ jobs:
           ./scale/dev/run-many.sh "${SCALE_WORKLOAD_TYPE}" "${SCALE_WORKLOAD_CLUSTERS}"
 
           num_deployments=$(yq '.deploymentWorkload[] | select(.deploymentType == "Deployment") | .numDeployments' "./scale/workloads/${SCALE_WORKLOAD_TYPE}.yaml")
-          max_deployments=$(( num_deployments * SCALE_WORKLOAD_CLUSTERS ))
+          max_deployments=$(( num_deployments * SCALE_WORKLOAD_CLUSTERS - 20 )) # num_deployments * SCALE_WORKLOAD_CLUSTERS is never quite reached so stop before than
 
           ./scale/dev/wait-for-deployments.sh "${max_deployments}"
 
