@@ -96,38 +96,28 @@ func (s *ClusterPostgresDataStoreTestSuite) SetupTest() {
 	sensorCnxMgr := connection.NewManager(hashManager.NewManager(hashStore))
 	clusterRanker := ranking.ClusterRanker()
 	compliancePruner := compliancePruning.GetTestPruner(s.T(), s.db)
-	ds, err := namespace.GetTestPostgresDataStore(s.T(), s.db.DB)
+	s.nsDatastore, err = namespace.GetTestPostgresDataStore(s.T(), s.db.DB)
 	s.NoError(err)
-	s.nsDatastore = ds
-	alertDS, err := alertDatastore.GetTestPostgresDataStore(s.T(), s.db.DB)
+	s.alertDatastore, err = alertDatastore.GetTestPostgresDataStore(s.T(), s.db.DB)
 	s.NoError(err)
-	s.alertDatastore = alertDS
-	deploymentDS, err := deploymentDatastore.GetTestPostgresDataStore(s.T(), s.db.DB)
+	s.deploymentDatastore, err = deploymentDatastore.GetTestPostgresDataStore(s.T(), s.db.DB)
 	s.NoError(err)
-	s.deploymentDatastore = deploymentDS
-	podDS, err := podDatastore.GetTestPostgresDataStore(s.T(), s.db.DB)
+	s.podDatastore, err = podDatastore.GetTestPostgresDataStore(s.T(), s.db.DB)
 	s.NoError(err)
-	s.podDatastore = podDS
-	secretDS, err := secretDataStore.GetTestPostgresDataStore(s.T(), s.db.DB)
+	s.secretDatastore, err = secretDataStore.GetTestPostgresDataStore(s.T(), s.db.DB)
 	s.NoError(err)
-	s.secretDatastore = secretDS
-	serviceAccountDS, err := serviceAccountDataStore.GetTestPostgresDataStore(s.T(), s.db.DB)
+	s.serviceAccountDatastore, err = serviceAccountDataStore.GetTestPostgresDataStore(s.T(), s.db.DB)
 	s.NoError(err)
-	s.serviceAccountDatastore = serviceAccountDS
-	roleDatastore := k8sRoleDataStore.GetTestPostgresDataStore(s.T(), s.db.DB)
-	s.roleDatastore = roleDatastore
-	roleBindingDatastore := k8sRoleBindingDataStore.GetTestPostgresDataStore(s.T(), s.db.DB)
-	s.roleBindingDatastore = roleBindingDatastore
-	imageIntegrationDS, err := imageIntegrationDataStore.GetTestPostgresDataStore(s.T(), s.db.DB)
+	s.roleDatastore = k8sRoleDataStore.GetTestPostgresDataStore(s.T(), s.db.DB)
+	s.roleBindingDatastore = k8sRoleBindingDataStore.GetTestPostgresDataStore(s.T(), s.db.DB)
+	s.imageIntegrationDatastore, err = imageIntegrationDataStore.GetTestPostgresDataStore(s.T(), s.db.DB)
 	s.NoError(err)
-	s.imageIntegrationDatastore = imageIntegrationDS
-	clusterDS, err := New(clusterDBStore, clusterHealthDBStore, clusterCVEStore,
-		alertDS, imageIntegrationDS, ds, deploymentDS,
-		nodeStore, podDS, secretDS, netFlowStore, netEntityStore,
-		serviceAccountDS, roleDatastore, roleBindingDatastore, sensorCnxMgr, nil,
+	s.clusterDatastore, err = New(clusterDBStore, clusterHealthDBStore, clusterCVEStore,
+		s.alertDatastore, s.imageIntegrationDatastore, s.nsDatastore, s.deploymentDatastore,
+		nodeStore, s.podDatastore, s.secretDatastore, netFlowStore, netEntityStore,
+		s.serviceAccountDatastore, s.roleDatastore, s.roleBindingDatastore, sensorCnxMgr, nil,
 		clusterRanker, networkBaselineM, compliancePruner)
 	s.NoError(err)
-	s.clusterDatastore = clusterDS
 }
 
 func (s *ClusterPostgresDataStoreTestSuite) TearDownTest() {
