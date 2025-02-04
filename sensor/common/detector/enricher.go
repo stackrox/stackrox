@@ -404,6 +404,8 @@ func (e *enricher) stop() {
 }
 
 func compareImageName(x *storage.ImageName, y *storage.ImageName) bool {
+	// Using proto.Equal can be racy due to internal writes in the Equal function.
+	// We compare the fields manually to avoid races.
 	return x.GetRegistry() == y.GetRegistry() &&
 		x.GetRemote() == y.GetRemote() &&
 		x.GetTag() == y.GetTag() &&
