@@ -20,8 +20,9 @@ default_image_prefix='brew.registry.redhat.io/rh-osbs/rhacs'
 image_prefix="${image_prefix:-${default_image_prefix}}"
 
 image_match="${2:-\(bundle\|operator\|rhel8\|stackrox\)$}"
-version_match="${3:-^[^0-3]\.}"
-
+#image_match="${2:-\(bundle\|operator\|\(roxctl\|slim\|db\|v4\|scanner\|main\|collector\)-rhel8\|stackrox\)$}"
+image_filter="${3:-drivers}"
+version_match="${4:-^[^0-3]\.}"
 
 
 function find_images() {
@@ -95,5 +96,6 @@ function fips_scan() {
 
 find_images "${image_prefix}" \
   | grep "${image_match}" \
+  | grep -v "${image_filter}" \
   | latest_tags "${version_match}" \
   | fips_scan

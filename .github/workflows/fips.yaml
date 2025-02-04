@@ -14,7 +14,12 @@ on:
         type: string
       image_match:
         description: 'Regex of image names to include'
-        default: '\(bundle\|operator\|rhel8\)$'
+        default: '\(bundle\|operator\|\(roxctl\|slim\|db\|v4\|scanner\|main\|collector\)-rhel8\)$'
+        required: false
+        type: string
+      image_filter:
+        description: 'Regex of image names to exclude'
+        default: 'drivers'
         required: false
         type: string
       tag_match:
@@ -106,4 +111,5 @@ jobs:
             fips-check-payload \
             "${{ github.event.inputs.image }}" \
             "${{ github.event.inputs.image_match }}" \
+            "${{ github.event.inputs.image_filter }}" \
             "${{ matrix.tag_match}}" \
