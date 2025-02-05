@@ -101,12 +101,12 @@ func Test_apiCall(t *testing.T) {
 				"User-Agent":          "RHACS Integration ServiceNow client"},
 		},
 	}
-	telemetryCampaign = append(telemetryCampaign, &phonehome.APICallCampaignCriterion{
-		Path: phonehome.Pattern("*test*").Ptr(),
-	})
-	require.NoError(t, telemetryCampaign.Compile())
 	require.NoError(t, permanentTelemetryCampaign.Compile())
-	appendRuntimeCampaign(&phonehome.RuntimeConfig{})
+	anyTestEndpoint := &phonehome.APICallCampaignCriterion{
+		Path: phonehome.Pattern("*test*").Ptr(),
+	}
+	appendRuntimeCampaign(&phonehome.RuntimeConfig{
+		APICallCampaign: phonehome.APICallCampaign{anyTestEndpoint}})
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			props := make(map[string]any)
