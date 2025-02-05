@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/cluster/datastore/internal/search"
 	clusterStore "github.com/stackrox/rox/central/cluster/store/cluster"
 	clusterHealthStore "github.com/stackrox/rox/central/cluster/store/clusterhealth"
+	clusterInitStore "github.com/stackrox/rox/central/clusterinit/store"
 	compliancePruning "github.com/stackrox/rox/central/complianceoperator/v2/pruner"
 	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
@@ -66,6 +67,7 @@ var (
 
 type datastoreImpl struct {
 	clusterStorage            clusterStore.Store
+	clusterInitStore          clusterInitStore.Store
 	clusterHealthStorage      clusterHealthStore.Store
 	clusterCVEDataStore       clusterCVEDS.DataStore
 	alertDataStore            alertDataStore.DataStore
@@ -877,6 +879,10 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 		cluster = clusterByID
 	} else if clusterName != "" {
 		// At this point, we can be sure that the cluster does not exist.
+		if err := ds.clusterInitStore.RegistrationPossible(ctx, registrantID); err != nil {
+			return nil, err
+		}
+
 		cluster = &storage.Cluster{
 			Name:               clusterName,
 			InitBundleId:       registrantID,
@@ -890,8 +896,14 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 			cluster.HelmConfig = clusterConfig.CloneVT()
 		}
 
-		if _, err := ds.addClusterNoLock(ctx, cluster); err != nil {
+		clusterId, err := ds.addClusterNoLock(ctx, cluster)
+		if err != nil {
 			return nil, errors.Wrapf(err, "failed to dynamically add cluster with name %q", clusterName)
+		}
+
+		if err := ds.clusterInitStore.RecordInitiatedRegistration(ctx, registrantID, clusterId); err != nil {
+			log.Warnf("cluster %q has been added, but recording the cluster registration using registrant ID %q failed", clusterName, registrantID)
+			return nil, errors.Wrapf(err, "recording cluster registration for registrant ID %q", registrantID)
 		}
 	} else {
 		return nil, errors.New("neither a cluster ID nor a cluster name was specified")
@@ -940,7 +952,9 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 
 	cluster = cluster.CloneVT()
 	cluster.ManagedBy = manager
-	cluster.InitBundleId = registrantID
+	if registrantID != "" {
+		cluster.InitBundleId = registrantID
+	}
 	cluster.SensorCapabilities = sliceutils.CopySliceSorted(hello.GetCapabilities())
 	if securedClusterIsNotManagedManually(helmConfig) {
 		configureFromHelmConfig(cluster, clusterConfig)
