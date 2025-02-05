@@ -140,27 +140,35 @@ func (s *ClusterPostgresDataStoreTestSuite) TestRemoveCluster() {
 	clusterId, clusterAddErr := s.clusterDatastore.AddCluster(ctx, testCluster)
 	s.NotEmpty(clusterId)
 	s.NoError(clusterAddErr)
+
 	testDeployment := &storage.Deployment{Id: fixtureconsts.Deployment1, ClusterId: clusterId, ClusterName: testCluster.Name}
 	deploymentUpsertErr := s.deploymentDatastore.UpsertDeployment(ctx, testDeployment)
 	s.NoError(deploymentUpsertErr)
+
 	testPod := &storage.Pod{Id: fixtureconsts.PodUID1, ClusterId: clusterId}
 	podUpsertErr := s.podDatastore.UpsertPod(ctx, testPod)
 	s.NoError(podUpsertErr)
+
 	testAlert := &storage.Alert{Id: fixtureconsts.Alert1, ClusterId: clusterId, ClusterName: testCluster.Name, Entity: convert.ToAlertDeployment(testDeployment)}
 	alertUpsertErr := s.alertDatastore.UpsertAlert(ctx, testAlert)
 	s.NoError(alertUpsertErr)
+
 	testSecret := &storage.Secret{Id: fixtureconsts.AlertFake, ClusterId: clusterId, ClusterName: testCluster.Name}
 	secretUpsertErr := s.secretDatastore.UpsertSecret(ctx, testSecret)
 	s.NoError(secretUpsertErr)
+
 	testServiceAccount := &storage.ServiceAccount{Id: fixtureconsts.ServiceAccount1, ClusterId: clusterId, ClusterName: testCluster.Name}
 	serviceAccountUpsertErr := s.serviceAccountDatastore.UpsertServiceAccount(ctx, testServiceAccount)
 	s.NoError(serviceAccountUpsertErr)
+
 	testRole := &storage.K8SRole{Id: fixtureconsts.Role1, ClusterId: clusterId, ClusterName: testCluster.Name}
 	roleUpsertErr := s.roleDatastore.UpsertRole(ctx, testRole)
 	s.NoError(roleUpsertErr)
+
 	testRoleBinding := &storage.K8SRoleBinding{Id: fixtureconsts.RoleBinding1, ClusterId: clusterId, ClusterName: testCluster.Name}
 	roleBindingUpsertErr := s.roleBindingDatastore.UpsertRoleBinding(ctx, testRoleBinding)
 	s.NoError(roleBindingUpsertErr)
+
 	testImageIntegration := &storage.ImageIntegration{Id: fixtureconsts.AlertFake, ClusterId: clusterId}
 	imageIntegrationId, imageIntegrationAddErr := s.imageIntegrationDatastore.AddImageIntegration(ctx, testImageIntegration)
 	s.NotEmpty(imageIntegrationId)
@@ -171,28 +179,36 @@ func (s *ClusterPostgresDataStoreTestSuite) TestRemoveCluster() {
 	clusterRemoveErr := s.clusterDatastore.RemoveCluster(ctx, clusterId, &doneSignal)
 	s.NoError(clusterRemoveErr)
 	s.True(concurrency.WaitWithTimeout(&doneSignal, 10*time.Second))
+
 	_, deploymentFound, deploymentGetErr := s.deploymentDatastore.GetDeployment(ctx, testDeployment.GetId())
 	s.NoError(deploymentGetErr)
 	s.False(deploymentFound)
+
 	_, podFound, podGetErr := s.podDatastore.GetPod(ctx, testPod.GetId())
 	s.NoError(podGetErr)
 	s.False(podFound)
+
 	alert, alertFound, alertFoundErr := s.alertDatastore.GetAlert(ctx, testAlert.GetId())
 	s.NoError(alertFoundErr)
 	s.True(alertFound)
 	s.Equal(storage.ViolationState_RESOLVED, alert.GetState())
+
 	_, secretFound, secretGetErr := s.secretDatastore.GetSecret(ctx, testSecret.GetId())
 	s.NoError(secretGetErr)
 	s.False(secretFound)
+
 	_, serviceAccountFound, serviceAccountGetErr := s.serviceAccountDatastore.GetServiceAccount(ctx, testServiceAccount.GetId())
 	s.NoError(serviceAccountGetErr)
 	s.False(serviceAccountFound)
+
 	_, roleFound, roleGetErr := s.roleDatastore.GetRole(ctx, testRole.GetId())
 	s.NoError(roleGetErr)
 	s.False(roleFound)
+
 	_, roleBindingFound, roleBindingGetErr := s.roleBindingDatastore.GetRoleBinding(ctx, testRole.GetId())
 	s.NoError(roleBindingGetErr)
 	s.False(roleBindingFound)
+
 	_, imageIntegrationFound, imageIntegrationGetErr := s.imageIntegrationDatastore.GetImageIntegration(ctx, testImageIntegration.GetId())
 	s.NoError(imageIntegrationGetErr)
 	s.False(imageIntegrationFound)
