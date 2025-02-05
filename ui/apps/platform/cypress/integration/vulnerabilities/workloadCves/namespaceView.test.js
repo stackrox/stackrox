@@ -23,7 +23,7 @@ describe('Workload CVE Namespace View', () => {
 
             cy.wrap($row.find('td[data-label="Deployments"] a')).click();
 
-            cy.get('h1:contains("Workload CVEs")');
+            cy.get('h1:contains("Platform vulnerabilities")');
 
             cy.get(selectors.filterChipGroupItem('Namespace', `^${namespace}$`));
             cy.get(selectors.filterChipGroupItem('Cluster', `^${cluster}$`));

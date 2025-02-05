@@ -26,11 +26,14 @@ export function visitWorkloadCveOverview({ clearFiltersOnVisit = true, urlSearch
     // With Workload CVEs split between User and Platform components, we can only reliably expect
     // CVEs to be present for the built-in (Platform) components during CI
     const basePath = hasFeatureFlag('ROX_PLATFORM_CVE_SPLIT')
-        ? '/main/vulnerabilities/platform-workload-cves/'
+        ? '/main/vulnerabilities/platform/'
         : '/main/vulnerabilities/workload-cves/';
     visit(basePath + urlSearch);
 
-    cy.get('h1:contains("Workload CVEs")');
+    const pageTitle = hasFeatureFlag('ROX_PLATFORM_CVE_SPLIT')
+        ? 'Platform vulnerabilities'
+        : 'Workload CVEs';
+    cy.get(`h1:contains("${pageTitle}")`);
     cy.location('pathname').should('eq', basePath);
 
     // Wait for the initial table load to begin and complete
@@ -45,6 +48,15 @@ export function visitWorkloadCveOverview({ clearFiltersOnVisit = true, urlSearch
         // Ensure the data in the table has settled before continuing with the test
         cy.get(selectors.isUpdatingTable).should('not.exist');
     }
+}
+
+export function navigateToView(viewTitle) {
+    cy.get(`nav.pf-m-horizontal-subnav a:contains("${viewTitle}")`).click();
+}
+
+export function navigateToViewViaDropdown(viewTitle) {
+    cy.get('nav.pf-m-horizontal-subnav button:contains("More Views")').click();
+    cy.get(`nav.pf-m-horizontal-subnav a[role="menuitem"]:contains("${viewTitle}")`).click();
 }
 
 /**
@@ -448,15 +460,6 @@ export function unwatchImageFromModal(imageFullName, imageNameAndTag) {
 
     // Verify that the image no longer has a watched image label in the workload cve table
     cy.get(selectors.watchedImageCellWithName(imageNameAndTag)).should('not.exist');
-}
-
-/**
- *
- * @param {'Image vulnerabilities'|'Images without vulnerabilities'} modeText
- */
-export function changeObservedCveViewingMode(modeText) {
-    cy.get(selectors.observedCveModeSelect).click();
-    cy.get(`button:contains("${modeText}")`).click();
 }
 
 /**
