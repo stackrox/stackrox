@@ -65,6 +65,8 @@ func (s *pipelineImpl) Run(ctx context.Context, msg *central.MsgFromSensor, inje
 	metrics.SetResourceProcessingDuration(msg.GetEvent())
 	defer metrics.SetSensorEventRunDuration(time.Now(), common.GetMessageType(msg), msg.GetEvent().GetAction().String())
 
+	log.Debugf("Central received %s (%q)", common.GetMessageType(msg), msg.GetEvent().String())
+
 	var matchCount int
 	for _, fragment := range s.fragments {
 		if fragment.Match(msg) {

@@ -113,6 +113,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	event := msg.GetEvent()
 	deployment := event.GetDeployment()
 	deployment.ClusterId = clusterID
+	log.Debugf("Deploymentevents pipeline: Received deployment event for cluster %s: %+v", clusterID, msg.GetEvent().String())
 
 	// ROX-22002: Remove invalid null characters in annotations
 	stringutils.SanitizeMapValues(deployment.GetAnnotations())
