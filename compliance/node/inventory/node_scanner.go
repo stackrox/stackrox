@@ -38,7 +38,7 @@ func (n *NodeInventoryComponentScanner) IsActive() bool {
 // Connect connects to node-inventory and stores an active client
 func (n *NodeInventoryComponentScanner) Connect(address string) {
 	if !env.NodeInventoryContainerEnabled.BooleanSetting() {
-		log.Info("Compliance will not call the node-inventory container, because this is not Openshift 4 cluster")
+		log.Info("Compliance will not call the node-inventory container, because this feature is disabled")
 		return
 	}
 	// Set up Compliance <-> NodeInventory connection
