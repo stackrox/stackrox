@@ -24,10 +24,13 @@ func initBundleMetaStorageToV1WithImpactedClusters(meta *storage.InitBundleMeta,
 
 func crsMetaStorageToV1(meta *storage.InitBundleMeta) *v1.CRSMeta {
 	return &v1.CRSMeta{
-		Id:        meta.GetId(),
-		Name:      meta.GetName(),
-		CreatedAt: meta.GetCreatedAt(),
-		CreatedBy: meta.GetCreatedBy(),
-		ExpiresAt: meta.GetExpiresAt(),
+		Id:                     meta.GetId(),
+		Name:                   meta.GetName(),
+		CreatedAt:              meta.GetCreatedAt(),
+		CreatedBy:              meta.GetCreatedBy(),
+		ExpiresAt:              meta.GetExpiresAt(),
+		MaxRegistrations:       meta.GetMaxRegistrations(),
+		RegistrationsInitiated: meta.GetRegistrationsInitiated(),
+		RegistrationsCompleted: meta.GetRegistrationsCompleted(),
 	}
 }
