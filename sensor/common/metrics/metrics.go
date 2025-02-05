@@ -1,6 +1,9 @@
 package metrics
 
 import (
+	"reflect"
+	"strings"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/branding"
@@ -285,6 +288,14 @@ var (
 		},
 		[]string{"central_id", "hosting", "install_method", "sensor_id"},
 	)
+
+	// responsesChannelOperationCount a counter to track the operations in the responses channel
+	responsesChannelOperationCount = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "num_messages_waiting_for_transmission_to_central",
+		Help:      "A counter that tracks the operations in the responses channel",
+	}, []string{"Operation", "MessageType"})
 )
 
 // IncrementEntityNotFound increments an instance of entity not found
@@ -436,6 +447,32 @@ func IncOutputChannelSize() {
 // DecOutputChannelSize decreases the outputChannel by 1
 func DecOutputChannelSize() {
 	outputChannelSize.Dec()
+}
+
+func getResponsesChannelLabel(op string, msg *central.MsgFromSensor) prometheus.Labels {
+	msgType := "nil"
+	if msg.GetMsg() != nil {
+		msgType = strings.TrimPrefix(reflect.TypeOf(msg.GetMsg()).String(), "*central.MsgFromSensor_")
+	}
+	return prometheus.Labels{
+		"MessageType": msgType,
+		"Operation":   op,
+	}
+}
+
+// ResponsesChannelAdd increases the responsesChannelOperationCount's Add operation by 1
+func ResponsesChannelAdd(msg *central.MsgFromSensor) {
+	responsesChannelOperationCount.With(getResponsesChannelLabel(metrics.Add.String(), msg)).Inc()
+}
+
+// ResponsesChannelRemove increases the responsesChannelOperationCount's Remove operation by 1
+func ResponsesChannelRemove(msg *central.MsgFromSensor) {
+	responsesChannelOperationCount.With(getResponsesChannelLabel(metrics.Remove.String(), msg)).Inc()
+}
+
+// ResponsesChannelDrop increases the responsesChannelDroppedCount by 1
+func ResponsesChannelDrop(msg *central.MsgFromSensor) {
+	responsesChannelOperationCount.With(getResponsesChannelLabel(metrics.Dropped.String(), msg)).Inc()
 }
 
 // SetTelemetryMetrics sets the cluster metrics for the telemetry metrics.

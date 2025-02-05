@@ -51,4 +51,6 @@ const (
 	WalkByQuery
 
 	Unset
+
+	Dropped
 )
