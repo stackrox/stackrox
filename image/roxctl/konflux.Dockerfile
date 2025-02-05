@@ -33,9 +33,7 @@ FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 
 COPY --from=builder /go/src/github.com/stackrox/rox/app/image/bin/roxctl /usr/bin/roxctl
 
-# TODO(ROX-20234): use hermetic builds when installing/updating RPMs becomes hermetic.
-RUN microdnf upgrade -y --nobest && \
-    microdnf clean all && \
+RUN microdnf clean all && \
     rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     rm -rf /var/cache/dnf /var/cache/yum
 
