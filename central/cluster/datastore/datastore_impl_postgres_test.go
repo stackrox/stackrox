@@ -600,7 +600,8 @@ func (s *ClusterPostgresDataStoreTestSuite) TestUpdateAuditLogFileStatesErrorCon
 
 			writeCtx := sac.WithAllAccess(context.Background())
 			if c.clusterIsMissing {
-				cluster, found, _ = s.clusterDatastore.GetCluster(writeCtx, c.clusterID)
+				cluster, found, err = s.clusterDatastore.GetCluster(writeCtx, c.clusterID)
+				s.NoError(err)
 				s.Nil(cluster)
 				s.False(found)
 			}
