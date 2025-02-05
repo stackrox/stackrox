@@ -633,6 +633,7 @@ func startGRPCServer() {
 				gs.AddGatherer(notifierDS.Gather)
 				gs.AddGatherer(roleDataStore.Gather)
 				gs.AddGatherer(signatureIntegrationDS.Gather)
+				gs.AddGatherer(globaldb.Gather)
 			}
 		}
 	}
