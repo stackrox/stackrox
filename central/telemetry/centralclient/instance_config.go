@@ -2,7 +2,6 @@ package centralclient
 
 import (
 	"context"
-	"encoding/json"
 	"time"
 
 	"github.com/pkg/errors"
@@ -33,24 +32,12 @@ var (
 	once   sync.Once
 	log    = logging.LoggerForModule()
 
-	startMux sync.RWMutex
-	enabled  bool
+	startMux   sync.RWMutex
+	enabled    bool
+	instanceId string
 )
 
-// getRuntimeConfig returns the runtime configuration with the configured key.
-// If returns nil or error, telemetry should be disabled.
-func getRuntimeConfig() (*phonehome.RuntimeConfig, error) {
-	if env.OfflineModeEnv.BooleanSetting() {
-		return nil, nil
-	}
-	runtimeCfg, err := phonehome.GetRuntimeConfig(
-		env.TelemetryConfigURL.Setting(),
-		env.TelemetryStorageKey.Setting(),
-	)
-	return runtimeCfg, errors.Wrap(err, "failed to get telemetry key")
-}
-
-func getInstanceConfig(id string, key string) (*phonehome.Config, map[string]any) {
+func getInstanceConfig(key string) (*phonehome.Config, map[string]any) {
 	// k8s apiserver is not accessible in cloud service environment.
 	v := &k8sVersion.Info{GitVersion: "unknown"}
 	if rc, err := rest.InClusterConfig(); err == nil {
@@ -69,7 +56,7 @@ func getInstanceConfig(id string, key string) (*phonehome.Config, map[string]any
 	tenantID := env.TenantID.Setting()
 	// Consider on-prem central a tenant of itself:
 	if tenantID == "" {
-		tenantID = id
+		tenantID = instanceId
 	}
 
 	return &phonehome.Config{
@@ -78,7 +65,7 @@ func getInstanceConfig(id string, key string) (*phonehome.Config, map[string]any
 			// the number of (none) values, appearing on Amplitude charts, by
 			// introducing a slight delay between consequent events.
 			BatchSize:     1,
-			ClientID:      id,
+			ClientID:      instanceId,
 			ClientName:    "Central",
 			ClientVersion: version.GetMainVersion(),
 			GroupType:     "Tenant",
@@ -96,54 +83,49 @@ func getInstanceConfig(id string, key string) (*phonehome.Config, map[string]any
 		}
 }
 
+func getInstanceId() error {
+	startMux.Lock()
+	defer startMux.Unlock()
+	if instanceId != "" {
+		return nil
+	}
+
+	ii, _, err := store.Singleton().Get(
+		sac.WithGlobalAccessScopeChecker(context.Background(),
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.InstallationInfo))))
+
+	if err != nil || ii == nil {
+		return errors.WithMessagef(err, "failed to get installation information")
+	}
+	instanceId = ii.Id
+	return nil
+}
+
 // InstanceConfig collects the central instance telemetry configuration from
 // central Deployment labels and environment variables, installation store and
 // orchestrator properties. The collected data is used for configuring the
 // telemetry client. Returns nil if data collection is disabled.
 func InstanceConfig() *phonehome.Config {
 	once.Do(func() {
-		runtimeCfg, err := getRuntimeConfig()
-		if err != nil {
-			log.Errorf("Failed to configure telemetry: %v.", err)
+		utils.Must(permanentTelemetryCampaign.Compile())
+		if _, err := applyConfig(); err != nil {
+			log.Errorf("Failed to apply telemetry configuration: %v.", err)
 			return
 		}
-		if runtimeCfg == nil {
-			return
+		startMux.RLock()
+		defer startMux.RUnlock()
+		if config != nil {
+			log.Info("Central ID: ", config.ClientID)
+			log.Info("Tenant ID: ", config.GroupID)
+			log.Infof("API Telemetry ignored paths: %v", ignoredPaths)
 		}
-
-		ii, _, err := store.Singleton().Get(
-			sac.WithGlobalAccessScopeChecker(context.Background(),
-				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-					sac.ResourceScopeKeys(resources.InstallationInfo))))
-
-		if err != nil || ii == nil {
-			log.Errorf("Failed to get installation information: %v.", err)
-			return
-		}
-
-		utils.Must(telemetryCampaign.Compile())
-		if err := runtimeCfg.APICallCampaign.Compile(); err != nil {
-			log.Errorf("Failed to initialize runtime telemetry campaign: %v", err)
-		} else {
-			telemetryCampaign = append(telemetryCampaign, runtimeCfg.APICallCampaign...)
-		}
-
-		var props map[string]any
-		config, props = getInstanceConfig(ii.Id, runtimeCfg.Key)
-		log.Info("Central ID: ", config.ClientID)
-		log.Info("Tenant ID: ", config.GroupID)
-		jc, _ := json.Marshal(telemetryCampaign)
-		log.Info("API Telemetry campaign: ", string(jc))
-		log.Infof("API Telemetry ignored paths: %v", ignoredPaths)
-
-		config.Gatherer().AddGatherer(func(ctx context.Context) (map[string]any, error) {
-			return props, nil
-		})
 	})
 	startMux.RLock()
 	defer startMux.RUnlock()
 	if !enabled {
+		log.Info("Telemetry collection is disabled")
 		// This will make InstanceConfig().Enabled() to return false, while
 		// keeping the config configured for eventual Start().
 		return nil
