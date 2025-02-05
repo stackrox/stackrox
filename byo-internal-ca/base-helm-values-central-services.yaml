@@ -1,0 +1,42 @@
+image:
+  registry: quay.io/rhacs-eng
+
+imagePullSecrets:
+  useExisting: quay-ips
+
+customize:
+  central:
+    envVars:
+      ROX_ALLOW_EXTERNALLY_ISSUED_CLUSTER_REGISTRATION_CERTIFICATES: "true"
+
+central:
+  image:
+    tag: $MAIN_IMAGE_TAG
+  exposure:
+    loadBalancer:
+      enabled: true
+  persistence:
+    none: true
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 1
+      memory: 4Gi
+  db:
+    image:
+      tag: $MAIN_IMAGE_TAG
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: 1
+        memory: 4Gi
+  telemetry:
+    enabled: false
+
+ca:
+  cert: "$CA_CERT"
+  key: "$CA_KEY"
