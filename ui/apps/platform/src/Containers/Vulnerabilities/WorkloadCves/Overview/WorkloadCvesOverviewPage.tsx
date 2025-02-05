@@ -1,14 +1,18 @@
+/* eslint-disable no-nested-ternary */
 import React, { useEffect, useState } from 'react';
 import {
     Button,
     Card,
     CardBody,
+    Divider,
     Flex,
     FlexItem,
     PageSection,
     Text,
     Title,
+    Tooltip,
 } from '@patternfly/react-core';
+import { OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
 import { gql, useApolloClient, useQuery } from '@apollo/client';
 import cloneDeep from 'lodash/cloneDeep';
 import difference from 'lodash/difference';
@@ -131,6 +135,14 @@ function getSearchFilterEntityByTab(
     }
 }
 
+const descriptionForVulnerabilityStateMap: Record<VulnerabilityState, string> = {
+    OBSERVED: 'Prioritize and triage detected workload vulnerabilities',
+    DEFERRED:
+        'View workload vulnerabilities that have been postponed for future assessment or action',
+    FALSE_POSITIVE:
+        'View workload vulnerabilities identified as false positives and excluded from active prioritization',
+};
+
 const searchFilterConfigWithFeatureFlagDependency = [
     imageSearchFilterConfig,
     imageCVESearchFilterConfig,
@@ -152,7 +164,8 @@ function WorkloadCvesOverviewPage() {
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
 
-    const { getAbsoluteUrl, pageTitle, baseSearchFilter } = useWorkloadCveViewContext();
+    const { getAbsoluteUrl, pageTitle, pageTitleDescription, baseSearchFilter } =
+        useWorkloadCveViewContext();
     const currentVulnerabilityState = useVulnerabilityState();
 
     const { searchFilter, setSearchFilter: setURLSearchFilter } = useURLSearch();
@@ -373,11 +386,43 @@ function WorkloadCvesOverviewPage() {
                 className="pf-v5-u-display-flex pf-v5-u-flex-direction-row pf-v5-u-align-items-center"
                 variant="light"
             >
-                <Flex direction={{ default: 'column' }} className="pf-v5-u-flex-grow-1">
+                <Flex
+                    direction={{
+                        default: isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT') ? 'row' : 'column',
+                    }}
+                    alignItems={{
+                        default: isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT')
+                            ? 'alignItemsCenter'
+                            : undefined,
+                    }}
+                    spaceItems={{
+                        default: isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT')
+                            ? 'spaceItemsNone'
+                            : undefined,
+                    }}
+                    className="pf-v5-u-flex-grow-1"
+                >
                     <Title headingLevel="h1">{pageTitle}</Title>
-                    <FlexItem>
-                        Prioritize and manage scanned CVEs across images and deployments
-                    </FlexItem>
+                    {pageTitleDescription && (
+                        <Tooltip
+                            aria="none"
+                            aria-live="polite"
+                            content={pageTitleDescription}
+                            position="bottom"
+                        >
+                            <Button
+                                aria-label="More information about the current page"
+                                variant="plain"
+                            >
+                                <OutlinedQuestionCircleIcon />
+                            </Button>
+                        </Tooltip>
+                    )}
+                    {!isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT') && (
+                        <FlexItem>
+                            Prioritize and manage scanned CVEs across images and deployments
+                        </FlexItem>
+                    )}
                 </Flex>
                 <Flex>
                     {hasWriteAccessForWatchedImage && (
@@ -395,13 +440,26 @@ function WorkloadCvesOverviewPage() {
                 </Flex>
             </PageSection>
             <PageSection id={vulnStateTabContentId} padding={{ default: 'noPadding' }}>
-                <PageSection
-                    padding={{ default: 'noPadding' }}
-                    component="div"
-                    className="pf-v5-u-pl-lg pf-v5-u-background-color-100"
-                >
-                    <VulnerabilityStateTabs onChange={onVulnerabilityStateChange} />
-                </PageSection>
+                {!isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT') || isViewingWithCves ? (
+                    <PageSection
+                        padding={{ default: 'noPadding' }}
+                        component="div"
+                        className="pf-v5-u-pl-lg pf-v5-u-background-color-100"
+                    >
+                        <VulnerabilityStateTabs onChange={onVulnerabilityStateChange} />
+                    </PageSection>
+                ) : (
+                    <Divider component="div" />
+                )}
+                {isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT') && (
+                    <PageSection variant="light" component="div">
+                        <Text component="p">
+                            {isViewingWithCves
+                                ? descriptionForVulnerabilityStateMap[currentVulnerabilityState]
+                                : 'View images and deployments that do not have detected vulnerabilities'}
+                        </Text>
+                    </PageSection>
+                )}
                 {currentVulnerabilityState === 'OBSERVED' &&
                     !isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT') && (
                         <PageSection className="pf-v5-u-py-md" component="div" variant="light">
@@ -422,17 +480,23 @@ function WorkloadCvesOverviewPage() {
                             >
                                 <FlexItem>
                                     <Title headingLevel="h2">
-                                        {getViewStateTitle(
-                                            currentVulnerabilityState ?? 'OBSERVED',
-                                            isViewingWithCves
-                                        )}
+                                        {isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT')
+                                            ? isViewingWithCves
+                                                ? 'Vulnerability findings'
+                                                : 'Workloads without detected vulnerabilities'
+                                            : getViewStateTitle(
+                                                  currentVulnerabilityState ?? 'OBSERVED',
+                                                  isViewingWithCves
+                                              )}
                                     </Title>
-                                    <Text className="pf-v5-u-font-size-sm">
-                                        {getViewStateDescription(
-                                            currentVulnerabilityState ?? 'OBSERVED',
-                                            isViewingWithCves
-                                        )}
-                                    </Text>
+                                    {!isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT') && (
+                                        <Text className="pf-v5-u-font-size-sm">
+                                            {getViewStateDescription(
+                                                currentVulnerabilityState ?? 'OBSERVED',
+                                                isViewingWithCves
+                                            )}
+                                        </Text>
+                                    )}
                                 </FlexItem>
                                 {isViewingWithCves &&
                                     (currentVulnerabilityState === 'OBSERVED' ||

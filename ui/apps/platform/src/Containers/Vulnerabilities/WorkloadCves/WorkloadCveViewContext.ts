@@ -5,6 +5,7 @@ export type WorkloadCveView = {
     getAbsoluteUrl: (path: string) => string;
     baseSearchFilter: QuerySearchFilter;
     pageTitle: string;
+    pageTitleDescription?: string;
 };
 
 /**
