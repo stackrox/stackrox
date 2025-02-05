@@ -1,14 +1,20 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, Dispatch, SetStateAction, useContext, useState } from 'react';
+
+interface CIDRFormModalContextType {
+    isCIDRFormModalOpen: boolean;
+    initialCIDRFormValue: string;
+    toggleCIDRFormModal: () => void;
+    setInitialCIDRFormValue: Dispatch<SetStateAction<string>>;
+}
 
 const defaultValue = {
     isCIDRFormModalOpen: false,
     initialCIDRFormValue: '',
     toggleCIDRFormModal: () => {},
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    setInitialCIDRFormValue: (value: string) => {},
+    setInitialCIDRFormValue: () => {},
 };
 
-const CIDRFormModalContext = createContext(defaultValue);
+const CIDRFormModalContext = createContext<CIDRFormModalContextType>(defaultValue);
 
 export const CIDRFormModalProvider = ({ children }) => {
     const [isCIDRFormModalOpen, setIsCIDRFormModalOpen] = useState(false);
