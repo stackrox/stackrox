@@ -19,7 +19,7 @@ var (
 	NodeScanningMaxInitialWait = registerDurationSetting("ROX_NODE_SCANNING_MAX_INITIAL_WAIT", 5*time.Minute)
 
 	// NodeInventoryContainerEnabled is used to tell compliance whether a connection to the node-inventory container should be attempted
-	NodeInventoryContainerEnabled = RegisterBooleanSetting("ROX_CALL_NODE_INVENTORY_ENABLED", true)
+	NodeInventoryContainerEnabled = RegisterBooleanSetting("ROX_CALL_NODE_INVENTORY_ENABLED", false)
 
 	// NodeAnalysisDeadline is a time in which node-inventory component should reply to compliance
 	NodeAnalysisDeadline = registerDurationSetting("ROX_NODE_SCANNING_DEADLINE", 30*time.Second)
