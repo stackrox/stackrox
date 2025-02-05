@@ -5,27 +5,34 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
 	// ErrInitBundleNotFound signals that a requested init bundle could not be located in the store.
-	ErrInitBundleNotFound = errors.New("init bundle not found")
+	ErrInitBundleNotFound = errors.New("init bundle or CRS not found")
 
 	// ErrInitBundleIDCollision signals that an init bundle could not be added to the store due to an ID collision.
-	ErrInitBundleIDCollision = errors.New("init bundle ID collision")
+	ErrInitBundleIDCollision = errors.New("init bundle or CRS ID collision")
 
 	// ErrInitBundleDuplicateName signals that an init bundle or CRS could not be added because the name already exists on a non-revoked init bundle or CRS.
 	ErrInitBundleDuplicateName = errors.New("init bundle or CRS already exists")
 )
 
 // Store interface for managing persisted cluster init bundles.
+//
+//go:generate mockgen-wrapper
 type Store interface {
 	GetAll(ctx context.Context) ([]*storage.InitBundleMeta, error)
 	GetAllCRS(ctx context.Context) ([]*storage.InitBundleMeta, error)
 	Get(ctx context.Context, id string) (*storage.InitBundleMeta, error)
 	Add(ctx context.Context, bundleMeta *storage.InitBundleMeta) error
+	Upsert(ctx context.Context, crs *storage.InitBundleMeta) error
 	Revoke(ctx context.Context, id string) error
+	RegistrationPossible(ctx context.Context, id string) error
+	RecordInitiatedRegistration(ctx context.Context, id string, clusterId string) error
+	RecordCompletedRegistration(ctx context.Context, id string, clusterId string) error
 }
 
 // UnderlyingStore is the base store that actually accesses the data
@@ -127,6 +134,13 @@ func (w *storeImpl) checkDuplicateName(ctx context.Context, meta *storage.InitBu
 	return nil
 }
 
+func (w *storeImpl) Upsert(ctx context.Context, crs *storage.InitBundleMeta) error {
+	w.uniqueUpdateMutex.Lock()
+	defer w.uniqueUpdateMutex.Unlock()
+
+	return w.store.Upsert(ctx, crs)
+}
+
 func (w *storeImpl) Revoke(ctx context.Context, id string) error {
 	w.uniqueUpdateMutex.Lock()
 	defer w.uniqueUpdateMutex.Unlock()
@@ -143,5 +157,139 @@ func (w *storeImpl) Revoke(ctx context.Context, id string) error {
 	if err := w.store.Upsert(ctx, meta); err != nil {
 		return err
 	}
+	return nil
+}
+
+// RegistrationPossible checks if another registration using the CRS with the provided CRS ID is possible.
+// If the provided id belongs to an init bundle, then registrations is always allowed, without any bookkeeping.
+func (w *storeImpl) RegistrationPossible(ctx context.Context, id string) error {
+	w.uniqueUpdateMutex.Lock()
+	defer w.uniqueUpdateMutex.Unlock()
+
+	crs, err := w.Get(ctx, id)
+	if err != nil {
+		return errors.Wrapf(err, "retrieving cluster registration secret meta data for %q", id)
+	}
+
+	switch crs.Version {
+	case storage.InitBundleMeta_INIT_BUNDLE:
+		// We don't support registration limits for init bundles.
+		return nil
+	case storage.InitBundleMeta_CRS:
+	}
+
+	if crs.MaxRegistrations == 0 {
+		// No limit.
+		return nil
+	}
+
+	numRegistrationsTotal := uint64(len(crs.RegistrationsInitiated) + len(crs.RegistrationsCompleted))
+	if numRegistrationsTotal >= crs.MaxRegistrations {
+		return errors.Errorf("maximum number of clusters registrations (%d/%d) with the provided cluster registration secret %s/%q reached",
+			numRegistrationsTotal, crs.MaxRegistrations, crs.Id, crs.Name)
+	}
+
+	return nil
+}
+
+func (w *storeImpl) RecordInitiatedRegistration(ctx context.Context, id string, clusterId string) error {
+	w.uniqueUpdateMutex.Lock()
+	defer w.uniqueUpdateMutex.Unlock()
+
+	crsMeta, err := w.Get(ctx, id)
+	if err != nil {
+		return errors.Wrapf(err, "retrieving cluster registration secret meta data for %s/%q", crsMeta.Id, crsMeta.Name)
+	}
+
+	switch crsMeta.Version {
+	case storage.InitBundleMeta_INIT_BUNDLE:
+		// We don't support registration limits for init bundles.
+		return nil
+	case storage.InitBundleMeta_CRS:
+	}
+
+	maxRegistrations := crsMeta.MaxRegistrations
+	if maxRegistrations == 0 {
+		// No limit.
+		return nil
+	}
+
+	registrationsInitiatedSet := set.NewStringSet(crsMeta.RegistrationsInitiated...)
+	registrationsCompletedSet := set.NewStringSet(crsMeta.RegistrationsCompleted...)
+	numRegistrationsTotal := uint64(len(registrationsInitiatedSet) + len(registrationsCompletedSet))
+
+	if registrationsCompletedSet.Contains(clusterId) {
+		return errors.Errorf("cluster %s already registered with cluster registration secret %s/%q", clusterId, crsMeta.Id, crsMeta.Name)
+	}
+
+	if registrationsInitiatedSet.Contains(clusterId) {
+		// Already done.
+		return nil
+	}
+
+	if numRegistrationsTotal >= maxRegistrations {
+		return errors.New("maximum number of allowed cluster registrations reached")
+	}
+
+	_ = registrationsInitiatedSet.Add(clusterId)
+	crsMeta.RegistrationsInitiated = registrationsInitiatedSet.AsSlice()
+
+	err = w.store.Upsert(ctx, crsMeta)
+	if err != nil {
+		return errors.Wrapf(err, "updating meta data for cluster registration secret %s/%q", crsMeta.Id, crsMeta.Name)
+	}
+
+	return nil
+}
+
+func (w *storeImpl) RecordCompletedRegistration(ctx context.Context, id string, clusterId string) error {
+	w.uniqueUpdateMutex.Lock()
+	defer w.uniqueUpdateMutex.Unlock()
+
+	crsMeta, err := w.Get(ctx, id)
+	if err != nil {
+		return errors.Wrapf(err, "retrieving cluster registration secret meta data for %s/%q", crsMeta.Id, crsMeta.Name)
+	}
+
+	switch crsMeta.Version {
+	case storage.InitBundleMeta_INIT_BUNDLE:
+		// We don't support registration limits for init bundles.
+		return nil
+	case storage.InitBundleMeta_CRS:
+	}
+
+	maxRegistrations := crsMeta.MaxRegistrations
+	if maxRegistrations == 0 {
+		// No limit.
+		return nil
+	}
+
+	registrationsInitiatedSet := set.NewStringSet(crsMeta.RegistrationsInitiated...)
+	registrationsCompletedSet := set.NewStringSet(crsMeta.RegistrationsCompleted...)
+
+	if registrationsCompletedSet.Contains(clusterId) {
+		// Already done.
+		return nil
+	}
+
+	if !registrationsInitiatedSet.Contains(clusterId) {
+		return errors.Errorf("registration for cluster %s using cluster registration secret %s/%q not initiated", clusterId, crsMeta.Id, crsMeta.Name)
+	}
+
+	_ = registrationsInitiatedSet.Remove(clusterId)
+	_ = registrationsCompletedSet.Add(clusterId)
+	crsMeta.RegistrationsInitiated = registrationsInitiatedSet.AsSlice()
+	crsMeta.RegistrationsCompleted = registrationsCompletedSet.AsSlice()
+
+	if uint64(len(registrationsCompletedSet)) >= crsMeta.MaxRegistrations &&
+		len(registrationsInitiatedSet) == 0 {
+		crsMeta.IsRevoked = true
+	}
+
+	err = w.store.Upsert(ctx, crsMeta)
+	if err != nil {
+		return errors.Wrapf(err, "updating meta data for cluster registration secret %q", id)
+	}
+
 	return nil
 }
