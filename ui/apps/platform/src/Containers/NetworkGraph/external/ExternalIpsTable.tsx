@@ -1,6 +1,7 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 import {
     Button,
+    Divider,
     Flex,
     Pagination,
     Toolbar,
@@ -10,30 +11,43 @@ import {
 import { InnerScrollContainer, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
+import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import useMetadata from 'hooks/useMetadata';
 import useRestQuery from 'hooks/useRestQuery';
+import { UseURLPaginationResult } from 'hooks/useURLPagination';
+import { UseUrlSearchReturn } from 'hooks/useURLSearch';
 import { getExternalIpsFlowsMetadata } from 'services/NetworkService';
 import { getTableUIState } from 'utils/getTableUIState';
 import { getVersionedDocs } from 'utils/versioning';
-import { ExternalNetworkFlowsMetadataResponse } from 'types/networkFlow.proto';
+import {
+    ExternalNetworkFlowsMetadataResponse,
+    ExternalSourceNetworkEntityInfo,
+} from 'types/networkFlow.proto';
 import { SearchFilter } from 'types/search';
+
+import IPMatchFilter from '../common/IPMatchFilter';
+import { EXTERNAL_SOURCE_ADDRESS_QUERY } from '../NetworkGraph.constants';
 import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 
 export type ExternalIpsTableProps = {
     scopeHierarchy: NetworkScopeHierarchy;
     onExternalIPSelect: (externalIP: string) => void;
     advancedFilters?: SearchFilter;
+    urlSearchFiltering: UseUrlSearchReturn;
+    urlPagination: UseURLPaginationResult;
 };
 
 function ExternalIpsTable({
     scopeHierarchy,
     onExternalIPSelect,
     advancedFilters,
+    urlSearchFiltering,
+    urlPagination,
 }: ExternalIpsTableProps) {
     const { version } = useMetadata();
-    const [page, setPage] = useState(1);
-    const [perPage, setPerPage] = useState(10);
+    const { page, perPage, setPage, setPerPage } = urlPagination;
+    const { searchFilter, setSearchFilter } = urlSearchFiltering;
     const clusterId = scopeHierarchy.cluster.id;
     const { namespaces, deployments } = scopeHierarchy;
 
@@ -43,9 +57,9 @@ function ExternalIpsTable({
                 sortOption: {},
                 page,
                 perPage,
-                advancedFilters,
+                advancedFilters: searchFilter,
             });
-        }, [page, perPage, clusterId, deployments, namespaces, advancedFilters]);
+        }, [page, perPage, clusterId, deployments, namespaces, searchFilter]);
 
     const {
         data: externalIpsFlowsMetadata,
@@ -57,11 +71,34 @@ function ExternalIpsTable({
         isLoading,
         data: externalIpsFlowsMetadata?.entities,
         error,
-        searchFilter: {},
+        searchFilter,
     });
 
     return (
         <>
+            <Toolbar className="pf-v5-u-pb-md pf-v5-u-pt-0">
+                <ToolbarContent className="pf-v5-u-px-0">
+                    <ToolbarItem className="pf-v5-u-w-100">
+                        <IPMatchFilter
+                            searchFilter={searchFilter}
+                            setSearchFilter={setSearchFilter}
+                        />
+                    </ToolbarItem>
+                    <ToolbarItem className="pf-v5-u-w-100">
+                        <SearchFilterChips
+                            searchFilter={searchFilter}
+                            onFilterChange={setSearchFilter}
+                            filterChipGroupDescriptors={[
+                                {
+                                    displayName: 'CIDR',
+                                    searchFilterName: EXTERNAL_SOURCE_ADDRESS_QUERY,
+                                },
+                            ]}
+                        />
+                    </ToolbarItem>
+                </ToolbarContent>
+            </Toolbar>
+            <Divider />
             <Toolbar>
                 <ToolbarContent>
                     <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
@@ -91,7 +128,7 @@ function ExternalIpsTable({
                             title: 'There was an error loading external ips',
                         }}
                         emptyProps={{
-                            message: 'No external ips found. This feature might not be enabled.',
+                            message: 'This feature might not be enabled.',
                             children: (
                                 <Flex alignSelf={{ default: 'alignSelfCenter' }}>
                                     <ExternalLink>
@@ -108,6 +145,12 @@ function ExternalIpsTable({
                                     </ExternalLink>
                                 </Flex>
                             ),
+                        }}
+                        filteredEmptyProps={{
+                            title: 'No external ips found',
+                            onClearFilters: () => {
+                                setSearchFilter({});
+                            },
                         }}
                         renderer={({ data }) => (
                             <Tbody>

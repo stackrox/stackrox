@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { Divider, Stack, StackItem, ToggleGroup, ToggleGroupItem } from '@patternfly/react-core';
 import useFeatureFlags from 'hooks/useFeatureFlags';
+import { UseURLPaginationResult } from 'hooks/useURLPagination';
+import { UseUrlSearchReturn } from 'hooks/useURLSearch';
+
 import { CustomNodeModel } from '../types/topology.type';
 import { EdgeState } from '../components/EdgeStateSelect';
 import { Flow } from '../types/flow.type';
@@ -21,6 +24,8 @@ type DeploymentFlowsProps = {
     networkFlows: Flow[];
     refetchFlows: () => void;
     scopeHierarchy: NetworkScopeHierarchy;
+    urlPagination: UseURLPaginationResult;
+    urlSearchFiltering: UseUrlSearchReturn;
 };
 
 function DeploymentFlows({
@@ -34,6 +39,8 @@ function DeploymentFlows({
     networkFlows,
     refetchFlows,
     scopeHierarchy,
+    urlPagination,
+    urlSearchFiltering,
 }: DeploymentFlowsProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isExternalIpsEnabled = isFeatureFlagEnabled('ROX_EXTERNAL_IPS');
@@ -94,6 +101,8 @@ function DeploymentFlows({
                                 deploymentId={deploymentId}
                                 scopeHierarchy={scopeHierarchy}
                                 onExternalIPSelect={onExternalIPSelect}
+                                urlPagination={urlPagination}
+                                urlSearchFiltering={urlSearchFiltering}
                             />
                         )}
                     </Stack>

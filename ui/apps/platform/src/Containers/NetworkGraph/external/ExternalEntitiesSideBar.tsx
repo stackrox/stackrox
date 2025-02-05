@@ -11,6 +11,10 @@ import {
     ToggleGroupItem,
 } from '@patternfly/react-core';
 
+import { UseURLPaginationResult } from 'hooks/useURLPagination';
+import { UseUrlSearchReturn } from 'hooks/useURLSearch';
+import { ExternalSourceNetworkEntityInfo } from 'types/networkFlow.proto';
+
 import { ExternalEntitiesIcon } from '../common/NetworkGraphIcons';
 import ExternalFlowsTable from './ExternalFlowsTable';
 import ExternalIpsTable from './ExternalIpsTable';
@@ -30,6 +34,8 @@ export type ExternalEntitiesSideBarProps = {
     scopeHierarchy: NetworkScopeHierarchy;
     onNodeSelect: (id: string) => void;
     onExternalIPSelect: (externalIP: string | undefined) => void;
+    urlPagination: UseURLPaginationResult;
+    urlSearchFiltering: UseUrlSearchReturn;
 };
 
 function EntityTitleText({ text, id }: { text: string | undefined; id: string }) {
@@ -49,6 +55,8 @@ function ExternalEntitiesSideBar({
     selectedExternalIP,
     onNodeSelect,
     onExternalIPSelect,
+    urlPagination,
+    urlSearchFiltering,
 }: ExternalEntitiesSideBarProps): ReactElement {
     const [selectedView, setSelectedView] = useState<ExternalEntitiesView>('external-ips');
 
@@ -106,6 +114,8 @@ function ExternalEntitiesSideBar({
                         <ExternalIpsTable
                             scopeHierarchy={scopeHierarchy}
                             onExternalIPSelect={onExternalIPSelect}
+                            urlPagination={urlPagination}
+                            urlSearchFiltering={urlSearchFiltering}
                         />
                     ) : (
                         <ExternalFlowsTable

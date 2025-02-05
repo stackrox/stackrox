@@ -1,6 +1,13 @@
 import React, { ReactElement, useState } from 'react';
 import { Flex, SearchInput, SelectOption } from '@patternfly/react-core';
+
 import SimpleSelect from 'Components/CompoundSearchFilter/components/SimpleSelect';
+import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
+import { SetSearchFilter } from 'hooks/useURLSearch';
+import { SearchFilter } from 'types/search';
+import { isValidCidrBlock } from 'utils/urlUtils';
+
+import { EXTERNAL_SOURCE_ADDRESS_QUERY } from '../NetworkGraph.constants';
 
 export const matchTypes = ['Equals', 'Not'];
 
@@ -12,7 +19,8 @@ export type IPMatchFilterResult = {
 };
 
 type IPMatchFilterProps = {
-    onSearch: ({ matchType, externalIP }: IPMatchFilterResult) => void;
+    searchFilter: SearchFilter;
+    setSearchFilter: SetSearchFilter;
 };
 
 function ensureMatchType(value: unknown): MatchType {
@@ -22,15 +30,33 @@ function ensureMatchType(value: unknown): MatchType {
     return 'Equals';
 }
 
-function IPMatchFilter({ onSearch }: IPMatchFilterProps): ReactElement {
+function IPMatchFilter({ searchFilter, setSearchFilter }: IPMatchFilterProps): ReactElement {
     const [matchType, setMatchType] = useState<MatchType>('Equals');
     const [externalIP, setExternalIP] = useState('');
+
+    function handleClear() {
+        setExternalIP('');
+        setSearchFilter({});
+    }
+
+    function handleSearch(ipAddress: string) {
+        const searchValue = isValidCidrBlock(`${ipAddress}/32`) ? `${ipAddress}/32` : ipAddress;
+
+        onURLSearch(searchFilter, setSearchFilter, {
+            action: 'ADD',
+            category: EXTERNAL_SOURCE_ADDRESS_QUERY,
+            value: searchValue,
+        });
+
+        setExternalIP('');
+    }
 
     return (
         <Flex
             direction={{ default: 'row' }}
             flexWrap={{ default: 'nowrap' }}
             spaceItems={{ default: 'spaceItemsNone' }}
+            className="pf-v5-u-w-100"
         >
             <SimpleSelect
                 menuToggleClassName="pf-v5-u-flex-shrink-0"
@@ -47,13 +73,13 @@ function IPMatchFilter({ onSearch }: IPMatchFilterProps): ReactElement {
                 </SelectOption>
             </SimpleSelect>
             <SearchInput
-                placeholder="Find by external IP"
+                placeholder="Find by IP or IP/CIDR"
                 value={externalIP}
                 onChange={(_event, value) => setExternalIP(value)}
                 onSearch={() => {
-                    onSearch({ matchType, externalIP });
+                    handleSearch(externalIP);
                 }}
-                onClear={() => setExternalIP('')}
+                onClear={handleClear}
             />
         </Flex>
     );

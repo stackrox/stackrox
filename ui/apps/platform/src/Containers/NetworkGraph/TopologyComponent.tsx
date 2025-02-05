@@ -18,6 +18,8 @@ import { networkBasePath } from 'routePaths';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
 import useFetchDeploymentCount from 'hooks/useFetchDeploymentCount';
+import useURLSearch from 'hooks/useURLSearch';
+import useURLPagination from 'hooks/useURLPagination';
 import DeploymentSideBar from './deployment/DeploymentSideBar';
 import NamespaceSideBar from './namespace/NamespaceSideBar';
 import GenericEntitiesSideBar from './genericEntities/GenericEntitiesSideBar';
@@ -45,6 +47,7 @@ import {
     ExternalEntitiesIcon,
     InternalEntitiesIcon,
 } from './common/NetworkGraphIcons';
+import { DEFAULT_NETWORK_GRAPH_PAGE_SIZE } from './NetworkGraph.constants';
 
 // TODO: move these type defs to a central location
 export const UrlNodeType = {
@@ -91,6 +94,10 @@ const TopologyComponent = ({
     const hasReadAccessForNetworkPolicy = hasReadAccess('NetworkPolicy');
 
     const { detailID: selectedExternalIP } = useParams();
+    const urlPagination = useURLPagination(DEFAULT_NETWORK_GRAPH_PAGE_SIZE);
+    const { setPage, setPerPage } = urlPagination;
+    const urlSearchFiltering = useURLSearch('sidePanel');
+    const { setSearchFilter } = urlSearchFiltering;
 
     const firstRenderRef = useRef(true);
     const history = useHistory();
@@ -182,6 +189,12 @@ const TopologyComponent = ({
     });
 
     useEffect(() => {
+        setPage(1);
+        setPerPage(DEFAULT_NETWORK_GRAPH_PAGE_SIZE);
+        setSearchFilter({});
+    }, [setPage, setPerPage, setSearchFilter, selectedNode]);
+
+    useEffect(() => {
         // we don't want to reset view on init
         if (!firstRenderRef.current && controller.hasGraph()) {
             resetViewCallback();
@@ -246,6 +259,8 @@ const TopologyComponent = ({
                             onExternalIPSelect={onExternalIPSelect}
                             defaultDeploymentTab={defaultDeploymentTab}
                             scopeHierarchy={scopeHierarchy}
+                            urlPagination={urlPagination}
+                            urlSearchFiltering={urlSearchFiltering}
                         />
                     )}
                     {selectedNode && selectedNode?.data?.type === 'EXTERNAL_GROUP' && (
@@ -281,6 +296,8 @@ const TopologyComponent = ({
                                 selectedExternalIP={selectedExternalIP}
                                 onNodeSelect={onNodeSelect}
                                 onExternalIPSelect={onExternalIPSelect}
+                                urlPagination={urlPagination}
+                                urlSearchFiltering={urlSearchFiltering}
                             />
                         ) : (
                             <GenericEntitiesSideBar

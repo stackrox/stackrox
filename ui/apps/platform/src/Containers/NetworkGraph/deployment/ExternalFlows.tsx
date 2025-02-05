@@ -1,6 +1,14 @@
 import React, { useMemo, useState } from 'react';
 import { Divider, Flex, FlexItem, Stack, StackItem } from '@patternfly/react-core';
 
+import { UseURLPaginationResult } from 'hooks/useURLPagination';
+import { UseUrlSearchReturn } from 'hooks/useURLSearch';
+
+import AdvancedFlowsFilter, {
+    defaultAdvancedFlowsFilters,
+} from '../common/AdvancedFlowsFilter/AdvancedFlowsFilter';
+import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
+import { getAllUniquePorts } from '../utils/flowUtils';
 import IPMatchFilter, { MatchType } from '../common/IPMatchFilter';
 import ExternalIpsTable from '../external/ExternalIpsTable';
 import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
@@ -13,10 +21,19 @@ type ExternalFlowsFilter = {
 type ExternalFlowsProps = {
     deploymentId: string;
     scopeHierarchy: NetworkScopeHierarchy;
+    urlSearchFiltering: UseUrlSearchReturn;
+    urlPagination: UseURLPaginationResult;
     onExternalIPSelect: (externalIP: string) => void;
 };
 
-function ExternalFlows({ deploymentId, scopeHierarchy, onExternalIPSelect }: ExternalFlowsProps) {
+function ExternalFlows({
+    deploymentId,
+    scopeHierarchy,
+    urlSearchFiltering,
+    urlPagination,
+    onExternalIPSelect,
+}: ExternalFlowsProps) {
+    const { searchFilter, setSearchFilter } = urlSearchFiltering;
     const [appliedFilter, setAppliedFilter] = useState<ExternalFlowsFilter>({
         matchType: 'Equals',
         externalIP: '',
@@ -39,7 +56,10 @@ function ExternalFlows({ deploymentId, scopeHierarchy, onExternalIPSelect }: Ext
             <StackItem>
                 <Flex direction={{ default: 'row' }}>
                     <FlexItem flex={{ default: 'flex_1' }}>
-                        <IPMatchFilter onSearch={onSearch} />
+                        <IPMatchFilter
+                            searchFilter={searchFilter}
+                            setSearchFilter={setSearchFilter}
+                        />
                     </FlexItem>
                 </Flex>
             </StackItem>
@@ -47,8 +67,9 @@ function ExternalFlows({ deploymentId, scopeHierarchy, onExternalIPSelect }: Ext
             <StackItem isFilled style={{ overflow: 'auto' }}>
                 <ExternalIpsTable
                     scopeHierarchy={scopeHierarchy}
-                    advancedFilters={advancedFilters}
                     onExternalIPSelect={onExternalIPSelect}
+                    urlPagination={urlPagination}
+                    urlSearchFiltering={urlSearchFiltering}
                 />
             </StackItem>
         </Stack>
