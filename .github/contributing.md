@@ -97,6 +97,10 @@
   draft PR to a regular PR, you can revert it to a draft PR by clicking
   "Convert to draft" under the list of reviewers in the right sidebar of the
   "Conversation" view.
+- Use `auto-retest` label if you want CI to rerun E2E test on failures.
+  Note this option only works if github checks are passing.
+  If you want to retest given job no matter of it result (e.g. validate for resolving flake)
+  use `/retest-times <number of retests> <job-to-retest>`.
 
 ## Merging a PR
 
