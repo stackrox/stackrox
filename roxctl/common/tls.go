@@ -91,7 +91,7 @@ func tlsConfigOptsForCentral(logger logger.Logger) (*clientconn.TLSConfigOptions
 
 	var dialContext func(ctx context.Context, addr string) (net.Conn, error)
 
-	skipVerify := flags.SkipTLSValidation() != nil && *flags.SkipTLSValidation()
+	skipVerify := flags.SkipTLSValidation()
 	var roots *x509.CertPool
 	var customVerifier tlscheck.TLSCertVerifier
 	var ca []byte
