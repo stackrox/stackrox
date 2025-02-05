@@ -34,13 +34,16 @@ export const imagesWithoutCvesViewId = 'images-without-cves';
 
 function getWorkloadCveContextFromView(viewId: string, isFeatureFlagEnabled: IsFeatureFlagEnabled) {
     let pageTitle: string = '';
+    let pageTitleDescription: string | undefined;
     let baseSearchFilter: QuerySearchFilter = {};
     let getAbsoluteUrl: (subPath: string) => string = () => '';
 
     switch (viewId) {
         case userWorkloadViewId:
             if (isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT')) {
-                pageTitle = 'User Workload Vulnerabilities';
+                pageTitle = 'User workload vulnerabilities';
+                pageTitleDescription =
+                    'Vulnerabilities affecting user-managed workloads and images';
                 baseSearchFilter = { 'Platform Component': ['false'] };
                 getAbsoluteUrl = (subPath: string) =>
                     `${vulnerabilitiesUserWorkloadsPath}/${subPath}`;
@@ -52,22 +55,30 @@ function getWorkloadCveContextFromView(viewId: string, isFeatureFlagEnabled: IsF
             }
             break;
         case platformViewId:
-            pageTitle = 'Platform Vulnerabilities';
+            pageTitle = 'Platform vulnerabilities';
+            pageTitleDescription =
+                'Vulnerabilities affecting images and workloads used by the OpenShift Platform and layered services';
             baseSearchFilter = { 'Platform Component': ['true'] };
             getAbsoluteUrl = (subPath: string) => `${vulnerabilitiesPlatformPath}/${subPath}`;
             break;
         case allImagesViewId:
-            pageTitle = 'All detected images';
+            pageTitle = 'All vulnerable images';
+            pageTitleDescription =
+                'View findings for user, platform, and inactive images simultaneously';
             baseSearchFilter = { 'Platform Component': ['true', 'false', '-'] };
             getAbsoluteUrl = (subPath: string) => `${vulnerabilitiesAllImagesPath}/${subPath}`;
             break;
         case inactiveImagesViewId:
             pageTitle = 'Inactive images only';
+            pageTitleDescription =
+                'View findings for watched images and images not currently deployed as workloads based on your image retention settings';
             baseSearchFilter = { 'Platform Component': ['-'] };
             getAbsoluteUrl = (subPath: string) => `${vulnerabilitiesInactiveImagesPath}/${subPath}`;
             break;
         case imagesWithoutCvesViewId:
             pageTitle = 'Images without CVEs';
+            pageTitleDescription =
+                'Images and workloads without observed CVEs (results might include false negatives due to scanner limitations, such as unsupported operating systems)';
             baseSearchFilter = { 'Image CVE Count': ['0'] };
             getAbsoluteUrl = (subPath: string) =>
                 `${vulnerabilitiesImagesWithoutCvesPath}/${subPath}`;
@@ -76,7 +87,7 @@ function getWorkloadCveContextFromView(viewId: string, isFeatureFlagEnabled: IsF
         // TODO Handle user-defined views, or error
     }
 
-    return { pageTitle, baseSearchFilter, getAbsoluteUrl };
+    return { pageTitle, pageTitleDescription, baseSearchFilter, getAbsoluteUrl };
 }
 
 export type WorkloadCvePageProps = {

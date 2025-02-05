@@ -22,6 +22,7 @@ import {
     violationsFullViewPath,
     violationsPlatformViewPath,
     violationsUserWorkloadsViewPath,
+    vulnerabilitiesPlatformCvesPath,
 } from 'routePaths';
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import { HasReadAccess } from 'hooks/usePermissions';
@@ -96,9 +97,9 @@ function getSubnavDescriptionGroups(
                       children: [
                           {
                               type: 'link',
-                              content: 'All Images',
+                              content: 'All vulnerable workloads',
                               description:
-                                  'View findings for user and platform images simultaneously',
+                                  'View findings for user, platform, and inactive images simultaneously',
                               path: vulnerabilitiesAllImagesPath,
                               routeKey: 'vulnerabilities/all-images',
                           },
@@ -106,7 +107,7 @@ function getSubnavDescriptionGroups(
                               type: 'link',
                               content: 'Inactive images',
                               description:
-                                  'View findings for images not currently deployed as workloads',
+                                  'View findings for watched images and images not currently deployed as workloads based on your image retention settings',
                               path: vulnerabilitiesInactiveImagesPath,
                               routeKey: 'vulnerabilities/inactive-images',
                           },
@@ -117,6 +118,14 @@ function getSubnavDescriptionGroups(
                                   'Images and workloads without observed CVEs (results might include false negatives due to scanner limitations, such as unsupported operating systems)',
                               path: vulnerabilitiesImagesWithoutCvesPath,
                               routeKey: 'vulnerabilities/images-without-cves',
+                          },
+                          {
+                              type: 'link',
+                              content: 'Kubernetes components',
+                              description:
+                                  'Vulnerabilities affecting the underlying Kubernetes infrastructure',
+                              path: vulnerabilitiesPlatformCvesPath,
+                              routeKey: 'vulnerabilities/platform-cves',
                           },
                       ],
                   },

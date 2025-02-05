@@ -80,6 +80,7 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
                               vulnerabilitiesInactiveImagesPath,
                               vulnerabilitiesImagesWithoutCvesPath,
                               vulnerabilitiesViewPath,
+                              vulnerabilitiesPlatformCvesPath,
                           ])
                       ),
               },
@@ -94,17 +95,6 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
                   content: 'Vulnerability Reporting',
                   path: vulnerabilityReportsPath,
                   routeKey: 'vulnerabilities/reports',
-              },
-              {
-                  type: 'separator',
-                  key: 'following-node-cves',
-              },
-
-              {
-                  type: 'link',
-                  content: 'Platform CVEs',
-                  path: vulnerabilitiesPlatformCvesPath,
-                  routeKey: 'vulnerabilities/platform-cves',
               },
               {
                   type: 'separator',
