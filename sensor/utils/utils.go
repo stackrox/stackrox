@@ -20,6 +20,12 @@ func GetSensorKubernetesLabels() map[string]string {
 	}
 }
 
+func GetTLSSecretLabels() map[string]string {
+	labels := GetSensorKubernetesLabels()
+	labels["rhacs.redhat.com/tls"] = "true"
+	return labels
+}
+
 // GetSensorKubernetesAnnotations returns the default annotations for resources created by the sensor.
 func GetSensorKubernetesAnnotations() map[string]string {
 	return map[string]string{

@@ -74,7 +74,7 @@ func (r *SecretReconciliator) DeleteSecret(ctx context.Context, name string) err
 // EnsureSecret makes sure a secret with the given name exists.
 // If the validateSecretDataFunc returns an error, then this function calls generateSecretDataFunc to get new secret data and updates the secret to "fix" it.
 // Also note that this function will refuse to touch a secret which is not owned by the object passed to the constructor.
-func (r *SecretReconciliator) EnsureSecret(ctx context.Context, name string, validate validateSecretDataFunc, generate generateSecretDataFunc) error {
+func (r *SecretReconciliator) EnsureSecret(ctx context.Context, name string, validate validateSecretDataFunc, generate generateSecretDataFunc, desiredLabels map[string]string) error {
 	secret := &coreV1.Secret{}
 	key := ctrlClient.ObjectKey{Namespace: r.obj.GetNamespace(), Name: name}
 
@@ -89,7 +89,7 @@ func (r *SecretReconciliator) EnsureSecret(ctx context.Context, name string, val
 	}
 
 	if secret != nil {
-		return r.updateExisting(ctx, secret, validate, generate)
+		return r.updateExisting(ctx, secret, validate, generate, desiredLabels)
 	}
 
 	// Try to generate the secret, in order to fix it.
@@ -97,6 +97,7 @@ func (r *SecretReconciliator) EnsureSecret(ctx context.Context, name string, val
 	if err != nil {
 		return generateError(err, name, "new")
 	}
+
 	newSecret := &coreV1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -104,7 +105,7 @@ func (r *SecretReconciliator) EnsureSecret(ctx context.Context, name string, val
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(r.obj, r.obj.GroupVersionKind()),
 			},
-			Labels: commonLabels.DefaultLabels(),
+			Labels: desiredLabels,
 		},
 		Data: data,
 	}
@@ -112,7 +113,7 @@ func (r *SecretReconciliator) EnsureSecret(ctx context.Context, name string, val
 	return errors.Wrapf(r.Client().Create(ctx, newSecret), "creating new %s secret failed", name)
 }
 
-func (r *SecretReconciliator) updateExisting(ctx context.Context, secret *coreV1.Secret, validate validateSecretDataFunc, generate generateSecretDataFunc) error {
+func (r *SecretReconciliator) updateExisting(ctx context.Context, secret *coreV1.Secret, validate validateSecretDataFunc, generate generateSecretDataFunc, desiredLabels map[string]string) error {
 	isManaged := metav1.IsControlledBy(secret, r.obj)
 	validateErr := validate(secret.Data, isManaged)
 
@@ -134,8 +135,8 @@ func (r *SecretReconciliator) updateExisting(ctx context.Context, secret *coreV1
 		needsUpdate = true
 	}
 
-	labels, needsLabelUpdate := commonLabels.WithDefaults(secret.Labels)
-	secret.Labels = labels
+	newLabels, needsLabelUpdate := commonLabels.MergeLabels(secret.Labels, desiredLabels)
+	secret.Labels = newLabels
 	needsUpdate = needsUpdate || needsLabelUpdate
 	if !needsUpdate || !isManaged {
 		return nil
