@@ -178,7 +178,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestSuccessfulCreate() {
 
 	expectedLabels := utils.GetTLSSecretLabels()
 	s.Equal(expectedLabels, secret.Labels, "Secret labels do not match expected values")
-	expectedAnnotations := utils.GetSensorKubernetesLabels()
+	expectedAnnotations := utils.GetSensorKubernetesAnnotations()
 	s.Equal(expectedAnnotations, secret.Annotations, "Secret annotations do not match expected values")
 }
 
