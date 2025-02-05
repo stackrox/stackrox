@@ -85,6 +85,7 @@ function NodeCvesOverviewPage() {
     const selectedCves = useMap<string, { cve: string }>();
     const { snoozeModalOptions, setSnoozeModalOptions, snoozeActionCreator } = useSnoozeCveModal();
     const snoozedCveCount = useSnoozedCveCount('Node');
+    const { version } = useMetadata();
 
     function onEntityTabChange(entityTab: 'CVE' | 'Node') {
         pagination.setPage(1);
@@ -176,6 +177,34 @@ function NodeCvesOverviewPage() {
                         />
                     </FlexItem>
                 </Flex>
+            </PageSection>
+            <PageSection variant="light">
+              <Alert
+                isInline
+                variant="info"
+                title="Results include Node CVEs obtained from Scanner V4."
+                component="p"
+              >
+                <Flex
+                  direction={{ default: 'column' }}
+                  spaceItems={{ default: 'spaceItemsMd' }}
+                >
+                  <Flex direction={{ default: 'row' }}>
+                    <ExternalLink>
+                      <a
+                        href={getVersionedDocs(
+                          version,
+                          'operating/manage-user-access/configure-short-lived-access.html#configure-short-lived-access'
+                        )}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Read more about the differences between V2 and V4 node scanning results
+                      </a>
+                    </ExternalLink>
+                  </Flex>
+                </Flex>
+              </Alert>
             </PageSection>
             <PageSection padding={{ default: 'noPadding' }}>
                 <PageSection isCenterAligned>
