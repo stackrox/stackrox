@@ -1,12 +1,12 @@
 package sbom
 
 import (
+	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/sbom/spdx"
 	"github.com/stackrox/rox/scanner/internal/version"
 )
 
@@ -18,31 +18,20 @@ func NewSBOMer() *SBOMer {
 }
 
 func (s *SBOMer) GetSBOM(ctx context.Context, ir *claircore.IndexReport, name, id string) ([]byte, error) {
-	// TODO(ROX-27145): remove static response and use claircore to create SBOM.
-	// Start: temporary static response
-	fakeResp := struct {
-		Msg             string   `json:"msg"`
-		Name            string   `json:"name"`
-		DocumentComment string   `json:"documentComment"`
-		Creators        []string `json:"creators"`
-		NumPackages     int      `json:"pkgs"`
-		NumDists        int      `json:"dists"`
-		NumRepos        int      `json:"repos"`
-		NumEnvs         int      `json:"envs"`
-	}{
-		Msg:             fmt.Sprintf("This fake response generated from Scanner V4 matcher on %q", time.Now().Format(time.RFC3339)),
-		Name:            id,
-		DocumentComment: fmt.Sprintf("Tech Preview - generated for '%s'", name),
-		Creators: []string{
-			fmt.Sprintf("Tool: scanner-v4-matcher-%s", version.Version),
-		},
-		NumPackages: len(ir.Packages),
-		NumDists:    len(ir.Distributions),
-		NumRepos:    len(ir.Repositories),
-		NumEnvs:     len(ir.Environments),
-	}
-	sbomB, err := json.Marshal(fakeResp)
-	// End: temporary static response
+	encoder := spdx.NewDefaultEncoder(
+		spdx.WithDocumentName(id),
+		spdx.WithDocumentNamespace("TODO NAMESPACE"),
+		spdx.WithDocumentComment(fmt.Sprintf("Tech Preview - generated for '%s'", name)),
+	)
+	encoder.Creators = append(encoder.Creators, spdx.Creator{Creator: fmt.Sprintf("scanner-v4-matcher-%s", version.Version), CreatorType: "Tool"})
+	encoder.Version = spdx.V2_3
+	encoder.Format = spdx.JSONFormat
 
-	return []byte(sbomB), err
+	b := &bytes.Buffer{}
+	err := encoder.Encode(ctx, b, ir)
+	if err != nil {
+		return nil, err
+	}
+
+	return b.Bytes(), nil
 }
