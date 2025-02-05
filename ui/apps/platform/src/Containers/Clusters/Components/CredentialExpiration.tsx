@@ -15,11 +15,13 @@ const testId = 'credentialExpiration';
 
 type CredentialExpirationProps = {
     certExpiryStatus?: CertExpiryStatus;
+    autoRefreshEnabled: boolean;
     isList?: boolean;
 };
 
 function CredentialExpiration({
     certExpiryStatus,
+    autoRefreshEnabled,
     isList = false,
 }: CredentialExpirationProps): ReactElement {
     const { version } = useMetadata();
@@ -42,6 +44,7 @@ function CredentialExpiration({
     const distanceElement = (
         <span className="whitespace-nowrap">
             {getDistanceStrictAsPhrase(sensorCertExpiry, currentDatetime)}
+            {autoRefreshEnabled && <div>Auto-refresh enabled</div>}
         </span>
     );
 
