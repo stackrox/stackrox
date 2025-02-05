@@ -6,11 +6,13 @@ export type FilteredWorkflowViewURLStateResult = {
     setFilteredWorkflowView: (value: FilteredWorkflowView) => void;
 };
 
+export const filteredWorkflowViewKey = 'filteredWorkflowView';
+
 function useFilteredWorkflowViewURLState(
     defaultView?: FilteredWorkflowView
 ): FilteredWorkflowViewURLStateResult {
     const [filteredWorkflowView, setFilteredWorkflowView] = useURLStringUnion(
-        'filteredWorkflowView',
+        filteredWorkflowViewKey,
         filteredWorkflowViews,
         defaultView
     );

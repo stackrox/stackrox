@@ -14,6 +14,8 @@ import {
 } from '@patternfly/react-charts';
 import sortBy from 'lodash/sortBy';
 
+import { filteredWorkflowViewKey } from 'Components/FilteredWorkflowViewSelector/useFilteredWorkflowViewURLState';
+import { fullWorkflowView } from 'Components/FilteredWorkflowViewSelector/types';
 import { LinkableChartLabel } from 'Components/PatternFly/Charts/LinkableChartLabel';
 import { AlertGroup } from 'services/AlertsService';
 import { severityLabels } from 'messages/common';
@@ -119,6 +121,7 @@ function linkForViolationsCategory(
     const queryString = getQueryString({
         s: search,
         sortOption: { field: 'Severity', direction: 'desc' },
+        [filteredWorkflowViewKey]: fullWorkflowView,
     });
     return `${violationsBasePath}${queryString}`;
 }

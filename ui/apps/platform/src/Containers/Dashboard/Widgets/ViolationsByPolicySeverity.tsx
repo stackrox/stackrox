@@ -4,6 +4,8 @@ import { Flex, FlexItem, Title, Button, Divider, Stack, StackItem } from '@patte
 
 import LinkShim from 'Components/PatternFly/LinkShim';
 import WidgetCard from 'Components/PatternFly/WidgetCard';
+import { filteredWorkflowViewKey } from 'Components/FilteredWorkflowViewSelector/useFilteredWorkflowViewURLState';
+import { fullWorkflowView } from 'Components/FilteredWorkflowViewSelector/types';
 import useURLSearch from 'hooks/useURLSearch';
 import { violationsBasePath } from 'routePaths';
 import { SearchFilter } from 'types/search';
@@ -23,6 +25,7 @@ function getViewAllLink(searchFilter: SearchFilter) {
             ...searchFilter,
         },
         sortOption: { field: 'Severity', direction: 'desc' },
+        [filteredWorkflowViewKey]: fullWorkflowView,
     });
     return `${violationsBasePath}${queryString}`;
 }
