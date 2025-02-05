@@ -178,8 +178,13 @@ const TopologyComponent = ({
         controller.fromModel(model);
         if (selectedNode) {
             panNodeIntoView(selectedNode);
-        } else if (history.location.pathname !== networkBasePath && !selectedNode) {
-            // if the path does not reflect the selected node state, sync URL to state
+        } else if (
+            history.location.pathname !== networkBasePath &&
+            !selectedNode &&
+            model.nodes.length > 0
+        ) {
+            // if the path does not reflect the selected node state or nodes have not
+            // been fetched yet, sync URL to state
             closeSidebar();
         }
     }, [controller, model, selectedNode, history, closeSidebar, panNodeIntoView]);
