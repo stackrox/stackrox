@@ -84,10 +84,6 @@ The enricher will fetch Red Hat advisories and extract data we have determined h
     * Note: we will not run into a case where an advisory has two different scores for the same CVE.
       CVEs are given an overall score which may be overridden for specific product. Since advisories
       are per-product, a single advisory cannot be associated with scores related to other products.
-  * CVEs
-    * This will *not* be output; however, this is necessary to determine the proper EPSS score to assign the advisory based on
-      [0014-epss-score.md](0014-epss-score.md).
-    * Scanner V4 will determine the EPSS scores from the list of the advisory's related CVEs and output the highest one.
 
 If we discover other fields have shown inconsistencies, we will include them, as-needed.
 

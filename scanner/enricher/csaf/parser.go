@@ -40,8 +40,6 @@ func (e *Enricher) ParseEnrichment(ctx context.Context, contents io.ReadCloser) 
 			// The current_release_date is the last-updated date, so
 			// we use initial_release_date here.
 			ReleaseDate: c.Document.Tracking.InitialReleaseDate,
-			// Track all related CVEs.
-			CVEs: make([]string, 0, len(c.Vulnerabilities)),
 			// Obtain the aggregate severity rating of all related CVEs for this advisory,
 			// which tends to be the highest severity of all related CVEs.
 			// This matches the severity we'd obtain from OVAL.
@@ -65,7 +63,6 @@ func (e *Enricher) ParseEnrichment(ctx context.Context, contents io.ReadCloser) 
 			vector string
 		}
 		for _, v := range c.Vulnerabilities {
-			record.CVEs = append(record.CVEs, v.CVE)
 			for _, score := range v.Scores {
 				if score.CVSSV3 != nil && score.CVSSV3.BaseScore > cvss3.score {
 					cvss3.score = score.CVSSV3.BaseScore

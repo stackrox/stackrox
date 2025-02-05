@@ -19,10 +19,8 @@ type Advisory struct {
 	Description string    `json:"description"`
 	ReleaseDate time.Time `json:"release_date"`
 	Severity    string    `json:"severity"`
-	// CVEs tracks all the CVEs related to this advisory.
-	CVEs   []string `json:"cves"`
-	CVSSv3 CVSS     `json:"cvssv3"`
-	CVSSv2 CVSS     `json:"cvssv2"`
+	CVSSv3      CVSS      `json:"cvssv3"`
+	CVSSv2      CVSS      `json:"cvssv2"`
 }
 
 // CVSS represents CVSS metrics we care to track for the advisory.
