@@ -165,6 +165,14 @@ var (
 		Help:      "A counter that tracks the size of the detection network flow buffer",
 	}, []string{"Operation"})
 
+	// DetectorDeploymentBufferSize keeps track of the size of the detection deployment buffer.
+	DetectorDeploymentBufferSize = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "detector_deployment_buffer_size",
+		Help:      "A counter that tracks the size of the deployment buffer",
+	}, []string{"Operation"})
+
 	// DetectorProcessIndicatorDroppedCount keeps track of the number of process indicators dropped in the detector.
 	DetectorProcessIndicatorDroppedCount = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -179,6 +187,14 @@ var (
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "detector_network_flows_dropped_total",
 		Help:      "A counter of the total number of network flows that were dropped if the detector buffer was full",
+	})
+
+	// DetectorDeploymentDroppedCount keeps track of the number of deployments dropped in the detector.
+	DetectorDeploymentDroppedCount = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "detector_deployments_dropped_total",
+		Help:      "A counter of the total number of deployments that were dropped if the detector buffer was full",
 	})
 )
 
@@ -247,5 +263,8 @@ func init() {
 		DetectorNetworkFlowBufferSize,
 		DetectorProcessIndicatorBufferSize,
 		DetectorNetworkFlowDroppedCount,
-		DetectorProcessIndicatorDroppedCount)
+		DetectorProcessIndicatorDroppedCount,
+		DetectorDeploymentBufferSize,
+		DetectorDeploymentDroppedCount,
+	)
 }
