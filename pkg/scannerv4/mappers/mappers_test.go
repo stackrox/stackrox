@@ -1616,7 +1616,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 					Updater:            "rhel-vex",
 					Severity:           "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
 					NormalizedSeverity: claircore.Critical,
-					Issued:             now,
+					Issued:             now.Add(-1 * time.Second),
 				},
 			},
 			nvdVulns: map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem{
@@ -1650,6 +1650,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 						Score:  9.4,
 						Vector: "AV:N/AC:L/Au:N/C:C/I:C/A:N",
 					},
+					ReleaseDate: now,
 				},
 			},
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
@@ -1777,7 +1778,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 					Updater:            "rhel-vex",
 					Severity:           "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
 					NormalizedSeverity: claircore.Medium,
-					Issued:             now,
+					Issued:             now.Add(-2 * time.Hour),
 				},
 				"bar": {
 					ID:                 "bar",
@@ -1786,7 +1787,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 					Updater:            "rhel-vex",
 					Severity:           "CVSS:3.1/AV:L/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:N",
 					NormalizedSeverity: claircore.Medium,
-					Issued:             now,
+					Issued:             now.Add(-1 * time.Hour),
 				},
 			},
 			advisories: map[string]csaf.Advisory{
@@ -1798,6 +1799,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 						Score:  7.5,
 						Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
 					},
+					ReleaseDate: now,
 				},
 				"bar": {
 					Name:        "RHSA-2024:10775",
@@ -1807,6 +1809,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 						Score:  7.5,
 						Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
 					},
+					ReleaseDate: now,
 				},
 			},
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
