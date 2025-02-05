@@ -217,7 +217,7 @@ endif
 		-I$(SCANNER_PROTO_BASE_PATH) \
 		--proto_path=$(PROTO_BASE_PATH) \
 		--plugin protoc-gen-go-vtproto="${PROTOC_GEN_GO_VTPROTO_BIN}" \
-		--go-vtproto_opt=features=marshal+size+equal+clone+unmarshal_unsafe \
+		--go-vtproto_opt=features=marshal+size+equal+clone+unmarshal+unmarshal_unsafe \
 		--go-vtproto_out=$(M_ARGS_STR:%=%,)module=github.com/stackrox/rox/generated:$(GENERATED_BASE_PATH) \
 		$(dir $<)/*.proto
 
