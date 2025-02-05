@@ -38,7 +38,7 @@ type centralUserPkiDeleteCommand struct {
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "delete id|name",
-		Short: "Delete a user certificate authentication provider.",
+		Short: "Delete a user certificate authentication provider",
 		Long:  "Delete a configured user certificate authentication provider and its associated group mappings.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {

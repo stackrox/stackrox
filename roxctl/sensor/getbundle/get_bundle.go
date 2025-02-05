@@ -94,7 +94,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "get-bundle <cluster-name-or-id>",
 		Args:  cobra.ExactArgs(1),
-		Short: "Download a bundle with the files to deploy StackRox services into a cluster.",
+		Short: "Download a bundle with the files to deploy StackRox services into a cluster",
 		Long:  "Download a bundle with the required YAML configuration files to deploy StackRox Sensor, Collector, and Admission controller (optional).",
 		RunE: func(c *cobra.Command, args []string) error {
 			if err := downloadBundle(outputDir, args[0], flags.Timeout(c), createUpgraderSA, slimCollector, istioVersion, cliEnvironment); err != nil {
@@ -104,11 +104,11 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		},
 	}
 
-	c.PersistentFlags().StringVar(&outputDir, "output-dir", "", "Output directory for bundle contents (default: auto-generated directory name inside the current directory)")
-	c.PersistentFlags().BoolVar(&createUpgraderSA, "create-upgrader-sa", true, "Whether to create the upgrader service account, with cluster-admin privileges, to facilitate automated sensor upgrades")
+	c.PersistentFlags().StringVar(&outputDir, "output-dir", "", "Output directory for bundle contents (default: auto-generated directory name inside the current directory).")
+	c.PersistentFlags().BoolVar(&createUpgraderSA, "create-upgrader-sa", true, "Whether to create the upgrader service account, with cluster-admin privileges, to facilitate automated sensor upgrades.")
 	c.PersistentFlags().StringVar(&istioVersion, "istio-support", "",
 		fmt.Sprintf(
-			"Generate deployment files supporting the given Istio version. Valid versions: %s",
+			"Generate deployment files supporting the given Istio version. Valid versions: %s.",
 			strings.Join(istioutils.ListKnownIstioVersions(), ", ")))
 
 	flags.AddTimeoutWithDefault(c, 5*time.Minute)

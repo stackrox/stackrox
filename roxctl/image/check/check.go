@@ -92,7 +92,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c := &cobra.Command{
 		Use:   "check",
-		Short: "Check images for build time policy violations, and report them.",
+		Short: "Check images for build time policy violations, and report them",
 		Args:  cobra.NoArgs,
 		RunE: func(c *cobra.Command, args []string) error {
 			if err := imageCheckCmd.Construct(nil, c, objectPrinterFactory); err != nil {
@@ -109,27 +109,27 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	objectPrinterFactory.AddFlags(c)
 
 	// Image Check specific flags
-	c.Flags().StringVarP(&imageCheckCmd.image, "image", "i", "", "Image name and reference. (e.g. nginx:latest or nginx@sha256:...)")
+	c.Flags().StringVarP(&imageCheckCmd.image, "image", "i", "", "Image name and reference (e.g. nginx:latest or nginx@sha256:...).")
 	pkgUtils.Must(c.MarkFlagRequired("image"))
 	c.Flags().IntVarP(&imageCheckCmd.retryDelay, "retry-delay", "d", 3, "Set time to wait between retries in seconds.")
 	c.Flags().IntVarP(&imageCheckCmd.retryCount, "retries", "r", 3, "Number of retries before exiting as error.")
-	c.Flags().BoolVarP(&imageCheckCmd.force, "force", "f", false, "Bypass Central's cache for the image and force a new pull from the Scanner")
+	c.Flags().BoolVarP(&imageCheckCmd.force, "force", "f", false, "Bypass Central's cache for the image and force a new pull from the Scanner.")
 	c.Flags().BoolVar(&imageCheckCmd.sendNotifications, "send-notifications", false,
 		"Whether to send notifications for violations (notifications will be sent to the notifiers "+
 			"configured in each violated policy).")
 	c.Flags().StringSliceVarP(&imageCheckCmd.policyCategories, "categories", "c", nil, "Optional comma separated list of policy categories to run.  Defaults to all policy categories.")
-	c.Flags().StringVar(&imageCheckCmd.cluster, "cluster", "", "Cluster name or ID to use as context for evaluation")
+	c.Flags().StringVar(&imageCheckCmd.cluster, "cluster", "", "Cluster name or ID to use as context for evaluation.")
 
 	// deprecated, old output format specific flags
-	c.Flags().BoolVar(&imageCheckCmd.printAllViolations, "print-all-violations", false, "Whether to print all violations per alert or truncate violations for readability")
-	c.Flags().BoolVar(&imageCheckCmd.json, jsonFlagName, false, "Output policy results as JSON")
+	c.Flags().BoolVar(&imageCheckCmd.printAllViolations, "print-all-violations", false, "Whether to print all violations per alert or truncate violations for readability.")
+	c.Flags().BoolVar(&imageCheckCmd.json, jsonFlagName, false, "Output policy results as JSON.")
 	c.Flags().BoolVar(&imageCheckCmd.failViolationsWithJSON, jsonFailFlagName, true,
 		"Whether policy violations should cause the command to exit non-zero in JSON output mode too. "+
 			"This flag only has effect when --json is also specified.")
 	// mark old output format flags as deprecated, but do not fully remove them to not break API for customer
 	// each deprecation message will be prefixed with "<flag-name> is deprecated,"
 	pkgUtils.Must(c.Flags().MarkDeprecated("print-all-violations", "Use the new output format which handles this by default. The flag is only "+
-		"relevant in combination with the --json flag"))
+		"relevant in combination with the --json flag."))
 	pkgUtils.Must(c.Flags().MarkDeprecated(jsonFlagName, "Use the new output format which also offers JSON. NOTE: The new output format's structure "+
 		"has changed in a non-backward compatible way."))
 	pkgUtils.Must(c.Flags().MarkDeprecated(jsonFailFlagName, "Use the new output format which will always fail with policy violations."))

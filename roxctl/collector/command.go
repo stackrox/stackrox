@@ -10,7 +10,7 @@ import (
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "collector",
-		Short: "Commands related to the Collector service.",
+		Short: "Commands related to the Collector service",
 	}
 
 	c.AddCommand(

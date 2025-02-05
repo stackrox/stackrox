@@ -60,7 +60,7 @@ func openshift(generateCmd *sensorGenerateCommand) *cobra.Command {
 	openshiftCommand := sensorGenerateOpenShiftCommand{sensorGenerateCommand: generateCmd}
 	c := &cobra.Command{
 		Use:   "openshift",
-		Short: "Generate the required files to deploy StackRox services into an OpenShift cluster.",
+		Short: "Generate the required files to deploy StackRox services into an OpenShift cluster",
 		Long:  "Generate the required YAML configuration files to deploy StackRox Sensor and Collector into an OpenShift cluster.",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			if err := openshiftCommand.ConstructOpenShift(); err != nil {
@@ -73,9 +73,9 @@ func openshift(generateCmd *sensorGenerateCommand) *cobra.Command {
 			return openshiftCommand.fullClusterCreation()
 		}),
 	}
-	c.PersistentFlags().IntVar(&openshiftCommand.openshiftVersion, "openshift-version", 0, "OpenShift major version to generate deployment files for")
-	flags.OptBoolFlagVarPF(c.PersistentFlags(), &openshiftCommand.admissionControllerEvents, "admission-controller-listen-on-events", "", "Enable admission controller webhook to listen on Kubernetes events", "auto")
-	flags.OptBoolFlagVarPF(c.PersistentFlags(), &openshiftCommand.disableAuditLogCollection, "disable-audit-logs", "", "Disable audit log collection for runtime detection", "auto")
+	c.PersistentFlags().IntVar(&openshiftCommand.openshiftVersion, "openshift-version", 0, "OpenShift major version to generate deployment files for.")
+	flags.OptBoolFlagVarPF(c.PersistentFlags(), &openshiftCommand.admissionControllerEvents, "admission-controller-listen-on-events", "", "Enable admission controller webhook to listen on Kubernetes events.", "auto")
+	flags.OptBoolFlagVarPF(c.PersistentFlags(), &openshiftCommand.disableAuditLogCollection, "disable-audit-logs", "", "Disable audit log collection for runtime detection.", "auto")
 
 	return c
 }

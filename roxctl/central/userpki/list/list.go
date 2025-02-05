@@ -33,7 +33,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	centralUserPkiListCmd := &centralUserPkiListCommand{env: cliEnvironment}
 	c := &cobra.Command{
 		Use:   "list",
-		Short: "Display all user certificate authentication providers.",
+		Short: "Display all user certificate authentication providers",
 		Long:  "Display all configured user certificate authentication providers in a human-readable or JSON format.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := centralUserPkiListCmd.construct(cmd); err != nil {
@@ -42,7 +42,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 			return centralUserPkiListCmd.listProviders()
 		},
 	}
-	c.Flags().BoolVarP(&centralUserPkiListCmd.json, "json", "j", false, "Enable JSON output")
+	c.Flags().BoolVarP(&centralUserPkiListCmd.json, "json", "j", false, "Enable JSON output.")
 	flags.AddTimeout(c)
 	flags.AddRetryTimeout(c)
 	return c

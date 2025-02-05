@@ -24,7 +24,7 @@ func Command(cliEnvironment env.Environment) *cobra.Command {
 
 	c := &cobra.Command{
 		Use:   fmt.Sprintf("derive-local-values --output <path> <%s>", common.MakePrettyChartNameList(supportedCharts...)),
-		Short: "Derive local Helm values from cluster configuration.",
+		Short: "Derive local Helm values from cluster configuration",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
@@ -40,9 +40,9 @@ func Command(cliEnvironment env.Environment) *cobra.Command {
 
 		},
 	}
-	c.PersistentFlags().StringVar(&helmDeriveLocalValuesCmd.output, "output", "", "Path to output file")
-	c.PersistentFlags().StringVar(&helmDeriveLocalValuesCmd.outputDir, "output-dir", "", "Path to output directory")
-	c.PersistentFlags().StringVar(&helmDeriveLocalValuesCmd.input, "input", "", "Path to file or directory containing YAML input")
+	c.PersistentFlags().StringVar(&helmDeriveLocalValuesCmd.output, "output", "", "Path to output file.")
+	c.PersistentFlags().StringVar(&helmDeriveLocalValuesCmd.outputDir, "output-dir", "", "Path to output directory.")
+	c.PersistentFlags().StringVar(&helmDeriveLocalValuesCmd.input, "input", "", "Path to file or directory containing YAML input.")
 	flags.AddTimeout(c)
 	flags.AddRetryTimeout(c)
 

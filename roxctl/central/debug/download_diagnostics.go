@@ -31,7 +31,7 @@ func downloadDiagnosticsCommand(cliEnvironment environment.Environment) *cobra.C
 
 	c := &cobra.Command{
 		Use:   "download-diagnostics",
-		Short: "Download a bundle containing a snapshot of diagnostic information about the platform.",
+		Short: "Download a bundle containing a snapshot of diagnostic information about the platform",
 		Long:  "Download a bundle containing a snapshot of diagnostic information such as logs from Central and Secured Clusters and other non-sensitive configuration data about the platform.",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			cliEnvironment.Logger().InfofLn("Downloading diagnostic bundle...")
@@ -78,12 +78,12 @@ To specify timeout, run  'roxctl' command:
 		}),
 	}
 	flags.AddTimeoutWithDefault(c, diagnosticBundleDownloadTimeout)
-	c.PersistentFlags().StringVar(&outputDir, "output-dir", "", "Output directory in which to store bundle")
-	c.PersistentFlags().StringVar(&outputFileName, "output-file-name", "", "Output file name for the bundle")
-	c.PersistentFlags().StringSliceVar(&clusters, "clusters", nil, "Comma separated list of sensor clusters from which logs should be collected")
-	c.PersistentFlags().StringVar(&since, "since", "", "Timestamp starting when logs should be collected from sensor clusters")
-	c.PersistentFlags().BoolVarP(&withComplianceOperator, "with-compliance-operator", "", false, "Include compliance operator resources in the diagnostic bundle")
-	c.PersistentFlags().BoolVarP(&withDBOnly, "with-database-only", "", false, "Include ONLY database diagnostics in the diagnostic bundle")
+	c.PersistentFlags().StringVar(&outputDir, "output-dir", "", "Output directory in which to store bundle.")
+	c.PersistentFlags().StringVar(&outputFileName, "output-file-name", "", "Output file name for the bundle.")
+	c.PersistentFlags().StringSliceVar(&clusters, "clusters", nil, "Comma separated list of sensor clusters from which logs should be collected.")
+	c.PersistentFlags().StringVar(&since, "since", "", "Timestamp starting when logs should be collected from sensor clusters.")
+	c.PersistentFlags().BoolVarP(&withComplianceOperator, "with-compliance-operator", "", false, "Include compliance operator resources in the diagnostic bundle.")
+	c.PersistentFlags().BoolVarP(&withDBOnly, "with-database-only", "", false, "Include ONLY database diagnostics in the diagnostic bundle.")
 
 	return c
 }
