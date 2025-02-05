@@ -34,9 +34,7 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 		return nil, errors.Wrap(err, "failed to get databaze size")
 	}
 
-	_ = phonehome.AddTotal(ctx, props, "Database Size", func(_ context.Context) (int, error) {
-		return int(dbSize), nil
-	})
+	props["Database Size"] = dbSize
 
 	return props, nil
 }
