@@ -533,6 +533,9 @@ func combineDisjunction(entries []*pgsearch.QueryEntry) *pgsearch.QueryEntry {
 	seenQueries := set.StringSet{}
 	seenSelectFields := set.StringSet{}
 	values := make([]any, 0, len(entries))
+	// skip for complex queries (having, groupby, multiple values and selects)
+	// here we support only simple cases of multiple exact match statements
+	// TODO(ROX-27944): add support for complex queries as well
 	for _, entry := range entries {
 		if entry.Having != nil ||
 			len(entry.GroupBy) != 0 ||
@@ -547,6 +550,9 @@ func combineDisjunction(entries []*pgsearch.QueryEntry) *pgsearch.QueryEntry {
 		values = append(values, fmt.Sprintf("%s", entry.Where.Values[0]))
 	}
 
+	// if we've seen more than a single exact query this means we have multiple
+	// columns there and we cannot apply IN operator there
+	// TODO(ROX-27944): handle multiple selected fields
 	if len(seenQueries) != 1 || len(seenSelectFields) > 1 {
 		return combineQueryEntries(entries, " or ")
 	}

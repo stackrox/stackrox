@@ -589,6 +589,24 @@ func TestSelectQueries(t *testing.T) {
 				group by deployments.ClusterName, deployments.Namespace`),
 		},
 		{
+			desc: "child schema; multiple select w/ where & group by with IN",
+			q: search.NewQueryBuilder().
+				AddSelectFields(
+					search.NewQuerySelect(search.Privileged),
+					search.NewQuerySelect(search.ImageName),
+				).
+				AddExactMatches(search.ImageName, "stack", "rox").
+				AddGroupBy(search.Cluster, search.Namespace).ProtoQuery(),
+			schema: deploymentBaseSchema,
+			expectedQuery: normalizeStatement(`select jsonb_agg(deployments_containers.SecurityContext_Privileged) as privileged,
+				jsonb_agg(deployments_containers.Image_Name_FullName) as image,
+				deployments.ClusterName as cluster, deployments.Namespace as namespace
+				from deployments inner join deployments_containers
+				on deployments.Id = deployments_containers.deployments_Id
+				where deployments_containers.Image_Name_FullName IN ($1, $2)
+				group by deployments.ClusterName, deployments.Namespace`),
+		},
+		{
 			desc: "base schema and child schema; select",
 			q: search.NewQueryBuilder().
 				AddSelectFields(
