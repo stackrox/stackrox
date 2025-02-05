@@ -77,6 +77,7 @@ func (w *watchHandler) OnChange(dir string) (interface{}, error) {
 }
 
 func (w *watchHandler) OnStableUpdate(val interface{}, err error) {
+	log.Info("DeclarativeConfig WatchHandler OnStableUpdate")
 	// We receive an array of file contents (i.e. bytes) which contain valid YAML format (this has been achieved within
 	// OnUpdate, and OnStableUpdate will only be called _iff_ OnStable deemed the contents as valid YAMLs.
 	if err != nil {
