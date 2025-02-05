@@ -11,6 +11,7 @@ import (
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	clusterPostgresStore "github.com/stackrox/rox/central/cluster/store/cluster/postgres"
 	clusterHealthPostgresStore "github.com/stackrox/rox/central/cluster/store/clusterhealth/postgres"
+	clusterInitStore "github.com/stackrox/rox/central/clusterinit/store"
 	compliancePruning "github.com/stackrox/rox/central/complianceoperator/v2/pruner"
 	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
@@ -47,6 +48,7 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
@@ -74,6 +76,7 @@ type ClusterPostgresDataStoreTestSuite struct {
 	roleBindingDatastore      k8sRoleBindingDataStore.DataStore
 	imageIntegrationDatastore imageIntegrationDataStore.DataStore
 	clusterDatastore          DataStore
+	clusterInitStore          clusterInitStore.Store
 
 	clusterHealthDBStore clusterHealthPostgresStore.Store
 }
@@ -107,11 +110,12 @@ func (s *ClusterPostgresDataStoreTestSuite) SetupTest() {
 	s.roleDatastore = k8sRoleDataStore.GetTestPostgresDataStore(s.T(), s.db.DB)
 	s.roleBindingDatastore = k8sRoleBindingDataStore.GetTestPostgresDataStore(s.T(), s.db.DB)
 	s.imageIntegrationDatastore = imageIntegrationDataStore.GetTestPostgresDataStore(s.T(), s.db.DB)
+	s.clusterInitStore = clusterInitStore.GetTestPostgresDataStore(s.T(), s.db.DB)
 	s.clusterDatastore, err = New(clusterDBStore, s.clusterHealthDBStore, clusterCVEStore,
 		s.alertDatastore, s.imageIntegrationDatastore, s.nsDatastore, s.deploymentDatastore,
 		nodeStore, s.podDatastore, s.secretDatastore, netFlowStore, netEntityStore,
 		s.serviceAccountDatastore, s.roleDatastore, s.roleBindingDatastore, sensorCnxMgr, nil,
-		clusterRanker, networkBaselineM, compliancePruner)
+		clusterRanker, networkBaselineM, compliancePruner, s.clusterInitStore)
 	s.NoError(err)
 }
 
@@ -457,6 +461,13 @@ func (s *ClusterPostgresDataStoreTestSuite) TestLookupOrCreateClusterFromConfig(
 			}
 
 			ctx := sac.WithAllAccess(context.Background())
+			_ = s.clusterInitStore.Delete(ctx, bundleID)
+			err = s.clusterInitStore.Add(ctx, &storage.InitBundleMeta{
+				Id:        bundleID,
+				Name:      "human-readable-bundle-name",
+				CreatedAt: timestamppb.New(time.Now()),
+			})
+			s.NoError(err, "adding InitBundleMeta (init bundle or CRS) to clusterInitStore")
 
 			if c.shouldClusterBeUpserted {
 				clusterID, err = s.clusterDatastore.AddCluster(ctx, c.cluster)
