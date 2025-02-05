@@ -166,7 +166,7 @@ func GenerateImageComponentV2(os string, image *storage.Image, from *storage.Emb
 			LayerIndex: from.GetLayerIndex(),
 		}
 	}
-	
+
 	return ret
 }
 
