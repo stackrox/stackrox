@@ -185,6 +185,7 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/config"
+	"github.com/stackrox/rox/pkg/continuousprofiling"
 	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/devmode"
@@ -271,6 +272,11 @@ func runSafeMode() {
 
 func main() {
 	premain.StartMain()
+
+	if err := continuousprofiling.SetupContinuousProfilingClient(continuousprofiling.DefaultConfig().
+		WithAppName("central")); err != nil {
+		log.Errorf("unable to start continuous profiling: %v", err)
+	}
 
 	conf := config.GetConfig()
 	if conf == nil || conf.Maintenance.SafeMode {
