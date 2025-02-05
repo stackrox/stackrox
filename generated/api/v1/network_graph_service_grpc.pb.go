@@ -20,14 +20,15 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	NetworkGraphService_GetNetworkGraph_FullMethodName             = "/v1.NetworkGraphService/GetNetworkGraph"
-	NetworkGraphService_GetExternalNetworkEntities_FullMethodName  = "/v1.NetworkGraphService/GetExternalNetworkEntities"
-	NetworkGraphService_GetExternalNetworkFlows_FullMethodName     = "/v1.NetworkGraphService/GetExternalNetworkFlows"
-	NetworkGraphService_CreateExternalNetworkEntity_FullMethodName = "/v1.NetworkGraphService/CreateExternalNetworkEntity"
-	NetworkGraphService_PatchExternalNetworkEntity_FullMethodName  = "/v1.NetworkGraphService/PatchExternalNetworkEntity"
-	NetworkGraphService_DeleteExternalNetworkEntity_FullMethodName = "/v1.NetworkGraphService/DeleteExternalNetworkEntity"
-	NetworkGraphService_GetNetworkGraphConfig_FullMethodName       = "/v1.NetworkGraphService/GetNetworkGraphConfig"
-	NetworkGraphService_PutNetworkGraphConfig_FullMethodName       = "/v1.NetworkGraphService/PutNetworkGraphConfig"
+	NetworkGraphService_GetNetworkGraph_FullMethodName                 = "/v1.NetworkGraphService/GetNetworkGraph"
+	NetworkGraphService_GetExternalNetworkEntities_FullMethodName      = "/v1.NetworkGraphService/GetExternalNetworkEntities"
+	NetworkGraphService_GetExternalNetworkFlows_FullMethodName         = "/v1.NetworkGraphService/GetExternalNetworkFlows"
+	NetworkGraphService_GetExternalNetworkFlowsMetadata_FullMethodName = "/v1.NetworkGraphService/GetExternalNetworkFlowsMetadata"
+	NetworkGraphService_CreateExternalNetworkEntity_FullMethodName     = "/v1.NetworkGraphService/CreateExternalNetworkEntity"
+	NetworkGraphService_PatchExternalNetworkEntity_FullMethodName      = "/v1.NetworkGraphService/PatchExternalNetworkEntity"
+	NetworkGraphService_DeleteExternalNetworkEntity_FullMethodName     = "/v1.NetworkGraphService/DeleteExternalNetworkEntity"
+	NetworkGraphService_GetNetworkGraphConfig_FullMethodName           = "/v1.NetworkGraphService/GetNetworkGraphConfig"
+	NetworkGraphService_PutNetworkGraphConfig_FullMethodName           = "/v1.NetworkGraphService/PutNetworkGraphConfig"
 )
 
 // NetworkGraphServiceClient is the client API for NetworkGraphService service.
@@ -37,6 +38,7 @@ type NetworkGraphServiceClient interface {
 	GetNetworkGraph(ctx context.Context, in *NetworkGraphRequest, opts ...grpc.CallOption) (*NetworkGraph, error)
 	GetExternalNetworkEntities(ctx context.Context, in *GetExternalNetworkEntitiesRequest, opts ...grpc.CallOption) (*GetExternalNetworkEntitiesResponse, error)
 	GetExternalNetworkFlows(ctx context.Context, in *GetExternalNetworkFlowsRequest, opts ...grpc.CallOption) (*GetExternalNetworkFlowsResponse, error)
+	GetExternalNetworkFlowsMetadata(ctx context.Context, in *GetExternalNetworkFlowsMetadataRequest, opts ...grpc.CallOption) (*GetExternalNetworkFlowsMetadataResponse, error)
 	CreateExternalNetworkEntity(ctx context.Context, in *CreateNetworkEntityRequest, opts ...grpc.CallOption) (*storage.NetworkEntity, error)
 	PatchExternalNetworkEntity(ctx context.Context, in *PatchNetworkEntityRequest, opts ...grpc.CallOption) (*storage.NetworkEntity, error)
 	DeleteExternalNetworkEntity(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
@@ -76,6 +78,16 @@ func (c *networkGraphServiceClient) GetExternalNetworkFlows(ctx context.Context,
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetExternalNetworkFlowsResponse)
 	err := c.cc.Invoke(ctx, NetworkGraphService_GetExternalNetworkFlows_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *networkGraphServiceClient) GetExternalNetworkFlowsMetadata(ctx context.Context, in *GetExternalNetworkFlowsMetadataRequest, opts ...grpc.CallOption) (*GetExternalNetworkFlowsMetadataResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetExternalNetworkFlowsMetadataResponse)
+	err := c.cc.Invoke(ctx, NetworkGraphService_GetExternalNetworkFlowsMetadata_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -139,6 +151,7 @@ type NetworkGraphServiceServer interface {
 	GetNetworkGraph(context.Context, *NetworkGraphRequest) (*NetworkGraph, error)
 	GetExternalNetworkEntities(context.Context, *GetExternalNetworkEntitiesRequest) (*GetExternalNetworkEntitiesResponse, error)
 	GetExternalNetworkFlows(context.Context, *GetExternalNetworkFlowsRequest) (*GetExternalNetworkFlowsResponse, error)
+	GetExternalNetworkFlowsMetadata(context.Context, *GetExternalNetworkFlowsMetadataRequest) (*GetExternalNetworkFlowsMetadataResponse, error)
 	CreateExternalNetworkEntity(context.Context, *CreateNetworkEntityRequest) (*storage.NetworkEntity, error)
 	PatchExternalNetworkEntity(context.Context, *PatchNetworkEntityRequest) (*storage.NetworkEntity, error)
 	DeleteExternalNetworkEntity(context.Context, *ResourceByID) (*Empty, error)
@@ -161,6 +174,9 @@ func (UnimplementedNetworkGraphServiceServer) GetExternalNetworkEntities(context
 }
 func (UnimplementedNetworkGraphServiceServer) GetExternalNetworkFlows(context.Context, *GetExternalNetworkFlowsRequest) (*GetExternalNetworkFlowsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetExternalNetworkFlows not implemented")
+}
+func (UnimplementedNetworkGraphServiceServer) GetExternalNetworkFlowsMetadata(context.Context, *GetExternalNetworkFlowsMetadataRequest) (*GetExternalNetworkFlowsMetadataResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetExternalNetworkFlowsMetadata not implemented")
 }
 func (UnimplementedNetworkGraphServiceServer) CreateExternalNetworkEntity(context.Context, *CreateNetworkEntityRequest) (*storage.NetworkEntity, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateExternalNetworkEntity not implemented")
@@ -247,6 +263,24 @@ func _NetworkGraphService_GetExternalNetworkFlows_Handler(srv interface{}, ctx c
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NetworkGraphServiceServer).GetExternalNetworkFlows(ctx, req.(*GetExternalNetworkFlowsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NetworkGraphService_GetExternalNetworkFlowsMetadata_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetExternalNetworkFlowsMetadataRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NetworkGraphServiceServer).GetExternalNetworkFlowsMetadata(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NetworkGraphService_GetExternalNetworkFlowsMetadata_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NetworkGraphServiceServer).GetExternalNetworkFlowsMetadata(ctx, req.(*GetExternalNetworkFlowsMetadataRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -359,6 +393,10 @@ var NetworkGraphService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetExternalNetworkFlows",
 			Handler:    _NetworkGraphService_GetExternalNetworkFlows_Handler,
+		},
+		{
+			MethodName: "GetExternalNetworkFlowsMetadata",
+			Handler:    _NetworkGraphService_GetExternalNetworkFlowsMetadata_Handler,
 		},
 		{
 			MethodName: "CreateExternalNetworkEntity",
