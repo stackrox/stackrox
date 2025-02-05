@@ -42,7 +42,7 @@ func init() {
 	}
 }
 
-// Detector is the hook to determine if a Reader contains a certain compression
+// detector is the hook to determine if a Reader contains a certain compression
 // scheme.
 type detector struct {
 	// Mask is a bytemask for the bytes passed to Check.
@@ -55,7 +55,7 @@ type detector struct {
 	Check func([]byte) bool
 }
 
-// Detectors is the array of detection hooks.
+// detectors is the array of detection hooks.
 var detectors = [...]detector{
 	staticHeader(gzipHeader),
 	staticHeader(zstdHeader),
@@ -71,7 +71,7 @@ var detectors = [...]detector{
 	},
 }
 
-// StaticHeader is a helper to create a [detector] for has a constant byte
+// staticHeader is a helper to create a [detector] for has a constant byte
 // string.
 func staticHeader(h []byte) detector {
 	return detector{
@@ -89,7 +89,7 @@ var (
 	bzipHeader = []byte{'B', 'Z', 'h'}
 )
 
-// DetectCompression reports the compression type indicated based on the header
+// detectCompression reports the compression type indicated based on the header
 // contained in the passed byte slice.
 //
 // "CmpNone" is returned if all detectors report false, but it's possible that
@@ -135,7 +135,7 @@ func Detect(r io.Reader) (io.ReadCloser, Compression, error) {
 	return detect(r)
 }
 
-// Detect (unexported) does the actual work for both [Detect] and [Reader].
+// detect (unexported) does the actual work for both [Detect] and [Reader].
 func detect(r io.Reader) (io.ReadCloser, Compression, error) {
 	br := bufio.NewReader(r)
 	// Populate a buffer with enough bytes to determine what header is at the

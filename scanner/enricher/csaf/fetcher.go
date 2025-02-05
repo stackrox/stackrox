@@ -42,7 +42,7 @@ type fingerprint struct {
 	version                    string
 }
 
-// ParseFingerprint takes a generic driver.Fingerprint and creates a vex.fingerprint.
+// parseFingerprint takes a generic driver.Fingerprint and creates a vex.fingerprint.
 // The string format saved in the DB is returned by the fingerprint.String() method.
 func parseFingerprint(in driver.Fingerprint) (*fingerprint, error) {
 	fp := string(in)
@@ -131,7 +131,7 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint)
 	defer cancel()
 
 	if compressedURL == nil {
-		return nil, hint, fmt.Errorf("compressed file URL needs to be populated")
+		return nil, hint, errors.New("compressed file URL needs to be populated")
 	}
 	req, err := http.NewRequestWithContext(rctx, http.MethodGet, compressedURL.String(), nil)
 	if err != nil {
@@ -265,7 +265,7 @@ func (e *Enricher) getLastModified(ctx context.Context, cu *url.URL) (time.Time,
 	return time.Parse(http.TimeFormat, lm)
 }
 
-// ProcessChanges deals with the published changes.csv, adding records
+// processChanges deals with the published changes.csv, adding records
 // to w means they are deemed to have changed since the compressed
 // file was last processed. w and fp can be modified.
 func (e *Enricher) processChanges(ctx context.Context, w io.Writer, fp *fingerprint, changed map[string]bool) error {
@@ -310,7 +310,7 @@ func (e *Enricher) processChanges(ctx context.Context, w io.Writer, fp *fingerpr
 		return fmt.Errorf("unable to copy resp body to tempfile: %w", err)
 	}
 	if n, err := tf.Seek(0, io.SeekStart); err != nil || n != 0 {
-		return fmt.Errorf("unable to seek changes to start: at %d, %v", n, err)
+		return fmt.Errorf("unable to seek changes to start: at %d, %w", n, err)
 	}
 
 	rd := csv.NewReader(tf)
@@ -325,7 +325,7 @@ func (e *Enricher) processChanges(ctx context.Context, w io.Writer, fp *fingerpr
 		buf.Reset()
 		bc.Reset()
 		if len(rec) != 2 {
-			return fmt.Errorf("could not parse changes.csv file")
+			return errors.New("could not parse changes.csv file")
 		}
 
 		cvePath, uTime := rec[0], rec[1]
@@ -395,7 +395,7 @@ func (e *Enricher) processChanges(ctx context.Context, w io.Writer, fp *fingerpr
 	return nil
 }
 
-// CheckResponse takes a http.Response and a variadic of ints representing
+// checkResponse takes a http.Response and a variadic of ints representing
 // acceptable http status codes. The error returned will attempt to include
 // some content from the server's response.
 func checkResponse(resp *http.Response, acceptableCodes ...int) error {
