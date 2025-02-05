@@ -899,17 +899,24 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 			cluster.HelmConfig = clusterConfig.CloneVT()
 		}
 
-		clusterId, err := ds.addClusterNoLock(ctx, cluster)
+		_, err := ds.addClusterNoLock(ctx, cluster)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to dynamically add cluster with name %q", clusterName)
 		}
-
-		if err := ds.clusterInitStore.RecordInitiatedRegistration(ctx, registrantID, clusterId); err != nil {
-			log.Warnf("cluster %q has been added, but recording the cluster registration using registrant ID %q failed", clusterName, registrantID)
-			return nil, errors.Wrapf(err, "recording cluster registration for registrant ID %q", registrantID)
-		}
 	} else {
 		return nil, errors.New("neither a cluster ID nor a cluster name was specified")
+	}
+
+	if cluster.GetInitBundleId() != "" && cluster.GetHealthStatus().GetLastContact() == nil {
+		// (Idempotent) Bookkeeping for initiated registrations in case the cluster still has an init artifact ID
+		// attached to it and the cluster did not connect so far.
+		// The init artifact ID will be removed when the cluster connects with issued service certificates for the
+		// first time, *after* the bookkeeping for completed registrations took place.
+		if err := ds.clusterInitStore.RecordInitiatedRegistration(ctx, cluster.GetInitBundleId(), cluster.GetId()); err != nil {
+			log.Warnf("cluster %q/%s has been added, but recording the cluster registration using registrant ID %q failed",
+				cluster.GetName(), cluster.GetId(), cluster.GetInitBundleId())
+			return nil, errors.Wrapf(err, "recording cluster registration for registrant ID %q", cluster.GetInitBundleId())
+		}
 	}
 
 	if manager != storage.ManagerType_MANAGER_TYPE_MANUAL && isExisting {
