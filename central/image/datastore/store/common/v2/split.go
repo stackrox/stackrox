@@ -37,14 +37,12 @@ func splitComponents(parts ImageParts) []ComponentParts {
 	addedComponents := set.NewStringSet()
 	for _, component := range parts.Image.GetScan().GetComponents() {
 		generatedComponent := GenerateImageComponent(parts.Image.GetScan().GetOperatingSystem(), component)
-		generatedComponentV2 := GenerateImageComponentV2(parts.Image.GetScan().GetOperatingSystem(), parts.Image, component)
 		if !addedComponents.Add(generatedComponent.GetId()) {
 			continue
 		}
 
 		cp := ComponentParts{}
 		cp.Component = generatedComponent
-		cp.ComponentV2 = generatedComponentV2
 		cp.Edge = generateImageComponentEdge(parts.Image, cp.Component, component)
 		cp.Children = splitCVEs(parts, cp, component)
 
