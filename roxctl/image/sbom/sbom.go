@@ -89,7 +89,7 @@ func (i *imageSBOMCommand) construct(cobraCmd *cobra.Command) error {
 	}
 
 	// Create the request.
-	req := apiparams.SbomRequestBody{
+	req := apiparams.SBOMRequestBody{
 		Cluster:   i.cluster,
 		ImageName: i.image,
 		Force:     i.force,
