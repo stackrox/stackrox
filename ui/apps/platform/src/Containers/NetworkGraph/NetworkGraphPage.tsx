@@ -3,7 +3,6 @@ import {
     Alert,
     AlertActionCloseButton,
     Bullseye,
-    Button,
     Divider,
     PageSection,
     Spinner,
@@ -51,6 +50,8 @@ import { getPropertiesForAnalytics } from './utils/networkGraphURLUtils';
 import getSimulation from './utils/getSimulation';
 import { getSearchFilterFromScopeHierarchy } from './utils/simulatorUtils';
 import CIDRFormModal from './components/CIDRFormModal';
+import { CIDRFormModalProvider } from './components/CIDRFormModalProvider';
+import CIDRFormModalButton from './components/CIDRFormModalButton';
 
 import './NetworkGraphPage.css';
 
@@ -97,7 +98,6 @@ function NetworkGraphPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [timeWindow, setTimeWindow] = useState<(typeof timeWindows)[number]>(timeWindows[0]);
     const [lastUpdatedTime, setLastUpdatedTime] = useState<string>('');
-    const [isCIDRBlockFormOpen, setIsCIDRBlockFormOpen] = useState(false);
     const [isBannerDismissed, setIsBannerDismissed] = useState(false);
 
     const { analyticsTrack } = useAnalytics();
@@ -279,21 +279,17 @@ function NetworkGraphPage() {
         deploymentCount,
     ]);
 
-    function toggleCIDRBlockForm() {
-        if (!isCIDRBlockFormOpen) {
-            const properties = getPropertiesForAnalytics(searchFilter);
+    function onCIDRFormModalOpenCallback() {
+        const properties = getPropertiesForAnalytics(searchFilter);
 
-            analyticsTrack({
-                event: CIDR_BLOCK_FORM_OPENED,
-                properties,
-            });
-        }
-
-        setIsCIDRBlockFormOpen(!isCIDRBlockFormOpen);
+        analyticsTrack({
+            event: CIDR_BLOCK_FORM_OPENED,
+            properties,
+        });
     }
 
     return (
-        <>
+        <CIDRFormModalProvider>
             {!isBannerDismissed && (
                 <Alert
                     variant="info"
@@ -339,13 +335,13 @@ function NetworkGraphPage() {
                             >
                                 {hasWriteAccessForBlocks && (
                                     <ToolbarItem>
-                                        <Button
+                                        <CIDRFormModalButton
                                             variant="secondary"
-                                            onClick={toggleCIDRBlockForm}
                                             isDisabled={!selectedClusterId}
+                                            onOpenCallback={onCIDRFormModalOpenCallback}
                                         >
                                             Manage CIDR blocks
-                                        </Button>
+                                        </CIDRFormModalButton>
                                     </ToolbarItem>
                                 )}
                                 {hasReadAccessForGenerator && (
@@ -440,13 +436,9 @@ function NetworkGraphPage() {
                         scopeHierarchy={scopeHierarchy}
                     />
                 )}
-                <CIDRFormModal
-                    selectedClusterId={selectedClusterId || ''}
-                    isOpen={isCIDRBlockFormOpen}
-                    onClose={toggleCIDRBlockForm}
-                />
+                <CIDRFormModal selectedClusterId={selectedClusterId || ''} />
             </PageSection>
-        </>
+        </CIDRFormModalProvider>
     );
 }
 
