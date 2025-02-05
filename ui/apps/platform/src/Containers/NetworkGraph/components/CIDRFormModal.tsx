@@ -76,12 +76,19 @@ function CIDRFormModal({ selectedClusterId }: CIDRFormModalProps) {
           }
         : emptyCIDRBlockRow;
 
-    const initialValues = {
-        entities:
-            CIDRBlocks.entities.length > 0
-                ? [...CIDRBlocks.entities]
-                : [...CIDRBlocks.entities, initialCIDRBlockRow],
-    };
+    let initialValues;
+
+    if (CIDRBlocks.entities.length === 0) {
+        initialValues = {
+            entities: [initialCIDRBlockRow],
+        };
+    } else {
+        initialValues = {
+            entities: initialCIDRFormValue
+                ? [...CIDRBlocks.entities, initialCIDRBlockRow]
+                : [...CIDRBlocks.entities],
+        };
+    }
 
     const formik = useFormik({
         initialValues,
