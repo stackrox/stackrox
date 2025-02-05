@@ -7,11 +7,9 @@ import {
     clustersBasePath,
     configManagementPath,
     urlEntityListTypes,
-    violationsBasePath,
+    violationsFullViewPath,
     vulnerabilitiesWorkloadCvesPath,
 } from 'routePaths';
-import { filteredWorkflowViewKey } from 'Components/FilteredWorkflowViewSelector/useFilteredWorkflowViewURLState';
-import { fullWorkflowView } from 'Components/FilteredWorkflowViewSelector/types';
 import { resourceTypes } from 'constants/entityTypes';
 import { generatePathWithQuery } from 'utils/searchUtils';
 
@@ -60,7 +58,7 @@ function SummaryCounts({ hasReadAccessForResource }: SummaryCountsProps): ReactE
     const tileLinks: Record<TileResource, string> = {
         Cluster: clustersBasePath,
         Node: `${configManagementPath}/${urlEntityListTypes[resourceTypes.NODE]}`,
-        Alert: `${violationsBasePath}?${filteredWorkflowViewKey}=${fullWorkflowView}`,
+        Alert: violationsFullViewPath,
         Deployment: `${configManagementPath}/${urlEntityListTypes[resourceTypes.DEPLOYMENT]}`,
         Image: generatePathWithQuery(
             vulnerabilitiesWorkloadCvesPath,

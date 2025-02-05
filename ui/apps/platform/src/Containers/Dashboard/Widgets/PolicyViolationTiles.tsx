@@ -1,14 +1,12 @@
 import React, { CSSProperties } from 'react';
 import { Button, Flex, FlexItem, Stack, StackItem } from '@patternfly/react-core';
 
-import { violationsBasePath } from 'routePaths';
+import { violationsFullViewPath } from 'routePaths';
 import { SearchFilter } from 'types/search';
 import { getUrlQueryStringForSearchFilter } from 'utils/searchUtils';
 import { severityLabels } from 'messages/common';
 import { policySeverityColorMap } from 'constants/severityColors';
 import { policySeverities, PolicySeverity } from 'types/policy.proto';
-import { filteredWorkflowViewKey } from 'Components/FilteredWorkflowViewSelector/useFilteredWorkflowViewURLState';
-import { fullWorkflowView } from 'Components/FilteredWorkflowViewSelector/types';
 import LinkShim from 'Components/PatternFly/LinkShim';
 
 import './SeverityTile.css';
@@ -46,7 +44,7 @@ function linkToViolations(searchFilter, severity) {
         ...searchFilter,
         Severity: severity,
     });
-    return `${violationsBasePath}?${queryString}&${filteredWorkflowViewKey}=${fullWorkflowView}`;
+    return `${violationsFullViewPath}&${queryString}`;
 }
 
 export type PolicyViolationTilesProps = {
