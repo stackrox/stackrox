@@ -127,7 +127,7 @@ func (s *updaterTestSuite) TestDelete_Successful() {
 	failedIDs, deletedCount, err := s.updater.DeleteResources(s.ctx, scopes[2].GetId())
 	s.NoError(err)
 	s.Empty(failedIDs)
-	s.Equal(len(scopes), deletedCount)
+	s.Equal(len(scopes)-1, deletedCount)
 
 	_, exists, err := s.updater.roleDS.GetAccessScope(s.ctx, scopes[0].GetId())
 	s.False(exists)
@@ -203,7 +203,7 @@ func (s *updaterTestSuite) TestDelete_Error() {
 	failedIDs, deletedCount, err := s.updater.DeleteResources(s.ctx)
 	s.Error(err)
 	s.ElementsMatch([]string{scopes[0].GetId(), scopes[1].GetId()}, failedIDs)
-	s.Equal(1, deletedCount)
+	s.Equal(0, deletedCount)
 
 	health, exists, err := s.updater.healthDS.GetDeclarativeConfig(s.ctx, scopes[0].GetId())
 	s.NoError(err)

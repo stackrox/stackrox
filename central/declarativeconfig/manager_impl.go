@@ -280,7 +280,7 @@ func (m *managerImpl) reconcileTransformedMessages(transformedMessagesByHandler 
 	}
 
 	log.Infof("Declarative config - Reconciliation loop run - %d update successes, %d update errors, "+
-		"%d deletion successes, %d update errors", upsertCount, failedUpsertCount, deleteCount, failedDeleteCount)
+		"%d deletion successes, %d deletion errors", upsertCount, failedUpsertCount, deleteCount, failedDeleteCount)
 }
 
 func (m *managerImpl) doUpsert(transformedMessagesByHandler map[string]protoMessagesByType) (int, int) {
