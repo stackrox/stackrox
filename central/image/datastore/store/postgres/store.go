@@ -349,8 +349,8 @@ func copyFromImageCves(ctx context.Context, tx *postgres.Tx, iTime time.Time, ob
 		"impactscore",
 		"snoozed",
 		"snoozeexpiry",
-		"cvebaseinfo_epss_epssprobability",
 		"serialized",
+		"cvebaseinfo_epss_epssprobability",
 	}
 
 	ids := set.NewStringSet()
@@ -377,7 +377,7 @@ func copyFromImageCves(ctx context.Context, tx *postgres.Tx, iTime time.Time, ob
 			return marshalErr
 		}
 
-		inputRows = append(inputRows, []interface{}{
+		row := []interface{}{
 			obj.GetId(),
 			obj.GetCveBaseInfo().GetCve(),
 			protocompat.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
@@ -389,9 +389,16 @@ func copyFromImageCves(ctx context.Context, tx *postgres.Tx, iTime time.Time, ob
 			obj.GetImpactScore(),
 			obj.GetSnoozed(),
 			protocompat.NilOrTime(obj.GetSnoozeExpiry()),
-			obj.GetCveBaseInfo().GetEpss().GetEpssProbability(),
 			serialized,
-		})
+		}
+
+		if epss := obj.GetCveBaseInfo().GetEpss(); epss != nil {
+			row = append(row, epss.GetEpssProbability())
+		} else {
+			row = append(row, nil)
+		}
+
+		inputRows = append(inputRows, row)
 
 		// Add the id to be deleted.
 		deletes = append(deletes, obj.GetId())

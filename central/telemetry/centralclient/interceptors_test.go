@@ -20,9 +20,11 @@ func withUserAgent(_ *testing.T, headers map[string][]string, ua string) func(st
 }
 
 func Test_apiCall(t *testing.T) {
+	noProps := make(map[string]any)
 	cases := map[string]struct {
-		rp       *phonehome.RequestParams
-		expected bool
+		rp            *phonehome.RequestParams
+		expected      bool
+		expectedProps map[string]any
 	}{
 		"roxctl": {
 			rp: &phonehome.RequestParams{
@@ -31,7 +33,8 @@ func Test_apiCall(t *testing.T) {
 				Path:    "/v1/endpoint",
 				Code:    200,
 			},
-			expected: true,
+			expected:      true,
+			expectedProps: map[string]any{"User-Agent": "Some roxctl client"},
 		},
 		"not roxctl": {
 			rp: &phonehome.RequestParams{
@@ -40,7 +43,18 @@ func Test_apiCall(t *testing.T) {
 				Path:    "/v1/endpoint",
 				Code:    200,
 			},
-			expected: false,
+			expected:      false,
+			expectedProps: noProps,
+		},
+		"don't catch user-agent": {
+			rp: &phonehome.RequestParams{
+				Headers: withUserAgent(t, nil, "Some client"),
+				Method:  "GET",
+				Path:    "/v1/test-endpoint",
+				Code:    200,
+			},
+			expected:      true,
+			expectedProps: noProps,
 		},
 		"roxctl ignored path": {
 			rp: &phonehome.RequestParams{
@@ -49,7 +63,8 @@ func Test_apiCall(t *testing.T) {
 				Path:    "/v1/ping",
 				Code:    200,
 			},
-			expected: false,
+			expected:      false,
+			expectedProps: noProps,
 		},
 		"ServiceNow clusters": {
 			rp: &phonehome.RequestParams{
@@ -58,7 +73,8 @@ func Test_apiCall(t *testing.T) {
 				Path:    "/v1/clusters",
 				Code:    200,
 			},
-			expected: true,
+			expected:      true,
+			expectedProps: map[string]any{"User-Agent": "Some ServiceNow client"},
 		},
 		"ServiceNow deployments": {
 			rp: &phonehome.RequestParams{
@@ -67,7 +83,8 @@ func Test_apiCall(t *testing.T) {
 				Path:    "/v1/deployments",
 				Code:    200,
 			},
-			expected: false,
+			expected:      false,
+			expectedProps: noProps,
 		},
 		"ServiceNow from integration": {
 			rp: &phonehome.RequestParams{
@@ -79,12 +96,20 @@ func Test_apiCall(t *testing.T) {
 				Code:   200,
 			},
 			expected: true,
+			expectedProps: map[string]any{
+				snowIntegrationHeader: "v1.0.3",
+				"User-Agent":          "RHACS Integration ServiceNow client"},
 		},
 	}
+	telemetryCampaign = append(telemetryCampaign, &phonehome.APICallCampaignCriterion{
+		Path: phonehome.Pattern("*test*").Ptr(),
+	})
 	require.NoError(t, telemetryCampaign.Compile())
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			assert.Equal(t, c.expected, apiCall(c.rp, nil))
+			props := make(map[string]any)
+			assert.Equal(t, c.expected, apiCall(c.rp, props))
+			assert.Equal(t, c.expectedProps, props)
 		})
 	}
 }
@@ -103,7 +128,7 @@ func Test_addCustomHeaders(t *testing.T) {
 			},
 		}
 		props := map[string]any{}
-		addCustomHeaders(rp, props)
+		addCustomHeaders(rp, telemetryCampaign[1], props)
 		assert.Equal(t, map[string]any{
 			userAgentHeaderKey:    "RHACS Integration ServiceNow client",
 			snowIntegrationHeader: "v1.0.3; beta",
@@ -122,7 +147,7 @@ func Test_addCustomHeaders(t *testing.T) {
 			},
 		}
 		props := map[string]any{}
-		addCustomHeaders(rp, props)
+		addCustomHeaders(rp, telemetryCampaign[1], props)
 		assert.Equal(t, map[string]any{
 			userAgentHeaderKey: "ServiceNow",
 		}, props)
@@ -142,12 +167,35 @@ func Test_addCustomHeaders(t *testing.T) {
 			},
 		}
 		props := map[string]any{}
-		addCustomHeaders(rp, props)
+		addCustomHeaders(rp, telemetryCampaign[0], props)
 		assert.Equal(t, map[string]any{
 			userAgentHeaderKey:                  "roxctl",
 			clientconn.RoxctlCommandHeader:      "central",
 			clientconn.RoxctlCommandIndexHeader: "1",
 			clientconn.ExecutionEnvironment:     "github",
 		}, props)
+	})
+	t.Run("add header from the single criterion", func(t *testing.T) {
+		previousCampaign := telemetryCampaign
+		telemetryCampaign = append(telemetryCampaign, &phonehome.APICallCampaignCriterion{
+			Headers: map[string]phonehome.Pattern{"Custom-Header": ""},
+		})
+		require.NoError(t, telemetryCampaign.Compile())
+		rp := &phonehome.RequestParams{
+			Method: "GET",
+			Path:   "/v1/config",
+			Code:   200,
+			Headers: func(h string) []string {
+				return map[string][]string{
+					userAgentHeaderKey: {"roxctl"},
+				}[h]
+			},
+		}
+		props := map[string]any{}
+		addCustomHeaders(rp, telemetryCampaign[0], props)
+		assert.Equal(t, map[string]any{
+			userAgentHeaderKey: "roxctl",
+		}, props)
+		telemetryCampaign = previousCampaign
 	})
 }

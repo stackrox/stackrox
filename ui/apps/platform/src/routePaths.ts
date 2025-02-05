@@ -65,6 +65,9 @@ export const systemHealthPath = `${mainPath}/system-health`;
 export const userBasePath = `${mainPath}/user`;
 export const userRolePath = `${userBasePath}/roles/:roleName`;
 export const violationsBasePath = `${mainPath}/violations`;
+export const violationsUserWorkloadsViewPath = `${mainPath}/violations?filteredWorkflowView=Application view`;
+export const violationsPlatformViewPath = `${mainPath}/violations?filteredWorkflowView=Platform view`;
+export const violationsFullViewPath = `${mainPath}/violations?filteredWorkflowView=Full view`;
 export const violationsPath = `${violationsBasePath}/:alertId?`;
 export const vulnManagementPath = `${mainPath}/vulnerability-management`;
 // TODO Deprecate these paths
@@ -78,6 +81,7 @@ export const vulnerabilitiesNodeCvesPath = `${vulnerabilitiesBasePath}/node-cves
 // System defined "views"
 export const vulnerabilitiesAllImagesPath = `${vulnerabilitiesBasePath}/all-images`;
 export const vulnerabilitiesInactiveImagesPath = `${vulnerabilitiesBasePath}/inactive-images`;
+export const vulnerabilitiesImagesWithoutCvesPath = `${vulnerabilitiesBasePath}/images-without-cves`;
 // user-workload template views path
 export const vulnerabilitiesViewPath = `${vulnerabilitiesBasePath}/results/:viewTemplate/:viewId`;
 
@@ -170,6 +174,7 @@ export type RouteKey =
     | 'vulnerabilities/platform'
     | 'vulnerabilities/all-images'
     | 'vulnerabilities/inactive-images'
+    | 'vulnerabilities/images-without-cves'
     | 'vulnerabilities/platform-cves'
     | 'vulnerabilities/workload-cves'
     | 'vulnerability-management'
@@ -337,6 +342,10 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource(['Deployment', 'Image']),
     },
     'vulnerabilities/inactive-images': {
+        featureFlagRequirements: allEnabled(['ROX_PLATFORM_CVE_SPLIT']),
+        resourceAccessRequirements: everyResource(['Deployment', 'Image']),
+    },
+    'vulnerabilities/images-without-cves': {
         featureFlagRequirements: allEnabled(['ROX_PLATFORM_CVE_SPLIT']),
         resourceAccessRequirements: everyResource(['Deployment', 'Image']),
     },

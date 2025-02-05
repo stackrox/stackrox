@@ -13,6 +13,7 @@ import { gql, useApolloClient, useQuery } from '@apollo/client';
 import cloneDeep from 'lodash/cloneDeep';
 import difference from 'lodash/difference';
 import isEmpty from 'lodash/isEmpty';
+import isEqual from 'lodash/isEqual';
 
 import useURLSearch from 'hooks/useURLSearch';
 import useURLStringUnion from 'hooks/useURLStringUnion';
@@ -156,18 +157,27 @@ function WorkloadCvesOverviewPage() {
 
     const { searchFilter, setSearchFilter: setURLSearchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
-    const [activeEntityTabKey, setActiveEntityTabKey] = useURLStringUnion(
-        'entityTab',
-        workloadEntityTabValues
-    );
     const [observedCveMode, setObservedCveMode] = useURLStringUnion(
         'observedCveMode',
         observedCveModeValues
     );
 
-    const defaultSearchFilterEntity = getSearchFilterEntityByTab(activeEntityTabKey);
+    // TODO Once the 'ROX_PLATFORM_CVE_SPLIT' flag is removed, we can get rid
+    // of the `observedCveMode` state and potentially abstract the detection of "zero cve view"
+    // in a way that doesn't require reading the base applied filters
+    const isViewingWithCves = isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT')
+        ? !(
+              'Image CVE Count' in baseSearchFilter &&
+              isEqual(baseSearchFilter['Image CVE Count'], ['0'])
+          )
+        : observedCveMode === 'WITH_CVES';
 
-    const isViewingWithCves = observedCveMode === 'WITH_CVES';
+    const [activeEntityTabKey, setActiveEntityTabKey] = useURLStringUnion(
+        'entityTab',
+        workloadEntityTabValues,
+        isViewingWithCves ? 'CVE' : 'Image'
+    );
+    const defaultSearchFilterEntity = getSearchFilterEntityByTab(activeEntityTabKey);
 
     // If the user is viewing observed CVEs, we need to scope the query based on
     // the selected vulnerability state. If the user is viewing _without_ CVEs, we
@@ -265,9 +275,9 @@ function WorkloadCvesOverviewPage() {
         // Reset all filters, sorting, and pagination and apply to the current history entry
         pagination.setPage(1);
         setSearchFilter({});
-        if (activeEntityTabKey === 'CVE') {
+        if (mode === 'WITHOUT_CVES' && activeEntityTabKey !== 'Deployment') {
             setActiveEntityTabKey('Image');
-            sort.setSortOption(getDefaultSortOption('Image'));
+            sort.setSortOption(getDefaultZeroCveSortOption('Image'));
         }
 
         // Re-apply the default filters when changing modes to the "WITH_CVES" mode
@@ -392,14 +402,15 @@ function WorkloadCvesOverviewPage() {
                 >
                     <VulnerabilityStateTabs onChange={onVulnerabilityStateChange} />
                 </PageSection>
-                {currentVulnerabilityState === 'OBSERVED' && (
-                    <PageSection className="pf-v5-u-py-md" component="div" variant="light">
-                        <ObservedCveModeSelect
-                            observedCveMode={observedCveMode}
-                            setObservedCveMode={onChangeObservedCveMode}
-                        />
-                    </PageSection>
-                )}
+                {currentVulnerabilityState === 'OBSERVED' &&
+                    !isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT') && (
+                        <PageSection className="pf-v5-u-py-md" component="div" variant="light">
+                            <ObservedCveModeSelect
+                                observedCveMode={observedCveMode}
+                                setObservedCveMode={onChangeObservedCveMode}
+                            />
+                        </PageSection>
+                    )}
                 <PageSection isCenterAligned>
                     <Card>
                         <CardBody>
@@ -413,13 +424,13 @@ function WorkloadCvesOverviewPage() {
                                     <Title headingLevel="h2">
                                         {getViewStateTitle(
                                             currentVulnerabilityState ?? 'OBSERVED',
-                                            observedCveMode
+                                            isViewingWithCves
                                         )}
                                     </Title>
                                     <Text className="pf-v5-u-font-size-sm">
                                         {getViewStateDescription(
                                             currentVulnerabilityState ?? 'OBSERVED',
-                                            observedCveMode
+                                            isViewingWithCves
                                         )}
                                     </Text>
                                 </FlexItem>

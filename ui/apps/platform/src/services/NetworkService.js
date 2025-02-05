@@ -458,6 +458,35 @@ export function applyNetworkPolicyModification(clusterId, modification) {
 }
 
 /**
+ * Fetches flows for a single external entity.
+ *
+ * @returns {Promise<Object, Error>}
+ */
+export function getExternalNetworkFlows(
+    clusterId,
+    entityId,
+    namespaces,
+    deployments,
+    { sortOption, page, perPage, advancedFilters }
+) {
+    const searchFilter = {
+        ...(namespaces.length && {
+            Namespace: namespaces.map(convertToExactMatch).join(','),
+        }),
+        ...(deployments.length && {
+            Deployment: deployments.map(convertToExactMatch).join(','),
+        }),
+        ...advancedFilters,
+    };
+    const params = getListQueryParams({ searchFilter, sortOption, page, perPage });
+    return axios
+        .get(
+            `${networkFlowBaseUrl}/cluster/${clusterId}/externalentities/${entityId}/flows?${params}`
+        )
+        .then((response) => response.data);
+}
+
+/**
  * Fetches external IPs metadata.
  * default=false && discovered=true: shows only external-IPs detected by the Collectors.
  *
