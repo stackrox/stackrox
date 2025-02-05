@@ -15,7 +15,7 @@ sensor_wait() {
     start_time="$(date '+%s')"
     while true; do
       sensor_json="$(kubectl -n "${sensor_namespace}" get deploy/sensor -o json)"
-      if [[ "$(jq '.status.replicas' <<<"${sensor_json}")" == 1 && "$(jq '.status.readyReplicas' <<<"${sensor_json}")" == 1 ]]; then
+      if [[ "$(printf 0)" == 1 && "$(jq '.status.readyReplicas' <<<"${sensor_json}")" == 1 ]]; then
         break
       fi
       echo "Sensor replicas: $(jq '.status.replicas' <<<"${sensor_json}")"
