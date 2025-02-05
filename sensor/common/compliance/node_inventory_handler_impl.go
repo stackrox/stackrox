@@ -391,6 +391,7 @@ func attachRPMtoRHCOS(version, arch string, rpm *v4.IndexReport) *v4.IndexReport
 		oci.Contents.Environments[envId] = list
 	}
 	oci.Contents.Distributions = rpm.GetContents().GetDistributions()
+	log.Debugf("Index Report Packages:\n%+v", oci.GetContents().GetPackages())
 	return oci
 }
 
