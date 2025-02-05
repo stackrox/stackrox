@@ -180,7 +180,6 @@ func TestGetScannerV4CertExpiry(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func genGetExpiryFunc(expiries map[mtls.Subject]*time.Time) func(context.Context, mtls.Subject, *tls.Config, string) (*time.Time, error) {

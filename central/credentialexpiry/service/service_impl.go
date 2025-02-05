@@ -4,7 +4,9 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/hex"
 	"fmt"
+	"net"
 	"sort"
 	"strings"
 	"time"
@@ -14,6 +16,7 @@ import (
 	iiDStore "github.com/stackrox/rox/central/imageintegration/datastore"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
@@ -21,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/scanners/scannerv4"
 	"github.com/stackrox/rox/pkg/tlsutils"
@@ -54,6 +58,8 @@ func (s *serviceImpl) GetCertExpiry(ctx context.Context, request *v1.GetCertExpi
 		return s.getScannerCertExpiry(ctx)
 	case v1.GetCertExpiry_SCANNER_V4:
 		return s.getScannerV4CertExpiry(ctx)
+	case v1.GetCertExpiry_CENTRAL_DB:
+		return s.getCentralDBCertExpiry()
 	}
 	return nil, errors.Wrapf(errox.InvalidArgs, "invalid component: %v", request.GetComponent())
 }
@@ -63,6 +69,7 @@ func (s *serviceImpl) getCentralCertExpiry() (*v1.GetCertExpiry_Response, error)
 	if err != nil {
 		return nil, errors.Errorf("failed to retrieve leaf certificate: %v", err)
 	}
+
 	if len(cert.Certificate) == 0 {
 		return nil, errors.New("no central cert found")
 	}
@@ -75,6 +82,80 @@ func (s *serviceImpl) getCentralCertExpiry() (*v1.GetCertExpiry_Response, error)
 		return nil, errors.Errorf("failed to convert timestamp: %v", err)
 	}
 	return &v1.GetCertExpiry_Response{Expiry: expiry}, nil
+}
+
+func (s *serviceImpl) getCentralDBCertExpiry() (*v1.GetCertExpiry_Response, error) {
+	pgConfigMap, _, err := pgconfig.GetPostgresConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "Error reading central db config")
+	}
+	if pgConfigMap == nil {
+		return nil, errors.Wrap(errox.NotFound, "Central db config not found")
+	}
+
+	host, ok := pgConfigMap["host"]
+	if !ok {
+		return nil, errors.Wrap(errox.InvalidArgs, "'host' parameter not defined in central db config")
+	}
+	port, ok := pgConfigMap["port"]
+	if !ok {
+		return nil, errors.Wrap(errox.InvalidArgs, "'port' parameter not defined in central db config")
+	}
+	endpoint := fmt.Sprintf("%s:%s", host, port)
+
+	conn, err := net.Dial("tcp", endpoint)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Failed to dial central db on endpoint '%s'", endpoint)
+	}
+	defer utils.IgnoreError(conn.Close)
+
+	sslRequestBlob, err := hex.DecodeString("0000000804D2162F")
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to generate central db connection initiation message")
+	}
+	_, err = conn.Write(sslRequestBlob)
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to send initiation message to central db")
+	}
+	reply := make([]byte, 1)
+	_, err = conn.Read(reply)
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to receive a reply from central db")
+	}
+
+	tlsConfig, err := clientconn.TLSConfig(mtls.CentralDBSubject, clientconn.TLSConfigOptions{
+		UseClientCert:      clientconn.MustUseClientCert,
+		InsecureSkipVerify: true,
+	})
+	if err != nil {
+		return nil, errors.Wrapf(err, "Failed to initialize TLS config for %q", mtls.CentralDBSubject.Identifier)
+	}
+
+	client := tls.Client(conn, tlsConfig)
+	if client == nil {
+		return nil, errors.New("Failed to initialize TLS client")
+	}
+	err = client.Handshake()
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed TLS handshake with central db")
+	}
+
+	certs := client.ConnectionState().PeerCertificates
+	if len(certs) == 0 {
+		return nil, errors.Errorf("%q at %s returned no peer certs", mtls.CentralDBSubject.Identifier, endpoint)
+	}
+	leafCert := certs[0]
+	if cn := leafCert.Subject.CommonName; cn != mtls.CentralDBSubject.CN() {
+		return nil, errors.Errorf("common name of %q at %s (%s) is not as expected", mtls.CentralDBSubject.Identifier, endpoint, cn)
+	}
+	if leafCert == nil || leafCert.NotAfter.IsZero() {
+		return &v1.GetCertExpiry_Response{Expiry: nil}, nil
+	}
+	certExpiry, err := protocompat.ConvertTimeToTimestampOrError(leafCert.NotAfter)
+	if err != nil {
+		return nil, err
+	}
+	return &v1.GetCertExpiry_Response{Expiry: certExpiry}, nil
 }
 
 // ensureTLSAndReturnAddr returns an address from endpoint that can be passed to tls.Dial,
