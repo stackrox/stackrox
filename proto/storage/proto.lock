@@ -11992,6 +11992,11 @@
                 "id": 7,
                 "name": "client_cert_auth_config",
                 "type": "ClientCertAuthConfig"
+              },
+              {
+                "id": 8,
+                "name": "wif_enabled",
+                "type": "bool"
               }
             ],
             "messages": [

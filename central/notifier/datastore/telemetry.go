@@ -51,8 +51,9 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 	}
 
 	cloudCredentialsEnabledNotifiersCount := map[string]int{
-		pkgNotifiers.AWSSecurityHubType: 0,
-		pkgNotifiers.CSCCType:           0,
+		pkgNotifiers.AWSSecurityHubType:    0,
+		pkgNotifiers.CSCCType:              0,
+		pkgNotifiers.MicrosoftSentinelType: 0,
 	}
 
 	for _, notifier := range notifiers {
@@ -64,6 +65,10 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 
 		if notifier.GetType() == pkgNotifiers.CSCCType && notifier.GetCscc().GetWifEnabled() {
 			cloudCredentialsEnabledNotifiersCount[pkgNotifiers.CSCCType]++
+		}
+
+		if notifier.GetType() == pkgNotifiers.MicrosoftSentinelType && notifier.GetMicrosoftSentinel().GetWifEnabled() {
+			cloudCredentialsEnabledNotifiersCount[pkgNotifiers.MicrosoftSentinelType]++
 		}
 	}
 
