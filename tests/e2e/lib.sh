@@ -1530,3 +1530,17 @@ if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     shift
     "$fn" "$@"
 fi
+
+# update_junit_prefix_with_central_and_sensor_version appends the central and sensor tags to all test
+# names in the result folder. This propagates into our artifacts and JIRA tasks created from failing tests
+# Used in gke-version-compatibility-tests and gke-nongroovy-compatibility-tests
+update_junit_prefix_with_central_and_sensor_version() {
+    local short_central_tag="$1"
+    local short_sensor_tag="$2"
+    local result_folder="$3"
+
+    info "Updating all test in $result_folder to have \"Central-v${short_central_tag}_Sensor-v${short_sensor_tag}_\" prefix"
+    find "${result_folder}" -type f -name "*.xml" -exec sh -c '
+            sed -i "s/testcase name=\"/testcase name=\"[Central-v"'"${short_central_tag}"'"-Sensor-v"'"${short_sensor_tag}"'"] /g" "$1"
+    ' sh {} \;
+}
