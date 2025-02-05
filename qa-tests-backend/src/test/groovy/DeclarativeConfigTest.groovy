@@ -328,7 +328,7 @@ splunk:
             PERMISSION_SET_KEY,
             INVALID_PERMISSION_SET_YAML
         )
-        log.debug "updated declarative permission set to be invalid in configMap $configMapUID" configMapUID
+        log.debug "updated declarative permission set to be invalid in configMap $configMapUID"
 
         then:
         // Verify the integration health for the permission set is unhealthy and contains an error message.
