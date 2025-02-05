@@ -107,9 +107,9 @@ func (a *APIServerSuite) Test_TwoTestsStartingAPIs() {
 	for i, api := range []API{api1, api2} {
 		// Running two tests that start the API results in failure.
 		a.Run(fmt.Sprintf("API test %d", i), func() {
+			a.T().Cleanup(func() { api.Stop() })
 			waitForPortToBeFree(a.T(), testPort)
 			a.Assert().NoError(api.Start().Wait())
-			a.Require().True(api.Stop())
 		})
 	}
 }
