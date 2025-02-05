@@ -10,6 +10,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"os"
 	"path"
 	"testing"
@@ -301,11 +302,11 @@ func (s *clusterInitBackendTestSuite) TestCRSNameMustBeUnique() {
 	).AnyTimes()
 
 	// Issue new CRS.
-	_, err := s.backend.IssueCRS(ctx, crsName)
+	_, err := s.backend.IssueCRS(ctx, crsName, 0)
 	s.Require().NoError(err)
 
 	// Attempt to issue again with same name.
-	_, err = s.backend.IssueCRS(ctx, crsName)
+	_, err = s.backend.IssueCRS(ctx, crsName, 0)
 	s.Require().Error(err)
 	s.Require().ErrorIs(err, store.ErrInitBundleDuplicateName)
 }
@@ -317,7 +318,7 @@ func (s *clusterInitBackendTestSuite) TestCRSLifecycle() {
 	s.certProvider.EXPECT().GetCRSCert().Return(s.crsCert, uuid.NewV4(), nil).AnyTimes()
 
 	// Issue new CRS.
-	crsWithMeta, err := s.backend.IssueCRS(ctx, crsName)
+	crsWithMeta, err := s.backend.IssueCRS(ctx, crsName, 0)
 	s.Require().NoError(err)
 	id := crsWithMeta.Meta.Id
 
@@ -401,6 +402,57 @@ func (s *clusterInitBackendTestSuite) TestCRSLifecycle() {
 	}
 }
 
+// Tests auto revocation for a CRS with maxRegistrations = 1.
+
+func (s *clusterInitBackendTestSuite) TestCrsAutoRevocationOneShot() {
+	ctx := s.ctx
+	clusterId := uuid.NewV4().String()
+	s.certProvider.EXPECT().GetCRSCert().Return(s.crsCert, uuid.NewV4(), nil)
+
+	crsName := fmt.Sprintf("test-crs-auto-revocation-1-%d", rand.Intn(10000))
+	crsWithMeta, err := s.backend.IssueCRS(ctx, crsName, 1)
+	s.Require().NoError(err)
+	id := crsWithMeta.Meta.Id
+
+	s.Require().NoErrorf(s.backend.CheckRevoked(ctx, id), "CRS %q is revoked", id)
+
+	s.Require().NoErrorf(s.backend.RecordInitiatedRegistration(ctx, id, clusterId), "recording initiated registration for CRS %q failed", id)
+	s.Require().Errorf(s.backend.RegistrationPossible(ctx, id), "cluster registration still possible")
+	s.Require().NoErrorf(s.backend.RecordCompletedRegistration(ctx, id, clusterId), "recording completed registration for CRS %q failed", id)
+	s.Require().Errorf(s.backend.CheckRevoked(ctx, id), "CRS %q is not revoked", id)
+}
+
+// Tests auto revocation for a CRS with maxRegistrations > 1.
+func (s *clusterInitBackendTestSuite) TestCrsAutoRevocationAfterTwoRegistrations() {
+	ctx := s.ctx
+	s.certProvider.EXPECT().GetCRSCert().Return(s.crsCert, uuid.NewV4(), nil)
+
+	crsName := fmt.Sprintf("test-crs-auto-revocation-2-%d", rand.Intn(10000))
+	crsWithMeta, err := s.backend.IssueCRS(ctx, crsName, 2)
+	s.Require().NoError(err)
+	id := crsWithMeta.Meta.Id
+
+	s.Require().NoErrorf(s.backend.CheckRevoked(ctx, id), "CRS %q is revoked", id)
+
+	clusterId := uuid.NewV4().String()
+	s.Require().NoErrorf(s.backend.RecordInitiatedRegistration(ctx, id, clusterId), "recording initiated registration for CRS %q failed", id)
+	s.Require().NoErrorf(s.backend.RegistrationPossible(ctx, id), "cluster registration not possible")
+	s.Require().NoErrorf(s.backend.RecordCompletedRegistration(ctx, id, clusterId), "recording completed registration for CRS %q failed", id)
+	s.Require().NoErrorf(s.backend.CheckRevoked(ctx, id), "CRS %q is revoked", id)
+
+	clusterId = uuid.NewV4().String()
+	s.Require().NoErrorf(s.backend.RecordInitiatedRegistration(ctx, id, clusterId), "recording initiated registration for CRS %q failed", id)
+	s.Require().Errorf(s.backend.RegistrationPossible(ctx, id), "cluster registration still possible")
+	s.Require().NoErrorf(s.backend.RecordCompletedRegistration(ctx, id, clusterId), "recording completed registration for CRS %q failed", id)
+	s.Require().Errorf(s.backend.CheckRevoked(ctx, id), "CRS %q is not revoked", id)
+}
+
+func (s *clusterInitBackendTestSuite) TestCrsIssuingWithTooLargeRegistrationLimit() {
+	crsName := fmt.Sprintf("test-crs-exceeding-limit-1-%d", rand.Intn(10000))
+	_, err := s.backend.IssueCRS(s.ctx, crsName, 101)
+	s.Require().Error(err, "issuing CRS with maxRegistrations=101 succeeded.")
+}
+
 // Tests if attempt to issue two init bundles with the same name fails as expected.
 func (s *clusterInitBackendTestSuite) TestIssuingWithDuplicateName() {
 	ctx := s.ctx
@@ -431,7 +483,7 @@ func (s *clusterInitBackendTestSuite) TestValidateClientCertificateNotFound() {
 
 	err := s.backend.ValidateClientCertificate(ctx, certs)
 	s.Require().Error(err)
-	s.Equal(fmt.Sprintf("failed checking init bundle status %[1]q: retrieving init bundle %[1]q: init bundle not found", id), err.Error())
+	s.Equal(fmt.Sprintf("failed checking init bundle status %[1]q: retrieving init bundle %[1]q: init bundle or CRS not found", id), err.Error())
 }
 
 func (s *clusterInitBackendTestSuite) TestValidateClientCertificateEphemeralInitBundle() {

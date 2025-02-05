@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	clusterInitStore "github.com/stackrox/rox/central/clusterinit/store"
 	installationStore "github.com/stackrox/rox/central/installation/store"
 	"github.com/stackrox/rox/central/metrics/telemetry"
 	"github.com/stackrox/rox/central/securedclustercertgen"
@@ -45,19 +46,27 @@ var (
 type serviceImpl struct {
 	central.UnimplementedSensorServiceServer
 
-	manager      connection.Manager
-	pf           pipeline.Factory
-	clusters     clusterDataStore.DataStore
-	installation installationStore.Store
+	manager          connection.Manager
+	pf               pipeline.Factory
+	clusters         clusterDataStore.DataStore
+	installation     installationStore.Store
+	clusterInitStore clusterInitStore.Store
 }
 
 // New creates a new Service using the given manager.
-func New(manager connection.Manager, pf pipeline.Factory, clusters clusterDataStore.DataStore, installation installationStore.Store) Service {
+func New(
+	manager connection.Manager,
+	pf pipeline.Factory,
+	clusters clusterDataStore.DataStore,
+	installation installationStore.Store,
+	clusterInitStore clusterInitStore.Store,
+) Service {
 	return &serviceImpl{
-		manager:      manager,
-		pf:           pf,
-		clusters:     clusters,
-		installation: installation,
+		manager:          manager,
+		pf:               pf,
+		clusters:         clusters,
+		installation:     installation,
+		clusterInitStore: clusterInitStore,
 	}
 }
 
@@ -176,6 +185,19 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 	if svcType == storage.ServiceType_REGISTRANT_SERVICE {
 		// Terminate connection which uses a CRS certificate at this point.
 		return nil
+	}
+
+	if cluster.GetHealthStatus().GetLastContact() == nil && cluster.GetInitBundleId() != "" {
+		// Sensor has initially connected with a real service certificate, not just with a CRS.
+		// The call to RecordCompletedRegistration also updates the revocation state of the CRS used for this
+		// cluster, if needed.
+		if err := s.clusterInitStore.RecordCompletedRegistration(clusterDSSAC, cluster.GetInitBundleId(), cluster.GetId()); err != nil {
+			return errors.Wrapf(err, "updating completed-registrations counter for cluster registration secret %q", cluster.GetInitBundleId())
+		}
+		cluster.InitBundleId = ""
+		if err := s.clusters.UpdateCluster(clusterDSSAC, cluster); err != nil {
+			return errors.Wrapf(err, "clearing init-bundle/CRS ID for newly created cluster %q", cluster.GetInitBundleId())
+		}
 	}
 
 	if expiryStatus, err := getCertExpiryStatus(identity); err != nil {
