@@ -6,6 +6,7 @@ import (
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	clusterPostgresStore "github.com/stackrox/rox/central/cluster/store/cluster/postgres"
 	clusterHealthPostgresStore "github.com/stackrox/rox/central/cluster/store/clusterhealth/postgres"
+	clusterInitStore "github.com/stackrox/rox/central/clusterinit/store"
 	compliancePruning "github.com/stackrox/rox/central/complianceoperator/v2/pruner"
 	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
@@ -25,13 +26,6 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
-)
-
-var (
-	testInstance     DataStore
-	testInstanceInit sync.Once
 )
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
@@ -70,6 +64,8 @@ func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error)
 
 	hashStore := datastore.GetTestPostgresDataStore(t, pool)
 
+	clusterInitStore := clusterInitStore.GetTestPostgresDataStore(t, pool)
+
 	sensorCnxMgr := connection.NewManager(hashManager.NewManager(hashStore))
 	clusterRanker := ranking.ClusterRanker()
 
@@ -79,14 +75,5 @@ func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error)
 		alertStore, iiStore, namespaceStore, deploymentStore,
 		nodeStore, podStore, secretStore, netFlowStore, netEntityStore,
 		serviceAccountStore, k8sRoleStore, k8sRoleBindingStore, sensorCnxMgr, nil,
-		clusterRanker, networkBaselineManager, compliancePruner)
-}
-
-func GetTestPostgresDataStoreSingleton(t testing.TB, pool postgres.DB) DataStore {
-	testInstanceInit.Do(func() {
-		store, err := GetTestPostgresDataStore(t, pool)
-		utils.Must(err)
-		testInstance = store
-	})
-	return testInstance
+		clusterRanker, networkBaselineManager, compliancePruner, clusterInitStore)
 }
