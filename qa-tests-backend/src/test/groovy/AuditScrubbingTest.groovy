@@ -34,7 +34,7 @@ class AuditScrubbingTest extends BaseSpecification {
 
     private getAuditEntry(String attemptId) {
         def jsonSlurper = new JsonSlurper()
-        return Helpers.withRetry(30, 1) {
+        return Helpers.evaluateWithRetry(30, 1) {
             def get = new URL("http://localhost:8080").openConnection()
             def objects = jsonSlurper.parseText(get.getInputStream().getText())
             def entry = objects.find {
