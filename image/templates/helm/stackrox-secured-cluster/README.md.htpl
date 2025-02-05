@@ -287,7 +287,6 @@ chart and their default values:
 |`collector.forceCollectionMethod`|Deprecated. This value has no effect. |`false` |
 |`collector.collectionMethod`|Either `CORE_BPF`, or `NO_COLLECTION`. |`CORE_BPF` |
 |`collector.disableTaintTolerations`|If you specify `false`, tolerations are applied to collector, and the collector pods can schedule onto all nodes with taints. If you specify it as `true`, no tolerations are applied, and the collector pods won't scheduled onto nodes with taints. |`false` |
-|`collector.slimMode`| Deprecated. Slim and regular Collector images are identical.|`false` |
 |`admissionControl.listenOnCreates`| This setting controls whether the cluster is configured to contact the StackRox Kubernetes Security Platform with `AdmissionReview` requests for `create` events on Kubernetes objects. |`false` |
 |`admissionControl.listenOnUpdates`|This setting controls whether the cluster is configured to contact the StackRox Kubernetes Security Platform with `AdmissionReview` requests for `update` events on Kubernetes objects.|`false` |
 |`admissionControl.listenOnEvents`|This setting controls whether the cluster is configured to contact the StackRox Kubernetes Security Platform with `AdmissionReview` requests for `update` Kubernetes events like `exec` and `portforward`.|`false` on OpenShift, `true` otherwise.|
@@ -314,7 +313,7 @@ non-standard environments:
 |`image.main.tag`| Tag of `main` image to use.|`null` |
 |`image.collector.tag`| Tag of `collector` image to use.| `null` |
 |`image.main.pullPolicy`| Image pull policy for `main` images.|`IfNotPresent`|
-|`image.collector.pullPolicy`| Image pull policy for `collector` images.| `IfNotPresent` if `slimCollector` is enabled, `Always` otherwise.|
+|`image.collector.pullPolicy`| Image pull policy for `collector` images.|`IfNotPresent`|
 |`sensor.resources`|Resource specification for Sensor.|See below.|
 |`collector.resources`|Resource specification for Collector.|See below.|
 |`collector.complianceResources`|Resource specification for Collector's Compliance container.|See below.|
