@@ -268,7 +268,7 @@ splunk:
         when:
 
         def configMapUID = createDefaultSetOfResources(CONFIGMAP_NAME, DEFAULT_NAMESPACE)
-        log.debug "created declarative configuration configMap " + configMapUID
+        log.debug "created declarative configuration configMap $configMapUID"
 
         then:
         // Retry this multiple times.
@@ -328,7 +328,7 @@ splunk:
             PERMISSION_SET_KEY,
             INVALID_PERMISSION_SET_YAML
         )
-        log.debug "updated declarative permission set to be invalid in configMap " + configMapUID
+        log.debug "updated declarative permission set to be invalid in configMap $configMapUID" configMapUID
 
         then:
         // Verify the integration health for the permission set is unhealthy and contains an error message.
@@ -355,7 +355,7 @@ splunk:
             ACCESS_SCOPE_KEY,
             INVALID_ACCESS_SCOPE_YAML
         )
-        log.debug "updated declarative access scope to be invalid in configMap " + configMapUID
+        log.debug "updated declarative access scope to be invalid in configMap $configMapUID"
 
         then:
         // Verify the integration health for the access scope is unhealthy and contains an error message.
@@ -382,7 +382,7 @@ splunk:
             ROLE_KEY,
             INVALID_ROLE_YAML
         )
-        log.debug "updated declarative role to be invalid in configMap " + configMapUID
+        log.debug "updated declarative role to be invalid in configMap $configMapUID"
 
         then:
         // Verify the integration health for the role is unhealthy and contains an error message.
@@ -407,7 +407,7 @@ splunk:
             AUTH_PROVIDER_KEY,
             INVALID_AUTH_PROVIDER_YAML
         )
-        log.debug "updated declarative auth provider to be invalid in configMap " + configMapUID
+        log.debug "updated declarative auth provider to be invalid in configMap $configMapUID"
 
         then:
         // Verify the integration health for the auth provider is unhealthy and contains an error message.
@@ -497,7 +497,7 @@ splunk:
                         (ROLE_KEY): INVALID_ROLE_YAML,
                         (AUTH_PROVIDER_KEY): INVALID_AUTH_PROVIDER_YAML,
                 ], DEFAULT_NAMESPACE)
-        log.debug "created declarative configuration configMap " + configMapUID
+        log.debug "created declarative configuration configMap $configMapUID"
 
         then:
         withRetry(RETRIES, PAUSE_SECS) {
@@ -568,7 +568,7 @@ splunk:
         when:
 
         def configMapUID = createDefaultSetOfResources(CONFIGMAP_NAME, DEFAULT_NAMESPACE)
-        log.debug "created declarative configuration configMap " + configMapUID
+        log.debug "created declarative configuration configMap $configMapUID"
 
         then:
         // Retry this multiple times.
@@ -617,7 +617,7 @@ splunk:
             PERMISSION_SET_KEY,
             VALID_PERMISSION_SET_YAML
         )
-        log.debug "restored a valid declarative permission set with configMap " + configMapUID
+        log.debug "restored a valid declarative permission set with configMap $configMapUID"
 
         then:
         withRetry(RETRIES, PAUSE_SECS) {
@@ -633,7 +633,7 @@ splunk:
 
         when:
         configMapUID = deleteConfigMapValue(CONFIGMAP_NAME, DEFAULT_NAMESPACE, ACCESS_SCOPE_KEY)
-        log.debug "trying to remove the declarative access scope with configMap " + configMapUID
+        log.debug "trying to remove the declarative access scope with configMap $configMapUID"
 
         then:
         withRetry(RETRIES, PAUSE_SECS) {
@@ -659,7 +659,7 @@ splunk:
             ACCESS_SCOPE_KEY,
             VALID_ACCESS_SCOPE_YAML
         )
-        log.debug "restored a valid declarative access scope with configMap " + configMapUID
+        log.debug "restored a valid declarative access scope with configMap $configMapUID"
 
         then:
         withRetry(RETRIES, PAUSE_SECS) {
@@ -700,7 +700,7 @@ splunk:
         log.debug "found newly created auth provider group " + imperativeGroupWithId.getProps().getId()
 
         configMapUID = deleteConfigMapValue(CONFIGMAP_NAME, DEFAULT_NAMESPACE, ROLE_KEY)
-        log.debug "trying to remove the declarative role with configMap " + configMapUID
+        log.debug "trying to remove the declarative role with configMap $configMapUID"
 
         then:
         withRetry(RETRIES, PAUSE_SECS) {
@@ -726,7 +726,7 @@ splunk:
             ROLE_KEY,
             VALID_ROLE_YAML
         )
-        log.debug "restored a valid declarative role with configMap " + configMapUID
+        log.debug "restored a valid declarative role with configMap $configMapUID"
 
         then:
         withRetry(RETRIES, PAUSE_SECS) {
@@ -742,7 +742,7 @@ splunk:
 
         when:
         configMapUID = deleteConfigMapValue(CONFIGMAP_NAME, DEFAULT_NAMESPACE, AUTH_PROVIDER_KEY)
-        log.debug "trying to remove the declarative auth provider with configMap " + configMapUID
+        log.debug "trying to remove the declarative auth provider with configMap $configMapUID"
 
         then:
         withRetry(RETRIES, PAUSE_SECS) {
