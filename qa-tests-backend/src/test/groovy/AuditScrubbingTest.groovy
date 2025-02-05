@@ -33,21 +33,16 @@ class AuditScrubbingTest extends BaseSpecification {
 
     private getAuditEntry(String attemptId) {
         def jsonSlurper = new JsonSlurper()
+        def url = new URL("http://localhost:8080")
         return Helpers.evaluateWithRetry(30, 1) {
-            def get = new URL("http://localhost:8080").openConnection()
+            def get = url.openConnection()
             def objects = jsonSlurper.parseText(get.getInputStream().getText())
             def entry = objects.find {
-                try {
-                    def data = it["data"]["audit"]
-                    return data["request"]["endpoint"] == ENDPOINT &&
-                            (data["request"]["payload"]["state"] as String).endsWith(attemptId)
-                } catch (Exception e) {
-                    log.warn("exception", e)
-                    return false
-                }
+                def req = it?.data?.audit?.request
+                return req?.endpoint == ENDPOINT && req?.payload?.state?.endsWith(attemptId)
             }
             assert entry
-            return entry["data"]["audit"]
+            return entry.data.audit
         }
     }
 
