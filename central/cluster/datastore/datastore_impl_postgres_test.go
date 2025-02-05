@@ -190,6 +190,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestRemoveCluster() {
 
 	alert, alertFound, alertFoundErr := s.alertDatastore.GetAlert(ctx, testAlert.GetId())
 	s.NoError(alertFoundErr)
+	// Verify that the alert was not deleted, but it was marked as resolved as the cluster it was related to has been removed
 	s.True(alertFound)
 	s.Equal(storage.ViolationState_RESOLVED, alert.GetState())
 
