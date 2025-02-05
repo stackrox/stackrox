@@ -2,10 +2,10 @@ package compliance
 
 import (
 	"strconv"
-	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/quay/claircore/indexer/controller"
+	"github.com/quay/claircore/pkg/rhctag"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
@@ -343,27 +343,15 @@ func (c *nodeInventoryHandlerImpl) sendNodeIndex(toC chan<- *message.ExpiringMes
 }
 
 func normalizeVersion(version string) []int32 {
-	fields := strings.Split(version, ".")
-	switch len(fields) {
-	case 0:
-		return []int32{0, 0, 0}
-	case 1:
-		i, err := strconv.ParseInt(fields[0], 10, 32)
-		if err == nil {
-			return []int32{int32(i), 0, 0}
-		}
+	rhctagVersion, err := rhctag.Parse(version)
+	if err != nil {
+		return []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 	}
-	i1, err1 := strconv.ParseInt(fields[0], 10, 32)
-	if err1 != nil {
-		i1 = 0
-	}
-	i2, err2 := strconv.ParseInt(fields[1], 10, 32)
-	if err2 != nil {
-		i2 = 0
-	}
-	// Only two first fields matter for the initial db query.
-	// The results of that query will be filtered further using string compare of the Version field.
-	return []int32{int32(i1), int32(i2), 0}
+	m := rhctagVersion.MinorStart()
+	v := m.Version(true).V
+	// Only two first fields matter for the initial db query that matches the vulnerabilities.
+	// The results of that query will be further filtered using the string value of the Version field.
+	return []int32{v[0], v[1], 0, 0, 0, 0, 0, 0, 0, 0}
 }
 
 func noop(_, _ string, rpm *v4.IndexReport) *v4.IndexReport {
