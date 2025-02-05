@@ -45,6 +45,7 @@ scale/image/fixtures/scrape.json
 scanner/cmd/scannerctl/fixtures/images.json
 scanner/e2etests/testdata/image_tests.json
 scanner/e2etests/testdata/image_tests.orig.json
+scanner/enricher/csaf/testdata/*
 scanner/enricher/nvd/testdata/feed.json
 scripts/ci/lib.sh
 sensor/tests/data/policies.json

@@ -15,7 +15,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/zlog"
-	"github.com/stackrox/rox/pkg/scannerv4/constants"
+	"github.com/stackrox/rox/pkg/scannerv4/updater/manual"
 	"github.com/stackrox/rox/pkg/utils"
 	yaml "gopkg.in/yaml.v3"
 )
@@ -69,7 +69,7 @@ func NewUpdater(c *http.Client, uri string) (*updater, error) {
 }
 
 func (u *updater) Name() string {
-	return constants.ManualUpdaterName
+	return manual.UpdaterName
 }
 
 // Fetch fetching data from a configurable URI.
