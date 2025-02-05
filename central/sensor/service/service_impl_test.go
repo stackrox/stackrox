@@ -336,10 +336,6 @@ var crsRegistrantIdentity = storage.ServiceIdentity{
 	InitBundleId: crsRegistrantId,
 }
 
-var sensorServiceIdentity = storage.ServiceIdentity{
-	Type: storage.ServiceType_SENSOR_SERVICE,
-}
-
 var installInfo *storage.InstallationInfo = &storage.InstallationInfo{
 	Id: "some-central-id",
 }
