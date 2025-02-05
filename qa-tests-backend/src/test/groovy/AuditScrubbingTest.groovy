@@ -8,7 +8,6 @@ import io.stackrox.proto.storage.NotifierOuterClass.Notifier
 import services.NotifierService
 import util.Env
 import util.Helpers
-import util.Timer
 
 import spock.lang.Shared
 import spock.lang.Tag
