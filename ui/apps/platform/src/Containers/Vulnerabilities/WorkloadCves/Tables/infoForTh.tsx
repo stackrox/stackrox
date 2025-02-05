@@ -5,7 +5,7 @@ import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 
 export const infoForEpssProbability: ThProps['info'] = {
     ariaLabel: 'Information about EPSS probability',
-    popover: <>Information to be determined</>,
+    popover: <>Likelihood of exploitability</>,
     popoverProps: {
         headerContent: 'EPSS probability',
         footerContent: (
