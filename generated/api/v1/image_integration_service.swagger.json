@@ -490,9 +490,11 @@
           "description": "The password for the integration. The server will mask the value of this credential in responses and logs."
         },
         "wifEnabled": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Enables authentication with short-lived tokens using Azure managed identities or Azure workload identities."
         }
-      }
+      },
+      "description": "Azure container registry configuration. Used by integrations of type \"azure\"."
     },
     "storageClairConfig": {
       "type": "object",
@@ -547,7 +549,8 @@
         "insecure": {
           "type": "boolean"
         }
-      }
+      },
+      "description": "Docker registry configuration. Used by integrations of type \"docker\" and other docker compliant registries without dedicated configuration type.\n\nUse of type \"azure\" with `DockerConfig` has been deprecated in 4.7. Use `AzureConfig` instead."
     },
     "storageECRConfig": {
       "type": "object",

@@ -692,6 +692,7 @@ class IntegrationsTest extends BaseSpecification {
         Assume.assumeTrue(imageIntegration.isTestable())
         Assume.assumeTrue(!testAspect.contains("IAM") || ClusterService.isEKS())
         Assume.assumeTrue(!testAspect.contains("workload identity") || Env.HAS_WORKLOAD_IDENTITIES)
+        Assume.assumeTrue(!testAspect.contains("AKS managed identity") || ClusterService.isAKS())
 
         when:
         "the integration is tested"
@@ -720,7 +721,12 @@ class IntegrationsTest extends BaseSpecification {
         new GCRImageIntegration()        | [:]                | "default config"
         new GCRImageIntegration()        | [includeScanner: false, wifEnabled: true]
                                                               | "requires workload identity"
-        new AzureRegistryIntegration()   | [:]                | "default config"
+        new AzureRegistryIntegration()   | [configSchema: "AzureConfig"]
+                                                              | "default config with AzureConfig"
+        new AzureRegistryIntegration()   | [configSchema: "DockerConfig"]
+                                                              | "default config with DockerConfig"
+        new AzureRegistryIntegration()   | [configSchema: "AzureConfig", wifEnabled: true]
+                                                              | "requires AKS managed identity"
         new ECRRegistryIntegration()     | [:]                | "default config"
         new ECRRegistryIntegration()     | [endpoint: ""]     | "without endpoint"
         new ECRRegistryIntegration()     | [useIam: true]     | "requires IAM"

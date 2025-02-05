@@ -2,7 +2,9 @@ import { BaseBackupIntegration } from 'types/externalBackup.proto';
 import { FeatureFlagEnvVar } from 'types/featureFlag';
 import {
     BaseImageIntegration,
+    AzureImageIntegration,
     ClairifyImageIntegration,
+    DockerImageIntegration,
     GoogleImageIntegration,
     QuayImageIntegration,
 } from 'types/imageIntegration.proto';
@@ -65,6 +67,7 @@ type IntegrationTableColumnDescriptorMap = {
         ImageIntegrationType,
         IntegrationTableColumnDescriptor<BaseImageIntegration>[]
     > & {
+        azure: IntegrationTableColumnDescriptor<AzureImageIntegration | DockerImageIntegration>[];
         clairify: IntegrationTableColumnDescriptor<ClairifyImageIntegration>[];
         google: IntegrationTableColumnDescriptor<GoogleImageIntegration>[];
         quay: IntegrationTableColumnDescriptor<QuayImageIntegration>[];
@@ -293,8 +296,20 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
         ],
         azure: [
             { accessor: 'name', Header: 'Name' },
-            { accessor: 'docker.endpoint', Header: 'Endpoint' },
-            { accessor: 'docker.username', Header: 'Username' },
+            {
+                accessor: (integration) =>
+                    'azure' in integration
+                        ? String(integration?.azure?.endpoint)
+                        : String(integration?.docker?.endpoint),
+                Header: 'Endpoint',
+            },
+            {
+                accessor: (integration) =>
+                    'azure' in integration
+                        ? String(integration?.azure?.username)
+                        : String(integration?.docker?.username),
+                Header: 'Username',
+            },
         ],
         ibm: [
             { accessor: 'name', Header: 'Name' },
