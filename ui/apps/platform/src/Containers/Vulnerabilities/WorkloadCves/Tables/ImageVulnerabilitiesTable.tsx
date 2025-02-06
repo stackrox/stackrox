@@ -47,6 +47,7 @@ import ExceptionDetailsCell from '../components/ExceptionDetailsCell';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
+import { infoForEpssProbability } from './infoForTh';
 import { formatEpssProbabilityAsPercent } from './table.utils';
 
 export const tableId = 'WorkloadCvesImageVulnerabilitiesTable';
@@ -199,6 +200,7 @@ function ImageVulnerabilitiesTable({
                     {isEpssProbabilityColumnEnabled && (
                         <Th
                             className={getVisibilityClass('epssProbability')}
+                            info={infoForEpssProbability}
                             sort={getSortParams('EPSS Probability')}
                         >
                             EPSS probability
