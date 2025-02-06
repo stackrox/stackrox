@@ -1,3 +1,4 @@
+{
   "swagger": "2.0",
   "info": {
     "title": "api/v1/search_service.proto",
@@ -118,12 +119,8 @@
                 "COMPLIANCE_BENCHMARKS",
                 "AUTH_PROVIDERS",
                 "COMPLIANCE_REPORT_SNAPSHOT",
-<<<<<<< HEAD
                 "IMAGE_COMPONENTS_V2",
                 "IMAGE_VULNERABILITIES_V2"
-=======
-                "IMAGE_COMPONENTS_V2"
->>>>>>> 9a652b9c15 (X-Smart-Squash: Squashed 10 commits:)
               ]
             },
             "collectionFormat": "multi"
@@ -237,12 +234,8 @@
                 "COMPLIANCE_BENCHMARKS",
                 "AUTH_PROVIDERS",
                 "COMPLIANCE_REPORT_SNAPSHOT",
-<<<<<<< HEAD
                 "IMAGE_COMPONENTS_V2",
                 "IMAGE_VULNERABILITIES_V2"
-=======
-                "IMAGE_COMPONENTS_V2"
->>>>>>> 9a652b9c15 (X-Smart-Squash: Squashed 10 commits:)
               ]
             },
             "collectionFormat": "multi"
@@ -350,12 +343,8 @@
                 "COMPLIANCE_BENCHMARKS",
                 "AUTH_PROVIDERS",
                 "COMPLIANCE_REPORT_SNAPSHOT",
-<<<<<<< HEAD
                 "IMAGE_COMPONENTS_V2",
                 "IMAGE_VULNERABILITIES_V2"
-=======
-                "IMAGE_COMPONENTS_V2"
->>>>>>> 9a652b9c15 (X-Smart-Squash: Squashed 10 commits:)
               ]
             },
             "collectionFormat": "multi"
@@ -506,12 +495,8 @@
         "COMPLIANCE_BENCHMARKS",
         "AUTH_PROVIDERS",
         "COMPLIANCE_REPORT_SNAPSHOT",
-<<<<<<< HEAD
         "IMAGE_COMPONENTS_V2",
         "IMAGE_VULNERABILITIES_V2"
-=======
-        "IMAGE_COMPONENTS_V2"
->>>>>>> 9a652b9c15 (X-Smart-Squash: Squashed 10 commits:)
       ],
       "default": "SEARCH_UNSET",
       "title": "Next available tag: 74"
