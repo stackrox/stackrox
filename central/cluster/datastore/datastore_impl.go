@@ -845,6 +845,15 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 		return nil, err
 	}
 
+	crsMode := false
+	if registrantID != "" {
+		initBundleMeta, err := ds.clusterInitStore.Get(ctx, registrantID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "retrieving init-bundle/CRS %s", registrantID)
+		}
+		crsMode = initBundleMeta.GetVersion() == storage.InitBundleMeta_CRS
+	}
+
 	helmConfig := hello.GetHelmManagedConfigInit()
 	manager := helmConfig.GetManagedBy()
 
@@ -959,7 +968,7 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 
 	cluster = cluster.CloneVT()
 	cluster.ManagedBy = manager
-	if registrantID != "" {
+	if !crsMode {
 		cluster.InitBundleId = registrantID
 	}
 	cluster.SensorCapabilities = sliceutils.CopySliceSorted(hello.GetCapabilities())
