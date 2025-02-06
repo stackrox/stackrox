@@ -30,6 +30,7 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 
 	props["Database Size (Bytes)"] = dbSize
 	props["PostgreSQL version"] = version
+	props["Database is external"] = pgconfig.IsExternalDatabase()
 
 	return props, nil
 }
