@@ -109,8 +109,8 @@ func (g *gatherer) Start(opts ...telemeter.Option) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	if g.stopSig.IsDone() {
-		g.reset()
 		concurrency.WithLock(&g.gathering, func() {
+			g.reset()
 			g.opts = opts
 		})
 		go g.loop()
