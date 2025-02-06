@@ -14,8 +14,8 @@ type Unmarshaler[T any] interface {
 //
 // This function closes the rows automatically on return.
 func ScanRows[T any, PT Unmarshaler[T]](rows pgx.Rows) ([]*T, error) {
-	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (*T, error) {
-		return Unmarshal[T, PT](rows)
+	return pgx.CollectRows(rows, func(r pgx.CollectableRow) (*T, error) {
+		return Unmarshal[T, PT](r)
 	})
 }
 
