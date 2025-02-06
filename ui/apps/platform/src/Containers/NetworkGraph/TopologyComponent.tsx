@@ -18,6 +18,8 @@ import { networkBasePath } from 'routePaths';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
 import useFetchDeploymentCount from 'hooks/useFetchDeploymentCount';
+import useURLSearch from 'hooks/useURLSearch';
+import { getQueryObject, getQueryString } from 'utils/queryStringUtils';
 import DeploymentSideBar from './deployment/DeploymentSideBar';
 import NamespaceSideBar from './namespace/NamespaceSideBar';
 import GenericEntitiesSideBar from './genericEntities/GenericEntitiesSideBar';
@@ -26,7 +28,7 @@ import ExternalGroupSideBar from './external/ExternalGroupSideBar';
 import NetworkPolicySimulatorSidePanel, {
     clearSimulationQuery,
 } from './simulation/NetworkPolicySimulatorSidePanel';
-import { getNodeById } from './utils/networkGraphUtils';
+import { getExternalEntitiesNode, getNodeById } from './utils/networkGraphUtils';
 import { CustomModel, CustomNodeModel, isNodeOfType } from './types/topology.type';
 import { Simulation } from './utils/getSimulation';
 import LegendContent from './components/LegendContent';
@@ -63,6 +65,13 @@ function getUrlParamsForEntity(type, id): [UrlDetailTypeValue, string] {
     return [UrlDetailType[type], id];
 }
 
+function clearSearchQueryValue(search: string, value: string) {
+    const modifiedSearchFilter = getQueryObject(search);
+    delete modifiedSearchFilter[value];
+    const queryString = getQueryString(modifiedSearchFilter);
+    return queryString;
+}
+
 export type TopologyComponentProps = {
     isReadyForVisualization: boolean;
     model: CustomModel;
@@ -90,17 +99,22 @@ const TopologyComponent = ({
     const { hasReadAccess } = usePermissions();
     const hasReadAccessForNetworkPolicy = hasReadAccess('NetworkPolicy');
 
+    const { searchFilter } = useURLSearch('sidePanel');
+
+    const selectedExternalIP = searchFilter.externalIP;
+
     const firstRenderRef = useRef(true);
     const history = useHistory();
     const controller = useVisualizationController();
     const [defaultDeploymentTab, setDefaultDeploymentTab] = useState(deploymentTabs.DETAILS);
 
     const closeSidebar = useCallback(() => {
-        const queryString = clearSimulationQuery(history.location.search);
+        let queryString = clearSimulationQuery(history.location.search);
+        queryString = clearSearchQueryValue(queryString, 'sidePanel');
         history.push(`${networkBasePath}${queryString}`);
     }, [history]);
 
-    function onNodeClick(ids: string[]) {
+    function onNodeClick(ids: string[], externalIP?: string) {
         const newSelectedId = ids?.[0] || '';
         const newSelectedEntity = getNodeById(model?.nodes, newSelectedId);
         if (selectedNode && !newSelectedId) {
@@ -111,7 +125,19 @@ const TopologyComponent = ({
             setDefaultDeploymentTab(deploymentTabs.DETAILS);
             const { data, id } = newSelectedEntity;
             const [newDetailType, newDetailId] = getUrlParamsForEntity(data.type, id);
-            const queryString = clearSimulationQuery(history.location.search);
+            const clearedQueryString = clearSimulationQuery(history.location.search);
+            let queryObject = getQueryObject(clearedQueryString);
+            if (externalIP) {
+                queryObject = {
+                    ...queryObject,
+                    sidePanel: externalIP
+                        ? {
+                              externalIP,
+                          }
+                        : undefined,
+                };
+            }
+            const queryString = getQueryString(queryObject);
             // if found, and it's not the logical grouping of all external sources, then trigger URL update
             if (newDetailId !== 'EXTERNAL') {
                 const newURL = `${networkBasePath}/${newDetailType}/${encodeURIComponent(
@@ -131,6 +157,13 @@ const TopologyComponent = ({
 
     function onNodeSelect(id: string) {
         onNodeClick([id]);
+    }
+
+    function onExternalIPSelect(externalIP: string | undefined) {
+        const externalEntitiesNode = getExternalEntitiesNode(model.nodes);
+        if (externalEntitiesNode) {
+            onNodeClick([externalEntitiesNode.id], externalIP);
+        }
     }
 
     function zoomInCallback() {
@@ -187,6 +220,7 @@ const TopologyComponent = ({
     const selectedIds = selectedNode ? [selectedNode.id] : [];
 
     const labelledById = 'TopologySideBarLabelledBy';
+
     return (
         <TopologyView
             sideBar={
@@ -219,6 +253,7 @@ const TopologyComponent = ({
                             edges={model?.edges || []}
                             edgeState={edgeState}
                             onNodeSelect={onNodeSelect}
+                            onExternalIPSelect={onExternalIPSelect}
                             defaultDeploymentTab={defaultDeploymentTab}
                             scopeHierarchy={scopeHierarchy}
                         />
@@ -253,7 +288,9 @@ const TopologyComponent = ({
                                 nodes={model?.nodes || []}
                                 edges={model?.edges || []}
                                 scopeHierarchy={scopeHierarchy}
+                                selectedExternalIP={selectedExternalIP}
                                 onNodeSelect={onNodeSelect}
+                                onExternalIPSelect={onExternalIPSelect}
                             />
                         ) : (
                             <GenericEntitiesSideBar

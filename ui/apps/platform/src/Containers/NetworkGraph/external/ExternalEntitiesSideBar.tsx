@@ -1,8 +1,5 @@
-/* eslint-disable no-nested-ternary */
 import React, { ReactElement, useState } from 'react';
 import {
-    Breadcrumb,
-    BreadcrumbItem,
     Divider,
     Flex,
     FlexItem,
@@ -14,15 +11,13 @@ import {
     ToggleGroupItem,
 } from '@patternfly/react-core';
 
-import { ExternalSourceNetworkEntityInfo } from 'types/networkFlow.proto';
-
 import { ExternalEntitiesIcon } from '../common/NetworkGraphIcons';
-import EntityDetailsTable from './EntityDetailsTable';
 import ExternalFlowsTable from './ExternalFlowsTable';
 import ExternalIpsTable from './ExternalIpsTable';
 import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 import { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
 import { getNodeById } from '../utils/networkGraphUtils';
+import EntityDetails from './EntityDetails';
 
 export type ExternalEntitiesView = 'external-ips' | 'workloads-with-external-flows';
 
@@ -31,8 +26,10 @@ export type ExternalEntitiesSideBarProps = {
     id: string;
     nodes: CustomNodeModel[];
     edges: CustomEdgeModel[];
+    selectedExternalIP: string | string[] | undefined;
     scopeHierarchy: NetworkScopeHierarchy;
     onNodeSelect: (id: string) => void;
+    onExternalIPSelect: (externalIP: string | undefined) => void;
 };
 
 function EntityTitleText({ text, id }: { text: string | undefined; id: string }) {
@@ -49,13 +46,26 @@ function ExternalEntitiesSideBar({
     nodes,
     edges,
     scopeHierarchy,
+    selectedExternalIP,
     onNodeSelect,
+    onExternalIPSelect,
 }: ExternalEntitiesSideBarProps): ReactElement {
     const [selectedView, setSelectedView] = useState<ExternalEntitiesView>('external-ips');
-    const [selectedEntity, setSelectedEntity] = useState<ExternalSourceNetworkEntityInfo | null>(
-        null
-    );
+
     const entityNode = getNodeById(nodes, id);
+
+    if (selectedExternalIP) {
+        return (
+            <EntityDetails
+                labelledById={labelledById}
+                entityName={entityNode?.label || ''}
+                entityId={String(selectedExternalIP)}
+                scopeHierarchy={scopeHierarchy}
+                onNodeSelect={onNodeSelect}
+                onExternalIPSelect={onExternalIPSelect}
+            />
+        );
+    }
 
     return (
         <Stack>
@@ -65,61 +75,37 @@ function ExternalEntitiesSideBar({
                         <ExternalEntitiesIcon />
                     </FlexItem>
                     <FlexItem>
-                        {selectedEntity ? (
-                            <Breadcrumb>
-                                <BreadcrumbItem to="#" onClick={() => setSelectedEntity(null)}>
-                                    <EntityTitleText text={entityNode?.label} id={labelledById} />
-                                </BreadcrumbItem>
-                                <BreadcrumbItem isActive>
-                                    <EntityTitleText
-                                        text={selectedEntity.externalSource.name}
-                                        id={selectedEntity.externalSource.name}
-                                    />
-                                </BreadcrumbItem>
-                            </Breadcrumb>
-                        ) : (
-                            <EntityTitleText text={entityNode?.label} id={labelledById} />
-                        )}
+                        <EntityTitleText text={entityNode?.label} id={labelledById} />
                         <Text className="pf-v5-u-font-size-sm pf-v5-u-color-200">
                             Connected entities outside your cluster
                         </Text>
                     </FlexItem>
                 </Flex>
             </StackItem>
-            {!selectedEntity && (
-                <>
-                    <Divider component="hr" />
-                    <StackItem className="pf-v5-u-p-md">
-                        <ToggleGroup aria-label="Toggle between external IPs and workload flows view">
-                            <ToggleGroupItem
-                                text="External IPs"
-                                buttonId="external-ips"
-                                isSelected={selectedView === 'external-ips'}
-                                onChange={() => setSelectedView('external-ips')}
-                            />
-                            <ToggleGroupItem
-                                text="Workloads with external flows"
-                                buttonId="workloads-with-external-flows"
-                                isSelected={selectedView === 'workloads-with-external-flows'}
-                                onChange={() => setSelectedView('workloads-with-external-flows')}
-                            />
-                        </ToggleGroup>
-                    </StackItem>
-                </>
-            )}
+            <Divider component="hr" />
+            <StackItem className="pf-v5-u-p-md">
+                <ToggleGroup aria-label="Toggle between external IPs and workload flows view">
+                    <ToggleGroupItem
+                        text="External IPs"
+                        buttonId="external-ips"
+                        isSelected={selectedView === 'external-ips'}
+                        onChange={() => setSelectedView('external-ips')}
+                    />
+                    <ToggleGroupItem
+                        text="Workloads with external flows"
+                        buttonId="workloads-with-external-flows"
+                        isSelected={selectedView === 'workloads-with-external-flows'}
+                        onChange={() => setSelectedView('workloads-with-external-flows')}
+                    />
+                </ToggleGroup>
+            </StackItem>
             <Divider component="hr" />
             <StackItem isFilled style={{ overflow: 'auto' }}>
                 <Stack className="pf-v5-u-p-md">
-                    {selectedEntity ? (
-                        <EntityDetailsTable
-                            entityId={selectedEntity.id}
-                            scopeHierarchy={scopeHierarchy}
-                            onNodeSelect={onNodeSelect}
-                        />
-                    ) : selectedView === 'external-ips' ? (
+                    {selectedView === 'external-ips' ? (
                         <ExternalIpsTable
                             scopeHierarchy={scopeHierarchy}
-                            setSelectedEntity={setSelectedEntity}
+                            onExternalIPSelect={onExternalIPSelect}
                         />
                     ) : (
                         <ExternalFlowsTable

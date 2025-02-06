@@ -25,6 +25,12 @@ export function getNodeById(
     return nodes?.find((node) => node.id === nodeId);
 }
 
+export function getExternalEntitiesNode(
+    nodes: CustomNodeModel[] | undefined
+): CustomNodeModel | undefined {
+    return nodes?.find((node) => node.data.type === 'EXTERNAL_ENTITIES');
+}
+
 /* edge helper functions */
 
 export function getNumAnomalousInternalFlows(networkFlows: Flow[]) {
