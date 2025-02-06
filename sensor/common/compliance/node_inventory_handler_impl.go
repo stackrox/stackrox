@@ -414,6 +414,7 @@ func buildRHCOSIndexReport(Id, version, arch string) *v4.IndexReport {
 					Source: &v4.Package{
 						Id:      Id,
 						Name:    "rhcos",
+						Kind:    "source",
 						Version: version,
 						Cpe:     "cpe:2.3:*", // required to pass validation of scanner V4 API
 					},
