@@ -20,7 +20,6 @@ import {
     visitViolationsWithFixture,
 } from './Violations.helpers';
 import { selectors } from './Violations.selectors';
-import { interceptAndWatchRequests } from '../../helpers/request';
 
 describe('Violations', () => {
     withAuth();
