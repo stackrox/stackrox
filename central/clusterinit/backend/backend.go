@@ -2,6 +2,7 @@ package backend
 
 import (
 	"context"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/clusterinit/backend/certificate"
@@ -45,7 +46,7 @@ type Backend interface {
 	GetAllCRS(ctx context.Context) ([]*storage.InitBundleMeta, error)
 	GetCAConfig(ctx context.Context) (*CAConfig, error)
 	Issue(ctx context.Context, name string) (*InitBundleWithMeta, error)
-	IssueCRS(ctx context.Context, name string, maxRegistrations uint64) (*CRSWithMeta, error)
+	IssueCRS(ctx context.Context, name string, maxRegistrations uint64, validUntil time.Time, validFor time.Duration) (*CRSWithMeta, error)
 	Revoke(ctx context.Context, id string) error
 	CheckRevoked(ctx context.Context, id string) error
 	RegistrationPossible(ctx context.Context, id string) error

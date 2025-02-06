@@ -12,6 +12,7 @@ package mocks
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	backend "github.com/stackrox/rox/central/clusterinit/backend"
 	storage "github.com/stackrox/rox/generated/storage"
@@ -118,18 +119,18 @@ func (mr *MockBackendMockRecorder) Issue(ctx, name any) *gomock.Call {
 }
 
 // IssueCRS mocks base method.
-func (m *MockBackend) IssueCRS(ctx context.Context, name string, maxRegistrations uint64) (*backend.CRSWithMeta, error) {
+func (m *MockBackend) IssueCRS(ctx context.Context, name string, maxRegistrations uint64, validUntil time.Time, validFor time.Duration) (*backend.CRSWithMeta, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IssueCRS", ctx, name, maxRegistrations)
+	ret := m.ctrl.Call(m, "IssueCRS", ctx, name, maxRegistrations, validUntil, validFor)
 	ret0, _ := ret[0].(*backend.CRSWithMeta)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // IssueCRS indicates an expected call of IssueCRS.
-func (mr *MockBackendMockRecorder) IssueCRS(ctx, name, maxRegistrations any) *gomock.Call {
+func (mr *MockBackendMockRecorder) IssueCRS(ctx, name, maxRegistrations, validUntil, validFor any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IssueCRS", reflect.TypeOf((*MockBackend)(nil).IssueCRS), ctx, name, maxRegistrations)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IssueCRS", reflect.TypeOf((*MockBackend)(nil).IssueCRS), ctx, name, maxRegistrations, validUntil, validFor)
 }
 
 // RecordCompletedRegistration mocks base method.
