@@ -1,34 +1,17 @@
 import withAuth from '../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../helpers/features';
 import { selectFilteredWorkflowView, visitViolations } from './Violations.helpers';
-import { selectors } from './Violations.selectors';
 
 describe('Violations - Filtered Workflow Views', () => {
     withAuth();
 
     before(function () {
-        if (!hasFeatureFlag('ROX_PLATFORM_COMPONENTS')) {
+        if (
+            !hasFeatureFlag('ROX_PLATFORM_COMPONENTS') ||
+            !hasFeatureFlag('ROX_PLATFORM_CVE_SPLIT')
+        ) {
             this.skip();
         }
-    });
-
-    it('should render the correct filtered workflow view select options', () => {
-        visitViolations();
-
-        // should exist and display "Applications view" by default
-        cy.get(selectors.filteredWorkflowSelectButton).should('exist');
-        cy.get(selectors.filteredWorkflowSelectButton).should('have.text', 'Applications view');
-
-        // show the dropdown options
-        cy.get(selectors.filteredWorkflowSelectButton).click();
-
-        // the correct options should display in the dropdown
-        const options = ['Applications view', 'Platform view', 'Full view'];
-        options.forEach((option, index) => {
-            cy.get(
-                `ul[aria-label="Filtered workflow select options"] li:nth(${index}) button span.pf-v5-c-menu__item-text`
-            ).should('have.text', option);
-        });
     });
 
     it('should filter the violations table when the "Applications view" is selected', () => {
@@ -48,7 +31,7 @@ describe('Violations - Filtered Workflow Views', () => {
     it('should filter the violations table when the "Platform view" is selected', () => {
         visitViolations();
 
-        selectFilteredWorkflowView('Platform view');
+        selectFilteredWorkflowView('Platform');
 
         cy.intercept('GET', '/v1/alerts?query=*').as('getViolations');
 
@@ -64,7 +47,7 @@ describe('Violations - Filtered Workflow Views', () => {
     it('should filter the violations table when the "Full view" is selected', () => {
         visitViolations();
 
-        selectFilteredWorkflowView('Full view');
+        selectFilteredWorkflowView('All Violations');
 
         cy.intercept('GET', '/v1/alerts?query=*').as('getViolations');
 
