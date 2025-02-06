@@ -13,10 +13,6 @@ import (
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
-<<<<<<< HEAD
-=======
-	"github.com/stackrox/rox/pkg/protocompat"
->>>>>>> 9a652b9c15 (X-Smart-Squash: Squashed 10 commits:)
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
@@ -113,6 +109,7 @@ func insertIntoImageComponentV2(batch *pgx.Batch, obj *storage.ImageComponentV2)
 	batch.Queue(finalStr, values...)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 	var query string
 
@@ -154,6 +151,8 @@ func insertIntoImageComponentV2Cves(batch *pgx.Batch, obj *storage.ImageCVEV2, i
 	batch.Queue(finalStr, values...)
 
 >>>>>>> 9a652b9c15 (X-Smart-Squash: Squashed 10 commits:)
+=======
+>>>>>>> 8ad8e67206 (X-Smart-Squash: Squashed 16 commits:)
 	return nil
 }
 
@@ -229,6 +228,7 @@ func copyFromImageComponentV2(ctx context.Context, s pgSearch.Deleter, tx *postg
 		}
 	}
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 =======
 	for idx, obj := range objs {
@@ -309,6 +309,8 @@ func copyFromImageComponentV2Cves(ctx context.Context, s pgSearch.Deleter, tx *p
 	}
 
 >>>>>>> 9a652b9c15 (X-Smart-Squash: Squashed 10 commits:)
+=======
+>>>>>>> 8ad8e67206 (X-Smart-Squash: Squashed 16 commits:)
 	return nil
 }
 
@@ -329,15 +331,6 @@ func Destroy(ctx context.Context, db postgres.DB) {
 
 func dropTableImageComponentV2(ctx context.Context, db postgres.DB) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS image_component_v2 CASCADE")
-<<<<<<< HEAD
-=======
-	dropTableImageComponentV2Cves(ctx, db)
-
-}
-
-func dropTableImageComponentV2Cves(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS image_component_v2_cves CASCADE")
->>>>>>> 9a652b9c15 (X-Smart-Squash: Squashed 10 commits:)
 
 }
 
