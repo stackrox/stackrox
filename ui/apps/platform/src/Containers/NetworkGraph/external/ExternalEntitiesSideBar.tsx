@@ -114,6 +114,7 @@ function ExternalEntitiesSideBar({
                         <EntityDetailsTable
                             entityId={selectedEntity.id}
                             scopeHierarchy={scopeHierarchy}
+                            onNodeSelect={onNodeSelect}
                         />
                     ) : selectedView === 'external-ips' ? (
                         <ExternalIpsTable

@@ -1,5 +1,12 @@
 import React, { useCallback, useState } from 'react';
-import { Pagination, Text, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
+import {
+    Button,
+    Pagination,
+    Text,
+    Toolbar,
+    ToolbarContent,
+    ToolbarItem,
+} from '@patternfly/react-core';
 import {
     ActionsColumn,
     InnerScrollContainer,
@@ -23,9 +30,10 @@ import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 export type EntityDetailsTableProps = {
     entityId: string;
     scopeHierarchy: NetworkScopeHierarchy;
+    onNodeSelect: (id: string) => void;
 };
 
-function EntityDetailsTable({ entityId, scopeHierarchy }: EntityDetailsTableProps) {
+function EntityDetailsTable({ entityId, scopeHierarchy, onNodeSelect }: EntityDetailsTableProps) {
     const [page, setPage] = useState(1);
     const [perPage, setPerPage] = useState(10);
     const clusterId = scopeHierarchy.cluster.id;
@@ -98,12 +106,23 @@ function EntityDetailsTable({ entityId, scopeHierarchy }: EntityDetailsTableProp
                                     }
 
                                     const { l4protocol, dstPort } = flow.props;
-                                    const { deployment, direction } = deploymentInfo;
+                                    const { entity, direction } = deploymentInfo;
+                                    const { deployment, id } = entity;
+
+                                    const onEntitySelect = () => {
+                                        onNodeSelect(id);
+                                    };
 
                                     return (
                                         <Tr key={`${deployment.name}-${dstPort}-${l4protocol}`}>
                                             <Td dataLabel="Entity">
-                                                {deployment.name}
+                                                <Button
+                                                    variant="link"
+                                                    isInline
+                                                    onClick={onEntitySelect}
+                                                >
+                                                    {deployment.name}
+                                                </Button>
                                                 <div>
                                                     <Text
                                                         component="small"
