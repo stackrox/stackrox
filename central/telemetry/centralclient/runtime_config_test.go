@@ -142,6 +142,7 @@ func Test_reloadConfig(t *testing.T) {
 		runtimeConfigJSON = `{"storage_key_v1": "` + remoteKey + `"}
 		"api_call_campaign": [{"method": "Test"}]}`
 		Enable()
+		defer Disable()
 		assert.True(t, enabled)
 		require.True(t, config.Enabled())
 

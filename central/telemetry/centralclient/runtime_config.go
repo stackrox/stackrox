@@ -3,6 +3,7 @@ package centralclient
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/env"
@@ -78,4 +79,17 @@ func Reload() error {
 		Disable()
 	}
 	return nil
+}
+
+// StartPeriodicReload starts a goroutine that periodically fetches and reloads
+// the remote configuration.
+func StartPeriodicReload(period time.Duration) {
+	if url := env.TelemetryConfigURL.Setting(); url == "" || url == "hardcoded" {
+		return
+	}
+	go func() {
+		for range time.NewTicker(period).C {
+			_ = Reload()
+		}
+	}()
 }
