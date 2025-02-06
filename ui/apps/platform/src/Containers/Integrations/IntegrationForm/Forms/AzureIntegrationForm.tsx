@@ -270,7 +270,7 @@ function AzureIntegrationForm({
                             />
                         }
                         fieldId="config.azure.wifEnabled"
-                        helperText="Removes any existing username and password"
+                        helperText="Enabling short-lived tokens removes any existing credentials from this integration"
                         touched={touched}
                         errors={errors}
                     >
