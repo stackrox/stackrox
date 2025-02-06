@@ -4,12 +4,12 @@ import { interactAndWaitForResponses } from './request';
 
 /**
  * For example, visitFromLeftNav('Violations');
- *
- * @param {string} itemText
- * @param {Record<string, { method: string, url: string }>} [routeMatcherMap]
- * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
  */
-export function visitFromLeftNav(itemText, routeMatcherMap, staticResponseMap) {
+export function visitFromLeftNav(
+    itemText: string,
+    routeMatcherMap: Record<string, { method: string; url: string }>,
+    staticResponseMap: Record<string, { body: unknown } | { fixture: string }>
+) {
     visitMainDashboard();
 
     interactAndWaitForResponses(
@@ -24,17 +24,12 @@ export function visitFromLeftNav(itemText, routeMatcherMap, staticResponseMap) {
 /**
  * For example, visitFromLeftNavExpandable('Vulnerability Management', 'Reporting');
  * For example, visitFromLeftNavExpandable('Platform Configuration', 'Integrations');
- *
- * @param {string} expandableTitle
- * @param {string} itemText
- * @param {Record<string, { method: string, url: string }>} [routeMatcherMap]
- * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
  */
 export function visitFromLeftNavExpandable(
-    expandableTitle,
-    itemText,
-    routeMatcherMap,
-    staticResponseMap
+    expandableTitle: string,
+    itemText: string,
+    routeMatcherMap: Record<string, { method: string; url: string }>,
+    staticResponseMap: Record<string, { body: unknown } | { fixture: string }>
 ) {
     visitMainDashboard();
 
@@ -48,4 +43,17 @@ export function visitFromLeftNavExpandable(
         routeMatcherMap,
         staticResponseMap
     );
+}
+
+export function visitFromHorizontalNav(linkTitle: string) {
+    cy.get(`${navSelectors.horizontalNavLinks}:contains("${linkTitle}")`).click();
+}
+
+export function visitFromHorizontalNavExpandable(expandableItemTitle: string) {
+    return (linkTitle: string) => {
+        cy.get(`nav.pf-m-horizontal-subnav button:contains("${expandableItemTitle}")`).click();
+        cy.get(
+            `nav.pf-m-horizontal-subnav .pf-v5-c-menu a[role="menuitem"]:contains("${linkTitle}")`
+        ).click();
+    };
 }

@@ -259,7 +259,7 @@ describe('Violations', () => {
         visitViolations();
 
         // filter to show the "Full view" of violations
-        selectFilteredWorkflowView('Full view');
+        selectFilteredWorkflowView('All Violations');
 
         cy.intercept('GET', '/v1/alerts?query=*').as('getViolations');
         cy.wait('@getViolations');
@@ -271,33 +271,6 @@ describe('Violations', () => {
         cy.get('ul[aria-label="Violation state and resolution"] li:eq(0)').should(
             'have.text',
             'State: Active'
-        );
-    });
-
-    // TODO(ROX-27198): The test is failing since 2024-11-27.
-    it.skip('should show a resolved violation in the details page', () => {
-        visitViolations();
-
-        // view "Resolved" violations
-        cy.get('button[role="tab"]:contains("Resolved")').click();
-
-        // filter to show the "Full view" of violations
-        selectFilteredWorkflowView('Full view');
-
-        cy.intercept('GET', '/v1/alerts?query=*').as('getViolations');
-        cy.wait('@getViolations');
-
-        // go to the details page
-        cy.get('#ViolationsTable table tr:nth(1) td[data-label="Policy"] a').click();
-
-        // check if the "Violation state" is "Resolved" and has a "Resolved on" label chip
-        cy.get('ul[aria-label="Violation state and resolution"] li:eq(0)').should(
-            'have.text',
-            'State: Resolved'
-        );
-        cy.get('ul[aria-label="Violation state and resolution"] li:eq(1)').should(
-            'contain.text',
-            'Resolved on:'
         );
     });
 

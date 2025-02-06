@@ -2,6 +2,8 @@ const navExpandable = 'ul.pf-v5-c-nav__list li.pf-v5-c-nav__item.pf-m-expandable
 
 const navigation = {
     allNavLinks: '.pf-v5-c-nav a',
+    horizontalNavBar: 'nav.pf-m-horizontal-subnav',
+    horizontalNavLinks: 'nav.pf-m-horizontal-subnav a',
     navLinks: '.pf-v5-c-nav > ul.pf-v5-c-nav__list > li > a',
     navExpandable,
     navExpandablePlatformConfiguration: `${navExpandable}:contains("Platform Configuration")`,
@@ -11,6 +13,6 @@ const navigation = {
     navPanel: '.navigation-panel ul li a',
     topNavBar: '[data-testid="top-nav-bar"]',
     summaryCounts: '[data-testid="top-nav-bar"] [data-testid="summary-tile-count"]',
-};
+} as const;
 
 export default navigation;
