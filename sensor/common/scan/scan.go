@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"strings"
 	"time"
 
 	pkgErrors "github.com/pkg/errors"
@@ -23,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/registrymirror"
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/tlscheck"
+	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/scannerclient"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"golang.org/x/sync/semaphore"
@@ -198,15 +200,18 @@ func (s *LocalScan) getImageWithMetadata(ctx context.Context, errorList *errorhe
 		return nil, nil
 	}
 
-	// errs are only added to errorList when attempts from all pull sources + all registries fail.
-	errs := errorhelpers.NewErrorList("")
+	// allErrs are only added to errorList when attempts from all pull sources + all registries fail.
+	allErrs := errorhelpers.NewErrorList("")
 
 	// For each pull source, obtain the associated registries and attempt to obtain metadata, stopping on first success.
 	for _, pullSource := range pullSources {
+		sourceErrs := errorhelpers.NewErrorList(fmt.Sprintf("for pull source %q", pullSource.GetName().GetFullName()))
+
 		registries, err := s.getRegistries(ctx, req.Namespace, pullSource.GetName(), req.ImagePullSecrets)
 		if err != nil {
 			log.Warnf("Error getting registries for pull source %q, skipping: %v", pullSource.GetName().GetFullName(), err)
-			errs.AddError(err)
+			sourceErrs.AddError(err)
+			allErrs.AddError(sourceErrs.ToError())
 			continue
 		}
 
@@ -214,7 +219,8 @@ func (s *LocalScan) getImageWithMetadata(ctx context.Context, errorList *errorhe
 
 		// Create an image and attempt to enrich it with metadata.
 		pullSourceImage := types.ToImage(pullSource)
-		reg := s.enrichImageWithMetadata(ctx, errs, registries, pullSourceImage)
+		reg := s.enrichImageWithMetadata(ctx, sourceErrs, registries, pullSourceImage)
+		allErrs.AddError(sourceErrs.ToError())
 		if reg != nil {
 			// Successful enrichment.
 			enrichImageDataSource(srcImage, reg, pullSourceImage)
@@ -230,7 +236,7 @@ func (s *LocalScan) getImageWithMetadata(ctx context.Context, errorList *errorhe
 	}
 
 	// Attempts for every pull source and registry have failed.
-	errorList.AddErrors(errs.Errors()...)
+	errorList.AddErrors(allErrs.Errors()...)
 
 	image := types.ToImage(srcImage)
 	image.Notes = append(image.Notes, storage.Image_MISSING_METADATA)
@@ -330,6 +336,19 @@ func (s *LocalScan) getPullSources(srcImage *storage.ContainerImage) []*storage.
 	return cImages
 }
 
+func getRegistryDescription(reg registryTypes.ImageRegistry) string {
+	if strings.HasPrefix(reg.Name(), registry.PullSecretNamePrefix) {
+		return fmt.Sprintf("pull secret integration %q", reg.Name())
+	}
+	if strings.HasPrefix(reg.Name(), registry.GlobalRegNamePrefix) {
+		return fmt.Sprintf("global pull secret integration %q", reg.Name())
+	}
+	if strings.HasPrefix(reg.Name(), registry.NoAuthNamePrefix) {
+		return fmt.Sprintf("anonymous integration %q", reg.Name())
+	}
+	return fmt.Sprintf("integration %q", reg.Name())
+}
+
 // enrichImageWithMetadata will loop through registries returning the first that succeeds in enriching image with metadata.
 func (s *LocalScan) enrichImageWithMetadata(ctx context.Context, errorList *errorhelpers.ErrorList,
 	registries []registryTypes.ImageRegistry, image *storage.Image,
@@ -339,8 +358,9 @@ func (s *LocalScan) enrichImageWithMetadata(ctx context.Context, errorList *erro
 		metadata, err := reg.Metadata(image)
 		if err != nil {
 			insecure := reg.Config(ctx).GetInsecure()
-			log.Debugf("Failed fetching metadata for image %q (%q) with integration %q (insecure: %t): %v", image.GetName().GetFullName(), image.GetId(), reg.Name(), insecure, err)
-			errs = append(errs, pkgErrors.Wrapf(err, "with integration %q (insecure: %t)", reg.Name(), insecure))
+			regDescription := getRegistryDescription(reg)
+			log.Debugf("Failed fetching metadata for image %q (%q) with %s (insecure: %t): %v", image.GetName().GetFullName(), image.GetId(), regDescription, insecure, err)
+			errs = append(errs, pkgErrors.Wrapf(err, "with %s (insecure: %t)", regDescription, insecure))
 			continue
 		}
 
@@ -419,24 +439,24 @@ func scanImage(ctx context.Context, image *storage.Image,
 
 // createNoAuthImageRegistry creates an image registry that has no user/pass.
 func createNoAuthImageRegistry(ctx context.Context, imgName *storage.ImageName, regFactory registries.Factory) (registryTypes.ImageRegistry, error) {
-	registry := imgName.GetRegistry()
-	if registry == "" {
+	reg := imgName.GetRegistry()
+	if reg == "" {
 		return nil, errors.New("no image registry provided, nothing to do")
 	}
 
-	secure, err := tlscheck.CheckTLS(ctx, registry)
+	secure, err := tlscheck.CheckTLS(ctx, reg)
 	if err != nil {
-		return nil, pkgErrors.Wrapf(err, "unable to check TLS for registry %q", registry)
+		return nil, pkgErrors.Wrapf(err, "unable to check TLS for registry %q", reg)
 	}
 
 	ii := &storage.ImageIntegration{
-		Id:         registry,
-		Name:       fmt.Sprintf("NoAuth/reg:%v", registry),
+		Id:         reg,
+		Name:       fmt.Sprintf("%s/reg:%v", registry.NoAuthNamePrefix, reg),
 		Type:       registryTypes.DockerType,
 		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
 		IntegrationConfig: &storage.ImageIntegration_Docker{
 			Docker: &storage.DockerConfig{
-				Endpoint: registry,
+				Endpoint: reg,
 				Insecure: !secure,
 			},
 		},

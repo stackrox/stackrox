@@ -28,8 +28,9 @@ import (
 const (
 	defaultSA = "default"
 
-	pullSecretNamePrefix = "PullSec"
-	globalRegNamePrefix  = "Global"
+	PullSecretNamePrefix = "PullSec"
+	GlobalRegNamePrefix  = "Global"
+	NoAuthNamePrefix     = "NoAuth"
 )
 
 var (
@@ -219,7 +220,7 @@ func (rs *Store) upsertRegistry(namespace, registry string, dce config.DockerCon
 	// remove http/https prefixes from registry, matching may fail otherwise, the created registry.url will have
 	// the appropriate prefix
 	registry = urlfmt.TrimHTTPPrefixes(registry)
-	name := genIntegrationName(pullSecretNamePrefix, namespace, "", registry)
+	name := genIntegrationName(PullSecretNamePrefix, namespace, "", registry)
 
 	ii := createImageIntegration(registry, dce, name)
 	inserted, err := regs.UpdateImageIntegration(ii)
@@ -267,7 +268,7 @@ func (rs *Store) getRegistryForImageInNamespace(image *storage.ImageName, namesp
 // upsertGlobalRegistry will store a new registry with the given credentials into the global registry store.
 func (rs *Store) upsertGlobalRegistry(registry string, dce config.DockerConfigEntry) error {
 	var err error
-	name := genIntegrationName(globalRegNamePrefix, "", "", registry)
+	name := genIntegrationName(GlobalRegNamePrefix, "", "", registry)
 	_, err = rs.globalRegistries.UpdateImageIntegration(createImageIntegration(registry, dce, name))
 	if err != nil {
 		return errors.Wrapf(err, "updating registry store with registry %q", registry)
@@ -511,7 +512,7 @@ func (rs *Store) upsertSecretByName(namespace, secretName string, dockerConfig c
 func (rs *Store) upsertPullSecretByNameNoLock(namespace, secretName, registryAddr string, dce config.DockerConfigEntry) {
 	registryAddr = urlfmt.TrimHTTPPrefixes(registryAddr)
 
-	name := genIntegrationName(pullSecretNamePrefix, namespace, secretName, registryAddr)
+	name := genIntegrationName(PullSecretNamePrefix, namespace, secretName, registryAddr)
 	ii := createImageIntegration(registryAddr, dce, name)
 
 	reg, err := rs.factory.CreateRegistry(ii, types.WithGCPTokenManager(gcp.Singleton()))
