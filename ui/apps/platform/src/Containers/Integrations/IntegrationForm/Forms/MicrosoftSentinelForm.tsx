@@ -211,6 +211,7 @@ function MicrosoftSentinelForm({
             setFieldValue('notifier.microsoftSentinel.secret', '');
             setFieldValue('notifier.microsoftSentinel.clientCertAuthConfig.clientCert', '');
             setFieldValue('notifier.microsoftSentinel.clientCertAuthConfig.privateKey', '');
+            setFieldValue('notifier.microsoftSentinel.wifEnabled', true);
         }
 
         onSave();
@@ -441,7 +442,7 @@ function MicrosoftSentinelForm({
                                                             <a
                                                                 href={getVersionedDocs(
                                                                     version,
-                                                                    'integration/integrate-using-short-lived-tokens.html'
+                                                                    '/integrating/integrate-using-short-lived-tokens'
                                                                 )}
                                                                 target="_blank"
                                                                 rel="noopener noreferrer"
@@ -455,17 +456,16 @@ function MicrosoftSentinelForm({
                                             ariaLabel="Help for short-lived tokens"
                                         />
                                     }
-                                    helperText="Removes any existing credentials"
+                                    helperText="Enabling short-lived tokens removes any existing credentials from this integration"
                                     fieldId="notifier.microsoftSentinel.wifEnabled"
                                     touched={touched}
                                     errors={errors}
                                 >
                                     <Checkbox
                                         isRequired
+                                        checked
                                         label="Use workload identity"
                                         id="notifier.microsoftSentinel.wifEnabled"
-                                        isChecked={values.notifier.microsoftSentinel.wifEnabled}
-                                        onChange={(event, isChecked) => onChange(isChecked, event)}
                                         onBlur={handleBlur}
                                         isDisabled={!isEditable}
                                     />
