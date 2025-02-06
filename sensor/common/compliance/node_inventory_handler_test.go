@@ -3,10 +3,12 @@ package compliance
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -47,6 +49,82 @@ func fakeNodeInventory(nodeName string) *storage.NodeInventory {
 	return msg
 }
 
+func fakeNodeIndex(arch string) *v4.IndexReport {
+	return &v4.IndexReport{
+		HashId:  fmt.Sprintf("sha256:%s", strings.Repeat("a", 64)),
+		Success: true,
+		Contents: &v4.Contents{
+			Packages: []*v4.Package{
+				{
+					Id:      "0",
+					Name:    "openssh-clients",
+					Version: "8.7p1-38.el9",
+					Kind:    "binary",
+					Source: &v4.Package{
+						Name:    "openssh",
+						Version: "8.7p1-38.el9",
+						Kind:    "source",
+						Source:  nil,
+						Cpe:     "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
+					},
+					PackageDb:      "sqlite:usr/share/rpm",
+					RepositoryHint: "hash:sha256:f52ca767328e6919ec11a1da654e92743587bd3c008f0731f8c4de3af19c1830|key:199e2f91fd431d51",
+					Arch:           arch,
+					Cpe:            "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
+				},
+				{
+					Id:      "1",
+					Name:    "openssh-clients-noarch",
+					Version: "8.7p1-38.el9",
+					Kind:    "binary",
+					Source: &v4.Package{
+						Name:    "openssh",
+						Version: "8.7p1-38.el9",
+						Kind:    "source",
+						Source:  nil,
+						Cpe:     "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
+					},
+					PackageDb:      "sqlite:usr/share/rpm",
+					RepositoryHint: "hash:sha256:f52ca767328e6919ec11a1da654e92743587bd3c008f0731f8c4de3af19c1830|key:199e2f91fd431d51",
+					Arch:           "noarch",
+					Cpe:            "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
+				},
+				{
+					Id:      "2",
+					Name:    "openssh-clients-empty-arch",
+					Version: "8.7p1-38.el9",
+					Kind:    "binary",
+					Source: &v4.Package{
+						Name:    "openssh",
+						Version: "8.7p1-38.el9",
+						Kind:    "source",
+						Source:  nil,
+						Cpe:     "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
+					},
+					PackageDb:      "sqlite:usr/share/rpm",
+					RepositoryHint: "hash:sha256:f52ca767328e6919ec11a1da654e92743587bd3c008f0731f8c4de3af19c1830|key:199e2f91fd431d51",
+					Arch:           "",
+					Cpe:            "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
+				},
+			},
+			Repositories: []*v4.Repository{
+				{
+					Id:   "0",
+					Name: "cpe:/o:redhat:enterprise_linux:9::fastdatapath",
+					Key:  "rhel-cpe-repository",
+					Cpe:  "cpe:2.3:o:redhat:enterprise_linux:9:*:fastdatapath:*:*:*:*:*",
+				},
+				{
+					Id:   "1",
+					Name: "cpe:/a:redhat:openshift:4.16::el9",
+					Key:  "rhel-cpe-repository",
+					Cpe:  "cpe:2.3:a:redhat:openshift:4.16:*:el9:*:*:*:*:*",
+				},
+			},
+		},
+	}
+}
+
 var _ suite.TearDownTestSuite = (*NodeInventoryHandlerTestSuite)(nil)
 
 type NodeInventoryHandlerTestSuite struct {
@@ -64,6 +142,70 @@ func assertNoGoroutineLeaks(t *testing.T) {
 
 func (s *NodeInventoryHandlerTestSuite) TearDownTest() {
 	assertNoGoroutineLeaks(s.T())
+}
+
+func (s *NodeInventoryHandlerTestSuite) TestExtractArch() {
+	cases := map[string]struct {
+		rpmArch      string
+		expectedArch string
+	}{
+		"noarch": {
+			rpmArch:      "noarch",
+			expectedArch: "",
+		},
+		"": {
+			rpmArch:      "",
+			expectedArch: "",
+		},
+		"x86_64": {
+			rpmArch:      "x86_64",
+			expectedArch: "x86_64",
+		},
+		"foobar": {
+			rpmArch:      "foobar",
+			expectedArch: "foobar",
+		},
+	}
+	for name, tc := range cases {
+		s.Run(name, func() {
+			got := extractArch(fakeNodeIndex(tc.rpmArch))
+			s.Equal(tc.expectedArch, got)
+		})
+	}
+}
+
+func (s *NodeInventoryHandlerTestSuite) TestAttachRPMtoRHCOS() {
+	arch := "x86_64"
+	rpmIR := fakeNodeIndex(arch)
+	got := attachRPMtoRHCOS("417.94.202501071621-0", arch, rpmIR)
+
+	s.Lenf(got.GetContents().GetPackages(), len(rpmIR.GetContents().GetPackages())+1, "IR should have 1 extra package")
+	s.Lenf(got.GetContents().GetEnvironments(), len(rpmIR.GetContents().GetEnvironments())+1, "IR should have 1 extra envinronment")
+	s.Lenf(got.GetContents().GetRepositories(), len(rpmIR.GetContents().GetRepositories())+1, "IR should have 1 extra repository")
+
+	var rhcosPKG *v4.Package
+	for _, p := range got.GetContents().GetPackages() {
+		if p.GetName() == "rhcos" {
+			rhcosPKG = p
+			break
+		}
+	}
+	s.NotNil(rhcosPKG)
+	s.Equal(rhcosPKG.GetName(), "rhcos")
+	s.Equal(rhcosPKG.GetArch(), arch)
+	s.Equal(rhcosPKG.GetId(), "600")
+
+	var rhcosRepo *v4.Repository
+	for _, r := range got.GetContents().GetRepositories() {
+		if r.GetId() == "600" {
+			rhcosRepo = r
+			break
+		}
+	}
+	s.NotNil(rhcosRepo)
+	s.Equal(rhcosRepo.GetKey(), "git ad")
+	s.Equal(rhcosRepo.GetName(), goldenName)
+	s.Equal(rhcosRepo.GetUri(), goldenURI)
 }
 
 func (s *NodeInventoryHandlerTestSuite) TestCapabilities() {
