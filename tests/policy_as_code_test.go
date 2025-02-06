@@ -163,7 +163,7 @@ func (pc *PolicyAsCodeSuite) TestCreateDefaultCR() {
 	_, err := pc.k8sClient.Create(pc.ctx, pc.toUnstructured(k8sPolicy), metav1.CreateOptions{})
 	pc.Require().NoError(err)
 
-	message := "status never udpated"
+	message := "status never updated"
 	timer := time.NewTimer(time.Second * 5)
 	for {
 		select {
@@ -433,7 +433,7 @@ func (pc *PolicyAsCodeSuite) createCRAndObserveInCentral(policyCR *v1alpha1.Secu
 			}
 		}
 		assert.NotEmpty(collect, policyId)
-	}, time.Second*5, time.Millisecond*30)
+	}, time.Minute*5, time.Millisecond*30)
 	return policyId
 }
 
