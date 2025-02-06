@@ -13,6 +13,7 @@ import (
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/views"
+	"github.com/stackrox/rox/central/views/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
@@ -104,7 +105,8 @@ type ImageCVEViewTestSuite struct {
 	testDB  *pgtest.TestPostgres
 	cveView CveView
 
-	testImages []*storage.Image
+	testImages              []*storage.Image
+	testImagesToDeployments map[string][]*storage.Deployment
 }
 
 func (s *ImageCVEViewTestSuite) SetupSuite() {
@@ -166,6 +168,10 @@ func (s *ImageCVEViewTestSuite) SetupSuite() {
 	for _, d := range deployments {
 		s.Require().NoError(deploymentStore.UpsertDeployment(ctx, d))
 	}
+
+	s.testImagesToDeployments = make(map[string][]*storage.Deployment)
+	s.testImagesToDeployments[images[1].Id] = []*storage.Deployment{deployments[0], deployments[1]}
+	s.testImagesToDeployments[images[2].Id] = []*storage.Deployment{deployments[2]}
 }
 
 func (s *ImageCVEViewTestSuite) TearDownSuite() {
@@ -656,6 +662,56 @@ func (s *ImageCVEViewTestSuite) testCases() []testCase {
 				}
 			},
 		},
+		{
+			desc: "search observed CVEs from inactive images and active images in non-platform deployments",
+			ctx:  context.Background(),
+			q: search.NewQueryBuilder().
+				AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_OBSERVED.String()).
+				AddStrings(search.PlatformComponent, "false", "-").
+				ProtoQuery(),
+			matchFilter: matchAllFilter().
+				withImageFilter(func(image *storage.Image) bool {
+					deps, ok := s.testImagesToDeployments[image.GetId()]
+					if !ok {
+						// include inactive image
+						return true
+					}
+					for _, d := range deps {
+						if !d.PlatformComponent {
+							return true
+						}
+					}
+					return false
+				}).
+				withVulnFilter(func(vuln *storage.EmbeddedVulnerability) bool {
+					return vuln.State == storage.VulnerabilityState_OBSERVED
+				}),
+		},
+		{
+			desc: "search observed CVEs from inactive images and active images in platform deployments",
+			ctx:  context.Background(),
+			q: search.NewQueryBuilder().
+				AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_OBSERVED.String()).
+				AddStrings(search.PlatformComponent, "true", "-").
+				ProtoQuery(),
+			matchFilter: matchAllFilter().
+				withImageFilter(func(image *storage.Image) bool {
+					deps, ok := s.testImagesToDeployments[image.GetId()]
+					if !ok {
+						// include inactive image
+						return true
+					}
+					for _, d := range deps {
+						if d.PlatformComponent {
+							return true
+						}
+					}
+					return false
+				}).
+				withVulnFilter(func(vuln *storage.EmbeddedVulnerability) bool {
+					return vuln.State == storage.VulnerabilityState_OBSERVED
+				}),
+		},
 	}
 }
 
@@ -1042,7 +1098,7 @@ func compileExpectedAffectedImageIDs(images []*storage.Image, filter *filterImpl
 	return ret
 }
 
-func compileExpectedCountBySeverity(images []*storage.Image, filter *filterImpl) *resourceCountByImageCVESeverity {
+func compileExpectedCountBySeverity(images []*storage.Image, filter *filterImpl) *common.ResourceCountByImageCVESeverity {
 	sevToCVEsMap := make(map[storage.VulnerabilitySeverity]set.Set[string])
 	sevToFixableCVEsMap := make(map[storage.VulnerabilitySeverity]set.Set[string])
 
@@ -1072,7 +1128,7 @@ func compileExpectedCountBySeverity(images []*storage.Image, filter *filterImpl)
 			}
 		}
 	}
-	return &resourceCountByImageCVESeverity{
+	return &common.ResourceCountByImageCVESeverity{
 		CriticalSeverityCount:        sevToCVEsMap[storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY].Cardinality(),
 		FixableCriticalSeverityCount: sevToFixableCVEsMap[storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY].Cardinality(),
 

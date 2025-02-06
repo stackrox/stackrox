@@ -7,7 +7,7 @@ import {
     clustersBasePath,
     configManagementPath,
     urlEntityListTypes,
-    violationsBasePath,
+    violationsFullViewPath,
     vulnerabilitiesWorkloadCvesPath,
 } from 'routePaths';
 import { resourceTypes } from 'constants/entityTypes';
@@ -58,7 +58,7 @@ function SummaryCounts({ hasReadAccessForResource }: SummaryCountsProps): ReactE
     const tileLinks: Record<TileResource, string> = {
         Cluster: clustersBasePath,
         Node: `${configManagementPath}/${urlEntityListTypes[resourceTypes.NODE]}`,
-        Alert: violationsBasePath,
+        Alert: violationsFullViewPath,
         Deployment: `${configManagementPath}/${urlEntityListTypes[resourceTypes.DEPLOYMENT]}`,
         Image: generatePathWithQuery(
             vulnerabilitiesWorkloadCvesPath,

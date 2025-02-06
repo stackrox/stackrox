@@ -945,7 +945,6 @@ func TestCheckAllNamespacesWriteAllowed(t *testing.T) {
 	}
 
 	for name, c := range cases {
-		c := c
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			ctx := sac.WithGlobalAccessScopeChecker(context.Background(), c.checker)
@@ -998,7 +997,6 @@ func TestGetNamespacesFromModification(t *testing.T) {
 	}
 
 	for name, c := range cases {
-		c := c
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 

@@ -350,6 +350,7 @@ func copyFromImageCves(ctx context.Context, tx *postgres.Tx, iTime time.Time, ob
 		"snoozed",
 		"snoozeexpiry",
 		"serialized",
+		"cvebaseinfo_epss_epssprobability",
 	}
 
 	ids := set.NewStringSet()
@@ -376,7 +377,7 @@ func copyFromImageCves(ctx context.Context, tx *postgres.Tx, iTime time.Time, ob
 			return marshalErr
 		}
 
-		inputRows = append(inputRows, []interface{}{
+		row := []interface{}{
 			obj.GetId(),
 			obj.GetCveBaseInfo().GetCve(),
 			protocompat.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
@@ -389,7 +390,15 @@ func copyFromImageCves(ctx context.Context, tx *postgres.Tx, iTime time.Time, ob
 			obj.GetSnoozed(),
 			protocompat.NilOrTime(obj.GetSnoozeExpiry()),
 			serialized,
-		})
+		}
+
+		if epss := obj.GetCveBaseInfo().GetEpss(); epss != nil {
+			row = append(row, epss.GetEpssProbability())
+		} else {
+			row = append(row, nil)
+		}
+
+		inputRows = append(inputRows, row)
 
 		// Add the id to be deleted.
 		deletes = append(deletes, obj.GetId())
@@ -1318,7 +1327,7 @@ func (s *storeImpl) retryableGetManyImageMetadata(ctx context.Context, ids []str
 	if err != nil {
 		return nil, nil, err
 	}
-	sacQueryFilter, err := sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err := sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
 	if err != nil {
 		return nil, nil, err
 	}

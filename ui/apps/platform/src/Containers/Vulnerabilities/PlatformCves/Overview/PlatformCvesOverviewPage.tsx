@@ -152,7 +152,7 @@ function PlatformCvesOverviewPage() {
                     onClose={() => setSnoozeModalOptions(null)}
                 />
             )}
-            <PageTitle title="Platform CVEs Overview" />
+            <PageTitle title="Kubernetes Components Overview" />
             <Divider component="div" />
             <PageSection
                 className="pf-v5-u-display-flex pf-v5-u-flex-direction-row pf-v5-u-align-items-center"
@@ -160,7 +160,7 @@ function PlatformCvesOverviewPage() {
             >
                 <Flex alignItems={{ default: 'alignItemsCenter' }} className="pf-v5-u-flex-grow-1">
                     <Flex direction={{ default: 'column' }} className="pf-v5-u-flex-grow-1">
-                        <Title headingLevel="h1">Platform CVEs</Title>
+                        <Title headingLevel="h1">Kubernetes components</Title>
                         <FlexItem>Prioritize and manage scanned CVEs across clusters</FlexItem>
                     </Flex>
                     <FlexItem>

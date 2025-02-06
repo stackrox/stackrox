@@ -3,63 +3,43 @@ package phonehome
 import (
 	"context"
 	"net/http"
-	"strings"
+	"slices"
 
 	"github.com/stackrox/rox/pkg/grpc/authn"
 )
 
+// NoHeaderOrAnyValue pattern allows no header or a header with any value.
+const NoHeaderOrAnyValue Pattern = ""
+
 // RequestParams holds intercepted call parameters.
 type RequestParams struct {
-	UserAgent string
-	UserID    authn.Identity
-	Method    string
-	Path      string
-	Code      int
-	GRPCReq   any
-	HTTPReq   *http.Request
-	// HTTP Headers or, for pure gRPC, the metadata.
+	UserID  authn.Identity
+	Method  string
+	Path    string
+	Code    int
+	GRPCReq any
+	HTTPReq *http.Request
+	// HTTP Headers or, for pure gRPC, the metadata. Includes the User-Agent.
 	Headers func(string) []string
 }
 
-// ServiceMethod describes a service method with its gRPC and HTTP variants.
-type ServiceMethod struct {
-	GRPCMethod string
-	HTTPMethod string
-	HTTPPath   string
-}
-
-// PathMatches returns true if Path equals to pattern or matches '*'-terminating
-// wildcard. E.g. path '/v1/object/id' will match pattern '/v1/object/*'.
-func (rp *RequestParams) PathMatches(pattern string) bool {
-	if strings.HasSuffix(pattern, "*") {
-		return strings.HasPrefix(rp.Path, pattern[0:len(pattern)-1])
-	}
-	return rp.Path == pattern
-}
-
-// HasPathIn returns true if Path matches an element in patterns.
-func (rp *RequestParams) HasPathIn(patterns []string) bool {
-	for _, p := range patterns {
-		if rp.PathMatches(p) {
-			return true
+// HasHeader returns true if for each header pattern there is at least one
+// request header with at least one matching value. A request without the
+// expected header matches NoHeaderOrAnyValue pattern for this header.
+func (rp *RequestParams) HasHeader(patterns map[string]Pattern) bool {
+	for header, expression := range patterns {
+		if expression == NoHeaderOrAnyValue {
+			continue
+		}
+		if rp.Headers == nil {
+			return false
+		}
+		values := rp.Headers(header)
+		if len(values) == 0 || !slices.ContainsFunc(values, expression.Match) {
+			return false
 		}
 	}
-	return false
-}
-
-// HasUserAgentWith returns true if UserAgent contains any of the sub-strings.
-func (rp *RequestParams) HasUserAgentWith(substrings []string) bool {
-	for _, pattern := range substrings {
-		if strings.Contains(rp.UserAgent, pattern) {
-			return true
-		}
-	}
-	return false
-}
-
-// Is checks wether the request targets the service method: either gRPC or HTTP.
-func (rp *RequestParams) Is(s *ServiceMethod) bool {
-	return rp.Method == s.GRPCMethod || (rp.Method == s.HTTPMethod && rp.PathMatches(s.HTTPPath))
+	return true
 }
 
 // GetGRPCRequestBody returns the request body with the type inferred from the

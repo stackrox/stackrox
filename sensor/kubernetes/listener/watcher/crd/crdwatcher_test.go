@@ -24,7 +24,7 @@ const (
 	kind                             = "CustomResourceDefinition"
 	customResourceDefinitionListName = "CustomResourceDefinitionList"
 	crdName                          = "fake-crd"
-	defaultTimeout                   = 5 * time.Second
+	defaultTimeout                   = 10 * time.Second
 )
 
 var (

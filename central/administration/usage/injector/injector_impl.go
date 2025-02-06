@@ -46,7 +46,7 @@ func (i *injectorImpl) gatherLoop() {
 	ctx, cancel := context.WithCancel(context.Background())
 	// There will most probably be no data on startup: sensors won't have time
 	// to report.
-	wg := &sync.WaitGroup{}
+	var wg sync.WaitGroup
 	for {
 		select {
 		case <-i.tickChan:

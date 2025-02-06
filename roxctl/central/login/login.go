@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/auth"
 	"github.com/stackrox/rox/roxctl/common/config"
 	"github.com/stackrox/rox/roxctl/common/environment"
@@ -274,7 +275,8 @@ In case the access token is expired and cannot be refreshed, you have to run "ro
 func (l *loginCommand) verifyLoginAuthProviders() error {
 	// Use the HTTP client with the anonymous auth method to force anonymous access.
 	// Note that this may still be done via HTTP/2 instead of HTTP/1, unless HTTP/1 is forced.
-	httpClient, err := l.env.HTTPClient(30*time.Second, auth.Anonymous())
+	httpClient, err := l.env.HTTPClient(30*time.Second, common.WithAuthMethod(auth.Anonymous()))
+
 	if err != nil {
 		return errors.Wrap(err, "creating HTTP client")
 	}

@@ -26,50 +26,62 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
+const (
+	cluster1name   = "cluster1name"
+	cluster2name   = "cluster2name"
+	container1name = "container1name"
+	container2name = "container2name"
+	dep1name       = "dep1name"
+	dep2name       = "dep2name"
+	dep3name       = "dep3name"
+	namespace1name = "namespace1name"
+	namespace2name = "namespace2name"
+)
+
 func testDeployments() []*storage.Deployment {
 	return []*storage.Deployment{
 		{
 			Id:          fixtureconsts.Deployment1,
-			Name:        "dep1name",
-			Namespace:   "namespace1name",
-			NamespaceId: "namespace1id",
-			ClusterId:   "cluster1id",
-			ClusterName: "cluster1name",
+			Name:        dep1name,
+			Namespace:   namespace1name,
+			NamespaceId: fixtureconsts.Namespace1,
+			ClusterId:   fixtureconsts.Cluster1,
+			ClusterName: cluster1name,
 			Containers: []*storage.Container{
 				{
-					Name:  "container1name",
+					Name:  container1name,
 					Image: imageTypes.ToContainerImage(testImages()[0]),
 				},
 				{
-					Name:  "container2name",
+					Name:  container2name,
 					Image: imageTypes.ToContainerImage(testImages()[1]),
 				},
 			},
 		},
 		{
 			Id:          fixtureconsts.Deployment2,
-			Name:        "dep2name",
-			Namespace:   "namespace1name",
-			NamespaceId: "namespace1id",
-			ClusterId:   "cluster1id",
-			ClusterName: "cluster1name",
+			Name:        dep2name,
+			Namespace:   namespace1name,
+			NamespaceId: fixtureconsts.Namespace1,
+			ClusterId:   fixtureconsts.Cluster1,
+			ClusterName: cluster1name,
 			Containers: []*storage.Container{
 				{
-					Name:  "container1name",
+					Name:  container1name,
 					Image: imageTypes.ToContainerImage(testImages()[0]),
 				},
 			},
 		},
 		{
 			Id:          fixtureconsts.Deployment3,
-			Name:        "dep3name",
-			Namespace:   "namespace2name",
-			NamespaceId: "namespace2id",
-			ClusterId:   "cluster2id",
-			ClusterName: "cluster2name",
+			Name:        dep3name,
+			Namespace:   namespace2name,
+			NamespaceId: fixtureconsts.Namespace2,
+			ClusterId:   fixtureconsts.Cluster2,
+			ClusterName: cluster2name,
 			Containers: []*storage.Container{
 				{
-					Name:  "container1name",
+					Name:  container1name,
 					Image: imageTypes.ToContainerImage(testImages()[1]),
 				},
 			},

@@ -229,16 +229,8 @@ func getImageIDFromScope(contexts ...context.Context) string {
 	var scope scoped.Scope
 	var hasScope bool
 	for _, ctx := range contexts {
-		if features.VulnMgmtWorkloadCVEs.Enabled() {
-			if scope, hasScope = scoped.GetScopeAtLevel(ctx, v1.SearchCategory_IMAGES); hasScope {
-				return scope.ID
-			}
-		} else {
-			if scope, ok := scoped.GetScope(ctx); ok {
-				if scope.Level == v1.SearchCategory_IMAGES {
-					return scope.ID
-				}
-			}
+		if scope, hasScope = scoped.GetScopeAtLevel(ctx, v1.SearchCategory_IMAGES); hasScope {
+			return scope.ID
 		}
 	}
 	return ""
@@ -504,16 +496,9 @@ func (resolver *imageComponentResolver) LayerIndex() (*int32, error) {
 		return &v, nil
 	}
 
-	var scope scoped.Scope
-	var hasScope bool
-	if features.VulnMgmtWorkloadCVEs.Enabled() {
-		if scope, hasScope = scoped.GetScopeAtLevel(resolver.ctx, v1.SearchCategory_IMAGES); !hasScope {
-			return nil, nil
-		}
-	} else {
-		if scope, hasScope = scoped.GetScope(resolver.ctx); !hasScope || scope.Level != v1.SearchCategory_IMAGES {
-			return nil, nil
-		}
+	scope, hasScope := scoped.GetScopeAtLevel(resolver.ctx, v1.SearchCategory_IMAGES)
+	if !hasScope {
+		return nil, nil
 	}
 
 	edges, err := resolver.root.ImageComponentEdgeDataStore.SearchRawEdges(resolver.ctx, resolver.componentQuery())

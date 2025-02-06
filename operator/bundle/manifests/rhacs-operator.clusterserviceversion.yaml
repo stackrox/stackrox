@@ -984,7 +984,6 @@ spec:
           for object updates.
 
 
-
           Note: this will not have any effect unless ''Listen On Creates'' is set
           to ''true'' as well.'
         displayName: Listen On Updates
@@ -1165,21 +1164,13 @@ spec:
         displayName: Collection
         path: perNode.collector.collection
         x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:select:EBPF
         - urn:alm:descriptor:com.tectonic.ui:select:CORE_BPF
         - urn:alm:descriptor:com.tectonic.ui:select:NoCollection
-      - description: 'The image flavor to use for collector. "Regular" images are
-          bigger in size, but contain probes
-
-          for most kernels. If you use the "Slim" image flavor, you must ensure that
-          your Central instance
-
-          is connected to the internet, or regularly receives Collector Support Package
-          updates (for further
-
-          instructions, please refer to the documentation).'
+      - description: Deprecated field.
         displayName: Image Flavor
         path: perNode.collector.imageFlavor
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Deprecated field. This field will be removed in a future release.
         displayName: Force Collection
         path: perNode.collector.forceCollection
@@ -1640,8 +1631,7 @@ spec:
                 - name: RELATED_IMAGE_SCANNER_SLIM
                 - name: RELATED_IMAGE_SCANNER_DB
                 - name: RELATED_IMAGE_SCANNER_DB_SLIM
-                - name: RELATED_IMAGE_COLLECTOR_SLIM
-                - name: RELATED_IMAGE_COLLECTOR_FULL
+                - name: RELATED_IMAGE_COLLECTOR
                 - name: RELATED_IMAGE_ROXCTL
                 - name: RELATED_IMAGE_CENTRAL_DB
                 - name: RELATED_IMAGE_SCANNER_V4_DB

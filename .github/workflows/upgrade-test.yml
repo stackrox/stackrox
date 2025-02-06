@@ -111,35 +111,26 @@ jobs:
             "${{inputs.previous-version}}" \
             "${{inputs.milestone}}"
       - name: Post to Slack about cluster creation
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        uses: slackapi/slack-github-action@v1.27.0
+        uses: slackapi/slack-github-action@v2.0.0
         with:
-          channel-id: ${{ needs.properties.outputs.slack-channel }}
-          payload: >-
-            {
-              "text": "Upgrade clusters have been prepared for ${{ inputs.milestone }} milestone. Consult the upgrade test documentation for next steps.",
-
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": ":${{ fromJSON('["desert", "tada"]')[github.event.inputs.dry-run != 'true'] }}: *Upgrade clusters have been prepared for ${{ inputs.milestone }} milestone of <${{ github.server_url }}/${{ github.repository }}|${{ github.repository }}> by ${{ github.event.sender.login }}.*"
-                  }
-                },
-                {
-                  "type": "divider"
-                },
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": ":arrow_right: Setup your local access to Central by running in your clone of `${{ github.repository }}`:\n```./scripts/release-tools/upgrade-cluster-client.sh ${{ inputs.milestone }}```"
-                  }
-                }
-              ]
-            }
+          method: chat.postMessage
+          token: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload: |
+            channel: "${{ needs.properties.outputs.slack-channel }}"
+            text: "Upgrade clusters have been prepared for ${{ inputs.milestone }} milestone. Consult the upgrade test documentation for next steps."
+            blocks:
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: |
+                    :${{ fromJSON('["desert", "tada"]')[github.event.inputs.dry-run != 'true'] }}: *Upgrade clusters have been prepared for ${{ inputs.milestone }} milestone of <${{ github.server_url }}/${{ github.repository }}|${{ github.repository }}> by ${{ github.event.sender.login }}.*
+              - type: "divider"
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: |
+                    :arrow_right: Setup your local access to Central by running in your clone of `${{ github.repository }}`:
+                    ```./scripts/release-tools/upgrade-cluster-client.sh ${{ inputs.milestone }}```
 
   notify-failed-clusters:
     name: Notify about failed cluster creation
@@ -148,32 +139,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Post to Slack
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        uses: slackapi/slack-github-action@v1.27.0
+        uses: slackapi/slack-github-action@v2.0.0
         with:
-          channel-id: ${{ needs.properties.outputs.slack-channel }}
-          payload: >-
-            {
-              "text": "Couldn't create upgrade clusters for ${{ inputs.milestone }} milestone. Investigate the output of the <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}> workflow run.",
-
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": ":${{ fromJSON('["desert", "red_circle"]')[github.event.inputs.dry-run != 'true'] }}: *Couldn't create upgrade clusters for ${{ inputs.milestone }} milestone of <${{ github.server_url }}/${{ github.repository }}|${{ github.repository }}> by ${{ github.event.sender.login }}.*"
-                  }
-                },
-                {
-                  "type": "divider"
-                },
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": ":arrow_right: *Please investigate the output of the <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}> workflow run and then restart the script from where it failed.*"
-                  }
-                }
-              ]
-            }
+          method: chat.postMessage
+          token: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload: |
+            channel: "${{ needs.properties.outputs.slack-channel }}"
+            text: "Couldn't create upgrade clusters for ${{ inputs.milestone }} milestone. Investigate the output of the <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}> workflow run."
+            blocks:
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: |
+                    :${{ fromJSON('["desert", "red_circle"]')[github.event.inputs.dry-run != 'true'] }}: *Couldn't create upgrade clusters for ${{ inputs.milestone }} milestone of <${{ github.server_url }}/${{ github.repository }}|${{ github.repository }}> by ${{ github.event.sender.login }}.*
+              - type: "divider"
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: |
+                    :arrow_right: Please investigate the output of the <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}> workflow run and then restart the script from where it failed.

@@ -68,7 +68,7 @@ import (
 	debugService "github.com/stackrox/rox/central/debug/service"
 	"github.com/stackrox/rox/central/declarativeconfig"
 	declarativeConfigHealthService "github.com/stackrox/rox/central/declarativeconfig/health/service"
-	delegatedRegistryConfigDataStore "github.com/stackrox/rox/central/delegatedregistryconfig/datastore"
+	delegatedRegistryConfigDS "github.com/stackrox/rox/central/delegatedregistryconfig/datastore"
 	delegatedRegistryConfigService "github.com/stackrox/rox/central/delegatedregistryconfig/service"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	deploymentService "github.com/stackrox/rox/central/deployment/service"
@@ -139,6 +139,7 @@ import (
 	"github.com/stackrox/rox/central/reprocessor"
 	collectionService "github.com/stackrox/rox/central/resourcecollection/service"
 	"github.com/stackrox/rox/central/risk/handlers/timeline"
+	riskManager "github.com/stackrox/rox/central/risk/manager"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/role/sachelper"
 	roleService "github.com/stackrox/rox/central/role/service"
@@ -184,6 +185,7 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/config"
+	"github.com/stackrox/rox/pkg/continuousprofiling"
 	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/devmode"
@@ -272,6 +274,11 @@ func main() {
 	defer utils.IgnoreError(log.InnerLogger.Sync)
 
 	premain.StartMain()
+
+	if err := continuousprofiling.SetupClient(continuousprofiling.DefaultConfig(),
+		continuousprofiling.WithDefaultAppName("central")); err != nil {
+		log.Errorf("unable to start continuous profiling: %v", err)
+	}
 
 	conf := config.GetConfig()
 	if conf == nil || conf.Maintenance.SafeMode {
@@ -474,7 +481,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		policyDataStore.Singleton(),
 		processBaselineDataStore.Singleton(),
 		networkBaselineDataStore.Singleton(),
-		delegatedRegistryConfigDataStore.Singleton(),
+		delegatedRegistryConfigDS.Singleton(),
 		iiDatastore.Singleton(),
 		v2ComplianceMgr.Singleton(),
 		autoTriggerUpgrades,
@@ -614,17 +621,18 @@ func startGRPCServer() {
 			if cfg := centralclient.Enable(); cfg.Enabled() {
 				centralclient.RegisterCentralClient(&config, basicAuthProvider.ID())
 				gs := cfg.Gatherer()
+				gs.AddGatherer(authDS.Gather)
 				gs.AddGatherer(authProviderTelemetry.Gather)
-				gs.AddGatherer(signatureIntegrationDS.Gather)
-				gs.AddGatherer(roleDataStore.Gather)
+				gs.AddGatherer(cloudSourcesDS.Gather(cloudSourcesDS.Singleton()))
 				gs.AddGatherer(clusterDataStore.Gather)
 				gs.AddGatherer(declarativeconfig.ManagerSingleton().Gather())
-				gs.AddGatherer(notifierDS.Gather)
+				gs.AddGatherer(delegatedRegistryConfigDS.Gather(delegatedRegistryConfigDS.Singleton()))
 				gs.AddGatherer(externalbackupsDS.Gather)
-				gs.AddGatherer(imageintegrationsDS.Gather)
-				gs.AddGatherer(cloudSourcesDS.Gather(cloudSourcesDS.Singleton()))
-				gs.AddGatherer(authDS.Gather)
 				gs.AddGatherer(featuresTelemetry.Gather)
+				gs.AddGatherer(imageintegrationsDS.Gather)
+				gs.AddGatherer(notifierDS.Gather)
+				gs.AddGatherer(roleDataStore.Gather)
+				gs.AddGatherer(signatureIntegrationDS.Gather)
 			}
 		}
 	}
@@ -749,8 +757,8 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		},
 		{
 			Route:         "/api/v1/images/sbom",
-			Authorizer:    user.With(permissions.Modify(permissions.WithLegacyAuthForSAC(resources.Image, true))),
-			ServerHandler: imageService.SBOMHandler(imageintegration.Set(), enrichment.ImageEnricherSingleton(), sachelper.NewClusterSacHelper(clusterDataStore.Singleton())),
+			Authorizer:    user.With(permissions.Modify(resources.Image)),
+			ServerHandler: imageService.SBOMHandler(imageintegration.Set(), enrichment.ImageEnricherSingleton(), sachelper.NewClusterSacHelper(clusterDataStore.Singleton()), riskManager.Singleton()),
 			Compression:   true,
 		},
 		{

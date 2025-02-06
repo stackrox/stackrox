@@ -17,7 +17,7 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Integration)): {
-			"/v1.DeclarativeConfigHealthService/GetDeclarativeConfigHealths",
+			v1.DeclarativeConfigHealthService_GetDeclarativeConfigHealths_FullMethodName,
 		},
 	})
 

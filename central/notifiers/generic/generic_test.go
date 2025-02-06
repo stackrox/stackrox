@@ -107,3 +107,40 @@ func TestConstructJSON(t *testing.T) {
 		})
 	}
 }
+
+func TestJSONDoesNotContainNewlines(t *testing.T) {
+	var cases = map[string]struct {
+		fields []*storage.KeyValuePair
+	}{
+		"Base, no extra field": {},
+		"Base, with extra field": {
+			fields: []*storage.KeyValuePair{
+				{
+					Key:   "key1",
+					Value: "value1",
+				},
+				{
+					Key:   "key2",
+					Value: "value2",
+				},
+			},
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			notifier := makeBaseGeneric()
+			var err error
+			notifier.Notifier.GetGeneric().ExtraFields = c.fields
+			notifier.extraFieldsJSONPrefix, err = getExtraFieldJSON(c.fields)
+			require.NoError(t, err)
+
+			reader, err := notifier.constructJSON(fixtures.GetAlert(), alertMessageKey)
+			require.NoError(t, err)
+
+			jsonBytes, err := io.ReadAll(reader)
+			require.NoError(t, err)
+			assert.NotContains(t, string(jsonBytes), "\n")
+		})
+	}
+}

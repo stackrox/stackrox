@@ -117,7 +117,6 @@ func TestGetResourceType(t *testing.T) {
 		{typ: &storage.User{}, resourceType: globallyScoped},
 		{typ: &storage.WatchedImage{}, resourceType: globallyScoped},
 	} {
-		tc := tc
 		t.Run(fmt.Sprintf("%T (join: %t, perm: %t) -> %d", tc.typ, tc.joinTable, tc.permissionChecker, tc.resourceType), func(t *testing.T) {
 			actual := getResourceType(
 				fmt.Sprintf("%T", tc.typ),

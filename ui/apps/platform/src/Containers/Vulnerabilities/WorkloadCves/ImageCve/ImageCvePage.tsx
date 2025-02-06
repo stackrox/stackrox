@@ -93,6 +93,11 @@ export const imageCveMetadataQuery = gql`
                 summary
                 link
                 operatingSystem
+                cveBaseInfo {
+                    epss {
+                        epssProbability
+                    }
+                }
             }
         }
     }

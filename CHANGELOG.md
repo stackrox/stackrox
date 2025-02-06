@@ -13,14 +13,20 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Added Features
 
-- ROX-26849: Introduce report caching for RHCOS Node Indexing
+- ROX-25625: RHCOS Node Scanning with Scanner V4 can now detect vulnerabilities for the containerized image of the RHCOS itself.
+- ROX-26849: Introduce report caching for RHCOS Node Indexing.
 - ROX-25638: Introduce configurable log rotation. `ROX_LOGGING_MAX_ROTATION_FILES` and `ROX_LOGGING_MAX_SIZE_MB` variables allow for configuring the number and the size of a central log rotation file.
 - ROX-14332: Automatic service certificate renewal for Secured Clusters installed using Helm or operator.
 - Scanner V4 adds supports for openSUSE Leap 15.5 and 15.6
+- ROX-27596: ROX_EXTERNAL_IPS feature flag enabled by default. Note: Collector will still need to be configured for external IPs for this to have an effect.
+- ROX-26088: Introduced Cluster Registration Secrets (CRS) as a successor to init bundles for registering Secured Clusters.
 
 ### Removed Features
 
 - Scanner V4 drops support for openSUSE Leap 15.0 and 15.1
+- ROX-18384 Slim Mode for Collector has been removed following deprecation in 4.5. Any Clusters configured to use slim mode will be converted to use regular Collector images.
+    - RELATED_IMAGE_COLLECTOR_SLIM and RELATED_IMAGE_COLLECTOR_FULL environment variables have been removed, in favor of RELATED_IMAGE_COLLECTOR. Users that set these variables
+      to override Collector images should either use the new environment variable or use other image override mechanisms for your chosen installation method.
 
 ### Deprecated Features
 
@@ -37,6 +43,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
       kubectl label crd/securitypolicies.config.stackrox.io app.kubernetes.io/managed-by=Helm
 
   The value of the annotations will need to be updated if you've updated the release name (i.e. "stackrox-central-services") or namespace (i.e. "stackrox").
+- `ROX_NODE_INDEX_CONTAINER_API` is no longer a valid environment variable to set in the Compliance pod.
+  - The node scanner never reached out to the Red Hat Container Catalog, so this variable was never used.
 
 ## [4.6.0]
 

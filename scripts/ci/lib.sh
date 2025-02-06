@@ -68,6 +68,8 @@ ci_exit_trap() {
     done
 
     handle_dangling_processes
+
+    gate_flaky_tests "${exit_code}"
 }
 
 # handle_dangling_processes() - The OpenShift CI ci-operator will not complete a
@@ -1576,7 +1578,7 @@ post_process_test_results() {
         # we will fallback to short commit
         base_link="$(echo "$JOB_SPEC" | jq ".refs.base_link | select( . != null )" -r)"
         calculated_base_link="https://github.com/stackrox/stackrox/commit/$(make --quiet --no-print-directory shortcommit)"
-        curl --retry 5 --retry-connrefused -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.22/junit2jira -o junit2jira && \
+        curl --retry 5 --retry-connrefused -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.23/junit2jira -o junit2jira && \
         chmod +x junit2jira && \
         ./junit2jira \
             -base-link "${base_link:-$calculated_base_link}" \
@@ -1597,6 +1599,42 @@ post_process_test_results() {
         save_test_metrics "${csv_output}"
     } || true
     set -u
+}
+
+gate_flaky_tests() {
+    local exit_code="$1"
+
+    if [[ "${exit_code}" == "0" ]]; then
+        exit "${exit_code}"
+    fi
+
+    # Gating flaky tests is enabled only on PRs.
+    if ! is_in_PR_context; then
+        exit "${exit_code}"
+    fi
+
+    # Prepare flakechecker
+    curl --retry 5 --retry-connrefused -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.23/flakechecker -o /tmp/flakechecker || exit "${exit_code}"
+    chmod +x /tmp/flakechecker
+    setup_gcp || echo "setup_gcp called"
+
+    # Run flakechecker for failed test
+    local config_file="${SCRIPTS_ROOT}/scripts/ci/flakechecker/flake-config.yml"
+    if /tmp/flakechecker -config-file "${config_file}" -job-name "${JOB_NAME}" -junit-reports-dir "${ARTIFACT_DIR}"; then
+      # Flakechecker exits successfully IF AND ONLY IF it finds a NON-EMPTY set of test failures in the
+      # JUnit report, AND ALL these test failures are found to be known flaky tests defined in flake-config.yml file.
+      # And the recent failure ratio for found failed tests is below threshold defined in flake-config.yml.
+      #
+      # In this case, we change the overall exit code of the job to success, hoping that the failure was only
+      # due to the tests flaky behavior (and not some other issue in the test job).
+      exit 0
+    else
+      # Flakechecker fails in case it identified test failures which do not qualify for suppression, OR
+      # in case there were no test failures at all in the JUnit report (a sign of problems elsewhere in the test job).
+      #
+      # In this case we keep the exit code as it was.
+      exit "${exit_code}"
+    fi
 }
 
 make_prow_job_link() {

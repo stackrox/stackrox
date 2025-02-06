@@ -58,6 +58,7 @@ export function getReportConfigurationFromFormValues(
         fixability,
         severities: reportParameters.cveSeverities,
         imageTypes: reportParameters.imageType,
+        includeEpssProbability: reportParameters.includeEpssProbability,
         includeNvdCvss: reportParameters.includeNvdCvss,
     };
     let vulnReportFilters: VulnerabilityReportFilters;
@@ -187,6 +188,7 @@ export function getReportFormValuesFromConfiguration(
             imageType: vulnReportFilters.imageTypes,
             cvesDiscoveredSince,
             cvesDiscoveredStartDate,
+            includeEpssProbability: vulnReportFilters.includeEpssProbability,
             includeNvdCvss: vulnReportFilters.includeNvdCvss,
             reportScope: {
                 id: resourceScope.collectionScope.collectionId,

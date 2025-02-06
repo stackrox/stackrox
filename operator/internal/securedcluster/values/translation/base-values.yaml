@@ -22,3 +22,5 @@ scannerV4:
       generate: false
     serviceTLS:
       generate: false
+crs:
+  enabled: true

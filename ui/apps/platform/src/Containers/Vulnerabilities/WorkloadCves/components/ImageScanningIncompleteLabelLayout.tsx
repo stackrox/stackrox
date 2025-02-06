@@ -1,27 +1,16 @@
 import React from 'react';
 import { Button, Flex, FlexItem, Label, Popover } from '@patternfly/react-core';
 import { ExclamationTriangleIcon } from '@patternfly/react-icons';
-import isEmpty from 'lodash/isEmpty';
 
 import PopoverBodyContent from 'Components/PopoverBodyContent';
 
-import getImageScanMessage from '../utils/getImageScanMessage';
+import { ScanMessage } from 'messages/vulnMgmt.messages';
 
 export type ImageScanningIncompleteLabelProps = {
-    imageNotes: string[];
-    scanNotes: string[];
+    scanMessage: ScanMessage;
 };
 
-function ImageScanningIncompleteLabel({
-    imageNotes,
-    scanNotes,
-}: ImageScanningIncompleteLabelProps) {
-    const scanMessage = getImageScanMessage(imageNotes, scanNotes);
-
-    if (isEmpty(scanMessage)) {
-        return null;
-    }
-
+function ImageScanningIncompleteLabel({ scanMessage }: ImageScanningIncompleteLabelProps) {
     return (
         <>
             <Popover

@@ -32,6 +32,7 @@ var (
 	_ types.Scanner                  = (*scannerv4)(nil)
 	_ types.ImageVulnerabilityGetter = (*scannerv4)(nil)
 	_ types.NodeScanner              = (*scannerv4)(nil)
+	_ types.SBOMer                   = (*scannerv4)(nil)
 
 	log = logging.LoggerForModule()
 
@@ -104,6 +105,18 @@ func newScanner(integration *storage.ImageIntegration, activeRegistries registri
 	}
 
 	return scanner, nil
+}
+
+// GetSBOM returns sbom of an image as a byte array. It also returns a boolean indicating if the index report for the image was found.
+func (s *scannerv4) GetSBOM(image *storage.Image) ([]byte, bool, error) {
+	digest, err := pkgscanner.DigestFromImage(image)
+	if err != nil {
+		return nil, false, err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
+	defer cancel()
+	sbom, found, err := s.scannerClient.GetSBOM(ctx, image.GetName().GetFullName(), digest)
+	return sbom, found, err
 }
 
 func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
@@ -233,7 +246,7 @@ func (s *scannerv4) GetNodeVulnerabilityReport(node *storage.Node, indexReport *
 
 	vr, err := s.scannerClient.GetVulnerabilities(ctx, nodeDigest, indexReport.GetContents())
 	if err != nil {
-		return nil, errors.Wrap(err, "Failed to create vulnerability report")
+		return nil, errors.Wrap(err, "Scanner V4 client call to GetVulnerabilities")
 	}
 
 	return vr, nil

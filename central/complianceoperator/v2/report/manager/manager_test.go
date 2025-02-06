@@ -3,6 +3,7 @@ package manager
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -14,6 +15,9 @@ import (
 	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager/watcher"
 	scanConfigurationDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
 	scanMocks "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore/mocks"
+	bindingsDS "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore/mocks"
+	suiteDS "github.com/stackrox/rox/central/complianceoperator/v2/suites/datastore/mocks"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
@@ -22,11 +26,13 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"k8s.io/utils/strings/slices"
 )
 
 type ManagerTestSuite struct {
@@ -38,6 +44,8 @@ type ManagerTestSuite struct {
 	profileDataStore               *profileMocks.MockDataStore
 	snapshotDataStore              *snapshotMocks.MockDataStore
 	complianceIntegrationDataStore *integrationMocks.MockDataStore
+	suiteDataStore                 *suiteDS.MockDataStore
+	bindingsDataStore              *bindingsDS.MockDataStore
 	reportGen                      *reportGen.MockComplianceReportGenerator
 }
 
@@ -54,6 +62,8 @@ func (m *ManagerTestSuite) SetupTest() {
 	m.profileDataStore = profileMocks.NewMockDataStore(m.mockCtrl)
 	m.snapshotDataStore = snapshotMocks.NewMockDataStore(m.mockCtrl)
 	m.complianceIntegrationDataStore = integrationMocks.NewMockDataStore(m.mockCtrl)
+	m.suiteDataStore = suiteDS.NewMockDataStore(m.mockCtrl)
+	m.bindingsDataStore = bindingsDS.NewMockDataStore(m.mockCtrl)
 	m.reportGen = reportGen.NewMockComplianceReportGenerator(m.mockCtrl)
 }
 
@@ -62,7 +72,7 @@ func TestComplianceReportManager(t *testing.T) {
 }
 
 func (m *ManagerTestSuite) TestSubmitReportRequest() {
-	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.reportGen)
+	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.reportGen)
 	reportRequest := &storage.ComplianceOperatorScanConfigurationV2{
 		ScanConfigName: "test_scan_config",
 		Id:             "test_scan_config",
@@ -83,10 +93,13 @@ func (m *ManagerTestSuite) TestHandleReportRequest() {
 	identity.EXPECT().UID().AnyTimes().Return("user-id")
 	identity.EXPECT().FullName().AnyTimes().Return("user-name")
 	identity.EXPECT().FriendlyName().AnyTimes().Return("user-friendly-name")
+	m.scanConfigDataStore.EXPECT().GetScanConfigClusterStatus(gomock.Any(), newGetScanConfigClusterStatusMatcher(getTestScanConfig())).AnyTimes().Return(getTestClusterStatusFromScanConfig(getTestScanConfig()), nil)
+	m.suiteDataStore.EXPECT().GetSuites(gomock.Any(), newGetSuitesMatcher(getTestScanConfig())).AnyTimes()
+	m.bindingsDataStore.EXPECT().GetScanSettingBindings(gomock.Any(), newGetBindingMatcher(getTestScanConfig())).AnyTimes()
 	ctx := authn.ContextWithIdentity(context.Background(), identity, m.T())
 
 	m.Run("Successful report, no watchers running", func() {
-		manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.reportGen)
+		manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.reportGen)
 		manager.Start()
 		wg := concurrency.NewWaitGroup(1)
 		m.snapshotDataStore.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
@@ -102,7 +115,7 @@ func (m *ManagerTestSuite) TestHandleReportRequest() {
 	})
 
 	m.Run("Error in the database", func() {
-		manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.reportGen)
+		manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.reportGen)
 		manager.Start()
 		wg := concurrency.NewWaitGroup(1)
 		m.snapshotDataStore.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
@@ -116,7 +129,7 @@ func (m *ManagerTestSuite) TestHandleReportRequest() {
 	})
 
 	m.Run("Successful report, with watcher running", func() {
-		manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.reportGen)
+		manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.reportGen)
 		manager.Start()
 		now := protocompat.TimestampNow()
 		m.scanConfigDataStore.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).AnyTimes().
@@ -171,13 +184,16 @@ func (m *ManagerTestSuite) TestFailedReportWithWatcherRunningAndNoNotifiers() {
 	identity.EXPECT().UID().AnyTimes().Return("user-id")
 	identity.EXPECT().FullName().AnyTimes().Return("user-name")
 	identity.EXPECT().FriendlyName().AnyTimes().Return("user-friendly-name")
+	m.scanConfigDataStore.EXPECT().GetScanConfigClusterStatus(gomock.Any(), newGetScanConfigClusterStatusMatcher(getTestScanConfig())).AnyTimes().Return(getTestClusterStatusFromScanConfig(getTestScanConfig()), nil)
+	m.suiteDataStore.EXPECT().GetSuites(gomock.Any(), newGetSuitesMatcher(getTestScanConfig())).AnyTimes()
+	m.bindingsDataStore.EXPECT().GetScanSettingBindings(gomock.Any(), newGetBindingMatcher(getTestScanConfig())).AnyTimes()
 	ctx := authn.ContextWithIdentity(context.Background(), identity, m.T())
 
 	// Set the timeouts to 1 and 2 seconds so the scan watchers timeout fast
 	m.T().Setenv(env.ComplianceScanWatcherTimeout.EnvVar(), "1s")
 	m.T().Setenv(env.ComplianceScanScheduleWatcherTimeout.EnvVar(), "2s")
 
-	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.reportGen)
+	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.reportGen)
 	manager.Start()
 	now := protocompat.TimestampNow()
 	scanConfig := getTestScanConfig()
@@ -256,7 +272,7 @@ func (m *ManagerTestSuite) TestHandleScan() {
 		)
 	m.snapshotDataStore.EXPECT().SearchSnapshots(gomock.Any(), gomock.Any()).AnyTimes().
 		Return([]*storage.ComplianceOperatorReportSnapshotV2{}, nil)
-	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.reportGen)
+	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.reportGen)
 	managerImplementation, ok := manager.(*managerImpl)
 	require.True(m.T(), ok)
 	scan := &storage.ComplianceOperatorScanV2{
@@ -285,7 +301,7 @@ func (m *ManagerTestSuite) TestHandleScan() {
 }
 
 func (m *ManagerTestSuite) TestHandleScanRemove() {
-	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.reportGen)
+	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.reportGen)
 	managerImplementation, ok := manager.(*managerImpl)
 	require.True(m.T(), ok)
 	manager.Start()
@@ -346,7 +362,7 @@ func (m *ManagerTestSuite) TestHandleScanRemove() {
 }
 
 func (m *ManagerTestSuite) TestHandleResult() {
-	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.reportGen)
+	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.reportGen)
 	managerImplementation, ok := manager.(*managerImpl)
 	require.True(m.T(), ok)
 	timeNow := time.Now()
@@ -535,6 +551,17 @@ func getTestScansFromScanConfig(sc *storage.ComplianceOperatorScanConfigurationV
 	return ret
 }
 
+func getTestClusterStatusFromScanConfig(sc *storage.ComplianceOperatorScanConfigurationV2) []*storage.ComplianceOperatorClusterScanConfigStatus {
+	ret := make([]*storage.ComplianceOperatorClusterScanConfigStatus, 0, len(sc.GetClusters()))
+	for _, c := range sc.GetClusters() {
+		ret = append(ret, &storage.ComplianceOperatorClusterScanConfigStatus{
+			ClusterId:   c.GetClusterId(),
+			ClusterName: fmt.Sprintf("cluster-name-%s", c.GetClusterId()),
+		})
+	}
+	return ret
+}
+
 func getTestScan(scan, cluster string, timestamp *timestamppb.Timestamp, done bool) *storage.ComplianceOperatorScanV2 {
 	ret := &storage.ComplianceOperatorScanV2{
 		Id:              scan,
@@ -565,4 +592,113 @@ func handleWaitGroup(t *testing.T, wg *concurrency.WaitGroup, timeout time.Durat
 		t.Fail()
 	case <-wg.Done():
 	}
+}
+
+func newGetScanConfigClusterStatusMatcher(sc *storage.ComplianceOperatorScanConfigurationV2) *getScanConfigClusterStatusMatcher {
+	return &getScanConfigClusterStatusMatcher{
+		scanConfigID: sc.GetId(),
+	}
+}
+
+type getScanConfigClusterStatusMatcher struct {
+	scanConfigID string
+	error        string
+}
+
+func (m *getScanConfigClusterStatusMatcher) Matches(target interface{}) bool {
+	scanConfigID, ok := target.(string)
+	if !ok {
+		m.error = "target is not of type string"
+		return false
+	}
+	m.error = fmt.Sprintf("expected field scan configuration ID %q", m.scanConfigID)
+	return m.scanConfigID == scanConfigID
+}
+
+func (m *getScanConfigClusterStatusMatcher) String() string {
+	return m.error
+}
+
+func newGetSuitesMatcher(sc *storage.ComplianceOperatorScanConfigurationV2) *getSuitesMatcher {
+	return &getSuitesMatcher{
+		suiteName: sc.GetScanConfigName(),
+	}
+}
+
+type getSuitesMatcher struct {
+	suiteName string
+	error     string
+}
+
+func (m *getSuitesMatcher) Matches(target interface{}) bool {
+	query, ok := target.(*v1.Query)
+	if !ok {
+		m.error = "target is not of type *v1.Query"
+		return false
+	}
+	m.error = fmt.Sprintf("expected field suite name %q", m.suiteName)
+	field := query.GetBaseQuery().GetMatchFieldQuery().GetField()
+	if field != search.ComplianceOperatorSuiteName.String() {
+		m.error = fmt.Sprintf("unexpected query field %s", field)
+		return false
+	}
+	value := strings.ReplaceAll(query.GetBaseQuery().GetMatchFieldQuery().GetValue(), "\"", "")
+	return value == m.suiteName
+}
+
+func (m *getSuitesMatcher) String() string {
+	return m.error
+}
+
+func newGetBindingMatcher(sc *storage.ComplianceOperatorScanConfigurationV2) *getBindingMatcher {
+	return &getBindingMatcher{
+		scanConfigName: sc.GetScanConfigName(),
+		clusters: func() []string {
+			ret := make([]string, 0, len(sc.GetClusters()))
+			for _, c := range sc.GetClusters() {
+				ret = append(ret, c.GetClusterId())
+			}
+			return ret
+		}(),
+	}
+}
+
+type getBindingMatcher struct {
+	scanConfigName string
+	clusters       []string
+	error          string
+}
+
+func (m *getBindingMatcher) Matches(target interface{}) bool {
+	query, ok := target.(*v1.Query)
+	if !ok {
+		m.error = "target is not of type *v1.Query"
+		return false
+	}
+	m.error = fmt.Sprintf("expected fields scan configuration name %q and clusters %v", m.scanConfigName, m.clusters)
+	scanConfigFound := false
+	clustersFound := false
+	for _, q := range query.GetConjunction().GetQueries() {
+		field := q.GetBaseQuery().GetMatchFieldQuery().GetField()
+		switch field {
+		case search.ComplianceOperatorScanConfigName.String():
+			value := strings.ReplaceAll(q.GetBaseQuery().GetMatchFieldQuery().GetValue(), "\"", "")
+			if value == m.scanConfigName {
+				scanConfigFound = true
+			}
+		case search.ClusterID.String():
+			value := strings.ReplaceAll(q.GetBaseQuery().GetMatchFieldQuery().GetValue(), "\"", "")
+			if slices.Contains(m.clusters, value) {
+				clustersFound = true
+			}
+		default:
+			m.error = fmt.Sprintf("unexpected query field %s", field)
+			return false
+		}
+	}
+	return scanConfigFound && clustersFound
+}
+
+func (m *getBindingMatcher) String() string {
+	return m.error
 }

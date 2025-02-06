@@ -21,7 +21,7 @@ import { getHasSearchApplied, getPaginationParams } from 'utils/searchUtils';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useMap from 'hooks/useMap';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
-
+import { getSearchFilterConfigWithFeatureFlagDependency } from 'Components/CompoundSearchFilter/utils/utils';
 import { DynamicTableLabel } from 'Components/DynamicIcon';
 import {
     SummaryCardLayout,
@@ -93,7 +93,10 @@ export const imageVulnerabilitiesQuery = gql`
 
 const defaultSortFields = ['CVE', 'CVSS', 'Severity'];
 
-const searchFilterConfig = [imageCVESearchFilterConfig, imageComponentSearchFilterConfig];
+const searchFilterConfigWithFeatureFlagDependency = [
+    imageCVESearchFilterConfig,
+    imageComponentSearchFilterConfig,
+];
 
 export type ImagePageVulnerabilitiesProps = {
     imageId: string;
@@ -185,11 +188,20 @@ function ImagePageVulnerabilities({
     });
 
     const isNvdCvssColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
+    const isEpssProbabilityColumnEnabled =
+        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_EPSS_SCORE');
     const filteredColumns = filterManagedColumns(
         defaultColumns,
-        (key) => key !== 'nvdCvss' || isNvdCvssColumnEnabled
+        (key) =>
+            (key !== 'nvdCvss' || isNvdCvssColumnEnabled) &&
+            (key !== 'epssProbability' || isEpssProbabilityColumnEnabled)
     );
     const managedColumnState = useManagedColumns(tableId, filteredColumns);
+
+    const searchFilterConfig = getSearchFilterConfigWithFeatureFlagDependency(
+        isFeatureFlagEnabled,
+        searchFilterConfigWithFeatureFlagDependency
+    );
 
     const hiddenSeverities = getHiddenSeverities(querySearchFilter);
     const hiddenStatuses = getHiddenStatuses(querySearchFilter);

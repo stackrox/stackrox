@@ -29,7 +29,12 @@ function ReportParametersDetails({
     formValues,
 }: ReportParametersDetailsProps): ReactElement {
     const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isIncludeEpssProbabilityEnabled =
+        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_EPSS_SCORE');
+    const hasIncludeEpssProbability =
+        isIncludeEpssProbabilityEnabled && formValues.reportParameters.includeEpssProbability;
     const isIncludeNvdCvssEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
+    const hasIncludeNvdCvss = isIncludeNvdCvssEnabled && formValues.reportParameters.includeNvdCvss;
 
     const cveSeverities =
         formValues.reportParameters.cveSeverities.length !== 0 ? (
@@ -114,12 +119,19 @@ function ReportParametersDetails({
                             {getCVEsDiscoveredSinceText(formValues.reportParameters)}
                         </DescriptionListDescription>
                     </DescriptionListGroup>
-                    {isIncludeNvdCvssEnabled && formValues.reportParameters.includeNvdCvss && (
+                    {(hasIncludeNvdCvss || hasIncludeEpssProbability) && (
                         <DescriptionListGroup>
                             <DescriptionListTerm>Optional columns</DescriptionListTerm>
-                            <DescriptionListDescription>
-                                Include NVD CVSS
-                            </DescriptionListDescription>
+                            {hasIncludeNvdCvss && (
+                                <DescriptionListDescription>
+                                    Include NVD CVSS
+                                </DescriptionListDescription>
+                            )}
+                            {hasIncludeEpssProbability && (
+                                <DescriptionListDescription>
+                                    Include EPSS probability
+                                </DescriptionListDescription>
+                            )}
                         </DescriptionListGroup>
                     )}
                 </DescriptionList>

@@ -843,7 +843,6 @@ spec:
         displayName: Collection
         path: perNode.collector.collection
         x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:select:EBPF
         - urn:alm:descriptor:com.tectonic.ui:select:CORE_BPF
         - urn:alm:descriptor:com.tectonic.ui:select:NoCollection
       - description: Controls the number of analyzer replicas and autoscaling.
@@ -896,7 +895,6 @@ spec:
       - description: |-
           Set this to 'true' to enable preventive policy enforcement for object updates.
 
-
           Note: this will not have any effect unless 'Listen On Creates' is set to 'true' as well.
         displayName: Listen On Updates
         path: admissionControl.listenOnUpdates
@@ -924,13 +922,11 @@ spec:
           All values are strings but are converted into appropriate type based on schema.
         displayName: Value
         path: overlays[0].patches[0].value
-      - description: |-
-          The image flavor to use for collector. "Regular" images are bigger in size, but contain probes
-          for most kernels. If you use the "Slim" image flavor, you must ensure that your Central instance
-          is connected to the internet, or regularly receives Collector Support Package updates (for further
-          instructions, please refer to the documentation).
+      - description: Deprecated field.
         displayName: Image Flavor
         path: perNode.collector.imageFlavor
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Settings for the Compliance container, which is responsible for
           checking host-level configurations.
         displayName: Compliance Settings

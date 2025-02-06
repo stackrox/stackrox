@@ -10,9 +10,11 @@ metadata:
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "serviceaccount" "sensor") | nindent 4 }}
+{{- if ._rox.mainImagePullSecrets._names }}
 imagePullSecrets:
 {{- range $secretName := ._rox.mainImagePullSecrets._names }}
 - name: {{ quote $secretName }}
+{{- end }}
 {{- end }}
 
 ---

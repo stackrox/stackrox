@@ -4,7 +4,8 @@ import { Card, CardBody, CardTitle, Title } from '@patternfly/react-core';
 import { Deployment } from 'types/deployment.proto';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import {
-    vulnerabilitiesPlatformWorkloadCvesPath,
+    vulnerabilitiesPlatformPath,
+    vulnerabilitiesUserWorkloadsPath,
     vulnerabilitiesWorkloadCvesPath,
 } from 'routePaths';
 import ContainerConfigurationDescriptionList from './ContainerConfigurationDescriptionList';
@@ -16,13 +17,14 @@ export type ContainerConfigurationProps = {
 function ContainerConfiguration({ deployment }: ContainerConfigurationProps): ReactElement {
     const { isFeatureFlagEnabled } = useFeatureFlags();
 
-    const hasPlatformWorkloadCveLink =
-        isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT') &&
-        deployment &&
-        deployment.platformComponent;
-    const vulnMgmtBasePath = hasPlatformWorkloadCveLink
-        ? vulnerabilitiesPlatformWorkloadCvesPath
-        : vulnerabilitiesWorkloadCvesPath;
+    const hasPlatformWorkloadCveLink = deployment && deployment.platformComponent;
+
+    // eslint-disable-next-line no-nested-ternary
+    const vulnMgmtBasePath = !isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT')
+        ? vulnerabilitiesWorkloadCvesPath
+        : hasPlatformWorkloadCveLink
+          ? vulnerabilitiesPlatformPath
+          : vulnerabilitiesUserWorkloadsPath;
 
     let content: JSX.Element[] | string = 'None';
 

@@ -273,6 +273,9 @@
             "$ref": "#/definitions/storageCVSSScore"
           },
           "title": "cvss_metrics stores list of cvss scores from different sources like nvd, Redhat etc"
+        },
+        "epss": {
+          "$ref": "#/definitions/storageEPSS"
         }
       }
     },
@@ -493,6 +496,20 @@
         }
       }
     },
+    "storageEPSS": {
+      "type": "object",
+      "properties": {
+        "epssProbability": {
+          "type": "number",
+          "format": "float"
+        },
+        "epssPercentile": {
+          "type": "number",
+          "format": "float"
+        }
+      },
+      "title": "EPSS Score stores two epss metrics returned by scanner - epss probability and epss percentile"
+    },
     "storageEmbeddedNodeScanComponent": {
       "type": "object",
       "properties": {
@@ -615,6 +632,9 @@
         "nvdCvss": {
           "type": "number",
           "format": "float"
+        },
+        "epss": {
+          "$ref": "#/definitions/storageEPSS"
         }
       },
       "title": "Next Tag: 22"

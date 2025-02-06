@@ -12,13 +12,14 @@ import {
 } from '@patternfly/react-core';
 import { gql, useQuery } from '@apollo/client';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLSort from 'hooks/useURLSort';
 import { Pagination as PaginationParam } from 'services/types';
 import { getHasSearchApplied, getPaginationParams } from 'utils/searchUtils';
 import NotFoundMessage from 'Components/NotFoundMessage';
-
+import { getSearchFilterConfigWithFeatureFlagDependency } from 'Components/CompoundSearchFilter/utils/utils';
 import { DynamicTableLabel } from 'Components/DynamicIcon';
 import {
     SummaryCardLayout,
@@ -33,7 +34,7 @@ import {
     imageCVESearchFilterConfig,
     imageSearchFilterConfig,
 } from 'Containers/Vulnerabilities/searchFilterConfig';
-import { useManagedColumns } from 'hooks/useManagedColumns';
+import { filterManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
 import BySeveritySummaryCard from '../../components/BySeveritySummaryCard';
 import CvesByStatusSummaryCard, {
@@ -93,7 +94,7 @@ export const deploymentVulnerabilitiesQuery = gql`
 
 const defaultSortFields = ['CVE', 'Severity'];
 
-const searchFilterConfig = [
+const searchFilterConfigWithFeatureFlagDependency = [
     imageSearchFilterConfig,
     imageCVESearchFilterConfig,
     imageComponentSearchFilterConfig,
@@ -108,6 +109,8 @@ function DeploymentPageVulnerabilities({
     deploymentId,
     pagination,
 }: DeploymentPageVulnerabilitiesProps) {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
 
@@ -182,7 +185,18 @@ function DeploymentPageVulnerabilities({
         },
     });
 
-    const managedColumnState = useManagedColumns(tableId, defaultColumns);
+    const isEpssProbabilityColumnEnabled =
+        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_EPSS_SCORE');
+    const filteredColumns = filterManagedColumns(
+        defaultColumns,
+        (key) => key !== 'epssProbability' || isEpssProbabilityColumnEnabled
+    );
+    const managedColumnState = useManagedColumns(tableId, filteredColumns);
+
+    const searchFilterConfig = getSearchFilterConfigWithFeatureFlagDependency(
+        isFeatureFlagEnabled,
+        searchFilterConfigWithFeatureFlagDependency
+    );
 
     const vulnerabilityData = vulnerabilityRequest.data ?? vulnerabilityRequest.previousData;
     const totalVulnerabilityCount = vulnerabilityData?.deployment?.imageVulnerabilityCount ?? 0;

@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/client/authn/tokenbased"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/auth"
 	"github.com/stackrox/rox/roxctl/common/config"
 	"google.golang.org/grpc/credentials"
@@ -95,7 +96,7 @@ Still, trying to authenticate with the given token. In case there's any issues, 
 }
 
 func (c configMethod) refreshAccessToken(url string, accessConfig *config.CentralAccessConfig) error {
-	client, err := c.env.HTTPClient(time.Minute, auth.Anonymous())
+	client, err := c.env.HTTPClient(time.Minute, common.WithAuthMethod(auth.Anonymous()))
 	if err != nil {
 		return errors.Wrap(err, "obtaining client for token refresh")
 	}

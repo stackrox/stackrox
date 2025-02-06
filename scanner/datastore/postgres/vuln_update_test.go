@@ -37,8 +37,10 @@ func TestVulnUpdateStore(t *testing.T) {
 	// Get or init a new key, verify the update time is older.
 	newT := timestamp.Add(-24 * time.Hour)
 	timestamp, err = store.GetOrSetLastVulnerabilityUpdate(ctx, "new", newT)
+	require.NoError(t, err)
 	assert.Equal(t, newT, timestamp, "new was set vuln update time")
 	timestamp, err = store.GetLastVulnerabilityUpdate(ctx)
+	require.NoError(t, err)
 	assert.Equal(t, newT, timestamp, "new did not change the vuln update time")
 }
 

@@ -12,6 +12,7 @@ import (
 	"github.com/quay/claircore/alpine"
 	"github.com/quay/claircore/aws"
 	"github.com/quay/claircore/debian"
+	"github.com/quay/claircore/enricher/epss"
 	"github.com/quay/claircore/gobin"
 	"github.com/quay/claircore/java"
 	"github.com/quay/claircore/libvuln"
@@ -29,12 +30,14 @@ import (
 	"github.com/quay/claircore/ubuntu"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/scanner/config"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stackrox/rox/scanner/enricher/fixedby"
 	"github.com/stackrox/rox/scanner/enricher/nvd"
 	"github.com/stackrox/rox/scanner/internal/httputil"
 	"github.com/stackrox/rox/scanner/matcher/updater/vuln"
+	"github.com/stackrox/rox/scanner/sbom"
 )
 
 // matcherNames specifies the ClairCore matchers to use.
@@ -71,6 +74,7 @@ type Matcher interface {
 	GetVulnerabilities(ctx context.Context, ir *claircore.IndexReport) (*claircore.VulnerabilityReport, error)
 	GetLastVulnerabilityUpdate(ctx context.Context) (time.Time, error)
 	GetKnownDistributions(ctx context.Context) []claircore.Distribution
+	GetSBOM(ctx context.Context, ir *claircore.IndexReport, id, name string) ([]byte, error)
 	Ready(ctx context.Context) error
 	Initialized(ctx context.Context) error
 	Close(ctx context.Context) error
@@ -83,6 +87,7 @@ type matcherImpl struct {
 	pool          *pgxpool.Pool
 
 	vulnUpdater *vuln.Updater
+	sbomer      *sbom.SBOMer
 }
 
 // NewMatcher creates a new matcher.
@@ -131,10 +136,16 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		Store:        store,
 		Locker:       locker,
 		MatcherNames: matcherNames,
-		Enrichers: []driver.Enricher{
-			&nvd.Enricher{},
-			&fixedby.Enricher{},
-		},
+		Enrichers: func() []driver.Enricher {
+			enrichers := []driver.Enricher{
+				&nvd.Enricher{},
+				&fixedby.Enricher{},
+			}
+			if features.EPSSScore.Enabled() {
+				enrichers = append(enrichers, &epss.Enricher{})
+			}
+			return enrichers
+		}(),
 		UpdateRetention:          libvuln.DefaultUpdateRetention,
 		DisableBackgroundUpdates: true,
 		Client:                   ccClient,
@@ -175,6 +186,13 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		return nil, fmt.Errorf("creating vuln updater: %w", err)
 	}
 
+	// SBOM generation capabilities are only avail via the matcher.
+	// SBOMs may optionally include vulnerabilities which aligns SBOM
+	// generation to matcher capabilities and reduces the complexity
+	// of routing requests differently based on if a user chooses to
+	// include vulnerabilities vs. not.
+	sbomer := sbom.NewSBOMer()
+
 	// Start the vulnerability updater.
 	go func() {
 		if err := vulnUpdater.Start(); err != nil {
@@ -189,6 +207,7 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		pool:          pool,
 
 		vulnUpdater: vulnUpdater,
+		sbomer:      sbomer,
 	}, nil
 }
 
@@ -204,6 +223,10 @@ func (m *matcherImpl) GetLastVulnerabilityUpdate(ctx context.Context) (time.Time
 
 func (m *matcherImpl) GetKnownDistributions(_ context.Context) []claircore.Distribution {
 	return m.vulnUpdater.KnownDistributions()
+}
+
+func (m *matcherImpl) GetSBOM(ctx context.Context, ir *claircore.IndexReport, name, id string) ([]byte, error) {
+	return m.sbomer.GetSBOM(ctx, ir, name, id)
 }
 
 // Close closes the matcher.

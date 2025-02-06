@@ -44,17 +44,17 @@ const (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Alert)): {
-			"/v1.AlertService/GetAlert",
-			"/v1.AlertService/ListAlerts",
-			"/v1.AlertService/CountAlerts",
-			"/v1.AlertService/GetAlertsGroup",
-			"/v1.AlertService/GetAlertsCounts",
-			"/v1.AlertService/GetAlertTimeseries",
+			v1.AlertService_GetAlert_FullMethodName,
+			v1.AlertService_ListAlerts_FullMethodName,
+			v1.AlertService_CountAlerts_FullMethodName,
+			v1.AlertService_GetAlertsGroup_FullMethodName,
+			v1.AlertService_GetAlertsCounts_FullMethodName,
+			v1.AlertService_GetAlertTimeseries_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.Alert)): {
-			"/v1.AlertService/ResolveAlert",
-			"/v1.AlertService/ResolveAlerts",
-			"/v1.AlertService/DeleteAlerts",
+			v1.AlertService_ResolveAlert_FullMethodName,
+			v1.AlertService_ResolveAlerts_FullMethodName,
+			v1.AlertService_DeleteAlerts_FullMethodName,
 		},
 	})
 
@@ -143,7 +143,7 @@ func (s *serviceImpl) ListAlerts(ctx context.Context, request *v1.ListAlertsRequ
 	if err != nil {
 		return nil, err
 	}
-	alerts, err := s.dataStore.SearchListAlerts(ctx, q)
+	alerts, err := s.dataStore.SearchListAlerts(ctx, q, true)
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +158,7 @@ func (s *serviceImpl) CountAlerts(ctx context.Context, request *v1.RawQuery) (*v
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
-	count, err := s.dataStore.Count(ctx, parsedQuery)
+	count, err := s.dataStore.Count(ctx, parsedQuery, true)
 	if err != nil {
 		return nil, err
 	}
@@ -184,7 +184,7 @@ func (s *serviceImpl) GetAlertsGroup(ctx context.Context, request *v1.ListAlerts
 	if err != nil {
 		return nil, err
 	}
-	alerts, err := s.dataStore.SearchListAlerts(ctx, q)
+	alerts, err := s.dataStore.SearchListAlerts(ctx, q, true)
 	if err != nil {
 		log.Error(err)
 		return nil, err
@@ -242,7 +242,7 @@ func (s *serviceImpl) GetAlertsCounts(ctx context.Context, request *v1.GetAlerts
 		requestQ = search.ConjunctionQuery(requestQ, conjunct)
 	}
 
-	alerts, err := s.dataStore.Search(ctx, requestQ)
+	alerts, err := s.dataStore.Search(ctx, requestQ, true)
 	if err != nil {
 		return nil, err
 	}
@@ -263,7 +263,7 @@ func (s *serviceImpl) GetAlertTimeseries(ctx context.Context, req *v1.ListAlerts
 		return nil, err
 	}
 
-	alerts, err := s.dataStore.SearchListAlerts(ctx, q)
+	alerts, err := s.dataStore.SearchListAlerts(ctx, q, true)
 	if err != nil {
 		return nil, err
 	}
@@ -336,7 +336,7 @@ func (s *serviceImpl) ResolveAlerts(ctx context.Context, req *v1.ResolveAlertsRe
 	}
 	runtimeQuery := search.NewQueryBuilder().AddExactMatches(search.LifecycleStage, storage.LifecycleStage_RUNTIME.String()).ProtoQuery()
 	cq := search.ConjunctionQuery(query, runtimeQuery)
-	alerts, err := s.dataStore.SearchRawAlerts(ctx, cq)
+	alerts, err := s.dataStore.SearchRawAlerts(ctx, cq, true)
 	if err != nil {
 		log.Error(err)
 		return nil, err
@@ -440,7 +440,7 @@ func (s *serviceImpl) DeleteAlerts(ctx context.Context, request *v1.DeleteAlerts
 		return nil, errors.Wrapf(errox.InvalidArgs, "please specify Violation State:%s in the query to confirm deletion", storage.ViolationState_RESOLVED.String())
 	}
 
-	results, err := s.dataStore.Search(ctx, query)
+	results, err := s.dataStore.Search(ctx, query, true)
 	if err != nil {
 		return nil, err
 	}

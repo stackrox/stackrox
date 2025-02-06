@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/csv"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
@@ -31,11 +32,8 @@ var (
 )
 
 // GenerateCSV takes in the results of vuln report query, converts to CSV and returns zipped data
-func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string, includeNVDCVSS bool) (*bytes.Buffer, error) {
-	csvHeaderClone := csvHeader
-	if includeNVDCVSS {
-		csvHeaderClone = append(csvHeader, "NVDCVSS")
-	}
+func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string, reportFilters *storage.VulnerabilityReportFilters) (*bytes.Buffer, error) {
+	csvHeaderClone := addOptionalColumnstoHeader(reportFilters)
 	csvWriter := csv.NewGenericWriter(csvHeaderClone, true)
 	for _, r := range cveResponses {
 		row := csv.Value{
@@ -52,9 +50,7 @@ func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string, inclu
 			r.GetDiscoveredAtImage(),
 			r.Link,
 		}
-		if includeNVDCVSS {
-			csvWriter.AppendToValue(&row, strconv.FormatFloat(r.GetNVDCVSS(), 'f', 2, 64))
-		}
+		addOptionalColumnstoRow(reportFilters, &row, csvWriter, r)
 		csvWriter.AddValue(row)
 	}
 
@@ -85,4 +81,30 @@ func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string, inclu
 		return nil, errors.Wrapf(err, "unable to close the zip file for report config %s", configName)
 	}
 	return &zipBuf, nil
+}
+
+func addOptionalColumnstoHeader(optionalColumns *storage.VulnerabilityReportFilters) []string {
+	csvHeaderClone := make([]string, len(csvHeader))
+	copy(csvHeaderClone, csvHeader)
+	if optionalColumns.GetIncludeNvdCvss() {
+		csvHeaderClone = append(csvHeaderClone, "NVDCVSS")
+	}
+	if optionalColumns.GetIncludeEpssProbability() {
+		csvHeaderClone = append(csvHeaderClone, "EPSS Probability Percentage")
+	}
+	return csvHeaderClone
+}
+
+func addOptionalColumnstoRow(optionalColumns *storage.VulnerabilityReportFilters, row *csv.Value, csvWriter *csv.GenericWriter, resp *ImageCVEQueryResponse) {
+	if optionalColumns.GetIncludeNvdCvss() {
+		csvWriter.AppendToValue(row, strconv.FormatFloat(resp.GetNVDCVSS(), 'f', 2, 64))
+	}
+	if optionalColumns.GetIncludeEpssProbability() {
+		epssScore := resp.GetEPSSProbability()
+		if epssScore != nil {
+			csvWriter.AppendToValue(row, strconv.FormatFloat(*resp.GetEPSSProbability()*100, 'f', 3, 64))
+		} else {
+			csvWriter.AppendToValue(row, "Not Available")
+		}
+	}
 }

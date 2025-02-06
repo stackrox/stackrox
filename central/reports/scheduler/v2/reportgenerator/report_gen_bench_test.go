@@ -15,6 +15,7 @@ import (
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	collectionSearch "github.com/stackrox/rox/central/resourcecollection/datastore/search"
 	collectionPostgres "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
+	imagesView "github.com/stackrox/rox/central/views/images"
 	watchedImageDS "github.com/stackrox/rox/central/watchedimage/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -108,6 +109,7 @@ func (bts *ReportGeneratorBenchmarkTestSuite) setupTestSuite() {
 	imageCVEDatastore := resolvers.CreateTestImageCVEDatastore(bts.b, bts.testDB)
 	bts.resolver, bts.schema = resolvers.SetupTestResolver(bts.b,
 		imageDataStore,
+		imagesView.NewImageView(bts.testDB.DB),
 		resolvers.CreateTestImageComponentDatastore(bts.b, bts.testDB, bts.mockCtrl),
 		imageCVEDatastore,
 		resolvers.CreateTestImageComponentCVEEdgeDatastore(bts.b, bts.testDB),

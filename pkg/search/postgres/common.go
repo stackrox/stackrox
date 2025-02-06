@@ -84,9 +84,10 @@ func replaceVars(s string) string {
 	return newString.String()
 }
 
-type innerJoin struct {
+type Join struct {
 	leftTable       string
 	rightTable      string
+	joinType        JoinType
 	columnNamePairs []walker.ColumnNamePair
 }
 
@@ -102,12 +103,15 @@ type query struct {
 
 	Having     string
 	Pagination parsedPaginationQuery
-	InnerJoins []innerJoin
+	Joins      []Join
 
 	// This indicates if a primary key is present in the group by clause. Unless GROUP BY clause is explicitly provided,
 	// we order the results by the primary key of the schema.
 	GroupByPrimaryKey bool
 	GroupBys          []groupByEntry
+
+	// This field indicates if 'Distinct' is applied in the select portion of the query
+	DistinctAppliedToSelects bool
 }
 
 type groupByEntry struct {
@@ -118,7 +122,7 @@ type groupByEntry struct {
 // We don't care about actually reading the values of these fields, they're
 // there to make SQL happy.
 func (q *query) ExtraSelectedFieldPaths() []pgsearch.SelectQueryField {
-	if !q.DistinctAppliedOnPrimaryKeySelect() && !q.groupByNonPKFields() {
+	if !q.isDistinctAppliedToSelects() && !q.groupByNonPKFields() {
 		return nil
 	}
 
@@ -199,6 +203,7 @@ func (q *query) populatePrimaryKeySelectFields() {
 		SelectPath: fmt.Sprintf("distinct(%s)", stringutils.JoinNonEmpty(",", outStr...)),
 		Alias:      alias,
 	})
+	q.DistinctAppliedToSelects = true
 }
 
 func (q *query) getPortionBeforeFromClause() string {
@@ -252,12 +257,16 @@ func (q *query) DistinctAppliedOnPrimaryKeySelect() bool {
 	// If this involves multiple tables, then we need to wrap the primary key portion in a distinct, because
 	// otherwise there could be multiple rows with the same primary key in the join table.
 	// TODO(viswa): we might be able to do this even more narrowly
-	return len(q.InnerJoins) > 0 && len(q.GroupBys) == 0
+	return len(q.Joins) > 0 && len(q.GroupBys) == 0
 }
 
 // groupByNonPKFields returns true if a group by clause based on fields other than primary keys is present in the query.
 func (q *query) groupByNonPKFields() bool {
 	return len(q.GroupBys) > 0 && !q.GroupByPrimaryKey
+}
+
+func (q *query) isDistinctAppliedToSelects() bool {
+	return q != nil && q.DistinctAppliedToSelects
 }
 
 func (q *query) AsSQL() string {
@@ -271,16 +280,20 @@ func (q *query) AsSQL() string {
 	querySB.WriteString(" from ")
 	querySB.WriteString(q.From)
 
-	for i, innerJoin := range q.InnerJoins {
-		querySB.WriteString(" inner join ")
-		querySB.WriteString(innerJoin.rightTable)
+	for i, join := range q.Joins {
+		if join.joinType == Inner {
+			querySB.WriteString(" inner join ")
+		} else {
+			querySB.WriteString(" left join ")
+		}
+		querySB.WriteString(join.rightTable)
 		querySB.WriteString(" on")
 
 		if env.ImageCVEEdgeCustomJoin.BooleanSetting() {
-			if (i == len(q.InnerJoins)-1) && (innerJoin.rightTable == pkgSchema.ImageCveEdgesTableName) {
+			if (i == len(q.Joins)-1) && (join.rightTable == pkgSchema.ImageCveEdgesTableName) {
 				// Step 4: Join image_cve_edges table such that both its ImageID and ImageCveId columns are matched with the joins so far
-				imageIDTable := findImageIDTableAndField(q.InnerJoins)
-				imageCVEIDTable := findImageCVEIDTableAndField(q.InnerJoins)
+				imageIDTable := findImageIDTableAndField(q.Joins)
+				imageCVEIDTable := findImageCVEIDTableAndField(q.Joins)
 				if imageIDTable != "" && imageCVEIDTable != "" {
 					imageIDField := tableWithImageIDToField[imageIDTable]
 					imageCVEIDField := tableWithImageCVEIDToField[imageCVEIDTable]
@@ -295,11 +308,11 @@ func (q *query) AsSQL() string {
 			}
 		}
 
-		for i, columnNamePair := range innerJoin.columnNamePairs {
+		for i, columnNamePair := range join.columnNamePairs {
 			if i > 0 {
 				querySB.WriteString(" and")
 			}
-			querySB.WriteString(fmt.Sprintf(" %s.%s = %s.%s", innerJoin.leftTable, columnNamePair.ColumnNameInThisSchema, innerJoin.rightTable, columnNamePair.ColumnNameInOtherSchema))
+			querySB.WriteString(fmt.Sprintf(" %s.%s = %s.%s", join.leftTable, columnNamePair.ColumnNameInThisSchema, join.rightTable, columnNamePair.ColumnNameInOtherSchema))
 		}
 	}
 	if q.Where != "" {
@@ -340,7 +353,7 @@ func (q *query) AsSQL() string {
 	return queryString
 }
 
-func findImageIDTableAndField(joins []innerJoin) string {
+func findImageIDTableAndField(joins []Join) string {
 	for _, join := range joins {
 		_, found := tableWithImageIDToField[join.leftTable]
 		if found {
@@ -354,7 +367,7 @@ func findImageIDTableAndField(joins []innerJoin) string {
 	return ""
 }
 
-func findImageCVEIDTableAndField(joins []innerJoin) string {
+func findImageCVEIDTableAndField(joins []Join) string {
 	for _, join := range joins {
 		_, found := tableWithImageCVEIDToField[join.leftTable]
 		if found {
@@ -405,11 +418,11 @@ func standardizeQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *w
 		return nil, sacErr
 	}
 	standardizeFieldNamesInQuery(q)
-	innerJoins, dbFields := getJoinsAndFields(schema, q)
+	joins, dbFields := getJoinsAndFields(schema, q)
 
 	var err error
 	if env.ImageCVEEdgeCustomJoin.BooleanSetting() {
-		innerJoins, err = handleImageCveEdgesTableInJoins(schema, innerJoins)
+		joins, err = handleImageCveEdgesTableInJoins(schema, joins)
 		if err != nil {
 			return nil, err
 		}
@@ -428,10 +441,10 @@ func standardizeQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *w
 	}
 
 	parsedQuery := &query{
-		Schema:     schema,
-		QueryType:  queryType,
-		InnerJoins: innerJoins,
-		From:       schema.Table,
+		Schema:    schema,
+		QueryType: queryType,
+		Joins:     joins,
+		From:      schema.Table,
 	}
 	if queryEntry != nil {
 		parsedQuery.Where = queryEntry.Where.Query
@@ -463,7 +476,7 @@ func standardizeQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *w
 	return parsedQuery, nil
 }
 
-func handleImageCveEdgesTableInJoins(schema *walker.Schema, innerJoins []innerJoin) ([]innerJoin, error) {
+func handleImageCveEdgesTableInJoins(schema *walker.Schema, joins []Join) ([]Join, error) {
 	// By avoiding ImageCveEdgesSchema as long as possible in getJoinsAndFields, we should have ensured that
 	// unless ImageCveEdgesSchema is the src schema, it is not a leftTable in any of the inner joins. This means that
 	// we have found an alternative route (via image_components) to join image and image_cves tables and if present,
@@ -471,38 +484,91 @@ func handleImageCveEdgesTableInJoins(schema *walker.Schema, innerJoins []innerJo
 	// any two distant tables.
 	// But we validate the same just to be safe here
 	if schema != pkgSchema.ImageCveEdgesSchema {
-		idx, isLeftTable := findTableInJoins(innerJoins, func(join innerJoin) bool {
+		idx, isLeftTable := findTableInJoins(joins, func(join Join) bool {
 			return join.leftTable == pkgSchema.ImageCveEdgesTableName
 		})
 
 		if isLeftTable {
 			return nil, errors.Wrapf(errox.InvariantViolation,
 				"Even though '%s' is not the root table in the query, it is the left table in inner join '%v'",
-				pkgSchema.ImageCveEdgesTableName, innerJoins[idx])
+				pkgSchema.ImageCveEdgesTableName, joins[idx])
 		}
 	}
 
 	// Step 3: If image_cve_edges table is the right table of any inner join, move that join to the end of the list.
 	// When building SQL query, this will ensure that we have already joined tables needed to match both CVEId and
 	// ImageId columns from image_cve_edges table.
-	idx, isRightTable := findTableInJoins(innerJoins, func(join innerJoin) bool {
+	idx, isRightTable := findTableInJoins(joins, func(join Join) bool {
 		return join.rightTable == pkgSchema.ImageCveEdgesTableName
 	})
 	if isRightTable {
-		elem := innerJoins[idx]
-		innerJoins = append(innerJoins[:idx], innerJoins[idx+1:]...)
-		innerJoins = append(innerJoins, elem)
+		elem := joins[idx]
+		joins = append(joins[:idx], joins[idx+1:]...)
+		joins = append(joins, elem)
 	}
-	return innerJoins, nil
+	return joins, nil
 }
 
-func findTableInJoins(innerJoins []innerJoin, matchTables func(join innerJoin) bool) (int, bool) {
+func findTableInJoins(innerJoins []Join, matchTables func(join Join) bool) (int, bool) {
 	for i, join := range innerJoins {
 		if matchTables(join) {
 			return i, true
 		}
 	}
 	return -1, false
+}
+
+// combineDisjunction tries to optimize disjunction queries with `IN` operator when possible.
+// If not it fallbacks to combineQueryEntries
+func combineDisjunction(entries []*pgsearch.QueryEntry) *pgsearch.QueryEntry {
+	if len(entries) == 0 {
+		return nil
+	}
+	if len(entries) == 1 {
+		return entries[0]
+	}
+
+	exactQuerySuffix := " = $$"
+
+	seenQueries := set.StringSet{}
+	seenSelectFields := set.StringSet{}
+	values := make([]any, 0, len(entries))
+	// skip for complex queries (having, groupby, multiple values and selects)
+	// here we support only simple cases of multiple exact match statements
+	// TODO(ROX-27944): add support for complex queries as well
+	for _, entry := range entries {
+		if entry.Having != nil ||
+			len(entry.GroupBy) != 0 ||
+			len(entry.Where.Values) != 1 ||
+			!strings.HasSuffix(entry.Where.Query, exactQuerySuffix) {
+			return combineQueryEntries(entries, " or ")
+		}
+		for _, selectedField := range entry.SelectedFields {
+			seenSelectFields.Add(selectedField.SelectPath)
+		}
+		seenQueries.Add(entry.Where.Query)
+		values = append(values, fmt.Sprintf("%s", entry.Where.Values[0]))
+	}
+
+	// if we've seen more than a single exact query this means we have multiple
+	// columns there and we cannot apply IN operator there
+	// TODO(ROX-27944): handle multiple selected fields
+	if len(seenQueries) != 1 || len(seenSelectFields) > 1 {
+		return combineQueryEntries(entries, " or ")
+	}
+
+	where := seenQueries.GetArbitraryElem()
+	where = strings.TrimSuffix(where, exactQuerySuffix)
+
+	return &pgsearch.QueryEntry{
+		Where: pgsearch.WhereClause{
+			Query:  fmt.Sprintf("%s IN (%s$$)", where, strings.Join(make([]string, len(entries)), "$$, ")),
+			Values: values,
+		},
+		SelectedFields: entries[0].SelectedFields,
+		GroupBy:        nil,
+	}
+
 }
 
 func combineQueryEntries(entries []*pgsearch.QueryEntry, separator string) *pgsearch.QueryEntry {
@@ -628,7 +694,7 @@ func compileQueryToPostgres(schema *walker.Schema, q *v1.Query, queryFields map[
 		if err != nil {
 			return nil, err
 		}
-		return combineQueryEntries(entries, " or "), nil
+		return combineDisjunction(entries), nil
 	case *v1.Query_BooleanQuery:
 		entries, err := entriesFromQueries(schema, sub.BooleanQuery.Must.Queries, queryFields, nowForQuery)
 		if err != nil {

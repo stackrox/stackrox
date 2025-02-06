@@ -184,8 +184,8 @@ function ExceptionRequestDetailsPage() {
             )}
             {expired && (
                 <Alert variant="warning" isInline title="Request Canceled." component="p">
-                    You are viewing a canceled request. If this cancelation was not intended, please
-                    submit a new request
+                    You are viewing a canceled request. If this cancellation was not intended,
+                    please submit a new request
                 </Alert>
             )}
             <PageSection variant="light" className="pf-v5-u-py-md">

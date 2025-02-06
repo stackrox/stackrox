@@ -108,7 +108,7 @@ From here, you can install stackrox-central-services to get Central and Scanner 
 ```sh
 helm upgrade --install -n stackrox --create-namespace stackrox-central-services \
   stackrox/stackrox-central-services \
-  --set central.adminPassword.value="${ROX_ADMIN_PASSWORD}"
+  --set central.adminPassword.value="${ROX_ADMIN_PASSWORD}" \
   --set central.persistence.none="true"
 ```
 
@@ -155,7 +155,7 @@ CLUSTER_NAME="my-secured-cluster"
 Then install stackrox-secured-cluster-services (with the init bundle you generated earlier) using this command:
 ```sh
 helm upgrade --install --create-namespace -n stackrox stackrox-secured-cluster-services stackrox/stackrox-secured-cluster-services \
-  -f simon-test-cluster-init-bundle.yaml \
+  -f stackrox-init-bundle.yaml \
   --set clusterName="$CLUSTER_NAME" \
   --set centralEndpoint="central.stackrox.svc:443"
 ```

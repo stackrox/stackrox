@@ -15,6 +15,10 @@ func IssueSelfSignedCert(t *testing.T, commonName string, dnsNames ...string) tl
 		CN:         commonName,
 		KeyRequest: csr.NewKeyRequest(),
 		Hosts:      dnsNames,
+		CA: &csr.CAConfig{
+			// Must be 398 days or fewer to run on macOS. See https://support.apple.com/en-au/102028 for more information.
+			Expiry: "8760h", // 365 days.
+		},
 	}
 
 	caCert, _, caKey, err := initca.New(&req)

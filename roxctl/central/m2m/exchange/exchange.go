@@ -13,6 +13,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/jsonutil"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/auth"
 	"github.com/stackrox/rox/roxctl/common/config"
 	"github.com/stackrox/rox/roxctl/common/environment"
@@ -81,7 +82,7 @@ func (e *exchangeCommand) construct(cmd *cobra.Command) error {
 
 func (e *exchangeCommand) exchange() error {
 	// The exchange API is anonymous, no auth is required.
-	httpClient, err := e.env.HTTPClient(e.timeout, auth.Anonymous())
+	httpClient, err := e.env.HTTPClient(e.timeout, common.WithAuthMethod(auth.Anonymous()))
 	if err != nil {
 		return errors.Wrap(err, "creating HTTP client")
 	}

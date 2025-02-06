@@ -27,9 +27,9 @@ const (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Secret)): {
-			"/v1.SecretService/GetSecret",
-			"/v1.SecretService/CountSecrets",
-			"/v1.SecretService/ListSecrets",
+			v1.SecretService_GetSecret_FullMethodName,
+			v1.SecretService_CountSecrets_FullMethodName,
+			v1.SecretService_ListSecrets_FullMethodName,
 		},
 	})
 )

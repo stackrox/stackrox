@@ -23,7 +23,6 @@ import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import { ensureBoolean, ensureStringArray } from 'utils/ensure';
 import useURLStringUnion from 'hooks/useURLStringUnion';
-import { RunState } from 'types/reportJob';
 import useAnalytics from 'hooks/useAnalytics';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLSort from 'hooks/useURLSort';
@@ -32,7 +31,10 @@ import { getTableUIState } from 'utils/getTableUIState';
 import useDeleteDownloadModal from 'Containers/Vulnerabilities/VulnerablityReporting/hooks/useDeleteDownloadModal';
 import DeleteModal from 'Components/PatternFly/DeleteModal';
 import ConfigDetails from './ConfigDetails';
-import ReportRunStatesFilter, { ensureReportRunStates } from './ReportRunStatesFilter';
+import ReportJobStatusFilter, {
+    ensureReportJobStatuses,
+    ReportJobStatus,
+} from './ReportJobStatusFilter';
 import MyJobsFilter from './MyJobsFilter';
 
 function getJobId(snapshot: ComplianceReportSnapshot) {
@@ -41,6 +43,37 @@ function getJobId(snapshot: ComplianceReportSnapshot) {
 
 function getConfigName(snapshot: ComplianceReportSnapshot) {
     return snapshot.name;
+}
+
+function createQueryFromReportJobStatusFilters(jobStatusFilters: string[]) {
+    const query: Record<string, string[]> = {
+        'Compliance Report State': [],
+        'Compliance Report Notification Method': [],
+    };
+
+    const jobStatusQueryMappings: Record<string, { category: string; value: string }> = {
+        PREPARING: { category: 'Compliance Report State', value: 'PREPARING' },
+        WAITING: { category: 'Compliance Report State', value: 'WAITING' },
+        ERROR: { category: 'Compliance Report State', value: 'FAILURE' },
+        PARTIAL_ERROR: { category: 'Compliance Report State', value: 'PARTIAL_ERROR' },
+        DOWNLOAD_GENERATED: {
+            category: 'Compliance Report Notification Method',
+            value: 'DOWNLOAD',
+        },
+        EMAIL_DELIVERED: { category: 'Compliance Report Notification Method', value: 'EMAIL' },
+    };
+
+    const reportJobStatuses = ensureReportJobStatuses(jobStatusFilters);
+
+    reportJobStatuses.forEach((jobStatus) => {
+        const queryMapping = jobStatusQueryMappings[jobStatus];
+        if (queryMapping) {
+            const { category, value } = queryMapping;
+            query[category].push(value);
+        }
+    });
+
+    return query;
 }
 
 const sortOptions = {
@@ -64,10 +97,10 @@ function ReportJobs({ scanConfigId, isComplianceReportingEnabled }: ReportJobsPr
         'true',
     ]);
 
-    const filteredReportRunStates = ensureStringArray(searchFilter['Compliance Report State']);
+    const reportJobStatusFilters = ensureStringArray(searchFilter['Compliance Report Job Status']);
 
     const query = getRequestQueryStringForSearchFilter({
-        'Compliance Report State': filteredReportRunStates,
+        ...createQueryFromReportJobStatusFilters(reportJobStatusFilters),
     });
 
     const fetchComplianceReportHistoryCallback = useCallback(
@@ -109,22 +142,22 @@ function ReportJobs({ scanConfigId, isComplianceReportingEnabled }: ReportJobsPr
         isPolling: true,
     });
 
-    const onReportStatesFilterChange = (_checked: boolean, selectedStatus: RunState) => {
-        const isStatusIncluded = filteredReportRunStates.includes(selectedStatus);
+    const onReportJobStatusFilterChange = (_checked: boolean, selectedStatus: ReportJobStatus) => {
+        const isStatusIncluded = reportJobStatusFilters.includes(selectedStatus);
         const newFilters = isStatusIncluded
-            ? ensureReportRunStates(
-                  filteredReportRunStates.filter((status) => status !== selectedStatus)
+            ? ensureReportJobStatuses(
+                  reportJobStatusFilters.filter((status) => status !== selectedStatus)
               )
-            : ensureReportRunStates([...filteredReportRunStates, selectedStatus]);
+            : ensureReportJobStatuses([...reportJobStatusFilters, selectedStatus]);
         analyticsTrack({
-            event: 'Compliance Report Run State Filtered',
+            event: 'Compliance Report Job Status Filtered',
             properties: {
                 value: newFilters,
             },
         });
         setSearchFilter({
             ...searchFilter,
-            'Compliance Report State': newFilters,
+            'Compliance Report Job Status': newFilters,
         });
         setPage(1);
     };
@@ -148,9 +181,9 @@ function ReportJobs({ scanConfigId, isComplianceReportingEnabled }: ReportJobsPr
             <Toolbar>
                 <ToolbarContent>
                     <ToolbarItem alignItems="center">
-                        <ReportRunStatesFilter
-                            reportRunStates={ensureReportRunStates(filteredReportRunStates)}
-                            onChange={onReportStatesFilterChange}
+                        <ReportJobStatusFilter
+                            selectedStatuses={ensureReportJobStatuses(reportJobStatusFilters)}
+                            onChange={onReportJobStatusFilterChange}
                         />
                     </ToolbarItem>
                     <ToolbarItem className="pf-v5-u-flex-grow-1" alignSelf="center">

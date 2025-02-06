@@ -1,7 +1,7 @@
 import React, { CSSProperties } from 'react';
 import { Button, Flex, FlexItem, Stack, StackItem } from '@patternfly/react-core';
 
-import { violationsBasePath } from 'routePaths';
+import { violationsFullViewPath } from 'routePaths';
 import { SearchFilter } from 'types/search';
 import { getUrlQueryStringForSearchFilter } from 'utils/searchUtils';
 import { severityLabels } from 'messages/common';
@@ -44,7 +44,7 @@ function linkToViolations(searchFilter, severity) {
         ...searchFilter,
         Severity: severity,
     });
-    return `${violationsBasePath}?${queryString}`;
+    return `${violationsFullViewPath}&${queryString}`;
 }
 
 export type PolicyViolationTilesProps = {

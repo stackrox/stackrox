@@ -11,9 +11,11 @@ package mocks
 
 import (
 	bytes "bytes"
+	context "context"
 	reflect "reflect"
 
 	report "github.com/stackrox/rox/central/complianceoperator/v2/report"
+	storage "github.com/stackrox/rox/generated/storage"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -53,6 +55,18 @@ func (m *MockComplianceReportGenerator) ProcessReportRequest(req *report.Request
 func (mr *MockComplianceReportGeneratorMockRecorder) ProcessReportRequest(req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessReportRequest", reflect.TypeOf((*MockComplianceReportGenerator)(nil).ProcessReportRequest), req)
+}
+
+// Stop mocks base method.
+func (m *MockComplianceReportGenerator) Stop() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Stop")
+}
+
+// Stop indicates an expected call of Stop.
+func (mr *MockComplianceReportGeneratorMockRecorder) Stop() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockComplianceReportGenerator)(nil).Stop))
 }
 
 // MockFormatter is a mock of Formatter interface.
@@ -130,4 +144,42 @@ func (m *MockResultsAggregator) GetReportData(arg0 *report.Request) *report.Resu
 func (mr *MockResultsAggregatorMockRecorder) GetReportData(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetReportData", reflect.TypeOf((*MockResultsAggregator)(nil).GetReportData), arg0)
+}
+
+// MockReportSender is a mock of ReportSender interface.
+type MockReportSender struct {
+	ctrl     *gomock.Controller
+	recorder *MockReportSenderMockRecorder
+	isgomock struct{}
+}
+
+// MockReportSenderMockRecorder is the mock recorder for MockReportSender.
+type MockReportSenderMockRecorder struct {
+	mock *MockReportSender
+}
+
+// NewMockReportSender creates a new mock instance.
+func NewMockReportSender(ctrl *gomock.Controller) *MockReportSender {
+	mock := &MockReportSender{ctrl: ctrl}
+	mock.recorder = &MockReportSenderMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockReportSender) EXPECT() *MockReportSenderMockRecorder {
+	return m.recorder
+}
+
+// SendEmail mocks base method.
+func (m *MockReportSender) SendEmail(arg0 context.Context, arg1 string, arg2 *bytes.Buffer, arg3 *report.Results, arg4 []*storage.NotifierConfiguration) <-chan error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SendEmail", arg0, arg1, arg2, arg3, arg4)
+	ret0, _ := ret[0].(<-chan error)
+	return ret0
+}
+
+// SendEmail indicates an expected call of SendEmail.
+func (mr *MockReportSenderMockRecorder) SendEmail(arg0, arg1, arg2, arg3, arg4 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendEmail", reflect.TypeOf((*MockReportSender)(nil).SendEmail), arg0, arg1, arg2, arg3, arg4)
 }

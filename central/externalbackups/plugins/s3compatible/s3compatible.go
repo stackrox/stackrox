@@ -117,6 +117,8 @@ func newS3Compatible(integration *storage.ExternalBackup) (*s3Compatible, error)
 				cfg.GetSecretAccessKey(), "",
 			),
 		),
+		config.WithRequestChecksumCalculation(aws.RequestChecksumCalculationWhenRequired),
+		config.WithResponseChecksumValidation(aws.ResponseChecksumValidationWhenRequired),
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), initialConfigurationMaxTimeout)

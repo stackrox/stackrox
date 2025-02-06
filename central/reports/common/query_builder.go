@@ -114,7 +114,7 @@ func (q *queryBuilder) buildAccessScopeQuery(clusters []*storage.Cluster,
 			scopeTree.Merge(sct)
 		}
 	}
-	scopeQuery, err := sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+	scopeQuery, err := sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
 	if err != nil {
 		return nil, err
 	}

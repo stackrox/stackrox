@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
@@ -259,7 +260,7 @@ func (e *enricher) getImageFromCache(key cache.Key) (*storage.Image, bool) {
 	return value.WaitAndGet(), true
 }
 
-func (e *enricher) runScan(req *scanImageRequest) imageChanResult {
+func (e *enricher) runScan(ctx context.Context, req *scanImageRequest) imageChanResult {
 	// Cache key is either going to be image full name or image ID.
 	// In case of image full name, we can skip. In case of image ID, we should make sure to check if the image's name
 	// is equal / contained in the images `Names` field.
@@ -303,7 +304,15 @@ func (e *enricher) runScan(req *scanImageRequest) imageChanResult {
 	}
 	value := e.imageCache.GetOrSet(key, newValue).(*cacheValue)
 	if forceEnrichImageWithSignatures || newValue == value {
-		value.scanAndSet(concurrency.AsContext(&e.stopSig), e.imageSvc, req)
+		// Merge ctx with the stopSig.
+		// If the stopSignal is triggered, the context used in scanAndSet should be canceled.
+		mergedCtx, stopAfterFunc := contextutil.MergeContext(ctx, concurrency.AsContext(&e.stopSig))
+		defer func() {
+			// Stop the AfterFunc so we don't leak goroutines.
+			// scanAndSet will block, so it's ok to defer the call here.
+			_ = stopAfterFunc()
+		}()
+		value.scanAndSet(mergedCtx, e.imageSvc, req)
 	}
 	return imageChanResult{
 		image:        value.WaitAndGet(),
@@ -318,20 +327,20 @@ type scanImageRequest struct {
 	pullSecrets          []string
 }
 
-func (e *enricher) runImageScanAsync(imageChan chan<- imageChanResult, req *scanImageRequest) {
+func (e *enricher) runImageScanAsync(ctx context.Context, imageChan chan<- imageChanResult, req *scanImageRequest) {
 	go func() {
 		// unguarded send (push to channel outside a select) is allowed because the imageChan is a buffered channel of exact size
-		imageChan <- e.runScan(req)
+		imageChan <- e.runScan(ctx, req)
 	}()
 }
 
-func (e *enricher) getImages(deployment *storage.Deployment) []*storage.Image {
+func (e *enricher) getImages(ctx context.Context, deployment *storage.Deployment) []*storage.Image {
 	imageChan := make(chan imageChanResult, len(deployment.GetContainers()))
 
 	pullSecrets := e.getPullSecrets(deployment)
 
 	for idx, container := range deployment.GetContainers() {
-		e.runImageScanAsync(imageChan, &scanImageRequest{
+		e.runImageScanAsync(ctx, imageChan, &scanImageRequest{
 			containerIdx:   idx,
 			containerImage: container.GetImage(),
 			clusterID:      clusterid.Get(),
@@ -370,10 +379,12 @@ func (e *enricher) blockingScan(ctx context.Context, deployment *storage.Deploym
 	case <-e.stopSig.Done():
 		return
 	case e.scanResultChan <- scanResult{
-		context:                ctx,
-		action:                 action,
-		deployment:             deployment,
-		images:                 e.getImages(deployment),
+		context:    ctx,
+		action:     action,
+		deployment: deployment,
+		// We pass the expiring message context to getImages here.
+		// This will allow us to cancel the scanWithRetries call if sensor disconnects.
+		images:                 e.getImages(ctx, deployment),
 		networkPoliciesApplied: netpolApplied,
 	}:
 	}

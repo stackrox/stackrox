@@ -334,67 +334,67 @@ jobs:
     name: Notify everybody
     needs: [variables, properties, branch, milestone]
     runs-on: ubuntu-latest
-    env:
-      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
     steps:
       - name: Post to Slack (normal release)
         if: needs.variables.outputs.patch == 0
-        uses: slackapi/slack-github-action@v1.27.0
+        uses: slackapi/slack-github-action@v2.0.0
         with:
-          channel-id: ${{ needs.properties.outputs.slack-channel }}
-          payload: >-
-            {
-              "text": "Upstream release ${{needs.variables.outputs.named-release-patch}} has been triggered. Consult the tracker for next steps.",
+          method: chat.postMessage
+          token: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload: |
+            channel: "${{ needs.properties.outputs.slack-channel }}"
+            text: "Upstream release ${{needs.variables.outputs.named-release-patch}} has been triggered. Consult the tracker for next steps."
+            blocks:
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: |
+                    :${{ fromJSON('["desert", "white_check_mark"]')[github.event.inputs.dry-run != 'true'] }}: *Upstream release ${{needs.variables.outputs.named-release-patch}} has been triggered on <${{github.server_url}}/${{github.repository}}|${{github.repository}}> by ${{ github.event.sender.login }}.*
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: |
+                    Branch `${{needs.variables.outputs.branch}}` and milestone `${{needs.variables.outputs.next-milestone}}` have been created.
 
-              "blocks": [
-            { "type": "section", "text": { "type": "mrkdwn", "text":
-            ":${{ fromJSON('["desert", "white_check_mark"]')[github.event.inputs.dry-run != 'true'] }}:
-            *Upstream release ${{needs.variables.outputs.named-release-patch}}
-            has been triggered on <${{github.server_url}}/${{github.repository}}|${{github.repository}}> by ${{ github.event.sender.login }}.*" }},
+                    PRs merged to the ${{env.main_branch}} branch and assigned to RC milestones will be cherry-picked when closing the respective milestones.
+                    For the urgent fixes that must go exclusively to this release open PRs to the `${{needs.variables.outputs.branch}}` branch.
+              - type: "divider"
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: |
+                    > Repository: <${{github.server_url}}/${{github.repository}}|${{github.repository}}>
+                    > Release: ${{needs.variables.outputs.named-release-patch}}
+                    > Workflow: <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}>
 
-            { "type": "section", "text": { "type": "mrkdwn", "text":
-            "Branch `${{needs.variables.outputs.branch}}`
-            and milestone `${{needs.variables.outputs.next-milestone}}`
-            have been created.\n\nPRs merged to the ${{env.main_branch}} branch
-            and assigned to RC milestones will be cherry-picked when closing the respective milestones.
-            For the urgent fixes that must go exclusively to this release
-            open PRs to the `${{needs.variables.outputs.branch}}` branch." }},
-
-            { "type": "divider" },
-
-            { "type": "section", "text": { "type": "mrkdwn", "text":
-            ">
-            Repository: <${{github.server_url}}/${{github.repository}}|${{github.repository}}>\n>
-            Release: ${{needs.variables.outputs.named-release-patch}}\n>
-            Workflow: <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}>" }}
-            ]}
       - name: Post to Slack (patch release)
         if: needs.variables.outputs.patch != 0
-        uses: slackapi/slack-github-action@v1.27.0
+        uses: slackapi/slack-github-action@v2.0.0
         with:
-          channel-id: ${{ needs.properties.outputs.slack-channel }}
-          payload: >-
-            {
-              "text": "Upstream patch release ${{needs.variables.outputs.named-release-patch}} has been triggered. Consult the tracker for next steps.",
+          method: chat.postMessage
+          token: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload: |
+            channel: "${{ needs.properties.outputs.slack-channel }}"
+            text: "Upstream patch release ${{needs.variables.outputs.named-release-patch}} has been triggered. Consult the tracker for next steps."
+            blocks:
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: |
+                    :${{ fromJSON('["desert", "white_check_mark"]')[github.event.inputs.dry-run != 'true'] }}: *Upstream patch release ${{needs.variables.outputs.named-release-patch}} has been triggered on <${{github.server_url}}/${{github.repository}}|${{github.repository}}> by ${{ github.event.sender.login }}.*
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: |
+                    Milestone `${{needs.variables.outputs.next-milestone}}` has been created.
 
-              "blocks": [
-            { "type": "section", "text": { "type": "mrkdwn", "text":
-            ":${{ fromJSON('["desert", "white_check_mark"]')[github.event.inputs.dry-run != 'true'] }}:
-            *Upstream patch release ${{needs.variables.outputs.named-release-patch}}
-            has been triggered on <${{github.server_url}}/${{github.repository}}|${{github.repository}}> by ${{ github.event.sender.login }}.*" }},
-
-            { "type": "section", "text": { "type": "mrkdwn", "text":
-            "Milestone `${{needs.variables.outputs.next-milestone}}`
-            has been created.\n\nPRs merged to the ${{env.main_branch}} branch
-            and assigned to RC milestones will be cherry-picked when closing the respective milestones.
-            For the urgent fixes that must go exclusively to this release
-            open PRs to the `${{needs.variables.outputs.branch}}` branch." }},
-
-            { "type": "divider" },
-
-            { "type": "section", "text": { "type": "mrkdwn", "text":
-            ">
-            Repository: <${{github.server_url}}/${{github.repository}}|${{github.repository}}>\n>
-            Release: ${{needs.variables.outputs.named-release-patch}}\n>
-            Workflow: <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}>" }}
-            ]}
+                    PRs merged to the ${{env.main_branch}} branch and assigned to RC milestones will be cherry-picked when closing the respective milestones.
+                    For the urgent fixes that must go exclusively to this release open PRs to the `${{needs.variables.outputs.branch}}` branch.
+              - type: "divider"
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: |
+                    > Repository: <${{github.server_url}}/${{github.repository}}|${{github.repository}}>
+                    > Release: ${{needs.variables.outputs.named-release-patch}}
+                    > Workflow: <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}>

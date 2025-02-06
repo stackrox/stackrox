@@ -3,6 +3,7 @@ package clusterentities
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"net/http"
 	"time"
 
@@ -30,9 +31,11 @@ func (e *Store) Debug() []byte {
 	m["endpoints"] = e.endpointsStore.debug()
 	m["IPs"] = e.podIPsStore.debug()
 	m["containerIDs"] = e.containerIDsStore.debug()
-	// json pretty-printer will sort it for us
-	concurrency.WithRLock(&e.traceMutex, func() {
-		m["events"] = e.trace
+	// json pretty-printer will sort it for us.
+	concurrency.WithLock(&e.traceMutex, func() {
+		// We need to clone the trace map, otherwise json.Marshal might panic when
+		// reading the map if track is called at the same time.
+		m["events"] = maps.Clone(e.trace)
 	})
 
 	ret, err := json.Marshal(m)

@@ -42,10 +42,11 @@ describe('Node CVEs - Overview Page', () => {
         // - Check that direct navigation fails
 
         // Missing 'Cluster' permission
-        visitWithStaticResponseForPermissions('/main', {
+        visitWithStaticResponseForPermissions('/main/vulnerabilities/user-workloads', {
             body: { resourceToAccess: { Node: 'READ_ACCESS' } },
         });
-        cy.get(navSelectors.allNavLinks).contains('Node CVEs').should('not.exist');
+        // With this limited permission, the entire horizontal nav should be missing
+        cy.get(navSelectors.horizontalNavBar).should('not.exist');
         visitNodeCveOverviewPage();
         assertCannotFindThePage();
     });
@@ -55,24 +56,22 @@ describe('Node CVEs - Overview Page', () => {
         // - Check that the Node CVEs link is not visible in the left navigation
         // - Check that direct navigation fails
         // Missing 'Node' permission
-        visitWithStaticResponseForPermissions('/main', {
+        visitWithStaticResponseForPermissions('/main/vulnerabilities/user-workloads', {
             body: { resourceToAccess: { Cluster: 'READ_ACCESS' } },
         });
-        cy.get(navSelectors.allNavLinks).contains('Node CVEs').should('not.exist');
+        cy.get(`${navSelectors.horizontalNavLinks}:contains('Nodes')`).should('not.exist');
         visitNodeCveOverviewPage();
         assertCannotFindThePage();
     });
 
     it('should allow access to users with sufficient "Node" and "Cluster" permissions', () => {
         // Has both 'Node' and 'Cluster' permissions
-        visitWithStaticResponseForPermissions('/main', {
+        visitWithStaticResponseForPermissions('/main/vulnerabilities/user-workloads', {
             body: { resourceToAccess: { Node: 'READ_ACCESS', Cluster: 'READ_ACCESS' } },
         });
         // Link should be visible in the left navigation
-        cy.get(navSelectors.allNavLinks).contains('Node CVEs');
         // Clicking the link should navigate to the Node CVEs page
-        cy.get(navSelectors.navExpandableVulnerabilityManagement).click();
-        cy.get(navSelectors.nestedNavLinks).contains('Node CVEs').click();
+        cy.get(navSelectors.horizontalNavLinks).contains('Nodes').click();
         cy.get('h1').contains('Node CVEs');
     });
 

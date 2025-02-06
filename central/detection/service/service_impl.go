@@ -63,11 +63,11 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Detection)): {
-			"/v1.DetectionService/DetectBuildTime",
-			"/v1.DetectionService/DetectDeployTimeFromYAML",
+			apiV1.DetectionService_DetectBuildTime_FullMethodName,
+			apiV1.DetectionService_DetectDeployTimeFromYAML_FullMethodName,
 		},
 		or.SensorOr(user.With(permissions.Modify(resources.Detection))): {
-			"/v1.DetectionService/DetectDeployTime",
+			apiV1.DetectionService_DetectDeployTime_FullMethodName,
 		},
 	})
 

@@ -9,13 +9,33 @@ import {
     Flex,
     Modal,
     Text,
+    Title,
 } from '@patternfly/react-core';
 import Raven from 'raven-js';
 
+import TechPreviewLabel from 'Components/PatternFly/TechPreviewLabel';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useAnalytics, { IMAGE_SBOM_GENERATED } from 'hooks/useAnalytics';
 import useRestMutation from 'hooks/useRestMutation';
 import { generateAndSaveSbom } from 'services/ImageSbomService';
+
+export function getSbomGenerationStatusMessage({
+    isScannerV4Enabled,
+    hasScanMessage,
+}: {
+    isScannerV4Enabled: boolean;
+    hasScanMessage: boolean;
+}): string | undefined {
+    if (!isScannerV4Enabled) {
+        return 'SBOM generation requires Scanner V4';
+    }
+
+    if (hasScanMessage) {
+        return 'SBOM generation is unavailable due to incomplete scan data';
+    }
+
+    return undefined;
+}
 
 export type GenerateSbomModalProps = {
     onClose: () => void;
@@ -38,8 +58,17 @@ function GenerateSbomModal(props: GenerateSbomModalProps) {
         <Modal
             isOpen
             onClose={onClose}
-            title="Generate Software Bill of Materials (SBOM)"
             variant="medium"
+            header={
+                <Flex
+                    className="pf-v5-u-mr-md"
+                    justifyContent={{ default: 'justifyContentSpaceBetween' }}
+                    alignItems={{ default: 'alignItemsCenter' }}
+                >
+                    <Title headingLevel="h1">Generate Software Bill of Materials (SBOM)</Title>
+                    <TechPreviewLabel />
+                </Flex>
+            }
             actions={[
                 <Button
                     key="generate-sbom-action"

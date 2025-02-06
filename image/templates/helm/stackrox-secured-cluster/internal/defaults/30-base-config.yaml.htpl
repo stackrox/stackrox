@@ -76,6 +76,7 @@ admissionControl:
     timeout: 10
     enforceOnUpdates: false
   replicas: 3
+  failurePolicy: Ignore
 
   affinity:
     nodeAffinity:

@@ -204,6 +204,49 @@ class Services extends BaseService {
         return getViolationsHelper("Deployment:${deploymentName}+Policy:${policyName}", policyName, timeoutSeconds)
     }
 
+    static boolean checkForNoActiveViolations(
+            String deploymentName, String policyName, int timeoutSeconds) {
+        String query = "Deployment:${deploymentName}+Policy:${policyName}+Violation State:ACTIVE"
+
+        // Consecutive checks will reduce possibility that policy evaluation did not happened.
+        int consecutiveChecks = 3
+
+        int intervalSeconds = 3
+        int retries = (timeoutSeconds / intervalSeconds).intValue()
+        Timer t = new Timer(retries, intervalSeconds)
+        while (t.IsValid()) {
+            List<AlertOuterClass.ListAlert> violations = []
+            try {
+                violations = AlertService.getViolations(ListAlertsRequest.newBuilder()
+                        .setQuery(query).build())
+            } catch (Exception e) {
+                LOG.warn "getViolations failed for deployment ${deploymentName} and policy ${policyName}: ${e}"
+                consecutiveChecks = 3
+                continue
+            }
+
+            if (!violations.isEmpty()) {
+                LOG.info "${violations.size()} active violations found for deployment ${deploymentName}" +
+                        " and policy ${policyName}"
+                consecutiveChecks = 3
+                continue
+            }
+
+            if (--consecutiveChecks > 0) {
+                LOG.info "No active violations found for deployment ${deploymentName} and policy ${policyName}" +
+                        " - additional ${consecutiveChecks} consecutive checks required"
+                continue
+            }
+
+            LOG.info "No active violations found for deployment ${deploymentName} and policy ${policyName}" +
+                    " after waiting ${t.SecondsSince()} seconds"
+            return true
+        }
+        LOG.info "Failed to get no active violations for deployment ${deploymentName}" +
+                " and policy ${policyName} after waiting ${t.SecondsSince()} seconds"
+        return false
+    }
+
     static getAllResourceViolationsWithTimeout(String resourceType,
                                                String policyName, int timeoutSeconds) {
         return getViolationsHelper("Resource Type:${resourceType}+Policy:${policyName}",

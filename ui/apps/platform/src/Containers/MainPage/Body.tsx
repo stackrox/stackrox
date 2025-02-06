@@ -43,7 +43,11 @@ import {
     vulnerabilitiesPlatformCvesPath,
     deprecatedPoliciesBasePath,
     policiesBasePath,
-    vulnerabilitiesPlatformWorkloadCvesPath,
+    vulnerabilitiesUserWorkloadsPath,
+    vulnerabilitiesPlatformPath,
+    vulnerabilitiesAllImagesPath,
+    vulnerabilitiesInactiveImagesPath,
+    vulnerabilitiesImagesWithoutCvesPath,
 } from 'routePaths';
 
 import PageNotFound from 'Components/PageNotFound';
@@ -64,6 +68,15 @@ function NotFoundPage(): ReactElement {
             <PageNotFound />
         </PageSection>
     );
+}
+
+function makeVulnMgmtUserWorkloadView(view: string) {
+    const AsyncWorkloadCvesComponent = asyncComponent(
+        () => import('Containers/Vulnerabilities/WorkloadCves/WorkloadCvesPage')
+    );
+    return function WorkloadCvesPage() {
+        return <AsyncWorkloadCvesComponent view={view} />;
+    };
 }
 
 type RouteComponent = {
@@ -209,17 +222,27 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         ),
         path: vulnerabilitiesPlatformCvesPath,
     },
-    'vulnerabilities/platform-workload-cves': {
-        component: (() => {
-            const AsyncWorkloadCvesComponent = asyncComponent(
-                () => import('Containers/Vulnerabilities/WorkloadCves/WorkloadCvesPage')
-            );
-
-            return function WorkloadCvesPage() {
-                return <AsyncWorkloadCvesComponent view="platform-workload" />;
-            };
-        })(),
-        path: vulnerabilitiesPlatformWorkloadCvesPath,
+    'vulnerabilities/user-workloads': {
+        component: makeVulnMgmtUserWorkloadView('user-workloads'),
+        path: vulnerabilitiesUserWorkloadsPath,
+    },
+    // Note: currently 'platform' is an implementation of the user-workloads view and
+    // it is expected that this will change in the future as these views diverge
+    'vulnerabilities/platform': {
+        component: makeVulnMgmtUserWorkloadView('platform'),
+        path: vulnerabilitiesPlatformPath,
+    },
+    'vulnerabilities/all-images': {
+        component: makeVulnMgmtUserWorkloadView('all-images'),
+        path: vulnerabilitiesAllImagesPath,
+    },
+    'vulnerabilities/inactive-images': {
+        component: makeVulnMgmtUserWorkloadView('inactive-images'),
+        path: vulnerabilitiesInactiveImagesPath,
+    },
+    'vulnerabilities/images-without-cves': {
+        component: makeVulnMgmtUserWorkloadView('images-without-cves'),
+        path: vulnerabilitiesImagesWithoutCvesPath,
     },
     'vulnerabilities/reports': {
         component: asyncComponent(
@@ -228,15 +251,7 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         path: vulnerabilityReportsPath,
     },
     'vulnerabilities/workload-cves': {
-        component: (() => {
-            const AsyncWorkloadCvesComponent = asyncComponent(
-                () => import('Containers/Vulnerabilities/WorkloadCves/WorkloadCvesPage')
-            );
-
-            return function WorkloadCvesPage() {
-                return <AsyncWorkloadCvesComponent view="user-workload" />;
-            };
-        })(),
+        component: makeVulnMgmtUserWorkloadView('user-workloads'),
         path: vulnerabilitiesWorkloadCvesPath,
     },
     'vulnerability-management': {
@@ -281,6 +296,22 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                             <Redirect to={`${policiesBasePath}/${match.params.policyId}`} />
                         )}
                     />
+                    {isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT') && (
+                        <Route
+                            // We _do not_ include the `exact` prop here, as all prior workload-cves routes
+                            // must redirect to the new path. Instead we match against all subpaths.
+                            path={`${vulnerabilitiesWorkloadCvesPath}/:subpath*`}
+                            // Since all subpaths and query parameters must be retained, we need to do
+                            // a search and replace of the subpath we are redirecting
+                            render={({ location }) => {
+                                const newPath = location.pathname.replace(
+                                    vulnerabilitiesWorkloadCvesPath,
+                                    vulnerabilitiesAllImagesPath
+                                );
+                                return <Redirect to={`${newPath}${location.search}`} />;
+                            }}
+                        />
+                    )}
                     {Object.keys(routeComponentMap)
                         .filter((routeKey) => isRouteEnabled(routePredicates, routeKey as RouteKey))
                         .map((routeKey) => {

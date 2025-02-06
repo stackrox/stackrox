@@ -22,16 +22,16 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.K8sRole)): {
-			"/v1.RbacService/GetRole",
-			"/v1.RbacService/ListRoles",
+			v1.RbacService_GetRole_FullMethodName,
+			v1.RbacService_ListRoles_FullMethodName,
 		},
 		user.With(permissions.View(resources.K8sRoleBinding)): {
-			"/v1.RbacService/GetRoleBinding",
-			"/v1.RbacService/ListRoleBindings",
+			v1.RbacService_GetRoleBinding_FullMethodName,
+			v1.RbacService_ListRoleBindings_FullMethodName,
 		},
 		user.With(permissions.View(resources.K8sSubject)): {
-			"/v1.RbacService/GetSubject",
-			"/v1.RbacService/ListSubjects",
+			v1.RbacService_GetSubject_FullMethodName,
+			v1.RbacService_ListSubjects_FullMethodName,
 		},
 	})
 )

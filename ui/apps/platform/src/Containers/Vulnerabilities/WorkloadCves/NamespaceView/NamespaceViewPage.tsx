@@ -17,7 +17,6 @@ import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { gql, useQuery } from '@apollo/client';
 import uniq from 'lodash/uniq';
 
-import { vulnerabilitiesWorkloadCvesPath } from 'routePaths';
 import { getTableUIState } from 'utils/getTableUIState';
 import { getPaginationParams, searchValueAsArray } from 'utils/searchUtils';
 import useURLSearch from 'hooks/useURLSearch';
@@ -105,7 +104,7 @@ const pollInterval = 30000;
 function NamespaceViewPage() {
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
-    const { pageTitle, baseSearchFilter } = useWorkloadCveViewContext();
+    const { pageTitle, baseSearchFilter, getAbsoluteUrl } = useWorkloadCveViewContext();
     const { searchFilter, setSearchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter({
         ...baseSearchFilter,
@@ -167,9 +166,7 @@ function NamespaceViewPage() {
             <PageTitle title={`${pageTitle} - Namespace view`} />
             <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
-                    <BreadcrumbItemLink to={vulnerabilitiesWorkloadCvesPath}>
-                        {pageTitle}
-                    </BreadcrumbItemLink>
+                    <BreadcrumbItemLink to={getAbsoluteUrl('')}>{pageTitle}</BreadcrumbItemLink>
                     <BreadcrumbItem isActive>Namespace view</BreadcrumbItem>
                 </Breadcrumb>
             </PageSection>
@@ -272,6 +269,7 @@ function NamespaceViewPage() {
                                                     deploymentCount={deploymentCount}
                                                     namespaceName={name}
                                                     clusterName={clusterName}
+                                                    vulnMgmtBaseUrl={getAbsoluteUrl('')}
                                                 />
                                             </Td>
                                             <Td dataLabel="Labels">

@@ -14,6 +14,19 @@ message GetVulnerabilitiesRequest {
   Contents contents = 2;
 }
 
+message GetSBOMRequest {
+  // id is a unique identiifer (ie: sha256 digest) that represents the contents.
+  string id = 1;
+  // name is the user requested name for the contents (ie: if contents represents an image, then the images full name with tag).
+  string name = 2;
+  // contents is the packages, versions, etc. that will be converted to an SBOM.
+  Contents contents = 3;
+}
+
+message GetSBOMResponse {
+  bytes sbom = 1;
+}
+
 message Metadata {
   google.protobuf.Timestamp LastVulnerabilityUpdate = 1;
 }
@@ -25,4 +38,7 @@ service Matcher {
 
   // GetMetadata returns information on vulnerability metadata, ek.g., last update timestamp.
   rpc GetMetadata(google.protobuf.Empty) returns (Metadata);
+
+  // GetSBOM returns an SBOM for a previously indexed manifest.
+  rpc GetSBOM(GetSBOMRequest) returns (GetSBOMResponse);
 }

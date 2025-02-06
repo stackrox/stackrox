@@ -81,7 +81,7 @@ var (
 		Name:      "sensor_event_duration",
 		Help:      "Time taken to perform an process a sensor event operation",
 		// We care more about precision at lower latencies, or outliers at higher latencies.
-		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
+		Buckets: prometheus.ExponentialBuckets(4, 2, 13),
 	}, []string{"Type", "Action"})
 
 	sensorEventQueueCounterVec = prometheus.NewCounterVec(prometheus.CounterOpts{

@@ -51,6 +51,19 @@ clusters by providing it as an input to the `helm install` command.
 
 ### Generate cluster init bundle
 
+[<- if .FeatureFlags.ROX_CLUSTER_REGISTRATION_SECRETS >]
+> **NOTE**: Beginning with StackRox/ACS 4.6 there exists a modern alternative to init bundles which goes
+> by the name of cluster registration secrets (or 'CRS' for short) and will at some point replace
+> init bundles entirely. Cluster registration secrets and init bundles differ in their specific usage
+> semantics, please consult the RHACS documentation for details.
+>
+> Feel free to skip this section and continue with the next one ("Generate cluster
+> registration secret (CRS)") if you want to try out the new CRS-style of bootstrapping a new secured
+> cluster.
+>
+> In any case, you only need an init bundle *or* a CRS, not both.
+[<- end >]
+
 Run the following command to generate a **cluster init bundle**:
 ```sh
 roxctl central init-bundles generate <cluster init bundle name> --output cluster-init-bundle.yaml
@@ -61,6 +74,23 @@ roxctl central init-bundles generate <cluster init bundle name> --output cluster
 - Make sure that you store this bundle securely as it contains secrets. You can
   use the same bundle to set up multiple StackRox secured clusters.
 
+[<- if .FeatureFlags.ROX_CLUSTER_REGISTRATION_SECRETS >]
+### Generate cluster registration secret (CRS)
+
+> **NOTE**: Skip this section if you have already created an init bundle.
+> You only need an init bundle *or* a CRS, not both.
+
+Run the following command to generate a **cluster registration secret**:
+```sh
+roxctl central crs generate <CRS name> --output crs.yaml
+```
+
+- This command creates a **cluster registration secret** and stores it in the file
+  `crs.yaml`.
+- Make sure that you store this file securely as it contains secrets. You can
+  use the same CRS to set up multiple StackRox secured clusters.
+[<- end >]
+
 ### Deploy Secured Cluster Services
 
 You can use the following command to deploy secured cluster services using
@@ -68,7 +98,11 @@ this Helm chart:
 ```sh
 helm install -n stackrox --create-namespace \
     stackrox-secured-cluster-services stackrox/stackrox-secured-cluster-services \
+[<- if .FeatureFlags.ROX_CLUSTER_REGISTRATION_SECRETS >]
+    [ -f <path to cluster-init-bundle.yaml> | --set-file crs.file=<path to crs.yaml> ] \
+[<- else >]
     -f <path to cluster-init-bundle.yaml> \
+[<- end >]
     --set clusterName=<name of the secured cluster> \
     --set centralEndpoint=<endpoint of Central service>
 ```
@@ -253,7 +287,6 @@ chart and their default values:
 |`collector.forceCollectionMethod`|Deprecated. This value has no effect. |`false` |
 |`collector.collectionMethod`|Either `CORE_BPF`, or `NO_COLLECTION`. |`CORE_BPF` |
 |`collector.disableTaintTolerations`|If you specify `false`, tolerations are applied to collector, and the collector pods can schedule onto all nodes with taints. If you specify it as `true`, no tolerations are applied, and the collector pods won't scheduled onto nodes with taints. |`false` |
-|`collector.slimMode`| Deprecated. Slim and regular Collector images are identical.|`false` |
 |`admissionControl.listenOnCreates`| This setting controls whether the cluster is configured to contact the StackRox Kubernetes Security Platform with `AdmissionReview` requests for `create` events on Kubernetes objects. |`false` |
 |`admissionControl.listenOnUpdates`|This setting controls whether the cluster is configured to contact the StackRox Kubernetes Security Platform with `AdmissionReview` requests for `update` events on Kubernetes objects.|`false` |
 |`admissionControl.listenOnEvents`|This setting controls whether the cluster is configured to contact the StackRox Kubernetes Security Platform with `AdmissionReview` requests for `update` Kubernetes events like `exec` and `portforward`.|`false` on OpenShift, `true` otherwise.|
@@ -280,7 +313,7 @@ non-standard environments:
 |`image.main.tag`| Tag of `main` image to use.|`null` |
 |`image.collector.tag`| Tag of `collector` image to use.| `null` |
 |`image.main.pullPolicy`| Image pull policy for `main` images.|`IfNotPresent`|
-|`image.collector.pullPolicy`| Image pull policy for `collector` images.| `IfNotPresent` if `slimCollector` is enabled, `Always` otherwise.|
+|`image.collector.pullPolicy`| Image pull policy for `collector` images.|`IfNotPresent`|
 |`sensor.resources`|Resource specification for Sensor.|See below.|
 |`collector.resources`|Resource specification for Collector.|See below.|
 |`collector.complianceResources`|Resource specification for Collector's Compliance container.|See below.|

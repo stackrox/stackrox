@@ -19,6 +19,9 @@ tests:
           "init-bundle.stackrox.io/name": "one incorrect format"
       ca:
         cert: "certification"
+      sensor:
+        serviceTLS:
+          cert: "dummy service certificate"
     expect: |
       .notes | contains("It seems an init bundle in the operator format has been provided. Note that this bundle format is ignored by the Helm chart.")
   - name: "Trying with no bundle"
@@ -35,5 +38,8 @@ tests:
           "init-bundle.stackrox.io/name": null
       ca:
         cert: "certification"
+      sensor:
+        serviceTLS:
+          cert: "dummy service certificate"
     expect: |
       .notes | assertThat(contains("Thank you for using StackRox!"))

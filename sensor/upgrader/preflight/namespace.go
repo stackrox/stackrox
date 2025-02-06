@@ -40,7 +40,6 @@ func namespaceAllowed(resource *k8sobjects.ObjectRef) bool {
 
 func (namespaceCheck) Check(_ *upgradectx.UpgradeContext, execPlan *plan.ExecutionPlan, reporter checkReporter) error {
 	for _, act := range execPlan.Actions() {
-		act := act
 		if !namespaceAllowed(&act.ObjectRef) {
 			logging.Warnf("namespaceAllowed returned false for object \"%v\" in namespace %q and the pod is in namespace %q", act.ObjectRef, act.ObjectRef.Namespace, pods.GetPodNamespace())
 			reporter.Errorf("To-be-%sd object %v is in disallowed namespace %s", act.ActionName, act.ObjectRef, act.ObjectRef.Namespace)

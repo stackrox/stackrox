@@ -6,7 +6,8 @@ import { DescriptionList } from '@patternfly/react-core';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import DescriptionListItem from 'Components/DescriptionListItem';
 import {
-    vulnerabilitiesPlatformWorkloadCvesPath,
+    vulnerabilitiesPlatformPath,
+    vulnerabilitiesUserWorkloadsPath,
     vulnerabilitiesWorkloadCvesPath,
 } from 'routePaths';
 import useFeatureFlags from 'hooks/useFeatureFlags';
@@ -25,10 +26,7 @@ function DeploymentOverview({
     deployment,
 }: DeploymentOverviewProps): ReactElement {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const hasPlatformWorkloadCveLink =
-        isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT') &&
-        deployment &&
-        deployment.platformComponent;
+    const hasPlatformWorkloadCveLink = deployment && deployment.platformComponent;
     return (
         <DescriptionList isCompact isHorizontal>
             <DescriptionListItem
@@ -36,9 +34,12 @@ function DeploymentOverview({
                 desc={
                     <Link
                         to={
-                            hasPlatformWorkloadCveLink
-                                ? `${vulnerabilitiesPlatformWorkloadCvesPath}/deployments/${alertDeployment.id}`
-                                : `${vulnerabilitiesWorkloadCvesPath}/deployments/${alertDeployment.id}`
+                            // eslint-disable-next-line no-nested-ternary
+                            !isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT')
+                                ? `${vulnerabilitiesWorkloadCvesPath}/deployments/${alertDeployment.id}`
+                                : hasPlatformWorkloadCveLink
+                                  ? `${vulnerabilitiesPlatformPath}/deployments/${alertDeployment.id}`
+                                  : `${vulnerabilitiesUserWorkloadsPath}/deployments/${alertDeployment.id}`
                         }
                     >
                         {alertDeployment.id}

@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
 )
@@ -223,4 +224,15 @@ func (s *NodesStoreSuite) TestStore_OrphanedCVEs() {
 		s.True(ok)
 		s.Equal(val.GetCveBaseInfo().GetCreatedAt(), cve.GetCveBaseInfo().GetCreatedAt())
 	}
+
+	metadatas, missing, err := store.GetManyNodeMetadata(s.ctx, []string{newNode.GetId(), uuid.NewDummy().String()})
+	s.NoError(err)
+	s.Equal(missing, []int{1})
+	protoassert.SlicesEqual(s.T(), []*storage.Node{stripComponents(newNode)}, metadatas)
+}
+
+func stripComponents(n *storage.Node) *storage.Node {
+	node := n.CloneVT()
+	node.GetScan().Components = nil
+	return node
 }

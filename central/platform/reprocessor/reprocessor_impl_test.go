@@ -83,7 +83,7 @@ func (s *platformReprocessorImplTestSuite) TestRunReprocessing() {
 }
 
 func (s *platformReprocessorImplTestSuite) TestStartAndStop() {
-	s.alertDatastore.EXPECT().Count(gomock.Any(), gomock.Any()).Return(6, nil).AnyTimes()
+	s.alertDatastore.EXPECT().Count(gomock.Any(), gomock.Any(), true).Return(6, nil).AnyTimes()
 	s.deploymentDatastore.EXPECT().Count(gomock.Any(), gomock.Any()).Return(4, nil).AnyTimes()
 
 	alerts := testAlerts()

@@ -18,7 +18,7 @@ import useFeatureFlags from 'hooks/useFeatureFlags';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import useSet from 'hooks/useSet';
 import useMap from 'hooks/useMap';
-import { VulnerabilityState } from 'types/cve.proto';
+import { CveBaseInfo, VulnerabilityState } from 'types/cve.proto';
 import TooltipTh from 'Components/TooltipTh';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import CvssFormatted from 'Components/CvssFormatted';
@@ -40,6 +40,7 @@ import {
     getScoreVersionsForTopNvdCVSS,
     sortCveDistroList,
     aggregateByCVSS,
+    aggregateByEPSS,
     aggregateByCreatedTime,
     aggregateByDistinctCount,
     getSeveritySortOptions,
@@ -51,6 +52,8 @@ import ExceptionDetailsCell from '../components/ExceptionDetailsCell';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
+import { infoForEpssProbability } from './infoForTh';
+import { formatEpssProbabilityAsPercent, getCveBaseInfoFromDistroTuples } from './table.utils';
 
 export const tableId = 'WorkloadCveOverviewTable';
 export const defaultColumns = {
@@ -64,6 +67,10 @@ export const defaultColumns = {
     },
     topNvdCvss: {
         title: 'Top NVD CVSS',
+        isShownByDefault: true,
+    },
+    epssProbability: {
+        title: 'EPSS probability',
         isShownByDefault: true,
     },
     affectedImages: {
@@ -115,6 +122,11 @@ export const cveListQuery = gql`
                 scoreVersion
                 nvdCvss
                 nvdScoreVersion
+                cveBaseInfo {
+                    epss {
+                        epssProbability
+                    }
+                }
             }
             pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
         }
@@ -152,6 +164,7 @@ export type ImageCVE = {
         scoreVersion: string;
         nvdCvss: number;
         nvdScoreVersion: string; // for example, V3 or UNKNOWN_VERSION
+        cveBaseInfo: CveBaseInfo;
     }[];
     pendingExceptionCount: number;
 };
@@ -195,9 +208,13 @@ function WorkloadCVEOverviewTable({
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isNvdCvssColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
+    const isEpssProbabilityColumnEnabled =
+        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_EPSS_SCORE');
 
     const colSpan =
-        (isNvdCvssColumnEnabled ? 7 : 6) +
+        6 +
+        (isNvdCvssColumnEnabled ? 1 : 0) +
+        (isEpssProbabilityColumnEnabled ? 1 : 0) +
         (canSelectRows ? 1 : 0) +
         (createTableActions ? 1 : 0) +
         (showExceptionDetailsLink ? 1 : 0) +
@@ -235,6 +252,15 @@ function WorkloadCVEOverviewTable({
                         >
                             Top NVD CVSS
                         </TooltipTh>
+                    )}
+                    {isEpssProbabilityColumnEnabled && (
+                        <Th
+                            className={getVisibilityClass('epssProbability')}
+                            info={infoForEpssProbability}
+                            sort={getSortParams('EPSS Probability', aggregateByEPSS)}
+                        >
+                            EPSS probability
+                        </Th>
                     )}
                     <TooltipTh
                         className={getVisibilityClass('affectedImages')}
@@ -303,6 +329,8 @@ function WorkloadCVEOverviewTable({
                                 topNvdCVSS,
                                 distroTuples
                             );
+                            const cveBaseInfo = getCveBaseInfoFromDistroTuples(distroTuples);
+                            const epssProbability = cveBaseInfo?.epss?.epssProbability;
                             const summary =
                                 prioritizedDistros.length > 0 ? prioritizedDistros[0].summary : '';
 
@@ -386,6 +414,14 @@ function WorkloadCVEOverviewTable({
                                                     cvss={topNvdCVSS ?? 0}
                                                     scoreVersion={nvdScoreVersions.join('/')}
                                                 />
+                                            </Td>
+                                        )}
+                                        {isEpssProbabilityColumnEnabled && (
+                                            <Td
+                                                className={getVisibilityClass('epssProbability')}
+                                                dataLabel="EPSS probability"
+                                            >
+                                                {formatEpssProbabilityAsPercent(epssProbability)}
                                             </Td>
                                         )}
                                         <Td

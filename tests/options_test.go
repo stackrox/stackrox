@@ -50,7 +50,7 @@ func TestOptionsMap(t *testing.T) {
 		"Add Capabilities", "CPU Cores Limit", "CPU Cores Request", "CVE", "CVE Published On", "CVE Snoozed", "CVSS",
 		"Cluster", "Component", "Component Version", "Deployment", "Deployment Annotation", "Deployment Label",
 		"Deployment Type", "Dockerfile Instruction Keyword", "Dockerfile Instruction Value", "Drop Capabilities",
-		"Environment Key", "Environment Value", "Environment Variable Source", "Exposed Node Port", "Exposing Service",
+		"EPSS Probability", "Environment Key", "Environment Value", "Environment Variable Source", "Exposed Node Port", "Exposing Service",
 		"Exposing Service Port", "Exposure Level", "External Hostname", "External IP", "Image", "Image CVE Count", "Image Command",
 		"Image Created Time", "Image Entrypoint", "Image Label", "Image OS", "Image Pull Secret", "Image Registry",
 		"Image Remote", "Image Scan Time", "Image Tag", "Image Top CVSS", "Image User", "Image Volumes",

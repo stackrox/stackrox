@@ -23,6 +23,7 @@ import { Alert, isDeploymentAlert, isResourceAlert } from 'types/alert.proto';
 import { getDateTime } from 'utils/dateUtils';
 import { VIOLATION_STATE_LABELS } from 'constants/violationStates';
 
+import useFilteredWorkflowViewURLState from 'Components/FilteredWorkflowViewSelector/useFilteredWorkflowViewURLState';
 import DeploymentTabWithReadAccessForDeployment from './Deployment/DeploymentTabWithReadAccessForDeployment';
 import DeploymentTabWithoutReadAccessForDeployment from './Deployment/DeploymentTabWithoutReadAccessForDeployment';
 import NetworkPolicies from './NetworkPolicies/NetworkPoliciesTab';
@@ -43,6 +44,8 @@ function ViolationDetailsPage(): ReactElement {
     const [isFetchingSelectedAlert, setIsFetchingSelectedAlert] = useState(false);
 
     const { alertId } = useParams();
+
+    const { filteredWorkflowView } = useFilteredWorkflowViewURLState('Full view');
 
     function handleTabClick(_, tabIndex) {
         setActiveTabKey(tabIndex);
@@ -89,7 +92,7 @@ function ViolationDetailsPage(): ReactElement {
 
     return (
         <>
-            <ViolationsBreadcrumbs current={title} />
+            <ViolationsBreadcrumbs current={title} filteredWorkflowView={filteredWorkflowView} />
             <PageSection variant="light">
                 <Title headingLevel="h1">{title}</Title>
                 <Title

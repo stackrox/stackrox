@@ -82,23 +82,23 @@ func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, sch
 	}
 
 	standardizeFieldNamesInQuery(q)
-	innerJoins, dbFields := getJoinsAndFields(schema, q)
+	joins, dbFields := getJoinsAndFields(schema, q)
 	if len(q.GetSelects()) == 0 && q.GetQuery() == nil {
 		return nil, nil
 	}
 
 	if env.ImageCVEEdgeCustomJoin.BooleanSetting() {
-		innerJoins, err = handleImageCveEdgesTableInJoins(schema, innerJoins)
+		joins, err = handleImageCveEdgesTableInJoins(schema, joins)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	parsedQuery := &query{
-		Schema:     schema,
-		QueryType:  queryType,
-		From:       schema.Table,
-		InnerJoins: innerJoins,
+		Schema:    schema,
+		QueryType: queryType,
+		From:      schema.Table,
+		Joins:     joins,
 	}
 
 	if err = populateSelect(parsedQuery, schema, q.GetSelects(), dbFields, nowForQuery); err != nil {
@@ -175,6 +175,7 @@ func populateSelect(querySoFar *query, schema *walker.Schema, querySelects []*v1
 			querySoFar.SelectedFields = append(querySoFar.SelectedFields,
 				selectQueryField(field.GetName(), dbField, field.GetDistinct(), aggregatefunc.GetAggrFunc(field.GetAggregateFunc()), ""),
 			)
+			querySoFar.DistinctAppliedToSelects = querySoFar.DistinctAppliedToSelects || field.GetDistinct()
 			continue
 		}
 
@@ -194,6 +195,7 @@ func populateSelect(querySoFar *query, schema *walker.Schema, querySelects []*v1
 		querySoFar.Data = append(querySoFar.Data, qe.Where.Values...)
 
 		selectField := selectQueryField(field.GetName(), dbField, field.GetDistinct(), aggregatefunc.GetAggrFunc(field.GetAggregateFunc()), qe.Where.Query)
+		querySoFar.DistinctAppliedToSelects = querySoFar.DistinctAppliedToSelects || field.GetDistinct()
 		if alias := filter.GetName(); alias != "" {
 			selectField.Alias = alias
 		} else {

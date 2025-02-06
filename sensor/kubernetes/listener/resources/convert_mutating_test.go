@@ -310,7 +310,6 @@ func TestConvertDifferentContainerNumbers(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(c.name, func(t *testing.T) {
 			actual := newDeploymentEventFromResource(c.inputObj, &c.action, c.deploymentType, testClusterID, c.podLister, mockNamespaceStore, hierarchyFromPodLister(c.podLister), "", c.systemNamespaces).GetDeployment()
 			if actual != nil {

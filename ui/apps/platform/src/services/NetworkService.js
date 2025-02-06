@@ -1,7 +1,7 @@
 import queryString from 'qs';
 
 import { ORCHESTRATOR_COMPONENTS_KEY } from 'utils/orchestratorComponents';
-import { convertToExactMatch } from 'utils/searchUtils';
+import { convertToExactMatch, getListQueryParams } from 'utils/searchUtils';
 
 import axios from './instance';
 
@@ -455,6 +455,64 @@ export function applyNetworkPolicyModification(clusterId, modification) {
     return axios(options).then((response) => ({
         response: response.data,
     }));
+}
+
+/**
+ * Fetches flows for a single external entity.
+ *
+ * @returns {Promise<Object, Error>}
+ */
+export function getExternalNetworkFlows(
+    clusterId,
+    entityId,
+    namespaces,
+    deployments,
+    { sortOption, page, perPage, advancedFilters }
+) {
+    const searchFilter = {
+        ...(namespaces.length && {
+            Namespace: namespaces.map(convertToExactMatch).join(','),
+        }),
+        ...(deployments.length && {
+            Deployment: deployments.map(convertToExactMatch).join(','),
+        }),
+        ...advancedFilters,
+    };
+    const params = getListQueryParams({ searchFilter, sortOption, page, perPage });
+    return axios
+        .get(
+            `${networkFlowBaseUrl}/cluster/${clusterId}/externalentities/${entityId}/flows?${params}`
+        )
+        .then((response) => response.data);
+}
+
+/**
+ * Fetches external IPs metadata.
+ * default=false && discovered=true: shows only external-IPs detected by the Collectors.
+ *
+ * @returns {Promise<Object, Error>}
+ */
+export function getExternalIpsFlowsMetadata(
+    clusterId,
+    namespaces,
+    deployments,
+    { sortOption, page, perPage, advancedFilters }
+) {
+    const searchFilter = {
+        ...(namespaces.length && {
+            Namespace: namespaces.map(convertToExactMatch).join(','),
+        }),
+        ...(deployments.length && {
+            Deployment: deployments.map(convertToExactMatch).join(','),
+        }),
+        'Default External Source': false,
+        'Discovered External Source': true,
+        ...advancedFilters,
+    };
+    const params = getListQueryParams({ searchFilter, sortOption, page, perPage });
+    return axios
+        .get(`${networkFlowBaseUrl}/cluster/${clusterId}/externalentities/metadata?${params}`)
+        .then((response) => response.data);
 }
 
 /**

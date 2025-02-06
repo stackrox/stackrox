@@ -47,7 +47,14 @@ func mockEnvWithHTTPClient(t *testing.T, store *cfgMock.MockStore) environment.E
 	mockEnv.EXPECT().ColorWriter().AnyTimes().Return(env.ColorWriter())
 	mockEnv.EXPECT().ConfigStore().AnyTimes().Return(store, nil)
 	mockEnv.EXPECT().HTTPClient(gomock.Any(), gomock.Any()).AnyTimes().Return(
-		common.GetRoxctlHTTPClient(auth.Anonymous(), 30*time.Second, false, true, env.Logger()))
+		common.GetRoxctlHTTPClient(common.NewHttpClientConfig(
+			common.WithAuthMethod(auth.Anonymous()),
+			common.WithTimeout(30*time.Second),
+			common.WithForceHTTP1(false),
+			common.WithUseInsecure(true),
+			common.WithLogger(env.Logger()),
+		)),
+	)
 
 	return mockEnv
 }

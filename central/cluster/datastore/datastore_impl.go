@@ -43,7 +43,9 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/simplecache"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -753,7 +755,7 @@ func (ds *datastoreImpl) getAlerts(ctx context.Context, deploymentID string) ([]
 	q := pkgSearch.NewQueryBuilder().
 		AddExactMatches(pkgSearch.ViolationState, storage.ViolationState_ACTIVE.String()).
 		AddExactMatches(pkgSearch.DeploymentID, deploymentID).ProtoQuery()
-	return ds.alertDataStore.SearchRawAlerts(ctx, q)
+	return ds.alertDataStore.SearchRawAlerts(ctx, q, true)
 }
 
 func (ds *datastoreImpl) markAlertsStale(ctx context.Context, alerts []*storage.Alert) error {
@@ -770,7 +772,9 @@ func (ds *datastoreImpl) markAlertsStale(ctx context.Context, alerts []*storage.
 		return err
 	}
 	for _, resolvedAlert := range resolvedAlerts {
-		ds.notifier.ProcessAlert(ctx, resolvedAlert)
+		if ds.notifier != nil {
+			ds.notifier.ProcessAlert(ctx, resolvedAlert)
+		}
 	}
 	return nil
 }
@@ -835,7 +839,8 @@ func (ds *datastoreImpl) updateClusterNoLock(ctx context.Context, cluster *stora
 	return nil
 }
 
-func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, clusterID, bundleID string, hello *central.SensorHello) (*storage.Cluster, error) {
+// registrantID can be the ID of an init bundle or of a CRS.
+func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, clusterID, registrantID string, hello *central.SensorHello) (*storage.Cluster, error) {
 	if err := checkWriteSac(ctx, clusterID); err != nil {
 		return nil, err
 	}
@@ -866,25 +871,25 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 
 		isExisting = true
 
+		cluster = clusterByID
+
 		// If a name is specified, validate it (otherwise, accept any name)
 		if clusterName != "" && clusterName != clusterByID.GetName() {
 			return nil, errors.Errorf("Name mismatch for cluster %q: expected %q, but %q was specified. Set the cluster.name/clusterName attribute in your Helm config to %q, or remove it", clusterID, cluster.GetName(), clusterName, cluster.GetName())
 		}
 
-		cluster = clusterByID
 	} else if clusterName != "" {
-		// A this point, we can be sure that the cluster does not exist.
+		// At this point, we can be sure that the cluster does not exist.
 		cluster = &storage.Cluster{
 			Name:               clusterName,
-			InitBundleId:       bundleID,
+			InitBundleId:       registrantID,
 			MostRecentSensorId: hello.GetDeploymentIdentification().CloneVT(),
+			SensorCapabilities: sliceutils.CopySliceSorted(hello.GetCapabilities()),
 		}
 		clusterConfig := helmConfig.GetClusterConfig()
 		configureFromHelmConfig(cluster, clusterConfig)
 
-		// Unless we know for sure that we are not Helm-managed we do store the Helm configuration,
-		// in particular this also applies to the UNKNOWN case.
-		if manager != storage.ManagerType_MANAGER_TYPE_MANUAL {
+		if securedClusterIsNotManagedManually(helmConfig) {
 			cluster.HelmConfig = clusterConfig.CloneVT()
 		}
 
@@ -918,17 +923,17 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 			}
 		}
 
-		if cluster.GetInitBundleId() == bundleID &&
+		if sensorCapabilitiesEqual(cluster, hello) &&
+			cluster.GetInitBundleId() == registrantID &&
 			cluster.GetHelmConfig().GetConfigFingerprint() == helmConfig.GetClusterConfig().GetConfigFingerprint() &&
 			cluster.GetManagedBy() == manager {
 			// No change in either of
+			// * sensor capabilities
 			// * fingerprint of the Helm configuration
 			// * in init bundle ID
 			// * manager type
 			//
 			// => there is no need to update the cluster, return immediately.
-			//
-			// Note: this also is the case if the cluster was newly added.
 			return cluster, nil
 		}
 	}
@@ -938,12 +943,13 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 
 	cluster = cluster.CloneVT()
 	cluster.ManagedBy = manager
-	cluster.InitBundleId = bundleID
-	if manager == storage.ManagerType_MANAGER_TYPE_MANUAL {
-		cluster.HelmConfig = nil
-	} else {
+	cluster.InitBundleId = registrantID
+	cluster.SensorCapabilities = sliceutils.CopySliceSorted(hello.GetCapabilities())
+	if securedClusterIsNotManagedManually(helmConfig) {
 		configureFromHelmConfig(cluster, clusterConfig)
 		cluster.HelmConfig = clusterConfig.CloneVT()
+	} else {
+		cluster.HelmConfig = nil
 	}
 
 	if !currentCluster.EqualVT(cluster) {
@@ -954,6 +960,15 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 	}
 
 	return cluster, nil
+}
+
+func securedClusterIsNotManagedManually(helmManagedConfig *central.HelmManagedConfigInit) bool {
+	return helmManagedConfig.GetManagedBy() != storage.ManagerType_MANAGER_TYPE_UNKNOWN &&
+		helmManagedConfig.GetManagedBy() != storage.ManagerType_MANAGER_TYPE_MANUAL
+}
+
+func sensorCapabilitiesEqual(cluster *storage.Cluster, hello *central.SensorHello) bool {
+	return set.NewSet(cluster.GetSensorCapabilities()...).Equal(set.NewSet(hello.GetCapabilities()...))
 }
 
 func normalizeCluster(cluster *storage.Cluster) error {

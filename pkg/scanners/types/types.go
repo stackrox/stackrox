@@ -32,6 +32,21 @@ type Scanner interface {
 	GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error)
 }
 
+// SBOM is the interface that contains the StackRox SBOM methods
+type SBOMer interface {
+	// GetSBOM to get sbom for an image
+	GetSBOM(image *storage.Image) ([]byte, bool, error)
+}
+
+// ScannerSBOMer represents a Scanner with SBOM generation capabilities. This
+// was initially created for mock generation to simplify tests.
+//
+//go:generate mockgen-wrapper
+type ScannerSBOMer interface {
+	Scanner
+	SBOMer
+}
+
 // ImageScannerWithDataSource provides a GetScanner to retrieve the underlying Scanner and
 // a DataSource function to describe which integration formed the interface.
 //

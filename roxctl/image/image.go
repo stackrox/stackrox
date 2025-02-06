@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/image/check"
+	"github.com/stackrox/rox/roxctl/image/sbom"
 	"github.com/stackrox/rox/roxctl/image/scan"
 )
 
@@ -19,6 +20,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c.AddCommand(check.Command(cliEnvironment))
 	c.AddCommand(scan.Command(cliEnvironment))
+	c.AddCommand(sbom.Command(cliEnvironment))
 
 	// This is set very high, because typically the scan will need to be triggered as the image will be new
 	// This means we must let the scanners do their thing otherwise we will miss the scans

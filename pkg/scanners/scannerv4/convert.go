@@ -171,6 +171,7 @@ func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerab
 			// LastModified: ,
 			VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 			Severity:          normalizedSeverity(ccVuln.GetNormalizedSeverity()),
+			Epss:              epss(ccVuln.GetEpssMetrics()),
 		}
 		if err := setScoresAndScoreVersions(vuln, ccVuln.GetCvssMetrics()); err != nil {
 			utils.Should(err)
@@ -186,6 +187,16 @@ func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerab
 	}
 
 	return vulns
+}
+
+func epss(epssDetail *v4.VulnerabilityReport_Vulnerability_EPSS) *storage.EPSS {
+	if epssDetail == nil {
+		return nil
+	}
+	return &storage.EPSS{
+		EpssProbability: epssDetail.Probability,
+		EpssPercentile:  epssDetail.Percentile,
+	}
 }
 
 func setScoresAndScoreVersions(vuln *storage.EmbeddedVulnerability, CVSSMetrics []*v4.VulnerabilityReport_Vulnerability_CVSS) error {

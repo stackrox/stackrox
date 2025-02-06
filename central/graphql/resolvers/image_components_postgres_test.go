@@ -9,9 +9,9 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
+	imagesView "github.com/stackrox/rox/central/views/images"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -53,6 +53,7 @@ func (s *GraphQLImageComponentTestSuite) SetupSuite() {
 	s.testDB = SetupTestPostgresConn(s.T())
 	imageDataStore := CreateTestImageDatastore(s.T(), s.testDB, mockCtrl)
 	resolver, _ := SetupTestResolver(s.T(),
+		imagesView.NewImageView(s.testDB.DB),
 		imageDataStore,
 		CreateTestImageComponentDatastore(s.T(), s.testDB, mockCtrl),
 		CreateTestImageComponentEdgeDatastore(s.T(), s.testDB),
@@ -173,11 +174,6 @@ func (s *GraphQLImageComponentTestSuite) TestImageComponentsScoped() {
 }
 
 func (s *GraphQLImageComponentTestSuite) TestImageComponentsScopeTree() {
-	if !features.VulnMgmtWorkloadCVEs.Enabled() {
-		s.T().Skipf("Skipping because %s=false", features.VulnMgmtWorkloadCVEs.EnvVar())
-		s.T().SkipNow()
-	}
-
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
 	imageCompTests := []struct {

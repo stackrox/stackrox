@@ -38,13 +38,13 @@ const (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Deployment)): {
-			"/v1.DeploymentService/GetDeployment",
-			"/v1.DeploymentService/GetDeploymentWithRisk",
-			"/v1.DeploymentService/CountDeployments",
-			"/v1.DeploymentService/ListDeployments",
-			"/v1.DeploymentService/GetLabels",
-			"/v1.DeploymentService/ListDeploymentsWithProcessInfo",
-			"/v1.DeploymentService/ExportDeployments",
+			v1.DeploymentService_GetDeployment_FullMethodName,
+			v1.DeploymentService_GetDeploymentWithRisk_FullMethodName,
+			v1.DeploymentService_CountDeployments_FullMethodName,
+			v1.DeploymentService_ListDeployments_FullMethodName,
+			v1.DeploymentService_GetLabels_FullMethodName,
+			v1.DeploymentService_ListDeploymentsWithProcessInfo_FullMethodName,
+			v1.DeploymentService_ExportDeployments_FullMethodName,
 		},
 	})
 	deploymentExtensionAuth = user.With(permissions.View(resources.DeploymentExtension))

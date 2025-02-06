@@ -96,8 +96,5 @@ export const selectors = {
     removeImageFromTableButton: (name) =>
         `${selectors.currentWatchedImagesTable} tr:has(td:contains("${name}")) button:contains("Remove watch")`,
 
-    // Observed CVE mode selectors
-    observedCveModeSelect: '*[aria-label="Observed CVE mode select"]',
-
     generateSbomModal: '*[role="dialog"]:contains("Generate Software Bill of Materials (SBOM)")',
 };

@@ -1,4 +1,5 @@
 import { saveFile } from 'services/DownloadService';
+import { sanitizeFilename } from 'utils/fileUtils';
 import { JobContextTab, jobContextTabs } from './types';
 
 export function ensureJobContextTab(value: unknown): JobContextTab {
@@ -8,11 +9,9 @@ export function ensureJobContextTab(value: unknown): JobContextTab {
     return 'CONFIGURATION_DETAILS';
 }
 
-const filenameSanitizerRegex = new RegExp('(:)|(/)|(\\s)', 'gi');
-
 export function onDownloadReport({ reportJobId, name, completedAt, baseDownloadURL }) {
     const filename = `${name}-${completedAt}`;
-    const sanitizedFilename = filename.replaceAll(filenameSanitizerRegex, '_');
+    const sanitizedFilename = sanitizeFilename(filename);
     return saveFile({
         method: 'get',
         url: `${baseDownloadURL}?id=${reportJobId}`,

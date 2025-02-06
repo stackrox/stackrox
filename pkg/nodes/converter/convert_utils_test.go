@@ -20,6 +20,7 @@ func TestNodeVulnConv(t *testing.T) {
 	// EmbeddedVulns do not have a reference field.
 	nodeVuln.CveBaseInfo.References = nil
 	nodeVuln.CveBaseInfo.CvssMetrics = nil
+	nodeVuln.CveBaseInfo.Epss = nil
 	embedvuln := EmbeddedVulnerabilityToNodeVulnerability(vuln)
 	protoassert.Equal(t, nodeVuln, embedvuln)
 }

@@ -52,6 +52,9 @@ type Scanner interface {
 	// GetMatcherMetadata returns metadata from the matcher.
 	GetMatcherMetadata(context.Context) (*v4.Metadata, error)
 
+	// GetSBOM to get sbom for an image
+	GetSBOM(ctx context.Context, name string, ref name.Digest) ([]byte, bool, error)
+
 	// Close cleans up any resources used by the implementation.
 	Close() error
 }
@@ -174,6 +177,26 @@ func createGRPCConn(ctx context.Context, o connOptions) (*grpc.ClientConn, error
 		clientconn.WithDialOptions(dialOpts...),
 	}
 	return clientconn.AuthenticatedGRPCConnection(ctx, address, o.mTLSSubject, connOpts...)
+}
+
+// GetSBOM verifies that index report exists and calls matcher to return sbom for an image
+func (c *gRPCScanner) GetSBOM(ctx context.Context, imageFullName string, ref name.Digest) ([]byte, bool, error) {
+	// verify index report exists for the image
+	hashId := getImageManifestID(ref)
+	ir, found, err := c.GetImageIndex(ctx, hashId)
+	if err != nil {
+		return nil, false, err
+	}
+	if !found {
+		return nil, false, nil
+	}
+
+	resp, err := c.matcher.GetSBOM(ctx, &v4.GetSBOMRequest{
+		Id:       ref.DigestStr(),
+		Name:     imageFullName,
+		Contents: ir.GetContents(),
+	})
+	return resp.GetSbom(), true, err
 }
 
 // GetImageIndex calls the Indexer's gRPC endpoint GetIndexReport.
