@@ -2,7 +2,6 @@ package mappers
 
 import (
 	"context"
-	"strconv"
 	"testing"
 	"time"
 
@@ -2025,6 +2024,107 @@ func Test_versionID(t *testing.T) {
 	}
 }
 
+func Test_sortByNVDCVSS(t *testing.T) {
+	type args struct {
+		ids             []string
+		vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerability
+	}
+	tests := []struct {
+		name string
+		args args
+		want []string
+	}{
+		{
+			name: "no NVD CVSS scores",
+			args: args{
+				ids: []string{"0", "1"},
+				vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"0": {
+						CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{},
+					},
+					"1": {
+						CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{},
+					},
+				},
+			},
+			want: []string{"0", "1"},
+		},
+		{
+			name: "one NVD CVSS score",
+			args: args{
+				ids: []string{"0", "1"},
+				vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"0": {
+						CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{},
+					},
+					"1": {
+						CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+							{
+								Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+								V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+									BaseScore: 1.0,
+								},
+							},
+						},
+					},
+				},
+			},
+			want: []string{"1", "0"},
+		},
+		{
+			name: "multiple NVD CVSS scores",
+			args: args{
+				ids: []string{"0", "1", "2"},
+				vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"0": {
+						CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+							{
+								Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_OSV,
+								V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+									BaseScore: 10.0,
+								},
+							},
+						},
+					},
+					"1": {
+						CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+							{
+								Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
+								V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+									BaseScore: 10.0,
+								},
+							},
+							{
+								Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+								V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+									BaseScore: 1.0,
+								},
+							},
+						},
+					},
+					"2": {
+						CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+							{
+								Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+								V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
+									BaseScore: 3.0,
+								},
+							},
+						},
+					},
+				},
+			},
+			want: []string{"2", "1", "0"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sortByNVDCVSS(tt.args.ids, tt.args.vulnerabilities)
+			assert.Equalf(t, tt.want, tt.args.ids, "sortByNVDCVSS(%v, %v)", tt.args.ids, tt.args.vulnerabilities)
+		})
+	}
+}
+
 func Test_getMaxBaseScore(t *testing.T) {
 	type args struct {
 		cvssMetrics []*v4.VulnerabilityReport_Vulnerability_CVSS
@@ -2257,70 +2357,14 @@ func Test_dedupeAdvisories(t *testing.T) {
 	now := timestamppb.Now()
 
 	testcases := []struct {
-		name        string
-		csafEnabled bool
-		vulnIDs     []string
-		vulns       map[string]*v4.VulnerabilityReport_Vulnerability
-		expected    []string
+		name     string
+		vulnIDs  []string
+		vulns    map[string]*v4.VulnerabilityReport_Vulnerability
+		expected []string
 	}{
 		{
-			name:        "CSAF disabled",
-			csafEnabled: false,
-			vulnIDs:     []string{"0", "1", "2", "3", "4", "5"},
-			vulns: map[string]*v4.VulnerabilityReport_Vulnerability{
-				"0": {
-					Id:                 "0",
-					Name:               "RHSA-2021:0735",
-					Description:        "Red Hat Security Advisory: nodejs:10 security update",
-					Issued:             now,
-					Link:               "https://access.redhat.com/errata/RHSA-2021:0735",
-					Severity:           "Important",
-					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
-				},
-				"1": {
-					Id:                 "1",
-					Name:               "RHSA-2021:0735",
-					Description:        "Red Hat Security Advisory: nodejs:10 security update",
-					Issued:             now,
-					Link:               "https://access.redhat.com/errata/RHSA-2021:0735",
-					Severity:           "Important",
-					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
-				},
-				"2": {
-					Id:                 "2",
-					Name:               "RHSA-2021:0548",
-					Description:        "Red Hat Security Advisory: nodejs:10 security update",
-					Issued:             now,
-					Link:               "https://access.redhat.com/errata/RHSA-2021:0548",
-					Severity:           "Moderate",
-					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
-				},
-				"3": {
-					Id:          "3",
-					Name:        "CVE-2025-12342",
-					Description: "very vulnerable",
-				},
-				"4": {
-					Id:                 "4",
-					Name:               "RHSA-2021:0548",
-					Description:        "Red Hat Security Advisory: nodejs:10 security update",
-					Issued:             now,
-					Link:               "https://access.redhat.com/errata/RHSA-2021:0548",
-					Severity:           "Moderate",
-					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
-				},
-				"5": {
-					Id:          "5",
-					Name:        "CVE-2025-12342",
-					Description: "very vulnerable",
-				},
-			},
-			expected: []string{"0", "1", "2", "3", "4", "5"},
-		},
-		{
-			name:        "CSAF enabled",
-			csafEnabled: true,
-			vulnIDs:     []string{"0", "1", "2", "3", "4", "5"},
+			name:    "basic",
+			vulnIDs: []string{"0", "1", "2", "3", "4", "5"},
 			vulns: map[string]*v4.VulnerabilityReport_Vulnerability{
 				"0": {
 					Id:                 "0",
@@ -2375,7 +2419,6 @@ func Test_dedupeAdvisories(t *testing.T) {
 
 	for _, tt := range testcases {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Setenv(features.ScannerV4RedHatCSAF.EnvVar(), strconv.FormatBool(tt.csafEnabled))
 			got := dedupeAdvisories(tt.vulnIDs, tt.vulns)
 			assert.ElementsMatch(t, tt.expected, got)
 		})

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -321,17 +322,76 @@ func toProtoV4PackageVulnerabilitiesMap(ccPkgVulnerabilities map[string][]string
 		if vulnIDs == nil {
 			continue
 		}
+		// First, deduplicate any vulnerabilities which Claircore may repeat.
+		// This may happen, for example, when we match the same vulnerability to multiple CPEs
+		// in Red Hat's OVAL or VEX data.
 		vulnIDs = dedupeVulns(vulnIDs, ccVulnerabilities)
-		vulnIDs = dedupeAdvisories(vulnIDs, vulnerabilities)
+		// Only do the following if we want to use the CSAF enrichment data.
+		if features.ScannerV4RedHatCSAF.Enabled() {
+			// Next, sort by NVD CVSS score.
+			sortByNVDCVSS(vulnIDs, vulnerabilities)
+			// Next, deduplicate and vulnerabilities with the same Red Hat advisory name.
+			// We just take the first one here, which is why we sorted by NVD CVSS score beforehand.
+			// We will take the version of the advisory associated with the highest NVD CVSS score.
+			vulnIDs = dedupeAdvisories(vulnIDs, vulnerabilities)
+		}
+		// Lastly, sort by severity in case we may still have any duplications we missed previously.
+		sortBySeverity(vulnIDs, vulnerabilities)
 		pkgVulns[id] = &v4.StringList{
 			Values: vulnIDs,
 		}
-		sortBySeverity(pkgVulns[id].GetValues(), vulnerabilities)
 	}
 	return pkgVulns
 }
 
-// baseScore returns the preferred CVSS base score found in the CVSS metrics, prioritizing V3 over V2.
+// sortByNVDCVSS sorts the vulnerability IDs in decreasing NVD CVSS order.
+func sortByNVDCVSS(ids []string, vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerability) {
+	slices.SortStableFunc(ids, func(idA, idB string) int {
+		vulnA := vulnerabilities[idA]
+		vulnB := vulnerabilities[idB]
+
+		var (
+			vulnANVDMetrics *v4.VulnerabilityReport_Vulnerability_CVSS
+			vulnBNVDMetrics *v4.VulnerabilityReport_Vulnerability_CVSS
+		)
+		for _, metrics := range vulnA.GetCvssMetrics() {
+			if metrics.GetSource() == v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD {
+				vulnANVDMetrics = metrics
+				break
+			}
+		}
+		for _, metrics := range vulnB.GetCvssMetrics() {
+			if metrics.GetSource() == v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD {
+				vulnBNVDMetrics = metrics
+				break
+			}
+		}
+
+		// Handle nil NVD metrics explicitly: nil is considered lower.
+		if vulnANVDMetrics == nil && vulnBNVDMetrics == nil {
+			return 0 // keep the original order
+		}
+		if vulnANVDMetrics == nil {
+			return +1 // vulnBNVDMetrics non-nil, so prefer vulnB
+		}
+		if vulnBNVDMetrics == nil {
+			return -1 // vulnANVDMetrics non-nil, so prefer vulnA
+		}
+
+		// Determine the base scores and indicate the vuln with the higher score goes in front.
+		vulnAScore := baseScore([]*v4.VulnerabilityReport_Vulnerability_CVSS{vulnANVDMetrics})
+		vulnBScore := baseScore([]*v4.VulnerabilityReport_Vulnerability_CVSS{vulnBNVDMetrics})
+		if vulnAScore > vulnBScore {
+			return -1
+		}
+		if vulnAScore < vulnBScore {
+			return +1
+		}
+		return 0
+	})
+}
+
+// baseScore returns the CVSS base score, prioritizing V3 over V2.
 func baseScore(cvssMetrics []*v4.VulnerabilityReport_Vulnerability_CVSS) float32 {
 	var metric *v4.VulnerabilityReport_Vulnerability_CVSS
 	if len(cvssMetrics) == 0 {
@@ -1221,10 +1281,6 @@ func vulnsEqual(a, b *claircore.Vulnerability) bool {
 // it'll just return the original slice of vulnIDs.
 // This function does not guarantee order is preserved.
 func dedupeAdvisories(vulnIDs []string, protoVulns map[string]*v4.VulnerabilityReport_Vulnerability) []string {
-	if !features.ScannerV4RedHatCSAF.Enabled() {
-		return vulnIDs
-	}
-
 	filtered := make([]string, 0, len(vulnIDs))
 	// advisories tracks the unique advisories.
 	advisories := set.NewStringSet()
