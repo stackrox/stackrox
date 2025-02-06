@@ -15,7 +15,9 @@ import (
 )
 
 // ParseEnrichment implements driver.EnrichmentUpdater.
-func (e *Enricher) ParseEnrichment(ctx context.Context, contents io.ReadCloser) ([]driver.EnrichmentRecord, error) {
+// The contents should be a line-delimited list of CSAF data, all of which is Snappy-compressed.
+// This method parses out the data the enricher cares about and marshals the result into JSON.
+func (e *Enricher) ParseEnrichment(_ context.Context, contents io.ReadCloser) ([]driver.EnrichmentRecord, error) {
 	records := make(map[string]pkgcsaf.Advisory)
 
 	r := bufio.NewReader(snappy.NewReader(contents))
@@ -63,6 +65,8 @@ func (e *Enricher) ParseEnrichment(ctx context.Context, contents io.ReadCloser) 
 			vector string
 		}
 		for _, v := range c.Vulnerabilities {
+			// Loop through each vulnerability's scores, but it is not expected for there to be more than one,
+			// as Red Hat advisories are per-product, and each product should only have a single CVSS v2/v3 score.
 			for _, score := range v.Scores {
 				if score.CVSSV3 != nil && score.CVSSV3.BaseScore > cvss3.score {
 					cvss3.score = score.CVSSV3.BaseScore

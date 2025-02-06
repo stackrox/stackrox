@@ -57,7 +57,8 @@ var (
 
 	awsUpdaterPrefix = `aws-`
 	osvUpdaterPrefix = `osv/`
-	rhelUpdaterName  = (*vex.Updater)(nil).Name()
+	// RedHatUpdaterName is the name of the Red Hat VEX updater.
+	RedHatUpdaterName = (*vex.Updater)(nil).Name()
 
 	// Name patterns are regexes to match against vulnerability fields to
 	// extract their name according to their updater.
@@ -66,9 +67,9 @@ var (
 	alasIDPattern = regexp.MustCompile(`ALAS\d*-\d{4}-\d+`)
 	// cveIDPattern captures CVEs.
 	cveIDPattern = regexp.MustCompile(`CVE-\d{4}-\d+`)
-	// rhelVulnNamePattern captures known Red Hat advisory patterns.
+	// RedHatAdvisoryPattern captures known Red Hat advisory patterns.
 	// TODO(ROX-26672): Remove this and show CVE as the vulnerability name.
-	rhelVulnNamePattern = regexp.MustCompile(`(RHSA|RHBA|RHEA)-\d{4}:\d+`)
+	RedHatAdvisoryPattern = regexp.MustCompile(`(RHSA|RHBA|RHEA)-\d{4}:\d+`)
 
 	// vulnNamePatterns is a default prioritized list of regexes to match
 	// vulnerability names.
@@ -387,11 +388,11 @@ func rhelVulnsEPSS(vulns map[string]*claircore.Vulnerability, epssItems map[stri
 		if v == nil {
 			continue
 		}
-		cve, foundCVE := findName(v, cveIDPattern)
+		cve, foundCVE := FindName(v, cveIDPattern)
 		if !foundCVE {
 			continue // continue if it's not a CVE
 		}
-		rhelName, foundRHEL := findName(v, rhelVulnNamePattern)
+		rhelName, foundRHEL := FindName(v, RedHatAdvisoryPattern)
 		if !foundRHEL {
 			continue // continue if it's not a RHSA
 		}
@@ -450,18 +451,18 @@ func toProtoV4VulnerabilitiesMap(
 			repoID = v.Repo.ID
 		}
 
-		// TODO: Handle EPSS score...
 		name := vulnerabilityName(v)
 		// TODO(ROX-26672): Remove this line.
 		advisory, advisoryExists := csafAdvisories[v.ID]
 
 		normalizedSeverity := toProtoV4VulnerabilitySeverity(ctx, v.NormalizedSeverity)
 		if advisoryExists {
+			// Replace the normalized severity for the CVE with the severity of the related Red Hat advisory.
 			normalizedSeverity = toProtoV4VulnerabilitySeverityFromString(ctx, advisory.Severity)
 		}
 
-		// Determine the related CVE for this vulnerability. This is necessary, as NVD is CVE-based.
-		cve, foundCVE := findName(v, cveIDPattern)
+		// Determine the related CVE for this vulnerability. This is necessary, as NVD and EPSS are CVE-based.
+		cve, foundCVE := FindName(v, cveIDPattern)
 		// Find the related NVD vuln for this vulnerability name, let it be empty if no
 		// NVD vuln for that name was found.
 		var nvdVuln nvdschema.CVEAPIJSON20CVEItem
@@ -499,6 +500,7 @@ func toProtoV4VulnerabilitiesMap(
 
 		description := v.Description
 		if advisoryExists {
+			// Replace the description for the CVE with the description of the related Red Hat advisory.
 			description = advisory.Description
 		}
 		if description == "" {
@@ -510,6 +512,7 @@ func toProtoV4VulnerabilitiesMap(
 
 		vulnPublished := v.Issued
 		if advisoryExists {
+			// Replace the published date for the CVE with the published date of the related Red Hat advisory.
 			vulnPublished = advisory.ReleaseDate
 		}
 		issued := issuedTime(vulnPublished, nvdVuln.Published)
@@ -923,11 +926,12 @@ func cvssMetrics(_ context.Context, vuln *claircore.Vulnerability, vulnName stri
 	var preferredCVSS *v4.VulnerabilityReport_Vulnerability_CVSS
 	var preferredErr error
 	switch {
-	case strings.EqualFold(vuln.Updater, rhelUpdaterName):
+	case strings.EqualFold(vuln.Updater, RedHatUpdaterName):
 		// If the Name is empty, then the whole advisory is.
 		if advisory.Name == "" {
 			preferredCVSS, preferredErr = vulnCVSS(vuln, v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT)
 		} else {
+			// Set the preferred CVSS metrics to the ones provided by the related Red Hat advisory.
 			// TODO(ROX-26462): add CVSS v4 support.
 			preferredCVSS = toCVSS(cvssValues{
 				v2Vector: advisory.CVSSv2.Vector,
@@ -938,7 +942,9 @@ func cvssMetrics(_ context.Context, vuln *claircore.Vulnerability, vulnName stri
 			})
 		}
 		// TODO(ROX-26672): Remove this
-		if !features.ScannerV4RedHatCVEs.Enabled() && preferredCVSS != nil && rhelVulnNamePattern.MatchString(vulnName) {
+		// Note: Do NOT use the advisory data here, as it's possible CSAF enrichment is disabled while [features.ScannerV4RedHatCVEs]
+		// is also disabled.
+		if !features.ScannerV4RedHatCVEs.Enabled() && preferredCVSS != nil && RedHatAdvisoryPattern.MatchString(vulnName) {
 			preferredCVSS.Url = redhatErrataURLPrefix + vulnName
 		}
 	case strings.HasPrefix(vuln.Updater, osvUpdaterPrefix) && !isOSVDBSpecificSeverity(vuln.Severity):
@@ -1111,41 +1117,33 @@ func nvdCVSS(v *nvdschema.CVEAPIJSON20CVEItem) (*v4.VulnerabilityReport_Vulnerab
 // vulnerabilityName searches the best known candidate for the vulnerability name
 // in the vulnerability details. It works by matching data against well-known
 // name patterns, and defaults to the original name if nothing is found.
-//
-// TODO: This is modified in scanner/enricher/csaf/csaf.go to prevent circular dependencies.
-// We should either combine these two, or better yet, remove the need for these.
-// Any changes done here should be considered for the other location, too.
 func vulnerabilityName(vuln *claircore.Vulnerability) string {
 	// Attempt per-updater patterns.
 	switch {
 	case strings.HasPrefix(vuln.Updater, awsUpdaterPrefix):
-		if v, ok := findName(vuln, alasIDPattern); ok {
+		if v, ok := FindName(vuln, alasIDPattern); ok {
 			return v
 		}
 	// TODO(ROX-26672): Remove this to show CVE as the vuln name.
-	case strings.EqualFold(vuln.Updater, rhelUpdaterName):
+	case strings.EqualFold(vuln.Updater, RedHatUpdaterName):
 		if !features.ScannerV4RedHatCVEs.Enabled() {
-			if v, ok := findName(vuln, rhelVulnNamePattern); ok {
+			if v, ok := FindName(vuln, RedHatAdvisoryPattern); ok {
 				return v
 			}
 		}
 	}
 	// Default patterns.
 	for _, p := range vulnNamePatterns {
-		if v, ok := findName(vuln, p); ok {
+		if v, ok := FindName(vuln, p); ok {
 			return v
 		}
 	}
 	return vuln.Name
 }
 
-// findName searches for a vulnerability name using the specified regex in
+// FindName searches for a vulnerability name using the specified regex in
 // pre-determined fields of the vulnerability, returning the name if found.
-//
-// TODO: This is modified in scanner/enricher/csaf/csaf.go to prevent circular dependencies.
-// We should either combine these two, or better yet, remove the need for these.
-// Any changes done here should be considered for the source, too.
-func findName(vuln *claircore.Vulnerability, p *regexp.Regexp) (string, bool) {
+func FindName(vuln *claircore.Vulnerability, p *regexp.Regexp) (string, bool) {
 	v := p.FindString(vuln.Name)
 	if v != "" {
 		return v, true
@@ -1237,7 +1235,7 @@ func dedupeAdvisories(vulnIDs []string, protoVulns map[string]*v4.VulnerabilityR
 		}
 
 		name := vuln.GetName()
-		if rhelVulnNamePattern.MatchString(name) && !advisories.Add(name) {
+		if RedHatAdvisoryPattern.MatchString(name) && !advisories.Add(name) {
 			continue
 		}
 

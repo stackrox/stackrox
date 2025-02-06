@@ -71,6 +71,8 @@ func (fp *fingerprint) String() string {
 }
 
 // FetchEnrichment implements driver.EnrichmentUpdater.
+// This method fetches Red Hat's CSAF data (https://security.access.redhat.com/data/csaf/v2/advisories/),
+// unless configured otherwise, and returns a Snappy-compressed file with each advisory's data written to each line.
 func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "enricher/csaf/Enricher/FetchEnrichment")
 	fp, err := parseFingerprint(hint)
