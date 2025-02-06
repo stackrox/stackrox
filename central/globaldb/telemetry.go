@@ -25,7 +25,11 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 		return nil, errors.Wrap(err, "failed to get databaze size")
 	}
 
-	props["Database Size"] = dbSize
+	db := GetPostgres()
+	version := GetPostgresVersion(ctx, db)
+
+	props["Database Size (Bytes)"] = dbSize
+	props["PostgreSQL version"] = version
 
 	return props, nil
 }
