@@ -188,15 +188,23 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 	}
 
 	if cluster.GetHealthStatus().GetLastContact() == nil && cluster.GetInitBundleId() != "" {
-		// Sensor has initially connected with a real service certificate, not just with a CRS.
-		// The call to RecordCompletedRegistration also updates the revocation state of the CRS used for this
-		// cluster, if needed.
-		if err := s.clusterInitStore.RecordCompletedRegistration(clusterDSSAC, cluster.GetInitBundleId(), cluster.GetId()); err != nil {
-			return errors.Wrapf(err, "updating completed-registrations counter for cluster registration secret %q", cluster.GetInitBundleId())
+		// Sensor has initially connected with a real service certificate, not just with an init artifact.
+		initBundleMeta, err := s.clusterInitStore.Get(clusterDSSAC, cluster.GetInitBundleId())
+		if err != nil {
+			return errors.Wrapf(err, "retrieving init-bundle/CRS %s", cluster.GetInitBundleId())
 		}
-		cluster.InitBundleId = ""
-		if err := s.clusters.UpdateCluster(clusterDSSAC, cluster); err != nil {
-			return errors.Wrapf(err, "clearing init-bundle/CRS ID for newly created cluster %q", cluster.GetInitBundleId())
+
+		if initBundleMeta.GetVersion() == storage.InitBundleMeta_CRS {
+			// The call to RecordCompletedRegistration also updates the revocation state of the CRS used for this
+			// cluster, if needed.
+			if err := s.clusterInitStore.RecordCompletedRegistration(clusterDSSAC, cluster.GetInitBundleId(), cluster.GetId()); err != nil {
+				return errors.Wrapf(err, "updating completed-registrations counter for cluster registration secret %q", cluster.GetInitBundleId())
+			}
+			// By doing this only in the CRS case we the exact semantics for init bundles.
+			cluster.InitBundleId = ""
+			if err := s.clusters.UpdateCluster(clusterDSSAC, cluster); err != nil {
+				return errors.Wrapf(err, "clearing init-bundle/CRS ID for newly created cluster %q", cluster.GetInitBundleId())
+			}
 		}
 	}
 
