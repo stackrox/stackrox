@@ -84,7 +84,7 @@ const violationPageText: Record<
     'Full view': {
         title: 'All violations',
         description:
-            'View violations for both user and platform workloads, as well as audit log violations',
+            'Violations affecting both user and platform workloads, as well as audit log violations for cluster resources.',
     },
 };
 
@@ -96,11 +96,11 @@ function getFilteredWorkflowViewText(filteredWorkflowView: FilteredWorkflowView)
 }
 
 const violationsPageDescription: Record<ViolationStateTab, string> = {
-    ACTIVE: 'View Build/Deploy violations for deployments currently in violation, along with unresolved Runtime violations.',
+    ACTIVE: 'View Build/Deploy violations for workloads currently in violation, along with unresolved Runtime violations.',
     RESOLVED:
-        'View Build/Deploy violations for deployments that were removed or modified to be compliant, manually resolved Runtime violations, and violations generated before a policy exclusion was added (all lifecycles)',
+        'View Build/Deploy violations for workloads that were removed or modified to be compliant, manually resolved Runtime violations, and violations generated before a policy exclusion was added (all lifecycles)',
     ATTEMPTED:
-        'View would-be violations that caused deployment attempts to be blocked by the Admission Controller.',
+        'View would-be violations that caused workload deployment attempts to be blocked by the Admission Controller.',
 };
 
 function getDescriptionForSelectedViolationState(
@@ -114,6 +114,7 @@ function ViolationsTablePage(): ReactElement {
     const { searchFilter, setSearchFilter } = useURLSearch();
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isPlatformComponentsEnabled = isFeatureFlagEnabled('ROX_PLATFORM_COMPONENTS');
+    const isPlatformCveSplitEnabled = isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT');
 
     const [selectedViolationStateTab, setSelectedViolationStateTab] = useURLStringUnion(
         'violationState',
@@ -275,15 +276,24 @@ function ViolationsTablePage(): ReactElement {
                     spaceItems={{ default: 'spaceItemsNone' }}
                     className="pf-v5-u-flex-grow-1"
                 >
-                    <Title headingLevel="h1">{title}</Title>
-                    <Tooltip aria="none" aria-live="polite" content={description} position="bottom">
-                        <Button
-                            aria-label="More information about the current page"
-                            variant="plain"
+                    <Title headingLevel="h1">
+                        {isPlatformCveSplitEnabled ? title : 'Violations'}
+                    </Title>
+                    {isPlatformCveSplitEnabled && (
+                        <Tooltip
+                            aria="none"
+                            aria-live="polite"
+                            content={description}
+                            position="bottom"
                         >
-                            <OutlinedQuestionCircleIcon />
-                        </Button>
-                    </Tooltip>
+                            <Button
+                                aria-label="More information about the current page"
+                                variant="plain"
+                            >
+                                <OutlinedQuestionCircleIcon />
+                            </Button>
+                        </Tooltip>
+                    )}
                 </Flex>
             </PageSection>
             <PageSection variant="light" className="pf-v5-u-py-0">
@@ -314,7 +324,7 @@ function ViolationsTablePage(): ReactElement {
                     />
                 </Tabs>
             </PageSection>
-            {isPlatformComponentsEnabled && !isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT') && (
+            {isPlatformComponentsEnabled && !isPlatformCveSplitEnabled && (
                 <PageSection className="pf-v5-u-py-md" component="div" variant="light">
                     <FilteredWorkflowViewSelector
                         filteredWorkflowView={filteredWorkflowView}
@@ -322,9 +332,13 @@ function ViolationsTablePage(): ReactElement {
                     />
                 </PageSection>
             )}
-            <PageSection variant="light">
-                <Text>{getDescriptionForSelectedViolationState(selectedViolationStateTab)}</Text>
-            </PageSection>
+            {isPlatformCveSplitEnabled && (
+                <PageSection variant="light">
+                    <Text>
+                        {getDescriptionForSelectedViolationState(selectedViolationStateTab)}
+                    </Text>
+                </PageSection>
+            )}
             <PageSection variant="default" id={tabContentId}>
                 {isLoadingAlerts && (
                     <Bullseye>
