@@ -1,13 +1,12 @@
 import withAuth from '../../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../../helpers/features';
+import { visitFromHorizontalNav, visitFromHorizontalNavExpandable } from '../../../helpers/nav';
 import { graphql } from '../../../constants/apiEndpoints';
 import {
     applyDefaultFilters,
     applyLocalSeverityFilters,
     interactAndWaitForImageList,
     interactAndWaitForDeploymentList,
-    navigateToView,
-    navigateToViewViaDropdown,
     selectEntityTab,
     visitWorkloadCveOverview,
 } from './WorkloadCves.helpers';
@@ -25,6 +24,8 @@ import {
     interceptAndOverridePermissions,
     interceptAndOverrideFeatureFlags,
 } from '../../../helpers/request';
+
+const visitFromMoreViewsDropdown = visitFromHorizontalNavExpandable('More Views');
 
 describe('Workload CVE overview page tests', () => {
     withAuth();
@@ -109,7 +110,7 @@ describe('Workload CVE overview page tests', () => {
             waitForRequests(['getImageCVEList']); // Wait for the third request after the filters have been changed to complete
 
             // Test the 'User Workloads' view
-            navigateToView('User Workloads');
+            visitFromHorizontalNav('User Workloads');
             waitAndYieldRequestBodyVariables(['getImageCVEList']).then(({ query }) => {
                 const requestQuery = query.toLowerCase();
                 expect(requestQuery).to.contain('vulnerability state:observed');
@@ -118,7 +119,7 @@ describe('Workload CVE overview page tests', () => {
             });
 
             // Test the 'Platform' view which is the default in e2e tests
-            navigateToView('Platform');
+            visitFromHorizontalNav('Platform');
             waitAndYieldRequestBodyVariables(['getImageCVEList']).then(({ query }) => {
                 const requestQuery = query.toLowerCase();
                 expect(requestQuery).to.contain('vulnerability state:observed');
@@ -127,7 +128,7 @@ describe('Workload CVE overview page tests', () => {
             });
 
             // Test the 'All vulnerable images' view
-            navigateToViewViaDropdown('All vulnerable images');
+            visitFromMoreViewsDropdown('All vulnerable images');
             waitAndYieldRequestBodyVariables(['getImageCVEList']).then(({ query }) => {
                 const requestQuery = query.toLowerCase();
                 expect(requestQuery).to.contain('vulnerability state:observed');
@@ -136,7 +137,7 @@ describe('Workload CVE overview page tests', () => {
             });
 
             // Test the 'Inactive images' view
-            navigateToViewViaDropdown('Inactive images');
+            visitFromMoreViewsDropdown('Inactive images');
             waitAndYieldRequestBodyVariables(['getImageCVEList']).then(({ query }) => {
                 const requestQuery = query.toLowerCase();
                 expect(requestQuery).to.contain('vulnerability state:observed');
@@ -145,7 +146,7 @@ describe('Workload CVE overview page tests', () => {
             });
 
             // Test the 'Images without CVEs' view
-            navigateToViewViaDropdown('Images without CVEs');
+            visitFromMoreViewsDropdown('Images without CVEs');
             waitAndYieldRequestBodyVariables(['getImageList']).then(({ query }) => {
                 const requestQuery = query.toLowerCase();
                 expect(requestQuery).not.to.contain('platform component:observed');
@@ -270,7 +271,7 @@ describe('Workload CVE overview page tests', () => {
             assertCveElementsArePresent();
 
             interactAndWaitForImageList(() => {
-                navigateToViewViaDropdown('Images without CVEs');
+                visitFromMoreViewsDropdown('Images without CVEs');
             });
 
             assertCveElementsAreNotPresent();

@@ -50,15 +50,6 @@ export function visitWorkloadCveOverview({ clearFiltersOnVisit = true, urlSearch
     }
 }
 
-export function navigateToView(viewTitle) {
-    cy.get(`nav.pf-m-horizontal-subnav a:contains("${viewTitle}")`).click();
-}
-
-export function navigateToViewViaDropdown(viewTitle) {
-    cy.get('nav.pf-m-horizontal-subnav button:contains("More Views")').click();
-    cy.get(`nav.pf-m-horizontal-subnav a[role="menuitem"]:contains("${viewTitle}")`).click();
-}
-
 /**
  * Apply default filters to the workload CVE overview page.
  * @param {('Critical' | 'Important' | 'Moderate' | 'Low')[]} severities
