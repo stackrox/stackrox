@@ -186,7 +186,7 @@ function NodeCvesOverviewPage() {
                 <Alert
                     isInline
                     variant="info"
-                    title="Results include Node CVEs obtained from Scanner V4."
+                    title="Results may include Node CVEs obtained from Scanner V4."
                     component="p"
                 >
                     <Flex
@@ -198,13 +198,13 @@ function NodeCvesOverviewPage() {
                                 <a
                                     href={getVersionedDocs(
                                         version,
-                                        'operating/manage-user-access/configure-short-lived-access.html#configure-short-lived-access'
+                                        'operating/placeholder.html#placeholder-section'
                                     )}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                 >
-                                    Read more about the differences between V2 and V4 node scanning
-                                    results
+                                    Read more about the differences between the node scanning
+                                    results obtained with the StackRox Scanner and Scanner V4.
                                 </a>
                             </ExternalLink>
                         </Flex>
