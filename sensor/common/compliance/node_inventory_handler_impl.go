@@ -318,12 +318,11 @@ func (c *nodeInventoryHandlerImpl) sendNodeIndex(toC chan<- *message.ExpiringMes
 		irWrapperFunc := noop
 		arch := c.archCache[indexWrap.NodeName]
 		if isRHCOS {
-			log.Debugf("Attaching OCI entry for 'rhcos' to index-report: version=%s", version)
 			if _, ok := c.archCache[indexWrap.NodeName]; !ok {
 				arch = extractArch(indexWrap.IndexReport)
 				c.archCache[indexWrap.NodeName] = arch
 			}
-			log.Debugf("Extracted arch for node %s: %s", indexWrap.NodeName, arch)
+			log.Debugf("Attaching OCI entry for 'rhcos' to index-report for node %s: version=%s, arch=%s", indexWrap.NodeName, version, arch)
 			irWrapperFunc = attachRPMtoRHCOS
 		}
 		toC <- message.New(&central.MsgFromSensor{
@@ -375,7 +374,7 @@ func extractArch(rpm *v4.IndexReport) string {
 			return p.GetArch()
 		}
 	}
-	return "noarch"
+	return ""
 }
 
 func attachRPMtoRHCOS(version, arch string, rpm *v4.IndexReport) *v4.IndexReport {
@@ -391,7 +390,6 @@ func attachRPMtoRHCOS(version, arch string, rpm *v4.IndexReport) *v4.IndexReport
 		oci.Contents.Environments[envId] = list
 	}
 	oci.Contents.Distributions = rpm.GetContents().GetDistributions()
-	log.Debugf("Index Report Packages:\n%+v", oci.GetContents().GetPackages())
 	return oci
 }
 
