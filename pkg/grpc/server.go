@@ -195,7 +195,6 @@ func (a *apiImpl) Stop() bool {
 	a.listenersLock.Lock()
 	defer a.listenersLock.Unlock()
 
-	state := true
 	a.debugLog.Logf("Stopping %d listeners", len(a.listeners))
 	for _, listener := range a.listeners {
 		debugMsg := "unknown listener type: "
@@ -207,13 +206,13 @@ func (a *apiImpl) Stop() bool {
 		}
 		if listener.stopper != nil {
 			debugMsg += "stopped"
-			state = listener.stopper() && state
+			listener.stopper()
 		} else {
 			debugMsg += fmt.Sprintf("not stopped in loop. Comparing with grpcServer pointer with listener.srv pointer (%p : %p)", a.grpcServer, listener.srv)
 		}
 		a.debugLog.Log(debugMsg)
 	}
-	return state
+	return true
 }
 
 func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
