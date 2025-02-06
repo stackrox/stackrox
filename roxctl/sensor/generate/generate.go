@@ -35,10 +35,12 @@ Please use --admission-controller-listen-on-creates instead to suppress this war
 	warningDeprecatedAdmControllerEnableSet = `The --admission-controller-enabled flag has been deprecated and will be removed in future versions of roxctl.
 Please use --admission-controller-enforce-on-creates instead to suppress this warning text and avoid breakages in the future.`
 
+	warningSlimCollectorModeSet = `The --slim-collector flag has been deprecated and will be removed in future versions of roxctl. It will be ignored from version 4.7 onwards.`
+
 	mainImageRepository = "main-image-repository"
 	slimCollector       = "slim-collector"
 
-	warningCentralEnvironmentError = "It was not possible to retrieve Central's runtime environment information: %v. Will use fallback defaults for " + mainImageRepository + " and " + slimCollector + " settings."
+	warningCentralEnvironmentError = "It was not possible to retrieve Central's runtime environment information: %v. Will use fallback defaults for " + mainImageRepository + " setting."
 )
 
 type sensorGenerateCommand struct {
@@ -223,7 +225,8 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c.PersistentFlags().BoolVar(&generateCmd.cluster.GetTolerationsConfig().Disabled, "disable-tolerations", false, "Disable tolerations for tainted nodes")
 
-	autobool.NewFlag(c.PersistentFlags(), &generateCmd.slimCollectorP, slimCollector, "Use slim collector in deployment bundle")
+	autobool.NewFlag(c.PersistentFlags(), &generateCmd.slimCollectorP, slimCollector, "Use slim collector in deployment bundle.")
+	utils.Must(c.PersistentFlags().MarkDeprecated(slimCollector, warningSlimCollectorModeSet))
 
 	c.PersistentFlags().BoolVar(&generateCmd.cluster.AdmissionController, "create-admission-controller", false, "Whether or not to use an admission controller for enforcement (WARNING: deprecated; admission controller will be deployed by default")
 	utils.Must(c.PersistentFlags().MarkHidden("create-admission-controller"))

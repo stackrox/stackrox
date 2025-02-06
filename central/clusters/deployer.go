@@ -19,7 +19,6 @@ import (
 // RenderOptions are options that control the rendering.
 type RenderOptions struct {
 	CreateUpgraderSA bool
-	SlimCollector    bool
 	IstioVersion     string
 
 	DisablePodSecurityPolicies bool
@@ -37,8 +36,8 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, imageFlavor *defaults.Im
 	deriveScannerRemoteFromMain(mainImage, baseValues)
 	baseValues.EnablePodSecurityPolicies = !opts.DisablePodSecurityPolicies
 
-	collectorFull, collectorSlim := determineCollectorImages(mainImage, collectorImage, imageFlavor)
-	setCollectorOverrideToMetaValues(collectorFull, collectorSlim, baseValues)
+	collector := determineCollectorImage(mainImage, collectorImage, imageFlavor)
+	setCollectorOverrideToMetaValues(collector, baseValues)
 
 	return baseValues, nil
 }
@@ -80,40 +79,31 @@ func setMainOverride(mainImage *storage.ImageName, metaValues *charts.MetaValues
 }
 
 // setCollectorOverrideToMetaValues adds collector image values to meta values as defined in the provided *storage.ImageName objects.
-func setCollectorOverrideToMetaValues(collectorImage *storage.ImageName, collectorSlimImage *storage.ImageName, metaValues *charts.MetaValues) {
+func setCollectorOverrideToMetaValues(collectorImage *storage.ImageName, metaValues *charts.MetaValues) {
 	metaValues.CollectorRegistry = collectorImage.Registry
-	metaValues.CollectorFullImageRemote = collectorImage.Remote
-	metaValues.CollectorSlimImageRemote = collectorSlimImage.Remote
-	metaValues.CollectorFullImageTag = collectorImage.Tag
-	metaValues.CollectorSlimImageTag = collectorSlimImage.Tag
+	metaValues.CollectorImageRemote = collectorImage.Remote
+	metaValues.CollectorImageTag = collectorImage.Tag
 }
 
-// determineCollectorImages is used to derive collector slim and full images from provided main and collector values.
+// determineCollectorImage is used to derive the collector image from provided main and collector values.
 // The collector repository defined in the cluster object can be passed from roxctl or as direct
 // input in the UI when creating a new secured cluster. If no value is provided, the collector image
 // will be derived from the main image. For example:
 // main image: "quay.io/rhacs/main" => collector image: "quay.io/rhacs/collector"
-// Similarly, slim collector will be derived. However, if a collector registry is specified and
-// current image flavor has different image names for collector slim and full: collector slim has to be
-// derived from full instead. For example:
-// collector full image: "custom.registry.io/collector" => collector slim image: "custom.registry.io/collector-slim"
-// returned images are: (collectorFull, collectorSlim)
-func determineCollectorImages(clusterMainImage, clusterCollectorImage *storage.ImageName, imageFlavor *defaults.ImageFlavor) (*storage.ImageName, *storage.ImageName) {
-	var collectorImageFull *storage.ImageName
+func determineCollectorImage(clusterMainImage, clusterCollectorImage *storage.ImageName, imageFlavor *defaults.ImageFlavor) *storage.ImageName {
+	var collectorImage *storage.ImageName
 	if clusterCollectorImage == nil && imageFlavor.IsImageDefaultMain(clusterMainImage) {
-		collectorImageFull = &storage.ImageName{
+		collectorImage = &storage.ImageName{
 			Registry: imageFlavor.CollectorRegistry,
 			Remote:   imageFlavor.CollectorImageName,
 		}
 	} else if clusterCollectorImage == nil {
-		collectorImageFull = deriveImageWithNewName(clusterMainImage, imageFlavor.CollectorImageName)
+		collectorImage = deriveImageWithNewName(clusterMainImage, imageFlavor.CollectorImageName)
 	} else {
-		collectorImageFull = clusterCollectorImage.CloneVT()
+		collectorImage = clusterCollectorImage.CloneVT()
 	}
-	collectorImageFull.Tag = imageFlavor.CollectorImageTag
-	collectorImageSlim := deriveImageWithNewName(collectorImageFull, imageFlavor.CollectorSlimImageName)
-	collectorImageSlim.Tag = imageFlavor.CollectorSlimImageTag
-	return collectorImageFull, collectorImageSlim
+	collectorImage.Tag = imageFlavor.CollectorImageTag
+	return collectorImage
 }
 
 // deriveImageWithNewName returns registry and repository values derived from a base image.
@@ -161,8 +151,6 @@ func getBaseMetaValues(c *storage.Cluster, versions version.Versions, scannerSli
 		K8sCommand: command,
 
 		OfflineMode: env.OfflineModeEnv.BooleanSetting(),
-
-		SlimCollector: opts.SlimCollector,
 
 		ScannerImageTag:        versions.ScannerVersion,
 		ScannerSlimImageRemote: scannerSlimImageRemote,

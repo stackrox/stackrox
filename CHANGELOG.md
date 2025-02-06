@@ -22,6 +22,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Removed Features
 
 - Scanner V4 drops support for openSUSE Leap 15.0 and 15.1
+- ROX-18384 Slim Mode for Collector has been removed following deprecation in 4.5. Any Clusters configured to use slim mode will be converted to use regular Collector images.
+    - RELATED_IMAGE_COLLECTOR_SLIM and RELATED_IMAGE_COLLECTOR_FULL environment variables have been removed, in favor of RELATED_IMAGE_COLLECTOR. Users that set these variables
+      to override Collector images should either use the new environment variable or use other image override mechanisms for your chosen installation method.
 
 ### Deprecated Features
 

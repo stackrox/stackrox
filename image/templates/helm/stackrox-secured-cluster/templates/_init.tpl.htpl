@@ -192,6 +192,10 @@
   {{ include "srox.fail" "'admissionControl.listenOnEvents' is set to true, but the chart is being deployed in OpenShift 3.x compatibility mode, which does not work with this feature. Set 'env.openshift' to '4' in order to enable OpenShift 4.x features." }}
 {{ end }}
 
+{{ if $._rox.collector.slimMode }}
+  {{ include "srox.warn" (list $ "collector.slimMode is set to true, but it has been removed in 4.7 after being deprecated since 4.5. This setting will be ignored.") }}
+{{ end }}
+
 {{/* Initial image pull secret setup. */}}
 {{ include "srox.mergeInto" (list $._rox.mainImagePullSecrets $._rox.imagePullSecrets) }}
 {{ include "srox.mergeInto" (list $._rox.collectorImagePullSecrets $._rox.imagePullSecrets) }}
