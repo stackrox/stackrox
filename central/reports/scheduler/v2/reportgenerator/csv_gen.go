@@ -87,10 +87,10 @@ func addOptionalColumnstoHeader(optionalColumns *storage.VulnerabilityReportFilt
 	csvHeaderClone := make([]string, len(csvHeader))
 	copy(csvHeaderClone, csvHeader)
 	if optionalColumns.GetIncludeNvdCvss() {
-		csvHeaderClone = append(csvHeader, "NVDCVSS")
+		csvHeaderClone = append(csvHeaderClone, "NVDCVSS")
 	}
 	if optionalColumns.GetIncludeEpssProbability() {
-		csvHeaderClone = append(csvHeader, "EPSS Probability Percentage")
+		csvHeaderClone = append(csvHeaderClone, "EPSS Probability Percentage")
 	}
 	return csvHeaderClone
 }
