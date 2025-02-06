@@ -1,12 +1,13 @@
 import React, { useEffect } from 'react';
 import {
-    PageSection,
-    Title,
+    Alert,
+    Card,
+    CardBody,
     Divider,
     Flex,
     FlexItem,
-    Card,
-    CardBody,
+    PageSection,
+    Title,
     ToolbarItem,
 } from '@patternfly/react-core';
 import { DropdownItem } from '@patternfly/react-core/deprecated';
@@ -31,8 +32,8 @@ import useSnoozedCveCount from 'Containers/Vulnerabilities/hooks/useSnoozedCveCo
 import { createFilterTracker } from 'utils/analyticsEventTracking';
 import {
     clusterSearchFilterConfig,
-    nodeCVESearchFilterConfig,
     nodeComponentSearchFilterConfig,
+    nodeCVESearchFilterConfig,
     nodeSearchFilterConfig,
 } from 'Containers/Vulnerabilities/searchFilterConfig';
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
@@ -46,14 +47,17 @@ import { nodeEntityTabValues } from '../../types';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 
 import CVEsTable, {
-    sortFields as cveSortFields,
     defaultSortOption as cveDefaultSortOption,
+    sortFields as cveSortFields,
 } from './CVEsTable';
 import NodesTable, {
-    sortFields as nodeSortFields,
     defaultSortOption as nodeDefaultSortOption,
+    sortFields as nodeSortFields,
 } from './NodesTable';
 import { useNodeCveEntityCounts } from './useNodeCveEntityCounts';
+import ExternalLink from '../../../../Components/PatternFly/IconText/ExternalLink';
+import { getVersionedDocs } from '../../../../utils/versioning';
+import useMetadata from '../../../../hooks/useMetadata';
 
 const searchFilterConfig = [
     nodeSearchFilterConfig,
@@ -179,32 +183,33 @@ function NodeCvesOverviewPage() {
                 </Flex>
             </PageSection>
             <PageSection variant="light">
-              <Alert
-                isInline
-                variant="info"
-                title="Results include Node CVEs obtained from Scanner V4."
-                component="p"
-              >
-                <Flex
-                  direction={{ default: 'column' }}
-                  spaceItems={{ default: 'spaceItemsMd' }}
+                <Alert
+                    isInline
+                    variant="info"
+                    title="Results include Node CVEs obtained from Scanner V4."
+                    component="p"
                 >
-                  <Flex direction={{ default: 'row' }}>
-                    <ExternalLink>
-                      <a
-                        href={getVersionedDocs(
-                          version,
-                          'operating/manage-user-access/configure-short-lived-access.html#configure-short-lived-access'
-                        )}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Read more about the differences between V2 and V4 node scanning results
-                      </a>
-                    </ExternalLink>
-                  </Flex>
-                </Flex>
-              </Alert>
+                    <Flex
+                        direction={{ default: 'column' }}
+                        spaceItems={{ default: 'spaceItemsMd' }}
+                    >
+                        <Flex direction={{ default: 'row' }}>
+                            <ExternalLink>
+                                <a
+                                    href={getVersionedDocs(
+                                        version,
+                                        'operating/manage-user-access/configure-short-lived-access.html#configure-short-lived-access'
+                                    )}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    Read more about the differences between V2 and V4 node scanning
+                                    results
+                                </a>
+                            </ExternalLink>
+                        </Flex>
+                    </Flex>
+                </Alert>
             </PageSection>
             <PageSection padding={{ default: 'noPadding' }}>
                 <PageSection isCenterAligned>
