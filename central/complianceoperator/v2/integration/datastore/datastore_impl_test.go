@@ -194,7 +194,7 @@ func (s *complianceIntegrationDataStoreTestSuite) TestGetComplianceIntegrationBy
 		if tc.expectedResult != nil {
 			protoassert.SliceContains(s.T(), clusterIntegrations, tc.expectedResult)
 		} else {
-			s.Nil(clusterIntegrations)
+			s.Empty(clusterIntegrations)
 		}
 	}
 }

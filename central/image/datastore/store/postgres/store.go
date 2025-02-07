@@ -1396,7 +1396,6 @@ func (s *storeImpl) retryableUpdateVulnState(ctx context.Context, cve string, im
 	if err != nil {
 		return err
 	}
-	defer rows.Close()
 	var imageCVEEdges []*storage.ImageCVEEdge
 	imageCVEEdges, err = pgutils.ScanRows[storage.ImageCVEEdge](rows)
 	if err != nil || len(imageCVEEdges) == 0 {
