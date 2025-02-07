@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"strings"
 	"time"
 
 	pkgErrors "github.com/pkg/errors"
@@ -188,15 +187,45 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 	return centralResp.GetImage(), errorList.ToError()
 }
 
+func (s *LocalScan) enrichImageForPullSource(ctx context.Context, pullSource *storage.ContainerImage, req *LocalScanRequest) (
+	registryTypes.ImageRegistry, *storage.Image, error,
+) {
+	errorList := errorhelpers.NewErrorList(fmt.Sprintf("for pull source %q", pullSource.GetName().GetFullName()))
+
+	registries, err := s.getRegistries(ctx, req.Namespace, pullSource.GetName(), req.ImagePullSecrets)
+	if err != nil {
+		log.Warnf("Error getting registries for pull source %q, skipping: %v", pullSource.GetName().GetFullName(), err)
+		errorList.AddError(err)
+		return nil, nil, errorList.ToError()
+	}
+
+	log.Debugf("Using %d registries for enriching pull source %q", len(registries), pullSource.GetName().GetFullName())
+
+	// Create an image and attempt to enrich it with metadata.
+	pullSourceImage := types.ToImage(pullSource)
+	reg := s.enrichImageWithMetadata(ctx, errorList, registries, pullSourceImage)
+	if reg != nil {
+		// Successful enrichment.
+		enrichImageDataSource(req.Image, reg, pullSourceImage)
+
+		srcName := req.Image.GetName().GetFullName()
+		srcID := req.Image.GetId()
+		pullName := pullSourceImage.GetName().GetFullName()
+		pullID := pullSourceImage.GetId()
+		log.Infof("Image %q (%v) enriched with metadata using pull source %q (%v) and integration %q (insecure: %t)", srcName, srcID, pullName, pullID, reg.Name(), reg.Config(ctx).GetInsecure())
+		log.Debugf("Metadata for image %q (%v) using pull source %q (%v): %v", srcName, srcID, pullName, pullID, pullSourceImage.GetMetadata())
+		return reg, pullSourceImage, nil
+	}
+	return nil, nil, errorList.ToError()
+}
+
 // getImageWithMetadata on success returns the registry used to pull metadata and an image with metadata populated.
 // The image returned may represent the source image or an image from a registry mirror.
 func (s *LocalScan) getImageWithMetadata(ctx context.Context, errorList *errorhelpers.ErrorList, req *LocalScanRequest) (registryTypes.ImageRegistry, *storage.Image) {
-	srcImage := req.Image
-
 	// Obtain the pull sources, which will include mirrors.
-	pullSources := s.getPullSources(srcImage)
+	pullSources := s.getPullSources(req.Image)
 	if len(pullSources) == 0 {
-		errorList.AddError(pkgErrors.Errorf("zero valid pull sources found for image %q", srcImage.GetName().GetFullName()))
+		errorList.AddError(pkgErrors.Errorf("zero valid pull sources found for image %q", req.Image.GetName().GetFullName()))
 		return nil, nil
 	}
 
@@ -205,40 +234,19 @@ func (s *LocalScan) getImageWithMetadata(ctx context.Context, errorList *errorhe
 
 	// For each pull source, obtain the associated registries and attempt to obtain metadata, stopping on first success.
 	for _, pullSource := range pullSources {
-		sourceErrs := errorhelpers.NewErrorList(fmt.Sprintf("for pull source %q", pullSource.GetName().GetFullName()))
-
-		registries, err := s.getRegistries(ctx, req.Namespace, pullSource.GetName(), req.ImagePullSecrets)
+		reg, pullSourceImage, err := s.enrichImageForPullSource(ctx, pullSource, req)
 		if err != nil {
 			log.Warnf("Error getting registries for pull source %q, skipping: %v", pullSource.GetName().GetFullName(), err)
-			sourceErrs.AddError(err)
-			allErrs.AddError(sourceErrs.ToError())
+			allErrs.AddError(err)
 			continue
 		}
-
-		log.Debugf("Using %d registries for enriching pull source %q", len(registries), pullSource.GetName().GetFullName())
-
-		// Create an image and attempt to enrich it with metadata.
-		pullSourceImage := types.ToImage(pullSource)
-		reg := s.enrichImageWithMetadata(ctx, sourceErrs, registries, pullSourceImage)
-		allErrs.AddError(sourceErrs.ToError())
-		if reg != nil {
-			// Successful enrichment.
-			enrichImageDataSource(srcImage, reg, pullSourceImage)
-
-			srcName := srcImage.GetName().GetFullName()
-			srcID := srcImage.GetId()
-			pullName := pullSourceImage.GetName().GetFullName()
-			pullID := pullSourceImage.GetId()
-			log.Infof("Image %q (%v) enriched with metadata using pull source %q (%v) and integration %q (insecure: %t)", srcName, srcID, pullName, pullID, reg.Name(), reg.Config(ctx).GetInsecure())
-			log.Debugf("Metadata for image %q (%v) using pull source %q (%v): %v", srcName, srcID, pullName, pullID, pullSourceImage.GetMetadata())
-			return reg, pullSourceImage
-		}
+		return reg, pullSourceImage
 	}
 
 	// Attempts for every pull source and registry have failed.
 	errorList.AddErrors(allErrs.Errors()...)
 
-	image := types.ToImage(srcImage)
+	image := types.ToImage(req.Image)
 	image.Notes = append(image.Notes, storage.Image_MISSING_METADATA)
 	return nil, image
 }
@@ -336,19 +344,6 @@ func (s *LocalScan) getPullSources(srcImage *storage.ContainerImage) []*storage.
 	return cImages
 }
 
-func getRegistryDescription(reg registryTypes.ImageRegistry) string {
-	if strings.HasPrefix(reg.Name(), registry.PullSecretNamePrefix) {
-		return fmt.Sprintf("pull secret integration %q", reg.Name())
-	}
-	if strings.HasPrefix(reg.Name(), registry.GlobalRegNamePrefix) {
-		return fmt.Sprintf("global pull secret integration %q", reg.Name())
-	}
-	if strings.HasPrefix(reg.Name(), registry.NoAuthNamePrefix) {
-		return fmt.Sprintf("anonymous integration %q", reg.Name())
-	}
-	return fmt.Sprintf("integration %q", reg.Name())
-}
-
 // enrichImageWithMetadata will loop through registries returning the first that succeeds in enriching image with metadata.
 func (s *LocalScan) enrichImageWithMetadata(ctx context.Context, errorList *errorhelpers.ErrorList,
 	registries []registryTypes.ImageRegistry, image *storage.Image,
@@ -358,9 +353,8 @@ func (s *LocalScan) enrichImageWithMetadata(ctx context.Context, errorList *erro
 		metadata, err := reg.Metadata(image)
 		if err != nil {
 			insecure := reg.Config(ctx).GetInsecure()
-			regDescription := getRegistryDescription(reg)
-			log.Debugf("Failed fetching metadata for image %q (%q) with %s (insecure: %t): %v", image.GetName().GetFullName(), image.GetId(), regDescription, insecure, err)
-			errs = append(errs, pkgErrors.Wrapf(err, "with %s (insecure: %t)", regDescription, insecure))
+			log.Debugf("Failed fetching metadata for image %q (%q) with integration %q (insecure: %t): %v", image.GetName().GetFullName(), image.GetId(), reg.Name(), insecure, err)
+			errs = append(errs, pkgErrors.Wrapf(err, "with integraton %q (insecure: %t)", reg.Name(), insecure))
 			continue
 		}
 

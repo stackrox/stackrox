@@ -28,8 +28,8 @@ import (
 const (
 	defaultSA = "default"
 
-	PullSecretNamePrefix = "PullSec"
-	GlobalRegNamePrefix  = "Global"
+	PullSecretNamePrefix = "PullSecret"
+	GlobalRegNamePrefix  = "GlobalPullSecret"
 	NoAuthNamePrefix     = "NoAuth"
 )
 
