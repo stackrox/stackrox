@@ -182,33 +182,26 @@ function NodeCvesOverviewPage() {
                     </FlexItem>
                 </Flex>
             </PageSection>
-            <PageSection variant="light">
+            <PageSection variant="light" className="pf-v5-u-pt-0">
                 <Alert
                     isInline
                     variant="info"
-                    title="Results may include Node CVEs obtained from Scanner V4."
+                    title="Results may include Node CVEs obtained from Scanner V4"
                     component="p"
                 >
-                    <Flex
-                        direction={{ default: 'column' }}
-                        spaceItems={{ default: 'spaceItemsMd' }}
-                    >
-                        <Flex direction={{ default: 'row' }}>
-                            <ExternalLink>
-                                <a
-                                    href={getVersionedDocs(
-                                        version,
-                                        'operating/manage-vulnerabilities/scan-rhcos-node-host#understanding-node-cves-scanner-v4_scan-rhcos-node-host'
-                                    )}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                >
-                                    Read more about the differences between the node scanning
-                                    results obtained with the StackRox Scanner and Scanner V4.
-                                </a>
-                            </ExternalLink>
-                        </Flex>
-                    </Flex>
+                  <ExternalLink>
+                      <a
+                          href={getVersionedDocs(
+                              version,
+                              'operating/manage-vulnerabilities/scan-rhcos-node-host#understanding-node-cves-scanner-v4_scan-rhcos-node-host'
+                          )}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                      >
+                          Read more about the differences between the node scanning
+                          results obtained with the StackRox Scanner and Scanner V4.
+                      </a>
+                  </ExternalLink>
                 </Alert>
             </PageSection>
             <PageSection padding={{ default: 'noPadding' }}>
