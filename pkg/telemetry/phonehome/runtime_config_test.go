@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
 )
@@ -28,11 +29,10 @@ func Test_toDownload(t *testing.T) {
 		"g": {release: true, key: "", cfgURL: "url", download: true},
 		"h": {release: true, key: "abc", cfgURL: "url", download: false},
 
-		// "hardcoded" is a special value.
-		"j": {release: false, key: "", cfgURL: "hardcoded", download: false},
-		"k": {release: false, key: "abc", cfgURL: "hardcoded", download: true},
-		"l": {release: true, key: "", cfgURL: "hardcoded", download: true},
-		"m": {release: true, key: "abc", cfgURL: "hardcoded", download: false},
+		"j": {release: false, key: "", cfgURL: env.TelemetrySelfManagedURL, download: false},
+		"k": {release: false, key: "abc", cfgURL: env.TelemetrySelfManagedURL, download: true},
+		"l": {release: true, key: "", cfgURL: env.TelemetrySelfManagedURL, download: true},
+		"m": {release: true, key: "abc", cfgURL: env.TelemetrySelfManagedURL, download: false},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -73,7 +73,7 @@ func Test_useRemoteKey(t *testing.T) {
 }
 
 func Test_download(t *testing.T) {
-	cfg, err := downloadConfig("hardcoded")
+	cfg, err := downloadConfig(env.TelemetrySelfManagedURL)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, cfg.Key)
 
@@ -111,15 +111,15 @@ func Test_GetKey(t *testing.T) {
 		expectedErr error
 	}{
 		"a": {defaultKey: "", cfgURL: ""},
-		"b": {defaultKey: "", cfgURL: "hardcoded"},
+		"b": {defaultKey: "", cfgURL: env.TelemetrySelfManagedURL},
 		"c": {defaultKey: DisabledKey, cfgURL: ""},
-		"d": {defaultKey: "abc", cfgURL: "hardcoded",
+		"d": {defaultKey: "abc", cfgURL: env.TelemetrySelfManagedURL,
 			expectedKey: "abc",
 		},
 		"e": {defaultKey: "ignored", cfgURL: ":bad url:",
 			expectedErr: errors.New("missing protocol scheme"),
 		},
-		"f": {defaultKey: selfManagedKey, cfgURL: "hardcoded",
+		"f": {defaultKey: selfManagedKey, cfgURL: env.TelemetrySelfManagedURL,
 			expectedKey: selfManagedKey,
 		},
 		"g": {defaultKey: remoteKey, cfgURL: server.URL,

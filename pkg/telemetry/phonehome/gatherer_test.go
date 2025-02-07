@@ -63,8 +63,9 @@ func (s *gathererTestSuite) TestGathererTicker() {
 	defer lastTrack.Wait()
 	expectedTraits := matchOptions(telemeter.WithTraits(map[string]any{"key": "value"}))
 	const expectedEvent = "Updated Test Identity"
+	const nTimes = 4
 	gomock.InOrder(
-		t.EXPECT().Track(expectedEvent, nil, expectedTraits).Times(3),
+		t.EXPECT().Track(expectedEvent, nil, expectedTraits).Times(nTimes-1),
 		// Stop gathering after 3rd heartbeat:
 		t.EXPECT().Track(expectedEvent, nil, expectedTraits).Times(1).
 			Do(func(any, any, ...any) {
@@ -86,12 +87,10 @@ func (s *gathererTestSuite) TestGathererTicker() {
 	})
 	g.Start()
 	s.Equal(int64(1), <-n, "gathering should be called once on start")
-	tickChan <- time.Now()
-	s.Equal(int64(2), <-n, "gathering should be called on tick")
-	tickChan <- time.Now()
-	tickChan <- time.Now()
-	s.Equal(int64(3), <-n)
-	s.Equal(int64(4), <-n, "there should have been 4 gathering calls")
+	for i := 2; i <= nTimes; i++ {
+		tickChan <- time.Now()
+		s.Equal(int64(i), <-n, "gathering should be called on tick")
+	}
 }
 
 func (s *gathererTestSuite) TestGathererWithNoDuplicates() {
