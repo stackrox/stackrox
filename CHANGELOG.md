@@ -12,6 +12,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Technical changes
 
 - UI Fix: column values are sanitized when rendering PDFs
+- fix(ROX-17632): publish v2 API docs to OpenShift mirror bucket
+- ROX-26908: set operator fips-compliant:true
 
 ## [4.4.7]
 
