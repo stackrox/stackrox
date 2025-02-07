@@ -189,19 +189,19 @@ function NodeCvesOverviewPage() {
                     title="Results may include Node CVEs obtained from Scanner V4"
                     component="p"
                 >
-                  <ExternalLink>
-                      <a
-                          href={getVersionedDocs(
-                              version,
-                              'operating/manage-vulnerabilities/scan-rhcos-node-host#understanding-node-cves-scanner-v4_scan-rhcos-node-host'
-                          )}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                      >
-                          Read more about the differences between the node scanning
-                          results obtained with the StackRox Scanner and Scanner V4.
-                      </a>
-                  </ExternalLink>
+                    <ExternalLink>
+                        <a
+                            href={getVersionedDocs(
+                                version,
+                                'operating/manage-vulnerabilities/scan-rhcos-node-host#understanding-node-cves-scanner-v4_scan-rhcos-node-host'
+                            )}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Read more about the differences between the node scanning results
+                            obtained with the StackRox Scanner and Scanner V4.
+                        </a>
+                    </ExternalLink>
                 </Alert>
             </PageSection>
             <PageSection padding={{ default: 'noPadding' }}>
