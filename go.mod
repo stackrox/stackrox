@@ -573,6 +573,4 @@ replace (
 	github.com/facebookincubator/nvdtools => github.com/stackrox/nvdtools v0.0.0-20231111002313-57e262e4797e
 	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.2.0
 	github.com/mholt/archiver/v3 => github.com/anchore/archiver/v3 v3.5.2
-
-	github.com/quay/claircore => github.com/BradLugo/claircore v0.0.0-20250205211627-9fcd250689b7
 )
