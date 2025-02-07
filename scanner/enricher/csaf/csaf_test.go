@@ -179,6 +179,22 @@ func TestEnrich(t *testing.T) {
 				Links:              "https://access.redhat.com/security/cve/cve-2024-34156 https://access.redhat.com/errata/RHSA-2024:10186",
 				Updater:            "rhel-vex",
 			},
+			"not-rhel-vex": {
+				Name:               "CVE-2025-21342",
+				Description:        "My super description",
+				Severity:           "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+				NormalizedSeverity: claircore.High,
+				Links:              "https://access.redhat.com/security/cve/cve-2024-34156 https://access.redhat.com/errata/RHSA-2024:10186",
+				Updater:            "not-rhel-vex",
+			},
+			"no-rhsa": {
+				Name:               "CVE-2025-21343",
+				Description:        "My super duper description",
+				Severity:           "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+				NormalizedSeverity: claircore.High,
+				Links:              "https://access.redhat.com/security/cve/cve-2025-21343",
+				Updater:            "rhel-vex",
+			},
 		},
 	}
 
