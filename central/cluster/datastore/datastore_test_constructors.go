@@ -64,10 +64,7 @@ func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error)
 
 	hashStore := datastore.GetTestPostgresDataStore(t, pool)
 
-	clusterInitStore, err := clusterInitStore.GetTestClusterInitDataStore(t, pool)
-	if err != nil {
-		return nil, err
-	}
+	clusterInitStore := clusterInitStore.GetTestPostgresDataStore(t, pool)
 
 	sensorCnxMgr := connection.NewManager(hashManager.NewManager(hashStore))
 	clusterRanker := ranking.ClusterRanker()
