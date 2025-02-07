@@ -32,8 +32,7 @@ type gatherer struct {
 	period      time.Duration
 	stopSig     concurrency.Signal
 	ctx         context.Context
-	mu          sync.Mutex
-	gathering   sync.Mutex
+	gathering   sync.RWMutex
 	gatherFuncs []GatherFunc
 	opts        []telemeter.Option
 
@@ -49,11 +48,6 @@ func newGatherer(clientType string, t telemeter.Telemeter, p time.Duration) *gat
 
 		tickerFactory: time.NewTicker,
 	}
-}
-
-func (g *gatherer) reset() {
-	g.stopSig.Reset()
-	g.ctx, _ = concurrency.DependentContext(context.Background(), &g.stopSig)
 }
 
 func (g *gatherer) gather() map[string]any {
@@ -75,8 +69,8 @@ func (g *gatherer) gather() map[string]any {
 
 func (g *gatherer) identify() {
 	// TODO: might make sense to abort if !TryLock(), but that's harder to test.
-	g.gathering.Lock()
-	defer g.gathering.Unlock()
+	g.gathering.RLock()
+	defer g.gathering.RUnlock()
 	data := g.gather()
 	// Track event makes the properties effective for the user on analytics.
 	// Duplicates are dropped during a day. The daily potential duplicate event
@@ -103,35 +97,29 @@ func (g *gatherer) loop() {
 }
 
 func (g *gatherer) Start(opts ...telemeter.Option) {
-	if g == nil {
+	if g == nil || !g.stopSig.IsDone() {
 		return
 	}
-	g.mu.Lock()
-	defer g.mu.Unlock()
-	if g.stopSig.IsDone() {
-		concurrency.WithLock(&g.gathering, func() {
-			g.reset()
-			g.opts = opts
-		})
-		go g.loop()
-	}
+	concurrency.WithLock(&g.gathering, func() {
+		g.stopSig.Reset()
+		g.ctx, _ = concurrency.DependentContext(context.Background(), &g.stopSig)
+		g.opts = opts
+	})
+	go g.loop()
 }
 
 func (g *gatherer) Stop() {
-	if g == nil {
-		return
+	if g != nil {
+		g.stopSig.Signal()
 	}
-	g.mu.Lock()
-	defer g.mu.Unlock()
-	g.stopSig.Signal()
 }
 
 func (g *gatherer) AddGatherer(f GatherFunc) {
 	if g == nil {
 		return
 	}
-	g.mu.Lock()
-	defer g.mu.Unlock()
+	g.gathering.Lock()
+	defer g.gathering.Unlock()
 	g.gatherFuncs = append(g.gatherFuncs, f)
 }
 
