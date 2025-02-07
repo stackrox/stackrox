@@ -354,17 +354,17 @@ func (e *enricher) getImages(ctx context.Context, deployment *storage.Deployment
 
 		imageName := imgResult.image.GetName()
 		deploymentImageName := deployment.Containers[imgResult.containerIdx].GetImage().GetName()
-		image := imgResult.image
+		image := *imgResult.image
 		if !compareImageName(imageName, deploymentImageName) {
 			// This will ensure that when we change the Name of the image
 			// that it will not cause a potential race condition
-			image = imgResult.image.CloneVT()
+			image = *imgResult.image.CloneVT()
 			// Overwrite the image Name as a workaround to the fact that we fetch the image by ID
 			// The ID may actually have many names that refer to it. e.g. busybox:latest and busybox:1.31 could have the
 			// exact same ID
 			image.Name = deployment.Containers[imgResult.containerIdx].GetImage().GetName()
 		}
-		images[imgResult.containerIdx] = image
+		images[imgResult.containerIdx] = &image
 	}
 	return images
 }
