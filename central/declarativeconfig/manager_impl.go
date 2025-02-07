@@ -236,10 +236,12 @@ func (m *managerImpl) reconciliationLoop() {
 		select {
 		case <-m.shortCircuitSignal.Done():
 			log.Debug("Received a short circuit signal, running the reconciliation")
+			log.Info("DC - FileWatch")
 			m.shortCircuitSignal.Reset()
 			m.runReconciliation()
 		case <-m.reconciliationTicker.C:
 			log.Debug("Received a ticker signal, running the reconciliation")
+			log.Info("DC - Timer")
 			m.runReconciliation()
 		}
 	}
