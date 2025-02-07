@@ -282,7 +282,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestLookupOrCreateClusterFromConfig(
 		}
 	}
 
-	someClusterWithManagerType := func(managerType storage.ManagerType, helmConfig *storage.CompleteClusterConfig) *storage.Cluster {
+	someClusterWithManagerType := func(managerType storage.ManagerType, helmConfig *storage.CompleteClusterConfig, capabilities []string) *storage.Cluster {
 		return &storage.Cluster{
 			Id:                 "",
 			Name:               "",
@@ -292,6 +292,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestLookupOrCreateClusterFromConfig(
 			CentralApiEndpoint: centralEndpoint,
 			ManagedBy:          managerType,
 			MostRecentSensorId: defaultSensorId(),
+			SensorCapabilities: capabilities,
 			HealthStatus: &storage.ClusterHealthStatus{
 				SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
 				LastContact:        protoconv.ConvertTimeToTimestamp(time.Now()),
@@ -299,7 +300,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestLookupOrCreateClusterFromConfig(
 		}
 	}
 
-	sensorHelloWithHelmManagedConfigInit := func(helmManagedConfigInit *central.HelmManagedConfigInit, identification *storage.SensorDeploymentIdentification) *central.SensorHello {
+	sensorHelloWithHelmManagedConfigInit := func(helmManagedConfigInit *central.HelmManagedConfigInit, identification *storage.SensorDeploymentIdentification, capabilities []string) *central.SensorHello {
 		if identification == nil {
 			identification = defaultSensorId()
 		}
@@ -307,97 +308,119 @@ func (s *ClusterPostgresDataStoreTestSuite) TestLookupOrCreateClusterFromConfig(
 			DeploymentIdentification: identification,
 			HelmManagedConfigInit:    helmManagedConfigInit,
 			PolicyVersion:            policyVersion,
+			Capabilities:             capabilities,
 		}
 	}
 
 	cases := []struct {
-		description             string
-		cluster                 *storage.Cluster
-		sensorHello             *central.SensorHello
-		clusterID               string
-		shouldClusterBeUpserted bool
-		shouldHaveLookupError   bool
-		expectedManagerType     storage.ManagerType
-		expectedHelmConfig      *storage.CompleteClusterConfig
+		description                string
+		cluster                    *storage.Cluster
+		sensorHello                *central.SensorHello
+		clusterID                  string
+		shouldClusterBeUpserted    bool
+		shouldHaveLookupError      bool
+		expectedManagerType        storage.ManagerType
+		expectedHelmConfig         *storage.CompleteClusterConfig
+		expectedSensorCapabilities []string
 	}{
 		{
 			description: "test if cluster with mismatched name to config throws an error",
-			cluster:     someClusterWithManagerType(storage.ManagerType_MANAGER_TYPE_HELM_CHART, &someHelmConfig),
+			cluster:     someClusterWithManagerType(storage.ManagerType_MANAGER_TYPE_HELM_CHART, &someHelmConfig, nil),
 			sensorHello: sensorHelloWithHelmManagedConfigInit(&central.HelmManagedConfigInit{
 				ClusterName:   "NotTheRightName",
 				ManagedBy:     storage.ManagerType_MANAGER_TYPE_HELM_CHART,
 				ClusterConfig: &someHelmConfig,
-			}, nil),
+			}, nil, nil),
 			shouldClusterBeUpserted: true,
 			shouldHaveLookupError:   true,
 		},
 		{
 			description: "test if cluster with id that does not exist throws an error",
-			cluster:     someClusterWithManagerType(storage.ManagerType_MANAGER_TYPE_HELM_CHART, &someHelmConfig),
+			cluster:     someClusterWithManagerType(storage.ManagerType_MANAGER_TYPE_HELM_CHART, &someHelmConfig, nil),
 			sensorHello: sensorHelloWithHelmManagedConfigInit(&central.HelmManagedConfigInit{
 				ClusterConfig: &someHelmConfig,
 				ManagedBy:     storage.ManagerType_MANAGER_TYPE_HELM_CHART,
-			}, nil),
+			}, nil, nil),
 			clusterID:               uuid.NewV4().String(),
 			shouldClusterBeUpserted: false,
 			shouldHaveLookupError:   true,
 		},
 		{
 			description: "try adding a cluster that has already been added with a different namespace for StackRox",
-			cluster:     someClusterWithManagerType(storage.ManagerType_MANAGER_TYPE_HELM_CHART, &someHelmConfig),
+			cluster:     someClusterWithManagerType(storage.ManagerType_MANAGER_TYPE_HELM_CHART, &someHelmConfig, nil),
 			sensorHello: sensorHelloWithHelmManagedConfigInit(&central.HelmManagedConfigInit{
 				ClusterConfig: &someHelmConfig,
 				ManagedBy:     storage.ManagerType_MANAGER_TYPE_HELM_CHART,
 			}, &storage.SensorDeploymentIdentification{
 				AppNamespace: "NotTheRightNamespace",
-			}),
+			}, nil),
 			shouldClusterBeUpserted: true,
 			shouldHaveLookupError:   true,
 		},
 		{
 			description: "try adding a cluster that has already been added with a different system namespace ID",
-			cluster:     someClusterWithManagerType(storage.ManagerType_MANAGER_TYPE_HELM_CHART, &someHelmConfig),
+			cluster:     someClusterWithManagerType(storage.ManagerType_MANAGER_TYPE_HELM_CHART, &someHelmConfig, nil),
 			sensorHello: sensorHelloWithHelmManagedConfigInit(&central.HelmManagedConfigInit{
 				ClusterConfig: &someHelmConfig,
 				ManagedBy:     storage.ManagerType_MANAGER_TYPE_HELM_CHART,
 			}, &storage.SensorDeploymentIdentification{
 				AppNamespace:      "stackrox",
 				SystemNamespaceId: "456",
-			}),
+			}, nil),
 			shouldClusterBeUpserted: true,
 			shouldHaveLookupError:   true,
 		},
 		{
 			description: "try adding a cluster and then seeing if we get the same cluster back",
-			cluster:     someClusterWithManagerType(storage.ManagerType_MANAGER_TYPE_HELM_CHART, &someHelmConfig),
+			cluster:     someClusterWithManagerType(storage.ManagerType_MANAGER_TYPE_HELM_CHART, &someHelmConfig, nil),
 			sensorHello: sensorHelloWithHelmManagedConfigInit(&central.HelmManagedConfigInit{
 				ClusterConfig: &someHelmConfig,
 				ManagedBy:     storage.ManagerType_MANAGER_TYPE_HELM_CHART,
-			}, nil),
+			}, nil, nil),
 			shouldClusterBeUpserted: true,
 			expectedManagerType:     storage.ManagerType_MANAGER_TYPE_HELM_CHART,
 			expectedHelmConfig:      &someHelmConfig,
 		},
 		{
 			description: "try adding a cluster and then changing the manager type",
-			cluster:     someClusterWithManagerType(storage.ManagerType_MANAGER_TYPE_HELM_CHART, &someHelmConfig),
+			cluster:     someClusterWithManagerType(storage.ManagerType_MANAGER_TYPE_HELM_CHART, &someHelmConfig, nil),
 			sensorHello: sensorHelloWithHelmManagedConfigInit(&central.HelmManagedConfigInit{
 				ManagedBy: storage.ManagerType_MANAGER_TYPE_MANUAL,
-			}, nil),
+			}, nil, nil),
 			shouldClusterBeUpserted: true,
 			expectedManagerType:     storage.ManagerType_MANAGER_TYPE_MANUAL,
 			expectedHelmConfig:      nil,
 		},
 		{
 			description: "try adding a cluster and then changing the helm config",
-			cluster:     someClusterWithManagerType(storage.ManagerType_MANAGER_TYPE_HELM_CHART, &someHelmConfig),
+			cluster:     someClusterWithManagerType(storage.ManagerType_MANAGER_TYPE_HELM_CHART, &someHelmConfig, nil),
 			sensorHello: sensorHelloWithHelmManagedConfigInit(&central.HelmManagedConfigInit{
 				ManagedBy:     storage.ManagerType_MANAGER_TYPE_HELM_CHART,
 				ClusterConfig: &differentConfigFPHelmConfig,
-			}, nil),
+			}, nil, nil),
 			shouldClusterBeUpserted: true,
 			expectedManagerType:     storage.ManagerType_MANAGER_TYPE_HELM_CHART,
 			expectedHelmConfig:      &differentConfigFPHelmConfig,
+		},
+		{
+			description: "test that sensor capabilities match does not trigger an update",
+			cluster:     someClusterWithManagerType(storage.ManagerType_MANAGER_TYPE_HELM_CHART, &someHelmConfig, []string{"capability1", "capability2"}),
+			sensorHello: sensorHelloWithHelmManagedConfigInit(&central.HelmManagedConfigInit{
+				ClusterConfig: &someHelmConfig,
+				ManagedBy:     storage.ManagerType_MANAGER_TYPE_HELM_CHART,
+			}, nil, []string{"capability2", "capability1"}), // capability ordering should not matter
+			shouldClusterBeUpserted:    false,
+			expectedSensorCapabilities: []string{"capability1", "capability2"},
+		},
+		{
+			description: "test that sensor capabilities mismatch triggers an update",
+			cluster:     someClusterWithManagerType(storage.ManagerType_MANAGER_TYPE_HELM_CHART, &someHelmConfig, []string{"capability1", "capability2"}),
+			sensorHello: sensorHelloWithHelmManagedConfigInit(&central.HelmManagedConfigInit{
+				ClusterConfig: &someHelmConfig,
+				ManagedBy:     storage.ManagerType_MANAGER_TYPE_HELM_CHART,
+			}, nil, []string{"capability3", "capability4"}),
+			shouldClusterBeUpserted:    true,
+			expectedSensorCapabilities: []string{"capability3", "capability4"},
 		},
 		{
 			description: "try creating a cluster from a config",
@@ -405,7 +428,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestLookupOrCreateClusterFromConfig(
 			sensorHello: sensorHelloWithHelmManagedConfigInit(&central.HelmManagedConfigInit{
 				ManagedBy:     storage.ManagerType_MANAGER_TYPE_HELM_CHART,
 				ClusterConfig: &someHelmConfig,
-			}, nil),
+			}, nil, nil),
 			shouldClusterBeUpserted: false,
 			expectedManagerType:     storage.ManagerType_MANAGER_TYPE_HELM_CHART,
 			expectedHelmConfig:      &someHelmConfig,
@@ -449,6 +472,9 @@ func (s *ClusterPostgresDataStoreTestSuite) TestLookupOrCreateClusterFromConfig(
 			}
 			if c.expectedHelmConfig != nil {
 				protoassert.Equal(s.T(), c.expectedHelmConfig, cluster.GetHelmConfig())
+			}
+			if c.expectedSensorCapabilities != nil {
+				s.Equal(c.expectedSensorCapabilities, cluster.SensorCapabilities)
 			}
 		})
 	}
