@@ -144,7 +144,7 @@ func (suite *SentinelTestSuite) TestValidate() {
 					Enabled: true,
 				},
 			},
-			ExpectedErrorMsg: "[Log Ingestion Endpoint must be specified, Audit Logging Data Collection Rule Id must be specified, Audit Logging Stream Name must be specified, Alert Data Collection Rule Id must be specified, Alert Stream Name must be specified, Directory Tenant Id must be specified, Application Client Id must be specified, Secret or Client Certificate authentication must be specified]",
+			ExpectedErrorMsg: "[Log Ingestion Endpoint must be specified, Audit Logging Data Collection Rule Id must be specified, Audit Logging Stream Name must be specified, Alert Data Collection Rule Id must be specified, Alert Stream Name must be specified, Directory Tenant Id must be specified, Application Client Id must be specified, Secret, Client Certificate or Workload Identity authentication must be specified]",
 			ValidateSecret:   true,
 		},
 		"given alert log dcr config is enabled with an invalid config validation should not pass": {
@@ -192,7 +192,7 @@ func (suite *SentinelTestSuite) TestValidate() {
 				},
 			},
 			ValidateSecret:   true,
-			ExpectedErrorMsg: "Secret or Client Certificate authentication must be specified",
+			ExpectedErrorMsg: "Secret, Client Certificate or Workload Identity authentication must be specified",
 		},
 		"given client cert authentication with missing client certificate validation should not pass": {
 			Config: &storage.MicrosoftSentinel{
@@ -205,7 +205,7 @@ func (suite *SentinelTestSuite) TestValidate() {
 				},
 			},
 			ValidateSecret:   true,
-			ExpectedErrorMsg: "Secret or Client Certificate authentication must be specified",
+			ExpectedErrorMsg: "Secret, Client Certificate or Workload Identity authentication must be specified",
 		},
 		"given only secret authentication validation should not pass": {
 			Config: &storage.MicrosoftSentinel{
@@ -216,7 +216,7 @@ func (suite *SentinelTestSuite) TestValidate() {
 			},
 			ValidateSecret: true,
 		},
-		"Given authentication configs are missing validation should not pass": {
+		"given authentication configs are missing validation should not pass": {
 			Config: &storage.MicrosoftSentinel{
 				AlertDcrConfig: &storage.MicrosoftSentinel_DataCollectionRuleConfig{
 					Enabled: true,
@@ -225,6 +225,15 @@ func (suite *SentinelTestSuite) TestValidate() {
 			ExpectedErrorMsg:            "[Log Ingestion Endpoint must be specified, Alert Data Collection Rule Id must be specified, Alert Stream Name must be specified, Directory Tenant Id must be specified, Application Client Id must be specified]",
 			ExpectedErrorMsgNotContains: "secret",
 			ValidateSecret:              false,
+		},
+		"given only workload identity authentication should pass": {
+			Config: &storage.MicrosoftSentinel{
+				ApplicationClientId:  uuid.NewDummy().String(),
+				DirectoryTenantId:    uuid.NewDummy().String(),
+				LogIngestionEndpoint: "example.com",
+				WifEnabled:           true,
+			},
+			ValidateSecret: true,
 		},
 	}
 
@@ -290,7 +299,6 @@ func (suite *SentinelTestSuite) TestAuditLogEnabled() {
 
 	notifier.notifier.GetMicrosoftSentinel().GetAuditLogDcrConfig().Enabled = false
 	suite.Assert().False(notifier.AuditLoggingEnabled())
-
 }
 
 func (suite *SentinelTestSuite) TestNewSentinelNotifier() {

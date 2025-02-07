@@ -18,10 +18,15 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - Scanner V4 adds supports for openSUSE Leap 15.5 and 15.6
 - ROX-27596: ROX_EXTERNAL_IPS feature flag enabled by default. Note: Collector will still need to be configured for external IPs for this to have an effect.
 - ROX-26088: Introduced Cluster Registration Secrets (CRS) as a successor to init bundles for registering Secured Clusters.
+- ROX-24052: Tech Preview - SBOMs can now be generated from Scanner V4 image scans via the UI, CLI (`roxctl image sbom`), and API (`/api/v1/images/sbom`). Only scans executed via Central are supported, delegated scans will be supported in a future release. This feature can be disabled by setting `ROX_SBOM_GENERATION` to `false`.
+- ROX-21529: Short-lived token authentication for Azure integrations with Azure workload or managed identities.
 
 ### Removed Features
 
 - Scanner V4 drops support for openSUSE Leap 15.0 and 15.1
+- ROX-18384 Slim Mode for Collector has been removed following deprecation in 4.5. Any Clusters configured to use slim mode will be converted to use regular Collector images.
+    - RELATED_IMAGE_COLLECTOR_SLIM and RELATED_IMAGE_COLLECTOR_FULL environment variables have been removed, in favor of RELATED_IMAGE_COLLECTOR. Users that set these variables
+      to override Collector images should either use the new environment variable or use other image override mechanisms for your chosen installation method.
 
 ### Deprecated Features
 

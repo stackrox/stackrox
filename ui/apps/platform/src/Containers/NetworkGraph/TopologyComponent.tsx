@@ -220,6 +220,7 @@ const TopologyComponent = ({
                             edgeState={edgeState}
                             onNodeSelect={onNodeSelect}
                             defaultDeploymentTab={defaultDeploymentTab}
+                            scopeHierarchy={scopeHierarchy}
                         />
                     )}
                     {selectedNode && selectedNode?.data?.type === 'EXTERNAL_GROUP' && (

@@ -1,16 +1,8 @@
 tests:
-- name: should use custom tag (full)
-  set:
-    collector.slimMode: false
+- name: collector image
   expect: |
     assertMainIs("test.registry/main:custom-main")
-    assertCollectorIs("test.registry/collector:custom-collector-full")
-- name: should use custom tag (slim)
-  set:
-    collector.slimMode: true
-  expect: |
-    assertMainIs("test.registry/main:custom-main")
-    assertCollectorIs("test.registry/collector:custom-collector-slim")
+    assertCollectorIs("test.registry/collector:custom-collector")
 
 - name: scanner image
   server:

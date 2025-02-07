@@ -4,6 +4,7 @@ package v1;
 
 import "api/v1/common.proto";
 import "api/v1/empty.proto";
+import "api/v1/pagination.proto";
 import weak "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 import "storage/network_flow.proto";
@@ -73,11 +74,33 @@ message GetExternalNetworkEntitiesResponse {
 
 message GetExternalNetworkFlowsRequest {
   string cluster_id = 1;
-  string deployment_id = 2;
+  string entity_id = 2;
+  string query = 3;
+  google.protobuf.Timestamp since = 4;
+  Pagination pagination = 5;
 }
 
 message GetExternalNetworkFlowsResponse {
-  repeated storage.NetworkFlow flows = 1;
+  storage.NetworkEntityInfo entity = 1;
+  int32 total_flows = 2;
+  repeated storage.NetworkFlow flows = 3;
+}
+
+message GetExternalNetworkFlowsMetadataRequest {
+  string cluster_id = 1;
+  string query = 2;
+  google.protobuf.Timestamp since = 3;
+  Pagination pagination = 4;
+}
+
+message ExternalNetworkFlowMetadata {
+  storage.NetworkEntityInfo entity = 1;
+  int32 flowsCount = 2;
+}
+
+message GetExternalNetworkFlowsMetadataResponse {
+  repeated ExternalNetworkFlowMetadata entities = 1;
+  int32 total_entities = 2;
 }
 
 message PutNetworkGraphConfigRequest {
@@ -94,7 +117,11 @@ service NetworkGraphService {
   }
 
   rpc GetExternalNetworkFlows(GetExternalNetworkFlowsRequest) returns (GetExternalNetworkFlowsResponse) {
-    option (google.api.http) = {get: "/v1/networkgraph/cluster/{cluster_id}/externalentities/flows/{deployment_id}"};
+    option (google.api.http) = {get: "/v1/networkgraph/cluster/{cluster_id}/externalentities/{entity_id}/flows"};
+  }
+
+  rpc GetExternalNetworkFlowsMetadata(GetExternalNetworkFlowsMetadataRequest) returns (GetExternalNetworkFlowsMetadataResponse) {
+    option (google.api.http) = {get: "/v1/networkgraph/cluster/{cluster_id}/externalentities/metadata"};
   }
 
   rpc CreateExternalNetworkEntity(CreateNetworkEntityRequest) returns (storage.NetworkEntity) {

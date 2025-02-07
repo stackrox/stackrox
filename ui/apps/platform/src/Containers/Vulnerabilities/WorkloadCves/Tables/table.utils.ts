@@ -319,8 +319,21 @@ export function formatVulnerabilityData(
 export function getCveBaseInfoFromDistroTuples(
     distroTuples: { cveBaseInfo: CveBaseInfo }[]
 ): CveBaseInfo | undefined {
-    // Assume that epss property has same value for each of multiple items.
-    return distroTuples?.[0]?.cveBaseInfo;
+    // Return cveBaseInfo that has max value of epssProbability,
+    // consistent with aggregateFunc: 'max' property in sortUtils.tsx file.
+    let cveBaseInfoMax: CveBaseInfo | undefined;
+
+    if (Array.isArray(distroTuples)) {
+        let epssProbabilityMax = -1; // in case epssProbability is ever zero
+        distroTuples.forEach(({ cveBaseInfo }) => {
+            if (cveBaseInfo?.epss && cveBaseInfo.epss?.epssProbability > epssProbabilityMax) {
+                cveBaseInfoMax = cveBaseInfo;
+                epssProbabilityMax = cveBaseInfo.epss.epssProbability;
+            }
+        });
+    }
+
+    return cveBaseInfoMax;
 }
 
 // Given probability as float fraction, return as percent with 3 decimal digits.

@@ -19,7 +19,7 @@ def grpcVersion = '1.69.0'
 // If the proto versions are changed, be sure it is also changed in make/protogen.mk.
 def protobufVersion = '4.29.3'
 def nettyTcNativeVersion = '2.0.61.Final'
-def fabric8Version = '7.0.1'
+def fabric8Version = '7.1.0'
 def jacksonVersion = '2.14.2'
 
 protobuf {
@@ -67,14 +67,14 @@ dependencies {
     implementation "io.grpc:grpc-auth:${grpcVersion}"
     implementation "io.netty:netty-tcnative-boringssl-static:${nettyTcNativeVersion}"
 
-    implementation platform('org.apache.groovy:groovy-bom:4.0.24')
+    implementation platform('org.apache.groovy:groovy-bom:4.0.25')
     implementation 'org.apache.groovy:groovy'
     implementation platform("org.spockframework:spock-bom:2.3-groovy-4.0")
     implementation "org.spockframework:spock-core"
     implementation "org.spockframework:spock-junit4"
     implementation 'io.rest-assured:rest-assured:5.5.0'
     testImplementation group: 'org.yaml', name: 'snakeyaml', version: '2.3'
-    implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.5.6'
+    implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.5.16'
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: jacksonVersion
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: jacksonVersion
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: jacksonVersion

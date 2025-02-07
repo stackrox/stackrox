@@ -545,11 +545,7 @@ spec:
                         type: boolean
                       imageFlavor:
                         default: Regular
-                        description: |-
-                          The image flavor to use for collector. "Regular" images are bigger in size, but contain probes
-                          for most kernels. If you use the "Slim" image flavor, you must ensure that your Central instance
-                          is connected to the internet, or regularly receives Collector Support Package updates (for further
-                          instructions, please refer to the documentation).
+                        description: Deprecated field.
                         enum:
                         - Regular
                         - Slim

@@ -11,16 +11,12 @@ type Unmarshaler[T any] interface {
 }
 
 // ScanRows scan and Unmarshal postgres rows into object of type T.
+//
+// This function closes the rows automatically on return.
 func ScanRows[T any, PT Unmarshaler[T]](rows pgx.Rows) ([]*T, error) {
-	var results []*T
-	for rows.Next() {
-		msg, err := Unmarshal[T, PT](rows)
-		if err != nil {
-			return nil, err
-		}
-		results = append(results, msg)
-	}
-	return results, rows.Err()
+	return pgx.CollectRows(rows, func(r pgx.CollectableRow) (*T, error) {
+		return Unmarshal[T, PT](r)
+	})
 }
 
 // Unmarshal postgres row into object of type T

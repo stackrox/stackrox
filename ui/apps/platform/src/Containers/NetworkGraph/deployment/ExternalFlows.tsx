@@ -1,37 +1,37 @@
+import React, { useMemo, useState } from 'react';
 import { Divider, Flex, FlexItem, Stack, StackItem } from '@patternfly/react-core';
-import React, { useState } from 'react';
-import AdvancedFlowsFilter, {
-    defaultAdvancedFlowsFilters,
-} from '../common/AdvancedFlowsFilter/AdvancedFlowsFilter';
-import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
-import { getAllUniquePorts } from '../utils/flowUtils';
+
 import IPMatchFilter, { MatchType } from '../common/IPMatchFilter';
+import ExternalIpsTable from '../external/ExternalIpsTable';
+import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
+
+type ExternalFlowsFilter = {
+    matchType: MatchType;
+    externalIP: string;
+};
 
 type InternalFlowsProps = {
     deploymentId: string;
+    scopeHierarchy: NetworkScopeHierarchy;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function ExternalFlows({ deploymentId }: InternalFlowsProps) {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [selectedMatchType, setSelectedMatchType] = useState<MatchType>('Equals');
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [selectedExternalIP, setSelectedExternalIP] = useState('');
-    const [advancedFilters, setAdvancedFilters] = React.useState<AdvancedFlowsFilterType>(
-        defaultAdvancedFlowsFilters
-    );
-
-    // TODO: Fetch external IPs connected to a deployment using the deploymentID
+function ExternalFlows({ deploymentId, scopeHierarchy }: InternalFlowsProps) {
+    const [appliedFilter, setAppliedFilter] = useState<ExternalFlowsFilter>({
+        matchType: 'Equals',
+        externalIP: '',
+    });
 
     const onSearch = ({ matchType, externalIP }) => {
-        setSelectedMatchType(matchType);
-        setSelectedExternalIP(externalIP);
+        setAppliedFilter({ matchType, externalIP });
     };
 
-    // TODO: Show all unique ports
-    const allUniquePorts = getAllUniquePorts([]);
-
-    // TODO: Filter network flows based on the match type and external IP
+    const advancedFilters = useMemo(
+        () => ({
+            'Deployment ID': deploymentId,
+            'External Source Address': appliedFilter.externalIP,
+        }),
+        [appliedFilter.externalIP, deploymentId]
+    );
 
     return (
         <Stack>
@@ -40,17 +40,18 @@ function ExternalFlows({ deploymentId }: InternalFlowsProps) {
                     <FlexItem flex={{ default: 'flex_1' }}>
                         <IPMatchFilter onSearch={onSearch} />
                     </FlexItem>
-                    <FlexItem>
-                        <AdvancedFlowsFilter
-                            filters={advancedFilters}
-                            setFilters={setAdvancedFilters}
-                            allUniquePorts={allUniquePorts}
-                        />
-                    </FlexItem>
                 </Flex>
             </StackItem>
-            <Divider component="hr" className="pf-v5-u-py-md" />
-            <StackItem isFilled style={{ overflow: 'auto' }}></StackItem>
+            <Divider component="hr" />
+            <StackItem isFilled style={{ overflow: 'auto' }}>
+                <ExternalIpsTable
+                    scopeHierarchy={scopeHierarchy}
+                    advancedFilters={advancedFilters}
+                    setSelectedEntity={() => {
+                        // TODO: Set up routing so this will take you to the external ip detail view
+                    }}
+                />
+            </StackItem>
         </Stack>
     );
 }

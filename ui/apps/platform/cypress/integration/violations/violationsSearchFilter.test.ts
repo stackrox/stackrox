@@ -21,7 +21,7 @@ describe('Violations - Search Filter', () => {
     it('should filter violations by policy name', () => {
         visitViolations();
 
-        selectFilteredWorkflowView('Full view');
+        selectFilteredWorkflowView('All Violations');
 
         // filter by the first policy name autocomplete option
         selectFirstAutocompleteSearchOption();
@@ -40,7 +40,7 @@ describe('Violations - Search Filter', () => {
     it('should filter violations by policy category', () => {
         visitViolations();
 
-        selectFilteredWorkflowView('Full view');
+        selectFilteredWorkflowView('All Violations');
 
         // change to the policy category filter
         selectCompoundSearchFilterAttribute('Category');
@@ -61,7 +61,7 @@ describe('Violations - Search Filter', () => {
     it('should filter violations by severity', () => {
         visitViolations();
 
-        selectFilteredWorkflowView('Full view');
+        selectFilteredWorkflowView('All Violations');
 
         // change to the policy severity filter
         selectCompoundSearchFilterAttribute('Severity');
@@ -88,7 +88,7 @@ describe('Violations - Search Filter', () => {
     it('should filter violations by lifecycle stage', () => {
         visitViolations();
 
-        selectFilteredWorkflowView('Full view');
+        selectFilteredWorkflowView('All Violations');
 
         // change to the policy lifecycle filter
         selectCompoundSearchFilterAttribute('Lifecycle');

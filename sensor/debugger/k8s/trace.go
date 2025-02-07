@@ -7,6 +7,7 @@ import (
 	"path"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -14,32 +15,52 @@ var _ io.Writer = (*TraceWriter)(nil)
 
 // TraceWriter writes sensor handled k8s events into a file
 type TraceWriter struct {
-	// Destination file where we will store the events
-	Destination string
 	// mu mutex to avoid multiple goroutines writing at the same time
 	mu sync.Mutex
+	f  *os.File
 }
 
-// Init initializes the writer
-func (tw *TraceWriter) Init() error {
-	if path.Dir(tw.Destination) == "" {
-		return nil
+// NewTraceWriter initializes the writer with destination file where we will store the events
+func NewTraceWriter(dest string) (*TraceWriter, error) {
+	dir := path.Dir(dest)
+	if dir == "" {
+		return nil, errors.New("trace destination directory must be set")
 	}
-	return os.MkdirAll(path.Dir(tw.Destination), os.ModePerm)
+	err := os.MkdirAll(dir, os.ModePerm)
+	if err != nil {
+		return nil, errors.Wrap(err, "error creating trace destination directory")
+	}
+	f, err := os.OpenFile(dest, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error opening trace destination file: %s", dest)
+	}
+
+	return &TraceWriter{
+		f: f,
+	}, nil
 }
+
+// Close closes the file
+func (tw *TraceWriter) Close() error {
+	return errors.Wrap(tw.f.Close(), "error closing trace writer")
+}
+
+var delimiter = []byte{'\n'}
 
 // Write a slice of bytes in the Destination file
 func (tw *TraceWriter) Write(b []byte) (int, error) {
-	tw.mu.Lock()
-	defer tw.mu.Unlock()
-	fObjs, err := os.OpenFile(tw.Destination, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
-	if err != nil {
-		return 0, errors.Wrapf(err, "Error opening file: %s\n", tw.Destination)
-	}
-	defer func() {
-		_ = fObjs.Close()
-	}()
-	return fObjs.Write(append(b, []byte{10}...))
+	return concurrency.WithLock2(&tw.mu, func() (int, error) {
+		n, err := tw.f.Write(b)
+		if err != nil {
+			return n, err
+		}
+		m, err := tw.f.Write(delimiter)
+		if err != nil {
+			return n + m, err
+		}
+		err = tw.f.Sync()
+		return n + m, err
+	})
 }
 
 // TraceReader reads a file containing k8s events
@@ -60,6 +81,6 @@ func (tw *TraceReader) ReadFile() ([][]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	objs := bytes.Split(data, []byte{'\n'})
+	objs := bytes.Split(data, delimiter)
 	return objs, nil
 }

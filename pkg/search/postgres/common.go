@@ -967,7 +967,6 @@ func retryableRunGetManyQueryForSchema[T any, PT pgutils.Unmarshaler[T]](ctx con
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 
 	return pgutils.ScanRows[T, PT](rows)
 }
@@ -1038,7 +1037,6 @@ func RunCursorQueryForSchema[T any, PT pgutils.Unmarshaler[T]](ctx context.Conte
 		if err != nil {
 			return nil, errors.Wrap(err, "advancing in cursor")
 		}
-		defer rows.Close()
 
 		return pgutils.ScanRows[T, PT](rows)
 	}, closer, nil

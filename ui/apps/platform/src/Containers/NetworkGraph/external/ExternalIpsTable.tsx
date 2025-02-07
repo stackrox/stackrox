@@ -20,29 +20,35 @@ import {
     ExternalSourceNetworkEntityInfo,
     ExternalNetworkFlowsMetadataResponse,
 } from 'types/networkFlow.proto';
-
+import { SearchFilter } from 'types/search';
 import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 
 export type ExternalIpsTableProps = {
     scopeHierarchy: NetworkScopeHierarchy;
     setSelectedEntity: (entity: ExternalSourceNetworkEntityInfo) => void;
+    advancedFilters?: SearchFilter;
 };
 
-function ExternalIpsTable({ scopeHierarchy, setSelectedEntity }: ExternalIpsTableProps) {
+function ExternalIpsTable({
+    scopeHierarchy,
+    setSelectedEntity,
+    advancedFilters,
+}: ExternalIpsTableProps) {
     const { version } = useMetadata();
     const [page, setPage] = useState(1);
     const [perPage, setPerPage] = useState(10);
     const clusterId = scopeHierarchy.cluster.id;
     const { namespaces, deployments } = scopeHierarchy;
+
     const fetchExternalIpsFlowsMetadata =
         useCallback((): Promise<ExternalNetworkFlowsMetadataResponse> => {
             return getExternalIpsFlowsMetadata(clusterId, namespaces, deployments, {
                 sortOption: {},
                 page,
                 perPage,
-                advancedFilters: {},
+                advancedFilters,
             });
-        }, [page, perPage, clusterId, deployments, namespaces]);
+        }, [page, perPage, clusterId, deployments, namespaces, advancedFilters]);
 
     const {
         data: externalIpsFlowsMetadata,
