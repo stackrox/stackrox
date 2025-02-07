@@ -11,6 +11,7 @@ import (
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	clusterPostgresStore "github.com/stackrox/rox/central/cluster/store/cluster/postgres"
 	clusterHealthPostgresStore "github.com/stackrox/rox/central/cluster/store/clusterhealth/postgres"
+	clusterInitStore "github.com/stackrox/rox/central/clusterinit/store"
 	compliancePruning "github.com/stackrox/rox/central/complianceoperator/v2/pruner"
 	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
@@ -112,11 +113,13 @@ func (s *ClusterPostgresDataStoreTestSuite) SetupTest() {
 	s.roleBindingDatastore = k8sRoleBindingDataStore.GetTestPostgresDataStore(s.T(), s.db.DB)
 	s.imageIntegrationDatastore, err = imageIntegrationDataStore.GetTestPostgresDataStore(s.T(), s.db.DB)
 	s.NoError(err)
+	clusterInitStore, err := clusterInitStore.GetTestClusterInitDataStore(s.T(), s.db.DB)
+	s.NoError(err)
 	s.clusterDatastore, err = New(clusterDBStore, clusterHealthDBStore, clusterCVEStore,
 		s.alertDatastore, s.imageIntegrationDatastore, s.nsDatastore, s.deploymentDatastore,
 		nodeStore, s.podDatastore, s.secretDatastore, netFlowStore, netEntityStore,
 		s.serviceAccountDatastore, s.roleDatastore, s.roleBindingDatastore, sensorCnxMgr, nil,
-		clusterRanker, networkBaselineM, compliancePruner)
+		clusterRanker, networkBaselineM, compliancePruner, clusterInitStore)
 	s.NoError(err)
 }
 
