@@ -146,13 +146,13 @@ func (s *migrationTestSuite) TestMigration() {
 	objs, err = newStore.GetByQuery(s.ctx,
 		search.NewQueryBuilder().AddExactMatches(search.CVE, "cve-2023-127").ProtoQuery())
 	assert.NoError(s.T(), err)
-	assert.Nil(s.T(), objs)
+	assert.Empty(s.T(), objs)
 
 	// Verify observed CVEs do not have exception request.
 	objs, err = newStore.GetByQuery(s.ctx,
 		search.NewQueryBuilder().AddExactMatches(search.CVE, "cve-2023-132").ProtoQuery())
 	assert.NoError(s.T(), err)
-	assert.Nil(s.T(), objs)
+	assert.Empty(s.T(), objs)
 
 	// Verify storage.ImageCVEEdge is updated.
 	var edgeObjs []*storage.ImageCVEEdge
