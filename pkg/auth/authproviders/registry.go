@@ -8,6 +8,8 @@ import (
 // Registry stores information about registered authentication providers, as well as about the factories to create them.
 // It also acts as an HTTP/1.1 handler, since most auth providers require some form of callback to the original webpage,
 // which cannot be implemented as a GRPC function.
+//
+//go:generate mockgen-wrapper
 type Registry interface {
 	http.Handler
 
