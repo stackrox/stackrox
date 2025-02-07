@@ -71,16 +71,7 @@ export const validationSchema = yup.object().shape({
                 .trim()
                 .required('A log ingestion endpoint is required'),
             directoryTenantId: yup.string().trim().required('A directory tenant ID is required'),
-            applicationClientId: yup
-                .string()
-                .trim()
-                .test(
-                    'application-id-test',
-                    'A application client ID is required',
-                    (value, context: yup.TestContext) => {
-                        return !!context?.parent?.wifEnabled || !!value;
-                    }
-                ),
+            applicationClientId: yup.string().trim(),
             secret: yup.string().trim(),
             clientCertAuthConfig: yup.object().shape({
                 clientCert: yup.string().trim(),
