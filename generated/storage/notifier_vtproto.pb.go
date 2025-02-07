@@ -428,6 +428,7 @@ func (m *MicrosoftSentinel) CloneVT() *MicrosoftSentinel {
 	r.AlertDcrConfig = m.AlertDcrConfig.CloneVT()
 	r.AuditLogDcrConfig = m.AuditLogDcrConfig.CloneVT()
 	r.ClientCertAuthConfig = m.ClientCertAuthConfig.CloneVT()
+	r.WifEnabled = m.WifEnabled
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -1240,6 +1241,9 @@ func (this *MicrosoftSentinel) EqualVT(that *MicrosoftSentinel) bool {
 		return false
 	}
 	if !this.ClientCertAuthConfig.EqualVT(that.ClientCertAuthConfig) {
+		return false
+	}
+	if this.WifEnabled != that.WifEnabled {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -2560,6 +2564,16 @@ func (m *MicrosoftSentinel) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.WifEnabled {
+		i--
+		if m.WifEnabled {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x40
+	}
 	if m.ClientCertAuthConfig != nil {
 		size, err := m.ClientCertAuthConfig.MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
@@ -3314,6 +3328,9 @@ func (m *MicrosoftSentinel) SizeVT() (n int) {
 	if m.ClientCertAuthConfig != nil {
 		l = m.ClientCertAuthConfig.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.WifEnabled {
+		n += 2
 	}
 	n += len(m.unknownFields)
 	return n
@@ -6658,6 +6675,26 @@ func (m *MicrosoftSentinel) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 8:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field WifEnabled", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.WifEnabled = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
