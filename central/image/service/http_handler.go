@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	clusterUtil "github.com/stackrox/rox/central/cluster/util"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/sachelper"
@@ -125,8 +124,9 @@ func (h sbomHttpHandler) enrichImage(ctx context.Context, enrichmentCtx enricher
 // getSBOM generates an SBOM for the specified parameters.
 func (h sbomHttpHandler) getSBOM(ctx context.Context, params apiparams.SBOMRequestBody) ([]byte, error) {
 	enrichmentCtx := enricher.EnrichmentContext{
+		// TODO(ROX-27920): re-introduce cluster flag when SBOM generation from delegated scans is implemented.
+		// Delegable:       true,
 		FetchOpt:        enricher.UseCachesIfPossible,
-		Delegable:       true,
 		ScannerTypeHint: scannerTypes.ScannerV4,
 	}
 
@@ -134,14 +134,15 @@ func (h sbomHttpHandler) getSBOM(ctx context.Context, params apiparams.SBOMReque
 		addForceToEnrichmentContext(&enrichmentCtx)
 	}
 
-	if params.Cluster != "" {
-		// The request indicates enrichment should be delegated to a specific cluster.
-		clusterID, err := clusterUtil.GetClusterIDFromNameOrID(ctx, h.clusterSACHelper, params.Cluster, delegateScanPermissions)
-		if err != nil {
-			return nil, err
-		}
-		enrichmentCtx.ClusterID = clusterID
-	}
+	// TODO(ROX-27920): re-introduce cluster flag when SBOM generation from delegated scans is implemented.
+	// if params.Cluster != "" {
+	//	// The request indicates enrichment should be delegated to a specific cluster.
+	//	clusterID, err := clusterUtil.GetClusterIDFromNameOrID(ctx, h.clusterSACHelper, params.Cluster, delegateScanPermissions)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//	enrichmentCtx.ClusterID = clusterID
+	// }
 
 	img, alreadyForcedEnrichment, err := h.enrichImage(ctx, enrichmentCtx, params.ImageName)
 	if err != nil {
