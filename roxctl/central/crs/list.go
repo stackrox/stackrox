@@ -39,20 +39,22 @@ func listCRSs(cliEnvironment environment.Environment, timeout time.Duration, ret
 	sort.Slice(crsMetas, func(i, j int) bool { return crsMetas[i].GetName() < crsMetas[j].GetName() })
 
 	tabWriter := tabwriter.NewWriter(cliEnvironment.InputOutput().Out(), 4, 8, 2, '\t', 0)
-	fmt.Fprintln(tabWriter, "Name\tCreated at\tExpires at\tCreated by\tID")
-	fmt.Fprintln(tabWriter, "====\t==========\t==========\t==========\t==")
+	fmt.Fprintln(tabWriter, "Name\tCreated at\tExpires at\tCreated by\tID\tMax Registrations\tRegistrations Completed")
+	fmt.Fprintln(tabWriter, "====\t==========\t==========\t==========\t==\t=================\t=======================")
 
 	for _, crsMeta := range crsMetas {
 		name := crsMeta.GetName()
 		if name == "" {
 			name = "(empty)"
 		}
-		fmt.Fprintf(tabWriter, "%s\t%s\t%s\t%s\t%s\n",
+		fmt.Fprintf(tabWriter, "%s\t%s\t%s\t%s\t%s\t%d\t%d\n",
 			name,
 			protocompat.ConvertTimestampToString(crsMeta.GetCreatedAt(), time.RFC3339),
 			protocompat.ConvertTimestampToString(crsMeta.GetExpiresAt(), time.RFC3339),
 			getPrettyUser(crsMeta.GetCreatedBy()),
 			crsMeta.GetId(),
+			crsMeta.GetMaxRegistrations(),
+			len(crsMeta.GetRegistrationsCompleted()),
 		)
 	}
 	return errors.Wrap(tabWriter.Flush(), "flushing tabular output")
