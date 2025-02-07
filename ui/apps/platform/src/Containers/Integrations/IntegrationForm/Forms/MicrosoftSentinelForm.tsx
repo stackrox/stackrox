@@ -192,7 +192,7 @@ function MicrosoftSentinelForm({
         return setFieldValue(event.currentTarget.id, value);
     }
 
-    function preOnSaveHook() {
+    function preHook(callback: () => void) {
         // use only the auth method selected by the user
         if (selectedAuthMethod === 'use-secret') {
             setFieldValue('notifier.microsoftSentinel.clientCertAuthConfig.clientCert', '');
@@ -214,7 +214,7 @@ function MicrosoftSentinelForm({
             setFieldValue('notifier.microsoftSentinel.wifEnabled', true);
         }
 
-        onSave();
+        callback();
     }
 
     return (
@@ -600,7 +600,7 @@ function MicrosoftSentinelForm({
             {isEditable && (
                 <IntegrationFormActions>
                     <FormSaveButton
-                        onSave={preOnSaveHook}
+                        onSave={() => preHook(onSave)}
                         isSubmitting={isSubmitting}
                         isTesting={isTesting}
                         isDisabled={!dirty || !isValid}
@@ -608,7 +608,7 @@ function MicrosoftSentinelForm({
                         Save
                     </FormSaveButton>
                     <FormTestButton
-                        onTest={onTest}
+                        onTest={() => preHook(onTest)}
                         isSubmitting={isSubmitting}
                         isTesting={isTesting}
                         isDisabled={!isValid}
