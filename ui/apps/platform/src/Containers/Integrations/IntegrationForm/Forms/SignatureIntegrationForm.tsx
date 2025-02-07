@@ -123,6 +123,17 @@ function SignatureIntegrationForm({
     } = formik;
     const { version } = useMetadata();
 
+    const re2syntax = (
+        <>
+            Supports regular expressions for matching. For more information, see{' '}
+            <ExternalLink>
+                <a href="https://golang.org/s/re2syntax" target="_blank" rel="noopener noreferrer">
+                    RE2 syntax reference
+                </a>
+            </ExternalLink>
+        </>
+    );
+
     function onChange(value, event) {
         setFieldValue(event.target.id, value);
     }
@@ -365,35 +376,12 @@ function SignatureIntegrationForm({
                                                                                 helpTitle="Certificate OIDC issuer"
                                                                                 helpText={
                                                                                     <>
-                                                                                        <Text>
-                                                                                            The
-                                                                                            certificate
-                                                                                            OIDC
-                                                                                            issuer
-                                                                                            as
-                                                                                            specified
-                                                                                            by
-                                                                                            cosign.
-                                                                                            Supports
-                                                                                            regular
-                                                                                            expressions
-                                                                                            for
-                                                                                            matching.
-                                                                                            For more
-                                                                                            information,
-                                                                                            see{' '}
-                                                                                            <ExternalLink>
-                                                                                                <a
-                                                                                                    href="https://golang.org/s/re2syntax"
-                                                                                                    target="_blank"
-                                                                                                    rel="noopener noreferrer"
-                                                                                                >
-                                                                                                    RE2
-                                                                                                    syntax
-                                                                                                    reference
-                                                                                                </a>
-                                                                                            </ExternalLink>
-                                                                                        </Text>
+                                                                                        The
+                                                                                        certificate
+                                                                                        OIDC issuer
+                                                                                        as specified
+                                                                                        by cosign.{' '}
+                                                                                        {re2syntax}{' '}
                                                                                     </>
                                                                                 }
                                                                                 ariaLabel="Help for certificate issuer"
@@ -436,34 +424,12 @@ function SignatureIntegrationForm({
                                                                                 helpTitle="Certificate identity"
                                                                                 helpText={
                                                                                     <>
-                                                                                        <Text>
-                                                                                            The
-                                                                                            certificate
-                                                                                            identity
-                                                                                            as
-                                                                                            specified
-                                                                                            by
-                                                                                            cosign.
-                                                                                            Supports
-                                                                                            regular
-                                                                                            expressions
-                                                                                            for
-                                                                                            matching.
-                                                                                            For more
-                                                                                            information,
-                                                                                            see{' '}
-                                                                                            <ExternalLink>
-                                                                                                <a
-                                                                                                    href="https://golang.org/s/re2syntax"
-                                                                                                    target="_blank"
-                                                                                                    rel="noopener noreferrer"
-                                                                                                >
-                                                                                                    RE2
-                                                                                                    syntax
-                                                                                                    reference
-                                                                                                </a>
-                                                                                            </ExternalLink>
-                                                                                        </Text>
+                                                                                        The
+                                                                                        certificate
+                                                                                        identity as
+                                                                                        specified by
+                                                                                        cosign.{' '}
+                                                                                        {re2syntax}{' '}
                                                                                     </>
                                                                                 }
                                                                                 ariaLabel="Help for certificate identity"
