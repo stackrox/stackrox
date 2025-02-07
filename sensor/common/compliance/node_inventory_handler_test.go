@@ -162,10 +162,10 @@ func (s *NodeInventoryHandlerTestSuite) TestAttachRPMtoRHCOS() {
 			break
 		}
 	}
-	s.NotNil(rhcosPKG)
-	s.Equal(rhcosPKG.GetName(), "rhcos")
-	s.Equal(rhcosPKG.GetArch(), arch)
-	s.Equal(rhcosPKG.GetId(), "600")
+	s.Require().NotNil(rhcosPKG, "the 'rhcos' pkg should exist in node index")
+	s.Equal("rhcos", rhcosPKG.GetName())
+	s.Equal(arch, rhcosPKG.GetArch())
+	s.Equal("600", rhcosPKG.GetId())
 
 	var rhcosRepo *v4.Repository
 	for _, r := range got.GetContents().GetRepositories() {
@@ -174,10 +174,10 @@ func (s *NodeInventoryHandlerTestSuite) TestAttachRPMtoRHCOS() {
 			break
 		}
 	}
-	s.NotNil(rhcosRepo)
-	s.Equal(rhcosRepo.GetKey(), "")
-	s.Equal(rhcosRepo.GetName(), goldenName)
-	s.Equal(rhcosRepo.GetUri(), goldenURI)
+	s.Require().NotNil(rhcosRepo, "the golden repos should exist in node index")
+	s.Equal("", rhcosRepo.GetKey())
+	s.Equal(goldenName, rhcosRepo.GetName())
+	s.Equal(goldenURI, rhcosRepo.GetUri())
 }
 
 func (s *NodeInventoryHandlerTestSuite) TestCapabilities() {
