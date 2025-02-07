@@ -285,7 +285,10 @@ function MicrosoftSentinelForm({
                     <Card isFlat>
                         <CardTitle>Authentication method</CardTitle>
                         <CardBody>
-                            <ToggleGroup aria-label="Authentication method selection">
+                            <ToggleGroup
+                                aria-label="Authentication method selection"
+                                className="pf-v5-u-pb-md"
+                            >
                                 <ToggleGroupItem
                                     text="Use secret"
                                     buttonId="use-secret"
