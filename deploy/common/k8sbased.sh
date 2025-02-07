@@ -927,12 +927,24 @@ function launch_sensor {
       NAMESPACE="${sensor_namespace}" "${k8s_dir}/sensor-deploy/sensor.sh"
     fi
 
+    collector_env=()
+
     if [[ -n "${ROX_AFTERGLOW_PERIOD}" ]]; then
-       kubectl -n "${sensor_namespace}" set env ds/collector ROX_AFTERGLOW_PERIOD="${ROX_AFTERGLOW_PERIOD}"
+      collector_env+=("ROX_AFTERGLOW_PERIOD=${ROX_AFTERGLOW_PERIOD}")
+      #kubectl -n "${sensor_namespace}" set env ds/collector ROX_AFTERGLOW_PERIOD="${ROX_AFTERGLOW_PERIOD}"
     fi
 
     if [[ -n "${ROX_NON_AGGREGATED_NETWORKS}" ]]; then
-      kubectl -n "${sensor_namespace}" set env ds/collector ROX_NON_AGGREGATED_NETWORKS="${ROX_NON_AGGREGATED_NETWORKS}"
+      collector_env+=("ROX_NON_AGGREGATED_NETWORKS=${ROX_NON_AGGREGATED_NETWORKS}")
+      #kubectl -n "${sensor_namespace}" set env ds/collector ROX_NON_AGGREGATED_NETWORKS="${ROX_NON_AGGREGATED_NETWORKS}"
+    fi
+
+    if [[ -n "${ROX_NETWORK_GRAPH_EXTERNAL_IPS}" ]]; then
+      collector_env+=("ROX_NETWORK_GRAPH_EXTERNAL_IPS=${ROX_NETWORK_GRAPH_EXTERNAL_IPS}")
+    fi
+
+    if [[ "${#collector_env[@]}" -gt 0 ]]; then
+      kubectl -n "${sensor_namespace}" set env ds/collector "${collector_env[@]}"
     fi
 
     # For local installations (e.g. on Colima): hotload binary
