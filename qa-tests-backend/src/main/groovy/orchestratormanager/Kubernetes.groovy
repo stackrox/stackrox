@@ -83,6 +83,7 @@ import io.fabric8.kubernetes.api.model.rbac.Subject
 import io.fabric8.kubernetes.client.KubernetesClient
 import io.fabric8.kubernetes.client.KubernetesClientBuilder
 import io.fabric8.kubernetes.client.KubernetesClientException
+import io.fabric8.kubernetes.client.LocalPortForward;
 import io.fabric8.kubernetes.client.dsl.Deletable
 import io.fabric8.kubernetes.client.dsl.ExecListener
 import io.fabric8.kubernetes.client.dsl.ExecWatch
@@ -1951,6 +1952,19 @@ class Kubernetes implements OrchestratorMain {
                 getStaticPodCount(ns).size() +
                 getStatefulSetCount(ns).size() +
                 getJobCount(ns).size()
+    }
+
+    List<LocalPortForward> createCollectorPortForwards(int port) {
+        // since Collector's a daemonset, we can match the behavior of
+        // kubectl, and pick a pod to forward to.
+        def collectorPods = getPods("stackrox", "collector")
+
+        return collectorPods.collect {
+            this.client.pods()
+                .inNamespace("stackrox")
+                .withName(it.getMetadata().getName())
+                .portForward(port)
+        }
     }
 
     /*
