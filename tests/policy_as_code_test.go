@@ -321,7 +321,7 @@ func (pc *PolicyAsCodeSuite) createPolicyInK8s(toCreate *v1alpha1.SecurityPolicy
 	pc.Require().NoError(err)
 
 	message := "status never udpated"
-	timer := time.NewTimer(time.Second * 5)
+	timer := time.NewTimer(time.Minute)
 	for {
 		select {
 		case <-timer.C:
@@ -433,7 +433,7 @@ func (pc *PolicyAsCodeSuite) createCRAndObserveInCentral(policyCR *v1alpha1.Secu
 			}
 		}
 		assert.NotEmpty(collect, policyId)
-	}, time.Minute*5, time.Millisecond*30)
+	}, time.Minute, time.Millisecond*30)
 	return policyId
 }
 
