@@ -203,7 +203,7 @@ func (s *NodeInventoryHandlerTestSuite) TestAttachRPMtoRHCOS() {
 		}
 	}
 	s.NotNil(rhcosRepo)
-	s.Equal(rhcosRepo.GetKey(), "git ad")
+	s.Equal(rhcosRepo.GetKey(), "")
 	s.Equal(rhcosRepo.GetName(), goldenName)
 	s.Equal(rhcosRepo.GetUri(), goldenURI)
 }
