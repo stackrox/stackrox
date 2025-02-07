@@ -32,7 +32,7 @@ type gatherer struct {
 	period      time.Duration
 	stopSig     concurrency.Signal
 	ctx         context.Context
-	gathering   sync.RWMutex
+	gathering   sync.Mutex
 	gatherFuncs []GatherFunc
 	opts        []telemeter.Option
 
@@ -69,8 +69,8 @@ func (g *gatherer) gather() map[string]any {
 
 func (g *gatherer) identify() {
 	// TODO: might make sense to abort if !TryLock(), but that's harder to test.
-	g.gathering.RLock()
-	defer g.gathering.RUnlock()
+	g.gathering.Lock()
+	defer g.gathering.Unlock()
 	data := g.gather()
 	// Track event makes the properties effective for the user on analytics.
 	// Duplicates are dropped during a day. The daily potential duplicate event
