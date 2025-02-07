@@ -198,7 +198,7 @@ function NodeCvesOverviewPage() {
                                 <a
                                     href={getVersionedDocs(
                                         version,
-                                        'operating/placeholder.html#placeholder-section'
+                                        'operating/manage-vulnerabilities/scan-rhcos-node-host#understanding-node-cves-scanner-v4_scan-rhcos-node-host'
                                     )}
                                     target="_blank"
                                     rel="noopener noreferrer"
