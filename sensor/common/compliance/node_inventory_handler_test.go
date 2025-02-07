@@ -55,73 +55,45 @@ func fakeNodeIndex(arch string) *v4.IndexReport {
 		Success: true,
 		Contents: &v4.Contents{
 			Packages: []*v4.Package{
-				{
-					Id:      "0",
-					Name:    "openssh-clients",
-					Version: "8.7p1-38.el9",
-					Kind:    "binary",
-					Source: &v4.Package{
-						Name:    "openssh",
-						Version: "8.7p1-38.el9",
-						Kind:    "source",
-						Source:  nil,
-						Cpe:     "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
-					},
-					PackageDb:      "sqlite:usr/share/rpm",
-					RepositoryHint: "hash:sha256:f52ca767328e6919ec11a1da654e92743587bd3c008f0731f8c4de3af19c1830|key:199e2f91fd431d51",
-					Arch:           arch,
-					Cpe:            "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
-				},
-				{
-					Id:      "1",
-					Name:    "openssh-clients-noarch",
-					Version: "8.7p1-38.el9",
-					Kind:    "binary",
-					Source: &v4.Package{
-						Name:    "openssh",
-						Version: "8.7p1-38.el9",
-						Kind:    "source",
-						Source:  nil,
-						Cpe:     "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
-					},
-					PackageDb:      "sqlite:usr/share/rpm",
-					RepositoryHint: "hash:sha256:f52ca767328e6919ec11a1da654e92743587bd3c008f0731f8c4de3af19c1830|key:199e2f91fd431d51",
-					Arch:           "noarch",
-					Cpe:            "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
-				},
-				{
-					Id:      "2",
-					Name:    "openssh-clients-empty-arch",
-					Version: "8.7p1-38.el9",
-					Kind:    "binary",
-					Source: &v4.Package{
-						Name:    "openssh",
-						Version: "8.7p1-38.el9",
-						Kind:    "source",
-						Source:  nil,
-						Cpe:     "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
-					},
-					PackageDb:      "sqlite:usr/share/rpm",
-					RepositoryHint: "hash:sha256:f52ca767328e6919ec11a1da654e92743587bd3c008f0731f8c4de3af19c1830|key:199e2f91fd431d51",
-					Arch:           "",
-					Cpe:            "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
-				},
+				exemplaryPackage("0", "vim-minimal", arch),
+				exemplaryPackage("1", "vim-minimal-noarch", "noarch"),
+				exemplaryPackage("2", "vim-minimal-empty-arch", ""),
 			},
 			Repositories: []*v4.Repository{
-				{
-					Id:   "0",
-					Name: "cpe:/o:redhat:enterprise_linux:9::fastdatapath",
-					Key:  "rhel-cpe-repository",
-					Cpe:  "cpe:2.3:o:redhat:enterprise_linux:9:*:fastdatapath:*:*:*:*:*",
-				},
-				{
-					Id:   "1",
-					Name: "cpe:/a:redhat:openshift:4.16::el9",
-					Key:  "rhel-cpe-repository",
-					Cpe:  "cpe:2.3:a:redhat:openshift:4.16:*:el9:*:*:*:*:*",
-				},
+				exemplaryRepo("0"),
+				exemplaryRepo("1"),
+				exemplaryRepo("2"),
 			},
 		},
+	}
+}
+
+func exemplaryPackage(id, name, arch string) *v4.Package {
+	return &v4.Package{
+		Id:      id,
+		Name:    name,
+		Version: "2:7.4.629-6.el8",
+		Kind:    "binary",
+		Source: &v4.Package{
+			Name:    "vim",
+			Version: "2:7.4.629-6.el8",
+			Kind:    "source",
+			Source:  nil,
+			Cpe:     "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
+		},
+		PackageDb:      "sqlite:usr/share/rpm",
+		RepositoryHint: "hash:sha256:f52ca767328e6919ec11a1da654e92743587bd3c008f0731f8c4de3af19c1830|key:199e2f91fd431d51",
+		Arch:           arch,
+		Cpe:            "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
+	}
+}
+
+func exemplaryRepo(id string) *v4.Repository {
+	return &v4.Repository{
+		Id:   id,
+		Name: "cpe:/o:redhat:enterprise_linux:9::fastdatapath",
+		Key:  "rhel-cpe-repository",
+		Cpe:  "cpe:2.3:o:redhat:enterprise_linux:9:*:fastdatapath:*:*:*:*:*",
 	}
 }
 
@@ -153,7 +125,7 @@ func (s *NodeInventoryHandlerTestSuite) TestExtractArch() {
 			rpmArch:      "noarch",
 			expectedArch: "",
 		},
-		"": {
+		"empty-arch": {
 			rpmArch:      "",
 			expectedArch: "",
 		},
