@@ -324,7 +324,7 @@ export function getCveBaseInfoFromDistroTuples(
     let cveBaseInfoMax: CveBaseInfo | undefined;
 
     if (Array.isArray(distroTuples)) {
-        let epssProbabilityMax = -1; // in case epssProbability is every zero
+        let epssProbabilityMax = -1; // in case epssProbability is ever zero
         distroTuples.forEach(({ cveBaseInfo }) => {
             if (cveBaseInfo?.epss && cveBaseInfo.epss?.epssProbability > epssProbabilityMax) {
                 cveBaseInfoMax = cveBaseInfo;
