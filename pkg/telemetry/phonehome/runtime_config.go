@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/version"
 )
@@ -57,8 +58,9 @@ func GetRuntimeConfig(cfgURL, defaultKey string) (*RuntimeConfig, error) {
 
 // downloadConfig downloads the configuration from the provided url.
 func downloadConfig(u string) (*RuntimeConfig, error) {
-	if u == "hardcoded" {
-		// TODO(ROX-17726): Use the hardcoded key for now.
+	// TODO(ROX-17726): Remove this clause:
+	if u == env.TelemetrySelfManagedURL {
+		// Use the hardcoded key for now.
 		return &RuntimeConfig{Key: selfManagedKey}, nil
 	}
 	client := http.Client{

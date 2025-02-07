@@ -79,7 +79,7 @@ func TestInstanceConfig(t *testing.T) {
 			// non-release builds should provide the same key as in the remote
 			// config to make the remote key effective, otherwise the provided
 			// key is used instead.
-			"hardcoded", "not-equal-to-hardcoded",
+			env.TelemetrySelfManagedURL, "not-equal-to-hardcoded",
 			true, "not-equal-to-hardcoded",
 		},
 		"custom URL, no key": {
