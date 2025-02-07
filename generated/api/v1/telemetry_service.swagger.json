@@ -38,6 +38,28 @@
         ]
       }
     },
+    "/v1/telemetry/config/reload": {
+      "post": {
+        "operationId": "TelemetryService_PostConfigReload",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "TelemetryService"
+        ]
+      }
+    },
     "/v1/telemetry/configure": {
       "get": {
         "operationId": "TelemetryService_GetTelemetryConfiguration",
@@ -158,6 +180,9 @@
           "type": "boolean"
         }
       }
+    },
+    "v1Empty": {
+      "type": "object"
     }
   }
 }

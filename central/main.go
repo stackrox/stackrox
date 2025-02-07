@@ -620,6 +620,7 @@ func startGRPCServer() {
 		if t := cds.GetTelemetry(); t == nil || t.GetEnabled() {
 			if cfg := centralclient.Enable(); cfg.Enabled() {
 				centralclient.RegisterCentralClient(&config, basicAuthProvider.ID())
+				centralclient.StartPeriodicReload(1 * time.Hour)
 				gs := cfg.Gatherer()
 				gs.AddGatherer(authDS.Gather)
 				gs.AddGatherer(authProviderTelemetry.Gather)
