@@ -1,0 +1,21 @@
+[ ca ]
+default_ca = test_ca
+
+[ test_ca ]
+new_certs_dir = ./newcerts
+database = ./ca-db.txt
+serial = ./ca-serial.txt
+private_key = ./ca-key.pem
+certificate = ./ca-cert.pem
+default_days = 3650
+default_md = sha256
+policy = ca_policy
+
+[ ca_policy ]
+countryName = optional
+stateOrProvinceName = optional
+localityName = optional
+organizationName = optional
+organizationalUnitName = optional
+commonName = optional
+emailAddress = optional
