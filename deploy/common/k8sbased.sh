@@ -786,11 +786,15 @@ function launch_sensor {
       )
 
       if [[ -n ${COLLECTOR_IMAGE_TAG:-} ]]; then
-        --set image.collector.tag="$COLLECTOR_IMAGE_TAG"
+	helm_args+=(
+          --set image.collector.tag="$COLLECTOR_IMAGE_TAG"
+	)
       fi
 
       if [[ -n ${COLLECTOR_IMAGE_REGISTRY:-} ]]; then
-        --set image.collector.registry="$COLLECTOR_IMAGE_REGISTRY"
+	helm_args+=(
+          --set image.collector.registry="$COLLECTOR_IMAGE_REGISTRY"
+	)
       fi
 
 
