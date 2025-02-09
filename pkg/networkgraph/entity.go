@@ -65,13 +65,17 @@ func (e Entity) ToProto() *storage.NetworkEntityInfo {
 
 // EntityFromProto converts a storage.NetworkEntityInfo proto to an Entity struct.
 func EntityFromProto(protoEnt *storage.NetworkEntityInfo) Entity {
-	if protoEnt.Type == storage.NetworkEntityInfo_EXTERNAL_SOURCE && protoEnt.GetExternalSource().GetDiscovered() {
-		return DiscoveredExternalEntity(net.IPNetworkFromCIDR(protoEnt.GetExternalSource().GetCidr()))
+	discovered := protoEnt.Type == storage.NetworkEntityInfo_EXTERNAL_SOURCE && protoEnt.GetExternalSource().GetDiscovered()
+	extAddr := net.IPNetwork{}
+	if discovered {
+		extAddr = net.IPNetworkFromCIDR(protoEnt.GetExternalSource().GetCidr())
 	}
+
 	return Entity{
-		Type:       protoEnt.GetType(),
-		ID:         protoEnt.GetId(),
-		Discovered: false,
+		Type:                  protoEnt.GetType(),
+		ID:                    protoEnt.GetId(),
+		Discovered:            discovered,
+		ExternalEntityAddress: extAddr,
 	}
 }
 
@@ -104,6 +108,21 @@ func InternalEntities() Entity {
 func DiscoveredExternalEntity(address net.IPNetwork) Entity {
 	id, err := externalsrcs.NewGlobalScopedScopedID(address.String())
 	utils.Should(errors.Wrapf(err, "generating id for network %s", address.String()))
+
+	return Entity{
+		Type:                  storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+		ID:                    id.String(),
+		ExternalEntityAddress: address,
+		Discovered:            true,
+	}
+}
+
+// DiscoveredExternalEntityClusterScoped returns an EXTERNAL_SOURCE entity refering to the provided
+// cluster, and network address.
+// It is marked as "Discovered" to constrast with Entities defined by the user or the default ones.
+func DiscoveredExternalEntityClusterScoped(clusterId string, address net.IPNetwork) Entity {
+	id, err := externalsrcs.NewClusterScopedID(clusterId, address.String())
+	utils.Should(errors.Wrapf(err, "generating id for cluster/network %s/%s", clusterId, address.String()))
 
 	return Entity{
 		Type:                  storage.NetworkEntityInfo_EXTERNAL_SOURCE,
