@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/protoutils"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/detector/metrics"
 	"github.com/stackrox/rox/sensor/common/image/cache"
@@ -122,6 +123,8 @@ func (c *cacheValue) scanWithRetries(ctx context.Context, svc v1.ImageServiceCli
 	eb.MaxElapsedTime = 0 // Never stop the backoff, leave that decision to the parent context.
 
 	eb.Reset()
+
+	defer metrics.SetScanCallDuration(time.Now())
 
 outer:
 	for {
@@ -312,7 +315,9 @@ func (e *enricher) runScan(ctx context.Context, req *scanImageRequest) imageChan
 			// scanAndSet will block, so it's ok to defer the call here.
 			_ = stopAfterFunc()
 		}()
+		metrics.AddScanAndSetCall(utils.IfThenElse[string](newValue == value, "new_value", "forced"))
 		value.scanAndSet(mergedCtx, e.imageSvc, req)
+		metrics.RemoveScanAndSetCall(utils.IfThenElse[string](newValue == value, "new_value", "forced"))
 	}
 	return imageChanResult{
 		image:        value.WaitAndGet(),
