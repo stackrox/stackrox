@@ -101,9 +101,6 @@ var (
 	// NetworkGraphExternalIPs enables displaying external IPs in the network graph
 	NetworkGraphExternalIPs = registerFeature("Display external ips in the UI", "ROX_NETWORK_GRAPH_EXTERNAL_IPS")
 
-	// ScannerV4RedHatLayers enables displaying vulnerabilities from Red Hat sources, only, for packages found in official Red Hat image layers.
-	ScannerV4RedHatLayers = registerFeature("Scanner V4 will only output vulnerabilities from Red Hat sources, only, for packages found in official Red Hat image layers", "ROX_SCANNER_V4_RED_HAT_LAYERS", enabled)
-
 	// Display RHSA/RHBA/RHEA advisory separately from associated CVE.
 	CVEAdvisorySeparation = registerFeature("Display RHSA/RHBA/RHEA advisory separately from associated CVE", "ROX_CVE_ADVISORY_SEPARATION")
 
@@ -159,4 +156,7 @@ var (
 	//
 	// This must be set in Scanner V4 Matcher to have any effect.
 	ScannerV4RedHatCSAF = registerFeature("Scanner V4 will enrich its results with Red Hat CSAF data", "ROX_SCANNER_V4_RED_HAT_CSAF", enabled)
+
+	// ScannerV4RedHatLayers enables displaying vulnerabilities from Red Hat sources, only, for packages found in official Red Hat image layers.
+	ScannerV4RedHatLayers = registerFeature("Scanner V4 will only output vulnerabilities from Red Hat sources, only, for packages found in official Red Hat image layers", "ROX_SCANNER_V4_RED_HAT_LAYERS")
 )
