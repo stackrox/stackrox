@@ -99,8 +99,8 @@ func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.Sett
 		detectorMetrics.DetectorProcessIndicatorBufferSize,
 		detectorMetrics.DetectorProcessIndicatorDroppedCount,
 	)
-	deploymentQueue := queue.NewQueue[*queue.DeploymentQueueItem](
-		detectorStopper,
+	// We only need the SimpleQueue since the deploymentQueue will not be paused/resumed
+	deploymentQueue := queue.NewSimpleQueue[*queue.DeploymentQueueItem](
 		"DeploymentQueue",
 		deploymentQueueSize,
 		detectorMetrics.DetectorDeploymentBufferSize,
@@ -177,7 +177,7 @@ type detectorImpl struct {
 
 	networkFlowsQueue *queue.Queue[*queue.FlowQueueItem]
 	indicatorsQueue   *queue.Queue[*queue.IndicatorQueueItem]
-	deploymentsQueue  *queue.Queue[*queue.DeploymentQueueItem]
+	deploymentsQueue  queue.SimpleQueue[*queue.DeploymentQueueItem]
 }
 
 func (d *detectorImpl) Start() error {
@@ -189,10 +189,6 @@ func (d *detectorImpl) Start() error {
 	go d.processDeployment()
 	d.networkFlowsQueue.Start()
 	d.indicatorsQueue.Start()
-	d.deploymentsQueue.Start()
-	// The deployment queue is not Pause nor Resume on Notify.
-	// We need to call Resume here to trigger the isRunning signal.
-	d.deploymentsQueue.Resume()
 	return nil
 }
 
@@ -505,10 +501,8 @@ func (d *detectorImpl) processDeployment() {
 		select {
 		case <-d.detectorStopper.Flow().StopRequested():
 			return
-		case item, ok := <-d.deploymentsQueue.Pull():
-			if !ok {
-				return
-			}
+		default:
+			item := d.deploymentsQueue.PullBlocking(d.detectorStopper.LowLevel().GetStopRequestSignal())
 			if item == nil {
 				continue
 			}
