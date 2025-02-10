@@ -325,12 +325,12 @@ $(certs-d)/%/cert.csr: $(certs-d)/%/key.pem
 .PRECIOUS: $(certs-d)/%/ca.pem
 $(certs-d)/%/ca.pem: $(certs-d)/ca/root.pem
 	@echo "+ $@"
-	$(SILENT)ln -fs $(abspath $<) $@
+	$(SILENT)cp $(abspath $<) $@
 
 .PRECIOUS: $(certs-d)/%/ca-key.pem
 $(certs-d)/%/ca-key.pem: $(certs-d)/ca/key.pem
 	@echo "+ $@"
-	$(SILENT)ln -fs $(abspath $<) $@
+	$(SILENT)cp $(abspath $<) $@
 
 # Generate a certificate.
 #
