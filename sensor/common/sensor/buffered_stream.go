@@ -3,8 +3,13 @@ package sensor
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/messagestream"
 	"github.com/stackrox/rox/sensor/common/metrics"
+)
+
+const (
+	loggingRateLimiter = "buffered-stream"
 )
 
 type bufferedStream struct {
@@ -19,6 +24,7 @@ func (s bufferedStream) Send(msg *central.MsgFromSensor) error {
 		metrics.ResponsesChannelAdd(msg)
 	default:
 		// The buffer is full, we drop the message and return
+		logging.GetRateLimitedLogger().WarnL(loggingRateLimiter, "Dropping message in the gRPC stream")
 		metrics.ResponsesChannelDrop(msg)
 		return nil
 	}
