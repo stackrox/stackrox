@@ -1,3 +1,4 @@
+{
   "definitions": [
     {
       "protopath": "active_component.proto",
@@ -6080,66 +6081,34 @@
               },
               {
                 "id": 9,
-<<<<<<< HEAD
-=======
-                "name": "cvss_metrics",
-                "type": "CVSSScore",
-                "is_repeated": true
-              },
-              {
-                "id": 10,
->>>>>>> 9cec9c9d85 (X-Smart-Squash: Squashed 7 commits:)
                 "name": "nvd_score_version",
                 "type": "CvssScoreVersion"
               },
               {
-<<<<<<< HEAD
                 "id": 10,
-=======
-                "id": 11,
->>>>>>> 9cec9c9d85 (X-Smart-Squash: Squashed 7 commits:)
                 "name": "first_image_occurrence",
                 "type": "google.protobuf.Timestamp"
               },
               {
-<<<<<<< HEAD
                 "id": 11,
-=======
-                "id": 12,
->>>>>>> 9cec9c9d85 (X-Smart-Squash: Squashed 7 commits:)
                 "name": "state",
                 "type": "VulnerabilityState"
               },
               {
-<<<<<<< HEAD
                 "id": 12,
-=======
-                "id": 13,
->>>>>>> 9cec9c9d85 (X-Smart-Squash: Squashed 7 commits:)
                 "name": "is_fixable",
                 "type": "bool"
               },
               {
-<<<<<<< HEAD
                 "id": 13,
-=======
-                "id": 14,
->>>>>>> 9cec9c9d85 (X-Smart-Squash: Squashed 7 commits:)
                 "name": "fixed_by",
                 "type": "string",
                 "oneof_parent": "has_fixed_by"
-<<<<<<< HEAD
               },
               {
-<<<<<<< HEAD
                 "id": 14,
-=======
-                "id": 15,
->>>>>>> 9cec9c9d85 (X-Smart-Squash: Squashed 7 commits:)
                 "name": "component_id",
                 "type": "string"
-=======
->>>>>>> 672686754e (X-Smart-Squash: Squashed 5 commits:)
               }
             ]
           },
@@ -8492,6 +8461,11 @@
                 "name": "executables",
                 "type": "Executable",
                 "is_repeated": true
+              },
+              {
+                "id": 13,
+                "name": "architecture",
+                "type": "string"
               }
             ],
             "messages": [
@@ -8960,15 +8934,6 @@
               },
               {
                 "id": 14,
-<<<<<<< HEAD
-=======
-                "name": "cves",
-                "type": "ImageCVEV2",
-                "is_repeated": true
-              },
-              {
-                "id": 15,
->>>>>>> 672686754e (X-Smart-Squash: Squashed 5 commits:)
                 "name": "architecture",
                 "type": "string"
               }
@@ -8976,9 +8941,6 @@
           }
         ],
         "imports": [
-          {
-            "path": "storage/cve.proto"
-          },
           {
             "path": "storage/image.proto"
           }
