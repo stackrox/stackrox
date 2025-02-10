@@ -40,6 +40,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - The node scanner never reached out to the Red Hat Container Catalog, so this variable was never used.
 - ROX-27253: Scanner V4 now reads [Red Hat's CSAF data](https://security.access.redhat.com/data/csaf/v2/advisories/) to alleviate inconsistent Red Hat advisory (RHSA/RHBA/RHEA) data.
   - Use of this data may be disabled by setting `ROX_SCANNER_V4_RED_HAT_CSAF` to `false` in Scanner V4 Matcher.
+  - ROX-27916 ROX-27985 ROX-27986: Replace links to docs in console UI
+    - from docs dot openshift dot com
+    - to docs dot redhat dot com
 
 ## [4.6.0]
 
