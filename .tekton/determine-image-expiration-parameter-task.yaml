@@ -33,7 +33,8 @@ spec:
       echo "Target branch: ${TARGET_BRANCH}"
 
       # TODO(ROX-28001): Update the expiration logic for -fast releases.
-      if [[ "${EVENT_TYPE}" == "push" && "${TARGET_BRANCH}" == refs/tags/* ]]; then
+      # if [[ "${EVENT_TYPE}" == "push" && "${TARGET_BRANCH}" == refs/tags/* ]]; then
+      if [[ "${EVENT_TYPE}" == "pull_request" && "${TARGET_BRANCH}" == "master" ]]; then
         IMAGE_EXPIRES_AFTER=""
       else
         IMAGE_EXPIRES_AFTER="$(params.DEFAULT_IMAGE_EXPIRES_AFTER)"
