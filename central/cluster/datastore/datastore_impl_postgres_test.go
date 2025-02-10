@@ -423,15 +423,26 @@ func (s *ClusterPostgresDataStoreTestSuite) TestLookupOrCreateClusterFromConfig(
 			expectedSensorCapabilities: []string{"capability3", "capability4"},
 		},
 		{
+			description: "test that sensor capabilities update correctly with partial overlap",
+			cluster:     someClusterWithManagerType(storage.ManagerType_MANAGER_TYPE_HELM_CHART, &someHelmConfig, []string{"capability1", "capability2"}),
+			sensorHello: sensorHelloWithHelmManagedConfigInit(&central.HelmManagedConfigInit{
+				ClusterConfig: &someHelmConfig,
+				ManagedBy:     storage.ManagerType_MANAGER_TYPE_HELM_CHART,
+			}, nil, []string{"capability3", "capability2"}),
+			shouldClusterBeUpserted:    true,
+			expectedSensorCapabilities: []string{"capability2", "capability3"},
+		},
+		{
 			description: "try creating a cluster from a config",
 			cluster:     nil,
 			sensorHello: sensorHelloWithHelmManagedConfigInit(&central.HelmManagedConfigInit{
 				ManagedBy:     storage.ManagerType_MANAGER_TYPE_HELM_CHART,
 				ClusterConfig: &someHelmConfig,
-			}, nil, nil),
-			shouldClusterBeUpserted: false,
-			expectedManagerType:     storage.ManagerType_MANAGER_TYPE_HELM_CHART,
-			expectedHelmConfig:      &someHelmConfig,
+			}, nil, []string{"capability2", "capability1", "capability3"}),
+			shouldClusterBeUpserted:    false,
+			expectedManagerType:        storage.ManagerType_MANAGER_TYPE_HELM_CHART,
+			expectedHelmConfig:         &someHelmConfig,
+			expectedSensorCapabilities: []string{"capability1", "capability2", "capability3"},
 		},
 	}
 
