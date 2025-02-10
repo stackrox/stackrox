@@ -183,14 +183,14 @@ var (
 	detectorBlockScanCalls = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "block_scan_calls",
+		Name:      "block_scan_calls_total",
 		Help:      "A counter that tracks the operations in blocking scan calls",
 	}, []string{"Operation", "Path"})
 
 	scanCallDuration = prometheus.NewHistogram(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "scan_call_duration",
+		Name:      "scan_call_duration_milliseconds",
 		Help:      "Time taken to call scan in milliseconds",
 		Buckets:   prometheus.ExponentialBuckets(4, 2, 16),
 	})
@@ -198,7 +198,7 @@ var (
 	scanAndSetCall = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "scan_and_set_call",
+		Name:      "scan_and_set_calls_total",
 		Help:      "A counter that tracks the operations in scan and set",
 	}, []string{"Operation", "Reason"})
 )
