@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 
 	imageIntegrationStore "github.com/stackrox/rox/central/imageintegration/datastore"
+	secretDS "github.com/stackrox/rox/central/secret/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/features"
@@ -26,7 +27,7 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(imageIntegrations imageIntegrationStore.DataStore) Service {
+func New(imageIntegrations imageIntegrationStore.DataStore, secretDatastore secretDS.DataStore) Service {
 	subjects := []mtls.Subject{mtls.ScannerSubject}
 	if features.ScannerV4.Enabled() {
 		subjects = append(subjects, mtls.ScannerV4IndexerSubject, mtls.ScannerV4MatcherSubject)
@@ -52,6 +53,7 @@ func New(imageIntegrations imageIntegrationStore.DataStore) Service {
 
 	return &serviceImpl{
 		imageIntegrations: imageIntegrations,
+		secretDatastore:   secretDatastore,
 		scannerConfigs:    tlsConfigs,
 		expiryFunc:        maybeGetExpiryFromScannerAt,
 	}
