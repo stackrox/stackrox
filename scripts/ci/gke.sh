@@ -139,7 +139,8 @@ create_cluster() {
     GCP_IMAGE_TYPE="${GCP_IMAGE_TYPE:-UBUNTU_CONTAINERD}"
     POD_SECURITY_POLICIES="${POD_SECURITY_POLICIES:-false}"
     GKE_RELEASE_CHANNEL="${GKE_RELEASE_CHANNEL:-stable}"
-    MACHINE_TYPE="${MACHINE_TYPE:-c4a-standard-4}"
+    # ARM options on GKE: (Google Axion with networked storage: c4a-standard-4 with hyperdisk-balanced) / (AMD Ampere: t2a-standard-4 with pd-ssd)
+    MACHINE_TYPE="${MACHINE_TYPE:-t2a-standard-4}"
     DISK_SIZE_GB=${DISK_SIZE_GB:-40}
 
     echo "Creating ${NUM_NODES} node cluster with image type \"${GCP_IMAGE_TYPE}\" and ${DISK_SIZE_GB}GB disks."
@@ -168,7 +169,7 @@ create_cluster() {
         timeout 830 gcloud beta container clusters create \
             --machine-type "${MACHINE_TYPE}" \
             --num-nodes "${NUM_NODES}" \
-            --disk-type=hyperdisk-balanced \
+            --disk-type=pd-ssd \
             --disk-size="${DISK_SIZE_GB}GB" \
             --create-subnetwork range=/28 \
             --cluster-ipv4-cidr=/20 \
