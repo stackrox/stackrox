@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
@@ -66,10 +65,10 @@ func (p *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 }
 
 func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSensor, injector common.MessageInjector) error {
-	if !env.NodeIndexEnabled.BooleanSetting() || !features.ScannerV4.Enabled() {
+	if !features.NodeIndexEnabled.Enabled() || !features.ScannerV4.Enabled() {
 		// Node Indexing only works correctly when both, itself and Scanner v4 are enabled
 		log.Debugf("Skipping node index message (Node Indexing Enabled: %t, Scanner V4 Enabled: %t",
-			env.NodeIndexEnabled.BooleanSetting(), features.ScannerV4.Enabled())
+			features.NodeIndexEnabled.Enabled(), features.ScannerV4.Enabled())
 		// ACK the message to prevent frequent retries.
 		// If support for NodeIndex is disabled on Central or Scanner V4 is missing, but NodeIndex msg arrives to Central,
 		// then we must acknowledge the reception to prevent the compliance container resending the message, as

@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
@@ -129,7 +128,7 @@ func shouldDiscardMsg(node *storage.Node) bool {
 	}
 	// Discard this v2 message if NodeScanning v4 and v2 are running in parallel on the same cluster.
 	// v4 scans are prioritized in that case.
-	if features.ScannerV4.Enabled() && env.NodeIndexEnabled.BooleanSetting() {
+	if features.ScannerV4.Enabled() && features.NodeIndexEnabled.Enabled() {
 		return true
 	}
 	// If either ScannerV4 or the feature flag are disabled, v2 scans are processed and persisted normally,
