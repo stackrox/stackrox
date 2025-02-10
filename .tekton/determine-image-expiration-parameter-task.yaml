@@ -1,0 +1,37 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: determine-image-expiration-parameter
+spec:
+  description: Determines the image expiration parameter, or set empty for release images.
+  params:
+  - name: DEFAULT_IMAGE_EXPIRES_AFTER
+    description: Default image expiration.
+    type: string
+  results:
+  - name: IMAGE_EXPIRES_AFTER
+    description: Image expiration as a duration, e.g. `13w`.
+  steps:
+  - name: determine-image-expiration-parameter
+    image: registry.access.redhat.com/ubi9:latest@sha256:53d6c19d664f4f418ce5c823d3a33dbb562a2550ea249cf07ef10aa063ace38f
+    env:
+    - name: EVENT_TYPE
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.labels['pipelinesascode.tekton.dev/event-type']
+    - name: TARGET_BRANCH
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.annotations['build.appstudio.redhat.com/target_branch']
+    script: |
+      #!/usr/bin/env bash
+
+      set -euo pipefail
+
+      echo "Default image expiration: $(params.DEFAULT_IMAGE_EXPIRES_AFTER)"
+      echo "Event type: ${EVENT_TYPE}"
+      echo "Target branch: ${TARGET_BRANCH}"
+
+      IMAGE_EXPIRES_AFTER="$(params.DEFAULT_IMAGE_EXPIRES_AFTER)"
+
+      echo -n "${IMAGE_EXPIRES_AFTER}" | tee "$(results.IMAGE_EXPIRES_AFTER.path)"
