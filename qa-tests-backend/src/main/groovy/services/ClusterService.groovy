@@ -8,6 +8,7 @@ import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.storage.ClusterOuterClass
 import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
 import io.stackrox.proto.storage.ClusterOuterClass.Cluster
+import io.stackrox.proto.storage.ClusterOuterClass.ClusterMetadata.Type
 import io.stackrox.proto.storage.ClusterOuterClass.DynamicClusterConfig
 
 @CompileStatic
@@ -100,7 +101,7 @@ class ClusterService extends BaseService {
     static Boolean isEKS() {
         Boolean isEKS = false
         try {
-            isEKS = clusters.every {
+            isEKS = ClusterService.getClusters().every {
                 Cluster cluster ->
                     cluster.getStatus().getProviderMetadata().hasAws() &&
                             cluster.getStatus().getOrchestratorMetadata().getVersion().contains("eks")
@@ -111,11 +112,23 @@ class ClusterService extends BaseService {
         isEKS
     }
 
+    static Boolean isAzure() {
+        Boolean isAzure = false
+        try {
+            isAzure = ClusterService.getClusters().every {
+                Cluster cluster -> cluster.getStatus().getProviderMetadata().hasAzure()
+            }
+        } catch (Exception e) {
+            log.error("Error getting cluster info", e)
+        }
+        isAzure
+    }
+
     static Boolean isAKS() {
         Boolean isAKS = false
         try {
-            isAKS = clusters.every {
-                Cluster cluster -> cluster.getStatus().getProviderMetadata().hasAzure()
+            isAKS = ClusterService.getClusters().every {
+                Cluster cluster -> cluster.getStatus().getProviderMetadata().getCluster().getType() == Type.AKS
             }
         } catch (Exception e) {
             log.error("Error getting cluster info", e)

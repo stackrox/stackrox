@@ -692,6 +692,7 @@ class IntegrationsTest extends BaseSpecification {
         Assume.assumeTrue(imageIntegration.isTestable())
         Assume.assumeTrue(!testAspect.contains("IAM") || ClusterService.isEKS())
         Assume.assumeTrue(!testAspect.contains("workload identity") || Env.HAS_WORKLOAD_IDENTITIES)
+        // Does not run on ARO because ARO does not support workload identity federation today.
         Assume.assumeTrue(!testAspect.contains("AKS managed identity") || ClusterService.isAKS())
 
         when:

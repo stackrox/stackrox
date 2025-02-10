@@ -317,7 +317,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                                                         .build()).build()
                                 ).build()
                         ).build()   | DEPLOYMENTNGINX | { containerRuntimeVersion.contains("docker") &&
-                                                                       !ClusterService.isAKS() } /* ROX-6994 */ | false
+                            !ClusterService.isAzure() } /* ROX-6994 */ | false
 
         "Dockerfile Line"                     |
                 Policy.newBuilder()
@@ -337,7 +337,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                                                         .build()).build()
                                 ).build()
                         ).build() | DEPLOYMENTNGINX | { containerRuntimeVersion.contains("docker") &&
-                                                                       !ClusterService.isAKS() } /* ROX-6994 */ | false
+                            !ClusterService.isAzure() } /* ROX-6994 */ | false
 
 //        TODO(ROX-3102)
 //        "Image is NOT Scanned"     |

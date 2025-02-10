@@ -670,7 +670,7 @@ class NetworkFlowTest extends BaseSpecification {
         // ROX-7153 - EKS cannot NetworkPolicy (RS-178)
         Assume.assumeFalse(ClusterService.isEKS())
         // ROX-7153 - AKS cannot tolerate NetworkPolicy (RS-179)
-        Assume.assumeFalse(ClusterService.isAKS())
+        Assume.assumeFalse(ClusterService.isAzure())
 
         given:
         "Two deployments, A and B, where B communicates to A"
