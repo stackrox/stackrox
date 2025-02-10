@@ -70,3 +70,5 @@ konflux-build:
   - any-glob-to-any-file:
     - '**/konflux.Dockerfile'
     - '**/konflux.*.Dockerfile'
+    - .tekton/**/*
+    - .konflux/**/*
