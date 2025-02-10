@@ -58,6 +58,7 @@ import { useNodeCveEntityCounts } from './useNodeCveEntityCounts';
 import ExternalLink from '../../../../Components/PatternFly/IconText/ExternalLink';
 import { getVersionedDocs } from '../../../../utils/versioning';
 import useMetadata from '../../../../hooks/useMetadata';
+import useFeatureFlags from '../../../../hooks/useFeatureFlags';
 
 const searchFilterConfig = [
     nodeSearchFilterConfig,
@@ -70,6 +71,9 @@ function NodeCvesOverviewPage() {
     const apolloClient = useApolloClient();
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const scannerV4NodeScanResultsPossible =
+        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_NODE_INDEX_ENABLED');
 
     const [activeEntityTabKey] = useURLStringUnion('entityTab', nodeEntityTabValues);
     const { searchFilter, setSearchFilter } = useURLSearch();
@@ -182,28 +186,30 @@ function NodeCvesOverviewPage() {
                     </FlexItem>
                 </Flex>
             </PageSection>
-            <PageSection variant="light" className="pf-v5-u-pt-0">
-                <Alert
-                    isInline
-                    variant="info"
-                    title="Results may include Node CVEs obtained from Scanner V4"
-                    component="p"
-                >
-                    <ExternalLink>
-                        <a
-                            href={getVersionedDocs(
-                                version,
-                                'operating/manage-vulnerabilities/scan-rhcos-node-host#understanding-node-cves-scanner-v4_scan-rhcos-node-host'
-                            )}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            Read more about the differences between the node scanning results
-                            obtained with the StackRox Scanner and Scanner V4.
-                        </a>
-                    </ExternalLink>
-                </Alert>
-            </PageSection>
+            {scannerV4NodeScanResultsPossible && (
+                <PageSection variant="light" className="pf-v5-u-pt-0">
+                    <Alert
+                        isInline
+                        variant="info"
+                        title="Results may include Node CVEs obtained from Scanner V4"
+                        component="p"
+                    >
+                        <ExternalLink>
+                            <a
+                                href={getVersionedDocs(
+                                    version,
+                                    'operating/manage-vulnerabilities/scan-rhcos-node-host#understanding-node-cves-scanner-v4_scan-rhcos-node-host'
+                                )}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Read more about the differences between the node scanning results
+                                obtained with the StackRox Scanner and Scanner V4.
+                            </a>
+                        </ExternalLink>
+                    </Alert>
+                </PageSection>
+            )}
             <PageSection padding={{ default: 'noPadding' }}>
                 <PageSection isCenterAligned>
                     <Card>
