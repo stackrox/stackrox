@@ -220,7 +220,7 @@ function AuthProviders(): ReactElement {
                                         <a
                                             href={getVersionedDocs(
                                                 version,
-                                                'operating/manage-user-access/configure-short-lived-access.html#configure-short-lived-access'
+                                                'operating/managing-user-access#configure-short-lived-access'
                                             )}
                                             target="_blank"
                                             rel="noopener noreferrer"
