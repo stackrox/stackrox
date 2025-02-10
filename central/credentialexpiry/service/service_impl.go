@@ -15,27 +15,26 @@ import (
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
 	secretDS "github.com/stackrox/rox/central/secret/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/pods"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/scanners/scannerv4"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/tlsutils"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 )
 
-const centralDBSecretName = "central-db-tls"
+const centralDBTLSName = "central-db-tls"
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
@@ -96,39 +95,40 @@ func (s *serviceImpl) getCentralDBCertExpiry(ctx context.Context) (*v1.GetCertEx
 
 	// We assume that central-db is installed in the same namespace as central when it is not an external db
 	centralDBNamespcae := pods.GetPodNamespace()
+	query := search.NewQueryBuilder().
+		AddExactMatches(search.Namespace, centralDBNamespcae).
+		AddExactMatches(search.SecretName, centralDBTLSName).
+		ProtoQuery()
 
-	config, err := k8sutil.GetK8sInClusterConfig()
+	secrets, err := s.secretDatastore.SearchRawSecrets(ctx, query)
 	if err != nil {
-		return nil, errors.Wrap(err, "Error obtaining in-cluster Kubernetes config")
+		return nil, errors.Wrap(err, "Error finding secret containing central DB certificate")
 	}
-	k8sClient, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		return nil, errors.Wrap(err, "Error creating Kubernetes clientset")
+	if len(secrets) == 0 {
+		return nil, errors.Wrap(errox.NotFound, "Secret containing central DB certificate not found")
 	}
-	secret, err := k8sClient.CoreV1().Secrets(centralDBNamespcae).Get(ctx, centralDBSecretName, metav1.GetOptions{})
-	if err != nil {
-		return nil, errors.Wrap(err, "Error getting central-db-tls secret from k8s client")
-	}
-
-	secretData := secret.Data
-	if secretData == nil {
-		return nil, errors.Wrap(errox.NotFound, "Secret data not found for central-db-tls secret")
-	}
-	cert, ok := secretData[mtls.ServiceCertFileName]
-	if !ok {
-		return nil, errors.Wrap(errox.NotFound, "certificate file not found in central-db-tls secret")
+	if len(secrets) > 1 {
+		return nil, errors.Wrapf(errox.InvariantViolation,
+			"Multiple secrets with same name in namespace '%s'", centralDBNamespcae)
 	}
 
-	parsedCert, err := x509.ParseCertificate(cert)
-	if err != nil {
-		return nil, errors.New("failed to parse central DB cert")
+	centralDBSecretFiles := secrets[0].GetFiles()
+	if len(centralDBSecretFiles) == 0 {
+		return nil, errors.Wrap(errox.NotFound, "Central DB secret does not contain any certificates")
 	}
 
-	expiry, err := protocompat.ConvertTimeToTimestampOrError(parsedCert.NotAfter)
-	if err != nil {
-		return nil, errors.Errorf("failed to convert timestamp: %v", err)
+	var centralDBCert *storage.Cert
+	for _, file := range centralDBSecretFiles {
+		if file.GetType() == storage.SecretType_PUBLIC_CERTIFICATE && file.GetName() == mtls.ServiceCertFileName {
+			centralDBCert = file.GetCert()
+		}
 	}
-	return &v1.GetCertExpiry_Response{Expiry: expiry}, nil
+
+	if centralDBCert == nil {
+		return nil, errors.Wrapf(errox.NotFound,
+			"File '%s' containing central DB public certificate not found", mtls.ServiceCertFileName)
+	}
+	return &v1.GetCertExpiry_Response{Expiry: centralDBCert.GetEndDate()}, nil
 }
 
 // ensureTLSAndReturnAddr returns an address from endpoint that can be passed to tls.Dial,
