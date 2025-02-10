@@ -18,7 +18,6 @@ func (s *serviceImpl) centralDBHandler(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteErrorf(w, http.StatusMethodNotAllowed, "invalid method %s, only POST allowed", r.Method)
 		return
 	}
-	
 	if pgconfig.IsExternalDatabase() {
 		httputil.WriteGRPCStyleError(w, codes.FailedPrecondition,
 			errors.New("Cannot use this service to generate central DB certificate when using external database"))
