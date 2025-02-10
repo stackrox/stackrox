@@ -532,6 +532,8 @@ replace github.com/nxadm/tail => github.com/stackrox/tail v1.4.9-0.2024080613095
 // @stackrox/draco
 // github.com/stackrox/helm-operator is a modified fork of github.com/operator-framework/helm-operator-plugins that
 // we currently depend on.
+// It includes multiple small bug fixes which we faced in StackRox. We use this fork
+// primarily to iterate faster.
 replace github.com/operator-framework/helm-operator-plugins => github.com/stackrox/helm-operator v0.0.12-0.20240905075134-4f1b67d62ed9
 
 // @stackrox/merlin
