@@ -1,0 +1,8 @@
+[submodule "scannerv2"]
+	path = scannerv2
+	url = https://github.com/stackrox/scanner
+	branch = release-2.35
+[submodule "collector"]
+	path = collector
+	url = https://github.com/stackrox/collector
+	branch = release-3.20
