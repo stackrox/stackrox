@@ -81,4 +81,8 @@ var (
 
 	// SensorComplianceChannelBufferSize defines how many node scanning ACK messages may be buffered before sending them to Compliance
 	SensorComplianceChannelBufferSize = RegisterIntegerSetting("ROX_SENSOR_COMPLIANCE_CHANNEL_BUFFER_SIZE", 2)
+
+	// ResponsesChannelBufferSize defines how many messages to central are we buffering before dropping messages
+	// Setting this variable to zero will disable this feature.
+	ResponsesChannelBufferSize = RegisterIntegerSetting("ROX_RESPONSES_CHANNEL_BUFFER_SIZE", 0)
 )
