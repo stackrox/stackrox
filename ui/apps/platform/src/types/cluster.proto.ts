@@ -132,6 +132,9 @@ export type Cluster = {
     // For internal use only.
     auditLogState: Record<string, AuditLogFileState>;
 
+    // used to check auto refresh cert "SecuredClusterCertificatesRefresh"
+    sensorCapabilities: string[];
+
     initBundleId: string;
     managedBy: ClusterManagerType;
 };
