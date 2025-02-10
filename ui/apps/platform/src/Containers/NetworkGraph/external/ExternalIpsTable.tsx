@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React from 'react';
 import {
     Button,
     Divider,
@@ -14,26 +14,25 @@ import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import useMetadata from 'hooks/useMetadata';
-import useRestQuery from 'hooks/useRestQuery';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import { UseUrlSearchReturn } from 'hooks/useURLSearch';
-import { getExternalIpsFlowsMetadata } from 'services/NetworkService';
-import { getTableUIState } from 'utils/getTableUIState';
+import { TableUIState } from 'utils/getTableUIState';
 import { getVersionedDocs } from 'utils/versioning';
 import {
     ExternalNetworkFlowsMetadataResponse,
     ExternalSourceNetworkEntityInfo,
+    ExternalNetworkFlowsMetadata,
 } from 'types/networkFlow.proto';
 import { SearchFilter } from 'types/search';
 
 import IPMatchFilter from '../common/IPMatchFilter';
 import { EXTERNAL_SOURCE_ADDRESS_QUERY } from '../NetworkGraph.constants';
-import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 
 export type ExternalIpsTableProps = {
     scopeHierarchy: NetworkScopeHierarchy;
     onExternalIPSelect: (externalIP: string) => void;
-    advancedFilters?: SearchFilter;
+    tableState: TableUIState<ExternalNetworkFlowsMetadata>;
+    totalEntities: number;
     urlSearchFiltering: UseUrlSearchReturn;
     urlPagination: UseURLPaginationResult;
 };
@@ -41,44 +40,20 @@ export type ExternalIpsTableProps = {
 function ExternalIpsTable({
     scopeHierarchy,
     onExternalIPSelect,
-    advancedFilters,
+    tableState,
+    totalEntities,
     urlSearchFiltering,
     urlPagination,
 }: ExternalIpsTableProps) {
     const { version } = useMetadata();
     const { page, perPage, setPage, setPerPage } = urlPagination;
     const { searchFilter, setSearchFilter } = urlSearchFiltering;
-    const clusterId = scopeHierarchy.cluster.id;
-    const { namespaces, deployments } = scopeHierarchy;
-
-    const fetchExternalIpsFlowsMetadata =
-        useCallback((): Promise<ExternalNetworkFlowsMetadataResponse> => {
-            return getExternalIpsFlowsMetadata(clusterId, namespaces, deployments, {
-                sortOption: {},
-                page,
-                perPage,
-                advancedFilters: searchFilter,
-            });
-        }, [page, perPage, clusterId, deployments, namespaces, searchFilter]);
-
-    const {
-        data: externalIpsFlowsMetadata,
-        isLoading,
-        error,
-    } = useRestQuery(fetchExternalIpsFlowsMetadata);
-
-    const tableState = getTableUIState({
-        isLoading,
-        data: externalIpsFlowsMetadata?.entities,
-        error,
-        searchFilter,
-    });
 
     return (
         <>
             <Toolbar className="pf-v5-u-pb-md pf-v5-u-pt-0">
                 <ToolbarContent className="pf-v5-u-px-0">
-                    <ToolbarItem className="pf-v5-u-w-100">
+                    <ToolbarItem className="pf-v5-u-w-100 pf-v5-u-mr-0">
                         <IPMatchFilter
                             searchFilter={searchFilter}
                             setSearchFilter={setSearchFilter}
@@ -103,7 +78,7 @@ function ExternalIpsTable({
                 <ToolbarContent>
                     <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
                         <Pagination
-                            itemCount={externalIpsFlowsMetadata?.totalEntities ?? 0}
+                            itemCount={totalEntities}
                             page={page}
                             perPage={perPage}
                             onSetPage={(_, newPage) => setPage(newPage)}

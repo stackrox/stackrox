@@ -17,7 +17,7 @@ import { ExternalSourceNetworkEntityInfo } from 'types/networkFlow.proto';
 
 import { ExternalEntitiesIcon } from '../common/NetworkGraphIcons';
 import ExternalFlowsTable from './ExternalFlowsTable';
-import ExternalIpsTable from './ExternalIpsTable';
+import ExternalIpsContainer from './ExternalIpsContainer';
 import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 import { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
 import { getNodeById } from '../utils/networkGraphUtils';
@@ -111,7 +111,7 @@ function ExternalEntitiesSideBar({
             <StackItem isFilled style={{ overflow: 'auto' }}>
                 <Stack className="pf-v5-u-p-md">
                     {selectedView === 'external-ips' ? (
-                        <ExternalIpsTable
+                        <ExternalIpsContainer
                             scopeHierarchy={scopeHierarchy}
                             onExternalIPSelect={onExternalIPSelect}
                             urlPagination={urlPagination}

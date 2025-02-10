@@ -15,6 +15,7 @@ export type DeploymentFlowsView = 'external-flows' | 'internal-flows';
 
 type DeploymentFlowsProps = {
     deploymentId: string;
+    deploymentName: string;
     nodes: CustomNodeModel[];
     edgeState: EdgeState;
     onNodeSelect: (id: string) => void;
@@ -30,6 +31,7 @@ type DeploymentFlowsProps = {
 
 function DeploymentFlows({
     deploymentId,
+    deploymentName,
     nodes,
     edgeState,
     onNodeSelect,
@@ -98,7 +100,7 @@ function DeploymentFlows({
                             />
                         ) : (
                             <ExternalFlows
-                                deploymentId={deploymentId}
+                                deploymentName={deploymentName}
                                 scopeHierarchy={scopeHierarchy}
                                 onExternalIPSelect={onExternalIPSelect}
                                 urlPagination={urlPagination}

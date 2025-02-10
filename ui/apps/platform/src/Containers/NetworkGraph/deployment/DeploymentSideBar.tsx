@@ -233,6 +233,7 @@ function DeploymentSideBar({
                                 <DeploymentFlows
                                     nodes={nodes}
                                     deploymentId={deploymentId}
+                                    deploymentName={deployment.name}
                                     edgeState={edgeState}
                                     onNodeSelect={onNodeSelect}
                                     onExternalIPSelect={onExternalIPSelect}
