@@ -4,10 +4,7 @@ import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import useRestQuery from 'hooks/useRestQuery';
 import { UseUrlSearchReturn } from 'hooks/useURLSearch';
 import { getExternalIpsFlowsMetadata } from 'services/NetworkService';
-import {
-    ExternalNetworkFlowsMetadataResponse,
-    ExternalSourceNetworkEntityInfo,
-} from 'types/networkFlow.proto';
+import { ExternalNetworkFlowsMetadataResponse } from 'types/networkFlow.proto';
 import { getTableUIState } from 'utils/getTableUIState';
 
 import ExternalIpsTable from './ExternalIpsTable';
@@ -15,14 +12,14 @@ import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 
 type ExternalIpsContainerProps = {
     scopeHierarchy: NetworkScopeHierarchy;
-    setSelectedEntity: (entity: ExternalSourceNetworkEntityInfo) => void;
+    onExternalIPSelect: (externalIP: string) => void;
     urlSearchFiltering: UseUrlSearchReturn;
     urlPagination: UseURLPaginationResult;
 };
 
 function ExternalIpsContainer({
     scopeHierarchy,
-    setSelectedEntity,
+    onExternalIPSelect,
     urlSearchFiltering,
     urlPagination,
 }: ExternalIpsContainerProps) {
@@ -55,7 +52,7 @@ function ExternalIpsContainer({
 
     return (
         <ExternalIpsTable
-            setSelectedEntity={setSelectedEntity}
+            onExternalIPSelect={onExternalIPSelect}
             tableState={tableState}
             totalEntities={externalIpsFlowsMetadata?.totalEntities ?? 0}
             urlPagination={urlPagination}

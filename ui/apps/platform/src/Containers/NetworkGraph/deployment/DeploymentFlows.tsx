@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Divider, Stack, StackItem, ToggleGroup, ToggleGroupItem } from '@patternfly/react-core';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
@@ -47,6 +47,14 @@ function DeploymentFlows({
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isExternalIpsEnabled = isFeatureFlagEnabled('ROX_EXTERNAL_IPS');
     const [selectedView, setSelectedView] = useState<DeploymentFlowsView>('internal-flows');
+
+    const { setPage } = urlPagination;
+    const { setSearchFilter } = urlSearchFiltering;
+
+    useEffect(() => {
+        setPage(1);
+        setSearchFilter({});
+    }, [selectedView, setPage, setSearchFilter]);
 
     if (!isExternalIpsEnabled) {
         return (

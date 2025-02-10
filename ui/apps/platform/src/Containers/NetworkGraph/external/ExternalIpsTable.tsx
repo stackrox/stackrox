@@ -18,18 +18,12 @@ import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import { UseUrlSearchReturn } from 'hooks/useURLSearch';
 import { TableUIState } from 'utils/getTableUIState';
 import { getVersionedDocs } from 'utils/versioning';
-import {
-    ExternalNetworkFlowsMetadataResponse,
-    ExternalSourceNetworkEntityInfo,
-    ExternalNetworkFlowsMetadata,
-} from 'types/networkFlow.proto';
-import { SearchFilter } from 'types/search';
+import { ExternalNetworkFlowsMetadata } from 'types/networkFlow.proto';
 
 import IPMatchFilter from '../common/IPMatchFilter';
 import { EXTERNAL_SOURCE_ADDRESS_QUERY } from '../NetworkGraph.constants';
 
 export type ExternalIpsTableProps = {
-    scopeHierarchy: NetworkScopeHierarchy;
     onExternalIPSelect: (externalIP: string) => void;
     tableState: TableUIState<ExternalNetworkFlowsMetadata>;
     totalEntities: number;
@@ -38,7 +32,6 @@ export type ExternalIpsTableProps = {
 };
 
 function ExternalIpsTable({
-    scopeHierarchy,
     onExternalIPSelect,
     tableState,
     totalEntities,
@@ -125,6 +118,7 @@ function ExternalIpsTable({
                             title: 'No external ips found',
                             onClearFilters: () => {
                                 setSearchFilter({});
+                                setPage(1);
                             },
                         }}
                         renderer={({ data }) => (

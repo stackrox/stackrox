@@ -36,10 +36,10 @@ function IPMatchFilter({ searchFilter, setSearchFilter }: IPMatchFilterProps): R
 
     function handleClear() {
         setExternalIP('');
-        setSearchFilter({});
     }
 
     function handleSearch(ipAddress: string) {
+        // this will only work if ipv4 is reported, will need to check if ipv4 or ipv6 and add /128 for ipv6
         const searchValue = isValidCidrBlock(`${ipAddress}/32`) ? `${ipAddress}/32` : ipAddress;
 
         onURLSearch(searchFilter, setSearchFilter, {

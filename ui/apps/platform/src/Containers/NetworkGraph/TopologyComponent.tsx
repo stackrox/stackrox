@@ -97,7 +97,7 @@ const TopologyComponent = ({
     const urlPagination = useURLPagination(DEFAULT_NETWORK_GRAPH_PAGE_SIZE);
     const { setPage, setPerPage } = urlPagination;
     const urlSearchFiltering = useURLSearch('sidePanel');
-    const { setSearchFilter } = urlSearchFiltering;
+    const { searchFilter, setSearchFilter } = urlSearchFiltering;
 
     const firstRenderRef = useRef(true);
     const history = useHistory();
@@ -193,6 +193,10 @@ const TopologyComponent = ({
         setPerPage(DEFAULT_NETWORK_GRAPH_PAGE_SIZE);
         setSearchFilter({});
     }, [setPage, setPerPage, setSearchFilter, selectedNode]);
+
+    useEffect(() => {
+        setPage(1);
+    }, [setPage, setPerPage, searchFilter]);
 
     useEffect(() => {
         // we don't want to reset view on init

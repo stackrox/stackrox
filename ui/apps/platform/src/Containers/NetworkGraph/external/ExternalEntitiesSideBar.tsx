@@ -1,4 +1,4 @@
-import React, { ReactElement, useState } from 'react';
+import React, { ReactElement, useEffect, useState } from 'react';
 import {
     Divider,
     Flex,
@@ -13,7 +13,6 @@ import {
 
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import { UseUrlSearchReturn } from 'hooks/useURLSearch';
-import { ExternalSourceNetworkEntityInfo } from 'types/networkFlow.proto';
 
 import { ExternalEntitiesIcon } from '../common/NetworkGraphIcons';
 import ExternalFlowsTable from './ExternalFlowsTable';
@@ -61,6 +60,13 @@ function ExternalEntitiesSideBar({
     const [selectedView, setSelectedView] = useState<ExternalEntitiesView>('external-ips');
 
     const entityNode = getNodeById(nodes, id);
+    const { setPage } = urlPagination;
+    const { setSearchFilter } = urlSearchFiltering;
+
+    useEffect(() => {
+        setPage(1);
+        setSearchFilter({});
+    }, [selectedView, setPage, setSearchFilter]);
 
     if (selectedExternalIP) {
         return (
@@ -71,6 +77,8 @@ function ExternalEntitiesSideBar({
                 scopeHierarchy={scopeHierarchy}
                 onNodeSelect={onNodeSelect}
                 onExternalIPSelect={onExternalIPSelect}
+                urlPagination={urlPagination}
+                urlSearchFiltering={urlSearchFiltering}
             />
         );
     }
