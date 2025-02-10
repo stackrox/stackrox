@@ -15,6 +15,7 @@ type DeploymentFlowsProps = {
     nodes: CustomNodeModel[];
     edgeState: EdgeState;
     onNodeSelect: (id: string) => void;
+    onExternalIPSelect: (externalIP: string) => void;
     isLoadingNetworkFlows: boolean;
     networkFlowsError: string;
     networkFlows: Flow[];
@@ -27,6 +28,7 @@ function DeploymentFlows({
     nodes,
     edgeState,
     onNodeSelect,
+    onExternalIPSelect,
     isLoadingNetworkFlows,
     networkFlowsError,
     networkFlows,
@@ -91,6 +93,7 @@ function DeploymentFlows({
                             <ExternalFlows
                                 deploymentId={deploymentId}
                                 scopeHierarchy={scopeHierarchy}
+                                onExternalIPSelect={onExternalIPSelect}
                             />
                         )}
                     </Stack>

@@ -1,10 +1,10 @@
 import uniq from 'lodash/uniq';
 
 import {
-    DeploymentDetails,
     ExternalNetworkFlowProperties,
     L4Protocol,
     NetworkEntityInfoType as EntityType,
+    DeploymentNetworkEntityInfo,
 } from 'types/networkFlow.proto';
 import { GroupedDiffFlows } from 'types/networkPolicyService';
 import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
@@ -340,20 +340,20 @@ export function getDeploymentInfoForExternalEntity(
     networkFlowProperties: ExternalNetworkFlowProperties
 ): {
     direction: 'Ingress' | 'Egress';
-    deployment: DeploymentDetails;
+    entity: DeploymentNetworkEntityInfo;
 } | null {
     const { srcEntity, dstEntity } = networkFlowProperties;
 
     if (srcEntity.type === 'DEPLOYMENT') {
         return {
             direction: 'Ingress',
-            deployment: srcEntity.deployment,
+            entity: srcEntity,
         };
     }
     if (dstEntity.type === 'DEPLOYMENT') {
         return {
             direction: 'Egress',
-            deployment: dstEntity.deployment,
+            entity: dstEntity,
         };
     }
 

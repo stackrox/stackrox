@@ -10,12 +10,13 @@ type ExternalFlowsFilter = {
     externalIP: string;
 };
 
-type InternalFlowsProps = {
+type ExternalFlowsProps = {
     deploymentId: string;
     scopeHierarchy: NetworkScopeHierarchy;
+    onExternalIPSelect: (externalIP: string) => void;
 };
 
-function ExternalFlows({ deploymentId, scopeHierarchy }: InternalFlowsProps) {
+function ExternalFlows({ deploymentId, scopeHierarchy, onExternalIPSelect }: ExternalFlowsProps) {
     const [appliedFilter, setAppliedFilter] = useState<ExternalFlowsFilter>({
         matchType: 'Equals',
         externalIP: '',
@@ -47,9 +48,7 @@ function ExternalFlows({ deploymentId, scopeHierarchy }: InternalFlowsProps) {
                 <ExternalIpsTable
                     scopeHierarchy={scopeHierarchy}
                     advancedFilters={advancedFilters}
-                    setSelectedEntity={() => {
-                        // TODO: Set up routing so this will take you to the external ip detail view
-                    }}
+                    onExternalIPSelect={onExternalIPSelect}
                 />
             </StackItem>
         </Stack>
