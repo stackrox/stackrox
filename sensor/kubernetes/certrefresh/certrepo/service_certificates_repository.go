@@ -187,7 +187,7 @@ func (r *ServiceCertificatesRepoSecrets) patchServiceCertificate(ctx context.Con
 		Value: r.secretDataForCertificate(secretSpec, caPem, cert),
 	}, {Op: "replace",
 		Path:  "/metadata/labels",
-		Value: map[string]string{"rhacs.redhat.com/tls": "true"},
+		Value: utils.GetTLSSecretLabels(),
 	}}
 	patchBytes, marshallingErr := json.Marshal(patch)
 	if marshallingErr != nil {
