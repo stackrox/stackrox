@@ -39,10 +39,10 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_IMAGE_VULNERABILITIES_V2, "imagecvev2", (*storage.ImageCVEV2)(nil)))
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_IMAGE_VULNERABILITIES, "imagecvev2", (*storage.ImageCVEV2)(nil)))
 		schema.SetSearchScope([]v1.SearchCategory{
-			v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
-			v1.SearchCategory_IMAGE_COMPONENTS_V2,
+			v1.SearchCategory_IMAGE_VULNERABILITIES,
+			v1.SearchCategory_IMAGE_COMPONENTS,
 			v1.SearchCategory_IMAGES,
 			v1.SearchCategory_DEPLOYMENTS,
 			v1.SearchCategory_NAMESPACES,
@@ -50,7 +50,7 @@ var (
 		}...)
 		schema.ScopingResource = resources.Image
 		RegisterTable(schema, CreateTableImageCvesV2Stmt, features.FlattenCVEData.Enabled)
-		mapping.RegisterCategoryToTable(v1.SearchCategory_IMAGE_VULNERABILITIES_V2, schema)
+		mapping.RegisterCategoryToTable(v1.SearchCategory_IMAGE_VULNERABILITIES, schema)
 		return schema
 	}()
 )
