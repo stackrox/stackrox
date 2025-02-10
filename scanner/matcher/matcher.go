@@ -89,6 +89,8 @@ type matcherImpl struct {
 
 	vulnUpdater *vuln.Updater
 	sbomer      *sbom.SBOMer
+
+	readyWithVulns bool
 }
 
 // NewMatcher creates a new matcher.
@@ -218,6 +220,8 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 
 		vulnUpdater: vulnUpdater,
 		sbomer:      sbomer,
+
+		readyWithVulns: cfg.Readiness == config.ReadinessVulnerability,
 	}, nil
 }
 
@@ -262,6 +266,9 @@ func (m *matcherImpl) Initialized(ctx context.Context) error {
 func (m *matcherImpl) Ready(ctx context.Context) error {
 	if err := m.pool.Ping(ctx); err != nil {
 		return fmt.Errorf("matcher vulnerability store cannot be reached: %w", err)
+	}
+	if m.readyWithVulns && !m.vulnUpdater.Initialized(ctx) {
+		return errors.New("initial load for the vulnerability store is in progress")
 	}
 	return nil
 }
