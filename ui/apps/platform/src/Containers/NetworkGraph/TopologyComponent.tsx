@@ -178,8 +178,15 @@ const TopologyComponent = ({
         controller.fromModel(model);
         if (selectedNode) {
             panNodeIntoView(selectedNode);
-        } else if (history.location.pathname !== networkBasePath && !selectedNode) {
-            // if the path does not reflect the selected node state, sync URL to state
+        } else if (
+            history.location.pathname !== networkBasePath &&
+            !selectedNode &&
+            model.nodes.length > 0
+        ) {
+            // If there's no selected node but the user is on a node-specific URL (and we've
+            // confirmed nodes have been fetched), reset to the base path by closing the sidebar.
+            // This also handles the edge case where a user might land on a node URL before node data
+            // is available – we want to prevent closing the sidebar until data has been fetched
             closeSidebar();
         }
     }, [controller, model, selectedNode, history, closeSidebar, panNodeIntoView]);
