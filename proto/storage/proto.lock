@@ -6119,6 +6119,82 @@
             ]
           },
           {
+            "name": "ImageCVEV2",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "image_id",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "cve_base_info",
+                "type": "CVEInfo"
+              },
+              {
+                "id": 4,
+                "name": "operating_system",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "cvss",
+                "type": "float"
+              },
+              {
+                "id": 6,
+                "name": "severity",
+                "type": "VulnerabilitySeverity"
+              },
+              {
+                "id": 7,
+                "name": "impact_score",
+                "type": "float"
+              },
+              {
+                "id": 8,
+                "name": "nvdcvss",
+                "type": "float"
+              },
+              {
+                "id": 9,
+                "name": "nvd_score_version",
+                "type": "CvssScoreVersion"
+              },
+              {
+                "id": 10,
+                "name": "first_image_occurrence",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 11,
+                "name": "state",
+                "type": "VulnerabilityState"
+              },
+              {
+                "id": 12,
+                "name": "is_fixable",
+                "type": "bool"
+              },
+              {
+                "id": 13,
+                "name": "fixed_by",
+                "type": "string",
+                "oneof_parent": "has_fixed_by"
+              },
+              {
+                "id": 14,
+                "name": "component_id",
+                "type": "string"
+              }
+            ]
+          },
+          {
             "name": "NodeCVE",
             "fields": [
               {
@@ -8866,6 +8942,83 @@
               {
                 "name": "deprecated",
                 "value": "true"
+              }
+            ]
+          },
+          {
+            "name": "ImageComponentV2",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "version",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "license",
+                "type": "License"
+              },
+              {
+                "id": 5,
+                "name": "priority",
+                "type": "int64"
+              },
+              {
+                "id": 6,
+                "name": "source",
+                "type": "SourceType"
+              },
+              {
+                "id": 7,
+                "name": "risk_score",
+                "type": "float"
+              },
+              {
+                "id": 8,
+                "name": "top_cvss",
+                "type": "float",
+                "oneof_parent": "set_top_cvss"
+              },
+              {
+                "id": 9,
+                "name": "fixed_by",
+                "type": "string"
+              },
+              {
+                "id": 10,
+                "name": "operating_system",
+                "type": "string"
+              },
+              {
+                "id": 11,
+                "name": "image_id",
+                "type": "string"
+              },
+              {
+                "id": 12,
+                "name": "layer_index",
+                "type": "int32",
+                "oneof_parent": "has_layer_index"
+              },
+              {
+                "id": 13,
+                "name": "location",
+                "type": "string"
+              },
+              {
+                "id": 14,
+                "name": "architecture",
+                "type": "string"
               }
             ]
           },
