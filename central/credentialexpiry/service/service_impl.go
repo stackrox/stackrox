@@ -4,9 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"encoding/hex"
 	"fmt"
-	"net"
 	"sort"
 	"strings"
 	"time"
@@ -15,15 +13,17 @@ import (
 	"github.com/pkg/errors"
 	iiDStore "github.com/stackrox/rox/central/imageintegration/datastore"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
+	secretDS "github.com/stackrox/rox/central/secret/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/pods"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/scanners/scannerv4"
@@ -31,7 +31,11 @@ import (
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
+
+const centralDBSecretName = "central-db-tls"
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
@@ -46,6 +50,7 @@ type serviceImpl struct {
 	v1.UnimplementedCredentialExpiryServiceServer
 
 	imageIntegrations iiDStore.DataStore
+	secretDatastore   secretDS.DataStore
 	scannerConfigs    map[mtls.Subject]*tls.Config
 	expiryFunc        func(ctx context.Context, subject mtls.Subject, tlsConfig *tls.Config, endpoint string) (*time.Time, error)
 }
@@ -59,7 +64,7 @@ func (s *serviceImpl) GetCertExpiry(ctx context.Context, request *v1.GetCertExpi
 	case v1.GetCertExpiry_SCANNER_V4:
 		return s.getScannerV4CertExpiry(ctx)
 	case v1.GetCertExpiry_CENTRAL_DB:
-		return s.getCentralDBCertExpiry()
+		return s.getCentralDBCertExpiry(ctx)
 	}
 	return nil, errors.Wrapf(errox.InvalidArgs, "invalid component: %v", request.GetComponent())
 }
@@ -84,78 +89,46 @@ func (s *serviceImpl) getCentralCertExpiry() (*v1.GetCertExpiry_Response, error)
 	return &v1.GetCertExpiry_Response{Expiry: expiry}, nil
 }
 
-func (s *serviceImpl) getCentralDBCertExpiry() (*v1.GetCertExpiry_Response, error) {
-	pgConfigMap, _, err := pgconfig.GetPostgresConfig()
-	if err != nil {
-		return nil, errors.Wrap(err, "Error reading central db config")
-	}
-	if pgConfigMap == nil {
-		return nil, errors.Wrap(errox.NotFound, "Central db config not found")
+func (s *serviceImpl) getCentralDBCertExpiry(ctx context.Context) (*v1.GetCertExpiry_Response, error) {
+	if pgconfig.IsExternalDatabase() {
+		return nil, nil
 	}
 
-	host, ok := pgConfigMap["host"]
+	// We assume that central-db is installed in the same namespace as central when it is not an external db
+	centralDBNamespcae := pods.GetPodNamespace()
+
+	config, err := k8sutil.GetK8sInClusterConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "Error obtaining in-cluster Kubernetes config")
+	}
+	k8sClient, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return nil, errors.Wrap(err, "Error creating Kubernetes clientset")
+	}
+	secret, err := k8sClient.CoreV1().Secrets(centralDBNamespcae).Get(ctx, centralDBSecretName, metav1.GetOptions{})
+	if err != nil {
+		return nil, errors.Wrap(err, "Error getting central-db-tls secret from k8s client")
+	}
+
+	secretData := secret.Data
+	if secretData == nil {
+		return nil, errors.Wrap(errox.NotFound, "Secret data not found for central-db-tls secret")
+	}
+	cert, ok := secretData[mtls.ServiceCertFileName]
 	if !ok {
-		return nil, errors.Wrap(errox.InvalidArgs, "'host' parameter not defined in central db config")
-	}
-	port, ok := pgConfigMap["port"]
-	if !ok {
-		return nil, errors.Wrap(errox.InvalidArgs, "'port' parameter not defined in central db config")
-	}
-	endpoint := fmt.Sprintf("%s:%s", host, port)
-
-	conn, err := net.Dial("tcp", endpoint)
-	if err != nil {
-		return nil, errors.Wrapf(err, "Failed to dial central db on endpoint '%s'", endpoint)
-	}
-	defer utils.IgnoreError(conn.Close)
-
-	sslRequestBlob, err := hex.DecodeString("0000000804D2162F")
-	if err != nil {
-		return nil, errors.Wrap(err, "Failed to generate central db connection initiation message")
-	}
-	_, err = conn.Write(sslRequestBlob)
-	if err != nil {
-		return nil, errors.Wrap(err, "Failed to send initiation message to central db")
-	}
-	reply := make([]byte, 1)
-	_, err = conn.Read(reply)
-	if err != nil {
-		return nil, errors.Wrap(err, "Failed to receive a reply from central db")
+		return nil, errors.Wrap(errox.NotFound, "certificate file not found in central-db-tls secret")
 	}
 
-	tlsConfig, err := clientconn.TLSConfig(mtls.CentralDBSubject, clientconn.TLSConfigOptions{
-		UseClientCert:      clientconn.MustUseClientCert,
-		InsecureSkipVerify: true,
-	})
+	parsedCert, err := x509.ParseCertificate(cert)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Failed to initialize TLS config for %q", mtls.CentralDBSubject.Identifier)
+		return nil, errors.New("failed to parse central DB cert")
 	}
 
-	client := tls.Client(conn, tlsConfig)
-	if client == nil {
-		return nil, errors.New("Failed to initialize TLS client")
-	}
-	err = client.Handshake()
+	expiry, err := protocompat.ConvertTimeToTimestampOrError(parsedCert.NotAfter)
 	if err != nil {
-		return nil, errors.Wrap(err, "Failed TLS handshake with central db")
+		return nil, errors.Errorf("failed to convert timestamp: %v", err)
 	}
-
-	certs := client.ConnectionState().PeerCertificates
-	if len(certs) == 0 {
-		return nil, errors.Errorf("%q at %s returned no peer certs", mtls.CentralDBSubject.Identifier, endpoint)
-	}
-	leafCert := certs[0]
-	if cn := leafCert.Subject.CommonName; cn != mtls.CentralDBSubject.CN() {
-		return nil, errors.Errorf("common name of %q at %s (%s) is not as expected", mtls.CentralDBSubject.Identifier, endpoint, cn)
-	}
-	if leafCert == nil || leafCert.NotAfter.IsZero() {
-		return &v1.GetCertExpiry_Response{Expiry: nil}, nil
-	}
-	certExpiry, err := protocompat.ConvertTimeToTimestampOrError(leafCert.NotAfter)
-	if err != nil {
-		return nil, err
-	}
-	return &v1.GetCertExpiry_Response{Expiry: certExpiry}, nil
+	return &v1.GetCertExpiry_Response{Expiry: expiry}, nil
 }
 
 // ensureTLSAndReturnAddr returns an address from endpoint that can be passed to tls.Dial,
