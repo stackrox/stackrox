@@ -3,7 +3,7 @@ kind: Task
 metadata:
   name: determine-image-expiration-parameter
 spec:
-  description: Determines the image expiration parameter, or set empty for release images.
+  description: Determines the image expiration parameter, or sets to empty for release images.
   params:
   - name: DEFAULT_IMAGE_EXPIRES_AFTER
     description: Default image expiration.
@@ -32,7 +32,7 @@ spec:
       echo "Event type: ${EVENT_TYPE}"
       echo "Target branch: ${TARGET_BRANCH}"
 
-      # TODO(ROX-...): Do not let master images expire for fast stream releases
+      # TODO(ROX-28001): Update the expiration logic for -fast releases.
       if [[ "${EVENT_TYPE}" == "push" && "${TARGET_BRANCH}" == refs/tags/* ]]; then
         IMAGE_EXPIRES_AFTER=""
       else
