@@ -68,7 +68,6 @@ backport:
 konflux-build:
 - changed-files:
   - any-glob-to-any-file:
-    - '**/konflux.Dockerfile'
-    - '**/konflux.*.Dockerfile'
+    - '**/konflux*.Dockerfile'
     - .tekton/**/*
     - .konflux/**/*
