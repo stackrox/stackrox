@@ -10,7 +10,8 @@ import util.Helpers
 import spock.lang.Tag
 
 @Tag("PZ")
-class NodeTest extends BaseSpecification{
+class NodeTest extends BaseSpecification {
+
     @Tag("BAT")
     def "Verify node details"() {
         given:
