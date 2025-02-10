@@ -78,6 +78,7 @@ var (
 			v1.SearchCategory_NAMESPACES,
 			v1.SearchCategory_CLUSTERS,
 			v1.SearchCategory_PROCESS_INDICATORS,
+			v1.SearchCategory_,
 		}...)
 		schema.ScopingResource = resources.Deployment
 		RegisterTable(schema, CreateTableDeploymentsStmt)
