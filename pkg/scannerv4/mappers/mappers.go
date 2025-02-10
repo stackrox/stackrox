@@ -918,7 +918,7 @@ func filterPackages(report *claircore.VulnerabilityReport) {
 
 // filterVulnerabilities filters out vulnerabilities from the given vulnerability report.
 // Note: This function only modifies the report's PackageVulnerabilities map.
-// It is not trivial to remove all unreferenced vulnerabilities from the report's
+// It is non-trivial to remove all unreferenced vulnerabilities from the report's
 // Vulnerabilities map, so we leave it untouched and accept we may send Scanner V4 clients
 // extra vulnerabilities. It is up to the client to handle this.
 func filterVulnerabilities(report *claircore.VulnerabilityReport) {
