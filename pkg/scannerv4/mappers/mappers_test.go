@@ -2,6 +2,7 @@ package mappers
 
 import (
 	"context"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -441,7 +442,7 @@ func Test_ToProtoV4VulnerabilityReport_FilterNodeJS(t *testing.T) {
 }
 
 func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
-	t.Setenv(features.ScannerV4RedHatLayers.EnvVar(), "true")
+	testutils.MustUpdateFeature(t, features.ScannerV4RedHatLayers, true)
 
 	layerA := claircore.MustParseDigest("sha256:" + strings.Repeat("a", 64))
 	layerB := claircore.MustParseDigest("sha256:" + strings.Repeat("b", 64))
@@ -495,10 +496,12 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 				},
 				Repositories: map[string]*claircore.Repository{
 					"0": {
+						ID:   "0",
 						Name: "Red Hat Container Catalog",
 						URI:  `https://catalog.redhat.com/software/containers/explore`,
 					},
 					"1": {
+						ID:   "1",
 						Name: "something else",
 						URI:  "somethingelse.com",
 					},
@@ -590,11 +593,13 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 					},
 					Repositories: []*v4.Repository{
 						{
+							Id:   "0",
 							Name: "Red Hat Container Catalog",
 							Uri:  `https://catalog.redhat.com/software/containers/explore`,
 							Cpe:  emptyCPE,
 						},
 						{
+							Id:   "1",
 							Name: "something else",
 							Uri:  "somethingelse.com",
 							Cpe:  emptyCPE,
@@ -635,11 +640,24 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			got, err := ToProtoV4VulnerabilityReport(ctx, tt.arg)
-			if tt.wantErr == "" {
-				assert.NoError(t, err)
-			} else {
+			if tt.wantErr != "" {
 				assert.ErrorContains(t, err, tt.wantErr)
+				return
 			}
+			assert.NoError(t, err)
+
+			// The assert library cannot compare elements in slices like the ones below
+			// while ignoring order. So, sort each slice.
+			for _, pkgVulns := range got.GetPackageVulnerabilities() {
+				slices.Sort(pkgVulns.GetValues())
+			}
+			slices.SortFunc(got.GetContents().GetPackages(), func(a, b *v4.Package) int {
+				return strings.Compare(a.GetId(), b.GetId())
+			})
+			slices.SortFunc(got.GetContents().GetRepositories(), func(a, b *v4.Repository) int {
+				return strings.Compare(a.GetId(), b.GetId())
+			})
+
 			protoassert.Equal(t, tt.want, got)
 		})
 	}
