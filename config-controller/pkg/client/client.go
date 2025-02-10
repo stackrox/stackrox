@@ -317,7 +317,7 @@ func (c *client) FlushCache(ctx context.Context) error {
 		return nil
 	}
 
-	log.Info("Flushing policy cache")
+	log.Info("Flushing policy caches")
 
 	log.Debug("Listing policies")
 	allPolicies, err := c.centralSvc.ListPolicies(ctx)
