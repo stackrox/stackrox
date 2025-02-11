@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/stackrox/rox/central/deployment/datastore/internal/store"
+	"github.com/stackrox/rox/central/deployment/datastore/internal/store/types"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/schema"
@@ -52,7 +53,11 @@ func (ds *searcherImplV2) SearchRawDeployments(ctx context.Context, q *v1.Query)
 
 // SearchListDeployments retrieves deployments from the storage
 func (ds *searcherImplV2) SearchListDeployments(ctx context.Context, q *v1.Query) ([]*storage.ListDeployment, error) {
-	deployments, _, err := ds.searchListDeployments(ctx, q)
+	deployments := make([]*storage.ListDeployment, 0, 0)
+	err := ds.storage.WalkByQuery(ctx, q, func(d *storage.Deployment) error {
+		deployments = append(deployments, types.ConvertDeploymentToDeploymentList(d))
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
