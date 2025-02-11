@@ -74,6 +74,7 @@ type ImageVulnerabilityResolver interface {
 func (resolver *Resolver) ImageVulnerability(ctx context.Context, args IDQuery) (ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerability")
 
+	log.Info("SHREWS -- ImageVulnerability")
 	// check permissions
 	if err := readImages(ctx); err != nil {
 		return nil, err
@@ -103,6 +104,8 @@ func (resolver *Resolver) ImageVulnerability(ctx context.Context, args IDQuery) 
 // ImageVulnerabilities resolves a set of image vulnerabilities for the input query
 func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilities")
+
+	log.Info("SHREWS -- ImageVulnerabilities")
 	// check permissions
 	if err := readImages(ctx); err != nil {
 		return nil, err
@@ -198,6 +201,8 @@ func (resolver *Resolver) ImageVulnerabilityCount(ctx context.Context, args RawQ
 func (resolver *Resolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilityCounter")
 
+	log.Info("SHREWS -- ImageVulnerabilityCounter")
+
 	// check permissions
 	if err := readImages(ctx); err != nil {
 		return nil, err
@@ -265,12 +270,13 @@ func (resolver *Resolver) ImageVulnerabilityCounter(ctx context.Context, args Ra
 // TopImageVulnerability returns the most severe image vulnerability found in the scoped context
 func (resolver *Resolver) TopImageVulnerability(ctx context.Context, args RawQuery) (ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "TopImageVulnerability")
+	log.Info("SHREWS -- TopImageVulnerability")
 
 	// verify scoping
 	scope, ok := scoped.GetScope(ctx)
 	if !ok {
 		return nil, errors.New("TopImageVulnerability called without scope context")
-	} else if scope.Level != v1.SearchCategory_IMAGE_COMPONENTS && scope.Level != v1.SearchCategory_IMAGES {
+	} else if (scope.Level != v1.SearchCategory_IMAGE_COMPONENTS && scope.Level != v1.SearchCategory_IMAGE_COMPONENTS_V2) && scope.Level != v1.SearchCategory_IMAGES {
 		return nil, errors.New("TopImageVulnerability called with improper scope context")
 	}
 

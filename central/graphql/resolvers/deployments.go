@@ -67,6 +67,8 @@ func init() {
 // Deployment returns a GraphQL resolver for a given id
 func (resolver *Resolver) Deployment(ctx context.Context, args struct{ *graphql.ID }) (*deploymentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Deployment")
+	log.Info("SHREWS -- Deployment")
+
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
 	}
@@ -77,6 +79,8 @@ func (resolver *Resolver) Deployment(ctx context.Context, args struct{ *graphql.
 // Deployments returns GraphQL resolvers all deployments
 func (resolver *Resolver) Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Deployments")
+	log.Info("SHREWS -- Deployments")
+
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
 	}
@@ -91,6 +95,7 @@ func (resolver *Resolver) Deployments(ctx context.Context, args PaginatedQuery) 
 // DeploymentCount returns count all deployments across infrastructure
 func (resolver *Resolver) DeploymentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "DeploymentCount")
+	log.Info("SHREWS -- DeploymentCount")
 	if err := readDeployments(ctx); err != nil {
 		return 0, err
 	}
@@ -500,6 +505,7 @@ func (resolver *deploymentResolver) ServiceAccountID(ctx context.Context) (strin
 
 func (resolver *deploymentResolver) Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "Images")
+	log.Info("SHREWS -- Images")
 	if !resolver.hasImages() {
 		return nil, nil
 	}
@@ -508,36 +514,43 @@ func (resolver *deploymentResolver) Images(ctx context.Context, args PaginatedQu
 
 func (resolver *deploymentResolver) ImageCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageCount")
+	log.Info("SHREWS -- ImageCount")
 	return resolver.root.ImageCount(resolver.withDeploymentScopeContext(ctx), args)
 }
 
 func (resolver *deploymentResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageComponents")
+	log.Info("SHREWS -- ImageComponents")
 	return resolver.root.ImageComponents(resolver.withDeploymentScopeContext(ctx), args)
 }
 
 func (resolver *deploymentResolver) ImageComponentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageComponentCount")
+	log.Info("SHREWS -- ImageComponentCount")
 	return resolver.root.ImageComponentCount(resolver.withDeploymentScopeContext(ctx), args)
 }
 
 func (resolver *deploymentResolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageVulnerabilities")
+	log.Info("SHREWS -- ImageVulnerabilities")
 	return resolver.root.ImageVulnerabilities(resolver.withDeploymentScopeContext(ctx), args)
 }
 
 func (resolver *deploymentResolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageVulnerabilityCount")
+	log.Info("SHREWS -- ImageVulnerabilityCount")
 	return resolver.root.ImageVulnerabilityCount(resolver.withDeploymentScopeContext(ctx), args)
 }
 
 func (resolver *deploymentResolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageVulnerabilityCounter")
+	log.Info("SHREWS -- ImageVulnerabilityCounter")
 	return resolver.root.ImageVulnerabilityCounter(resolver.withDeploymentScopeContext(ctx), args)
 }
 
 func (resolver *deploymentResolver) ImageCVECountBySeverity(ctx context.Context, q RawQuery) (*resourceCountBySeverityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageCVECountBySeverity")
+	log.Info("SHREWS -- imageCVECountBySeverity")
 
 	if err := readImages(ctx); err != nil {
 		return nil, err

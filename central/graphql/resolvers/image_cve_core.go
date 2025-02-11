@@ -81,6 +81,7 @@ func (resolver *Resolver) wrapImageCVECoresWithContext(ctx context.Context, valu
 // Note: Client must explicitly pass observed/deferred CVEs.
 func (resolver *Resolver) ImageCVECount(ctx context.Context, q RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageCVEs")
+	log.Info("SHREWS -- ImageCVECount")
 
 	if err := readImages(ctx); err != nil {
 		return 0, err
@@ -101,6 +102,7 @@ func (resolver *Resolver) ImageCVECount(ctx context.Context, q RawQuery) (int32,
 // Note: Client must explicitly pass observed/deferred CVEs.
 func (resolver *Resolver) ImageCVEs(ctx context.Context, q PaginatedQuery) ([]*imageCVECoreResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageCVEs")
+	log.Info("SHREWS -- ImageCVEs")
 
 	if err := readImages(ctx); err != nil {
 		return nil, err
