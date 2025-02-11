@@ -142,10 +142,9 @@ message CVEInfo {
   EPSS epss = 12;
 }
 
-// ******************************
-// This proto is deprecated.
-// ******************************
+// This proto is deprecated and replaced by ImageCVEV2.
 message ImageCVE {
+  option deprecated = true;
   string id = 1; // This field is composite of cve and operating system. // @gotags: search:"CVE ID,hidden" sql:"pk,id"
   CVEInfo cve_base_info = 2;
   string operating_system = 3; // @gotags: search:"Operating System"
