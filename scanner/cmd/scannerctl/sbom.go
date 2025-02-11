@@ -65,7 +65,7 @@ func sbomCmd(ctx context.Context) *cobra.Command {
 				ref.DigestStr(), *imageDigest)
 		}
 
-		uri := fmt.Sprintf("%s-%s", imageURL, uuid.NewV4().String())
+		uri := imageURL + "-" + uuid.NewV4().String()
 		// Attempt to generate the SBOM from an existing index report.
 		sbom, found, err := scanner.GetSBOM(ctx, imageURL, ref, uri)
 		if err != nil {

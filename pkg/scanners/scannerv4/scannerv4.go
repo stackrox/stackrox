@@ -117,7 +117,7 @@ func (s *scannerv4) GetSBOM(image *storage.Image) ([]byte, bool, error) {
 
 	imgName := image.GetName()
 	// Desired URI for images: https://<registry>/<repo>-<uuid>
-	uri := fmt.Sprintf("https://%s/%s-%s", imgName.GetRegistry(), imgName.GetRemote(), uuid.NewV4().String())
+	uri := "https://" + imgName.GetRegistry() + "/" + imgName.GetRemote() + "-" + uuid.NewV4().String()
 
 	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
 	defer cancel()
