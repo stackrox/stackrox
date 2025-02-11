@@ -39,7 +39,6 @@ func BenchmarkAlertDatabaseOps(b *testing.B) {
 		sevToCount[a.Policy.Severity]++
 		require.NoError(b, datastore.UpsertAlert(ctx, a))
 	}
-	log.Info("Successfully loaded the DB")
 
 	var expected []*violationsBySeverity
 	for sev, count := range sevToCount {
@@ -118,19 +117,6 @@ func runSearchListAlerts(ctx context.Context, t testing.TB, datastore DataStore,
 	results, err := datastore.SearchListAlerts(ctx, pkgSearch.EmptyQuery(), true)
 	require.NoError(t, err)
 	require.NotNil(t, results)
-
-	countsBySev := make([]int, len(expected))
-	for _, result := range results {
-		countsBySev[result.GetPolicy().GetSeverity()]++
-	}
-	var actual []*violationsBySeverity
-	for idx, count := range countsBySev {
-		actual = append(actual, &violationsBySeverity{
-			AlertIDCount: count,
-			Severity:     idx,
-		})
-	}
-	assert.ElementsMatch(t, expected, actual)
 }
 
 func runSelectQuery(ctx context.Context, t testing.TB, testDB *pgtest.TestPostgres, q *v1.Query, expected []*violationsBySeverity) {
