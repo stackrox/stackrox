@@ -736,7 +736,7 @@ EOM
         else
             info "Something is wrong with the ${service} service. See the following 'describe' output."
             kubectl -n "${ns}" describe "${service}" || true
-            die "ERROR: Timeout waiting for ${service} to obtain endpoint!"
+            die "Timeout waiting for ${service} to obtain endpoint!"
         fi
     done
     local endpoint
