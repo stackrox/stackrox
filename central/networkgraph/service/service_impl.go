@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"slices"
 	"sort"
 	"time"
 
@@ -178,7 +179,7 @@ func (s *serviceImpl) GetExternalNetworkFlowsMetadata(ctx context.Context, reque
 	// To ensure pagination is consistent/deterministic, sort the keys
 	// and construct the list of metadata objects in order of key (entity ID)
 	keys := maps.Keys(entityMeta)
-	sort.Strings(keys)
+	slices.Sort(keys)
 
 	values := make([]*v1.ExternalNetworkFlowMetadata, 0, len(keys))
 
