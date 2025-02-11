@@ -66,7 +66,7 @@ function ExternalEntitiesSideBar({
     useEffect(() => {
         setPage(1);
         setSearchFilter({});
-    }, [selectedView, setPage, setSearchFilter]);
+    }, [selectedExternalIP, selectedView, setPage, setSearchFilter]);
 
     if (selectedExternalIP) {
         return (
