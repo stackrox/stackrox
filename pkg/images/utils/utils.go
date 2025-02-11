@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/distribution/reference"
+	"github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
@@ -196,14 +197,18 @@ func IsValidImageString(imageStr string) error {
 
 // ExtractImageDigest returns the image sha, if it exists, within the string.
 // Otherwise, the empty string is returned.
-func ExtractImageDigest(imageStr string) string {
+func ExtractImageDigest(imageStr string) (string, error) {
 	for _, prefix := range digestPrefixes {
 		if idx := strings.Index(imageStr, prefix); idx != -1 {
-			return imageStr[idx:]
+			dig, err := digest.Parse(imageStr[idx:])
+			if err != nil {
+				return "", errors.Wrapf(err, "error extracting digest from image %q: %v", imageStr, err)
+			}
+			return dig.String(), nil
 		}
 	}
 
-	return ""
+	return "", nil
 }
 
 // ExtractOpenShiftProject returns the name of the OpenShift project in which the given image is stored.
