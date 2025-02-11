@@ -64,14 +64,14 @@ function getWorkloadCveContextFromView(viewId: string, isFeatureFlagEnabled: IsF
         case allImagesViewId:
             pageTitle = 'All vulnerable images';
             pageTitleDescription =
-                'View findings for user, platform, and inactive images simultaneously';
+                'Findings for user, platform, and inactive images simultaneously';
             baseSearchFilter = { 'Platform Component': ['true', 'false', '-'] };
             getAbsoluteUrl = (subPath: string) => `${vulnerabilitiesAllImagesPath}/${subPath}`;
             break;
         case inactiveImagesViewId:
             pageTitle = 'Inactive images only';
             pageTitleDescription =
-                'View findings for watched images and images not currently deployed as workloads based on your image retention settings';
+                'Findings for watched images and images not currently deployed as workloads based on your image retention settings';
             baseSearchFilter = { 'Platform Component': ['-'] };
             getAbsoluteUrl = (subPath: string) => `${vulnerabilitiesInactiveImagesPath}/${subPath}`;
             break;
