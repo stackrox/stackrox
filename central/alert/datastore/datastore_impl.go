@@ -168,6 +168,7 @@ func (ds *datastoreImpl) UpsertAlerts(ctx context.Context, alertBatch []*storage
 
 func (ds *datastoreImpl) MarkAlertsResolvedBatch(ctx context.Context, ids ...string) ([]*storage.Alert, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "MarkAlertsResolvedBatch")
+	log.Debugf("MarkAlertsResolvedBatch for ids: %v", ids)
 
 	resolvedAt := protocompat.TimestampNow()
 	idsAsBytes := make([][]byte, 0, len(ids))
@@ -276,6 +277,9 @@ func (ds *datastoreImpl) updateAlertNoLock(ctx context.Context, alerts ...*stora
 		}
 	}
 
+	for i, alert := range alerts {
+		log.Debugf("updateAlertNoLock [%d] for : %v", i, alert)
+	}
 	return ds.storage.UpsertMany(ctx, alerts)
 }
 
