@@ -488,12 +488,12 @@ func (d *detectorImpl) ProcessDeployment(ctx context.Context, deployment *storag
 	case <-ctx.Done():
 		return
 	default:
+		d.deploymentsQueue.Push(&queue.DeploymentQueueItem{
+			Ctx:        ctx,
+			Deployment: deployment,
+			Action:     action,
+		})
 	}
-	d.deploymentsQueue.Push(&queue.DeploymentQueueItem{
-		Ctx:        ctx,
-		Deployment: deployment,
-		Action:     action,
-	})
 }
 
 func (d *detectorImpl) processDeployment() {
