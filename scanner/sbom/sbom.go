@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/pkg/errors"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/sbom/spdx"
 	"github.com/stackrox/rox/scanner/internal/version"
@@ -24,6 +25,14 @@ func NewSBOMer() *SBOMer {
 }
 
 func (s *SBOMer) GetSBOM(ctx context.Context, ir *claircore.IndexReport, opts *Options) ([]byte, error) {
+	if ir == nil {
+		return nil, errors.New("index report is required")
+	}
+
+	if opts == nil {
+		return nil, errors.New("opts is required")
+	}
+
 	encoder := spdx.NewDefaultEncoder(
 		spdx.WithDocumentName(opts.Name),
 		spdx.WithDocumentNamespace(opts.Namespace),
