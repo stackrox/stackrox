@@ -53,7 +53,7 @@ type Scanner interface {
 	GetMatcherMetadata(context.Context) (*v4.Metadata, error)
 
 	// GetSBOM to get sbom for an image
-	GetSBOM(ctx context.Context, name string, ref name.Digest, namespace string) ([]byte, bool, error)
+	GetSBOM(ctx context.Context, name string, ref name.Digest, uri string) ([]byte, bool, error)
 
 	// Close cleans up any resources used by the implementation.
 	Close() error
