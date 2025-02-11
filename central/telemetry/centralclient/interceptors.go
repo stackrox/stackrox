@@ -36,6 +36,12 @@ var (
 				snowIntegrationHeader: phonehome.NoHeaderOrAnyValue,
 			},
 		},
+		{
+			// Capture SBOM generation requests. Corresponding handler in central/image/service/http_handler.go.
+			Path:    phonehome.Pattern("/api/v1/images/sbom").Ptr(),
+			Method:  phonehome.Pattern("POST").Ptr(),
+			Headers: map[string]phonehome.Pattern{userAgentHeaderKey: phonehome.NoHeaderOrAnyValue},
+		},
 		apiPathsCampaign(),
 		userAgentsCampaign(),
 	}
