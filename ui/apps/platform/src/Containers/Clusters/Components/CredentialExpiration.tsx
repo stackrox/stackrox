@@ -44,7 +44,6 @@ function CredentialExpiration({
     const distanceElement = (
         <span className="whitespace-nowrap">
             {getDistanceStrictAsPhrase(sensorCertExpiry, currentDatetime)}
-            {autoRefreshEnabled && <div>Auto-refresh enabled</div>}
         </span>
     );
 
@@ -74,6 +73,7 @@ function CredentialExpiration({
                         ? getDayOfWeek(sensorCertExpiry)
                         : getDate(sensorCertExpiry)
                 }`}</span>
+                {autoRefreshEnabled && <div>Auto-refresh enabled</div>}
             </div>
         );
     }
