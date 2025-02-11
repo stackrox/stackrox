@@ -1,17 +1,23 @@
 package m209tom210
 
 import (
+	"context"
 	"embed"
 
+	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/migrator/migrations/m_209_to_m_210_policy_updates_for_4_7_0/conversion"
+	"github.com/stackrox/rox/migrator/migrations/m_209_to_m_210_policy_updates_for_4_7_0/schema"
 	"github.com/stackrox/rox/migrator/migrations/policymigrationhelper"
 	"github.com/stackrox/rox/migrator/types"
+	"gorm.io/gorm"
 )
 
 var (
 	//go:embed policies_before_and_after
 	policyDiffFS embed.FS
 
-	// We want to migrate only if the existing policy sections,name and description haven't changed.
+	// We want to migrate only if the existing policy sections, name, and description haven't changed.
 	fieldsToCompare = []policymigrationhelper.FieldComparator{
 		policymigrationhelper.DescriptionComparator,
 		policymigrationhelper.PolicySectionComparator,
@@ -39,18 +45,83 @@ var (
 )
 
 func migrate(database *types.Databases) error {
-	_ = database // TODO(dont-merge): remove this line, it is there to make the compiler happy while the migration code is being written.
-	// Use databases.DBCtx to take advantage of the transaction wrapping present in the migration initiator
+	db := database.GormDB
 
-	// TODO(dont-merge): Migration code comes here
-	// TODO(dont-merge): When using gorm, make sure you use a separate handle for the updates and the query.  Such as:
-	// TODO(dont-merge): db = db.WithContext(database.DBCtx).Table(schema.ListeningEndpointsTableName)
-	// TODO(dont-merge): query := db.WithContext(database.DBCtx).Table(schema.ListeningEndpointsTableName).Select("serialized")
-	// TODO(dont-merge): See README for more details
+	return policymigrationhelper.MigratePoliciesWithDiffsAndStoreV2(
+		policyDiffFS,
+		policyDiffs,
+		// Get policy with specified id
+		func(ctx context.Context, id string) (*storage.Policy, bool, error) {
+			var foundPolicy schema.Policies
+			result := db.WithContext(ctx).Table(schema.PoliciesTableName).Where(&schema.Policies{ID: id}).First(&foundPolicy)
+			if result.Error != nil {
+				if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+					return nil, false, nil
+				}
+				return nil, false, result.Error
+			}
+			storagePolicy, err := conversion.ConvertPolicyToProto(&foundPolicy)
+			if err != nil {
+				return nil, false, err
+			}
+			return storagePolicy, true, nil
+		},
+		// Upsert policy. Technically it should be just an update and not create because in theory policy has been verified to exist
+		func(ctx context.Context, policy *storage.Policy) error {
+			dbPolicy, err := conversion.ConvertPolicyFromProto(policy)
+			if err != nil {
+				return err
+			}
+			result := db.WithContext(ctx).Table(schema.PoliciesTableName).Save(dbPolicy)
+			if result.RowsAffected != 1 {
+				return errors.Errorf("failed to save policy with id %s", policy.GetId())
+			}
+			return result.Error
+		},
+		// Get categories from the DB.
+		func(ctx context.Context) (map[string]string, error) {
+			var results []*schema.PolicyCategories
+			db.WithContext(ctx).Table(schema.PolicyCategoriesTableName).Find(&results)
 
-	return nil
+			categories := make(map[string]string, 0)
+			for _, r := range results {
+				c, err := conversion.ConvertPolicyCategoryToProto(r)
+				if err != nil {
+					return nil, err
+				}
+				categories[c.Name] = c.Id
+			}
+			return categories, nil
+		},
+		func(ctx context.Context, edge *storage.PolicyCategoryEdge) error {
+			dbEdge, err := conversion.ConvertPolicyCategoryEdgeFromProto(edge)
+			if err != nil {
+				return err
+			}
+			result := db.WithContext(ctx).Table(schema.PolicyCategoryEdgesTableName).Save(dbEdge)
+			if result.RowsAffected != 1 {
+				return errors.Errorf("failed to save edge for policy id %s, category id %s: %q",
+					edge.GetPolicyId(), edge.GetCategoryId(), result.Error)
+			}
+			return result.Error
+		},
+		func(ctx context.Context, edge *storage.PolicyCategoryEdge) error {
+			dbEdge, err := conversion.ConvertPolicyCategoryEdgeFromProto(edge)
+			if err != nil {
+				return err
+			}
+			result := db.WithContext(ctx).Table(schema.PolicyCategoryEdgesTableName).Where(&schema.PolicyCategoryEdges{
+				PolicyID:   edge.GetPolicyId(),
+				CategoryID: edge.GetCategoryId(),
+			}).Delete(dbEdge)
+			if result.Error != nil {
+				if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+					return nil
+				}
+				return errors.Errorf("failed to remove edge for policy id %s, category id %s", edge.GetPolicyId(), edge.GetCategoryId())
+
+			}
+			return nil
+		},
+	)
 }
-
-// TODO(dont-merge): Write the additional code to support the migration
-
-// TODO(dont-merge): remove any pending TODO
