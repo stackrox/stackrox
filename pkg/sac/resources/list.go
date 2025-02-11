@@ -82,6 +82,7 @@ var (
 	ComplianceOperator = newInternalResourceMetadata("ComplianceOperator", permissions.GlobalScope)
 	InstallationInfo   = newInternalResourceMetadata("InstallationInfo", permissions.GlobalScope)
 	Notifications      = newInternalResourceMetadata("Notifications", permissions.GlobalScope)
+	Pruning            = newInternalResourceMetadata("Pruning", permissions.GlobalScope)
 	Version            = newInternalResourceMetadata("Version", permissions.GlobalScope)
 	Hash               = newInternalResourceMetadata("Hash", permissions.GlobalScope)
 

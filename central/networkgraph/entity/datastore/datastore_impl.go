@@ -37,6 +37,7 @@ var (
 	// Since system-generated external sources are immutable (per current implementation) and are the same across all
 	// clusters, we allow them to be accessed if users have network graph permissions to any cluster.
 	networkGraphSAC       = sac.ForResource(resources.NetworkGraph)
+	pruningSAC            = sac.ForResource(resources.Pruning)
 	administrationReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Administration)))
@@ -66,7 +67,7 @@ func NewEntityDataStore(storage store.EntityStore, graphConfig graphConfigDS.Dat
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(t *testing.T, pool postgres.DB) (EntityDataStore, error) {
-	dbstore := pgStore.New(pool)
+	dbstore := pgStore.NewFullStore(pool)
 	graphConfigStore, err := graphConfigDS.GetTestPostgresDataStore(t, pool)
 	if err != nil {
 		return nil, err
@@ -78,7 +79,7 @@ func GetTestPostgresDataStore(t *testing.T, pool postgres.DB) (EntityDataStore, 
 
 // GetBenchPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetBenchPostgresDataStore(t testing.TB, pool postgres.DB) (EntityDataStore, error) {
-	dbstore := pgStore.New(pool)
+	dbstore := pgStore.NewFullStore(pool)
 	graphConfigStore, err := graphConfigDS.GetBenchPostgresDataStore(t, pool)
 	if err != nil {
 		return nil, err
@@ -444,6 +445,14 @@ func (ds *dataStoreImpl) DeleteExternalNetworkEntitiesForCluster(ctx context.Con
 	go ds.doPushExternalNetworkEntitiesToSensor(clusterID)
 
 	return nil
+}
+
+func (ds *dataStoreImpl) RemoveOrphanedEntities(ctx context.Context) (int64, error) {
+	if err := sac.VerifyAuthzOK(pruningSAC.WriteAllowed(ctx)); err != nil {
+		return 0, err
+	}
+
+	return ds.storage.RemoveOrphanedEntities(ctx)
 }
 
 func (ds *dataStoreImpl) validateNoCIDRUpdate(ctx context.Context, newEntity *storage.NetworkEntity) (bool, error) {

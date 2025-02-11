@@ -10,6 +10,7 @@ import (
 	imagesDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageComponentDatastore "github.com/stackrox/rox/central/imagecomponent/datastore"
 	logimbueStore "github.com/stackrox/rox/central/logimbue/store"
+	networkEntityDatastore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	networkFlowsDataStore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	nodeDatastore "github.com/stackrox/rox/central/node/datastore"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
@@ -42,6 +43,7 @@ func Singleton() GarbageCollector {
 			processDatastore.Singleton(),
 			processBaselineDatastore.Singleton(),
 			networkFlowsDataStore.Singleton(),
+			networkEntityDatastore.Singleton(),
 			configDatastore.Singleton(),
 			imageComponentDatastore.Singleton(),
 			riskDataStore.Singleton(),
