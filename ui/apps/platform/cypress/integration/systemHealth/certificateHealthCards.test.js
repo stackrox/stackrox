@@ -28,7 +28,7 @@ describe('System Health Certificate Health Cards', () => {
             setClock(currentDatetime); // call before visit
             visitSystemHealth(staticResponseMap);
 
-            cy.get(`${statusSelectorCentral}:contains(expires in 12 months)`);
+            cy.get(`${statusSelectorCentral}:contains("expires in 12 months")`);
         });
 
         it('should have widget with warning text for less than 2 weeks', () => {
@@ -42,7 +42,7 @@ describe('System Health Certificate Health Cards', () => {
             setClock(currentDatetime); // call before visit
             visitSystemHealth(staticResponseMap);
 
-            cy.get(`${statusSelectorCentral}:contains(expires in 13 days)`);
+            cy.get(`${statusSelectorCentral}:contains("expires in 13 days")`);
         });
 
         it('should have widget with error text for less than 24 hours', () => {
@@ -56,7 +56,7 @@ describe('System Health Certificate Health Cards', () => {
             setClock(currentDatetime); // call before visit
             visitSystemHealth(staticResponseMap);
 
-            cy.get(`${statusSelectorCentral}:contains(expires in 1 day)`);
+            cy.get(`${statusSelectorCentral}:contains("expires in 1 day")`);
         });
     });
 
@@ -72,7 +72,7 @@ describe('System Health Certificate Health Cards', () => {
             setClock(currentDatetime); // call before visit
             visitSystemHealth(staticResponseMap);
 
-            cy.get(`${statusSelectorCentralDb}:contains(expires in 12 months)`);
+            cy.get(`${statusSelectorCentralDb}:contains("expires in 12 months")`);
         });
 
         it('should have widget with warning text for less than 2 weeks', () => {
@@ -86,7 +86,7 @@ describe('System Health Certificate Health Cards', () => {
             setClock(currentDatetime); // call before visit
             visitSystemHealth(staticResponseMap);
 
-            cy.get(`${statusSelectorCentralDb}:contains(expires in 13 days)`);
+            cy.get(`${statusSelectorCentralDb}:contains("expires in 13 days")`);
         });
 
         it('should have widget with error text for less than 24 hours', () => {
@@ -100,7 +100,7 @@ describe('System Health Certificate Health Cards', () => {
             setClock(currentDatetime); // call before visit
             visitSystemHealth(staticResponseMap);
 
-            cy.get(`${statusSelectorCentralDb}:contains(expires in 1 day)`);
+            cy.get(`${statusSelectorCentralDb}:contains("expires in 1 day")`);
         });
     });
 
@@ -116,7 +116,7 @@ describe('System Health Certificate Health Cards', () => {
             setClock(currentDatetime); // call before visit
             visitSystemHealth(staticResponseMap);
 
-            cy.get(`${statusSelectorScanner}:contains(expires in 12 months)`);
+            cy.get(`${statusSelectorScanner}:contains("expires in 12 months")`);
         });
 
         it('should have widget with warning text for less than 2 weeks', () => {
@@ -130,7 +130,7 @@ describe('System Health Certificate Health Cards', () => {
             setClock(currentDatetime); // call before visit
             visitSystemHealth(staticResponseMap);
 
-            cy.get(`${statusSelectorScanner}:contains(expires in 13 days)`);
+            cy.get(`${statusSelectorScanner}:contains("expires in 13 days")`);
         });
 
         it('should have widget with error text for less than 24 hours', () => {
@@ -144,7 +144,7 @@ describe('System Health Certificate Health Cards', () => {
             setClock(currentDatetime); // call before visit
             visitSystemHealth(staticResponseMap);
 
-            cy.get(`${statusSelectorScanner}:contains(expires in 1 day)`);
+            cy.get(`${statusSelectorScanner}:contains("expires in 1 day")`);
         });
     });
 });
