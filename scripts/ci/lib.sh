@@ -734,6 +734,8 @@ EOM
             ((attempt++))
             sleep 10
         else
+            info "Something is wrong with the ${service} service. See the following 'describe' output."
+            kubectl -n "${ns}" describe "${service}" || true
             die "ERROR: Timeout waiting for ${service} to obtain endpoint!"
         fi
     done
