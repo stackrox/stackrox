@@ -89,21 +89,21 @@ func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.Sett
 		detectorStopper,
 		"FlowsQueue",
 		netFlowQueueSize,
-		detectorMetrics.DetectorNetworkFlowBufferSize,
+		detectorMetrics.DetectorNetworkFlowQueueOperations,
 		detectorMetrics.DetectorNetworkFlowDroppedCount,
 	)
 	piQueue := queue.NewQueue[*queue.IndicatorQueueItem](
 		detectorStopper,
 		"PIsQueue",
 		piQueueSize,
-		detectorMetrics.DetectorProcessIndicatorBufferSize,
+		detectorMetrics.DetectorProcessIndicatorQueueOperations,
 		detectorMetrics.DetectorProcessIndicatorDroppedCount,
 	)
 	// We only need the SimpleQueue since the deploymentQueue will not be paused/resumed
 	deploymentQueue := queue.NewSimpleQueue[*queue.DeploymentQueueItem](
 		"DeploymentQueue",
 		deploymentQueueSize,
-		detectorMetrics.DetectorDeploymentBufferSize,
+		detectorMetrics.DetectorDeploymentQueueOperations,
 		detectorMetrics.DetectorDeploymentDroppedCount,
 	)
 
