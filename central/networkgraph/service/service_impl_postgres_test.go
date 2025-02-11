@@ -492,15 +492,8 @@ func (s *networkGraphServiceSuite) TestGetExternalNetworkFlowsMetadata() {
 			if tc.expectSuccess {
 				s.NoError(err)
 
-				if tc.request.Pagination != nil {
-					// if paginated response, just verify length, since the
-					// elements themselves are not deterministic
-					s.Assert().Len(response.Entities, len(tc.expected.Entities))
-					s.Assert().Equal(response.TotalEntities, tc.expected.TotalEntities)
-				} else {
-					protoassert.ElementsMatch(s.T(), tc.expected.Entities, response.Entities)
-					s.Assert().Equal(response.TotalEntities, tc.expected.TotalEntities)
-				}
+				s.Assert().Len(response.Entities, len(tc.expected.Entities))
+				s.Assert().Equal(response.TotalEntities, tc.expected.TotalEntities)
 			} else {
 				s.Error(err)
 			}

@@ -175,16 +175,26 @@ func (s *serviceImpl) GetExternalNetworkFlowsMetadata(ctx context.Context, reque
 		}
 	}
 
-	result := maps.Values(entityMeta)
-	total := int32(len(result))
+	// To ensure pagination is consistent/deterministic, sort the keys
+	// and construct the list of metadata objects in order of key (entity ID)
+	keys := maps.Keys(entityMeta)
+	sort.Strings(keys)
+
+	values := make([]*v1.ExternalNetworkFlowMetadata, 0, len(keys))
+
+	for _, key := range keys {
+		values = append(values, entityMeta[key])
+	}
+
+	total := int32(len(values))
 
 	page := request.GetPagination()
 	if page != nil {
-		result = paginated.PaginateSlice(int(page.GetOffset()), int(page.GetLimit()), result)
+		values = paginated.PaginateSlice(int(page.GetOffset()), int(page.GetLimit()), values)
 	}
 
 	return &v1.GetExternalNetworkFlowsMetadataResponse{
-		Entities:      result,
+		Entities:      values,
 		TotalEntities: total,
 	}, nil
 }
