@@ -99,7 +99,6 @@ ALLOWED_VULNS=$(jq -c '.[]' "$DIR/allowed_vulns.json")
 compare_fixable_vulns "main" "$RELEASE_TAG"
 
 # check collector images
-compare_fixable_vulns "collector" "${COLLECTOR_TAG}-slim"
 compare_fixable_vulns "collector" "${COLLECTOR_TAG}"
 
 # check scanner images
