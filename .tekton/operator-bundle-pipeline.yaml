@@ -657,6 +657,7 @@ spec:
     - clamav-scan
     - clone-repository
     - deprecated-base-image-check
+    - determine-image-expiration
     - determine-image-tag
     - init
     - prefetch-dependencies
