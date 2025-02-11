@@ -6034,6 +6034,12 @@
                 "name": "nvd_score_version",
                 "type": "CvssScoreVersion"
               }
+            ],
+            "options": [
+              {
+                "name": "deprecated",
+                "value": "true"
+              }
             ]
           },
           {
@@ -8854,6 +8860,12 @@
                 "id": 10,
                 "name": "operating_system",
                 "type": "string"
+              }
+            ],
+            "options": [
+              {
+                "name": "deprecated",
+                "value": "true"
               }
             ]
           },
@@ -13904,6 +13916,12 @@
                 "name": "image_component_id",
                 "type": "string"
               }
+            ],
+            "options": [
+              {
+                "name": "deprecated",
+                "value": "true"
+              }
             ]
           },
           {
@@ -13935,6 +13953,12 @@
                 "name": "image_cve_id",
                 "type": "string"
               }
+            ],
+            "options": [
+              {
+                "name": "deprecated",
+                "value": "true"
+              }
             ]
           },
           {
@@ -13964,6 +13988,12 @@
                 "id": 5,
                 "name": "image_cve_id",
                 "type": "string"
+              }
+            ],
+            "options": [
+              {
+                "name": "deprecated",
+                "value": "true"
               }
             ]
           },
