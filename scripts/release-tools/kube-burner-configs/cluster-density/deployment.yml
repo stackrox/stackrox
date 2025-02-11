@@ -19,7 +19,7 @@ spec:
       - args:
         - sleep
         - infinity
-        image: quay.io/rhacs-eng/qa:berserker-1.0-26-g56b1cf4e5d
+        image: quay.io/rhacs-eng/qa:berserker-1.0-63-g7b0a20bf5f
         resources:
           requests:
             memory: "150Mi"
@@ -54,14 +54,8 @@ spec:
           protocol: TCP
         name: cluster-density
         env:
-        - name: ENVVAR1
-          value: "250"
-        - name: ENVVAR2
-          value: "250"
-        - name: ENVVAR3
-          value: "250"
-        - name: ENVVAR4
-          value: "250"
+        - name: BERSERKER__WORKLOAD__ARRIVAL_RATE
+          value: "1"
       volumes:
       - name: secret-1
         secret:
