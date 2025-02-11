@@ -14,7 +14,7 @@ export type SelectSingleProps = {
     variant?: 'typeahead' | null;
     placeholderText?: string;
     onBlur?: React.FocusEventHandler<HTMLTextAreaElement>;
-    menuAppendTo?: () => HTMLElement;
+    menuAppendTo?: (() => HTMLElement) | 'inline' | 'parent';
     footer?: React.ReactNode;
 };
 
