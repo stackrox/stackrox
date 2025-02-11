@@ -28,6 +28,12 @@ const (
 	// NegationPrefix is the prefix to negate a query.
 	NegationPrefix = "!"
 
+	// MapKeyValueSeparator is the separator between key and value strings in a map query
+	MapKeyValueSeparator = "="
+
+	// NotInMapKeyValueSeparator is the separator between key and value strings in a 'Not in map' query
+	NotInMapKeyValueSeparator = "!="
+
 	// AtLeastOnePrefix is the prefix to require that all values match the query
 	AtLeastOnePrefix = "!!"
 
@@ -390,7 +396,13 @@ func (qb *QueryBuilder) AddExactMatches(k FieldLabel, values ...string) *QueryBu
 
 // AddMapQuery adds a query for a key and a value in a map field.
 func (qb *QueryBuilder) AddMapQuery(k FieldLabel, mapKey, mapValue string) *QueryBuilder {
-	qb.AddStrings(k, fmt.Sprintf("%s=%s", mapKey, mapValue))
+	qb.AddStrings(k, fmt.Sprintf("%s%s%s", mapKey, MapKeyValueSeparator, mapValue))
+	return qb
+}
+
+// AddNotInMapQuery adds a query to check for non-existence of a key value pair in a map field
+func (qb *QueryBuilder) AddNotInMapQuery(k FieldLabel, mapKey, mapValue string) *QueryBuilder {
+	qb.AddStrings(k, fmt.Sprintf("%s%s%s", mapKey, NotInMapKeyValueSeparator, mapValue))
 	return qb
 }
 
@@ -523,6 +535,23 @@ func (qb *QueryBuilder) RawQuery() (string, error) {
 		query += fmt.Sprintf("%s:%s", field, q)
 	}
 	return query, nil
+}
+
+// SimpleFieldValueQuery returns a proto query that matches a single field with a single string value
+func SimpleFieldValueQuery(k FieldLabel, v string) *v1.Query {
+	return &v1.Query{
+		Query: &v1.Query_BaseQuery{
+			BaseQuery: &v1.BaseQuery{
+				Query: &v1.BaseQuery_MatchFieldQuery{
+					MatchFieldQuery: &v1.MatchFieldQuery{
+						Field:     k.String(),
+						Value:     v,
+						Highlight: false,
+					},
+				},
+			},
+		},
+	}
 }
 
 // EmptyQuery is a shortcut function to receive an empty query, to avoid requiring having to create an empty query builder.
