@@ -346,13 +346,13 @@ export function getDeploymentInfoForExternalEntity(
 
     if (srcEntity.type === 'DEPLOYMENT') {
         return {
-            direction: 'Ingress',
+            direction: 'Egress',
             entity: srcEntity,
         };
     }
     if (dstEntity.type === 'DEPLOYMENT') {
         return {
-            direction: 'Egress',
+            direction: 'Ingress',
             entity: dstEntity,
         };
     }
