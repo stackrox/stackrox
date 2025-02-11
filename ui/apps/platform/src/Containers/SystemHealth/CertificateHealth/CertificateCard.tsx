@@ -110,7 +110,9 @@ function CertificateCard({ component, pollingCount }: CertificateCardProps): Rea
                 </Flex>
             </CardHeader>
             <CardBody>
-                {hasAdministrationWritePermission ? (
+                {hasAdministrationWritePermission &&
+                // if the DB is external, the expiry will be returned as null, and we do not want to show renewal
+                (component !== 'CENTRAL_DB' || expirationDate) ? (
                     <Flex>
                         <FlexItem>
                             To update the certificate, download the YAML file and apply it to your
