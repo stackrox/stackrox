@@ -37,8 +37,8 @@ var (
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_IMAGES, "image", (*storage.Image)(nil)))
 		if features.FlattenCVEData.Enabled() {
 			schema.SetSearchScope([]v1.SearchCategory{
-				v1.SearchCategory_IMAGE_VULNERABILITIES,
-				v1.SearchCategory_IMAGE_COMPONENTS,
+				v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
+				v1.SearchCategory_IMAGE_COMPONENTS_V2,
 				v1.SearchCategory_IMAGES,
 				v1.SearchCategory_DEPLOYMENTS,
 				v1.SearchCategory_NAMESPACES,
