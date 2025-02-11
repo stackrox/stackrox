@@ -95,7 +95,7 @@ export type ExternalNetworkFlowsMetadataResponse = {
     totalEntities: number;
 };
 
-type ExternalNetworkFlowsMetadata = {
+export type ExternalNetworkFlowsMetadata = {
     entity: ExternalSourceNetworkEntityInfo;
     flowsCount: number;
 };

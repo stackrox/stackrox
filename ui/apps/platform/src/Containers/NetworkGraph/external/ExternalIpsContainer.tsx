@@ -7,37 +7,35 @@ import { getExternalIpsFlowsMetadata } from 'services/NetworkService';
 import { ExternalNetworkFlowsMetadataResponse } from 'types/networkFlow.proto';
 import { getTableUIState } from 'utils/getTableUIState';
 
-import ExternalIpsTable from '../external/ExternalIpsTable';
+import ExternalIpsTable from './ExternalIpsTable';
 import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 
-type ExternalFlowsProps = {
-    deploymentName: string;
+type ExternalIpsContainerProps = {
     scopeHierarchy: NetworkScopeHierarchy;
+    onExternalIPSelect: (externalIP: string) => void;
     urlSearchFiltering: UseUrlSearchReturn;
     urlPagination: UseURLPaginationResult;
-    onExternalIPSelect: (externalIP: string) => void;
 };
 
-function ExternalFlows({
-    deploymentName,
+function ExternalIpsContainer({
     scopeHierarchy,
+    onExternalIPSelect,
     urlSearchFiltering,
     urlPagination,
-    onExternalIPSelect,
-}: ExternalFlowsProps) {
+}: ExternalIpsContainerProps) {
     const clusterId = scopeHierarchy.cluster.id;
-    const { namespaces } = scopeHierarchy;
+    const { namespaces, deployments } = scopeHierarchy;
     const { searchFilter } = urlSearchFiltering;
     const { page, perPage } = urlPagination;
     const fetchExternalIpsFlowsMetadata =
         useCallback((): Promise<ExternalNetworkFlowsMetadataResponse> => {
-            return getExternalIpsFlowsMetadata(clusterId, namespaces, [deploymentName], {
+            return getExternalIpsFlowsMetadata(clusterId, namespaces, deployments, {
                 sortOption: {},
                 page,
                 perPage,
                 advancedFilters: searchFilter,
             });
-        }, [page, perPage, clusterId, deploymentName, namespaces, searchFilter]);
+        }, [page, perPage, clusterId, deployments, namespaces, searchFilter]);
 
     const {
         data: externalIpsFlowsMetadata,
@@ -63,4 +61,4 @@ function ExternalFlows({
     );
 }
 
-export default ExternalFlows;
+export default ExternalIpsContainer;
