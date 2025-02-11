@@ -165,7 +165,7 @@ class ComplianceTest extends BaseSpecification {
                                 '", and provides continuous risk assessment.'],
                         ComplianceState.COMPLIANCE_STATE_SUCCESS).setType(Control.ControlType.CLUSTER),
         ]
-        if (!ClusterService.isAKS()) { // ROX-6993
+        if (!ClusterService.isAzure()) { // ROX-6993
             staticControls.add(new Control(
                "CIS_Kubernetes_v1_5:1_1_13",
                ["File \"/etc/kubernetes/manifests/admin.conf\" does not exist on host, " +
