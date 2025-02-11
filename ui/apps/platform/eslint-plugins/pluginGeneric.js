@@ -282,7 +282,7 @@ const rules = {
                 CallExpression(node) {
                     if (
                         node.callee?.name === 'getVersionedDocs' &&
-                        Array.isArray(node?.arguments) &&
+                        Array.isArray(node.arguments) &&
                         typeof node.arguments[1]?.value === 'string'
                     ) {
                         const { value } = node.arguments[1];
