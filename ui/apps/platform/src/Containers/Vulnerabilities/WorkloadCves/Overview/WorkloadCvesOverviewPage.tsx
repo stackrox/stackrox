@@ -164,8 +164,13 @@ function WorkloadCvesOverviewPage() {
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
 
-    const { getAbsoluteUrl, pageTitle, pageTitleDescription, baseSearchFilter } =
-        useWorkloadCveViewContext();
+    const {
+        getAbsoluteUrl,
+        pageTitle,
+        pageTitleDescription,
+        baseSearchFilter,
+        overviewEntityTabs,
+    } = useWorkloadCveViewContext();
     const currentVulnerabilityState = useVulnerabilityState();
 
     const { searchFilter, setSearchFilter: setURLSearchFilter } = useURLSearch();
@@ -371,9 +376,7 @@ function WorkloadCvesOverviewPage() {
 
     const entityToggleGroup = (
         <EntityTypeToggleGroup
-            entityTabs={
-                isViewingWithCves ? ['CVE', 'Image', 'Deployment'] : ['Image', 'Deployment']
-            }
+            entityTabs={overviewEntityTabs}
             entityCounts={entityCounts}
             onChange={onEntityTabChange}
         />
