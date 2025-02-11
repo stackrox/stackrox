@@ -73,7 +73,6 @@ function CredentialExpiration({
                         ? getDayOfWeek(sensorCertExpiry)
                         : getDate(sensorCertExpiry)
                 }`}</span>
-                {autoRefreshEnabled && <div>Auto-refresh enabled</div>}
             </div>
         );
     }
@@ -81,7 +80,10 @@ function CredentialExpiration({
     return (
         <HealthStatus icon={icon} iconColor={fgColor}>
             {isList || healthStatus === 'HEALTHY' ? (
-                expirationElement
+                <div>
+                    {expirationElement}
+                    {autoRefreshEnabled && <div>Auto-refresh enabled</div>}
+                </div>
             ) : (
                 <div>
                     {expirationElement}
