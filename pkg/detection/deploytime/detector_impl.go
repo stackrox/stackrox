@@ -5,11 +5,14 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/detection"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 type detectorImpl struct {
 	policySet detection.PolicySet
 }
+
+var log = logging.LoggerForModule()
 
 // PolicySet returns set of policies.
 func (d *detectorImpl) PolicySet() detection.PolicySet {
@@ -20,6 +23,7 @@ func (d *detectorImpl) PolicySet() detection.PolicySet {
 func (d *detectorImpl) Detect(ctx DetectionContext, enhancedDeployment booleanpolicy.EnhancedDeployment, filters ...detection.FilterOption) ([]*storage.Alert, error) {
 	var alerts []*storage.Alert
 	var cacheReceptacle booleanpolicy.CacheReceptacle
+	uniquePolicies := make(map[string]struct{}) // Set to store unique policy names
 	err := d.policySet.ForEach(func(compiled detection.CompiledPolicy) error {
 		if compiled.Policy().GetDisabled() {
 			return nil
@@ -47,9 +51,13 @@ func (d *detectorImpl) Detect(ctx DetectionContext, enhancedDeployment booleanpo
 		}
 		if alertViolations := violations.AlertViolations; len(alertViolations) > 0 {
 			alerts = append(alerts, PolicyDeploymentAndViolationsToAlert(compiled.Policy(), enhancedDeployment.Deployment, alertViolations))
+			uniquePolicies[compiled.Policy().GetName()] = struct{}{} // Store policy name
 		}
 		return nil
 	})
+	for name := range uniquePolicies {
+		log.Infof("deploy time Detect:policy evaluated %s", name)
+	}
 	if err != nil {
 		return nil, err
 	}
