@@ -99,9 +99,8 @@ class ClusterService extends BaseService {
     }
 
     static Boolean isEKS() {
-        Boolean isEKS = false
         try {
-            isEKS = ClusterService.getClusters().every {
+            return ClusterService.getClusters().every {
                 Cluster cluster ->
                     cluster.getStatus().getProviderMetadata().hasAws() &&
                             cluster.getStatus().getOrchestratorMetadata().getVersion().contains("eks")
@@ -109,31 +108,29 @@ class ClusterService extends BaseService {
         } catch (Exception e) {
             log.error("Error getting cluster info", e)
         }
-        isEKS
+        return false
     }
 
     static Boolean isAzure() {
-        Boolean isAzure = false
         try {
-            isAzure = ClusterService.getClusters().every {
+            return ClusterService.getClusters().every {
                 Cluster cluster -> cluster.getStatus().getProviderMetadata().hasAzure()
             }
         } catch (Exception e) {
             log.error("Error getting cluster info", e)
         }
-        isAzure
+        return false
     }
 
     static Boolean isAKS() {
-        Boolean isAKS = false
         try {
-            isAKS = ClusterService.getClusters().every {
+            return ClusterService.getClusters().every {
                 Cluster cluster -> cluster.getStatus().getProviderMetadata().getCluster().getType() == Type.AKS
             }
         } catch (Exception e) {
             log.error("Error getting cluster info", e)
         }
-        isAKS
+        return false
     }
 
     static Boolean isOpenShift4() {
