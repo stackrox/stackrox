@@ -171,6 +171,7 @@ func (resolver *imageCVECoreResolver) Deployments(ctx context.Context, args stru
 
 func (resolver *imageCVECoreResolver) DistroTuples(ctx context.Context) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVECore, "DistroTuples")
+	log.Info("SHREWS -- DistroTuples")
 	var q PaginatedQuery
 	if features.FlattenCVEData.Enabled() {
 		q = PaginatedQuery{

@@ -455,6 +455,7 @@ func (resolver *imageComponentResolver) ImageVulnerabilityCounter(ctx context.Co
 
 func (resolver *imageComponentResolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "ImageVulnerabilities")
+	log.Info("SHREWS -- ImageVulnerabilities")
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}
@@ -656,6 +657,7 @@ func (resolver *imageComponentV2Resolver) ImageVulnerabilityCounter(ctx context.
 
 func (resolver *imageComponentV2Resolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "ImageVulnerabilities")
+	log.Info("SHREWS -- ImageVulnerabilities")
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}
