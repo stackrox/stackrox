@@ -782,6 +782,7 @@ func (resolver *imageCVEResolver) Link(_ context.Context) string {
 }
 
 func (resolver *imageCVEResolver) PublishedOn(_ context.Context) (*graphql.Time, error) {
+	log.Info("SHREWS -- image_vulnerabilities.imageCVEResolver.PublishedOn")
 	return protocompat.ConvertTimestampToGraphqlTimeOrError(resolver.data.GetCveBaseInfo().GetPublishedOn())
 }
 
@@ -829,6 +830,7 @@ func (resolver *imageCVEV2Resolver) Link(_ context.Context) string {
 }
 
 func (resolver *imageCVEV2Resolver) PublishedOn(_ context.Context) (*graphql.Time, error) {
+	log.Info("SHREWS -- image_vulnerabilities.imageCVEV2Resolver.PublishedOn")
 	return protocompat.ConvertTimestampToGraphqlTimeOrError(resolver.data.GetCveBaseInfo().GetPublishedOn())
 }
 

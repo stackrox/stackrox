@@ -200,6 +200,7 @@ func (resolver *imageCVECoreResolver) FirstDiscoveredInSystem(_ context.Context)
 }
 
 func (resolver *imageCVECoreResolver) PublishedOn(_ context.Context) *graphql.Time {
+	log.Info("SHREWS -- image_cve_core.PublishedOn")
 	ts := resolver.data.GetPublishDate()
 	if ts == nil {
 		return nil

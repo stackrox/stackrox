@@ -415,6 +415,7 @@ func (resolver *clusterCVEResolver) Link(_ context.Context) string {
 }
 
 func (resolver *clusterCVEResolver) PublishedOn(_ context.Context) (*graphql.Time, error) {
+	log.Info("SHREWS -- cluster_vulnerabilities.PublishedOn")
 	return protocompat.ConvertTimestampToGraphqlTimeOrError(resolver.data.GetCveBaseInfo().GetPublishedOn())
 }
 
