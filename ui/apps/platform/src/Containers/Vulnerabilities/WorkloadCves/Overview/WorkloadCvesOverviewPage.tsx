@@ -8,9 +8,9 @@ import {
     Flex,
     FlexItem,
     PageSection,
+    Popover,
     Text,
     Title,
-    Tooltip,
 } from '@patternfly/react-core';
 import { OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
 import { gql, useApolloClient, useQuery } from '@apollo/client';
@@ -404,19 +404,14 @@ function WorkloadCvesOverviewPage() {
                 >
                     <Title headingLevel="h1">{pageTitle}</Title>
                     {pageTitleDescription && (
-                        <Tooltip
-                            aria="none"
-                            aria-live="polite"
-                            content={pageTitleDescription}
-                            position="bottom"
+                        <Popover
+                            aria-label="More information about the current page"
+                            bodyContent={pageTitleDescription}
                         >
-                            <Button
-                                aria-label="More information about the current page"
-                                variant="plain"
-                            >
+                            <Button title="Page description" variant="plain">
                                 <OutlinedQuestionCircleIcon />
                             </Button>
-                        </Tooltip>
+                        </Popover>
                     )}
                     {!isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT') && (
                         <FlexItem>
