@@ -247,7 +247,7 @@ push_image_manifest_lists() {
     done
 
     # Push manifest lists for scanner and collector for amd64 only
-    local amd64_image_set=("scanner" "scanner-db" "scanner-slim" "scanner-db-slim" "collector" "collector-slim")
+    local amd64_image_set=("scanner" "scanner-db" "scanner-slim" "scanner-db-slim" "collector" )
     for image in "${amd64_image_set[@]}"; do
         retry 5 true \
           "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:${tag}" "amd64" | cat
@@ -461,7 +461,6 @@ push_matching_collector_scanner_images() {
     _retag "${registry}/scanner-db-slim:${scanner_version}" "${registry}/scanner-db-slim:${main_tag}-${arch}"
 
     _retag "${registry}/collector:${collector_version}"      "${registry}/collector:${main_tag}-${arch}"
-    _retag "${registry}/collector:${collector_version}-slim" "${registry}/collector-slim:${main_tag}-${arch}"
 }
 
 poll_for_system_test_images() {
@@ -814,7 +813,6 @@ stackrox-operator-index ${operator_metadata_tag}
 main ${tag}
 central-db ${tag}
 collector ${tag}
-collector-slim ${tag}
 scanner ${tag}
 scanner-db ${tag}
 scanner-v4 ${tag}
