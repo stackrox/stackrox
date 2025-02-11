@@ -1,7 +1,7 @@
 # Static Network Policy Analysis and Visualization
 
 ## About
-The static network policy analyzer is a tool that analyzes Kubernetes network policies.
+The static network policy analyzer is a tool that analyzes Kubernetes network policies (i.e. NetworkPolicy, AdminNetworkPolicy and BaselineAdminNetworkPolicy resources).
 Based on a given folder containing deployment and network policy YAMLs, it analyzes the permitted cluster connectivity.
 It produces a list of **allowed** connections based on the workloads and network policies defined.
 It is based on [NP-Guard's Network Policy Analyzer](https://github.com/np-guard/netpol-analyzer) component.
