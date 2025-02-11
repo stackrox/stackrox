@@ -177,7 +177,7 @@ var (
 	DetectorProcessIndicatorDroppedCount = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "detector_process_indicators_dropped_total",
+		Name:      "detector_process_indicator_queue_dropped_total",
 		Help:      "A counter of the total number of process indicators that were dropped if the detector buffer was full",
 	})
 
@@ -185,7 +185,7 @@ var (
 	DetectorNetworkFlowDroppedCount = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "detector_network_flows_dropped_total",
+		Name:      "detector_network_flow_queue_dropped_total",
 		Help:      "A counter of the total number of network flows that were dropped if the detector buffer was full",
 	})
 
@@ -193,7 +193,7 @@ var (
 	DetectorDeploymentDroppedCount = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "detector_deployments_dropped_total",
+		Name:      "detector_deployment_queue_dropped_total",
 		Help:      "A counter of the total number of deployments that were dropped if the detector buffer was full",
 	})
 
