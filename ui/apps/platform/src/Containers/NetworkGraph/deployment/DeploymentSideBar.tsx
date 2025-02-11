@@ -48,6 +48,7 @@ type DeploymentSideBarProps = {
     edges: CustomEdgeModel[];
     edgeState: EdgeState;
     onNodeSelect: (id: string) => void;
+    onExternalIPSelect: (externalIP: string) => void;
     defaultDeploymentTab: string;
     scopeHierarchy: NetworkScopeHierarchy;
 };
@@ -59,6 +60,7 @@ function DeploymentSideBar({
     edges,
     edgeState,
     onNodeSelect,
+    onExternalIPSelect,
     defaultDeploymentTab,
     scopeHierarchy,
 }: DeploymentSideBarProps) {
@@ -227,6 +229,7 @@ function DeploymentSideBar({
                                     deploymentId={deploymentId}
                                     edgeState={edgeState}
                                     onNodeSelect={onNodeSelect}
+                                    onExternalIPSelect={onExternalIPSelect}
                                     isLoadingNetworkFlows={isLoadingNetworkFlows}
                                     networkFlowsError={networkFlowsError}
                                     networkFlows={networkFlows}

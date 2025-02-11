@@ -16,22 +16,19 @@ import useRestQuery from 'hooks/useRestQuery';
 import { getExternalIpsFlowsMetadata } from 'services/NetworkService';
 import { getTableUIState } from 'utils/getTableUIState';
 import { getVersionedDocs } from 'utils/versioning';
-import {
-    ExternalSourceNetworkEntityInfo,
-    ExternalNetworkFlowsMetadataResponse,
-} from 'types/networkFlow.proto';
+import { ExternalNetworkFlowsMetadataResponse } from 'types/networkFlow.proto';
 import { SearchFilter } from 'types/search';
 import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 
 export type ExternalIpsTableProps = {
     scopeHierarchy: NetworkScopeHierarchy;
-    setSelectedEntity: (entity: ExternalSourceNetworkEntityInfo) => void;
+    onExternalIPSelect: (externalIP: string) => void;
     advancedFilters?: SearchFilter;
 };
 
 function ExternalIpsTable({
     scopeHierarchy,
-    setSelectedEntity,
+    onExternalIPSelect,
     advancedFilters,
 }: ExternalIpsTableProps) {
     const { version } = useMetadata();
@@ -121,7 +118,7 @@ function ExternalIpsTable({
                                                 <Button
                                                     variant="link"
                                                     isInline
-                                                    onClick={() => setSelectedEntity(entity)}
+                                                    onClick={() => onExternalIPSelect(entity.id)}
                                                 >
                                                     {entity.externalSource.name}
                                                 </Button>

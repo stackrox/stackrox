@@ -33,6 +33,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/scanner/config"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
+	"github.com/stackrox/rox/scanner/enricher/csaf"
 	"github.com/stackrox/rox/scanner/enricher/fixedby"
 	"github.com/stackrox/rox/scanner/enricher/nvd"
 	"github.com/stackrox/rox/scanner/internal/httputil"
@@ -132,20 +133,29 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		Transport: httputil.DenyTransport,
 	}
 
+	enrichers := []driver.Enricher{
+		&fixedby.Enricher{},
+		&nvd.Enricher{},
+	}
+	var (
+		epssEnabled bool
+		csafEnabled bool
+	)
+	if features.EPSSScore.Enabled() {
+		epssEnabled = true
+		enrichers = append(enrichers, &epss.Enricher{})
+	}
+	if features.ScannerV4RedHatCSAF.Enabled() && !features.ScannerV4RedHatCVEs.Enabled() {
+		csafEnabled = true
+		enrichers = append(enrichers, &csaf.Enricher{})
+	}
+	zlog.Info(ctx).Bool("enabled", epssEnabled).Msg("EPSS enrichment")
+	zlog.Info(ctx).Bool("enabled", csafEnabled).Msg("CSAF enrichment")
 	libVuln, err := libvuln.New(ctx, &libvuln.Options{
-		Store:        store,
-		Locker:       locker,
-		MatcherNames: matcherNames,
-		Enrichers: func() []driver.Enricher {
-			enrichers := []driver.Enricher{
-				&nvd.Enricher{},
-				&fixedby.Enricher{},
-			}
-			if features.EPSSScore.Enabled() {
-				enrichers = append(enrichers, &epss.Enricher{})
-			}
-			return enrichers
-		}(),
+		Store:                    store,
+		Locker:                   locker,
+		MatcherNames:             matcherNames,
+		Enrichers:                enrichers,
 		UpdateRetention:          libvuln.DefaultUpdateRetention,
 		DisableBackgroundUpdates: true,
 		Client:                   ccClient,

@@ -21,7 +21,7 @@ metadata:
       )
   labels:
     appstudio.openshift.io/application: acs
-  name: retag-collector-full
+  name: retag-collector
   namespace: rh-acs-tenant
 
 spec:

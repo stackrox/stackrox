@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	commonLabels "github.com/stackrox/rox/operator/internal/common/labels"
 	"github.com/stackrox/rox/operator/internal/types"
 	"github.com/stackrox/rox/pkg/renderer"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -54,7 +55,7 @@ func (r *reconcileScannerV4DBPasswordExtensionRun) Execute(ctx context.Context) 
 
 func (r *reconcileScannerV4DBPasswordExtensionRun) reconcilePasswordSecret(ctx context.Context, shouldExist bool) error {
 	if shouldExist {
-		return r.EnsureSecret(ctx, r.passwordResourceName, r.validateScannerV4DBPasswordData, r.generateScannerV4DBPasswordData)
+		return r.EnsureSecret(ctx, r.passwordResourceName, r.validateScannerV4DBPasswordData, r.generateScannerV4DBPasswordData, commonLabels.DefaultLabels())
 	}
 	return r.DeleteSecret(ctx, r.passwordResourceName)
 }

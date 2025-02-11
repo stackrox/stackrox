@@ -59,7 +59,7 @@ sourceSets.each { ss ->
 dependencies {
     // grpc and protobuf
     implementation 'com.google.code.gson:gson:2.12.1'
-    implementation "com.google.api.grpc:proto-google-common-protos:2.51.0"
+    implementation "com.google.api.grpc:proto-google-common-protos:2.52.0"
     implementation "io.grpc:grpc-alts:${grpcVersion}"
     implementation "io.grpc:grpc-netty:${grpcVersion}"
     implementation "io.grpc:grpc-protobuf:${grpcVersion}"
@@ -85,7 +85,7 @@ dependencies {
     implementation "io.fabric8:kubernetes-client:${fabric8Version}"
     implementation "io.fabric8:openshift-client:${fabric8Version}"
 
-    implementation 'io.kubernetes:client-java:22.0.0'
+    implementation 'io.kubernetes:client-java:22.0.0-legacy'
 
     implementation group: 'com.github.docker-java', name: 'docker-java', version: '3.4.1'
 

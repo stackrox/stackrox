@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/openshift"
 	"github.com/stackrox/rox/pkg/registries"
 	rhelFactory "github.com/stackrox/rox/pkg/registries/rhel"
 	"github.com/stackrox/rox/pkg/registries/types"
@@ -26,9 +27,6 @@ import (
 
 const (
 	defaultSA = "default"
-
-	openshiftConfigNamespace  = "openshift-config"
-	openshiftConfigPullSecret = "pull-secret"
 
 	pullSecretNamePrefix = "PullSec"
 	globalRegNamePrefix  = "Global"
@@ -422,7 +420,7 @@ func (rs *Store) UpsertSecret(namespace, secretName string, dockerConfig config.
 }
 
 func (rs *Store) upsertSecretByHost(namespace, secretName string, dockerConfig config.DockerConfig, serviceAcctName string) {
-	isGlobalPullSecret := namespace == openshiftConfigNamespace && secretName == openshiftConfigPullSecret
+	isGlobalPullSecret := openshift.GlobalPullSecret(namespace, secretName)
 
 	// In Kubernetes, the `default` service account always exists in each namespace (it is recreated upon deletion).
 	// The default service account always contains an API token.
@@ -468,7 +466,7 @@ func (rs *Store) upsertSecretByHost(namespace, secretName string, dockerConfig c
 }
 
 func (rs *Store) upsertSecretByName(namespace, secretName string, dockerConfig config.DockerConfig, serviceAcctName string) {
-	isGlobalPullSecret := namespace == openshiftConfigNamespace && secretName == openshiftConfigPullSecret
+	isGlobalPullSecret := openshift.GlobalPullSecret(namespace, secretName)
 
 	// hasBoundServiceAccount indicates that this secret is bound to a service account,
 	// which means the secret is managed by OCP and its lifecycle is tied to that of

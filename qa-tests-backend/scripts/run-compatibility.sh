@@ -83,21 +83,10 @@ _compatibility_test() {
 
     make -C qa-tests-backend compatibility-test || touch FAIL
 
-    update_junit_prefix_with_central_and_sensor_version "${short_central_tag}" "${short_sensor_tag}"
+    update_junit_prefix_with_central_and_sensor_version "${short_central_tag}" "${short_sensor_tag}" "${ROOT}/qa-tests-backend/build/test-results/testCOMPATIBILITY"
 
     store_qa_test_results "compatibility-test-central-v${short_central_tag}-sensor-v${short_sensor_tag}"
     [[ ! -f FAIL ]] || die "compatibility-test-central-v${short_central_tag}-sensor-v${short_sensor_tag}"
-}
-
-update_junit_prefix_with_central_and_sensor_version() {
-    local short_central_tag="$1"
-    local short_sensor_tag="$2"
-
-    result_folder="${ROOT}/qa-tests-backend/build/test-results/testCOMPATIBILITY"
-    info "Updating all test in $result_folder to have \"Central-v${short_central_tag}_Sensor-v${short_sensor_tag}_\" prefix"
-    for f in "$result_folder"/*.xml; do
-        sed -i "s/testcase name=\"/testcase name=\"[Central-v${short_central_tag}_Sensor-v${short_sensor_tag}] /g" "$f"
-    done
 }
 
 shorten_tag() {

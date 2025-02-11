@@ -15,6 +15,12 @@ var defaultLabels = map[string]string{
 	"app.stackrox.io/managed-by": "operator",
 }
 
+func TLSSecretLabels() map[string]string {
+	labels := DefaultLabels()
+	labels["rhacs.redhat.com/tls"] = "true"
+	return labels
+}
+
 // DefaultLabels defines the default labels the operator should set on resources it creates.
 func DefaultLabels() map[string]string {
 	labels := make(map[string]string, len(defaultLabels))
@@ -23,6 +29,24 @@ func DefaultLabels() map[string]string {
 	}
 
 	return labels
+}
+
+// MergeLabels merges labels
+func MergeLabels(current, newLabels map[string]string) (map[string]string, bool) {
+	updated := false
+	mergedLabels := map[string]string{}
+
+	for k, v := range current {
+		mergedLabels[k] = v
+	}
+	for k, v := range newLabels {
+		if x, exists := mergedLabels[k]; !exists || x != v {
+			updated = true
+			mergedLabels[k] = v
+		}
+
+	}
+	return mergedLabels, updated
 }
 
 // WithDefaults return a copy of the given labels with the default labels added.

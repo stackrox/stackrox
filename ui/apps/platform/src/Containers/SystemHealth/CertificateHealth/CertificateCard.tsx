@@ -134,7 +134,7 @@ function CertificateCard({ component, pollingCount }: CertificateCardProps): Rea
                                     <a
                                         href={getVersionedDocs(
                                             version,
-                                            'configuration/reissue-internal-certificates.html'
+                                            'configuring/reissue-internal-certificates'
                                         )}
                                         target="_blank"
                                         rel="noopener noreferrer"

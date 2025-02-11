@@ -15,11 +15,13 @@ const testId = 'credentialExpiration';
 
 type CredentialExpirationProps = {
     certExpiryStatus?: CertExpiryStatus;
+    autoRefreshEnabled: boolean;
     isList?: boolean;
 };
 
 function CredentialExpiration({
     certExpiryStatus,
+    autoRefreshEnabled,
     isList = false,
 }: CredentialExpirationProps): ReactElement {
     const { version } = useMetadata();
@@ -42,6 +44,7 @@ function CredentialExpiration({
     const distanceElement = (
         <span className="whitespace-nowrap">
             {getDistanceStrictAsPhrase(sensorCertExpiry, currentDatetime)}
+            {autoRefreshEnabled && <div>Auto-refresh enabled</div>}
         </span>
     );
 
@@ -88,7 +91,7 @@ function CredentialExpiration({
                                 <a
                                     href={getVersionedDocs(
                                         version,
-                                        'configuration/reissue-internal-certificates.html#reissue-internal-certificates-secured-clusters'
+                                        'configuring/reissue-internal-certificates#reissue-internal-certificates-secured-clusters'
                                     )}
                                     target="_blank"
                                     rel="noopener noreferrer"

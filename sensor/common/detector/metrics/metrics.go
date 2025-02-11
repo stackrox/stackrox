@@ -180,6 +180,27 @@ var (
 		Name:      "detector_network_flows_dropped_total",
 		Help:      "A counter of the total number of network flows that were dropped if the detector buffer was full",
 	})
+	detectorBlockScanCalls = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "block_scan_calls_total",
+		Help:      "A counter that tracks the operations in blocking scan calls",
+	}, []string{"Operation", "Path"})
+
+	scanCallDuration = prometheus.NewHistogram(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "scan_call_duration_milliseconds",
+		Help:      "Time taken to call scan in milliseconds",
+		Buckets:   prometheus.ExponentialBuckets(4, 2, 16),
+	})
+
+	scanAndSetCall = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "scan_and_set_calls_total",
+		Help:      "A counter that tracks the operations in scan and set",
+	}, []string{"Operation", "Reason"})
 )
 
 // ObserveTimeSpentInExponentialBackoff observes the metric.
@@ -236,6 +257,45 @@ func ObserveNodeScanningAck(nodeName, ackType, messageType string, op AckOperati
 	}).Inc()
 }
 
+// AddBlockingScanCall records a call to blockingScan
+func AddBlockingScanCall(path string) {
+	detectorBlockScanCalls.With(prometheus.Labels{
+		"Operation": metrics.Add.String(),
+		"Path":      path,
+	}).Inc()
+}
+
+// RemoveBlockingScanCall records a call to blockingScan has finished
+func RemoveBlockingScanCall() {
+	detectorBlockScanCalls.With(prometheus.Labels{
+		"Operation": metrics.Remove.String(),
+		"Path":      "",
+	}).Inc()
+}
+
+// SetScanCallDuration records the duration of the scan call to central/scanner
+func SetScanCallDuration(start time.Time) {
+	now := time.Now()
+	durMilli := now.Sub(start).Milliseconds()
+	scanCallDuration.Observe(float64(durMilli))
+}
+
+// AddScanAndSetCall records a call to ScanAndSet
+func AddScanAndSetCall(reason string) {
+	scanAndSetCall.With(prometheus.Labels{
+		"Operation": metrics.Add.String(),
+		"Reason":    reason,
+	}).Inc()
+}
+
+// RemoveScanAndSetCall records a call to ScanAndSet has finished
+func RemoveScanAndSetCall(reason string) {
+	scanAndSetCall.With(prometheus.Labels{
+		"Operation": metrics.Remove.String(),
+		"Reason":    reason,
+	}).Inc()
+}
+
 func init() {
 	prometheus.MustRegister(timeSpentInExponentialBackoff,
 		networkPoliciesStored,
@@ -247,5 +307,9 @@ func init() {
 		DetectorNetworkFlowBufferSize,
 		DetectorProcessIndicatorBufferSize,
 		DetectorNetworkFlowDroppedCount,
-		DetectorProcessIndicatorDroppedCount)
+		DetectorProcessIndicatorDroppedCount,
+		detectorBlockScanCalls,
+		scanCallDuration,
+		scanAndSetCall,
+	)
 }

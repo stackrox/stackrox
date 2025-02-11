@@ -64,3 +64,10 @@ ci-all-qa-tests:
 
 backport:
 - base-branch: 'release-*'
+
+konflux-build:
+- changed-files:
+  - any-glob-to-any-file:
+    - '**/konflux*.Dockerfile'
+    - .tekton/**/*
+    - .konflux/**/*
