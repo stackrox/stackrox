@@ -665,6 +665,9 @@ func (resolver *imageComponentV2Resolver) ImageVulnerabilities(ctx context.Conte
 	// Short path. Full image is embedded when image scan resolver is called.
 	embeddedComponent := embeddedobjs.ComponentFromContext(resolver.ctx)
 	if embeddedComponent == nil {
+		log.Infof("SHREWS -- ImageVulnerabilities -- %v", embeddedComponent)
+		log.Infof("SHREWS -- ImageVulnerabilities -- %v", ctx)
+		log.Infof("SHREWS -- ImageVulnerabilities -- %v", args)
 		return resolver.root.ImageVulnerabilities(resolver.imageComponentScopeContext(ctx), args)
 	}
 

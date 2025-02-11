@@ -118,6 +118,7 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 	}
 
 	if features.FlattenCVEData.Enabled() {
+		log.Info("SHREWS -- ImageVulnerabilities -- loader")
 		// get loader
 		loader, err := loaders.GetImageCVEV2Loader(ctx)
 		if err != nil {
@@ -127,6 +128,7 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 		// get values
 		//query = tryUnsuppressedQuery(query)
 		vulns, err := loader.FromQuery(ctx, query)
+		log.Info("SHREWS -- ImageVulnerabilities -- got vulns")
 		cveResolvers, err := resolver.wrapImageCVEV2sWithContext(ctx, vulns, err)
 		if err != nil {
 			return nil, err
