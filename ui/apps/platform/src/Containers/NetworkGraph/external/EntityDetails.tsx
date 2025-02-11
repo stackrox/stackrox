@@ -15,16 +15,7 @@ import {
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
-import {
-    ActionsColumn,
-    InnerScrollContainer,
-    Table,
-    Tbody,
-    Td,
-    Th,
-    Thead,
-    Tr,
-} from '@patternfly/react-table';
+import { InnerScrollContainer, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import useRestQuery from 'hooks/useRestQuery';
@@ -141,9 +132,6 @@ function EntityDetails({
                                     <Th>Entity</Th>
                                     <Th>Direction</Th>
                                     <Th>Port/protocol</Th>
-                                    <Th>
-                                        <span className="pf-v5-screen-reader">Row actions</span>
-                                    </Th>
                                 </Tr>
                             </Thead>
                             <TbodyUnified
@@ -196,16 +184,6 @@ function EntityDetails({
                                                     <Td dataLabel="Direction">{direction}</Td>
                                                     <Td dataLabel="Port/protocol">
                                                         {dstPort} / {protocolLabel[l4protocol]}
-                                                    </Td>
-                                                    <Td isActionCell>
-                                                        <ActionsColumn
-                                                            items={[
-                                                                {
-                                                                    title: 'Add to baseline',
-                                                                    onClick: () => {},
-                                                                },
-                                                            ]}
-                                                        />
                                                     </Td>
                                                 </Tr>
                                             );
