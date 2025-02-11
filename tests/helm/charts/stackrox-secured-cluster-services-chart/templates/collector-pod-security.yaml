@@ -1,0 +1,72 @@
+{{- include "srox.init" . -}}
+
+{{- if ._rox.system.enablePodSecurityPolicies }}
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: stackrox-collector-psp
+  labels:
+    {{- include "srox.labels" (list . "clusterrole" "stackrox-collector-psp") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "clusterrole" "stackrox-collector-psp") | nindent 4 }}
+rules:
+  - apiGroups:
+      - policy
+    resources:
+      - podsecuritypolicies
+    resourceNames:
+      - stackrox-collector
+    verbs:
+      - use
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: stackrox-collector-psp
+  namespace: {{ ._rox._namespace }}
+  labels:
+    {{- include "srox.labels" (list . "rolebinding" "stackrox-collector-psp") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "rolebinding" "stackrox-collector-psp") | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: stackrox-collector-psp
+subjects:
+  - kind: ServiceAccount
+    name: collector
+    namespace: {{ ._rox._namespace }}
+---
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: stackrox-collector
+  labels:
+    {{- include "srox.labels" (list . "podsecuritypolicy" "stackrox-collector") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "podsecuritypolicy" "stackrox-collector") | nindent 4 }}
+spec:
+  privileged: true
+  allowPrivilegeEscalation: true
+  allowedCapabilities:
+    - '*'
+  volumes:
+    - '*'
+  allowedHostPaths:
+    - pathPrefix: /
+      readOnly: true
+  hostNetwork: false
+  hostIPC: false
+  hostPID: true
+  runAsUser:
+    rule: 'RunAsAny'
+  seLinux:
+    rule: 'RunAsAny'
+  supplementalGroups:
+    rule: 'RunAsAny'
+  fsGroup:
+    rule: 'RunAsAny'
+{{- end }}
