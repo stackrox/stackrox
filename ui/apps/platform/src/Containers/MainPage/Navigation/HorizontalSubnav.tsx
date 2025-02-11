@@ -275,14 +275,16 @@ function HorizontalSubnav({ hasReadAccess, isFeatureFlagEnabled }: HorizontalSub
                                                 );
                                             }
                                             const { content, path, description } = child;
+                                            const isActive = isActiveLink(location, child);
                                             return (
                                                 <DropdownItem
                                                     component={'a'}
                                                     className={
-                                                        isActiveLink(location, child)
+                                                        isActive
                                                             ? 'acs-pf-horizontal-subnav-menu__active'
                                                             : ''
                                                     }
+                                                    isSelected={isActive}
                                                     value={path}
                                                     key={path}
                                                     description={description}
