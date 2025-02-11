@@ -588,6 +588,7 @@ func toProtoV4VulnerabilitiesMap(
 		if rhelEPSS, ok := rhelEPSSDetails[name]; ok {
 			vulnEPSS = &rhelEPSS
 		}
+
 		if vulnerabilities == nil {
 			vulnerabilities = make(map[string]*v4.VulnerabilityReport_Vulnerability, len(vulns))
 		}
@@ -940,7 +941,7 @@ func cveEPSS(ctx context.Context, enrichments map[string][]json.RawMessage) (map
 	if len(enrichmentList) == 0 {
 		zlog.Warn(ctx).
 			Str("enrichments", epss.Type).
-			Msg("no EPSS enrichments found, check if vulnerability enrichment data is complete")
+			Msg("No EPSS enrichments found. Verify that the vulnerability enrichment data is available and complete.")
 		return nil, nil
 	}
 
@@ -954,7 +955,7 @@ func cveEPSS(ctx context.Context, enrichments map[string][]json.RawMessage) (map
 	if len(epssItems) == 0 {
 		zlog.Warn(ctx).
 			Str("enrichments", epss.Type).
-			Msg("no EPSS enrichments found, check if vulnerability enrichment data is complete")
+			Msg("No EPSS enrichments found. Verify that the vulnerability enrichment data is available and complete.")
 		return nil, nil
 	}
 

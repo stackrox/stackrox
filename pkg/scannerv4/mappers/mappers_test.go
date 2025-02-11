@@ -1130,7 +1130,7 @@ func Test_toProtoV4VulnerabilitiesMapWithEPSS(t *testing.T) {
 			enableEPSS := "true"
 			t.Setenv(features.EPSSScore.EnvVar(), enableEPSS)
 			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities, tt.nvdVulns, tt.epssItems, nil)
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			protoassert.MapEqual(t, tt.want, got)
 		})
 	}
