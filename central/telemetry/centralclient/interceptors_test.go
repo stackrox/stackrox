@@ -100,6 +100,17 @@ func Test_apiCall(t *testing.T) {
 				snowIntegrationHeader: "v1.0.3",
 				"User-Agent":          "RHACS Integration ServiceNow client"},
 		},
+		"SBOM generation": {
+			rp: &phonehome.RequestParams{
+				Headers: withUserAgent(t, nil, "Some SBOM client"),
+				Method:  "POST",
+				Path:    "/api/v1/images/sbom",
+				Code:    200,
+			},
+			expected: true,
+			expectedProps: map[string]any{
+				"User-Agent": "Some SBOM client"},
+		},
 	}
 	require.NoError(t, permanentTelemetryCampaign.Compile())
 	anyTestEndpoint := &phonehome.APICallCampaignCriterion{
