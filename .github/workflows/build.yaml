@@ -60,7 +60,7 @@ jobs:
           matrix="$(jq '.build_and_push_operator.name += ["RHACS_BRANDING"]' <<< "$matrix")"
 
           matrix="$(jq '.scan_images_with_roxctl.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
-          matrix="$(jq '.scan_images_with_roxctl.image += ["central-db", "collector", "collector-slim", "main", "roxctl", "scanner", "scanner-db", "scanner-db-slim", "scanner-slim", "stackrox-operator"]' <<< "$matrix")"
+          matrix="$(jq '.scan_images_with_roxctl.image += ["central-db", "collector", "main", "roxctl", "scanner", "scanner-db", "scanner-db-slim", "scanner-slim", "stackrox-operator"]' <<< "$matrix")"
           # TODO(ROX-27191): remove the exclusion once there's a community operator.
           matrix="$(jq '.scan_images_with_roxctl.exclude += [{ "name": "STACKROX_BRANDING", "image": "stackrox-operator" }]' <<< "$matrix")"
 
@@ -282,7 +282,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        tag_suffix: ["", "-fast", "-fast-slim"]
+        tag_suffix: ["", "-fast"]
     steps:
     - name: Checkout repo
       uses: actions/checkout@v4
