@@ -105,9 +105,6 @@ var (
 	// ExternalIPs enables storing detailed discovered external IPs
 	ExternalIPs = registerFeature("Central will work with discovered external IPs", "ROX_EXTERNAL_IPS")
 
-	// NetworkGraphExternalIPs enables displaying external (discovered) entities in the network graph
-	NetworkGraphExternalIPs = registerFeature("Enables display of external IPs in the network graph UI", "ROX_NETWORK_GRAPH_EXTERNAL_IPS")
-
 	// ScannerV4RedHatCVEs enables displaying CVEs instead of RHSAs/RHEAs/RHBAs in the place of fixed vulnerabilities affected Red Hat products.
 	// TODO(ROX-26672): Remove this once we can show both CVEs and RHSAs in the UI + reports.
 	ScannerV4RedHatCVEs = registerFeature("Scanner V4 will output CVEs instead of RHSAs/RHBAs/RHEAs for fixed Red Hat vulnerabilities", "ROX_SCANNER_V4_RED_HAT_CVES")
