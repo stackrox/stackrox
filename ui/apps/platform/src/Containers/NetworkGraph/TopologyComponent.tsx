@@ -88,7 +88,7 @@ const TopologyComponent = ({
     scopeHierarchy,
 }: TopologyComponentProps) => {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isExternalIpsEnabled = isFeatureFlagEnabled('ROX_EXTERNAL_IPS');
+    const isNetworkGraphExternalIpsEnabled = isFeatureFlagEnabled('ROX_NETWORK_GRAPH_EXTERNAL_IPS');
 
     const { hasReadAccess } = usePermissions();
     const hasReadAccessForNetworkPolicy = hasReadAccess('NetworkPolicy');
@@ -290,7 +290,7 @@ const TopologyComponent = ({
                     )}
                     {selectedNode &&
                         isNodeOfType('EXTERNAL_ENTITIES', selectedNode) &&
-                        (isExternalIpsEnabled ? (
+                        (isNetworkGraphExternalIpsEnabled ? (
                             <ExternalEntitiesSideBar
                                 labelledById={labelledById}
                                 id={selectedNode.id}
