@@ -354,7 +354,7 @@ func (s *LocalScan) enrichImageWithMetadata(ctx context.Context, errorList *erro
 		if err != nil {
 			insecure := reg.Config(ctx).GetInsecure()
 			log.Debugf("Failed fetching metadata for image %q (%q) with integration %q (insecure: %t): %v", image.GetName().GetFullName(), image.GetId(), reg.Name(), insecure, err)
-			errs = append(errs, pkgErrors.Wrapf(err, "with integraton %q (insecure: %t)", reg.Name(), insecure))
+			errs = append(errs, pkgErrors.Wrapf(err, "with integration %q (insecure: %t)", reg.Name(), insecure))
 			continue
 		}
 
