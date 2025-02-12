@@ -766,15 +766,15 @@ func (resolver *imageComponentV2Resolver) LayerIndex() (*int32, error) {
 		return nil, nil
 	}
 
-	edges, err := resolver.root.ImageComponentEdgeDataStore.SearchRawEdges(resolver.ctx, resolver.componentQuery())
+	components, err := resolver.root.ImageComponentV2DataStore.SearchRawImageComponents(resolver.ctx, resolver.componentQuery())
 	if err != nil {
 		return nil, err
 	}
-	if len(edges) == 0 || len(edges) > 1 {
-		return nil, errors.Errorf("Unexpected number of image-component edge matched for image %s and component %s. Expected 1 edge.", scope.ID, resolver.data.GetId())
+	if len(components) == 0 || len(components) > 1 {
+		return nil, errors.Errorf("Unexpected number of image-components matched for image %s and component %s. Expected 1 component.", scope.ID, resolver.data.GetId())
 	}
 
-	w, ok := edges[0].GetHasLayerIndex().(*storage.ImageComponentEdge_LayerIndex)
+	w, ok := components[0].GetHasLayerIndex().(*storage.ImageComponentV2_LayerIndex)
 	if !ok {
 		return nil, nil
 	}
@@ -811,11 +811,11 @@ func (resolver *imageComponentV2Resolver) Location(ctx context.Context, args Raw
 	}
 
 	query := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, imageID).AddExactMatches(search.ComponentID, resolver.data.GetId()).ProtoQuery()
-	edges, err := resolver.root.ImageComponentEdgeDataStore.SearchRawEdges(resolver.ctx, query)
-	if err != nil || len(edges) == 0 {
+	components, err := resolver.root.ImageComponentV2DataStore.SearchRawImageComponents(resolver.ctx, query)
+	if err != nil || len(components) == 0 {
 		return "", err
 	}
-	return edges[0].GetLocation(), nil
+	return components[0].GetLocation(), nil
 }
 
 // Following are deprecated functions that are retained to allow UI time to migrate away from them

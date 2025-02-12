@@ -24,6 +24,7 @@ import (
 	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
 	"github.com/stackrox/rox/central/cve/fetcher"
 	imageCVEDataStore "github.com/stackrox/rox/central/cve/image/datastore"
+	imageCVEV2DataStore "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	cveMatcher "github.com/stackrox/rox/central/cve/matcher"
 	nodeCVEDataStore "github.com/stackrox/rox/central/cve/node/datastore"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
@@ -120,6 +121,7 @@ type Resolver struct {
 	vulnReqStore                  vulnReqDataStore.DataStore
 	AuditLogger                   auditPkg.Auditor
 	ImageComponentV2DataStore     imageComponentV2DataStore.DataStore
+	ImageCVEV2DataStore           imageCVEV2DataStore.DataStore
 
 	// Views
 	ImageCVEView    imagecve.CveView
