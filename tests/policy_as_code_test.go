@@ -163,7 +163,7 @@ func (pc *PolicyAsCodeSuite) TestCreateDefaultCR() {
 	_, err := pc.k8sClient.Create(pc.ctx, pc.toUnstructured(k8sPolicy), metav1.CreateOptions{})
 	pc.Require().NoError(err)
 
-	message := "status never udpated"
+	message := "status never updated"
 	timer := time.NewTimer(time.Second * 5)
 	for {
 		select {
@@ -187,7 +187,7 @@ func (pc *PolicyAsCodeSuite) TestRenameToDefaultCR() {
 	pc.Require().NoError(err)
 	pc.fromUnstructured(u, k8sPolicy)
 
-	message := "status never udpated"
+	message := "status never updated"
 	timer := time.NewTimer(time.Second * 5)
 	for {
 		accepted := false
@@ -320,7 +320,7 @@ func (pc *PolicyAsCodeSuite) createPolicyInK8s(toCreate *v1alpha1.SecurityPolicy
 	_, err := pc.k8sClient.Create(pc.ctx, pc.toUnstructured(toCreate), metav1.CreateOptions{})
 	pc.Require().NoError(err)
 
-	message := "status never udpated"
+	message := "status never updated"
 	timer := time.NewTimer(time.Second * 5)
 	for {
 		select {
