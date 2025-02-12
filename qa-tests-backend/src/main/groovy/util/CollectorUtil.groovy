@@ -68,9 +68,17 @@ class CollectorUtil {
             sleep intervalSeconds * 1000
         }
 
+        def success = waitTime <= timeoutSeconds / intervalSeconds
+        if (success) {
+            def waitTimeSeconds = waitTime * intervalSeconds
+            log.info "Waited for ${waitTimeSeconds} seconds for Collector runtime configuration to be updated"
+        } else {
+            log.info "Waiting for Collector runtime configuration timed out after ${timeoutSeconds} seconds"
+        }
+
         // if we timed out, some collectors have not updated
         // the config, so return false
-        return (waitTime <= timeoutSeconds / intervalSeconds)
+        return success
     }
 
     static enableExternalIps(OrchestratorMain orchestrator, int timeoutSeconds = 90) {
