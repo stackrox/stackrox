@@ -672,6 +672,11 @@ func toDigestString(digest claircore.Digest) string {
 }
 
 func toClairCoreCPE(s string) (cpe.WFN, error) {
+	emptyCPE := cpe.WFN{}.BindFS()
+	if s == emptyCPE {
+		return cpe.WFN{}, nil
+	}
+
 	c, err := cpe.Unbind(s)
 	if err != nil {
 		return c, fmt.Errorf("%q: %s", s, strings.TrimPrefix(err.Error(), "cpe: "))

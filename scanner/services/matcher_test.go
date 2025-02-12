@@ -131,12 +131,12 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_c
 			EXPECT().
 			GetVulnerabilities(gomock.Any(), gomock.Eq(&claircore.IndexReport{
 				Packages: map[string]*claircore.Package{
-					"1": {ID: "1", Name: "Foobar", CPE: cpe.MustUnbind(emptyCPE)},
+					"1": {ID: "1", Name: "Foobar", CPE: cpe.WFN{}},
 				},
 			})).
 			Return(&claircore.VulnerabilityReport{
 				Packages: map[string]*claircore.Package{
-					"1": {ID: "1", Name: "Foobar", CPE: cpe.MustUnbind(emptyCPE)},
+					"1": {ID: "1", Name: "Foobar", CPE: cpe.WFN{}},
 				},
 			}, nil)
 		s.matcherMock.
