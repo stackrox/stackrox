@@ -915,76 +915,43 @@ func (resolver *imageCVEV2Resolver) FixedByVersion(ctx context.Context) (string,
 }
 
 func (resolver *imageCVEV2Resolver) IsFixable(_ context.Context, _ RawQuery) (bool, error) {
-	//defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "IsFixable")
-	//
-	//if resolver.ctx == nil {
-	//	resolver.ctx = ctx
-	//}
-	//
-	//// Short path. Full image is embedded when image scan resolver is called.
-	//if embeddedVuln := embeddedobjs.VulnFromContext(resolver.ctx); embeddedVuln != nil {
-	//	return embeddedVuln.GetFixedBy() != "", nil
-	//}
-	//
-	//query, err := args.AsV1QueryOrEmpty(search.ExcludeFieldLabel(search.CVEID))
-	//if err != nil {
-	//	return false, err
-	//}
-	//// check for Fixable fields in args
-	//logErrorOnQueryContainingField(query, search.Fixable, "IsFixable")
-	//
-	//conjuncts := []*v1.Query{query, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery()}
-	//
-	//// check scoping, add as conjunction if needed
-	//if scope, ok := scoped.GetScope(resolver.ctx); !ok || scope.Level != v1.SearchCategory_IMAGE_VULNERABILITIES {
-	//	conjuncts = append(conjuncts, resolver.getImageCVEQuery())
-	//}
-	//
-	//query = search.ConjunctionQuery(conjuncts...)
-	//loader, err := loaders.GetImageCVELoader(resolver.ctx)
-	//if err != nil {
-	//	return false, err
-	//}
-	//count, err := loader.CountFromQuery(resolver.ctx, query)
-	//if err != nil {
-	//	return false, err
-	//}
-	return false, nil //count != 0, nil
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "IsFixable")
+	return resolver.data.IsFixable, nil
 }
 
-func (resolver *imageCVEV2Resolver) LastScanned(_ context.Context) (*graphql.Time, error) {
-	//defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "LastScanned")
-	//
-	//// Short path. Full image is embedded when image scan resolver is called.
-	//if scanTime := embeddedobjs.LastScannedFromContext(resolver.ctx); scanTime != nil {
-	//	return &graphql.Time{Time: *scanTime}, nil
-	//}
-	//
-	//imageLoader, err := loaders.GetImageLoader(resolver.ctx)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//q := search.EmptyQuery()
-	//q.Pagination = &v1.QueryPagination{
-	//	Limit:  1,
-	//	Offset: 0,
-	//	SortOptions: []*v1.QuerySortOption{
-	//		{
-	//			Field:    search.ImageScanTime.String(),
-	//			Reversed: true,
-	//		},
-	//	},
-	//}
-	//
-	//images, err := imageLoader.FromQuery(resolver.imageVulnerabilityScopeContext(ctx), q)
-	//if err != nil || len(images) == 0 {
-	//	return nil, err
-	//} else if len(images) > 1 {
-	//	return nil, errors.New("multiple images matched for last scanned image vulnerability query")
-	//}
+func (resolver *imageCVEV2Resolver) LastScanned(ctx context.Context) (*graphql.Time, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "LastScanned")
 
-	return nil, nil //protocompat.ConvertTimestampToGraphqlTimeOrError(images[0].GetScan().GetScanTime())
+	// Short path. Full image is embedded when image scan resolver is called.
+	if scanTime := embeddedobjs.LastScannedFromContext(resolver.ctx); scanTime != nil {
+		return &graphql.Time{Time: *scanTime}, nil
+	}
+
+	imageLoader, err := loaders.GetImageLoader(resolver.ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	q := search.EmptyQuery()
+	q.Pagination = &v1.QueryPagination{
+		Limit:  1,
+		Offset: 0,
+		SortOptions: []*v1.QuerySortOption{
+			{
+				Field:    search.ImageScanTime.String(),
+				Reversed: true,
+			},
+		},
+	}
+
+	images, err := imageLoader.FromQuery(resolver.imageVulnerabilityScopeContext(ctx), q)
+	if err != nil || len(images) == 0 {
+		return nil, err
+	} else if len(images) > 1 {
+		return nil, errors.New("multiple images matched for last scanned image vulnerability query")
+	}
+
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(images[0].GetScan().GetScanTime())
 }
 
 func (resolver *imageCVEV2Resolver) Vectors() *EmbeddedVulnerabilityVectorsResolver {
@@ -1107,41 +1074,7 @@ func (resolver *imageCVEV2Resolver) Deployments(ctx context.Context, args Pagina
 
 func (resolver *imageCVEV2Resolver) DiscoveredAtImage(_ context.Context, _ RawQuery) (*graphql.Time, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "DiscoveredAtImage")
-	//
-	//if resolver.ctx == nil {
-	//	resolver.ctx = ctx
-	//}
-	//
-	//// Short path. Full image is embedded when image scan resolver is called.
-	//if embeddedVuln := embeddedobjs.VulnFromContext(resolver.ctx); embeddedVuln != nil {
-	//	return protocompat.ConvertTimestampToGraphqlTimeOrError(embeddedVuln.GetFirstImageOccurrence())
-	//}
-	//
-	//var imageID string
-	//scope, hasScope := scoped.GetScopeAtLevel(resolver.ctx, v1.SearchCategory_IMAGES)
-	//if hasScope {
-	//	imageID = scope.ID
-	//} else {
-	//	var err error
-	//	imageID, err = getImageIDFromIfImageShaQuery(resolver.ctx, resolver.root, args)
-	//	if err != nil {
-	//		return nil, errors.Wrap(err, "could not determine vulnerability discovered time in image")
-	//	}
-	//}
-	//
-	//if imageID == "" {
-	//	return nil, nil
-	//}
-	//
-	//query := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, imageID).AddExactMatches(search.CVEID, resolver.data.GetId()).ProtoQuery()
-	//// TODO:  Verify this is correct.
-	//cves, err := resolver.root.ImageCVEV2DataStore.SearchRawImageCVEs(resolver.ctx, query)
-	//if err != nil || len(cves) == 0 {
-	//	return nil, err
-	//}
-	//return protocompat.ConvertTimestampToGraphqlTimeOrError(cves[0].GetFirstImageOccurrence())
 	return protocompat.ConvertTimestampToGraphqlTimeOrError(resolver.data.GetFirstImageOccurrence())
-
 }
 
 func (resolver *imageCVEV2Resolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
@@ -1217,4 +1150,8 @@ func (resolver *imageCVEV2Resolver) imageVulnerabilityScopeContext(ctx context.C
 		ID:    resolver.data.GetId(),
 		Level: v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
 	})
+}
+
+func (resolver *imageCVEV2Resolver) getImageCVEQuery() *v1.Query {
+	return search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.data.GetId()).ProtoQuery()
 }
