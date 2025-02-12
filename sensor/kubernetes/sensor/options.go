@@ -19,6 +19,7 @@ type CreateOptions struct {
 	certLoader                         centralclient.CertLoader
 	localSensor                        bool
 	k8sClient                          client.Interface
+	realK8sClient                      client.Interface
 	traceWriter                        io.Writer
 	eventPipelineQueueSize             int
 	networkFlowServiceAuthFuncOverride func(context.Context, string) (context.Context, error)
@@ -39,6 +40,7 @@ func ConfigWithDefaults() *CreateOptions {
 		centralConnFactory:                 nil,
 		certLoader:                         centralclient.EmptyCertLoader(),
 		k8sClient:                          nil,
+		realK8sClient:                      nil,
 		localSensor:                        false,
 		traceWriter:                        nil,
 		eventPipelineQueueSize:             queue.ScaleSizeOnNonDefault(env.EventPipelineQueueSize),
@@ -53,6 +55,14 @@ func ConfigWithDefaults() *CreateOptions {
 // Default: nil
 func (cfg *CreateOptions) WithK8sClient(k8s client.Interface) *CreateOptions {
 	cfg.k8sClient = k8s
+	return cfg
+}
+
+// WithRealK8sClient sets the real k8s client.
+// This is necessary if we want to use the fake-workloads with a CRS installation.
+// Default: nil
+func (cfg *CreateOptions) WithRealK8sClient(k8s client.Interface) *CreateOptions {
+	cfg.realK8sClient = k8s
 	return cfg
 }
 

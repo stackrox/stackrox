@@ -74,7 +74,13 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	log.Infof("Install method: %q", helmManagedConfig.GetManagedBy())
 	installmethod.Set(helmManagedConfig.GetManagedBy())
 
-	deploymentIdentification := FetchDeploymentIdentification(context.Background(), cfg.k8sClient.Kubernetes())
+	k8sFetcher := cfg.k8sClient.Kubernetes()
+	if cfg.realK8sClient != nil {
+		// This is used so we can still identify sensor's deployment with the fake-workloads
+		k8sFetcher = cfg.realK8sClient.Kubernetes()
+	}
+
+	deploymentIdentification := FetchDeploymentIdentification(context.Background(), k8sFetcher)
 	log.Infof("Determined deployment identification: %s", protoutils.NewWrapper(deploymentIdentification))
 
 	auditLogEventsInput := make(chan *sensorInternal.AuditEvents)
@@ -172,13 +178,13 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 		podName := os.Getenv("POD_NAME")
 		components = append(components,
-			certrefresh.NewSecuredClusterTLSIssuer(cfg.k8sClient.Kubernetes(), sensorNamespace, podName))
+			certrefresh.NewSecuredClusterTLSIssuer(k8sFetcher, sensorNamespace, podName))
 
 		// Local scanner can be started even if scanner-tls certs are available in the same namespace because
 		// it ignores secrets not owned by Sensor.
 		if env.LocalImageScanningEnabled.BooleanSetting() {
 			components = append(components,
-				certrefresh.NewLocalScannerTLSIssuer(cfg.k8sClient.Kubernetes(), sensorNamespace, podName))
+				certrefresh.NewLocalScannerTLSIssuer(k8sFetcher, sensorNamespace, podName))
 		}
 	}
 
