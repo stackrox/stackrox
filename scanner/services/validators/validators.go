@@ -81,6 +81,9 @@ func ValidateGetSBOMRequest(req *v4.GetSBOMRequest) error {
 	if req.GetName() == "" {
 		return errox.InvalidArgs.New("name is required")
 	}
+	if req.GetUri() == "" {
+		return errox.InvalidArgs.New("uri is required")
+	}
 	// The SBOM request requires Contents to be populated.
 	if req.GetContents() == nil {
 		return errox.InvalidArgs.New("contents are required")

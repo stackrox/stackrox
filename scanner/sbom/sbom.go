@@ -1,48 +1,52 @@
 package sbom
 
 import (
+	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"time"
 
+	"github.com/pkg/errors"
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/sbom/spdx"
 	"github.com/stackrox/rox/scanner/internal/version"
 )
 
 type SBOMer struct {
 }
 
+type Options struct {
+	Name      string
+	Namespace string
+	Comment   string
+}
+
 func NewSBOMer() *SBOMer {
 	return &SBOMer{}
 }
 
-func (s *SBOMer) GetSBOM(ctx context.Context, ir *claircore.IndexReport, name, id string) ([]byte, error) {
-	// TODO(ROX-27145): remove static response and use claircore to create SBOM.
-	// Start: temporary static response
-	fakeResp := struct {
-		Msg             string   `json:"msg"`
-		Name            string   `json:"name"`
-		DocumentComment string   `json:"documentComment"`
-		Creators        []string `json:"creators"`
-		NumPackages     int      `json:"pkgs"`
-		NumDists        int      `json:"dists"`
-		NumRepos        int      `json:"repos"`
-		NumEnvs         int      `json:"envs"`
-	}{
-		Msg:             fmt.Sprintf("This fake response generated from Scanner V4 matcher on %q", time.Now().Format(time.RFC3339)),
-		Name:            id,
-		DocumentComment: fmt.Sprintf("Tech Preview - generated for '%s'", name),
-		Creators: []string{
-			fmt.Sprintf("Tool: scanner-v4-matcher-%s", version.Version),
-		},
-		NumPackages: len(ir.Packages),
-		NumDists:    len(ir.Distributions),
-		NumRepos:    len(ir.Repositories),
-		NumEnvs:     len(ir.Environments),
+func (s *SBOMer) GetSBOM(ctx context.Context, ir *claircore.IndexReport, opts *Options) ([]byte, error) {
+	if ir == nil {
+		return nil, errors.New("index report is required")
 	}
-	sbomB, err := json.Marshal(fakeResp)
-	// End: temporary static response
 
-	return []byte(sbomB), err
+	if opts == nil {
+		return nil, errors.New("opts is required")
+	}
+
+	encoder := spdx.NewDefaultEncoder(
+		spdx.WithDocumentName(opts.Name),
+		spdx.WithDocumentNamespace(opts.Namespace),
+		spdx.WithDocumentComment(opts.Comment),
+	)
+	encoder.Creators = append(encoder.Creators, spdx.Creator{Creator: fmt.Sprintf("scanner-v4-matcher-%s", version.Version), CreatorType: "Tool"})
+	encoder.Version = spdx.V2_3
+	encoder.Format = spdx.JSONFormat
+
+	b := &bytes.Buffer{}
+	err := encoder.Encode(ctx, b, ir)
+	if err != nil {
+		return nil, err
+	}
+
+	return b.Bytes(), nil
 }

@@ -15,12 +15,17 @@ message GetVulnerabilitiesRequest {
 }
 
 message GetSBOMRequest {
-  // id is a unique identiifer (ie: sha256 digest) that represents the contents.
+  // id is a unique identifier (ie: sha256 digest) that represents the contents.
+  // For SPDX 2.3 this will be the document name.
   string id = 1;
-  // name is the user requested name for the contents (ie: if contents represents an image, then the images full name with tag).
+  // name is the user requested name for the contents (ie: for images this may be the images full name with tag).
+  // For SPDX 2.3 this will be included to the document comment.
   string name = 2;
+  // uri is a unique absolute Uniform Resource Identifier (URI) for this document (if applicable).
+  // For SPDX 2.3 this will be the document namespace.
+  string uri = 3;
   // contents is the packages, versions, etc. that will be converted to an SBOM.
-  Contents contents = 3;
+  Contents contents = 4;
 }
 
 message GetSBOMResponse {
