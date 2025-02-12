@@ -1,17 +1,17 @@
 import React, { useEffect, useState, ReactElement } from 'react';
 import {
-    PageSection,
-    Bullseye,
     Alert,
+    Bullseye,
+    Button,
+    Flex,
+    PageSection,
+    Popover,
+    Spinner,
     Title,
     Tabs,
     Tab,
     TabTitleText,
     Text,
-    Spinner,
-    Button,
-    Flex,
-    Tooltip,
 } from '@patternfly/react-core';
 import { OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
 
@@ -280,19 +280,14 @@ function ViolationsTablePage(): ReactElement {
                         {isPlatformCveSplitEnabled ? title : 'Violations'}
                     </Title>
                     {isPlatformCveSplitEnabled && (
-                        <Tooltip
-                            aria="none"
-                            aria-live="polite"
-                            content={description}
-                            position="bottom"
+                        <Popover
+                            aria-label="More information about the current page"
+                            bodyContent={description}
                         >
-                            <Button
-                                aria-label="More information about the current page"
-                                variant="plain"
-                            >
+                            <Button title="Page description" variant="plain">
                                 <OutlinedQuestionCircleIcon />
                             </Button>
-                        </Tooltip>
+                        </Popover>
                     )}
                 </Flex>
             </PageSection>
