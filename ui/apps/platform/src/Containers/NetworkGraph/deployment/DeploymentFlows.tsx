@@ -45,7 +45,7 @@ function DeploymentFlows({
     urlSearchFiltering,
 }: DeploymentFlowsProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isExternalIpsEnabled = isFeatureFlagEnabled('ROX_EXTERNAL_IPS');
+    const isNetworkGraphExternalIpsEnabled = isFeatureFlagEnabled('ROX_NETWORK_GRAPH_EXTERNAL_IPS');
     const [selectedView, setSelectedView] = useState<DeploymentFlowsView>('internal-flows');
 
     const { setPage } = urlPagination;
@@ -56,7 +56,7 @@ function DeploymentFlows({
         setSearchFilter({});
     }, [selectedView, setPage, setSearchFilter]);
 
-    if (!isExternalIpsEnabled) {
+    if (!isNetworkGraphExternalIpsEnabled) {
         return (
             <div className="pf-v5-u-h-100 pf-v5-u-p-md">
                 <InternalFlows
