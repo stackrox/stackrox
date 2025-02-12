@@ -128,7 +128,7 @@ describe('Workload CVE overview page tests', () => {
             });
 
             // Test the 'All vulnerable images' view
-            visitFromHorizontalNavExpandable('More views')('All vulnerable images');
+            visitFromHorizontalNavExpandable('More Views')('All vulnerable images');
             waitAndYieldRequestBodyVariables(['getImageCVEList']).then(({ query }) => {
                 const requestQuery = query.toLowerCase();
                 expect(requestQuery).to.contain('vulnerability state:observed');
