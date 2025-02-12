@@ -49,9 +49,6 @@ var (
 	// VulnMgmtLegacySnooze enables APIs and UI for the legacy VM 1.0 "snooze CVE" functionality in the new VM 2.0 sections
 	VulnMgmtLegacySnooze = registerFeature("Enables the ability to snooze Node and Platform CVEs in VM 2.0", "ROX_VULN_MGMT_LEGACY_SNOOZE")
 
-	// NodeIndexEnabled defines whether Compliance will actually run indexing code.
-	NodeIndexEnabled = registerFeature("Instructs Central to prefer NodeIndex (Node scanning V4) messages over NodeInventory (Node scanning V2)", "ROX_NODE_INDEX_ENABLED", enabled)
-
 	// ComplianceReporting enables support for compliance reporting.
 	ComplianceReporting = registerFeature("Enable support for V2 compliance reporting", "ROX_COMPLIANCE_REPORTING", enabled)
 

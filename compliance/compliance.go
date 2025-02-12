@@ -20,7 +20,6 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
@@ -113,7 +112,7 @@ func (c *Compliance) Start() {
 
 	go func(ctx context.Context) {
 		defer wg.Add(-1)
-		if features.NodeIndexEnabled.Enabled() {
+		if env.NodeIndexEnabled.BooleanSetting() {
 			log.Infof("Node Index v4 enabled")
 			nodeIndexesC := c.manageNodeIndexScanLoop(ctx)
 			// sending node indexes into output toSensorC
@@ -202,7 +201,7 @@ func (c *Compliance) manageNodeIndexScanLoop(ctx context.Context) <-chan *sensor
 					cmetrics.ObserveNodePackageReportTransmissions(nodeName, cmetrics.InventoryTransmissionResendingCacheHit, cmetrics.ScannerVersionV4)
 				}
 			case <-t.C:
-				if features.NodeIndexEnabled.Enabled() {
+				if env.NodeIndexEnabled.BooleanSetting() {
 					index := c.runNodeIndex(ctx)
 					if index != nil {
 						nodeIndexesC <- index

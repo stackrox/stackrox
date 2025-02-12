@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/metrics"
 	nodeEnricher "github.com/stackrox/rox/pkg/nodes/enricher"
@@ -119,7 +120,7 @@ func Test_ThreePipelines_Run(t *testing.T) {
 			},
 			setUpMocksAndEnv: func(t *testing.T, m *usedMocks) {
 				t.Setenv(features.ScannerV4.EnvVar(), "true")
-				t.Setenv(features.NodeIndexEnabled.EnvVar(), "true")
+				t.Setenv(env.NodeIndexEnabled.EnvVar(), "true")
 				gomock.InOrder(
 					// node index arrives
 					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).MinTimes(1).Return(nil, false, nil),
@@ -141,7 +142,7 @@ func Test_ThreePipelines_Run(t *testing.T) {
 			},
 			setUpMocksAndEnv: func(t *testing.T, m *usedMocks) {
 				t.Setenv(features.ScannerV4.EnvVar(), "true")
-				t.Setenv(features.NodeIndexEnabled.EnvVar(), "true")
+				t.Setenv(env.NodeIndexEnabled.EnvVar(), "true")
 				gomock.InOrder(
 					// node arrives
 					m.clusterStore.EXPECT().GetClusterName(gomock.Any(), gomock.Eq(clusterID)).Times(1).Return(clusterID, true, nil),
@@ -176,7 +177,7 @@ func Test_ThreePipelines_Run(t *testing.T) {
 			},
 			setUpMocksAndEnv: func(t *testing.T, m *usedMocks) {
 				t.Setenv(features.ScannerV4.EnvVar(), "true")
-				t.Setenv(features.NodeIndexEnabled.EnvVar(), "true")
+				t.Setenv(env.NodeIndexEnabled.EnvVar(), "true")
 				gomock.InOrder(
 					// node inventory arrives
 					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).Times(1).Return(nodeWithScore, true, nil),
@@ -212,7 +213,7 @@ func Test_ThreePipelines_Run(t *testing.T) {
 			},
 			setUpMocksAndEnv: func(t *testing.T, m *usedMocks) {
 				t.Setenv(features.ScannerV4.EnvVar(), "true")
-				t.Setenv(features.NodeIndexEnabled.EnvVar(), "true")
+				t.Setenv(env.NodeIndexEnabled.EnvVar(), "true")
 				gomock.InOrder(
 					// node index arrives
 					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).Times(1).Return(nodeWithScore, true, nil),
@@ -245,7 +246,7 @@ func Test_ThreePipelines_Run(t *testing.T) {
 			},
 			setUpMocksAndEnv: func(t *testing.T, m *usedMocks) {
 				t.Setenv(features.ScannerV4.EnvVar(), "false")
-				t.Setenv(features.NodeIndexEnabled.EnvVar(), "false")
+				t.Setenv(env.NodeIndexEnabled.EnvVar(), "false")
 				gomock.InOrder(
 					// node inventory arrives
 					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).Return(nodeWithScore, true, nil),
@@ -270,7 +271,7 @@ func Test_ThreePipelines_Run(t *testing.T) {
 			},
 			setUpMocksAndEnv: func(t *testing.T, m *usedMocks) {
 				t.Setenv(features.ScannerV4.EnvVar(), "true")
-				t.Setenv(features.NodeIndexEnabled.EnvVar(), "true")
+				t.Setenv(env.NodeIndexEnabled.EnvVar(), "true")
 				gomock.InOrder(
 					// node inventory arrives
 					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).Return(nodeWithScore, true, nil),
