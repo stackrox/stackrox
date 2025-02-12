@@ -69,6 +69,8 @@ func init() {
 // Images returns GraphQL resolvers for all images
 func (resolver *Resolver) Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Images")
+	log.Info("SHREWS -- Images")
+
 	if err := readImages(ctx); err != nil {
 		return nil, err
 	}
@@ -87,6 +89,7 @@ func (resolver *Resolver) Images(ctx context.Context, args PaginatedQuery) ([]*i
 // ImageCount returns count of all images across deployments
 func (resolver *Resolver) ImageCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageCount")
+	log.Info("SHREWS -- ImageCount")
 	if err := readImages(ctx); err != nil {
 		return 0, err
 	}
@@ -105,6 +108,8 @@ func (resolver *Resolver) ImageCount(ctx context.Context, args RawQuery) (int32,
 // Image returns a graphql resolver for the identified image, if it exists
 func (resolver *Resolver) Image(ctx context.Context, args struct{ ID graphql.ID }) (*imageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Image")
+	log.Info("SHREWS -- Image")
+
 	if err := readImages(ctx); err != nil {
 		return nil, err
 	}
@@ -120,6 +125,8 @@ func (resolver *Resolver) Image(ctx context.Context, args struct{ ID graphql.ID 
 // FullImage returns a graphql resolver for the identified image, if it exists
 func (resolver *Resolver) FullImage(ctx context.Context, args struct{ ID graphql.ID }) (*imageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "FullImage")
+	log.Info("SHREWS -- FullImage")
+
 	if err := readImages(ctx); err != nil {
 		return nil, err
 	}
@@ -135,34 +142,41 @@ func (resolver *Resolver) FullImage(ctx context.Context, args struct{ ID graphql
 // Deployments returns the deployments which use this image for the identified image, if it exists
 func (resolver *imageResolver) Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "Deployments")
+	log.Info("SHREWS -- Deployments")
+
 	return resolver.root.Deployments(resolver.withImageScopeContext(ctx), args)
 }
 
 // DeploymentCount returns the number of deployments which use this image for the identified image, if it exists
 func (resolver *imageResolver) DeploymentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "DeploymentCount")
+	log.Info("SHREWS -- DeploymentCount")
 	return resolver.root.DeploymentCount(resolver.withImageScopeContext(ctx), args)
 }
 
 // TopImageVulnerability returns the image vulnerability with the top CVSS score.
 func (resolver *imageResolver) TopImageVulnerability(ctx context.Context, args RawQuery) (ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "TopImageVulnerability")
+	log.Info("SHREWS -- TopImageVulnerability")
 	return resolver.root.TopImageVulnerability(resolver.withImageScopeContext(ctx), args)
 }
 
 // ImageVulnerabilities returns, as ImageVulnerabilityResolver, the vulnerabilities for the image
 func (resolver *imageResolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageVulnerabilities")
+	log.Info("SHREWS -- ImageVulnerabilities")
 	return resolver.root.ImageVulnerabilities(resolver.withImageScopeContext(ctx), args)
 }
 
 func (resolver *imageResolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageVulnerabilityCount")
+	log.Info("SHREWS -- ImageVulnerabilityCount")
 	return resolver.root.ImageVulnerabilityCount(resolver.withImageScopeContext(ctx), args)
 }
 
 func (resolver *imageResolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageVulnerabilityCounter")
+	log.Info("SHREWS -- ImageVulnerabilityCounter")
 	// In this function, the resolver is obtained by a call to either Image or Images from the root resolver,
 	// applying scoped access control to avoid exposing images the requester should not be aware of.
 	// The image ID is added to the context (by withImageScopeContext) to restrict the vulnerability search
@@ -176,7 +190,7 @@ func (resolver *imageResolver) ImageVulnerabilityCounter(ctx context.Context, ar
 
 func (resolver *imageResolver) ImageCVECountBySeverity(ctx context.Context, q RawQuery) (*resourceCountBySeverityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageCVECountBySeverity")
-
+	log.Info("SHREWS -- ImageCVECountBySeverity")
 	if err := readImages(ctx); err != nil {
 		return nil, err
 	}
@@ -190,11 +204,13 @@ func (resolver *imageResolver) ImageCVECountBySeverity(ctx context.Context, q Ra
 
 func (resolver *imageResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageComponents")
+	log.Info("SHREWS -- ImageComponents")
 	return resolver.root.ImageComponents(resolver.withImageScopeContext(ctx), args)
 }
 
 func (resolver *imageResolver) ImageComponentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageComponentCount")
+	log.Info("SHREWS -- ImageComponentCount")
 	return resolver.root.ImageComponentCount(resolver.withImageScopeContext(ctx), args)
 }
 

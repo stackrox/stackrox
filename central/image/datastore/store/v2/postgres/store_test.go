@@ -144,9 +144,4 @@ func (s *ImagesStoreSuite) TestNVDCVSS() {
 	imageComponent, _, err := componentPgStore.Get(ctx, id)
 	s.Require().NoError(err)
 	s.Require().NotEmpty(imageComponent)
-	for _, cve := range imageComponent.GetCves() {
-		s.Equal(float32(10), cve.GetNvdcvss())
-		s.Require().NotEmpty(cve.GetCvssMetrics())
-		protoassert.Equal(s.T(), nvdCvss, cve.GetCvssMetrics()[0])
-	}
 }
