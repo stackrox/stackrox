@@ -117,6 +117,7 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 		return nil, err
 	}
 
+	log.Infof("SHREWS -- The query %q", query.String())
 	if features.FlattenCVEData.Enabled() {
 		log.Info("SHREWS -- ImageVulnerabilities -- loader")
 		// get loader

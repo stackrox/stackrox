@@ -76,7 +76,9 @@ func (idl *imageCveV2LoaderImpl) FromID(ctx context.Context, id string) (*storag
 
 // FromQuery loads a set of image cves that match a query.
 func (idl *imageCveV2LoaderImpl) FromQuery(ctx context.Context, query *v1.Query) ([]*storage.ImageCVEV2, error) {
+	log.Info("SHREWS -- FromQuery")
 	results, err := idl.ds.Search(ctx, query)
+	log.Info("SHREWS -- Back from Search")
 	if err != nil {
 		return nil, err
 	}
