@@ -96,11 +96,11 @@ function getFilteredWorkflowViewText(filteredWorkflowView: FilteredWorkflowView)
 }
 
 const violationsPageDescription: Record<ViolationStateTab, string> = {
-    ACTIVE: 'View Build/Deploy-phase violations for workloads currently in violation, along with unresolved Runtime violations.',
+    ACTIVE: 'Build/Deploy-stage violations for workloads currently in violation, along with unresolved Runtime violations.',
     RESOLVED:
-        'View Build/Deploy-phase violations for workloads that were removed or modified to be compliant, manually resolved Runtime violations, and violations generated before a policy exclusion was added (all lifecycles)',
+        'Build/Deploy-stage violations for workloads that were removed or modified to be compliant, manually resolved Runtime violations, and violations generated before a policy exclusion was added (all lifecycles)',
     ATTEMPTED:
-        'View would-be violations that caused workload deployment attempts to be blocked by the Admission Controller.',
+        'Would-be violations that caused workload deployment attempts to be blocked by the Admission Controller.',
 };
 
 function getDescriptionForSelectedViolationState(
