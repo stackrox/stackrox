@@ -1,7 +1,6 @@
 import React, { ReactElement, useState } from 'react';
-import { Flex, SearchInput, SelectOption } from '@patternfly/react-core';
+import { Flex, SearchInput } from '@patternfly/react-core';
 
-import SimpleSelect from 'Components/CompoundSearchFilter/components/SimpleSelect';
 import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
 import { SetSearchFilter } from 'hooks/useURLSearch';
 import { SearchFilter } from 'types/search';
@@ -13,25 +12,12 @@ export const matchTypes = ['Equals', 'Not'];
 
 export type MatchType = (typeof matchTypes)[number];
 
-export type IPMatchFilterResult = {
-    matchType: MatchType;
-    externalIP: string;
-};
-
 type IPMatchFilterProps = {
     searchFilter: SearchFilter;
     setSearchFilter: SetSearchFilter;
 };
 
-function ensureMatchType(value: unknown): MatchType {
-    if (typeof value === 'string' && matchTypes.includes(value)) {
-        return value;
-    }
-    return 'Equals';
-}
-
 function IPMatchFilter({ searchFilter, setSearchFilter }: IPMatchFilterProps): ReactElement {
-    const [matchType, setMatchType] = useState<MatchType>('Equals');
     const [externalIP, setExternalIP] = useState('');
 
     function handleClear() {
@@ -58,20 +44,6 @@ function IPMatchFilter({ searchFilter, setSearchFilter }: IPMatchFilterProps): R
             spaceItems={{ default: 'spaceItemsNone' }}
             className="pf-v5-u-w-100"
         >
-            <SimpleSelect
-                menuToggleClassName="pf-v5-u-flex-shrink-0"
-                value={matchType}
-                onChange={(value) => setMatchType(ensureMatchType(value))}
-                ariaLabelMenu="external ip comparison selector menu"
-                ariaLabelToggle="external ip comparison selector toggle"
-            >
-                <SelectOption key="Equals" value="Equals">
-                    Equals
-                </SelectOption>
-                <SelectOption key="Not" value="Not">
-                    Not
-                </SelectOption>
-            </SimpleSelect>
             <SearchInput
                 placeholder="Find by IP or IP/CIDR"
                 value={externalIP}
