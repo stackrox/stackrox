@@ -185,7 +185,7 @@ ClusterSummary.propTypes = {
     clusterId: PropTypes.string.isRequired,
     clusterRetentionInfo: PropTypes.shape({}),
     isManagerTypeNonConfigurable: PropTypes.bool.isRequired,
-    autoRefreshEnabled: PropTypes.boolean,
+    autoRefreshEnabled: PropTypes.bool,
 };
 
 export default ClusterSummary;

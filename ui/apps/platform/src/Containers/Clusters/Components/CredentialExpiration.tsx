@@ -44,7 +44,6 @@ function CredentialExpiration({
     const distanceElement = (
         <span className="whitespace-nowrap">
             {getDistanceStrictAsPhrase(sensorCertExpiry, currentDatetime)}
-            {autoRefreshEnabled && <div>Auto-refresh enabled</div>}
         </span>
     );
 
@@ -81,7 +80,10 @@ function CredentialExpiration({
     return (
         <HealthStatus icon={icon} iconColor={fgColor}>
             {isList || healthStatus === 'HEALTHY' ? (
-                expirationElement
+                <div>
+                    {expirationElement}
+                    {autoRefreshEnabled && <div>Auto-refresh enabled</div>}
+                </div>
             ) : (
                 <div>
                     {expirationElement}
