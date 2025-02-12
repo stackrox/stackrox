@@ -32,6 +32,8 @@ pkg/signatures/**/*         @stackrox/merlin
 roxctl/**/*                 @stackrox/merlin
 tests/performance           @stackrox/merlin
 
+qa-tests-backend/**/*       @janisz
+
 /ui/**/* @stackrox/ui
 
 # Listing all users as "Outside collaborators cannot be added to a team"
