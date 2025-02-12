@@ -24,6 +24,12 @@ nav.pf-v5-c-nav.pf-m-horizontal-subnav.acs-pf-horizontal-subnav .pf-v5-c-menu-to
   --pf-v5-c-menu-toggle--PaddingLeft: var(--pf-v5-c-nav--m-horizontal-subnav__link--PaddingLeft);
 }
 
+nav.pf-v5-c-nav.pf-m-horizontal-subnav.acs-pf-horizontal-subnav .pf-v5-c-menu-toggle:after {
+  border-left-width: 1px;
+  border-left-style: solid;
+  border-left-color: var(--pf-v5-global--BackgroundColor--dark-200);
+}
+
 nav.pf-v5-c-nav.pf-m-horizontal-subnav.acs-pf-horizontal-subnav .pf-v5-c-menu {
   max-width: 300px;
   white-space: break-spaces;

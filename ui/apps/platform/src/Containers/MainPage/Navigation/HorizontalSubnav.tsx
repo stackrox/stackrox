@@ -233,6 +233,10 @@ function HorizontalSubnav({ hasReadAccess, isFeatureFlagEnabled }: HorizontalSub
                         }
                         case 'parent': {
                             const { key, title, children } = subnavDescription;
+                            const activeChildLink = subnavDescription.children
+                                .filter((c) => c.type === 'link')
+                                .find((child) => isActiveLink(location, child));
+                            const dropdownTitle = activeChildLink?.content ?? title;
                             return (
                                 <Dropdown
                                     key={key}
@@ -244,11 +248,7 @@ function HorizontalSubnav({ hasReadAccess, isFeatureFlagEnabled }: HorizontalSub
                                     }
                                     toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
                                         <NavItem
-                                            isActive={subnavDescription.children.some(
-                                                (child) =>
-                                                    child.type === 'link' &&
-                                                    isActiveLink(location, child)
-                                            )}
+                                            isActive={Boolean(activeChildLink)}
                                             onClick={() => onToggleClick(key)}
                                         >
                                             <MenuToggle
@@ -256,9 +256,9 @@ function HorizontalSubnav({ hasReadAccess, isFeatureFlagEnabled }: HorizontalSub
                                                 isExpanded={openDropdownKey === key}
                                                 variant="plainText"
                                             >
-                                                {typeof title === 'function'
-                                                    ? title(subnavDescriptions)
-                                                    : title}
+                                                {typeof dropdownTitle === 'function'
+                                                    ? dropdownTitle(subnavDescriptions)
+                                                    : dropdownTitle}
                                             </MenuToggle>
                                         </NavItem>
                                     )}
@@ -275,14 +275,16 @@ function HorizontalSubnav({ hasReadAccess, isFeatureFlagEnabled }: HorizontalSub
                                                 );
                                             }
                                             const { content, path, description } = child;
+                                            const isActive = isActiveLink(location, child);
                                             return (
                                                 <DropdownItem
                                                     component={'a'}
                                                     className={
-                                                        isActiveLink(location, child)
+                                                        isActive
                                                             ? 'acs-pf-horizontal-subnav-menu__active'
                                                             : ''
                                                     }
+                                                    isSelected={isActive}
                                                     value={path}
                                                     key={path}
                                                     description={description}

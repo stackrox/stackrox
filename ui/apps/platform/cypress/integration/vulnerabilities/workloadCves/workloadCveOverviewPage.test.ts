@@ -128,7 +128,7 @@ describe('Workload CVE overview page tests', () => {
             });
 
             // Test the 'All vulnerable images' view
-            visitFromMoreViewsDropdown('All vulnerable images');
+            visitFromHorizontalNavExpandable('More Views')('All vulnerable images');
             waitAndYieldRequestBodyVariables(['getImageCVEList']).then(({ query }) => {
                 const requestQuery = query.toLowerCase();
                 expect(requestQuery).to.contain('vulnerability state:observed');
@@ -137,7 +137,7 @@ describe('Workload CVE overview page tests', () => {
             });
 
             // Test the 'Inactive images' view
-            visitFromMoreViewsDropdown('Inactive images');
+            visitFromHorizontalNavExpandable('All vulnerable images')('Inactive images');
             waitAndYieldRequestBodyVariables(['getImageCVEList']).then(({ query }) => {
                 const requestQuery = query.toLowerCase();
                 expect(requestQuery).to.contain('vulnerability state:observed');
@@ -146,7 +146,7 @@ describe('Workload CVE overview page tests', () => {
             });
 
             // Test the 'Images without CVEs' view
-            visitFromMoreViewsDropdown('Images without CVEs');
+            visitFromHorizontalNavExpandable('Inactive images')('Images without CVEs');
             waitAndYieldRequestBodyVariables(['getImageList']).then(({ query }) => {
                 const requestQuery = query.toLowerCase();
                 expect(requestQuery).not.to.contain('platform component:observed');
