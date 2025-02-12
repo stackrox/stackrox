@@ -105,7 +105,7 @@ func (s *serviceImpl) getCentralDBCertExpiry(ctx context.Context) (*v1.GetCertEx
 		return nil, errors.Wrap(err, "Error finding secret containing central DB certificate")
 	}
 	if len(secrets) == 0 {
-		return nil, errors.Wrap(errox.NotFound, "Secret containing central DB certificate not found")
+		return nil, nil
 	}
 	if len(secrets) > 1 {
 		return nil, errors.Wrapf(errox.InvariantViolation,
