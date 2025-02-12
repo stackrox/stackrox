@@ -177,12 +177,12 @@ func TestReconcileTransformedMessages_Success(t *testing.T) {
 
 	// Delete resources should be called in order, ignoring the existing IDs from the previously upserted resources.
 	gomock.InOrder(
-		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"notifierId"}).Return(nil, nil),
-		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"group"}).Return(nil, nil),
-		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"id-auth-provider"}).Return(nil, nil),
-		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"role"}).Return(nil, nil),
-		mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.InAnyOrder([]string{"id-perm-set-1", "id-perm-set-2"})).Return(nil, nil),
-		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"id-access-scope"}).Return([]string{"skipping-scope"}, errors.New("some-error")),
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"notifierId"}).Return(nil, 0, nil),
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"group"}).Return(nil, 0, nil),
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"id-auth-provider"}).Return(nil, 0, nil),
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"role"}).Return(nil, 0, nil),
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.InAnyOrder([]string{"id-perm-set-1", "id-perm-set-2"})).Return(nil, 0, nil),
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"id-access-scope"}).Return([]string{"skipping-scope"}, 0, errors.New("some-error")),
 	)
 
 	// We retrieve the integration healths on the deletion, only the non-ignored ID that does not have "Config Map"
@@ -288,7 +288,7 @@ func TestReconcileTransformedMessages_ErrorPropagatedToReporter(t *testing.T) {
 		ErrorMessage: "test error",
 	}))
 
-	mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.Any()).Return(nil, nil).Times(supportedTypesCount)
+	mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.Any()).Return(nil, 0, nil).Times(supportedTypesCount)
 
 	mockHealthDS.EXPECT().GetDeclarativeConfigs(gomock.Any()).
 		Return(nil, nil).Times(1)
@@ -342,7 +342,7 @@ func TestReconcileTransformedMessages_SkipReconciliationWithNoChanges(t *testing
 	gomock.InOrder(
 		mockUpdater.EXPECT().Upsert(gomock.Any(), permissionSet1).Return(nil).Times(1),
 		mockHealthDS.EXPECT().UpsertDeclarativeConfig(gomock.Any(), gomock.Any()).Times(1),
-		mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.Any()).Return(nil, nil).Times(supportedTypesCount),
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.Any()).Return(nil, 0, nil).Times(supportedTypesCount),
 		mockHealthDS.EXPECT().GetDeclarativeConfigs(gomock.Any()).
 			Return(nil, nil).Times(1),
 	)
@@ -391,7 +391,7 @@ func TestReconcileTransformedMessages_SkipDeletion(t *testing.T) {
 
 	gomock.InOrder(
 		mockUpdater.EXPECT().Upsert(gomock.Any(), permissionSet1).Return(errors.New("some error")).Times(1),
-		mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.Any()).Return(nil, nil).Times(supportedTypesCount),
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.Any()).Return(nil, 0, nil).Times(supportedTypesCount),
 		mockHealthDS.EXPECT().GetDeclarativeConfigs(gomock.Any()).
 			Return(nil, nil).Times(1),
 	)
@@ -456,7 +456,7 @@ func TestReconcileTransformedMessages_SkipUpsert(t *testing.T) {
 	gomock.InOrder(
 		mockUpdater.EXPECT().Upsert(gomock.Any(), permissionSet1).Return(nil).Times(1),
 		mockHealthDS.EXPECT().UpsertDeclarativeConfig(gomock.Any(), gomock.Any()).Times(1),
-		mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.Any()).Return(nil, errors.New("some error")).Times(supportedTypesCount),
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.Any()).Return(nil, 0, errors.New("some error")).Times(supportedTypesCount),
 		mockHealthDS.EXPECT().GetDeclarativeConfigs(gomock.Any()).
 			Return(nil, nil).Times(1),
 	)
@@ -476,7 +476,7 @@ func TestReconcileTransformedMessages_SkipUpsert(t *testing.T) {
 	// 2. Run the reconciliation again. Only deletion should be done.
 
 	gomock.InOrder(
-		mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.Any()).Return(nil, errors.New("some error")).Times(supportedTypesCount),
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.Any()).Return(nil, 0, errors.New("some error")).Times(supportedTypesCount),
 		mockHealthDS.EXPECT().GetDeclarativeConfigs(gomock.Any()).
 			Return(nil, nil).Times(1),
 	)
@@ -488,7 +488,7 @@ func TestReconcileTransformedMessages_SkipUpsert(t *testing.T) {
 	// 3. Run the reconciliation again. Only deletion should be done, and if successful no deletion error should be indicated.
 
 	gomock.InOrder(
-		mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.Any()).Return(nil, nil).Times(supportedTypesCount),
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.Any()).Return(nil, 0, nil).Times(supportedTypesCount),
 		mockHealthDS.EXPECT().GetDeclarativeConfigs(gomock.Any()).
 			Return(nil, nil).Times(1),
 	)
