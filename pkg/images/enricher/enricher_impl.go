@@ -956,7 +956,7 @@ func (e *enricherImpl) enrichImageWithScanner(ctx context.Context, image *storag
 	sema := scanner.MaxConcurrentScanSemaphore()
 	err := sema.Acquire(ctx, 1)
 	if err != nil {
-		return ScanNotDone, err
+		return ScanNotDone, errors.Wrapf(err, "acquiring max concurrent scan semaphore with scanner %q", scanner.Name())
 	}
 	defer sema.Release(1)
 
