@@ -411,6 +411,8 @@ func (resolver *imageCVEResolver) EnvImpact(ctx context.Context) (float64, error
 func (resolver *imageCVEResolver) FixedByVersion(ctx context.Context) (string, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "FixedByVersion")
 
+	log.Info("SHREWS --FixedByVersion")
+
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}
@@ -582,6 +584,7 @@ func (resolver *imageCVEResolver) ActiveState(ctx context.Context, args RawQuery
 	if !features.ActiveVulnMgmt.Enabled() {
 		return &activeStateResolver{}, nil
 	}
+	log.Info("SHREWS --ActiveState")
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "ActiveState")
 
 	if resolver.ctx == nil {
@@ -627,7 +630,7 @@ func (resolver *imageCVEResolver) ActiveState(ctx context.Context, args RawQuery
 
 func (resolver *imageCVEResolver) EffectiveVulnerabilityRequest(ctx context.Context) (*VulnerabilityRequestResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "EffectiveVulnerabilityRequest")
-
+	log.Info("SHREWS --EffectiveVulnerabilityRequest")
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}
@@ -660,6 +663,7 @@ func (resolver *imageCVEResolver) EffectiveVulnerabilityRequest(ctx context.Cont
 	if err != nil {
 		return nil, err
 	}
+	log.Info("SHREWS --EffectiveVulnerabilityRequest  -- OUT")
 	return resolver.root.wrapVulnerabilityRequest(req, nil)
 }
 
