@@ -42,6 +42,13 @@ const (
 	RedHatType = "rhel"
 )
 
+// Local scanning registry name prefixes.
+const (
+	PullSecretNamePrefix = "PullSecret"
+	GlobalRegNamePrefix  = "GlobalPullSecret"
+	NoAuthNamePrefix     = "NoAuth"
+)
+
 // Config is the config of the registry, which can be utilized by 3rd party scanners
 type Config struct {
 	Username         string

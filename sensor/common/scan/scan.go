@@ -23,7 +23,6 @@ import (
 	"github.com/stackrox/rox/pkg/registrymirror"
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/tlscheck"
-	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/scannerclient"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"golang.org/x/sync/semaphore"
@@ -445,7 +444,7 @@ func createNoAuthImageRegistry(ctx context.Context, imgName *storage.ImageName, 
 
 	ii := &storage.ImageIntegration{
 		Id:         reg,
-		Name:       fmt.Sprintf("%s/reg:%v", registry.NoAuthNamePrefix, reg),
+		Name:       fmt.Sprintf("%s/reg:%v", registryTypes.NoAuthNamePrefix, reg),
 		Type:       registryTypes.DockerType,
 		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
 		IntegrationConfig: &storage.ImageIntegration_Docker{
