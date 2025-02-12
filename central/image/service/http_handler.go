@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errox/grpc"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/images/enricher"
@@ -24,6 +25,11 @@ import (
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/zip"
 	"google.golang.org/grpc/codes"
+)
+
+const (
+	// TODO(ROX-26789): remove this note and usages when delegated scanning support added.
+	deleScanNotSupported = "(note: generating SBOMs from delegated scans is currently not supported, while troubleshooting confirm if this applies to your environment)"
 )
 
 type sbomHttpHandler struct {
@@ -50,6 +56,11 @@ func (h sbomHttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
+
+	// Past this point all responses will be in JSON format (this may change in the future when
+	// other SBOM types are supported).
+	w.Header().Add("Content-Type", "application/json")
+
 	// Verify Scanner V4 is enabled.
 	if !features.ScannerV4.Enabled() {
 		httputil.WriteGRPCStyleError(w, codes.Unimplemented, errors.New("Scanner V4 is disabled. Enable Scanner V4 to generate SBOMs"))
@@ -74,19 +85,27 @@ func (h sbomHttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 	bytes, err := h.getSBOM(ctx, params)
 	if err != nil {
-		// Using WriteError instead of WriteGRPCStyleError so that the HTTP status
+		// We use WriteError instead of WriteGRPCStyleError in this block so that the HTTP status
 		// is derived from the error type.
-		httputil.WriteError(w, errors.Wrap(err, "generating SBOM"))
+
+		// If user input was the problem, we do not show the delegated scanning warning.
+		code := grpc.RoxErrorToGRPCCode(err)
+		if code == codes.InvalidArgument {
+			httputil.WriteError(w, errors.Wrap(err, "generating SBOM"))
+			return
+		}
+
+		// Otherwise, we show the delegated scanning warning.
+		httputil.WriteError(w, fmt.Errorf("generating SBOM: %w %s", err, deleScanNotSupported))
 		return
 	}
 	if len(bytes) == 0 {
-		httputil.WriteGRPCStyleError(w, codes.Internal, errors.New("SBOM not found for the image"))
+		httputil.WriteGRPCStyleError(w, codes.Internal, errors.New("SBOM not found for the image. "+deleScanNotSupported))
 		return
 	}
 
 	// Tell the browser this is a download.
 	w.Header().Add("Content-Disposition", fmt.Sprintf("attachment; filename=%s.%s", zip.GetSafeFilename(params.ImageName), "json"))
-	w.Header().Add("Content-Type", "application/json")
 	w.Header().Add("Content-Length", fmt.Sprint(len(bytes)))
 	_, _ = w.Write(bytes)
 }
