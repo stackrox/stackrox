@@ -914,7 +914,7 @@ func (resolver *imageCVEV2Resolver) FixedByVersion(ctx context.Context) (string,
 	return components[0].GetFixedBy(), nil
 }
 
-func (resolver *imageCVEV2Resolver) IsFixable(ctx context.Context, args RawQuery) (bool, error) {
+func (resolver *imageCVEV2Resolver) IsFixable(_ context.Context, _ RawQuery) (bool, error) {
 	//defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "IsFixable")
 	//
 	//if resolver.ctx == nil {
@@ -952,7 +952,7 @@ func (resolver *imageCVEV2Resolver) IsFixable(ctx context.Context, args RawQuery
 	return false, nil //count != 0, nil
 }
 
-func (resolver *imageCVEV2Resolver) LastScanned(ctx context.Context) (*graphql.Time, error) {
+func (resolver *imageCVEV2Resolver) LastScanned(_ context.Context) (*graphql.Time, error) {
 	//defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "LastScanned")
 	//
 	//// Short path. Full image is embedded when image scan resolver is called.
@@ -1105,41 +1105,43 @@ func (resolver *imageCVEV2Resolver) Deployments(ctx context.Context, args Pagina
 	return resolver.root.Deployments(resolver.imageVulnerabilityScopeContext(ctx), args)
 }
 
-func (resolver *imageCVEV2Resolver) DiscoveredAtImage(ctx context.Context, args RawQuery) (*graphql.Time, error) {
+func (resolver *imageCVEV2Resolver) DiscoveredAtImage(_ context.Context, _ RawQuery) (*graphql.Time, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "DiscoveredAtImage")
+	//
+	//if resolver.ctx == nil {
+	//	resolver.ctx = ctx
+	//}
+	//
+	//// Short path. Full image is embedded when image scan resolver is called.
+	//if embeddedVuln := embeddedobjs.VulnFromContext(resolver.ctx); embeddedVuln != nil {
+	//	return protocompat.ConvertTimestampToGraphqlTimeOrError(embeddedVuln.GetFirstImageOccurrence())
+	//}
+	//
+	//var imageID string
+	//scope, hasScope := scoped.GetScopeAtLevel(resolver.ctx, v1.SearchCategory_IMAGES)
+	//if hasScope {
+	//	imageID = scope.ID
+	//} else {
+	//	var err error
+	//	imageID, err = getImageIDFromIfImageShaQuery(resolver.ctx, resolver.root, args)
+	//	if err != nil {
+	//		return nil, errors.Wrap(err, "could not determine vulnerability discovered time in image")
+	//	}
+	//}
+	//
+	//if imageID == "" {
+	//	return nil, nil
+	//}
+	//
+	//query := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, imageID).AddExactMatches(search.CVEID, resolver.data.GetId()).ProtoQuery()
+	//// TODO:  Verify this is correct.
+	//cves, err := resolver.root.ImageCVEV2DataStore.SearchRawImageCVEs(resolver.ctx, query)
+	//if err != nil || len(cves) == 0 {
+	//	return nil, err
+	//}
+	//return protocompat.ConvertTimestampToGraphqlTimeOrError(cves[0].GetFirstImageOccurrence())
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(resolver.data.GetFirstImageOccurrence())
 
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-
-	// Short path. Full image is embedded when image scan resolver is called.
-	if embeddedVuln := embeddedobjs.VulnFromContext(resolver.ctx); embeddedVuln != nil {
-		return protocompat.ConvertTimestampToGraphqlTimeOrError(embeddedVuln.GetFirstImageOccurrence())
-	}
-
-	var imageID string
-	scope, hasScope := scoped.GetScopeAtLevel(resolver.ctx, v1.SearchCategory_IMAGES)
-	if hasScope {
-		imageID = scope.ID
-	} else {
-		var err error
-		imageID, err = getImageIDFromIfImageShaQuery(resolver.ctx, resolver.root, args)
-		if err != nil {
-			return nil, errors.Wrap(err, "could not determine vulnerability discovered time in image")
-		}
-	}
-
-	if imageID == "" {
-		return nil, nil
-	}
-
-	query := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, imageID).AddExactMatches(search.CVEID, resolver.data.GetId()).ProtoQuery()
-	// TODO:  Verify this is correct.
-	cves, err := resolver.root.ImageCVEV2DataStore.SearchRawImageCVEs(resolver.ctx, query)
-	if err != nil || len(cves) == 0 {
-		return nil, err
-	}
-	return protocompat.ConvertTimestampToGraphqlTimeOrError(cves[0].GetFirstImageOccurrence())
 }
 
 func (resolver *imageCVEV2Resolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {

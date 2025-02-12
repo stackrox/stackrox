@@ -752,29 +752,30 @@ func (resolver *imageComponentV2Resolver) TopImageVulnerability(ctx context.Cont
 
 func (resolver *imageComponentV2Resolver) LayerIndex() (*int32, error) {
 	// Short path. Full image is embedded when image scan resolver is called.
-	if embeddedComponent := embeddedobjs.ComponentFromContext(resolver.ctx); embeddedComponent != nil {
-		w, ok := embeddedComponent.GetHasLayerIndex().(*storage.EmbeddedImageScanComponent_LayerIndex)
-		if !ok {
-			return nil, nil
-		}
-		v := w.LayerIndex
-		return &v, nil
-	}
+	//if embeddedComponent := embeddedobjs.ComponentFromContext(resolver.ctx); embeddedComponent != nil {
+	//	w, ok := embeddedComponent.GetHasLayerIndex().(*storage.EmbeddedImageScanComponent_LayerIndex)
+	//	if !ok {
+	//		return nil, nil
+	//	}
+	//	v := w.LayerIndex
+	//	return &v, nil
+	//}
+	//
+	//scope, hasScope := scoped.GetScopeAtLevel(resolver.ctx, v1.SearchCategory_IMAGES)
+	//if !hasScope {
+	//	return nil, nil
+	//}
+	//
+	//components, err := resolver.root.ImageComponentV2DataStore.SearchRawImageComponents(resolver.ctx, resolver.componentQuery())
+	//if err != nil {
+	//	return nil, err
+	//}
+	//if len(components) == 0 || len(components) > 1 {
+	//	return nil, errors.Errorf("Unexpected number of image-components matched for image %s and component %s. Expected 1 component.", scope.ID, resolver.data.GetId())
+	//}
 
-	scope, hasScope := scoped.GetScopeAtLevel(resolver.ctx, v1.SearchCategory_IMAGES)
-	if !hasScope {
-		return nil, nil
-	}
-
-	components, err := resolver.root.ImageComponentV2DataStore.SearchRawImageComponents(resolver.ctx, resolver.componentQuery())
-	if err != nil {
-		return nil, err
-	}
-	if len(components) == 0 || len(components) > 1 {
-		return nil, errors.Errorf("Unexpected number of image-components matched for image %s and component %s. Expected 1 component.", scope.ID, resolver.data.GetId())
-	}
-
-	w, ok := components[0].GetHasLayerIndex().(*storage.ImageComponentV2_LayerIndex)
+	//w, ok := components[0].GetHasLayerIndex().(*storage.ImageComponentV2_LayerIndex)
+	w, ok := resolver.data.GetHasLayerIndex().(*storage.ImageComponentV2_LayerIndex)
 	if !ok {
 		return nil, nil
 	}
@@ -787,35 +788,10 @@ func (resolver *imageComponentV2Resolver) UnusedVarSink(_ context.Context, _ Raw
 }
 
 // Location returns the location of the component.
-func (resolver *imageComponentV2Resolver) Location(ctx context.Context, args RawQuery) (string, error) {
+func (resolver *imageComponentV2Resolver) Location(_ context.Context, _ RawQuery) (string, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "Location")
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
 
-	// Short path. Full image is embedded when image scan resolver is called.
-	if embeddedComponent := embeddedobjs.ComponentFromContext(resolver.ctx); embeddedComponent != nil {
-		return embeddedComponent.GetLocation(), nil
-	}
-
-	imageID := getImageIDFromScope(resolver.ctx)
-	if imageID == "" {
-		var err error
-		imageID, err = getImageIDFromIfImageShaQuery(resolver.ctx, resolver.root, args)
-		if err != nil {
-			return "", errors.Wrap(err, "could not determine component location")
-		}
-	}
-	if imageID == "" {
-		return "", nil
-	}
-
-	query := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, imageID).AddExactMatches(search.ComponentID, resolver.data.GetId()).ProtoQuery()
-	components, err := resolver.root.ImageComponentV2DataStore.SearchRawImageComponents(resolver.ctx, query)
-	if err != nil || len(components) == 0 {
-		return "", err
-	}
-	return components[0].GetLocation(), nil
+	return resolver.data.GetLocation(), nil
 }
 
 // Following are deprecated functions that are retained to allow UI time to migrate away from them
