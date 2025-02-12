@@ -62,6 +62,7 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 		err := res.Body.Close()
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusMethodNotAllowed, res.StatusCode)
+		assert.NotContains(t, recorder.Body.String(), deleScanNotSupported)
 	})
 
 	// Test case: valid json body and enricher returns error
@@ -90,6 +91,7 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 		err = res.Body.Close()
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
+		assert.Contains(t, recorder.Body.String(), deleScanNotSupported)
 	})
 
 	// Test case: valid json body and validate enricher being called
