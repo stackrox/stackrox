@@ -85,7 +85,7 @@ dependencies {
     implementation "io.fabric8:kubernetes-client:${fabric8Version}"
     implementation "io.fabric8:openshift-client:${fabric8Version}"
 
-    implementation 'io.kubernetes:client-java:22.0.0-legacy'
+    implementation 'io.kubernetes:client-java:22.0.1-legacy'
 
     implementation group: 'com.github.docker-java', name: 'docker-java', version: '3.4.1'
 
