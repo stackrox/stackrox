@@ -547,17 +547,6 @@ func toProtoV4VulnerabilitiesMap(
 			preferredCVSS = metrics[0]
 		}
 
-		var vulnEPSS *epss.EPSSItem
-		if epssVulnItem, ok := epssItems[v.ID]; ok {
-			if v, ok := epssVulnItem[cve]; foundCVE && ok {
-				vulnEPSS = v
-			}
-		}
-		// overwrite with RHSA EPSS score if it exists
-		if rhelEPSS, ok := rhelEPSSDetails[name]; ok {
-			vulnEPSS = &rhelEPSS
-		}
-
 		description := v.Description
 		if advisoryExists {
 			// Replace the description for the CVE with the description of the related Red Hat advisory.
@@ -589,6 +578,17 @@ func toProtoV4VulnerabilitiesMap(
 				Str("nvd_published", nvdVuln.Published).
 				Msg("issued time invalid: leaving empty")
 		}
+		var vulnEPSS *epss.EPSSItem
+		if epssVulnItem, ok := epssItems[v.ID]; ok {
+			if v, ok := epssVulnItem[cve]; foundCVE && ok {
+				vulnEPSS = v
+			}
+		}
+		// overwrite with RHSA EPSS score if it exists
+		if rhelEPSS, ok := rhelEPSSDetails[name]; ok {
+			vulnEPSS = &rhelEPSS
+		}
+
 		if vulnerabilities == nil {
 			vulnerabilities = make(map[string]*v4.VulnerabilityReport_Vulnerability, len(vulns))
 		}
@@ -941,7 +941,7 @@ func cveEPSS(ctx context.Context, enrichments map[string][]json.RawMessage) (map
 	if len(enrichmentList) == 0 {
 		zlog.Warn(ctx).
 			Str("enrichments", epss.Type).
-			Msg("no EPSS enrichments found")
+			Msg("No EPSS enrichments found. Verify that the vulnerability enrichment data is available and complete.")
 		return nil, nil
 	}
 
@@ -953,6 +953,9 @@ func cveEPSS(ctx context.Context, enrichments map[string][]json.RawMessage) (map
 	}
 
 	if len(epssItems) == 0 {
+		zlog.Warn(ctx).
+			Str("enrichments", epss.Type).
+			Msg("No EPSS enrichments found. Verify that the vulnerability enrichment data is available and complete.")
 		return nil, nil
 	}
 
