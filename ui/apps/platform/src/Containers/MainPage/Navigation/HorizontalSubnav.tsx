@@ -99,7 +99,7 @@ function getSubnavDescriptionGroups(
                               type: 'link',
                               content: 'All vulnerable images',
                               description:
-                                  'View findings for user, platform, and inactive images simultaneously',
+                                  'Findings for user, platform, and inactive images simultaneously',
                               path: vulnerabilitiesAllImagesPath,
                               routeKey: 'vulnerabilities/all-images',
                           },
@@ -107,7 +107,7 @@ function getSubnavDescriptionGroups(
                               type: 'link',
                               content: 'Inactive images',
                               description:
-                                  'View findings for watched images and images not currently deployed as workloads based on your image retention settings',
+                                  'Findings for watched images and images not currently deployed as workloads based on your image retention settings',
                               path: vulnerabilitiesInactiveImagesPath,
                               routeKey: 'vulnerabilities/inactive-images',
                           },

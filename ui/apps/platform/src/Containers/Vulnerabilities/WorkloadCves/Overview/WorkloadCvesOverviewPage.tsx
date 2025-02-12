@@ -8,9 +8,9 @@ import {
     Flex,
     FlexItem,
     PageSection,
+    Popover,
     Text,
     Title,
-    Tooltip,
 } from '@patternfly/react-core';
 import { OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
 import { gql, useApolloClient, useQuery } from '@apollo/client';
@@ -164,8 +164,13 @@ function WorkloadCvesOverviewPage() {
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
 
-    const { getAbsoluteUrl, pageTitle, pageTitleDescription, baseSearchFilter } =
-        useWorkloadCveViewContext();
+    const {
+        getAbsoluteUrl,
+        pageTitle,
+        pageTitleDescription,
+        baseSearchFilter,
+        overviewEntityTabs,
+    } = useWorkloadCveViewContext();
     const currentVulnerabilityState = useVulnerabilityState();
 
     const { searchFilter, setSearchFilter: setURLSearchFilter } = useURLSearch();
@@ -371,9 +376,7 @@ function WorkloadCvesOverviewPage() {
 
     const entityToggleGroup = (
         <EntityTypeToggleGroup
-            entityTabs={
-                isViewingWithCves ? ['CVE', 'Image', 'Deployment'] : ['Image', 'Deployment']
-            }
+            entityTabs={overviewEntityTabs}
             entityCounts={entityCounts}
             onChange={onEntityTabChange}
         />
@@ -404,19 +407,14 @@ function WorkloadCvesOverviewPage() {
                 >
                     <Title headingLevel="h1">{pageTitle}</Title>
                     {pageTitleDescription && (
-                        <Tooltip
-                            aria="none"
-                            aria-live="polite"
-                            content={pageTitleDescription}
-                            position="bottom"
+                        <Popover
+                            aria-label="More information about the current page"
+                            bodyContent={pageTitleDescription}
                         >
-                            <Button
-                                aria-label="More information about the current page"
-                                variant="plain"
-                            >
+                            <Button title="Page description" variant="plain">
                                 <OutlinedQuestionCircleIcon />
                             </Button>
-                        </Tooltip>
+                        </Popover>
                     )}
                     {!isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT') && (
                         <FlexItem>
