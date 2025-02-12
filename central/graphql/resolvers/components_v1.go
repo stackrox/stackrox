@@ -21,6 +21,7 @@ import (
 /////////////////////////////////////
 
 func (resolver *imageScanResolver) Components(_ context.Context, args PaginatedQuery) ([]*EmbeddedImageScanComponentResolver, error) {
+	log.Info("SHREWS -- Components")
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
@@ -39,6 +40,7 @@ func (resolver *imageScanResolver) Components(_ context.Context, args PaginatedQ
 }
 
 func (resolver *imageScanResolver) ComponentCount(ctx context.Context, args RawQuery) (int32, error) {
+	log.Info("SHREWS -- ComponentCount")
 	resolvers, err := resolver.Components(ctx, PaginatedQuery{Query: args.Query})
 	if err != nil {
 		return 0, err
@@ -67,6 +69,7 @@ func (eicr *EmbeddedImageScanComponentResolver) License(_ context.Context) (*lic
 
 // ID returns a unique identifier for the component.
 func (eicr *EmbeddedImageScanComponentResolver) ID(_ context.Context) graphql.ID {
+	log.Info("SHREWS -- ID")
 	return graphql.ID(scancomponent.ComponentID(eicr.data.GetName(), eicr.data.GetVersion(), eicr.os))
 }
 
@@ -125,6 +128,7 @@ func (eicr *EmbeddedImageScanComponentResolver) LastScanned(_ context.Context) (
 
 // TopVuln returns the first vulnerability with the top CVSS score.
 func (eicr *EmbeddedImageScanComponentResolver) TopVuln(_ context.Context) (*EmbeddedVulnerabilityResolver, error) {
+	log.Info("SHREWS -- TopVuln")
 	var maxCvss *storage.EmbeddedVulnerability
 	for _, vuln := range eicr.data.GetVulns() {
 		if maxCvss == nil || vuln.GetCvss() > maxCvss.GetCvss() {
@@ -139,6 +143,7 @@ func (eicr *EmbeddedImageScanComponentResolver) TopVuln(_ context.Context) (*Emb
 
 // Vulns resolves the vulnerabilities contained in the image component.
 func (eicr *EmbeddedImageScanComponentResolver) Vulns(_ context.Context, args PaginatedQuery) ([]*EmbeddedVulnerabilityResolver, error) {
+	log.Info("SHREWS -- Vulns")
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
@@ -182,6 +187,7 @@ func (eicr *EmbeddedImageScanComponentResolver) VulnCounter(_ context.Context, _
 
 // Images are the images that contain the Component.
 func (eicr *EmbeddedImageScanComponentResolver) Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error) {
+	log.Info("SHREWS -- Images")
 	// Convert to query, but link the fields for the search.
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
@@ -196,6 +202,7 @@ func (eicr *EmbeddedImageScanComponentResolver) Images(ctx context.Context, args
 
 // ImageCount is the number of images that contain the Component.
 func (eicr *EmbeddedImageScanComponentResolver) ImageCount(ctx context.Context, args RawQuery) (int32, error) {
+	log.Info("SHREWS -- ImageCount")
 	imageLoader, err := loaders.GetImageLoader(ctx)
 	if err != nil {
 		return 0, err
@@ -213,6 +220,7 @@ func (eicr *EmbeddedImageScanComponentResolver) ImageCount(ctx context.Context, 
 
 // Deployments are the deployments that contain the Component.
 func (eicr *EmbeddedImageScanComponentResolver) Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error) {
+	log.Info("SHREWS -- Deployments")
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
 	}
@@ -225,6 +233,7 @@ func (eicr *EmbeddedImageScanComponentResolver) Deployments(ctx context.Context,
 
 // DeploymentCount is the number of deployments that contain the Component.
 func (eicr *EmbeddedImageScanComponentResolver) DeploymentCount(ctx context.Context, args RawQuery) (int32, error) {
+	log.Info("SHREWS -- DeploymentCount")
 	if err := readDeployments(ctx); err != nil {
 		return 0, err
 	}
@@ -317,6 +326,7 @@ func (eicr *EmbeddedImageScanComponentResolver) NodeCount(ctx context.Context, a
 }
 
 func (eicr *EmbeddedImageScanComponentResolver) loadImages(ctx context.Context, query *v1.Query) ([]*imageResolver, error) {
+	log.Info("SHREWS -- loadImages")
 	imageLoader, err := loaders.GetImageLoader(ctx)
 	if err != nil {
 		return nil, err
@@ -336,6 +346,7 @@ func (eicr *EmbeddedImageScanComponentResolver) loadImages(ctx context.Context, 
 }
 
 func (eicr *EmbeddedImageScanComponentResolver) loadDeployments(ctx context.Context, query *v1.Query) ([]*deploymentResolver, error) {
+	log.Info("SHREWS -- loadDeployments")
 	deploymentBaseQuery, err := eicr.getDeploymentBaseQuery(ctx)
 	if err != nil || deploymentBaseQuery == nil {
 		return nil, err
@@ -382,6 +393,7 @@ func (eicr *EmbeddedImageScanComponentResolver) componentQuery() *v1.Query {
 
 // Map the images that matched a query to the image components it contains.
 func mapImagesToComponentResolvers(root *Resolver, images []*storage.Image, query *v1.Query) ([]*EmbeddedImageScanComponentResolver, error) {
+	log.Info("SHREWS -- mapImagesToComponentResolvers")
 	query, _ = search.FilterQueryWithMap(query, mappings.ComponentOptionsMap)
 	componentPred, err := componentPredicateFactory.GeneratePredicate(query)
 	if err != nil {
