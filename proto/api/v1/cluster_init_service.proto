@@ -30,6 +30,9 @@ message CRSMeta {
   google.protobuf.Timestamp created_at = 3;
   storage.User created_by = 4;
   google.protobuf.Timestamp expires_at = 5;
+  uint64 max_registrations = 7;
+  repeated string registrations_initiated = 8;
+  repeated string registrations_completed = 9;
 }
 
 message InitBundleGenResponse {
@@ -61,6 +64,7 @@ message InitBundleGenRequest {
 
 message CRSGenRequest {
   string name = 1;
+  uint64 max_registrations = 2;
 }
 
 message InitBundleRevokeRequest {
