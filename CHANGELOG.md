@@ -18,7 +18,6 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-25638: Introduce configurable log rotation. `ROX_LOGGING_MAX_ROTATION_FILES` and `ROX_LOGGING_MAX_SIZE_MB` variables allow for configuring the number and the size of a central log rotation file.
 - ROX-14332: Automatic service certificate renewal for Secured Clusters installed using Helm or operator.
 - Scanner V4 adds supports for openSUSE Leap 15.5 and 15.6
-- ROX-27596: ROX_EXTERNAL_IPS feature flag enabled by default. Note: Collector will still need to be configured for external IPs for this to have an effect.
 - ROX-26088: Introduced Cluster Registration Secrets (CRS) as a successor to init bundles for registering Secured Clusters.
 - ROX-24052: Tech Preview - SBOMs can now be generated from Scanner V4 image scans via the UI, CLI (`roxctl image sbom`), and API (`/api/v1/images/sbom`). Only scans executed via Central are supported, delegated scans will be supported in a future release. This feature can be disabled by setting `ROX_SBOM_GENERATION` to `false`.
 - ROX-21529: Short-lived token authentication for Azure integrations with Azure workload or managed identities.
