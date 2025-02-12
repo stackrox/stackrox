@@ -813,7 +813,7 @@ func TestRegistyStore_Metrics(t *testing.T) {
 		c := metrics.PullSecretEntriesSize
 		metrics.ResetRegistryMetrics()
 
-		name := genIntegrationName(pullSecretNamePrefix, fakeNamespace, "", "example.com")
+		name := genIntegrationName(types.PullSecretNamePrefix, fakeNamespace, "", "example.com")
 		entrySize := float64(createImageIntegration("example.com", dce, name).SizeVT())
 
 		regStore := NewRegistryStore(alwaysInsecureCheckTLS)
@@ -869,7 +869,7 @@ func TestRegistyStore_Metrics(t *testing.T) {
 		c := metrics.PullSecretEntriesSize
 		metrics.ResetRegistryMetrics()
 
-		name := genIntegrationName(pullSecretNamePrefix, fakeNamespace, fakeSecretName, "example.com")
+		name := genIntegrationName(types.PullSecretNamePrefix, fakeNamespace, fakeSecretName, "example.com")
 		entrySize := float64(createImageIntegration("example.com", dce, name).SizeVT())
 		t.Logf("entrySize: %v", entrySize)
 

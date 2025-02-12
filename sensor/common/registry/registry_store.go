@@ -25,12 +25,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/registry/metrics"
 )
 
-const (
-	defaultSA = "default"
-
-	pullSecretNamePrefix = "PullSec"
-	globalRegNamePrefix  = "Global"
-)
+const defaultSA = "default"
 
 var (
 	log       = logging.LoggerForModule()
@@ -219,7 +214,7 @@ func (rs *Store) upsertRegistry(namespace, registry string, dce config.DockerCon
 	// remove http/https prefixes from registry, matching may fail otherwise, the created registry.url will have
 	// the appropriate prefix
 	registry = urlfmt.TrimHTTPPrefixes(registry)
-	name := genIntegrationName(pullSecretNamePrefix, namespace, "", registry)
+	name := genIntegrationName(types.PullSecretNamePrefix, namespace, "", registry)
 
 	ii := createImageIntegration(registry, dce, name)
 	inserted, err := regs.UpdateImageIntegration(ii)
@@ -267,7 +262,7 @@ func (rs *Store) getRegistryForImageInNamespace(image *storage.ImageName, namesp
 // upsertGlobalRegistry will store a new registry with the given credentials into the global registry store.
 func (rs *Store) upsertGlobalRegistry(registry string, dce config.DockerConfigEntry) error {
 	var err error
-	name := genIntegrationName(globalRegNamePrefix, "", "", registry)
+	name := genIntegrationName(types.GlobalRegNamePrefix, "", "", registry)
 	_, err = rs.globalRegistries.UpdateImageIntegration(createImageIntegration(registry, dce, name))
 	if err != nil {
 		return errors.Wrapf(err, "updating registry store with registry %q", registry)
@@ -314,7 +309,7 @@ func (rs *Store) IsLocal(image *storage.ImageName) bool {
 	}
 
 	if rs.hasClusterLocalRegistryHost(image.GetRegistry()) {
-		// This host is always cluster local irregardless of the DelegatedRegistryConfig (ie: OCP internal registry).
+		// This host is always cluster local regardless of the DelegatedRegistryConfig (ie: OCP internal registry).
 		return true
 	}
 
@@ -511,7 +506,7 @@ func (rs *Store) upsertSecretByName(namespace, secretName string, dockerConfig c
 func (rs *Store) upsertPullSecretByNameNoLock(namespace, secretName, registryAddr string, dce config.DockerConfigEntry) {
 	registryAddr = urlfmt.TrimHTTPPrefixes(registryAddr)
 
-	name := genIntegrationName(pullSecretNamePrefix, namespace, secretName, registryAddr)
+	name := genIntegrationName(types.PullSecretNamePrefix, namespace, secretName, registryAddr)
 	ii := createImageIntegration(registryAddr, dce, name)
 
 	reg, err := rs.factory.CreateRegistry(ii, types.WithGCPTokenManager(gcp.Singleton()))
