@@ -25,7 +25,7 @@ func dumpCommand(cliEnvironment environment.Environment) *cobra.Command {
 
 	c := &cobra.Command{
 		Use:   "dump",
-		Short: "Download a bundle containing debug information for Central.",
+		Short: "Download a bundle containing debug information for Central",
 		Long:  "Download a bundle containing debug information for Central such as log files, memory, and CPU profiles. Bundle generation takes a few minutes.",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			cliEnvironment.Logger().InfofLn("Retrieving debug metrics. This may take a couple of minutes...")
@@ -41,8 +41,8 @@ func dumpCommand(cliEnvironment environment.Environment) *cobra.Command {
 		}),
 	}
 	flags.AddTimeoutWithDefault(c, dumpTimeout)
-	c.Flags().BoolVar(&withLogs, "logs", false, "Include logs in Central dump")
-	c.PersistentFlags().StringVar(&outputDir, "output-dir", "", "Output directory for bundle contents (default: auto-generated directory name inside the current directory)")
+	c.Flags().BoolVar(&withLogs, "logs", false, "Include logs in Central dump.")
+	c.PersistentFlags().StringVar(&outputDir, "output-dir", "", "Output directory for bundle contents (default: auto-generated directory name inside the current directory).")
 
 	return c
 }

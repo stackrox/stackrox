@@ -40,8 +40,7 @@ Example of a label selector requiring values: --%s "key=kubernetes.io/hostname;o
 Example of a label selector not requiring values: --%s "key=custom-label;operator=EXISTS"
 
 NOTE: The created access scope will only contain a single label selector, where each specified requirement
-will be in conjunction. If you desire to create multiple label selectors, you have to adjust the YAML output manually.
-`
+will be in conjunction. If you desire to create multiple label selectors, you have to adjust the YAML output manually.`
 
 func accessScopeCommand(cliEnvironment environment.Environment) *cobra.Command {
 	accessScopeCmd := accessScopeCmd{accessScope: &declarativeconfig.AccessScope{}, env: cliEnvironment}
@@ -61,14 +60,14 @@ func accessScopeCommand(cliEnvironment environment.Environment) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVar(&accessScopeCmd.accessScope.Name, "name", "", "Name of the access scope")
+	cmd.Flags().StringVar(&accessScopeCmd.accessScope.Name, "name", "", "Name of the access scope.")
 	cmd.Flags().StringVar(&accessScopeCmd.accessScope.Description, "description", "",
-		"Description of the access scope")
+		"Description of the access scope.")
 
 	cmd.Flags().Var(&includedObjectsFlag{includedObjects: &accessScopeCmd.accessScope.Rules.IncludedObjects}, "included",
 		`List of clusters and their namespaces that should be included within the access scope.
 In case all namespaces of a specific cluster should be included, specify --included cluster-name.
-In case only a subset of namespace should be included, specify --included cluster-name=namespaceA,namespaceB`)
+In case only a subset of namespace should be included, specify --included cluster-name=namespaceA,namespaceB.`)
 
 	// Currently, its only support to provide a single cluster-label-selector for the access scope.
 	// The reason is of the complexity of the resulting struct, its currently not possible to associated N requirements
