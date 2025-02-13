@@ -781,6 +781,8 @@ jobs:
 
       - uses: ./.github/actions/handle-tagged-build
 
+      - run: echo "RUNNER_DEBUG=true" >> "$GITHUB_ENV"
+
       - name: Central login
         uses: stackrox/central-login@v1
         with:
@@ -791,6 +793,8 @@ jobs:
         with:
           central-endpoint: ${{ vars.ACS_DOGFOODING_CENTRAL_URL }}
           central-token: ${{ env.ROX_API_TOKEN }}
+        env:
+          RUNNER_DEBUG: true
 
       - name: Scan images for vulnerabilities
         run: |
