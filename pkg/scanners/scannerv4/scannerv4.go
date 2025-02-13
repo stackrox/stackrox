@@ -2,12 +2,12 @@ package scannerv4
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
@@ -17,19 +17,18 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/registries"
 	"github.com/stackrox/rox/pkg/scanners/types"
-	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
+	scannertypes "github.com/stackrox/rox/pkg/scanners/types"
 	pkgscanner "github.com/stackrox/rox/pkg/scannerv4"
 	"github.com/stackrox/rox/pkg/scannerv4/client"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/pkg/version"
 	scannerv1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
 
-// mockDigest is the digest used for annotating any Node Index.
-// The Scanner endpoint requires a digest for each image layer before analyzing it - TODO(ROX-25614)
-// As the Node contents are treated as one big image layer, they also need a bogus digest.
-// This digest is taken from the test of the digest library we're using (go-containerregistry).
-const mockDigest = "registry/repository@sha256:deadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33f"
+// mockNodeName is a fake name for a node made to look like an image name.
+// The digest is taken from https://github.com/google/go-containerregistry/blob/v0.20.2/pkg/name/digest_test.go#L25.
+const mockNodeName = "registry/repository@sha256:deadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33f"
 
 var (
 	_ types.Scanner                  = (*scannerv4)(nil)
@@ -49,7 +48,18 @@ var (
 
 	scanTimeout     = env.ScanTimeout.DurationSetting()
 	metadataTimeout = 1 * time.Minute
+
+	// mockNodeDigest is the digest used for annotating any Node Index.
+	// The Scanner endpoint requires a digest for each image layer before analyzing it - TODO(ROX-25614)
+	// As the Node contents are treated as one big image layer, they also need a bogus digest.
+	mockNodeDigest name.Digest
 )
+
+func init() {
+	var err error
+	mockNodeDigest, err = name.NewDigest(mockNodeName)
+	utils.CrashOnError(err)
+}
 
 // Creator provides the type scanners.Creator to add to the scanners Registry.
 func Creator(set registries.Set) (string, func(integration *storage.ImageIntegration) (types.Scanner, error)) {
@@ -71,17 +81,17 @@ type scannerv4 struct {
 func newScanner(integration *storage.ImageIntegration, activeRegistries registries.Set) (*scannerv4, error) {
 	conf := integration.GetScannerV4()
 	if conf == nil {
-		return nil, errors.New("scanner V4 configuration required")
+		return nil, errors.New("scanner v4 configuration required")
 	}
 
 	indexerEndpoint := DefaultIndexerEndpoint
-	if conf.IndexerEndpoint != "" {
-		indexerEndpoint = conf.IndexerEndpoint
+	if conf.GetIndexerEndpoint() != "" {
+		indexerEndpoint = conf.GetIndexerEndpoint()
 	}
 
 	matcherEndpoint := DefaultMatcherEndpoint
-	if conf.MatcherEndpoint != "" {
-		matcherEndpoint = conf.MatcherEndpoint
+	if conf.GetMatcherEndpoint() != "" {
+		matcherEndpoint = conf.GetMatcherEndpoint()
 	}
 
 	numConcurrentScans := defaultMaxConcurrentScans
@@ -100,11 +110,10 @@ func newScanner(integration *storage.ImageIntegration, activeRegistries registri
 	}
 
 	scanner := &scannerv4{
-		name:              integration.GetName(),
-		activeRegistries:  activeRegistries,
-		ScanSemaphore:     types.NewSemaphoreWithValue(numConcurrentScans),
-		NodeScanSemaphore: types.NewNodeSemaphoreWithValue(numConcurrentScans),
-		scannerClient:     c,
+		name:             integration.GetName(),
+		activeRegistries: activeRegistries,
+		ScanSemaphore:    types.NewSemaphoreWithValue(numConcurrentScans),
+		scannerClient:    c,
 	}
 
 	return scanner, nil
@@ -268,47 +277,9 @@ func (s *scannerv4) GetVulnerabilities(image *storage.Image, components *types.S
 	return imageScan(image.GetMetadata(), vr, scannerVersionStr), nil
 }
 
-func (s *scannerv4) GetNodeVulnerabilityReport(node *storage.Node, indexReport *v4.IndexReport) (*v4.VulnerabilityReport, error) {
-	nodeDigest, err := name.NewDigest(mockDigest)
-	if err != nil {
-		log.Errorf("Failed to parse digest from node %q: %v", node.GetName(), err)
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
-	defer cancel()
-
-	vr, err := s.scannerClient.GetVulnerabilities(ctx, nodeDigest, indexReport.GetContents())
-	if err != nil {
-		return nil, errors.Wrap(err, "Scanner V4 client call to GetVulnerabilities")
-	}
-
-	return vr, nil
-}
-
-func (s *scannerv4) GetNodeInventoryScan(node *storage.Node, inv *storage.NodeInventory, ir *v4.IndexReport) (*storage.NodeScan, error) {
-	if ir == nil && inv != nil {
-		return nil, errors.New("Received Scanner v2 data for Scanner v4. Exiting.")
-	}
-	vr, err := s.GetNodeVulnerabilityReport(node, ir)
-	if err != nil {
-		return nil, errors.Wrap(err, "Failed to create vulnerability report")
-	}
-	log.Debugf("Received Vulnerability Report with %d packages containing %d vulnerabilities", len(vr.GetContents().GetPackages()), len(vr.Vulnerabilities))
-	return toNodeScan(vr, node.GetOsImage()), nil
-}
-
-func (s *scannerv4) GetNodeScan(_ *storage.Node) (*storage.NodeScan, error) {
-	return nil, errors.New("Not implemented for Scanner v4")
-}
-
-func (s *scannerv4) TestNodeScanner() error {
-	log.Warn("NodeScanner v4 - Returning FAKE 'success' to Test")
-	return nil
-}
-
 // NodeScannerCreator provides the type scanners.NodeScannerCreator to add to the scanners registry.
-func NodeScannerCreator() (string, func(integration *storage.NodeIntegration) (scannerTypes.NodeScanner, error)) {
-	return scannerTypes.ScannerV4, func(integration *storage.NodeIntegration) (scannerTypes.NodeScanner, error) {
+func NodeScannerCreator() (string, func(integration *storage.NodeIntegration) (scannertypes.NodeScanner, error)) {
+	return scannertypes.ScannerV4, func(integration *storage.NodeIntegration) (scannertypes.NodeScanner, error) {
 		return newNodeScanner(integration)
 	}
 }
@@ -318,14 +289,10 @@ func newNodeScanner(integration *storage.NodeIntegration) (*scannerv4, error) {
 	if conf == nil {
 		return nil, errors.New("scanner v4 configuration required")
 	}
-	indexerEndpoint := DefaultIndexerEndpoint
-	if conf.IndexerEndpoint != "" {
-		indexerEndpoint = conf.IndexerEndpoint
-	}
 
 	matcherEndpoint := DefaultMatcherEndpoint
-	if conf.MatcherEndpoint != "" {
-		matcherEndpoint = conf.MatcherEndpoint
+	if conf.GetMatcherEndpoint() != "" {
+		matcherEndpoint = conf.GetMatcherEndpoint()
 	}
 
 	numConcurrentScans := defaultMaxConcurrentScans
@@ -333,23 +300,45 @@ func newNodeScanner(integration *storage.NodeIntegration) (*scannerv4, error) {
 		numConcurrentScans = int64(conf.GetNumConcurrentScans())
 	}
 
-	log.Debugf("Creating Scanner V4 with name [%s] indexer address [%s], matcher address [%s], num concurrent scans [%d]", integration.GetName(), indexerEndpoint, matcherEndpoint, numConcurrentScans)
+	log.Debugf("Creating Scanner V4 with name [%s], matcher address [%s], num concurrent scans [%d]", integration.GetName(), matcherEndpoint, numConcurrentScans)
 	ctx := context.Background()
-	c, err := client.NewGRPCScanner(ctx,
-		client.WithIndexerAddress(indexerEndpoint),
-		client.WithMatcherAddress(matcherEndpoint),
-	)
+	c, err := client.NewGRPCScanner(ctx, client.WithMatcherAddress(matcherEndpoint))
 	if err != nil {
 		return nil, err
 	}
 
 	scanner := &scannerv4{
-		name:              integration.GetName(),
-		activeRegistries:  nil,
-		ScanSemaphore:     types.NewSemaphoreWithValue(numConcurrentScans),
 		NodeScanSemaphore: types.NewNodeSemaphoreWithValue(numConcurrentScans),
+		name:              integration.GetName(),
 		scannerClient:     c,
 	}
 
 	return scanner, nil
+}
+
+func (s *scannerv4) GetNodeInventoryScan(node *storage.Node, inv *storage.NodeInventory, ir *v4.IndexReport) (*storage.NodeScan, error) {
+	if ir == nil && inv != nil {
+		return nil, errors.New("received StackRox Scanner data for Scanner V4")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
+	defer cancel()
+
+	vr, err := s.scannerClient.GetVulnerabilities(ctx, mockNodeDigest, ir.GetContents())
+	if err != nil {
+		return nil, fmt.Errorf("get vulnerability report (reference: %s): %w", node.GetName(), err)
+	}
+
+	log.Debugf("Received Node Vulnerability Report with %d packages containing %d vulnerabilities", len(vr.GetContents().GetPackages()), len(vr.GetVulnerabilities()))
+
+	return nodeScan(node.GetOsImage(), vr), nil
+}
+
+func (s *scannerv4) GetNodeScan(_ *storage.Node) (*storage.NodeScan, error) {
+	return nil, errors.New("not implemented for Scanner V4")
+}
+
+func (s *scannerv4) TestNodeScanner() error {
+	log.Warn("Node Scanner V4 - Returning FAKE 'success' to Test")
+	return nil
 }

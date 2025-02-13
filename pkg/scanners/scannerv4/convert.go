@@ -49,13 +49,13 @@ func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport)
 		}
 
 		component := &storage.EmbeddedImageScanComponent{
-			Name:         pkg.GetName(),
-			Version:      pkg.GetVersion(),
+			Name:     pkg.GetName(),
+			Version:  pkg.GetVersion(),
 			Architecture: pkg.GetArch(),
-			Vulns:        vulnerabilities(report.GetVulnerabilities(), vulnIDs),
-			FixedBy:      pkg.GetFixedInVersion(),
-			Source:       source,
-			Location:     location,
+			Vulns:    vulnerabilities(vulnIDs, report.GetVulnerabilities(), storage.EmbeddedVulnerability_IMAGE_VULNERABILITY),
+			FixedBy:  pkg.GetFixedInVersion(),
+			Source:   source,
+			Location: location,
 		}
 		// DO NOT BLINDLY SET THIS INSIDE THE STRUCT DECLARATION DIRECTLY ABOVE.
 		// IF layerIdx IS nil, IT DOES NOT MEAN HasLayerIndex WILL BE THE SAME nil.
@@ -141,8 +141,8 @@ func layerIndex(layerSHAToIndex map[string]int32, env *v4.Environment) *storage.
 	}
 }
 
-func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerability, ids []string) []*storage.EmbeddedVulnerability {
-	if len(vulnerabilities) == 0 || len(ids) == 0 {
+func vulnerabilities(ids []string, vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerability, vulnType storage.EmbeddedVulnerability_VulnerabilityType) []*storage.EmbeddedVulnerability {
+	if len(ids) == 0 || len(vulnerabilities) == 0 {
 		return nil
 	}
 
@@ -170,7 +170,7 @@ func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerab
 			Link:        link(ccVuln.GetLink()),
 			PublishedOn: ccVuln.GetIssued(),
 			// LastModified: ,
-			VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+			VulnerabilityType: vulnType,
 			Severity:          normalizedSeverity(ccVuln.GetNormalizedSeverity()),
 			Epss:              epss(ccVuln.GetEpssMetrics()),
 		}
@@ -320,7 +320,7 @@ func toCVSSV3Scores(vulnCVSS *v4.VulnerabilityReport_Vulnerability_CVSS, cve str
 }
 
 // link returns the first link from space separated list of links (which is how ClairCore provides links).
-// The ACS UI will fail to show a vulnerability's link if it is an invalid URL.
+// The StackRox UI will fail to show a vulnerability's link if it is an invalid URL.
 func link(links string) string {
 	link, _, _ := strings.Cut(links, " ")
 	return link
