@@ -15,4 +15,5 @@ data:
         conn_string: host={{ .Values.app.db.name }}.{{ .Release.Namespace }} port=5432 user=postgres sslmode=verify-ca statement_timeout=60000 sslrootcert=/run/secrets/stackrox.io/certs/ca.pem
         password_file: /run/secrets/stackrox.io/postgresql/password
       vulnerabilities_url: "https://localhost:9443"
+      readiness: vulnerability
     log_level: debug
