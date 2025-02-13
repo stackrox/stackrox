@@ -176,6 +176,8 @@ test_upgrade_paths() {
 
       wait_for_api
       wait_for_central_db
+
+      collect_and_check_stackrox_logs "$log_output_dir" "00_postgres_postgres_upgrade-$str"
     done
 
     ########################################################################################
