@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package storage;
 
-import "storage/cve.proto";
 import "storage/image.proto";
 
 option go_package = "./storage;storage";
