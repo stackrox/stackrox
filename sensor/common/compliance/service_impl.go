@@ -25,14 +25,16 @@ import (
 	"google.golang.org/grpc"
 )
 
-// ComplianceService is the struct that manages the compliance results and audit log events
+var _ Service = (*serviceImpl)(nil)
+
+// serviceImpl is the struct that manages the compliance results and audit log events.
 type serviceImpl struct {
 	sensor.UnimplementedComplianceServiceServer
 
 	output           chan *compliance.ComplianceReturn
 	auditEvents      chan *sensor.AuditEvents
 	nodeInventories  chan *storage.NodeInventory
-	indexReportWraps chan *index.IndexReportWrap
+	indexReports     chan *index.Report
 
 	complianceC <-chan common.MessageToComplianceWithAddress
 
@@ -252,7 +254,7 @@ func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateSer
 		case *sensor.MsgFromCompliance_IndexReport:
 			log.Infof("Received index report from %q with %d packages",
 				msg.GetNode(), len(msg.GetIndexReport().GetContents().GetPackages()))
-			s.indexReportWraps <- &index.IndexReportWrap{
+			s.indexReports <- &index.Report{
 				NodeName:    msg.GetNode(),
 				IndexReport: t.IndexReport,
 			}
@@ -287,6 +289,6 @@ func (s *serviceImpl) NodeInventories() <-chan *storage.NodeInventory {
 	return s.nodeInventories
 }
 
-func (s *serviceImpl) IndexReportWraps() <-chan *index.IndexReportWrap {
-	return s.indexReportWraps
+func (s *serviceImpl) IndexReports() <-chan *index.Report {
+	return s.indexReports
 }

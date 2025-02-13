@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/quay/claircore/indexer/controller"
 	"github.com/quay/claircore/pkg/rhctag"
+	"github.com/quay/claircore/rhel/rhcc"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
@@ -24,18 +25,24 @@ var (
 	errInventoryInputChanClosed = errors.New("channel receiving node inventories is closed")
 	errIndexInputChanClosed     = errors.New("channel receiving node indexes is closed")
 	errStartMoreThanOnce        = errors.New("unable to start the component more than once")
+
+	// rhccRepoName is the name of the "Gold Repository".
+	rhccRepoName = rhcc.GoldRepo.Name
+	// rhccRepoURI is the URI of the "Gold Repository".
+	rhccRepoURI = rhcc.GoldRepo.URI
 )
 
 const (
 	rhcosFullName = "Red Hat Enterprise Linux CoreOS"
-	// From ClairCore rhel-vex matcher
-	goldenName = "Red Hat Container Catalog"
-	goldenURI  = `https://catalog.redhat.com/software/containers/explore`
+
+	// dummySHA256 is a placeholder, valid SHA 256 which is required by Claircore.
+	// This is used when the SHA 256 value does not matter.
+	dummySHA256 = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 )
 
 type nodeInventoryHandlerImpl struct {
 	inventories  <-chan *storage.NodeInventory
-	reportWraps  <-chan *index.IndexReportWrap
+	indexReports <-chan *index.Report
 	toCentral    <-chan *message.ExpiringMessage
 	centralReady concurrency.Signal
 	// acksFromCentral is for connecting the replies from Central with the toCompliance chan
@@ -165,7 +172,7 @@ func (c *nodeInventoryHandlerImpl) run() (toCentral <-chan *message.ExpiringMess
 					return
 				}
 				c.handleNodeInventory(inventory, ch2Central)
-			case wrap, ok := <-c.reportWraps:
+			case wrap, ok := <-c.indexReports:
 				if !ok {
 					c.stopper.Flow().StopWithError(errIndexInputChanClosed)
 					return
@@ -210,35 +217,32 @@ func (c *nodeInventoryHandlerImpl) handleNodeInventory(
 	}
 }
 
-func (c *nodeInventoryHandlerImpl) handleNodeIndex(
-	index *index.IndexReportWrap,
-	toCentral chan *message.ExpiringMessage,
-) {
-	if index == nil || index.IndexReport == nil {
-		log.Warn("Received nil index report: not sending to Central")
+func (c *nodeInventoryHandlerImpl) handleNodeIndex(report *index.Report, toCentral chan *message.ExpiringMessage) {
+	if report == nil || report.IndexReport == nil {
+		log.Warn("Received nil Index Report: not sending to Central")
 		metrics.ObserveNodeScan("nil", metrics.NodeScanTypeNodeIndex, metrics.NodeScanOperationReceive)
 		return
 	}
-	metrics.ObserveNodeScan(index.NodeName, metrics.NodeScanTypeNodeIndex, metrics.NodeScanOperationReceive)
+	metrics.ObserveNodeScan(report.NodeName, metrics.NodeScanTypeNodeIndex, metrics.NodeScanOperationReceive)
 	if !c.centralReady.IsDone() {
-		log.Warn("Received IndexReport but Central is not reachable. Requesting Compliance to resend later.")
-		c.sendAckToCompliance(index.NodeName,
+		log.Warn("Received Index Report but Central is not reachable. Requesting Compliance to resend later.")
+		c.sendAckToCompliance(report.NodeName,
 			sensor.MsgToCompliance_NodeInventoryACK_NACK,
 			sensor.MsgToCompliance_NodeInventoryACK_NodeIndexer,
 			metrics.AckReasonCentralUnreachable)
 		return
 	}
 
-	if nodeID, err := c.nodeMatcher.GetNodeID(index.NodeName); err != nil {
-		log.Warnf("Received Index Report from Node %q that is unknown to Sensor. Requesting Compliance to resend later.", index.NodeName)
-		c.sendAckToCompliance(index.NodeName,
+	if nodeID, err := c.nodeMatcher.GetNodeID(report.NodeName); err != nil {
+		log.Warnf("Received Index Report from Node %q that is unknown to Sensor. Requesting Compliance to resend later.", report.NodeName)
+		c.sendAckToCompliance(report.NodeName,
 			sensor.MsgToCompliance_NodeInventoryACK_NACK,
 			sensor.MsgToCompliance_NodeInventoryACK_NodeIndexer,
 			metrics.AckReasonNodeUnknown)
 	} else {
-		index.NodeID = nodeID
-		log.Debugf("Mapping IndexReport name '%s' to Node ID '%s'", index.NodeName, nodeID)
-		c.sendNodeIndex(toCentral, index)
+		report.NodeID = nodeID
+		log.Debugf("Mapping Index Report name '%s' to Node ID '%s'", report.NodeName, nodeID)
+		c.sendNodeIndex(toCentral, report)
 	}
 }
 
@@ -294,46 +298,46 @@ func (c *nodeInventoryHandlerImpl) sendNodeInventory(toC chan<- *message.Expirin
 	}
 }
 
-func (c *nodeInventoryHandlerImpl) sendNodeIndex(toC chan<- *message.ExpiringMessage, indexWrap *index.IndexReportWrap) {
-	if indexWrap == nil || indexWrap.IndexReport == nil {
-		log.Debugf("Empty IndexReport - not sending to Central")
+func (c *nodeInventoryHandlerImpl) sendNodeIndex(toC chan<- *message.ExpiringMessage, report *index.Report) {
+	if report == nil || report.IndexReport == nil {
+		log.Debugf("Empty Index Report - not sending to Central")
 		return
 	}
 
-	isRHCOS, version, err := c.nodeRHCOSMatcher.GetRHCOSVersion(indexWrap.NodeName)
+	isRHCOS, version, err := c.nodeRHCOSMatcher.GetRHCOSVersion(report.NodeName)
 	if err != nil {
-		log.Warnf("Unable to determine RHCOS version for node %q: %v", indexWrap.NodeName, err)
+		log.Warnf("Unable to determine RHCOS version for node %q: %v", report.NodeName, err)
 		isRHCOS = false
 	}
-	log.Debugf("Node=%q discovered RHCOS=%t rhcos-version=%q", indexWrap.NodeName, isRHCOS, version)
+	log.Debugf("Node=%q discovered RHCOS=%t rhcos-version=%q", report.NodeName, isRHCOS, version)
 
 	select {
 	case <-c.stopper.Flow().StopRequested():
 	default:
 		defer func() {
-			log.Debugf("Sent IndexReport to Central")
-			metrics.ObserveReceivedNodeIndex(indexWrap.NodeName) // keeping for compatibility with 4.6. Remove in 4.8
-			metrics.ObserveNodeScan(indexWrap.NodeName, metrics.NodeScanTypeNodeIndex, metrics.NodeScanOperationSendToCentral)
+			log.Debugf("Sent Index Report to Central")
+			metrics.ObserveReceivedNodeIndex(report.NodeName) // keeping for compatibility with 4.6. Remove in 4.8
+			metrics.ObserveNodeScan(report.NodeName, metrics.NodeScanTypeNodeIndex, metrics.NodeScanOperationSendToCentral)
 		}()
 		irWrapperFunc := noop
-		arch := c.archCache[indexWrap.NodeName]
+		arch := c.archCache[report.NodeName]
 		if isRHCOS {
-			if _, ok := c.archCache[indexWrap.NodeName]; !ok {
-				arch = extractArch(indexWrap.IndexReport)
-				c.archCache[indexWrap.NodeName] = arch
+			if _, ok := c.archCache[report.NodeName]; !ok {
+				arch = extractArch(report.IndexReport)
+				c.archCache[report.NodeName] = arch
 			}
-			log.Debugf("Attaching OCI entry for 'rhcos' to index-report for node %s: version=%s, arch=%s", indexWrap.NodeName, version, arch)
+			log.Debugf("Attaching OCI entry for 'rhcos' to index-report for node %s: version=%s, arch=%s", report.NodeName, version, arch)
 			irWrapperFunc = attachRPMtoRHCOS
 		}
 		toC <- message.New(&central.MsgFromSensor{
 			Msg: &central.MsgFromSensor_Event{
 				Event: &central.SensorEvent{
-					Id: indexWrap.NodeID,
+					Id: report.NodeID,
 					// ResourceAction_UNSET_ACTION_RESOURCE is the only one supported by Central 4.6 and older.
 					// This can be changed to CREATE or UPDATE for Sensor 4.8 or when Central 4.6 is out of support.
 					Action: central.ResourceAction_UNSET_ACTION_RESOURCE,
 					Resource: &central.SensorEvent_IndexReport{
-						IndexReport: irWrapperFunc(version, arch, indexWrap.IndexReport),
+						IndexReport: irWrapperFunc(version, arch, report.IndexReport),
 					},
 				},
 			},
@@ -393,17 +397,17 @@ func attachRPMtoRHCOS(version, arch string, rpm *v4.IndexReport) *v4.IndexReport
 	return oci
 }
 
-func buildRHCOSIndexReport(Id, version, arch string) *v4.IndexReport {
+func buildRHCOSIndexReport(id, version, arch string) *v4.IndexReport {
 	return &v4.IndexReport{
-		// This hashId is arbitrary. The value doesn't play a role for matcher, but must be valid sha256.
-		HashId:  "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		// This HashId is arbitrary. The value doesn't play a role for matcher, but must be valid sha256.
+		HashId:  dummySHA256,
 		State:   controller.IndexFinished.String(),
 		Success: true,
 		Err:     "",
 		Contents: &v4.Contents{
 			Packages: []*v4.Package{
 				{
-					Id:      Id,
+					Id:      id,
 					Name:    "rhcos",
 					Version: version,
 					NormalizedVersion: &v4.NormalizedVersion{
@@ -412,34 +416,34 @@ func buildRHCOSIndexReport(Id, version, arch string) *v4.IndexReport {
 					},
 					Kind: "binary",
 					Source: &v4.Package{
-						Id:      Id,
+						Id:      id,
 						Name:    "rhcos",
 						Kind:    "source",
 						Version: version,
-						Cpe:     "cpe:2.3:*", // required to pass validation of scanner V4 API
+						Cpe:     "cpe:2.3:*", // required to pass validation of Scanner V4 API.
 					},
 					Arch: arch,
-					Cpe:  "cpe:2.3:*", // required to pass validation of scanner V4 API
+					Cpe:  "cpe:2.3:*", // required to pass validation of Scanner V4 API.
 				},
 			},
 			Repositories: []*v4.Repository{
 				{
-					Id:   Id,
-					Name: goldenName,
+					Id:   id,
+					Name: rhccRepoName,
 					Key:  "",
-					Uri:  goldenURI,
-					Cpe:  "cpe:2.3:*", // required to pass validation of scanner V4 API
+					Uri:  rhccRepoURI,
+					Cpe:  "cpe:2.3:*", // required to pass validation of Scanner V4 API.
 				},
 			},
-			// Environments must be present for the matcher to discover records
+			// Environments must be present for the matcher to discover records.
 			Environments: map[string]*v4.Environment_List{
-				Id: {
+				id: {
 					Environments: []*v4.Environment{
 						{
 							PackageDb: "",
 							// IntroducedIn must be a valid sha256, but the value is not important.
-							IntroducedIn:  "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-							RepositoryIds: []string{Id},
+							IntroducedIn:  dummySHA256,
+							RepositoryIds: []string{id},
 						},
 					},
 				},

@@ -146,7 +146,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		complianceService,
 	}
 	matcher := compliance.NewNodeIDMatcher(storeProvider.Nodes())
-	nodeInventoryHandler := compliance.NewNodeInventoryHandler(complianceService.NodeInventories(), complianceService.IndexReportWraps(), matcher, matcher)
+	nodeInventoryHandler := compliance.NewNodeInventoryHandler(complianceService.NodeInventories(), complianceService.IndexReports(), matcher, matcher)
 	complianceMultiplexer.AddComponentWithComplianceC(nodeInventoryHandler)
 	// complianceMultiplexer must start after all components that implement common.ComplianceComponent
 	// i.e., after nodeInventoryHandler

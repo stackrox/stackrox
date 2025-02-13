@@ -90,7 +90,7 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 		return nil
 	}
 	log.Debugf("Received node index report for node %s with %d packages from %d content sets",
-		event.GetId(), len(report.GetContents().Packages), len(report.GetContents().Repositories))
+		event.GetId(), len(report.GetContents().GetPackages()), len(report.GetContents().GetRepositories()))
 	report = report.CloneVT()
 
 	// Query storage for the node this report comes from
