@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/scanner/internal/version"
 )
 
+// MatcherReadiness labels the different readiness strategies Scanner can use.
 type MatcherReadiness string
 
 const (
@@ -246,7 +247,7 @@ func (c *MatcherConfig) validate() error {
 	switch c.Readiness {
 	case ReadinessDatabase, ReadinessVulnerability:
 	default:
-		return fmt.Errorf("readiness: invalid readiness type '%s'", c.Readiness)
+		return fmt.Errorf("readiness: invalid readiness type %q", c.Readiness)
 	}
 
 	return nil
