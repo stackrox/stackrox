@@ -3,6 +3,7 @@ package common
 import (
 	"github.com/stackrox/rox/central/cve/converter/utils"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
@@ -17,7 +18,11 @@ func Split(image *storage.Image, withComponents bool) ImageParts {
 
 	// These need to be called in order.
 	if withComponents {
-		parts.Children = splitComponents(parts)
+		if features.FlattenCVEData.Enabled() {
+			parts.Children = splitComponentsV2(parts)
+		} else {
+			parts.Children = splitComponents(parts)
+		}
 	}
 
 	// Clear components in the top level image.
@@ -47,10 +52,27 @@ func splitComponents(parts ImageParts) []ComponentParts {
 	return ret
 }
 
+func splitComponentsV2(parts ImageParts) []ComponentParts {
+	ret := make([]ComponentParts, 0, len(parts.Image.GetScan().GetComponents()))
+	for _, component := range parts.Image.GetScan().GetComponents() {
+		generatedComponentV2 := GenerateImageComponentV2(parts.Image.GetScan().GetOperatingSystem(), parts.Image, component)
+
+		cp := ComponentParts{}
+		cp.ComponentV2 = generatedComponentV2
+		cp.Children = splitCVEsV2(parts, cp, component)
+
+		ret = append(ret, cp)
+	}
+
+	return ret
+}
+
 func splitCVEs(parts ImageParts, component ComponentParts, embedded *storage.EmbeddedImageScanComponent) []CVEParts {
 	ret := make([]CVEParts, 0, len(embedded.GetVulns()))
 	addedCVEs := set.NewStringSet()
 	for _, cve := range embedded.GetVulns() {
+		if features.FlattenCVEData.Enabled() {
+		}
 		convertedCVE := utils.EmbeddedVulnerabilityToImageCVE(parts.Image.GetScan().GetOperatingSystem(), cve)
 		if !addedCVEs.Add(convertedCVE.GetId()) {
 			continue
@@ -61,6 +83,19 @@ func splitCVEs(parts ImageParts, component ComponentParts, embedded *storage.Emb
 		if _, ok := parts.ImageCVEEdges[cp.CVE.GetId()]; !ok {
 			parts.ImageCVEEdges[cp.CVE.GetId()] = generateImageCVEEdge(parts.Image.GetId(), cp.CVE, cve)
 		}
+		ret = append(ret, cp)
+	}
+
+	return ret
+}
+
+func splitCVEsV2(parts ImageParts, component ComponentParts, embedded *storage.EmbeddedImageScanComponent) []CVEParts {
+	ret := make([]CVEParts, 0, len(embedded.GetVulns()))
+	for cveIndex, cve := range embedded.GetVulns() {
+		convertedCVE := utils.EmbeddedVulnerabilityToImageCVEV2(parts.Image.GetScan().GetOperatingSystem(), component.ComponentV2.GetImageId(), component.ComponentV2.GetId(), cveIndex, cve)
+
+		cp := CVEParts{}
+		cp.CVEV2 = convertedCVE
 		ret = append(ret, cp)
 	}
 
@@ -100,6 +135,36 @@ func GenerateImageComponent(os string, from *storage.EmbeddedImageScanComponent)
 	if from.GetSetTopCvss() != nil {
 		ret.SetTopCvss = &storage.ImageComponent_TopCvss{TopCvss: from.GetTopCvss()}
 	}
+	return ret
+}
+
+// GenerateImageComponentV2 returns top-level image component from embedded component.
+func GenerateImageComponentV2(os string, image *storage.Image, from *storage.EmbeddedImageScanComponent) *storage.ImageComponentV2 {
+	ret := &storage.ImageComponentV2{
+		Id:              scancomponent.ComponentIDV2(from.GetName(), from.GetVersion(), from.GetArchitecture(), image.GetId()),
+		Name:            from.GetName(),
+		Version:         from.GetVersion(),
+		License:         from.GetLicense().CloneVT(),
+		Source:          from.GetSource(),
+		FixedBy:         from.GetFixedBy(),
+		RiskScore:       from.GetRiskScore(),
+		Priority:        from.GetPriority(),
+		OperatingSystem: os,
+		ImageId:         image.GetId(),
+		Location:        from.GetLocation(),
+		Architecture:    from.GetArchitecture(),
+	}
+
+	if from.GetSetTopCvss() != nil {
+		ret.SetTopCvss = &storage.ImageComponentV2_TopCvss{TopCvss: from.GetTopCvss()}
+	}
+
+	if from.HasLayerIndex != nil {
+		ret.HasLayerIndex = &storage.ImageComponentV2_LayerIndex{
+			LayerIndex: from.GetLayerIndex(),
+		}
+	}
+
 	return ret
 }
 
