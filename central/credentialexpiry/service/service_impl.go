@@ -118,7 +118,6 @@ func (s *serviceImpl) getCentralDBCertExpiry() (*v1.GetCertExpiry_Response, erro
 	defer utils.IgnoreError(conn.Close)
 
 	tlsConfig, err := clientconn.TLSConfig(mtls.CentralDBSubject, clientconn.TLSConfigOptions{
-		UseClientCert:      clientconn.MustUseClientCert,
 		InsecureSkipVerify: true,
 	})
 	if err != nil {
