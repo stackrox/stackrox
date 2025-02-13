@@ -62,11 +62,13 @@ func main() {
 	signal.Notify(sigs, os.Interrupt, unix.SIGTERM)
 
 	var sharedClientInterface client.Interface
+	var sharedClientInterfaceForFetchingPodOwnership client.Interface
 
 	// Workload manager is only non-nil when we are mocking out the k8s client
 	workloadManager := fake.NewWorkloadManager(fake.ConfigDefaults())
 	if workloadManager != nil {
 		sharedClientInterface = workloadManager.Client()
+		sharedClientInterfaceForFetchingPodOwnership = client.MustCreateInterface()
 	} else {
 		sharedClientInterface = client.MustCreateInterface()
 	}
@@ -82,7 +84,8 @@ func main() {
 		WithK8sClient(sharedClientInterface).
 		WithCentralConnectionFactory(centralConnFactory).
 		WithCertLoader(certLoader).
-		WithWorkloadManager(workloadManager))
+		WithWorkloadManager(workloadManager).
+		WithIntrospectionK8sClient(sharedClientInterfaceForFetchingPodOwnership))
 	utils.CrashOnError(err)
 
 	s.Start()
