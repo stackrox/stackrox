@@ -275,6 +275,7 @@ func (q *query) AsSQL() string {
 	}
 
 	var querySB strings.Builder
+	var queryString string
 
 	querySB.WriteString(q.getPortionBeforeFromClause())
 	querySB.WriteString(" from ")
@@ -341,12 +342,15 @@ func (q *query) AsSQL() string {
 		querySB.WriteString(strings.Join(returnedColumnPaths, ", "))
 	}
 	if paginationSQL := q.Pagination.AsSQL(); paginationSQL != "" {
+		queryString = querySB.String()
 		querySB.WriteString(" ")
+		queryString = querySB.String()
 		querySB.WriteString(paginationSQL)
+		queryString = querySB.String()
 	}
 	// Performing this operation on full query is safe since table names and column names
 	// can only contain alphanumeric and underscore character.
-	queryString := replaceVars(querySB.String())
+	queryString = replaceVars(querySB.String())
 	if env.PostgresQueryLogger.BooleanSetting() {
 		log.Info(queryString)
 	}
@@ -400,7 +404,7 @@ func (p *parsedPaginationQuery) AsSQL() string {
 		for _, entry := range p.OrderBys {
 			orderByClauses = append(orderByClauses, fmt.Sprintf("%s %s", entry.Field.SelectPath, pkgUtils.IfThenElse(entry.Descending, "desc", "asc")))
 		}
-		paginationSB.WriteString(fmt.Sprintf("order by %s", strings.Join(orderByClauses, ", ")))
+		paginationSB.WriteString(fmt.Sprintf("order by %s nulls last", strings.Join(orderByClauses, ", ")))
 	}
 	if p.Limit > 0 {
 		paginationSB.WriteString(fmt.Sprintf(" LIMIT %d", p.Limit))
