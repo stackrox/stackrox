@@ -1242,9 +1242,9 @@ restore_4_5_postgres_backup() {
     require_environment "API_ENDPOINT"
     require_environment "ROX_ADMIN_PASSWORD"
 
-    gsutil cp gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/postgres_db_4_5.sql.zip .
+    gsutil cp gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/postgres_db_4_1.sql.zip .
     roxctl -e "$API_ENDPOINT" \
-        central db restore --timeout 5m postgres_db_4_5.sql.zip
+        central db restore --timeout 5m postgres_db_4_1.sql.zip
 }
 
 update_public_config() {

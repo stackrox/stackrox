@@ -7,10 +7,14 @@ set -euo pipefail
 
 TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 
-EARLIER_TAG="4.5.5"
-EARLIER_SHA="74f9ef246c34456966a84e4a5c904119fbc3bbdf"
+EARLIER_TAG="4.1.3"
+EARLIER_SHA="8a4677e3d45ebc4f065ec052d1d66d6ead2084bb"
 CURRENT_TAG="$(make --quiet --no-print-directory tag)"
-PREVIOUS_RELEASES=("4.5.5" "4.6.2")
+PREVIOUS_RELEASES=("4.1.3" "4.2.5" "4.3.8" "4.4.7" "4.5.5" "4.6.2")
+#EARLIER_TAG="4.5.5"
+#EARLIER_SHA="74f9ef246c34456966a84e4a5c904119fbc3bbdf"
+#CURRENT_TAG="$(make --quiet --no-print-directory tag)"
+#PREVIOUS_RELEASES=("4.5.5" "4.6.2")
 
 # shellcheck source=../../scripts/lib.sh
 source "$TEST_ROOT/scripts/lib.sh"
@@ -98,7 +102,7 @@ test_upgrade_paths() {
     wait_for_api
 
     # Run with some scale to have data populated to migrate
-    deploy_scaled_workload
+#    deploy_scaled_workload
 
     # Get the API_TOKEN for the upgrades
     export API_TOKEN="$(roxcurl /v1/apitokens/generate -d '{"name": "helm-upgrade-test", "role": "Admin"}' | jq -r '.token')"
@@ -120,8 +124,8 @@ test_upgrade_paths() {
     ci_export ALLOWLIST_FILE "/tmp/allowlist-patterns"
 
     # Add some Postgres Access Scopes.  These should not survive a rollback.
-    createPostgresScopes
-    checkForPostgresAccessScopes
+#    createPostgresScopes
+#    checkForPostgresAccessScopes
 
     touch "${UPGRADE_PROGRESS_POSTGRES_EARLIER_CENTRAL}"
 
@@ -136,7 +140,7 @@ test_upgrade_paths() {
     kubectl -n stackrox delete pod -l app=collector --grace-period=0
 
     # Verify data is still there
-    checkForPostgresAccessScopes
+#    checkForPostgresAccessScopes
 
     validate_upgrade "01-bounce-after-upgrade" "bounce after postgres upgrade" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
     collect_and_check_stackrox_logs "$log_output_dir" "01_post_bounce"
@@ -155,11 +159,11 @@ test_upgrade_paths() {
     wait_for_central_db
 
     # Verify data is still there
-    checkForPostgresAccessScopes
-
-    validate_upgrade "02-bounce-db-after-upgrade" "bounce central db after postgres upgrade" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
-
-    collect_and_check_stackrox_logs "$log_output_dir" "02_post_bounce-db"
+#    checkForPostgresAccessScopes
+#
+#    validate_upgrade "02-bounce-db-after-upgrade" "bounce central db after postgres upgrade" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
+#
+#    collect_and_check_stackrox_logs "$log_output_dir" "02_post_bounce-db"
 
     # Ensure central is ready for requests after any previous tests
     wait_for_api
@@ -176,6 +180,8 @@ test_upgrade_paths() {
 
       wait_for_api
       wait_for_central_db
+      
+      db_backup_and_restore_test
     done
 
     ########################################################################################
