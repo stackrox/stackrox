@@ -33,7 +33,7 @@ export function alertsGrpc(host, headers, tags) {
             params,
         );
         console.log(tags);
-        check(response, {'status is OK': (r) => r && r.status === StatusOK && r.message.alerts.length > 0}, params.tags);
+        check(response, {'status is OK': (r) => r && r.status === StatusOK && r.message.alerts.length > 0}, tags);
     });
     });
     client.close();
