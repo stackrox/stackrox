@@ -685,10 +685,11 @@ func (ts *DelegatedScanningSuite) TestDeploymentScans() {
 // that delegated scanning is able to scan images from mirrors defined by the various
 // mirroring CRs (ie: ImageContentSourcePolicy, ImageDigestMirrorSet, ImageTagMirrorSet)
 func (ts *DelegatedScanningSuite) TestMirrorScans() {
+	ts.T().Skip("Disabled! ROX-26663: CI improvements 2025-02-12: The test is unstable.")
+
 	t := ts.T()
 	ctx := ts.ctx
 
-	t.Skip("Disabled! ROX-26663: CI improvements 2025-02-12: The test is unstable.")
 	ts.skipIfNotOpenShift()
 
 	// Create mirroring CRs and update OCP global pull secret, this will
