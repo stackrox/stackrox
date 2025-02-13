@@ -12,7 +12,7 @@ updates:
       day: 'wednesday'
     # always update package.json files to match new version for any package in UI monorepo
     versioning-strategy: increase
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 3
     labels:
       - "dependencies"
       - "area/ui"
@@ -27,7 +27,7 @@ updates:
     directory: 'qa-tests-backend/'
     schedule:
       interval: 'daily'
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 3
     labels:
       - "ci-all-qa-tests"
       - "dependencies"
@@ -266,7 +266,7 @@ updates:
     schedule:
       interval: 'weekly'
       day: 'wednesday'
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 3
     labels:
     - "dependencies"
     - "area/operator"
@@ -283,7 +283,7 @@ updates:
     schedule:
       interval: 'weekly'
       day: 'wednesday'
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 3
     labels:
     - "ci-all-qa-tests"
     - "dependencies"
@@ -298,7 +298,7 @@ updates:
     schedule:
       interval: 'weekly'
       day: 'wednesday'
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 3
     labels:
     - "ci-all-qa-tests"
     - "dependencies"
@@ -313,7 +313,7 @@ updates:
     schedule:
       interval: 'weekly'
       day: 'wednesday'
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 3
     labels:
     - "ci-all-qa-tests"
     - "dependencies"
@@ -328,7 +328,7 @@ updates:
     schedule:
       interval: 'weekly'
       day: 'wednesday'
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 3
     labels:
     - "ci-all-qa-tests"
     - "dependencies"
@@ -343,7 +343,7 @@ updates:
     schedule:
       interval: 'weekly'
       day: 'wednesday'
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 3
     reviewers:
     - "stackrox/backend-dep-updaters"
     commit-message:
@@ -353,3 +353,136 @@ updates:
       actions:
         patterns:
           - "actions/*"
+
+  # Below configuration is workaround for dependabot issue
+  # about local actions in .github/actions/ are not checked
+  # https://github.com/dependabot/dependabot-core/issues/6345
+
+  - package-ecosystem: github-actions
+    directory: /.github/actions/cache-go-dependencies
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+    open-pull-requests-limit: 3
+    reviewers:
+    - "stackrox/backend-dep-updaters"
+    commit-message:
+      include: scope
+      prefix: chore
+    groups:
+      actions:
+        patterns:
+        - "actions/*"
+
+  - package-ecosystem: github-actions
+    directory: /.github/actions/cache-gradle-dependencies
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+    open-pull-requests-limit: 3
+    reviewers:
+    - "stackrox/backend-dep-updaters"
+    commit-message:
+      include: scope
+      prefix: chore
+    groups:
+      actions:
+        patterns:
+        - "actions/*"
+
+  - package-ecosystem: github-actions
+    directory: /.github/actions/cache-ui-dependencies
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+    open-pull-requests-limit: 3
+    reviewers:
+    - "stackrox/backend-dep-updaters"
+    commit-message:
+      include: scope
+      prefix: chore
+    groups:
+      actions:
+        patterns:
+        - "actions/*"
+
+  - package-ecosystem: github-actions
+    directory: /.github/actions/download-artifact-with-retry
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+    open-pull-requests-limit: 3
+    reviewers:
+    - "stackrox/backend-dep-updaters"
+    commit-message:
+      include: scope
+      prefix: chore
+    groups:
+      actions:
+        patterns:
+        - "actions/*"
+
+  - package-ecosystem: github-actions
+    directory: /.github/actions/handle-tagged-build
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+    open-pull-requests-limit: 3
+    reviewers:
+    - "stackrox/backend-dep-updaters"
+    commit-message:
+      include: scope
+      prefix: chore
+    groups:
+      actions:
+        patterns:
+        - "actions/*"
+
+
+  - package-ecosystem: github-actions
+    directory: /.github/actions/job-preamble
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+    open-pull-requests-limit: 3
+    reviewers:
+    - "stackrox/backend-dep-updaters"
+    commit-message:
+      include: scope
+      prefix: chore
+    groups:
+      actions:
+        patterns:
+        - "actions/*"
+
+  - package-ecosystem: github-actions
+    directory: /.github/actions/junit2jira
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+    open-pull-requests-limit: 3
+    reviewers:
+    - "stackrox/backend-dep-updaters"
+    commit-message:
+      include: scope
+      prefix: chore
+    groups:
+      actions:
+        patterns:
+        - "actions/*"
+
+  - package-ecosystem: github-actions
+    directory: /.github/actions/upload-artifact-with-retry
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+    open-pull-requests-limit: 3
+    reviewers:
+    - "stackrox/backend-dep-updaters"
+    commit-message:
+      include: scope
+      prefix: chore
+    groups:
+      actions:
+        patterns:
+        - "actions/*"
