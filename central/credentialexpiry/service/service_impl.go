@@ -131,11 +131,14 @@ func (s *serviceImpl) getCentralDBCertExpiry() (*v1.GetCertExpiry_Response, erro
 		return nil, errors.Errorf("%q at %s returned no peer certs", mtls.CentralDBSubject.Identifier, endpoint)
 	}
 	leafCert := certs[0]
+	if leafCert == nil {
+		return nil, nil
+	}
 	if cn := leafCert.Subject.CommonName; cn != mtls.CentralDBSubject.CN() {
 		return nil, errors.Errorf("common name of %q at %s (%s) is not as expected", mtls.CentralDBSubject.Identifier, endpoint, cn)
 	}
-	if leafCert == nil || leafCert.NotAfter.IsZero() {
-		return &v1.GetCertExpiry_Response{Expiry: nil}, nil
+	if leafCert.NotAfter.IsZero() {
+		return nil, nil
 	}
 	certExpiry, err := protocompat.ConvertTimeToTimestampOrError(leafCert.NotAfter)
 	if err != nil {
