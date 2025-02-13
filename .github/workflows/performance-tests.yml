@@ -3,7 +3,6 @@ on:
   pull_request:
     branches:
       - master
-      - hack2023/k6-ci-pipeline-tests
     types:
       - labeled
       - synchronize
@@ -12,6 +11,7 @@ jobs:
   wait-for-images:
     name: Wait for images
     runs-on: ubuntu-latest
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'ci-performance-tests') }}
     strategy:
       matrix:
         image: [main, roxctl]
