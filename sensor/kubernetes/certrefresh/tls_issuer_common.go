@@ -66,8 +66,8 @@ type tlsIssuerImpl struct {
 	requestOngoing               atomic.Bool
 	newMsgFromSensorFn           newMsgFromSensor
 	requiredCentralCapability    *centralsensor.CentralCapability
-	started                      bool
-	online                       bool
+	started                      atomic.Bool
+	online                       atomic.Bool
 }
 
 // Start starts the Sensor component and launches a certificate refresher that:
@@ -76,15 +76,15 @@ type tlsIssuerImpl struct {
 // When Sensor is offline this component is not active.
 func (i *tlsIssuerImpl) Start() error {
 	log.Debugf("Starting %s TLS issuer.", i.componentName)
-	i.started = true
+	i.started.Store(true)
 	return i.activate()
 }
 
 func (i *tlsIssuerImpl) activate() error {
-	if !i.started {
+	if !i.started.Load() {
 		return nil
 	}
-	if !i.online {
+	if !i.online.Load() {
 		return nil
 	}
 	if i.certRefresher != nil {
@@ -99,7 +99,7 @@ func (i *tlsIssuerImpl) activate() error {
 	sensorOwnerReference, fetchSensorDeploymentErr := FetchSensorDeploymentOwnerRef(ctx, i.sensorPodName,
 		i.sensorNamespace, i.k8sClient, wait.Backoff{})
 	if fetchSensorDeploymentErr != nil {
-		i.started = false
+		i.started.Store(false)
 		return fmt.Errorf("fetching sensor deployment: %w", fetchSensorDeploymentErr)
 	}
 
@@ -111,7 +111,7 @@ func (i *tlsIssuerImpl) activate() error {
 	if refreshStartErr := i.certRefresher.Start(); refreshStartErr != nil {
 		// Starting a RetryTicker should only return an error if already started or stopped, so this should
 		// never happen because i.certRefresher was just created
-		i.started = false
+		i.started.Store(false)
 		return fmt.Errorf("starting certificate refresher: %w", refreshStartErr)
 	}
 
@@ -120,7 +120,7 @@ func (i *tlsIssuerImpl) activate() error {
 }
 
 func (i *tlsIssuerImpl) Stop(_ error) {
-	i.started = false
+	i.started.Store(false)
 	i.deactivate()
 }
 
@@ -144,12 +144,12 @@ func (i *tlsIssuerImpl) Notify(e common.SensorComponentEvent) {
 			log.Infof("Central does not have the %s capability", i.requiredCentralCapability.String())
 			return
 		}
-		i.online = true
+		i.online.Store(true)
 		if err := i.activate(); err != nil {
 			log.Warnf("Failed to activate %s TLS issuer: %v", i.componentName, err)
 		}
 	case common.SensorComponentEventOfflineMode:
-		i.online = false
+		i.online.Store(false)
 		i.deactivate()
 	}
 }
