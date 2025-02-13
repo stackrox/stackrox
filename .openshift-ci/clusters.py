@@ -44,6 +44,7 @@ class GKECluster:
         self.machine_type = machine_type
         self.disk_gb = disk_gb
         self.refresh_token_cmd = None
+        self.refresh_dns_cmd = None
 
     def provision(self):
         set_ci_shared_export(CLUSTER_FLAVOR_VARIANT_VAR, "gke")
@@ -95,6 +96,11 @@ class GKECluster:
             [GKECluster.REFRESH_PATH, "refresh_gke_token"]
         )
 
+        # pylint: disable=consider-using-with
+        self.refresh_dns_cmd = subprocess.Popen(
+            [GKECluster.REFRESH_PATH, "refresh_dns"]
+        )
+
         return self
 
     def teardown(self, canceled=False):
@@ -112,6 +118,13 @@ class GKECluster:
         while os.path.exists("/tmp/hold-cluster"):
             print("Pausing teardown because /tmp/hold-cluster exists")
             time.sleep(60)
+
+        if self.refresh_dns_cmd is not None and not canceled:
+            print("Terminating GKE dns refresh")
+            try:
+                popen_graceful_kill(self.refresh_dns_cmd)
+            except Exception as err:
+                print(f"Could not terminate the dns refresh: {err}")
 
         if self.refresh_token_cmd is not None and not canceled:
             print("Terminating GKE token refresh")
