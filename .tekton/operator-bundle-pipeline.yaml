@@ -253,7 +253,7 @@ spec:
       - name: name
         value: determine-image-expiration
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:pr-37@sha256:ab8a234b7e78cbaea42626f23ec3da0b4872fce4058128b6e066e4c3e846a366
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:e557f9ca3e3d31f48127c3528c2c2647f4b49e2d72dce022c85fbe121c113ecd
       - name: kind
         value: task
       resolver: bundles
