@@ -181,7 +181,7 @@ test_upgrade_paths() {
       wait_for_api
       wait_for_central_db
       
-      db_backup_and_restore_test
+      db_backup_and_restore_test "$log_output_dir/$str"
     done
 
     ########################################################################################
