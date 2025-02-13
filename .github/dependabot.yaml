@@ -12,7 +12,7 @@ updates:
       day: 'wednesday'
     # always update package.json files to match new version for any package in UI monorepo
     versioning-strategy: increase
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 3
     labels:
       - "dependencies"
       - "area/ui"
@@ -27,7 +27,7 @@ updates:
     directory: 'qa-tests-backend/'
     schedule:
       interval: 'daily'
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 3
     labels:
       - "ci-all-qa-tests"
       - "dependencies"
@@ -266,7 +266,7 @@ updates:
     schedule:
       interval: 'weekly'
       day: 'wednesday'
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 3
     labels:
     - "dependencies"
     - "area/operator"
@@ -283,7 +283,7 @@ updates:
     schedule:
       interval: 'weekly'
       day: 'wednesday'
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 3
     labels:
     - "ci-all-qa-tests"
     - "dependencies"
@@ -298,7 +298,7 @@ updates:
     schedule:
       interval: 'weekly'
       day: 'wednesday'
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 3
     labels:
     - "ci-all-qa-tests"
     - "dependencies"
@@ -313,7 +313,7 @@ updates:
     schedule:
       interval: 'weekly'
       day: 'wednesday'
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 3
     labels:
     - "ci-all-qa-tests"
     - "dependencies"
@@ -328,7 +328,7 @@ updates:
     schedule:
       interval: 'weekly'
       day: 'wednesday'
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 3
     labels:
     - "ci-all-qa-tests"
     - "dependencies"
@@ -343,7 +343,7 @@ updates:
     schedule:
       interval: 'weekly'
       day: 'wednesday'
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 3
     reviewers:
     - "stackrox/backend-dep-updaters"
     commit-message:
@@ -363,7 +363,7 @@ updates:
     schedule:
       interval: 'weekly'
       day: 'wednesday'
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 3
     reviewers:
     - "stackrox/backend-dep-updaters"
     commit-message:
@@ -379,7 +379,7 @@ updates:
     schedule:
       interval: 'weekly'
       day: 'wednesday'
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 3
     reviewers:
     - "stackrox/backend-dep-updaters"
     commit-message:
@@ -395,7 +395,7 @@ updates:
     schedule:
       interval: 'weekly'
       day: 'wednesday'
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 3
     reviewers:
     - "stackrox/backend-dep-updaters"
     commit-message:
@@ -411,7 +411,7 @@ updates:
     schedule:
       interval: 'weekly'
       day: 'wednesday'
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 3
     reviewers:
     - "stackrox/backend-dep-updaters"
     commit-message:
@@ -427,7 +427,7 @@ updates:
     schedule:
       interval: 'weekly'
       day: 'wednesday'
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 3
     reviewers:
     - "stackrox/backend-dep-updaters"
     commit-message:
@@ -444,7 +444,7 @@ updates:
     schedule:
       interval: 'weekly'
       day: 'wednesday'
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 3
     reviewers:
     - "stackrox/backend-dep-updaters"
     commit-message:
@@ -460,7 +460,7 @@ updates:
     schedule:
       interval: 'weekly'
       day: 'wednesday'
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 3
     reviewers:
     - "stackrox/backend-dep-updaters"
     commit-message:
@@ -476,7 +476,7 @@ updates:
     schedule:
       interval: 'weekly'
       day: 'wednesday'
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 3
     reviewers:
     - "stackrox/backend-dep-updaters"
     commit-message:
