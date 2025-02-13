@@ -9,14 +9,10 @@ Follow the procedure below after any dependencies change for successful builds i
 
 ### Prerequisite
 
-Install [pip-compile](https://pip-tools.readthedocs.io/en/stable/).
-
-Example:
+Setup [nix-shell](https://nixos.org/download/) and start the environment in this directory (this can take a while for the first time!).
 
 ```bash
-python3 -m pip install --user pipx
-python3 -m pipx ensurepath
-pipx install pip-tools
+nix-shell
 ```
 
 ### Instructions
@@ -24,7 +20,7 @@ pipx install pip-tools
 1. Generate a fully resolved requirements.txt:
 
 ```bash
-pip-compile requirements.in --generate-hashes > requirements.txt
+pip-compile requirements.in --generate-hashes
 ```
 
 2. Download pip_find_builddeps.py:
@@ -38,11 +34,9 @@ chmod +x pip_find_builddeps.py
 
 ```bash
 ./pip_find_builddeps.py requirements.txt \
-  --append \
-  --only-write-on-update \
   -o requirements-build.in
 
-pip-compile requirements-build.in --allow-unsafe --generate-hashes > requirements-build.txt
+pip-compile requirements-build.in --allow-unsafe --generate-hashes
 ```
 
 For more information, consult the [Cachi2 docs](https://github.com/containerbuildsystem/cachi2/blob/main/docs/pip.md#building-from-source).
