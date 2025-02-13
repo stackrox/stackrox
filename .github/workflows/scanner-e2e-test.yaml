@@ -4,8 +4,31 @@ on:
   workflow_dispatch:
 
 jobs:
+  wait-for-images:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        image:
+          - scanner-v4
+          - scanner-v4-db
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: "${{ github.event.pull_request.head.sha }}"
+      - name: Get tag
+        run: |
+          echo "tag=$(make tag)" >> "$GITHUB_ENV"
+      - name: Wait for image ${{ matrix.image }}
+        uses: stackrox/actions/release/wait-for-image@v1
+        with:
+          token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
+          image: rhacs-eng/${{ matrix.image }}:${{ env.tag }}
+
   e2e-run:
-    name: "Deploy and run"
+    needs:
+      - wait-for-images
     runs-on: ubuntu-latest
     env:
       SCANNER_E2E_QUAY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
@@ -18,7 +41,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: "${{ github.event.pull_request.head.sha }}"
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -37,14 +60,26 @@ jobs:
           mkdir -m 777 "${{ runner.temp }}"/pgdata
           make -C scanner e2e-deploy db-host-path="/runner/pgdata"
 
-      - name: Show deployment
-        if: success() || failure()
+      - name: Wait for deployments
         run: |
-          set +e
-          kubectl -n stackrox describe pods -l app=scanner-v4-db
-          kubectl -n stackrox logs -l app=scanner-v4-db --all-containers=true
-          kubectl -n stackrox describe pods -l app=scanner-v4
-          kubectl -n stackrox logs -l app=scanner-v4 --all-containers=true
+          timeout=1m
+          count=30
+          for _ in $(seq "$count"); do
+              if kubectl -n stackrox wait pod --for=condition=Ready --all --timeout="$timeout"; then
+                  break
+              fi
+              for app in scanner-v4 scanner-v4-db; do
+                  # If "Failed" or any nonzero log then we give up.
+                  kubectl -n stackrox get pods \
+                      -l app="$app" \
+                      -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.status.phase}{" "}{range .status.containerStatuses[*]}{.restartCount}{" "}{end}{"\n"}{end}' \
+                    | grep -qE '(Failed|[1-9])'
+                  kubectl -n stackrox describe pods -l app=${app}
+                  kubectl -n stackrox logs -l app=${app} --all-containers=true
+              done
+          done
+          echo "timeout: waiting for pods to be ready"
+          exit 1
 
       - name: Run
         run: |
