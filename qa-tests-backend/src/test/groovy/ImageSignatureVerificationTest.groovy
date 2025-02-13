@@ -321,7 +321,7 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
 
         // Wait until we received metadata from all images we want to test. This will ensure that enrichment
         // has finalized.
-        withRetry(90, 2) {
+        withRetry(20, 30) {
             for (digest in IMAGE_DIGESTS) {
                 ImageOuterClass.Image image = ImageService.getImage(digest, false)
                 assert image
