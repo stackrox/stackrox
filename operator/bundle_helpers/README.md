@@ -48,4 +48,3 @@ For more information, consult the [Cachi2 docs](https://github.com/containerbuil
 * `requirements.txt`: Fully resolved list of all transitive project dependencies.
 * `requirements-build.txt`: Fully resolved list of all dependencies required to _build_ the project dependencies from sources in Konflux.
 * `requirements-build.in` (not commited): Intermediate result for the generation of `requirements.txt`.
-s
