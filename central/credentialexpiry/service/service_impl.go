@@ -124,6 +124,9 @@ func (s *serviceImpl) getCentralDBCertExpiry() (*v1.GetCertExpiry_Response, erro
 		return nil, errors.Wrapf(err, "Failed to initialize TLS config for %q", mtls.CentralDBSubject.Identifier)
 	}
 	tlsConn, err := tlsConnectToCentralDB(conn, tlsConfig)
+	if err != nil {
+		return nil, err
+	}
 
 	certs := tlsConn.ConnectionState().PeerCertificates
 	if len(certs) == 0 {
