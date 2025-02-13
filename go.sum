@@ -96,10 +96,10 @@ github.com/Azure/azure-sdk-for-go-extensions v0.1.8 h1:x8Vu78C4r8mh6V2yQKQRSWLU+
 github.com/Azure/azure-sdk-for-go-extensions v0.1.8/go.mod h1:4su5NjJwhqFH2B/5zJSKOz7hazfr2y38Iu6W4ZK0HYA=
 github.com/Azure/azure-sdk-for-go/sdk/azcore v1.17.0 h1:g0EZJwz7xkXQiZAI5xi9f3WWFYBlX1CPTrR+NDToRkQ=
 github.com/Azure/azure-sdk-for-go/sdk/azcore v1.17.0/go.mod h1:XCW7KnZet0Opnr7HccfUw1PLc4CjHqpcaxW8DHklNkQ=
-github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.8.1 h1:1mvYtZfWQAnwNah/C+Z+Jb9rQH95LPE2vlmMuWAHJk8=
-github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.8.1/go.mod h1:75I/mXtme1JyWFtz8GocPHVFyH421IBoZErnO16dd0k=
-github.com/Azure/azure-sdk-for-go/sdk/azidentity/cache v0.3.1 h1:Bk5uOhSAenHyR5P61D/NzeQCv+4fEVV8mOkJ82NqpWw=
-github.com/Azure/azure-sdk-for-go/sdk/azidentity/cache v0.3.1/go.mod h1:QZ4pw3or1WPmRBxf0cHd1tknzrT54WPBOQoGutCPvSU=
+github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.8.2 h1:F0gBpfdPLGsw+nsgk6aqqkZS1jiixa5WwFe3fk/T3Ys=
+github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.8.2/go.mod h1:SqINnQ9lVVdRlyC8cd1lCI0SdX4n2paeABd2K8ggfnE=
+github.com/Azure/azure-sdk-for-go/sdk/azidentity/cache v0.3.2 h1:yz1bePFlP5Vws5+8ez6T3HWXPmwOK7Yvq8QxDBD3SKY=
+github.com/Azure/azure-sdk-for-go/sdk/azidentity/cache v0.3.2/go.mod h1:Pa9ZNPuoNu/GztvBSKk9J1cDJW6vk/n0zLtV4mgd8N8=
 github.com/Azure/azure-sdk-for-go/sdk/containers/azcontainerregistry v0.2.2 h1:wBx10efdJcl8FSewgc41kAW4AvHPgmJZmN7fpNxn8rc=
 github.com/Azure/azure-sdk-for-go/sdk/containers/azcontainerregistry v0.2.2/go.mod h1:zzmu18cpAinSbhC86oWd47nmgbb91Fl+Yac2PE8NdYk=
 github.com/Azure/azure-sdk-for-go/sdk/internal v1.10.0 h1:ywEEhmNahHBihViHepv3xPBn1663uRv2t2q/ESv9seY=
@@ -137,8 +137,8 @@ github.com/Azure/go-autorest/tracing v0.6.0 h1:TYi4+3m5t6K48TGI9AUdb+IzbnSxvnvUM
 github.com/Azure/go-autorest/tracing v0.6.0/go.mod h1:+vhtPC754Xsa23ID7GlGsrdKBpUA79WCAKPPZVC2DeU=
 github.com/AzureAD/microsoft-authentication-extensions-for-go/cache v0.1.1 h1:WJTmL004Abzc5wDB5VtZG2PJk5ndYDgVacGqfirKxjM=
 github.com/AzureAD/microsoft-authentication-extensions-for-go/cache v0.1.1/go.mod h1:tCcJZ0uHAmvjsVYzEFivsRTN00oz5BEsRgQHu5JZ9WE=
-github.com/AzureAD/microsoft-authentication-library-for-go v1.3.2 h1:kYRSnvJju5gYVyhkij+RTJ/VR6QIUaCfWeaFm2ycsjQ=
-github.com/AzureAD/microsoft-authentication-library-for-go v1.3.2/go.mod h1:wP83P5OoQ5p6ip3ScPr0BAq0BvuPAvacpEuSzyouqAI=
+github.com/AzureAD/microsoft-authentication-library-for-go v1.3.3 h1:H5xDQaE3XowWfhZRUpnfC+rGZMEVoSiji+b+/HFAPU4=
+github.com/AzureAD/microsoft-authentication-library-for-go v1.3.3/go.mod h1:wP83P5OoQ5p6ip3ScPr0BAq0BvuPAvacpEuSzyouqAI=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/toml v0.4.1/go.mod h1:CxXYINrC8qIiEnFrOxCa7Jy5BFHlXnUU2pbicEuybxQ=
 github.com/BurntSushi/toml v1.4.0 h1:kuoIxZQy2WRRk1pttg9asf+WVv6tWQuBNVmK8+nqPr0=
