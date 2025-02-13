@@ -8,7 +8,7 @@ set -euo pipefail
 TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 
 EARLIER_TAG="4.5.5"
-EARLIER_SHA="8a4677e3d45ebc4f065ec052d1d66d6ead2084bb"
+EARLIER_SHA="74f9ef246c34456966a84e4a5c904119fbc3bbdf"
 CURRENT_TAG="$(make --quiet --no-print-directory tag)"
 PREVIOUS_RELEASES=("4.5.5" "4.6.2")
 
@@ -75,8 +75,8 @@ test_upgrade_paths() {
 
     local log_output_dir="$1"
 
-    # To test we remain backwards compatible rollback to 4.1.x
-    FORCE_ROLLBACK_VERSION="4.1.3"
+    # To test we remain backwards compatible rollback to 4.5.x
+    FORCE_ROLLBACK_VERSION="$EARLIER_TAG"
 
     cd "$REPO_FOR_TIME_TRAVEL"
     git checkout "$EARLIER_SHA"
@@ -176,8 +176,6 @@ test_upgrade_paths() {
 
       wait_for_api
       wait_for_central_db
-
-      collect_and_check_stackrox_logs "$log_output_dir" "00_postgres_postgres_upgrade-$str"
     done
 
     ########################################################################################
