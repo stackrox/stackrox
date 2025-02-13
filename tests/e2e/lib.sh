@@ -1236,8 +1236,8 @@ _record_build_info() {
     update_job_record "build" "${build_info}"
 }
 
-restore_4_1_postgres_backup() {
-    info "Restoring a 4.1 postgres backup"
+restore_4_5_postgres_backup() {
+    info "Restoring a 4.5 postgres backup"
 
     require_environment "API_ENDPOINT"
     require_environment "ROX_ADMIN_PASSWORD"
