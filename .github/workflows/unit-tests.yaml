@@ -91,7 +91,7 @@ jobs:
     steps:
     - name: Set Postgres version
       run: |
-        echo "PATH=${PATH}:/usr/pgsql-${{ matrix.pg }}/bin" >> "${GITHUB_ENV}"
+        echo "/usr/pgsql-${{ matrix.pg }}/bin" >> "${GITHUB_PATH}"
 
     - name: Checkout
       uses: actions/checkout@v4
@@ -104,7 +104,6 @@ jobs:
 
     - name: Run Postgres
       run: |
-        echo $PATH
         su postgres -c 'initdb -D /tmp/data'
         su postgres -c 'pg_ctl -D /tmp/data start'
 
