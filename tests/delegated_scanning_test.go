@@ -688,6 +688,7 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 	t := ts.T()
 	ctx := ts.ctx
 
+	t.Skip("Disabled! ROX-26663: CI improvements 2025-02-12: The test is unstable.")
 	ts.skipIfNotOpenShift()
 
 	// Create mirroring CRs and update OCP global pull secret, this will
