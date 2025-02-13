@@ -8,6 +8,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/images/defaults"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
@@ -49,16 +50,25 @@ func Test_reloadConfig(t *testing.T) {
 	const devVersion = "4.4.1-dev"
 	const remoteKey = "remotekey"
 
-	var runtimeConfigJSON = `{
+	var runtimeConfigJSON string
+	runtimeMux := sync.RWMutex{}
+	setConfig := func(cfg string) {
+		runtimeMux.Lock()
+		defer runtimeMux.Unlock()
+		runtimeConfigJSON = cfg
+	}
+	setConfig(`{
 		"storage_key_v1": "` + remoteKey + `",
 		"api_call_campaign": [
 			{"method": "{put,delete}"},
 			{"headers": {"Accept-Encoding": "*json*"}}
 		]
-	}`
+	}`)
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
+		runtimeMux.RLock()
+		defer runtimeMux.RUnlock()
 		_, _ = w.Write([]byte(runtimeConfigJSON))
 	}))
 	defer server.Close()
@@ -84,11 +94,11 @@ func Test_reloadConfig(t *testing.T) {
 
 	t.Run("reload config with campaign changes", func(t *testing.T) {
 		t.Setenv(env.TelemetryStorageKey.EnvVar(), "anotherKey")
-		runtimeConfigJSON = `{"storage_key_v1": "anotherKey",
+		setConfig(`{"storage_key_v1": "anotherKey",
 		"api_call_campaign": [
 			{"method": "GET"},
 			{"path": "*splunk*"}
-		]}`
+		]}`)
 		enable, err := applyConfig()
 		require.NoError(t, err)
 		assert.True(t, enable)
@@ -100,7 +110,7 @@ func Test_reloadConfig(t *testing.T) {
 	})
 	t.Run("reload corrupted config", func(t *testing.T) {
 		t.Setenv(env.TelemetryStorageKey.EnvVar(), "anotherKey")
-		runtimeConfigJSON = `not JSON`
+		setConfig(`not JSON`)
 		enable, err := applyConfig()
 		require.Error(t, err)
 		assert.False(t, enable)
@@ -112,18 +122,18 @@ func Test_reloadConfig(t *testing.T) {
 	})
 	t.Run("reload config with DISABLED key", func(t *testing.T) {
 		t.Setenv(env.TelemetryStorageKey.EnvVar(), "DISABLED")
-		runtimeConfigJSON = `{"storage_key_v1": "DISABLED",
+		setConfig(`{"storage_key_v1": "DISABLED",
 		"api_call_campaign": [
 			{"method": "GET"},
 			{"path": "*splunk*"}
-		]}`
+		]}`)
 		enable, err := applyConfig()
 		require.NoError(t, err)
 		assert.False(t, enable)
 	})
 	t.Run("reload when not enabled", func(t *testing.T) {
 		t.Setenv(env.TelemetryStorageKey.EnvVar(), remoteKey)
-		runtimeConfigJSON = `{"storage_key_v1": "` + remoteKey + `"}`
+		setConfig(`{"storage_key_v1": "` + remoteKey + `"}`)
 		Enable()
 		require.NoError(t, Reload())
 		assert.True(t, enabled)
@@ -139,8 +149,8 @@ func Test_reloadConfig(t *testing.T) {
 		tickChan := make(chan time.Time)
 		defer close(tickChan)
 		t.Setenv(env.TelemetryStorageKey.EnvVar(), remoteKey)
-		runtimeConfigJSON = `{"storage_key_v1": "` + remoteKey + `"}
-		"api_call_campaign": [{"method": "Test"}]}`
+		setConfig(`{"storage_key_v1": "` + remoteKey + `"}
+		"api_call_campaign": [{"method": "Test"}]}`)
 		Enable()
 		defer Disable()
 		assert.True(t, enabled)
@@ -159,7 +169,7 @@ func Test_reloadConfig(t *testing.T) {
 			assert.True(collect, config.Enabled())
 		}, 1*time.Second, 10*time.Millisecond)
 		t.Setenv(env.TelemetryStorageKey.EnvVar(), "DISABLED")
-		runtimeConfigJSON = `{"storage_key_v1": "DISABLED"}`
+		setConfig(`{"storage_key_v1": "DISABLED"}`)
 		tickChan <- time.Now()
 		assert.EventuallyWithT(t, func(collect *assert.CollectT) {
 			startMux.Lock()
