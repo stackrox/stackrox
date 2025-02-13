@@ -10,30 +10,31 @@ client.load(['../../../proto', '../../../third_party/googleapis'], 'api/v1/alert
 export function alertsGrpc(host, headers, tags) {
 
     host = host.replace('https://', '')
-    client.connect(host + GRPC_PORT);
+    host = host.includes(':') ? host : host + GRPC_PORT;
+    client.connect(host);
 
-    const params = {
-        metadata: headers,
-    };
-
+    group('list alerts grpc', function () {
     [0, 10, 100, 1000].forEach(limit => {
-        group('list alerts grpc', function () {
-            const response = client.invoke(
-                'v1.AlertService/ListAlerts',
-                {
-                    pagination: {
-                        limit: limit,
-                        offset: 0,
-                        sortOption: {
-                            field: 'Violation Time'
-                        }
+        tags.limit = limit;
+        const params = {
+            metadata: headers, tags: tags,
+        };
+        const response = client.invoke(
+            'v1.AlertService/ListAlerts',
+            {
+                pagination: {
+                    limit: limit,
+                    offset: 0,
+                    sortOption: {
+                        field: 'Violation Time'
                     }
-                },
-                params,
-            );
-
-            check(response, {'status is OK': (r) => r && r.status === StatusOK && r.message.alerts.length > 0});
-        })
+                }
+            },
+            params,
+        );
+        console.log(tags);
+        check(response, {'status is OK': (r) => r && r.status === StatusOK && r.message.alerts.length > 0}, params.tags);
+    });
     });
     client.close();
 }
