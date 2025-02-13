@@ -251,7 +251,7 @@ spec:
     taskRef:
       params:
       - name: name
-        value: determine-image-expiration-parameter
+        value: determine-image-expiration
       - name: bundle
         value: quay.io/rhacs-eng/konflux-tasks:pr-37@sha256:ab8a234b7e78cbaea42626f23ec3da0b4872fce4058128b6e066e4c3e846a366
       - name: kind
