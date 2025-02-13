@@ -236,6 +236,8 @@ spec:
 
   - name: build-container-amd64
     params:
+    - name: TARGET_STAGE
+      value: ui-builder
     - name: IMAGE
       value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-amd64
     - name: DOCKERFILE
@@ -275,6 +277,8 @@ spec:
 
   - name: build-container-s390x
     params:
+    - name: TARGET_STAGE
+      value: ui-builder
     - name: PLATFORM
       value: linux/s390x
     - name: IMAGE
@@ -317,6 +321,8 @@ spec:
 
   - name: build-container-ppc64le
     params:
+    - name: TARGET_STAGE
+      value: ui-builder
     - name: PLATFORM
       value: linux/ppc64le
     - name: IMAGE
@@ -359,6 +365,8 @@ spec:
 
   - name: build-container-arm64
     params:
+    - name: TARGET_STAGE
+      value: ui-builder
     - name: PLATFORM
       value: linux/arm64
     - name: IMAGE
