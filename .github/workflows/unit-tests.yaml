@@ -104,6 +104,7 @@ jobs:
 
     - name: Run Postgres
       run: |
+        echo $PATH
         su postgres -c 'initdb -D /tmp/data'
         su postgres -c 'pg_ctl -D /tmp/data start'
 
