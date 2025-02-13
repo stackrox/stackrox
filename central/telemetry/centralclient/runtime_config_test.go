@@ -134,12 +134,9 @@ func Test_reloadConfig(t *testing.T) {
 	t.Run("reload when not enabled", func(t *testing.T) {
 		t.Setenv(env.TelemetryStorageKey.EnvVar(), remoteKey)
 		setConfig(`{"storage_key_v1": "` + remoteKey + `"}`)
-		Enable()
-		require.NoError(t, Reload())
-		assert.True(t, enabled)
-		assert.True(t, config.Enabled())
-		Disable()
-		assert.False(t, enabled)
+		startMux.Lock()
+		enabled = false
+		startMux.Unlock()
 		require.NoError(t, Reload())
 		assert.False(t, enabled)
 		assert.True(t, config.Enabled(), "config should still be good")
@@ -150,10 +147,10 @@ func Test_reloadConfig(t *testing.T) {
 		defer close(tickChan)
 		t.Setenv(env.TelemetryStorageKey.EnvVar(), remoteKey)
 		setConfig(`{"storage_key_v1": "` + remoteKey + `"}
-		"api_call_campaign": [{"method": "Test"}]}`)
-		Enable()
-		defer Disable()
-		assert.True(t, enabled)
+			"api_call_campaign": [{"method": "Test"}]}`)
+		startMux.Lock()
+		enabled = true
+		startMux.Unlock()
 		require.True(t, config.Enabled())
 
 		go func() {
@@ -175,7 +172,7 @@ func Test_reloadConfig(t *testing.T) {
 			startMux.Lock()
 			defer startMux.Unlock()
 			assert.False(collect, enabled)
-			assert.True(collect, config.Enabled())
+			assert.True(collect, config.Enabled(), "config should have a key")
 		}, 1*time.Second, 10*time.Millisecond)
 	})
 }

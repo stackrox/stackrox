@@ -60,7 +60,7 @@ type Config struct {
 	interceptorsLock sync.RWMutex
 }
 
-// Enabled tells whether telemetry data collection is enabled.
+// Enabled tells whether telemetry configuration allows for data collection.
 func (cfg *Config) Enabled() bool {
 	return cfg != nil && cfg.StorageKey != ""
 }
