@@ -5,15 +5,6 @@
     },
     "GO-2022-0646": {
       "reason": "Unused portion of the SDK"
-    },
-    "GO-2024-3105": {
-      "reason": "Requires Go 1.22.7 or 1.23.1"
-    },
-    "GO-2024-3106": {
-      "reason": "Requires Go 1.22.7 or 1.23.1"
-    },
-    "GO-2024-3107": {
-      "reason": "Requires Go 1.22.7 or 1.23.1"
     }
   }
 }
