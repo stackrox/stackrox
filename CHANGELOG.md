@@ -11,6 +11,18 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Added Features
 
+### Removed Features
+
+### Deprecated Fatures
+
+### Technical Changes
+
+## [4.7.0]
+
+
+
+### Added Features
+
 - ROX-26847: RHCOS Node Scanning with Scanner V4
     - ROX-27719: is now enabled by default on all secured clusters and will be preferred over the Stackrox Scanner if Scanner V4 is installed and connected to Central.
     - ROX-25625: can now detect vulnerabilities for the containerized image of the RHCOS itself.
