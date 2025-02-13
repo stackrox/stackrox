@@ -123,7 +123,7 @@ message CVEInfo {
     V3 = 1;
     UNKNOWN = 2;
   }
-  string cve = 1; // @gotags: search:"CVE,store" sql:"index=hash"
+  string cve = 1; // @gotags: search:"CVE,store" sql:"index=btree"
   string summary = 2;
   string link = 3;
   // This indicates the timestamp when the cve was first published in the cve feeds.
@@ -142,7 +142,9 @@ message CVEInfo {
   EPSS epss = 12;
 }
 
+// This proto is deprecated and replaced by ImageCVEV2.
 message ImageCVE {
+  option deprecated = true;
   string id = 1; // This field is composite of cve and operating system. // @gotags: search:"CVE ID,hidden" sql:"pk,id"
   CVEInfo cve_base_info = 2;
   string operating_system = 3; // @gotags: search:"Operating System"
@@ -159,6 +161,34 @@ message ImageCVE {
   // cvss_metrics stores list of cvss metrics from different sources like Redhat, NVD etc
   repeated CVSSScore cvss_metrics = 11;
   CvssScoreVersion nvd_score_version = 12;
+}
+
+message ImageCVEV2 {
+  // keeping id similar construction for now during investigation.  It will include component and index
+  // within the component
+  string id = 1; // @gotags: search:"CVE ID,hidden" sql:"pk,id"
+  // was hash index, making it btree
+  string image_id = 2; // @gotags: sql:"fk(Image:id),index=btree"
+  CVEInfo cve_base_info = 3;
+  string operating_system = 4; // @gotags: search:"Operating System"
+  // cvss stores ACS preferred cvss score
+  float cvss = 5; // @gotags: search:"CVSS,store"
+  VulnerabilitySeverity severity = 6; // @gotags: search:"Severity" sql:"index=btree"
+  float impact_score = 7; // @gotags: search:"Impact Score"
+
+  // nvdcvss stores cvss score for a cve from NVD
+  float nvdcvss = 8; // @gotags: search:"NVD CVSS,store"
+  CvssScoreVersion nvd_score_version = 9;
+  google.protobuf.Timestamp first_image_occurrence = 10; // @gotags: search:"First Image Occurrence Timestamp,hidden"
+  VulnerabilityState state = 11; // @gotags: search:"Vulnerability State" sql:"index=btree"
+
+  bool is_fixable = 12; // @gotags: search:"Fixable,store"
+  // Whether there is a version the CVE is fixed in the component.
+  oneof has_fixed_by {
+    string fixed_by = 13; // @gotags: search:"Fixed By,store,hidden"
+  }
+
+  string component_id = 14; // @gotags: sql:"fk(ImageComponentV2:id),index=btree"
 }
 
 message NodeCVE {

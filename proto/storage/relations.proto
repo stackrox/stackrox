@@ -10,7 +10,9 @@ option java_package = "io.stackrox.proto.storage";
 
 //// Image related relations.
 
+// This proto has been deprecated
 message ImageComponentEdge {
+  option deprecated = true;
   // id is base 64 encoded Image:Component ids.
   string id = 1; // @gotags: sql:"pk,id"
   /// Layer that contains this component
@@ -23,7 +25,9 @@ message ImageComponentEdge {
   string image_component_id = 5; // @gotags: sql:"fk(ImageComponent:id),no-fk-constraint,index=hash"
 }
 
+// This proto has been deprecated
 message ComponentCVEEdge {
+  option deprecated = true;
   // base 64 encoded Component:CVE ids.
   string id = 1; // @gotags: sql:"pk,id"
 
@@ -37,7 +41,9 @@ message ComponentCVEEdge {
   string image_cve_id = 5; // @gotags: sql:"fk(ImageCVE:id),no-fk-constraint,index=hash"
 }
 
+// This proto has been deprecated
 message ImageCVEEdge {
+  option deprecated = true;
   // base 64 encoded Image:CVE ids.
   string id = 1; // @gotags: sql:"pk,id"
   google.protobuf.Timestamp first_image_occurrence = 2; // @gotags: search:"First Image Occurrence Timestamp,hidden"
