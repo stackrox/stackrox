@@ -1,12 +1,32 @@
 package printer
 
 import (
+	"slices"
 	"strings"
 
+	"github.com/cloudflare/cfssl/log"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/printers"
 	"github.com/stackrox/rox/pkg/set"
+)
+
+var (
+	// default headers to use when printing tabular output
+	defaultImageScanHeaders = []string{"COMPONENT", "VERSION", "CVE", "SEVERITY", "LINK", "FIXED_VERSION"}
+	defaultColumnsToMerge   = []string{"COMPONENT", "VERSION"}
+
+	imageScanHeaderToJSONPathMap = map[string]string{
+		"COMPONENT":     "result.vulnerabilities.#.componentName",
+		"VERSION":       "result.vulnerabilities.#.componentVersion",
+		"CVE":           "result.vulnerabilities.#.cveId",
+		"SEVERITY":      "result.vulnerabilities.#.cveSeverity",
+		"LINK":          "result.vulnerabilities.#.cveInfo",
+		"FIXED_VERSION": "result.vulnerabilities.#.componentFixedVersion",
+	}
+
+	// default JSON path expression representing a row within tabular output, based on the mapping above
+	defaultImageScanJSONPathExpression, _ = createImageScanJSONPathExpression(defaultImageScanHeaders)
 )
 
 // TabularPrinterFactory holds all configuration options of tabular printers, specifically CSVPrinter and TablePrinter
@@ -33,12 +53,12 @@ func NewTabularPrinterFactory(headers []string, rowJSONPathExpression string) *T
 }
 
 // NewTabularPrinterFactoryWithAutoMerge creates new TabularPrinterFactory with the injected default values
-func NewTabularPrinterFactoryWithAutoMerge(headers []string, columnsToMerge []string, rowJSONPathExpression string) *TabularPrinterFactory {
+func NewTabularPrinterFactoryWithAutoMerge() *TabularPrinterFactory {
 	return &TabularPrinterFactory{
 		Merge:                 true,
-		Headers:               headers,
-		RowJSONPathExpression: rowJSONPathExpression,
-		columnsToMerge:        columnsToMerge,
+		Headers:               defaultImageScanHeaders,
+		RowJSONPathExpression: defaultImageScanJSONPathExpression,
+		columnsToMerge:        defaultColumnsToMerge,
 	}
 }
 
@@ -46,9 +66,10 @@ func NewTabularPrinterFactoryWithAutoMerge(headers []string, columnsToMerge []st
 func (t *TabularPrinterFactory) AddFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().BoolVar(&t.Merge, "merge-output", t.Merge, "Merge duplicate cells in prettified tabular output")
 	cmd.PersistentFlags().StringSliceVar(&t.Headers, "headers", t.Headers, "Headers to print in tabular output")
-	cmd.PersistentFlags().StringVar(&t.RowJSONPathExpression, "row-jsonpath-expressions", t.RowJSONPathExpression,
-		"JSON Path expression to create a row from the JSON object. This leverages gJSON (https://github.com/tidwall/gjson)."+
-			" NOTE: The amount of expressions within the multi-path has to match the amount of provided headers.")
+	err := t.propagateCustomHeaders()
+	if err != nil {
+		log.Errorf("%v", err)
+	}
 	cmd.PersistentFlags().BoolVar(&t.NoHeader, "no-header", t.NoHeader, "Print no headers for tabular output")
 	cmd.PersistentFlags().BoolVar(&t.HeaderAsComment, "headers-as-comments", t.HeaderAsComment, "Print headers "+
 		"as comments in CSV tabular output")
@@ -141,4 +162,43 @@ func (t *TabularPrinterFactory) validate() error {
 		return errox.InvalidArgs.Newf("undefined columns to merge: %s", columnsToMerge.Difference(intersect).ElementsString(", "))
 	}
 	return nil
+}
+
+func (t *TabularPrinterFactory) propagateCustomHeaders() error {
+	rawJSONPathExpression, err := createImageScanJSONPathExpression(t.Headers)
+	if err != nil {
+		return errox.InvalidArgs.Newf("Invalid --header args: %v", err)
+	}
+	t.RowJSONPathExpression = rawJSONPathExpression
+	return nil
+}
+
+func createImageScanJSONPathExpression(imageScanHeaders []string) (string, error) {
+	if !validateImageScanHeaders(imageScanHeaders) {
+		return "", errox.InvalidArgs.Newf("Invalid headers, supported headers: [%s]",
+			strings.Join(defaultImageScanHeaders, ", "))
+	}
+	rawJSONOutput := "{"
+	for i, header := range imageScanHeaders {
+		JSONHeader, ok := imageScanHeaderToJSONPathMap[header]
+		if ok {
+			rawJSONOutput = rawJSONOutput + JSONHeader
+			if i < len(imageScanHeaders)-1 {
+				rawJSONOutput = rawJSONOutput + ","
+			}
+		} else {
+			log.Errorf("Tried to use invalid header %s. This should not happen due to validation", header)
+		}
+	}
+	rawJSONOutput = rawJSONOutput + "}"
+	return rawJSONOutput, nil
+}
+
+func validateImageScanHeaders(imageScanHeaders []string) bool {
+	for _, header := range imageScanHeaders {
+		if !slices.Contains(defaultImageScanHeaders, header) {
+			return false
+		}
+	}
+	return true
 }
