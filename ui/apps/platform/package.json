@@ -21,7 +21,7 @@
         "@patternfly/react-core": "^5.2.2",
         "@patternfly/react-icons": "^5.2.1",
         "@patternfly/react-styles": "^5.2.1",
-        "@patternfly/react-table": "^5.2.2",
+        "@patternfly/react-table": "^6.1.0",
         "@patternfly/react-topology": "^5.2.1",
         "@patternfly/react-user-feedback": "^5.0.0",
         "axios": "^1.7.7",
