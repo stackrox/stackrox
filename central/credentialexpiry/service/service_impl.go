@@ -13,7 +13,9 @@ import (
 	"github.com/pkg/errors"
 	iiDStore "github.com/stackrox/rox/central/imageintegration/datastore"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
+	secretDS "github.com/stackrox/rox/central/secret/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
@@ -21,13 +23,18 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/pods"
+	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/scanners/scannerv4"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/tlsutils"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
 )
+
+const centralDBTLSName = "central-db-tls"
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
@@ -42,6 +49,7 @@ type serviceImpl struct {
 	v1.UnimplementedCredentialExpiryServiceServer
 
 	imageIntegrations iiDStore.DataStore
+	secretDatastore   secretDS.DataStore
 	scannerConfigs    map[mtls.Subject]*tls.Config
 	expiryFunc        func(ctx context.Context, subject mtls.Subject, tlsConfig *tls.Config, endpoint string) (*time.Time, error)
 }
@@ -54,6 +62,8 @@ func (s *serviceImpl) GetCertExpiry(ctx context.Context, request *v1.GetCertExpi
 		return s.getScannerCertExpiry(ctx)
 	case v1.GetCertExpiry_SCANNER_V4:
 		return s.getScannerV4CertExpiry(ctx)
+	case v1.GetCertExpiry_CENTRAL_DB:
+		return s.getCentralDBCertExpiry(ctx)
 	}
 	return nil, errors.Wrapf(errox.InvalidArgs, "invalid component: %v", request.GetComponent())
 }
@@ -63,6 +73,7 @@ func (s *serviceImpl) getCentralCertExpiry() (*v1.GetCertExpiry_Response, error)
 	if err != nil {
 		return nil, errors.Errorf("failed to retrieve leaf certificate: %v", err)
 	}
+
 	if len(cert.Certificate) == 0 {
 		return nil, errors.New("no central cert found")
 	}
@@ -75,6 +86,49 @@ func (s *serviceImpl) getCentralCertExpiry() (*v1.GetCertExpiry_Response, error)
 		return nil, errors.Errorf("failed to convert timestamp: %v", err)
 	}
 	return &v1.GetCertExpiry_Response{Expiry: expiry}, nil
+}
+
+func (s *serviceImpl) getCentralDBCertExpiry(ctx context.Context) (*v1.GetCertExpiry_Response, error) {
+	if pgconfig.IsExternalDatabase() {
+		return nil, nil
+	}
+
+	// We assume that central-db is installed in the same namespace as central when it is not an external db
+	centralDBNamespcae := pods.GetPodNamespace()
+	query := search.NewQueryBuilder().
+		AddExactMatches(search.Namespace, centralDBNamespcae).
+		AddExactMatches(search.SecretName, centralDBTLSName).
+		ProtoQuery()
+
+	secrets, err := s.secretDatastore.SearchRawSecrets(ctx, query)
+	if err != nil {
+		return nil, errors.Wrap(err, "Error finding secret containing central DB certificate")
+	}
+	if len(secrets) == 0 {
+		return nil, nil
+	}
+	if len(secrets) > 1 {
+		return nil, errors.Wrapf(errox.InvariantViolation,
+			"Multiple secrets with same name in namespace '%s'", centralDBNamespcae)
+	}
+
+	centralDBSecretFiles := secrets[0].GetFiles()
+	if len(centralDBSecretFiles) == 0 {
+		return nil, errors.Wrap(errox.NotFound, "Central DB secret does not contain any certificates")
+	}
+
+	var centralDBCert *storage.Cert
+	for _, file := range centralDBSecretFiles {
+		if file.GetType() == storage.SecretType_PUBLIC_CERTIFICATE && file.GetName() == mtls.ServiceCertFileName {
+			centralDBCert = file.GetCert()
+		}
+	}
+
+	if centralDBCert == nil {
+		return nil, errors.Wrapf(errox.NotFound,
+			"File '%s' containing central DB public certificate not found", mtls.ServiceCertFileName)
+	}
+	return &v1.GetCertExpiry_Response{Expiry: centralDBCert.GetEndDate()}, nil
 }
 
 // ensureTLSAndReturnAddr returns an address from endpoint that can be passed to tls.Dial,
