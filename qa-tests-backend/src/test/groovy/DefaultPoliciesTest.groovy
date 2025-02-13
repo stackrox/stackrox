@@ -63,9 +63,9 @@ class DefaultPoliciesTest extends BaseSpecification {
     private String componentCount = ""
 
     static final private List<String> WHITELISTED_KUBE_SYSTEM_POLICIES = [
-            "Fixable CVSS >= 6 and Privileged",
-            "Privileged Container(s) with Important and Critical CVE(s)",
-            "Fixable Severity at least Important",
+            "Privileged containers with fixable CVEs and CVSS >= 6",
+            "Privileged containers with fixable CVEs and Severity at least Important",
+            "Containers with fixable CVEs and Severity at least Important",
             "Ubuntu Package Manager in Image",
             "Red Hat Package Manager in Image",
             "Curl in Image",
@@ -258,7 +258,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         //"30-Day Scan Age"                               | SSL_TERMINATOR | "C941" | false
 
-        "Fixable CVSS >= 7"                             | GCR_NGINX      | "C933" | false
+        "Containers with fixable CVEs and CVSS >= 7"    | GCR_NGINX      | "C933" | false
 
         "Curl in Image"                                 | WGET_CURL      | "C948" | true
     }

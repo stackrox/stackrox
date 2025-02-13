@@ -834,7 +834,7 @@ class ComplianceTest extends BaseSpecification {
 
         ]
         def enforcementPolicies = [
-                "Fixable Severity at least Important",
+                "Containers with fixable CVEs and Severity at least Important",
                 "Privileged Container",
                 "90-Day Image Age",
                 "Latest tag",
@@ -846,7 +846,7 @@ class ComplianceTest extends BaseSpecification {
         given:
         "update policies"
         Services.updatePolicyLifecycleStage(
-                "Fixable Severity at least Important",
+                "Containers with fixable CVEs and Severity at least Important",
                 [PolicyOuterClass.LifecycleStage.BUILD, PolicyOuterClass.LifecycleStage.DEPLOY])
         for (String policyName : enforcementPolicies) {
             def enforcements = []
@@ -911,7 +911,7 @@ class ComplianceTest extends BaseSpecification {
             Services.updatePolicyEnforcement(policyName, priorEnforcement.get(policyName))
         }
         Services.updatePolicyLifecycleStage(
-                "Fixable CVSS >= 7",
+                "Containers with fixable CVEs and CVSS >= 7",
                 [PolicyOuterClass.LifecycleStage.DEPLOY])
         if (policyId) {
             PolicyService.deletePolicy(policyId)
