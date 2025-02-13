@@ -53,14 +53,16 @@ func versionCommand(cliEnvironment environment.Environment) *cobra.Command {
 // Command constructs and returns the roxctl command tree
 func Command() *cobra.Command {
 	c := &cobra.Command{
-		SilenceUsage: true,
-		Use:          os.Args[0],
+		SilenceUsage:      true,
+		Use:               os.Args[0],
+		PersistentPreRunE: flags.LoadConfig,
 	}
 
 	flags.AddNoColor(c)
 	flags.AddPassword(c)
 	flags.AddConnectionFlags(c)
 	flags.AddAPITokenFile(c)
+	flags.AddConfigurationFile(c)
 
 	c.MarkFlagsMutuallyExclusive("password", "token-file")
 
