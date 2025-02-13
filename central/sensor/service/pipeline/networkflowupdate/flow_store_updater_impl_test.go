@@ -53,7 +53,7 @@ func (suite *FlowStoreUpdaterTestSuite) SetupTest() {
 	suite.mockFlows = nfDSMocks.NewMockFlowDataStore(suite.mockCtrl)
 	suite.mockBaselines = baselineMocks.NewMockManager(suite.mockCtrl)
 	suite.mockEntities = entityMocks.NewMockEntityDataStore(suite.mockCtrl)
-	suite.tested = newFlowPersister(suite.mockFlows, suite.mockBaselines, suite.mockEntities)
+	suite.tested = newFlowPersister(suite.mockFlows, suite.mockBaselines, suite.mockEntities, "cluster")
 }
 
 func (suite *FlowStoreUpdaterTestSuite) TearDownTest() {
@@ -277,6 +277,8 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdateWithExternalIPs() {
 
 	discoveredEntity1 := networkgraph.DiscoveredExternalEntity(net.IPNetworkFromCIDRBytes([]byte{1, 2, 3, 4, 32})).ToProto()
 	discoveredEntity2 := networkgraph.DiscoveredExternalEntity(net.IPNetworkFromCIDRBytes([]byte{2, 3, 4, 5, 32})).ToProto()
+	fixedupDiscoveredEntity1 := networkgraph.DiscoveredExternalEntityClusterScoped("cluster", net.IPNetworkFromCIDRBytes([]byte{1, 2, 3, 4, 32})).ToProto()
+	fixedupDiscoveredEntity2 := networkgraph.DiscoveredExternalEntityClusterScoped("cluster", net.IPNetworkFromCIDRBytes([]byte{2, 3, 4, 5, 32})).ToProto()
 
 	secondTimestamp := time.Now()
 	newFlows := []*storage.NetworkFlow{
@@ -304,12 +306,12 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdateWithExternalIPs() {
 	expectedUpdateProps := []*storage.NetworkFlowProperties{
 		{
 			SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
-			DstEntity:  discoveredEntity1,
+			DstEntity:  fixedupDiscoveredEntity1,
 			DstPort:    3,
 			L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 		},
 		{
-			SrcEntity:  discoveredEntity2,
+			SrcEntity:  fixedupDiscoveredEntity2,
 			DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
 			DstPort:    4,
 			L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
@@ -328,7 +330,7 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdateWithExternalIPs() {
 				},
 				DstEntity: networkgraph.Entity{
 					Type:                  storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-					ID:                    "__MS4yLjMuNC8zMg",
+					ID:                    "cluster__MS4yLjMuNC8zMg",
 					ExternalEntityAddress: net.IPNetworkFromCIDRBytes([]byte{1, 2, 3, 4, 32}),
 					Discovered:            true,
 				},
@@ -338,7 +340,7 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdateWithExternalIPs() {
 			{
 				SrcEntity: networkgraph.Entity{
 					Type:                  storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-					ID:                    "__Mi4zLjQuNS8zMg",
+					ID:                    "cluster__Mi4zLjQuNS8zMg",
 					ExternalEntityAddress: net.IPNetworkFromCIDRBytes([]byte{2, 3, 4, 5, 32}),
 					Discovered:            true,
 				},
