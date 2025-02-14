@@ -2,6 +2,7 @@ package manager
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -14,9 +15,14 @@ import (
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/protoconv/resources"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	admission "k8s.io/api/admission/v1"
 	"k8s.io/utils/pointer"
+)
+
+const (
+	ScaleSubResource = "scale"
 )
 
 var (
@@ -37,9 +43,13 @@ func (m *manager) shouldBypass(s *state, req *admission.AdmissionRequest) bool {
 		return true
 	}
 
-	// We don't enforce on subresources.
-	if req.SubResource != "" {
-		log.Debugf("Request is for a subresource, bypassing %s request on %s/%s [%s]", req.Operation, req.Namespace, req.Name, req.Kind)
+	// We don't enforce on subresources other than the scale subresource.
+	// Openshift console uses the scale subresource to scale deployments, and our admission controller bypasses these requests
+	// without running policy detection and enforcement. However, an `oc scale` command works. The following
+	// change makes the behavior of admission controller consistent across all supported ways that k8s allows
+	// deployment replica scaling.
+	if req.SubResource != "" && req.SubResource != ScaleSubResource {
+		log.Debugf("Request is for a subresource other than the scale subresource, bypassing %s request on %s/%s [%s]", req.Operation, req.Namespace, req.Name, req.Kind)
 		return true
 	}
 
@@ -102,21 +112,29 @@ func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionReq
 
 	log.Debugf("Not bypassing %s request on %s/%s [%s]", req.Operation, req.Namespace, req.Name, req.Kind)
 
-	k8sObj, err := unmarshalK8sObject(req.Kind, req.Object.Raw)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not unmarshal object from request")
-	}
+	var deployment *storage.Deployment
+	if req.SubResource != "" && req.SubResource == ScaleSubResource {
+		if deployment = m.deployments.GetByName(req.Namespace, req.Name); deployment == nil {
+			return nil, errors.New(
+				fmt.Sprintf("could not find deployment with name: %q in namespace %q for this admission review request",
+					req.Name, req.Namespace))
+		}
+	} else {
+		k8sObj, err := unmarshalK8sObject(req.Kind, req.Object.Raw)
+		if err != nil {
+			return nil, errors.Wrap(err, "could not unmarshal object from request")
+		}
 
-	deployment, err := resources.NewDeploymentFromStaticResource(k8sObj, req.Kind.Kind, s.clusterID(), s.GetClusterConfig().GetRegistryOverride())
-	if err != nil {
-		return nil, errors.Wrap(err, "could not convert Kubernetes object into StackRox deployment")
-	}
+		deployment, err = resources.NewDeploymentFromStaticResource(k8sObj, req.Kind.Kind, s.clusterID(), s.GetClusterConfig().GetRegistryOverride())
+		if err != nil {
+			return nil, errors.Wrap(err, "could not convert Kubernetes object into StackRox deployment")
+		}
 
-	if deployment == nil {
-		log.Debugf("Non-top-level object, bypassing %s request on %s/%s [%s]", req.Operation, req.Namespace, req.Name, req.Kind)
-		return pass(req.UID), nil // we only enforce on top-level objects
+		if deployment == nil {
+			log.Debugf("Non-top-level object, bypassing %s request on %s/%s [%s]", req.Operation, req.Namespace, req.Name, req.Kind)
+			return pass(req.UID), nil // we only enforce on top-level objects
+		}
 	}
-
 	log.Debugf("Evaluating policies on %+v", deployment)
 
 	// Check if the deployment has a bypass annotation
@@ -129,7 +147,7 @@ func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionReq
 	}
 
 	var fetchImgCtx context.Context
-	if timeoutSecs := s.GetClusterConfig().GetAdmissionControllerConfig().GetTimeoutSeconds(); timeoutSecs > 1 && hasModifiedImages(s, deployment, req) {
+	if timeoutSecs := s.GetClusterConfig().GetAdmissionControllerConfig().GetTimeoutSeconds(); timeoutSecs > 1 && m.hasModifiedImages(s, deployment, req) {
 		var cancel context.CancelFunc
 		fetchImgCtx, cancel = context.WithTimeout(context.Background(), time.Duration(timeoutSecs)*time.Second)
 		defer cancel()
@@ -158,4 +176,50 @@ func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionReq
 
 	log.Debugf("Violated policies: %d, rejecting %s request on %s/%s [%s]", len(alerts), req.Operation, req.Namespace, req.Name, req.Kind)
 	return fail(req.UID, message(alerts, !s.GetClusterConfig().GetAdmissionControllerConfig().GetDisableBypass())), nil
+}
+
+// hasModifiedImages checks if the given deployment has any new images that the old version was not previously using.
+// If there is no old deployment version, or some error is encountered during conversion, true is conservatively
+// returned.
+func (m *manager) hasModifiedImages(s *state, deployment *storage.Deployment, req *admission.AdmissionRequest) bool {
+	if req.OldObject.Raw == nil {
+		return true
+	}
+
+	var oldDeployment *storage.Deployment
+	if req.SubResource != "" && req.SubResource == ScaleSubResource {
+		// TODO: We could consider returning false here since when the admission review request is for the scale
+		// subresource, I do not believe it is possible for a user to change the image on the deployment at the same
+		// time as updating the scale subresource However, the contract of this function as designed was to be
+		// conservative and return true.
+		return true
+	} else {
+		oldK8sObj, err := unmarshalK8sObject(req.Kind, req.OldObject.Raw)
+		if err != nil {
+			log.Errorf("Failed to unmarshal old object into K8s object: %v", err)
+			return true
+		}
+
+		oldDeployment, err = resources.NewDeploymentFromStaticResource(oldK8sObj, req.Kind.Kind, s.clusterID(), s.GetClusterConfig().GetRegistryOverride())
+		if err != nil {
+			log.Errorf("Failed to convert old K8s object into StackRox deployment: %v", err)
+			return true
+		}
+	}
+	if oldDeployment == nil {
+		return true
+	}
+
+	oldImages := set.NewStringSet()
+	for _, container := range oldDeployment.GetContainers() {
+		oldImages.Add(container.GetImage().GetName().GetFullName())
+	}
+
+	for _, container := range deployment.GetContainers() {
+		if !oldImages.Contains(container.GetImage().GetName().GetFullName()) {
+			return true
+		}
+	}
+
+	return false
 }
