@@ -81,8 +81,8 @@ validate_helm_charts() {
         fi
     fi
 
-    check_url_yaml_contains "https://charts.stackrox.io/index.yaml" ".entries.central-services[] | select( .appVersion == \"${RELEASE_PATCH}\")"
-    check_url_yaml_contains "https://charts.stackrox.io/index.yaml" ".entries.secured-cluster-services[] | select( .appVersion == \"${RELEASE_PATCH}\")"
+    check_url_yaml_contains "https://charts.stackrox.io/index.yaml?v=$(date +%s)" ".entries.central-services[] | select( .appVersion == \"${RELEASE_PATCH}\")"
+    check_url_yaml_contains "https://charts.stackrox.io/index.yaml?v=$(date +%s)" ".entries.secured-cluster-services[] | select( .appVersion == \"${RELEASE_PATCH}\")"
 }
 
 validate_images() {
