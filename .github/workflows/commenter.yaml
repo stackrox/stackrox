@@ -1,6 +1,8 @@
-name: Add /ok-to-test comment on pull requests from trusted actors
+name: Add /ok-to-test comment
+# on pull requests from trusted authors.
 on:
   pull_request:
+  # todo only opened and reopened
 
 jobs:
   comment-on-pr:
@@ -11,4 +13,4 @@ jobs:
       env:
         GH_TOKEN: "${{ secrets.RHACS_BOT_GITHUB_TOKEN }}"
       run: |
-        gh pr comment --body "/ok-to-test"
+        gh pr comment "${{ github.event.pull_request.url }}" --body "/ok-to-test"
