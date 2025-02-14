@@ -81,14 +81,18 @@ func ecosystems(ctx context.Context) []*ccindexer.Ecosystem {
 	es := []*ccindexer.Ecosystem{
 		alpine.NewEcosystem(ctx),
 		dpkg.NewEcosystem(ctx),
-		gobin.NewEcosystem(ctx),
-		java.NewEcosystem(ctx),
-		nodejs.NewEcosystem(ctx),
-		python.NewEcosystem(ctx),
 		rhcc.NewEcosystem(ctx),
 		rhel.NewEcosystem(ctx),
 		rpm.NewEcosystem(ctx),
-		ruby.NewEcosystem(ctx),
+	}
+	if !features.ScannerV4SkipLanguage.Enabled() {
+		es = append(es,
+			gobin.NewEcosystem(ctx),
+			java.NewEcosystem(ctx),
+			nodejs.NewEcosystem(ctx),
+			python.NewEcosystem(ctx),
+			ruby.NewEcosystem(ctx),
+		)
 	}
 	return es
 }
