@@ -991,6 +991,43 @@ func RunGetManyQueryForSchema[T any, PT pgutils.Unmarshaler[T]](ctx context.Cont
 	})
 }
 
+// RunQueryForSchema executes a query and perform fn on each row
+func RunQueryForSchema[T any, PT pgutils.Unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB, fn func(PT) error) error {
+	if q == nil {
+		q = searchPkg.EmptyQuery()
+	}
+
+	query, err := standardizeQueryAndPopulatePath(ctx, q, schema, GET)
+	if err != nil {
+		return err
+	}
+	if query == nil {
+		return emptyQueryErr
+	}
+
+	queryStr := query.AsSQL()
+	rows, err := tracedQuery(ctx, db, queryStr, query.Data...)
+	if err != nil {
+		return err
+	}
+
+	return walkRows(rows, fn)
+}
+
+func walkRows[T any, PT pgutils.Unmarshaler[T]](rows pgx.Rows, fn func(PT) error) error {
+	var data []byte
+	_, err := pgx.ForEachRow(rows, []any{&data}, func() error {
+		msg := new(T)
+		// We need to copy in order to use Unsafe unmarshal
+		// TODO: generate UnmarshalVT to use it here
+		if err := PT(msg).UnmarshalVTUnsafe(data); err != nil {
+			return err
+		}
+		return fn(msg)
+	})
+	return err
+}
+
 // RunCursorQueryForSchema creates a cursor against the database
 func RunCursorQueryForSchema[T any, PT pgutils.Unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) (fetcher func(n int) ([]*T, error), closer func(), err error) {
 	if q == nil {
