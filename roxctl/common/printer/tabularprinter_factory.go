@@ -64,7 +64,7 @@ func NewTabularPrinterFactoryWithAutoMerge() *TabularPrinterFactory {
 // AddFlags will add all tabular printer specific flags to the cobra.Command
 func (t *TabularPrinterFactory) AddFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().BoolVar(&t.Merge, "merge-output", t.Merge, "Merge duplicate cells in prettified tabular output")
-	cmd.PersistentFlags().StringSliceVar(&t.Headers, "headers", t.Headers, "Headers to print in tabular output")
+	cmd.PersistentFlags().StringSliceVar(&t.Headers, "headers", defaultImageScanHeaders, "Headers to print in tabular output")
 	err := t.propagateCustomHeaders()
 	if err != nil {
 		cmd.PrintErrf("%v", err)
@@ -164,6 +164,9 @@ func (t *TabularPrinterFactory) validate() error {
 }
 
 func (t *TabularPrinterFactory) propagateCustomHeaders() error {
+	if slices.Equal(t.Headers, defaultImageScanHeaders) {
+		return nil
+	}
 	rawJSONPathExpression, err := createImageScanJSONPathExpression(t.Headers)
 	if err != nil {
 		return errox.InvalidArgs.Newf("Invalid --header args: %v", err)
