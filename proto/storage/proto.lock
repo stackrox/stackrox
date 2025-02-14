@@ -18159,6 +18159,11 @@
                 "type": "string"
               },
               {
+                "id": 24,
+                "name": "advisory",
+                "type": "string"
+              },
+              {
                 "id": 2,
                 "name": "cvss",
                 "type": "float"
