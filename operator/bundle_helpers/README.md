@@ -9,14 +9,13 @@ Follow the procedure below after any dependencies change for successful builds i
 
 ### Prerequisite
 
-Install [pip-compile](https://pip-tools.readthedocs.io/en/stable/).
-
-Example:
+Run the steps inside a container of the same image as the operator-bundle builder stage.
 
 ```bash
-python3 -m pip install --user pipx
-python3 -m pipx ensurepath
-pipx install pip-tools
+docker run -it -v $(pwd):/src --entrypoint /bin/sh registry.access.redhat.com/ubi9/python-39:latest
+# inside the container
+cd /src
+python3 -m pip install pip-tools
 ```
 
 ### Instructions
@@ -24,7 +23,7 @@ pipx install pip-tools
 1. Generate a fully resolved requirements.txt:
 
 ```bash
-pip-compile requirements.in --generate-hashes > requirements.txt
+pip-compile requirements.in --generate-hashes
 ```
 
 2. Download pip_find_builddeps.py:
@@ -38,11 +37,9 @@ chmod +x pip_find_builddeps.py
 
 ```bash
 ./pip_find_builddeps.py requirements.txt \
-  --append \
-  --only-write-on-update \
   -o requirements-build.in
 
-pip-compile requirements-build.in --allow-unsafe --generate-hashes > requirements-build.txt
+pip-compile requirements-build.in --allow-unsafe --generate-hashes
 ```
 
 For more information, consult the [Cachi2 docs](https://github.com/containerbuildsystem/cachi2/blob/main/docs/pip.md#building-from-source).
