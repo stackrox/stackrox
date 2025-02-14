@@ -32,7 +32,7 @@
         "d3-brush": "^3.0.0",
         "d3-polygon": "^3.0.1",
         "d3-scale": "^4.0.2",
-        "d3-selection": "^2.0.0",
+        "d3-selection": "^3.0.0",
         "d3-zoom": "^3.0.0",
         "date-fns": "1.30.1",
         "deepmerge": "^4.2.2",
@@ -197,58 +197,10 @@
         "monaco-yaml": {
             "monaco-editor": "0.34.1"
         },
-        "react-collapsible": {
-            "react": "^18.0.0",
-            "react-dom": "^18.0.0"
-        },
-        "react-copy-to-clipboard": {
-            "react": "^18.0.0"
-        },
-        "react-feather": {
-            "react": "^18.0.0"
-        },
-        "react-modal": {
-            "react": "^18.0.0",
-            "react-dom": "^18.0.0"
-        },
-        "react-popper": {
-            "react": "^18.0.0",
-            "react-dom": "^18.0.0"
-        },
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
         "react-scripts": {
             "typescript": "5.7.2"
-        },
-        "react-select": {
-            "react": "^18.0.0",
-            "react-dom": "^18.0.0"
-        },
-        "react-spinners": {
-            "react": "^18.0.0",
-            "react-dom": "^18.0.0"
-        },
-        "react-table-6": {
-            "react": "^18.0.0",
-            "react-dom": "^18.0.0"
-        },
-        "react-test-renderer": {
-            "react": "^18.0.0",
-            "react-dom": "^18.0.0"
-        },
-        "react-truncate": {
-            "react": "^18.0.0",
-            "react-dom": "^18.0.0"
-        },
-        "react-vis": {
-            "react": "^18.0.0",
-            "react-dom": "^18.0.0"
-        },
-        "redoc": {
-            "react": "^18.0.0",
-            "react-dom": "^18.0.0"
-        },
-        "redux-form": {
-            "react": "^18.0.0",
-            "react-dom": "^18.0.0"
         }
     },
     "jest": {
