@@ -1,0 +1,65 @@
+name: "RELEASE: Check jira issues"
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Full version X.Y.Z
+        required: true
+        default: 1.0.0
+        type: string
+      dry-run:
+        description: Dry-run
+        required: false
+        default: true
+        type: boolean
+
+env:
+  script_url: /repos/${{github.repository}}/contents/.github/workflows/scripts/common.sh?ref=${{ github.ref_name }}
+  DRY_RUN: ${{ fromJSON('["true", "false"]')[github.event.inputs.dry-run != 'true'] }}
+  ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
+
+jobs:
+  properties:
+    runs-on: ubuntu-latest
+    outputs:
+      jira-projects: ${{ steps.fetch.outputs.jira-projects }}
+    steps:
+      - name: Read workflow properties file
+        id: fetch
+        env:
+          PROPERTIES_URL: /repos/${{ github.repository }}/contents/.github/properties?ref=${{ github.ref_name }}
+        run: gh api -H "$ACCEPT_RAW" "$PROPERTIES_URL" >> "$GITHUB_OUTPUT"
+
+  log-run-parameters:
+    name: Run parameters
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "Event: ${{github.event_name}}" >>"$GITHUB_STEP_SUMMARY"
+          if [ "${{github.event_name}}" = "workflow_dispatch" ]; then
+            cat <<EOF >>"$GITHUB_STEP_SUMMARY"
+          \`\`\`
+          ${{toJSON(inputs)}}
+          \`\`\`
+          EOF
+          fi
+
+  check-jira:
+    name: Check Jira tickets for release
+    needs: [properties]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Query JIRA
+        env:
+          JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+        run: |
+          release="${{github.event.inputs.version}}"
+          named_release_patch="${release}"
+          patch="${release##*.}"
+          release="${release%.*}"
+          gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
+            check-jira-issues \
+            "${{needs.properties.outputs.jira-projects}}" \
+            "${release}" \
+            "${patch}" \
+            "${named_release_patch}"
