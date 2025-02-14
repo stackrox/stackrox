@@ -133,4 +133,11 @@ var (
 
 	// Flattens CVE Data Model for improved accuracy and performance
 	FlattenCVEData = registerFeature("Uses a flattened CVE Data Model improved accuracy and performance", "ROX_FLATTEN_CVE_DATA")
+
+	// ScannerV4SkipLanguage disables any language-level packages support.
+	//
+	// This must be set in Scanner V4 Indexer to skip analyzing images for language-level packages.
+	// This must be set in Scanner V4 Matcher to skip matching packages to vulnerabilities related to language-level packages.
+	// Note: setting this in Scanner V4 Matcher does not stop Scanner V4 DB from tracking language-related vulnerabilities.
+	ScannerV4SkipLanguage = registerFeature("Scanner V4 will only analyze static images for data related to OS-provided package managers", "ROX_SCANNER_V4_SKIP_LANGUAGE")
 )
