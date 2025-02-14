@@ -222,6 +222,26 @@ func (e *enricherImpl) updateImageWithExistingImage(image *storage.Image, existi
 	return e.useExistingScan(image, existingImage, option)
 }
 
+func debugImage(fetchOpt FetchOption, image *storage.Image) {
+	imageName := image.GetName().GetFullName()
+	filterLogging(imageName, "lvm --> fetchOp %d Image %s CVEs %d", fetchOpt, imageName, image.GetCves())
+	filterLogging(imageName, "lvm --> fetchOp %d Image %s Scan Time %+v", fetchOpt, imageName, image.GetScan().GetScanTime())
+	filterLogging(imageName, "lvm --> fetchOp %d Image %s Scan Components %d", fetchOpt, imageName, len(image.GetScan().GetComponents()))
+	for _, c := range image.GetScan().GetComponents() {
+		filterLogging(imageName, "lvm --> fetchOp %d Image %s Scan FullComponent %+v", fetchOpt, imageName, c)
+		for _, vul := range c.GetVulns() {
+			filterLogging(imageName, "lvm --> fetchOp %d Image %s Scan Component %s first image occurrence %+v", fetchOpt, imageName, c.GetName(), vul.GetFirstImageOccurrence())
+			filterLogging(imageName, "lvm --> fetchOp %d Image %s Scan Component %s first system occurrence %+v", fetchOpt, imageName, c.GetName(), vul.GetFirstSystemOccurrence())
+		}
+	}
+}
+
+func filterLogging(imageName string, fmt string, args ...interface{}) {
+	if strings.Contains(imageName, "nginx") {
+		log.Infof(fmt, args...)
+	}
+}
+
 // EnrichImage enriches an image with the integration set present.
 func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext EnrichmentContext, image *storage.Image) (EnrichmentResult, error) {
 	if shouldDelegate, err := e.delegateEnrichImage(ctx, enrichContext, image); shouldDelegate {
@@ -268,7 +288,15 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 	// This makes sure that we fetch any existing image only once from database.
 	useExistingScanIfPossible := e.updateImageFromDatabase(ctx, image, enrichContext.FetchOpt)
 
+	//filterLogging(image.GetName().GetFullName(), "lvm --> image before enrichment")
+	//debugImage(enrichContext.FetchOpt, image)
+	//filterLogging(image.GetName().GetFullName(), "lvm --> image before enrichment")
+	filterLogging(image.GetName().GetFullName(), "lvm --> enrich with scan fetch opt %d", enrichContext.FetchOpt)
 	scanResult, err := e.enrichWithScan(ctx, enrichContext, image, useExistingScanIfPossible)
+	filterLogging(image.GetName().GetFullName(), "lvm --> end of enrich with scan fetch opt %d", enrichContext.FetchOpt)
+	//filterLogging(image.GetName().GetFullName(), "lvm --> image after enrichment")
+	//debugImage(enrichContext.FetchOpt, image)
+	//filterLogging(image.GetName().GetFullName(), "lvm --> image after enrichment")
 	errorList.AddError(err)
 	if scanResult == ScanNotDone && image.GetScan() == nil {
 		imageNoteSet[storage.Image_MISSING_SCAN_DATA] = struct{}{}
@@ -970,7 +998,9 @@ func (e *enricherImpl) enrichImageWithScanner(ctx context.Context, image *storag
 		return ScanNotDone, nil
 	}
 
+	filterLogging(image.GetName().GetFullName(), "lvm --> scanner %q type %q", scanner.Name(), scanner.Type())
 	enrichImage(image, scan, imageScanner.DataSource())
+	filterLogging(image.GetName().GetFullName(), "lvm --> end scanner %q type %q", scanner.Name(), scanner.Type())
 
 	return ScanSucceeded, nil
 }
@@ -980,12 +1010,21 @@ func enrichImage(image *storage.Image, scan *storage.ImageScan, dataSource *stor
 	normalizeVulnerabilities(scan)
 
 	scan.DataSource = dataSource
+	filterLogging(image.GetName().GetFullName(), "lvm --> before overriding scan")
+	debugImage(0, image)
+	filterLogging(image.GetName().GetFullName(), "lvm --> before overriding scan")
 
 	// Assume:
 	//  scan != nil
 	//  no error scanning.
 	image.Scan = scan
+	filterLogging(image.GetName().GetFullName(), "lvm --> after overriding scan")
+	debugImage(0, image)
+	filterLogging(image.GetName().GetFullName(), "lvm --> after overriding scan")
 	FillScanStats(image)
+	filterLogging(image.GetName().GetFullName(), "lvm --> after filling stats")
+	debugImage(0, image)
+	filterLogging(image.GetName().GetFullName(), "lvm --> after filling stats")
 }
 
 // FillScanStats fills in the higher level stats from the scan data.

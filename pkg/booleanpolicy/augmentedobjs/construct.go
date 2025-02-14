@@ -3,16 +3,22 @@ package augmentedobjs
 import (
 	"fmt"
 	"slices"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
 	// CompositeFieldCharSep is the separating character used when we create a composite field.
 	CompositeFieldCharSep = "\t"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 func findMatchingContainerIdxForProcess(deployment *storage.Deployment, process *storage.ProcessIndicator) (int, error) {
@@ -138,6 +144,12 @@ func ConstructDeploymentWithNetworkFlowInfo(
 	return obj, nil
 }
 
+func filterLogging(deploymentName string, fmt string, args ...interface{}) {
+	if strings.Contains(deploymentName, "test") {
+		log.Infof(fmt, args...)
+	}
+}
+
 // ConstructDeployment constructs the augmented deployment object.
 // It assumes that the given images are in the same order as the containers specified within the given deployment.
 // If there's a mismatch in the amount of containers on the deployment and the given images, an error will be returned.
@@ -153,11 +165,18 @@ func ConstructDeployment(deployment *storage.Deployment, images []*storage.Image
 		return nil, utils.ShouldErr(err)
 	}
 
+	filterLogging(deployment.GetName(), "lvm --> Num Images %d", len(images))
 	for i, image := range images {
 		// Since we ensure that both images and containers have the same length, this will not lead to index out of
 		// bounds panics.
 		containerImageFullName := deployment.GetContainers()[i].GetImage().GetName().GetFullName()
 		augmentedImg, err := ConstructImage(image, containerImageFullName)
+		filterLogging(deployment.GetName(), "lvm --> Image %s CVEs %d", image.GetName().GetFullName(), image.GetCves())
+		filterLogging(deployment.GetName(), "lvm --> Image %s Scan Time %+v", image.GetName().GetFullName(), image.GetScan().GetScanTime())
+		filterLogging(deployment.GetName(), "lvm --> Image %s Scan Components %d", image.GetName().GetFullName(), len(image.GetScan().GetComponents()))
+		for _, c := range image.GetScan().GetComponents() {
+			filterLogging(deployment.GetName(), "lvm --> Image %s Scan Component %+v", image.GetName().GetFullName(), c)
+		}
 		if err != nil {
 			return nil, err
 		}
