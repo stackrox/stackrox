@@ -16,7 +16,6 @@ import (
 	"github.com/pkg/errors"
 	iiDStore "github.com/stackrox/rox/central/imageintegration/datastore"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
-	secretDS "github.com/stackrox/rox/central/secret/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -35,8 +34,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-const centralDBTLSName = "central-db-tls"
-
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.Authenticated(): {
@@ -50,7 +47,6 @@ type serviceImpl struct {
 	v1.UnimplementedCredentialExpiryServiceServer
 
 	imageIntegrations iiDStore.DataStore
-	secretDatastore   secretDS.DataStore
 	scannerConfigs    map[mtls.Subject]*tls.Config
 	expiryFunc        func(ctx context.Context, subject mtls.Subject, tlsConfig *tls.Config, endpoint string) (*time.Time, error)
 }

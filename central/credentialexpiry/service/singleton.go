@@ -2,7 +2,6 @@ package service
 
 import (
 	imageIntegrationStore "github.com/stackrox/rox/central/imageintegration/datastore"
-	secretDS "github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -13,7 +12,7 @@ var (
 )
 
 func initialize() {
-	instance = New(imageIntegrationStore.Singleton(), secretDS.Singleton())
+	instance = New(imageIntegrationStore.Singleton())
 }
 
 // Singleton provides the instance of the Service interface to register.
