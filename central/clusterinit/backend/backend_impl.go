@@ -19,7 +19,8 @@ import (
 )
 
 const (
-	currentCrsVersion = 1
+	currentCrsVersion          = 1
+	maxRegistrationsUpperLimit = 100
 )
 
 var _ authn.ValidateCertChain = (*backendImpl)(nil)
@@ -152,13 +153,17 @@ func (b *backendImpl) Issue(ctx context.Context, name string) (*InitBundleWithMe
 	}, nil
 }
 
-func (b *backendImpl) IssueCRS(ctx context.Context, name string) (*CRSWithMeta, error) {
+func (b *backendImpl) IssueCRS(ctx context.Context, name string, maxRegistrations uint64) (*CRSWithMeta, error) {
 	if err := access.CheckAccess(ctx, storage.Access_READ_WRITE_ACCESS); err != nil {
 		return nil, err
 	}
 
 	if err := validateName(name); err != nil {
 		return nil, err
+	}
+
+	if maxRegistrations > maxRegistrationsUpperLimit {
+		return nil, errors.Errorf("cluster registration limit must be in the range 1...%d", maxRegistrationsUpperLimit)
 	}
 
 	caCert, err := b.certProvider.GetCA()
@@ -184,12 +189,13 @@ func (b *backendImpl) IssueCRS(ctx context.Context, name string) (*CRSWithMeta, 
 
 	// On the storage side we are reusing the InitBundleMeta.
 	meta := &storage.InitBundleMeta{
-		Id:        id.String(),
-		Name:      name,
-		CreatedAt: protocompat.TimestampNow(),
-		CreatedBy: user,
-		ExpiresAt: expiryTimestamp,
-		Version:   storage.InitBundleMeta_CRS,
+		Id:               id.String(),
+		Name:             name,
+		CreatedAt:        protocompat.TimestampNow(),
+		CreatedBy:        user,
+		ExpiresAt:        expiryTimestamp,
+		Version:          storage.InitBundleMeta_CRS,
+		MaxRegistrations: maxRegistrations,
 	}
 
 	if err := b.store.Add(ctx, meta); err != nil {
@@ -232,6 +238,30 @@ func (b *backendImpl) Revoke(ctx context.Context, id string) error {
 	}
 
 	return nil
+}
+
+func (b *backendImpl) RegistrationPossible(ctx context.Context, id string) error {
+	if err := access.CheckAccess(ctx, storage.Access_READ_ACCESS); err != nil {
+		return err
+	}
+
+	return b.store.RegistrationPossible(ctx, id)
+}
+
+func (b *backendImpl) RecordInitiatedRegistration(ctx context.Context, id string, clusterId string) error {
+	if err := access.CheckAccess(ctx, storage.Access_READ_WRITE_ACCESS); err != nil {
+		return err
+	}
+
+	return b.store.RecordInitiatedRegistration(ctx, id, clusterId)
+}
+
+func (b *backendImpl) RecordCompletedRegistration(ctx context.Context, id string, clusterId string) error {
+	if err := access.CheckAccess(ctx, storage.Access_READ_WRITE_ACCESS); err != nil {
+		return err
+	}
+
+	return b.store.RecordCompletedRegistration(ctx, id, clusterId)
 }
 
 func (b *backendImpl) CheckRevoked(ctx context.Context, id string) error {
