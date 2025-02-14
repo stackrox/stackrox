@@ -2,6 +2,7 @@ package reprocessor
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -353,6 +354,12 @@ func (l *loopImpl) getActiveImageIDs() ([]string, error) {
 	return search.ResultsToIDs(results), nil
 }
 
+func filterLogging(imageName string, fmt string, args ...interface{}) {
+	if strings.Contains(imageName, "nginx") {
+		log.Infof(fmt, args...)
+	}
+}
+
 func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.FetchOption,
 	imgReprocessingFunc imageReprocessingFunc, imageQuery *v1.Query) {
 	if l.stopSig.IsDone() {
@@ -397,6 +404,17 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 				conn := l.connManager.GetConnection(clusterID)
 				if conn == nil {
 					continue
+				}
+				imageName := image.GetName().GetFullName()
+				filterLogging(imageName, "lvm --> fetchOp %d Image %s CVEs %d", fetchOpt, imageName, image.GetCves())
+				filterLogging(imageName, "lvm --> fetchOp %d Image %s Scan Time %+v", fetchOpt, imageName, image.GetScan().GetScanTime())
+				filterLogging(imageName, "lvm --> fetchOp %d Image %s Scan Components %d", fetchOpt, imageName, len(image.GetScan().GetComponents()))
+				for _, c := range image.GetScan().GetComponents() {
+					filterLogging(imageName, "lvm --> fetchOp %d Image %s Scan FullComponent %+v", fetchOpt, imageName, c)
+					for _, vul := range c.GetVulns() {
+						filterLogging(imageName, "lvm --> fetchOp %d Image %s Scan Component %s first image occurrence %+v", fetchOpt, imageName, c.GetName(), vul.GetFirstImageOccurrence())
+						filterLogging(imageName, "lvm --> fetchOp %d Image %s Scan Component %s first system occurrence %+v", fetchOpt, imageName, c.GetName(), vul.GetFirstSystemOccurrence())
+					}
 				}
 				err := conn.InjectMessage(concurrency.AsContext(&l.stopSig), &central.MsgToSensor{
 					Msg: &central.MsgToSensor_UpdatedImage{
