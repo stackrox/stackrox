@@ -144,7 +144,8 @@ func TestTabularPrinterFactory_CustomHeaderPropagation(t *testing.T) {
 	}{
 		"Default": {
 			t: &TabularPrinterFactory{
-				Headers: defaultImageScanHeaders,
+				Headers:               defaultImageScanHeaders,
+				RowJSONPathExpression: defaultImageScanJSONPathExpression,
 			},
 			expectedJSONPathExpression: "{" +
 				"result.vulnerabilities.#.componentName," +
@@ -156,7 +157,8 @@ func TestTabularPrinterFactory_CustomHeaderPropagation(t *testing.T) {
 		},
 		"Reversed": {
 			t: &TabularPrinterFactory{
-				Headers: sliceutils.Reversed(defaultImageScanHeaders),
+				Headers:               sliceutils.Reversed(defaultImageScanHeaders),
+				RowJSONPathExpression: defaultImageScanJSONPathExpression,
 			},
 			expectedJSONPathExpression: "{" +
 				"result.vulnerabilities.#.componentFixedVersion," +
@@ -168,7 +170,8 @@ func TestTabularPrinterFactory_CustomHeaderPropagation(t *testing.T) {
 		},
 		"Duplicate": {
 			t: &TabularPrinterFactory{
-				Headers: []string{"CVE", "CVE"},
+				Headers:               []string{"CVE", "CVE"},
+				RowJSONPathExpression: defaultImageScanJSONPathExpression,
 			},
 			expectedJSONPathExpression: "{" +
 				"result.vulnerabilities.#.cveId," +
