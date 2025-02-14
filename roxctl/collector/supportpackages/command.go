@@ -16,7 +16,7 @@ less than 4.5. Newer versions do not require support packages.`
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "support-packages",
-		Short: "Commands to upload support packages for Collector.",
+		Short: "Commands to upload support packages for Collector",
 		Long:  supportPkgHelpLong,
 	}
 
