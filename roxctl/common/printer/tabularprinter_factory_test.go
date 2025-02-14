@@ -114,6 +114,14 @@ func TestTabularPrinterFactory_CustomHeaderValidation(t *testing.T) {
 			},
 			shouldFail: false,
 		},
+		"should not fail with duplicate allowed headers": {
+			t: &TabularPrinterFactory{
+				NoHeader:        true,
+				HeaderAsComment: true,
+				Headers:         []string{"LINK", "SEVERITY", "VERSION", "LINK"},
+			},
+			shouldFail: false,
+		},
 	}
 
 	for name, c := range cases {
