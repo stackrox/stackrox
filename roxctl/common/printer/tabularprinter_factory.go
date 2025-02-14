@@ -4,7 +4,6 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/cloudflare/cfssl/log"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/printers"
@@ -12,7 +11,7 @@ import (
 )
 
 var (
-	// default headers to use when printing tabular output
+	// Default headers to use when printing tabular output.
 	defaultImageScanHeaders = []string{"COMPONENT", "VERSION", "CVE", "SEVERITY", "LINK", "FIXED_VERSION"}
 	defaultColumnsToMerge   = []string{"COMPONENT", "VERSION"}
 
@@ -25,7 +24,7 @@ var (
 		"FIXED_VERSION": "result.vulnerabilities.#.componentFixedVersion",
 	}
 
-	// default JSON path expression representing a row within tabular output, based on the mapping above
+	// Default JSON path expression representing a row within tabular output, based on the mapping above.
 	defaultImageScanJSONPathExpression, _ = createImageScanJSONPathExpression(defaultImageScanHeaders)
 )
 
@@ -68,7 +67,7 @@ func (t *TabularPrinterFactory) AddFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringSliceVar(&t.Headers, "headers", t.Headers, "Headers to print in tabular output")
 	err := t.propagateCustomHeaders()
 	if err != nil {
-		log.Errorf("%v", err)
+		cmd.PrintErrf("%v", err)
 	}
 	cmd.PersistentFlags().BoolVar(&t.NoHeader, "no-header", t.NoHeader, "Print no headers for tabular output")
 	cmd.PersistentFlags().BoolVar(&t.HeaderAsComment, "headers-as-comments", t.HeaderAsComment, "Print headers "+
@@ -178,20 +177,11 @@ func createImageScanJSONPathExpression(imageScanHeaders []string) (string, error
 		return "", errox.InvalidArgs.Newf("Invalid headers, supported headers: [%s]",
 			strings.Join(defaultImageScanHeaders, ", "))
 	}
-	rawJSONOutput := "{"
-	for i, header := range imageScanHeaders {
-		JSONHeader, ok := imageScanHeaderToJSONPathMap[header]
-		if ok {
-			rawJSONOutput = rawJSONOutput + JSONHeader
-			if i < len(imageScanHeaders)-1 {
-				rawJSONOutput = rawJSONOutput + ","
-			}
-		} else {
-			log.Errorf("Tried to use invalid header %s. This should not happen due to validation", header)
-		}
+	rawJSONOutput := make([]string, 0, len(imageScanHeaders))
+	for _, header := range imageScanHeaders {
+		rawJSONOutput = append(rawJSONOutput, imageScanHeaderToJSONPathMap[header])
 	}
-	rawJSONOutput = rawJSONOutput + "}"
-	return rawJSONOutput, nil
+	return "{" + strings.Join(rawJSONOutput, ",") + "}", nil
 }
 
 func validateImageScanHeaders(imageScanHeaders []string) bool {
