@@ -22,7 +22,6 @@ import (
 	"github.com/quay/zlog"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -894,7 +893,7 @@ func redhatCSAFAdvisories(ctx context.Context, enrichments map[string][]json.Raw
 // filterPackages filters out packages from the given map.
 func filterPackages(packages map[string]*claircore.Package, environments map[string][]*claircore.Environment, packageVulns map[string][]string) {
 	// We only filter out Node.js packages with no known vulnerabilities (if configured to do so) at this time.
-	if !env.ScannerV4PartialNodeJSSupport.BooleanSetting() {
+	if !features.ScannerV4PartialNodeJSSupport.Enabled() {
 		return
 	}
 	for pkgID := range packages {
