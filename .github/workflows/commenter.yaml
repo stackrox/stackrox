@@ -1,0 +1,14 @@
+name: Add /ok-to-test comment on pull requests from trusted actors
+on:
+  pull_request:
+
+jobs:
+  comment-on-pr:
+    runs-on: ubuntu-latest
+    #if: ${{ github.actor }}
+    steps:
+    - name: Blah
+      env:
+        GH_TOKEN: "${{ secrets.RHACS_BOT_GITHUB_TOKEN }}"
+      run: |
+        gh pr comment --body "/ok-to-test"
