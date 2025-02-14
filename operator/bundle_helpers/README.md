@@ -9,10 +9,13 @@ Follow the procedure below after any dependencies change for successful builds i
 
 ### Prerequisite
 
-Setup [nix-shell](https://nixos.org/download/) and start the environment in this directory (this can take a while for the first time!).
+Run the steps inside a container of the same image as the operator-bundle builder stage.
 
 ```bash
-nix-shell
+docker run -it -v $(pwd):/src --entrypoint /bin/sh registry.access.redhat.com/ubi9/python-39:latest
+# inside the container
+cd /src
+python3 -m pip install pip-tools
 ```
 
 ### Instructions
