@@ -4,6 +4,8 @@ import { htmlReport } from "https://raw.githubusercontent.com/benc-uk/k6-reporte
 
 import { getHeaderWithAdminPass } from '../load/src/utils.js';
 import { mainDashboard } from '../load/groups/mainDashboard.js';
+import { vulnerabilityManagementDashboard } from '../load/groups/vulnerabilityManagementDashboard.js';
+import { alertsGrpc } from '../load/groups/alerts.js';
 
 import { defaultOptions } from '../load/src/options.js';
 
@@ -12,6 +14,8 @@ export const options = defaultOptions;
 
 const runAllGroups = (header, tags) => {
     mainDashboard(__ENV.HOST, header, tags);
+    vulnerabilityManagementDashboard(__ENV.HOST, header, tags);
+    alertsGrpc(__ENV.HOST, header, tags);
 };
 
 export default function main() {
