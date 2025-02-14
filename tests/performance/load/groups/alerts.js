@@ -5,7 +5,7 @@ const GRPC_PORT = ":443";
 
 const client = new Client();
 
-client.load(['../../../proto', '../../../third_party/googleapis'], 'api/v1/alert_service.proto');
+client.load(['proto/stackrox', 'proto/googleapis'], 'api/v1/alert_service.proto');
 
 export function alertsGrpc(host, headers, tags) {
 
