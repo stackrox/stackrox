@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/scannerv4/enricher/csaf"
 	"github.com/stackrox/rox/pkg/scannerv4/updater/manual"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -1999,6 +2000,41 @@ func Test_vulnerabilityName(t *testing.T) {
 		}
 		assert.Equal(t, "GO-2021-0072", vulnerabilityName(v))
 	})
+}
+
+func Test_advisory(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.ScannerV4RedHatCVEs, true)
+	testcases := map[string]struct {
+		vuln     *claircore.Vulnerability
+		expected string
+	}{
+		"non-VEX": {
+			vuln: &claircore.Vulnerability{
+				Links:   "https://access.redhat.com/security/cve/CVE-2023-25761 https://access.redhat.com/errata/RHSA-2023:1866 https://access.redhat.com/security/cve/CVE-2023-25762",
+				Updater: "not-vex",
+			},
+			expected: "",
+		},
+		"no RHSA": {
+			vuln: &claircore.Vulnerability{
+				Links:   "https://access.redhat.com/security/cve/CVE-2023-25761 https://access.redhat.com/security/cve/CVE-2023-25762",
+				Updater: "rhel-vex",
+			},
+			expected: "",
+		},
+		"RHSA": {
+			vuln: &claircore.Vulnerability{
+				Links:   "https://access.redhat.com/security/cve/CVE-2023-25761 https://access.redhat.com/errata/RHSA-2023:1866 https://access.redhat.com/security/cve/CVE-2023-25762",
+				Updater: "rhel-vex",
+			},
+			expected: "RHSA-2023:1866",
+		},
+	}
+	for name, testcase := range testcases {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, testcase.expected, advisory(testcase.vuln))
+		})
+	}
 }
 
 func Test_versionID(t *testing.T) {
