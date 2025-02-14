@@ -117,10 +117,10 @@ deploy_earlier_postgres_central() {
     ci_export "ROX_ADMIN_PASSWORD" "$ROX_ADMIN_PASSWORD"
 }
 
-restore_4_1_backup() {
-    info "Restoring a 4.1 backup into a newer central"
+restore_4_6_backup() {
+    info "Restoring a 4.6 backup into a newer central"
 
-    restore_4_1_postgres_backup
+    restore_4_6_postgres_backup
 }
 
 force_rollback() {
