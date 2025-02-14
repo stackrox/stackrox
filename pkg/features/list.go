@@ -40,12 +40,6 @@ var (
 	// SensorCapturesIntermediateEvents enables sensor to capture intermediate events when it is disconnected from central
 	SensorCapturesIntermediateEvents = registerFeature("Enables sensor to capture intermediate events when it is disconnected from central", "ROX_CAPTURE_INTERMEDIATE_EVENTS", enabled)
 
-	// ScannerV4 indicates Scanner V4 is installed and should be used as the default image scanner in Central/Sensor.
-	ScannerV4 = registerFeature("Enables Scanner V4 runtime functionality", "ROX_SCANNER_V4")
-
-	// ScannerV4MultiBundle enables Scanner V4 to consume vulnerabilities using multi-bundle archives.
-	ScannerV4MultiBundle = registerFeature("Enables Scanner V4 to consume vulnerabilities using multi-bundle archives", "ROX_SCANNER_V4_MULTI_BUNDLE", enabled)
-
 	// VulnMgmtLegacySnooze enables APIs and UI for the legacy VM 1.0 "snooze CVE" functionality in the new VM 2.0 sections
 	VulnMgmtLegacySnooze = registerFeature("Enables the ability to snooze Node and Platform CVEs in VM 2.0", "ROX_VULN_MGMT_LEGACY_SNOOZE")
 
@@ -108,17 +102,6 @@ var (
 	// NetworkGraphExternalIPs enables displaying external IPs in the network graph
 	NetworkGraphExternalIPs = registerFeature("Display external ips in the UI", "ROX_NETWORK_GRAPH_EXTERNAL_IPS")
 
-	// ScannerV4RedHatCVEs enables displaying CVEs instead of RHSAs/RHEAs/RHBAs in the place of fixed vulnerabilities affected Red Hat products.
-	// TODO(ROX-26672): Remove this once we can show both CVEs and RHSAs in the UI + reports.
-	ScannerV4RedHatCVEs = registerFeature("Scanner V4 will output CVEs instead of RHSAs/RHBAs/RHEAs for fixed Red Hat vulnerabilities", "ROX_SCANNER_V4_RED_HAT_CVES")
-
-	// ScannerV4RedHatCSAF enables CSAF enrichment for Red Hat advisories.
-	// TODO(ROX-26672): Remove this once we can show both CVEs and RHSAs in the UI + reports.
-	ScannerV4RedHatCSAF = registerFeature("Scanner V4 will enrich its results with Red Hat CSAF data", "ROX_SCANNER_V4_RED_HAT_CSAF", enabled)
-
-	// ScannerV4ReIndex enables Scanner V4 manifest re-indexing.
-	ScannerV4ReIndex = registerFeature("Scanner V4 will re-index and delete unused manifests", "ROX_SCANNER_V4_REINDEX", enabled)
-
 	// Display RHSA/RHBA/RHEA advisory separately from associated CVE.
 	CVEAdvisorySeparation = registerFeature("Display RHSA/RHBA/RHEA advisory separately from associated CVE", "ROX_CVE_ADVISORY_SEPARATION")
 
@@ -133,4 +116,39 @@ var (
 
 	// Flattens CVE Data Model for improved accuracy and performance
 	FlattenCVEData = registerFeature("Uses a flattened CVE Data Model improved accuracy and performance", "ROX_FLATTEN_CVE_DATA")
+)
+
+// The following feature flags are related to Scanner V4.
+var (
+	// ScannerV4 indicates Scanner V4 is installed and should be used as the default image scanner in Central/Sensor.
+	ScannerV4 = registerFeature("Enables Scanner V4 runtime functionality", "ROX_SCANNER_V4")
+
+	// ScannerV4ReIndex enables Scanner V4 manifest re-indexing.
+	//
+	// This must be set in Scanner V4 Indexer to have any effect.
+	ScannerV4ReIndex = registerFeature("Scanner V4 will re-index and delete unused manifests", "ROX_SCANNER_V4_REINDEX", enabled)
+
+	// ScannerV4MultiBundle enables Scanner V4 to consume vulnerabilities using multi-bundle archives.
+	//
+	// This must be set in Scanner V4 Matcher to have any effect.
+	ScannerV4MultiBundle = registerFeature("Enables Scanner V4 to consume vulnerabilities using multi-bundle archives", "ROX_SCANNER_V4_MULTI_BUNDLE", enabled)
+
+	// ScannerV4PartialNodeJSSupport specifies if Scanner v4 should support partial indexing/vuln matching Node.js (npm) packages.
+	// Partial support is equivalent to StackRox Scanner (Scanner v2) support: only return packages which are affected
+	// by at least one vulnerability.
+	//
+	// This must be set in Scanner V4 Matcher to have any effect.
+	ScannerV4PartialNodeJSSupport = registerFeature("Scanner V4 will only return Node.js packages which are affected by at least one vulnerability", "ROX_SCANNER_V4_PARTIAL_NODE_JS_SUPPORT")
+
+	// ScannerV4RedHatCVEs enables displaying CVEs instead of RHSAs/RHEAs/RHBAs in the place of fixed vulnerabilities affected Red Hat products.
+	// TODO(ROX-26672): Remove this once we can show both CVEs and RHSAs in the UI + reports.
+	//
+	// This must be set in Scanner V4 Matcher to have any effect.
+	ScannerV4RedHatCVEs = registerFeature("Scanner V4 will output CVEs instead of RHSAs/RHBAs/RHEAs for fixed Red Hat vulnerabilities", "ROX_SCANNER_V4_RED_HAT_CVES")
+
+	// ScannerV4RedHatCSAF enables CSAF enrichment for Red Hat advisories.
+	// TODO(ROX-26672): Remove this once we can show both CVEs and RHSAs in the UI + reports.
+	//
+	// This must be set in Scanner V4 Matcher to have any effect.
+	ScannerV4RedHatCSAF = registerFeature("Scanner V4 will enrich its results with Red Hat CSAF data", "ROX_SCANNER_V4_RED_HAT_CSAF", enabled)
 )
