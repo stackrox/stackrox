@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/stackrox/rox/operator/pkg/types"
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -78,7 +77,7 @@ func (m *manifestGenerator) getCA(ctx context.Context) error {
 				return fmt.Errorf("Error generating CA: %v", err)
 			}
 
-			fileMap := make(types.SecretDataMap)
+			fileMap := make(map[string][]byte)
 			certgen.AddCAToFileMap(fileMap, ca)
 
 			secret = &v1.Secret{
@@ -124,7 +123,7 @@ func (m *manifestGenerator) applyNamespace(ctx context.Context) error {
 	return nil
 }
 
-type tlsCallback func(fileMap types.SecretDataMap) error
+type tlsCallback func(fileMap map[string][]byte) error
 
 func (m *manifestGenerator) applyTlsSecret(ctx context.Context, name string, issueCert tlsCallback) error {
 	secret, err := m.Client.CoreV1().Secrets(m.Namespace).Get(ctx, name, metav1.GetOptions{})
@@ -137,7 +136,7 @@ func (m *manifestGenerator) applyTlsSecret(ctx context.Context, name string, iss
 		return fmt.Errorf("Error fetching %s secret: %w", name, err)
 	}
 
-	fileMap := make(types.SecretDataMap)
+	fileMap := make(map[string][]byte)
 	certgen.AddCAToFileMap(fileMap, m.CA)
 
 	secret = &v1.Secret{

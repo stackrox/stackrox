@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/stackrox/rox/operator/pkg/types"
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/mtls"
 
@@ -99,7 +98,7 @@ scanner:
 }
 
 func (m *manifestGenerator) createScannerTlsSecrets(ctx context.Context) error {
-	err := m.applyTlsSecret(ctx, "scanner-tls", func(fileMap types.SecretDataMap) error {
+	err := m.applyTlsSecret(ctx, "scanner-tls", func(fileMap map[string][]byte) error {
 		if err := certgen.IssueScannerCerts(fileMap, m.CA, mtls.WithNamespace(m.Namespace)); err != nil {
 			return fmt.Errorf("issuing central service certificate: %w\n", err)
 		}
@@ -110,7 +109,7 @@ func (m *manifestGenerator) createScannerTlsSecrets(ctx context.Context) error {
 		return err
 	}
 
-	err = m.applyTlsSecret(ctx, "scanner-db-password", func(fileMap types.SecretDataMap) error {
+	err = m.applyTlsSecret(ctx, "scanner-db-password", func(fileMap map[string][]byte) error {
 		fileMap["password"] = []byte("letmein")
 		return nil
 	})
@@ -119,7 +118,7 @@ func (m *manifestGenerator) createScannerTlsSecrets(ctx context.Context) error {
 		return err
 	}
 
-	err = m.applyTlsSecret(ctx, "scanner-db-tls", func(fileMap types.SecretDataMap) error {
+	err = m.applyTlsSecret(ctx, "scanner-db-tls", func(fileMap map[string][]byte) error {
 		if err := certgen.IssueOtherServiceCerts(fileMap, m.CA, []mtls.Subject{mtls.ScannerDBSubject}, mtls.WithNamespace(m.Namespace)); err != nil {
 			return fmt.Errorf("issuing scanner DB certificate: %w\n", err)
 		}
