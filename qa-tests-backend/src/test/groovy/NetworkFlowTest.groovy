@@ -482,8 +482,6 @@ class NetworkFlowTest extends BaseSpecification {
 
         log.info "Checking for edge from ${EXTERNALDESTINATION} to external target"
 
-	sleep 180000
-
         List<Edge> edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
         assert edges
 	log.info "${edges}"
@@ -491,16 +489,14 @@ class NetworkFlowTest extends BaseSpecification {
 	log.info "${graph}"
 
         CollectorUtil.enableExternalIps(orchestrator)
-	sleep 180000
-
         assert waitForEdgeToBeClosed(edges.get(0), 165)
         edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
 	log.info "${edges}"
         log.info "asdf"
 	graph = NetworkGraphService.getNetworkGraph(null, null)
 	log.info "${graph}"
+
         CollectorUtil.disableExternalIps(orchestrator)
-	sleep 180000
         assert waitForEdgeUpdate(edges.get(0), 90)
 	graph = NetworkGraphService.getNetworkGraph(null, null)
 	log.info "${graph}"
@@ -515,49 +511,21 @@ class NetworkFlowTest extends BaseSpecification {
         String deploymentUid = deployments.find { it.name == EXTERNALDESTINATION }?.deploymentUid
         assert deploymentUid != null
 
-        def Map<String, String> CONFIG_MAP_DATA = [
-           "runtime_config.yaml": """
-networking:
-    externalIps:
-        enabled: DISABLED
-"""
-        ]
-
-        orchestrator.createConfigMap(CONFIG_MAP_NAME, CONFIG_MAP_DATA, "stackrox")
+        CollectorUtil.disableExternalIps(orchestrator)
 
         log.info "Checking for edge from ${EXTERNALDESTINATION} to external target"
-
-	sleep 180000
 
         def externalEntities = NetworkGraphService.getExternalNetworkEntities(null)
 	log.info "external entities with external ips disabled"
         log.info "${externalEntities}"
 
-        CONFIG_MAP_DATA = [
-           "runtime_config.yaml": """
-networking:
-    externalIps:
-        enabled: ENABLED
-"""
-       ]
-        orchestrator.createConfigMap(CONFIG_MAP_NAME, CONFIG_MAP_DATA, "stackrox")
-	sleep 180000
+        CollectorUtil.enableExternalIps(orchestrator)
 
         externalEntities = NetworkGraphService.getExternalNetworkEntities(null)
 	log.info "external entities with external ips enabled"
         log.info "${externalEntities}"
 
-
-        CONFIG_MAP_DATA = [
-           "runtime_config.yaml": """
-networking:
-    externalIps:
-        enabled: DISABLED
-"""
-       ]
-
-        orchestrator.createConfigMap(CONFIG_MAP_NAME, CONFIG_MAP_DATA, "stackrox")
-	sleep 180000
+        CollectorUtil.disableExternalIps(orchestrator)
 
         externalEntities = NetworkGraphService.getExternalNetworkEntities(null)
 	log.info "external entities with external ips disabled"
