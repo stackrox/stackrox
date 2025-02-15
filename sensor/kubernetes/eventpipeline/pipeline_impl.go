@@ -204,6 +204,7 @@ func (p *eventPipeline) processUpdatedImage(image *storage.Image) error {
 		component.WithForceDetection(),
 		component.WithSkipResolving())
 	msg.Context = p.getCurrentContext()
+	log.Debugf("processUpdatedImage: Resolver enqueues event %v for image %s", msg, image.GetName())
 	p.resolver.Send(msg)
 	return nil
 }
