@@ -26,6 +26,7 @@ import services.ClusterService
 import services.DeploymentService
 import services.NetworkGraphService
 import services.NetworkPolicyService
+import util.CollectorUtil
 import util.Env
 import util.Helpers
 import util.NetworkGraphUtil
@@ -477,15 +478,7 @@ class NetworkFlowTest extends BaseSpecification {
         String deploymentUid = deployments.find { it.name == EXTERNALDESTINATION }?.deploymentUid
         assert deploymentUid != null
 
-        def Map<String, String> CONFIG_MAP_DATA = [
-           "runtime_config.yaml": """
-networking:
-    externalIps:
-        enabled: DISABLED
-"""
-        ]
-
-        orchestrator.createConfigMap(CONFIG_MAP_NAME, CONFIG_MAP_DATA, "stackrox")
+        CollectorUtil.disableExternalIps(orchestrator)
 
         log.info "Checking for edge from ${EXTERNALDESTINATION} to external target"
 
@@ -497,14 +490,7 @@ networking:
 	def graph = NetworkGraphService.getNetworkGraph(null, null)
 	log.info "${graph}"
 
-        CONFIG_MAP_DATA = [
-           "runtime_config.yaml": """
-networking:
-    externalIps:
-        enabled: ENABLED
-"""
-       ]
-        orchestrator.createConfigMap(CONFIG_MAP_NAME, CONFIG_MAP_DATA, "stackrox")
+        CollectorUtil.enableExternalIps(orchestrator)
 	sleep 180000
 
         assert waitForEdgeToBeClosed(edges.get(0), 165)
@@ -513,16 +499,7 @@ networking:
         log.info "asdf"
 	graph = NetworkGraphService.getNetworkGraph(null, null)
 	log.info "${graph}"
-
-        CONFIG_MAP_DATA = [
-           "runtime_config.yaml": """
-networking:
-    externalIps:
-        enabled: DISABLED
-"""
-       ]
-
-        orchestrator.createConfigMap(CONFIG_MAP_NAME, CONFIG_MAP_DATA, "stackrox")
+        CollectorUtil.disableExternalIps(orchestrator)
 	sleep 180000
         assert waitForEdgeUpdate(edges.get(0), 90)
 	graph = NetworkGraphService.getNetworkGraph(null, null)
