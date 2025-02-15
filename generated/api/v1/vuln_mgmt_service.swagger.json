@@ -789,9 +789,12 @@
             "$ref": "#/definitions/storageEmbeddedImageScanComponentExecutable"
           },
           "title": "Values are cleared after moving to cache, remove them from the grpc return as well"
+        },
+        "architecture": {
+          "type": "string"
         }
       },
-      "title": "Next Tag: 13"
+      "title": "Next Tag: 14"
     },
     "storageEmbeddedImageScanComponentExecutable": {
       "type": "object",
