@@ -857,3 +857,57 @@ print-image-prefetcher-deploy-bin:
 .PHONY: prometheus-metric-parser
 prometheus-metric-parser: $(PROMETHEUS_METRIC_PARSER_BIN)
 	@echo $(PROMETHEUS_METRIC_PARSER_BIN)
+
+pkg := $(shell find pkg -name *.go)
+
+bin/scanner:  $(shell find scanner -name *.go) ${pkg}
+	CGO_ENABLED=1 go build -o $@ ./scanner/cmd/scanner
+
+bin/kubernetes: $(shell find sensor/kubernetes/ -name *.go) ${pkg}
+	CGO_ENABLED=1 go build -o $@ ./sensor/kubernetes
+
+bin/admission-control: $(shell find sensor/admission-control/ -name *.go) ${pkg}
+	CGO_ENABLED=1 go build -o $@ ./sensor/admission-control
+
+bin/compliance: $(shell find compliance/ -name *.go) ${pkg}
+	CGO_ENABLED=1 go build -o $@ ./compliance/cmd/compliance
+
+bin/upgrader: $(shell find sensor/upgrader/ -name *.go) ${pkg}
+	CGO_ENABLED=1 go build -o $@ ./sensor/upgrader
+
+bin/init-tls-certs: $(shell find sensor/init-tls-certs/ -name *.go) ${pkg}
+	CGO_ENABLED=1 go build -o $@ ./sensor/init-tls-certs
+
+bin/roxctl: $(shell find roxctl/ -name *.go) ${pkg}
+	CGO_ENABLED=0 go build -o $@ ./roxctl
+
+bin/central: $(shell find central/ -name *.go) ${pkg}
+	CGO_ENABLED=1 go build -o $@ ./central
+
+bin/config-controller: $(shell find config-controller/ -name *.go) ${pkg}
+	CGO_ENABLED=1 go build -o $@ ./config-controller
+
+bin/migrator: $(shell find migrator/ -name *.go) ${pkg}
+	CGO_ENABLED=1 go build -o $@ ./migrator
+
+central: bin/central bin/config-controller bin/migrator
+
+secured-cluster: bin/kubernetes bin/admission-control bin/compliance bin/upgrader bin/init-tls-certs
+
+bin/scanner-v4: (shell find scanner/ -name *.go) ${pkg}
+	CGO_ENABLED=1 go build -o $@ ./scanner/cmd/scanner
+
+.PHONY: all-binaries
+all-binaries: secured-cluster central
+
+download: data
+	rm -rf data
+	mkdir data
+	image/rhel/fetch-stackrox-data.sh data
+
+.PHONY: build-combined-image
+build-combined-image:
+	podman build .
+
+.PHONY: combined-image
+combined-image: all-binaries download build-combined-image

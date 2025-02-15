@@ -7,7 +7,6 @@
 #  grep -vF -e '/.git/' -e '/image/' -e '/qa-tests-backend/' .dockerignore
 
 **/node_modules/
-/bin/
 /linux-gocache/
 /operator/*/bin/
 .dccache
