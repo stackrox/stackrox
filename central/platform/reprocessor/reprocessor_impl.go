@@ -4,7 +4,6 @@ import (
 	"context"
 	"sync/atomic"
 
-	"github.com/pkg/errors"
 	alertDS "github.com/stackrox/rox/central/alert/datastore"
 	alertutils "github.com/stackrox/rox/central/alert/utils"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
@@ -76,46 +75,7 @@ func (pr *platformReprocessorImpl) runReprocessing() {
 	}
 }
 
-func (pr *platformReprocessorImpl) alertsNeedReprocessing() (bool, error) {
-	// Check if there is atleast one alert where platform component is unset
-	q := unsetPlatformComponentQuery.CloneVT()
-	q.Pagination = &v1.QueryPagination{
-		Limit: 1,
-	}
-	alerts, err := pr.alertDatastore.GetByQuery(reprocessorCtx, q)
-	if err != nil {
-		return false, err
-	}
-	return len(alerts) > 0, nil
-}
-
-func (pr *platformReprocessorImpl) deploymentsNeedReprocessing() (bool, error) {
-	// Check if there is atleast one deployment where platform component is unset
-	q := unsetPlatformComponentQuery.CloneVT()
-	q.Pagination = &v1.QueryPagination{
-		Limit: 1,
-	}
-	deployments, err := pr.deploymentDatastore.SearchRawDeployments(reprocessorCtx, q)
-	if err != nil {
-		return false, err
-	}
-	return len(deployments) > 0, nil
-}
-
 func (pr *platformReprocessorImpl) reprocessAlerts() error {
-	if pr.stopSignal.IsDone() {
-		log.Info("Stop called, stopping platform reprocessor")
-		return nil
-	}
-	needReprocessing, err := pr.alertsNeedReprocessing()
-	if err != nil {
-		return errors.Wrap(err, "Error determining if alerts need reporcessing")
-	}
-	if !needReprocessing {
-		log.Debug("Alerts up to date with platform rules, skipping reprocessing")
-		return nil
-	}
-
 	q := unsetPlatformComponentQuery.CloneVT()
 	q.Pagination = &v1.QueryPagination{
 		Limit: batchSize,
@@ -151,19 +111,6 @@ func (pr *platformReprocessorImpl) reprocessAlerts() error {
 }
 
 func (pr *platformReprocessorImpl) reprocessDeployments() error {
-	if pr.stopSignal.IsDone() {
-		log.Info("Stop called, stopping platform reprocessor")
-		return nil
-	}
-	needReprocessing, err := pr.deploymentsNeedReprocessing()
-	if err != nil {
-		return errors.Wrap(err, "Error determining if deployments need reporcessing")
-	}
-	if !needReprocessing {
-		log.Debug("Deployments up to date with platform rules, skipping reprocessing")
-		return nil
-	}
-
 	q := unsetPlatformComponentQuery.CloneVT()
 	q.Pagination = &v1.QueryPagination{
 		Limit: batchSize,
