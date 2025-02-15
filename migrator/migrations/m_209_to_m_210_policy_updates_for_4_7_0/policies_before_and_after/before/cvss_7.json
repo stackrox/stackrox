@@ -1,9 +1,10 @@
 {
-  "id": "a919ccaf-6b43-4160-ac5d-a405e1440a41",
-  "name": "Containers with fixable CVEs and Severity at least Important",
-  "description": "Alert if a deployment has containers with fixable vulnerabilities with Severity rating Important or higher. If you prefer CVSS-based policy, consider enabling 'Containers with Fixable CVEs and CVSS >= 7' instead.",
+  "id": "f09f8da1-6111-4ca0-8f49-294a76c65115",
+  "name": "Fixable CVSS >= 7",
+  "description": "Alert on deployments with fixable vulnerabilities with a CVSS of at least 7",
   "rationale": "Known vulnerabilities make it easier for adversaries to exploit your application. You can fix these high-severity vulnerabilities by updating to a newer version of the affected component(s).",
   "remediation": "Use your package manager to update to a fixed version in future builds or speak with your security team to mitigate the vulnerabilities.",
+  "disabled": true,
   "categories": [
     "Vulnerability Management"
   ],
@@ -28,10 +29,10 @@
           ]
         },
         {
-          "fieldName": "Severity",
+          "fieldName": "CVSS",
           "values": [
             {
-              "value": ">= IMPORTANT"
+              "value": ">= 7.000000"
             }
           ]
         }
