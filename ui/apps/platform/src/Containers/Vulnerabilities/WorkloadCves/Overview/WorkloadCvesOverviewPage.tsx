@@ -40,6 +40,7 @@ import {
     getWorkloadCveOverviewSortFields,
     syncSeveritySortOption,
 } from 'Containers/Vulnerabilities/utils/sortUtils';
+import { useIsFirstRender } from 'hooks/useIsFirstRender';
 import useURLSort from 'hooks/useURLSort';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import { VulnerabilityState } from 'types/cve.proto';
@@ -152,6 +153,15 @@ const searchFilterConfigWithFeatureFlagDependency = [
     clusterSearchFilterConfig,
 ];
 
+const defaultStorage: VulnMgmtLocalStorage = {
+    preferences: {
+        defaultFilters: {
+            SEVERITY: ['Critical', 'Important'],
+            FIXABLE: ['Fixable'],
+        },
+    },
+} as const;
+
 function WorkloadCvesOverviewPage() {
     const apolloClient = useApolloClient();
 
@@ -173,8 +183,6 @@ function WorkloadCvesOverviewPage() {
     } = useWorkloadCveViewContext();
     const currentVulnerabilityState = useVulnerabilityState();
 
-    const { searchFilter, setSearchFilter: setURLSearchFilter } = useURLSearch();
-    const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const [observedCveMode, setObservedCveMode] = useURLStringUnion(
         'observedCveMode',
         observedCveModeValues
@@ -196,6 +204,25 @@ function WorkloadCvesOverviewPage() {
         isViewingWithCves ? 'CVE' : 'Image'
     );
     const defaultSearchFilterEntity = getSearchFilterEntityByTab(activeEntityTabKey);
+
+    const [localStorageValue, setStoredValue] = useLocalStorage(
+        'vulnerabilityManagement',
+        defaultStorage,
+        isVulnMgmtLocalStorage
+    );
+
+    const { searchFilter: urlSearchFilter, setSearchFilter: setURLSearchFilter } = useURLSearch();
+    const isFirstRender = useIsFirstRender();
+
+    // If this is the first render of the page, and no other filters are applied, use the default filters
+    // as the search filters to apply on the first run of the query. This will only happen once, and on a
+    // subsequent render the default filters will be synced with the URL params and page state, if needed.
+    const shouldSyncDefaultFilters = isFirstRender && isEmpty(urlSearchFilter) && isViewingWithCves;
+    const searchFilter = shouldSyncDefaultFilters
+        ? localStorageValue.preferences.defaultFilters
+        : urlSearchFilter;
+
+    const querySearchFilter = parseQuerySearchFilter(searchFilter);
 
     // If the user is viewing observed CVEs, we need to scope the query based on
     // the selected vulnerability state. If the user is viewing _without_ CVEs, we
@@ -233,21 +260,6 @@ function WorkloadCvesOverviewPage() {
         Image: data?.imageCount ?? 0,
         Deployment: data?.deploymentCount ?? 0,
     };
-
-    const defaultStorage: VulnMgmtLocalStorage = {
-        preferences: {
-            defaultFilters: {
-                SEVERITY: ['Critical', 'Important'],
-                FIXABLE: ['Fixable'],
-            },
-        },
-    } as const;
-
-    const [localStorageValue, setStoredValue] = useLocalStorage(
-        'vulnerabilityManagement',
-        defaultStorage,
-        isVulnMgmtLocalStorage
-    );
 
     const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
 
@@ -333,7 +345,7 @@ function WorkloadCvesOverviewPage() {
     // is already on the page. This is because we do not distinguish between navigation via the
     // sidebar and e.g. clearing the page filters.
     useEffect(() => {
-        if (isEmpty(searchFilter) && isViewingWithCves) {
+        if (shouldSyncDefaultFilters) {
             applyDefaultFilters();
         }
     }, []);
