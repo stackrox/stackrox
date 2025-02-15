@@ -94,7 +94,7 @@ func generateCommand(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "generate <CRS name>",
 		Short: "Generate a new Cluster Registration Secret",
-		Long:  "Generate a new Cluster Registration Secret (CRS) for bootstrapping a new Secured Cluster",
+		Long:  "Generate a new Cluster Registration Secret (CRS) for bootstrapping a new Secured Cluster.",
 		Args:  common.ExactArgsWithCustomErrMessage(1, "No name for the CRS specified"),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			name := args[0]
@@ -107,7 +107,7 @@ func generateCommand(cliEnvironment environment.Environment) *cobra.Command {
 			return generateCRS(cliEnvironment, name, outputFile, flags.Timeout(cmd), flags.RetryTimeout(cmd))
 		},
 	}
-	c.PersistentFlags().StringVarP(&outputFile, "output", "o", "", "File to be used for storing the newly generated CRS (- for stdout)")
+	c.PersistentFlags().StringVarP(&outputFile, "output", "o", "", "File to be used for storing the newly generated CRS (- for stdout).")
 
 	return c
 }

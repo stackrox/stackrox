@@ -25,7 +25,7 @@ type centralRestoreCancelCommand struct {
 func v2RestoreCancelCommand(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "cancel",
-		Short: "Cancel the ongoing database restore process.",
+		Short: "Cancel the ongoing database restore process",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			return makeCentralRestoreCancelCommand(cliEnvironment, c).cancelActiveRestore()
 		}),

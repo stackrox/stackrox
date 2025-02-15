@@ -12,7 +12,7 @@ import (
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "scanner",
-		Short: "Commands related to the Scanner service.",
+		Short: "Commands related to the Scanner service",
 	}
 	c.AddCommand(
 		generate.Command(cliEnvironment),
