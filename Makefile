@@ -893,11 +893,15 @@ central: bin/central bin/config-controller bin/migrator
 
 secured-cluster: bin/kubernetes bin/admission-control bin/compliance bin/upgrader bin/init-tls-certs
 
-bin/scanner-v4: (shell find scanner/ -name *.go) ${pkg}
+bin/scanner-v4: $(shell find scanner/ -name *.go) ${pkg}
 	CGO_ENABLED=1 go build -o $@ ./scanner/cmd/scanner
 
+bin/installer: $(shell find installer/ -name *.go) $(shell find pkg/manifest -name *.go)
+	CGO_ENABLED=1 go build -o $@ ./installer
+
+
 .PHONY: all-binaries
-all-binaries: secured-cluster central
+all-binaries: secured-cluster central bin/installer
 
 download: data
 	rm -rf data

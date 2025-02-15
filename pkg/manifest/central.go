@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/stackrox/rox/operator/pkg/types"
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/renderer"
@@ -178,7 +177,7 @@ func (m *manifestGenerator) createCentralEndpointsConfig(ctx context.Context) er
 }
 
 func (m *manifestGenerator) createTlsSecrets(ctx context.Context) error {
-	err := m.applyTlsSecret(ctx, "central-tls", func(fileMap types.SecretDataMap) error {
+	err := m.applyTlsSecret(ctx, "central-tls", func(fileMap map[string][]byte) error {
 		if err := certgen.IssueCentralCert(fileMap, m.CA, mtls.WithNamespace(m.Namespace)); err != nil {
 			return fmt.Errorf("issuing central service certificate: %w\n", err)
 		}
@@ -196,7 +195,7 @@ func (m *manifestGenerator) createTlsSecrets(ctx context.Context) error {
 		return err
 	}
 
-	return m.applyTlsSecret(ctx, "central-db-tls", func(fileMap types.SecretDataMap) error {
+	return m.applyTlsSecret(ctx, "central-db-tls", func(fileMap map[string][]byte) error {
 		subjects := []mtls.Subject{mtls.CentralDBSubject}
 		if err := certgen.IssueOtherServiceCerts(fileMap, m.CA, subjects, mtls.WithNamespace(m.Namespace)); err != nil {
 			return fmt.Errorf("issuing central service certificate: %w\n", err)
@@ -227,7 +226,7 @@ func (m *manifestGenerator) createCentralDbPvc(ctx context.Context) error {
 func (m *manifestGenerator) createAdminPassword(ctx context.Context) error {
 	password := "letmein"
 
-	applyPassword := func(fileMap types.SecretDataMap) error {
+	applyPassword := func(fileMap map[string][]byte) error {
 		fileMap["password"] = []byte(password)
 		return nil
 	}
@@ -240,7 +239,7 @@ func (m *manifestGenerator) createAdminPassword(ctx context.Context) error {
 		return err
 	}
 
-	return m.applyTlsSecret(ctx, "central-htpasswd", func(fileMap types.SecretDataMap) error {
+	return m.applyTlsSecret(ctx, "central-htpasswd", func(fileMap map[string][]byte) error {
 		htpasswdBytes, err := renderer.CreateHtpasswd(password)
 		if err != nil {
 			return err
