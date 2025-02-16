@@ -63,8 +63,6 @@ class NetworkFlowTest extends BaseSpecification {
 
     static final private String SOCAT_DEBUG = "-d -d -v"
 
-    static final private CONFIG_MAP_NAME = "collector-config"
-
     // Target deployments
     @Shared
     private List<Deployment> targetDeployments
@@ -486,20 +484,20 @@ class NetworkFlowTest extends BaseSpecification {
         assert edges
 	log.info "${edges}"
 	def graph = NetworkGraphService.getNetworkGraph(null, null)
-	log.info "${graph}"
+        log.info "${graph}"
 
         CollectorUtil.enableExternalIps(orchestrator)
         assert waitForEdgeToBeClosed(edges.get(0), 165)
         edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
 	log.info "${edges}"
         log.info "asdf"
-	graph = NetworkGraphService.getNetworkGraph(null, null)
-	log.info "${graph}"
+        graph = NetworkGraphService.getNetworkGraph(null, null)
+        log.info "${graph}"
 
         CollectorUtil.disableExternalIps(orchestrator)
         assert waitForEdgeUpdate(edges.get(0), 90)
-	graph = NetworkGraphService.getNetworkGraph(null, null)
-	log.info "${graph}"
+        graph = NetworkGraphService.getNetworkGraph(null, null)
+        log.info "${graph}"
     }
 
     @Tag("NetworkFlowVisualization")
@@ -516,19 +514,19 @@ class NetworkFlowTest extends BaseSpecification {
         log.info "Checking for edge from ${EXTERNALDESTINATION} to external target"
 
         def externalEntities = NetworkGraphService.getExternalNetworkEntities(null)
-	log.info "external entities with external ips disabled"
+        log.info "external entities with external ips disabled"
         log.info "${externalEntities}"
 
         CollectorUtil.enableExternalIps(orchestrator)
 
         externalEntities = NetworkGraphService.getExternalNetworkEntities(null)
-	log.info "external entities with external ips enabled"
+        log.info "external entities with external ips enabled"
         log.info "${externalEntities}"
 
         CollectorUtil.disableExternalIps(orchestrator)
 
         externalEntities = NetworkGraphService.getExternalNetworkEntities(null)
-	log.info "external entities with external ips disabled"
+        log.info "external entities with external ips disabled"
         log.info "${externalEntities}"
     }
 
