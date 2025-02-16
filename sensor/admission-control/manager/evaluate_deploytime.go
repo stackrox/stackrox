@@ -2,6 +2,7 @@ package manager
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -17,6 +18,10 @@ import (
 	"github.com/stackrox/rox/pkg/stringutils"
 	admission "k8s.io/api/admission/v1"
 	"k8s.io/utils/pointer"
+)
+
+const (
+	ScaleSubResource = "scale"
 )
 
 var (
@@ -37,9 +42,13 @@ func (m *manager) shouldBypass(s *state, req *admission.AdmissionRequest) bool {
 		return true
 	}
 
-	// We don't enforce on subresources.
-	if req.SubResource != "" {
-		log.Debugf("Request is for a subresource, bypassing %s request on %s/%s [%s]", req.Operation, req.Namespace, req.Name, req.Kind)
+	// We don't enforce on subresources other than the scale subresource.
+	// Openshift console uses the scale subresource to scale deployments, and our admission controller bypasses these requests
+	// without running policy detection and enforcement. However, an `oc scale` command works. The following
+	// change makes the behavior of admission controller consistent across all supported ways that k8s allows
+	// deployment replica scaling.
+	if req.SubResource != "" && req.SubResource != ScaleSubResource {
+		log.Debugf("Request is for a subresource other than the scale subresource, bypassing %s request on %s/%s [%s]", req.Operation, req.Namespace, req.Name, req.Kind)
 		return true
 	}
 
@@ -102,21 +111,29 @@ func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionReq
 
 	log.Debugf("Not bypassing %s request on %s/%s [%s]", req.Operation, req.Namespace, req.Name, req.Kind)
 
-	k8sObj, err := unmarshalK8sObject(req.Kind, req.Object.Raw)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not unmarshal object from request")
-	}
+	var deployment *storage.Deployment
+	if req.SubResource != "" && req.SubResource == ScaleSubResource {
+		if deployment := m.deployments.GetByName(req.Namespace, req.Name); deployment == nil {
+			return nil, errors.New(
+				fmt.Sprintf("could not find deployment with name: %q in namespace %q for the scale subresource request",
+					req.Name, req.Namespace))
+		}
+	} else {
+		k8sObj, err := unmarshalK8sObject(req.Kind, req.Object.Raw)
+		if err != nil {
+			return nil, errors.Wrap(err, "could not unmarshal object from request")
+		}
 
-	deployment, err := resources.NewDeploymentFromStaticResource(k8sObj, req.Kind.Kind, s.clusterID(), s.GetClusterConfig().GetRegistryOverride())
-	if err != nil {
-		return nil, errors.Wrap(err, "could not convert Kubernetes object into StackRox deployment")
-	}
+		deployment, err = resources.NewDeploymentFromStaticResource(k8sObj, req.Kind.Kind, s.clusterID(), s.GetClusterConfig().GetRegistryOverride())
+		if err != nil {
+			return nil, errors.Wrap(err, "could not convert Kubernetes object into StackRox deployment")
+		}
 
-	if deployment == nil {
-		log.Debugf("Non-top-level object, bypassing %s request on %s/%s [%s]", req.Operation, req.Namespace, req.Name, req.Kind)
-		return pass(req.UID), nil // we only enforce on top-level objects
+		if deployment == nil {
+			log.Debugf("Non-top-level object, bypassing %s request on %s/%s [%s]", req.Operation, req.Namespace, req.Name, req.Kind)
+			return pass(req.UID), nil // we only enforce on top-level objects
+		}
 	}
-
 	log.Debugf("Evaluating policies on %+v", deployment)
 
 	// Check if the deployment has a bypass annotation

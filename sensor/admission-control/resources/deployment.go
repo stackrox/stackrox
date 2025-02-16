@@ -59,6 +59,23 @@ func (m *DeploymentStore) Get(namespace, deploymentID string) *storage.Deploymen
 	return depMap[deploymentID]
 }
 
+// GetByName returns a deployment given namespace and deployment name.
+func (m *DeploymentStore) GetByName(namespace, name string) *storage.Deployment {
+	m.mutex.RLock()
+	defer m.mutex.RUnlock()
+
+	depMap := m.deployments[namespace]
+	if depMap == nil {
+		return nil
+	}
+	for _, deployment := range depMap {
+		if deployment.GetName() == name {
+			return deployment
+		}
+	}
+	return nil
+}
+
 // OnNamespaceDelete removes deployments in supplied namespace.
 func (m *DeploymentStore) OnNamespaceDelete(namespace string) {
 	m.mutex.Lock()
