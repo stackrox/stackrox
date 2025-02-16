@@ -16,6 +16,7 @@ import (
 	imageComponentDatastore "github.com/stackrox/rox/central/imagecomponent/datastore"
 	logimbueDataStore "github.com/stackrox/rox/central/logimbue/store"
 	"github.com/stackrox/rox/central/metrics"
+	networkEntityDatastore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	networkFlowDatastore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	nodeDatastore "github.com/stackrox/rox/central/node/datastore"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
@@ -35,6 +36,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/maputil"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
@@ -92,6 +94,7 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 	processes processDatastore.DataStore,
 	processbaseline processBaselineDatastore.DataStore,
 	networkflows networkFlowDatastore.ClusterDataStore,
+	networkentities networkEntityDatastore.EntityDataStore,
 	config configDatastore.DataStore,
 	imageComponents imageComponentDatastore.DataStore,
 	risks riskDataStore.DataStore,
@@ -116,6 +119,7 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 		processes:       processes,
 		processbaseline: processbaseline,
 		networkflows:    networkflows,
+		networkentities: networkentities,
 		config:          config,
 		risks:           risks,
 		vulnReqs:        vulnReqs,
@@ -145,6 +149,7 @@ type garbageCollectorImpl struct {
 	processes       processDatastore.DataStore
 	processbaseline processBaselineDatastore.DataStore
 	networkflows    networkFlowDatastore.ClusterDataStore
+	networkentities networkEntityDatastore.EntityDataStore
 	config          configDatastore.DataStore
 	risks           riskDataStore.DataStore
 	vulnReqs        vulnReqDataStore.DataStore
@@ -343,6 +348,12 @@ func (g *garbageCollectorImpl) removeOrphanedResources() {
 
 	g.markOrphanedAlertsAsResolved()
 	g.removeOrphanedNetworkFlows(clusterIDSet)
+
+	if features.ExternalIPs.Enabled() || env.ExternalIPsPruning.BooleanSetting() {
+		g.removeOrphanedNetworkEntities()
+	} else {
+		log.Info("[Entity pruning] disabled")
+	}
 
 	g.removeOrphanedPods()
 	g.removeOrphanedNodes()
@@ -584,6 +595,18 @@ func (g *garbageCollectorImpl) removeOrphanedNetworkFlows(clusters set.FrozenStr
 	wg.Wait()
 
 	log.Info("[Network Flow pruning] Completed")
+}
+
+func (g *garbageCollectorImpl) removeOrphanedNetworkEntities() {
+
+	affectedRows, err := g.networkentities.RemoveOrphanedEntities(pruningCtx)
+
+	if err != nil {
+		log.Errorf("[Entity pruning] error removing orphaned network entities: %v", err)
+		return
+	}
+
+	log.Infof("[Entity pruning] Found %d orphaned entities", affectedRows)
 }
 
 func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {
