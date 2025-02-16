@@ -26,6 +26,7 @@ import services.ClusterService
 import services.DeploymentService
 import services.NetworkGraphService
 import services.NetworkPolicyService
+import util.CollectorUtil
 import util.Env
 import util.Helpers
 import util.NetworkGraphUtil
@@ -475,11 +476,58 @@ class NetworkFlowTest extends BaseSpecification {
         String deploymentUid = deployments.find { it.name == EXTERNALDESTINATION }?.deploymentUid
         assert deploymentUid != null
 
-        expect:
-        "Check for edge in network graph"
+        CollectorUtil.disableExternalIps(orchestrator)
+
         log.info "Checking for edge from ${EXTERNALDESTINATION} to external target"
+
         List<Edge> edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
         assert edges
+	log.info "${edges}"
+	def graph = NetworkGraphService.getNetworkGraph(null, null)
+        log.info "${graph}"
+
+        CollectorUtil.enableExternalIps(orchestrator)
+        assert waitForEdgeToBeClosed(edges.get(0), 165)
+        edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
+	log.info "${edges}"
+        log.info "asdf"
+        graph = NetworkGraphService.getNetworkGraph(null, null)
+        log.info "${graph}"
+
+        CollectorUtil.disableExternalIps(orchestrator)
+        assert waitForEdgeUpdate(edges.get(0), 90)
+        graph = NetworkGraphService.getNetworkGraph(null, null)
+        log.info "${graph}"
+    }
+
+    @Tag("NetworkFlowVisualization")
+    //ROX-21491 skipping test case for p/z
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
+    def "Verify external IPs"() {
+        given:
+        "Deployment A, where A communicates to an external target"
+        String deploymentUid = deployments.find { it.name == EXTERNALDESTINATION }?.deploymentUid
+        assert deploymentUid != null
+
+        CollectorUtil.disableExternalIps(orchestrator)
+
+        log.info "Checking for edge from ${EXTERNALDESTINATION} to external target"
+
+        def externalEntities = NetworkGraphService.getExternalNetworkEntities(null)
+        log.info "external entities with external ips disabled"
+        log.info "${externalEntities}"
+
+        CollectorUtil.enableExternalIps(orchestrator)
+
+        externalEntities = NetworkGraphService.getExternalNetworkEntities(null)
+        log.info "external entities with external ips enabled"
+        log.info "${externalEntities}"
+
+        CollectorUtil.disableExternalIps(orchestrator)
+
+        externalEntities = NetworkGraphService.getExternalNetworkEntities(null)
+        log.info "external entities with external ips disabled"
+        log.info "${externalEntities}"
     }
 
     @Tag("NetworkFlowVisualization")
