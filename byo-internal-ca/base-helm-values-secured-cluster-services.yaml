@@ -1,0 +1,11 @@
+imagePullSecrets:
+  useExisting: quay-ips
+
+image:
+  main:
+    tag: $MAIN_IMAGE_TAG
+
+clusterName: docbrown
+
+crs:
+  file: "$CRS"
