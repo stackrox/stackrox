@@ -99,26 +99,38 @@ func TestTabularPrinterFactory_CustomHeaderValidation(t *testing.T) {
 		},
 		"should fail with invalid headers": {
 			t: &TabularPrinterFactory{
-				NoHeader:        true,
-				HeaderAsComment: true,
-				Headers:         []string{"FOO", "BAR"},
+				NoHeader:              true,
+				HeaderAsComment:       true,
+				Headers:               []string{"FOO", "BAR"},
+				RowJSONPathExpression: defaultImageScanJSONPathExpression,
 			},
 			shouldFail: true,
 			error:      errox.InvalidArgs,
 		},
+		"should not fail with invalid headers but JSON Path Expression set": {
+			t: &TabularPrinterFactory{
+				NoHeader:              true,
+				HeaderAsComment:       true,
+				Headers:               []string{"FOO", "BAR"},
+				RowJSONPathExpression: "{result.vulnerabilities.#.componentName,result.vulnerabilities.#.cveId}",
+			},
+			shouldFail: false,
+		},
 		"should not fail with reordered allowed headers": {
 			t: &TabularPrinterFactory{
-				NoHeader:        true,
-				HeaderAsComment: true,
-				Headers:         []string{"LINK", "SEVERITY", "VERSION"},
+				NoHeader:              true,
+				HeaderAsComment:       true,
+				Headers:               []string{"LINK", "SEVERITY", "VERSION"},
+				RowJSONPathExpression: defaultImageScanJSONPathExpression,
 			},
 			shouldFail: false,
 		},
 		"should not fail with duplicate allowed headers": {
 			t: &TabularPrinterFactory{
-				NoHeader:        true,
-				HeaderAsComment: true,
-				Headers:         []string{"LINK", "SEVERITY", "VERSION", "LINK"},
+				NoHeader:              true,
+				HeaderAsComment:       true,
+				Headers:               []string{"LINK", "SEVERITY", "VERSION", "LINK"},
+				RowJSONPathExpression: defaultImageScanJSONPathExpression,
 			},
 			shouldFail: false,
 		},
@@ -175,6 +187,15 @@ func TestTabularPrinterFactory_CustomHeaderPropagation(t *testing.T) {
 			},
 			expectedJSONPathExpression: "{" +
 				"result.vulnerabilities.#.cveId," +
+				"result.vulnerabilities.#.cveId}",
+		},
+		"Custom headers but --row-json-path-expression set does not propagate custom headers": {
+			t: &TabularPrinterFactory{
+				Headers:               []string{"CVE", "SEVERITY"},
+				RowJSONPathExpression: "{result.vulnerabilities.#.componentName,result.vulnerabilities.#.cveId}",
+			},
+			expectedJSONPathExpression: "{" +
+				"result.vulnerabilities.#.componentName," +
 				"result.vulnerabilities.#.cveId}",
 		},
 	}

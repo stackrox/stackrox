@@ -64,7 +64,11 @@ func NewTabularPrinterFactoryWithAutoMerge() *TabularPrinterFactory {
 // AddFlags will add all tabular printer specific flags to the cobra.Command
 func (t *TabularPrinterFactory) AddFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().BoolVar(&t.Merge, "merge-output", t.Merge, "Merge duplicate cells in prettified tabular output")
-	cmd.PersistentFlags().StringSliceVar(&t.Headers, "headers", defaultImageScanHeaders, "Headers to print in tabular output")
+	cmd.PersistentFlags().StringSliceVar(&t.Headers, "headers", defaultImageScanHeaders, "Headers to print in tabular output"+
+		"Will propagate headers to the table unless --row-jsonpath-expressions is also set.")
+	cmd.PersistentFlags().StringVar(&t.RowJSONPathExpression, "row-jsonpath-expressions", t.RowJSONPathExpression,
+		"JSON Path expression to create a row from the JSON object. This leverages gJSON (https://github.com/tidwall/gjson)."+
+			" NOTE: The amount of expressions within the multi-path has to match the amount of provided headers.")
 	err := t.propagateCustomHeaders()
 	if err != nil {
 		cmd.PrintErrf("%v", err)
@@ -164,7 +168,8 @@ func (t *TabularPrinterFactory) validate() error {
 }
 
 func (t *TabularPrinterFactory) propagateCustomHeaders() error {
-	if slices.Equal(t.Headers, defaultImageScanHeaders) {
+	// If --headers is default OR --row-jsonpath-expressions is unset do nothing
+	if slices.Equal(t.Headers, defaultImageScanHeaders) || (t.RowJSONPathExpression != defaultImageScanJSONPathExpression) {
 		return nil
 	}
 	rawJSONPathExpression, err := createImageScanJSONPathExpression(t.Headers)
