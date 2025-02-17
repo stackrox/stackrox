@@ -600,6 +600,22 @@ function launch_central {
     echo "Access the UI at: https://${API_ENDPOINT}"
 }
 
+function ensure_pod_priority_classes {
+    local priority_class_name="$1"
+    ${ORCH_CMD} get priorityclass -o=name "$priority_class_name" >/dev/null 2>&1 && return 0
+    ${ORCH_CMD} apply -f <(cat <<EOF | sed -e "s|\$PRIORITY_CLASS_NAME|$priority_class_name|g;"
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: \$PRIORITY_CLASS_NAME
+value: 1000000
+preemptionPolicy: PreemptLowerPriority
+globalDefault: false
+description: "This priority class shall be used for collector pods, which must be able to preemt other pods to fit exactly one collector on each node."
+EOF
+)
+}
+
 function launch_sensor {
     local k8s_dir="$1"
     local sensor_namespace=${SENSOR_NAMESPACE:-stackrox}
@@ -609,6 +625,8 @@ function launch_sensor {
     local scanner_extra_config=()
     local extra_json_config=''
     local extra_helm_config=()
+
+    local collector_priority_class_name="stackrox-collector"
 
     verify_orch
 
@@ -830,6 +848,11 @@ function launch_sensor {
       if [[ "${FORCE_COLLECTION_METHOD:-false}" == "true" ]]; then
         echo "Forcing collection method"
         extra_helm_config+=(--set "collector.forceCollectionMethod=true")
+      fi
+
+      if [[ "${DEDICATED_COLLECTOR_PRIORITY_CLASS:-}" == "true" ]]; then
+        ensure_pod_priority_classes "$collector_priority_class_name"
+        extra_helm_config+=(--set "collector.priorityClassName=$collector_priority_class_name")
       fi
 
       if [[ -n "$CI" ]]; then
