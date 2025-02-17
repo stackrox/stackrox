@@ -76,19 +76,6 @@ func mergeComponentsV2(parts ImageParts, image *storage.Image) {
 		// Generate an embedded component for the edge and non-embedded version.
 		image.Scan.Components = append(image.Scan.Components, generateEmbeddedComponentV2(image.GetScan().GetOperatingSystem(), cp))
 	}
-
-	sort.SliceStable(image.GetScan().GetComponents(), func(i, j int) bool {
-		compI, compJ := image.GetScan().GetComponents()[i], image.GetScan().GetComponents()[j]
-		if compI.GetName() != compJ.GetName() {
-			return compI.GetName() < compJ.GetName()
-		}
-		return compI.GetVersion() < compJ.GetVersion()
-	})
-	for _, comp := range image.GetScan().GetComponents() {
-		sort.SliceStable(comp.Vulns, func(i, j int) bool {
-			return comp.Vulns[i].GetCve() < comp.Vulns[j].GetCve()
-		})
-	}
 }
 
 func generateEmbeddedComponent(_ string, cp ComponentParts, imageCVEEdges map[string]*storage.ImageCVEEdge) *storage.EmbeddedImageScanComponent {
