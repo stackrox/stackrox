@@ -8,7 +8,6 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -43,7 +42,7 @@ var (
 			v1.SearchCategory_CLUSTERS,
 		}...)
 		schema.ScopingResource = resources.Image
-		RegisterTable(schema, CreateTableImageCvesStmt, features.NormalizeCVEData.Enabled)
+		RegisterTable(schema, CreateTableImageCvesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_IMAGE_VULNERABILITIES, schema)
 		return schema
 	}()

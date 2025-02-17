@@ -127,7 +127,4 @@ var (
 
 	// Flattens CVE Data Model for improved accuracy and performance
 	FlattenCVEData = registerFeature("Uses a flattened CVE Data Model improved accuracy and performance", "ROX_FLATTEN_CVE_DATA")
-
-	// Normalized CVE Data Model for improved accuracy and performance
-	NormalizeCVEData = registerFeature("Uses the deprecated normalized CVE Data Model", "ROX_NORMALIZE_CVE_DATA")
 )

@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
@@ -29,12 +28,6 @@ func TestImageComponentsStore(t *testing.T) {
 }
 
 func (s *ImageComponentsStoreSuite) SetupSuite() {
-
-	s.T().Setenv(features.NormalizeCVEData.EnvVar(), "true")
-	if !features.NormalizeCVEData.Enabled() {
-		s.T().Skip("Skip postgres store tests because feature flag is off")
-		s.T().SkipNow()
-	}
 
 	s.testDB = pgtest.ForT(s.T())
 	s.store = New(s.testDB.DB)
