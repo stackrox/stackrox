@@ -23,9 +23,9 @@ func ID(cve, os string) string {
 	return pgSearch.IDFromPks([]string{cve, os})
 }
 
-// IDV2 creates a CVE ID from the given cve id and image ID.
-func IDV2(cve, imageID, componentID, cveIndex string) string {
-	return pgSearch.IDFromPks([]string{cve, imageID, componentID, cveIndex})
+// IDV2 creates a CVE ID from the given cve name, component id and index of CVE within the component.
+func IDV2(cve, componentID, cveIndex string) string {
+	return pgSearch.IDFromPks([]string{cve, componentID, cveIndex})
 }
 
 // IDToParts return the CVE ID parts—cve and operating system.

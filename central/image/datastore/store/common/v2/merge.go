@@ -171,18 +171,5 @@ func generateEmbeddedComponentV2(_ string, cp ComponentParts) *storage.EmbeddedI
 }
 
 func generateEmbeddedCVEV2(cp *storage.ImageCVEV2) *storage.EmbeddedVulnerability {
-	ret := utils.ImageCVEV2ToEmbeddedVulnerability(cp)
-	if cp.IsFixable {
-		ret.SetFixedBy = &storage.EmbeddedVulnerability_FixedBy{
-			FixedBy: cp.GetFixedBy(),
-		}
-	}
-	ret.FirstImageOccurrence = cp.GetFirstImageOccurrence()
-
-	// The `Suppressed` field is transferred to `State` field (as DEFERRED) in `converter.ProtoCVEToEmbeddedCVE`.
-	// Now visit image-cve edge to derive the state.
-	if state := cp.GetState(); state != storage.VulnerabilityState_OBSERVED {
-		ret.State = state
-	}
-	return ret
+	return utils.ImageCVEV2ToEmbeddedVulnerability(cp)
 }

@@ -239,21 +239,29 @@ func ImageCVEV2ToEmbeddedVulnerability(vuln *storage.ImageCVEV2) *storage.Embedd
 		Severity:              vuln.GetSeverity(),
 		CvssMetrics:           vuln.GetCveBaseInfo().GetCvssMetrics(),
 		NvdCvss:               vuln.GetNvdcvss(),
+		Epss:                  vuln.GetCveBaseInfo().GetEpss(),
+		FirstImageOccurrence:  vuln.GetFirstImageOccurrence(),
 	}
+
 	if vuln.GetCveBaseInfo().GetCvssV3() != nil {
 		embeddedCVE.ScoreVersion = storage.EmbeddedVulnerability_V3
 	} else {
 		embeddedCVE.ScoreVersion = storage.EmbeddedVulnerability_V2
 	}
+
 	embeddedCVE.VulnerabilityType = storage.EmbeddedVulnerability_IMAGE_VULNERABILITY
 	embeddedCVE.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY}
 
-	if vuln.GetCveBaseInfo().GetEpss() != nil {
-		epss := &storage.EPSS{
-			EpssProbability: vuln.GetCveBaseInfo().GetEpss().GetEpssProbability(),
-			EpssPercentile:  vuln.GetCveBaseInfo().GetEpss().GetEpssPercentile(),
+	if vuln.IsFixable {
+		embeddedCVE.SetFixedBy = &storage.EmbeddedVulnerability_FixedBy{
+			FixedBy: vuln.GetFixedBy(),
 		}
-		embeddedCVE.Epss = epss
+	}
+
+	// The `Suppressed` field is transferred to `State` field (as DEFERRED) in `converter.ProtoCVEToEmbeddedCVE`.
+	// Now visit image-cve edge to derive the state.
+	if state := vuln.GetState(); state != storage.VulnerabilityState_OBSERVED {
+		embeddedCVE.State = state
 	}
 
 	return embeddedCVE
@@ -370,7 +378,7 @@ func EmbeddedVulnerabilityToImageCVEV2(os string, imageID string, componentID st
 		}
 	}
 	ret := &storage.ImageCVEV2{
-		Id:              cve.IDV2(from.GetCve(), imageID, componentID, strconv.Itoa(cveIndex)),
+		Id:              cve.IDV2(from.GetCve(), componentID, strconv.Itoa(cveIndex)),
 		ComponentId:     componentID,
 		OperatingSystem: os,
 		CveBaseInfo: &storage.CVEInfo{
