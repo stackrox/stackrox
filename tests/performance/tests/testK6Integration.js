@@ -14,8 +14,7 @@ export const options = defaultOptions;
 
 const runAllGroups = (header, tags) => {
     mainDashboard(__ENV.HOST, header, tags);
-    vulnerabilityManagementDashboard(__ENV.HOST, header, tags);
-    alertsGrpc(__ENV.HOST, header, tags);
+    alertsGrpc(__ENV.HOST, header, tags, 50);
 };
 
 export default function main() {

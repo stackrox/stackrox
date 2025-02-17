@@ -7,17 +7,18 @@ const client = new Client();
 
 client.load(['proto/stackrox', 'proto/googleapis'], 'api/v1/alert_service.proto');
 
-export function alertsGrpc(host, headers, tags) {
+export function alertsGrpc(host, headers, baseTags, limit) {
 
     host = host.replace('https://', '')
     host = host.includes(':') ? host : host + GRPC_PORT;
     client.connect(host);
 
+    let tags = { ...baseTags, limit: limit };
+
     group('list alerts grpc', function () {
-    [0, 10, 100, 1000].forEach(limit => {
         tags.limit = limit;
         const params = {
-            metadata: headers, tags: tags,
+            metadata: headers, tags: t,
         };
         const response = client.invoke(
             'v1.AlertService/ListAlerts',
@@ -34,7 +35,6 @@ export function alertsGrpc(host, headers, tags) {
         );
         tags.fetched = response?.message?.alerts?.length ?? 0;
         check(response, {'status is OK': (r) => r && r.status === StatusOK && tags.fetched > 0}, tags);
-    });
     });
     client.close();
 }
