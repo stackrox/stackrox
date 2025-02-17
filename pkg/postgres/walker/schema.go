@@ -172,7 +172,8 @@ func (s *Schema) SetSearchScope(searchCategories ...v1.SearchCategory) {
 
 	s.SearchScope = make(map[v1.SearchCategory]struct{})
 	for _, cat := range searchCategories {
-		// TODO:  Find a better way, for now hack this to not set old search scopes
+		// The flattened CVE schema and the original interfere with each other.  We only want
+		// to register the proper search tags depending upon the feature flag.
 		if features.FlattenCVEData.Enabled() && normalizedSkipMap.Contains(cat.String()) {
 			continue
 		}
