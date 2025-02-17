@@ -2,8 +2,8 @@
 
 For hermetic builds with Konflux, we need to provide the full list of resolved dependencies in `requirements.txt`.
 The dependency source files will be prefetched with Cachi2 and made available to the container image build.
-Because GHA/upstream is running on a different Python version, it uses `requirements-upstream.txt` to mange its own dependencies.
-Follow the procedure below after any dependencies change for successful builds in Konflux and mirror those changes into the `requirements-upstream.txt`.
+Because GHA/upstream is running on a different Python version, it uses `requirements-gha.txt` to mange its own dependencies.
+Follow the procedure below after any dependencies change for successful builds in Konflux and mirror those changes into the `requirements-gha.txt`.
 
 ## Prepare the fully resolved requirements files for Cachi2
 
@@ -12,6 +12,7 @@ Follow the procedure below after any dependencies change for successful builds i
 Run the steps inside a container of the same image as the operator-bundle builder stage.
 
 ```bash
+cd operator/bundle_helpers # if not already in this directory
 docker run -it -v $(pwd):/src --entrypoint /bin/sh registry.access.redhat.com/ubi9/python-39:latest
 # inside the container
 cd /src
@@ -47,7 +48,7 @@ For more information, consult the [Cachi2 docs](https://github.com/containerbuil
 ### What does each requirements file do?
 
 * `requirements.in`: List of project dependencies.
-* `requirements-gha.txt`: Temporary list of project dependencies as required by the build process on GHA. This will be deleted after ROX-26860.
+* `requirements-gha.txt`: Temporary list of project dependencies as required by the build process on GHA and locally. This will be deleted after ROX-26860.
 * `requirements.txt`: Fully resolved list of all transitive project dependencies.
 * `requirements-build.txt`: Fully resolved list of all dependencies required to _build_ the project dependencies from sources in Konflux.
 * `requirements-build.in` (not commited): Intermediate result for the generation of `requirements.txt`.
