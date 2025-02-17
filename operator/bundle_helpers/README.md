@@ -8,11 +8,10 @@ Follow the procedure below after any dependencies change for successful builds i
 
 ### Prerequisite
 
-Run the steps inside a container of the same image as the [operator-bundle builder stage](./konflux.bundle.Dockerfile).
+Run the steps inside a container of the same image as the [operator-bundle builder stage](../konflux.bundle.Dockerfile).
 
 ```bash
-cd $(git rev-parse --show-toplevel)/operator/bundle_helpers
-docker run -it -v $(pwd):/src --entrypoint /bin/bash -w /src registry.access.redhat.com/ubi9/python-39:latest
+docker run -it -v "$(git rev-parse --show-toplevel)/operator/bundle_helpers:/src" --entrypoint /bin/bash -w /src registry.access.redhat.com/ubi9/python-39:latest
 # inside the container
 python3 -m pip install pip-tools
 ```
@@ -48,7 +47,7 @@ For more information, consult the [Cachi2 docs](https://github.com/containerbuil
 ### What does each requirements file do?
 
 * `requirements.in`: List of project dependencies.
-* `requirements-gha.txt`: Temporary list of project dependencies as required by the build process on GHA and locally. This workaround exists due to a different Python version. Any changes in this or the `requirements.in` file must be synced manually to the other. This will be deleted after ROX-26860.
+* `requirements-gha.txt`: The list of project dependencies as required by the build process on GHA and locally. This file exists as a workaround due to a different Python version in this context. Any changes in this or the `requirements.in` file should be synced manually to `requirements-gha.txt`. This file will be deleted after ROX-26860.
 * `requirements.txt`: Fully resolved list of all transitive project dependencies.
 * `requirements-build.txt`: Fully resolved list of all dependencies required to _build_ the project dependencies from sources in Konflux.
 * `requirements-build.in` (not commited): Intermediate result for the generation of `requirements.txt`.
