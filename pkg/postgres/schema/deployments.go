@@ -68,6 +68,8 @@ var (
 		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_DEPLOYMENTS, "deployment", (*storage.Deployment)(nil)))
 		schema.SetSearchScope([]v1.SearchCategory{
+			v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
+			v1.SearchCategory_IMAGE_COMPONENTS_V2,
 			v1.SearchCategory_IMAGE_VULNERABILITIES,
 			v1.SearchCategory_COMPONENT_VULN_EDGE,
 			v1.SearchCategory_IMAGE_COMPONENTS,
