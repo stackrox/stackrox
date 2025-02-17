@@ -28,9 +28,9 @@ import (
 
 var matcherAuth = perrpc.FromMap(map[authz.Authorizer][]string{
 	idcheck.CentralOnly(): {
-		"/scanner.v4.Matcher/GetVulnerabilities",
-		"/scanner.v4.Matcher/GetMetadata",
-		"/scanner.v4.Matcher/GetSBOM",
+		v4.Matcher_GetVulnerabilities_FullMethodName,
+		v4.Matcher_GetMetadata_FullMethodName,
+		v4.Matcher_GetSBOM_FullMethodName,
 	},
 })
 
