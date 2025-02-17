@@ -72,5 +72,24 @@ func (s *migrationTestSuite) TestMigration() {
 
 	count, err = plopStore.Count(s.ctx, search.EmptyQuery())
 	s.Require().NoError(err)
-	s.Equal(6, count)
+	s.Equal(3, count)
+
+	expectedPlops := []*storage.ProcessListeningOnPortStorage{
+		fixtures.GetPlopStorage4(),
+		fixtures.GetPlopStorage5(),
+		fixtures.GetPlopStorage6(),
+	}
+
+	for _, expectedPlop := range expectedPlops {
+		actualPlop, exists, err := plopStore.Get(s.ctx, expectedPlop.Id)
+		s.Require().NoError(err)
+		s.Equal(true, exists)
+		s.Equal(actualPlop.Port, expectedPlop.Port)
+		s.Equal(actualPlop.Protocol, expectedPlop.Protocol)
+		s.Equal(actualPlop.ProcessIndicatorId, expectedPlop.ProcessIndicatorId)
+		s.Equal(actualPlop.Closed, expectedPlop.Closed)
+		s.Equal(actualPlop.DeploymentId, expectedPlop.DeploymentId)
+		s.Equal(actualPlop.PodUid, expectedPlop.PodUid)
+	}
+
 }
