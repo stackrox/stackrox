@@ -226,13 +226,17 @@ describe('Violations', () => {
             visitViolations();
         });
 
+        interactAndWaitForViolationsResponses(() => {
+            selectFilteredWorkflowView('All Violations');
+        });
+
         const thSelector = 'th[scope="col"]:contains("Severity")';
         const tdSelector = 'td[data-label="Severity"]';
 
         // 0. Initial table state is sorted descending by Time.
         cy.get(thSelector).should('have.attr', 'aria-sort', 'none');
 
-        // 1. Sort decending by the Severity column.
+        // 1. Sort descending by the Severity column.
         interactAndWaitForViolationsResponses(() => {
             cy.get(thSelector).click();
         });
