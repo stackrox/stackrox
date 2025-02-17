@@ -8,6 +8,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/search"
@@ -157,8 +158,27 @@ func (s *Schema) SetOptionsMap(optionsMap search.OptionsMap) {
 
 // SetSearchScope sets search scope for the schema.
 func (s *Schema) SetSearchScope(searchCategories ...v1.SearchCategory) {
+	// TODO(ROX-28123): Clean up
+	normalizedSkipMap := set.NewStringSet(
+		v1.SearchCategory_IMAGE_VULNERABILITIES.String(),
+		v1.SearchCategory_COMPONENT_VULN_EDGE.String(),
+		v1.SearchCategory_IMAGE_COMPONENTS.String(),
+		v1.SearchCategory_IMAGE_COMPONENT_EDGE.String(),
+		v1.SearchCategory_IMAGE_VULN_EDGE.String())
+
+	flattenedSkipMap := set.NewStringSet(
+		v1.SearchCategory_IMAGE_VULNERABILITIES_V2.String(),
+		v1.SearchCategory_IMAGE_COMPONENTS_V2.String())
+
 	s.SearchScope = make(map[v1.SearchCategory]struct{})
 	for _, cat := range searchCategories {
+		// TODO:  Find a better way, for now hack this to not set old search scopes
+		if features.FlattenCVEData.Enabled() && normalizedSkipMap.Contains(cat.String()) {
+			continue
+		}
+		if !features.FlattenCVEData.Enabled() && flattenedSkipMap.Contains(cat.String()) {
+			continue
+		}
 		s.SearchScope[cat] = struct{}{}
 	}
 	for _, c := range s.Children {

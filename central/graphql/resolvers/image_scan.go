@@ -34,6 +34,7 @@ func init() {
 }
 
 func (resolver *imageScanResolver) ImageComponents(_ context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
+	log.Info("SHREWS -- ImageComponents")
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
@@ -42,6 +43,7 @@ func (resolver *imageScanResolver) ImageComponents(_ context.Context, args Pagin
 }
 
 func (resolver *imageScanResolver) ImageComponentCount(_ context.Context, args RawQuery) (int32, error) {
+	log.Info("SHREWS -- ImageComponentCount")
 	return resolver.root.ImageComponentCount(resolver.ctx, args)
 }
 

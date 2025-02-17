@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -21,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/utils"
@@ -93,11 +95,22 @@ type ImageComponentResolver interface {
 func (resolver *Resolver) ImageComponent(ctx context.Context, args IDQuery) (ImageComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageComponent")
 
+	log.Info("SHREWS -- ImageComponent")
 	// check permissions
 	if err := readImages(ctx); err != nil {
 		return nil, err
 	}
 
+	if features.FlattenCVEData.Enabled() {
+		// get loader
+		loader, err := loaders.GetComponentV2Loader(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		ret, err := loader.FromID(ctx, string(*args.ID))
+		return resolver.wrapImageComponentV2WithContext(ctx, ret, true, err)
+	}
 	// get loader
 	loader, err := loaders.GetComponentLoader(ctx)
 	if err != nil {
@@ -112,6 +125,7 @@ func (resolver *Resolver) ImageComponent(ctx context.Context, args IDQuery) (Ima
 func (resolver *Resolver) ImageComponents(ctx context.Context, q PaginatedQuery) ([]ImageComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageComponents")
 
+	log.Info("SHREWS -- ImageComponents")
 	// check permissions
 	if err := readImages(ctx); err != nil {
 		return nil, err
@@ -121,6 +135,28 @@ func (resolver *Resolver) ImageComponents(ctx context.Context, q PaginatedQuery)
 	query, err := q.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
+	}
+
+	if features.FlattenCVEData.Enabled() {
+		// get loader
+		loader, err := loaders.GetComponentV2Loader(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		// get values
+		comps, err := loader.FromQuery(ctx, query)
+		componentResolvers, err := resolver.wrapImageComponentV2sWithContext(ctx, comps, err)
+		if err != nil {
+			return nil, err
+		}
+
+		// cast as return type
+		ret := make([]ImageComponentResolver, 0, len(componentResolvers))
+		for _, res := range componentResolvers {
+			ret = append(ret, res)
+		}
+		return ret, nil
 	}
 
 	// get loader
@@ -147,7 +183,7 @@ func (resolver *Resolver) ImageComponents(ctx context.Context, q PaginatedQuery)
 // ImageComponentCount returns count of image components that match the input query
 func (resolver *Resolver) ImageComponentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageComponentCount")
-
+	log.Info("SHREWS -- ImageComponentCount")
 	// check permissions
 	if err := readImages(ctx); err != nil {
 		return 0, err
@@ -159,6 +195,15 @@ func (resolver *Resolver) ImageComponentCount(ctx context.Context, args RawQuery
 		return 0, err
 	}
 
+	if features.FlattenCVEData.Enabled() {
+		// get loader
+		loader, err := loaders.GetComponentV2Loader(ctx)
+		if err != nil {
+			return 0, err
+		}
+
+		return loader.CountFromQuery(ctx, query)
+	}
 	// get loader
 	loader, err := loaders.GetComponentLoader(ctx)
 	if err != nil {
@@ -278,6 +323,49 @@ func getImageCVEResolvers(ctx context.Context, root *Resolver, os string, vulns 
 	return paginate(query.GetPagination(), resolverI, nil)
 }
 
+func getImageCVEV2Resolvers(ctx context.Context, root *Resolver, os string, imageID string, component *storage.EmbeddedImageScanComponent, query *v1.Query) ([]ImageVulnerabilityResolver, error) {
+	query, _ = search.FilterQueryWithMap(query, mappings.VulnerabilityOptionsMap)
+	predicate, err := vulnPredicateFactory.GeneratePredicate(query)
+	if err != nil {
+		return nil, err
+	}
+
+	componentID := scancomponent.ComponentIDV2(component.GetName(), component.GetVersion(), component.GetArchitecture(), imageID)
+	// Use the images to map CVEs to the images and components.
+	idToVals := make(map[string]*imageCVEV2Resolver)
+	for idx, vuln := range component.GetVulns() {
+		if !predicate.Matches(vuln) {
+			continue
+		}
+		id := cve.IDV2(vuln.GetCve(), imageID, componentID, fmt.Sprintf("%d", idx))
+		if _, exists := idToVals[id]; !exists {
+			converted := cveConverter.EmbeddedVulnerabilityToImageCVEV2(os, imageID, componentID, idx, vuln)
+			resolver, err := root.wrapImageCVEV2(converted, true, nil)
+			if err != nil {
+				return nil, err
+			}
+			resolver.ctx = embeddedobjs.VulnContext(ctx, vuln)
+			idToVals[id] = resolver
+		}
+	}
+
+	// For now, sort by ID.
+	resolvers := make([]*imageCVEV2Resolver, 0, len(idToVals))
+	for _, vuln := range idToVals {
+		resolvers = append(resolvers, vuln)
+	}
+	if len(query.GetPagination().GetSortOptions()) == 0 {
+		sort.SliceStable(resolvers, func(i, j int) bool {
+			return resolvers[i].data.GetId() < resolvers[j].data.GetId()
+		})
+	}
+	resolverI := make([]ImageVulnerabilityResolver, 0, len(resolvers))
+	for _, resolver := range resolvers {
+		resolverI = append(resolverI, resolver)
+	}
+	return paginate(query.GetPagination(), resolverI, nil)
+}
+
 /*
 Sub Resolver Functions
 */
@@ -367,6 +455,7 @@ func (resolver *imageComponentResolver) ImageVulnerabilityCounter(ctx context.Co
 
 func (resolver *imageComponentResolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "ImageVulnerabilities")
+	log.Info("SHREWS -- ImageVulnerabilities")
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}
@@ -525,4 +614,212 @@ func (resolver *imageComponentResolver) UnusedVarSink(_ context.Context, _ RawQu
 
 func (resolver *imageComponentResolver) FixedIn(_ context.Context) string {
 	return resolver.data.GetFixedBy()
+}
+
+/*
+Sub Resolver Functions
+*/
+
+func (resolver *imageComponentV2Resolver) ActiveState(_ context.Context, _ RawQuery) (*activeStateResolver, error) {
+	// TODO:  verify active vuln management is no longer supported
+	return &activeStateResolver{}, nil
+}
+
+func (resolver *imageComponentV2Resolver) DeploymentCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "DeploymentCount")
+	return resolver.root.DeploymentCount(resolver.imageComponentScopeContext(ctx), args)
+}
+
+func (resolver *imageComponentV2Resolver) Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "Deployments")
+	return resolver.root.Deployments(resolver.imageComponentScopeContext(ctx), args)
+}
+
+func (resolver *imageComponentV2Resolver) ImageCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "ImageCount")
+	return resolver.root.ImageCount(resolver.imageComponentScopeContext(ctx), args)
+}
+
+func (resolver *imageComponentV2Resolver) Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "Images")
+	return resolver.root.Images(resolver.imageComponentScopeContext(ctx), args)
+}
+
+func (resolver *imageComponentV2Resolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "ImageVulnerabilityCount")
+	return resolver.root.ImageVulnerabilityCount(resolver.imageComponentScopeContext(ctx), args)
+}
+
+func (resolver *imageComponentV2Resolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "ImageVulnerabilityCounter")
+	return resolver.root.ImageVulnerabilityCounter(resolver.imageComponentScopeContext(ctx), args)
+}
+
+func (resolver *imageComponentV2Resolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "ImageVulnerabilities")
+	log.Info("SHREWS -- ImageVulnerabilities")
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
+
+	// Short path. Full image is embedded when image scan resolver is called.
+	embeddedComponent := embeddedobjs.ComponentFromContext(resolver.ctx)
+	if embeddedComponent == nil {
+		log.Infof("SHREWS -- ImageVulnerabilities -- %v", embeddedComponent)
+		log.Infof("SHREWS -- ImageVulnerabilities -- %v", ctx)
+		log.Infof("SHREWS -- ImageVulnerabilities -- %v", args)
+		return resolver.root.ImageVulnerabilities(resolver.imageComponentScopeContext(ctx), args)
+	}
+
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+	return getImageCVEV2Resolvers(resolver.ctx, resolver.root, embeddedobjs.OSFromContext(resolver.ctx), resolver.ImageId(resolver.ctx), embeddedComponent, query)
+}
+
+func (resolver *imageComponentV2Resolver) LastScanned(ctx context.Context) (*graphql.Time, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "LastScanned")
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
+
+	// Short path. Full image is embedded when image scan resolver is called.
+	if scanTime := embeddedobjs.LastScannedFromContext(resolver.ctx); scanTime != nil {
+		return &graphql.Time{Time: *scanTime}, nil
+	}
+
+	imageLoader, err := loaders.GetImageLoader(resolver.ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	q := resolver.componentQuery()
+	q.Pagination = &v1.QueryPagination{
+		Limit:  1,
+		Offset: 0,
+		SortOptions: []*v1.QuerySortOption{
+			{
+				Field:    search.ImageScanTime.String(),
+				Reversed: true,
+			},
+		},
+	}
+
+	images, err := imageLoader.FromQuery(resolver.ctx, q)
+	if err != nil || len(images) == 0 {
+		return nil, err
+	} else if len(images) > 1 {
+		return nil, errors.New("multiple images matched for last scanned image component query")
+	}
+
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(images[0].GetScan().GetScanTime())
+}
+
+// PlottedImageVulnerabilities returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
+func (resolver *imageComponentV2Resolver) PlottedImageVulnerabilities(ctx context.Context, args RawQuery) (*PlottedImageVulnerabilitiesResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "PlottedImageVulnerabilities")
+	return resolver.root.PlottedImageVulnerabilities(resolver.imageComponentScopeContext(ctx), args)
+}
+
+func (resolver *imageComponentV2Resolver) TopImageVulnerability(ctx context.Context) (ImageVulnerabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "TopImageVulnerability")
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
+
+	// Short path. Full image is embedded when image scan resolver is called.
+	if embeddedComponent := embeddedobjs.ComponentFromContext(resolver.ctx); embeddedComponent != nil {
+		var topVuln *storage.EmbeddedVulnerability
+		var topIndex int
+		for idx, vuln := range embeddedComponent.GetVulns() {
+			if topVuln == nil || vuln.GetCvss() > topVuln.GetCvss() {
+				topVuln = vuln
+				topIndex = idx
+			}
+		}
+		if topVuln == nil {
+			return nil, nil
+		}
+		componentID := scancomponent.ComponentIDV2(embeddedComponent.GetName(), embeddedComponent.GetVersion(), embeddedComponent.GetArchitecture(), resolver.ImageId(resolver.ctx))
+		return resolver.root.wrapImageCVEV2WithContext(resolver.ctx,
+			cveConverter.EmbeddedVulnerabilityToImageCVEV2(embeddedobjs.OSFromContext(resolver.ctx), resolver.ImageId(resolver.ctx), componentID, topIndex, topVuln), true, nil,
+		)
+	}
+
+	return resolver.root.TopImageVulnerability(resolver.imageComponentScopeContext(ctx), RawQuery{})
+}
+
+func (resolver *imageComponentV2Resolver) LayerIndex() (*int32, error) {
+	// Short path. Full image is embedded when image scan resolver is called.
+	//if embeddedComponent := embeddedobjs.ComponentFromContext(resolver.ctx); embeddedComponent != nil {
+	//	w, ok := embeddedComponent.GetHasLayerIndex().(*storage.EmbeddedImageScanComponent_LayerIndex)
+	//	if !ok {
+	//		return nil, nil
+	//	}
+	//	v := w.LayerIndex
+	//	return &v, nil
+	//}
+	//
+	//scope, hasScope := scoped.GetScopeAtLevel(resolver.ctx, v1.SearchCategory_IMAGES)
+	//if !hasScope {
+	//	return nil, nil
+	//}
+	//
+	//components, err := resolver.root.ImageComponentV2DataStore.SearchRawImageComponents(resolver.ctx, resolver.componentQuery())
+	//if err != nil {
+	//	return nil, err
+	//}
+	//if len(components) == 0 || len(components) > 1 {
+	//	return nil, errors.Errorf("Unexpected number of image-components matched for image %s and component %s. Expected 1 component.", scope.ID, resolver.data.GetId())
+	//}
+
+	//w, ok := components[0].GetHasLayerIndex().(*storage.ImageComponentV2_LayerIndex)
+	w, ok := resolver.data.GetHasLayerIndex().(*storage.ImageComponentV2_LayerIndex)
+	if !ok {
+		return nil, nil
+	}
+	v := w.LayerIndex
+	return &v, nil
+}
+
+func (resolver *imageComponentV2Resolver) UnusedVarSink(_ context.Context, _ RawQuery) *int32 {
+	return nil
+}
+
+// Location returns the location of the component.
+func (resolver *imageComponentV2Resolver) Location(_ context.Context, _ RawQuery) (string, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "Location")
+
+	return resolver.data.GetLocation(), nil
+}
+
+// Following are deprecated functions that are retained to allow UI time to migrate away from them
+
+func (resolver *imageComponentV2Resolver) FixedIn(_ context.Context) string {
+	return resolver.data.GetFixedBy()
+}
+
+/*
+Utility Functions
+*/
+
+func (resolver *imageComponentV2Resolver) imageComponentScopeContext(ctx context.Context) context.Context {
+	if ctx == nil {
+		err := utils.ShouldErr(errors.New("argument 'ctx' is nil"))
+		if err != nil {
+			log.Error(err)
+		}
+	}
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
+	return scoped.Context(resolver.ctx, scoped.Scope{
+		Level: v1.SearchCategory_IMAGE_COMPONENTS_V2,
+		ID:    resolver.data.GetId(),
+	})
+}
+
+func (resolver *imageComponentV2Resolver) componentQuery() *v1.Query {
+	return search.NewQueryBuilder().AddExactMatches(search.ComponentID, resolver.data.GetId()).ProtoQuery()
 }

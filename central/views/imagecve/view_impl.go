@@ -10,6 +10,8 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -21,6 +23,8 @@ import (
 
 var (
 	queryTimeout = env.PostgresVMStatementTimeout.DurationSetting()
+
+	log = logging.LoggerForModule()
 )
 
 type imageCVECoreViewImpl struct {
@@ -102,10 +106,12 @@ func (v *imageCVECoreViewImpl) CountBySeverity(ctx context.Context, q *v1.Query)
 }
 
 func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query, options views.ReadOptions) ([]CveCore, error) {
+	log.Info("SHREWS -- Get")
 	if err := common.ValidateQuery(q); err != nil {
 		return nil, err
 	}
 
+	log.Info("SHREWS -- Get -- query is valid")
 	var err error
 	// Avoid changing the passed query
 	cloned := q.CloneVT()
@@ -120,6 +126,8 @@ func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 		if err != nil {
 			return nil, err
 		}
+		log.Infof("SHREWS -- Get -- filter ID length %d", len(cveIDsToFilter))
+		log.Infof("SHREWS -- Get -- filter ID length %v", cveIDsToFilter)
 
 		if cloned.GetPagination() != nil && cloned.GetPagination().GetSortOptions() != nil {
 			// The CVE ID list that we get from the above query is paginated. So when we fetch the details and aggregates for those CVEs,
@@ -135,6 +143,7 @@ func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 	if err != nil {
 		return nil, err
 	}
+	log.Infof("SHREWS -- Get -- results length %d", len(results))
 
 	ret := make([]CveCore, 0, len(results))
 	for _, r := range results {
@@ -229,7 +238,11 @@ func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
 func withSelectCVECoreResponseQuery(q *v1.Query, cveIDsToFilter []string, options views.ReadOptions) *v1.Query {
 	cloned := q.CloneVT()
 	if len(cveIDsToFilter) > 0 {
-		cloned = search.ConjunctionQuery(cloned, search.NewQueryBuilder().AddDocIDs(cveIDsToFilter...).ProtoQuery())
+		if features.FlattenCVEData.Enabled() {
+			cloned = search.ConjunctionQuery(cloned, search.NewQueryBuilder().AddExactMatches(search.CVEID, cveIDsToFilter...).ProtoQuery())
+		} else {
+			cloned = search.ConjunctionQuery(cloned, search.NewQueryBuilder().AddDocIDs(cveIDsToFilter...).ProtoQuery())
+		}
 		cloned.Pagination = q.GetPagination()
 	}
 	cloned.Selects = []*v1.QuerySelect{

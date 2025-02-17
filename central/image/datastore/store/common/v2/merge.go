@@ -1,8 +1,6 @@
 package common
 
 import (
-	"sort"
-
 	"github.com/stackrox/rox/central/cve/converter/utils"
 	"github.com/stackrox/rox/generated/storage"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
@@ -47,18 +45,18 @@ func mergeComponents(parts ImageParts, image *storage.Image) {
 		image.Scan.Components = append(image.Scan.Components, generateEmbeddedComponent(image.GetScan().GetOperatingSystem(), cp, parts.ImageCVEEdges))
 	}
 
-	sort.SliceStable(image.GetScan().GetComponents(), func(i, j int) bool {
-		compI, compJ := image.GetScan().GetComponents()[i], image.GetScan().GetComponents()[j]
-		if compI.GetName() != compJ.GetName() {
-			return compI.GetName() < compJ.GetName()
-		}
-		return compI.GetVersion() < compJ.GetVersion()
-	})
-	for _, comp := range image.GetScan().GetComponents() {
-		sort.SliceStable(comp.Vulns, func(i, j int) bool {
-			return comp.Vulns[i].GetCve() < comp.Vulns[j].GetCve()
-		})
-	}
+	//sort.SliceStable(image.GetScan().GetComponents(), func(i, j int) bool {
+	//	compI, compJ := image.GetScan().GetComponents()[i], image.GetScan().GetComponents()[j]
+	//	if compI.GetName() != compJ.GetName() {
+	//		return compI.GetName() < compJ.GetName()
+	//	}
+	//	return compI.GetVersion() < compJ.GetVersion()
+	//})
+	//for _, comp := range image.GetScan().GetComponents() {
+	//	sort.SliceStable(comp.Vulns, func(i, j int) bool {
+	//		return comp.Vulns[i].GetCve() < comp.Vulns[j].GetCve()
+	//	})
+	//}
 }
 
 func mergeComponentsV2(parts ImageParts, image *storage.Image) {
@@ -77,18 +75,18 @@ func mergeComponentsV2(parts ImageParts, image *storage.Image) {
 		image.Scan.Components = append(image.Scan.Components, generateEmbeddedComponentV2(image.GetScan().GetOperatingSystem(), cp))
 	}
 
-	sort.SliceStable(image.GetScan().GetComponents(), func(i, j int) bool {
-		compI, compJ := image.GetScan().GetComponents()[i], image.GetScan().GetComponents()[j]
-		if compI.GetName() != compJ.GetName() {
-			return compI.GetName() < compJ.GetName()
-		}
-		return compI.GetVersion() < compJ.GetVersion()
-	})
-	for _, comp := range image.GetScan().GetComponents() {
-		sort.SliceStable(comp.Vulns, func(i, j int) bool {
-			return comp.Vulns[i].GetCve() < comp.Vulns[j].GetCve()
-		})
-	}
+	//sort.SliceStable(image.GetScan().GetComponents(), func(i, j int) bool {
+	//	compI, compJ := image.GetScan().GetComponents()[i], image.GetScan().GetComponents()[j]
+	//	if compI.GetName() != compJ.GetName() {
+	//		return compI.GetName() < compJ.GetName()
+	//	}
+	//	return compI.GetVersion() < compJ.GetVersion()
+	//})
+	//for _, comp := range image.GetScan().GetComponents() {
+	//	sort.SliceStable(comp.Vulns, func(i, j int) bool {
+	//		return comp.Vulns[i].GetCve() < comp.Vulns[j].GetCve()
+	//	})
+	//}
 }
 
 func generateEmbeddedComponent(_ string, cp ComponentParts, imageCVEEdges map[string]*storage.ImageCVEEdge) *storage.EmbeddedImageScanComponent {

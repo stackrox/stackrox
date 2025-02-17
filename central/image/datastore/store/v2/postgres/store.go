@@ -269,7 +269,6 @@ func copyFromImageComponentsV2(ctx context.Context, tx *postgres.Tx, iTime time.
 			inputRows = inputRows[:0]
 		}
 	}
-
 	return nil
 }
 
