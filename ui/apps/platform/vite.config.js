@@ -68,5 +68,17 @@ export default defineConfig((props) => {
                 cert: fs.readFileSync('/Users/dvail/certs/DVailRootCA.crt'),
             },
         },
+        test: {
+            environment: 'jsdom',
+            globals: true,
+            reporters: ['junit', 'verbose'],
+            outputFile: {
+                junit: './test-results/reports/junit-report.xml',
+            },
+            sequence: {
+                hooks: 'list',
+            },
+            setupFiles: 'src/setupTests.js',
+        },
     };
 });

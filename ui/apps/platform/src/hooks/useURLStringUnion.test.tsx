@@ -6,13 +6,13 @@ import { URLSearchParams } from 'url';
 import useURLStringUnion from './useURLStringUnion';
 
 beforeAll(() => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
 });
 
 function actAndRunTicks(callback) {
     return act(() => {
         callback();
-        jest.runAllTicks();
+        vi.runAllTicks();
     });
 }
 
