@@ -33,8 +33,7 @@ export type CvePageHeaderProps = {
 
 function CvePageHeader({ data }: CvePageHeaderProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isEpssProbabilityColumnEnabled =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_EPSS_SCORE');
+    const isEpssProbabilityColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
 
     if (!data) {
         return (
