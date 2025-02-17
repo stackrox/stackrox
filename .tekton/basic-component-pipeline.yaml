@@ -142,6 +142,20 @@ spec:
         value: task
       resolver: bundles
 
+  - name: determine-image-expiration
+    params:
+      - name: DEFAULT_IMAGE_EXPIRES_AFTER
+        value: $(params.image-expires-after)
+    taskRef:
+      params:
+      - name: name
+        value: determine-image-expiration
+      - name: bundle
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:e557f9ca3e3d31f48127c3528c2c2647f4b49e2d72dce022c85fbe121c113ecd
+      - name: kind
+        value: task
+      resolver: bundles
+
   - name: clone-repository
     params:
     - name: url
@@ -227,7 +241,7 @@ spec:
     - name: PREFETCH_INPUT
       value: $(params.prefetch-input)
     - name: IMAGE_EXPIRES_AFTER
-      value: $(params.image-expires-after)
+      value: $(tasks.determine-image-expiration.results.IMAGE_EXPIRES_AFTER)
     - name: COMMIT_SHA
       value: $(tasks.clone-repository.results.commit)
     - name: BUILD_ARGS
@@ -264,7 +278,7 @@ spec:
     - name: PREFETCH_INPUT
       value: $(params.prefetch-input)
     - name: IMAGE_EXPIRES_AFTER
-      value: $(params.image-expires-after)
+      value: $(tasks.determine-image-expiration.results.IMAGE_EXPIRES_AFTER)
     - name: COMMIT_SHA
       value: $(tasks.clone-repository.results.commit)
     - name: BUILD_ARGS
@@ -303,7 +317,7 @@ spec:
     - name: PREFETCH_INPUT
       value: $(params.prefetch-input)
     - name: IMAGE_EXPIRES_AFTER
-      value: $(params.image-expires-after)
+      value: $(tasks.determine-image-expiration.results.IMAGE_EXPIRES_AFTER)
     - name: COMMIT_SHA
       value: $(tasks.clone-repository.results.commit)
     - name: BUILD_ARGS
@@ -342,7 +356,7 @@ spec:
     - name: PREFETCH_INPUT
       value: $(params.prefetch-input)
     - name: IMAGE_EXPIRES_AFTER
-      value: $(params.image-expires-after)
+      value: $(tasks.determine-image-expiration.results.IMAGE_EXPIRES_AFTER)
     - name: COMMIT_SHA
       value: $(tasks.clone-repository.results.commit)
     - name: BUILD_ARGS
@@ -381,7 +395,7 @@ spec:
       - $(tasks.build-container-ppc64le.results.IMAGE_REF)
       - $(tasks.build-container-arm64.results.IMAGE_REF)
     - name: IMAGE_EXPIRES_AFTER
-      value: $(params.image-expires-after)
+      value: $(tasks.determine-image-expiration.results.IMAGE_EXPIRES_AFTER)
     taskRef:
       params:
       - name: name
@@ -409,7 +423,7 @@ spec:
       - $(tasks.build-container-ppc64le.results.IMAGE_REF)
       - $(tasks.build-container-arm64.results.IMAGE_REF)
     - name: IMAGE_EXPIRES_AFTER
-      value: $(params.image-expires-after)
+      value: $(tasks.determine-image-expiration.results.IMAGE_EXPIRES_AFTER)
     taskRef:
       params:
       - name: name
