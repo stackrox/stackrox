@@ -13,13 +13,13 @@ const wrapper = ({ children }) => {
 };
 
 beforeAll(() => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
 });
 
 function actAndRunTicks(callback) {
     return act(() => {
         callback();
-        jest.runAllTicks();
+        vi.runAllTicks();
     });
 }
 
@@ -90,7 +90,7 @@ describe('useURLSort', () => {
         });
 
         it('should trigger the `onSort` callback when the sort option changes', () => {
-            const onSort = jest.fn();
+            const onSort = vi.fn();
 
             const { result } = renderHook(() => useURLSort({ ...params, onSort }), { wrapper });
 

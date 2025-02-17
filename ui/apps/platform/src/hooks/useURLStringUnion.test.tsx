@@ -32,13 +32,13 @@ const createWrapper = (props) => {
 };
 
 beforeAll(() => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
 });
 
 function actAndRunTicks(callback) {
     return act(() => {
         callback();
-        jest.runAllTicks();
+        vi.runAllTicks();
     });
 }
 

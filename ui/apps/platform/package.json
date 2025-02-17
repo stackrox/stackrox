@@ -97,7 +97,8 @@
         "clean": "rm -rf ./test-results ./cypress/test-results",
         "start": "vite serve",
         "build": "vite build",
-        "test": "JEST_JUNIT_UNIQUE_OUTPUT_NAME=true JEST_JUNIT_OUTPUT_DIR=${TEST_RESULTS_OUTPUT_DIR:-test-results}/reports jest --verbose=true --slowTestThreshold=1 --coverage=false --reporters=default --reporters=jest-junit",
+        "test-old": "JEST_JUNIT_UNIQUE_OUTPUT_NAME=true JEST_JUNIT_OUTPUT_DIR=${TEST_RESULTS_OUTPUT_DIR:-test-results}/reports jest --verbose=true --slowTestThreshold=1 --coverage=false --reporters=default --reporters=jest-junit",
+        "test": "vitest",
         "test-coverage": "JEST_JUNIT_UNIQUE_OUTPUT_NAME=true JEST_JUNIT_OUTPUT_DIR=${TEST_RESULTS_OUTPUT_DIR:-test-results}/reports jest --verbose=true --slowTestThreshold=1 --coverage --reporters=default --reporters=jest-junit",
         "test-watch": "jest",
         "lint": "eslint --quiet .",
@@ -174,7 +175,8 @@
         "ts-jest": "^29.2.5",
         "typescript": "^5.7.2",
         "vite": "^5.4.10",
-        "vite-plugin-svgr": "^4.3.0"
+        "vite-plugin-svgr": "^4.3.0",
+        "vitest": "^3.0.5"
     },
     "overrides": {
         "@jest/types": "^29.6.3",
