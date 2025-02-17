@@ -1,0 +1,17 @@
+{{- include "srox.init" . -}}
+
+{{- if ._rox.central._endpointsConfig -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: central-endpoints
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "configmap" "central-endpoints") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "configmap" "central-endpoints") | nindent 4 }}
+data:
+  endpoints.yaml: |
+    {{- ._rox.central._endpointsConfig | nindent 4 }}
+
+{{- end -}}
