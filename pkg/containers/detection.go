@@ -2,23 +2,26 @@ package containers
 
 import "os"
 
-// IsRunningInContainer checks whether the current process is being executed inside a docker container
+// IsRunningInContainer checks whether the current process is being executed inside one of the containers we check for
 func IsRunningInContainer() bool {
-	return isDocker() || isPodman() || isCryoSpark()
+	return IsDocker() || IsPodman() || IsCryoSpark()
 }
 
-func isDocker() bool {
+// IsDocker returns true if we are running in a docker instance
+func IsDocker() bool {
 	return pathExists("/.dockerenv") ||
 		pathExists("/.dockerinit") ||
 		pathExists("/run/.containerenv") ||
 		pathExists("/var/run/.containerenv")
 }
 
-func isPodman() bool {
+// IsPodman returns true if we are running in a podman instance
+func IsPodman() bool {
 	return os.Getenv("container") == "oci" || os.Getenv("container") == "podman"
 }
 
-func isCryoSpark() bool {
+// IsCryoSpark returns true if we are running in a cryospark instance
+func IsCryoSpark() bool {
 	_, hostnameSet := os.LookupEnv("CRYOSPARC_MASTER_HOSTNAME")
 	_, userSet := os.LookupEnv("CRYOSPARC_USER")
 	return hostnameSet || userSet || pathExists("/opt/cryosparc") || pathExists("/app/cryosparc")
