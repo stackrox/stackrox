@@ -1,14 +1,20 @@
 //go:build sql_integration
 
-package m198tom199
+package m209tom210
 
 import (
 	"context"
 	"testing"
 
+	"github.com/stackrox/rox/generated/storage"
+	listeningEndpointsSchema "github.com/stackrox/rox/migrator/migrations/m_209_to_m_210_remove_listening_endpoints_where_pod_uid_is_null/schema/listening_endpoints"
+	plopDatastore "github.com/stackrox/rox/migrator/migrations/m_209_to_m_210_remove_listening_endpoints_where_pod_uid_is_null/store/processlisteningonport"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
+	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -27,7 +33,8 @@ func TestMigration(t *testing.T) {
 func (s *migrationTestSuite) SetupSuite() {
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.db = pghelper.ForT(s.T(), false)
-	// TODO(dont-merge): Create the schemas and tables required for the pre-migration dataset push to DB
+
+	pgutils.CreateTableFromModel(s.ctx, s.db.GetGormDB(), listeningEndpointsSchema.CreateTableListeningEndpointsStmt)
 }
 
 func (s *migrationTestSuite) TearDownSuite() {
@@ -37,9 +44,23 @@ func (s *migrationTestSuite) TearDownSuite() {
 
 
 func (s *migrationTestSuite) TestMigration() {
-	// TODO(dont-merge): instantiate any store required for the pre-migration dataset push to DB
+	plopStore := plopDatastore.New(s.db)
 
-	// TODO(dont-merge): push the pre-migration dataset to DB
+	plops := []*storage.ProcessListeningOnPortStorage{
+		fixtures.GetPlopStorage1(),
+		fixtures.GetPlopStorage2(),
+		fixtures.GetPlopStorage3(),
+		fixtures.GetPlopStorage4(),
+		fixtures.GetPlopStorage5(),
+		fixtures.GetPlopStorage6(),
+	}
+
+	err := plopStore.UpsertMany(s.ctx, plops)
+	s.Require().NoError(err)
+
+	count, err := plopStore.Count(s.ctx, search.EmptyQuery())
+	s.Require().NoError(err)
+	s.Equal(6, count)
 
 	dbs := &types.Databases{
 		GormDB:     s.db.GetGormDB(),
@@ -49,15 +70,7 @@ func (s *migrationTestSuite) TestMigration() {
 
 	s.Require().NoError(migration.Run(dbs))
 
-	// TODO(dont-merge): instantiate any store required for the post-migration dataset pull from DB
-
-	// TODO(dont-merge): pull the post-migration dataset from DB
-
-	// TODO(dont-merge): validate that the post-migration dataset has the expected content
-
-	// TODO(dont-merge): validate that pre-migration queries and statements execute against the
-	// post-migration database to ensure backwards compatibility
-
+	count, err = plopStore.Count(s.ctx, search.EmptyQuery())
+	s.Require().NoError(err)
+	s.Equal(6, count)
 }
-
-// TODO(dont-merge): remove any pending TODO
