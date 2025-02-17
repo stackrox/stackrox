@@ -59,6 +59,7 @@ type ViolationsTablePanelProps = {
     onSearch: OnSearchCallback;
     additionalContextFilter: SearchFilter;
     hasActiveViolations: boolean;
+    isTableDataUpdating: boolean;
 };
 
 function ViolationsTablePanel({
@@ -77,6 +78,7 @@ function ViolationsTablePanel({
     onSearch,
     additionalContextFilter,
     hasActiveViolations,
+    isTableDataUpdating,
 }: ViolationsTablePanelProps): ReactElement {
     const isRouteEnabled = useIsRouteEnabled();
     const { hasReadWriteAccess } = usePermissions();
@@ -283,7 +285,7 @@ function ViolationsTablePanel({
                             )}
                         </Tr>
                     </Thead>
-                    <Tbody>
+                    <Tbody aria-live="polite" aria-busy={isTableDataUpdating ? 'true' : 'false'}>
                         {violations.map((violation, rowIndex) => {
                             const { state, lifecycleStage, enforcementAction, policy, id } =
                                 violation;

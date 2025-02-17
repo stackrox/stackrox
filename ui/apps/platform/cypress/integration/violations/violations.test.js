@@ -11,7 +11,7 @@ import {
     clickDeploymentTabWithFixture,
     exportAndWaitForNetworkPolicyYaml,
     interactAndWaitForNetworkPoliciesResponse,
-    interactAndWaitForSortedViolationsResponses,
+    interactAndWaitForViolationsResponses,
     selectFilteredWorkflowView,
     visitViolationFromTableWithFixture,
     visitViolationWithFixture,
@@ -221,8 +221,10 @@ describe('Violations', () => {
         // Conditionally rendered: Policy scope
     });
 
-    it.skip('should sort the Severity column', () => {
-        visitViolations();
+    it('should sort the Severity column', () => {
+        interactAndWaitForViolationsResponses(() => {
+            visitViolations();
+        });
 
         const thSelector = 'th[scope="col"]:contains("Severity")';
         const tdSelector = 'td[data-label="Severity"]';
@@ -231,25 +233,23 @@ describe('Violations', () => {
         cy.get(thSelector).should('have.attr', 'aria-sort', 'none');
 
         // 1. Sort decending by the Severity column.
-        interactAndWaitForSortedViolationsResponses(() => {
+        interactAndWaitForViolationsResponses(() => {
             cy.get(thSelector).click();
-        }, 'desc');
+        });
 
         cy.get(thSelector).should('have.attr', 'aria-sort', 'descending');
 
-        cy.wait(1000); // prevent timing failures
         cy.get(tdSelector).then((items) => {
             assertSortedItems(items, callbackForPairOfDescendingPolicySeverityValuesFromElements);
         });
 
         // 2. Sort ascending by the Severity column.
-        interactAndWaitForSortedViolationsResponses(() => {
+        interactAndWaitForViolationsResponses(() => {
             cy.get(thSelector).click();
-        }, 'asc');
+        });
 
         cy.get(thSelector).should('have.attr', 'aria-sort', 'ascending');
 
-        cy.wait(1000); // prevent timing failures
         cy.get(tdSelector).then((items) => {
             assertSortedItems(items, callbackForPairOfAscendingPolicySeverityValuesFromElements);
         });
