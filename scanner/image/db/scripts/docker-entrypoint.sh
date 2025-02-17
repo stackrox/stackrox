@@ -6,7 +6,7 @@ set -Eeo pipefail
 ### Community][1]. Any StackRox modification or comments are tagged with this
 ### comment.
 ###
-### [1]: https://github.com/docker-library/postgres/blob/master/15/bullseye/docker-entrypoint.sh
+### [1]: https://github.com/docker-library/postgres/blob/master/15/bookworm/docker-entrypoint.sh
 
 ### STACKROX MODIFIED - Fast shutdown to kill and rollback in-flight transactions.
 shutdown() {
