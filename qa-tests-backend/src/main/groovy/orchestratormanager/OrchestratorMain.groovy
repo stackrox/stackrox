@@ -2,6 +2,7 @@ package orchestratormanager
 
 import groovy.transform.CompileStatic
 import io.fabric8.kubernetes.api.model.apps.Deployment as K8sDeployment
+import io.fabric8.kubernetes.api.model.batch.v1.Job as K8sJob
 import io.fabric8.kubernetes.api.model.ObjectMeta
 import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.api.model.StatusDetails
@@ -162,7 +163,7 @@ interface OrchestratorMain {
     void deleteClusterRoleBinding(K8sRoleBinding roleBinding)
 
     //Jobs
-    Job createJob(Job job)
+    K8sJob createJob(Job job)
     void deleteJob(Job job)
     List<String> getJobCount()
 

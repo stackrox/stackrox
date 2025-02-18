@@ -246,7 +246,7 @@ class Kubernetes implements OrchestratorMain {
         return false
     }
 
-    boolean podReady(Pod pod) {
+    static boolean podReady(Pod pod) {
         def deleted = pod.metadata.deletionTimestamp as boolean
         return !deleted && pod.status?.containerStatuses?.every { it.ready }
     }
@@ -639,7 +639,7 @@ class Kubernetes implements OrchestratorMain {
         return podsPassing == pods.size()
     }
 
-    Job createJob(Job job) {
+    K8sJob createJob(Job job) {
         ensureNamespaceExists(job.namespace)
 
         job.getNamespace() != null ?: job.setNamespace(this.namespace)
