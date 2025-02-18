@@ -2,8 +2,10 @@ syntax = "proto3";
 
 package sensor;
 
+import "storage/process_indicator.proto";
 import "internalapi/sensor/collector.proto";
 import "internalapi/sensor/network_connection_info.proto";
+import "internalapi/sensor/network_connection_iservice.proto";
 
 option cc_enable_arenas = true;
 option go_package = "./internalapi/sensor;sensor";
@@ -12,7 +14,7 @@ message MsgFromCollector {
   oneof msg {
     CollectorRegisterRequest register = 1;
     NetworkConnectionInfo info = 2;
-    ProcessSignal process_signal = 3;
+    storage.ProcessSignal process_signal = 3;
   }
 }
 

@@ -141,8 +141,8 @@ func (x *ComplianceAggregationRequest) GetWhere() *RawQuery {
 
 type ComplianceStandardMetadata struct {
 	state                protoimpl.MessageState             `protogen:"open.v1"`
-	Id                   string                             `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`     // @gotags: search:"Standard ID,hidden"
-	Name                 string                             `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"` // @gotags: search:"Standard,store,hidden"
+	Id                   string                             `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Standard ID,hidden"`     // @gotags: search:"Standard ID,hidden"
+	Name                 string                             `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Standard,store,hidden"` // @gotags: search:"Standard,store,hidden"
 	Description          string                             `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
 	NumImplementedChecks int32                              `protobuf:"varint,4,opt,name=num_implemented_checks,json=numImplementedChecks,proto3" json:"num_implemented_checks,omitempty"`
 	Scopes               []ComplianceStandardMetadata_Scope `protobuf:"varint,5,rep,packed,name=scopes,proto3,enum=v1.ComplianceStandardMetadata_Scope" json:"scopes,omitempty"`
@@ -233,9 +233,9 @@ func (x *ComplianceStandardMetadata) GetHideScanResults() bool {
 
 type ComplianceControlGroup struct {
 	state                protoimpl.MessageState `protogen:"open.v1"`
-	Id                   string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`                                   // @gotags: search:"Control Group ID"
-	StandardId           string                 `protobuf:"bytes,2,opt,name=standard_id,json=standardId,proto3" json:"standard_id,omitempty"` // @gotags: search:"Standard ID,store"
-	Name                 string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`                               // @gotags: search:"Control Group,store"
+	Id                   string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Control Group ID"`                                   // @gotags: search:"Control Group ID"
+	StandardId           string                 `protobuf:"bytes,2,opt,name=standard_id,json=standardId,proto3" json:"standard_id,omitempty" search:"Standard ID,store"` // @gotags: search:"Standard ID,store"
+	Name                 string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty" search:"Control Group,store"`                               // @gotags: search:"Control Group,store"
 	Description          string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
 	NumImplementedChecks int32                  `protobuf:"varint,5,opt,name=num_implemented_checks,json=numImplementedChecks,proto3" json:"num_implemented_checks,omitempty"`
 	unknownFields        protoimpl.UnknownFields
@@ -309,10 +309,10 @@ func (x *ComplianceControlGroup) GetNumImplementedChecks() int32 {
 
 type ComplianceControl struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
-	Id                 string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`                                   // @gotags: search:"Control ID,hidden"
-	StandardId         string                 `protobuf:"bytes,2,opt,name=standard_id,json=standardId,proto3" json:"standard_id,omitempty"` // @gotags: search:"Standard ID,hidden"
-	GroupId            string                 `protobuf:"bytes,3,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`          // @gotags: search:"Control Group ID,hidden"
-	Name               string                 `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty"`                               // @gotags: search:"Control,store"
+	Id                 string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Control ID,hidden"`                                   // @gotags: search:"Control ID,hidden"
+	StandardId         string                 `protobuf:"bytes,2,opt,name=standard_id,json=standardId,proto3" json:"standard_id,omitempty" search:"Standard ID,hidden"` // @gotags: search:"Standard ID,hidden"
+	GroupId            string                 `protobuf:"bytes,3,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty" search:"Control Group ID,hidden"`          // @gotags: search:"Control Group ID,hidden"
+	Name               string                 `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty" search:"Control,store"`                               // @gotags: search:"Control,store"
 	Description        string                 `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
 	Implemented        bool                   `protobuf:"varint,6,opt,name=implemented,proto3" json:"implemented,omitempty"`
 	InterpretationText string                 `protobuf:"bytes,7,opt,name=interpretation_text,json=interpretationText,proto3" json:"interpretation_text,omitempty"`
@@ -402,8 +402,8 @@ func (x *ComplianceControl) GetInterpretationText() string {
 type ComplianceStandard struct {
 	state         protoimpl.MessageState      `protogen:"open.v1"`
 	Metadata      *ComplianceStandardMetadata `protobuf:"bytes,1,opt,name=metadata,proto3" json:"metadata,omitempty"`
-	Groups        []*ComplianceControlGroup   `protobuf:"bytes,2,rep,name=groups,proto3" json:"groups,omitempty"`     // @gotags: search:"-"
-	Controls      []*ComplianceControl        `protobuf:"bytes,3,rep,name=controls,proto3" json:"controls,omitempty"` // @gotags: search:"-"
+	Groups        []*ComplianceControlGroup   `protobuf:"bytes,2,rep,name=groups,proto3" json:"groups,omitempty" search:"-"`     // @gotags: search:"-"
+	Controls      []*ComplianceControl        `protobuf:"bytes,3,rep,name=controls,proto3" json:"controls,omitempty" search:"-"` // @gotags: search:"-"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
