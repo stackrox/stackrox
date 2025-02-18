@@ -219,8 +219,6 @@ function ViolationsTablePage(): ReactElement {
                 setCurrentPageAlerts(alerts);
                 setAlertCount(counts);
                 setCurrentPageAlertsErrorMessage('');
-                setIsLoadingAlerts(false);
-                setIsTableDataUpdating(false);
             })
             .catch((error) => {
                 if (error instanceof CancelledPromiseError) {
@@ -230,6 +228,8 @@ function ViolationsTablePage(): ReactElement {
                 setAlertCount(0);
                 const parsedMessage = getAxiosErrorMessage(error);
                 setCurrentPageAlertsErrorMessage(parsedMessage);
+            })
+            .finally(() => {
                 setIsLoadingAlerts(false);
                 setIsTableDataUpdating(false);
             });
