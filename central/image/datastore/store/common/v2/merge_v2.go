@@ -23,11 +23,11 @@ func mergeComponentsV2(parts ImageParts, image *storage.Image) {
 			continue
 		}
 		// Generate an embedded component from the non-embedded version.
-		image.Scan.Components = append(image.Scan.Components, generateEmbeddedComponentV2(image.GetScan().GetOperatingSystem(), cp))
+		image.Scan.Components = append(image.Scan.Components, generateEmbeddedComponentV2(cp))
 	}
 }
 
-func generateEmbeddedComponentV2(_ string, cp ComponentParts) *storage.EmbeddedImageScanComponent {
+func generateEmbeddedComponentV2(cp ComponentParts) *storage.EmbeddedImageScanComponent {
 	vulns := make([]*storage.EmbeddedVulnerability, 0, len(cp.Children))
 	for _, cve := range cp.Children {
 		if cve.CVEV2 == nil {
