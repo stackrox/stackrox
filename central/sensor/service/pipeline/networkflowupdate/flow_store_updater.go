@@ -15,11 +15,12 @@ type flowPersister interface {
 	update(ctx context.Context, newFlows []*storage.NetworkFlow, updateTS *time.Time) error
 }
 
-func newFlowPersister(flowStore datastore.FlowDataStore, networkBaselines networkBaselineManager.Manager, entityStore entityDataStore.EntityDataStore) flowPersister {
+func newFlowPersister(flowStore datastore.FlowDataStore, networkBaselines networkBaselineManager.Manager, entityStore entityDataStore.EntityDataStore, clusterID string) flowPersister {
 	return &flowPersisterImpl{
 		flowStore:                 flowStore,
 		baselines:                 networkBaselines,
 		seenBaselineRelevantFlows: make(map[networkgraph.NetworkConnIndicator]struct{}),
 		entityStore:               entityStore,
+		clusterID:                 clusterID,
 	}
 }
