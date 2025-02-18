@@ -29,6 +29,7 @@ type datastoreImpl struct {
 	indicatorDataStore processIndicatorStore.DataStore
 	mutex              sync.RWMutex
 	pool               postgres.DB
+	prunedNullPoduid   bool
 }
 
 var (
@@ -45,6 +46,7 @@ func newDatastoreImpl(
 		storage:            storage,
 		indicatorDataStore: indicatorDataStore,
 		pool:               pool,
+		prunedNullPoduid:   false,
 	}
 }
 
@@ -645,4 +647,18 @@ func (ds *datastoreImpl) RemovePLOPsWithoutProcessIndicatorOrProcessInfo(ctx con
 	}
 
 	return int64(len(plopsToDelete)), nil
+}
+
+func (ds *datastoreImpl) RemovePLOPsWithoutPodUID(ctx context.Context) (int64, error) {
+	ds.mutex.Lock()
+	defer ds.mutex.Unlock()
+
+	// Delete processes listening on without poduids
+	commandTag, err := ds.pool.Exec(ctx, deletePLOPsWithoutPodUID)
+	if err != nil {
+		log.Errorf("failed to prune process listening without poduids: %v", err)
+		return 0, err
+	}
+
+	return commandTag.RowsAffected(), nil
 }
