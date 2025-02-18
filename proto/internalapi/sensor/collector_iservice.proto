@@ -2,10 +2,10 @@ syntax = "proto3";
 
 package sensor;
 
-import "storage/process_indicator.proto";
 import "internalapi/sensor/collector.proto";
 import "internalapi/sensor/network_connection_info.proto";
 import "internalapi/sensor/network_connection_iservice.proto";
+import "storage/process_indicator.proto";
 
 option cc_enable_arenas = true;
 option go_package = "./internalapi/sensor;sensor";
