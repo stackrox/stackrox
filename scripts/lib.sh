@@ -14,7 +14,7 @@ Reuse with:
 }
 
 info() {
-    echo "INFO: $(date): $*"
+    echo "INFO: $(date):" "$@"
 }
 
 die() {

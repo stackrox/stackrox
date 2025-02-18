@@ -851,6 +851,7 @@ function launch_sensor {
       fi
 
       if [[ "${DEDICATED_COLLECTOR_PRIORITY_CLASS:-}" == "true" ]]; then
+        echo "Using collector priority class $collector_priority_class_name"
         ensure_pod_priority_classes "$collector_priority_class_name"
         extra_helm_config+=(--set "collector.priorityClassName=$collector_priority_class_name")
       fi
