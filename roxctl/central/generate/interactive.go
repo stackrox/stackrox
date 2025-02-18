@@ -80,7 +80,7 @@ func getInteractiveUsage(f *pflag.Flag) string {
 }
 
 func readUserInputFromFlag(f *pflag.Flag) (string, error) {
-	usage := getInteractiveUsage(f)
+	usage := strings.TrimSuffix(getInteractiveUsage(f), ".")
 
 	var prompt string
 	if f.DefValue != "" {
