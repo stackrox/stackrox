@@ -3,7 +3,18 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import upperFirst from 'lodash/upperFirst';
-import { Alert } from '@patternfly/react-core';
+import {
+    Alert,
+    Button,
+    CodeBlock,
+    CodeBlockCode,
+    DescriptionList,
+    DescriptionListDescription,
+    DescriptionListGroup,
+    DescriptionListTerm,
+    List,
+    ListItem,
+} from '@patternfly/react-core';
 
 import { selectors } from 'reducers';
 
@@ -26,52 +37,60 @@ function getMessage(response) {
 
     const displayAttributes = response.userAttributes.map((curr) => {
         return (
-            <li key={curr.key}>
-                <span id={curr.key}>{curr.key}</span>:{' '}
-                <span aria-labelledby={curr.key}>
+            <DescriptionListGroup key={curr.key}>
+                <DescriptionListTerm>{curr.key}</DescriptionListTerm>
+                <DescriptionListDescription>
                     {Array.isArray(curr.values) ? curr.values.join(', ') : curr.values}
-                </span>
-            </li>
+                </DescriptionListDescription>
+            </DescriptionListGroup>
         );
     });
 
     // None is likely already filtered by the backend but we keep this code to be robust.
-    const displayRoles = response.roles
-        .filter((role) => {
-            return role.name !== `None`;
-        })
-        .map((role) => {
-            return <li key={role.name}>{role.name}</li>;
-        });
+    const filteredRoles = response.roles.filter((role) => role.name !== 'None');
 
     const content = (
-        <>
-            <p className="pb-2 mb-2 border-b border-success-700">
-                <span className="font-700" id="user-id-label">
-                    User ID:
-                </span>{' '}
-                <span aria-labelledby="user-id-label">{response?.userID}</span>
-            </p>
-            <p className="pb-2 mb-2 border-b border-success-700">
-                <h2 className="font-700">User Attributes:</h2>
-                <ul className="list-none">{displayAttributes}</ul>
-            </p>
+        <DescriptionList isCompact isHorizontal className="pf-v5-u-pt-md">
+            <DescriptionListGroup>
+                <DescriptionListTerm>User ID</DescriptionListTerm>
+                <DescriptionListDescription>{response?.userID}</DescriptionListDescription>
+            </DescriptionListGroup>
+            <DescriptionListGroup>
+                <DescriptionListTerm>User attributes</DescriptionListTerm>
+                <DescriptionListDescription>
+                    <DescriptionList isCompact isHorizontal>
+                        {displayAttributes}
+                    </DescriptionList>
+                </DescriptionListDescription>
+            </DescriptionListGroup>
             {response?.idpToken && (
-                <p className="pb-2 mb-2 border-b border-success-700">
-                    <span className="font-700" id="user-idp-token">
-                        IdP Token:
-                    </span>{' '}
-                    <span aria-labelledby="user-idp-token">
-                        <pre>{JSON.stringify(JSON.parse(response?.idpToken), null, 4)}</pre>
-                    </span>
-                </p>
+                <DescriptionListGroup>
+                    <DescriptionListTerm>IdP token</DescriptionListTerm>
+                    <DescriptionListDescription>
+                        <CodeBlock>
+                            <CodeBlockCode>
+                                {JSON.stringify(JSON.parse(response?.idpToken), null, 2)}
+                            </CodeBlockCode>
+                        </CodeBlock>
+                    </DescriptionListDescription>
+                </DescriptionListGroup>
             )}
-            <h2 className="font-700">User Roles:</h2>
-            <ul className="list-none">{displayRoles}</ul>
-        </>
+            {filteredRoles.length !== 0 && (
+                <DescriptionListGroup>
+                    <DescriptionListTerm>User roles</DescriptionListTerm>
+                    <DescriptionListDescription>
+                        <List isPlain>
+                            {filteredRoles.map(({ name }) => (
+                                <ListItem key={name}>{name}</ListItem>
+                            ))}
+                        </List>
+                    </DescriptionListDescription>
+                </DescriptionListGroup>
+            )}
+        </DescriptionList>
     );
 
-    if (displayRoles.length === 0) {
+    if (filteredRoles.length === 0) {
         const body = (
             <div className={messageClass}>
                 <p>
@@ -103,18 +122,14 @@ function TestLoginResultsPage({ authProviderTestResults }) {
                             {messageBody}
                         </Alert>
                     </div>
-                    <div className="flex flex-col items-center border-t border-base-400 p-4 w-full">
+                    <div className="flex flex-col items-center p-4 w-full">
                         <p className="mb-4">
                             You may now close this window and continue working in your original
                             window.
                         </p>
-                        <button
-                            type="button"
-                            className="btn btn-base whitespace-nowrap h-10 ml-4"
-                            onClick={closeThisWindow}
-                        >
-                            Close Window
-                        </button>
+                        <Button variant="primary" type="button" onClick={closeThisWindow}>
+                            Close window
+                        </Button>
                     </div>
                 </div>
             </div>
