@@ -319,8 +319,8 @@ github.com/aws/aws-sdk-go-v2/service/kms v1.30.0 h1:yS0JkEdV6h9JOo8sy2JSpjX+i7vs
 github.com/aws/aws-sdk-go-v2/service/kms v1.30.0/go.mod h1:+I8VUUSVD4p5ISQtzpgSva4I8cJ4SQ4b1dcBcof7O+g=
 github.com/aws/aws-sdk-go-v2/service/s3 v1.77.0 h1:RCOi1rDmLqOICym/6UeS2cqKED4T4m966w2rl1HfL+g=
 github.com/aws/aws-sdk-go-v2/service/s3 v1.77.0/go.mod h1:VC4EKSHqT3nzOcU955VWHMGsQ+w67wfAUBSjC8NOo8U=
-github.com/aws/aws-sdk-go-v2/service/securityhub v1.55.9 h1:C8IyiBlwQxnxcq01Roii2qnT1yghyCCfOKy8s5KbB84=
-github.com/aws/aws-sdk-go-v2/service/securityhub v1.55.9/go.mod h1:YE8gZTF+1Ie2DDPTLoT6VK6iPZWtzfQOcFMAnO8YEb0=
+github.com/aws/aws-sdk-go-v2/service/securityhub v1.55.10 h1:Qi6H4lAtv0oP/Uz8OXLJFm3oHtMXQ+7DI0U3Q6C7C90=
+github.com/aws/aws-sdk-go-v2/service/securityhub v1.55.10/go.mod h1:YE8gZTF+1Ie2DDPTLoT6VK6iPZWtzfQOcFMAnO8YEb0=
 github.com/aws/aws-sdk-go-v2/service/sso v1.24.15 h1:/eE3DogBjYlvlbhd2ssWyeuovWunHLxfgw3s/OJa4GQ=
 github.com/aws/aws-sdk-go-v2/service/sso v1.24.15/go.mod h1:2PCJYpi7EKeA5SkStAmZlF6fi0uUABuhtF8ILHjGc3Y=
 github.com/aws/aws-sdk-go-v2/service/ssooidc v1.28.14 h1:M/zwXiL2iXUrHputuXgmO94TVNmcenPHxgLXLutodKE=
