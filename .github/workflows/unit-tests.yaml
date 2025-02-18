@@ -82,12 +82,17 @@ jobs:
     strategy:
       matrix:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
+        pg: [ '13', '15' ]
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.5
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.6
     steps:
+    - name: Set Postgres version
+      run: |
+        echo "/usr/pgsql-${{ matrix.pg }}/bin" >> "${GITHUB_PATH}"
+
     - name: Checkout
       uses: actions/checkout@v4
       with:
