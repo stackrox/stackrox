@@ -100,17 +100,19 @@ func EmptyOrMap[K comparable, V any, M map[K]V](m M) interface{} {
 
 // CreateTableFromModel executes input create statement using the input connection.
 func CreateTableFromModel(ctx context.Context, db *gorm.DB, createStmt *postgres.CreateStmts) {
-	var rawSQL *gorm.DB
+	// A DB object to use to perform non-GORM changes (i.e partitions creation
+	// etc.) via raw SQL
+	var rawSQLDB *gorm.DB
 
 	// This function can access the database via GORM AutoMigrate and directly.
 	// For the latter we have to respect certain aspects, e.g. DryRun mode,
 	// which is used to print out SQL of the migration for troubleshooting.
 	if db.DryRun {
-		rawSQL = db.Session(&gorm.Session{
+		rawSQLDB = db.Session(&gorm.Session{
 			Logger: &printSQLLogger{Interface: db.Logger},
 		})
 	} else {
-		rawSQL = db
+		rawSQLDB = db
 	}
 
 	// Partitioned tables are not supported by Gorm migration or models
@@ -122,7 +124,7 @@ func CreateTableFromModel(ctx context.Context, db *gorm.DB, createStmt *postgres
 		err = errors.Wrapf(err, "Error creating table for %q: %v", reflect.TypeOf(createStmt.GormModel), err)
 		utils.Must(err)
 	} else {
-		rdb := rawSQL.WithContext(ctx).Exec(createStmt.PartitionCreate)
+		rdb := rawSQLDB.WithContext(ctx).Exec(createStmt.PartitionCreate)
 		utils.Must(rdb.Error)
 	}
 
@@ -131,7 +133,7 @@ func CreateTableFromModel(ctx context.Context, db *gorm.DB, createStmt *postgres
 	}
 
 	for _, stmt := range createStmt.PostStmts {
-		rdb := rawSQL.WithContext(ctx).Exec(stmt)
+		rdb := rawSQLDB.WithContext(ctx).Exec(stmt)
 		utils.Must(rdb.Error)
 	}
 }
