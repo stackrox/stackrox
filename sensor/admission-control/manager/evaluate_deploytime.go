@@ -2,7 +2,6 @@ package manager
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 
@@ -114,9 +113,9 @@ func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionReq
 	var deployment *storage.Deployment
 	if req.SubResource != "" && req.SubResource == ScaleSubResource {
 		if deployment = m.deployments.GetByName(req.Namespace, req.Name); deployment == nil {
-			return nil, errors.New(
-				fmt.Sprintf("could not find deployment with name: %q in namespace %q for this admission review request",
-					req.Name, req.Namespace))
+			return nil, errors.Errorf(
+				"could not find deployment with name: %q in namespace %q for this admission review request",
+				req.Name, req.Namespace)
 		}
 	} else {
 		k8sObj, err := unmarshalK8sObject(req.Kind, req.Object.Raw)

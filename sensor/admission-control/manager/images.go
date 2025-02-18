@@ -172,7 +172,6 @@ func hasModifiedImages(s *state, deployment *storage.Deployment, req *admission.
 		log.Errorf("Failed to convert old K8s object into StackRox deployment: %v", err)
 		return true
 	}
-
 	if oldDeployment == nil {
 		return true
 	}
