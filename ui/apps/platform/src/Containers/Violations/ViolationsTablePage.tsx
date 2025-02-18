@@ -113,7 +113,6 @@ function ViolationsTablePage(): ReactElement {
     const { analyticsTrack } = useAnalytics();
     const { searchFilter, setSearchFilter } = useURLSearch();
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isPlatformComponentsEnabled = isFeatureFlagEnabled('ROX_PLATFORM_COMPONENTS');
     const isPlatformCveSplitEnabled = isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT');
 
     const [selectedViolationStateTab, setSelectedViolationStateTab] = useURLStringUnion(
@@ -192,13 +191,8 @@ function ViolationsTablePage(): ReactElement {
 
     // When any of the deps to this effect change, we want to reload the alerts and count.
     useEffect(() => {
-        const filteredWorkflowFilter = isPlatformComponentsEnabled
-            ? getFilteredWorkflowViewSearchFilter(filteredWorkflowView)
-            : {};
-
         const alertSearchFilter: SearchFilter = {
             ...searchFilter,
-            ...filteredWorkflowFilter,
             'Violation State': selectedViolationStateTab,
         };
 
@@ -246,7 +240,6 @@ function ViolationsTablePage(): ReactElement {
         perPage,
         selectedViolationStateTab,
         filteredWorkflowView,
-        isPlatformComponentsEnabled,
     ]);
 
     // We need to be able to identify which alerts are runtime or attempted, and which are not by id.
@@ -319,7 +312,7 @@ function ViolationsTablePage(): ReactElement {
                     />
                 </Tabs>
             </PageSection>
-            {isPlatformComponentsEnabled && !isPlatformCveSplitEnabled && (
+            {!isPlatformCveSplitEnabled && (
                 <PageSection className="pf-v5-u-py-md" component="div" variant="light">
                     <FilteredWorkflowViewSelector
                         filteredWorkflowView={filteredWorkflowView}
