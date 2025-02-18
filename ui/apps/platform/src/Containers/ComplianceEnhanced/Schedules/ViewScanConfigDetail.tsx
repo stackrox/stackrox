@@ -39,7 +39,6 @@ import useWatchLastSnapshotForComplianceReports from './hooks/useWatchLastSnapsh
 type ViewScanConfigDetailProps = {
     hasWriteAccessForCompliance: boolean;
     isReportJobsEnabled: boolean;
-    isComplianceReportingEnabled: boolean;
     scanConfig?: ComplianceScanConfigurationStatus;
     isLoading: boolean;
     error?: Error | string | null;
@@ -51,7 +50,6 @@ const allReportJobsTabId = 'ComplianceScanConfigReportJobs';
 function ViewScanConfigDetail({
     hasWriteAccessForCompliance,
     isReportJobsEnabled,
-    isComplianceReportingEnabled,
     scanConfig,
     isLoading,
     error = null,
@@ -174,7 +172,6 @@ function ViewScanConfigDetail({
                                         isReportStatusPending={isReportStatusPending}
                                         scanConfigResponse={scanConfig}
                                         isReportJobsEnabled={isReportJobsEnabled}
-                                        isComplianceReportingEnabled={isComplianceReportingEnabled}
                                     />
                                 </FlexItem>
                             )}
@@ -228,7 +225,6 @@ function ViewScanConfigDetail({
                                 isLoading={isLoading}
                                 error={error}
                                 scanConfig={scanConfig}
-                                isComplianceReportingEnabled={isComplianceReportingEnabled}
                             />
                         </CardBody>
                     </Card>
@@ -236,10 +232,7 @@ function ViewScanConfigDetail({
             )}
             {activeScanConfigTab === 'ALL_REPORT_JOBS' && scanConfig?.id && (
                 <PageSection isCenterAligned id={allReportJobsTabId}>
-                    <ReportJobs
-                        scanConfigId={scanConfig.id}
-                        isComplianceReportingEnabled={isComplianceReportingEnabled}
-                    />
+                    <ReportJobs scanConfigId={scanConfig.id} />
                 </PageSection>
             )}
         </>

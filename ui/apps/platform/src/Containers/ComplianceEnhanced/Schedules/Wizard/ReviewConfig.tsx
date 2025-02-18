@@ -13,7 +13,6 @@ import {
 } from '@patternfly/react-core';
 
 import NotifierConfigurationView from 'Components/NotifierConfiguration/NotifierConfigurationView';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import { ComplianceIntegration } from 'services/ComplianceIntegrationService';
 
 import {
@@ -34,8 +33,6 @@ export type ReviewConfigProps = {
 
 function ReviewConfig({ clusters, errorMessage }: ReviewConfigProps) {
     const { values: formikValues }: FormikContextType<ScanConfigFormValues> = useFormikContext();
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isComplianceReportingEnabled = isFeatureFlagEnabled('ROX_COMPLIANCE_REPORTING');
 
     const scanSchedule = convertFormikParametersToSchedule(formikValues.parameters);
 
@@ -94,17 +91,15 @@ function ReviewConfig({ clusters, errorMessage }: ReviewConfigProps) {
                     headingLevel={headingLevel}
                     profiles={formikValues.profiles}
                 />
-                {isComplianceReportingEnabled && (
-                    <NotifierConfigurationView
-                        headingLevel={headingLevel}
-                        customBodyDefault={getBodyDefault(formikValues.profiles)}
-                        customSubjectDefault={getSubjectDefault(
-                            formikValues.parameters.name,
-                            formikValues.profiles
-                        )}
-                        notifierConfigurations={formikValues.report.notifierConfigurations}
-                    />
-                )}
+                <NotifierConfigurationView
+                    headingLevel={headingLevel}
+                    customBodyDefault={getBodyDefault(formikValues.profiles)}
+                    customSubjectDefault={getSubjectDefault(
+                        formikValues.parameters.name,
+                        formikValues.profiles
+                    )}
+                    notifierConfigurations={formikValues.report.notifierConfigurations}
+                />
                 <Alert
                     variant="info"
                     title="Save for new versus existing scan schedule"
