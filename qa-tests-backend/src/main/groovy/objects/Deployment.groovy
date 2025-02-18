@@ -1,5 +1,7 @@
 package objects
 
+import groovy.transform.CompileStatic
+
 import common.Constants
 import groovy.transform.AutoClone
 import groovy.util.logging.Slf4j
@@ -7,6 +9,7 @@ import orchestratormanager.OrchestratorType
 
 @AutoClone
 @Slf4j
+@CompileStatic
 class Deployment {
     String name
     String namespace = Constants.ORCHESTRATOR_NAMESPACE
@@ -326,6 +329,7 @@ class Deployment {
     }
 }
 
+@CompileStatic
 class DaemonSet extends Deployment {
     @Override
     DaemonSet create() {
@@ -339,6 +343,7 @@ class DaemonSet extends Deployment {
     }
 }
 
+@CompileStatic
 class Job extends Deployment {
     @Override
     Job create() {

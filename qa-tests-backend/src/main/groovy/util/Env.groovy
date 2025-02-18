@@ -1,5 +1,6 @@
 package util
 
+import groovy.transform.CompileStatic
 import orchestratormanager.OrchestratorTypes
 
 import java.nio.file.Files
@@ -8,30 +9,31 @@ import java.nio.file.attribute.FileTime
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
+@CompileStatic
 class Env {
 
     private static final Logger LOG = LoggerFactory.getLogger(this.getClass())
 
-    private static final PROPERTIES_FILE = "qa-test-settings.properties"
+    private static final String PROPERTIES_FILE = "qa-test-settings.properties"
 
-    private static final DEFAULT_VALUES = [
+    private static final Map<String, String> DEFAULT_VALUES = [
             "API_HOSTNAME": "localhost",
             "API_PORT": "8000",
             "ROX_USERNAME": "admin",
     ]
 
-    static final IN_CI = (System.getenv("CI") == "true")
-    static final CI_JOB_NAME = System.getenv("CI_JOB_NAME")
-    static final BUILD_TAG = System.getenv("BUILD_TAG")
-    static final GATHER_QA_TEST_DEBUG_LOGS = (System.getenv("GATHER_QA_TEST_DEBUG_LOGS") == "true")
-    static final QA_TEST_DEBUG_LOGS = System.getenv("QA_TEST_DEBUG_LOGS") ?: ""
-    static final HAS_WORKLOAD_IDENTITIES = (System.getenv("SETUP_WORKLOAD_IDENTITIES") == "true")
+    static final boolean IN_CI = (System.getenv("CI") == "true")
+    static final String CI_JOB_NAME = System.getenv("CI_JOB_NAME")
+    static final String BUILD_TAG = System.getenv("BUILD_TAG")
+    static final boolean GATHER_QA_TEST_DEBUG_LOGS = (System.getenv("GATHER_QA_TEST_DEBUG_LOGS") == "true")
+    static final String QA_TEST_DEBUG_LOGS = System.getenv("QA_TEST_DEBUG_LOGS") ?: ""
+    static final boolean HAS_WORKLOAD_IDENTITIES = (System.getenv("SETUP_WORKLOAD_IDENTITIES") == "true")
 
     static final String IMAGE_PULL_POLICY_FOR_QUAY_IO = System.getenv("IMAGE_PULL_POLICY_FOR_QUAY_IO")
 
     // REMOTE_CLUSTER_ARCH specifies architecture of a remote cluster on which tests are to be executed
     // the remote cluster arch can be ppc64le or s390x, default is x86_64
-    static final REMOTE_CLUSTER_ARCH = System.getenv("REMOTE_CLUSTER_ARCH") ?: "x86_64"
+    static final boolean REMOTE_CLUSTER_ARCH = System.getenv("REMOTE_CLUSTER_ARCH") ?: "x86_64"
 
     // ONLY_SECURED_CLUSTER specifies that the remote cluster being used to execute tests
     // only has secured-cluster deployed and connects to a remote central
@@ -51,7 +53,7 @@ class Env {
         return INSTANCE.mustGetInCIInternal(key, defVal)
     }
 
-    private final envVars = new Properties()
+    private final Properties envVars = new Properties()
 
     private Env() {
         if (!IN_CI) {
@@ -86,7 +88,7 @@ class Env {
     protected String mustGetInCIInternal(String key, String defVal) {
         def value = envVars.get(key)
         if (value == null) {
-            if (inCI) {
+            if (IN_CI) {
                 throw new RuntimeException("No value assigned for required key ${key}")
             }
             return defVal
@@ -134,7 +136,7 @@ class Env {
 
             String password = null
             try {
-                def passwordPath = "../deploy/${envVars.get("CLUSTER").toLowerCase()}/central-deploy/password"
+                def passwordPath = "../deploy/${envVars.get("CLUSTER").toString().toLowerCase()}/central-deploy/password"
                 BufferedReader br = new BufferedReader(new FileReader(passwordPath))
                 password = br.readLine()
             } catch (Exception ex) {
