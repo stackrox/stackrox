@@ -171,7 +171,6 @@ func (m *managerImpl) Gather() phonehome.GatherFunc {
 
 // UpdateDeclarativeConfigContents will take the file contents and transform these to declarative configurations.
 func (m *managerImpl) UpdateDeclarativeConfigContents(handlerID string, contents [][]byte) {
-	log.Info("DeclarativeConfig - ManagerImpl - UpdateDeclarativeConfigContents")
 	// Operate the whole function under a single lock.
 	// This is due to the nature of the function being called from multiple go routines, and the possibility currently
 	// being there that two concurrent calls to Update lead to transformed configurations being potentially overwritten.
@@ -179,7 +178,6 @@ func (m *managerImpl) UpdateDeclarativeConfigContents(handlerID string, contents
 	defer m.transformedMessagesMutex.Unlock()
 	configurations, err := declarativeconfig.ConfigurationFromRawBytes(contents...)
 	if err != nil {
-		log.Info("DeclarativeConfig - ManagerImpl - UpdateDeclarativeConfig - Error getting configurations")
 		m.updateDeclarativeConfigHealth(declarativeConfigUtils.HealthStatusForHandler(handlerID, err))
 		log.Debugf("Error during unmarshalling of declarative configuration files: %+v", err)
 		return
@@ -187,17 +185,14 @@ func (m *managerImpl) UpdateDeclarativeConfigContents(handlerID string, contents
 
 	transformedConfigurations := make(map[reflect.Type][]protocompat.Message, len(configurations))
 	var transformationErrors *multierror.Error
-	var transformedMessageCount, transformationErrorCount int
 	for _, configuration := range configurations {
 		transformedConfig, err := m.universalTransformer.Transform(configuration)
 		if err != nil {
 			log.Debugf("Error during transforming declarative configuration %+v: %+v", configuration, err)
 			transformationErrors = multierror.Append(transformationErrors, err)
-			transformationErrorCount++
 			continue
 		}
 		for protoType, protoMessages := range transformedConfig {
-			transformedMessageCount += len(protoMessages)
 			transformedConfigurations[protoType] = append(transformedConfigurations[protoType], protoMessages...)
 			// Register health status for all new messages. Existing messages will not be re-registered.
 			m.registerHealthForMessages(handlerID, protoMessages...)
@@ -207,10 +202,6 @@ func (m *managerImpl) UpdateDeclarativeConfigContents(handlerID string, contents
 		errors.Wrap(transformationErrors.ErrorOrNil(), "during transforming configuration")))
 
 	m.transformedMessagesByHandler[handlerID] = transformedConfigurations
-	if transformedMessageCount > 0 || transformationErrorCount > 0 {
-		log.Infof("Declarative Config - Manager - %d objects pushed for update, "+
-			"%d transformation errors", transformedMessageCount, transformationErrorCount)
-	}
 	m.shortCircuitReconciliationLoop()
 }
 
@@ -236,12 +227,10 @@ func (m *managerImpl) reconciliationLoop() {
 		select {
 		case <-m.shortCircuitSignal.Done():
 			log.Debug("Received a short circuit signal, running the reconciliation")
-			log.Info("DC - FileWatch")
 			m.shortCircuitSignal.Reset()
 			m.runReconciliation()
 		case <-m.reconciliationTicker.C:
 			log.Debug("Received a ticker signal, running the reconciliation")
-			log.Info("DC - Timer")
 			m.runReconciliation()
 		}
 	}
