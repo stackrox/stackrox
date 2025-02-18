@@ -2747,49 +2747,32 @@ func (suite *PLOPDataStoreTestSuite) RemovePLOPsWithoutProcessIndicatorOrProcess
 }
 
 func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUID() {
-
-	cases := []struct {
-		name                  string
-		initialPlops          []*storage.ProcessListeningOnPortStorage
-		expectedPlopDeletions []string
-	}{
-		{
-			name: "no deployments nor pods - remove plops since there are no pods",
-			initialPlops: []*storage.ProcessListeningOnPortStorage{
-				fixtures.GetPlopStorage1(),
-				fixtures.GetPlopStorage2(),
-				fixtures.GetPlopStorage3(),
-				fixtures.GetPlopStorage4(),
-				fixtures.GetPlopStorage5(),
-				fixtures.GetPlopStorage6(),
-			},
-			expectedPlopDeletions: []string{fixtureconsts.PlopUID1, fixtureconsts.PlopUID2, fixtureconsts.PlopUID3},
-		},
+	initialPlops := []*storage.ProcessListeningOnPortStorage{
+		fixtures.GetPlopStorage1(),
+		fixtures.GetPlopStorage2(),
+		fixtures.GetPlopStorage3(),
+		fixtures.GetPlopStorage4(),
+		fixtures.GetPlopStorage5(),
+		fixtures.GetPlopStorage6(),
 	}
-	for _, c := range cases {
-		suite.T().Run(c.name, func(t *testing.T) {
-			suite.TearDownTest()
-			suite.SetupTest()
+	expectedPlopDeletions := []string{fixtureconsts.PlopUID1, fixtureconsts.PlopUID2, fixtureconsts.PlopUID3}
 
-			err := suite.store.UpsertMany(suite.hasWriteCtx, c.initialPlops)
-			suite.NoError(err)
-			plopCount, err := suite.store.Count(suite.hasReadCtx, search.EmptyQuery())
-			suite.NoError(err)
-			suite.Equal(len(c.initialPlops), plopCount)
+	err := suite.store.UpsertMany(suite.hasWriteCtx, initialPlops)
+	suite.NoError(err)
+	plopCount, err := suite.store.Count(suite.hasReadCtx, search.EmptyQuery())
+	suite.NoError(err)
+	suite.Equal(len(initialPlops), plopCount)
 
-			prunedCount, err := suite.datastore.RemovePLOPsWithoutPodUID(suite.hasWriteCtx)
-			suite.Equal(int64(3), prunedCount)
+	prunedCount, err := suite.datastore.RemovePLOPsWithoutPodUID(suite.hasWriteCtx)
+	suite.Equal(int64(3), prunedCount)
 
-			plopCount, err = suite.store.Count(suite.hasReadCtx, search.EmptyQuery())
-			suite.NoError(err)
-			suite.Equal(len(c.initialPlops)-len(c.expectedPlopDeletions), plopCount)
+	plopCount, err = suite.store.Count(suite.hasReadCtx, search.EmptyQuery())
+	suite.NoError(err)
+	suite.Equal(len(initialPlops)-len(expectedPlopDeletions), plopCount)
 
-			ids, err := suite.store.GetIDs(suite.hasReadCtx)
-			suite.NoError(err)
-			for id := range ids {
-				suite.NotContains(c.expectedPlopDeletions, id)
-			}
-
-		})
+	ids, err := suite.store.GetIDs(suite.hasReadCtx)
+	suite.NoError(err)
+	for id := range ids {
+		suite.NotContains(expectedPlopDeletions, id)
 	}
 }
