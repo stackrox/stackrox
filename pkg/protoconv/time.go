@@ -97,7 +97,7 @@ func ReadableTime(ts *timestamppb.Timestamp) string {
 	return t.UTC().Format(time.DateTime)
 }
 
-// NowMinus substracts a specified amount of time from the current timestamp
+// NowMinus subtracts a specified amount of time from the current timestamp
 func NowMinus(t time.Duration) *timestamppb.Timestamp {
 	return ConvertTimeToTimestamp(time.Now().Add(-t))
 }

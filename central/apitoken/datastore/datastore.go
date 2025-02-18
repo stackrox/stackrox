@@ -15,11 +15,13 @@ type DataStore interface {
 	GetTokenOrNil(ctx context.Context, id string) (token *storage.TokenMetadata, err error)
 	GetTokens(ctx context.Context, req *v1.GetAPITokensRequest) ([]*storage.TokenMetadata, error)
 
+	Count(ctx context.Context, q *v1.Query) (int, error)
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 	SearchRawTokens(ctx context.Context, q *v1.Query) ([]*storage.TokenMetadata, error)
 
 	AddToken(ctx context.Context, token *storage.TokenMetadata) error
 	RevokeToken(ctx context.Context, id string) (exists bool, err error)
+	DeleteToken(ctx context.Context, id string) error
 
 	GetNotificationSchedule(ctx context.Context) (*storage.NotificationSchedule, bool, error)
 	UpsertNotificationSchedule(ctx context.Context, schedule *storage.NotificationSchedule) error
