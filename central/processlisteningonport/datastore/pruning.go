@@ -31,8 +31,4 @@ const (
 	// if the serialized data has process information. PLOPs without process information are then deleted.
 	getPotentiallyOrphanedPLOPs = `SELECT plop.serialized FROM listening_endpoints plop where NOT EXISTS
 			(select 1 FROM process_indicators proc where plop.processindicatorid = proc.id)`
-
-	// PLOPs with null PodUID are stale, from before the listening_endpoints table had the PodUID column.
-	// PodUIDs should be populated on secured cluster restart.
-	deletePLOPsWithoutPodUID = `DELETE FROM listening_endpoints WHERE poduid is NULL`
 )

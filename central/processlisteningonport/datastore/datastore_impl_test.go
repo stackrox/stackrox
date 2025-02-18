@@ -2764,6 +2764,7 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUID() {
 	suite.Equal(len(initialPlops), plopCount)
 
 	prunedCount, err := suite.datastore.RemovePLOPsWithoutPodUID(suite.hasWriteCtx)
+	suite.NoError(err)
 	suite.Equal(int64(3), prunedCount)
 
 	plopCount, err = suite.store.Count(suite.hasReadCtx, search.EmptyQuery())
