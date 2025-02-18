@@ -218,7 +218,6 @@ export const notifierIntegrationsDescriptors: NotifierIntegrationDescriptor[] = 
         image: acscsEmail,
         label: 'RHACS Cloud Service',
         type: 'acscsEmail',
-        featureFlagDependency: ['ROX_ACSCS_EMAIL_NOTIFIER'],
     },
     {
         image: google,
