@@ -245,8 +245,8 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
         },
         {
             type: 'parent',
-            key: 'Platform Configuration',
-            title: keyForPlatformConfiguration,
+            title: 'Platform Configuration',
+            key: keyForPlatformConfiguration,
             children: [
                 {
                     type: 'link',
