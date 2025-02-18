@@ -865,11 +865,11 @@ func (x *TestCloudSourceRequest) GetUpdateCredentials() bool {
 type CloudSource_Credentials struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Used for single-valued authentication via long-lived tokens.
-	Secret string `protobuf:"bytes,1,opt,name=secret,proto3" json:"secret,omitempty"` // @gotags: scrub:"always"
+	Secret string `protobuf:"bytes,1,opt,name=secret,proto3" json:"secret,omitempty" scrub:"always"` // @gotags: scrub:"always"
 	// Used for client authentication in combination with client_secret.
-	ClientId string `protobuf:"bytes,2,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"` // @gotags: scrub:"always"
+	ClientId string `protobuf:"bytes,2,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty" scrub:"always"` // @gotags: scrub:"always"
 	// Used for client authentication in combination with client_id.
-	ClientSecret  string `protobuf:"bytes,3,opt,name=client_secret,json=clientSecret,proto3" json:"client_secret,omitempty"` // @gotags: scrub:"always"
+	ClientSecret  string `protobuf:"bytes,3,opt,name=client_secret,json=clientSecret,proto3" json:"client_secret,omitempty" scrub:"always"` // @gotags: scrub:"always"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
