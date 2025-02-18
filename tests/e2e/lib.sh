@@ -188,7 +188,7 @@ export_test_environment() {
         ci_export FAIL_FAST "true"
     fi
 
-    if [[ "${CI_JOB_NAME}" =~ gke ]]; then
+    if [[ "${CI_JOB_NAME:-}" =~ gke ]]; then
         # GKE uses this network for services. Consider it as a private subnet.
         ci_export ROX_NON_AGGREGATED_NETWORKS "${ROX_NON_AGGREGATED_NETWORKS:-34.118.224.0/20}"
     fi
