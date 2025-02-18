@@ -1733,6 +1733,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				"foo": {
 					Id:                 "foo",
 					Name:               "CVE-2021-44228",
+					Advisory:           "RHSA-2021:5132",
 					Link:               "https://access.redhat.com/security/cve/CVE-2021-44228 https://access.redhat.com/errata/RHSA-2021:5132",
 					Issued:             protoNow,
 					Severity:           "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
