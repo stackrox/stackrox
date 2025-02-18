@@ -19,7 +19,6 @@ import (
 var (
 	ReadOnlyMode int32 = 0640
 	PostgresUser int64 = 70
-	CentralUser  int64 = 4000
 	ScannerUser  int64 = 65534
 	TwoGigs            = resource.MustParse("2Gi")
 	log                = logging.CreateLogger(logging.CurrentModule(), 0)

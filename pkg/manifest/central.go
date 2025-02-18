@@ -434,9 +434,9 @@ func (m *manifestGenerator) applyCentralDeployment(ctx context.Context) error {
 					ServiceAccountName: "central",
 					InitContainers: []v1.Container{{
 						Name:            "migrator",
-						Image:           "localhost:5001/stackrox/main:latest",
+						Image:           "localhost:5001/stackrox/stackrox:latest",
 						ImagePullPolicy: v1.PullAlways,
-						Command:         []string{"/stackrox/bin/migrator"},
+						Command:         []string{"/stackrox/migrator"},
 						Env: []v1.EnvVar{
 							{
 								Name: "ROX_NAMESPACE",
@@ -451,7 +451,7 @@ func (m *manifestGenerator) applyCentralDeployment(ctx context.Context) error {
 					Containers: []v1.Container{{
 						Name: "central",
 						// Image:           "quay.io/klape/stackrox:latest",
-						Image:           "localhost:5001/stackrox/main:latest",
+						Image:           "localhost:5001/stackrox/stackrox:latest",
 						ImagePullPolicy: v1.PullAlways,
 						Command:         []string{"/stackrox/central"},
 						Ports: []v1.ContainerPort{{

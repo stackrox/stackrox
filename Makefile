@@ -8,6 +8,8 @@ BENCHTIME ?= 1x
 BENCHTIMEOUT ?= 20m
 BENCHCOUNT ?= 1
 
+SHELL = /bin/bash -o pipefail
+
 podman =
 # docker --version might not contain any traces of podman in the latest
 # version, search for more output
@@ -890,19 +892,41 @@ bin/config-controller: $(shell find config-controller/ -name *.go) ${pkg}
 bin/migrator: $(shell find migrator/ -name *.go) ${pkg}
 	CGO_ENABLED=1 go build -o $@ ./migrator
 
-central: bin/central bin/config-controller bin/migrator
+central: bin/central bin/config-controller bin/migrator bin/scanner-v4
 
 secured-cluster: bin/kubernetes bin/admission-control bin/compliance bin/upgrader bin/init-tls-certs
 
 bin/scanner-v4: $(shell find scanner/ -name *.go) ${pkg}
 	CGO_ENABLED=1 go build -o $@ ./scanner/cmd/scanner
 
+bin/scanner-v2: $(shell find scannerv2/ -name *.go)
+	go build -C scannerv2 -o ../$@ ./cmd/clair
+
+bin/local-nodescanner-v2: $(shell find scannerv2/ -name *.go)
+	go build -C scannerv2 -o ../$@ ./tools/local-nodescanner
+
 bin/installer: $(shell find installer/ -name *.go) $(shell find pkg/manifest -name *.go)
 	CGO_ENABLED=1 go build -o $@ ./installer
 
+bin/updater: $(shell find scannerv2/ -name *.go)
+	go build -C ./scannerv2 -o ../$@ ./cmd/updater
+
+bundle: bin/updater scannerv2/image/scanner/dump/genesis_manifests.json
+	# mkdir -p /tmp/genesis-dump
+	# bin/updater generate-dump --out-file /tmp/genesis-dump/genesis-dump.zip
+	# ls -lrt /tmp/genesis-dump
+	# bin/updater print-stats /tmp/genesis-dump/genesis-dump.zip
+	mkdir -p bundle/
+	unzip -j /tmp/genesis-dump/genesis-dump.zip 'nvd/*.json' -d bundle/nvd_definitions
+	unzip -j /tmp/genesis-dump/genesis-dump.zip 'k8s/*.yaml' -d bundle/k8s_definitions
+	unzip -j /tmp/genesis-dump/genesis-dump.zip 'istio/*.yaml' -d bundle/istio_definitions
+	unzip -j /tmp/genesis-dump/genesis-dump.zip 'rhelv2/repository-to-cpe.json' -d bundle/repo2cpe
+
+.PHONY: scanner-v2
+scanner-v2: bin/scanner-v2 bin/local-nodescanner-v2 bundle
 
 .PHONY: all-binaries
-all-binaries: secured-cluster central bin/installer
+all-binaries: secured-cluster central bin/installer scanner-v2
 
 download: data
 	rm -rf data
@@ -911,7 +935,12 @@ download: data
 
 .PHONY: build-combined-image
 build-combined-image:
-	podman build .
+	podman build . | tee /tmp/stackrox-combined-image-tag
+
+.PHONY: push-combined-image-local
+push-combined-image-local: build-combined-image
+	podman tag $(shell tail -n 1 /tmp/stackrox-combined-image-tag) localhost:5001/stackrox/stackrox:latest
+	podman push --tls-verify=false localhost:5001/stackrox/stackrox:latest
 
 .PHONY: combined-image
-combined-image: all-binaries download build-combined-image
+combined-image: all-binaries download push-combined-image-local

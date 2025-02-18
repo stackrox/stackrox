@@ -285,7 +285,7 @@ func (m *manifestGenerator) applyScannerDbDeployment(ctx context.Context) error 
 
 func (m *manifestGenerator) applyScannerDeployment(ctx context.Context) error {
 	// image := "quay.io/redhat-user-workloads/rh-acs-tenant/acs/scanner:on-pr-8f408774a783d37ea22030afbae689aa72ba1966"
-	image := "quay.io/stackrox-io/scanner:4.3.4"
+	image := "localhost:5001/stackrox/stackrox:latest"
 	deployment := apps.Deployment{
 		Spec: apps.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
@@ -303,15 +303,25 @@ func (m *manifestGenerator) applyScannerDeployment(ctx context.Context) error {
 					},
 				},
 				Spec: v1.PodSpec{
-					SecurityContext: &v1.PodSecurityContext{
-						FSGroup: &ScannerUser,
-					},
 					ServiceAccountName: "scanner",
+					// InitContainers: []v1.Container{{
+					// 	Name:  "init",
+					// 	Image: image,
+					// 	Command: []string{
+					// 		"/bin/sh",
+					// 		"-c",
+					// 		`
+					// set -euo pipefail
+					// CA_PATH="/run/secrets/stackrox.io/certs/ca.pem"
+					// cp "${CA_PATH}" /etc/pki/ca-trust/source/anchors/root-ca.pem
+					// update-ca-trust
+					// `,
+					// 	},
+					// }},
 					Containers: []v1.Container{{
-						Name:            "scanner",
-						Image:           image,
-						Command:         []string{"/entrypoint.sh"},
-						SecurityContext: RestrictedSecurityContext(ScannerUser),
+						Name:    "scanner",
+						Image:   image,
+						Command: []string{"/stackrox/scanner-v2"},
 						Ports: []v1.ContainerPort{{
 							Name:          "https",
 							ContainerPort: 8080,
@@ -336,6 +346,9 @@ func (m *manifestGenerator) applyScannerDeployment(ctx context.Context) error {
 										FieldPath: "metadata.name",
 									},
 								},
+							}, {
+								Name:  "PGSSLROOTCERT",
+								Value: "/run/secrets/stackrox.io/certs/ca.pem",
 							},
 						},
 					}},
@@ -464,6 +477,7 @@ func (m *manifestGenerator) applyScannerDeployment(ctx context.Context) error {
 
 	for _, v := range volumeMounts {
 		v.Apply(&deployment.Spec.Template.Spec.Containers[0], &deployment.Spec.Template.Spec)
+		// v.Apply(&deployment.Spec.Template.Spec.InitContainers[0], nil)
 	}
 
 	deployment.SetName("scanner")
