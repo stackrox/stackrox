@@ -9,7 +9,6 @@ import useAnalytics, {
     COMPLIANCE_SCHEDULES_WIZARD_SAVE_CLICKED,
     COMPLIANCE_SCHEDULES_WIZARD_STEP_CHANGED,
 } from 'hooks/useAnalytics';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useRestQuery from 'hooks/useRestQuery';
 import { saveScanConfig } from 'services/ComplianceScanConfigurationService';
 import { listComplianceIntegrations } from 'services/ComplianceIntegrationService';
@@ -48,8 +47,6 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
     const [createScanConfigError, setCreateScanConfigError] = useState('');
     const [clustersUsedForProfileData, setClustersUsedForProfileData] = useState<string[]>([]);
     const alertRef = useRef<HTMLDivElement | null>(null);
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isComplianceReportingEnabled = isFeatureFlagEnabled('ROX_COMPLIANCE_REPORTING');
 
     const listClustersQuery = useCallback(() => listComplianceIntegrations(), []);
     const { data: clusters, isLoading: isFetchingClusters } = useRestQuery(listClustersQuery);
@@ -213,7 +210,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
             ),
             canJumpTo: canJumpToReviewConfig(),
         },
-    ].filter(({ id }) => id !== CONFIGURE_REPORT_ID || isComplianceReportingEnabled);
+    ];
 
     return (
         <>

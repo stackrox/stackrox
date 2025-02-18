@@ -18,7 +18,6 @@ export type ScanConfigActionsColumnProps = {
     scanConfigResponse: ComplianceScanConfigurationStatus;
     isSnapshotStatusPending: boolean;
     isReportJobsEnabled: boolean;
-    isComplianceReportingEnabled: boolean;
 };
 
 function ScanConfigActionsColumn({
@@ -29,7 +28,6 @@ function ScanConfigActionsColumn({
     scanConfigResponse,
     isSnapshotStatusPending,
     isReportJobsEnabled,
-    isComplianceReportingEnabled,
 }: ScanConfigActionsColumnProps): ReactElement {
     const history = useHistory();
 
@@ -79,7 +77,6 @@ function ScanConfigActionsColumn({
                 event.preventDefault();
                 handleSendReport(scanConfigResponse);
             },
-            isHidden: !isComplianceReportingEnabled,
             isDisabled: notifiers.length === 0 || isSnapshotStatusPending,
         },
         {
