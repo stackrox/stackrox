@@ -29,7 +29,6 @@ type datastoreImpl struct {
 	indicatorDataStore processIndicatorStore.DataStore
 	mutex              sync.RWMutex
 	pool               postgres.DB
-	prunedNullPoduid   bool
 }
 
 var (
@@ -46,7 +45,6 @@ func newDatastoreImpl(
 		storage:            storage,
 		indicatorDataStore: indicatorDataStore,
 		pool:               pool,
-		prunedNullPoduid:   false,
 	}
 }
 
