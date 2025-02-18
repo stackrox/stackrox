@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/protoconv/resources"
-	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	admission "k8s.io/api/admission/v1"
 	"k8s.io/utils/pointer"
@@ -147,7 +146,7 @@ func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionReq
 	}
 
 	var fetchImgCtx context.Context
-	if timeoutSecs := s.GetClusterConfig().GetAdmissionControllerConfig().GetTimeoutSeconds(); timeoutSecs > 1 && m.hasModifiedImages(s, deployment, req) {
+	if timeoutSecs := s.GetClusterConfig().GetAdmissionControllerConfig().GetTimeoutSeconds(); timeoutSecs > 1 && hasModifiedImages(s, deployment, req) {
 		var cancel context.CancelFunc
 		fetchImgCtx, cancel = context.WithTimeout(context.Background(), time.Duration(timeoutSecs)*time.Second)
 		defer cancel()
@@ -176,50 +175,4 @@ func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionReq
 
 	log.Debugf("Violated policies: %d, rejecting %s request on %s/%s [%s]", len(alerts), req.Operation, req.Namespace, req.Name, req.Kind)
 	return fail(req.UID, message(alerts, !s.GetClusterConfig().GetAdmissionControllerConfig().GetDisableBypass())), nil
-}
-
-// hasModifiedImages checks if the given deployment has any new images that the old version was not previously using.
-// If there is no old deployment version, or some error is encountered during conversion, true is conservatively
-// returned.
-func (m *manager) hasModifiedImages(s *state, deployment *storage.Deployment, req *admission.AdmissionRequest) bool {
-	if req.OldObject.Raw == nil {
-		return true
-	}
-
-	var oldDeployment *storage.Deployment
-	if req.SubResource != "" && req.SubResource == ScaleSubResource {
-		// TODO: We could consider returning false here since when the admission review request is for the scale
-		// subresource, I do not believe it is possible for a user to change the image on the deployment at the same
-		// time as updating the scale subresource However, the contract of this function as designed was to be
-		// conservative and return true.
-		return true
-	} else {
-		oldK8sObj, err := unmarshalK8sObject(req.Kind, req.OldObject.Raw)
-		if err != nil {
-			log.Errorf("Failed to unmarshal old object into K8s object: %v", err)
-			return true
-		}
-
-		oldDeployment, err = resources.NewDeploymentFromStaticResource(oldK8sObj, req.Kind.Kind, s.clusterID(), s.GetClusterConfig().GetRegistryOverride())
-		if err != nil {
-			log.Errorf("Failed to convert old K8s object into StackRox deployment: %v", err)
-			return true
-		}
-	}
-	if oldDeployment == nil {
-		return true
-	}
-
-	oldImages := set.NewStringSet()
-	for _, container := range oldDeployment.GetContainers() {
-		oldImages.Add(container.GetImage().GetName().GetFullName())
-	}
-
-	for _, container := range deployment.GetContainers() {
-		if !oldImages.Contains(container.GetImage().GetName().GetFullName()) {
-			return true
-		}
-	}
-
-	return false
 }
