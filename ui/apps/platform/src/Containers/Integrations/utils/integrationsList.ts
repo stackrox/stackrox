@@ -259,7 +259,6 @@ export const notifierIntegrationsDescriptors: NotifierIntegrationDescriptor[] = 
         image: microsoftSentinel,
         label: 'Microsoft Sentinel',
         type: 'microsoftSentinel',
-        featureFlagDependency: ['ROX_MICROSOFT_SENTINEL'],
     },
 ];
 
