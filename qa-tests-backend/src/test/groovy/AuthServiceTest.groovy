@@ -26,13 +26,13 @@ class AuthServiceTest extends BaseSpecification {
         assert status
         assert status.userId == "admin"
 
-        status.authProvider.withDo {
+        status.authProvider.with {
             assert name == "Login with username/password"
             assert id == "4df1b98c-24ed-4073-a9ad-356aec6bb62d"
             assert type == "basic"
         }
 
-        status.userInfo.withDo {
+        status.userInfo.with {
             assert permissions.resourceToAccessCount > 0
             permissions.resourceToAccessMap.each {
                 assert it.value == RoleOuterClass.Access.READ_WRITE_ACCESS
@@ -57,7 +57,7 @@ class AuthServiceTest extends BaseSpecification {
         assert status.userId.startsWith("auth-token:")
         assert !status.authProvider.id
 
-        status.userInfo.withDo {
+        status.userInfo.with {
             assert permissions.resourceToAccessCount > 0
             permissions.resourceToAccessMap.each {
                 assert it.value == RoleOuterClass.Access.READ_WRITE_ACCESS
