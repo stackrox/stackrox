@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"strconv"
 	"strings"
 	"time"
 
@@ -194,6 +193,7 @@ func NVDCVEsToEmbeddedCVEs(cves []*schema.NVDCVEFeedJSON10DefCVEItem, ct CVEType
 
 // ImageCVEToEmbeddedVulnerability coverts a Proto CVEs to Embedded Vuln
 // It converts all the fields except Fixed By which gets set depending on the CVE
+// TODO(ROX-28123): Remove
 func ImageCVEToEmbeddedVulnerability(vuln *storage.ImageCVE) *storage.EmbeddedVulnerability {
 	embeddedCVE := &storage.EmbeddedVulnerability{
 		Cve:                   vuln.GetCveBaseInfo().GetCve(),
@@ -220,50 +220,6 @@ func ImageCVEToEmbeddedVulnerability(vuln *storage.ImageCVE) *storage.EmbeddedVu
 	}
 	embeddedCVE.VulnerabilityType = storage.EmbeddedVulnerability_IMAGE_VULNERABILITY
 	embeddedCVE.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY}
-	return embeddedCVE
-}
-
-// ImageCVEV2ToEmbeddedVulnerability coverts a Proto CVEs to Embedded Vuln
-// It converts all the fields except Fixed By which gets set depending on the CVE
-func ImageCVEV2ToEmbeddedVulnerability(vuln *storage.ImageCVEV2) *storage.EmbeddedVulnerability {
-	embeddedCVE := &storage.EmbeddedVulnerability{
-		Cve:                   vuln.GetCveBaseInfo().GetCve(),
-		Cvss:                  vuln.GetCvss(),
-		Summary:               vuln.GetCveBaseInfo().GetSummary(),
-		Link:                  vuln.GetCveBaseInfo().GetLink(),
-		CvssV2:                vuln.GetCveBaseInfo().GetCvssV2(),
-		CvssV3:                vuln.GetCveBaseInfo().GetCvssV3(),
-		PublishedOn:           vuln.GetCveBaseInfo().GetPublishedOn(),
-		LastModified:          vuln.GetCveBaseInfo().GetLastModified(),
-		FirstSystemOccurrence: vuln.GetCveBaseInfo().GetCreatedAt(),
-		Severity:              vuln.GetSeverity(),
-		CvssMetrics:           vuln.GetCveBaseInfo().GetCvssMetrics(),
-		NvdCvss:               vuln.GetNvdcvss(),
-		Epss:                  vuln.GetCveBaseInfo().GetEpss(),
-		FirstImageOccurrence:  vuln.GetFirstImageOccurrence(),
-	}
-
-	if vuln.GetCveBaseInfo().GetCvssV3() != nil {
-		embeddedCVE.ScoreVersion = storage.EmbeddedVulnerability_V3
-	} else {
-		embeddedCVE.ScoreVersion = storage.EmbeddedVulnerability_V2
-	}
-
-	embeddedCVE.VulnerabilityType = storage.EmbeddedVulnerability_IMAGE_VULNERABILITY
-	embeddedCVE.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY}
-
-	if vuln.IsFixable {
-		embeddedCVE.SetFixedBy = &storage.EmbeddedVulnerability_FixedBy{
-			FixedBy: vuln.GetFixedBy(),
-		}
-	}
-
-	// The `Suppressed` field is transferred to `State` field (as DEFERRED) in `converter.ProtoCVEToEmbeddedCVE`.
-	// Now visit image-cve edge to derive the state.
-	if state := vuln.GetState(); state != storage.VulnerabilityState_OBSERVED {
-		embeddedCVE.State = state
-	}
-
 	return embeddedCVE
 }
 
@@ -310,6 +266,7 @@ func EmbeddedCVEToProtoCVE(os string, from *storage.EmbeddedVulnerability) *stor
 }
 
 // EmbeddedVulnerabilityToImageCVE converts *storage.EmbeddedVulnerability object to *storage.ImageCVE object
+// TODO(ROX-28123): Remove
 func EmbeddedVulnerabilityToImageCVE(os string, from *storage.EmbeddedVulnerability) *storage.ImageCVE {
 	var nvdCvss float32
 	nvdCvss = 0
@@ -357,72 +314,6 @@ func EmbeddedVulnerabilityToImageCVE(os string, from *storage.EmbeddedVulnerabil
 		ret.CveBaseInfo.ScoreVersion = storage.CVEInfo_V2
 		ret.ImpactScore = from.GetCvssV2().GetImpactScore()
 	}
-	return ret
-}
-
-// EmbeddedVulnerabilityToImageCVEV2 converts *storage.EmbeddedVulnerability object to *storage.ImageCVEV2 object
-func EmbeddedVulnerabilityToImageCVEV2(os string, imageID string, componentID string, cveIndex int, from *storage.EmbeddedVulnerability) *storage.ImageCVEV2 {
-	var nvdCvss float32
-	nvdCvss = 0
-	nvdVersion := storage.CvssScoreVersion_UNKNOWN_VERSION
-	for _, score := range from.GetCvssMetrics() {
-		if score.Source == storage.Source_SOURCE_NVD {
-			if score.GetCvssv3() != nil {
-				nvdCvss = score.GetCvssv3().GetScore()
-				nvdVersion = storage.CvssScoreVersion_V3
-
-			} else if score.GetCvssv2() != nil {
-				nvdCvss = score.GetCvssv2().GetScore()
-				nvdVersion = storage.CvssScoreVersion_V2
-			}
-		}
-	}
-	ret := &storage.ImageCVEV2{
-		Id:              cve.IDV2(from.GetCve(), componentID, strconv.Itoa(cveIndex)),
-		ComponentId:     componentID,
-		OperatingSystem: os,
-		CveBaseInfo: &storage.CVEInfo{
-			Cve:          from.GetCve(),
-			Summary:      from.GetSummary(),
-			Link:         from.GetLink(),
-			PublishedOn:  from.GetPublishedOn(),
-			CreatedAt:    from.GetFirstSystemOccurrence(),
-			LastModified: from.GetLastModified(),
-			CvssV2:       from.GetCvssV2(),
-			CvssV3:       from.GetCvssV3(),
-			CvssMetrics:  from.GetCvssMetrics(),
-		},
-		Cvss:                 from.GetCvss(),
-		Nvdcvss:              nvdCvss,
-		NvdScoreVersion:      nvdVersion,
-		Severity:             from.GetSeverity(),
-		ImageId:              imageID,
-		FirstImageOccurrence: from.GetFirstImageOccurrence(),
-		State:                from.GetState(),
-		IsFixable:            from.GetFixedBy() != "",
-	}
-	if ret.GetCveBaseInfo().GetCvssV3() != nil {
-		ret.CveBaseInfo.ScoreVersion = storage.CVEInfo_V3
-		ret.ImpactScore = from.GetCvssV3().GetImpactScore()
-	} else if ret.GetCveBaseInfo().GetCvssV2() != nil {
-		ret.CveBaseInfo.ScoreVersion = storage.CVEInfo_V2
-		ret.ImpactScore = from.GetCvssV2().GetImpactScore()
-	}
-
-	if ret.IsFixable {
-		ret.HasFixedBy = &storage.ImageCVEV2_FixedBy{
-			FixedBy: from.GetFixedBy(),
-		}
-	}
-
-	if from.GetEpss() != nil {
-		epss := &storage.EPSS{
-			EpssProbability: from.GetEpss().GetEpssProbability(),
-			EpssPercentile:  from.GetEpss().GetEpssPercentile(),
-		}
-		ret.CveBaseInfo.Epss = epss
-	}
-
 	return ret
 }
 
@@ -477,15 +368,6 @@ func NodeVulnerabilityToNodeCVE(os string, from *storage.NodeVulnerability) *sto
 	return ret
 }
 
-// EmbeddedCVEsToProtoCVEs converts *storage.EmbeddedVulnerability to *storage.CVE
-func EmbeddedCVEsToProtoCVEs(os string, froms ...*storage.EmbeddedVulnerability) []*storage.CVE {
-	ret := make([]*storage.CVE, 0, len(froms))
-	for _, from := range froms {
-		ret = append(ret, EmbeddedCVEToProtoCVE(os, from))
-	}
-	return ret
-}
-
 func embeddedVulnTypeToProtoType(protoCVEType storage.EmbeddedVulnerability_VulnerabilityType) storage.CVE_CVEType {
 	switch protoCVEType {
 	case storage.EmbeddedVulnerability_IMAGE_VULNERABILITY:
@@ -523,16 +405,4 @@ func GetFixedVersions(nvdCVE *schema.NVDCVEFeedJSON10DefCVEItem) []string {
 	}
 
 	return versions
-}
-
-// CVEScoreVersionToEmbeddedScoreVersion converts versions between cve protos.
-func CVEScoreVersionToEmbeddedScoreVersion(v storage.CVE_ScoreVersion) storage.EmbeddedVulnerability_ScoreVersion {
-	switch v {
-	case storage.CVE_V2:
-		return storage.EmbeddedVulnerability_V2
-	case storage.CVE_V3:
-		return storage.EmbeddedVulnerability_V3
-	default:
-		return storage.EmbeddedVulnerability_V2
-	}
 }
