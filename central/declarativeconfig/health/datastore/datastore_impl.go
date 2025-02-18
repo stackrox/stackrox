@@ -8,13 +8,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protocompat"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 type datastoreImpl struct {
@@ -41,7 +36,6 @@ func (ds *datastoreImpl) UpsertDeclarativeConfig(ctx context.Context, configHeal
 	if err := ds.verifyDeclarativeContext(ctx); err != nil {
 		return err
 	}
-	log.Info("Updating Declarative config health ", configHealth.GetId(), " / ", configHealth.GetName(), " => ", configHealth.GetStatus().String())
 	return ds.store.Upsert(ctx, configHealth)
 }
 
