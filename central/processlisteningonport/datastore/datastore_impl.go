@@ -651,42 +651,13 @@ func (ds *datastoreImpl) RemovePLOPsWithoutPodUID(ctx context.Context) (int64, e
 	ds.mutex.Lock()
 	defer ds.mutex.Unlock()
 
-	batchSize := 10000
-	idsToDelete := make([]string, batchSize)
-	totalCount := 0
-	count := 0
 
-	err := ds.storage.Walk(ctx,
-		func(plop *storage.ProcessListeningOnPortStorage) error {
-			if plop.GetPodUid() == "" {
-				idsToDelete[count] = plop.Id
-				count++
-			}
-
-			if count == batchSize {
-				err := ds.storage.DeleteMany(ctx, idsToDelete)
-				if err != nil {
-					return err
-				}
-				totalCount += count
-				count = 0
-			}
-
-			return nil
-		})
-
-	if count > 0 {
-		idsToDelete = idsToDelete[:count]
-		err := ds.storage.DeleteMany(ctx, idsToDelete)
-		if err != nil {
-			return int64(totalCount), err
-		}
-		totalCount += count
-	}
+	deletedPlops, err := ds.storage.DeleteByQuery(ctx, search.NewQueryBuilder().
+		AddNullField(search.PodUID).ProtoQuery())
 
 	if err != nil {
-		return int64(totalCount), err
+		return 0, nil
 	}
 
-	return int64(totalCount), nil
+	return int64(len(deletedPlops)), err
 }
