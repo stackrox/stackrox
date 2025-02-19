@@ -875,7 +875,7 @@ class Kubernetes implements OrchestratorMain {
                             type: deployment.createLoadBalancer ? "LoadBalancer" : "ClusterIP"
                     )
             )
-            objects.Service created = client.services().inNamespace(deployment.namespace).createOrReplace(service)
+            Service created = client.services().inNamespace(deployment.namespace).createOrReplace(service)
             if (created == null) {
                 log.debug deployment.serviceName ?: deployment.name + " service not created"
                 assert created
