@@ -13,7 +13,8 @@ The OpenAPI specs must be converted to AsciiDoc for publishing to the official d
 
 Sample steps to modify, validate, and convert these specs:
 
-1. Load the `yaml` into https://editor.swagger.io/ (or use the equiv offline variation) and make appropriate changes and validate syntax
+1. Load the `yaml` into https://editor.swagger.io/ (or use the equiv offline variation) and make appropriate changes and validate syntax.
+   - _Refer to the [OpenAPI guide](https://swagger.io/docs/specification/v3_0/about/) and/or [official specs](https://spec.openapis.org/) for more details_
 
 2. Copy the modified `yaml` back into this repo
 
