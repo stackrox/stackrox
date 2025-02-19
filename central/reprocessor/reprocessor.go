@@ -348,6 +348,7 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption,
 			return nil, false
 		}
 		if !exists {
+			log.Errorw("The image was not found after enrichement", logging.ImageID(id), logging.Err(err))
 			return nil, false
 		}
 	}
