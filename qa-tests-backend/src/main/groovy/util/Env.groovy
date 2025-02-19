@@ -137,7 +137,8 @@ class Env {
 
             String password = null
             try {
-                def passwordPath = "../deploy/${envVars.get("CLUSTER").toString().toLowerCase()}/central-deploy/password"
+                def passwordPath = "../deploy/${envVars.get("CLUSTER").toString().toLowerCase()}" +
+                        "/central-deploy/password"
                 BufferedReader br = new BufferedReader(new FileReader(passwordPath))
                 password = br.readLine()
             } catch (Exception ex) {
