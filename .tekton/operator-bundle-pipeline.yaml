@@ -661,7 +661,7 @@ spec:
     - determine-image-tag
     - init
     - prefetch-dependencies
-    - push-dockerfile
+    #- push-dockerfile
     - rpms-signature-scan
     - sast-snyk-check
     - wait-for-central-db-image
@@ -681,12 +681,6 @@ spec:
     - name: COMPONENTS
       value: |
         [
-          {
-            "name": "central-db",
-            "containerImage": "$(params.central-db-image-build-repo)@$(tasks.wait-for-central-db-image.results.IMAGE_DIGEST)",
-            "repository": "$(tasks.wait-for-central-db-image.results.GIT_REPO)",
-            "revision": "$(tasks.wait-for-central-db-image.results.GIT_REF)"
-          },
           {
             "name": "collector",
             "containerImage": "$(params.collector-image-build-repo)@$(tasks.wait-for-collector-image.results.IMAGE_DIGEST)",

@@ -21,6 +21,9 @@ check_create_snapshot_runs_last() {
     echo
     echo "➤ ${pipeline_path} // checking ${task_name}: task's runAfter contents shall match the expected ones."
     if ! compare "${expected_runafter}" "${actual_runafter}"; then
+        echo >&2 "::error file=${pipeline_path}::${task_name} runAfter is not expected
+it should be:
+${expected_runafter}" # multiline
         echo >&2 -e "How to resolve:
 1. Open ${pipeline_path} and locate the ${task_name} task
 2. Update the runAfter attribute of this task to this list of all previous tasks in the pipeline (sorted alphabetically):
@@ -45,6 +48,7 @@ check_all_components_are_part_of_custom_snapshot() {
     echo
     echo "➤ ${pipeline_path} // checking ${task_name}: COMPONENTS contents shall include all ACS images."
     if ! compare "${expected_components}" "${actual_components}"; then
+        echo >&2 "::error file=${pipeline_path}::${task_name} COMPONENTS are not expected" # to stderr
         echo >&2 -e "How to resolve:
 1. Open ${pipeline_path} and locate the ${task_name} task
 2. Update the COMPONENTS parameter of this task to include entries for the missing components or delete references to removed components. COMPONENTS should include entries for (sorted alphabetically):
@@ -72,6 +76,7 @@ check_test_rpmdb_files_are_ignored() {
     echo
     echo "➤ ${syft_config} // checking ${exclude_attribute}: all rpmdb files in the repo shall be mentioned."
     if ! compare "${expected_excludes}" "${actual_excludes}"; then
+        echo "::error file=${syft_config}::${exclude_attribute} contents are not expected"
         echo >&2 "How to resolve:
 1. Open ${syft_config} and replace ${exclude_attribute} contents with the following.
 ${expected_excludes}"

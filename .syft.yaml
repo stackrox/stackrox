@@ -4,3 +4,4 @@
 # Syft config docs https://github.com/anchore/syft/wiki/configuration
 exclude:
 - ./compliance/node/index/testdata/usr/share/rpm/rpmdb.sqlite
+- blah
