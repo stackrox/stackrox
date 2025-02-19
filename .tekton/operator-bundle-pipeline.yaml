@@ -648,7 +648,7 @@ spec:
     # Explicitly running after all other tasks to ensure that
     # - there are no failures that should prevent a release of the operator-bundle image (missing RPMs signatures, deprecated base images, ...)
     # - the source image is present as it is required by EC
-    # Use scripts/ci/jobs/check-konflux-pipelines.sh to validate and update the list.
+    # Use scripts/ci/jobs/check-konflux-setup.sh to validate and update the list.
     runAfter:
     - apply-tags
     - build-container
