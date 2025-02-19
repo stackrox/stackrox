@@ -535,6 +535,21 @@ class Services extends BaseService {
         return false
     }
 
+    static waitForVulnerabilitiesForImage(objects.Deployment deployment, int retries = 30, int interval = 2) {
+        def imageName = deployment.image.contains(":") ? deployment.image : deployment.image + ":latest"
+        Timer t = new Timer(retries, interval)
+        while (t.IsValid()) {
+            def found = ImageService.getImages().find{ it.name.endsWith(imageName) }
+            if (found.hasCves() || found.hasFixableCves()) {
+                LOG.info "SR found vulnerabilities for the image ${imageName} within ${t.SecondsSince()}s"
+                return true
+            }
+            LOG.info "SR has not found vulnerabilities for the image ${imageName} yet"
+        }
+        LOG.info "SR did not detect vulnerabilities for the image ${imageName} in ${t.SecondsSince()} seconds"
+        return false
+    }
+
     static cleanupNetworkPolicies(List<NetworkPolicy> policies) {
         policies.each {
             if (it.uid) {
