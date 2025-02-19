@@ -1,14 +1,12 @@
 package datastore
 
 import (
-	"context"
 	"testing"
 
 	searchMocks "github.com/stackrox/rox/central/cve/image/v2/datastore/search/mocks"
 	storeMocks "github.com/stackrox/rox/central/cve/image/v2/datastore/store/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -16,8 +14,6 @@ import (
 
 var (
 	testSuppressionQuery = searchPkg.NewQueryBuilder().AddBools(searchPkg.CVESuppressed, true).ProtoQuery()
-
-	testAllAccessContext = sac.WithAllAccess(context.Background())
 )
 
 func TestImageCVEDataStore(t *testing.T) {

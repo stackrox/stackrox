@@ -2,9 +2,7 @@ package datastore
 
 import (
 	"context"
-	"time"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cve/common"
 	"github.com/stackrox/rox/central/cve/image/v2/datastore/search"
 	"github.com/stackrox/rox/central/cve/image/v2/datastore/store"
@@ -13,22 +11,12 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
-	vulnRequesterOrApproverSAC = sac.ForResources(
-		sac.ForResource(resources.VulnerabilityManagementRequests),
-		sac.ForResource(resources.VulnerabilityManagementApprovals),
-	)
-
 	accessAllCtx = sac.WithAllAccess(context.Background())
-
-	errNilSuppressionStart = errors.New("suppression start time is nil")
-
-	errNilSuppressionDuration = errors.New("suppression duration is nil")
 )
 
 type datastoreImpl struct {
@@ -40,28 +28,6 @@ type datastoreImpl struct {
 
 	keyFence concurrency.KeyFence
 }
-
-//func getSuppressionCacheEntry(cve *storage.ImageCVEV2) common.SuppressionCacheEntry {
-//	cacheEntry := common.SuppressionCacheEntry{}
-//	cacheEntry.SuppressActivation = protocompat.ConvertTimestampToTimeOrNil(cve.GetSnoozeStart())
-//	cacheEntry.SuppressExpiry = protocompat.ConvertTimestampToTimeOrNil(cve.GetSnoozeExpiry())
-//	return cacheEntry
-//}
-
-//func (ds *datastoreImpl) buildSuppressedCache() {
-//	query := pkgSearch.NewQueryBuilder().AddBools(pkgSearch.CVESuppressed, true).ProtoQuery()
-//	suppressedCVEs, err := ds.searcher.SearchRawImageCVEs(accessAllCtx, query)
-//	if err != nil {
-//		log.Error(errors.Wrap(err, "Vulnerability exception management may not function correctly. Failed to build cache of CVE exceptions."))
-//		return
-//	}
-//
-//	ds.cveSuppressionLock.Lock()
-//	defer ds.cveSuppressionLock.Unlock()
-//	for _, cve := range suppressedCVEs {
-//		ds.cveSuppressionCache[cve.GetCveBaseInfo().GetCve()] = getSuppressionCacheEntry(cve)
-//	}
-//}
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
 	return ds.searcher.Search(ctx, q)
@@ -124,15 +90,4 @@ func (ds *datastoreImpl) EnrichImageWithSuppressedCVEs(image *storage.Image) {
 			}
 		}
 	}
-}
-
-func getSuppressExpiry(start *time.Time, duration *time.Duration) (*time.Time, error) {
-	if start == nil {
-		return nil, errNilSuppressionStart
-	}
-	if duration == nil {
-		return nil, errNilSuppressionDuration
-	}
-	expiry := start.Truncate(time.Second).Add(duration.Truncate(time.Second))
-	return &expiry, nil
 }

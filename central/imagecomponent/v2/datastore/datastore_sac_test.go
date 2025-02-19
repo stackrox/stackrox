@@ -43,7 +43,7 @@ func (s *cveDataStoreSACTestSuite) TearDownSuite() {
 }
 
 func getImageComponentID(component *storage.EmbeddedImageScanComponent, imageID string) string {
-	return scancomponent.ComponentIDV2(component.GetName(), component.GetVersion(), component.GetArchitecture(), imageID)
+	return scancomponent.ComponentIDV2(component.GetName(), component.GetVersion(), "component.GetArchitecture()", imageID)
 }
 
 func (s *cveDataStoreSACTestSuite) cleanImageToVulnerabilitiesGraph() {
