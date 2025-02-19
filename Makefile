@@ -910,11 +910,11 @@ bin/installer: $(shell find installer/ -name *.go) $(shell find pkg/manifest -na
 bin/updater: $(shell find scannerv2/ -name *.go)
 	go build -C ./scannerv2 -o ../$@ ./cmd/updater
 
-bundle: bin/updater scannerv2/image/scanner/dump/genesis_manifests.json
-	# mkdir -p /tmp/genesis-dump
-	# bin/updater generate-dump --out-file /tmp/genesis-dump/genesis-dump.zip
-	# ls -lrt /tmp/genesis-dump
-	# bin/updater print-stats /tmp/genesis-dump/genesis-dump.zip
+bundle: scannerv2/image/scanner/dump/genesis_manifests.json
+	mkdir -p /tmp/genesis-dump
+	bin/updater generate-dump --out-file /tmp/genesis-dump/genesis-dump.zip
+	ls -lrt /tmp/genesis-dump
+	bin/updater print-stats /tmp/genesis-dump/genesis-dump.zip
 	mkdir -p bundle/
 	unzip -j /tmp/genesis-dump/genesis-dump.zip 'nvd/*.json' -d bundle/nvd_definitions
 	unzip -j /tmp/genesis-dump/genesis-dump.zip 'k8s/*.yaml' -d bundle/k8s_definitions
