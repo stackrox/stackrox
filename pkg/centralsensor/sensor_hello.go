@@ -41,6 +41,8 @@ func DeriveSensorHelloFromIncomingMetadata(md metautils.MD) (*central.SensorHell
 	return sensorHello, versionErr
 }
 
+// SecuredClusterIsNotManagedManually returns true if the cluster is not manually managed
+// (i.e., it is managed by Helm or by the Operator)
 func SecuredClusterIsNotManagedManually(helmManagedConfig *central.HelmManagedConfigInit) bool {
 	return helmManagedConfig.GetManagedBy() != storage.ManagerType_MANAGER_TYPE_UNKNOWN &&
 		helmManagedConfig.GetManagedBy() != storage.ManagerType_MANAGER_TYPE_MANUAL
