@@ -66,6 +66,8 @@ type LocalScan struct {
 	regFactory registries.Factory
 
 	mirrorStore registrymirror.Store
+	// adHocScanSemaphore limits the number of ad-hoc scans.
+	adHocScanSemaphore *semaphore.Weighted
 }
 
 // LocalScanRequest encapsulates request specific fields used when enriching an image local to Sensor.
@@ -95,11 +97,12 @@ func NewLocalScan(registryStore registryStore, mirrorStore registrymirror.Store)
 			docker.CreatorWithoutRepoList,
 		},
 	})
-	return &LocalScan{
+	ls := &LocalScan{
 		scanImg:                   scanImage,
 		fetchSignaturesWithRetry:  signatures.FetchImageSignaturesWithRetries,
 		scannerClientSingleton:    scannerclient.GRPCClientSingleton,
 		scanSemaphore:             semaphore.NewWeighted(int64(env.MaxParallelImageScanInternal.IntegerSetting())),
+		adHocScanSemaphore:        semaphore.NewWeighted(int64(env.MaxParallelDelegatedScanInternal.IntegerSetting())),
 		maxSemaphoreWaitTime:      defaultMaxSemaphoreWaitTime,
 		regFactory:                regFactory,
 		mirrorStore:               mirrorStore,
@@ -108,6 +111,11 @@ func NewLocalScan(registryStore registryStore, mirrorStore registrymirror.Store)
 		getPullSecretRegistries:   registryStore.GetPullSecretRegistries,
 		getGlobalRegistry:         registryStore.GetGlobalRegistry,
 	}
+	// allow certain number of parallel delegated scans
+	if !env.DelegatedScanningDisabled.BooleanSetting() {
+		ls.scanSemaphore = semaphore.NewWeighted(int64(max(20, env.MaxParallelImageScanInternal.IntegerSetting()-env.MaxParallelDelegatedScanInternal.IntegerSetting())))
+	}
+	return ls
 }
 
 // EnrichLocalImageInNamespace will enrich an image with scan results from local scanner as well as signatures
@@ -131,14 +139,19 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 	if s.scannerClientSingleton() == nil {
 		return nil, errors.Join(ErrNoLocalScanner, ErrEnrichNotStarted)
 	}
+	scanLimitSemaphore := s.scanSemaphore
 
+	// Delegated requests
+	if req.ID != "" && !env.DelegatedScanningDisabled.BooleanSetting() {
+		scanLimitSemaphore = s.adHocScanSemaphore
+	}
 	// Throttle the # of active scans.
 	semaphoreCtx, cancel := context.WithTimeout(ctx, s.maxSemaphoreWaitTime)
 	defer cancel()
-	if err := s.scanSemaphore.Acquire(semaphoreCtx, 1); err != nil {
+	if err := scanLimitSemaphore.Acquire(semaphoreCtx, 1); err != nil {
 		return nil, errors.Join(err, ErrTooManyParallelScans, ErrEnrichNotStarted)
 	}
-	defer s.scanSemaphore.Release(1)
+	defer scanLimitSemaphore.Release(1)
 
 	srcImage := req.Image
 	log.Debugf("Enriching image locally %q, namespace %q, requestID %q, force %v", srcImage.GetName().GetFullName(), req.Namespace, req.ID, req.Force)
