@@ -153,6 +153,14 @@ func hasModifiedImages(s *state, deployment *storage.Deployment, req *admission.
 		return true
 	}
 
+	if req.SubResource != "" && req.SubResource == ScaleSubResource {
+		// TODO: We could consider returning false here since when the admission review request is for the scale
+		// subresource, I do not believe it is possible for a user to change the image on the deployment at the same
+		// time as updating the scale subresource However, the contract of this function as designed was to be
+		// conservative and return true.
+		return true
+	}
+
 	oldK8sObj, err := unmarshalK8sObject(req.Kind, req.OldObject.Raw)
 	if err != nil {
 		log.Errorf("Failed to unmarshal old object into K8s object: %v", err)
@@ -164,7 +172,6 @@ func hasModifiedImages(s *state, deployment *storage.Deployment, req *admission.
 		log.Errorf("Failed to convert old K8s object into StackRox deployment: %v", err)
 		return true
 	}
-
 	if oldDeployment == nil {
 		return true
 	}
