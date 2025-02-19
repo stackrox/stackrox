@@ -18,13 +18,10 @@ check_create_snapshot_runs_last() {
     local actual_runafter
     actual_runafter="$(yq eval '.spec.tasks[] | select(.name == '\"${task_name}\"') | .runAfter[]' "${pipeline_path}")"
 
-    local line_number
-    line_number="$(yq eval '.spec.tasks[] | select(.name == '\"${task_name}\"') | .runAfter | line' "${pipeline_path}")"
-
     echo
     echo "➤ ${pipeline_path} // checking ${task_name}: task's runAfter contents shall match the expected ones."
     if ! compare "${expected_runafter}" "${actual_runafter}"; then
-        gha_echo "::error file=${pipeline_path},line=${line_number}::${task_name} runAfter is not expected"
+        gha_echo "::error file=${pipeline_path}::${task_name} runAfter is not expected"
         echo >&2 -e "How to resolve:
 1. Open ${pipeline_path} and locate the ${task_name} task
 2. Update the runAfter attribute of this task to this list of all previous tasks in the pipeline (sorted alphabetically):
@@ -41,9 +38,6 @@ check_all_components_are_part_of_custom_snapshot() {
     local actual_components
     actual_components="$(yq eval '.spec.tasks[] | select(.name == '\"${task_name}\"') | .params[] | select(.name == "COMPONENTS") | .value' "${pipeline_path}" | yq eval '.[].name' - | tr " " "\n" | sort)"
 
-    local line_number
-    line_number="$(yq eval '.spec.tasks[] | select(.name == '\"${task_name}\"') | .params[] | select(.name == "COMPONENTS") | line' "${pipeline_path}")"
-
     # Expected components are based on the wait-for-*-image task plus the operator-bundle and stored as a sorted multi-line string.
     local expected_components
     expected_components_from_images="$(yq eval '.spec.tasks[] | select(.name == "wait-for-*-image") | .name | sub("(wait-for-|-image)", "")' ${pipeline_path})"
@@ -52,7 +46,7 @@ check_all_components_are_part_of_custom_snapshot() {
     echo
     echo "➤ ${pipeline_path} // checking ${task_name}: COMPONENTS contents shall include all ACS images."
     if ! compare "${expected_components}" "${actual_components}"; then
-        gha_echo "::error file=${pipeline_path},line=${line_number},title=${pipeline_path} is not ok::${task_name} COMPONENTS are not expected"
+        gha_echo "::error file=${pipeline_path},title=${pipeline_path} is not ok::${task_name} COMPONENTS are not expected"
         echo >&2 -e "How to resolve:
 1. Open ${pipeline_path} and locate the ${task_name} task
 2. Update the COMPONENTS parameter of this task to include entries for the missing components or delete references to removed components. COMPONENTS should include entries for (sorted alphabetically):
@@ -74,16 +68,13 @@ check_test_rpmdb_files_are_ignored() {
     local actual_excludes
     actual_excludes="$(yq eval "${exclude_attribute}" "${syft_config}")"
 
-    local line_number
-    line_number="$(yq eval "${exclude_attribute} | line" "${syft_config}")"
-
     local expected_excludes
     expected_excludes="$(git ls-files -- '**/rpmdb.sqlite' | sort | uniq | sed 's/^/- .\//')"
 
     echo
     echo "➤ ${syft_config} // checking ${exclude_attribute}: all rpmdb files in the repo shall be mentioned."
     if ! compare "${expected_excludes}" "${actual_excludes}"; then
-        gha_echo "::error file=${syft_config},line=${line_number},title=test title::${exclude_attribute} contents are not expected"
+        gha_echo "::error file=${syft_config},title=test title::${exclude_attribute} contents are not expected"
         echo >&2 "How to resolve:
 1. Open ${syft_config} and replace ${exclude_attribute} contents with the following.
 ${expected_excludes}"
