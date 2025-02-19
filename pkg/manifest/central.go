@@ -161,6 +161,13 @@ func (m *manifestGenerator) createCentralConfig(ctx context.Context) error {
 	cm.SetName("central-external-db")
 	_, err = m.Client.CoreV1().ConfigMaps(m.Namespace).Create(ctx, &cm, metav1.CreateOptions{})
 
+	if errors.IsAlreadyExists(err) {
+		_, err = m.Client.CoreV1().ConfigMaps(m.Namespace).Update(ctx, &cm, metav1.UpdateOptions{})
+		log.Info("Updated central-external-db configmap")
+	} else {
+		log.Info("Created centra-external-dbl configmap")
+	}
+
 	return err
 }
 
@@ -433,24 +440,22 @@ func (m *manifestGenerator) applyCentralDeployment(ctx context.Context) error {
 				Spec: v1.PodSpec{
 					ServiceAccountName: "central",
 					InitContainers: []v1.Container{{
+						Name:            "add-additional-cas",
+						Image:           "localhost:5001/stackrox/stackrox:latest",
+						ImagePullPolicy: v1.PullAlways,
+						Command: []string{
+							"sh",
+							"-c",
+							"restore-all-dir-contents && import-additional-cas",
+						},
+					}, {
 						Name:            "migrator",
 						Image:           "localhost:5001/stackrox/stackrox:latest",
 						ImagePullPolicy: v1.PullAlways,
 						Command:         []string{"/stackrox/migrator"},
-						Env: []v1.EnvVar{
-							{
-								Name: "ROX_NAMESPACE",
-								ValueFrom: &v1.EnvVarSource{
-									FieldRef: &v1.ObjectFieldSelector{
-										FieldPath: "metadata.namespace",
-									},
-								},
-							},
-						},
 					}},
 					Containers: []v1.Container{{
-						Name: "central",
-						// Image:           "quay.io/klape/stackrox:latest",
+						Name:            "central",
 						Image:           "localhost:5001/stackrox/stackrox:latest",
 						ImagePullPolicy: v1.PullAlways,
 						Command:         []string{"/stackrox/central"},
@@ -677,6 +682,7 @@ func (m *manifestGenerator) applyCentralDeployment(ctx context.Context) error {
 	for _, v := range volumeMounts {
 		v.Apply(&deployment.Spec.Template.Spec.Containers[0], &deployment.Spec.Template.Spec)
 		v.Apply(&deployment.Spec.Template.Spec.InitContainers[0], nil)
+		v.Apply(&deployment.Spec.Template.Spec.InitContainers[1], nil)
 	}
 
 	deployment.SetName("central")
@@ -703,7 +709,7 @@ func (m *manifestGenerator) applyCentralServices(ctx context.Context) error {
 			},
 			Ports: []v1.ServicePort{{
 				Name:       "https",
-				Port:       8443,
+				Port:       443,
 				Protocol:   v1.ProtocolTCP,
 				TargetPort: intstr.FromString("api"),
 			}},
