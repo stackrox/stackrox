@@ -24,7 +24,7 @@ runs:
       uses: 'google-github-actions/setup-gcloud@v2'
 
     - name: Record job info
-      uses: gacts/run-and-post-run@674528335da98a7afc80915ff2b4b860a0b3553a # v1.4.0
+      uses: gacts/run-and-post-run@d803f6920adc9a47eeac4cb6c93dbc2e2890c684 # v1.4.0
       env:
         GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ inputs.gcp-account }}
       if: "${{ env.GCP_SERVICE_ACCOUNT_STACKROX_CI != '' }}"

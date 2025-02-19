@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Divider, Stack, StackItem, ToggleGroup, ToggleGroupItem } from '@patternfly/react-core';
 import useFeatureFlags from 'hooks/useFeatureFlags';
+import { UseURLPaginationResult } from 'hooks/useURLPagination';
+import { UseUrlSearchReturn } from 'hooks/useURLSearch';
+
 import { CustomNodeModel } from '../types/topology.type';
 import { EdgeState } from '../components/EdgeStateSelect';
 import { Flow } from '../types/flow.type';
@@ -12,6 +15,7 @@ export type DeploymentFlowsView = 'external-flows' | 'internal-flows';
 
 type DeploymentFlowsProps = {
     deploymentId: string;
+    deploymentName: string;
     nodes: CustomNodeModel[];
     edgeState: EdgeState;
     onNodeSelect: (id: string) => void;
@@ -21,10 +25,13 @@ type DeploymentFlowsProps = {
     networkFlows: Flow[];
     refetchFlows: () => void;
     scopeHierarchy: NetworkScopeHierarchy;
+    urlPagination: UseURLPaginationResult;
+    urlSearchFiltering: UseUrlSearchReturn;
 };
 
 function DeploymentFlows({
     deploymentId,
+    deploymentName,
     nodes,
     edgeState,
     onNodeSelect,
@@ -34,12 +41,22 @@ function DeploymentFlows({
     networkFlows,
     refetchFlows,
     scopeHierarchy,
+    urlPagination,
+    urlSearchFiltering,
 }: DeploymentFlowsProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isExternalIpsEnabled = isFeatureFlagEnabled('ROX_EXTERNAL_IPS');
+    const isNetworkGraphExternalIpsEnabled = isFeatureFlagEnabled('ROX_NETWORK_GRAPH_EXTERNAL_IPS');
     const [selectedView, setSelectedView] = useState<DeploymentFlowsView>('internal-flows');
 
-    if (!isExternalIpsEnabled) {
+    const { setPage } = urlPagination;
+    const { setSearchFilter } = urlSearchFiltering;
+
+    useEffect(() => {
+        setPage(1);
+        setSearchFilter({});
+    }, [selectedView, setPage, setSearchFilter]);
+
+    if (!isNetworkGraphExternalIpsEnabled) {
         return (
             <div className="pf-v5-u-h-100 pf-v5-u-p-md">
                 <InternalFlows
@@ -91,9 +108,11 @@ function DeploymentFlows({
                             />
                         ) : (
                             <ExternalFlows
-                                deploymentId={deploymentId}
+                                deploymentName={deploymentName}
                                 scopeHierarchy={scopeHierarchy}
                                 onExternalIPSelect={onExternalIPSelect}
+                                urlPagination={urlPagination}
+                                urlSearchFiltering={urlSearchFiltering}
                             />
                         )}
                     </Stack>

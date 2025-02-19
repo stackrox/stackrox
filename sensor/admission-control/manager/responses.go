@@ -5,6 +5,7 @@ import (
 	"text/template"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/enforcers"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/templates"
@@ -55,7 +56,7 @@ func fail(uid types.UID, message string) *admission.AdmissionResponse {
 		Allowed: false,
 		Result: &metav1.Status{
 			Status:  "Failure",
-			Reason:  metav1.StatusReason("Failed currently enforced policies from StackRox"),
+			Reason:  metav1.StatusReason(fmt.Sprintf("Failed currently enforced policies from %s", branding.GetProductNameShort())),
 			Message: message,
 		},
 	}

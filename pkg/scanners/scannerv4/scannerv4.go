@@ -19,6 +19,7 @@ import (
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	pkgscanner "github.com/stackrox/rox/pkg/scannerv4"
 	"github.com/stackrox/rox/pkg/scannerv4/client"
+	"github.com/stackrox/rox/pkg/uuid"
 	scannerv1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
 
@@ -113,9 +114,14 @@ func (s *scannerv4) GetSBOM(image *storage.Image) ([]byte, bool, error) {
 	if err != nil {
 		return nil, false, err
 	}
+
+	imgName := image.GetName()
+	// Desired URI for images: https://<registry>/<repo>-<uuid>
+	uri := "https://" + imgName.GetRegistry() + "/" + imgName.GetRemote() + "-" + uuid.NewV4().String()
+
 	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
 	defer cancel()
-	sbom, found, err := s.scannerClient.GetSBOM(ctx, image.GetName().GetFullName(), digest)
+	sbom, found, err := s.scannerClient.GetSBOM(ctx, image.GetName().GetFullName(), digest, uri)
 	return sbom, found, err
 }
 

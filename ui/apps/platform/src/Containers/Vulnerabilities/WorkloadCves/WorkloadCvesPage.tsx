@@ -16,6 +16,7 @@ import {
 import ScannerV4IntegrationBanner from 'Components/ScannerV4IntegrationBanner';
 import useFeatureFlags, { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
+import { NonEmptyArray } from 'utils/type.utils';
 import DeploymentPage from './Deployment/DeploymentPage';
 import ImagePage from './Image/ImagePage';
 import WorkloadCvesOverviewPage from './Overview/WorkloadCvesOverviewPage';
@@ -24,7 +25,7 @@ import NamespaceViewPage from './NamespaceView/NamespaceViewPage';
 import { WorkloadCveViewContext } from './WorkloadCveViewContext';
 
 import './WorkloadCvesPage.css';
-import { QuerySearchFilter } from '../types';
+import { QuerySearchFilter, WorkloadEntityTab } from '../types';
 
 export const userWorkloadViewId = 'user-workloads';
 export const platformViewId = 'platform';
@@ -37,6 +38,7 @@ function getWorkloadCveContextFromView(viewId: string, isFeatureFlagEnabled: IsF
     let pageTitleDescription: string | undefined;
     let baseSearchFilter: QuerySearchFilter = {};
     let getAbsoluteUrl: (subPath: string) => string = () => '';
+    let overviewEntityTabs: NonEmptyArray<WorkloadEntityTab> = ['CVE', 'Image', 'Deployment'];
 
     switch (viewId) {
         case userWorkloadViewId:
@@ -64,16 +66,17 @@ function getWorkloadCveContextFromView(viewId: string, isFeatureFlagEnabled: IsF
         case allImagesViewId:
             pageTitle = 'All vulnerable images';
             pageTitleDescription =
-                'View findings for user, platform, and inactive images simultaneously';
+                'Findings for user, platform, and inactive images simultaneously';
             baseSearchFilter = { 'Platform Component': ['true', 'false', '-'] };
             getAbsoluteUrl = (subPath: string) => `${vulnerabilitiesAllImagesPath}/${subPath}`;
             break;
         case inactiveImagesViewId:
             pageTitle = 'Inactive images only';
             pageTitleDescription =
-                'View findings for watched images and images not currently deployed as workloads based on your image retention settings';
+                'Findings for watched images and images not currently deployed as workloads based on your image retention settings';
             baseSearchFilter = { 'Platform Component': ['-'] };
             getAbsoluteUrl = (subPath: string) => `${vulnerabilitiesInactiveImagesPath}/${subPath}`;
+            overviewEntityTabs = ['CVE', 'Image'];
             break;
         case imagesWithoutCvesViewId:
             pageTitle = 'Images without CVEs';
@@ -82,12 +85,19 @@ function getWorkloadCveContextFromView(viewId: string, isFeatureFlagEnabled: IsF
             baseSearchFilter = { 'Image CVE Count': ['0'] };
             getAbsoluteUrl = (subPath: string) =>
                 `${vulnerabilitiesImagesWithoutCvesPath}/${subPath}`;
+            overviewEntityTabs = ['Image', 'Deployment'];
             break;
         default:
         // TODO Handle user-defined views, or error
     }
 
-    return { pageTitle, pageTitleDescription, baseSearchFilter, getAbsoluteUrl };
+    return {
+        pageTitle,
+        pageTitleDescription,
+        baseSearchFilter,
+        getAbsoluteUrl,
+        overviewEntityTabs,
+    };
 }
 
 export type WorkloadCvePageProps = {

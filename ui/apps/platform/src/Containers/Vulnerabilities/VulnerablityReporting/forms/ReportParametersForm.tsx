@@ -42,8 +42,10 @@ export type ReportParametersFormParams = {
 
 function ReportParametersForm({ title, formik }: ReportParametersFormParams): ReactElement {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isIncludeEpssProbabilityEnabled =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_EPSS_SCORE');
+    const isIncludeAdvisoryEnabled =
+        isFeatureFlagEnabled('ROX_SCANNER_V4') &&
+        isFeatureFlagEnabled('ROX_CVE_ADVISORY_SEPARATION');
+    const isIncludeEpssProbabilityEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
     const isIncludeNvdCvssEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
 
     const handleTextChange =
@@ -285,7 +287,9 @@ function ReportParametersForm({ title, formik }: ReportParametersFormParams): Re
                         />
                     </FormLabelGroup>
                 )}
-                {(isIncludeNvdCvssEnabled || isIncludeEpssProbabilityEnabled) && (
+                {(isIncludeNvdCvssEnabled ||
+                    isIncludeEpssProbabilityEnabled ||
+                    isIncludeAdvisoryEnabled) && (
                     <FormGroup label="Optional columns" isInline isStack>
                         {isIncludeNvdCvssEnabled && (
                             <Checkbox
@@ -300,6 +304,14 @@ function ReportParametersForm({ title, formik }: ReportParametersFormParams): Re
                                 label="Include EPSS probability"
                                 id="reportParameters.includeEpssProbability"
                                 isChecked={formik.values.reportParameters.includeEpssProbability}
+                                onChange={onChange}
+                            />
+                        )}
+                        {isIncludeAdvisoryEnabled && (
+                            <Checkbox
+                                label="Include advisory"
+                                id="reportParameters.includeAdvisory"
+                                isChecked={formik.values.reportParameters.includeAdvisory}
                                 onChange={onChange}
                             />
                         )}

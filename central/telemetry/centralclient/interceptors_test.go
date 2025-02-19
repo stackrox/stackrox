@@ -98,7 +98,42 @@ func Test_apiCall(t *testing.T) {
 			expected: true,
 			expectedProps: map[string]any{
 				snowIntegrationHeader: "v1.0.3",
-				"User-Agent":          "RHACS Integration ServiceNow client"},
+				"User-Agent":          "RHACS Integration ServiceNow client",
+			},
+		},
+		"central-login GitHub action": {
+			rp: &phonehome.RequestParams{
+				Headers: withUserAgent(t, nil, "central-login-GHA"),
+				Method:  "POST",
+				Path:    "/v1/auth/m2m/exchange",
+			},
+			expected: true,
+			expectedProps: map[string]any{
+				"User-Agent": "central-login-GHA",
+			},
+		},
+		"roxctl-installer GitHub action": {
+			rp: &phonehome.RequestParams{
+				Headers: withUserAgent(t, nil, "roxctl-installer-GHA"),
+				Method:  "GET",
+				Path:    "/api/cli/download/roxctl-linux-amd64",
+			},
+			expected: true,
+			expectedProps: map[string]any{
+				"User-Agent": "roxctl-installer-GHA",
+			},
+		},
+		"SBOM generation": {
+			rp: &phonehome.RequestParams{
+				Headers: withUserAgent(t, nil, "Some SBOM client"),
+				Method:  "POST",
+				Path:    "/api/v1/images/sbom",
+				Code:    200,
+			},
+			expected: true,
+			expectedProps: map[string]any{
+				"User-Agent": "Some SBOM client",
+			},
 		},
 	}
 	require.NoError(t, permanentTelemetryCampaign.Compile())
@@ -106,7 +141,8 @@ func Test_apiCall(t *testing.T) {
 		Path: phonehome.Pattern("*test*").Ptr(),
 	}
 	appendRuntimeCampaign(&phonehome.RuntimeConfig{
-		APICallCampaign: phonehome.APICallCampaign{anyTestEndpoint}})
+		APICallCampaign: phonehome.APICallCampaign{anyTestEndpoint},
+	})
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			props := make(map[string]any)

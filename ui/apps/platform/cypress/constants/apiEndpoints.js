@@ -71,6 +71,12 @@ export const integrationHealth = {
     vulnDefinitions: '/v1/integrationhealth/vulndefinitions?component=*',
 };
 
+export const credentialHealth = {
+    central: '/v1/credentialexpiry?component=CENTRAL',
+    centralDb: '/v1/credentialexpiry?component=CENTRAL_DB',
+    scanner: '/v1/credentialexpiry?component=SCANNER',
+};
+
 export const integrations = {
     imageIntegrations: '/v1/imageintegrations',
     signatureIntegrations: '/v1/signatureintegrations',

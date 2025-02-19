@@ -311,6 +311,7 @@ function MachineAccessIntegrationForm({
                                                                 handleSelect={setFieldValue}
                                                                 direction="up"
                                                                 placeholderText="Select a role"
+                                                                menuAppendTo={() => document.body}
                                                             >
                                                                 {roles.map(({ name }) => (
                                                                     <SelectOption

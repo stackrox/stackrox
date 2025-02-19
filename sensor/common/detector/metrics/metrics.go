@@ -149,27 +149,35 @@ var (
 			"reason",
 		})
 
-	// DetectorProcessIndicatorBufferSize keeps track of the size of the detection process indicator buffer.
-	DetectorProcessIndicatorBufferSize = prometheus.NewCounterVec(prometheus.CounterOpts{
+	// DetectorProcessIndicatorQueueOperations keeps track of the operations of the detection process indicator buffer.
+	DetectorProcessIndicatorQueueOperations = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "detector_process_indicator_buffer_size",
-		Help:      "A counter that tracks the size of the detection process indicator buffer",
+		Name:      "detector_process_indicator_queue_operations_total",
+		Help:      "A counter that tracks the number of ADD and REMOVE operations on the process indicator buffer queue. Current size of the queue can be calculated by subtracting the number of remove operations from the add operations",
 	}, []string{"Operation"})
 
-	// DetectorNetworkFlowBufferSize keeps track of the size of the detection network flow buffer.
-	DetectorNetworkFlowBufferSize = prometheus.NewCounterVec(prometheus.CounterOpts{
+	// DetectorNetworkFlowQueueOperations keeps track of the operations of the detection network flow buffer.
+	DetectorNetworkFlowQueueOperations = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "detector_network_flow_buffer_size",
-		Help:      "A counter that tracks the size of the detection network flow buffer",
+		Name:      "detector_network_flow_queue_operations_total",
+		Help:      "A counter that tracks the number of ADD and REMOVE operations on the network flows buffer queue. Current size of the queue can be calculated by subtracting the number of remove operations from the add operations",
+	}, []string{"Operation"})
+
+	// DetectorDeploymentQueueOperations keeps track of the operations of the detection deployment buffer.
+	DetectorDeploymentQueueOperations = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "detector_deployment_queue_operations_total",
+		Help:      "A counter that tracks the number of ADD and REMOVE operations on the deployment buffer queue. Current size of the queue can be calculated by subtracting the number of remove operations from the add operations",
 	}, []string{"Operation"})
 
 	// DetectorProcessIndicatorDroppedCount keeps track of the number of process indicators dropped in the detector.
 	DetectorProcessIndicatorDroppedCount = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "detector_process_indicators_dropped_total",
+		Name:      "detector_process_indicator_queue_dropped_total",
 		Help:      "A counter of the total number of process indicators that were dropped if the detector buffer was full",
 	})
 
@@ -177,9 +185,18 @@ var (
 	DetectorNetworkFlowDroppedCount = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "detector_network_flows_dropped_total",
+		Name:      "detector_network_flow_queue_dropped_total",
 		Help:      "A counter of the total number of network flows that were dropped if the detector buffer was full",
 	})
+
+	// DetectorDeploymentDroppedCount keeps track of the number of deployments dropped in the detector.
+	DetectorDeploymentDroppedCount = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "detector_deployment_queue_dropped_total",
+		Help:      "A counter of the total number of deployments that were dropped if the detector buffer was full",
+	})
+
 	detectorBlockScanCalls = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
@@ -304,12 +321,14 @@ func init() {
 		receivedNodeInventory,
 		receivedNodeIndex,
 		processedNodeScanningAck,
-		DetectorNetworkFlowBufferSize,
-		DetectorProcessIndicatorBufferSize,
+		DetectorNetworkFlowQueueOperations,
+		DetectorProcessIndicatorQueueOperations,
 		DetectorNetworkFlowDroppedCount,
 		DetectorProcessIndicatorDroppedCount,
 		detectorBlockScanCalls,
 		scanCallDuration,
 		scanAndSetCall,
+		DetectorDeploymentQueueOperations,
+		DetectorDeploymentDroppedCount,
 	)
 }

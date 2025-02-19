@@ -186,53 +186,66 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 	return centralResp.GetImage(), errorList.ToError()
 }
 
+func (s *LocalScan) enrichImageForPullSource(ctx context.Context, pullSource *storage.ContainerImage, req *LocalScanRequest) (
+	registryTypes.ImageRegistry, *storage.Image, error,
+) {
+	errorList := errorhelpers.NewErrorList(fmt.Sprintf("for pull source %q", pullSource.GetName().GetFullName()))
+
+	registries, err := s.getRegistries(ctx, req.Namespace, pullSource.GetName(), req.ImagePullSecrets)
+	if err != nil {
+		log.Warnf("Error getting registries for pull source %q, skipping: %v", pullSource.GetName().GetFullName(), err)
+		errorList.AddError(err)
+		return nil, nil, errorList.ToError()
+	}
+
+	log.Debugf("Using %d registries for enriching pull source %q", len(registries), pullSource.GetName().GetFullName())
+
+	// Create an image and attempt to enrich it with metadata.
+	pullSourceImage := types.ToImage(pullSource)
+	reg := s.enrichImageWithMetadata(ctx, errorList, registries, pullSourceImage)
+	if reg != nil {
+		// Successful enrichment.
+		enrichImageDataSource(req.Image, reg, pullSourceImage)
+
+		srcName := req.Image.GetName().GetFullName()
+		srcID := req.Image.GetId()
+		pullName := pullSourceImage.GetName().GetFullName()
+		pullID := pullSourceImage.GetId()
+		log.Infof("Image %q (%v) enriched with metadata using pull source %q (%v) and integration %q (insecure: %t)", srcName, srcID, pullName, pullID, reg.Name(), reg.Config(ctx).GetInsecure())
+		log.Debugf("Metadata for image %q (%v) using pull source %q (%v): %v", srcName, srcID, pullName, pullID, pullSourceImage.GetMetadata())
+		return reg, pullSourceImage, nil
+	}
+	return nil, nil, errorList.ToError()
+}
+
 // getImageWithMetadata on success returns the registry used to pull metadata and an image with metadata populated.
 // The image returned may represent the source image or an image from a registry mirror.
 func (s *LocalScan) getImageWithMetadata(ctx context.Context, errorList *errorhelpers.ErrorList, req *LocalScanRequest) (registryTypes.ImageRegistry, *storage.Image) {
-	srcImage := req.Image
-
 	// Obtain the pull sources, which will include mirrors.
-	pullSources := s.getPullSources(srcImage)
+	pullSources := s.getPullSources(req.Image)
 	if len(pullSources) == 0 {
-		errorList.AddError(pkgErrors.Errorf("zero valid pull sources found for image %q", srcImage.GetName().GetFullName()))
+		errorList.AddError(pkgErrors.Errorf("zero valid pull sources found for image %q", req.Image.GetName().GetFullName()))
 		return nil, nil
 	}
 
-	// errs are only added to errorList when attempts from all pull sources + all registries fail.
-	errs := errorhelpers.NewErrorList("")
+	// allErrs are only added to errorList when attempts from all pull sources + all registries fail.
+	allErrs := errorhelpers.NewErrorList("")
 
 	// For each pull source, obtain the associated registries and attempt to obtain metadata, stopping on first success.
 	for _, pullSource := range pullSources {
-		registries, err := s.getRegistries(ctx, req.Namespace, pullSource.GetName(), req.ImagePullSecrets)
+		reg, pullSourceImage, err := s.enrichImageForPullSource(ctx, pullSource, req)
 		if err != nil {
 			log.Warnf("Error getting registries for pull source %q, skipping: %v", pullSource.GetName().GetFullName(), err)
-			errs.AddError(err)
+			allErrs.AddError(err)
 			continue
 		}
-
-		log.Debugf("Using %d registries for enriching pull source %q", len(registries), pullSource.GetName().GetFullName())
-
-		// Create an image and attempt to enrich it with metadata.
-		pullSourceImage := types.ToImage(pullSource)
-		reg := s.enrichImageWithMetadata(ctx, errs, registries, pullSourceImage)
-		if reg != nil {
-			// Successful enrichment.
-			enrichImageDataSource(srcImage, reg, pullSourceImage)
-
-			srcName := srcImage.GetName().GetFullName()
-			srcID := srcImage.GetId()
-			pullName := pullSourceImage.GetName().GetFullName()
-			pullID := pullSourceImage.GetId()
-			log.Infof("Image %q (%v) enriched with metadata using pull source %q (%v) and integration %q (insecure: %t)", srcName, srcID, pullName, pullID, reg.Name(), reg.Config(ctx).GetInsecure())
-			log.Debugf("Metadata for image %q (%v) using pull source %q (%v): %v", srcName, srcID, pullName, pullID, pullSourceImage.GetMetadata())
-			return reg, pullSourceImage
-		}
+		return reg, pullSourceImage
 	}
 
 	// Attempts for every pull source and registry have failed.
-	errorList.AddErrors(errs.Errors()...)
+	errorList.AddErrors(allErrs.Errors()...)
 
-	image := types.ToImage(srcImage)
+	image := types.ToImage(req.Image)
 	image.Notes = append(image.Notes, storage.Image_MISSING_METADATA)
 	return nil, image
 }
@@ -419,24 +432,24 @@ func scanImage(ctx context.Context, image *storage.Image,
 
 // createNoAuthImageRegistry creates an image registry that has no user/pass.
 func createNoAuthImageRegistry(ctx context.Context, imgName *storage.ImageName, regFactory registries.Factory) (registryTypes.ImageRegistry, error) {
-	registry := imgName.GetRegistry()
-	if registry == "" {
+	reg := imgName.GetRegistry()
+	if reg == "" {
 		return nil, errors.New("no image registry provided, nothing to do")
 	}
 
-	secure, err := tlscheck.CheckTLS(ctx, registry)
+	secure, err := tlscheck.CheckTLS(ctx, reg)
 	if err != nil {
-		return nil, pkgErrors.Wrapf(err, "unable to check TLS for registry %q", registry)
+		return nil, pkgErrors.Wrapf(err, "unable to check TLS for registry %q", reg)
 	}
 
 	ii := &storage.ImageIntegration{
-		Id:         registry,
-		Name:       fmt.Sprintf("NoAuth/reg:%v", registry),
+		Id:         reg,
+		Name:       fmt.Sprintf("%s/reg:%v", registryTypes.NoAuthNamePrefix, reg),
 		Type:       registryTypes.DockerType,
 		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
 		IntegrationConfig: &storage.ImageIntegration_Docker{
 			Docker: &storage.DockerConfig{
-				Endpoint: registry,
+				Endpoint: reg,
 				Insecure: !secure,
 			},
 		},

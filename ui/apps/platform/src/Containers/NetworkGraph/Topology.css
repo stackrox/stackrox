@@ -28,6 +28,11 @@
     --pf-v5-l-flex--spacer: 8px;
 }
 
+/* override custom topology css when pf-m-space-items-none is specifically set on PF flex component */
+.pf-ri__topology-section .pf-v5-l-flex.pf-m-space-items-none > * {
+    --pf-v5-l-flex--spacer: 0px;
+}
+
 .pf-ri__topology-section .pf-v5-c-toolbar__item .pf-v5-c-form-control {
     width: 85px;
 }

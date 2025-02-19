@@ -2,6 +2,7 @@ package pgutils
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -47,13 +48,15 @@ func Retry3[T any, U any](ctx context.Context, fn func() (T, U, error)) (T, U, e
 	var ret1 T
 	var ret2 U
 	if err := ctx.Err(); err != nil {
-		return ret1, ret2, err
+		return ret1, ret2, fmt.Errorf("retry context is done: %w", err)
 	}
 
 	// Run query immediately
 	if val1, val2, err := fn(); err == nil || !IsTransientError(err) {
 		if err != nil && err != pgx.ErrNoRows {
-			log.Debugf("UNEXPECTED: found permanent error: %+v", err)
+			log.Debugf("UNEXPECTED: found non-retryable error: %+v", err)
+			return ret1, ret2, fmt.Errorf("found non-retryable error: %w", err)
+
 		}
 		return val1, val2, err
 	}
@@ -68,16 +71,17 @@ func Retry3[T any, U any](ctx context.Context, fn func() (T, U, error)) (T, U, e
 	for {
 		select {
 		case <-ctx.Done():
-			return ret1, ret2, ctx.Err()
+			return ret1, ret2, fmt.Errorf("retry context is done: %w", ctx.Err())
 		case <-expirationTimer.C:
-			return ret1, ret2, err
+			return ret1, ret2, fmt.Errorf("retry timer is expired: %w", err)
 		case <-intervalTicker.C:
 			// Uses err outside the for loop to allow for the expiration to show the last err received
 			// and provide context for the expiration
 			ret1, ret2, err = fn()
 			if err == nil || !IsTransientError(err) {
 				if err != nil && err != pgx.ErrNoRows {
-					log.Debugf("UNEXPECTED: found permanent error: %+v", err)
+					log.Debugf("UNEXPECTED: found non-retryable error: %+v", err)
+					return ret1, ret2, fmt.Errorf("found non-retryable error: %w", err)
 				}
 				return ret1, ret2, err
 			}

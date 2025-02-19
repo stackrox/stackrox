@@ -268,6 +268,43 @@ const rules = {
             };
         },
     },
+    'getVersionedDocs-subPath': {
+        meta: {
+            type: 'problem',
+            docs: {
+                description:
+                    'Require that optional subPath argument of getVersionedDocs function call has no obvious problems',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                CallExpression(node) {
+                    if (
+                        node.callee?.name === 'getVersionedDocs' &&
+                        Array.isArray(node.arguments) &&
+                        typeof node.arguments[1]?.value === 'string'
+                    ) {
+                        const { value } = node.arguments[1];
+                        if (value.startsWith('/')) {
+                            context.report({
+                                node,
+                                message:
+                                    'Omit leading slash from relative subPath argument of getVersionedDocs function call',
+                            });
+                        }
+                        if (value.includes('.html')) {
+                            context.report({
+                                node,
+                                message:
+                                    'Omit .html extension from relative subPath argument of getVersionedDocs function call',
+                            });
+                        }
+                    }
+                },
+            };
+        },
+    },
     'pagination-function-call': {
         // Require that pagination property has function call like getPaginationParams.
         // Some classic pages have queryService.getPagination function call instead.

@@ -72,8 +72,8 @@ dependencies {
     implementation platform("org.spockframework:spock-bom:2.3-groovy-4.0")
     implementation "org.spockframework:spock-core"
     implementation "org.spockframework:spock-junit4"
-    implementation 'io.rest-assured:rest-assured:5.5.0'
-    testImplementation group: 'org.yaml', name: 'snakeyaml', version: '2.3'
+    implementation 'io.rest-assured:rest-assured:5.5.1'
+    testImplementation group: 'org.yaml', name: 'snakeyaml', version: '2.4'
     implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.5.16'
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: jacksonVersion
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: jacksonVersion
@@ -115,7 +115,7 @@ dependencies {
         "codenarc"("org.codehaus.groovy:groovy-xml:2.5.23")
     }
 
-    implementation 'org.javers:javers-core:7.7.0'
+    implementation 'org.javers:javers-core:7.8.0'
     implementation group: 'org.picocontainer', name: 'picocontainer', version: '2.15'
 
     implementation 'commons-codec:commons-codec:1.18.0'

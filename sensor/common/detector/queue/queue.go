@@ -7,16 +7,16 @@ import (
 	"github.com/stackrox/rox/pkg/queue"
 )
 
-// InternalQueue defines the pkg/queue that holds the items.
-type InternalQueue[T comparable] interface {
+// SimpleQueue defines the pkg/queue that holds the items.
+type SimpleQueue[T comparable] interface {
 	Push(T)
 	PullBlocking(concurrency.Waitable) T
 	Len() int
 }
 
-// Queue wraps a InternalQueue to make it pullable with a channel.
+// Queue wraps a SimpleQueue to make it pullable with a channel.
 type Queue[T comparable] struct {
-	queue     InternalQueue[T]
+	queue     SimpleQueue[T]
 	outputC   chan T
 	stopper   concurrency.Stopper
 	isRunning concurrency.Signal

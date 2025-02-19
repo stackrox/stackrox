@@ -73,6 +73,7 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 	desiredState, err := policyCR.Spec.ToProtobuf(r.CentralClient.GetNotifiers())
 	if err != nil {
+		_ = r.CentralClient.FlushCache(ctx)
 		policyCR.Status = configstackroxiov1alpha1.SecurityPolicyStatus{
 			Accepted: false,
 			Message:  err.Error(),

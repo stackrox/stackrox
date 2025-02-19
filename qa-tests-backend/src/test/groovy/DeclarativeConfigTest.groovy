@@ -50,6 +50,10 @@ class DeclarativeConfigTest extends BaseSpecification {
     static final private int RETRIES = 60
     static final private int DELETION_RETRIES = 60
     static final private int PAUSE_SECS = 3
+    // The AuthProvider reconciliation flow performs HTTP calls that can increase
+    // the time needed for reconciliation errors to surface. The number of retries
+    // here is increased accordingly.
+    static final private int AUTH_PROVIDER_RETRIES = 180
 
     // Values used within testing for permission sets.
     // These include:
@@ -272,8 +276,9 @@ splunk:
 
         then:
         // Retry this multiple times.
-        // It may take some time until a) the config map contents are mapped within the pod b) the reconciliation
-        // has been triggered.
+        // It may take some time until
+        // a) the config map contents are mapped within the pod
+        // b) the reconciliation has been triggered.
         // If the tests are flaky, we have to increase this value.
         withRetry(RETRIES, PAUSE_SECS) {
             def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
@@ -412,8 +417,9 @@ splunk:
         then:
         // Verify the integration health for the auth provider is unhealthy and contains an error message.
         // The errors will be surface after at least three consecutive occurrences, hence we need to retry multiple
-        // times here.
-        withRetry(RETRIES, PAUSE_SECS) {
+        // times here. One reconciliation cycle in that case can take longer if the HTTP calls involved
+        // in the object creation process are slow.
+        withRetry(AUTH_PROVIDER_RETRIES, PAUSE_SECS) {
             def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
             def authProviderHealth = response.getHealthsList().find {
                 it.getName().contains(AUTH_PROVIDER_KEY)

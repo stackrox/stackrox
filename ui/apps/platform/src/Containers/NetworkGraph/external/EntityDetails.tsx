@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -15,19 +15,12 @@ import {
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
-import {
-    ActionsColumn,
-    InnerScrollContainer,
-    Table,
-    Tbody,
-    Td,
-    Th,
-    Thead,
-    Tr,
-} from '@patternfly/react-table';
+import { InnerScrollContainer, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import useRestQuery from 'hooks/useRestQuery';
+import { UseURLPaginationResult } from 'hooks/useURLPagination';
+import { UseUrlSearchReturn } from 'hooks/useURLSearch';
 import { getExternalNetworkFlows } from 'services/NetworkService';
 import { getTableUIState } from 'utils/getTableUIState';
 import { ExternalNetworkFlowsResponse } from 'types/networkFlow.proto';
@@ -41,6 +34,8 @@ export type EntityDetailsProps = {
     entityName: string;
     entityId: string;
     scopeHierarchy: NetworkScopeHierarchy;
+    urlPagination: UseURLPaginationResult;
+    urlSearchFiltering: UseUrlSearchReturn;
     onNodeSelect: (id: string) => void;
     onExternalIPSelect: (externalIP: string | undefined) => void;
 };
@@ -58,11 +53,13 @@ function EntityDetails({
     entityName,
     entityId,
     scopeHierarchy,
+    urlPagination,
+    urlSearchFiltering,
     onNodeSelect,
     onExternalIPSelect,
 }: EntityDetailsProps) {
-    const [page, setPage] = useState(1);
-    const [perPage, setPerPage] = useState(10);
+    const { page, perPage, setPage, setPerPage } = urlPagination;
+    const { searchFilter } = urlSearchFiltering;
     const clusterId = scopeHierarchy.cluster.id;
     const { deployments, namespaces } = scopeHierarchy;
     const fetchExternalNetworkFlows = useCallback((): Promise<ExternalNetworkFlowsResponse> => {
@@ -70,9 +67,9 @@ function EntityDetails({
             sortOption: {},
             page,
             perPage,
-            advancedFilters: {},
+            advancedFilters: searchFilter,
         });
-    }, [page, perPage, clusterId, deployments, entityId, namespaces]);
+    }, [page, perPage, clusterId, deployments, entityId, namespaces, searchFilter]);
 
     const {
         data: externalNetworkFlows,
@@ -84,7 +81,7 @@ function EntityDetails({
         isLoading,
         data: externalNetworkFlows?.flows,
         error,
-        searchFilter: {},
+        searchFilter,
     });
 
     const externalIPName = externalNetworkFlows?.entity.externalSource.name || '';
@@ -135,9 +132,6 @@ function EntityDetails({
                                     <Th>Entity</Th>
                                     <Th>Direction</Th>
                                     <Th>Port/protocol</Th>
-                                    <Th>
-                                        <span className="pf-v5-screen-reader">Row actions</span>
-                                    </Th>
                                 </Tr>
                             </Thead>
                             <TbodyUnified
@@ -190,16 +184,6 @@ function EntityDetails({
                                                     <Td dataLabel="Direction">{direction}</Td>
                                                     <Td dataLabel="Port/protocol">
                                                         {dstPort} / {protocolLabel[l4protocol]}
-                                                    </Td>
-                                                    <Td isActionCell>
-                                                        <ActionsColumn
-                                                            items={[
-                                                                {
-                                                                    title: 'Add to baseline',
-                                                                    onClick: () => {},
-                                                                },
-                                                            ]}
-                                                        />
                                                     </Td>
                                                 </Tr>
                                             );

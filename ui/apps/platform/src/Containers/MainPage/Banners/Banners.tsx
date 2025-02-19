@@ -29,6 +29,10 @@ function Banners(): ReactElement {
                 showCertGenerateAction={showCertGenerateAction}
             />
             <CredentialExpiryBanner
+                component="CENTRAL_DB"
+                showCertGenerateAction={showCertGenerateAction}
+            />
+            <CredentialExpiryBanner
                 component="SCANNER"
                 showCertGenerateAction={showCertGenerateAction}
             />

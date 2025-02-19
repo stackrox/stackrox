@@ -690,9 +690,16 @@ class IntegrationsTest extends BaseSpecification {
         ImageIntegrationService.deleteStackRoxScannerIntegrationIfExists()
 
         Assume.assumeTrue(imageIntegration.isTestable())
-        Assume.assumeTrue(!testAspect.contains("IAM") || ClusterService.isEKS())
-        Assume.assumeTrue(!testAspect.contains("workload identity") || Env.HAS_WORKLOAD_IDENTITIES)
-        Assume.assumeTrue(!testAspect.contains("AKS managed identity") || ClusterService.isAKS())
+        Assume.assumeTrue("requires AWS container IAM role",
+            !testAspect.contains("IAM") || ClusterService.isEKS(),
+        )
+        Assume.assumeTrue("requires GCP workload identity",
+            !testAspect.contains("workload identity") || Env.HAS_WORKLOAD_IDENTITIES,
+        )
+        // Does not run on ARO because ARO does not support workload identity federation today.
+        Assume.assumeTrue("requires Azure workload identity",
+            !testAspect.contains("AKS managed identity") || ClusterService.isAKS(),
+        )
 
         when:
         "the integration is tested"

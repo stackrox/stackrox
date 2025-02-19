@@ -9,10 +9,13 @@ import (
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 )
 
-// The header is set by the RHACS ServiceNow integration.
-// See https://github.com/stackrox/service-now/blob/9d1df943f5f0b3052df97c6272814e2303f17685/52616ff6938a1a50c52a72856aba10fd/update/sys_script_include_2b362bbe938a1a50c52a72856aba10b3.xml#L80.
-const snowIntegrationHeader = "Rh-ServiceNow-Integration"
-const userAgentHeaderKey = "User-Agent"
+const (
+	// The header is set by the RHACS ServiceNow integration.
+	// See https://github.com/stackrox/service-now/blob/9d1df943f5f0b3052df97c6272814e2303f17685/52616ff6938a1a50c52a72856aba10fd/update/sys_script_include_2b362bbe938a1a50c52a72856aba10b3.xml#L80.
+	snowIntegrationHeader = "Rh-ServiceNow-Integration"
+
+	userAgentHeaderKey = "User-Agent"
+)
 
 var (
 	ignoredPaths = glob.MustCompile("{/v1/ping,/v1.PingService/Ping,/v1/metadata,/static/*}")
@@ -35,6 +38,20 @@ var (
 				userAgentHeaderKey:    "*ServiceNow*",
 				snowIntegrationHeader: phonehome.NoHeaderOrAnyValue,
 			},
+		},
+		{
+			// Capture requests from GitHub action user agents.
+			// See https://github.com/stackrox/central-login/blob/68785c129f3faba128d820cfe767558287be53a3/src/main.ts#L73
+			// and https://github.com/stackrox/roxctl-installer-action/blob/47fb4f5b275066b8322369e6e33fa010915b0d13/action.yml#L59.
+			Headers: map[string]phonehome.Pattern{
+				userAgentHeaderKey: phonehome.Pattern("*-GHA*"),
+			},
+		},
+		{
+			// Capture SBOM generation requests. Corresponding handler in central/image/service/http_handler.go.
+			Path:    phonehome.Pattern("/api/v1/images/sbom").Ptr(),
+			Method:  phonehome.Pattern("POST").Ptr(),
+			Headers: map[string]phonehome.Pattern{userAgentHeaderKey: phonehome.NoHeaderOrAnyValue},
 		},
 		apiPathsCampaign(),
 		userAgentsCampaign(),

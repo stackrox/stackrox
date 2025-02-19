@@ -1,17 +1,17 @@
 import React, { useEffect, useState, ReactElement } from 'react';
 import {
-    PageSection,
-    Bullseye,
     Alert,
+    Bullseye,
+    Button,
+    Flex,
+    PageSection,
+    Popover,
+    Spinner,
     Title,
     Tabs,
     Tab,
     TabTitleText,
     Text,
-    Spinner,
-    Button,
-    Flex,
-    Tooltip,
 } from '@patternfly/react-core';
 import { OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
 
@@ -74,12 +74,12 @@ const violationPageText: Record<
 > = {
     'Applications view': {
         title: 'User workload violations',
-        description: 'Violations affecting user-managed workloads and images',
+        description: 'Violations affecting user-managed workloads',
     },
     'Platform view': {
         title: 'Platform violations',
         description:
-            'Violations affecting images and workloads used by the OpenShift Platform and layered services',
+            'Violations affecting workloads used by the OpenShift Platform and layered services',
     },
     'Full view': {
         title: 'All violations',
@@ -96,11 +96,11 @@ function getFilteredWorkflowViewText(filteredWorkflowView: FilteredWorkflowView)
 }
 
 const violationsPageDescription: Record<ViolationStateTab, string> = {
-    ACTIVE: 'View Build/Deploy violations for workloads currently in violation, along with unresolved Runtime violations.',
+    ACTIVE: 'Build/Deploy-stage violations for workloads currently in violation, along with unresolved Runtime violations.',
     RESOLVED:
-        'View Build/Deploy violations for workloads that were removed or modified to be compliant, manually resolved Runtime violations, and violations generated before a policy exclusion was added (all lifecycles)',
+        'Build/Deploy-stage violations for workloads that were removed or modified to be compliant, manually resolved Runtime violations, and violations generated before a policy exclusion was added (all lifecycles)',
     ATTEMPTED:
-        'View would-be violations that caused workload deployment attempts to be blocked by the Admission Controller.',
+        'Would-be violations that caused workload deployment attempts to be blocked by the Admission Controller.',
 };
 
 function getDescriptionForSelectedViolationState(
@@ -113,7 +113,6 @@ function ViolationsTablePage(): ReactElement {
     const { analyticsTrack } = useAnalytics();
     const { searchFilter, setSearchFilter } = useURLSearch();
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isPlatformComponentsEnabled = isFeatureFlagEnabled('ROX_PLATFORM_COMPONENTS');
     const isPlatformCveSplitEnabled = isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT');
 
     const [selectedViolationStateTab, setSelectedViolationStateTab] = useURLStringUnion(
@@ -192,10 +191,7 @@ function ViolationsTablePage(): ReactElement {
 
     // When any of the deps to this effect change, we want to reload the alerts and count.
     useEffect(() => {
-        const filteredWorkflowFilter = isPlatformComponentsEnabled
-            ? getFilteredWorkflowViewSearchFilter(filteredWorkflowView)
-            : {};
-
+        const filteredWorkflowFilter = getFilteredWorkflowViewSearchFilter(filteredWorkflowView);
         const alertSearchFilter: SearchFilter = {
             ...searchFilter,
             ...filteredWorkflowFilter,
@@ -246,7 +242,6 @@ function ViolationsTablePage(): ReactElement {
         perPage,
         selectedViolationStateTab,
         filteredWorkflowView,
-        isPlatformComponentsEnabled,
     ]);
 
     // We need to be able to identify which alerts are runtime or attempted, and which are not by id.
@@ -280,19 +275,14 @@ function ViolationsTablePage(): ReactElement {
                         {isPlatformCveSplitEnabled ? title : 'Violations'}
                     </Title>
                     {isPlatformCveSplitEnabled && (
-                        <Tooltip
-                            aria="none"
-                            aria-live="polite"
-                            content={description}
-                            position="bottom"
+                        <Popover
+                            aria-label="More information about the current page"
+                            bodyContent={description}
                         >
-                            <Button
-                                aria-label="More information about the current page"
-                                variant="plain"
-                            >
+                            <Button title="Page description" variant="plain">
                                 <OutlinedQuestionCircleIcon />
                             </Button>
-                        </Tooltip>
+                        </Popover>
                     )}
                 </Flex>
             </PageSection>
@@ -324,7 +314,7 @@ function ViolationsTablePage(): ReactElement {
                     />
                 </Tabs>
             </PageSection>
-            {isPlatformComponentsEnabled && !isPlatformCveSplitEnabled && (
+            {!isPlatformCveSplitEnabled && (
                 <PageSection className="pf-v5-u-py-md" component="div" variant="light">
                     <FilteredWorkflowViewSelector
                         filteredWorkflowView={filteredWorkflowView}

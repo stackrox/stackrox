@@ -75,7 +75,7 @@ type Matcher interface {
 	GetVulnerabilities(ctx context.Context, ir *claircore.IndexReport) (*claircore.VulnerabilityReport, error)
 	GetLastVulnerabilityUpdate(ctx context.Context) (time.Time, error)
 	GetKnownDistributions(ctx context.Context) []claircore.Distribution
-	GetSBOM(ctx context.Context, ir *claircore.IndexReport, id, name string) ([]byte, error)
+	GetSBOM(ctx context.Context, ir *claircore.IndexReport, opts *sbom.Options) ([]byte, error)
 	Ready(ctx context.Context) error
 	Initialized(ctx context.Context) error
 	Close(ctx context.Context) error
@@ -235,8 +235,8 @@ func (m *matcherImpl) GetKnownDistributions(_ context.Context) []claircore.Distr
 	return m.vulnUpdater.KnownDistributions()
 }
 
-func (m *matcherImpl) GetSBOM(ctx context.Context, ir *claircore.IndexReport, name, id string) ([]byte, error) {
-	return m.sbomer.GetSBOM(ctx, ir, name, id)
+func (m *matcherImpl) GetSBOM(ctx context.Context, ir *claircore.IndexReport, opts *sbom.Options) ([]byte, error) {
+	return m.sbomer.GetSBOM(ctx, ir, opts)
 }
 
 // Close closes the matcher.

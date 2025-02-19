@@ -65,7 +65,6 @@ import useWatchLastSnapshotForComplianceReports from './hooks/useWatchLastSnapsh
 type ScanConfigsTablePageProps = {
     hasWriteAccessForCompliance: boolean;
     isReportJobsEnabled: boolean;
-    isComplianceReportingEnabled: boolean;
 };
 
 const CreateScanConfigButton = () => {
@@ -85,7 +84,6 @@ const defaultSortOption = {
 function ScanConfigsTablePage({
     hasWriteAccessForCompliance,
     isReportJobsEnabled,
-    isComplianceReportingEnabled,
 }: ScanConfigsTablePageProps): React.ReactElement {
     const { currentUser } = useAuthStatus();
     const { analyticsTrack } = useAnalytics();
@@ -273,7 +271,6 @@ function ScanConfigsTablePage({
                                 scanConfigResponse={scanSchedule}
                                 isSnapshotStatusPending={isSnapshotStatusPending}
                                 isReportJobsEnabled={isReportJobsEnabled}
-                                isComplianceReportingEnabled={isComplianceReportingEnabled}
                             />
                         </Td>
                     )}

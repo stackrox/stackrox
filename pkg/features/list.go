@@ -103,7 +103,10 @@ var (
 	SensorPullSecretsByName = registerFeature("Sensor will capture pull secrets by name and registry host instead of just registry host", "ROX_SENSOR_PULL_SECRETS_BY_NAME", enabled)
 
 	// ExternalIPs enables storing detailed discovered external IPs
-	ExternalIPs = registerFeature("Central will work with discovered external IPs", "ROX_EXTERNAL_IPS", enabled)
+	ExternalIPs = registerFeature("Central will work with discovered external IPs", "ROX_EXTERNAL_IPS")
+
+	// NetworkGraphExternalIPs enables displaying external IPs in the network graph
+	NetworkGraphExternalIPs = registerFeature("Display external ips in the UI", "ROX_NETWORK_GRAPH_EXTERNAL_IPS")
 
 	// ScannerV4RedHatCVEs enables displaying CVEs instead of RHSAs/RHEAs/RHBAs in the place of fixed vulnerabilities affected Red Hat products.
 	// TODO(ROX-26672): Remove this once we can show both CVEs and RHSAs in the UI + reports.

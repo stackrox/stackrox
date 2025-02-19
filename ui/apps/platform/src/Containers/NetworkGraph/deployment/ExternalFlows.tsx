@@ -1,57 +1,65 @@
-import React, { useMemo, useState } from 'react';
-import { Divider, Flex, FlexItem, Stack, StackItem } from '@patternfly/react-core';
+import React, { useCallback } from 'react';
 
-import IPMatchFilter, { MatchType } from '../common/IPMatchFilter';
+import { UseURLPaginationResult } from 'hooks/useURLPagination';
+import useRestQuery from 'hooks/useRestQuery';
+import { UseUrlSearchReturn } from 'hooks/useURLSearch';
+import { getExternalIpsFlowsMetadata } from 'services/NetworkService';
+import { ExternalNetworkFlowsMetadataResponse } from 'types/networkFlow.proto';
+import { getTableUIState } from 'utils/getTableUIState';
+
 import ExternalIpsTable from '../external/ExternalIpsTable';
 import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 
-type ExternalFlowsFilter = {
-    matchType: MatchType;
-    externalIP: string;
-};
-
 type ExternalFlowsProps = {
-    deploymentId: string;
+    deploymentName: string;
     scopeHierarchy: NetworkScopeHierarchy;
+    urlSearchFiltering: UseUrlSearchReturn;
+    urlPagination: UseURLPaginationResult;
     onExternalIPSelect: (externalIP: string) => void;
 };
 
-function ExternalFlows({ deploymentId, scopeHierarchy, onExternalIPSelect }: ExternalFlowsProps) {
-    const [appliedFilter, setAppliedFilter] = useState<ExternalFlowsFilter>({
-        matchType: 'Equals',
-        externalIP: '',
+function ExternalFlows({
+    deploymentName,
+    scopeHierarchy,
+    urlSearchFiltering,
+    urlPagination,
+    onExternalIPSelect,
+}: ExternalFlowsProps) {
+    const clusterId = scopeHierarchy.cluster.id;
+    const { namespaces } = scopeHierarchy;
+    const { searchFilter } = urlSearchFiltering;
+    const { page, perPage } = urlPagination;
+    const fetchExternalIpsFlowsMetadata =
+        useCallback((): Promise<ExternalNetworkFlowsMetadataResponse> => {
+            return getExternalIpsFlowsMetadata(clusterId, namespaces, [deploymentName], {
+                sortOption: {},
+                page,
+                perPage,
+                advancedFilters: searchFilter,
+            });
+        }, [page, perPage, clusterId, deploymentName, namespaces, searchFilter]);
+
+    const {
+        data: externalIpsFlowsMetadata,
+        isLoading,
+        error,
+    } = useRestQuery(fetchExternalIpsFlowsMetadata);
+
+    const tableState = getTableUIState({
+        isLoading,
+        data: externalIpsFlowsMetadata?.entities,
+        error,
+        searchFilter,
     });
 
-    const onSearch = ({ matchType, externalIP }) => {
-        setAppliedFilter({ matchType, externalIP });
-    };
-
-    const advancedFilters = useMemo(
-        () => ({
-            'Deployment ID': deploymentId,
-            'External Source Address': appliedFilter.externalIP,
-        }),
-        [appliedFilter.externalIP, deploymentId]
-    );
-
     return (
-        <Stack>
-            <StackItem>
-                <Flex direction={{ default: 'row' }}>
-                    <FlexItem flex={{ default: 'flex_1' }}>
-                        <IPMatchFilter onSearch={onSearch} />
-                    </FlexItem>
-                </Flex>
-            </StackItem>
-            <Divider component="hr" />
-            <StackItem isFilled style={{ overflow: 'auto' }}>
-                <ExternalIpsTable
-                    scopeHierarchy={scopeHierarchy}
-                    advancedFilters={advancedFilters}
-                    onExternalIPSelect={onExternalIPSelect}
-                />
-            </StackItem>
-        </Stack>
+        <ExternalIpsTable
+            onExternalIPSelect={onExternalIPSelect}
+            tableState={tableState}
+            totalEntities={externalIpsFlowsMetadata?.totalEntities ?? 0}
+            urlPagination={urlPagination}
+            urlSearchFiltering={urlSearchFiltering}
+        />
     );
 }
 

@@ -15,6 +15,7 @@ import (
 	time "time"
 
 	claircore "github.com/quay/claircore"
+	sbom "github.com/stackrox/rox/scanner/sbom"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -86,18 +87,18 @@ func (mr *MockMatcherMockRecorder) GetLastVulnerabilityUpdate(ctx any) *gomock.C
 }
 
 // GetSBOM mocks base method.
-func (m *MockMatcher) GetSBOM(ctx context.Context, ir *claircore.IndexReport, id, name string) ([]byte, error) {
+func (m *MockMatcher) GetSBOM(ctx context.Context, ir *claircore.IndexReport, opts *sbom.Options) ([]byte, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetSBOM", ctx, ir, id, name)
+	ret := m.ctrl.Call(m, "GetSBOM", ctx, ir, opts)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetSBOM indicates an expected call of GetSBOM.
-func (mr *MockMatcherMockRecorder) GetSBOM(ctx, ir, id, name any) *gomock.Call {
+func (mr *MockMatcherMockRecorder) GetSBOM(ctx, ir, opts any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSBOM", reflect.TypeOf((*MockMatcher)(nil).GetSBOM), ctx, ir, id, name)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSBOM", reflect.TypeOf((*MockMatcher)(nil).GetSBOM), ctx, ir, opts)
 }
 
 // GetVulnerabilities mocks base method.

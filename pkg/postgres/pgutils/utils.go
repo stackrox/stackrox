@@ -2,10 +2,12 @@ package pgutils
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"reflect"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
@@ -14,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
 )
 
@@ -32,6 +35,19 @@ var (
 	}
 	pgxPoolDSNRegex = regexp.MustCompile(`(^| )(pool_max_conns|pool_min_conns|pool_max_conn_lifetime|pool_max_conn_idle_time|pool_health_check_period)=\S+`)
 )
+
+// Logger for Raw SQL portion of migration.
+type printSQLLogger struct {
+	logger.Interface
+}
+
+func (l *printSQLLogger) Trace(ctx context.Context, begin time.Time,
+	fc func() (sql string, rowsAffected int64), err error) {
+
+	sql, _ := fc()
+	fmt.Println(sql + ";")
+	l.Interface.Trace(ctx, begin, fc, err)
+}
 
 // ErrNilIfNoRows returns nil if the error is pgx.ErrNoRows
 func ErrNilIfNoRows(err error) error {
@@ -84,6 +100,21 @@ func EmptyOrMap[K comparable, V any, M map[K]V](m M) interface{} {
 
 // CreateTableFromModel executes input create statement using the input connection.
 func CreateTableFromModel(ctx context.Context, db *gorm.DB, createStmt *postgres.CreateStmts) {
+	// A DB object to use to perform non-GORM changes (i.e partitions creation
+	// etc.) via raw SQL
+	var rawSQLDB *gorm.DB
+
+	// This function can access the database via GORM AutoMigrate and directly.
+	// For the latter we have to respect certain aspects, e.g. DryRun mode,
+	// which is used to print out SQL of the migration for troubleshooting.
+	if db.DryRun {
+		rawSQLDB = db.Session(&gorm.Session{
+			Logger: &printSQLLogger{Interface: db.Logger},
+		})
+	} else {
+		rawSQLDB = db
+	}
+
 	// Partitioned tables are not supported by Gorm migration or models
 	// For partitioned tables the necessary DDL will be contained in PartitionCreate.
 	if !createStmt.Partition {
@@ -93,15 +124,16 @@ func CreateTableFromModel(ctx context.Context, db *gorm.DB, createStmt *postgres
 		err = errors.Wrapf(err, "Error creating table for %q: %v", reflect.TypeOf(createStmt.GormModel), err)
 		utils.Must(err)
 	} else {
-		rdb := db.WithContext(ctx).Exec(createStmt.PartitionCreate)
+		rdb := rawSQLDB.WithContext(ctx).Exec(createStmt.PartitionCreate)
 		utils.Must(rdb.Error)
 	}
 
 	for _, child := range createStmt.Children {
 		CreateTableFromModel(ctx, db, child)
 	}
+
 	for _, stmt := range createStmt.PostStmts {
-		rdb := db.WithContext(ctx).Exec(stmt)
+		rdb := rawSQLDB.WithContext(ctx).Exec(stmt)
 		utils.Must(rdb.Error)
 	}
 }

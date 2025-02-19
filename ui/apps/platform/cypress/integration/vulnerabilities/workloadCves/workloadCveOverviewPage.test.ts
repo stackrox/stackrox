@@ -105,7 +105,6 @@ describe('Workload CVE overview page tests', () => {
         ).then(({ waitForRequests, waitAndYieldRequestBodyVariables }) => {
             visitWorkloadCveOverview();
             waitForRequests(['getImageCVEList']); // Wait for the initial request to complete
-            waitForRequests(['getImageCVEList']); // Wait for the second request after the default filters load to complete
             applyDefaultFilters(['Critical', 'Important'], ['Fixable']); // Set the default filters to none to prevent multiple requests on each page visit
             waitForRequests(['getImageCVEList']); // Wait for the third request after the filters have been changed to complete
 
@@ -128,7 +127,7 @@ describe('Workload CVE overview page tests', () => {
             });
 
             // Test the 'All vulnerable images' view
-            visitFromMoreViewsDropdown('All vulnerable images');
+            visitFromHorizontalNavExpandable('More Views')('All vulnerable images');
             waitAndYieldRequestBodyVariables(['getImageCVEList']).then(({ query }) => {
                 const requestQuery = query.toLowerCase();
                 expect(requestQuery).to.contain('vulnerability state:observed');
@@ -137,7 +136,7 @@ describe('Workload CVE overview page tests', () => {
             });
 
             // Test the 'Inactive images' view
-            visitFromMoreViewsDropdown('Inactive images');
+            visitFromHorizontalNavExpandable('All vulnerable images')('Inactive images');
             waitAndYieldRequestBodyVariables(['getImageCVEList']).then(({ query }) => {
                 const requestQuery = query.toLowerCase();
                 expect(requestQuery).to.contain('vulnerability state:observed');
@@ -146,7 +145,7 @@ describe('Workload CVE overview page tests', () => {
             });
 
             // Test the 'Images without CVEs' view
-            visitFromMoreViewsDropdown('Images without CVEs');
+            visitFromHorizontalNavExpandable('Inactive images')('Images without CVEs');
             waitAndYieldRequestBodyVariables(['getImageList']).then(({ query }) => {
                 const requestQuery = query.toLowerCase();
                 expect(requestQuery).not.to.contain('platform component:observed');
@@ -286,11 +285,8 @@ describe('Workload CVE overview page tests', () => {
 
         it('should default to multi-severity sort and keep in sync with applied filters', () => {
             interceptAndWatchRequests(getRouteMatcherMapForGraphQL(['getImageCVEList'])).then(
-                ({ waitForRequests, waitAndYieldRequestBodyVariables }) => {
+                ({ waitAndYieldRequestBodyVariables }) => {
                     visitWorkloadCveOverview({ clearFiltersOnVisit: false });
-                    // Wait for the initial request to complete, this fires twice due to the default filters being applied.
-                    // Ideally we fix this in the future to avoid the additional overhead.
-                    waitForRequests();
 
                     // Check the default sort
                     waitAndYieldRequestBodyVariables().then(

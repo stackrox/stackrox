@@ -436,7 +436,7 @@ function MicrosoftSentinelForm({
                                                             <a
                                                                 href={getVersionedDocs(
                                                                     version,
-                                                                    '/integrating/integrate-using-short-lived-tokens'
+                                                                    'integrating/integrate-using-short-lived-tokens'
                                                                 )}
                                                                 target="_blank"
                                                                 rel="noopener noreferrer"

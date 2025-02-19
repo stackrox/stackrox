@@ -1,4 +1,4 @@
-import React, { ReactElement, useState } from 'react';
+import React, { ReactElement, useEffect, useState } from 'react';
 import {
     Divider,
     Flex,
@@ -11,9 +11,12 @@ import {
     ToggleGroupItem,
 } from '@patternfly/react-core';
 
+import { UseURLPaginationResult } from 'hooks/useURLPagination';
+import { UseUrlSearchReturn } from 'hooks/useURLSearch';
+
 import { ExternalEntitiesIcon } from '../common/NetworkGraphIcons';
 import ExternalFlowsTable from './ExternalFlowsTable';
-import ExternalIpsTable from './ExternalIpsTable';
+import ExternalIpsContainer from './ExternalIpsContainer';
 import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 import { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
 import { getNodeById } from '../utils/networkGraphUtils';
@@ -30,6 +33,8 @@ export type ExternalEntitiesSideBarProps = {
     scopeHierarchy: NetworkScopeHierarchy;
     onNodeSelect: (id: string) => void;
     onExternalIPSelect: (externalIP: string | undefined) => void;
+    urlPagination: UseURLPaginationResult;
+    urlSearchFiltering: UseUrlSearchReturn;
 };
 
 function EntityTitleText({ text, id }: { text: string | undefined; id: string }) {
@@ -49,10 +54,19 @@ function ExternalEntitiesSideBar({
     selectedExternalIP,
     onNodeSelect,
     onExternalIPSelect,
+    urlPagination,
+    urlSearchFiltering,
 }: ExternalEntitiesSideBarProps): ReactElement {
     const [selectedView, setSelectedView] = useState<ExternalEntitiesView>('external-ips');
 
     const entityNode = getNodeById(nodes, id);
+    const { setPage } = urlPagination;
+    const { setSearchFilter } = urlSearchFiltering;
+
+    useEffect(() => {
+        setPage(1);
+        setSearchFilter({});
+    }, [selectedExternalIP, selectedView, setPage, setSearchFilter]);
 
     if (selectedExternalIP) {
         return (
@@ -63,6 +77,8 @@ function ExternalEntitiesSideBar({
                 scopeHierarchy={scopeHierarchy}
                 onNodeSelect={onNodeSelect}
                 onExternalIPSelect={onExternalIPSelect}
+                urlPagination={urlPagination}
+                urlSearchFiltering={urlSearchFiltering}
             />
         );
     }
@@ -103,9 +119,11 @@ function ExternalEntitiesSideBar({
             <StackItem isFilled style={{ overflow: 'auto' }}>
                 <Stack className="pf-v5-u-p-md">
                     {selectedView === 'external-ips' ? (
-                        <ExternalIpsTable
+                        <ExternalIpsContainer
                             scopeHierarchy={scopeHierarchy}
                             onExternalIPSelect={onExternalIPSelect}
+                            urlPagination={urlPagination}
+                            urlSearchFiltering={urlSearchFiltering}
                         />
                     ) : (
                         <ExternalFlowsTable

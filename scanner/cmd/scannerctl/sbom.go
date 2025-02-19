@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/scannerv4/client"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/scanner/cmd/scannerctl/authn"
 	"github.com/stackrox/rox/scanner/indexer"
 )
@@ -64,8 +65,9 @@ func sbomCmd(ctx context.Context) *cobra.Command {
 				ref.DigestStr(), *imageDigest)
 		}
 
+		uri := imageURL + "-" + uuid.NewV4().String()
 		// Attempt to generate the SBOM from an existing index report.
-		sbom, found, err := scanner.GetSBOM(ctx, imageURL, ref)
+		sbom, found, err := scanner.GetSBOM(ctx, imageURL, ref, uri)
 		if err != nil {
 			return fmt.Errorf("generating sbom: %w", err)
 		}
@@ -90,7 +92,7 @@ func sbomCmd(ctx context.Context) *cobra.Command {
 		}
 
 		// Re-attempt to generate the SBOM.
-		sbom, found, err = scanner.GetSBOM(ctx, imageURL, ref)
+		sbom, found, err = scanner.GetSBOM(ctx, imageURL, ref, uri)
 		if err != nil {
 			return fmt.Errorf("generating sbom: %w", err)
 		}

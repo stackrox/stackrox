@@ -2,10 +2,10 @@ package manager
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
-	"github.com/pkg/errors"
 	complianceDatastore "github.com/stackrox/rox/central/compliance/datastore"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/central/compliance/standards"
@@ -248,7 +248,7 @@ func (m *managerImpl) addProfileNoLock(profile *storage.ComplianceOperatorProfil
 		}
 
 		if err := m.registerCheckFromRule(standard.ID, profileProductType, fullRule); err != nil {
-			return errors.Wrapf(err, "registering check %s", fullRule.GetName())
+			return fmt.Errorf("registering check %s: %w", fullRule.GetName(), err)
 		}
 	}
 
@@ -286,7 +286,7 @@ func (m *managerImpl) DeleteProfile(deletedProfile *storage.ComplianceOperatorPr
 		}
 		return nil
 	})
-	if err != nil && err != errConditionMet {
+	if err != nil && !errors.Is(err, errConditionMet) {
 		return err
 	}
 	if !found {
@@ -345,7 +345,7 @@ func (m *managerImpl) IsStandardActive(standardID string) bool {
 			return nil
 		})
 	}
-	if err := pgutils.RetryIfPostgres(context.Background(), walkFn); err != nil && err != errConditionMet {
+	if err := pgutils.RetryIfPostgres(context.Background(), walkFn); err != nil && !errors.Is(err, errConditionMet) {
 		log.Errorf("error walking scan setting bindings datastore: %v", err)
 		return false
 	}
@@ -388,7 +388,7 @@ func (m *managerImpl) IsStandardActiveForCluster(standardID, clusterID string) b
 			return nil
 		})
 	}
-	if err := pgutils.RetryIfPostgres(context.Background(), walkFn); err != nil && err != errConditionMet {
+	if err := pgutils.RetryIfPostgres(context.Background(), walkFn); err != nil && !errors.Is(err, errConditionMet) {
 		log.Errorf("error walking scan setting bindings datastore: %v", err)
 		return false
 	}
