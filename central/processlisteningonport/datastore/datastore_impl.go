@@ -651,7 +651,6 @@ func (ds *datastoreImpl) RemovePLOPsWithoutPodUID(ctx context.Context) (int64, e
 	ds.mutex.Lock()
 	defer ds.mutex.Unlock()
 
-
 	deletedPlops, err := ds.storage.DeleteByQuery(ctx, search.NewQueryBuilder().
 		AddNullField(search.PodUID).ProtoQuery())
 
