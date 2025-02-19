@@ -28,8 +28,6 @@ import services.ImageIntegrationService
 import services.MetadataService
 import services.RoleService
 import util.Env
-import util.Helpers
-import util.OnFailure
 
 import org.junit.Rule
 import org.junit.rules.TestName
@@ -37,7 +35,6 @@ import org.junit.rules.Timeout
 import spock.lang.Shared
 import spock.lang.Specification
 
-@OnFailure(handler = { Helpers.collectDebugForFailure(delegate as Throwable) })
 class BaseSpecification extends Specification {
 
     static final Logger LOG = LoggerFactory.getLogger("test." + BaseSpecification.getSimpleName())
