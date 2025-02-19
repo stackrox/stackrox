@@ -31,6 +31,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	clusterValidation "github.com/stackrox/rox/pkg/cluster"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
@@ -889,7 +890,7 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 		clusterConfig := helmConfig.GetClusterConfig()
 		configureFromHelmConfig(cluster, clusterConfig)
 
-		if securedClusterIsNotManagedManually(helmConfig) {
+		if centralsensor.SecuredClusterIsNotManagedManually(helmConfig) {
 			cluster.HelmConfig = clusterConfig.CloneVT()
 		}
 
@@ -945,7 +946,7 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 	cluster.ManagedBy = manager
 	cluster.InitBundleId = registrantID
 	cluster.SensorCapabilities = sliceutils.CopySliceSorted(hello.GetCapabilities())
-	if securedClusterIsNotManagedManually(helmConfig) {
+	if centralsensor.SecuredClusterIsNotManagedManually(helmConfig) {
 		configureFromHelmConfig(cluster, clusterConfig)
 		cluster.HelmConfig = clusterConfig.CloneVT()
 	} else {
@@ -960,11 +961,6 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 	}
 
 	return cluster, nil
-}
-
-func securedClusterIsNotManagedManually(helmManagedConfig *central.HelmManagedConfigInit) bool {
-	return helmManagedConfig.GetManagedBy() != storage.ManagerType_MANAGER_TYPE_UNKNOWN &&
-		helmManagedConfig.GetManagedBy() != storage.ManagerType_MANAGER_TYPE_MANUAL
 }
 
 func sensorCapabilitiesEqual(cluster *storage.Cluster, hello *central.SensorHello) bool {
