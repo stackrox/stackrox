@@ -85,7 +85,7 @@ func ecosystems(ctx context.Context) []*ccindexer.Ecosystem {
 		rhel.NewEcosystem(ctx),
 		rpm.NewEcosystem(ctx),
 	}
-	if !features.ScannerV4SkipLanguage.Enabled() {
+	if features.ScannerV4LanguageSupport.Enabled() {
 		es = append(es,
 			gobin.NewEcosystem(ctx),
 			java.NewEcosystem(ctx),

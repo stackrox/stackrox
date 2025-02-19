@@ -55,7 +55,7 @@ func matcherNames() []string {
 		(*suse.Matcher)(nil).Name(),
 		(*ubuntu.Matcher)(nil).Name(),
 	}
-	if !features.ScannerV4SkipLanguage.Enabled() {
+	if features.ScannerV4LanguageSupport.Enabled() {
 		// Claircore does not register the Node.js factory by default, so register it here.
 		nodeJSMatcher := nodejs.Matcher{}
 		registry.Register(nodeJSMatcher.Name(), driver.MatcherStatic(&nodeJSMatcher))
