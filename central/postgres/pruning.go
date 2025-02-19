@@ -117,6 +117,12 @@ const (
 	pruneAdministrationEvents = `DELETE FROM %s WHERE lastoccurredat < now() at time zone 'utc' - INTERVAL '%d MINUTES'`
 
 	pruneDiscoveredClusters = `DELETE FROM %s WHERE lastupdatedat < now() at time zone 'utc' - INTERVAL '%d MINUTES'`
+
+	pruneInvalidAPITokens = `DELETE FROM %s WHERE
+		(
+			revoked = TRUE OR
+			expiration < now() at time zone 'utc' - INTERVAL '%d MINUTES'
+		)` // #nosec G101
 )
 
 var (
@@ -270,5 +276,19 @@ func PruneDiscoveredClusters(ctx context.Context, pool postgres.DB, retentionDur
 		int(retentionDuration.Minutes()))
 	if _, err := pool.Exec(pruneCtx, query); err != nil {
 		log.Errorf("failed to prune discovered clusters: %v", err)
+	}
+}
+
+// PruneInvalidAPITokens prunes expired or revoked API tokens.
+func PruneInvalidAPITokens(ctx context.Context, pool postgres.DB, retentionDuration time.Duration) {
+	pruneCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, pruningTimeout)
+	defer cancel()
+
+	query := fmt.Sprintf(pruneInvalidAPITokens,
+		schema.APITokensTableName,
+		int(retentionDuration.Minutes()),
+	)
+	if _, err := pool.Exec(pruneCtx, query); err != nil {
+		log.Errorf("failed to prune invalid api tokens: %v", err)
 	}
 }
