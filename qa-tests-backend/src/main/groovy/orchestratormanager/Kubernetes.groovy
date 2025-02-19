@@ -1976,6 +1976,7 @@ class Kubernetes implements OrchestratorMain {
         Private K8S Support functions
     */
 
+    @CompileDynamic
     boolean createDeploymentNoWait(Deployment deployment, int maxNumRetries = 0) {
         deployment.getNamespace() != null ?: deployment.setNamespace(this.namespace)
 
@@ -2081,6 +2082,7 @@ class Kubernetes implements OrchestratorMain {
         return ""
     }
 
+    @CompileDynamic
     def createDaemonSetNoWait(DaemonSet daemonSet) {
         daemonSet.getNamespace() != null ?: daemonSet.setNamespace(this.namespace)
 
@@ -2150,6 +2152,7 @@ class Kubernetes implements OrchestratorMain {
         }
     }
 
+    @CompileDynamic
     static PodSpec generatePodSpec(Deployment deployment) {
         List<ContainerPort> depPorts = deployment.ports.collect {
             k, v ->
@@ -2334,6 +2337,7 @@ class Kubernetes implements OrchestratorMain {
         }
     }
 
+    @CompileDynamic
     protected static io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy createNetworkPolicyObject(
             NetworkPolicy policy) {
         def networkPolicy = new NetworkPolicyBuilder()
