@@ -530,14 +530,14 @@ require (
 // @stackrox/core-workflows
 replace github.com/nxadm/tail => github.com/stackrox/tail v1.4.9-0.20240806130957-77cf33bea65f
 
-// @stackrox/draco
+// @stackrox/install
 // github.com/stackrox/helm-operator is a modified fork of github.com/operator-framework/helm-operator-plugins that
 // we currently depend on.
 // It includes a number of features and bug fixes which we faced in StackRox. We use this fork
 // primarily to iterate faster. See https://issues.redhat.com/browse/ROX-7911
 replace github.com/operator-framework/helm-operator-plugins => github.com/stackrox/helm-operator v0.0.12-0.20250211113659-1b2840226a8b
 
-// @stackrox/merlin
+// @stackrox/sensor-ecosystem
 replace (
 	// Our fork has the following changes:
 	// - fetch signatures without fetching the image manifest
