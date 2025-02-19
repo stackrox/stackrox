@@ -23,7 +23,7 @@ func mergeComponentsV2(parts ImageParts, image *storage.Image) {
 			continue
 		}
 		// Generate an embedded component from the non-embedded version.
-		image.Scan.Components = append(image.Scan.Components, generateEmbeddedComponentV2(cp))
+		image.GetScan().Components = append(image.GetScan().Components, generateEmbeddedComponentV2(cp))
 	}
 }
 
@@ -34,19 +34,19 @@ func generateEmbeddedComponentV2(cp ComponentParts) *storage.EmbeddedImageScanCo
 			log.Errorf("UNEXPECTED: nil cve when retrieving cves for component %q", cp.Component.GetId())
 			continue
 		}
-		vulns = append(vulns, generateEmbeddedCVEV2(cve.CVEV2))
+		vulns = append(vulns, utils.ImageCVEV2ToEmbeddedVulnerability(cve.CVEV2))
 	}
 
 	ret := &storage.EmbeddedImageScanComponent{
 		Name:         cp.ComponentV2.GetName(),
 		Version:      cp.ComponentV2.GetVersion(),
+		Architecture: cp.ComponentV2.GetArchitecture(),
 		License:      cp.ComponentV2.GetLicense().CloneVT(),
 		Source:       cp.ComponentV2.GetSource(),
 		Location:     cp.ComponentV2.GetLocation(),
 		FixedBy:      cp.ComponentV2.GetFixedBy(),
 		RiskScore:    cp.ComponentV2.GetRiskScore(),
 		Priority:     cp.ComponentV2.GetPriority(),
-		Architecture: cp.ComponentV2.GetArchitecture(),
 		Vulns:        vulns,
 	}
 
@@ -61,8 +61,4 @@ func generateEmbeddedComponentV2(cp ComponentParts) *storage.EmbeddedImageScanCo
 	}
 
 	return ret
-}
-
-func generateEmbeddedCVEV2(cp *storage.ImageCVEV2) *storage.EmbeddedVulnerability {
-	return utils.ImageCVEV2ToEmbeddedVulnerability(cp)
 }

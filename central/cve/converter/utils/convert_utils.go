@@ -191,6 +191,7 @@ func NVDCVEsToEmbeddedCVEs(cves []*schema.NVDCVEFeedJSON10DefCVEItem, ct CVEType
 	return ret, nil
 }
 
+// Deprecated: replaced with equivalent functions using storage.ImageCVEV2
 // ImageCVEToEmbeddedVulnerability coverts a Proto CVEs to Embedded Vuln
 // It converts all the fields except Fixed By which gets set depending on the CVE
 // TODO(ROX-28123): Remove
@@ -265,6 +266,7 @@ func EmbeddedCVEToProtoCVE(os string, from *storage.EmbeddedVulnerability) *stor
 	return ret
 }
 
+// Deprecated: replaced with equivalent functions using storage.ImageCVEV2
 // EmbeddedVulnerabilityToImageCVE converts *storage.EmbeddedVulnerability object to *storage.ImageCVE object
 // TODO(ROX-28123): Remove
 func EmbeddedVulnerabilityToImageCVE(os string, from *storage.EmbeddedVulnerability) *storage.ImageCVE {

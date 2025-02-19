@@ -18,7 +18,6 @@ func Split(image *storage.Image, withComponents bool) ImageParts {
 		ImageCVEEdges: make(map[string]*storage.ImageCVEEdge),
 	}
 
-	// These need to be called in order.
 	if withComponents {
 		if features.FlattenCVEData.Enabled() {
 			parts.Children = splitComponentsV2(parts)
@@ -90,6 +89,7 @@ func generateComponentCVEEdge(convertedComponent *storage.ImageComponent, conver
 	return ret
 }
 
+// Deprecated: replaced with equivalent functions using storage.ImageComponentV2
 // GenerateImageComponent returns top-level image component from embedded component.
 func GenerateImageComponent(os string, from *storage.EmbeddedImageScanComponent) *storage.ImageComponent {
 	ret := &storage.ImageComponent{

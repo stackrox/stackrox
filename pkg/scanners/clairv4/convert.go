@@ -106,8 +106,8 @@ func components(report *claircore.VulnerabilityReport) []*storage.EmbeddedImageS
 		component := &storage.EmbeddedImageScanComponent{
 			Name:         pkg.Name,
 			Version:      pkg.Version,
-			Vulns:        vulnerabilities(report.Vulnerabilities, vulnIDs),
 			Architecture: pkg.Arch,
+			Vulns:        vulnerabilities(report.Vulnerabilities, vulnIDs),
 		}
 
 		components = append(components, component)

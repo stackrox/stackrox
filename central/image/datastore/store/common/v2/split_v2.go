@@ -11,9 +11,10 @@ func splitComponentsV2(parts ImageParts) []ComponentParts {
 	for _, component := range parts.Image.GetScan().GetComponents() {
 		generatedComponentV2 := GenerateImageComponentV2(parts.Image.GetScan().GetOperatingSystem(), parts.Image, component)
 
-		cp := ComponentParts{}
-		cp.ComponentV2 = generatedComponentV2
-		cp.Children = splitCVEsV2(cp, component)
+		cp := ComponentParts{
+			ComponentV2: generatedComponentV2,
+			Children:    splitCVEsV2(parts.Image.Id, generatedComponentV2.GetId(), component),
+		}
 
 		ret = append(ret, cp)
 	}
@@ -21,13 +22,14 @@ func splitComponentsV2(parts ImageParts) []ComponentParts {
 	return ret
 }
 
-func splitCVEsV2(component ComponentParts, embedded *storage.EmbeddedImageScanComponent) []CVEParts {
+func splitCVEsV2(imageID string, componentID string, embedded *storage.EmbeddedImageScanComponent) []CVEParts {
 	ret := make([]CVEParts, 0, len(embedded.GetVulns()))
 	for cveIndex, cve := range embedded.GetVulns() {
-		convertedCVE := utils.EmbeddedVulnerabilityToImageCVEV2(component.ComponentV2.GetOperatingSystem(), component.ComponentV2.GetImageId(), component.ComponentV2.GetId(), cveIndex, cve)
+		convertedCVE := utils.EmbeddedVulnerabilityToImageCVEV2(imageID, componentID, cveIndex, cve)
 
-		cp := CVEParts{}
-		cp.CVEV2 = convertedCVE
+		cp := CVEParts{
+			CVEV2: convertedCVE,
+		}
 		ret = append(ret, cp)
 	}
 

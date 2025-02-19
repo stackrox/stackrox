@@ -7,24 +7,19 @@ import (
 	"github.com/stackrox/rox/pkg/cve"
 )
 
-// ImageCVEV2ToEmbeddedVulnerability coverts a Proto CVEs to Embedded Vuln
-// It converts all the fields except Fixed By which gets set depending on the CVE
+// ImageCVEV2ToEmbeddedVulnerability coverts a `*storage.ImageCVEV2` to an `*storage.EmbeddedVulnerability`.
 func ImageCVEV2ToEmbeddedVulnerability(vuln *storage.ImageCVEV2) *storage.EmbeddedVulnerability {
-	var scoreVersion storage.EmbeddedVulnerability_ScoreVersion
+	scoreVersion := storage.EmbeddedVulnerability_V2
 	if vuln.GetCveBaseInfo().GetCvssV3() != nil {
 		scoreVersion = storage.EmbeddedVulnerability_V3
-	} else {
-		scoreVersion = storage.EmbeddedVulnerability_V2
 	}
-
-	vulnType := storage.EmbeddedVulnerability_IMAGE_VULNERABILITY
-	vulnTypes := []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY}
 
 	ret := &storage.EmbeddedVulnerability{
 		Cve:                   vuln.GetCveBaseInfo().GetCve(),
 		Cvss:                  vuln.GetCvss(),
 		Summary:               vuln.GetCveBaseInfo().GetSummary(),
 		Link:                  vuln.GetCveBaseInfo().GetLink(),
+		ScoreVersion:          scoreVersion,
 		CvssV2:                vuln.GetCveBaseInfo().GetCvssV2(),
 		CvssV3:                vuln.GetCveBaseInfo().GetCvssV3(),
 		PublishedOn:           vuln.GetCveBaseInfo().GetPublishedOn(),
@@ -35,9 +30,8 @@ func ImageCVEV2ToEmbeddedVulnerability(vuln *storage.ImageCVEV2) *storage.Embedd
 		NvdCvss:               vuln.GetNvdcvss(),
 		Epss:                  vuln.GetCveBaseInfo().GetEpss(),
 		FirstImageOccurrence:  vuln.GetFirstImageOccurrence(),
-		ScoreVersion:          scoreVersion,
-		VulnerabilityType:     vulnType,
-		VulnerabilityTypes:    vulnTypes,
+		VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+		VulnerabilityTypes:    []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
 		State:                 vuln.GetState(),
 	}
 
@@ -51,12 +45,11 @@ func ImageCVEV2ToEmbeddedVulnerability(vuln *storage.ImageCVEV2) *storage.Embedd
 }
 
 // EmbeddedVulnerabilityToImageCVEV2 converts *storage.EmbeddedVulnerability object to *storage.ImageCVEV2 object
-func EmbeddedVulnerabilityToImageCVEV2(os string, imageID string, componentID string, cveIndex int, from *storage.EmbeddedVulnerability) *storage.ImageCVEV2 {
+func EmbeddedVulnerabilityToImageCVEV2(imageID string, componentID string, cveIndex int, from *storage.EmbeddedVulnerability) *storage.ImageCVEV2 {
 	var nvdCvss float32
-	nvdCvss = 0
 	nvdVersion := storage.CvssScoreVersion_UNKNOWN_VERSION
 	for _, score := range from.GetCvssMetrics() {
-		if score.Source == storage.Source_SOURCE_NVD {
+		if score.GetSource() == storage.Source_SOURCE_NVD {
 			if score.GetCvssv3() != nil {
 				nvdCvss = score.GetCvssv3().GetScore()
 				nvdVersion = storage.CvssScoreVersion_V3
@@ -79,9 +72,8 @@ func EmbeddedVulnerabilityToImageCVEV2(os string, imageID string, componentID st
 	}
 
 	ret := &storage.ImageCVEV2{
-		Id:              cve.IDV2(from.GetCve(), componentID, strconv.Itoa(cveIndex)),
-		ComponentId:     componentID,
-		OperatingSystem: os,
+		Id:          cve.IDV2(from.GetCve(), componentID, strconv.Itoa(cveIndex)),
+		ComponentId: componentID,
 		CveBaseInfo: &storage.CVEInfo{
 			Cve:          from.GetCve(),
 			Summary:      from.GetSummary(),

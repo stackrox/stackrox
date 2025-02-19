@@ -11,7 +11,6 @@ import (
 )
 
 type componentPieces struct {
-	os          string
 	imageID     string
 	componentID string
 	cveIndex    int
@@ -181,7 +180,6 @@ var (
 					EpssPercentile:  98,
 				},
 			},
-			OperatingSystem:      "",
 			Cvss:                 0,
 			Severity:             0,
 			ImpactScore:          2.0,
@@ -222,7 +220,6 @@ var (
 				CvssMetrics: nil,
 				Epss:        nil,
 			},
-			OperatingSystem:      "",
 			Cvss:                 0,
 			Severity:             0,
 			ImpactScore:          32,
@@ -240,13 +237,11 @@ var (
 
 	componentInfo = []*componentPieces{
 		{
-			os:          "",
 			imageID:     "sha",
 			componentID: scancomponent.ComponentIDV2("comp1", "ver2", "", "sha"),
 			cveIndex:    0,
 		},
 		{
-			os:          "",
 			imageID:     "sha",
 			componentID: scancomponent.ComponentIDV2("comp1", "ver2", "", "sha"),
 			cveIndex:    1,
@@ -263,7 +258,7 @@ func TestImageCVEV2ToEmbeddedCVEs(t *testing.T) {
 
 func TestEmbeddedCVEToImageCVEV2(t *testing.T) {
 	for idx, embeddedVuln := range testVulns {
-		convertedVuln := EmbeddedVulnerabilityToImageCVEV2(componentInfo[idx].os, componentInfo[idx].imageID, componentInfo[idx].componentID, componentInfo[idx].cveIndex, embeddedVuln)
+		convertedVuln := EmbeddedVulnerabilityToImageCVEV2(componentInfo[idx].imageID, componentInfo[idx].componentID, componentInfo[idx].cveIndex, embeddedVuln)
 		protoassert.Equal(t, testCVEs[idx], convertedVuln)
 	}
 }
