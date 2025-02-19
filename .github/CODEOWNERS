@@ -18,8 +18,10 @@ pkg/postgres/**/*                   @stackrox/core-workflows
 tests/upgrade/*                     @stackrox/core-workflows
 pkg/search/**/*                     @stackrox/core-workflows
 
-# sensor-ecosystem main responsibilities include roxctl, authN (authproviders), authZ (SAC), declarative config,
-# sensor, netpol, images, performance testing, administration events, cloud sources, and image signatures.
+# sensor-ecosystem main responsibilities include:
+# administration events, authN (authproviders), authZ (SAC)
+# cloud sources, declarative config, image signatures, images, netpol,
+# observability, performance testing, roxctl, sensor and telemetry.
 */administration/**/*       @stackrox/sensor-ecosystem
 */auth/**/*                 @stackrox/sensor-ecosystem
 */cloudsources/**/*         @stackrox/sensor-ecosystem
