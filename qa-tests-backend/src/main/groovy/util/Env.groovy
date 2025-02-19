@@ -106,7 +106,8 @@ class Env {
         OrchestratorTypes selected = null
         FileTime mostRecent = null
         for (def orchestratorType : OrchestratorTypes.values()) {
-            def passwordPath = "../deploy/${orchestratorType.toString().toLowerCase()}/central-deploy/password"
+            def passwordPath = "../deploy/${orchestratorType.toString().toLowerCase()}" +
+                    "/central-deploy/password"
             try {
                 def modTime = Files.getLastModifiedTime(Paths.get(passwordPath))
                 if (mostRecent == null || modTime > mostRecent) {

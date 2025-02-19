@@ -17,31 +17,34 @@ class Constants {
     static final String AUTO_REGISTERED_STACKROX_SCANNER_INTEGRATION = "Stackrox Scanner"
     static final String ANY_FIXED_VULN_POLICY = "any-fixed-vulnerabilities"
     static final Map<String, String> CSV_COLUMN_MAPPING = [
-            "Standard" : "standard",
-            "Cluster" : "cluster",
-            "Namespace" : "namespace",
-            "Object Type" : "objectType",
-            "Object Name" : "objectName",
-            "Control" : "control",
-            "Control Description" : "controlDescription",
-            "State" : "state",
-            "Evidence" : "evidence",
-            "Assessment Time" : "timestamp",
+            "Standard"           : "standard",
+            "Cluster"            : "cluster",
+            "Namespace"          : "namespace",
+            "Object Type"        : "objectType",
+            "Object Name"        : "objectName",
+            "Control"            : "control",
+            "Control Description": "controlDescription",
+            "State"              : "state",
+            "Evidence"           : "evidence",
+            "Assessment Time"    : "timestamp",
     ]
     static final Map<String, List<String>> VIOLATIONS_ALLOWLIST = [
             // TODO(ROX-2659) Remove the fixable CVSS one from here, that's not okay.
-            "monitoring" : ["CVSS >= 7", "Ubuntu Package Manager in Image", "Curl in Image", "Fixable CVSS >= 7",
-                            ANY_FIXED_VULN_POLICY, "90-Day Image Age", "Fixable Severity at least Important"],
-            "scanner" : ["Red Hat Package Manager Execution", "Red Hat Package Manager in Image", "Curl in Image"],
-            "collector": ["Ubuntu Package Manager in Image"],
-            "authorization-plugin" : ["Latest tag", "90-Day Image Age"],
-            "webhookserver" : ["90-Day Image Age"],
+            "monitoring"          : ["CVSS >= 7", "Ubuntu Package Manager in Image", "Curl in Image", "Fixable CVSS >= 7",
+                                     ANY_FIXED_VULN_POLICY, "90-Day Image Age", "Fixable Severity at least Important"],
+            "scanner"             : ["Red Hat Package Manager Execution", "Red Hat Package Manager in Image", "Curl in Image"],
+            "collector"           : ["Ubuntu Package Manager in Image"],
+            "authorization-plugin": ["Latest tag", "90-Day Image Age"],
+            "webhookserver"       : ["90-Day Image Age"],
     ]
     static final List<String> VIOLATIONS_BY_POLICY_ALLOWLIST = [
             "OpenShift: Advanced Cluster Security Central Admin Secret Accessed"
     ]
-    static final String INTERNET_EXTERNAL_SOURCE_ID = "afa12424-bde3-4313-b810-bb463cbe8f90" // pkg/networkgraph/constants.go
-    static final String INTERNAL_ENTITIES_SOURCE_ID = "ada12424-bde3-4313-b810-bb463cbe8f90" // pkg/networkgraph/constants.go
+
+    // pkg/networkgraph/constants.go
+    static final String INTERNET_EXTERNAL_SOURCE_ID = "afa12424-bde3-4313-b810-bb463cbe8f90"
+    static final String INTERNAL_ENTITIES_SOURCE_ID = "ada12424-bde3-4313-b810-bb463cbe8f90"
+
     static final int STACKROX_ANNOTATION_TRUNCATION_LENGTH = 254
     static final String CORE_IMAGE_INTEGRATION_NAME = "core quay"
     static final String SPLUNK_TEST_NAMESPACE = "qa-splunk"
