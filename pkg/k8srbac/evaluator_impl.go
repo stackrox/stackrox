@@ -59,7 +59,7 @@ func getSubjectsGrantedClusterAdmin(roles []*storage.K8SRole, roleBindings []*st
 	subjectsWithClusterAdmin := NewSubjectSet()
 	for _, binding := range roleBindings {
 		if !IsDefaultRoleBinding(binding) && clusterAdminRoleIDs.Contains(binding.GetRoleId()) {
-			subjectsWithClusterAdmin.Add(binding.GetSubjects()...)
+			subjectsWithClusterAdmin.Add(GetSubjectsAdjustedByKind(binding)...)
 		}
 	}
 	return subjectsWithClusterAdmin.ToSlice()
@@ -70,7 +70,7 @@ func isSubjectClusterAdmin(subject *storage.Subject, roles []*storage.K8SRole, r
 	subjectsWithClusterAdmin := NewSubjectSet()
 	for _, binding := range roleBindings {
 		if clusterAdminRoleIDs.Contains(binding.GetRoleId()) {
-			subjectsWithClusterAdmin.Add(binding.GetSubjects()...)
+			subjectsWithClusterAdmin.Add(GetSubjectsAdjustedByKind(binding)...)
 		}
 	}
 	for _, s := range subjectsWithClusterAdmin.ToSlice() {
@@ -116,7 +116,7 @@ func buildMap(roles []*storage.K8SRole, bindings []*storage.K8SRoleBinding) map[
 		if _, hasEntry := roleIDToSubjects[binding.GetRoleId()]; !hasEntry {
 			roleIDToSubjects[binding.GetRoleId()] = NewSubjectSet()
 		}
-		roleIDToSubjects[binding.GetRoleId()].Add(binding.GetSubjects()...)
+		roleIDToSubjects[binding.GetRoleId()].Add(GetSubjectsAdjustedByKind(binding)...)
 	}
 
 	// Complete the map so that we can test subjects and get the role for it.

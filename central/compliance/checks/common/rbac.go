@@ -22,7 +22,7 @@ func CheckVolumeAccessIsLimited(ctx framework.ComplianceContext) {
 	// Collect a list of all known service accounts with bound permissions.
 	allServiceAccounts := k8srbac.NewSubjectSet()
 	for _, binding := range ctx.Data().K8sRoleBindings() {
-		for _, subject := range binding.GetSubjects() {
+		for _, subject := range k8srbac.GetSubjectsAdjustedByKind(binding) {
 			if subject.GetKind() == storage.SubjectKind_SERVICE_ACCOUNT {
 				allServiceAccounts.Add(subject)
 			}
@@ -69,7 +69,7 @@ func CheckVolumeAccessIsLimited(ctx framework.ComplianceContext) {
 // These should be groups, not shared users.
 func AdministratorUsersPresent(ctx framework.ComplianceContext) {
 	for _, binding := range ctx.Data().K8sRoleBindings() {
-		for _, subject := range binding.GetSubjects() {
+		for _, subject := range k8srbac.GetSubjectsAdjustedByKind(binding) {
 			if subject.GetKind() == storage.SubjectKind_USER {
 				if adminNames.Contains(strings.ToLower(subject.GetName())) {
 					framework.Fail(ctx, "Use the GROUP subject kind instead of USER, when specifying administrative accounts.")
@@ -118,7 +118,7 @@ func LimitedUsersAndGroupsWithClusterAdmin(ctx framework.ComplianceContext) {
 func listSubjectsWithAccess(predicate func(sub *storage.Subject) bool, roles []*storage.K8SRole, bindings []*storage.K8SRoleBinding, pr *storage.PolicyRule) k8srbac.SubjectSet {
 	allSubjects := k8srbac.NewSubjectSet()
 	for _, binding := range bindings {
-		for _, subject := range binding.GetSubjects() {
+		for _, subject := range k8srbac.GetSubjectsAdjustedByKind(binding) {
 			if predicate(subject) {
 				allSubjects.Add(subject)
 			}
