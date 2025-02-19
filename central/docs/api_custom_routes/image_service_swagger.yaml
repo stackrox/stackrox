@@ -11,8 +11,8 @@ produces:
 paths:
   /api/v1/images/sbom:
     post:
-      summary: generate sbom
-      operationId: ImageService_ScanImage
+      summary: Generate an SPDX 2.3 SBOM from an image scan.
+      operationId: GenerateSBOM
       responses:
         '200':
           description: A successful response.
@@ -36,8 +36,13 @@ definitions:
     properties:
       imageName:
         type: string
+        description: "Image name and reference. (e.g. nginx:latest or nginx@sha256:...)"
       force:
         type: boolean
+        description: "Bypass Central's cache for the image and force a new pull from the Scanner"
+        default: false
+    required:
+    - imageName
   SBOM-SPDX23-Document:
     description: "SPDX 2.3 document, refer to https://spdx.github.io/spdx-spec/v2.3/ for more details."
     type: object
