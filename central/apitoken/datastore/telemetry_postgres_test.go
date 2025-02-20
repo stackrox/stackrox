@@ -43,28 +43,28 @@ func TestGather(t *testing.T) {
 	}{
 		"one valid token": {
 			tokens: []*storage.TokenMetadata{
-				testutils.GenerateToken(t, &now, &notExpired, false),
+				testutils.GenerateToken(t, now, notExpired, false),
 			},
 			expectedTotalTokens: 1,
 			expectedValidTokens: 1,
 		},
 		"one expired token": {
 			tokens: []*storage.TokenMetadata{
-				testutils.GenerateToken(t, &now, &isExpired, false),
+				testutils.GenerateToken(t, now, isExpired, false),
 			},
 			expectedTotalTokens:   1,
 			expectedExpiredTokens: 1,
 		},
 		"one revoked token": {
 			tokens: []*storage.TokenMetadata{
-				testutils.GenerateToken(t, &now, &notExpired, true),
+				testutils.GenerateToken(t, now, notExpired, true),
 			},
 			expectedTotalTokens:   1,
 			expectedRevokedTokens: 1,
 		},
 		"one expired and revoked token": {
 			tokens: []*storage.TokenMetadata{
-				testutils.GenerateToken(t, &now, &isExpired, true),
+				testutils.GenerateToken(t, now, isExpired, true),
 			},
 			expectedTotalTokens:   1,
 			expectedExpiredTokens: 1,
@@ -72,8 +72,8 @@ func TestGather(t *testing.T) {
 		},
 		"one valid token, one revoked token": {
 			tokens: []*storage.TokenMetadata{
-				testutils.GenerateToken(t, &now, &notExpired, false),
-				testutils.GenerateToken(t, &now, &notExpired, true),
+				testutils.GenerateToken(t, now, notExpired, false),
+				testutils.GenerateToken(t, now, notExpired, true),
 			},
 			expectedTotalTokens:   2,
 			expectedRevokedTokens: 1,
@@ -81,8 +81,8 @@ func TestGather(t *testing.T) {
 		},
 		"one valid token, one expired token": {
 			tokens: []*storage.TokenMetadata{
-				testutils.GenerateToken(t, &now, &notExpired, false),
-				testutils.GenerateToken(t, &now, &isExpired, false),
+				testutils.GenerateToken(t, now, notExpired, false),
+				testutils.GenerateToken(t, now, isExpired, false),
 			},
 			expectedTotalTokens:   2,
 			expectedExpiredTokens: 1,
@@ -90,9 +90,9 @@ func TestGather(t *testing.T) {
 		},
 		"one valid token, one revoked token, one expired token": {
 			tokens: []*storage.TokenMetadata{
-				testutils.GenerateToken(t, &now, &notExpired, false),
-				testutils.GenerateToken(t, &now, &notExpired, true),
-				testutils.GenerateToken(t, &now, &isExpired, false),
+				testutils.GenerateToken(t, now, notExpired, false),
+				testutils.GenerateToken(t, now, notExpired, true),
+				testutils.GenerateToken(t, now, isExpired, false),
 			},
 			expectedTotalTokens:   3,
 			expectedExpiredTokens: 1,

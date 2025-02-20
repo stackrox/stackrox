@@ -49,7 +49,7 @@ func (s *apiTokenExpirationNotifierTestSuite) TestSelectTokenAboutToExpire() {
 	now := time.Now()
 	expiration := now.Add(2 * time.Hour)
 	expiresUntil := now.Add(5 * time.Hour)
-	token := testutils.GenerateToken(s.T(), &now, &expiration, false)
+	token := testutils.GenerateToken(s.T(), now, expiration, false)
 	s.Require().NoError(s.datastore.AddToken(s.ctx, token))
 
 	fetchedTokens, err := s.notifier.listItemsToNotify(now, expiresUntil)
@@ -63,7 +63,7 @@ func (s *apiTokenExpirationNotifierTestSuite) TestDontSelectTokenNotAboutToExpir
 	now := time.Now()
 	expiration := now.Add(7 * time.Hour)
 	expiresUntil := now.Add(5 * time.Hour)
-	token := testutils.GenerateToken(s.T(), &now, &expiration, false)
+	token := testutils.GenerateToken(s.T(), now, expiration, false)
 	s.Require().NoError(s.datastore.AddToken(s.ctx, token))
 
 	fetchedTokens, err := s.notifier.listItemsToNotify(now, expiresUntil)
@@ -75,7 +75,7 @@ func (s *apiTokenExpirationNotifierTestSuite) TestDontSelectRevokedToken() {
 	now := time.Now()
 	expiration := now.Add(2 * time.Hour)
 	expiresUntil := now.Add(5 * time.Hour)
-	token := testutils.GenerateToken(s.T(), &now, &expiration, true)
+	token := testutils.GenerateToken(s.T(), now, expiration, true)
 	s.Require().NoError(s.datastore.AddToken(s.ctx, token))
 
 	fetchedTokens, err := s.notifier.listItemsToNotify(now, expiresUntil)
@@ -87,7 +87,7 @@ func (s *apiTokenExpirationNotifierTestSuite) TestDontSelectExpiredToken() {
 	now := time.Now()
 	expiration := now.Add(-2 * time.Hour)
 	expiresUntil := now.Add(5 * time.Hour)
-	token := testutils.GenerateToken(s.T(), &now, &expiration, false)
+	token := testutils.GenerateToken(s.T(), now, expiration, false)
 	s.Require().NoError(s.datastore.AddToken(s.ctx, token))
 
 	fetchedTokens, err := s.notifier.listItemsToNotify(now, expiresUntil)
@@ -102,19 +102,19 @@ func (s *apiTokenExpirationNotifierTestSuite) TestLogGeneration() {
 
 	generated1 := now.Add(-(3*time.Hour + 10*time.Minute))
 	expiration1 := now.Add(2*time.Hour - 10*time.Minute)
-	token1 := testutils.GenerateToken(s.T(), &generated1, &expiration1, false)
+	token1 := testutils.GenerateToken(s.T(), generated1, expiration1, false)
 	log1 := generateExpiringTokenLog(token1, now, sliceDuration, sliceName)
 	s.Equal("API Token will expire in less than 2 hours", log1)
 
 	generated2 := now.Add(-(4*time.Hour + 10*time.Minute))
 	expiration2 := now.Add(1*time.Hour - 10*time.Minute)
-	token2 := testutils.GenerateToken(s.T(), &generated2, &expiration2, false)
+	token2 := testutils.GenerateToken(s.T(), generated2, expiration2, false)
 	log2 := generateExpiringTokenLog(token2, now, sliceDuration, sliceName)
 	s.Equal("API Token will expire in less than 1 hour", log2)
 
 	generated3 := now.Add(-2 * time.Hour)
 	expiration3 := now.Add(3 * time.Hour)
-	token3 := testutils.GenerateToken(s.T(), &generated3, &expiration3, false)
+	token3 := testutils.GenerateToken(s.T(), generated3, expiration3, false)
 	log3 := generateExpiringTokenLog(token3, now, sliceDuration, sliceName)
 	s.Equal("API Token will expire in less than 3 hours", log3)
 }
