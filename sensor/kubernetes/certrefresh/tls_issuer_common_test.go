@@ -119,8 +119,8 @@ type certificateRefresherMock struct {
 	stopped bool
 }
 
-func (m *certificateRefresherMock) Start() error {
-	args := m.Called()
+func (m *certificateRefresherMock) Start(ctx context.Context) error {
+	args := m.Called(ctx)
 	return args.Error(0)
 }
 

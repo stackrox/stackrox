@@ -58,7 +58,6 @@ type tlsIssuerImpl struct {
 	getServiceCertificatesRepoFn serviceCertificatesRepoGetter
 	certRefresher                concurrency.RetryTicker
 	msgToCentralC                chan *message.ExpiringMessage
-	stopSig                      concurrency.ErrorSignal
 	responseFromCentral          atomic.Pointer[Response]
 	responseReceived             concurrency.Signal
 	ongoingRequestID             string
@@ -68,6 +67,7 @@ type tlsIssuerImpl struct {
 	requiredCentralCapability    *centralsensor.CentralCapability
 	started                      atomic.Bool
 	online                       atomic.Bool
+	cancelRefresher              context.CancelFunc
 }
 
 // Start starts the Sensor component and launches a certificate refresher that:
@@ -92,7 +92,6 @@ func (i *tlsIssuerImpl) activate() error {
 		return nil
 	}
 
-	i.stopSig.Reset()
 	ctx, cancel := context.WithTimeout(context.Background(), startTimeout)
 	defer cancel()
 
@@ -108,7 +107,9 @@ func (i *tlsIssuerImpl) activate() error {
 	i.certRefresher = i.getCertificateRefresherFn(i.componentName, i.requestCertificates, certsRepo,
 		certRefreshTimeout, i.certRefreshBackoff)
 
-	if refreshStartErr := i.certRefresher.Start(); refreshStartErr != nil {
+	refresherCtx, cancelFunc := context.WithCancel(context.Background())
+	i.cancelRefresher = cancelFunc
+	if refreshStartErr := i.certRefresher.Start(refresherCtx); refreshStartErr != nil {
 		// Starting a RetryTicker should only return an error if already started or stopped, so this should
 		// never happen because i.certRefresher was just created
 		i.started.Store(false)
@@ -125,7 +126,7 @@ func (i *tlsIssuerImpl) Stop(_ error) {
 }
 
 func (i *tlsIssuerImpl) deactivate() {
-	i.stopSig.Signal()
+	i.cancelRefresher()
 	if i.certRefresher != nil {
 		i.certRefresher.Stop()
 		i.certRefresher = nil
@@ -234,8 +235,6 @@ func (i *tlsIssuerImpl) requestCertificates(ctx context.Context) (*Response, err
 // send a cert refresh request to Central
 func (i *tlsIssuerImpl) send(ctx context.Context, requestID string) error {
 	select {
-	case <-i.stopSig.Done():
-		return nil
 	case <-ctx.Done():
 		return ctx.Err()
 	case i.msgToCentralC <- message.New(i.newMsgFromSensorFn(requestID)):

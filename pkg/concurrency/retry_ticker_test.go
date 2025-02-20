@@ -77,7 +77,7 @@ func TestRetryTickerCallsTickFunction(t *testing.T) {
 				schedulerSpy.On("afterFunc", backoff.Duration, mock.Anything).Return(nil).Once()
 			}
 
-			require.NoError(t, ticker.Start())
+			require.NoError(t, ticker.Start(context.Background()))
 
 			_, ok := doneErrSig.WaitWithTimeout(testTimeout)
 			require.True(t, ok, "timeout exceeded")
@@ -98,7 +98,7 @@ func TestRetryTickerStop(t *testing.T) {
 	})
 	defer ticker.Stop()
 
-	require.NoError(t, ticker.Start())
+	require.NoError(t, ticker.Start(context.Background()))
 	_, ok := firsTickErrSig.WaitWithTimeout(testTimeout)
 	require.True(t, ok, "timeout exceeded")
 	ticker.Stop()
@@ -116,7 +116,7 @@ func TestRetryTickerStopsOnNonRecoverableErrors(t *testing.T) {
 	})
 	defer ticker.Stop()
 
-	require.NoError(t, ticker.Start())
+	require.NoError(t, ticker.Start(context.Background()))
 	_, ok := firsTickErrSig.WaitWithTimeout(testTimeout)
 	require.True(t, ok, "timeout exceeded")
 
@@ -129,8 +129,8 @@ func TestRetryTickerStartWhileStarterFailure(t *testing.T) {
 	})
 	defer ticker.Stop()
 
-	require.NoError(t, ticker.Start())
-	assert.ErrorIs(t, ErrStartedTimer, ticker.Start())
+	require.NoError(t, ticker.Start(context.Background()))
+	assert.ErrorIs(t, ErrStartedTimer, ticker.Start(context.Background()))
 }
 
 func TestRetryTickerStartTwiceFailure(t *testing.T) {
@@ -139,9 +139,9 @@ func TestRetryTickerStartTwiceFailure(t *testing.T) {
 	})
 	defer ticker.Stop()
 
-	require.NoError(t, ticker.Start())
+	require.NoError(t, ticker.Start(context.Background()))
 	ticker.Stop()
-	require.ErrorIs(t, ErrStoppedTimer, ticker.Start())
+	require.ErrorIs(t, ErrStoppedTimer, ticker.Start(context.Background()))
 }
 
 func newRetryTicker(t *testing.T, doFunc tickFunc) *retryTickerImpl {

@@ -59,7 +59,6 @@ func newLocalScannerTLSIssuerFixture(k8sClientConfig fakeK8sClientConfig) *local
 		certRefreshBackoff:           certRefreshBackoff,
 		getCertificateRefresherFn:    fixture.componentGetter.getCertificateRefresher,
 		getServiceCertificatesRepoFn: fixture.componentGetter.getServiceCertificatesRepo,
-		stopSig:                      concurrency.NewErrorSignal(),
 		msgToCentralC:                make(chan *message.ExpiringMessage),
 		newMsgFromSensorFn:           newLocalScannerMsgFromSensor,
 		responseReceived:             concurrency.NewSignal(),
@@ -75,7 +74,7 @@ func (f *localScannerTLSIssuerFixture) assertMockExpectations(t *testing.T) {
 
 // mockForStart setups the mocks for the happy path of Start
 func (f *localScannerTLSIssuerFixture) mockForStart(conf mockForStartConfig) {
-	f.certRefresher.On("Start").Once().Return(conf.refresherStartErr)
+	f.certRefresher.On("Start", mock.Anything).Once().Return(conf.refresherStartErr)
 
 	f.repo.On("GetServiceCertificates", mock.Anything).Once().
 		Return((*storage.TypedServiceCertificateSet)(nil), conf.getCertsErr)
