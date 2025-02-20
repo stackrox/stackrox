@@ -6115,6 +6115,11 @@
                 "id": 14,
                 "name": "component_id",
                 "type": "string"
+              },
+              {
+                "id": 15,
+                "name": "advisory",
+                "type": "string"
               }
             ]
           },
@@ -18159,11 +18164,6 @@
                 "type": "string"
               },
               {
-                "id": 24,
-                "name": "advisory",
-                "type": "string"
-              },
-              {
                 "id": 2,
                 "name": "cvss",
                 "type": "float"
@@ -18270,6 +18270,11 @@
                 "id": 23,
                 "name": "epss",
                 "type": "EPSS"
+              },
+              {
+                "id": 24,
+                "name": "advisory",
+                "type": "string"
               }
             ],
             "reserved_ids": [

@@ -78,6 +78,7 @@ type ImageCvesV2 struct {
 	IsFixable                      bool                          `gorm:"column:isfixable;type:bool"`
 	FixedBy                        string                        `gorm:"column:fixedby;type:varchar"`
 	ComponentID                    string                        `gorm:"column:componentid;type:varchar;index:imagecvesv2_componentid,type:btree"`
+	Advisory                       string                        `gorm:"column:advisory;type:varchar"`
 	Serialized                     []byte                        `gorm:"column:serialized;type:bytea"`
 	ImagesRef                      Images                        `gorm:"foreignKey:imageid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 	ImageComponentV2Ref            ImageComponentV2              `gorm:"foreignKey:componentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`

@@ -705,6 +705,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"snoozed: Boolean!",
 	}))
 	utils.Must(builder.AddType("ImageCVEV2", []string{
+		"advisory: String!",
 		"componentId: String!",
 		"cveBaseInfo: CVEInfo",
 		"cvss: Float!",
@@ -8415,6 +8416,11 @@ func (resolver *Resolver) wrapImageCVEV2sWithContext(ctx context.Context, values
 		output[i] = &imageCVEV2Resolver{ctx: ctx, root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *imageCVEV2Resolver) Advisory(ctx context.Context) string {
+	value := resolver.data.GetAdvisory()
+	return value
 }
 
 func (resolver *imageCVEV2Resolver) ComponentId(ctx context.Context) string {
