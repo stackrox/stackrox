@@ -104,7 +104,7 @@ func convertMany(components []*storage.ImageComponentV2, results []search.Result
 
 func convertOne(component *storage.ImageComponentV2, result *search.Result) *v1.SearchResult {
 	return &v1.SearchResult{
-		Category:       v1.SearchCategory_IMAGE_COMPONENTS,
+		Category:       v1.SearchCategory_IMAGE_COMPONENTS_V2,
 		Id:             component.GetId(),
 		Name:           component.GetName(),
 		FieldToMatches: search.GetProtoMatchesMap(result.Matches),
