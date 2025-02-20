@@ -503,9 +503,9 @@ func TestCountQueries(t *testing.T) {
 				inner join image_cve_edges on(images.Id = image_cve_edges.ImageId and image_component_cve_edges.ImageCveId = image_cve_edges.ImageCveId)
 				where ((deployments.PlatformComponent = $1 or deployments.PlatformComponent is null) and image_cve_edges.State = $2)`),
 			expectedData: []interface{}{"false", "0"},
-			expectedFlattenedStatement: `select count(distinct(images.Id)) from images 
+			expectedFlattenedStatement: `select count(distinct(images.Id)) from images
 				left join deployments_containers on images.Id = deployments_containers.Image_Id
-				left join deployments on deployments_containers.deployments_Id = deployments.Id " +
+				left join deployments on deployments_containers.deployments_Id = deployments.Id
 				inner join image_cves_v2 on images.Id = image_cves_v2.ImageId
 				where ((deployments.PlatformComponent = $1 or deployments.PlatformComponent is null) and image_cves_v2.State = $2)`,
 		},
