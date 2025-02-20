@@ -655,8 +655,8 @@ func (ds *datastoreImpl) RemovePLOPsWithoutPodUID(ctx context.Context) (int64, e
 		AddNullField(search.PodUID).ProtoQuery())
 
 	if err != nil {
-		return 0, nil
+		return 0, err
 	}
 
-	return int64(len(deletedPlops)), err
+	return int64(len(deletedPlops)), nil
 }
