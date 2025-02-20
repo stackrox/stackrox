@@ -257,6 +257,7 @@ func (m *EmbeddedImageScanComponent) CloneVT() *EmbeddedImageScanComponent {
 	r.Location = m.Location
 	r.RiskScore = m.RiskScore
 	r.FixedBy = m.FixedBy
+	r.Architecture = m.Architecture
 	if rhs := m.Vulns; rhs != nil {
 		tmpContainer := make([]*EmbeddedVulnerability, len(rhs))
 		for k, v := range rhs {
@@ -1103,6 +1104,9 @@ func (this *EmbeddedImageScanComponent) EqualVT(that *EmbeddedImageScanComponent
 				return false
 			}
 		}
+	}
+	if this.Architecture != that.Architecture {
+		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
@@ -2268,6 +2272,13 @@ func (m *EmbeddedImageScanComponent) MarshalToSizedBufferVT(dAtA []byte) (int, e
 			return 0, err
 		}
 		i -= size
+	}
+	if len(m.Architecture) > 0 {
+		i -= len(m.Architecture)
+		copy(dAtA[i:], m.Architecture)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Architecture)))
+		i--
+		dAtA[i] = 0x6a
 	}
 	if len(m.Executables) > 0 {
 		for iNdEx := len(m.Executables) - 1; iNdEx >= 0; iNdEx-- {
@@ -3462,6 +3473,10 @@ func (m *EmbeddedImageScanComponent) SizeVT() (n int) {
 			l = e.SizeVT()
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
+	}
+	l = len(m.Architecture)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -5559,6 +5574,38 @@ func (m *EmbeddedImageScanComponent) UnmarshalVT(dAtA []byte) error {
 			if err := m.Executables[len(m.Executables)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		case 13:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Architecture", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Architecture = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -9395,6 +9442,42 @@ func (m *EmbeddedImageScanComponent) UnmarshalVTUnsafe(dAtA []byte) error {
 			if err := m.Executables[len(m.Executables)-1].UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		case 13:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Architecture", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.Architecture = stringValue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
