@@ -161,8 +161,6 @@ class Helpers {
         }
     }
 
-    // the subprocess should inherit the environment of the current process.
-    private final static List envp = null
 
     static void shellCmd(String cmd) {
         shellCmdExitValue(cmd)
@@ -171,7 +169,8 @@ class Helpers {
     static int shellCmdExitValue(String cmd) {
         StringBuilder sout = new StringBuilder()
         StringBuilder serr = new StringBuilder()
-        Process proc = cmd.execute(envp, new File(".."))
+        final List inheritEnv = null
+        Process proc = cmd.execute(inheritEnv, new File(".."))
         proc.consumeProcessOutput(sout, serr)
         proc.waitFor()
         log.debug "Ran: ${cmd}\nExit: ${proc.exitValue()}\nStdout: $sout\nStderr: $serr"
