@@ -7,6 +7,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/postgres/walker"
@@ -19,11 +20,13 @@ import (
 )
 
 var (
-	deploymentBaseSchema = schema.DeploymentsSchema
-	imagesSchema         = schema.ImagesSchema
-	imageCVEsSchema      = schema.ImageCvesSchema
-	alertSchema          = schema.AlertsSchema
-	_                    = schema.ImageCveEdgesSchema
+	deploymentBaseSchema   = schema.DeploymentsSchema
+	imagesSchema           = schema.ImagesSchema
+	imageCVEsSchema        = schema.ImageCvesSchema
+	alertSchema            = schema.AlertsSchema
+	_                      = schema.ImageCveEdgesSchema
+	imageComponentV2Schema = schema.ImageComponentV2Schema
+	imageCVEV2Schema       = schema.ImageCvesV2Schema
 )
 
 func TestReplaceVars(t *testing.T) {
@@ -73,15 +76,17 @@ func TestMultiTableQueries(t *testing.T) {
 	t.Parallel()
 
 	for _, c := range []struct {
-		desc                 string
-		q                    *v1.Query
-		schema               *walker.Schema
-		expectedQueryPortion string
-		expectedFrom         string
-		expectedWhere        string
-		expectedData         []interface{}
-		expectedJoinTables   map[string]JoinType
-		expectedError        string
+		desc                        string
+		q                           *v1.Query
+		schema                      *walker.Schema
+		expectedQueryPortion        string
+		expectedFrom                string
+		expectedWhere               string
+		expectedData                []interface{}
+		expectedJoinTables          map[string]JoinType
+		expectedError               string
+		expectedFlattenedWhere      string
+		expectedFlattenedJoinTables map[string]JoinType
 	}{
 		{
 			desc:          "base schema query",
@@ -235,7 +240,13 @@ func TestMultiTableQueries(t *testing.T) {
 				"deployments_containers":    Left,
 				"deployments":               Left,
 			},
-			expectedData: []interface{}{"false", "0"},
+			expectedData:           []interface{}{"false", "0"},
+			expectedFlattenedWhere: "((deployments.PlatformComponent = $$ or deployments.PlatformComponent is null) and image_cves_v2.State = $$)",
+			expectedFlattenedJoinTables: map[string]JoinType{
+				"image_cves_v2":          Inner,
+				"deployments_containers": Left,
+				"deployments":            Left,
+			},
 		},
 	} {
 		t.Run(c.desc, func(t *testing.T) {
@@ -246,7 +257,11 @@ func TestMultiTableQueries(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.Equal(t, c.expectedFrom, actual.From)
-				assert.Equal(t, c.expectedWhere, actual.Where)
+				expectedWhere := c.expectedWhere
+				if features.FlattenCVEData.Enabled() && c.expectedFlattenedWhere != "" {
+					expectedWhere = c.expectedFlattenedWhere
+				}
+				assert.Equal(t, expectedWhere, actual.Where)
 				assert.ElementsMatch(t, c.expectedData, actual.Data)
 
 				var actualJoins map[string]JoinType
@@ -256,7 +271,11 @@ func TestMultiTableQueries(t *testing.T) {
 						actualJoins[join.rightTable] = join.joinType
 					}
 				}
-				assert.Equal(t, c.expectedJoinTables, actualJoins)
+				expectedJoinTables := c.expectedJoinTables
+				if features.FlattenCVEData.Enabled() && c.expectedFlattenedJoinTables != nil {
+					expectedJoinTables = c.expectedFlattenedJoinTables
+				}
+				assert.Equal(t, expectedJoinTables, actualJoins)
 			}
 		})
 	}
@@ -265,13 +284,14 @@ func TestMultiTableQueries(t *testing.T) {
 func TestCountQueries(t *testing.T) {
 	baseCtx := sac.WithAllAccess(context.Background())
 	for _, c := range []struct {
-		desc              string
-		ctx               context.Context
-		q                 *v1.Query
-		schema            *walker.Schema
-		expectedStatement string
-		expectedData      []interface{}
-		expectedError     string
+		desc                       string
+		ctx                        context.Context
+		q                          *v1.Query
+		schema                     *walker.Schema
+		expectedStatement          string
+		expectedData               []interface{}
+		expectedError              string
+		expectedFlattenedStatement string
 	}{
 		{
 			desc:              "base schema query",
@@ -483,6 +503,11 @@ func TestCountQueries(t *testing.T) {
 				inner join image_cve_edges on(images.Id = image_cve_edges.ImageId and image_component_cve_edges.ImageCveId = image_cve_edges.ImageCveId)
 				where ((deployments.PlatformComponent = $1 or deployments.PlatformComponent is null) and image_cve_edges.State = $2)`),
 			expectedData: []interface{}{"false", "0"},
+			expectedFlattenedStatement: "select count(distinct(images.Id)) from images " +
+				"left join deployments_containers on images.Id = deployments_containers.Image_Id " +
+				"left join deployments on deployments_containers.deployments_Id = deployments.Id " +
+				"inner join image_cves_v2 on images.Id = image_cves_v2.ImageId " +
+				"where ((deployments.PlatformComponent = $1 or deployments.PlatformComponent is null) and image_cves_v2.State = $2)",
 		},
 	} {
 		t.Run(c.desc, func(it *testing.T) {
@@ -491,7 +516,11 @@ func TestCountQueries(t *testing.T) {
 				assert.Error(it, err, c.expectedError)
 			} else {
 				assert.NoError(it, err)
-				assert.Equal(it, c.expectedStatement, actual.AsSQL())
+				expectedStatement := c.expectedStatement
+				if features.FlattenCVEData.Enabled() && c.expectedFlattenedStatement != "" {
+					expectedStatement = c.expectedFlattenedStatement
+				}
+				assert.Equal(it, expectedStatement, actual.AsSQL())
 				assert.Equal(it, c.expectedData, actual.Data)
 			}
 		})
@@ -502,12 +531,14 @@ func TestSelectQueries(t *testing.T) {
 	t.Parallel()
 
 	for _, c := range []struct {
-		desc          string
-		ctx           context.Context
-		q             *v1.Query
-		schema        *walker.Schema
-		expectedError string
-		expectedQuery string
+		desc                   string
+		ctx                    context.Context
+		q                      *v1.Query
+		schema                 *walker.Schema
+		flattenedSchema        *walker.Schema
+		expectedError          string
+		expectedQuery          string
+		expectedFlattenedQuery string
 	}{
 		{
 			desc: "base schema; no select",
@@ -718,7 +749,8 @@ func TestSelectQueries(t *testing.T) {
 				AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_OBSERVED.String()).
 				AddStrings(search.PlatformComponent, "true", "-").
 				ProtoQuery(),
-			schema: imageCVEsSchema,
+			schema:          imageCVEsSchema,
+			flattenedSchema: imageComponentV2Schema,
 			expectedQuery: normalizeStatement(`select image_cves.CveBaseInfo_Cve as cve,
 				distinct(image_cves.Id) as cve_id, max(image_cves.Cvss) as cvss_max,
 				count(distinct(images.Id)) as image_sha_count
@@ -729,6 +761,15 @@ func TestSelectQueries(t *testing.T) {
 				left join deployments on deployments_containers.deployments_Id = deployments.Id
 				inner join image_cve_edges on(image_component_edges.ImageId = image_cve_edges.ImageId and image_cves.Id = image_cve_edges.ImageCveId)
 				where ((deployments.PlatformComponent = $1 or deployments.PlatformComponent is null) and image_cve_edges.State = $2)`),
+			expectedFlattenedQuery: "select image_cves_v2.CveBaseInfo_Cve as cve, " +
+				"distinct(image_cves_v2.Id) as cve_id, max(image_cves_v2.Cvss) as cvss_max, " +
+				"count(distinct(images.Id)) as image_sha_count " +
+				"from image_component_v2 " +
+				"inner join image_cves_v2 on image_component_v2.Id = image_cves_v2.ComponentId " +
+				"inner join images on image_component_v2.ImageId = images.Id " +
+				"left join deployments_containers on images.Id = deployments_containers.Image_Id " +
+				"left join deployments on deployments_containers.deployments_Id = deployments.Id " +
+				"where ((deployments.PlatformComponent = $1 or deployments.PlatformComponent is null) and image_cves_v2.State = $2)",
 		},
 		{
 			desc: "select with multiple enum values with IN operator",
@@ -738,7 +779,8 @@ func TestSelectQueries(t *testing.T) {
 				).
 				AddRegexes(search.VulnerabilityState, ".+ED").
 				ProtoQuery(),
-			schema: imageCVEsSchema,
+			schema:          imageCVEsSchema,
+			flattenedSchema: imageCVEV2Schema,
 			expectedQuery: normalizeStatement(`select image_cves.CveBaseInfo_Cve as cve
 				from image_cves
 				inner join image_component_cve_edges on image_cves.Id = image_component_cve_edges.ImageCveId
@@ -746,6 +788,9 @@ func TestSelectQueries(t *testing.T) {
 				inner join images on image_component_edges.ImageId = images.Id
 				inner join image_cve_edges on(image_component_edges.ImageId = image_cve_edges.ImageId and image_cves.Id = image_cve_edges.ImageCveId)
 				where image_cve_edges.State IN ($1, $2)`),
+			expectedFlattenedQuery: "select image_cves_v2.CveBaseInfo_Cve as cve " +
+				"from image_cves_v2 " +
+				"where image_cves_v2.State IN ($1, $2)",
 		},
 	} {
 		t.Run(c.desc, func(t *testing.T) {
@@ -753,8 +798,11 @@ func TestSelectQueries(t *testing.T) {
 			if c.ctx == nil {
 				ctx = context.Background()
 			}
-
-			actualQ, err := standardizeSelectQueryAndPopulatePath(ctx, c.q, c.schema, SELECT)
+			testSchema := c.schema
+			if features.FlattenCVEData.Enabled() && c.flattenedSchema != nil {
+				testSchema = c.flattenedSchema
+			}
+			actualQ, err := standardizeSelectQueryAndPopulatePath(ctx, c.q, testSchema, SELECT)
 			if c.expectedError != "" {
 				assert.Error(t, err, c.expectedError)
 				return
@@ -767,8 +815,12 @@ func TestSelectQueries(t *testing.T) {
 				return
 			}
 
+			expectedQuery := c.expectedQuery
+			if features.FlattenCVEData.Enabled() && c.expectedFlattenedQuery != "" {
+				expectedQuery = c.expectedFlattenedQuery
+			}
 			actual := actualQ.AsSQL()
-			assert.Equal(t, c.expectedQuery, actual)
+			assert.Equal(t, expectedQuery, actual)
 		})
 	}
 }
