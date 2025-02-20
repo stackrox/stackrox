@@ -538,13 +538,20 @@ class Services extends BaseService {
     static waitForVulnerabilitiesForImage(objects.Deployment deployment, int retries = 30, int interval = 2) {
         def imageName = deployment.image.contains(":") ? deployment.image : deployment.image + ":latest"
         Timer t = new Timer(retries, interval)
+        int i = 1
         while (t.IsValid()) {
-            def found = ImageService.getImages().find { it.name.endsWith(imageName) }
-            if (found.hasCves() || found.hasFixableCves()) {
-                LOG.info "SR found vulnerabilities for the image ${imageName} within ${t.SecondsSince()}s"
-                return true
+            try {
+                def found = ImageService.getImages().find { it.name.endsWith(imageName) }
+                if (found.hasCves() || found.hasFixableCves()) {
+                    LOG.info "SR found vulnerabilities for the image ${imageName} within ${t.SecondsSince()}s"
+                    return true
+                }
+                LOG.info "SR has not found vulnerabilities for the image ${imageName} yet"
+            } catch (Exception e) {
+                LOG.debug("Caught exception while waiting for vulnerabilities to populate for the image ${imageName}. Retrying in ${interval}s (attempt ${i} of ${retries}): " + e)
+            } finally {
+                i++
             }
-            LOG.info "SR has not found vulnerabilities for the image ${imageName} yet"
         }
         LOG.info "SR did not detect vulnerabilities for the image ${imageName} in ${t.SecondsSince()} seconds"
         return false
