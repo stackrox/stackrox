@@ -123,19 +123,6 @@ func (b *datastoreImpl) RevokeToken(ctx context.Context, id string) (bool, error
 	return true, nil
 }
 
-func (b *datastoreImpl) DeleteToken(ctx context.Context, id string) error {
-	if ok, err := integrationSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
-	b.Lock()
-	defer b.Unlock()
-
-	return b.storage.Delete(ctx, id)
-}
-
 func (b *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	if err := sac.VerifyAuthzOK(integrationSAC.ReadAllowed(ctx)); err != nil {
 		return 0, err

@@ -19,7 +19,7 @@ import (
 
 func TestGather(t *testing.T) {
 	pool := pgtest.ForT(t)
-	ds := New(pgStore.New(pool.DB))
+	ds := &datastoreImpl{storage: pgStore.New(pool.DB)}
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
@@ -117,7 +117,7 @@ func TestGather(t *testing.T) {
 			assert.Equal(t, expectedProps, props)
 
 			for _, token := range tc.tokens {
-				err := ds.DeleteToken(ctx, token.GetId())
+				err := ds.storage.Delete(ctx, token.GetId())
 				require.NoError(t, err)
 			}
 		})
