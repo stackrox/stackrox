@@ -160,7 +160,7 @@ class Helpers {
     }
 
     // the subprocess should inherit the environment of the current process.
-    private static List envp = null
+    private final static List envp = null
 
     static void shellCmd(String cmd) {
         StringBuilder sout = new StringBuilder()
