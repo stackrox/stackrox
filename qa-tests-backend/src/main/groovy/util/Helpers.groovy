@@ -161,7 +161,6 @@ class Helpers {
         }
     }
 
-
     static void shellCmd(String cmd) {
         shellCmdExitValue(cmd)
     }
