@@ -10,6 +10,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/central/image/datastore/store"
 	"github.com/stackrox/rox/central/image/datastore/store/common/v2"
+	common2 "github.com/stackrox/rox/central/image/datastore/store/common/v2"
 	componentStore "github.com/stackrox/rox/central/imagecomponent/v2/datastore/store/postgres"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -153,10 +154,10 @@ func (s *storeImpl) insertIntoImages(
 	}
 
 	if !scanUpdated {
-		common.SensorEventsDeduperCounter.With(prometheus.Labels{"status": "deduped"}).Inc()
+		common2.SensorEventsDeduperCounter.With(prometheus.Labels{"status": "deduped"}).Inc()
 		return nil
 	}
-	common.SensorEventsDeduperCounter.With(prometheus.Labels{"status": "passed"}).Inc()
+	common2.SensorEventsDeduperCounter.With(prometheus.Labels{"status": "passed"}).Inc()
 
 	err = copyFromImageComponentsV2(ctx, tx, iTime, componentCVEMap, parts.componentsV2...)
 	if err != nil {
