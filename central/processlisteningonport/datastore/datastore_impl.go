@@ -655,12 +655,12 @@ func (ds *datastoreImpl) getPLOPsWithoutPodUIDs(ctx context.Context) ([]string, 
 	orphanedQueryTimeout := env.PruneOrphanedQueryTimeout.DurationSetting()
 
 	plopsToDelete, err := pgutils.Retry2(ctx, func() ([]*storage.ProcessListeningOnPortStorage, error) {
-                pruneCtx, cancel := context.WithTimeout(ctx, orphanedQueryTimeout)
-                defer cancel()
+		pruneCtx, cancel := context.WithTimeout(ctx, orphanedQueryTimeout)
+		defer cancel()
 
 		return ds.storage.GetByQuery(pruneCtx, search.NewQueryBuilder().
 			AddNullField(search.PodUID).ProtoQuery())
-        })
+	})
 
 	if err != nil {
 		return nil, err
@@ -668,7 +668,7 @@ func (ds *datastoreImpl) getPLOPsWithoutPodUIDs(ctx context.Context) ([]string, 
 
 	plopIdsToDelete := make([]string, len(plopsToDelete))
 
-	for i, _ := range plopsToDelete {
+	for i := range plopsToDelete {
 		plopIdsToDelete[i] = plopsToDelete[i].Id
 	}
 
@@ -690,6 +690,6 @@ func (ds *datastoreImpl) RemovePLOPsWithoutPodUID(ctx context.Context) (int64, e
 	if err != nil {
 		return 0, err
 	}
-	
+
 	return int64(len(plopsToDelete)), nil
 }
