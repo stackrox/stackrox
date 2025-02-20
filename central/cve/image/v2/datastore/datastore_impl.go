@@ -38,9 +38,6 @@ func (ds *datastoreImpl) SearchRawImageCVEs(ctx context.Context, q *v1.Query) ([
 }
 
 func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	if q == nil {
-		q = pkgSearch.EmptyQuery()
-	}
 	return ds.searcher.Count(ctx, q)
 }
 
