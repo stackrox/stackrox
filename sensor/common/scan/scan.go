@@ -30,6 +30,7 @@ import (
 
 const (
 	defaultMaxSemaphoreWaitTime = 5 * time.Second
+	imageScanLowerBound         = 10
 )
 
 var (
@@ -60,14 +61,14 @@ type LocalScan struct {
 	getGlobalRegistry         func(*storage.ImageName) (registryTypes.ImageRegistry, error)
 
 	// scanSemaphore limits the number of active scans.
-	scanSemaphore        *semaphore.Weighted
+	scanSemaphore *semaphore.Weighted
+	// adHocScanSemaphore limits the number of delegated scans.
+	adHocScanSemaphore   *semaphore.Weighted
 	maxSemaphoreWaitTime time.Duration
 
 	regFactory registries.Factory
 
 	mirrorStore registrymirror.Store
-	// adHocScanSemaphore limits the number of ad-hoc scans.
-	adHocScanSemaphore *semaphore.Weighted
 }
 
 // LocalScanRequest encapsulates request specific fields used when enriching an image local to Sensor.
@@ -102,7 +103,6 @@ func NewLocalScan(registryStore registryStore, mirrorStore registrymirror.Store)
 		fetchSignaturesWithRetry:  signatures.FetchImageSignaturesWithRetries,
 		scannerClientSingleton:    scannerclient.GRPCClientSingleton,
 		scanSemaphore:             semaphore.NewWeighted(int64(env.MaxParallelImageScanInternal.IntegerSetting())),
-		adHocScanSemaphore:        semaphore.NewWeighted(int64(env.MaxParallelDelegatedScanInternal.IntegerSetting())),
 		maxSemaphoreWaitTime:      defaultMaxSemaphoreWaitTime,
 		regFactory:                regFactory,
 		mirrorStore:               mirrorStore,
@@ -113,7 +113,8 @@ func NewLocalScan(registryStore registryStore, mirrorStore registrymirror.Store)
 	}
 	// allow certain number of parallel delegated scans
 	if !env.DelegatedScanningDisabled.BooleanSetting() {
-		ls.scanSemaphore = semaphore.NewWeighted(int64(max(20, env.MaxParallelImageScanInternal.IntegerSetting()-env.MaxParallelDelegatedScanInternal.IntegerSetting())))
+		ls.adHocScanSemaphore = semaphore.NewWeighted(int64(env.MaxParallelAdHocScanInternal.IntegerSetting()))
+		ls.scanSemaphore = semaphore.NewWeighted(int64(max(imageScanLowerBound, env.MaxParallelImageScanInternal.IntegerSetting()-env.MaxParallelAdHocScanInternal.IntegerSetting())))
 	}
 	return ls
 }
@@ -144,7 +145,7 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 	scanLimitSemaphore := s.scanSemaphore
 
 	// Delegated requests
-	if req.ID != "" && !env.DelegatedScanningDisabled.BooleanSetting() {
+	if req.ID != "" {
 		scanLimitSemaphore = s.adHocScanSemaphore
 	}
 
