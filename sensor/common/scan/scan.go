@@ -103,7 +103,7 @@ func NewLocalScan(registryStore registryStore, mirrorStore registrymirror.Store)
 		fetchSignaturesWithRetry:  signatures.FetchImageSignaturesWithRetries,
 		scannerClientSingleton:    scannerclient.GRPCClientSingleton,
 		scanSemaphore:             semaphore.NewWeighted(int64(env.MaxParallelImageScanInternal.IntegerSetting())),
-		delegatedScanSemaphore:    semaphore.NewWeighted(int64(env.MaxParallelDelegatedScanInternal.IntegerSetting())),
+		delegatedScanSemaphore:    semaphore.NewWeighted(int64(min(10, env.MaxParallelDelegatedScanInternal.IntegerSetting()))),
 		maxSemaphoreWaitTime:      defaultMaxSemaphoreWaitTime,
 		regFactory:                regFactory,
 		mirrorStore:               mirrorStore,
@@ -114,7 +114,7 @@ func NewLocalScan(registryStore registryStore, mirrorStore registrymirror.Store)
 	}
 	// allow certain number of parallel delegated scans
 	if !env.DelegatedScanningDisabled.BooleanSetting() {
-		ls.scanSemaphore = semaphore.NewWeighted(int64(max(20, env.MaxParallelImageScanInternal.IntegerSetting()-env.MaxParallelDelegatedScanInternal.IntegerSetting())))
+		ls.scanSemaphore = semaphore.NewWeighted(int64(env.MaxParallelImageScanInternal.IntegerSetting() - env.MaxParallelDelegatedScanInternal.IntegerSetting()))
 	}
 	return ls
 }
