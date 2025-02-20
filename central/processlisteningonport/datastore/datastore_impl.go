@@ -648,23 +648,42 @@ func (ds *datastoreImpl) RemovePLOPsWithoutProcessIndicatorOrProcessInfo(ctx con
 	return int64(len(plopsToDelete)), nil
 }
 
-func (ds *datastoreImpl) RemovePLOPsWithoutPodUID(ctx context.Context) (int64, error) {
+func (ds *datastoreImpl) getPLOPsWithoutPodUIDs(ctx context.Context) ([]string, error) {
 	ds.mutex.Lock()
 	defer ds.mutex.Unlock()
 
 	orphanedQueryTimeout := env.PruneOrphanedQueryTimeout.DurationSetting()
 
-	plopsToDelete, err := pgutils.Retry2(ctx, func() ([]string, error) {
+	plopsToDelete, err := pgutils.Retry2(ctx, func() ([]*storage.ProcessListeningOnPortStorage, error) {
                 pruneCtx, cancel := context.WithTimeout(ctx, orphanedQueryTimeout)
                 defer cancel()
 
-		return ds.storage.GetIDsByQuery(pruneCtx, search.NewQueryBuilder().
+		return ds.storage.GetByQuery(pruneCtx, search.NewQueryBuilder().
 			AddNullField(search.PodUID).ProtoQuery())
         })
 
 	if err != nil {
+		return nil, err
+	}
+
+	plopIdsToDelete := make([]string, len(plopsToDelete))
+
+	for i, _ := range plopsToDelete {
+		plopIdsToDelete[i] = plopsToDelete[i].Id
+	}
+
+	return plopIdsToDelete, err
+}
+
+func (ds *datastoreImpl) RemovePLOPsWithoutPodUID(ctx context.Context) (int64, error) {
+	plopsToDelete, err := ds.getPLOPsWithoutPodUIDs(ctx)
+
+	if err != nil {
 		return 0, err
 	}
+
+	ds.mutex.Lock()
+	defer ds.mutex.Unlock()
 
 	err = ds.storage.PruneMany(ctx, plopsToDelete)
 

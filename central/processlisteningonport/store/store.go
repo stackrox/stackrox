@@ -25,7 +25,6 @@ type Store interface {
 
 	Get(ctx context.Context, id string) (*storage.ProcessListeningOnPortStorage, bool, error)
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.ProcessListeningOnPortStorage, error)
-	GetIDsByQuery(ctx context.Context, query *v1.Query) ([]string, error)
 	GetMany(ctx context.Context, identifiers []string) ([]*storage.ProcessListeningOnPortStorage, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 
