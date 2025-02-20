@@ -3,9 +3,13 @@ package pgtest
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"hash/fnv"
+	"io"
 	"strings"
 	"testing"
 
+	"github.com/lib/pq"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest/conn"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
@@ -34,8 +38,11 @@ func CreateADatabaseForT(t testing.TB) string {
 	suffix, err := random.GenerateString(5, random.AlphanumericCharacters)
 	require.NoError(t, err)
 
-	database := strings.ToLower(strings.ReplaceAll(t.Name(), "/", "_") + suffix)
-	database = strings.ToLower(strings.ReplaceAll(database, "-", "_"))
+	h := fnv.New64a()
+	_, err = io.WriteString(h, t.Name())
+	require.NoError(t, err)
+
+	database := fmt.Sprintf("%x_%s", h.Sum64(), suffix)
 
 	CreateDatabase(t, database)
 
@@ -55,13 +62,12 @@ func CreateDatabase(t testing.TB, database string) {
 
 	row := db.QueryRow(existsStmt, database)
 	var exists bool
-	if err := row.Scan(&exists); err != nil {
-		exists = false
-	}
+	err = row.Scan(&exists)
+	require.NoError(t, err)
 
 	// Only create the test DB if it does not exist
 	if !exists {
-		_, err = db.Exec("CREATE DATABASE " + database)
+		_, err = db.Exec("CREATE DATABASE " + pq.QuoteIdentifier(database))
 		require.NoError(t, err)
 	}
 	require.NoError(t, db.Close())
@@ -75,7 +81,7 @@ func DropDatabase(t testing.TB, database string) {
 		db, err := sql.Open(driverName, sourceWithPostgresDatabase)
 		require.NoError(t, err)
 
-		_, _ = db.Exec("DROP DATABASE " + database)
+		_, _ = db.Exec("DROP DATABASE " + pq.QuoteIdentifier(database))
 		require.NoError(t, db.Close())
 	}
 }
