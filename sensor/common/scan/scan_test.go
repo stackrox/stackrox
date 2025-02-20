@@ -354,10 +354,26 @@ func (suite *scanTestSuite) TestEnrichThrottle() {
 	scan := LocalScan{
 		scannerClientSingleton: emptyScannerClientSingleton,
 		scanSemaphore:          semaphore.NewWeighted(0),
+		maxSemaphoreWaitTime:   defaultMaxSemaphoreWaitTime,
 	}
 
 	img := &storage.ContainerImage{Name: &storage.ImageName{Registry: "fake"}}
 	_, err := scan.EnrichLocalImageInNamespace(context.Background(), nil, genScanReq(img, "", "", false))
+	suite.Require().ErrorIs(err, ErrTooManyParallelScans)
+	suite.Require().ErrorIs(err, ErrEnrichNotStarted)
+}
+
+func (suite *scanTestSuite) TestCentralDelegatedScanThrottle() {
+	ls := LocalScan{
+		scannerClientSingleton: emptyScannerClientSingleton,
+		scanSemaphore:          semaphore.NewWeighted(5),
+		adHocScanSemaphore:     semaphore.NewWeighted(0),
+	}
+
+	img := &storage.ContainerImage{Name: &storage.ImageName{Registry: "fake"}}
+	req := genScanReq(img, "", "some-id", false) // "makes it an ad-hoc delegated request
+
+	_, err := ls.EnrichLocalImageInNamespace(context.Background(), nil, req)
 	suite.Require().ErrorIs(err, ErrTooManyParallelScans)
 	suite.Require().ErrorIs(err, ErrEnrichNotStarted)
 }
