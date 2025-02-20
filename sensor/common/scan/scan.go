@@ -140,7 +140,7 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 	if s.scannerClientSingleton() == nil {
 		return nil, errors.Join(ErrNoLocalScanner, ErrEnrichNotStarted)
 	}
-	
+
 	semaphoreToUse := s.scanSemaphore
 	// Delegated requests
 	if req.ID != "" {
