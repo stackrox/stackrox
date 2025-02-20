@@ -1,8 +1,14 @@
 package orchestratormanager
 
+import groovy.transform.CompileStatic
+import io.fabric8.kubernetes.api.model.apps.Deployment as K8sDeployment
+import io.fabric8.kubernetes.api.model.batch.v1.Job as K8sJob
 import io.fabric8.kubernetes.api.model.ObjectMeta
 import io.fabric8.kubernetes.api.model.Pod
+import io.fabric8.kubernetes.api.model.StatusDetails
 import io.fabric8.kubernetes.api.model.admissionregistration.v1.ValidatingWebhookConfiguration
+import io.fabric8.kubernetes.client.LocalPortForward
+
 import objects.ConfigMap
 import objects.DaemonSet
 import objects.Deployment
@@ -16,104 +22,105 @@ import objects.Node
 import objects.Secret
 import objects.Service
 
+@CompileStatic
 interface OrchestratorMain {
-    def setup()
+    void setup()
 
     // Pods
     List<Pod> getPods(String ns, String appName)
     List<Pod> getPodsByLabel(String ns, Map<String, String> label)
     Boolean deletePod(String ns, String podName, Long gracePeriodSecs)
     Boolean deletePodAndWait(String ns, String podName, int retries, int intervalSeconds)
-    def deleteAllPods(String ns, Map<String, String> labels)
-    def restartPodByLabels(String ns, Map<String, String> labels, int retries, int intervalSecond)
-    def waitForAllPodsToBeRemoved(String ns, Map<String, String>labels, int iterations, int intervalSeconds)
-    def waitForPodsReady(String ns, Map<String, String> labels, int minReady, int iterations, int intervalSeconds)
-    def waitForPodRestart(String ns, String name, int prevRestartCount, int retries, int intervalSeconds)
+    List<StatusDetails> deleteAllPods(String ns, Map<String, String> labels)
+    boolean restartPodByLabels(String ns, Map<String, String> labels, int retries, int intervalSecond)
+    boolean waitForAllPodsToBeRemoved(String ns, Map<String, String>labels, int iterations, int intervalSeconds)
+    boolean waitForPodsReady(String ns, Map<String, String> labels, int minReady, int iterations, int intervalSeconds)
+    boolean waitForPodRestart(String ns, String name, int prevRestartCount, int retries, int intervalSeconds)
     String getPodLog(String ns, String name)
-    def copyFileToPod(String fromPath, String ns, String podName, String toPath)
+    boolean copyFileToPod(String fromPath, String ns, String podName, String toPath)
     boolean podReady(Pod pod)
-    def addPodAnnotationByApp(String ns, String appName, String key, String value)
+    Pod addPodAnnotationByApp(String ns, String appName, String key, String value)
 
     //Deployments
-    io.fabric8.kubernetes.api.model.apps.Deployment getOrchestratorDeployment(String ns, String name)
-    def createOrchestratorDeployment(io.fabric8.kubernetes.api.model.apps.Deployment dep)
-    def createDeploymentNoWait(Deployment deployment)
-    def createDeployment(Deployment deployment)
-    def updateDeployment(Deployment deployment)
+    K8sDeployment getOrchestratorDeployment(String ns, String name)
+    K8sDeployment createOrchestratorDeployment(K8sDeployment dep)
+    boolean createDeploymentNoWait(Deployment deployment)
+    void createDeployment(Deployment deployment)
+    void updateDeployment(Deployment deployment)
     boolean updateDeploymentNoWait(Deployment deployment)
-    def batchCreateDeployments(List<Deployment> deployments)
-    def deleteAndWaitForDeploymentDeletion(Deployment... deployments)
-    def deleteDeployment(Deployment deployment)
-    def waitForDeploymentDeletion(Deployment deploy)
+    void batchCreateDeployments(List<Deployment> deployments)
+    void deleteAndWaitForDeploymentDeletion(Deployment... deployments)
+    void deleteDeployment(Deployment deployment)
+    void waitForDeploymentDeletion(Deployment deploy)
     String getDeploymentId(Deployment deployment)
-    def getDeploymentReplicaCount(Deployment deployment)
-    def getDeploymentUnavailableReplicaCount(Deployment deployment)
-    def getDeploymentNodeSelectors(Deployment deployment)
-    def getDeploymentCount()
-    def getDeploymentCount(String ns)
+    Integer getDeploymentReplicaCount(Deployment deployment)
+    Integer getDeploymentUnavailableReplicaCount(Deployment deployment)
+    Map<String, String> getDeploymentNodeSelectors(Deployment deployment)
+    List<String> getDeploymentCount()
+    List<String> getDeploymentCount(String ns)
     Set<String> getDeploymentSecrets(Deployment deployment)
-    def createPortForward(int port, Deployment deployment)
-    def scaleDeployment(String ns, String name, Integer replicas)
+    LocalPortForward createPortForward(int port, Deployment deployment)
+    void scaleDeployment(String ns, String name, Integer replicas)
     List<String> getDeployments(String ns)
     boolean deploymentReady(String ns, String name)
 
     //DaemonSets
-    def createDaemonSet(DaemonSet daemonSet)
-    def deleteDaemonSet(DaemonSet daemonSet)
+    void createDaemonSet(DaemonSet daemonSet)
+    void deleteDaemonSet(DaemonSet daemonSet)
     boolean containsDaemonSetContainer(String ns, String name, String containerName)
-    def updateDaemonSetEnv(String ns, String name, String containerName, String key, String value)
-    def getDaemonSetReplicaCount(DaemonSet daemonSet)
-    def getDaemonSetNodeSelectors(DaemonSet daemonSet)
-    def getDaemonSetUnavailableReplicaCount(DaemonSet daemonSet)
-    def getDaemonSetCount()
-    def getDaemonSetCount(String ns)
+    void updateDaemonSetEnv(String ns, String name, String containerName, String key, String value)
+    Integer getDaemonSetReplicaCount(DaemonSet daemonSet)
+    Map<String, String> getDaemonSetNodeSelectors(DaemonSet daemonSet)
+    Integer getDaemonSetUnavailableReplicaCount(DaemonSet daemonSet)
+    List<String> getDaemonSetCount()
+    List<String> getDaemonSetCount(String ns)
     boolean daemonSetReady(String ns, String name)
     boolean daemonSetEnvVarUpdated(String ns, String name, String containerName, String envVarName, String envVarValue)
-    def waitForDaemonSetDeletion(String name)
+    void waitForDaemonSetDeletion(String name)
     String getDaemonSetId(DaemonSet daemonSet)
 
     // StatefulSets
-    def getStatefulSetCount()
+    List<String> getStatefulSetCount()
 
     //Containers
-    def deleteContainer(String containerName, String namespace)
-    def wasContainerKilled(String containerName, String namespace)
-    def isKubeDashboardRunning()
+    void deleteContainer(String containerName, String namespace)
+    boolean wasContainerKilled(String containerName, String namespace)
+    boolean isKubeDashboardRunning()
     String getContainerlogs(String ns, String podName, String containerName)
-    def getStaticPodCount()
-    def getStaticPodCount(String ns)
+    Set<String> getStaticPodCount()
+    Set<String> getStaticPodCount(String ns)
 
     //Services
-    def createService(Deployment deployment)
-    def createService(Service service)
-    def deleteService(String serviceName, String namespace)
-    def waitForServiceDeletion(Service service)
-    def getServiceIP(String serviceName, String ns)
-    def addOrUpdateServiceLabel(String serviceName, String ns, String name, String value)
+    void createService(Deployment deployment)
+    void createService(Service service)
+    void deleteService(String serviceName, String namespace)
+    void waitForServiceDeletion(Service service)
+    String getServiceIP(String serviceName, String ns)
+    void addOrUpdateServiceLabel(String serviceName, String ns, String name, String value)
 
     //Routes
-    def createRoute(String routeName, String namespace)
-    def deleteRoute(String routeName, String namespace)
+    void createRoute(String routeName, String namespace)
+    void deleteRoute(String routeName, String namespace)
 
     //Secrets
-    def createSecret(Secret secret)
-    def createSecret(String name, String namespace)
-    def createImagePullSecret(String name, String username, String password, String namespace, String server)
-    def createImagePullSecret(Secret secret)
-    def deleteSecret(String name, String namespace)
+    String createSecret(Secret secret)
+    String createSecret(String name, String namespace)
+    String createImagePullSecret(String name, String username, String password, String namespace, String server)
+    String createImagePullSecret(Secret secret)
+    void deleteSecret(String name, String namespace)
     int getSecretCount(String ns)
     int getSecretCount()
     io.fabric8.kubernetes.api.model.Secret getSecret(String name, String namespace)
-    def updateSecret(io.fabric8.kubernetes.api.model.Secret secret)
+    void updateSecret(io.fabric8.kubernetes.api.model.Secret secret)
 
     //Namespaces
-    def ensureNamespaceExists(String ns)
+    void ensureNamespaceExists(String ns)
     String createNamespace(String ns)
-    def deleteNamespace(String ns)
-    def waitForNamespaceDeletion(String ns)
-    def addNamespaceAnnotation(String ns, String key, String value)
-    def removeNamespaceAnnotation(String ns, String key)
-    def getAllNetworkPoliciesNamesByNamespace(Boolean ignoreUndoneStackroxGenerated)
+    void deleteNamespace(String ns)
+    boolean waitForNamespaceDeletion(String ns)
+    void addNamespaceAnnotation(String ns, String key, String value)
+    void removeNamespaceAnnotation(String ns, String key)
+    Map<String, List<String>> getAllNetworkPoliciesNamesByNamespace(Boolean ignoreUndoneStackroxGenerated)
     Namespace getNamespaceDetailsByName(String name)
     boolean ownerIsTracked(ObjectMeta obj)
     List<String> getNamespaces()
@@ -121,66 +128,61 @@ interface OrchestratorMain {
     //NetworkPolicies
     String applyNetworkPolicy(NetworkPolicy policy)
     boolean deleteNetworkPolicy(NetworkPolicy policy)
-    def getNetworkPolicyCount(String ns)
+    int getNetworkPolicyCount(String ns)
 
     //Nodes
-    def getNodeCount()
+    int getNodeCount()
     List<Node> getNodeDetails()
-    def isGKE()
+    boolean isGKE()
 
     //Service Accounts
     List<K8sServiceAccount> getServiceAccounts()
-    def createServiceAccount(K8sServiceAccount serviceAccount)
-    def deleteServiceAccount(K8sServiceAccount serviceAccount)
-    def addServiceAccountImagePullSecret(String accountName, String secretName, String namespace)
-    def removeServiceAccountImagePullSecret(String accountName, String secretName, String namespace)
+    void createServiceAccount(K8sServiceAccount serviceAccount)
+    void deleteServiceAccount(K8sServiceAccount serviceAccount)
+    void addServiceAccountImagePullSecret(String accountName, String secretName, String namespace)
+    void removeServiceAccountImagePullSecret(String accountName, String secretName, String namespace)
 
     //Roles
     List<K8sRole> getRoles()
-    def createRole(K8sRole role)
-    def deleteRole(K8sRole role)
+    void createRole(K8sRole role)
+    void deleteRole(K8sRole role)
 
     //RoleBindings
     List<K8sRoleBinding> getRoleBindings()
-    def createRoleBinding(K8sRoleBinding roleBinding)
-    def deleteRoleBinding(K8sRoleBinding roleBinding)
+    void createRoleBinding(K8sRoleBinding roleBinding)
+    void deleteRoleBinding(K8sRoleBinding roleBinding)
 
     //ClusterRoles
     List<K8sRole> getClusterRoles()
-    def createClusterRole(K8sRole role)
-    def deleteClusterRole(K8sRole role)
+    void createClusterRole(K8sRole role)
+    void deleteClusterRole(K8sRole role)
 
     //ClusterRoleBindings
     List<K8sRoleBinding> getClusterRoleBindings()
-    def createClusterRoleBinding(K8sRoleBinding roleBinding)
-    def deleteClusterRoleBinding(K8sRoleBinding roleBinding)
+    void createClusterRoleBinding(K8sRoleBinding roleBinding)
+    void deleteClusterRoleBinding(K8sRoleBinding roleBinding)
 
     //Jobs
-    def createJob(Job job)
-    def deleteJob(Job job)
-    def getJobCount()
+    K8sJob createJob(Job job)
+    void deleteJob(Job job)
+    List<String> getJobCount()
 
     //ConfigMaps
-    def createConfigMap(ConfigMap configMap)
-    def createConfigMap(String name, Map<String,String> data, String namespace)
+    String createConfigMap(ConfigMap configMap)
+    String createConfigMap(String name, Map<String,String> data, String namespace)
     ConfigMap getConfigMap(String name, String namespace)
-    def deleteConfigMap(String name, String namespace)
+    void deleteConfigMap(String name, String namespace)
 
     //Misc
-    def execInContainer(Deployment deployment, String cmd)
+    boolean execInContainer(Deployment deployment, String cmd)
     boolean execInContainerByPodName(String name, String namespace, String cmd, int retries)
     String generateYaml(Object orchestratorObject)
     String getNameSpace()
     String getSensorContainerName()
-    def waitForSensor()
+    void waitForSensor()
     int getAllDeploymentTypesCount(String ns)
 
     ValidatingWebhookConfiguration getAdmissionController()
-    def deleteAdmissionController(String name)
-    def createAdmissionController(ValidatingWebhookConfiguration config)
-
-    /*TODO:
-        def getDeploymenton(String deploymentName)
-        def updateDeploymenton()
-    */
+    void deleteAdmissionController(String name)
+    void createAdmissionController(ValidatingWebhookConfiguration config)
 }
