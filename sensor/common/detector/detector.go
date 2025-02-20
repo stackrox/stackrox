@@ -3,6 +3,7 @@ package detector
 import (
 	"context"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -51,6 +52,9 @@ var (
 
 	deploymentNotFoundErr     = errors.Wrap(errox.NotFound, "deployment entity")
 	externalEntityNotFoundErr = errors.Wrap(errox.NotFound, "external entity")
+
+	cleanCacheOnReassess  = env.RegisterBooleanSetting("ROX_CLEAN_CACHE_ON_REASSESS", true)
+	cleanCacheOnReprocess = env.RegisterBooleanSetting("ROX_CLEAN_CACHE_ON_REPROCESS", false)
 )
 
 // Detector is the sensor component that syncs policies from Central and runs detection
@@ -290,6 +294,7 @@ func (d *detectorImpl) Capabilities() []centralsensor.SensorCapability {
 
 // ProcessPolicySync reconciles policies and flush all deployments through the detector
 func (d *detectorImpl) ProcessPolicySync(ctx context.Context, sync *central.PolicySync) error {
+	log.Info("lvm --> Policy Sync")
 	// Note: Assume the version of the policies received from central is never
 	// older than sensor's version. Convert to latest if this proves wrong.
 	d.unifiedDetector.ReconcilePolicies(sync.GetPolicies())
@@ -311,8 +316,12 @@ func (d *detectorImpl) ProcessPolicySync(ctx context.Context, sync *central.Poli
 // ProcessReassessPolicies clears the image caches and resets the deduper
 func (d *detectorImpl) ProcessReassessPolicies() error {
 	log.Debug("Reassess Policies triggered")
-	// Clear the image caches and make all the deployments flow back through by clearing out the hash
-	d.enricher.imageCache.RemoveAll()
+	log.Infof("lvm --> Reassess Policies triggered: clean cache %t", cleanCacheOnReassess.BooleanSetting())
+	if cleanCacheOnReassess.BooleanSetting() {
+		// Clear the image caches and make all the deployments flow back through by clearing out the hash
+		log.Infof("lvm --> Cleaning cache in reassess policies")
+		d.enricher.imageCache.RemoveAll()
+	}
 	if d.admCtrlSettingsMgr != nil {
 		d.admCtrlSettingsMgr.FlushCache()
 	}
@@ -339,10 +348,28 @@ func (d *detectorImpl) processNetworkBaselineSync(sync *central.NetworkBaselineS
 	return errs.ToError()
 }
 
+func filterLogging(imageName string, fmt string, args ...interface{}) {
+	if strings.Contains(imageName, "nginx") {
+		log.Infof(fmt, args...)
+	}
+}
+
 // ProcessUpdatedImage updates the imageCache with a new value
 func (d *detectorImpl) ProcessUpdatedImage(image *storage.Image) error {
 	key := cache.GetKey(image)
 	log.Debugf("Receiving update for image: %s from central. Updating cache", image.GetName().GetFullName())
+	log.Infof("lvm --> Receiving update for image: %s from central. Updating cache", image.GetName().GetFullName())
+	imageName := image.GetName().GetFullName()
+	filterLogging(imageName, "lvm --> Image %s CVEs %d", imageName, image.GetCves())
+	filterLogging(imageName, "lvm --> Image %s Scan Time %+v", imageName, image.GetScan().GetScanTime())
+	filterLogging(imageName, "lvm --> Image %s Scan Components %d", imageName, len(image.GetScan().GetComponents()))
+	for _, c := range image.GetScan().GetComponents() {
+		filterLogging(imageName, "lvm --> Image %s Scan FullComponent %+v", imageName, c)
+		for _, vul := range c.GetVulns() {
+			filterLogging(imageName, "lvm --> Image %s Scan Component %s first image occurrence %+v", imageName, c.GetName(), vul.GetFirstImageOccurrence())
+			filterLogging(imageName, "lvm --> Image %s Scan Component %s first system occurrence %+v", imageName, c.GetName(), vul.GetFirstSystemOccurrence())
+		}
+	}
 	newValue := &cacheValue{
 		image:     image,
 		localScan: d.enricher.localScan,
@@ -356,6 +383,11 @@ func (d *detectorImpl) ProcessUpdatedImage(image *storage.Image) error {
 // ProcessReprocessDeployments marks all deployments to be reprocessed
 func (d *detectorImpl) ProcessReprocessDeployments() error {
 	log.Debug("Reprocess deployments triggered. Clearing cache and deduper")
+	log.Infof("lvm --> Reprocess deployments triggered. Clearing cache and deduper: cleaning cache %t", cleanCacheOnReprocess.BooleanSetting())
+	if cleanCacheOnReprocess.BooleanSetting() {
+		log.Info("lvm --> Cleaning cache in reprocess policies")
+		d.enricher.imageCache.RemoveAll()
+	}
 	if d.admissionCacheNeedsFlush && d.admCtrlSettingsMgr != nil {
 		// Would prefer to do a targeted flush
 		d.admCtrlSettingsMgr.FlushCache()
