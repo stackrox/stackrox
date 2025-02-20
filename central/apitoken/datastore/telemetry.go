@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -23,7 +22,7 @@ func Gather(ds DataStore) phonehome.GatherFunc {
 				sac.ResourceScopeKeys(resources.Integration),
 			),
 		)
-		numTotalTokens, err := ds.Count(ctx, &v1.Query{})
+		numTotalTokens, err := ds.Count(ctx, search.EmptyQuery())
 		if err != nil {
 			return nil, errors.Wrap(err, "counting all api tokens")
 		}
