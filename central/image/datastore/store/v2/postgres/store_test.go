@@ -6,7 +6,7 @@ import (
 	"context"
 	"testing"
 
-	componentStore "github.com/stackrox/rox/central/imagecomponent/v2/datastore/store/postgres"
+	cveStore "github.com/stackrox/rox/central/cve/image/v2/datastore/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -136,17 +136,15 @@ func (s *ImagesStoreSuite) TestNVDCVSS() {
 	s.True(exists)
 	s.NotEmpty(foundImage)
 
-	componentPgStore := componentStore.CreateTableAndNewStore(ctx, pool, gormDB)
-	components, err := componentPgStore.GetIDs(ctx)
+	cvePgStore := cveStore.CreateTableAndNewStore(ctx, pool, gormDB)
+	cves, err := cvePgStore.GetIDs(ctx)
 	s.Require().NoError(err)
-	s.Require().NotEmpty(components)
-	id := components[0]
-	imageComponent, _, err := componentPgStore.Get(ctx, id)
+	s.Require().NotEmpty(cves)
+	id := cves[0]
+	imageCve, _, err := cvePgStore.Get(ctx, id)
 	s.Require().NoError(err)
-	s.Require().NotEmpty(imageComponent)
-	for _, cve := range imageComponent.GetCves() {
-		s.Equal(float32(10), cve.GetNvdcvss())
-		s.Require().NotEmpty(cve.GetCvssMetrics())
-		protoassert.Equal(s.T(), nvdCvss, cve.GetCvssMetrics()[0])
-	}
+	s.Require().NotEmpty(imageCve)
+	s.Equal(float32(10), imageCve.GetNvdcvss())
+	s.Require().NotEmpty(imageCve.GetCveBaseInfo().GetCvssMetrics())
+	protoassert.Equal(s.T(), nvdCvss, imageCve.GetCveBaseInfo().GetCvssMetrics()[0])
 }
