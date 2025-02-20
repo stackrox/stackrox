@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/central/cve/image/v2/datastore/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
@@ -29,13 +28,12 @@ type DataStore interface {
 }
 
 // New returns a new instance of a DataStore.
-func New(storage store.Store, searcher search.Searcher, kf concurrency.KeyFence) DataStore {
+func New(storage store.Store, searcher search.Searcher) DataStore {
 	ds := &datastoreImpl{
 		storage:  storage,
 		searcher: searcher,
 
 		cveSuppressionCache: make(common.CVESuppressionCache),
-		keyFence:            kf,
 	}
 	return ds
 }
