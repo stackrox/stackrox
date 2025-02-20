@@ -4,6 +4,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.text.SimpleDateFormat
 
+import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import io.fabric8.kubernetes.client.KubernetesClientException
@@ -80,6 +81,7 @@ class Helpers {
         return "https://" + Env.mustGetHostname() + ":" + Env.mustGetPort()
     }
 
+    @CompileDynamic
     static void collectDebugForFailure(Throwable exception) {
         if (!collectDebug()) {
             return
@@ -163,12 +165,7 @@ class Helpers {
     private final static List envp = null
 
     static void shellCmd(String cmd) {
-        StringBuilder sout = new StringBuilder()
-        StringBuilder serr = new StringBuilder()
-        Process proc = cmd.execute(envp, new File(".."))
-        proc.consumeProcessOutput(sout, serr)
-        proc.waitFor()
-        log.debug "Ran: ${cmd}\nExit: ${proc.exitValue()}\nStdout: $sout\nStderr: $serr"
+        shellCmdExitValue(cmd)
     }
 
     static int shellCmdExitValue(String cmd) {
