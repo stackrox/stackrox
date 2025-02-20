@@ -14,65 +14,21 @@
 
 set -euo pipefail
 
-bats_require_minimum_version 1.5.0
-
-ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")"/../.. && pwd)"
-export ROOT
-
-# Save original stdout, stderr fds as 4 and 5.
-# (Note: 3 is reserved for real-time output by Bats.)
-stdout_orig=4
-stderr_orig=5
-exec 4>&1 5>&2
 if [[ -z "${REAL_TIME_TEST_OUTPUT:-}" ]] && test -t 0; then
     # Use real-time test output by default when executed on a terminal.
     export REAL_TIME_TEST_OUTPUT="true"
 fi
 
-stdout=1
+outfd=1
 if [[ "${REAL_TIME_TEST_OUTPUT:-}" == "true" ]]; then
-    stdout=3
+    outfd=3
 fi
-
-# Need this for "info".
-# shellcheck source=../../scripts/lib.sh
-source "$ROOT/scripts/lib.sh"
-
-_render_step_label() {
-    if [[ -z "${_step_label}" ]]; then
-        echo ""
-    else
-        echo "[${_step_label}] "
-    fi
-}
-
-bats_cleanup() {
-    exec 3>&-
-    exit 1
-}
-
-
-post_process_output() {
-    local label
-    label="$(_render_step_label)"
-    local msg
-
-    trap bats_cleanup INT
-
-    while IFS="" read -r line; do
-        if [[ "$line" =~ ^(INFO|ERROR):\ [[:alpha:]]+\ [[:alpha:]]+\ [[:digit:]]+\ [[:digit:]]{2}:[[:digit:]]{2}:[[:digit:]]{2}\ [[:alpha:]]+\ [[:digit:]]+:\ (.*) ]]; then
-            msg="${label}${BASH_REMATCH[2]}"
-        else
-            msg="${label}${line}"
-        fi
-        info >&$stdout "$msg"
-    done
-}
-
-initialized="false"
+export outfd
 
 init() {
     set -euo pipefail
+    ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")"/../.. && pwd)"
+    export ROOT
 
     if [[ "${CI:-}" != "true" ]]; then
         # Some friendly environment checks
@@ -93,9 +49,9 @@ init() {
     # shellcheck source=../../tests/scripts/setup-certs.sh
     source "$ROOT/tests/scripts/setup-certs.sh"
     load "$ROOT/scripts/test_helpers.bats"
-
-    require_environment "ORCHESTRATOR_FLAVOR"
 }
+
+initialized="false"
 
 _begin() {
     if [[ $initialized = "false" ]]; then
@@ -105,53 +61,36 @@ _begin() {
 
     local label="${1:-}"
 
-    stdout_pipe=$(mktemp -u)
-    mkfifo "$stdout_pipe"
-    stderr_pipe=$(mktemp -u)
-    mkfifo "$stderr_pipe"
-
-    export _step_label="$label"
-
-    post_process_output < "$stdout_pipe" &
-    stdout_pid=$!
-
-    post_process_output < "$stderr_pipe" &
-    stderr_pid=$!
-
-    trap "rm -f '$stdout_pipe' '$stderr_pipe'" EXIT
-    trap bats_cleanup INT
-
-    exec >"$stdout_pipe"
-    exec 2>"$stderr_pipe"
-
-    export _begin_state
-    _begin_state="{\"stdout_pipe\": \"$stdout_pipe\", \"stdout_pid\": \"$stdout_pid\", \"stderr_pipe\": \"$stderr_pipe\", \"stderr_pid\": \"$stderr_pid\"}"
+    exec 4>&1 5>&2
+    exec 1> >(bash -c "post_process_output '$label'" > "/dev/fd/$outfd") 2> >(bash -c "post_process_output '$label'" > "/dev/fd/$outfd")
+    trap "exec 1>&- 2>&- 1>&4 2>&5; exit 1" INT ABRT KILL TERM
 }
 
 _end() {
-    local _begin_state="$1"
-    local stdout_pipe; stdout_pipe=$(jq -r .stdout_pipe <<< "$_begin_state")
-    local stderr_pipe; stderr_pipe=$(jq -r .stderr_pipe <<< "$_begin_state")
-    local stdout_pid; stdout_pid=$(jq -r .stdout_pid <<< "$_begin_state")
-    local stderr_pid; stderr_pid=$(jq -r .stderr_pid <<< "$_begin_state")
-
-    exec >"$stdout_orig"
-    exec 2>"$stderr_orig"
-
-    rm -f >/dev/null 2>&1 "$stdout_pipe" "$stderr_pipe"
-
-    wait "$stdout_pid" "$stderr_pid" || true
+    exec 1>&- 2>&- 1>&4 2>&5
 }
 
 _step() {
-    _end "${1:-}"; shift
-    _begin "${1:-}"; shift
+    _end
+    _begin "$1"
 }
 
 export TEST_SUITE_ABORTED="false"
 
 setup_file() {
     _begin "setup-file"
+
+    cat <<'EOT'
+    _    ____ ____    ___           _        _ _       _   _               _____         _
+   / \  / ___/ ___|  |_ _|_ __  ___| |_ __ _| | | __ _| |_(_) ___  _ __   |_   _|__  ___| |_ ___
+  / _ \| |   \___ \   | || '_ \/ __| __/ _` | | |/ _` | __| |/ _ \| '_ \    | |/ _ \/ __| __/ __|
+ / ___ \ |___ ___) |  | || | | \__ \ || (_| | | | (_| | |_| | (_) | | | |   | |  __/\__ \ |_\__ \
+/_/   \_\____|____/  |___|_| |_|___/\__\__,_|_|_|\__,_|\__|_|\___/|_| |_|   |_|\___||___/\__|___/
+
+EOT
+
+    bats_require_minimum_version 1.5.0
+    require_environment "ORCHESTRATOR_FLAVOR"
 
     # Use
     #   export CHART_BASE="/rhacs"
@@ -231,28 +170,28 @@ setup_file() {
     # have any logs for investigation the situation.
     export BATS_TEST_TIMEOUT=1800 # Seconds
 
-    _end "$_begin_state"
+    _end
 }
 
 test_case_no=0
-
 
 setup() {
     [[ "${TEST_SUITE_ABORTED}" == "true" ]] && return 1
 
     _begin "setup-test-env"
 
+    echo "Executing Test: $BATS_TEST_DESCRIPTION"
     export_test_environment
     if [[ "$CI" = "true" ]]; then
         setup_gcp
         setup_deployment_env false false
     fi
 
-    _step "$_begin_state" "tear-down"
+    _step "tear-down"
 
     if [[ "${SKIP_INITIAL_TEARDOWN:-}" != "true" ]] && (( test_case_no == 0 )); then
         # executing teardown to begin test execution in a well-defined state
-        silent_remove_existing_stackrox_resources "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}" "stackrox"
+        _remove_existing_stackrox_resources "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}" "stackrox"
     fi
     if [[ ${TEARDOWN_ONLY:-} == "true" ]]; then
         echo "Only tearing down resources, exiting now..."
@@ -268,7 +207,7 @@ setup() {
     export ROX_DEPLOY_SENSOR_WITH_CRS=true
 
     echo "Finished test setup."
-    _end "$_begin_state"
+    _end
 }
 
 describe_pods_in_namespace() {
@@ -353,15 +292,15 @@ teardown() {
         fi
     fi
 
-    run silent_remove_existing_stackrox_resources "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}" "stackrox"
+    run _remove_existing_stackrox_resources "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}" "stackrox"
     echo "Teardown complete"
 
-    _end "$_begin_state"
+    _end
 }
 
-silent_remove_existing_stackrox_resources() {
+_remove_existing_stackrox_resources() {
     echo "Removing existing StackRox resources..."
-    remove_existing_stackrox_resources "$@" >/dev/null
+    remove_existing_stackrox_resources
     echo "StackRox resources removed."
 }
 
@@ -398,7 +337,7 @@ central:
 EOF
     ROX_CENTRAL_EXTRA_HELM_VALUES_FILE="${_ROX_CENTRAL_EXTRA_HELM_VALUES_FILE}" CENTRAL_CHART_DIR_OVERRIDE="${_CENTRAL_CHART_DIR_OVERRIDE}" _deploy_stackrox
 
-    _step "$_begin_state" "upgrading-stackrox"
+    _step "upgrading-stackrox"
 
     # Upgrade to HEAD chart without explicit disabling of Scanner V4.
     info "Upgrading StackRox using HEAD Helm chart"
@@ -409,7 +348,7 @@ EOF
 
     _deploy_stackrox
 
-    _step "$_begin_state" "verify"
+    _step "verify"
 
     # Verify that Scanner V2 and V4 are up.
     verify_scannerV2_deployed "stackrox"
@@ -417,7 +356,7 @@ EOF
     verify_deployment_scannerV4_env_var_set "stackrox" "central"
     verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
 
-    _end "$_begin_state"
+    _end
 }
 
 @test "Fresh installation of HEAD Helm chart with Scanner V4 disabled and enabling it later" {
@@ -428,14 +367,14 @@ EOF
     export OUTPUT_FORMAT=helm
     ROX_SCANNER_V4=false _deploy_stackrox
 
-    _step "$_begin_state" "verify"
+    _step "verify"
 
     verify_scannerV2_deployed "stackrox"
     verify_no_scannerV4_deployed "stackrox"
     run ! verify_deployment_scannerV4_env_var_set "stackrox" "central"
     run ! verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
 
-    _step "$_begin_state" "enable-scanner-v4"
+    _step "enable-scanner-v4"
 
     SENSOR_SCANNER_V4_SUPPORT=true HELM_REUSE_VALUES=true _deploy_stackrox
 
@@ -444,7 +383,7 @@ EOF
     verify_deployment_scannerV4_env_var_set "stackrox" "central"
     verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
 
-    _step "$_begin_state" "disable-scanner-v4"
+    _step "disable-scanner-v4"
 
     # Deactivate Scanner V4 for both releases.
     info "Disabling Scanner V4 for Central"
@@ -457,7 +396,7 @@ EOF
     run ! verify_deployment_scannerV4_env_var_set "stackrox" "central"
     run ! verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
 
-    _end "$_begin_state"
+    _end
 }
 
 @test "Fresh installation of HEAD Helm chart with Scanner V4 enabled" {
@@ -471,14 +410,14 @@ EOF
 
     _deploy_stackrox
 
-    _step "$_begin_state" "verify"
+    _step "verify"
 
     verify_scannerV2_deployed "stackrox"
     verify_scannerV4_deployed "stackrox"
     verify_deployment_scannerV4_env_var_set "stackrox" "central"
     verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
 
-    _end "$_begin_state"
+    _end
 }
 
 @test "Fresh installation of HEAD Helm charts with Scanner V4 enabled in multi-namespace mode" {
@@ -515,7 +454,7 @@ EOF
     run ! verify_deployment_scannerV4_env_var_set "${central_namespace}" "central"
     run ! verify_deployment_scannerV4_env_var_set "${sensor_namespace}" "sensor"
 
-    _end "$_begin_state"
+    _end
 }
 
 @test "[Manifest Bundle] Fresh installation without Scanner V4, adding Scanner V4 later" {
@@ -534,7 +473,7 @@ EOF
 
     _deploy_stackrox
 
-    _step "$_begin_state" "verify"
+    _step "verify"
 
     echo "verify scanner v2 deployed"
     verify_scannerV2_deployed
@@ -544,7 +483,7 @@ EOF
     run ! verify_deployment_scannerV4_env_var_set "stackrox" "central"
     echo "done"
 
-    _step "$_begin_state" "deploy-scanner-v4"
+    _step "deploy-scanner-v4"
 
     assert [ -d "${scanner_bundle}" ]
     assert [ -d "${scanner_bundle}/scanner-v4" ]
@@ -558,7 +497,7 @@ EOF
     verify_scannerV4_deployed
     verify_deployment_scannerV4_env_var_set "stackrox" "central"
 
-    _end "$_begin_state"
+    _end
 }
 
 @test "[Operator] Fresh installation with Scanner V4 enabled" {
@@ -585,14 +524,14 @@ EOF
     VERSION="${OPERATOR_VERSION_TAG}" deploy_stackrox_operator
     _deploy_stackrox
 
-    _step "$_begin_state" "verify"
+    _step "verify"
 
     verify_scannerV2_deployed "stackrox"
     verify_scannerV4_deployed "stackrox"
     verify_deployment_scannerV4_env_var_set "stackrox" "central"
     verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
 
-    _end "$_begin_state"
+    _end
 }
 
 @test "[Operator] Fresh multi-namespace installation with Scanner V4 enabled" {
@@ -619,7 +558,7 @@ EOF
     VERSION="${OPERATOR_VERSION_TAG}" deploy_stackrox_operator
     _deploy_stackrox "" "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}"
 
-    _step "$_begin_state" "verify"
+    _step "verify"
 
     verify_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
     verify_scannerV4_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
@@ -629,7 +568,7 @@ EOF
     verify_scannerV4_indexer_deployed "${CUSTOM_SENSOR_NAMESPACE}"
     verify_deployment_scannerV4_env_var_set "${CUSTOM_SENSOR_NAMESPACE}" "sensor"
 
-    _end "$_begin_state"
+    _end
 }
 
 @test "[Operator] Upgrade multi-namespace installation" {
@@ -653,12 +592,12 @@ EOF
     VERSION="${OPERATOR_VERSION_TAG}" make -C operator deploy-previous-via-olm
     ROX_SCANNER_V4="false" _deploy_stackrox "" "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}"
 
-    _step "$_begin_state" "verify"
+    _step "verify"
 
     verify_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
     verify_scannerV2_deployed "${CUSTOM_SENSOR_NAMESPACE}"
 
-    _step "$_begin_state" "upgrade-operator"
+    _step "upgrade-operator"
 
     # Upgrade operator
     info "Upgrading StackRox Operator to version ${OPERATOR_VERSION_TAG}..."
@@ -671,7 +610,7 @@ EOF
     sleep 60
     "${ORCH_CMD}" </dev/null -n stackrox-operator wait --for=condition=Ready --timeout=3m pods -l app=rhacs-operator
 
-    _step "$_begin_state" "verify"
+    _step "verify"
 
     verify_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
     verify_scannerV2_deployed "${CUSTOM_SENSOR_NAMESPACE}"
@@ -682,7 +621,7 @@ EOF
 
     wait_until_central_validation_webhook_is_ready "${CUSTOM_CENTRAL_NAMESPACE}"
 
-    _step "$_begin_state" "patching-central"
+    _step "patching-central"
 
     # Enable Scanner V4 on central side.
     info "Patching Central"
@@ -728,7 +667,7 @@ EOT
     sleep 60
     "${ORCH_CMD}" </dev/null -n "${CUSTOM_CENTRAL_NAMESPACE}" wait --for=condition=Ready pods -l app=central || true
 
-    _step "$_begin_state" "patching-secured-cluster"
+    _step "patching-secured-cluster"
 
     info "Patching SecuredCluster"
     # Enable Scanner V4 on secured-cluster side
@@ -763,7 +702,7 @@ EOT
     sleep 60
     "${ORCH_CMD}" </dev/null -n "${CUSTOM_SENSOR_NAMESPACE}" wait --for=condition=Ready pods -l app=sensor || true
 
-    _step "$_begin_state" "verify"
+    _step "verify"
 
     verify_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
     verify_scannerV4_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
@@ -772,7 +711,7 @@ EOT
     verify_scannerV4_indexer_deployed "${CUSTOM_SENSOR_NAMESPACE}"
     verify_deployment_scannerV4_env_var_set "${CUSTOM_SENSOR_NAMESPACE}" "sensor"
 
-    _step "$_begin_state" "disable-scanner-v4"
+    _step "disable-scanner-v4"
 
     # Test disabling of Scanner V4.
     info "Disabling Scanner V4 for Central"
@@ -793,7 +732,7 @@ spec:
 EOT
     )
 
-    _step "$_begin_state" "verify"
+    _step "verify"
 
     sleep 2m # Give the operator some time to reconcile and the deployments to terminate.
     verify_no_scannerV4_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
@@ -801,7 +740,7 @@ EOT
     run ! verify_deployment_scannerV4_env_var_set "${CUSTOM_CENTRAL_NAMESPACE}" "central"
     run ! verify_deployment_scannerV4_env_var_set "${CUSTOM_SENSOR_NAMESPACE}" "sensor"
 
-    _end "$_begin_state"
+    _end
 }
 
 @test "Fresh installation using roxctl with Scanner V4 enabled" {
@@ -819,13 +758,13 @@ EOT
 
     _deploy_stackrox
 
-    _step "$_begin_state" "verify"
+    _step "verify"
 
     verify_scannerV2_deployed "stackrox"
     verify_scannerV4_deployed "stackrox"
     verify_deployment_scannerV4_env_var_set "stackrox" "central"
 
-    _end "$_begin_state"
+    _end
 }
 
 @test "Upgrade from old version without Scanner V4 support to the version which supports Scanner V4" {
@@ -841,26 +780,26 @@ EOT
     info "Using roxctl executable ${EARLIER_ROXCTL_PATH}/roxctl for generating pre-Scanner V4 deployment bundles"
     PATH="${EARLIER_ROXCTL_PATH}:${PATH}" MAIN_IMAGE_TAG="${EARLIER_MAIN_IMAGE_TAG}" _deploy_stackrox
 
-    _step "$_begin_state" "verify"
+    _step "verify"
 
     verify_scannerV2_deployed
     verify_no_scannerV4_deployed
     run ! verify_deployment_scannerV4_env_var_set "stackrox" "central"
     run ! verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
 
-    _step "$_begin_state" "upgrade-stackrox"
+    _step "upgrade-stackrox"
 
     info "Upgrading StackRox using HEAD deployment bundles"
     _deploy_stackrox
 
-    _step "$_begin_state" "verify"
+    _step "verify"
 
     verify_scannerV2_deployed
     verify_scannerV4_deployed
     verify_deployment_scannerV4_env_var_set "stackrox" "central"
     run ! verify_deployment_scannerV4_env_var_set "stackrox" "sensor" # no Scanner V4 support in Sensor with roxctl
 
-    _end "$_begin_state"
+    _end
 }
 
 verify_no_scannerV4_deployed() {
@@ -924,6 +863,8 @@ verify_deployment_scannerV4_env_var_set() {
     local deployment=${2:-central}
     local deployment_env_vars
     local scanner_v4_value
+
+    echo "Looking for ROX_SCANNER_V4 environment variable being set in ${namespace}/${deployment}."
 
     deployment_env_vars="$("${ORCH_CMD}" </dev/null -n "${namespace}" get deploy/"${deployment}" -o jsonpath="{.spec.template.spec.containers[?(@.name=='${deployment}')].env}")"
     scanner_v4_value="$(echo "${deployment_env_vars}" | jq -r '.[] | select(.name == "ROX_SCANNER_V4").value')"
@@ -1119,7 +1060,7 @@ wait_for_ready_pods() {
 }
 
 remove_earlier_roxctl_binary() {
-    if [[ -d "${EARLIER_ROXCTL_PATH}" ]]; then
+    if [[ -n "${EARLIER_ROXCTL_PATH:-}" && -d "${EARLIER_ROXCTL_PATH}" ]]; then
       rm -f "${EARLIER_ROXCTL_PATH}/roxctl"
       rmdir "${EARLIER_ROXCTL_PATH}"
       echo "Removed earlier roxctl binary"
@@ -1142,3 +1083,18 @@ spec:
 EOT
     retry 7 true "${ORCH_CMD}" </dev/null -n "${central_namespace}" patch Central stackrox-central-services --type=merge --patch-file="${patch_test_file}"
 }
+
+post_process_output() {
+    local label="$1"
+    local msg
+
+    while IFS="" read -r line; do
+        if [[ "$line" =~ ^(INFO|ERROR):\ [[:alpha:]]+\ [[:alpha:]]+\ [[:digit:]]+\ [[:digit:]]{2}:[[:digit:]]{2}:[[:digit:]]{2}\ [[:alpha:]]+\ [[:digit:]]+:\ (.*) ]]; then
+            msg="[${label}] ${BASH_REMATCH[2]}"
+        else
+            msg="[${label}] ${line}"
+        fi
+        echo "INFO: $(date): $msg"
+    done
+}
+export -f post_process_output
