@@ -139,13 +139,15 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 	if s.scannerClientSingleton() == nil {
 		return nil, errors.Join(ErrNoLocalScanner, ErrEnrichNotStarted)
 	}
+
+	// Throttle the # of active scans.
 	scanLimitSemaphore := s.scanSemaphore
 
 	// Delegated requests
 	if req.ID != "" && !env.DelegatedScanningDisabled.BooleanSetting() {
 		scanLimitSemaphore = s.adHocScanSemaphore
 	}
-	// Throttle the # of active scans.
+
 	semaphoreCtx, cancel := context.WithTimeout(ctx, s.maxSemaphoreWaitTime)
 	defer cancel()
 	if err := scanLimitSemaphore.Acquire(semaphoreCtx, 1); err != nil {
