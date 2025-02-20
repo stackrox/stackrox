@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -289,7 +290,7 @@ func (q *query) AsSQL() string {
 		querySB.WriteString(join.rightTable)
 		querySB.WriteString(" on")
 
-		if env.ImageCVEEdgeCustomJoin.BooleanSetting() {
+		if env.ImageCVEEdgeCustomJoin.BooleanSetting() && !features.FlattenCVEData.Enabled() {
 			if (i == len(q.Joins)-1) && (join.rightTable == pkgSchema.ImageCveEdgesTableName) {
 				// Step 4: Join image_cve_edges table such that both its ImageID and ImageCveId columns are matched with the joins so far
 				imageIDTable := findImageIDTableAndField(q.Joins)
@@ -421,7 +422,7 @@ func standardizeQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *w
 	joins, dbFields := getJoinsAndFields(schema, q)
 
 	var err error
-	if env.ImageCVEEdgeCustomJoin.BooleanSetting() {
+	if env.ImageCVEEdgeCustomJoin.BooleanSetting() && !features.FlattenCVEData.Enabled() {
 		joins, err = handleImageCveEdgesTableInJoins(schema, joins)
 		if err != nil {
 			return nil, err
