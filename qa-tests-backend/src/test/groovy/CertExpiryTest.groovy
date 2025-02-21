@@ -6,6 +6,7 @@ import util.Cert
 import spock.lang.Tag
 import spock.lang.IgnoreIf
 import util.Env
+import util.Helpers
 
 @Tag("BAT")
 @Tag("COMPATIBILITY")
@@ -33,7 +34,10 @@ class CertExpiryTest extends BaseSpecification {
         assert shellCmdExitValue("./scripts/ci/is-scanner-v2-available.sh stackrox") == 0
         def scannerTLSSecret = orchestrator.getSecret("scanner-tls", "stackrox")
         assert scannerTLSSecret
-        def scannerCertExpiryFromCentral = new Date(CredentialExpiryService.getScannerCertExpiry().getSeconds() * 1000)
+        // Retry since scanner integration registration happens asynchronously.
+        def scannerCertExpiryFromCentral = Helpers.evaluateWithRetry(5, 5) {
+            return new Date(CredentialExpiryService.getScannerCertExpiry().getSeconds() * 1000)
+        }
         assert scannerCertExpiryFromCentral
 
         then:
