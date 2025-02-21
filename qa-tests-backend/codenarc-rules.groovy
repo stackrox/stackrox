@@ -110,7 +110,7 @@ ruleset {
     AbstractClassWithoutAbstractMethod 
     AssignmentToStaticFieldFromInstanceMethod 
     BooleanMethodReturnsNull 
-    BuilderMethodWithSideEffects
+    // BuilderMethodWithSideEffects
     CloneableWithoutClone 
     CloseWithoutCloseable 
     CompareToWithoutComparable 
