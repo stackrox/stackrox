@@ -1233,15 +1233,15 @@ _record_build_info() {
     update_job_record "build" "${build_info}"
 }
 
-restore_4_1_postgres_backup() {
-    info "Restoring a 4.1 postgres backup"
+restore_4_6_postgres_backup() {
+    info "Restoring a 4.6 postgres backup"
 
     require_environment "API_ENDPOINT"
     require_environment "ROX_ADMIN_PASSWORD"
 
-    gsutil cp gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/postgres_db_4_1.sql.zip .
+    gsutil cp gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/postgres_db_4_6.sql.zip .
     roxctl -e "$API_ENDPOINT" \
-        central db restore --timeout 5m postgres_db_4_1.sql.zip
+        central db restore --timeout 5m postgres_db_4_6.sql.zip
 }
 
 update_public_config() {
