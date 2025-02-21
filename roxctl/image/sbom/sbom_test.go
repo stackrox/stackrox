@@ -165,7 +165,7 @@ func buildCmds(t *testing.T, env environment.Environment) (*imageSBOMCommand, *c
 
 	cobraCmd := &cobra.Command{}
 	flags.AddTimeoutWithDefault(cobraCmd, 10*time.Minute)
-	flags.AddPassword(cobraCmd)
+	flags.AddCentralAuthFlags(cobraCmd)
 
 	t.Setenv("ROX_INSECURE_CLIENT", "true")
 	t.Setenv("ROX_CLIENT_MAX_RETRIES", "0")
