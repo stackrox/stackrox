@@ -115,3 +115,5 @@ elif [[ -n "$ROX_DEFAULT_TLS_KEY_FILE" ]]; then
 else
 	echo "No default TLS certificates provided"
 fi
+
+export DEDICATED_COLLECTOR_PRIORITY_CLASS="${DEDICATED_COLLECTOR_PRIORITY_CLASS:-true}"

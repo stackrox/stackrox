@@ -5,9 +5,9 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/internalapi/central"
 	sensorInternal "github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
@@ -170,7 +170,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		components = append(components, k8sadmctrl.NewConfigMapSettingsPersister(cfg.k8sClient.Kubernetes(), admCtrlSettingsMgr, sensorNamespace))
 	}
 
-	if securedClusterIsNotManagedManually(helmManagedConfig) {
+	if centralsensor.SecuredClusterIsNotManagedManually(helmManagedConfig) {
 		// Central capabilities are not available at this point (there's no connection to Central yet),
 		// so we'll start both Secured Cluster and Local Scanner TLS issuer Sensor components. The Secured Cluster
 		// certificate refresher can determine at runtime if Central has the required capability for it to work.
@@ -225,9 +225,4 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	s.AddAPIServices(apiServices...)
 	return s, nil
-}
-
-func securedClusterIsNotManagedManually(helmManagedConfig *central.HelmManagedConfigInit) bool {
-	return helmManagedConfig.GetManagedBy() != storage.ManagerType_MANAGER_TYPE_UNKNOWN &&
-		helmManagedConfig.GetManagedBy() != storage.ManagerType_MANAGER_TYPE_MANUAL
 }
