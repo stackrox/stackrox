@@ -7,7 +7,6 @@ source "${ROOT}/scripts/ci/lib.sh"
 set -euo pipefail
 
 export SCANNER_V4_LOG_DIR="$1"
-export REAL_TIME_TEST_OUTPUT="true"
 REPORTS_DIR=$(mktemp -d)
 FAILED=0
 
@@ -18,7 +17,7 @@ echo
 
 bats \
     --print-output-on-failure \
-    --show-output-of-passing-tests \
+    --verbose-run \
     --report-formatter junit \
     --output "${REPORTS_DIR}" \
     "${ROOT}/tests/e2e/run-scanner-v4-install.bats" || FAILED=1
