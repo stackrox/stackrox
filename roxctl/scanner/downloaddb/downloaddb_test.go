@@ -99,7 +99,7 @@ func TestDetectVersion(t *testing.T) {
 
 	t.Setenv("ROX_ADMIN_PASSWORD", "fake")
 	t.Setenv("ROX_INSECURE_CLIENT", "true")
-	flags.AddPassword(&cobra.Command{})           // init flags.passwordChanged to avoid nil pointer
+	flags.AddCentralAuthFlags(&cobra.Command{})   // init flags.passwordChanged to avoid nil pointer
 	_, _, _ = flags.EndpointAndPlaintextSetting() // init endpoint
 
 	t.Run("use version from flag", func(t *testing.T) {
@@ -195,7 +195,7 @@ func TestVersionFromCentral(t *testing.T) {
 
 	t.Setenv("ROX_ADMIN_PASSWORD", "fake")
 	t.Setenv("ROX_INSECURE_CLIENT", "true")
-	flags.AddPassword(&cobra.Command{})           // init flags.passwordChanged to avoid nil pointer
+	flags.AddCentralAuthFlags(&cobra.Command{})   // init flags.passwordChanged to avoid nil pointer
 	_, _, _ = flags.EndpointAndPlaintextSetting() // allow unencrypted http communication
 
 	testIO, _, _, _ := roxctlio.TestIO()

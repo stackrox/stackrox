@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/stackrox/rox/roxctl/common/flags"
 )
 
 var (
@@ -87,6 +86,5 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 			return errors.Wrap(gen(cliEnvironment.InputOutput().Out()), "could not generate completion")
 		},
 	}
-	flags.HideInheritedFlags(cmd)
 	return cmd
 }

@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/declarativeconfig/transform"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/declarativeconfig/k8sobject"
 )
 
@@ -45,8 +44,6 @@ In case this is not set, the namespace set within the current kube config contex
 	cmd.MarkFlagsMutuallyExclusive("file", k8sobject.ConfigMapFlag)
 	cmd.MarkFlagsMutuallyExclusive("file", k8sobject.SecretFlag)
 	cmd.MarkFlagsMutuallyExclusive(k8sobject.ConfigMapFlag, k8sobject.SecretFlag)
-
-	flags.HideInheritedFlags(cmd)
 
 	return cmd
 }

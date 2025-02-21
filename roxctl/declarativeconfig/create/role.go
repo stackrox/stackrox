@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/declarativeconfig/k8sobject"
 	"github.com/stackrox/rox/roxctl/declarativeconfig/lint"
 	"gopkg.in/yaml.v3"
@@ -43,8 +42,6 @@ func roleCommand(cliEnvironment environment.Environment) *cobra.Command {
 	utils.Must(cmd.MarkFlagRequired("name"))
 	utils.Must(cmd.MarkFlagRequired("access-scope"))
 	utils.Must(cmd.MarkFlagRequired("permission-set"))
-
-	flags.HideInheritedFlags(cmd, k8sobject.ConfigMapFlag, k8sobject.NamespaceFlag)
 	return cmd
 }
 

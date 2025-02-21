@@ -3,7 +3,6 @@ package declarativeconfig
 import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/declarativeconfig/create"
 	"github.com/stackrox/rox/roxctl/declarativeconfig/lint"
 )
@@ -18,8 +17,6 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		create.Command(cliEnvironment),
 		lint.Command(cliEnvironment),
 	)
-
-	flags.HideInheritedFlags(cmd)
 
 	return cmd
 }
