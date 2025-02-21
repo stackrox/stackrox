@@ -67,11 +67,13 @@ func newSecuredClusterTLSIssuerFixture(k8sClientConfig fakeK8sClientConfig) *sec
 		certRefreshBackoff:           certRefreshBackoff,
 		getCertificateRefresherFn:    fixture.componentGetter.getCertificateRefresher,
 		getServiceCertificatesRepoFn: fixture.componentGetter.getServiceCertificatesRepo,
-		stopSig:                      concurrency.NewErrorSignal(),
 		msgToCentralC:                make(chan *message.ExpiringMessage),
 		newMsgFromSensorFn:           newSecuredClusterMsgFromSensor,
 		responseReceived:             concurrency.NewSignal(),
-		requiredCentralCapability:    nil,
+		requiredCentralCapability: func() *centralsensor.CentralCapability {
+			centralCap := centralsensor.CentralCapability(centralsensor.SecuredClusterCertificatesReissue)
+			return &centralCap
+		}(),
 	}
 
 	return fixture
@@ -79,11 +81,12 @@ func newSecuredClusterTLSIssuerFixture(k8sClientConfig fakeK8sClientConfig) *sec
 
 func (f *securedClusterTLSIssuerFixture) assertMockExpectations(t *testing.T) {
 	f.componentGetter.AssertExpectations(t)
+	f.certRefresher.AssertExpectations(t)
 }
 
 // mockForStart setups the mocks for the happy path of Start
 func (f *securedClusterTLSIssuerFixture) mockForStart(conf mockForStartConfig) {
-	f.certRefresher.On("Start").Once().Return(conf.refresherStartErr)
+	f.certRefresher.On("Start", mock.Anything).Once().Return(conf.refresherStartErr)
 
 	f.repo.On("GetServiceCertificates", mock.Anything).Once().
 		Return((*storage.TypedServiceCertificateSet)(nil), conf.getCertsErr)
@@ -117,7 +120,23 @@ func (f *securedClusterTLSIssuerFixture) respondRequest(
 	}
 }
 
-func TestSecuredClusterTLSIssuerStartStopSuccess(t *testing.T) {
+func TestSecuredClusterTLSIssuerTests(t *testing.T) {
+	suite.Run(t, new(securedClusterTLSIssuerTests))
+}
+
+type securedClusterTLSIssuerTests struct {
+	suite.Suite
+}
+
+func (s *securedClusterTLSIssuerTests) SetupTest() {
+	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.SecuredClusterCertificatesReissue})
+}
+
+func (s *securedClusterTLSIssuerTests) TearDownTest() {
+	centralcaps.Set([]centralsensor.CentralCapability{})
+}
+
+func (s *securedClusterTLSIssuerTests) TestSecuredClusterTLSIssuerStartStopSuccess() {
 	testCases := map[string]struct {
 		getCertsErr error
 	}{
@@ -127,46 +146,60 @@ func TestSecuredClusterTLSIssuerStartStopSuccess(t *testing.T) {
 		"missing secret":      {getCertsErr: k8sErrors.NewNotFound(schema.GroupResource{Group: "Core", Resource: "Secret"}, "scanner-db-slim-tls")},
 	}
 	for tcName, tc := range testCases {
-		t.Run(tcName, func(t *testing.T) {
+		s.Run(tcName, func() {
 			fixture := newSecuredClusterTLSIssuerFixture(fakeK8sClientConfig{})
 			fixture.mockForStart(mockForStartConfig{getCertsErr: tc.getCertsErr})
 			fixture.certRefresher.On("Stop").Once()
 
 			startErr := fixture.tlsIssuer.Start()
+			fixture.tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
+			assert.NotNil(s.T(), fixture.tlsIssuer.certRefresher)
 			fixture.tlsIssuer.Stop(nil)
 
-			assert.NoError(t, startErr)
-			assert.Nil(t, fixture.tlsIssuer.certRefresher)
-			fixture.assertMockExpectations(t)
+			assert.NoError(s.T(), startErr)
+			assert.Nil(s.T(), fixture.tlsIssuer.certRefresher)
+			fixture.assertMockExpectations(s.T())
 		})
 	}
 }
 
-func TestSecuredClusterTLSIssuerRefresherFailureStartFailure(t *testing.T) {
+func (s *securedClusterTLSIssuerTests) TestSecuredClusterTLSIssuerStartFailure() {
 	fixture := newSecuredClusterTLSIssuerFixture(fakeK8sClientConfig{})
 	fixture.mockForStart(mockForStartConfig{refresherStartErr: errForced})
-	fixture.certRefresher.On("Stop").Once()
 
+	fixture.tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
 	startErr := fixture.tlsIssuer.Start()
 
-	require.Error(t, startErr)
-	fixture.assertMockExpectations(t)
+	require.Error(s.T(), startErr)
+	fixture.assertMockExpectations(s.T())
 }
 
-func TestSecuredClusterTLSIssuerStartAlreadyStartedFailure(t *testing.T) {
+func (s *securedClusterTLSIssuerTests) TestSecuredClusterTLSIssuerDoesNotStartWhenCentralLacksReissueCapability() {
 	fixture := newSecuredClusterTLSIssuerFixture(fakeK8sClientConfig{})
 	fixture.mockForStart(mockForStartConfig{})
-	fixture.certRefresher.On("Stop").Once()
 
 	startErr := fixture.tlsIssuer.Start()
-	secondStartErr := fixture.tlsIssuer.Start()
+	assert.NoError(s.T(), startErr)
 
-	assert.NoError(t, startErr)
-	require.Error(t, secondStartErr)
-	fixture.assertMockExpectations(t)
+	centralcaps.Set([]centralsensor.CentralCapability{})
+	fixture.tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
+	require.Nil(s.T(), fixture.tlsIssuer.certRefresher)
 }
 
-func TestSecuredClusterTLSIssuerFetchSensorDeploymentOwnerRefErrorStartFailure(t *testing.T) {
+func (s *securedClusterTLSIssuerTests) TestSecuredClusterTLSIssuerStartAlreadyStarted() {
+	fixture := newSecuredClusterTLSIssuerFixture(fakeK8sClientConfig{})
+	fixture.mockForStart(mockForStartConfig{})
+
+	startErr := fixture.tlsIssuer.Start()
+	fixture.tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
+	secondStartErr := fixture.tlsIssuer.Start()
+
+	require.NoError(s.T(), startErr)
+	require.NoError(s.T(), secondStartErr)
+	fixture.assertMockExpectations(s.T())
+}
+
+func (s *securedClusterTLSIssuerTests) TestSecuredClusterTLSIssuerFetchSensorDeploymentOwnerRefErrorStartFailure() {
 	testCases := map[string]struct {
 		k8sClientConfig fakeK8sClientConfig
 	}{
@@ -174,19 +207,19 @@ func TestSecuredClusterTLSIssuerFetchSensorDeploymentOwnerRefErrorStartFailure(t
 		"sensor pod missing":         {k8sClientConfig: fakeK8sClientConfig{skipSensorPod: true}},
 	}
 	for tcName, tc := range testCases {
-		t.Run(tcName, func(t *testing.T) {
+		s.Run(tcName, func() {
 			fixture := newSecuredClusterTLSIssuerFixture(tc.k8sClientConfig)
-			fixture.certRefresher.On("Stop").Once()
 
+			fixture.tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
 			startErr := fixture.tlsIssuer.Start()
 
-			require.Error(t, startErr)
-			fixture.assertMockExpectations(t)
+			require.Error(s.T(), startErr)
+			fixture.assertMockExpectations(s.T())
 		})
 	}
 }
 
-func TestSecuredClusterTLSIssuerProcessMessageKnownMessage(t *testing.T) {
+func (s *securedClusterTLSIssuerTests) TestSecuredClusterTLSIssuerProcessMessageKnownMessage() {
 	fixture := newSecuredClusterTLSIssuerFixture(fakeK8sClientConfig{})
 	expectedResponse := &central.IssueSecuredClusterCertsResponse{
 		RequestId: uuid.NewDummy().String(),
@@ -200,73 +233,71 @@ func TestSecuredClusterTLSIssuerProcessMessageKnownMessage(t *testing.T) {
 	fixture.tlsIssuer.ongoingRequestID = expectedResponse.RequestId
 	fixture.tlsIssuer.requestOngoing.Store(true)
 
-	assert.NoError(t, fixture.tlsIssuer.ProcessMessage(msg))
-	assert.Eventually(t, func() bool {
+	assert.NoError(s.T(), fixture.tlsIssuer.ProcessMessage(msg))
+	assert.Eventually(s.T(), func() bool {
 		return fixture.tlsIssuer.responseReceived.IsDone()
 	}, 2*time.Second, 100*time.Millisecond)
 }
 
-func TestSecuredClusterTLSIssuerProcessMessageUnknownMessage(t *testing.T) {
+func (s *securedClusterTLSIssuerTests) TestSecuredClusterTLSIssuerProcessMessageUnknownMessage() {
 	fixture := newSecuredClusterTLSIssuerFixture(fakeK8sClientConfig{})
 	msg := &central.MsgToSensor{
 		Msg: &central.MsgToSensor_ReprocessDeployments{},
 	}
 
-	assert.NoError(t, fixture.tlsIssuer.ProcessMessage(msg))
-	assert.Never(t, func() bool {
+	assert.NoError(s.T(), fixture.tlsIssuer.ProcessMessage(msg))
+	assert.Never(s.T(), func() bool {
 		return fixture.tlsIssuer.responseReceived.IsDone()
 	}, 200*time.Millisecond, 50*time.Millisecond)
 }
 
-func TestSecuredClusterTLSIssuerRequestCancellation(t *testing.T) {
-	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.SecuredClusterCertificatesReissue})
+func (s *securedClusterTLSIssuerTests) TestSecuredClusterTLSIssuerRequestCancellation() {
 	f := newSecuredClusterTLSIssuerFixture(fakeK8sClientConfig{})
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	cancel()
 
 	certs, requestErr := f.tlsIssuer.requestCertificates(ctx)
-	assert.Nil(t, certs)
-	assert.Equal(t, context.Canceled, requestErr)
+	assert.Nil(s.T(), certs)
+	assert.Equal(s.T(), context.Canceled, requestErr)
 }
 
-func TestSecuredClusterTLSIssuerRequestSuccess(t *testing.T) {
-	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.SecuredClusterCertificatesReissue})
+func (s *securedClusterTLSIssuerTests) TestSecuredClusterTLSIssuerRequestSuccess() {
 	f := newSecuredClusterTLSIssuerFixture(fakeK8sClientConfig{})
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	go f.respondRequest(ctx, t, nil)
+	go f.respondRequest(ctx, s.T(), nil)
 
 	response, err := f.tlsIssuer.requestCertificates(ctx)
-	require.NoError(t, err)
-	assert.Equal(t, f.interceptedRequestID.Load(), response.RequestId)
+	require.NoError(s.T(), err)
+	assert.Equal(s.T(), f.interceptedRequestID.Load(), response.RequestId)
 	oldRequestId := response.RequestId
 
 	// Check that a second call also works
-	go f.respondRequest(ctx, t, nil)
+	go f.respondRequest(ctx, s.T(), nil)
 
 	response, err = f.tlsIssuer.requestCertificates(ctx)
-	assert.NoError(t, err)
-	assert.Equal(t, f.interceptedRequestID.Load(), response.RequestId)
-	assert.NotEqual(t, oldRequestId, response.RequestId)
+	assert.NoError(s.T(), err)
+	assert.Equal(s.T(), f.interceptedRequestID.Load(), response.RequestId)
+	assert.NotEqual(s.T(), oldRequestId, response.RequestId)
 }
 
-func TestSecuredClusterTLSIssuerResponsesWithUnknownIDAreIgnored(t *testing.T) {
+func (s *securedClusterTLSIssuerTests) TestSecuredClusterTLSIssuerResponsesWithUnknownIDAreIgnored() {
 	f := newSecuredClusterTLSIssuerFixture(fakeK8sClientConfig{})
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
 
 	response := &central.IssueSecuredClusterCertsResponse{RequestId: "UNKNOWN"}
 	// Request with different request ID should be ignored.
-	go f.respondRequest(ctx, t, response)
+	go f.respondRequest(ctx, s.T(), response)
 
 	certs, requestErr := f.tlsIssuer.requestCertificates(ctx)
-	assert.Nil(t, certs)
-	assert.Equal(t, context.DeadlineExceeded, requestErr)
+	assert.Nil(s.T(), certs)
+	assert.Equal(s.T(), context.DeadlineExceeded, requestErr)
 }
 
-func TestSecuredClusterCertificateRequesterNoReplyFromCentral(t *testing.T) {
+func (s *securedClusterTLSIssuerTests) TestSecuredClusterCertificateRequesterNoReplyFromCentral() {
 	f := newSecuredClusterTLSIssuerFixture(fakeK8sClientConfig{})
 	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
 	defer cancel()
@@ -274,29 +305,29 @@ func TestSecuredClusterCertificateRequesterNoReplyFromCentral(t *testing.T) {
 	certs, requestErr := f.tlsIssuer.requestCertificates(ctx)
 
 	// No response was set using `f.respondRequest`, which simulates not receiving a reply from Central
-	assert.Nil(t, certs)
-	assert.Equal(t, context.DeadlineExceeded, requestErr)
+	assert.Nil(s.T(), certs)
+	assert.Equal(s.T(), context.DeadlineExceeded, requestErr)
 }
 
 func TestSecuredClusterTLSIssuerIntegrationTests(t *testing.T) {
-	suite.Run(t, new(securedClusterTLSIssueIntegrationTests))
+	suite.Run(t, new(securedClusterTLSIssuerIntegrationTests))
 }
 
-type securedClusterTLSIssueIntegrationTests struct {
+type securedClusterTLSIssuerIntegrationTests struct {
 	suite.Suite
 }
 
-func (s *securedClusterTLSIssueIntegrationTests) SetupTest() {
+func (s *securedClusterTLSIssuerIntegrationTests) SetupTest() {
+	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.SecuredClusterCertificatesReissue})
 	err := testutilsMTLS.LoadTestMTLSCerts(s.T())
 	s.Require().NoError(err)
 }
 
-func (s *securedClusterTLSIssueIntegrationTests) TestSuccessfulRefresh() {
-	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.SecuredClusterCertificatesReissue})
-	defer func() {
-		centralcaps.Set([]centralsensor.CentralCapability{})
-	}()
+func (s *securedClusterTLSIssuerIntegrationTests) TearDownTest() {
+	centralcaps.Set([]centralsensor.CentralCapability{})
+}
 
+func (s *securedClusterTLSIssuerIntegrationTests) TestSuccessfulRefresh() {
 	testCases := map[string]struct {
 		k8sClientConfig    fakeK8sClientConfig
 		numFailedResponses int
@@ -345,6 +376,7 @@ func (s *securedClusterTLSIssueIntegrationTests) TestSuccessfulRefresh() {
 			}
 
 			s.Require().NoError(tlsIssuer.Start())
+			tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
 			defer tlsIssuer.Stop(nil)
 			s.Require().NotNil(tlsIssuer.certRefresher)
 			s.Require().False(tlsIssuer.certRefresher.Stopped())
@@ -366,7 +398,63 @@ func (s *securedClusterTLSIssueIntegrationTests) TestSuccessfulRefresh() {
 	}
 }
 
-func (s *securedClusterTLSIssueIntegrationTests) TestUnexpectedOwnerStop() {
+func (s *securedClusterTLSIssuerIntegrationTests) TestSensorOnlineOfflineModes() {
+	testTimeout := 2 * time.Second
+	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
+	defer cancel()
+	ca, err := mtls.CAForSigning()
+	s.Require().NoError(err)
+
+	secretsCerts := getAllSecuredClusterCertificates(s.T())
+
+	k8sClient := getFakeK8sClient(fakeK8sClientConfig{})
+	tlsIssuer := newSecuredClusterTLSIssuer(s.T(), k8sClient, sensorNamespace, sensorPodName)
+	tlsIssuer.certRefreshBackoff = wait.Backoff{
+		Duration: time.Millisecond,
+	}
+
+	s.Require().NoError(tlsIssuer.Start())
+	tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
+	defer tlsIssuer.Stop(nil)
+	s.Require().NotNil(tlsIssuer.certRefresher)
+	s.Require().False(tlsIssuer.certRefresher.Stopped())
+
+	request := s.waitForRequest(ctx, tlsIssuer)
+	response := getSecuredClusterIssueCertsFailureResponse(request.GetRequestId())
+	err = tlsIssuer.ProcessMessage(response)
+	s.Require().NoError(err)
+
+	tlsIssuer.Notify(common.SensorComponentEventOfflineMode)
+	s.Require().Nil(tlsIssuer.certRefresher)
+
+	tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
+	s.Require().NotNil(tlsIssuer.certRefresher)
+
+	request = s.waitForRequest(ctx, tlsIssuer)
+	response = getSecuredClusterIssueCertsSuccessResponse(request.GetRequestId(), ca.CertPEM(), secretsCerts)
+	err = tlsIssuer.ProcessMessage(response)
+	s.Require().NoError(err)
+
+	verifySecrets(ctx, s.T(), k8sClient, sensorNamespace, ca, secretsCerts)
+
+	tlsIssuer.Notify(common.SensorComponentEventOfflineMode)
+	s.Require().Nil(tlsIssuer.certRefresher)
+
+	// Delete all secrets to force a refresh when Sensor goes back online
+	deleteAllSecrets(ctx, s.T(), k8sClient, sensorNamespace)
+
+	tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
+	s.Require().NotNil(tlsIssuer.certRefresher)
+
+	request = s.waitForRequest(ctx, tlsIssuer)
+	response = getSecuredClusterIssueCertsSuccessResponse(request.GetRequestId(), ca.CertPEM(), secretsCerts)
+	err = tlsIssuer.ProcessMessage(response)
+	s.Require().NoError(err)
+
+	verifySecrets(ctx, s.T(), k8sClient, sensorNamespace, ca, secretsCerts)
+}
+
+func (s *securedClusterTLSIssuerIntegrationTests) TestUnexpectedOwnerStop() {
 	testCases := map[string]struct {
 		secretNames []string
 	}{
@@ -397,12 +485,12 @@ func (s *securedClusterTLSIssueIntegrationTests) TestUnexpectedOwnerStop() {
 			tlsIssuer := newSecuredClusterTLSIssuer(s.T(), k8sClient, sensorNamespace, sensorPodName)
 
 			s.Require().NoError(tlsIssuer.Start())
+			tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
 			defer tlsIssuer.Stop(nil)
 
-			ok := concurrency.PollWithTimeout(func() bool {
+			require.Eventually(s.T(), func() bool {
 				return tlsIssuer.certRefresher != nil && tlsIssuer.certRefresher.Stopped()
-			}, 10*time.Millisecond, 100*time.Millisecond)
-			s.True(ok, "cert refresher should be stopped")
+			}, 100*time.Millisecond, 10*time.Millisecond, "cert refresher should be stopped")
 		})
 	}
 }
@@ -419,7 +507,7 @@ func getAllSecuredClusterCertificates(t require.TestingT) map[string]*mtls.Issue
 	}
 }
 
-func (s *securedClusterTLSIssueIntegrationTests) waitForRequest(ctx context.Context, tlsIssuer common.SensorComponent) *central.IssueSecuredClusterCertsRequest {
+func (s *securedClusterTLSIssuerIntegrationTests) waitForRequest(ctx context.Context, tlsIssuer common.SensorComponent) *central.IssueSecuredClusterCertsRequest {
 	var request *message.ExpiringMessage
 	select {
 	case request = <-tlsIssuer.ResponsesC():

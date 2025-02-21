@@ -36,7 +36,6 @@ func NewLocalScannerTLSIssuer(
 		getCertificateRefresherFn:    newCertificatesRefresher,
 		getServiceCertificatesRepoFn: localscanner.NewServiceCertificatesRepo,
 		msgToCentralC:                make(chan *message.ExpiringMessage),
-		stopSig:                      concurrency.NewErrorSignal(),
 		newMsgFromSensorFn:           newLocalScannerMsgFromSensor,
 		responseReceived:             concurrency.NewSignal(),
 		requiredCentralCapability:    nil,
