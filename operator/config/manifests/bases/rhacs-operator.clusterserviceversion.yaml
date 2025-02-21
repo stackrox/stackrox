@@ -357,6 +357,12 @@ spec:
       - description: Name of resource.
         displayName: Name
         path: overlays[0].name
+      - description: |-
+          Verbatim value to add, delete or replace.
+          Same as Value, however the content is not interpreted as YAML, but treated as literal string instead.
+          At least one of Value and Verbatim must be empty.
+        displayName: Verbatim
+        path: overlays[0].patches[0].verbatim
       - displayName: Autoscaling Minimum Replicas
         path: scanner.analyzer.scaling.minReplicas
         x-descriptors:
@@ -965,6 +971,12 @@ spec:
       - description: Name of resource.
         displayName: Name
         path: overlays[0].name
+      - description: |-
+          Verbatim value to add, delete or replace.
+          Same as Value, however the content is not interpreted as YAML, but treated as literal string instead.
+          At least one of Value and Verbatim must be empty.
+        displayName: Verbatim
+        path: overlays[0].patches[0].verbatim
       - description: Deprecated field. This field will be removed in a future release.
         displayName: Force Collection
         path: perNode.collector.forceCollection

@@ -1439,8 +1439,8 @@ github.com/stackrox/istio-cves v0.0.0-20221007013142-0bde9b541ec8 h1:rUIvoAHokPc
 github.com/stackrox/istio-cves v0.0.0-20221007013142-0bde9b541ec8/go.mod h1:ZF7mH4kH1G+82HxR3uFDHvyLG8eCOdrh1RDyQcTGkBA=
 github.com/stackrox/k8s-cves v0.0.0-20220818200547-7d0d1420c58d h1:88Iui7fSMKgXvpyfBlbP3qosrqyv3qMgOJ6JJ4V4tFQ=
 github.com/stackrox/k8s-cves v0.0.0-20220818200547-7d0d1420c58d/go.mod h1:GJwFpFwCxiYhgpJWrAkM+v9Z9gpgtyWxkRdK4JjsOIg=
-github.com/stackrox/k8s-overlay-patch v0.0.0-20240610103501-74a2a4fd2bae h1:8E4Rq2kqSP8Jh/cNEg90OAdnVDN98j+1h3lH8//ilT8=
-github.com/stackrox/k8s-overlay-patch v0.0.0-20240610103501-74a2a4fd2bae/go.mod h1:u7v87z34sjtlcaEaHXknpnrzXutdM//Vb3yyhXllQp0=
+github.com/stackrox/k8s-overlay-patch v0.0.0-20250219071755-4ea89cb53e4c h1:zjGIn2XjvKTr6O4fPCa8axfFNJiFvWfdJVmTqY8/ayw=
+github.com/stackrox/k8s-overlay-patch v0.0.0-20250219071755-4ea89cb53e4c/go.mod h1:u7v87z34sjtlcaEaHXknpnrzXutdM//Vb3yyhXllQp0=
 github.com/stackrox/nvdtools v0.0.0-20231111002313-57e262e4797e h1:hLHHK1pGLpRvEbER2cJZekLeMnL+nMn3C37CVUhameM=
 github.com/stackrox/nvdtools v0.0.0-20231111002313-57e262e4797e/go.mod h1:Kh55SAWnjckS96TBSrXI99KrEKH4iB0OJby3N8GRJO4=
 github.com/stackrox/oauth2 v0.0.0-20240521152739-4d3f7e4f6b49 h1:FUX/fzXDu/TkYZQCk0TFGc5QUAv7m4GtvaRutyZCk4Y=

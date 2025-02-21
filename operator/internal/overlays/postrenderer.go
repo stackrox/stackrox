@@ -83,8 +83,9 @@ func mapOverlayPatches(patches []*v1alpha1.K8sObjectOverlayPatch) []*types.K8sOb
 	out := make([]*types.K8sObjectOverlayPatch, len(patches))
 	for i, p := range patches {
 		out[i] = &types.K8sObjectOverlayPatch{
-			Path:  p.Path,
-			Value: p.Value,
+			Path:     p.Path,
+			Value:    p.Value,
+			Verbatim: p.Verbatim,
 		}
 	}
 	return out

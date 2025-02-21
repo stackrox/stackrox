@@ -549,6 +549,14 @@ spec:
           schema.'
         displayName: Value
         path: overlays[0].patches[0].value
+      - description: 'Verbatim value to add, delete or replace.
+
+          Same as Value, however the content is not interpreted as YAML, but treated
+          as literal string instead.
+
+          At least one of Value and Verbatim must be empty.'
+        displayName: Verbatim
+        path: overlays[0].patches[0].verbatim
       - description: 'If you do not want to deploy the Red Hat Advanced Cluster Security
           Scanner, you can disable it here
 
@@ -1123,6 +1131,14 @@ spec:
           schema.'
         displayName: Value
         path: overlays[0].patches[0].value
+      - description: 'Verbatim value to add, delete or replace.
+
+          Same as Value, however the content is not interpreted as YAML, but treated
+          as literal string instead.
+
+          At least one of Value and Verbatim must be empty.'
+        displayName: Verbatim
+        path: overlays[0].patches[0].verbatim
       - description: 'Settings for the Collector container, which is responsible for
           collecting process and networking
 
