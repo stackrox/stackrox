@@ -257,21 +257,28 @@ func (m *managerImpl) reconcileTransformedMessages(transformedMessagesByHandler 
 		return
 	}
 
+	var upsertCount, failedUpsertCount, deleteCount, failedDeleteCount int
 	// Only upsert resources if either the messages we reconcile on changed or the last upsert failed, as it might
 	// have been a transient error or successfully remediated by now.
 	if hasChanges || m.lastUpsertFailed.Get() {
-		m.doUpsert(transformedMessagesByHandler)
+		upsertCount, failedUpsertCount = m.doUpsert(transformedMessagesByHandler)
 	}
 
 	// Only delete resources if either the messages we reconcile on changed or the last deletion failed, as it might
 	// have been a transient error or successfully remediated by now.
 	if hasChanges || m.lastDeletionFailed.Get() {
-		m.doDeletion(transformedMessagesByHandler)
+		deleteCount, failedDeleteCount = m.doDeletion(transformedMessagesByHandler)
+	}
+
+	if upsertCount > 0 || failedUpsertCount > 0 || deleteCount > 0 || failedDeleteCount > 0 {
+		log.Infof("Declarative config - Reconciliation loop run - %d update successes, %d update errors, "+
+			"%d deletion successes, %d deletion errors", upsertCount, failedUpsertCount, deleteCount, failedDeleteCount)
 	}
 }
 
-func (m *managerImpl) doUpsert(transformedMessagesByHandler map[string]protoMessagesByType) {
+func (m *managerImpl) doUpsert(transformedMessagesByHandler map[string]protoMessagesByType) (int, int) {
 	var failureInUpsert bool
+	var upsertSuccessCount, upsertFailureCount int
 	for _, protoType := range protoTypesOrder {
 		for handler, protoMessagesByType := range transformedMessagesByHandler {
 			messages, hasMessages := protoMessagesByType[protoType]
@@ -284,17 +291,22 @@ func (m *managerImpl) doUpsert(transformedMessagesByHandler map[string]protoMess
 				m.updateHealthForMessage(handler, message, err, consecutiveReconciliationErrorThreshold)
 				if err != nil {
 					failureInUpsert = true
+					upsertFailureCount++
+				} else {
+					upsertSuccessCount++
 				}
 			}
 		}
 	}
 	m.lastUpsertFailed.Set(failureInUpsert)
+	return upsertSuccessCount, upsertFailureCount
 }
 
-func (m *managerImpl) doDeletion(transformedMessagesByHandler map[string]protoMessagesByType) {
+func (m *managerImpl) doDeletion(transformedMessagesByHandler map[string]protoMessagesByType) (int, int) {
 	reversedProtoTypes := sliceutils.Reversed(protoTypesOrder)
 	var failureInDeletion bool
 	var allProtoIDsToSkip []string
+	var deletionSuccessCount, deletionFailureCount int
 	for _, protoType := range reversedProtoTypes {
 		var idsToSkip []string
 		for _, protoMessageByType := range transformedMessagesByHandler {
@@ -306,7 +318,7 @@ func (m *managerImpl) doDeletion(transformedMessagesByHandler map[string]protoMe
 		allProtoIDsToSkip = append(allProtoIDsToSkip, idsToSkip...)
 		typeUpdater := m.updaters[protoType]
 		log.Debugf("Running deletion with resource updater %T, skipping IDs %+v", typeUpdater, idsToSkip)
-		failedDeletionIDs, err := typeUpdater.DeleteResources(m.reconciliationCtx, idsToSkip...)
+		failedDeletionIDs, deletionCount, err := typeUpdater.DeleteResources(m.reconciliationCtx, idsToSkip...)
 		log.Debugf("Finished deletion, return value: %+v", err)
 		// In case of an error, ensure we do not delete the integration health status for resources we failed to delete.
 		// Otherwise, the reason why the deletion failed will not be visible to users while the resource may still
@@ -314,7 +326,10 @@ func (m *managerImpl) doDeletion(transformedMessagesByHandler map[string]protoMe
 		if err != nil {
 			log.Debugf("The following IDs failed deletion: [%s]", strings.Join(failedDeletionIDs, ","))
 			allProtoIDsToSkip = append(allProtoIDsToSkip, failedDeletionIDs...)
+			deletionFailureCount += len(failedDeletionIDs)
 			failureInDeletion = true
+		} else {
+			deletionSuccessCount += deletionCount
 		}
 	}
 
@@ -322,6 +337,7 @@ func (m *managerImpl) doDeletion(transformedMessagesByHandler map[string]protoMe
 		log.Errorf("Failed to delete stale health status entries for declarative config: %v", err)
 	}
 	m.lastDeletionFailed.Set(failureInDeletion)
+	return deletionSuccessCount, deletionFailureCount
 }
 
 // updateHealthForMessage will update the health status of a message using the integrationhealth.Reporter.
