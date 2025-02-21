@@ -33,7 +33,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-var orphanWindow = 30 * time.Minute
+const orphanWindow = 30 * time.Minute
 
 type PostgresPruningSuite struct {
 	suite.Suite
