@@ -29,8 +29,7 @@ COPY \
      scanner/image/db/scripts/init-entrypoint.sh \
      /usr/local/bin/
 
-RUN dnf upgrade -y --nobest && \
-    localedef -f UTF-8 -i en_US en_US.UTF-8 && \
+RUN localedef -f UTF-8 -i en_US en_US.UTF-8 && \
     mkdir -p /var/lib/postgresql && \
     groupmod -g 70 postgres && \
     usermod -u 70 postgres -d /var/lib/postgresql && \
