@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/maincommand"
+	"github.com/stackrox/rox/roxctl/utils"
 
 	// Make sure devbuild setting is registered.
 	_ "github.com/stackrox/rox/pkg/devbuild"
@@ -29,6 +30,8 @@ func main() {
 	// Until we have a better solution (e.g. way to control this behaviour in upstream pflag)
 	// we simply add the usage information "(default false)" to our affected boolean flags.
 	AddMissingDefaultsToFlagUsage(c)
+
+	c.SetHelpFunc(utils.FormatHelp)
 
 	once := sync.Once{}
 	// Peak only the deepest command path. The hooks are added to all commands.
