@@ -49,8 +49,6 @@ func (p *eventPipeline) ProcessMessage(msg *central.MsgToSensor) error {
 	switch {
 	case msg.GetPolicySync() != nil:
 		return p.processPolicySync(msg.GetPolicySync())
-	case msg.GetReassessPolicies() != nil:
-		return p.processReassessPolicies()
 	case msg.GetUpdatedImage() != nil:
 		return p.processUpdatedImage(msg.GetUpdatedImage())
 	case msg.GetReprocessDeployments() != nil:
@@ -164,20 +162,6 @@ func (p *eventPipeline) forwardMessages() {
 func (p *eventPipeline) processPolicySync(sync *central.PolicySync) error {
 	log.Debug("PolicySync message received from central")
 	return p.detector.ProcessPolicySync(p.getCurrentContext(), sync)
-}
-
-func (p *eventPipeline) processReassessPolicies() error {
-	log.Debug("ReassessPolicies message received from central")
-	if err := p.detector.ProcessReassessPolicies(); err != nil {
-		return err
-	}
-	msg := component.NewEvent()
-	// TODO(ROX-14310): Add WithSkipResolving to the DeploymentResolution (Revert: https://github.com/stackrox/stackrox/pull/5551)
-	msg.AddDeploymentReference(resolver.ResolveAllDeployments(),
-		component.WithForceDetection())
-	msg.Context = p.getCurrentContext()
-	p.resolver.Send(msg)
-	return nil
 }
 
 func (p *eventPipeline) processReprocessDeployments() error {

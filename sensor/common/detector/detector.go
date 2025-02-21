@@ -65,7 +65,6 @@ type Detector interface {
 	ProcessIndicator(ctx context.Context, indicator *storage.ProcessIndicator)
 	ProcessNetworkFlow(ctx context.Context, flow *storage.NetworkFlow)
 	ProcessPolicySync(ctx context.Context, sync *central.PolicySync) error
-	ProcessReassessPolicies() error
 	ProcessReprocessDeployments() error
 	ProcessUpdatedImage(image *storage.Image) error
 }
@@ -305,18 +304,6 @@ func (d *detectorImpl) ProcessPolicySync(ctx context.Context, sync *central.Poli
 	if d.admCtrlSettingsMgr != nil {
 		d.admCtrlSettingsMgr.UpdatePolicies(sync.GetPolicies())
 	}
-	return nil
-}
-
-// ProcessReassessPolicies clears the image caches and resets the deduper
-func (d *detectorImpl) ProcessReassessPolicies() error {
-	log.Debug("Reassess Policies triggered")
-	// Clear the image caches and make all the deployments flow back through by clearing out the hash
-	d.enricher.imageCache.RemoveAll()
-	if d.admCtrlSettingsMgr != nil {
-		d.admCtrlSettingsMgr.FlushCache()
-	}
-	d.deduper.reset()
 	return nil
 }
 
