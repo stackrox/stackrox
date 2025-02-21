@@ -560,6 +560,11 @@ _image_prefetcher_system_start() {
     *-operator-e2e-tests|*ocp*qa-e2e-tests)
         image_prefetcher_start_set stackrox-images
         ;;
+    # Enabling scanner V4 installation tests as well, even though they also run on GKE,
+    # for gathering some more data points for CI reliability.
+    *-scanner-v4-install-tests)
+        image_prefetcher_start_set stackrox-images
+        ;;
     *)
         info "No system image prefetching is performed for: ${CI_JOB_NAME}."
         ;;
@@ -661,6 +666,11 @@ _image_prefetcher_system_await() {
     # ROX-24818: GKE is excluded from system image prefetch as it causes
     # flakes in test.
     *-operator-e2e-tests|*ocp*qa-e2e-tests)
+        image_prefetcher_await_set stackrox-images
+        ;;
+    # Enabling scanner V4 installation tests as well, even though they also run on GKE,
+    # for gathering some more data points for CI reliability.
+    *-scanner-v4-install-tests)
         image_prefetcher_await_set stackrox-images
         ;;
     *)
@@ -834,6 +844,21 @@ END
                 # Otherwise this message will surface in the Prow log when
                 # images timeout out below.
             fi
+            ;;
+        *-scanner-v4-install-tests)
+            cat >> "${image_list}" << END
+stackrox-operator ${operator_controller_tag}
+stackrox-operator-bundle ${operator_metadata_tag}
+stackrox-operator-index ${operator_metadata_tag}
+main ${tag}
+central-db ${tag}
+collector ${tag}
+scanner ${tag}
+scanner-db ${tag}
+scanner-v4 ${tag}
+scanner-v4-db ${tag}
+roxctl ${tag}
+END
             ;;
         *)
             cat >> "${image_list}" << END

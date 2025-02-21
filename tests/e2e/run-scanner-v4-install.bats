@@ -2,7 +2,31 @@
 
 # Runs Scanner V4 installation tests using the Bats testing framework.
 
+# NOTE: For debugging purposes you can run this test suite locally against a remote cluster. For example:
+#
+#   ABORT_ON_FAILURE=true ORCHESTRATOR_FLAVOR=[openshift|k8s] BATS_CORE_ROOT=$HOME/bats-core \
+#     bats --print-output-on-failure -p --show-output-of-passing-tests ./tests/e2e/run-scanner-v4-install.bats
+#
+#   (you need to point $BATS_CORE_ROOT to your directory containing checkouts of:
+#     https://github.com/bats-core/bats-core
+#     https://github.com/bats-core/bats-assert)
+#
+
+set -euo pipefail
+
+if [[ -z "${REAL_TIME_TEST_OUTPUT:-}" ]] && test -t 0; then
+    # Use real-time test output by default when executed on a terminal.
+    export REAL_TIME_TEST_OUTPUT="true"
+fi
+
+outfd=1
+if [[ "${REAL_TIME_TEST_OUTPUT:-}" == "true" ]]; then
+    outfd=3
+fi
+export outfd
+
 init() {
+    set -euo pipefail
     ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")"/../.. && pwd)"
     export ROOT
 
@@ -25,14 +49,48 @@ init() {
     # shellcheck source=../../tests/scripts/setup-certs.sh
     source "$ROOT/tests/scripts/setup-certs.sh"
     load "$ROOT/scripts/test_helpers.bats"
+}
 
-    require_environment "ORCHESTRATOR_FLAVOR"
+initialized="false"
+
+_begin() {
+    if [[ $initialized = "false" ]]; then
+        init
+        initialized="true"
+    fi
+
+    local label="${1:-}"
+
+    exec 4>&1 5>&2
+    exec 1> >(bash -c "post_process_output '$label'" > "/dev/fd/$outfd") 2> >(bash -c "post_process_output '$label'" > "/dev/fd/$outfd")
+    trap "exec 1>&- 2>&- 1>&4 2>&5; exit 1" INT ABRT KILL TERM
+}
+
+_end() {
+    exec 1>&- 2>&- 1>&4 2>&5
+}
+
+_step() {
+    _end
+    _begin "$1"
 }
 
 export TEST_SUITE_ABORTED="false"
 
 setup_file() {
-    init
+    _begin "setup-file"
+
+    cat <<'EOT'
+    _    ____ ____    ___           _        _ _       _   _               _____         _
+   / \  / ___/ ___|  |_ _|_ __  ___| |_ __ _| | | __ _| |_(_) ___  _ __   |_   _|__  ___| |_ ___
+  / _ \| |   \___ \   | || '_ \/ __| __/ _` | | |/ _` | __| |/ _ \| '_ \    | |/ _ \/ __| __/ __|
+ / ___ \ |___ ___) |  | || | | \__ \ || (_| | | | (_| | |_| | (_) | | | |   | |  __/\__ \ |_\__ \
+/_/   \_\____|____/  |___|_| |_|___/\__\__,_|_|_|\__,_|\__|_|\___/|_| |_|   |_|\___||___/\__|___/
+
+EOT
+
+    bats_require_minimum_version 1.5.0
+    require_environment "ORCHESTRATOR_FLAVOR"
 
     # Use
     #   export CHART_BASE="/rhacs"
@@ -40,6 +98,9 @@ setup_file() {
     # for the RHACS flavor.
     export CHART_BASE=""
     export DEFAULT_IMAGE_REGISTRY="quay.io/stackrox-io"
+
+    export MAIN_IMAGE_TAG="${MAIN_IMAGE_TAG:-$(make --quiet --no-print-directory -C "${ROOT}" tag)}"
+    info "Using MAIN_IMAGE_TAG=$MAIN_IMAGE_TAG"
 
     export CURRENT_MAIN_IMAGE_TAG=${CURRENT_MAIN_IMAGE_TAG:-} # Setting a tag can be useful for local testing.
     export EARLIER_CHART_VERSION="4.3.0"
@@ -62,16 +123,30 @@ setup_file() {
         CHART_REPOSITORY=$(mktemp -d "helm-charts.XXXXXX" -p /tmp)
     fi
     if [[ ! -e "${CHART_REPOSITORY}/.git" ]]; then
+        echo "Cloning released Helm charts..."
         git clone --depth 1 -b main https://github.com/stackrox/helm-charts "${CHART_REPOSITORY}"
     fi
     export CHART_REPOSITORY
+
+    if ! command -v roxctl >/dev/null; then
+        die "roxctl not found, please make sure it can be resolved via PATH."
+    fi
+
+    local roxctl_version
+    roxctl_version="$(roxctl version)"
+
+    # if [[ -n "$MAIN_IMAGE_TAG" ]] && [[ "$roxctl_version" != "$MAIN_IMAGE_TAG" ]]; then
+    if [[ -n "$MAIN_IMAGE_TAG" ]] && [[ "$roxctl_version" != "$MAIN_IMAGE_TAG" ]]; then
+        echo "MAIN_IMAGE_TAG ($MAIN_IMAGE_TAG) does not match roxctl version ($roxctl_version)."
+    fi
+
 
     # Download and use earlier version of roxctl without Scanner V4 support
     # We will just hard-code a pre-4.4 version here.
     if [[ -z "${EARLIER_ROXCTL_PATH:-}" ]]; then
         EARLIER_ROXCTL_PATH=$(mktemp -d "early_roxctl.XXXXXX" -p /tmp)
     fi
-    echo "EARLIER_ROXCTL_PATH=$EARLIER_ROXCTL_PATH"
+    echo "For tests requiring an older roxctl version, $EARLIER_ROXCTL_PATH will be used."
     export EARLIER_ROXCTL_PATH
     if [[ ! -e "${EARLIER_ROXCTL_PATH}/roxctl" ]]; then
         curl --retry 5 --retry-connrefused -sL "https://mirror.openshift.com/pub/rhacs/assets/${EARLIER_MAIN_IMAGE_TAG}/bin/${OS}/roxctl" --output "${EARLIER_ROXCTL_PATH}/roxctl"
@@ -80,9 +155,6 @@ setup_file() {
 
     export CUSTOM_CENTRAL_NAMESPACE=${CUSTOM_CENTRAL_NAMESPACE:-stackrox-central}
     export CUSTOM_SENSOR_NAMESPACE=${CUSTOM_SENSOR_NAMESPACE:-stackrox-sensor}
-
-    export MAIN_IMAGE_TAG="${MAIN_IMAGE_TAG:-$(make --quiet --no-print-directory -C "${ROOT}" tag)}"
-    info "Using MAIN_IMAGE_TAG=$MAIN_IMAGE_TAG"
 
     # Taken from operator/Makefile
     export OPERATOR_VERSION_TAG=${OPERATOR_VERSION_TAG:-}
@@ -97,24 +169,29 @@ setup_file() {
     # Without a timeout it might happen that the pod running the tests is simply killed and we won't
     # have any logs for investigation the situation.
     export BATS_TEST_TIMEOUT=1800 # Seconds
+
+    _end
 }
 
 test_case_no=0
 
 setup() {
     [[ "${TEST_SUITE_ABORTED}" == "true" ]] && return 1
-    init
-    set -euo pipefail
 
+    _begin "setup-test-env"
+
+    echo "Executing Test: $BATS_TEST_DESCRIPTION"
     export_test_environment
     if [[ "$CI" = "true" ]]; then
         setup_gcp
         setup_deployment_env false false
     fi
 
+    _step "tear-down"
+
     if [[ "${SKIP_INITIAL_TEARDOWN:-}" != "true" ]] && (( test_case_no == 0 )); then
-        # executing initial teardown to begin test execution in a well-defined state
-        remove_existing_stackrox_resources "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}" "stackrox"
+        # executing teardown to begin test execution in a well-defined state
+        _remove_existing_stackrox_resources "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}" "stackrox"
     fi
     if [[ ${TEARDOWN_ONLY:-} == "true" ]]; then
         echo "Only tearing down resources, exiting now..."
@@ -128,6 +205,9 @@ setup() {
     # By default we will use CRS-based cluster registration in this test suite, but there are some
     # specific tests which require CRS to be switched off (upgrade tests involving an old Helm chart, e.g.).
     export ROX_DEPLOY_SENSOR_WITH_CRS=true
+
+    echo "Finished test setup."
+    _end
 }
 
 describe_pods_in_namespace() {
@@ -144,7 +224,6 @@ describe_pods_in_namespace() {
       echo "** LOGS FOR POD: ${namespace}/${pod_name}:"
       "${ORCH_CMD}" </dev/null -n "${namespace}" logs "${pod_name}" || true
       echo
-
     done
 }
 
@@ -162,6 +241,8 @@ describe_deployments_in_namespace() {
 }
 
 teardown() {
+    _begin "tear-down"
+
     if [[ "${TEST_SUITE_ABORTED}" == "true" ]]; then
         echo "Skipping teardown due to previous failure." >&3
         return
@@ -190,12 +271,17 @@ teardown() {
         sensor_namespace="${CUSTOM_SENSOR_NAMESPACE}"
     fi
 
-    "$ROOT/scripts/ci/collect-service-logs.sh" "${central_namespace}" \
-      "${SCANNER_V4_LOG_DIR}/${BATS_TEST_NUMBER}-${BATS_TEST_NAME}"
+    echo "Using central namespace: ${central_namespace}"
+    echo "Using sensor namespace: ${sensor_namespace}"
 
-    if [[ "${central_namespace}" != "${sensor_namespace}" && -n "${sensor_namespace}" ]]; then
-      "$ROOT/scripts/ci/collect-service-logs.sh" "${sensor_namespace}" \
-        "${SCANNER_V4_LOG_DIR}/${BATS_TEST_NUMBER}-${BATS_TEST_NAME}"
+    if [[ -n "${SCANNER_V4_LOG_DIR:-}" ]]; then
+        "$ROOT/scripts/ci/collect-service-logs.sh" "${central_namespace}" \
+            "${SCANNER_V4_LOG_DIR}/${BATS_TEST_NUMBER}-${BATS_TEST_NAME}"
+
+        if [[ "${central_namespace}" != "${sensor_namespace}" && -n "${sensor_namespace}" ]]; then
+            "$ROOT/scripts/ci/collect-service-logs.sh" "${sensor_namespace}" \
+                "${SCANNER_V4_LOG_DIR}/${BATS_TEST_NUMBER}-${BATS_TEST_NAME}"
+        fi
     fi
 
     if [[ -z "${BATS_TEST_COMPLETED:-}" && -z "${BATS_TEST_SKIPPED}" && -n "${central_namespace}" ]]; then
@@ -209,7 +295,16 @@ teardown() {
         fi
     fi
 
-    run remove_existing_stackrox_resources "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}" "stackrox"
+    run _remove_existing_stackrox_resources "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}" "stackrox"
+    echo "Teardown complete"
+
+    _end
+}
+
+_remove_existing_stackrox_resources() {
+    echo "Removing existing StackRox resources..."
+    remove_existing_stackrox_resources "$@"
+    echo "StackRox resources removed."
 }
 
 teardown_file() {
@@ -217,6 +312,8 @@ teardown_file() {
 }
 
 @test "Upgrade from old Helm chart to HEAD Helm chart with Scanner v4 enabled" {
+    init
+
     # shellcheck disable=SC2030,SC2031
     export OUTPUT_FORMAT=helm
     export ROX_DEPLOY_SENSOR_WITH_CRS=false
@@ -225,6 +322,9 @@ teardown_file() {
 
     # Deploy earlier version without Scanner V4.
     local _CENTRAL_CHART_DIR_OVERRIDE="${CHART_REPOSITORY}${CHART_BASE}/${EARLIER_CHART_VERSION}/central-services"
+
+    _begin "deploying-stackrox"
+
     info "Deploying StackRox services using chart ${_CENTRAL_CHART_DIR_OVERRIDE}"
 
     if [[ -n "${EARLIER_MAIN_IMAGE_TAG:-}" ]]; then
@@ -240,6 +340,8 @@ central:
 EOF
     ROX_CENTRAL_EXTRA_HELM_VALUES_FILE="${_ROX_CENTRAL_EXTRA_HELM_VALUES_FILE}" CENTRAL_CHART_DIR_OVERRIDE="${_CENTRAL_CHART_DIR_OVERRIDE}" _deploy_stackrox
 
+    _step "upgrading-stackrox"
+
     # Upgrade to HEAD chart without explicit disabling of Scanner V4.
     info "Upgrading StackRox using HEAD Helm chart"
     MAIN_IMAGE_TAG="${main_image_tag}"
@@ -249,23 +351,33 @@ EOF
 
     _deploy_stackrox
 
+    _step "verify"
+
     # Verify that Scanner V2 and V4 are up.
     verify_scannerV2_deployed "stackrox"
     verify_scannerV4_deployed "stackrox"
     verify_deployment_scannerV4_env_var_set "stackrox" "central"
     verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
+
+    _end
 }
 
 @test "Fresh installation of HEAD Helm chart with Scanner V4 disabled and enabling it later" {
+    _begin "deploy-stackrox"
+
     info "Installing StackRox using HEAD Helm chart with Scanner V4 disabled and enabling it later"
     # shellcheck disable=SC2030,SC2031
     export OUTPUT_FORMAT=helm
     ROX_SCANNER_V4=false _deploy_stackrox
 
+    _step "verify"
+
     verify_scannerV2_deployed "stackrox"
     verify_no_scannerV4_deployed "stackrox"
     run ! verify_deployment_scannerV4_env_var_set "stackrox" "central"
     run ! verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
+
+    _step "enable-scanner-v4"
 
     SENSOR_SCANNER_V4_SUPPORT=true HELM_REUSE_VALUES=true _deploy_stackrox
 
@@ -273,6 +385,8 @@ EOF
     verify_scannerV4_deployed "stackrox"
     verify_deployment_scannerV4_env_var_set "stackrox" "central"
     verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
+
+    _step "disable-scanner-v4"
 
     # Deactivate Scanner V4 for both releases.
     info "Disabling Scanner V4 for Central"
@@ -285,9 +399,12 @@ EOF
     run ! verify_deployment_scannerV4_env_var_set "stackrox" "central"
     run ! verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
 
+    _end
 }
 
 @test "Fresh installation of HEAD Helm chart with Scanner V4 enabled" {
+    _begin "deploy-stackrox"
+
     info "Installing StackRox using HEAD Helm chart with Scanner V4 enabled"
     # shellcheck disable=SC2030,SC2031
     export OUTPUT_FORMAT=helm
@@ -296,15 +413,23 @@ EOF
 
     _deploy_stackrox
 
+    _step "verify"
+
     verify_scannerV2_deployed "stackrox"
     verify_scannerV4_deployed "stackrox"
     verify_deployment_scannerV4_env_var_set "stackrox" "central"
     verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
+
+    _end
 }
 
 @test "Fresh installation of HEAD Helm charts with Scanner V4 enabled in multi-namespace mode" {
+    init
+
     local central_namespace="$CUSTOM_CENTRAL_NAMESPACE"
     local sensor_namespace="$CUSTOM_SENSOR_NAMESPACE"
+
+    _begin "deploy-stackrox"
 
     info "Installing StackRox using HEAD Helm chart with Scanner V4 enabled in multi-namespace mode"
 
@@ -332,9 +457,12 @@ EOF
     run ! verify_deployment_scannerV4_env_var_set "${central_namespace}" "central"
     run ! verify_deployment_scannerV4_env_var_set "${sensor_namespace}" "sensor"
 
+    _end
 }
 
 @test "[Manifest Bundle] Fresh installation without Scanner V4, adding Scanner V4 later" {
+    init
+
     # shellcheck disable=SC2030,SC2031
     export OUTPUT_FORMAT=""
     # shellcheck disable=SC2030,SC2031
@@ -344,11 +472,21 @@ EOF
     export GENERATE_SCANNER_DEPLOYMENT_BUNDLE="true"
     local scanner_bundle="${ROOT}/deploy/${ORCHESTRATOR_FLAVOR}/scanner-deploy"
 
+    _begin "deploy-stackrox"
+
     _deploy_stackrox
 
+    _step "verify"
+
+    echo "verify scanner v2 deployed"
     verify_scannerV2_deployed
+    echo "verify no scanner v4 deployed"
     verify_no_scannerV4_deployed
+    echo "verify deployment env var set"
     run ! verify_deployment_scannerV4_env_var_set "stackrox" "central"
+    echo "done"
+
+    _step "deploy-scanner-v4"
 
     assert [ -d "${scanner_bundle}" ]
     assert [ -d "${scanner_bundle}/scanner-v4" ]
@@ -361,15 +499,20 @@ EOF
 
     verify_scannerV4_deployed
     verify_deployment_scannerV4_env_var_set "stackrox" "central"
+
+    _end
 }
 
 @test "[Operator] Fresh installation with Scanner V4 enabled" {
+    init
+
     if [[ "${ORCHESTRATOR_FLAVOR:-}" != "openshift" ]]; then
         skip "This test is currently only supported on OpenShift"
     fi
     if [[ "${ENABLE_OPERATOR_TESTS:-}" != "true" ]]; then
         skip "Operator tests disabled. Set ENABLE_OPERATOR_TESTS=true to enable them."
     fi
+
     # shellcheck disable=SC2030,SC2031
     export ROX_SCANNER_V4="true"
     # shellcheck disable=SC2030,SC2031
@@ -379,16 +522,24 @@ EOF
     # shellcheck disable=SC2030,SC2031
     export SENSOR_SCANNER_V4_SUPPORT=true
 
+    _begin "deploy-stackrox"
+
     VERSION="${OPERATOR_VERSION_TAG}" deploy_stackrox_operator
     _deploy_stackrox
+
+    _step "verify"
 
     verify_scannerV2_deployed "stackrox"
     verify_scannerV4_deployed "stackrox"
     verify_deployment_scannerV4_env_var_set "stackrox" "central"
     verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
+
+    _end
 }
 
 @test "[Operator] Fresh multi-namespace installation with Scanner V4 enabled" {
+    init
+
     if [[ "${ORCHESTRATOR_FLAVOR:-}" != "openshift" ]]; then
         skip "This test is currently only supported on OpenShift"
     fi
@@ -404,8 +555,13 @@ EOF
     export SENSOR_SCANNER_SUPPORT=true
     # shellcheck disable=SC2030,SC2031
     export SENSOR_SCANNER_V4_SUPPORT=true
+
+    _begin "deploy-stackrox"
+
     VERSION="${OPERATOR_VERSION_TAG}" deploy_stackrox_operator
     _deploy_stackrox "" "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}"
+
+    _step "verify"
 
     verify_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
     verify_scannerV4_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
@@ -414,9 +570,13 @@ EOF
     verify_scannerV2_deployed "${CUSTOM_SENSOR_NAMESPACE}"
     verify_scannerV4_indexer_deployed "${CUSTOM_SENSOR_NAMESPACE}"
     verify_deployment_scannerV4_env_var_set "${CUSTOM_SENSOR_NAMESPACE}" "sensor"
+
+    _end
 }
 
 @test "[Operator] Upgrade multi-namespace installation" {
+    init
+
     if [[ "${ORCHESTRATOR_FLAVOR:-}" != "openshift" ]]; then
         skip "This test is currently only supported on OpenShift"
     fi
@@ -429,12 +589,18 @@ EOF
     # shellcheck disable=SC2030,SC2031
     export SENSOR_SCANNER_SUPPORT=true
 
+    _begin "deploy-stackrox"
+
     # Install old version of the operator & deploy StackRox.
     VERSION="${OPERATOR_VERSION_TAG}" make -C operator deploy-previous-via-olm
     ROX_SCANNER_V4="false" _deploy_stackrox "" "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}"
 
+    _step "verify"
+
     verify_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
     verify_scannerV2_deployed "${CUSTOM_SENSOR_NAMESPACE}"
+
+    _step "upgrade-operator"
 
     # Upgrade operator
     info "Upgrading StackRox Operator to version ${OPERATOR_VERSION_TAG}..."
@@ -447,6 +613,8 @@ EOF
     sleep 60
     "${ORCH_CMD}" </dev/null -n stackrox-operator wait --for=condition=Ready --timeout=3m pods -l app=rhacs-operator
 
+    _step "verify"
+
     verify_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
     verify_scannerV2_deployed "${CUSTOM_SENSOR_NAMESPACE}"
     verify_no_scannerV4_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
@@ -455,6 +623,8 @@ EOF
     run ! verify_deployment_scannerV4_env_var_set "${CUSTOM_SENSOR_NAMESPACE}" "sensor"
 
     wait_until_central_validation_webhook_is_ready "${CUSTOM_CENTRAL_NAMESPACE}"
+
+    _step "patching-central"
 
     # Enable Scanner V4 on central side.
     info "Patching Central"
@@ -500,6 +670,8 @@ EOT
     sleep 60
     "${ORCH_CMD}" </dev/null -n "${CUSTOM_CENTRAL_NAMESPACE}" wait --for=condition=Ready pods -l app=central || true
 
+    _step "patching-secured-cluster"
+
     info "Patching SecuredCluster"
     # Enable Scanner V4 on secured-cluster side
     "${ORCH_CMD}" </dev/null -n "${CUSTOM_SENSOR_NAMESPACE}" \
@@ -533,12 +705,16 @@ EOT
     sleep 60
     "${ORCH_CMD}" </dev/null -n "${CUSTOM_SENSOR_NAMESPACE}" wait --for=condition=Ready pods -l app=sensor || true
 
+    _step "verify"
+
     verify_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
     verify_scannerV4_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
     verify_deployment_scannerV4_env_var_set "${CUSTOM_CENTRAL_NAMESPACE}" "central"
     verify_scannerV2_deployed "${CUSTOM_SENSOR_NAMESPACE}"
     verify_scannerV4_indexer_deployed "${CUSTOM_SENSOR_NAMESPACE}"
     verify_deployment_scannerV4_env_var_set "${CUSTOM_SENSOR_NAMESPACE}" "sensor"
+
+    _step "disable-scanner-v4"
 
     # Test disabling of Scanner V4.
     info "Disabling Scanner V4 for Central"
@@ -559,15 +735,20 @@ spec:
 EOT
     )
 
+    _step "verify"
+
     sleep 2m # Give the operator some time to reconcile and the deployments to terminate.
     verify_no_scannerV4_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
     verify_no_scannerV4_deployed "${CUSTOM_SENSOR_NAMESPACE}"
     run ! verify_deployment_scannerV4_env_var_set "${CUSTOM_CENTRAL_NAMESPACE}" "central"
     run ! verify_deployment_scannerV4_env_var_set "${CUSTOM_SENSOR_NAMESPACE}" "sensor"
 
+    _end
 }
 
 @test "Fresh installation using roxctl with Scanner V4 enabled" {
+    _begin "deploy-stackrox"
+
     # shellcheck disable=SC2030,SC2031
     export OUTPUT_FORMAT=""
     # shellcheck disable=SC2030,SC2031
@@ -580,12 +761,18 @@ EOT
 
     _deploy_stackrox
 
+    _step "verify"
+
     verify_scannerV2_deployed "stackrox"
     verify_scannerV4_deployed "stackrox"
     verify_deployment_scannerV4_env_var_set "stackrox" "central"
+
+    _end
 }
 
 @test "Upgrade from old version without Scanner V4 support to the version which supports Scanner V4" {
+    _begin "deploy-stackrox"
+
     if [[ "$CI" = "true" ]]; then
         setup_default_TLS_certs
     fi
@@ -595,18 +782,27 @@ EOT
     export OUTPUT_FORMAT=""
     info "Using roxctl executable ${EARLIER_ROXCTL_PATH}/roxctl for generating pre-Scanner V4 deployment bundles"
     PATH="${EARLIER_ROXCTL_PATH}:${PATH}" MAIN_IMAGE_TAG="${EARLIER_MAIN_IMAGE_TAG}" _deploy_stackrox
+
+    _step "verify"
+
     verify_scannerV2_deployed
     verify_no_scannerV4_deployed
     run ! verify_deployment_scannerV4_env_var_set "stackrox" "central"
     run ! verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
 
+    _step "upgrade-stackrox"
+
     info "Upgrading StackRox using HEAD deployment bundles"
     _deploy_stackrox
+
+    _step "verify"
 
     verify_scannerV2_deployed
     verify_scannerV4_deployed
     verify_deployment_scannerV4_env_var_set "stackrox" "central"
     run ! verify_deployment_scannerV4_env_var_set "stackrox" "sensor" # no Scanner V4 support in Sensor with roxctl
+
+    _end
 }
 
 verify_no_scannerV4_deployed() {
@@ -617,12 +813,14 @@ verify_no_scannerV4_deployed() {
 
 verify_no_scannerV4_indexer_deployed() {
     local namespace=${1:-stackrox}
+    echo "Verifying that scanner V4 indexer is not deployed"
     run "${ORCH_CMD}" </dev/null -n "$namespace" get deployments -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
     refute_output --regexp "scanner-v4-indexer"
 }
 
 verify_no_scannerV4_matcher_deployed() {
     local namespace=${1:-stackrox}
+    echo "Verifying that scanner V4 matcher is not deployed"
     run "${ORCH_CMD}" </dev/null -n "$namespace" get deployments -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
     refute_output --regexp "scanner-v4-matcher"
 }
@@ -668,6 +866,8 @@ verify_deployment_scannerV4_env_var_set() {
     local deployment=${2:-central}
     local deployment_env_vars
     local scanner_v4_value
+
+    echo "Looking for ROX_SCANNER_V4 environment variable being set in ${namespace}/${deployment}."
 
     deployment_env_vars="$("${ORCH_CMD}" </dev/null -n "${namespace}" get deploy/"${deployment}" -o jsonpath="{.spec.template.spec.containers[?(@.name=='${deployment}')].env}")"
     scanner_v4_value="$(echo "${deployment_env_vars}" | jq -r '.[] | select(.name == "ROX_SCANNER_V4").value')"
@@ -717,6 +917,11 @@ _deploy_stackrox() {
 # shellcheck disable=SC2120
 _deploy_central() {
     local central_namespace=${1:-stackrox}
+    if [[ "${CI:-}" != "true" ]]; then
+        info "Creating image pull secrets..."
+        "${ORCH_CMD}" </dev/null create namespace "$central_namespace" || true
+        "${ROOT}/deploy/common/pull-secret.sh" stackrox quay.io | kubectl -n "$central_namespace" apply -f -
+    fi
     deploy_central "${central_namespace}"
     patch_down_central "${central_namespace}"
 }
@@ -769,6 +974,12 @@ EOF
 _deploy_sensor() {
     local sensor_namespace=${1:-stackrox}
     local central_namespace=${2:-stackrox}
+    if [[ "${CI:-}" != "true" ]]; then
+        info "Creating image pull secrets..."
+        "${ORCH_CMD}" </dev/null create namespace "$sensor_namespace" || true
+        "${ROOT}/deploy/common/pull-secret.sh" stackrox quay.io | kubectl -n "$sensor_namespace" apply -f -
+        "${ROOT}/deploy/common/pull-secret.sh" collector-stackrox quay.io | kubectl -n "$sensor_namespace" apply -f -
+    fi
     deploy_sensor "${sensor_namespace}" "${central_namespace}"
     patch_down_sensor "${sensor_namespace}"
 }
@@ -852,7 +1063,7 @@ wait_for_ready_pods() {
 }
 
 remove_earlier_roxctl_binary() {
-    if [[ -d "${EARLIER_ROXCTL_PATH}" ]]; then
+    if [[ -n "${EARLIER_ROXCTL_PATH:-}" && -d "${EARLIER_ROXCTL_PATH}" ]]; then
       rm -f "${EARLIER_ROXCTL_PATH}/roxctl"
       rmdir "${EARLIER_ROXCTL_PATH}"
       echo "Removed earlier roxctl binary"
@@ -875,3 +1086,18 @@ spec:
 EOT
     retry 7 true "${ORCH_CMD}" </dev/null -n "${central_namespace}" patch Central stackrox-central-services --type=merge --patch-file="${patch_test_file}"
 }
+
+post_process_output() {
+    local label="$1"
+    local msg
+
+    while IFS="" read -r line; do
+        if [[ "$line" =~ ^(INFO|ERROR):\ [[:alpha:]]+\ [[:alpha:]]+\ [[:digit:]]+\ [[:digit:]]{2}:[[:digit:]]{2}:[[:digit:]]{2}\ [[:alpha:]]+\ [[:digit:]]+:\ (.*) ]]; then
+            msg="[${label}] ${BASH_REMATCH[2]}"
+        else
+            msg="[${label}] ${line}"
+        fi
+        echo "INFO: $(date): $msg"
+    done
+}
+export -f post_process_output
