@@ -17,6 +17,7 @@ import (
 	administrationUsageService "github.com/stackrox/rox/central/administration/usage/service"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	alertService "github.com/stackrox/rox/central/alert/service"
+	apitokenDS "github.com/stackrox/rox/central/apitoken/datastore"
 	apiTokenExpiration "github.com/stackrox/rox/central/apitoken/expiration"
 	apiTokenService "github.com/stackrox/rox/central/apitoken/service"
 	"github.com/stackrox/rox/central/audit"
@@ -620,6 +621,7 @@ func startGRPCServer() {
 				centralclient.RegisterCentralClient(&config, basicAuthProvider.ID())
 				centralclient.StartPeriodicReload(1 * time.Hour)
 				gs := cfg.Gatherer()
+				gs.AddGatherer(apitokenDS.Gather(apitokenDS.Singleton()))
 				gs.AddGatherer(authDS.Gather)
 				gs.AddGatherer(authProviderTelemetry.Gather)
 				gs.AddGatherer(cloudSourcesDS.Gather(cloudSourcesDS.Singleton()))
@@ -628,11 +630,11 @@ func startGRPCServer() {
 				gs.AddGatherer(delegatedRegistryConfigDS.Gather(delegatedRegistryConfigDS.Singleton()))
 				gs.AddGatherer(externalbackupsDS.Gather)
 				gs.AddGatherer(featuresTelemetry.Gather)
+				gs.AddGatherer(globaldb.Gather)
 				gs.AddGatherer(imageintegrationsDS.Gather)
 				gs.AddGatherer(notifierDS.Gather)
 				gs.AddGatherer(roleDataStore.Gather)
 				gs.AddGatherer(signatureIntegrationDS.Gather)
-				gs.AddGatherer(globaldb.Gather)
 			}
 		}
 	}

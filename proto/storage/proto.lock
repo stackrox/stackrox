@@ -8467,6 +8467,11 @@
                 "name": "executables",
                 "type": "Executable",
                 "is_repeated": true
+              },
+              {
+                "id": 13,
+                "name": "architecture",
+                "type": "string"
               }
             ],
             "messages": [

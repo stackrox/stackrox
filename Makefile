@@ -85,7 +85,7 @@ UNAME_M := $(shell uname -m)
 
 BUILD_IMAGE := quay.io/stackrox-io/apollo-ci:$(shell sed 's/\s*\#.*//' BUILD_IMAGE_VERSION)
 ifneq ($(UNAME_M),x86_64)
-	BUILD_IMAGE = docker.io/library/golang:1.22
+	BUILD_IMAGE = docker.io/library/golang:1.23
 endif
 
 CENTRAL_DB_DOCKER_ARGS :=

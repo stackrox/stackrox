@@ -15,6 +15,7 @@ type DataStore interface {
 	GetTokenOrNil(ctx context.Context, id string) (token *storage.TokenMetadata, err error)
 	GetTokens(ctx context.Context, req *v1.GetAPITokensRequest) ([]*storage.TokenMetadata, error)
 
+	Count(ctx context.Context, q *v1.Query) (int, error)
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 	SearchRawTokens(ctx context.Context, q *v1.Query) ([]*storage.TokenMetadata, error)
 

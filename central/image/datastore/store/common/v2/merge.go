@@ -8,6 +8,9 @@ import (
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
 
+// TODO(ROX-28123): Remove file
+
+// Deprecated: replaced with equivalent functions using flattened data model
 // Merge merges the images parts into an image.
 func Merge(parts ImageParts) *storage.Image {
 	mergeComponents(parts, parts.Image)
