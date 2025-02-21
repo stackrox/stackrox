@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/trace"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -93,7 +94,7 @@ func (u *updaterImpl) resetContext() {
 	if u.cancelCtx != nil {
 		u.cancelCtx()
 	}
-	u.pipelineCtx, u.cancelCtx = context.WithCancel(context.Background())
+	u.pipelineCtx, u.cancelCtx = context.WithCancel(trace.DefaultContext())
 }
 
 func (u *updaterImpl) getCurrentContext() context.Context {

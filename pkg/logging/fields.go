@@ -1,11 +1,16 @@
 package logging
 
 import (
+	"context"
+
 	administrationResources "github.com/stackrox/rox/pkg/administration/events/resources"
 	"go.uber.org/zap"
+	"google.golang.org/grpc/metadata"
 )
 
 const (
+	ClusterIDContextValue = "stackrox.cluster-id"
+
 	alertIDField      = "alert_id"
 	apiTokenIDField   = "api_token_id"
 	apiTokenNameField = "api_token_name"
@@ -35,6 +40,27 @@ var resourceTypeFields = map[string]string{
 // Err wraps err into a zap.Field instance with a well-known name 'error'.
 func Err(err error) zap.Field {
 	return zap.Error(err)
+}
+
+// Context provides selected context values as structured log fields.
+func Context(ctx context.Context) zap.Field {
+	// Use zap.Dict in zap v1.26.0.
+	// return zap.Dict("context",
+	// 	zap.NamedError("cause", context.Cause(ctx)),
+	// 	zap.Any("clusterID", ctx.Value("clusterID")),
+	// )
+
+	contextMap := make(map[string]interface{})
+	if cause := context.Cause(ctx); cause != nil {
+		contextMap["cause"] = cause.Error()
+	}
+	if clusterID := metadata.ValueFromIncomingContext(ctx, ClusterIDContextValue); clusterID != nil {
+		contextMap["clusterID"] = clusterID
+	}
+	if len(contextMap) > 0 {
+		return zap.Any("context", contextMap)
+	}
+	return zap.Skip()
 }
 
 // ImageName provides the image name as a structured log field.

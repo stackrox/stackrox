@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/x509utils"
+	"github.com/stackrox/rox/sensor/common/trace"
 )
 
 var (
@@ -313,7 +314,7 @@ func EmptyCertLoader() CertLoader {
 func RemoteCertLoader(httpClient *Client) CertLoader {
 	// only logs errors because this feature should not break sensors start-up.
 	return func() []*x509.Certificate {
-		certs, err := httpClient.GetTLSTrustedCerts(context.Background())
+		certs, err := httpClient.GetTLSTrustedCerts(trace.DefaultContext())
 		if err != nil {
 			log.Errorf("\n#------------------------------------------------------------------------------\n"+
 				"# Failed to fetch centrals TLS certs: %v\n"+

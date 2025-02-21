@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/util"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/sensor/common/trace"
 )
 
 // CentralConnectionFactory is responsible for establishing a gRPC connection between sensor
@@ -52,7 +53,7 @@ func (f *centralConnectionFactoryImpl) StopSignal() concurrency.ReadOnlyErrorSig
 }
 
 func (f *centralConnectionFactoryImpl) pingCentral() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(trace.DefaultContext(), 10*time.Second)
 	defer cancel()
 	// Ping result doesn't matter, as long as Central is reachable.
 	_, err := f.httpClient.GetPing(ctx)
@@ -60,7 +61,7 @@ func (f *centralConnectionFactoryImpl) pingCentral() error {
 }
 
 func (f *centralConnectionFactoryImpl) getCentralGRPCPreferences() (*v1.Preferences, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(trace.DefaultContext(), 10*time.Second)
 	defer cancel()
 	return f.httpClient.GetGRPCPreferences(ctx)
 }
@@ -114,7 +115,7 @@ func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(conn *uti
 
 	// This returns a dial function, but does not call dial!
 	// Thus, we cannot treat the connection as established and ready at this point.
-	centralConnection, err := clientconn.AuthenticatedGRPCConnection(context.Background(), env.CentralEndpoint.Setting(), mtls.CentralSubject, opts...)
+	centralConnection, err := clientconn.AuthenticatedGRPCConnection(trace.DefaultContext(), env.CentralEndpoint.Setting(), mtls.CentralSubject, opts...)
 	if err != nil {
 		log.Errorf("creating the gRPC client: %v", err)
 		f.stopSignal.SignalWithErrorWrap(err, "creating the gRPC client")

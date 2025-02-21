@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
@@ -24,12 +23,11 @@ import (
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/scan"
 	"github.com/stackrox/rox/sensor/common/store"
+	commonTypes "github.com/stackrox/rox/sensor/common/types"
 	"google.golang.org/grpc/status"
 )
 
-var (
-	scanTimeout = env.ScanTimeout.DurationSetting()
-)
+var scanTimeout = env.ScanTimeout.DurationSetting()
 
 type scanResult struct {
 	context                context.Context
@@ -132,6 +130,7 @@ outer:
 		timeSpentInBackoffSoFar := eb.GetElapsedTime()
 		scannedImage, err := scanFn(ctx, svc, req, c.localScan)
 		if err != nil {
+			log.Errorf("local scan failed (context cause = %s): %w", context.Cause(ctx).Error(), err)
 			for _, detail := range status.Convert(err).Details() {
 				// If the client is effectively rate-limited, backoff and try again.
 				if _, isTooManyParallelScans := detail.(*v1.ScanImageInternalResponseDetails_TooManyParallelScans); isTooManyParallelScans {
@@ -307,16 +306,11 @@ func (e *enricher) runScan(ctx context.Context, req *scanImageRequest) imageChan
 	}
 	value := e.imageCache.GetOrSet(key, newValue).(*cacheValue)
 	if forceEnrichImageWithSignatures || newValue == value {
-		// Merge ctx with the stopSig.
-		// If the stopSignal is triggered, the context used in scanAndSet should be canceled.
-		mergedCtx, stopAfterFunc := contextutil.MergeContext(ctx, concurrency.AsContext(&e.stopSig))
-		defer func() {
-			// Stop the AfterFunc so we don't leak goroutines.
-			// scanAndSet will block, so it's ok to defer the call here.
-			_ = stopAfterFunc()
-		}()
+		scanCtx, cancel := context.WithCancelCause(ctx)
+		defer func() { cancel(nil) }()
+		concurrency.CancelContextOnSignal(scanCtx, func() { cancel(commonTypes.SensorStoppedErr) }, &e.stopSig)
 		metrics.AddScanAndSetCall(utils.IfThenElse[string](newValue == value, "new_value", "forced"))
-		value.scanAndSet(mergedCtx, e.imageSvc, req)
+		value.scanAndSet(scanCtx, e.imageSvc, req)
 		metrics.RemoveScanAndSetCall(utils.IfThenElse[string](newValue == value, "new_value", "forced"))
 	}
 	return imageChanResult{
