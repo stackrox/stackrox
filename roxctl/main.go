@@ -18,19 +18,6 @@ import (
 func main() {
 	c := maincommand.Command()
 
-	// This is a workaround. Cobra/pflag takes care of presenting flag usage information
-	// to the user including the respective flag default values.
-	//
-	// But, as an exception, showing the default value for a flag is skipped in pflag if
-	// that value is the zero value for a certain standard type.
-	//
-	// In our case this caused the unintended behaviour of not showing the default values
-	// for our boolean flags which default to `false`.
-	//
-	// Until we have a better solution (e.g. way to control this behaviour in upstream pflag)
-	// we simply add the usage information "(default false)" to our affected boolean flags.
-	AddMissingDefaultsToFlagUsage(c)
-
 	c.SetHelpFunc(utils.FormatHelp)
 
 	once := sync.Once{}
