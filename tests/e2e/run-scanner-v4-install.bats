@@ -303,7 +303,7 @@ teardown() {
 
 _remove_existing_stackrox_resources() {
     echo "Removing existing StackRox resources..."
-    remove_existing_stackrox_resources
+    remove_existing_stackrox_resources "$@"
     echo "StackRox resources removed."
 }
 
