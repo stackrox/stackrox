@@ -79,10 +79,23 @@ func FormatHelp(c *cobra.Command, _ []string) {
 		iw.WriteLn("Examples:")
 		iw.WriteLn(c.Example, 2)
 	}
-	if c.HasHelpSubCommands() {
-		iw.NewLine()
-		iw.WriteLn("Available Commands:")
-		formatCommands(c.Commands(), iw)
+	if c.HasAvailableSubCommands() {
+		if len(c.Groups()) == 0 {
+			iw.NewLine()
+			iw.WriteLn("Available Commands:")
+			formatCommands(c.Commands(), iw, "")
+		} else {
+			for _, group := range c.Groups() {
+				iw.NewLine()
+				iw.WriteLn(group.Title)
+				formatCommands(c.Commands(), iw, group.ID)
+			}
+			if !c.AllChildCommandsHaveGroup() {
+				iw.NewLine()
+				iw.WriteLn("Additional Commands:")
+				formatCommands(c.Commands(), iw, "")
+			}
+		}
 	}
 	visitor := makeFlagVisitor(iw)
 	hasFlags := false
@@ -100,21 +113,28 @@ func FormatHelp(c *cobra.Command, _ []string) {
 		c.InheritedFlags().VisitAll(visitor)
 	}
 	iw.WriteLn("Usage:")
-	iw.WriteLn(c.UseLine(), 2)
+	if c.Runnable() {
+		iw.WriteLn(c.UseLine(), 2)
+	}
+	if c.HasAvailableSubCommands() {
+		iw.Write(c.CommandPath(), 2)
+		iw.WriteLn(" [command]")
+	}
+
 }
 
 // formatCommands prints the command name and description.
-func formatCommands(commands []*cobra.Command, iw *indentWriter) {
+func formatCommands(commands []*cobra.Command, iw *indentWriter, group string) {
 	padding := 0
 	for _, command := range commands {
-		if command.Hidden {
+		if !command.IsAvailableCommand() {
 			continue
 		}
 		padding = max(padding, len(command.Name()))
 	}
 	const leftPadding, interPadding = 2, 3
 	for _, command := range commands {
-		if command.Hidden {
+		if !command.IsAvailableCommand() || command.GroupID != group {
 			continue
 		}
 		name := command.Name()
