@@ -207,6 +207,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/errors"
 	"github.com/stackrox/rox/pkg/grpc/ratelimit"
 	"github.com/stackrox/rox/pkg/grpc/routes"
+	grpcTrace "github.com/stackrox/rox/pkg/grpc/trace"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/memlimit"
@@ -602,6 +603,9 @@ func startGRPCServer() {
 			errors.PanicOnInvariantViolationStreamInterceptor,
 		)
 	}
+	config.UnaryInterceptors = append(config.UnaryInterceptors,
+		grpcTrace.IncomingTraceInterceptor(grpcTrace.WithServiceName("central")),
+	)
 
 	// This adds an on-demand global tracing for the built-in authorization.
 	authzTraceSink := trace.AuthzTraceSinkSingleton()

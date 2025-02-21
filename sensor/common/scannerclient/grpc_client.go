@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/registries/types"
 	pkgscanner "github.com/stackrox/rox/pkg/scannerv4"
 	"github.com/stackrox/rox/pkg/scannerv4/client"
+	"github.com/stackrox/rox/sensor/common/trace"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -163,7 +164,7 @@ func dialV2() (ScannerClient, error) {
 
 // dialV4 connect to scanner V4 gRPC and return a new ScannerClient.
 func dialV4() (ScannerClient, error) {
-	ctx := context.Background()
+	ctx := trace.DefaultContext()
 	c, err := client.NewGRPCScanner(ctx, client.WithIndexerAddress(env.ScannerV4IndexerEndpoint.Setting()))
 	if err != nil {
 		return nil, err

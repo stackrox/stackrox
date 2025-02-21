@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/trace"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -87,7 +88,7 @@ func (u *updaterImpl) cancelCurrentContext() {
 func (u *updaterImpl) createContext() {
 	u.contextMtx.Lock()
 	defer u.contextMtx.Unlock()
-	u.context, u.cancelContext = context.WithCancel(context.Background())
+	u.context, u.cancelContext = context.WithCancel(trace.DefaultContext())
 }
 
 func (u *updaterImpl) getCurrentContext() context.Context {
