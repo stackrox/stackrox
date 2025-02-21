@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/declarativeconfig/k8sobject"
 	"github.com/stackrox/rox/roxctl/declarativeconfig/lint"
 	"golang.org/x/exp/maps"
@@ -87,9 +86,6 @@ Example of a group: --groups-key "email" --groups-value "my@domain.com" --groups
 		authProviderCmd.userPKICommand(),
 		authProviderCmd.openShiftCommand(),
 	)
-
-	flags.HideInheritedFlags(cmd, k8sobject.ConfigMapFlag, k8sobject.NamespaceFlag)
-
 	return cmd
 }
 
@@ -148,8 +144,6 @@ func (a *authProviderCmd) oidcCommand() *cobra.Command {
 
 	utils.Must(cmd.MarkFlagRequired("issuer"))
 	utils.Must(cmd.MarkFlagRequired("client-id"))
-
-	flags.HideInheritedFlags(cmd, persistentFlagsToShow...)
 	return cmd
 }
 
@@ -176,8 +170,6 @@ func (a *authProviderCmd) samlCommand() *cobra.Command {
 	utils.Must(cmd.MarkFlagRequired("sp-issuer"))
 	cmd.MarkFlagsRequiredTogether("idp-cert", "sso-url", "idp-issuer")
 	cmd.MarkFlagsMutuallyExclusive("metadata-url", "sso-url")
-
-	flags.HideInheritedFlags(cmd, persistentFlagsToShow...)
 	return cmd
 }
 
@@ -193,8 +185,6 @@ func (a *authProviderCmd) iapCommand() *cobra.Command {
 		"be validated")
 
 	utils.Must(cmd.MarkFlagRequired("audience"))
-
-	flags.HideInheritedFlags(cmd, persistentFlagsToShow...)
 	return cmd
 }
 
@@ -211,8 +201,6 @@ func (a *authProviderCmd) userPKICommand() *cobra.Command {
 		"authorities in PEM format")
 
 	utils.Must(cmd.MarkFlagRequired("ca-file"))
-
-	flags.HideInheritedFlags(cmd, persistentFlagsToShow...)
 	return cmd
 }
 
@@ -222,8 +210,6 @@ func (a *authProviderCmd) openShiftCommand() *cobra.Command {
 		RunE:  a.RunE(),
 		Short: "Create a declarative configuration for an OpenShift-Auth auth provider",
 	}
-
-	flags.HideInheritedFlags(cmd, persistentFlagsToShow...)
 	return cmd
 }
 

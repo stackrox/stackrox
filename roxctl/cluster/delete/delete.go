@@ -36,6 +36,8 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		},
 	}
 	cbr.PersistentFlags().StringVar(&clusterDeleteCmd.name, "name", "", "Cluster name to delete")
+	flags.AddConnectionFlags(cbr)
+	flags.AddCentralAuthFlags(cbr)
 	return cbr
 }
 
