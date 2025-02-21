@@ -870,7 +870,29 @@ func (ts *DelegatedScanningSuite) scanWithRetries(ctx context.Context, service v
 	retryErrTokens := []string{
 		scan.ErrTooManyParallelScans.Error(),
 		"context deadline exceeded",
-		"could not advance in the tar archive: archive/tar: invalid tar header",
+		"Client.Timeout exceeded while awaiting headers",
+
+		// K8s services/pods may refuse connections shortly after restart
+		//
+		// ex:
+		// - transport: Error while dialing: dial tcp <ip>:8443: connect: connection refused
+		"connect: connection refused",
+
+		// Registry issues, network glitches, resources contention, etc. may interrupt the download
+		// of image layers.
+		//
+		// ex:
+		// - could not advance in the tar archive: archive/tar: invalid tar header
+		// - could not advance in the tar archive: unexpected EOF
+		"could not advance in the tar archive",
+
+		// Sensor may accept ad-hoc scan requests prior to the mirroring CRs being loaded, this may result
+		// in attempts to reach out to the 'invalid' mirror host. We trigger a retry in this case to give
+		// Sensor time to load the mirroring CRs.
+		//
+		// ex:
+		// - unable to check TLS for registry "icsp.invalid": dial tcp: lookup icsp.invalid on <ip>:53: no such host
+		"no such host",
 	}
 
 	retryFunc := func() error {
