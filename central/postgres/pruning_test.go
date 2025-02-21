@@ -11,6 +11,8 @@ import (
 	activeComponent "github.com/stackrox/rox/central/activecomponent/datastore"
 	administrationEventDS "github.com/stackrox/rox/central/administration/events/datastore"
 	alertStore "github.com/stackrox/rox/central/alert/datastore"
+	apitokenDS "github.com/stackrox/rox/central/apitoken/datastore"
+	apitokenTestutils "github.com/stackrox/rox/central/apitoken/testutils"
 	clusterStore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterHealthPostgresStore "github.com/stackrox/rox/central/cluster/store/clusterhealth/postgres"
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
@@ -31,9 +33,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-var (
-	orphanWindow = 30 * time.Minute
-)
+const orphanWindow = 30 * time.Minute
 
 type PostgresPruningSuite struct {
 	suite.Suite
@@ -438,7 +438,6 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 			for _, podID := range c.pods.AsSlice() {
 				s.Require().NoError(podDS.RemovePod(s.ctx, podID))
 			}
-
 		})
 	}
 }
@@ -536,6 +535,33 @@ func (s *PostgresPruningSuite) TestPruneAdministrationEvents() {
 	storedEvents, err := datastore.ListEvents(s.ctx, search.EmptyQuery())
 	s.NoError(err)
 	protoassert.ElementsMatch(s.T(), []*storage.AdministrationEvent{events[0], events[1], events[3], events[4]}, storedEvents)
+}
+
+func (s *PostgresPruningSuite) TestPruneAPITokens() {
+	datastore := apitokenDS.NewTestPostgres(s.T(), s.testDB)
+	now := time.Now()
+	notExpired := now.Add(48 * time.Hour)
+	isExpired := now.Add(-48 * time.Hour)
+	tokens := []*storage.TokenMetadata{
+		// Should be subject to pruning.
+		apitokenTestutils.GenerateToken(s.T(), now, isExpired, false),
+		// Should not be subject to pruning.
+		apitokenTestutils.GenerateToken(s.T(), now, notExpired, false),
+		// Should be subject to pruning.
+		apitokenTestutils.GenerateToken(s.T(), now, notExpired, true),
+		// Should not be subject to pruning.
+		apitokenTestutils.GenerateToken(s.T(), now, notExpired, false),
+	}
+	for _, token := range tokens {
+		err := datastore.AddToken(s.ctx, token)
+		s.Require().NoError(err)
+	}
+
+	PruneInvalidAPITokens(s.ctx, s.testDB, 24*time.Hour)
+
+	storedTokens, err := datastore.SearchRawTokens(s.ctx, search.EmptyQuery())
+	s.Require().NoError(err)
+	protoassert.ElementsMatch(s.T(), []*storage.TokenMetadata{tokens[1], tokens[3]}, storedTokens)
 }
 
 // Helper functions.

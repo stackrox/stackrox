@@ -2,8 +2,10 @@ package datastore
 
 import (
 	"context"
+	"testing"
 
 	"github.com/stackrox/rox/central/apitoken/datastore/internal/store"
+	pgStore "github.com/stackrox/rox/central/apitoken/datastore/internal/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -34,4 +36,9 @@ func New(storage store.Store) DataStore {
 // NewPostgres returns a ready-to-use DataStore instance plugged to postgres.
 func NewPostgres(pool postgres.DB) DataStore {
 	return newPostgres(pool)
+}
+
+// NewTestPostgres provides a datastore connected to postgres for testing purposes.
+func NewTestPostgres(_ testing.TB, pool postgres.DB) DataStore {
+	return New(pgStore.New(pool))
 }
