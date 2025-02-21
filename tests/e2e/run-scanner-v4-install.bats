@@ -271,6 +271,9 @@ teardown() {
         sensor_namespace="${CUSTOM_SENSOR_NAMESPACE}"
     fi
 
+    echo "Using central namespace: ${central_namespace}"
+    echo "Using sensor namespace: ${sensor_namespace}"
+
     if [[ -n "${SCANNER_V4_LOG_DIR:-}" ]]; then
         "$ROOT/scripts/ci/collect-service-logs.sh" "${central_namespace}" \
             "${SCANNER_V4_LOG_DIR}/${BATS_TEST_NUMBER}-${BATS_TEST_NAME}"
