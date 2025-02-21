@@ -35,6 +35,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/internalmessage"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/metrics"
+	"github.com/stackrox/rox/sensor/common/status"
 	flowMetrics "github.com/stackrox/rox/sensor/common/networkflow/metrics"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -366,7 +367,7 @@ func (m *networkFlowManager) resetContext() {
 	if m.cancelCtx != nil {
 		m.cancelCtx()
 	}
-	m.pipelineCtx, m.cancelCtx = context.WithCancel(context.Background())
+	m.pipelineCtx, m.cancelCtx = context.WithCancel(status.DefaultContext())
 }
 
 func (m *networkFlowManager) sendToCentral(msg *central.MsgFromSensor) bool {

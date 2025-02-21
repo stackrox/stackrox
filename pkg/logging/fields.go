@@ -1,6 +1,8 @@
 package logging
 
 import (
+	"context"
+
 	administrationResources "github.com/stackrox/rox/pkg/administration/events/resources"
 	"go.uber.org/zap"
 )
@@ -35,6 +37,14 @@ var resourceTypeFields = map[string]string{
 // Err wraps err into a zap.Field instance with a well-known name 'error'.
 func Err(err error) zap.Field {
 	return zap.Error(err)
+}
+
+// Context provides selected context values as structured log fields.
+func Context(ctx context.Context) zap.Field {
+	return zap.Dict("context",
+		zap.NamedError("cause", context.Cause(ctx)),
+		zap.Any("clusterID", ctx.Value("clusterID")),
+	)
 }
 
 // ImageName provides the image name as a structured log field.
