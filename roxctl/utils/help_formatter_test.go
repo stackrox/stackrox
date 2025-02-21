@@ -75,8 +75,21 @@ func TestFormatHelp(t *testing.T) {
 		Use:   "sub-test",
 		Short: "short sub test description",
 		Long:  "long sub test description\nmultiline",
+		Run:   func(cmd *cobra.Command, args []string) {},
 	}
 	subcommand.Flags().Int64("i64", int64(42), "int64 flag with default value")
+
+	subcommand.AddGroup(&cobra.Group{
+		ID:    "g1",
+		Title: "Test Group",
+	})
+	subsubcommand := &cobra.Command{
+		Use:     "sub-sub-test",
+		Short:   "short subsub test description",
+		Run:     func(cmd *cobra.Command, args []string) {},
+		GroupID: "g1",
+	}
+	subcommand.AddCommand(subsubcommand)
 
 	c.AddCommand(subcommand)
 
@@ -125,7 +138,7 @@ Options:
         string flag with shorthand
 
 Usage:
-  test [flags]
+  test [command]
 `, sb.String())
 	})
 
@@ -141,6 +154,9 @@ short sub test description
 long sub test description
 multiline
 
+Test Group
+  sub-sub-test   short subsub test description
+
 Options:
     --i64=42:
         int64 flag with default value
@@ -151,6 +167,7 @@ Global Options:
 
 Usage:
   test sub-test [flags]
+  test sub-test [command]
 `, sb.String())
 	})
 }
