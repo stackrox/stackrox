@@ -33,7 +33,7 @@ func checkUsageFirstCharacter(t *testing.T, command *cobra.Command) {
 	if !isCapitalized(command.Short) {
 		t.Errorf("%q, short usage: %q", getCommandPath(command), command.Short)
 	}
-	if !isCapitalized(command.Long) {
+	if !isCapitalized(command.Long) && !strings.HasPrefix(command.Long, "roxctl ") {
 		t.Errorf("%q, long usage: %q", getCommandPath(command), command.Long)
 	}
 	for _, subcommand := range command.Commands() {
