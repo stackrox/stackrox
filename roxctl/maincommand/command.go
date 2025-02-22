@@ -53,6 +53,8 @@ func versionCommand(cliEnvironment environment.Environment) *cobra.Command {
 // Command constructs and returns the roxctl command tree
 func Command() *cobra.Command {
 	c := &cobra.Command{
+		Long: "roxctl is a command-line interface (CLI) for running commands" +
+			" on Red Hat Advanced Cluster Security for Kubernetes (RHACS)",
 		SilenceUsage: true,
 		Use:          os.Args[0],
 	}
