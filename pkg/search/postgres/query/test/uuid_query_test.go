@@ -3,57 +3,57 @@
 package test
 
 import (
-        "context"
-        "testing"
+	"context"
+	"testing"
 
+	plopStore "github.com/stackrox/rox/central/processlisteningonport/store"
+	postgresStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-        plopStore "github.com/stackrox/rox/central/processlisteningonport/store"
-        postgresStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
-        "github.com/stackrox/rox/generated/storage"
-        "github.com/stackrox/rox/pkg/fixtures"
-        "github.com/stackrox/rox/pkg/postgres/pgtest"
-        "github.com/stackrox/rox/pkg/sac"
-        "github.com/stackrox/rox/pkg/search"
-        "github.com/stretchr/testify/suite"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stretchr/testify/suite"
 )
 
 func TestUUID(t *testing.T) {
-        suite.Run(t, new(UUIDTestSuite))
+	suite.Run(t, new(UUIDTestSuite))
 }
 
 type UUIDTestSuite struct {
-        suite.Suite
-        store              plopStore.Store
+	suite.Suite
+	store plopStore.Store
 
-        postgres *pgtest.TestPostgres
+	postgres *pgtest.TestPostgres
 	ctx      context.Context
 }
 
-func (s *UUIDTestSuite) SetupTest() {                                             
-        s.postgres = pgtest.ForT(s.T())
-        s.store = postgresStore.NewFullStore(s.postgres.DB)              
+func (s *UUIDTestSuite) SetupTest() {
+	s.postgres = pgtest.ForT(s.T())
+	s.store = postgresStore.NewFullStore(s.postgres.DB)
 	s.ctx = sac.WithAllAccess(context.Background())
 }
-                                                                                    
+
 func (s *UUIDTestSuite) TearDownTest() {
-        s.postgres.Teardown(s.T())   
-}       
+	s.postgres.Teardown(s.T())
+}
 
 func (s *UUIDTestSuite) TestRemovePLOPsWithoutPodUID() {
-        plops := []*storage.ProcessListeningOnPortStorage{
-                fixtures.GetPlopStorage1(),
-                fixtures.GetPlopStorage2(),
-                fixtures.GetPlopStorage3(),
-                fixtures.GetPlopStorage4(),
-                fixtures.GetPlopStorage5(),
-                fixtures.GetPlopStorage6(),
-        }
+	plops := []*storage.ProcessListeningOnPortStorage{
+		fixtures.GetPlopStorage1(),
+		fixtures.GetPlopStorage2(),
+		fixtures.GetPlopStorage3(),
+		fixtures.GetPlopStorage4(),
+		fixtures.GetPlopStorage5(),
+		fixtures.GetPlopStorage6(),
+	}
 
-        err := s.store.UpsertMany(s.ctx, plops)
-        s.NoError(err)
-        plopCount, err := s.store.Count(s.ctx, search.EmptyQuery())
-        s.NoError(err)
-        s.Equal(len(plops), plopCount)
+	err := s.store.UpsertMany(s.ctx, plops)
+	s.NoError(err)
+	plopCount, err := s.store.Count(s.ctx, search.EmptyQuery())
+	s.NoError(err)
+	s.Equal(len(plops), plopCount)
 
 	for _, testCase := range []struct {
 		desc            string
