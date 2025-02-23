@@ -1,0 +1,12 @@
+helm-values-central-services.yaml
+helm-values-secured-cluster-services.yaml
+ca-cert.pem
+ca-key.pem
+crs-cert.pem
+crs-csr.pem
+crs-key.pem
+ca-db.txt*
+ca-serial.txt*
+newcerts
+cluster-registration-secret.yaml
+cluster-registration-secret.json
