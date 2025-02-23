@@ -167,22 +167,25 @@ func Test_retestNTimes(t *testing.T) {
 
 func Test_shouldRetest(t *testing.T) {
 	tests := []struct {
-		name     string
-		statuses map[string]string
-		comments []string
-		want     bool
+		name           string
+		statuses       map[string]string
+		comments       []string
+		wantErr        bool
+		wantErrMessage string
 	}{
 		{
-			name:     "nil",
-			statuses: nil,
-			comments: nil,
-			want:     false,
+			name:           "nil",
+			statuses:       nil,
+			comments:       nil,
+			wantErr:        true,
+			wantErrMessage: "job has not failed",
 		},
 		{
-			name:     "empty",
-			statuses: map[string]string{},
-			comments: []string{},
-			want:     false,
+			name:           "empty",
+			statuses:       map[string]string{},
+			comments:       []string{},
+			wantErr:        true,
+			wantErrMessage: "job has not failed",
 		},
 		{
 			name: "all success",
@@ -191,8 +194,9 @@ func Test_shouldRetest(t *testing.T) {
 				"b": "success",
 				"c": "success",
 			},
-			comments: []string{},
-			want:     false,
+			comments:       []string{},
+			wantErr:        true,
+			wantErrMessage: "job has not failed",
 		},
 		{
 			name: "one failure",
@@ -202,7 +206,7 @@ func Test_shouldRetest(t *testing.T) {
 				"c": "success",
 			},
 			comments: []string{},
-			want:     true,
+			wantErr:  false,
 		},
 		{
 			name: "one failure but already retested",
@@ -212,7 +216,7 @@ func Test_shouldRetest(t *testing.T) {
 				"c": "success",
 			},
 			comments: []string{"/retest"},
-			want:     true,
+			wantErr:  false,
 		},
 		{
 			name: "one failure but already retested",
@@ -221,14 +225,20 @@ func Test_shouldRetest(t *testing.T) {
 				"b": "failure",
 				"c": "success",
 			},
-			comments: []string{"/retest", "/retest", "/retest", "/retest"},
-			want:     false,
+			comments:       []string{"/retest", "/retest", "/retest", "/retest"},
+			wantErr:        true,
+			wantErrMessage: "job has been retested already 4 times",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := shouldRetestFailedStatuses(tt.statuses, tt.comments)
-			assert.Equal(t, tt.want, got)
+			if tt.wantErr {
+				assert.Errorf(t, got, "")
+				assert.ErrorContains(t, got, tt.wantErrMessage)
+			} else {
+				assert.NoError(t, got, "")
+			}
 		})
 	}
 }
