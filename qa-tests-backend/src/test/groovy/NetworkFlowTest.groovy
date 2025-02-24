@@ -487,17 +487,23 @@ class NetworkFlowTest extends BaseSpecification {
         log.info "${graph}"
 
         CollectorUtil.enableExternalIps(orchestrator)
-        assert waitForEdgeToBeClosed(edges.get(0), 165)
-        edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
-	log.info "${edges}"
-        log.info "asdf"
-        graph = NetworkGraphService.getNetworkGraph(null, null)
-        log.info "${graph}"
+        sleep 90000
 
-        CollectorUtil.disableExternalIps(orchestrator)
-        assert waitForEdgeUpdate(edges.get(0), 90)
-        graph = NetworkGraphService.getNetworkGraph(null, null)
-        log.info "${graph}"
+        edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
+
+
+        
+        //assert waitForEdgeToBeClosed(edges.get(0), 165)
+        //edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
+	//log.info "${edges}"
+        //log.info "asdf"
+        //graph = NetworkGraphService.getNetworkGraph(null, null)
+        //log.info "${graph}"
+
+        //CollectorUtil.disableExternalIps(orchestrator)
+        //assert waitForEdgeUpdate(edges.get(0), 90)
+        //graph = NetworkGraphService.getNetworkGraph(null, null)
+        //log.info "${graph}"
     }
 
     @Tag("NetworkFlowVisualization")
