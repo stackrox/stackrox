@@ -10,14 +10,14 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/protocompat"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
 
 var (
-	log    = logging.LoggerForModule()
-	schema = migrationSchema.VulnerabilityRequestsSchema
+	log            = logging.LoggerForModule()
+	schema         = migrationSchema.VulnerabilityRequestsSchema
+	targetResource = resources.VulnerabilityRequest
 )
 
 type storeType = storage.VulnerabilityRequest
@@ -34,7 +34,7 @@ type Store interface {
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
-	return pgSearch.NewGenericStoreWithPermissionChecker[storeType, *storeType](
+	return pgSearch.NewGenericStore[storeType, *storeType](
 		db,
 		schema,
 		pkGetter,
@@ -42,7 +42,8 @@ func New(db postgres.DB) Store {
 		copyFromVulnerabilityRequests,
 		nil,
 		nil,
-		sac.NewAnyGlobalResourceAllowedPermissionChecker(resources.VulnerabilityManagementRequests, resources.VulnerabilityManagementApprovals),
+		pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
+		targetResource,
 	)
 }
 
