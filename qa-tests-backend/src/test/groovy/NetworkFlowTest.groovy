@@ -490,8 +490,11 @@ class NetworkFlowTest extends BaseSpecification {
         sleep 90000
 
         edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
-
-
+	graph = NetworkGraphService.getNetworkGraph(null, null)
+        def node = NetworkGraphUtil.findDeploymentNode(graph, deploymentUid)
+        assert node
+        log.info "${node}"
+        assert node.outEdgesList.size() == 1
         
         //assert waitForEdgeToBeClosed(edges.get(0), 165)
         //edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
