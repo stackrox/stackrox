@@ -742,7 +742,7 @@ _deploy_stackrox() {
 _deploy_central() {
     local central_namespace=${1:-stackrox}
     if [[ "${CI:-}" != "true" ]]; then
-        info "Creating image pull secrets..."
+        info "Creating namespace and image pull secrets..."
         "${ORCH_CMD}" </dev/null create namespace "$central_namespace" || true
         "${ROOT}/deploy/common/pull-secret.sh" stackrox quay.io | kubectl -n "$central_namespace" apply -f -
     fi
