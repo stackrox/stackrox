@@ -86,7 +86,6 @@ setup_file() {
     local roxctl_version
     roxctl_version="$(roxctl version)"
 
-    # if [[ -n "$MAIN_IMAGE_TAG" ]] && [[ "$roxctl_version" != "$MAIN_IMAGE_TAG" ]]; then
     if [[ -n "$MAIN_IMAGE_TAG" ]] && [[ "$roxctl_version" != "$MAIN_IMAGE_TAG" ]]; then
         echo "MAIN_IMAGE_TAG ($MAIN_IMAGE_TAG) does not match roxctl version ($roxctl_version)."
     fi
