@@ -1,0 +1,315 @@
+central:
+  FLAGS:
+    - ca
+    - direct-grpc
+    - endpoint
+    - force-http1
+    - insecure
+    - insecure-skip-tls-verify
+    - plaintext
+    - server-name
+    - use-current-k8s-context
+  backup:
+    FLAGS:
+      - certs-only
+      - output
+  cert:
+    FLAGS:
+      - output
+  crs:
+    generate: {}
+    list: {}
+    revoke: {}
+  db:
+    backup:
+      FLAGS:
+        - certs-only
+        - full
+        - output
+    restore:
+      FLAGS:
+        - file
+        - force
+        - interrupt
+      cancel:
+        FLAGS:
+          - force
+      status: {}
+  debug:
+    authz-trace: {}
+    db:
+      stats:
+        reset: {}
+    download-diagnostics: {}
+    dump:
+      FLAGS:
+        - logs
+    log:
+      FLAGS:
+        - level
+        - modules
+  export:
+    deployments: {}
+    images: {}
+    nodes: {}
+    pods: {}
+  generate:
+    interactive: {}
+    k8s:
+      hostpath:
+        FLAGS:
+          - db-hostpath
+          - db-node-selector-key
+          - db-node-selector-value
+      none: {}
+      pvc:
+        FLAGS:
+          - db-name
+          - db-size
+          - db-storage-class
+    openshift:
+      hostpath:
+        FLAGS:
+          - db-hostpath
+          - db-node-selector-key
+          - db-node-selector-value
+      none: {}
+      pvc:
+        FLAGS:
+          - db-name
+          - db-size
+          - db-storage-class
+  init-bundles:
+    fetch-ca: {}
+    generate: {}
+    list: {}
+    revoke:
+      FLAGS:
+        - force
+  login: {}
+  machine-to-machine:
+    exchange:
+      FLAGS:
+        - token
+        - token-file
+  userpki:
+    create:
+      FLAGS:
+        - cert
+        - role
+    delete:
+      FLAGS:
+        - force
+    list:
+      FLAGS:
+        - json
+  whoami: {}
+cluster:
+  delete:
+    FLAGS:
+      - ca
+      - direct-grpc
+      - endpoint
+      - force-http1
+      - insecure
+      - insecure-skip-tls-verify
+      - name
+      - plaintext
+      - server-name
+      - use-current-k8s-context
+collector:
+  support-packages:
+    upload:
+      FLAGS:
+        - overwrite
+completion: {}
+declarative-config:
+  create:
+    FLAGS:
+      - config-map
+      - namespace
+      - secret
+    access-scope:
+      FLAGS:
+        - cluster-label-selector
+        - description
+        - included
+        - name
+        - namespace-label-selector
+    auth-provider:
+      FLAGS:
+        - extra-ui-endpoints
+        - groups-key
+        - groups-role
+        - groups-value
+        - minimum-access-role
+        - name
+        - required-attributes
+        - ui-endpoint
+      iap:
+        FLAGS:
+          - audience
+      oidc:
+        FLAGS:
+          - claim-mappings
+          - client-id
+          - client-secret
+          - disable-offline-access
+          - issuer
+          - mode
+      openshift-auth: {}
+      saml:
+        FLAGS:
+          - idp-cert
+          - idp-issuer
+          - metadata-url
+          - name-id-format
+          - sp-issuer
+          - sso-url
+      userpki:
+        FLAGS:
+          - ca-file
+    notifier:
+      generic:
+        FLAGS:
+          - audit-logging
+          - extra-fields
+          - headers
+          - webhook-cacert-file
+          - webhook-endpoint
+          - webhook-password
+          - webhook-skip-tls-verify
+          - webhook-username
+      splunk:
+        FLAGS:
+          - audit-logging
+          - source-types
+          - splunk-endpoint
+          - splunk-skip-tls-verify
+          - splunk-token
+          - truncate
+    permission-set:
+      FLAGS:
+        - description
+        - name
+        - resource-with-access
+    role:
+      FLAGS:
+        - access-scope
+        - description
+        - name
+        - permission-set
+  lint:
+    FLAGS:
+      - config-map
+      - file
+      - namespace
+      - secret
+deployment:
+  check:
+    FLAGS:
+      - categories
+      - cluster
+      - file
+      - force
+      - json
+      - namespace
+      - print-all-violations
+      - retries
+      - retry-delay
+      - verbose
+doc:
+  FLAGS:
+    - output
+helm:
+  derive-local-values: {}
+  output: {}
+image:
+  check:
+    FLAGS:
+      - categories
+      - cluster
+      - force
+      - image
+      - json
+      - json-fail-on-policy-violations
+      - print-all-violations
+      - retries
+      - retry-delay
+      - send-notifications
+  sbom:
+    FLAGS:
+      - force
+      - image
+      - retries
+      - retry-delay
+  scan:
+    FLAGS:
+      - cluster
+      - fail
+      - force
+      - format
+      - image
+      - include-snoozed
+      - retries
+      - retry-delay
+      - severity
+log-convert:
+  FLAGS:
+    - level
+    - module
+netpol:
+  connectivity:
+    diff:
+      FLAGS:
+        - dir1
+        - dir2
+        - fail
+        - output-file
+        - output-format
+        - remove
+        - save-to-file
+        - strict
+    map:
+      FLAGS:
+        - exposure
+        - fail
+        - focus-workload
+        - output-file
+        - output-format
+        - remove
+        - save-to-file
+        - strict
+  generate:
+    FLAGS:
+      - dnsport
+      - fail
+      - output-dir
+      - output-file
+      - remove
+      - strict
+scanner:
+  download-db:
+    FLAGS:
+      - force
+      - scanner-db-file
+      - skip-central
+      - skip-variants
+      - version
+  generate:
+    FLAGS:
+      - istio-support
+      - output-dir
+      - scanner-image
+      - scanner-v4-db-image
+      - scanner-v4-image
+  upload-db:
+    FLAGS:
+      - scanner-db-file
+sensor:
+  generate:
+    k8s: {}
+    openshift: {}
+  generate-certs: {}
+  get-bundle: {}
+version: {}
