@@ -1,12 +1,19 @@
 package maincommand
 
 import (
+	_ "embed"
 	"strings"
 	"testing"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	yaml "gopkg.in/yaml.v3"
 )
+
+//go:embed commands_tree.yaml
+var commandsTree string
 
 func isCapitalized(s string) bool {
 	if len(s) == 0 {
@@ -45,4 +52,34 @@ func checkUsageFirstCharacter(t *testing.T, command *cobra.Command) {
 
 func Test_Commands(t *testing.T) {
 	checkUsageFirstCharacter(t, Command())
+}
+
+type cmdNode struct {
+	Commands map[string]*cmdNode `yaml:"cmd,inline,omitempty"`
+	Flags    []string            `yaml:"FLAGS,omitempty"`
+}
+
+func buildCmdTree(c *cobra.Command) *cmdNode {
+	command := &cmdNode{
+		Commands: make(map[string]*cmdNode),
+	}
+	c.Flags().VisitAll(func(f *pflag.Flag) {
+		command.Flags = append(command.Flags, f.Name)
+	})
+
+	for _, cmd := range c.Commands() {
+		command.Commands[cmd.Name()] = buildCmdTree(cmd)
+	}
+	return command
+}
+
+func Test_commandTree(t *testing.T) {
+	root := Command()
+	sb := &strings.Builder{}
+	tree := buildCmdTree(root)
+	e := yaml.NewEncoder(sb)
+	e.SetIndent(2)
+	require.NoError(t, e.Encode(tree))
+	defer func() { _ = e.Close() }()
+	assert.Equal(t, commandsTree, sb.String())
 }
