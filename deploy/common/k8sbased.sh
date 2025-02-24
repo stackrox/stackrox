@@ -625,7 +625,7 @@ function launch_sensor {
     local extra_json_config=''
     local extra_helm_config=()
 
-    local collector_priority_class_name="stackrox-collector"
+    local collector_priority_class_name="stackrox-collector-dev"
 
     verify_orch
 
