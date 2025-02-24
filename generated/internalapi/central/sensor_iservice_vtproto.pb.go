@@ -187,22 +187,6 @@ func (m *MsgFromSensor_IssueSecuredClusterCertsRequest) CloneVT() isMsgFromSenso
 	return r
 }
 
-func (m *ReassessPolicies) CloneVT() *ReassessPolicies {
-	if m == nil {
-		return (*ReassessPolicies)(nil)
-	}
-	r := new(ReassessPolicies)
-	if len(m.unknownFields) > 0 {
-		r.unknownFields = make([]byte, len(m.unknownFields))
-		copy(r.unknownFields, m.unknownFields)
-	}
-	return r
-}
-
-func (m *ReassessPolicies) CloneMessageVT() proto.Message {
-	return m.CloneVT()
-}
-
 func (m *ReprocessDeployments) CloneVT() *ReprocessDeployments {
 	if m == nil {
 		return (*ReprocessDeployments)(nil)
@@ -298,15 +282,6 @@ func (m *MsgToSensor_PolicySync) CloneVT() isMsgToSensor_Msg {
 	}
 	r := new(MsgToSensor_PolicySync)
 	r.PolicySync = m.PolicySync.CloneVT()
-	return r
-}
-
-func (m *MsgToSensor_ReassessPolicies) CloneVT() isMsgToSensor_Msg {
-	if m == nil {
-		return (*MsgToSensor_ReassessPolicies)(nil)
-	}
-	r := new(MsgToSensor_ReassessPolicies)
-	r.ReassessPolicies = m.ReassessPolicies.CloneVT()
 	return r
 }
 
@@ -1098,22 +1073,6 @@ func (this *MsgFromSensor_IssueSecuredClusterCertsRequest) EqualVT(thatIface isM
 	return true
 }
 
-func (this *ReassessPolicies) EqualVT(that *ReassessPolicies) bool {
-	if this == that {
-		return true
-	} else if this == nil || that == nil {
-		return false
-	}
-	return string(this.unknownFields) == string(that.unknownFields)
-}
-
-func (this *ReassessPolicies) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*ReassessPolicies)
-	if !ok {
-		return false
-	}
-	return this.EqualVT(that)
-}
 func (this *ReprocessDeployments) EqualVT(that *ReprocessDeployments) bool {
 	if this == that {
 		return true
@@ -1323,31 +1282,6 @@ func (this *MsgToSensor_PolicySync) EqualVT(thatIface isMsgToSensor_Msg) bool {
 		}
 		if q == nil {
 			q = &PolicySync{}
-		}
-		if !p.EqualVT(q) {
-			return false
-		}
-	}
-	return true
-}
-
-func (this *MsgToSensor_ReassessPolicies) EqualVT(thatIface isMsgToSensor_Msg) bool {
-	that, ok := thatIface.(*MsgToSensor_ReassessPolicies)
-	if !ok {
-		return false
-	}
-	if this == that {
-		return true
-	}
-	if this == nil && that != nil || this != nil && that == nil {
-		return false
-	}
-	if p, q := this.ReassessPolicies, that.ReassessPolicies; p != q {
-		if p == nil {
-			p = &ReassessPolicies{}
-		}
-		if q == nil {
-			q = &ReassessPolicies{}
 		}
 		if !p.EqualVT(q) {
 			return false
@@ -2531,39 +2465,6 @@ func (m *MsgFromSensor_IssueSecuredClusterCertsRequest) MarshalToSizedBufferVT(d
 	}
 	return len(dAtA) - i, nil
 }
-func (m *ReassessPolicies) MarshalVT() (dAtA []byte, err error) {
-	if m == nil {
-		return nil, nil
-	}
-	size := m.SizeVT()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *ReassessPolicies) MarshalToVT(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVT(dAtA[:size])
-}
-
-func (m *ReassessPolicies) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
-	if m == nil {
-		return 0, nil
-	}
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.unknownFields != nil {
-		i -= len(m.unknownFields)
-		copy(dAtA[i:], m.unknownFields)
-	}
-	return len(dAtA) - i, nil
-}
-
 func (m *ReprocessDeployments) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -2797,29 +2698,6 @@ func (m *MsgToSensor_PolicySync) MarshalToSizedBufferVT(dAtA []byte) (int, error
 		i = protohelpers.EncodeVarint(dAtA, i, 0)
 		i--
 		dAtA[i] = 0x3a
-	}
-	return len(dAtA) - i, nil
-}
-func (m *MsgToSensor_ReassessPolicies) MarshalToVT(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVT(dAtA[:size])
-}
-
-func (m *MsgToSensor_ReassessPolicies) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	if m.ReassessPolicies != nil {
-		size, err := m.ReassessPolicies.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x42
-	} else {
-		i = protohelpers.EncodeVarint(dAtA, i, 0)
-		i--
-		dAtA[i] = 0x42
 	}
 	return len(dAtA) - i, nil
 }
@@ -3980,16 +3858,6 @@ func (m *MsgFromSensor_IssueSecuredClusterCertsRequest) SizeVT() (n int) {
 	}
 	return n
 }
-func (m *ReassessPolicies) SizeVT() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	n += len(m.unknownFields)
-	return n
-}
-
 func (m *ReprocessDeployments) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -4105,20 +3973,6 @@ func (m *MsgToSensor_PolicySync) SizeVT() (n int) {
 	_ = l
 	if m.PolicySync != nil {
 		l = m.PolicySync.SizeVT()
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	} else {
-		n += 2
-	}
-	return n
-}
-func (m *MsgToSensor_ReassessPolicies) SizeVT() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.ReassessPolicies != nil {
-		l = m.ReassessPolicies.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	} else {
 		n += 2
@@ -5357,57 +5211,6 @@ func (m *MsgFromSensor) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ReassessPolicies) UnmarshalVT(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return protohelpers.ErrIntOverflow
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: ReassessPolicies: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ReassessPolicies: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		default:
-			iNdEx = preIndex
-			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
 func (m *ReprocessDeployments) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -5773,47 +5576,6 @@ func (m *MsgToSensor) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 				m.Msg = &MsgToSensor_PolicySync{PolicySync: v}
-			}
-			iNdEx = postIndex
-		case 8:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ReassessPolicies", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if oneof, ok := m.Msg.(*MsgToSensor_ReassessPolicies); ok {
-				if err := oneof.ReassessPolicies.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-			} else {
-				v := &ReassessPolicies{}
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-				m.Msg = &MsgToSensor_ReassessPolicies{ReassessPolicies: v}
 			}
 			iNdEx = postIndex
 		case 9:
@@ -8486,57 +8248,6 @@ func (m *MsgFromSensor) UnmarshalVTUnsafe(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ReassessPolicies) UnmarshalVTUnsafe(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return protohelpers.ErrIntOverflow
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: ReassessPolicies: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ReassessPolicies: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		default:
-			iNdEx = preIndex
-			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
 func (m *ReprocessDeployments) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -8902,47 +8613,6 @@ func (m *MsgToSensor) UnmarshalVTUnsafe(dAtA []byte) error {
 					return err
 				}
 				m.Msg = &MsgToSensor_PolicySync{PolicySync: v}
-			}
-			iNdEx = postIndex
-		case 8:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ReassessPolicies", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if oneof, ok := m.Msg.(*MsgToSensor_ReassessPolicies); ok {
-				if err := oneof.ReassessPolicies.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-			} else {
-				v := &ReassessPolicies{}
-				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-				m.Msg = &MsgToSensor_ReassessPolicies{ReassessPolicies: v}
 			}
 			iNdEx = postIndex
 		case 9:
