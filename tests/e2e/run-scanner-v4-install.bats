@@ -41,6 +41,9 @@ setup_file() {
     export CHART_BASE=""
     export DEFAULT_IMAGE_REGISTRY="quay.io/stackrox-io"
 
+    export MAIN_IMAGE_TAG="${MAIN_IMAGE_TAG:-$(make --quiet --no-print-directory -C "${ROOT}" tag)}"
+    info "Using MAIN_IMAGE_TAG=$MAIN_IMAGE_TAG"
+
     export CURRENT_MAIN_IMAGE_TAG=${CURRENT_MAIN_IMAGE_TAG:-} # Setting a tag can be useful for local testing.
     export EARLIER_CHART_VERSION="4.3.0"
     export EARLIER_MAIN_IMAGE_TAG=$EARLIER_CHART_VERSION
@@ -65,6 +68,18 @@ setup_file() {
         git clone --depth 1 -b main https://github.com/stackrox/helm-charts "${CHART_REPOSITORY}"
     fi
     export CHART_REPOSITORY
+
+    if ! command -v roxctl >/dev/null; then
+        die "roxctl not found, please make sure it can be resolved via PATH."
+    fi
+
+    local roxctl_version
+    roxctl_version="$(roxctl version)"
+
+    # if [[ -n "$MAIN_IMAGE_TAG" ]] && [[ "$roxctl_version" != "$MAIN_IMAGE_TAG" ]]; then
+    if [[ -n "$MAIN_IMAGE_TAG" ]] && [[ "$roxctl_version" != "$MAIN_IMAGE_TAG" ]]; then
+        echo "MAIN_IMAGE_TAG ($MAIN_IMAGE_TAG) does not match roxctl version ($roxctl_version)."
+    fi
 
     # Download and use earlier version of roxctl without Scanner V4 support
     # We will just hard-code a pre-4.4 version here.
