@@ -1,61 +1,14 @@
 Create a declarative configuration for a generic notifier
 
-Options:
-    --audit-logging=false:
-        Audit logging enabled
-
-    --extra-fields=[]:
-        Extra fields (comma separated key=value pairs)
-
-    --headers=[]:
-        Headers (comma separated key=value pairs)
-
-    --webhook-cacert-file:
-        Endpoint CA certificate file name (PEM format)
-
-    --webhook-endpoint:
-        Webhook endpoint URL
-
-    --webhook-password:
-        Password for the webhook endpoint basic authentication. No 
-        authentication if not provided. Requires --webhook-username
-
-    --webhook-skip-tls-verify=false:
-        Skip webhook TLS verification
-
-    --webhook-username:
-        Username for the webhook endpoint basic authentication. No 
-        authentication if not provided. Requires --webhook-password
-
-Global Options:
-    --config-map:
-        Config Map to which the declarative config YAML should be written to.
-        If this is unset and the flag "secret" is also unset, the created YAML 
-        will be printed to stdout instead
-
-    -h, --help=false:
-        Help
-
-    --name:
-        Name of the notifier
-
-    --namespace:
-        Only required in case the declarative config YAML should be written to a
-        Config Map or secret.
-        If left empty, the default namespace in the current kube config will be 
-        used.
-
-    --no-color=false:
-        Disable color output. Alternately disable the color output by setting 
-        the ROX_NO_COLOR environment variable
-
-    --secret:
-        Secret to which the declarative config YAML should be written to.
-        Secrets should be used in case sensitive data is contained within the 
-        declarative configuration, e.g. within auth providers.
-        If this is unset and the flag "config-map" is also unset, the created 
-        YAML will be printed to stdout instead.
-
 Usage:
-  tmp/roxctl-bats/bin/roxctl-release declarative-config create notifier generic 
-  [flags]
+  tmp/roxctl-bats/bin/roxctl-release declarative-config create notifier generic [flags]
+
+Flags:
+      --audit-logging                 Audit logging enabled
+      --extra-fields stringToString   Extra fields (comma separated key=value pairs) (default [])
+      --headers stringToString        Headers (comma separated key=value pairs) (default [])
+      --webhook-cacert-file string    Endpoint CA certificate file name (PEM format)
+      --webhook-endpoint string       Webhook endpoint URL
+      --webhook-password string       Password for the webhook endpoint basic authentication. No authentication if not provided. Requires --webhook-username
+      --webhook-skip-tls-verify       Skip webhook TLS verification
+      --webhook-username string       Username for the webhook endpoint basic authentication. No authentication if not provided. Requires --webhook-password
