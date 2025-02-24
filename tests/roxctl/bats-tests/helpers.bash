@@ -40,7 +40,7 @@ roxctl-development-cmd() {
   if [[ ! -x "${tmp_roxctl}/roxctl-dev" ]]; then
     _uname="$(luname)"
     mkdir -p "$tmp_roxctl"
-    make -s "cli-${_uname}" GOTAGS='' 2>&3
+    make -s "cli-${_uname}_amd64" GOTAGS='' 2>&3
     mv "bin/${_uname}_amd64/roxctl" "${tmp_roxctl}/roxctl-dev"
   fi
   echo "${tmp_roxctl}/roxctl-dev"
@@ -56,7 +56,7 @@ roxctl-release-cmd() {
   if [[ ! -x "${tmp_roxctl}/roxctl-release" ]]; then
     _uname="$(luname)"
     mkdir -p "$tmp_roxctl"
-    make -s "cli-${_uname}" GOTAGS='release' 2>&3
+    make -s "cli-${_uname}_amd64" GOTAGS='release' 2>&3
     mv "bin/${_uname}_amd64/roxctl" "${tmp_roxctl}/roxctl-release"
   fi
   echo "${tmp_roxctl}/roxctl-release"
