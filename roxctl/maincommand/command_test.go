@@ -82,5 +82,6 @@ func Test_commandTree(t *testing.T) {
 	result := sb.String()
 	// Regenerate the tree:
 	// os.WriteFile(commandTreeFilename, []byte(result), 0666)
+	assert.NotEmpty(t, commandTreeFilename, result)
 	assert.Equal(t, commandTree, result)
 }
