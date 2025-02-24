@@ -603,17 +603,16 @@ function launch_central {
 function ensure_collector_priority_class {
     local priority_class_name="$1"
     ${ORCH_CMD} get priorityclass -o=name "$priority_class_name" >/dev/null 2>&1 && return 0
-    ${ORCH_CMD} apply -f <(cat <<EOT | sed -e "s|\$PRIORITY_CLASS_NAME|$priority_class_name|g;"
+    ${ORCH_CMD} apply -f - <<EOT
 apiVersion: scheduling.k8s.io/v1
 kind: PriorityClass
 metadata:
-  name: \$PRIORITY_CLASS_NAME
+  name: ${priority_class_name}
 value: 1000000
 preemptionPolicy: PreemptLowerPriority
 globalDefault: false
 description: "This priority class shall be used for collector pods, which must be able to preempt other pods to fit exactly one collector on each node."
 EOT
-)
 }
 
 function launch_sensor {
