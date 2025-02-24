@@ -25,19 +25,19 @@ var (
 )
 
 type manifestGenerator struct {
-	CA        mtls.CA
-	Namespace string
-	Client    *kubernetes.Clientset
+	CA     mtls.CA
+	Config *Config
+	Client *kubernetes.Clientset
 }
 
-func New(ns string, clientset *kubernetes.Clientset) (*manifestGenerator, error) {
-	if ns == "" {
-		return nil, fmt.Errorf("Invalid namespace: %s", ns)
+func New(cfg *Config, clientset *kubernetes.Clientset) (*manifestGenerator, error) {
+	if cfg.Namespace == "" {
+		return nil, fmt.Errorf("Invalid namespace: %s", cfg.Namespace)
 	}
 
 	return &manifestGenerator{
-		Namespace: ns,
-		Client:    clientset,
+		Config: cfg,
+		Client: clientset,
 	}, nil
 }
 
@@ -68,7 +68,7 @@ func (m *manifestGenerator) Apply(ctx context.Context) error {
 func (m *manifestGenerator) getCA(ctx context.Context) error {
 	var ca mtls.CA
 	var err error
-	secret, err := m.Client.CoreV1().Secrets(m.Namespace).Get(ctx, "additional-ca", metav1.GetOptions{})
+	secret, err := m.Client.CoreV1().Secrets(m.Config.Namespace).Get(ctx, "additional-ca", metav1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
 			ca, err = certgen.GenerateCA()
@@ -86,7 +86,7 @@ func (m *manifestGenerator) getCA(ctx context.Context) error {
 				Data: fileMap,
 			}
 
-			_, err = m.Client.CoreV1().Secrets(m.Namespace).Create(ctx, secret, metav1.CreateOptions{})
+			_, err = m.Client.CoreV1().Secrets(m.Config.Namespace).Create(ctx, secret, metav1.CreateOptions{})
 			if err != nil {
 				if errors.IsAlreadyExists(err) {
 					return fmt.Errorf("Race condition: Secret additional-ca got created just before now: %w", err)
@@ -110,7 +110,7 @@ func (m *manifestGenerator) getCA(ctx context.Context) error {
 
 func (m *manifestGenerator) applyNamespace(ctx context.Context) error {
 	ns := v1.Namespace{}
-	ns.SetName(m.Namespace)
+	ns.SetName(m.Config.Namespace)
 	_, err := m.Client.CoreV1().Namespaces().Create(ctx, &ns, metav1.CreateOptions{})
 
 	if err != nil && !errors.IsAlreadyExists(err) {
@@ -125,7 +125,7 @@ func (m *manifestGenerator) applyNamespace(ctx context.Context) error {
 type tlsCallback func(fileMap map[string][]byte) error
 
 func (m *manifestGenerator) applyTlsSecret(ctx context.Context, name string, issueCert tlsCallback) error {
-	secret, err := m.Client.CoreV1().Secrets(m.Namespace).Get(ctx, name, metav1.GetOptions{})
+	secret, err := m.Client.CoreV1().Secrets(m.Config.Namespace).Get(ctx, name, metav1.GetOptions{})
 	if err == nil {
 		log.Infof("Secret %s already found.", name)
 		return nil
@@ -149,7 +149,7 @@ func (m *manifestGenerator) applyTlsSecret(ctx context.Context, name string, iss
 		return fmt.Errorf("issuing certificate for %s: %w", name, err)
 	}
 
-	_, err = m.Client.CoreV1().Secrets(m.Namespace).Create(ctx, secret, metav1.CreateOptions{})
+	_, err = m.Client.CoreV1().Secrets(m.Config.Namespace).Create(ctx, secret, metav1.CreateOptions{})
 
 	if err != nil {
 		if errors.IsAlreadyExists(err) {
@@ -210,7 +210,7 @@ func (m *manifestGenerator) createNonrootV2SCCRole(ctx context.Context) error {
 			Verbs:         []string{"use"},
 		}},
 	}
-	_, err := m.Client.RbacV1().Roles(m.Namespace).Create(ctx, &role, metav1.CreateOptions{})
+	_, err := m.Client.RbacV1().Roles(m.Config.Namespace).Create(ctx, &role, metav1.CreateOptions{})
 
 	if err != nil {
 		if errors.IsAlreadyExists(err) {
@@ -240,7 +240,7 @@ func (m *manifestGenerator) createNonrootV2SCCRoleBinding(ctx context.Context, s
 			Namespace: "stackrox",
 		}},
 	}
-	_, err := m.Client.RbacV1().RoleBindings(m.Namespace).Create(ctx, &roleBinding, metav1.CreateOptions{})
+	_, err := m.Client.RbacV1().RoleBindings(m.Config.Namespace).Create(ctx, &roleBinding, metav1.CreateOptions{})
 
 	if err != nil {
 		if errors.IsAlreadyExists(err) {
@@ -260,7 +260,7 @@ func (m *manifestGenerator) createServiceAccount(ctx context.Context, name strin
 		},
 	}
 
-	_, err := m.Client.CoreV1().ServiceAccounts(m.Namespace).Create(ctx, &acct, metav1.CreateOptions{})
+	_, err := m.Client.CoreV1().ServiceAccounts(m.Config.Namespace).Create(ctx, &acct, metav1.CreateOptions{})
 
 	if err != nil {
 		if errors.IsAlreadyExists(err) {

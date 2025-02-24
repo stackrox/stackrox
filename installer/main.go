@@ -7,11 +7,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/stackrox/rox/pkg/manifest"
-
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
+
+	"github.com/stackrox/rox/pkg/manifest"
 )
 
 func log(msg string, params ...interface{}) {
@@ -19,6 +19,7 @@ func log(msg string, params ...interface{}) {
 }
 
 func main() {
+	configPath := flag.String("conf", "", "Path to installer's configuration file.")
 	var kubeconfig *string
 	if os.Getenv("KUBECONFIG") != "" {
 		kubeconfig = flag.String("kubeconfig", os.Getenv("KUBECONFIG"), "(optional) absolute path to the kubeconfig file")
@@ -33,6 +34,10 @@ func main() {
 	if err != nil {
 		panic(err.Error())
 	}
+	cfg, err := manifest.ReadConfig(*configPath)
+	if err != nil {
+		panic(fmt.Sprintf("failed to load configuration %q: %v", *configPath, err))
+	}
 
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
@@ -41,7 +46,7 @@ func main() {
 
 	ctx := context.Background()
 
-	m, err := manifest.New("stackrox", clientset)
+	m, err := manifest.New(cfg, clientset)
 
 	if err != nil {
 		panic(err.Error())
