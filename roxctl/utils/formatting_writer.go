@@ -74,7 +74,7 @@ func (w *formattingWriter) WriteString(s string) (int, error) {
 			if err := w.ln(); err != nil {
 				return w.written, err
 			}
-			if word == " " || word == "\t" {
+			if word == " " {
 				continue
 			}
 		}
