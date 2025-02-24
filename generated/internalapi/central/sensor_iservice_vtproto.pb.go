@@ -11,6 +11,7 @@ import (
 	proto "google.golang.org/protobuf/proto"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	io "io"
+	sync "sync"
 	unsafe "unsafe"
 )
 
@@ -25,7 +26,7 @@ func (m *MsgFromSensor) CloneVT() *MsgFromSensor {
 	if m == nil {
 		return (*MsgFromSensor)(nil)
 	}
-	r := new(MsgFromSensor)
+	r := MsgFromSensorFromVTPool()
 	r.HashKey = m.HashKey
 	r.DedupeKey = m.DedupeKey
 	r.ProcessingAttempt = m.ProcessingAttempt
@@ -3610,6 +3611,26 @@ func (m *InvalidateImageCache) MarshalToSizedBufferVT(dAtA []byte) (int, error) 
 	return len(dAtA) - i, nil
 }
 
+var vtprotoPool_MsgFromSensor = sync.Pool{
+	New: func() interface{} {
+		return &MsgFromSensor{}
+	},
+}
+
+func (m *MsgFromSensor) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *MsgFromSensor) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_MsgFromSensor.Put(m)
+	}
+}
+func MsgFromSensorFromVTPool() *MsgFromSensor {
+	return vtprotoPool_MsgFromSensor.Get().(*MsgFromSensor)
+}
 func (m *MsgFromSensor) SizeVT() (n int) {
 	if m == nil {
 		return 0

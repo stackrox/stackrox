@@ -193,7 +193,8 @@ func getSensorMessageTypeString(msg *central.MsgFromSensor) string {
 func (c *sensorConnection) runRecv(ctx context.Context, grpcServer central.SensorService_CommunicateServer) {
 	queues := make(map[string]*dedupingqueue.DedupingQueue[string])
 	for !c.stopSig.IsDone() {
-		msg, err := grpcServer.Recv()
+		msg := central.MsgFromSensorFromVTPool()
+		err := grpcServer.RecvMsg(msg)
 		if err != nil {
 			if errStatus, ok := status.FromError(err); ok {
 				if errStatus.Code() == codes.ResourceExhausted {
@@ -225,6 +226,7 @@ func (c *sensorConnection) handleMessages(ctx context.Context, queue *dedupingqu
 			metrics.IncrementPipelinePanics(msgFromSensor)
 			log.Errorf("panic in handle message: %v", err)
 		}
+		msgFromSensor.ReturnToVTPool()
 	}
 	c.eventPipeline.OnFinish(c.clusterID)
 	c.stoppedSig.SignalWithError(c.stopSig.Err())
