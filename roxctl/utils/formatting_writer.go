@@ -7,43 +7,49 @@ import (
 
 const tabWidth = 8
 
-type indentAndWrapWriter struct {
-	w      io.StringWriter
+type formattingWriter struct {
+	raw    io.StringWriter
 	width  int
 	indent indents
 
 	currentLine int
 	written     int
+	npQueue     []rune
 }
 
-var _ io.StringWriter = (*indentAndWrapWriter)(nil)
+var _ io.StringWriter = (*formattingWriter)(nil)
 
-func makeWriter(w io.StringWriter, width int, indent ...int) *indentAndWrapWriter {
-	return &indentAndWrapWriter{w: w, width: width, indent: indent}
+func makeWriter(w io.StringWriter, width int, indent ...int) *formattingWriter {
+	return &formattingWriter{raw: w, width: width, indent: indent}
 }
 
 //nolint:wrapcheck
-func (w *indentAndWrapWriter) write0(s string) error {
-	n, err := w.w.WriteString(s)
+func (w *formattingWriter) write0(s string) error {
+	n, err := w.raw.WriteString(s)
 	w.currentLine += n
 	w.written += n
 	return err
 }
 
-func (w *indentAndWrapWriter) writePadding() error {
+func (w *formattingWriter) writePadding() error {
 	w.currentLine = 0
 	return w.write0(strings.Repeat(" ", w.indent.pop()))
 }
 
 //nolint:wrapcheck
-func (w *indentAndWrapWriter) ln() error {
-	if _, err := w.w.WriteString("\n"); err != nil {
+func (w *formattingWriter) ln() error {
+	if _, err := w.raw.WriteString("\n"); err != nil {
 		return err
 	}
 	return w.writePadding()
 }
 
-func (w *indentAndWrapWriter) WriteString(s string) (int, error) {
+func (w *formattingWriter) setIndent(indent ...int) {
+	w.currentLine = 0
+	w.indent = indent
+}
+
+func (w *formattingWriter) WriteString(s string) (int, error) {
 	w.written = 0
 	if w.currentLine == 0 {
 		if err := w.writePadding(); err != nil {
