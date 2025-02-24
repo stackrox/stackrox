@@ -78,12 +78,10 @@ func buildCmdTree(c *cobra.Command) *cmdNode {
 }
 
 func Test_commandTree(t *testing.T) {
-	root := Command()
 	sb := &strings.Builder{}
-	tree := buildCmdTree(root)
 	e := yaml.NewEncoder(sb)
 	e.SetIndent(2)
-	require.NoError(t, e.Encode(tree))
-	defer func() { _ = e.Close() }()
+	require.NoError(t, e.Encode(buildCmdTree(Command())))
+	_ = e.Close()
 	assert.Equal(t, commandsTree, sb.String())
 }
