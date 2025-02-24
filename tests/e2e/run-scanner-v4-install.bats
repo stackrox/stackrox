@@ -717,6 +717,11 @@ _deploy_stackrox() {
 # shellcheck disable=SC2120
 _deploy_central() {
     local central_namespace=${1:-stackrox}
+    if [[ "${CI:-}" != "true" ]]; then
+        info "Creating image pull secrets..."
+        "${ORCH_CMD}" </dev/null create namespace "$central_namespace" || true
+        "${ROOT}/deploy/common/pull-secret.sh" stackrox quay.io | kubectl -n "$central_namespace" apply -f -
+    fi
     deploy_central "${central_namespace}"
     patch_down_central "${central_namespace}"
 }
@@ -769,6 +774,12 @@ EOF
 _deploy_sensor() {
     local sensor_namespace=${1:-stackrox}
     local central_namespace=${2:-stackrox}
+    if [[ "${CI:-}" != "true" ]]; then
+        info "Creating image pull secrets..."
+        "${ORCH_CMD}" </dev/null create namespace "$sensor_namespace" || true
+        "${ROOT}/deploy/common/pull-secret.sh" stackrox quay.io | kubectl -n "$sensor_namespace" apply -f -
+        "${ROOT}/deploy/common/pull-secret.sh" collector-stackrox quay.io | kubectl -n "$sensor_namespace" apply -f -
+    fi
     deploy_sensor "${sensor_namespace}" "${central_namespace}"
     patch_down_sensor "${sensor_namespace}"
 }
