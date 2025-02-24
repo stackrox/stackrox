@@ -12,8 +12,8 @@ Available Commands:
   image                Commands that you can run on a specific image.
   netpol               Commands related to network policies.
   scanner              Commands related to the Scanner service.
-  sensor               Commands related to deploying StackRox services in secured 
-                       clusters.
+  sensor               Commands related to deploying StackRox services in 
+                       secured clusters.
   version              Display the current roxctl version.
 
 Options:

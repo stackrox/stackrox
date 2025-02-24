@@ -54,16 +54,41 @@ lines.`)
 }
 
 func Test_setIndent(t *testing.T) {
-	sb := &strings.Builder{}
-	w := makeWriter(sb, 20)
-	_, _ = w.WriteString("text 0")
-	w.setIndent(2, 4)
-	_, _ = w.WriteString("text 2\n")
-	_, _ = w.WriteString("text 4\n")
-	_, _ = w.WriteString("text 4")
-	w.setIndent()
-	_, _ = w.WriteString("text 0\n")
-	_, _ = w.WriteString("text 0\n")
+	t.Run("should respect updated indentation", func(t *testing.T) {
+		sb := &strings.Builder{}
+		w := makeWriter(sb, 20)
+		_, _ = w.WriteString("text 0")
+		w.setIndent(2, 4)
+		_, _ = w.WriteString("text 2\n")
+		_, _ = w.WriteString("text 4\n")
+		_, _ = w.WriteString("text 4")
+		w.setIndent()
+		_, _ = w.WriteString("text 0\n")
+		_, _ = w.WriteString("text 0\n")
 
-	assert.Equal(t, "text 0  text 2\n    text 4\n    text 4text 0\ntext 0\n", sb.String())
+		assert.Equal(t, "text 0  text 2\n    text 4\n    text 4text 0\ntext 0\n", sb.String())
+	})
+
+	t.Run("should not reset previously written line length", func(t *testing.T) {
+		sb := &strings.Builder{}
+		w := makeWriter(sb, 10)
+
+		w.setIndent(2)               // 2
+		_, _ = w.WriteString("... ") // +4=6
+		w.setIndent(2)               // +2=8
+		_, _ = w.WriteString(" .")   // +2=10
+		assert.Equal(t, "  ...    .", sb.String())
+	})
+
+	t.Run("should wrap correctly", func(t *testing.T) {
+		sb := &strings.Builder{}
+		w := makeWriter(sb, 10)
+
+		w.setIndent(2)
+		_, _ = w.WriteString(".... ")
+		w.setIndent(2)
+		_, _ = w.WriteString(" ..")
+		assert.Equal(t, "  ....    \n  ..", sb.String())
+	})
+
 }

@@ -14,7 +14,7 @@ type formattingWriter struct {
 
 	currentLine int
 	written     int
-	npQueue     []rune
+	indentReset bool
 }
 
 var _ io.StringWriter = (*formattingWriter)(nil)
@@ -32,7 +32,9 @@ func (w *formattingWriter) write0(s string) error {
 }
 
 func (w *formattingWriter) writePadding() error {
-	w.currentLine = 0
+	if !w.indentReset {
+		w.currentLine = 0
+	}
 	return w.write0(strings.Repeat(" ", w.indent.pop()))
 }
 
@@ -45,16 +47,17 @@ func (w *formattingWriter) ln() error {
 }
 
 func (w *formattingWriter) setIndent(indent ...int) {
-	w.currentLine = 0
+	w.indentReset = true
 	w.indent = indent
 }
 
 func (w *formattingWriter) WriteString(s string) (int, error) {
 	w.written = 0
-	if w.currentLine == 0 {
+	if w.currentLine == 0 || w.indentReset {
 		if err := w.writePadding(); err != nil {
 			return w.written, err
 		}
+		w.indentReset = false
 	}
 	for word := range words(s) {
 		if word == "\n" {
@@ -64,7 +67,7 @@ func (w *formattingWriter) WriteString(s string) (int, error) {
 			continue
 		}
 		length := len(word)
-		if word == "\n" {
+		if word == "\t" {
 			length = tabWidth
 		}
 		if w.currentLine+length > w.width {
