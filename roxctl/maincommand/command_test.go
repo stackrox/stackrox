@@ -1,7 +1,6 @@
 package maincommand
 
 import (
-	_ "embed"
 	"strings"
 	"testing"
 
@@ -11,9 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 	yaml "gopkg.in/yaml.v3"
 )
-
-//go:embed commands_tree.yaml
-var commandsTree string
 
 func isCapitalized(s string) bool {
 	if len(s) == 0 {
@@ -83,5 +79,8 @@ func Test_commandTree(t *testing.T) {
 	e.SetIndent(2)
 	require.NoError(t, e.Encode(buildCmdTree(Command())))
 	_ = e.Close()
-	assert.Equal(t, commandsTree, sb.String())
+	result := sb.String()
+	// Regenerate the tree:
+	// os.WriteFile(commandTreeFilename, []byte(result), 0666)
+	assert.Equal(t, commandTree, result)
 }
