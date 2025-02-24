@@ -10,8 +10,8 @@ import (
 func Test_indentAndWrap(t *testing.T) {
 	expected := " \n" +
 		"  This is some long text, that\n" +
-		"   should be indented and\t\n" +
-		"    wrapped.\n" +
+		"   should be indented and\n" +
+		"    \twrapped.\n" +
 		"    There are multiple\n" +
 		"    lines."
 
