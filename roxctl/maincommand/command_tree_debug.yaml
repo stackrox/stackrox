@@ -18,15 +18,14 @@ central:
     - direct-grpc
     - endpoint
     - force-http1
-    - help
     - insecure
     - insecure-skip-tls-verify
-    - no-color
-    - password
     - plaintext
     - server-name
-    - token-file
     - use-current-k8s-context
+  GLOBAL_FLAGS:
+    - help
+    - no-color
   backup:
     LOCAL_FLAGS:
       - certs-only
@@ -1091,14 +1090,7 @@ cluster:
     - endpoint
     - force-http1
     - help
-    - insecure
-    - insecure-skip-tls-verify
     - no-color
-    - password
-    - plaintext
-    - server-name
-    - token-file
-    - use-current-k8s-context
   delete:
     PERSISTENT_FLAGS:
       - name
@@ -1107,17 +1099,17 @@ cluster:
       - direct-grpc
       - endpoint
       - force-http1
-      - help
       - insecure
       - insecure-skip-tls-verify
-      - no-color
-      - password
+      - name
       - plaintext
-      - retry-timeout
       - server-name
-      - timeout
-      - token-file
       - use-current-k8s-context
+    GLOBAL_FLAGS:
+      - help
+      - no-color
+      - retry-timeout
+      - timeout
 collector:
   INHERITED_FLAGS:
     - ca
@@ -1125,14 +1117,7 @@ collector:
     - endpoint
     - force-http1
     - help
-    - insecure
-    - insecure-skip-tls-verify
     - no-color
-    - password
-    - plaintext
-    - server-name
-    - token-file
-    - use-current-k8s-context
   support-packages:
     INHERITED_FLAGS:
       - ca
@@ -1140,14 +1125,7 @@ collector:
       - endpoint
       - force-http1
       - help
-      - insecure
-      - insecure-skip-tls-verify
       - no-color
-      - password
-      - plaintext
-      - server-name
-      - token-file
-      - use-current-k8s-context
     upload:
       LOCAL_FLAGS:
         - overwrite
@@ -1160,14 +1138,7 @@ collector:
         - endpoint
         - force-http1
         - help
-        - insecure
-        - insecure-skip-tls-verify
         - no-color
-        - password
-        - plaintext
-        - server-name
-        - token-file
-        - use-current-k8s-context
 completion:
   INHERITED_FLAGS:
     - ca
@@ -1175,14 +1146,7 @@ completion:
     - endpoint
     - force-http1
     - help
-    - insecure
-    - insecure-skip-tls-verify
     - no-color
-    - password
-    - plaintext
-    - server-name
-    - token-file
-    - use-current-k8s-context
 declarative-config:
   INHERITED_FLAGS:
     - ca
@@ -1190,14 +1154,7 @@ declarative-config:
     - endpoint
     - force-http1
     - help
-    - insecure
-    - insecure-skip-tls-verify
     - no-color
-    - password
-    - plaintext
-    - server-name
-    - token-file
-    - use-current-k8s-context
   create:
     PERSISTENT_FLAGS:
       - config-map
@@ -1209,14 +1166,7 @@ declarative-config:
       - endpoint
       - force-http1
       - help
-      - insecure
-      - insecure-skip-tls-verify
       - no-color
-      - password
-      - plaintext
-      - server-name
-      - token-file
-      - use-current-k8s-context
     access-scope:
       LOCAL_FLAGS:
         - cluster-label-selector
@@ -1227,20 +1177,10 @@ declarative-config:
       INHERITED_FLAGS:
         - ca
         - config-map
-        - direct-grpc
-        - endpoint
-        - force-http1
         - help
-        - insecure
-        - insecure-skip-tls-verify
         - namespace
         - no-color
-        - password
-        - plaintext
         - secret
-        - server-name
-        - token-file
-        - use-current-k8s-context
     auth-provider:
       PERSISTENT_FLAGS:
         - extra-ui-endpoints
@@ -1254,48 +1194,28 @@ declarative-config:
       INHERITED_FLAGS:
         - ca
         - config-map
-        - direct-grpc
-        - endpoint
-        - force-http1
         - help
-        - insecure
-        - insecure-skip-tls-verify
         - namespace
         - no-color
-        - password
-        - plaintext
         - secret
-        - server-name
-        - token-file
-        - use-current-k8s-context
       iap:
         LOCAL_FLAGS:
           - audience
         INHERITED_FLAGS:
           - ca
           - config-map
-          - direct-grpc
-          - endpoint
           - extra-ui-endpoints
-          - force-http1
           - groups-key
           - groups-role
           - groups-value
           - help
-          - insecure
-          - insecure-skip-tls-verify
           - minimum-access-role
           - name
           - namespace
           - no-color
-          - password
-          - plaintext
           - required-attributes
           - secret
-          - server-name
-          - token-file
           - ui-endpoint
-          - use-current-k8s-context
       oidc:
         LOCAL_FLAGS:
           - claim-mappings
@@ -1307,54 +1227,34 @@ declarative-config:
         INHERITED_FLAGS:
           - ca
           - config-map
-          - direct-grpc
-          - endpoint
           - extra-ui-endpoints
-          - force-http1
           - groups-key
           - groups-role
           - groups-value
           - help
-          - insecure
-          - insecure-skip-tls-verify
           - minimum-access-role
           - name
           - namespace
           - no-color
-          - password
-          - plaintext
           - required-attributes
           - secret
-          - server-name
-          - token-file
           - ui-endpoint
-          - use-current-k8s-context
       openshift-auth:
         INHERITED_FLAGS:
           - ca
           - config-map
-          - direct-grpc
-          - endpoint
           - extra-ui-endpoints
-          - force-http1
           - groups-key
           - groups-role
           - groups-value
           - help
-          - insecure
-          - insecure-skip-tls-verify
           - minimum-access-role
           - name
           - namespace
           - no-color
-          - password
-          - plaintext
           - required-attributes
           - secret
-          - server-name
-          - token-file
           - ui-endpoint
-          - use-current-k8s-context
       saml:
         LOCAL_FLAGS:
           - idp-cert
@@ -1366,76 +1266,46 @@ declarative-config:
         INHERITED_FLAGS:
           - ca
           - config-map
-          - direct-grpc
-          - endpoint
           - extra-ui-endpoints
-          - force-http1
           - groups-key
           - groups-role
           - groups-value
           - help
-          - insecure
-          - insecure-skip-tls-verify
           - minimum-access-role
           - name
           - namespace
           - no-color
-          - password
-          - plaintext
           - required-attributes
           - secret
-          - server-name
-          - token-file
           - ui-endpoint
-          - use-current-k8s-context
       userpki:
         LOCAL_FLAGS:
           - ca-file
         INHERITED_FLAGS:
           - ca
           - config-map
-          - direct-grpc
-          - endpoint
           - extra-ui-endpoints
-          - force-http1
           - groups-key
           - groups-role
           - groups-value
           - help
-          - insecure
-          - insecure-skip-tls-verify
           - minimum-access-role
           - name
           - namespace
           - no-color
-          - password
-          - plaintext
           - required-attributes
           - secret
-          - server-name
-          - token-file
           - ui-endpoint
-          - use-current-k8s-context
     notifier:
       PERSISTENT_FLAGS:
         - name
       INHERITED_FLAGS:
         - ca
         - config-map
-        - direct-grpc
-        - endpoint
-        - force-http1
         - help
-        - insecure
-        - insecure-skip-tls-verify
         - namespace
         - no-color
-        - password
-        - plaintext
         - secret
-        - server-name
-        - token-file
-        - use-current-k8s-context
       generic:
         LOCAL_FLAGS:
           - audit-logging
@@ -1449,21 +1319,11 @@ declarative-config:
         INHERITED_FLAGS:
           - ca
           - config-map
-          - direct-grpc
-          - endpoint
-          - force-http1
           - help
-          - insecure
-          - insecure-skip-tls-verify
           - name
           - namespace
           - no-color
-          - password
-          - plaintext
           - secret
-          - server-name
-          - token-file
-          - use-current-k8s-context
       splunk:
         LOCAL_FLAGS:
           - audit-logging
@@ -1475,21 +1335,11 @@ declarative-config:
         INHERITED_FLAGS:
           - ca
           - config-map
-          - direct-grpc
-          - endpoint
-          - force-http1
           - help
-          - insecure
-          - insecure-skip-tls-verify
           - name
           - namespace
           - no-color
-          - password
-          - plaintext
           - secret
-          - server-name
-          - token-file
-          - use-current-k8s-context
     permission-set:
       LOCAL_FLAGS:
         - description
@@ -1498,20 +1348,10 @@ declarative-config:
       INHERITED_FLAGS:
         - ca
         - config-map
-        - direct-grpc
-        - endpoint
-        - force-http1
         - help
-        - insecure
-        - insecure-skip-tls-verify
         - namespace
         - no-color
-        - password
-        - plaintext
         - secret
-        - server-name
-        - token-file
-        - use-current-k8s-context
     role:
       LOCAL_FLAGS:
         - access-scope
@@ -1521,20 +1361,10 @@ declarative-config:
       INHERITED_FLAGS:
         - ca
         - config-map
-        - direct-grpc
-        - endpoint
-        - force-http1
         - help
-        - insecure
-        - insecure-skip-tls-verify
         - namespace
         - no-color
-        - password
-        - plaintext
         - secret
-        - server-name
-        - token-file
-        - use-current-k8s-context
   lint:
     LOCAL_FLAGS:
       - config-map
@@ -1547,14 +1377,7 @@ declarative-config:
       - endpoint
       - force-http1
       - help
-      - insecure
-      - insecure-skip-tls-verify
       - no-color
-      - password
-      - plaintext
-      - server-name
-      - token-file
-      - use-current-k8s-context
 deployment:
   PERSISTENT_FLAGS:
     - timeout
@@ -1564,14 +1387,7 @@ deployment:
     - endpoint
     - force-http1
     - help
-    - insecure
-    - insecure-skip-tls-verify
     - no-color
-    - password
-    - plaintext
-    - server-name
-    - token-file
-    - use-current-k8s-context
   check:
     LOCAL_FLAGS:
       - categories
@@ -1599,15 +1415,8 @@ deployment:
       - endpoint
       - force-http1
       - help
-      - insecure
-      - insecure-skip-tls-verify
       - no-color
-      - password
-      - plaintext
-      - server-name
       - timeout
-      - token-file
-      - use-current-k8s-context
 doc:
   LOCAL_FLAGS:
     - output
@@ -1617,14 +1426,7 @@ doc:
     - endpoint
     - force-http1
     - help
-    - insecure
-    - insecure-skip-tls-verify
     - no-color
-    - password
-    - plaintext
-    - server-name
-    - token-file
-    - use-current-k8s-context
 helm:
   INHERITED_FLAGS:
     - ca
@@ -1632,14 +1434,7 @@ helm:
     - endpoint
     - force-http1
     - help
-    - insecure
-    - insecure-skip-tls-verify
     - no-color
-    - password
-    - plaintext
-    - server-name
-    - token-file
-    - use-current-k8s-context
   derive-local-values:
     PERSISTENT_FLAGS:
       - input
@@ -1653,14 +1448,7 @@ helm:
       - endpoint
       - force-http1
       - help
-      - insecure
-      - insecure-skip-tls-verify
       - no-color
-      - password
-      - plaintext
-      - server-name
-      - token-file
-      - use-current-k8s-context
   output:
     PERSISTENT_FLAGS:
       - debug
@@ -1676,14 +1464,7 @@ helm:
       - endpoint
       - force-http1
       - help
-      - insecure
-      - insecure-skip-tls-verify
       - no-color
-      - password
-      - plaintext
-      - server-name
-      - token-file
-      - use-current-k8s-context
 image:
   PERSISTENT_FLAGS:
     - timeout
@@ -1693,14 +1474,7 @@ image:
     - endpoint
     - force-http1
     - help
-    - insecure
-    - insecure-skip-tls-verify
     - no-color
-    - password
-    - plaintext
-    - server-name
-    - token-file
-    - use-current-k8s-context
   check:
     LOCAL_FLAGS:
       - categories
@@ -1728,15 +1502,8 @@ image:
       - endpoint
       - force-http1
       - help
-      - insecure
-      - insecure-skip-tls-verify
       - no-color
-      - password
-      - plaintext
-      - server-name
       - timeout
-      - token-file
-      - use-current-k8s-context
   sbom:
     LOCAL_FLAGS:
       - force
@@ -1749,15 +1516,8 @@ image:
       - endpoint
       - force-http1
       - help
-      - insecure
-      - insecure-skip-tls-verify
       - no-color
-      - password
-      - plaintext
-      - server-name
       - timeout
-      - token-file
-      - use-current-k8s-context
   scan:
     LOCAL_FLAGS:
       - cluster
@@ -1783,15 +1543,8 @@ image:
       - endpoint
       - force-http1
       - help
-      - insecure
-      - insecure-skip-tls-verify
       - no-color
-      - password
-      - plaintext
-      - server-name
       - timeout
-      - token-file
-      - use-current-k8s-context
 log-convert:
   LOCAL_FLAGS:
     - level
@@ -1802,14 +1555,7 @@ log-convert:
     - endpoint
     - force-http1
     - help
-    - insecure
-    - insecure-skip-tls-verify
     - no-color
-    - password
-    - plaintext
-    - server-name
-    - token-file
-    - use-current-k8s-context
 netpol:
   INHERITED_FLAGS:
     - ca
@@ -1817,14 +1563,7 @@ netpol:
     - endpoint
     - force-http1
     - help
-    - insecure
-    - insecure-skip-tls-verify
     - no-color
-    - password
-    - plaintext
-    - server-name
-    - token-file
-    - use-current-k8s-context
   connectivity:
     INHERITED_FLAGS:
       - ca
@@ -1832,14 +1571,7 @@ netpol:
       - endpoint
       - force-http1
       - help
-      - insecure
-      - insecure-skip-tls-verify
       - no-color
-      - password
-      - plaintext
-      - server-name
-      - token-file
-      - use-current-k8s-context
     diff:
       LOCAL_FLAGS:
         - dir1
@@ -1856,14 +1588,7 @@ netpol:
         - endpoint
         - force-http1
         - help
-        - insecure
-        - insecure-skip-tls-verify
         - no-color
-        - password
-        - plaintext
-        - server-name
-        - token-file
-        - use-current-k8s-context
     map:
       LOCAL_FLAGS:
         - exposure
@@ -1880,14 +1605,7 @@ netpol:
         - endpoint
         - force-http1
         - help
-        - insecure
-        - insecure-skip-tls-verify
         - no-color
-        - password
-        - plaintext
-        - server-name
-        - token-file
-        - use-current-k8s-context
   generate:
     LOCAL_FLAGS:
       - dnsport
@@ -1902,14 +1620,7 @@ netpol:
       - endpoint
       - force-http1
       - help
-      - insecure
-      - insecure-skip-tls-verify
       - no-color
-      - password
-      - plaintext
-      - server-name
-      - token-file
-      - use-current-k8s-context
 scanner:
   INHERITED_FLAGS:
     - ca
@@ -1917,14 +1628,7 @@ scanner:
     - endpoint
     - force-http1
     - help
-    - insecure
-    - insecure-skip-tls-verify
     - no-color
-    - password
-    - plaintext
-    - server-name
-    - token-file
-    - use-current-k8s-context
   download-db:
     LOCAL_FLAGS:
       - force
@@ -1940,14 +1644,7 @@ scanner:
       - endpoint
       - force-http1
       - help
-      - insecure
-      - insecure-skip-tls-verify
       - no-color
-      - password
-      - plaintext
-      - server-name
-      - token-file
-      - use-current-k8s-context
   generate:
     LOCAL_FLAGS:
       - istio-support
@@ -1966,14 +1663,7 @@ scanner:
       - endpoint
       - force-http1
       - help
-      - insecure
-      - insecure-skip-tls-verify
       - no-color
-      - password
-      - plaintext
-      - server-name
-      - token-file
-      - use-current-k8s-context
   upload-db:
     LOCAL_FLAGS:
       - scanner-db-file
@@ -1985,14 +1675,7 @@ scanner:
       - endpoint
       - force-http1
       - help
-      - insecure
-      - insecure-skip-tls-verify
       - no-color
-      - password
-      - plaintext
-      - server-name
-      - token-file
-      - use-current-k8s-context
 sensor:
   PERSISTENT_FLAGS:
     - retry-timeout
@@ -2003,14 +1686,7 @@ sensor:
     - endpoint
     - force-http1
     - help
-    - insecure
-    - insecure-skip-tls-verify
     - no-color
-    - password
-    - plaintext
-    - server-name
-    - token-file
-    - use-current-k8s-context
   generate:
     PERSISTENT_FLAGS:
       - admission-controller-disable-bypass
@@ -2041,15 +1717,8 @@ sensor:
       - endpoint
       - force-http1
       - help
-      - insecure
-      - insecure-skip-tls-verify
       - no-color
-      - password
-      - plaintext
       - retry-timeout
-      - server-name
-      - token-file
-      - use-current-k8s-context
     k8s:
       PERSISTENT_FLAGS:
         - admission-controller-listen-on-events
@@ -2062,34 +1731,23 @@ sensor:
         - admission-controller-listen-on-updates
         - admission-controller-scan-inline
         - admission-controller-timeout
-        - ca
         - central
         - collection-method
         - collector-image-repository
         - continue-if-exists
         - create-admission-controller
         - create-upgrader-sa
-        - direct-grpc
         - disable-tolerations
         - enable-pod-security-policies
-        - endpoint
-        - force-http1
         - help
-        - insecure
-        - insecure-skip-tls-verify
         - istio-support
         - main-image-repository
         - name
         - no-color
         - output-dir
-        - password
-        - plaintext
         - retry-timeout
-        - server-name
         - slim-collector
         - timeout
-        - token-file
-        - use-current-k8s-context
     openshift:
       PERSISTENT_FLAGS:
         - admission-controller-listen-on-events
@@ -2104,34 +1762,23 @@ sensor:
         - admission-controller-listen-on-updates
         - admission-controller-scan-inline
         - admission-controller-timeout
-        - ca
         - central
         - collection-method
         - collector-image-repository
         - continue-if-exists
         - create-admission-controller
         - create-upgrader-sa
-        - direct-grpc
         - disable-tolerations
         - enable-pod-security-policies
-        - endpoint
-        - force-http1
         - help
-        - insecure
-        - insecure-skip-tls-verify
         - istio-support
         - main-image-repository
         - name
         - no-color
         - output-dir
-        - password
-        - plaintext
         - retry-timeout
-        - server-name
         - slim-collector
         - timeout
-        - token-file
-        - use-current-k8s-context
   generate-certs:
     PERSISTENT_FLAGS:
       - output-dir
@@ -2141,16 +1788,9 @@ sensor:
       - endpoint
       - force-http1
       - help
-      - insecure
-      - insecure-skip-tls-verify
       - no-color
-      - password
-      - plaintext
       - retry-timeout
-      - server-name
       - timeout
-      - token-file
-      - use-current-k8s-context
   get-bundle:
     PERSISTENT_FLAGS:
       - create-upgrader-sa
@@ -2164,15 +1804,8 @@ sensor:
       - endpoint
       - force-http1
       - help
-      - insecure
-      - insecure-skip-tls-verify
       - no-color
-      - password
-      - plaintext
       - retry-timeout
-      - server-name
-      - token-file
-      - use-current-k8s-context
 version:
   PERSISTENT_FLAGS:
     - json
@@ -2182,11 +1815,4 @@ version:
     - endpoint
     - force-http1
     - help
-    - insecure
-    - insecure-skip-tls-verify
     - no-color
-    - password
-    - plaintext
-    - server-name
-    - token-file
-    - use-current-k8s-context
