@@ -1,6 +1,16 @@
 #!/usr/bin/env bats
 
 # Runs Scanner V4 installation tests using the Bats testing framework.
+#
+# NOTE: For debugging purposes you can run this test suite locally against a remote cluster. For example:
+#
+#   ABORT_ON_FAILURE=true ORCHESTRATOR_FLAVOR=[openshift|k8s] BATS_CORE_ROOT=$HOME/bats-core \
+#     bats --report-formatter junit --print-output-on-failure --show-output-of-passing-tests ./tests/e2e/run-scanner-v4-install.bats
+#
+#   (you need to point $BATS_CORE_ROOT to your directory containing checkouts of:
+#     https://github.com/bats-core/bats-core
+#     https://github.com/bats-core/bats-assert)
+#
 
 init() {
     ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")"/../.. && pwd)"
@@ -41,6 +51,9 @@ setup_file() {
     export CHART_BASE=""
     export DEFAULT_IMAGE_REGISTRY="quay.io/stackrox-io"
 
+    export MAIN_IMAGE_TAG="${MAIN_IMAGE_TAG:-$(make --quiet --no-print-directory -C "${ROOT}" tag)}"
+    info "Using MAIN_IMAGE_TAG=$MAIN_IMAGE_TAG"
+
     export CURRENT_MAIN_IMAGE_TAG=${CURRENT_MAIN_IMAGE_TAG:-} # Setting a tag can be useful for local testing.
     export EARLIER_CHART_VERSION="4.3.0"
     export EARLIER_MAIN_IMAGE_TAG=$EARLIER_CHART_VERSION
@@ -57,6 +70,13 @@ setup_file() {
       export ROX_OPENSHIFT_VERSION=4
     fi
 
+    if ! command -v roxctl >/dev/null; then
+        die "roxctl not found, please make sure it can be resolved via PATH."
+    fi
+
+    local roxctl_version
+    roxctl_version="$(roxctl version)"
+
     # Prepare earlier Helm chart version.
     if [[ -z "${CHART_REPOSITORY:-}" ]]; then
         CHART_REPOSITORY=$(mktemp -d "helm-charts.XXXXXX" -p /tmp)
@@ -65,6 +85,10 @@ setup_file() {
         git clone --depth 1 -b main https://github.com/stackrox/helm-charts "${CHART_REPOSITORY}"
     fi
     export CHART_REPOSITORY
+
+    if [[ -n "$MAIN_IMAGE_TAG" ]] && [[ "$roxctl_version" != "$MAIN_IMAGE_TAG" ]]; then
+        info "MAIN_IMAGE_TAG ($MAIN_IMAGE_TAG) does not match roxctl version ($roxctl_version)."
+    fi
 
     # Download and use earlier version of roxctl without Scanner V4 support
     # We will just hard-code a pre-4.4 version here.
@@ -717,6 +741,11 @@ _deploy_stackrox() {
 # shellcheck disable=SC2120
 _deploy_central() {
     local central_namespace=${1:-stackrox}
+    if [[ "${CI:-}" != "true" ]]; then
+        info "Creating namespace and image pull secrets..."
+        "${ORCH_CMD}" </dev/null create namespace "$central_namespace" || true
+        "${ROOT}/deploy/common/pull-secret.sh" stackrox quay.io | kubectl -n "$central_namespace" apply -f -
+    fi
     deploy_central "${central_namespace}"
     patch_down_central "${central_namespace}"
 }
@@ -769,6 +798,12 @@ EOF
 _deploy_sensor() {
     local sensor_namespace=${1:-stackrox}
     local central_namespace=${2:-stackrox}
+    if [[ "${CI:-}" != "true" ]]; then
+        info "Creating image pull secrets..."
+        "${ORCH_CMD}" </dev/null create namespace "$sensor_namespace" || true
+        "${ROOT}/deploy/common/pull-secret.sh" stackrox quay.io | kubectl -n "$sensor_namespace" apply -f -
+        "${ROOT}/deploy/common/pull-secret.sh" collector-stackrox quay.io | kubectl -n "$sensor_namespace" apply -f -
+    fi
     deploy_sensor "${sensor_namespace}" "${central_namespace}"
     patch_down_sensor "${sensor_namespace}"
 }
