@@ -68,6 +68,7 @@ type tlsIssuerImpl struct {
 	started                      atomic.Bool
 	online                       atomic.Bool
 	cancelRefresher              context.CancelFunc
+	activateLock                 sync.Mutex
 }
 
 // Start starts the Sensor component and launches a certificate refresher that:
@@ -81,6 +82,9 @@ func (i *tlsIssuerImpl) Start() error {
 }
 
 func (i *tlsIssuerImpl) activate() error {
+	i.activateLock.Lock()
+	defer i.activateLock.Unlock()
+
 	if !i.started.Load() {
 		return nil
 	}
@@ -126,6 +130,9 @@ func (i *tlsIssuerImpl) Stop(_ error) {
 }
 
 func (i *tlsIssuerImpl) deactivate() {
+	i.activateLock.Lock()
+	defer i.activateLock.Unlock()
+
 	i.cancelRefresher()
 	if i.certRefresher != nil {
 		i.certRefresher.Stop()
