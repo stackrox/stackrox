@@ -19,21 +19,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-var (
-	persistentFlagsToShow = []string{
-		"name",
-		"minimum-access-role",
-		"ui-endpoint",
-		"extra-ui-endpoints",
-		"required-attributes",
-		"groups-key",
-		"groups-value",
-		"groups-role",
-		k8sobject.ConfigMapFlag,
-		k8sobject.NamespaceFlag,
-	}
-)
-
 func authProviderCommand(cliEnvironment environment.Environment) *cobra.Command {
 	authProviderCmd := &authProviderCmd{authProvider: &declarativeconfig.AuthProvider{}, env: cliEnvironment}
 
