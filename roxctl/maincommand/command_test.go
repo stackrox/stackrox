@@ -74,6 +74,9 @@ func buildCmdTree(c *cobra.Command) *cmdNode {
 	c.InheritedFlags().VisitAll(func(f *pflag.Flag) {
 		command.InheritedFlags = append(command.InheritedFlags, f.Name)
 	})
+	c.InheritedFlags().VisitAll(func(f *pflag.Flag) {
+		command.InheritedFlags = append(command.InheritedFlags, f.Name)
+	})
 
 	for _, cmd := range c.Commands() {
 		command.Commands[cmd.Name()] = buildCmdTree(cmd)
