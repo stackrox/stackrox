@@ -1,6 +1,9 @@
 package sac
 
 import (
+	"fmt"
+
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -258,9 +261,32 @@ func allowFixedGlobalLevelScopes() ScopeCheckerCore {
 	}
 }
 
+func grantReadIfWriteIsGranted(keys []ScopeKey) []ScopeKey {
+	hasReadAccess := false
+	hasWriteAccess := false
+	for _, key := range keys {
+		accessModeKey, ok := key.(AccessModeScopeKey)
+		if !ok {
+			fmt.Println("failed to cast key to access mode key")
+			return keys
+		}
+		switch accessModeKey {
+		case AccessModeScopeKey(storage.Access_READ_ACCESS):
+			hasReadAccess = true
+		case AccessModeScopeKey(storage.Access_READ_WRITE_ACCESS):
+			hasWriteAccess = true
+		}
+	}
+	if hasWriteAccess && !hasReadAccess {
+		keys = append(keys, AccessModeScopeKey(storage.Access_READ_ACCESS))
+	}
+	return keys
+}
+
 func allowFixedAccessModeLevelScopes(
 	accessLevelKeys []ScopeKey,
 ) ScopeCheckerCore {
+	accessLevelKeys = grantReadIfWriteIsGranted(accessLevelKeys)
 	return &allowedFixedScopesCheckerCore{
 		checkerLevel:  GlobalScopeKind,
 		accessKeys:    typedKeySet[AccessModeScopeKey](accessLevelKeys),
@@ -274,6 +300,7 @@ func allowFixedResourceLevelScopes(
 	accessLevelKeys []ScopeKey,
 	resourceLevelKeys []ScopeKey,
 ) ScopeCheckerCore {
+	accessLevelKeys = grantReadIfWriteIsGranted(accessLevelKeys)
 	return &allowedFixedScopesCheckerCore{
 		checkerLevel:  GlobalScopeKind,
 		accessKeys:    typedKeySet[AccessModeScopeKey](accessLevelKeys),
@@ -288,6 +315,7 @@ func allowFixedClusterLevelScopes(
 	resourceLevelKeys []ScopeKey,
 	clusterLevelKeys []ScopeKey,
 ) ScopeCheckerCore {
+	accessLevelKeys = grantReadIfWriteIsGranted(accessLevelKeys)
 	return &allowedFixedScopesCheckerCore{
 		checkerLevel:  GlobalScopeKind,
 		accessKeys:    typedKeySet[AccessModeScopeKey](accessLevelKeys),
@@ -303,6 +331,7 @@ func allowFixedNamespaceLevelScopes(
 	clusterLevelKeys []ScopeKey,
 	namespaceLevelKeys []ScopeKey,
 ) ScopeCheckerCore {
+	accessLevelKeys = grantReadIfWriteIsGranted(accessLevelKeys)
 	return &allowedFixedScopesCheckerCore{
 		checkerLevel:  GlobalScopeKind,
 		accessKeys:    typedKeySet[AccessModeScopeKey](accessLevelKeys),
