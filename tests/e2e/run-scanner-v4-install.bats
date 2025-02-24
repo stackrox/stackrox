@@ -1,6 +1,16 @@
 #!/usr/bin/env bats
 
 # Runs Scanner V4 installation tests using the Bats testing framework.
+#
+# NOTE: For debugging purposes you can run this test suite locally against a remote cluster. For example:
+#
+#   ABORT_ON_FAILURE=true ORCHESTRATOR_FLAVOR=[openshift|k8s] BATS_CORE_ROOT=$HOME/bats-core \
+#     bats --report-formatter junit --print-output-on-failure --show-output-of-passing-tests ./tests/e2e/run-scanner-v4-install.bats
+#
+#   (you need to point $BATS_CORE_ROOT to your directory containing checkouts of:
+#     https://github.com/bats-core/bats-core
+#     https://github.com/bats-core/bats-assert)
+#
 
 init() {
     ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")"/../.. && pwd)"
