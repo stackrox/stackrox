@@ -27,6 +27,8 @@ class Env {
     static final QA_TEST_DEBUG_LOGS = System.getenv("QA_TEST_DEBUG_LOGS") ?: ""
     static final HAS_WORKLOAD_IDENTITIES = (System.getenv("SETUP_WORKLOAD_IDENTITIES") == "true")
 
+    static final String IMAGE_PULL_POLICY_FOR_QUAY_IO = System.getenv("IMAGE_PULL_POLICY_FOR_QUAY_IO")
+
     // REMOTE_CLUSTER_ARCH specifies architecture of a remote cluster on which tests are to be executed
     // the remote cluster arch can be ppc64le or s390x, default is x86_64
     static final REMOTE_CLUSTER_ARCH = System.getenv("REMOTE_CLUSTER_ARCH") ?: "x86_64"
