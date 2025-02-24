@@ -65,6 +65,7 @@ type retryTickerImpl struct {
 // Start returns and error if the RetryTicker is started more than once:
 // - ErrStartedTimer is returned if the timer was already started.
 // - ErrStoppedTimer is returned if the timer was stopped.
+// The ctx parameter can be used to stop the timer and cancel any ongoing tick.
 func (t *retryTickerImpl) Start(ctx context.Context) error {
 	if t.Stopped() {
 		return ErrStoppedTimer
@@ -79,6 +80,8 @@ func (t *retryTickerImpl) Start(ctx context.Context) error {
 
 // Stop cancels this RetryTicker. If Stop is called while the tick function is running then Stop does not
 // wait for the tick function to complete before returning.
+// If you want to cancel the execution of the tick function as well (in case it is running), cancel
+// the context passed to Start instead
 func (t *retryTickerImpl) Stop() {
 	t.stopFlag.Set(true)
 
@@ -105,7 +108,8 @@ func (t *retryTickerImpl) scheduleTick(ctx context.Context, timeToTick time.Dura
 			// ticker was stopped while tick function was running.
 			return
 		}
-		if errors.Is(tickErr, ErrNonRecoverable) {
+
+		if errors.Is(tickErr, ErrNonRecoverable) || ctx.Err() != nil {
 			t.Stop()
 			return
 		}
