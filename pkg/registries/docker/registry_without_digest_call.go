@@ -3,6 +3,8 @@ package docker
 import (
 	"fmt"
 
+	"github.com/opencontainers/go-digest"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
@@ -49,11 +51,13 @@ func (r *RegistryWithoutManifestCall) Metadata(image *storage.Image) (*storage.I
 
 	remote := image.GetName().GetRemote()
 
-	// If the image ID is empty, then populate with the digest from the manifest
-	// This only applies in a situation with CI client
-	ref := image.Id
-	if ref == "" {
-		ref = image.GetName().GetTag()
+	ref := image.GetName().GetTag()
+	// Prefer the image digest over the tag, if it exists.
+	if dig := image.GetId(); dig != "" {
+		if _, err := digest.Parse(dig); err != nil {
+			return nil, errors.Wrapf(err, "invalid image id: %s", dig)
+		}
+		ref = dig
 	}
 
 	errorList := errorhelpers.NewErrorList(fmt.Sprintf("Error accessing %q", image.GetName().GetFullName()))
