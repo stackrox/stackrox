@@ -1,7 +1,6 @@
 package maincommand
 
 import (
-	_ "embed"
 	"strings"
 	"testing"
 
@@ -11,9 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 	yaml "gopkg.in/yaml.v3"
 )
-
-//go:embed commands_tree.yaml
-var commandsTree string
 
 func isCapitalized(s string) bool {
 	if len(s) == 0 {
