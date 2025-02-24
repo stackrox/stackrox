@@ -9,102 +9,964 @@ central:
     - plaintext
     - server-name
     - use-current-k8s-context
+  GLOBAL_FLAGS:
+    - help
+    - no-color
   backup:
     FLAGS:
       - certs-only
       - output
+    GLOBAL_FLAGS:
+      - ca
+      - direct-grpc
+      - endpoint
+      - force-http1
+      - help
+      - insecure
+      - insecure-skip-tls-verify
+      - no-color
+      - password
+      - plaintext
+      - server-name
+      - token-file
+      - use-current-k8s-context
   cert:
     FLAGS:
       - output
+    GLOBAL_FLAGS:
+      - ca
+      - direct-grpc
+      - endpoint
+      - force-http1
+      - help
+      - insecure
+      - insecure-skip-tls-verify
+      - no-color
+      - password
+      - plaintext
+      - server-name
+      - token-file
+      - use-current-k8s-context
   crs:
-    generate: {}
-    list: {}
-    revoke: {}
+    GLOBAL_FLAGS:
+      - ca
+      - direct-grpc
+      - endpoint
+      - force-http1
+      - help
+      - insecure
+      - insecure-skip-tls-verify
+      - no-color
+      - password
+      - plaintext
+      - server-name
+      - token-file
+      - use-current-k8s-context
+    generate:
+      GLOBAL_FLAGS:
+        - ca
+        - direct-grpc
+        - endpoint
+        - force-http1
+        - help
+        - insecure
+        - insecure-skip-tls-verify
+        - no-color
+        - password
+        - plaintext
+        - retry-timeout
+        - server-name
+        - timeout
+        - token-file
+        - use-current-k8s-context
+    list:
+      GLOBAL_FLAGS:
+        - ca
+        - direct-grpc
+        - endpoint
+        - force-http1
+        - help
+        - insecure
+        - insecure-skip-tls-verify
+        - no-color
+        - password
+        - plaintext
+        - retry-timeout
+        - server-name
+        - timeout
+        - token-file
+        - use-current-k8s-context
+    revoke:
+      GLOBAL_FLAGS:
+        - ca
+        - direct-grpc
+        - endpoint
+        - force-http1
+        - help
+        - insecure
+        - insecure-skip-tls-verify
+        - no-color
+        - password
+        - plaintext
+        - retry-timeout
+        - server-name
+        - timeout
+        - token-file
+        - use-current-k8s-context
   db:
+    GLOBAL_FLAGS:
+      - ca
+      - direct-grpc
+      - endpoint
+      - force-http1
+      - help
+      - insecure
+      - insecure-skip-tls-verify
+      - no-color
+      - password
+      - plaintext
+      - server-name
+      - token-file
+      - use-current-k8s-context
     backup:
       FLAGS:
         - certs-only
         - full
         - output
+      GLOBAL_FLAGS:
+        - ca
+        - direct-grpc
+        - endpoint
+        - force-http1
+        - help
+        - insecure
+        - insecure-skip-tls-verify
+        - no-color
+        - password
+        - plaintext
+        - server-name
+        - token-file
+        - use-current-k8s-context
     restore:
       FLAGS:
         - file
         - force
         - interrupt
+      GLOBAL_FLAGS:
+        - ca
+        - direct-grpc
+        - endpoint
+        - force-http1
+        - help
+        - insecure
+        - insecure-skip-tls-verify
+        - no-color
+        - password
+        - plaintext
+        - server-name
+        - timeout
+        - token-file
+        - use-current-k8s-context
       cancel:
         FLAGS:
           - force
-      status: {}
+        GLOBAL_FLAGS:
+          - ca
+          - direct-grpc
+          - endpoint
+          - force-http1
+          - help
+          - insecure
+          - insecure-skip-tls-verify
+          - no-color
+          - password
+          - plaintext
+          - server-name
+          - timeout
+          - token-file
+          - use-current-k8s-context
+      status:
+        GLOBAL_FLAGS:
+          - ca
+          - direct-grpc
+          - endpoint
+          - force-http1
+          - help
+          - insecure
+          - insecure-skip-tls-verify
+          - no-color
+          - password
+          - plaintext
+          - server-name
+          - timeout
+          - token-file
+          - use-current-k8s-context
   debug:
-    authz-trace: {}
+    GLOBAL_FLAGS:
+      - ca
+      - direct-grpc
+      - endpoint
+      - force-http1
+      - help
+      - insecure
+      - insecure-skip-tls-verify
+      - no-color
+      - password
+      - plaintext
+      - server-name
+      - token-file
+      - use-current-k8s-context
+    authz-trace:
+      GLOBAL_FLAGS:
+        - ca
+        - direct-grpc
+        - endpoint
+        - force-http1
+        - help
+        - insecure
+        - insecure-skip-tls-verify
+        - no-color
+        - password
+        - plaintext
+        - server-name
+        - token-file
+        - use-current-k8s-context
     db:
+      GLOBAL_FLAGS:
+        - ca
+        - direct-grpc
+        - endpoint
+        - force-http1
+        - help
+        - insecure
+        - insecure-skip-tls-verify
+        - no-color
+        - password
+        - plaintext
+        - server-name
+        - token-file
+        - use-current-k8s-context
       stats:
-        reset: {}
-    download-diagnostics: {}
+        GLOBAL_FLAGS:
+          - ca
+          - direct-grpc
+          - endpoint
+          - force-http1
+          - help
+          - insecure
+          - insecure-skip-tls-verify
+          - no-color
+          - password
+          - plaintext
+          - server-name
+          - timeout
+          - token-file
+          - use-current-k8s-context
+        reset:
+          GLOBAL_FLAGS:
+            - ca
+            - direct-grpc
+            - endpoint
+            - force-http1
+            - help
+            - insecure
+            - insecure-skip-tls-verify
+            - no-color
+            - password
+            - plaintext
+            - server-name
+            - timeout
+            - token-file
+            - use-current-k8s-context
+    download-diagnostics:
+      GLOBAL_FLAGS:
+        - ca
+        - direct-grpc
+        - endpoint
+        - force-http1
+        - help
+        - insecure
+        - insecure-skip-tls-verify
+        - no-color
+        - password
+        - plaintext
+        - server-name
+        - token-file
+        - use-current-k8s-context
     dump:
       FLAGS:
         - logs
+      GLOBAL_FLAGS:
+        - ca
+        - direct-grpc
+        - endpoint
+        - force-http1
+        - help
+        - insecure
+        - insecure-skip-tls-verify
+        - no-color
+        - password
+        - plaintext
+        - server-name
+        - token-file
+        - use-current-k8s-context
     log:
       FLAGS:
         - level
         - modules
+      GLOBAL_FLAGS:
+        - ca
+        - direct-grpc
+        - endpoint
+        - force-http1
+        - help
+        - insecure
+        - insecure-skip-tls-verify
+        - no-color
+        - password
+        - plaintext
+        - server-name
+        - token-file
+        - use-current-k8s-context
   export:
-    deployments: {}
-    images: {}
-    nodes: {}
-    pods: {}
+    GLOBAL_FLAGS:
+      - ca
+      - direct-grpc
+      - endpoint
+      - force-http1
+      - help
+      - insecure
+      - insecure-skip-tls-verify
+      - no-color
+      - password
+      - plaintext
+      - server-name
+      - token-file
+      - use-current-k8s-context
+    deployments:
+      GLOBAL_FLAGS:
+        - ca
+        - direct-grpc
+        - endpoint
+        - force-http1
+        - help
+        - insecure
+        - insecure-skip-tls-verify
+        - no-color
+        - password
+        - plaintext
+        - server-name
+        - timeout
+        - token-file
+        - use-current-k8s-context
+    images:
+      GLOBAL_FLAGS:
+        - ca
+        - direct-grpc
+        - endpoint
+        - force-http1
+        - help
+        - insecure
+        - insecure-skip-tls-verify
+        - no-color
+        - password
+        - plaintext
+        - server-name
+        - timeout
+        - token-file
+        - use-current-k8s-context
+    nodes:
+      GLOBAL_FLAGS:
+        - ca
+        - direct-grpc
+        - endpoint
+        - force-http1
+        - help
+        - insecure
+        - insecure-skip-tls-verify
+        - no-color
+        - password
+        - plaintext
+        - server-name
+        - timeout
+        - token-file
+        - use-current-k8s-context
+    pods:
+      GLOBAL_FLAGS:
+        - ca
+        - direct-grpc
+        - endpoint
+        - force-http1
+        - help
+        - insecure
+        - insecure-skip-tls-verify
+        - no-color
+        - password
+        - plaintext
+        - server-name
+        - timeout
+        - token-file
+        - use-current-k8s-context
   generate:
-    interactive: {}
+    GLOBAL_FLAGS:
+      - ca
+      - direct-grpc
+      - endpoint
+      - force-http1
+      - help
+      - insecure
+      - insecure-skip-tls-verify
+      - no-color
+      - plaintext
+      - server-name
+      - token-file
+      - use-current-k8s-context
+    interactive:
+      GLOBAL_FLAGS:
+        - backup-bundle
+        - ca
+        - debug
+        - debug-path
+        - default-tls-cert
+        - default-tls-key
+        - direct-grpc
+        - disable-admin-password
+        - enable-pod-security-policies
+        - endpoint
+        - force-http1
+        - help
+        - insecure
+        - insecure-skip-tls-verify
+        - no-color
+        - password
+        - plaintext
+        - plaintext-endpoints
+        - server-name
+        - token-file
+        - use-current-k8s-context
+        - with-config-file
     k8s:
+      GLOBAL_FLAGS:
+        - backup-bundle
+        - ca
+        - debug
+        - debug-path
+        - default-tls-cert
+        - default-tls-key
+        - direct-grpc
+        - disable-admin-password
+        - enable-pod-security-policies
+        - endpoint
+        - force-http1
+        - help
+        - insecure
+        - insecure-skip-tls-verify
+        - no-color
+        - password
+        - plaintext
+        - plaintext-endpoints
+        - server-name
+        - token-file
+        - use-current-k8s-context
+        - with-config-file
       hostpath:
         FLAGS:
           - db-hostpath
           - db-node-selector-key
           - db-node-selector-value
-      none: {}
+        GLOBAL_FLAGS:
+          - backup-bundle
+          - ca
+          - central-db-image
+          - debug
+          - debug-path
+          - declarative-config-config-maps
+          - declarative-config-secrets
+          - default-tls-cert
+          - default-tls-key
+          - direct-grpc
+          - disable-admin-password
+          - enable-pod-security-policies
+          - enable-telemetry
+          - endpoint
+          - force-http1
+          - help
+          - image-defaults
+          - insecure
+          - insecure-skip-tls-verify
+          - istio-support
+          - lb-type
+          - main-image
+          - no-color
+          - offline
+          - output-dir
+          - output-format
+          - password
+          - plaintext
+          - plaintext-endpoints
+          - scanner-db-image
+          - scanner-image
+          - scanner-v4-db-image
+          - scanner-v4-image
+          - server-name
+          - token-file
+          - use-current-k8s-context
+          - with-config-file
+      none:
+        GLOBAL_FLAGS:
+          - backup-bundle
+          - ca
+          - central-db-image
+          - debug
+          - debug-path
+          - declarative-config-config-maps
+          - declarative-config-secrets
+          - default-tls-cert
+          - default-tls-key
+          - direct-grpc
+          - disable-admin-password
+          - enable-pod-security-policies
+          - enable-telemetry
+          - endpoint
+          - force-http1
+          - help
+          - image-defaults
+          - insecure
+          - insecure-skip-tls-verify
+          - istio-support
+          - lb-type
+          - main-image
+          - no-color
+          - offline
+          - output-dir
+          - output-format
+          - password
+          - plaintext
+          - plaintext-endpoints
+          - scanner-db-image
+          - scanner-image
+          - scanner-v4-db-image
+          - scanner-v4-image
+          - server-name
+          - token-file
+          - use-current-k8s-context
+          - with-config-file
       pvc:
         FLAGS:
           - db-name
           - db-size
           - db-storage-class
+        GLOBAL_FLAGS:
+          - backup-bundle
+          - ca
+          - central-db-image
+          - debug
+          - debug-path
+          - declarative-config-config-maps
+          - declarative-config-secrets
+          - default-tls-cert
+          - default-tls-key
+          - direct-grpc
+          - disable-admin-password
+          - enable-pod-security-policies
+          - enable-telemetry
+          - endpoint
+          - force-http1
+          - help
+          - image-defaults
+          - insecure
+          - insecure-skip-tls-verify
+          - istio-support
+          - lb-type
+          - main-image
+          - no-color
+          - offline
+          - output-dir
+          - output-format
+          - password
+          - plaintext
+          - plaintext-endpoints
+          - scanner-db-image
+          - scanner-image
+          - scanner-v4-db-image
+          - scanner-v4-image
+          - server-name
+          - token-file
+          - use-current-k8s-context
+          - with-config-file
     openshift:
+      GLOBAL_FLAGS:
+        - backup-bundle
+        - ca
+        - debug
+        - debug-path
+        - default-tls-cert
+        - default-tls-key
+        - direct-grpc
+        - disable-admin-password
+        - enable-pod-security-policies
+        - endpoint
+        - force-http1
+        - help
+        - insecure
+        - insecure-skip-tls-verify
+        - no-color
+        - password
+        - plaintext
+        - plaintext-endpoints
+        - server-name
+        - token-file
+        - use-current-k8s-context
+        - with-config-file
       hostpath:
         FLAGS:
           - db-hostpath
           - db-node-selector-key
           - db-node-selector-value
-      none: {}
+        GLOBAL_FLAGS:
+          - backup-bundle
+          - ca
+          - central-db-image
+          - debug
+          - debug-path
+          - declarative-config-config-maps
+          - declarative-config-secrets
+          - default-tls-cert
+          - default-tls-key
+          - direct-grpc
+          - disable-admin-password
+          - enable-pod-security-policies
+          - enable-telemetry
+          - endpoint
+          - force-http1
+          - help
+          - image-defaults
+          - insecure
+          - insecure-skip-tls-verify
+          - istio-support
+          - lb-type
+          - main-image
+          - no-color
+          - offline
+          - openshift-monitoring
+          - openshift-version
+          - output-dir
+          - output-format
+          - password
+          - plaintext
+          - plaintext-endpoints
+          - scanner-db-image
+          - scanner-image
+          - scanner-v4-db-image
+          - scanner-v4-image
+          - server-name
+          - token-file
+          - use-current-k8s-context
+          - with-config-file
+      none:
+        GLOBAL_FLAGS:
+          - backup-bundle
+          - ca
+          - central-db-image
+          - debug
+          - debug-path
+          - declarative-config-config-maps
+          - declarative-config-secrets
+          - default-tls-cert
+          - default-tls-key
+          - direct-grpc
+          - disable-admin-password
+          - enable-pod-security-policies
+          - enable-telemetry
+          - endpoint
+          - force-http1
+          - help
+          - image-defaults
+          - insecure
+          - insecure-skip-tls-verify
+          - istio-support
+          - lb-type
+          - main-image
+          - no-color
+          - offline
+          - openshift-monitoring
+          - openshift-version
+          - output-dir
+          - output-format
+          - password
+          - plaintext
+          - plaintext-endpoints
+          - scanner-db-image
+          - scanner-image
+          - scanner-v4-db-image
+          - scanner-v4-image
+          - server-name
+          - token-file
+          - use-current-k8s-context
+          - with-config-file
       pvc:
         FLAGS:
           - db-name
           - db-size
           - db-storage-class
+        GLOBAL_FLAGS:
+          - backup-bundle
+          - ca
+          - central-db-image
+          - debug
+          - debug-path
+          - declarative-config-config-maps
+          - declarative-config-secrets
+          - default-tls-cert
+          - default-tls-key
+          - direct-grpc
+          - disable-admin-password
+          - enable-pod-security-policies
+          - enable-telemetry
+          - endpoint
+          - force-http1
+          - help
+          - image-defaults
+          - insecure
+          - insecure-skip-tls-verify
+          - istio-support
+          - lb-type
+          - main-image
+          - no-color
+          - offline
+          - openshift-monitoring
+          - openshift-version
+          - output-dir
+          - output-format
+          - password
+          - plaintext
+          - plaintext-endpoints
+          - scanner-db-image
+          - scanner-image
+          - scanner-v4-db-image
+          - scanner-v4-image
+          - server-name
+          - token-file
+          - use-current-k8s-context
+          - with-config-file
   init-bundles:
-    fetch-ca: {}
-    generate: {}
-    list: {}
+    GLOBAL_FLAGS:
+      - ca
+      - direct-grpc
+      - endpoint
+      - force-http1
+      - help
+      - insecure
+      - insecure-skip-tls-verify
+      - no-color
+      - password
+      - plaintext
+      - server-name
+      - token-file
+      - use-current-k8s-context
+    fetch-ca:
+      GLOBAL_FLAGS:
+        - ca
+        - direct-grpc
+        - endpoint
+        - force-http1
+        - help
+        - insecure
+        - insecure-skip-tls-verify
+        - no-color
+        - password
+        - plaintext
+        - retry-timeout
+        - server-name
+        - timeout
+        - token-file
+        - use-current-k8s-context
+    generate:
+      GLOBAL_FLAGS:
+        - ca
+        - direct-grpc
+        - endpoint
+        - force-http1
+        - help
+        - insecure
+        - insecure-skip-tls-verify
+        - no-color
+        - password
+        - plaintext
+        - retry-timeout
+        - server-name
+        - timeout
+        - token-file
+        - use-current-k8s-context
+    list:
+      GLOBAL_FLAGS:
+        - ca
+        - direct-grpc
+        - endpoint
+        - force-http1
+        - help
+        - insecure
+        - insecure-skip-tls-verify
+        - no-color
+        - password
+        - plaintext
+        - retry-timeout
+        - server-name
+        - timeout
+        - token-file
+        - use-current-k8s-context
     revoke:
       FLAGS:
         - force
-  login: {}
+      GLOBAL_FLAGS:
+        - ca
+        - direct-grpc
+        - endpoint
+        - force-http1
+        - help
+        - insecure
+        - insecure-skip-tls-verify
+        - no-color
+        - password
+        - plaintext
+        - retry-timeout
+        - server-name
+        - timeout
+        - token-file
+        - use-current-k8s-context
+  login:
+    GLOBAL_FLAGS:
+      - ca
+      - direct-grpc
+      - endpoint
+      - force-http1
+      - help
+      - insecure
+      - insecure-skip-tls-verify
+      - no-color
+      - password
+      - plaintext
+      - server-name
+      - token-file
+      - use-current-k8s-context
   machine-to-machine:
+    GLOBAL_FLAGS:
+      - ca
+      - direct-grpc
+      - endpoint
+      - force-http1
+      - help
+      - insecure
+      - insecure-skip-tls-verify
+      - no-color
+      - password
+      - plaintext
+      - server-name
+      - token-file
+      - use-current-k8s-context
     exchange:
       FLAGS:
         - token
         - token-file
+      GLOBAL_FLAGS:
+        - ca
+        - direct-grpc
+        - endpoint
+        - force-http1
+        - help
+        - insecure
+        - insecure-skip-tls-verify
+        - no-color
+        - password
+        - plaintext
+        - server-name
+        - use-current-k8s-context
   userpki:
+    GLOBAL_FLAGS:
+      - ca
+      - direct-grpc
+      - endpoint
+      - force-http1
+      - help
+      - insecure
+      - insecure-skip-tls-verify
+      - no-color
+      - password
+      - plaintext
+      - server-name
+      - token-file
+      - use-current-k8s-context
     create:
       FLAGS:
         - cert
         - role
+      GLOBAL_FLAGS:
+        - ca
+        - direct-grpc
+        - endpoint
+        - force-http1
+        - help
+        - insecure
+        - insecure-skip-tls-verify
+        - no-color
+        - password
+        - plaintext
+        - server-name
+        - token-file
+        - use-current-k8s-context
     delete:
       FLAGS:
         - force
+      GLOBAL_FLAGS:
+        - ca
+        - direct-grpc
+        - endpoint
+        - force-http1
+        - help
+        - insecure
+        - insecure-skip-tls-verify
+        - no-color
+        - password
+        - plaintext
+        - server-name
+        - token-file
+        - use-current-k8s-context
     list:
       FLAGS:
         - json
-  whoami: {}
+      GLOBAL_FLAGS:
+        - ca
+        - direct-grpc
+        - endpoint
+        - force-http1
+        - help
+        - insecure
+        - insecure-skip-tls-verify
+        - no-color
+        - password
+        - plaintext
+        - server-name
+        - token-file
+        - use-current-k8s-context
+  whoami:
+    GLOBAL_FLAGS:
+      - ca
+      - direct-grpc
+      - endpoint
+      - force-http1
+      - help
+      - insecure
+      - insecure-skip-tls-verify
+      - no-color
+      - password
+      - plaintext
+      - server-name
+      - token-file
+      - use-current-k8s-context
 cluster:
+  GLOBAL_FLAGS:
+    - help
+    - no-color
   delete:
     FLAGS:
       - ca
@@ -117,18 +979,41 @@ cluster:
       - plaintext
       - server-name
       - use-current-k8s-context
+    GLOBAL_FLAGS:
+      - help
+      - no-color
+      - retry-timeout
+      - timeout
 collector:
+  GLOBAL_FLAGS:
+    - help
+    - no-color
   support-packages:
+    GLOBAL_FLAGS:
+      - help
+      - no-color
     upload:
       FLAGS:
         - overwrite
-completion: {}
+      GLOBAL_FLAGS:
+        - help
+        - no-color
+completion:
+  GLOBAL_FLAGS:
+    - help
+    - no-color
 declarative-config:
+  GLOBAL_FLAGS:
+    - help
+    - no-color
   create:
     FLAGS:
       - config-map
       - namespace
       - secret
+    GLOBAL_FLAGS:
+      - help
+      - no-color
     access-scope:
       FLAGS:
         - cluster-label-selector
@@ -136,6 +1021,12 @@ declarative-config:
         - included
         - name
         - namespace-label-selector
+      GLOBAL_FLAGS:
+        - config-map
+        - help
+        - namespace
+        - no-color
+        - secret
     auth-provider:
       FLAGS:
         - extra-ui-endpoints
@@ -146,9 +1037,29 @@ declarative-config:
         - name
         - required-attributes
         - ui-endpoint
+      GLOBAL_FLAGS:
+        - config-map
+        - help
+        - namespace
+        - no-color
+        - secret
       iap:
         FLAGS:
           - audience
+        GLOBAL_FLAGS:
+          - config-map
+          - extra-ui-endpoints
+          - groups-key
+          - groups-role
+          - groups-value
+          - help
+          - minimum-access-role
+          - name
+          - namespace
+          - no-color
+          - required-attributes
+          - secret
+          - ui-endpoint
       oidc:
         FLAGS:
           - claim-mappings
@@ -157,7 +1068,35 @@ declarative-config:
           - disable-offline-access
           - issuer
           - mode
-      openshift-auth: {}
+        GLOBAL_FLAGS:
+          - config-map
+          - extra-ui-endpoints
+          - groups-key
+          - groups-role
+          - groups-value
+          - help
+          - minimum-access-role
+          - name
+          - namespace
+          - no-color
+          - required-attributes
+          - secret
+          - ui-endpoint
+      openshift-auth:
+        GLOBAL_FLAGS:
+          - config-map
+          - extra-ui-endpoints
+          - groups-key
+          - groups-role
+          - groups-value
+          - help
+          - minimum-access-role
+          - name
+          - namespace
+          - no-color
+          - required-attributes
+          - secret
+          - ui-endpoint
       saml:
         FLAGS:
           - idp-cert
@@ -166,10 +1105,44 @@ declarative-config:
           - name-id-format
           - sp-issuer
           - sso-url
+        GLOBAL_FLAGS:
+          - config-map
+          - extra-ui-endpoints
+          - groups-key
+          - groups-role
+          - groups-value
+          - help
+          - minimum-access-role
+          - name
+          - namespace
+          - no-color
+          - required-attributes
+          - secret
+          - ui-endpoint
       userpki:
         FLAGS:
           - ca-file
+        GLOBAL_FLAGS:
+          - config-map
+          - extra-ui-endpoints
+          - groups-key
+          - groups-role
+          - groups-value
+          - help
+          - minimum-access-role
+          - name
+          - namespace
+          - no-color
+          - required-attributes
+          - secret
+          - ui-endpoint
     notifier:
+      GLOBAL_FLAGS:
+        - config-map
+        - help
+        - namespace
+        - no-color
+        - secret
       generic:
         FLAGS:
           - audit-logging
@@ -180,6 +1153,13 @@ declarative-config:
           - webhook-password
           - webhook-skip-tls-verify
           - webhook-username
+        GLOBAL_FLAGS:
+          - config-map
+          - help
+          - name
+          - namespace
+          - no-color
+          - secret
       splunk:
         FLAGS:
           - audit-logging
@@ -188,24 +1168,49 @@ declarative-config:
           - splunk-skip-tls-verify
           - splunk-token
           - truncate
+        GLOBAL_FLAGS:
+          - config-map
+          - help
+          - name
+          - namespace
+          - no-color
+          - secret
     permission-set:
       FLAGS:
         - description
         - name
         - resource-with-access
+      GLOBAL_FLAGS:
+        - config-map
+        - help
+        - namespace
+        - no-color
+        - secret
     role:
       FLAGS:
         - access-scope
         - description
         - name
         - permission-set
+      GLOBAL_FLAGS:
+        - config-map
+        - help
+        - namespace
+        - no-color
+        - secret
   lint:
     FLAGS:
       - config-map
       - file
       - namespace
       - secret
+    GLOBAL_FLAGS:
+      - help
+      - no-color
 deployment:
+  GLOBAL_FLAGS:
+    - help
+    - no-color
   check:
     FLAGS:
       - categories
@@ -218,13 +1223,32 @@ deployment:
       - retries
       - retry-delay
       - verbose
+    GLOBAL_FLAGS:
+      - help
+      - no-color
+      - timeout
 doc:
   FLAGS:
     - output
+  GLOBAL_FLAGS:
+    - help
+    - no-color
 helm:
-  derive-local-values: {}
-  output: {}
+  GLOBAL_FLAGS:
+    - help
+    - no-color
+  derive-local-values:
+    GLOBAL_FLAGS:
+      - help
+      - no-color
+  output:
+    GLOBAL_FLAGS:
+      - help
+      - no-color
 image:
+  GLOBAL_FLAGS:
+    - help
+    - no-color
   check:
     FLAGS:
       - categories
@@ -237,12 +1261,20 @@ image:
       - retries
       - retry-delay
       - send-notifications
+    GLOBAL_FLAGS:
+      - help
+      - no-color
+      - timeout
   sbom:
     FLAGS:
       - force
       - image
       - retries
       - retry-delay
+    GLOBAL_FLAGS:
+      - help
+      - no-color
+      - timeout
   scan:
     FLAGS:
       - cluster
@@ -254,12 +1286,25 @@ image:
       - retries
       - retry-delay
       - severity
+    GLOBAL_FLAGS:
+      - help
+      - no-color
+      - timeout
 log-convert:
   FLAGS:
     - level
     - module
+  GLOBAL_FLAGS:
+    - help
+    - no-color
 netpol:
+  GLOBAL_FLAGS:
+    - help
+    - no-color
   connectivity:
+    GLOBAL_FLAGS:
+      - help
+      - no-color
     diff:
       FLAGS:
         - dir1
@@ -270,6 +1315,9 @@ netpol:
         - remove
         - save-to-file
         - strict
+      GLOBAL_FLAGS:
+        - help
+        - no-color
     map:
       FLAGS:
         - exposure
@@ -280,6 +1328,9 @@ netpol:
         - remove
         - save-to-file
         - strict
+      GLOBAL_FLAGS:
+        - help
+        - no-color
   generate:
     FLAGS:
       - dnsport
@@ -288,7 +1339,13 @@ netpol:
       - output-file
       - remove
       - strict
+    GLOBAL_FLAGS:
+      - help
+      - no-color
 scanner:
+  GLOBAL_FLAGS:
+    - help
+    - no-color
   download-db:
     FLAGS:
       - force
@@ -296,6 +1353,9 @@ scanner:
       - skip-central
       - skip-variants
       - version
+    GLOBAL_FLAGS:
+      - help
+      - no-color
   generate:
     FLAGS:
       - istio-support
@@ -303,13 +1363,90 @@ scanner:
       - scanner-image
       - scanner-v4-db-image
       - scanner-v4-image
+    GLOBAL_FLAGS:
+      - help
+      - no-color
   upload-db:
     FLAGS:
       - scanner-db-file
+    GLOBAL_FLAGS:
+      - help
+      - no-color
 sensor:
+  GLOBAL_FLAGS:
+    - help
+    - no-color
   generate:
-    k8s: {}
-    openshift: {}
-  generate-certs: {}
-  get-bundle: {}
-version: {}
+    GLOBAL_FLAGS:
+      - help
+      - no-color
+      - retry-timeout
+    k8s:
+      GLOBAL_FLAGS:
+        - admission-controller-disable-bypass
+        - admission-controller-enabled
+        - admission-controller-enforce-on-creates
+        - admission-controller-enforce-on-updates
+        - admission-controller-listen-on-creates
+        - admission-controller-listen-on-updates
+        - admission-controller-scan-inline
+        - admission-controller-timeout
+        - central
+        - collection-method
+        - collector-image-repository
+        - continue-if-exists
+        - create-admission-controller
+        - create-upgrader-sa
+        - disable-tolerations
+        - enable-pod-security-policies
+        - help
+        - istio-support
+        - main-image-repository
+        - name
+        - no-color
+        - output-dir
+        - retry-timeout
+        - slim-collector
+        - timeout
+    openshift:
+      GLOBAL_FLAGS:
+        - admission-controller-disable-bypass
+        - admission-controller-enabled
+        - admission-controller-enforce-on-creates
+        - admission-controller-enforce-on-updates
+        - admission-controller-listen-on-creates
+        - admission-controller-listen-on-updates
+        - admission-controller-scan-inline
+        - admission-controller-timeout
+        - central
+        - collection-method
+        - collector-image-repository
+        - continue-if-exists
+        - create-admission-controller
+        - create-upgrader-sa
+        - disable-tolerations
+        - enable-pod-security-policies
+        - help
+        - istio-support
+        - main-image-repository
+        - name
+        - no-color
+        - output-dir
+        - retry-timeout
+        - slim-collector
+        - timeout
+  generate-certs:
+    GLOBAL_FLAGS:
+      - help
+      - no-color
+      - retry-timeout
+      - timeout
+  get-bundle:
+    GLOBAL_FLAGS:
+      - help
+      - no-color
+      - retry-timeout
+version:
+  GLOBAL_FLAGS:
+    - help
+    - no-color

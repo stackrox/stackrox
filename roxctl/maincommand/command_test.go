@@ -55,8 +55,9 @@ func Test_Commands(t *testing.T) {
 }
 
 type cmdNode struct {
-	Commands map[string]*cmdNode `yaml:"cmd,inline,omitempty"`
-	Flags    []string            `yaml:"FLAGS,omitempty"`
+	Commands       map[string]*cmdNode `yaml:"cmd,inline,omitempty"`
+	Flags          []string            `yaml:"FLAGS,omitempty"`
+	InheritedFlags []string            `yaml:"GLOBAL_FLAGS,omitempty"`
 }
 
 func buildCmdTree(c *cobra.Command) *cmdNode {
@@ -65,6 +66,9 @@ func buildCmdTree(c *cobra.Command) *cmdNode {
 	}
 	c.Flags().VisitAll(func(f *pflag.Flag) {
 		command.Flags = append(command.Flags, f.Name)
+	})
+	c.InheritedFlags().VisitAll(func(f *pflag.Flag) {
+		command.InheritedFlags = append(command.InheritedFlags, f.Name)
 	})
 
 	for _, cmd := range c.Commands() {
