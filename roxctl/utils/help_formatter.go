@@ -55,6 +55,8 @@ func makeFlagVisitor(iw *indentWriter) func(f *pflag.Flag) {
 }
 
 // FormatHelp formats command help.
+// FTR, kubectl uses a similar, but even more sophisticated custom formatter:
+// https://github.com/kubernetes/kubectl/blob/master/pkg/util/templates/templater.go
 func FormatHelp(c *cobra.Command, _ []string) {
 	iw := &indentWriter{
 		&cobraWriter{c},
