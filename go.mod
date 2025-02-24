@@ -59,7 +59,7 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.1
 	github.com/google/certificate-transparency-go v1.3.1
 	github.com/google/gnostic-models v0.6.9
-	github.com/google/go-cmp v0.6.0
+	github.com/google/go-cmp v0.7.0
 	github.com/google/go-containerregistry v0.20.2
 	github.com/google/go-github/v60 v60.0.0
 	github.com/google/uuid v1.6.0
