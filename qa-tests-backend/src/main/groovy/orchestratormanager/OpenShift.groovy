@@ -95,6 +95,7 @@ class OpenShift extends Kubernetes {
     */
 
     @Override
+    @SuppressWarnings('BuilderMethodWithSideEffects')
     void createRoute(String routeName, String namespace) {
         log.debug "Creating a route: " + routeName
         withRetry(2, 3) {

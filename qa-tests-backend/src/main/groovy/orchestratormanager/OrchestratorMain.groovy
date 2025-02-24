@@ -45,6 +45,7 @@ interface OrchestratorMain {
     K8sDeployment getOrchestratorDeployment(String ns, String name)
     K8sDeployment createOrchestratorDeployment(K8sDeployment dep)
     boolean createDeploymentNoWait(Deployment deployment)
+    @SuppressWarnings('BuilderMethodWithSideEffects')
     void createDeployment(Deployment deployment)
     void updateDeployment(Deployment deployment)
     boolean updateDeploymentNoWait(Deployment deployment)
@@ -65,6 +66,7 @@ interface OrchestratorMain {
     boolean deploymentReady(String ns, String name)
 
     //DaemonSets
+    @SuppressWarnings('BuilderMethodWithSideEffects')
     void createDaemonSet(DaemonSet daemonSet)
     void deleteDaemonSet(DaemonSet daemonSet)
     boolean containsDaemonSetContainer(String ns, String name, String containerName)
@@ -91,7 +93,9 @@ interface OrchestratorMain {
     Set<String> getStaticPodCount(String ns)
 
     //Services
+    @SuppressWarnings('BuilderMethodWithSideEffects')
     void createService(Deployment deployment)
+    @SuppressWarnings('BuilderMethodWithSideEffects')
     void createService(Service service)
     void deleteService(String serviceName, String namespace)
     void waitForServiceDeletion(Service service)
@@ -99,6 +103,7 @@ interface OrchestratorMain {
     void addOrUpdateServiceLabel(String serviceName, String ns, String name, String value)
 
     //Routes
+    @SuppressWarnings('BuilderMethodWithSideEffects')
     void createRoute(String routeName, String namespace)
     void deleteRoute(String routeName, String namespace)
 
@@ -137,6 +142,7 @@ interface OrchestratorMain {
 
     //Service Accounts
     List<K8sServiceAccount> getServiceAccounts()
+    @SuppressWarnings('BuilderMethodWithSideEffects')
     void createServiceAccount(K8sServiceAccount serviceAccount)
     void deleteServiceAccount(K8sServiceAccount serviceAccount)
     void addServiceAccountImagePullSecret(String accountName, String secretName, String namespace)
@@ -144,21 +150,25 @@ interface OrchestratorMain {
 
     //Roles
     List<K8sRole> getRoles()
+    @SuppressWarnings('BuilderMethodWithSideEffects')
     void createRole(K8sRole role)
     void deleteRole(K8sRole role)
 
     //RoleBindings
     List<K8sRoleBinding> getRoleBindings()
+    @SuppressWarnings('BuilderMethodWithSideEffects')
     void createRoleBinding(K8sRoleBinding roleBinding)
     void deleteRoleBinding(K8sRoleBinding roleBinding)
 
     //ClusterRoles
     List<K8sRole> getClusterRoles()
+    @SuppressWarnings('BuilderMethodWithSideEffects')
     void createClusterRole(K8sRole role)
     void deleteClusterRole(K8sRole role)
 
     //ClusterRoleBindings
     List<K8sRoleBinding> getClusterRoleBindings()
+    @SuppressWarnings('BuilderMethodWithSideEffects')
     void createClusterRoleBinding(K8sRoleBinding roleBinding)
     void deleteClusterRoleBinding(K8sRoleBinding roleBinding)
 
@@ -184,5 +194,6 @@ interface OrchestratorMain {
 
     ValidatingWebhookConfiguration getAdmissionController()
     void deleteAdmissionController(String name)
+    @SuppressWarnings('BuilderMethodWithSideEffects')
     void createAdmissionController(ValidatingWebhookConfiguration config)
 }

@@ -192,6 +192,7 @@ class Kubernetes implements OrchestratorMain {
         Deployment Methods
     */
 
+    @SuppressWarnings('BuilderMethodWithSideEffects')
     void createDeployment(Deployment deployment) {
         ensureNamespaceExists(deployment.namespace)
         createDeploymentNoWait(deployment)
@@ -543,6 +544,7 @@ class Kubernetes implements OrchestratorMain {
         DaemonSet Methods
     */
 
+    @SuppressWarnings('BuilderMethodWithSideEffects')
     void createDaemonSet(DaemonSet daemonSet) {
         ensureNamespaceExists(daemonSet.namespace)
         createDaemonSetNoWait(daemonSet)
@@ -852,6 +854,7 @@ class Kubernetes implements OrchestratorMain {
     */
 
     @CompileDynamic
+    @SuppressWarnings('BuilderMethodWithSideEffects')
     void createService(Deployment deployment) {
         withRetry(2, 3) {
             Service service = new Service(
@@ -889,6 +892,7 @@ class Kubernetes implements OrchestratorMain {
     }
 
     @CompileDynamic
+    @SuppressWarnings('BuilderMethodWithSideEffects')
     void createService(objects.Service s) {
         withRetry(2, 3) {
             Service service = new Service(
@@ -1008,6 +1012,7 @@ class Kubernetes implements OrchestratorMain {
         Route Methods
     */
 
+    @SuppressWarnings('BuilderMethodWithSideEffects')
     void createRoute(String routeName, String namespace) {
         throw new RuntimeException("K8s does not support routes")
     }
@@ -1332,6 +1337,7 @@ class Kubernetes implements OrchestratorMain {
         }
     }
 
+    @SuppressWarnings('BuilderMethodWithSideEffects')
     void createServiceAccount(K8sServiceAccount serviceAccount) {
         withRetry(1, 2) {
             ServiceAccount sa = toServiceAccount(serviceAccount)
@@ -1470,6 +1476,7 @@ class Kubernetes implements OrchestratorMain {
         }
     }
 
+    @SuppressWarnings('BuilderMethodWithSideEffects')
     void createRole(K8sRole role) {
         withRetry(1, 2) {
             Role r = new Role(
@@ -1531,6 +1538,7 @@ class Kubernetes implements OrchestratorMain {
         }
     }
 
+    @SuppressWarnings('BuilderMethodWithSideEffects')
     void createRoleBinding(K8sRoleBinding roleBinding) {
         withRetry(1, 2) {
             RoleBinding r = new RoleBinding(
@@ -1590,6 +1598,7 @@ class Kubernetes implements OrchestratorMain {
         }
     }
 
+    @SuppressWarnings('BuilderMethodWithSideEffects')
     void createClusterRole(K8sRole role) {
         withRetry(2, 3) {
             ClusterRole r = new ClusterRole(
@@ -1649,6 +1658,7 @@ class Kubernetes implements OrchestratorMain {
         }
     }
 
+    @SuppressWarnings('BuilderMethodWithSideEffects')
     void createClusterRoleBinding(K8sRoleBinding roleBinding) {
         withRetry(2, 3) {
             ClusterRoleBinding r = new ClusterRoleBinding(
@@ -2424,6 +2434,7 @@ class Kubernetes implements OrchestratorMain {
         log.debug "delete admission controllers stub: ${name}"
     }
 
+    @SuppressWarnings('BuilderMethodWithSideEffects')
     void createAdmissionController(ValidatingWebhookConfiguration config) {
         log.debug "create admission controllers stub: ${config}"
     }
