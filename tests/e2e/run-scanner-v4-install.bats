@@ -70,6 +70,13 @@ setup_file() {
       export ROX_OPENSHIFT_VERSION=4
     fi
 
+    if ! command -v roxctl >/dev/null; then
+        die "roxctl not found, please make sure it can be resolved via PATH."
+    fi
+
+    local roxctl_version
+    roxctl_version="$(roxctl version)"
+
     # Prepare earlier Helm chart version.
     if [[ -z "${CHART_REPOSITORY:-}" ]]; then
         CHART_REPOSITORY=$(mktemp -d "helm-charts.XXXXXX" -p /tmp)
@@ -78,13 +85,6 @@ setup_file() {
         git clone --depth 1 -b main https://github.com/stackrox/helm-charts "${CHART_REPOSITORY}"
     fi
     export CHART_REPOSITORY
-
-    if ! command -v roxctl >/dev/null; then
-        die "roxctl not found, please make sure it can be resolved via PATH."
-    fi
-
-    local roxctl_version
-    roxctl_version="$(roxctl version)"
 
     if [[ -n "$MAIN_IMAGE_TAG" ]] && [[ "$roxctl_version" != "$MAIN_IMAGE_TAG" ]]; then
         info "MAIN_IMAGE_TAG ($MAIN_IMAGE_TAG) does not match roxctl version ($roxctl_version)."
