@@ -92,14 +92,14 @@ scanner:
 		},
 	}
 	cm.SetName("scanner-config")
-	_, err := m.Client.CoreV1().ConfigMaps(m.Namespace).Create(ctx, &cm, metav1.CreateOptions{})
+	_, err := m.Client.CoreV1().ConfigMaps(m.Config.Namespace).Create(ctx, &cm, metav1.CreateOptions{})
 
 	return err
 }
 
 func (m *manifestGenerator) createScannerTlsSecrets(ctx context.Context) error {
 	err := m.applyTlsSecret(ctx, "scanner-tls", func(fileMap map[string][]byte) error {
-		if err := certgen.IssueScannerCerts(fileMap, m.CA, mtls.WithNamespace(m.Namespace)); err != nil {
+		if err := certgen.IssueScannerCerts(fileMap, m.CA, mtls.WithNamespace(m.Config.Namespace)); err != nil {
 			return fmt.Errorf("issuing central service certificate: %w\n", err)
 		}
 		return nil
@@ -119,7 +119,7 @@ func (m *manifestGenerator) createScannerTlsSecrets(ctx context.Context) error {
 	}
 
 	err = m.applyTlsSecret(ctx, "scanner-db-tls", func(fileMap map[string][]byte) error {
-		if err := certgen.IssueOtherServiceCerts(fileMap, m.CA, []mtls.Subject{mtls.ScannerDBSubject}, mtls.WithNamespace(m.Namespace)); err != nil {
+		if err := certgen.IssueOtherServiceCerts(fileMap, m.CA, []mtls.Subject{mtls.ScannerDBSubject}, mtls.WithNamespace(m.Config.Namespace)); err != nil {
 			return fmt.Errorf("issuing scanner DB certificate: %w\n", err)
 		}
 		return nil
@@ -271,10 +271,10 @@ func (m *manifestGenerator) applyScannerDbDeployment(ctx context.Context) error 
 	}
 
 	deployment.SetName("scanner-db")
-	_, err := m.Client.AppsV1().Deployments(m.Namespace).Create(ctx, &deployment, metav1.CreateOptions{})
+	_, err := m.Client.AppsV1().Deployments(m.Config.Namespace).Create(ctx, &deployment, metav1.CreateOptions{})
 
 	if errors.IsAlreadyExists(err) {
-		_, err = m.Client.AppsV1().Deployments(m.Namespace).Update(ctx, &deployment, metav1.UpdateOptions{})
+		_, err = m.Client.AppsV1().Deployments(m.Config.Namespace).Update(ctx, &deployment, metav1.UpdateOptions{})
 		log.Info("Updated central deployment")
 	} else {
 		log.Info("Created central deployment")
@@ -482,10 +482,10 @@ func (m *manifestGenerator) applyScannerDeployment(ctx context.Context) error {
 
 	deployment.SetName("scanner")
 
-	_, err := m.Client.AppsV1().Deployments(m.Namespace).Create(ctx, &deployment, metav1.CreateOptions{})
+	_, err := m.Client.AppsV1().Deployments(m.Config.Namespace).Create(ctx, &deployment, metav1.CreateOptions{})
 
 	if errors.IsAlreadyExists(err) {
-		_, err = m.Client.AppsV1().Deployments(m.Namespace).Update(ctx, &deployment, metav1.UpdateOptions{})
+		_, err = m.Client.AppsV1().Deployments(m.Config.Namespace).Update(ctx, &deployment, metav1.UpdateOptions{})
 		log.Info("Updated scanner deployment")
 	} else {
 		log.Info("Created scanner deployment")
@@ -518,10 +518,10 @@ func (m *manifestGenerator) applyScannerServices(ctx context.Context) error {
 
 	svc.SetName("scanner")
 
-	_, err := m.Client.CoreV1().Services(m.Namespace).Create(ctx, &svc, metav1.CreateOptions{})
+	_, err := m.Client.CoreV1().Services(m.Config.Namespace).Create(ctx, &svc, metav1.CreateOptions{})
 
 	if errors.IsAlreadyExists(err) {
-		_, err = m.Client.CoreV1().Services(m.Namespace).Update(ctx, &svc, metav1.UpdateOptions{})
+		_, err = m.Client.CoreV1().Services(m.Config.Namespace).Update(ctx, &svc, metav1.UpdateOptions{})
 		log.Info("Updated scanner service")
 	} else {
 		log.Info("Created scanner service")
@@ -549,10 +549,10 @@ func (m *manifestGenerator) applyScannerServices(ctx context.Context) error {
 
 	svc.SetName("scanner-db")
 
-	_, err = m.Client.CoreV1().Services(m.Namespace).Create(ctx, &svc, metav1.CreateOptions{})
+	_, err = m.Client.CoreV1().Services(m.Config.Namespace).Create(ctx, &svc, metav1.CreateOptions{})
 
 	if errors.IsAlreadyExists(err) {
-		_, err = m.Client.CoreV1().Services(m.Namespace).Update(ctx, &svc, metav1.UpdateOptions{})
+		_, err = m.Client.CoreV1().Services(m.Config.Namespace).Update(ctx, &svc, metav1.UpdateOptions{})
 		log.Info("Updated scanner-db service")
 	} else {
 		log.Info("Created scanner-db service")

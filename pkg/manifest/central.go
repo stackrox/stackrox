@@ -122,7 +122,7 @@ shared_preload_libraries = 'pg_stat_statements'`,
 		},
 	}
 	cm.SetName("central-db-config")
-	_, err := m.Client.CoreV1().ConfigMaps(m.Namespace).Create(ctx, &cm, metav1.CreateOptions{})
+	_, err := m.Client.CoreV1().ConfigMaps(m.Config.Namespace).Create(ctx, &cm, metav1.CreateOptions{})
 
 	return err
 }
@@ -140,7 +140,7 @@ func (m *manifestGenerator) createCentralConfig(ctx context.Context) error {
 		},
 	}
 	cm.SetName("central-config")
-	_, err := m.Client.CoreV1().ConfigMaps(m.Namespace).Create(ctx, &cm, metav1.CreateOptions{})
+	_, err := m.Client.CoreV1().ConfigMaps(m.Config.Namespace).Create(ctx, &cm, metav1.CreateOptions{})
 
 	cm = v1.ConfigMap{
 		Data: map[string]string{
@@ -159,10 +159,10 @@ func (m *manifestGenerator) createCentralConfig(ctx context.Context) error {
 		},
 	}
 	cm.SetName("central-external-db")
-	_, err = m.Client.CoreV1().ConfigMaps(m.Namespace).Create(ctx, &cm, metav1.CreateOptions{})
+	_, err = m.Client.CoreV1().ConfigMaps(m.Config.Namespace).Create(ctx, &cm, metav1.CreateOptions{})
 
 	if errors.IsAlreadyExists(err) {
-		_, err = m.Client.CoreV1().ConfigMaps(m.Namespace).Update(ctx, &cm, metav1.UpdateOptions{})
+		_, err = m.Client.CoreV1().ConfigMaps(m.Config.Namespace).Update(ctx, &cm, metav1.UpdateOptions{})
 		log.Info("Updated central-external-db configmap")
 	} else {
 		log.Info("Created centra-external-dbl configmap")
@@ -178,14 +178,14 @@ func (m *manifestGenerator) createCentralEndpointsConfig(ctx context.Context) er
 		},
 	}
 	cm.SetName("central-endpoints")
-	_, err := m.Client.CoreV1().ConfigMaps(m.Namespace).Create(ctx, &cm, metav1.CreateOptions{})
+	_, err := m.Client.CoreV1().ConfigMaps(m.Config.Namespace).Create(ctx, &cm, metav1.CreateOptions{})
 
 	return err
 }
 
 func (m *manifestGenerator) createTlsSecrets(ctx context.Context) error {
 	err := m.applyTlsSecret(ctx, "central-tls", func(fileMap map[string][]byte) error {
-		if err := certgen.IssueCentralCert(fileMap, m.CA, mtls.WithNamespace(m.Namespace)); err != nil {
+		if err := certgen.IssueCentralCert(fileMap, m.CA, mtls.WithNamespace(m.Config.Namespace)); err != nil {
 			return fmt.Errorf("issuing central service certificate: %w\n", err)
 		}
 
@@ -204,7 +204,7 @@ func (m *manifestGenerator) createTlsSecrets(ctx context.Context) error {
 
 	return m.applyTlsSecret(ctx, "central-db-tls", func(fileMap map[string][]byte) error {
 		subjects := []mtls.Subject{mtls.CentralDBSubject}
-		if err := certgen.IssueOtherServiceCerts(fileMap, m.CA, subjects, mtls.WithNamespace(m.Namespace)); err != nil {
+		if err := certgen.IssueOtherServiceCerts(fileMap, m.CA, subjects, mtls.WithNamespace(m.Config.Namespace)); err != nil {
 			return fmt.Errorf("issuing central service certificate: %w\n", err)
 		}
 
@@ -225,7 +225,7 @@ func (m *manifestGenerator) createCentralDbPvc(ctx context.Context) error {
 		},
 	}
 	pvc.SetName("central-db")
-	_, err := m.Client.CoreV1().PersistentVolumeClaims(m.Namespace).Create(ctx, &pvc, metav1.CreateOptions{})
+	_, err := m.Client.CoreV1().PersistentVolumeClaims(m.Config.Namespace).Create(ctx, &pvc, metav1.CreateOptions{})
 
 	return err
 }
@@ -411,10 +411,10 @@ func (m *manifestGenerator) applyCentralDbDeployment(ctx context.Context) error 
 	}
 
 	deployment.SetName("central-db")
-	_, err := m.Client.AppsV1().Deployments(m.Namespace).Create(ctx, &deployment, metav1.CreateOptions{})
+	_, err := m.Client.AppsV1().Deployments(m.Config.Namespace).Create(ctx, &deployment, metav1.CreateOptions{})
 
 	if errors.IsAlreadyExists(err) {
-		_, err = m.Client.AppsV1().Deployments(m.Namespace).Update(ctx, &deployment, metav1.UpdateOptions{})
+		_, err = m.Client.AppsV1().Deployments(m.Config.Namespace).Update(ctx, &deployment, metav1.UpdateOptions{})
 		log.Info("Updated central-db deployment")
 	} else {
 		log.Info("Created central-db deployment")
@@ -687,10 +687,10 @@ func (m *manifestGenerator) applyCentralDeployment(ctx context.Context) error {
 
 	deployment.SetName("central")
 
-	_, err := m.Client.AppsV1().Deployments(m.Namespace).Create(ctx, &deployment, metav1.CreateOptions{})
+	_, err := m.Client.AppsV1().Deployments(m.Config.Namespace).Create(ctx, &deployment, metav1.CreateOptions{})
 
 	if errors.IsAlreadyExists(err) {
-		_, err = m.Client.AppsV1().Deployments(m.Namespace).Update(ctx, &deployment, metav1.UpdateOptions{})
+		_, err = m.Client.AppsV1().Deployments(m.Config.Namespace).Update(ctx, &deployment, metav1.UpdateOptions{})
 		log.Info("Updated central deployment")
 	} else {
 		log.Info("Created central deployment")
@@ -718,10 +718,10 @@ func (m *manifestGenerator) applyCentralServices(ctx context.Context) error {
 
 	svc.SetName("central")
 
-	_, err := m.Client.CoreV1().Services(m.Namespace).Create(ctx, &svc, metav1.CreateOptions{})
+	_, err := m.Client.CoreV1().Services(m.Config.Namespace).Create(ctx, &svc, metav1.CreateOptions{})
 
 	if errors.IsAlreadyExists(err) {
-		_, err = m.Client.CoreV1().Services(m.Namespace).Update(ctx, &svc, metav1.UpdateOptions{})
+		_, err = m.Client.CoreV1().Services(m.Config.Namespace).Update(ctx, &svc, metav1.UpdateOptions{})
 		log.Info("Updated central service")
 	} else {
 		log.Info("Created central service")
@@ -749,10 +749,10 @@ func (m *manifestGenerator) applyCentralServices(ctx context.Context) error {
 
 	svc.SetName("central-db")
 
-	_, err = m.Client.CoreV1().Services(m.Namespace).Create(ctx, &svc, metav1.CreateOptions{})
+	_, err = m.Client.CoreV1().Services(m.Config.Namespace).Create(ctx, &svc, metav1.CreateOptions{})
 
 	if errors.IsAlreadyExists(err) {
-		_, err = m.Client.CoreV1().Services(m.Namespace).Update(ctx, &svc, metav1.UpdateOptions{})
+		_, err = m.Client.CoreV1().Services(m.Config.Namespace).Update(ctx, &svc, metav1.UpdateOptions{})
 		log.Info("Updated central-db service")
 	} else {
 		log.Info("Created central-db service")
