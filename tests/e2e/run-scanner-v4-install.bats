@@ -87,7 +87,7 @@ setup_file() {
     roxctl_version="$(roxctl version)"
 
     if [[ -n "$MAIN_IMAGE_TAG" ]] && [[ "$roxctl_version" != "$MAIN_IMAGE_TAG" ]]; then
-        echo "MAIN_IMAGE_TAG ($MAIN_IMAGE_TAG) does not match roxctl version ($roxctl_version)."
+        info "MAIN_IMAGE_TAG ($MAIN_IMAGE_TAG) does not match roxctl version ($roxctl_version)."
     fi
 
     # Download and use earlier version of roxctl without Scanner V4 support
