@@ -32,9 +32,6 @@ func (w *formattingWriter) write0(s string) error {
 }
 
 func (w *formattingWriter) writePadding() error {
-	if !w.indentReset {
-		w.currentLine = 0
-	}
 	return w.write0(strings.Repeat(" ", w.indent.pop()))
 }
 
@@ -43,7 +40,8 @@ func (w *formattingWriter) ln() error {
 	if _, err := w.raw.WriteString("\n"); err != nil {
 		return err
 	}
-	return w.writePadding()
+	w.currentLine = 0
+	return nil
 }
 
 func (w *formattingWriter) setIndent(indent ...int) {
@@ -53,13 +51,13 @@ func (w *formattingWriter) setIndent(indent ...int) {
 
 func (w *formattingWriter) WriteString(s string) (int, error) {
 	w.written = 0
-	if w.currentLine == 0 || w.indentReset {
-		if err := w.writePadding(); err != nil {
-			return w.written, err
-		}
-		w.indentReset = false
-	}
 	for word := range words(s) {
+		if w.currentLine == 0 || w.indentReset {
+			if err := w.writePadding(); err != nil {
+				return w.written, err
+			}
+			w.indentReset = false
+		}
 		if word == "\n" {
 			if err := w.ln(); err != nil {
 				return w.written, err
@@ -76,6 +74,9 @@ func (w *formattingWriter) WriteString(s string) (int, error) {
 			}
 			if word == " " {
 				continue
+			}
+			if err := w.writePadding(); err != nil {
+				return w.written, err
 			}
 		}
 		if err := w.write0(word); err != nil {
