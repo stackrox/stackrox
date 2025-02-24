@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -24,6 +25,10 @@ func TestFormatHelp(t *testing.T) {
 	c.Flags().Duration("dflag", time.Minute, "duration flag")
 	c.Flags().StringP("spflag", "s", "", "string flag with shorthand")
 	c.Flags().StringArray("sarray", []string{"a", "b"}, "string array flag with default array value")
+
+	fs := pflag.NewFlagSet("test", pflag.ExitOnError)
+	fs.String("flagset", "", "string flag from a test set")
+	c.Flags().AddFlagSet(fs)
 
 	subcommand := &cobra.Command{
 		Use:   "sub-test",
@@ -78,6 +83,9 @@ Options:
 
     --dflag='1m0s':
         duration flag
+
+    --flagset:
+        string flag from a test set
 
     --iflag=10:
         integer flag
