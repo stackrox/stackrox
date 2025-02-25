@@ -87,8 +87,8 @@ var connectionFlags = func() *pflag.FlagSet {
 	return fs
 }()
 
-// AddConnectionFlags adds connection-related flags to roxctl.
-func AddConnectionFlags(c *cobra.Command) {
+// AddCentralConnectionFlags adds connection-related flags to roxctl.
+func AddCentralConnectionFlags(c *cobra.Command) {
 	c.PersistentFlags().AddFlagSet(connectionFlags)
 	c.MarkFlagsMutuallyExclusive(useKubeContextFlagName, endpointFlagName)
 }
