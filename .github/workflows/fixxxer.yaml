@@ -10,6 +10,7 @@ jobs:
     if: ${{ github.event.issue.pull_request && github.event.comment.body == '/fixxx' }}
     runs-on: ubuntu-latest
     steps:
+
     - run: |
         echo "Responding to this comment: ${URL}"
       env:
