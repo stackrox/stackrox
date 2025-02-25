@@ -7,7 +7,6 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/stackrox/rox/roxctl/common/flags"
 )
 
 // Command provides the doc generation command.
@@ -49,7 +48,5 @@ The following formats are supported:
 	cmd.Flags().StringVarP(&dir, "output", "o", "",
 		"Directory where the docs should be written to")
 	utils.Must(cmd.MarkFlagRequired("output"))
-	flags.HideInheritedFlags(cmd)
-
 	return cmd
 }

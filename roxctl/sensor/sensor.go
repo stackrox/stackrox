@@ -22,5 +22,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	)
 	flags.AddTimeout(c)
 	flags.AddRetryTimeout(c)
+	flags.AddCentralConnectionFlags(c)
+	flags.AddCentralAuthFlags(c)
 	return c
 }
