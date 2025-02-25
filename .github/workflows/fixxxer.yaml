@@ -9,9 +9,21 @@ jobs:
     name: PR comment
     if: ${{ github.event.issue.pull_request && github.event.comment.body == '/fixxx' }}
     runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.5
     steps:
 
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
     - run: |
-        echo "Responding to this comment: ${URL}"
-      env:
-        URL: ${{ github.event.comment.url }}
+        set -e
+        echo "Running scripts/fixxxers/operator/deps-go-mod-tidy.sh" > msg.txt
+        echo >> msg.txt
+        ./scripts/fixxxers/operator/deps-go-mod-tidy.sh >> msg.txt 2>&1
+        git commit -a -F msg.txt
+
+    - uses: actions-js/push@v1.5
+      with:
+        branch: ${{ github.head_ref }}
