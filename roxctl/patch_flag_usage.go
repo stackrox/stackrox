@@ -1,13 +1,17 @@
 package main
 
 import (
+	"strings"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
 func processFlag(flag *pflag.Flag) {
-	if flag.Value.Type() == "bool" && flag.DefValue == "false" && flag.Name != "help" {
-		flag.Usage += " (default false)"
+	const defaultFalse = " (default false)"
+	if flag.Value.Type() == "bool" && flag.DefValue == "false" && flag.Name != "help" &&
+		!strings.HasSuffix(flag.Usage, defaultFalse) {
+		flag.Usage += defaultFalse
 	}
 }
 
