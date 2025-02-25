@@ -56,7 +56,6 @@ type imagePartsAsSlice struct {
 type timeFields struct {
 	createdAt            time.Time
 	firstImageOccurrence time.Time
-	publishedOn          time.Time
 }
 
 // New returns a new Store instance using the provided sql instance.
@@ -93,15 +92,10 @@ func (s *storeImpl) insertIntoImages(
 				log.Infof("CVE 2")
 				val.firstImageOccurrence = cve.GetFirstImageOccurrence().AsTime()
 			}
-			if val.publishedOn.After(cve.GetCveBaseInfo().GetPublishedOn().AsTime()) {
-				log.Infof("CVE 3")
-				val.publishedOn = cve.GetCveBaseInfo().GetPublishedOn().AsTime()
-			}
 		} else {
 			cveTimeMap[cve.GetCveBaseInfo().GetCve()] = &timeFields{
 				createdAt:            cve.GetCveBaseInfo().GetCreatedAt().AsTime(),
 				firstImageOccurrence: cve.GetFirstImageOccurrence().AsTime(),
-				publishedOn:          cve.GetCveBaseInfo().GetPublishedOn().AsTime(),
 			}
 		}
 	}
@@ -132,10 +126,6 @@ func (s *storeImpl) insertIntoImages(
 				if val.firstImageOccurrence.After(cve.GetFirstImageOccurrence().AsTime()) {
 					log.Infof("CVE 5")
 					val.firstImageOccurrence = cve.GetFirstImageOccurrence().AsTime()
-				}
-				if val.publishedOn.After(cve.GetCveBaseInfo().GetPublishedOn().AsTime()) {
-					log.Infof("CVE 6")
-					val.publishedOn = cve.GetCveBaseInfo().GetPublishedOn().AsTime()
 				}
 			}
 		}
@@ -355,7 +345,6 @@ func copyFromImageComponentV2Cves(ctx context.Context, tx *postgres.Tx, iTime ti
 			log.Infof("SHREWS -- found existing CVE %q Using its times", obj.GetCveBaseInfo().GetCve())
 			obj.CveBaseInfo.CreatedAt = protocompat.ConvertTimeToTimestampOrNil(&cveTimes.createdAt)
 			obj.FirstImageOccurrence = protocompat.ConvertTimeToTimestampOrNil(&cveTimes.firstImageOccurrence)
-			obj.CveBaseInfo.PublishedOn = protocompat.ConvertTimeToTimestampOrNil(&cveTimes.publishedOn)
 		} else {
 			log.Infof("SHREWS -- not foud existing CVE %q Using iTime", obj.GetCveBaseInfo().GetCve())
 			if obj.GetCveBaseInfo().GetCreatedAt() == nil {
