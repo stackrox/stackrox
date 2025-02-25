@@ -1,6 +1,6 @@
 hba_file = '/etc/stackrox.d/config/pg_hba.conf'
 listen_addresses = '*'
-max_connections = 100
+max_connections = 200
 password_encryption = scram-sha-256
 
 ssl = on
@@ -12,7 +12,6 @@ shared_buffers = 2GB
 work_mem = 40MB
 maintenance_work_mem = 512MB
 effective_cache_size = 4GB
-hash_mem_multiplier = 2.0
 
 dynamic_shared_memory_type = posix
 max_wal_size = 5GB
@@ -56,6 +55,3 @@ log_temp_files = 1024
 # Autovacuum has to keep up with the data growth. Log any autovacuum activity,
 # that took longer than 500ms.
 log_autovacuum_min_duration = 500
-autovacuum_max_workers = 5
-autovacuum_vacuum_scale_factor = 0.05
-autovacuum_analyze_scale_factor = 0.02
