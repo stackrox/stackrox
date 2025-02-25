@@ -1351,8 +1351,11 @@ func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
 						ProcessArgs:         "test_arguments1",
 						ProcessExecFilePath: "test_path1",
 					},
+					DeploymentId: fixtureconsts.Deployment1,
+					PodUid:       fixtureconsts.PodUID1,
 				},
 			},
+			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID1),
 			expectedDeletions: []string{plopID1},
 		},
 		{
@@ -1373,9 +1376,11 @@ func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
 						ProcessExecFilePath: "test_path1",
 					},
 					DeploymentId: fixtureconsts.Deployment1,
+					PodUid:       fixtureconsts.PodUID1,
 				},
 			},
 			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment1),
+			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID1),
 			expectedDeletions: []string{},
 		},
 		{
@@ -1395,8 +1400,12 @@ func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
 						ProcessArgs:         "test_arguments1",
 						ProcessExecFilePath: "test_path1",
 					},
+					DeploymentId: fixtureconsts.Deployment1,
+					PodUid:       fixtureconsts.PodUID1,
 				},
 			},
+			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment1),
+			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID1),
 			expectedDeletions: []string{plopID1},
 		},
 		{
@@ -1420,6 +1429,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
 					PodUid:       fixtureconsts.PodUID1,
 				},
 			},
+			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment1),
 			expectedDeletions: []string{plopID1},
 		},
 		{
@@ -1446,6 +1456,30 @@ func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
 			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment1),
 			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID1),
 			expectedDeletions: []string{},
+		},
+		{
+			name: "Plop does not have a poduid so it is removed",
+			initialPlops: []*storage.ProcessListeningOnPortStorage{
+				{
+					Id:                 plopID1,
+					Port:               1234,
+					Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
+					CloseTimestamp:     nil,
+					ProcessIndicatorId: fixtureconsts.ProcessIndicatorID1,
+					Closed:             false,
+					Process: &storage.ProcessIndicatorUniqueKey{
+						PodId:               fixtureconsts.PodUID1,
+						ContainerName:       "test_container1",
+						ProcessName:         "test_process1",
+						ProcessArgs:         "test_arguments1",
+						ProcessExecFilePath: "test_path1",
+					},
+					DeploymentId: fixtureconsts.Deployment1,
+				},
+			},
+			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment1),
+			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID1),
+			expectedDeletions: []string{plopID1},
 		},
 	}
 
