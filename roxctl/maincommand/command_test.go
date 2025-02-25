@@ -1,7 +1,6 @@
 package maincommand
 
 import (
-	"os"
 	"strings"
 	"testing"
 
@@ -89,7 +88,7 @@ func Test_commandTree(t *testing.T) {
 	_ = e.Close()
 	result := sb.String()
 	// Regenerate the tree:
-	os.WriteFile(commandTreeFilename, []byte(result), 0666)
+	// os.WriteFile(commandTreeFilename, []byte(result), 0666)
 	assert.NotEmpty(t, commandTreeFilename, result)
 	assert.Equal(t, commandTree, result)
 }
