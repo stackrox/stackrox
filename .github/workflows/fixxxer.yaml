@@ -20,7 +20,7 @@ jobs:
     - name: Fetch PR metadata
       id: pr-metadata
       run: |
-        curl --silent --retry 7 --retry-all-errors --retry-connrefused "$PR_URL" > pr.json
+        curl --silent --retry 7 "$PR_URL" > pr.json
         pr_head_repo="$(jq --raw-output .head.repo.full_name pr.json)"
 
         if [ "$pr_head_repo" != "${THIS_REPO}" ]; then
@@ -36,7 +36,7 @@ jobs:
           # TODO: more checks for safe branch names
           exit 1
         fi
-        echo "branch=$branch" >> $GITHUB_OUTPUT
+        echo "branch=$branch" >> "$GITHUB_OUTPUT"
         rm pr.json
       env:
         PR_URL: ${{ github.event.issue.pull_request.url }}
@@ -63,7 +63,7 @@ jobs:
     - name: Configure Git
       run: |
         set -ex
-        git config --global --add safe.directory `pwd`
+        git config --global --add safe.directory "$(pwd)"
         git config --global user.email "nobody@redhat.com"
         git config --global user.name "StackRox PR Fixxxer"
 
