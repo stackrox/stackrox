@@ -2,6 +2,8 @@ import { gql } from '@apollo/client';
 import { min, parse } from 'date-fns';
 import sortBy from 'lodash/sortBy';
 import uniq from 'lodash/uniq';
+import pluralize from 'pluralize';
+
 import { CveBaseInfo, VulnerabilitySeverity, isVulnerabilitySeverity } from 'types/cve.proto';
 import { SourceType } from 'types/image.proto';
 import { ApiSortOptionSingle } from 'types/search';
@@ -345,4 +347,17 @@ export function formatEpssProbabilityAsPercent(epssProbability: number | undefin
 
     // For any of the following: null, undefined, or number out of range
     return 'Not available';
+}
+
+export function formatTotalAdvisories(totalAdvisories: number | undefined) {
+    if (
+        typeof totalAdvisories === 'number' &&
+        Number.isSafeInteger(totalAdvisories) &&
+        totalAdvisories > 0
+    ) {
+        return `${totalAdvisories} ${pluralize('advisory', totalAdvisories)}`;
+    }
+
+    // For any of the following: undefined, or number out of range
+    return 'No advisories';
 }
