@@ -60,7 +60,6 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 		"aws",
 		"chainguard",
 		"debian",
-		"clair.kev",
 		"oracle",
 		"osv",
 		"photon",
