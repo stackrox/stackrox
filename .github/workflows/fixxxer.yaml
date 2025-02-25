@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   pr_commented:
-    name: PR comment
+    name: Run PR Fixxxer
     # TODO: support leading and trailing whitespace too
     if: ${{ github.event.issue.pull_request && github.event.comment.body == '/fixxx' }}
     runs-on: ubuntu-latest
