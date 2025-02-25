@@ -1,3 +1,5 @@
+name: PR Fixxxer
+
 on:
   issue_comment:
     types: [created]
