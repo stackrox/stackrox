@@ -58,6 +58,12 @@ func (m *manifestGenerator) Apply(ctx context.Context) error {
 		panic(err)
 	}
 
+	if m.Config.ScannerV4 {
+		if err := m.applyScannerV4(ctx); err != nil {
+			panic(err)
+		}
+	}
+
 	if err := m.applyScanner(ctx); err != nil {
 		panic(err)
 	}
@@ -126,17 +132,18 @@ type tlsCallback func(fileMap map[string][]byte) error
 
 func (m *manifestGenerator) applyTlsSecret(ctx context.Context, name string, issueCert tlsCallback) error {
 	secret, err := m.Client.CoreV1().Secrets(m.Config.Namespace).Get(ctx, name, metav1.GetOptions{})
-	if err == nil {
-		log.Infof("Secret %s already found.", name)
-		return nil
-	}
 
 	if err != nil && !errors.IsNotFound(err) {
 		return fmt.Errorf("Error fetching %s secret: %w", name, err)
 	}
 
+	if err == nil {
+		log.Infof("Secret %s already found.", name)
+		return nil
+	}
+
 	fileMap := make(map[string][]byte)
-	certgen.AddCAToFileMap(fileMap, m.CA)
+	certgen.AddCACertToFileMap(fileMap, m.CA)
 
 	secret = &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -271,4 +278,48 @@ func (m *manifestGenerator) createServiceAccount(ctx context.Context, name strin
 	}
 
 	return m.createNonrootV2SCCRoleBinding(ctx, name)
+}
+
+func (m *manifestGenerator) applyConfigMap(ctx context.Context, name string, cm *v1.ConfigMap) error {
+	cm.SetName(name)
+	_, err := m.Client.CoreV1().ConfigMaps(m.Config.Namespace).Create(ctx, cm, metav1.CreateOptions{})
+
+	if err != nil {
+		if errors.IsAlreadyExists(err) {
+			_, err = m.Client.CoreV1().ConfigMaps(m.Config.Namespace).Update(ctx, cm, metav1.UpdateOptions{})
+			if err != nil {
+				return fmt.Errorf("Error updating configmap %s: %w", name, err)
+			}
+		} else {
+			return fmt.Errorf("Error creating configmap %s: %w", name, err)
+		}
+	}
+
+	return nil
+}
+
+func (m *manifestGenerator) applyService(ctx context.Context, name string, ports []v1.ServicePort) error {
+	svc := v1.Service{
+		Spec: v1.ServiceSpec{
+			Selector: map[string]string{
+				"app": name,
+			},
+			Ports: ports,
+		},
+	}
+	svc.SetName(name)
+	_, err := m.Client.CoreV1().Services(m.Config.Namespace).Create(ctx, &svc, metav1.CreateOptions{})
+
+	if err != nil {
+		if errors.IsAlreadyExists(err) {
+			_, err = m.Client.CoreV1().Services(m.Config.Namespace).Update(ctx, &svc, metav1.UpdateOptions{})
+			if err != nil {
+				return fmt.Errorf("Error updating service %s: %w", name, err)
+			}
+		} else {
+			return fmt.Errorf("Error creating service %s: %w", name, err)
+		}
+	}
+
+	return nil
 }
