@@ -4,6 +4,9 @@ on:
   issue_comment:
     types: [created]
 
+permissions:
+  contents: write
+
 jobs:
   pr_commented:
     name: PR comment
@@ -30,3 +33,4 @@ jobs:
     - uses: actions-js/push@v1.5
       with:
         branch: ${{ github.head_ref }}
+        github_token: ${{ secrets.GITHUB_TOKEN }}
