@@ -13,6 +13,7 @@ central/processlisteningonport/datastore/datastore_impl_test.go
 central/pruning/pruning_test.go
 central/splunk/violations_test.go
 central/testutils/testdata/imgdata.json.gz
+central/vulnmgmt/vulnerabilityrequest/datastore/datastore_impl_postgres_test.go
 compliance/node/index/testdata/usr/share/rpm/rpmdb.sqlite
 deploy/charts/monitoring/dashboards/dataplane.json
 generated/**/*.pb.go
