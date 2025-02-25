@@ -57,6 +57,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - ROX-27916 ROX-27985 ROX-27986: Replace links to docs in console UI
     - from docs dot openshift dot com
     - to docs dot redhat dot com
+- ROX-26763: identify defunct processes before they induce parsing errors in Collector.
 
 ## [4.6.0]
 
