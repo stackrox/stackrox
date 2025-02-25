@@ -1,0 +1,76 @@
+name: PR Fixxxer
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+
+jobs:
+  pr_commented:
+    name: PR comment
+    # TODO: support leading and trailing whitespace too
+    if: ${{ github.event.issue.pull_request && github.event.comment.body == '/fixxx' }}
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.5
+    steps:
+
+    - name: Fetch PR metadata
+      id: pr-metadata
+      run: |
+        curl --silent --retry 7 --retry-all-errors --retry-connrefused "$PR_URL" > pr.json
+        pr_head_repo="$(jq --raw-output .head.repo.full_name pr.json)"
+
+        if [ "$pr_head_repo" != "${THIS_REPO}" ]; then
+          echo "This comment was issued on a PR from branch in repo $pr_head_repo. Currently only PRs from branches in repo $THIS_REPO are supported."
+          # TODO: we could still run commands and point at results in a PR comment, even if we do not have permissions to push there.
+          exit 1
+        fi
+
+        branch="$(jq --raw-output .head.ref pr.json)"
+        # If branch name is empty, push action defaults to pushing to main, which we do not want to do.
+        if [ -z "${branch}" ]; then
+          echo "Failed to detect source branch."
+          # TODO: more checks for safe branch names
+          exit 1
+        fi
+        echo "branch=$branch" >> $GITHUB_OUTPUT
+        rm pr.json
+      env:
+        PR_URL: ${{ github.event.issue.pull_request.url }}
+        THIS_REPO: ${{ github.repository }}
+
+    - name: Dump GitHub context
+      env:
+        GITHUB_CONTEXT: ${{ toJson(github) }}
+      run: echo "$GITHUB_CONTEXT" | jq .
+    - name: Dump job context
+      env:
+        JOB_CONTEXT: ${{ toJson(job) }}
+      run: echo "$JOB_CONTEXT" | jq .
+    - name: Dump steps context
+      env:
+        STEPS_CONTEXT: ${{ toJson(steps) }}
+      run: echo "$STEPS_CONTEXT" | jq .
+
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ steps.pr-metadata.outputs.branch }}
+        fetch-depth: 0
+
+    - name: Configure Git
+      run: |
+        set -ex
+        git config --global --add safe.directory `pwd`
+        git config --global user.email "nobody@redhat.com"
+        git config --global user.name "StackRox PR Fixxxer"
+
+    - run: ./scripts/fixxxer.sh
+
+    - uses: ad-m/github-push-action@v0.8.0
+      with:
+        branch: ${{ steps.pr-metadata.outputs.branch }}
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+
