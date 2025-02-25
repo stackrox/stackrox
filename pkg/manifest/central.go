@@ -147,7 +147,7 @@ func (m *manifestGenerator) createCentralConfig(ctx context.Context) error {
 			"central-external-db.yaml": `centralDB:
    external: false
    source: >
-     host=central-db.stackrox.svc
+     host=central-db
      port=5432
      user=postgres
      sslmode=verify-ca
@@ -284,7 +284,7 @@ func (m *manifestGenerator) applyCentralDbDeployment(ctx context.Context) error 
 					},
 					Containers: []v1.Container{{
 						Name:            "central-db",
-						Image:           "quay.io/stackrox-io/central-db:latest",
+						Image:           m.Config.Images.DB,
 						SecurityContext: RestrictedSecurityContext(PostgresUser),
 						Ports: []v1.ContainerPort{{
 							Name:          "postgresql",
@@ -304,7 +304,7 @@ func (m *manifestGenerator) applyCentralDbDeployment(ctx context.Context) error 
 					}},
 					InitContainers: []v1.Container{{
 						Name:            "init-db",
-						Image:           "quay.io/stackrox-io/central-db:latest",
+						Image:           m.Config.Images.DB,
 						Command:         []string{"init-entrypoint.sh"},
 						SecurityContext: RestrictedSecurityContext(PostgresUser),
 						Env: []v1.EnvVar{
@@ -441,7 +441,7 @@ func (m *manifestGenerator) applyCentralDeployment(ctx context.Context) error {
 					ServiceAccountName: "central",
 					InitContainers: []v1.Container{{
 						Name:            "add-additional-cas",
-						Image:           "localhost:5001/stackrox/stackrox:latest",
+						Image:           m.Config.Images.Stackrox,
 						ImagePullPolicy: v1.PullAlways,
 						Command: []string{
 							"sh",
@@ -450,13 +450,13 @@ func (m *manifestGenerator) applyCentralDeployment(ctx context.Context) error {
 						},
 					}, {
 						Name:            "migrator",
-						Image:           "localhost:5001/stackrox/stackrox:latest",
+						Image:           m.Config.Images.Stackrox,
 						ImagePullPolicy: v1.PullAlways,
 						Command:         []string{"/stackrox/migrator"},
 					}},
 					Containers: []v1.Container{{
 						Name:            "central",
-						Image:           "localhost:5001/stackrox/stackrox:latest",
+						Image:           m.Config.Images.Stackrox,
 						ImagePullPolicy: v1.PullAlways,
 						Command:         []string{"/stackrox/central"},
 						Ports: []v1.ContainerPort{{
@@ -478,6 +478,13 @@ func (m *manifestGenerator) applyCentralDeployment(ctx context.Context) error {
 				},
 			},
 		},
+	}
+
+	if m.Config.ScannerV4 {
+		deployment.Spec.Template.Spec.Containers[0].Env = append(deployment.Spec.Template.Spec.Containers[0].Env, v1.EnvVar{
+			Name:  "ROX_SCANNER_V4",
+			Value: "true",
+		})
 	}
 
 	trueBool := true

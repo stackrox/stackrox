@@ -921,6 +921,8 @@ bundle: scannerv2/image/scanner/dump/genesis_manifests.json
 	unzip -j /tmp/genesis-dump/genesis-dump.zip 'k8s/*.yaml' -d bundle/k8s_definitions
 	unzip -j /tmp/genesis-dump/genesis-dump.zip 'istio/*.yaml' -d bundle/istio_definitions
 	unzip -j /tmp/genesis-dump/genesis-dump.zip 'rhelv2/repository-to-cpe.json' -d bundle/repo2cpe
+	cp /tmp/genesis-dump/genesis-dump.zip bundle
+	curl -L https://security.access.redhat.com/data/metrics/container-name-repos-map.json > bundle/repo2cpe/container-name-repos-map.json
 
 .PHONY: scanner-v2
 scanner-v2: bin/scanner-v2 bin/local-nodescanner-v2 bundle

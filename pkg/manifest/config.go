@@ -9,14 +9,24 @@ import (
 	"strings"
 )
 
+type Images struct {
+	Stackrox string `yaml:"stackrox"`
+	DB       string `yaml:"db"`
+}
+
 type Config struct {
 	Namespace string `yaml:"namespace"`
-	ScannerV4 bool   `yaml:"scannerv4"`
+	ScannerV4 bool   `yaml:"scannerV4"`
+	Images    Images `yaml:"images"`
 }
 
 var DefaultConfig Config = Config{
 	Namespace: "stackrox",
 	ScannerV4: false,
+	Images: Images{
+		Stackrox: "localhost:5001/stackrox/stackrox:latest",
+		DB:       "localhost:5001/stackrox/db:latest",
+	},
 }
 
 func ReadConfig(filename string) (*Config, error) {
@@ -35,7 +45,7 @@ func ReadConfig(filename string) (*Config, error) {
 func load(r io.Reader) (*Config, error) {
 	yd := yaml.NewDecoder(r)
 	yd.KnownFields(true)
-	cfg := Config{}
+	cfg := DefaultConfig
 	if err := yd.Decode(&cfg); err != nil {
 		msg := strings.TrimPrefix(err.Error(), `yaml: `)
 		return nil, fmt.Errorf("malformed yaml: %v", msg)
