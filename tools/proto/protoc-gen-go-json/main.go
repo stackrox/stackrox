@@ -72,16 +72,12 @@ func generateMessage(g *protogen.GeneratedFile, msg *protogen.Message) {
 	for _, f := range msg.Fields {
 		hasMapsOrList = hasMapsOrList || f.Desc.IsMap() || f.Desc.IsList()
 	}
-	if hasMapsOrList {
-		g.P("trailingComma := true")
-	}
+	g.P("trailingComma := false")
+	g.P("if trailingComma {}")
 	w(g, "{")
-	trailingComma := false
 	for _, f := range msg.Fields {
-		if trailingComma {
-			w(g, ",")
-		}
-		trailingComma = true
+		g.P(`if x := m.Get`, f.GoName, "(); x != ", zero(f.Desc), " { ")
+		g.P("if trailingComma { buf.WriteByte(',') }; trailingComma = true;")
 		ident(g, f.Desc.JSONName())
 		w(g, ":")
 		if f.Desc.IsList() {
@@ -121,6 +117,7 @@ func generateMessage(g *protogen.GeneratedFile, msg *protogen.Message) {
 			}
 			g.P("}")
 			w(g, "]")
+			g.P("}") // x
 			continue
 		}
 		if f.Desc.IsMap() {
@@ -169,6 +166,7 @@ func generateMessage(g *protogen.GeneratedFile, msg *protogen.Message) {
 			}
 			g.P("}")
 			w(g, "}")
+			g.P("}") // x
 			continue
 		}
 		switch f.Desc.Kind() {
@@ -178,16 +176,7 @@ func generateMessage(g *protogen.GeneratedFile, msg *protogen.Message) {
 				g.P(`t := t.AsTime().Format(`, rfc3339, `)`)
 				q(g, "t")
 				g.P("}")
-				continue
-			}
-			if f.Desc.IsList() {
-				w(g, "[")
-				g.P(`for _, v := range m.Get`, f.GoName, "() {")
-				g.P("	b, err = v.MarshalJSON()")
-				g.P("	if err != nil { return nil, err }")
-				g.P(`	if len(b) != 0 { buf.Write(b) } else { buf.WriteString("null") }`)
-				g.P(`}`)
-				w(g, "]")
+				g.P("}") // x
 				continue
 			}
 			g.P("b, err = m.Get", f.GoName, "().MarshalJSON()")
@@ -211,6 +200,7 @@ func generateMessage(g *protogen.GeneratedFile, msg *protogen.Message) {
 		default:
 			panic(f.Location.SourceFile + "/" + f.GoName)
 		}
+		g.P("}") // x
 	}
 	w(g, "}")
 	g.P(`return buf.Bytes(), nil`)
@@ -232,4 +222,26 @@ func q(g *protogen.GeneratedFile, s string) {
 func ident(g *protogen.GeneratedFile, s string) {
 	g.P(`buf.WriteString("\""); buf.WriteString("` + s + `"); buf.WriteString("\"");`)
 
+}
+
+func zero(fd protoreflect.FieldDescriptor) string {
+	if fd.IsMap() || fd.IsList() {
+		return "nil"
+	}
+	switch fd.Kind() {
+	case protoreflect.MessageKind, protoreflect.BytesKind:
+		return "nil"
+	case protoreflect.StringKind:
+		return `""`
+	case protoreflect.BoolKind:
+		return "false"
+	case protoreflect.EnumKind, protoreflect.Int32Kind, protoreflect.Sint32Kind,
+		protoreflect.Uint32Kind, protoreflect.Int64Kind, protoreflect.Sint64Kind,
+		protoreflect.Uint64Kind, protoreflect.Sfixed32Kind, protoreflect.Fixed32Kind,
+		protoreflect.Sfixed64Kind, protoreflect.Fixed64Kind,
+		protoreflect.FloatKind, protoreflect.DoubleKind:
+		return "0"
+	default:
+		panic(fd.FullName())
+	}
 }

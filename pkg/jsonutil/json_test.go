@@ -6,25 +6,38 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/encoding/protojson"
 )
 
+type protoWithJson interface {
+	protocompat.Message
+	json.Marshaler
+}
+
 func TestJsonMarshaler(t *testing.T) {
-	a := fixtures.GetAlert()
 
-	marshaller := &protojson.MarshalOptions{
-		EmitUnpopulated: true,
+	input := []protoWithJson{
+		fixtures.GetAlert(),
+		fixtures.GetImage(),
+		fixtures.GetCluster("cluster"),
+		fixtures.GetImageAlert(),
+		fixtures.GetDeployment(),
 	}
-	expected, err := marshaller.Marshal(a)
-	require.NoError(t, err)
 
-	b, err := a.MarshalJSON()
-	require.NoError(t, err)
+	for _, msg := range input {
+		t.Run(string(msg.ProtoReflect().Type().Descriptor().FullName()), func(t *testing.T) {
+			expected, err := ProtoToJSON(msg)
+			require.NoError(t, err)
 
-	var dest bytes.Buffer
-	err = json.Indent(&dest, b, "", "  ")
-	require.NoError(t, err)
-	t.Log(dest.String())
-	require.JSONEq(t, string(expected), string(b))
+			b, err := msg.MarshalJSON()
+			require.NoError(t, err)
+
+			var dest bytes.Buffer
+			err = json.Indent(&dest, b, "", "  ")
+			require.NoError(t, err)
+			t.Log(dest.String())
+			require.JSONEq(t, expected, string(b))
+		})
+	}
 }
