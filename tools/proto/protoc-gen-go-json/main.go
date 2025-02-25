@@ -12,10 +12,12 @@ import (
 const (
 	bytesPackage = protogen.GoImportPath("bytes")
 	fmtPackage   = protogen.GoImportPath("fmt")
+	timePackage  = protogen.GoImportPath("time")
 )
 
 var (
 	fprintf = fmtPackage.Ident("Fprintf")
+	rfc3339 = timePackage.Ident("RFC3339Nano")
 )
 
 func main() {
@@ -47,6 +49,7 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) {
 	g.P()
 	g.Import("bytes")
 	g.Import("fmt")
+	g.Import("time")
 
 	for _, m := range file.Messages {
 		generateMessage(g, m)
@@ -63,7 +66,7 @@ func generateMessage(g *protogen.GeneratedFile, msg *protogen.Message) {
 
 	g.P()
 	g.P("func (m *", name, ") MarshalJSON() (b []byte, err error) ", " { ")
-	g.P("if m == nil { return nil, nil }")
+	g.P(`if m == nil { return []byte("null"), nil }`)
 	g.P("var buf ", bytesPackage.Ident("Buffer"))
 	hasMapsOrList := false
 	for _, f := range msg.Fields {
@@ -89,16 +92,22 @@ func generateMessage(g *protogen.GeneratedFile, msg *protogen.Message) {
 			switch f.Desc.Kind() {
 			case protoreflect.MessageKind:
 				if f.Desc.Message().FullName() == "google.protobuf.Timestamp" {
-					q(g, "v.String()")
+					g.P(`if t := m.Get` + f.GoName + `(); t == nil { buf.WriteString("null") } else {`)
+					g.P(`t := t.AsTime().Format(`, rfc3339, `)"`)
+					q(g, "t")
+					g.P("}")
+				} else {
+					g.P("b, err = v.MarshalJSON()")
+					g.P("if err != nil { return nil, err }")
+					g.P(`buf.Write(b)`)
 				}
-				g.P("b, err = v.MarshalJSON()")
-				g.P("if err != nil { return nil, err }")
-				g.P(`if len(b) != 0 { buf.Write(b) } else { buf.WriteString("null") }`)
 			case protoreflect.StringKind:
 				q(g, `v`)
 			case protoreflect.BoolKind:
 				g.P(`if v { buf.WriteString("true") } else { buf.WriteString("false") }`)
-			case protoreflect.EnumKind, protoreflect.Int32Kind, protoreflect.Sint32Kind,
+			case protoreflect.EnumKind:
+				q(g, "v.String()")
+			case protoreflect.Int32Kind, protoreflect.Sint32Kind,
 				protoreflect.Uint32Kind, protoreflect.Int64Kind, protoreflect.Sint64Kind,
 				protoreflect.Uint64Kind, protoreflect.Sfixed32Kind, protoreflect.Fixed32Kind,
 				protoreflect.Sfixed64Kind, protoreflect.Fixed64Kind:
@@ -124,7 +133,9 @@ func generateMessage(g *protogen.GeneratedFile, msg *protogen.Message) {
 				q(g, "k")
 			case protoreflect.BoolKind:
 				g.P(`if k { buf.WriteString("true") } else { buf.WriteString("false") }`)
-			case protoreflect.EnumKind, protoreflect.Int32Kind, protoreflect.Sint32Kind,
+			case protoreflect.EnumKind:
+				q(g, "k.String()")
+			case protoreflect.Int32Kind, protoreflect.Sint32Kind,
 				protoreflect.Uint32Kind, protoreflect.Int64Kind, protoreflect.Sint64Kind,
 				protoreflect.Uint64Kind, protoreflect.Sfixed32Kind, protoreflect.Fixed32Kind,
 				protoreflect.Sfixed64Kind, protoreflect.Fixed64Kind:
@@ -139,12 +150,14 @@ func generateMessage(g *protogen.GeneratedFile, msg *protogen.Message) {
 			case protoreflect.MessageKind:
 				g.P("b, err = v.MarshalJSON()")
 				g.P("if err != nil { return nil, err }")
-				g.P(`if len(b) != 0 { buf.Write(b) } else { buf.WriteString("null") }`)
+				g.P(`buf.Write(b)`)
 			case protoreflect.StringKind:
 				q(g, "v")
 			case protoreflect.BoolKind:
 				g.P(`if v { buf.WriteString("true") } else { buf.WriteString("false") }`)
-			case protoreflect.EnumKind, protoreflect.Int32Kind, protoreflect.Sint32Kind,
+			case protoreflect.EnumKind:
+				q(g, "v.String()")
+			case protoreflect.Int32Kind, protoreflect.Sint32Kind,
 				protoreflect.Uint32Kind, protoreflect.Int64Kind, protoreflect.Sint64Kind,
 				protoreflect.Uint64Kind, protoreflect.Sfixed32Kind, protoreflect.Fixed32Kind,
 				protoreflect.Sfixed64Kind, protoreflect.Fixed64Kind:
@@ -161,7 +174,10 @@ func generateMessage(g *protogen.GeneratedFile, msg *protogen.Message) {
 		switch f.Desc.Kind() {
 		case protoreflect.MessageKind:
 			if f.Desc.Message().FullName() == "google.protobuf.Timestamp" {
-				q(g, "m.Get"+f.GoName+"().String()")
+				g.P(`if t := m.Get` + f.GoName + `(); t == nil { buf.WriteString("null") } else {`)
+				g.P(`t := t.AsTime().Format(`, rfc3339, `)`)
+				q(g, "t")
+				g.P("}")
 				continue
 			}
 			if f.Desc.IsList() {
@@ -176,12 +192,14 @@ func generateMessage(g *protogen.GeneratedFile, msg *protogen.Message) {
 			}
 			g.P("b, err = m.Get", f.GoName, "().MarshalJSON()")
 			g.P("if err != nil { return nil, err }")
-			g.P(`if len(b) != 0 { buf.Write(b) } else { buf.WriteString("null") }`)
+			g.P(`buf.Write(b)`)
 		case protoreflect.StringKind:
 			q(g, `m.Get`+f.GoName+"()")
 		case protoreflect.BoolKind:
 			g.P("if m.Get", f.GoName, `() { buf.WriteString("true") } else { buf.WriteString("false") }`)
-		case protoreflect.EnumKind, protoreflect.Int32Kind, protoreflect.Sint32Kind,
+		case protoreflect.EnumKind:
+			q(g, `m.Get`+f.GoName+"().String()")
+		case protoreflect.Int32Kind, protoreflect.Sint32Kind,
 			protoreflect.Uint32Kind, protoreflect.Int64Kind, protoreflect.Sint64Kind,
 			protoreflect.Uint64Kind, protoreflect.Sfixed32Kind, protoreflect.Fixed32Kind,
 			protoreflect.Sfixed64Kind, protoreflect.Fixed64Kind:
