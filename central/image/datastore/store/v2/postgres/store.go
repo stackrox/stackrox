@@ -53,6 +53,12 @@ type imagePartsAsSlice struct {
 	cveV2        []*storage.ImageCVEV2
 }
 
+type timeFields struct {
+	createdAt            time.Time
+	firstImageOccurrence time.Time
+	publishedOn          time.Time
+}
+
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB, noUpdateTimestamps bool, keyFence concurrency.KeyFence, componentV2Store componentStore.Store) store.Store {
 	return &storeImpl{
@@ -76,6 +82,30 @@ func (s *storeImpl) insertIntoImages(
 	metadataUpdated, scanUpdated bool,
 	iTime time.Time,
 ) error {
+	cveTimeMap := make(map[string]*timeFields)
+	for _, cve := range parts.cveV2 {
+		if val, ok := cveTimeMap[cve.GetCveBaseInfo().GetCve()]; ok {
+			if val.createdAt.After(cve.GetCveBaseInfo().GetCreatedAt().AsTime()) {
+				log.Infof("CVE 1")
+				val.createdAt = cve.GetCveBaseInfo().GetCreatedAt().AsTime()
+			}
+			if val.firstImageOccurrence.After(cve.GetFirstImageOccurrence().AsTime()) {
+				log.Infof("CVE 2")
+				val.firstImageOccurrence = cve.GetFirstImageOccurrence().AsTime()
+			}
+			if val.publishedOn.After(cve.GetCveBaseInfo().GetPublishedOn().AsTime()) {
+				log.Infof("CVE 3")
+				val.publishedOn = cve.GetCveBaseInfo().GetPublishedOn().AsTime()
+			}
+		} else {
+			cveTimeMap[cve.GetCveBaseInfo().GetCve()] = &timeFields{
+				createdAt:            cve.GetCveBaseInfo().GetCreatedAt().AsTime(),
+				firstImageOccurrence: cve.GetFirstImageOccurrence().AsTime(),
+				publishedOn:          cve.GetCveBaseInfo().GetPublishedOn().AsTime(),
+			}
+		}
+	}
+
 	// Grab all the components and CVEs that exist.
 	existingComponents, err := getImageComponents(ctx, tx, parts.image.GetId())
 	if err != nil {
@@ -91,7 +121,23 @@ func (s *storeImpl) insertIntoImages(
 
 		cveMap := make(map[string]*storage.ImageCVEV2)
 		for _, cve := range existingCVEs {
-			cveMap[cve.GetId()] = cve
+			cveMap[cve.GetCveBaseInfo().GetCve()] = cve
+			// If the existing CVE is not already in the map that implies it no longer exists for this image and
+			// the CVE will be removed.
+			if val, ok := cveTimeMap[cve.GetCveBaseInfo().GetCve()]; ok {
+				if val.createdAt.After(cve.GetCveBaseInfo().GetCreatedAt().AsTime()) {
+					log.Infof("CVE 4")
+					val.createdAt = cve.GetCveBaseInfo().GetCreatedAt().AsTime()
+				}
+				if val.firstImageOccurrence.After(cve.GetFirstImageOccurrence().AsTime()) {
+					log.Infof("CVE 5")
+					val.firstImageOccurrence = cve.GetFirstImageOccurrence().AsTime()
+				}
+				if val.publishedOn.After(cve.GetCveBaseInfo().GetPublishedOn().AsTime()) {
+					log.Infof("CVE 6")
+					val.publishedOn = cve.GetCveBaseInfo().GetPublishedOn().AsTime()
+				}
+			}
 		}
 		componentCVEMap[component.GetId()] = cveMap
 	}
@@ -164,7 +210,7 @@ func (s *storeImpl) insertIntoImages(
 		return err
 	}
 
-	return copyFromImageComponentV2Cves(ctx, tx, iTime, componentCVEMap, parts.cveV2...)
+	return copyFromImageComponentV2Cves(ctx, tx, iTime, cveTimeMap, parts.cveV2...)
 }
 
 func getPartsAsSlice(parts common.ImageParts) *imagePartsAsSlice {
@@ -276,7 +322,7 @@ func copyFromImageComponentsV2(ctx context.Context, tx *postgres.Tx, iTime time.
 
 // Basically a copy of the generated method in imagecomponent/v2/datastore/store/postgres.  But we need to pass some additional information
 // around to ensure times and things are updated appropriately.  So we must have this method here.
-func copyFromImageComponentV2Cves(ctx context.Context, tx *postgres.Tx, iTime time.Time, componentCVEMap map[string]map[string]*storage.ImageCVEV2, objs ...*storage.ImageCVEV2) error {
+func copyFromImageComponentV2Cves(ctx context.Context, tx *postgres.Tx, iTime time.Time, cveTimeMap map[string]*timeFields, objs ...*storage.ImageCVEV2) error {
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)
@@ -304,13 +350,20 @@ func copyFromImageComponentV2Cves(ctx context.Context, tx *postgres.Tx, iTime ti
 	}
 
 	for idx, obj := range objs {
-		existingCVEs := componentCVEMap[obj.GetComponentId()]
-		if storedCVE := existingCVEs[obj.GetId()]; storedCVE != nil {
-			obj.CveBaseInfo.CreatedAt = storedCVE.GetCveBaseInfo().GetCreatedAt()
-			obj.FirstImageOccurrence = storedCVE.GetFirstImageOccurrence()
+		// If we have seen this CVE in the image, set the times consistently.
+		if cveTimes := cveTimeMap[obj.GetCveBaseInfo().GetCve()]; cveTimes != nil {
+			log.Infof("SHREWS -- found existing CVE %q Using its times", obj.GetCveBaseInfo().GetCve())
+			obj.CveBaseInfo.CreatedAt = protocompat.ConvertTimeToTimestampOrNil(&cveTimes.createdAt)
+			obj.FirstImageOccurrence = protocompat.ConvertTimeToTimestampOrNil(&cveTimes.firstImageOccurrence)
+			obj.CveBaseInfo.PublishedOn = protocompat.ConvertTimeToTimestampOrNil(&cveTimes.publishedOn)
 		} else {
-			obj.CveBaseInfo.CreatedAt = protocompat.ConvertTimeToTimestampOrNil(&iTime)
-			obj.FirstImageOccurrence = protocompat.ConvertTimeToTimestampOrNil(&iTime)
+			log.Infof("SHREWS -- not foud existing CVE %q Using iTime", obj.GetCveBaseInfo().GetCve())
+			if obj.GetCveBaseInfo().GetCreatedAt() == nil {
+				obj.CveBaseInfo.CreatedAt = protocompat.ConvertTimeToTimestampOrNil(&iTime)
+			}
+			if obj.GetFirstImageOccurrence() == nil {
+				obj.FirstImageOccurrence = protocompat.ConvertTimeToTimestampOrNil(&iTime)
+			}
 		}
 
 		serialized, marshalErr := obj.MarshalVT()
@@ -537,9 +590,22 @@ func (s *storeImpl) populateImage(ctx context.Context, tx *postgres.Tx, image *s
 		Children: []common.ComponentParts{},
 	}
 	for _, component := range components {
+		cves, err := getImageComponentCVEs(ctx, tx, component.GetId())
+		if err != nil {
+			return err
+		}
+
+		cveParts := make([]common.CVEParts, 0, len(cves))
+		for _, cve := range cves {
+			cvePart := common.CVEParts{
+				CVEV2: cve,
+			}
+			cveParts = append(cveParts, cvePart)
+		}
+
 		child := common.ComponentParts{
 			ComponentV2: component,
-			Children:    []common.CVEParts{},
+			Children:    cveParts,
 		}
 		imageParts.Children = append(imageParts.Children, child)
 	}
