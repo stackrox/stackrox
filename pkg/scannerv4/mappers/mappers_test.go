@@ -10,7 +10,6 @@ import (
 	"github.com/quay/claircore/enricher/epss"
 	"github.com/quay/claircore/toolkit/types/cpe"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -308,7 +307,7 @@ func Test_ToProtoV4VulnerabilityReport(t *testing.T) {
 }
 
 func Test_ToProtoV4VulnerabilityReport_FilterNodeJS(t *testing.T) {
-	t.Setenv(env.ScannerV4PartialNodeJSSupport.EnvVar(), "true")
+	t.Setenv(features.ScannerV4PartialNodeJSSupport.EnvVar(), "true")
 
 	now := time.Now()
 	protoNow, err := protocompat.ConvertTimeToTimestampOrError(now)
