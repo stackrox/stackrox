@@ -124,6 +124,9 @@ func ToProtoV4VulnerabilityReport(ctx context.Context, r *claircore.Vulnerabilit
 		return nil, fmt.Errorf("internal error: parsing Red Hat CSAF advisories: %w", err)
 	}
 	kevExploits, err := kevExploits(ctx, r.Enrichments)
+	if err != nil {
+		return nil, fmt.Errorf("internal error: parsing CISA KEV exploits: %w", err)
+	}
 	vulnerabilities, err := toProtoV4VulnerabilitiesMap(ctx, r.Vulnerabilities, nvdVulns, epssItems, csafAdvisories, kevExploits)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: %w", err)
