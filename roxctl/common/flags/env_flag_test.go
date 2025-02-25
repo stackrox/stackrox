@@ -34,14 +34,14 @@ func TestBooleanFlagOrSettingValue(t *testing.T) {
 	// 1. Default, unchanged flag value and setting not set should lead to the default value being returned.
 	cmd := &cobra.Command{}
 
-	AddConnectionFlags(cmd)
+	AddCentralConnectionFlags(cmd)
 
 	assert.False(t, UseInsecure())
 
 	// 2. Change the flag value. The changed flag value should be returned, irrespective of whether the setting is set.
 	t.Setenv("ROX_INSECURE_CLIENT", "true")
 	cmd = &cobra.Command{}
-	AddConnectionFlags(cmd)
+	AddCentralConnectionFlags(cmd)
 	assert.NoError(t, cmd.ParseFlags([]string{"--insecure=false"}))
 	assert.Equal(t, false, UseInsecure())
 
@@ -49,6 +49,6 @@ func TestBooleanFlagOrSettingValue(t *testing.T) {
 	t.Setenv("ROX_INSECURE_CLIENT", "true")
 	cmd = &cobra.Command{}
 	connectionFlags.Lookup("insecure").Changed = false
-	AddConnectionFlags(cmd)
+	AddCentralConnectionFlags(cmd)
 	assert.Equal(t, true, UseInsecure())
 }

@@ -32,7 +32,7 @@ func executeUpdateDBCommand(t *testing.T, serverURL string) (*bytes.Buffer, *byt
 	env := environment.NewTestCLIEnvironment(t, testIO, printer.DefaultColorPrinter())
 
 	cmd := Command(env)
-	flags.AddConnectionFlags(cmd)
+	flags.AddCentralConnectionFlags(cmd)
 	flags.AddCentralAuthFlags(cmd)
 
 	cmd.SilenceUsage = true

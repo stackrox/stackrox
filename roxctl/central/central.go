@@ -42,7 +42,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	if features.ClusterRegistrationSecrets.Enabled() {
 		c.AddCommand(crs.Command(cliEnvironment))
 	}
-	flags.AddConnectionFlags(c)
+	flags.AddCentralConnectionFlags(c)
 	flags.AddCentralAuthFlags(c)
 	return c
 }

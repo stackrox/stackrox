@@ -1073,8 +1073,19 @@ central:
       - use-current-k8s-context
 cluster:
   PERSISTENT_FLAGS:
+    - ca
+    - direct-grpc
+    - endpoint
+    - force-http1
+    - insecure
+    - insecure-skip-tls-verify
+    - password
+    - plaintext
     - retry-timeout
+    - server-name
     - timeout
+    - token-file
+    - use-current-k8s-context
   INHERITED_FLAGS:
     - help
     - no-color
@@ -1093,10 +1104,21 @@ cluster:
       - token-file
       - use-current-k8s-context
     INHERITED_FLAGS:
+      - ca
+      - direct-grpc
+      - endpoint
+      - force-http1
       - help
+      - insecure
+      - insecure-skip-tls-verify
       - no-color
+      - password
+      - plaintext
       - retry-timeout
+      - server-name
       - timeout
+      - token-file
+      - use-current-k8s-context
 collector:
   INHERITED_FLAGS:
     - help
@@ -1109,8 +1131,19 @@ collector:
       LOCAL_FLAGS:
         - overwrite
       PERSISTENT_FLAGS:
+        - ca
+        - direct-grpc
+        - endpoint
+        - force-http1
+        - insecure
+        - insecure-skip-tls-verify
+        - password
+        - plaintext
         - retry-timeout
+        - server-name
         - timeout
+        - token-file
+        - use-current-k8s-context
       INHERITED_FLAGS:
         - help
         - no-color
@@ -1327,7 +1360,18 @@ declarative-config:
       - no-color
 deployment:
   PERSISTENT_FLAGS:
+    - ca
+    - direct-grpc
+    - endpoint
+    - force-http1
+    - insecure
+    - insecure-skip-tls-verify
+    - password
+    - plaintext
+    - server-name
     - timeout
+    - token-file
+    - use-current-k8s-context
   INHERITED_FLAGS:
     - help
     - no-color
@@ -1353,9 +1397,20 @@ deployment:
       - output
       - row-jsonpath-expressions
     INHERITED_FLAGS:
+      - ca
+      - direct-grpc
+      - endpoint
+      - force-http1
       - help
+      - insecure
+      - insecure-skip-tls-verify
       - no-color
+      - password
+      - plaintext
+      - server-name
       - timeout
+      - token-file
+      - use-current-k8s-context
 doc:
   LOCAL_FLAGS:
     - output
@@ -1390,7 +1445,18 @@ helm:
       - no-color
 image:
   PERSISTENT_FLAGS:
+    - ca
+    - direct-grpc
+    - endpoint
+    - force-http1
+    - insecure
+    - insecure-skip-tls-verify
+    - password
+    - plaintext
+    - server-name
     - timeout
+    - token-file
+    - use-current-k8s-context
   INHERITED_FLAGS:
     - help
     - no-color
@@ -1416,9 +1482,20 @@ image:
       - output
       - row-jsonpath-expressions
     INHERITED_FLAGS:
+      - ca
+      - direct-grpc
+      - endpoint
+      - force-http1
       - help
+      - insecure
+      - insecure-skip-tls-verify
       - no-color
+      - password
+      - plaintext
+      - server-name
       - timeout
+      - token-file
+      - use-current-k8s-context
   sbom:
     LOCAL_FLAGS:
       - force
@@ -1426,9 +1503,20 @@ image:
       - retries
       - retry-delay
     INHERITED_FLAGS:
+      - ca
+      - direct-grpc
+      - endpoint
+      - force-http1
       - help
+      - insecure
+      - insecure-skip-tls-verify
       - no-color
+      - password
+      - plaintext
+      - server-name
       - timeout
+      - token-file
+      - use-current-k8s-context
   scan:
     LOCAL_FLAGS:
       - cluster
@@ -1449,9 +1537,20 @@ image:
       - output
       - row-jsonpath-expressions
     INHERITED_FLAGS:
+      - ca
+      - direct-grpc
+      - endpoint
+      - force-http1
       - help
+      - insecure
+      - insecure-skip-tls-verify
       - no-color
+      - password
+      - plaintext
+      - server-name
       - timeout
+      - token-file
+      - use-current-k8s-context
 log-convert:
   LOCAL_FLAGS:
     - level
@@ -1505,6 +1604,18 @@ netpol:
       - help
       - no-color
 scanner:
+  PERSISTENT_FLAGS:
+    - ca
+    - direct-grpc
+    - endpoint
+    - force-http1
+    - insecure
+    - insecure-skip-tls-verify
+    - password
+    - plaintext
+    - server-name
+    - token-file
+    - use-current-k8s-context
   INHERITED_FLAGS:
     - help
     - no-color
@@ -1518,8 +1629,19 @@ scanner:
     PERSISTENT_FLAGS:
       - timeout
     INHERITED_FLAGS:
+      - ca
+      - direct-grpc
+      - endpoint
+      - force-http1
       - help
+      - insecure
+      - insecure-skip-tls-verify
       - no-color
+      - password
+      - plaintext
+      - server-name
+      - token-file
+      - use-current-k8s-context
   generate:
     LOCAL_FLAGS:
       - istio-support
@@ -1533,20 +1655,53 @@ scanner:
       - retry-timeout
       - timeout
     INHERITED_FLAGS:
+      - ca
+      - direct-grpc
+      - endpoint
+      - force-http1
       - help
+      - insecure
+      - insecure-skip-tls-verify
       - no-color
+      - password
+      - plaintext
+      - server-name
+      - token-file
+      - use-current-k8s-context
   upload-db:
     LOCAL_FLAGS:
       - scanner-db-file
     PERSISTENT_FLAGS:
       - timeout
     INHERITED_FLAGS:
+      - ca
+      - direct-grpc
+      - endpoint
+      - force-http1
       - help
+      - insecure
+      - insecure-skip-tls-verify
       - no-color
+      - password
+      - plaintext
+      - server-name
+      - token-file
+      - use-current-k8s-context
 sensor:
   PERSISTENT_FLAGS:
+    - ca
+    - direct-grpc
+    - endpoint
+    - force-http1
+    - insecure
+    - insecure-skip-tls-verify
+    - password
+    - plaintext
     - retry-timeout
+    - server-name
     - timeout
+    - token-file
+    - use-current-k8s-context
   INHERITED_FLAGS:
     - help
     - no-color
@@ -1575,9 +1730,20 @@ sensor:
       - slim-collector
       - timeout
     INHERITED_FLAGS:
+      - ca
+      - direct-grpc
+      - endpoint
+      - force-http1
       - help
+      - insecure
+      - insecure-skip-tls-verify
       - no-color
+      - password
+      - plaintext
       - retry-timeout
+      - server-name
+      - token-file
+      - use-current-k8s-context
     k8s:
       PERSISTENT_FLAGS:
         - admission-controller-listen-on-events
@@ -1590,23 +1756,34 @@ sensor:
         - admission-controller-listen-on-updates
         - admission-controller-scan-inline
         - admission-controller-timeout
+        - ca
         - central
         - collection-method
         - collector-image-repository
         - continue-if-exists
         - create-admission-controller
         - create-upgrader-sa
+        - direct-grpc
         - disable-tolerations
         - enable-pod-security-policies
+        - endpoint
+        - force-http1
         - help
+        - insecure
+        - insecure-skip-tls-verify
         - istio-support
         - main-image-repository
         - name
         - no-color
         - output-dir
+        - password
+        - plaintext
         - retry-timeout
+        - server-name
         - slim-collector
         - timeout
+        - token-file
+        - use-current-k8s-context
     openshift:
       PERSISTENT_FLAGS:
         - admission-controller-listen-on-events
@@ -1621,31 +1798,53 @@ sensor:
         - admission-controller-listen-on-updates
         - admission-controller-scan-inline
         - admission-controller-timeout
+        - ca
         - central
         - collection-method
         - collector-image-repository
         - continue-if-exists
         - create-admission-controller
         - create-upgrader-sa
+        - direct-grpc
         - disable-tolerations
         - enable-pod-security-policies
+        - endpoint
+        - force-http1
         - help
+        - insecure
+        - insecure-skip-tls-verify
         - istio-support
         - main-image-repository
         - name
         - no-color
         - output-dir
+        - password
+        - plaintext
         - retry-timeout
+        - server-name
         - slim-collector
         - timeout
+        - token-file
+        - use-current-k8s-context
   generate-certs:
     PERSISTENT_FLAGS:
       - output-dir
     INHERITED_FLAGS:
+      - ca
+      - direct-grpc
+      - endpoint
+      - force-http1
       - help
+      - insecure
+      - insecure-skip-tls-verify
       - no-color
+      - password
+      - plaintext
       - retry-timeout
+      - server-name
       - timeout
+      - token-file
+      - use-current-k8s-context
   get-bundle:
     PERSISTENT_FLAGS:
       - create-upgrader-sa
@@ -1654,9 +1853,20 @@ sensor:
       - slim-collector
       - timeout
     INHERITED_FLAGS:
+      - ca
+      - direct-grpc
+      - endpoint
+      - force-http1
       - help
+      - insecure
+      - insecure-skip-tls-verify
       - no-color
+      - password
+      - plaintext
       - retry-timeout
+      - server-name
+      - token-file
+      - use-current-k8s-context
 version:
   PERSISTENT_FLAGS:
     - json
