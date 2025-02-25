@@ -69,7 +69,7 @@ func V2Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c.Flags().StringVar(&centralDbRestoreCmd.file, "file", "", "File to restore the DB from (deprecated; use positional argument)")
 	c.Flags().BoolVar(&centralDbRestoreCmd.interrupt, "interrupt", false, "Interrupt ongoing restore process (if any) to allow resuming")
-	utils.Must(c.Flags().MarkDeprecated("file", "--file is deprecated; use the positional argument instead"))
+	utils.Must(c.Flags().MarkDeprecated("file", "use the positional argument instead"))
 	flags.AddForce(c)
 
 	return c

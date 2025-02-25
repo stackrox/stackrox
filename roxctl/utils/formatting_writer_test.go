@@ -91,4 +91,26 @@ func Test_setIndent(t *testing.T) {
 		assert.Equal(t, "  ....    \n  ..", sb.String())
 	})
 
+	t.Run("negative indent should tab", func(t *testing.T) {
+		sb := &strings.Builder{}
+		w := makeWriter(sb, 80)
+
+		_, _ = w.WriteString("\n")
+		w.setIndent(2)
+		_, _ = w.WriteString(">")
+		w.setIndent(-10)
+		_, _ = w.WriteString("|\n|\n")
+		w.setIndent(2)
+		_, _ = w.WriteString(">>>>>>>>>>>")
+		w.setIndent(-10)
+		_, _ = w.WriteString("|\n|")
+		w.setIndent(-15)
+		_, _ = w.WriteString("|\n|")
+		assert.Equal(t, `
+  >       |
+          |
+  >>>>>>>>>>>|
+          |    |
+               |`, sb.String())
+	})
 }

@@ -32,7 +32,12 @@ func (w *formattingWriter) write0(s string) error {
 }
 
 func (w *formattingWriter) writePadding() error {
-	return w.write0(strings.Repeat(" ", w.indent.pop()))
+	padding := w.indent.pop()
+	if padding < 0 {
+		padding = -padding
+		padding = max(padding-w.currentLine, 0)
+	}
+	return w.write0(strings.Repeat(" ", padding))
 }
 
 //nolint:wrapcheck
