@@ -25,4 +25,7 @@ var authFlagSet = func() *pflag.FlagSet {
 
 func AddCentralAuthFlags(c *cobra.Command) {
 	c.PersistentFlags().AddFlagSet(authFlagSet)
+	// Needed for tests, which use authFlagSet:
+	authFlagSet.Lookup("password").Changed = false
+	authFlagSet.Lookup("token-file").Changed = false
 }
