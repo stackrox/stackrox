@@ -13,6 +13,7 @@ import (
 	"github.com/klauspost/compress/zstd"
 	"github.com/pkg/errors"
 	"github.com/quay/claircore/enricher/epss"
+	"github.com/quay/claircore/enricher/kev"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/jsonblob"
 	"github.com/quay/claircore/libvuln/updates"
@@ -51,12 +52,15 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 	bundles["nvd"] = nvdOpts()
 	bundles["epss"] = epssOpts()
 	bundles["stackrox-rhel-csaf"] = redhatCSAFOpts()
+	bundles["cisa-kev"] = kevOpts()
 
 	// ClairCore updaters.
 	for _, uSet := range []string{
 		"alpine",
 		"aws",
+		"chainguard",
 		"debian",
+		"clair.kev",
 		"oracle",
 		"osv",
 		"photon",
@@ -182,6 +186,16 @@ func epssOpts() []updates.ManagerOption {
 		updates.WithEnabled([]string{}),
 		updates.WithFactories(map[string]driver.UpdaterSetFactory{
 			"clair.epss": epss.NewFactory(),
+		}),
+	}
+}
+
+func kevOpts() []updates.ManagerOption {
+	return []updates.ManagerOption{
+		// This is required to prevent default updaters from running.
+		updates.WithEnabled([]string{}),
+		updates.WithFactories(map[string]driver.UpdaterSetFactory{
+			"clair.kev": kev.NewFactory(),
 		}),
 	}
 }

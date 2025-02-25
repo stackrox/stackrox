@@ -23,6 +23,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/alpine"
+	"github.com/quay/claircore/chainguard"
 	ccpostgres "github.com/quay/claircore/datastore/postgres"
 	"github.com/quay/claircore/dpkg"
 	"github.com/quay/claircore/gobin"
@@ -81,6 +82,7 @@ func ecosystems(ctx context.Context) []*ccindexer.Ecosystem {
 	es := []*ccindexer.Ecosystem{
 		alpine.NewEcosystem(ctx),
 		dpkg.NewEcosystem(ctx),
+		chainguard.NewEcosystem(ctx),
 		gobin.NewEcosystem(ctx),
 		java.NewEcosystem(ctx),
 		nodejs.NewEcosystem(ctx),

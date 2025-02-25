@@ -11,6 +11,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/alpine"
 	"github.com/quay/claircore/aws"
+	"github.com/quay/claircore/chainguard"
 	"github.com/quay/claircore/debian"
 	"github.com/quay/claircore/enricher/epss"
 	"github.com/quay/claircore/gobin"
@@ -47,6 +48,8 @@ import (
 var matcherNames = []string{
 	(*alpine.Matcher)(nil).Name(),
 	(*aws.Matcher)(nil).Name(),
+	chainguard.ChainguardMatcher.Name(),
+	chainguard.WolfiMatcher.Name(),
 	(*debian.Matcher)(nil).Name(),
 	(*gobin.Matcher)(nil).Name(),
 	(*java.Matcher)(nil).Name(),
