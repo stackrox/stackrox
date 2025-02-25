@@ -19,16 +19,19 @@ func TestFormatHelp(t *testing.T) {
 		Example: "test this:\ntest command",
 	}
 	c.PersistentFlags().Bool("bflag0", false, "persistent bool flag with default false value")
-	c.Flags().Bool("bflag1", true, "bool with default true value")
-	c.Flags().String("sflag", "defstr", "string flag with default value")
-	c.Flags().Int("iflag", 10, "integer flag")
-	c.Flags().Duration("dflag", time.Minute, "duration flag")
-	c.Flags().StringP("spflag", "s", "", "string flag with shorthand")
-	c.Flags().StringArray("sarray", []string{"a", "b"}, "string array flag with default array value")
+	c.LocalFlags().Bool("bflag1", true, "bool with default true value")
+	c.LocalFlags().String("sflag", "defstr", "string flag with default value")
+	c.LocalFlags().Int("iflag", 10, "integer flag")
+	c.LocalFlags().Duration("dflag", time.Minute, "duration flag")
+	c.LocalFlags().StringP("spflag", "s", "", "string flag with shorthand")
+	c.LocalFlags().StringArray("sarray", []string{"a", "b"}, "string array flag with default array value")
 
 	fs := pflag.NewFlagSet("test", pflag.ExitOnError)
 	fs.String("flagset", "", "string flag from a test set")
-	c.Flags().AddFlagSet(fs)
+	c.LocalFlags().AddFlagSet(fs)
+
+	c.LocalFlags().String("depreflag", "deprecated", "string deprecated flag with default value")
+	assert.NoError(t, c.LocalFlags().MarkDeprecated("depreflag", "don't use"))
 
 	subcommand := &cobra.Command{
 		Use:   "sub-test",
@@ -50,7 +53,15 @@ func TestFormatHelp(t *testing.T) {
 	}
 	subcommand.AddCommand(subsubcommand)
 
-	c.AddCommand(subcommand)
+	deprecatedCommand := &cobra.Command{
+		Use:        "deprecated-test",
+		Short:      "short depreacted command test description",
+		Long:       "long depreacted command test description",
+		Run:        func(cmd *cobra.Command, args []string) {},
+		Deprecated: "don't use",
+	}
+
+	c.AddCommand(subcommand, deprecatedCommand)
 
 	t.Run("test main command", func(t *testing.T) {
 		sb := &strings.Builder{}
@@ -130,6 +141,28 @@ Global Options:
 Usage:
   test sub-test [flags]
   test sub-test [command]
+`, sb.String())
+	})
+
+	t.Run("test deprecated command", func(t *testing.T) {
+		sb := &strings.Builder{}
+		sb.WriteRune('\n')
+		deprecatedCommand.SetOut(sb)
+
+		FormatHelp(deprecatedCommand, nil)
+		assert.Equal(t, `
+short depreacted command test description
+
+long depreacted command test description
+
+Global Options:
+    --bflag0=false:
+        persistent bool flag with default false value
+
+Usage:
+  test deprecated-test [flags]
+
+DEPRECATED: don't use
 `, sb.String())
 	})
 }

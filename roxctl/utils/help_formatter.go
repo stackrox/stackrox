@@ -68,6 +68,10 @@ func FormatHelp(c *cobra.Command, _ []string) {
 			w.Indent(2).WriteLn(c.CommandPath(), " [command]")
 		}
 	}
+	if len(c.Deprecated) != 0 {
+		w.EmptyLineSeparator()
+		w.WriteLn("DEPRECATED: ", c.Deprecated)
+	}
 }
 
 // formatCommands prints the command name and description.
@@ -79,7 +83,7 @@ func formatCommands(commands []*cobra.Command, w *helpWriter, group string) {
 		}
 		maxCommandLength = max(maxCommandLength, len(command.Name()))
 	}
-	const leftPadding, interPadding = 2, 3
+	maxCommandLength += 5
 	for _, command := range commands {
 		if !command.IsAvailableCommand() || command.GroupID != group {
 			continue
@@ -89,8 +93,8 @@ func formatCommands(commands []*cobra.Command, w *helpWriter, group string) {
 			help = command.Long
 		}
 		name := command.Name()
-		w.Indent(leftPadding, leftPadding+maxCommandLength+interPadding).
-			WriteLn(name, strings.Repeat(" ", maxCommandLength-len(name)+interPadding), help)
+		w.Indent(2).Write(name)
+		w.Indent(-maxCommandLength).WriteLn(help)
 	}
 }
 
@@ -130,5 +134,8 @@ func makeFlagVisitor(w *helpWriter) func(f *pflag.Flag) {
 		sb := &strings.Builder{}
 		formatFlag(sb, f)
 		w.Indent(4, 8).WriteLn(sb.String(), f.Usage)
+		if len(f.Deprecated) != 0 {
+			w.Indent(8).WriteLn("(DEPRECATED: ", f.Deprecated, ")")
+		}
 	}
 }
