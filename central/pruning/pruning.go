@@ -511,7 +511,7 @@ func (g *garbageCollectorImpl) removeOrphanedPLOPs() {
 	}
 	log.Infof("[PLOP pruning] Pruning of %d orphaned PLOPs with no matching process indicator or process information complete", prunedCount)
 
-	// Only run once since we don't expect any new PLOPs without poduids.
+	// Only run one time after Central startup since we don't expect any new PLOPs without poduids.
 	if !prunedPLOPsWithoutPodUIDs {
 		prunedCount, err = g.plops.RemovePLOPsWithoutPodUID(pruningCtx)
 		if err != nil {
