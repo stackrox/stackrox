@@ -1516,7 +1516,11 @@ store_test_results() {
     dest="$(stored_test_results "$to")"
 
     mkdir -p "$dest"
-    cp -a "$from" "$dest" || true # (best effort)
+    if [ -d "$from" ]; then
+        cp -a "$from" "$dest"
+    else
+        info "Warning: Tried to copy test results from "${from}" but they don't exist."
+    fi
 }
 
 post_process_test_results() {
