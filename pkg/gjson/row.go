@@ -3,10 +3,12 @@ package gjson
 import (
 	"encoding/json"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/tidwall/gjson"
+	"k8s.io/utils/strings/slices"
 )
 
 // RowMapper is responsible for mapping a gjson.Result to a row representation in the form of two-dimensional
@@ -18,7 +20,7 @@ type RowMapper struct {
 // NewRowMapper creates a RowMapper which takes a json object and GJSON compatible multi-path JSON expression
 // and will retrieve all values from the JSON object and create a row representation in form of a two-dimensional
 // string array. Each element within the multi-path JSON expression will be seen as a column value
-func NewRowMapper(jsonObj interface{}, multiPathExpression string) (*RowMapper, error) {
+func NewRowMapper(jsonObj interface{}, multiPathExpression string, options ...ColumnTreeOptions) (*RowMapper, error) {
 	bytes, err := json.Marshal(jsonObj)
 	if err != nil {
 		return nil, errox.InvariantViolation.CausedBy(err)
@@ -29,7 +31,7 @@ func NewRowMapper(jsonObj interface{}, multiPathExpression string) (*RowMapper, 
 		return nil, err
 	}
 
-	ct := constructColumnTree(result, multiPathExpression)
+	ct := constructColumnTree(result, multiPathExpression, options...)
 
 	return &RowMapper{
 		columnTree: ct,
@@ -167,15 +169,19 @@ func jaggedArrayError(maxAmount, violatedAmount, arrayIndex int) error {
 type columnTree struct {
 	rootNode        *columnNode
 	originalQuery   string
+	result          []queryResult
 	numberOfColumns int
+	strictColumns   []string
 }
 
 // newColumnTree creates a column tree with a root columnNode that has the root property set.
 func newColumnTree(query string, numberOfColumns int) *columnTree {
 	return &columnTree{
 		originalQuery:   query,
+		result:          nil,
 		numberOfColumns: numberOfColumns,
 		rootNode:        &columnNode{root: true, columnIndex: -1},
+		strictColumns:   []string{},
 	}
 }
 
@@ -194,7 +200,16 @@ type columnNode struct {
 	root         bool // Specified when the node is a root node
 }
 
-func constructColumnTree(result gjson.Result, originalQuery string) *columnTree {
+// ColumnTreeOptions models an option for modifying the column tree by eg. pruning sparsely populated parts of it
+type ColumnTreeOptions func(*columnTree)
+
+func HideRowsIfColumnNotPopulated(columns []string) ColumnTreeOptions {
+	return func(ct *columnTree) {
+		ct.strictColumns = columns
+	}
+}
+
+func constructColumnTree(result gjson.Result, originalQuery string, options ...ColumnTreeOptions) *columnTree {
 	// in multipath queries, the result will be represented as an array.
 	res := getQueryResults(result, originalQuery)
 
@@ -206,6 +221,9 @@ func constructColumnTree(result gjson.Result, originalQuery string) *columnTree 
 	})
 
 	ct := newColumnTree(originalQuery, len(res))
+	ct.result = res
+
+	applyOptions(ct, options...)
 
 	for _, r := range res {
 		nodes := getColumnNodesForResult(r.query, r.result, r.dimension, r.originalIndex)
@@ -217,15 +235,52 @@ func constructColumnTree(result gjson.Result, originalQuery string) *columnTree 
 	return ct
 }
 
+func applyOptions(tree *columnTree, options ...ColumnTreeOptions) {
+	for _, option := range options {
+		option(tree)
+	}
+}
+
 func (ct *columnTree) CreateColumns() [][]string {
 	// Get the number of queries. Each query represents a column.
 	numberOfQueries := getNumberOfQueries(ct.originalQuery)
 	columns := make([][]string, 0, numberOfQueries)
+	var strictColIndices []int
+	if len(ct.strictColumns) > 0 {
+		for i, r := range ct.result {
+			println("Query! ", r.query)
+			if slices.Contains(ct.strictColumns, r.query) {
+				strictColIndices = append(strictColIndices, i)
+			}
+		}
+	}
+	deletionMap := make(map[int]bool)
+	println("Strict cols: ", strings.Join(ct.strictColumns, ","))
+	println("Strict Col Indices length: ", strconv.Itoa(len(ct.strictColumns)))
 	for columnIndex := 0; columnIndex < numberOfQueries; columnIndex++ {
 		// For each query, the query ID == columnID on the node. Retrieve all values for the specific columnID
 		// and auto expand, if required, them.
 		// The values need to be merged based on their index.
-		columns = append(columns, ct.createColumnFromColumnNodes(columnIndex))
+		newCol := ct.createColumnFromColumnNodes(columnIndex)
+		columns = append(columns, newCol)
+		if sort.SearchInts(strictColIndices, columnIndex) != len(strictColIndices) {
+			for i, item := range newCol {
+				if item == emptyReplacement {
+					println("Added to deletionmap: ", strconv.Itoa(i))
+					deletionMap[i] = true
+				}
+			}
+		}
+	}
+	for i, column := range columns {
+		var purgedCol []string
+		for j, item := range column {
+			_, shouldDelete := deletionMap[j]
+			if !shouldDelete {
+				purgedCol = append(purgedCol, item)
+			}
+		}
+		columns[i] = purgedCol
 	}
 
 	return columns
