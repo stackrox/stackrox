@@ -1,6 +1,7 @@
 package maincommand
 
 import (
+	"os"
 	"strings"
 	"testing"
 
@@ -51,17 +52,21 @@ func Test_Commands(t *testing.T) {
 }
 
 type cmdNode struct {
-	Commands       map[string]*cmdNode `yaml:"cmd,inline,omitempty"`
-	Flags          []string            `yaml:"FLAGS,omitempty"`
-	InheritedFlags []string            `yaml:"GLOBAL_FLAGS,omitempty"`
+	Commands        map[string]*cmdNode `yaml:"cmd,inline,omitempty"`
+	LocalFlags      []string            `yaml:"LOCAL_FLAGS,omitempty"`
+	PersistentFlags []string            `yaml:"PERSISTENT_FLAGS,omitempty"`
+	InheritedFlags  []string            `yaml:"INHERITED_FLAGS,omitempty"`
 }
 
 func buildCmdTree(c *cobra.Command) *cmdNode {
 	command := &cmdNode{
 		Commands: make(map[string]*cmdNode),
 	}
-	c.Flags().VisitAll(func(f *pflag.Flag) {
-		command.Flags = append(command.Flags, f.Name)
+	c.LocalNonPersistentFlags().VisitAll(func(f *pflag.Flag) {
+		command.LocalFlags = append(command.LocalFlags, f.Name)
+	})
+	c.PersistentFlags().VisitAll(func(f *pflag.Flag) {
+		command.PersistentFlags = append(command.PersistentFlags, f.Name)
 	})
 	c.InheritedFlags().VisitAll(func(f *pflag.Flag) {
 		command.InheritedFlags = append(command.InheritedFlags, f.Name)
@@ -81,7 +86,7 @@ func Test_commandTree(t *testing.T) {
 	_ = e.Close()
 	result := sb.String()
 	// Regenerate the tree:
-	// os.WriteFile(commandTreeFilename, []byte(result), 0666)
+	os.WriteFile(commandTreeFilename, []byte(result), 0666)
 	assert.NotEmpty(t, commandTreeFilename, result)
 	assert.Equal(t, commandTree, result)
 }

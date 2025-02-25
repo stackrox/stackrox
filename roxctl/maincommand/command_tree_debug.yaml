@@ -1,8 +1,9 @@
-FLAGS:
+PERSISTENT_FLAGS:
   - ca
   - direct-grpc
   - endpoint
   - force-http1
+  - help
   - insecure
   - insecure-skip-tls-verify
   - no-color
@@ -12,7 +13,7 @@ FLAGS:
   - token-file
   - use-current-k8s-context
 central:
-  GLOBAL_FLAGS:
+  INHERITED_FLAGS:
     - ca
     - direct-grpc
     - endpoint
@@ -27,10 +28,12 @@ central:
     - token-file
     - use-current-k8s-context
   backup:
-    FLAGS:
+    LOCAL_FLAGS:
       - certs-only
       - output
-    GLOBAL_FLAGS:
+    PERSISTENT_FLAGS:
+      - timeout
+    INHERITED_FLAGS:
       - ca
       - direct-grpc
       - endpoint
@@ -45,9 +48,12 @@ central:
       - token-file
       - use-current-k8s-context
   cert:
-    FLAGS:
+    LOCAL_FLAGS:
       - output
-    GLOBAL_FLAGS:
+    PERSISTENT_FLAGS:
+      - retry-timeout
+      - timeout
+    INHERITED_FLAGS:
       - ca
       - direct-grpc
       - endpoint
@@ -62,7 +68,10 @@ central:
       - token-file
       - use-current-k8s-context
   crs:
-    GLOBAL_FLAGS:
+    PERSISTENT_FLAGS:
+      - retry-timeout
+      - timeout
+    INHERITED_FLAGS:
       - ca
       - direct-grpc
       - endpoint
@@ -77,7 +86,9 @@ central:
       - token-file
       - use-current-k8s-context
     generate:
-      GLOBAL_FLAGS:
+      PERSISTENT_FLAGS:
+        - output
+      INHERITED_FLAGS:
         - ca
         - direct-grpc
         - endpoint
@@ -94,7 +105,7 @@ central:
         - token-file
         - use-current-k8s-context
     list:
-      GLOBAL_FLAGS:
+      INHERITED_FLAGS:
         - ca
         - direct-grpc
         - endpoint
@@ -111,7 +122,7 @@ central:
         - token-file
         - use-current-k8s-context
     revoke:
-      GLOBAL_FLAGS:
+      INHERITED_FLAGS:
         - ca
         - direct-grpc
         - endpoint
@@ -128,7 +139,9 @@ central:
         - token-file
         - use-current-k8s-context
   db:
-    GLOBAL_FLAGS:
+    PERSISTENT_FLAGS:
+      - timeout
+    INHERITED_FLAGS:
       - ca
       - direct-grpc
       - endpoint
@@ -143,11 +156,13 @@ central:
       - token-file
       - use-current-k8s-context
     backup:
-      FLAGS:
+      LOCAL_FLAGS:
         - certs-only
         - full
         - output
-      GLOBAL_FLAGS:
+      PERSISTENT_FLAGS:
+        - timeout
+      INHERITED_FLAGS:
         - ca
         - direct-grpc
         - endpoint
@@ -162,11 +177,11 @@ central:
         - token-file
         - use-current-k8s-context
     restore:
-      FLAGS:
+      LOCAL_FLAGS:
         - file
         - force
         - interrupt
-      GLOBAL_FLAGS:
+      INHERITED_FLAGS:
         - ca
         - direct-grpc
         - endpoint
@@ -182,9 +197,9 @@ central:
         - token-file
         - use-current-k8s-context
       cancel:
-        FLAGS:
+        LOCAL_FLAGS:
           - force
-        GLOBAL_FLAGS:
+        INHERITED_FLAGS:
           - ca
           - direct-grpc
           - endpoint
@@ -200,7 +215,7 @@ central:
           - token-file
           - use-current-k8s-context
       status:
-        GLOBAL_FLAGS:
+        INHERITED_FLAGS:
           - ca
           - direct-grpc
           - endpoint
@@ -216,7 +231,7 @@ central:
           - token-file
           - use-current-k8s-context
   debug:
-    GLOBAL_FLAGS:
+    INHERITED_FLAGS:
       - ca
       - direct-grpc
       - endpoint
@@ -231,7 +246,9 @@ central:
       - token-file
       - use-current-k8s-context
     authz-trace:
-      GLOBAL_FLAGS:
+      PERSISTENT_FLAGS:
+        - timeout
+      INHERITED_FLAGS:
         - ca
         - direct-grpc
         - endpoint
@@ -246,7 +263,9 @@ central:
         - token-file
         - use-current-k8s-context
     db:
-      GLOBAL_FLAGS:
+      PERSISTENT_FLAGS:
+        - timeout
+      INHERITED_FLAGS:
         - ca
         - direct-grpc
         - endpoint
@@ -261,7 +280,7 @@ central:
         - token-file
         - use-current-k8s-context
       stats:
-        GLOBAL_FLAGS:
+        INHERITED_FLAGS:
           - ca
           - direct-grpc
           - endpoint
@@ -277,7 +296,7 @@ central:
           - token-file
           - use-current-k8s-context
         reset:
-          GLOBAL_FLAGS:
+          INHERITED_FLAGS:
             - ca
             - direct-grpc
             - endpoint
@@ -293,7 +312,15 @@ central:
             - token-file
             - use-current-k8s-context
     download-diagnostics:
-      GLOBAL_FLAGS:
+      PERSISTENT_FLAGS:
+        - clusters
+        - output-dir
+        - output-file-name
+        - since
+        - timeout
+        - with-compliance-operator
+        - with-database-only
+      INHERITED_FLAGS:
         - ca
         - direct-grpc
         - endpoint
@@ -308,9 +335,12 @@ central:
         - token-file
         - use-current-k8s-context
     dump:
-      FLAGS:
+      LOCAL_FLAGS:
         - logs
-      GLOBAL_FLAGS:
+      PERSISTENT_FLAGS:
+        - output-dir
+        - timeout
+      INHERITED_FLAGS:
         - ca
         - direct-grpc
         - endpoint
@@ -325,10 +355,13 @@ central:
         - token-file
         - use-current-k8s-context
     log:
-      FLAGS:
+      LOCAL_FLAGS:
         - level
         - modules
-      GLOBAL_FLAGS:
+      PERSISTENT_FLAGS:
+        - retry-timeout
+        - timeout
+      INHERITED_FLAGS:
         - ca
         - direct-grpc
         - endpoint
@@ -343,7 +376,9 @@ central:
         - token-file
         - use-current-k8s-context
   export:
-    GLOBAL_FLAGS:
+    PERSISTENT_FLAGS:
+      - timeout
+    INHERITED_FLAGS:
       - ca
       - direct-grpc
       - endpoint
@@ -358,7 +393,7 @@ central:
       - token-file
       - use-current-k8s-context
     deployments:
-      GLOBAL_FLAGS:
+      INHERITED_FLAGS:
         - ca
         - direct-grpc
         - endpoint
@@ -374,7 +409,7 @@ central:
         - token-file
         - use-current-k8s-context
     images:
-      GLOBAL_FLAGS:
+      INHERITED_FLAGS:
         - ca
         - direct-grpc
         - endpoint
@@ -390,7 +425,7 @@ central:
         - token-file
         - use-current-k8s-context
     nodes:
-      GLOBAL_FLAGS:
+      INHERITED_FLAGS:
         - ca
         - direct-grpc
         - endpoint
@@ -406,7 +441,7 @@ central:
         - token-file
         - use-current-k8s-context
     pods:
-      GLOBAL_FLAGS:
+      INHERITED_FLAGS:
         - ca
         - direct-grpc
         - endpoint
@@ -422,7 +457,18 @@ central:
         - token-file
         - use-current-k8s-context
   generate:
-    GLOBAL_FLAGS:
+    PERSISTENT_FLAGS:
+      - backup-bundle
+      - debug
+      - debug-path
+      - default-tls-cert
+      - default-tls-key
+      - disable-admin-password
+      - enable-pod-security-policies
+      - password
+      - plaintext-endpoints
+      - with-config-file
+    INHERITED_FLAGS:
       - ca
       - direct-grpc
       - endpoint
@@ -436,7 +482,7 @@ central:
       - token-file
       - use-current-k8s-context
     interactive:
-      GLOBAL_FLAGS:
+      INHERITED_FLAGS:
         - backup-bundle
         - ca
         - debug
@@ -460,7 +506,23 @@ central:
         - use-current-k8s-context
         - with-config-file
     k8s:
-      GLOBAL_FLAGS:
+      PERSISTENT_FLAGS:
+        - central-db-image
+        - declarative-config-config-maps
+        - declarative-config-secrets
+        - enable-telemetry
+        - image-defaults
+        - istio-support
+        - lb-type
+        - main-image
+        - offline
+        - output-dir
+        - output-format
+        - scanner-db-image
+        - scanner-image
+        - scanner-v4-db-image
+        - scanner-v4-image
+      INHERITED_FLAGS:
         - backup-bundle
         - ca
         - debug
@@ -484,11 +546,11 @@ central:
         - use-current-k8s-context
         - with-config-file
       hostpath:
-        FLAGS:
+        LOCAL_FLAGS:
           - db-hostpath
           - db-node-selector-key
           - db-node-selector-value
-        GLOBAL_FLAGS:
+        INHERITED_FLAGS:
           - backup-bundle
           - ca
           - central-db-image
@@ -527,7 +589,7 @@ central:
           - use-current-k8s-context
           - with-config-file
       none:
-        GLOBAL_FLAGS:
+        INHERITED_FLAGS:
           - backup-bundle
           - ca
           - central-db-image
@@ -566,11 +628,11 @@ central:
           - use-current-k8s-context
           - with-config-file
       pvc:
-        FLAGS:
+        LOCAL_FLAGS:
           - db-name
           - db-size
           - db-storage-class
-        GLOBAL_FLAGS:
+        INHERITED_FLAGS:
           - backup-bundle
           - ca
           - central-db-image
@@ -609,7 +671,25 @@ central:
           - use-current-k8s-context
           - with-config-file
     openshift:
-      GLOBAL_FLAGS:
+      PERSISTENT_FLAGS:
+        - central-db-image
+        - declarative-config-config-maps
+        - declarative-config-secrets
+        - enable-telemetry
+        - image-defaults
+        - istio-support
+        - lb-type
+        - main-image
+        - offline
+        - openshift-monitoring
+        - openshift-version
+        - output-dir
+        - output-format
+        - scanner-db-image
+        - scanner-image
+        - scanner-v4-db-image
+        - scanner-v4-image
+      INHERITED_FLAGS:
         - backup-bundle
         - ca
         - debug
@@ -633,11 +713,11 @@ central:
         - use-current-k8s-context
         - with-config-file
       hostpath:
-        FLAGS:
+        LOCAL_FLAGS:
           - db-hostpath
           - db-node-selector-key
           - db-node-selector-value
-        GLOBAL_FLAGS:
+        INHERITED_FLAGS:
           - backup-bundle
           - ca
           - central-db-image
@@ -678,7 +758,7 @@ central:
           - use-current-k8s-context
           - with-config-file
       none:
-        GLOBAL_FLAGS:
+        INHERITED_FLAGS:
           - backup-bundle
           - ca
           - central-db-image
@@ -719,11 +799,11 @@ central:
           - use-current-k8s-context
           - with-config-file
       pvc:
-        FLAGS:
+        LOCAL_FLAGS:
           - db-name
           - db-size
           - db-storage-class
-        GLOBAL_FLAGS:
+        INHERITED_FLAGS:
           - backup-bundle
           - ca
           - central-db-image
@@ -764,7 +844,10 @@ central:
           - use-current-k8s-context
           - with-config-file
   init-bundles:
-    GLOBAL_FLAGS:
+    PERSISTENT_FLAGS:
+      - retry-timeout
+      - timeout
+    INHERITED_FLAGS:
       - ca
       - direct-grpc
       - endpoint
@@ -779,7 +862,9 @@ central:
       - token-file
       - use-current-k8s-context
     fetch-ca:
-      GLOBAL_FLAGS:
+      PERSISTENT_FLAGS:
+        - output
+      INHERITED_FLAGS:
         - ca
         - direct-grpc
         - endpoint
@@ -796,7 +881,10 @@ central:
         - token-file
         - use-current-k8s-context
     generate:
-      GLOBAL_FLAGS:
+      PERSISTENT_FLAGS:
+        - output
+        - output-secrets
+      INHERITED_FLAGS:
         - ca
         - direct-grpc
         - endpoint
@@ -813,7 +901,7 @@ central:
         - token-file
         - use-current-k8s-context
     list:
-      GLOBAL_FLAGS:
+      INHERITED_FLAGS:
         - ca
         - direct-grpc
         - endpoint
@@ -830,9 +918,9 @@ central:
         - token-file
         - use-current-k8s-context
     revoke:
-      FLAGS:
+      LOCAL_FLAGS:
         - force
-      GLOBAL_FLAGS:
+      INHERITED_FLAGS:
         - ca
         - direct-grpc
         - endpoint
@@ -849,7 +937,9 @@ central:
         - token-file
         - use-current-k8s-context
   login:
-    GLOBAL_FLAGS:
+    PERSISTENT_FLAGS:
+      - timeout
+    INHERITED_FLAGS:
       - ca
       - direct-grpc
       - endpoint
@@ -864,7 +954,7 @@ central:
       - token-file
       - use-current-k8s-context
   machine-to-machine:
-    GLOBAL_FLAGS:
+    INHERITED_FLAGS:
       - ca
       - direct-grpc
       - endpoint
@@ -879,10 +969,12 @@ central:
       - token-file
       - use-current-k8s-context
     exchange:
-      FLAGS:
+      LOCAL_FLAGS:
         - token
         - token-file
-      GLOBAL_FLAGS:
+      PERSISTENT_FLAGS:
+        - timeout
+      INHERITED_FLAGS:
         - ca
         - direct-grpc
         - endpoint
@@ -896,7 +988,7 @@ central:
         - server-name
         - use-current-k8s-context
   userpki:
-    GLOBAL_FLAGS:
+    INHERITED_FLAGS:
       - ca
       - direct-grpc
       - endpoint
@@ -911,10 +1003,13 @@ central:
       - token-file
       - use-current-k8s-context
     create:
-      FLAGS:
+      LOCAL_FLAGS:
         - cert
         - role
-      GLOBAL_FLAGS:
+      PERSISTENT_FLAGS:
+        - retry-timeout
+        - timeout
+      INHERITED_FLAGS:
         - ca
         - direct-grpc
         - endpoint
@@ -929,9 +1024,12 @@ central:
         - token-file
         - use-current-k8s-context
     delete:
-      FLAGS:
+      LOCAL_FLAGS:
         - force
-      GLOBAL_FLAGS:
+      PERSISTENT_FLAGS:
+        - retry-timeout
+        - timeout
+      INHERITED_FLAGS:
         - ca
         - direct-grpc
         - endpoint
@@ -946,9 +1044,12 @@ central:
         - token-file
         - use-current-k8s-context
     list:
-      FLAGS:
+      LOCAL_FLAGS:
         - json
-      GLOBAL_FLAGS:
+      PERSISTENT_FLAGS:
+        - retry-timeout
+        - timeout
+      INHERITED_FLAGS:
         - ca
         - direct-grpc
         - endpoint
@@ -963,7 +1064,10 @@ central:
         - token-file
         - use-current-k8s-context
   whoami:
-    GLOBAL_FLAGS:
+    PERSISTENT_FLAGS:
+      - retry-timeout
+      - timeout
+    INHERITED_FLAGS:
       - ca
       - direct-grpc
       - endpoint
@@ -978,7 +1082,10 @@ central:
       - token-file
       - use-current-k8s-context
 cluster:
-  GLOBAL_FLAGS:
+  PERSISTENT_FLAGS:
+    - retry-timeout
+    - timeout
+  INHERITED_FLAGS:
     - ca
     - direct-grpc
     - endpoint
@@ -993,7 +1100,9 @@ cluster:
     - token-file
     - use-current-k8s-context
   delete:
-    GLOBAL_FLAGS:
+    PERSISTENT_FLAGS:
+      - name
+    INHERITED_FLAGS:
       - ca
       - direct-grpc
       - endpoint
@@ -1010,7 +1119,7 @@ cluster:
       - token-file
       - use-current-k8s-context
 collector:
-  GLOBAL_FLAGS:
+  INHERITED_FLAGS:
     - ca
     - direct-grpc
     - endpoint
@@ -1025,7 +1134,7 @@ collector:
     - token-file
     - use-current-k8s-context
   support-packages:
-    GLOBAL_FLAGS:
+    INHERITED_FLAGS:
       - ca
       - direct-grpc
       - endpoint
@@ -1040,9 +1149,12 @@ collector:
       - token-file
       - use-current-k8s-context
     upload:
-      FLAGS:
+      LOCAL_FLAGS:
         - overwrite
-      GLOBAL_FLAGS:
+      PERSISTENT_FLAGS:
+        - retry-timeout
+        - timeout
+      INHERITED_FLAGS:
         - ca
         - direct-grpc
         - endpoint
@@ -1057,7 +1169,7 @@ collector:
         - token-file
         - use-current-k8s-context
 completion:
-  GLOBAL_FLAGS:
+  INHERITED_FLAGS:
     - ca
     - direct-grpc
     - endpoint
@@ -1072,7 +1184,7 @@ completion:
     - token-file
     - use-current-k8s-context
 declarative-config:
-  GLOBAL_FLAGS:
+  INHERITED_FLAGS:
     - ca
     - direct-grpc
     - endpoint
@@ -1087,11 +1199,11 @@ declarative-config:
     - token-file
     - use-current-k8s-context
   create:
-    FLAGS:
+    PERSISTENT_FLAGS:
       - config-map
       - namespace
       - secret
-    GLOBAL_FLAGS:
+    INHERITED_FLAGS:
       - ca
       - direct-grpc
       - endpoint
@@ -1106,13 +1218,13 @@ declarative-config:
       - token-file
       - use-current-k8s-context
     access-scope:
-      FLAGS:
+      LOCAL_FLAGS:
         - cluster-label-selector
         - description
         - included
         - name
         - namespace-label-selector
-      GLOBAL_FLAGS:
+      INHERITED_FLAGS:
         - ca
         - config-map
         - direct-grpc
@@ -1130,7 +1242,7 @@ declarative-config:
         - token-file
         - use-current-k8s-context
     auth-provider:
-      FLAGS:
+      PERSISTENT_FLAGS:
         - extra-ui-endpoints
         - groups-key
         - groups-role
@@ -1139,7 +1251,7 @@ declarative-config:
         - name
         - required-attributes
         - ui-endpoint
-      GLOBAL_FLAGS:
+      INHERITED_FLAGS:
         - ca
         - config-map
         - direct-grpc
@@ -1157,9 +1269,9 @@ declarative-config:
         - token-file
         - use-current-k8s-context
       iap:
-        FLAGS:
+        LOCAL_FLAGS:
           - audience
-        GLOBAL_FLAGS:
+        INHERITED_FLAGS:
           - ca
           - config-map
           - direct-grpc
@@ -1185,14 +1297,14 @@ declarative-config:
           - ui-endpoint
           - use-current-k8s-context
       oidc:
-        FLAGS:
+        LOCAL_FLAGS:
           - claim-mappings
           - client-id
           - client-secret
           - disable-offline-access
           - issuer
           - mode
-        GLOBAL_FLAGS:
+        INHERITED_FLAGS:
           - ca
           - config-map
           - direct-grpc
@@ -1218,7 +1330,7 @@ declarative-config:
           - ui-endpoint
           - use-current-k8s-context
       openshift-auth:
-        GLOBAL_FLAGS:
+        INHERITED_FLAGS:
           - ca
           - config-map
           - direct-grpc
@@ -1244,14 +1356,14 @@ declarative-config:
           - ui-endpoint
           - use-current-k8s-context
       saml:
-        FLAGS:
+        LOCAL_FLAGS:
           - idp-cert
           - idp-issuer
           - metadata-url
           - name-id-format
           - sp-issuer
           - sso-url
-        GLOBAL_FLAGS:
+        INHERITED_FLAGS:
           - ca
           - config-map
           - direct-grpc
@@ -1277,9 +1389,9 @@ declarative-config:
           - ui-endpoint
           - use-current-k8s-context
       userpki:
-        FLAGS:
+        LOCAL_FLAGS:
           - ca-file
-        GLOBAL_FLAGS:
+        INHERITED_FLAGS:
           - ca
           - config-map
           - direct-grpc
@@ -1305,7 +1417,9 @@ declarative-config:
           - ui-endpoint
           - use-current-k8s-context
     notifier:
-      GLOBAL_FLAGS:
+      PERSISTENT_FLAGS:
+        - name
+      INHERITED_FLAGS:
         - ca
         - config-map
         - direct-grpc
@@ -1323,7 +1437,7 @@ declarative-config:
         - token-file
         - use-current-k8s-context
       generic:
-        FLAGS:
+        LOCAL_FLAGS:
           - audit-logging
           - extra-fields
           - headers
@@ -1332,7 +1446,7 @@ declarative-config:
           - webhook-password
           - webhook-skip-tls-verify
           - webhook-username
-        GLOBAL_FLAGS:
+        INHERITED_FLAGS:
           - ca
           - config-map
           - direct-grpc
@@ -1351,14 +1465,14 @@ declarative-config:
           - token-file
           - use-current-k8s-context
       splunk:
-        FLAGS:
+        LOCAL_FLAGS:
           - audit-logging
           - source-types
           - splunk-endpoint
           - splunk-skip-tls-verify
           - splunk-token
           - truncate
-        GLOBAL_FLAGS:
+        INHERITED_FLAGS:
           - ca
           - config-map
           - direct-grpc
@@ -1377,11 +1491,11 @@ declarative-config:
           - token-file
           - use-current-k8s-context
     permission-set:
-      FLAGS:
+      LOCAL_FLAGS:
         - description
         - name
         - resource-with-access
-      GLOBAL_FLAGS:
+      INHERITED_FLAGS:
         - ca
         - config-map
         - direct-grpc
@@ -1399,12 +1513,12 @@ declarative-config:
         - token-file
         - use-current-k8s-context
     role:
-      FLAGS:
+      LOCAL_FLAGS:
         - access-scope
         - description
         - name
         - permission-set
-      GLOBAL_FLAGS:
+      INHERITED_FLAGS:
         - ca
         - config-map
         - direct-grpc
@@ -1422,12 +1536,12 @@ declarative-config:
         - token-file
         - use-current-k8s-context
   lint:
-    FLAGS:
+    LOCAL_FLAGS:
       - config-map
       - file
       - namespace
       - secret
-    GLOBAL_FLAGS:
+    INHERITED_FLAGS:
       - ca
       - direct-grpc
       - endpoint
@@ -1442,7 +1556,9 @@ declarative-config:
       - token-file
       - use-current-k8s-context
 deployment:
-  GLOBAL_FLAGS:
+  PERSISTENT_FLAGS:
+    - timeout
+  INHERITED_FLAGS:
     - ca
     - direct-grpc
     - endpoint
@@ -1457,7 +1573,7 @@ deployment:
     - token-file
     - use-current-k8s-context
   check:
-    FLAGS:
+    LOCAL_FLAGS:
       - categories
       - cluster
       - file
@@ -1468,7 +1584,16 @@ deployment:
       - retries
       - retry-delay
       - verbose
-    GLOBAL_FLAGS:
+    PERSISTENT_FLAGS:
+      - compact-output
+      - headers
+      - headers-as-comments
+      - junit-suite-name
+      - merge-output
+      - no-header
+      - output
+      - row-jsonpath-expressions
+    INHERITED_FLAGS:
       - ca
       - direct-grpc
       - endpoint
@@ -1484,9 +1609,9 @@ deployment:
       - token-file
       - use-current-k8s-context
 doc:
-  FLAGS:
+  LOCAL_FLAGS:
     - output
-  GLOBAL_FLAGS:
+  INHERITED_FLAGS:
     - ca
     - direct-grpc
     - endpoint
@@ -1501,7 +1626,7 @@ doc:
     - token-file
     - use-current-k8s-context
 helm:
-  GLOBAL_FLAGS:
+  INHERITED_FLAGS:
     - ca
     - direct-grpc
     - endpoint
@@ -1516,7 +1641,13 @@ helm:
     - token-file
     - use-current-k8s-context
   derive-local-values:
-    GLOBAL_FLAGS:
+    PERSISTENT_FLAGS:
+      - input
+      - output
+      - output-dir
+      - retry-timeout
+      - timeout
+    INHERITED_FLAGS:
       - ca
       - direct-grpc
       - endpoint
@@ -1531,7 +1662,15 @@ helm:
       - token-file
       - use-current-k8s-context
   output:
-    GLOBAL_FLAGS:
+    PERSISTENT_FLAGS:
+      - debug
+      - debug-path
+      - enable-telemetry
+      - image-defaults
+      - output-dir
+      - remove
+      - rhacs
+    INHERITED_FLAGS:
       - ca
       - direct-grpc
       - endpoint
@@ -1546,7 +1685,9 @@ helm:
       - token-file
       - use-current-k8s-context
 image:
-  GLOBAL_FLAGS:
+  PERSISTENT_FLAGS:
+    - timeout
+  INHERITED_FLAGS:
     - ca
     - direct-grpc
     - endpoint
@@ -1561,7 +1702,7 @@ image:
     - token-file
     - use-current-k8s-context
   check:
-    FLAGS:
+    LOCAL_FLAGS:
       - categories
       - cluster
       - force
@@ -1572,7 +1713,16 @@ image:
       - retries
       - retry-delay
       - send-notifications
-    GLOBAL_FLAGS:
+    PERSISTENT_FLAGS:
+      - compact-output
+      - headers
+      - headers-as-comments
+      - junit-suite-name
+      - merge-output
+      - no-header
+      - output
+      - row-jsonpath-expressions
+    INHERITED_FLAGS:
       - ca
       - direct-grpc
       - endpoint
@@ -1588,12 +1738,12 @@ image:
       - token-file
       - use-current-k8s-context
   sbom:
-    FLAGS:
+    LOCAL_FLAGS:
       - force
       - image
       - retries
       - retry-delay
-    GLOBAL_FLAGS:
+    INHERITED_FLAGS:
       - ca
       - direct-grpc
       - endpoint
@@ -1609,7 +1759,7 @@ image:
       - token-file
       - use-current-k8s-context
   scan:
-    FLAGS:
+    LOCAL_FLAGS:
       - cluster
       - fail
       - force
@@ -1619,7 +1769,15 @@ image:
       - retries
       - retry-delay
       - severity
-    GLOBAL_FLAGS:
+    PERSISTENT_FLAGS:
+      - compact-output
+      - headers
+      - headers-as-comments
+      - merge-output
+      - no-header
+      - output
+      - row-jsonpath-expressions
+    INHERITED_FLAGS:
       - ca
       - direct-grpc
       - endpoint
@@ -1635,10 +1793,10 @@ image:
       - token-file
       - use-current-k8s-context
 log-convert:
-  FLAGS:
+  LOCAL_FLAGS:
     - level
     - module
-  GLOBAL_FLAGS:
+  INHERITED_FLAGS:
     - ca
     - direct-grpc
     - endpoint
@@ -1653,7 +1811,7 @@ log-convert:
     - token-file
     - use-current-k8s-context
 netpol:
-  GLOBAL_FLAGS:
+  INHERITED_FLAGS:
     - ca
     - direct-grpc
     - endpoint
@@ -1668,7 +1826,7 @@ netpol:
     - token-file
     - use-current-k8s-context
   connectivity:
-    GLOBAL_FLAGS:
+    INHERITED_FLAGS:
       - ca
       - direct-grpc
       - endpoint
@@ -1683,7 +1841,7 @@ netpol:
       - token-file
       - use-current-k8s-context
     diff:
-      FLAGS:
+      LOCAL_FLAGS:
         - dir1
         - dir2
         - fail
@@ -1692,7 +1850,7 @@ netpol:
         - remove
         - save-to-file
         - strict
-      GLOBAL_FLAGS:
+      INHERITED_FLAGS:
         - ca
         - direct-grpc
         - endpoint
@@ -1707,7 +1865,7 @@ netpol:
         - token-file
         - use-current-k8s-context
     map:
-      FLAGS:
+      LOCAL_FLAGS:
         - exposure
         - fail
         - focus-workload
@@ -1716,7 +1874,7 @@ netpol:
         - remove
         - save-to-file
         - strict
-      GLOBAL_FLAGS:
+      INHERITED_FLAGS:
         - ca
         - direct-grpc
         - endpoint
@@ -1731,14 +1889,14 @@ netpol:
         - token-file
         - use-current-k8s-context
   generate:
-    FLAGS:
+    LOCAL_FLAGS:
       - dnsport
       - fail
       - output-dir
       - output-file
       - remove
       - strict
-    GLOBAL_FLAGS:
+    INHERITED_FLAGS:
       - ca
       - direct-grpc
       - endpoint
@@ -1753,7 +1911,7 @@ netpol:
       - token-file
       - use-current-k8s-context
 scanner:
-  GLOBAL_FLAGS:
+  INHERITED_FLAGS:
     - ca
     - direct-grpc
     - endpoint
@@ -1768,13 +1926,15 @@ scanner:
     - token-file
     - use-current-k8s-context
   download-db:
-    FLAGS:
+    LOCAL_FLAGS:
       - force
       - scanner-db-file
       - skip-central
       - skip-variants
       - version
-    GLOBAL_FLAGS:
+    PERSISTENT_FLAGS:
+      - timeout
+    INHERITED_FLAGS:
       - ca
       - direct-grpc
       - endpoint
@@ -1789,13 +1949,18 @@ scanner:
       - token-file
       - use-current-k8s-context
   generate:
-    FLAGS:
+    LOCAL_FLAGS:
       - istio-support
       - output-dir
       - scanner-image
       - scanner-v4-db-image
       - scanner-v4-image
-    GLOBAL_FLAGS:
+    PERSISTENT_FLAGS:
+      - cluster-type
+      - enable-pod-security-policies
+      - retry-timeout
+      - timeout
+    INHERITED_FLAGS:
       - ca
       - direct-grpc
       - endpoint
@@ -1810,9 +1975,11 @@ scanner:
       - token-file
       - use-current-k8s-context
   upload-db:
-    FLAGS:
+    LOCAL_FLAGS:
       - scanner-db-file
-    GLOBAL_FLAGS:
+    PERSISTENT_FLAGS:
+      - timeout
+    INHERITED_FLAGS:
       - ca
       - direct-grpc
       - endpoint
@@ -1827,7 +1994,10 @@ scanner:
       - token-file
       - use-current-k8s-context
 sensor:
-  GLOBAL_FLAGS:
+  PERSISTENT_FLAGS:
+    - retry-timeout
+    - timeout
+  INHERITED_FLAGS:
     - ca
     - direct-grpc
     - endpoint
@@ -1842,7 +2012,30 @@ sensor:
     - token-file
     - use-current-k8s-context
   generate:
-    GLOBAL_FLAGS:
+    PERSISTENT_FLAGS:
+      - admission-controller-disable-bypass
+      - admission-controller-enabled
+      - admission-controller-enforce-on-creates
+      - admission-controller-enforce-on-updates
+      - admission-controller-listen-on-creates
+      - admission-controller-listen-on-updates
+      - admission-controller-scan-inline
+      - admission-controller-timeout
+      - central
+      - collection-method
+      - collector-image-repository
+      - continue-if-exists
+      - create-admission-controller
+      - create-upgrader-sa
+      - disable-tolerations
+      - enable-pod-security-policies
+      - istio-support
+      - main-image-repository
+      - name
+      - output-dir
+      - slim-collector
+      - timeout
+    INHERITED_FLAGS:
       - ca
       - direct-grpc
       - endpoint
@@ -1858,7 +2051,9 @@ sensor:
       - token-file
       - use-current-k8s-context
     k8s:
-      GLOBAL_FLAGS:
+      PERSISTENT_FLAGS:
+        - admission-controller-listen-on-events
+      INHERITED_FLAGS:
         - admission-controller-disable-bypass
         - admission-controller-enabled
         - admission-controller-enforce-on-creates
@@ -1896,7 +2091,11 @@ sensor:
         - token-file
         - use-current-k8s-context
     openshift:
-      GLOBAL_FLAGS:
+      PERSISTENT_FLAGS:
+        - admission-controller-listen-on-events
+        - disable-audit-logs
+        - openshift-version
+      INHERITED_FLAGS:
         - admission-controller-disable-bypass
         - admission-controller-enabled
         - admission-controller-enforce-on-creates
@@ -1934,7 +2133,9 @@ sensor:
         - token-file
         - use-current-k8s-context
   generate-certs:
-    GLOBAL_FLAGS:
+    PERSISTENT_FLAGS:
+      - output-dir
+    INHERITED_FLAGS:
       - ca
       - direct-grpc
       - endpoint
@@ -1951,7 +2152,13 @@ sensor:
       - token-file
       - use-current-k8s-context
   get-bundle:
-    GLOBAL_FLAGS:
+    PERSISTENT_FLAGS:
+      - create-upgrader-sa
+      - istio-support
+      - output-dir
+      - slim-collector
+      - timeout
+    INHERITED_FLAGS:
       - ca
       - direct-grpc
       - endpoint
@@ -1967,7 +2174,9 @@ sensor:
       - token-file
       - use-current-k8s-context
 version:
-  GLOBAL_FLAGS:
+  PERSISTENT_FLAGS:
+    - json
+  INHERITED_FLAGS:
     - ca
     - direct-grpc
     - endpoint
