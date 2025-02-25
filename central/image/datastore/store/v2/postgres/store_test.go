@@ -24,7 +24,6 @@ import (
 var (
 	lastWeek  = time.Now().Add(-7 * 24 * time.Hour)
 	yesterday = time.Now().Add(-24 * time.Hour)
-	now       = time.Now()
 )
 
 type ImagesStoreSuite struct {
@@ -245,11 +244,11 @@ func (s *ImagesStoreSuite) TestUpsert() {
 	log.Infof("SHREWS -- found1 %v", foundImage)
 	protoassert.Equal(s.T(), cloned, foundImage)
 
-	//s.NoError(store.Delete(ctx, image.GetId()))
-	//foundImage, exists, err = store.Get(ctx, image.GetId())
-	//s.NoError(err)
-	//s.False(exists)
-	//s.Nil(foundImage)
+	s.NoError(store.Delete(ctx, image.GetId()))
+	foundImage, exists, err = store.Get(ctx, image.GetId())
+	s.NoError(err)
+	s.False(exists)
+	s.Nil(foundImage)
 
 	s.T().Setenv("ROX_FLATTEN_CVE_DATA", "false")
 }
