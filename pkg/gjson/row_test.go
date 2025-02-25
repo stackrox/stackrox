@@ -309,7 +309,7 @@ func TestRowMapper_CreateRows_SimpleHierarchy(t *testing.T) {
 		{"Bilbo Baggins", "Bag End"},
 	}
 
-	runRowMapperTest(t, testJSONObject, testExpression, expectedRows)
+	runRowMapperTest(t, testJSONObject, testExpression, expectedRows, []string{})
 }
 
 type people struct {
@@ -382,7 +382,7 @@ func TestRowMapper_Create_Rows_DeepHierarchy(t *testing.T) {
 		{"Harry Potter", "Hagrid", "Hagrid's Hut"},
 	}
 
-	runRowMapperTest(t, testJSONObject, testExpression, expectedRows)
+	runRowMapperTest(t, testJSONObject, testExpression, expectedRows, []string{})
 }
 
 func TestRowMapper_CreateRows_DeepHierarchyAndEmptyValues(t *testing.T) {
@@ -449,11 +449,22 @@ func TestRowMapper_CreateRows_DeepHierarchyAndEmptyValues(t *testing.T) {
 		{"Harry Potter", "Voldemort", "-"},
 	}
 
-	runRowMapperTest(t, testJSONObject, testExpression, expectedRows)
+	expectedRowsWithStrictAddressColumn := [][]string{
+		{"LOTR", "Gandalf", "Minas Tirith"},
+		{"LOTR", "Gollum", "Gladden Fields"},
+		{"LOTR", "Aragorn", "Gondor"},
+		{"LOTR", "Bilbo Baggins", "Bag End"},
+		{"Harry Potter", "Harry Potter", "Little Whinging"},
+		{"Harry Potter", "Ron Weasley", "The Burrow"},
+		{"Harry Potter", "Hagrid", "Hagrid's Hut"},
+	}
+
+	runRowMapperTest(t, testJSONObject, testExpression, expectedRows, []string{})
+	runRowMapperTest(t, testJSONObject, testExpression, expectedRowsWithStrictAddressColumn, []string{"result.#.people.#.address"})
 }
 
-func runRowMapperTest(t *testing.T, obj interface{}, expression string, expectedRows [][]string) {
-	mapper, err := NewRowMapper(obj, expression)
+func runRowMapperTest(t *testing.T, obj interface{}, expression string, expectedRows [][]string, strictColumns []string) {
+	mapper, err := NewRowMapper(obj, expression, HideRowsIfColumnNotPopulated(strictColumns))
 	require.NoError(t, err)
 	rows, err := mapper.CreateRows()
 	require.NoError(t, err)

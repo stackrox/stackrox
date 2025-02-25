@@ -21,6 +21,14 @@ func WithTableHeadersOption(headers []string, headersToMerge []string, noHeader 
 	}
 }
 
+// WithTableHideUnpopulatedRowsOption is a functional option for hiding rows of the table,
+// when those rows have an unpopulated spot from a column marked as required.
+func WithTableHideUnpopulatedRowsOption(requiredColumns []string) TablePrinterOptions {
+	return func(p *TablePrinter) {
+		p.columnTreeOptions = gjson.HideRowsIfColumnNotPopulated(requiredColumns)
+	}
+}
+
 // TablePrinter will print a table output from a given JSON Object.
 type TablePrinter struct {
 	headers               []string
@@ -29,6 +37,7 @@ type TablePrinter struct {
 	// There will be no precedence in any fashion applied.
 	columnIndexesToMerge []int
 	noHeader             bool
+	columnTreeOptions    gjson.ColumnTreeOptions
 }
 
 // NewTablePrinter creates a TablePrinter from the options set.
@@ -124,7 +133,7 @@ func (p *TablePrinter) Print(jsonObject interface{}, out io.Writer) error {
 	tw := p.createTableWriter(out)
 
 	// retrieve rows from JSON object via JSON path expression.
-	rowMapper, err := gjson.NewRowMapper(jsonObject, p.rowJSONPathExpression)
+	rowMapper, err := gjson.NewRowMapper(jsonObject, p.rowJSONPathExpression, p.columnTreeOptions)
 	if err != nil {
 		return err
 	}
