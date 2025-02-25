@@ -278,15 +278,15 @@ func (s *serviceImpl) GetAlertsGroupedCounts(ctx context.Context, request *v1.Ge
 
 		if matchFieldQuery.MatchFieldQuery.GetField() == search.Cluster.String() {
 			hasClusterQ = true
-			//matchFieldQuery.MatchFieldQuery.Highlight = true
+			// matchFieldQuery.MatchFieldQuery.Highlight = true
 		}
 		if matchFieldQuery.MatchFieldQuery.GetField() == search.Category.String() {
 			hasCategoryQ = true
-			//matchFieldQuery.MatchFieldQuery.Highlight = true
+			// matchFieldQuery.MatchFieldQuery.Highlight = true
 		}
 		if matchFieldQuery.MatchFieldQuery.GetField() == search.Severity.String() {
 			hasSeverityQ = true
-			//matchFieldQuery.MatchFieldQuery.Highlight = true
+			// matchFieldQuery.MatchFieldQuery.Highlight = true
 		}
 	})
 	log.Info("Cluster ", hasClusterQ, ", Severity ", hasSeverityQ, ", Category ", hasCategoryQ)
