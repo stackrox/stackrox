@@ -195,7 +195,7 @@ func (s *storeImpl) insertIntoImages(
 	}
 	common2.SensorEventsDeduperCounter.With(prometheus.Labels{"status": "passed"}).Inc()
 
-	err = copyFromImageComponentsV2(ctx, tx, iTime, componentCVEMap, parts.componentsV2...)
+	err = s.copyFromImageComponentsV2(ctx, tx, parts.image.GetId(), parts.componentsV2...)
 	if err != nil {
 		return err
 	}
@@ -240,16 +240,16 @@ func insertIntoImagesLayers(ctx context.Context, tx *postgres.Tx, obj *storage.I
 
 // Basically a copy of the generated method in imagecomponent/v2/datastore/store/postgres.  But we need to pass some additional information
 // around to ensure times and things are updated appropriately.  So we must have this method here.
-func copyFromImageComponentsV2(ctx context.Context, tx *postgres.Tx, iTime time.Time, componentCVEMap map[string]map[string]*storage.ImageCVEV2, objs ...*storage.ImageComponentV2) error {
+func (s *storeImpl) copyFromImageComponentsV2(ctx context.Context, tx *postgres.Tx, imageID string, objs ...*storage.ImageComponentV2) error {
+	// Each scan is complete.  So first thing we do is remove the components for an image and then we add them back.
+	if err := s.deleteImageComponents(ctx, tx, imageID); err != nil {
+		return err
+	}
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)
 	}
 	inputRows := make([][]interface{}, 0, batchSize)
-
-	// This is a copy, so first we must delete the rows and re-add them
-	// Which is essentially the desired behaviour of an upsert.
-	deletes := make([]string, 0, batchSize)
 
 	copyCols := []string{
 		"id",
@@ -285,20 +285,8 @@ func copyFromImageComponentsV2(ctx context.Context, tx *postgres.Tx, iTime time.
 			serialized,
 		})
 
-		// Add the ID to be deleted.
-		deletes = append(deletes, obj.GetId())
-
 		// if we hit our batch size we need to push the data
 		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-			_, err := tx.Exec(ctx, "DELETE FROM "+imageComponentsV2Table+" WHERE id = ANY($1::text[])", deletes)
-			if err != nil {
-				return err
-			}
-			// clear the inserts and vals for the next batch
-			deletes = deletes[:0]
-
 			if _, err := tx.CopyFrom(ctx, pgx.Identifier{imageComponentsV2Table}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
 				return err
 			}
@@ -715,6 +703,10 @@ func (s *storeImpl) deleteImageTree(ctx context.Context, tx *postgres.Tx, imageI
 		return err
 	}
 
+	return s.deleteImageComponents(ctx, tx, imageID)
+}
+
+func (s *storeImpl) deleteImageComponents(ctx context.Context, tx *postgres.Tx, imageID string) error {
 	// Delete image components for this image
 	if _, err := tx.Exec(ctx, "delete from "+imageComponentsV2Table+" where imageid = $1", imageID); err != nil {
 		return err
