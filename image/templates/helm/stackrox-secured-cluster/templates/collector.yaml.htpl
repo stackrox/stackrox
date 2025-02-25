@@ -136,6 +136,10 @@ spec:
           valueFrom:
             resourceFieldRef:
               resource: limits.cpu
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
         - name: ROX_CALL_NODE_INVENTORY_ENABLED
           value: {{ if eq ._rox.env.openshift 4 }}"true"{{ else }}"false"{{ end }}
       {{- if eq ._rox.env.openshift 4 }}
@@ -212,6 +216,10 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: spec.nodeName
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
         {{- include "srox.envVars" (list . "daemonset" "collector" "node-inventory") | nindent 8 }}
         volumeMounts:
          - mountPath: /host
