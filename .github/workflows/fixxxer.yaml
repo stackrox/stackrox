@@ -20,6 +20,8 @@ jobs:
     - run: |
         set -ex
         git config --global --add safe.directory `pwd`
+        git config --global user.email "mowsiany@redhat.com"
+        git config --global user.name "StackRox PR Fixxxer"
         echo "Running scripts/fixxxers/operator/deps-go-mod-tidy.sh" > msg.txt
         echo >> msg.txt
         ./scripts/fixxxers/operator/deps-go-mod-tidy.sh >> msg.txt 2>&1
