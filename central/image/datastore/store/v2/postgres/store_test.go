@@ -225,6 +225,12 @@ func (s *ImagesStoreSuite) TestUpsert() {
 	// Replace all components removing "cve2".
 	// Ensure "cve2" is not returned with the image.
 
+	s.NoError(store.Delete(ctx, image.GetId()))
+	foundImage, exists, err = store.Get(ctx, image.GetId())
+	s.NoError(err)
+	s.False(exists)
+	s.Nil(foundImage)
+
 	s.T().Setenv("ROX_FLATTEN_CVE_DATA", "false")
 }
 
@@ -365,7 +371,7 @@ func getComponent3Verify() *storage.EmbeddedImageScanComponent {
 					ImpactScore: 10,
 				},
 				ScoreVersion:          storage.EmbeddedVulnerability_V3,
-				PublishedOn:           protocompat.ConvertTimeToTimestampOrNil(&lastWeek),
+				PublishedOn:           protocompat.ConvertTimeToTimestampOrNil(&yesterday),
 				FirstImageOccurrence:  protocompat.ConvertTimeToTimestampOrNil(&lastWeek),
 				FirstSystemOccurrence: protocompat.ConvertTimeToTimestampOrNil(&lastWeek),
 			},
