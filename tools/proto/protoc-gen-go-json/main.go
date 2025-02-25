@@ -8,6 +8,16 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
+// Standard library dependencies.
+const (
+	bytesPackage = protogen.GoImportPath("bytes")
+	fmtPackage   = protogen.GoImportPath("fmt")
+)
+
+var (
+	fprintf = fmtPackage.Ident("Fprintf")
+)
+
 func main() {
 	protogen.Options{}.Run(func(gen *protogen.Plugin) error {
 		for _, f := range gen.Files {
@@ -35,7 +45,8 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) {
 	g.P()
 	g.P("package ", file.GoPackageName)
 	g.P()
-	g.P(`import "bytes"`)
+	g.Import("bytes")
+	g.Import("fmt")
 
 	for _, m := range file.Messages {
 		generateMessage(g, m)
@@ -43,35 +54,116 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) {
 }
 
 func generateMessage(g *protogen.GeneratedFile, msg *protogen.Message) {
+	if msg.Desc.IsMapEntry() {
+		return
+	}
+
 	s := msg.GoIdent.String()
 	name := s[strings.LastIndex(s, ".")+1:]
 
 	g.P()
-	g.P("func (m *", name, ") MarshalJSON() ([]byte, error) ", " { ")
+	g.P("func (m *", name, ") MarshalJSON() (b []byte, err error) ", " { ")
 	g.P("if m == nil { return nil, nil }")
-	g.P("var buffer bytes.Buffer")
-	g.P(`buffer.WriteString("{")`)
-	g.P(`buffer.WriteString("{")`)
-	g.P(`var b []byte`)
-	g.P(`var err error`)
+	g.P("var buf ", bytesPackage.Ident("Buffer"))
+	w(g, "{")
 	for _, f := range msg.Fields {
-		g.P("buffer.WriteString(\"", f.Desc.JSONName(), "\")")
-		g.P(`buffer.WriteString(":")`)
+		w(g, f.Desc.JSONName())
+		w(g, ":")
+		if f.Desc.IsMap() {
+			w(g, "{")
+			g.P(`for k, v := range m.Get`, f.GoName, "() {")
+			switch f.Desc.MapKey().Kind() {
+			case protoreflect.StringKind:
+				q(g, "k")
+			case protoreflect.BoolKind:
+				g.P(`if k { buf.WriteString("true") } else { buf.WriteString("false") }`)
+			case protoreflect.EnumKind, protoreflect.Int32Kind, protoreflect.Sint32Kind,
+				protoreflect.Uint32Kind, protoreflect.Int64Kind, protoreflect.Sint64Kind,
+				protoreflect.Uint64Kind, protoreflect.Sfixed32Kind, protoreflect.Fixed32Kind,
+				protoreflect.Sfixed64Kind, protoreflect.Fixed64Kind:
+				g.P(fprintf, `(&buf, "%d", k`)
+			case protoreflect.FloatKind, protoreflect.DoubleKind:
+				g.P(fprintf, `(&buf, "%f", k)`)
+			default:
+				panic(f)
+			}
+			w(g, ":")
+			switch f.Desc.MapValue().Kind() {
+			case protoreflect.MessageKind:
+				g.P("b, err = v.MarshalJSON()")
+				g.P("if err != nil { return nil, err }")
+				g.P("buf.Write(b)")
+			case protoreflect.StringKind:
+				q(g, "v")
+			case protoreflect.BoolKind:
+				g.P(`if v { buf.WriteString("true") } else { buf.WriteString("false") }`)
+			case protoreflect.EnumKind, protoreflect.Int32Kind, protoreflect.Sint32Kind,
+				protoreflect.Uint32Kind, protoreflect.Int64Kind, protoreflect.Sint64Kind,
+				protoreflect.Uint64Kind, protoreflect.Sfixed32Kind, protoreflect.Fixed32Kind,
+				protoreflect.Sfixed64Kind, protoreflect.Fixed64Kind:
+				g.P(fprintf, `(&buf, "%d", v)`)
+			case protoreflect.FloatKind, protoreflect.DoubleKind:
+				g.P(fprintf, `(&buf, "%f", v)`)
+			default:
+				panic(f)
+			}
+			g.P("}")
+			w(g, "}")
+			continue
+		}
 		switch f.Desc.Kind() {
 		case protoreflect.MessageKind:
+			if f.Desc.Message().FullName() == "google.protobuf.Timestamp" {
+				q(g, "m.Get"+f.GoName+"().String()")
+				continue
+			}
+			if f.Desc.IsList() {
+				w(g, "[")
+				g.P(`for _, v := range m.Get`, f.GoName, "() {")
+				g.P("	b, err = v.MarshalJSON()")
+				g.P("	if err != nil { return nil, err }")
+				g.P("	buf.Write(b)")
+				g.P(`}`)
+				w(g, "]")
+				continue
+			}
 			g.P("b, err = m.Get", f.GoName, "().MarshalJSON()")
 			g.P("if err != nil { return nil, err }")
-			g.P("buffer.Write(b)")
+			g.P("buf.Write(b)")
 		case protoreflect.StringKind:
-			g.P(`buffer.WriteString(m.Get`, f.GoName, "())")
+			q(g, `m.Get`+f.GoName+"()")
 		case protoreflect.BoolKind:
-			g.P("if m.Get", f.GoName, `() { buffer.WriteString("true") } else { buffer.WriteString("false") }`)
+			g.P("if m.Get", f.GoName, `() { buf.WriteString("true") } else { buf.WriteString("false") }`)
+		case protoreflect.EnumKind, protoreflect.Int32Kind, protoreflect.Sint32Kind,
+			protoreflect.Uint32Kind, protoreflect.Int64Kind, protoreflect.Sint64Kind,
+			protoreflect.Uint64Kind, protoreflect.Sfixed32Kind, protoreflect.Fixed32Kind,
+			protoreflect.Sfixed64Kind, protoreflect.Fixed64Kind:
+			g.P(fprintf, `(&buf, "%d", m.Get`, f.GoName, `())`)
+		case protoreflect.FloatKind, protoreflect.DoubleKind:
+			g.P(fprintf, `(&buf, "%f", m.Get`, f.GoName, `())`)
+		case protoreflect.BytesKind:
+			w(g, "null")
+		default:
+			panic(f.Location.SourceFile + "/" + f.GoName)
 		}
 	}
-	g.P(`buffer.WriteString("}")`)
+	w(g, "}")
+	g.P(`return buf.Bytes(), nil`)
 	g.P("}")
 	g.P()
 	for _, m := range msg.Messages {
 		generateMessage(g, m)
 	}
+}
+
+func w(g *protogen.GeneratedFile, s string) {
+	g.P(`buf.WriteString("` + s + `")`)
+}
+
+func q(g *protogen.GeneratedFile, s string) {
+	g.P(`buf.WriteString("\"" +` + s + `+ "\"")`)
+}
+
+func u(g *protogen.GeneratedFile, s string) {
+	g.P(`buf.WriteString(` + s + `)`)
 }
