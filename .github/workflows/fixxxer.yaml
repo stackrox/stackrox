@@ -18,7 +18,8 @@ jobs:
         fetch-depth: 0
 
     - run: |
-        set -e
+        set -ex
+        git config --global --add safe.directory `pwd`
         echo "Running scripts/fixxxers/operator/deps-go-mod-tidy.sh" > msg.txt
         echo >> msg.txt
         ./scripts/fixxxers/operator/deps-go-mod-tidy.sh >> msg.txt 2>&1
