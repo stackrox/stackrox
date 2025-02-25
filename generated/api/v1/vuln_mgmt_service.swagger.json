@@ -909,6 +909,9 @@
         },
         "epss": {
           "$ref": "#/definitions/storageEPSS"
+        },
+        "exploit": {
+          "$ref": "#/definitions/storageExploit"
         }
       },
       "title": "Next Tag: 22"
@@ -922,6 +925,29 @@
       "default": "V2",
       "description": "- V2: No unset for automatic backwards compatibility",
       "title": "ScoreVersion can be deprecated ROX-26066"
+    },
+    "storageExploit": {
+      "type": "object",
+      "properties": {
+        "catalogVersion": {
+          "type": "string"
+        },
+        "dateAdded": {
+          "type": "string"
+        },
+        "shortDescription": {
+          "type": "string"
+        },
+        "requiredAction": {
+          "type": "string"
+        },
+        "dueDate": {
+          "type": "string"
+        },
+        "knownRansomwareCampaignUse": {
+          "type": "string"
+        }
+      }
     },
     "storageImage": {
       "type": "object",

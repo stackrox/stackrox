@@ -173,6 +173,7 @@ func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerab
 			VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 			Severity:          normalizedSeverity(ccVuln.GetNormalizedSeverity()),
 			Epss:              epss(ccVuln.GetEpssMetrics()),
+			Exploit:           exploit(ccVuln.GetExploit()),
 		}
 		if err := setScoresAndScoreVersions(vuln, ccVuln.GetCvssMetrics()); err != nil {
 			utils.Should(err)
@@ -197,6 +198,20 @@ func epss(epssDetail *v4.VulnerabilityReport_Vulnerability_EPSS) *storage.EPSS {
 	return &storage.EPSS{
 		EpssProbability: epssDetail.Probability,
 		EpssPercentile:  epssDetail.Percentile,
+	}
+}
+
+func exploit(exploit *v4.VulnerabilityReport_Vulnerability_KEVExploit) *storage.Exploit {
+	if exploit == nil {
+		return nil
+	}
+	return &storage.Exploit{
+		CatalogVersion:             exploit.CatalogVersion,
+		DateAdded:                  exploit.DateAdded,
+		ShortDescription:           exploit.ShortDescription,
+		RequiredAction:             exploit.RequiredAction,
+		DueDate:                    exploit.DueDate,
+		KnownRansomwareCampaignUse: exploit.KnownRansomwareCampaignUse,
 	}
 }
 
