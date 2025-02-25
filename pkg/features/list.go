@@ -116,6 +116,9 @@ var (
 
 	// Flattens CVE Data Model for improved accuracy and performance
 	FlattenCVEData = registerFeature("Uses a flattened CVE Data Model improved accuracy and performance", "ROX_FLATTEN_CVE_DATA")
+
+	// Spire enables SPIFFE/SPIRE based authentication among ACS components.
+	Spire = registerFeature("Uses SPIFFE/SPIRE based authentication", "ROX_SPIRE", enabled)
 )
 
 // The following feature flags are related to Scanner V4.
