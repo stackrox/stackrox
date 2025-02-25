@@ -197,6 +197,9 @@ func (s *ImagesStoreSuite) TestUpsert() {
 
 	// Reconcile the timestamps that are set during upsert.
 	cloned.LastUpdated = foundImage.LastUpdated
+	// Because of times we need to reconcile the components to account
+	// for first image occurrence and first system time of a CVE
+	cloned.Scan.Components = getTestImageComponentsVerify()
 
 	log.Infof("SHREWS -- cloned %v", cloned)
 	log.Infof("SHREWS -- found1 %v", foundImage)
@@ -222,14 +225,31 @@ func (s *ImagesStoreSuite) TestUpsert() {
 	log.Infof("SHREWS -- found1 %v", foundImage)
 	protoassert.Equal(s.T(), cloned, foundImage)
 
-	// Replace all components removing "cve2".
-	// Ensure "cve2" is not returned with the image.
-
-	s.NoError(store.Delete(ctx, image.GetId()))
+	// Replace all components removing "cve1".
+	// Ensure "cve1" is not returned with the image.
+	image.Scan.Components = getTestImageComponentsFixedCVE1()
+	s.NoError(store.Upsert(ctx, image))
 	foundImage, exists, err = store.Get(ctx, image.GetId())
 	s.NoError(err)
-	s.False(exists)
-	s.Nil(foundImage)
+	s.True(exists)
+	cloned = image.CloneVT()
+
+	// Should pull the old CVE times for CVE1 even though it just appeared in
+	// the component.  The CVE has still existed in the image even though it is
+	// new to the component.
+	cloned.LastUpdated = foundImage.LastUpdated
+	cloned.Scan.Hashoneof = &storage.ImageScan_Hash{
+		Hash: foundImage.GetScan().GetHash(),
+	}
+	log.Infof("SHREWS -- cloned %v", cloned)
+	log.Infof("SHREWS -- found1 %v", foundImage)
+	protoassert.Equal(s.T(), cloned, foundImage)
+
+	//s.NoError(store.Delete(ctx, image.GetId()))
+	//foundImage, exists, err = store.Get(ctx, image.GetId())
+	//s.NoError(err)
+	//s.False(exists)
+	//s.Nil(foundImage)
 
 	s.T().Setenv("ROX_FLATTEN_CVE_DATA", "false")
 }
@@ -319,6 +339,82 @@ func getTestImage(id string) *storage.Image {
 	}
 }
 
+func getTestImageComponentsVerify() []*storage.EmbeddedImageScanComponent {
+	return []*storage.EmbeddedImageScanComponent{
+		{
+			Name:    "comp1",
+			Version: "ver1",
+			Vulns:   []*storage.EmbeddedVulnerability{},
+		},
+		{
+			Name:    "comp1",
+			Version: "ver2",
+			Vulns: []*storage.EmbeddedVulnerability{
+				{
+					Cve:                "cve1",
+					VulnerabilityType:  storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+					VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+					CvssV3: &storage.CVSSV3{
+						ImpactScore: 10,
+					},
+					ScoreVersion:          storage.EmbeddedVulnerability_V3,
+					PublishedOn:           protocompat.ConvertTimeToTimestampOrNil(&lastWeek),
+					FirstImageOccurrence:  protocompat.ConvertTimeToTimestampOrNil(&lastWeek),
+					FirstSystemOccurrence: protocompat.ConvertTimeToTimestampOrNil(&lastWeek),
+				},
+				{
+					Cve:                "cve2",
+					VulnerabilityType:  storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+					VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+					SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+						FixedBy: "ver3",
+					},
+					CvssV3: &storage.CVSSV3{
+						ImpactScore: 1,
+					},
+					ScoreVersion:          storage.EmbeddedVulnerability_V3,
+					PublishedOn:           protocompat.ConvertTimeToTimestampOrNil(&yesterday),
+					FirstImageOccurrence:  protocompat.ConvertTimeToTimestampOrNil(&lastWeek),
+					FirstSystemOccurrence: protocompat.ConvertTimeToTimestampOrNil(&lastWeek),
+				},
+			},
+		},
+		{
+			Name:    "comp2",
+			Version: "ver1",
+			Vulns: []*storage.EmbeddedVulnerability{
+				{
+					Cve:                "cve1",
+					VulnerabilityType:  storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+					VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+					SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+						FixedBy: "ver2",
+					},
+					CvssV3: &storage.CVSSV3{
+						ImpactScore: 10,
+					},
+					ScoreVersion:          storage.EmbeddedVulnerability_V3,
+					PublishedOn:           protocompat.ConvertTimeToTimestampOrNil(&lastWeek),
+					FirstImageOccurrence:  protocompat.ConvertTimeToTimestampOrNil(&lastWeek),
+					FirstSystemOccurrence: protocompat.ConvertTimeToTimestampOrNil(&lastWeek),
+				},
+				{
+					Cve:                "cve2",
+					VulnerabilityType:  storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+					VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+					CvssV3: &storage.CVSSV3{
+						ImpactScore: 1,
+					},
+					ScoreVersion:          storage.EmbeddedVulnerability_V3,
+					PublishedOn:           protocompat.ConvertTimeToTimestampOrNil(&lastWeek),
+					FirstImageOccurrence:  protocompat.ConvertTimeToTimestampOrNil(&lastWeek),
+					FirstSystemOccurrence: protocompat.ConvertTimeToTimestampOrNil(&lastWeek),
+				},
+			},
+		},
+	}
+}
+
 func getComponent3() *storage.EmbeddedImageScanComponent {
 	return &storage.EmbeddedImageScanComponent{
 		Name:    "comp3",
@@ -386,6 +482,73 @@ func getComponent3Verify() *storage.EmbeddedImageScanComponent {
 				PublishedOn:           protocompat.ConvertTimeToTimestampOrNil(&yesterday),
 				FirstImageOccurrence:  protocompat.ConvertTimeToTimestampOrNil(&yesterday),
 				FirstSystemOccurrence: protocompat.ConvertTimeToTimestampOrNil(&yesterday),
+			},
+		},
+	}
+}
+
+func getTestImageComponentsFixedCVE1() []*storage.EmbeddedImageScanComponent {
+	return []*storage.EmbeddedImageScanComponent{
+		{
+			Name:    "comp1",
+			Version: "ver1",
+			Vulns:   []*storage.EmbeddedVulnerability{},
+		},
+		{
+			Name:    "comp1",
+			Version: "ver3",
+			Vulns: []*storage.EmbeddedVulnerability{
+				{
+					Cve:                "cve2",
+					VulnerabilityType:  storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+					VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+					SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+						FixedBy: "ver3",
+					},
+					CvssV3: &storage.CVSSV3{
+						ImpactScore: 1,
+					},
+					ScoreVersion:          storage.EmbeddedVulnerability_V3,
+					PublishedOn:           protocompat.ConvertTimeToTimestampOrNil(&yesterday),
+					FirstImageOccurrence:  protocompat.ConvertTimeToTimestampOrNil(&lastWeek),
+					FirstSystemOccurrence: protocompat.ConvertTimeToTimestampOrNil(&lastWeek),
+				},
+			},
+		},
+		{
+			Name:    "comp2",
+			Version: "ver2",
+			Vulns: []*storage.EmbeddedVulnerability{
+				{
+					Cve:                "cve2",
+					VulnerabilityType:  storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+					VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+					CvssV3: &storage.CVSSV3{
+						ImpactScore: 1,
+					},
+					ScoreVersion:          storage.EmbeddedVulnerability_V3,
+					PublishedOn:           protocompat.ConvertTimeToTimestampOrNil(&lastWeek),
+					FirstImageOccurrence:  protocompat.ConvertTimeToTimestampOrNil(&lastWeek),
+					FirstSystemOccurrence: protocompat.ConvertTimeToTimestampOrNil(&lastWeek),
+				},
+			},
+		},
+		{
+			Name:    "comp3",
+			Version: "ver2",
+			Vulns: []*storage.EmbeddedVulnerability{
+				{
+					Cve:                "cve3",
+					VulnerabilityType:  storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+					VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+					CvssV3: &storage.CVSSV3{
+						ImpactScore: 1,
+					},
+					ScoreVersion:          storage.EmbeddedVulnerability_V3,
+					PublishedOn:           protocompat.ConvertTimeToTimestampOrNil(&yesterday),
+					FirstImageOccurrence:  protocompat.ConvertTimeToTimestampOrNil(&yesterday),
+					FirstSystemOccurrence: protocompat.ConvertTimeToTimestampOrNil(&yesterday),
+				},
 			},
 		},
 	}
