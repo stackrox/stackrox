@@ -58,7 +58,6 @@ type tlsIssuerImpl struct {
 	getServiceCertificatesRepoFn serviceCertificatesRepoGetter
 	certRefresher                concurrency.RetryTicker
 	msgToCentralC                chan *message.ExpiringMessage
-	stopSig                      concurrency.ErrorSignal
 	responseFromCentral          atomic.Pointer[Response]
 	responseReceived             concurrency.Signal
 	ongoingRequestID             string
@@ -66,26 +65,45 @@ type tlsIssuerImpl struct {
 	requestOngoing               atomic.Bool
 	newMsgFromSensorFn           newMsgFromSensor
 	requiredCentralCapability    *centralsensor.CentralCapability
+	started                      atomic.Bool
+	online                       atomic.Bool
+	cancelRefresher              context.CancelFunc
+	activateLock                 sync.Mutex
 }
 
-// Start starts the Sensor component and launches a certificate refresher that immediately checks the certificates, and
-// that keeps them updated.
-// In case a secret doesn't have the expected owner, this logs a warning and returns nil.
-// In case this component was already started it fails immediately.
+// Start starts the Sensor component and launches a certificate refresher that:
+// * checks the state of the certificates whenever Sensor connects to Central, and several months before they expire
+// * updates the certificates if needed
+// When Sensor is offline this component is not active.
 func (i *tlsIssuerImpl) Start() error {
 	log.Debugf("Starting %s TLS issuer.", i.componentName)
-	i.stopSig.Reset()
+	i.started.Store(true)
+	return i.activate()
+}
+
+func (i *tlsIssuerImpl) activate() error {
+	i.activateLock.Lock()
+	defer i.activateLock.Unlock()
+
+	if !i.started.Load() {
+		return nil
+	}
+	if !i.online.Load() {
+		return nil
+	}
+	if i.certRefresher != nil {
+		log.Debugf("%s TLS issuer is already started.", i.componentName)
+		return nil
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), startTimeout)
 	defer cancel()
-
-	if i.certRefresher != nil {
-		return i.abortStart(errors.New("already started"))
-	}
 
 	sensorOwnerReference, fetchSensorDeploymentErr := FetchSensorDeploymentOwnerRef(ctx, i.sensorPodName,
 		i.sensorNamespace, i.k8sClient, wait.Backoff{})
 	if fetchSensorDeploymentErr != nil {
-		return i.abortStart(errors.Wrap(fetchSensorDeploymentErr, "fetching sensor deployment"))
+		i.started.Store(false)
+		return fmt.Errorf("fetching sensor deployment: %w", fetchSensorDeploymentErr)
 	}
 
 	certsRepo := i.getServiceCertificatesRepoFn(*sensorOwnerReference, i.sensorNamespace,
@@ -93,31 +111,56 @@ func (i *tlsIssuerImpl) Start() error {
 	i.certRefresher = i.getCertificateRefresherFn(i.componentName, i.requestCertificates, certsRepo,
 		certRefreshTimeout, i.certRefreshBackoff)
 
-	if refreshStartErr := i.certRefresher.Start(); refreshStartErr != nil {
-		return i.abortStart(errors.Wrap(refreshStartErr, "starting certificate refresher"))
+	refresherCtx, cancelFunc := context.WithCancel(context.Background())
+	i.cancelRefresher = cancelFunc
+	if refreshStartErr := i.certRefresher.Start(refresherCtx); refreshStartErr != nil {
+		// Starting a RetryTicker should only return an error if already started or stopped, so this should
+		// never happen because i.certRefresher was just created
+		i.started.Store(false)
+		return fmt.Errorf("starting certificate refresher: %w", refreshStartErr)
 	}
 
-	log.Debugf("%s TLS issuer started.", i.componentName)
+	log.Debugf("%s TLS issuer is active.", i.componentName)
 	return nil
 }
 
-func (i *tlsIssuerImpl) abortStart(err error) error {
-	log.Errorf("%s TLS issuer start aborted due to error: %s", i.componentName, err)
-	i.Stop(err)
-	return err
+func (i *tlsIssuerImpl) Stop(_ error) {
+	i.started.Store(false)
+	i.deactivate()
 }
 
-func (i *tlsIssuerImpl) Stop(_ error) {
-	i.stopSig.Signal()
+func (i *tlsIssuerImpl) deactivate() {
+	i.activateLock.Lock()
+	defer i.activateLock.Unlock()
+
+	i.cancelRefresher()
 	if i.certRefresher != nil {
 		i.certRefresher.Stop()
 		i.certRefresher = nil
 	}
 
-	log.Debugf("%s TLS issuer stopped.", i.componentName)
+	log.Debugf("%s TLS issuer is not active.", i.componentName)
 }
 
-func (i *tlsIssuerImpl) Notify(common.SensorComponentEvent) {}
+func (i *tlsIssuerImpl) Notify(e common.SensorComponentEvent) {
+	log.Info(common.LogSensorComponentEvent(e))
+
+	switch e {
+	case common.SensorComponentEventCentralReachable:
+		// At this point we can be sure that Central capabilities have been received
+		if i.requiredCentralCapability != nil && !centralcaps.Has(*i.requiredCentralCapability) {
+			log.Infof("Central does not have the %s capability", i.requiredCentralCapability.String())
+			return
+		}
+		i.online.Store(true)
+		if err := i.activate(); err != nil {
+			log.Warnf("Failed to activate %s TLS issuer: %v", i.componentName, err)
+		}
+	case common.SensorComponentEventOfflineMode:
+		i.online.Store(false)
+		i.deactivate()
+	}
+}
 
 func (i *tlsIssuerImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{i.sensorCapability}
@@ -199,8 +242,6 @@ func (i *tlsIssuerImpl) requestCertificates(ctx context.Context) (*Response, err
 // send a cert refresh request to Central
 func (i *tlsIssuerImpl) send(ctx context.Context, requestID string) error {
 	select {
-	case <-i.stopSig.Done():
-		return nil
 	case <-ctx.Done():
 		return ctx.Err()
 	case i.msgToCentralC <- message.New(i.newMsgFromSensorFn(requestID)):

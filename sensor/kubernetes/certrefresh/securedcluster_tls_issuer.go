@@ -36,7 +36,6 @@ func NewSecuredClusterTLSIssuer(
 		getCertificateRefresherFn:    newCertificatesRefresher,
 		getServiceCertificatesRepoFn: securedcluster.NewServiceCertificatesRepo,
 		msgToCentralC:                make(chan *message.ExpiringMessage),
-		stopSig:                      concurrency.NewErrorSignal(),
 		newMsgFromSensorFn:           newSecuredClusterMsgFromSensor,
 		responseReceived:             concurrency.NewSignal(),
 		requiredCentralCapability: func() *centralsensor.CentralCapability {

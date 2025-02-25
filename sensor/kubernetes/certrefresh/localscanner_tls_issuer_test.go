@@ -59,7 +59,6 @@ func newLocalScannerTLSIssuerFixture(k8sClientConfig fakeK8sClientConfig) *local
 		certRefreshBackoff:           certRefreshBackoff,
 		getCertificateRefresherFn:    fixture.componentGetter.getCertificateRefresher,
 		getServiceCertificatesRepoFn: fixture.componentGetter.getServiceCertificatesRepo,
-		stopSig:                      concurrency.NewErrorSignal(),
 		msgToCentralC:                make(chan *message.ExpiringMessage),
 		newMsgFromSensorFn:           newLocalScannerMsgFromSensor,
 		responseReceived:             concurrency.NewSignal(),
@@ -75,7 +74,7 @@ func (f *localScannerTLSIssuerFixture) assertMockExpectations(t *testing.T) {
 
 // mockForStart setups the mocks for the happy path of Start
 func (f *localScannerTLSIssuerFixture) mockForStart(conf mockForStartConfig) {
-	f.certRefresher.On("Start").Once().Return(conf.refresherStartErr)
+	f.certRefresher.On("Start", mock.Anything).Once().Return(conf.refresherStartErr)
 
 	f.repo.On("GetServiceCertificates", mock.Anything).Once().
 		Return((*storage.TypedServiceCertificateSet)(nil), conf.getCertsErr)
@@ -125,6 +124,8 @@ func TestLocalScannerTLSIssuerStartStopSuccess(t *testing.T) {
 			fixture.certRefresher.On("Stop").Once()
 
 			startErr := fixture.tlsIssuer.Start()
+			fixture.tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
+			assert.NotNil(t, fixture.tlsIssuer.certRefresher)
 			fixture.tlsIssuer.Stop(nil)
 
 			assert.NoError(t, startErr)
@@ -137,24 +138,24 @@ func TestLocalScannerTLSIssuerStartStopSuccess(t *testing.T) {
 func TestLocalScannerTLSIssuerRefresherFailureStartFailure(t *testing.T) {
 	fixture := newLocalScannerTLSIssuerFixture(fakeK8sClientConfig{})
 	fixture.mockForStart(mockForStartConfig{refresherStartErr: errForced})
-	fixture.certRefresher.On("Stop").Once()
 
+	fixture.tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
 	startErr := fixture.tlsIssuer.Start()
 
 	require.Error(t, startErr)
 	fixture.assertMockExpectations(t)
 }
 
-func TestLocalScannerTLSIssuerStartAlreadyStartedFailure(t *testing.T) {
+func TestLocalScannerTLSIssuerStartAlreadyStarted(t *testing.T) {
 	fixture := newLocalScannerTLSIssuerFixture(fakeK8sClientConfig{})
 	fixture.mockForStart(mockForStartConfig{})
-	fixture.certRefresher.On("Stop").Once()
 
 	startErr := fixture.tlsIssuer.Start()
+	fixture.tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
 	secondStartErr := fixture.tlsIssuer.Start()
 
-	assert.NoError(t, startErr)
-	require.Error(t, secondStartErr)
+	require.NoError(t, startErr)
+	require.NoError(t, secondStartErr)
 	fixture.assertMockExpectations(t)
 }
 
@@ -168,8 +169,8 @@ func TestLocalScannerTLSIssuerFetchSensorDeploymentOwnerRefErrorStartFailure(t *
 	for tcName, tc := range testCases {
 		t.Run(tcName, func(t *testing.T) {
 			fixture := newLocalScannerTLSIssuerFixture(tc.k8sClientConfig)
-			fixture.certRefresher.On("Stop").Once()
 
+			fixture.tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
 			startErr := fixture.tlsIssuer.Start()
 
 			require.Error(t, startErr)
@@ -321,6 +322,7 @@ func (s *localScannerTLSIssueIntegrationTests) TestSuccessfulRefresh() {
 			}
 
 			s.Require().NoError(tlsIssuer.Start())
+			tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
 			defer tlsIssuer.Stop(nil)
 			s.Require().NotNil(tlsIssuer.certRefresher)
 			s.Require().False(tlsIssuer.certRefresher.Stopped())
@@ -368,13 +370,13 @@ func (s *localScannerTLSIssueIntegrationTests) TestUnexpectedOwnerStop() {
 			})
 			tlsIssuer := newLocalScannerTLSIssuer(s.T(), k8sClient, sensorNamespace, sensorPodName)
 
+			tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
 			s.Require().NoError(tlsIssuer.Start())
 			defer tlsIssuer.Stop(nil)
 
-			ok := concurrency.PollWithTimeout(func() bool {
+			require.Eventually(s.T(), func() bool {
 				return tlsIssuer.certRefresher != nil && tlsIssuer.certRefresher.Stopped()
-			}, 10*time.Millisecond, 100*time.Millisecond)
-			s.True(ok, "cert refresher should be stopped")
+			}, 100*time.Millisecond, 10*time.Millisecond, "cert refresher should be stopped")
 		})
 	}
 }
