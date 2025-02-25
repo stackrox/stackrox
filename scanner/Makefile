@@ -325,12 +325,12 @@ $(certs-d)/%/cert.csr: $(certs-d)/%/key.pem
 .PRECIOUS: $(certs-d)/%/ca.pem
 $(certs-d)/%/ca.pem: $(certs-d)/ca/root.pem
 	@echo "+ $@"
-	$(SILENT)ln -fs $(abspath $<) $@
+	$(SILENT)cp $(abspath $<) $@
 
 .PRECIOUS: $(certs-d)/%/ca-key.pem
 $(certs-d)/%/ca-key.pem: $(certs-d)/ca/key.pem
 	@echo "+ $@"
-	$(SILENT)ln -fs $(abspath $<) $@
+	$(SILENT)cp $(abspath $<) $@
 
 # Generate a certificate.
 #
@@ -451,14 +451,14 @@ e2e-deploy: db-host-path :=
 e2e-deploy: debug-templates :=
 
 # Wait timeout for the E2E deployment to be successful.
-e2e-deploy: timeout := 10m
+e2e-deploy: timeout := 30m
 
 e2e-deploy: $(e2e-chart-d) $(e2e-conf-files-t) $(e2e-certs-t)
 	@echo "+ $@" db=$(db-tag) scanner=$(scanner-tag)
 	helm $(if $(debug-templates),template,upgrade --install) --debug $(release) $< \
 	    --namespace $(namespace) \
 	    --create-namespace \
-	    $(if $(CI),--wait,--atomic) \
+	    $(if $(CI),,--atomic) \
 	    --timeout $(timeout) \
 	    $(and $(db-host-path),--set app.db.persistence.hostPath=$(db-host-path)) \
 	    --set app.db.image.registry=$(db-registry) \
