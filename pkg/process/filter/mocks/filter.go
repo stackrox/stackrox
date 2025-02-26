@@ -79,6 +79,18 @@ func (mr *MockFilterMockRecorder) DeleteByPod(pod any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteByPod", reflect.TypeOf((*MockFilter)(nil).DeleteByPod), pod)
 }
 
+// DeleteByPods mocks base method.
+func (m *MockFilter) DeleteByPods(pods []*storage.Pod) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "DeleteByPods", pods)
+}
+
+// DeleteByPods indicates an expected call of DeleteByPods.
+func (mr *MockFilterMockRecorder) DeleteByPods(pods any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteByPods", reflect.TypeOf((*MockFilter)(nil).DeleteByPods), pods)
+}
+
 // UpdateByGivenContainers mocks base method.
 func (m *MockFilter) UpdateByGivenContainers(deploymentID string, liveContainerSet set.StringSet) {
 	m.ctrl.T.Helper()

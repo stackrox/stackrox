@@ -4,12 +4,14 @@ package pruning
 
 import (
 	"context"
+	"math"
 	"slices"
 	"testing"
 	"time"
 
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	alertDatastoreMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
+	blobDatastore "github.com/stackrox/rox/central/blob/datastore"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterPostgres "github.com/stackrox/rox/central/cluster/store/cluster/postgres"
 	clusterHealthPostgres "github.com/stackrox/rox/central/cluster/store/clusterhealth/postgres"
@@ -22,12 +24,14 @@ import (
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageDatastoreMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	imagePostgres "github.com/stackrox/rox/central/image/datastore/store/postgres"
+	imageComponentDS "github.com/stackrox/rox/central/imagecomponent/datastore"
 	componentsMocks "github.com/stackrox/rox/central/imagecomponent/datastore/mocks"
 	imageIntegrationDatastoreMocks "github.com/stackrox/rox/central/imageintegration/datastore/mocks"
 	logimbueDataStore "github.com/stackrox/rox/central/logimbue/store"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	networkBaselineMocks "github.com/stackrox/rox/central/networkbaseline/manager/mocks"
 	netEntityMocks "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
+	networkFlowsDataStore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	networkFlowDatastoreMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
 	testNodeDatastore "github.com/stackrox/rox/central/node/datastore"
 	nodeDatastoreMocks "github.com/stackrox/rox/central/node/datastore/mocks"
@@ -36,6 +40,7 @@ import (
 	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
 	podMocks "github.com/stackrox/rox/central/pod/datastore/mocks"
+	processBaselineDataStore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processBaselineDatastoreMocks "github.com/stackrox/rox/central/processbaseline/datastore/mocks"
 	processIndicatorDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	processIndicatorDatastoreMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
@@ -47,12 +52,15 @@ import (
 	roleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
 	k8sRoleBindingDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	roleBindingMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
+	reportSnapshotDS2 "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	riskDatastore "github.com/stackrox/rox/central/risk/datastore"
 	riskDatastoreMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	secretMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	serviceAccountMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
+	"github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/cache"
+	vulnReqDataStore "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
@@ -74,6 +82,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 	versionUtils "github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
@@ -2116,8 +2125,8 @@ func (s *PruningTestSuite) TestRemoveOrphanedPods() {
 	cluster1PodCount := 20
 	cluster2PodCount := 15
 
-	s.addSomePods(pods, clusterID1, cluster1PodCount)
-	s.addSomePods(pods, clusterID2, cluster2PodCount)
+	s.addSomePods(pods, clusterID1, cluster1PodCount, "")
+	s.addSomePods(pods, clusterID2, cluster2PodCount, "")
 
 	gci := &garbageCollectorImpl{
 		pods:     pods,
@@ -2246,13 +2255,187 @@ func (s *PruningTestSuite) TestPruneOrphanedNodeCVEs() {
 	}
 }
 
-func (s *PruningTestSuite) addSomePods(podDS podDatastore.DataStore, clusterID string, numberPods int) {
+func (s *PruningTestSuite) TestPruningUnderHeavyLoad() {
+
+	const (
+		TOTAL_ALERTS    = 10 * 1000000
+		TOTAL_PODS      = 100 * 1000
+		NUM_THREADS     = 32
+		BATCH_SIZE      = 1000
+		NUM_BATCHES     = TOTAL_ALERTS / BATCH_SIZE
+		BATCHES_PER_POD = TOTAL_PODS / NUM_BATCHES
+	)
+	clusterDS, err := clusterDatastore.GetTestPostgresDataStore(s.T(), s.pool)
+	s.NoError(err)
+
+	deploymentDS, err := deploymentDatastore.GetTestPostgresDataStore(s.T(), s.pool)
+	s.NoError(err)
+
+	podDS, err := podDatastore.GetTestPostgresDataStore(s.T(), s.pool)
+	s.NoError(err)
+
+	alertDS, err := alertDatastore.GetTestPostgresDataStore(s.T(), s.pool)
+	s.NoError(err)
+
+	configDS := configDatastore.NewForTest(s.T(), s.pool)
+	err = configDS.UpsertConfig(s.ctx, testConfig)
+	s.NoError(err)
+
+	nodeDS := testNodeDatastore.GetTestPostgresDataStore(s.T(), s.pool)
+
+	imageDS := imageDatastore.GetTestPostgresDataStore(s.T(), s.pool)
+	s.NoError(err)
+
+	processDS, err := processIndicatorDatastore.GetTestPostgresDataStore(s.T(), s.pool)
+	s.NoError(err)
+
+	processBaselineDS, err := processBaselineDataStore.GetTestPostgresDataStore(s.T(), s.pool)
+	s.NoError(err)
+
+	networkFlowDS, err := networkFlowsDataStore.GetTestPostgresClusterDataStore(s.T(), s.pool)
+	s.NoError(err)
+
+	imageComponentsDS := imageComponentDS.GetTestPostgresDataStore(s.T(), s.pool)
+
+	risksDS := riskDatastore.GetTestPostgresDataStore(s.T(), s.pool)
+
+	vulnReqDS := vulnReqDataStore.GetTestPostgresDataStore(s.T(), s.pool, cache.PendingReqsCacheSingleton(), cache.ActiveReqsCacheSingleton())
+
+	serviceAccountsDS, err := serviceAccountDataStore.GetTestPostgresDataStore(s.T(), s.pool)
+	s.NoError(err)
+
+	k8sRoleDS := k8sRoleDataStore.GetTestPostgresDataStore(s.T(), s.pool)
+
+	k8sRoleBindingDS := k8sRoleBindingDataStore.GetTestPostgresDataStore(s.T(), s.pool)
+
+	logImbueDS := logimbueDataStore.GetTestPostgresDataStore(s.T(), s.pool)
+
+	reportSnapshotDS := reportSnapshotDS2.GetTestPostgresDataStore(s.T(), s.pool)
+
+	plopsDS := plopDatastore.GetTestPostgresDataStore(s.T(), s.pool)
+
+	blobsDS := blobDatastore.NewTestDatastore(s.T(), s.pool)
+
+	nodeCveDS, err := nodeCVEDS.GetTestPostgresDataStore(s.T(), s.pool)
+	s.NoError(err)
+
+	gci := newGarbageCollector(alertDS, nodeDS, imageDS, clusterDS, deploymentDS, podDS,
+		processDS, processBaselineDS, networkFlowDS, configDS, imageComponentsDS, risksDS, vulnReqDS,
+		serviceAccountsDS, k8sRoleDS, k8sRoleBindingDS, logImbueDS, reportSnapshotDS, plopsDS,
+		blobsDS, nodeCveDS).(*garbageCollectorImpl)
+	gci.postgres = s.pool
+
+	fakeCluster := &storage.Cluster{Name: "TestPruningUnderHeavyLoadCluster1", MainImage: "docker.io/stackrox/rox:latest"}
+	clusterID, err := clusterDS.AddCluster(s.ctx, fakeCluster)
+	s.NoError(err)
+
+	fakeDeployment := &storage.Deployment{Id: fixtureconsts.Deployment1, Namespace: "stackrox", Name: "totally-a-real-deployment"}
+	err = deploymentDS.UpsertDeployment(s.ctx, fakeDeployment)
+	s.NoError(err)
+
+	var wg sync.WaitGroup
+	batches := make(chan int, TOTAL_ALERTS/BATCH_SIZE)
+	pods := s.addSomePods(podDS, clusterID, TOTAL_PODS, fixtureconsts.Deployment1)
+	for i := 0; i < NUM_THREADS; i++ {
+		wg.Add(1)
+		go func(wg *sync.WaitGroup) {
+			defer log.Info("Worker ", i, " is done")
+			defer wg.Done()
+			log.Info("Starting worker ", i)
+			for k := range batches {
+				pod := pods[int(math.Floor(float64(k)/float64(BATCHES_PER_POD)))]
+				s.addSomeAlerts(alertDS, pod, clusterID, BATCH_SIZE)
+			}
+		}(&wg)
+	}
+
+	for i := 0; i < NUM_BATCHES; i++ {
+		batches <- i
+	}
+	close(batches)
+
+	wg.Wait()
+
+	log.Info("Upserting complete, checking counts now")
+
+	count, err := podDS.Count(s.ctx, search.EmptyQuery())
+	s.Equal(TOTAL_PODS, count)
+	s.NoError(err)
+
+	count, err = alertDS.Count(s.ctx, search.EmptyQuery(), false)
+	s.Equal(TOTAL_ALERTS, count)
+	s.NoError(err)
+
+	doneSignal := concurrency.NewSignal()
+	err = clusterDS.RemoveCluster(s.ctx, clusterID, &doneSignal)
+	s.NoError(err)
+	<-doneSignal.Done()
+	cluster, found, err := clusterDS.GetCluster(s.ctx, clusterID)
+	s.Nil(cluster)
+	s.False(found)
+	s.NoError(err)
+
+	start := time.Now()
+	gci.removeOrphanedPods()
+
+	count, err = podDS.Count(s.ctx, search.EmptyQuery())
+	s.NoError(err)
+	s.Equal(0, count)
+
+	gci.pruneBasedOnConfig()
+	end := time.Now()
+	log.Info("Time delta: ", end.Sub(start))
+
+	count, err = alertDS.Count(s.ctx, search.EmptyQuery(), false)
+	s.NoError(err)
+	s.Equal(0, count)
+}
+
+func (s *PruningTestSuite) addSomePods(podDS podDatastore.DataStore, clusterID string, numberPods int, deploymentID string) []*storage.Pod {
+	var res []*storage.Pod
+	for i := 0; i < numberPods; i++ {
+		pod := &storage.Pod{
+			Id:        uuid.NewV4().String(),
+			ClusterId: clusterID,
+		}
+		if deploymentID != "" {
+			pod.DeploymentId = deploymentID
+		}
+		err := podDS.UpsertPod(s.ctx, pod)
+		s.Nil(err)
+		res = append(res, pod)
+	}
+	return res
+}
+
+func (s *PruningTestSuite) addSomePodsAsync(podDS podDatastore.DataStore, clusterID string, numberPods int, c chan<- *storage.Pod) {
 	for i := 0; i < numberPods; i++ {
 		pod := &storage.Pod{
 			Id:        uuid.NewV4().String(),
 			ClusterId: clusterID,
 		}
 		err := podDS.UpsertPod(s.ctx, pod)
+		s.Nil(err)
+		c <- pod
+	}
+}
+
+func (s *PruningTestSuite) addSomeAlerts(alertDS alertDatastore.DataStore, pod *storage.Pod, clusterID string, numberAlerts int) {
+	old := protoconv.ConvertTimeToTimestamp(time.Date(2000, time.January, 1, 0, 0, 0, 0, time.UTC))
+	for i := 0; i < numberAlerts; i++ {
+		alert := &storage.Alert{
+			Id:             uuid.NewV4().String(),
+			LifecycleStage: storage.LifecycleStage_RUNTIME,
+			State:          storage.ViolationState_RESOLVED,
+			Time:           old,
+			Entity: &storage.Alert_Deployment_{
+				Deployment: &storage.Alert_Deployment{
+					Id: pod.Id,
+				},
+			},
+			ClusterId: clusterID,
+		}
+		err := alertDS.UpsertAlert(s.ctx, alert)
 		s.Nil(err)
 	}
 }

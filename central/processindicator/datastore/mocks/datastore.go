@@ -153,6 +153,20 @@ func (mr *MockDataStoreMockRecorder) RemoveProcessIndicatorsByPod(ctx, id any) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveProcessIndicatorsByPod", reflect.TypeOf((*MockDataStore)(nil).RemoveProcessIndicatorsByPod), ctx, id)
 }
 
+// RemoveProcessIndicatorsByPods mocks base method.
+func (m *MockDataStore) RemoveProcessIndicatorsByPods(ctx context.Context, ids []string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveProcessIndicatorsByPods", ctx, ids)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveProcessIndicatorsByPods indicates an expected call of RemoveProcessIndicatorsByPods.
+func (mr *MockDataStoreMockRecorder) RemoveProcessIndicatorsByPods(ctx, ids any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveProcessIndicatorsByPods", reflect.TypeOf((*MockDataStore)(nil).RemoveProcessIndicatorsByPods), ctx, ids)
+}
+
 // Search mocks base method.
 func (m *MockDataStore) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	m.ctrl.T.Helper()
