@@ -31,6 +31,10 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/portforward"
@@ -44,6 +48,21 @@ var (
 	TwoGigs            = resource.MustParse("2Gi")
 	log                = logging.CreateLogger(logging.CurrentModule(), 0)
 )
+
+type Resource struct {
+	Object       runtime.Object
+	Name         string
+	IsUpdateable bool
+}
+
+type Generator interface {
+	Generate(ctx context.Context, m *manifestGenerator) ([]Resource, error)
+	Name() string
+	Exportable() bool
+}
+
+var central []Generator = []Generator{}
+var securedCluster []Generator = []Generator{}
 
 type manifestGenerator struct {
 	CA         mtls.CA
@@ -64,8 +83,13 @@ func New(cfg *Config, clientset *kubernetes.Clientset, restConfig *restclient.Co
 	}, nil
 }
 
-func (m *manifestGenerator) Apply(ctx context.Context) error {
+func (m *manifestGenerator) Generate(ctx context.Context) error {
 	if err := m.applyNamespace(ctx); err != nil {
+		panic(err)
+	}
+
+	dynamicClient, err := dynamic.NewForConfig(m.RESTConfig)
+	if err != nil {
 		panic(err)
 	}
 
@@ -73,77 +97,138 @@ func (m *manifestGenerator) Apply(ctx context.Context) error {
 		return fmt.Errorf("Getting CA: %w\n", err)
 	}
 
-	if err := m.createNonrootV2SCCRole(ctx); err != nil {
-		panic(err)
+	if m.CA == nil {
+		central = append([]Generator{CertGenerator{}}, central...)
 	}
 
-	if err := m.applyCentral(ctx); err != nil {
-		panic(err)
-	}
+	for _, generator := range central {
+		resources, err := generator.Generate(ctx, m)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("Failure generating %s", generator.Name()))
+		}
+		for _, resource := range resources {
+			objMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(resource.Object)
+			if err != nil {
+				panic(err)
+			}
 
-	if m.Config.ScannerV4 {
-		if err := m.applyScannerV4(ctx); err != nil {
-			panic(err)
+			unst := unstructured.Unstructured{Object: objMap}
+
+			gvk := resource.Object.GetObjectKind().GroupVersionKind()
+			dynClient := dynamicClient.Resource(toGVR(gvk)).Namespace(m.Config.Namespace)
+			_, err = dynClient.Create(ctx, &unst, metav1.CreateOptions{})
+
+			if err != nil {
+				if k8serrors.IsAlreadyExists(err) {
+					if resource.IsUpdateable {
+						_, err := dynClient.Update(ctx, &unst, metav1.UpdateOptions{})
+						if err != nil {
+							return errors.Wrap(err, fmt.Sprintf("Failed to update %s/%s", gvk.Kind, resource.Name))
+						} else {
+							log.Infof("Updated %s/%s", gvk.Kind, resource.Name)
+						}
+					} else {
+						log.Infof("Skipped %s/%s", gvk.Kind, resource.Name)
+					}
+				} else {
+					return errors.Wrap(err, fmt.Sprintf("Failed to create %s/%s", gvk.Kind, resource.Name))
+				}
+			} else {
+				log.Infof("Created %s/%s", gvk.Kind, resource.Name)
+			}
 		}
 	}
-
-	if err := m.applyScanner(ctx); err != nil {
-		panic(err)
-	}
-
-	if err := m.applyCRS(ctx); err != nil {
-		log.Errorf("Failed to apply CRS: %v", err)
-		return nil
-	}
-
-	if err := m.applySensor(ctx); err != nil {
-		panic(err)
-	}
-
 	return nil
 }
 
 func (m *manifestGenerator) getCA(ctx context.Context) error {
-	var ca mtls.CA
-	var err error
 	secret, err := m.Client.CoreV1().Secrets(m.Config.Namespace).Get(ctx, "additional-ca", metav1.GetOptions{})
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			ca, err = certgen.GenerateCA()
-			if err != nil {
-				return fmt.Errorf("Error generating CA: %v", err)
-			}
-
-			fileMap := make(map[string][]byte)
-			certgen.AddCAToFileMap(fileMap, ca)
-
-			secret = &v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "additional-ca",
-				},
-				Data: fileMap,
-			}
-
-			_, err = m.Client.CoreV1().Secrets(m.Config.Namespace).Create(ctx, secret, metav1.CreateOptions{})
-			if err != nil {
-				if k8serrors.IsAlreadyExists(err) {
-					return fmt.Errorf("Race condition: Secret additional-ca got created just before now: %w", err)
-				}
-				return fmt.Errorf("Error creating secret additional-ca: %w", err)
-			}
-		} else {
-			return fmt.Errorf("Error fetching additional-ca secret: %w", err)
+			return nil
 		}
-	} else {
-		ca, err = certgen.LoadCAFromFileMap(secret.Data)
-		if err != nil {
-			return fmt.Errorf("Error loading CA from additional-ca secret: %v", err)
-		}
+		return fmt.Errorf("Error fetching additional-ca secret: %w", err)
+	}
+
+	ca, err := certgen.LoadCAFromFileMap(secret.Data)
+	if err != nil {
+		return fmt.Errorf("Error loading CA from additional-ca secret: %v", err)
 	}
 
 	m.CA = ca
-
 	return nil
+}
+
+// func (m *manifestGenerator) Apply(ctx context.Context) error {
+
+// 	if err := m.getCA(ctx); err != nil {
+// 		return fmt.Errorf("Getting CA: %w\n", err)
+// 	}
+
+// 	if err := m.createNonrootV2SCCRole(ctx); err != nil {
+// 		panic(err)
+// 	}
+
+// 	if err := m.applyCentral(ctx); err != nil {
+// 		panic(err)
+// 	}
+
+// 	if m.Config.ScannerV4 {
+// 		if err := m.applyScannerV4(ctx); err != nil {
+// 			panic(err)
+// 		}
+// 	}
+
+// 	if err := m.applyScanner(ctx); err != nil {
+// 		panic(err)
+// 	}
+
+// 	if err := m.applyCRS(ctx); err != nil {
+// 		log.Errorf("Failed to apply CRS: %v", err)
+// 		return nil
+// 	}
+
+// 	if err := m.applySensor(ctx); err != nil {
+// 		panic(err)
+// 	}
+
+// 	return nil
+// }
+
+type CertGenerator struct{}
+
+func (g CertGenerator) Name() string {
+	return "Certificate"
+}
+
+func (g CertGenerator) Exportable() bool {
+	return true
+}
+
+func (g CertGenerator) Generate(ctx context.Context, m *manifestGenerator) ([]Resource, error) {
+	ca, err := certgen.GenerateCA()
+	if err != nil {
+		return []Resource{}, fmt.Errorf("Error generating CA: %v", err)
+	}
+
+	fileMap := make(map[string][]byte)
+	certgen.AddCAToFileMap(fileMap, ca)
+
+	secret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "additional-ca",
+		},
+		Data: fileMap,
+	}
+	secret.SetGroupVersionKind(v1.SchemeGroupVersion.WithKind("Secret"))
+
+	m.CA = ca
+
+	return []Resource{{
+		Object:       secret,
+		Name:         secret.Name,
+		IsUpdateable: false,
+	}}, nil
 }
 
 func (m *manifestGenerator) applyNamespace(ctx context.Context) error {
@@ -161,6 +246,29 @@ func (m *manifestGenerator) applyNamespace(ctx context.Context) error {
 }
 
 type tlsCallback func(fileMap map[string][]byte) error
+
+func genTlsSecret(name string, ca mtls.CA, issueCert tlsCallback) (Resource, error) {
+	fileMap := make(map[string][]byte)
+	certgen.AddCACertToFileMap(fileMap, ca)
+
+	secret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+		Data: fileMap,
+	}
+	secret.SetGroupVersionKind(v1.SchemeGroupVersion.WithKind("Secret"))
+
+	if err := issueCert(fileMap); err != nil {
+		return Resource{}, fmt.Errorf("issuing certificate for %s: %w", name, err)
+	}
+
+	return Resource{
+		Object:       secret,
+		Name:         name,
+		IsUpdateable: false,
+	}, nil
+}
 
 func (m *manifestGenerator) applyTlsSecret(ctx context.Context, name string, issueCert tlsCallback) error {
 	secret, err := m.Client.CoreV1().Secrets(m.Config.Namespace).Get(ctx, name, metav1.GetOptions{})
@@ -260,6 +368,31 @@ func (m *manifestGenerator) createNonrootV2SCCRole(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func genRoleBinding(serviceAccountName, roleName, ns string) Resource {
+	name := fmt.Sprintf("%s-%s", serviceAccountName, roleName)
+	binding := &rbacv1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "Role",
+			Name:     roleName,
+		},
+		Subjects: []rbacv1.Subject{{
+			Kind:      "ServiceAccount",
+			Name:      serviceAccountName,
+			Namespace: ns,
+		}},
+	}
+	binding.SetGroupVersionKind(rbacv1.SchemeGroupVersion.WithKind("RoleBinding"))
+	return Resource{
+		Object:       binding,
+		Name:         name,
+		IsUpdateable: true,
+	}
 }
 
 func (m *manifestGenerator) createRoleBinding(ctx context.Context, serviceAccountName, roleName string) error {
@@ -363,7 +496,7 @@ func (m *manifestGenerator) applyConfigMap(ctx context.Context, name string, cm 
 	return nil
 }
 
-func (m *manifestGenerator) applyService(ctx context.Context, name string, ports []v1.ServicePort) error {
+func genService(name string, ports []v1.ServicePort) Resource {
 	svc := v1.Service{
 		Spec: v1.ServiceSpec{
 			Selector: map[string]string{
@@ -373,11 +506,43 @@ func (m *manifestGenerator) applyService(ctx context.Context, name string, ports
 		},
 	}
 	svc.SetName(name)
-	_, err := m.Client.CoreV1().Services(m.Config.Namespace).Create(ctx, &svc, metav1.CreateOptions{})
+	svc.SetGroupVersionKind(v1.SchemeGroupVersion.WithKind("Service"))
+	return Resource{
+		Object:       &svc,
+		Name:         name,
+		IsUpdateable: true,
+	}
+}
+
+func genServiceAccount(name string) Resource {
+	sa := &v1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+	}
+	sa.SetGroupVersionKind(v1.SchemeGroupVersion.WithKind("ServiceAccount"))
+	return Resource{
+		Object:       sa,
+		Name:         name,
+		IsUpdateable: false,
+	}
+}
+
+func (m *manifestGenerator) applyService(ctx context.Context, name string, ports []v1.ServicePort) error {
+	svc := &v1.Service{
+		Spec: v1.ServiceSpec{
+			Selector: map[string]string{
+				"app": name,
+			},
+			Ports: ports,
+		},
+	}
+	svc.SetName(name)
+	_, err := m.Client.CoreV1().Services(m.Config.Namespace).Create(ctx, svc, metav1.CreateOptions{})
 
 	if err != nil {
 		if k8serrors.IsAlreadyExists(err) {
-			_, err = m.Client.CoreV1().Services(m.Config.Namespace).Update(ctx, &svc, metav1.UpdateOptions{})
+			_, err = m.Client.CoreV1().Services(m.Config.Namespace).Update(ctx, svc, metav1.UpdateOptions{})
 			if err != nil {
 				return fmt.Errorf("Error updating service %s: %w", name, err)
 			}
@@ -569,4 +734,12 @@ func extractCRS(input []byte) string {
 		}
 	}
 	return ""
+}
+
+func toGVR(gvk schema.GroupVersionKind) schema.GroupVersionResource {
+	return schema.GroupVersionResource{
+		Group:    gvk.Group,
+		Version:  gvk.Version,
+		Resource: strings.ToLower(gvk.Kind + "s"),
+	}
 }

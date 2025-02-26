@@ -23,7 +23,6 @@ func (m *manifestGenerator) applySensor(ctx context.Context) error {
 		return fmt.Errorf("Failed to create central service account: %w\n", err)
 	}
 
-	err = m.createTlsSecrets(ctx)
 	if err != nil && !k8serrors.IsAlreadyExists(err) {
 		return fmt.Errorf("Failed to create TLS secret: %w\n", err)
 	}
