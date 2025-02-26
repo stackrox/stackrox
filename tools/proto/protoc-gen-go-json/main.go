@@ -10,14 +10,14 @@ import (
 
 // Standard library dependencies.
 const (
-	bytesPackage = protogen.GoImportPath("bytes")
-	fmtPackage   = protogen.GoImportPath("fmt")
-	timePackage  = protogen.GoImportPath("time")
+	bytesPackage   = protogen.GoImportPath("bytes")
+	fmtPackage     = protogen.GoImportPath("fmt")
+	stringsPackage = protogen.GoImportPath("strings")
 )
 
 var (
 	fprintf = fmtPackage.Ident("Fprintf")
-	rfc3339 = timePackage.Ident("RFC3339Nano")
+	trim    = stringsPackage.Ident("TrimSuffix")
 )
 
 func main() {
@@ -83,14 +83,13 @@ func generateMessage(g *protogen.GeneratedFile, msg *protogen.Message) {
 		if f.Desc.IsList() {
 			g.P("trailingComma = false")
 			w(g, "[")
-			g.P(`for _, v := range m.Get`, f.GoName, "() {")
+			g.P(`for _, v := range x {`)
 			g.P("if trailingComma { buf.WriteByte(',') }; trailingComma = true;")
 			switch f.Desc.Kind() {
 			case protoreflect.MessageKind:
 				if f.Desc.Message().FullName() == "google.protobuf.Timestamp" {
-					g.P(`if t := m.Get` + f.GoName + `(); t == nil { buf.WriteString("null") } else {`)
-					g.P(`t := t.AsTime().Format(`, rfc3339, `)"`)
-					q(g, "t")
+					g.P(`if v == nil { buf.WriteString("null") } else {`)
+					t(g, "t")
 					g.P("}")
 				} else {
 					g.P("b, err = v.MarshalJSON()")
@@ -124,7 +123,7 @@ func generateMessage(g *protogen.GeneratedFile, msg *protogen.Message) {
 		if f.Desc.IsMap() {
 			g.P("trailingComma = false")
 			w(g, "{")
-			g.P(`for k, v := range m.Get`, f.GoName, "() {")
+			g.P(`for k, v := range x {`)
 			g.P("if trailingComma { buf.WriteByte(',') }; trailingComma = true;")
 			switch f.Desc.MapKey().Kind() {
 			case protoreflect.StringKind:
@@ -175,30 +174,29 @@ func generateMessage(g *protogen.GeneratedFile, msg *protogen.Message) {
 		switch f.Desc.Kind() {
 		case protoreflect.MessageKind:
 			if f.Desc.Message().FullName() == "google.protobuf.Timestamp" {
-				g.P(`if t := m.Get` + f.GoName + `(); t == nil { buf.WriteString("null") } else {`)
-				g.P(`t := t.AsTime().Format(`, rfc3339, `)`)
-				q(g, "t")
+				g.P(`if t := x; t == nil { buf.WriteString("null") } else {`)
+				t(g, "t")
 				g.P("}")
 				g.P("}") // x
 				continue
 			}
-			g.P("b, err = m.Get", f.GoName, "().MarshalJSON()")
+			g.P("b, err = x.MarshalJSON()")
 			g.P("if err != nil { return nil, err }")
 			g.P(`buf.Write(b)`)
 		case protoreflect.StringKind:
-			g.P(fprintf, `(&buf, "%q", m.Get`, f.GoName, `())`)
+			g.P(fprintf, `(&buf, "%q", x)`)
 		case protoreflect.BoolKind:
-			g.P("if m.Get", f.GoName, `() { buf.WriteString("true") } else { buf.WriteString("false") }`)
+			g.P(`if x { buf.WriteString("true") } else { buf.WriteString("false") }`)
 		case protoreflect.EnumKind:
-			q(g, `m.Get`+f.GoName+"().String()")
+			q(g, "x.String()")
 		case protoreflect.Int32Kind, protoreflect.Sint32Kind,
 			protoreflect.Uint32Kind, protoreflect.Sfixed32Kind, protoreflect.Fixed32Kind:
-			g.P(fprintf, `(&buf, "%d", m.Get`, f.GoName, `())`)
+			g.P(fprintf, `(&buf, "%d", x)`)
 		case protoreflect.Int64Kind, protoreflect.Sint64Kind,
 			protoreflect.Uint64Kind, protoreflect.Sfixed64Kind, protoreflect.Fixed64Kind:
-			g.P(fprintf, `(&buf, "\"%d\"", m.Get`, f.GoName, `())`)
+			g.P(fprintf, `(&buf, "\"%d\"", x)`)
 		case protoreflect.FloatKind, protoreflect.DoubleKind:
-			g.P(fprintf, `(&buf, "%f", m.Get`, f.GoName, `())`)
+			g.P(fprintf, `(&buf, "%f", x)`)
 		case protoreflect.BytesKind:
 			w(g, "null")
 		default:
@@ -226,6 +224,17 @@ func q(g *protogen.GeneratedFile, s string) {
 func ident(g *protogen.GeneratedFile, s string) {
 	g.P(`buf.WriteString("\""); buf.WriteString("` + s + `"); buf.WriteString("\"");`)
 
+}
+
+func t(g *protogen.GeneratedFile, s string) {
+	// https://github.com/protocolbuffers/protobuf-go/blob/v1.36.5/encoding/protojson/well_known_types.go#L597-L607
+	// Uses RFC 3339, where generated output will be Z-normalized and uses 0, 3,
+	// 6 or 9 fractional digits.
+	g.P(`tf := ` + s + `.AsTime().UTC().Format("2006-01-02T15:04:05.000000000")`)
+	g.P(`tf = `, trim, `(tf, "000")`)
+	g.P(`tf = `, trim, `(tf, "000")`)
+	g.P(`tf = `, trim, `(tf, ".000")`)
+	q(g, `tf + "Z"`)
 }
 
 func zero(fd protoreflect.FieldDescriptor) string {
