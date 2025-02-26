@@ -82,7 +82,8 @@ setup_file() {
         CHART_REPOSITORY=$(mktemp -d "helm-charts.XXXXXX" -p /tmp)
     fi
     if [[ ! -e "${CHART_REPOSITORY}/.git" ]]; then
-        git clone --depth 1 -b main https://github.com/stackrox/helm-charts "${CHART_REPOSITORY}"
+        echo "Cloning released Helm charts into ${CHART_REPOSITORY}..."
+        git clone --quiet --depth 1 -b main https://github.com/stackrox/helm-charts "${CHART_REPOSITORY}"
     fi
     export CHART_REPOSITORY
 
