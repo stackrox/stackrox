@@ -1,6 +1,6 @@
 {{- include "srox.init" . -}}
 
-{{- if ._rox.central.exposure.route.enabled }}
+{{- if and ._rox.central.exposure.route.enabled (eq ._rox.central.exposure.route.termination "passthrough") }}
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
@@ -33,6 +33,72 @@ metadata:
     {{- include "srox.annotations" (list . "route" "central-mtls") | nindent 4 }}
 spec:
   host: "central.{{ .Release.Namespace }}"
+  port:
+    targetPort: https
+  tls:
+    termination: passthrough
+  to:
+    kind: Service
+    name: central
+---
+{{- end }}
+
+{{- if and ._rox.central.exposure.route.enabled (eq ._rox.central.exposure.route.termination "reencrypt") }}
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: central
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "route" "central") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "route" "central") | nindent 4 }}
+spec:
+{{- if ._rox.central.exposure.route.host }}
+  host: {{ ._rox.central.exposure.route.host }}
+{{- end }}
+  port:
+    targetPort: https
+  tls:
+    destinationCACertificate: |
+      {{- ._rox._ca.Cert | nindent 6 }}
+    termination: reencrypt
+  to:
+    kind: Service
+    name: central
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: central-mtls
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "route" "central-mtls") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "route" "central-mtls") | nindent 4 }}
+spec:
+  host: "central.{{ .Release.Namespace }}"
+  port:
+    targetPort: https
+  tls:
+    termination: passthrough
+  to:
+    kind: Service
+    name: central
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: central-data
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "route" "central-data") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "route" "central-data") | nindent 4 }}
+spec:
+{{- if ._rox.central.exposure.route.host }}
+  host: data-{{ ._rox.central.exposure.route.host }}
+{{- end }}
   port:
     targetPort: https
   tls:

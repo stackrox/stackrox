@@ -72,6 +72,9 @@ defaults:
         port: null
       route:
         enabled: false
+        termination: passthrough
+        externalCertificate:
+          name: null
     db:
       external: false
 
