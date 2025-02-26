@@ -904,7 +904,7 @@ bin/scanner-v2: $(shell find scannerv2/ -name *.go)
 bin/local-nodescanner-v2: $(shell find scannerv2/ -name *.go)
 	go build -C scannerv2 -o ../$@ ./tools/local-nodescanner
 
-bin/installer: $(shell find installer/ -name *.go) $(shell find pkg/manifest -name *.go)
+bin/installer: $(shell find installer/ -name *.go)
 	CGO_ENABLED=1 go build -o $@ ./installer
 
 bin/updater: $(shell find scannerv2/ -name *.go)

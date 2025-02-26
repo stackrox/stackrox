@@ -11,7 +11,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 
-	"github.com/stackrox/rox/pkg/manifest"
+	"github.com/stackrox/rox/installer/manifest"
 )
 
 func log(msg string, params ...interface{}) {
@@ -52,7 +52,7 @@ func main() {
 		panic(err.Error())
 	}
 
-	if err = m.Apply(ctx); err != nil {
+	if err = m.Generate(ctx); err != nil {
 		panic(err.Error())
 	}
 }

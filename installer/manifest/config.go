@@ -9,15 +9,16 @@ import (
 	"strings"
 )
 
-type Images struct {
-	Stackrox string `yaml:"stackrox"`
-	DB       string `yaml:"db"`
-}
-
 type Config struct {
+	Action    string `yaml:"action"`
 	Namespace string `yaml:"namespace"`
 	ScannerV4 bool   `yaml:"scannerV4"`
 	Images    Images `yaml:"images"`
+}
+
+type Images struct {
+	Stackrox string `yaml:"stackrox"`
+	DB       string `yaml:"db"`
 }
 
 var DefaultConfig Config = Config{
