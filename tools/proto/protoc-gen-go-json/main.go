@@ -98,16 +98,17 @@ func generateMessage(g *protogen.GeneratedFile, msg *protogen.Message) {
 					g.P(`buf.Write(b)`)
 				}
 			case protoreflect.StringKind:
-				q(g, `v`)
+				g.P(fprintf, `(&buf, "%q", v)`)
 			case protoreflect.BoolKind:
 				g.P(`if v { buf.WriteString("true") } else { buf.WriteString("false") }`)
 			case protoreflect.EnumKind:
 				q(g, "v.String()")
 			case protoreflect.Int32Kind, protoreflect.Sint32Kind,
-				protoreflect.Uint32Kind, protoreflect.Int64Kind, protoreflect.Sint64Kind,
-				protoreflect.Uint64Kind, protoreflect.Sfixed32Kind, protoreflect.Fixed32Kind,
-				protoreflect.Sfixed64Kind, protoreflect.Fixed64Kind:
+				protoreflect.Uint32Kind, protoreflect.Sfixed32Kind, protoreflect.Fixed32Kind:
 				g.P(fprintf, `(&buf, "%d", v)`)
+			case protoreflect.Int64Kind, protoreflect.Sint64Kind,
+				protoreflect.Uint64Kind, protoreflect.Sfixed64Kind, protoreflect.Fixed64Kind:
+				g.P(fprintf, `(&buf, "\"%d\"", v)`)
 			case protoreflect.FloatKind, protoreflect.DoubleKind:
 				g.P(fprintf, `(&buf, "%f", v)`)
 			case protoreflect.BytesKind:
@@ -127,16 +128,17 @@ func generateMessage(g *protogen.GeneratedFile, msg *protogen.Message) {
 			g.P("if trailingComma { buf.WriteByte(',') }; trailingComma = true;")
 			switch f.Desc.MapKey().Kind() {
 			case protoreflect.StringKind:
-				q(g, "k")
+				g.P(fprintf, `(&buf, "%q", k)`)
 			case protoreflect.BoolKind:
 				g.P(`if k { buf.WriteString("true") } else { buf.WriteString("false") }`)
 			case protoreflect.EnumKind:
 				q(g, "k.String()")
 			case protoreflect.Int32Kind, protoreflect.Sint32Kind,
-				protoreflect.Uint32Kind, protoreflect.Int64Kind, protoreflect.Sint64Kind,
-				protoreflect.Uint64Kind, protoreflect.Sfixed32Kind, protoreflect.Fixed32Kind,
-				protoreflect.Sfixed64Kind, protoreflect.Fixed64Kind:
+				protoreflect.Uint32Kind, protoreflect.Sfixed32Kind, protoreflect.Fixed32Kind:
 				g.P(fprintf, `(&buf, "%d", k`)
+			case protoreflect.Int64Kind, protoreflect.Sint64Kind,
+				protoreflect.Uint64Kind, protoreflect.Sfixed64Kind, protoreflect.Fixed64Kind:
+				g.P(fprintf, `(&buf, "\"%d\"", k)`)
 			case protoreflect.FloatKind, protoreflect.DoubleKind:
 				g.P(fprintf, `(&buf, "%f", k)`)
 			default:
@@ -149,16 +151,17 @@ func generateMessage(g *protogen.GeneratedFile, msg *protogen.Message) {
 				g.P("if err != nil { return nil, err }")
 				g.P(`buf.Write(b)`)
 			case protoreflect.StringKind:
-				q(g, "v")
+				g.P(fprintf, `(&buf, "%q", v)`)
 			case protoreflect.BoolKind:
 				g.P(`if v { buf.WriteString("true") } else { buf.WriteString("false") }`)
 			case protoreflect.EnumKind:
 				q(g, "v.String()")
 			case protoreflect.Int32Kind, protoreflect.Sint32Kind,
-				protoreflect.Uint32Kind, protoreflect.Int64Kind, protoreflect.Sint64Kind,
-				protoreflect.Uint64Kind, protoreflect.Sfixed32Kind, protoreflect.Fixed32Kind,
-				protoreflect.Sfixed64Kind, protoreflect.Fixed64Kind:
+				protoreflect.Uint32Kind, protoreflect.Sfixed32Kind, protoreflect.Fixed32Kind:
 				g.P(fprintf, `(&buf, "%d", v)`)
+			case protoreflect.Int64Kind, protoreflect.Sint64Kind,
+				protoreflect.Uint64Kind, protoreflect.Sfixed64Kind, protoreflect.Fixed64Kind:
+				g.P(fprintf, `(&buf, "\"%d\"", v)`)
 			case protoreflect.FloatKind, protoreflect.DoubleKind:
 				g.P(fprintf, `(&buf, "%f", v)`)
 			default:
@@ -183,16 +186,17 @@ func generateMessage(g *protogen.GeneratedFile, msg *protogen.Message) {
 			g.P("if err != nil { return nil, err }")
 			g.P(`buf.Write(b)`)
 		case protoreflect.StringKind:
-			q(g, `m.Get`+f.GoName+"()")
+			g.P(fprintf, `(&buf, "%q", m.Get`, f.GoName, `())`)
 		case protoreflect.BoolKind:
 			g.P("if m.Get", f.GoName, `() { buf.WriteString("true") } else { buf.WriteString("false") }`)
 		case protoreflect.EnumKind:
 			q(g, `m.Get`+f.GoName+"().String()")
 		case protoreflect.Int32Kind, protoreflect.Sint32Kind,
-			protoreflect.Uint32Kind, protoreflect.Int64Kind, protoreflect.Sint64Kind,
-			protoreflect.Uint64Kind, protoreflect.Sfixed32Kind, protoreflect.Fixed32Kind,
-			protoreflect.Sfixed64Kind, protoreflect.Fixed64Kind:
+			protoreflect.Uint32Kind, protoreflect.Sfixed32Kind, protoreflect.Fixed32Kind:
 			g.P(fprintf, `(&buf, "%d", m.Get`, f.GoName, `())`)
+		case protoreflect.Int64Kind, protoreflect.Sint64Kind,
+			protoreflect.Uint64Kind, protoreflect.Sfixed64Kind, protoreflect.Fixed64Kind:
+			g.P(fprintf, `(&buf, "\"%d\"", m.Get`, f.GoName, `())`)
 		case protoreflect.FloatKind, protoreflect.DoubleKind:
 			g.P(fprintf, `(&buf, "%f", m.Get`, f.GoName, `())`)
 		case protoreflect.BytesKind:

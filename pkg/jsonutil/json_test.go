@@ -35,7 +35,7 @@ func TestJsonMarshaler(t *testing.T) {
 
 			var dest bytes.Buffer
 			err = json.Indent(&dest, b, "", "  ")
-			require.NoError(t, err)
+			require.NoError(t, err, string(b))
 			t.Log(dest.String())
 			require.JSONEq(t, expected, string(b))
 		})
