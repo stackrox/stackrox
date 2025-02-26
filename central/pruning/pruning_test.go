@@ -273,14 +273,14 @@ func (s *PruningTestSuite) generatePodDataStructures() podDatastore.DataStore {
 	// Setup the mocks
 	ctrl := gomock.NewController(s.T())
 	mockProcessDataStore := processIndicatorDatastoreMocks.NewMockDataStore(ctrl)
-	mockProcessDataStore.EXPECT().RemoveProcessIndicatorsByPod(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+	mockProcessDataStore.EXPECT().RemoveProcessIndicatorsByPods(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 
 	mockPlopDataStore := plopDatastoreMocks.NewMockDataStore(ctrl)
-	mockPlopDataStore.EXPECT().RemovePlopsByPod(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+	mockPlopDataStore.EXPECT().RemovePlopsByPods(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 
 	mockFilter := filterMocks.NewMockFilter(ctrl)
 	mockFilter.EXPECT().UpdateByPod(gomock.Any()).AnyTimes()
-	mockFilter.EXPECT().DeleteByPod(gomock.Any()).AnyTimes()
+	mockFilter.EXPECT().DeleteByPods(gomock.Any()).AnyTimes()
 
 	pods, err := podDatastore.NewPostgresDB(s.pool, mockProcessDataStore, mockPlopDataStore, mockFilter)
 	require.NoError(s.T(), err)
