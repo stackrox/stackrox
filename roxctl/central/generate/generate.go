@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/backup"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/certgen"
-	"github.com/stackrox/rox/pkg/containers"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
@@ -278,7 +277,7 @@ func OutputZip(logger logger.Logger, io io2.IO, config renderer.Config) error {
 	}
 
 	var outputPath string
-	if roxctl.InMainImage() || !containers.IsRunningInContainer() {
+	if roxctl.InMainImage() {
 		bytes, err := wrapper.Zip()
 		if err != nil {
 			return errors.Wrap(err, "error generating zip file")
