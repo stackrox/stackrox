@@ -95,10 +95,12 @@ setup_file() {
     if [[ -z "${EARLIER_ROXCTL_PATH:-}" ]]; then
         EARLIER_ROXCTL_PATH=$(mktemp -d "early_roxctl.XXXXXX" -p /tmp)
     fi
-    echo "EARLIER_ROXCTL_PATH=$EARLIER_ROXCTL_PATH"
+    echo "For tests requiring an older roxctl version, $EARLIER_ROXCTL_PATH will be used."
     export EARLIER_ROXCTL_PATH
     if [[ ! -e "${EARLIER_ROXCTL_PATH}/roxctl" ]]; then
-        curl --retry 5 --retry-connrefused -sL "https://mirror.openshift.com/pub/rhacs/assets/${EARLIER_MAIN_IMAGE_TAG}/bin/${OS}/roxctl" --output "${EARLIER_ROXCTL_PATH}/roxctl"
+        local ROXCTL_URL="https://mirror.openshift.com/pub/rhacs/assets/${EARLIER_MAIN_IMAGE_TAG}/bin/${OS}/roxctl"
+        echo "Downloading roxctl from ${ROXCTL_URL}..."
+        curl --retry 5 --retry-connrefused -sL "$ROXCTL_URL" --output "${EARLIER_ROXCTL_PATH}/roxctl"
         chmod +x "${EARLIER_ROXCTL_PATH}/roxctl"
     fi
 
@@ -237,7 +239,6 @@ teardown() {
 }
 
 teardown_file() {
-    remove_earlier_roxctl_binary
 }
 
 @test "Upgrade from old Helm chart to HEAD Helm chart with Scanner v4 enabled" {
@@ -884,14 +885,6 @@ wait_for_ready_pods() {
     done
 
     echo "Pod(s) within deployment ${namespace}/${deployment} ready."
-}
-
-remove_earlier_roxctl_binary() {
-    if [[ -d "${EARLIER_ROXCTL_PATH}" ]]; then
-      rm -f "${EARLIER_ROXCTL_PATH}/roxctl"
-      rmdir "${EARLIER_ROXCTL_PATH}"
-      echo "Removed earlier roxctl binary"
-    fi
 }
 
 # Waits until ValidationWebhook is completely functional.
