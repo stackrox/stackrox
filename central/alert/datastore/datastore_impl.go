@@ -55,6 +55,12 @@ func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query, excludeResolved
 	return ds.searcher.Count(ctx, q, excludeResolved)
 }
 
+func (ds *datastoreImpl) CountBy(ctx context.Context, q *v1.Query) ([]searchCommon.CountByWrapper, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "CountBy")
+
+	return ds.storage.CountBy(ctx, q)
+}
+
 func (ds *datastoreImpl) SearchListAlerts(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*storage.ListAlert, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "SearchListAlerts")
 

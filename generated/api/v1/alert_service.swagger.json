@@ -292,6 +292,94 @@
         ]
       }
     },
+    "/v1/alerts/summary/groupedcounts": {
+      "get": {
+        "summary": "GetAlertsGroupedCounts returns the number of alerts in the requested cluster or category.",
+        "operationId": "AlertService_GetAlertsGroupedCounts",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetAlertsCountsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "request.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "request.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "request.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "request.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "request.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "request.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "request.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "groupBy",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "CATEGORY",
+              "CLUSTER"
+            ],
+            "default": "UNSET"
+          }
+        ],
+        "tags": [
+          "AlertService"
+        ]
+      }
+    },
     "/v1/alerts/summary/groups": {
       "get": {
         "summary": "GetAlertsGroup returns alerts grouped by policy.",

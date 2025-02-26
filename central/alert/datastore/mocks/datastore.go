@@ -73,6 +73,21 @@ func (mr *MockDataStoreMockRecorder) CountAlerts(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountAlerts", reflect.TypeOf((*MockDataStore)(nil).CountAlerts), ctx)
 }
 
+// CountBy mocks base method.
+func (m *MockDataStore) CountBy(ctx context.Context, q *v1.Query) ([]search.CountByWrapper, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountBy", ctx, q)
+	ret0, _ := ret[0].([]search.CountByWrapper)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountBy indicates an expected call of CountBy.
+func (mr *MockDataStoreMockRecorder) CountBy(ctx, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountBy", reflect.TypeOf((*MockDataStore)(nil).CountBy), ctx, q)
+}
+
 // DeleteAlerts mocks base method.
 func (m *MockDataStore) DeleteAlerts(ctx context.Context, ids ...string) error {
 	m.ctrl.T.Helper()

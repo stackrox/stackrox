@@ -13,6 +13,7 @@ import (
 //go:generate mockgen-wrapper
 type Store interface {
 	Count(ctx context.Context, q *v1.Query) (int, error)
+	CountBy(ctx context.Context, q *v1.Query) ([]search.CountByWrapper, error)
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 	Walk(ctx context.Context, fn func(*storage.Alert) error) error
 	WalkByQuery(ctx context.Context, q *v1.Query, fn func(*storage.Alert) error) error

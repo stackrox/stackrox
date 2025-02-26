@@ -20,15 +20,16 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AlertService_GetAlert_FullMethodName           = "/v1.AlertService/GetAlert"
-	AlertService_CountAlerts_FullMethodName        = "/v1.AlertService/CountAlerts"
-	AlertService_ListAlerts_FullMethodName         = "/v1.AlertService/ListAlerts"
-	AlertService_GetAlertsGroup_FullMethodName     = "/v1.AlertService/GetAlertsGroup"
-	AlertService_GetAlertsCounts_FullMethodName    = "/v1.AlertService/GetAlertsCounts"
-	AlertService_GetAlertTimeseries_FullMethodName = "/v1.AlertService/GetAlertTimeseries"
-	AlertService_ResolveAlert_FullMethodName       = "/v1.AlertService/ResolveAlert"
-	AlertService_ResolveAlerts_FullMethodName      = "/v1.AlertService/ResolveAlerts"
-	AlertService_DeleteAlerts_FullMethodName       = "/v1.AlertService/DeleteAlerts"
+	AlertService_GetAlert_FullMethodName               = "/v1.AlertService/GetAlert"
+	AlertService_CountAlerts_FullMethodName            = "/v1.AlertService/CountAlerts"
+	AlertService_ListAlerts_FullMethodName             = "/v1.AlertService/ListAlerts"
+	AlertService_GetAlertsGroup_FullMethodName         = "/v1.AlertService/GetAlertsGroup"
+	AlertService_GetAlertsCounts_FullMethodName        = "/v1.AlertService/GetAlertsCounts"
+	AlertService_GetAlertsGroupedCounts_FullMethodName = "/v1.AlertService/GetAlertsGroupedCounts"
+	AlertService_GetAlertTimeseries_FullMethodName     = "/v1.AlertService/GetAlertTimeseries"
+	AlertService_ResolveAlert_FullMethodName           = "/v1.AlertService/ResolveAlert"
+	AlertService_ResolveAlerts_FullMethodName          = "/v1.AlertService/ResolveAlerts"
+	AlertService_DeleteAlerts_FullMethodName           = "/v1.AlertService/DeleteAlerts"
 )
 
 // AlertServiceClient is the client API for AlertService service.
@@ -47,6 +48,8 @@ type AlertServiceClient interface {
 	GetAlertsGroup(ctx context.Context, in *ListAlertsRequest, opts ...grpc.CallOption) (*GetAlertsGroupResponse, error)
 	// GetAlertsCounts returns the number of alerts in the requested cluster or category.
 	GetAlertsCounts(ctx context.Context, in *GetAlertsCountsRequest, opts ...grpc.CallOption) (*GetAlertsCountsResponse, error)
+	// GetAlertsGroupedCounts returns the number of alerts in the requested cluster or category.
+	GetAlertsGroupedCounts(ctx context.Context, in *GetAlertsCountsRequest, opts ...grpc.CallOption) (*GetAlertsCountsResponse, error)
 	// GetAlertTimeseries returns the alerts sorted by time.
 	GetAlertTimeseries(ctx context.Context, in *ListAlertsRequest, opts ...grpc.CallOption) (*GetAlertTimeseriesResponse, error)
 	// ResolveAlert marks the given alert (by ID) as resolved.
@@ -114,6 +117,16 @@ func (c *alertServiceClient) GetAlertsCounts(ctx context.Context, in *GetAlertsC
 	return out, nil
 }
 
+func (c *alertServiceClient) GetAlertsGroupedCounts(ctx context.Context, in *GetAlertsCountsRequest, opts ...grpc.CallOption) (*GetAlertsCountsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetAlertsCountsResponse)
+	err := c.cc.Invoke(ctx, AlertService_GetAlertsGroupedCounts_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *alertServiceClient) GetAlertTimeseries(ctx context.Context, in *ListAlertsRequest, opts ...grpc.CallOption) (*GetAlertTimeseriesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetAlertTimeseriesResponse)
@@ -170,6 +183,8 @@ type AlertServiceServer interface {
 	GetAlertsGroup(context.Context, *ListAlertsRequest) (*GetAlertsGroupResponse, error)
 	// GetAlertsCounts returns the number of alerts in the requested cluster or category.
 	GetAlertsCounts(context.Context, *GetAlertsCountsRequest) (*GetAlertsCountsResponse, error)
+	// GetAlertsGroupedCounts returns the number of alerts in the requested cluster or category.
+	GetAlertsGroupedCounts(context.Context, *GetAlertsCountsRequest) (*GetAlertsCountsResponse, error)
 	// GetAlertTimeseries returns the alerts sorted by time.
 	GetAlertTimeseries(context.Context, *ListAlertsRequest) (*GetAlertTimeseriesResponse, error)
 	// ResolveAlert marks the given alert (by ID) as resolved.
@@ -200,6 +215,9 @@ func (UnimplementedAlertServiceServer) GetAlertsGroup(context.Context, *ListAler
 }
 func (UnimplementedAlertServiceServer) GetAlertsCounts(context.Context, *GetAlertsCountsRequest) (*GetAlertsCountsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAlertsCounts not implemented")
+}
+func (UnimplementedAlertServiceServer) GetAlertsGroupedCounts(context.Context, *GetAlertsCountsRequest) (*GetAlertsCountsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAlertsGroupedCounts not implemented")
 }
 func (UnimplementedAlertServiceServer) GetAlertTimeseries(context.Context, *ListAlertsRequest) (*GetAlertTimeseriesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAlertTimeseries not implemented")
@@ -323,6 +341,24 @@ func _AlertService_GetAlertsCounts_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AlertService_GetAlertsGroupedCounts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAlertsCountsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AlertServiceServer).GetAlertsGroupedCounts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AlertService_GetAlertsGroupedCounts_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AlertServiceServer).GetAlertsGroupedCounts(ctx, req.(*GetAlertsCountsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AlertService_GetAlertTimeseries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListAlertsRequest)
 	if err := dec(in); err != nil {
@@ -421,6 +457,10 @@ var AlertService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetAlertsCounts",
 			Handler:    _AlertService_GetAlertsCounts_Handler,
+		},
+		{
+			MethodName: "GetAlertsGroupedCounts",
+			Handler:    _AlertService_GetAlertsGroupedCounts_Handler,
 		},
 		{
 			MethodName: "GetAlertTimeseries",

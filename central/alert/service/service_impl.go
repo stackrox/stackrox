@@ -49,6 +49,7 @@ var (
 			v1.AlertService_CountAlerts_FullMethodName,
 			v1.AlertService_GetAlertsGroup_FullMethodName,
 			v1.AlertService_GetAlertsCounts_FullMethodName,
+			v1.AlertService_GetAlertsGroupedCounts_FullMethodName,
 			v1.AlertService_GetAlertTimeseries_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.Alert)): {
@@ -252,6 +253,74 @@ func (s *serviceImpl) GetAlertsCounts(ctx context.Context, request *v1.GetAlerts
 	}
 
 	return nil, errors.Wrapf(errox.InvalidArgs, "unknown group by: %v", request.GetGroupBy())
+}
+
+// GetAlertsGroupedCounts returns alert counts by severity according to the request.
+// Counts can be grouped by policy category or cluster.
+func (s *serviceImpl) GetAlertsGroupedCounts(ctx context.Context, request *v1.GetAlertsCountsRequest) (*v1.GetAlertsCountsResponse, error) {
+	if request == nil {
+		request = &v1.GetAlertsCountsRequest{}
+	}
+
+	request.Request = ensureAllAlertsAreFetched(request.GetRequest())
+	requestQ, err := search.ParseQuery(request.GetRequest().GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, err
+	}
+
+	var hasClusterQ, hasSeverityQ, hasCategoryQ bool
+	log.Info(requestQ)
+	search.ApplyFnToAllBaseQueries(requestQ, func(bq *v1.BaseQuery) {
+		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+		if !ok {
+			return
+		}
+
+		if matchFieldQuery.MatchFieldQuery.GetField() == search.Cluster.String() {
+			hasClusterQ = true
+			// matchFieldQuery.MatchFieldQuery.Highlight = true
+		}
+		if matchFieldQuery.MatchFieldQuery.GetField() == search.Category.String() {
+			hasCategoryQ = true
+			// matchFieldQuery.MatchFieldQuery.Highlight = true
+		}
+		if matchFieldQuery.MatchFieldQuery.GetField() == search.Severity.String() {
+			hasSeverityQ = true
+			// matchFieldQuery.MatchFieldQuery.Highlight = true
+		}
+	})
+	log.Info("Cluster ", hasClusterQ, ", Severity ", hasSeverityQ, ", Category ", hasCategoryQ)
+	groupBySeverity := search.NewQueryBuilder().AddGroupBy(search.Severity).ProtoQuery()
+	requestQ.GroupBy = groupBySeverity.GetGroupBy()
+	switch request.GetGroupBy() {
+	case v1.GetAlertsCountsRequest_CATEGORY:
+		extraGroupBy := search.NewQueryBuilder().AddGroupBy(search.Category).ProtoQuery()
+		requestQ.GroupBy.Fields = append(requestQ.GroupBy.Fields, extraGroupBy.GroupBy.Fields...)
+	case v1.GetAlertsCountsRequest_CLUSTER:
+		extraGroupBy := search.NewQueryBuilder().AddGroupBy(search.Cluster).ProtoQuery()
+		requestQ.GroupBy.Fields = append(requestQ.GroupBy.Fields, extraGroupBy.GroupBy.Fields...)
+	}
+	for _, f := range requestQ.GetGroupBy().GetFields() {
+		log.Infof("Grouping by field %s", f)
+	}
+
+	counters, err := s.dataStore.CountBy(ctx, requestQ)
+	if err != nil {
+		return nil, err
+	}
+	var groupBy func(search.Result) []string
+	switch request.GetGroupBy() {
+	case v1.GetAlertsCountsRequest_UNSET:
+		groupBy = groupByFunctions[v1.GetAlertsCountsRequest_UNSET]
+	case v1.GetAlertsCountsRequest_CATEGORY:
+		groupBy = groupByFunctions[v1.GetAlertsCountsRequest_CATEGORY]
+	case v1.GetAlertsCountsRequest_CLUSTER:
+		groupBy = groupByFunctions[v1.GetAlertsCountsRequest_CLUSTER]
+	default:
+		return nil, errors.Wrapf(errox.InvalidArgs, "unknown group by: %v", request.GetGroupBy())
+	}
+	counterMap := extractMapOfAlertCounts(counters, groupBy)
+	return getCountResponse(counterMap), nil
 }
 
 // GetAlertTimeseries returns the timeseries format of the events based on the request parameters
@@ -525,32 +594,7 @@ func alertTimeseriesResponseFrom(alerts []*storage.ListAlert) *v1.GetAlertTimese
 func countAlerts(alerts []search.Result, groupByFunc func(result search.Result) []string) (output *v1.GetAlertsCountsResponse) {
 	groups := getMapOfAlertCounts(alerts, groupByFunc)
 
-	output = new(v1.GetAlertsCountsResponse)
-	output.Groups = make([]*v1.GetAlertsCountsResponse_AlertGroup, 0, len(groups))
-
-	for group, countsBySeverity := range groups {
-		bySeverity := make([]*v1.GetAlertsCountsResponse_AlertGroup_AlertCounts, 0, len(countsBySeverity))
-
-		for severity, count := range countsBySeverity {
-			bySeverity = append(bySeverity, &v1.GetAlertsCountsResponse_AlertGroup_AlertCounts{
-				Severity: severity,
-				Count:    int64(count),
-			})
-		}
-
-		sort.Slice(bySeverity, func(i, j int) bool {
-			return bySeverity[i].Severity < bySeverity[j].Severity
-		})
-
-		output.Groups = append(output.Groups, &v1.GetAlertsCountsResponse_AlertGroup{
-			Group:  group,
-			Counts: bySeverity,
-		})
-	}
-
-	sort.Slice(output.Groups, func(i, j int) bool {
-		return output.Groups[i].Group < output.Groups[j].Group
-	})
+	output = getCountResponse(groups)
 
 	return
 }
@@ -598,4 +642,57 @@ func getGroupToAlertEvents(alerts []*storage.ListAlert) (clusters map[string]map
 		}
 	}
 	return
+}
+
+func getCountResponse(counterMap map[string]map[storage.Severity]int) *v1.GetAlertsCountsResponse {
+	output := new(v1.GetAlertsCountsResponse)
+	for group, countsBySeverity := range counterMap {
+		bySeverity := make([]*v1.GetAlertsCountsResponse_AlertGroup_AlertCounts, 0, len(countsBySeverity))
+
+		for severity, count := range countsBySeverity {
+			bySeverity = append(bySeverity, &v1.GetAlertsCountsResponse_AlertGroup_AlertCounts{
+				Severity: severity,
+				Count:    int64(count),
+			})
+		}
+
+		sort.Slice(bySeverity, func(i, j int) bool {
+			return bySeverity[i].Severity < bySeverity[j].Severity
+		})
+
+		output.Groups = append(output.Groups, &v1.GetAlertsCountsResponse_AlertGroup{
+			Group:  group,
+			Counts: bySeverity,
+		})
+	}
+
+	sort.Slice(output.Groups, func(i, j int) bool {
+		return output.Groups[i].Group < output.Groups[j].Group
+	})
+
+	return output
+}
+
+func extractMapOfAlertCounts(counters []search.CountByWrapper, groupBy func(search.Result) []string) map[string]map[storage.Severity]int {
+	counts := make(map[string]map[storage.Severity]int)
+	for _, counter := range counters {
+		severity := getSeverity(counter.ByFields)
+		groups := groupBy(counter.ByFields)
+		for _, group := range groups {
+			groupCounter, found := counts[group]
+			if !found {
+				groupCounter = make(map[storage.Severity]int)
+				counts[group] = groupCounter
+			}
+			groupCounter[severity] += counter.Count
+		}
+	}
+	return counts
+}
+
+func getSeverity(result search.Result) storage.Severity {
+	field := mappings.OptionsMap.MustGet(search.Severity.String())
+	value := result.Matches[field.GetFieldPath()][0]
+	severity := storage.Severity_value[value]
+	return storage.Severity(severity)
 }
