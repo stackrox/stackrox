@@ -22,7 +22,7 @@ func WithCSVColumnHeaders(headers []string) CSVPrinterOption {
 // WithCSVHideUnpopulatedRowsOption is a functional option for hiding rows of the table,
 // when those rows have an unpopulated spot from a column marked as required.
 func WithCSVHideUnpopulatedRowsOption(requiredColumns []string) CSVPrinterOption {
-	return func(p *TablePrinter) {
+	return func(p *CSVPrinter) {
 		p.columnTreeOptions = gjson.HideRowsIfColumnNotPopulated(requiredColumns)
 	}
 }
