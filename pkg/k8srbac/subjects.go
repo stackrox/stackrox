@@ -30,7 +30,7 @@ func GetSubjectsAdjustedByKind(binding *storage.K8SRoleBinding) []*storage.Subje
 	for _, subject := range binding.GetSubjects() {
 		// Minimize number of CloneVT() calls.
 		if subject.GetNamespace() != "" && (subject.GetKind() == storage.SubjectKind_USER || subject.GetKind() == storage.SubjectKind_GROUP) {
-			adjustedSubject := subject.CloneVT()
+			adjustedSubject := subject.Clone()
 			adjustedSubject.Namespace = ""
 			adjustedSubjectSet.Add(adjustedSubject)
 
