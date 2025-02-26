@@ -21,6 +21,10 @@ func (m *manifestGenerator) applyScanner(ctx context.Context) error {
 	}
 	log.Info("Created scanner service account")
 
+	if err := m.createRoleBinding(ctx, "scanner", "use-nonroot-v2-scc"); err != nil {
+		return fmt.Errorf("Failed to create central service account: %w\n", err)
+	}
+
 	if err := m.createScannerConfig(ctx); err != nil && !errors.IsAlreadyExists(err) {
 		return fmt.Errorf("Failed to create central config: %w\n", err)
 	}

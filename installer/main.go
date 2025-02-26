@@ -46,7 +46,7 @@ func main() {
 
 	ctx := context.Background()
 
-	m, err := manifest.New(cfg, clientset)
+	m, err := manifest.New(cfg, clientset, config)
 
 	if err != nil {
 		panic(err.Error())

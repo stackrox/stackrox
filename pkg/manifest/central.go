@@ -17,19 +17,25 @@ import (
 )
 
 func (m *manifestGenerator) applyCentral(ctx context.Context) error {
-	err := m.createServiceAccount(ctx, "central")
-	if err != nil && !errors.IsAlreadyExists(err) {
+	if err := m.createServiceAccount(ctx, "central"); err != nil {
 		return fmt.Errorf("Failed to create central service account: %w\n", err)
 	}
 	log.Info("Created central service account")
 
-	err = m.createServiceAccount(ctx, "central-db")
-	if err != nil && !errors.IsAlreadyExists(err) {
+	if err := m.createRoleBinding(ctx, "central", "use-nonroot-v2-scc"); err != nil {
+		return fmt.Errorf("Failed to create central service account: %w\n", err)
+	}
+
+	if err := m.createServiceAccount(ctx, "central-db"); err != nil {
 		return fmt.Errorf("Failed to create central-db service account: %w\n", err)
 	}
 	log.Info("Created central-db service account")
 
-	err = m.createCentralEndpointsConfig(ctx)
+	if err := m.createRoleBinding(ctx, "central", "use-nonroot-v2-scc"); err != nil {
+		return fmt.Errorf("Failed to create central service account: %w\n", err)
+	}
+
+	err := m.createCentralEndpointsConfig(ctx)
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return fmt.Errorf("Failed to create central endpoints config: %w\n", err)
 	}
@@ -195,6 +201,8 @@ func (m *manifestGenerator) createTlsSecrets(ctx context.Context) error {
 		}
 
 		certgen.AddJWTSigningKeyToFileMap(fileMap, jwtKey)
+
+		fileMap["ca-key.pem"] = m.CA.KeyPEM()
 		return nil
 	})
 
@@ -707,63 +715,19 @@ func (m *manifestGenerator) applyCentralDeployment(ctx context.Context) error {
 }
 
 func (m *manifestGenerator) applyCentralServices(ctx context.Context) error {
-	// central
-
-	svc := v1.Service{
-		Spec: v1.ServiceSpec{
-			Selector: map[string]string{
-				"app": "central",
-			},
-			Ports: []v1.ServicePort{{
-				Name:       "https",
-				Port:       443,
-				Protocol:   v1.ProtocolTCP,
-				TargetPort: intstr.FromString("api"),
-			}},
-		},
-	}
-
-	svc.SetName("central")
-
-	_, err := m.Client.CoreV1().Services(m.Config.Namespace).Create(ctx, &svc, metav1.CreateOptions{})
-
-	if errors.IsAlreadyExists(err) {
-		_, err = m.Client.CoreV1().Services(m.Config.Namespace).Update(ctx, &svc, metav1.UpdateOptions{})
-		log.Info("Updated central service")
-	} else {
-		log.Info("Created central service")
-	}
-
-	if err != nil {
+	if err := m.applyService(ctx, "central", []v1.ServicePort{{
+		Name:       "https",
+		Port:       443,
+		Protocol:   v1.ProtocolTCP,
+		TargetPort: intstr.FromString("api"),
+	}}); err != nil {
 		return err
 	}
 
-	// central-db
-
-	svc = v1.Service{
-		Spec: v1.ServiceSpec{
-			Selector: map[string]string{
-				"app": "central-db",
-			},
-			Ports: []v1.ServicePort{{
-				Name:       "tcp-db",
-				Port:       5432,
-				Protocol:   v1.ProtocolTCP,
-				TargetPort: intstr.FromString("postgresql"),
-			}},
-		},
-	}
-
-	svc.SetName("central-db")
-
-	_, err = m.Client.CoreV1().Services(m.Config.Namespace).Create(ctx, &svc, metav1.CreateOptions{})
-
-	if errors.IsAlreadyExists(err) {
-		_, err = m.Client.CoreV1().Services(m.Config.Namespace).Update(ctx, &svc, metav1.UpdateOptions{})
-		log.Info("Updated central-db service")
-	} else {
-		log.Info("Created central-db service")
-	}
-
-	return err
+	return m.applyService(ctx, "central-db", []v1.ServicePort{{
+		Name:       "tcp-db",
+		Port:       5432,
+		Protocol:   v1.ProtocolTCP,
+		TargetPort: intstr.FromString("postgresql"),
+	}})
 }
