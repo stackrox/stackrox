@@ -2,6 +2,7 @@ package pruning
 
 import (
 	"context"
+	"math"
 	"time"
 
 	"github.com/pkg/errors"
@@ -49,6 +50,7 @@ import (
 )
 
 const (
+	maxThreads         = 32
 	baselineBatchLimit = 10000
 	clusterGCFreq      = 24 * time.Hour
 	logImbueGCFreq     = 24 * time.Hour
@@ -255,11 +257,28 @@ func (g *garbageCollectorImpl) removeOrphanedPods() {
 	log.Infof("[Pruning] Found %d orphaned pods (from formerly deleted clusters). Deleting...",
 		len(podIDsToRemove))
 
-	for _, id := range podIDsToRemove {
-		if err := g.pods.RemovePod(pruningCtx, id); err != nil {
-			log.Errorf("Failed to remove pod with id %s: %v", id, err)
-		}
+	idBatches := make(chan [2]int)
+	var wg sync.WaitGroup
+	for i := 0; i < maxThreads; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for batch := range idBatches {
+				if err := g.pods.RemovePods(pruningCtx, podIDsToRemove[batch[0]:batch[1]]); err != nil {
+					log.Errorf("Failed to remove pod in batch %s: %v", podIDsToRemove[batch[0]:batch[1]], err)
+				}
+			}
+		}()
 	}
+
+	for i := 0; i < len(podIDsToRemove); {
+		idBatches <- [2]int{i, int(math.Min(float64(i+baselineBatchLimit), float64(len(podIDsToRemove))))}
+		i = int(math.Min(float64(i+baselineBatchLimit), float64(len(podIDsToRemove))))
+	}
+	close(idBatches)
+
+	wg.Wait()
+
 }
 
 // Remove nodes where the cluster has been deleted.
@@ -905,27 +924,52 @@ func (g *garbageCollectorImpl) collectAlerts(config *storage.PrivateConfig) {
 	}
 
 	prunedAlertCount := 0
+	var wg sync.WaitGroup
 	// Go through the various queries and remove those batches.
 	for key, query := range queryMap {
-		log.Debugf("Pruning for key %q", key)
-		alertsToPrune, err := g.getAlertsToPrune(query)
-		if err != nil {
-			// log and keep going.  If we found some to prune, prune them.
-			log.Errorf("Unable to prune alerts for query %v", query)
-		}
-
-		func() {
-			pruneCtxWithTimeout, pruneCancel := contextutil.ContextWithTimeoutIfNotExists(pruningCtx, pruningTimeout)
-			defer pruneCancel()
-
-			log.Infof("[Alert pruning] Removing %d alerts for %q", len(alertsToPrune), key)
-			if err := g.alerts.PruneAlerts(pruneCtxWithTimeout, alertsToPrune...); err != nil {
-				log.Error(err)
-			} else {
-				prunedAlertCount = prunedAlertCount + len(alertsToPrune)
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			log.Debugf("Pruning for key %q", key)
+			alertsToPrune, err := g.getAlertsToPrune(query)
+			if err != nil {
+				// log and keep going.  If we found some to prune, prune them.
+				log.Errorf("Unable to prune alerts for query %v", query)
 			}
+
+			func() {
+				pruneCtxWithTimeout, pruneCancel := contextutil.ContextWithTimeoutIfNotExists(pruningCtx, pruningTimeout)
+				defer pruneCancel()
+
+				log.Infof("[Alert pruning] Removing %d alerts for %q", len(alertsToPrune), key)
+				var wg2 sync.WaitGroup
+				idBatches := make(chan [2]int)
+				for i := 0; i < maxThreads; i++ {
+					wg2.Add(1)
+					go func() {
+						defer wg2.Done()
+						for batch := range idBatches {
+							if err := g.alerts.PruneAlerts(pruneCtxWithTimeout, alertsToPrune[batch[0]:batch[1]]...); err != nil {
+								log.Error(err)
+							} else {
+								prunedAlertCount = prunedAlertCount + len(alertsToPrune[batch[0]:batch[1]])
+							}
+						}
+					}()
+				}
+
+				for i := 0; i < len(alertsToPrune); {
+					idBatches <- [2]int{i, int(math.Min(float64(i+baselineBatchLimit), float64(len(alertsToPrune))))}
+					i = int(math.Min(float64(i+baselineBatchLimit), float64(len(alertsToPrune))))
+				}
+				close(idBatches)
+
+				wg2.Wait()
+			}()
 		}()
 	}
+
+	wg.Wait()
 
 	log.Infof("Pruned %d alerts based on retention configuration", prunedAlertCount)
 }
