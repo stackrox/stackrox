@@ -73,4 +73,3 @@ jobs:
       with:
         branch: ${{ steps.pr-metadata.outputs.branch }}
         github_token: ${{ secrets.GITHUB_TOKEN }}
-
