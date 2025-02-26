@@ -141,8 +141,8 @@ github.com/AzureAD/microsoft-authentication-library-for-go v1.3.3 h1:H5xDQaE3Xow
 github.com/AzureAD/microsoft-authentication-library-for-go v1.3.3/go.mod h1:wP83P5OoQ5p6ip3ScPr0BAq0BvuPAvacpEuSzyouqAI=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/toml v0.4.1/go.mod h1:CxXYINrC8qIiEnFrOxCa7Jy5BFHlXnUU2pbicEuybxQ=
-github.com/BurntSushi/toml v1.4.0 h1:kuoIxZQy2WRRk1pttg9asf+WVv6tWQuBNVmK8+nqPr0=
-github.com/BurntSushi/toml v1.4.0/go.mod h1:ukJfTF/6rtPPRCnwkur4qwRxa8vTRFBF0uk2lLoLwho=
+github.com/BurntSushi/toml v1.4.1-0.20240526193622-a339e1f7089c h1:pxW6RcqyfI9/kWtOwnv/G+AzdKuy2ZrqINhenH4HyNs=
+github.com/BurntSushi/toml v1.4.1-0.20240526193622-a339e1f7089c/go.mod h1:ukJfTF/6rtPPRCnwkur4qwRxa8vTRFBF0uk2lLoLwho=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/ComplianceAsCode/compliance-operator v1.5.0 h1:tjdqGnCn++KUBk5KUooeATQLilCESLX7OR2IU5NcMnA=
 github.com/ComplianceAsCode/compliance-operator v1.5.0/go.mod h1:n8Y9P0324nf6qc+UegRV/kzSr5DcmsJc2yMcl9zOoBw=
@@ -910,10 +910,10 @@ github.com/in-toto/in-toto-golang v0.9.0/go.mod h1:xsBVrVsHNsB61++S6Dy2vWosKhuA3
 github.com/inconshreveable/mousetrap v1.0.0/go.mod h1:PxqpIevigyE2G7u3NXJIT2ANytuPF1OarO4DADm73n8=
 github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2s0bqwp9tc8=
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
-github.com/itchyny/gojq v0.12.14 h1:6k8vVtsrhQSYgSGg827AD+PVVaB1NLXEdX+dda2oZCc=
-github.com/itchyny/gojq v0.12.14/go.mod h1:y1G7oO7XkcR1LPZO59KyoCRy08T3j9vDYRV0GgYSS+s=
-github.com/itchyny/timefmt-go v0.1.5 h1:G0INE2la8S6ru/ZI5JecgyzbbJNs5lG1RcBqa7Jm6GE=
-github.com/itchyny/timefmt-go v0.1.5/go.mod h1:nEP7L+2YmAbT2kZ2HfSs1d8Xtw9LY8D2stDBckWakZ8=
+github.com/itchyny/gojq v0.12.17 h1:8av8eGduDb5+rvEdaOO+zQUjA04MS0m3Ps8HiD+fceg=
+github.com/itchyny/gojq v0.12.17/go.mod h1:WBrEMkgAfAGO1LUcGOckBl5O726KPp+OlkKug0I/FEY=
+github.com/itchyny/timefmt-go v0.1.6 h1:ia3s54iciXDdzWzwaVKXZPbiXzxxnv1SPGFfM/myJ5Q=
+github.com/itchyny/timefmt-go v0.1.6/go.mod h1:RRDZYC5s9ErkjQvTvvU7keJjxUYzIISJGxm9/mAERQg=
 github.com/jackc/chunkreader v1.0.0/go.mod h1:RT6O25fNZIuasFJRyZ4R/Y2BbhasbmZXF9QQ7T3kePo=
 github.com/jackc/chunkreader/v2 v2.0.0/go.mod h1:odVSm741yZoC3dpHEUXIqA9tQRhFrgOHwnPIn9lDKlk=
 github.com/jackc/chunkreader/v2 v2.0.1 h1:i+RDz65UE+mmpjTfyz0MoVTnzeYxroil2G82ki7MGG8=
@@ -1434,8 +1434,8 @@ github.com/stackrox/external-network-pusher v0.0.0-20231115153210-b82d72f500a2 h
 github.com/stackrox/external-network-pusher v0.0.0-20231115153210-b82d72f500a2/go.mod h1:M22zIb5zuZCYbYwcn9iOWswNBrxE+YPkAHU5Bkg5XE4=
 github.com/stackrox/helm-operator v0.0.12-0.20250211113659-1b2840226a8b h1:l8jO0gzzbgvrPB7ojbTJP8P7516JL3fjh4BJn2/SqZM=
 github.com/stackrox/helm-operator v0.0.12-0.20250211113659-1b2840226a8b/go.mod h1:Sc+8bE38xTCgCChBUvtq/PxatEg9fAypr7S5iAw8nlA=
-github.com/stackrox/helmtest v0.0.1 h1:vWodNu/Ml24iaSqBMIiATC5BdJn3v7RDZevfemhUEfA=
-github.com/stackrox/helmtest v0.0.1/go.mod h1:MJJs41ADMAtOCLgYVcoAITCY+4YCHjvjxk3ABYFmOVE=
+github.com/stackrox/helmtest v0.0.2 h1:eYhy5nDqOXdvgToqPuY8xsiG3O/Qo43PqAdn+H+UZIs=
+github.com/stackrox/helmtest v0.0.2/go.mod h1:rRuDHNdRRTviA31dBuzw+16UUUNVZ4ze/SXk8oZzOJc=
 github.com/stackrox/istio-cves v0.0.0-20221007013142-0bde9b541ec8 h1:rUIvoAHokPcd92aJT2gJwVeyE8tMuaqS5l5s3cEgXFY=
 github.com/stackrox/istio-cves v0.0.0-20221007013142-0bde9b541ec8/go.mod h1:ZF7mH4kH1G+82HxR3uFDHvyLG8eCOdrh1RDyQcTGkBA=
 github.com/stackrox/k8s-cves v0.0.0-20220818200547-7d0d1420c58d h1:88Iui7fSMKgXvpyfBlbP3qosrqyv3qMgOJ6JJ4V4tFQ=
