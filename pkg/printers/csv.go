@@ -19,6 +19,14 @@ func WithCSVColumnHeaders(headers []string) CSVPrinterOption {
 	}
 }
 
+// WithCSVHideUnpopulatedRowsOption is a functional option for hiding rows of the table,
+// when those rows have an unpopulated spot from a column marked as required.
+func WithCSVHideUnpopulatedRowsOption(requiredColumns []string) CSVPrinterOption {
+	return func(p *CSVPrinter) {
+		p.columnTreeOptions = []gjson.ColumnTreeOptions{gjson.HideRowsIfColumnNotPopulated(requiredColumns)}
+	}
+}
+
 // WithCSVHeaderOptions is a functional option for printing headers. Headers can be
 // either printed as comments in the CSV output or not at all.
 // By default, headers will be printed.
@@ -51,6 +59,7 @@ type CSVPrinter struct {
 	columnHeaders         []string
 	rowJSONPathExpression string
 	headerPrintOption     headerPrintOption
+	columnTreeOptions     []gjson.ColumnTreeOptions
 }
 
 // NewCSVPrinter creates a CSVPrinter from the options set.
@@ -116,7 +125,7 @@ func NewCSVPrinter(rowJSONPathExpression string, options ...CSVPrinterOption) *C
 func (c *CSVPrinter) Print(jsonObject interface{}, out io.Writer) error {
 	csvWriter := csv.NewWriter(out)
 
-	rowMapper, err := gjson.NewRowMapper(jsonObject, c.rowJSONPathExpression)
+	rowMapper, err := gjson.NewRowMapper(jsonObject, c.rowJSONPathExpression, c.columnTreeOptions...)
 	if err != nil {
 		return err
 	}
