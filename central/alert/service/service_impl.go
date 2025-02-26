@@ -299,6 +299,9 @@ func (s *serviceImpl) GetAlertsGroupedCounts(ctx context.Context, request *v1.Ge
 	}
 	groupByQuery := groupByQueryBuilder.ProtoQuery()
 	requestQ.GroupBy = groupByQuery.GetGroupBy()
+	for _, f := range requestQ.GetGroupBy().GetFields() {
+		log.Infof("Grouping by field %s", f)
+	}
 
 	counters, err := s.dataStore.CountBy(ctx, requestQ)
 	if err != nil {
