@@ -1,19 +1,40 @@
 package manifest
 
 import (
+	"bufio"
 	"context"
+	"crypto/x509"
+	"encoding/base64"
 	"fmt"
+	"net"
+	"net/http"
+	"os"
+	"strconv"
+	"strings"
+	"time"
 
+	stackroxv1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/certgen"
+	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/pkg/size"
+	"github.com/stackrox/rox/pkg/utils"
 
+	"github.com/pkg/errors"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	restclient "k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/portforward"
+	"k8s.io/client-go/transport/spdy"
 )
 
 var (
@@ -25,19 +46,21 @@ var (
 )
 
 type manifestGenerator struct {
-	CA     mtls.CA
-	Config *Config
-	Client *kubernetes.Clientset
+	CA         mtls.CA
+	Config     *Config
+	Client     *kubernetes.Clientset
+	RESTConfig *restclient.Config
 }
 
-func New(cfg *Config, clientset *kubernetes.Clientset) (*manifestGenerator, error) {
+func New(cfg *Config, clientset *kubernetes.Clientset, restConfig *restclient.Config) (*manifestGenerator, error) {
 	if cfg.Namespace == "" {
 		return nil, fmt.Errorf("Invalid namespace: %s", cfg.Namespace)
 	}
 
 	return &manifestGenerator{
-		Config: cfg,
-		Client: clientset,
+		Config:     cfg,
+		Client:     clientset,
+		RESTConfig: restConfig,
 	}, nil
 }
 
@@ -68,6 +91,15 @@ func (m *manifestGenerator) Apply(ctx context.Context) error {
 		panic(err)
 	}
 
+	if err := m.applyCRS(ctx); err != nil {
+		log.Errorf("Failed to apply CRS: %v", err)
+		return nil
+	}
+
+	if err := m.applySensor(ctx); err != nil {
+		panic(err)
+	}
+
 	return nil
 }
 
@@ -76,7 +108,7 @@ func (m *manifestGenerator) getCA(ctx context.Context) error {
 	var err error
 	secret, err := m.Client.CoreV1().Secrets(m.Config.Namespace).Get(ctx, "additional-ca", metav1.GetOptions{})
 	if err != nil {
-		if errors.IsNotFound(err) {
+		if k8serrors.IsNotFound(err) {
 			ca, err = certgen.GenerateCA()
 			if err != nil {
 				return fmt.Errorf("Error generating CA: %v", err)
@@ -94,7 +126,7 @@ func (m *manifestGenerator) getCA(ctx context.Context) error {
 
 			_, err = m.Client.CoreV1().Secrets(m.Config.Namespace).Create(ctx, secret, metav1.CreateOptions{})
 			if err != nil {
-				if errors.IsAlreadyExists(err) {
+				if k8serrors.IsAlreadyExists(err) {
 					return fmt.Errorf("Race condition: Secret additional-ca got created just before now: %w", err)
 				}
 				return fmt.Errorf("Error creating secret additional-ca: %w", err)
@@ -119,7 +151,7 @@ func (m *manifestGenerator) applyNamespace(ctx context.Context) error {
 	ns.SetName(m.Config.Namespace)
 	_, err := m.Client.CoreV1().Namespaces().Create(ctx, &ns, metav1.CreateOptions{})
 
-	if err != nil && !errors.IsAlreadyExists(err) {
+	if err != nil && !k8serrors.IsAlreadyExists(err) {
 		return fmt.Errorf("Failed to create namespace: %w\n", err)
 	}
 
@@ -133,7 +165,7 @@ type tlsCallback func(fileMap map[string][]byte) error
 func (m *manifestGenerator) applyTlsSecret(ctx context.Context, name string, issueCert tlsCallback) error {
 	secret, err := m.Client.CoreV1().Secrets(m.Config.Namespace).Get(ctx, name, metav1.GetOptions{})
 
-	if err != nil && !errors.IsNotFound(err) {
+	if err != nil && !k8serrors.IsNotFound(err) {
 		return fmt.Errorf("Error fetching %s secret: %w", name, err)
 	}
 
@@ -159,7 +191,7 @@ func (m *manifestGenerator) applyTlsSecret(ctx context.Context, name string, iss
 	_, err = m.Client.CoreV1().Secrets(m.Config.Namespace).Create(ctx, secret, metav1.CreateOptions{})
 
 	if err != nil {
-		if errors.IsAlreadyExists(err) {
+		if k8serrors.IsAlreadyExists(err) {
 			return fmt.Errorf("Race condition: Secret %s got created just before now: %w", name, err)
 		}
 		return fmt.Errorf("Error creating secret %s: %w", name, err)
@@ -220,7 +252,7 @@ func (m *manifestGenerator) createNonrootV2SCCRole(ctx context.Context) error {
 	_, err := m.Client.RbacV1().Roles(m.Config.Namespace).Create(ctx, &role, metav1.CreateOptions{})
 
 	if err != nil {
-		if errors.IsAlreadyExists(err) {
+		if k8serrors.IsAlreadyExists(err) {
 			log.Infof("Role %s already exists", name)
 		} else {
 			return fmt.Errorf("Error creating role %s: %w", name, err)
@@ -230,8 +262,8 @@ func (m *manifestGenerator) createNonrootV2SCCRole(ctx context.Context) error {
 	return nil
 }
 
-func (m *manifestGenerator) createNonrootV2SCCRoleBinding(ctx context.Context, serviceAccountName string) error {
-	name := fmt.Sprintf("%s-use-nonroot-v2-scc", serviceAccountName)
+func (m *manifestGenerator) createRoleBinding(ctx context.Context, serviceAccountName, roleName string) error {
+	name := fmt.Sprintf("%s-%s", serviceAccountName, roleName)
 	roleBinding := rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
@@ -239,19 +271,52 @@ func (m *manifestGenerator) createNonrootV2SCCRoleBinding(ctx context.Context, s
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "Role",
-			Name:     "use-nonroot-v2-scc",
+			Name:     roleName,
 		},
 		Subjects: []rbacv1.Subject{{
 			Kind:      "ServiceAccount",
 			Name:      serviceAccountName,
-			Namespace: "stackrox",
+			Namespace: m.Config.Namespace,
 		}},
 	}
 	_, err := m.Client.RbacV1().RoleBindings(m.Config.Namespace).Create(ctx, &roleBinding, metav1.CreateOptions{})
 
 	if err != nil {
-		if errors.IsAlreadyExists(err) {
+		if k8serrors.IsAlreadyExists(err) {
 			log.Infof("Role binding %s already exists", name)
+			if _, err := m.Client.RbacV1().RoleBindings(m.Config.Namespace).Update(ctx, &roleBinding, metav1.UpdateOptions{}); err != nil {
+				return fmt.Errorf("Error updating role binding %s: %w", name, err)
+			}
+		} else {
+			return fmt.Errorf("Error creating role binding %s: %w", name, err)
+		}
+	}
+
+	return nil
+}
+
+func (m *manifestGenerator) createClusterRoleBinding(ctx context.Context, serviceAccountName, roleName string) error {
+	name := fmt.Sprintf("%s-%s-%s", m.Config.Namespace, serviceAccountName, roleName)
+	roleBinding := rbacv1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "ClusterRole",
+			Name:     roleName,
+		},
+		Subjects: []rbacv1.Subject{{
+			Kind:      "ServiceAccount",
+			Name:      serviceAccountName,
+			Namespace: m.Config.Namespace,
+		}},
+	}
+	_, err := m.Client.RbacV1().ClusterRoleBindings().Create(ctx, &roleBinding, metav1.CreateOptions{})
+
+	if err != nil {
+		if k8serrors.IsAlreadyExists(err) {
+			log.Infof("Role binding %s already exists, skipping", name)
 		} else {
 			return fmt.Errorf("Error creating role binding %s: %w", name, err)
 		}
@@ -270,14 +335,14 @@ func (m *manifestGenerator) createServiceAccount(ctx context.Context, name strin
 	_, err := m.Client.CoreV1().ServiceAccounts(m.Config.Namespace).Create(ctx, &acct, metav1.CreateOptions{})
 
 	if err != nil {
-		if errors.IsAlreadyExists(err) {
+		if k8serrors.IsAlreadyExists(err) {
 			log.Infof("Service account %s already exists", name)
 		} else {
 			return fmt.Errorf("Error creating service account %s: %w", name, err)
 		}
 	}
 
-	return m.createNonrootV2SCCRoleBinding(ctx, name)
+	return nil
 }
 
 func (m *manifestGenerator) applyConfigMap(ctx context.Context, name string, cm *v1.ConfigMap) error {
@@ -285,7 +350,7 @@ func (m *manifestGenerator) applyConfigMap(ctx context.Context, name string, cm 
 	_, err := m.Client.CoreV1().ConfigMaps(m.Config.Namespace).Create(ctx, cm, metav1.CreateOptions{})
 
 	if err != nil {
-		if errors.IsAlreadyExists(err) {
+		if k8serrors.IsAlreadyExists(err) {
 			_, err = m.Client.CoreV1().ConfigMaps(m.Config.Namespace).Update(ctx, cm, metav1.UpdateOptions{})
 			if err != nil {
 				return fmt.Errorf("Error updating configmap %s: %w", name, err)
@@ -311,7 +376,7 @@ func (m *manifestGenerator) applyService(ctx context.Context, name string, ports
 	_, err := m.Client.CoreV1().Services(m.Config.Namespace).Create(ctx, &svc, metav1.CreateOptions{})
 
 	if err != nil {
-		if errors.IsAlreadyExists(err) {
+		if k8serrors.IsAlreadyExists(err) {
 			_, err = m.Client.CoreV1().Services(m.Config.Namespace).Update(ctx, &svc, metav1.UpdateOptions{})
 			if err != nil {
 				return fmt.Errorf("Error updating service %s: %w", name, err)
@@ -322,4 +387,186 @@ func (m *manifestGenerator) applyService(ctx context.Context, name string, ports
 	}
 
 	return nil
+}
+
+func getRandomPort() (int, error) {
+	listener, err := net.Listen("tcp", ":0") // 0 means a random port will be assigned
+	if err != nil {
+		return 0, err
+	}
+	defer listener.Close()
+	_, port, _ := net.SplitHostPort(listener.Addr().String())
+	return strconv.Atoi(port)
+}
+
+func (m *manifestGenerator) portForward(ctx context.Context, port int) (chan struct{}, error) {
+	pods, err := m.Client.CoreV1().Pods(m.Config.Namespace).List(ctx, metav1.ListOptions{
+		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{MatchLabels: map[string]string{"app": "central"}}),
+	})
+	if err != nil {
+		return nil, err
+	} else if len(pods.Items) == 0 {
+		return nil, fmt.Errorf("no central pods found: %v", err)
+	}
+
+	centralPod := pods.Items[0]
+
+	if centralPod.Status.Phase != v1.PodRunning {
+		return nil, errors.New("Pod not yet ready")
+	}
+
+	podName := centralPod.Name
+
+	if podName == "" {
+		return nil, errors.New("Timed out waiting for pod to start running")
+	}
+
+	req := m.Client.CoreV1().RESTClient().Post().
+		Resource("pods").
+		Namespace(m.Config.Namespace).
+		Name(podName).
+		SubResource("portforward")
+
+	transport, upgrader, err := spdy.RoundTripperFor(m.RESTConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	dialer := spdy.NewDialer(upgrader, &http.Client{Transport: transport}, http.MethodPost, req.URL())
+	if err != nil {
+		return nil, fmt.Errorf("Failed to create websocket: %v", err)
+	}
+
+	stopChan := make(chan struct{}, 1)
+	readyChan := make(chan struct{})
+
+	pf, err := portforward.New(dialer, []string{fmt.Sprintf("%d:8443", port)}, stopChan, readyChan, os.Stdout, os.Stderr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create tunnel for port-forwarding: %v", err)
+	}
+
+	go func() {
+		err = pf.ForwardPorts()
+	}()
+
+	log.Info("Waiting for port forwarder to become ready...")
+
+	select {
+	case <-readyChan:
+		log.Info("port forwarder ready!")
+		return stopChan, nil
+	case <-time.After(5 * time.Second):
+		errMsg := "Timed out waiting for port forwarding to start"
+		if err != nil {
+			return nil, errors.Wrap(err, errMsg)
+		}
+		return nil, errors.New(errMsg)
+	}
+}
+
+func (m *manifestGenerator) centralConnection(ctx context.Context, port int) (*grpc.ClientConn, error) {
+	clientconn.SetUserAgent("Installer")
+
+	dialOpts := []grpc.DialOption{
+		grpc.WithNoProxy(),
+	}
+
+	pool := x509.NewCertPool()
+	pool.AppendCertsFromPEM(m.CA.CertPEM())
+
+	opts := clientconn.Options{
+		InsecureNoTLS:                  false,
+		InsecureAllowCredsViaPlaintext: false,
+		DialOptions:                    dialOpts,
+		TLS: clientconn.TLSConfigOptions{
+			RootCAs: pool,
+		},
+	}
+
+	opts.ConfigureBasicAuth("admin", "letmein")
+
+	callOpts := []grpc.CallOption{grpc.MaxCallRecvMsgSize(12 * size.MB)}
+	centralHostPort := fmt.Sprintf("localhost:%d", port)
+	return clientconn.GRPCConnection(ctx, mtls.CentralSubject, centralHostPort, opts, grpc.WithDefaultCallOptions(callOpts...))
+}
+
+func (m *manifestGenerator) applyCRS(ctx context.Context) error {
+	sec, err := m.Client.CoreV1().Secrets(m.Config.Namespace).Get(ctx, "cluster-registration-secret", metav1.GetOptions{})
+	if sec != nil && err == nil {
+		log.Info("CRS already exists")
+		return nil
+	} else if !k8serrors.IsNotFound(err) {
+		return errors.Wrap(err, "Failed to fetch cluster-registration-secret")
+	}
+
+	port, err := getRandomPort()
+	if err != nil {
+		panic(err)
+	}
+
+	var resp *stackroxv1.CRSGenResponse
+	retry.WithRetry(func() error {
+		pfCloseChan, err := m.portForward(ctx, port)
+		if err != nil {
+			return errors.Wrap(err, "Failed to create port forwarder")
+		}
+		defer close(pfCloseChan)
+
+		log.Info("Creating grpc connection to central...")
+
+		conn, err := m.centralConnection(ctx, port)
+		if err != nil {
+			return errors.Wrap(err, "Failed to create gRPC connection")
+		}
+		defer utils.IgnoreError(conn.Close)
+
+		log.Info("Invoking CRS endpoint...")
+		svc := stackroxv1.NewClusterInitServiceClient(conn)
+		req := stackroxv1.CRSGenRequest{Name: "local"}
+		resp, err = svc.GenerateCRS(ctx, &req)
+		if err != nil {
+			if errStatus, ok := status.FromError(err); ok && errStatus.Code() == codes.Unimplemented {
+				return errors.Wrap(err, "missing CRS support in Central")
+			}
+			return errors.Wrap(err, "generating new CRS")
+		}
+		return nil
+	}, retry.Tries(30), retry.BetweenAttempts(func(previousAttemptNumber int) {
+		log.Info("Waiting for central endpoint to start listening")
+		time.Sleep(5 * time.Second)
+	}))
+
+	crs := extractCRS(resp.GetCrs())
+
+	if crs == "" {
+		return errors.New("Failed to extract CRS")
+	}
+
+	data, err := base64.StdEncoding.DecodeString(crs)
+	if err != nil {
+		return errors.Wrap(err, "Failed to base64 decode CRS")
+	}
+
+	crsSecret := v1.Secret{
+		Data: map[string][]byte{"crs": []byte(data)},
+	}
+	crsSecret.SetName("cluster-registration-secret")
+	if _, err := m.Client.CoreV1().Secrets(m.Config.Namespace).Create(ctx, &crsSecret, metav1.CreateOptions{}); err != nil {
+		return errors.Wrap(err, "Failed to create CRS secret")
+	}
+	log.Info("Created cluster-registration-secret")
+
+	return nil
+}
+
+func extractCRS(input []byte) string {
+	scanner := bufio.NewScanner(strings.NewReader(string(input)))
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.HasPrefix(line, "  crs: ") {
+			return strings.TrimPrefix(line, "  crs: ")
+		}
+	}
+	return ""
 }
