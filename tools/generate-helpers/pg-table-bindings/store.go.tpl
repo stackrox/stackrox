@@ -78,6 +78,7 @@ type Store interface {
 {{- end }}
 
     Count(ctx context.Context, q *v1.Query) (int, error)
+    CountBy(ctx context.Context, q *v1.Query) ([]search.CountByWrapper, error)
     Exists(ctx context.Context, {{template "paramList" $pks}}) (bool, error)
     Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 
