@@ -984,7 +984,7 @@ func RunCountByRequestForSchema(ctx context.Context, schema *walker.Schema, q *v
 		for rows.Next() {
 			log.Info("processing row")
 			log.Infof("row raw value count %d", len(rows.RawValues()))
-			if err := rows.Scan(&bufferToScanRowInto); err != nil {
+			if err := rows.Scan(bufferToScanRowInto...); err != nil {
 				log.Errorf("Query issue: %s: %v", queryStr, err)
 				return nil, errors.Wrap(err, "error executing query")
 			}
