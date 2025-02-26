@@ -2413,18 +2413,6 @@ func (s *PruningTestSuite) addSomePods(podDS podDatastore.DataStore, clusterID s
 	return res
 }
 
-func (s *PruningTestSuite) addSomePodsAsync(podDS podDatastore.DataStore, clusterID string, numberPods int, c chan<- *storage.Pod) {
-	for i := 0; i < numberPods; i++ {
-		pod := &storage.Pod{
-			Id:        uuid.NewV4().String(),
-			ClusterId: clusterID,
-		}
-		err := podDS.UpsertPod(s.ctx, pod)
-		s.Nil(err)
-		c <- pod
-	}
-}
-
 func (s *PruningTestSuite) addSomeAlerts(alertDS alertDatastore.DataStore, pod *storage.Pod, clusterID string, numberAlerts int) {
 	old := protoconv.ConvertTimeToTimestamp(time.Date(2000, time.January, 1, 0, 0, 0, 0, time.UTC))
 	for i := 0; i < numberAlerts; i++ {
