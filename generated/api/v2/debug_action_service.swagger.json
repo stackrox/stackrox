@@ -1,0 +1,264 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "api/v2/debug_action_service.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "DebugActionService"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v2/actions/debug": {
+      "post": {
+        "summary": "Register a new action to execute when the action identifier is encountered.\nAt any time, only one action can be registered per identifier.",
+        "operationId": "DebugActionService_RegisterAction",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v2DebugAction"
+            }
+          }
+        ],
+        "tags": [
+          "DebugActionService"
+        ]
+      }
+    },
+    "/v2/actions/debug/proceed/all/{id}": {
+      "put": {
+        "summary": "Proceeds all routines waiting on the given action identifier.\nThis is only relevant when registered action is of WaitAction type",
+        "operationId": "DebugActionService_ProceedAll",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "DebugActionService"
+        ]
+      }
+    },
+    "/v2/actions/debug/proceed/{id}": {
+      "put": {
+        "summary": "Proceeds the oldest routine waiting on the given action identifier.\nThis is only relevant when registered action is of WaitAction type",
+        "operationId": "DebugActionService_ProceedOldest",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "DebugActionService"
+        ]
+      }
+    },
+    "/v2/actions/debug/{id}": {
+      "get": {
+        "summary": "Status of the registered action",
+        "operationId": "DebugActionService_GetActionStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ActionStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "DebugActionService"
+        ]
+      },
+      "delete": {
+        "summary": "Deletes the registered action. If any routines are waiting on this action, they are all signalled to proceed",
+        "operationId": "DebugActionService_DeleteAction",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "DebugActionService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "v2ActionStatus": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "$ref": "#/definitions/v2DebugAction"
+        },
+        "timesEncountered": {
+          "type": "integer",
+          "format": "int32",
+          "title": "number of times the action identifier was encountered"
+        },
+        "timesExecuted": {
+          "type": "integer",
+          "format": "int32",
+          "title": "number of times the action was executed"
+        },
+        "timesSignaled": {
+          "type": "integer",
+          "format": "int32",
+          "title": "number of times the action was given proceed signal. This is only relevant when action is of WaitAction type"
+        }
+      }
+    },
+    "v2DebugAction": {
+      "type": "object",
+      "properties": {
+        "identifier": {
+          "type": "string",
+          "description": "Action identifier must declared in the code using <func name here>. The action registered in this request is executed\nwhen any routine encounters this identifier during its execution."
+        },
+        "numTimes": {
+          "type": "integer",
+          "format": "int32",
+          "title": "num_times > 0: Wait (until proceed signal is received) for first num_times this action identifier is encountered.\nDefault 0: Always wait (until proceed signal is received) upon encountering this action identifier"
+        },
+        "sleepAction": {
+          "$ref": "#/definitions/v2SleepAction"
+        },
+        "waitAction": {
+          "$ref": "#/definitions/v2WaitAction"
+        }
+      }
+    },
+    "v2Empty": {
+      "type": "object"
+    },
+    "v2SleepAction": {
+      "type": "object",
+      "properties": {
+        "seconds": {
+          "type": "integer",
+          "format": "int32",
+          "title": "seconds to sleep upon encountering this action identifier"
+        }
+      }
+    },
+    "v2WaitAction": {
+      "type": "object"
+    }
+  }
+}
