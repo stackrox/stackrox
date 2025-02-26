@@ -3,10 +3,8 @@
 package storage
 
 import (
-	_ "bytes"
 	fmt "fmt"
 	strings "strings"
-	_ "time"
 	unsafe "unsafe"
 )
 
@@ -31,16 +29,16 @@ func (m *ProfileShim) marshalJSON(buf *strings.Builder) (err error) {
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetProfileId(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("profileId")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetProfileRefId(); x != "" {
@@ -48,10 +46,10 @@ func (m *ProfileShim) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("profileRefId")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	buf.WriteString("}")
@@ -79,16 +77,16 @@ func (m *ComplianceOperatorProfileV2) marshalJSON(buf *strings.Builder) (err err
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetId(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("id")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetProfileId(); x != "" {
@@ -96,10 +94,10 @@ func (m *ComplianceOperatorProfileV2) marshalJSON(buf *strings.Builder) (err err
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("profileId")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetName(); x != "" {
@@ -107,10 +105,10 @@ func (m *ComplianceOperatorProfileV2) marshalJSON(buf *strings.Builder) (err err
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("name")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetProfileVersion(); x != "" {
@@ -118,10 +116,10 @@ func (m *ComplianceOperatorProfileV2) marshalJSON(buf *strings.Builder) (err err
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("profileVersion")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetProductType(); x != "" {
@@ -129,10 +127,10 @@ func (m *ComplianceOperatorProfileV2) marshalJSON(buf *strings.Builder) (err err
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("productType")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetStandard(); x != "" {
@@ -140,10 +138,10 @@ func (m *ComplianceOperatorProfileV2) marshalJSON(buf *strings.Builder) (err err
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("standard")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetLabels(); x != nil {
@@ -151,54 +149,54 @@ func (m *ComplianceOperatorProfileV2) marshalJSON(buf *strings.Builder) (err err
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("labels")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("{")
+		buf.WriteByte('{')
 		for k, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
 			}
 			trailingComma = true
 			fmt.Fprintf(buf, "%q", k)
-			buf.WriteString(":")
+			buf.WriteByte(':')
 			fmt.Fprintf(buf, "%q", v)
 		}
-		buf.WriteString("}")
+		buf.WriteByte('}')
 	}
 	if x := m.GetAnnotations(); x != nil {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("annotations")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("{")
+		buf.WriteByte('{')
 		for k, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
 			}
 			trailingComma = true
 			fmt.Fprintf(buf, "%q", k)
-			buf.WriteString(":")
+			buf.WriteByte(':')
 			fmt.Fprintf(buf, "%q", v)
 		}
-		buf.WriteString("}")
+		buf.WriteByte('}')
 	}
 	if x := m.GetDescription(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("description")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetRules(); x != nil {
@@ -206,12 +204,12 @@ func (m *ComplianceOperatorProfileV2) marshalJSON(buf *strings.Builder) (err err
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("rules")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("[")
+		buf.WriteByte('[')
 		for _, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
@@ -221,17 +219,17 @@ func (m *ComplianceOperatorProfileV2) marshalJSON(buf *strings.Builder) (err err
 				return err
 			}
 		}
-		buf.WriteString("]")
+		buf.WriteByte(']')
 	}
 	if x := m.GetProduct(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("product")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetTitle(); x != "" {
@@ -239,10 +237,10 @@ func (m *ComplianceOperatorProfileV2) marshalJSON(buf *strings.Builder) (err err
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("title")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetValues(); x != nil {
@@ -250,12 +248,12 @@ func (m *ComplianceOperatorProfileV2) marshalJSON(buf *strings.Builder) (err err
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("values")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("[")
+		buf.WriteByte('[')
 		for _, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
@@ -263,17 +261,17 @@ func (m *ComplianceOperatorProfileV2) marshalJSON(buf *strings.Builder) (err err
 			trailingComma = true
 			fmt.Fprintf(buf, "%q", v)
 		}
-		buf.WriteString("]")
+		buf.WriteByte(']')
 	}
 	if x := m.GetClusterId(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("clusterId")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetProfileRefId(); x != "" {
@@ -281,10 +279,10 @@ func (m *ComplianceOperatorProfileV2) marshalJSON(buf *strings.Builder) (err err
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("profileRefId")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	buf.WriteString("}")
@@ -312,16 +310,16 @@ func (m *ComplianceOperatorProfileV2_Rule) marshalJSON(buf *strings.Builder) (er
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetRuleName(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("ruleName")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	buf.WriteString("}")
@@ -349,16 +347,16 @@ func (m *ComplianceOperatorRuleV2) marshalJSON(buf *strings.Builder) (err error)
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetId(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("id")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetRuleId(); x != "" {
@@ -366,10 +364,10 @@ func (m *ComplianceOperatorRuleV2) marshalJSON(buf *strings.Builder) (err error)
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("ruleId")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetName(); x != "" {
@@ -377,10 +375,10 @@ func (m *ComplianceOperatorRuleV2) marshalJSON(buf *strings.Builder) (err error)
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("name")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetRuleType(); x != "" {
@@ -388,10 +386,10 @@ func (m *ComplianceOperatorRuleV2) marshalJSON(buf *strings.Builder) (err error)
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("ruleType")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetSeverity(); x != 0 {
@@ -399,10 +397,10 @@ func (m *ComplianceOperatorRuleV2) marshalJSON(buf *strings.Builder) (err error)
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("severity")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		buf.WriteString("\"" + x.String() + "\"")
 	}
 	if x := m.GetLabels(); x != nil {
@@ -410,54 +408,54 @@ func (m *ComplianceOperatorRuleV2) marshalJSON(buf *strings.Builder) (err error)
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("labels")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("{")
+		buf.WriteByte('{')
 		for k, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
 			}
 			trailingComma = true
 			fmt.Fprintf(buf, "%q", k)
-			buf.WriteString(":")
+			buf.WriteByte(':')
 			fmt.Fprintf(buf, "%q", v)
 		}
-		buf.WriteString("}")
+		buf.WriteByte('}')
 	}
 	if x := m.GetAnnotations(); x != nil {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("annotations")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("{")
+		buf.WriteByte('{')
 		for k, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
 			}
 			trailingComma = true
 			fmt.Fprintf(buf, "%q", k)
-			buf.WriteString(":")
+			buf.WriteByte(':')
 			fmt.Fprintf(buf, "%q", v)
 		}
-		buf.WriteString("}")
+		buf.WriteByte('}')
 	}
 	if x := m.GetTitle(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("title")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetDescription(); x != "" {
@@ -465,10 +463,10 @@ func (m *ComplianceOperatorRuleV2) marshalJSON(buf *strings.Builder) (err error)
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("description")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetRationale(); x != "" {
@@ -476,10 +474,10 @@ func (m *ComplianceOperatorRuleV2) marshalJSON(buf *strings.Builder) (err error)
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("rationale")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetFixes(); x != nil {
@@ -487,12 +485,12 @@ func (m *ComplianceOperatorRuleV2) marshalJSON(buf *strings.Builder) (err error)
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("fixes")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("[")
+		buf.WriteByte('[')
 		for _, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
@@ -502,17 +500,17 @@ func (m *ComplianceOperatorRuleV2) marshalJSON(buf *strings.Builder) (err error)
 				return err
 			}
 		}
-		buf.WriteString("]")
+		buf.WriteByte(']')
 	}
 	if x := m.GetWarning(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("warning")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetControls(); x != nil {
@@ -520,12 +518,12 @@ func (m *ComplianceOperatorRuleV2) marshalJSON(buf *strings.Builder) (err error)
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("controls")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("[")
+		buf.WriteByte('[')
 		for _, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
@@ -535,17 +533,17 @@ func (m *ComplianceOperatorRuleV2) marshalJSON(buf *strings.Builder) (err error)
 				return err
 			}
 		}
-		buf.WriteString("]")
+		buf.WriteByte(']')
 	}
 	if x := m.GetClusterId(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("clusterId")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetRuleRefId(); x != "" {
@@ -553,10 +551,10 @@ func (m *ComplianceOperatorRuleV2) marshalJSON(buf *strings.Builder) (err error)
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("ruleRefId")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetParentRule(); x != "" {
@@ -564,10 +562,10 @@ func (m *ComplianceOperatorRuleV2) marshalJSON(buf *strings.Builder) (err error)
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("parentRule")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetInstructions(); x != "" {
@@ -575,10 +573,10 @@ func (m *ComplianceOperatorRuleV2) marshalJSON(buf *strings.Builder) (err error)
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("instructions")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	buf.WriteString("}")
@@ -606,16 +604,16 @@ func (m *ComplianceOperatorRuleV2_Fix) marshalJSON(buf *strings.Builder) (err er
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetPlatform(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("platform")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetDisruption(); x != "" {
@@ -623,10 +621,10 @@ func (m *ComplianceOperatorRuleV2_Fix) marshalJSON(buf *strings.Builder) (err er
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("disruption")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	buf.WriteString("}")
@@ -654,16 +652,16 @@ func (m *RuleControls) marshalJSON(buf *strings.Builder) (err error) {
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetStandard(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("standard")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetControls(); x != nil {
@@ -671,12 +669,12 @@ func (m *RuleControls) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("controls")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("[")
+		buf.WriteByte('[')
 		for _, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
@@ -684,17 +682,17 @@ func (m *RuleControls) marshalJSON(buf *strings.Builder) (err error) {
 			trailingComma = true
 			fmt.Fprintf(buf, "%q", v)
 		}
-		buf.WriteString("]")
+		buf.WriteByte(']')
 	}
 	if x := m.GetControl(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("control")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	buf.WriteString("}")
@@ -722,16 +720,16 @@ func (m *ComplianceOperatorScanConfigurationV2) marshalJSON(buf *strings.Builder
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetId(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("id")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetScanConfigName(); x != "" {
@@ -739,10 +737,10 @@ func (m *ComplianceOperatorScanConfigurationV2) marshalJSON(buf *strings.Builder
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("scanConfigName")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetAutoApplyRemediations(); x != false {
@@ -750,10 +748,10 @@ func (m *ComplianceOperatorScanConfigurationV2) marshalJSON(buf *strings.Builder
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("autoApplyRemediations")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if x {
 			buf.WriteString("true")
 		} else {
@@ -765,10 +763,10 @@ func (m *ComplianceOperatorScanConfigurationV2) marshalJSON(buf *strings.Builder
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("autoUpdateRemediations")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if x {
 			buf.WriteString("true")
 		} else {
@@ -780,10 +778,10 @@ func (m *ComplianceOperatorScanConfigurationV2) marshalJSON(buf *strings.Builder
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("oneTimeScan")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if x {
 			buf.WriteString("true")
 		} else {
@@ -795,56 +793,56 @@ func (m *ComplianceOperatorScanConfigurationV2) marshalJSON(buf *strings.Builder
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("labels")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("{")
+		buf.WriteByte('{')
 		for k, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
 			}
 			trailingComma = true
 			fmt.Fprintf(buf, "%q", k)
-			buf.WriteString(":")
+			buf.WriteByte(':')
 			fmt.Fprintf(buf, "%q", v)
 		}
-		buf.WriteString("}")
+		buf.WriteByte('}')
 	}
 	if x := m.GetAnnotations(); x != nil {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("annotations")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("{")
+		buf.WriteByte('{')
 		for k, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
 			}
 			trailingComma = true
 			fmt.Fprintf(buf, "%q", k)
-			buf.WriteString(":")
+			buf.WriteByte(':')
 			fmt.Fprintf(buf, "%q", v)
 		}
-		buf.WriteString("}")
+		buf.WriteByte('}')
 	}
 	if x := m.GetProfiles(); x != nil {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("profiles")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("[")
+		buf.WriteByte('[')
 		for _, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
@@ -854,19 +852,19 @@ func (m *ComplianceOperatorScanConfigurationV2) marshalJSON(buf *strings.Builder
 				return err
 			}
 		}
-		buf.WriteString("]")
+		buf.WriteByte(']')
 	}
 	if x := m.GetNodeRoles(); x != nil {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("nodeRoles")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("[")
+		buf.WriteByte('[')
 		for _, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
@@ -874,17 +872,17 @@ func (m *ComplianceOperatorScanConfigurationV2) marshalJSON(buf *strings.Builder
 			trailingComma = true
 			buf.WriteString("\"" + v.String() + "\"")
 		}
-		buf.WriteString("]")
+		buf.WriteByte(']')
 	}
 	if x := m.GetStrictNodeScan(); x != false {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("strictNodeScan")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if x {
 			buf.WriteString("true")
 		} else {
@@ -896,10 +894,10 @@ func (m *ComplianceOperatorScanConfigurationV2) marshalJSON(buf *strings.Builder
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("schedule")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if err := x.marshalJSON(buf); err != nil {
 			return err
 		}
@@ -909,10 +907,10 @@ func (m *ComplianceOperatorScanConfigurationV2) marshalJSON(buf *strings.Builder
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("createdTime")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if t := x; t == nil {
 			buf.WriteString("null")
 		} else {
@@ -928,10 +926,10 @@ func (m *ComplianceOperatorScanConfigurationV2) marshalJSON(buf *strings.Builder
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("lastUpdatedTime")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if t := x; t == nil {
 			buf.WriteString("null")
 		} else {
@@ -947,10 +945,10 @@ func (m *ComplianceOperatorScanConfigurationV2) marshalJSON(buf *strings.Builder
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("modifiedBy")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if err := x.marshalJSON(buf); err != nil {
 			return err
 		}
@@ -960,10 +958,10 @@ func (m *ComplianceOperatorScanConfigurationV2) marshalJSON(buf *strings.Builder
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("description")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetClusters(); x != nil {
@@ -971,12 +969,12 @@ func (m *ComplianceOperatorScanConfigurationV2) marshalJSON(buf *strings.Builder
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("clusters")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("[")
+		buf.WriteByte('[')
 		for _, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
@@ -986,19 +984,19 @@ func (m *ComplianceOperatorScanConfigurationV2) marshalJSON(buf *strings.Builder
 				return err
 			}
 		}
-		buf.WriteString("]")
+		buf.WriteByte(']')
 	}
 	if x := m.GetNotifiers(); x != nil {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("notifiers")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("[")
+		buf.WriteByte('[')
 		for _, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
@@ -1008,7 +1006,7 @@ func (m *ComplianceOperatorScanConfigurationV2) marshalJSON(buf *strings.Builder
 				return err
 			}
 		}
-		buf.WriteString("]")
+		buf.WriteByte(']')
 	}
 	buf.WriteString("}")
 	return nil
@@ -1035,16 +1033,16 @@ func (m *ComplianceOperatorScanConfigurationV2_ProfileName) marshalJSON(buf *str
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetProfileName(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("profileName")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	buf.WriteString("}")
@@ -1072,16 +1070,16 @@ func (m *ComplianceOperatorScanConfigurationV2_Cluster) marshalJSON(buf *strings
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetClusterId(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("clusterId")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	buf.WriteString("}")
@@ -1109,16 +1107,16 @@ func (m *ComplianceOperatorClusterScanConfigStatus) marshalJSON(buf *strings.Bui
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetId(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("id")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetClusterId(); x != "" {
@@ -1126,10 +1124,10 @@ func (m *ComplianceOperatorClusterScanConfigStatus) marshalJSON(buf *strings.Bui
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("clusterId")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetScanConfigId(); x != "" {
@@ -1137,10 +1135,10 @@ func (m *ComplianceOperatorClusterScanConfigStatus) marshalJSON(buf *strings.Bui
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("scanConfigId")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetErrors(); x != nil {
@@ -1148,12 +1146,12 @@ func (m *ComplianceOperatorClusterScanConfigStatus) marshalJSON(buf *strings.Bui
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("errors")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("[")
+		buf.WriteByte('[')
 		for _, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
@@ -1161,17 +1159,17 @@ func (m *ComplianceOperatorClusterScanConfigStatus) marshalJSON(buf *strings.Bui
 			trailingComma = true
 			fmt.Fprintf(buf, "%q", v)
 		}
-		buf.WriteString("]")
+		buf.WriteByte(']')
 	}
 	if x := m.GetLastUpdatedTime(); x != nil {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("lastUpdatedTime")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if t := x; t == nil {
 			buf.WriteString("null")
 		} else {
@@ -1187,10 +1185,10 @@ func (m *ComplianceOperatorClusterScanConfigStatus) marshalJSON(buf *strings.Bui
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("clusterName")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	buf.WriteString("}")
@@ -1218,16 +1216,16 @@ func (m *ComplianceOperatorBenchmarkV2) marshalJSON(buf *strings.Builder) (err e
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetId(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("id")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetName(); x != "" {
@@ -1235,10 +1233,10 @@ func (m *ComplianceOperatorBenchmarkV2) marshalJSON(buf *strings.Builder) (err e
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("name")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetVersion(); x != "" {
@@ -1246,10 +1244,10 @@ func (m *ComplianceOperatorBenchmarkV2) marshalJSON(buf *strings.Builder) (err e
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("version")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetDescription(); x != "" {
@@ -1257,10 +1255,10 @@ func (m *ComplianceOperatorBenchmarkV2) marshalJSON(buf *strings.Builder) (err e
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("description")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetProvider(); x != "" {
@@ -1268,10 +1266,10 @@ func (m *ComplianceOperatorBenchmarkV2) marshalJSON(buf *strings.Builder) (err e
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("provider")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetShortName(); x != "" {
@@ -1279,10 +1277,10 @@ func (m *ComplianceOperatorBenchmarkV2) marshalJSON(buf *strings.Builder) (err e
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("shortName")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetProfiles(); x != nil {
@@ -1290,12 +1288,12 @@ func (m *ComplianceOperatorBenchmarkV2) marshalJSON(buf *strings.Builder) (err e
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("profiles")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("[")
+		buf.WriteByte('[')
 		for _, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
@@ -1305,7 +1303,7 @@ func (m *ComplianceOperatorBenchmarkV2) marshalJSON(buf *strings.Builder) (err e
 				return err
 			}
 		}
-		buf.WriteString("]")
+		buf.WriteByte(']')
 	}
 	buf.WriteString("}")
 	return nil
@@ -1332,16 +1330,16 @@ func (m *ComplianceOperatorBenchmarkV2_Profile) marshalJSON(buf *strings.Builder
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetProfileName(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("profileName")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetProfileVersion(); x != "" {
@@ -1349,10 +1347,10 @@ func (m *ComplianceOperatorBenchmarkV2_Profile) marshalJSON(buf *strings.Builder
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("profileVersion")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	buf.WriteString("}")
@@ -1380,16 +1378,16 @@ func (m *ComplianceOperatorCheckResultV2) marshalJSON(buf *strings.Builder) (err
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetId(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("id")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetCheckId(); x != "" {
@@ -1397,10 +1395,10 @@ func (m *ComplianceOperatorCheckResultV2) marshalJSON(buf *strings.Builder) (err
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("checkId")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetCheckName(); x != "" {
@@ -1408,10 +1406,10 @@ func (m *ComplianceOperatorCheckResultV2) marshalJSON(buf *strings.Builder) (err
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("checkName")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetClusterId(); x != "" {
@@ -1419,10 +1417,10 @@ func (m *ComplianceOperatorCheckResultV2) marshalJSON(buf *strings.Builder) (err
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("clusterId")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetStatus(); x != 0 {
@@ -1430,10 +1428,10 @@ func (m *ComplianceOperatorCheckResultV2) marshalJSON(buf *strings.Builder) (err
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("status")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		buf.WriteString("\"" + x.String() + "\"")
 	}
 	if x := m.GetSeverity(); x != 0 {
@@ -1441,10 +1439,10 @@ func (m *ComplianceOperatorCheckResultV2) marshalJSON(buf *strings.Builder) (err
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("severity")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		buf.WriteString("\"" + x.String() + "\"")
 	}
 	if x := m.GetDescription(); x != "" {
@@ -1452,10 +1450,10 @@ func (m *ComplianceOperatorCheckResultV2) marshalJSON(buf *strings.Builder) (err
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("description")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetInstructions(); x != "" {
@@ -1463,10 +1461,10 @@ func (m *ComplianceOperatorCheckResultV2) marshalJSON(buf *strings.Builder) (err
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("instructions")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetLabels(); x != nil {
@@ -1474,54 +1472,54 @@ func (m *ComplianceOperatorCheckResultV2) marshalJSON(buf *strings.Builder) (err
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("labels")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("{")
+		buf.WriteByte('{')
 		for k, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
 			}
 			trailingComma = true
 			fmt.Fprintf(buf, "%q", k)
-			buf.WriteString(":")
+			buf.WriteByte(':')
 			fmt.Fprintf(buf, "%q", v)
 		}
-		buf.WriteString("}")
+		buf.WriteByte('}')
 	}
 	if x := m.GetAnnotations(); x != nil {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("annotations")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("{")
+		buf.WriteByte('{')
 		for k, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
 			}
 			trailingComma = true
 			fmt.Fprintf(buf, "%q", k)
-			buf.WriteString(":")
+			buf.WriteByte(':')
 			fmt.Fprintf(buf, "%q", v)
 		}
-		buf.WriteString("}")
+		buf.WriteByte('}')
 	}
 	if x := m.GetCreatedTime(); x != nil {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("createdTime")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if t := x; t == nil {
 			buf.WriteString("null")
 		} else {
@@ -1537,12 +1535,12 @@ func (m *ComplianceOperatorCheckResultV2) marshalJSON(buf *strings.Builder) (err
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("valuesUsed")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("[")
+		buf.WriteByte('[')
 		for _, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
@@ -1550,19 +1548,19 @@ func (m *ComplianceOperatorCheckResultV2) marshalJSON(buf *strings.Builder) (err
 			trailingComma = true
 			fmt.Fprintf(buf, "%q", v)
 		}
-		buf.WriteString("]")
+		buf.WriteByte(']')
 	}
 	if x := m.GetWarnings(); x != nil {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("warnings")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("[")
+		buf.WriteByte('[')
 		for _, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
@@ -1570,17 +1568,17 @@ func (m *ComplianceOperatorCheckResultV2) marshalJSON(buf *strings.Builder) (err
 			trailingComma = true
 			fmt.Fprintf(buf, "%q", v)
 		}
-		buf.WriteString("]")
+		buf.WriteByte(']')
 	}
 	if x := m.GetScanName(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("scanName")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetClusterName(); x != "" {
@@ -1588,10 +1586,10 @@ func (m *ComplianceOperatorCheckResultV2) marshalJSON(buf *strings.Builder) (err
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("clusterName")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetScanConfigName(); x != "" {
@@ -1599,10 +1597,10 @@ func (m *ComplianceOperatorCheckResultV2) marshalJSON(buf *strings.Builder) (err
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("scanConfigName")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetRationale(); x != "" {
@@ -1610,10 +1608,10 @@ func (m *ComplianceOperatorCheckResultV2) marshalJSON(buf *strings.Builder) (err
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("rationale")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetScanRefId(); x != "" {
@@ -1621,10 +1619,10 @@ func (m *ComplianceOperatorCheckResultV2) marshalJSON(buf *strings.Builder) (err
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("scanRefId")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetRuleRefId(); x != "" {
@@ -1632,10 +1630,10 @@ func (m *ComplianceOperatorCheckResultV2) marshalJSON(buf *strings.Builder) (err
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("ruleRefId")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	buf.WriteString("}")
@@ -1663,16 +1661,16 @@ func (m *ScanStatus) marshalJSON(buf *strings.Builder) (err error) {
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetPhase(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("phase")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetResult(); x != "" {
@@ -1680,10 +1678,10 @@ func (m *ScanStatus) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("result")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetWarnings(); x != "" {
@@ -1691,10 +1689,10 @@ func (m *ScanStatus) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("warnings")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	buf.WriteString("}")
@@ -1722,16 +1720,16 @@ func (m *ComplianceOperatorScanV2) marshalJSON(buf *strings.Builder) (err error)
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetId(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("id")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetScanConfigName(); x != "" {
@@ -1739,10 +1737,10 @@ func (m *ComplianceOperatorScanV2) marshalJSON(buf *strings.Builder) (err error)
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("scanConfigName")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetClusterId(); x != "" {
@@ -1750,10 +1748,10 @@ func (m *ComplianceOperatorScanV2) marshalJSON(buf *strings.Builder) (err error)
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("clusterId")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetErrors(); x != "" {
@@ -1761,10 +1759,10 @@ func (m *ComplianceOperatorScanV2) marshalJSON(buf *strings.Builder) (err error)
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("errors")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetProfile(); x != nil {
@@ -1772,10 +1770,10 @@ func (m *ComplianceOperatorScanV2) marshalJSON(buf *strings.Builder) (err error)
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("profile")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if err := x.marshalJSON(buf); err != nil {
 			return err
 		}
@@ -1785,54 +1783,54 @@ func (m *ComplianceOperatorScanV2) marshalJSON(buf *strings.Builder) (err error)
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("labels")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("{")
+		buf.WriteByte('{')
 		for k, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
 			}
 			trailingComma = true
 			fmt.Fprintf(buf, "%q", k)
-			buf.WriteString(":")
+			buf.WriteByte(':')
 			fmt.Fprintf(buf, "%q", v)
 		}
-		buf.WriteString("}")
+		buf.WriteByte('}')
 	}
 	if x := m.GetAnnotations(); x != nil {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("annotations")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("{")
+		buf.WriteByte('{')
 		for k, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
 			}
 			trailingComma = true
 			fmt.Fprintf(buf, "%q", k)
-			buf.WriteString(":")
+			buf.WriteByte(':')
 			fmt.Fprintf(buf, "%q", v)
 		}
-		buf.WriteString("}")
+		buf.WriteByte('}')
 	}
 	if x := m.GetScanType(); x != 0 {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("scanType")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		buf.WriteString("\"" + x.String() + "\"")
 	}
 	if x := m.GetNodeSelector(); x != 0 {
@@ -1840,10 +1838,10 @@ func (m *ComplianceOperatorScanV2) marshalJSON(buf *strings.Builder) (err error)
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("nodeSelector")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		buf.WriteString("\"" + x.String() + "\"")
 	}
 	if x := m.GetStatus(); x != nil {
@@ -1851,10 +1849,10 @@ func (m *ComplianceOperatorScanV2) marshalJSON(buf *strings.Builder) (err error)
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("status")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if err := x.marshalJSON(buf); err != nil {
 			return err
 		}
@@ -1864,10 +1862,10 @@ func (m *ComplianceOperatorScanV2) marshalJSON(buf *strings.Builder) (err error)
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("createdTime")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if t := x; t == nil {
 			buf.WriteString("null")
 		} else {
@@ -1883,10 +1881,10 @@ func (m *ComplianceOperatorScanV2) marshalJSON(buf *strings.Builder) (err error)
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("lastExecutedTime")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if t := x; t == nil {
 			buf.WriteString("null")
 		} else {
@@ -1902,10 +1900,10 @@ func (m *ComplianceOperatorScanV2) marshalJSON(buf *strings.Builder) (err error)
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("scanName")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetWarnings(); x != "" {
@@ -1913,10 +1911,10 @@ func (m *ComplianceOperatorScanV2) marshalJSON(buf *strings.Builder) (err error)
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("warnings")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetProductType(); x != "" {
@@ -1924,10 +1922,10 @@ func (m *ComplianceOperatorScanV2) marshalJSON(buf *strings.Builder) (err error)
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("productType")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetScanRefId(); x != "" {
@@ -1935,10 +1933,10 @@ func (m *ComplianceOperatorScanV2) marshalJSON(buf *strings.Builder) (err error)
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("scanRefId")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetLastStartedTime(); x != nil {
@@ -1946,10 +1944,10 @@ func (m *ComplianceOperatorScanV2) marshalJSON(buf *strings.Builder) (err error)
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("lastStartedTime")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if t := x; t == nil {
 			buf.WriteString("null")
 		} else {
@@ -1985,16 +1983,16 @@ func (m *ComplianceOperatorScanSettingBindingV2) marshalJSON(buf *strings.Builde
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetId(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("id")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetName(); x != "" {
@@ -2002,10 +2000,10 @@ func (m *ComplianceOperatorScanSettingBindingV2) marshalJSON(buf *strings.Builde
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("name")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetClusterId(); x != "" {
@@ -2013,10 +2011,10 @@ func (m *ComplianceOperatorScanSettingBindingV2) marshalJSON(buf *strings.Builde
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("clusterId")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetProfileNames(); x != nil {
@@ -2024,12 +2022,12 @@ func (m *ComplianceOperatorScanSettingBindingV2) marshalJSON(buf *strings.Builde
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("profileNames")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("[")
+		buf.WriteByte('[')
 		for _, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
@@ -2037,17 +2035,17 @@ func (m *ComplianceOperatorScanSettingBindingV2) marshalJSON(buf *strings.Builde
 			trailingComma = true
 			fmt.Fprintf(buf, "%q", v)
 		}
-		buf.WriteString("]")
+		buf.WriteByte(']')
 	}
 	if x := m.GetScanSettingName(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("scanSettingName")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetLabels(); x != nil {
@@ -2055,54 +2053,54 @@ func (m *ComplianceOperatorScanSettingBindingV2) marshalJSON(buf *strings.Builde
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("labels")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("{")
+		buf.WriteByte('{')
 		for k, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
 			}
 			trailingComma = true
 			fmt.Fprintf(buf, "%q", k)
-			buf.WriteString(":")
+			buf.WriteByte(':')
 			fmt.Fprintf(buf, "%q", v)
 		}
-		buf.WriteString("}")
+		buf.WriteByte('}')
 	}
 	if x := m.GetAnnotations(); x != nil {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("annotations")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("{")
+		buf.WriteByte('{')
 		for k, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
 			}
 			trailingComma = true
 			fmt.Fprintf(buf, "%q", k)
-			buf.WriteString(":")
+			buf.WriteByte(':')
 			fmt.Fprintf(buf, "%q", v)
 		}
-		buf.WriteString("}")
+		buf.WriteByte('}')
 	}
 	if x := m.GetStatus(); x != nil {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("status")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if err := x.marshalJSON(buf); err != nil {
 			return err
 		}
@@ -2132,16 +2130,16 @@ func (m *ComplianceOperatorCondition) marshalJSON(buf *strings.Builder) (err err
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetType(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("type")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetStatus(); x != "" {
@@ -2149,10 +2147,10 @@ func (m *ComplianceOperatorCondition) marshalJSON(buf *strings.Builder) (err err
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("status")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetReason(); x != "" {
@@ -2160,10 +2158,10 @@ func (m *ComplianceOperatorCondition) marshalJSON(buf *strings.Builder) (err err
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("reason")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetMessage(); x != "" {
@@ -2171,10 +2169,10 @@ func (m *ComplianceOperatorCondition) marshalJSON(buf *strings.Builder) (err err
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("message")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetLastTransitionTime(); x != nil {
@@ -2182,10 +2180,10 @@ func (m *ComplianceOperatorCondition) marshalJSON(buf *strings.Builder) (err err
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("lastTransitionTime")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if t := x; t == nil {
 			buf.WriteString("null")
 		} else {
@@ -2221,16 +2219,16 @@ func (m *ComplianceOperatorStatus) marshalJSON(buf *strings.Builder) (err error)
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetPhase(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("phase")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetResult(); x != "" {
@@ -2238,10 +2236,10 @@ func (m *ComplianceOperatorStatus) marshalJSON(buf *strings.Builder) (err error)
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("result")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetErrorMessage(); x != "" {
@@ -2249,10 +2247,10 @@ func (m *ComplianceOperatorStatus) marshalJSON(buf *strings.Builder) (err error)
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("errorMessage")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetConditions(); x != nil {
@@ -2260,12 +2258,12 @@ func (m *ComplianceOperatorStatus) marshalJSON(buf *strings.Builder) (err error)
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("conditions")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("[")
+		buf.WriteByte('[')
 		for _, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
@@ -2275,7 +2273,7 @@ func (m *ComplianceOperatorStatus) marshalJSON(buf *strings.Builder) (err error)
 				return err
 			}
 		}
-		buf.WriteString("]")
+		buf.WriteByte(']')
 	}
 	buf.WriteString("}")
 	return nil
@@ -2302,16 +2300,16 @@ func (m *ComplianceOperatorSuiteV2) marshalJSON(buf *strings.Builder) (err error
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetId(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("id")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetName(); x != "" {
@@ -2319,10 +2317,10 @@ func (m *ComplianceOperatorSuiteV2) marshalJSON(buf *strings.Builder) (err error
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("name")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetClusterId(); x != "" {
@@ -2330,10 +2328,10 @@ func (m *ComplianceOperatorSuiteV2) marshalJSON(buf *strings.Builder) (err error
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("clusterId")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetStatus(); x != nil {
@@ -2341,10 +2339,10 @@ func (m *ComplianceOperatorSuiteV2) marshalJSON(buf *strings.Builder) (err error
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("status")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if err := x.marshalJSON(buf); err != nil {
 			return err
 		}
@@ -2374,16 +2372,16 @@ func (m *ComplianceOperatorRemediationV2) marshalJSON(buf *strings.Builder) (err
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetId(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("id")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetName(); x != "" {
@@ -2391,10 +2389,10 @@ func (m *ComplianceOperatorRemediationV2) marshalJSON(buf *strings.Builder) (err
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("name")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetComplianceCheckResultName(); x != "" {
@@ -2402,10 +2400,10 @@ func (m *ComplianceOperatorRemediationV2) marshalJSON(buf *strings.Builder) (err
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("complianceCheckResultName")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetApply(); x != false {
@@ -2413,10 +2411,10 @@ func (m *ComplianceOperatorRemediationV2) marshalJSON(buf *strings.Builder) (err
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("apply")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if x {
 			buf.WriteString("true")
 		} else {
@@ -2428,10 +2426,10 @@ func (m *ComplianceOperatorRemediationV2) marshalJSON(buf *strings.Builder) (err
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("currentObject")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetOutdatedObject(); x != "" {
@@ -2439,10 +2437,10 @@ func (m *ComplianceOperatorRemediationV2) marshalJSON(buf *strings.Builder) (err
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("outdatedObject")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetEnforcementType(); x != "" {
@@ -2450,10 +2448,10 @@ func (m *ComplianceOperatorRemediationV2) marshalJSON(buf *strings.Builder) (err
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("enforcementType")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetClusterId(); x != "" {
@@ -2461,10 +2459,10 @@ func (m *ComplianceOperatorRemediationV2) marshalJSON(buf *strings.Builder) (err
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("clusterId")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	buf.WriteString("}")
@@ -2492,16 +2490,16 @@ func (m *ComplianceOperatorReportSnapshotV2) marshalJSON(buf *strings.Builder) (
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetReportId(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("reportId")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetScanConfigurationId(); x != "" {
@@ -2509,10 +2507,10 @@ func (m *ComplianceOperatorReportSnapshotV2) marshalJSON(buf *strings.Builder) (
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("scanConfigurationId")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetName(); x != "" {
@@ -2520,10 +2518,10 @@ func (m *ComplianceOperatorReportSnapshotV2) marshalJSON(buf *strings.Builder) (
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("name")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetDescription(); x != "" {
@@ -2531,10 +2529,10 @@ func (m *ComplianceOperatorReportSnapshotV2) marshalJSON(buf *strings.Builder) (
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("description")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetReportStatus(); x != nil {
@@ -2542,10 +2540,10 @@ func (m *ComplianceOperatorReportSnapshotV2) marshalJSON(buf *strings.Builder) (
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("reportStatus")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if err := x.marshalJSON(buf); err != nil {
 			return err
 		}
@@ -2555,10 +2553,10 @@ func (m *ComplianceOperatorReportSnapshotV2) marshalJSON(buf *strings.Builder) (
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("user")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if err := x.marshalJSON(buf); err != nil {
 			return err
 		}
@@ -2568,12 +2566,12 @@ func (m *ComplianceOperatorReportSnapshotV2) marshalJSON(buf *strings.Builder) (
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("scans")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("[")
+		buf.WriteByte('[')
 		for _, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
@@ -2583,17 +2581,17 @@ func (m *ComplianceOperatorReportSnapshotV2) marshalJSON(buf *strings.Builder) (
 				return err
 			}
 		}
-		buf.WriteString("]")
+		buf.WriteByte(']')
 	}
 	if x := m.GetReportData(); x != nil {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("reportData")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if err := x.marshalJSON(buf); err != nil {
 			return err
 		}
@@ -2623,16 +2621,16 @@ func (m *ComplianceOperatorReportSnapshotV2_Scan) marshalJSON(buf *strings.Build
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetScanRefId(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("scanRefId")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetLastStartedTime(); x != nil {
@@ -2640,10 +2638,10 @@ func (m *ComplianceOperatorReportSnapshotV2_Scan) marshalJSON(buf *strings.Build
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("lastStartedTime")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if t := x; t == nil {
 			buf.WriteString("null")
 		} else {
@@ -2679,16 +2677,16 @@ func (m *ComplianceOperatorReportData) marshalJSON(buf *strings.Builder) (err er
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetScanConfiguration(); x != nil {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("scanConfiguration")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if err := x.marshalJSON(buf); err != nil {
 			return err
 		}
@@ -2698,12 +2696,12 @@ func (m *ComplianceOperatorReportData) marshalJSON(buf *strings.Builder) (err er
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("clusterStatus")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("[")
+		buf.WriteByte('[')
 		for _, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
@@ -2713,17 +2711,17 @@ func (m *ComplianceOperatorReportData) marshalJSON(buf *strings.Builder) (err er
 				return err
 			}
 		}
-		buf.WriteString("]")
+		buf.WriteByte(']')
 	}
 	if x := m.GetLastExecutedTime(); x != nil {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("lastExecutedTime")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if t := x; t == nil {
 			buf.WriteString("null")
 		} else {
@@ -2759,16 +2757,16 @@ func (m *ComplianceOperatorReportData_SuiteStatus) marshalJSON(buf *strings.Buil
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetPhase(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("phase")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetResult(); x != "" {
@@ -2776,10 +2774,10 @@ func (m *ComplianceOperatorReportData_SuiteStatus) marshalJSON(buf *strings.Buil
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("result")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetErrorMessage(); x != "" {
@@ -2787,10 +2785,10 @@ func (m *ComplianceOperatorReportData_SuiteStatus) marshalJSON(buf *strings.Buil
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("errorMessage")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetLastTransitionTime(); x != nil {
@@ -2798,10 +2796,10 @@ func (m *ComplianceOperatorReportData_SuiteStatus) marshalJSON(buf *strings.Buil
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("lastTransitionTime")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if t := x; t == nil {
 			buf.WriteString("null")
 		} else {
@@ -2837,16 +2835,16 @@ func (m *ComplianceOperatorReportData_ClusterStatus) marshalJSON(buf *strings.Bu
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetClusterId(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("clusterId")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetErrors(); x != nil {
@@ -2854,12 +2852,12 @@ func (m *ComplianceOperatorReportData_ClusterStatus) marshalJSON(buf *strings.Bu
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("errors")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("[")
+		buf.WriteByte('[')
 		for _, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
@@ -2867,17 +2865,17 @@ func (m *ComplianceOperatorReportData_ClusterStatus) marshalJSON(buf *strings.Bu
 			trailingComma = true
 			fmt.Fprintf(buf, "%q", v)
 		}
-		buf.WriteString("]")
+		buf.WriteByte(']')
 	}
 	if x := m.GetClusterName(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("clusterName")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetSuiteStatus(); x != nil {
@@ -2885,10 +2883,10 @@ func (m *ComplianceOperatorReportData_ClusterStatus) marshalJSON(buf *strings.Bu
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("suiteStatus")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if err := x.marshalJSON(buf); err != nil {
 			return err
 		}
@@ -2918,16 +2916,16 @@ func (m *ComplianceOperatorReportStatus) marshalJSON(buf *strings.Builder) (err 
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetRunState(); x != 0 {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("runState")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		buf.WriteString("\"" + x.String() + "\"")
 	}
 	if x := m.GetStartedAt(); x != nil {
@@ -2935,10 +2933,10 @@ func (m *ComplianceOperatorReportStatus) marshalJSON(buf *strings.Builder) (err 
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("startedAt")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if t := x; t == nil {
 			buf.WriteString("null")
 		} else {
@@ -2954,10 +2952,10 @@ func (m *ComplianceOperatorReportStatus) marshalJSON(buf *strings.Builder) (err 
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("completedAt")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if t := x; t == nil {
 			buf.WriteString("null")
 		} else {
@@ -2973,10 +2971,10 @@ func (m *ComplianceOperatorReportStatus) marshalJSON(buf *strings.Builder) (err 
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("errorMsg")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetReportRequestType(); x != 0 {
@@ -2984,10 +2982,10 @@ func (m *ComplianceOperatorReportStatus) marshalJSON(buf *strings.Builder) (err 
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("reportRequestType")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		buf.WriteString("\"" + x.String() + "\"")
 	}
 	if x := m.GetReportNotificationMethod(); x != 0 {
@@ -2995,10 +2993,10 @@ func (m *ComplianceOperatorReportStatus) marshalJSON(buf *strings.Builder) (err 
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("reportNotificationMethod")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		buf.WriteString("\"" + x.String() + "\"")
 	}
 	buf.WriteString("}")

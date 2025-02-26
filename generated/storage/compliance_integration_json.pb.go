@@ -3,10 +3,8 @@
 package storage
 
 import (
-	_ "bytes"
 	fmt "fmt"
 	strings "strings"
-	_ "time"
 	unsafe "unsafe"
 )
 
@@ -31,16 +29,16 @@ func (m *ComplianceIntegration) marshalJSON(buf *strings.Builder) (err error) {
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetId(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("id")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetVersion(); x != "" {
@@ -48,10 +46,10 @@ func (m *ComplianceIntegration) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("version")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetClusterId(); x != "" {
@@ -59,10 +57,10 @@ func (m *ComplianceIntegration) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("clusterId")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetComplianceNamespace(); x != "" {
@@ -70,10 +68,10 @@ func (m *ComplianceIntegration) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("complianceNamespace")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetStatusErrors(); x != nil {
@@ -81,12 +79,12 @@ func (m *ComplianceIntegration) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("statusErrors")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("[")
+		buf.WriteByte('[')
 		for _, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
@@ -94,17 +92,17 @@ func (m *ComplianceIntegration) marshalJSON(buf *strings.Builder) (err error) {
 			trailingComma = true
 			fmt.Fprintf(buf, "%q", v)
 		}
-		buf.WriteString("]")
+		buf.WriteByte(']')
 	}
 	if x := m.GetOperatorInstalled(); x != false {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("operatorInstalled")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if x {
 			buf.WriteString("true")
 		} else {
@@ -116,10 +114,10 @@ func (m *ComplianceIntegration) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("operatorStatus")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		buf.WriteString("\"" + x.String() + "\"")
 	}
 	buf.WriteString("}")

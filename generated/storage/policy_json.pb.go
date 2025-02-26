@@ -3,10 +3,8 @@
 package storage
 
 import (
-	_ "bytes"
 	fmt "fmt"
 	strings "strings"
-	_ "time"
 	unsafe "unsafe"
 )
 
@@ -31,16 +29,16 @@ func (m *Policy) marshalJSON(buf *strings.Builder) (err error) {
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetId(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("id")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetName(); x != "" {
@@ -48,10 +46,10 @@ func (m *Policy) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("name")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetDescription(); x != "" {
@@ -59,10 +57,10 @@ func (m *Policy) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("description")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetRationale(); x != "" {
@@ -70,10 +68,10 @@ func (m *Policy) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("rationale")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetRemediation(); x != "" {
@@ -81,10 +79,10 @@ func (m *Policy) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("remediation")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetDisabled(); x != false {
@@ -92,10 +90,10 @@ func (m *Policy) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("disabled")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if x {
 			buf.WriteString("true")
 		} else {
@@ -107,12 +105,12 @@ func (m *Policy) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("categories")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("[")
+		buf.WriteByte('[')
 		for _, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
@@ -120,19 +118,19 @@ func (m *Policy) marshalJSON(buf *strings.Builder) (err error) {
 			trailingComma = true
 			fmt.Fprintf(buf, "%q", v)
 		}
-		buf.WriteString("]")
+		buf.WriteByte(']')
 	}
 	if x := m.GetLifecycleStages(); x != nil {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("lifecycleStages")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("[")
+		buf.WriteByte('[')
 		for _, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
@@ -140,17 +138,17 @@ func (m *Policy) marshalJSON(buf *strings.Builder) (err error) {
 			trailingComma = true
 			buf.WriteString("\"" + v.String() + "\"")
 		}
-		buf.WriteString("]")
+		buf.WriteByte(']')
 	}
 	if x := m.GetEventSource(); x != 0 {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("eventSource")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		buf.WriteString("\"" + x.String() + "\"")
 	}
 	if x := m.GetExclusions(); x != nil {
@@ -158,12 +156,12 @@ func (m *Policy) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("exclusions")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("[")
+		buf.WriteByte('[')
 		for _, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
@@ -173,19 +171,19 @@ func (m *Policy) marshalJSON(buf *strings.Builder) (err error) {
 				return err
 			}
 		}
-		buf.WriteString("]")
+		buf.WriteByte(']')
 	}
 	if x := m.GetScope(); x != nil {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("scope")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("[")
+		buf.WriteByte('[')
 		for _, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
@@ -195,17 +193,17 @@ func (m *Policy) marshalJSON(buf *strings.Builder) (err error) {
 				return err
 			}
 		}
-		buf.WriteString("]")
+		buf.WriteByte(']')
 	}
 	if x := m.GetSeverity(); x != 0 {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("severity")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		buf.WriteString("\"" + x.String() + "\"")
 	}
 	if x := m.GetEnforcementActions(); x != nil {
@@ -213,12 +211,12 @@ func (m *Policy) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("enforcementActions")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("[")
+		buf.WriteByte('[')
 		for _, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
@@ -226,19 +224,19 @@ func (m *Policy) marshalJSON(buf *strings.Builder) (err error) {
 			trailingComma = true
 			buf.WriteString("\"" + v.String() + "\"")
 		}
-		buf.WriteString("]")
+		buf.WriteByte(']')
 	}
 	if x := m.GetNotifiers(); x != nil {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("notifiers")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("[")
+		buf.WriteByte('[')
 		for _, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
@@ -246,17 +244,17 @@ func (m *Policy) marshalJSON(buf *strings.Builder) (err error) {
 			trailingComma = true
 			fmt.Fprintf(buf, "%q", v)
 		}
-		buf.WriteString("]")
+		buf.WriteByte(']')
 	}
 	if x := m.GetLastUpdated(); x != nil {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("lastUpdated")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if t := x; t == nil {
 			buf.WriteString("null")
 		} else {
@@ -272,10 +270,10 @@ func (m *Policy) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("SORTName")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetSORTLifecycleStage(); x != "" {
@@ -283,10 +281,10 @@ func (m *Policy) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("SORTLifecycleStage")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetSORTEnforcement(); x != false {
@@ -294,10 +292,10 @@ func (m *Policy) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("SORTEnforcement")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if x {
 			buf.WriteString("true")
 		} else {
@@ -309,10 +307,10 @@ func (m *Policy) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("policyVersion")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetPolicySections(); x != nil {
@@ -320,12 +318,12 @@ func (m *Policy) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("policySections")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("[")
+		buf.WriteByte('[')
 		for _, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
@@ -335,19 +333,19 @@ func (m *Policy) marshalJSON(buf *strings.Builder) (err error) {
 				return err
 			}
 		}
-		buf.WriteString("]")
+		buf.WriteByte(']')
 	}
 	if x := m.GetMitreAttackVectors(); x != nil {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("mitreAttackVectors")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("[")
+		buf.WriteByte('[')
 		for _, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
@@ -357,17 +355,17 @@ func (m *Policy) marshalJSON(buf *strings.Builder) (err error) {
 				return err
 			}
 		}
-		buf.WriteString("]")
+		buf.WriteByte(']')
 	}
 	if x := m.GetCriteriaLocked(); x != false {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("criteriaLocked")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if x {
 			buf.WriteString("true")
 		} else {
@@ -379,10 +377,10 @@ func (m *Policy) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("mitreVectorsLocked")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if x {
 			buf.WriteString("true")
 		} else {
@@ -394,10 +392,10 @@ func (m *Policy) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("isDefault")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if x {
 			buf.WriteString("true")
 		} else {
@@ -409,10 +407,10 @@ func (m *Policy) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("source")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		buf.WriteString("\"" + x.String() + "\"")
 	}
 	buf.WriteString("}")
@@ -440,16 +438,16 @@ func (m *Policy_MitreAttackVectors) marshalJSON(buf *strings.Builder) (err error
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetTactic(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("tactic")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetTechniques(); x != nil {
@@ -457,12 +455,12 @@ func (m *Policy_MitreAttackVectors) marshalJSON(buf *strings.Builder) (err error
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("techniques")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("[")
+		buf.WriteByte('[')
 		for _, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
@@ -470,7 +468,7 @@ func (m *Policy_MitreAttackVectors) marshalJSON(buf *strings.Builder) (err error
 			trailingComma = true
 			fmt.Fprintf(buf, "%q", v)
 		}
-		buf.WriteString("]")
+		buf.WriteByte(']')
 	}
 	buf.WriteString("}")
 	return nil
@@ -497,16 +495,16 @@ func (m *PolicySection) marshalJSON(buf *strings.Builder) (err error) {
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetSectionName(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("sectionName")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetPolicyGroups(); x != nil {
@@ -514,12 +512,12 @@ func (m *PolicySection) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("policyGroups")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("[")
+		buf.WriteByte('[')
 		for _, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
@@ -529,7 +527,7 @@ func (m *PolicySection) marshalJSON(buf *strings.Builder) (err error) {
 				return err
 			}
 		}
-		buf.WriteString("]")
+		buf.WriteByte(']')
 	}
 	buf.WriteString("}")
 	return nil
@@ -556,16 +554,16 @@ func (m *PolicyGroup) marshalJSON(buf *strings.Builder) (err error) {
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetFieldName(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("fieldName")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetBooleanOperator(); x != 0 {
@@ -573,10 +571,10 @@ func (m *PolicyGroup) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("booleanOperator")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		buf.WriteString("\"" + x.String() + "\"")
 	}
 	if x := m.GetNegate(); x != false {
@@ -584,10 +582,10 @@ func (m *PolicyGroup) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("negate")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if x {
 			buf.WriteString("true")
 		} else {
@@ -599,12 +597,12 @@ func (m *PolicyGroup) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("values")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("[")
+		buf.WriteByte('[')
 		for _, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
@@ -614,7 +612,7 @@ func (m *PolicyGroup) marshalJSON(buf *strings.Builder) (err error) {
 				return err
 			}
 		}
-		buf.WriteString("]")
+		buf.WriteByte(']')
 	}
 	buf.WriteString("}")
 	return nil
@@ -641,16 +639,16 @@ func (m *PolicyValue) marshalJSON(buf *strings.Builder) (err error) {
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetValue(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("value")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	buf.WriteString("}")
@@ -678,18 +676,18 @@ func (m *PolicyList) marshalJSON(buf *strings.Builder) (err error) {
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetPolicies(); x != nil {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("policies")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("[")
+		buf.WriteByte('[')
 		for _, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
@@ -699,7 +697,7 @@ func (m *PolicyList) marshalJSON(buf *strings.Builder) (err error) {
 				return err
 			}
 		}
-		buf.WriteString("]")
+		buf.WriteByte(']')
 	}
 	buf.WriteString("}")
 	return nil
@@ -726,16 +724,16 @@ func (m *ListPolicy) marshalJSON(buf *strings.Builder) (err error) {
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetId(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("id")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetName(); x != "" {
@@ -743,10 +741,10 @@ func (m *ListPolicy) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("name")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetDescription(); x != "" {
@@ -754,10 +752,10 @@ func (m *ListPolicy) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("description")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetSeverity(); x != 0 {
@@ -765,10 +763,10 @@ func (m *ListPolicy) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("severity")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		buf.WriteString("\"" + x.String() + "\"")
 	}
 	if x := m.GetDisabled(); x != false {
@@ -776,10 +774,10 @@ func (m *ListPolicy) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("disabled")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if x {
 			buf.WriteString("true")
 		} else {
@@ -791,12 +789,12 @@ func (m *ListPolicy) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("lifecycleStages")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("[")
+		buf.WriteByte('[')
 		for _, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
@@ -804,19 +802,19 @@ func (m *ListPolicy) marshalJSON(buf *strings.Builder) (err error) {
 			trailingComma = true
 			buf.WriteString("\"" + v.String() + "\"")
 		}
-		buf.WriteString("]")
+		buf.WriteByte(']')
 	}
 	if x := m.GetNotifiers(); x != nil {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("notifiers")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("[")
+		buf.WriteByte('[')
 		for _, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
@@ -824,17 +822,17 @@ func (m *ListPolicy) marshalJSON(buf *strings.Builder) (err error) {
 			trailingComma = true
 			fmt.Fprintf(buf, "%q", v)
 		}
-		buf.WriteString("]")
+		buf.WriteByte(']')
 	}
 	if x := m.GetLastUpdated(); x != nil {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("lastUpdated")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if t := x; t == nil {
 			buf.WriteString("null")
 		} else {
@@ -850,10 +848,10 @@ func (m *ListPolicy) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("eventSource")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		buf.WriteString("\"" + x.String() + "\"")
 	}
 	if x := m.GetIsDefault(); x != false {
@@ -861,10 +859,10 @@ func (m *ListPolicy) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("isDefault")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if x {
 			buf.WriteString("true")
 		} else {
@@ -876,10 +874,10 @@ func (m *ListPolicy) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("source")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		buf.WriteString("\"" + x.String() + "\"")
 	}
 	buf.WriteString("}")
@@ -907,16 +905,16 @@ func (m *Exclusion) marshalJSON(buf *strings.Builder) (err error) {
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetName(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("name")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetDeployment(); x != nil {
@@ -924,10 +922,10 @@ func (m *Exclusion) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("deployment")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if err := x.marshalJSON(buf); err != nil {
 			return err
 		}
@@ -937,10 +935,10 @@ func (m *Exclusion) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("image")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if err := x.marshalJSON(buf); err != nil {
 			return err
 		}
@@ -950,10 +948,10 @@ func (m *Exclusion) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("expiration")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if t := x; t == nil {
 			buf.WriteString("null")
 		} else {
@@ -989,16 +987,16 @@ func (m *Exclusion_Container) marshalJSON(buf *strings.Builder) (err error) {
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetImageName(); x != nil {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("imageName")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if err := x.marshalJSON(buf); err != nil {
 			return err
 		}
@@ -1028,16 +1026,16 @@ func (m *Exclusion_Deployment) marshalJSON(buf *strings.Builder) (err error) {
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetName(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("name")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetScope(); x != nil {
@@ -1045,10 +1043,10 @@ func (m *Exclusion_Deployment) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("scope")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if err := x.marshalJSON(buf); err != nil {
 			return err
 		}
@@ -1078,16 +1076,16 @@ func (m *Exclusion_Image) marshalJSON(buf *strings.Builder) (err error) {
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetName(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("name")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	buf.WriteString("}")
@@ -1115,18 +1113,18 @@ func (m *ExportPoliciesResponse) marshalJSON(buf *strings.Builder) (err error) {
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetPolicies(); x != nil {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("policies")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("[")
+		buf.WriteByte('[')
 		for _, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
@@ -1136,7 +1134,7 @@ func (m *ExportPoliciesResponse) marshalJSON(buf *strings.Builder) (err error) {
 				return err
 			}
 		}
-		buf.WriteString("]")
+		buf.WriteByte(']')
 	}
 	buf.WriteString("}")
 	return nil

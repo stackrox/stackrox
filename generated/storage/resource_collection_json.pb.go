@@ -3,10 +3,8 @@
 package storage
 
 import (
-	_ "bytes"
 	fmt "fmt"
 	strings "strings"
-	_ "time"
 	unsafe "unsafe"
 )
 
@@ -31,16 +29,16 @@ func (m *ResourceCollection) marshalJSON(buf *strings.Builder) (err error) {
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetId(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("id")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetName(); x != "" {
@@ -48,10 +46,10 @@ func (m *ResourceCollection) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("name")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetDescription(); x != "" {
@@ -59,10 +57,10 @@ func (m *ResourceCollection) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("description")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetCreatedAt(); x != nil {
@@ -70,10 +68,10 @@ func (m *ResourceCollection) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("createdAt")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if t := x; t == nil {
 			buf.WriteString("null")
 		} else {
@@ -89,10 +87,10 @@ func (m *ResourceCollection) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("lastUpdated")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if t := x; t == nil {
 			buf.WriteString("null")
 		} else {
@@ -108,10 +106,10 @@ func (m *ResourceCollection) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("createdBy")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if err := x.marshalJSON(buf); err != nil {
 			return err
 		}
@@ -121,10 +119,10 @@ func (m *ResourceCollection) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("updatedBy")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if err := x.marshalJSON(buf); err != nil {
 			return err
 		}
@@ -134,12 +132,12 @@ func (m *ResourceCollection) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("resourceSelectors")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("[")
+		buf.WriteByte('[')
 		for _, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
@@ -149,19 +147,19 @@ func (m *ResourceCollection) marshalJSON(buf *strings.Builder) (err error) {
 				return err
 			}
 		}
-		buf.WriteString("]")
+		buf.WriteByte(']')
 	}
 	if x := m.GetEmbeddedCollections(); x != nil {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("embeddedCollections")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("[")
+		buf.WriteByte('[')
 		for _, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
@@ -171,7 +169,7 @@ func (m *ResourceCollection) marshalJSON(buf *strings.Builder) (err error) {
 				return err
 			}
 		}
-		buf.WriteString("]")
+		buf.WriteByte(']')
 	}
 	buf.WriteString("}")
 	return nil
@@ -198,16 +196,16 @@ func (m *ResourceCollection_EmbeddedResourceCollection) marshalJSON(buf *strings
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetId(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("id")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	buf.WriteString("}")
@@ -235,18 +233,18 @@ func (m *ResourceSelector) marshalJSON(buf *strings.Builder) (err error) {
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetRules(); x != nil {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("rules")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("[")
+		buf.WriteByte('[')
 		for _, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
@@ -256,7 +254,7 @@ func (m *ResourceSelector) marshalJSON(buf *strings.Builder) (err error) {
 				return err
 			}
 		}
-		buf.WriteString("]")
+		buf.WriteByte(']')
 	}
 	buf.WriteString("}")
 	return nil
@@ -283,16 +281,16 @@ func (m *SelectorRule) marshalJSON(buf *strings.Builder) (err error) {
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetFieldName(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("fieldName")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetOperator(); x != 0 {
@@ -300,10 +298,10 @@ func (m *SelectorRule) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("operator")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		buf.WriteString("\"" + x.String() + "\"")
 	}
 	if x := m.GetValues(); x != nil {
@@ -311,12 +309,12 @@ func (m *SelectorRule) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("values")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		trailingComma = false
-		buf.WriteString("[")
+		buf.WriteByte('[')
 		for _, v := range x {
 			if trailingComma {
 				buf.WriteByte(',')
@@ -326,7 +324,7 @@ func (m *SelectorRule) marshalJSON(buf *strings.Builder) (err error) {
 				return err
 			}
 		}
-		buf.WriteString("]")
+		buf.WriteByte(']')
 	}
 	buf.WriteString("}")
 	return nil
@@ -353,16 +351,16 @@ func (m *RuleValue) marshalJSON(buf *strings.Builder) (err error) {
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetValue(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("value")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetMatchType(); x != 0 {
@@ -370,10 +368,10 @@ func (m *RuleValue) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("matchType")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		buf.WriteString("\"" + x.String() + "\"")
 	}
 	buf.WriteString("}")

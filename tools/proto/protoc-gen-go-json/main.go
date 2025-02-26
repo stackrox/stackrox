@@ -10,10 +10,10 @@ import (
 
 // Standard library dependencies.
 const (
-	unsafePackage  = protogen.GoImportPath("unsafe")
+	base64Package  = protogen.GoImportPath("encoding/base64")
 	fmtPackage     = protogen.GoImportPath("fmt")
 	stringsPackage = protogen.GoImportPath("strings")
-	base64Package  = protogen.GoImportPath("base64")
+	unsafePackage  = protogen.GoImportPath("unsafe")
 )
 
 var (
@@ -80,33 +80,33 @@ func generateMessage(g *protogen.GeneratedFile, msg *protogen.Message) {
 	}
 	g.P("trailingComma := false")
 	g.P("if trailingComma {}")
-	w(g, "{")
+	b(g, '{')
 	for _, f := range msg.Fields {
 		g.P(`if x := m.Get`, f.GoName, "(); x != ", zero(f.Desc), " { ")
 		g.P("if trailingComma { buf.WriteByte(',') }; trailingComma = true;")
 		ident(g, f.Desc.JSONName())
-		w(g, ":")
+		b(g, ':')
 		if f.Desc.IsList() {
 			g.P("trailingComma = false")
-			w(g, "[")
+			b(g, '[')
 			g.P(`for _, v := range x {`)
 			g.P("if trailingComma { buf.WriteByte(',') }; trailingComma = true;")
 			emitField(g, f.Desc, "v")
 			g.P("}")
-			w(g, "]")
+			b(g, ']')
 			g.P("}") // x
 			continue
 		}
 		if f.Desc.IsMap() {
 			g.P("trailingComma = false")
-			w(g, "{")
+			b(g, '{')
 			g.P(`for k, v := range x {`)
 			g.P("if trailingComma { buf.WriteByte(',') }; trailingComma = true;")
 			emitField(g, f.Desc.MapKey(), "k")
-			w(g, ":")
+			b(g, ':')
 			emitField(g, f.Desc.MapValue(), "v")
 			g.P("}")
-			w(g, "}")
+			b(g, '}')
 			g.P("}") // x
 			continue
 		}
@@ -147,15 +147,19 @@ func emitField(g *protogen.GeneratedFile, f protoreflect.FieldDescriptor, varnam
 	case protoreflect.FloatKind, protoreflect.DoubleKind:
 		g.P(fprintf, `(buf, "%f", `, varname, `)`)
 	case protoreflect.BytesKind:
-		g.P(`buf.WriteString("\"")`)
+		b(g, '"')
 		g.P("encoder := ", base64Package.Ident("NewEncoder"), "(", base64Package.Ident("StdEncoding"), ", buf)")
 		g.P("encoder.Write(", varname, ")")
 		// Must close the encoder when finished to flush any partial blocks.
 		g.P("encoder.Close()")
-		g.P(`buf.WriteString("\"")`)
+		b(g, '"')
 	default:
 		panic(f.ParentFile().Path() + "/" + string(f.FullName().Name()))
 	}
+}
+
+func b(g *protogen.GeneratedFile, s byte) {
+	g.P(`buf.WriteByte('` + string(s) + `')`)
 }
 
 func w(g *protogen.GeneratedFile, s string) {
@@ -167,8 +171,9 @@ func q(g *protogen.GeneratedFile, s string) {
 }
 
 func ident(g *protogen.GeneratedFile, s string) {
-	g.P(`buf.WriteString("\""); buf.WriteString("` + s + `"); buf.WriteString("\"");`)
-
+	b(g, '"')
+	g.P(`buf.WriteString("` + s + `")`)
+	b(g, '"')
 }
 
 func t(g *protogen.GeneratedFile, s string) {

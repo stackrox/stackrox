@@ -3,10 +3,9 @@
 package storage
 
 import (
-	_ "bytes"
+	base64 "encoding/base64"
 	fmt "fmt"
 	strings "strings"
-	_ "time"
 	unsafe "unsafe"
 )
 
@@ -31,16 +30,16 @@ func (m *LogImbue) marshalJSON(buf *strings.Builder) (err error) {
 	trailingComma := false
 	if trailingComma {
 	}
-	buf.WriteString("{")
+	buf.WriteByte('{')
 	if x := m.GetId(); x != "" {
 		if trailingComma {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("id")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		fmt.Fprintf(buf, "%q", x)
 	}
 	if x := m.GetTimestamp(); x != nil {
@@ -48,10 +47,10 @@ func (m *LogImbue) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("timestamp")
-		buf.WriteString("\"")
-		buf.WriteString(":")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		if t := x; t == nil {
 			buf.WriteString("null")
 		} else {
@@ -67,11 +66,15 @@ func (m *LogImbue) marshalJSON(buf *strings.Builder) (err error) {
 			buf.WriteByte(',')
 		}
 		trailingComma = true
-		buf.WriteString("\"")
+		buf.WriteByte('"')
 		buf.WriteString("log")
-		buf.WriteString("\"")
-		buf.WriteString(":")
-		buf.WriteString("null")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
+		buf.WriteByte('"')
+		encoder := base64.NewEncoder(base64.StdEncoding, buf)
+		encoder.Write(x)
+		encoder.Close()
+		buf.WriteByte('"')
 	}
 	buf.WriteString("}")
 	return nil
