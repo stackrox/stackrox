@@ -224,7 +224,7 @@ class Enforcement extends BaseSpecification {
     private final static String CONTAINER_PORT_22_POLICY = "Secure Shell (ssh) Port Exposed"
     private final static String APT_GET_POLICY = "Ubuntu Package Manager Execution"
     private final static String LATEST_TAG = "Latest tag"
-    private final static String SEVERITY = "Fixable Severity at least Important"
+    private final static String SEVERITY = "Containers with fixable CVEs and Severity at least Important"
     private final static String SCAN_AGE = "30-Day Scan Age"
     private final static String BASELINEPROCESS_POLICY = "Unauthorized Process Execution"
 
