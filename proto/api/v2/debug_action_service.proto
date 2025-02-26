@@ -1,0 +1,76 @@
+syntax = "proto3";
+
+package v2;
+
+import "api/v2/common.proto";
+import weak "google/api/annotations.proto";
+
+option go_package = "./api/v2;v2";
+option java_package = "io.stackrox.proto.api.v2";
+
+message SleepAction {
+  // seconds to sleep upon encountering this action identifier
+  int32 seconds = 1;
+}
+
+message WaitAction {}
+
+message DebugAction {
+  // Action identifier must declared in the code using <func name here>. The action registered in this request is executed
+  // when any routine encounters this identifier during its execution.
+  string identifier = 1;
+  // num_times > 0: Wait (until proceed signal is received) for first num_times this action identifier is encountered.
+  // Default 0: Always wait (until proceed signal is received) upon encountering this action identifier
+  int32 num_times = 2;
+  oneof action {
+    SleepAction sleep_action = 3;
+    WaitAction wait_action = 4;
+  }
+}
+
+message ActionStatus {
+  DebugAction action = 1;
+  // number of times the action identifier was encountered
+  int32 times_encountered = 2;
+  // number of times the action was executed
+  int32 times_executed = 3;
+  // number of times the action was given proceed signal. This is only relevant when action is of WaitAction type
+  int32 times_signaled = 4;
+}
+
+service DebugActionService {
+  // Register a new action to execute when the action identifier is encountered.
+  // At any time, only one action can be registered per identifier.
+  rpc RegisterAction(DebugAction) returns (Empty) {
+    option (google.api.http) = {
+      post: "/v2/actions/debug"
+      body: "*"
+    };
+  }
+
+  // Status of the registered action
+  rpc GetActionStatus(ResourceByID) returns (ActionStatus) {
+    option (google.api.http) = {get: "/v2/actions/debug/{id}"};
+  }
+
+  // Deletes the registered action. If any routines are waiting on this action, they are all signalled to proceed
+  rpc DeleteAction(ResourceByID) returns (Empty) {
+    option (google.api.http) = {delete: "/v2/actions/debug/{id}"};
+  }
+
+  // Proceeds the oldest routine waiting on the given action identifier.
+  // This is only relevant when registered action is of WaitAction type
+  rpc ProceedOldest(ResourceByID) returns (Empty) {
+    option (google.api.http) = {
+      put: "/v2/actions/debug/proceed/{id}"
+    };
+  }
+
+  // Proceeds all routines waiting on the given action identifier.
+  // This is only relevant when registered action is of WaitAction type
+  rpc ProceedAll(ResourceByID) returns (Empty) {
+    option (google.api.http) = {
+      put: "/v2/actions/debug/proceed/all/{id}"
+    };
+  }
+}
