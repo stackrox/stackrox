@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 import { gql, useQuery } from '@apollo/client';
 import sortBy from 'lodash/sortBy';
+import { Alert } from '@patternfly/react-core';
 
 import entityTypes from 'constants/entityTypes';
 import queryService from 'utils/queryService';
@@ -11,7 +12,6 @@ import { cveSortFields } from 'constants/sortFields';
 import { WIDGET_PAGINATION_START_OFFSET } from 'constants/workflowPages.constants';
 import Loader from 'Components/Loader';
 import Widget from 'Components/Widget';
-import NoResultsMessage from 'Components/NoResultsMessage';
 
 import NumberedList from './NumberedList';
 import ViewAllButton from './ViewAllButton';
@@ -67,7 +67,14 @@ const MostCommonVulnerabiltiesInDeployment = ({ deploymentId, limit }) => {
 
         if (!processedData || processedData.length === 0) {
             content = (
-                <NoResultsMessage message="No vulnerabilities found" className="p-6" icon="info" />
+                <div className="w-full">
+                    <Alert
+                        variant="success"
+                        isInline
+                        title="No vulnerabilities found"
+                        component="p"
+                    />
+                </div>
             );
         } else {
             content = (
