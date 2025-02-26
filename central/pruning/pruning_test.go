@@ -2257,6 +2257,11 @@ func (s *PruningTestSuite) TestPruneOrphanedNodeCVEs() {
 
 func (s *PruningTestSuite) TestPruningUnderHeavyLoad() {
 
+	if !env.PruningLoadTestEnabled.BooleanSetting() {
+		s.T().Skip("Skipping TestPruningUnderHeavyLoad because it was not explicitly enabled")
+		s.T().SkipNow()
+	}
+
 	const (
 		TOTAL_ALERTS    = 10 * 1000000
 		TOTAL_PODS      = 100 * 1000
