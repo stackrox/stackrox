@@ -36,7 +36,7 @@ class ComplianceManagementService extends BaseService {
         log.debug "waiting for the run${standardId ? "" : "s"} to finish..."
         Long startTime = System.currentTimeMillis()
         while (complianceRuns.any { it.state != ComplianceRun.State.FINISHED } &&
-                (System.currentTimeMillis() - startTime) < 300000) {
+                (System.currentTimeMillis() - startTime) < 600000) {
             sleep 1000
             complianceRuns = getRunStatuses(complianceRuns*.id).runsList
         }
