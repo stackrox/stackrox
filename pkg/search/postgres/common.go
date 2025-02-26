@@ -982,10 +982,12 @@ func RunCountByRequestForSchema(ctx context.Context, schema *walker.Schema, q *v
 		log.Infof("query was executed without error, it has %d group fields and a buffer of size %d", len(query.GroupBys), len(bufferToScanRowInto))
 		var results []searchPkg.CountByWrapper
 		for rows.Next() {
+			log.Info("processing row")
 			if err := rows.Scan(&bufferToScanRowInto); err != nil {
 				log.Errorf("Query issue: %s: %v", queryStr, err)
 				return nil, errors.Wrap(err, "error executing query")
 			}
+			log.Info("scanned successfully")
 			result := searchPkg.CountByWrapper{}
 			if len(query.GroupBys) > 0 {
 				for i, field := range query.GroupBys {
