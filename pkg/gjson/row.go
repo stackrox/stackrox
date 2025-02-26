@@ -3,7 +3,6 @@ package gjson
 import (
 	"encoding/json"
 	"sort"
-	"strconv"
 	"strings"
 
 	"github.com/stackrox/rox/pkg/errox"
@@ -248,15 +247,12 @@ func (ct *columnTree) CreateColumns() [][]string {
 	var strictColIndices []int
 	if len(ct.strictColumns) > 0 {
 		for i, r := range ct.result {
-			println("Query! ", r.query)
 			if slices.Contains(ct.strictColumns, r.query) {
 				strictColIndices = append(strictColIndices, i)
 			}
 		}
 	}
 	deletionMap := make(map[int]bool)
-	println("Strict cols: ", strings.Join(ct.strictColumns, ","))
-	println("Strict Col Indices length: ", strconv.Itoa(len(ct.strictColumns)))
 	for columnIndex := 0; columnIndex < numberOfQueries; columnIndex++ {
 		// For each query, the query ID == columnID on the node. Retrieve all values for the specific columnID
 		// and auto expand, if required, them.
@@ -266,7 +262,6 @@ func (ct *columnTree) CreateColumns() [][]string {
 		if sort.SearchInts(strictColIndices, columnIndex) != len(strictColIndices) {
 			for i, item := range newCol {
 				if item == emptyReplacement {
-					println("Added to deletionmap: ", strconv.Itoa(i))
 					deletionMap[i] = true
 				}
 			}
