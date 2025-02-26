@@ -42,6 +42,15 @@ message EPSS {
   float epss_percentile = 2;
 }
 
+message Exploit {
+  string catalog_version = 1;
+  string date_added = 2;
+  string short_description = 3;
+  string required_action = 4;
+  string due_date = 5;
+  string known_ransomware_campaign_use = 6;
+}
+
 // ******************************
 // This proto is deprecated.
 // ******************************
@@ -140,6 +149,7 @@ message CVEInfo {
   // cvss_metrics stores list of cvss scores from different sources like nvd, Redhat etc
   repeated CVSSScore cvss_metrics = 11;
   EPSS epss = 12;
+  Exploit exploit = 13;
 }
 
 // This proto is deprecated and replaced by ImageCVEV2.

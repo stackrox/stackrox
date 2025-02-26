@@ -1128,7 +1128,7 @@ func Test_toProtoV4VulnerabilitiesMapWithEPSS(t *testing.T) {
 			t.Setenv(features.ScannerV4RedHatCVEs.EnvVar(), enableRedHatCVEs)
 			enableEPSS := "true"
 			t.Setenv(features.EPSSScore.EnvVar(), enableEPSS)
-			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities, tt.nvdVulns, tt.epssItems, nil)
+			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities, tt.nvdVulns, tt.epssItems, nil, nil)
 			assert.NoError(t, err)
 			protoassert.MapEqual(t, tt.want, got)
 		})
@@ -1877,7 +1877,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 			}
 			t.Setenv(features.ScannerV4RedHatCVEs.EnvVar(), enableRedHatCVEs)
 			// EPSS scores are intentionally not covered here
-			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities, tt.nvdVulns, nil, tt.advisories)
+			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities, tt.nvdVulns, nil, tt.advisories, nil)
 			assert.NoError(t, err)
 			protoassert.MapEqual(t, tt.want, got)
 		})

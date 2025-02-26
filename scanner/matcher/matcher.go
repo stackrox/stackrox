@@ -11,8 +11,10 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/alpine"
 	"github.com/quay/claircore/aws"
+	"github.com/quay/claircore/chainguard"
 	"github.com/quay/claircore/debian"
 	"github.com/quay/claircore/enricher/epss"
+	"github.com/quay/claircore/enricher/kev"
 	"github.com/quay/claircore/gobin"
 	"github.com/quay/claircore/java"
 	"github.com/quay/claircore/libvuln"
@@ -47,6 +49,8 @@ import (
 var matcherNames = []string{
 	(*alpine.Matcher)(nil).Name(),
 	(*aws.Matcher)(nil).Name(),
+	chainguard.ChainguardMatcher.Name(),
+	chainguard.WolfiMatcher.Name(),
 	(*debian.Matcher)(nil).Name(),
 	(*gobin.Matcher)(nil).Name(),
 	(*java.Matcher)(nil).Name(),
@@ -135,6 +139,7 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 
 	enrichers := []driver.Enricher{
 		&fixedby.Enricher{},
+		&kev.Enricher{},
 		&nvd.Enricher{},
 	}
 	var (
