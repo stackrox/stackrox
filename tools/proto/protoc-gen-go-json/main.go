@@ -1,16 +1,15 @@
 package main
 
 import (
-	"path"
-	"strings"
-
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/reflect/protoreflect"
+	"path"
+	"strings"
 )
 
 // Standard library dependencies.
 const (
-	bytesPackage   = protogen.GoImportPath("bytes")
+	unsafePackage  = protogen.GoImportPath("unsafe")
 	fmtPackage     = protogen.GoImportPath("fmt")
 	stringsPackage = protogen.GoImportPath("strings")
 )
@@ -67,7 +66,8 @@ func generateMessage(g *protogen.GeneratedFile, msg *protogen.Message) {
 	g.P()
 	g.P("func (m *", name, ") MarshalJSON() (b []byte, err error) ", " { ")
 	g.P(`if m == nil { return []byte("null"), nil }`)
-	g.P("var buf ", bytesPackage.Ident("Buffer"))
+	g.P("var buf ", stringsPackage.Ident("Builder"))
+	g.P(`buf.Grow(m.SizeVT())`)
 	hasMapsOrList := false
 	for _, f := range msg.Fields {
 		hasMapsOrList = hasMapsOrList || f.Desc.IsMap() || f.Desc.IsList()
@@ -205,7 +205,8 @@ func generateMessage(g *protogen.GeneratedFile, msg *protogen.Message) {
 		g.P("}") // x
 	}
 	w(g, "}")
-	g.P(`return buf.Bytes(), nil`)
+	g.P(`str := buf.String()`)
+	g.P(`return `, unsafePackage.Ident("Slice"), "(", unsafePackage.Ident("StringData"), `(str), len(str)), nil`)
 	g.P("}")
 	g.P()
 	for _, m := range msg.Messages {
