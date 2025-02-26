@@ -35,7 +35,7 @@ type DebugActionServiceClient interface {
 	RegisterAction(ctx context.Context, in *DebugAction, opts ...grpc.CallOption) (*Empty, error)
 	// Status of the registered action
 	GetActionStatus(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*ActionStatus, error)
-	// Deletes the registered action. If any routines are waiting on this action, they are all signalled to proceed
+	// Deletes the registered action. If any routines are waiting due to this action, they are all signalled to proceed
 	DeleteAction(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
 	// Proceeds the oldest routine waiting on the given action identifier.
 	// This is only relevant when registered action is of WaitAction type
@@ -112,7 +112,7 @@ type DebugActionServiceServer interface {
 	RegisterAction(context.Context, *DebugAction) (*Empty, error)
 	// Status of the registered action
 	GetActionStatus(context.Context, *ResourceByID) (*ActionStatus, error)
-	// Deletes the registered action. If any routines are waiting on this action, they are all signalled to proceed
+	// Deletes the registered action. If any routines are waiting due to this action, they are all signalled to proceed
 	DeleteAction(context.Context, *ResourceByID) (*Empty, error)
 	// Proceeds the oldest routine waiting on the given action identifier.
 	// This is only relevant when registered action is of WaitAction type

@@ -53,7 +53,7 @@ service DebugActionService {
     option (google.api.http) = {get: "/v2/actions/debug/{id}"};
   }
 
-  // Deletes the registered action. If any routines are waiting on this action, they are all signalled to proceed
+  // Deletes the registered action. If any routines are waiting due to this action, they are all signalled to proceed
   rpc DeleteAction(ResourceByID) returns (Empty) {
     option (google.api.http) = {delete: "/v2/actions/debug/{id}"};
   }

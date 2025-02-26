@@ -142,7 +142,7 @@
         ]
       },
       "delete": {
-        "summary": "Deletes the registered action. If any routines are waiting on this action, they are all signalled to proceed",
+        "summary": "Deletes the registered action. If any routines are waiting due to this action, they are all signalled to proceed",
         "operationId": "DebugActionService_DeleteAction",
         "responses": {
           "200": {
