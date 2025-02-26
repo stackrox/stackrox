@@ -72,7 +72,7 @@ _begin() {
         1> >(bash -c "post_process_output '$label'" > "/dev/fd/$outfd") \
         2> >(bash -c "post_process_output '$label'" > "/dev/fd/$outfd")
     # Close post-processing stdout and stderr and restore from original fds.
-    trap "exec 1>&- 2>&- 1>&4 2>&5; exit 1" INT ABRT KILL TERM
+    trap "exec 1>&- 2>&- 1>&4 2>&5; exit 1" INT ABRT TERM
 }
 
 _end() {
