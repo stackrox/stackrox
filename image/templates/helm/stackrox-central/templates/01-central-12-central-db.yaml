@@ -99,6 +99,10 @@ spec:
         securityContext:
           runAsUser: 70
           runAsGroup: 70
+{{- if ._rox.env.spire }}
+
+{{- else }}
+{{- end }}
       containers:
       - name: central-db
         image: {{ ._rox.central.db.image.fullRef | quote }}

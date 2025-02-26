@@ -10,6 +10,7 @@ defaults:
 
   env:
     offlineMode: false
+    spire: false
 
   central:
     config: "@config/central/config.yaml|config/central/config.yaml.default"

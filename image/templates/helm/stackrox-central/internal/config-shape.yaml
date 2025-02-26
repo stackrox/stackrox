@@ -19,6 +19,7 @@ env:
     default: null # string
   pvcs:
     names: null # [string]
+  spire: null # bool
 ca:
   cert: null # string
   key: null # string

@@ -170,9 +170,11 @@
 {{/* Add environment information which should not be modifiable by the user. */}}
 {{ $_ := set $env "centralServices" true }}
 
-{{/* Global CA setup */}}
-{{ $caCertSpec := dict "CN" "StackRox Certificate Authority" "ca" true }}
-{{ include "srox.configureCrypto" (list $ "ca" $caCertSpec) }}
+{{ if not $._rox.env.spire }}
+  {{/* Global CA setup */}}
+  {{ $caCertSpec := dict "CN" "StackRox Certificate Authority" "ca" true }}
+  {{ include "srox.configureCrypto" (list $ "ca" $caCertSpec) }}
+{{ end }}
 
 {{/* Additional CAs. */}}
 {{ $additionalCAList := list }}
