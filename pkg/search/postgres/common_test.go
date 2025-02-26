@@ -737,7 +737,7 @@ func TestCountByQueries(t *testing.T) {
 				"inner join image_component_cve_edges on image_component_edges.ImageComponentId = image_component_cve_edges.ImageComponentId " +
 				"inner join image_cves on image_component_cve_edges.ImageCveId = image_cves.Id " +
 				"inner join image_cve_edges on(images.Id = image_cve_edges.ImageId and image_component_cve_edges.ImageCveId = image_cve_edges.ImageCveId) " +
-				"where ((deployments.PlatformComponent = $1 or deployments.PlatformComponent is null) and (image_cve_edges.State = $2))",
+				"where ((deployments.PlatformComponent = $1 or deployments.PlatformComponent is null) and image_cve_edges.State = $2)",
 			expectedData: []interface{}{"false", "0"},
 		},
 		{
@@ -933,7 +933,7 @@ func TestCountByQueries(t *testing.T) {
 				"inner join image_component_cve_edges on image_component_edges.ImageComponentId = image_component_cve_edges.ImageComponentId " +
 				"inner join image_cves on image_component_cve_edges.ImageCveId = image_cves.Id " +
 				"inner join image_cve_edges on(images.Id = image_cve_edges.ImageId and image_component_cve_edges.ImageCveId = image_cve_edges.ImageCveId) " +
-				"where ((deployments.PlatformComponent = $1 or deployments.PlatformComponent is null) and (image_cve_edges.State = $2)) " +
+				"where ((deployments.PlatformComponent = $1 or deployments.PlatformComponent is null) and image_cve_edges.State = $2) " +
 				"group by deployments.Namespace",
 			expectedData: []interface{}{"false", "0"},
 		},
