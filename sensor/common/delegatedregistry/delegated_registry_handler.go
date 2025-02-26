@@ -16,7 +16,9 @@ import (
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/scan"
+	"github.com/stackrox/rox/sensor/common/trace"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
 
 var (
@@ -122,9 +124,12 @@ func (d *delegatedRegistryImpl) executeScan(scanReq *central.ScanImage) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
+	ctx, cancel := context.WithTimeout(trace.DefaultContext(), scanTimeout)
 	defer cancel()
 
+	md, _ := metadata.FromIncomingContext(ctx)
+	log.Infof("executeScan with context metadata: %+v", md)
+	trace.PrintContextInternals(ctx, false)
 	// Execute the scan, ignore returned image because will be sent to Central during enrichment.
 	_, err = d.localScan.EnrichLocalImageInNamespace(ctx, d.imageSvc, &scan.LocalScanRequest{
 		ID:        scanReq.GetRequestId(),

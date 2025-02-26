@@ -26,6 +26,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/managedcentral"
 	"github.com/stackrox/rox/sensor/common/sensor/helmconfig"
+	"github.com/stackrox/rox/sensor/common/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/encoding/gzip"
@@ -172,9 +173,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	}
 
 	// Prepare outgoing context
-	ctx := context.Background()
-
-	ctx = metadata.AppendToOutgoingContext(ctx, centralsensor.SensorHelloMetadataKey, "true")
+	ctx := metadata.AppendToOutgoingContext(trace.DefaultContext(), centralsensor.SensorHelloMetadataKey, "true")
 	ctx, err := centralsensor.AppendSensorHelloInfoToOutgoingMetadata(ctx, sensorHello)
 	if err != nil {
 		s.stopper.Flow().StopWithError(err)
@@ -364,7 +363,7 @@ func (s *centralCommunicationImpl) initialPolicySync(stream central.SensorServic
 	if msg.GetPolicySync() == nil {
 		return errors.Errorf("second message received from Sensor was not a policy sync: %T", msg.Msg)
 	}
-	if err := detector.ProcessPolicySync(context.Background(), msg.GetPolicySync()); err != nil {
+	if err := detector.ProcessPolicySync(trace.DefaultContext(), msg.GetPolicySync()); err != nil {
 		return errors.Wrap(err, "policy sync could not be successfully processed")
 	}
 
