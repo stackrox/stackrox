@@ -8,9 +8,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/containerid"
 	"github.com/stackrox/rox/pkg/fixtures"
-	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/sync"
@@ -473,7 +471,7 @@ func populatePodContainerStatuses(pod *corev1.Pod) {
 			ImageID:     fmt.Sprintf("docker-pullable://%s", container.Image),
 			ContainerID: fmt.Sprintf("docker://%s", randStringWithLength(63)),
 		}
-		containerPool.add(getShortContainerID(status.ContainerID))
+		containerPool.add(status.ContainerID)
 		statuses = append(statuses, status)
 	}
 	pod.Status.ContainerStatuses = statuses
@@ -495,7 +493,7 @@ func (w *WorkloadManager) managePod(ctx context.Context, deploymentSig *concurre
 		ipPool.remove(pod.Status.PodIP)
 
 		for _, cs := range pod.Status.ContainerStatuses {
-			containerPool.remove(getShortContainerID(cs.ContainerID))
+			containerPool.remove(cs.ContainerID)
 		}
 		podSig.Signal()
 	}
@@ -527,11 +525,6 @@ func (w *WorkloadManager) managePod(ctx context.Context, deploymentSig *concurre
 	}
 }
 
-func getShortContainerID(id string) string {
-	_, runtimeID := k8sutil.ParseContainerRuntimeString(id)
-	return containerid.ShortContainerIDFromInstanceID(runtimeID)
-}
-
 func (w *WorkloadManager) manageProcessesForPod(podSig *concurrency.Signal, podWorkload PodWorkload, pod *corev1.Pod) {
 	processWorkload := podWorkload.ProcessWorkload
 
@@ -541,10 +534,9 @@ func (w *WorkloadManager) manageProcessesForPod(podSig *concurrency.Signal, podW
 	ticker := time.NewTicker(processWorkload.ProcessInterval)
 	defer ticker.Stop()
 
-	// Precompute these as multiple calls to getShortContainerID is expensive
 	containerIDs := make([]string, 0, len(pod.Status.ContainerStatuses))
 	for _, status := range pod.Status.ContainerStatuses {
-		containerIDs = append(containerIDs, getShortContainerID(status.ContainerID))
+		containerIDs = append(containerIDs, status.ContainerID)
 	}
 	for {
 		select {
