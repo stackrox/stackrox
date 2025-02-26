@@ -1,0 +1,13 @@
+version: "2.0"
+instances:
+  name: "insecure-instance"
+  endpoint: "https://insecure.stackrox.example.com"
+  insecure: true
+  insecureSkipTLSVerify: true
+users:
+  username: "insecure-user"
+  apiTokenPath: "/path/to/insecure/token"
+contexts:
+  instance: "insecure-instance"
+  user: "insecure-user"
+current-context: "insecure-instance-context"
