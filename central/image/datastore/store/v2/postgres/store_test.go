@@ -76,8 +76,6 @@ func (s *ImagesStoreSuite) TestStore() {
 	s.True(exists)
 	cloned := image.CloneVT()
 
-	log.Infof("SHREWS -- cloned %v", cloned)
-	log.Infof("SHREWS -- found1 %v", foundImage)
 	protoassert.Equal(s.T(), cloned, foundImage)
 
 	imageCount, err := store.Count(ctx, search.EmptyQuery())
@@ -167,10 +165,6 @@ func (s *ImagesStoreSuite) TestUpsert() {
 		s.T().Setenv("ROX_FLATTEN_CVE_DATA", "true")
 	}
 
-	if !features.FlattenCVEData.Enabled() {
-		s.T().Setenv("ROX_FLATTEN_CVE_DATA", "true")
-	}
-
 	ctx := sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(s.T())
@@ -200,8 +194,6 @@ func (s *ImagesStoreSuite) TestUpsert() {
 	// for first image occurrence and first system time of a CVE
 	cloned.Scan.Components = getTestImageComponentsVerify()
 
-	log.Infof("SHREWS -- cloned %v", cloned)
-	log.Infof("SHREWS -- found1 %v", foundImage)
 	protoassert.Equal(s.T(), cloned, foundImage)
 
 	// Add a new component with "cve1" that has new times
@@ -220,8 +212,6 @@ func (s *ImagesStoreSuite) TestUpsert() {
 		Hash: foundImage.GetScan().GetHash(),
 	}
 	cloned.Scan.Components = append(cloned.Scan.Components, getComponent3Verify())
-	log.Infof("SHREWS -- cloned %v", cloned)
-	log.Infof("SHREWS -- found1 %v", foundImage)
 	protoassert.Equal(s.T(), cloned, foundImage)
 
 	// Replace all components removing "cve1".
@@ -240,8 +230,6 @@ func (s *ImagesStoreSuite) TestUpsert() {
 	cloned.Scan.Hashoneof = &storage.ImageScan_Hash{
 		Hash: foundImage.GetScan().GetHash(),
 	}
-	log.Infof("SHREWS -- cloned %v", cloned)
-	log.Infof("SHREWS -- found1 %v", foundImage)
 	protoassert.Equal(s.T(), cloned, foundImage)
 
 	s.NoError(store.Delete(ctx, image.GetId()))
