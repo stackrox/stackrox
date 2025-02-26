@@ -13,6 +13,7 @@ const (
 	unsafePackage  = protogen.GoImportPath("unsafe")
 	fmtPackage     = protogen.GoImportPath("fmt")
 	stringsPackage = protogen.GoImportPath("strings")
+	base64Package  = protogen.GoImportPath("base64")
 )
 
 var (
@@ -47,9 +48,6 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) {
 	g.P()
 	g.P("package ", file.GoPackageName)
 	g.P()
-	g.Import("bytes")
-	g.Import("fmt")
-	g.Import("time")
 
 	for _, m := range file.Messages {
 		generateMessage(g, m)
@@ -149,7 +147,12 @@ func emitField(g *protogen.GeneratedFile, f protoreflect.FieldDescriptor, varnam
 	case protoreflect.FloatKind, protoreflect.DoubleKind:
 		g.P(fprintf, `(buf, "%f", `, varname, `)`)
 	case protoreflect.BytesKind:
-		w(g, "null")
+		g.P(`buf.WriteString("\"")`)
+		g.P("encoder := ", base64Package.Ident("NewEncoder"), "(", base64Package.Ident("StdEncoding"), ", buf)")
+		g.P("encoder.Write(", varname, ")")
+		// Must close the encoder when finished to flush any partial blocks.
+		g.P("encoder.Close()")
+		g.P(`buf.WriteString("\"")`)
 	default:
 		panic(f.ParentFile().Path() + "/" + string(f.FullName().Name()))
 	}
