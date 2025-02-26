@@ -690,6 +690,13 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 
 	ts.skipIfNotOpenShift()
 
+	// Before setting up mirrors, attempt to disable the node draining behavior of the
+	// OCP Machine Config Operator.
+	err := ts.deleScanUtils.DisableMCONodeDrain(t, ctx)
+	if err != nil {
+		logf(t, "WARN: Attempts to disable machine config operator node draining behavior failed, this may lead to higher chance of flakes: %v", err)
+	}
+
 	// Create mirroring CRs and update OCP global pull secret, this will
 	// trigger nodes to drain and may take between 5-10 mins to complete.
 	icspAvail, idmsAvail, itmsAvail := ts.deleScanUtils.SetupMirrors(t, ctx, "quay.io/rhacs-eng", config.DockerConfigEntry{
@@ -895,6 +902,7 @@ func (ts *DelegatedScanningSuite) scanWithRetries(ctx context.Context, service v
 		"no such host",
 	}
 
+	t := ts.T()
 	retryFunc := func() error {
 		img, err = service.ScanImage(ctx, req)
 		if err == nil {
@@ -903,6 +911,7 @@ func (ts *DelegatedScanningSuite) scanWithRetries(ctx context.Context, service v
 
 		for _, token := range retryErrTokens {
 			if strings.Contains(err.Error(), token) {
+				logf(t, "Retryable error found when scanning image %q: %v", req.GetImageName(), err)
 				return retry.MakeRetryable(err)
 			}
 		}
@@ -910,7 +919,7 @@ func (ts *DelegatedScanningSuite) scanWithRetries(ctx context.Context, service v
 		return err
 	}
 
-	err = ts.withRetries(retryFunc, "Timeout or too many parallel scans")
+	err = ts.withRetries(retryFunc, "Error scanning image")
 	return img, err
 }
 

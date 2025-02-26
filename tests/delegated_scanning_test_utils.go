@@ -24,6 +24,7 @@ import (
 	configv1client "github.com/openshift/client-go/config/clientset/versioned/typed/config/v1"
 	imagev1client "github.com/openshift/client-go/image/clientset/versioned/typed/image/v1"
 	machineconfigurationv1client "github.com/openshift/client-go/machineconfiguration/clientset/versioned/typed/machineconfiguration/v1"
+	operatorv1client "github.com/openshift/client-go/operator/clientset/versioned/typed/operator/v1"
 	operatorv1alpha1client "github.com/openshift/client-go/operator/clientset/versioned/typed/operator/v1alpha1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker/config"
@@ -145,6 +146,24 @@ func (d *deleScanTestUtils) availMirroringCRs() (icspAvail bool, idmsAvail bool,
 	return icspAvail, idmsAvail, itmsAvail
 }
 
+// apiResourceAvail will return true if the cluster has an API resources that matches
+// group and name, false otherwise.
+func (d *deleScanTestUtils) apiResourceAvail(groupVersion, name string) bool {
+	for _, list := range d.apiResourceList {
+		gv := list.GroupVersion
+		if gv != groupVersion {
+			continue
+		}
+		for _, resource := range list.APIResources {
+			if resource.Name == name {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
 // SetupMirrors will add creds to the Global Pull Secret, and create the mirroring CRs
 // (ImageContentSourcePolicy, ImageDigestMirrorSet, and ImageTagMirrorSet). If changes
 // were made will wait for changes to be propagated to all nodes. During testing on an
@@ -194,7 +213,7 @@ func (d *deleScanTestUtils) SetupMirrors(t *testing.T, ctx context.Context, reg 
 
 		yamlB := d.renderTemplate(t, "testdata/delegatedscanning/mirrors/icsp.yaml.tmpl", map[string]string{"name": icspName})
 		icsp := new(operatorv1alpha1.ImageContentSourcePolicy)
-		d.applyK8sYamlOrJson(t, ctx, opClient.RESTClient(), "", "imagecontentsourcepolicies", yamlB, icsp)
+		d.mustApplyK8sYamlOrJson(t, ctx, opClient.RESTClient(), "", "imagecontentsourcepolicies", yamlB, icsp)
 
 		if icsp.ResourceVersion != origIcsp.ResourceVersion {
 			logf(t, "ImageContentSourcePolicy %q updated", icspName)
@@ -210,7 +229,7 @@ func (d *deleScanTestUtils) SetupMirrors(t *testing.T, ctx context.Context, reg 
 
 		yamlB := d.renderTemplate(t, "testdata/delegatedscanning/mirrors/idms.yaml.tmpl", map[string]string{"name": idmsName})
 		idms := new(configv1.ImageDigestMirrorSet)
-		d.applyK8sYamlOrJson(t, ctx, cfgClient.RESTClient(), "", "imagedigestmirrorsets", yamlB, idms)
+		d.mustApplyK8sYamlOrJson(t, ctx, cfgClient.RESTClient(), "", "imagedigestmirrorsets", yamlB, idms)
 
 		if idms.ResourceVersion != origIdms.ResourceVersion {
 			logf(t, "ImageDigestMirrorSet %q updated", idmsName)
@@ -226,7 +245,7 @@ func (d *deleScanTestUtils) SetupMirrors(t *testing.T, ctx context.Context, reg 
 
 		yamlB := d.renderTemplate(t, "testdata/delegatedscanning/mirrors/itms.yaml.tmpl", map[string]string{"name": itmsName})
 		itms := new(configv1.ImageTagMirrorSet)
-		d.applyK8sYamlOrJson(t, ctx, cfgClient.RESTClient(), "", "imagetagmirrorsets", yamlB, itms)
+		d.mustApplyK8sYamlOrJson(t, ctx, cfgClient.RESTClient(), "", "imagetagmirrorsets", yamlB, itms)
 
 		if itms.ResourceVersion != origItms.ResourceVersion {
 			logf(t, "ImageTagMirrorSet %q updated", itmsName)
@@ -375,7 +394,7 @@ func (d *deleScanTestUtils) DeploySleeperImage(t *testing.T, ctx context.Context
 	clientset, err := kubernetes.NewForConfig(d.restCfg)
 	require.NoError(t, err)
 
-	d.applyK8sYamlOrJson(t, ctx, clientset.AppsV1().RESTClient(), namespace, "deployments", yamlB, nil)
+	d.mustApplyK8sYamlOrJson(t, ctx, clientset.AppsV1().RESTClient(), namespace, "deployments", yamlB, nil)
 	logf(t, "Deployed image: %q", imageStr)
 }
 
@@ -403,7 +422,7 @@ func (d *deleScanTestUtils) applyBuildConfig(t *testing.T, ctx context.Context, 
 	require.NoError(t, err)
 
 	yamlB := d.renderTemplate(t, "testdata/delegatedscanning/build-config.yaml.tmpl", map[string]string{"name": name, "namespace": namespace})
-	d.applyK8sYamlOrJson(t, ctx, buildV1Client.RESTClient(), namespace, "buildconfigs", yamlB, nil)
+	d.mustApplyK8sYamlOrJson(t, ctx, buildV1Client.RESTClient(), namespace, "buildconfigs", yamlB, nil)
 }
 
 // applyBuildConfig creates an image stream.
@@ -415,7 +434,7 @@ func (d *deleScanTestUtils) applyImageStream(t *testing.T, ctx context.Context, 
 	require.NoError(t, err)
 
 	yamlB := d.renderTemplate(t, "testdata/delegatedscanning/image-stream.yaml.tmpl", map[string]string{"name": name, "namespace": namespace})
-	d.applyK8sYamlOrJson(t, ctx, imageV1Client.RESTClient(), namespace, "imagestreams", yamlB, nil)
+	d.mustApplyK8sYamlOrJson(t, ctx, imageV1Client.RESTClient(), namespace, "imagestreams", yamlB, nil)
 }
 
 // getDigestFromImageStreamTag extracts an image's digest from an image stream tag.
@@ -487,9 +506,16 @@ func (d *deleScanTestUtils) buildAndPushImage(t *testing.T, ctx context.Context,
 	return result.Status.OutputDockerImageReference
 }
 
+// mustApplyK8sYamlOrJson mimics applyK8sYamlOrJson but fails the test when any errors are
+// encountered.
+func (d *deleScanTestUtils) mustApplyK8sYamlOrJson(t *testing.T, ctx context.Context, client rest.Interface, namespace, resource string, yamlOrJson []byte, result runtime.Object) {
+	err := d.applyK8sYamlOrJson(t, ctx, client, namespace, resource, yamlOrJson, result)
+	require.NoError(t, err)
+}
+
 // applyK8sYamlOrJson performs a server side apply using the provided client along with the
 // YAML or JSON. Result is populated with the updated object.
-func (d *deleScanTestUtils) applyK8sYamlOrJson(t *testing.T, ctx context.Context, client rest.Interface, namespace, resource string, yamlOrJson []byte, result runtime.Object) {
+func (d *deleScanTestUtils) applyK8sYamlOrJson(t *testing.T, ctx context.Context, client rest.Interface, namespace, resource string, yamlOrJson []byte, result runtime.Object) error {
 	partialObj := &v1.PartialObjectMetadata{}
 	reader := bytes.NewReader(yamlOrJson)
 	require.NoError(t, yaml.NewYAMLOrJSONDecoder(reader, 1024).Decode(partialObj))
@@ -506,7 +532,7 @@ func (d *deleScanTestUtils) applyK8sYamlOrJson(t *testing.T, ctx context.Context
 		Do(ctx).
 		Into(result)
 
-	require.NoError(t, err)
+	return err
 }
 
 // renderTemplate renders a go template using the data provided.
@@ -602,4 +628,65 @@ func (d *deleScanTestUtils) waitForBuildComplete(ctx context.Context, c buildv1c
 			}
 		}
 	}
+}
+
+// DisableMCONodeDrain configures the OpenShift Machine Config Operator to not drain
+// nodes when mirroring CRs are applied. This is best effort as the capability is
+// not available on every MCO z-stream release.
+//
+// This should speed up mirroring tests and reduce flakes on OCP versions that would
+// otherwise perform drains.
+//
+// The test will only fail if static testdata files are not found.
+//
+// TODO: Test on OCP 4.12, 4.13, 4.14, 4.15, 4.16, 4.17, 4.18
+func (d *deleScanTestUtils) DisableMCONodeDrain(t *testing.T, ctx context.Context) error {
+	// applyMachineConfiguration returns true if machine configuration CR was found.
+	applyMachineConfiguration := func() (bool, error) {
+		if d.apiResourceAvail("operator.openshift.io/v1", "machineconfigurations") {
+			logf(t, "Cluster supports machineconfigurations CR, disabling node drain")
+
+			yamlB, err := os.ReadFile("testdata/delegatedscanning/mirrors/machineconfiguration.yaml")
+			require.NoError(t, err, "expected machineconfiguration.yaml not found in testdata")
+
+			operatorClient, err := operatorv1client.NewForConfig(d.restCfg)
+			if err != nil {
+				return true, err
+			}
+
+			err = d.applyK8sYamlOrJson(t, ctx, operatorClient.RESTClient(), "", "machineconfigurations", yamlB, nil)
+			return true, err
+		}
+		return false, nil
+	}
+
+	crFound, err := applyMachineConfiguration()
+	if err != nil {
+		logf(t, "Error occured disabling node drain via machineconfigurations: %v", err)
+	}
+	if crFound && err == nil {
+		// The machine configuration was successfully applied, short-circuit.
+		return nil
+	}
+
+	// Otherwise apply the drain override configmap if the namespace exists.
+	mcoNamespace := "openshift-machine-config-operator"
+	k8s := createK8sClient(t)
+	_, err = k8s.CoreV1().Namespaces().Get(ctx, mcoNamespace, v1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("checking if namespace %q exists: %w", mcoNamespace, err)
+	}
+
+	// The MCO namespace exists, apply the configmap.
+	logf(t, "Applying image registry drain override configmap to namespace %q", mcoNamespace)
+
+	yamlB, err := os.ReadFile("testdata/delegatedscanning/mirrors/image-registry-override-drain-configmap.yaml")
+	require.NoError(t, err, "expected image-registry-override-drain-configmap.yaml not found in testdata")
+
+	err = d.applyK8sYamlOrJson(t, ctx, k8s.CoreV1().RESTClient(), mcoNamespace, "configmaps", yamlB, nil)
+	if err != nil {
+		return fmt.Errorf("applying image drain configmap to namespace %q: %w", mcoNamespace, err)
+	}
+
+	return nil
 }

@@ -1,0 +1,10 @@
+# The presence of this config map will cause the Machine Config Operator to not drain nodes 
+# when registries.conf is updated, in the context of delegated scanning this happens
+# when the mirroring CRs are applied.
+#
+# This should only be applied to OCP 4.14+ clusters.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: image-registry-override-drain
+  namespace: openshift-machine-config-operator
