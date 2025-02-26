@@ -290,15 +290,16 @@ func (s *serviceImpl) GetAlertsGroupedCounts(ctx context.Context, request *v1.Ge
 		}
 	})
 	log.Info("Cluster ", hasClusterQ, ", Severity ", hasSeverityQ, ", Category ", hasCategoryQ)
-	groupByQueryBuilder := search.NewQueryBuilder().AddGroupBy(search.Severity)
+	groupBySeverity := search.NewQueryBuilder().AddGroupBy(search.Severity).ProtoQuery()
+	requestQ.GroupBy = groupBySeverity.GetGroupBy()
 	switch request.GetGroupBy() {
 	case v1.GetAlertsCountsRequest_CATEGORY:
-		groupByQueryBuilder.AddGroupBy(search.Category)
+		extraGroupBy := search.NewQueryBuilder().AddGroupBy(search.Category).ProtoQuery()
+		requestQ.GroupBy.Fields = append(requestQ.GroupBy.Fields, extraGroupBy.GroupBy.Fields...)
 	case v1.GetAlertsCountsRequest_CLUSTER:
-		groupByQueryBuilder.AddGroupBy(search.Cluster)
+		extraGroupBy := search.NewQueryBuilder().AddGroupBy(search.Cluster).ProtoQuery()
+		requestQ.GroupBy.Fields = append(requestQ.GroupBy.Fields, extraGroupBy.GroupBy.Fields...)
 	}
-	groupByQuery := groupByQueryBuilder.ProtoQuery()
-	requestQ.GroupBy = groupByQuery.GetGroupBy()
 	for _, f := range requestQ.GetGroupBy().GetFields() {
 		log.Infof("Grouping by field %s", f)
 	}
