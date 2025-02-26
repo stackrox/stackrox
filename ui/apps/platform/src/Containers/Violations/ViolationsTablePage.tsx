@@ -136,6 +136,10 @@ function ViolationsTablePage(): ReactElement {
     const [currentPageAlertsErrorMessage, setCurrentPageAlertsErrorMessage] = useState('');
     const [alertCount, setAlertCount] = useState(0);
 
+    // Flag to signal that the table is in an updating state
+    // Note: This would be better replaced with a consistent "polling" state in TBodyUnified
+    const [isTableDataUpdating, setIsTableDataUpdating] = useState(true);
+
     // To handle page/count refreshing.
     const [pollEpoch, setPollEpoch] = useState(0);
 
@@ -191,6 +195,7 @@ function ViolationsTablePage(): ReactElement {
 
     // When any of the deps to this effect change, we want to reload the alerts and count.
     useEffect(() => {
+        setIsTableDataUpdating(true);
         const filteredWorkflowFilter = getFilteredWorkflowViewSearchFilter(filteredWorkflowView);
         const alertSearchFilter: SearchFilter = {
             ...searchFilter,
@@ -214,7 +219,6 @@ function ViolationsTablePage(): ReactElement {
                 setCurrentPageAlerts(alerts);
                 setAlertCount(counts);
                 setCurrentPageAlertsErrorMessage('');
-                setIsLoadingAlerts(false);
             })
             .catch((error) => {
                 if (error instanceof CancelledPromiseError) {
@@ -224,7 +228,10 @@ function ViolationsTablePage(): ReactElement {
                 setAlertCount(0);
                 const parsedMessage = getAxiosErrorMessage(error);
                 setCurrentPageAlertsErrorMessage(parsedMessage);
+            })
+            .finally(() => {
                 setIsLoadingAlerts(false);
+                setIsTableDataUpdating(false);
             });
 
         return () => {
@@ -362,6 +369,7 @@ function ViolationsTablePage(): ReactElement {
                             onSearch={onSearch}
                             additionalContextFilter={additionalContextFilter}
                             hasActiveViolations={selectedViolationStateTab === 'ACTIVE'}
+                            isTableDataUpdating={isTableDataUpdating}
                         />
                     </PageSection>
                 )}
