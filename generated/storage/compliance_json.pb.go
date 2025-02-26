@@ -22,6 +22,7 @@ func (m *ComplianceResource) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceResource) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -99,6 +100,7 @@ func (m *ComplianceResource_ClusterName) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceResource_ClusterName) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -146,6 +148,7 @@ func (m *ComplianceResource_DeploymentName) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceResource_DeploymentName) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -217,6 +220,7 @@ func (m *ComplianceResource_NodeName) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceResource_NodeName) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -277,6 +281,7 @@ func (m *ComplianceResultValue) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceResultValue) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -335,6 +340,7 @@ func (m *ComplianceResultValue_Evidence) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceResultValue_Evidence) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -393,6 +399,7 @@ func (m *ComplianceControlResult) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceControlResult) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -455,6 +462,7 @@ func (m *ComplianceDomain) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceDomain) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -552,6 +560,7 @@ func (m *ComplianceDomain_Cluster) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceDomain_Cluster) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -599,6 +608,7 @@ func (m *ComplianceDomain_Node) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceDomain_Node) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -668,6 +678,7 @@ func (m *ComplianceDomain_Deployment) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceDomain_Deployment) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -770,6 +781,7 @@ func (m *ComplianceRunMetadata) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceRunMetadata) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -903,6 +915,7 @@ func (m *ComplianceRunResults) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceRunResults) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -1039,6 +1052,7 @@ func (m *ComplianceRunResults_EntityResults) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceRunResults_EntityResults) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -1088,6 +1102,7 @@ func (m *ComplianceStrings) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceStrings) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -1144,6 +1159,7 @@ func (m *ComplianceAggregation) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceAggregation) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -1169,6 +1185,7 @@ func (m *ComplianceAggregation_AggregationKey) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceAggregation_AggregationKey) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -1216,6 +1233,7 @@ func (m *ComplianceAggregation_Result) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceAggregation_Result) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -1307,6 +1325,7 @@ func (m *ComplianceAggregation_Source) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceAggregation_Source) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -1389,6 +1408,7 @@ func (m *ComplianceAggregation_Response) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceAggregation_Response) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -1469,6 +1489,7 @@ func (m *PreComputedComplianceAggregation) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *PreComputedComplianceAggregation) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")

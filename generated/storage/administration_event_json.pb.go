@@ -22,6 +22,7 @@ func (m *AdministrationEvent) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *AdministrationEvent) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -175,6 +176,7 @@ func (m *AdministrationEvent_Resource) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *AdministrationEvent_Resource) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")

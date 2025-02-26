@@ -22,6 +22,7 @@ func (m *ComplianceOperatorCheckResult) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceOperatorCheckResult) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -168,6 +169,7 @@ func (m *ComplianceOperatorProfile) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceOperatorProfile) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -314,6 +316,7 @@ func (m *ComplianceOperatorProfile_Rule) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceOperatorProfile_Rule) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -350,6 +353,7 @@ func (m *ComplianceOperatorRule) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceOperatorRule) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -496,6 +500,7 @@ func (m *ComplianceOperatorScanSettingBinding) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceOperatorScanSettingBinding) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -620,6 +625,7 @@ func (m *ComplianceOperatorScanSettingBinding_Profile) MarshalJSON() ([]byte, er
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceOperatorScanSettingBinding_Profile) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -656,6 +662,7 @@ func (m *ComplianceOperatorScan) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceOperatorScan) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")

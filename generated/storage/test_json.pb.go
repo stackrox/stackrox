@@ -22,6 +22,7 @@ func (m *TestSingleKeyStruct) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *TestSingleKeyStruct) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -279,6 +280,7 @@ func (m *TestSingleKeyStruct_Embedded) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *TestSingleKeyStruct_Embedded) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -315,6 +317,7 @@ func (m *TestSingleKeyStruct_Embedded_Embedded2) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *TestSingleKeyStruct_Embedded_Embedded2) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -351,6 +354,7 @@ func (m *TestSingleKeyStruct_Nested) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *TestSingleKeyStruct_Nested) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -400,6 +404,7 @@ func (m *TestSingleKeyStruct_Nested_Nested2) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *TestSingleKeyStruct_Nested_Nested2) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -436,6 +441,7 @@ func (m *TestSingleKeyStruct_OneOfNested) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *TestSingleKeyStruct_OneOfNested) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -485,6 +491,7 @@ func (m *TestSingleKeyStruct_OneOfNested_Nested2) MarshalJSON() ([]byte, error) 
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *TestSingleKeyStruct_OneOfNested_Nested2) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -521,6 +528,7 @@ func (m *TestSingleUUIDKeyStruct) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *TestSingleUUIDKeyStruct) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -800,6 +808,7 @@ func (m *TestSingleUUIDKeyStruct_Embedded) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *TestSingleUUIDKeyStruct_Embedded) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -836,6 +845,7 @@ func (m *TestSingleUUIDKeyStruct_Embedded_Embedded2) MarshalJSON() ([]byte, erro
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *TestSingleUUIDKeyStruct_Embedded_Embedded2) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -872,6 +882,7 @@ func (m *TestSingleUUIDKeyStruct_Nested) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *TestSingleUUIDKeyStruct_Nested) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -921,6 +932,7 @@ func (m *TestSingleUUIDKeyStruct_Nested_Nested2) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *TestSingleUUIDKeyStruct_Nested_Nested2) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -957,6 +969,7 @@ func (m *TestSingleUUIDKeyStruct_OneOfNested) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *TestSingleUUIDKeyStruct_OneOfNested) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -1006,6 +1019,7 @@ func (m *TestSingleUUIDKeyStruct_OneOfNested_Nested2) MarshalJSON() ([]byte, err
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *TestSingleUUIDKeyStruct_OneOfNested_Nested2) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -1042,6 +1056,7 @@ func (m *TestStruct) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *TestStruct) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -1339,6 +1354,7 @@ func (m *TestStruct_Embedded) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *TestStruct_Embedded) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -1375,6 +1391,7 @@ func (m *TestStruct_Embedded_Embedded2) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *TestStruct_Embedded_Embedded2) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -1411,6 +1428,7 @@ func (m *TestStruct_Nested) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *TestStruct_Nested) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -1486,6 +1504,7 @@ func (m *TestStruct_Nested_Nested2) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *TestStruct_Nested_Nested2) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -1548,6 +1567,7 @@ func (m *TestStruct_OneOfNested) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *TestStruct_OneOfNested) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -1584,6 +1604,7 @@ func (m *TestStruct_OneOfNested_Nested2) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *TestStruct_OneOfNested_Nested2) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -1620,6 +1641,7 @@ func (m *TestGrandparent) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *TestGrandparent) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -1711,6 +1733,7 @@ func (m *TestGrandparent_Embedded) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *TestGrandparent_Embedded) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -1769,6 +1792,7 @@ func (m *TestGrandparent_Embedded_Embedded2) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *TestGrandparent_Embedded_Embedded2) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -1805,6 +1829,7 @@ func (m *TestParent1) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *TestParent1) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -1905,6 +1930,7 @@ func (m *TestParent1_Child1Ref) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *TestParent1_Child1Ref) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -1941,6 +1967,7 @@ func (m *TestChild1) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *TestChild1) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -1988,6 +2015,7 @@ func (m *TestGrandChild1) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *TestGrandChild1) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -2057,6 +2085,7 @@ func (m *TestGGrandChild1) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *TestGGrandChild1) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -2104,6 +2133,7 @@ func (m *TestG2GrandChild1) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *TestG2GrandChild1) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -2173,6 +2203,7 @@ func (m *TestG3GrandChild1) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *TestG3GrandChild1) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -2220,6 +2251,7 @@ func (m *TestParent2) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *TestParent2) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -2278,6 +2310,7 @@ func (m *TestChild2) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *TestChild2) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -2347,6 +2380,7 @@ func (m *TestParent3) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *TestParent3) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -2405,6 +2439,7 @@ func (m *TestParent4) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *TestParent4) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -2463,6 +2498,7 @@ func (m *TestChild1P4) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *TestChild1P4) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -2521,6 +2557,7 @@ func (m *TestShortCircuit) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *TestShortCircuit) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")

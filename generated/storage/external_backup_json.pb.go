@@ -22,6 +22,7 @@ func (m *ExternalBackup) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ExternalBackup) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -158,6 +159,7 @@ func (m *S3Config) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *S3Config) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -264,6 +266,7 @@ func (m *S3Compatible) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *S3Compatible) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -366,6 +369,7 @@ func (m *GCSConfig) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *GCSConfig) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")

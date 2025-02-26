@@ -22,6 +22,7 @@ func (m *ProfileShim) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ProfileShim) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -69,6 +70,7 @@ func (m *ComplianceOperatorProfileV2) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceOperatorProfileV2) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -301,6 +303,7 @@ func (m *ComplianceOperatorProfileV2_Rule) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceOperatorProfileV2_Rule) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -337,6 +340,7 @@ func (m *ComplianceOperatorRuleV2) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceOperatorRuleV2) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -593,6 +597,7 @@ func (m *ComplianceOperatorRuleV2_Fix) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceOperatorRuleV2_Fix) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -640,6 +645,7 @@ func (m *RuleControls) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *RuleControls) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -707,6 +713,7 @@ func (m *ComplianceOperatorScanConfigurationV2) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceOperatorScanConfigurationV2) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -1019,6 +1026,7 @@ func (m *ComplianceOperatorScanConfigurationV2_ProfileName) MarshalJSON() ([]byt
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceOperatorScanConfigurationV2_ProfileName) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -1055,6 +1063,7 @@ func (m *ComplianceOperatorScanConfigurationV2_Cluster) MarshalJSON() ([]byte, e
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceOperatorScanConfigurationV2_Cluster) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -1091,6 +1100,7 @@ func (m *ComplianceOperatorClusterScanConfigStatus) MarshalJSON() ([]byte, error
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceOperatorClusterScanConfigStatus) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -1199,6 +1209,7 @@ func (m *ComplianceOperatorBenchmarkV2) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceOperatorBenchmarkV2) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -1312,6 +1323,7 @@ func (m *ComplianceOperatorBenchmarkV2_Profile) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceOperatorBenchmarkV2_Profile) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -1359,6 +1371,7 @@ func (m *ComplianceOperatorCheckResultV2) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceOperatorCheckResultV2) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -1641,6 +1654,7 @@ func (m *ScanStatus) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ScanStatus) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -1699,6 +1713,7 @@ func (m *ComplianceOperatorScanV2) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceOperatorScanV2) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -1961,6 +1976,7 @@ func (m *ComplianceOperatorScanSettingBindingV2) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceOperatorScanSettingBindingV2) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -2107,6 +2123,7 @@ func (m *ComplianceOperatorCondition) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceOperatorCondition) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -2195,6 +2212,7 @@ func (m *ComplianceOperatorStatus) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceOperatorStatus) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -2275,6 +2293,7 @@ func (m *ComplianceOperatorSuiteV2) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceOperatorSuiteV2) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -2346,6 +2365,7 @@ func (m *ComplianceOperatorRemediationV2) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceOperatorRemediationV2) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -2463,6 +2483,7 @@ func (m *ComplianceOperatorReportSnapshotV2) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceOperatorReportSnapshotV2) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -2593,6 +2614,7 @@ func (m *ComplianceOperatorReportSnapshotV2_Scan) MarshalJSON() ([]byte, error) 
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceOperatorReportSnapshotV2_Scan) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -2648,6 +2670,7 @@ func (m *ComplianceOperatorReportData) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceOperatorReportData) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -2727,6 +2750,7 @@ func (m *ComplianceOperatorReportData_SuiteStatus) MarshalJSON() ([]byte, error)
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceOperatorReportData_SuiteStatus) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -2804,6 +2828,7 @@ func (m *ComplianceOperatorReportData_ClusterStatus) MarshalJSON() ([]byte, erro
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceOperatorReportData_ClusterStatus) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -2884,6 +2909,7 @@ func (m *ComplianceOperatorReportStatus) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *ComplianceOperatorReportStatus) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")

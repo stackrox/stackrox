@@ -22,6 +22,7 @@ func (m *DelegatedRegistryConfig) MarshalJSON() ([]byte, error) {
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *DelegatedRegistryConfig) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
@@ -91,6 +92,7 @@ func (m *DelegatedRegistryConfig_DelegatedRegistry) MarshalJSON() ([]byte, error
 	str := buf.String()
 	return unsafe.Slice(unsafe.StringData(str), len(str)), nil
 }
+
 func (m *DelegatedRegistryConfig_DelegatedRegistry) marshalJSON(buf *strings.Builder) (err error) {
 	if m == nil {
 		buf.WriteString("null")
