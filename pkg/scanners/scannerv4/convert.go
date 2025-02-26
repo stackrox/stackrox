@@ -363,7 +363,13 @@ func os(report *v4.VulnerabilityReport) string {
 	}
 
 	dist := dists[0]
-	return dist.GetDid() + ":" + dist.GetVersionId()
+	switch did := dist.GetDid(); did {
+	case "chainguard", "wolfi":
+		// Chainguard and Wolfi are not versioned, so just return the name.
+		return did
+	default:
+		return did + ":" + dist.GetVersionId()
+	}
 }
 
 func notes(report *v4.VulnerabilityReport) []storage.ImageScan_Note {
