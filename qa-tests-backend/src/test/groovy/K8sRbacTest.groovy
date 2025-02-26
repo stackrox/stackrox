@@ -304,9 +304,8 @@ class K8sRbacTest extends BaseSpecification {
         assert stackroxSubjects.size() == orchestratorSubjects.size()
         for (Rbac.Subject sub : stackroxSubjects) {
             K8sSubject subject = orchestratorSubjects.find {
-                it.name == sub.name &&
-                        it.namespace == sub.namespace &&
-                        it.kind.toLowerCase() == sub.kind.toString().toLowerCase()
+                // orchestratorSubjects contains only User and Group kind where namespace is not relevant.
+                it.name == sub.name && it.kind.toLowerCase() == sub.kind.toString().toLowerCase()
             }
             assert subject
         }
