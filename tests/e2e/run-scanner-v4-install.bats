@@ -313,9 +313,6 @@ teardown() {
     _end
 }
 
-teardown_file() {
-}
-
 @test "Upgrade from old Helm chart to HEAD Helm chart with Scanner v4 enabled" {
     init
 
