@@ -8,7 +8,6 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/containerid"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/kubernetes"
@@ -529,7 +528,7 @@ func (w *WorkloadManager) managePod(ctx context.Context, deploymentSig *concurre
 
 func getShortContainerID(id string) string {
 	_, runtimeID := k8sutil.ParseContainerRuntimeString(id)
-	return containerid.ShortContainerIDFromInstanceID(runtimeID)
+	return runtimeID
 }
 
 func (w *WorkloadManager) manageProcessesForPod(podSig *concurrency.Signal, podWorkload PodWorkload, pod *corev1.Pod) {
