@@ -87,45 +87,43 @@ func (s *storeImpl) insertIntoImages(
 	// the times of previous occurrences.
 	cveTimeMap := make(map[string]*timeFields)
 	// Scan has not been updated, so we are only processing image specific items.  Components and CVEs need not be updated.
-	if !scanUpdated {
-		for _, cve := range parts.cveV2 {
+	for _, cve := range parts.cveV2 {
+		if val, ok := cveTimeMap[cve.GetCveBaseInfo().GetCve()]; ok {
+			if val.createdAt.After(cve.GetCveBaseInfo().GetCreatedAt().AsTime()) {
+				val.createdAt = cve.GetCveBaseInfo().GetCreatedAt().AsTime()
+			}
+			if val.firstImageOccurrence.After(cve.GetFirstImageOccurrence().AsTime()) {
+				val.firstImageOccurrence = cve.GetFirstImageOccurrence().AsTime()
+			}
+		} else {
+			cveTimeMap[cve.GetCveBaseInfo().GetCve()] = &timeFields{
+				createdAt:            cve.GetCveBaseInfo().GetCreatedAt().AsTime(),
+				firstImageOccurrence: cve.GetFirstImageOccurrence().AsTime(),
+			}
+		}
+	}
+
+	// Grab all the components and CVEs that exist.
+	existingComponents, err := getImageComponents(ctx, tx, parts.image.GetId())
+	if err != nil {
+		return err
+	}
+
+	for _, component := range existingComponents {
+		existingCVEs, err := getImageComponentCVEs(ctx, tx, component.GetId())
+		if err != nil {
+			return err
+		}
+
+		for _, cve := range existingCVEs {
+			// If the existing CVE is not already in the map that implies it no longer exists for this image and
+			// the CVE will be removed.
 			if val, ok := cveTimeMap[cve.GetCveBaseInfo().GetCve()]; ok {
 				if val.createdAt.After(cve.GetCveBaseInfo().GetCreatedAt().AsTime()) {
 					val.createdAt = cve.GetCveBaseInfo().GetCreatedAt().AsTime()
 				}
 				if val.firstImageOccurrence.After(cve.GetFirstImageOccurrence().AsTime()) {
 					val.firstImageOccurrence = cve.GetFirstImageOccurrence().AsTime()
-				}
-			} else {
-				cveTimeMap[cve.GetCveBaseInfo().GetCve()] = &timeFields{
-					createdAt:            cve.GetCveBaseInfo().GetCreatedAt().AsTime(),
-					firstImageOccurrence: cve.GetFirstImageOccurrence().AsTime(),
-				}
-			}
-		}
-
-		// Grab all the components and CVEs that exist.
-		existingComponents, err := getImageComponents(ctx, tx, parts.image.GetId())
-		if err != nil {
-			return err
-		}
-
-		for _, component := range existingComponents {
-			existingCVEs, err := getImageComponentCVEs(ctx, tx, component.GetId())
-			if err != nil {
-				return err
-			}
-
-			for _, cve := range existingCVEs {
-				// If the existing CVE is not already in the map that implies it no longer exists for this image and
-				// the CVE will be removed.
-				if val, ok := cveTimeMap[cve.GetCveBaseInfo().GetCve()]; ok {
-					if val.createdAt.After(cve.GetCveBaseInfo().GetCreatedAt().AsTime()) {
-						val.createdAt = cve.GetCveBaseInfo().GetCreatedAt().AsTime()
-					}
-					if val.firstImageOccurrence.After(cve.GetFirstImageOccurrence().AsTime()) {
-						val.firstImageOccurrence = cve.GetFirstImageOccurrence().AsTime()
-					}
 				}
 			}
 		}
@@ -169,7 +167,7 @@ func (s *storeImpl) insertIntoImages(
 	}
 
 	finalStr := "INSERT INTO " + imagesTable + " (Id, Name_Registry, Name_Remote, Name_Tag, Name_FullName, Metadata_V1_Created, Metadata_V1_User, Metadata_V1_Command, Metadata_V1_Entrypoint, Metadata_V1_Volumes, Metadata_V1_Labels, Scan_ScanTime, Scan_OperatingSystem, Signature_Fetched, Components, Cves, FixableCves, LastUpdated, Priority, RiskScore, TopCvss, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name_Registry = EXCLUDED.Name_Registry, Name_Remote = EXCLUDED.Name_Remote, Name_Tag = EXCLUDED.Name_Tag, Name_FullName = EXCLUDED.Name_FullName, Metadata_V1_Created = EXCLUDED.Metadata_V1_Created, Metadata_V1_User = EXCLUDED.Metadata_V1_User, Metadata_V1_Command = EXCLUDED.Metadata_V1_Command, Metadata_V1_Entrypoint = EXCLUDED.Metadata_V1_Entrypoint, Metadata_V1_Volumes = EXCLUDED.Metadata_V1_Volumes, Metadata_V1_Labels = EXCLUDED.Metadata_V1_Labels, Scan_ScanTime = EXCLUDED.Scan_ScanTime, Scan_OperatingSystem = EXCLUDED.Scan_OperatingSystem, Signature_Fetched = EXCLUDED.Signature_Fetched, Components = EXCLUDED.Components, Cves = EXCLUDED.Cves, FixableCves = EXCLUDED.FixableCves, LastUpdated = EXCLUDED.LastUpdated, Priority = EXCLUDED.Priority, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(ctx, finalStr, values...)
+	_, err = tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
 	}
