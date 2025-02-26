@@ -64,10 +64,16 @@ func generateMessage(g *protogen.GeneratedFile, msg *protogen.Message) {
 	name := s[strings.LastIndex(s, ".")+1:]
 
 	g.P()
-	g.P("func (m *", name, ") MarshalJSON() (b []byte, err error) ", " { ")
+	g.P("func (m *", name, ") MarshalJSON() ([]byte, error) { ")
 	g.P(`if m == nil { return []byte("null"), nil }`)
 	g.P("var buf ", stringsPackage.Ident("Builder"))
 	g.P(`buf.Grow(m.SizeVT())`)
+	g.P(`if err := m.marshalJSON(&buf); err != nil { return nil, err }`)
+	g.P(`str := buf.String()`)
+	g.P(`return `, unsafePackage.Ident("Slice"), "(", unsafePackage.Ident("StringData"), `(str), len(str)), nil`)
+	g.P("}")
+	g.P("func (m *", name, ") marshalJSON(buf *", stringsPackage.Ident("Builder"), ") (err error) { ")
+	g.P(`if m == nil { buf.WriteString("null"); return nil }`)
 	hasMapsOrList := false
 	for _, f := range msg.Fields {
 		hasMapsOrList = hasMapsOrList || f.Desc.IsMap() || f.Desc.IsList()
@@ -92,24 +98,22 @@ func generateMessage(g *protogen.GeneratedFile, msg *protogen.Message) {
 					t(g, "t")
 					g.P("}")
 				} else {
-					g.P("b, err = v.MarshalJSON()")
-					g.P("if err != nil { return nil, err }")
-					g.P(`buf.Write(b)`)
+					g.P("if err := v.marshalJSON(buf); err != nil { return err }")
 				}
 			case protoreflect.StringKind:
-				g.P(fprintf, `(&buf, "%q", v)`)
+				g.P(fprintf, `(buf, "%q", v)`)
 			case protoreflect.BoolKind:
 				g.P(`if v { buf.WriteString("true") } else { buf.WriteString("false") }`)
 			case protoreflect.EnumKind:
 				q(g, "v.String()")
 			case protoreflect.Int32Kind, protoreflect.Sint32Kind,
 				protoreflect.Uint32Kind, protoreflect.Sfixed32Kind, protoreflect.Fixed32Kind:
-				g.P(fprintf, `(&buf, "%d", v)`)
+				g.P(fprintf, `(buf, "%d", v)`)
 			case protoreflect.Int64Kind, protoreflect.Sint64Kind,
 				protoreflect.Uint64Kind, protoreflect.Sfixed64Kind, protoreflect.Fixed64Kind:
-				g.P(fprintf, `(&buf, "\"%d\"", v)`)
+				g.P(fprintf, `(buf, "\"%d\"", v)`)
 			case protoreflect.FloatKind, protoreflect.DoubleKind:
-				g.P(fprintf, `(&buf, "%f", v)`)
+				g.P(fprintf, `(buf, "%f", v)`)
 			case protoreflect.BytesKind:
 				w(g, "null")
 			default:
@@ -127,42 +131,40 @@ func generateMessage(g *protogen.GeneratedFile, msg *protogen.Message) {
 			g.P("if trailingComma { buf.WriteByte(',') }; trailingComma = true;")
 			switch f.Desc.MapKey().Kind() {
 			case protoreflect.StringKind:
-				g.P(fprintf, `(&buf, "%q", k)`)
+				g.P(fprintf, `(buf, "%q", k)`)
 			case protoreflect.BoolKind:
 				g.P(`if k { buf.WriteString("true") } else { buf.WriteString("false") }`)
 			case protoreflect.EnumKind:
 				q(g, "k.String()")
 			case protoreflect.Int32Kind, protoreflect.Sint32Kind,
 				protoreflect.Uint32Kind, protoreflect.Sfixed32Kind, protoreflect.Fixed32Kind:
-				g.P(fprintf, `(&buf, "%d", k`)
+				g.P(fprintf, `(buf, "%d", k`)
 			case protoreflect.Int64Kind, protoreflect.Sint64Kind,
 				protoreflect.Uint64Kind, protoreflect.Sfixed64Kind, protoreflect.Fixed64Kind:
-				g.P(fprintf, `(&buf, "\"%d\"", k)`)
+				g.P(fprintf, `(buf, "\"%d\"", k)`)
 			case protoreflect.FloatKind, protoreflect.DoubleKind:
-				g.P(fprintf, `(&buf, "%f", k)`)
+				g.P(fprintf, `(buf, "%f", k)`)
 			default:
 				panic(f)
 			}
 			w(g, ":")
 			switch f.Desc.MapValue().Kind() {
 			case protoreflect.MessageKind:
-				g.P("b, err = v.MarshalJSON()")
-				g.P("if err != nil { return nil, err }")
-				g.P(`buf.Write(b)`)
+				g.P("if err := v.marshalJSON(buf); err != nil { return err }")
 			case protoreflect.StringKind:
-				g.P(fprintf, `(&buf, "%q", v)`)
+				g.P(fprintf, `(buf, "%q", v)`)
 			case protoreflect.BoolKind:
 				g.P(`if v { buf.WriteString("true") } else { buf.WriteString("false") }`)
 			case protoreflect.EnumKind:
 				q(g, "v.String()")
 			case protoreflect.Int32Kind, protoreflect.Sint32Kind,
 				protoreflect.Uint32Kind, protoreflect.Sfixed32Kind, protoreflect.Fixed32Kind:
-				g.P(fprintf, `(&buf, "%d", v)`)
+				g.P(fprintf, `(buf, "%d", v)`)
 			case protoreflect.Int64Kind, protoreflect.Sint64Kind,
 				protoreflect.Uint64Kind, protoreflect.Sfixed64Kind, protoreflect.Fixed64Kind:
-				g.P(fprintf, `(&buf, "\"%d\"", v)`)
+				g.P(fprintf, `(buf, "\"%d\"", v)`)
 			case protoreflect.FloatKind, protoreflect.DoubleKind:
-				g.P(fprintf, `(&buf, "%f", v)`)
+				g.P(fprintf, `(buf, "%f", v)`)
 			default:
 				panic(f)
 			}
@@ -180,23 +182,21 @@ func generateMessage(g *protogen.GeneratedFile, msg *protogen.Message) {
 				g.P("}") // x
 				continue
 			}
-			g.P("b, err = x.MarshalJSON()")
-			g.P("if err != nil { return nil, err }")
-			g.P(`buf.Write(b)`)
+			g.P("if err := x.marshalJSON(buf); err != nil { return err }")
 		case protoreflect.StringKind:
-			g.P(fprintf, `(&buf, "%q", x)`)
+			g.P(fprintf, `(buf, "%q", x)`)
 		case protoreflect.BoolKind:
 			g.P(`if x { buf.WriteString("true") } else { buf.WriteString("false") }`)
 		case protoreflect.EnumKind:
 			q(g, "x.String()")
 		case protoreflect.Int32Kind, protoreflect.Sint32Kind,
 			protoreflect.Uint32Kind, protoreflect.Sfixed32Kind, protoreflect.Fixed32Kind:
-			g.P(fprintf, `(&buf, "%d", x)`)
+			g.P(fprintf, `(buf, "%d", x)`)
 		case protoreflect.Int64Kind, protoreflect.Sint64Kind,
 			protoreflect.Uint64Kind, protoreflect.Sfixed64Kind, protoreflect.Fixed64Kind:
-			g.P(fprintf, `(&buf, "\"%d\"", x)`)
+			g.P(fprintf, `(buf, "\"%d\"", x)`)
 		case protoreflect.FloatKind, protoreflect.DoubleKind:
-			g.P(fprintf, `(&buf, "%f", x)`)
+			g.P(fprintf, `(buf, "%f", x)`)
 		case protoreflect.BytesKind:
 			w(g, "null")
 		default:
@@ -205,8 +205,7 @@ func generateMessage(g *protogen.GeneratedFile, msg *protogen.Message) {
 		g.P("}") // x
 	}
 	w(g, "}")
-	g.P(`str := buf.String()`)
-	g.P(`return `, unsafePackage.Ident("Slice"), "(", unsafePackage.Ident("StringData"), `(str), len(str)), nil`)
+	g.P("return nil")
 	g.P("}")
 	g.P()
 	for _, m := range msg.Messages {

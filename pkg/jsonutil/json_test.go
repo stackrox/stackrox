@@ -41,19 +41,19 @@ func TestJsonMarshaler(t *testing.T) {
 	}
 }
 
-func BenchmarkProtoToJSON(b *testing.B) {
-	for _, msg := range input {
-		b.Run(string(msg.ProtoReflect().Type().Descriptor().FullName()), func(b *testing.B) {
-			for i := 0; i < b.N; i++ {
-				expected, err := ProtoToJSON(msg)
-				require.NoError(b, err)
-				require.NotEmpty(b, expected)
-			}
-		})
-	}
-}
+//func BenchmarkProtoToJSON(b *testing.B) {
+//	for _, msg := range input {
+//		b.Run(string(msg.ProtoReflect().Type().Descriptor().FullName()), func(b *testing.B) {
+//			for i := 0; i < b.N; i++ {
+//				expected, err := ProtoToJSON(msg)
+//				require.NoError(b, err)
+//				require.NotEmpty(b, expected)
+//			}
+//		})
+//	}
+//}
 
-func BenchmarkMarshalJSON(b *testing.B) {
+func BenchmarkProtoToJSON(b *testing.B) {
 	for _, msg := range input {
 		b.Run(string(msg.ProtoReflect().Type().Descriptor().FullName()), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
