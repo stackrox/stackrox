@@ -91,9 +91,10 @@ func (s *permissionSetUpdaterTestSuite) TestDelete_Successful() {
 		Traits:      &storage.Traits{Origin: storage.Traits_DECLARATIVE},
 	}))
 
-	names, err := s.updater.DeleteResources(s.ctx)
+	names, deletionCount, err := s.updater.DeleteResources(s.ctx)
 	s.NoError(err)
 	s.Empty(names)
+	s.Equal(1, deletionCount)
 }
 
 func (s *permissionSetUpdaterTestSuite) TestDelete_Error() {
@@ -125,9 +126,10 @@ func (s *permissionSetUpdaterTestSuite) TestDelete_Error() {
 		Status: storage.DeclarativeConfigHealth_HEALTHY,
 	}))
 
-	names, err := s.updater.DeleteResources(s.ctx)
+	names, deletionCount, err := s.updater.DeleteResources(s.ctx)
 	s.Contains(names, "04a87e34-b568-5e14-90ac-380d25c8689b")
 	s.ErrorIs(err, errox.ReferencedByAnotherObject)
+	s.Equal(0, deletionCount)
 
 	health, exists, err := s.updater.healthDS.GetDeclarativeConfig(s.ctx,
 		"04a87e34-b568-5e14-90ac-380d25c8689b")
