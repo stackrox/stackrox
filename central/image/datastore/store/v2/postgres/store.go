@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/central/image/datastore/store"
 	"github.com/stackrox/rox/central/image/datastore/store/common/v2"
 	common2 "github.com/stackrox/rox/central/image/datastore/store/common/v2"
-	componentStore "github.com/stackrox/rox/central/imagecomponent/v2/datastore/store/postgres"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -61,12 +60,11 @@ type timeFields struct {
 // TODO(ROX-28222): Refactor logic operating on other tables out and up to the datastore layer.
 
 // New returns a new Store instance using the provided sql instance.
-func New(db postgres.DB, noUpdateTimestamps bool, keyFence concurrency.KeyFence, componentV2Store componentStore.Store) store.Store {
+func New(db postgres.DB, noUpdateTimestamps bool, keyFence concurrency.KeyFence) store.Store {
 	return &storeImpl{
 		db:                 db,
 		noUpdateTimestamps: noUpdateTimestamps,
 		keyFence:           keyFence,
-		componentV2Store:   componentV2Store,
 	}
 }
 
@@ -74,7 +72,6 @@ type storeImpl struct {
 	db                 postgres.DB
 	noUpdateTimestamps bool
 	keyFence           concurrency.KeyFence
-	componentV2Store   componentStore.Store
 }
 
 func (s *storeImpl) insertIntoImages(
@@ -1100,5 +1097,5 @@ func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB
 	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImagesStmt)
 	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImageComponentV2Stmt)
 	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImageCvesV2Stmt)
-	return New(db, noUpdateTimestamps, concurrency.NewKeyFence(), componentStore.New(db))
+	return New(db, noUpdateTimestamps, concurrency.NewKeyFence())
 }
