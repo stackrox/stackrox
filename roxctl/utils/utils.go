@@ -4,15 +4,16 @@ import "iter"
 
 type indents []int
 
-func (slice *indents) pop() int {
-	switch len(*slice) {
+func (ptr *indents) pop() int {
+	slice := *ptr
+	switch len(slice) {
 	case 0:
 		return 0
 	case 1:
-		return (*slice)[0]
+		return slice[0]
 	default:
-		value := (*slice)[0]
-		*slice = (*slice)[1:]
+		value := slice[0]
+		*ptr = slice[1:]
 		return value
 	}
 }

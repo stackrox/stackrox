@@ -12,7 +12,8 @@ import (
 // FTR, kubectl uses a similar, but even more sophisticated custom formatter:
 // https://github.com/kubernetes/kubectl/blob/master/pkg/util/templates/templater.go
 func FormatHelp(c *cobra.Command, _ []string) {
-	w := makeHelpWriter(&cobraWriter{c}, 80)
+	w := makeHelpWriter(
+		makeFormattingWriter(&cobraWriter{c}, 80))
 	if len(c.Short) > 0 {
 		w.WriteLn(c.Short)
 	}
@@ -122,20 +123,17 @@ func formatFlag(sb io.StringWriter, f *pflag.Flag) {
 }
 
 func makeFlagVisitor(w *helpWriter) func(f *pflag.Flag) {
-	first := true
+	firstFlag := true
 	return func(f *pflag.Flag) {
 		if f.Hidden {
 			return
 		}
-		if !first {
+		if !firstFlag {
 			w.EmptyLineSeparator()
 		}
-		first = false
+		firstFlag = false
 		sb := &strings.Builder{}
 		formatFlag(sb, f)
 		w.Indent(4, 8).WriteLn(sb.String(), f.Usage)
-		if len(f.Deprecated) != 0 {
-			w.Indent(8).WriteLn("(DEPRECATED: ", f.Deprecated, ")")
-		}
 	}
 }

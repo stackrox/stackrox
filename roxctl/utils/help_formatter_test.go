@@ -51,7 +51,13 @@ func TestFormatHelp(t *testing.T) {
 		Run:     func(cmd *cobra.Command, args []string) {},
 		GroupID: "g1",
 	}
-	subcommand.AddCommand(subsubcommand)
+	subsubcommand1 := &cobra.Command{
+		Use:   "sub-sub-test1",
+		Short: "short subsub test1 description",
+		Run:   func(cmd *cobra.Command, args []string) {},
+	}
+
+	subcommand.AddCommand(subsubcommand, subsubcommand1)
 
 	deprecatedCommand := &cobra.Command{
 		Use:        "deprecated-test",
@@ -128,7 +134,10 @@ long sub test description
 multiline
 
 Test Group
-  sub-sub-test   short subsub test description
+  sub-sub-test    short subsub test description
+
+Additional Commands:
+  sub-sub-test1   short subsub test1 description
 
 Options:
     --i64=42:

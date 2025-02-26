@@ -28,13 +28,13 @@ type helpWriter struct {
 	empty bool
 }
 
-func makeHelpWriter(w io.StringWriter, width int, indent ...int) *helpWriter {
-	return &helpWriter{makeWriter(w, width, indent...), true}
+func makeHelpWriter(w *formattingWriter) *helpWriter {
+	return &helpWriter{w, true}
 }
 
 // Indent sets indentation for the next WriteLn call.
 func (w *helpWriter) Indent(indent ...int) *helpWriter {
-	w.fw.setIndent(indent...)
+	w.fw.SetIndent(indent...)
 	return w
 }
 
@@ -44,8 +44,8 @@ func (w *helpWriter) Write(s ...string) {
 	for _, s := range s {
 		if len(s) > 0 {
 			_, _ = w.fw.WriteString(s)
+			w.empty = false
 		}
-		w.empty = false
 	}
 }
 
@@ -53,15 +53,13 @@ func (w *helpWriter) Write(s ...string) {
 // resets the indentation.
 func (w *helpWriter) WriteLn(s ...string) {
 	w.Write(s...)
-	w.fw.setIndent()
-	_, _ = w.fw.WriteString("\n")
+	_, _ = w.Indent().fw.WriteString("\n")
 	w.empty = false
 }
 
 func (w *helpWriter) EmptyLineSeparator() {
 	if !w.empty {
-		w.fw.setIndent()
-		_, _ = w.fw.WriteString("\n")
+		_, _ = w.Indent().fw.WriteString("\n")
 		w.empty = true
 	}
 }

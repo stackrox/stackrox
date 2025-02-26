@@ -16,7 +16,7 @@ func Test_indentAndWrap(t *testing.T) {
 		"    lines."
 
 	sb := &strings.Builder{}
-	_, err := makeWriter(sb, 30, 1, 2, 3, 4).WriteString(
+	_, err := makeFormattingWriter(sb, 30, 1, 2, 3, 4).WriteString(
 		`
 This is some long text, that should be indented and	wrapped.
 There are multiple
@@ -25,7 +25,7 @@ lines.`)
 	assert.Equal(t, expected, sb.String())
 
 	sb = &strings.Builder{}
-	xw := makeWriter(sb, 30, 1, 2, 3, 4)
+	xw := makeFormattingWriter(sb, 30, 1, 2, 3, 4)
 	_, _ = xw.WriteString("\nThis is")
 	_, _ = xw.WriteString(" some long text")
 	_, _ = xw.WriteString(", that should be indented ")
@@ -47,7 +47,7 @@ lines.`)
 	}
 	for _, c := range cases {
 		sb := &strings.Builder{}
-		_, err := makeWriter(sb, 20, c.padding...).WriteString(c.text)
+		_, err := makeFormattingWriter(sb, 20, c.padding...).WriteString(c.text)
 		assert.NoError(t, err)
 		assert.Equal(t, c.expected, sb.String())
 	}
@@ -56,13 +56,13 @@ lines.`)
 func Test_setIndent(t *testing.T) {
 	t.Run("should respect updated indentation", func(t *testing.T) {
 		sb := &strings.Builder{}
-		w := makeWriter(sb, 20)
+		w := makeFormattingWriter(sb, 20)
 		_, _ = w.WriteString("text 0")
-		w.setIndent(2, 4)
+		w.SetIndent(2, 4)
 		_, _ = w.WriteString("text 2\n")
 		_, _ = w.WriteString("text 4\n")
 		_, _ = w.WriteString("text 4")
-		w.setIndent()
+		w.SetIndent()
 		_, _ = w.WriteString("text 0\n")
 		_, _ = w.WriteString("text 0\n")
 
@@ -71,45 +71,63 @@ func Test_setIndent(t *testing.T) {
 
 	t.Run("should not reset previously written line length", func(t *testing.T) {
 		sb := &strings.Builder{}
-		w := makeWriter(sb, 10)
+		w := makeFormattingWriter(sb, 10)
 
-		w.setIndent(2)               // 2
+		w.SetIndent(2)               // 2
 		_, _ = w.WriteString("... ") // +4=6
-		w.setIndent(2)               // +2=8
+		w.SetIndent(2)               // +2=8
 		_, _ = w.WriteString(" .")   // +2=10
 		assert.Equal(t, "  ...    .", sb.String())
 	})
 
 	t.Run("should wrap correctly", func(t *testing.T) {
 		sb := &strings.Builder{}
-		w := makeWriter(sb, 10)
+		w := makeFormattingWriter(sb, 10)
 
-		w.setIndent(2)
+		w.SetIndent(2)
 		_, _ = w.WriteString(".... ")
-		w.setIndent(2)
+		w.SetIndent(2)
 		_, _ = w.WriteString(" ..")
 		assert.Equal(t, "  ....    \n  ..", sb.String())
 	})
 
 	t.Run("negative indent should tab", func(t *testing.T) {
 		sb := &strings.Builder{}
-		w := makeWriter(sb, 80)
+		w := makeFormattingWriter(sb, 20)
 
 		_, _ = w.WriteString("\n")
-		w.setIndent(2)
+		w.SetIndent(15)
 		_, _ = w.WriteString(">")
-		w.setIndent(-10)
+		w.SetIndent(15)
+		_, _ = w.WriteString("|\n")
+		w.SetIndent(2)
+		_, _ = w.WriteString(">")
+		w.SetIndent(-10)
 		_, _ = w.WriteString("|\n|\n")
-		w.setIndent(2)
-		_, _ = w.WriteString(">>>>>>>>>>>")
-		w.setIndent(-10)
+		w.SetIndent(2)
+		_, _ = w.WriteString(">>>>>>>>>")
+		w.SetIndent(-10)
+		_, _ = w.WriteString("|\n")
+		w.SetIndent(2)
+		_, _ = w.WriteString(">>>>>>>>")
+		w.SetIndent(-10)
+		_, _ = w.WriteString("|\n")
+		w.SetIndent(2)
+		_, _ = w.WriteString(">>>>>>>")
+		w.SetIndent(-10)
 		_, _ = w.WriteString("|\n|")
-		w.setIndent(-15)
+		w.SetIndent(-15)
 		_, _ = w.WriteString("|\n|")
 		assert.Equal(t, `
+               >
+               |
   >       |
           |
-  >>>>>>>>>>>|
+  >>>>>>>>>
+          |
+  >>>>>>>>
+          |
+  >>>>>>> |
           |    |
                |`, sb.String())
 	})

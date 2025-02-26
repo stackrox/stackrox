@@ -10,7 +10,7 @@ import (
 func Test_helpWriter(t *testing.T) {
 	t.Run("empty line separator", func(t *testing.T) {
 		sb := &strings.Builder{}
-		w := makeHelpWriter(sb, 20)
+		w := makeHelpWriter(makeFormattingWriter(sb, 20))
 
 		w.EmptyLineSeparator()
 		w.EmptyLineSeparator()
@@ -24,7 +24,7 @@ func Test_helpWriter(t *testing.T) {
 	})
 	t.Run("write", func(t *testing.T) {
 		sb := &strings.Builder{}
-		w := makeHelpWriter(sb, 25)
+		w := makeHelpWriter(makeFormattingWriter(sb, 25))
 		w.WriteLn("short line of text")
 		w.WriteLn("somewhat long line of text")
 		w.Indent(2, 3).Write("<-2 spaces")
