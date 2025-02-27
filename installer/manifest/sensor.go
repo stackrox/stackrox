@@ -4,46 +4,38 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/pkg/errors"
 	apps "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func (m *manifestGenerator) applySensor(ctx context.Context) error {
-	err := m.createServiceAccount(ctx, "sensor")
-	if err != nil && !k8serrors.IsAlreadyExists(err) {
-		return fmt.Errorf("Failed to create sensor service account: %w\n", err)
-	}
-	log.Info("Created sensor service account")
+type SensorGenerator struct{}
 
-	if err := m.createClusterRoleBinding(ctx, "sensor", "cluster-admin"); err != nil {
-		return fmt.Errorf("Failed to create central service account: %w\n", err)
-	}
-
-	if err != nil && !k8serrors.IsAlreadyExists(err) {
-		return fmt.Errorf("Failed to create TLS secret: %w\n", err)
-	}
-
-	if err := m.applyHelmConfig(ctx); err != nil {
-		return err
-	}
-
-	if err := m.applySensorDeployment(ctx); err != nil {
-		return err
-	}
-
-	return m.applyService(ctx, "sensor", []v1.ServicePort{{
-		Name:       "https",
-		Port:       443,
-		Protocol:   v1.ProtocolTCP,
-		TargetPort: intstr.FromString("api"),
-	}})
+func (g SensorGenerator) Name() string {
+	return "Sensor"
 }
 
-func (m *manifestGenerator) applyHelmConfig(ctx context.Context) error {
+func (g SensorGenerator) Exportable() bool {
+	return true
+}
+
+func (g SensorGenerator) Generate(ctx context.Context, m *manifestGenerator) ([]Resource, error) {
+	return []Resource{
+		genServiceAccount("sensor"),
+		genClusterRoleBinding("sensor", "cluster-admin", m.Config.Namespace),
+		g.applyHelmConfig(m),
+		g.applySensorDeployment(m),
+		genService("sensor", []v1.ServicePort{{
+			Name:       "https",
+			Port:       443,
+			Protocol:   v1.ProtocolTCP,
+			TargetPort: intstr.FromString("api"),
+		}}),
+	}, nil
+}
+
+func (g SensorGenerator) applyHelmConfig(m *manifestGenerator) Resource {
 	config := fmt.Sprintf(`clusterName: local
 managedBy: MANAGER_TYPE_HELM_CHART
 clusterConfig:
@@ -72,24 +64,19 @@ clusterConfig:
   clusterLabels:
     null`, m.Config.Images.Stackrox, m.Config.Images.Stackrox, m.Config.Namespace)
 
-	crsSecret := v1.Secret{
+	sensorConfig := v1.Secret{
 		Data: map[string][]byte{"config.yaml": []byte(config)},
 	}
-	crsSecret.SetName("helm-cluster-config")
-	_, err := m.Client.CoreV1().Secrets(m.Config.Namespace).Create(ctx, &crsSecret, metav1.CreateOptions{})
-	if err != nil {
-		if k8serrors.IsAlreadyExists(err) {
-			log.Info("helm-cluster-config secret already exists")
-			return nil
-		} else {
-			return errors.Wrap(err, "Failed to create helm-cluster-config secret")
-		}
+	sensorConfig.SetName("helm-cluster-config")
+	sensorConfig.SetGroupVersionKind(v1.SchemeGroupVersion.WithKind("Secret"))
+	return Resource{
+		Object:       &sensorConfig,
+		Name:         sensorConfig.Name,
+		IsUpdateable: true,
 	}
-	log.Info("Created helm-cluster-config secret")
-	return nil
 }
 
-func (m *manifestGenerator) applySensorDeployment(ctx context.Context) error {
+func (g SensorGenerator) applySensorDeployment(m *manifestGenerator) Resource {
 	trueVar := true
 	envVars := []v1.EnvVar{{
 		Name:  "ROX_CENTRAL_ENDPOINT",
@@ -284,15 +271,15 @@ func (m *manifestGenerator) applySensorDeployment(ctx context.Context) error {
 	}
 
 	deployment.SetName("sensor")
+	deployment.SetGroupVersionKind(apps.SchemeGroupVersion.WithKind("Deployment"))
 
-	_, err := m.Client.AppsV1().Deployments(m.Config.Namespace).Create(ctx, &deployment, metav1.CreateOptions{})
-
-	if k8serrors.IsAlreadyExists(err) {
-		_, err = m.Client.AppsV1().Deployments(m.Config.Namespace).Update(ctx, &deployment, metav1.UpdateOptions{})
-		log.Info("Updated sensor deployment")
-	} else {
-		log.Info("Created sensor deployment")
+	return Resource{
+		Object:       &deployment,
+		Name:         deployment.Name,
+		IsUpdateable: true,
 	}
+}
 
-	return err
+func init() {
+	securedCluster = append(securedCluster, SensorGenerator{})
 }
