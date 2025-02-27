@@ -176,7 +176,7 @@ func (resolver *imageCVECoreResolver) DistroTuples(ctx context.Context) ([]Image
 	if features.FlattenCVEData.Enabled() {
 		// TODO:  Look at this to see if we need to get a list of CVE names instead
 		q = PaginatedQuery{
-			Query: pointers.String(search.NewQueryBuilder().AddExactMatches(search.CVE, resolver.data.GetCVEIDs()...).
+			Query: pointers.String(search.NewQueryBuilder().AddExactMatches(search.CVE, resolver.data.GetCVE()).
 				Query()),
 		}
 		return resolver.root.ImageVulnerabilities(ctx, q)
