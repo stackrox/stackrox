@@ -1,13 +1,14 @@
 package utils
 
 import (
-	"slices"
+	"bufio"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_words(t *testing.T) {
+func Test_wordsAndDelimeters(t *testing.T) {
 	cases := map[string][]string{
 		"\nText with \nmultiple\n lines.": {"\n", "Text", " ", "with", " ", "\n", "multiple", "\n", " ", "lines."},
 		"":                                {},
@@ -17,7 +18,12 @@ func Test_words(t *testing.T) {
 		"word":                            {"word"},
 	}
 	for text, c := range cases {
-		result := slices.AppendSeq([]string{}, words(text))
+		sc := bufio.NewScanner(strings.NewReader(text))
+		result := []string{}
+		sc.Split(wordsAndDelimeters)
+		for sc.Scan() {
+			result = append(result, sc.Text())
+		}
 		assert.Equal(t, c, result)
 	}
 }
