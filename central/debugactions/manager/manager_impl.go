@@ -117,7 +117,7 @@ func (m *managerImpl) retrieveAndUpdateActionParts(identifier string) *actionPar
 	}
 	parts.actionStatus.TimesEncountered += 1
 	if parts.actionStatus.GetTimesEncountered() > parts.actionStatus.GetDebugAction().GetNumTimes() {
-		log.Debugf("Action registered for identifier '%s' already executed max number of times (%d), "+
+		log.Debugf("Action registered for identifier '%s' already executed max number of times (%v), "+
 			"skipping further executions", parts.actionStatus.GetDebugAction().GetNumTimes())
 		return nil
 	}
