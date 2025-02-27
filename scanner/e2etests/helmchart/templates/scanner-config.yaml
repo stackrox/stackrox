@@ -6,6 +6,8 @@ metadata:
   namespace: {{ .Release.Namespace }}
 data:
   config.yaml: |-
+    http_listen_addr: :9443
+    grpc_listen_addr: :8443
     indexer:
       database:
         conn_string: host={{ .Values.app.db.name }}.{{ .Release.Namespace }} port=5432 user=postgres sslmode=verify-ca statement_timeout=60000 sslrootcert=/run/secrets/stackrox.io/certs/ca.pem
@@ -14,5 +16,6 @@ data:
       database:
         conn_string: host={{ .Values.app.db.name }}.{{ .Release.Namespace }} port=5432 user=postgres sslmode=verify-ca statement_timeout=60000 sslrootcert=/run/secrets/stackrox.io/certs/ca.pem
         password_file: /run/secrets/stackrox.io/postgresql/password
-      vulnerabilities_url: "https://localhost:9443"
+      vulnerabilities_url: https://definitions.stackrox.io/v4/vulnerability-bundles/ROX_VULNERABILITY_VERSION/vulnerabilities.zip
+      readiness: vulnerability
     log_level: debug
