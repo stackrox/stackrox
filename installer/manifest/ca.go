@@ -75,4 +75,5 @@ func (g *CAGenerator) GetCA(ctx context.Context, m *manifestGenerator) error {
 
 func init() {
 	central = append(central, CAGenerator{})
+	crs = append(crs, CAGenerator{})
 }
