@@ -971,31 +971,44 @@ func RunCountByRequestForSchema(ctx context.Context, schema *walker.Schema, q *v
 		return nil, err
 	}
 	queryStr := query.AsSQL()
+	// Example query string:
+	// select
+	//   alerts.Policy_Severity as severity,
+	//   alerts.Policy_Categories as category,
+	//   count(*)
+	// from alerts
+	// where
+	//   alerts.State IN ($1, $2)
+	// group by
+	//   alerts.Policy_Severity,
+	//   alerts.Policy_Categories
 
 	return pgutils.Retry2(ctx, func() ([]searchPkg.CountByWrapper, error) {
-		bufferToScanRowInto := make([]interface{}, len(query.GroupBys)+1)
 		rows, err := tracedQuery(ctx, db, queryStr, query.Data...)
 		if err != nil {
 			log.Errorf("Query issue: %s: %v", queryStr, err)
 			return nil, errors.Wrap(err, "error executing query")
 		}
-		log.Infof("query was executed without error, it has %d group fields and a buffer of size %d", len(query.GroupBys), len(bufferToScanRowInto))
+		defer rows.Close()
+
+		// Prepare results processing
 		var results []searchPkg.CountByWrapper
+		bufferToScanRowInto := make([]interface{}, len(query.GroupBys)+1)
+		for i, field := range query.GroupBys {
+			bufferToScanRowInto[i] = mustAllocForDataType(field.Field.FieldType)
+		}
+		bufferToScanRowInto[len(query.GroupBys)] = mustAllocForDataType(postgres.BigInteger)
 		for rows.Next() {
-			log.Info("processing row")
 			if err := rows.Scan(bufferToScanRowInto...); err != nil {
-				log.Errorf("Query issue: %s: %v", queryStr, err)
+				log.Errorf("Scan row issue: %s: %v", queryStr, err)
 				return nil, errors.Wrap(err, "error executing query")
 			}
-			log.Infof("row raw value count %d", len(rows.RawValues()))
-			for _, val := range rows.RawValues() {
-				log.Info(val)
-			}
-			log.Info("scanned successfully")
 			result := searchPkg.CountByWrapper{}
 			if len(query.GroupBys) > 0 {
 				for i, field := range query.GroupBys {
 					returnedValue := bufferToScanRowInto[i]
+					// PROBLEM:
+					// 
 					if field.Field.PostTransform != nil {
 						returnedValue = field.Field.PostTransform(returnedValue)
 					}
