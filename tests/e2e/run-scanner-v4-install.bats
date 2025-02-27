@@ -53,6 +53,8 @@ init() {
 }
 
 initialized="false"
+begin_timestamp=""
+current_label=""
 
 _begin() {
     # In case it is convenient for a given test-case, _begin() can take care of the initialization.
@@ -62,6 +64,7 @@ _begin() {
     fi
 
     local label="${1:-}"
+    current_label="$label"
 
     # Save original stdout and stderr fds as 4 and 5.
     exec 4>&1 5>&2
@@ -71,11 +74,21 @@ _begin() {
     exec \
         1> >(bash -c "post_process_output '$label'" > "/dev/fd/$outfd") \
         2>&1
+    begin_timestamp=$(date +%s)
 }
 
 _end() {
+    local end_timestamp=$(date +%s)
+    local seconds_spent=$((end_timestamp - begin_timestamp))
+    local test_identifier=$(test_identifier_from_description "${BATS_TEST_DESCRIPTION:-}")
+
+    cat <<EOT
+TIMING_DATA: {"test": "$test_identifier", "step": "$current_label", "seconds_spent": $seconds_spent}
+EOT
     # Close post-processing stdout and stderr and restore from original fds.
     exec 1>&- 2>&- 1>&4 2>&5
+    current_label=""
+    begin_timestamp=""
 }
 
 # Combined _end() and _begin() for convenience.
@@ -1104,3 +1117,10 @@ post_process_output() {
     done
 }
 export -f post_process_output
+
+test_identifier_from_description() {
+    local identifier="$1"
+    # Substitute all whitespaces with underscores
+    identifier="${identifier// /_}"
+    echo "$identifier"
+}
