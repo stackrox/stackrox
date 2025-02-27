@@ -42,12 +42,14 @@ func (g CRSGenerator) Exportable() bool {
 }
 
 func (g CRSGenerator) Generate(ctx context.Context, m *manifestGenerator) ([]Resource, error) {
-	sec, err := m.Client.CoreV1().Secrets(m.Config.Namespace).Get(ctx, "cluster-registration-secret", metav1.GetOptions{})
-	if sec != nil && err == nil {
-		log.Info("CRS already exists")
-		return []Resource{}, nil
-	} else if !k8serrors.IsNotFound(err) {
-		return []Resource{}, errors.Wrap(err, "Failed to fetch cluster-registration-secret")
+	if m.Config.Action == "apply" {
+		sec, err := m.Client.CoreV1().Secrets(m.Config.Namespace).Get(ctx, "cluster-registration-secret", metav1.GetOptions{})
+		if sec != nil && err == nil {
+			log.Info("CRS already exists")
+			return []Resource{}, nil
+		} else if !k8serrors.IsNotFound(err) {
+			return []Resource{}, errors.Wrap(err, "Failed to fetch cluster-registration-secret")
+		}
 	}
 
 	port, err := getRandomPort()
@@ -56,7 +58,7 @@ func (g CRSGenerator) Generate(ctx context.Context, m *manifestGenerator) ([]Res
 	}
 
 	var resp *stackroxv1.CRSGenResponse
-	retry.WithRetry(func() error {
+	err = retry.WithRetry(func() error {
 		pfCloseChan, err := g.portForward(ctx, port, m)
 		if err != nil {
 			return errors.Wrap(err, "Failed to create port forwarder")
@@ -76,7 +78,11 @@ func (g CRSGenerator) Generate(ctx context.Context, m *manifestGenerator) ([]Res
 		req := stackroxv1.CRSGenRequest{Name: "local"}
 		resp, err = svc.GenerateCRS(ctx, &req)
 		if err != nil {
-			if errStatus, ok := status.FromError(err); ok && errStatus.Code() == codes.Unimplemented {
+			errStatus, ok := status.FromError(err)
+			if !ok && !strings.Contains(err.Error(), "certificate errors:") {
+				return retry.MakeRetryable(err)
+			}
+			if ok && errStatus.Code() == codes.Unimplemented {
 				return errors.Wrap(err, "missing CRS support in Central")
 			}
 			return errors.Wrap(err, "generating new CRS")
@@ -85,7 +91,11 @@ func (g CRSGenerator) Generate(ctx context.Context, m *manifestGenerator) ([]Res
 	}, retry.Tries(30), retry.BetweenAttempts(func(previousAttemptNumber int) {
 		log.Info("Waiting for central endpoint to start listening")
 		time.Sleep(5 * time.Second)
-	}))
+	}), retry.OnlyRetryableErrors())
+
+	if err != nil {
+		return []Resource{}, errors.Wrap(err, "Failed to retrieve CRS from Central")
+	}
 
 	crs := extractCRS(resp.GetCrs())
 

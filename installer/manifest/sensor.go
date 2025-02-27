@@ -65,7 +65,7 @@ clusterConfig:
     null`, m.Config.Images.Stackrox, m.Config.Images.Stackrox, m.Config.Namespace)
 
 	sensorConfig := v1.Secret{
-		Data: map[string][]byte{"config.yaml": []byte(config)},
+		StringData: map[string]string{"config.yaml": config},
 	}
 	sensorConfig.SetName("helm-cluster-config")
 	sensorConfig.SetGroupVersionKind(v1.SchemeGroupVersion.WithKind("Secret"))

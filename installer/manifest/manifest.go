@@ -1,6 +1,7 @@
 package manifest
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"strings"
@@ -10,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 
 	"github.com/pkg/errors"
+	"gopkg.in/yaml.v3"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -74,6 +76,34 @@ func New(cfg *Config, clientset *kubernetes.Clientset, restConfig *restclient.Co
 }
 
 func (m *manifestGenerator) Export(ctx context.Context, generators []Generator) error {
+	for _, generator := range generators {
+		resources, err := generator.Generate(ctx, m)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("Failure generating %s", generator.Name()))
+		}
+		for _, resource := range resources {
+			gvk := resource.Object.GetObjectKind().GroupVersionKind()
+			objMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(resource.Object)
+			if err != nil {
+				panic(err)
+			}
+
+			delete(objMap, "status")
+			delete(objMap["metadata"].(map[string]interface{}), "creationTimestamp")
+
+			var buf bytes.Buffer
+			encoder := yaml.NewEncoder(&buf)
+			defer encoder.Close()
+			encoder.SetIndent(2)
+
+			if err := encoder.Encode(objMap); err != nil {
+				return errors.Wrap(err, fmt.Sprintf("Error encoding resource %s/%s from generator %s into yaml", gvk.Kind, resource.Name, generator.Name()))
+			}
+
+			println("-----")
+			print(string(buf.Bytes()))
+		}
+	}
 	return nil
 }
 
