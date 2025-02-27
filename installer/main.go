@@ -35,18 +35,21 @@ func main() {
 
 	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
 	if err != nil {
-		panic(err.Error())
+		println(err.Error())
+		return
 	}
 	cfg, err := manifest.ReadConfig(*configPath)
 	if err != nil {
-		panic(fmt.Sprintf("failed to load configuration %q: %v", *configPath, err))
+		fmt.Printf("failed to load configuration %q: %v\n", *configPath, err)
+		return
 	}
 
 	cfg.Action = action
 
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		panic(err.Error())
+		println(err.Error())
+		return
 	}
 
 	ctx := context.Background()
@@ -54,22 +57,26 @@ func main() {
 	m, err := manifest.New(cfg, clientset, config)
 
 	if err != nil {
-		panic(err.Error())
+		println(err.Error())
+		return
 	}
 
 	set, found := manifest.GeneratorSets[generatorSet]
 	if !found {
 		fmt.Printf("Invalid set '%s'. Valid options are central, securedcluster, or crs\n", generatorSet)
+		return
 	}
 
 	switch action {
 	case "apply":
 		if err = m.Apply(ctx, *set); err != nil {
-			panic(err.Error())
+			println(err.Error())
+			return
 		}
 	case "export":
 		if err = m.Export(ctx, *set); err != nil {
-			panic(err.Error())
+			println(err.Error())
+			return
 		}
 	}
 }
