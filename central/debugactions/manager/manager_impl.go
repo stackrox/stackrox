@@ -5,16 +5,18 @@ import (
 	"math"
 	"time"
 
-	"github.com/cloudflare/cfssl/log"
 	"github.com/pkg/errors"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"golang.org/x/sync/semaphore"
 )
 
 const maxWeight = int64(math.MaxInt64)
+
+var log = logging.LoggerForModule()
 
 type actionParts struct {
 	actionStatus *v2.ActionStatus
