@@ -79,16 +79,25 @@ _begin() {
 
 _end() {
     local end_timestamp=$(date +%s)
-    local seconds_spent=$((end_timestamp - begin_timestamp))
     local test_identifier=$(test_identifier_from_description "${BATS_TEST_DESCRIPTION:-}")
 
-    cat <<EOT
-TIMING_DATA: {"test": "$test_identifier", "step": "$current_label", "seconds_spent": $seconds_spent}
-EOT
+    emit_timing_data "$test_identifier" "$current_label" "$begin_timestamp" "$end_timestamp"
     # Close post-processing stdout and stderr and restore from original fds.
     exec 1>&- 2>&- 1>&4 2>&5
     current_label=""
     begin_timestamp=""
+}
+
+emit_timing_data() {
+    local test="$1"
+    local step="$2"
+    local t0="$3"
+    local t1="$4"
+    local seconds_spent=$((t1 - t0))
+
+    cat <<EOT
+TIMING_DATA: {"test": "$test", "step": "$step", "seconds_spent": $seconds_spent}
+EOT
 }
 
 # Combined _end() and _begin() for convenience.
@@ -99,8 +108,12 @@ _step() {
 
 export TEST_SUITE_ABORTED="false"
 
+export test_suite_begin_timestamp=""
+
 setup_file() {
+    test_suite_begin_timestamp=$(date +%s)
     _begin "setup-file"
+
 
     cat <<'EOT'
     _    ____ ____    ___           _        _ _       _   _               _____         _
@@ -193,6 +206,13 @@ EOT
     # have any logs for investigation the situation.
     export BATS_TEST_TIMEOUT=1800 # Seconds
 
+    _end
+}
+
+teardown_file() {
+    local test_suite_end_timestamp=$(date +%s)
+    _begin "teardown-file"
+    emit_timing_data "" "test-suite" "$test_suite_begin_timestamp" "$test_suite_end_timestamp"
     _end
 }
 
