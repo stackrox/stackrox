@@ -3,9 +3,11 @@ package main
 import (
 	"os"
 	"os/signal"
+	"runtime"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/continuousprofiling"
 	"github.com/stackrox/rox/pkg/devmode"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
@@ -30,9 +32,16 @@ func init() {
 }
 
 func main() {
+	runtime.SetMutexProfileFraction(5)
+	runtime.SetBlockProfileRate(5)
 	premain.StartMain()
 
 	devmode.StartOnDevBuilds("bin/kubernetes-sensor")
+
+	if err := continuousprofiling.SetupContinuousProfilingClient(continuousprofiling.DefaultConfig().
+		WithAppName("sensor")); err != nil {
+		log.Errorf("unable to start continuous profiling: %v", err)
+	}
 
 	log.Infof("Running StackRox Version: %s", version.GetMainVersion())
 
