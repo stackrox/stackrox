@@ -337,9 +337,9 @@ func getImageCVEV2Resolvers(ctx context.Context, root *Resolver, os string, imag
 		if !predicate.Matches(vuln) {
 			continue
 		}
-		id := cve.IDV2(vuln.GetCve(), imageID, componentID, fmt.Sprintf("%d", idx))
+		id := cve.IDV2(vuln.GetCve(), componentID, fmt.Sprintf("%d", idx))
 		if _, exists := idToVals[id]; !exists {
-			converted := cveConverter.EmbeddedVulnerabilityToImageCVEV2(os, imageID, componentID, idx, vuln)
+			converted := cveConverter.EmbeddedVulnerabilityToImageCVEV2(os, componentID, idx, vuln)
 			resolver, err := root.wrapImageCVEV2(converted, true, nil)
 			if err != nil {
 				return nil, err
@@ -743,7 +743,7 @@ func (resolver *imageComponentV2Resolver) TopImageVulnerability(ctx context.Cont
 		}
 		componentID := scancomponent.ComponentIDV2(embeddedComponent.GetName(), embeddedComponent.GetVersion(), embeddedComponent.GetArchitecture(), resolver.ImageId(resolver.ctx))
 		return resolver.root.wrapImageCVEV2WithContext(resolver.ctx,
-			cveConverter.EmbeddedVulnerabilityToImageCVEV2(embeddedobjs.OSFromContext(resolver.ctx), resolver.ImageId(resolver.ctx), componentID, topIndex, topVuln), true, nil,
+			cveConverter.EmbeddedVulnerabilityToImageCVEV2(resolver.ImageId(resolver.ctx), componentID, topIndex, topVuln), true, nil,
 		)
 	}
 
@@ -751,30 +751,6 @@ func (resolver *imageComponentV2Resolver) TopImageVulnerability(ctx context.Cont
 }
 
 func (resolver *imageComponentV2Resolver) LayerIndex() (*int32, error) {
-	// Short path. Full image is embedded when image scan resolver is called.
-	//if embeddedComponent := embeddedobjs.ComponentFromContext(resolver.ctx); embeddedComponent != nil {
-	//	w, ok := embeddedComponent.GetHasLayerIndex().(*storage.EmbeddedImageScanComponent_LayerIndex)
-	//	if !ok {
-	//		return nil, nil
-	//	}
-	//	v := w.LayerIndex
-	//	return &v, nil
-	//}
-	//
-	//scope, hasScope := scoped.GetScopeAtLevel(resolver.ctx, v1.SearchCategory_IMAGES)
-	//if !hasScope {
-	//	return nil, nil
-	//}
-	//
-	//components, err := resolver.root.ImageComponentV2DataStore.SearchRawImageComponents(resolver.ctx, resolver.componentQuery())
-	//if err != nil {
-	//	return nil, err
-	//}
-	//if len(components) == 0 || len(components) > 1 {
-	//	return nil, errors.Errorf("Unexpected number of image-components matched for image %s and component %s. Expected 1 component.", scope.ID, resolver.data.GetId())
-	//}
-
-	//w, ok := components[0].GetHasLayerIndex().(*storage.ImageComponentV2_LayerIndex)
 	w, ok := resolver.data.GetHasLayerIndex().(*storage.ImageComponentV2_LayerIndex)
 	if !ok {
 		return nil, nil
