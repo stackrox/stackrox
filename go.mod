@@ -576,5 +576,5 @@ replace (
 	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.2.0
 	github.com/mholt/archiver/v3 => github.com/anchore/archiver/v3 v3.5.2
 
-	github.com/quay/claircore => github.com/RTann/claircore v0.0.0-20250227014608-d7546ee6125e
+	github.com/quay/claircore => github.com/RTann/claircore v0.0.0-20250227082155-4e82c070ca29
 )
