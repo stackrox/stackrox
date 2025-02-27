@@ -400,7 +400,7 @@ jobs:
           set +e
           set -x
           df -h
-          for delete in /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL /mnt/opt/hostedtoolcache/Ruby; do
+          for delete in /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL /opt/hostedtoolcache/Ruby; do
             du -hs "/mnt${delete:?}"
             rm -rf "/mnt${delete:?}"
           done
@@ -657,7 +657,7 @@ jobs:
           set +e
           set -x
           df -h
-          for delete in /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL /mnt/opt/hostedtoolcache/Ruby; do
+          for delete in /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL /opt/hostedtoolcache/Ruby; do
             du -hs "/mnt${delete:?}"
             rm -rf "/mnt${delete:?}"
           done
