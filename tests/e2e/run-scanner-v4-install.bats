@@ -70,7 +70,7 @@ _begin() {
     # or 3 (for Bats real-time output).
     exec \
         1> >(bash -c "post_process_output '$label'" > "/dev/fd/$outfd") \
-        2> >(bash -c "post_process_output '$label'" > "/dev/fd/$outfd")
+        2>&1
     # Close post-processing stdout and stderr and restore from original fds.
     trap "exec 1>&- 2>&- 1>&4 2>&5; exit 1" INT ABRT KILL TERM
 }
