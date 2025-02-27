@@ -23,9 +23,10 @@ func (g NamespaceGenerator) Generate(ctx context.Context, m *manifestGenerator) 
 	ns.SetGroupVersionKind(v1.SchemeGroupVersion.WithKind("Namespace"))
 
 	return []Resource{{
-		Object:       &ns,
-		Name:         ns.Name,
-		IsUpdateable: false,
+		Object:        &ns,
+		Name:          ns.Name,
+		IsUpdateable:  false,
+		ClusterScoped: true,
 	}}, nil
 }
 

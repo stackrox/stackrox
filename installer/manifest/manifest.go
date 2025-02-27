@@ -32,9 +32,10 @@ var (
 )
 
 type Resource struct {
-	Object       runtime.Object
-	Name         string
-	IsUpdateable bool
+	Object        runtime.Object
+	Name          string
+	IsUpdateable  bool
+	ClusterScoped bool
 }
 
 type Generator interface {
@@ -89,12 +90,18 @@ func (m *manifestGenerator) Apply(ctx context.Context, generators []Generator) e
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("Failure generating %s", generator.Name()))
 		}
+
+		if len(resources) == 0 {
+			log.Infof("No resources to apply from %s", generator.Name())
+			continue
+		}
+
 		log.Infof("Applying resources from %s...", generator.Name())
 		for _, resource := range resources {
 			gvk := resource.Object.GetObjectKind().GroupVersionKind()
 
 			var dynClient dynamic.ResourceInterface
-			if gvk.Kind == "Namespace" {
+			if resource.ClusterScoped {
 				dynClient = dynamicClient.Resource(toGVR(gvk))
 			} else {
 				dynClient = dynamicClient.Resource(toGVR(gvk)).Namespace(m.Config.Namespace)
@@ -254,6 +261,33 @@ func (m *manifestGenerator) createNonrootV2SCCRole(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func genClusterRoleBinding(serviceAccountName, roleName, ns string) Resource {
+	name := fmt.Sprintf("%s-%s-%s", ns, serviceAccountName, roleName)
+	binding := &rbacv1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "ClusterRole",
+			Name:     roleName,
+		},
+		Subjects: []rbacv1.Subject{{
+			Kind:      "ServiceAccount",
+			Name:      serviceAccountName,
+			Namespace: ns,
+		}},
+	}
+	binding.SetGroupVersionKind(rbacv1.SchemeGroupVersion.WithKind("ClusterRoleBinding"))
+
+	return Resource{
+		Object:        binding,
+		Name:          name,
+		IsUpdateable:  true,
+		ClusterScoped: true,
+	}
 }
 
 func genRoleBinding(serviceAccountName, roleName, ns string) Resource {
