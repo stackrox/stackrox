@@ -143,7 +143,7 @@ func (g *CentralGenerator) createCentralEndpointsConfig() Resource {
 	cm.SetGroupVersionKind(v1.SchemeGroupVersion.WithKind("ConfigMap"))
 	return Resource{
 		Object:       &cm,
-		Name:         "central-endpoints",
+		Name:         cm.Name,
 		IsUpdateable: true,
 	}
 }
