@@ -45,11 +45,12 @@ type Generator interface {
 
 var central []Generator = []Generator{}
 var securedCluster []Generator = []Generator{}
+var crs []Generator = []Generator{}
 
 var GeneratorSets map[string]*[]Generator = map[string]*[]Generator{
 	"central":        &central,
 	"securedcluster": &securedCluster,
-	"crs":            {CRSGenerator{}},
+	"crs":            &crs,
 }
 
 type manifestGenerator struct {
@@ -76,10 +77,6 @@ func (m *manifestGenerator) Export(ctx context.Context, generators []Generator) 
 }
 
 func (m *manifestGenerator) Apply(ctx context.Context, generators []Generator) error {
-	if err := m.applyNamespace(ctx); err != nil {
-		panic(err)
-	}
-
 	dynamicClient, err := dynamic.NewForConfig(m.RESTConfig)
 	if err != nil {
 		panic(err)
@@ -94,15 +91,21 @@ func (m *manifestGenerator) Apply(ctx context.Context, generators []Generator) e
 		}
 		log.Infof("Applying resources from %s...", generator.Name())
 		for _, resource := range resources {
+			gvk := resource.Object.GetObjectKind().GroupVersionKind()
+
+			var dynClient dynamic.ResourceInterface
+			if gvk.Kind == "Namespace" {
+				dynClient = dynamicClient.Resource(toGVR(gvk))
+			} else {
+				dynClient = dynamicClient.Resource(toGVR(gvk)).Namespace(m.Config.Namespace)
+			}
+
 			objMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(resource.Object)
 			if err != nil {
 				panic(err)
 			}
 
 			unst := unstructured.Unstructured{Object: objMap}
-
-			gvk := resource.Object.GetObjectKind().GroupVersionKind()
-			dynClient := dynamicClient.Resource(toGVR(gvk)).Namespace(m.Config.Namespace)
 			_, err = dynClient.Create(ctx, &unst, metav1.CreateOptions{})
 
 			if err != nil {
@@ -125,23 +128,6 @@ func (m *manifestGenerator) Apply(ctx context.Context, generators []Generator) e
 			}
 		}
 	}
-	return nil
-}
-
-func (m *manifestGenerator) applyNamespace(ctx context.Context) error {
-	ns := v1.Namespace{}
-	ns.SetName(m.Config.Namespace)
-	_, err := m.Client.CoreV1().Namespaces().Create(ctx, &ns, metav1.CreateOptions{})
-
-	if err != nil && k8serrors.IsAlreadyExists(err) {
-		log.Info("Namespace already exists")
-		return nil
-	} else if err != nil {
-		return fmt.Errorf("Failed to create namespace: %w\n", err)
-	}
-
-	log.Info("Created namespace")
-
 	return nil
 }
 

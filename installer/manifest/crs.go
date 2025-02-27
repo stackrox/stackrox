@@ -225,5 +225,5 @@ func extractCRS(input []byte) string {
 }
 
 func init() {
-	securedCluster = append(securedCluster, CRSGenerator{})
+	crs = append(crs, CRSGenerator{})
 }
