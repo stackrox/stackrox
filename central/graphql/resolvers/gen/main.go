@@ -58,6 +58,8 @@ var (
 			reflect.TypeOf((*storage.ComplianceDomain_Cluster)(nil)),
 			reflect.TypeOf((*storage.ComplianceDomain_Deployment)(nil)),
 			reflect.TypeOf((*storage.ComplianceDomain_Node)(nil)),
+			reflect.TypeOf((*storage.ImageComponentV2)(nil)),
+			reflect.TypeOf((*storage.ImageCVEV2)(nil)),
 
 			reflect.TypeOf((*v1.ComplianceStandard)(nil)),
 			reflect.TypeOf((*v1.GenerateTokenResponse)(nil)),
@@ -104,6 +106,14 @@ var (
 			{
 				ParentType: reflect.TypeOf(storage.CVE{}),
 				FieldName:  "CvssV3",
+			},
+			{
+				ParentType: reflect.TypeOf(storage.ImageCVEV2{}),
+				FieldName:  "IsFixable",
+			},
+			{
+				ParentType: reflect.TypeOf(storage.ImageComponentV2{}),
+				FieldName:  "Location",
 			},
 		},
 		InputTypes: []reflect.Type{

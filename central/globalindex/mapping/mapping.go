@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/standards/index"
 	subjectMapping "github.com/stackrox/rox/central/rbac/service/mapping"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -29,12 +30,20 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		schema.ProcessIndicatorsSchema.OptionsMap,
 	)
 
+	// Deprecated
 	imageToVulnerabilitySearchOptions := search.CombineOptionsMaps(
 		schema.ImageCvesSchema.OptionsMap,
 		schema.ImageCveEdgesSchema.OptionsMap,
 		schema.ImageComponentCveEdgesSchema.OptionsMap,
 		schema.ImageComponentsSchema.OptionsMap,
 		schema.ImageComponentEdgesSchema.OptionsMap,
+		schema.ImagesSchema.OptionsMap,
+		schema.DeploymentsSchema.OptionsMap,
+	)
+
+	imageToVulnerabilityV2SearchOptions := search.CombineOptionsMaps(
+		schema.ImageCvesV2Schema.OptionsMap,
+		schema.ImageComponentV2Schema.OptionsMap,
 		schema.ImagesSchema.OptionsMap,
 		schema.DeploymentsSchema.OptionsMap,
 	)
@@ -66,14 +75,8 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		v1.SearchCategory_CLUSTERS:                schema.ClustersSchema.OptionsMap,
 		v1.SearchCategory_COMPLIANCE_STANDARD:     index.StandardOptions,
 		v1.SearchCategory_COMPLIANCE_CONTROL:      index.ControlOptions,
-		v1.SearchCategory_COMPONENT_VULN_EDGE:     imageToVulnerabilitySearchOptions,
 		v1.SearchCategory_DEPLOYMENTS:             deploymentsCustomSearchOptions,
-		v1.SearchCategory_IMAGE_COMPONENT_EDGE:    imageToVulnerabilitySearchOptions,
-		v1.SearchCategory_IMAGE_COMPONENTS:        imageToVulnerabilitySearchOptions,
 		v1.SearchCategory_IMAGE_INTEGRATIONS:      schema.ImageIntegrationsSchema.OptionsMap,
-		v1.SearchCategory_IMAGE_VULN_EDGE:         imageToVulnerabilitySearchOptions,
-		v1.SearchCategory_IMAGE_VULNERABILITIES:   imageToVulnerabilitySearchOptions,
-		v1.SearchCategory_IMAGES:                  imageToVulnerabilitySearchOptions,
 		v1.SearchCategory_NAMESPACES:              schema.NamespacesSchema.OptionsMap,
 		v1.SearchCategory_NODE_COMPONENT_EDGE:     nodeToVulnerabilitySearchOptions,
 		v1.SearchCategory_NODE_COMPONENTS:         nodeToVulnerabilitySearchOptions,
@@ -101,6 +104,19 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		schema.ReportSnapshotsSchema.OptionsMap,
 	)
 	entityOptionsMap[v1.SearchCategory_REPORT_CONFIGURATIONS] = reportConfigurationSearchOptions
+
+	if !features.FlattenCVEData.Enabled() {
+		entityOptionsMap[v1.SearchCategory_IMAGE_COMPONENT_EDGE] = imageToVulnerabilitySearchOptions
+		entityOptionsMap[v1.SearchCategory_IMAGE_COMPONENTS] = imageToVulnerabilitySearchOptions
+		entityOptionsMap[v1.SearchCategory_IMAGE_VULN_EDGE] = imageToVulnerabilitySearchOptions
+		entityOptionsMap[v1.SearchCategory_IMAGE_VULNERABILITIES] = imageToVulnerabilitySearchOptions
+		entityOptionsMap[v1.SearchCategory_IMAGES] = imageToVulnerabilitySearchOptions
+		entityOptionsMap[v1.SearchCategory_COMPONENT_VULN_EDGE] = imageToVulnerabilitySearchOptions
+	} else {
+		entityOptionsMap[v1.SearchCategory_IMAGE_COMPONENTS_V2] = imageToVulnerabilityV2SearchOptions
+		entityOptionsMap[v1.SearchCategory_IMAGE_VULNERABILITIES_V2] = imageToVulnerabilityV2SearchOptions
+		entityOptionsMap[v1.SearchCategory_IMAGES] = imageToVulnerabilityV2SearchOptions
+	}
 
 	return entityOptionsMap
 }
