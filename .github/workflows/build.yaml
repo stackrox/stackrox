@@ -400,13 +400,13 @@ jobs:
           set +e
           set -x
           df -h
-          for delete in /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL; do
-            rm -rf "/mnt${delete:?}"
+          for delete in /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL /mnt/opt/hostedtoolcache/Ruby; do
             df -h "/mnt${delete:?}"
+            rm -rf "/mnt${delete:?}"
           done
           df -h
           for path in /mnt/usr/share /mnt/usr/local/lib /mnt/opt /mnt/opt/hostedtoolcache; do
-            du --threshold=100 -hs "${path}"/* | sort -nr | tail -10
+            du --threshold=100 -ks "${path}"/* | sort -nr | tail -10
           done
 
       - name: Checkout
@@ -657,13 +657,13 @@ jobs:
           set +e
           set -x
           df -h
-          for delete in /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL; do
-            rm -rf "/mnt${delete:?}"
+          for delete in /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL /mnt/opt/hostedtoolcache/Ruby; do
             df -h "/mnt${delete:?}"
+            rm -rf "/mnt${delete:?}"
           done
           df -h
           for path in /mnt/usr/share /mnt/usr/local/lib /mnt/opt /mnt/opt/hostedtoolcache; do
-            du --threshold=100 -hs "${path}"/* | sort -nr | tail -10
+            du --threshold=100 -ks "${path}"/* | sort -nr | tail -10
           done
 
       - name: Checkout
