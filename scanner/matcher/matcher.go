@@ -9,6 +9,7 @@ import (
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/alma"
 	"github.com/quay/claircore/alpine"
 	"github.com/quay/claircore/aws"
 	"github.com/quay/claircore/chainguard"
@@ -47,6 +48,7 @@ import (
 //
 // Note: Do NOT hardcode the names. It's very easy to mess up...
 var matcherNames = []string{
+	(*alma.Matcher)(nil).Name(),
 	(*alpine.Matcher)(nil).Name(),
 	(*aws.Matcher)(nil).Name(),
 	chainguard.ChainguardMatcher.Name(),

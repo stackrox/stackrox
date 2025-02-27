@@ -56,6 +56,7 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 
 	// ClairCore updaters.
 	for _, uSet := range []string{
+		"alma",
 		"alpine",
 		"aws",
 		"chainguard",
