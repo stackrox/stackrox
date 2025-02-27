@@ -1,7 +1,6 @@
 package service
 
 import (
-	"github.com/stackrox/rox/central/debugactions"
 	"github.com/stackrox/rox/central/debugactions/manager"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -18,9 +17,6 @@ func initialize() {
 
 // Singleton returns the sole instance of the Service
 func Singleton() Service {
-	if !debugactions.DebugActions.BooleanSetting() {
-		return nil
-	}
 	once.Do(initialize)
 	return das
 }
