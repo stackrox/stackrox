@@ -57,7 +57,7 @@ var (
 
 // Validate validates the token or returns an error.
 func (v validator) Validate(rawToken string, claims *jwt.Claims, extraClaims ...interface{}) error {
-	token, err := jwt.ParseSigned(rawToken, []jose.SignatureAlgorithm{jose.RS256})
+	token, err := ParseSigned(rawToken)
 	if err != nil {
 		return err
 	}
