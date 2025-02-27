@@ -4,8 +4,8 @@ package jwt
 import (
 	"time"
 
-	"github.com/go-jose/go-jose/v3"
-	"github.com/go-jose/go-jose/v3/jwt"
+	"github.com/go-jose/go-jose/v4"
+	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -26,7 +26,7 @@ type validator struct {
 func NewRS256Validator(keys KeyGetter, issuer string, audience jwt.Audience) Validator {
 	return validator{
 		keyGetter: keys,
-		expected:  jwt.Expected{Issuer: issuer, Audience: audience},
+		expected:  jwt.Expected{Issuer: issuer, AnyAudience: audience},
 		algorithm: string(jose.RS256),
 	}
 }
@@ -35,7 +35,7 @@ func NewRS256Validator(keys KeyGetter, issuer string, audience jwt.Audience) Val
 func NewES256Validator(keys KeyGetter, issuer string, audience jwt.Audience) Validator {
 	return validator{
 		keyGetter: keys,
-		expected:  jwt.Expected{Issuer: issuer, Audience: audience},
+		expected:  jwt.Expected{Issuer: issuer, AnyAudience: audience},
 		algorithm: string(jose.ES256),
 	}
 }
@@ -57,7 +57,7 @@ var (
 
 // Validate validates the token or returns an error.
 func (v validator) Validate(rawToken string, claims *jwt.Claims, extraClaims ...interface{}) error {
-	token, err := jwt.ParseSigned(rawToken)
+	token, err := jwt.ParseSigned(rawToken, []jose.SignatureAlgorithm{jose.RS256})
 	if err != nil {
 		return err
 	}

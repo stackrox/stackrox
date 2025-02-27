@@ -6,7 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/go-jose/go-jose/v3/jwt"
+	"github.com/go-jose/go-jose/v4"
+	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
@@ -69,7 +70,7 @@ func (s *service) AuthFuncOverride(ctx context.Context, fullMethodName string) (
 }
 
 func (s *service) verifyToken(ctx context.Context, token string, expectedSubject string) error {
-	parsedToken, err := jwt.ParseSigned(token)
+	parsedToken, err := jwt.ParseSigned(token, []jose.SignatureAlgorithm{jose.RS256})
 	if err != nil {
 		return errors.Wrapf(errox.InvalidArgs, "invalid JWT: %s", err)
 	}
