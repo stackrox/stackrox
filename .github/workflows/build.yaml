@@ -418,6 +418,10 @@ jobs:
         run: |
             git submodule update --init
 
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
       - uses: ./.github/actions/handle-tagged-build
 
       - uses: ./.github/actions/download-artifact-with-retry
@@ -437,21 +441,41 @@ jobs:
         with:
           name: ${{ env.GO_BINARIES_BUILD_ARTIFACT }}
 
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
       - name: Unpack Go binaries build
         run: |
           tar xvzf go-binaries-build.tgz
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - uses: ./.github/actions/download-artifact-with-retry
         with:
           name: docs-build
           path: image/rhel/docs
 
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
       # needed to restore node_modules for ossls-nostice
       - uses: ./.github/actions/cache-ui-dependencies
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       # explicitly fetch deps just in case cache was not ready
       - name: Fetch UI deps
         run: make -C ui deps
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Generate OSS notice
         run: make ossls-notice
@@ -464,9 +488,17 @@ jobs:
         if: matrix.name == 'race-condition-debug'
         run: echo "BUILD_TAG=$(make --quiet --no-print-directory tag)-rcd" >> "$GITHUB_ENV"
 
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
       - name: Build main images
         run: |
           GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make docker-build-main-image
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Check debugger presence in the main image
         run: make check-debugger
@@ -475,6 +507,10 @@ jobs:
         run: |
           GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make docker-build-roxctl-image
 
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
       # needed for docs ensure_image.sh initial pull with RHACS_BRANDING
       - name: Docker login
         # Skip for external contributions.
@@ -482,6 +518,10 @@ jobs:
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
           ./scripts/ci/lib.sh registry_ro_login "quay.io/rhacs-eng"
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Push images
         # Skip for external contributions.
@@ -496,6 +536,10 @@ jobs:
             fi
             push_main_image_set "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"
 
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
       - name: Push matching collector and scanner images
         # Skip for external contributions.
         if: |
@@ -505,6 +549,10 @@ jobs:
             docker system prune --all --force
             source ./scripts/ci/lib.sh
             push_matching_collector_scanner_images "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
   push-main-manifests:
     runs-on: ubuntu-latest
