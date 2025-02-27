@@ -102,10 +102,13 @@ func (m *manifestGenerator) Generate(ctx context.Context) error {
 	}
 
 	for _, generator := range central {
+		log.Info("-----")
+		log.Infof("Generating resources from %s", generator.Name())
 		resources, err := generator.Generate(ctx, m)
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("Failure generating %s", generator.Name()))
 		}
+		log.Infof("Applying resources from %s", generator.Name())
 		for _, resource := range resources {
 			objMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(resource.Object)
 			if err != nil {

@@ -9,48 +9,55 @@ import (
 
 	apps "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func (m *manifestGenerator) applyScanner(ctx context.Context) error {
-	err := m.createServiceAccount(ctx, "scanner")
-	if err != nil && !errors.IsAlreadyExists(err) {
-		return fmt.Errorf("Failed to create scanner service account: %w\n", err)
-	}
-	log.Info("Created scanner service account")
+type ScannerGenerator struct{}
 
-	if err := m.createRoleBinding(ctx, "scanner", "use-nonroot-v2-scc"); err != nil {
-		return fmt.Errorf("Failed to create central service account: %w\n", err)
-	}
-
-	if err := m.createScannerConfig(ctx); err != nil && !errors.IsAlreadyExists(err) {
-		return fmt.Errorf("Failed to create central config: %w\n", err)
-	}
-	log.Info("Created central config")
-
-	if err := m.createScannerTlsSecrets(ctx); err != nil && !errors.IsAlreadyExists(err) {
-		return fmt.Errorf("Failed to create TLS secret: %w\n", err)
-	}
-	log.Info("Created scanner TLS secrets")
-
-	if err := m.applyScannerDbDeployment(ctx); err != nil {
-		return err
-	}
-
-	if err := m.applyScannerDeployment(ctx); err != nil {
-		return err
-	}
-
-	if err := m.applyScannerServices(ctx); err != nil {
-		return err
-	}
-
-	return nil
+func (g ScannerGenerator) Name() string {
+	return "Scanner V2"
 }
 
-func (m *manifestGenerator) createScannerConfig(ctx context.Context) error {
+func (g ScannerGenerator) Exportable() bool {
+	return true
+}
+
+func (g ScannerGenerator) Generate(ctx context.Context, m *manifestGenerator) ([]Resource, error) {
+	scannerTls, err := genTlsSecret("scanner-tls", m.CA, func(fileMap map[string][]byte) error {
+		if err := certgen.IssueScannerCerts(fileMap, m.CA, mtls.WithNamespace(m.Config.Namespace)); err != nil {
+			return fmt.Errorf("issuing scanner service certificate: %w\n", err)
+		}
+		return nil
+	})
+
+	if err != nil {
+		return []Resource{}, err
+	}
+
+	svc := genService("scanner", []v1.ServicePort{{
+		Name:       "grpcs-scanner",
+		Port:       8443,
+		Protocol:   v1.ProtocolTCP,
+		TargetPort: intstr.FromInt(8443),
+	}, {
+		Name:       "https-scanner",
+		Port:       8080,
+		Protocol:   v1.ProtocolTCP,
+		TargetPort: intstr.FromInt(8080),
+	}})
+
+	return []Resource{
+		genServiceAccount("scanner"),
+		genRoleBinding("scanner", "use-nonroot-v2-scc", m.Config.Namespace),
+		scannerTls,
+		svc,
+		g.genScannerConfig(),
+		g.genScannerDeployment(),
+	}, nil
+}
+
+func (g *ScannerGenerator) genScannerConfig() Resource {
 	cm := v1.ConfigMap{
 		Data: map[string]string{
 			"config.yaml": `# Configuration file for scanner.
@@ -96,198 +103,15 @@ scanner:
 		},
 	}
 	cm.SetName("scanner-config")
-	_, err := m.Client.CoreV1().ConfigMaps(m.Config.Namespace).Create(ctx, &cm, metav1.CreateOptions{})
-
-	return err
+	cm.SetGroupVersionKind(v1.SchemeGroupVersion.WithKind("ConfigMap"))
+	return Resource{
+		Object:       &cm,
+		Name:         cm.Name,
+		IsUpdateable: true,
+	}
 }
 
-func (m *manifestGenerator) createScannerTlsSecrets(ctx context.Context) error {
-	err := m.applyTlsSecret(ctx, "scanner-tls", func(fileMap map[string][]byte) error {
-		if err := certgen.IssueScannerCerts(fileMap, m.CA, mtls.WithNamespace(m.Config.Namespace)); err != nil {
-			return fmt.Errorf("issuing central service certificate: %w\n", err)
-		}
-		return nil
-	})
-
-	if err != nil {
-		return err
-	}
-
-	err = m.applyTlsSecret(ctx, "scanner-db-password", func(fileMap map[string][]byte) error {
-		fileMap["password"] = []byte("letmein")
-		return nil
-	})
-
-	if err != nil {
-		return err
-	}
-
-	err = m.applyTlsSecret(ctx, "scanner-db-tls", func(fileMap map[string][]byte) error {
-		if err := certgen.IssueOtherServiceCerts(fileMap, m.CA, []mtls.Subject{mtls.ScannerDBSubject}, mtls.WithNamespace(m.Config.Namespace)); err != nil {
-			return fmt.Errorf("issuing scanner DB certificate: %w\n", err)
-		}
-		return nil
-	})
-
-	return err
-}
-
-func (m *manifestGenerator) applyScannerDbDeployment(ctx context.Context) error {
-	image := "quay.io/stackrox-io/scanner-db:4.3.4"
-	// image := "quay.io/redhat-user-workloads/rh-acs-tenant/acs/scanner-db:on-pr-4312c58932be0a656654d7d0adb1d010c326ca54"
-	deployment := apps.Deployment{
-		Spec: apps.DeploymentSpec{
-			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"app": "scanner-db",
-				},
-			},
-			Strategy: apps.DeploymentStrategy{
-				Type: apps.RecreateDeploymentStrategyType,
-			},
-			Template: v1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						"app": "scanner-db",
-					},
-				},
-				Spec: v1.PodSpec{
-					SecurityContext: &v1.PodSecurityContext{
-						FSGroup: &PostgresUser,
-					},
-					ServiceAccountName: "scanner",
-					Containers: []v1.Container{{
-						Name:            "db",
-						Image:           image,
-						SecurityContext: RestrictedSecurityContext(PostgresUser),
-						Ports: []v1.ContainerPort{{
-							Name:          "tcp-postgresql",
-							ContainerPort: 5432,
-							Protocol:      v1.ProtocolTCP,
-						}},
-						Env: []v1.EnvVar{
-							{
-								Name:  "POSTGRES_HOST_AUTH_METHOD",
-								Value: "password",
-							},
-							{
-								Name:  "PGDATA",
-								Value: "/var/lib/postgresql/data/pgdata",
-							},
-						},
-					}},
-					InitContainers: []v1.Container{{
-						Name:            "init-db",
-						Image:           image,
-						SecurityContext: RestrictedSecurityContext(PostgresUser),
-						Env: []v1.EnvVar{
-							{
-								Name:  "POSTGRES_PASSWORD_FILE",
-								Value: "/run/secrets/stackrox.io/secrets/password",
-							},
-							{
-								Name:  "ROX_SCANNER_DB_INIT",
-								Value: "true",
-							},
-						},
-						VolumeMounts: []v1.VolumeMount{
-							{
-								Name:      "scanner-db-data",
-								MountPath: "/var/lib/postgresql/data",
-							},
-							{
-								Name:      "scanner-db-tls-volume",
-								MountPath: "/run/secrets/stackrox.io/certs",
-							},
-						},
-					}},
-				},
-			},
-		},
-	}
-	volumeMounts := []VolumeDefAndMount{
-		{
-			Name:      "scanner-db-data",
-			MountPath: "/var/lib/postgresql/data",
-			Volume: v1.Volume{
-				VolumeSource: v1.VolumeSource{
-					EmptyDir: &v1.EmptyDirVolumeSource{},
-				},
-			},
-		},
-		{
-			Name:      "scanner-db-tls-volume",
-			MountPath: "/run/secrets/stackrox.io/certs",
-			ReadOnly:  true,
-			Volume: v1.Volume{
-				VolumeSource: v1.VolumeSource{
-					Secret: &v1.SecretVolumeSource{
-						DefaultMode: &ReadOnlyMode,
-						SecretName:  "scanner-db-tls",
-						Items: []v1.KeyToPath{
-							{
-								Key:  "scanner-db-cert.pem",
-								Path: "server.crt",
-							},
-							{
-								Key:  "scanner-db-key.pem",
-								Path: "server.key",
-							},
-							{
-								Key:  "ca.pem",
-								Path: "root.crt",
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			Name:      "shared-memory",
-			MountPath: "/dev/shm",
-			Volume: v1.Volume{
-				VolumeSource: v1.VolumeSource{
-					EmptyDir: &v1.EmptyDirVolumeSource{
-						Medium:    v1.StorageMediumMemory,
-						SizeLimit: &TwoGigs,
-					},
-				},
-			},
-		},
-	}
-
-	dbPasswd := VolumeDefAndMount{
-		Name:      "scanner-db-password",
-		MountPath: "/run/secrets/stackrox.io/secrets",
-		Volume: v1.Volume{
-			VolumeSource: v1.VolumeSource{
-				Secret: &v1.SecretVolumeSource{
-					SecretName: "scanner-db-password",
-				},
-			},
-		},
-	}
-
-	dbPasswd.Apply(&deployment.Spec.Template.Spec.InitContainers[0], &deployment.Spec.Template.Spec)
-
-	for _, v := range volumeMounts {
-		v.Apply(&deployment.Spec.Template.Spec.Containers[0], &deployment.Spec.Template.Spec)
-	}
-
-	deployment.SetName("scanner-db")
-	_, err := m.Client.AppsV1().Deployments(m.Config.Namespace).Create(ctx, &deployment, metav1.CreateOptions{})
-
-	if errors.IsAlreadyExists(err) {
-		_, err = m.Client.AppsV1().Deployments(m.Config.Namespace).Update(ctx, &deployment, metav1.UpdateOptions{})
-		log.Info("Updated central deployment")
-	} else {
-		log.Info("Created central deployment")
-	}
-
-	return err
-}
-
-func (m *manifestGenerator) applyScannerDeployment(ctx context.Context) error {
+func (g *ScannerGenerator) genScannerDeployment() Resource {
 	// image := "quay.io/redhat-user-workloads/rh-acs-tenant/acs/scanner:on-pr-8f408774a783d37ea22030afbae689aa72ba1966"
 	image := "localhost:5001/stackrox/stackrox:latest"
 	deployment := apps.Deployment{
@@ -485,82 +309,15 @@ func (m *manifestGenerator) applyScannerDeployment(ctx context.Context) error {
 	}
 
 	deployment.SetName("scanner")
+	deployment.SetGroupVersionKind(apps.SchemeGroupVersion.WithKind("Deployment"))
 
-	_, err := m.Client.AppsV1().Deployments(m.Config.Namespace).Create(ctx, &deployment, metav1.CreateOptions{})
-
-	if errors.IsAlreadyExists(err) {
-		_, err = m.Client.AppsV1().Deployments(m.Config.Namespace).Update(ctx, &deployment, metav1.UpdateOptions{})
-		log.Info("Updated scanner deployment")
-	} else {
-		log.Info("Created scanner deployment")
+	return Resource{
+		Object:       &deployment,
+		Name:         deployment.Name,
+		IsUpdateable: true,
 	}
-
-	return err
 }
 
-func (m *manifestGenerator) applyScannerServices(ctx context.Context) error {
-	// scanner
-
-	svc := v1.Service{
-		Spec: v1.ServiceSpec{
-			Selector: map[string]string{
-				"app": "scanner",
-			},
-			Ports: []v1.ServicePort{{
-				Name:       "grpcs-scanner",
-				Port:       8443,
-				Protocol:   v1.ProtocolTCP,
-				TargetPort: intstr.FromInt(8443),
-			}, {
-				Name:       "https-scanner",
-				Port:       8080,
-				Protocol:   v1.ProtocolTCP,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
-
-	svc.SetName("scanner")
-
-	_, err := m.Client.CoreV1().Services(m.Config.Namespace).Create(ctx, &svc, metav1.CreateOptions{})
-
-	if errors.IsAlreadyExists(err) {
-		_, err = m.Client.CoreV1().Services(m.Config.Namespace).Update(ctx, &svc, metav1.UpdateOptions{})
-		log.Info("Updated scanner service")
-	} else {
-		log.Info("Created scanner service")
-	}
-
-	if err != nil {
-		return err
-	}
-
-	// scanner-db
-
-	svc = v1.Service{
-		Spec: v1.ServiceSpec{
-			Selector: map[string]string{
-				"app": "scanner-db",
-			},
-			Ports: []v1.ServicePort{{
-				Name:       "tcp-db",
-				Port:       5432,
-				Protocol:   v1.ProtocolTCP,
-				TargetPort: intstr.FromInt(5432),
-			}},
-		},
-	}
-
-	svc.SetName("scanner-db")
-
-	_, err = m.Client.CoreV1().Services(m.Config.Namespace).Create(ctx, &svc, metav1.CreateOptions{})
-
-	if errors.IsAlreadyExists(err) {
-		_, err = m.Client.CoreV1().Services(m.Config.Namespace).Update(ctx, &svc, metav1.UpdateOptions{})
-		log.Info("Updated scanner-db service")
-	} else {
-		log.Info("Created scanner-db service")
-	}
-
-	return err
+func init() {
+	central = append(central, ScannerGenerator{})
 }
