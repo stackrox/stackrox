@@ -2,6 +2,7 @@ package reprocessor
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -13,11 +14,13 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	nodeDatastore "github.com/stackrox/rox/central/node/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
+	scanAuditsDataStore "github.com/stackrox/rox/central/scanaudit/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	watchedImageDataStore "github.com/stackrox/rox/central/watchedimage/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/caudit"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
@@ -79,7 +82,7 @@ func Singleton() Loop {
 	once.Do(func() {
 		loop = NewLoop(connection.ManagerSingleton(), enrichment.ImageEnricherSingleton(), enrichment.NodeEnricherSingleton(),
 			deploymentDatastore.Singleton(), imageDatastore.Singleton(), nodeDatastore.Singleton(), manager.Singleton(),
-			watchedImageDataStore.Singleton(), activeComponentsUpdater.Singleton())
+			watchedImageDataStore.Singleton(), activeComponentsUpdater.Singleton(), scanAuditsDataStore.Singleton())
 	})
 	return loop
 }
@@ -99,11 +102,11 @@ type Loop interface {
 // NewLoop returns a new instance of a Loop.
 func NewLoop(connManager connection.Manager, imageEnricher imageEnricher.ImageEnricher, nodeEnricher nodeEnricher.NodeEnricher,
 	deployments deploymentDatastore.DataStore, images imageDatastore.DataStore, nodes nodeDatastore.DataStore,
-	risk manager.Manager, watchedImages watchedImageDataStore.DataStore, acUpdater activeComponentsUpdater.Updater) Loop {
+	risk manager.Manager, watchedImages watchedImageDataStore.DataStore, acUpdater activeComponentsUpdater.Updater, scanAuditsDataStore scanAuditsDataStore.DataStore) Loop {
 	return newLoopWithDuration(
 		connManager, imageEnricher, nodeEnricher, deployments, images, nodes, risk,
 		watchedImages, env.ReprocessInterval.DurationSetting(), env.RiskReprocessInterval.DurationSetting(),
-		env.ActiveVulnRefreshInterval.DurationSetting(), acUpdater)
+		env.ActiveVulnRefreshInterval.DurationSetting(), acUpdater, scanAuditsDataStore)
 }
 
 // newLoopWithDuration returns a loop that ticks at the given duration.
@@ -112,7 +115,7 @@ func NewLoop(connManager connection.Manager, imageEnricher imageEnricher.ImageEn
 func newLoopWithDuration(connManager connection.Manager, imageEnricher imageEnricher.ImageEnricher, nodeEnricher nodeEnricher.NodeEnricher,
 	deployments deploymentDatastore.DataStore, images imageDatastore.DataStore, nodes nodeDatastore.DataStore,
 	risk manager.Manager, watchedImages watchedImageDataStore.DataStore, enrichAndDetectDuration, deploymentRiskDuration,
-	activeComponentTickerDuration time.Duration, acUpdater activeComponentsUpdater.Updater) *loopImpl {
+	activeComponentTickerDuration time.Duration, acUpdater activeComponentsUpdater.Updater, scanAuditsDataStore scanAuditsDataStore.DataStore) *loopImpl {
 	return &loopImpl{
 		enrichAndDetectTickerDuration: enrichAndDetectDuration,
 		deploymentRiskTickerDuration:  deploymentRiskDuration,
@@ -141,6 +144,8 @@ func newLoopWithDuration(connManager connection.Manager, imageEnricher imageEnri
 		signatureVerificationSig: concurrency.NewSignal(),
 
 		connManager: connManager,
+
+		scanAudits: scanAuditsDataStore,
 	}
 }
 
@@ -184,6 +189,8 @@ type loopImpl struct {
 	reprocessingInProgress concurrency.Flag
 
 	connManager connection.Manager
+
+	scanAudits scanAuditsDataStore.DataStore
 }
 
 func (l *loopImpl) ReprocessRiskForDeployments(deploymentIDs ...string) {
@@ -325,12 +332,20 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption,
 		return nil, false
 	}
 
-	result, err := reprocessingFunc(emptyCtx, imageEnricher.EnrichmentContext{
+	ctx := caudit.NewContext(sac.WithAllAccess(context.Background()))
+
+	caudit.AddEvent(ctx, caudit.StatusSuccess, "Start")
+
+	result, err := reprocessingFunc(ctx, imageEnricher.EnrichmentContext{
 		FetchOpt: fetchOpt,
 	}, image)
 
 	if err != nil {
 		log.Errorw("Error enriching image", logging.ImageName(image.GetName().GetFullName()), logging.Err(err))
+		oerr := l.scanAudits.UpsertCTXEvents(ctx, caudit.StatusFailure, image.GetId(), fmt.Sprintf("Reprocessing %q: %v", image.GetName().GetFullName(), err))
+		if oerr != nil {
+			logging.Debugf("DAVE: 006: %v", oerr)
+		}
 		return nil, false
 	}
 	if result.ImageUpdated {
@@ -339,6 +354,12 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption,
 				logging.ImageName(image.GetName().GetFullName()), logging.Err(err))
 			return nil, false
 		}
+
+		oerr := l.scanAudits.UpsertCTXEvents(ctx, caudit.StatusSuccess, image.GetId(), fmt.Sprintf("Reprocessing %q", image.GetName().GetFullName()))
+		if oerr != nil {
+			logging.Debugf("DAVE: 007: %v", oerr)
+		}
+
 		// We need to fetch the image again to make sure all fields are populated.
 		// GetImage will internally call a Merge function which will use the CVEEdges table to enrich fields like
 		// FirstImageOccurrence and FirstSystemOccurrence.

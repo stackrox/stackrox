@@ -1,6 +1,7 @@
 package quay
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"io"
@@ -110,7 +111,7 @@ func (q *quay) Test() error {
 }
 
 // GetScan retrieves the most recent scan
-func (q *quay) GetScan(image *storage.Image) (*storage.ImageScan, error) {
+func (q *quay) GetScan(_ context.Context, image *storage.Image) (*storage.ImageScan, error) {
 	if image == nil || image.GetName().GetRemote() == "" || image.GetName().GetTag() == "" {
 		return nil, nil
 	}

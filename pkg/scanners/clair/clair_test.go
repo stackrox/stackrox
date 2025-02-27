@@ -1,6 +1,7 @@
 package clair
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -84,7 +85,7 @@ func (suite *ClairSuite) TestGetScan() {
 			},
 		},
 	}
-	scan, err := suite.scanner.GetScan(image)
+	scan, err := suite.scanner.GetScan(context.Background(), image)
 	suite.NoError(err)
 
 	features, _ := mock.GetTestFeatures()

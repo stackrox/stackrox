@@ -10,6 +10,7 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	storage "github.com/stackrox/rox/generated/storage"
@@ -96,17 +97,17 @@ func (mr *MockSetMockRecorder) GetRegistryByImage(image any) *gomock.Call {
 }
 
 // GetRegistryMetadataByImage mocks base method.
-func (m *MockSet) GetRegistryMetadataByImage(image *storage.Image) *types.Config {
+func (m *MockSet) GetRegistryMetadataByImage(ctx context.Context, image *storage.Image) *types.Config {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetRegistryMetadataByImage", image)
+	ret := m.ctrl.Call(m, "GetRegistryMetadataByImage", ctx, image)
 	ret0, _ := ret[0].(*types.Config)
 	return ret0
 }
 
 // GetRegistryMetadataByImage indicates an expected call of GetRegistryMetadataByImage.
-func (mr *MockSetMockRecorder) GetRegistryMetadataByImage(image any) *gomock.Call {
+func (mr *MockSetMockRecorder) GetRegistryMetadataByImage(ctx, image any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRegistryMetadataByImage", reflect.TypeOf((*MockSet)(nil).GetRegistryMetadataByImage), image)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRegistryMetadataByImage", reflect.TypeOf((*MockSet)(nil).GetRegistryMetadataByImage), ctx, image)
 }
 
 // IsEmpty mocks base method.

@@ -34,6 +34,7 @@ import HeaderLoadingSkeleton from '../../components/HeaderLoadingSkeleton';
 import GenerateSbomModal, {
     getSbomGenerationStatusMessage,
 } from '../../components/GenerateSbomModal';
+import ScanHistoryModal from '../../components/ScanHistoryModal';
 import { getOverviewPagePath } from '../../utils/searchUtils';
 import useInvalidateVulnerabilityQueries from '../../hooks/useInvalidateVulnerabilityQueries';
 import useHasGenerateSbomAbility from '../../hooks/useHasGenerateSBOMAbility';
@@ -48,6 +49,7 @@ import getImageScanMessage from '../utils/getImageScanMessage';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import { getImageBaseNameDisplay } from '../utils/images';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
+import { getImagesScanHistory } from 'services/imageService';
 
 export const imageDetailsQuery = gql`
     ${imageDetailsFragment}
@@ -107,6 +109,7 @@ function ImagePage() {
     const hasGenerateSbomAbility = useHasGenerateSbomAbility();
     const isScannerV4Enabled = useIsScannerV4Enabled();
     const [sbomTargetImage, setSbomTargetImage] = useState<string>();
+    const [historyTargetImage, setHistoryTargetImage] = useState<string>();
 
     const imageData = data && data.image;
     const imageName = imageData?.name;
@@ -167,6 +170,23 @@ function ImagePage() {
                                     )}
                                     <ImageDetailBadges imageData={imageData} />
                                 </Flex>
+                                <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
+                                        <Button
+                                            variant="secondary"
+                                            onClick={() => {
+                                                setHistoryTargetImage(imageData.id);
+                                                console.log(`Dave: ${imageData.id}`)
+                                            }}
+                                        >
+                                            History
+                                        </Button>
+                                        {historyTargetImage && (
+                                            <ScanHistoryModal
+                                                onClose={() => setHistoryTargetImage(undefined)}
+                                                imageName={historyTargetImage}
+                                            />
+                                        )}
+                                    </FlexItem>
                                 {hasGenerateSbomAbility && (
                                     <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
                                         <OptionalSbomButtonTooltip

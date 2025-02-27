@@ -10,6 +10,7 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -46,18 +47,18 @@ func (m *MockScanner) EXPECT() *MockScannerMockRecorder {
 }
 
 // GetScan mocks base method.
-func (m *MockScanner) GetScan(image *storage.Image) (*storage.ImageScan, error) {
+func (m *MockScanner) GetScan(ctx context.Context, image *storage.Image) (*storage.ImageScan, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetScan", image)
+	ret := m.ctrl.Call(m, "GetScan", ctx, image)
 	ret0, _ := ret[0].(*storage.ImageScan)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetScan indicates an expected call of GetScan.
-func (mr *MockScannerMockRecorder) GetScan(image any) *gomock.Call {
+func (mr *MockScannerMockRecorder) GetScan(ctx, image any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetScan", reflect.TypeOf((*MockScanner)(nil).GetScan), image)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetScan", reflect.TypeOf((*MockScanner)(nil).GetScan), ctx, image)
 }
 
 // GetVulnDefinitionsInfo mocks base method.
@@ -226,18 +227,18 @@ func (mr *MockScannerSBOMerMockRecorder) GetSBOM(image any) *gomock.Call {
 }
 
 // GetScan mocks base method.
-func (m *MockScannerSBOMer) GetScan(image *storage.Image) (*storage.ImageScan, error) {
+func (m *MockScannerSBOMer) GetScan(ctx context.Context, image *storage.Image) (*storage.ImageScan, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetScan", image)
+	ret := m.ctrl.Call(m, "GetScan", ctx, image)
 	ret0, _ := ret[0].(*storage.ImageScan)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetScan indicates an expected call of GetScan.
-func (mr *MockScannerSBOMerMockRecorder) GetScan(image any) *gomock.Call {
+func (mr *MockScannerSBOMerMockRecorder) GetScan(ctx, image any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetScan", reflect.TypeOf((*MockScannerSBOMer)(nil).GetScan), image)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetScan", reflect.TypeOf((*MockScannerSBOMer)(nil).GetScan), ctx, image)
 }
 
 // GetVulnDefinitionsInfo mocks base method.

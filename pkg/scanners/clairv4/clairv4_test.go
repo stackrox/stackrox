@@ -208,7 +208,7 @@ func TestGetScan(t *testing.T) {
 	}, mockSet)
 	require.NoError(t, err)
 
-	scan, err := clair.GetScan(testImage.image)
+	scan, err := clair.GetScan(context.Background(), testImage.image)
 	assert.NoError(t, err)
 	expected := testImage.expected
 	protoassert.ElementsMatch(t, expected.Components, scan.Components)

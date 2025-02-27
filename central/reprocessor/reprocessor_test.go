@@ -44,7 +44,7 @@ func TestGetActiveImageIDs(t *testing.T) {
 	deploymentsDS, err = deploymentDatastore.New(pool, nil, nil, nil, nil, nil, filter.NewFilter(5, 5, []int{5}), ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker(), platformmatcher.Singleton())
 	require.NoError(t, err)
 
-	loop := NewLoop(nil, nil, nil, deploymentsDS, imageDS, nil, nil, nil, nil).(*loopImpl)
+	loop := NewLoop(nil, nil, nil, deploymentsDS, imageDS, nil, nil, nil, nil, nil).(*loopImpl)
 
 	ids, err := loop.getActiveImageIDs()
 	require.NoError(t, err)

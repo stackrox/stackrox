@@ -96,6 +96,7 @@ func init() {
 		&storage.Risk{}:                                         resources.DeploymentExtension,
 		&storage.Role{}:                                         resources.Access,
 		&storage.ComplianceOperatorScanSettingBindingV2{}:       resources.Compliance,
+		&storage.ScanAudit{}:                                    resources.Image,
 		&storage.SecuredUnits{}:                                 resources.Administration,
 		&storage.SensorUpgradeConfig{}:                          resources.Administration,
 		&storage.ServiceIdentity{}:                              resources.Administration,

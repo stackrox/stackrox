@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package storage;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
+message ScanAudit {
+  enum ScanAuditStatus {
+    SUCCESS = 0;
+    FAILURE = 1;
+  }
+
+  message ScanAuditEvent {
+    google.protobuf.Timestamp time = 1;
+    ScanAuditStatus status = 2;
+    string message = 3;
+  }
+
+  string id = 1; // @gotags: sql:"pk,type(uuid)"
+  string imageID = 2; // @gotags: search:"Image Sha,store,hidden"
+  google.protobuf.Timestamp event_time = 3;
+  string message = 4;
+  repeated ScanAuditEvent events = 5;
+  ScanAuditStatus status = 6;
+}

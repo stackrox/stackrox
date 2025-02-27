@@ -2,8 +2,10 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"math"
+	"sort"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -13,12 +15,14 @@ import (
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/sachelper"
+	scanAuditsDataStore "github.com/stackrox/rox/central/scanaudit/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	watchedImageDataStore "github.com/stackrox/rox/central/watchedimage/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/caudit"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
@@ -33,6 +37,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
@@ -74,6 +79,7 @@ var (
 			v1.ImageService_DeleteImages_FullMethodName,
 			v1.ImageService_InvalidateScanAndRegistryCaches_FullMethodName,
 			v1.ImageService_ScanImage_FullMethodName,
+			v1.ImageService_GetImageScanAudit_FullMethodName,
 		},
 		user.With(permissions.View(resources.WatchedImage)): {
 			v1.ImageService_GetWatchedImages_FullMethodName,
@@ -109,6 +115,8 @@ type serviceImpl struct {
 	scanWaiterManager waiter.Manager[*storage.Image]
 
 	clusterSACHelper sachelper.ClusterSacHelper
+
+	scanAudits scanAuditsDataStore.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -239,6 +247,8 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 	}
 	defer s.internalScanSemaphore.Release(1)
 
+	ctx = caudit.NewContext(ctx)
+
 	var (
 		img       *storage.Image
 		fetchOpt  enricher.FetchOption
@@ -291,15 +301,31 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 		img = types.ToImage(request.GetImage())
 	}
 
-	if err := s.enrichImage(ctx, img, fetchOpt, request); err != nil && imgExists {
+	err = s.enrichImage(ctx, img, fetchOpt, request)
+	if err != nil && imgExists {
 		// In case we hit an error during enriching, and the image previously existed, we will _not_ upsert it in
 		// central, since it could lead to us overriding an enriched image with a non-enriched image.
+		oerr := s.scanAudits.UpsertCTXEvents(ctx, caudit.StatusFailure, imgID, fmt.Sprintf("Sensor requested scan for %q: %v", request.GetImage().GetName().GetFullName(), err))
+		if oerr != nil {
+			logging.Debugf("DAVE: 001: %v", oerr)
+		}
 		return internalScanRespFromImage(img), nil
 	}
 	// Due to discrepancies in digests retrieved from metadata pulls and k8s, only upsert if the request
 	// contained a digest.
 	if imgID != "" {
 		_ = s.saveImage(img)
+
+		status := pkgUtils.IfThenElse(err == nil, caudit.StatusSuccess, caudit.StatusFailure)
+
+		msg := fmt.Sprintf("Sensor requested scan for %q", request.GetImage().GetName().GetFullName())
+		if err != nil {
+			msg = fmt.Sprintf("Sensor requested scan for %q: %v", request.GetImage().GetName().GetFullName(), err)
+		}
+		oerr := s.scanAudits.UpsertCTXEvents(ctx, status, imgID, msg)
+		if oerr != nil {
+			logging.Debugf("DAVE: 002: %v", oerr)
+		}
 	}
 
 	return internalScanRespFromImage(img), nil
@@ -380,9 +406,14 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 		FetchOpt:  enricher.UseCachesIfPossible,
 		Delegable: true,
 	}
+	ctx = caudit.NewContext(ctx)
+	params := fmt.Sprintf("imageName %q, force %t, cluster %q, includeSnoozed %t", request.GetImageName(), request.GetForce(), request.GetCluster(), request.GetIncludeSnoozed())
+
 	if request.GetForce() {
 		enrichmentCtx.FetchOpt = enricher.UseImageNamesRefetchCachedValues
 	}
+
+	caudit.AddEvent(ctx, caudit.StatusSuccess, "Ad-hoc scan requested: %s", params)
 
 	if request.GetCluster() != "" {
 		// The request indicates enrichment should be delegated to a specific cluster.
@@ -405,9 +436,25 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 		if err := s.saveImage(img); err != nil {
 			return nil, err
 		}
+
+		oerr := s.scanAudits.UpsertCTXEvents(ctx, caudit.StatusSuccess, img.GetId(), "Ad-hoc scan complete")
+		if oerr != nil {
+			logging.Debugf("DAVE: 003: %v", oerr)
+		}
 	}
 	if !request.GetIncludeSnoozed() {
 		utils.FilterSuppressedCVEsNoClone(img)
+	}
+
+	lines := caudit.DebugDump(ctx, "CAUDIT:   ")
+	logging.Debugf("CAUDIT: Context Audit contents:\n%s", lines)
+
+	events, _, err := s.scanAudits.GetAuditEvents(ctx, img.GetId())
+	if err != nil {
+		logging.Debugf("CAUDIT pull from DB failed: %v", err)
+	} else {
+		b, _ := json.MarshalIndent(events, "", "  ")
+		logging.Debugf("CAUDIT: FROM DB: %s", string(b))
 	}
 
 	return img, nil
@@ -753,6 +800,7 @@ func (s *serviceImpl) WatchImage(ctx context.Context, request *v1.WatchImageRequ
 		}, nil
 	}
 
+	ctx = caudit.NewContext(ctx)
 	img := types.ToImage(containerImage)
 
 	enrichCtx := enricher.EnrichmentContext{
@@ -761,6 +809,14 @@ func (s *serviceImpl) WatchImage(ctx context.Context, request *v1.WatchImageRequ
 	}
 	enrichmentResult, err := s.enricher.EnrichImage(ctx, enrichCtx, img)
 	if err != nil {
+		id := utils.GetSHA(img)
+		if id != "" {
+			oerr := s.scanAudits.UpsertCTXEvents(ctx, caudit.StatusFailure, img.GetId(), fmt.Sprintf("Image watch failed: %v", err))
+			if oerr != nil {
+				logging.Debugf("DAVE: 004: %v", oerr)
+			}
+		}
+
 		return &v1.WatchImageResponse{
 			ErrorMessage: fmt.Sprintf("failed to scan image: %v", err),
 			ErrorType:    v1.WatchImageResponse_SCAN_FAILED,
@@ -784,6 +840,10 @@ func (s *serviceImpl) WatchImage(ctx context.Context, request *v1.WatchImageRequ
 	}
 
 	if err := s.saveImage(img); err != nil {
+		oerr := s.scanAudits.UpsertCTXEvents(ctx, caudit.StatusSuccess, img.GetId(), "Image watch created")
+		if oerr != nil {
+			logging.Debugf("DAVE: 005: %v", oerr)
+		}
 		return nil, errors.Errorf("failed to store image: %v", err)
 	}
 
@@ -807,4 +867,21 @@ func (s *serviceImpl) GetWatchedImages(ctx context.Context, _ *v1.Empty) (*v1.Ge
 		return nil, err
 	}
 	return &v1.GetWatchedImagesResponse{WatchedImages: watchedImgs}, nil
+}
+
+func (s *serviceImpl) GetImageScanAudit(ctx context.Context, req *v1.GetImageScanAuditRequest) (*v1.GetImageScanAuditResponse, error) {
+	log.Debugf("Request to GetImageScanAudit: %+v", req)
+
+	events, _, err := s.scanAudits.GetAuditEvents(ctx, req.GetId())
+	if err != nil {
+		return nil, err
+	}
+
+	sort.Slice(events, func(i, j int) bool {
+		it := protocompat.ConvertTimestampToTimeOrNil(events[i].EventTime)
+		jt := protocompat.ConvertTimestampToTimeOrNil(events[j].EventTime)
+		return it.Before(*jt)
+	})
+
+	return &v1.GetImageScanAuditResponse{Events: events}, nil
 }

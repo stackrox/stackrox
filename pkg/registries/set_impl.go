@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/caudit"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
@@ -85,13 +86,14 @@ func (e *setImpl) GetAllUnique() []types.ImageRegistry {
 }
 
 // GetRegistryMetadataByImage returns the config for a registry that contains the input image.
-func (e *setImpl) GetRegistryMetadataByImage(image *storage.Image) *types.Config {
+func (e *setImpl) GetRegistryMetadataByImage(ctx context.Context, image *storage.Image) *types.Config {
 	e.lock.RLock()
 	defer e.lock.RUnlock()
 
 	reg := e.getRegistryByImageNoLock(image)
 	if reg != nil {
 		// TODO(ROX-25474) refactor to pass parent context.
+		caudit.AddSuccessEvent(ctx, "Scanning with creds from integration %q", reg.DataSource().Name)
 		return reg.Config(context.Background())
 	}
 
@@ -106,7 +108,7 @@ func (e *setImpl) GetRegistryByImage(image *storage.Image) types.Registry {
 	return e.getRegistryByImageNoLock(image)
 }
 
-func (e *setImpl) getRegistryByImageNoLock(image *storage.Image) types.Registry {
+func (e *setImpl) getRegistryByImageNoLock(image *storage.Image) types.ImageRegistry {
 	if sourceID := image.GetMetadata().GetDataSource().GetId(); sourceID != "" {
 		reg, ok := e.integrations[sourceID]
 		if ok {

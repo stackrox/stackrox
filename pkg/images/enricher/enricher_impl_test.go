@@ -91,7 +91,7 @@ func (*fakeScanner) MaxConcurrentScanSemaphore() *semaphore.Weighted {
 	return semaphore.NewWeighted(1)
 }
 
-func (f *fakeScanner) GetScan(_ *storage.Image) (*storage.ImageScan, error) {
+func (f *fakeScanner) GetScan(_ context.Context, _ *storage.Image) (*storage.ImageScan, error) {
 	f.requestedScan = true
 	return &storage.ImageScan{
 		Components: []*storage.EmbeddedImageScanComponent{

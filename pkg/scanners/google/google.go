@@ -202,7 +202,7 @@ func (c *googleScanner) processComponent(pv packageAndVersion, vulns []*grafeas.
 }
 
 // GetScan retrieves the most recent scan
-func (c *googleScanner) GetScan(image *storage.Image) (*storage.ImageScan, error) {
+func (c *googleScanner) GetScan(_ context.Context, image *storage.Image) (*storage.ImageScan, error) {
 	log.Infof("Retrieving scans for image %s", image.GetName().GetFullName())
 
 	componentOccurrences, vulnOccurrences, err := c.getOccurrencesForImage(image)

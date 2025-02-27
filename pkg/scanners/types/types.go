@@ -1,6 +1,8 @@
 package types
 
 import (
+	"context"
+
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
@@ -24,7 +26,7 @@ type Scanner interface {
 	// GetScan gets the scan for the given image.
 	// It is a blocking call; if the scanner has not scanned the image yet,
 	// the function blocks until it does. It returns an error if it fails to do so.
-	GetScan(image *storage.Image) (*storage.ImageScan, error)
+	GetScan(ctx context.Context, image *storage.Image) (*storage.ImageScan, error)
 	Match(image *storage.ImageName) bool
 	Test() error
 	Type() string

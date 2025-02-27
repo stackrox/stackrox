@@ -1,6 +1,7 @@
 package scanners
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -24,7 +25,7 @@ type fakeScanner struct {
 	typ string
 }
 
-func (*fakeScanner) GetScan(*storage.Image) (*storage.ImageScan, error) {
+func (*fakeScanner) GetScan(context.Context, *storage.Image) (*storage.ImageScan, error) {
 	panic("implement me")
 }
 

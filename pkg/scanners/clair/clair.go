@@ -1,6 +1,7 @@
 package clair
 
 import (
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -137,7 +138,7 @@ func (c *clair) retrieveLayerData(layer string) (*clairV1.LayerEnvelope, error) 
 }
 
 // GetScan retrieves the most recent scan
-func (c *clair) GetScan(image *storage.Image) (*storage.ImageScan, error) {
+func (c *clair) GetScan(_ context.Context, image *storage.Image) (*storage.ImageScan, error) {
 	if image == nil || image.GetName().GetRemote() == "" || image.GetName().GetTag() == "" {
 		return nil, nil
 	}

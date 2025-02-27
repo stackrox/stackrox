@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/sachelper"
+	scanAuditsDataStore "github.com/stackrox/rox/central/scanaudit/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	watchedImageDataStore "github.com/stackrox/rox/central/watchedimage/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -43,6 +44,7 @@ func New(
 	metadataCache cache.ImageMetadata,
 	scanWaiterManager waiter.Manager[*storage.Image],
 	clusterSACHelper sachelper.ClusterSacHelper,
+	scanAuditsDataStore scanAuditsDataStore.DataStore,
 ) Service {
 	return &serviceImpl{
 		datastore:             datastore,
@@ -54,5 +56,6 @@ func New(
 		scanWaiterManager:     scanWaiterManager,
 		internalScanSemaphore: semaphore.NewWeighted(int64(env.MaxParallelImageScanInternal.IntegerSetting())),
 		clusterSACHelper:      clusterSACHelper,
+		scanAudits:            scanAuditsDataStore,
 	}
 }

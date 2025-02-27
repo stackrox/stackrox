@@ -1,9 +1,10 @@
-import { ListImage, WatchedImage } from 'types/image.proto';
+import { ListImage, WatchedImage, ScanAudit, ScanAuditEvent } from 'types/image.proto';
 
 import axios from './instance';
 import { Empty } from './types';
 
 const imagesUrl = '/v1/images';
+const imageScanHistoryURL = '/v1/images/audit'
 const watchedImagesUrl = '/v1/watchedimages';
 
 /*
@@ -16,6 +17,12 @@ export function getImages(): Promise<ListImage[]> {
     return axios
         .get<{ images: ListImage[] }>(imagesUrl)
         .then((response) => response.data?.images ?? []);
+}
+
+export function getImagesScanHistory(id: string): Promise<ScanAudit[]> {
+    return axios
+        .get<{ events: ScanAudit[] }>(`${imageScanHistoryURL}/${id}`)
+        .then((response) => response.data?.events ?? []);
 }
 
 /*

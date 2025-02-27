@@ -10,6 +10,7 @@ import "scanner/api/v1/component.proto";
 import "scanner/api/v1/note.proto";
 import "storage/deployment.proto";
 import "storage/image.proto";
+import "storage/scan_audit.proto";
 
 option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
@@ -145,6 +146,14 @@ message ExportImageResponse {
   storage.Image image = 1;
 }
 
+message GetImageScanAuditRequest {
+  string id = 1;
+}
+
+message GetImageScanAuditResponse {
+  repeated storage.ScanAudit events = 1;
+}
+
 // ImageService APIs manages image metadata.
 service ImageService {
   // GetImage returns the image given its ID.
@@ -219,5 +228,9 @@ service ImageService {
 
   rpc ExportImages(ExportImageRequest) returns (stream ExportImageResponse) {
     option (google.api.http) = {get: "/v1/export/images"};
+  }
+
+  rpc GetImageScanAudit(GetImageScanAuditRequest) returns (GetImageScanAuditResponse) {
+    option (google.api.http) = {get: "/v1/images/audit/{id}"};
   }
 }

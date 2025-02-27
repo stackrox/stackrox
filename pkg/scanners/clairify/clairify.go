@@ -339,7 +339,7 @@ func (c *clairify) getInitialScanResults(img *storage.Image) (*clairV1.LayerEnve
 }
 
 // GetScan retrieves the most recent scan
-func (c *clairify) GetScan(image *storage.Image) (*storage.ImageScan, error) {
+func (c *clairify) GetScan(_ context.Context, image *storage.Image) (*storage.ImageScan, error) {
 	// If we haven't retrieved any metadata then we won't be able to scan with Clairify
 	if image.GetMetadata() == nil {
 		return nil, nil
@@ -392,7 +392,7 @@ func (c *clairify) scanImage(image *storage.Image, opts types.GetImageDataOpts) 
 }
 
 func (c *clairify) addScan(image *storage.Image, uncertifiedRHEL bool) error {
-	rc := c.activeRegistries.GetRegistryMetadataByImage(image)
+	rc := c.activeRegistries.GetRegistryMetadataByImage(context.Background(), image)
 	if rc == nil {
 		return nil
 	}

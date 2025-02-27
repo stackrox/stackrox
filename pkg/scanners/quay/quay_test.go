@@ -1,6 +1,7 @@
 package quay
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -121,7 +122,7 @@ func (suite *QuaySuite) TestGetScan() {
 			Tag:      "1.10",
 		},
 	}
-	scan, err := suite.scanner.GetScan(image)
+	scan, err := suite.scanner.GetScan(context.Background(), image)
 	suite.NoError(err)
 
 	expectedQuayScan, err := getImageScan()

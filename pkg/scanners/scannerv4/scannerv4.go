@@ -125,12 +125,12 @@ func (s *scannerv4) GetSBOM(image *storage.Image) ([]byte, bool, error) {
 	return sbom, found, err
 }
 
-func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
+func (s *scannerv4) GetScan(ctx context.Context, image *storage.Image) (*storage.ImageScan, error) {
 	if image.GetMetadata() == nil {
 		return nil, nil
 	}
 
-	rc := s.activeRegistries.GetRegistryMetadataByImage(image)
+	rc := s.activeRegistries.GetRegistryMetadataByImage(ctx, image)
 	if rc == nil {
 		log.Debugf("No registry matched during scan of %q", image.GetName().GetFullName())
 		return nil, nil

@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/caudit"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
@@ -111,11 +112,14 @@ func (d *delegatorImpl) DelegateScanImage(ctx context.Context, imgName *storage.
 
 	log.Infof("Sent scan request %q to cluster %q for %q with inferred namespace %q", w.ID(), clusterID, imgName.GetFullName(), namespace)
 
+	caudit.AddEvent(ctx, caudit.StatusSuccess, "Delegated scan to cluster %q with inferred namespace %q", clusterID, namespace)
 	image, err := w.Wait(ctx)
 	if err != nil {
+		caudit.AddEvent(ctx, caudit.StatusFailure, "Delegated scan failed: %v", err)
 		return nil, errors.Wrapf(err, "error delegating scan to cluster %q for image %q", clusterID, imgName.GetFullName())
 	}
 
+	caudit.AddEvent(ctx, caudit.StatusSuccess, "Delegated scan complete")
 	log.Debugf("Scan response received for %q and image %q", w.ID(), imgName.GetFullName())
 
 	return image, nil

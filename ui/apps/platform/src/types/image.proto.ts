@@ -16,6 +16,20 @@ export type ListImage = {
     priority: string; // int64
 };
 
+export type ScanAudit = {
+    id: string;
+    eventTime: string;
+    message: string;
+    status: string;
+    events: ScanAuditEvent[];
+}
+
+export type ScanAuditEvent = {
+    time: string;
+    status: string;
+    message: string;
+}
+
 export type WatchedImage = {
     name: string;
 };

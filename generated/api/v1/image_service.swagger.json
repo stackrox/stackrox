@@ -218,6 +218,36 @@
         ]
       }
     },
+    "/v1/images/audit/{id}": {
+      "get": {
+        "operationId": "ImageService_GetImageScanAudit",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetImageScanAuditResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ImageService"
+        ]
+      }
+    },
     "/v1/images/cache/invalidate": {
       "get": {
         "summary": "InvalidateScanAndRegistryCaches removes the image metadata cache.",
@@ -545,6 +575,29 @@
           }
         }
       }
+    },
+    "ScanAuditScanAuditEvent": {
+      "type": "object",
+      "properties": {
+        "time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "status": {
+          "$ref": "#/definitions/ScanAuditScanAuditStatus"
+        },
+        "message": {
+          "type": "string"
+        }
+      }
+    },
+    "ScanAuditScanAuditStatus": {
+      "type": "string",
+      "enum": [
+        "SUCCESS",
+        "FAILURE"
+      ],
+      "default": "SUCCESS"
     },
     "WatchImageResponseErrorType": {
       "type": "string",
@@ -1534,6 +1587,34 @@
         }
       }
     },
+    "storageScanAudit": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "imageID": {
+          "type": "string"
+        },
+        "eventTime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "message": {
+          "type": "string"
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/ScanAuditScanAuditEvent"
+          }
+        },
+        "status": {
+          "$ref": "#/definitions/ScanAuditScanAuditStatus"
+        }
+      }
+    },
     "storageSignature": {
       "type": "object",
       "properties": {
@@ -1702,6 +1783,18 @@
       "properties": {
         "image": {
           "$ref": "#/definitions/storageImage"
+        }
+      }
+    },
+    "v1GetImageScanAuditResponse": {
+      "type": "object",
+      "properties": {
+        "events": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageScanAudit"
+          }
         }
       }
     },

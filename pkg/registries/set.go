@@ -1,6 +1,8 @@
 package registries
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/registries/types"
 )
@@ -12,7 +14,7 @@ type Set interface {
 	GetAll() []types.ImageRegistry
 	GetAllUnique() []types.ImageRegistry
 	Match(image *storage.ImageName) bool
-	GetRegistryMetadataByImage(image *storage.Image) *types.Config
+	GetRegistryMetadataByImage(ctx context.Context, image *storage.Image) *types.Config
 	GetRegistryByImage(image *storage.Image) types.Registry
 
 	IsEmpty() bool

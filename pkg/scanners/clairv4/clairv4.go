@@ -2,6 +2,7 @@ package clairv4
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -114,7 +115,7 @@ func validate(cfg *storage.ClairV4Config) error {
 	return errorList.ToError()
 }
 
-func (c *clairv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
+func (c *clairv4) GetScan(_ context.Context, image *storage.Image) (*storage.ImageScan, error) {
 	// For logging/error message purposes.
 	imgName := image.GetName().GetFullName()
 
