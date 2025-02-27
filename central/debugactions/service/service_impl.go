@@ -32,42 +32,50 @@ type serviceImpl struct {
 	actionMgr manager.Manager
 }
 
-func (s serviceImpl) RegisterServiceServer(server *grpc.Server) {
-	//TODO implement me
-	panic("implement me")
+func (s *serviceImpl) RegisterServiceServer(server *grpc.Server) {
+	v2.RegisterDebugActionServiceServer(server, s)
 }
 
-func (s serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
-	//TODO implement me
-	panic("implement me")
+func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
+	return v2.RegisterDebugActionServiceHandler(ctx, mux, conn)
 }
 
-func (s serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	//TODO implement me
-	panic("implement me")
+func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
-func (s serviceImpl) RegisterAction(ctx context.Context, action *v2.DebugAction) (*v2.Empty, error) {
-	//TODO implement me
-	panic("implement me")
+func (s *serviceImpl) RegisterAction(_ context.Context, action *v2.DebugAction) (*v2.Empty, error) {
+	err := s.actionMgr.RegisterAction(action)
+	if err != nil {
+		return nil, err
+	}
+	return &v2.Empty{}, nil
 }
 
-func (s serviceImpl) GetActionStatus(ctx context.Context, id *v2.ResourceByID) (*v2.ActionStatus, error) {
-	//TODO implement me
-	panic("implement me")
+func (s *serviceImpl) GetActionStatus(_ context.Context, id *v2.ResourceByID) (*v2.ActionStatus, error) {
+	return s.actionMgr.GetActionStatus(id.GetId())
 }
 
-func (s serviceImpl) DeleteAction(ctx context.Context, id *v2.ResourceByID) (*v2.Empty, error) {
-	//TODO implement me
-	panic("implement me")
+func (s *serviceImpl) DeleteAction(_ context.Context, id *v2.ResourceByID) (*v2.Empty, error) {
+	err := s.actionMgr.DeleteAction(id.GetId())
+	if err != nil {
+		return nil, err
+	}
+	return &v2.Empty{}, nil
 }
 
-func (s serviceImpl) ProceedOldest(ctx context.Context, id *v2.ResourceByID) (*v2.Empty, error) {
-	//TODO implement me
-	panic("implement me")
+func (s *serviceImpl) ProceedOldest(_ context.Context, id *v2.ResourceByID) (*v2.Empty, error) {
+	err := s.actionMgr.ProceedOldest(id.GetId())
+	if err != nil {
+		return nil, err
+	}
+	return &v2.Empty{}, nil
 }
 
-func (s serviceImpl) ProceedAll(ctx context.Context, id *v2.ResourceByID) (*v2.Empty, error) {
-	//TODO implement me
-	panic("implement me")
+func (s *serviceImpl) ProceedAll(_ context.Context, id *v2.ResourceByID) (*v2.Empty, error) {
+	err := s.actionMgr.ProceedAll(id.GetId())
+	if err != nil {
+		return nil, err
+	}
+	return &v2.Empty{}, nil
 }

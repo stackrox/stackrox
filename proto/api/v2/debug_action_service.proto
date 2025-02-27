@@ -10,7 +10,7 @@ option java_package = "io.stackrox.proto.api.v2";
 
 message SleepAction {
   // seconds to sleep upon encountering this action identifier
-  int32 seconds = 1;
+  int64 seconds = 1;
 }
 
 message WaitAction {}
@@ -21,7 +21,7 @@ message DebugAction {
   string identifier = 1;
   // num_times > 0: Wait (until proceed signal is received) for first num_times this action identifier is encountered.
   // Default 0: Always wait (until proceed signal is received) upon encountering this action identifier
-  int32 num_times = 2;
+  int64 num_times = 2;
   oneof action {
     SleepAction sleep_action = 3;
     WaitAction wait_action = 4;
@@ -29,13 +29,13 @@ message DebugAction {
 }
 
 message ActionStatus {
-  DebugAction action = 1;
+  DebugAction debug_action = 1;
   // number of times the action identifier was encountered
-  int32 times_encountered = 2;
+  int64 times_encountered = 2;
   // number of times the action was executed
-  int32 times_executed = 3;
+  int64 times_executed = 3;
   // number of times the action was given proceed signal. This is only relevant when action is of WaitAction type
-  int32 times_signaled = 4;
+  int64 times_signaled = 4;
 }
 
 service DebugActionService {

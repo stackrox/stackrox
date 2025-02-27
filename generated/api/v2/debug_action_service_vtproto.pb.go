@@ -97,7 +97,7 @@ func (m *ActionStatus) CloneVT() *ActionStatus {
 		return (*ActionStatus)(nil)
 	}
 	r := new(ActionStatus)
-	r.Action = m.Action.CloneVT()
+	r.DebugAction = m.DebugAction.CloneVT()
 	r.TimesEncountered = m.TimesEncountered
 	r.TimesExecuted = m.TimesExecuted
 	r.TimesSignaled = m.TimesSignaled
@@ -237,7 +237,7 @@ func (this *ActionStatus) EqualVT(that *ActionStatus) bool {
 	} else if this == nil || that == nil {
 		return false
 	}
-	if !this.Action.EqualVT(that.Action) {
+	if !this.DebugAction.EqualVT(that.DebugAction) {
 		return false
 	}
 	if this.TimesEncountered != that.TimesEncountered {
@@ -475,8 +475,8 @@ func (m *ActionStatus) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x10
 	}
-	if m.Action != nil {
-		size, err := m.Action.MarshalToSizedBufferVT(dAtA[:i])
+	if m.DebugAction != nil {
+		size, err := m.DebugAction.MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -565,8 +565,8 @@ func (m *ActionStatus) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
-	if m.Action != nil {
-		l = m.Action.SizeVT()
+	if m.DebugAction != nil {
+		l = m.DebugAction.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.TimesEncountered != 0 {
@@ -625,7 +625,7 @@ func (m *SleepAction) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.Seconds |= int32(b&0x7F) << shift
+				m.Seconds |= int64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -778,7 +778,7 @@ func (m *DebugAction) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.NumTimes |= int32(b&0x7F) << shift
+				m.NumTimes |= int64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -918,7 +918,7 @@ func (m *ActionStatus) UnmarshalVT(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Action", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field DebugAction", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -945,10 +945,10 @@ func (m *ActionStatus) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.Action == nil {
-				m.Action = &DebugAction{}
+			if m.DebugAction == nil {
+				m.DebugAction = &DebugAction{}
 			}
-			if err := m.Action.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.DebugAction.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -966,7 +966,7 @@ func (m *ActionStatus) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.TimesEncountered |= int32(b&0x7F) << shift
+				m.TimesEncountered |= int64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -985,7 +985,7 @@ func (m *ActionStatus) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.TimesExecuted |= int32(b&0x7F) << shift
+				m.TimesExecuted |= int64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -1004,7 +1004,7 @@ func (m *ActionStatus) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.TimesSignaled |= int32(b&0x7F) << shift
+				m.TimesSignaled |= int64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -1074,7 +1074,7 @@ func (m *SleepAction) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.Seconds |= int32(b&0x7F) << shift
+				m.Seconds |= int64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -1231,7 +1231,7 @@ func (m *DebugAction) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.NumTimes |= int32(b&0x7F) << shift
+				m.NumTimes |= int64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -1371,7 +1371,7 @@ func (m *ActionStatus) UnmarshalVTUnsafe(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Action", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field DebugAction", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -1398,10 +1398,10 @@ func (m *ActionStatus) UnmarshalVTUnsafe(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.Action == nil {
-				m.Action = &DebugAction{}
+			if m.DebugAction == nil {
+				m.DebugAction = &DebugAction{}
 			}
-			if err := m.Action.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.DebugAction.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1419,7 +1419,7 @@ func (m *ActionStatus) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.TimesEncountered |= int32(b&0x7F) << shift
+				m.TimesEncountered |= int64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -1438,7 +1438,7 @@ func (m *ActionStatus) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.TimesExecuted |= int32(b&0x7F) << shift
+				m.TimesExecuted |= int64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -1457,7 +1457,7 @@ func (m *ActionStatus) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.TimesSignaled |= int32(b&0x7F) << shift
+				m.TimesSignaled |= int64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}

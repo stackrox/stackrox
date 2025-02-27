@@ -9,6 +9,9 @@ import v2 "github.com/stackrox/rox/generated/api/v2"
 type Manager interface {
 	// RegisterAction registers new action
 	RegisterAction(action *v2.DebugAction) error
+	// ExecRegisteredAction executes the action registered for the given identifier.
+	// If no action is registered, it will do nothing
+	ExecRegisteredAction(identifier string)
 	// GetActionStatus returns the current status of the action registered for given identifier
 	GetActionStatus(identifier string) (*v2.ActionStatus, error)
 	// DeleteAction deletes the action registered for the given identifier.
@@ -29,5 +32,7 @@ type Manager interface {
 
 // New returns a new instance of the Manager
 func New() Manager {
-	return &managerImpl{}
+	return &managerImpl{
+		actionIDToParts: make(map[string]*actionParts),
+	}
 }

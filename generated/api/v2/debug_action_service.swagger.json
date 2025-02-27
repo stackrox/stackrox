@@ -204,22 +204,22 @@
     "v2ActionStatus": {
       "type": "object",
       "properties": {
-        "action": {
+        "debugAction": {
           "$ref": "#/definitions/v2DebugAction"
         },
         "timesEncountered": {
-          "type": "integer",
-          "format": "int32",
+          "type": "string",
+          "format": "int64",
           "title": "number of times the action identifier was encountered"
         },
         "timesExecuted": {
-          "type": "integer",
-          "format": "int32",
+          "type": "string",
+          "format": "int64",
           "title": "number of times the action was executed"
         },
         "timesSignaled": {
-          "type": "integer",
-          "format": "int32",
+          "type": "string",
+          "format": "int64",
           "title": "number of times the action was given proceed signal. This is only relevant when action is of WaitAction type"
         }
       }
@@ -232,8 +232,8 @@
           "description": "Action identifier must declared in the code using <func name here>. The action registered in this request is executed\nwhen any routine encounters this identifier during its execution."
         },
         "numTimes": {
-          "type": "integer",
-          "format": "int32",
+          "type": "string",
+          "format": "int64",
           "title": "num_times > 0: Wait (until proceed signal is received) for first num_times this action identifier is encountered.\nDefault 0: Always wait (until proceed signal is received) upon encountering this action identifier"
         },
         "sleepAction": {
@@ -251,8 +251,8 @@
       "type": "object",
       "properties": {
         "seconds": {
-          "type": "integer",
-          "format": "int32",
+          "type": "string",
+          "format": "int64",
           "title": "seconds to sleep upon encountering this action identifier"
         }
       }

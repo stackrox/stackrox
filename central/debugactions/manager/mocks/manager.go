@@ -54,6 +54,18 @@ func (mr *MockManagerMockRecorder) DeleteAction(identifier any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteAction", reflect.TypeOf((*MockManager)(nil).DeleteAction), identifier)
 }
 
+// ExecRegisteredAction mocks base method.
+func (m *MockManager) ExecRegisteredAction(identifier string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ExecRegisteredAction", identifier)
+}
+
+// ExecRegisteredAction indicates an expected call of ExecRegisteredAction.
+func (mr *MockManagerMockRecorder) ExecRegisteredAction(identifier any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExecRegisteredAction", reflect.TypeOf((*MockManager)(nil).ExecRegisteredAction), identifier)
+}
+
 // GetActionStatus mocks base method.
 func (m *MockManager) GetActionStatus(identifier string) (*v2.ActionStatus, error) {
 	m.ctrl.T.Helper()
