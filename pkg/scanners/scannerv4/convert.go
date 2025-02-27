@@ -163,8 +163,9 @@ func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerab
 
 		// TODO(ROX-20355): Populate last modified once the API is available.
 		vuln := &storage.EmbeddedVulnerability{
-			Cve:     ccVuln.GetName(),
-			Summary: ccVuln.GetDescription(),
+			Cve:      ccVuln.GetName(),
+			Advisory: ccVuln.GetAdvisory(),
+			Summary:  ccVuln.GetDescription(),
 			// TODO(ROX-26547)
 			// The link field will be overwritten if preferred CVSS source is available
 			Link:        link(ccVuln.GetLink()),

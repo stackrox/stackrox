@@ -512,12 +512,12 @@ func toProtoV4VulnerabilitiesMap(
 
 		name := vulnerabilityName(v)
 		// TODO(ROX-26672): Remove this line.
-		advisory, advisoryExists := csafAdvisories[v.ID]
+		csafAdvisory, csafAdvisoryExists := csafAdvisories[v.ID]
 
 		normalizedSeverity := toProtoV4VulnerabilitySeverity(ctx, v.NormalizedSeverity)
-		if advisoryExists {
+		if csafAdvisoryExists {
 			// Replace the normalized severity for the CVE with the severity of the related Red Hat advisory.
-			normalizedSeverity = toProtoV4VulnerabilitySeverityFromString(ctx, advisory.Severity)
+			normalizedSeverity = toProtoV4VulnerabilitySeverityFromString(ctx, csafAdvisory.Severity)
 		}
 
 		// Determine the related CVE for this vulnerability. This is necessary, as NVD and EPSS are CVE-based.
@@ -530,7 +530,7 @@ func toProtoV4VulnerabilitiesMap(
 				nvdVuln = *v
 			}
 		}
-		metrics, err := cvssMetrics(ctx, v, name, &nvdVuln, advisory)
+		metrics, err := cvssMetrics(ctx, v, name, &nvdVuln, csafAdvisory)
 		if err != nil {
 			zlog.Debug(ctx).
 				Err(err).
@@ -547,9 +547,9 @@ func toProtoV4VulnerabilitiesMap(
 		}
 
 		description := v.Description
-		if advisoryExists {
+		if csafAdvisoryExists {
 			// Replace the description for the CVE with the description of the related Red Hat advisory.
-			description = advisory.Description
+			description = csafAdvisory.Description
 		}
 		if description == "" {
 			// No description provided, so fall back to NVD.
@@ -559,9 +559,9 @@ func toProtoV4VulnerabilitiesMap(
 		}
 
 		vulnPublished := v.Issued
-		if advisoryExists {
+		if csafAdvisoryExists {
 			// Replace the published date for the CVE with the published date of the related Red Hat advisory.
-			vulnPublished = advisory.ReleaseDate
+			vulnPublished = csafAdvisory.ReleaseDate
 		}
 		issued := issuedTime(vulnPublished, nvdVuln.Published)
 		if issued == nil {
@@ -569,10 +569,10 @@ func toProtoV4VulnerabilitiesMap(
 				Str("vuln_id", v.ID).
 				Str("vuln_name", v.Name).
 				Str("vuln_updater", v.Updater).
-				Bool("advisory_exists", advisoryExists).
+				Bool("csaf_advisory_exists", csafAdvisoryExists).
 				// Use Str instead of Time because the latter will format the time into
 				// RFC3339 form, which may not be valid for this.
-				Str("advisory_release_date", advisory.ReleaseDate.String()).
+				Str("csaf_advisory_release_date", csafAdvisory.ReleaseDate.String()).
 				Str("claircore_issued", v.Issued.String()).
 				Str("nvd_published", nvdVuln.Published).
 				Msg("issued time invalid: leaving empty")
@@ -594,6 +594,7 @@ func toProtoV4VulnerabilitiesMap(
 		vulnerabilities[k] = &v4.VulnerabilityReport_Vulnerability{
 			Id:                 v.ID,
 			Name:               name,
+			Advisory:           advisory(v),
 			Description:        description,
 			Issued:             issued,
 			Link:               v.Links,
@@ -1215,6 +1216,28 @@ func FindName(vuln *claircore.Vulnerability, p *regexp.Regexp) (string, bool) {
 		return v, true
 	}
 	return "", false
+}
+
+// advisory returns the vulnerability's related advisory.
+//
+// Only Red Hat advisories (RHSA/RHBA/RHEA) are supported at this time.
+func advisory(vuln *claircore.Vulnerability) string {
+	// Do not return an advisory if we do not want to separate
+	// CVEs and Red Hat advisories.
+	if !features.ScannerV4RedHatCVEs.Enabled() {
+		return ""
+	}
+
+	// If the vulnerability is not from Red Hat's VEX data,
+	// then it's definitely not an advisory we support at this time.
+	if !strings.EqualFold(vuln.Updater, RedHatUpdaterName) {
+		return ""
+	}
+
+	// The advisory name will be found in the vulnerability's links,
+	// if it exists, so just return what we get when looking for
+	// valid Red Hat advisory patterns in the links.
+	return RedHatAdvisoryPattern.FindString(vuln.Links)
 }
 
 // dedupeVulns deduplicates repeat vulnerabilities out of vulnIDs and returns the result.
