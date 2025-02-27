@@ -2,12 +2,13 @@ package gjson
 
 import (
 	"encoding/json"
+	"slices"
 	"sort"
 	"strings"
 
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/tidwall/gjson"
-	"k8s.io/utils/strings/slices"
 )
 
 // RowMapper is responsible for mapping a gjson.Result to a row representation in the form of two-dimensional
@@ -252,7 +253,7 @@ func (ct *columnTree) CreateColumns() [][]string {
 			}
 		}
 	}
-	deletionMap := make(map[int]bool)
+	deletionSet := set.IntSet{}
 	for columnIndex := 0; columnIndex < numberOfQueries; columnIndex++ {
 		// For each query, the query ID == columnID on the node. Retrieve all values for the specific columnID
 		// and auto expand, if required, them.
@@ -262,16 +263,15 @@ func (ct *columnTree) CreateColumns() [][]string {
 		if sort.SearchInts(strictColIndices, columnIndex) != len(strictColIndices) {
 			for i, item := range newCol {
 				if item == emptyReplacement {
-					deletionMap[i] = true
+					deletionSet.Add(i)
 				}
 			}
 		}
 	}
 	for i, column := range columns {
 		var purgedCol []string
-		for j, item := range column {
-			_, shouldDelete := deletionMap[j]
-			if !shouldDelete {
+		for _, item := range column {
+			if !deletionSet.Contains(i) {
 				purgedCol = append(purgedCol, item)
 			}
 		}
