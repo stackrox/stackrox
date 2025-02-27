@@ -1077,6 +1077,8 @@ EOT
 
 post_process_output() {
     local label="$1"
+    local default_severity="INFO"
+    local severity
     local msg
 
     while IFS="" read -r line; do
@@ -1090,12 +1092,15 @@ post_process_output() {
         #
         #   INFO: <timestamp>: [<label>] <message text>
         #
-        if [[ "$line" =~ ^(INFO|ERROR):\ [[:alpha:]]+\ [[:alpha:]]+\ [[:digit:]]+\ [[:digit:]]{2}:[[:digit:]]{2}:[[:digit:]]{2}\ [[:alpha:]]+\ [[:digit:]]+:\ (.*) ]]; then
-            msg="[${label}] ${BASH_REMATCH[2]}"
+        severity="$default_severity"
+
+        if [[ "$line" =~ ^(INFO|ERROR):(\ [[:alpha:]]+\ [[:alpha:]]+\ [[:digit:]]+\ [[:digit:]]{2}:[[:digit:]]{2}:[[:digit:]]{2}\ [[:alpha:]]+\ [[:digit:]]+:)?\ (.*) ]]; then
+            severity="${BASH_REMATCH[1]}"
+            msg="[${label}] ${BASH_REMATCH[3]}"
         else
             msg="[${label}] ${line}"
         fi
-        echo "INFO: $(date): $msg"
+        echo "$severity: $(date): $msg"
     done
 }
 export -f post_process_output
