@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"os"
 
 	"github.com/pkg/errors"
@@ -9,7 +8,6 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/x509utils"
-	"github.com/stackrox/rox/sensor/admission-control/fetchcerts"
 )
 
 const (
@@ -62,10 +60,6 @@ func configureCerts(namespace string) error {
 		return nil
 	}
 
-	log.Info("No usable certificates found. This is expected in some configurations. Attempting to fetch certificates from sensor ...")
-	if err := fetchcerts.FetchAndSetupCertificates(context.Background()); err != nil {
-		return errors.Wrap(err, "failed to fetch certificates from sensor")
-	}
-	log.Info("Obtained certificates from sensor. We're good to go.")
-	return nil
+	return errors.Errorf("no usable certificates found for namespace %q: certificate SAN must match %s.svc",
+		namespace, mtls.AdmissionControlSubject.HostnameForNamespace(namespace))
 }
