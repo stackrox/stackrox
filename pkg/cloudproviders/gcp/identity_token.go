@@ -7,11 +7,11 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/go-jose/go-jose/v4"
 	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/httputil"
+	pkgjwt "github.com/stackrox/rox/pkg/jwt"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -91,7 +91,7 @@ func getMetadataFromIdentityToken(ctx context.Context) (*gcpMetadata, error) {
 		log.Warnf("Failed to fetch Google OAuth2 certs: %v", err)
 	}
 
-	parsedToken, err := jwt.ParseSigned(identityToken, []jose.SignatureAlgorithm{jose.RS256})
+	parsedToken, err := pkgjwt.ParseSigned(identityToken)
 	if err != nil {
 		return nil, err
 	}
