@@ -26,7 +26,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
-	"gorm.io/gorm"
 )
 
 const (
@@ -707,27 +706,6 @@ func (s *storeImpl) deleteImageComponents(ctx context.Context, tx *postgres.Tx, 
 	return nil
 }
 
-// GetIDs returns all the IDs for the store
-func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "ImageIDs")
-
-	return pgutils.Retry2(ctx, func() ([]string, error) {
-		return s.retryableGetIDs(ctx)
-	})
-}
-
-func (s *storeImpl) retryableGetIDs(ctx context.Context) ([]string, error) {
-	rows, err := s.db.Query(ctx, getImageIDsStmt)
-	if err != nil {
-		return nil, pgutils.ErrNilIfNoRows(err)
-	}
-	ids, err := scanIDs(rows)
-	if err != nil {
-		return nil, err
-	}
-	return ids, nil
-}
-
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice
 func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Image, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "Image")
@@ -1063,37 +1041,4 @@ func scanIDs(rows pgx.Rows) ([]string, error) {
 		ids = append(ids, id)
 	}
 	return ids, rows.Err()
-}
-
-// // Used for testing
-func dropAllTablesInImageTree(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS images CASCADE")
-	dropTableImagesLayers(ctx, db)
-	dropTableImageComponents(ctx, db)
-	dropTableImageCVEs(ctx, db)
-}
-
-func dropTableImagesLayers(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS images_Layers CASCADE")
-}
-
-func dropTableImageComponents(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+imageComponentsV2Table+" CASCADE")
-}
-
-func dropTableImageCVEs(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+imageComponentsV2CVEsTable+" CASCADE")
-}
-
-// Destroy drops image table.
-func Destroy(ctx context.Context, db postgres.DB) {
-	dropAllTablesInImageTree(ctx, db)
-}
-
-// CreateTableAndNewStore returns a new Store instance for testing
-func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB, noUpdateTimestamps bool) store.Store {
-	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImagesStmt)
-	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImageComponentV2Stmt)
-	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImageCvesV2Stmt)
-	return New(db, noUpdateTimestamps, concurrency.NewKeyFence())
 }

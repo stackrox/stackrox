@@ -4,15 +4,18 @@ package postgres
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
 	cveStore "github.com/stackrox/rox/central/cve/image/v2/datastore/store/postgres"
+	"github.com/stackrox/rox/central/image/datastore/store"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
-	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
@@ -28,32 +31,43 @@ var (
 
 type ImagesStoreSuite struct {
 	suite.Suite
+
+	ctx        context.Context
+	testDB     *pgtest.TestPostgres
+	store      store.Store
+	cvePgStore cveStore.Store
 }
 
 func TestImagesStore(t *testing.T) {
 	suite.Run(t, new(ImagesStoreSuite))
 }
 
-func (s *ImagesStoreSuite) TestStore() {
+func (s *ImagesStoreSuite) SetupSuite() {
 	if !features.FlattenCVEData.Enabled() {
 		s.T().Setenv("ROX_FLATTEN_CVE_DATA", "true")
 	}
 
-	ctx := sac.WithAllAccess(context.Background())
+	s.ctx = sac.WithAllAccess(context.Background())
+	s.testDB = pgtest.ForT(s.T())
 
-	source := pgtest.GetConnectionString(s.T())
-	config, err := postgres.ParseConfig(source)
+	s.store = New(s.testDB.DB, false, concurrency.NewKeyFence())
+	s.cvePgStore = cveStore.New(s.testDB.DB)
+}
+
+func (s *ImagesStoreSuite) SetupTest() {
+	_, err := s.testDB.DB.Exec(s.ctx, "TRUNCATE "+pkgSchema.ImageCvesV2TableName+" CASCADE")
 	s.Require().NoError(err)
-	pool, err := postgres.New(ctx, config)
-	s.NoError(err)
-	defer pool.Close()
+	_, err = s.testDB.DB.Exec(s.ctx, "TRUNCATE "+pkgSchema.ImageComponentV2TableName+" CASCADE")
+	s.Require().NoError(err)
+	_, err = s.testDB.DB.Exec(s.ctx, "TRUNCATE "+pkgSchema.ImagesTableName+" CASCADE")
+	s.Require().NoError(err)
+}
 
-	Destroy(ctx, pool)
+func (s *ImagesStoreSuite) TearDownSuite() {
+	s.testDB.Teardown(s.T())
+}
 
-	gormDB := pgtest.OpenGormDB(s.T(), source)
-	defer pgtest.CloseGormDB(s.T(), gormDB)
-	store := CreateTableAndNewStore(ctx, pool, gormDB, false)
-
+func (s *ImagesStoreSuite) TestStore() {
 	image := fixtures.GetImage()
 	s.NoError(testutils.FullInit(image, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 	for _, comp := range image.GetScan().GetComponents() {
@@ -65,29 +79,29 @@ func (s *ImagesStoreSuite) TestStore() {
 		}
 	}
 
-	foundImage, exists, err := store.Get(ctx, image.GetId())
+	foundImage, exists, err := s.store.Get(s.ctx, image.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundImage)
 
-	s.NoError(store.Upsert(ctx, image))
-	foundImage, exists, err = store.Get(ctx, image.GetId())
+	s.NoError(s.store.Upsert(s.ctx, image))
+	foundImage, exists, err = s.store.Get(s.ctx, image.GetId())
 	s.NoError(err)
 	s.True(exists)
 	cloned := image.CloneVT()
 
 	protoassert.Equal(s.T(), cloned, foundImage)
 
-	imageCount, err := store.Count(ctx, search.EmptyQuery())
+	imageCount, err := s.store.Count(s.ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(imageCount, 1)
 
-	imageExists, err := store.Exists(ctx, image.GetId())
+	imageExists, err := s.store.Exists(s.ctx, image.GetId())
 	s.NoError(err)
 	s.True(imageExists)
-	s.NoError(store.Upsert(ctx, image))
+	s.NoError(s.store.Upsert(s.ctx, image))
 
-	foundImage, exists, err = store.Get(ctx, image.GetId())
+	foundImage, exists, err = s.store.Get(s.ctx, image.GetId())
 	s.NoError(err)
 	s.True(exists)
 
@@ -95,33 +109,14 @@ func (s *ImagesStoreSuite) TestStore() {
 	cloned.LastUpdated = foundImage.LastUpdated
 	protoassert.Equal(s.T(), cloned, foundImage)
 
-	s.NoError(store.Delete(ctx, image.GetId()))
-	foundImage, exists, err = store.Get(ctx, image.GetId())
+	s.NoError(s.store.Delete(s.ctx, image.GetId()))
+	foundImage, exists, err = s.store.Get(s.ctx, image.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundImage)
-
-	s.T().Setenv("ROX_FLATTEN_CVE_DATA", "false")
 }
 
 func (s *ImagesStoreSuite) TestNVDCVSS() {
-	if !features.FlattenCVEData.Enabled() {
-		s.T().Setenv("ROX_FLATTEN_CVE_DATA", "true")
-	}
-
-	ctx := sac.WithAllAccess(context.Background())
-	source := pgtest.GetConnectionString(s.T())
-	config, err := postgres.ParseConfig(source)
-	s.Require().NoError(err)
-	pool, err := postgres.New(ctx, config)
-	s.NoError(err)
-	defer pool.Close()
-	Destroy(ctx, pool)
-
-	gormDB := pgtest.OpenGormDB(s.T(), source)
-	defer pgtest.CloseGormDB(s.T(), gormDB)
-	store := CreateTableAndNewStore(ctx, pool, gormDB, false)
-
 	image := fixtures.GetImage()
 	s.NoError(testutils.FullInit(image, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 	nvdCvss := &storage.CVSSScore{
@@ -139,51 +134,29 @@ func (s *ImagesStoreSuite) TestNVDCVSS() {
 
 	}
 
-	s.NoError(store.Upsert(ctx, image))
-	foundImage, exists, err := store.Get(ctx, image.GetId())
+	s.NoError(s.store.Upsert(s.ctx, image))
+	foundImage, exists, err := s.store.Get(s.ctx, image.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.NotEmpty(foundImage)
 
-	cvePgStore := cveStore.CreateTableAndNewStore(ctx, pool, gormDB)
-	cves, err := cvePgStore.GetIDs(ctx)
+	cves, err := s.cvePgStore.GetIDs(s.ctx)
 	s.Require().NoError(err)
 	s.Require().NotEmpty(cves)
 	id := cves[0]
-	imageCve, _, err := cvePgStore.Get(ctx, id)
+	imageCve, _, err := s.cvePgStore.Get(s.ctx, id)
 	s.Require().NoError(err)
 	s.Require().NotEmpty(imageCve)
 	s.Equal(float32(10), imageCve.GetNvdcvss())
 	s.Require().NotEmpty(imageCve.GetCveBaseInfo().GetCvssMetrics())
 	protoassert.Equal(s.T(), nvdCvss, imageCve.GetCveBaseInfo().GetCvssMetrics()[0])
-
-	s.T().Setenv("ROX_FLATTEN_CVE_DATA", "false")
 }
 
 func (s *ImagesStoreSuite) TestUpsert() {
-	if !features.FlattenCVEData.Enabled() {
-		s.T().Setenv("ROX_FLATTEN_CVE_DATA", "true")
-	}
-
-	ctx := sac.WithAllAccess(context.Background())
-
-	source := pgtest.GetConnectionString(s.T())
-	config, err := postgres.ParseConfig(source)
-	s.Require().NoError(err)
-	pool, err := postgres.New(ctx, config)
-	s.NoError(err)
-	defer pool.Close()
-
-	Destroy(ctx, pool)
-
-	gormDB := pgtest.OpenGormDB(s.T(), source)
-	defer pgtest.CloseGormDB(s.T(), gormDB)
-	store := CreateTableAndNewStore(ctx, pool, gormDB, false)
-
 	image := getTestImage("image1")
 
-	s.NoError(store.Upsert(ctx, image))
-	foundImage, exists, err := store.Get(ctx, image.GetId())
+	s.NoError(s.store.Upsert(s.ctx, image))
+	foundImage, exists, err := s.store.Get(s.ctx, image.GetId())
 	s.NoError(err)
 	s.True(exists)
 	cloned := image.CloneVT()
@@ -199,8 +172,8 @@ func (s *ImagesStoreSuite) TestUpsert() {
 	// Add a new component with "cve1" that has new times
 	// Ensure old times are associated with the CVE in the new component.
 	image.Scan.Components = append(image.Scan.Components, getComponent3())
-	s.NoError(store.Upsert(ctx, image))
-	foundImage, exists, err = store.Get(ctx, image.GetId())
+	s.NoError(s.store.Upsert(s.ctx, image))
+	foundImage, exists, err = s.store.Get(s.ctx, image.GetId())
 	s.NoError(err)
 	s.True(exists)
 
@@ -217,8 +190,8 @@ func (s *ImagesStoreSuite) TestUpsert() {
 	// Replace all components removing "cve1".
 	// Ensure "cve1" is not returned with the image.
 	image.Scan.Components = getTestImageComponentsFixedCVE1()
-	s.NoError(store.Upsert(ctx, image))
-	foundImage, exists, err = store.Get(ctx, image.GetId())
+	s.NoError(s.store.Upsert(s.ctx, image))
+	foundImage, exists, err = s.store.Get(s.ctx, image.GetId())
 	s.NoError(err)
 	s.True(exists)
 	cloned = image.CloneVT()
@@ -232,13 +205,143 @@ func (s *ImagesStoreSuite) TestUpsert() {
 	}
 	protoassert.Equal(s.T(), cloned, foundImage)
 
-	s.NoError(store.Delete(ctx, image.GetId()))
-	foundImage, exists, err = store.Get(ctx, image.GetId())
+	s.NoError(s.store.Delete(s.ctx, image.GetId()))
+	foundImage, exists, err = s.store.Get(s.ctx, image.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundImage)
+}
 
-	s.T().Setenv("ROX_FLATTEN_CVE_DATA", "false")
+func (s *ImagesStoreSuite) TestUpdateVulnState() {
+	image := getTestImage("image1")
+	image2 := getTestImage("image2")
+
+	// Add an image with CVE1
+	s.NoError(s.store.Upsert(s.ctx, image))
+	_, exists, err := s.store.Get(s.ctx, image.GetId())
+	s.NoError(err)
+	s.True(exists)
+
+	// Add a second image with CVE1
+	s.NoError(s.store.Upsert(s.ctx, image2))
+	_, exists, err = s.store.Get(s.ctx, image2.GetId())
+	s.NoError(err)
+	s.True(exists)
+
+	s.NoError(s.store.UpdateVulnState(s.ctx, "cve1", []string{image.GetId()}, storage.VulnerabilityState_FALSE_POSITIVE))
+
+	walkFn := func(obj *storage.ImageCVEV2) error {
+		switch obj.GetImageId() {
+		case image.GetId():
+			if obj.GetCveBaseInfo().GetCve() == "cve1" && obj.GetState() != storage.VulnerabilityState_FALSE_POSITIVE {
+				return fmt.Errorf("expected CVE1 of image1 to be false positive but got %s", obj.GetState())
+			}
+		case image2.GetId():
+			if obj.GetState() != storage.VulnerabilityState_OBSERVED {
+				return fmt.Errorf("expected CVE1 of image2 to be observed but got %s", obj.GetState())
+			}
+		}
+		return nil
+	}
+
+	s.NoError(s.cvePgStore.Walk(s.ctx, walkFn))
+}
+
+func (s *ImagesStoreSuite) TestGetManyImageMetadata() {
+	image := getTestImage("image1")
+	image2 := getTestImage("image2")
+
+	// Add an image with CVE1
+	s.NoError(s.store.Upsert(s.ctx, image))
+	_, exists, err := s.store.Get(s.ctx, image.GetId())
+	s.NoError(err)
+	s.True(exists)
+
+	// Add a second image with CVE1
+	s.NoError(s.store.Upsert(s.ctx, image2))
+	_, exists, err = s.store.Get(s.ctx, image2.GetId())
+	s.NoError(err)
+	s.True(exists)
+
+	searchedIndexes := []string{image.GetId(), image2.GetId()}
+	returnedImages, notFoundIDs, err := s.store.GetManyImageMetadata(s.ctx, searchedIndexes)
+	s.NoError(err)
+	s.Empty(notFoundIDs)
+	s.Equal(2, len(returnedImages))
+
+	for _, image := range returnedImages {
+		s.Nil(image.GetScan().GetComponents())
+		s.Contains(searchedIndexes, image.GetId())
+	}
+
+	searchedIndexes = []string{image.GetId(), image2.GetId(), "nonsense"}
+	returnedImages, notFoundIDs, err = s.store.GetManyImageMetadata(s.ctx, searchedIndexes)
+	s.NoError(err)
+	s.Contains(notFoundIDs, 2)
+	s.Equal(1, len(notFoundIDs))
+	s.Equal(2, len(returnedImages))
+}
+
+func (s *ImagesStoreSuite) TestWalkByQuery() {
+	image := getTestImage("image1")
+	image2 := getTestImage("image2")
+
+	// Add an image with CVE1
+	s.NoError(s.store.Upsert(s.ctx, image))
+	_, exists, err := s.store.Get(s.ctx, image.GetId())
+	s.NoError(err)
+	s.True(exists)
+
+	// Add a second image with CVE1
+	s.NoError(s.store.Upsert(s.ctx, image2))
+	_, exists, err = s.store.Get(s.ctx, image2.GetId())
+	s.NoError(err)
+	s.True(exists)
+
+	walkFn := func(obj *storage.Image) error {
+		if obj.GetId() != image.GetId() {
+			return fmt.Errorf("expected image1 but got %s", obj.GetId())
+		}
+		return nil
+	}
+
+	q := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, image.GetId()).ProtoQuery()
+	s.NoError(s.store.WalkByQuery(s.ctx, q, walkFn))
+}
+
+func (s *ImagesStoreSuite) TestGetMany() {
+	image := getTestImage("image1")
+	image2 := getTestImage("image2")
+
+	// Add an image with CVE1
+	s.NoError(s.store.Upsert(s.ctx, image))
+	_, exists, err := s.store.Get(s.ctx, image.GetId())
+	s.NoError(err)
+	s.True(exists)
+
+	// Add a second image with CVE1
+	s.NoError(s.store.Upsert(s.ctx, image2))
+	_, exists, err = s.store.Get(s.ctx, image2.GetId())
+	s.NoError(err)
+	s.True(exists)
+
+	searchedIndexes := []string{image.GetId(), image2.GetId()}
+	returnedImages, notFoundIDs, err := s.store.GetMany(s.ctx, searchedIndexes)
+	s.NoError(err)
+	s.Empty(notFoundIDs)
+	s.Equal(2, len(returnedImages))
+
+	for _, image := range returnedImages {
+		s.NotNil(image.GetScan().GetComponents())
+		s.Contains(searchedIndexes, image.GetId())
+	}
+
+	searchedIndexes = []string{image.GetId(), image2.GetId(), "nonsense"}
+	returnedImages, notFoundIDs, err = s.store.GetMany(s.ctx, searchedIndexes)
+	s.NoError(err)
+	s.Contains(notFoundIDs, 2)
+	s.Equal(1, len(notFoundIDs))
+	s.Equal(2, len(returnedImages))
 }
 
 func getTestImage(id string) *storage.Image {
