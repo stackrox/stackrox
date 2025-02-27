@@ -146,6 +146,10 @@ jobs:
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.6
     steps:
+    - name: Set Postgres version
+      run: |
+        echo "/usr/pgsql-15/bin" >> "${GITHUB_PATH}"
+
     - name: Checkout
       uses: actions/checkout@v4
       with:
