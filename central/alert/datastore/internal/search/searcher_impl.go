@@ -39,7 +39,7 @@ func (ds *searcherImpl) SearchAlerts(ctx context.Context, q *v1.Query) ([]*v1.Se
 // SearchListAlerts retrieves list alerts from the storage, passing excludeResolved = true will exclude resolved alerts unless the query has explicitly added Violation State = Resolved to the filter
 func (ds *searcherImpl) SearchListAlerts(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*storage.ListAlert, error) {
 	if excludeResolved {
-		q = applyDefaultState(q)
+		q = ApplyDefaultState(q)
 	}
 	alerts, err := ds.storage.GetByQuery(ctx, q)
 	if err != nil {
@@ -78,7 +78,7 @@ func (ds *searcherImpl) searchListAlerts(ctx context.Context, q *v1.Query) ([]*s
 
 func (ds *searcherImpl) searchAlerts(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*storage.Alert, error) {
 	if excludeResolved {
-		q = applyDefaultState(q)
+		q = ApplyDefaultState(q)
 	}
 	return ds.storage.GetByQuery(ctx, q)
 }
@@ -130,7 +130,8 @@ func formatSearcher(searcher search.Searcher) AlertSearcher {
 	return withDefaultViolationState
 }
 
-func applyDefaultState(q *v1.Query) *v1.Query {
+// ApplyDefaultState extends the input query to restrict the results to active and attempted alerts
+func ApplyDefaultState(q *v1.Query) *v1.Query {
 	var querySpecifiesStateField bool
 	search.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
 		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
@@ -149,6 +150,7 @@ func applyDefaultState(q *v1.Query) *v1.Query {
 			storage.ViolationState_ACTIVE.String(),
 			storage.ViolationState_ATTEMPTED.String()).ProtoQuery())
 		cq.Pagination = q.GetPagination()
+		cq.GroupBy = q.GetGroupBy()
 		return cq
 	}
 	return q
@@ -167,14 +169,14 @@ type defaultViolationStateSearcher struct {
 
 func (ds *defaultViolationStateSearcher) Search(ctx context.Context, q *v1.Query, excludeResolved bool) ([]search.Result, error) {
 	if excludeResolved {
-		q = applyDefaultState(q)
+		q = ApplyDefaultState(q)
 	}
 	return ds.searcher.Search(ctx, q)
 }
 
 func (ds *defaultViolationStateSearcher) Count(ctx context.Context, q *v1.Query, excludeResolved bool) (int, error) {
 	if excludeResolved {
-		q = applyDefaultState(q)
+		q = ApplyDefaultState(q)
 	}
 	return ds.searcher.Count(ctx, q)
 }
