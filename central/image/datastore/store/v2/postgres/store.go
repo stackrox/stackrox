@@ -1028,17 +1028,3 @@ func gatherKeys(parts *imagePartsAsSlice) [][]byte {
 	}
 	return keys
 }
-
-func scanIDs(rows pgx.Rows) ([]string, error) {
-	defer rows.Close()
-	var ids []string
-
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		ids = append(ids, id)
-	}
-	return ids, rows.Err()
-}
