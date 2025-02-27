@@ -359,6 +359,15 @@ jobs:
         QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
         QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
     steps:
+      - name: Free disk space
+        # https://github.com/actions/virtual-environments/issues/709
+        run: |
+          echo "========= Original CI disk space"
+          df -h
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          echo "========= After clean up CI disk space"
+          df -h
       - name: Setup build env
         run: |
           case "${{ matrix.name }}" in
