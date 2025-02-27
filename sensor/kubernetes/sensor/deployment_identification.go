@@ -6,7 +6,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/go-jose/go-jose/v3/jwt"
+	"github.com/go-jose/go-jose/v4"
+	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -35,7 +36,7 @@ func populateFromServiceAccountTokenFile(out *storage.SensorDeploymentIdentifica
 		return errors.Wrapf(err, "reading token from file %s", tokenFile)
 	}
 
-	saToken, err := jwt.ParseSigned(string(bytes.TrimSpace(tokenBytes)))
+	saToken, err := jwt.ParseSigned(string(bytes.TrimSpace(tokenBytes)), []jose.SignatureAlgorithm{jose.RS256})
 	if err != nil {
 		return errors.Wrapf(err, "parsing service account JWT from file %s", tokenFile)
 	}

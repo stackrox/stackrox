@@ -7,7 +7,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/go-jose/go-jose/v3/jwt"
+	"github.com/go-jose/go-jose/v4"
+	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/httputil"
@@ -90,7 +91,7 @@ func getMetadataFromIdentityToken(ctx context.Context) (*gcpMetadata, error) {
 		log.Warnf("Failed to fetch Google OAuth2 certs: %v", err)
 	}
 
-	parsedToken, err := jwt.ParseSigned(identityToken)
+	parsedToken, err := jwt.ParseSigned(identityToken, []jose.SignatureAlgorithm{jose.RS256})
 	if err != nil {
 		return nil, err
 	}
@@ -112,8 +113,8 @@ func getMetadataFromIdentityToken(ctx context.Context) (*gcpMetadata, error) {
 	}
 
 	expectedClaims := jwt.Expected{
-		Issuer:   "https://accounts.google.com",
-		Audience: jwt.Audience{audience},
+		Issuer:      "https://accounts.google.com",
+		AnyAudience: jwt.Audience{audience},
 	}
 
 	if err := claims.Validate(expectedClaims); err != nil {
