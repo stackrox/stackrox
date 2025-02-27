@@ -236,6 +236,7 @@ func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
 }
 
 func withSelectCVECoreResponseQuery(q *v1.Query, cveIDsToFilter []string, options views.ReadOptions) *v1.Query {
+	log.Info("SHREWS -- withSelectCVECoreResponseQuery")
 	cloned := q.CloneVT()
 	if len(cveIDsToFilter) > 0 {
 		if features.FlattenCVEData.Enabled() {
@@ -276,6 +277,7 @@ func withSelectCVECoreResponseQuery(q *v1.Query, cveIDsToFilter []string, option
 }
 
 func (v *imageCVECoreViewImpl) getFilteredCVEs(ctx context.Context, q *v1.Query) ([]string, error) {
+	log.Info("SHREWS -- withSelectCVEQuery")
 	var cveIDsToFilter []string
 
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
