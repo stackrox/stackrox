@@ -6,11 +6,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/go-jose/go-jose/v4"
-	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	pkgjwt "github.com/stackrox/rox/pkg/jwt"
 	"github.com/stackrox/rox/pkg/namespaces"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -36,7 +35,7 @@ func populateFromServiceAccountTokenFile(out *storage.SensorDeploymentIdentifica
 		return errors.Wrapf(err, "reading token from file %s", tokenFile)
 	}
 
-	saToken, err := jwt.ParseSigned(string(bytes.TrimSpace(tokenBytes)), []jose.SignatureAlgorithm{jose.RS256})
+	saToken, err := pkgjwt.ParseSigned(string(bytes.TrimSpace(tokenBytes)))
 	if err != nil {
 		return errors.Wrapf(err, "parsing service account JWT from file %s", tokenFile)
 	}
