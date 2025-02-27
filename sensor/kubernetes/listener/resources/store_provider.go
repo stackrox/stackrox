@@ -39,12 +39,14 @@ func InitializeStore() *StoreProvider {
 	if memSizeSetting < 0 {
 		memSizeSetting = pastClusterEntitiesMemorySize.DefaultValue()
 	}
+	// TODO(ROX-28242): Disable ROX_PAST_CLUSTER_ENTITIES_MEMORY_SIZE option.
+	memSizeSetting = 0
 	log.Infof("Initializing cluster entities store with memory that will last for %d ticks", memSizeSetting)
 	deployStore := newDeploymentStore()
 	podStore := newPodStore()
 	svcStore := newServiceStore()
 	nodeStore := newNodeStore()
-	entityStore := clusterentities.NewStore()
+	entityStore := clusterentities.NewStoreWithMemory(uint16(memSizeSetting), debugClusterEntitiesStore.BooleanSetting())
 	if debugClusterEntitiesStore.BooleanSetting() {
 		go entityStore.StartDebugServer()
 	}
