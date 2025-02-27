@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"bufio"
 	"io"
 	"strings"
 )
@@ -76,7 +77,10 @@ func (w *formattingWriter) SetIndent(indent ...int) {
 func (w *formattingWriter) WriteString(s string) (int, error) {
 	w.written = 0
 	var err error
-	for word := range words(s) {
+	tokenScanner := bufio.NewScanner(strings.NewReader(s))
+	tokenScanner.Split(wordsAndDelimeters)
+	for tokenScanner.Scan() {
+		token := tokenScanner.Text()
 		if err != nil {
 			break
 		}
@@ -86,26 +90,26 @@ func (w *formattingWriter) WriteString(s string) (int, error) {
 			}
 			w.indentReset = false
 		}
-		if word == "\n" {
+		if token == "\n" {
 			err = w.ln()
 			continue
 		}
-		length := len(word)
-		if word == "\t" {
+		length := len(token)
+		if token == "\t" {
 			length = tabWidth
 		}
 		if w.currentLine+length > w.width {
 			if err = w.ln(); err != nil {
 				break
 			}
-			if word == " " {
+			if token == " " {
 				continue
 			}
 			if err = w.writePadding(); err != nil {
 				break
 			}
 		}
-		err = w.write(word)
+		err = w.write(token)
 	}
 	return w.written, err
 }
