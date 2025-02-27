@@ -176,8 +176,8 @@ func (i *tlsIssuerImpl) deactivate() {
 	i.activateLock.Lock()
 	defer i.activateLock.Unlock()
 
-	i.cancelRefresher()
 	if i.certRefresher != nil {
+		i.cancelRefresher()
 		i.certRefresher.Stop()
 		i.certRefresher = nil
 	}

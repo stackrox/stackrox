@@ -181,6 +181,25 @@ func (s *securedClusterTLSIssuerTests) TestSecuredClusterTLSIssuerStartStopSucce
 	}
 }
 
+func (s *securedClusterTLSIssuerTests) TestSecuredClusterTLSIssuerStopStartStop() {
+	fixture := newSecuredClusterTLSIssuerFixture(fakeK8sClientConfig{})
+	fixture.mockForStart(mockForStartConfig{})
+	fixture.certRefresher.On("Stop").Once()
+
+	// calling Start / Stop out of order should be OK
+	fixture.tlsIssuer.Stop(nil)
+
+	startErr := fixture.tlsIssuer.Start()
+	fixture.tlsIssuer.Notify(common.SensorComponentEventOfflineMode)
+	fixture.tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
+	assert.NotNil(s.T(), fixture.tlsIssuer.certRefresher)
+	fixture.tlsIssuer.Stop(nil)
+
+	assert.NoError(s.T(), startErr)
+	assert.Nil(s.T(), fixture.tlsIssuer.certRefresher)
+	fixture.assertMockExpectations(s.T())
+}
+
 func (s *securedClusterTLSIssuerTests) TestSecuredClusterTLSIssuerStartFailure() {
 	fixture := newSecuredClusterTLSIssuerFixture(fakeK8sClientConfig{})
 	fixture.mockForStart(mockForStartConfig{refresherStartErr: errForced})
