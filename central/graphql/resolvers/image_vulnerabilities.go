@@ -357,7 +357,6 @@ func imageCveToVulnerabilityWithSeverity(in []*storage.ImageCVE) []Vulnerability
 	return ret
 }
 
-// TODO see about generic
 func imageCveV2ToVulnerabilityWithSeverity(in []*storage.ImageCVEV2) []VulnerabilityWithSeverity {
 	ret := make([]VulnerabilityWithSeverity, len(in))
 	for i, vuln := range in {
@@ -905,8 +904,7 @@ func (resolver *imageCVEV2Resolver) FixedByVersion(ctx context.Context) (string,
 		return "", nil
 	}
 
-	query := search.NewQueryBuilder().AddExactMatches(search.ComponentID, scope.ID).AddExactMatches(search.CVEID, resolver.data.GetId()).ProtoQuery()
-	// TODO:  verify this
+	query := search.NewQueryBuilder().AddExactMatches(search.ComponentID, scope.ID).AddExactMatches(search.CVE, resolver.data.GetCveBaseInfo().GetCve()).ProtoQuery()
 	components, err := resolver.root.ImageComponentV2DataStore.SearchRawImageComponents(resolver.ctx, query)
 	if err != nil || len(components) == 0 {
 		return "", err
@@ -1153,5 +1151,6 @@ func (resolver *imageCVEV2Resolver) imageVulnerabilityScopeContext(ctx context.C
 }
 
 func (resolver *imageCVEV2Resolver) getImageCVEQuery() *v1.Query {
-	return search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.data.GetId()).ProtoQuery()
+	log.Info("SHREWS -- getImageCVEQuery")
+	return search.NewQueryBuilder().AddExactMatches(search.CVE, resolver.data.GetCveBaseInfo().GetCve()).ProtoQuery()
 }
