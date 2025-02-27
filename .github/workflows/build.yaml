@@ -401,7 +401,7 @@ jobs:
           set -x
           df -h
           for delete in /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL /mnt/opt/hostedtoolcache/Ruby; do
-            df -h "/mnt${delete:?}"
+            du -hs "/mnt${delete:?}"
             rm -rf "/mnt${delete:?}"
           done
           df -h
@@ -658,7 +658,7 @@ jobs:
           set -x
           df -h
           for delete in /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL /mnt/opt/hostedtoolcache/Ruby; do
-            df -h "/mnt${delete:?}"
+            du -hs "/mnt${delete:?}"
             rm -rf "/mnt${delete:?}"
           done
           df -h
