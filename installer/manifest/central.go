@@ -102,7 +102,7 @@ func (g *CentralGenerator) createCentralConfig() Resource {
 	cm.SetGroupVersionKind(v1.SchemeGroupVersion.WithKind("ConfigMap"))
 	return Resource{
 		Object:       &cm,
-		Name:         "central-config",
+		Name:         cm.Name,
 		IsUpdateable: true,
 	}
 }
@@ -422,7 +422,7 @@ func (g *CentralGenerator) createCentralDeployment(m *manifestGenerator) Resourc
 
 	return Resource{
 		Object:       &deployment,
-		Name:         "central",
+		Name:         deployment.Name,
 		IsUpdateable: true,
 	}
 }
