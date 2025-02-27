@@ -52,25 +52,25 @@ func (g ScannerGenerator) Generate(ctx context.Context, m *manifestGenerator) ([
 		genRoleBinding("scanner", "use-nonroot-v2-scc", m.Config.Namespace),
 		scannerTls,
 		svc,
-		g.genScannerConfig(),
+		g.genScannerConfig(m),
 		g.genScannerDeployment(),
 	}, nil
 }
 
-func (g *ScannerGenerator) genScannerConfig() Resource {
+func (g *ScannerGenerator) genScannerConfig(m *manifestGenerator) Resource {
 	cm := v1.ConfigMap{
 		Data: map[string]string{
-			"config.yaml": `# Configuration file for scanner.
+			"config.yaml": fmt.Sprintf(`# Configuration file for scanner.
 scanner:
-  centralEndpoint: https://central.stackrox.svc
-  sensorEndpoint: https://sensor.stackrox.svc
+  centralEndpoint: https://central.%s.svc
+  sensorEndpoint: https://sensor.%s.svc
   database:
     # Database driver
     type: pgsql
     options:
       # PostgreSQL Connection string
       # https://www.postgresql.org/docs/current/static/libpq-connect.html#LIBPQ-CONNSTRING
-      source: host=scanner-db.stackrox.svc port=5432 user=postgres sslmode=verify-full statement_timeout=60000
+      source: host=scanner-db.%s.svc port=5432 user=postgres sslmode=verify-full statement_timeout=60000
 
       # Number of elements kept in the cache
       # Values unlikely to change (e.g. namespaces) are cached in order to save prevent needless roundtrips to the database.
@@ -99,7 +99,7 @@ scanner:
   # The max size of image file reader buffer. Image file data beyond this limit are overflowed to temporary files on disk.
   # maxImageFileReaderBufferSizeMB: 100
 
-  exposeMonitoring: false`,
+  exposeMonitoring: false`, m.Config.Namespace, m.Config.Namespace, m.Config.Namespace),
 		},
 	}
 	cm.SetName("scanner-config")
