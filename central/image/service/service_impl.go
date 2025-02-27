@@ -19,7 +19,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
@@ -233,8 +232,13 @@ func (s *serviceImpl) saveImage(img *storage.Image) error {
 
 // ScanImageInternal handles an image request from Sensor and Admission Controller.
 func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
-	err := s.acquireScanSemaphore()
+	err := s.acquireScanSemaphore(ctx)
 	if err != nil {
+		log.Errorw("Failed to acquire scan semaphore",
+			logging.ImageName(request.GetImage().GetName().GetFullName()),
+			logging.ImageID(request.GetImage().GetId()),
+			logging.Err(err),
+		)
 		return nil, err
 	}
 	defer s.internalScanSemaphore.Release(1)
@@ -417,8 +421,13 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 // specified by the given components and scan notes.
 // This is meant to be called by Sensor.
 func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, request *v1.GetImageVulnerabilitiesInternalRequest) (*v1.ScanImageInternalResponse, error) {
-	err := s.acquireScanSemaphore()
+	err := s.acquireScanSemaphore(ctx)
 	if err != nil {
+		log.Errorw("Failed to acquire scan semaphore",
+			logging.ImageName(request.GetImageName().GetFullName()),
+			logging.ImageID(request.GetImageId()),
+			logging.Err(err),
+		)
 		return nil, err
 	}
 	defer s.internalScanSemaphore.Release(1)
@@ -462,8 +471,15 @@ func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, reque
 	return internalScanRespFromImage(img), nil
 }
 
-func (s *serviceImpl) acquireScanSemaphore() error {
-	if err := s.internalScanSemaphore.Acquire(concurrency.AsContext(concurrency.Timeout(maxSemaphoreWaitTime)), 1); err != nil {
+func (s *serviceImpl) acquireScanSemaphore(ctx context.Context) error {
+	semaphoreCtx, cancel := context.WithTimeout(ctx, maxSemaphoreWaitTime)
+	defer cancel()
+	if err := s.internalScanSemaphore.Acquire(semaphoreCtx, 1); err != nil {
+		// If the context was canceled, we do not want to indicate the client to retry.
+		if errors.Is(err, context.Canceled) {
+			return errors.Wrap(err, "acquiring scan semaphore")
+		}
+
 		// Aborted indicates the operation was aborted, typically due to a concurrency
 		// issues.  Clients should retry by default on Aborted.
 		s, err := status.New(codes.Aborted, err.Error()).WithDetails(&v1.ScanImageInternalResponseDetails_TooManyParallelScans{})
@@ -475,8 +491,14 @@ func (s *serviceImpl) acquireScanSemaphore() error {
 }
 
 func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.EnrichLocalImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
-	err := s.acquireScanSemaphore()
+	err := s.acquireScanSemaphore(ctx)
 	if err != nil {
+		log.Errorw("Failed to acquire scan semaphore",
+			logging.ImageName(request.GetImageName().GetFullName()),
+			logging.ImageID(request.GetImageId()),
+			logging.Err(err),
+			logging.String("request_id", request.GetRequestId()),
+		)
 		return nil, err
 	}
 
