@@ -33,7 +33,6 @@ func executeUpdateDBCommand(t *testing.T, serverURL string) (*bytes.Buffer, *byt
 
 	cmd := Command(env)
 	flags.AddCentralConnectionFlags(cmd)
-	flags.AddCentralAuthFlags(cmd)
 
 	cmd.SilenceUsage = true
 	cmd.SetOut(io.Discard)

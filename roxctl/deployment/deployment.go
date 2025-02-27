@@ -23,6 +23,5 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	// default timeout.
 	flags.AddTimeoutWithDefault(c, 10*time.Minute)
 	flags.AddCentralConnectionFlags(c)
-	flags.AddCentralAuthFlags(c)
 	return c
 }

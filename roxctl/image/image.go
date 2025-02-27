@@ -28,6 +28,5 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	// but other scanners do not
 	flags.AddTimeoutWithDefault(c, 10*time.Minute)
 	flags.AddCentralConnectionFlags(c)
-	flags.AddCentralAuthFlags(c)
 	return c
 }

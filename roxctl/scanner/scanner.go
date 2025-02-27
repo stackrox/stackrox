@@ -21,6 +21,5 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		downloaddb.Command(cliEnvironment),
 	)
 	flags.AddCentralConnectionFlags(c)
-	flags.AddCentralAuthFlags(c)
 	return c
 }

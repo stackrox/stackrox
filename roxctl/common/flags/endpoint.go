@@ -91,6 +91,8 @@ var connectionFlags = func() *pflag.FlagSet {
 func AddCentralConnectionFlags(c *cobra.Command) {
 	c.PersistentFlags().AddFlagSet(connectionFlags)
 	c.MarkFlagsMutuallyExclusive(useKubeContextFlagName, endpointFlagName)
+
+	addCentralAuthFlags(c)
 }
 
 // EndpointAndPlaintextSetting returns the Central endpoint to connect to, as well as a bool indicating whether to

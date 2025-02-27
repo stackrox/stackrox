@@ -76,7 +76,6 @@ func executeDiagnosticsCommand(t *testing.T, serverURL string, timeout time.Dura
 
 	cmd := downloadDiagnosticsCommand(env)
 	flags.AddCentralConnectionFlags(cmd)
-	flags.AddCentralAuthFlags(cmd)
 
 	cmd.SilenceUsage = true
 	cmd.SetOut(io.Discard)

@@ -43,6 +43,5 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		c.AddCommand(crs.Command(cliEnvironment))
 	}
 	flags.AddCentralConnectionFlags(c)
-	flags.AddCentralAuthFlags(c)
 	return c
 }

@@ -11,14 +11,14 @@ func TestFlagOrSettingValue(t *testing.T) {
 	// 1. Default, unchanged flag value and setting not set should lead to the default value being returned.
 	cmd := &cobra.Command{}
 
-	AddCentralAuthFlags(cmd)
+	addCentralAuthFlags(cmd)
 
 	assert.Empty(t, Password())
 
 	// 2. Change the flag value. The changed flag value should be returned, irrespective of whether the setting is set.
 	t.Setenv("ROX_ADMIN_PASSWORD", "some-test-value")
 	cmd = &cobra.Command{}
-	AddCentralAuthFlags(cmd)
+	addCentralAuthFlags(cmd)
 	assert.NoError(t, cmd.ParseFlags([]string{"--password", "some-other-test-value"}))
 	assert.Equal(t, "some-other-test-value", Password())
 
@@ -26,7 +26,7 @@ func TestFlagOrSettingValue(t *testing.T) {
 	t.Setenv("ROX_ADMIN_PASSWORD", "some-test-value")
 	cmd = &cobra.Command{}
 	authFlagSet.Lookup("password").Changed = false
-	AddCentralAuthFlags(cmd)
+	addCentralAuthFlags(cmd)
 	assert.Equal(t, "some-test-value", Password())
 }
 

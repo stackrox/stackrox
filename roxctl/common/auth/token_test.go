@@ -31,7 +31,7 @@ var _ suite.SetupSubTest = (*tokenSuite)(nil)
 func (s *tokenSuite) SetupTest() {
 	// Reset the APITokenFile value between tests.
 	s.c = &cobra.Command{}
-	flags.AddCentralAuthFlags(s.c)
+	flags.AddCentralConnectionFlags(s.c)
 	s.NoError(s.c.ParseFlags([]string{}))
 	tokenFileFlag := s.c.PersistentFlags().Lookup("token-file")
 	s.NoError(tokenFileFlag.Value.Set(""))
