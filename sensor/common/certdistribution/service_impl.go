@@ -15,7 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
-	pkgjwt "github.com/stackrox/rox/pkg/jwt"
+	"github.com/stackrox/rox/pkg/jwt"
 	"github.com/stackrox/rox/pkg/services"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"golang.org/x/time/rate"
@@ -69,7 +69,7 @@ func (s *service) AuthFuncOverride(ctx context.Context, fullMethodName string) (
 }
 
 func (s *service) verifyToken(ctx context.Context, token string, expectedSubject string) error {
-	parsedToken, err := pkgjwt.ParseSigned(token)
+	parsedToken, err := jwt.ParseSigned(token)
 	if err != nil {
 		return errors.Wrapf(errox.InvalidArgs, "invalid JWT: %s", err)
 	}
