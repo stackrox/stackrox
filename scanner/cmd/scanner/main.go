@@ -15,6 +15,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/continuousprofiling"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -74,6 +75,10 @@ func main() {
 	// Create cancellable context.
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	if err := continuousprofiling.SetupClient(continuousprofiling.DefaultConfig()); err != nil {
+		zlog.Error(ctx).Err(err).Msg("unable to start continuous profiling")
+	}
 
 	// Initialize logging and setup context.
 	err = initializeLogging(zerolog.Level(cfg.LogLevel))
