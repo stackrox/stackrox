@@ -864,7 +864,7 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         shortName: 'Exposed port',
         negatedName: 'Exposed port doesn’t match',
         category: policyCriteriaCategories.NETWORKING,
-        type: 'number',
+        type: 'text',
         placeholder: '22',
         canBooleanLogic: true,
         lifecycleStages: ['DEPLOY', 'RUNTIME'],
