@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/central/image/datastore/store"
-	common "github.com/stackrox/rox/central/image/datastore/store/common/v2"
+	"github.com/stackrox/rox/central/image/datastore/store/common/v2"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -66,6 +66,11 @@ type imagePartsAsSlice struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB, noUpdateTimestamps bool, keyFence concurrency.KeyFence) store.Store {
+	// Need to only use one data model at a time.
+	if features.FlattenCVEData.Enabled() {
+		return nil
+	}
+
 	return &storeImpl{
 		db:                 db,
 		noUpdateTimestamps: noUpdateTimestamps,
@@ -143,10 +148,10 @@ func (s *storeImpl) insertIntoImages(
 	}
 
 	if !scanUpdated {
-		sensorEventsDeduperCounter.With(prometheus.Labels{"status": "deduped"}).Inc()
+		common.SensorEventsDeduperCounter.With(prometheus.Labels{"status": "deduped"}).Inc()
 		return nil
 	}
-	sensorEventsDeduperCounter.With(prometheus.Labels{"status": "passed"}).Inc()
+	common.SensorEventsDeduperCounter.With(prometheus.Labels{"status": "passed"}).Inc()
 
 	// DO NOT CHANGE THE ORDER.
 	if err := copyFromImageComponentEdges(ctx, tx, cloned.GetId(), parts.imageComponentEdges...); err != nil {
@@ -835,11 +840,6 @@ func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Image
 }
 
 func (s *storeImpl) populateImage(ctx context.Context, tx *postgres.Tx, image *storage.Image) error {
-	if features.FlattenCVEData.Enabled() {
-		// TODO(ROX-27402)
-		return nil
-	}
-
 	imageCVEEdgeMap, err := getImageCVEEdges(ctx, tx, image.GetId())
 	if err != nil {
 		return err
