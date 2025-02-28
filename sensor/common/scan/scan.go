@@ -10,7 +10,6 @@ import (
 	pkgErrors "github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
@@ -133,9 +132,11 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 		return nil, errors.Join(ErrNoLocalScanner, ErrEnrichNotStarted)
 	}
 
-	// throttle the # of active scans.
-	if err := s.scanSemaphore.Acquire(concurrency.AsContext(concurrency.Timeout(s.maxSemaphoreWaitTime)), 1); err != nil {
-		return nil, errors.Join(ErrTooManyParallelScans, ErrEnrichNotStarted)
+	// Throttle the # of active scans.
+	semaphoreCtx, cancel := context.WithTimeout(ctx, s.maxSemaphoreWaitTime)
+	defer cancel()
+	if err := s.scanSemaphore.Acquire(semaphoreCtx, 1); err != nil {
+		return nil, errors.Join(err, ErrTooManyParallelScans, ErrEnrichNotStarted)
 	}
 	defer s.scanSemaphore.Release(1)
 
