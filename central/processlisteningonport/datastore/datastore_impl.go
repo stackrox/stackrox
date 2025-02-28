@@ -12,7 +12,6 @@ import (
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/processlisteningonport/store"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -648,33 +647,6 @@ func (ds *datastoreImpl) RemovePLOPsWithoutProcessIndicatorOrProcessInfo(ctx con
 	return int64(len(plopsToDelete)), nil
 }
 
-func (ds *datastoreImpl) getPLOPsWithoutPodUIDs(ctx context.Context) ([]string, error) {
-	ds.mutex.Lock()
-	defer ds.mutex.Unlock()
-
-	orphanedQueryTimeout := env.PruneOrphanedQueryTimeout.DurationSetting()
-
-	plopsToDelete, err := pgutils.Retry2(ctx, func() ([]*storage.ProcessListeningOnPortStorage, error) {
-		pruneCtx, cancel := context.WithTimeout(ctx, orphanedQueryTimeout)
-		defer cancel()
-
-		return ds.storage.GetByQuery(pruneCtx, search.NewQueryBuilder().
-			AddNullField(search.PodUID).ProtoQuery())
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	plopIdsToDelete := make([]string, len(plopsToDelete))
-
-	for i := range plopsToDelete {
-		plopIdsToDelete[i] = plopsToDelete[i].Id
-	}
-
-	return plopIdsToDelete, err
-}
-
 func (ds *datastoreImpl) RemovePLOPsWithoutPodUID(ctx context.Context) (int64, error) {
 	ds.mutex.Lock()
 	defer ds.mutex.Unlock()
@@ -683,7 +655,7 @@ func (ds *datastoreImpl) RemovePLOPsWithoutPodUID(ctx context.Context) (int64, e
 	numDeleted := int64(0)
 
 	plops, _ := ds.storage.Count(ctx, search.EmptyQuery())
-	for offset := 0; offset <= plops ; {
+	for offset := 0; offset <= plops; {
 		query := fmt.Sprintf(deletePLOPsWithoutPoduid, page, offset)
 		commandTag, err := ds.pool.Exec(ctx, query)
 		numDeleted += commandTag.RowsAffected()
