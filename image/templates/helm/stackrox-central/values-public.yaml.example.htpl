@@ -226,9 +226,17 @@
 #       # letting Kubernetes automatically select a node port (recommended).
 #       port: 32000
 #
-#     # Exposure via an OpenShift route. Only available for OpenShift clusters
+#     # Exposure via an OpenShift passthrough route. Sensor must communicate with Central
+#     # via a passthrough route because of mutual TLS encryption.
+#     # Only available for OpenShift clusters.
 #     route:
 #       enabled: true
+#       # Exposure via an OpenShift reencrypt route. The route serves a certificate that was
+#       # signed by the OpenShift certificate authority. The reencrypt route cannot be used
+#       # for communication between Sensor and Central because of mutual TLS encryption.
+#       # Only available for OpenShift clusters.
+#       reencrypt:
+#         enabled: true
 #
 #     # Additional volume mounts for the Central container. Only few people will require this.
 #     extraMounts:

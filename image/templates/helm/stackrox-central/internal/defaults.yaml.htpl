@@ -72,6 +72,10 @@ defaults:
         port: null
       route:
         enabled: false
+        host: null
+        reencrypt:
+          host: null
+          enabled: false
     db:
       external: false
 
