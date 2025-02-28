@@ -184,7 +184,7 @@ func init() {
 }
 
 // ToProtobuf converts the SecurityPolicy spec into policy proto
-func (p SecurityPolicySpec) ToProtobuf(notifiers map[string]string) (*storage.Policy, error) {
+func (p SecurityPolicySpec) ToProtobuf(notifiers map[string]string, clusters map[string]string) (*storage.Policy, error) {
 	proto := storage.Policy{
 		Name:               p.PolicyName,
 		Description:        p.Description,
@@ -242,8 +242,16 @@ func (p SecurityPolicySpec) ToProtobuf(notifiers map[string]string) (*storage.Po
 
 			scope := exclusion.Deployment.Scope
 			if scope != (Scope{}) {
+				var cluster string
+				if _, err := uuid.FromString(scope.Cluster); err != nil {
+					cluster = scope.Cluster
+				} else if clusterId, exists := clusters[scope.Cluster]; exists {
+					cluster = clusterId
+				} else {
+					return nil, errors.New(fmt.Sprintf("Cluster '%s' does not exist", scope.Cluster))
+				}
 				protoExclusion.Deployment.Scope = &storage.Scope{
-					Cluster:   scope.Cluster,
+					Cluster:   cluster,
 					Namespace: scope.Namespace,
 				}
 			}
