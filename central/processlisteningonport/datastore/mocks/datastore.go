@@ -132,6 +132,20 @@ func (mr *MockDataStoreMockRecorder) RemovePlopsByPod(ctx, id any) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemovePlopsByPod", reflect.TypeOf((*MockDataStore)(nil).RemovePlopsByPod), ctx, id)
 }
 
+// RemovePlopsByPods mocks base method.
+func (m *MockDataStore) RemovePlopsByPods(ctx context.Context, ids []string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemovePlopsByPods", ctx, ids)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemovePlopsByPods indicates an expected call of RemovePlopsByPods.
+func (mr *MockDataStoreMockRecorder) RemovePlopsByPods(ctx, ids any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemovePlopsByPods", reflect.TypeOf((*MockDataStore)(nil).RemovePlopsByPods), ctx, ids)
+}
+
 // RemoveProcessListeningOnPort mocks base method.
 func (m *MockDataStore) RemoveProcessListeningOnPort(ctx context.Context, ids []string) error {
 	m.ctrl.T.Helper()

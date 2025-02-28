@@ -190,3 +190,38 @@ func (ds *datastoreImpl) RemovePod(ctx context.Context, id string) error {
 
 	return errPlop
 }
+
+func (ds *datastoreImpl) RemovePods(ctx context.Context, ids []string) error {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "DeleteMany")
+	if ok, err := podsSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
+	pods, _, err := ds.podStore.GetMany(ctx, ids)
+	if err != nil {
+		return err
+	}
+	ds.processFilter.DeleteByPods(pods)
+
+	err = ds.podStore.DeleteMany(ctx, ids)
+	if err != nil {
+		return err
+	}
+
+	deleteIndicatorsCtx := sac.WithGlobalAccessScopeChecker(ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.DeploymentExtension)))
+
+	errIndicators := ds.indicators.RemoveProcessIndicatorsByPods(deleteIndicatorsCtx, ids)
+
+	if errIndicators != nil {
+		return errIndicators
+	}
+
+	errPlop := ds.plops.RemovePlopsByPods(deleteIndicatorsCtx, ids)
+
+	return errPlop
+}
