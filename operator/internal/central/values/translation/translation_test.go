@@ -601,7 +601,7 @@ func TestTranslate(t *testing.T) {
 					"exposeMonitoring": true,
 				},
 				"scannerV4": map[string]interface{}{
-					"disable": true,
+					"disable": false,
 					"indexer": map[string]interface{}{
 						"autoscaling": map[string]interface{}{
 							"disable":     false,
