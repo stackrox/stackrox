@@ -147,7 +147,7 @@ function launch_central {
     local common_dir="${k8s_dir}/../common"
 
     verify_orch
-    if [[ -z "$CI" ]]; then
+    if [[ -z "$CI" && "${DEPLOY_CENTRAL_INTERACTIVELY:-true}" == "true" ]]; then
         prompt_if_central_exists "${central_namespace}"
     fi
 
@@ -180,7 +180,7 @@ function launch_central {
       fi
 
       local images_to_check=("${MAIN_IMAGE}" "${CENTRAL_DB_IMAGE}")
-      if [[ "$SCANNER_SUPPORT" == "true" && "$ROX_SCANNER_V4" == "true" ]]; then
+      if [[ "$SCANNER_SUPPORT" == "true" && "$ROX_SCANNER_V4" != "false" ]]; then
         images_to_check+=("${DEFAULT_IMAGE_REGISTRY}/scanner-v4:${MAIN_IMAGE_TAG}" "${DEFAULT_IMAGE_REGISTRY}/scanner-v4-db:${MAIN_IMAGE_TAG}")
       fi
 
@@ -829,6 +829,8 @@ function launch_sensor {
 
       if [[ "$SENSOR_SCANNER_V4_SUPPORT" == "true" ]]; then
         helm_args+=(--set scannerV4.disable=false)
+      elif [[ "$SENSOR_SCANNER_V4_SUPPORT" == "false" ]]; then
+        helm_args+=(--set scannerV4.disable=true)
       fi
 
       if [[ -n "$LOGLEVEL" ]]; then
