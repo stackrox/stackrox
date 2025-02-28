@@ -2,10 +2,10 @@ import React, { useState, useContext } from 'react';
 import PropTypes from 'prop-types';
 import { useHistory } from 'react-router-dom';
 import resolvePath from 'object-resolve-path';
+import { Alert } from '@patternfly/react-core';
 
 import workflowStateContext from 'Containers/workflowStateContext';
 import Widget from 'Components/Widget';
-import NoResultsMessage from 'Components/NoResultsMessage';
 import TablePagination from 'Components/TablePagination';
 import Table, { DEFAULT_PAGE_SIZE } from 'Components/Table';
 
@@ -89,7 +89,9 @@ const TableWidget = ({
                     />
                 </Widget>
             ) : (
-                <NoResultsMessage message={noDataText} className="p-6" icon="info" />
+                <div className="w-full">
+                    <Alert variant="info" isInline title={noDataText} component="p" />
+                </div>
             )}
         </>
     );
