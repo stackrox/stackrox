@@ -17,6 +17,32 @@ func CreateSubjectID(clusterID, subjectName string) string {
 	return fmt.Sprintf("%s:%s", clusterEncoded, subjectEncoded)
 }
 
+// GetSubjectsAdjustedByKind returns subjects adjusted by kind scope.
+// User and Group kind do not have namespace defined and such entities should not exist,
+// but k8s storage allows it. Docs:
+// https://kubernetes.io/docs/reference/kubernetes-api/authorization-resources/role-binding-v1/ -> subjects.namespace
+func GetSubjectsAdjustedByKind(binding *storage.K8SRoleBinding) []*storage.Subject {
+	if binding == nil {
+		return nil
+	}
+
+	adjustedSubjectSet := NewSubjectSet()
+	for _, subject := range binding.GetSubjects() {
+		// Minimize number of CloneVT() calls.
+		if subject.GetNamespace() != "" && (subject.GetKind() == storage.SubjectKind_USER || subject.GetKind() == storage.SubjectKind_GROUP) {
+			adjustedSubject := subject.Clone()
+			adjustedSubject.Namespace = ""
+			adjustedSubjectSet.Add(adjustedSubject)
+
+			continue
+		}
+
+		adjustedSubjectSet.Add(subject)
+	}
+
+	return adjustedSubjectSet.ToSlice()
+}
+
 // SplitSubjectID returns the components of the ID
 func SplitSubjectID(id string) (string, string, error) {
 	clusterEncoded, subjectEncoded := stringutils.Split2(id, ":")
@@ -64,7 +90,7 @@ func GetSubjectForServiceAccount(sa *storage.ServiceAccount) *storage.Subject {
 func GetAllSubjects(bindings []*storage.K8SRoleBinding, kinds ...storage.SubjectKind) []*storage.Subject {
 	subjectsSet := NewSubjectSet()
 	for _, binding := range bindings {
-		for _, subject := range binding.GetSubjects() {
+		for _, subject := range GetSubjectsAdjustedByKind(binding) {
 			for _, kind := range kinds {
 				if subject.GetKind() == kind {
 					subjectsSet.Add(subject)
@@ -80,7 +106,7 @@ func GetAllSubjects(bindings []*storage.K8SRoleBinding, kinds ...storage.Subject
 func GetSubject(subjectName string, bindings []*storage.K8SRoleBinding) (*storage.Subject, bool, error) {
 	// Find the subject we want.
 	for _, binding := range bindings {
-		for _, subject := range binding.GetSubjects() {
+		for _, subject := range GetSubjectsAdjustedByKind(binding) {
 			// We only want to look for a user or a group.
 			if subject.GetKind() != storage.SubjectKind_USER && subject.GetKind() != storage.SubjectKind_GROUP {
 				continue
