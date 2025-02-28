@@ -211,8 +211,6 @@ setup() {
 
     test_case_no=$(( test_case_no + 1))
 
-    export ROX_SCANNER_V4=true
-
     # By default we will use CRS-based cluster registration in this test suite, but there are some
     # specific tests which require CRS to be switched off (upgrade tests involving an old Helm chart, e.g.).
     export ROX_DEPLOY_SENSOR_WITH_CRS=true
@@ -347,9 +345,6 @@ EOF
     info "Upgrading StackRox using HEAD Helm chart"
     MAIN_IMAGE_TAG="${main_image_tag}"
 
-    # shellcheck disable=SC2030,SC2031
-    export SENSOR_SCANNER_V4_SUPPORT=true
-
     _deploy_stackrox
 
     _step "verify"
@@ -409,8 +404,6 @@ EOF
     info "Installing StackRox using HEAD Helm chart with Scanner V4 enabled"
     # shellcheck disable=SC2030,SC2031
     export OUTPUT_FORMAT=helm
-    # shellcheck disable=SC2030,SC2031
-    export SENSOR_SCANNER_V4_SUPPORT=true
 
     _deploy_stackrox
 
@@ -467,15 +460,13 @@ EOF
     # shellcheck disable=SC2030,SC2031
     export OUTPUT_FORMAT=""
     # shellcheck disable=SC2030,SC2031
-    export ROX_SCANNER_V4="false"
-    # shellcheck disable=SC2030,SC2031
     export SENSOR_HELM_DEPLOY="false"
     export GENERATE_SCANNER_DEPLOYMENT_BUNDLE="true"
     local scanner_bundle="${ROOT}/deploy/${ORCHESTRATOR_FLAVOR}/scanner-deploy"
 
     _begin "deploy-stackrox"
 
-    _deploy_stackrox
+    ROX_SCANNER_V4=false _deploy_stackrox
 
     _step "verify"
 
@@ -511,8 +502,6 @@ EOF
     fi
 
     # shellcheck disable=SC2030,SC2031
-    export ROX_SCANNER_V4="true"
-    # shellcheck disable=SC2030,SC2031
     export DEPLOY_STACKROX_VIA_OPERATOR="true"
     # shellcheck disable=SC2030,SC2031
     export SENSOR_SCANNER_SUPPORT=true
@@ -545,13 +534,9 @@ EOF
     fi
 
     # shellcheck disable=SC2030,SC2031
-    export ROX_SCANNER_V4="true"
-    # shellcheck disable=SC2030,SC2031
     export DEPLOY_STACKROX_VIA_OPERATOR="true"
     # shellcheck disable=SC2030,SC2031
     export SENSOR_SCANNER_SUPPORT=true
-    # shellcheck disable=SC2030,SC2031
-    export SENSOR_SCANNER_V4_SUPPORT=true
 
     _begin "deploy-stackrox"
 
@@ -590,7 +575,7 @@ EOF
 
     # Install old version of the operator & deploy StackRox.
     VERSION="${OPERATOR_VERSION_TAG}" make -C operator deploy-previous-via-olm
-    ROX_SCANNER_V4="false" _deploy_stackrox "" "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}"
+    ROX_SCANNER_V4=false _deploy_stackrox "" "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}"
 
     _step "verify"
 
@@ -748,8 +733,6 @@ EOT
 
     # shellcheck disable=SC2030,SC2031
     export OUTPUT_FORMAT=""
-    # shellcheck disable=SC2030,SC2031
-    export ROX_SCANNER_V4="true"
     if [[ "${ORCHESTRATOR_FLAVOR:-}" == "openshift" ]]; then
       export ROX_OPENSHIFT_VERSION=4
     fi
