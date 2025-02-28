@@ -23,7 +23,7 @@ teardown() {
 @test "roxctl-release helm output help-text should state default value for --image-defaults flag" {
   run roxctl-release helm output central-services -h
   assert_success
-  assert_line --regexp "--image-defaults.*\(rhacs, opensource\).*default \"rhacs\""
+  assert_line --regexp "--image-defaults='rhacs'"
 }
 
 @test "roxctl-release helm output central-services should use registry.redhat.io registry by default" {

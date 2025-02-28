@@ -26,7 +26,6 @@ func mockRunE(_ *cobra.Command, _ []string) error { return nil }
 
 func TestCommandReconstruction(t *testing.T) {
 	root := maincommand.Command()
-	AddMissingDefaultsToFlagUsage(root)
 
 	type testCase struct {
 		args    []string

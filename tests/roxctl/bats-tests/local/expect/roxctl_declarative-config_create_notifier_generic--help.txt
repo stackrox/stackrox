@@ -1,0 +1,14 @@
+Create a declarative configuration for a generic notifier
+
+Usage:
+  tmp/roxctl-bats/bin/roxctl-release declarative-config create notifier generic [flags]
+
+Flags:
+      --audit-logging                 Audit logging enabled
+      --extra-fields stringToString   Extra fields (comma separated key=value pairs) (default [])
+      --headers stringToString        Headers (comma separated key=value pairs) (default [])
+      --webhook-cacert-file string    Endpoint CA certificate file name (PEM format)
+      --webhook-endpoint string       Webhook endpoint URL
+      --webhook-password string       Password for the webhook endpoint basic authentication. No authentication if not provided. Requires --webhook-username
+      --webhook-skip-tls-verify       Skip webhook TLS verification
+      --webhook-username string       Username for the webhook endpoint basic authentication. No authentication if not provided. Requires --webhook-password
