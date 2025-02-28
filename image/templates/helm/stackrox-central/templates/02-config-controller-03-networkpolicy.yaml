@@ -22,6 +22,14 @@ spec:
     ports:
     - port: 443
       protocol: TCP
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: central
+    ports:
+    - port: 443
+      protocol: TCP
   podSelector:
     matchLabels:
       app: config-controller
