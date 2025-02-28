@@ -1,0 +1,28 @@
+{{- include "srox.init" . -}}
+
+{{ if ._rox.network.enableNetworkPolicies -}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: config-controller
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "networkpolicy" "config-controller") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "networkpolicy" "config-controller") | nindent 4 }}
+spec:
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: central
+    ports:
+    - port: 443
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app: config-controller
+{{- end }}
