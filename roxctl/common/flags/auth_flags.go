@@ -21,7 +21,7 @@ var (
 	authFlagSet = func() *pflag.FlagSet {
 		fs := pflag.NewFlagSet("auth", pflag.ExitOnError)
 		fs.StringVarP(&password, "password", "p", "",
-			"Password for basic auth. Alternatively, set the password via the ROX_ADMIN_PASSWORD environment variable")
+			"Password for basic auth. Alternatively, set the password via the ROX_ADMIN_PASSWORD environment variable.")
 		passwordChanged = &fs.Lookup("password").Changed
 
 		fs.StringVarP(&apiTokenFile,
@@ -30,7 +30,7 @@ var (
 			"",
 			"Use the API token in the provided file to authenticate. "+
 				"Alternatively, set the path via the ROX_API_TOKEN_FILE environment variable or "+
-				"set the token via the ROX_API_TOKEN environment variable")
+				"set the token via the ROX_API_TOKEN environment variable.")
 		apiTokenFileChanged = &fs.Lookup("token-file").Changed
 
 		return fs
