@@ -302,6 +302,7 @@ func (m *managerImpl) doUpsert(transformedMessagesByHandler map[string]protoMess
 
 func (m *managerImpl) doDeletion(transformedMessagesByHandler map[string]protoMessagesByType) (int, int) {
 	reversedProtoTypes := sliceutils.Reversed(protoTypesOrder)
+	var failureInDeletion bool
 	var allProtoIDsToSkip []string
 	var deletionSuccessCount, deletionFailureCount int
 	for _, protoType := range reversedProtoTypes {
@@ -324,6 +325,7 @@ func (m *managerImpl) doDeletion(transformedMessagesByHandler map[string]protoMe
 			log.Debugf("The following IDs failed deletion: [%s]", strings.Join(failedDeletionIDs, ","))
 			allProtoIDsToSkip = append(allProtoIDsToSkip, failedDeletionIDs...)
 			deletionFailureCount += len(failedDeletionIDs)
+			failureInDeletion = true
 		} else {
 			deletionSuccessCount += deletionCount
 		}
@@ -332,7 +334,7 @@ func (m *managerImpl) doDeletion(transformedMessagesByHandler map[string]protoMe
 	if err := m.removeStaleHealthStatuses(allProtoIDsToSkip); err != nil {
 		log.Errorf("Failed to delete stale health status entries for declarative config: %v", err)
 	}
-	m.lastDeletionFailed.Set(deletionFailureCount > 0)
+	m.lastDeletionFailed.Set(failureInDeletion)
 	return deletionSuccessCount, deletionFailureCount
 }
 
