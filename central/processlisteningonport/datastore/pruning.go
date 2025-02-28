@@ -31,4 +31,9 @@ const (
 	// if the serialized data has process information. PLOPs without process information are then deleted.
 	getPotentiallyOrphanedPLOPs = `SELECT plop.serialized FROM listening_endpoints plop where NOT EXISTS
 			(select 1 FROM process_indicators proc where plop.processindicatorid = proc.id)`
+
+	// Finds PLOPs without poduids and deletes them. This is done in batches.
+	deletePLOPsWithoutPoduid = `WITH rows_to_delete AS
+		(SELECT id FROM listening_endpoints WHERE poduid IS NULL LIMIT %d OFFSET %d)
+		DELETE FROM listening_endpoints WHERE id IN (SELECT id FROM rows_to_delete)`
 )
