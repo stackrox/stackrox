@@ -2,7 +2,6 @@ package continuousprofiling
 
 import (
 	"net/url"
-	"os"
 	"runtime"
 
 	"github.com/grafana/pyroscope-go"
@@ -10,7 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/urlfmt"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -37,7 +35,7 @@ var (
 // DefaultConfig creates a new configuration with default properties.
 func DefaultConfig() *pyroscope.Config {
 	return &pyroscope.Config{
-		ApplicationName:   utils.IfThenElse[string](env.ContinuousProfilingAppName.Setting() != "", env.ContinuousProfilingAppName.Setting(), os.Getenv("POD_NAME")),
+		ApplicationName:   env.ContinuousProfilingAppName.Setting(),
 		ServerAddress:     env.ContinuousProfilingServerAddress.Setting(),
 		BasicAuthUser:     env.ContinuousProfilingBasicAuthUser.Setting(),
 		BasicAuthPassword: env.ContinuousProfilingBasicAuthPassword.Setting(),
