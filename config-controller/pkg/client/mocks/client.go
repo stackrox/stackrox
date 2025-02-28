@@ -98,6 +98,20 @@ func (mr *MockCachedCentralClientMockRecorder) FlushCache(ctx any) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FlushCache", reflect.TypeOf((*MockCachedCentralClient)(nil).FlushCache), ctx)
 }
 
+// GetClusters mocks base method.
+func (m *MockCachedCentralClient) GetClusters() map[string]string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetClusters")
+	ret0, _ := ret[0].(map[string]string)
+	return ret0
+}
+
+// GetClusters indicates an expected call of GetClusters.
+func (mr *MockCachedCentralClientMockRecorder) GetClusters() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClusters", reflect.TypeOf((*MockCachedCentralClient)(nil).GetClusters))
+}
+
 // GetNotifiers mocks base method.
 func (m *MockCachedCentralClient) GetNotifiers() map[string]string {
 	m.ctrl.T.Helper()
@@ -208,6 +222,21 @@ func (m *MockCentralClient) GetPolicy(ctx context.Context, id string) (*storage.
 func (mr *MockCentralClientMockRecorder) GetPolicy(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPolicy", reflect.TypeOf((*MockCentralClient)(nil).GetPolicy), ctx, id)
+}
+
+// ListClusters mocks base method.
+func (m *MockCentralClient) ListClusters(ctx context.Context) ([]*storage.Cluster, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListClusters", ctx)
+	ret0, _ := ret[0].([]*storage.Cluster)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListClusters indicates an expected call of ListClusters.
+func (mr *MockCentralClientMockRecorder) ListClusters(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListClusters", reflect.TypeOf((*MockCentralClient)(nil).ListClusters), ctx)
 }
 
 // ListNotifiers mocks base method.
