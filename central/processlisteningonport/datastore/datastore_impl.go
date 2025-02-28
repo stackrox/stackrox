@@ -676,20 +676,21 @@ func (ds *datastoreImpl) getPLOPsWithoutPodUIDs(ctx context.Context) ([]string, 
 }
 
 func (ds *datastoreImpl) RemovePLOPsWithoutPodUID(ctx context.Context) (int64, error) {
-	plopsToDelete, err := ds.getPLOPsWithoutPodUIDs(ctx)
-
-	if err != nil {
-		return 0, err
-	}
-
 	ds.mutex.Lock()
 	defer ds.mutex.Unlock()
 
-	err = ds.storage.PruneMany(ctx, plopsToDelete)
+	page := 10000
+	numDeleted := int64(0)
 
-	if err != nil {
-		return 0, err
+	plops, _ := ds.storage.Count(ctx, search.EmptyQuery())
+	for offset := 0; offset <= plops ; {
+		query := fmt.Sprintf(deletePLOPsWithoutPoduid, page, offset)
+		commandTag, err := ds.pool.Exec(ctx, query)
+		numDeleted += commandTag.RowsAffected()
+		offset += page - int(commandTag.RowsAffected())
+		if err != nil {
+			return numDeleted, err
+		}
 	}
-
-	return int64(len(plopsToDelete)), nil
+	return numDeleted, nil
 }
