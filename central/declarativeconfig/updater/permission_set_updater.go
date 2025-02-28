@@ -54,7 +54,6 @@ func (u *permissionSetUpdater) DeleteResources(ctx context.Context, resourceIDsT
 
 	var permissionSetDeletionErr *multierror.Error
 	var permissionSetIDs []string
-	deletionCount := 0
 	for _, permissionSet := range permissionSets {
 		if err := u.roleDS.RemovePermissionSet(ctx, permissionSet.GetId()); err != nil {
 			permissionSetDeletionErr = multierror.Append(permissionSetDeletionErr, err)
@@ -68,9 +67,7 @@ func (u *permissionSetUpdater) DeleteResources(ctx context.Context, resourceIDsT
 					permissionSetDeletionErr = multierror.Append(permissionSetDeletionErr, errors.Wrap(err, "setting origin to orphaned"))
 				}
 			}
-		} else {
-			deletionCount++
 		}
 	}
-	return permissionSetIDs, deletionCount, permissionSetDeletionErr.ErrorOrNil()
+	return permissionSetIDs, len(permissionSets) - len(permissionSetIDs), permissionSetDeletionErr.ErrorOrNil()
 }

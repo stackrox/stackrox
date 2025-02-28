@@ -81,7 +81,6 @@ func (u *authProviderUpdater) DeleteResources(ctx context.Context, resourceIDsTo
 
 	var authProviderDeletionErr *multierror.Error
 	authProviderIDs := set.NewStringSet()
-	deletedCount := 0
 	for _, authProvider := range authProviders {
 		referencingGroups, err := u.groupDS.GetFiltered(ctx, func(group *storage.Group) bool {
 			return group.GetProps().GetAuthProviderId() == authProvider.GetId()
@@ -105,11 +104,9 @@ func (u *authProviderUpdater) DeleteResources(ctx context.Context, resourceIDsTo
 		}
 		if err := u.authProviderRegistry.DeleteProvider(ctx, authProvider.GetId(), true, true); err != nil {
 			authProviderDeletionErr, authProviderIDs = u.processDeletionError(ctx, authProviderDeletionErr, err, authProviderIDs, authProvider)
-		} else {
-			deletedCount++
 		}
 	}
-	return authProviderIDs.AsSlice(), deletedCount, authProviderDeletionErr.ErrorOrNil()
+	return authProviderIDs.AsSlice(), len(authProviders) - authProviderIDs.Cardinality(), authProviderDeletionErr.ErrorOrNil()
 }
 
 func (u *authProviderUpdater) processDeletionError(ctx context.Context, authProviderDeletionErr *multierror.Error,

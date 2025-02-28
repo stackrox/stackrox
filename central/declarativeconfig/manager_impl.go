@@ -277,7 +277,6 @@ func (m *managerImpl) reconcileTransformedMessages(transformedMessagesByHandler 
 }
 
 func (m *managerImpl) doUpsert(transformedMessagesByHandler map[string]protoMessagesByType) (int, int) {
-	var failureInUpsert bool
 	var upsertSuccessCount, upsertFailureCount int
 	for _, protoType := range protoTypesOrder {
 		for handler, protoMessagesByType := range transformedMessagesByHandler {
@@ -290,7 +289,6 @@ func (m *managerImpl) doUpsert(transformedMessagesByHandler map[string]protoMess
 				err := typeUpdater.Upsert(m.reconciliationCtx, message)
 				m.updateHealthForMessage(handler, message, err, consecutiveReconciliationErrorThreshold)
 				if err != nil {
-					failureInUpsert = true
 					upsertFailureCount++
 				} else {
 					upsertSuccessCount++
@@ -298,13 +296,12 @@ func (m *managerImpl) doUpsert(transformedMessagesByHandler map[string]protoMess
 			}
 		}
 	}
-	m.lastUpsertFailed.Set(failureInUpsert)
+	m.lastUpsertFailed.Set(upsertFailureCount > 0)
 	return upsertSuccessCount, upsertFailureCount
 }
 
 func (m *managerImpl) doDeletion(transformedMessagesByHandler map[string]protoMessagesByType) (int, int) {
 	reversedProtoTypes := sliceutils.Reversed(protoTypesOrder)
-	var failureInDeletion bool
 	var allProtoIDsToSkip []string
 	var deletionSuccessCount, deletionFailureCount int
 	for _, protoType := range reversedProtoTypes {
@@ -327,7 +324,6 @@ func (m *managerImpl) doDeletion(transformedMessagesByHandler map[string]protoMe
 			log.Debugf("The following IDs failed deletion: [%s]", strings.Join(failedDeletionIDs, ","))
 			allProtoIDsToSkip = append(allProtoIDsToSkip, failedDeletionIDs...)
 			deletionFailureCount += len(failedDeletionIDs)
-			failureInDeletion = true
 		} else {
 			deletionSuccessCount += deletionCount
 		}
@@ -336,7 +332,7 @@ func (m *managerImpl) doDeletion(transformedMessagesByHandler map[string]protoMe
 	if err := m.removeStaleHealthStatuses(allProtoIDsToSkip); err != nil {
 		log.Errorf("Failed to delete stale health status entries for declarative config: %v", err)
 	}
-	m.lastDeletionFailed.Set(failureInDeletion)
+	m.lastDeletionFailed.Set(deletionFailureCount > 0)
 	return deletionSuccessCount, deletionFailureCount
 }
 
