@@ -179,12 +179,29 @@ type SecurityPolicyList struct {
 	Items           []SecurityPolicy `json:"items"`
 }
 
+type CacheName int
+
+const (
+	Notifier CacheName = iota
+	Cluster
+)
+
 func init() {
 	SchemeBuilder.Register(&SecurityPolicy{}, &SecurityPolicyList{})
 }
 
+func getNameFromIdOrName(name string, cache map[string]string) (string, error) {
+	if _, err := uuid.FromString(name); err == nil {
+		return name, nil
+	} else if id, exists := cache[name]; exists {
+		return id, nil
+	} else {
+		return "", errors.New("Name not found in cache and passed string was not a valid UUID")
+	}
+}
+
 // ToProtobuf converts the SecurityPolicy spec into policy proto
-func (p SecurityPolicySpec) ToProtobuf(notifiers map[string]string) (*storage.Policy, error) {
+func (p SecurityPolicySpec) ToProtobuf(caches map[CacheName]map[string]string) (*storage.Policy, error) {
 	proto := storage.Policy{
 		Name:               p.PolicyName,
 		Description:        p.Description,
@@ -201,18 +218,11 @@ func (p SecurityPolicySpec) ToProtobuf(notifiers map[string]string) (*storage.Po
 
 	proto.Notifiers = make([]string, 0, len(p.Notifiers))
 	for _, notifier := range p.Notifiers {
-		_, err := uuid.FromString(notifier)
-		if err == nil {
-			proto.Notifiers = append(proto.Notifiers, notifier)
-			continue
+		id, err := getNameFromIdOrName(notifier, caches[Notifier])
+		if err != nil {
+			return nil, errors.New(fmt.Sprintf("Notifier '%s' does not exist", notifier))
 		}
-		// spec has notifier names specified
-		id, exists := notifiers[notifier]
-		if exists {
-			proto.Notifiers = append(proto.Notifiers, id)
-			continue
-		}
-		return nil, errors.New(fmt.Sprintf("Notifier '%s' does not exist", notifier))
+		proto.Notifiers = append(proto.Notifiers, id)
 	}
 
 	for _, ls := range p.LifecycleStages {
@@ -242,8 +252,12 @@ func (p SecurityPolicySpec) ToProtobuf(notifiers map[string]string) (*storage.Po
 
 			scope := exclusion.Deployment.Scope
 			if scope != (Scope{}) {
+				cluster, err := getNameFromIdOrName(scope.Cluster, caches[Cluster])
+				if err != nil {
+					return nil, errors.New(fmt.Sprintf("Cluster '%s' does not exist", scope.Cluster))
+				}
 				protoExclusion.Deployment.Scope = &storage.Scope{
-					Cluster:   scope.Cluster,
+					Cluster:   cluster,
 					Namespace: scope.Namespace,
 				}
 			}
@@ -261,8 +275,12 @@ func (p SecurityPolicySpec) ToProtobuf(notifiers map[string]string) (*storage.Po
 	}
 
 	for _, scope := range p.Scope {
+		cluster, err := getNameFromIdOrName(scope.Cluster, caches[Cluster])
+		if err != nil {
+			return nil, errors.New(fmt.Sprintf("Cluster '%s' does not exist", scope.Cluster))
+		}
 		protoScope := &storage.Scope{
-			Cluster:   scope.Cluster,
+			Cluster:   cluster,
 			Namespace: scope.Namespace,
 		}
 
