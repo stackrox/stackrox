@@ -31,14 +31,6 @@ init() {
     ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")"/../.. && pwd)"
     export ROOT
 
-    if [[ "${CI:-}" != "true" ]]; then
-        # Some friendly environment checks
-        if [[ -z "${BATS_CORE_ROOT:-}" ]]; then
-            echo "WARNING: You better set \$BATS_CORE_ROOT before executing this test suite." >&3
-            exit 1
-        fi
-    fi
-
     # shellcheck source=../../scripts/ci/lib.sh
     source "$ROOT/scripts/ci/lib.sh"
     # shellcheck source=../../scripts/ci/gcp.sh
@@ -116,7 +108,16 @@ EOT
     export EARLIER_MAIN_IMAGE_TAG=$EARLIER_CHART_VERSION
     export USE_LOCAL_ROXCTL=true
     export ROX_PRODUCT_BRANDING=RHACS_BRANDING
-    export CI=${CI:-false}
+
+    export CI=${CI:-}
+    if [[ "$CI" != "true" ]]; then
+        # Some friendly environment checks
+        if [[ -z "${BATS_CORE_ROOT:-}" ]]; then
+            echo "WARNING: You better set \$BATS_CORE_ROOT before executing this test suite." >&3
+            exit 1
+        fi
+    fi
+
     OS="$(uname | tr '[:upper:]' '[:lower:]')"
     export OS
     export ORCH_CMD="${ROOT}/scripts/retry-kubectl.sh"
@@ -913,7 +914,7 @@ _deploy_stackrox() {
 # shellcheck disable=SC2120
 _deploy_central() {
     local central_namespace=${1:-stackrox}
-    if [[ "${CI:-}" != "true" ]]; then
+    if [[ "$CI" != "true" ]]; then
         info "Creating namespace and image pull secrets..."
         "${ORCH_CMD}" </dev/null create namespace "$central_namespace" || true
         "${ROOT}/deploy/common/pull-secret.sh" stackrox quay.io | "${ORCH_CMD}" -n "$central_namespace" apply -f -
@@ -970,7 +971,7 @@ EOF
 _deploy_sensor() {
     local sensor_namespace=${1:-stackrox}
     local central_namespace=${2:-stackrox}
-    if [[ "${CI:-}" != "true" ]]; then
+    if [[ "$CI" != "true" ]]; then
         info "Creating image pull secrets..."
         "${ORCH_CMD}" </dev/null create namespace "$sensor_namespace" || true
         "${ROOT}/deploy/common/pull-secret.sh" stackrox quay.io | "${ORCH_CMD}" -n "$sensor_namespace" apply -f -
