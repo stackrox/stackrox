@@ -55,7 +55,6 @@ func (u *roleUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...
 
 	var roleDeletionErr *multierror.Error
 	var roleNames []string
-	deletionCount := 0
 	for _, role := range roles {
 		if err := u.roleDS.RemoveRole(ctx, role.GetName()); err != nil {
 			roleDeletionErr = multierror.Append(roleDeletionErr, err)
@@ -70,9 +69,7 @@ func (u *roleUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...
 					roleDeletionErr = multierror.Append(roleDeletionErr, errors.Wrap(err, "setting origin to orphaned"))
 				}
 			}
-		} else {
-			deletionCount++
 		}
 	}
-	return roleNames, deletionCount, roleDeletionErr.ErrorOrNil()
+	return roleNames, len(roles) - len(roleNames), roleDeletionErr.ErrorOrNil()
 }

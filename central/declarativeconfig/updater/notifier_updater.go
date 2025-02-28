@@ -95,7 +95,6 @@ func (u *notifierUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip
 
 	var notifierDeletionErr *multierror.Error
 	var notifierIDs []string
-	deletionCount := 0
 	for _, n := range notifiers {
 		if err := u.policyCleaner.DeleteNotifierFromPolicies(n.GetId()); err != nil {
 			notifierDeletionErr, notifierIDs = u.processDeletionError(ctx, notifierDeletionErr, errors.Wrap(err, "deleting notifier from policies"), notifierIDs, n)
@@ -109,8 +108,6 @@ func (u *notifierUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip
 			err := errors.Wrap(err, "deleting notifier from database")
 			notifierDeletionErr, notifierIDs = u.processDeletionError(ctx, notifierDeletionErr, err, notifierIDs, n)
 			continue
-		} else {
-			deletionCount++
 		}
 
 		u.processor.RemoveNotifier(ctx, n.GetId())
@@ -119,7 +116,7 @@ func (u *notifierUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip
 			notifierDeletionErr, notifierIDs = u.processDeletionError(ctx, notifierDeletionErr, err, notifierIDs, n)
 		}
 	}
-	return notifierIDs, deletionCount, notifierDeletionErr.ErrorOrNil()
+	return notifierIDs, len(notifiers) - len(notifierIDs), notifierDeletionErr.ErrorOrNil()
 }
 
 func (u *notifierUpdater) processDeletionError(ctx context.Context, notifierDeletionErr *multierror.Error, err error,

@@ -54,7 +54,6 @@ func (u *accessScopeUpdater) DeleteResources(ctx context.Context, resourceIDsToS
 
 	var scopeDeletionErr *multierror.Error
 	var scopeIDs []string
-	deletionCount := 0
 	for _, scope := range scopes {
 		if err := u.roleDS.RemoveAccessScope(ctx, scope.GetId()); err != nil {
 			scopeDeletionErr = multierror.Append(scopeDeletionErr, err)
@@ -69,9 +68,7 @@ func (u *accessScopeUpdater) DeleteResources(ctx context.Context, resourceIDsToS
 					scopeDeletionErr = multierror.Append(scopeDeletionErr, errors.Wrap(err, "setting origin to orphaned"))
 				}
 			}
-		} else {
-			deletionCount++
 		}
 	}
-	return scopeIDs, deletionCount, scopeDeletionErr.ErrorOrNil()
+	return scopeIDs, len(scopes) - len(scopeIDs), scopeDeletionErr.ErrorOrNil()
 }

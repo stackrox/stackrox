@@ -54,7 +54,6 @@ func (u *groupUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ..
 
 	var groupDeletionErr *multierror.Error
 	var groupIDs []string
-	deletionCount := 0
 	for _, group := range groups {
 		if err := u.groupDS.Remove(ctx, group.GetProps(), true); err != nil {
 			groupDeletionErr = multierror.Append(groupDeletionErr, err)
@@ -63,9 +62,7 @@ func (u *groupUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ..
 				log.Errorf("Failed to update the declarative config health status %q: %v",
 					group.GetProps().GetId(), err)
 			}
-		} else {
-			deletionCount++
 		}
 	}
-	return groupIDs, deletionCount, groupDeletionErr.ErrorOrNil()
+	return groupIDs, len(groups) - len(groupIDs), groupDeletionErr.ErrorOrNil()
 }
