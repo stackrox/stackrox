@@ -191,7 +191,7 @@ func init() {
 }
 
 func getNameFromIdOrName(name string, cache map[string]string) (string, error) {
-	if _, err := uuid.FromString(name); err != nil {
+	if _, err := uuid.FromString(name); err == nil {
 		return name, nil
 	} else if id, exists := cache[name]; exists {
 		return id, nil
