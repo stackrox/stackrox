@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/declarativeconfig/k8sobject"
 	"github.com/stackrox/rox/roxctl/declarativeconfig/lint"
 	"golang.org/x/exp/maps"
@@ -83,8 +82,6 @@ In case only a subset of namespace should be included, specify --included cluste
 		fmt.Sprintf(labelSelectorUsage, "namespace-label-selector", "namespace-label-selector"))
 
 	utils.Must(cmd.MarkFlagRequired("name"))
-
-	flags.HideInheritedFlags(cmd, k8sobject.ConfigMapFlag, k8sobject.NamespaceFlag)
 
 	return cmd
 }

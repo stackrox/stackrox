@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/util"
 )
 
@@ -51,8 +50,5 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c.Flags().StringVar(&module, "module", "logconvert", "Specifies the module for logging purposes")
 	c.Flags().StringVar(&levelLabel, "level", "info", "Specifies the log level in {error, warn, info, debug}")
-
-	flags.HideInheritedFlags(c)
-
 	return c
 }
