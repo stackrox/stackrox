@@ -475,17 +475,25 @@ func (s *serviceImpl) acquireScanSemaphore(ctx context.Context) error {
 	semaphoreCtx, cancel := context.WithTimeout(ctx, maxSemaphoreWaitTime)
 	defer cancel()
 	if err := s.internalScanSemaphore.Acquire(semaphoreCtx, 1); err != nil {
+		wrappedErr := errors.Wrap(err, "acquiring scan semaphore")
+
 		// If the context was canceled, we do not want to indicate the client to retry.
 		if errors.Is(err, context.Canceled) {
-			return errors.Wrap(err, "acquiring scan semaphore")
+			return status.Error(codes.Canceled, wrappedErr.Error())
 		}
 
-		// Aborted indicates the operation was aborted, typically due to a concurrency
-		// issues.  Clients should retry by default on Aborted.
-		s, err := status.New(codes.Aborted, err.Error()).WithDetails(&v1.ScanImageInternalResponseDetails_TooManyParallelScans{})
-		if pkgUtils.ShouldErr(err) == nil {
-			return s.Err()
+		// Aborted indicates the operation was aborted, typically due to concurrency issues.
+		// Clients should retry by default on Aborted.
+		s, err := status.New(codes.Aborted, wrappedErr.Error()).WithDetails(
+			&v1.ScanImageInternalResponseDetails_TooManyParallelScans{},
+		)
+		if err != nil {
+			// Encountered a broken invariant. Return internal server error.
+			return status.Error(codes.Internal,
+				errors.Wrap(err, "creating too many parallel scans error").Error(),
+			)
 		}
+		return s.Err()
 	}
 	return nil
 }
