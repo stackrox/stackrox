@@ -41,7 +41,7 @@ func (u *permissionSetUpdater) Upsert(ctx context.Context, m protocompat.Message
 	return u.roleDS.UpsertPermissionSet(ctx, permissionSet)
 }
 
-func (u *permissionSetUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...string) ([]string, error) {
+func (u *permissionSetUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...string) ([]string, int, error) {
 	permissionSetsToSkip := set.NewFrozenStringSet(resourceIDsToSkip...)
 
 	permissionSets, err := u.roleDS.GetPermissionSetsFiltered(ctx, func(permissionSet *storage.PermissionSet) bool {
@@ -49,7 +49,7 @@ func (u *permissionSetUpdater) DeleteResources(ctx context.Context, resourceIDsT
 			!permissionSetsToSkip.Contains(permissionSet.GetId())
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "retrieving declarative permission sets")
+		return nil, 0, errors.Wrap(err, "retrieving declarative permission sets")
 	}
 
 	var permissionSetDeletionErr *multierror.Error
@@ -69,5 +69,5 @@ func (u *permissionSetUpdater) DeleteResources(ctx context.Context, resourceIDsT
 			}
 		}
 	}
-	return permissionSetIDs, permissionSetDeletionErr.ErrorOrNil()
+	return permissionSetIDs, len(permissionSets) - len(permissionSetIDs), permissionSetDeletionErr.ErrorOrNil()
 }

@@ -42,7 +42,7 @@ func (u *roleUpdater) Upsert(ctx context.Context, m protocompat.Message) error {
 	return u.roleDS.UpsertRole(ctx, role)
 }
 
-func (u *roleUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...string) ([]string, error) {
+func (u *roleUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...string) ([]string, int, error) {
 	rolesToSkip := set.NewFrozenStringSet(resourceIDsToSkip...)
 
 	roles, err := u.roleDS.GetRolesFiltered(ctx, func(role *storage.Role) bool {
@@ -50,7 +50,7 @@ func (u *roleUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...
 			!rolesToSkip.Contains(role.GetName())
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "retrieving declarative roles")
+		return nil, 0, errors.Wrap(err, "retrieving declarative roles")
 	}
 
 	var roleDeletionErr *multierror.Error
@@ -71,5 +71,5 @@ func (u *roleUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...
 			}
 		}
 	}
-	return roleNames, roleDeletionErr.ErrorOrNil()
+	return roleNames, len(roles) - len(roleNames), roleDeletionErr.ErrorOrNil()
 }

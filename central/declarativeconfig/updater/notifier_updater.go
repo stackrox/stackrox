@@ -82,7 +82,7 @@ func (u *notifierUpdater) Upsert(ctx context.Context, m protocompat.Message) err
 	return u.reporter.Register(notifierProto.GetId(), notifierProto.GetName(), storage.IntegrationHealth_NOTIFIER)
 }
 
-func (u *notifierUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...string) ([]string, error) {
+func (u *notifierUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...string) ([]string, int, error) {
 	notifiersToSkip := set.NewFrozenStringSet(resourceIDsToSkip...)
 
 	notifiers, err := u.notifierDS.GetNotifiersFiltered(ctx, func(n *storage.Notifier) bool {
@@ -90,7 +90,7 @@ func (u *notifierUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip
 			!notifiersToSkip.Contains(n.GetId())
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "retrieving declarative notifiers")
+		return nil, 0, errors.Wrap(err, "retrieving declarative notifiers")
 	}
 
 	var notifierDeletionErr *multierror.Error
@@ -116,7 +116,7 @@ func (u *notifierUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip
 			notifierDeletionErr, notifierIDs = u.processDeletionError(ctx, notifierDeletionErr, err, notifierIDs, n)
 		}
 	}
-	return notifierIDs, notifierDeletionErr.ErrorOrNil()
+	return notifierIDs, len(notifiers) - len(notifierIDs), notifierDeletionErr.ErrorOrNil()
 }
 
 func (u *notifierUpdater) processDeletionError(ctx context.Context, notifierDeletionErr *multierror.Error, err error,
