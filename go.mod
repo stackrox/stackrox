@@ -545,7 +545,7 @@ replace (
 	// in a previous step as a prereq.
 	github.com/sigstore/cosign/v2 => github.com/stackrox/cosign/v2 v2.0.0-20240412144741-15f5395d853a
 
-	// Our fok has following features:
+	// Our fork has following features:
 	// - console log field ordering
 	// - not verbose error logging
 	// TODO(ROX-23217): upgrade to latest version
