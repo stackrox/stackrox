@@ -163,7 +163,7 @@ scanner:
   {{- end }}
 
 scannerV4:
-  disable: true
+  disable: false
   {{- if .K8sConfig.ImageOverrides.ScannerV4 }}
   image:
   {{- if .K8sConfig.ImageOverrides.ScannerV4.Name }}
