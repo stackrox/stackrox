@@ -72,6 +72,7 @@ type CachedCentralClient interface {
 	UpdatePolicy(ctx context.Context, policy *storage.Policy) error
 	DeletePolicy(ctx context.Context, name string) error
 	GetNotifiers() map[string]string
+	GetClusters() map[string]string
 	FlushCache(ctx context.Context) error
 	EnsureFresh(ctx context.Context) error
 }
@@ -83,12 +84,14 @@ type CentralClient interface {
 	PutPolicy(context.Context, *storage.Policy) error
 	DeletePolicy(ctx context.Context, id string) error
 	ListNotifiers(ctx context.Context) ([]*storage.Notifier, error)
+	ListClusters(ctx context.Context) ([]*storage.Cluster, error)
 	TokenExchange(ctx context.Context) error
 }
 
 type grpcClient struct {
 	policySvc   v1.PolicyServiceClient
 	notifierSvc v1.NotifierServiceClient
+	clusterSvc  v1.ClustersServiceClient
 	perRPCCreds *perRPCCreds
 }
 
@@ -120,6 +123,7 @@ func newGrpcClient(ctx context.Context) (CentralClient, error) {
 		perRPCCreds: perRPCCreds,
 		policySvc:   v1.NewPolicyServiceClient(conn),
 		notifierSvc: v1.NewNotifierServiceClient(conn),
+		clusterSvc:  v1.NewClustersServiceClient(conn),
 	}, nil
 }
 
@@ -130,6 +134,15 @@ func (gc *grpcClient) ListNotifiers(ctx context.Context) ([]*storage.Notifier, e
 	}
 
 	return allNotifiers.Notifiers, err
+}
+
+func (gc *grpcClient) ListClusters(ctx context.Context) ([]*storage.Cluster, error) {
+	allClusters, err := gc.clusterSvc.GetClusters(ctx, &v1.GetClustersRequest{})
+	if err != nil {
+		return []*storage.Cluster{}, errors.Wrap(err, "Failed to list clusters from grpc client")
+	}
+
+	return allClusters.Clusters, err
 }
 
 func (gc *grpcClient) ListPolicies(ctx context.Context) ([]*storage.ListPolicy, error) {
@@ -197,6 +210,7 @@ type client struct {
 	policyObjectCache     map[string]*storage.Policy // policy ID to policy
 	policyNameToIDCache   map[string]string          // policy name to policy ID
 	notifierNameToIDCache map[string]string          // notifier name to notifier ID
+	clusterNameToIDCache  map[string]string          // cluster name to cluster ID
 	lastUpdated           time.Time
 }
 
@@ -241,6 +255,9 @@ func New(ctx context.Context, opts ...clientOptions) (CachedCentralClient, error
 
 func (c *client) GetNotifiers() map[string]string {
 	return c.notifierNameToIDCache
+}
+func (c *client) GetClusters() map[string]string {
+	return c.clusterNameToIDCache
 }
 
 func (c *client) ListPolicies(_ context.Context) ([]*storage.Policy, error) {
@@ -330,8 +347,14 @@ func (c *client) FlushCache(ctx context.Context) error {
 		return errors.Wrap(err, "Failed to list notifiers")
 	}
 
+	allClusters, err := c.centralSvc.ListClusters(ctx)
+	if err != nil {
+		return errors.Wrap(err, "Faield to list clusters")
+	}
+
 	newPolicyObjectCache := make(map[string]*storage.Policy, len(allPolicies))
 	newPolicyNameToIDCache := make(map[string]string, len(allPolicies))
+	newClusterNameToIDCache := make(map[string]string, len(allClusters))
 	newNotifierNameToIDCache := make(map[string]string, len(allNotifiers))
 
 	for _, listPolicy := range allPolicies {
@@ -348,8 +371,13 @@ func (c *client) FlushCache(ctx context.Context) error {
 		newNotifierNameToIDCache[notifier.GetName()] = notifier.GetId()
 	}
 
+	for _, cluster := range allClusters {
+		newClusterNameToIDCache[cluster.GetName()] = cluster.GetId()
+	}
+
 	c.policyObjectCache = newPolicyObjectCache
 	c.policyNameToIDCache = newPolicyNameToIDCache
+	c.clusterNameToIDCache = newClusterNameToIDCache
 	c.notifierNameToIDCache = newNotifierNameToIDCache
 
 	c.lastUpdated = time.Now()
