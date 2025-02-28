@@ -183,6 +183,16 @@ func init() {
 	SchemeBuilder.Register(&SecurityPolicy{}, &SecurityPolicyList{})
 }
 
+func getNameFromIdOrName(name string, cache map[string]string) (string, error) {
+	if _, err := uuid.FromString(name); err != nil {
+		return name, nil
+	} else if id, exists := cache[name]; exists {
+		return id, nil
+	} else {
+		return "", errors.New("Name not found in cache and passed string was not a valid UUID")
+	}
+}
+
 // ToProtobuf converts the SecurityPolicy spec into policy proto
 func (p SecurityPolicySpec) ToProtobuf(notifiers map[string]string, clusters map[string]string) (*storage.Policy, error) {
 	proto := storage.Policy{
@@ -201,18 +211,11 @@ func (p SecurityPolicySpec) ToProtobuf(notifiers map[string]string, clusters map
 
 	proto.Notifiers = make([]string, 0, len(p.Notifiers))
 	for _, notifier := range p.Notifiers {
-		_, err := uuid.FromString(notifier)
-		if err == nil {
-			proto.Notifiers = append(proto.Notifiers, notifier)
-			continue
+		id, err := getNameFromIdOrName(notifier, notifiers)
+		if err != nil {
+			return nil, errors.New(fmt.Sprintf("Notifier '%s' does not exist", notifier))
 		}
-		// spec has notifier names specified
-		id, exists := notifiers[notifier]
-		if exists {
-			proto.Notifiers = append(proto.Notifiers, id)
-			continue
-		}
-		return nil, errors.New(fmt.Sprintf("Notifier '%s' does not exist", notifier))
+		proto.Notifiers = append(proto.Notifiers, id)
 	}
 
 	for _, ls := range p.LifecycleStages {
@@ -242,12 +245,8 @@ func (p SecurityPolicySpec) ToProtobuf(notifiers map[string]string, clusters map
 
 			scope := exclusion.Deployment.Scope
 			if scope != (Scope{}) {
-				var cluster string
-				if _, err := uuid.FromString(scope.Cluster); err != nil {
-					cluster = scope.Cluster
-				} else if clusterId, exists := clusters[scope.Cluster]; exists {
-					cluster = clusterId
-				} else {
+				cluster, err := getNameFromIdOrName(scope.Cluster, clusters)
+				if err != nil {
 					return nil, errors.New(fmt.Sprintf("Cluster '%s' does not exist", scope.Cluster))
 				}
 				protoExclusion.Deployment.Scope = &storage.Scope{
@@ -269,8 +268,12 @@ func (p SecurityPolicySpec) ToProtobuf(notifiers map[string]string, clusters map
 	}
 
 	for _, scope := range p.Scope {
+		cluster, err := getNameFromIdOrName(scope.Cluster, clusters)
+		if err != nil {
+			return nil, errors.New(fmt.Sprintf("Cluster '%s' does not exist", scope.Cluster))
+		}
 		protoScope := &storage.Scope{
-			Cluster:   scope.Cluster,
+			Cluster:   cluster,
 			Namespace: scope.Namespace,
 		}
 
