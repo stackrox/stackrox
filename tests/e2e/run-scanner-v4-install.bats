@@ -919,7 +919,7 @@ _deploy_central() {
         "${ORCH_CMD}" </dev/null create namespace "$central_namespace" || true
         "${ROOT}/deploy/common/pull-secret.sh" stackrox quay.io | "${ORCH_CMD}" -n "$central_namespace" apply -f -
     fi
-    deploy_central "${central_namespace}"
+    DEPLOY_CENTRAL_INTERACTIVELY=false deploy_central "${central_namespace}"
     patch_down_central "${central_namespace}"
 }
 
