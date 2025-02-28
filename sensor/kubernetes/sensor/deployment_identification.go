@@ -6,10 +6,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/go-jose/go-jose/v3/jwt"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/jwt"
 	"github.com/stackrox/rox/pkg/namespaces"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
