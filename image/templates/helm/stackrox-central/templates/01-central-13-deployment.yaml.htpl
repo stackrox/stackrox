@@ -51,6 +51,23 @@ spec:
       securityContext:
         fsGroup: 4000
         runAsUser: 4000
+      initContainers:
+{{- if ._rox.env.spire }}
+      - name: spire
+        resources: {}
+        image: ghcr.io/spiffe/spiffe-helper:0.8.0
+        args: ["-config", "/mnt/helper-config/helper.conf"]
+        restartPolicy: Always
+        volumeMounts:
+        - name: spire-helper-config
+          mountPath: /mnt/helper-config
+          readOnly: true
+        - name: spiffe-workload-api
+          mountPath: /spiffe-workload-api
+          readOnly: true
+        - name: central-certs-volume
+          mountPath: /certs
+{{- end }}
       containers:
       - name: central
         image: {{ ._rox.central.image.fullRef | quote }}
@@ -223,9 +240,22 @@ spec:
         emptyDir: {}
       - name: central-etc-pki-volume
         emptyDir: {}
+{{- if ._rox.env.spire }}
+      - name: spire-helper-config
+        configMap:
+          name: spire-helper
+      - name: spiffe-workload-api
+        csi:
+          driver: "csi.spiffe.io"
+          readOnly: true
       - name: central-certs-volume
         secret:
           secretName: central-tls
+{{- else }}
+      - name: central-certs-volume
+        emptyDir:
+          medium: Memory
+{{- end}}
       - name: central-default-tls-cert-volume
         secret:
           secretName: {{ default "central-default-tls-cert" ._rox.central.defaultTLS.reference }}
