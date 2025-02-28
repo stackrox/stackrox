@@ -33,7 +33,7 @@ const (
 			(select 1 FROM process_indicators proc where plop.processindicatorid = proc.id)`
 
 	// Finds PLOPs without poduids and deletes them. This is done in batches.
-	deletePLOPsWithoutPoduid = `WITH rows_to_delete AS
-		(SELECT id FROM listening_endpoints WHERE poduid IS NULL LIMIT %d OFFSET %d)
-		DELETE FROM listening_endpoints WHERE id IN (SELECT id FROM rows_to_delete)`
+	deletePLOPsWithoutPoduid = `WITH temp AS
+		(SELECT id, poduid FROM listening_endpoints LIMIT %d OFFSET %d)
+		DELETE FROM listening_endpoints WHERE id IN (SELECT id FROM temp where poduid is null)`
 )
