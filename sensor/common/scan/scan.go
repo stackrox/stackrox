@@ -31,6 +31,7 @@ import (
 
 const (
 	defaultMaxSemaphoreWaitTime = 5 * time.Second
+	imageScanLowerBound         = 10
 )
 
 var (
@@ -61,7 +62,9 @@ type LocalScan struct {
 	getGlobalRegistry         func(*storage.ImageName) (registryTypes.ImageRegistry, error)
 
 	// scanSemaphore limits the number of active scans.
-	scanSemaphore        *semaphore.Weighted
+	scanSemaphore *semaphore.Weighted
+	// adHocScanSemaphore limits the number of delegated scans.
+	adHocScanSemaphore   *semaphore.Weighted
 	maxSemaphoreWaitTime time.Duration
 
 	regFactory registries.Factory
@@ -96,7 +99,7 @@ func NewLocalScan(registryStore registryStore, mirrorStore registrymirror.Store)
 			docker.CreatorWithoutRepoList,
 		},
 	})
-	return &LocalScan{
+	ls := &LocalScan{
 		scanImg:                   scanImage,
 		fetchSignaturesWithRetry:  signatures.FetchImageSignaturesWithRetries,
 		scannerClientSingleton:    scannerclient.GRPCClientSingleton,
@@ -109,6 +112,12 @@ func NewLocalScan(registryStore registryStore, mirrorStore registrymirror.Store)
 		getPullSecretRegistries:   registryStore.GetPullSecretRegistries,
 		getGlobalRegistry:         registryStore.GetGlobalRegistry,
 	}
+	// allow certain number of parallel delegated scans
+	if !env.DelegatedScanningDisabled.BooleanSetting() {
+		ls.adHocScanSemaphore = semaphore.NewWeighted(int64(env.MaxParallelAdHocScanInternal.IntegerSetting()))
+		ls.scanSemaphore = semaphore.NewWeighted(int64(max(imageScanLowerBound, env.MaxParallelImageScanInternal.IntegerSetting()-env.MaxParallelAdHocScanInternal.IntegerSetting())))
+	}
+	return ls
 }
 
 // EnrichLocalImageInNamespace will enrich an image with scan results from local scanner as well as signatures
@@ -133,8 +142,15 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 		return nil, errors.Join(ErrNoLocalScanner, ErrEnrichNotStarted)
 	}
 
+	scanLimitSemaphore := s.scanSemaphore
+
+	// Delegated requests
+	if req.ID != "" && !env.DelegatedScanningDisabled.BooleanSetting() {
+		scanLimitSemaphore = s.adHocScanSemaphore
+	}
+
 	// throttle the # of active scans.
-	if err := s.scanSemaphore.Acquire(concurrency.AsContext(concurrency.Timeout(s.maxSemaphoreWaitTime)), 1); err != nil {
+	if err := scanLimitSemaphore.Acquire(concurrency.AsContext(concurrency.Timeout(s.maxSemaphoreWaitTime)), 1); err != nil {
 		return nil, errors.Join(ErrTooManyParallelScans, ErrEnrichNotStarted)
 	}
 	defer s.scanSemaphore.Release(1)
