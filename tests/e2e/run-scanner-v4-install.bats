@@ -853,8 +853,13 @@ verify_deployment_scannerV4_env_var_set() {
     scanner_v4_value="$(echo "${deployment_env_vars}" | jq -r '.[] | select(.name == "ROX_SCANNER_V4").value')"
 
     if [[ "${scanner_v4_value}" == "true" ]]; then
+        echo "ROX_SCANNER_V4 environment variable is set to \"true\" for deployment ${namespace}/${deployment}."
         return 0
+    elif [[ "${scanner_v4_value}" == "null" ]]; then
+        echo "ERROR: ROX_SCANNER_V4 environment variable is unset for deployment ${namespace}/${deployment}."
+        return 1
     else
+        echo "ERROR: ROX_SCANNER_V4 environment variable is set to \"${scanner_v4_value}\" for deployment ${namespace}/${deployment}."
         return 1
     fi
 }
