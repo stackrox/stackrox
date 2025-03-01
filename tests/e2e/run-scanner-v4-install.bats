@@ -842,14 +842,14 @@ verify_no_scannerV4_deployed() {
 
 verify_no_scannerV4_indexer_deployed() {
     local namespace=${1:-stackrox}
-    echo "Verifying that scanner V4 indexer is not deployed"
+    echo "Verifying that scanner V4 indexer is not deployed in namespace ${namespace}"
     run "${ORCH_CMD}" </dev/null -n "$namespace" get deployments -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
     refute_output --regexp "scanner-v4-indexer"
 }
 
 verify_no_scannerV4_matcher_deployed() {
     local namespace=${1:-stackrox}
-    echo "Verifying that scanner V4 matcher is not deployed"
+    echo "Verifying that scanner V4 matcher is not deployed in namespace ${namespace}"
     run "${ORCH_CMD}" </dev/null -n "$namespace" get deployments -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
     refute_output --regexp "scanner-v4-matcher"
 }
