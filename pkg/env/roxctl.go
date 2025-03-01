@@ -40,6 +40,9 @@ var (
 	// ConfigDirEnv is the variable that clients can use for specifying the config location for commandline operations.
 	ConfigDirEnv = RegisterSetting("ROX_CONFIG_DIR")
 
+	// ConfigFileEnv is the variable that clients can use for specifying the config file for commandline operations.
+	ConfigFileEnv = RegisterSetting("ROX_CONFIG_FILE")
+
 	// UseCurrentKubeContext instructs roxctl to use port-forwarding for central
 	// service connections in the current kubeconfig context.
 	UseCurrentKubeContext = RegisterBooleanSetting("ROX_USE_KUBECONTEXT", false)
