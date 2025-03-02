@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io/fs"
 	"testing"
+	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -354,7 +355,7 @@ func (suite *scanTestSuite) TestEnrichThrottle() {
 	scan := LocalScan{
 		scannerClientSingleton: emptyScannerClientSingleton,
 		scanSemaphore:          semaphore.NewWeighted(0),
-		maxSemaphoreWaitTime:   defaultMaxSemaphoreWaitTime,
+		maxSemaphoreWaitTime:   1 * time.Millisecond,
 	}
 
 	img := &storage.ContainerImage{Name: &storage.ImageName{Registry: "fake"}}
@@ -363,11 +364,12 @@ func (suite *scanTestSuite) TestEnrichThrottle() {
 	suite.Require().ErrorIs(err, ErrEnrichNotStarted)
 }
 
-func (suite *scanTestSuite) TestCentralDelegatedScanThrottle() {
+func (suite *scanTestSuite) TestAdHocScanThrottle() {
 	ls := LocalScan{
 		scannerClientSingleton: emptyScannerClientSingleton,
 		scanSemaphore:          semaphore.NewWeighted(5),
 		adHocScanSemaphore:     semaphore.NewWeighted(0),
+		maxSemaphoreWaitTime:   1 * time.Millisecond,
 	}
 
 	img := &storage.ContainerImage{Name: &storage.ImageName{Registry: "fake"}}
