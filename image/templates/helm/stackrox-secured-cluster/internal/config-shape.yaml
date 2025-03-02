@@ -140,6 +140,10 @@ collector:
     enabled: null # bool
   runtimeConfig:
     enabled: null # bool
+    networking:
+      externalIps:
+        enabled: null # bool
+      maxConnectionsPerMinute: null # int
 auditLogs:
   disableCollection: null # bool
 customize:
