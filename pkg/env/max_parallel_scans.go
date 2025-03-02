@@ -5,7 +5,7 @@ var (
 	// and GetImageVulnerabilitiesInternal endpoints and separately sets the max active local scans in a secured cluster
 	MaxParallelImageScanInternal = RegisterIntegerSetting("ROX_MAX_PARALLEL_IMAGE_SCAN_INTERNAL", 30)
 
-	// MaxParallelAdHocScanInternal defines the maximum number of parallel ad-hoc roxctl delegated scans initiated from Central.
+	// MaxParallelAdHocScan defines the maximum number of parallel ad-hoc roxctl delegated scans initiated from Central.
 	// It must be set lower than the collective limit for ScanImageInternal, EnrichLocalImageInternal, and GetImageVulnerabilitiesInternal endpoints.
-	MaxParallelAdHocScanInternal = RegisterIntegerSetting("ROX_MAX_PARALLEL_ADHOC_SCAN_INTERNAL", 5)
+	MaxParallelAdHocScan = RegisterIntegerSetting("ROX_MAX_PARALLEL_ADHOC_SCAN_INTERNAL", 5)
 )
