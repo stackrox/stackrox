@@ -494,19 +494,23 @@ class NetworkFlowTest extends BaseSpecification {
         def node = NetworkGraphUtil.findDeploymentNode(graph, deploymentUid)
         assert node
         log.info "${node}"
-        assert node.outEdgesList.size() == 1
+        assert node.outEdges.size() == 1
         
-        //assert waitForEdgeToBeClosed(edges.get(0), 165)
+        waitForEdgeToBeClosed(edges.get(0), 165)
+        assert waitForEdgeUpdate(edges.get(0))
         //edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
 	//log.info "${edges}"
         //log.info "asdf"
         //graph = NetworkGraphService.getNetworkGraph(null, null)
         //log.info "${graph}"
 
-        //CollectorUtil.disableExternalIps(orchestrator)
-        //assert waitForEdgeUpdate(edges.get(0), 90)
-        //graph = NetworkGraphService.getNetworkGraph(null, null)
-        //log.info "${graph}"
+        CollectorUtil.disableExternalIps(orchestrator)
+        edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
+        waitForEdgeToBeClosed(edges.get(0), 165)
+        assert waitForEdgeUpdate(edges.get(0))
+        node = NetworkGraphUtil.findDeploymentNode(graph, deploymentUid)
+        assert node
+        assert node.outEdges.size() == 1
     }
 
     @Tag("NetworkFlowVisualization")
@@ -1076,6 +1080,25 @@ class NetworkFlowTest extends BaseSpecification {
         for (waitTime = 0; waitTime <= timeoutSeconds / intervalSeconds; waitTime++) {
             def graph = NetworkGraphService.getNetworkGraph()
             def newEdge = NetworkGraphUtil.findEdges(graph, edge.sourceID, edge.targetID)?.find { true }
+            log.info "newEdge"
+            log.info "${newEdge}"
+            log.info ""
+            log.info ""
+            log.info ""
+            def newEdges = NetworkGraphUtil.findEdges(graph, edge.sourceID, edge.targetID)
+            log.info "newEdges"
+            log.info "${newEdges}"
+            log.info ""
+            log.info "newEdges.size= ${newEdges.size()}"
+            log.info ""
+            def nedge = newEdges.size()
+            int i
+            for (i = 0; i < nedge; i++) {
+                log.info ""
+                log.info "${i} ${newEdges[i]}"
+                log.info ""
+            }
+            log.info ""
 
             // If lastActiveTimestamp is equal to the previous edges lastActiveTimestamp then the edge has been closed
             if (newEdge != null && newEdge.lastActiveTimestamp == prevEdge.lastActiveTimestamp) {
