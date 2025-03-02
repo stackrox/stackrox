@@ -377,6 +377,8 @@ EOF
 
     SENSOR_SCANNER_V4_SUPPORT=true HELM_REUSE_VALUES=true _deploy_stackrox
 
+    _step "verify-scanner-v4-is-deployed"
+
     verify_scannerV2_deployed "stackrox"
     verify_scannerV4_deployed "stackrox"
     verify_deployment_scannerV4_env_var_set "stackrox" "central"
@@ -389,8 +391,9 @@ EOF
     helm upgrade -n stackrox stackrox-central-services "${CENTRAL_CHART_DIR}" --reuse-values --set scannerV4.disable=true
     info "Disabling Scanner V4 for SecuredCluster"
     helm upgrade -n stackrox stackrox-secured-cluster-services "${SENSOR_CHART_DIR}" --reuse-values --set scannerV4.disable=true
-    sleep 30 # Give the deployments time to terminate.
 
+    _step "verify-scanner-v4-is-not-deployed"
+    sleep 3m # Give the deployments time to terminate. Note this verification logic will be improved in a separate PR.
     verify_no_scannerV4_deployed "stackrox"
     run ! verify_deployment_scannerV4_env_var_set "stackrox" "central"
     run ! verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
