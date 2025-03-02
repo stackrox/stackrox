@@ -102,7 +102,8 @@ func NewLocalScan(registryStore registryStore, mirrorStore registrymirror.Store)
 		scanImg:                   scanImage,
 		fetchSignaturesWithRetry:  signatures.FetchImageSignaturesWithRetries,
 		scannerClientSingleton:    scannerclient.GRPCClientSingleton,
-		scanSemaphore:             semaphore.NewWeighted(int64(env.MaxParallelImageScanInternal.IntegerSetting())),
+		scanSemaphore:             semaphore.NewWeighted(int64(max(imageScanLowerBound, env.MaxParallelImageScanInternal.IntegerSetting()-env.MaxParallelAdHocScan.IntegerSetting()))),
+		adHocScanSemaphore:        semaphore.NewWeighted(int64(env.MaxParallelAdHocScan.IntegerSetting())),
 		maxSemaphoreWaitTime:      defaultMaxSemaphoreWaitTime,
 		regFactory:                regFactory,
 		mirrorStore:               mirrorStore,
@@ -110,11 +111,6 @@ func NewLocalScan(registryStore registryStore, mirrorStore registrymirror.Store)
 		getCentralRegistries:      registryStore.GetCentralRegistries,
 		getPullSecretRegistries:   registryStore.GetPullSecretRegistries,
 		getGlobalRegistry:         registryStore.GetGlobalRegistry,
-	}
-	// allow certain number of parallel delegated scans
-	if !env.DelegatedScanningDisabled.BooleanSetting() {
-		ls.adHocScanSemaphore = semaphore.NewWeighted(int64(env.MaxParallelAdHocScanInternal.IntegerSetting()))
-		ls.scanSemaphore = semaphore.NewWeighted(int64(max(imageScanLowerBound, env.MaxParallelImageScanInternal.IntegerSetting()-env.MaxParallelAdHocScanInternal.IntegerSetting())))
 	}
 	return ls
 }
@@ -144,7 +140,7 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 	// Throttle the # of active scans.
 	scanLimitSemaphore := s.scanSemaphore
 
-	// Delegated requests
+	// ad-hoc requests
 	if req.ID != "" {
 		scanLimitSemaphore = s.adHocScanSemaphore
 	}
