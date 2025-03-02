@@ -393,9 +393,8 @@ EOF
     helm upgrade -n stackrox stackrox-central-services "${CENTRAL_CHART_DIR}" --reuse-values --set scannerV4.disable=true
     info "Disabling Scanner V4 for SecuredCluster"
     helm upgrade -n stackrox stackrox-secured-cluster-services "${SENSOR_CHART_DIR}" --reuse-values --set scannerV4.disable=true
-    sleep 30 # Give the deployments time to terminate.
 
-    verify_no_scannerV4_deployed "stackrox"
+    verify_deployment_deletion_with_timeout 4m "stackrox" scanner-v4-indexer scanner-v4-matcher scanner-v4-db
     run ! verify_deployment_scannerV4_env_var_set "stackrox" "central"
     run ! verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
 
@@ -450,10 +449,8 @@ EOF
     # Deactivate Scanner V4 for both releases.
     helm upgrade -n "${central_namespace}" stackrox-central-services "${CENTRAL_CHART_DIR}" --reuse-values --set scannerV4.disable=true
     helm upgrade -n "${sensor_namespace}" stackrox-secured-cluster-services "${SENSOR_CHART_DIR}" --reuse-values --set scannerV4.disable=true
-    sleep 30 # Give the deployments time to terminate.
 
-    verify_no_scannerV4_deployed "${central_namespace}"
-    verify_no_scannerV4_deployed "${sensor_namespace}"
+    verify_deployment_deletion_with_timeout 4m "stackrox" scanner-v4-indexer scanner-v4-matcher scanner-v4-db
     run ! verify_deployment_scannerV4_env_var_set "${central_namespace}" "central"
     run ! verify_deployment_scannerV4_env_var_set "${sensor_namespace}" "sensor"
 
@@ -733,9 +730,8 @@ EOT
 
     _step "verify"
 
-    sleep 2m # Give the operator some time to reconcile and the deployments to terminate.
-    verify_no_scannerV4_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
-    verify_no_scannerV4_deployed "${CUSTOM_SENSOR_NAMESPACE}"
+    verify_deployment_deletion_with_timeout 4m "${CUSTOM_CENTRAL_NAMESPACE}" scanner-v4-indexer scanner-v4-matcher scanner-v4-db
+    verify_deployment_deletion_with_timeout 4m "${CUSTOM_SENSOR_NAMESPACE}" scanner-v4-indexer scanner-v4-db
     run ! verify_deployment_scannerV4_env_var_set "${CUSTOM_CENTRAL_NAMESPACE}" "central"
     run ! verify_deployment_scannerV4_env_var_set "${CUSTOM_SENSOR_NAMESPACE}" "sensor"
 
@@ -799,6 +795,63 @@ EOT
     run ! verify_deployment_scannerV4_env_var_set "stackrox" "sensor" # no Scanner V4 support in Sensor with roxctl
 
     _end
+}
+
+verify_deployment_deletion() {
+    local namespace="$1"; shift
+    local deployment_names="$@"
+
+    echo "Waiting for the following deployments in namespace ${namespace} to be deleted: $deployment_names"
+
+    local deployment_names_file; deployment_names_file=$(mktemp)
+    echo "$deployment_names" | tr ' ' '\n' >> "$deployment_names_file"
+
+    local delete
+    while [[ -s "$deployment_names_file" ]]; do
+        active_deployments=$("${ORCH_CMD}" -n "$namespace" get deployments -o json)
+        deployment_names=$(cat "$deployment_names_file")
+
+        for deployment_name in $deployment_names; do
+            delete=false
+            if ! jq -e ".items[] | select (.metadata.name == \"$deployment_name\")" <<< "$active_deployments" > /dev/null 2>&1; then
+                delete=true
+            elif jq -e ".items[] | select (.metadata.name == \"$deployment_name\") | .metadata.deletionTimestamp" > /dev/null 2>&1 <<<"$active_deployments"; then
+                delete=true
+            fi
+            if [[ "$delete" == "true" ]]; then
+                echo "Deployment ${namespace}/$deployment_name deleted."
+                sed -ie "/^${deployment_name}$/d" "$deployment_names_file"
+            fi
+        done
+        sleep 1
+    done
+
+    echo "All deployments deleted."
+}
+export -f verify_deployment_deletion
+
+verify_deployment_deletion_with_timeout() {
+    local timeout_duration="$1"; shift
+
+    timeout "$timeout_duration" bash -c "verify_deployment_deletion $*"
+    ret=$?
+
+    case $ret in
+    0)
+        ;;
+    124)
+        echo "Waiting for deployment deletion of deployments timed out."
+        return 1
+        ;;
+    125|126|127|137)
+        echo "Waiting for deployment deletion failed with unexpected exit code $ret."
+        return 1
+        ;;
+    *)
+        echo "deployment deletion failed with exit code $ret."
+        return 1
+        ;;
+    esac
 }
 
 verify_no_scannerV4_deployed() {
