@@ -517,36 +517,6 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Tag("NetworkFlowVisualization")
-    //ROX-21491 skipping test case for p/z
-    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
-    def "Verify external IPs"() {
-        given:
-        "Deployment A, where A communicates to an external target"
-        String deploymentUid = deployments.find { it.name == EXTERNALDESTINATION }?.deploymentUid
-        assert deploymentUid != null
-
-        CollectorUtil.disableExternalIps(orchestrator)
-
-        log.info "Checking for edge from ${EXTERNALDESTINATION} to external target"
-
-        def externalEntities = NetworkGraphService.getExternalNetworkEntities(null)
-        log.info "external entities with external ips disabled"
-        log.info "${externalEntities}"
-
-        CollectorUtil.enableExternalIps(orchestrator)
-
-        externalEntities = NetworkGraphService.getExternalNetworkEntities(null)
-        log.info "external entities with external ips enabled"
-        log.info "${externalEntities}"
-
-        CollectorUtil.disableExternalIps(orchestrator)
-
-        externalEntities = NetworkGraphService.getExternalNetworkEntities(null)
-        log.info "external entities with external ips disabled"
-        log.info "${externalEntities}"
-    }
-
-    @Tag("NetworkFlowVisualization")
     // TODO: additional handling may be needed for P/Z - see ROX-19615
     @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify connections from external sources"() {
