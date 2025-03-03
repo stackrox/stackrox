@@ -94,6 +94,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation
 import io.fabric8.kubernetes.client.dsl.Resource
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource
 import io.fabric8.kubernetes.client.dsl.ScalableResource
+import io.fabric8.kubernetes.client.LocalPortForward;
 import org.apache.commons.exec.CommandLine
 
 import common.YamlGenerator
@@ -1981,6 +1982,20 @@ class Kubernetes {
                 getStatefulSetCount(ns).size() +
                 getJobCount(ns).size()
     }
+
+    List<LocalPortForward> createCollectorPortForwards(int port) {
+        // since Collector's a daemonset, we can match the behavior of
+        // kubectl, and pick a pod to forward to.
+        def collectorPods = getPods("stackrox", "collector")
+
+        return collectorPods.collect {
+            this.client.pods()
+                .inNamespace("stackrox")
+                .withName(it.getMetadata().getName())
+                .portForward(port)
+        }
+    }
+
 
     /*
         Private K8S Support functions
