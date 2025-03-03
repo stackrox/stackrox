@@ -76,15 +76,16 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	if err := continuousprofiling.SetupClient(continuousprofiling.DefaultConfig()); err != nil {
-		zlog.Error(ctx).Err(err).Msg("unable to start continuous profiling")
-	}
-
 	// Initialize logging and setup context.
 	err = initializeLogging(zerolog.Level(cfg.LogLevel))
 	if err != nil {
 		golog.Fatalf("failed to initialize logging: %v", err)
 	}
+
+	if err := continuousprofiling.SetupClient(continuousprofiling.DefaultConfig()); err != nil {
+		zlog.Error(ctx).Err(err).Msg("unable to start continuous profiling")
+	}
+
 	ctx = zlog.ContextWithValues(ctx, "component", "main")
 	zlog.Info(ctx).Str("version", version.Version).Str("build_flavor", buildinfo.BuildFlavor).Msg("starting scanner")
 
