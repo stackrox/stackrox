@@ -138,7 +138,7 @@ EOT
     info "Using MAIN_IMAGE_TAG=$MAIN_IMAGE_TAG"
 
     export CURRENT_MAIN_IMAGE_TAG=${CURRENT_MAIN_IMAGE_TAG:-} # Setting a tag can be useful for local testing.
-    export EARLIER_CHART_VERSION="4.3.0"
+    export EARLIER_CHART_VERSION="4.6.0"
     export EARLIER_MAIN_IMAGE_TAG=$EARLIER_CHART_VERSION
     export ROX_PRODUCT_BRANDING=RHACS_BRANDING
     export CI=${CI:-false}
@@ -205,6 +205,12 @@ EOT
     # have any logs for investigation the situation.
     export BATS_TEST_TIMEOUT=1800 # Seconds
 
+   if [[ -z "${HEAD_HELM_CHART_CENTRAL_SERVICES_DIR:-}" ]]; then
+        HEAD_HELM_CHART_CENTRAL_SERVICES_DIR=$(mktemp -d)
+        roxctl helm output central-services --output-dir="${HEAD_HELM_CHART_CENTRAL_SERVICES_DIR}" --remove
+        export HEAD_HELM_CHART_CENTRAL_SERVICES_DIR
+    fi
+
     _end
 }
 
@@ -241,8 +247,6 @@ setup() {
     fi
 
     test_case_no=$(( test_case_no + 1))
-
-    export ROX_SCANNER_V4=true
 
     # By default we will use CRS-based cluster registration in this test suite, but there are some
     # specific tests which require CRS to be switched off (upgrade tests involving an old Helm chart, e.g.).
@@ -343,6 +347,60 @@ teardown() {
     _end
 }
 
+@test "Upgrade from old central-services Helm chart to HEAD Helm chart" {
+   init
+
+    # shellcheck disable=SC2030,SC2031
+    local central_namespace="$CUSTOM_CENTRAL_NAMESPACE"
+    local sensor_namespace="$CUSTOM_SENSOR_NAMESPACE"
+
+    local main_image_tag="${MAIN_IMAGE_TAG}"
+
+    # Deploy earlier version without Scanner V4.
+    local old_chart="${CHART_REPOSITORY}${CHART_BASE}/${EARLIER_CHART_VERSION}/central-services"
+
+    _begin "deploying-old-central"
+
+    info "Deploying StackRox services using chart ${old_chart}"
+
+    if [[ -n "${EARLIER_MAIN_IMAGE_TAG:-}" ]]; then
+        MAIN_IMAGE_TAG=$EARLIER_MAIN_IMAGE_TAG
+        info "Overriding MAIN_IMAGE_TAG=$EARLIER_MAIN_IMAGE_TAG"
+    fi
+
+    _deploy_central_with_helm "$central_namespace" "$EARLIER_MAIN_IMAGE_TAG" "$old_chart"
+
+    _step "verify"
+
+    verify_scannerV2_deployed "$central_namespace"
+    verify_no_scannerV4_deployed "$central_namespace"
+
+    _begin "upgrading-to-HEAD-central"
+
+    _deploy_central_with_helm "$central_namespace" "$MAIN_IMAGE_TAG" ""
+
+    _step "verify"
+
+    verify_scannerV2_deployed "$central_namespace"
+    verify_no_scannerV4_deployed "$central_namespace"
+
+    _begin "enable-scanner-v4"
+
+    _deploy_central_with_helm "$central_namespace" "$MAIN_IMAGE_TAG" "" -f <(cat <<EOT
+scannerV4:
+  disable: false
+EOT
+    )
+
+    _step "verify"
+
+    verify_scannerV2_deployed "$central_namespace"
+    verify_scannerV4_deployed "$central_namespace"
+    verify_deployment_scannerV4_env_var_set "$central_namespace" "central"
+
+    _end
+}
+
 @test "Upgrade from old Helm chart to HEAD Helm chart with Scanner v4 enabled" {
     init
 
@@ -372,9 +430,10 @@ central:
 EOF
     ROX_CENTRAL_EXTRA_HELM_VALUES_FILE="${_ROX_CENTRAL_EXTRA_HELM_VALUES_FILE}" CENTRAL_CHART_DIR_OVERRIDE="${_CENTRAL_CHART_DIR_OVERRIDE}" _deploy_stackrox
 
-    _step "upgrading-stackrox"
+    _step "upgrading-stackrox-without-scanner-v4"
 
     # Upgrade to HEAD chart without explicit disabling of Scanner V4.
+    # Since it is an upgrade, Scanner V4 shall not be installed.
     info "Upgrading StackRox using HEAD Helm chart"
     MAIN_IMAGE_TAG="${main_image_tag}"
 
@@ -384,6 +443,28 @@ EOF
     _deploy_stackrox
 
     _step "verify"
+
+    # Verify that Scanner V2 and V4 are up.
+    verify_scannerV2_deployed "stackrox"
+    verify_scannerV4_deployed "stackrox"
+    verify_deployment_scannerV4_env_var_set "stackrox" "central"
+    verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
+
+    _step "upgrading-stackrox-with-scanner-v4"
+
+    # Upgrade to HEAD chart without explicit disabling of Scanner V4.
+    # Since it is an upgrade, Scanner V4 shall not be installed.
+    info "Upgrading StackRox using HEAD Helm chart"
+    MAIN_IMAGE_TAG="${main_image_tag}"
+
+    export ROX_SCANNER_V4=true
+    # shellcheck disable=SC2030,SC2031
+    export SENSOR_SCANNER_V4_SUPPORT=true
+
+    _deploy_stackrox
+
+    _step "verify"
+
 
     # Verify that Scanner V2 and V4 are up.
     verify_scannerV2_deployed "stackrox"
@@ -1008,6 +1089,88 @@ _deploy_central() {
     fi
     deploy_central "${central_namespace}"
     patch_down_central "${central_namespace}"
+}
+
+# shellcheck disable=SC2120
+# _deploy_central_with_helm "<central namespace>" "<main image tag>" "<helm chart dir overwrite>" [ additional args for helm ... ]
+_deploy_central_with_helm() {
+    local central_namespace="$1"; shift
+    local main_image_tag="$1"; shift
+    helm_chart_dir="$HEAD_HELM_CHART_CENTRAL_SERVICES_DIR"
+    if [[ -n "$1" ]]; then
+        # overwrite Helm chart path.
+        helm_chart_dir="$1"
+    fi; shift
+
+    if [[ "${CI:-}" != "true" ]]; then
+        info "Creating namespace and image pull secrets..."
+        "${ORCH_CMD}" </dev/null create namespace "$central_namespace" || true
+        "${ROOT}/deploy/common/pull-secret.sh" stackrox quay.io | "${ORCH_CMD}" -n "$central_namespace" apply -f -
+    fi
+
+    local default_helm_values
+    default_helm_values=$(cat <<EOT
+central:
+  exposure:
+    loadBalancer:
+      enabled: true
+  persistence:
+    none: true
+  db:
+    image:
+      tag: "$main_image_tag"
+  image:
+    tag: "$main_image_tag"
+
+scanner:
+  replicas: 1
+  autoscaling:
+    disable: true
+
+scanner-v4:
+  indexer:
+    replicas: 1
+    autoscaling:
+      disable: true
+  matcher:
+    replicas: 1
+    autoscaling:
+      disable: true
+  db:
+    persistence:
+      none: true
+
+allowNonstandardNamespace: true
+EOT
+    )
+
+    command=("install")
+    if helm list -n "$central_namespace" -o json | jq -e '.[] | select(.name == "stackrox-central-services")' > /dev/null 2>&1; then
+        helm_generated_values_file=$(mktemp)
+        "${ORCH_CMD}" -n "$central_namespace" get secrets -o json \
+            </dev/null \
+            | jq -r '.items[] | select(.metadata.name | startswith("stackrox-generated-")) | .data["generated-values.yaml"] | @base64d' \
+            > "$helm_generated_values_file"
+        command=("upgrade" "--install" "-f" "$helm_generated_values_file")
+    fi
+
+    echo "Deploying stackrox-central-services Helm chart "${helm_chart_dir}" into namespace ${central_namespace} with the following settings:"
+    echo "default Helm values:"
+    echo "$default_helm_values" | sed -e 's/^/  |/;'
+    echo "additional arguments:"
+    echo "  | -f \"${ROOT}/deploy/common/local-dev-values.yaml\" $*"
+
+    helm -n "${central_namespace}" "${command[@]}" \
+        -f <(echo "$default_helm_values") \
+        -f "${ROOT}/deploy/common/local-dev-values.yaml" \
+        "$@" \
+        stackrox-central-services "${helm_chart_dir}"
+    echo "Waiting for API..."
+    wait_for_api "${central_namespace}"
+    echo "Setting up client TLS certs..."
+    setup_client_TLS_certs ""
+    echo "Recording build info..."
+    record_build_info "${central_namespace}"
 }
 
 patch_down_central() {
