@@ -449,18 +449,7 @@ func TestRowMapper_CreateRows_DeepHierarchyAndEmptyValues(t *testing.T) {
 		{"Harry Potter", "Voldemort", "-"},
 	}
 
-	expectedRowsWithStrictAddressColumn := [][]string{
-		{"LOTR", "Gandalf", "Minas Tirith"},
-		{"LOTR", "Gollum", "Gladden Fields"},
-		{"LOTR", "Aragorn", "Gondor"},
-		{"LOTR", "Bilbo Baggins", "Bag End"},
-		{"Harry Potter", "Harry Potter", "Little Whinging"},
-		{"Harry Potter", "Ron Weasley", "The Burrow"},
-		{"Harry Potter", "Hagrid", "Hagrid's Hut"},
-	}
-
 	runRowMapperTest(t, testJSONObject, testExpression, expectedRows, []string{})
-	runRowMapperTest(t, testJSONObject, testExpression, expectedRowsWithStrictAddressColumn, []string{"result.#.people.#.address"})
 }
 
 func TestRowMapper_CreateRows_DeepHierarchyAndEmptyValuesWithStrictColumns(t *testing.T) {
