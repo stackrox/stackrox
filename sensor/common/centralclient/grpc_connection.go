@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/util"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/sensor/common/trace"
 )
 
 // CentralConnectionFactory is responsible for establishing a gRPC connection between sensor
@@ -114,7 +115,7 @@ func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(conn *uti
 
 	// This returns a dial function, but does not call dial!
 	// Thus, we cannot treat the connection as established and ready at this point.
-	centralConnection, err := clientconn.AuthenticatedGRPCConnection(context.Background(), env.CentralEndpoint.Setting(), mtls.CentralSubject, opts...)
+	centralConnection, err := clientconn.AuthenticatedGRPCConnection(trace.Context(), env.CentralEndpoint.Setting(), mtls.CentralSubject, opts...)
 	if err != nil {
 		log.Errorf("creating the gRPC client: %v", err)
 		f.stopSignal.SignalWithErrorWrap(err, "creating the gRPC client")
