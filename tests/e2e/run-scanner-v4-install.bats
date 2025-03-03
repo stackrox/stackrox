@@ -108,8 +108,12 @@ _step() {
 
 export TEST_SUITE_ABORTED="false"
 
+export test_suite_begin_timestamp=""
+
 setup_file() {
+    test_suite_begin_timestamp=$(date +%s)
     _begin "setup-file"
+
 
     cat <<'EOT'
     _    ____ ____    ___           _        _ _       _   _               _____         _
@@ -202,6 +206,13 @@ EOT
     # have any logs for investigation the situation.
     export BATS_TEST_TIMEOUT=1800 # Seconds
 
+    _end
+}
+
+teardown_file() {
+    local test_suite_end_timestamp=$(date +%s)
+    _begin "teardown-file"
+    emit_timing_data "" "test-suite" "$test_suite_begin_timestamp" "$test_suite_end_timestamp"
     _end
 }
 
