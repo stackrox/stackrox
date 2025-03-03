@@ -129,7 +129,7 @@ func TestToProtobuf(t *testing.T) {
 	clusters := map[string]string{
 		"test-cluster": clusterID,
 	}
-	protoPolicy, err := policyCRSpec.ToProtobuf(map[CacheName]map[string]string{
+	protoPolicy, err := policyCRSpec.ToProtobuf(map[CacheType]map[string]string{
 		Notifier: notifiers,
 		Cluster:  clusters,
 	})

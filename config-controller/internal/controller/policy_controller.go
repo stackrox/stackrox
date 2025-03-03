@@ -71,7 +71,7 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, errors.Wrap(err, "Failed to refresh")
 	}
 
-	desiredState, err := policyCR.Spec.ToProtobuf(map[configstackroxiov1alpha1.CacheName]map[string]string{
+	desiredState, err := policyCR.Spec.ToProtobuf(map[configstackroxiov1alpha1.CacheType]map[string]string{
 		configstackroxiov1alpha1.Notifier: r.CentralClient.GetNotifiers(),
 		configstackroxiov1alpha1.Cluster:  r.CentralClient.GetClusters(),
 	})

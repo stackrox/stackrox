@@ -179,10 +179,10 @@ type SecurityPolicyList struct {
 	Items           []SecurityPolicy `json:"items"`
 }
 
-type CacheName int
+type CacheType int
 
 const (
-	Notifier CacheName = iota
+	Notifier CacheType = iota
 	Cluster
 )
 
@@ -201,7 +201,7 @@ func getNameFromIdOrName(name string, cache map[string]string) (string, error) {
 }
 
 // ToProtobuf converts the SecurityPolicy spec into policy proto
-func (p SecurityPolicySpec) ToProtobuf(caches map[CacheName]map[string]string) (*storage.Policy, error) {
+func (p SecurityPolicySpec) ToProtobuf(caches map[CacheType]map[string]string) (*storage.Policy, error) {
 	proto := storage.Policy{
 		Name:               p.PolicyName,
 		Description:        p.Description,
