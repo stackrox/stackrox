@@ -11,7 +11,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Technical Changes
 
-- ROX-2734: Fix migrator failure when opening Badger DB
+- ROX-27347: Fix vulnerability report job getting stuck in waiting state after central restart.
 
 ## [4.5.6]
 
