@@ -5,7 +5,7 @@ set -euo pipefail
 msg_file=$(mktemp)
 trap 'rm -f "${msg_file}"' EXIT
 
-find scripts/fixxxers -name '*.sh' -type f -printf "%p\n" | while read -r script; do
+find scripts/fixxxers -name '*.sh' -type f -printf "%p\n" | sort | while read -r script; do
     echo "Running $script" > "$msg_file"
     echo >> "$msg_file"
     if ! ./"$script" >> "$msg_file" 2>&1; then
