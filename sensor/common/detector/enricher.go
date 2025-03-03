@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common/clusterid"
@@ -24,6 +25,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/scan"
 	"github.com/stackrox/rox/sensor/common/store"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -344,6 +346,7 @@ func (e *enricher) getImages(ctx context.Context, deployment *storage.Deployment
 
 	pullSecrets := e.getPullSecrets(deployment)
 
+	ctx = metadata.AppendToOutgoingContext(ctx, logging.ClusterIDContextValue, clusterid.GetNoWait())
 	for idx, container := range deployment.GetContainers() {
 		e.runImageScanAsync(ctx, imageChan, &scanImageRequest{
 			containerIdx:   idx,

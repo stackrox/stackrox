@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/metrics"
+	"github.com/stackrox/rox/sensor/common/trace"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 )
 
@@ -68,7 +69,7 @@ func (q *outputQueueImpl) runOutputQueue() {
 			}
 
 			if msg.Context == nil {
-				msg.Context = context.Background()
+				msg.Context = trace.ParentContext()
 			}
 
 			for _, resourceUpdates := range msg.ForwardMessages {
