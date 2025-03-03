@@ -1,4 +1,4 @@
-package postgres
+package common
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	sensorEventsDeduperCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+	SensorEventsDeduperCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "image_upsert_deduper",
@@ -15,5 +15,5 @@ var (
 )
 
 func init() {
-	prometheus.MustRegister(sensorEventsDeduperCounter)
+	prometheus.MustRegister(SensorEventsDeduperCounter)
 }

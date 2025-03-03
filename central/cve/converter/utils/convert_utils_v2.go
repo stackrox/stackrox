@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // ImageCVEV2ToEmbeddedVulnerability coverts a `*storage.ImageCVEV2` to an `*storage.EmbeddedVulnerability`.
@@ -71,6 +72,16 @@ func EmbeddedVulnerabilityToImageCVEV2(imageID string, componentID string, cveIn
 		impactScore = from.GetCvssV2().GetImpactScore()
 	}
 
+	createdAt := from.GetFirstSystemOccurrence()
+	if createdAt == nil {
+		createdAt = timestamppb.Now()
+	}
+
+	firstImageOccurrence := from.GetFirstImageOccurrence()
+	if firstImageOccurrence == nil {
+		firstImageOccurrence = timestamppb.Now()
+	}
+
 	ret := &storage.ImageCVEV2{
 		Id:          cve.IDV2(from.GetCve(), componentID, strconv.Itoa(cveIndex)),
 		ComponentId: componentID,
@@ -79,7 +90,7 @@ func EmbeddedVulnerabilityToImageCVEV2(imageID string, componentID string, cveIn
 			Summary:      from.GetSummary(),
 			Link:         from.GetLink(),
 			PublishedOn:  from.GetPublishedOn(),
-			CreatedAt:    from.GetFirstSystemOccurrence(),
+			CreatedAt:    createdAt,
 			LastModified: from.GetLastModified(),
 			CvssV2:       from.GetCvssV2(),
 			CvssV3:       from.GetCvssV3(),
@@ -92,7 +103,7 @@ func EmbeddedVulnerabilityToImageCVEV2(imageID string, componentID string, cveIn
 		NvdScoreVersion:      nvdVersion,
 		Severity:             from.GetSeverity(),
 		ImageId:              imageID,
-		FirstImageOccurrence: from.GetFirstImageOccurrence(),
+		FirstImageOccurrence: firstImageOccurrence,
 		State:                from.GetState(),
 		IsFixable:            from.GetFixedBy() != "",
 		ImpactScore:          impactScore,

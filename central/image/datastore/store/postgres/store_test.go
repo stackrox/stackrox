@@ -49,7 +49,6 @@ func (s *ImagesStoreSuite) TestStore() {
 			vuln.NvdCvss = 0
 			vuln.Epss = nil
 		}
-		// TODO(ROX-27402) remove this
 		comp.Architecture = ""
 	}
 
