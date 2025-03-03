@@ -93,7 +93,8 @@ func (ds *dataStoreImpl) initNetworkTrees(ctx context.Context) {
 	// If network tree for a cluster is not found, it means it must orphan which shall be cleaned at next garbage collection.
 	walkFn := func() error {
 		entitiesByCluster = make(map[string][]*storage.NetworkEntityInfo)
-		return ds.storage.Walk(ctx, func(obj *storage.NetworkEntity) error {
+		storeCtx := getStoreAccessContext(ctx, storage.Access_READ_ACCESS)
+		return ds.storage.Walk(storeCtx, func(obj *storage.NetworkEntity) error {
 			entitiesByCluster[obj.GetScope().GetClusterId()] = append(entitiesByCluster[obj.GetScope().GetClusterId()], obj.GetInfo())
 			return nil
 		})
@@ -118,11 +119,13 @@ func (ds *dataStoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 	if ok, err := ds.readAllowed(ctx, id); err != nil || !ok {
 		return false, err
 	}
-	return ds.storage.Exists(ctx, id)
+	storeCtx := getStoreAccessContext(ctx, storage.Access_READ_ACCESS)
+	return ds.storage.Exists(storeCtx, id)
 }
 
 func (ds *dataStoreImpl) GetIDs(ctx context.Context) ([]string, error) {
-	ids, err := ds.storage.GetIDs(ctx)
+	storeCtx := getStoreAccessContext(ctx, storage.Access_READ_ACCESS)
+	ids, err := ds.storage.GetIDs(storeCtx)
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +159,8 @@ func (ds *dataStoreImpl) GetEntity(ctx context.Context, id string) (*storage.Net
 	if ok, err := ds.readAllowed(ctx, id); err != nil || !ok {
 		return nil, false, err
 	}
-	return ds.storage.Get(ctx, id)
+	storeCtx := getStoreAccessContext(ctx, storage.Access_READ_ACCESS)
+	return ds.storage.Get(storeCtx, id)
 }
 
 func (ds *dataStoreImpl) GetAllEntitiesForCluster(ctx context.Context, clusterID string) ([]*storage.NetworkEntity, error) {
@@ -201,7 +205,8 @@ func (ds *dataStoreImpl) GetAllMatchingEntities(ctx context.Context, pred func(e
 	walkFn := func() error {
 		entities = entities[:0]
 		allowed = make(map[string]bool)
-		return ds.storage.Walk(ctx, func(entity *storage.NetworkEntity) error {
+		storeCtx := getStoreAccessContext(ctx, storage.Access_READ_ACCESS)
+		return ds.storage.Walk(storeCtx, func(entity *storage.NetworkEntity) error {
 			if !pred(entity) {
 				return nil
 			}
@@ -232,7 +237,8 @@ func (ds *dataStoreImpl) GetAllMatchingEntities(ctx context.Context, pred func(e
 }
 
 func (ds *dataStoreImpl) GetEntityByQuery(ctx context.Context, query *v1.Query) ([]*storage.NetworkEntity, error) {
-	return ds.storage.GetByQuery(ctx, query)
+	storeCtx := getStoreAccessContext(ctx, storage.Access_READ_ACCESS)
+	return ds.storage.GetByQuery(storeCtx, query)
 }
 
 func (ds *dataStoreImpl) CreateExternalNetworkEntity(ctx context.Context, entity *storage.NetworkEntity, skipPush bool) error {
@@ -303,10 +309,11 @@ func (ds *dataStoreImpl) CreateExtNetworkEntitiesForCluster(ctx context.Context,
 }
 
 func (ds *dataStoreImpl) createMany(ctx context.Context, entities []*storage.NetworkEntity) error {
+	storeCtx := getStoreAccessContext(ctx, storage.Access_READ_WRITE_ACCESS)
 	ds.netEntityLock.Lock()
 	defer ds.netEntityLock.Unlock()
 
-	if err := ds.storage.UpsertMany(ctx, entities); err != nil {
+	if err := ds.storage.UpsertMany(storeCtx, entities); err != nil {
 		return errors.Wrapf(err, "upserting %d network entities into storage", len(entities))
 	}
 
@@ -318,11 +325,12 @@ func (ds *dataStoreImpl) create(ctx context.Context, entity *storage.NetworkEnti
 	if err != nil {
 		return err
 	}
+	storeCtx := getStoreAccessContext(ctx, storage.Access_READ_WRITE_ACCESS)
 
 	ds.netEntityLock.Lock()
 	defer ds.netEntityLock.Unlock()
 
-	if stored, found, err := ds.storage.Get(ctx, entity.GetInfo().GetId()); err != nil {
+	if stored, found, err := ds.storage.Get(storeCtx, entity.GetInfo().GetId()); err != nil {
 		return errors.Wrapf(err, "could not determine if network entity %s already exists in DB. SKIPPING",
 			entity.GetInfo().GetExternalSource().GetName())
 	} else if found {
@@ -333,7 +341,7 @@ func (ds *dataStoreImpl) create(ctx context.Context, entity *storage.NetworkEnti
 			stored.GetInfo().GetExternalSource().GetName(), stored.GetInfo().GetExternalSource().GetCidr())
 	}
 
-	if err := ds.storage.Upsert(ctx, entity); err != nil {
+	if err := ds.storage.Upsert(storeCtx, entity); err != nil {
 		return errors.Wrapf(err, "upserting network entity %s into storage", entity.GetInfo().GetId())
 	}
 
@@ -350,6 +358,7 @@ func (ds *dataStoreImpl) UpdateExternalNetworkEntity(ctx context.Context, entity
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
+	storeCtx := getStoreAccessContext(ctx, storage.Access_READ_WRITE_ACCESS)
 
 	ds.netEntityLock.Lock()
 	defer ds.netEntityLock.Unlock()
@@ -359,7 +368,7 @@ func (ds *dataStoreImpl) UpdateExternalNetworkEntity(ctx context.Context, entity
 		return err
 	}
 
-	if err := ds.storage.Upsert(ctx, entity); err != nil {
+	if err := ds.storage.Upsert(storeCtx, entity); err != nil {
 		return errors.Wrapf(err, "upserting network entity %s into storage", entity.GetInfo().GetId())
 	}
 
@@ -378,12 +387,13 @@ func (ds *dataStoreImpl) DeleteExternalNetworkEntity(ctx context.Context, id str
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
+	storeCtx := getStoreAccessContext(ctx, storage.Access_READ_WRITE_ACCESS)
 
 	ds.netEntityLock.Lock()
 	defer ds.netEntityLock.Unlock()
 
 	// Check if the entity actually exists to avoid unnecessary push to Sensor.
-	found, err := ds.storage.Exists(ctx, id)
+	found, err := ds.storage.Exists(storeCtx, id)
 	if err != nil {
 		return err
 	}
@@ -391,7 +401,7 @@ func (ds *dataStoreImpl) DeleteExternalNetworkEntity(ctx context.Context, id str
 		return nil
 	}
 
-	if err := ds.storage.Delete(ctx, id); err != nil {
+	if err := ds.storage.Delete(storeCtx, id); err != nil {
 		return errors.Wrapf(err, "deleting network entity %s from storage", id)
 	}
 
@@ -419,12 +429,13 @@ func (ds *dataStoreImpl) DeleteExternalNetworkEntitiesForCluster(ctx context.Con
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
+	storeCtx := getStoreAccessContext(ctx, storage.Access_READ_WRITE_ACCESS)
 
 	ds.netEntityLock.Lock()
 	defer ds.netEntityLock.Unlock()
 
 	var ids []string
-	if err := ds.storage.WalkByQuery(ctx,
+	if err := ds.storage.WalkByQuery(storeCtx,
 		pkgSearch.NewQueryBuilder().AddBools(pkgSearch.DefaultExternalSource, false).ProtoQuery(),
 		func(obj *storage.NetworkEntity) error {
 			if clusterID == obj.GetScope().GetClusterId() {
@@ -436,7 +447,7 @@ func (ds *dataStoreImpl) DeleteExternalNetworkEntitiesForCluster(ctx context.Con
 		return err
 	}
 
-	if err := ds.storage.DeleteMany(ctx, ids); err != nil {
+	if err := ds.storage.DeleteMany(storeCtx, ids); err != nil {
 		return errors.Wrapf(err, "deleting network entities for cluster %s from storage", clusterID)
 	}
 
@@ -447,8 +458,11 @@ func (ds *dataStoreImpl) DeleteExternalNetworkEntitiesForCluster(ctx context.Con
 	return nil
 }
 
+// region helpers
+
 func (ds *dataStoreImpl) validateNoCIDRUpdate(ctx context.Context, newEntity *storage.NetworkEntity) (bool, error) {
-	old, found, err := ds.storage.Get(ctx, newEntity.GetInfo().GetId())
+	storeCtx := getStoreAccessContext(ctx, storage.Access_READ_ACCESS)
+	old, found, err := ds.storage.Get(storeCtx, newEntity.GetInfo().GetId())
 	if err != nil {
 		return false, err
 	}
@@ -488,6 +502,20 @@ func allowed(ctx context.Context, access storage.Access, id string) (bool, error
 		return false, err
 	}
 	return networkGraphSAC.ScopeChecker(ctx, access).IsAllowed(scopeKey...), nil
+}
+
+func getStoreAccessContext(ctx context.Context, mode storage.Access) context.Context {
+	accessModes := []storage.Access{mode}
+	if mode == storage.Access_READ_WRITE_ACCESS {
+		accessModes = append(accessModes, storage.Access_READ_ACCESS)
+	}
+	return sac.WithGlobalAccessScopeChecker(
+		ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(accessModes...),
+			sac.ResourceScopeKeys(resources.NetworkGraph, resources.NetworkEntity),
+		),
+	)
 }
 
 func validateExternalNetworkEntity(entity *storage.NetworkEntity) error {
@@ -580,3 +608,5 @@ func (p *networkEntityPusherImpl) doPushExternalNetworkEntitiesToSensor(clusters
 		}
 	}
 }
+
+// endregion helpers

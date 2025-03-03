@@ -83,6 +83,7 @@ var (
 	Hash                 = newInternalResourceMetadata("Hash", permissions.GlobalScope)
 	InstallationInfo     = newInternalResourceMetadata("InstallationInfo", permissions.GlobalScope)
 	Notifications        = newInternalResourceMetadata("Notifications", permissions.GlobalScope)
+	NetworkEntity        = newInternalResourceMetadata("NetworkEntity", permissions.GlobalScope)
 	Version              = newInternalResourceMetadata("Version", permissions.GlobalScope)
 	VulnerabilityRequest = newInternalResourceMetadata("VulnerabilityRequest", permissions.GlobalScope)
 

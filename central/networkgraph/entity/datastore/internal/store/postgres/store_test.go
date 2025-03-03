@@ -80,7 +80,7 @@ func (s *NetworkEntitiesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundNetworkEntity)
-	s.ErrorIs(store.Delete(withNoAccessCtx, networkEntity.GetInfo().GetId()), sac.ErrResourceAccessDenied)
+	s.NoError(store.Delete(withNoAccessCtx, networkEntity.GetInfo().GetId()))
 
 	var networkEntitys []*storage.NetworkEntity
 	var networkEntityIDs []string
