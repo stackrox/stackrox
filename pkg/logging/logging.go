@@ -76,7 +76,7 @@ var (
 		encoding:   "console",
 		encodeTime: zapcore.TimeEncoderOfLayout("2006/01/02 15:04:05.000000"),
 		separator:  " ",
-		fieldOrder: "N:TC:L:",
+		fieldOrder: "T:L:NC:",
 	}
 
 	json = struct {
