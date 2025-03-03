@@ -1,4 +1,3 @@
-import { createLocation } from 'history';
 import qs from 'qs';
 
 import entityTypes from 'constants/entityTypes';
@@ -13,10 +12,10 @@ import { WorkflowState } from './WorkflowState';
 
 function getLocation(search, pathname) {
     return {
-        location: createLocation({
-            search: qs.stringify(search),
+        location: {
             pathname,
-        }),
+            search: `?${qs.stringify(search)}`,
+        },
     };
 }
 
@@ -123,10 +122,10 @@ describe('ParseURL', () => {
         const context = 'clusters';
         const pathname = `/main/${context}/0123456789abcdef`;
 
-        const location = createLocation({
+        const location = {
             pathname,
             search: '',
-        });
+        };
 
         const workflowState = parseURL(location);
 
@@ -143,10 +142,10 @@ describe('ParseURL', () => {
         const context = 'clusters';
         const pathname = `/main/${context}`;
 
-        const location = createLocation({
+        const location = {
             pathname,
             search: 's[CLUSTER_HEALTH]=HEALTHY',
-        });
+        };
 
         const workflowState = parseURL(location);
 

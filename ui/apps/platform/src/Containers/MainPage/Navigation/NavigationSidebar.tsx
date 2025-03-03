@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { matchPath, useLocation } from 'react-router-dom';
+import { Location, matchPath, useLocation } from 'react-router-dom';
 import {
     Nav,
     NavExpandable,
@@ -69,20 +69,23 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
                   content: 'Results',
                   path: vulnerabilitiesUserWorkloadsPath,
                   routeKey: 'vulnerabilities/user-workloads',
-                  isActive: (location) =>
-                      Boolean(
-                          matchPath(location.pathname, [
-                              vulnerabilitiesWorkloadCvesPath,
-                              vulnerabilitiesNodeCvesPath,
-                              vulnerabilitiesUserWorkloadsPath,
-                              vulnerabilitiesPlatformPath,
-                              vulnerabilitiesAllImagesPath,
-                              vulnerabilitiesInactiveImagesPath,
-                              vulnerabilitiesImagesWithoutCvesPath,
-                              vulnerabilitiesViewPath,
-                              vulnerabilitiesPlatformCvesPath,
-                          ])
-                      ),
+                  isActive: (location: Location) => {
+                      const pathsToMatch = [
+                          vulnerabilitiesWorkloadCvesPath,
+                          vulnerabilitiesNodeCvesPath,
+                          vulnerabilitiesUserWorkloadsPath,
+                          vulnerabilitiesPlatformPath,
+                          vulnerabilitiesAllImagesPath,
+                          vulnerabilitiesInactiveImagesPath,
+                          vulnerabilitiesImagesWithoutCvesPath,
+                          vulnerabilitiesViewPath,
+                          vulnerabilitiesPlatformCvesPath,
+                      ];
+
+                      return pathsToMatch.some((path) =>
+                          matchPath({ path: `${path}/*` }, location.pathname)
+                      );
+                  },
               },
               {
                   type: 'link',
