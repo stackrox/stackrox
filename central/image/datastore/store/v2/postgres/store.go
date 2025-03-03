@@ -20,7 +20,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
-	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
@@ -36,9 +35,8 @@ const (
 )
 
 var (
-	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ImagesSchema
-	targetResource = resources.Image
+	log    = logging.LoggerForModule()
+	schema = pkgSchema.ImagesSchema
 )
 
 type imagePartsAsSlice struct {
