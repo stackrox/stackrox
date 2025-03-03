@@ -463,6 +463,74 @@ func TestRowMapper_CreateRows_DeepHierarchyAndEmptyValues(t *testing.T) {
 	runRowMapperTest(t, testJSONObject, testExpression, expectedRowsWithStrictAddressColumn, []string{"result.#.people.#.address"})
 }
 
+func TestRowMapper_CreateRows_DeepHierarchyAndEmptyValuesWithStrictColumns(t *testing.T) {
+	testJSONObject := &deepHierarchy{
+		Result: []example{
+			{
+				Franchise: "LOTR",
+				People: []people{
+					{
+						Name:    "Gandalf",
+						Address: "Minas Tirith",
+					},
+					{
+						Name: "Gollum",
+					},
+					{
+						Name: "Aragorn",
+					},
+					{
+						Name: "Bilbo Baggins",
+					},
+					{
+						Name: "Sauron",
+					},
+				},
+			},
+			{
+				Franchise: "Harry Potter",
+				People: []people{
+					{
+						Name:    "Harry Potter",
+						Address: "Little Whinging",
+					},
+					{
+						Name: "Ron Weasley",
+					},
+					{
+						Name: "Hagrid",
+					},
+					{
+						Name: "Voldemort",
+					},
+				},
+			},
+		},
+	}
+
+	testExpression := "{result.#.franchise,result.#.people.#.name,result.#.people.#.address}"
+
+	expectedRows := [][]string{
+		{"LOTR", "Gandalf", "Minas Tirith"},
+		{"LOTR", "Gollum", "-"},
+		{"LOTR", "Aragorn", "-"},
+		{"LOTR", "Bilbo Baggins", "-"},
+		{"LOTR", "Sauron", "-"},
+		{"Harry Potter", "Harry Potter", "Little Whinging"},
+		{"Harry Potter", "Ron Weasley", "-"},
+		{"Harry Potter", "Hagrid", "-"},
+		{"Harry Potter", "Voldemort", "-"},
+	}
+
+	expectedRowsWithStrictAddressColumn := [][]string{
+		{"LOTR", "Gandalf", "Minas Tirith"},
+		{"Harry Potter", "Harry Potter", "Little Whinging"},
+	}
+
+	runRowMapperTest(t, testJSONObject, testExpression, expectedRows, []string{})
+	runRowMapperTest(t, testJSONObject, testExpression, expectedRowsWithStrictAddressColumn, []string{"result.#.people.#.address"})
+}
+
 func runRowMapperTest(t *testing.T, obj interface{}, expression string, expectedRows [][]string, strictColumns []string) {
 	mapper, err := NewRowMapper(obj, expression, HideRowsIfColumnNotPopulated(strictColumns))
 	require.NoError(t, err)
