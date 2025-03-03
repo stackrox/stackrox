@@ -265,7 +265,7 @@ func (p SecurityPolicySpec) ToProtobuf(caches map[CacheType]map[string]string) (
 					return nil, errors.New(fmt.Sprintf("Cluster '%s' does not exist", scope.Cluster))
 				}
 				protoExclusion.Deployment.Scope = &storage.Scope{
-					Cluster:   cluster,
+					Cluster:   clusterID,
 					Namespace: scope.Namespace,
 				}
 			}
@@ -288,7 +288,7 @@ func (p SecurityPolicySpec) ToProtobuf(caches map[CacheType]map[string]string) (
 			return nil, errors.New(fmt.Sprintf("Cluster '%s' does not exist", scope.Cluster))
 		}
 		protoScope := &storage.Scope{
-			Cluster:   cluster,
+			Cluster:   clusterID,
 			Namespace: scope.Namespace,
 		}
 
