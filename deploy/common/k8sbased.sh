@@ -180,7 +180,7 @@ function launch_central {
       fi
 
       local images_to_check=("${MAIN_IMAGE}" "${CENTRAL_DB_IMAGE}")
-      if [[ "$SCANNER_SUPPORT" == "true" && "$ROX_SCANNER_V4" == "true" ]]; then
+      if [[ "$SCANNER_SUPPORT" == "true" && "$ROX_SCANNER_V4" != "false" ]]; then
         images_to_check+=("${DEFAULT_IMAGE_REGISTRY}/scanner-v4:${MAIN_IMAGE_TAG}" "${DEFAULT_IMAGE_REGISTRY}/scanner-v4-db:${MAIN_IMAGE_TAG}")
       fi
 
@@ -416,9 +416,9 @@ function launch_central {
       fi
 
       if [[ -n "$ROX_SCANNER_V4" ]]; then
-        local _disable=true
-        if [[ "$ROX_SCANNER_V4" == "true" ]]; then
-          _disable=false
+        local _disable=false
+        if [[ "$ROX_SCANNER_V4" == "false" ]]; then
+          _disable=true
         fi
         helm_args+=(
           --set scannerV4.disable="${_disable}"
