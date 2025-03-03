@@ -488,7 +488,7 @@ class NetworkFlowTest extends BaseSpecification {
         assert edges
         def nedges = edges.size()
         int i
-        for (i=0;i<nedges;i++) {
+        for (i=0 ; i<nedges ; i++) {
             log.info ""
             log.info "external edge"
             log.info "${edges[i].getLastActiveTimestamp()}"
