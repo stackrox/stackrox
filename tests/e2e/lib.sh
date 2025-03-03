@@ -361,6 +361,7 @@ deploy_sensor() {
     info "Deploying sensor into namespace ${sensor_namespace} (central is expected in namespace ${central_namespace})"
 
     ci_export ROX_AFTERGLOW_PERIOD "15"
+    ci_export ROX_COLLECTOR_INTROSPECTION_ENABLE "true"
 
     if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" == "true" ]]; then
         deploy_sensor_via_operator "${sensor_namespace}" "${central_namespace}"
@@ -447,13 +448,26 @@ deploy_sensor_via_operator() {
     wait_for_object_to_appear "${sensor_namespace}" deploy/sensor 300
     wait_for_object_to_appear "${sensor_namespace}" ds/collector 300
 
+    collector_envs=()
+
     if [[ -n "${ROX_AFTERGLOW_PERIOD:-}" ]]; then
-       kubectl -n "${sensor_namespace}" set env ds/collector ROX_AFTERGLOW_PERIOD="${ROX_AFTERGLOW_PERIOD}"
+       collector_envs+=("ROX_AFTERGLOW_PERIOD=${ROX_AFTERGLOW_PERIOD}")
+       #kubectl -n "${sensor_namespace}" set env ds/collector ROX_AFTERGLOW_PERIOD="${ROX_AFTERGLOW_PERIOD}"
+    fi
+
+    if [[ -n "${ROX_COLLECTOR_INTROSPECTION_ENABLE:-}" ]]; then
+       collector_envs+=("ROX_COLLECTOR_INTROSPECTION_ENABLE=${ROX_COLLECTOR_INTROSPECTION_ENABLE}")
+       #kubectl -n "${sensor_namespace}" set env ds/collector ROX_COLLECTOR_INTROSPECTION_ENABLE="${ROX_COLLECTOR_INTROSPECTION_ENABLE}"
     fi
 
     if [[ -n "${ROX_PROCESSES_LISTENING_ON_PORT:-}" ]]; then
+       collector_envs+=("ROX_PROCESSES_LISTENING_ON_PORT=${ROX_PROCESSES_LISTENING_ON_PORT}")
        kubectl -n "${sensor_namespace}" set env deployment/sensor ROX_PROCESSES_LISTENING_ON_PORT="${ROX_PROCESSES_LISTENING_ON_PORT}"
-       kubectl -n "${sensor_namespace}" set env ds/collector ROX_PROCESSES_LISTENING_ON_PORT="${ROX_PROCESSES_LISTENING_ON_PORT}"
+       #kubectl -n "${sensor_namespace}" set env ds/collector ROX_PROCESSES_LISTENING_ON_PORT="${ROX_PROCESSES_LISTENING_ON_PORT}"
+    fi
+
+    if [[ ${#collector_envs[@]} -gt 0 ]]; then
+        kubectl -n "${sensor_namespace}" set env ds/collector "${collector_envs[@]}"
     fi
 }
 
