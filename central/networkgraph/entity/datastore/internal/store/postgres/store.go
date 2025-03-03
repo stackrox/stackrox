@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
@@ -28,8 +27,9 @@ const (
 )
 
 var (
-	log    = logging.LoggerForModule()
-	schema = pkgSchema.NetworkEntitiesSchema
+	log            = logging.LoggerForModule()
+	schema         = pkgSchema.NetworkEntitiesSchema
+	targetResource = resources.NetworkGraph
 )
 
 type storeType = storage.NetworkEntity
@@ -58,7 +58,7 @@ type Store interface {
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
-	return pgSearch.NewGenericStoreWithPermissionChecker[storeType, *storeType](
+	return pgSearch.NewGenericStore[storeType, *storeType](
 		db,
 		schema,
 		pkGetter,
@@ -66,7 +66,8 @@ func New(db postgres.DB) Store {
 		copyFromNetworkEntities,
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
-		sac.NewNotGloballyDeniedPermissionChecker(resources.NetworkGraph),
+		pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
+		targetResource,
 	)
 }
 
