@@ -22,7 +22,7 @@ import {
 
 import DescriptionListCompact from 'Components/DescriptionListCompact';
 import { selectors } from 'reducers';
-import { userBasePath, userRolePath } from 'routePaths';
+import { userBasePath } from 'routePaths';
 import User from 'utils/User';
 
 import UserPermissionsForRolesTable from './UserPermissionsForRolesTable';
@@ -46,9 +46,7 @@ function UserPage({ resourceToAccessByRole, userData }) {
 
     const UserRoleRoute = () => {
         const { roleName } = useParams();
-        console.log('roleName ', roleName);
         const role = roles.find((_role) => _role.name === roleName);
-        console.log('role ', role);
 
         if (role) {
             return <UserPermissionsTable permissions={role?.resourceToAccess ?? {}} />;

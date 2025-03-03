@@ -1,5 +1,7 @@
 import React from 'react';
+import { createMemoryHistory } from 'history';
 import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
+import { HistoryRouter as Router } from 'redux-first-history/rr6';
 import { renderHook, act } from '@testing-library/react';
 
 import { URLSearchParams } from 'url';
@@ -230,27 +232,24 @@ test('should implement push and replace state for navigate', async () => {
 
 test('should batch URL parameter updates', async () => {
     let params;
-    let testLocation;
+
+    const history = createMemoryHistory({
+        initialEntries: [''],
+    });
 
     const { result } = renderHook(
         () => {
-            testLocation = useLocation();
             return {
                 hook1: useURLParameter('testKey1', undefined),
                 hook2: useURLParameter('testKey2', undefined),
             };
         },
         {
-            wrapper: ({ children }) => (
-                <MemoryRouter initialEntries={['']} initialIndex={1}>
-                    {children}
-                </MemoryRouter>
-            ),
+            wrapper: ({ children }) => <Router history={history}>{children}</Router>,
         }
     );
 
-    params = new URLSearchParams(testLocation.search);
-    expect(window.history.length).toBe(1);
+    params = new URLSearchParams(history.location.search);
     expect(params.get('testKey1')).toBeNull();
     expect(params.get('testKey2')).toBeNull();
     expect(result.current.hook1[0]).toBeUndefined();
@@ -262,8 +261,7 @@ test('should batch URL parameter updates', async () => {
         setParam('testValue');
     });
 
-    params = new URLSearchParams(testLocation.search);
-    expect(window.history.length).toBe(2);
+    params = new URLSearchParams(history.location.search);
     expect(params.get('testKey1')).toBe('testValue');
     expect(params.get('testKey2')).toBeNull();
     expect(result.current.hook1[0]).toBe('testValue');
@@ -278,8 +276,7 @@ test('should batch URL parameter updates', async () => {
         setParam2('newValue3');
     });
 
-    params = new URLSearchParams(testLocation.search);
-    expect(window.history.length).toBe(3);
+    params = new URLSearchParams(history.location.search);
     expect(params.get('testKey1')).toBe('newValue1');
     expect(params.get('testKey2')).toBe('newValue3');
     expect(result.current.hook1[0]).toBe('newValue1');
@@ -291,8 +288,7 @@ test('should batch URL parameter updates', async () => {
         setParam('newTestValue', 'replace');
     });
 
-    params = new URLSearchParams(testLocation.search);
-    expect(window.history.length).toBe(3);
+    params = new URLSearchParams(history.location.search);
     expect(params.get('testKey1')).toBe('newTestValue');
     expect(params.get('testKey2')).toBe('newValue3');
     expect(result.current.hook1[0]).toBe('newTestValue');
@@ -306,8 +302,7 @@ test('should batch URL parameter updates', async () => {
         setParam2('newValue5');
     });
 
-    params = new URLSearchParams(testLocation.search);
-    expect(window.history.length).toBe(4);
+    params = new URLSearchParams(history.location.search);
     expect(params.get('testKey1')).toBe('newValue4');
     expect(params.get('testKey2')).toBe('newValue5');
     expect(result.current.hook1[0]).toBe('newValue4');

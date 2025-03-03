@@ -1,4 +1,6 @@
 import React from 'react';
+import { createMemoryHistory } from 'history';
+import { HistoryRouter as Router } from 'redux-first-history/rr6';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { renderHook, act } from '@testing-library/react';
 
@@ -65,25 +67,23 @@ test('should update pagination parameters in the URL', async () => {
 
 test('should not add history states when setting values with a "replace" action', async () => {
     let params;
-    let historyLength;
-    let testLocation;
+
+    const history = createMemoryHistory({
+        initialEntries: [''],
+    });
 
     const { result } = renderHook(
         () => {
-            testLocation = useLocation();
-            historyLength = window.history.length;
             return useURLPagination(10);
         },
         {
-            wrapper: ({ children }) => (
-                <MemoryRouter initialEntries={['']}>{children}</MemoryRouter>
-            ),
+            wrapper: ({ children }) => <Router history={history}>{children}</Router>,
         }
     );
 
     // Check the length of the initial history stack
-    params = new URLSearchParams(testLocation.search);
-    expect(historyLength).toBe(1);
+    params = new URLSearchParams(history.location.search);
+    expect(history.index).toBe(0);
     expect(params.get('page')).toBe(null);
     expect(params.get('perPage')).toBe(null);
 
@@ -94,8 +94,8 @@ test('should not add history states when setting values with a "replace" action'
     });
 
     // Check the length of the history stack after updating the page parameter
-    params = new URLSearchParams(testLocation.search);
-    expect(historyLength).toBe(1);
+    params = new URLSearchParams(history.location.search);
+    expect(history.index).toBe(0);
     expect(params.get('page')).toBe('2');
     expect(params.get('perPage')).toBe(null);
 
@@ -106,33 +106,31 @@ test('should not add history states when setting values with a "replace" action'
     });
 
     // Check the length of the history stack after updating the perPage parameter
-    params = new URLSearchParams(testLocation.search);
-    expect(historyLength).toBe(1);
+    params = new URLSearchParams(history.location.search);
+    expect(history.index).toBe(0);
     expect(params.get('page')).toBe('1');
     expect(params.get('perPage')).toBe('20');
 });
 
 test('should only add a single history state when setting perPage without an action parameter', async () => {
     let params;
-    let historyLength;
-    let testLocation;
+
+    const history = createMemoryHistory({
+        initialEntries: [''],
+    });
 
     const { result } = renderHook(
         () => {
-            testLocation = useLocation();
-            historyLength = window.history.length;
             return useURLPagination(10);
         },
         {
-            wrapper: ({ children }) => (
-                <MemoryRouter initialEntries={['']}>{children}</MemoryRouter>
-            ),
+            wrapper: ({ children }) => <Router history={history}>{children}</Router>,
         }
     );
 
     // Check the length of the initial history stack
-    params = new URLSearchParams(testLocation.search);
-    expect(historyLength).toBe(1);
+    params = new URLSearchParams(history.location.search);
+    expect(history.index).toBe(0);
     expect(params.get('page')).toBe(null);
     expect(params.get('perPage')).toBe(null);
 
@@ -143,8 +141,8 @@ test('should only add a single history state when setting perPage without an act
     });
 
     // Check the length of the history stack after updating the page parameter
-    params = new URLSearchParams(testLocation.search);
-    expect(historyLength).toBe(2);
+    params = new URLSearchParams(history.location.search);
+    expect(history.index).toBe(1);
     expect(params.get('page')).toBe('2');
     expect(params.get('perPage')).toBe(null);
 
@@ -155,8 +153,8 @@ test('should only add a single history state when setting perPage without an act
     });
 
     // Check the length of the history stack after updating the perPage parameter
-    params = new URLSearchParams(testLocation.search);
-    expect(historyLength).toBe(3);
+    params = new URLSearchParams(history.location.search);
+    expect(history.index).toBe(2);
     expect(params.get('page')).toBe('1');
     expect(params.get('perPage')).toBe('20');
 });

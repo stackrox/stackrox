@@ -1,43 +1,9 @@
-import React, { ReactNode } from 'react';
-import { Location, MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
+import React from 'react';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import { renderHook, act } from '@testing-library/react';
 
 import { URLSearchParams } from 'url';
 import useURLStringUnion from './useURLStringUnion';
-
-type WrapperProps = {
-    children: ReactNode;
-    onRouteRender: (location: Location) => void;
-    initialEntries: string[];
-};
-
-// This Wrapper component allows the hook to simulate the browser's
-// URL bar in JSDom via the MemoryRouter
-function Wrapper({ children, onRouteRender, initialEntries = [] }: WrapperProps) {
-    const RouteWatcher = () => {
-        const location = useLocation();
-        onRouteRender(location);
-        return null;
-    };
-
-    return (
-        <MemoryRouter
-            initialEntries={initialEntries}
-            initialIndex={Math.max(0, initialEntries.length - 1)}
-        >
-            <Routes>
-                <Route path="*" element={<RouteWatcher />} />
-            </Routes>
-            {children}
-        </MemoryRouter>
-    );
-}
-
-const createWrapper = (props) => {
-    return function CreatedWrapper({ children }) {
-        return <Wrapper {...props}>{children}</Wrapper>;
-    };
-};
 
 beforeAll(() => {
     jest.useFakeTimers();
