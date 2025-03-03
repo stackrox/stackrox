@@ -95,21 +95,17 @@ type grpcClient struct {
 func newGrpcClient(ctx context.Context) (CentralClient, error) {
 	clientconn.SetUserAgent(clientconn.ConfigController)
 
-	dialOpts := []grpc.DialOption{
-		grpc.WithNoProxy(),
-	}
-
 	perRPCCreds := &perRPCCreds{}
-	opts := clientconn.Options{
-		InsecureNoTLS:                  false,
-		InsecureAllowCredsViaPlaintext: false,
-		DialOptions:                    dialOpts,
-		PerRPCCreds:                    perRPCCreds,
+
+	dialOpts := []grpc.DialOption{grpc.WithNoProxy(), grpc.WithPerRPCCredentials(perRPCCreds)}
+
+	opts := []clientconn.ConnectionOption{
+		clientconn.UseInsecureNoTLS(false),
+		clientconn.MaxMsgReceiveSize(12 * size.MB),
 	}
+	opts = append(opts, clientconn.WithDialOptions(dialOpts...))
 
-	callOpts := []grpc.CallOption{grpc.MaxCallRecvMsgSize(12 * size.MB)}
-
-	conn, err := clientconn.GRPCConnection(ctx, mtls.CentralSubject, centralHostPort, opts, grpc.WithDefaultCallOptions(callOpts...))
+	conn, err := clientconn.AuthenticatedGRPCConnection(ctx, env.CentralEndpoint.Setting(), mtls.CentralSubject, opts...)
 
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to create gRPC connection")
