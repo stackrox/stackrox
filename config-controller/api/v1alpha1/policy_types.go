@@ -190,7 +190,7 @@ func init() {
 	SchemeBuilder.Register(&SecurityPolicy{}, &SecurityPolicyList{})
 }
 
-func getNameFromIdOrName(name string, cache map[string]string) (string, error) {
+func getID(name string, cache map[string]string) (string, error) {
 	if _, err := uuid.FromString(name); err == nil {
 		return name, nil
 	} else if id, exists := cache[name]; exists {
