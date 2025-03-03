@@ -452,18 +452,14 @@ deploy_sensor_via_operator() {
 
     if [[ -n "${ROX_AFTERGLOW_PERIOD:-}" ]]; then
        collector_envs+=("ROX_AFTERGLOW_PERIOD=${ROX_AFTERGLOW_PERIOD}")
-       #kubectl -n "${sensor_namespace}" set env ds/collector ROX_AFTERGLOW_PERIOD="${ROX_AFTERGLOW_PERIOD}"
     fi
 
     if [[ -n "${ROX_COLLECTOR_INTROSPECTION_ENABLE:-}" ]]; then
        collector_envs+=("ROX_COLLECTOR_INTROSPECTION_ENABLE=${ROX_COLLECTOR_INTROSPECTION_ENABLE}")
-       #kubectl -n "${sensor_namespace}" set env ds/collector ROX_COLLECTOR_INTROSPECTION_ENABLE="${ROX_COLLECTOR_INTROSPECTION_ENABLE}"
     fi
 
     if [[ -n "${ROX_PROCESSES_LISTENING_ON_PORT:-}" ]]; then
        collector_envs+=("ROX_PROCESSES_LISTENING_ON_PORT=${ROX_PROCESSES_LISTENING_ON_PORT}")
-       kubectl -n "${sensor_namespace}" set env deployment/sensor ROX_PROCESSES_LISTENING_ON_PORT="${ROX_PROCESSES_LISTENING_ON_PORT}"
-       #kubectl -n "${sensor_namespace}" set env ds/collector ROX_PROCESSES_LISTENING_ON_PORT="${ROX_PROCESSES_LISTENING_ON_PORT}"
     fi
 
     if [[ ${#collector_envs[@]} -gt 0 ]]; then
