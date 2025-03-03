@@ -661,6 +661,7 @@ func (ds *datastoreImpl) RemovePLOPsWithoutPodUID(ctx context.Context) (int64, e
 
 	plops, _ := ds.storage.Count(ctx, search.EmptyQuery())
 	for offset := 0; offset <= plops; {
+		start := time.Now()
 		query := fmt.Sprintf(deletePLOPsWithoutPoduid, page, offset)
 		commandTag, err := ds.pool.Exec(ctx, query)
 		numDeleted += commandTag.RowsAffected()
@@ -668,6 +669,8 @@ func (ds *datastoreImpl) RemovePLOPsWithoutPodUID(ctx context.Context) (int64, e
 		if err != nil {
 			return numDeleted, err
 		}
+		duration := time.Since(start)
+		log.Infof("Iteration at offset %d took %s", offset, duration)
 	}
 	return numDeleted, nil
 }
