@@ -125,7 +125,7 @@ require (
 	golang.org/x/crypto v0.31.0
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56
 	golang.org/x/net v0.33.0
-	golang.org/x/oauth2 v0.21.0
+	golang.org/x/oauth2 v0.27.0
 	golang.org/x/sync v0.10.0
 	golang.org/x/sys v0.28.0
 	golang.org/x/text v0.21.0
@@ -536,7 +536,7 @@ replace (
 	//       there is a mix of header auth and body auth in existence, which
 	//       the library solves with autosensing + caching, and what we don't
 	//       want to reimplement in our code.
-	golang.org/x/oauth2 => github.com/stackrox/oauth2 v0.0.0-20240521152739-4d3f7e4f6b49
+	golang.org/x/oauth2 => github.com/stackrox/oauth2 v0.27.1-0.20250303165042-2f6a66366502
 
 	// grpc has updated protobuf dependency to v2 that causes test failures.
 	// We need to upgrade to v2 in order to fix issues. For now let's stick with older version.
