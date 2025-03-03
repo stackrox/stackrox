@@ -10,11 +10,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/central/image/datastore/store"
 	"github.com/stackrox/rox/central/image/datastore/store/common/v2"
-	common2 "github.com/stackrox/rox/central/image/datastore/store/common/v2"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
@@ -22,7 +20,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
@@ -34,7 +31,6 @@ const (
 	imageComponentsV2CVEsTable = pkgSchema.ImageCvesV2TableName
 
 	getImageMetaStmt = "SELECT serialized FROM " + imagesTable + " WHERE Id = $1"
-	getImageIDsStmt  = "SELECT Id FROM " + imagesTable
 
 	cursorBatchSize = 50
 )
@@ -48,7 +44,7 @@ var (
 type imagePartsAsSlice struct {
 	image        *storage.Image
 	componentsV2 []*storage.ImageComponentV2
-	cveV2        []*storage.ImageCVEV2
+	cvesV2       []*storage.ImageCVEV2
 }
 
 type timeFields struct {
@@ -80,13 +76,12 @@ func (s *storeImpl) insertIntoImages(
 	iTime time.Time,
 ) error {
 	// First Image Occurrence and Created At are set based on the CVE itself, not the CVE
-	// within the component.  Since a CVE can occur multiple times within a component we can grab
+	// within the image.  Since a CVE can occur multiple times within an image we can grab
 	// those times for the incoming data and set the times appropriately.  We will later go through the
 	// existing CVEs to make further adjustments if necessary to make sure we do not overwrite
 	// the times of previous occurrences.
 	cveTimeMap := make(map[string]*timeFields)
-	// Scan has not been updated, so we are only processing image specific items.  Components and CVEs need not be updated.
-	for _, cve := range parts.cveV2 {
+	for _, cve := range parts.cvesV2 {
 		if val, ok := cveTimeMap[cve.GetCveBaseInfo().GetCve()]; ok {
 			if val.createdAt.After(cve.GetCveBaseInfo().GetCreatedAt().AsTime()) {
 				val.createdAt = cve.GetCveBaseInfo().GetCreatedAt().AsTime()
@@ -102,28 +97,21 @@ func (s *storeImpl) insertIntoImages(
 		}
 	}
 
-	// Grab all the components and CVEs that exist.
-	existingComponents, err := getImageComponents(ctx, tx, parts.image.GetId())
+	// Grab all CVEs for the image.
+	existingCVEs, err := getImageCVEs(ctx, tx, parts.image.GetId())
 	if err != nil {
 		return err
 	}
 
-	for _, component := range existingComponents {
-		existingCVEs, err := getImageComponentCVEs(ctx, tx, component.GetId())
-		if err != nil {
-			return err
-		}
-
-		for _, cve := range existingCVEs {
-			// If the existing CVE is not already in the map that implies it no longer exists for this image and
-			// the CVE will be removed.
-			if val, ok := cveTimeMap[cve.GetCveBaseInfo().GetCve()]; ok {
-				if val.createdAt.After(cve.GetCveBaseInfo().GetCreatedAt().AsTime()) {
-					val.createdAt = cve.GetCveBaseInfo().GetCreatedAt().AsTime()
-				}
-				if val.firstImageOccurrence.After(cve.GetFirstImageOccurrence().AsTime()) {
-					val.firstImageOccurrence = cve.GetFirstImageOccurrence().AsTime()
-				}
+	for _, cve := range existingCVEs {
+		// If the existing CVE is not already in the map that implies it no longer exists for this image and
+		// the CVE will be removed.
+		if val, ok := cveTimeMap[cve.GetCveBaseInfo().GetCve()]; ok {
+			if val.createdAt.After(cve.GetCveBaseInfo().GetCreatedAt().AsTime()) {
+				val.createdAt = cve.GetCveBaseInfo().GetCreatedAt().AsTime()
+			}
+			if val.firstImageOccurrence.After(cve.GetFirstImageOccurrence().AsTime()) {
+				val.firstImageOccurrence = cve.GetFirstImageOccurrence().AsTime()
 			}
 		}
 	}
@@ -179,7 +167,7 @@ func (s *storeImpl) insertIntoImages(
 			}
 		}
 
-		query = "delete from images_Layers where images_Id = $1 AND idx >= $2"
+		query = "DELETE FROM images_Layers WHERE images_Id = $1 AND idx >= $2"
 		_, err = tx.Exec(ctx, query, cloned.GetId(), len(cloned.GetMetadata().GetV1().GetLayers()))
 		if err != nil {
 			return err
@@ -189,17 +177,17 @@ func (s *storeImpl) insertIntoImages(
 	// If the scan is not new, we do not need to bother writing the components and CVEs as the latest already
 	// exist.
 	if !scanUpdated {
-		common2.SensorEventsDeduperCounter.With(prometheus.Labels{"status": "deduped"}).Inc()
+		common.SensorEventsDeduperCounter.With(prometheus.Labels{"status": "deduped"}).Inc()
 		return nil
 	}
-	common2.SensorEventsDeduperCounter.With(prometheus.Labels{"status": "passed"}).Inc()
+	common.SensorEventsDeduperCounter.With(prometheus.Labels{"status": "passed"}).Inc()
 
 	err = s.copyFromImageComponentsV2(ctx, tx, parts.image.GetId(), parts.componentsV2...)
 	if err != nil {
 		return err
 	}
 
-	return copyFromImageComponentV2Cves(ctx, tx, iTime, cveTimeMap, parts.cveV2...)
+	return copyFromImageComponentV2Cves(ctx, tx, iTime, cveTimeMap, parts.cvesV2...)
 }
 
 func getPartsAsSlice(parts common.ImageParts) *imagePartsAsSlice {
@@ -214,7 +202,7 @@ func getPartsAsSlice(parts common.ImageParts) *imagePartsAsSlice {
 	return &imagePartsAsSlice{
 		image:        parts.Image,
 		componentsV2: componentsV2,
-		cveV2:        vulns,
+		cvesV2:       vulns,
 	}
 }
 
@@ -658,6 +646,31 @@ func getImageComponentCVEs(ctx context.Context, tx *postgres.Tx, componentID str
 	return cves, rows.Err()
 }
 
+func getImageCVEs(ctx context.Context, tx *postgres.Tx, imageID string) ([]*storage.ImageCVEV2, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageCVEs")
+
+	// Using this method instead of accessing the component store to ensure the query is in the same transaction as
+	// the updates.  That may prove to not matter, but for now doing it this way.
+	rows, err := tx.Query(ctx, "SELECT serialized FROM "+imageComponentsV2CVEsTable+" WHERE imageid = $1", imageID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	cves := make([]*storage.ImageCVEV2, 0)
+	for rows.Next() {
+		var data []byte
+		if err := rows.Scan(&data); err != nil {
+			return nil, err
+		}
+		msg := &storage.ImageCVEV2{}
+		if err := msg.UnmarshalVTUnsafe(data); err != nil {
+			return nil, err
+		}
+		cves = append(cves, msg)
+	}
+	return cves, rows.Err()
+}
+
 // Delete removes the specified ID from the store.
 func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Image")
@@ -690,16 +703,17 @@ func (s *storeImpl) retryableDelete(ctx context.Context, id string) error {
 
 func (s *storeImpl) deleteImageTree(ctx context.Context, tx *postgres.Tx, imageID string) error {
 	// Delete from image table.
-	if _, err := tx.Exec(ctx, "delete from "+imagesTable+" where Id = $1", imageID); err != nil {
+	if _, err := tx.Exec(ctx, "DELETE FROM "+imagesTable+" WHERE Id = $1", imageID); err != nil {
 		return err
 	}
 
+	// We do not need to delete the CVEs because of the FK relationship to components with the cascade action.
 	return s.deleteImageComponents(ctx, tx, imageID)
 }
 
 func (s *storeImpl) deleteImageComponents(ctx context.Context, tx *postgres.Tx, imageID string) error {
 	// Delete image components for this image
-	if _, err := tx.Exec(ctx, "delete from "+imageComponentsV2Table+" where imageid = $1", imageID); err != nil {
+	if _, err := tx.Exec(ctx, "DELETE FROM "+imageComponentsV2Table+" WHERE imageid = $1", imageID); err != nil {
 		return err
 	}
 
@@ -852,22 +866,7 @@ func (s *storeImpl) retryableGetManyImageMetadata(ctx context.Context, ids []str
 		return nil, nil, nil
 	}
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
-		Resource: targetResource,
-		Access:   storage.Access_READ_ACCESS,
-	})
-	if err != nil {
-		return nil, nil, err
-	}
-	sacQueryFilter, err := sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
-	if err != nil {
-		return nil, nil, err
-	}
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddExactMatches(search.ImageSHA, ids...).ProtoQuery(),
-	)
+	q := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, ids...).ProtoQuery()
 
 	rows, err := pgSearch.RunGetManyQueryForSchema[storage.Image](ctx, schema, q, s.db)
 	if err != nil {
