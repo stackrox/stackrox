@@ -493,7 +493,7 @@ class NetworkFlowTest extends BaseSpecification {
         assert edges
         // Enabling external IPs should not change the number of edges
         assert edges.size() == 1
-	def graph = NetworkGraphService.getNetworkGraph(null, null)
+        def graph = NetworkGraphService.getNetworkGraph(null, null)
         def node = NetworkGraphUtil.findDeploymentNode(graph, deploymentUid)
         assert node
         // There should only be one connection and it should be to the generic external entity.
@@ -514,7 +514,7 @@ class NetworkFlowTest extends BaseSpecification {
         assert edges
         // Disbling external IPs should not change the number of edges
         assert edges.size() == 1
-	graph = NetworkGraphService.getNetworkGraph(null, null)
+        graph = NetworkGraphService.getNetworkGraph(null, null)
         node = NetworkGraphUtil.findDeploymentNode(graph, deploymentUid)
         assert node
         // There should only be one connection and it should be to the generic external entity.
