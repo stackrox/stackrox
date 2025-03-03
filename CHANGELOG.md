@@ -7,6 +7,12 @@ Entries in this file should be limited to:
 - Obscure side-effects that are not obviously apparent based on the JIRA associated with the changes.
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
+## [4.5.7]
+
+### Technical Changes
+
+- ROX-2734: Fix migrator failure when opening Badger DB
+
 ## [4.5.6]
 
 ### Technical Changes
