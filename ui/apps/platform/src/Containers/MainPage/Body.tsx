@@ -270,6 +270,17 @@ type BodyProps = {
     isFeatureFlagEnabled: IsFeatureFlagEnabled;
 };
 
+function WorkloadCvesRedirect() {
+    const location = useLocation();
+
+    const newPath = location.pathname.replace(
+        vulnerabilitiesWorkloadCvesPath,
+        vulnerabilitiesAllImagesPath
+    );
+
+    return <Navigate to={`${newPath}${location.search}`} replace />;
+}
+
 function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement {
     const location = useLocation();
     const params = useParams();
@@ -300,18 +311,12 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                     />
                     {isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT') && (
                         <Route
-                            // We _do not_ include the `exact` prop here, as all prior workload-cves routes
-                            // must redirect to the new path. Instead we match against all subpaths.
-                            path={`${vulnerabilitiesWorkloadCvesPath}/:subpath*`}
+                            // all prior workload-cves routes must redirect to the new path.
+                            path={`${vulnerabilitiesWorkloadCvesPath}/*`}
                             // Since all subpaths and query parameters must be retained, we need to do
-                            // a search and replace of the subpath we are redirecting
-                            render={({ location }) => {
-                                const newPath = location.pathname.replace(
-                                    vulnerabilitiesWorkloadCvesPath,
-                                    vulnerabilitiesAllImagesPath
-                                );
-                                return <Redirect to={`${newPath}${location.search}`} />;
-                            }}
+                            // a search and replace of the subpath we are redirecting, which is accomplished
+                            // by using the WorkloadCvesRedirect component.
+                            element={<WorkloadCvesRedirect />}
                         />
                     )}
                     {Object.keys(routeComponentMap)

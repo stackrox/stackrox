@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { matchPath, useHistory, useLocation } from 'react-router-dom';
+import { matchPath, useLocation, useNavigate } from 'react-router-dom';
 import {
     Nav,
     Dropdown,
@@ -48,24 +48,30 @@ function getSubnavDescriptionGroups(
                       type: 'link',
                       content: 'User Workloads',
                       path: violationsUserWorkloadsViewPath,
-                      isActive: (location) =>
-                          location.search.includes(`filteredWorkflowView=Applications view`),
+                      isActive: (location) => {
+                          const search: string = location.search || '';
+                          return search.includes(`filteredWorkflowView=Applications view`);
+                      },
                       routeKey: 'violations',
                   },
                   {
                       type: 'link',
                       content: 'Platform',
                       path: violationsPlatformViewPath,
-                      isActive: (location) =>
-                          location.search.includes(`filteredWorkflowView=Platform view`),
+                      isActive: (location) => {
+                          const search: string = location.search || '';
+                          return search.includes(`filteredWorkflowView=Platform view`);
+                      },
                       routeKey: 'violations',
                   },
                   {
                       type: 'link',
                       content: 'All Violations',
                       path: violationsFullViewPath,
-                      isActive: (location) =>
-                          location.search.includes(`filteredWorkflowView=Full view`),
+                      isActive: (location) => {
+                          const search: string = location.search || '';
+                          return search.includes(`filteredWorkflowView=Full view`);
+                      },
                       routeKey: 'violations',
                   },
               ]
@@ -146,7 +152,7 @@ function matchBasePath({
     descriptionPath: string;
 }): boolean {
     const basePath = descriptionPath.split('?')[0] ?? '';
-    return Boolean(matchPath(pathname, basePath));
+    return Boolean(matchPath({ path: `${basePath}/*` }, pathname));
 }
 
 /*
@@ -179,7 +185,7 @@ export type HorizontalSubnavProps = {
 };
 
 function HorizontalSubnav({ hasReadAccess, isFeatureFlagEnabled }: HorizontalSubnavProps) {
-    const history = useHistory();
+    const navigate = useNavigate();
     const location = useLocation();
     const routePredicates = { hasReadAccess, isFeatureFlagEnabled };
 
@@ -203,7 +209,9 @@ function HorizontalSubnav({ hasReadAccess, isFeatureFlagEnabled }: HorizontalSub
         _event: React.MouseEvent<Element, MouseEvent> | undefined,
         value: string | number | undefined
     ) => {
-        history.push(value);
+        if (value !== undefined) {
+            navigate(value.toString());
+        }
         setOpenDropdownKey(null);
     };
 
