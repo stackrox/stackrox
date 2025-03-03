@@ -12,8 +12,15 @@ else
 
     if [ $(cat "${PGDATA}/PG_VERSION") -lt "$PG_BINARY_VERSION" ]; then
         # Data version is less than binaries, upgrade
+
+        # Not sure how it works now, but during the upgrade group permissions
+        # are rejected.
+        chmod 0700 $PGDATA
+
+        # Allow pg_upgrade to use the password
         export PGPASSWORD=$(cat /run/secrets/stackrox.io/secrets/password)
 
+        # Copies the same options as the original initdb
         export PGSETUP_INITDB_OPTIONS="--auth-host=scram-sha-256 \
                                        --auth-local=scram-sha-256 \
                                        --pwfile /run/secrets/stackrox.io/secrets/password \
