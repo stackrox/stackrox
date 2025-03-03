@@ -144,11 +144,11 @@ func (t *TabularPrinterFactory) CreatePrinter(format string) (ObjectPrinter, err
 	}
 	requiredHeadersJSON, err := t.mapRequiredHeadersToJson()
 	if err != nil {
-		return nil, errox.InvalidArgs.Newf("Failed to map required headers to JSON: %v", format)
+		return nil, errox.InvalidArgs.Newf("Failed to map required headers to JSON: %v", err)
 	}
 	err = t.propagateCustomHeaders()
 	if err != nil {
-		return nil, errox.InvalidArgs.Newf("Failed to propagate custom headers: %v", format)
+		return nil, errox.InvalidArgs.Newf("Failed to propagate custom headers: %v", err)
 	}
 	// If not column is specified by merge is enabled then set all columns to merge.
 	if t.columnsToMerge == nil && t.Merge {
