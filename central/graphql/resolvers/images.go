@@ -153,11 +153,13 @@ func (resolver *imageResolver) TopImageVulnerability(ctx context.Context, args R
 // ImageVulnerabilities returns, as ImageVulnerabilityResolver, the vulnerabilities for the image
 func (resolver *imageResolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageVulnerabilities")
+	log.Infof("SHREWS -- image.ImageVulnerabilities -- %v", args)
 	return resolver.root.ImageVulnerabilities(resolver.withImageScopeContext(ctx), args)
 }
 
 func (resolver *imageResolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageVulnerabilityCount")
+	log.Info("SHREWS -- image.ImageVulnerabilitiesCount")
 	return resolver.root.ImageVulnerabilityCount(resolver.withImageScopeContext(ctx), args)
 }
 
@@ -190,6 +192,7 @@ func (resolver *imageResolver) ImageCVECountBySeverity(ctx context.Context, q Ra
 
 func (resolver *imageResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageComponents")
+	log.Infof("SHREWS -- image.ImageComponents -- %v", args)
 	return resolver.root.ImageComponents(resolver.withImageScopeContext(ctx), args)
 }
 
