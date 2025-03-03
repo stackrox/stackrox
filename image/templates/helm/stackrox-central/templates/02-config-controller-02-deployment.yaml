@@ -41,6 +41,8 @@ spec:
         args:
           - --health-probe-bind-address=:8081
         env:
+        - name: ROX_CENTRAL_ENDPOINT
+          value: {{ ._rox.centralEndpoint }}
         - name: POD_NAMESPACE
           valueFrom:
             fieldRef:
