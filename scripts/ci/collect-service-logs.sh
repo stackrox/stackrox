@@ -78,21 +78,28 @@ main() {
         fi
         cat "$out"
 
+        info "Creating dir ${log_dir}/${object}"
         mkdir -p "${log_dir}/${object}"
         local item_count=0
 
         for item in $(kubectl -n "${namespace}" get "${object}" -o jsonpath='{.items}' | jq -r '.[] | select(.metadata.deletionTimestamp | not) | .metadata.name'); do
+            info "loop item: '$item'"
+            info "executing: kubectl get '${object}' '${item}' -n '${namespace}' -o json >  '${log_dir}/${object}/${item}_object.json'"
             kubectl get "${object}" "${item}" -n "${namespace}" -o json > "${log_dir}/${object}/${item}_object.json" 2>&1
             {
+              echo "executing: kubectl describe '${object}' '${item}' -n '${namespace}'"
               kubectl describe "${object}" "${item}" -n "${namespace}" 2>&1
               echo
               echo
               echo '----------------------'
               echo '# Full YAML definition'
+              echo "executing: kubectl get '${object}' '${item}' -n '${namespace}' -o yaml"
               kubectl get "${object}" "${item}" -n "${namespace}" -o yaml 2>&1
-            } > "${log_dir}/${object}/${item}_describe.log"
+            } | tee "${log_dir}/${object}/${item}_describe.log"
 
+            info "executing: dump_logs '.status.containerStatuses'"
             dump_logs '.status.containerStatuses'
+            info "executing: dump_logs '.status.initContainerStatuses'"
             dump_logs '.status.initContainerStatuses'
             (( item_count++ ))
         done
@@ -100,13 +107,18 @@ main() {
         # Save the count of objects found in order to couple this script with
         # other functionality that expects filenames in these directories to
         # follow a certain pattern.
-        echo "${item_count}" > "${log_dir}/${object}/ITEM_COUNT.txt"
+        echo "saving item count"
+        echo "${item_count}" | tee "${log_dir}/${object}/ITEM_COUNT.txt"
     done
 
+    echo "executing: kubectl -n '${namespace}' get events -o wide >'${log_dir}/events.txt'"
     kubectl -n "${namespace}" get events -o wide >"${log_dir}/events.txt"
+    echo "executing: kubectl -n '${namespace}' get events -o yaml >'${log_dir}/events.txt'"
     kubectl -n "${namespace}" get events -o yaml >"${log_dir}/events.yaml"
 
+    echo "executing: find '${log_dir}' -type f -size 0 -delete"
     find "${log_dir}" -type f -size 0 -delete
+    echo "finished collect-service-logs.sh:main"
 }
 
 main "$@"
