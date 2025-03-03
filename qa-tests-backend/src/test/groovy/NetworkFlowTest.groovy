@@ -483,17 +483,30 @@ class NetworkFlowTest extends BaseSpecification {
         log.info "Checking for edge from ${EXTERNALDESTINATION} to external target"
 
         List<Edge> edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
+        def graph = NetworkGraphService.getNetworkGraph(null, null)
+        log.info "graph0 = ${graph}"
         assert edges
+        def nedges = edges.size()
+        int i
+        for (i=0;i<nedges;i++) {
+            log.info ""
+            log.info "external edge"
+            log.info "${edges[i].getLastActiveTimestamp()}"
+            log.info "${edges[i].getProtocol()}"
+            log.info "${edges[i].getPort()}"
+            log.info ""
+        }
         assert edges.size() == 1
 
         CollectorUtil.enableExternalIps(orchestrator)
         sleep 65000 // Wait for the collector scrape interval and for sensor to send connections to sensor
 
         edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
+        graph = NetworkGraphService.getNetworkGraph(null, null)
+        log.info "graph1 = ${graph}"
         assert edges
         // Enabling external IPs should not change the number of edges
         assert edges.size() == 1
-        def graph = NetworkGraphService.getNetworkGraph(null, null)
         def node = NetworkGraphUtil.findDeploymentNode(graph, deploymentUid)
         assert node
         // There should only be one connection and it should be to the generic external entity.
@@ -501,10 +514,7 @@ class NetworkFlowTest extends BaseSpecification {
         // // Collector reports the normalized connection as being closed. There is no assert here
         // // as we don't want this behavior long term.
         // waitForEdgeToBeClosed(edges.get(0), 165)
-        // // The unnormalized connection is then reported as being opened by collector. This connection
-        // // is normlized later before appearing in the API response.
-        // // We probably don't want this assert either.
-        // assert waitForEdgeUpdate(edges.get(0))
+        // assert !waitForEdgeToBeClosed(edges.get(0), 165) // This assert was failing
 
         // Disable external IPs at the end of the test and check the relevant edge
         CollectorUtil.disableExternalIps(orchestrator)
@@ -513,8 +523,9 @@ class NetworkFlowTest extends BaseSpecification {
         edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
         assert edges
         // Disbling external IPs should not change the number of edges
-        assert edges.size() == 1
         graph = NetworkGraphService.getNetworkGraph(null, null)
+        log.info "graph2 = ${graph}"
+        assert edges.size() == 1
         node = NetworkGraphUtil.findDeploymentNode(graph, deploymentUid)
         assert node
         // There should only be one connection and it should be to the generic external entity.
@@ -522,9 +533,6 @@ class NetworkFlowTest extends BaseSpecification {
         // // Collector reports the unnormalized connection as being closed. There is no assert here
         // // as we don't want this behavior long term.
         // waitForEdgeToBeClosed(edges.get(0), 165)
-        // // The normalized connection is then reported as being opened by collector.
-        // // We probably don't want this assert either.
-        // assert waitForEdgeUpdate(edges.get(0))
     }
 
     @Tag("NetworkFlowVisualization")
