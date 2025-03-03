@@ -46,7 +46,7 @@ The following formats are supported:
 	}
 
 	cmd.Flags().StringVarP(&dir, "output", "o", "",
-		"Directory where the docs should be written to")
+		"Directory where the docs should be written to.")
 	utils.Must(cmd.MarkFlagRequired("output"))
 	return cmd
 }
