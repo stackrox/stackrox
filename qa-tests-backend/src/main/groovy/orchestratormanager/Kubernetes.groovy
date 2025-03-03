@@ -94,7 +94,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation
 import io.fabric8.kubernetes.client.dsl.Resource
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource
 import io.fabric8.kubernetes.client.dsl.ScalableResource
-import io.fabric8.kubernetes.client.LocalPortForward;
+import io.fabric8.kubernetes.client.LocalPortForward
 import org.apache.commons.exec.CommandLine
 
 import common.YamlGenerator
@@ -1995,7 +1995,6 @@ class Kubernetes {
                 .portForward(port)
         }
     }
-
 
     /*
         Private K8S Support functions

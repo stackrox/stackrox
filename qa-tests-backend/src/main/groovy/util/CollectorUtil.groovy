@@ -4,9 +4,6 @@ import groovy.util.logging.Slf4j
 
 import orchestratormanager.OrchestratorMain
 
-import java.net.HttpURLConnection
-import java.net.URL
-
 import com.google.protobuf.util.JsonFormat
 
 import sensor.Collector
@@ -47,14 +44,13 @@ class CollectorUtil {
         }
     }
 
-    static waitForConfigToHaveState(OrchestratorMain orchestrator, String state, int timeoutSeconds = 90, int port = 8080) {
+    static waitForConfigToHaveState(OrchestratorMain orchestrator, String state, int timeout = 90, int port = 8080) {
         def portForwards = orchestrator.createCollectorPortForwards(port)
 
         log.info "Waiting for Collector Config propagation (${portForwards.size()} pods)"
         int intervalSeconds = 1
         int waitTime
-        def startTime = System.currentTimeMillis()
-        for (waitTime = 0; waitTime <= timeoutSeconds / intervalSeconds; waitTime++) {
+        for (waitTime = 0; waitTime <= timeout / intervalSeconds; waitTime++) {
             if (portForwards.size() == 0) {
                 break
             }
@@ -68,12 +64,12 @@ class CollectorUtil {
             sleep intervalSeconds * 1000
         }
 
-        def success = waitTime <= timeoutSeconds / intervalSeconds
+        def success = waitTime <= timeout / intervalSeconds
         if (success) {
             def waitTimeSeconds = waitTime * intervalSeconds
             log.info "Waited for ${waitTimeSeconds} seconds for Collector runtime configuration to be updated"
         } else {
-            log.info "Waiting for Collector runtime configuration timed out after ${timeoutSeconds} seconds"
+            log.info "Waiting for Collector runtime configuration timed out after ${timeout} seconds"
         }
 
         // if we timed out, some collectors have not updated
