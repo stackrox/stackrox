@@ -26,6 +26,7 @@ import services.ClusterService
 import services.DeploymentService
 import services.NetworkGraphService
 import services.NetworkPolicyService
+import util.CollectorUtil
 import util.Env
 import util.Helpers
 import util.NetworkGraphUtil
@@ -61,8 +62,6 @@ class NetworkFlowTest extends BaseSpecification {
     static final private String OTHER_NAMESPACE = "qa2"
 
     static final private String SOCAT_DEBUG = "-d -d -v"
-
-    static final private CONFIG_MAP_NAME = "collector-config"
 
     // Target deployments
     @Shared
@@ -477,114 +476,55 @@ class NetworkFlowTest extends BaseSpecification {
         String deploymentUid = deployments.find { it.name == EXTERNALDESTINATION }?.deploymentUid
         assert deploymentUid != null
 
-        def Map<String, String> CONFIG_MAP_DATA = [
-           "runtime_config.yaml": """
-networking:
-    externalIps:
-        enabled: DISABLED
-"""
-        ]
-
-        orchestrator.createConfigMap(CONFIG_MAP_NAME, CONFIG_MAP_DATA, "stackrox")
+        // External IPs should be disabled at this point, but it is disabled again to be safe.
+        // Later external IPs is enabled and then disabled again.
+        CollectorUtil.disableExternalIps(orchestrator)
 
         log.info "Checking for edge from ${EXTERNALDESTINATION} to external target"
-
-	sleep 180000
 
         List<Edge> edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
         assert edges
-	log.info "${edges}"
-	def graph = NetworkGraphService.getNetworkGraph(null, null)
-	log.info "${graph}"
+        assert edges.size() == 1
 
-        CONFIG_MAP_DATA = [
-           "runtime_config.yaml": """
-networking:
-    externalIps:
-        enabled: ENABLED
-"""
-       ]
-        orchestrator.createConfigMap(CONFIG_MAP_NAME, CONFIG_MAP_DATA, "stackrox")
-	sleep 180000
+        CollectorUtil.enableExternalIps(orchestrator)
+        sleep 65000 // Wait for the collector scrape interval and for sensor to send connections to sensor
 
-        assert waitForEdgeToBeClosed(edges.get(0), 165)
         edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
-	log.info "${edges}"
-        log.info "asdf"
-	graph = NetworkGraphService.getNetworkGraph(null, null)
-	log.info "${graph}"
+        assert edges
+        // Enabling external IPs should not change the number of edges
+        assert edges.size() == 1
+        def graph = NetworkGraphService.getNetworkGraph(null, null)
+        def node = NetworkGraphUtil.findDeploymentNode(graph, deploymentUid)
+        assert node
+        // There should only be one connection and it should be to the generic external entity.
+        assert node.outEdges.size() == 1
+        // // Collector reports the normalized connection as being closed. There is no assert here
+        // // as we don't want this behavior long term.
+        // waitForEdgeToBeClosed(edges.get(0), 165)
+        // // The unnormalized connection is then reported as being opened by collector. This connection
+        // // is normlized later before appearing in the API response.
+        // // We probably don't want this assert either.
+        // assert waitForEdgeUpdate(edges.get(0))
 
-        CONFIG_MAP_DATA = [
-           "runtime_config.yaml": """
-networking:
-    externalIps:
-        enabled: DISABLED
-"""
-       ]
+        // Disable external IPs at the end of the test and check the relevant edge
+        CollectorUtil.disableExternalIps(orchestrator)
+        sleep 65000 // Wait for the collector scrape interval and for sensor to send connections to sensor
 
-        orchestrator.createConfigMap(CONFIG_MAP_NAME, CONFIG_MAP_DATA, "stackrox")
-	sleep 180000
-        assert waitForEdgeUpdate(edges.get(0), 90)
-	graph = NetworkGraphService.getNetworkGraph(null, null)
-	log.info "${graph}"
-    }
-
-    @Tag("NetworkFlowVisualization")
-    //ROX-21491 skipping test case for p/z
-    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
-    def "Verify external IPs"() {
-        given:
-        "Deployment A, where A communicates to an external target"
-        String deploymentUid = deployments.find { it.name == EXTERNALDESTINATION }?.deploymentUid
-        assert deploymentUid != null
-
-        def Map<String, String> CONFIG_MAP_DATA = [
-           "runtime_config.yaml": """
-networking:
-    externalIps:
-        enabled: DISABLED
-"""
-        ]
-
-        orchestrator.createConfigMap(CONFIG_MAP_NAME, CONFIG_MAP_DATA, "stackrox")
-
-        log.info "Checking for edge from ${EXTERNALDESTINATION} to external target"
-
-	sleep 180000
-
-        def externalEntities = NetworkGraphService.getExternalNetworkEntities(null)
-	log.info "external entities with external ips disabled"
-        log.info "${externalEntities}"
-
-        CONFIG_MAP_DATA = [
-           "runtime_config.yaml": """
-networking:
-    externalIps:
-        enabled: ENABLED
-"""
-       ]
-        orchestrator.createConfigMap(CONFIG_MAP_NAME, CONFIG_MAP_DATA, "stackrox")
-	sleep 180000
-
-        externalEntities = NetworkGraphService.getExternalNetworkEntities(null)
-	log.info "external entities with external ips enabled"
-        log.info "${externalEntities}"
-
-
-        CONFIG_MAP_DATA = [
-           "runtime_config.yaml": """
-networking:
-    externalIps:
-        enabled: DISABLED
-"""
-       ]
-
-        orchestrator.createConfigMap(CONFIG_MAP_NAME, CONFIG_MAP_DATA, "stackrox")
-	sleep 180000
-
-        externalEntities = NetworkGraphService.getExternalNetworkEntities(null)
-	log.info "external entities with external ips disabled"
-        log.info "${externalEntities}"
+        edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
+        assert edges
+        // Disbling external IPs should not change the number of edges
+        assert edges.size() == 1
+        graph = NetworkGraphService.getNetworkGraph(null, null)
+        node = NetworkGraphUtil.findDeploymentNode(graph, deploymentUid)
+        assert node
+        // There should only be one connection and it should be to the generic external entity.
+        assert node.outEdges.size() == 1
+        // // Collector reports the unnormalized connection as being closed. There is no assert here
+        // // as we don't want this behavior long term.
+        // waitForEdgeToBeClosed(edges.get(0), 165)
+        // // The normalized connection is then reported as being opened by collector.
+        // // We probably don't want this assert either.
+        // assert waitForEdgeUpdate(edges.get(0))
     }
 
     @Tag("NetworkFlowVisualization")
