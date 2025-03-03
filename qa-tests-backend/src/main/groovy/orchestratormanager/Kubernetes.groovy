@@ -86,7 +86,6 @@ import io.fabric8.kubernetes.api.model.rbac.Subject
 import io.fabric8.kubernetes.client.KubernetesClient
 import io.fabric8.kubernetes.client.KubernetesClientBuilder
 import io.fabric8.kubernetes.client.KubernetesClientException
-import io.fabric8.kubernetes.client.LocalPortForward
 import io.fabric8.kubernetes.client.dsl.Deletable
 import io.fabric8.kubernetes.client.dsl.ExecListener
 import io.fabric8.kubernetes.client.dsl.ExecWatch
