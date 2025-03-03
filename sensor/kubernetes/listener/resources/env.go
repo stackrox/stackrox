@@ -3,7 +3,7 @@ package resources
 import "github.com/stackrox/rox/pkg/env"
 
 var (
-	// pastClusterEntitiesMemorySize defines for how many ticks Sensor should remember past entities.
+	// PastClusterEntitiesMemorySize defines for how many ticks Sensor should remember past entities.
 	// TODO(ROX-28259): Re-enable ROX_PAST_CLUSTER_ENTITIES_MEMORY_SIZE option.
 	// The duration of one tick is defined as duration of networkFlowManager.enricherTicker.
 	// Value of 0 disables the memory completely.
@@ -16,7 +16,7 @@ var (
 	// for connections that could have been attributed to a past deployment.
 	// Setting this value too high will result in higher memory consumption of Sensor (especially in clusters with many
 	// deletions or frequent dynamic changes to services or IP addresses).
-	// pastClusterEntitiesMemorySize = env.RegisterIntegerSetting("ROX_PAST_CLUSTER_ENTITIES_MEMORY_SIZE", 20)
+	PastClusterEntitiesMemorySize = env.RegisterIntegerSetting("ROX_PAST_CLUSTER_ENTITIES_MEMORY_SIZE", 20)
 	// debugClusterEntitiesStore enables running a debug http server that allows to look into the state of the
 	// clusterentities store and events that added and deleted entries from the store. DO NOT RUN IN PRODUCTION.
 	debugClusterEntitiesStore = env.RegisterBooleanSetting("ROX_DEBUG_CLUSTER_ENTITIES_STORE", false)

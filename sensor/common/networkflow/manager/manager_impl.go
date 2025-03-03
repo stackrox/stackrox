@@ -234,12 +234,24 @@ func (e *containerEndpoint) String() string {
 	return fmt.Sprintf("%s %s: %s", e.containerID, e.processKey, e.endpoint)
 }
 
+type Option func(*networkFlowManager)
+
+// WithTicker overrides the default ticker
+func WithTicker(ticker <-chan time.Time) Option {
+	return func(manager *networkFlowManager) {
+		if ticker != nil {
+			manager.tickerC = ticker
+		}
+	}
+}
+
 // NewManager creates a new instance of network flow manager
 func NewManager(
 	clusterEntities EntityStore,
 	externalSrcs externalsrcs.Store,
 	policyDetector detector.Detector,
 	pubSub *internalmessage.MessageSubscriber,
+	opts ...Option,
 ) Manager {
 	enricherTicker := time.NewTicker(tickerTime)
 	mgr := &networkFlowManager{
@@ -249,6 +261,7 @@ func NewManager(
 		externalSrcs:      externalSrcs,
 		policyDetector:    policyDetector,
 		enricherTicker:    enricherTicker,
+		tickerC:           enricherTicker.C,
 		initialSync:       &atomic.Bool{},
 		activeConnections: make(map[connection]*networkConnIndicator),
 		activeEndpoints:   make(map[containerEndpoint]*containerEndpointIndicator),
@@ -272,6 +285,10 @@ func NewManager(
 		mgr.Notify(common.SensorComponentEventResourceSyncFinished)
 	}); err != nil {
 		log.Errorf("unable to subscribe to %s: %+v", internalmessage.SensorMessageResourceSyncFinished, err)
+	}
+
+	for _, o := range opts {
+		o(mgr)
 	}
 
 	return mgr
@@ -301,6 +318,7 @@ type networkFlowManager struct {
 	initialSync *atomic.Bool
 
 	enricherTicker *time.Ticker
+	tickerC        <-chan time.Time
 
 	publicIPs *publicIPsManager
 
@@ -315,7 +333,7 @@ func (m *networkFlowManager) ProcessMessage(_ *central.MsgToSensor) error {
 }
 
 func (m *networkFlowManager) Start() error {
-	go m.enrichConnections(m.enricherTicker.C)
+	go m.enrichConnections(m.tickerC)
 	go m.publicIPs.Run(m.stopper.LowLevel().GetStopRequestSignal(), m.clusterEntities)
 	return nil
 }
@@ -375,6 +393,7 @@ func (m *networkFlowManager) sendToCentral(msg *central.MsgFromSensor) bool {
 		case <-m.stopper.Flow().StopRequested():
 			return false
 		case m.sensorUpdates <- message.New(msg):
+			log.Infof("=============== lvm message sent to central flows len(%d) endpoints len(%d)", len(msg.GetNetworkFlowUpdate().GetUpdated()), len(msg.GetNetworkFlowUpdate().GetUpdatedEndpoints()))
 			return true
 		default:
 			// If the m.sensorUpdates queue is full, we bounce the Network Flow update.
@@ -422,6 +441,7 @@ func (m *networkFlowManager) enrichConnections(tickerC <-chan time.Time) {
 		case <-m.stopper.Flow().StopRequested():
 			return
 		case <-tickerC:
+			log.Info("=============== lvm manager tick")
 			if !features.SensorCapturesIntermediateEvents.Enabled() && !m.centralReady.IsDone() {
 				log.Info("Sensor is in offline mode: skipping enriching until connection is back up")
 				continue
@@ -444,9 +464,14 @@ func (m *networkFlowManager) getCurrentContext() context.Context {
 
 func (m *networkFlowManager) enrichAndSend() {
 	currentConns, currentEndpoints := m.currentEnrichedConnsAndEndpoints()
+	log.Infof("=========== lvm current conn len(%d) current endpoints len(%d)", len(currentConns), len(currentEndpoints))
+	log.Infof("=========== lvm current conn %v", currentConns)
+	log.Infof("=========== lvm current endpoints %v", currentConns)
 
 	updatedConns := computeUpdatedConns(currentConns, m.enrichedConnsLastSentState, &m.lastSentStateMutex)
 	updatedEndpoints := computeUpdatedEndpoints(currentEndpoints, m.enrichedEndpointsLastSentState, &m.lastSentStateMutex)
+
+	log.Infof("=========== lvm updated conn len(%d) updated endpoints len(%d)", len(updatedConns), len(updatedEndpoints))
 
 	if len(updatedConns)+len(updatedEndpoints) == 0 {
 		return
@@ -1058,6 +1083,8 @@ func (m *networkFlowManager) UnregisterCollector(hostname string, sequenceID int
 func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, nowTimestamp timestamp.MicroTS, sequenceID int64) error {
 	updatedConnections := getUpdatedConnections(h.hostname, networkInfo)
 	updatedEndpoints := getUpdatedContainerEndpoints(h.hostname, networkInfo)
+	log.Infof("=============== lvm process updated conn %v", updatedConnections)
+	log.Infof("=============== lvm process updated endpoints %v", updatedEndpoints)
 
 	collectorTS := timestamp.FromProtobuf(networkInfo.GetTime())
 	tsOffset := nowTimestamp - collectorTS
@@ -1098,6 +1125,7 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 				h.connections[c] = status
 			}
 			status.lastSeen = t
+			log.Infof("=============== lvm conn last seen is set %v", t)
 		}
 
 		h.lastKnownTimestamp = nowTimestamp
@@ -1122,6 +1150,7 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 				h.endpoints[ep] = status
 			}
 			status.lastSeen = t
+			log.Infof("=============== lvm endpoint last seen is set %v", t)
 		}
 
 		h.lastKnownTimestamp = nowTimestamp
