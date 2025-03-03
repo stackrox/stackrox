@@ -14,6 +14,8 @@ import (
 	connMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
 	"github.com/stackrox/rox/pkg/networkgraph/testutils"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
@@ -21,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	sacTestUtils "github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/predicate"
 	"github.com/stretchr/testify/suite"
@@ -76,10 +79,18 @@ func (suite *NetworkEntityDataStoreTestSuite) SetupSuite() {
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraph)))
 
-	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.db = pgtest.ForT(suite.T())
-
 	suite.store = postgres.New(suite.db.DB)
+}
+
+func (s *NetworkEntityDataStoreTestSuite) TearDownTest() {
+	s.mockCtrl.Finish()
+}
+
+func (suite *NetworkEntityDataStoreTestSuite) SetupTest() {
+	ctx := sac.WithAllAccess(context.Background())
+	_, err := suite.db.Exec(ctx, "TRUNCATE TABLE network_entities CASCADE")
+	suite.Require().NoError(err)
 
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.graphConfig = graphConfigMocks.NewMockDataStore(suite.mockCtrl)
@@ -89,10 +100,6 @@ func (suite *NetworkEntityDataStoreTestSuite) SetupSuite() {
 	suite.treeMgr.EXPECT().Initialize(gomock.Any())
 	dataPusher := newNetworkEntityPusher(suite.connMgr)
 	suite.ds = newEntityDataStore(suite.store, suite.graphConfig, suite.treeMgr, dataPusher)
-}
-
-func (suite *NetworkEntityDataStoreTestSuite) TearDownSuite() {
-	suite.mockCtrl.Finish()
 }
 
 func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
@@ -633,4 +640,1022 @@ func (suite *NetworkEntityDataStoreTestSuite) expectPushExternalNetworkEntitiesT
 		})
 
 	return signal
+}
+
+func (s *NetworkEntityDataStoreTestSuite) setupSACReadSingleTest() ([]sac.ResourceID, []*storage.NetworkEntity) {
+	var err error
+	var entity1ID, entity2ID, entity3ID sac.ResourceID
+
+	cidr := "192.168.2.0/24"
+	entity1ID, err = externalsrcs.NewGlobalScopedScopedID(cidr)
+	s.Require().NoError(err)
+	entity2ID, err = externalsrcs.NewClusterScopedID(fixtureconsts.Cluster1, cidr)
+	s.Require().NoError(err)
+	entity3ID, err = externalsrcs.NewClusterScopedID(fixtureconsts.Cluster2, cidr)
+	s.Require().NoError(err)
+
+	entityName := "cidr1"
+	global := ""
+	globalEntity := testutils.GetExtSrcNetworkEntity(
+		entity1ID.String(),
+		entityName,
+		cidr,
+		true,
+		global,
+		false,
+	)
+	cluster1Entity := testutils.GetExtSrcNetworkEntity(
+		entity2ID.String(),
+		entityName,
+		cidr,
+		true,
+		fixtureconsts.Cluster1,
+		false,
+	)
+
+	ctx := sac.WithAllAccess(context.Background())
+
+	s.treeMgr.EXPECT().GetNetworkTree(gomock.Any(), global).Return(trees[""])
+	err = s.ds.CreateExternalNetworkEntity(ctx, globalEntity, true)
+	s.Require().NoError(err)
+
+	var insertedCount int
+	s.treeMgr.EXPECT().GetNetworkTree(gomock.Any(), fixtureconsts.Cluster1).Return(trees[cluster1])
+	s.expectPushExternalNetworkEntitiesToSensor(fixtureconsts.Cluster1)
+	insertedCount, err = s.ds.CreateExtNetworkEntitiesForCluster(ctx, fixtureconsts.Cluster1, cluster1Entity)
+	s.Require().NoError(err)
+	s.Require().Equal(1, insertedCount)
+
+	return []sac.ResourceID{entity1ID, entity2ID, entity3ID}, []*storage.NetworkEntity{globalEntity, cluster1Entity}
+}
+
+func (s *NetworkEntityDataStoreTestSuite) TestExistsSAC() {
+	entityIDs, _ := s.setupSACReadSingleTest()
+	entity1ID := entityIDs[0]
+	entity2ID := entityIDs[1]
+	entity3ID := entityIDs[2]
+	testContexts := sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.NetworkGraph)
+
+	for name, tc := range map[string]struct {
+		contextName    string
+		entityID       string
+		expectedExists bool
+	}{
+		"All access can get global entity": {
+			contextName:    sacTestUtils.UnrestrictedReadWriteCtx,
+			entityID:       entity1ID.String(),
+			expectedExists: true,
+		},
+		"All access can get cluster entity": {
+			contextName:    sacTestUtils.UnrestrictedReadWriteCtx,
+			entityID:       entity2ID.String(),
+			expectedExists: true,
+		},
+		"All access cannot get missing entity": {
+			contextName:    sacTestUtils.UnrestrictedReadWriteCtx,
+			entityID:       entity3ID.String(),
+			expectedExists: false,
+		},
+		"Full read access can get global entity": {
+			contextName:    sacTestUtils.UnrestrictedReadCtx,
+			entityID:       entity1ID.String(),
+			expectedExists: true,
+		},
+		"Full read access can get cluster entity": {
+			contextName:    sacTestUtils.UnrestrictedReadCtx,
+			entityID:       entity2ID.String(),
+			expectedExists: true,
+		},
+		"Full read access cannot get missing entity": {
+			contextName:    sacTestUtils.UnrestrictedReadCtx,
+			entityID:       entity3ID.String(),
+			expectedExists: false,
+		},
+		"Cluster full access cannot get global entity": {
+			contextName:    sacTestUtils.Cluster1ReadWriteCtx,
+			entityID:       entity1ID.String(),
+			expectedExists: false,
+		},
+		"Cluster full access can get cluster entity": {
+			contextName:    sacTestUtils.Cluster1ReadWriteCtx,
+			entityID:       entity2ID.String(),
+			expectedExists: true,
+		},
+		"Cluster full access cannot get missing entity": {
+			contextName:    sacTestUtils.Cluster1ReadWriteCtx,
+			entityID:       entity3ID.String(),
+			expectedExists: false,
+		},
+		"Cluster partial access cannot get global entity": {
+			contextName:    sacTestUtils.Cluster1NamespaceAReadWriteCtx,
+			entityID:       entity1ID.String(),
+			expectedExists: false,
+		},
+		"Cluster partial access cannot get cluster entity": {
+			contextName:    sacTestUtils.Cluster1NamespaceAReadWriteCtx,
+			entityID:       entity2ID.String(),
+			expectedExists: false,
+		},
+		"Cluster partial access cannot get missing entity": {
+			contextName:    sacTestUtils.Cluster1NamespaceAReadWriteCtx,
+			entityID:       entity3ID.String(),
+			expectedExists: false,
+		},
+		"Other cluster access cannot get global entity": {
+			contextName:    sacTestUtils.Cluster2ReadWriteCtx,
+			entityID:       entity1ID.String(),
+			expectedExists: false,
+		},
+		"Other cluster access cannot get cluster entity": {
+			contextName:    sacTestUtils.Cluster2ReadWriteCtx,
+			entityID:       entity2ID.String(),
+			expectedExists: false,
+		},
+		"Other cluster access cannot get missing entity": {
+			contextName:    sacTestUtils.Cluster2ReadWriteCtx,
+			entityID:       entity3ID.String(),
+			expectedExists: false,
+		},
+	} {
+		s.Run(name, func() {
+			ctx := testContexts[tc.contextName]
+			exists, testErr := s.ds.Exists(ctx, tc.entityID)
+			s.NoError(testErr)
+			s.Equal(tc.expectedExists, exists)
+		})
+	}
+}
+
+func (s *NetworkEntityDataStoreTestSuite) TestGetIDsSAC() {
+	entityIDs, _ := s.setupSACReadSingleTest()
+	entity1ID := entityIDs[0]
+	entity2ID := entityIDs[1]
+	testContexts := sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.NetworkGraph)
+
+	allIDs := []string{entity1ID.String(), entity2ID.String()}
+	clusterIDs := []string{entity2ID.String()}
+	noIDs := []string{}
+
+	for name, tc := range map[string]struct {
+		contextName string
+		expectedIDs []string
+	}{
+		"All access can get all entity IDs": {
+			contextName: sacTestUtils.UnrestrictedReadWriteCtx,
+			expectedIDs: allIDs,
+		},
+		"Full read access can get all entity IDs": {
+			contextName: sacTestUtils.UnrestrictedReadCtx,
+			expectedIDs: allIDs,
+		},
+		"Cluster full access can only get cluster entity IDs": {
+			contextName: sacTestUtils.Cluster1ReadWriteCtx,
+			expectedIDs: clusterIDs,
+		},
+		"Cluster partial access cannot get any entity ID": {
+			contextName: sacTestUtils.Cluster1NamespaceAReadWriteCtx,
+			expectedIDs: noIDs,
+		},
+		"Other cluster access cannot get any entity ID": {
+			contextName: sacTestUtils.Cluster2ReadWriteCtx,
+			expectedIDs: noIDs,
+		},
+	} {
+		s.Run(name, func() {
+			ctx := testContexts[tc.contextName]
+			fetchedIDs, testErr := s.ds.GetIDs(ctx)
+			s.NoError(testErr)
+			s.ElementsMatch(tc.expectedIDs, fetchedIDs)
+		})
+	}
+}
+
+func (s *NetworkEntityDataStoreTestSuite) TestGetEntitySAC() {
+	entityIDs, entities := s.setupSACReadSingleTest()
+	entity1ID := entityIDs[0]
+	entity2ID := entityIDs[1]
+	entity3ID := entityIDs[2]
+	globalEntity := entities[0]
+	clusterEntity := entities[1]
+	testContexts := sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.NetworkGraph)
+
+	for name, tc := range map[string]struct {
+		contextName    string
+		entityID       string
+		expectedFound  bool
+		expectedEntity *storage.NetworkEntity
+	}{
+		"All access can get global entity": {
+			contextName:    sacTestUtils.UnrestrictedReadWriteCtx,
+			entityID:       entity1ID.String(),
+			expectedFound:  true,
+			expectedEntity: globalEntity,
+		},
+		"All access can get cluster entity": {
+			contextName:    sacTestUtils.UnrestrictedReadWriteCtx,
+			entityID:       entity2ID.String(),
+			expectedFound:  true,
+			expectedEntity: clusterEntity,
+		},
+		"All access cannot get missing entity": {
+			contextName:   sacTestUtils.UnrestrictedReadWriteCtx,
+			entityID:      entity3ID.String(),
+			expectedFound: false,
+		},
+		"Full read access can get global entity": {
+			contextName:    sacTestUtils.UnrestrictedReadCtx,
+			entityID:       entity1ID.String(),
+			expectedFound:  true,
+			expectedEntity: globalEntity,
+		},
+		"Full read access can get cluster entity": {
+			contextName:    sacTestUtils.UnrestrictedReadCtx,
+			entityID:       entity2ID.String(),
+			expectedFound:  true,
+			expectedEntity: clusterEntity,
+		},
+		"Full read access cannot get missing entity": {
+			contextName:   sacTestUtils.UnrestrictedReadCtx,
+			entityID:      entity3ID.String(),
+			expectedFound: false,
+		},
+		"Cluster full access cannot get global entity": {
+			contextName:   sacTestUtils.Cluster1ReadWriteCtx,
+			entityID:      entity1ID.String(),
+			expectedFound: false,
+		},
+		"Cluster full access can get cluster entity": {
+			contextName:    sacTestUtils.Cluster1ReadWriteCtx,
+			entityID:       entity2ID.String(),
+			expectedFound:  true,
+			expectedEntity: clusterEntity,
+		},
+		"Cluster full access cannot get missing entity": {
+			contextName:   sacTestUtils.Cluster1ReadWriteCtx,
+			entityID:      entity3ID.String(),
+			expectedFound: false,
+		},
+		"Cluster partial access cannot get global entity": {
+			contextName:   sacTestUtils.Cluster1NamespaceAReadWriteCtx,
+			entityID:      entity1ID.String(),
+			expectedFound: false,
+		},
+		"Cluster partial access cannot get cluster entity": {
+			contextName:   sacTestUtils.Cluster1NamespaceAReadWriteCtx,
+			entityID:      entity2ID.String(),
+			expectedFound: false,
+		},
+		"Cluster partial access cannot get missing entity": {
+			contextName:   sacTestUtils.Cluster1NamespaceAReadWriteCtx,
+			entityID:      entity3ID.String(),
+			expectedFound: false,
+		},
+		"Other cluster access cannot get global entity": {
+			contextName:   sacTestUtils.Cluster2ReadWriteCtx,
+			entityID:      entity1ID.String(),
+			expectedFound: false,
+		},
+		"Other cluster access cannot get cluster entity": {
+			contextName:   sacTestUtils.Cluster2ReadWriteCtx,
+			entityID:      entity2ID.String(),
+			expectedFound: false,
+		},
+		"Other cluster access cannot get missing entity": {
+			contextName:   sacTestUtils.Cluster2ReadWriteCtx,
+			entityID:      entity3ID.String(),
+			expectedFound: false,
+		},
+	} {
+		s.Run(name, func() {
+			ctx := testContexts[tc.contextName]
+			entity, found, testErr := s.ds.GetEntity(ctx, tc.entityID)
+			s.NoError(testErr)
+			if tc.expectedFound {
+				s.True(found)
+				protoassert.Equal(s.T(), tc.expectedEntity, entity)
+			} else {
+				s.False(found)
+				s.Nil(entity)
+			}
+		})
+	}
+}
+
+func (s *NetworkEntityDataStoreTestSuite) TestGetEntityByQuerySAC() {
+	// Note: The test here reflects the observed behaviour,
+	// which is not the expected one from a pure scoped access control perspective
+	// (entities that are not linked to the requester scope should be filtered out,
+	// like global entities for users that have access scope restricted to a cluster
+	// or cluster entities for clusters that are not in the access scope of the user).
+	entityIDs, entities := s.setupSACReadSingleTest()
+	entity1ID := entityIDs[0]
+	entity2ID := entityIDs[1]
+	entity3ID := entityIDs[2]
+	globalEntity := entities[0]
+	clusterEntity := entities[1]
+	testContexts := sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.NetworkGraph)
+
+	allEntities := []*storage.NetworkEntity{globalEntity, clusterEntity}
+	// clusterEntities := []*storage.NetworkEntity{clusterEntity}
+	// noEntities := []*storage.NetworkEntity{}
+
+	for name, tc := range map[string]struct {
+		contextName      string
+		expectedEntities []*storage.NetworkEntity
+	}{
+		"All access can get global and cluster entities": {
+			contextName:      sacTestUtils.UnrestrictedReadWriteCtx,
+			expectedEntities: allEntities,
+		},
+		"Full read access can get global and cluster entities": {
+			contextName:      sacTestUtils.UnrestrictedReadCtx,
+			expectedEntities: allEntities,
+		},
+		"Cluster full access should only get entities for the target cluster but can get all": {
+			contextName:      sacTestUtils.Cluster1ReadWriteCtx,
+			expectedEntities: allEntities,
+			// expectedEntities: clusterEntities
+		},
+		"Cluster partial access should not get global nor cluster entities but can": {
+			contextName:      sacTestUtils.Cluster1NamespaceAReadWriteCtx,
+			expectedEntities: allEntities,
+			// expectedEntities: noEntities
+		},
+		"Other cluster access should not get global nor other cluster entities but can": {
+			contextName:      sacTestUtils.Cluster2ReadWriteCtx,
+			expectedEntities: allEntities,
+			// expectedEntities: noEntities
+		},
+	} {
+		s.Run(name, func() {
+			ctx := testContexts[tc.contextName]
+			query := search.NewQueryBuilder().
+				AddDocIDs(entity1ID.String(), entity2ID.String(), entity3ID.String()).
+				ProtoQuery()
+			fetchedEntities, testErr := s.ds.GetEntityByQuery(ctx, query)
+			s.NoError(testErr)
+			protoassert.ElementsMatch(s.T(), tc.expectedEntities, fetchedEntities)
+		})
+	}
+}
+
+func (s *NetworkEntityDataStoreTestSuite) TestGetAllEntitiesForClusterSAC() {
+	_, entities := s.setupSACReadSingleTest()
+	globalEntity := entities[0]
+	clusterEntity := entities[1]
+	testContexts := sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.NetworkGraph)
+
+	allEntities := []*storage.NetworkEntity{globalEntity, clusterEntity}
+	clusterEntities := []*storage.NetworkEntity{clusterEntity}
+	noEntities := []*storage.NetworkEntity{}
+
+	for name, tc := range map[string]struct {
+		contextName      string
+		expectedEntities []*storage.NetworkEntity
+	}{
+		"All access can get global and target cluster entities": {
+			contextName:      sacTestUtils.UnrestrictedReadWriteCtx,
+			expectedEntities: allEntities,
+		},
+		"Full read access can get gobal and target cluster entities": {
+			contextName:      sacTestUtils.UnrestrictedReadCtx,
+			expectedEntities: allEntities,
+		},
+		"Cluster full access can get entities for the target cluster": {
+			contextName:      sacTestUtils.Cluster1ReadWriteCtx,
+			expectedEntities: clusterEntities,
+		},
+		"Cluster partial access cannot get target cluster entities": {
+			contextName:      sacTestUtils.Cluster1NamespaceAReadWriteCtx,
+			expectedEntities: noEntities,
+		},
+		"Other cluster access cannot get target cluster entities": {
+			contextName:      sacTestUtils.Cluster2ReadWriteCtx,
+			expectedEntities: noEntities,
+		},
+	} {
+		s.Run(name, func() {
+			ctx := testContexts[tc.contextName]
+			badTargetClusterID := ""
+			fetchedEntitiesFromBadCluster, badClusterTestErr := s.ds.GetAllEntitiesForCluster(ctx, badTargetClusterID)
+			s.ErrorIs(badClusterTestErr, errox.InvalidArgs)
+			s.Nil(fetchedEntitiesFromBadCluster)
+
+			s.graphConfig.EXPECT().
+				GetNetworkGraphConfig(gomock.Any()).
+				Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: false}, nil)
+			targetClusterID := fixtureconsts.Cluster1
+			fetchedEntities, testErr := s.ds.GetAllEntitiesForCluster(ctx, targetClusterID)
+			s.NoError(testErr)
+			protoassert.ElementsMatch(s.T(), tc.expectedEntities, fetchedEntities)
+		})
+	}
+}
+
+func (s *NetworkEntityDataStoreTestSuite) TestGetAllEntitiesSAC() {
+	_, entities := s.setupSACReadSingleTest()
+	globalEntity := entities[0]
+	clusterEntity := entities[1]
+	testContexts := sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.NetworkGraph)
+
+	allEntities := []*storage.NetworkEntity{globalEntity, clusterEntity}
+	clusterEntities := []*storage.NetworkEntity{clusterEntity}
+	noEntities := []*storage.NetworkEntity{}
+
+	for name, tc := range map[string]struct {
+		contextName      string
+		expectedEntities []*storage.NetworkEntity
+	}{
+		"All access can get global and target cluster entities": {
+			contextName:      sacTestUtils.UnrestrictedReadWriteCtx,
+			expectedEntities: allEntities,
+		},
+		"Full read access can get gobal and target cluster entities": {
+			contextName:      sacTestUtils.UnrestrictedReadCtx,
+			expectedEntities: allEntities,
+		},
+		"Cluster full access can get entities for the target cluster": {
+			contextName:      sacTestUtils.Cluster1ReadWriteCtx,
+			expectedEntities: clusterEntities,
+		},
+		"Cluster partial access cannot get target cluster entities": {
+			contextName:      sacTestUtils.Cluster1NamespaceAReadWriteCtx,
+			expectedEntities: noEntities,
+		},
+		"Other cluster access cannot get target cluster entities": {
+			contextName:      sacTestUtils.Cluster2ReadWriteCtx,
+			expectedEntities: noEntities,
+		},
+	} {
+		s.Run(name, func() {
+			ctx := testContexts[tc.contextName]
+			s.graphConfig.EXPECT().
+				GetNetworkGraphConfig(gomock.Any()).
+				Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: false}, nil)
+			fetchedEntities, testErr := s.ds.GetAllEntities(ctx)
+			s.NoError(testErr)
+			protoassert.ElementsMatch(s.T(), tc.expectedEntities, fetchedEntities)
+		})
+	}
+}
+
+func (s *NetworkEntityDataStoreTestSuite) TestGetAllMatchingEntitiesSAC() {
+	_, entities := s.setupSACReadSingleTest()
+	globalEntity := entities[0]
+	clusterEntity := entities[1]
+	testContexts := sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.NetworkGraph)
+
+	allEntities := []*storage.NetworkEntity{globalEntity, clusterEntity}
+	clusterEntities := []*storage.NetworkEntity{clusterEntity}
+	noEntities := []*storage.NetworkEntity{}
+
+	for name, tc := range map[string]struct {
+		contextName      string
+		expectedEntities []*storage.NetworkEntity
+	}{
+		"All access can get global and target cluster entities": {
+			contextName:      sacTestUtils.UnrestrictedReadWriteCtx,
+			expectedEntities: allEntities,
+		},
+		"Full read access can get gobal and target cluster entities": {
+			contextName:      sacTestUtils.UnrestrictedReadCtx,
+			expectedEntities: allEntities,
+		},
+		"Cluster full access can get entities for the target cluster": {
+			contextName:      sacTestUtils.Cluster1ReadWriteCtx,
+			expectedEntities: clusterEntities,
+		},
+		"Cluster partial access cannot get target cluster entities": {
+			contextName:      sacTestUtils.Cluster1NamespaceAReadWriteCtx,
+			expectedEntities: noEntities,
+		},
+		"Other cluster access cannot get target cluster entities": {
+			contextName:      sacTestUtils.Cluster2ReadWriteCtx,
+			expectedEntities: noEntities,
+		},
+	} {
+		s.Run(name, func() {
+			ctx := testContexts[tc.contextName]
+			// The predicate counts the processed entities that
+			// have a cluster ID in the entity scope and those
+			// that do not. The goal is to check what kind of
+			// access control was applied at database level.
+			globalEntityCounter := 0
+			clusterEntityCounter := 0
+			pred := func(ne *storage.NetworkEntity) bool {
+				if ne.GetScope().GetClusterId() == "" {
+					globalEntityCounter++
+				} else {
+					clusterEntityCounter++
+				}
+				return true
+			}
+			fetchedEntities, testErr := s.ds.GetAllMatchingEntities(ctx, pred)
+			s.NoError(testErr)
+			protoassert.ElementsMatch(s.T(), tc.expectedEntities, fetchedEntities)
+			// Walk went over all DB items (1 global entity and 1 cluster one).
+			// Access control was applied after the entity match.
+			s.Equal(1, globalEntityCounter)
+			s.Equal(1, clusterEntityCounter)
+		})
+	}
+}
+
+func (s *NetworkEntityDataStoreTestSuite) TestCreateExternalNetworkEntitySAC() {
+	testContexts := sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.NetworkGraph)
+	cleanupCtx := sac.WithAllAccess(context.Background())
+
+	var globalEntityID sac.ResourceID
+	var clusterEntityID sac.ResourceID
+	var err error
+	cidr := "192.168.2.0/24"
+	globalEntityID, err = externalsrcs.NewGlobalScopedScopedID(cidr)
+	s.Require().NoError(err)
+	clusterEntityID, err = externalsrcs.NewClusterScopedID(fixtureconsts.Cluster1, cidr)
+	s.Require().NoError(err)
+
+	entityName := "cidr1"
+
+	globalClusterID := ""
+	globalEntity := testutils.GetExtSrcNetworkEntity(
+		globalEntityID.String(),
+		entityName,
+		cidr,
+		true,
+		globalClusterID,
+		false,
+	)
+	cluster1Entity := testutils.GetExtSrcNetworkEntity(
+		clusterEntityID.String(),
+		entityName,
+		cidr,
+		true,
+		fixtureconsts.Cluster1,
+		false,
+	)
+
+	for name, tc := range map[string]struct {
+		contextName   string
+		expectedError error
+	}{
+		"All access can create a global entity": {
+			contextName:   sacTestUtils.UnrestrictedReadWriteCtx,
+			expectedError: nil,
+		},
+		"Full read cannot create a global entity": {
+			contextName:   sacTestUtils.UnrestrictedReadCtx,
+			expectedError: sac.ErrResourceAccessDenied,
+		},
+		"Full cluster read/write cannot create a global entity": {
+			contextName:   sacTestUtils.Cluster1ReadWriteCtx,
+			expectedError: sac.ErrResourceAccessDenied,
+		},
+		"Partial cluster read/write cannot create a global entity": {
+			contextName:   sacTestUtils.Cluster1NamespaceAReadWriteCtx,
+			expectedError: sac.ErrResourceAccessDenied,
+		},
+	} {
+		s.Run(name, func() {
+			ctx := testContexts[tc.contextName]
+			// for creation and removal
+			s.treeMgr.EXPECT().
+				GetNetworkTree(gomock.Any(), globalClusterID).
+				Return(tree.NewDefaultNetworkTreeWrapper()).
+				AnyTimes()
+			s.connMgr.EXPECT().
+				PushExternalNetworkEntitiesToAllSensors(gomock.Any()).
+				Return(nil).
+				AnyTimes()
+			testErr := s.ds.CreateExternalNetworkEntity(ctx, globalEntity, false)
+			s.ErrorIs(testErr, tc.expectedError)
+			cleanupErr := s.ds.DeleteExternalNetworkEntity(cleanupCtx, globalEntityID.String())
+			s.NoError(cleanupErr)
+		})
+	}
+
+	for name, tc := range map[string]struct {
+		contextName   string
+		expectedError error
+	}{
+		"All access can create a cluster entity": {
+			contextName:   sacTestUtils.UnrestrictedReadWriteCtx,
+			expectedError: nil,
+		},
+		"Full read cannot create a cluster entity": {
+			contextName:   sacTestUtils.UnrestrictedReadCtx,
+			expectedError: sac.ErrResourceAccessDenied,
+		},
+		"Full cluster read/write can create a cluster entity for cluster in scope": {
+			contextName:   sacTestUtils.Cluster1ReadWriteCtx,
+			expectedError: nil,
+		},
+		"Partial cluster read/write cannot create a global entity": {
+			contextName:   sacTestUtils.Cluster1NamespaceAReadWriteCtx,
+			expectedError: sac.ErrResourceAccessDenied,
+		},
+		"Other cluster read/write cannot create a cluster entity for cluster not in scope": {
+			contextName:   sacTestUtils.Cluster2ReadWriteCtx,
+			expectedError: sac.ErrResourceAccessDenied,
+		},
+	} {
+		s.Run(name, func() {
+			ctx := testContexts[tc.contextName]
+			// for creation and removal
+			s.treeMgr.EXPECT().
+				GetNetworkTree(gomock.Any(), fixtureconsts.Cluster1).
+				Return(tree.NewDefaultNetworkTreeWrapper()).
+				AnyTimes()
+			s.connMgr.EXPECT().
+				PushExternalNetworkEntitiesToSensor(gomock.Any(), fixtureconsts.Cluster1).
+				Return(nil).
+				AnyTimes()
+			testErr := s.ds.CreateExternalNetworkEntity(ctx, cluster1Entity, false)
+			s.ErrorIs(testErr, tc.expectedError)
+			cleanupErr := s.ds.DeleteExternalNetworkEntity(cleanupCtx, clusterEntityID.String())
+			s.NoError(cleanupErr)
+		})
+	}
+}
+
+func (s *NetworkEntityDataStoreTestSuite) TestUpdateExternalNetworkEntitySAC() {
+	testContexts := sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.NetworkGraph)
+	creationCtx := sac.WithAllAccess(context.Background())
+	cleanupCtx := sac.WithAllAccess(context.Background())
+
+	var globalEntityID sac.ResourceID
+	var clusterEntityID sac.ResourceID
+	var err error
+	cidr := "192.168.2.0/24"
+	globalEntityID, err = externalsrcs.NewGlobalScopedScopedID(cidr)
+	s.Require().NoError(err)
+	clusterEntityID, err = externalsrcs.NewClusterScopedID(fixtureconsts.Cluster1, cidr)
+	s.Require().NoError(err)
+
+	entityName := "cidr1"
+
+	globalClusterID := ""
+	globalEntity := testutils.GetExtSrcNetworkEntity(
+		globalEntityID.String(),
+		entityName,
+		cidr,
+		true,
+		globalClusterID,
+		false,
+	)
+	cluster1Entity := testutils.GetExtSrcNetworkEntity(
+		clusterEntityID.String(),
+		entityName,
+		cidr,
+		true,
+		fixtureconsts.Cluster1,
+		false,
+	)
+	updatedGlobalEntity := globalEntity.CloneVT()
+	updatedGlobalEntity.Info.GetExternalSource().Name = "updated"
+	updatedCluster1Entity := cluster1Entity.CloneVT()
+	updatedCluster1Entity.Info.GetExternalSource().Name = "updated"
+
+	for name, tc := range map[string]struct {
+		contextName   string
+		expectedError error
+	}{
+		"All access can update a global entity": {
+			contextName:   sacTestUtils.UnrestrictedReadWriteCtx,
+			expectedError: nil,
+		},
+		"Full read cannot update a global entity": {
+			contextName:   sacTestUtils.UnrestrictedReadCtx,
+			expectedError: sac.ErrResourceAccessDenied,
+		},
+		"Full cluster read/write cannot update a global entity": {
+			contextName:   sacTestUtils.Cluster1ReadWriteCtx,
+			expectedError: sac.ErrResourceAccessDenied,
+		},
+		"Partial cluster read/write cannot update a global entity": {
+			contextName:   sacTestUtils.Cluster1NamespaceAReadWriteCtx,
+			expectedError: sac.ErrResourceAccessDenied,
+		},
+	} {
+		s.Run(name, func() {
+			ctx := testContexts[tc.contextName]
+			// for creation, update and removal
+			s.treeMgr.EXPECT().
+				GetNetworkTree(gomock.Any(), globalClusterID).
+				Return(tree.NewDefaultNetworkTreeWrapper()).
+				AnyTimes()
+			s.connMgr.EXPECT().
+				PushExternalNetworkEntitiesToAllSensors(gomock.Any()).
+				Return(nil).
+				AnyTimes()
+			creationErr := s.ds.CreateExternalNetworkEntity(creationCtx, globalEntity, false)
+			s.NoError(creationErr)
+			testErr := s.ds.UpdateExternalNetworkEntity(ctx, updatedGlobalEntity, false)
+			s.ErrorIs(testErr, tc.expectedError)
+			cleanupErr := s.ds.DeleteExternalNetworkEntity(cleanupCtx, globalEntityID.String())
+			s.NoError(cleanupErr)
+		})
+	}
+
+	for name, tc := range map[string]struct {
+		contextName   string
+		expectedError error
+	}{
+		"All access can update a cluster entity": {
+			contextName:   sacTestUtils.UnrestrictedReadWriteCtx,
+			expectedError: nil,
+		},
+		"Full read cannot update a cluster entity": {
+			contextName:   sacTestUtils.UnrestrictedReadCtx,
+			expectedError: sac.ErrResourceAccessDenied,
+		},
+		"Full cluster read/write can update a cluster entity for cluster in scope": {
+			contextName:   sacTestUtils.Cluster1ReadWriteCtx,
+			expectedError: nil,
+		},
+		"Partial cluster read/write cannot update a global entity": {
+			contextName:   sacTestUtils.Cluster1NamespaceAReadWriteCtx,
+			expectedError: sac.ErrResourceAccessDenied,
+		},
+		"Other cluster read/write cannot update a cluster entity for cluster not in scope": {
+			contextName:   sacTestUtils.Cluster2ReadWriteCtx,
+			expectedError: sac.ErrResourceAccessDenied,
+		},
+	} {
+		s.Run(name, func() {
+			ctx := testContexts[tc.contextName]
+			// for creation, update and removal
+			s.treeMgr.EXPECT().
+				GetNetworkTree(gomock.Any(), fixtureconsts.Cluster1).
+				Return(tree.NewDefaultNetworkTreeWrapper()).
+				AnyTimes()
+			s.connMgr.EXPECT().
+				PushExternalNetworkEntitiesToSensor(gomock.Any(), fixtureconsts.Cluster1).
+				Return(nil).
+				AnyTimes()
+			createErr := s.ds.CreateExternalNetworkEntity(creationCtx, cluster1Entity, false)
+			s.NoError(createErr)
+			testErr := s.ds.UpdateExternalNetworkEntity(ctx, updatedCluster1Entity, false)
+			s.ErrorIs(testErr, tc.expectedError)
+			cleanupErr := s.ds.DeleteExternalNetworkEntity(cleanupCtx, clusterEntityID.String())
+			s.NoError(cleanupErr)
+		})
+	}
+}
+
+func (s *NetworkEntityDataStoreTestSuite) TestCreateExtNetworkEntitiesForCluster() {
+	testContexts := sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.NetworkGraph)
+	cleanupCtx := sac.WithAllAccess(context.Background())
+
+	var globalEntityID sac.ResourceID
+	var clusterEntityID sac.ResourceID
+	var err error
+	cidr := "192.168.2.0/24"
+	globalEntityID, err = externalsrcs.NewGlobalScopedScopedID(cidr)
+	s.Require().NoError(err)
+	clusterEntityID, err = externalsrcs.NewClusterScopedID(fixtureconsts.Cluster1, cidr)
+	s.Require().NoError(err)
+
+	entityName := "cidr1"
+
+	globalClusterID := ""
+	globalEntity := testutils.GetExtSrcNetworkEntity(
+		globalEntityID.String(),
+		entityName,
+		cidr,
+		true,
+		globalClusterID,
+		false,
+	)
+	cluster1Entity := testutils.GetExtSrcNetworkEntity(
+		clusterEntityID.String(),
+		entityName,
+		cidr,
+		true,
+		fixtureconsts.Cluster1,
+		false,
+	)
+
+	for name, tc := range map[string]struct {
+		contextName   string
+		expectedError error
+	}{
+		"All access can create a global entity": {
+			contextName:   sacTestUtils.UnrestrictedReadWriteCtx,
+			expectedError: nil,
+		},
+		"Full read cannot create a global entity": {
+			contextName:   sacTestUtils.UnrestrictedReadCtx,
+			expectedError: sac.ErrResourceAccessDenied,
+		},
+		"Full cluster read/write cannot create a global entity": {
+			contextName:   sacTestUtils.Cluster1ReadWriteCtx,
+			expectedError: sac.ErrResourceAccessDenied,
+		},
+		"Partial cluster read/write cannot create a global entity": {
+			contextName:   sacTestUtils.Cluster1NamespaceAReadWriteCtx,
+			expectedError: sac.ErrResourceAccessDenied,
+		},
+	} {
+		s.Run(name, func() {
+			ctx := testContexts[tc.contextName]
+			s.treeMgr.EXPECT().
+				GetNetworkTree(gomock.Any(), fixtureconsts.Cluster1).
+				Return(tree.NewDefaultNetworkTreeWrapper()).
+				Times(1)
+			s.connMgr.EXPECT().
+				PushExternalNetworkEntitiesToSensor(gomock.Any(), fixtureconsts.Cluster1).
+				Return(nil).
+				AnyTimes()
+			_, testErr := s.ds.CreateExtNetworkEntitiesForCluster(ctx, fixtureconsts.Cluster1, globalEntity)
+			if tc.expectedError != nil {
+				s.Error(testErr)
+			} else {
+				s.NoError(testErr)
+			}
+			s.treeMgr.EXPECT().
+				GetNetworkTree(gomock.Any(), globalClusterID).
+				Return(tree.NewDefaultNetworkTreeWrapper()).
+				AnyTimes()
+			s.connMgr.EXPECT().
+				PushExternalNetworkEntitiesToAllSensors(gomock.Any()).
+				Return(nil).
+				AnyTimes()
+			cleanupErr := s.ds.DeleteExternalNetworkEntity(cleanupCtx, globalEntityID.String())
+			s.NoError(cleanupErr)
+		})
+	}
+
+	for name, tc := range map[string]struct {
+		contextName   string
+		expectedError error
+	}{
+		"All access can create a cluster entity": {
+			contextName:   sacTestUtils.UnrestrictedReadWriteCtx,
+			expectedError: nil,
+		},
+		"Full read cannot create a cluster entity": {
+			contextName:   sacTestUtils.UnrestrictedReadCtx,
+			expectedError: sac.ErrResourceAccessDenied,
+		},
+		"Full cluster read/write can create a cluster entity for cluster in scope": {
+			contextName:   sacTestUtils.Cluster1ReadWriteCtx,
+			expectedError: nil,
+		},
+		"Partial cluster read/write cannot create a global entity": {
+			contextName:   sacTestUtils.Cluster1NamespaceAReadWriteCtx,
+			expectedError: sac.ErrResourceAccessDenied,
+		},
+		"Other cluster read/write cannot create a cluster entity for cluster not in scope": {
+			contextName:   sacTestUtils.Cluster2ReadWriteCtx,
+			expectedError: sac.ErrResourceAccessDenied,
+		},
+	} {
+		s.Run(name, func() {
+			ctx := testContexts[tc.contextName]
+			s.treeMgr.EXPECT().
+				GetNetworkTree(gomock.Any(), fixtureconsts.Cluster1).
+				Return(tree.NewDefaultNetworkTreeWrapper()).
+				AnyTimes()
+			s.connMgr.EXPECT().
+				PushExternalNetworkEntitiesToSensor(gomock.Any(), fixtureconsts.Cluster1).
+				Return(nil).
+				AnyTimes()
+			_, testErr := s.ds.CreateExtNetworkEntitiesForCluster(ctx, fixtureconsts.Cluster1, cluster1Entity)
+			if tc.expectedError != nil {
+				s.Error(testErr)
+			} else {
+				s.NoError(testErr)
+			}
+			s.treeMgr.EXPECT().
+				GetNetworkTree(gomock.Any(), fixtureconsts.Cluster1).
+				Return(tree.NewDefaultNetworkTreeWrapper()).
+				AnyTimes()
+			s.connMgr.EXPECT().
+				PushExternalNetworkEntitiesToSensor(gomock.Any(), fixtureconsts.Cluster1).
+				Return(nil).
+				AnyTimes()
+			cleanupErr := s.ds.DeleteExternalNetworkEntity(cleanupCtx, clusterEntityID.String())
+			s.NoError(cleanupErr)
+		})
+	}
+}
+
+func (s *NetworkEntityDataStoreTestSuite) TestDeleteExternalNetworkEntity() {
+	testContexts := sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.NetworkGraph)
+	createCtx := sac.WithAllAccess(context.Background())
+	cleanupCtx := sac.WithAllAccess(context.Background())
+
+	var globalEntityID sac.ResourceID
+	var clusterEntityID sac.ResourceID
+	var err error
+	cidr := "192.168.2.0/24"
+	globalEntityID, err = externalsrcs.NewGlobalScopedScopedID(cidr)
+	s.Require().NoError(err)
+	clusterEntityID, err = externalsrcs.NewClusterScopedID(fixtureconsts.Cluster1, cidr)
+	s.Require().NoError(err)
+
+	entityName := "cidr1"
+
+	globalClusterID := ""
+	globalEntity := testutils.GetExtSrcNetworkEntity(
+		globalEntityID.String(),
+		entityName,
+		cidr,
+		true,
+		globalClusterID,
+		false,
+	)
+	cluster1Entity := testutils.GetExtSrcNetworkEntity(
+		clusterEntityID.String(),
+		entityName,
+		cidr,
+		true,
+		fixtureconsts.Cluster1,
+		false,
+	)
+
+	for name, tc := range map[string]struct {
+		contextName   string
+		expectedError error
+	}{
+		"All access can create a global entity": {
+			contextName:   sacTestUtils.UnrestrictedReadWriteCtx,
+			expectedError: nil,
+		},
+		"Full read cannot create a global entity": {
+			contextName:   sacTestUtils.UnrestrictedReadCtx,
+			expectedError: sac.ErrResourceAccessDenied,
+		},
+		"Full cluster read/write cannot create a global entity": {
+			contextName:   sacTestUtils.Cluster1ReadWriteCtx,
+			expectedError: sac.ErrResourceAccessDenied,
+		},
+		"Partial cluster read/write cannot create a global entity": {
+			contextName:   sacTestUtils.Cluster1NamespaceAReadWriteCtx,
+			expectedError: sac.ErrResourceAccessDenied,
+		},
+	} {
+		s.Run(name, func() {
+			ctx := testContexts[tc.contextName]
+			s.treeMgr.EXPECT().
+				GetNetworkTree(gomock.Any(), globalClusterID).
+				Return(tree.NewDefaultNetworkTreeWrapper()).
+				AnyTimes()
+			s.connMgr.EXPECT().
+				PushExternalNetworkEntitiesToAllSensors(gomock.Any()).
+				Return(nil).
+				AnyTimes()
+			creationErr := s.ds.CreateExternalNetworkEntity(createCtx, globalEntity, false)
+			s.NoError(creationErr)
+			testErr := s.ds.DeleteExternalNetworkEntity(ctx, globalEntityID.String())
+			s.ErrorIs(testErr, tc.expectedError)
+			cleanupErr := s.ds.DeleteExternalNetworkEntity(cleanupCtx, globalEntityID.String())
+			s.NoError(cleanupErr)
+		})
+	}
+
+	for name, tc := range map[string]struct {
+		contextName   string
+		expectedError error
+	}{
+		"All access can create a cluster entity": {
+			contextName:   sacTestUtils.UnrestrictedReadWriteCtx,
+			expectedError: nil,
+		},
+		"Full read cannot create a cluster entity": {
+			contextName:   sacTestUtils.UnrestrictedReadCtx,
+			expectedError: sac.ErrResourceAccessDenied,
+		},
+		"Full cluster read/write can create a cluster entity for cluster in scope": {
+			contextName:   sacTestUtils.Cluster1ReadWriteCtx,
+			expectedError: nil,
+		},
+		"Partial cluster read/write cannot create a global entity": {
+			contextName:   sacTestUtils.Cluster1NamespaceAReadWriteCtx,
+			expectedError: sac.ErrResourceAccessDenied,
+		},
+		"Other cluster read/write cannot create a cluster entity for cluster not in scope": {
+			contextName:   sacTestUtils.Cluster2ReadWriteCtx,
+			expectedError: sac.ErrResourceAccessDenied,
+		},
+	} {
+		s.Run(name, func() {
+			ctx := testContexts[tc.contextName]
+			// for creation and removal
+			s.treeMgr.EXPECT().
+				GetNetworkTree(gomock.Any(), fixtureconsts.Cluster1).
+				Return(tree.NewDefaultNetworkTreeWrapper()).
+				AnyTimes()
+			s.connMgr.EXPECT().
+				PushExternalNetworkEntitiesToSensor(gomock.Any(), fixtureconsts.Cluster1).
+				Return(nil).
+				AnyTimes()
+			creationErr := s.ds.CreateExternalNetworkEntity(createCtx, cluster1Entity, false)
+			s.NoError(creationErr)
+			testErr := s.ds.DeleteExternalNetworkEntity(ctx, clusterEntityID.String())
+			s.ErrorIs(testErr, tc.expectedError)
+			cleanupErr := s.ds.DeleteExternalNetworkEntity(cleanupCtx, clusterEntityID.String())
+			s.NoError(cleanupErr)
+		})
+	}
 }
