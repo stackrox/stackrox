@@ -244,7 +244,7 @@ func New(ctx context.Context, opts ...clientOptions) (CachedCentralClient, error
 
 	for {
 		if err := c.EnsureFresh(ctx); err != nil {
-			log.Infof("Initialization Error: %s", err)
+			log.Warnf("Initialization Error: %s", err)
 			time.Sleep(time.Second * 5)
 			continue
 		}
