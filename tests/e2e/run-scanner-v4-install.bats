@@ -318,26 +318,35 @@ teardown() {
     echo "Using sensor namespace: ${sensor_namespace}"
 
     if [[ -n "${SCANNER_V4_LOG_DIR:-}" ]]; then
+        echo "executing: '$ROOT/scripts/ci/collect-service-logs.sh' '${central_namespace}' '${SCANNER_V4_LOG_DIR}/${BATS_TEST_NUMBER}-${BATS_TEST_NAME}'"
         "$ROOT/scripts/ci/collect-service-logs.sh" "${central_namespace}" \
             "${SCANNER_V4_LOG_DIR}/${BATS_TEST_NUMBER}-${BATS_TEST_NAME}"
-
+        echo "done with first collect-service-logs"
         if [[ "${central_namespace}" != "${sensor_namespace}" && -n "${sensor_namespace}" ]]; then
+            echo "executing: '$ROOT/scripts/ci/collect-service-logs.sh' '${sensor_namespace}' '${SCANNER_V4_LOG_DIR}/${BATS_TEST_NUMBER}-${BATS_TEST_NAME}'"
             "$ROOT/scripts/ci/collect-service-logs.sh" "${sensor_namespace}" \
                 "${SCANNER_V4_LOG_DIR}/${BATS_TEST_NUMBER}-${BATS_TEST_NAME}"
+            echo "done with second collect-service-logs"
         fi
     fi
 
     if [[ -z "${BATS_TEST_COMPLETED:-}" && -z "${BATS_TEST_SKIPPED}" && -n "${central_namespace}" ]]; then
+        echo "Test dit not complete, collecting analysis data"
         # Test did not "complete" and was not skipped. Collect some analysis data.
+        echo "describing pods in namespace '${central_namespace}'"
         describe_pods_in_namespace "${central_namespace}"
+        echo "describing deployments in namespace '${central_namespace}'"
         describe_deployments_in_namespace "${central_namespace}"
 
         if [[ "${central_namespace}" != "${sensor_namespace}" && -n "${sensor_namespace}" ]]; then
+            echo "describing pods in namespace '${sensor_namespace}'"
             describe_pods_in_namespace "${sensor_namespace}"
+            echo "describing deployments in namespace '${sensor_namespace}'"
             describe_deployments_in_namespace "${sensor_namespace}"
         fi
     fi
 
+    echo "executing: remove_existing_stackrox_resource"
     run remove_existing_stackrox_resources "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}" "stackrox"
     echo "Teardown complete"
 
