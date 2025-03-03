@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/size"
-	"google.golang.org/grpc"
 )
 
 var (
@@ -95,21 +94,22 @@ type grpcClient struct {
 func newGrpcClient(ctx context.Context) (CentralClient, error) {
 	clientconn.SetUserAgent(clientconn.ConfigController)
 
-	dialOpts := []grpc.DialOption{
-		grpc.WithNoProxy(),
-	}
+	//dialOpts := []grpc.DialOption{
+	//	grpc.WithNoProxy(),
+	//}
 
 	perRPCCreds := &perRPCCreds{}
-	opts := clientconn.Options{
-		InsecureNoTLS:                  false,
-		InsecureAllowCredsViaPlaintext: false,
-		DialOptions:                    dialOpts,
-		PerRPCCreds:                    perRPCCreds,
-	}
+	//opts := clientconn.Options{
+	//	InsecureNoTLS:                  false,
+	//	InsecureAllowCredsViaPlaintext: false,
+	//	DialOptions:                    dialOpts,
+	//	PerRPCCreds:                    perRPCCreds,
+	//}
 
-	callOpts := []grpc.CallOption{grpc.MaxCallRecvMsgSize(12 * size.MB)}
+	callOpts := []clientconn.ConnectionOption{clientconn.MaxMsgReceiveSize(12 * size.MB)}
 
-	conn, err := clientconn.GRPCConnection(ctx, mtls.CentralSubject, centralHostPort, opts, grpc.WithDefaultCallOptions(callOpts...))
+	conn, err := clientconn.AuthenticatedGRPCConnection(ctx, env.CentralEndpoint.Setting(), mtls.CentralSubject, callOpts...)
+	//centralConnection, err := clientconn.AuthenticatedGRPCConnection(context.Background(), env.CentralEndpoint.Setting(), mtls.CentralSubject, opts...)
 
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to create gRPC connection")
