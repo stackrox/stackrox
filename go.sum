@@ -1444,8 +1444,8 @@ github.com/stackrox/k8s-overlay-patch v0.0.0-20250224110925-13b5b47fd812 h1:ZWFT
 github.com/stackrox/k8s-overlay-patch v0.0.0-20250224110925-13b5b47fd812/go.mod h1:u7v87z34sjtlcaEaHXknpnrzXutdM//Vb3yyhXllQp0=
 github.com/stackrox/nvdtools v0.0.0-20231111002313-57e262e4797e h1:hLHHK1pGLpRvEbER2cJZekLeMnL+nMn3C37CVUhameM=
 github.com/stackrox/nvdtools v0.0.0-20231111002313-57e262e4797e/go.mod h1:Kh55SAWnjckS96TBSrXI99KrEKH4iB0OJby3N8GRJO4=
-github.com/stackrox/oauth2 v0.0.0-20240521152739-4d3f7e4f6b49 h1:FUX/fzXDu/TkYZQCk0TFGc5QUAv7m4GtvaRutyZCk4Y=
-github.com/stackrox/oauth2 v0.0.0-20240521152739-4d3f7e4f6b49/go.mod h1:XYTD2NtWslqkgxebSiOHnXEap4TF09sJSc7H1sXbhtI=
+github.com/stackrox/oauth2 v0.27.1-0.20250303074527-ab111a926f2a h1:wZu1eOLttRfg2YgIWC1HKerDOb/ZGeHPpfxk36L9DLg=
+github.com/stackrox/oauth2 v0.27.1-0.20250303074527-ab111a926f2a/go.mod h1:onh5ek6nERTohokkhCD/y2cV4Do3fxFHFuAejCkRWT8=
 github.com/stackrox/pkcs7 v0.0.0-20240314170115-841ca6b5f88d h1:aLCTq23tpBhbmrLa/3+21rESx7VXgkrjIKJpbhcrvVk=
 github.com/stackrox/pkcs7 v0.0.0-20240314170115-841ca6b5f88d/go.mod h1:zwEXo3PEZZb6QQZBrBORMX0Hvnnwst3PduSaTQZMFYc=
 github.com/stackrox/scanner v0.0.0-20240830165150-d133ba942d59 h1:XrOPpgBpAnwTXGbyAYSOongfFeVJJBWPTdWEgYw+Uck=
