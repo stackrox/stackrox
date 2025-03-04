@@ -16,7 +16,7 @@ func Test_indentAndWrap(t *testing.T) {
 		"    lines."
 
 	sb := &strings.Builder{}
-	_, err := makeFormattingWriter(sb, 30, 1, 2, 3, 4).WriteString(
+	_, err := makeFormattingWriter(sb, 30, defaultTabWidth, 1, 2, 3, 4).WriteString(
 		`
 This is some long text, that should be indented and	wrapped.
 There are multiple
@@ -25,7 +25,7 @@ lines.`)
 	assert.Equal(t, expected, sb.String())
 
 	sb = &strings.Builder{}
-	xw := makeFormattingWriter(sb, 30, 1, 2, 3, 4)
+	xw := makeFormattingWriter(sb, 30, defaultTabWidth, 1, 2, 3, 4)
 	_, _ = xw.WriteString("\nThis is")
 	_, _ = xw.WriteString(" some long text")
 	_, _ = xw.WriteString(", that should be indented ")
@@ -47,7 +47,7 @@ lines.`)
 	}
 	for _, c := range cases {
 		sb := &strings.Builder{}
-		_, err := makeFormattingWriter(sb, 20, c.padding...).WriteString(c.text)
+		_, err := makeFormattingWriter(sb, 20, defaultTabWidth, c.padding...).WriteString(c.text)
 		assert.NoError(t, err)
 		assert.Equal(t, c.expected, sb.String())
 	}
@@ -56,7 +56,7 @@ lines.`)
 func Test_setIndent(t *testing.T) {
 	t.Run("should respect updated indentation", func(t *testing.T) {
 		sb := &strings.Builder{}
-		w := makeFormattingWriter(sb, 20)
+		w := makeFormattingWriter(sb, 20, defaultTabWidth)
 		_, _ = w.WriteString("text 0")
 		w.SetIndent(2, 4)
 		_, _ = w.WriteString("text 2\n")
@@ -71,7 +71,7 @@ func Test_setIndent(t *testing.T) {
 
 	t.Run("should not reset previously written line length", func(t *testing.T) {
 		sb := &strings.Builder{}
-		w := makeFormattingWriter(sb, 10)
+		w := makeFormattingWriter(sb, 10, defaultTabWidth)
 
 		w.SetIndent(2)               // 2
 		_, _ = w.WriteString("... ") // +4=6
@@ -82,7 +82,7 @@ func Test_setIndent(t *testing.T) {
 
 	t.Run("should wrap correctly", func(t *testing.T) {
 		sb := &strings.Builder{}
-		w := makeFormattingWriter(sb, 10)
+		w := makeFormattingWriter(sb, 10, defaultTabWidth)
 
 		w.SetIndent(2)
 		_, _ = w.WriteString(".... ")
@@ -93,7 +93,7 @@ func Test_setIndent(t *testing.T) {
 
 	t.Run("negative indent should tab", func(t *testing.T) {
 		sb := &strings.Builder{}
-		w := makeFormattingWriter(sb, 20)
+		w := makeFormattingWriter(sb, 20, defaultTabWidth)
 
 		_, _ = w.WriteString("\n")
 		w.SetIndent(15)

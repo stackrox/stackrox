@@ -20,7 +20,7 @@ func FormatHelp(c *cobra.Command, _ []string) {
 		termWidth = 80
 	}
 	w := makeHelpWriter(
-		makeFormattingWriter(&cobraWriter{c}, termWidth))
+		makeFormattingWriter(&cobraWriter{c}, termWidth, defaultTabWidth))
 	if len(c.Short) > 0 {
 		w.WriteLn(c.Short)
 	}

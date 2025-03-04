@@ -6,14 +6,15 @@ import (
 	"strings"
 )
 
-const tabWidth = 8
+const defaultTabWidth = 8
 
 // formattingWriter implements StringWriter interface.
 // It writes strings to the underlying writer indenting and wrapping the text.
 type formattingWriter struct {
-	raw    io.StringWriter
-	width  int
-	indent indents
+	raw      io.StringWriter
+	width    int
+	indent   indents
+	tabWidth int
 
 	currentLine int
 	written     int
@@ -22,8 +23,8 @@ type formattingWriter struct {
 
 var _ io.StringWriter = (*formattingWriter)(nil)
 
-func makeFormattingWriter(w io.StringWriter, width int, indent ...int) *formattingWriter {
-	return &formattingWriter{raw: w, width: width, indent: indent}
+func makeFormattingWriter(w io.StringWriter, width int, tabWidth int, indent ...int) *formattingWriter {
+	return &formattingWriter{raw: w, width: width, indent: indent, tabWidth: tabWidth}
 }
 
 // write is an internal method that writes the string to the underlying writer.
@@ -96,7 +97,7 @@ func (w *formattingWriter) WriteString(s string) (int, error) {
 		}
 		length := len(token)
 		if token == "\t" {
-			length = tabWidth
+			length = defaultTabWidth
 		}
 		if w.currentLine+length > w.width {
 			if err = w.ln(); err != nil {
