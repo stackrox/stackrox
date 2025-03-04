@@ -136,7 +136,7 @@ require (
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56
 	golang.org/x/mod v0.21.0
 	golang.org/x/net v0.33.0
-	golang.org/x/oauth2 v0.22.0
+	golang.org/x/oauth2 v0.27.0
 	golang.org/x/sync v0.10.0
 	golang.org/x/sys v0.28.0
 	golang.org/x/text v0.21.0
@@ -542,7 +542,7 @@ replace (
 	//       there is a mix of header auth and body auth in existence, which
 	//       the library solves with autosensing + caching, and what we don't
 	//       want to reimplement in our code.
-	golang.org/x/oauth2 => github.com/stackrox/oauth2 v0.0.0-20240521152739-4d3f7e4f6b49
+	golang.org/x/oauth2 => github.com/stackrox/oauth2 v0.27.1-0.20250303165042-2f6a66366502
 
 	// Both github.com/go-yaml/yaml/v2 and github.com/go-yaml/yaml/v3 do not provide go.sum
 	// so dependabot is not able to check dependecies.
