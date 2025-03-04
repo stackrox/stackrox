@@ -32,8 +32,16 @@ const (
 	getPotentiallyOrphanedPLOPs = `SELECT plop.serialized FROM listening_endpoints plop where NOT EXISTS
 			(select 1 FROM process_indicators proc where plop.processindicatorid = proc.id)`
 
+	//// Finds PLOPs without poduids and deletes them. This is done in batches.
+	//deletePLOPsWithoutPoduid = `WITH temp AS
+	//	(SELECT id, poduid FROM listening_endpoints LIMIT %d OFFSET %d)
+	//	DELETE FROM listening_endpoints WHERE id IN (SELECT id FROM temp where poduid is null)`
+
 	// Finds PLOPs without poduids and deletes them. This is done in batches.
 	deletePLOPsWithoutPoduid = `WITH temp AS
-		(SELECT id, poduid FROM listening_endpoints LIMIT %d OFFSET %d)
+		(SELECT id, poduid FROM listening_endpoints ORDER BY id LIMIT %d OFFSET %d)
 		DELETE FROM listening_endpoints WHERE id IN (SELECT id FROM temp where poduid is null)`
+
+	deletePLOPsWithoutPoduid2 = "DELETE FROM listening_endpoints where poduid is null"
+
 )
