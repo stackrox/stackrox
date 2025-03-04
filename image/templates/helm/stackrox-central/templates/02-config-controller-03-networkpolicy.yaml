@@ -13,14 +13,6 @@ metadata:
 spec:
   policyTypes:
   - Ingress
-  ingress:
-  - from:
-    - podSelector:
-        matchLabels:
-          app: central
-    ports:
-    - port: 8443
-      protocol: TCP
   podSelector:
     matchLabels:
       app: config-controller
