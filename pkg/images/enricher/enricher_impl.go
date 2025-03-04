@@ -132,7 +132,6 @@ func (e *enricherImpl) EnrichWithSignatureVerificationData(ctx context.Context, 
 // delegateEnrichImage returns true if enrichment for this image should be delegated (enriched via Sensor). If true
 // and no error image was enriched successfully.
 func (e *enricherImpl) delegateEnrichImage(ctx context.Context, enrichCtx EnrichmentContext, image *storage.Image) (bool, error) {
-	log.Infof(">>>> delegateEnrichImage with enrichCtx")
 	if !enrichCtx.Delegable {
 		// Request should not be delegated.
 		return false, nil
@@ -142,14 +141,13 @@ func (e *enricherImpl) delegateEnrichImage(ctx context.Context, enrichCtx Enrich
 	var err error
 	clusterID := enrichCtx.ClusterID
 	if clusterID == "" {
-		log.Infof(">>>> delegateEnrichImage: no cluster Id from enrichCtx")
 		clusterID, shouldDelegate, err = e.scanDelegator.GetDelegateClusterID(ctx, image.GetName())
 	} else {
 		// A cluster ID has been passed to the enricher, determine if it's valid for delegation.
 		err = e.scanDelegator.ValidateCluster(enrichCtx.ClusterID)
 		shouldDelegate = true
 	}
-
+	log.Infof(">>>> delegateEnrichImage with enrichCtx, cluster ID is: %s", clusterID)
 	if err != nil || !shouldDelegate {
 		// If was an error or should not delegate, short-circuit.
 		return shouldDelegate, err
@@ -180,7 +178,6 @@ func (e *enricherImpl) delegateEnrichImage(ctx context.Context, enrichCtx Enrich
 	if err != nil {
 		return true, err
 	}
-
 	// Copy the fields from scannedImage into image, EnrichImage expecting modification in place
 	image.Reset()
 	protocompat.Merge(image, scannedImage)
@@ -227,9 +224,15 @@ func (e *enricherImpl) updateImageWithExistingImage(image *storage.Image, existi
 // EnrichImage enriches an image with the integration set present.
 func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext EnrichmentContext, image *storage.Image) (EnrichmentResult, error) {
 	if shouldDelegate, err := e.delegateEnrichImage(ctx, enrichContext, image); shouldDelegate {
-		// This enrichment should have been delegated, short circuit.
+		log.Infof(">>>> EnrichImage: try delegate scan")
 		if err != nil {
-			return EnrichmentResult{ImageUpdated: false, ScanResult: ScanNotDone}, err
+			if errors.Is(err, errox.InvalidArgs.New("no ad-hoc cluster ID specified in the delegated scanning config")) {
+				// Log the warning and try to keep enriching
+				log.Warnf("No default cluster found for delegation: %v, proceed enriching", err)
+			} else {
+				// This enrichment should have been delegated, short circuit.
+				return EnrichmentResult{ImageUpdated: false, ScanResult: ScanNotDone}, err
+			}
 		}
 		return EnrichmentResult{ImageUpdated: true, ScanResult: ScanSucceeded}, nil
 	} else if err != nil {
