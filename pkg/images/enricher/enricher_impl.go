@@ -132,6 +132,7 @@ func (e *enricherImpl) EnrichWithSignatureVerificationData(ctx context.Context, 
 // delegateEnrichImage returns true if enrichment for this image should be delegated (enriched via Sensor). If true
 // and no error image was enriched successfully.
 func (e *enricherImpl) delegateEnrichImage(ctx context.Context, enrichCtx EnrichmentContext, image *storage.Image) (bool, error) {
+	log.Infof(">>>> delegateEnrichImage with enrichCtx")
 	if !enrichCtx.Delegable {
 		// Request should not be delegated.
 		return false, nil
@@ -141,6 +142,7 @@ func (e *enricherImpl) delegateEnrichImage(ctx context.Context, enrichCtx Enrich
 	var err error
 	clusterID := enrichCtx.ClusterID
 	if clusterID == "" {
+		log.Infof(">>>> delegateEnrichImage: no cluster Id from enrichCtx")
 		clusterID, shouldDelegate, err = e.scanDelegator.GetDelegateClusterID(ctx, image.GetName())
 	} else {
 		// A cluster ID has been passed to the enricher, determine if it's valid for delegation.
