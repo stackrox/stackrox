@@ -12,6 +12,7 @@ import (
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/processlisteningonport/store"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -647,22 +648,142 @@ func (ds *datastoreImpl) RemovePLOPsWithoutProcessIndicatorOrProcessInfo(ctx con
 	return int64(len(plopsToDelete)), nil
 }
 
-func (ds *datastoreImpl) RemovePLOPsWithoutPodUID(ctx context.Context) (int64, error) {
+func (ds *datastoreImpl) RemovePLOPsWithoutPodUIDWithOffset(ctx context.Context, page int, offset int) (int64, error) {
+	ds.mutex.Lock()
+	defer ds.mutex.Unlock()
+	start := time.Now()
+	query := fmt.Sprintf(deletePLOPsWithoutPoduid, page, offset)
+	commandTag, err := ds.pool.Exec(ctx, query)
+	numDeleted := commandTag.RowsAffected()
+	if err != nil {
+		return numDeleted, err
+	}
+	duration := time.Since(start)
+	log.Infof("Pruning starting at offset %d took %s", offset, duration)
+
+	return numDeleted, nil
+}
+
+func (ds *datastoreImpl) RemovePLOPsWithoutPodUIDBatch(ctx context.Context) (int64, error) {
+	page := 100000
+	numDeletedTotal := int64(0)
+
+	nplops, _ := ds.storage.Count(ctx, search.EmptyQuery())
+	for offset := 0; offset <= nplops - int(numDeletedTotal); {
+		numDeleted, err := ds.RemovePLOPsWithoutPodUIDWithOffset(ctx, page, offset)
+		numDeletedTotal += numDeleted
+		if err != nil {
+			return numDeletedTotal, err
+		}
+		offset += page - int(numDeleted)
+	}
+	return numDeletedTotal, nil
+}
+
+func (ds *datastoreImpl) RemovePLOPsWithoutPodUIDSimple(ctx context.Context) (int64, error) {
 	ds.mutex.Lock()
 	defer ds.mutex.Unlock()
 
-	page := 10000
-	numDeleted := int64(0)
+	commandTag, err := ds.pool.Exec(ctx, deletePLOPsWithoutPoduid2)
 
-	plops, _ := ds.storage.Count(ctx, search.EmptyQuery())
-	for offset := 0; offset <= plops; {
-		query := fmt.Sprintf(deletePLOPsWithoutPoduid, page, offset)
-		commandTag, err := ds.pool.Exec(ctx, query)
-		numDeleted += commandTag.RowsAffected()
-		offset += page - int(commandTag.RowsAffected())
-		if err != nil {
-			return numDeleted, err
-		}
+	if err != nil {
+		return 0, err
 	}
-	return numDeleted, nil
+
+	return int64(commandTag.RowsAffected()), nil
+
+}
+
+func (ds *datastoreImpl) getPLOPsWithoutPodUIDs(ctx context.Context) ([]string, error) {
+	ds.mutex.Lock()
+	defer ds.mutex.Unlock()
+
+	orphanedQueryTimeout := env.PruneOrphanedQueryTimeout.DurationSetting()
+
+	plopsToDelete, err := pgutils.Retry2(ctx, func() ([]*storage.ProcessListeningOnPortStorage, error) {
+                pruneCtx, cancel := context.WithTimeout(ctx, orphanedQueryTimeout)
+                defer cancel()
+
+		return ds.storage.GetByQuery(pruneCtx, search.NewQueryBuilder().
+			AddNullField(search.PodUID).ProtoQuery())
+        })
+
+	if err != nil {
+		return nil, err
+	}
+
+	plopIdsToDelete := make([]string, len(plopsToDelete))
+
+	for i, _ := range plopsToDelete {
+		plopIdsToDelete[i] = plopsToDelete[i].Id
+	}
+
+	return plopIdsToDelete, err
+}
+
+func (ds *datastoreImpl) RemovePLOPsWithoutPodUIDTwoParts(ctx context.Context) (int64, error) {
+	plopsToDelete, err := ds.getPLOPsWithoutPodUIDs(ctx)
+
+	if err != nil {
+		return 0, err
+	}
+
+	ds.mutex.Lock()
+	defer ds.mutex.Unlock()
+
+	err = ds.storage.PruneMany(ctx, plopsToDelete)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return int64(len(plopsToDelete)), nil
+}
+
+func (ds *datastoreImpl) RemovePLOPsWithoutPodUIDWalk(ctx context.Context) (int64, error) {
+	ds.mutex.Lock()
+	defer ds.mutex.Unlock()
+
+	batchSize := 100000
+	idsToDelete := make([]string, batchSize)
+	totalCount := 0
+	count := 0
+
+	err := ds.storage.Walk(ctx,
+		func(plop *storage.ProcessListeningOnPortStorage) error {
+			if plop.GetPodUid() == "" {
+				idsToDelete[count] = plop.Id
+				count++
+			}
+
+			if count == batchSize {
+				err := ds.storage.DeleteMany(ctx, idsToDelete)
+				if err != nil {
+					return err
+				}
+				totalCount += count
+				count = 0
+			}
+
+			return nil
+		})
+
+	if count > 0 {
+		idsToDelete = idsToDelete[:count]
+		err := ds.storage.DeleteMany(ctx, idsToDelete)
+		if err != nil {
+			return int64(totalCount), err
+		}
+		totalCount += count
+	}
+
+	if err != nil {
+		return int64(totalCount), err
+	}
+
+	return int64(totalCount), nil
+}
+
+func (ds *datastoreImpl) RemovePLOPsWithoutPodUID(ctx context.Context) (int64, error) {
+	return ds.RemovePLOPsWithoutPodUIDBatch(ctx)
 }

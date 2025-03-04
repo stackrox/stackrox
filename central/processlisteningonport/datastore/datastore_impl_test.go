@@ -2343,6 +2343,61 @@ func (suite *PLOPDataStoreTestSuite) makeRandomPlops(nport int, nprocess int, np
 	return plops
 }
 
+func (suite *PLOPDataStoreTestSuite) makeRandomPlopsStorage(nport int, nprocess int, npod int, deployment string) []*storage.ProcessListeningOnPortStorage {
+	count := 0
+
+	nplops := 2 * nprocess * npod * nport
+
+	plops := make([]*storage.ProcessListeningOnPortStorage, nplops)
+	for podIdx := 0; podIdx < npod; podIdx++ {
+		podID := makeRandomString(10)
+		podUid := uuid.NewV4().String()
+		for processIdx := 0; processIdx < nprocess; processIdx++ {
+			execFilePath := makeRandomString(10)
+			process := &storage.ProcessIndicatorUniqueKey{
+				PodId:               podID,
+				ContainerName:       "test_container1",
+				ProcessName:         "test_process1",
+				ProcessArgs:         "test_arguments1",
+				ProcessExecFilePath: execFilePath,
+			}
+			processIndicatorId := id.GetIndicatorIDFromProcessIndicatorUniqueKey(process)
+			for port := 0; port < nport; port++ {
+
+				plopTCP := &storage.ProcessListeningOnPortStorage{
+					Id:		    uuid.NewV4().String(),
+					Port:               uint32(port),
+					Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
+					CloseTimestamp:     nil,
+					Process:            process,
+					ProcessIndicatorId: processIndicatorId,
+					DeploymentId:       deployment,
+					ClusterId:          fixtureconsts.Cluster1,
+					Namespace:          fixtureconsts.Namespace1,
+					PodUid:             podUid,
+				}
+				plopUDP := &storage.ProcessListeningOnPortStorage{
+					Id:		    uuid.NewV4().String(),
+					Port:               uint32(port),
+					Protocol:           storage.L4Protocol_L4_PROTOCOL_UDP,
+					CloseTimestamp:     nil,
+					Process:            process,
+					ProcessIndicatorId: processIndicatorId,
+					DeploymentId:       deployment,
+					ClusterId:          fixtureconsts.Cluster1,
+					Namespace:          fixtureconsts.Namespace1,
+					PodUid:             podUid,
+				}
+				plops[count] = plopTCP
+				count++
+				plops[count] = plopUDP
+				count++
+			}
+		}
+	}
+	return plops
+}
+
 func (suite *PLOPDataStoreTestSuite) TestAddPodUids() {
 	nport := 30
 	nprocess := 30
@@ -2776,4 +2831,78 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUID() {
 	for id := range ids {
 		suite.NotContains(expectedPlopDeletions, id)
 	}
+}
+
+func (suite *PLOPDataStoreTestSuite) upsertTooMany(plops []*storage.ProcessListeningOnPortStorage) {
+	batchSize := 30000
+
+	nplops := len(plops)
+
+	for offset := 0; offset < nplops; offset += batchSize {
+		end := offset + batchSize
+		if end > nplops {
+			end = nplops
+		}
+		err := suite.store.UpsertMany(suite.hasWriteCtx, plops[offset:end])
+		suite.NoError(err)
+	}
+}
+
+func (suite *PLOPDataStoreTestSuite) RemovePLOPsWithoutPodUIDScale(nport int, nprocess int, npod int) {
+	plopObjects := suite.makeRandomPlopsStorage(nport, nprocess, npod, fixtureconsts.Deployment1)
+
+	plopsWithoutPodUids := 0
+	for _, plop := range plopObjects {
+		p := rand.Float32()
+		if p < 0.5 {
+			plop.PodUid = ""
+			plopsWithoutPodUids++
+		}
+	}
+
+	// Add the PLOPs
+	suite.upsertTooMany(plopObjects)
+
+	plopCount, err := suite.store.Count(suite.hasReadCtx, search.EmptyQuery())
+	suite.Equal(plopCount, 2 * nport * nprocess * npod)
+	suite.NoError(err)
+
+	start := time.Now()
+	prunedCount, err := suite.datastore.RemovePLOPsWithoutPodUID(suite.hasWriteCtx)
+	suite.Equal(int64(plopsWithoutPodUids), prunedCount)
+	duration := time.Since(start)
+	suite.NoError(err)
+	log.Infof("Pruning %d plops took %s", prunedCount, duration)
+}
+
+func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUIDScale27K() {
+	nport := 30
+	nprocess := 30
+	npod := 30
+
+	suite.RemovePLOPsWithoutPodUIDScale(nport, nprocess, npod)
+}
+
+func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUIDScale125K() {
+	nport := 50
+	nprocess := 50
+	npod := 50
+
+	suite.RemovePLOPsWithoutPodUIDScale(nport, nprocess, npod)
+}
+
+func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUIDScale1M() {
+	nport := 100
+	nprocess := 100
+	npod := 100
+
+	suite.RemovePLOPsWithoutPodUIDScale(nport, nprocess, npod)
+}
+
+func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUIDScale3M() {
+	nport := 150
+	nprocess := 150
+	npod := 150
+
+	suite.RemovePLOPsWithoutPodUIDScale(nport, nprocess, npod)
 }
