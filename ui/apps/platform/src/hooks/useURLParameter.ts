@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useRef } from 'react';
-import { Location, NavigateFunction, useLocation, useNavigate } from 'react-router-dom';
+import { NavigateFunction, useLocation, useNavigate } from 'react-router-dom';
 import isEqual from 'lodash/isEqual';
 
 import { getQueryObject, getQueryString } from 'utils/queryStringUtils';
@@ -25,14 +25,15 @@ export type UrlParameterUpdate = {
  */
 export function applyUpdatesToUrl(
     updates: UrlParameterUpdate[],
-    location: Location,
+    search: string,
+    pathname: string,
     navigate: NavigateFunction
 ) {
     const action = updates.some(({ historyAction }) => historyAction === 'push')
         ? 'push'
         : 'replace';
 
-    const previousQuery = getQueryObject(location.search) || {};
+    const previousQuery = getQueryObject(search) || {};
     const newQuery = { ...previousQuery };
 
     updates.forEach(({ keyPrefix, newValue }) => {
@@ -47,9 +48,9 @@ export function applyUpdatesToUrl(
     // Do not change history states if setter is called with current value
     if (!isEqual(previousQuery, newQuery)) {
         if (action === 'push') {
-            navigate(`${location.pathname}${getQueryString(newQuery)}`);
+            navigate(`${pathname}${getQueryString(newQuery)}`);
         } else if (action === 'replace') {
-            navigate(`${location.pathname}${getQueryString(newQuery)}`, { replace: true });
+            navigate(`${pathname}${getQueryString(newQuery)}`, { replace: true });
         }
     }
 }
@@ -65,9 +66,9 @@ function makeMicrotaskSchedulingContext() {
     let updates: UrlParameterUpdate[] = [];
     let isUpdateScheduled = false;
 
-    function scheduleAndFlushUpdates(location: Location, navigate: NavigateFunction) {
+    function scheduleAndFlushUpdates(search: string, pathname: string, navigate: NavigateFunction) {
         queueMicrotask(() => {
-            applyUpdatesToUrl(updates, location, navigate);
+            applyUpdatesToUrl(updates, search, pathname, navigate);
             updates = [];
             isUpdateScheduled = false;
         });
@@ -76,12 +77,13 @@ function makeMicrotaskSchedulingContext() {
     return {
         addUrlParameterUpdate: (
             update: UrlParameterUpdate,
-            location: Location,
+            search: string,
+            pathname: string,
             navigate: NavigateFunction
         ) => {
             updates = [...updates, update];
             if (!isUpdateScheduled) {
-                scheduleAndFlushUpdates(location, navigate);
+                scheduleAndFlushUpdates(search, pathname, navigate);
             }
             isUpdateScheduled = true;
         },
@@ -123,9 +125,14 @@ function useURLParameter(keyPrefix: string, defaultValue: QueryValue): UseURLPar
 
     const setValue = useCallback(
         (newValue: QueryValue, historyAction: HistoryAction = 'push') => {
-            addUrlParameterUpdate({ historyAction, keyPrefix, newValue }, location, navigate);
+            addUrlParameterUpdate(
+                { historyAction, keyPrefix, newValue },
+                location.search,
+                location.pathname,
+                navigate
+            );
         },
-        [addUrlParameterUpdate, keyPrefix, location, navigate]
+        [addUrlParameterUpdate, keyPrefix, location.search, location.pathname, navigate]
     );
 
     const nextValue = getQueryObject(location.search)[keyPrefix] || defaultValue;

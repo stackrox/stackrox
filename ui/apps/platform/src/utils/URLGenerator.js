@@ -155,7 +155,10 @@ function generateURL(workflowState) {
         : '';
 
     const encodedParams = Object.fromEntries(
-        Object.entries(params).map(([key, value]) => [key, encodeURIComponent(value)])
+        Object.entries(params).map(([key, value]) => [
+            key,
+            value !== undefined ? encodeURIComponent(value) : value,
+        ])
     );
     const newPath = generatePath(path, encodedParams) + queryString;
     return newPath;

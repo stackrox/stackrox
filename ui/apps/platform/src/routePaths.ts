@@ -472,6 +472,9 @@ export const basePathToLabelMap: Record<string, string> = {
     [userBasePath]: 'User Profile',
 };
 
+export const validPageEntityListTypes = Object.values(urlEntityListTypes);
+export const validPageEntityTypes = Object.values(urlEntityTypes);
+
 export const workflowPaths = {
     DASHBOARD: `${mainPath}/:context`,
     LIST: `${mainPath}/:context/:pageEntityListType/:entityId1?/:entityType2?/:entityId2?`,

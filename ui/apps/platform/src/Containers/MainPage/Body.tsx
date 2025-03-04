@@ -287,7 +287,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
     const { analyticsPageVisit } = useAnalytics();
     useEffect(() => {
         analyticsPageVisit('Page Viewed', '', { path: location.pathname });
-    }, [location, analyticsPageVisit]);
+    }, [location.pathname, analyticsPageVisit]);
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForInviting = hasReadWriteAccess('Access');
     const showInviteModal = useSelector(selectors.inviteSelector);

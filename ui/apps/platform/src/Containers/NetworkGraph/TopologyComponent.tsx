@@ -223,7 +223,7 @@ const TopologyComponent = ({
             // is available – we want to prevent closing the sidebar until data has been fetched
             closeSidebar();
         }
-    }, [controller, location, model, selectedNode, closeSidebar, panNodeIntoView]);
+    }, [controller, location.pathname, model, selectedNode, closeSidebar, panNodeIntoView]);
 
     const selectedIds = selectedNode ? [selectedNode.id] : [];
 
