@@ -15,6 +15,8 @@ import {
     policiesPath,
     userRolePath,
     accessControlPath,
+    validPageEntityListTypes,
+    validPageEntityTypes,
 } from '../routePaths';
 
 type ParamsWithContext = {
@@ -52,12 +54,18 @@ function getParams(pathname): ParamsWithContext {
     // The type casts assert that workflow paths include a :context param.
 
     const matchedEntityPath = matchPath({ path: workflowPaths.ENTITY }, pathname);
-    if (matchedEntityPath?.params) {
+    if (
+        matchedEntityPath &&
+        validPageEntityTypes.includes(matchedEntityPath?.params?.pageEntityType ?? '')
+    ) {
         return matchedEntityPath.params as ParamsWithContext;
     }
 
     const matchedListPath = matchPath({ path: workflowPaths.LIST }, pathname);
-    if (matchedListPath?.params) {
+    if (
+        matchedListPath &&
+        validPageEntityListTypes.includes(matchedListPath?.params?.pageEntityListType ?? '')
+    ) {
         return matchedListPath.params as ParamsWithContext;
     }
 
