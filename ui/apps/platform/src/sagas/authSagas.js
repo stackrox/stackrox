@@ -2,7 +2,7 @@ import { all, take, call, fork, put, takeLatest, takeEvery, select } from 'redux
 import { delay } from 'redux-saga';
 import queryString from 'qs';
 import Raven from 'raven-js';
-import { LOCATION_CHANGE } from 'redux-first-history';
+import { LOCATION_CHANGE, push } from 'redux-first-history';
 import { Base64 } from 'js-base64';
 
 import { loginPath, testLoginResultsPath, authResponsePrefix } from 'routePaths';
@@ -227,7 +227,7 @@ function* handleAuthorizeRoxctlLoginResponse(result) {
     window.location.assign(`${parsedCallbackURL.toString()}?${queryString.stringify(query)}`);
 }
 
-function* dispatchAuthResponse(type, location, history) {
+function* dispatchAuthResponse(type, location) {
     // For every handler registered under `/auth/response/<type>`, add a function that returns the token.
     const responseHandlers = {
         oidc: handleOidcResponse,
@@ -261,7 +261,7 @@ function* dispatchAuthResponse(type, location, history) {
     yield fork(getUserPermissions);
 
     const storedLocation = yield call(AuthService.getAndClearRequestedLocation);
-    history.push(storedLocation || '/'); // try to restore requested path
+    yield put(push(storedLocation || '/')); // try to restore requested path
     yield call(getLoginAuthProviders);
 }
 
@@ -386,7 +386,7 @@ function* fetchAvailableProviderTypes() {
     }
 }
 
-export default function* auth(history) {
+export default function* auth() {
     // start by monitoring auth providers to re-evaluate user access
     yield fork(watchNewAuthProviders);
     yield fork(fetchAvailableProviderTypes);
@@ -399,7 +399,7 @@ export default function* auth(history) {
     if (location.pathname?.startsWith(authResponsePrefix)) {
         // if it was a redirect after authentication, handle it properly
         const authType = location.pathname.substr(authResponsePrefix.length);
-        yield fork(dispatchAuthResponse, authType, location, history);
+        yield fork(dispatchAuthResponse, authType, location);
     } else {
         // otherwise we still need to fetch auth providers to check if user can access the app
         yield fork(getLoginAuthProviders);
