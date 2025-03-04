@@ -8,7 +8,6 @@ import (
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/policy/search"
 	policyStore "github.com/stackrox/rox/central/policy/store"
-	policyPostgres "github.com/stackrox/rox/central/policy/store/postgres"
 	categoriesDS "github.com/stackrox/rox/central/policycategory/datastore"
 	"github.com/stackrox/rox/pkg/defaults/policies"
 	"github.com/stackrox/rox/pkg/policyutils"
@@ -25,7 +24,7 @@ var (
 )
 
 func initialize() {
-	storage := policyPostgres.New(globaldb.GetPostgres())
+	storage := policyStore.New(globaldb.GetPostgres())
 	searcher := search.New(storage)
 
 	clusterDatastore := clusterDS.Singleton()
