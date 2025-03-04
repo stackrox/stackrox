@@ -95,7 +95,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.22.2
 	github.com/onsi/gomega v1.36.2
 	github.com/opencontainers/go-digest v1.0.0
-	github.com/opencontainers/image-spec v1.1.0
+	github.com/opencontainers/image-spec v1.1.1
 	github.com/openshift-online/ocm-sdk-go v0.1.460
 	github.com/openshift/api v0.0.0-20240415161129-d7aff303fa1a
 	github.com/openshift/client-go v0.0.0-20240415191513-dcdeb09390b4
