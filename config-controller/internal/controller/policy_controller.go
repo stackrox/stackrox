@@ -71,6 +71,8 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, errors.Wrap(err, "Failed to refresh")
 	}
 
+	log.Infof("CR Request %s", policyCR)
+
 	desiredState, err := policyCR.Spec.ToProtobuf(r.CentralClient.GetNotifiers())
 	if err != nil {
 		_ = r.CentralClient.FlushCache(ctx)
@@ -150,17 +152,20 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, nil
 	}
 
+	log.Infof("desiredState: %s", desiredState)
 	// policy create or update flow
 	var retErr error
 	if desiredState.GetId() != "" {
 		log.Debugf("Updating policy %q (ID: %q)", desiredState.GetName(), desiredState.GetId())
 		if err := r.CentralClient.UpdatePolicy(ctx, desiredState); err != nil {
+			log.Infof("Updated policy %s", desiredState)
 			retErr = errors.Wrap(err, fmt.Sprintf("Failed to update policy '%s'", desiredState.GetName()))
 			policyCR.Status = configstackroxiov1alpha1.SecurityPolicyStatus{
 				Accepted: false,
 				Message:  retErr.Error(),
 			}
 		} else {
+			log.Infof("Updated policy %s", desiredState)
 			policyCR.Status = configstackroxiov1alpha1.SecurityPolicyStatus{
 				Accepted: true,
 				Message:  "Successfully updated policy",
@@ -170,12 +175,14 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	} else {
 		log.Debugf("Creating policy with name %q", desiredState.GetName())
 		if createdPolicy, err := r.CentralClient.CreatePolicy(ctx, desiredState); err != nil {
+			log.Infof("Created policy %s", createdPolicy)
 			retErr = errors.Wrap(err, fmt.Sprintf("Failed to create policy '%s'", desiredState.GetName()))
 			policyCR.Status = configstackroxiov1alpha1.SecurityPolicyStatus{
 				Accepted: false,
 				Message:  retErr.Error(),
 			}
 		} else {
+			log.Infof("Created policy %s", createdPolicy)
 			// Create was successful so persist the policy ID received from Central
 			policyCR.Status = configstackroxiov1alpha1.SecurityPolicyStatus{
 				Accepted: true,
