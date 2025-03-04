@@ -834,8 +834,10 @@ verify_deployment_deletion_with_timeout() {
     local timeout_duration="$1"; shift
     local deployment_names_file; deployment_names_file=$(mktemp)
 
-    timeout "$timeout_duration" bash -c "verify_deployment_deletion \"$deployment_names_file\" $*"
-    ret=$?
+    local ret=0
+    if ! timeout "$timeout_duration" bash -c "verify_deployment_deletion \"$deployment_names_file\" $*"; then
+        ret=$?
+    fi
     rm -f "$deployment_names_file"
 
     case $ret in
