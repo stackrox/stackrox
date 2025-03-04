@@ -80,7 +80,7 @@ jobs:
       # race-condition-debug - built with -race
       matrix: ${{ fromJson(needs.define-scanner-job-matrix.outputs.matrix).pre_build_scanner_go_binary }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.6
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.8
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -137,7 +137,7 @@ jobs:
     needs: pre-build-scanner-go-binary
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.6
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.8
     if: contains(github.event.pull_request.labels.*.name, 'scan-go-binaries')
     env:
       ARTIFACT_DIR: junit-reports/
@@ -191,7 +191,7 @@ jobs:
       # race-condition-debug - built with -race
       matrix: ${{ fromJson(needs.define-scanner-job-matrix.outputs.matrix).build_and_push_scanner }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.6
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.8
       env:
         QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
         QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
@@ -263,7 +263,7 @@ jobs:
       # race-condition-debug
       matrix: ${{ fromJson(needs.define-scanner-job-matrix.outputs.matrix).push_scanner_manifests }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.6
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.8
       env:
         QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
         QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
