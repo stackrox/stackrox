@@ -806,19 +806,19 @@ verify_deployment_deletion() {
     local deployment_names_file; deployment_names_file=$(mktemp)
     echo "$deployment_names" | tr ' ' '\n' >> "$deployment_names_file"
 
-    local delete
+    local deleted
     while [[ -s "$deployment_names_file" ]]; do
         active_deployments=$("${ORCH_CMD}" -n "$namespace" get deployments -o json)
         deployment_names=$(cat "$deployment_names_file")
 
         for deployment_name in $deployment_names; do
-            delete=false
+            deleted=false
             if ! jq -e ".items[] | select (.metadata.name == \"$deployment_name\")" <<< "$active_deployments" > /dev/null 2>&1; then
-                delete=true
+                deleted=true
             elif jq -e ".items[] | select (.metadata.name == \"$deployment_name\") | .metadata.deletionTimestamp" > /dev/null 2>&1 <<<"$active_deployments"; then
-                delete=true
+                deleted=true
             fi
-            if [[ "$delete" == "true" ]]; then
+            if [[ "$deleted" == "true" ]]; then
                 echo "Deployment ${namespace}/$deployment_name deleted."
                 sed -ie "/^${deployment_name}$/d" "$deployment_names_file"
             fi
