@@ -113,10 +113,14 @@ func SendCloseFlowMessage(fakeCollector *collector.FakeCollector,
 	fromIP string,
 	toIP string,
 	port uint32,
-	closeTimestamp *timestamppb.Timestamp) {
+	closeTimestampSeconds int64) {
 	fakeCollector.SendFakeNetworkFlow(&sensor.NetworkConnectionInfoMessage{
 		Msg: &sensor.NetworkConnectionInfoMessage_Info{
 			Info: &sensor.NetworkConnectionInfo{
+				Time: &timestamppb.Timestamp{
+					Seconds: closeTimestampSeconds,
+					Nanos:   0,
+				},
 				UpdatedConnections: []*sensor.NetworkConnection{
 					{
 						SocketFamily: socketFamily,
@@ -133,7 +137,10 @@ func SendCloseFlowMessage(fakeCollector *collector.FakeCollector,
 							IpNetwork:   net2.ParseIP(toIP).AsNetIP(),
 							Port:        port,
 						},
-						CloseTimestamp: closeTimestamp,
+						CloseTimestamp: &timestamppb.Timestamp{
+							Seconds: closeTimestampSeconds,
+							Nanos:   0,
+						},
 					},
 					{
 						SocketFamily: socketFamily,
@@ -150,7 +157,10 @@ func SendCloseFlowMessage(fakeCollector *collector.FakeCollector,
 							IpNetwork:   net2.ParseIP(fromIP).AsNetIP(),
 							Port:        0,
 						},
-						CloseTimestamp: closeTimestamp,
+						CloseTimestamp: &timestamppb.Timestamp{
+							Seconds: closeTimestampSeconds,
+							Nanos:   0,
+						},
 					},
 				},
 				UpdatedEndpoints: []*sensor.NetworkEndpoint{
@@ -167,7 +177,10 @@ func SendCloseFlowMessage(fakeCollector *collector.FakeCollector,
 							ProcessName:         "nginx",
 							ProcessExecFilePath: "/path/nginx",
 						},
-						CloseTimestamp: closeTimestamp,
+						CloseTimestamp: &timestamppb.Timestamp{
+							Seconds: closeTimestampSeconds,
+							Nanos:   0,
+						},
 					},
 				},
 			},
@@ -183,10 +196,15 @@ func SendFlowMessage(fakeCollector *collector.FakeCollector,
 	toID string,
 	fromIP string,
 	toIP string,
-	port uint32) {
+	port uint32,
+	timestampSeconds int64) {
 	fakeCollector.SendFakeNetworkFlow(&sensor.NetworkConnectionInfoMessage{
 		Msg: &sensor.NetworkConnectionInfoMessage_Info{
 			Info: &sensor.NetworkConnectionInfo{
+				Time: &timestamppb.Timestamp{
+					Seconds: timestampSeconds,
+					Nanos:   0,
+				},
 				UpdatedConnections: []*sensor.NetworkConnection{
 					{
 						SocketFamily: socketFamily,

@@ -114,6 +114,7 @@ func Test_SensorLastSeenTimestamp(t *testing.T) {
 				talkIP,
 				nginxIP,
 				80,
+				900,
 			)
 		}
 		messagesReceivedSignal := concurrency.NewErrorSignal()
@@ -168,7 +169,8 @@ func Test_SensorLastSeenTimestamp(t *testing.T) {
 				talkIP,
 				nginxIP,
 				80,
-				protocompat.TimestampNow(),
+				1000,
+				//protocompat.TimestampNow().GetSeconds(),
 			)
 		}
 		messagesReceivedSignal.Reset()
@@ -207,6 +209,7 @@ func Test_SensorLastSeenTimestamp(t *testing.T) {
 		require.NoError(t, deleteService())
 	}))
 }
+
 func assertFlow(t *testing.T, fromID, toID string) func(*central.MsgFromSensor) bool {
 	return func(event *central.MsgFromSensor) bool {
 		found := false
