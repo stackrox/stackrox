@@ -1,4 +1,4 @@
-import React, { useState, useEffect, ReactElement, ReactFragment } from 'react';
+import React, { useState, useEffect, ReactNode } from 'react';
 import {
     Alert,
     Breadcrumb,
@@ -29,7 +29,7 @@ import DelegatedRegistriesList from './Components/DelegatedRegistriesList';
 type AlertObj = {
     type: 'danger' | 'success';
     title: string;
-    body: ReactElement | ReactFragment;
+    body: ReactNode;
 };
 const initialDelegatedState: DelegatedRegistryConfig = {
     enabledFor: 'NONE',
