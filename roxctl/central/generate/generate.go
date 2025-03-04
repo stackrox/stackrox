@@ -278,7 +278,7 @@ func OutputZip(logger logger.Logger, io io2.IO, config renderer.Config) error {
 	}
 
 	var outputPath string
-	if roxctl.InMainImage() || !containers.IsRunningInContainer() {
+	if roxctl.InMainImage() || (!containers.IsRunningInContainer() && flags.OutputDirManuallySet) {
 		bytes, err := wrapper.Zip()
 		if err != nil {
 			return errors.Wrap(err, "error generating zip file")
