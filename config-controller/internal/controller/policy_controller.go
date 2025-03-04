@@ -163,6 +163,7 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			policyCR.Status = configstackroxiov1alpha1.SecurityPolicyStatus{
 				Accepted: false,
 				Message:  retErr.Error(),
+				PolicyId: desiredState.GetId(),
 			}
 		} else {
 			log.Infof("Updated policy %s", desiredState)
