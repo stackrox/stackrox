@@ -37,33 +37,6 @@ const initialDelegatedState: DelegatedRegistryConfig = {
     registries: [],
 };
 
-function getUuid() {
-    const MAX_RANDOM = 1000000;
-
-    const uuid = self?.crypto?.randomUUID() ?? Math.floor(Math.random() * MAX_RANDOM).toString();
-
-    return uuid;
-}
-
-function addUuidstoRegistries(config: DelegatedRegistryConfig) {
-    const newRegistries = config.registries.map((registry) => {
-        const uuid = getUuid();
-
-        return {
-            path: registry.path,
-            clusterId: registry.clusterId,
-            uuid,
-        };
-    });
-
-    const newState: DelegatedRegistryConfig = {
-        ...config,
-        registries: newRegistries,
-    };
-
-    return newState;
-}
-
 function DelegateScanningPage() {
     const displayedPageTitle = 'Delegated Image Scanning';
     const [delegatedRegistryConfig, setDedicatedRegistryConfig] =
@@ -81,10 +54,7 @@ function DelegateScanningPage() {
     function fetchConfig() {
         setAlertObj(null);
         fetchDelegatedRegistryConfig()
-            .then((configFetched) => {
-                const configWithUuids = addUuidstoRegistries(configFetched);
-                setDedicatedRegistryConfig(configWithUuids);
-            })
+            .then(setDedicatedRegistryConfig)
             .catch((error) => {
                 const newErrorObj: AlertObj = {
                     type: 'danger',
@@ -146,12 +116,9 @@ function DelegateScanningPage() {
     function addRegistryRow() {
         const newState: DelegatedRegistryConfig = { ...delegatedRegistryConfig };
 
-        const uuid = getUuid();
-
         newState.registries.push({
             path: '',
             clusterId: '',
-            uuid,
         });
 
         setDedicatedRegistryConfig(newState);
@@ -175,7 +142,6 @@ function DelegateScanningPage() {
                 return {
                     path: value,
                     clusterId: registry.clusterId,
-                    uuid: registry.uuid,
                 };
             }
 
@@ -195,20 +161,11 @@ function DelegateScanningPage() {
                 return {
                     path: registry.path,
                     clusterId: value,
-                    uuid: registry.uuid,
                 };
             }
 
             return registry;
         });
-
-        newState.registries = newRegistries;
-
-        setDedicatedRegistryConfig(newState);
-    }
-
-    function updateRegistriesOrder(newRegistries) {
-        const newState: DelegatedRegistryConfig = { ...delegatedRegistryConfig };
 
         newState.registries = newRegistries;
 
@@ -300,10 +257,6 @@ function DelegateScanningPage() {
                                 handleClusterChange={handleClusterChange}
                                 addRegistryRow={addRegistryRow}
                                 deleteRow={deleteRow}
-                                // TODO: remove lint override after @typescript-eslint deps can be resolved to ^5.2.x
-                                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                                // @ts-ignore
-                                updateRegistriesOrder={updateRegistriesOrder}
                                 key="delegated-registries-list"
                             />
                         </>
