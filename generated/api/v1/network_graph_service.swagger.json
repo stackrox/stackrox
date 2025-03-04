@@ -626,6 +626,11 @@
         "clusterId": {
           "type": "string",
           "title": "Need the clusterID as that is part of the key in RocksDB"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "This field is set by Central everytime a flow is upserted."
         }
       }
     },
