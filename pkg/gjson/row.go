@@ -268,17 +268,20 @@ func (ct *columnTree) CreateColumns() [][]string {
 			}
 		}
 	}
-	for i, column := range columns {
+	var newCols [][]string
+	for _, column := range columns {
 		var purgedCol []string
-		for _, item := range column {
+		for i, item := range column {
 			if !deletionSet.Contains(i) {
 				purgedCol = append(purgedCol, item)
 			}
 		}
-		columns[i] = purgedCol
+		if len(purgedCol) > 0 {
+			newCols = append(newCols, purgedCol)
+		}
 	}
 
-	return columns
+	return newCols
 }
 
 type queryResult struct {

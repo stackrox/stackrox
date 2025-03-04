@@ -449,18 +449,29 @@ func TestRowMapper_CreateRows_DeepHierarchyAndEmptyValues(t *testing.T) {
 		{"Harry Potter", "Voldemort", "-"},
 	}
 
+	expectedRowsWithStrictAddressColumn := [][]string{
+		{"LOTR", "Gandalf", "Minas Tirith"},
+		{"LOTR", "Gollum", "Gladden Fields"},
+		{"LOTR", "Aragorn", "Gondor"},
+		{"LOTR", "Bilbo Baggins", "Bag End"},
+		{"Harry Potter", "Harry Potter", "Little Whinging"},
+		{"Harry Potter", "Ron Weasley", "The Burrow"},
+		{"Harry Potter", "Hagrid", "Hagrid's Hut"},
+	}
+
 	runRowMapperTest(t, testJSONObject, testExpression, expectedRows, []string{})
+	runRowMapperTest(t, testJSONObject, testExpression, expectedRowsWithStrictAddressColumn,
+		[]string{"result.#.people.#.address"})
 }
 
-func TestRowMapper_CreateRows_DeepHierarchyAndEmptyValuesWithStrictColumns(t *testing.T) {
+func TestRowMapper_CreateRows_DeepHierarchyAndEmptyValuesWithStrictColumnsEmptyTable(t *testing.T) {
 	testJSONObject := &deepHierarchy{
 		Result: []example{
 			{
 				Franchise: "LOTR",
 				People: []people{
 					{
-						Name:    "Gandalf",
-						Address: "Minas Tirith",
+						Name: "Gandalf",
 					},
 					{
 						Name: "Gollum",
@@ -480,8 +491,7 @@ func TestRowMapper_CreateRows_DeepHierarchyAndEmptyValuesWithStrictColumns(t *te
 				Franchise: "Harry Potter",
 				People: []people{
 					{
-						Name:    "Harry Potter",
-						Address: "Little Whinging",
+						Name: "Harry Potter",
 					},
 					{
 						Name: "Ron Weasley",
@@ -500,24 +510,22 @@ func TestRowMapper_CreateRows_DeepHierarchyAndEmptyValuesWithStrictColumns(t *te
 	testExpression := "{result.#.franchise,result.#.people.#.name,result.#.people.#.address}"
 
 	expectedRows := [][]string{
-		{"LOTR", "Gandalf", "Minas Tirith"},
+		{"LOTR", "Gandalf", "-"},
 		{"LOTR", "Gollum", "-"},
 		{"LOTR", "Aragorn", "-"},
 		{"LOTR", "Bilbo Baggins", "-"},
 		{"LOTR", "Sauron", "-"},
-		{"Harry Potter", "Harry Potter", "Little Whinging"},
+		{"Harry Potter", "Harry Potter", "-"},
 		{"Harry Potter", "Ron Weasley", "-"},
 		{"Harry Potter", "Hagrid", "-"},
 		{"Harry Potter", "Voldemort", "-"},
 	}
 
-	expectedRowsWithStrictAddressColumn := [][]string{
-		{"LOTR", "Gandalf", "Minas Tirith"},
-		{"Harry Potter", "Harry Potter", "Little Whinging"},
-	}
+	expectedRowsWithStrictAddressColumn := [][]string(nil)
 
 	runRowMapperTest(t, testJSONObject, testExpression, expectedRows, []string{})
-	runRowMapperTest(t, testJSONObject, testExpression, expectedRowsWithStrictAddressColumn, []string{"result.#.people.#.address"})
+	runRowMapperTest(t, testJSONObject, testExpression, expectedRowsWithStrictAddressColumn,
+		[]string{"result.#.people.#.address"})
 }
 
 func runRowMapperTest(t *testing.T, obj interface{}, expression string, expectedRows [][]string, strictColumns []string) {

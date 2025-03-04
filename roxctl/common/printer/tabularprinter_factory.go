@@ -190,8 +190,8 @@ func (t *TabularPrinterFactory) mapRequiredHeadersToJson() ([]string, error) {
 			strings.Join(defaultImageScanHeaders, ", "))
 	}
 	var headersJson []string
-	for i := range t.RequiredHeaders {
-		headersJson = append(headersJson, imageScanHeaderToJSONPathMap[t.RequiredHeaders[i]])
+	for _, h := range t.RequiredHeaders {
+		headersJson = append(headersJson, imageScanHeaderToJSONPathMap[h])
 	}
 	return headersJson, nil
 }
