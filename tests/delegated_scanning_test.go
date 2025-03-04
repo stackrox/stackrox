@@ -692,9 +692,11 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 
 	// Before setting up mirrors, attempt to disable the node draining behavior of the
 	// OCP Machine Config Operator.
+	nodesDrained := false
 	err := ts.deleScanUtils.DisableMCONodeDrain(t, ctx)
 	if err != nil {
 		logf(t, "WARN: Attempts to disable machine config operator node draining behavior failed, this may lead to higher chance of flakes: %v", err)
+		nodesDrained = true
 	}
 
 	// Create mirroring CRs and update OCP global pull secret, this will
@@ -709,14 +711,16 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 		t.Skip("Mirroring CRs not available in this cluster, skipping tests")
 	}
 
-	// Sensor connects to Central quicker on fresh start vs. waiting for automatic reconnect.
-	// Since Sensor may have started first after the prior node drain, we restart Sensor
-	// so that testing will be able to proceed quicker.
-	logf(t, "Deleting Sensor to speed up ready state")
-	sensorPod, err := ts.getSensorPodWithRetries(ctx, ts.namespace)
-	require.NoError(t, err)
-	err = ts.k8s.CoreV1().Pods(ts.namespace).Delete(ctx, sensorPod.GetName(), metaV1.DeleteOptions{})
-	require.NoError(t, err)
+	if nodesDrained {
+		// Sensor connects to Central quicker on fresh start vs. waiting for automatic reconnect.
+		// Since Sensor may have started first after the prior node drain, we restart Sensor
+		// so that testing will be able to proceed quicker.
+		logf(t, "Deleting Sensor to speed up ready state")
+		sensorPod, err := ts.getSensorPodWithRetries(ctx, ts.namespace)
+		require.NoError(t, err)
+		err = ts.k8s.CoreV1().Pods(ts.namespace).Delete(ctx, sensorPod.GetName(), metaV1.DeleteOptions{})
+		require.NoError(t, err)
+	}
 
 	// Wait for Central/Sensor to be healthy.
 	ts.waitForHealthyCentralSensorConn()
