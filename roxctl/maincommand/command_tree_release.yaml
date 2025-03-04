@@ -1572,6 +1572,7 @@ deployment:
       - merge-output
       - no-header
       - output
+      - required-headers
       - row-jsonpath-expressions
     INHERITED_FLAGS:
       - ca
@@ -1682,6 +1683,7 @@ image:
       - merge-output
       - no-header
       - output
+      - required-headers
       - row-jsonpath-expressions
     INHERITED_FLAGS:
       - ca
@@ -1737,6 +1739,7 @@ image:
       - merge-output
       - no-header
       - output
+      - required-headers
       - row-jsonpath-expressions
     INHERITED_FLAGS:
       - ca
