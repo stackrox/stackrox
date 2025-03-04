@@ -10429,6 +10429,11 @@
                 "id": 3,
                 "name": "cluster_id",
                 "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "updated_at",
+                "type": "google.protobuf.Timestamp"
               }
             ]
           },

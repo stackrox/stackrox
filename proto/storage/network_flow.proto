@@ -14,6 +14,9 @@ message NetworkFlow {
 
   // Need the clusterID as that is part of the key in RocksDB
   string cluster_id = 3; // @gotags: sql:"pk,type(uuid)"
+
+  // This field is set by Central everytime a flow is upserted.
+  google.protobuf.Timestamp updated_at = 4; // @gotags: sql:"index=brin"
 }
 
 message NetworkFlowProperties {
