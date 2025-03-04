@@ -88,9 +88,10 @@ func (s *PolicyServicePostgresSuite) TearDownSuite() {
 	s.db.Close()
 }
 
-// TestPostPolicy tests posting and then immediately after putting the same policy, as this was an edge case that caused
-// issues with the policy as code config controller.
-func (s *PolicyServicePostgresSuite) TestPostPolicy() {
+// TestPostPolicy tests posting and then immediately after putting the same policy, as this discovered a bug in the
+// title casing of policy categories. This caused the policy as code workflow to create a new policy CR with a new policy
+// category name that did not conform to "title" casing to fail.
+func (s *PolicyServicePostgresSuite) TestPutAfterPostPolicyWithInvalidCasing() {
 	policy := &storage.Policy{
 		Name:            "Test Policy",
 		Description:     "Test Description",
