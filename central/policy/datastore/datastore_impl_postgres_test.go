@@ -9,6 +9,7 @@ import (
 	clusterDSMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	notifierDSMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	"github.com/stackrox/rox/central/policy/search"
+	policyStore "github.com/stackrox/rox/central/policy/store"
 	pgStore "github.com/stackrox/rox/central/policy/store/postgres"
 	policyCategoryDS "github.com/stackrox/rox/central/policycategory/datastore"
 	categorySearch "github.com/stackrox/rox/central/policycategory/search"
@@ -76,8 +77,8 @@ func (s *PolicyPostgresDataStoreTestSuite) SetupTest() {
 
 	s.categoryDS = policyCategoryDS.New(categoryStorage, categorySearcher, policyCategoryEdgeDS.New(edgeStorage, edgeSearcher))
 
-	policyStore := pgStore.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
-	s.datastore = New(policyStore, search.New(policyStore), s.mockClusterDS, s.mockNotifierDS, s.categoryDS)
+	policyDS := policyStore.New(s.db)
+	s.datastore = New(policyDS, search.New(policyDS), s.mockClusterDS, s.mockNotifierDS, s.categoryDS)
 
 }
 
@@ -136,6 +137,29 @@ func (s *PolicyPostgresDataStoreTestSuite) TestInsertUpdatePolicy() {
 	results, err = s.datastore.Search(ctx, q)
 	s.NoError(err)
 	s.Len(results, 0)
+}
+
+func (s *PolicyPostgresDataStoreTestSuite) TestUpdatePolicyWithInvalidCategory() {
+	policy := fixtures.GetPolicy()
+
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+		sac.ResourceScopeKeys(resources.WorkflowAdministration, resources.Cluster),
+	))
+
+	id, err := s.datastore.AddPolicy(ctx, policy)
+	s.NoError(err)
+	s.NotEmpty(id)
+
+	policy.Id = id
+
+	policy.Categories = []string{"Not a Real Category"}
+	err = s.datastore.UpdatePolicy(ctx, policy)
+	s.Error(err)
+
+	//count, err := s.datastore.Count(ctx, pkgSearch.EmptyQuery())
+	//s.NoError(err)
+	//s.Equal(0, count)
 }
 
 func (s *PolicyPostgresDataStoreTestSuite) TestImportPolicy() {
