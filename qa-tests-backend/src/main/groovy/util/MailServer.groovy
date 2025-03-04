@@ -3,7 +3,7 @@ package util
 import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
 import io.fabric8.kubernetes.client.LocalPortForward
-import orchestratormanager.OrchestratorMain
+import orchestratormanager.Kubernetes
 
 import objects.Deployment
 import objects.Service
@@ -26,7 +26,7 @@ class MailServer {
     private MailServer() { }
 
     // Deploys a fake SMTP service that can both receive emails and return the emails it received
-    static MailServer createMailServer(OrchestratorMain orchestrator,
+    static MailServer createMailServer(Kubernetes orchestrator,
                                        boolean authenticated = true,
                                        boolean useTLS = false) {
         def mailServer = new MailServer()
@@ -90,7 +90,7 @@ class MailServer {
         return mailServer
     }
 
-    void teardown(OrchestratorMain orchestrator) {
+    void teardown(Kubernetes orchestrator) {
         def imagePullSecrets = deployment.getImagePullSecret()
         for (String secret : imagePullSecrets) {
             orchestrator.deleteSecret(secret, deployment.namespace)

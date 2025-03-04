@@ -117,7 +117,7 @@ import util.Timer
 
 @Slf4j
 @CompileStatic
-class Kubernetes implements OrchestratorMain {
+class Kubernetes {
     final int sleepDurationSeconds = 5
     final int maxWaitTimeSeconds = 90
     final int lbWaitTimeSeconds = 600
