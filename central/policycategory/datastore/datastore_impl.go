@@ -45,6 +45,10 @@ func (ds *datastoreImpl) SetPolicyCategoriesForPolicy(ctx context.Context, polic
 	ds.categoryMutex.Lock()
 	defer ds.categoryMutex.Unlock()
 
+	for i, categoryName := range categoryNames {
+		categoryNames[i] = strings.Title(categoryName)
+	}
+
 	edges, err := ds.policyCategoryEdgeDS.SearchRawEdges(ctx, searchPkg.NewQueryBuilder().AddExactMatches(searchPkg.PolicyID, policyID).ProtoQuery())
 	if err != nil {
 		return err
