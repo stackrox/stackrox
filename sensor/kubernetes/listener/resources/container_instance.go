@@ -50,7 +50,9 @@ func containerInstances(pod *corev1.Pod) []*storage.ContainerInstance {
 			result[i].ExitCode = terminated.ExitCode
 			result[i].TerminationReason = terminated.Reason
 		}
-		if digest := imageUtils.ExtractImageDigest(c.ImageID); digest != "" {
+		if digest, err := imageUtils.ExtractImageDigest(c.ImageID); err != nil {
+			log.Errorf("extracting image digest from Kubernetes (%v) to proto: %v", c.ImageID, err)
+		} else if digest != "" {
 			result[i].ImageDigest = digest
 		}
 	}

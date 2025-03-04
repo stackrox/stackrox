@@ -369,7 +369,10 @@ func (w *deploymentWrap) populateImageMetadata(localImages set.StringSet, pods .
 				continue
 			}
 
-			if digest := imageUtils.ExtractImageDigest(c.ImageID); digest != "" {
+			if digest, err := imageUtils.ExtractImageDigest(c.ImageID); err != nil {
+				log.Errorf("Image ID %q is invalid, so skipping: %v", c.ImageID, err)
+				continue
+			} else if digest != "" {
 				image.Id = digest
 				image.NotPullable = !imageUtils.IsPullable(c.ImageID)
 				image.IsClusterLocal = localImages.Contains(image.GetName().GetFullName())

@@ -1435,8 +1435,8 @@ github.com/spiffe/go-spiffe/v2 v2.3.0 h1:g2jYNb/PDMB8I7mBGL2Zuq/Ur6hUhoroxGQFyD6
 github.com/spiffe/go-spiffe/v2 v2.3.0/go.mod h1:Oxsaio7DBgSNqhAO9i/9tLClaVlfRok7zvJnTV8ZyIY=
 github.com/stackrox/cosign/v2 v2.0.0-20240412144741-15f5395d853a h1:qoXejTh+3Uln8SfDxFW3r1bE1PHjVAEc2I8NE8k3Xtk=
 github.com/stackrox/cosign/v2 v2.0.0-20240412144741-15f5395d853a/go.mod h1:JZlRD2uaEjVAvZ1XJ3QkkZJhTqSDVtLaet+C/TMR81Y=
-github.com/stackrox/docker-registry-client v0.2.0 h1:91TLimNkFgdwO9QF8rUC57DoLGiTAgDKm2KhLI2xkLU=
-github.com/stackrox/docker-registry-client v0.2.0/go.mod h1:4TU+pA11iczIvhtL0own2OJcJXc1o26tBHDivaXhlZU=
+github.com/stackrox/docker-registry-client v0.2.1 h1:0SxojNYZXV2tXo1BxtxfQpiPZavAmw+B1aWT8CSSqYE=
+github.com/stackrox/docker-registry-client v0.2.1/go.mod h1:4TU+pA11iczIvhtL0own2OJcJXc1o26tBHDivaXhlZU=
 github.com/stackrox/dotnet-scraper v0.0.0-20201023051640-72ef543323dd h1:vEjp7Q66zd4W72//Uk3uyVN50Mh/nFLbN9pb7CVK7mE=
 github.com/stackrox/dotnet-scraper v0.0.0-20201023051640-72ef543323dd/go.mod h1:HILeV3i/EyJz844GcrC3+oU7oZONhjfujaIYBMJ/bZE=
 github.com/stackrox/external-network-pusher v0.0.0-20231115153210-b82d72f500a2 h1:gRDa1g3wlX7UDjv8nwkXcvnMbjFQkLPa6kDZJ6WpyZo=
