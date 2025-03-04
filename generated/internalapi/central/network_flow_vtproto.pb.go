@@ -13,6 +13,7 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
+	sync "sync"
 )
 
 const (
@@ -26,7 +27,7 @@ func (m *NetworkFlowUpdate) CloneVT() *NetworkFlowUpdate {
 	if m == nil {
 		return (*NetworkFlowUpdate)(nil)
 	}
-	r := new(NetworkFlowUpdate)
+	r := NetworkFlowUpdateFromVTPool()
 	r.Time = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.Time).CloneVT())
 	if rhs := m.Updated; rhs != nil {
 		tmpContainer := make([]*storage.NetworkFlow, len(rhs))
@@ -353,6 +354,36 @@ func (m *PushNetworkEntitiesRequest) MarshalToSizedBufferVT(dAtA []byte) (int, e
 	return len(dAtA) - i, nil
 }
 
+var vtprotoPool_NetworkFlowUpdate = sync.Pool{
+	New: func() interface{} {
+		return &NetworkFlowUpdate{}
+	},
+}
+
+func (m *NetworkFlowUpdate) ResetVT() {
+	if m != nil {
+		for _, mm := range m.Updated {
+			mm.Reset()
+		}
+		f0 := m.Updated[:0]
+		for _, mm := range m.UpdatedEndpoints {
+			mm.Reset()
+		}
+		f1 := m.UpdatedEndpoints[:0]
+		m.Reset()
+		m.Updated = f0
+		m.UpdatedEndpoints = f1
+	}
+}
+func (m *NetworkFlowUpdate) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_NetworkFlowUpdate.Put(m)
+	}
+}
+func NetworkFlowUpdateFromVTPool() *NetworkFlowUpdate {
+	return vtprotoPool_NetworkFlowUpdate.Get().(*NetworkFlowUpdate)
+}
 func (m *NetworkFlowUpdate) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -474,7 +505,14 @@ func (m *NetworkFlowUpdate) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Updated = append(m.Updated, &storage.NetworkFlow{})
+			if len(m.Updated) == cap(m.Updated) {
+				m.Updated = append(m.Updated, &storage.NetworkFlow{})
+			} else {
+				m.Updated = m.Updated[:len(m.Updated)+1]
+				if m.Updated[len(m.Updated)-1] == nil {
+					m.Updated[len(m.Updated)-1] = &storage.NetworkFlow{}
+				}
+			}
 			if unmarshal, ok := interface{}(m.Updated[len(m.Updated)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
@@ -552,7 +590,14 @@ func (m *NetworkFlowUpdate) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.UpdatedEndpoints = append(m.UpdatedEndpoints, &storage.NetworkEndpoint{})
+			if len(m.UpdatedEndpoints) == cap(m.UpdatedEndpoints) {
+				m.UpdatedEndpoints = append(m.UpdatedEndpoints, &storage.NetworkEndpoint{})
+			} else {
+				m.UpdatedEndpoints = m.UpdatedEndpoints[:len(m.UpdatedEndpoints)+1]
+				if m.UpdatedEndpoints[len(m.UpdatedEndpoints)-1] == nil {
+					m.UpdatedEndpoints[len(m.UpdatedEndpoints)-1] = &storage.NetworkEndpoint{}
+				}
+			}
 			if unmarshal, ok := interface{}(m.UpdatedEndpoints[len(m.UpdatedEndpoints)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
@@ -757,7 +802,14 @@ func (m *NetworkFlowUpdate) UnmarshalVTUnsafe(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Updated = append(m.Updated, &storage.NetworkFlow{})
+			if len(m.Updated) == cap(m.Updated) {
+				m.Updated = append(m.Updated, &storage.NetworkFlow{})
+			} else {
+				m.Updated = m.Updated[:len(m.Updated)+1]
+				if m.Updated[len(m.Updated)-1] == nil {
+					m.Updated[len(m.Updated)-1] = &storage.NetworkFlow{}
+				}
+			}
 			if unmarshal, ok := interface{}(m.Updated[len(m.Updated)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
@@ -835,7 +887,14 @@ func (m *NetworkFlowUpdate) UnmarshalVTUnsafe(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.UpdatedEndpoints = append(m.UpdatedEndpoints, &storage.NetworkEndpoint{})
+			if len(m.UpdatedEndpoints) == cap(m.UpdatedEndpoints) {
+				m.UpdatedEndpoints = append(m.UpdatedEndpoints, &storage.NetworkEndpoint{})
+			} else {
+				m.UpdatedEndpoints = m.UpdatedEndpoints[:len(m.UpdatedEndpoints)+1]
+				if m.UpdatedEndpoints[len(m.UpdatedEndpoints)-1] == nil {
+					m.UpdatedEndpoints[len(m.UpdatedEndpoints)-1] = &storage.NetworkEndpoint{}
+				}
+			}
 			if unmarshal, ok := interface{}(m.UpdatedEndpoints[len(m.UpdatedEndpoints)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {

@@ -3619,6 +3619,9 @@ var vtprotoPool_MsgFromSensor = sync.Pool{
 
 func (m *MsgFromSensor) ResetVT() {
 	if m != nil {
+		if oneof, ok := m.Msg.(*MsgFromSensor_NetworkFlowUpdate); ok {
+			oneof.NetworkFlowUpdate.ReturnToVTPool()
+		}
 		m.Reset()
 	}
 }
@@ -4546,7 +4549,7 @@ func (m *MsgFromSensor) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &NetworkFlowUpdate{}
+				v := NetworkFlowUpdateFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -7575,7 +7578,7 @@ func (m *MsgFromSensor) UnmarshalVTUnsafe(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &NetworkFlowUpdate{}
+				v := NetworkFlowUpdateFromVTPool()
 				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
