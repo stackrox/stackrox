@@ -67,7 +67,7 @@ main() {
     info ">>> Collecting from namespace ${namespace} <<<"
     set +e
 
-    for object in daemonsets deployments services pods secrets serviceaccounts validatingwebhookconfigurations \
+    for object in daemonsets deployments services pods serviceaccounts validatingwebhookconfigurations \
       catalogsources subscriptions clusterserviceversions central securedclusters nodes; do
         # A feel good command before pulling logs
         info ">>> Collecting ${object} from namespace ${namespace} <<<"
