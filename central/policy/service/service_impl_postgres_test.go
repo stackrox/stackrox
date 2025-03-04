@@ -138,4 +138,8 @@ func (s *PolicyServicePostgresSuite) TestPostPolicy() {
 	count, err := s.policies.Count(s.ctx, searchPkg.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, count)
+
+	count, err = s.categories.Count(s.ctx, searchPkg.EmptyQuery())
+	s.NoError(err)
+	s.Equal(1, count)
 }
