@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/sensor/debugger/collector"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	"github.com/stackrox/rox/sensor/tests/helper"
@@ -80,17 +79,20 @@ func Test_SensorLastSeenTimestamp(t *testing.T) {
 		//testContext.StopCentralGRPC()
 
 		// Nginx deployment
+		t.Log("Applying nginx deployment")
 		nginxObj := helper.ObjByKind(NginxDeployment.Kind)
 		deleteNginx, err := c.ApplyResource(ctx, t, helper.DefaultNamespace, &NginxDeployment, nginxObj, nil)
 		require.NoError(t, err)
 		nginxUID := string(nginxObj.GetUID())
 
 		// Nginx service
+		t.Log("Applying nginx service")
 		srvObj := helper.ObjByKind(NginxService.Kind)
 		deleteService, err := c.ApplyResource(ctx, t, helper.DefaultNamespace, &NginxService, srvObj, nil)
 		require.NoError(t, err)
 
 		// Talk pod
+		t.Log("Applying talk pod")
 		talkObj := helper.ObjByKind(TalkPod.Kind)
 		deleteTalk, err := c.ApplyResource(ctx, t, helper.DefaultNamespace, &TalkPod, talkObj, nil)
 		require.NoError(t, err)
@@ -100,6 +102,7 @@ func Test_SensorLastSeenTimestamp(t *testing.T) {
 		talkIP := testContext.GetIPFromPod(talkObj)
 		require.NotEqual(t, "", talkIP)
 
+		t.Log("Ensure nginx deployment was deployed correctly")
 		nginxPodIDs, nginxContainerIDs, nginxIP := getDeploymentInfo(t, c, nginxObj, srvObj)
 		if !helper.UseRealCollector.BooleanSetting() {
 			helper.SendSignalMessage(fakeCollector, talkContainerIds[0], "curl")
@@ -228,7 +231,7 @@ func assertFlow(t *testing.T, fromID, toID string) func(*central.MsgFromSensor) 
 
 func getDeploymentInfo(t *testing.T, c *helper.TestContext, deployment, service k8s.Object) (podIDs []string, containerIDs map[string][]string, ip string) {
 	podIDs, containerIDs = c.GetContainerIdsFromDeployment(deployment)
-	require.Len(t, podIDs, 1)
+	require.Len(t, podIDs, 1, "Expected to find 1 pod ID")
 	require.Len(t, containerIDs, 1)
 	require.Len(t, containerIDs[podIDs[0]], 1)
 	require.NotEqual(t, "", containerIDs[podIDs[0]][0])
