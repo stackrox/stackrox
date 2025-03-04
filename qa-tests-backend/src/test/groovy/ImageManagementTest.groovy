@@ -76,8 +76,8 @@ class ImageManagementTest extends BaseSpecification {
         // "90-Day Image Age"             | "stackroxacr.azurecr.io" | "nginx"               | "1.12"       | ""
         "Ubuntu Package Manager in Image" | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
         "Curl in Image"                   | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
-        "Fixable CVSS >= 7"               | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "nginx-1.12" | ""
-        "Wget in Image"                   | "quay.io"     | WGET_IMAGE_NS                  | WGET_IMAGE_TAG | ""
+        "Containers with fixable CVEs and CVSS >= 7"|"quay.io"|"rhacs-eng/qa-multi-arch"     | "nginx-1.12" | ""
+        "Wget in Image"                   | "quay.io"     | WGET_IMAGE_NS                    |WGET_IMAGE_TAG| ""
         "Apache Struts: CVE-2017-5638"    | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
     }
 
