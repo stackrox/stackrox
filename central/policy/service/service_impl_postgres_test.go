@@ -88,6 +88,8 @@ func (s *PolicyServicePostgresSuite) TearDownSuite() {
 	s.db.Close()
 }
 
+// TestPostPolicy tests posting and then immediately after putting the same policy, as this was an edge case that caused
+// issues with the policy as code config controller.
 func (s *PolicyServicePostgresSuite) TestPostPolicy() {
 	policy := &storage.Policy{
 		Name:            "Test Policy",
