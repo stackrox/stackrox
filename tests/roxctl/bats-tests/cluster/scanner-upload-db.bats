@@ -36,7 +36,7 @@ teardown() {
 }
 
 @test "[zip] roxctl scanner upload-db" {
-  run curl --retry 30 --retry-max-time 300 --retry-connrefused --show-error --fail --output "${temp_dir}/test-scanner-vuln-updates.zip" --location 'https://install.stackrox.io/scanner/scanner-vuln-updates.zip'
+  run curl --retry 30 --retry-max-time 600 --retry-all-errors --show-error --fail --output "${temp_dir}/test-scanner-vuln-updates.zip" --location 'https://install.stackrox.io/scanner/scanner-vuln-updates.zip'
   assert_success
 
   run roxctl_authenticated scanner upload-db --scanner-db-file "${temp_dir}/test-scanner-vuln-updates.zip"
