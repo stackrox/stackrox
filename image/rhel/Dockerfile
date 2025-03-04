@@ -59,7 +59,7 @@ RUN rpm --import RPM-GPG-KEY-CentOS-Official && \
     microdnf clean all -y && \
     rm /tmp/postgres.rpm /tmp/postgres-libs.rpm RPM-GPG-KEY-CentOS-Official && \
     # (Optional) Remove line below to keep package management utilities
-    rpm -v -e $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*' libmodulemd) && \
+    rpm -v -e $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*' libmodulemd libxml2 libarchive librepo) && \
     rm -rf /var/cache/dnf /var/cache/yum && \
     # The contents of paths mounted as emptyDir volumes in Kubernetes are saved
     # by the script `save-dir-contents` during the image build. The directory
