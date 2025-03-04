@@ -1,4 +1,4 @@
-# The presence of this config map will cause the Machine Config Operator to not drain nodes 
+# The presence of this config map will cause the Machine Config Operator to not drain nodes
 # when registries.conf is updated, in the context of delegated scanning this happens
 # when the mirroring CRs are applied.
 #

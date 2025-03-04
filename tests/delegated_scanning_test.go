@@ -902,7 +902,6 @@ func (ts *DelegatedScanningSuite) scanWithRetries(ctx context.Context, service v
 		"no such host",
 	}
 
-	t := ts.T()
 	retryFunc := func() error {
 		img, err = service.ScanImage(ctx, req)
 		if err == nil {
@@ -911,7 +910,6 @@ func (ts *DelegatedScanningSuite) scanWithRetries(ctx context.Context, service v
 
 		for _, token := range retryErrTokens {
 			if strings.Contains(err.Error(), token) {
-				logf(t, "Retryable error found when scanning image %q: %v", req.GetImageName(), err)
 				return retry.MakeRetryable(err)
 			}
 		}
@@ -919,7 +917,7 @@ func (ts *DelegatedScanningSuite) scanWithRetries(ctx context.Context, service v
 		return err
 	}
 
-	err = ts.withRetries(retryFunc, "Error scanning image")
+	err = ts.withRetries(retryFunc, "Timeout or too many parallel scans")
 	return img, err
 }
 
