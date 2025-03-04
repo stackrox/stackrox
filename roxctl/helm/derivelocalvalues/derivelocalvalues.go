@@ -338,7 +338,7 @@ func derivePublicLocalValuesForCentralServices(ctx context.Context, _ string, k8
 
 func retrieveDeclarativeConfigConfigMaps(ctx context.Context, k8s k8sObjectDescription, names []string) []string {
 	configMaps := k8s.evaluateToStringSlice(ctx, "deployment", "central",
-		`{.spec.template.spec.volumes[?(@.configMap].name}`, []string{})
+		`{.spec.template.spec.volumes[?(@.configMap)].name}`, []string{})
 	configMapSet := set.NewStringSet(configMaps...)
 	namesSet := set.NewStringSet(names...)
 	return namesSet.Intersect(configMapSet).AsSlice()
@@ -346,7 +346,7 @@ func retrieveDeclarativeConfigConfigMaps(ctx context.Context, k8s k8sObjectDescr
 
 func retrieveDeclarativeConfigSecrets(ctx context.Context, k8s k8sObjectDescription, names []string) []string {
 	secrets := k8s.evaluateToStringSlice(ctx, "deployment", "central",
-		`{.spec.template.spec.volumes[?(@.secret].name}`, []string{})
+		`{.spec.template.spec.volumes[?(@.secret)].name}`, []string{})
 	secretsSet := set.NewStringSet(secrets...)
 	namesSet := set.NewStringSet(names...)
 	return namesSet.Intersect(secretsSet).AsSlice()
