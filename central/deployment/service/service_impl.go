@@ -253,7 +253,7 @@ func labelsMapFromSearchResults(results []search.Result) (map[string]*v1.Deploym
 	for _, r := range results {
 		// In postgres, map key and values are returned as one `k=v`.
 		for _, match := range r.Matches[labelFieldPath] {
-			key, value, hasEquals := pgsearch.ParseMapQuery(match)
+			key, value, hasEquals, _ := pgsearch.ParseMapQuery(match)
 			if !hasEquals {
 				utils.Should(errors.Errorf("cannot handle label %s", match))
 				continue
