@@ -798,12 +798,12 @@ EOT
 }
 
 verify_deployment_deletion() {
+    local deployment_names_file="$1"; shift
     local namespace="$1"; shift
     local deployment_names="$@"
 
     echo "Waiting for the following deployments in namespace ${namespace} to be deleted: $deployment_names"
 
-    local deployment_names_file; deployment_names_file=$(mktemp)
     echo "$deployment_names" | tr ' ' '\n' >> "$deployment_names_file"
 
     local deleted
@@ -832,9 +832,11 @@ export -f verify_deployment_deletion
 
 verify_deployment_deletion_with_timeout() {
     local timeout_duration="$1"; shift
+    local deployment_names_file; deployment_names_file=$(mktemp)
 
-    timeout "$timeout_duration" bash -c "verify_deployment_deletion $*"
+    timeout "$timeout_duration" bash -c "verify_deployment_deletion \"$deployment_names_file\" $*"
     ret=$?
+    rm -f "$deployment_names_file"
 
     case $ret in
     0)
