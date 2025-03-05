@@ -40,6 +40,7 @@ func request_DeclarativeConfigHealthService_GetDeclarativeConfigHealths_0(ctx co
 		protoReq Empty
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	msg, err := client.GetDeclarativeConfigHealths(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
