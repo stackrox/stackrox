@@ -1,8 +1,11 @@
 package testutils
 
 import (
+	"encoding/binary"
+	"fmt"
 	"math/rand"
 	"net"
+	"net/netip"
 	"strconv"
 	"time"
 
@@ -11,8 +14,55 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/utils"
 )
+
+func AnyFlow(toID string, toType storage.NetworkEntityInfo_Type, fromID string, fromType storage.NetworkEntityInfo_Type) *storage.NetworkFlow {
+	return &storage.NetworkFlow{
+		Props: &storage.NetworkFlowProperties{
+			SrcEntity: &storage.NetworkEntityInfo{
+				Type: fromType,
+				Id:   fromID,
+			},
+			DstEntity: &storage.NetworkEntityInfo{
+				Type: toType,
+				Id:   toID,
+			},
+		},
+	}
+}
+
+func ExtFlow(toID, fromID string) *storage.NetworkFlow {
+	return AnyFlow(toID, storage.NetworkEntityInfo_EXTERNAL_SOURCE, fromID, storage.NetworkEntityInfo_DEPLOYMENT)
+}
+
+func DepFlow(toID, fromID string) *storage.NetworkFlow {
+	return AnyFlow(toID, storage.NetworkEntityInfo_DEPLOYMENT, fromID, storage.NetworkEntityInfo_DEPLOYMENT)
+}
+
+func ListenFlow(depID string, port uint32) *storage.NetworkFlow {
+	return &storage.NetworkFlow{
+		Props: &storage.NetworkFlowProperties{
+			SrcEntity: &storage.NetworkEntityInfo{
+				Type: storage.NetworkEntityInfo_DEPLOYMENT,
+				Id:   depID,
+			},
+			DstEntity: &storage.NetworkEntityInfo{
+				Type: storage.NetworkEntityInfo_LISTEN_ENDPOINT,
+			},
+			DstPort:    port,
+			L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+		},
+	}
+}
+
+func ExtIdFromIPv4(clusterId string, packedIp uint32) (sac.ResourceID, error) {
+	bs := [4]byte{}
+	binary.BigEndian.PutUint32(bs[:], packedIp)
+	ip := netip.AddrFrom4(bs)
+	return externalsrcs.NewClusterScopedID(clusterId, fmt.Sprintf("%s/32", ip.String()))
+}
 
 // GetDeploymentNetworkEntity returns a deployment type network entity.
 func GetDeploymentNetworkEntity(id, name string) *storage.NetworkEntityInfo {
