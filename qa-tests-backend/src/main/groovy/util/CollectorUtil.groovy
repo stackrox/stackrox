@@ -1,6 +1,9 @@
 package util
 
 import groovy.util.logging.Slf4j
+import groovy.transform.CompileStatic
+import java.net.HttpURLConnection
+import java.net.URL
 
 import orchestratormanager.OrchestratorMain
 
@@ -25,7 +28,8 @@ class CollectorUtil {
 
     static introspectionQuery(String collectorAddress, String endpoint) {
         String uri = "http://${collectorAddress}${endpoint}"
-        HttpURLConnection connection = new URL(uri).openConnection()
+        URL url = new URL(uri)
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection()
 
         // this might be unneeded?
         connection.setRequestMethod("GET")
@@ -60,7 +64,8 @@ class CollectorUtil {
             // we need to check
             portForwards.removeAll {
                 def config = introspectionQuery("127.0.0.1:${it.getLocalPort()}", "/state/runtime-config")
-                return config.networking.externalIps.enabled.name() == state
+                def configTyped = (Collector.CollectorConfig) config
+                return configTyped.networking.externalIps.enabled.name() == state
             }
             sleep intervalSeconds * 1000
         }
