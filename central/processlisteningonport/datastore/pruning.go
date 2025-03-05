@@ -44,4 +44,30 @@ const (
 
 	deletePLOPsWithoutPoduid2 = "DELETE FROM listening_endpoints where poduid is null"
 
+	deletePLOPsWithoutPoduidLimit = `WITH rows_to_delete AS (
+					    SELECT id
+					    FROM listening_endpoints
+					    WHERE poduid IS NULL
+					    ORDER BY id
+					    LIMIT %d
+					)
+					DELETE FROM listening_endpoints
+					WHERE id IN (SELECT id FROM rows_to_delete)
+					RETURNING id`
+
+	deletePLOPsWithoutPoduidPage = `WITH rows_to_delete AS (
+					    SELECT id
+					    FROM listening_endpoints
+					    WHERE poduid IS NULL
+					    AND id > '%s'
+					    ORDER BY id
+					    LIMIT %d
+					)
+					DELETE FROM listening_endpoints
+					WHERE id IN (SELECT id FROM rows_to_delete)
+					RETURNING id`
+	//deletePLOPsWithoutPoduidLimit = "DELETE FROM listening_endpoints where poduid is null LIMIT %d"
+
+	//deletePLOPsWithoutPoduidPage = "DELETE FROM listening_endpoints where poduid is null and id > %s LIMIT %d"
+
 )

@@ -784,6 +784,86 @@ func (ds *datastoreImpl) RemovePLOPsWithoutPodUIDWalk(ctx context.Context) (int6
 	return int64(totalCount), nil
 }
 
+func (ds *datastoreImpl) RemovePLOPsWithoutPodUIDPage(ctx context.Context) (int64, error) {
+        return pgutils.Retry2(ctx, func() (int64, error) {
+                return ds.retryableRemovePLOPsWithoutPodUID(ctx)
+        })
+}
+
+func (ds *datastoreImpl) RemovePLOPsWithoutPodUIDOnePage(ctx context.Context, id string, limit int) (int, string, error) {
+	ds.mutex.Lock()
+	defer ds.mutex.Unlock()
+
+	query := fmt.Sprintf(deletePLOPsWithoutPoduidPage, id, limit)
+	rows, err := ds.pool.Query(ctx, query)
+        defer rows.Close()
+
+	if err != nil {
+	        return 0, id, err
+	}
+
+	return ds.readRowsForDeletion(ctx, rows)
+}
+
+func (ds *datastoreImpl) RemovePLOPsWithoutPodUIDFirstPage(ctx context.Context, limit int) (int, string, error) {
+	ds.mutex.Lock()
+	defer ds.mutex.Unlock()
+
+	query := fmt.Sprintf(deletePLOPsWithoutPoduidLimit, limit)
+	rows, err := ds.pool.Query(ctx, query)
+
+        if err != nil {
+                // Do not be alarmed if the error is simply NoRows
+                err = pgutils.ErrNilIfNoRows(err)
+                if err != nil {
+                        log.Warnf("%s: %s", query, err)
+                }
+                return 0, "", err
+        }
+        defer rows.Close()
+
+        nrows, id, err := ds.readRowsForDeletion(ctx, rows)
+
+        if err != nil {
+                return int(nrows), id, err
+        }
+        
+	return int(nrows), id, nil
+}
+
+func (ds *datastoreImpl) retryableRemovePLOPsWithoutPodUID(ctx context.Context) (int64, error) {
+	totalRows := 0
+        limit := 10000
+
+	nrows, id, err := ds.RemovePLOPsWithoutPodUIDFirstPage(ctx, limit)
+
+	totalRows = nrows
+
+	for nrows > 0 {
+        	nrows, id, err = ds.RemovePLOPsWithoutPodUIDOnePage(ctx, id, limit)
+        	if err != nil {
+        	        return int64(totalRows), err
+        	}
+		totalRows += nrows
+	}
+
+        return int64(totalRows), nil
+}
+
+func (ds *datastoreImpl) readRowsForDeletion(ctx context.Context, rows pgx.Rows) (int, string, error) {
+        var id string
+
+        nrows := 0
+        for rows.Next() {
+                if err := rows.Scan(&id); err != nil {
+                        return nrows, "", pgutils.ErrNilIfNoRows(err)
+                }
+                nrows++
+        }
+
+        return nrows, id, nil
+}
+
 func (ds *datastoreImpl) RemovePLOPsWithoutPodUID(ctx context.Context) (int64, error) {
-	return ds.RemovePLOPsWithoutPodUIDBatch(ctx)
+	return ds.RemovePLOPsWithoutPodUIDPage(ctx)
 }
