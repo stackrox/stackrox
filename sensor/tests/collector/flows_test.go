@@ -216,7 +216,10 @@ func assertFlow(t *testing.T, fromID, toID string) func(*central.MsgFromSensor) 
 		if len(event.GetNetworkFlowUpdate().GetUpdated()) > 0 {
 			t.Log("============= lvm Flows")
 			for _, flow := range event.GetNetworkFlowUpdate().GetUpdated() {
-				t.Logf("============= lvm Flow: %v", flow.GetLastSeenTimestamp())
+				t.Logf("============= lvm Flow (src=%s -> dest=%s) last seen: %v",
+					flow.GetProps().GetSrcEntity().GetId(),
+					flow.GetProps().GetDstEntity().GetId(),
+					flow.GetLastSeenTimestamp())
 				if flow.GetProps().GetSrcEntity().GetId() == fromID && flow.GetProps().GetDstEntity().GetId() == toID {
 					found = true
 				}
@@ -225,7 +228,7 @@ func assertFlow(t *testing.T, fromID, toID string) func(*central.MsgFromSensor) 
 		if len(event.GetNetworkFlowUpdate().GetUpdatedEndpoints()) > 0 {
 			t.Log("============= lvm Endpoints")
 			for _, f := range event.GetNetworkFlowUpdate().GetUpdatedEndpoints() {
-				t.Logf("============= lvm Endpoint: %v", f.GetLastActiveTimestamp())
+				t.Logf("============= lvm Endpoint: last active ts=%v", f.GetLastActiveTimestamp())
 			}
 		}
 		return found

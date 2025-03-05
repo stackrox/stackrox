@@ -441,7 +441,7 @@ func (m *networkFlowManager) enrichConnections(tickerC <-chan time.Time) {
 		case <-m.stopper.Flow().StopRequested():
 			return
 		case <-tickerC:
-			log.Info("=============== lvm manager tick")
+			log.Info("=== lvm manager tick")
 			if !features.SensorCapturesIntermediateEvents.Enabled() && !m.centralReady.IsDone() {
 				log.Info("Sensor is in offline mode: skipping enriching until connection is back up")
 				continue
@@ -463,17 +463,37 @@ func (m *networkFlowManager) getCurrentContext() context.Context {
 }
 
 func (m *networkFlowManager) enrichAndSend() {
+	log.Info("=== lvm (enrichAndSend) start")
 	currentConns, currentEndpoints := m.currentEnrichedConnsAndEndpoints()
-	log.Infof("=========== lvm current conn len(%d) current endpoints len(%d)", len(currentConns), len(currentEndpoints))
-	log.Infof("=========== lvm current conn %v", currentConns)
-	log.Infof("=========== lvm current endpoints %v", currentConns)
+
+	// DEBUG OUTPUT
+	log.Infof("=== lvm (enrichAndSend) current conn len(%d) current endpoints len(%d)", len(currentConns), len(currentEndpoints))
+	for indicator, ts := range currentConns {
+		log.Infof("=== lvm (enrichAndSend) current conn %s: %d",
+			indicator.srcEntity.ID+"->"+indicator.dstEntity.ID, ts.UnixSeconds())
+	}
+	for indicator, ts := range currentEndpoints {
+		log.Infof("=== lvm (enrichAndSend) current endpoint %s: %d",
+			indicator.entity.ID, ts.UnixSeconds())
+	}
 
 	updatedConns := computeUpdatedConns(currentConns, m.enrichedConnsLastSentState, &m.lastSentStateMutex)
 	updatedEndpoints := computeUpdatedEndpoints(currentEndpoints, m.enrichedEndpointsLastSentState, &m.lastSentStateMutex)
 
-	log.Infof("=========== lvm updated conn len(%d) updated endpoints len(%d)", len(updatedConns), len(updatedEndpoints))
+	log.Infof("=== lvm updated conn len(%d) updated endpoints len(%d)", len(updatedConns), len(updatedEndpoints))
+
+	// DEBUG OUTPUT
+	for _, c := range updatedConns {
+		log.Infof("====== lvm (enrichAndSend) updated conn %s -> %s",
+			c.GetProps().GetSrcEntity().GetId(), c.GetProps().GetDstEntity().GetId())
+	}
+	for _, e := range updatedEndpoints {
+		log.Infof("====== lvm (enrichAndSend) updated endpoint %s, ts=%s",
+			e.GetProps().String(), e.GetLastActiveTimestamp())
+	}
 
 	if len(updatedConns)+len(updatedEndpoints) == 0 {
+		defer log.Infof("=== lvm (enrichAndSend) exiting early - nothing to update")
 		return
 	}
 
@@ -1083,9 +1103,20 @@ func (m *networkFlowManager) UnregisterCollector(hostname string, sequenceID int
 func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, nowTimestamp timestamp.MicroTS, sequenceID int64) error {
 	updatedConnections := getUpdatedConnections(h.hostname, networkInfo)
 	updatedEndpoints := getUpdatedContainerEndpoints(h.hostname, networkInfo)
-	log.Infof("=============== lvm process updated conn %v", updatedConnections)
-	log.Infof("=============== lvm process updated endpoints %v", updatedEndpoints)
-
+	for c, ts := range updatedConnections {
+		if ts == timestamp.InfiniteFuture {
+			log.Infof("=== lvm (Process) collector-updated conn %s: +Inf (%d)", c.String(), ts.UnixSeconds())
+		} else {
+			log.Infof("=== lvm (Process) collector-updated conn %s: %d", c.String(), ts.UnixSeconds())
+		}
+	}
+	for c, ts := range updatedEndpoints {
+		if ts == timestamp.InfiniteFuture {
+			log.Infof("=== lvm (Process) collector-updated endpoint %s: +Inf (%d)", c.String(), ts.UnixSeconds())
+		} else {
+			log.Infof("=== lvm (Process) collector-updated endpoint %s: %d", c.String(), ts.UnixSeconds())
+		}
+	}
 	collectorTS := timestamp.FromProtobuf(networkInfo.GetTime())
 	tsOffset := nowTimestamp - collectorTS
 
@@ -1093,11 +1124,13 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 	defer h.mutex.Unlock()
 
 	if sequenceID != h.currentSequenceID {
+		log.Infof("=== lvm (Process) conn replaced by newer connection")
 		return errors.New("replaced by newer connection")
 	} else if sequenceID != h.connectionsSequenceID {
+		log.Infof("=== lvm (Process) observing first message of a new connection")
 		// This is the first message of the new connection.
 		for _, status := range h.connections {
-			// Mark all connections as closed this is the first update
+			// Mark all past connections as closed, as this is the first update
 			// after a connection went down and came back up again.
 			status.lastSeen = h.lastKnownTimestamp
 		}
@@ -1217,6 +1250,9 @@ func processConnection(conn *sensor.NetworkConnection) (*connection, error) {
 	return c, nil
 }
 
+// getUpdatedConnections returns a map of connections to timestamp.
+// The timestamp set to +infinity means that the connection is open;
+// any other value >0 means that the connection is closed.
 func getUpdatedConnections(hostname string, networkInfo *sensor.NetworkConnectionInfo) map[connection]timestamp.MicroTS {
 	updatedConnections := make(map[connection]timestamp.MicroTS)
 
