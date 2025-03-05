@@ -942,6 +942,22 @@ func (m *networkFlowManager) currentEnrichedProcesses() map[processListeningIndi
 	return enrichedProcesses
 }
 
+func isUpdated(prevTS, currTS timestamp.MicroTS, found bool) bool {
+	// Connection has not been seen in the last tick.
+	if !found {
+		return true
+	}
+	// Collector saw this connection more recently.
+	if currTS > prevTS {
+		return true
+	}
+	// Connection was active (unclosed) in the last tick, now it is closed.
+	if prevTS == timestamp.InfiniteFuture && currTS != prevTS {
+		return true
+	}
+	return false
+}
+
 func computeUpdatedConns(current map[networkConnIndicator]timestamp.MicroTS, previous map[networkConnIndicator]timestamp.MicroTS, previousMutex *sync.RWMutex) []*storage.NetworkFlow {
 	previousMutex.RLock()
 	defer previousMutex.RUnlock()
@@ -949,7 +965,7 @@ func computeUpdatedConns(current map[networkConnIndicator]timestamp.MicroTS, pre
 
 	for conn, currTS := range current {
 		prevTS, ok := previous[conn]
-		if !ok || currTS > prevTS {
+		if isUpdated(prevTS, currTS, ok) {
 			updates = append(updates, conn.toProto(currTS))
 		}
 	}

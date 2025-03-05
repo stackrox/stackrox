@@ -187,8 +187,13 @@ func Test_SensorLastSeenTimestamp(t *testing.T) {
 		//testContext.WaitForSyncEvent(t, 2*time.Minute)
 		time.Sleep(5 * time.Second)
 		ticker <- time.Now()
-		time.Sleep(5 * time.Second)
-		ticker <- time.Now()
+		t.Log("============= lvm first tick")
+		time.Sleep(1 * time.Second)
+
+		//ticker <- time.Now()
+		//// The enrichAndSend will not catch this connection as updated, because current conn has defined TS, while previous one had +inf ts - thus, this is not an update. But is that correct?
+		//t.Log("============= lvm after second tick")
+		//<-time.After(time.Second)
 
 		//msg, err = testContext.WaitForMessageWithMatcher(func(event *central.MsgFromSensor) bool {
 		//	return event.GetEvent().GetProcessIndicator().GetDeploymentId() == talkUID &&
