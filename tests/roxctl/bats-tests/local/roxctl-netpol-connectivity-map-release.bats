@@ -605,6 +605,37 @@ hello-world/workload-a[Deployment] is not protected on Egress'
   assert_output "$normalized_expected_output"
 }
 
+@test "roxctl-release netpol connectivity map generates connlist for input resources with admin network policies" {
+  assert_file_exist "${test_data}/np-guard/anp_banp_demo/ns.yaml"
+  assert_file_exist "${test_data}/np-guard/anp_banp_demo/policies.yaml"
+  assert_file_exist "${test_data}/np-guard/anp_banp_demo/workloads.yaml"
+
+  echo "Writing connlist report to ${ofile}" >&3
+  run roxctl-release netpol connectivity map "${test_data}/np-guard/anp_banp_demo"
+  assert_success
+
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  # normalizing tabs and whitespaces in output so it will be easier to compare with expected
+  output=$(normalize_whitespaces "$output")
+  expected_output='0.0.0.0-255.255.255.255 => bar/mybar[Pod] : All Connections
+0.0.0.0-255.255.255.255 => baz/mybaz[Pod] : All Connections
+0.0.0.0-255.255.255.255 => monitoring/mymonitoring[Pod] : All Connections
+bar/mybar[Pod] => 0.0.0.0-255.255.255.255 : All Connections
+bar/mybar[Pod] => baz/mybaz[Pod] : All Connections
+bar/mybar[Pod] => monitoring/mymonitoring[Pod] : All Connections
+baz/mybaz[Pod] => 0.0.0.0-255.255.255.255 : All Connections
+baz/mybaz[Pod] => monitoring/mymonitoring[Pod] : All Connections
+foo/myfoo[Pod] => 0.0.0.0-255.255.255.255 : All Connections
+foo/myfoo[Pod] => baz/mybaz[Pod] : All Connections
+foo/myfoo[Pod] => monitoring/mymonitoring[Pod] : All Connections
+monitoring/mymonitoring[Pod] => 0.0.0.0-255.255.255.255 : All Connections
+monitoring/mymonitoring[Pod] => baz/mybaz[Pod] : All Connections
+monitoring/mymonitoring[Pod] => foo/myfoo[Pod] : All Connections'
+  normalized_expected_output=$(normalize_whitespaces "$expected_output")
+  assert_output "$normalized_expected_output"
+}
+
 normalize_whitespaces() {
   echo "$1"| sed -e "s/[[:space:]]\+/ /g"
 }
