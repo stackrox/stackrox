@@ -1,0 +1,20 @@
+version: "1.0"
+instances:
+  name: "test-instance"
+  endpoint: "https://stackrox.example.com"
+  caCertPath: "/path/to/ca.crt"
+  caCert: "certificate-content"
+  plaintext: "some-text"
+  directGrpc: true
+  forceHttp: false
+  insecure: false
+  insecureSkipTLSVerify: true
+users:
+  username: "test-user"
+  password: "secure-password"
+  apiToken: "12345abcde"
+  apiTokenPath: "/path/to/api/token"
+contexts:
+  instance: "test-instance"
+  user: "test-user"
+current-context: "test-instance-context"
