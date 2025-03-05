@@ -22,7 +22,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	mitreDataStore "github.com/stackrox/rox/pkg/mitre/datastore"
-	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
@@ -38,7 +37,7 @@ type PolicyServicePostgresSuite struct {
 	suite.Suite
 	mockCtrl          *gomock.Controller
 	ctx               context.Context
-	db                postgres.DB
+	db                *pgtest.TestPostgres
 	policies          policyDatastore.DataStore
 	categories        policyCategoryDatastore.DataStore
 	clusters          clusterDatastore.DataStore
@@ -85,7 +84,7 @@ func (s *PolicyServicePostgresSuite) SetupSuite() {
 }
 
 func (s *PolicyServicePostgresSuite) TearDownSuite() {
-	s.db.Close()
+	s.db.Teardown(s.T())
 }
 
 // TestPostPolicy tests posting and then immediately after putting the same policy, as this discovered a bug in the
