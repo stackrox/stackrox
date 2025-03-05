@@ -41,6 +41,43 @@ spec:
     kind: Service
     name: central
 ---
+
+{{- if and ._rox.central.exposure.route.reencrypt.enabled ._rox._ca }}
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: central-reencrypt
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "route" "central-reencrypt") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "route" "central-reencrypt") | nindent 4 }}
+spec:
+{{- if ._rox.central.exposure.route.reencrypt.host }}
+  host: {{ ._rox.central.exposure.route.reencrypt.host }}
+{{- end }}
+  port:
+    targetPort: https
+  tls:
+    destinationCACertificate: |
+      {{- ._rox._ca.Cert | nindent 6 }}
+    termination: reencrypt
+    {{- with ._rox.central.exposure.route.reencrypt.tls }}
+    {{- if .caCertificate }}
+    caCertificate: |
+      {{- .caCertificate | nindent 6 }}
+    {{- end }}
+    certificate: |
+      {{- .certificate | nindent 6 }}
+    key: |
+      {{- .key | nindent 6 }}
+    {{- end }}
+  to:
+    kind: Service
+    name: central
+---
+{{- end }}
+
 {{- end }}
 
 {{- if ._rox.central.exposure.nodePort.enabled }}
