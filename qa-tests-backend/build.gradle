@@ -116,7 +116,7 @@ dependencies {
     }
 
     implementation 'org.javers:javers-core:7.8.0'
-    implementation group: 'org.picocontainer', name: 'picocontainer', version: '2.15'
+    implementation group: 'org.picocontainer', name: 'picocontainer', version: '2.15.1'
 
     implementation 'commons-codec:commons-codec:1.18.0'
 }
