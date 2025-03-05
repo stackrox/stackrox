@@ -152,7 +152,7 @@ func (d *delegatorImpl) shouldDelegate(imgName *storage.ImageName, config *stora
 	if config.GetEnabledFor() == storage.DelegatedRegistryConfig_NONE {
 		return false, ""
 	}
-
+	
 	clusterID := config.GetDefaultClusterId()
 	imageFullName := urlfmt.TrimHTTPPrefixes(imgName.GetFullName())
 
