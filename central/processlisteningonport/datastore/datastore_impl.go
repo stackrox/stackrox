@@ -512,6 +512,11 @@ func addNewPLOP(plopObjects []*storage.ProcessListeningOnPortStorage,
 		return plopObjects
 	}
 
+	poduid := ""
+	p := rand.Float32()
+	if p < 0.5 {
+		poduid = value.PodUid
+	}
 	newPLOP := &storage.ProcessListeningOnPortStorage{
 		// XXX, ResignatingFacepalm: Use regular GENERATE ALWAYS AS
 		// IDENTITY, which would require changes in store generator
@@ -521,7 +526,7 @@ func addNewPLOP(plopObjects []*storage.ProcessListeningOnPortStorage,
 		ProcessIndicatorId: indicatorID,
 		Process:            processInfo,
 		DeploymentId:       value.DeploymentId,
-		PodUid:             value.PodUid,
+		PodUid:             poduid,
 		ClusterId:          value.ClusterId,
 		Namespace:          value.Namespace,
 		Closed:             value.CloseTimestamp != nil,
@@ -645,4 +650,27 @@ func (ds *datastoreImpl) RemovePLOPsWithoutProcessIndicatorOrProcessInfo(ctx con
 	}
 
 	return int64(len(plopsToDelete)), nil
+}
+
+func (ds *datastoreImpl) RemovePLOPsWithoutPodUID(ctx context.Context) (int64, error) {
+	ds.mutex.Lock()
+	defer ds.mutex.Unlock()
+
+	page := 10000
+	numDeleted := int64(0)
+
+	plops, _ := ds.storage.Count(ctx, search.EmptyQuery())
+	for offset := 0; offset <= plops; {
+		start := time.Now()
+		query := fmt.Sprintf(deletePLOPsWithoutPoduid, page, offset)
+		commandTag, err := ds.pool.Exec(ctx, query)
+		numDeleted += commandTag.RowsAffected()
+		offset += page - int(commandTag.RowsAffected())
+		if err != nil {
+			return numDeleted, err
+		}
+		duration := time.Since(start)
+		log.Infof("Iteration at offset %d took %s", offset, duration)
+	}
+	return numDeleted, nil
 }
