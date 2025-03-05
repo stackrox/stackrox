@@ -531,7 +531,7 @@ type ScannerComponentSpec struct {
 
 // ScannerV4Spec defines settings for the central "Scanner V4" component.
 type ScannerV4Spec struct {
-	// If you want to deploy Scanner V4 components set this to "Enabled"
+	// If you want to prevent Scanner V4 from being deployed set this to "Disabled".
 	//+kubebuilder:default=Default
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Scanner V4 component"
 	ScannerComponent *ScannerV4ComponentPolicy `json:"scannerComponent,omitempty"`
@@ -597,8 +597,7 @@ type ScannerV4ComponentPolicy string
 const (
 	// ScannerV4ComponentDefault means that Scanner V4 uses the default semantics
 	// to identify whether Scanner V4 component should be used.
-	// Currently this defaults to "Disabled" semantics.
-	// TODO change default to "Enabled" semantics with version 4.5
+	// Starting with ACS 4.8 this defaults to "Enabled" semantics.
 	ScannerV4ComponentDefault ScannerV4ComponentPolicy = "Default"
 	// ScannerV4ComponentEnabled explicitly enables the Scanner V4 component.
 	ScannerV4ComponentEnabled ScannerV4ComponentPolicy = "Enabled"

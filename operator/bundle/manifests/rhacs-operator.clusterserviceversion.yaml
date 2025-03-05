@@ -655,7 +655,8 @@ spec:
           inbound connections to the port.'
         displayName: Expose Endpoint
         path: scanner.monitoring.exposeEndpoint
-      - description: If you want to deploy Scanner V4 components set this to "Enabled"
+      - description: If you want to prevent Scanner V4 from being deployed set this
+          to "Disabled".
         displayName: Scanner V4 component
         path: scannerV4.scannerComponent
       - description: Settings pertaining to the indexer deployment.

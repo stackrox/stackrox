@@ -1740,8 +1740,8 @@ spec:
                     type: object
                   scannerComponent:
                     default: Default
-                    description: If you want to deploy Scanner V4 components set this
-                      to "Enabled"
+                    description: If you want to prevent Scanner V4 from being deployed
+                      set this to "Disabled".
                     enum:
                     - Default
                     - Enabled

@@ -31,14 +31,6 @@ init() {
     ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")"/../.. && pwd)"
     export ROOT
 
-    if [[ "${CI:-}" != "true" ]]; then
-        # Some friendly environment checks
-        if [[ -z "${BATS_CORE_ROOT:-}" ]]; then
-            echo "WARNING: You better set \$BATS_CORE_ROOT before executing this test suite." >&3
-            exit 1
-        fi
-    fi
-
     # shellcheck source=../../scripts/ci/lib.sh
     source "$ROOT/scripts/ci/lib.sh"
     # shellcheck source=../../scripts/ci/gcp.sh
@@ -142,7 +134,16 @@ EOT
     export EARLIER_MAIN_IMAGE_TAG=$EARLIER_CHART_VERSION
     export USE_LOCAL_ROXCTL=true
     export ROX_PRODUCT_BRANDING=RHACS_BRANDING
-    export CI=${CI:-false}
+
+    export CI=${CI:-}
+    if [[ "$CI" != "true" ]]; then
+        # Some friendly environment checks
+        if [[ -z "${BATS_CORE_ROOT:-}" ]]; then
+            echo "WARNING: You better set \$BATS_CORE_ROOT before executing this test suite." >&3
+            exit 1
+        fi
+    fi
+
     OS="$(uname | tr '[:upper:]' '[:lower:]')"
     export OS
     export ORCH_CMD="${ROOT}/scripts/retry-kubectl.sh"
@@ -242,8 +243,6 @@ setup() {
     fi
 
     test_case_no=$(( test_case_no + 1))
-
-    export ROX_SCANNER_V4=true
 
     # By default we will use CRS-based cluster registration in this test suite, but there are some
     # specific tests which require CRS to be switched off (upgrade tests involving an old Helm chart, e.g.).
@@ -379,9 +378,6 @@ EOF
     info "Upgrading StackRox using HEAD Helm chart"
     MAIN_IMAGE_TAG="${main_image_tag}"
 
-    # shellcheck disable=SC2030,SC2031
-    export SENSOR_SCANNER_V4_SUPPORT=true
-
     _deploy_stackrox
 
     _step "verify"
@@ -414,6 +410,8 @@ EOF
 
     SENSOR_SCANNER_V4_SUPPORT=true HELM_REUSE_VALUES=true _deploy_stackrox
 
+    _step "verify-scanner-v4-is-deployed"
+
     verify_scannerV2_deployed "stackrox"
     verify_scannerV4_deployed "stackrox"
     verify_deployment_scannerV4_env_var_set "stackrox" "central"
@@ -426,8 +424,9 @@ EOF
     helm upgrade -n stackrox stackrox-central-services "${CENTRAL_CHART_DIR}" --reuse-values --set scannerV4.disable=true
     info "Disabling Scanner V4 for SecuredCluster"
     helm upgrade -n stackrox stackrox-secured-cluster-services "${SENSOR_CHART_DIR}" --reuse-values --set scannerV4.disable=true
-    sleep 30 # Give the deployments time to terminate.
 
+    _step "verify-scanner-v4-is-not-deployed"
+    sleep 3m # Give the deployments time to terminate. Note this verification logic will be improved in a separate PR.
     verify_no_scannerV4_deployed "stackrox"
     run ! verify_deployment_scannerV4_env_var_set "stackrox" "central"
     run ! verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
@@ -441,8 +440,6 @@ EOF
     info "Installing StackRox using HEAD Helm chart with Scanner V4 enabled"
     # shellcheck disable=SC2030,SC2031
     export OUTPUT_FORMAT=helm
-    # shellcheck disable=SC2030,SC2031
-    export SENSOR_SCANNER_V4_SUPPORT=true
 
     _deploy_stackrox
 
@@ -499,15 +496,13 @@ EOF
     # shellcheck disable=SC2030,SC2031
     export OUTPUT_FORMAT=""
     # shellcheck disable=SC2030,SC2031
-    export ROX_SCANNER_V4="false"
-    # shellcheck disable=SC2030,SC2031
     export SENSOR_HELM_DEPLOY="false"
     export GENERATE_SCANNER_DEPLOYMENT_BUNDLE="true"
     local scanner_bundle="${ROOT}/deploy/${ORCHESTRATOR_FLAVOR}/scanner-deploy"
 
     _begin "deploy-stackrox"
 
-    _deploy_stackrox
+    ROX_SCANNER_V4=false _deploy_stackrox
 
     _step "verify"
 
@@ -543,8 +538,6 @@ EOF
     fi
 
     # shellcheck disable=SC2030,SC2031
-    export ROX_SCANNER_V4="true"
-    # shellcheck disable=SC2030,SC2031
     export DEPLOY_STACKROX_VIA_OPERATOR="true"
     # shellcheck disable=SC2030,SC2031
     export SENSOR_SCANNER_SUPPORT=true
@@ -577,13 +570,9 @@ EOF
     fi
 
     # shellcheck disable=SC2030,SC2031
-    export ROX_SCANNER_V4="true"
-    # shellcheck disable=SC2030,SC2031
     export DEPLOY_STACKROX_VIA_OPERATOR="true"
     # shellcheck disable=SC2030,SC2031
     export SENSOR_SCANNER_SUPPORT=true
-    # shellcheck disable=SC2030,SC2031
-    export SENSOR_SCANNER_V4_SUPPORT=true
 
     _begin "deploy-stackrox"
 
@@ -622,7 +611,7 @@ EOF
 
     # Install old version of the operator & deploy StackRox.
     VERSION="${OPERATOR_VERSION_TAG}" make -C operator deploy-previous-via-olm
-    ROX_SCANNER_V4="false" _deploy_stackrox "" "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}"
+    ROX_SCANNER_V4=false _deploy_stackrox "" "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}"
 
     _step "verify"
 
@@ -780,8 +769,6 @@ EOT
 
     # shellcheck disable=SC2030,SC2031
     export OUTPUT_FORMAT=""
-    # shellcheck disable=SC2030,SC2031
-    export ROX_SCANNER_V4="true"
     if [[ "${ORCHESTRATOR_FLAVOR:-}" == "openshift" ]]; then
       export ROX_OPENSHIFT_VERSION=4
     fi
@@ -902,8 +889,13 @@ verify_deployment_scannerV4_env_var_set() {
     scanner_v4_value="$(echo "${deployment_env_vars}" | jq -r '.[] | select(.name == "ROX_SCANNER_V4").value')"
 
     if [[ "${scanner_v4_value}" == "true" ]]; then
+        echo "ROX_SCANNER_V4 environment variable is set to \"true\" for deployment ${namespace}/${deployment}."
         return 0
+    elif [[ "${scanner_v4_value}" == "null" ]]; then
+        echo "ERROR: ROX_SCANNER_V4 environment variable is unset for deployment ${namespace}/${deployment}."
+        return 1
     else
+        echo "ERROR: ROX_SCANNER_V4 environment variable is set to \"${scanner_v4_value}\" for deployment ${namespace}/${deployment}."
         return 1
     fi
 }
@@ -946,12 +938,12 @@ _deploy_stackrox() {
 # shellcheck disable=SC2120
 _deploy_central() {
     local central_namespace=${1:-stackrox}
-    if [[ "${CI:-}" != "true" ]]; then
+    if [[ "$CI" != "true" ]]; then
         info "Creating namespace and image pull secrets..."
         "${ORCH_CMD}" </dev/null create namespace "$central_namespace" || true
         "${ROOT}/deploy/common/pull-secret.sh" stackrox quay.io | "${ORCH_CMD}" -n "$central_namespace" apply -f -
     fi
-    deploy_central "${central_namespace}"
+    DEPLOY_CENTRAL_INTERACTIVELY=false deploy_central "${central_namespace}"
     patch_down_central "${central_namespace}"
 }
 
@@ -1003,7 +995,7 @@ EOF
 _deploy_sensor() {
     local sensor_namespace=${1:-stackrox}
     local central_namespace=${2:-stackrox}
-    if [[ "${CI:-}" != "true" ]]; then
+    if [[ "$CI" != "true" ]]; then
         info "Creating image pull secrets..."
         "${ORCH_CMD}" </dev/null create namespace "$sensor_namespace" || true
         "${ROOT}/deploy/common/pull-secret.sh" stackrox quay.io | "${ORCH_CMD}" -n "$sensor_namespace" apply -f -

@@ -181,7 +181,7 @@ func SetScannerV4DisableValue(sv *ValuesBuilder, scannerV4Component *platform.Sc
 	case platform.ScannerV4ComponentDisabled:
 		sv.SetBoolValue("disable", true)
 	case platform.ScannerV4ComponentDefault:
-		sv.SetBoolValue("disable", true)
+		sv.SetBoolValue("disable", false)
 	case platform.ScannerV4ComponentEnabled:
 		sv.SetBoolValue("disable", false)
 	default:

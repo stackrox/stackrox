@@ -679,7 +679,7 @@ func TestSetScannerV4DisableValue(t *testing.T) {
 		"scannerV4Component Default": {
 			scannerV4Component: platform.ScannerV4ComponentDefault,
 			want: map[string]interface{}{
-				"disable": true,
+				"disable": false,
 			},
 			wantErr: false,
 		},
