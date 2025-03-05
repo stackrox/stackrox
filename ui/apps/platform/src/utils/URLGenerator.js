@@ -153,7 +153,14 @@ function generateURL(workflowState) {
               encodeValuesOnly: true,
           })
         : '';
-    const newPath = generatePath(path, params) + queryString;
+
+    const encodedParams = Object.fromEntries(
+        Object.entries(params).map(([key, value]) => [
+            key,
+            value !== undefined ? encodeURIComponent(value) : value,
+        ])
+    );
+    const newPath = generatePath(path, encodedParams) + queryString;
     return newPath;
 }
 

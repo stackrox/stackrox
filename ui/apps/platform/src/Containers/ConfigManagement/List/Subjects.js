@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLocation, useRouteMatch } from 'react-router-dom';
+import { useLocation, useMatch } from 'react-router-dom';
 import pluralize from 'pluralize';
 
 import {
@@ -14,6 +14,7 @@ import { subjectSortFields } from 'constants/sortFields';
 import { SUBJECTS_QUERY } from 'queries/subject';
 import queryService from 'utils/queryService';
 import URLService from 'utils/URLService';
+import { workflowPaths } from 'routePaths';
 import { getConfigMgmtPathForEntitiesAndId } from '../entities';
 import List from './List';
 
@@ -106,7 +107,7 @@ const createTableRows = (data) => data?.results || [];
 
 const Subjects = ({ selectedRowId, onRowClick, query, className, data, totalResults }) => {
     const location = useLocation();
-    const match = useRouteMatch();
+    const match = useMatch(workflowPaths.LIST);
     const autoFocusSearchInput = !selectedRowId;
     const tableColumns = buildTableColumns(match, location);
     const queryText = queryService.objectToWhereClause(query);

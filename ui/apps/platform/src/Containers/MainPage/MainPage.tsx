@@ -1,6 +1,6 @@
 import React, { ReactElement, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Page, Button } from '@patternfly/react-core';
 import { OutlinedCommentsIcon } from '@patternfly/react-icons';
 
@@ -21,7 +21,7 @@ import Body from './Body';
 import AcsFeedbackModal from './AcsFeedbackModal';
 
 function MainPage(): ReactElement {
-    const history = useHistory();
+    const navigate = useNavigate();
     const dispatch = useDispatch();
 
     const { isFeatureFlagEnabled, isLoadingFeatureFlags } = useFeatureFlags();
@@ -42,7 +42,7 @@ function MainPage(): ReactElement {
                     if (clusters?.length === 0) {
                         // If no clusters, and user can admin Clusters, redirect to clusters section.
                         // Only applicable in Cloud Services.
-                        history.push(clustersBasePath);
+                        navigate(clustersBasePath);
                     }
                 })
                 .catch(() => {})
@@ -50,7 +50,8 @@ function MainPage(): ReactElement {
                     setIsLoadingClustersCount(false);
                 });
         }
-    }, [hasWriteAccessForCluster, history]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [hasWriteAccessForCluster]);
 
     // Prerequisites from initial requests for conditional rendering that affects all authenticated routes:
     // feature flags: for NavigationSidebar and Body

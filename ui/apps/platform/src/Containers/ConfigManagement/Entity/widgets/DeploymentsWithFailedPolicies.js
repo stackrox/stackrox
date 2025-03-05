@@ -15,7 +15,8 @@ import { entityViolationsColumns } from 'constants/listColumns';
 
 import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverityIconText';
 import Table, { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
-import { useHistory, useLocation, useRouteMatch } from 'react-router-dom';
+import { useLocation, useNavigate, useMatch } from 'react-router-dom';
+import { workflowPaths } from 'routePaths';
 import TableWidget from './TableWidget';
 
 const getDeploymentsGroupedByPolicies = (data) => {
@@ -38,14 +39,14 @@ const getDeploymentsGroupedByPolicies = (data) => {
 const Deployments = ({ original: policy, entityContext }) => {
     const { deployments } = policy;
     const columns = entityViolationsColumns[entityTypes.DEPLOYMENT](entityContext);
-    const history = useHistory();
+    const navigate = useNavigate();
     const location = useLocation();
-    const match = useRouteMatch();
+    const match = useMatch(workflowPaths.ENTITY);
 
     function onRowClick(row) {
         const id = resolvePath(row, 'id');
         const url = URLService.getURL(match, location).push(entityTypes.DEPLOYMENT, id).url();
-        history.push(url);
+        navigate(url);
     }
     return (
         <Table

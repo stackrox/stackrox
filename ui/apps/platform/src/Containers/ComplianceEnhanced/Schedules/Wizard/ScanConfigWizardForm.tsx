@@ -1,5 +1,5 @@
 import React, { ReactElement, useCallback, useRef, useState } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Wizard, WizardStep } from '@patternfly/react-core/deprecated';
 import { FormikProvider } from 'formik';
 import { complianceEnhancedSchedulesPath } from 'routePaths';
@@ -41,7 +41,7 @@ type ScanConfigWizardFormProps = {
 
 function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps): ReactElement {
     const { analyticsTrack } = useAnalytics();
-    const history = useHistory();
+    const navigate = useNavigate();
     const formik = useFormikScanConfig(initialFormValues);
     const [isCreating, setIsCreating] = useState(false);
     const [createScanConfigError, setCreateScanConfigError] = useState('');
@@ -73,7 +73,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                     errorMessage: '',
                 },
             });
-            history.push(complianceEnhancedSchedulesPath);
+            navigate(complianceEnhancedSchedulesPath);
         } catch (error) {
             analyticsTrack({
                 event: COMPLIANCE_SCHEDULES_WIZARD_SAVE_CLICKED,
@@ -117,7 +117,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
     }
 
     function onClose(): void {
-        history.push(complianceEnhancedSchedulesPath);
+        navigate(complianceEnhancedSchedulesPath);
     }
 
     function setAllFieldsTouched(formikGroupKey: string): void {

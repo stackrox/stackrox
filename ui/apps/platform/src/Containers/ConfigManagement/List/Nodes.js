@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLocation, useRouteMatch } from 'react-router-dom';
+import { useLocation, useMatch } from 'react-router-dom';
 import { gql } from '@apollo/client';
 import { format } from 'date-fns';
 import pluralize from 'pluralize';
@@ -16,6 +16,7 @@ import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPag
 import { nodeSortFields } from 'constants/sortFields';
 import queryService from 'utils/queryService';
 import URLService from 'utils/URLService';
+import { workflowPaths } from 'routePaths';
 import { getConfigMgmtPathForEntitiesAndId } from '../entities';
 import List from './List';
 import NoEntitiesIconText from './utilities/NoEntitiesIconText';
@@ -167,7 +168,7 @@ const Nodes = ({
     totalResults,
     entityContext,
 }) => {
-    const match = useRouteMatch();
+    const match = useMatch(workflowPaths.LIST);
     const location = useLocation();
     const autoFocusSearchInput = !selectedRowId;
     const tableColumns = buildTableColumns(match, location, entityContext);
