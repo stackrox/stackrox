@@ -40,8 +40,7 @@ func (w *formattingWriter) write(s string) error {
 // calculated as tabulation offset, i.e. the spaces are added to reach the
 // required offset. Returns true if a new line has been written.
 func (w *formattingWriter) writePadding() (bool, error) {
-	var err error
-	var ln bool
+	w.indentReset = false
 	padding := w.indent.popNotLast()
 	if padding < 0 {
 		// Indent to tabulation.
@@ -49,17 +48,12 @@ func (w *formattingWriter) writePadding() (bool, error) {
 		if padding > w.currentLine {
 			padding -= w.currentLine
 		} else {
-			err = w.ln()
-			ln = true
+			return true, nil
 		}
 	} else if w.currentLine+padding > w.width {
-		err = w.ln()
-		ln = true
+		return true, nil
 	}
-	if err == nil {
-		err = w.write(strings.Repeat(" ", padding))
-	}
-	return ln, err
+	return false, w.write(strings.Repeat(" ", padding))
 }
 
 // ln is an internal method that writes a new line to the underlying writer.
@@ -80,36 +74,36 @@ func (w *formattingWriter) SetIndent(indent ...int) {
 // Implements the StringWriter interface.
 func (w *formattingWriter) WriteString(s string) (int, error) {
 	w.written = 0
-	var err error
 	tokenScanner := bufio.NewScanner(strings.NewReader(s))
 	tokenScanner.Split(wordsAndDelimeters)
-	for tokenScanner.Scan() {
+	var err error
+	for err == nil && tokenScanner.Scan() {
 		token := tokenScanner.Text()
-		if err != nil {
-			break
-		}
-		ln := false
-		if w.currentLine == 0 || w.indentReset {
-			if token == "\n" {
+		length := len(token)
+		switch token {
+		case "\t":
+			length = defaultTabWidth
+		case "\n":
+			if w.currentLine == 0 {
 				w.indent.popNotLast()
-			} else if ln, err = w.writePadding(); err != nil {
-				break
+				w.indentReset = false
 			}
-			w.indentReset = false
-		}
-		if token == "\n" {
 			err = w.ln()
 			continue
 		}
-		length := len(token)
-		if token == "\t" {
-			length = defaultTabWidth
+		ln := false
+		if w.currentLine == 0 || w.indentReset {
+			if ln, err = w.writePadding(); err != nil {
+				break
+			}
 		}
-		if w.currentLine+length > w.width && !ln {
+		// Write a new line and a padding in case of line overflow:
+		if ln || w.currentLine+length > w.width {
 			if err = w.ln(); err != nil {
 				break
 			}
 			if token == " " {
+				// Do not write space token that caused line break.
 				continue
 			}
 			if _, err = w.writePadding(); err != nil {
