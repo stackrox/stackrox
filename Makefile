@@ -910,6 +910,11 @@ bin/installer: $(shell find installer/ -name *.go)
 bin/updater: $(shell find scannerv2/ -name *.go)
 	go build -C ./scannerv2 -o ../$@ ./cmd/updater
 
+bin/collector: $(shell find collector/ -name *.go) $(shell find collector/ -name *.cpp)
+	cmake --preset=vcpkg collector 
+	cmake --build cmake-build/vcpkg -j$(nproc) collector
+	cp collector/cmake-build/vcpkg/collector/collector bin/collector
+
 bundle: scannerv2/image/scanner/dump/genesis_manifests.json
 	mkdir -p /tmp/genesis-dump
 	bin/updater generate-dump --out-file /tmp/genesis-dump/genesis-dump.zip
