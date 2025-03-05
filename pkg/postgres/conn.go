@@ -20,6 +20,14 @@ func (c *Conn) Release() {
 	}
 }
 
+func (c *Conn) Conn() *pgx.Conn {
+	if c != nil {
+		return c.PgxPoolConn.Conn()
+	} else {
+		return nil
+	}
+}
+
 // Begin wraps pgxpool.Conn Begin
 func (c *Conn) Begin(ctx context.Context) (*Tx, error) {
 	if tx, ok := TxFromContext(ctx); ok {

@@ -10,6 +10,7 @@ import (
 	cloneMgr "github.com/stackrox/rox/migrator/clone"
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/pkg/config"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -85,7 +86,12 @@ func run() error {
 	}
 	log.WriteToStderrf("Clone to Migrate %q", pgClone)
 
-	err = upgrade(pgClone)
+	if env.TernMigrations.BooleanSetting() {
+		err = upgradeTern(pgClone)
+	} else {
+		err = upgradeGORM(pgClone)
+	}
+
 	if err != nil {
 		return err
 	}
