@@ -41,7 +41,7 @@ func (w *formattingWriter) write(s string) error {
 // required offset.
 func (w *formattingWriter) writePadding() error {
 	var err error
-	padding := w.indent.pop()
+	padding := w.indent.popNotLast()
 	if padding < 0 {
 		// Indent to tabulation.
 		padding = -padding
