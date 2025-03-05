@@ -113,42 +113,9 @@ func NewDeleScanTestUtils(t *testing.T, restCfg *rest.Config, apiResourceList []
 	return utils
 }
 
-// availMirroringCRs determines what mirroring CRs are available based on the provided
-// resource list.
-func (d *deleScanTestUtils) availMirroringCRs() (icspAvail bool, idmsAvail bool, itmsAvail bool) {
-	icspKey := "operator.openshift.io/v1alpha1|imagecontentsourcepolicies"
-	idmsKey := "config.openshift.io/v1|imagedigestmirrorsets"
-	itmsKey := "config.openshift.io/v1|imagetagmirrorsets"
-
-	for _, list := range d.apiResourceList {
-		group := list.GroupVersion
-		for _, resource := range list.APIResources {
-			name := resource.Name
-			key := fmt.Sprintf("%s|%s", group, name)
-
-			if key == icspKey {
-				icspAvail = true
-				continue
-			}
-
-			if key == idmsKey {
-				idmsAvail = true
-				continue
-			}
-
-			if key == itmsKey {
-				itmsAvail = true
-				continue
-			}
-		}
-	}
-
-	return icspAvail, idmsAvail, itmsAvail
-}
-
-// apiResourceAvail will return true if the cluster has an API resources that matches
+// apiResourceSupported will return true if the cluster has an API resources that matches
 // group and name, false otherwise.
-func (d *deleScanTestUtils) apiResourceAvail(groupVersion, name string) bool {
+func (d *deleScanTestUtils) apiResourceSupported(groupVersion, name string) bool {
 	for _, list := range d.apiResourceList {
 		gv := list.GroupVersion
 		if gv != groupVersion {
@@ -170,11 +137,11 @@ func (d *deleScanTestUtils) apiResourceAvail(groupVersion, name string) bool {
 // OCP cluster with 3 master + 2 worker nodes the average time to propagate these
 // changes was between 5-10 minutes.
 //
-// Will return 3 bools which indicate if the associated mirroring CR is avail.
+// Will return 3 bools which indicate if the associated mirroring CR is supported.
 // 1. ImageContentSourcePolicy
 // 2. ImageDigestMirrorSet
 // 3. ImageTagMirrorSet
-func (d *deleScanTestUtils) SetupMirrors(t *testing.T, ctx context.Context, reg string, dce config.DockerConfigEntry) (icspAvail bool, idmsAvail bool, itmsAvail bool) {
+func (d *deleScanTestUtils) SetupMirrors(t *testing.T, ctx context.Context, reg string, dce config.DockerConfigEntry) (icspSupported bool, idmsSupported bool, itmsSupported bool) {
 	start := time.Now()
 	defer func() {
 		logf(t, "Setting up mirrors took:: %v", time.Since(start))
@@ -202,10 +169,12 @@ func (d *deleScanTestUtils) SetupMirrors(t *testing.T, ctx context.Context, reg 
 	// Update the OCP global pull secret, which k8s needs in order to pull images from authenticated mirrors.
 	updated := d.addCredToOCPGlobalPullSecret(t, ctx, reg, dce)
 
-	// Identify which mirroring CRs are available for creation.
-	icspAvail, idmsAvail, itmsAvail = d.availMirroringCRs()
+	// Identify which mirroring CRs are supported for creation.
+	icspSupported = d.apiResourceSupported("operator.openshift.io/v1alpha1", "imagecontentsourcepolicies")
+	idmsSupported = d.apiResourceSupported("config.openshift.io/v1", "imagedigestmirrorsets")
+	itmsSupported = d.apiResourceSupported("config.openshift.io/v1", "imagetagmirrorsets")
 
-	if icspAvail {
+	if icspSupported {
 		// Create an ImageContentSourcePolicy.
 		icspName := "icsp-invalid"
 		logf(t, "Applying ImageContentSourcePolicy %q", icspName)
@@ -221,7 +190,7 @@ func (d *deleScanTestUtils) SetupMirrors(t *testing.T, ctx context.Context, reg 
 		}
 	}
 
-	if idmsAvail {
+	if idmsSupported {
 		// Create an ImageDigestMirrorSet.
 		idmsName := "idms-invalid"
 		logf(t, "Applying ImageDigestMirrorSet %q", idmsName)
@@ -237,7 +206,7 @@ func (d *deleScanTestUtils) SetupMirrors(t *testing.T, ctx context.Context, reg 
 		}
 	}
 
-	if itmsAvail {
+	if itmsSupported {
 		// Create an ImageTagMirrorSet.
 		itmsName := "itms-invalid"
 		logf(t, "Applying ImageTagMirrorSet %q", itmsName)
@@ -638,12 +607,10 @@ func (d *deleScanTestUtils) waitForBuildComplete(ctx context.Context, c buildv1c
 // otherwise perform drains.
 //
 // The test will only fail if static testdata files are not found.
-//
-// TODO: Test on OCP 4.12, 4.13, 4.14, 4.15, 4.16, 4.17, 4.18
 func (d *deleScanTestUtils) DisableMCONodeDrain(t *testing.T, ctx context.Context) error {
 	// applyMachineConfiguration returns true if machine configuration CR was found.
 	applyMachineConfiguration := func() (bool, error) {
-		if d.apiResourceAvail("operator.openshift.io/v1", "machineconfigurations") {
+		if d.apiResourceSupported("operator.openshift.io/v1", "machineconfigurations") {
 			logf(t, "Cluster supports machineconfigurations CR, disabling node drain")
 
 			yamlB, err := os.ReadFile("testdata/delegatedscanning/mirrors/machineconfiguration.yaml")

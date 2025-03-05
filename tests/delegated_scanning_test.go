@@ -701,14 +701,14 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 
 	// Create mirroring CRs and update OCP global pull secret, this will
 	// trigger nodes to drain and may take between 5-10 mins to complete.
-	icspAvail, idmsAvail, itmsAvail := ts.deleScanUtils.SetupMirrors(t, ctx, "quay.io/rhacs-eng", config.DockerConfigEntry{
+	icspSupported, idmsSupported, itmsSupported := ts.deleScanUtils.SetupMirrors(t, ctx, "quay.io/rhacs-eng", config.DockerConfigEntry{
 		Username: ts.quayROUsername,
 		Password: ts.quayROPassword,
 		Email:    "dele-scan-test@example.com",
 	})
 
-	if !icspAvail && !idmsAvail && !itmsAvail {
-		t.Skip("Mirroring CRs not available in this cluster, skipping tests")
+	if !icspSupported && !idmsSupported && !itmsSupported {
+		t.Skip("Mirroring CRs not supported in this cluster, skipping tests")
 	}
 
 	if nodesDrained {
@@ -758,9 +758,9 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 		imageStr string
 		skip     bool
 	}{
-		{"Scan ad-hoc image from mirror via ImageContentSourcePolicy", icspImage.IDRef(), !icspAvail},
-		{"Scan ad-hoc image from mirror via ImageDigestMirrorSet", idmsImage.IDRef(), !idmsAvail},
-		{"Scan ad-hoc image from mirror via ImageTagMirrorSet", itmsImage.TagRef(), !itmsAvail},
+		{"Scan ad-hoc image from mirror via ImageContentSourcePolicy", icspImage.IDRef(), !icspSupported},
+		{"Scan ad-hoc image from mirror via ImageDigestMirrorSet", idmsImage.IDRef(), !idmsSupported},
+		{"Scan ad-hoc image from mirror via ImageTagMirrorSet", itmsImage.TagRef(), !itmsSupported},
 	}
 
 	conn := centralgrpc.GRPCConnectionToCentral(t)
@@ -769,7 +769,7 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 			t := ts.T()
 
 			if tc.skip {
-				t.Skip("CR not avail, skipping test.")
+				t.Skip("CR not supported, skipping test.")
 			}
 
 			req := &v1.ScanImageRequest{
@@ -789,9 +789,9 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 		imageStr   string
 		skip       bool
 	}{
-		{"Scan deploy image from mirror via ImageContentSourcePolicy", "dele-scan-icsp", icspImage.ID(), icspImage.IDRef(), !icspAvail},
-		{"Scan deploy image from mirror via ImageDigestMirrorSet", "dele-scan-idms", idmsImage.ID(), idmsImage.IDRef(), !idmsAvail},
-		{"Scan deploy image from mirror via ImageTagMirrorSet", "dele-scan-itms", itmsImage.ID(), itmsImage.TagRef(), !itmsAvail},
+		{"Scan deploy image from mirror via ImageContentSourcePolicy", "dele-scan-icsp", icspImage.ID(), icspImage.IDRef(), !icspSupported},
+		{"Scan deploy image from mirror via ImageDigestMirrorSet", "dele-scan-idms", idmsImage.ID(), idmsImage.IDRef(), !idmsSupported},
+		{"Scan deploy image from mirror via ImageTagMirrorSet", "dele-scan-itms", itmsImage.ID(), itmsImage.TagRef(), !itmsSupported},
 	}
 
 	for _, tc := range deployTCs {
@@ -799,7 +799,7 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 			t := ts.T()
 
 			if tc.skip {
-				t.Skip("CR not avail, skipping test.")
+				t.Skip("CR not supported, skipping test.")
 			}
 
 			// Do an initial teardown in case a deployment is lingering from a previous test.
