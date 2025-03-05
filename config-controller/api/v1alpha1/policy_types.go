@@ -102,6 +102,7 @@ type Image struct {
 }
 
 type Scope struct {
+	// Cluster is either the name or the ID of the cluster that this scope applies to
 	Cluster   string `json:"cluster,omitempty"`
 	Namespace string `json:"namespace,omitempty"`
 	Label     Label  `json:"label,omitempty"`
