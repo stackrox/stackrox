@@ -131,4 +131,16 @@ func Test_setIndent(t *testing.T) {
           |    |
                |`, sb.String())
 	})
+
+	t.Run("single LN when string is longer than width", func(t *testing.T) {
+		sb := &strings.Builder{}
+		w := makeFormattingWriter(sb, 5, defaultTabWidth)
+
+		w.SetIndent(0, 3)
+		_, _ = w.WriteString("abc ")
+		_, _ = w.WriteString("def")
+		w.SetIndent(4)
+		_, _ = w.WriteString("ghi")
+		assert.Equal(t, "abc \n   def\n    ghi", sb.String())
+	})
 }
