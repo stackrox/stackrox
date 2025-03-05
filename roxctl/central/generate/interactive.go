@@ -17,7 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/flags"
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 )
 
 const (
@@ -129,7 +129,7 @@ func readUserString(f *pflag.Flag) string {
 
 func readPassword(prompt string) (string, error) {
 	fd := int(os.Stdin.Fd())
-	if !terminal.IsTerminal(fd) {
+	if !term.IsTerminal(fd) {
 		printlnToStderr("%s", "Warning: Entered password will be echoed in this mode. Use 'roxctl generate central interactive' instead if you would not like the password echoed.")
 	}
 
@@ -140,7 +140,7 @@ func readPassword(prompt string) (string, error) {
 	}
 
 	// Re enter password prompt only for the roxctl case, not for docker run
-	if terminal.IsTerminal(fd) && passwd != "" {
+	if term.IsTerminal(fd) && passwd != "" {
 		printToStderr("Re-%s: ", strings.TrimSpace(strings.ToLower(strings.Split(prompt, "(")[0])))
 		reEnteredPasswd, err := getPassword(fd)
 		if err != nil {
@@ -155,8 +155,8 @@ func readPassword(prompt string) (string, error) {
 }
 
 func getPassword(fd int) (passwd string, err error) {
-	if terminal.IsTerminal(fd) {
-		bytes, err := terminal.ReadPassword(fd)
+	if term.IsTerminal(fd) {
+		bytes, err := term.ReadPassword(fd)
 		if err != nil {
 			return "", err
 		}
