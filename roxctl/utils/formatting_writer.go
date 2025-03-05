@@ -38,9 +38,10 @@ func (w *formattingWriter) write(s string) error {
 // writePadding is an internal method, that takes the next indent value and the
 // writes the according number of spaces. If the indent value is negative, it is
 // calculated as tabulation offset, i.e. the spaces are added to reach the
-// required offset.
-func (w *formattingWriter) writePadding() error {
+// required offset. Returns true if a new line has been written.
+func (w *formattingWriter) writePadding() (bool, error) {
 	var err error
+	var ln bool
 	padding := w.indent.popNotLast()
 	if padding < 0 {
 		// Indent to tabulation.
@@ -49,14 +50,16 @@ func (w *formattingWriter) writePadding() error {
 			padding -= w.currentLine
 		} else {
 			err = w.ln()
+			ln = true
 		}
-	} else if w.currentLine != 0 && w.currentLine+padding > w.width {
+	} else if w.currentLine+padding > w.width {
 		err = w.ln()
+		ln = true
 	}
-	if err != nil {
-		return err
+	if err == nil {
+		err = w.write(strings.Repeat(" ", padding))
 	}
-	return w.write(strings.Repeat(" ", padding))
+	return ln, err
 }
 
 // ln is an internal method that writes a new line to the underlying writer.
@@ -85,8 +88,9 @@ func (w *formattingWriter) WriteString(s string) (int, error) {
 		if err != nil {
 			break
 		}
+		ln := false
 		if w.currentLine == 0 || w.indentReset {
-			if err = w.writePadding(); err != nil {
+			if ln, err = w.writePadding(); err != nil {
 				break
 			}
 			w.indentReset = false
@@ -99,14 +103,14 @@ func (w *formattingWriter) WriteString(s string) (int, error) {
 		if token == "\t" {
 			length = defaultTabWidth
 		}
-		if w.currentLine+length > w.width {
+		if w.currentLine+length > w.width && !ln {
 			if err = w.ln(); err != nil {
 				break
 			}
 			if token == " " {
 				continue
 			}
-			if err = w.writePadding(); err != nil {
+			if _, err = w.writePadding(); err != nil {
 				break
 			}
 		}
