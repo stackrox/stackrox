@@ -1,4 +1,6 @@
 import React from 'react';
+import Raven from 'raven-js';
+
 import entityTypes from 'constants/entityTypes';
 import useCases from 'constants/useCaseTypes';
 
@@ -32,6 +34,11 @@ const VulnMgmtEntityList = (props) => {
     const { entityListType } = props;
     const Component = entityComponentMap[entityListType];
     if (!Component) {
+        Raven.captureException(
+            new Error(
+                `DEVELOPER ERROR A component could not be found for entity type ${entityListType} for use case ${useCases.VULN_MANAGEMENT}`
+            )
+        );
         return <PageNotFound resourceType={entityListType} useCase={useCases.VULN_MANAGEMENT} />;
     }
     return <Component {...props} />;
