@@ -43,6 +43,7 @@ func request_GroupService_GetGroups_0(ctx context.Context, marshaler runtime.Mar
 		protoReq GetGroupsRequest
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -75,6 +76,7 @@ func request_GroupService_GetGroup_0(ctx context.Context, marshaler runtime.Mars
 		protoReq storage.GroupProperties
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -193,6 +195,7 @@ func request_GroupService_DeleteGroup_0(ctx context.Context, marshaler runtime.M
 		protoReq DeleteGroupRequest
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}

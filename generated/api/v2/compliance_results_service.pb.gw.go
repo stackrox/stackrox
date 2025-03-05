@@ -41,6 +41,7 @@ func request_ComplianceResultsService_GetComplianceScanCheckResult_0(ctx context
 		metadata runtime.ServerMetadata
 		err      error
 	)
+	io.Copy(io.Discard, req.Body)
 	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
@@ -78,6 +79,7 @@ func request_ComplianceResultsService_GetComplianceScanResults_0(ctx context.Con
 		protoReq RawQuery
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -111,6 +113,7 @@ func request_ComplianceResultsService_GetComplianceScanConfigurationResults_0(ct
 		metadata runtime.ServerMetadata
 		err      error
 	)
+	io.Copy(io.Discard, req.Body)
 	val, ok := pathParams["scan_config_name"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "scan_config_name")
@@ -161,6 +164,7 @@ func request_ComplianceResultsService_GetComplianceProfileResults_0(ctx context.
 		metadata runtime.ServerMetadata
 		err      error
 	)
+	io.Copy(io.Discard, req.Body)
 	val, ok := pathParams["profile_name"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "profile_name")
@@ -211,6 +215,7 @@ func request_ComplianceResultsService_GetComplianceProfileCheckResult_0(ctx cont
 		metadata runtime.ServerMetadata
 		err      error
 	)
+	io.Copy(io.Discard, req.Body)
 	val, ok := pathParams["profile_name"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "profile_name")
@@ -277,6 +282,7 @@ func request_ComplianceResultsService_GetComplianceProfileClusterResults_0(ctx c
 		metadata runtime.ServerMetadata
 		err      error
 	)
+	io.Copy(io.Discard, req.Body)
 	val, ok := pathParams["profile_name"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "profile_name")
@@ -343,6 +349,7 @@ func request_ComplianceResultsService_GetComplianceProfileCheckDetails_0(ctx con
 		metadata runtime.ServerMetadata
 		err      error
 	)
+	io.Copy(io.Discard, req.Body)
 	val, ok := pathParams["profile_name"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "profile_name")
