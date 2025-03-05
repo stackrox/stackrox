@@ -75,8 +75,7 @@ func executeDiagnosticsCommand(t *testing.T, serverURL string, timeout time.Dura
 	env := environment.NewTestCLIEnvironment(t, testIO, printer.DefaultColorPrinter())
 
 	cmd := downloadDiagnosticsCommand(env)
-	flags.AddConnectionFlags(cmd)
-	flags.AddPassword(cmd)
+	flags.AddCentralConnectionFlags(cmd)
 
 	cmd.SilenceUsage = true
 	cmd.SetOut(io.Discard)
