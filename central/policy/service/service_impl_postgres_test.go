@@ -90,7 +90,7 @@ func (s *PolicyServicePostgresSuite) TearDownSuite() {
 
 // TestPostPolicy tests posting and then immediately after putting the same policy, as this discovered a bug in the
 // title casing of policy categories. This caused the policy as code workflow to create a new policy CR with a new policy
-// category name that did not conform to "title" casing to fail.
+// category name that did not conform to "title" casing to fail (ROX-26676).
 func (s *PolicyServicePostgresSuite) TestPutAfterPostPolicyWithInvalidCasing() {
 	policy := &storage.Policy{
 		Name:            "Test Policy",
