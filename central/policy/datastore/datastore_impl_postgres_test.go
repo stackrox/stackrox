@@ -9,6 +9,7 @@ import (
 	clusterDSMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	notifierDSMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	"github.com/stackrox/rox/central/policy/search"
+	policyStore "github.com/stackrox/rox/central/policy/store"
 	pgStore "github.com/stackrox/rox/central/policy/store/postgres"
 	policyCategoryDS "github.com/stackrox/rox/central/policycategory/datastore"
 	categorySearch "github.com/stackrox/rox/central/policycategory/search"
@@ -76,8 +77,8 @@ func (s *PolicyPostgresDataStoreTestSuite) SetupTest() {
 
 	s.categoryDS = policyCategoryDS.New(categoryStorage, categorySearcher, policyCategoryEdgeDS.New(edgeStorage, edgeSearcher))
 
-	policyStore := pgStore.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
-	s.datastore = New(policyStore, search.New(policyStore), s.mockClusterDS, s.mockNotifierDS, s.categoryDS)
+	policyStorage := policyStore.New(s.db)
+	s.datastore = New(policyStorage, search.New(policyStorage), s.mockClusterDS, s.mockNotifierDS, s.categoryDS)
 
 }
 
