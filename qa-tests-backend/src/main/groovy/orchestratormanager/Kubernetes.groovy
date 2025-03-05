@@ -1989,7 +1989,7 @@ class Kubernetes {
 
         return collectorPods.collect {
             this.client.pods()
-                .inNamespace("stackrox")
+                .inNamespace(Constants.STACKROX_NAMESPACE)
                 .withName(it.getMetadata().getName())
                 .portForward(port)
         }
