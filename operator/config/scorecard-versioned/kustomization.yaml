@@ -7,4 +7,4 @@ resources:
 images:
 - name: quay.io/operator-framework/scorecard-test
   newName: quay.io/operator-framework/scorecard-test
-  newTag: v1.38.0
+  newTag: v1.39.1
