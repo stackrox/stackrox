@@ -243,8 +243,6 @@ setup() {
 
     test_case_no=$(( test_case_no + 1))
 
-    export ROX_SCANNER_V4=true
-
     # By default we will use CRS-based cluster registration in this test suite, but there are some
     # specific tests which require CRS to be switched off (upgrade tests involving an old Helm chart, e.g.).
     export ROX_DEPLOY_SENSOR_WITH_CRS=true
