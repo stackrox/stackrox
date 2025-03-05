@@ -17,3 +17,8 @@ const (
 	// PasswordKey allows an echoless prompt.
 	PasswordKey = "password"
 )
+
+var (
+	// OutputDirManuallySet returns true iff --output-dir was manually set in the roxctl command
+	OutputDirManuallySet = false
+)

@@ -80,6 +80,7 @@ func orchestratorCommand(shortName, _ string) *cobra.Command {
 	}
 	if !roxctl.InMainImage() {
 		c.PersistentFlags().Var(common.NewOutputDir(&cfg.OutputDir, defaultBundlePath), "output-dir", "The directory to output the deployment bundle to")
+		flags.OutputDirManuallySet = c.PersistentFlags().Changed("output-dir")
 	}
 	return c
 }
