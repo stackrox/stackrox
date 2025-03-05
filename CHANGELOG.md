@@ -11,6 +11,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Added Features
 - ROX-13493: Support for scale subresource in the admission controller to enable policy detection and enforcement on admission review requests on the scale subresource.
+- ROX-26577: Scanner V4 will be enabled by default for Central Installations (fresh installations and upgrades, unless explicitly disabled).
 
 ### Removed Features
 
