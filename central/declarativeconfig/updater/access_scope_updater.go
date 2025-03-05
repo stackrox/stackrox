@@ -41,7 +41,7 @@ func (u *accessScopeUpdater) Upsert(ctx context.Context, m protocompat.Message) 
 	return u.roleDS.UpsertAccessScope(ctx, accessScope)
 }
 
-func (u *accessScopeUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...string) ([]string, error) {
+func (u *accessScopeUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...string) ([]string, int, error) {
 	resourcesToSkip := set.NewFrozenStringSet(resourceIDsToSkip...)
 
 	scopes, err := u.roleDS.GetAccessScopesFiltered(ctx, func(accessScope *storage.SimpleAccessScope) bool {
@@ -49,7 +49,7 @@ func (u *accessScopeUpdater) DeleteResources(ctx context.Context, resourceIDsToS
 			!resourcesToSkip.Contains(accessScope.GetId())
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "retrieving declarative access scopes")
+		return nil, 0, errors.Wrap(err, "retrieving declarative access scopes")
 	}
 
 	var scopeDeletionErr *multierror.Error
@@ -70,5 +70,5 @@ func (u *accessScopeUpdater) DeleteResources(ctx context.Context, resourceIDsToS
 			}
 		}
 	}
-	return scopeIDs, scopeDeletionErr.ErrorOrNil()
+	return scopeIDs, len(scopes) - len(scopeIDs), scopeDeletionErr.ErrorOrNil()
 }
