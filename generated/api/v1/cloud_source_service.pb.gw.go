@@ -42,6 +42,7 @@ func request_CloudSourcesService_CountCloudSources_0(ctx context.Context, marsha
 		protoReq CountCloudSourcesRequest
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -73,6 +74,7 @@ func request_CloudSourcesService_GetCloudSource_0(ctx context.Context, marshaler
 		metadata runtime.ServerMetadata
 		err      error
 	)
+	io.Copy(io.Discard, req.Body)
 	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
@@ -110,6 +112,7 @@ func request_CloudSourcesService_ListCloudSources_0(ctx context.Context, marshal
 		protoReq ListCloudSourcesRequest
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -207,6 +210,7 @@ func request_CloudSourcesService_DeleteCloudSource_0(ctx context.Context, marsha
 		metadata runtime.ServerMetadata
 		err      error
 	)
+	io.Copy(io.Discard, req.Body)
 	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
