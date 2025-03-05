@@ -27,6 +27,7 @@ GENERATED_API_SRCS = $(ALL_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%_grpc.pb.g
 GENERATED_API_GW_SRCS = $(SERVICE_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%.pb.gw.go)
 GENERATED_API_SWAGGER_SPECS = $(API_SERVICE_PROTOS:%.proto=$(GENERATED_BASE_PATH)/%.swagger.json)
 GENERATED_API_SWAGGER_SPECS_V2 = $(API_SERVICE_PROTOS_V2:%.proto=$(GENERATED_BASE_PATH)/%.swagger.json)
+GENERATED_JSON_SRCS = $(ALL_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%_json.pb.go)
 
 SCANNER_DIR = $(shell go list -f '{{.Dir}}' -m github.com/stackrox/scanner)
 ifneq ($(SCANNER_DIR),)
@@ -41,6 +42,7 @@ $(call go-tool, PROTOC_GEN_GO_VTPROTO_BIN, github.com/planetscale/vtprotobuf/cmd
 $(call go-tool, PROTOC_GEN_OPENAPIV2, github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2)
 $(call go-tool, PROTOC_GEN_GRPC_GATEWAY, github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway)
 $(call go-tool, PROTOC_GO_INJECT_TAG_BIN, github.com/favadi/protoc-go-inject-tag, tools/proto)
+$(call go-tool, PROTOC_GEN_JSON_BIN, github.com/stackrox/stackrox/tools/proto/protoc-gen-go-json, tools/proto)
 
 ##############
 ## Protobuf ##
@@ -219,6 +221,22 @@ endif
 		--plugin protoc-gen-go-vtproto="${PROTOC_GEN_GO_VTPROTO_BIN}" \
 		--go-vtproto_opt=features=marshal+size+equal+clone+unmarshal+unmarshal_unsafe \
 		--go-vtproto_out=$(M_ARGS_STR:%=%,)module=github.com/stackrox/rox/generated:$(GENERATED_BASE_PATH) \
+		$(dir $<)/*.proto
+
+# Generate JSON methods
+$(GENERATED_BASE_PATH)/%_json.pb.go: $(PROTO_BASE_PATH)/%.proto $(PROTO_DEPS) $(ALL_PROTOS) $(PROTOC) $(PROTOC_GEN_JSON_BIN)
+	@echo "+ $@"
+ifeq ($(SCANNER_DIR),)
+	$(error Cached directory of scanner dependency not found, run 'go mod tidy')
+endif
+	$(SILENT)mkdir -p $(dir $@)
+	$(SILENT)PATH=$(GOTOOLS_BIN) $(PROTOC) \
+		-I$(PROTOC_INCLUDES) \
+		-I$(GOOGLE_API_INCLUDES) \
+		-I$(SCANNER_PROTO_BASE_PATH) \
+		--proto_path=$(PROTO_BASE_PATH) \
+		--plugin protoc-gen-go-json="${PROTOC_GEN_JSON_BIN}" \
+		--go-json_out=$(M_ARGS_STR:%=%,)module=github.com/stackrox/rox/generated:$(GENERATED_BASE_PATH) \
 		$(dir $<)/*.proto
 
 # Generate gRPC services.
