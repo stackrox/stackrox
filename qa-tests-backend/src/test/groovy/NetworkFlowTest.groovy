@@ -529,7 +529,7 @@ class NetworkFlowTest extends BaseSpecification {
         node = NetworkGraphUtil.findDeploymentNode(graph, deploymentUid)
         assert node
         // There should only be one connection and it should be to the generic external entity.
-        assert node.outEdges.size() == 1
+        assert node.outEdgesMap.size() == 1
         // // Collector reports the unnormalized connection as being closed. There is no assert here
         // // as we don't want this behavior long term.
         // waitForEdgeToBeClosed(edges.get(0), 165)

@@ -9,6 +9,7 @@ import com.google.protobuf.util.JsonFormat
 import sensor.Collector
 
 @Slf4j
+@CompileStatic
 class CollectorUtil {
     static final String RUNTIME_CONFIG_MAP_NAME = "collector-config"
     static final String RUNTIME_CONFIG_MAP_KEY = "runtime_config.yaml"
@@ -17,7 +18,7 @@ class CollectorUtil {
     static final String DISABLED_VALUE = "DISABLED"
 
     static parseJsonToProtobuf(String json) {
-        sensor.Collector.CollectorConfig.Builder builder = sensor.Collector.CollectorConfig.newBuilder()
+        Collector.CollectorConfig.Builder builder = Collector.CollectorConfig.newBuilder()
         JsonFormat.parser().merge(json, builder)
         return builder.build()
     }
