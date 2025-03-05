@@ -64,6 +64,8 @@ func (d *delegatorImpl) GetDelegateClusterID(ctx context.Context, imgName *stora
 	}
 
 	shouldDelegate, clusterID := d.shouldDelegate(imgName, config)
+	log.Infof(">>>> should delegate: %v", shouldDelegate)
+
 	if !shouldDelegate {
 		return "", false, nil
 	}
@@ -152,6 +154,7 @@ func (d *delegatorImpl) shouldDelegate(imgName *storage.ImageName, config *stora
 	}
 
 	clusterID := config.GetDefaultClusterId()
+	log.Infof(">>>> shouldDelegate, current clusterId is %s", clusterID)
 	imageFullName := urlfmt.TrimHTTPPrefixes(imgName.GetFullName())
 
 	for _, reg := range config.GetRegistries() {
