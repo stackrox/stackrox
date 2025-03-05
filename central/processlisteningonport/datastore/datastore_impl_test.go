@@ -2833,6 +2833,21 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUID() {
 	}
 }
 
+func (suite *PLOPDataStoreTestSuite) addTooMany(plops []*storage.ProcessListeningOnPortFromSensor) {
+	batchSize := 30000
+
+	nplops := len(plops)
+
+	for offset := 0; offset < nplops; offset += batchSize {
+		end := offset + batchSize
+		if end > nplops {
+			end = nplops
+		}
+		err := suite.datastore.AddProcessListeningOnPort(suite.hasWriteCtx, fixtureconsts.Cluster1, plops[offset:end]...)
+		suite.NoError(err)
+	}
+}
+
 func (suite *PLOPDataStoreTestSuite) upsertTooMany(plops []*storage.ProcessListeningOnPortStorage) {
 	batchSize := 30000
 
@@ -2905,4 +2920,64 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUIDScale3M() {
 	npod := 150
 
 	suite.RemovePLOPsWithoutPodUIDScale(nport, nprocess, npod)
+}
+
+func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUIDScaleRaceCondition() {
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	running := true
+	plopsWithoutPodUids := 0
+	go func() {
+		defer wg.Done()
+		iterations := 3
+		for i := 0 ; i < iterations ; i++ {
+			nport := 30
+			nprocess := 30
+			npod := 30
+			plopObjects := suite.makeRandomPlops(nport, nprocess, npod, fixtureconsts.Deployment1)
+
+			for _, plop := range plopObjects {
+				p := rand.Float32()
+				if p < 0.5 {
+					plop.PodUid = ""
+					plopsWithoutPodUids += 2
+				} else {
+					plop.PodUid = uuid.NewV4().String()
+				}
+			}
+
+			// Add the PLOPs
+			suite.addTooMany(plopObjects)
+
+			// Close the PLOPs
+			// This is so that UpsertMany will trigger deletes
+			for _, plop := range plopObjects {
+				plop.CloseTimestamp = protoconv.ConvertTimeToTimestamp(time.Now())
+			}
+
+			// Add the PLOPs
+			suite.addTooMany(plopObjects)
+		}
+	}()
+
+	totalPrunedCount := 0
+
+	go func() {
+		for running {
+			prunedCount, err := suite.datastore.RemovePLOPsWithoutPodUID(suite.hasWriteCtx)
+			suite.NoError(err)
+			totalPrunedCount += int(prunedCount)
+		}
+	}()
+
+	wg.Wait()
+
+	running = false
+
+	prunedCount, err := suite.datastore.RemovePLOPsWithoutPodUID(suite.hasWriteCtx)
+	suite.NoError(err)
+	totalPrunedCount += int(prunedCount)
+
+	suite.Equal(int(plopsWithoutPodUids), totalPrunedCount)
 }
