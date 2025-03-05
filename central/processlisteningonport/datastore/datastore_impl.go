@@ -648,6 +648,8 @@ func (ds *datastoreImpl) RemovePLOPsWithoutProcessIndicatorOrProcessInfo(ctx con
 	return int64(len(plopsToDelete)), nil
 }
 
+///////////////////////////////////////////////////////////
+
 func (ds *datastoreImpl) RemovePLOPsWithoutPodUIDWithOffset(ctx context.Context, page int, offset int) (int64, error) {
 	ds.mutex.Lock()
 	defer ds.mutex.Unlock()
@@ -680,6 +682,8 @@ func (ds *datastoreImpl) RemovePLOPsWithoutPodUIDBatch(ctx context.Context) (int
 	return numDeletedTotal, nil
 }
 
+///////////////////////////////////////////////////////////
+
 func (ds *datastoreImpl) RemovePLOPsWithoutPodUIDSimple(ctx context.Context) (int64, error) {
 	ds.mutex.Lock()
 	defer ds.mutex.Unlock()
@@ -693,6 +697,8 @@ func (ds *datastoreImpl) RemovePLOPsWithoutPodUIDSimple(ctx context.Context) (in
 	return int64(commandTag.RowsAffected()), nil
 
 }
+
+///////////////////////////////////////////////////////////
 
 func (ds *datastoreImpl) getPLOPsWithoutPodUIDs(ctx context.Context) ([]string, error) {
 	ds.mutex.Lock()
@@ -740,6 +746,8 @@ func (ds *datastoreImpl) RemovePLOPsWithoutPodUIDTwoParts(ctx context.Context) (
 	return int64(len(plopsToDelete)), nil
 }
 
+///////////////////////////////////////////////////////////
+
 func (ds *datastoreImpl) RemovePLOPsWithoutPodUIDWalk(ctx context.Context) (int64, error) {
 	ds.mutex.Lock()
 	defer ds.mutex.Unlock()
@@ -783,6 +791,8 @@ func (ds *datastoreImpl) RemovePLOPsWithoutPodUIDWalk(ctx context.Context) (int6
 
 	return int64(totalCount), nil
 }
+
+///////////////////////////////////////////////////////////
 
 func (ds *datastoreImpl) RemovePLOPsWithoutPodUIDPage(ctx context.Context) (int64, error) {
         return pgutils.Retry2(ctx, func() (int64, error) {
@@ -864,6 +874,143 @@ func (ds *datastoreImpl) readRowsForDeletion(ctx context.Context, rows pgx.Rows)
         return nrows, id, nil
 }
 
+///////////////////////////////////////////////////////////
+
+func (ds *datastoreImpl) RemovePLOPsWithoutPodUIDGetPages(ctx context.Context) (int64, error) {
+        return pgutils.Retry2(ctx, func() (int64, error) {
+                return ds.retryableRemovePLOPsWithoutPodUIDGetPages(ctx)
+        })
+}
+
+func (ds *datastoreImpl) RemovePLOPsWithoutPodUIDGetPagesOnePage(ctx context.Context, prevId string, nextId string) (int64, error) {
+	ds.mutex.Lock()
+	defer ds.mutex.Unlock()
+
+	query := fmt.Sprintf(deletePLOPsWithoutPoduidInPage, prevId, nextId)
+	commandTag, err := ds.pool.Exec(ctx, query)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return commandTag.RowsAffected(), nil
+}
+
+func (ds *datastoreImpl) RemovePLOPsWithoutPodUIDGetPagesFirstPage(ctx context.Context, id string) (int64, error) {
+	ds.mutex.Lock()
+	defer ds.mutex.Unlock()
+
+	query := fmt.Sprintf(deletePLOPsWithoutPoduidInFirstPage, id)
+	commandTag, err := ds.pool.Exec(ctx, query)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return commandTag.RowsAffected(), nil
+}
+
+func (ds *datastoreImpl) GetFirstPageId(ctx context.Context, limit int) (string, error) {
+	ds.mutex.Lock()
+	defer ds.mutex.Unlock()
+
+	query := fmt.Sprintf(getLastIdFromFirstPage, limit)
+	rows, err := ds.pool.Query(ctx, query)
+
+        if err != nil {
+                // Do not be alarmed if the error is simply NoRows
+                err = pgutils.ErrNilIfNoRows(err)
+                if err != nil {
+                        log.Warnf("%s: %s", query, err)
+                }
+                return "", err
+        }
+        defer rows.Close()
+
+        id, err := ds.getLastIdFromRows(ctx, rows)
+
+        if err != nil {
+                return "", err
+        }
+
+	return id, nil
+}
+
+func (ds *datastoreImpl) GetNextPageId(ctx context.Context, prevId string, limit int) (string, error) {
+	ds.mutex.Lock()
+	defer ds.mutex.Unlock()
+
+	query := fmt.Sprintf(getLastIdFromPage, prevId, limit)
+	rows, err := ds.pool.Query(ctx, query)
+
+        if err != nil {
+                // Do not be alarmed if the error is simply NoRows
+                err = pgutils.ErrNilIfNoRows(err)
+                if err != nil {
+                        log.Warnf("%s: %s", query, err)
+                }
+                return "", err
+        }
+        defer rows.Close()
+
+        nextId, err := ds.getLastIdFromRows(ctx, rows)
+
+        if err != nil {
+                return "", err
+        }
+
+	return nextId, nil
+}
+
+func (ds *datastoreImpl) retryableRemovePLOPsWithoutPodUIDGetPages(ctx context.Context) (int64, error) {
+	totalRows := int64(0)
+        limit := 10000
+
+	prevId, err := ds.GetFirstPageId(ctx, limit)
+	if err != nil {
+		return 0, err
+	}
+	if prevId == "" {
+		return 0, nil
+	}
+
+	nrows, err := ds.RemovePLOPsWithoutPodUIDGetPagesFirstPage(ctx, prevId)
+
+	totalRows = nrows
+
+	for true {
+		nextId, err := ds.GetNextPageId(ctx, prevId, limit)
+		if err != nil {
+			return int64(totalRows), err
+		}
+		if nextId == "" {
+			break
+		}
+		nrows, err = ds.RemovePLOPsWithoutPodUIDGetPagesOnePage(ctx, prevId, nextId)
+		if err != nil {
+			return int64(totalRows), err
+		}
+		totalRows += nrows
+		prevId = nextId
+	}
+
+	return int64(totalRows), nil
+}
+
+func (ds *datastoreImpl) getLastIdFromRows(ctx context.Context, rows pgx.Rows) (string, error) {
+	id := ""
+
+        for rows.Next() {
+                if err := rows.Scan(&id); err != nil {
+                        return "", pgutils.ErrNilIfNoRows(err)
+                }
+        }
+
+        return id, nil
+}
+
+///////////////////////////////////////////////////////////
+
 func (ds *datastoreImpl) RemovePLOPsWithoutPodUID(ctx context.Context) (int64, error) {
-	return ds.RemovePLOPsWithoutPodUIDPage(ctx)
+	return ds.RemovePLOPsWithoutPodUIDGetPages(ctx)
 }
