@@ -6,7 +6,7 @@ import (
 
 type indents []int
 
-func (ptr *indents) pop() int {
+func (ptr *indents) popNotLast() int {
 	slice := *ptr
 	switch len(slice) {
 	case 0:

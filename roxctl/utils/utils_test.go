@@ -16,6 +16,8 @@ func Test_wordsAndDelimeters(t *testing.T) {
 		" \n ":                            {" ", "\n", " "},
 		" \n\t":                           {" ", "\n", "\t"},
 		"word":                            {"word"},
+		" Leading space":                  {" ", "Leading", " ", "space"},
+		"  Multiple Leading spaces":       {" ", " ", "Multiple", " ", "Leading", " ", "spaces"},
 	}
 	for text, c := range cases {
 		sc := bufio.NewScanner(strings.NewReader(text))
@@ -39,7 +41,7 @@ func Test_pop(t *testing.T) {
 		{[]int{}, 0, []int{}},
 	}
 	for _, c := range cases {
-		value := c.arr.pop()
+		value := c.arr.popNotLast()
 		assert.Equal(t, c.expectedValue, value)
 		assert.Equal(t, c.expectedArr, []int(c.arr))
 	}
