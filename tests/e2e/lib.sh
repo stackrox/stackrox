@@ -355,7 +355,7 @@ deploy_sensor() {
 
     info "Deploying sensor into namespace ${sensor_namespace} (central is expected in namespace ${central_namespace})"
 
-    ci_export ROX_AFTERGLOW_PERIOD "15"
+    ci_export ROX_AFTERGLOW_PERIOD "0"
     ci_export ROX_COLLECTOR_INTROSPECTION_ENABLE "true"
 
     if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" == "true" ]]; then
