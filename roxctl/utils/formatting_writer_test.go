@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -154,5 +155,60 @@ func Test_setIndent(t *testing.T) {
 		w.SetIndent(4)
 		_, _ = w.WriteString("ghi")
 		assert.Equal(t, "abc \n   def\n    ghi", sb.String())
+	})
+}
+
+type sbWithErrors struct {
+	strings.Builder
+	fail func(n int, s string) bool
+}
+
+func (sbe *sbWithErrors) WriteString(s string) (int, error) {
+	if sbe.fail(sbe.Builder.Len(), s) {
+		return 0, errors.New("test error")
+	}
+	return sbe.Builder.WriteString(s)
+}
+
+func Test_writeErrors(t *testing.T) {
+	t.Run("simple string", func(t *testing.T) {
+		sb := &sbWithErrors{fail: func(n int, s string) bool {
+			return n+len(s) > 5
+		}}
+		w := makeFormattingWriter(sb, 10, defaultTabWidth)
+
+		n, err := w.WriteString("abcde")
+		assert.NoError(t, err)
+		assert.Equal(t, 5, n)
+		n, err = w.WriteString("fgh")
+		assert.Error(t, err)
+		assert.Equal(t, 0, n)
+	})
+	t.Run("write error on wrapping", func(t *testing.T) {
+		sb := &sbWithErrors{fail: func(_ int, s string) bool {
+			return s == "\n"
+		}}
+		w := makeFormattingWriter(sb, 10, defaultTabWidth)
+		n, err := w.WriteString("abcde fghij")
+		assert.Error(t, err)
+		assert.Equal(t, 6, n)
+	})
+	t.Run("write error on padding", func(t *testing.T) {
+		sb := &sbWithErrors{fail: func(_ int, s string) bool {
+			return s == "  "
+		}}
+		w := makeFormattingWriter(sb, 10, defaultTabWidth, 0, 2)
+		n, err := w.WriteString("abcde fghij")
+		assert.Error(t, err)
+		assert.Equal(t, 6, n)
+	})
+	t.Run("write error on initial padding", func(t *testing.T) {
+		sb := &sbWithErrors{fail: func(_ int, s string) bool {
+			return s == "  "
+		}}
+		w := makeFormattingWriter(sb, 10, defaultTabWidth, 2)
+		n, err := w.WriteString("a")
+		assert.Error(t, err)
+		assert.Equal(t, 0, n)
 	})
 }
