@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	net2 "github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/sensor/debugger/collector"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
@@ -83,6 +84,7 @@ func WaitToReceiveMessagesFromCollectorWithTimeout(ctx context.Context, signal *
 		}
 		if len(expectedSignalMessages) == 0 && len(expectedNetworkMessages) == 0 {
 			signal.Signal()
+			return
 		}
 	}
 }
@@ -103,6 +105,89 @@ func SendSignalMessage(fakeCollector *collector.FakeCollector, containerID strin
 	})
 }
 
+func SendCloseFlowMessage(fakeCollector *collector.FakeCollector,
+	socketFamily sensor.SocketFamily,
+	protocol storage.L4Protocol,
+	fromID string,
+	toID string,
+	fromIP string,
+	toIP string,
+	port uint32,
+	closeTimestampSeconds int64) {
+	fakeCollector.SendFakeNetworkFlow(&sensor.NetworkConnectionInfoMessage{
+		Msg: &sensor.NetworkConnectionInfoMessage_Info{
+			Info: &sensor.NetworkConnectionInfo{
+				Time: &timestamppb.Timestamp{
+					Seconds: closeTimestampSeconds,
+					Nanos:   0,
+				},
+				UpdatedConnections: []*sensor.NetworkConnection{
+					{
+						SocketFamily: socketFamily,
+						Protocol:     protocol,
+						Role:         sensor.ClientServerRole_ROLE_CLIENT,
+						ContainerId:  fromID,
+						LocalAddress: &sensor.NetworkAddress{
+							AddressData: nil,
+							IpNetwork:   nil,
+							Port:        0,
+						},
+						RemoteAddress: &sensor.NetworkAddress{
+							AddressData: net2.ParseIP(toIP).AsNetIP(),
+							IpNetwork:   net2.ParseIP(toIP).AsNetIP(),
+							Port:        port,
+						},
+						CloseTimestamp: &timestamppb.Timestamp{
+							Seconds: closeTimestampSeconds,
+							Nanos:   0,
+						},
+					},
+					{
+						SocketFamily: socketFamily,
+						Protocol:     protocol,
+						Role:         sensor.ClientServerRole_ROLE_SERVER,
+						ContainerId:  toID,
+						LocalAddress: &sensor.NetworkAddress{
+							AddressData: nil,
+							IpNetwork:   nil,
+							Port:        port,
+						},
+						RemoteAddress: &sensor.NetworkAddress{
+							AddressData: net2.ParseIP(fromIP).AsNetIP(),
+							IpNetwork:   net2.ParseIP(fromIP).AsNetIP(),
+							Port:        0,
+						},
+						CloseTimestamp: &timestamppb.Timestamp{
+							Seconds: closeTimestampSeconds,
+							Nanos:   0,
+						},
+					},
+				},
+				UpdatedEndpoints: []*sensor.NetworkEndpoint{
+					{
+						SocketFamily: socketFamily,
+						Protocol:     protocol,
+						ListenAddress: &sensor.NetworkAddress{
+							AddressData: net2.ParseIP(toIP).AsNetIP(),
+							IpNetwork:   net2.ParseIP(toIP).AsNetIP(),
+							Port:        port,
+						},
+						ContainerId: toID,
+						Originator: &storage.NetworkProcessUniqueKey{
+							ProcessName:         "nginx",
+							ProcessExecFilePath: "/path/nginx",
+						},
+						CloseTimestamp: &timestamppb.Timestamp{
+							Seconds: closeTimestampSeconds,
+							Nanos:   0,
+						},
+					},
+				},
+			},
+		},
+	})
+}
+
 // SendFlowMessage uses FakeCollector to send a fake NetworkConnectionInfoMessage.
 func SendFlowMessage(fakeCollector *collector.FakeCollector,
 	socketFamily sensor.SocketFamily,
@@ -111,10 +196,15 @@ func SendFlowMessage(fakeCollector *collector.FakeCollector,
 	toID string,
 	fromIP string,
 	toIP string,
-	port uint32) {
+	port uint32,
+	timestampSeconds int64) {
 	fakeCollector.SendFakeNetworkFlow(&sensor.NetworkConnectionInfoMessage{
 		Msg: &sensor.NetworkConnectionInfoMessage_Info{
 			Info: &sensor.NetworkConnectionInfo{
+				Time: &timestamppb.Timestamp{
+					Seconds: timestampSeconds,
+					Nanos:   0,
+				},
 				UpdatedConnections: []*sensor.NetworkConnection{
 					{
 						SocketFamily: socketFamily,
@@ -146,6 +236,22 @@ func SendFlowMessage(fakeCollector *collector.FakeCollector,
 							AddressData: net2.ParseIP(fromIP).AsNetIP(),
 							IpNetwork:   net2.ParseIP(fromIP).AsNetIP(),
 							Port:        0,
+						},
+					},
+				},
+				UpdatedEndpoints: []*sensor.NetworkEndpoint{
+					{
+						SocketFamily: socketFamily,
+						Protocol:     protocol,
+						ListenAddress: &sensor.NetworkAddress{
+							AddressData: net2.ParseIP(toIP).AsNetIP(),
+							IpNetwork:   net2.ParseIP(toIP).AsNetIP(),
+							Port:        port,
+						},
+						ContainerId: toID,
+						Originator: &storage.NetworkProcessUniqueKey{
+							ProcessName:         "nginx",
+							ProcessExecFilePath: "/path/nginx",
 						},
 					},
 				},

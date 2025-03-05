@@ -840,6 +840,7 @@ type Config struct {
 	SendDeduperState            bool
 	RealCerts                   bool
 	NetworkFlowTraceWriter      io.Writer
+	NetworkFlowTicker           <-chan time.Time
 	ProcessIndicatorTraceWriter io.Writer
 }
 
@@ -878,6 +879,9 @@ func (c *TestContext) startSensorInstance(t *testing.T, env *envconf.Config, cfg
 	}
 	if cfg.NetworkFlowTraceWriter != nil {
 		sensorConfig.WithNetworkFlowTraceWriter(cfg.NetworkFlowTraceWriter)
+	}
+	if cfg.NetworkFlowTicker != nil {
+		sensorConfig.WithNetworkFlowTicker(cfg.NetworkFlowTicker)
 	}
 	if cfg.ProcessIndicatorTraceWriter != nil {
 		sensorConfig.WithProcessIndicatorTraceWriter(cfg.ProcessIndicatorTraceWriter)
