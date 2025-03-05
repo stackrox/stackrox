@@ -2888,6 +2888,8 @@ func (suite *PLOPDataStoreTestSuite) RemovePLOPsWithoutPodUIDScale(nport int, np
 	duration := time.Since(start)
 	suite.NoError(err)
 	log.Infof("Pruning %d plops took %s", prunedCount, duration)
+	_, err = suite.datastore.RemovePLOPsWithoutPodUID(suite.hasWriteCtx)
+	suite.NoError(err)
 }
 
 func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUIDScale27K() {
