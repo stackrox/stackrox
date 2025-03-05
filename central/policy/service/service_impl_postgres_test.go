@@ -53,7 +53,7 @@ func (s *PolicyServicePostgresSuite) SetupSuite() {
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.db = pgtest.ForT(s.T())
 
-	pStore := policyStore.New(s.db)
+	policyStorage := policyStore.New(s.db)
 
 	notifierDS := notifierDatastore.GetTestPostgresDataStore(s.T(), s.db)
 
@@ -67,7 +67,7 @@ func (s *PolicyServicePostgresSuite) SetupSuite() {
 
 	s.categories = policyCategoryDatastore.New(categoryStorage, categorySearcher, edgeDatastore)
 
-	s.policies = policyDatastore.New(pStore, search.New(pStore), s.clusters, notifierDS, s.categories)
+	s.policies = policyDatastore.New(policyStorage, search.New(policyStorage), s.clusters, notifierDS, s.categories)
 
 	var err error
 	s.clusters, err = clusterDatastore.GetTestPostgresDataStore(s.T(), s.db)

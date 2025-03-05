@@ -77,8 +77,8 @@ func (s *PolicyPostgresDataStoreTestSuite) SetupTest() {
 
 	s.categoryDS = policyCategoryDS.New(categoryStorage, categorySearcher, policyCategoryEdgeDS.New(edgeStorage, edgeSearcher))
 
-	policyDS := policyStore.New(s.db)
-	s.datastore = New(policyDS, search.New(policyDS), s.mockClusterDS, s.mockNotifierDS, s.categoryDS)
+	policyStorage := policyStore.New(s.db)
+	s.datastore = New(policyStorage, search.New(policyStorage), s.mockClusterDS, s.mockNotifierDS, s.categoryDS)
 
 }
 
