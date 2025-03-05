@@ -704,9 +704,36 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"snoozeStart: Time",
 		"snoozed: Boolean!",
 	}))
+	utils.Must(builder.AddType("ImageCVEV2", []string{
+		"componentId: String!",
+		"cveBaseInfo: CVEInfo",
+		"cvss: Float!",
+		"firstImageOccurrence: Time",
+		"id: ID!",
+		"imageId: String!",
+		"impactScore: Float!",
+		"nvdScoreVersion: CvssScoreVersion!",
+		"nvdcvss: Float!",
+		"operatingSystem: String!",
+		"severity: VulnerabilitySeverity!",
+		"state: VulnerabilityState!",
+	}))
 	utils.Must(builder.AddType("ImageComponent", []string{
 		"fixedBy: String!",
 		"id: ID!",
+		"license: License",
+		"name: String!",
+		"operatingSystem: String!",
+		"priority: Int!",
+		"riskScore: Float!",
+		"source: SourceType!",
+		"version: String!",
+	}))
+	utils.Must(builder.AddType("ImageComponentV2", []string{
+		"architecture: String!",
+		"fixedBy: String!",
+		"id: ID!",
+		"imageId: String!",
 		"license: License",
 		"name: String!",
 		"operatingSystem: String!",
@@ -8346,6 +8373,108 @@ func (resolver *imageCVEResolver) Snoozed(ctx context.Context) bool {
 	return value
 }
 
+type imageCVEV2Resolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.ImageCVEV2
+}
+
+func (resolver *Resolver) wrapImageCVEV2(value *storage.ImageCVEV2, ok bool, err error) (*imageCVEV2Resolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &imageCVEV2Resolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapImageCVEV2s(values []*storage.ImageCVEV2, err error) ([]*imageCVEV2Resolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*imageCVEV2Resolver, len(values))
+	for i, v := range values {
+		output[i] = &imageCVEV2Resolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapImageCVEV2WithContext(ctx context.Context, value *storage.ImageCVEV2, ok bool, err error) (*imageCVEV2Resolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &imageCVEV2Resolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapImageCVEV2sWithContext(ctx context.Context, values []*storage.ImageCVEV2, err error) ([]*imageCVEV2Resolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*imageCVEV2Resolver, len(values))
+	for i, v := range values {
+		output[i] = &imageCVEV2Resolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *imageCVEV2Resolver) ComponentId(ctx context.Context) string {
+	value := resolver.data.GetComponentId()
+	return value
+}
+
+func (resolver *imageCVEV2Resolver) CveBaseInfo(ctx context.Context) (*cVEInfoResolver, error) {
+	value := resolver.data.GetCveBaseInfo()
+	return resolver.root.wrapCVEInfo(value, true, nil)
+}
+
+func (resolver *imageCVEV2Resolver) Cvss(ctx context.Context) float64 {
+	value := resolver.data.GetCvss()
+	return float64(value)
+}
+
+func (resolver *imageCVEV2Resolver) FirstImageOccurrence(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetFirstImageOccurrence()
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
+}
+
+func (resolver *imageCVEV2Resolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *imageCVEV2Resolver) ImageId(ctx context.Context) string {
+	value := resolver.data.GetImageId()
+	return value
+}
+
+func (resolver *imageCVEV2Resolver) ImpactScore(ctx context.Context) float64 {
+	value := resolver.data.GetImpactScore()
+	return float64(value)
+}
+
+func (resolver *imageCVEV2Resolver) NvdScoreVersion(ctx context.Context) string {
+	value := resolver.data.GetNvdScoreVersion()
+	return value.String()
+}
+
+func (resolver *imageCVEV2Resolver) Nvdcvss(ctx context.Context) float64 {
+	value := resolver.data.GetNvdcvss()
+	return float64(value)
+}
+
+func (resolver *imageCVEV2Resolver) OperatingSystem(ctx context.Context) string {
+	value := resolver.data.GetOperatingSystem()
+	return value
+}
+
+func (resolver *imageCVEV2Resolver) Severity(ctx context.Context) string {
+	value := resolver.data.GetSeverity()
+	return value.String()
+}
+
+func (resolver *imageCVEV2Resolver) State(ctx context.Context) string {
+	value := resolver.data.GetState()
+	return value.String()
+}
+
 type imageComponentResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -8429,6 +8558,103 @@ func (resolver *imageComponentResolver) Source(ctx context.Context) string {
 }
 
 func (resolver *imageComponentResolver) Version(ctx context.Context) string {
+	value := resolver.data.GetVersion()
+	return value
+}
+
+type imageComponentV2Resolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.ImageComponentV2
+}
+
+func (resolver *Resolver) wrapImageComponentV2(value *storage.ImageComponentV2, ok bool, err error) (*imageComponentV2Resolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &imageComponentV2Resolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapImageComponentV2s(values []*storage.ImageComponentV2, err error) ([]*imageComponentV2Resolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*imageComponentV2Resolver, len(values))
+	for i, v := range values {
+		output[i] = &imageComponentV2Resolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapImageComponentV2WithContext(ctx context.Context, value *storage.ImageComponentV2, ok bool, err error) (*imageComponentV2Resolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &imageComponentV2Resolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapImageComponentV2sWithContext(ctx context.Context, values []*storage.ImageComponentV2, err error) ([]*imageComponentV2Resolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*imageComponentV2Resolver, len(values))
+	for i, v := range values {
+		output[i] = &imageComponentV2Resolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *imageComponentV2Resolver) Architecture(ctx context.Context) string {
+	value := resolver.data.GetArchitecture()
+	return value
+}
+
+func (resolver *imageComponentV2Resolver) FixedBy(ctx context.Context) string {
+	value := resolver.data.GetFixedBy()
+	return value
+}
+
+func (resolver *imageComponentV2Resolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *imageComponentV2Resolver) ImageId(ctx context.Context) string {
+	value := resolver.data.GetImageId()
+	return value
+}
+
+func (resolver *imageComponentV2Resolver) License(ctx context.Context) (*licenseResolver, error) {
+	value := resolver.data.GetLicense()
+	return resolver.root.wrapLicense(value, true, nil)
+}
+
+func (resolver *imageComponentV2Resolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *imageComponentV2Resolver) OperatingSystem(ctx context.Context) string {
+	value := resolver.data.GetOperatingSystem()
+	return value
+}
+
+func (resolver *imageComponentV2Resolver) Priority(ctx context.Context) int32 {
+	value := resolver.data.GetPriority()
+	return int32(value)
+}
+
+func (resolver *imageComponentV2Resolver) RiskScore(ctx context.Context) float64 {
+	value := resolver.data.GetRiskScore()
+	return float64(value)
+}
+
+func (resolver *imageComponentV2Resolver) Source(ctx context.Context) string {
+	value := resolver.data.GetSource()
+	return value.String()
+}
+
+func (resolver *imageComponentV2Resolver) Version(ctx context.Context) string {
 	value := resolver.data.GetVersion()
 	return value
 }
