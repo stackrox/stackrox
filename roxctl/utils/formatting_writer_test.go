@@ -8,7 +8,7 @@ import (
 )
 
 func Test_indentAndWrap(t *testing.T) {
-	expected := " \n" +
+	expected := "\n" +
 		"  This is some long text, that\n" +
 		"   should be indented and\n" +
 		"    \twrapped.\n" +
@@ -130,6 +130,18 @@ func Test_setIndent(t *testing.T) {
   >>>>>>> |
           |    |
                |`, sb.String())
+	})
+
+	t.Run("No padding before linebreak", func(t *testing.T) {
+		sb := &strings.Builder{}
+		w := makeFormattingWriter(sb, 14, defaultTabWidth)
+
+		w.SetIndent(4)
+		_, _ = w.WriteString("\n")
+		_, _ = w.WriteString("Blue trees arent real")
+		assert.Equal(t, `
+    Blue trees
+    arent real`, sb.String())
 	})
 
 	t.Run("single LN when string is longer than width", func(t *testing.T) {

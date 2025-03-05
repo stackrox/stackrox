@@ -90,7 +90,9 @@ func (w *formattingWriter) WriteString(s string) (int, error) {
 		}
 		ln := false
 		if w.currentLine == 0 || w.indentReset {
-			if ln, err = w.writePadding(); err != nil {
+			if token == "\n" {
+				w.indent.popNotLast()
+			} else if ln, err = w.writePadding(); err != nil {
 				break
 			}
 			w.indentReset = false
