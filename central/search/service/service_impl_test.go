@@ -255,10 +255,10 @@ func (s *SearchOperationsTestSuite) TestAutocompleteForEnums() {
 	var ds policyDatastore.DataStore
 
 	categoriesDS := categoryDataStoreMocks.NewMockDataStore(s.mockCtrl)
-	pStore := policyStore.New(s.pool)
-	s.NoError(pStore.Upsert(ctx, fixtures.GetPolicy()))
-	pSearcher := policySearcher.New(pStore)
-	ds = policyDatastore.New(pStore, pSearcher, nil, nil, categoriesDS)
+	policyStorage := policyStore.New(s.pool)
+	s.NoError(policyStorage.Upsert(ctx, fixtures.GetPolicy()))
+	pSearcher := policySearcher.New(policyStorage)
+	ds = policyDatastore.New(policyStorage, pSearcher, nil, nil, categoriesDS)
 
 	builder := NewBuilder().
 		WithAlertStore(alertMocks.NewMockDataStore(s.mockCtrl)).
