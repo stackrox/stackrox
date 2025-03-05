@@ -1140,57 +1140,52 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 		h.connectionsSequenceID = sequenceID
 	}
 
-	{
-		prevSize := len(h.connections)
-		for c, t := range updatedConnections {
-			// timestamp = zero implies the connection is newly added. Add new connections, update existing ones to mark them closed
-			if t != timestamp.InfiniteFuture { // adjust timestamp if not zero.
-				t += tsOffset
-			}
-			status := h.connections[c]
-			if status == nil {
-				status = &connStatus{
-					firstSeen: timestamp.Now(),
-				}
-				if t < status.firstSeen {
-					status.firstSeen = t
-				}
-				h.connections[c] = status
-			}
-			status.lastSeen = t
-			log.Infof("=============== lvm conn last seen is set %v", t)
-		}
+	log.Info("=== lvm (Process) updating connections status")
+	h.updateConnectionsStatusNoLock(updatedConnections, tsOffset, nowTimestamp)
+	log.Info("=== lvm (Process) updating endpoints status")
+	h.updateEndpointsStatusNoLock(updatedEndpoints, tsOffset, nowTimestamp)
 
-		h.lastKnownTimestamp = nowTimestamp
-		flowMetrics.HostConnectionsAdded.Add(float64(len(h.connections) - prevSize))
-	}
-
-	{
-		prevSize := len(h.endpoints)
-		for ep, t := range updatedEndpoints {
-			// timestamp = zero implies the endpoint is newly added. Add new endpoints, update existing ones to mark them closed
-			if t != timestamp.InfiniteFuture { // adjust timestamp if not zero.
-				t += tsOffset
-			}
-			status := h.endpoints[ep]
-			if status == nil {
-				status = &connStatus{
-					firstSeen: timestamp.Now(),
-				}
-				if t < status.firstSeen {
-					status.firstSeen = t
-				}
-				h.endpoints[ep] = status
-			}
-			status.lastSeen = t
-			log.Infof("=============== lvm endpoint last seen is set %v", t)
-		}
-
-		h.lastKnownTimestamp = nowTimestamp
-		flowMetrics.HostEndpointsAdded.Add(float64(len(h.endpoints) - prevSize))
-	}
-
+	log.Info("=== lvm (Process) finished")
+	// h.connections have updated their lastSeen status updated
 	return nil
+}
+
+func (h *hostConnections) updateConnectionsStatusNoLock(updatedConnections map[connection]timestamp.MicroTS, tsOffset, nowTimestamp timestamp.MicroTS) {
+	prevSize := len(h.connections)
+	updateStatusNoLock(h.connections, updatedConnections, tsOffset, nowTimestamp)
+	h.lastKnownTimestamp = nowTimestamp
+	flowMetrics.HostConnectionsAdded.Add(float64(len(h.connections) - prevSize))
+}
+
+func (h *hostConnections) updateEndpointsStatusNoLock(updatedEndpoints map[containerEndpoint]timestamp.MicroTS, tsOffset, nowTimestamp timestamp.MicroTS) {
+	prevSize := len(h.endpoints)
+	updateStatusNoLock(h.endpoints, updatedEndpoints, tsOffset, nowTimestamp)
+	h.lastKnownTimestamp = nowTimestamp
+	flowMetrics.HostEndpointsAdded.Add(float64(len(h.endpoints) - prevSize))
+}
+
+func updateStatusNoLock[T comparable](current map[T]*connStatus, updated map[T]timestamp.MicroTS, tsOffset, nowTimestamp timestamp.MicroTS) {
+	for c, t := range updated {
+		// timestamp = zero implies the connection/endpoint is newly added.
+		// Add new current, update existing ones to mark them closed
+		if t != timestamp.InfiniteFuture { // adjust timestamp if not zero.
+			log.Infof("=== lvm offsetting collector ts=%ds by %ds", t.UnixSeconds(), tsOffset.UnixSeconds())
+			t += tsOffset
+		} else {
+			log.Info("=== lvm collector ts for connection is +Infinity")
+		}
+		status := current[c]
+		if status == nil {
+			status = &connStatus{
+				firstSeen: nowTimestamp,
+			}
+			if t < status.firstSeen {
+				status.firstSeen = t
+			}
+			current[c] = status
+		}
+		status.lastSeen = t
+	}
 }
 
 func getProcessKey(originator *storage.NetworkProcessUniqueKey) processInfo {
