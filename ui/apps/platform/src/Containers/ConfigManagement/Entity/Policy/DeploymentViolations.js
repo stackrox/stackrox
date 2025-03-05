@@ -1,19 +1,21 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import pluralize from 'pluralize';
+import { Alert } from '@patternfly/react-core';
+
 import entityTypes from 'constants/entityTypes';
 import { entityViolationsColumns } from 'constants/listColumns';
 
-import NoResultsMessage from 'Components/NoResultsMessage';
 import TableWidget from 'Containers/ConfigManagement/Entity/widgets/TableWidget';
 
 const DeploymentViolations = ({ className, alerts, entityContext }) => {
     if (!alerts || !alerts.length) {
         return (
-            <NoResultsMessage
-                message="No deployments violating this policy"
-                className="p-3 shadow"
-                icon="info"
+            <Alert
+                variant="success"
+                isInline
+                title="No deployments violating this policy"
+                component="p"
             />
         );
     }

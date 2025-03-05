@@ -1,6 +1,5 @@
-import React from 'react';
+import React, { ReactElement } from 'react';
 import { XYPlot, ArcSeries, LabelSeries } from 'react-vis';
-import PropTypes from 'prop-types';
 
 const RADIUS = 3;
 const VALUE_THICKNESS = 0.2;
@@ -13,24 +12,28 @@ function getDataFromValue(value) {
             angle: (FULL_ANGLE * value) / 100,
             radius0: RADIUS - VALUE_THICKNESS,
             radius: RADIUS,
-            color: 'var(--success-500)',
+            color: 'var(--pf-v5-global--primary-color--100)',
         },
         {
             angle0: (FULL_ANGLE * value) / 100,
             angle: FULL_ANGLE,
             radius0: RADIUS - VALUE_THICKNESS * 0.8,
             radius: RADIUS - VALUE_THICKNESS * 0.2,
-            color: 'var(--base-400)',
+            color: 'var(--pf-v5-global--disabled-color--200)',
         },
     ];
 }
 const LABEL_STYLE = {
     fontSize: '36px',
-    fill: 'var(--primary-800)',
+    fill: 'var(--pf-v5-global--Color--100)',
     fontWeight: 500,
 };
 
-const ArcSingle = ({ value }) => {
+export type ArcSingleProps = {
+    value: number;
+};
+
+function ArcSingle({ value }: ArcSingleProps): ReactElement {
     const data = getDataFromValue(value);
 
     return (
@@ -50,10 +53,6 @@ const ArcSingle = ({ value }) => {
             />
         </XYPlot>
     );
-};
-
-ArcSingle.propTypes = {
-    value: PropTypes.number.isRequired,
-};
+}
 
 export default ArcSingle;
