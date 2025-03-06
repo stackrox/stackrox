@@ -3,6 +3,8 @@ kind: Central
 metadata:
   name: stackrox-central-services
 spec:
+  imagePullSecrets:
+  - name: stackrox
   # Match the values set by deploy/ scripts.
   central:
     adminPasswordSecret:
