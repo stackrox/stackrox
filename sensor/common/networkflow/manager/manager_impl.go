@@ -43,8 +43,6 @@ import (
 const (
 	// Wait at least this long before determining that an unresolvable IP is "outside of the cluster".
 	clusterEntityResolutionWaitPeriod = 10 * time.Second
-	// Wait at least this long before giving up on resolving the container for a connection
-	maxContainerResolutionWaitPeriod = 2 * time.Minute
 
 	connectionDeletionGracePeriod = 5 * time.Minute
 )
@@ -604,16 +602,17 @@ func markConnectionClosed(conn *networkConnIndicator, enrichedConnections map[ne
 func handleContainerNotFound(conn *connection, firstSeen timestamp.MicroTS,
 	activeConnections map[connection]*networkConnIndicator,
 	now timestamp.MicroTS,
-) (activeConnToEnrich *networkConnIndicator, markRotten bool, err error) {
+) (activeConnToClose *networkConnIndicator, markRotten bool, err error) {
 	timeElapsedSinceFirstSeen := now.ElapsedSince(firstSeen)
-	log.Debugf("Can't find deployment information for container %s", conn.containerID)
 	failReason := fmt.Errorf("ContainerID %s unknown", conn.containerID)
-	if timeElapsedSinceFirstSeen <= maxContainerResolutionWaitPeriod {
-		return nil, false, multierror.Append(failReason, fmt.Errorf("time for container resolution (%s) not elapsed yet", maxContainerResolutionWaitPeriod))
+	if timeElapsedSinceFirstSeen <= env.ContainerIDResolutionGracePeriod.DurationSetting() {
+		return nil, false,
+			multierror.Append(failReason, fmt.Errorf("time for container resolution (%s) not elapsed yet", env.ContainerIDResolutionGracePeriod.DurationSetting()))
 	}
-
-	if activeConn, found := activeConnections[*conn]; found {
-		return activeConn, false, nil
+	// We cannot resolve the container ID for a longer time (longer than ContainerIDResolutionGracePeriod),
+	// so, let's assume the connection should be closed.
+	if activeConnToClose, found := activeConnections[*conn]; found {
+		return activeConnToClose, false, nil
 	}
 	// Only increment metric once the connection is marked rotten
 	flowMetrics.ContainerIDMisses.Inc()
@@ -634,9 +633,9 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		// 90% of the cases that container is Sensor itself before being restarted.
 		// However, there is no point in tracking a connection to or from a container that we do not recognize in Sensor,
 		// so we mark this connection as closed or rotten, depending on the details.
-		connToClose, markRotten, reason := handleContainerNotFound(conn, status.firstSeen, m.activeConnections, now)
+		connIndicatorToClose, markRotten, reason := handleContainerNotFound(conn, status.firstSeen, m.activeConnections, now)
 		if reason != nil {
-			log.Debugf("Enrichment failed: %v", reason)
+			log.Debugf("Not enriching: %v", reason)
 		}
 		if markRotten {
 			status.rotten = true
@@ -645,8 +644,8 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		// Expiration is marked by assigning a non-infinity last-seen timestamp in the enrichedConnections map.
 		// That means that the connection is considered closed (if we cannot find the container anymore,
 		// then, implicitly, the connection must be closed).
-		if connToClose != nil {
-			markConnectionClosed(connToClose, enrichedConnections, now)
+		if connIndicatorToClose != nil {
+			markConnectionClosed(connIndicatorToClose, enrichedConnections, now)
 			m.expireActiveConnection(conn)
 		}
 		return
@@ -826,7 +825,7 @@ func (m *networkFlowManager) enrichContainerEndpoint(ep *containerEndpoint, stat
 	container, ok := m.clusterEntities.LookupByContainerID(ep.containerID)
 	if !ok {
 		// Expire the connection if the container cannot be found within the clusterEntityResolutionWaitPeriod
-		if timeElapsedSinceFirstSeen > maxContainerResolutionWaitPeriod {
+		if timeElapsedSinceFirstSeen > env.ContainerIDResolutionGracePeriod.DurationSetting() {
 			if activeEp, found := m.activeEndpoints[*ep]; found {
 				enrichedEndpoints[*activeEp] = timestamp.Now()
 				delete(m.activeEndpoints, *ep)
@@ -875,7 +874,7 @@ func (m *networkFlowManager) enrichProcessListening(ep *containerEndpoint, statu
 	container, ok := m.clusterEntities.LookupByContainerID(ep.containerID)
 	if !ok {
 		// Expire the process if the container cannot be found within the clusterEntityResolutionWaitPeriod
-		if timeElapsedSinceFirstSeen > maxContainerResolutionWaitPeriod {
+		if timeElapsedSinceFirstSeen > env.ContainerIDResolutionGracePeriod.DurationSetting() {
 			status.rotten = true
 			// Only increment metric once the connection is marked rotten
 			flowMetrics.ContainerIDMisses.Inc()

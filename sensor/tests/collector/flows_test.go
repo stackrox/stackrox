@@ -222,6 +222,7 @@ func Test_SensorFlow_DeleteDeploymentEarly(t *testing.T) {
 	t.Setenv(resources.PastClusterEntitiesMemorySize.EnvVar(), strconv.Itoa(historySize))
 	t.Setenv(env.ConnectionRetryInitialInterval.EnvVar(), "1s")
 	t.Setenv(env.ConnectionRetryMaxInterval.EnvVar(), "2s")
+	t.Setenv(env.ContainerIDResolutionGracePeriod.EnvVar(), "1ms")
 
 	t.Setenv(resources.PastClusterEntitiesMemorySize.EnvVar(), "0")
 	t.Setenv("LOGLEVEL", "debug")
@@ -329,8 +330,6 @@ func Test_SensorFlow_DeleteDeploymentEarly(t *testing.T) {
 
 		t.Log("Collector message received in Sensor")
 
-		// We need to wait here at least 30s to make sure the network flows are processed
-		// time.Sleep(60 * time.Second)
 		time.Sleep(5 * time.Second)
 		ticker <- time.Now()
 
