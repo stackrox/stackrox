@@ -36,7 +36,7 @@ func Test_loggingMessage(t *testing.T) {
 
 	buf := make([]byte, 0, 1024)
 	w := bytes.NewBuffer(buf)
-	log := zap.New(
+	logger = zap.New(
 		zapcore.NewCore(zapcore.NewConsoleEncoder(zapcore.EncoderConfig{
 			MessageKey: "msg",
 			EncodeTime: func(t time.Time, pae zapcore.PrimitiveArrayEncoder) {},
@@ -49,7 +49,7 @@ func Test_loggingMessage(t *testing.T) {
 		Roles: []string{"Admin", "Test"},
 	}
 
-	LogTokenCreation(log, mockIdentity, md)
+	LogTokenCreation(mockIdentity, md)
 	assert.Equal(t, `An API token has been issued	`+
 		`{"err_code": "token-created", "api_token_name": "test", "api_token_id": "token-id", `+
 		`"roles": ["Admin", "Test"], "user": "username", "user_id": "0000-0000", `+
@@ -58,7 +58,7 @@ func Test_loggingMessage(t *testing.T) {
 
 	w.Reset()
 	mockIdentity.EXPECT().ExternalAuthProvider().Times(1).Return(nil)
-	LogTokenCreation(log, mockIdentity, md)
+	LogTokenCreation(mockIdentity, md)
 	assert.Equal(t, `An API token has been issued	`+
 		`{"err_code": "token-created", "api_token_name": "test", "api_token_id": "token-id", `+
 		`"roles": ["Admin", "Test"], "user": "username", "user_id": "0000-0000"}`+"\n",
