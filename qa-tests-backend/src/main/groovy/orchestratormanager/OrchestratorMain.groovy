@@ -61,6 +61,7 @@ interface OrchestratorMain {
     List<String> getDeploymentCount(String ns)
     Set<String> getDeploymentSecrets(Deployment deployment)
     LocalPortForward createPortForward(int port, Deployment deployment)
+    List<LocalPortForward> createCollectorPortForwards(int port)
     void scaleDeployment(String ns, String name, Integer replicas)
     List<String> getDeployments(String ns)
     boolean deploymentReady(String ns, String name)
