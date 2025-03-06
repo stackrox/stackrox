@@ -37,18 +37,18 @@ const (
 	//	(SELECT id, poduid FROM listening_endpoints LIMIT %d OFFSET %d)
 	//	DELETE FROM listening_endpoints WHERE id IN (SELECT id FROM temp where poduid is null)`
 
-	///////////////////////////////
+	/////////////////////////////// Batching
 
 	// Finds PLOPs without poduids and deletes them. This is done in batches.
 	deletePLOPsWithoutPoduid = `WITH temp AS
 		(SELECT id, poduid FROM listening_endpoints ORDER BY id LIMIT %d OFFSET %d)
 		DELETE FROM listening_endpoints WHERE id IN (SELECT id FROM temp where poduid is null)`
 
-	///////////////////////////////
+	/////////////////////////////// Simple
 
 	deletePLOPsWithoutPoduid2 = "DELETE FROM listening_endpoints where poduid is null"
 
-	///////////////////////////////
+	/////////////////////////////// Batching with starting id.
 
 	deletePLOPsWithoutPoduidPage = `WITH rows_to_delete AS (
 					    SELECT id
@@ -62,7 +62,7 @@ const (
 					WHERE id IN (SELECT id FROM rows_to_delete)
 					RETURNING id`
 
-	///////////////////////////////
+	/////////////////////////////// Batching with starting and ending ids.
 
 	getLastIdFromFirstPage = `(SELECT id FROM listening_endpoints ORDER BY id OFFSET %d LIMIT 1)
 				UNION ALL
