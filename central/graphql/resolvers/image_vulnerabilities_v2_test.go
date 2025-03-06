@@ -206,7 +206,7 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilitiesFixable()
 func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilitiesNonFixable() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	expected := int32(4)
+	expected := int32(6)
 
 	query, err := getFixableRawQuery(false)
 	s.NoError(err)
@@ -220,7 +220,7 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilitiesNonFixabl
 		s.Equal(false, fixable)
 	}
 	idList := getIDList(ctx, vulns)
-	s.ElementsMatch([]string{"cve-2019-1#", "cve-2019-2#", "cve-2017-1#", "cve-2017-2#"}, idList)
+	s.ElementsMatch([]string{cveIDMap[cve231], cveIDMap[cve331], cveIDMap[cve232], cveIDMap[cve332], cveIDMap[cve442], cveIDMap[cve542]}, idList)
 
 	count, err := s.resolver.ImageVulnerabilityCount(ctx, RawQuery{Query: &query})
 	s.NoError(err)
@@ -265,13 +265,13 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilitiesScoped() 
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
 	image := s.getImageResolver(ctx, "sha1")
-	expected := int32(3)
+	expected := int32(4)
 
 	vulns, err := image.ImageVulnerabilities(ctx, PaginatedQuery{})
 	s.NoError(err)
 	s.Equal(expected, int32(len(vulns)))
 	idList := getIDList(ctx, vulns)
-	s.ElementsMatch([]string{"cve-2018-1#", "cve-2019-1#", "cve-2019-2#"}, idList)
+	s.ElementsMatch([]string{cveIDMap[cve111], cveIDMap[cve121], cveIDMap[cve231], cveIDMap[cve331]}, idList)
 
 	count, err := image.ImageVulnerabilityCount(ctx, RawQuery{})
 	s.NoError(err)
@@ -279,7 +279,7 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilitiesScoped() 
 
 	counter, err := image.ImageVulnerabilityCounter(ctx, RawQuery{})
 	s.NoError(err)
-	checkVulnerabilityCounter(s.T(), counter, expected, 1, 1, 0, 1, 1)
+	checkVulnerabilityCounter(s.T(), counter, expected, 2, 2, 0, 1, 1)
 
 	image = s.getImageResolver(ctx, "sha2")
 	expected = int32(5)
@@ -288,7 +288,7 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilitiesScoped() 
 	s.NoError(err)
 	s.Equal(expected, int32(len(vulns)))
 	idList = getIDList(ctx, vulns)
-	s.ElementsMatch([]string{"cve-2018-1#", "cve-2019-1#", "cve-2019-2#", "cve-2017-1#", "cve-2017-2#"}, idList)
+	s.ElementsMatch([]string{cveIDMap[cve112], cveIDMap[cve232], cveIDMap[cve332], cveIDMap[cve442], cveIDMap[cve542]}, idList)
 
 	count, err = image.ImageVulnerabilityCount(ctx, RawQuery{})
 	s.NoError(err)
@@ -311,7 +311,7 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityMiss() {
 func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityHit() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	vulnID := graphql.ID("cve-2018-1#")
+	vulnID := graphql.ID(cveIDMap[cve111])
 
 	vuln, err := s.resolver.ImageVulnerability(ctx, IDQuery{ID: &vulnID})
 	s.NoError(err)
@@ -330,7 +330,7 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestTopImageVulnerability() {
 
 	image := s.getImageResolver(ctx, "sha1")
 
-	expected := graphql.ID("cve-2019-1#")
+	expected := graphql.ID(cveIDMap[cve231])
 	topVuln, err := image.TopImageVulnerability(ctx, RawQuery{})
 	s.NoError(err)
 	s.Equal(expected, topVuln.Id(ctx))
@@ -339,19 +339,19 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestTopImageVulnerability() {
 func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityImages() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	vuln := s.getImageVulnerabilityResolver(ctx, "cve-2018-1#")
+	vuln := s.getImageVulnerabilityResolver(ctx, cveIDMap[cve111])
 
 	images, err := vuln.Images(ctx, PaginatedQuery{})
 	s.NoError(err)
-	s.Equal(2, len(images))
+	s.Equal(1, len(images))
 	idList := getIDList(ctx, images)
-	s.ElementsMatch([]string{"sha1", "sha2"}, idList)
+	s.ElementsMatch([]string{"sha1"}, idList)
 
 	count, err := vuln.ImageCount(ctx, RawQuery{})
 	s.NoError(err)
 	s.Equal(int32(len(images)), count)
 
-	vuln = s.getImageVulnerabilityResolver(ctx, "cve-2017-1#")
+	vuln = s.getImageVulnerabilityResolver(ctx, cveIDMap[cve442])
 
 	images, err = vuln.Images(ctx, PaginatedQuery{})
 	s.NoError(err)
@@ -367,25 +367,25 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityImages() {
 func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityImageComponents() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	vuln := s.getImageVulnerabilityResolver(ctx, "cve-2018-1#")
+	vuln := s.getImageVulnerabilityResolver(ctx, cveIDMap[cve111])
 
 	comps, err := vuln.ImageComponents(ctx, PaginatedQuery{})
 	s.NoError(err)
-	s.Equal(2, len(comps))
+	s.Equal(1, len(comps))
 	idList := getIDList(ctx, comps)
-	s.ElementsMatch([]string{"comp1#0.9#", "comp2#1.1#"}, idList)
+	s.ElementsMatch([]string{componentIDMap[comp11]}, idList)
 
 	count, err := vuln.ImageComponentCount(ctx, RawQuery{})
 	s.NoError(err)
 	s.Equal(int32(len(comps)), count)
 
-	vuln = s.getImageVulnerabilityResolver(ctx, "cve-2017-1#")
+	vuln = s.getImageVulnerabilityResolver(ctx, cveIDMap[cve442])
 
 	comps, err = vuln.ImageComponents(ctx, PaginatedQuery{})
 	s.NoError(err)
 	s.Equal(1, len(comps))
 	idList = getIDList(ctx, comps)
-	s.ElementsMatch([]string{"comp4#1.0#"}, idList)
+	s.ElementsMatch([]string{componentIDMap[comp42]}, idList)
 
 	count, err = vuln.ImageComponentCount(ctx, RawQuery{})
 	s.NoError(err)
@@ -660,7 +660,7 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCo
 func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCountTagless() {
 	// TODO(ROX-27780): Defer until vuln requests updates are made
 	s.T().Skip()
-	
+
 	taglessImage := testImages()[1]
 	taglessImage.Id = "sha3"
 	taglessImage.Name.Tag = ""
