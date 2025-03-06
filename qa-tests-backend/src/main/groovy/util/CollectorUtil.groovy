@@ -11,6 +11,8 @@ import com.google.protobuf.util.JsonFormat
 
 import sensor.Collector
 
+import static util.Helpers.withRetry
+
 @Slf4j
 @CompileStatic
 class CollectorUtil {
@@ -55,12 +57,8 @@ class CollectorUtil {
 
         log.info "Waiting for Collector Config propagation (${portForwards.size()} pods)"
         int intervalSeconds = 1
-        int waitTime
-        for (waitTime = 0; waitTime <= timeout / intervalSeconds; waitTime++) {
-            if (portForwards.size() == 0) {
-                break
-            }
-
+        int waitTime = 0
+        withRetry(timeout, intervalSeconds) {
             // if a pod has the right config, remove it from the list
             // we need to check
             portForwards.removeAll {
@@ -68,13 +66,13 @@ class CollectorUtil {
                 def configTyped = (Collector.CollectorConfig) config
                 return configTyped.networking.externalIps.enabled.name() == state
             }
-            sleep intervalSeconds * 1000
+            assert portForwards.size() == 0
+            waitTime++
         }
 
-        def success = waitTime <= timeout / intervalSeconds
+        def success = portForwards.size() == 0
         if (success) {
-            def waitTimeSeconds = waitTime * intervalSeconds
-            log.info "Waited for ${waitTimeSeconds} seconds for Collector runtime configuration to be updated"
+            log.info "Waited for ${waitTime} seconds for Collector runtime configuration to be updated"
         } else {
             log.info "Waiting for Collector runtime configuration timed out after ${timeout} seconds"
         }
