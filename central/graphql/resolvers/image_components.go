@@ -95,7 +95,6 @@ type ImageComponentResolver interface {
 func (resolver *Resolver) ImageComponent(ctx context.Context, args IDQuery) (ImageComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageComponent")
 
-	log.Info("SHREWS -- ImageComponent")
 	// check permissions
 	if err := readImages(ctx); err != nil {
 		return nil, err
@@ -107,10 +106,8 @@ func (resolver *Resolver) ImageComponent(ctx context.Context, args IDQuery) (Ima
 		if err != nil {
 			return nil, err
 		}
-		log.Info("SHREWS -- ImageComponent -- 1")
 
 		ret, err := loader.FromID(ctx, string(*args.ID))
-		log.Info("SHREWS -- ImageComponent -- 2")
 		return resolver.wrapImageComponentV2WithContext(ctx, ret, true, err)
 	}
 	// get loader
@@ -127,7 +124,6 @@ func (resolver *Resolver) ImageComponent(ctx context.Context, args IDQuery) (Ima
 func (resolver *Resolver) ImageComponents(ctx context.Context, q PaginatedQuery) ([]ImageComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageComponents")
 
-	log.Info("SHREWS -- ImageComponents")
 	// check permissions
 	if err := readImages(ctx); err != nil {
 		return nil, err
@@ -185,7 +181,6 @@ func (resolver *Resolver) ImageComponents(ctx context.Context, q PaginatedQuery)
 // ImageComponentCount returns count of image components that match the input query
 func (resolver *Resolver) ImageComponentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageComponentCount")
-	log.Info("SHREWS -- ImageComponentCount")
 	// check permissions
 	if err := readImages(ctx); err != nil {
 		return 0, err
@@ -240,7 +235,6 @@ func (resolver *imageComponentResolver) componentQuery() *v1.Query {
 }
 
 func getDeploymentIDFromQuery(q *v1.Query) string {
-	log.Infof("SHREWS -- getDeploymentIDFromQuery %s", q.String())
 	if q == nil {
 		return ""
 	}
@@ -260,18 +254,14 @@ func getDeploymentIDFromQuery(q *v1.Query) string {
 }
 
 func getDeploymentScope(scopeQuery *v1.Query, contexts ...context.Context) string {
-	log.Info("SHREWS -- getDeploymentScope")
 	for _, ctx := range contexts {
 		if scope, ok := scoped.GetScope(ctx); ok && scope.Level == v1.SearchCategory_DEPLOYMENTS {
-			log.Infof("SHREWS -- 1 -- %v", scope.ID)
 			return scope.ID
 		} else if deploymentID := deploymentctx.FromContext(ctx); deploymentID != "" {
-			log.Infof("SHREWS -- 2 -- %v", deploymentID)
 			return deploymentID
 		}
 	}
 	if scopeQuery != nil {
-		log.Info("SHREWS -- 3")
 		return getDeploymentIDFromQuery(scopeQuery)
 	}
 	return ""
@@ -462,7 +452,6 @@ func (resolver *imageComponentResolver) ImageVulnerabilityCounter(ctx context.Co
 
 func (resolver *imageComponentResolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "ImageVulnerabilities")
-	log.Info("SHREWS -- ImageVulnerabilities")
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}
@@ -634,13 +623,11 @@ func (resolver *imageComponentV2Resolver) ActiveState(_ context.Context, _ RawQu
 
 func (resolver *imageComponentV2Resolver) DeploymentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "DeploymentCount")
-	log.Info("SHREWS -- DeploymentCount")
 	return resolver.root.DeploymentCount(resolver.imageComponentScopeContext(ctx), args)
 }
 
 func (resolver *imageComponentV2Resolver) Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "Deployments")
-	log.Infof("SHREWS -- Deployments %v", args.String())
 	return resolver.root.Deployments(resolver.imageComponentScopeContext(ctx), args)
 }
 
@@ -666,7 +653,6 @@ func (resolver *imageComponentV2Resolver) ImageVulnerabilityCounter(ctx context.
 
 func (resolver *imageComponentV2Resolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "ImageVulnerabilities")
-	log.Info("SHREWS -- ImageVulnerabilities")
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}
@@ -674,9 +660,6 @@ func (resolver *imageComponentV2Resolver) ImageVulnerabilities(ctx context.Conte
 	// Short path. Full image is embedded when image scan resolver is called.
 	embeddedComponent := embeddedobjs.ComponentFromContext(resolver.ctx)
 	if embeddedComponent == nil {
-		log.Infof("SHREWS -- ImageVulnerabilities -- %v", embeddedComponent)
-		log.Infof("SHREWS -- ImageVulnerabilities -- %v", ctx)
-		log.Infof("SHREWS -- ImageVulnerabilities -- %v", args)
 		return resolver.root.ImageVulnerabilities(resolver.imageComponentScopeContext(ctx), args)
 	}
 

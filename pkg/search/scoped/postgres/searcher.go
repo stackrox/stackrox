@@ -19,11 +19,9 @@ func WithScoping(searcher search.Searcher) search.Searcher {
 	return search.FuncSearcher{
 		SearchFunc: func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 			scopes, hasScope := scoped.GetAllScopes(ctx)
-			log.Infof("SHREWS -- scopes -- %v", scopes)
 			if hasScope {
 				var err error
 				q, err = scopeQuery(q, scopes)
-				log.Infof("SHREWS -- back form scopeQuery %v, %v", q.String(), err)
 				if err != nil || q == nil {
 					return nil, err
 				}
@@ -49,9 +47,7 @@ func scopeQuery(q *v1.Query, scopes []scoped.Scope) (*v1.Query, error) {
 	q.Pagination = nil
 	conjuncts := []*v1.Query{q}
 	for _, scope := range scopes {
-		log.Infof("SHREWS -- scopeQuery -- %s", scope.Level.String())
 		schema := mapping.GetTableFromCategory(scope.Level)
-		log.Infof("SHREWS -- schema -- %v", schema)
 		if schema == nil {
 			utils.Should(errors.Errorf("no schema registered for search category %s", scope.Level))
 			return q, nil
@@ -61,6 +57,5 @@ func scopeQuery(q *v1.Query, scopes []scoped.Scope) (*v1.Query, error) {
 	}
 	ret := search.ConjunctionQuery(conjuncts...)
 	ret.Pagination = pagination
-	log.Infof("SHREWS -- query %v", ret.String())
 	return ret, nil
 }

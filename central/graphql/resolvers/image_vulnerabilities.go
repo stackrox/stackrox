@@ -74,7 +74,6 @@ type ImageVulnerabilityResolver interface {
 func (resolver *Resolver) ImageVulnerability(ctx context.Context, args IDQuery) (ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerability")
 
-	log.Info("SHREWS -- ImageVulnerability")
 	// check permissions
 	if err := readImages(ctx); err != nil {
 		return nil, err
@@ -105,7 +104,6 @@ func (resolver *Resolver) ImageVulnerability(ctx context.Context, args IDQuery) 
 func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilities")
 
-	log.Info("SHREWS -- ImageVulnerabilities")
 	// check permissions
 	if err := readImages(ctx); err != nil {
 		return nil, err
@@ -117,9 +115,7 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 		return nil, err
 	}
 
-	log.Infof("SHREWS -- The query %q", query.String())
 	if features.FlattenCVEData.Enabled() {
-		log.Info("SHREWS -- ImageVulnerabilities -- loader")
 		// get loader
 		loader, err := loaders.GetImageCVEV2Loader(ctx)
 		if err != nil {
@@ -133,7 +129,6 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 		query.Selects = append(query.Selects, search.NewQuerySelect(search.CVE).Distinct().Proto())
 
 		vulns, err := loader.FromQuery(ctx, query)
-		log.Info("SHREWS -- ImageVulnerabilities -- got vulns")
 		cveResolvers, err := resolver.wrapImageCVEV2sWithContext(ctx, vulns, err)
 		if err != nil {
 			return nil, err
@@ -172,7 +167,6 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 // ImageVulnerabilityCount returns count of image vulnerabilities for the input query
 func (resolver *Resolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilityCount")
-	log.Infof("SHREWS -- ImageVulnerabilityCount -- query %v", args)
 	// check permissions
 	if err := readImages(ctx); err != nil {
 		return 0, err
@@ -207,8 +201,6 @@ func (resolver *Resolver) ImageVulnerabilityCount(ctx context.Context, args RawQ
 // ImageVulnerabilityCounter returns a VulnerabilityCounterResolver for the input query
 func (resolver *Resolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilityCounter")
-
-	log.Info("SHREWS -- ImageVulnerabilityCounter")
 
 	// check permissions
 	if err := readImages(ctx); err != nil {
@@ -277,7 +269,6 @@ func (resolver *Resolver) ImageVulnerabilityCounter(ctx context.Context, args Ra
 // TopImageVulnerability returns the most severe image vulnerability found in the scoped context
 func (resolver *Resolver) TopImageVulnerability(ctx context.Context, args RawQuery) (ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "TopImageVulnerability")
-	log.Info("SHREWS -- TopImageVulnerability")
 
 	// verify scoping
 	scope, ok := scoped.GetScope(ctx)
@@ -413,8 +404,6 @@ func (resolver *imageCVEResolver) EnvImpact(ctx context.Context) (float64, error
 
 func (resolver *imageCVEResolver) FixedByVersion(ctx context.Context) (string, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "FixedByVersion")
-
-	log.Info("SHREWS --FixedByVersion")
 
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
@@ -587,7 +576,6 @@ func (resolver *imageCVEResolver) ActiveState(ctx context.Context, args RawQuery
 	if !features.ActiveVulnMgmt.Enabled() {
 		return &activeStateResolver{}, nil
 	}
-	log.Info("SHREWS --ActiveState")
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "ActiveState")
 
 	if resolver.ctx == nil {
@@ -633,7 +621,6 @@ func (resolver *imageCVEResolver) ActiveState(ctx context.Context, args RawQuery
 
 func (resolver *imageCVEResolver) EffectiveVulnerabilityRequest(ctx context.Context) (*VulnerabilityRequestResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "EffectiveVulnerabilityRequest")
-	log.Info("SHREWS --EffectiveVulnerabilityRequest")
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}
@@ -666,7 +653,6 @@ func (resolver *imageCVEResolver) EffectiveVulnerabilityRequest(ctx context.Cont
 	if err != nil {
 		return nil, err
 	}
-	log.Info("SHREWS --EffectiveVulnerabilityRequest  -- OUT")
 	return resolver.root.wrapVulnerabilityRequest(req, nil)
 }
 
@@ -798,7 +784,6 @@ func (resolver *imageCVEResolver) Link(_ context.Context) string {
 }
 
 func (resolver *imageCVEResolver) PublishedOn(_ context.Context) (*graphql.Time, error) {
-	log.Info("SHREWS -- image_vulnerabilities.imageCVEResolver.PublishedOn")
 	return protocompat.ConvertTimestampToGraphqlTimeOrError(resolver.data.GetCveBaseInfo().GetPublishedOn())
 }
 
@@ -846,7 +831,6 @@ func (resolver *imageCVEV2Resolver) Link(_ context.Context) string {
 }
 
 func (resolver *imageCVEV2Resolver) PublishedOn(_ context.Context) (*graphql.Time, error) {
-	log.Info("SHREWS -- image_vulnerabilities.imageCVEV2Resolver.PublishedOn")
 	return protocompat.ConvertTimestampToGraphqlTimeOrError(resolver.data.GetCveBaseInfo().GetPublishedOn())
 }
 
@@ -872,7 +856,6 @@ func (resolver *imageCVEV2Resolver) Suppressed(_ context.Context) bool {
 
 func (resolver *imageCVEV2Resolver) EnvImpact(ctx context.Context) (float64, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "EnvImpact")
-	log.Info("SHREWS -- EnvImpact")
 	allCount, err := resolver.root.DeploymentCount(ctx, RawQuery{})
 	if err != nil || allCount == 0 {
 		return 0, err
@@ -890,7 +873,6 @@ func (resolver *imageCVEV2Resolver) EnvImpact(ctx context.Context) (float64, err
 
 func (resolver *imageCVEV2Resolver) FixedByVersion(ctx context.Context) (string, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "FixedByVersion")
-	log.Info("SHREWS -- FixedByVersion")
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}
@@ -908,10 +890,8 @@ func (resolver *imageCVEV2Resolver) FixedByVersion(ctx context.Context) (string,
 		return "", nil
 	}
 
-	log.Infof("SHREWS -- %v", resolver.data.GetId())
 	query := search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.data.GetId()).ProtoQuery()
 	cves, err := resolver.root.ImageCVEV2DataStore.SearchRawImageCVEs(resolver.ctx, query)
-	log.Infof("SHREWS -- ImageCVEs %v", cves)
 	if err != nil || len(cves) == 0 {
 		return "", err
 	}
@@ -1157,6 +1137,5 @@ func (resolver *imageCVEV2Resolver) imageVulnerabilityScopeContext(ctx context.C
 }
 
 func (resolver *imageCVEV2Resolver) getImageCVEQuery() *v1.Query {
-	log.Info("SHREWS -- getImageCVEQuery")
 	return search.NewQueryBuilder().AddExactMatches(search.CVE, resolver.data.GetCveBaseInfo().GetCve()).ProtoQuery()
 }

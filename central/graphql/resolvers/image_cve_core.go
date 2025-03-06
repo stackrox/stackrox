@@ -81,7 +81,6 @@ func (resolver *Resolver) wrapImageCVECoresWithContext(ctx context.Context, valu
 // Note: Client must explicitly pass observed/deferred CVEs.
 func (resolver *Resolver) ImageCVECount(ctx context.Context, q RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageCVEs")
-	log.Info("SHREWS -- ImageCVECount")
 
 	if err := readImages(ctx); err != nil {
 		return 0, err
@@ -102,7 +101,6 @@ func (resolver *Resolver) ImageCVECount(ctx context.Context, q RawQuery) (int32,
 // Note: Client must explicitly pass observed/deferred CVEs.
 func (resolver *Resolver) ImageCVEs(ctx context.Context, q PaginatedQuery) ([]*imageCVECoreResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageCVEs")
-	log.Info("SHREWS -- ImageCVEs")
 
 	if err := readImages(ctx); err != nil {
 		return nil, err
@@ -171,7 +169,6 @@ func (resolver *imageCVECoreResolver) Deployments(ctx context.Context, args stru
 
 func (resolver *imageCVECoreResolver) DistroTuples(ctx context.Context) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVECore, "DistroTuples")
-	log.Info("SHREWS -- DistroTuples")
 	var q PaginatedQuery
 	if features.FlattenCVEData.Enabled() {
 		// TODO:  Look at this to see if we need to get a list of CVE names instead
@@ -204,7 +201,6 @@ func (resolver *imageCVECoreResolver) FirstDiscoveredInSystem(_ context.Context)
 }
 
 func (resolver *imageCVECoreResolver) PublishedOn(_ context.Context) *graphql.Time {
-	log.Info("SHREWS -- image_cve_core.PublishedOn")
 	ts := resolver.data.GetPublishDate()
 	if ts == nil {
 		return nil

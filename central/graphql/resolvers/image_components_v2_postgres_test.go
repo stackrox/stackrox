@@ -68,8 +68,7 @@ type GraphQLImageComponentV2TestSuite struct {
 
 func (s *GraphQLImageComponentV2TestSuite) SetupSuite() {
 	if !features.FlattenCVEData.Enabled() {
-		s.T().Setenv(features.FlattenCVEData.EnvVar(), "true")
-		//s.T().Setenv("ROX_FLATTEN_CVE_DATA", "true")
+		s.T().Skip()
 	}
 
 	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))

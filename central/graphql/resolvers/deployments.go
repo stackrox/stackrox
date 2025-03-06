@@ -67,7 +67,6 @@ func init() {
 // Deployment returns a GraphQL resolver for a given id
 func (resolver *Resolver) Deployment(ctx context.Context, args struct{ *graphql.ID }) (*deploymentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Deployment")
-	log.Info("SHREWS")
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
 	}
@@ -78,7 +77,6 @@ func (resolver *Resolver) Deployment(ctx context.Context, args struct{ *graphql.
 // Deployments returns GraphQL resolvers all deployments
 func (resolver *Resolver) Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Deployments")
-	log.Info("SHREWS")
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
 	}
@@ -93,7 +91,6 @@ func (resolver *Resolver) Deployments(ctx context.Context, args PaginatedQuery) 
 // DeploymentCount returns count all deployments across infrastructure
 func (resolver *Resolver) DeploymentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "DeploymentCount")
-	log.Info("SHREWS")
 	if err := readDeployments(ctx); err != nil {
 		return 0, err
 	}

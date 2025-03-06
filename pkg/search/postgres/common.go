@@ -478,7 +478,6 @@ func standardizeQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *w
 }
 
 func handleImageCveEdgesTableInJoins(schema *walker.Schema, joins []Join) ([]Join, error) {
-	log.Infof("SHREWS -- In special image join.  Why?")
 	// By avoiding ImageCveEdgesSchema as long as possible in getJoinsAndFields, we should have ensured that
 	// unless ImageCveEdgesSchema is the src schema, it is not a leftTable in any of the inner joins. This means that
 	// we have found an alternative route (via image_components) to join image and image_cves tables and if present,
