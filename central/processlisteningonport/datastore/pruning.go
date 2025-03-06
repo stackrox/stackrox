@@ -75,7 +75,10 @@ const (
 
 ///////////////////////////////
 
-	getLastIdFromFirstPage = "SELECT id FROM listening_endpoints ORDER BY id OFFSET %d LIMIT 1"
+	getLastIdFromFirstPage = `(SELECT id FROM listening_endpoints ORDER BY id OFFSET %d LIMIT 1)
+				UNION ALL
+				(SELECT id FROM listening_endpoints ORDER BY id DESC LIMIT 1)
+				LIMIT 1`
 
 	getLastIdFromPage = `WITH tmp as (
 				SELECT id FROM listening_endpoints WHERE id > '%s' ORDER BY id LIMIT %d
