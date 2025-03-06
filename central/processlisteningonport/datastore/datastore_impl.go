@@ -819,7 +819,9 @@ func (ds *datastoreImpl) RemovePLOPsWithoutPodUIDFirstPage(ctx context.Context, 
 	ds.mutex.Lock()
 	defer ds.mutex.Unlock()
 
-	query := fmt.Sprintf(deletePLOPsWithoutPoduidLimit, limit)
+	firstId := "00000000-0000-0000-0000-000000000000"
+
+	query := fmt.Sprintf(deletePLOPsWithoutPoduidPage, firstId, limit)
 	rows, err := ds.pool.Query(ctx, query)
 
         if err != nil {
