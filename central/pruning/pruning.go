@@ -496,7 +496,8 @@ func (g *garbageCollectorImpl) removeOrphanedProcessBaselines(deployments set.Fr
 }
 
 // removeOrphanedPLOPs: cleans up ProcessListeningOnPort objects that are expired
-// or have a PodUid and belong to a deployment or pod that does not exist.
+// or have a PodUid and belong to a deployment or pod that does not exist or have
+// no PodUid.
 func (g *garbageCollectorImpl) removeOrphanedPLOPs() {
 	defer metrics.SetPruningDuration(time.Now(), "PLOPs")
 	prunedCount := g.plops.PruneOrphanedPLOPs(pruningCtx, orphanWindow)
@@ -508,6 +509,12 @@ func (g *garbageCollectorImpl) removeOrphanedPLOPs() {
 		log.Errorf("error removing PLOPs with no matching process indicator or process information: %v", err)
 	}
 	log.Infof("[PLOP pruning] Pruning of %d orphaned PLOPs with no matching process indicator or process information complete", prunedCount)
+
+	prunedCount, err = g.plops.RemovePLOPsWithoutPodUID(pruningCtx)
+	if err != nil {
+		log.Errorf("error removing PLOPs without poduid: %v", err)
+	}
+	log.Infof("[PLOP pruning] Prunned %d orphaned PLOPs with no poduid", prunedCount)
 }
 
 func (g *garbageCollectorImpl) removeExpiredAdministrationEvents(config *storage.PrivateConfig) {
