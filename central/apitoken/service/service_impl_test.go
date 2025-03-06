@@ -8,6 +8,7 @@ import (
 	roleMock "github.com/stackrox/rox/central/role/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/mocks"
@@ -50,4 +51,36 @@ func TestServiceImpl_ListAllowedRoles_SortsRoleAlphabetically(t *testing.T) {
 
 	expected := []string{"Admin", "Analyst", "Writer"}
 	assert.Equal(t, expected, actual.RoleNames)
+}
+
+func Test_loggingMessage(t *testing.T) {
+	ap, err := authproviders.NewProvider(
+		authproviders.WithID("test-provider"),
+		authproviders.WithName("test-provider-name"),
+		authproviders.WithType("test"),
+	)
+	require.NoError(t, err)
+	ui := &storage.UserInfo{
+		Username:     "username",
+		FriendlyName: "friendly name",
+	}
+
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockIdentity := mocks.NewMockIdentity(mockCtrl)
+	mockIdentity.EXPECT().User().Times(2).Return(ui)
+	mockIdentity.EXPECT().UID().Times(2).Return("0000-0000")
+	mockIdentity.EXPECT().ExternalAuthProvider().Times(1).Return(ap)
+
+	md := &storage.TokenMetadata{
+		Name:  "test",
+		Roles: []string{"Admin", "Test"},
+	}
+
+	basicInfo := `An API token "test" with roles [Admin Test] has been issued by user "username" (ID 0000-0000).`
+	assert.Equal(t, basicInfo+` User auth-provider "test-provider-name" ("test", ID test-provider).`,
+		logTokenIssued(mockIdentity, md))
+
+	mockIdentity.EXPECT().ExternalAuthProvider().Times(1).Return(nil)
+	assert.Equal(t, basicInfo, logTokenIssued(mockIdentity, md))
 }
