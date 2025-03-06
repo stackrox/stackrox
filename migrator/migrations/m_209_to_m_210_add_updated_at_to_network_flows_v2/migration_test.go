@@ -48,7 +48,7 @@ func TestMigration(t *testing.T) {
 func (s *migrationTestSuite) SetupSuite() {
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.db = pghelper.ForT(s.T(), false)
-	// TODO(dont-merge): Create the schemas and tables required for the pre-migration dataset push to DB
+
 	pgutils.CreateTableFromModel(context.Background(), s.db.GetGormDB(), old.CreateTableNetworkFlowsStmt)
 	s.oldStore1 = previous.New(s.db.DB, cluster1)
 	s.oldStore2 = previous.New(s.db.DB, cluster2)
@@ -59,13 +59,10 @@ func (s *migrationTestSuite) TearDownSuite() {
 }
 
 func (s *migrationTestSuite) TestMigration() {
-	// TODO(dont-merge): instantiate any store required for the pre-migration dataset push to DB
 	ctx, cancel := context.WithTimeout(s.ctx, 5*time.Minute)
 	defer cancel()
 	s.addFlows(ctx, s.oldStore1, cluster1, cluster1Count)
 	s.addFlows(ctx, s.oldStore2, cluster2, cluster2Count)
-
-	// TODO(dont-merge): push the pre-migration dataset to DB
 
 	dbs := &types.Databases{
 		GormDB:     s.db.GetGormDB(),
@@ -87,17 +84,7 @@ func (s *migrationTestSuite) TestMigration() {
 	s.Assert().NoError(err)
 	s.Equal(cluster2Count, len(flows2))
 	s.assertUpdatedAt(flows2)
-	// TODO(dont-merge): instantiate any store required for the post-migration dataset pull from DB
-
-	// TODO(dont-merge): pull the post-migration dataset from DB
-
-	// TODO(dont-merge): validate that the post-migration dataset has the expected content
-
-	// TODO(dont-merge): validate that pre-migration queries and statements execute against the
-	// post-migration database to ensure backwards compatibility
 }
-
-// TODO(dont-merge): remove any pending TODO
 
 func (s *migrationTestSuite) addFlows(ctx context.Context, store previous.FlowStore, clusterID string, count int) {
 	flows := make([]*storage.NetworkFlow, 0, count)
