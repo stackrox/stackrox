@@ -1,8 +1,8 @@
 module github.com/stackrox/rox/operator/tools/operator-sdk
 
-go 1.23
+go 1.23.0
 
-toolchain go1.23.2
+toolchain go1.23.6
 
 require (
 	github.com/operator-framework/operator-lifecycle-manager v0.30.0
@@ -215,7 +215,7 @@ require (
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56 // indirect
 	golang.org/x/mod v0.21.0 // indirect
 	golang.org/x/net v0.33.0 // indirect
-	golang.org/x/oauth2 v0.23.0 // indirect
+	golang.org/x/oauth2 v0.27.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
 	golang.org/x/sys v0.28.0 // indirect
 	golang.org/x/term v0.27.0 // indirect
