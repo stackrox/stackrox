@@ -648,7 +648,8 @@ func (ds *datastoreImpl) RemovePLOPsWithoutProcessIndicatorOrProcessInfo(ctx con
 	return int64(len(plopsToDelete)), nil
 }
 
-///////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////// Batching
+// As the offset increases the time taken by the query tends to increase and the 10 second time limit is reached
 
 func (ds *datastoreImpl) RemovePLOPsWithoutPodUIDWithOffset(ctx context.Context, page int, offset int) (int64, error) {
 	ds.mutex.Lock()
@@ -682,7 +683,8 @@ func (ds *datastoreImpl) RemovePLOPsWithoutPodUIDBatch(ctx context.Context) (int
 	return numDeletedTotal, nil
 }
 
-///////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////// Simple
+// Crashes due to reaching 10 second time limit
 
 func (ds *datastoreImpl) RemovePLOPsWithoutPodUIDSimple(ctx context.Context) (int64, error) {
 	ds.mutex.Lock()
@@ -698,7 +700,9 @@ func (ds *datastoreImpl) RemovePLOPsWithoutPodUIDSimple(ctx context.Context) (in
 
 }
 
-///////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////// Two parts
+// Separates getting the ids of the PLOPs that need to be deleted and deleting them.
+// Either one can still reach the 10 second time limit and crash.
 
 func (ds *datastoreImpl) getPLOPsWithoutPodUIDs(ctx context.Context) ([]string, error) {
 	ds.mutex.Lock()
@@ -746,7 +750,8 @@ func (ds *datastoreImpl) RemovePLOPsWithoutPodUIDTwoParts(ctx context.Context) (
 	return int64(len(plopsToDelete)), nil
 }
 
-///////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////// Walk
+// Since the mutex is locked the entire time it runs up against the 10 second limit and crashes.
 
 func (ds *datastoreImpl) RemovePLOPsWithoutPodUIDWalk(ctx context.Context) (int64, error) {
 	ds.mutex.Lock()
@@ -792,7 +797,9 @@ func (ds *datastoreImpl) RemovePLOPsWithoutPodUIDWalk(ctx context.Context) (int6
 	return int64(totalCount), nil
 }
 
-///////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////// Batching with starting id.
+// Works well when there many rows that need to be pruned, but not well when there are
+// a large number of rows none of which needs to be pruned
 
 func (ds *datastoreImpl) RemovePLOPsWithoutPodUIDPage(ctx context.Context) (int64, error) {
 	return pgutils.Retry2(ctx, func() (int64, error) {
@@ -879,7 +886,8 @@ func (ds *datastoreImpl) readRowsForDeletion(ctx context.Context, rows pgx.Rows)
 	return nrows, id, nil
 }
 
-///////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////// Batching with starting and ending ids.
+// This passes all tests and the solution I want to go with.
 
 func (ds *datastoreImpl) RemovePLOPsWithoutPodUIDGetPages(ctx context.Context) (int64, error) {
 	return pgutils.Retry2(ctx, func() (int64, error) {
