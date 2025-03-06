@@ -44,4 +44,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_206_to_m_207_add_default_policy_edge"
 	_ "github.com/stackrox/rox/migrator/migrations/m_207_to_m_208_initialize_nvd_cvss"
 	_ "github.com/stackrox/rox/migrator/migrations/m_208_to_m_209_policy_updates_for_4_6"
+	_ "github.com/stackrox/rox/migrator/migrations/m_209_to_m_210_add_updated_at_to_network_flows_v2"
 )
