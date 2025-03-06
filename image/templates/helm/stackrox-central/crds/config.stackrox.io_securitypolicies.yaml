@@ -98,6 +98,8 @@ spec:
                         scope:
                           properties:
                             cluster:
+                              description: Cluster is either the name or the ID of
+                                the cluster that this scope applies to
                               type: string
                             label:
                               properties:
@@ -228,6 +230,8 @@ spec:
                 items:
                   properties:
                     cluster:
+                      description: Cluster is either the name or the ID of the cluster
+                        that this scope applies to
                       type: string
                     label:
                       properties:
