@@ -22,16 +22,11 @@ func Test_loggingMessage(t *testing.T) {
 		authproviders.WithType("test-provider"),
 	)
 	require.NoError(t, err)
-	ui := &storage.UserInfo{
-		Username:     "username",
-		FriendlyName: "friendly name",
-	}
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	mockIdentity := mocks.NewMockIdentity(mockCtrl)
-	mockIdentity.EXPECT().User().Times(2).Return(ui)
-	mockIdentity.EXPECT().UID().Times(2).Return("0000-0000")
+	mockIdentity.EXPECT().UID().Times(2).Return("sso:0000-0000:admin")
 	mockIdentity.EXPECT().ExternalAuthProvider().Times(1).Return(ap)
 
 	buf := make([]byte, 0, 1024)
@@ -50,17 +45,17 @@ func Test_loggingMessage(t *testing.T) {
 	}
 
 	LogTokenCreation(mockIdentity, md)
-	assert.Equal(t, `An API token has been issued	`+
+	assert.Equal(t, `An API token has been created	`+
 		`{"err_code": "token-created", "api_token_name": "test", "api_token_id": "token-id", `+
-		`"roles": ["Admin", "Test"], "user": "username", "user_id": "0000-0000", `+
-		`"user_auth_provider": "test-provider \"provider-name\" 1234-5678"}`+"\n",
+		`"roles": ["Admin", "Test"], "user_id": "sso:0000-0000:admin", `+
+		`"user_auth_provider": "test-provider provider-name"}`+"\n",
 		w.String())
 
 	w.Reset()
 	mockIdentity.EXPECT().ExternalAuthProvider().Times(1).Return(nil)
 	LogTokenCreation(mockIdentity, md)
-	assert.Equal(t, `An API token has been issued	`+
+	assert.Equal(t, `An API token has been created	`+
 		`{"err_code": "token-created", "api_token_name": "test", "api_token_id": "token-id", `+
-		`"roles": ["Admin", "Test"], "user": "username", "user_id": "0000-0000"}`+"\n",
+		`"roles": ["Admin", "Test"], "user_id": "sso:0000-0000:admin"}`+"\n",
 		w.String())
 }
