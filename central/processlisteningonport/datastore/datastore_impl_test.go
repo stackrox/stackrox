@@ -2365,7 +2365,7 @@ func (suite *PLOPDataStoreTestSuite) makeRandomPlopsStorage(nport int, nprocess 
 			for port := 0; port < nport; port++ {
 
 				plopTCP := &storage.ProcessListeningOnPortStorage{
-					Id:		    uuid.NewV4().String(),
+					Id:                 uuid.NewV4().String(),
 					Port:               uint32(port),
 					Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
 					CloseTimestamp:     nil,
@@ -2377,7 +2377,7 @@ func (suite *PLOPDataStoreTestSuite) makeRandomPlopsStorage(nport int, nprocess 
 					PodUid:             podUid,
 				}
 				plopUDP := &storage.ProcessListeningOnPortStorage{
-					Id:		    uuid.NewV4().String(),
+					Id:                 uuid.NewV4().String(),
 					Port:               uint32(port),
 					Protocol:           storage.L4Protocol_L4_PROTOCOL_UDP,
 					CloseTimestamp:     nil,
@@ -2879,7 +2879,7 @@ func (suite *PLOPDataStoreTestSuite) RemovePLOPsWithoutPodUIDScale(nport int, np
 	suite.upsertTooMany(plopObjects)
 
 	plopCount, err := suite.store.Count(suite.hasReadCtx, search.EmptyQuery())
-	suite.Equal(plopCount, 2 * nport * nprocess * npod)
+	suite.Equal(plopCount, 2*nport*nprocess*npod)
 	suite.NoError(err)
 
 	start := time.Now()
@@ -2933,7 +2933,7 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUIDScaleRaceCondit
 	go func() {
 		defer wg.Done()
 		iterations := 3
-		for i := 0 ; i < iterations ; i++ {
+		for i := 0; i < iterations; i++ {
 			nport := 30
 			nprocess := 30
 			npod := 30
@@ -2943,7 +2943,7 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUIDScaleRaceCondit
 				p := rand.Float32()
 				if p < 0.5 {
 					plop.PodUid = ""
-					plopsWithoutPodUids += 2
+					plopsWithoutPodUids += 1
 				} else {
 					plop.PodUid = uuid.NewV4().String()
 				}
@@ -2981,5 +2981,11 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUIDScaleRaceCondit
 	suite.NoError(err)
 	totalPrunedCount += int(prunedCount)
 
-	suite.Equal(int(plopsWithoutPodUids), totalPrunedCount)
+	// Each PLOP is opened and closed. If a PLOP is opened then pruned, then closed,
+	// and pruned again, then it will be pruned twice. If a PLOP is opened, then closed,
+	// and pruned, then it will be pruned once. Therefore the number of rows pruned will
+	// be between the number of PLOPs that don't have poduids that were added and twice
+	// that number.
+	suite.GreaterOrEqual(int(plopsWithoutPodUids), totalPrunedCount/2)
+	suite.LessOrEqual(int(plopsWithoutPodUids), totalPrunedCount)
 }
