@@ -2,13 +2,13 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"slices"
 	"strings"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/apitoken/backend"
+	"github.com/stackrox/rox/central/apitoken/creation"
 	roleDS "github.com/stackrox/rox/central/role/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -123,25 +123,12 @@ func (s *serviceImpl) GenerateToken(ctx context.Context, req *v1.GenerateTokenRe
 		return nil, err
 	}
 
-	logging.LoggerForModule().Info(logTokenIssued(id, metadata))
+	creation.LogTokenCreation(logging.LoggerForModule(), id, metadata)
 
 	return &v1.GenerateTokenResponse{
 		Token:    token,
 		Metadata: metadata,
 	}, nil
-}
-
-func logTokenIssued(id authn.Identity, md *storage.TokenMetadata) string {
-	const baseInfoTemplate = "An API token %q with roles %v has been issued by user %q (ID %s)."
-	if ap := id.ExternalAuthProvider(); ap != nil {
-		return fmt.Sprintf(baseInfoTemplate+" User auth-provider %q (%q, ID %s).",
-			md.Name, md.Roles,
-			id.User().GetUsername(), id.UID(),
-			ap.Name(), ap.Type(), ap.ID())
-	}
-	return fmt.Sprintf(baseInfoTemplate,
-		md.Name, md.Roles,
-		id.User().GetUsername(), id.UID())
 }
 
 func (s *serviceImpl) ListAllowedTokenRoles(ctx context.Context, _ *v1.Empty) (*v1.ListAllowedTokenRolesResponse, error) {
