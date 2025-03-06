@@ -59,6 +59,7 @@ jobs:
       with:
         ref: ${{ steps.pr-metadata.outputs.branch }}
         fetch-depth: 0
+        token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
 
     - name: Configure Git
       run: |
@@ -72,4 +73,4 @@ jobs:
     - uses: ad-m/github-push-action@v0.8.0
       with:
         branch: ${{ steps.pr-metadata.outputs.branch }}
-        github_token: ${{ secrets.GITHUB_TOKEN }}
+        github_token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
