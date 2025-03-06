@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"slices"
 	"strings"
 
@@ -19,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sliceutils"
@@ -121,10 +123,25 @@ func (s *serviceImpl) GenerateToken(ctx context.Context, req *v1.GenerateTokenRe
 		return nil, err
 	}
 
+	logging.LoggerForModule().Info(logTokenIssued(id, metadata))
+
 	return &v1.GenerateTokenResponse{
 		Token:    token,
 		Metadata: metadata,
 	}, nil
+}
+
+func logTokenIssued(id authn.Identity, md *storage.TokenMetadata) string {
+	const baseInfoTemplate = "An API token %q with roles %v has been issued by user %q (ID %s)."
+	if ap := id.ExternalAuthProvider(); ap != nil {
+		return fmt.Sprintf(baseInfoTemplate+" User auth-provider %q (%q, ID %s).",
+			md.Name, md.Roles,
+			id.User().GetUsername(), id.UID(),
+			ap.Name(), ap.Type(), ap.ID())
+	}
+	return fmt.Sprintf(baseInfoTemplate,
+		md.Name, md.Roles,
+		id.User().GetUsername(), id.UID())
 }
 
 func (s *serviceImpl) ListAllowedTokenRoles(ctx context.Context, _ *v1.Empty) (*v1.ListAllowedTokenRolesResponse, error) {
