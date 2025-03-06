@@ -5,14 +5,11 @@ import (
 
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/utils"
 )
-
-var log = logging.LoggerForModule()
 
 // WithScoping allows the input searcher to be scoped.
 func WithScoping(searcher search.Searcher) search.Searcher {
