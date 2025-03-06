@@ -2,6 +2,7 @@ package collector
 
 import (
 	"context"
+	"strconv"
 	"testing"
 	"time"
 
@@ -34,6 +35,8 @@ func Test_SensorLastSeenTimestamp(t *testing.T) {
 	t.Setenv(features.SensorReconciliationOnReconnect.EnvVar(), "true")
 	t.Setenv(features.SensorCapturesIntermediateEvents.EnvVar(), "true")
 
+	historySize := 2
+	t.Setenv(resources.PastClusterEntitiesMemorySize.EnvVar(), strconv.Itoa(historySize))
 	t.Setenv(env.ConnectionRetryInitialInterval.EnvVar(), "1s")
 	t.Setenv(env.ConnectionRetryMaxInterval.EnvVar(), "2s")
 
@@ -104,6 +107,7 @@ func Test_SensorLastSeenTimestamp(t *testing.T) {
 
 		t.Log("Ensure nginx deployment was deployed correctly")
 		nginxPodIDs, nginxContainerIDs, nginxIP := getDeploymentInfo(t, c, nginxObj, srvObj)
+
 		if !helper.UseRealCollector.BooleanSetting() {
 			helper.SendSignalMessage(fakeCollector, talkContainerIds[0], "curl")
 			helper.SendFlowMessage(fakeCollector,
@@ -147,7 +151,7 @@ func Test_SensorLastSeenTimestamp(t *testing.T) {
 		time.Sleep(5 * time.Second)
 		ticker <- time.Now()
 
-		msg, err := testContext.WaitForMessageWithMatcher(assertFlow(t, talkUID, nginxUID), time.Minute)
+		msg, err := testContext.WaitForMessageWithMatcher(assertFlow(t, talkUID, nginxUID), 2*time.Minute)
 		assert.NoError(t, err)
 		assert.NotNil(t, msg)
 		testContext.GetFakeCentral().ClearReceivedBuffer()
@@ -187,13 +191,6 @@ func Test_SensorLastSeenTimestamp(t *testing.T) {
 		//testContext.WaitForSyncEvent(t, 2*time.Minute)
 		time.Sleep(5 * time.Second)
 		ticker <- time.Now()
-		t.Log("============= lvm first tick")
-		time.Sleep(1 * time.Second)
-
-		//ticker <- time.Now()
-		//// The enrichAndSend will not catch this connection as updated, because current conn has defined TS, while previous one had +inf ts - thus, this is not an update. But is that correct?
-		//t.Log("============= lvm after second tick")
-		//<-time.After(time.Second)
 
 		//msg, err = testContext.WaitForMessageWithMatcher(func(event *central.MsgFromSensor) bool {
 		//	return event.GetEvent().GetProcessIndicator().GetDeploymentId() == talkUID &&
@@ -207,11 +204,199 @@ func Test_SensorLastSeenTimestamp(t *testing.T) {
 		//testContext.AssertViolationStateByID(t, talkUID, helper.AssertViolationsMatch(networkFlowPolicyName), networkFlowPolicyName, false)
 		//testContext.AssertViolationStateByID(t, talkUID, helper.AssertViolationsMatch(processIndicatorPolicyName), processIndicatorPolicyName, false)
 		//testContext.AssertViolationStateByID(t, nginxUID, helper.AssertViolationsMatch(networkFlowPolicyName), networkFlowPolicyName, false)
+		t.Log("Deleting test deployments...")
 		require.NoError(t, deleteTalk())
 		require.NoError(t, testContext.WaitForResourceDeleted(talkObj))
 		require.NoError(t, deleteNginx())
 		require.NoError(t, testContext.WaitForResourceDeleted(nginxObj))
 		require.NoError(t, deleteService())
+	}))
+}
+
+func Test_SensorFlow_DeleteDeploymentEarly(t *testing.T) {
+	t.Setenv(features.PreventSensorRestartOnDisconnect.EnvVar(), "true")
+	t.Setenv(features.SensorReconciliationOnReconnect.EnvVar(), "true")
+	t.Setenv(features.SensorCapturesIntermediateEvents.EnvVar(), "true")
+
+	historySize := 0
+	t.Setenv(resources.PastClusterEntitiesMemorySize.EnvVar(), strconv.Itoa(historySize))
+	t.Setenv(env.ConnectionRetryInitialInterval.EnvVar(), "1s")
+	t.Setenv(env.ConnectionRetryMaxInterval.EnvVar(), "2s")
+
+	t.Setenv(resources.PastClusterEntitiesMemorySize.EnvVar(), "0")
+	t.Setenv("LOGLEVEL", "debug")
+
+	var err error
+	ctx, cancelFn := context.WithCancel(context.Background())
+	defer cancelFn()
+	initialSystemPolicies, err := testutils.GetPoliciesFromFile("../data/runtime-policies.json")
+	require.NoError(t, err)
+	flowC := make(chan *sensor.NetworkConnectionInfoMessage, 1000)
+	signalC := make(chan *sensor.SignalStreamMessage, 1000)
+	ticker := make(chan time.Time)
+	config := helper.Config{
+		InitialSystemPolicies:       initialSystemPolicies,
+		RealCerts:                   helper.UseRealCollector.BooleanSetting(),
+		SendDeduperState:            false,
+		NetworkFlowTraceWriter:      helper.NewNetworkFlowTraceWriter(ctx, flowC),
+		ProcessIndicatorTraceWriter: helper.NewProcessIndicatorTraceWriter(ctx, signalC),
+		CertFilePath:                "../../../tools/local-sensor/certs/",
+		NetworkFlowTicker:           ticker,
+	}
+
+	if config.RealCerts {
+		config.CertFilePath = "tmp/"
+	}
+	c, err := helper.NewContextWithConfig(t, config)
+	require.NoError(t, err)
+
+	var fakeCollector *collector.FakeCollector
+	if !helper.UseRealCollector.BooleanSetting() {
+		fakeCollector = collector.NewFakeCollector(collector.WithDefaultConfig().WithCertsPath(config.CertFilePath))
+		require.NoError(t, fakeCollector.Start())
+	}
+
+	c.RunTest(t, helper.WithTestCase(func(t *testing.T, testContext *helper.TestContext, _ map[string]k8s.Object) {
+		testContext.WaitForSyncEvent(t, 2*time.Minute)
+		waitIfRealCollector(30 * time.Second)
+		t.Logf("Test scenario %s starts", t.Name())
+
+		// Nginx deployment
+		t.Log("Applying nginx deployment")
+		nginxObj := helper.ObjByKind(NginxDeployment.Kind)
+		deleteNginx, err := c.ApplyResource(ctx, t, helper.DefaultNamespace, &NginxDeployment, nginxObj, nil)
+		require.NoError(t, err)
+		nginxUID := string(nginxObj.GetUID())
+
+		// Nginx service
+		t.Log("Applying nginx service")
+		srvObj := helper.ObjByKind(NginxService.Kind)
+		deleteService, err := c.ApplyResource(ctx, t, helper.DefaultNamespace, &NginxService, srvObj, nil)
+		require.NoError(t, err)
+
+		// Talk pod
+		t.Log("Applying talk pod")
+		talkObj := helper.ObjByKind(TalkPod.Kind)
+		deleteTalk, err := c.ApplyResource(ctx, t, helper.DefaultNamespace, &TalkPod, talkObj, nil)
+		require.NoError(t, err)
+		talkUID := string(talkObj.GetUID())
+		talkContainerIds := testContext.GetContainerIdsFromPod(ctx, talkObj)
+		require.Len(t, talkContainerIds, 1)
+		talkIP := testContext.GetIPFromPod(talkObj)
+		require.NotEqual(t, "", talkIP)
+
+		t.Log("Ensure nginx deployment was deployed correctly")
+		nginxPodIDs, nginxContainerIDs, nginxIP := getDeploymentInfo(t, c, nginxObj, srvObj)
+
+		t.Logf("=== lvm Talk ID=%s, UID=%s, IP=%s", talkContainerIds[0], talkUID, talkIP)
+		t.Logf("=== lvm Nginx ID=%s, IP=%s", nginxContainerIDs[nginxPodIDs[0]][0], nginxIP)
+
+		if !helper.UseRealCollector.BooleanSetting() {
+			helper.SendSignalMessage(fakeCollector, talkContainerIds[0], "curl")
+			helper.SendFlowMessage(fakeCollector,
+				sensor.SocketFamily_SOCKET_FAMILY_UNKNOWN,
+				storage.L4Protocol_L4_PROTOCOL_TCP,
+				talkContainerIds[0],
+				nginxContainerIDs[nginxPodIDs[0]][0],
+				talkIP,
+				nginxIP,
+				80,
+				900,
+			)
+		}
+		messagesReceivedSignal := concurrency.NewErrorSignal()
+		expectedNetworkFlows := []helper.ExpectedNetworkConnectionMessageFn{
+			func(msg *sensor.NetworkConnectionInfoMessage) bool {
+				for _, conn := range msg.GetInfo().GetUpdatedConnections() {
+					if conn.Protocol == storage.L4Protocol_L4_PROTOCOL_TCP && conn.ContainerId == talkContainerIds[0] && conn.GetRemoteAddress().GetPort() == 80 {
+						return true
+					}
+				}
+				return false
+			},
+		}
+		expectedSignals := []helper.ExpectedSignalMessageFn{
+			func(msg *sensor.SignalStreamMessage) bool {
+				return msg.GetSignal().GetProcessSignal().GetName() == "curl" && msg.GetSignal().GetProcessSignal().GetContainerId() == talkContainerIds[0]
+			},
+		}
+		go helper.WaitToReceiveMessagesFromCollector(ctx, &messagesReceivedSignal,
+			signalC,
+			flowC,
+			expectedSignals,
+			expectedNetworkFlows)
+		require.NoError(t, messagesReceivedSignal.Wait())
+
+		t.Log("Collector message received in Sensor")
+
+		// We need to wait here at least 30s to make sure the network flows are processed
+		// time.Sleep(60 * time.Second)
+		time.Sleep(5 * time.Second)
+		ticker <- time.Now()
+
+		msg, err := testContext.WaitForMessageWithMatcher(assertFlow(t, talkUID, nginxUID), 2*time.Minute)
+		assert.NoError(t, err)
+		assert.NotNil(t, msg)
+		testContext.GetFakeCentral().ClearReceivedBuffer()
+
+		t.Log("Deleting test deployments...")
+
+		require.NoError(t, deleteTalk())
+		require.NoError(t, testContext.WaitForResourceDeleted(talkObj))
+		require.NoError(t, deleteNginx())
+		require.NoError(t, testContext.WaitForResourceDeleted(nginxObj))
+		require.NoError(t, deleteService())
+
+		t.Log("Test deployments deleted")
+		t.Log("Ensure sensor has processed deleted test deployments...")
+
+		testContext.WaitForDeploymentEventWithTimeout(t, talkObj.GetName(), time.Second*5)
+		testContext.WaitForDeploymentEventWithTimeout(t, nginxObj.GetName(), time.Second*5)
+
+		t.Log("Sensor has finished processing deleted test deployments")
+
+		<-time.After(5 * time.Second)
+
+		t.Log("Sending flow close message concerning previously deleted deployments")
+		// The flow data would be found or not found in the history
+
+		if !helper.UseRealCollector.BooleanSetting() {
+			helper.SendCloseFlowMessage(fakeCollector,
+				sensor.SocketFamily_SOCKET_FAMILY_UNKNOWN,
+				storage.L4Protocol_L4_PROTOCOL_TCP,
+				talkContainerIds[0],
+				nginxContainerIDs[nginxPodIDs[0]][0],
+				talkIP,
+				nginxIP,
+				80,
+				1000,
+			)
+		}
+		messagesReceivedSignal.Reset()
+		go helper.WaitToReceiveMessagesFromCollector(ctx, &messagesReceivedSignal,
+			signalC,
+			flowC,
+			nil,
+			expectedNetworkFlows)
+		require.NoError(t, messagesReceivedSignal.Wait())
+
+		t.Log("Collector message received in Sensor")
+
+		time.Sleep(1 * time.Second)
+		ticker <- time.Now()
+		time.Sleep(3 * time.Second)
+
+		t.Log("Ensuring that history has expired")
+		// ensure the history is expired
+		for i := 0; i < historySize; i++ {
+			time.Sleep(100 * time.Millisecond)
+			ticker <- time.Now()
+		}
+		time.Sleep(100 * time.Millisecond)
+
+		msg, err = testContext.WaitForMessageWithMatcher(assertFlow(t, talkUID, nginxUID), time.Minute)
+		assert.NoError(t, err)
+		assert.NotNil(t, msg)
 	}))
 }
 

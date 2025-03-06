@@ -18,7 +18,9 @@ message NetworkConnectionInfo {
   repeated NetworkEndpoint updated_endpoints = 3;
 
   //For active connections, the timestamp of the entire message serves as the latest timestamp
-  //that connection was deemed active
+  //that connection was deemed active = the connection was not closed yet at that moment.
+  // Time of creation of the message in Collector.
+  // This should always be set by Collector.
   google.protobuf.Timestamp time = 2;
 }
 

@@ -77,7 +77,7 @@ type connStatus struct {
 	used bool
 	// usedProcess keeps track of if an endpoint has been used by the processes listening on
 	// ports path. If processes listening on ports is used, both must be true to delete the
-	// endpoint. Otherwise the endpoint will not be available to process listening on ports
+	// endpoint. Otherwise, the endpoint will not be available to process listening on ports
 	// and it won't report endpoints that it doesn't have access to.
 	usedProcess bool
 	// rotten implies we expected to correlate the flow with a container, but were unable to
@@ -551,29 +551,6 @@ func (m *networkFlowManager) enrichAndSendProcesses() {
 	}
 }
 
-func (m *networkFlowManager) handleContainerNotFound(conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) error {
-	timeElapsedSinceFirstSeen := timestamp.Now().ElapsedSince(status.firstSeen)
-	failReason := fmt.Errorf("ContainerID %s unknown", conn.containerID)
-	if timeElapsedSinceFirstSeen <= maxContainerResolutionWaitPeriod {
-		return multierror.Append(failReason, fmt.Errorf("time for container resolution (%s) not elapsed yet", maxContainerResolutionWaitPeriod))
-	}
-
-	activeConn, found := m.activeConnections[*conn]
-	if !found {
-		// Expire the connection if the container cannot be found within the clusterEntityResolutionWaitPeriod
-		status.rotten = true
-		// Only increment metric once the connection is marked rotten
-		flowMetrics.ContainerIDMisses.Inc()
-		log.Debugf("Can't find deployment information for container %s", conn.containerID)
-		return failReason
-	}
-	// Active connection found - enrichment can be done.
-	enrichedConnections[*activeConn] = timestamp.Now()
-	delete(m.activeConnections, *conn)
-	flowMetrics.SetActiveFlowsTotalGauge(len(m.activeConnections))
-	return nil
-}
-
 func formatMultiErrorOneline(errs []error) string {
 	elems := make([]string, len(errs))
 	for i, err := range errs {
@@ -607,17 +584,70 @@ func logReasonForAggregatingNetGraphFlow(conn *connection, contNs, contName, ent
 	}
 }
 
+// expireActiveConnection removes the connection from the list of active connections.
+// This happens when the connection is considered closed.
+func (m *networkFlowManager) expireActiveConnection(conn *connection) {
+	delete(m.activeConnections, *conn)
+	flowMetrics.SetActiveFlowsTotalGauge(len(m.activeConnections))
+}
+
+// markConnectionClosed updates the enrichedConnections connections map with a timestamp for selected connection.
+// This means that the given connection is considered no longer active (closed) and the timestamp is used as the last-seen value.
+// Usually, the Collector marks connections as closed and sends respective message to Sensor, but in some cases
+// Sensor implies that the connection must be closed based on other factors.
+func markConnectionClosed(conn *networkConnIndicator, enrichedConnections map[networkConnIndicator]timestamp.MicroTS, now timestamp.MicroTS) {
+	enrichedConnections[*conn] = now
+}
+
+// handleContainerNotFound returns error with reason why enrichment should not be continued.
+// Otherwise, it returns nil and modifies: status, enrichedConnections, activeConnections
+func handleContainerNotFound(conn *connection, firstSeen timestamp.MicroTS,
+	activeConnections map[connection]*networkConnIndicator,
+	now timestamp.MicroTS,
+) (activeConnToEnrich *networkConnIndicator, markRotten bool, err error) {
+	timeElapsedSinceFirstSeen := now.ElapsedSince(firstSeen)
+	log.Debugf("Can't find deployment information for container %s", conn.containerID)
+	failReason := fmt.Errorf("ContainerID %s unknown", conn.containerID)
+	if timeElapsedSinceFirstSeen <= maxContainerResolutionWaitPeriod {
+		return nil, false, multierror.Append(failReason, fmt.Errorf("time for container resolution (%s) not elapsed yet", maxContainerResolutionWaitPeriod))
+	}
+
+	if activeConn, found := activeConnections[*conn]; found {
+		return activeConn, false, nil
+	}
+	// Only increment metric once the connection is marked rotten
+	flowMetrics.ContainerIDMisses.Inc()
+	return nil, true, failReason
+}
+
 func (m *networkFlowManager) enrichConnection(conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) {
 	timeElapsedSinceFirstSeen := timestamp.Now().ElapsedSince(status.firstSeen)
 	isFresh := timeElapsedSinceFirstSeen < clusterEntityResolutionWaitPeriod
 	var netGraphFailReason *multierror.Error
+	log.Debug("enrichConnection start")
+	defer log.Debug("enrichConnection finished")
 
+	now := timestamp.Now()
 	container, ok := m.clusterEntities.LookupByContainerID(conn.containerID)
 	if !ok {
 		// There is an incoming connection to a container that Sensor does not recognize.
 		// 90% of the cases that container is Sensor itself before being restarted.
-		if err := m.handleContainerNotFound(conn, status, enrichedConnections); err != nil {
-			log.Debugf("Enrichment failed: %v", err)
+		// However, there is no point in tracking a connection to or from a container that we do not recognize in Sensor,
+		// so we mark this connection as closed or rotten, depending on the details.
+		connToClose, markRotten, reason := handleContainerNotFound(conn, status.firstSeen, m.activeConnections, now)
+		if reason != nil {
+			log.Debugf("Enrichment failed: %v", reason)
+		}
+		if markRotten {
+			status.rotten = true
+		}
+		// Expire the connection if the container cannot be found within expected timeframe (clusterEntityResolutionWaitPeriod).
+		// Expiration is marked by assigning a non-infinity last-seen timestamp in the enrichedConnections map.
+		// That means that the connection is considered closed (if we cannot find the container anymore,
+		// then, implicitly, the connection must be closed).
+		if connToClose != nil {
+			markConnectionClosed(connToClose, enrichedConnections, now)
+			m.expireActiveConnection(conn)
 		}
 		return
 	}
@@ -658,6 +688,10 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		// If the address is set and is not resolvable, we want to we wait for `clusterEntityResolutionWaitPeriod` time
 		// before associating it to a known network or INTERNET.
 		if isFresh && conn.remote.IPAndPort.Address.IsValid() {
+			log.Debugf("Not enriching: %s", multierror.Append(netGraphFailReason,
+				fmt.Errorf("the connection is fresh and its remote counterpart is a valid IP address. "+
+					"There is a chance that the local endpoint %q is not yet known to Sensor;"+
+					"the enrichment will be attempted again later", conn.remote.IPAndPort.String())))
 			return
 		}
 
@@ -667,7 +701,10 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		}
 
 		if isFresh {
-			log.Debugf("Enrichment aborted: Connection is fresh")
+			log.Debugf("Not enriching: %s", multierror.Append(netGraphFailReason,
+				fmt.Errorf("the connection is fresh and its remote address doesn't match any known external networks. "+
+					"There is a chance that the local endpoint %q will be known to Sensor later;"+
+					"the enrichment will be attempted again later", conn.remote.IPAndPort.String())))
 			return
 		}
 
@@ -952,7 +989,7 @@ func isUpdated(prevTS, currTS timestamp.MicroTS, found bool) bool {
 		return true
 	}
 	// Connection was active (unclosed) in the last tick, now it is closed.
-	if prevTS == timestamp.InfiniteFuture && currTS != prevTS {
+	if prevTS == timestamp.InfiniteFuture && currTS != timestamp.InfiniteFuture {
 		return true
 	}
 	return false
@@ -986,7 +1023,7 @@ func computeUpdatedEndpoints(current map[containerEndpointIndicator]timestamp.Mi
 
 	for ep, currTS := range current {
 		prevTS, ok := previous[ep]
-		if !ok || currTS > prevTS {
+		if isUpdated(prevTS, currTS, ok) {
 			updates = append(updates, ep.toProto(currTS))
 		}
 	}
