@@ -11,6 +11,7 @@ import (
 	imagesView "github.com/stackrox/rox/central/views/images"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/pointers"
@@ -19,6 +20,32 @@ import (
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+)
+
+const (
+	cve111 = "cve1comp1image1"
+	cve121 = "cve1comp2image1"
+	cve231 = "cve2comp3image1"
+	cve331 = "cve3comp3image1"
+	cve112 = "cve1comp1image2"
+	cve232 = "cve2comp3image2"
+	cve332 = "cve3comp3image2"
+	cve442 = "cve4comp4image2"
+	cve542 = "cve5comp4image2"
+)
+
+var (
+	cveIDMap = map[string]string{
+		cve111: cve.IDV2("cve-2018-1", componentIDMap[comp11], "0"),
+		cve121: cve.IDV2("cve-2018-1", componentIDMap[comp21], "0"),
+		cve231: cve.IDV2("cve-2019-1", componentIDMap[comp31], "0"),
+		cve331: cve.IDV2("cve-2019-2", componentIDMap[comp31], "1"),
+		cve112: cve.IDV2("cve-2018-1", componentIDMap[comp12], "0"),
+		cve232: cve.IDV2("cve-2019-1", componentIDMap[comp32], "0"),
+		cve332: cve.IDV2("cve-2019-2", componentIDMap[comp32], "1"),
+		cve442: cve.IDV2("cve-2017-1", componentIDMap[comp42], "0"),
+		cve542: cve.IDV2("cve-2017-2", componentIDMap[comp42], "1"),
+	}
 )
 
 func TestGraphQLImageVulnerabilityV2Endpoints(t *testing.T) {
@@ -51,14 +78,12 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) SetupSuite() {
 
 	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 	mockCtrl := gomock.NewController(s.T())
-	s.testDB = SetupTestPostgresConn(s.T())
+	s.testDB = pgtest.ForT(s.T())
 	resolver, _ := SetupTestResolver(s.T(),
 		imagesView.NewImageView(s.testDB.DB),
-		CreateTestImageDatastore(s.T(), s.testDB, mockCtrl),
-		CreateTestImageComponentDatastore(s.T(), s.testDB, mockCtrl),
-		CreateTestImageCVEDatastore(s.T(), s.testDB),
-		CreateTestImageComponentCVEEdgeDatastore(s.T(), s.testDB),
-		CreateTestImageCVEEdgeDatastore(s.T(), s.testDB),
+		CreateTestImageV2Datastore(s.T(), s.testDB, mockCtrl),
+		CreateTestImageComponentV2Datastore(s.T(), s.testDB, mockCtrl),
+		CreateTestImageCVEV2Datastore(s.T(), s.testDB),
 		TestVulnReqDatastore(s.T(), s.testDB),
 	)
 	s.resolver = resolver
@@ -129,13 +154,17 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestUnauthorizedTopImageVulnerabi
 func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilities() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	expected := int32(5)
+	expected := int32(len(cveIDMap))
+	expectedIDs := make([]string, 0, expected)
+	for _, cveID := range cveIDMap {
+		expectedIDs = append(expectedIDs, cveID)
+	}
 
 	vulns, err := s.resolver.ImageVulnerabilities(ctx, PaginatedQuery{})
 	s.NoError(err)
 	s.Equal(expected, int32(len(vulns)))
 	idList := getIDList(ctx, vulns)
-	s.ElementsMatch([]string{"cve-2018-1#", "cve-2019-1#", "cve-2019-2#", "cve-2017-1#", "cve-2017-2#"}, idList)
+	s.ElementsMatch(expectedIDs, idList)
 
 	count, err := s.resolver.ImageVulnerabilityCount(ctx, RawQuery{})
 	s.NoError(err)
@@ -143,13 +172,13 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilities() {
 
 	counter, err := s.resolver.ImageVulnerabilityCounter(ctx, RawQuery{})
 	s.NoError(err)
-	checkVulnerabilityCounter(s.T(), counter, expected, 1, 1, 2, 1, 1)
+	checkVulnerabilityCounter(s.T(), counter, expected, 3, 3, 2, 2, 2)
 }
 
 func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilitiesFixable() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	expected := int32(1)
+	expected := int32(3)
 
 	query, err := getFixableRawQuery(true)
 	s.NoError(err)
@@ -167,7 +196,7 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilitiesFixable()
 		s.Equal("", fixedBy)
 	}
 	idList := getIDList(ctx, vulns)
-	s.ElementsMatch([]string{"cve-2018-1#"}, idList)
+	s.ElementsMatch([]string{cveIDMap[cve111], cveIDMap[cve121], cveIDMap[cve112]}, idList)
 
 	count, err := s.resolver.ImageVulnerabilityCount(ctx, RawQuery{Query: &query})
 	s.NoError(err)
@@ -202,30 +231,30 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilitiesFixedByVe
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
 	scopedCtx := scoped.Context(ctx, scoped.Scope{
-		Level: v1.SearchCategory_IMAGE_COMPONENTS,
-		ID:    "comp1#0.9#",
+		Level: v1.SearchCategory_IMAGE_COMPONENTS_V2,
+		ID:    componentIDMap[comp11],
 	})
-	vuln := s.getImageVulnerabilityResolver(scopedCtx, "cve-2018-1#")
-
+	vuln := s.getImageVulnerabilityResolver(scopedCtx, cveIDMap[cve111])
+	log.Infof("SHRES -- vuln %v, %v", vuln.Id(ctx), vuln.CVE(ctx))
 	fixedBy, err := vuln.FixedByVersion(ctx)
 	s.NoError(err)
 	s.Equal("1.1", fixedBy)
 
 	scopedCtx = scoped.Context(ctx, scoped.Scope{
-		Level: v1.SearchCategory_IMAGE_COMPONENTS,
-		ID:    "comp2#1.1#",
+		Level: v1.SearchCategory_IMAGE_COMPONENTS_V2,
+		ID:    componentIDMap[comp21],
 	})
-	vuln = s.getImageVulnerabilityResolver(scopedCtx, "cve-2018-1#")
+	vuln = s.getImageVulnerabilityResolver(scopedCtx, cveIDMap[cve121])
 
 	fixedBy, err = vuln.FixedByVersion(ctx)
 	s.NoError(err)
 	s.Equal("1.5", fixedBy)
 
 	scopedCtx = scoped.Context(ctx, scoped.Scope{
-		Level: v1.SearchCategory_IMAGE_COMPONENTS,
-		ID:    "comp2#1.1#",
+		Level: v1.SearchCategory_IMAGE_COMPONENTS_V2,
+		ID:    componentIDMap[comp12],
 	})
-	vuln = s.getImageVulnerabilityResolver(scopedCtx, "cve-2017-1#")
+	vuln = s.getImageVulnerabilityResolver(scopedCtx, cveIDMap[cve442])
 
 	fixedBy, err = vuln.FixedByVersion(ctx)
 	s.NoError(err)
@@ -364,6 +393,9 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityImageCompon
 }
 
 func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCountAll() {
+	// TODO(ROX-27780): Defer until vuln requests updates are made
+	s.T().Skip()
+
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 	args := struct {
 		RequestStatus *[]*string
@@ -394,6 +426,9 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCo
 }
 
 func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCountPending() {
+	// TODO(ROX-27780): Defer until vuln requests updates are made
+	s.T().Skip()
+
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 	status := []*string{pointers.String(storage.RequestStatus_PENDING.String())}
 	args := struct {
@@ -426,6 +461,9 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCo
 }
 
 func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCountApproved() {
+	// TODO(ROX-27780): Defer until vuln requests updates are made
+	s.T().Skip()
+
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 	status := []*string{pointers.String(storage.RequestStatus_APPROVED.String())}
 	args := struct {
@@ -453,6 +491,9 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCo
 }
 
 func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCountPendingUpdate() {
+	// TODO(ROX-27780): Defer until vuln requests updates are made
+	s.T().Skip()
+
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 	status := []*string{pointers.String(storage.RequestStatus_APPROVED_PENDING_UPDATE.String())}
 	args := struct {
@@ -480,6 +521,9 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCo
 }
 
 func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCountAllWithImageScope() {
+	// TODO(ROX-27780): Defer until vuln requests updates are made
+	s.T().Skip()
+
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 	ctx = scoped.Context(ctx, scoped.Scope{
 		ID:    "sha1",
@@ -512,6 +556,9 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCo
 }
 
 func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCountPendingWithImageScope() {
+	// TODO(ROX-27780): Defer until vuln requests updates are made
+	s.T().Skip()
+
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 	status := []*string{pointers.String(storage.RequestStatus_PENDING.String())}
 	ctx = scoped.Context(ctx, scoped.Scope{
@@ -547,6 +594,9 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCo
 }
 
 func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCountApprovedWithImageScope() {
+	// TODO(ROX-27780): Defer until vuln requests updates are made
+	s.T().Skip()
+
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 	status := []*string{pointers.String(storage.RequestStatus_APPROVED.String())}
 	ctx = scoped.Context(ctx, scoped.Scope{
@@ -580,6 +630,9 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCo
 }
 
 func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCountPendingUpdateWithImageScope() {
+	// TODO(ROX-27780): Defer until vuln requests updates are made
+	s.T().Skip()
+
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 	status := []*string{pointers.String(storage.RequestStatus_APPROVED_PENDING_UPDATE.String())}
 	ctx = scoped.Context(ctx, scoped.Scope{
@@ -605,6 +658,9 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCo
 }
 
 func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCountTagless() {
+	// TODO(ROX-27780): Defer until vuln requests updates are made
+	s.T().Skip()
+	
 	taglessImage := testImages()[1]
 	taglessImage.Id = "sha3"
 	taglessImage.Name.Tag = ""

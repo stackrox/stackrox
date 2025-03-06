@@ -65,6 +65,7 @@ func (s *ImagesStoreSuite) SetupTest() {
 
 func (s *ImagesStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
+	s.T().Setenv("ROX_FLATTEN_CVE_DATA", "false")
 }
 
 func (s *ImagesStoreSuite) TestStore() {

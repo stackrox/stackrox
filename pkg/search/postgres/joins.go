@@ -178,6 +178,7 @@ func getJoinsAndFields(src *walker.Schema, q *v1.Query) ([]Join, map[string]sear
 	unreachedFields, nullableFields := collectFields(q)
 
 	if env.ImageCVEEdgeCustomJoin.BooleanSetting() && !features.FlattenCVEData.Enabled() {
+		log.Infof("SHREWS -- In special image join.  Why?")
 		// Step 1: If ImageCveEdgesSchema is going to be a part of joins, we want to ensure that we are able to join on both
 		//  ImageId and ImageCveId fields
 		if src != schema.ImageCveEdgesSchema &&
@@ -208,6 +209,7 @@ func getJoinsAndFields(src *walker.Schema, q *v1.Query) ([]Join, map[string]sear
 		queue = queue[1:]
 
 		if env.ImageCVEEdgeCustomJoin.BooleanSetting() && !features.FlattenCVEData.Enabled() {
+			log.Infof("SHREWS -- In special image join.  Why?")
 			// Step 2: Avoid using ImageCveEdgesSchema unless there is no other way to get to the required fields.
 			// If ImageCveEdgesSchema is root schema, then it is unavoidable.
 			if currElem.schema == schema.ImageCveEdgesSchema && currElem.schema != src {
@@ -260,6 +262,8 @@ func getJoinsAndFields(src *walker.Schema, q *v1.Query) ([]Join, map[string]sear
 
 	allRelationshipsLoop:
 		for _, rel := range currElem.schema.AllRelationships() {
+			//log.Infof("SHREWS -- relationships -- %v", rel)
+			//log.Infof("SHREWS -- currElem -- %v", currElem.schema.Table)
 			// Don't go back to something we've already seen in this path.
 			// This is not strictly required since the visited check above will take care of this case too,
 			// but it is cleaner and will save some work.
@@ -270,6 +274,7 @@ func getJoinsAndFields(src *walker.Schema, q *v1.Query) ([]Join, map[string]sear
 			}
 
 			if env.ImageCVEEdgeCustomJoin.BooleanSetting() && !features.FlattenCVEData.Enabled() {
+				log.Infof("SHREWS -- In special image join.  Why?")
 				// We want to make sure ImageCveEdgesSchema gets added only once to queue. If there are multiple copies of
 				// ImageCveEdgesSchema in the queue, then we can enter an infinite loop trying to push one copy after another
 				// to the end of queue.

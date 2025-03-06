@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/deployment/datastore/internal/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
@@ -19,6 +20,7 @@ var (
 		Field:    search.DeploymentPriority.String(),
 		Reversed: false,
 	}
+	log = logging.LoggerForModule()
 )
 
 // NewV2 returns a new instance of Searcher for the given storage.
@@ -88,6 +90,7 @@ func (ds *searcherImplV2) SearchDeployments(ctx context.Context, q *v1.Query) ([
 }
 
 func (ds *searcherImplV2) searchDeployments(ctx context.Context, q *v1.Query) ([]*storage.Deployment, error) {
+	log.Infof("SHREWS -- searchDeployments -- %v", q.String())
 	results, err := ds.Search(ctx, q)
 	if err != nil {
 		return nil, err

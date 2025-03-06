@@ -128,6 +128,10 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 
 		// get values
 		//query = tryUnsuppressedQuery(query)
+		// Try adding conjunction on distinct CVE
+		//query = search.ConjunctionQuery(query, search.NewQueryBuilder().AddBools(search.CVESuppressed, false).ProtoQuery())
+		query.Selects = append(query.Selects, search.NewQuerySelect(search.CVE).Distinct().Proto())
+
 		vulns, err := loader.FromQuery(ctx, query)
 		log.Info("SHREWS -- ImageVulnerabilities -- got vulns")
 		cveResolvers, err := resolver.wrapImageCVEV2sWithContext(ctx, vulns, err)
@@ -904,12 +908,14 @@ func (resolver *imageCVEV2Resolver) FixedByVersion(ctx context.Context) (string,
 		return "", nil
 	}
 
-	query := search.NewQueryBuilder().AddExactMatches(search.ComponentID, scope.ID).AddExactMatches(search.CVE, resolver.data.GetCveBaseInfo().GetCve()).ProtoQuery()
-	components, err := resolver.root.ImageComponentV2DataStore.SearchRawImageComponents(resolver.ctx, query)
-	if err != nil || len(components) == 0 {
+	log.Infof("SHREWS -- %v", resolver.data.GetId())
+	query := search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.data.GetId()).ProtoQuery()
+	cves, err := resolver.root.ImageCVEV2DataStore.SearchRawImageCVEs(resolver.ctx, query)
+	log.Infof("SHREWS -- ImageCVEs %v", cves)
+	if err != nil || len(cves) == 0 {
 		return "", err
 	}
-	return components[0].GetFixedBy(), nil
+	return cves[0].GetFixedBy(), nil
 }
 
 func (resolver *imageCVEV2Resolver) IsFixable(_ context.Context, _ RawQuery) (bool, error) {
