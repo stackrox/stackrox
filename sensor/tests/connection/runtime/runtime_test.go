@@ -109,6 +109,7 @@ func Test_SensorIntermediateRuntimeEvents(t *testing.T) {
 				talkIP,
 				nginxIP,
 				80,
+				time.Now().Unix(),
 			)
 		}
 		messagesReceivedSignal := concurrency.NewErrorSignal()
