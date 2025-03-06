@@ -29,12 +29,13 @@ class CollectorUtil {
     static introspectionQuery(String collectorAddress, String endpoint) {
         String uri = "http://${collectorAddress}${endpoint}"
         URL url = new URL(uri)
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection()
-
-        // this might be unneeded?
-        connection.setRequestMethod("GET")
+        HttpURLConnection connection = null
 
         try {
+            connection = (HttpURLConnection) url.openConnection()
+
+            // this might be unneeded?
+            connection.setRequestMethod("GET")
             connection.connect()
 
             if (connection.responseCode != HttpURLConnection.HTTP_OK) {
