@@ -893,6 +893,14 @@ func (ts *DelegatedScanningSuite) scanWithRetries(ctx context.Context, service v
 		// ex:
 		// - unable to check TLS for registry "icsp.invalid": dial tcp: lookup icsp.invalid on <ip>:53: no such host
 		"no such host",
+
+		// Central's cluster API is used to report the health of secured clusters, this cluster status is on a delay
+		// and may not represent actual state leading to flakes. When the actual connection to a cluster fails during
+		// delegation, the scan attempt should be retried.
+		//
+		// ex:
+		// - no connection to "a21b168a-280e-40d1-a175-e84d14ed8232"
+		"no connection to",
 	}
 
 	retryFunc := func() error {
@@ -910,7 +918,7 @@ func (ts *DelegatedScanningSuite) scanWithRetries(ctx context.Context, service v
 		return err
 	}
 
-	err = ts.withRetries(retryFunc, "Timeout or too many parallel scans")
+	err = ts.withRetries(retryFunc, "Scan failed")
 	return img, err
 }
 
@@ -1165,8 +1173,13 @@ func (ts *DelegatedScanningSuite) withRetries(retryFunc func() error, statusMsg 
 	t := ts.T()
 
 	betweenAttemptsFunc := func(num int) {
-		logf(t, "%s, trying again in %s, attempt %d/%d", statusMsg, deleScanDefaultRetryDelay, num, deleScanDefaultMaxRetries)
+		logf(t, "Trying again in %s, attempt %d/%d", deleScanDefaultRetryDelay, num, deleScanDefaultMaxRetries)
 		time.Sleep(deleScanDefaultRetryDelay)
+	}
+
+	onFailedAttemptsFunc := func(err error) {
+		// Log the error for each attempt to assist troubleshooting.
+		logf(t, "%s: %v", statusMsg, err)
 	}
 
 	return retry.WithRetry(retryFunc,
@@ -1174,6 +1187,7 @@ func (ts *DelegatedScanningSuite) withRetries(retryFunc func() error, statusMsg 
 		retry.Tries(deleScanDefaultMaxRetries),
 		retry.WithExponentialBackoff(),
 		retry.OnlyRetryableErrors(),
+		retry.OnFailedAttempts(onFailedAttemptsFunc),
 	)
 }
 
