@@ -123,9 +123,8 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 		}
 
 		// get values
-		//query = tryUnsuppressedQuery(query)
-		// Try adding conjunction on distinct CVE
-		//query = search.ConjunctionQuery(query, search.NewQueryBuilder().AddBools(search.CVESuppressed, false).ProtoQuery())
+		// TODO(ROX-27780): figure out what to do with this
+		//  query = tryUnsuppressedQuery(query)
 		query.Selects = append(query.Selects, search.NewQuerySelect(search.CVE).Distinct().Proto())
 
 		vulns, err := loader.FromQuery(ctx, query)

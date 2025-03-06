@@ -167,9 +167,6 @@ func CreateTestImageDatastore(t testing.TB, testDB *pgtest.TestPostgres, ctrl *g
 
 // CreateTestImageV2Datastore creates image datastore for testing
 func CreateTestImageV2Datastore(t testing.TB, testDB *pgtest.TestPostgres, ctrl *gomock.Controller) imageDS.DataStore {
-	//ctx := context.Background()
-	//imagePostgresV2.Destroy(ctx, testDB.DB)
-
 	risks := mockRisks.NewMockDataStore(ctrl)
 	risks.EXPECT().RemoveRisk(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	return imageDS.NewWithPostgres(
@@ -194,9 +191,6 @@ func CreateTestImageComponentDatastore(t testing.TB, testDB *pgtest.TestPostgres
 
 // CreateTestImageComponentV2Datastore creates imageComponent datastore for testing
 func CreateTestImageComponentV2Datastore(_ testing.TB, testDB *pgtest.TestPostgres, ctrl *gomock.Controller) imageComponentV2DS.DataStore {
-	//ctx := context.Background()
-	//imageComponentV2Postgres.Destroy(ctx, testDB.DB)
-
 	mockRisk := mockRisks.NewMockDataStore(ctrl)
 	storage := imageComponentV2Postgres.New(testDB.DB)
 	searcher := imageComponentV2Search.NewV2(storage)
@@ -218,9 +212,6 @@ func CreateTestImageCVEDatastore(t testing.TB, testDB *pgtest.TestPostgres) imag
 
 // CreateTestImageCVEV2Datastore creates imageCVE datastore for testing
 func CreateTestImageCVEV2Datastore(_ testing.TB, testDB *pgtest.TestPostgres) imageCVEV2DS.DataStore {
-	//ctx := context.Background()
-	//imageCVEV2Postgres.Destroy(ctx, testDB.DB)
-
 	storage := imageCVEV2Postgres.New(testDB.DB)
 	searcher := imageCVEV2Search.New(storage)
 	datastore := imageCVEV2DS.New(storage, searcher)
