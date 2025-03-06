@@ -8,6 +8,7 @@ tests:
       disable: false
   expect: |
     .deployments.central.spec.template.spec.hostAliases | assertThat(. == null)
+    .deployments["config-controller"].spec.template.spec.hostAliases | assertThat(. == null)
     .deployments["central-db"].spec.template.spec.hostAliases | assertThat(. == null)
     .deployments.scanner.spec.template.spec.hostAliases | assertThat(. == null)
     .deployments["scanner-db"].spec.template.spec.hostAliases | assertThat(. == null)
@@ -40,6 +41,18 @@ tests:
     .deployments["central-db"].spec.template.spec.hostAliases[0].hostnames | assertThat(length == 2)
     .deployments["central-db"].spec.template.spec.hostAliases[0].hostnames[0] | assertThat(. == "foo.local")
     .deployments["central-db"].spec.template.spec.hostAliases[0].hostnames[1] | assertThat(. == "bar.local")
+- name: "with config controller host aliases"
+  values:
+    configController:
+      hostAliases:
+      - ip: "127.0.0.1"
+        hostnames: ["foo.local", "bar.local"]
+  expect: |
+    .deployments["config-controller"].spec.template.spec.hostAliases | assertThat(length == 1)
+    .deployments["config-controller"].spec.template.spec.hostAliases[0].ip | assertThat(. == "127.0.0.1")
+    .deployments["config-controller"].spec.template.spec.hostAliases[0].hostnames | assertThat(length == 2)
+    .deployments["config-controller"].spec.template.spec.hostAliases[0].hostnames[0] | assertThat(. == "foo.local")
+    .deployments["config-controller"].spec.template.spec.hostAliases[0].hostnames[1] | assertThat(. == "bar.local")
 - name: "with scanner host aliases"
   values:
     scanner:
