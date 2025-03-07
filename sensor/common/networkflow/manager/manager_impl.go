@@ -578,8 +578,8 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 	isFresh := timeElapsedSinceFirstSeen < clusterEntityResolutionWaitPeriod
 	var netGraphFailReason *multierror.Error
 
-	container, ok := m.clusterEntities.LookupByContainerID(conn.containerID)
-	if !ok {
+	container, found, isHistorical := m.clusterEntities.LookupByContainerID(conn.containerID)
+	if !found {
 		// There is an incoming connection to a container that Sensor does not recognize.
 		// 90% of the cases that container is Sensor itself before being restarted.
 		reason := m.handleContainerNotFound(conn, status, enrichedConnections)
@@ -593,7 +593,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 	// Container can be found in the store only because it is historical.
 	// In that case, we shall enrich the container with all the data from the store (i.e., do not exit early),
 	// but the connection must be marked as expired (i.e., the last-seen timestamp must be set to 'now').
-	if found, isHistorical := m.clusterEntities.IsContainerIDHistorical(conn.containerID); found && isHistorical {
+	if isHistorical {
 		// With history disabled, we would mark this connection as closed. That would be implicit
 		// decision (i.e., not communicated by Collector) based on the container being gone. We assume that if container
 		// is gone, then all connections involving it must also be finished.
@@ -772,9 +772,9 @@ func (m *networkFlowManager) enrichContainerEndpoint(ep *containerEndpoint, stat
 		status.used = true
 	}
 
-	container, ok := m.clusterEntities.LookupByContainerID(ep.containerID)
+	container, ok, _ := m.clusterEntities.LookupByContainerID(ep.containerID)
 	if !ok {
-		// Expire the connection if the container cannot be found within the clusterEntityResolutionWaitPeriod
+		// Expire the endpoint if the container cannot be found within the clusterEntityResolutionWaitPeriod
 		if timeElapsedSinceFirstSeen > maxContainerResolutionWaitPeriod {
 			if activeEp, found := m.activeEndpoints[*ep]; found {
 				enrichedEndpoints[*activeEp] = timestamp.Now()
@@ -784,11 +784,14 @@ func (m *networkFlowManager) enrichContainerEndpoint(ep *containerEndpoint, stat
 			}
 			status.rotten = true
 			// Only increment metric once the connection is marked rotten
-			flowMetrics.ContainerIDMisses.WithLabelValues("rotten").Inc()
+			flowMetrics.ContainerIDMisses.WithLabelValues("rotten-for-endpoint").Inc()
 			log.Debugf("Unable to fetch deployment information for container %s: no deployment found", ep.containerID)
 		}
 		return
 	}
+	// If the container ID is historical, we do not remove the matching endpoint from active endpoints
+	// as there may be other messages about connections involving that endpoint.
+	// TODO: Verify that the active endpoints are not piling up in the long running clusters.
 
 	status.used = true
 
@@ -821,13 +824,13 @@ func (m *networkFlowManager) enrichProcessListening(ep *containerEndpoint, statu
 		status.usedProcess = true
 	}
 
-	container, ok := m.clusterEntities.LookupByContainerID(ep.containerID)
+	container, ok, _ := m.clusterEntities.LookupByContainerID(ep.containerID)
 	if !ok {
 		// Expire the process if the container cannot be found within the clusterEntityResolutionWaitPeriod
 		if timeElapsedSinceFirstSeen > maxContainerResolutionWaitPeriod {
 			status.rotten = true
 			// Only increment metric once the connection is marked rotten
-			flowMetrics.ContainerIDMisses.WithLabelValues("rotten").Inc()
+			flowMetrics.ContainerIDMisses.WithLabelValues("rotten-for-plop").Inc()
 			log.Debugf("Unable to fetch deployment information for container %s: no deployment found", ep.containerID)
 		}
 		return
