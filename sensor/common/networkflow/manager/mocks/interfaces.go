@@ -41,28 +41,14 @@ func (m *MockEntityStore) EXPECT() *MockEntityStoreMockRecorder {
 	return m.recorder
 }
 
-// IsContainerIDHistorical mocks base method.
-func (m *MockEntityStore) IsContainerIDHistorical(arg0 string) (bool, bool) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsContainerIDHistorical", arg0)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(bool)
-	return ret0, ret1
-}
-
-// IsContainerIDHistorical indicates an expected call of IsContainerIDHistorical.
-func (mr *MockEntityStoreMockRecorder) IsContainerIDHistorical(arg0 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsContainerIDHistorical", reflect.TypeOf((*MockEntityStore)(nil).IsContainerIDHistorical), arg0)
-}
-
 // LookupByContainerID mocks base method.
-func (m *MockEntityStore) LookupByContainerID(arg0 string) (clusterentities.ContainerMetadata, bool) {
+func (m *MockEntityStore) LookupByContainerID(arg0 string) (clusterentities.ContainerMetadata, bool, bool) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "LookupByContainerID", arg0)
 	ret0, _ := ret[0].(clusterentities.ContainerMetadata)
 	ret1, _ := ret[1].(bool)
-	return ret0, ret1
+	ret2, _ := ret[2].(bool)
+	return ret0, ret1, ret2
 }
 
 // LookupByContainerID indicates an expected call of LookupByContainerID.
