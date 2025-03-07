@@ -127,6 +127,8 @@ func (rs *Store) Cleanup() {
 	rs.tlsCheckCache.Cleanup()
 
 	metrics.ResetRegistryMetrics()
+
+	log.Info("Registry store cleared.")
 }
 
 func (rs *Store) cleanupRegistries() {
