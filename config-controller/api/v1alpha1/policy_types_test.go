@@ -65,9 +65,6 @@ func TestToProtobuf(t *testing.T) {
 				Cluster: "test-cluster",
 			},
 		},
-		CriteriaLocked:     true,
-		MitreVectorsLocked: true,
-		IsDefault:          false,
 	}
 
 	expectedProto := &storage.Policy{
