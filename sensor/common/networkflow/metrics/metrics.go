@@ -43,12 +43,12 @@ var (
 		Name:      "network_flow_msgs_received_per_node",
 		Help:      "Total number of network flows received for a specific node",
 	}, []string{"Hostname"})
-	ContainerIDMisses = prometheus.NewCounter(prometheus.CounterOpts{
+	ContainerIDMisses = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "network_flow_misses_container_lookup",
-		Help:      "Total number of misses on container lookup for network flows (increased only for rotten connections)",
-	})
+		Help:      "Total number of misses on container lookup for network flows",
+	}, []string{"status"})
 	ExternalFlowCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),

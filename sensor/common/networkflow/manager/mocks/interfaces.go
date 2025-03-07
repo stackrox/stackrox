@@ -50,6 +50,15 @@ func (m *MockEntityStore) LookupByContainerID(arg0 string) (clusterentities.Cont
 	return ret0, ret1
 }
 
+// LookupByContainerID mocks base method.
+func (m *MockEntityStore) IsContainerIDHistorical(arg0 string) (bool, bool){
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LookupByContainerID", arg0)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(bool)
+	return ret1, ret2
+}
+
 // LookupByContainerID indicates an expected call of LookupByContainerID.
 func (mr *MockEntityStoreMockRecorder) LookupByContainerID(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
