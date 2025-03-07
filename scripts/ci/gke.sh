@@ -157,7 +157,7 @@ create_cluster() {
     if [[ "${POD_SECURITY_POLICIES}" == "true" ]]; then
         PSP_ARG="--enable-pod-security-policy"
     fi
-    zones=$(gcloud compute zones list --filter="region=$REGION" | grep UP | cut -f1 -d' ' | shuf)
+    zones=$(gcloud compute zones list | grep "${REGION}\s*UP" | cut -f1 -d' ' | shuf)
     success=0
     for zone in $zones; do
         echo "Trying zone $zone"
