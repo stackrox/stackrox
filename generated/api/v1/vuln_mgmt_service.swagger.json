@@ -909,6 +909,9 @@
         },
         "epss": {
           "$ref": "#/definitions/storageEPSS"
+        },
+        "advisory": {
+          "type": "string"
         }
       },
       "title": "Next Tag: 22"
