@@ -265,16 +265,10 @@ func (e *Store) LookupByEndpoint(endpoint net.NumericEndpoint) []LookupResult {
 }
 
 // LookupByContainerID retrieves the deployment ID by a container ID.
-func (e *Store) LookupByContainerID(containerID string) (result ContainerMetadata, found bool) {
-	result, found, _ = e.containerIDsStore.lookupByContainer(containerID)
+func (e *Store) LookupByContainerID(containerID string) (metadata ContainerMetadata, found bool, isHistorical bool) {
+	metadata, found, isHistorical = e.containerIDsStore.lookupByContainer(containerID)
 	e.track("LookupByContainerID(%s): found=%t", containerID, found)
-	return result, found
-}
-
-// IsContainerIDHistorical checks whether any data about the container ID exists and whether it is a historical entry.
-func (e *Store) IsContainerIDHistorical(containerID string) (found, isHistorical bool) {
-	_, found, isHistorical = e.containerIDsStore.lookupByContainer(containerID)
-	return found, isHistorical
+	return metadata, found, isHistorical
 }
 
 // RegisterPublicIPsListener registers a listener that listens on changes to the set of public IP addresses.
