@@ -193,6 +193,15 @@ func Test_writeErrors(t *testing.T) {
 		assert.Error(t, err)
 		assert.Equal(t, 6, n)
 	})
+	t.Run("write error on ln", func(t *testing.T) {
+		sb := &sbWithErrors{fail: func(_ int, s string) bool {
+			return s == "\n"
+		}}
+		w := makeFormattingWriter(sb, 10, defaultTabWidth)
+		n, err := w.WriteString("abc\ndef")
+		assert.Error(t, err)
+		assert.Equal(t, 3, n)
+	})
 	t.Run("write error on padding", func(t *testing.T) {
 		sb := &sbWithErrors{fail: func(_ int, s string) bool {
 			return s == "  "
@@ -200,7 +209,8 @@ func Test_writeErrors(t *testing.T) {
 		w := makeFormattingWriter(sb, 10, defaultTabWidth, 0, 2)
 		n, err := w.WriteString("abcde fghij")
 		assert.Error(t, err)
-		assert.Equal(t, 6, n)
+		assert.Equal(t, 7, n)
+		assert.Equal(t, "abcde \n", sb.String())
 	})
 	t.Run("write error on initial padding", func(t *testing.T) {
 		sb := &sbWithErrors{fail: func(_ int, s string) bool {

@@ -3,6 +3,7 @@ package utils
 import (
 	"bufio"
 	"io"
+	"iter"
 	"strings"
 )
 
@@ -28,11 +29,14 @@ func makeFormattingWriter(w io.StringWriter, width int, tabWidth int, indent ...
 }
 
 // write is an internal method that writes the string to the underlying writer.
-func (w *formattingWriter) write(s string) error {
+func (w *formattingWriter) write(s string) (int, error) {
 	n, err := w.raw.WriteString(s)
-	w.currentLine += n
-	w.written += n
-	return err //nolint:wrapcheck
+	if s == "\n" {
+		w.currentLine = 0
+	} else {
+		w.currentLine += n
+	}
+	return n, err //nolint:wrapcheck
 }
 
 // computePadding is an internal method, that takes the next indent value and
@@ -59,13 +63,6 @@ func (w *formattingWriter) computePadding() (bool, int) {
 	return false, padding
 }
 
-// ln is an internal method that writes a new line to the underlying writer.
-func (w *formattingWriter) ln() error {
-	_, err := w.raw.WriteString("\n")
-	w.currentLine = 0
-	return err //nolint:wrapcheck
-}
-
 // SetIndent updates the indentation for the following writings.
 func (w *formattingWriter) SetIndent(indent ...int) {
 	w.indentReset = true
@@ -76,35 +73,53 @@ func (w *formattingWriter) SetIndent(indent ...int) {
 // indentation and wrapping.
 // Implements the StringWriter interface.
 func (w *formattingWriter) WriteString(s string) (int, error) {
-	w.written = 0
-	tokenScanner := bufio.NewScanner(strings.NewReader(s))
-	tokenScanner.Split(wordsAndDelimeters)
-	var err error
-	for err == nil && tokenScanner.Scan() {
-		token := tokenScanner.Text()
-		length := len(token)
-		switch token {
-		case "\t":
-			length = defaultTabWidth
-		case "\n":
-			if w.currentLine == 0 {
-				w.indent.popNotLast()
-				w.indentReset = false
-			}
-			err = w.ln()
-			continue
-		}
-		ln, padding := w.computePadding()
-		if ln || w.currentLine+padding+length > w.width {
-			if err = w.ln(); err != nil || token == " " {
-				continue
-			}
-			_, padding = w.computePadding()
-		}
-
-		if err = w.write(strings.Repeat(" ", padding)); err == nil {
-			err = w.write(token)
+	written := 0
+	for t := range w.tokens(s) {
+		n, err := w.write(t)
+		written += n
+		if err != nil {
+			return written, err
 		}
 	}
-	return w.written, err
+	return written, nil
+}
+
+// tokens is an internal iterator that issues tokens with paddings and wrapping.
+func (w *formattingWriter) tokens(s string) iter.Seq[string] {
+	return func(yield func(string) bool) {
+		tokenScanner := bufio.NewScanner(strings.NewReader(s))
+	tokenLoop:
+		for tokenScanner.Split(wordsAndDelimeters); tokenScanner.Scan(); {
+			token := tokenScanner.Text()
+			tokenLength := len(token)
+			switch token {
+			case "\t":
+				tokenLength = defaultTabWidth
+			case "\n":
+				if w.currentLine == 0 {
+					w.indent.popNotLast()
+					w.indentReset = false
+				}
+				if !yield("\n") {
+					break tokenLoop
+				}
+				continue
+			}
+			ln, padding := w.computePadding()
+			if ln || w.currentLine+padding+tokenLength > w.width {
+				if !yield("\n") {
+					break
+				}
+				if token == " " {
+					// Ignore the space that caused wrapping.
+					continue
+				}
+				_, padding = w.computePadding()
+			}
+			if (padding > 0 && !yield(strings.Repeat(" ", padding))) ||
+				!yield(token) {
+				break
+			}
+		}
+	}
 }
