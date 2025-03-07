@@ -47,7 +47,7 @@
             "mode": "palette-classic"
           },
           "custom": {
-            "axisLabel": "Percent CPU Usage",
+            "axisLabel": "CPU Usage [Cores]",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -59,7 +59,7 @@
               "tooltip": false,
               "viz": false
             },
-            "lineInterpolation": "stepAfter",
+            "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
@@ -70,20 +70,17 @@
           },
           "links": [],
           "mappings": [],
+          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           },
-          "unit": "percent"
+          "unit": "none"
         },
         "overrides": []
       },
@@ -117,7 +114,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "exemplar": true,
-          "expr": "rate(container_cpu_usage_seconds_total{namespace=\"stackrox\", container=\"central\"}[1m])*100",
+          "expr": "rate(container_cpu_usage_seconds_total{namespace=\"stackrox\", container=\"central\"}[$__rate_interval])",
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
@@ -227,7 +224,7 @@
             "mode": "palette-classic"
           },
           "custom": {
-            "axisLabel": "Percent CPU Usage",
+            "axisLabel": "CPU Usage [Cores]",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -239,7 +236,7 @@
               "tooltip": false,
               "viz": false
             },
-            "lineInterpolation": "stepAfter",
+            "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
@@ -250,20 +247,17 @@
           },
           "links": [],
           "mappings": [],
+          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           },
-          "unit": "percent"
+          "unit": "none"
         },
         "overrides": []
       },
@@ -297,7 +291,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "exemplar": true,
-          "expr": "rate(container_cpu_usage_seconds_total{namespace=\"stackrox\", container=\"central-db\"}[1m])*100",
+          "expr": "rate(container_cpu_usage_seconds_total{namespace=\"stackrox\", container=\"central-db\"}[$__rate_interval])",
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
@@ -407,7 +401,7 @@
             "mode": "palette-classic"
           },
           "custom": {
-            "axisLabel": "Percent CPU Usage",
+            "axisLabel": "CPU Usage [Cores]",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -419,7 +413,7 @@
               "tooltip": false,
               "viz": false
             },
-            "lineInterpolation": "stepAfter",
+            "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
@@ -430,20 +424,17 @@
           },
           "links": [],
           "mappings": [],
+          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           },
-          "unit": "percent"
+          "unit": "none"
         },
         "overrides": []
       },
@@ -477,7 +468,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "exemplar": true,
-          "expr": "rate(container_cpu_usage_seconds_total{namespace=\"stackrox\", container=\"scanner\"}[1m])*100",
+          "expr": "rate(container_cpu_usage_seconds_total{namespace=\"stackrox\", container=\"scanner\"}[$__rate_interval])",
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
@@ -587,7 +578,7 @@
             "mode": "palette-classic"
           },
           "custom": {
-            "axisLabel": "Percent CPU Usage",
+            "axisLabel": "CPU Usage [Cores]",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -599,7 +590,7 @@
               "tooltip": false,
               "viz": false
             },
-            "lineInterpolation": "stepAfter",
+            "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
@@ -610,20 +601,17 @@
           },
           "links": [],
           "mappings": [],
+          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           },
-          "unit": "percent"
+          "unit": "none"
         },
         "overrides": []
       },
@@ -657,7 +645,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "exemplar": true,
-          "expr": "rate(container_cpu_usage_seconds_total{namespace=\"stackrox\", container=\"scanner-db\"}[1m])*100",
+          "expr": "rate(container_cpu_usage_seconds_total{namespace=\"stackrox\", container=\"scanner-db\"}[$__rate_interval])",
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
@@ -767,7 +755,7 @@
             "mode": "palette-classic"
           },
           "custom": {
-            "axisLabel": "Percent CPU Usage",
+            "axisLabel": "CPU Usage [Cores]",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -779,7 +767,7 @@
               "tooltip": false,
               "viz": false
             },
-            "lineInterpolation": "stepAfter",
+            "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
@@ -790,20 +778,17 @@
           },
           "links": [],
           "mappings": [],
+          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           },
-          "unit": "percent"
+          "unit": "none"
         },
         "overrides": []
       },
@@ -837,7 +822,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "exemplar": true,
-          "expr": "sum by(pod)(\n  rate(container_cpu_usage_seconds_total{namespace=\"stackrox\", container=~\"(collector|compliance|node-inventory)\"}[1m])*100\n)",
+          "expr": "sum by(pod)(\n  rate(container_cpu_usage_seconds_total{namespace=\"stackrox\", container=~\"(collector|compliance|node-inventory)\"}[$__rate_interval])\n)",
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
@@ -947,7 +932,7 @@
             "mode": "palette-classic"
           },
           "custom": {
-            "axisLabel": "Percent CPU Usage",
+            "axisLabel": "CPU Usage [Cores]",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -959,7 +944,7 @@
               "tooltip": false,
               "viz": false
             },
-            "lineInterpolation": "stepAfter",
+            "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
@@ -970,20 +955,17 @@
           },
           "links": [],
           "mappings": [],
+          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           },
-          "unit": "percent"
+          "unit": "none"
         },
         "overrides": []
       },
@@ -1017,7 +999,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "exemplar": true,
-          "expr": "sum by(pod)(\n  rate(container_cpu_usage_seconds_total{namespace=\"stackrox\", container=\"sensor\"}[1m])*100\n)",
+          "expr": "sum by(pod)(\n  rate(container_cpu_usage_seconds_total{namespace=\"stackrox\", container=\"sensor\"}[$__rate_interval])\n)",
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
@@ -1127,7 +1109,7 @@
             "mode": "palette-classic"
           },
           "custom": {
-            "axisLabel": "Percent CPU Usage",
+            "axisLabel": "CPU Usage [Cores]",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -1139,7 +1121,7 @@
               "tooltip": false,
               "viz": false
             },
-            "lineInterpolation": "stepAfter",
+            "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
@@ -1150,20 +1132,17 @@
           },
           "links": [],
           "mappings": [],
+          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           },
-          "unit": "percent"
+          "unit": "none"
         },
         "overrides": []
       },
@@ -1197,7 +1176,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "exemplar": true,
-          "expr": "sum by(pod)(\n  rate(container_cpu_usage_seconds_total{namespace=\"stackrox\", container=\"admission-control\"}[1m])*100\n)",
+          "expr": "sum by(pod)(\n  rate(container_cpu_usage_seconds_total{namespace=\"stackrox\", container=\"admission-control\"}[$__rate_interval])\n)",
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
