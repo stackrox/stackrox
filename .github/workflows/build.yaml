@@ -394,6 +394,16 @@ jobs:
             echo "DEBUG_BUILD=yes" >> "${GITHUB_ENV}"
           fi
 
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
       - name: delete unused tools
         shell: bash
         run: |
@@ -408,16 +418,6 @@ jobs:
           for path in /mnt/usr/share /mnt/usr/local/lib /mnt/opt /mnt/opt/hostedtoolcache; do
             du --threshold=100 -ks "${path}"/* | sort -nr | tail -10
           done
-
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
-
-      - uses: ./.github/actions/job-preamble
-        with:
-          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
         uses: docker/login-action@v3
@@ -651,6 +651,16 @@ jobs:
     env:
       ROX_PRODUCT_BRANDING: ${{ matrix.name }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
       - name: delete unused tools
         shell: bash
         run: |
@@ -665,16 +675,6 @@ jobs:
           for path in /mnt/usr/share /mnt/usr/local/lib /mnt/opt /mnt/opt/hostedtoolcache; do
             du --threshold=100 -ks "${path}"/* | sort -nr | tail -10
           done
-
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
-
-      - uses: ./.github/actions/job-preamble
-        with:
-          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
