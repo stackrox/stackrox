@@ -600,34 +600,15 @@ func (d *deleScanTestUtils) waitForBuildComplete(ctx context.Context, c buildv1c
 }
 
 // DisableMCONodeDrain configures the OpenShift Machine Config Operator to not drain
-// nodes when mirroring CRs are applied. This is best effort as the capability is
-// not available on every MCO z-stream release.
+// nodes when mirroring CRs are applied. This is best effort as the capability was
+// backported and may only be available to some MCO z-stream releases.
 //
 // This should speed up mirroring tests and reduce flakes on OCP versions that would
 // otherwise perform drains.
 //
 // The test will only fail if static testdata files are not found.
 func (d *deleScanTestUtils) DisableMCONodeDrain(t *testing.T, ctx context.Context) error {
-	// applyMachineConfiguration returns true if machine configuration CR was found.
-	applyMachineConfiguration := func() (bool, error) {
-		if d.apiResourceSupported("operator.openshift.io/v1", "machineconfigurations") {
-			logf(t, "Cluster supports machineconfigurations CR, disabling node drain")
-
-			yamlB, err := os.ReadFile("testdata/delegatedscanning/mirrors/machineconfiguration.yaml")
-			require.NoError(t, err, "expected machineconfiguration.yaml not found in testdata")
-
-			operatorClient, err := operatorv1client.NewForConfig(d.restCfg)
-			if err != nil {
-				return true, err
-			}
-
-			err = d.applyK8sYamlOrJson(t, ctx, operatorClient.RESTClient(), "", "machineconfigurations", yamlB, nil)
-			return true, err
-		}
-		return false, nil
-	}
-
-	crFound, err := applyMachineConfiguration()
+	crFound, err := d.applyMachineConfiguration(t, ctx)
 	if err != nil {
 		logf(t, "Error occured disabling node drain via machineconfigurations: %v", err)
 	}
@@ -656,4 +637,24 @@ func (d *deleScanTestUtils) DisableMCONodeDrain(t *testing.T, ctx context.Contex
 	}
 
 	return nil
+}
+
+// applyMachineConfiguration attempts to apply the machine configuration CR, will return true
+// if the CR is supported.
+func (d *deleScanTestUtils) applyMachineConfiguration(t *testing.T, ctx context.Context) (bool, error) {
+	if d.apiResourceSupported("operator.openshift.io/v1", "machineconfigurations") {
+		logf(t, "Cluster supports machineconfigurations CR, disabling node drain")
+
+		yamlB, err := os.ReadFile("testdata/delegatedscanning/mirrors/machineconfiguration.yaml")
+		require.NoError(t, err, "expected machineconfiguration.yaml not found in testdata")
+
+		operatorClient, err := operatorv1client.NewForConfig(d.restCfg)
+		if err != nil {
+			return true, err
+		}
+
+		err = d.applyK8sYamlOrJson(t, ctx, operatorClient.RESTClient(), "", "machineconfigurations", yamlB, nil)
+		return true, err
+	}
+	return false, nil
 }
