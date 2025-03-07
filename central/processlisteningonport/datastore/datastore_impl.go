@@ -513,6 +513,12 @@ func addNewPLOP(plopObjects []*storage.ProcessListeningOnPortStorage,
 		return plopObjects
 	}
 
+	podUid := ""
+        p := rand.Float32()
+        if p < 0.5 {
+		podUid = value.PodUid
+	}
+
 	newPLOP := &storage.ProcessListeningOnPortStorage{
 		// XXX, ResignatingFacepalm: Use regular GENERATE ALWAYS AS
 		// IDENTITY, which would require changes in store generator
@@ -522,7 +528,7 @@ func addNewPLOP(plopObjects []*storage.ProcessListeningOnPortStorage,
 		ProcessIndicatorId: indicatorID,
 		Process:            processInfo,
 		DeploymentId:       value.DeploymentId,
-		PodUid:             value.PodUid,
+		PodUid:             podUid,
 		ClusterId:          value.ClusterId,
 		Namespace:          value.Namespace,
 		Closed:             value.CloseTimestamp != nil,
