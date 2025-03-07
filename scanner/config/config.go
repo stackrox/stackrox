@@ -405,7 +405,7 @@ func Load(r io.Reader) (*Config, error) {
 	v.SetConfigType("yaml")
 	// Allow env vars, but use `_` rather than `.` as a field separator.
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-	v.SetEnvPrefix("SCANNER_V4")
+	v.SetEnvPrefix("SCANNER_V4_CONFIG")
 	v.AutomaticEnv()
 	// Decode the default configuration into a configuration map using mapstruct, so
 	// we can initialize Viper's default keys (using MergeConfigMap).
