@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"time"
+	"math/rand"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/stackrox/rox/central/metrics"
