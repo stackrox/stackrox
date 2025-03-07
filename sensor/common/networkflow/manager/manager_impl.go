@@ -520,7 +520,7 @@ func expireConnection(conn *connection,
 	return nil
 }
 
-func (m *networkFlowManager) handleContainerNotFound(conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) error {
+func (m *networkFlowManager) handleContainerNotFound(conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) *multierror.Error {
 	timeElapsedSinceFirstSeen := timestamp.Now().ElapsedSince(status.firstSeen)
 	failReason := fmt.Errorf("ContainerID %s unknown", conn.containerID)
 	if timeElapsedSinceFirstSeen <= maxContainerResolutionWaitPeriod {
@@ -534,7 +534,7 @@ func (m *networkFlowManager) handleContainerNotFound(conn *connection, status *c
 		// Only increment metric once the connection is marked rotten
 		flowMetrics.ContainerIDMisses.WithLabelValues("rotten").Inc()
 		log.Debugf("Can't find deployment information for container %s", conn.containerID)
-		return multierror.Append(failReason, fmt.Errorf("connection is rotten"))
+		return multierror.Append(failReason, errors.New("connection is rotten"))
 	}
 	flowMetrics.ContainerIDMisses.WithLabelValues("expired").Inc()
 	return multierror.Append(failReason, fmt.Errorf("marking connection as inactive, because it involves non-existing container %s", conn.containerID))
@@ -582,9 +582,9 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 	if !ok {
 		// There is an incoming connection to a container that Sensor does not recognize.
 		// 90% of the cases that container is Sensor itself before being restarted.
-		if err := m.handleContainerNotFound(conn, status, enrichedConnections); err != nil {
-			log.Debugf("Enrichment failed: %v", err)
-		}
+		reason := m.handleContainerNotFound(conn, status, enrichedConnections)
+		reason.ErrorFormat = formatMultiErrorOneline
+		log.Debugf("Enrichment finished early: %s", reason.Error())
 		// If we miss container data, there is no point in trying further enrichments (endpoint won't be found as well).
 		return
 	}
