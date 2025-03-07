@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 import { gql, useQuery } from '@apollo/client';
 import sortBy from 'lodash/sortBy';
+import { Alert } from '@patternfly/react-core';
 
 import entityTypes from 'constants/entityTypes';
 import queryService from 'utils/queryService';
@@ -10,7 +11,6 @@ import Loader from 'Components/Loader';
 import Widget from 'Components/Widget';
 import { checkForPermissionErrorMessage } from 'utils/permissionUtils';
 import { getVulnerabilityChips } from 'utils/vulnerabilityUtils';
-import NoResultsMessage from 'Components/NoResultsMessage';
 import { cveSortFields } from 'constants/sortFields';
 
 import NumberedList from './NumberedList';
@@ -84,17 +84,24 @@ const RecentlyDetectedImageVulnerabilities = ({ entityContext, search, limit }) 
 
             const parsedMessage = checkForPermissionErrorMessage(error, defaultMessage);
 
-            content = <NoResultsMessage message={parsedMessage} className="p-3" icon="warn" />;
+            content = (
+                <div className="w-full">
+                    <Alert variant="warning" isInline title={parsedMessage} component="p" />
+                </div>
+            );
         } else {
             const processedData = processData(data, workflowState, entityTypes.IMAGE_CVE);
 
             if (!processedData || processedData.length === 0) {
                 content = (
-                    <NoResultsMessage
-                        message="No vulnerabilities found"
-                        className="p-3"
-                        icon="info"
-                    />
+                    <div className="w-full">
+                        <Alert
+                            variant="success"
+                            isInline
+                            title="No vulnerabilities found"
+                            component="p"
+                        />
+                    </div>
                 );
             } else {
                 content = (

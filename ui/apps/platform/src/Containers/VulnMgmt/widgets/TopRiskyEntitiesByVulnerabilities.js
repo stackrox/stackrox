@@ -2,11 +2,11 @@ import React, { useState, useContext } from 'react';
 import PropTypes from 'prop-types';
 import pluralize from 'pluralize';
 import { gql, useQuery } from '@apollo/client';
+import { Alert } from '@patternfly/react-core';
 
 import queryService from 'utils/queryService';
 import workflowStateContext from 'Containers/workflowStateContext';
 import Loader from 'Components/Loader';
-import NoResultsMessage from 'Components/NoResultsMessage';
 import Widget from 'Components/Widget';
 import TextSelect from 'Components/TextSelect';
 import entityTypes from 'constants/entityTypes';
@@ -293,18 +293,25 @@ const TopRiskyEntitiesByVulnerabilities = ({
 
             const parsedMessage = checkForPermissionErrorMessage(error, defaultMessage);
 
-            content = <NoResultsMessage message={parsedMessage} className="p-3" icon="warn" />;
+            content = (
+                <div className="w-full">
+                    <Alert variant="warning" isInline title={parsedMessage} component="p" />
+                </div>
+            );
         } else if (data) {
             const results = processData(data);
             if (!results || results.length === 0) {
                 content = (
-                    <NoResultsMessage
-                        message={`No ${pluralize(
-                            selectedEntityType.toLowerCase()
-                        )} with vulnerabilities found`}
-                        className="p-3"
-                        icon="info"
-                    />
+                    <div className="w-full">
+                        <Alert
+                            variant="success"
+                            isInline
+                            title={`No ${pluralize(
+                                selectedEntityType.toLowerCase()
+                            )} with vulnerabilities found`}
+                            component="p"
+                        />
+                    </div>
                 );
             } else {
                 content = (
