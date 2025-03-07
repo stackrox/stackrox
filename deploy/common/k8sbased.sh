@@ -348,6 +348,7 @@ function launch_central {
     ${KUBE_COMMAND:-kubectl} get namespace "${central_namespace}" &>/dev/null || \
       ${KUBE_COMMAND:-kubectl} create namespace "${central_namespace}"
 
+    unzip_dir="$unzip_dir/helm"
     if [[ -f "$unzip_dir/values-public.yaml" ]]; then
       if [[ -n "${REGISTRY_USERNAME}" ]]; then
         ROX_NAMESPACE="${central_namespace}" "${unzip_dir}/scripts/setup.sh"
