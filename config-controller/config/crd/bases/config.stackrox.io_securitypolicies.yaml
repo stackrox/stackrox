@@ -48,10 +48,6 @@ spec:
                   type: string
                 minItems: 1
                 type: array
-              criteriaLocked:
-                description: Read-only field. If true, the policy's criteria fields
-                  are rendered read-only.
-                type: boolean
               description:
                 description: Description is a free-form text description of this policy.
                 pattern: ^[^\$]{0,800}$
@@ -124,10 +120,6 @@ spec:
                       type: string
                   type: object
                 type: array
-              isDefault:
-                description: Read-only field. Indicates the policy is a default policy
-                  if true and a custom policy if false.
-                type: boolean
               lifecycleStages:
                 description: LifecycleStages describes which policy lifecylce stages
                   this policy applies to.  Choices are DEPLOY, BUILD, and RUNTIME.
@@ -150,10 +142,6 @@ spec:
                       type: array
                   type: object
                 type: array
-              mitreVectorsLocked:
-                description: Read-only field. If true, the policy's MITRE ATT&CK fields
-                  are rendered read-only.
-                type: boolean
               notifiers:
                 description: Notifiers is a list of IDs or names of the notifiers
                   that should be triggered when a violation from this policy is identified.  IDs
