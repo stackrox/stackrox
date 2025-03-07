@@ -142,6 +142,9 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
+      volumes:
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -394,21 +397,6 @@ jobs:
             echo "DEBUG_BUILD=yes" >> "${GITHUB_ENV}"
           fi
 
-      - name: delete unused tools
-        shell: bash
-        run: |
-          set +e
-          set -x
-          df -h
-          for delete in /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL /opt/hostedtoolcache/Ruby; do
-            du -hs "/mnt${delete:?}"
-            rm -rf "/mnt${delete:?}"
-          done
-          df -h
-          for path in /mnt/usr/share /mnt/usr/local/lib /mnt/opt /mnt/opt/hostedtoolcache; do
-            du --threshold=100 -ks "${path}"/* | sort -nr | tail -10
-          done
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -651,21 +639,6 @@ jobs:
     env:
       ROX_PRODUCT_BRANDING: ${{ matrix.name }}
     steps:
-      - name: delete unused tools
-        shell: bash
-        run: |
-          set +e
-          set -x
-          df -h
-          for delete in /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL /opt/hostedtoolcache/Ruby; do
-            du -hs "/mnt${delete:?}"
-            rm -rf "/mnt${delete:?}"
-          done
-          df -h
-          for path in /mnt/usr/share /mnt/usr/local/lib /mnt/opt /mnt/opt/hostedtoolcache; do
-            du --threshold=100 -ks "${path}"/* | sort -nr | tail -10
-          done
-
       - name: Checkout
         uses: actions/checkout@v4
         with:

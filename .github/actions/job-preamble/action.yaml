@@ -14,6 +14,26 @@ runs:
         df --si /
       shell: bash
 
+    - name: Remove unused gha runner tools if found
+      shell: bash
+      run: |
+        set -x
+        cleanup=(
+          /usr/share/dotnet
+          /usr/local/lib/android
+          /opt/ghc
+          /opt/hostedtoolcache/CodeQL
+          /opt/hostedtoolcache/Ruby
+        )
+        for d in "${cleanup[@]}"; do
+          if [[ -d "/mnt${d}" ]]; then
+            rm -rf "/mnt${d}"
+          elif [[ -d "$d" ]]; then
+            rm -rf "$d"
+          fi
+        done
+        df --si /
+
     - name: Ignore dubious repository ownership
       run: |
         # Prevent fatal error "detected dubious ownership in repository" from recent git.
