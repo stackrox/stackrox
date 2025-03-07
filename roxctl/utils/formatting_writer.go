@@ -35,11 +35,14 @@ func (w *formattingWriter) write(s string) error {
 	return err //nolint:wrapcheck
 }
 
-// writePadding is an internal method, that takes the next indent value and the
-// writes the according number of spaces. If the indent value is negative, it is
-// calculated as tabulation offset, i.e. the spaces are added to reach the
-// required offset. Returns true if a new line has been written.
-func (w *formattingWriter) writePadding() (bool, error) {
+// computePadding is an internal method, that takes the next indent value and
+// computes the required number of spaces. If the indent value is negative, it
+// is calculated as tabulation offset, i.e. the spaces are added to reach the
+// required offset. Returns true if a new line needs to been written.
+func (w *formattingWriter) computePadding() (bool, int) {
+	if w.currentLine != 0 && !w.indentReset {
+		return false, 0
+	}
 	w.indentReset = false
 	padding := w.indent.popNotLast()
 	if padding < 0 {
@@ -48,12 +51,12 @@ func (w *formattingWriter) writePadding() (bool, error) {
 		if padding > w.currentLine {
 			padding -= w.currentLine
 		} else {
-			return true, nil
+			return true, 0
 		}
 	} else if w.currentLine+padding > w.width {
-		return true, nil
+		return true, 0
 	}
-	return false, w.write(strings.Repeat(" ", padding))
+	return false, padding
 }
 
 // ln is an internal method that writes a new line to the underlying writer.
@@ -91,26 +94,17 @@ func (w *formattingWriter) WriteString(s string) (int, error) {
 			err = w.ln()
 			continue
 		}
-		ln := false
-		if w.currentLine == 0 || w.indentReset {
-			if ln, err = w.writePadding(); err != nil {
-				break
-			}
-		}
-		// Write a new line and a padding in case of line overflow:
-		if ln || w.currentLine+length > w.width {
-			if err = w.ln(); err != nil {
-				break
-			}
-			if token == " " {
-				// Do not write space token that caused line break.
+		ln, padding := w.computePadding()
+		if ln || w.currentLine+padding+length > w.width {
+			if err = w.ln(); err != nil || token == " " {
 				continue
 			}
-			if _, err = w.writePadding(); err != nil {
-				break
-			}
+			_, padding = w.computePadding()
 		}
-		err = w.write(token)
+
+		if err = w.write(strings.Repeat(" ", padding)); err == nil {
+			err = w.write(token)
+		}
 	}
 	return w.written, err
 }
