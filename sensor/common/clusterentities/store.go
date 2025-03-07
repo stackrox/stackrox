@@ -271,6 +271,12 @@ func (e *Store) LookupByContainerID(containerID string) (result ContainerMetadat
 	return result, found
 }
 
+// IsContainerIDHistorical checks whether any data about the container ID exists and whether it is a historical entry.
+func (e *Store) IsContainerIDHistorical(containerID string) (found, isHistorical bool) {
+	_, found, isHistorical = e.containerIDsStore.lookupByContainer(containerID)
+	return found, isHistorical
+}
+
 // RegisterPublicIPsListener registers a listener that listens on changes to the set of public IP addresses.
 // It returns a boolean indicating whether the listener was actually unregistered (i.e., a return value of false
 // indicates that the listener was already registered).
