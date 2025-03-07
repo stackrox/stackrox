@@ -18,7 +18,6 @@ type formattingWriter struct {
 	tabWidth int
 
 	currentLine int
-	written     int
 	indentReset bool
 }
 
@@ -26,17 +25,6 @@ var _ io.StringWriter = (*formattingWriter)(nil)
 
 func makeFormattingWriter(w io.StringWriter, width int, tabWidth int, indent ...int) *formattingWriter {
 	return &formattingWriter{raw: w, width: width, indent: indent, tabWidth: tabWidth}
-}
-
-// write is an internal method that writes the string to the underlying writer.
-func (w *formattingWriter) write(s string) (int, error) {
-	n, err := w.raw.WriteString(s)
-	if s == "\n" {
-		w.currentLine = 0
-	} else {
-		w.currentLine += n
-	}
-	return n, err //nolint:wrapcheck
 }
 
 // computePadding is an internal method, that takes the next indent value and
@@ -74,11 +62,11 @@ func (w *formattingWriter) SetIndent(indent ...int) {
 // Implements the StringWriter interface.
 func (w *formattingWriter) WriteString(s string) (int, error) {
 	written := 0
-	for t := range w.tokens(s) {
-		n, err := w.write(t)
+	for token := range w.tokens(s) {
+		n, err := w.raw.WriteString(token)
 		written += n
 		if err != nil {
-			return written, err
+			return written, err //nolint:wrapcheck
 		}
 	}
 	return written, nil
@@ -100,13 +88,16 @@ func (w *formattingWriter) tokens(s string) iter.Seq[string] {
 					w.indent.popNotLast()
 					w.indentReset = false
 				}
+				w.currentLine = 0
 				if !yield("\n") {
 					break tokenLoop
 				}
 				continue
 			}
 			ln, padding := w.computePadding()
+			// Wrapping condition:
 			if ln || w.currentLine+padding+tokenLength > w.width {
+				w.currentLine = 0
 				if !yield("\n") {
 					break
 				}
@@ -114,8 +105,10 @@ func (w *formattingWriter) tokens(s string) iter.Seq[string] {
 					// Ignore the space that caused wrapping.
 					continue
 				}
+				// Re-compute padding after wrapping.
 				_, padding = w.computePadding()
 			}
+			w.currentLine += padding + tokenLength
 			if (padding > 0 && !yield(strings.Repeat(" ", padding))) ||
 				!yield(token) {
 				break
