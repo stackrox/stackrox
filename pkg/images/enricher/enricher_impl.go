@@ -224,9 +224,9 @@ func (e *enricherImpl) updateImageWithExistingImage(image *storage.Image, existi
 // EnrichImage enriches an image with the integration set present.
 func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext EnrichmentContext, image *storage.Image) (EnrichmentResult, error) {
 	if shouldDelegate, err := e.delegateEnrichImage(ctx, enrichContext, image); shouldDelegate {
-		log.Infof(">>>> EnrichImage: try delegate scan")
 		if err != nil {
-			if errors.Is(err, errox.InvalidArgs.New("no ad-hoc cluster ID specified in the delegated scanning config")) {
+			log.Warnf(">>>> the current error is: %v", err)
+			if errors.Is(err, errox.InvalidArgs) {
 				// Log the warning and try to keep enriching
 				log.Warnf("No default cluster found for delegation: %v, proceed enriching", err)
 			} else {
