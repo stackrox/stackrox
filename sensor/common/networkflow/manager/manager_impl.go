@@ -506,27 +506,38 @@ func (m *networkFlowManager) enrichAndSendProcesses() {
 	}
 }
 
+func expireConnection(conn *connection,
+	activeConnections map[connection]*networkConnIndicator,
+	enrichedConnections map[networkConnIndicator]timestamp.MicroTS) error {
+	activeConn, found := activeConnections[*conn]
+	if !found {
+		return errors.New("cannot expire inactive connection: connection is rotten")
+	}
+	// Active connection found - enrichment can be done.
+	enrichedConnections[*activeConn] = timestamp.Now()
+	delete(activeConnections, *conn)
+	flowMetrics.SetActiveFlowsTotalGauge(len(activeConnections))
+	return nil
+}
+
 func (m *networkFlowManager) handleContainerNotFound(conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) error {
 	timeElapsedSinceFirstSeen := timestamp.Now().ElapsedSince(status.firstSeen)
 	failReason := fmt.Errorf("ContainerID %s unknown", conn.containerID)
 	if timeElapsedSinceFirstSeen <= maxContainerResolutionWaitPeriod {
+		flowMetrics.ContainerIDMisses.WithLabelValues("in-grace-period").Inc()
 		return multierror.Append(failReason, fmt.Errorf("time for container resolution (%s) not elapsed yet", maxContainerResolutionWaitPeriod))
 	}
 
-	activeConn, found := m.activeConnections[*conn]
-	if !found {
-		// Expire the connection if the container cannot be found within the clusterEntityResolutionWaitPeriod
+	if expireConnection(conn, m.activeConnections, enrichedConnections) != nil {
+		// Connection cannot be expired, so it must be rotten
 		status.rotten = true
 		// Only increment metric once the connection is marked rotten
-		flowMetrics.ContainerIDMisses.Inc()
+		flowMetrics.ContainerIDMisses.WithLabelValues("rotten").Inc()
 		log.Debugf("Can't find deployment information for container %s", conn.containerID)
-		return failReason
+		return multierror.Append(failReason, fmt.Errorf("connection is rotten"))
 	}
-	// Active connection found - enrichment can be done.
-	enrichedConnections[*activeConn] = timestamp.Now()
-	delete(m.activeConnections, *conn)
-	flowMetrics.SetActiveFlowsTotalGauge(len(m.activeConnections))
-	return nil
+	flowMetrics.ContainerIDMisses.WithLabelValues("expired").Inc()
+	return multierror.Append(failReason, fmt.Errorf("marking connection as inactive, because it involves non-existing container %s", conn.containerID))
 }
 
 func formatMultiErrorOneline(errs []error) string {
@@ -574,9 +585,29 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		if err := m.handleContainerNotFound(conn, status, enrichedConnections); err != nil {
 			log.Debugf("Enrichment failed: %v", err)
 		}
+		// If we miss container data, there is no point in trying further enrichments (endpoint won't be found as well).
 		return
 	}
 	netGraphFailReason = multierror.Append(netGraphFailReason, errors.New("ContainerID lookup successful"))
+
+	// Container can be found in the store only because it is historical.
+	// In that case, we shall enrich the container with all the data from the store (i.e., do not exit early),
+	// but the connection must be marked as expired (i.e., the last-seen timestamp must be set to 'now').
+	if found, isHistorical := m.clusterEntities.IsContainerIDHistorical(conn.containerID); found && isHistorical {
+		// With history disabled, we would mark this connection as closed. That would be implicit
+		// decision (i.e., not communicated by Collector) based on the container being gone. We assume that if container
+		// is gone, then all connections involving it must also be finished.
+		if expireConnection(conn, m.activeConnections, enrichedConnections) != nil {
+			// Connection cannot be expired (not found within activeConnections), so we mark it as rotten
+			status.rotten = true
+			// TODO: What does it mean that the connection is rotten for historical containers?
+		} else {
+			netGraphFailReason = multierror.Append(netGraphFailReason,
+				fmt.Errorf("marking connection as inactive, because it involves historical container %s", conn.containerID))
+		}
+		// Do not return here, as we want to enrich also the endpoints and all other data, so that this connection
+		// is correctly displayed on the network graph.
+	}
 
 	var lookupResults []clusterentities.LookupResult
 	var isInternet = false
@@ -753,7 +784,7 @@ func (m *networkFlowManager) enrichContainerEndpoint(ep *containerEndpoint, stat
 			}
 			status.rotten = true
 			// Only increment metric once the connection is marked rotten
-			flowMetrics.ContainerIDMisses.Inc()
+			flowMetrics.ContainerIDMisses.WithLabelValues("rotten").Inc()
 			log.Debugf("Unable to fetch deployment information for container %s: no deployment found", ep.containerID)
 		}
 		return
@@ -796,7 +827,7 @@ func (m *networkFlowManager) enrichProcessListening(ep *containerEndpoint, statu
 		if timeElapsedSinceFirstSeen > maxContainerResolutionWaitPeriod {
 			status.rotten = true
 			// Only increment metric once the connection is marked rotten
-			flowMetrics.ContainerIDMisses.Inc()
+			flowMetrics.ContainerIDMisses.WithLabelValues("rotten").Inc()
 			log.Debugf("Unable to fetch deployment information for container %s: no deployment found", ep.containerID)
 		}
 		return

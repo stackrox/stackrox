@@ -9,6 +9,7 @@ import (
 //
 //go:generate mockgen-wrapper
 type EntityStore interface {
+	IsContainerIDHistorical(string) (found, isHistorical bool)
 	LookupByContainerID(string) (clusterentities.ContainerMetadata, bool)
 	LookupByEndpoint(net.NumericEndpoint) []clusterentities.LookupResult
 	RegisterPublicIPsListener(clusterentities.PublicIPsListener) bool
