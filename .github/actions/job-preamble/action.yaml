@@ -32,7 +32,7 @@ runs:
             rm -rf "$d"
           fi
         done
-        df --si
+        df --si /
 
     - name: Ignore dubious repository ownership
       run: |
