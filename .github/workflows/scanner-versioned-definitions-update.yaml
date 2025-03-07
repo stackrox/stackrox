@@ -123,17 +123,6 @@ jobs:
       SCANNER_BUNDLE_VERSION: ${{ matrix.version }}
       ROX_GIT_REF: ${{ matrix.ref }}
     steps:
-    - name: Free up disk space
-      shell: bash
-      run: |
-        set +e
-        set -x
-        df -h
-        for delete in /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL; do
-          rm -rf "/mnt${delete:?}"
-        done
-        df -h
-
     - name: Checkout specific reference
       uses: actions/checkout@v4
       with:
@@ -195,17 +184,6 @@ jobs:
       - /usr:/mnt/usr
       - /opt:/mnt/opt
     steps:
-    - name: Free up disk space
-      shell: bash
-      run: |
-        set +e
-        set -x
-        df -h
-        for delete in /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL; do
-          rm -rf "/mnt${delete:?}"
-        done
-        df -h
-
     - name: Checkout repository
       uses: actions/checkout@v4
       with:

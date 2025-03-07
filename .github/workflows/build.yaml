@@ -407,21 +407,6 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      - name: delete unused tools
-        shell: bash
-        run: |
-          set +e
-          set -x
-          df -h
-          for delete in /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL /opt/hostedtoolcache/Ruby; do
-            du -hs "/mnt${delete:?}"
-            rm -rf "/mnt${delete:?}"
-          done
-          df -h
-          for path in /mnt/usr/share /mnt/usr/local/lib /mnt/opt /mnt/opt/hostedtoolcache; do
-            du --threshold=100 -ks "${path}"/* | sort -nr | tail -10
-          done
-
       - name: Login to docker.io to mitigate rate limiting on downloading images
         uses: docker/login-action@v3
         with:
@@ -663,21 +648,6 @@ jobs:
       - uses: ./.github/actions/job-preamble
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-      - name: delete unused tools
-        shell: bash
-        run: |
-          set +e
-          set -x
-          df -h
-          for delete in /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL /opt/hostedtoolcache/Ruby; do
-            du -hs "/mnt${delete:?}"
-            rm -rf "/mnt${delete:?}"
-          done
-          df -h
-          for path in /mnt/usr/share /mnt/usr/local/lib /mnt/opt /mnt/opt/hostedtoolcache; do
-            du --threshold=100 -ks "${path}"/* | sort -nr | tail -10
-          done
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
