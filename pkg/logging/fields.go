@@ -1,11 +1,18 @@
 package logging
 
 import (
+	"context"
+
 	administrationResources "github.com/stackrox/rox/pkg/administration/events/resources"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+
+	"google.golang.org/grpc/metadata"
 )
 
 const (
+	ClusterIDContextValue = "stackrox.cluster.id"
+
 	alertIDField      = "alert_id"
 	apiTokenIDField   = "api_token_id"
 	apiTokenNameField = "api_token_name"
@@ -32,6 +39,30 @@ var resourceTypeFields = map[string]string{
 	notifierField:     administrationResources.Notifier,
 }
 
+type ContextField struct {
+	fields []zap.Field
+}
+
+func (c *ContextField) add(field zap.Field) {
+	c.fields = append(c.fields, field)
+}
+
+func (c *ContextField) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	for _, field := range c.fields {
+		field.AddTo(enc)
+	}
+	return nil
+}
+
+// Context provides selected context values as structured log fields.
+func Context(ctx context.Context) zap.Field {
+	context := &ContextField{}
+	if clusterID := metadata.ValueFromIncomingContext(ctx, ClusterIDContextValue); clusterID != nil {
+		context.add(ClusterID(clusterID[0]))
+	}
+	return zap.Inline(context)
+}
+
 // Err wraps err into a zap.Field instance with a well-known name 'error'.
 func Err(err error) zap.Field {
 	return zap.Error(err)
@@ -39,64 +70,64 @@ func Err(err error) zap.Field {
 
 // ImageName provides the image name as a structured log field.
 func ImageName(name string) zap.Field {
-	return zap.String(imageField, name)
+	return String(imageField, name)
 }
 
 // ClusterID provides the cluster ID as a structured log field.
 func ClusterID(id string) zap.Field {
-	return zap.String(clusterIDField, id)
+	return String(clusterIDField, id)
 }
 
 // ImageID provides the image ID as a structured log field.
 func ImageID(id string) zap.Field {
-	return zap.String(imageIDField, id)
+	return String(imageIDField, id)
 }
 
 // NodeID provides the node ID as a structured log field.
 func NodeID(id string) zap.Field {
-	return zap.String(nodeIDField, id)
+	return String(nodeIDField, id)
 }
 
 // BackupName provides the backup name as a structured log field.
 func BackupName(name string) zap.Field {
-	return zap.String(backupField, name)
+	return String(backupField, name)
 }
 
 // CloudSourceName provides the cloud source name as a structured log field.
 func CloudSourceName(name string) zap.Field {
-	return zap.String(cloudSourceField, name)
+	return String(cloudSourceField, name)
 }
 
 // NotifierName provides the notifier name as a structured log field.
 func NotifierName(name string) zap.Field {
-	return zap.String(notifierField, name)
+	return String(notifierField, name)
 }
 
 // ErrCode refers to a specific human-readable error code. The error code
 // will be used to identify a specific issue and may be used to render e.g. help information
 // or can be used for filtering.
 func ErrCode(code string) zap.Field {
-	return zap.String(errCodeField, code)
+	return String(errCodeField, code)
 }
 
 // AlertID provides the alert ID as a structured log field.
 func AlertID(id string) zap.Field {
-	return zap.String(alertIDField, id)
+	return String(alertIDField, id)
 }
 
 // APITokenID provides the API token ID as a structured log field.
 func APITokenID(id string) zap.Field {
-	return zap.String(apiTokenIDField, id)
+	return String(apiTokenIDField, id)
 }
 
 // APITokenName provides the API token name as a structured log field.
 func APITokenName(name string) zap.Field {
-	return zap.String(apiTokenNameField, name)
+	return String(apiTokenNameField, name)
 }
 
 // ClusterName provides the cluster name as a structured log field.
 func ClusterName(name string) zap.Field {
-	return zap.String(clusterNameField, name)
+	return String(clusterNameField, name)
 }
 
 // Wrapper functions for zap.Field functions.
@@ -104,18 +135,27 @@ func ClusterName(name string) zap.Field {
 // String provides a wrapper around zap.String and adds the key-value pair as structured log field.
 // This should be _always_ preferred over direct calls to zap to minimize dependency to it.
 func String(field, value string) zap.Field {
+	if value == "" {
+		return zap.Skip()
+	}
 	return zap.String(field, value)
 }
 
 // Any provides a wrapper around zap.Any and adds the key-value pair as structured log field.
 // This should be _always_ preferred over direct calls to zap to minimize dependency to it.
 func Any(field string, value interface{}) zap.Field {
+	if value == nil {
+		return zap.Skip()
+	}
 	return zap.Any(field, value)
 }
 
 // Strings provides a wrapper around zap.Strings and adds the key-value pair as structured log field.
 // This should be _always_ preferred over direct calls to zap to minimize dependency to it.
 func Strings(field string, values []string) zap.Field {
+	if len(values) == 0 {
+		return zap.Skip()
+	}
 	return zap.Strings(field, values)
 }
 

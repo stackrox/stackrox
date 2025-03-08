@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/reprocessor"
 	"github.com/stackrox/rox/sensor/common/store/resolver"
+	"github.com/stackrox/rox/sensor/common/trace"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 )
 
@@ -83,7 +84,7 @@ func (p *eventPipeline) getCurrentContext() context.Context {
 func (p *eventPipeline) createNewContext() {
 	p.contextMtx.Lock()
 	defer p.contextMtx.Unlock()
-	p.context, p.cancelContext = context.WithCancel(context.Background())
+	p.context, p.cancelContext = context.WithCancel(trace.Context())
 }
 
 // Start implements common.SensorComponent

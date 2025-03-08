@@ -26,6 +26,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/managedcentral"
 	"github.com/stackrox/rox/sensor/common/sensor/helmconfig"
+	"github.com/stackrox/rox/sensor/common/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/encoding/gzip"
@@ -172,9 +173,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	}
 
 	// Prepare outgoing context
-	ctx := context.Background()
-
-	ctx = metadata.AppendToOutgoingContext(ctx, centralsensor.SensorHelloMetadataKey, "true")
+	ctx := metadata.AppendToOutgoingContext(trace.Context(), centralsensor.SensorHelloMetadataKey, "true")
 	ctx, err := centralsensor.AppendSensorHelloInfoToOutgoingMetadata(ctx, sensorHello)
 	if err != nil {
 		s.stopper.Flow().StopWithError(err)
@@ -187,7 +186,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 		return
 	}
 
-	if err := s.initialSync(stream, sensorHello, configHandler, detector); err != nil {
+	if err := s.initialSync(ctx, stream, sensorHello, configHandler, detector); err != nil {
 		s.stopper.Flow().StopWithError(err)
 		return
 	}
@@ -211,7 +210,9 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	log.Info("Communication with central ended.")
 }
 
-func (s *centralCommunicationImpl) initialSync(stream central.SensorService_CommunicateClient, hello *central.SensorHello, configHandler config.Handler, detector detector.Detector) error {
+func (s *centralCommunicationImpl) initialSync(ctx context.Context, stream central.SensorService_CommunicateClient,
+	hello *central.SensorHello, configHandler config.Handler, detector detector.Detector,
+) error {
 	rawHdr, err := stream.Header()
 	if err != nil {
 		return errors.Wrap(err, "receiving headers from central")
@@ -279,7 +280,7 @@ func (s *centralCommunicationImpl) initialSync(stream central.SensorService_Comm
 		return err
 	}
 
-	if err := s.initialPolicySync(stream, detector); err != nil {
+	if err := s.initialPolicySync(ctx, stream, detector); err != nil {
 		return err
 	}
 
@@ -355,7 +356,9 @@ func (s *centralCommunicationImpl) initialConfigSync(stream central.SensorServic
 	return nil
 }
 
-func (s *centralCommunicationImpl) initialPolicySync(stream central.SensorService_CommunicateClient, detector detector.Detector) error {
+func (s *centralCommunicationImpl) initialPolicySync(ctx context.Context,
+	stream central.SensorService_CommunicateClient, detector detector.Detector,
+) error {
 	// Policy sync
 	msg, err := stream.Recv()
 	if err != nil {
@@ -364,7 +367,7 @@ func (s *centralCommunicationImpl) initialPolicySync(stream central.SensorServic
 	if msg.GetPolicySync() == nil {
 		return errors.Errorf("second message received from Sensor was not a policy sync: %T", msg.Msg)
 	}
-	if err := detector.ProcessPolicySync(context.Background(), msg.GetPolicySync()); err != nil {
+	if err := detector.ProcessPolicySync(ctx, msg.GetPolicySync()); err != nil {
 		return errors.Wrap(err, "policy sync could not be successfully processed")
 	}
 
