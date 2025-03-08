@@ -64,6 +64,8 @@ func (d *delegatorImpl) GetDelegateClusterID(ctx context.Context, imgName *stora
 	}
 
 	shouldDelegate, clusterID := d.shouldDelegate(imgName, config)
+	log.Infof(">>>> GetDelegateClusterID should delegate: %v", shouldDelegate)
+
 	if !shouldDelegate {
 		return "", false, nil
 	}

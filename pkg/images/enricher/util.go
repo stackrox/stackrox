@@ -20,7 +20,7 @@ func EnrichImageByName(ctx context.Context, enricher ImageEnricher, enrichmentCt
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 	img := types.ToImage(containerImage)
-
+	log.Infof(">>>> EnrichImageByName: enriching")
 	enrichmentResult, err := enricher.EnrichImage(ctx, enrichmentCtx, img)
 	if err != nil {
 		return nil, err
