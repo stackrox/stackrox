@@ -223,7 +223,7 @@ func (s *NetworkFlowManagerTestSuite) TestEnrichConnection() {
 		expectedStatus              *connStatus
 	}{
 		"Rotten connection should return rotten status": {
-			connPair: createConnectionPair().incoming().external().firstSeen(timestamp.Now().Add(-maxContainerResolutionWaitPeriod * 2)),
+			connPair: createConnectionPair().incoming().external().firstSeen(timestamp.Now().Add(-env.ContainerIDResolutionGracePeriod.DurationSetting() * 2)),
 			expectEntityLookupContainer: func() {
 				mockEntityStore.EXPECT().LookupByContainerID(gomock.Any()).Times(1).DoAndReturn(func(_ any) (clusterentities.ContainerMetadata, bool) {
 					return clusterentities.ContainerMetadata{}, false
@@ -419,7 +419,7 @@ func (s *NetworkFlowManagerTestSuite) TestEnrichContainerEndpoint() {
 		expectedEndpoint            *containerEndpointIndicator
 	}{
 		"Rotten connection should return rotten status": {
-			endpointPair:                createEndpointPair(timestamp.Now().Add(-maxContainerResolutionWaitPeriod * 2)),
+			endpointPair:                createEndpointPair(timestamp.Now().Add(-env.ContainerIDResolutionGracePeriod.DurationSetting() * 2)),
 			expectEntityLookupContainer: expectEntityLookupContainerHelper(mockEntityStore, 1, clusterentities.ContainerMetadata{}, false),
 			expectedStatus: &connStatus{
 				rotten: true,
@@ -467,7 +467,7 @@ func (s *NetworkFlowManagerTestSuite) TestEnrichProcessListening() {
 		expectedListeningIndicator  *processListeningIndicator
 	}{
 		"Rotten connection should return rotten status": {
-			containerPair:               createContainerPair(timestamp.Now().Add(-maxContainerResolutionWaitPeriod * 2)),
+			containerPair:               createContainerPair(timestamp.Now().Add(-env.ContainerIDResolutionGracePeriod.DurationSetting() * 2)),
 			expectEntityLookupContainer: expectEntityLookupContainerHelper(mockEntityStore, 1, clusterentities.ContainerMetadata{}, false),
 			expectedStatus: &connStatus{
 				rotten:      true,
@@ -809,7 +809,7 @@ func (b *sendNetflowsSuite) TestCloseOldConnectionFailedLookup() {
 	b.expectDetections(1)
 
 	pair := createConnectionPair().
-		firstSeen(timestamp.Now().Add(-maxContainerResolutionWaitPeriod * 2)).
+		firstSeen(timestamp.Now().Add(-env.ContainerIDResolutionGracePeriod.DurationSetting() * 2)).
 		lastSeen(timestamp.Now())
 	b.m.activeConnections[*pair.conn] = &networkConnIndicator{}
 	b.updateConn(pair)
@@ -837,7 +837,7 @@ func (b *sendNetflowsSuite) TestCloseOldEndpointFailedLookup() {
 	b.expectFailedLookup(1)
 
 	pair := createEndpointPair(
-		timestamp.Now().Add(-maxContainerResolutionWaitPeriod * 2)).
+		timestamp.Now().Add(-env.ContainerIDResolutionGracePeriod.DurationSetting() * 2)).
 		lastSeen(timestamp.Now())
 	b.m.activeEndpoints[*pair.endpoint] = &containerEndpointIndicator{}
 	b.updateEp(pair)
