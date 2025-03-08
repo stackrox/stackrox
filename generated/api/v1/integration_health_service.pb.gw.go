@@ -40,6 +40,7 @@ func request_IntegrationHealthService_GetImageIntegrations_0(ctx context.Context
 		protoReq Empty
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	msg, err := client.GetImageIntegrations(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
@@ -58,6 +59,7 @@ func request_IntegrationHealthService_GetNotifiers_0(ctx context.Context, marsha
 		protoReq Empty
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	msg, err := client.GetNotifiers(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
@@ -76,6 +78,7 @@ func request_IntegrationHealthService_GetBackupPlugins_0(ctx context.Context, ma
 		protoReq Empty
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	msg, err := client.GetBackupPlugins(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
@@ -94,6 +97,7 @@ func request_IntegrationHealthService_GetDeclarativeConfigs_0(ctx context.Contex
 		protoReq Empty
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	msg, err := client.GetDeclarativeConfigs(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
@@ -114,6 +118,7 @@ func request_IntegrationHealthService_GetVulnDefinitionsInfo_0(ctx context.Conte
 		protoReq VulnDefinitionsInfoRequest
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}

@@ -827,6 +827,9 @@
         "cve": {
           "type": "string"
         },
+        "advisory": {
+          "type": "string"
+        },
         "cvss": {
           "type": "number",
           "format": "float"
@@ -911,7 +914,7 @@
           "$ref": "#/definitions/storageEPSS"
         }
       },
-      "title": "Next Tag: 22"
+      "title": "Next Tag: 25"
     },
     "storageEmbeddedVulnerabilityScoreVersion": {
       "type": "string",

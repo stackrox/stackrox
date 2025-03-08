@@ -96,17 +96,6 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      - name: Free more disk space
-        shell: bash
-        run: |
-          set +e
-          set -x
-          df -h
-          for delete in /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL; do
-            rm -rf "/mnt${delete:?}"
-          done
-          df -h
-
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
 
@@ -127,6 +116,9 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
+      volumes:
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
     steps:
     - name: Checkout
       uses: actions/checkout@v4
