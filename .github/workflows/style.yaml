@@ -78,6 +78,9 @@ jobs:
     - name: Check Konflux setup
       run: scripts/ci/jobs/check-konflux-setup.sh
 
+    - name: Check TODOs
+      run: scripts/ci/jobs/check-image-version.sh
+
   style-check:
     runs-on: ubuntu-latest
     container:
