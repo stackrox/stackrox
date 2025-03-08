@@ -24,14 +24,14 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Administration)): {
-			"/v1.SensorUpgradeService/GetSensorUpgradeConfig",
+			v1.SensorUpgradeService_GetSensorUpgradeConfig_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.Administration)): {
-			"/v1.SensorUpgradeService/UpdateSensorUpgradeConfig",
+			v1.SensorUpgradeService_UpdateSensorUpgradeConfig_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.Cluster)): {
-			"/v1.SensorUpgradeService/TriggerSensorUpgrade",
-			"/v1.SensorUpgradeService/TriggerSensorCertRotation",
+			v1.SensorUpgradeService_TriggerSensorUpgrade_FullMethodName,
+			v1.SensorUpgradeService_TriggerSensorCertRotation_FullMethodName,
 		},
 	})
 )

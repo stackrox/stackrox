@@ -61,7 +61,12 @@ spec:
         command:
         - kubernetes-sensor
         resources:
-          {{- ._rox.sensor._resources | nindent 10 }}
+          requests:
+            memory: "200Mi"
+            cpu: "400m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
         args:
         - ensure-service-certificates
         securityContext:
@@ -141,7 +146,7 @@ spec:
         {{- include "srox.injectedCABundleVolumeMount" . | nindent 8 }}
       {{- end }}
       {{- if ._rox._securedClusterCertRefresh }}
-      - {{ include "srox.tlsCertsInitContainer" (list .  ._rox.sensor._resources) | indent 8 | trim }}
+      - {{ include "srox.tlsCertsInitContainer" (list .) | indent 8 | trim }}
       {{- end }}
       containers:
       - image: {{ quote ._rox.image.main.fullRef }}
@@ -199,8 +204,6 @@ spec:
           value: {{ ._rox.sensor.endpoint }}
         {{- if ._rox.env.openshift }}
         - name: ROX_OPENSHIFT_API
-          value: "true"
-        - name: ROX_NODE_INDEX_ENABLED
           value: "true"
         {{- end }}
         [<- if (not .KubectlOutput) >]

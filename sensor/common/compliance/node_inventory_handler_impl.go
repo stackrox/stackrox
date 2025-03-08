@@ -1,8 +1,13 @@
 package compliance
 
 import (
+	"strconv"
+
 	"github.com/pkg/errors"
+	"github.com/quay/claircore/indexer/controller"
+	"github.com/quay/claircore/pkg/rhctag"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -21,18 +26,29 @@ var (
 	errStartMoreThanOnce        = errors.New("unable to start the component more than once")
 )
 
+const (
+	rhcosFullName = "Red Hat Enterprise Linux CoreOS"
+	// From ClairCore rhel-vex matcher
+	goldenName = "Red Hat Container Catalog"
+	goldenURI  = `https://catalog.redhat.com/software/containers/explore`
+)
+
 type nodeInventoryHandlerImpl struct {
 	inventories  <-chan *storage.NodeInventory
 	reportWraps  <-chan *index.IndexReportWrap
 	toCentral    <-chan *message.ExpiringMessage
 	centralReady concurrency.Signal
 	// acksFromCentral is for connecting the replies from Central with the toCompliance chan
-	acksFromCentral chan common.MessageToComplianceWithAddress
-	toCompliance    chan common.MessageToComplianceWithAddress
-	nodeMatcher     NodeIDMatcher
+	acksFromCentral  chan common.MessageToComplianceWithAddress
+	toCompliance     chan common.MessageToComplianceWithAddress
+	nodeMatcher      NodeIDMatcher
+	nodeRHCOSMatcher NodeRHCOSMatcher
 	// lock prevents the race condition between Start() [writer] and ResponsesC() [reader]
 	lock    *sync.Mutex
 	stopper concurrency.Stopper
+	// archCache stores an architecture per node, so that it can be used in the index report for
+	// the 'rhcos' package. The arch is discovered once and then reused for subsequent scans.
+	archCache map[string]string
 }
 
 func (c *nodeInventoryHandlerImpl) Stopped() concurrency.ReadOnlyErrorSignal {
@@ -283,23 +299,151 @@ func (c *nodeInventoryHandlerImpl) sendNodeIndex(toC chan<- *message.ExpiringMes
 		log.Debugf("Empty IndexReport - not sending to Central")
 		return
 	}
+
+	isRHCOS, version, err := c.nodeRHCOSMatcher.GetRHCOSVersion(indexWrap.NodeName)
+	if err != nil {
+		log.Warnf("Unable to determine RHCOS version for node %q: %v", indexWrap.NodeName, err)
+		isRHCOS = false
+	}
+	log.Debugf("Node=%q discovered RHCOS=%t rhcos-version=%q", indexWrap.NodeName, isRHCOS, version)
+
 	select {
 	case <-c.stopper.Flow().StopRequested():
-	case toC <- message.New(&central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Id: indexWrap.NodeID,
-				// ResourceAction_UNSET_ACTION_RESOURCE is the only one supported by Central 4.6 and older.
-				// This can be changed to CREATE or UPDATE for Sensor 4.8 or when Central 4.6 is out of support.
-				Action: central.ResourceAction_UNSET_ACTION_RESOURCE,
-				Resource: &central.SensorEvent_IndexReport{
-					IndexReport: indexWrap.IndexReport,
+	default:
+		defer func() {
+			log.Debugf("Sent IndexReport to Central")
+			metrics.ObserveReceivedNodeIndex(indexWrap.NodeName) // keeping for compatibility with 4.6. Remove in 4.8
+			metrics.ObserveNodeScan(indexWrap.NodeName, metrics.NodeScanTypeNodeIndex, metrics.NodeScanOperationSendToCentral)
+		}()
+		irWrapperFunc := noop
+		arch := c.archCache[indexWrap.NodeName]
+		if isRHCOS {
+			if _, ok := c.archCache[indexWrap.NodeName]; !ok {
+				arch = extractArch(indexWrap.IndexReport)
+				c.archCache[indexWrap.NodeName] = arch
+			}
+			log.Debugf("Attaching OCI entry for 'rhcos' to index-report for node %s: version=%s, arch=%s", indexWrap.NodeName, version, arch)
+			irWrapperFunc = attachRPMtoRHCOS
+		}
+		toC <- message.New(&central.MsgFromSensor{
+			Msg: &central.MsgFromSensor_Event{
+				Event: &central.SensorEvent{
+					Id: indexWrap.NodeID,
+					// ResourceAction_UNSET_ACTION_RESOURCE is the only one supported by Central 4.6 and older.
+					// This can be changed to CREATE or UPDATE for Sensor 4.8 or when Central 4.6 is out of support.
+					Action: central.ResourceAction_UNSET_ACTION_RESOURCE,
+					Resource: &central.SensorEvent_IndexReport{
+						IndexReport: irWrapperFunc(version, arch, indexWrap.IndexReport),
+					},
+				},
+			},
+		})
+	}
+}
+
+func normalizeVersion(version string) []int32 {
+	rhctagVersion, err := rhctag.Parse(version)
+	if err != nil {
+		return []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	}
+	m := rhctagVersion.MinorStart()
+	v := m.Version(true).V
+	// Only two first fields matter for the initial db query that matches the vulnerabilities.
+	// The results of that query will be further filtered using the string value of the Version field.
+	return []int32{v[0], v[1], 0, 0, 0, 0, 0, 0, 0, 0}
+}
+
+func noop(_, _ string, rpm *v4.IndexReport) *v4.IndexReport {
+	return rpm
+}
+
+func idTaken[T any](m map[string]T, id int) bool {
+	_, exists := m[strconv.Itoa(id)]
+	return exists
+}
+
+// extractArch deduces the architecture of the node OS based on the index report containing rpm packages.
+func extractArch(rpm *v4.IndexReport) string {
+	for _, distro := range rpm.GetContents().GetDistributions() {
+		if distro.GetArch() != "" && distro.GetArch() != "noarch" {
+			return distro.GetArch()
+		}
+	}
+	for _, p := range rpm.GetContents().GetPackages() {
+		if p.GetArch() != "" && p.GetArch() != "noarch" {
+			return p.GetArch()
+		}
+	}
+	return ""
+}
+
+func attachRPMtoRHCOS(version, arch string, rpm *v4.IndexReport) *v4.IndexReport {
+	idCandidate := 600 // Arbitrary selected. RHCOS has usually 520-560 rpm packages.
+	for idTaken(rpm.GetContents().GetEnvironments(), idCandidate) {
+		idCandidate++
+	}
+	strID := strconv.Itoa(idCandidate)
+	oci := buildRHCOSIndexReport(strID, version, arch)
+	oci.Contents.Packages = append(oci.Contents.Packages, rpm.GetContents().GetPackages()...)
+	oci.Contents.Repositories = append(oci.Contents.Repositories, rpm.GetContents().GetRepositories()...)
+	for envId, list := range rpm.GetContents().GetEnvironments() {
+		oci.Contents.Environments[envId] = list
+	}
+	oci.Contents.Distributions = rpm.GetContents().GetDistributions()
+	return oci
+}
+
+func buildRHCOSIndexReport(Id, version, arch string) *v4.IndexReport {
+	return &v4.IndexReport{
+		// This hashId is arbitrary. The value doesn't play a role for matcher, but must be valid sha256.
+		HashId:  "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		State:   controller.IndexFinished.String(),
+		Success: true,
+		Err:     "",
+		Contents: &v4.Contents{
+			Packages: []*v4.Package{
+				{
+					Id:      Id,
+					Name:    "rhcos",
+					Version: version,
+					NormalizedVersion: &v4.NormalizedVersion{
+						Kind: "rhctag",
+						V:    normalizeVersion(version), // Only two first fields matter for the db-query.
+					},
+					Kind: "binary",
+					Source: &v4.Package{
+						Id:      Id,
+						Name:    "rhcos",
+						Kind:    "source",
+						Version: version,
+						Cpe:     "cpe:2.3:*", // required to pass validation of scanner V4 API
+					},
+					Arch: arch,
+					Cpe:  "cpe:2.3:*", // required to pass validation of scanner V4 API
+				},
+			},
+			Repositories: []*v4.Repository{
+				{
+					Id:   Id,
+					Name: goldenName,
+					Key:  "",
+					Uri:  goldenURI,
+					Cpe:  "cpe:2.3:*", // required to pass validation of scanner V4 API
+				},
+			},
+			// Environments must be present for the matcher to discover records
+			Environments: map[string]*v4.Environment_List{
+				Id: {
+					Environments: []*v4.Environment{
+						{
+							PackageDb: "",
+							// IntroducedIn must be a valid sha256, but the value is not important.
+							IntroducedIn:  "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+							RepositoryIds: []string{Id},
+						},
+					},
 				},
 			},
 		},
-	}):
-		defer log.Debugf("Sent IndexReport to Central")
-		metrics.ObserveReceivedNodeIndex(indexWrap.NodeName) // keeping for compatibility with 4.6. Remove in 4.8
-		metrics.ObserveNodeScan(indexWrap.NodeName, metrics.NodeScanTypeNodeIndex, metrics.NodeScanOperationSendToCentral)
 	}
 }

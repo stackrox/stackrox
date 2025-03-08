@@ -61,7 +61,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	auditPkg "github.com/stackrox/rox/pkg/audit"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -180,10 +179,7 @@ func New() *Resolver {
 
 		// Views
 		ImageCVEView: func() imagecve.CveView {
-			if features.VulnMgmtWorkloadCVEs.Enabled() {
-				return imagecve.Singleton()
-			}
-			return nil
+			return imagecve.Singleton()
 		}(),
 		NodeCVEView: func() nodecve.CveView {
 			return nodecve.Singleton()

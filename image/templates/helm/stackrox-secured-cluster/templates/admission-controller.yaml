@@ -55,7 +55,7 @@ spec:
       serviceAccountName: admission-control
       initContainers:
       {{- if ._rox._securedClusterCertRefresh }}
-      - {{ include "srox.tlsCertsInitContainer" (list .  ._rox.admissionControl._resources) | indent 8 | trim }}
+      - {{ include "srox.tlsCertsInitContainer" (list .) | indent 8 | trim }}
       {{- end }}
       containers:
         - image: {{ quote ._rox.image.main.fullRef }}
@@ -92,6 +92,10 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.namespace
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
           - name: ROX_SENSOR_ENDPOINT
             value: {{ ._rox.sensor.endpoint }}
           {{- include "srox.envVars" (list . "deployment" "admission-controller" "admission-controller") | nindent 10 }}
@@ -235,7 +239,7 @@ webhooks:
           - kube-public
           - istio-system
       {{- end }}
-    failurePolicy: Ignore
+    failurePolicy: {{ ._rox.admissionControl.failurePolicy | quote }}
     clientConfig:
       caBundle: {{ required "The 'ca.cert' config option MUST be set to StackRox's Service CA certificate in order for the admission controller to be usable" ._rox.ca._cert | b64enc }}
       service:
@@ -261,7 +265,7 @@ webhooks:
           - pods
           - pods/exec
           - pods/portforward
-    failurePolicy: Ignore
+    failurePolicy: {{ ._rox.admissionControl.failurePolicy | quote }}
     clientConfig:
       caBundle: {{ required "The 'ca.cert' config option MUST be set to StackRox's Service CA certificate in order for the admission controller to be usable" ._rox.ca._cert | b64enc }}
       service:

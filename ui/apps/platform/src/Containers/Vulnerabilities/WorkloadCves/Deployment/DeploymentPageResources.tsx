@@ -17,7 +17,6 @@ import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 
 import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
-import { getDefaultWorkloadSortOption, getWorkloadSortFields } from '../../utils/sortUtils';
 import ImageResourceTable, { ImageResources, imageResourcesFragment } from './ImageResourceTable';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 
@@ -40,8 +39,8 @@ function DeploymentPageResources({ deploymentId, pagination }: DeploymentPageRes
     const { baseSearchFilter } = useWorkloadCveViewContext();
     const { page, perPage, setPage, setPerPage } = pagination;
     const { sortOption, getSortParams } = useURLSort({
-        sortFields: getWorkloadSortFields('Image'),
-        defaultSortOption: getDefaultWorkloadSortOption('Image'),
+        sortFields: ['Image'],
+        defaultSortOption: { field: 'Image', direction: 'asc' },
         onSort: () => setPage(1),
     });
 

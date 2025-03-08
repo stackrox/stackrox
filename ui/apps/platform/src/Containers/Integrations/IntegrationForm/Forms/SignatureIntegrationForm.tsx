@@ -1,31 +1,34 @@
 import React, { ReactElement, useState } from 'react';
 import {
+    Alert,
     Button,
     ExpandableSection,
     Flex,
     FlexItem,
     Form,
     PageSection,
-    Popover,
+    Text,
     TextArea,
     TextInput,
 } from '@patternfly/react-core';
 import * as yup from 'yup';
 import { FieldArray, FormikProvider } from 'formik';
-import { HelpIcon, TrashIcon } from '@patternfly/react-icons';
+import { TrashIcon } from '@patternfly/react-icons';
 import merge from 'lodash/merge';
 
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormMessage from 'Components/PatternFly/FormMessage';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
-import PopoverBodyContent from 'Components/PopoverBodyContent';
 import {
     CosignCertificateVerification,
     CosignPublicKey,
     SignatureIntegration,
 } from 'types/signatureIntegration.proto';
+import useMetadata from 'hooks/useMetadata';
+import { getVersionedDocs } from 'utils/versioning';
 import IntegrationFormActions from '../IntegrationFormActions';
+import IntegrationHelpIcon from './Components/IntegrationHelpIcon';
 import FormLabelGroup from '../FormLabelGroup';
 import { IntegrationFormProps } from '../integrationFormTypes';
 import useIntegrationForm from '../useIntegrationForm';
@@ -95,40 +98,6 @@ const VerificationExpandableSection = ({ toggleText, children }): ReactElement =
     );
 };
 
-function regularExpressionIcon(): ReactElement {
-    return (
-        <Popover
-            aria-label="Supports regular expressions"
-            bodyContent={
-                <PopoverBodyContent
-                    headerContent="Supports regular expressions"
-                    bodyContent={
-                        <ExternalLink>
-                            <a
-                                href="https://golang.org/s/re2syntax"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
-                                See RE2 syntax reference
-                            </a>
-                        </ExternalLink>
-                    }
-                />
-            }
-        >
-            <button
-                type="button"
-                aria-label="More info for input"
-                onClick={(e) => e.preventDefault()}
-                aria-describedby="simple-form-name-01"
-                className="pf-v5-c-form__group-label-help"
-            >
-                <HelpIcon />
-            </button>
-        </Popover>
-    );
-}
-
 function SignatureIntegrationForm({
     initialValues = null,
     isEditable = false,
@@ -152,6 +121,18 @@ function SignatureIntegrationForm({
         onCancel,
         message,
     } = formik;
+    const { version } = useMetadata();
+
+    const re2syntax = (
+        <>
+            Supports regular expressions for matching. For more information, see{' '}
+            <ExternalLink>
+                <a href="https://golang.org/s/re2syntax" target="_blank" rel="noopener noreferrer">
+                    RE2 syntax reference
+                </a>
+            </ExternalLink>
+        </>
+    );
 
     function onChange(value, event) {
         setFieldValue(event.target.id, value);
@@ -160,6 +141,49 @@ function SignatureIntegrationForm({
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
+                <Alert
+                    title="Verifying image signatures"
+                    component="p"
+                    variant="info"
+                    isInline
+                    className="pf-v5-u-mb-lg"
+                >
+                    <Flex direction={{ default: 'column' }}>
+                        <FlexItem>
+                            <Text>
+                                Image signatures are verified by ensuring that their signature has
+                                been signed by a trusted image signer. Configure at least one
+                                trusted image signer by specifying a Cosign public encryption key or
+                                a Cosign certificate chain. Multiple image signers may be combined
+                                in a single signature integration.
+                            </Text>
+                        </FlexItem>
+                        <FlexItem>
+                            <Text>
+                                Certificates that are contained in the image signature must not be
+                                expired. Communication with the transparency log Rekor is not
+                                supported.
+                            </Text>
+                        </FlexItem>
+                        <FlexItem>
+                            <Text>
+                                For more information, see{' '}
+                                <ExternalLink>
+                                    <a
+                                        href={getVersionedDocs(
+                                            version,
+                                            'operating/verify-image-signatures'
+                                        )}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        RHACS documentation
+                                    </a>
+                                </ExternalLink>
+                            </Text>
+                        </FlexItem>
+                    </Flex>
+                </Alert>
                 <FormMessage message={message} />
                 <Form isWidthLimited>
                     <FormikProvider value={formik}>
@@ -274,6 +298,9 @@ function SignatureIntegrationForm({
                                                                             }
                                                                             onBlur={handleBlur}
                                                                             isDisabled={!isEditable}
+                                                                            placeholder={
+                                                                                '-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----'
+                                                                            }
                                                                         />
                                                                     </FormLabelGroup>
                                                                 </FlexItem>
@@ -344,7 +371,22 @@ function SignatureIntegrationForm({
                                                                     <FormLabelGroup
                                                                         isRequired
                                                                         label="Certificate OIDC issuer"
-                                                                        labelIcon={regularExpressionIcon()}
+                                                                        labelIcon={
+                                                                            <IntegrationHelpIcon
+                                                                                helpTitle="Certificate OIDC issuer"
+                                                                                helpText={
+                                                                                    <>
+                                                                                        The
+                                                                                        certificate
+                                                                                        OIDC issuer
+                                                                                        as specified
+                                                                                        by cosign.{' '}
+                                                                                        {re2syntax}{' '}
+                                                                                    </>
+                                                                                }
+                                                                                ariaLabel="Help for certificate issuer"
+                                                                            />
+                                                                        }
                                                                         fieldId={`cosignCertificates[${index}].certificateOidcIssuer`}
                                                                         touched={touched}
                                                                         errors={errors}
@@ -377,7 +419,22 @@ function SignatureIntegrationForm({
                                                                     <FormLabelGroup
                                                                         isRequired
                                                                         label="Certificate identity"
-                                                                        labelIcon={regularExpressionIcon()}
+                                                                        labelIcon={
+                                                                            <IntegrationHelpIcon
+                                                                                helpTitle="Certificate identity"
+                                                                                helpText={
+                                                                                    <>
+                                                                                        The
+                                                                                        certificate
+                                                                                        identity as
+                                                                                        specified by
+                                                                                        cosign.{' '}
+                                                                                        {re2syntax}{' '}
+                                                                                    </>
+                                                                                }
+                                                                                ariaLabel="Help for certificate identity"
+                                                                            />
+                                                                        }
                                                                         fieldId={`cosignCertificates[${index}].certificateIdentity`}
                                                                         touched={touched}
                                                                         errors={errors}
@@ -421,7 +478,34 @@ function SignatureIntegrationForm({
                                                                     }}
                                                                 >
                                                                     <FormLabelGroup
-                                                                        label="Certificate Chain PEM encoded"
+                                                                        label="Certificate chain (PEM encoded)"
+                                                                        labelIcon={
+                                                                            <IntegrationHelpIcon
+                                                                                helpTitle="Certificate chain (PEM encoded)"
+                                                                                helpText={
+                                                                                    <>
+                                                                                        <Text>
+                                                                                            The
+                                                                                            trusted
+                                                                                            certificate
+                                                                                            root to
+                                                                                            verify
+                                                                                            certificates
+                                                                                            against.
+                                                                                            If left
+                                                                                            empty,
+                                                                                            the
+                                                                                            public
+                                                                                            Fulcio
+                                                                                            roots
+                                                                                            are
+                                                                                            used.
+                                                                                        </Text>
+                                                                                    </>
+                                                                                }
+                                                                                ariaLabel="Help for certificate chain PEM encoded"
+                                                                            />
+                                                                        }
                                                                         fieldId={`cosignCertificates[${index}].certificateChainPemEnc`}
                                                                         touched={touched}
                                                                         errors={errors}
@@ -451,10 +535,42 @@ function SignatureIntegrationForm({
                                                                             }
                                                                             onBlur={handleBlur}
                                                                             isDisabled={!isEditable}
+                                                                            placeholder={
+                                                                                '-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----'
+                                                                            }
                                                                         />
                                                                     </FormLabelGroup>
                                                                     <FormLabelGroup
-                                                                        label="Certificate PEM encoded"
+                                                                        label="Intermediate certificate (PEM encoded)"
+                                                                        labelIcon={
+                                                                            <IntegrationHelpIcon
+                                                                                helpTitle="Intermediate certificate (PEM encoded)"
+                                                                                helpText={
+                                                                                    <>
+                                                                                        <Text>
+                                                                                            The
+                                                                                            trusted
+                                                                                            signer
+                                                                                            intermediate
+                                                                                            certificate
+                                                                                            authority
+                                                                                            to
+                                                                                            verify
+                                                                                            certificates
+                                                                                            against.
+                                                                                            If left
+                                                                                            empty,
+                                                                                            just the
+                                                                                            certificate
+                                                                                            chain is
+                                                                                            used for
+                                                                                            verification.
+                                                                                        </Text>
+                                                                                    </>
+                                                                                }
+                                                                                ariaLabel="Help for certificate chain PEM encoded"
+                                                                            />
+                                                                        }
                                                                         fieldId={`cosignCertificates[${index}].certificatePemEnc`}
                                                                         touched={touched}
                                                                         errors={errors}
@@ -483,6 +599,9 @@ function SignatureIntegrationForm({
                                                                             }
                                                                             onBlur={handleBlur}
                                                                             isDisabled={!isEditable}
+                                                                            placeholder={
+                                                                                '-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----'
+                                                                            }
                                                                         />
                                                                     </FormLabelGroup>
                                                                 </FlexItem>

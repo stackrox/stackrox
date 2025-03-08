@@ -40,3 +40,11 @@ This parsing step is necessary due to the nature of the data, which often consis
 ### Authentication
 
 To generate client certificate and a private key use: `openssl req -x509 -newkey rsa:2048 -days 365 -keyout ca-key.pem -out ca-cert.pem -nodes`
+
+#### Service Principal
+
+To create a new service principal for a resource group to ingest new logs, run:
+
+```
+$ az ad sp create-for-rbac --role="Monitoring Metrics Publisher" --scopes="/subscriptions/<subscription-id>/resourceGroups/<resource-group>"
+```

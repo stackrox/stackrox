@@ -34,16 +34,16 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Integration)): {
-			"/v1.NotifierService/GetNotifier",
-			"/v1.NotifierService/GetNotifiers",
+			v1.NotifierService_GetNotifier_FullMethodName,
+			v1.NotifierService_GetNotifiers_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.Integration)): {
-			"/v1.NotifierService/PutNotifier",
-			"/v1.NotifierService/PostNotifier",
-			"/v1.NotifierService/TestNotifier",
-			"/v1.NotifierService/DeleteNotifier",
-			"/v1.NotifierService/TestUpdatedNotifier",
-			"/v1.NotifierService/UpdateNotifier",
+			v1.NotifierService_PutNotifier_FullMethodName,
+			v1.NotifierService_PostNotifier_FullMethodName,
+			v1.NotifierService_TestNotifier_FullMethodName,
+			v1.NotifierService_DeleteNotifier_FullMethodName,
+			v1.NotifierService_TestUpdatedNotifier_FullMethodName,
+			v1.NotifierService_UpdateNotifier_FullMethodName,
 		},
 	})
 )

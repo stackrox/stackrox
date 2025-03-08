@@ -1,0 +1,44 @@
+/*
+* Top level styles to ensure the sub-navigation is always at the top of the current page
+* and that dropdown entries are not obscured by content
+*/
+nav.pf-v5-c-nav.pf-m-horizontal-subnav.acs-pf-horizontal-subnav {
+  background-color: var(--pf-v5-global--BackgroundColor--dark-300);
+  position: sticky;
+  overflow: visible;
+  z-index: 9999;
+}
+
+nav.pf-v5-c-nav.pf-m-horizontal-subnav.acs-pf-horizontal-subnav .pf-v5-c-nav__list {
+  overflow: visible;
+}
+
+/*
+* Style normalization of the text and colors of a dropdown nav item to match non-dropdown items
+*/
+nav.pf-v5-c-nav.pf-m-horizontal-subnav.acs-pf-horizontal-subnav .pf-v5-c-menu-toggle {
+  font-size: var(--pf-v5-c-nav__link--FontSize);
+  font-weight: var(--pf-v5-c-nav__link--FontWeight);
+  color: var(--pf-v5-c-nav__link--Color);
+  --pf-v5-c-menu-toggle__toggle-icon--Color: var(--pf-v5-c-nav__link--Color);
+  --pf-v5-c-menu-toggle--PaddingLeft: var(--pf-v5-c-nav--m-horizontal-subnav__link--PaddingLeft);
+}
+
+nav.pf-v5-c-nav.pf-m-horizontal-subnav.acs-pf-horizontal-subnav .pf-v5-c-menu-toggle:after {
+  border-left-width: 1px;
+  border-left-style: solid;
+  border-left-color: var(--pf-v5-global--BackgroundColor--dark-200);
+}
+
+nav.pf-v5-c-nav.pf-m-horizontal-subnav.acs-pf-horizontal-subnav .pf-v5-c-menu {
+  max-width: 300px;
+  white-space: break-spaces;
+  --pf-v5-c-menu__item-description--Color: var(--pf-v5-global--Color--light-300);
+}
+
+/*
+* Applies a highlight to a dropdown nav item when it is the current active item
+*/
+nav.pf-v5-c-nav.pf-m-horizontal-subnav.acs-pf-horizontal-subnav .acs-pf-horizontal-subnav-menu__active {
+  --pf-v5-c-menu__list-item--BackgroundColor: var(--pf-v5-c-menu__list-item--hover--BackgroundColor);
+}

@@ -5,9 +5,9 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/internalapi/central"
 	sensorInternal "github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
@@ -74,7 +74,12 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	log.Infof("Install method: %q", helmManagedConfig.GetManagedBy())
 	installmethod.Set(helmManagedConfig.GetManagedBy())
 
-	deploymentIdentification := FetchDeploymentIdentification(context.Background(), cfg.k8sClient.Kubernetes())
+	if cfg.introspectionK8sClient == nil {
+		// This is used so we can still identify sensor's deployment with the fake-workloads.
+		cfg.introspectionK8sClient = cfg.k8sClient
+	}
+
+	deploymentIdentification := FetchDeploymentIdentification(context.Background(), cfg.introspectionK8sClient.Kubernetes())
 	log.Infof("Determined deployment identification: %s", protoutils.NewWrapper(deploymentIdentification))
 
 	auditLogEventsInput := make(chan *sensorInternal.AuditEvents)
@@ -141,7 +146,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		complianceService,
 	}
 	matcher := compliance.NewNodeIDMatcher(storeProvider.Nodes())
-	nodeInventoryHandler := compliance.NewNodeInventoryHandler(complianceService.NodeInventories(), complianceService.IndexReportWraps(), matcher)
+	nodeInventoryHandler := compliance.NewNodeInventoryHandler(complianceService.NodeInventories(), complianceService.IndexReportWraps(), matcher, matcher)
 	complianceMultiplexer.AddComponentWithComplianceC(nodeInventoryHandler)
 	// complianceMultiplexer must start after all components that implement common.ComplianceComponent
 	// i.e., after nodeInventoryHandler
@@ -165,21 +170,10 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		components = append(components, k8sadmctrl.NewConfigMapSettingsPersister(cfg.k8sClient.Kubernetes(), admCtrlSettingsMgr, sensorNamespace))
 	}
 
-	if securedClusterIsNotManagedManually(helmManagedConfig) {
-		// Central capabilities are not available at this point (there's no connection to Central yet),
-		// so we'll start both Secured Cluster and Local Scanner TLS issuer Sensor components. The Secured Cluster
-		// certificate refresher can determine at runtime if Central has the required capability for it to work.
-
+	if centralsensor.SecuredClusterIsNotManagedManually(helmManagedConfig) {
 		podName := os.Getenv("POD_NAME")
 		components = append(components,
-			certrefresh.NewSecuredClusterTLSIssuer(cfg.k8sClient.Kubernetes(), sensorNamespace, podName))
-
-		// Local scanner can be started even if scanner-tls certs are available in the same namespace because
-		// it ignores secrets not owned by Sensor.
-		if env.LocalImageScanningEnabled.BooleanSetting() {
-			components = append(components,
-				certrefresh.NewLocalScannerTLSIssuer(cfg.k8sClient.Kubernetes(), sensorNamespace, podName))
-		}
+			certrefresh.NewSecuredClusterTLSIssuer(cfg.introspectionK8sClient.Kubernetes(), sensorNamespace, podName))
 	}
 
 	s := sensor.NewSensor(
@@ -220,9 +214,4 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	s.AddAPIServices(apiServices...)
 	return s, nil
-}
-
-func securedClusterIsNotManagedManually(helmManagedConfig *central.HelmManagedConfigInit) bool {
-	return helmManagedConfig.GetManagedBy() != storage.ManagerType_MANAGER_TYPE_UNKNOWN &&
-		helmManagedConfig.GetManagedBy() != storage.ManagerType_MANAGER_TYPE_MANUAL
 }

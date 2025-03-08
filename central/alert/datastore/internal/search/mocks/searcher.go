@@ -44,33 +44,33 @@ func (m *MockSearcher) EXPECT() *MockSearcherMockRecorder {
 }
 
 // Count mocks base method.
-func (m *MockSearcher) Count(ctx context.Context, q *v1.Query) (int, error) {
+func (m *MockSearcher) Count(ctx context.Context, q *v1.Query, excludeResolved bool) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Count", ctx, q)
+	ret := m.ctrl.Call(m, "Count", ctx, q, excludeResolved)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Count indicates an expected call of Count.
-func (mr *MockSearcherMockRecorder) Count(ctx, q any) *gomock.Call {
+func (mr *MockSearcherMockRecorder) Count(ctx, q, excludeResolved any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockSearcher)(nil).Count), ctx, q)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockSearcher)(nil).Count), ctx, q, excludeResolved)
 }
 
 // Search mocks base method.
-func (m *MockSearcher) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+func (m *MockSearcher) Search(ctx context.Context, q *v1.Query, excludeResolved bool) ([]search.Result, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Search", ctx, q)
+	ret := m.ctrl.Call(m, "Search", ctx, q, excludeResolved)
 	ret0, _ := ret[0].([]search.Result)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Search indicates an expected call of Search.
-func (mr *MockSearcherMockRecorder) Search(ctx, q any) *gomock.Call {
+func (mr *MockSearcherMockRecorder) Search(ctx, q, excludeResolved any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockSearcher)(nil).Search), ctx, q)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockSearcher)(nil).Search), ctx, q, excludeResolved)
 }
 
 // SearchAlerts mocks base method.
@@ -89,31 +89,31 @@ func (mr *MockSearcherMockRecorder) SearchAlerts(ctx, q any) *gomock.Call {
 }
 
 // SearchListAlerts mocks base method.
-func (m *MockSearcher) SearchListAlerts(ctx context.Context, q *v1.Query) ([]*storage.ListAlert, error) {
+func (m *MockSearcher) SearchListAlerts(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*storage.ListAlert, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SearchListAlerts", ctx, q)
+	ret := m.ctrl.Call(m, "SearchListAlerts", ctx, q, excludeResolved)
 	ret0, _ := ret[0].([]*storage.ListAlert)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SearchListAlerts indicates an expected call of SearchListAlerts.
-func (mr *MockSearcherMockRecorder) SearchListAlerts(ctx, q any) *gomock.Call {
+func (mr *MockSearcherMockRecorder) SearchListAlerts(ctx, q, excludeResolved any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchListAlerts", reflect.TypeOf((*MockSearcher)(nil).SearchListAlerts), ctx, q)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchListAlerts", reflect.TypeOf((*MockSearcher)(nil).SearchListAlerts), ctx, q, excludeResolved)
 }
 
 // SearchRawAlerts mocks base method.
-func (m *MockSearcher) SearchRawAlerts(ctx context.Context, q *v1.Query) ([]*storage.Alert, error) {
+func (m *MockSearcher) SearchRawAlerts(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*storage.Alert, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SearchRawAlerts", ctx, q)
+	ret := m.ctrl.Call(m, "SearchRawAlerts", ctx, q, excludeResolved)
 	ret0, _ := ret[0].([]*storage.Alert)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SearchRawAlerts indicates an expected call of SearchRawAlerts.
-func (mr *MockSearcherMockRecorder) SearchRawAlerts(ctx, q any) *gomock.Call {
+func (mr *MockSearcherMockRecorder) SearchRawAlerts(ctx, q, excludeResolved any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawAlerts", reflect.TypeOf((*MockSearcher)(nil).SearchRawAlerts), ctx, q)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawAlerts", reflect.TypeOf((*MockSearcher)(nil).SearchRawAlerts), ctx, q, excludeResolved)
 }

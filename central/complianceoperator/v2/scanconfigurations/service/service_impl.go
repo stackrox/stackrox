@@ -46,20 +46,20 @@ const (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Compliance)): {
-			"/v2.ComplianceScanConfigurationService/ListComplianceScanConfigurations",
-			"/v2.ComplianceScanConfigurationService/GetComplianceScanConfiguration",
-			"/v2.ComplianceScanConfigurationService/ListComplianceScanConfigProfiles",
-			"/v2.ComplianceScanConfigurationService/ListComplianceScanConfigClusterProfiles",
-			"/v2.ComplianceScanConfigurationService/GetReportHistory",
-			"/v2.ComplianceScanConfigurationService/GetMyReportHistory",
+			v2.ComplianceScanConfigurationService_ListComplianceScanConfigurations_FullMethodName,
+			v2.ComplianceScanConfigurationService_GetComplianceScanConfiguration_FullMethodName,
+			v2.ComplianceScanConfigurationService_ListComplianceScanConfigProfiles_FullMethodName,
+			v2.ComplianceScanConfigurationService_ListComplianceScanConfigClusterProfiles_FullMethodName,
+			v2.ComplianceScanConfigurationService_GetReportHistory_FullMethodName,
+			v2.ComplianceScanConfigurationService_GetMyReportHistory_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.Compliance)): {
-			"/v2.ComplianceScanConfigurationService/CreateComplianceScanConfiguration",
-			"/v2.ComplianceScanConfigurationService/DeleteComplianceScanConfiguration",
-			"/v2.ComplianceScanConfigurationService/RunComplianceScanConfiguration",
-			"/v2.ComplianceScanConfigurationService/UpdateComplianceScanConfiguration",
-			"/v2.ComplianceScanConfigurationService/RunReport",
-			"/v2.ComplianceScanConfigurationService/DeleteReport",
+			v2.ComplianceScanConfigurationService_CreateComplianceScanConfiguration_FullMethodName,
+			v2.ComplianceScanConfigurationService_DeleteComplianceScanConfiguration_FullMethodName,
+			v2.ComplianceScanConfigurationService_RunComplianceScanConfiguration_FullMethodName,
+			v2.ComplianceScanConfigurationService_UpdateComplianceScanConfiguration_FullMethodName,
+			v2.ComplianceScanConfigurationService_RunReport_FullMethodName,
+			v2.ComplianceScanConfigurationService_DeleteReport_FullMethodName,
 		},
 	})
 

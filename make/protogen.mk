@@ -194,6 +194,7 @@ ifeq ($(SCANNER_DIR),)
 endif
 	$(SILENT)mkdir -p $(dir $@)
 	$(SILENT)PATH=$(GOTOOLS_BIN) $(PROTOC) \
+		--fatal_warnings \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GOOGLE_API_INCLUDES) \
 		-I$(SCANNER_PROTO_BASE_PATH) \
@@ -210,12 +211,13 @@ ifeq ($(SCANNER_DIR),)
 endif
 	$(SILENT)mkdir -p $(dir $@)
 	$(SILENT)PATH=$(GOTOOLS_BIN) $(PROTOC) \
+		--fatal_warnings \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GOOGLE_API_INCLUDES) \
 		-I$(SCANNER_PROTO_BASE_PATH) \
 		--proto_path=$(PROTO_BASE_PATH) \
 		--plugin protoc-gen-go-vtproto="${PROTOC_GEN_GO_VTPROTO_BIN}" \
-		--go-vtproto_opt=features=marshal+size+equal+clone+unmarshal_unsafe \
+		--go-vtproto_opt=features=marshal+size+equal+clone+unmarshal+unmarshal_unsafe \
 		--go-vtproto_out=$(M_ARGS_STR:%=%,)module=github.com/stackrox/rox/generated:$(GENERATED_BASE_PATH) \
 		$(dir $<)/*.proto
 
@@ -227,6 +229,7 @@ ifeq ($(SCANNER_DIR),)
 endif
 	$(SILENT)mkdir -p $(dir $@)
 	$(SILENT)PATH=$(GOTOOLS_BIN) $(PROTOC) \
+		--fatal_warnings \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GOOGLE_API_INCLUDES) \
 		-I$(SCANNER_PROTO_BASE_PATH) \
@@ -245,6 +248,7 @@ ifeq ($(SCANNER_DIR),)
 endif
 	$(SILENT)mkdir -p $(dir $@)
 	$(SILENT)PATH=$(GOTOOLS_BIN) $(PROTOC) \
+		--fatal_warnings \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GOOGLE_API_INCLUDES) \
 		-I$(SCANNER_PROTO_BASE_PATH) \
@@ -261,6 +265,7 @@ ifeq ($(SCANNER_DIR),)
 	$(error Cached directory of scanner dependency not found, run 'go mod tidy')
 endif
 	$(SILENT)PATH=$(GOTOOLS_BIN) $(PROTOC) \
+		--fatal_warnings \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GOOGLE_API_INCLUDES) \
 		-I$(SCANNER_PROTO_BASE_PATH) \
@@ -274,6 +279,7 @@ ifeq ($(SCANNER_DIR),)
 	$(error Cached directory of scanner dependency not found, run 'go mod tidy')
 endif
 	$(SILENT)PATH=$(GOTOOLS_BIN) $(PROTOC) \
+		--fatal_warnings \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GOOGLE_API_INCLUDES) \
 		-I$(SCANNER_PROTO_BASE_PATH) \

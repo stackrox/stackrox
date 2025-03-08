@@ -1,6 +1,7 @@
 package sampleScripts
 
 import common.Constants
+import io.stackrox.proto.api.v1.NamespaceServiceOuterClass.Namespace
 import orchestratormanager.OrchestratorMain
 import orchestratormanager.OrchestratorType
 import org.javers.core.Javers
@@ -9,8 +10,8 @@ import org.javers.core.diff.ListCompareAlgorithm
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import services.BaseService
-import services.SummaryService
 import services.DeploymentService
+import services.NamespaceService
 import util.Env
 
 // Repeat the deployment counts found in SummaryTest.
@@ -35,8 +36,18 @@ OrchestratorMain orchestrator = OrchestratorType.create(
 
 //
 
-def stackroxSummaryCounts = SummaryService.getCounts()
-log.info "Stackrox deployment count: ${stackroxSummaryCounts.numDeployments}"
+int getDeploymentCount() {
+    int totalDeployments = 0
+    def namespaces = NamespaceService.getNamespaces()
+    for (Namespace ns: namespaces) {
+        def namespaceDetails = NamespaceService.getNamespace(ns.metadata.id)
+        totalDeployments += namespaceDetails.getNumDeployments()
+    }
+    return totalDeployments
+}
+
+def stackroxDeploymentCounts = getDeploymentCount()
+log.info "Stackrox deployment count: ${stackroxDeploymentCounts}"
 
 List<String> orchestratorDeploymentNames = orchestrator.getDeploymentCount()
 List<String> orchestratorDaemonSetNames = orchestrator.getDaemonSetCount()
@@ -56,7 +67,7 @@ List<String> orchestratorResourceNames = orchestratorDeploymentNames +
     orchestratorStatefulSetNames +
     orchestratorJobNames
 
-log.info "Stackrox count: ${stackroxSummaryCounts.numDeployments}, " +
+log.info "Stackrox count: ${stackroxDeploymentCounts}, " +
          "orchestrator count ${orchestratorResourceNames.size()}"
 
 List<String> stackroxDeploymentNames = DeploymentService.listDeployments()*.name
@@ -68,4 +79,4 @@ log.info javers.compare(stackroxDeploymentNames, orchestratorResourceNames).pret
 log.info "Stackrox deployments: " + stackroxDeploymentNames.sort().join(",")
 log.info "Orchestrator deployments: " + orchestratorResourceNames.sort().join(",")
 
-assert Math.abs(stackroxSummaryCounts.numDeployments - orchestratorResourceNames.size()) <= 2
+assert Math.abs(stackroxDeploymentCounts - orchestratorResourceNames.size()) <= 2

@@ -68,6 +68,8 @@ ci_exit_trap() {
     done
 
     handle_dangling_processes
+
+    gate_flaky_tests "${exit_code}"
 }
 
 # handle_dangling_processes() - The OpenShift CI ci-operator will not complete a
@@ -245,7 +247,7 @@ push_image_manifest_lists() {
     done
 
     # Push manifest lists for scanner and collector for amd64 only
-    local amd64_image_set=("scanner" "scanner-db" "scanner-slim" "scanner-db-slim" "collector" "collector-slim")
+    local amd64_image_set=("scanner" "scanner-db" "scanner-slim" "scanner-db-slim" "collector")
     for image in "${amd64_image_set[@]}"; do
         retry 5 true \
           "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:${tag}" "amd64" | cat
@@ -459,7 +461,6 @@ push_matching_collector_scanner_images() {
     _retag "${registry}/scanner-db-slim:${scanner_version}" "${registry}/scanner-db-slim:${main_tag}-${arch}"
 
     _retag "${registry}/collector:${collector_version}"      "${registry}/collector:${main_tag}-${arch}"
-    _retag "${registry}/collector:${collector_version}-slim" "${registry}/collector-slim:${main_tag}-${arch}"
 }
 
 poll_for_system_test_images() {
@@ -557,6 +558,11 @@ _image_prefetcher_system_start() {
     # ROX-24818: GKE is excluded from system image prefetch as it causes
     # flakes in test.
     *-operator-e2e-tests|*ocp*qa-e2e-tests)
+        image_prefetcher_start_set stackrox-images
+        ;;
+    # Enabling scanner V4 installation tests as well, even though they also run on GKE,
+    # for gathering some more data points for CI reliability.
+    *-scanner-v4-install-tests)
         image_prefetcher_start_set stackrox-images
         ;;
     *)
@@ -662,6 +668,11 @@ _image_prefetcher_system_await() {
     *-operator-e2e-tests|*ocp*qa-e2e-tests)
         image_prefetcher_await_set stackrox-images
         ;;
+    # Enabling scanner V4 installation tests as well, even though they also run on GKE,
+    # for gathering some more data points for CI reliability.
+    *-scanner-v4-install-tests)
+        image_prefetcher_await_set stackrox-images
+        ;;
     *)
         info "No system image prefetching is performed for: ${CI_JOB_NAME}. Nothing to wait for."
         ;;
@@ -732,7 +743,9 @@ EOM
             ((attempt++))
             sleep 10
         else
-            die "ERROR: Timeout waiting for ${service} to obtain endpoint!"
+            info "Something is wrong with the ${service} service. See the following 'describe' output."
+            kubectl -n "${ns}" describe "${service}" || true
+            die "Timeout waiting for ${service} to obtain endpoint!"
         fi
     done
     local endpoint
@@ -812,7 +825,6 @@ stackrox-operator-index ${operator_metadata_tag}
 main ${tag}
 central-db ${tag}
 collector ${tag}
-collector-slim ${tag}
 scanner ${tag}
 scanner-db ${tag}
 scanner-v4 ${tag}
@@ -832,6 +844,21 @@ END
                 # Otherwise this message will surface in the Prow log when
                 # images timeout out below.
             fi
+            ;;
+        *-scanner-v4-install-tests)
+            cat >> "${image_list}" << END
+stackrox-operator ${operator_controller_tag}
+stackrox-operator-bundle ${operator_metadata_tag}
+stackrox-operator-index ${operator_metadata_tag}
+main ${tag}
+central-db ${tag}
+collector ${tag}
+scanner ${tag}
+scanner-db ${tag}
+scanner-v4 ${tag}
+scanner-v4-db ${tag}
+roxctl ${tag}
+END
             ;;
         *)
             cat >> "${image_list}" << END
@@ -1597,6 +1624,42 @@ post_process_test_results() {
         save_test_metrics "${csv_output}"
     } || true
     set -u
+}
+
+gate_flaky_tests() {
+    local exit_code="$1"
+
+    if [[ "${exit_code}" == "0" ]]; then
+        exit "${exit_code}"
+    fi
+
+    # Gating flaky tests is enabled only on PRs.
+    if ! is_in_PR_context; then
+        exit "${exit_code}"
+    fi
+
+    # Prepare flakechecker
+    curl --retry 5 --retry-connrefused -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.23/flakechecker -o /tmp/flakechecker || exit "${exit_code}"
+    chmod +x /tmp/flakechecker
+    setup_gcp || echo "setup_gcp called"
+
+    # Run flakechecker for failed test
+    local config_file="${SCRIPTS_ROOT}/scripts/ci/flakechecker/flake-config.yml"
+    if /tmp/flakechecker -config-file "${config_file}" -job-name "${JOB_NAME}" -junit-reports-dir "${ARTIFACT_DIR}"; then
+      # Flakechecker exits successfully IF AND ONLY IF it finds a NON-EMPTY set of test failures in the
+      # JUnit report, AND ALL these test failures are found to be known flaky tests defined in flake-config.yml file.
+      # And the recent failure ratio for found failed tests is below threshold defined in flake-config.yml.
+      #
+      # In this case, we change the overall exit code of the job to success, hoping that the failure was only
+      # due to the tests flaky behavior (and not some other issue in the test job).
+      exit 0
+    else
+      # Flakechecker fails in case it identified test failures which do not qualify for suppression, OR
+      # in case there were no test failures at all in the JUnit report (a sign of problems elsewhere in the test job).
+      #
+      # In this case we keep the exit code as it was.
+      exit "${exit_code}"
+    fi
 }
 
 make_prow_job_link() {

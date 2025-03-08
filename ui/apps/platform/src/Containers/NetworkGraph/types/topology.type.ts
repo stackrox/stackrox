@@ -1,6 +1,6 @@
 import { EdgeModel, EdgeTerminalType, Model, NodeModel } from '@patternfly/react-topology';
 
-import { EdgeProperties, ListenPort, OutEdges } from 'types/networkFlow.proto';
+import { DeploymentDetails, EdgeProperties, OutEdges } from 'types/networkFlow.proto';
 import { Override } from 'utils/type.utils';
 
 export type CustomModel = Override<Model, { nodes: CustomNodeModel[]; edges: CustomEdgeModel[] }>;
@@ -121,12 +121,7 @@ export type NodeDataType =
 export type DeploymentData = {
     type: 'DEPLOYMENT';
     id: string;
-    deployment: {
-        cluster: string;
-        listenPorts: ListenPort[];
-        name: string;
-        namespace: string;
-    };
+    deployment: DeploymentDetails;
     policyIds: string[];
     networkPolicyState: NetworkPolicyState;
     showPolicyState: boolean;

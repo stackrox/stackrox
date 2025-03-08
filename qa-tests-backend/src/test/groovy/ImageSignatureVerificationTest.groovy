@@ -1,4 +1,4 @@
-import static Services.checkForNoViolations
+import static Services.checkForNoActiveViolations
 import static Services.waitForViolation
 import static util.Helpers.withRetry
 
@@ -321,11 +321,12 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
 
         // Wait until we received metadata from all images we want to test. This will ensure that enrichment
         // has finalized.
-        withRetry(90, 2) {
+        withRetry(20, 30) {
             for (digest in IMAGE_DIGESTS) {
                 ImageOuterClass.Image image = ImageService.getImage(digest, false)
                 assert image
                 assert !image.getNotesList().contains(ImageOuterClass.Image.Note.MISSING_METADATA)
+                assert !image.getNotPullable()
             }
         }
 
@@ -383,7 +384,7 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
         if (expectViolations) {
             assert waitForViolation(deployment.name, policyName)
         } else {
-            assert checkForNoViolations(deployment.name, policyName, 15)
+            assert checkForNoActiveViolations(deployment.name, policyName, 60)
         }
 
         where:

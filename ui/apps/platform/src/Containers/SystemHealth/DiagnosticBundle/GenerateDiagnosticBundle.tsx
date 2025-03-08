@@ -88,10 +88,7 @@ function GenerateDiagnosticBundle(): ReactElement {
             {version && (
                 <ExternalLink>
                     <a
-                        href={getVersionedDocs(
-                            version,
-                            'configuration/generate-diagnostic-bundle.html'
-                        )}
+                        href={getVersionedDocs(version, 'configuring/generate-diagnostic-bundle')}
                         target="_blank"
                         rel="noopener noreferrer"
                     >

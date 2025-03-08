@@ -176,6 +176,8 @@ message Cluster {
 
   string init_bundle_id = 29;
   ManagerType managed_by = 30;
+
+  repeated string sensor_capabilities = 31;
 }
 
 enum ManagerType {

@@ -23,9 +23,9 @@ func WithSACFilter(ctx context.Context, targetResource permissions.ResourceMetad
 	}
 
 	if clusterLevelResource(targetResource) {
-		sacQueryFilter, err = sac.BuildNonVerboseClusterLevelSACQueryFilter(scopeTree)
+		sacQueryFilter, err = sac.BuildClusterLevelSACQueryFilter(scopeTree)
 	} else {
-		sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+		sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
 	}
 	if err != nil {
 		return nil, err

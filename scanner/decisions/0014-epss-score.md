@@ -5,7 +5,7 @@
 
 ## Status
 
-Status: Accepted
+Status: Updated by [#0016](0016-epss-rhsa.md)
 
 ## Context
 

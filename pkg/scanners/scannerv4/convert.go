@@ -50,12 +50,13 @@ func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport)
 		}
 
 		component := &storage.EmbeddedImageScanComponent{
-			Name:     pkg.GetName(),
-			Version:  pkg.GetVersion(),
-			Vulns:    vulnerabilities(report.GetVulnerabilities(), vulnIDs),
-			FixedBy:  pkg.GetFixedInVersion(),
-			Source:   source,
-			Location: location,
+			Name:         pkg.GetName(),
+			Version:      pkg.GetVersion(),
+			Architecture: pkg.GetArch(),
+			Vulns:        vulnerabilities(report.GetVulnerabilities(), vulnIDs),
+			FixedBy:      pkg.GetFixedInVersion(),
+			Source:       source,
+			Location:     location,
 		}
 		// DO NOT BLINDLY SET THIS INSIDE THE STRUCT DECLARATION DIRECTLY ABOVE.
 		// IF layerIdx IS nil, IT DOES NOT MEAN HasLayerIndex WILL BE THE SAME nil.
@@ -162,8 +163,9 @@ func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerab
 
 		// TODO(ROX-20355): Populate last modified once the API is available.
 		vuln := &storage.EmbeddedVulnerability{
-			Cve:     ccVuln.GetName(),
-			Summary: ccVuln.GetDescription(),
+			Cve:      ccVuln.GetName(),
+			Advisory: ccVuln.GetAdvisory(),
+			Summary:  ccVuln.GetDescription(),
 			// TODO(ROX-26547)
 			// The link field will be overwritten if preferred CVSS source is available
 			Link:        link(ccVuln.GetLink()),
@@ -171,6 +173,7 @@ func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerab
 			// LastModified: ,
 			VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 			Severity:          normalizedSeverity(ccVuln.GetNormalizedSeverity()),
+			Epss:              epss(ccVuln.GetEpssMetrics()),
 		}
 		if err := setScoresAndScoreVersions(vuln, ccVuln.GetCvssMetrics()); err != nil {
 			utils.Should(err)
@@ -186,6 +189,16 @@ func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerab
 	}
 
 	return vulns
+}
+
+func epss(epssDetail *v4.VulnerabilityReport_Vulnerability_EPSS) *storage.EPSS {
+	if epssDetail == nil {
+		return nil
+	}
+	return &storage.EPSS{
+		EpssProbability: epssDetail.Probability,
+		EpssPercentile:  epssDetail.Percentile,
+	}
 }
 
 func setScoresAndScoreVersions(vuln *storage.EmbeddedVulnerability, CVSSMetrics []*v4.VulnerabilityReport_Vulnerability_CVSS) error {

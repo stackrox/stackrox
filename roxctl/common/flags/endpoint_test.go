@@ -74,7 +74,6 @@ func TestEndpointAndPlaintextSetting(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
 		t.Run(tc.givenEndpoint, func(t *testing.T) {
 			t.Setenv(env.EndpointEnv.EnvVar(), tc.givenEndpoint)
 			host, usePlaintext, err := EndpointAndPlaintextSetting()

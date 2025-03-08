@@ -19,6 +19,10 @@ const (
 	propertyName = "Cloud Sources"
 )
 
+func trimPrefix(typeName string) string {
+	return strings.TrimPrefix(typeName, "TYPE_")
+}
+
 // Gather cloud source types.
 // Current properties we gather:
 // "Total Cloud Sources"
@@ -44,10 +48,12 @@ func Gather(ds DataStore) phonehome.GatherFunc {
 		})
 
 		totalCount := map[string]int{}
+		for csType := range storage.CloudSource_Type_value {
+			totalCount[trimPrefix(csType)] = 0
+		}
 
 		for _, cs := range cloudSources {
-			csType := cs.GetType()
-			totalCount[strings.TrimPrefix(csType.String(), "TYPE_")]++
+			totalCount[trimPrefix(cs.GetType().String())]++
 		}
 
 		for csType, count := range totalCount {

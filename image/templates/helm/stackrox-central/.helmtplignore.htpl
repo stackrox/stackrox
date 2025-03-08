@@ -17,6 +17,10 @@ templates/*
 !templates/_*.tpl
 !templates/01-central-05-tls-secret.yaml
 templates/*
+[< else if eq .RenderMode "centralDBTLSOnly" >]
+!templates/_*.tpl
+!templates/01-central-05-db-tls-secret.yaml
+templates/*
 [< else if eq .RenderMode "centralDBOnly" >]
 !templates/_*.tpl
 !templates/01-central-*-central-db.yaml

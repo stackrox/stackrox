@@ -24,7 +24,7 @@ clusterConfig:
     admissionControllerEvents: true
     tolerationsConfig:
       disabled: false
-    slimCollector: true
+    slimCollector: false
   dynamicConfig:
     disableAuditLogs: true
     admissionControllerConfig:
@@ -64,7 +64,6 @@ clusterConfig:
 			AdmissionController:        true,
 			AdmissionControllerUpdates: false,
 			TolerationsConfig:          &storage.TolerationsConfig{Disabled: false},
-			SlimCollector:              true,
 			AdmissionControllerEvents:  true,
 		},
 		ConfigFingerprint: "69c6a7ea9452e9dc13aaf7d29e2b9ac4207a53d95b900b3853dce46f47df8407-1",

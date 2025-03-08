@@ -21,8 +21,7 @@ func TestOverriddenTagsAreRenderedInTheChart(t *testing.T) {
 		MetaValuesOverridesFunc: func(values *charts.MetaValues) {
 			values.ClusterName = "test"
 			values.ImageTag = "custom-main"
-			values.CollectorFullImageTag = "custom-collector-full"
-			values.CollectorSlimImageTag = "custom-collector-slim"
+			values.CollectorImageTag = "custom-collector"
 			values.ScannerImageTag = "custom-scanner"
 		},
 		HelmTestOpts: []helmTest.LoaderOpt{helmTest.WithAdditionalTestDirs(path.Join(testDir, "override"))},

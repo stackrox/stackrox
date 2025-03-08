@@ -149,27 +149,35 @@ var (
 			"reason",
 		})
 
-	// DetectorProcessIndicatorBufferSize keeps track of the size of the detection process indicator buffer.
-	DetectorProcessIndicatorBufferSize = prometheus.NewCounterVec(prometheus.CounterOpts{
+	// DetectorProcessIndicatorQueueOperations keeps track of the operations of the detection process indicator buffer.
+	DetectorProcessIndicatorQueueOperations = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "detector_process_indicator_buffer_size",
-		Help:      "A counter that tracks the size of the detection process indicator buffer",
+		Name:      "detector_process_indicator_queue_operations_total",
+		Help:      "A counter that tracks the number of ADD and REMOVE operations on the process indicator buffer queue. Current size of the queue can be calculated by subtracting the number of remove operations from the add operations",
 	}, []string{"Operation"})
 
-	// DetectorNetworkFlowBufferSize keeps track of the size of the detection network flow buffer.
-	DetectorNetworkFlowBufferSize = prometheus.NewCounterVec(prometheus.CounterOpts{
+	// DetectorNetworkFlowQueueOperations keeps track of the operations of the detection network flow buffer.
+	DetectorNetworkFlowQueueOperations = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "detector_network_flow_buffer_size",
-		Help:      "A counter that tracks the size of the detection network flow buffer",
+		Name:      "detector_network_flow_queue_operations_total",
+		Help:      "A counter that tracks the number of ADD and REMOVE operations on the network flows buffer queue. Current size of the queue can be calculated by subtracting the number of remove operations from the add operations",
+	}, []string{"Operation"})
+
+	// DetectorDeploymentQueueOperations keeps track of the operations of the detection deployment buffer.
+	DetectorDeploymentQueueOperations = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "detector_deployment_queue_operations_total",
+		Help:      "A counter that tracks the number of ADD and REMOVE operations on the deployment buffer queue. Current size of the queue can be calculated by subtracting the number of remove operations from the add operations",
 	}, []string{"Operation"})
 
 	// DetectorProcessIndicatorDroppedCount keeps track of the number of process indicators dropped in the detector.
 	DetectorProcessIndicatorDroppedCount = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "detector_process_indicators_dropped_total",
+		Name:      "detector_process_indicator_queue_dropped_total",
 		Help:      "A counter of the total number of process indicators that were dropped if the detector buffer was full",
 	})
 
@@ -177,9 +185,39 @@ var (
 	DetectorNetworkFlowDroppedCount = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "detector_network_flows_dropped_total",
+		Name:      "detector_network_flow_queue_dropped_total",
 		Help:      "A counter of the total number of network flows that were dropped if the detector buffer was full",
 	})
+
+	// DetectorDeploymentDroppedCount keeps track of the number of deployments dropped in the detector.
+	DetectorDeploymentDroppedCount = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "detector_deployment_queue_dropped_total",
+		Help:      "A counter of the total number of deployments that were dropped if the detector buffer was full",
+	})
+
+	detectorBlockScanCalls = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "block_scan_calls_total",
+		Help:      "A counter that tracks the operations in blocking scan calls",
+	}, []string{"Operation", "Path"})
+
+	scanCallDuration = prometheus.NewHistogram(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "scan_call_duration_milliseconds",
+		Help:      "Time taken to call scan in milliseconds",
+		Buckets:   prometheus.ExponentialBuckets(4, 2, 16),
+	})
+
+	scanAndSetCall = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "scan_and_set_calls_total",
+		Help:      "A counter that tracks the operations in scan and set",
+	}, []string{"Operation", "Reason"})
 )
 
 // ObserveTimeSpentInExponentialBackoff observes the metric.
@@ -236,6 +274,45 @@ func ObserveNodeScanningAck(nodeName, ackType, messageType string, op AckOperati
 	}).Inc()
 }
 
+// AddBlockingScanCall records a call to blockingScan
+func AddBlockingScanCall(path string) {
+	detectorBlockScanCalls.With(prometheus.Labels{
+		"Operation": metrics.Add.String(),
+		"Path":      path,
+	}).Inc()
+}
+
+// RemoveBlockingScanCall records a call to blockingScan has finished
+func RemoveBlockingScanCall() {
+	detectorBlockScanCalls.With(prometheus.Labels{
+		"Operation": metrics.Remove.String(),
+		"Path":      "",
+	}).Inc()
+}
+
+// SetScanCallDuration records the duration of the scan call to central/scanner
+func SetScanCallDuration(start time.Time) {
+	now := time.Now()
+	durMilli := now.Sub(start).Milliseconds()
+	scanCallDuration.Observe(float64(durMilli))
+}
+
+// AddScanAndSetCall records a call to ScanAndSet
+func AddScanAndSetCall(reason string) {
+	scanAndSetCall.With(prometheus.Labels{
+		"Operation": metrics.Add.String(),
+		"Reason":    reason,
+	}).Inc()
+}
+
+// RemoveScanAndSetCall records a call to ScanAndSet has finished
+func RemoveScanAndSetCall(reason string) {
+	scanAndSetCall.With(prometheus.Labels{
+		"Operation": metrics.Remove.String(),
+		"Reason":    reason,
+	}).Inc()
+}
+
 func init() {
 	prometheus.MustRegister(timeSpentInExponentialBackoff,
 		networkPoliciesStored,
@@ -244,8 +321,14 @@ func init() {
 		receivedNodeInventory,
 		receivedNodeIndex,
 		processedNodeScanningAck,
-		DetectorNetworkFlowBufferSize,
-		DetectorProcessIndicatorBufferSize,
+		DetectorNetworkFlowQueueOperations,
+		DetectorProcessIndicatorQueueOperations,
 		DetectorNetworkFlowDroppedCount,
-		DetectorProcessIndicatorDroppedCount)
+		DetectorProcessIndicatorDroppedCount,
+		detectorBlockScanCalls,
+		scanCallDuration,
+		scanAndSetCall,
+		DetectorDeploymentQueueOperations,
+		DetectorDeploymentDroppedCount,
+	)
 }

@@ -19,7 +19,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
@@ -57,30 +56,30 @@ const (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Image)): {
-			"/v1.ImageService/GetImage",
-			"/v1.ImageService/CountImages",
-			"/v1.ImageService/ListImages",
-			"/v1.ImageService/ExportImages",
+			v1.ImageService_GetImage_FullMethodName,
+			v1.ImageService_CountImages_FullMethodName,
+			v1.ImageService_ListImages_FullMethodName,
+			v1.ImageService_ExportImages_FullMethodName,
 		},
 		or.SensorOr(idcheck.AdmissionControlOnly()): {
-			"/v1.ImageService/ScanImageInternal",
+			v1.ImageService_ScanImageInternal_FullMethodName,
 		},
 		idcheck.SensorsOnly(): {
-			"/v1.ImageService/GetImageVulnerabilitiesInternal",
-			"/v1.ImageService/EnrichLocalImageInternal",
-			"/v1.ImageService/UpdateLocalScanStatusInternal",
+			v1.ImageService_GetImageVulnerabilitiesInternal_FullMethodName,
+			v1.ImageService_EnrichLocalImageInternal_FullMethodName,
+			v1.ImageService_UpdateLocalScanStatusInternal_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.Image)): {
-			"/v1.ImageService/DeleteImages",
-			"/v1.ImageService/InvalidateScanAndRegistryCaches",
-			"/v1.ImageService/ScanImage",
+			v1.ImageService_DeleteImages_FullMethodName,
+			v1.ImageService_InvalidateScanAndRegistryCaches_FullMethodName,
+			v1.ImageService_ScanImage_FullMethodName,
 		},
 		user.With(permissions.View(resources.WatchedImage)): {
-			"/v1.ImageService/GetWatchedImages",
+			v1.ImageService_GetWatchedImages_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.WatchedImage)): {
-			"/v1.ImageService/WatchImage",
-			"/v1.ImageService/UnwatchImage",
+			v1.ImageService_WatchImage_FullMethodName,
+			v1.ImageService_UnwatchImage_FullMethodName,
 		},
 	})
 
@@ -233,8 +232,13 @@ func (s *serviceImpl) saveImage(img *storage.Image) error {
 
 // ScanImageInternal handles an image request from Sensor and Admission Controller.
 func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
-	err := s.acquireScanSemaphore()
+	err := s.acquireScanSemaphore(ctx)
 	if err != nil {
+		log.Errorw("Failed to acquire scan semaphore",
+			logging.ImageName(request.GetImage().GetName().GetFullName()),
+			logging.ImageID(request.GetImage().GetId()),
+			logging.Err(err),
+		)
 		return nil, err
 	}
 	defer s.internalScanSemaphore.Release(1)
@@ -417,8 +421,13 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 // specified by the given components and scan notes.
 // This is meant to be called by Sensor.
 func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, request *v1.GetImageVulnerabilitiesInternalRequest) (*v1.ScanImageInternalResponse, error) {
-	err := s.acquireScanSemaphore()
+	err := s.acquireScanSemaphore(ctx)
 	if err != nil {
+		log.Errorw("Failed to acquire scan semaphore",
+			logging.ImageName(request.GetImageName().GetFullName()),
+			logging.ImageID(request.GetImageId()),
+			logging.Err(err),
+		)
 		return nil, err
 	}
 	defer s.internalScanSemaphore.Release(1)
@@ -462,21 +471,42 @@ func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, reque
 	return internalScanRespFromImage(img), nil
 }
 
-func (s *serviceImpl) acquireScanSemaphore() error {
-	if err := s.internalScanSemaphore.Acquire(concurrency.AsContext(concurrency.Timeout(maxSemaphoreWaitTime)), 1); err != nil {
-		// Aborted indicates the operation was aborted, typically due to a concurrency
-		// issues.  Clients should retry by default on Aborted.
-		s, err := status.New(codes.Aborted, err.Error()).WithDetails(&v1.ScanImageInternalResponseDetails_TooManyParallelScans{})
-		if pkgUtils.ShouldErr(err) == nil {
-			return s.Err()
+func (s *serviceImpl) acquireScanSemaphore(ctx context.Context) error {
+	semaphoreCtx, cancel := context.WithTimeout(ctx, maxSemaphoreWaitTime)
+	defer cancel()
+	if err := s.internalScanSemaphore.Acquire(semaphoreCtx, 1); err != nil {
+		wrappedErr := errors.Wrap(err, "acquiring scan semaphore")
+
+		// If the context was canceled, we do not want to indicate the client to retry.
+		if errors.Is(err, context.Canceled) {
+			return status.Error(codes.Canceled, wrappedErr.Error())
 		}
+
+		// Aborted indicates the operation was aborted, typically due to concurrency issues.
+		// Clients should retry by default on Aborted.
+		s, err := status.New(codes.Aborted, wrappedErr.Error()).WithDetails(
+			&v1.ScanImageInternalResponseDetails_TooManyParallelScans{},
+		)
+		if err != nil {
+			// Encountered a broken invariant. Return internal server error.
+			return status.Error(codes.Internal,
+				errors.Wrap(err, "creating too many parallel scans error").Error(),
+			)
+		}
+		return s.Err()
 	}
 	return nil
 }
 
 func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.EnrichLocalImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
-	err := s.acquireScanSemaphore()
+	err := s.acquireScanSemaphore(ctx)
 	if err != nil {
+		log.Errorw("Failed to acquire scan semaphore",
+			logging.ImageName(request.GetImageName().GetFullName()),
+			logging.ImageID(request.GetImageId()),
+			logging.Err(err),
+			logging.String("request_id", request.GetRequestId()),
+		)
 		return nil, err
 	}
 

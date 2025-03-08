@@ -39,7 +39,7 @@ func TestUpdate(t *testing.T) {
 	require.NoError(t, u.doUpdate())
 	assertOnFileExistence(t, filePath, true)
 
-	lastUpdatedTime := time.Now().Add(time.Hour)
+	lastUpdatedTime := time.Now()
 	mustSetModTime(t, filePath, lastUpdatedTime)
 	// Should not fetch since it can't be updated in a time in the future.
 	require.NoError(t, u.doUpdate())

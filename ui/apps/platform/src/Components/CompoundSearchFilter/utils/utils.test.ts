@@ -5,6 +5,7 @@ import {
     getDefaultAttributeName,
     getDefaultEntityName,
     getEntityAttributes,
+    getSearchFilterConfigWithFeatureFlagDependency,
     makeFilterChipDescriptors,
 } from './utils';
 import { CompoundSearchFilterEntity } from '../types';
@@ -28,29 +29,13 @@ const imageCVESearchFilterConfig: CompoundSearchFilterEntity = {
 };
 
 describe('utils', () => {
-    describe('getEntities', () => {
-        it('should get the entities in a config object', () => {
-            const config = [
-                imageSearchFilterConfig,
-                deploymentSearchFilterConfig,
-                imageCVESearchFilterConfig,
-            ];
-
-            expect(config).toStrictEqual([
-                imageSearchFilterConfig,
-                deploymentSearchFilterConfig,
-                imageCVESearchFilterConfig,
-            ]);
-        });
-    });
-
     describe('getEntityAttributes', () => {
         it('should get the attributes of an entity in a config object', () => {
-            const config = [
-                imageSearchFilterConfig,
-                deploymentSearchFilterConfig,
-                imageCVESearchFilterConfig,
-            ];
+            // Omit EPSSProbability object that has been added to imageCVE attributes.
+            const config = getSearchFilterConfigWithFeatureFlagDependency(
+                () => false,
+                [imageSearchFilterConfig, deploymentSearchFilterConfig, imageCVESearchFilterConfig]
+            );
 
             const result = getEntityAttributes(config, 'Image CVE');
 
@@ -107,7 +92,11 @@ describe('utils', () => {
 
     describe('makeFilterChipDescriptors', () => {
         it('should create an array of FilterChipGroupDescriptor objects from a config object', () => {
-            const config = [imageCVESearchFilterConfig];
+            // Omit EPSSProbability object that has been added to imageCVE attributes.
+            const config = getSearchFilterConfigWithFeatureFlagDependency(
+                () => false,
+                [imageCVESearchFilterConfig]
+            );
 
             const result = makeFilterChipDescriptors(config);
 

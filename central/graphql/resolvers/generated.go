@@ -282,6 +282,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"name: String!",
 		"priority: Int!",
 		"runtimeSupport: Boolean!",
+		"sensorCapabilities: [String!]!",
 		"slimCollector: Boolean!",
 		"status: ClusterStatus",
 		"tolerationsConfig: TolerationsConfig",
@@ -843,6 +844,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"directoryTenantId: String!",
 		"logIngestionEndpoint: String!",
 		"secret: String!",
+		"wifEnabled: Boolean!",
 	}))
 	utils.Must(builder.AddType("MicrosoftSentinel_ClientCertAuthConfig", []string{
 		"clientCert: String!",
@@ -4074,6 +4076,11 @@ func (resolver *clusterResolver) Priority(ctx context.Context) int32 {
 
 func (resolver *clusterResolver) RuntimeSupport(ctx context.Context) bool {
 	value := resolver.data.GetRuntimeSupport()
+	return value
+}
+
+func (resolver *clusterResolver) SensorCapabilities(ctx context.Context) []string {
+	value := resolver.data.GetSensorCapabilities()
 	return value
 }
 
@@ -9830,6 +9837,11 @@ func (resolver *microsoftSentinelResolver) LogIngestionEndpoint(ctx context.Cont
 
 func (resolver *microsoftSentinelResolver) Secret(ctx context.Context) string {
 	value := resolver.data.GetSecret()
+	return value
+}
+
+func (resolver *microsoftSentinelResolver) WifEnabled(ctx context.Context) bool {
+	value := resolver.data.GetWifEnabled()
 	return value
 }
 

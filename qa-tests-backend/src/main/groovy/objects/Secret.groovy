@@ -1,5 +1,8 @@
 package objects
 
+import groovy.transform.CompileStatic
+
+@CompileStatic
 class Secret {
     String name
     String namespace

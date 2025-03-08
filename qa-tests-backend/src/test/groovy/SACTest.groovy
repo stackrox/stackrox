@@ -27,12 +27,11 @@ import services.NetworkGraphService
 import services.RoleService
 import services.SearchService
 import services.SecretService
-import services.SummaryService
 import util.Env
 import util.NetworkGraphUtil
 
 import org.junit.AssumptionViolatedException
-import spock.lang.Ignore
+import spock.lang.Retry
 import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Unroll
@@ -257,71 +256,6 @@ class SACTest extends BaseSpecification {
         NAMESPACE_QA2 | _
     }
 
-    @Ignore("ROX-24528: This API is deprecated in 4.5. Remove this test once the API is removed")
-    def "Verify GetSummaryCounts using a token without access receives no results"() {
-        when:
-        "GetSummaryCounts is called using a token without access"
-        createSecret(DEPLOYMENT_QA1.namespace)
-        useToken(NOACCESSTOKEN)
-        def result = SummaryService.getCounts()
-        then:
-        "Verify GetSumamryCounts returns no results"
-        assert result.getNumDeployments() == 0
-        assert result.getNumSecrets() == 0
-        assert result.getNumNodes() == 0
-        assert result.getNumClusters() == 0
-        assert result.getNumImages() == 0
-        cleanup:
-        "Cleanup"
-        BaseService.useBasicAuth()
-        deleteSecret(DEPLOYMENT_QA1.namespace)
-    }
-
-    @Ignore("ROX-24528: This API is deprecated in 4.5. Remove this test once the API is removed")
-    def "Verify GetSummaryCounts using a token with partial access receives partial results"() {
-        when:
-        "GetSummaryCounts is called using a token with restricted access"
-        createSecret(DEPLOYMENT_QA1.namespace)
-        createSecret(DEPLOYMENT_QA2.namespace)
-        useToken("getSummaryCountsToken")
-        then:
-        "Verify correct counts are returned by GetSummaryCounts"
-        withRetry(30, 3) {
-            def result = SummaryService.getCounts()
-            assert result.getNumDeployments() == 1
-            assert result.getNumSecrets() == orchestrator.getSecretCount(DEPLOYMENT_QA1.namespace)
-            assert result.getNumImages() == 1
-        }
-        cleanup:
-        "Cleanup"
-        BaseService.useBasicAuth()
-        deleteSecret(DEPLOYMENT_QA1.namespace)
-        deleteSecret(DEPLOYMENT_QA2.namespace)
-    }
-
-    @Ignore("ROX-24528: This API is deprecated in 4.5. Remove this test once the API is removed")
-    def "Verify GetSummaryCounts using a token with all access receives all results"() {
-        when:
-        "GetSummaryCounts is called using a token with all access"
-        createSecret(DEPLOYMENT_QA1.namespace)
-        createSecret(DEPLOYMENT_QA2.namespace)
-        useToken(ALLACCESSTOKEN)
-        def result = SummaryService.getCounts()
-        then:
-        "Verify results are returned in each category"
-        assert result.getNumDeployments() >= 2
-        // These may be created by other tests so it's hard to know the exact number.
-        assert result.getNumSecrets() >= 2
-        assert result.getNumNodes() > 0
-        assert result.getNumClusters() >= 1
-        assert result.getNumImages() >= 1
-        cleanup:
-        "Cleanup"
-        BaseService.useBasicAuth()
-        deleteSecret(DEPLOYMENT_QA1.namespace)
-        deleteSecret(DEPLOYMENT_QA2.namespace)
-    }
-
     @Unroll
     def "Verify alerts count is scoped"() {
         given:
@@ -338,10 +272,12 @@ class SACTest extends BaseSpecification {
 
         then:
         assert alertsCount(NOACCESSTOKEN) == 0
-        // getSummaryCountsToken has access only to QA1 deployment while
-        // ALLACCESSTOKEN has access to QA1 and QA2. Since deployments are identical
-        // number of alerts for ALLACCESSTOKEN should be twice of getSummaryCountsToken.
-        assert 2 * alertsCount("getSummaryCountsToken") == alertsCount(ALLACCESSTOKEN)
+        withRetry(30, 5) {
+            // getSummaryCountsToken has access only to QA1 deployment while
+            // ALLACCESSTOKEN has access to QA1 and QA2. Since deployments are identical
+            // number of alerts for ALLACCESSTOKEN should be twice of getSummaryCountsToken.
+            assert 2 * alertsCount("getSummaryCountsToken") == alertsCount(ALLACCESSTOKEN)
+        }
     }
 
     def "Verify ListSecrets using a token without access receives no results"() {
@@ -384,19 +320,20 @@ class SACTest extends BaseSpecification {
         "A search is performed using the given token"
         def query = getSpecificQuery(category)
         useToken(tokenName)
-        def result = SearchService.search(query)
 
         then:
         "Verify the specified number of results are returned"
-        assert result.resultsCount == numResults
+        withRetry(30, 5) {
+            def result = SearchService.search(query)
+            assert result.resultsCount == numResults
+        }
 
         where:
         "Data inputs are: "
         tokenName                | category     | numResults
         NOACCESSTOKEN            | "Cluster"    | 0
         "searchDeploymentsToken" | "Deployment" | 1
-        // ROX-26729 - it's failing ~5 times a week. Disabled for now.
-        // "searchImagesToken"      | "Image"      | 1
+        "searchImagesToken"      | "Image"      | 1
     }
 
     @Unroll
@@ -447,10 +384,12 @@ class SACTest extends BaseSpecification {
         "Search is called using a token without view access to Deployments"
         def query = getSpecificQuery(category)
         useToken(tokenName)
-        def result = SearchService.autocomplete(query)
         then:
-        "Verify no results are returned by Search"
-        assert result.getValuesCount() == numResults
+        "Verify results returned by Search"
+        withRetry(30, 5) {
+            def result = SearchService.autocomplete(query)
+            assert result.getValuesCount() == numResults
+        }
 
         where:
         "Data inputs are: "
@@ -458,8 +397,7 @@ class SACTest extends BaseSpecification {
         NOACCESSTOKEN            | "Deployment" | 0
         NOACCESSTOKEN            | "Image"      | 0
         "searchDeploymentsToken" | "Deployment" | 1
-        // ROX-27478 - it's failing since 2024-12-19. Disabled for now. Could be related to: ROX-26729.
-        // "searchImagesToken"      | "Image"      | 1
+        "searchImagesToken"      | "Image"      | 1
         "searchNamespacesToken"  | "Namespace"  | 1
     }
 
@@ -469,10 +407,12 @@ class SACTest extends BaseSpecification {
         "Autocomplete is called using the given token"
         def query = getSpecificQuery(category)
         useToken(tokenName)
-        def result = SearchService.autocomplete(query)
         then:
         "Verify exactly the expected number of results are returned"
-        assert result.getValuesCount() >= minReturned
+        withRetry(30, 5) {
+            def result = SearchService.autocomplete(query)
+            assert result.getValuesCount() >= minReturned
+        }
 
         where:
         "Data inputs are: "
@@ -602,6 +542,7 @@ class SACTest extends BaseSpecification {
         "searchDeploymentsImagesToken"     | NAMESPACE_QA1  | [SSOC.SearchCategory.IMAGES]
     }
 
+    @Retry(count=30, delay=5000)
     def "Verify that SAC has the same effect as query restriction for network flows"() {
         given:
         "The network graphs retrieved by admin with a query and the SAC restricted token with and without query"

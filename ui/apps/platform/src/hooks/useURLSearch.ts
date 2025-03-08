@@ -7,7 +7,7 @@ import useURLParameter, { HistoryAction, QueryValue } from './useURLParameter';
 
 export type SetSearchFilter = (newFilter: SearchFilter, historyAction?: HistoryAction) => void;
 
-type UseUrlSearchReturn = {
+export type UseUrlSearchReturn = {
     searchFilter: SearchFilter;
     setSearchFilter: SetSearchFilter;
 };

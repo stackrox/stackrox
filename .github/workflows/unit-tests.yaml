@@ -20,7 +20,7 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.4
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -82,12 +82,17 @@ jobs:
     strategy:
       matrix:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
+        pg: [ '13', '15' ]
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.4
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
     steps:
+    - name: Set Postgres version
+      run: |
+        echo "/usr/pgsql-${{ matrix.pg }}/bin" >> "${GITHUB_PATH}"
+
     - name: Checkout
       uses: actions/checkout@v4
       with:
@@ -139,8 +144,12 @@ jobs:
   go-bench:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.4
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
     steps:
+    - name: Set Postgres version
+      run: |
+        echo "/usr/pgsql-15/bin" >> "${GITHUB_PATH}"
+
     - name: Checkout
       uses: actions/checkout@v4
       with:
@@ -182,7 +191,7 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.4
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -218,7 +227,7 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.4
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -259,7 +268,7 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.4
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -293,7 +302,7 @@ jobs:
   openshift-ci-unit-tests:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.4
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
     steps:
       - name: Checkout
         uses: actions/checkout@v4

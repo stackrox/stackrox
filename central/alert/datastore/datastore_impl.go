@@ -42,26 +42,26 @@ type datastoreImpl struct {
 	platformMatcher platformmatcher.PlatformMatcher
 }
 
-func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchCommon.Result, error) {
+func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query, excludeResolved bool) ([]searchCommon.Result, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "Search")
 
-	return ds.searcher.Search(ctx, q)
+	return ds.searcher.Search(ctx, q, excludeResolved)
 }
 
 // Count returns the number of search results from the query
-func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query, excludeResolved bool) (int, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "Count")
 
-	return ds.searcher.Count(ctx, q)
+	return ds.searcher.Count(ctx, q, excludeResolved)
 }
 
-func (ds *datastoreImpl) SearchListAlerts(ctx context.Context, q *v1.Query) ([]*storage.ListAlert, error) {
+func (ds *datastoreImpl) SearchListAlerts(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*storage.ListAlert, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "SearchListAlerts")
 
-	return ds.searcher.SearchListAlerts(ctx, q)
+	return ds.searcher.SearchListAlerts(ctx, q, excludeResolved)
 }
 
-// SearchAlerts returns search results for the given request.
+// SearchAlerts returns search results for the given request. This will exclude resolved alerts by default unless Violation State = Resolved is explicitly specified in the query
 func (ds *datastoreImpl) SearchAlerts(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "SearchAlerts")
 
@@ -69,10 +69,10 @@ func (ds *datastoreImpl) SearchAlerts(ctx context.Context, q *v1.Query) ([]*v1.S
 }
 
 // SearchRawAlerts returns search results for the given request in the form of a slice of alerts.
-func (ds *datastoreImpl) SearchRawAlerts(ctx context.Context, q *v1.Query) ([]*storage.Alert, error) {
+func (ds *datastoreImpl) SearchRawAlerts(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*storage.Alert, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "SearchRawAlerts")
 
-	return ds.searcher.SearchRawAlerts(ctx, q)
+	return ds.searcher.SearchRawAlerts(ctx, q, excludeResolved)
 }
 
 // GetAlert returns an alert by id.
@@ -91,7 +91,7 @@ func (ds *datastoreImpl) GetAlert(ctx context.Context, id string) (*storage.Aler
 // CountAlerts returns the number of alerts that are active
 func (ds *datastoreImpl) CountAlerts(ctx context.Context) (int, error) {
 	activeQuery := searchCommon.NewQueryBuilder().AddExactMatches(searchCommon.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery()
-	return ds.Count(ctx, activeQuery)
+	return ds.Count(ctx, activeQuery, true)
 }
 
 // UpsertAlert inserts an alert into storage
@@ -305,4 +305,17 @@ func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(*storage.ListAlert
 		})
 	}
 	return pgutils.RetryIfPostgres(ctx, walkFn)
+}
+
+// DefaultStateAlertDataStoreImpl will only return unresolved alerts unless Violation State=Resolved is explicitly provided by the query
+type DefaultStateAlertDataStoreImpl struct {
+	DataStore *DataStore
+}
+
+func (ds *DefaultStateAlertDataStoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchCommon.Result, error) {
+	return (*ds.DataStore).Search(ctx, q, true)
+}
+
+func (ds *DefaultStateAlertDataStoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+	return (*ds.DataStore).Count(ctx, q, true)
 }

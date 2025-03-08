@@ -25,17 +25,11 @@ export type ConfigDetailsProps = {
     scanConfig?: ComplianceScanConfigurationStatus;
     isLoading?: boolean;
     error?: Error | string | null;
-    isComplianceReportingEnabled: boolean;
 };
 
 const headingLevel = 'h2';
 
-function ConfigDetails({
-    isLoading,
-    error,
-    scanConfig,
-    isComplianceReportingEnabled,
-}: ConfigDetailsProps) {
+function ConfigDetails({ isLoading, error, scanConfig }: ConfigDetailsProps) {
     if (isLoading) {
         return (
             <Bullseye>
@@ -84,17 +78,15 @@ function ConfigDetails({
                     headingLevel={headingLevel}
                     profiles={scanConfig.scanConfig.profiles}
                 />
-                {isComplianceReportingEnabled && (
-                    <NotifierConfigurationView
-                        headingLevel={headingLevel}
-                        customBodyDefault={getBodyDefault(scanConfig.scanConfig.profiles)}
-                        customSubjectDefault={getSubjectDefault(
-                            scanConfig.scanName,
-                            scanConfig.scanConfig.profiles
-                        )}
-                        notifierConfigurations={scanConfig.scanConfig.notifiers}
-                    />
-                )}
+                <NotifierConfigurationView
+                    headingLevel={headingLevel}
+                    customBodyDefault={getBodyDefault(scanConfig.scanConfig.profiles)}
+                    customSubjectDefault={getSubjectDefault(
+                        scanConfig.scanName,
+                        scanConfig.scanConfig.profiles
+                    )}
+                    notifierConfigurations={scanConfig.scanConfig.notifiers}
+                />
             </Flex>
         );
     }

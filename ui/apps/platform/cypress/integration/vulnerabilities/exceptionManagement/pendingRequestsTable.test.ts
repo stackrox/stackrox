@@ -1,5 +1,4 @@
 import withAuth from '../../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../../helpers/features';
 import {
     cancelAllCveExceptions,
     fillAndSubmitExceptionForm,
@@ -16,22 +15,12 @@ import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 describe('Exception Management Pending Requests Page', () => {
     withAuth();
 
-    before(function () {
-        if (!hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES')) {
-            this.skip();
-        }
-    });
-
     beforeEach(() => {
-        if (hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES')) {
-            cancelAllCveExceptions();
-        }
+        cancelAllCveExceptions();
     });
 
     after(() => {
-        if (hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES')) {
-            cancelAllCveExceptions();
-        }
+        cancelAllCveExceptions();
     });
 
     it('should be able to view deferred pending requests', () => {

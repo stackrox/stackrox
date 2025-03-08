@@ -3,7 +3,7 @@ package tokens
 import (
 	"time"
 
-	"github.com/go-jose/go-jose/v3/jwt"
+	"github.com/go-jose/go-jose/v4/jwt"
 )
 
 // Option is an option that can transparently modify a token's claims.

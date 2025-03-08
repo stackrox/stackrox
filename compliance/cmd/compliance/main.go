@@ -18,7 +18,7 @@ func init() {
 
 func main() {
 	np := &node.EnvNodeNameProvider{}
-	cfg := index.NewNodeIndexerConfigFromEnv()
+	cfg := index.DefaultNodeIndexerConfig
 
 	scanner := inventory.NewNodeInventoryComponentScanner(np)
 	scanner.Connect(env.NodeScanningEndpoint.Setting())

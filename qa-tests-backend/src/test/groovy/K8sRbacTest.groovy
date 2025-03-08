@@ -20,8 +20,10 @@ import objects.K8sServiceAccount
 import objects.K8sSubject
 import services.RbacService
 import services.ServiceAccountService
+import util.Env
 import util.Helpers
 
+import spock.lang.IgnoreIf
 import spock.lang.Stepwise
 import spock.lang.Tag
 
@@ -60,6 +62,8 @@ class K8sRbacTest extends BaseSpecification {
 
     @Tag("BAT")
     @Tag("COMPATIBILITY")
+    // ROX-25270 Test is failing for OSD on AWS
+    @IgnoreIf({ Env.CI_JOB_NAME ==~ /.*osd-aws.*/ })
     def "Verify scraped service accounts"() {
         given:
         List<K8sServiceAccount> orchestratorSAs = null

@@ -15,11 +15,13 @@ const testId = 'credentialExpiration';
 
 type CredentialExpirationProps = {
     certExpiryStatus?: CertExpiryStatus;
+    autoRefreshEnabled: boolean;
     isList?: boolean;
 };
 
 function CredentialExpiration({
     certExpiryStatus,
+    autoRefreshEnabled,
     isList = false,
 }: CredentialExpirationProps): ReactElement {
     const { version } = useMetadata();
@@ -78,7 +80,10 @@ function CredentialExpiration({
     return (
         <HealthStatus icon={icon} iconColor={fgColor}>
             {isList || healthStatus === 'HEALTHY' ? (
-                expirationElement
+                <div>
+                    {expirationElement}
+                    {autoRefreshEnabled && <div>Auto-refresh enabled</div>}
+                </div>
             ) : (
                 <div>
                     {expirationElement}
@@ -88,7 +93,7 @@ function CredentialExpiration({
                                 <a
                                     href={getVersionedDocs(
                                         version,
-                                        'configuration/reissue-internal-certificates.html#reissue-internal-certificates-secured-clusters'
+                                        'configuring/reissue-internal-certificates#reissue-internal-certificates-secured-clusters'
                                     )}
                                     target="_blank"
                                     rel="noopener noreferrer"

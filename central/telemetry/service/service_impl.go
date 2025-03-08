@@ -21,13 +21,14 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Administration)): {
-			"/v1.TelemetryService/GetTelemetryConfiguration",
+			v1.TelemetryService_GetTelemetryConfiguration_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.Administration)): {
-			"/v1.TelemetryService/ConfigureTelemetry",
+			v1.TelemetryService_ConfigureTelemetry_FullMethodName,
 		},
 		user.Authenticated(): {
-			"/v1.TelemetryService/GetConfig",
+			v1.TelemetryService_GetConfig_FullMethodName,
+			v1.TelemetryService_PostConfigReload_FullMethodName,
 		},
 	})
 )
@@ -78,4 +79,8 @@ func (s *serviceImpl) GetConfig(ctx context.Context, _ *v1.Empty) (*central.Tele
 		Endpoint:     cfg.Endpoint,
 		StorageKeyV1: cfg.StorageKey,
 	}, nil
+}
+
+func (s *serviceImpl) PostConfigReload(ctx context.Context, _ *v1.Empty) (*v1.Empty, error) {
+	return nil, centralclient.Reload()
 }

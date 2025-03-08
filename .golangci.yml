@@ -2,10 +2,11 @@ run:
   timeout: 240m
   build-tags:
   - integration
+  - scanner_db_integration
   - sql_integration
   - test_e2e
   modules-download-mode: readonly
-  go: "1.22"
+  go: "1.23"
 
 output:
   formats:
@@ -153,6 +154,7 @@ linters:
   enable:
     - asciicheck
     # - bodyclose
+    - copyloopvar
     # - deadcode
     # - depguard
     # - dogsled
@@ -164,7 +166,6 @@ linters:
     # - gochecknoinits
     # - gocognit
     # - goconst
-    - exportloopref
     - gocritic
     # - gocyclo
     # - godot

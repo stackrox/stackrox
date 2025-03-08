@@ -27,7 +27,7 @@ RUN dnf -y --installroot="$FINAL_STAGE_PATH" upgrade --nobest && \
 RUN /tmp/.konflux/subscription-manager-bro.sh cleanup
 
 
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.22 AS go-builder
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.23 AS go-builder
 
 RUN dnf -y install --allowerasing make automake gcc gcc-c++ coreutils binutils diffutils zlib-devel bzip2-devel lz4-devel cmake jq
 
@@ -35,18 +35,16 @@ WORKDIR /go/src/github.com/stackrox/rox/app
 
 COPY . .
 
-# Ensure there will be no unintended -dirty suffix. package and package-lock are restored
-# because they are touched by Cachi2.
-RUN git restore ui/apps/platform/package.json ui/apps/platform/package-lock.json && \
-    .konflux/scripts/fail-build-if-git-is-dirty.sh
-
-ARG VERSIONS_SUFFIX
-ENV MAIN_TAG_SUFFIX="$VERSIONS_SUFFIX" COLLECTOR_TAG_SUFFIX="$VERSIONS_SUFFIX" SCANNER_TAG_SUFFIX="$VERSIONS_SUFFIX"
+ARG BUILD_TAG
+RUN if [[ "$BUILD_TAG" == "" ]]; then >&2 echo "error: required BUILD_TAG arg is unset"; exit 6; fi
+ENV BUILD_TAG="$BUILD_TAG"
 
 ENV GOFLAGS=""
 ENV CGO_ENABLED=1
 # TODO(ROX-20240): enable non-release development builds.
-ENV GOTAGS="release"
+# TODO(ROX-27054): Remove the redundant strictfipsruntime option if one is found to be so.
+ENV GOTAGS="release,strictfipsruntime"
+ENV GOEXPERIMENT=strictfipsruntime
 ENV CI=1
 
 RUN # TODO(ROX-13200): make sure roxctl cli is built without running go mod tidy. \
@@ -59,7 +57,7 @@ RUN # TODO(ROX-13200): make sure roxctl cli is built without running go mod tidy
 RUN make copy-go-binaries-to-image-dir
 
 
-FROM registry.access.redhat.com/ubi8/nodejs-18:latest AS ui-builder
+FROM registry.access.redhat.com/ubi8/nodejs-20:latest AS ui-builder
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
@@ -103,8 +101,7 @@ RUN GOARCH=$(uname -m) ; \
     ln -s /assets/downloads/cli/roxctl-linux-$GOARCH /stackrox/roxctl ; \
     ln -s /assets/downloads/cli/roxctl-linux-$GOARCH /assets/downloads/cli/roxctl-linux
 
-ARG MAIN_IMAGE_TAG
-RUN if [[ "$MAIN_IMAGE_TAG" == "" ]]; then >&2 echo "error: required MAIN_IMAGE_TAG arg is unset"; exit 6; fi
+ARG BUILD_TAG
 
 LABEL \
     com.redhat.component="rhacs-main-container" \
@@ -122,17 +119,16 @@ LABEL \
     url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
     vendor="Red Hat, Inc." \
     # We must set version label to prevent inheriting value set in the base stage.
-    version="${MAIN_IMAGE_TAG}" \
+    version="${BUILD_TAG}" \
     # Release label is required by EC although has no practical semantics.
     # We also set it to not inherit one from a base stage in case it's RHEL or UBI.
     release="1"
 
 EXPOSE 8443
 
-# TODO(ROX-22245): set proper image flavor for user-facing GA Fast Stream images.
 ENV PATH="/stackrox:$PATH" \
     ROX_ROXCTL_IN_MAIN_IMAGE="true" \
-    ROX_IMAGE_FLAVOR="development_build" \
+    ROX_IMAGE_FLAVOR="rhacs" \
     ROX_PRODUCT_BRANDING="RHACS_BRANDING"
 
 COPY .konflux/stackrox-data/external-networks/external-networks.zip /stackrox/static-data/external-networks/external-networks.zip

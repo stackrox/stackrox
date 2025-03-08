@@ -1,6 +1,5 @@
 import { graphql } from '../../../constants/apiEndpoints';
 import withAuth from '../../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../../helpers/features';
 import { getRegExpForTitleWithBranding } from '../../../helpers/title';
 import { visit } from '../../../helpers/visit';
 import {
@@ -20,22 +19,12 @@ import { selectors } from './ExceptionManagement.selectors';
 describe('Exception Management', () => {
     withAuth();
 
-    before(function () {
-        if (!hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES')) {
-            this.skip();
-        }
-    });
-
     beforeEach(() => {
-        if (hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES')) {
-            cancelAllCveExceptions();
-        }
+        cancelAllCveExceptions();
     });
 
     after(() => {
-        if (hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES')) {
-            cancelAllCveExceptions();
-        }
+        cancelAllCveExceptions();
     });
 
     it('should have the correct browser title for pending requests', () => {

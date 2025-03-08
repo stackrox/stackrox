@@ -38,7 +38,7 @@ function ClusterStatus({ healthStatus, isList = false }: ClusterStatusProps): Re
             <a
                 href={getVersionedDocs(
                     version,
-                    'troubleshooting/retrieving-and-analyzing-the-collector-logs-and-pod-status.html'
+                    'troubleshooting_collector/retrieving-and-analyzing-the-collector-logs-and-pod-status'
                 )}
                 target="_blank"
                 rel="noopener noreferrer"

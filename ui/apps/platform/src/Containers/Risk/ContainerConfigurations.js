@@ -3,10 +3,7 @@ import { Link } from 'react-router-dom';
 import lowerCase from 'lodash/lowerCase';
 import capitalize from 'lodash/capitalize';
 
-import {
-    vulnerabilitiesPlatformWorkloadCvesPath,
-    vulnerabilitiesWorkloadCvesPath,
-} from 'routePaths';
+import { vulnerabilitiesPlatformPath, vulnerabilitiesWorkloadCvesPath } from 'routePaths';
 
 import CollapsibleCard from 'Components/CollapsibleCard';
 import useFeatureFlags from 'hooks/useFeatureFlags';
@@ -123,7 +120,7 @@ const ContainerConfigurations = ({ deployment }) => {
         deployment &&
         deployment.platformComponent;
     const vulnMgmtBasePath = usePlatformWorkloadCvePath
-        ? vulnerabilitiesPlatformWorkloadCvesPath
+        ? vulnerabilitiesPlatformPath
         : vulnerabilitiesWorkloadCvesPath;
 
     let containers = [];

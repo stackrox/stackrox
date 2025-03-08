@@ -27,8 +27,8 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.ServiceAccount)): {
-			"/v1.ServiceAccountService/GetServiceAccount",
-			"/v1.ServiceAccountService/ListServiceAccounts",
+			v1.ServiceAccountService_GetServiceAccount_FullMethodName,
+			v1.ServiceAccountService_ListServiceAccounts_FullMethodName,
 		},
 	})
 )

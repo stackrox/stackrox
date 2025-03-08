@@ -76,6 +76,9 @@ _run_compatibility_tests() {
     fi
     kubectl -n stackrox get pods
     make -C tests compatibility-tests || touch FAIL
+
+    update_junit_prefix_with_central_and_sensor_version "${short_central_tag}" "${short_sensor_tag}" "${ROOT}/tests/compatibility-tests-results"
+
     store_test_results "tests/compatibility-tests-results" "${compatibility_dir}"
     [[ ! -f FAIL ]] || die "compatibility tests failed for Central v${short_central_tag}, Sensor v${short_sensor_tag}"
 

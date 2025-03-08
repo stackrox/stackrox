@@ -192,7 +192,7 @@ func queryAlerts(ctx context.Context, alertDS datastore.DataStore, checkpoint sp
 		}},
 	}
 
-	return alertDS.SearchRawAlerts(ctx, pq)
+	return alertDS.SearchRawAlerts(ctx, pq, true)
 }
 
 func extractViolations(alert *storage.Alert, fromTime time.Time, toTime time.Time) ([]*integrations.SplunkViolation, error) {

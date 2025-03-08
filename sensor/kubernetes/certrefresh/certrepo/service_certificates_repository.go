@@ -185,6 +185,9 @@ func (r *ServiceCertificatesRepoSecrets) patchServiceCertificate(ctx context.Con
 		Op:    "replace",
 		Path:  "/data",
 		Value: r.secretDataForCertificate(secretSpec, caPem, cert),
+	}, {Op: "replace",
+		Path:  "/metadata/labels",
+		Value: utils.GetTLSSecretLabels(),
 	}}
 	patchBytes, marshallingErr := json.Marshal(patch)
 	if marshallingErr != nil {
@@ -199,9 +202,9 @@ func (r *ServiceCertificatesRepoSecrets) patchServiceCertificate(ctx context.Con
 }
 
 type patchSecretDataByteMap struct {
-	Op    string            `json:"op"`
-	Path  string            `json:"path"`
-	Value map[string][]byte `json:"value"`
+	Op    string      `json:"op"`
+	Path  string      `json:"path"`
+	Value interface{} `json:"value"`
 }
 
 func (r *ServiceCertificatesRepoSecrets) createSecret(ctx context.Context, caPem []byte,
@@ -211,8 +214,8 @@ func (r *ServiceCertificatesRepoSecrets) createSecret(ctx context.Context, caPem
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            secretSpec.SecretName,
 			Namespace:       r.Namespace,
-			Labels:          utils.GetSensorKubernetesLabels(),
-			Annotations:     utils.GetSensorKubernetesLabels(),
+			Labels:          utils.GetTLSSecretLabels(),
+			Annotations:     utils.GetSensorKubernetesAnnotations(),
 			OwnerReferences: []metav1.OwnerReference{r.OwnerReference},
 		},
 		Data: r.secretDataForCertificate(secretSpec, caPem, certificate),

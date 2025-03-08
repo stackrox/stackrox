@@ -67,7 +67,7 @@ func (suite *ClusterServiceTestSuite) TestGetClusterDefaults() {
 			defaults, err := clusterService.GetClusterDefaultValues(context.Background(), nil)
 			suite.NoError(err)
 			suite.Equal(flavor.MainImageNoTag(), defaults.GetMainImageRepository())
-			suite.Equal(flavor.CollectorFullImageNoTag(), defaults.GetCollectorImageRepository())
+			suite.Equal(flavor.CollectorImageNoTag(), defaults.GetCollectorImageRepository())
 			suite.Equal(testCase.kernelSupportAvailable, defaults.GetKernelSupportAvailable())
 		})
 	}

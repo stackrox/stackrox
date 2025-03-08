@@ -99,11 +99,11 @@ function PlatformCvePage() {
 
     return (
         <>
-            <PageTitle title={`Platform CVEs - PlatformCVE ${cveName}`} />
+            <PageTitle title={`Kubernetes components - Vulnerability ${cveName}`} />
             <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={workloadCveOverviewCvePath}>
-                        Platform CVEs
+                        Kubernetes components
                     </BreadcrumbItemLink>
                     <BreadcrumbItem isActive>
                         {cveName ?? <Skeleton screenreaderText="Loading CVE name" width="200px" />}

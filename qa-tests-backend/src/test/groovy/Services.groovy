@@ -204,6 +204,49 @@ class Services extends BaseService {
         return getViolationsHelper("Deployment:${deploymentName}+Policy:${policyName}", policyName, timeoutSeconds)
     }
 
+    static boolean checkForNoActiveViolations(
+            String deploymentName, String policyName, int timeoutSeconds) {
+        String query = "Deployment:${deploymentName}+Policy:${policyName}+Violation State:ACTIVE"
+
+        // Consecutive checks will reduce possibility that policy evaluation did not happened.
+        int consecutiveChecks = 3
+
+        int intervalSeconds = 3
+        int retries = (timeoutSeconds / intervalSeconds).intValue()
+        Timer t = new Timer(retries, intervalSeconds)
+        while (t.IsValid()) {
+            List<AlertOuterClass.ListAlert> violations = []
+            try {
+                violations = AlertService.getViolations(ListAlertsRequest.newBuilder()
+                        .setQuery(query).build())
+            } catch (Exception e) {
+                LOG.warn "getViolations failed for deployment ${deploymentName} and policy ${policyName}: ${e}"
+                consecutiveChecks = 3
+                continue
+            }
+
+            if (!violations.isEmpty()) {
+                LOG.info "${violations.size()} active violations found for deployment ${deploymentName}" +
+                        " and policy ${policyName}"
+                consecutiveChecks = 3
+                continue
+            }
+
+            if (--consecutiveChecks > 0) {
+                LOG.info "No active violations found for deployment ${deploymentName} and policy ${policyName}" +
+                        " - additional ${consecutiveChecks} consecutive checks required"
+                continue
+            }
+
+            LOG.info "No active violations found for deployment ${deploymentName} and policy ${policyName}" +
+                    " after waiting ${t.SecondsSince()} seconds"
+            return true
+        }
+        LOG.info "Failed to get no active violations for deployment ${deploymentName}" +
+                " and policy ${policyName} after waiting ${t.SecondsSince()} seconds"
+        return false
+    }
+
     static getAllResourceViolationsWithTimeout(String resourceType,
                                                String policyName, int timeoutSeconds) {
         return getViolationsHelper("Resource Type:${resourceType}+Policy:${policyName}",
@@ -489,6 +532,21 @@ class Services extends BaseService {
             LOG.info "SR has not found image ${imageName} yet"
         }
         LOG.info "SR did not detect the image ${imageName} in ${t.SecondsSince()} seconds"
+        return false
+    }
+
+    static waitForVulnerabilitiesForImage(objects.Deployment deployment, int retries = 30, int interval = 2) {
+        def imageName = deployment.image.contains(":") ? deployment.image : deployment.image + ":latest"
+        Timer t = new Timer(retries, interval)
+        while (t.IsValid()) {
+            def found = ImageService.getImages().find { it.name.endsWith(imageName) }
+            if (found.hasCves() || found.hasFixableCves()) {
+                LOG.info "SR found vulnerabilities for the image ${imageName} within ${t.SecondsSince()}s"
+                return true
+            }
+            LOG.info "SR has not found vulnerabilities for the image ${imageName} yet"
+        }
+        LOG.info "SR did not detect vulnerabilities for the image ${imageName} in ${t.SecondsSince()} seconds"
         return false
     }
 

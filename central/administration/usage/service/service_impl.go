@@ -21,8 +21,8 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Administration)): {
-			"/v1.AdministrationUsageService/GetCurrentSecuredUnitsUsage",
-			"/v1.AdministrationUsageService/GetMaxSecuredUnitsUsage",
+			v1.AdministrationUsageService_GetCurrentSecuredUnitsUsage_FullMethodName,
+			v1.AdministrationUsageService_GetMaxSecuredUnitsUsage_FullMethodName,
 		}})
 )
 

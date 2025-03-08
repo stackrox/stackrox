@@ -6,12 +6,17 @@ import PageNotFound from 'Components/PageNotFound';
 import PageTitle from 'Components/PageTitle';
 
 import {
-    vulnerabilitiesPlatformWorkloadCvesPath,
+    vulnerabilitiesAllImagesPath,
+    vulnerabilitiesImagesWithoutCvesPath,
+    vulnerabilitiesInactiveImagesPath,
+    vulnerabilitiesPlatformPath,
+    vulnerabilitiesUserWorkloadsPath,
     vulnerabilitiesWorkloadCvesPath,
 } from 'routePaths';
 import ScannerV4IntegrationBanner from 'Components/ScannerV4IntegrationBanner';
-import useFeatureFlags from 'hooks/useFeatureFlags';
+import useFeatureFlags, { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
+import { NonEmptyArray } from 'utils/type.utils';
 import DeploymentPage from './Deployment/DeploymentPage';
 import ImagePage from './Image/ImagePage';
 import WorkloadCvesOverviewPage from './Overview/WorkloadCvesOverviewPage';
@@ -20,9 +25,83 @@ import NamespaceViewPage from './NamespaceView/NamespaceViewPage';
 import { WorkloadCveViewContext } from './WorkloadCveViewContext';
 
 import './WorkloadCvesPage.css';
+import { QuerySearchFilter, WorkloadEntityTab } from '../types';
+
+export const userWorkloadViewId = 'user-workloads';
+export const platformViewId = 'platform';
+export const allImagesViewId = 'all-images';
+export const inactiveImagesViewId = 'inactive-images';
+export const imagesWithoutCvesViewId = 'images-without-cves';
+
+function getWorkloadCveContextFromView(viewId: string, isFeatureFlagEnabled: IsFeatureFlagEnabled) {
+    let pageTitle: string = '';
+    let pageTitleDescription: string | undefined;
+    let baseSearchFilter: QuerySearchFilter = {};
+    let getAbsoluteUrl: (subPath: string) => string = () => '';
+    let overviewEntityTabs: NonEmptyArray<WorkloadEntityTab> = ['CVE', 'Image', 'Deployment'];
+
+    switch (viewId) {
+        case userWorkloadViewId:
+            if (isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT')) {
+                pageTitle = 'User workload vulnerabilities';
+                pageTitleDescription =
+                    'Vulnerabilities affecting user-managed workloads and images';
+                baseSearchFilter = { 'Platform Component': ['false'] };
+                getAbsoluteUrl = (subPath: string) =>
+                    `${vulnerabilitiesUserWorkloadsPath}/${subPath}`;
+            } else {
+                pageTitle = 'Workload CVEs';
+                baseSearchFilter = {};
+                getAbsoluteUrl = (subPath: string) =>
+                    `${vulnerabilitiesWorkloadCvesPath}/${subPath}`;
+            }
+            break;
+        case platformViewId:
+            pageTitle = 'Platform vulnerabilities';
+            pageTitleDescription =
+                'Vulnerabilities affecting images and workloads used by the OpenShift Platform and layered services';
+            baseSearchFilter = { 'Platform Component': ['true'] };
+            getAbsoluteUrl = (subPath: string) => `${vulnerabilitiesPlatformPath}/${subPath}`;
+            break;
+        case allImagesViewId:
+            pageTitle = 'All vulnerable images';
+            pageTitleDescription =
+                'Findings for user, platform, and inactive images simultaneously';
+            baseSearchFilter = { 'Platform Component': ['true', 'false', '-'] };
+            getAbsoluteUrl = (subPath: string) => `${vulnerabilitiesAllImagesPath}/${subPath}`;
+            break;
+        case inactiveImagesViewId:
+            pageTitle = 'Inactive images only';
+            pageTitleDescription =
+                'Findings for watched images and images not currently deployed as workloads based on your image retention settings';
+            baseSearchFilter = { 'Platform Component': ['-'] };
+            getAbsoluteUrl = (subPath: string) => `${vulnerabilitiesInactiveImagesPath}/${subPath}`;
+            overviewEntityTabs = ['CVE', 'Image'];
+            break;
+        case imagesWithoutCvesViewId:
+            pageTitle = 'Images without CVEs';
+            pageTitleDescription =
+                'Images and workloads without observed CVEs (results might include false negatives due to scanner limitations, such as unsupported operating systems)';
+            baseSearchFilter = { 'Image CVE Count': ['0'] };
+            getAbsoluteUrl = (subPath: string) =>
+                `${vulnerabilitiesImagesWithoutCvesPath}/${subPath}`;
+            overviewEntityTabs = ['Image', 'Deployment'];
+            break;
+        default:
+        // TODO Handle user-defined views, or error
+    }
+
+    return {
+        pageTitle,
+        pageTitleDescription,
+        baseSearchFilter,
+        getAbsoluteUrl,
+        overviewEntityTabs,
+    };
+}
 
 export type WorkloadCvePageProps = {
-    view: 'user-workload' | 'platform-workload';
+    view: string;
 };
 
 function WorkloadCvesPage({ view }: WorkloadCvePageProps) {
@@ -31,23 +110,10 @@ function WorkloadCvesPage({ view }: WorkloadCvePageProps) {
     const hasReadAccessForIntegration = hasReadAccess('Integration');
     const hasReadAccessForNamespaces = hasReadAccess('Namespace');
 
-    const context = useMemo(() => {
-        const pageTitle = 'Workload CVEs'; // TODO Implement throughout in follow up
-        const platformComponentFilters =
-            view === 'platform-workload'
-                ? ['true']
-                : // The '-' filter is used to include inactive images in the "user-workload" view
-                  ['false', '-'];
-        const baseSearchFilter = isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT')
-            ? { 'Platform Component': platformComponentFilters }
-            : {};
-        const getAbsoluteUrl = (subPath: string) =>
-            view === 'platform-workload'
-                ? `${vulnerabilitiesPlatformWorkloadCvesPath}/${subPath}`
-                : `${vulnerabilitiesWorkloadCvesPath}/${subPath}`;
-
-        return { pageTitle, baseSearchFilter, getAbsoluteUrl };
-    }, [view, isFeatureFlagEnabled]);
+    const context = useMemo(
+        () => getWorkloadCveContextFromView(view, isFeatureFlagEnabled),
+        [view, isFeatureFlagEnabled]
+    );
 
     return (
         <WorkloadCveViewContext.Provider value={context}>

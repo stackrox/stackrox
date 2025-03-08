@@ -17,7 +17,6 @@ import useURLSort from 'hooks/useURLSort';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 
 import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
-import { getDefaultWorkloadSortOption, getWorkloadSortFields } from '../../utils/sortUtils';
 import DeploymentResourceTable, {
     DeploymentResources,
     deploymentResourcesFragment,
@@ -43,8 +42,8 @@ function ImagePageResources({ imageId, pagination }: ImagePageResourcesProps) {
     const { baseSearchFilter } = useWorkloadCveViewContext();
     const { page, perPage, setPage, setPerPage } = pagination;
     const { sortOption, getSortParams } = useURLSort({
-        sortFields: getWorkloadSortFields('Deployment'),
-        defaultSortOption: getDefaultWorkloadSortOption('Deployment'),
+        sortFields: ['Deployment', 'Cluster', 'Namespace', 'Created'],
+        defaultSortOption: { field: 'Deployment', direction: 'asc' },
         onSort: () => setPage(1),
     });
 

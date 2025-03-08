@@ -93,6 +93,11 @@ export const imageCveMetadataQuery = gql`
                 summary
                 link
                 operatingSystem
+                cveBaseInfo {
+                    epss {
+                        epssProbability
+                    }
+                }
             }
         }
     }
@@ -377,9 +382,7 @@ function ImageCvePage() {
             />
             <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
-                    <BreadcrumbItemLink to={workloadCveOverviewCvePath}>
-                        {pageTitle}
-                    </BreadcrumbItemLink>
+                    <BreadcrumbItemLink to={workloadCveOverviewCvePath}>CVEs</BreadcrumbItemLink>
                     {!metadataRequest.error && (
                         <BreadcrumbItem isActive>
                             {cveName ?? (

@@ -45,7 +45,15 @@ export type ArtifactRegistryImageIntegration = {
 
 export type AzureImageIntegration = {
     type: 'azure';
+    azure: AzureConfig;
 } & BaseImageIntegration;
+
+export type AzureConfig = {
+    endpoint: string; // scrub: dependent
+    username: string; // scrub: dependent
+    password: string; // scrub: always
+    wifEnabled: boolean; // scrub: dependent
+};
 
 export type ClairImageIntegration = {
     type: 'clair';

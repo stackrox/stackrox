@@ -19,7 +19,7 @@ import useURLSort from 'hooks/useURLSort';
 import { Pagination as PaginationParam } from 'services/types';
 import { getHasSearchApplied, getPaginationParams } from 'utils/searchUtils';
 import NotFoundMessage from 'Components/NotFoundMessage';
-
+import { getSearchFilterConfigWithFeatureFlagDependency } from 'Components/CompoundSearchFilter/utils/utils';
 import { DynamicTableLabel } from 'Components/DynamicIcon';
 import {
     SummaryCardLayout,
@@ -94,9 +94,16 @@ export const deploymentVulnerabilitiesQuery = gql`
 
 const defaultSortFields = ['CVE', 'Severity'];
 
-const searchFilterConfig = [
+const searchFilterConfigWithFeatureFlagDependency = [
     imageSearchFilterConfig,
-    imageCVESearchFilterConfig,
+    // Omit EPSSProbability for 4.7 release until CVE/advisory separatipn is available in 4.8 release.
+    // imageCVESearchFilterConfig,
+    {
+        ...imageCVESearchFilterConfig,
+        attributes: imageCVESearchFilterConfig.attributes.filter(
+            ({ searchTerm }) => searchTerm !== 'EPSS Probability'
+        ),
+    },
     imageComponentSearchFilterConfig,
 ];
 
@@ -185,13 +192,19 @@ function DeploymentPageVulnerabilities({
         },
     });
 
-    const isEpssProbabilityColumnEnabled =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_EPSS_SCORE');
+    // Omit for 4.7 release until CVE/advisory separatipn is available in 4.8 release.
+    // const isEpssProbabilityColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
+    const isEpssProbabilityColumnEnabled = false;
     const filteredColumns = filterManagedColumns(
         defaultColumns,
         (key) => key !== 'epssProbability' || isEpssProbabilityColumnEnabled
     );
     const managedColumnState = useManagedColumns(tableId, filteredColumns);
+
+    const searchFilterConfig = getSearchFilterConfigWithFeatureFlagDependency(
+        isFeatureFlagEnabled,
+        searchFilterConfigWithFeatureFlagDependency
+    );
 
     const vulnerabilityData = vulnerabilityRequest.data ?? vulnerabilityRequest.previousData;
     const totalVulnerabilityCount = vulnerabilityData?.deployment?.imageVulnerabilityCount ?? 0;

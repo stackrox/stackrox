@@ -15,10 +15,8 @@ type MetaValues struct {
 	CentralDBImageTag                string
 	CentralDBImageRemote             string
 	CollectorRegistry                string
-	CollectorFullImageRemote         string
-	CollectorSlimImageRemote         string
-	CollectorFullImageTag            string
-	CollectorSlimImageTag            string
+	CollectorImageRemote             string
+	CollectorImageTag                string
 	ScannerImageRemote               string
 	ScannerSlimImageRemote           string
 	ScannerImageTag                  string
@@ -46,7 +44,6 @@ type MetaValues struct {
 	K8sCommand                       string
 	K8sConfig                        map[string]interface{} // renderer.K8sConfig // introduces a cycle in the dependencies
 	OfflineMode                      bool
-	SlimCollector                    bool
 	AdmissionController              bool
 	AdmissionControlListenOnUpdates  bool
 	AdmissionControlListenOnEvents   bool
@@ -74,10 +71,8 @@ func GetMetaValuesForFlavor(imageFlavor defaults.ImageFlavor) *MetaValues {
 		CentralDBImageTag:        imageFlavor.CentralDBImageTag,
 		CentralDBImageRemote:     imageFlavor.CentralDBImageName,
 		CollectorRegistry:        imageFlavor.CollectorRegistry,
-		CollectorFullImageRemote: imageFlavor.CollectorImageName,
-		CollectorSlimImageRemote: imageFlavor.CollectorSlimImageName,
-		CollectorFullImageTag:    imageFlavor.CollectorImageTag,
-		CollectorSlimImageTag:    imageFlavor.CollectorSlimImageTag,
+		CollectorImageRemote:     imageFlavor.CollectorImageName,
+		CollectorImageTag:        imageFlavor.CollectorImageTag,
 		ScannerImageRemote:       imageFlavor.ScannerImageName,
 		ScannerSlimImageRemote:   imageFlavor.ScannerSlimImageName,
 		ScannerImageTag:          imageFlavor.ScannerImageTag,

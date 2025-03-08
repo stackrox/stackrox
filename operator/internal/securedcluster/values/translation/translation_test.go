@@ -805,7 +805,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 					"forceCollectionMethod":   true,
 					"collectionMethod":        "CORE_BPF",
 					"disableTaintTolerations": false,
-					"slimMode":                false,
 					"complianceResources": map[string]interface{}{
 						"limits": map[string]interface{}{
 							"cpu":    "1504m",
@@ -853,7 +852,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"collector": map[string]interface{}{
 					"forceCollectionMethod": true,
 					"collectionMethod":      "CORE_BPF",
-					"slimMode":              false,
 				},
 				"admissionControl": map[string]interface{}{
 					"dynamic": map[string]interface{}{

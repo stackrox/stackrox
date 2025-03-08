@@ -8,8 +8,7 @@ image:
     name: [< required "" .ImageRemote >]
     pullPolicy: IfNotPresent
   collector:
-    name: [< required "" .CollectorFullImageRemote >]
-    slimName: [< required "" .CollectorSlimImageRemote >]
+    name: [< required "" .CollectorImageRemote >]
   scanner:
     name: [< required "" .ScannerSlimImageRemote >]
     tag: [< required "" .ScannerImageTag >]
@@ -42,20 +41,12 @@ image:
     registry: {{ ._rox.image.registry }}
   [<- end >]
 ---
-# Default to collector slim mode. If configured registry equals the default we can assume the cluster has internet connectivity.
-collector:
-  slimMode: {{ eq ._rox.image.collector.registry "[< required "" .CollectorRegistry >]" }}
----
 # Configure repository (registry + name)
 image:
   main:
     repository: {{ list ._rox.image.main.registry ._rox.image.main.name | compact | join "/" }}
   collector:
-    {{- if ._rox.collector.slimMode }}
-    repository: {{ list ._rox.image.collector.registry ._rox.image.collector.slimName | compact | join "/" }}
-    {{- else }}
     repository: {{ list ._rox.image.collector.registry ._rox.image.collector.name | compact | join "/" }}
-    {{- end }}
   scanner:
     repository: {{ list ._rox.image.scanner.registry ._rox.image.scanner.name | compact | join "/" }}
   [<- if not .KubectlOutput >]
@@ -66,15 +57,6 @@ image:
   scannerV4DB:
     repository: {{ list ._rox.image.scannerV4DB.registry ._rox.image.scannerV4DB.name | compact | join "/" }}
   [<- end >]
----
-# Configure collector slim image full ref
-image:
-  collector:
-    {{- if and ._rox.collector.slimMode ._rox.image.collector.slim.fullRef }}
-    fullRef: {{ ._rox.image.collector.slim.fullRef }}
-    {{- else if and (not ._rox.collector.slimMode) ._rox.image.collector.full.fullRef }}
-    fullRef: {{ ._rox.image.collector.full.fullRef }}
-    {{- end }}
 ---
 # Apply fullRef and configurations to images
 image:
@@ -88,9 +70,6 @@ image:
   collector:
     {{- if or ._rox.image.collector.tag ._rox.image.collector.fullRef }}
       {{- include "srox.warn" (list . "You have specified an explicit collector image tag. This will prevent the collector image from being updated correctly when upgrading to a newer version of this chart.") }}
-      {{- if ._rox.collector.slimMode }}
-        {{- include "srox.warn" (list . "You have specified an explicit collector image tag. The slim collector setting will not have any effect.") }}
-      {{- end }}
     {{- else }}
     _abbrevImageRef: {{ ._rox.image.collector.repository }}
     {{- end }}
@@ -98,13 +77,8 @@ image:
 # Configure tags and pull policies
 image:
   collector:
-    {{- if ._rox.collector.slimMode }}
-    tag: "[< required "" .CollectorSlimImageTag >]"
+    tag: "[< required "" .CollectorImageTag >]"
     pullPolicy: IfNotPresent
-    {{- else }}
-    tag: "[< required "" .CollectorFullImageTag >]"
-    pullPolicy: Always
-    {{- end }}
 ---
 # Add fullRef references to images
 # TODO(ROX-9261): Add support for image pull policy to scanner slim

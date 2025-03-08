@@ -1,15 +1,14 @@
 import withAuth from '../../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../../helpers/features';
+import { visitFromHorizontalNav, visitFromHorizontalNavExpandable } from '../../../helpers/nav';
 import { graphql } from '../../../constants/apiEndpoints';
 import {
+    applyDefaultFilters,
     applyLocalSeverityFilters,
-    selectEntityTab,
-    visitWorkloadCveOverview,
-    changeObservedCveViewingMode,
-    interactAndWaitForCveList,
     interactAndWaitForImageList,
     interactAndWaitForDeploymentList,
-    typeAndEnterCustomSearchFilterValue,
+    selectEntityTab,
+    visitWorkloadCveOverview,
 } from './WorkloadCves.helpers';
 import { selectors } from './WorkloadCves.selectors';
 import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
@@ -26,14 +25,10 @@ import {
     interceptAndOverrideFeatureFlags,
 } from '../../../helpers/request';
 
+const visitFromMoreViewsDropdown = visitFromHorizontalNavExpandable('More Views');
+
 describe('Workload CVE overview page tests', () => {
     withAuth();
-
-    before(function () {
-        if (!hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES')) {
-            this.skip();
-        }
-    });
 
     it('should satisfy initial page load defaults', () => {
         visitWorkloadCveOverview();
@@ -97,6 +92,66 @@ describe('Workload CVE overview page tests', () => {
                 );
             });
             */
+        });
+    });
+
+    it('should apply the correct baseline filters when switching between built in views using the user-workload based template', function () {
+        if (!hasFeatureFlag('ROX_PLATFORM_CVE_SPLIT')) {
+            this.skip();
+        }
+
+        interceptAndWatchRequests(
+            getRouteMatcherMapForGraphQL(['getImageCVEList', 'getImageList'])
+        ).then(({ waitForRequests, waitAndYieldRequestBodyVariables }) => {
+            visitWorkloadCveOverview();
+            waitForRequests(['getImageCVEList']); // Wait for the initial request to complete
+            applyDefaultFilters(['Critical', 'Important'], ['Fixable']); // Set the default filters to none to prevent multiple requests on each page visit
+            waitForRequests(['getImageCVEList']); // Wait for the third request after the filters have been changed to complete
+
+            // Test the 'User Workloads' view
+            visitFromHorizontalNav('User Workloads');
+            waitAndYieldRequestBodyVariables(['getImageCVEList']).then(({ query }) => {
+                const requestQuery = query.toLowerCase();
+                expect(requestQuery).to.contain('vulnerability state:observed');
+                expect(requestQuery).to.contain('platform component:false');
+                expect(requestQuery).not.to.contain('image cve count');
+            });
+
+            // Test the 'Platform' view which is the default in e2e tests
+            visitFromHorizontalNav('Platform');
+            waitAndYieldRequestBodyVariables(['getImageCVEList']).then(({ query }) => {
+                const requestQuery = query.toLowerCase();
+                expect(requestQuery).to.contain('vulnerability state:observed');
+                expect(requestQuery).to.contain('platform component:true');
+                expect(requestQuery).not.to.contain('image cve count');
+            });
+
+            // Test the 'All vulnerable images' view
+            visitFromHorizontalNavExpandable('More Views')('All vulnerable images');
+            waitAndYieldRequestBodyVariables(['getImageCVEList']).then(({ query }) => {
+                const requestQuery = query.toLowerCase();
+                expect(requestQuery).to.contain('vulnerability state:observed');
+                expect(requestQuery).to.contain('platform component:true,false,-');
+                expect(requestQuery).not.to.contain('image cve count');
+            });
+
+            // Test the 'Inactive images' view
+            visitFromHorizontalNavExpandable('All vulnerable images')('Inactive images');
+            waitAndYieldRequestBodyVariables(['getImageCVEList']).then(({ query }) => {
+                const requestQuery = query.toLowerCase();
+                expect(requestQuery).to.contain('vulnerability state:observed');
+                expect(requestQuery).to.contain('platform component:-');
+                expect(requestQuery).not.to.contain('image cve count');
+            });
+
+            // Test the 'Images without CVEs' view
+            visitFromHorizontalNavExpandable('Inactive images')('Images without CVEs');
+            waitAndYieldRequestBodyVariables(['getImageList']).then(({ query }) => {
+                const requestQuery = query.toLowerCase();
+                expect(requestQuery).not.to.contain('platform component:observed');
+                expect(requestQuery).not.to.contain('vulnerability state');
+                expect(requestQuery).to.contain('image cve count:0');
+            });
         });
     });
 
@@ -173,7 +228,11 @@ describe('Workload CVE overview page tests', () => {
     });
 
     describe('Images without CVEs view tests', () => {
-        it('should remove cve-related UI elements when viewing the "without cves" view', () => {
+        it('should remove cve-related UI elements when viewing the "without cves" view', function () {
+            if (!hasFeatureFlag('ROX_PLATFORM_CVE_SPLIT')) {
+                this.skip();
+            }
+
             visitWorkloadCveOverview();
 
             const cvesBySeverityHeader = 'th:contains("CVEs by severity")';
@@ -210,109 +269,24 @@ describe('Workload CVE overview page tests', () => {
 
             assertCveElementsArePresent();
 
-            // Switch to the "without cves" view, we should stay on the deployments tab
+            interactAndWaitForImageList(() => {
+                visitFromMoreViewsDropdown('Images without CVEs');
+            });
+
+            assertCveElementsAreNotPresent();
+
+            // Visit the Deployments tab
             interactAndWaitForDeploymentList(() => {
-                changeObservedCveViewingMode('Images without vulnerabilities');
+                selectEntityTab('Deployment');
             });
 
             assertCveElementsAreNotPresent();
-
-            // Visit the Images tab
-            interactAndWaitForImageList(() => {
-                selectEntityTab('Image');
-            });
-
-            assertCveElementsAreNotPresent();
-        });
-
-        it('should apply the correct filters when switching between "with cves" and "without cves" views', () => {
-            const severityChip = 'CVE severity';
-            const cveStatusChip = 'CVE status';
-            const imageNameChip = 'Image name';
-
-            // Since we want to test the behavior of the default filters with the two cve views, we
-            // do not clear them by default in this case
-            visitWorkloadCveOverview({ clearFiltersOnVisit: false });
-
-            interactAndWaitForCveList(() => {
-                // Add a local filter
-                typeAndEnterCustomSearchFilterValue('Image', 'Name', 'quay.io/bogus');
-
-                // Check that default filters and the local filter are present
-                cy.get(selectors.filterChipGroupItem(severityChip, 'Critical'));
-                cy.get(selectors.filterChipGroupItem(severityChip, 'Important'));
-                cy.get(selectors.filterChipGroupItem(cveStatusChip, 'Fixable'));
-                cy.get(selectors.filterChipGroupItem(imageNameChip, 'quay.io/bogus'));
-            }).should((xhr) => {
-                // Ensure the default "with cves" view passes a "Vulnerability State" filter automatically
-                // Ensure default and local filters are passed as well
-                const requestQuery = xhr.request.body.variables.query.toLowerCase();
-                expect(requestQuery).to.contain('vulnerability state');
-                expect(requestQuery).to.contain(
-                    'severity:critical_vulnerability_severity,important_vulnerability_severity'
-                );
-                expect(requestQuery).to.contain('fixable:true');
-                expect(requestQuery).to.contain('image:r/quay.io/bogus');
-                // This view should not filter to
-                expect(requestQuery).not.to.contain('image cve count');
-            });
-
-            interactAndWaitForImageList(() => {
-                // Change to the "without cves" view, note that since we are currently on the
-                // CVE tab, we should automatically switch to the Image tab
-                changeObservedCveViewingMode('Images without vulnerabilities');
-
-                // Filters should be cleared
-                cy.get(selectors.filterChipGroup).should('not.exist');
-            }).should((xhr) => {
-                // On switching views, all filters, including the defaults should be cleared
-                const requestQuery = xhr.request.body.variables.query.toLowerCase();
-                // The request should complete with only a filter for images without cves
-                expect(requestQuery).to.equal('image cve count:0');
-            });
-
-            interactAndWaitForImageList(() => {
-                // Apply a filter in the "without cves" view
-                typeAndEnterCustomSearchFilterValue('Image', 'Name', 'quay.io/bogus');
-            }).should((xhr) => {
-                // On switching views, all filters, including the defaults should be cleared
-                const requestQuery = xhr.request.body.variables.query.toLowerCase();
-                // The request should complete with only a filter for images without cves
-                expect(requestQuery).to.contain('image cve count:0');
-                expect(requestQuery).to.contain('image:r/quay.io/bogus');
-            });
-
-            interactAndWaitForImageList(() => {
-                // switching back to the "with cves" view should clear existing filters
-                // and reapply the default filters
-                changeObservedCveViewingMode('Image vulnerabilities');
-                // Check that default filters are present
-                cy.get(selectors.filterChipGroupItem(severityChip, 'Critical'));
-                cy.get(selectors.filterChipGroupItem(severityChip, 'Important'));
-                cy.get(selectors.filterChipGroupItem(cveStatusChip, 'Fixable'));
-                // check that the local applied filter is not present
-                cy.get(selectors.filterChipGroupItem(imageNameChip, 'quay.io/bogus')).should(
-                    'not.exist'
-                );
-            }).should((xhr) => {
-                const requestQuery = xhr.request.body.variables.query.toLowerCase();
-                expect(requestQuery).to.contain('vulnerability state');
-                expect(requestQuery).to.contain(
-                    'severity:critical_vulnerability_severity,important_vulnerability_severity'
-                );
-                expect(requestQuery).to.contain('fixable:true');
-                expect(requestQuery).not.to.contain('image cve count');
-                expect(requestQuery).not.to.contain('image:r/quay.io/bogus');
-            });
         });
 
         it('should default to multi-severity sort and keep in sync with applied filters', () => {
             interceptAndWatchRequests(getRouteMatcherMapForGraphQL(['getImageCVEList'])).then(
-                ({ waitForRequests, waitAndYieldRequestBodyVariables }) => {
+                ({ waitAndYieldRequestBodyVariables }) => {
                     visitWorkloadCveOverview({ clearFiltersOnVisit: false });
-                    // Wait for the initial request to complete, this fires twice due to the default filters being applied.
-                    // Ideally we fix this in the future to avoid the additional overhead.
-                    waitForRequests();
 
                     // Check the default sort
                     waitAndYieldRequestBodyVariables().then(

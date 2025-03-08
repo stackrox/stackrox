@@ -65,7 +65,6 @@ type Detector interface {
 	ProcessIndicator(ctx context.Context, indicator *storage.ProcessIndicator)
 	ProcessNetworkFlow(ctx context.Context, flow *storage.NetworkFlow)
 	ProcessPolicySync(ctx context.Context, sync *central.PolicySync) error
-	ProcessReassessPolicies() error
 	ProcessReprocessDeployments() error
 	ProcessUpdatedImage(image *storage.Image) error
 }
@@ -77,23 +76,34 @@ func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.Sett
 	detectorStopper := concurrency.NewStopper()
 	netFlowQueueSize := 0
 	piQueueSize := 0
+	deploymentQueueSize := 0
 	if features.SensorCapturesIntermediateEvents.Enabled() {
 		netFlowQueueSize = queueScaler.ScaleSizeOnNonDefault(env.DetectorNetworkFlowBufferSize)
 		piQueueSize = queueScaler.ScaleSizeOnNonDefault(env.DetectorProcessIndicatorBufferSize)
+	}
+	if env.DetectorDeploymentBufferSize.IntegerSetting() > 0 {
+		deploymentQueueSize = queueScaler.ScaleSizeOnNonDefault(env.DetectorDeploymentBufferSize)
 	}
 	netFlowQueue := queue.NewQueue[*queue.FlowQueueItem](
 		detectorStopper,
 		"FlowsQueue",
 		netFlowQueueSize,
-		detectorMetrics.DetectorNetworkFlowBufferSize,
+		detectorMetrics.DetectorNetworkFlowQueueOperations,
 		detectorMetrics.DetectorNetworkFlowDroppedCount,
 	)
 	piQueue := queue.NewQueue[*queue.IndicatorQueueItem](
 		detectorStopper,
 		"PIsQueue",
 		piQueueSize,
-		detectorMetrics.DetectorProcessIndicatorBufferSize,
+		detectorMetrics.DetectorProcessIndicatorQueueOperations,
 		detectorMetrics.DetectorProcessIndicatorDroppedCount,
+	)
+	// We only need the SimpleQueue since the deploymentQueue will not be paused/resumed
+	deploymentQueue := queue.NewSimpleQueue[*queue.DeploymentQueueItem](
+		"DeploymentQueue",
+		deploymentQueueSize,
+		detectorMetrics.DetectorDeploymentQueueOperations,
+		detectorMetrics.DetectorDeploymentDroppedCount,
 	)
 
 	return &detectorImpl{
@@ -125,6 +135,7 @@ func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.Sett
 
 		networkFlowsQueue: netFlowQueue,
 		indicatorsQueue:   piQueue,
+		deploymentsQueue:  deploymentQueue,
 	}
 }
 
@@ -165,6 +176,7 @@ type detectorImpl struct {
 
 	networkFlowsQueue *queue.Queue[*queue.FlowQueueItem]
 	indicatorsQueue   *queue.Queue[*queue.IndicatorQueueItem]
+	deploymentsQueue  queue.SimpleQueue[*queue.DeploymentQueueItem]
 }
 
 func (d *detectorImpl) Start() error {
@@ -173,6 +185,7 @@ func (d *detectorImpl) Start() error {
 	go d.serializeDeployTimeOutput()
 	go d.processAlertsForFlowOnEntity()
 	go d.processIndicator()
+	go d.processDeployment()
 	d.networkFlowsQueue.Start()
 	d.indicatorsQueue.Start()
 	return nil
@@ -294,18 +307,6 @@ func (d *detectorImpl) ProcessPolicySync(ctx context.Context, sync *central.Poli
 	return nil
 }
 
-// ProcessReassessPolicies clears the image caches and resets the deduper
-func (d *detectorImpl) ProcessReassessPolicies() error {
-	log.Debug("Reassess Policies triggered")
-	// Clear the image caches and make all the deployments flow back through by clearing out the hash
-	d.enricher.imageCache.RemoveAll()
-	if d.admCtrlSettingsMgr != nil {
-		d.admCtrlSettingsMgr.FlushCache()
-	}
-	d.deduper.reset()
-	return nil
-}
-
 func (d *detectorImpl) processBaselineSync(sync *central.BaselineSync) error {
 	for _, b := range sync.GetBaselines() {
 		d.baselineEval.AddBaseline(b)
@@ -373,6 +374,7 @@ func (d *detectorImpl) runDetector() {
 		case <-d.detectorStopper.Flow().StopRequested():
 			return
 		case scanOutput := <-d.enricher.outputChan():
+			detectorMetrics.RemoveBlockingScanCall()
 			alerts := d.unifiedDetector.DetectDeployment(deploytime.DetectionContext{}, booleanpolicy.EnhancedDeployment{
 				Deployment:             scanOutput.deployment,
 				Images:                 scanOutput.images,
@@ -473,11 +475,29 @@ func (d *detectorImpl) ProcessDeployment(ctx context.Context, deployment *storag
 	case <-ctx.Done():
 		return
 	default:
+		d.deploymentsQueue.Push(&queue.DeploymentQueueItem{
+			Ctx:        ctx,
+			Deployment: deployment,
+			Action:     action,
+		})
 	}
+}
 
-	d.deploymentDetectionLock.Lock()
-	defer d.deploymentDetectionLock.Unlock()
-	d.processDeploymentNoLock(ctx, deployment, action)
+func (d *detectorImpl) processDeployment() {
+	for {
+		select {
+		case <-d.detectorStopper.Flow().StopRequested():
+			return
+		default:
+			item := d.deploymentsQueue.PullBlocking(d.detectorStopper.LowLevel().GetStopRequestSignal())
+			if item == nil {
+				continue
+			}
+			concurrency.WithLock(&d.deploymentDetectionLock, func() {
+				d.processDeploymentNoLock(item.Ctx, item.Deployment, item.Action)
+			})
+		}
+	}
 }
 
 func (d *detectorImpl) ReprocessDeployments(deploymentIDs ...string) {
@@ -516,6 +536,7 @@ func (d *detectorImpl) processDeploymentNoLock(ctx context.Context, deployment *
 	case central.ResourceAction_CREATE_RESOURCE:
 		d.deduper.addDeployment(deployment)
 		d.markDeploymentForProcessing(deployment.GetId())
+		detectorMetrics.AddBlockingScanCall("deployment_create")
 		go d.enricher.blockingScan(ctx, deployment, d.getNetworkPoliciesApplied(deployment), action)
 	case central.ResourceAction_UPDATE_RESOURCE, central.ResourceAction_SYNC_RESOURCE:
 		// Check if the deployment has changes that require detection, which is more expensive than hashing
@@ -525,6 +546,7 @@ func (d *detectorImpl) processDeploymentNoLock(ctx context.Context, deployment *
 			return
 		}
 		d.markDeploymentForProcessing(deployment.GetId())
+		detectorMetrics.AddBlockingScanCall("deployment_update")
 		go d.enricher.blockingScan(ctx, deployment, d.getNetworkPoliciesApplied(deployment), action)
 	}
 }
@@ -586,7 +608,9 @@ func (d *detectorImpl) processIndicator() {
 			if item == nil {
 				continue
 			}
-			images := d.enricher.getImages(item.Deployment)
+			// If ROX_CAPTURE_INTERMEDIATE_EVENTS is enabled,
+			// the context will not be canceled with sensor disconnects
+			images := d.enricher.getImages(item.Ctx, item.Deployment)
 
 			// Run detection now
 			alerts := d.unifiedDetector.DetectProcess(booleanpolicy.EnhancedDeployment{
@@ -700,7 +724,9 @@ func (d *detectorImpl) processAlertsForFlowOnEntity() {
 			}
 			log.Debugf("processing network flow for deployment %s with id %s", item.Deployment.GetName(), item.Deployment.GetId())
 
-			images := d.enricher.getImages(item.Deployment)
+			// If ROX_CAPTURE_INTERMEDIATE_EVENTS is enabled,
+			// the context will not be canceled with sensor disconnects
+			images := d.enricher.getImages(item.Ctx, item.Deployment)
 			alerts := d.unifiedDetector.DetectNetworkFlowForDeployment(booleanpolicy.EnhancedDeployment{
 				Deployment:             item.Deployment,
 				Images:                 images,

@@ -1,0 +1,15 @@
+# IMPORTANT: Before adding a new record to the list of known flaky tests,
+# please post a message and/or PR in #proj-acs-ci-improvement.
+
+# Flake for compatibility tests with Central 4.4.z because discovered issues and fixes are not ported to that version.
+# More information can be found in ROX-24410.
+- jobNameRegex: pull-ci-stackrox-stackrox-master-gke-version-compatibility-tests
+  className: AutocompleteTest
+  testNameRegex: '.*Central-v400\.4\.z_Sensor-v4\.7\.x.*'
+  ratioJobName: branch-ci-stackrox-stackrox-master-merge-gke-version-compatibility-tests
+  ratioThreshold: 10
+- jobNameRegex: pull-ci-stackrox-stackrox-master-gke-version-compatibility-tests
+  className: SummaryTest
+  testNameRegex: '.*Central-v400\.4\.z_Sensor-v4\.7\.x.*'
+  ratioJobName: branch-ci-stackrox-stackrox-master-merge-gke-version-compatibility-tests
+  ratioThreshold: 30

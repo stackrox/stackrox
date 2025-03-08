@@ -23,21 +23,21 @@ describe('versioning utilities', () => {
 
     describe('getVersionedDocs', () => {
         it('returns the correct url for acs documentation', () => {
-            expect(getVersionedDocs('3.73', 'sub-path')).toBe(
-                'https://docs.openshift.com/acs/3.73/sub-path'
+            expect(getVersionedDocs('4.7', 'sub-path')).toBe(
+                'https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.7/html/sub-path'
             );
         });
 
-        it('returns only the major and minor version in the url', () => {
-            expect(getVersionedDocs('3.73.123')).toMatch(/.*\/3\.73\//);
-        });
-
         it('the url ends with the given subPath', () => {
-            expect(getVersionedDocs('3.73.123', 'sub-path#anchor')).toMatch(/.*\/sub-path#anchor/);
+            expect(getVersionedDocs('4.7.123', 'sub-path#anchor')).toBe(
+                'https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.7/html/sub-path#anchor'
+            );
         });
 
-        it('the url ends with the default subpath welcome/index.html when the subpath is not given', () => {
-            expect(getVersionedDocs('3.73.123')).toMatch(/.*\/welcome\/index\.html/);
+        it('the url ends with version when the subpath is not given', () => {
+            expect(getVersionedDocs('4.7.123')).toBe(
+                'https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.7'
+            );
         });
     });
 });

@@ -1,12 +1,11 @@
 {{/*
-    srox.tlsCertsInitContainer $ $initContainerResources
+    srox.tlsCertsInitContainer $
 
     This template produces the specification of the init container to be used
     for initializing the proper TLS certificates for the respective service.
    */}}
 {{- define "srox.tlsCertsInitContainer" }}
 {{- $ := index . 0 -}}
-{{- $initContainerResources := index . 1 -}}
 name: init-tls-certs
 image: {{ quote $._rox.image.main.fullRef }}
 command:
@@ -16,7 +15,12 @@ args:
 - --new=/run/secrets/stackrox.io/certs-new/
 - --destination=/run/secrets/stackrox.io/certs/
 resources:
-  {{- $initContainerResources | nindent 2 }}
+  requests:
+    memory: "100Mi"
+    cpu: "60m"
+  limits:
+    memory: "200Mi"
+    cpu: "1000m"
 securityContext:
   runAsNonRoot: true
   readOnlyRootFilesystem: true

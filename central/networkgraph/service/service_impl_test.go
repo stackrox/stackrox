@@ -198,59 +198,56 @@ func (s *NetworkGraphServiceTestSuite) TestGetExternalNetworkFlows() {
 			}))
 
 	req := v1.GetExternalNetworkFlowsRequest{
-		ClusterId:    "mycluster",
-		DeploymentId: "mydeployment",
+		ClusterId: "mycluster",
+		Query:     "Namespace:foo",
 	}
 
-	s.deployments.EXPECT().GetDeployment(gomock.Any(), gomock.Any()).Return(&storage.Deployment{
-		Namespace: "foo",
-		ClusterId: "mycluster",
-	}, true, nil)
+	deployments := []*storage.ListDeployment{
+		{
+			Id:        "mydeployment",
+			Name:      "mydeployment",
+			Cluster:   "mycluster",
+			ClusterId: "mycluster",
+		},
+	}
+
+	s.deployments.EXPECT().Count(gomock.Any(), gomock.Any()).Return(1, nil)
+	s.deployments.EXPECT().SearchListDeployments(gomock.Any(), gomock.Any()).Times(2).Return(deployments, nil)
 
 	mockFlowStore := nfDSMocks.NewMockFlowDataStore(s.mockCtrl)
-	s.flows.EXPECT().GetFlowStore(ctx, gomock.Any()).Return(mockFlowStore, nil)
+	s.flows.EXPECT().GetFlowStore(gomock.Any(), gomock.Any()).Return(mockFlowStore, nil)
+
+	es1aID, _ := externalsrcs.NewClusterScopedID("mycluster", "192.168.0.1/32")
+	es1bID, _ := externalsrcs.NewClusterScopedID("mycluster", "192.168.0.2/32")
+
+	es1a := testutils.GetExtSrcNetworkEntityInfo(es1aID.String(), "net1", "192.168.0.1/32", false)
+	es1b := testutils.GetExtSrcNetworkEntityInfo(es1bID.String(), "net2", "192.168.0.2/32", false)
 
 	entities := []*storage.NetworkEntity{
 		{
-			Info: &storage.NetworkEntityInfo{
-				Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-				Id:   "ExternalEntity1",
-				Desc: &storage.NetworkEntityInfo_ExternalSource_{
-					ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-						Name: "cidr1",
-						Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-							Cidr: "192.168.0.1/32",
-						},
-					},
-				},
-			},
+			Info: es1a,
 		},
 		{
-			Info: &storage.NetworkEntityInfo{
-				Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-				Id:   "ExternalEntity2",
-				Desc: &storage.NetworkEntityInfo_ExternalSource_{
-					ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-						Name: "cidr2",
-						Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-							Cidr: "192.168.0.2/32",
-						},
-					},
-				},
-			},
+			Info: es1b,
 		},
 	}
 
-	s.entities.EXPECT().GetEntity(ctx, "ExternalEntity1").Return(entities[0], true, nil)
-	s.entities.EXPECT().GetEntity(ctx, "ExternalEntity2").Return(entities[1], true, nil)
+	s.entities.EXPECT().GetEntityByQuery(ctx, gomock.Any()).Return(entities, nil)
 
-	mockFlowStore.EXPECT().GetExternalFlowsForDeployment(ctx, gomock.Any()).Return(
+	mockFlowStore.EXPECT().GetMatchingFlows(gomock.Any(), gomock.Any(), gomock.Any()).Return(
 		[]*storage.NetworkFlow{
-			extFlow("ExternalEntity1", "mydeployment"),
-			extFlow("ExternalEntity2", "mydeployment"),
+			extFlow(es1aID.String(), "mydeployment"),
+			extFlow(es1bID.String(), "mydeployment"),
 		},
 		nil,
+		nil,
 	)
+
+	networkTree, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{es1a, es1b})
+	s.NoError(err)
+
+	s.networkTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), gomock.Any()).Return(networkTree)
+	s.networkTreeMgr.EXPECT().GetDefaultNetworkTree(gomock.Any()).Return(networkTree)
 
 	flows, err := s.tested.GetExternalNetworkFlows(ctx, &req)
 	s.NoError(err)

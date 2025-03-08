@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/sensor/utils"
 	"github.com/stretchr/testify/suite"
 	appsApiv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -163,6 +164,24 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestPatch() {
 	}
 }
 
+func (s *serviceCertificatesRepoSecretsImplSuite) TestSuccessfulCreate() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	fixture := s.newFixture(certSecretsRepoFixtureConfig{skipSecretCreation: true})
+	persistedCertificates, err := fixture.repo.EnsureServiceCertificates(ctx, fixture.certificates)
+	protoassert.SlicesEqual(s.T(), certificates.ServiceCerts, persistedCertificates)
+	s.ErrorIs(err, nil)
+
+	secret, err := fixture.secretsClient.Get(ctx, fixture.secretName, metav1.GetOptions{})
+	s.Require().NoError(err)
+
+	expectedLabels := utils.GetTLSSecretLabels()
+	s.Equal(expectedLabels, secret.Labels, "Secret labels do not match expected values")
+	expectedAnnotations := utils.GetSensorKubernetesAnnotations()
+	s.Equal(expectedAnnotations, secret.Annotations, "Secret annotations do not match expected values")
+}
+
 func (s *serviceCertificatesRepoSecretsImplSuite) TestGetNoSecretDataFailure() {
 	fixture := s.newFixture(certSecretsRepoFixtureConfig{emptySecretData: true})
 
@@ -260,6 +279,7 @@ type certSecretsRepoFixture struct {
 	repo          *ServiceCertificatesRepoSecrets
 	secretsClient corev1.SecretInterface
 	certificates  *storage.TypedServiceCertificateSet
+	secretName    string
 }
 
 // newFixture creates a certSecretsRepoFixture that contains:
@@ -276,9 +296,10 @@ func (s *serviceCertificatesRepoSecretsImplSuite) newFixture(config certSecretsR
 	if config.secretOwnerRefUID != "" {
 		ownerRef[0].UID = types.UID(config.secretOwnerRefUID)
 	}
+	secretName := fmt.Sprintf("%s-secret", scannerServiceType)
 	secret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            fmt.Sprintf("%s-secret", scannerServiceType),
+			Name:            secretName,
 			Namespace:       namespace,
 			OwnerReferences: ownerRef,
 		},
@@ -294,7 +315,12 @@ func (s *serviceCertificatesRepoSecretsImplSuite) newFixture(config certSecretsR
 		delete(secret.Data, secretDataKey)
 	}
 	secrets := map[storage.ServiceType]*v1.Secret{scannerServiceType: secret}
-	clientSet := fake.NewSimpleClientset(sensorDeployment, secret)
+	var clientSet *fake.Clientset
+	if config.skipSecretCreation {
+		clientSet = fake.NewSimpleClientset(sensorDeployment)
+	} else {
+		clientSet = fake.NewSimpleClientset(sensorDeployment, secret)
+	}
 	secretsClient := clientSet.CoreV1().Secrets(namespace)
 	clientSet.CoreV1().(*fakecorev1.FakeCoreV1).PrependReactor(config.k8sAPIVerbToError, "secrets", func(action k8sTesting.Action) (handled bool, ret runtime.Object, err error) {
 		return true, &v1.Secret{}, errForced
@@ -304,6 +330,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) newFixture(config certSecretsR
 		repo:          repo,
 		secretsClient: secretsClient,
 		certificates:  certificates,
+		secretName:    secretName,
 	}
 }
 
@@ -313,6 +340,8 @@ type certSecretsRepoFixtureConfig struct {
 	k8sAPIVerbToError string
 	// If true then the data of the secret used to initialize the fake k8s client set will be empty.
 	emptySecretData bool
+	// If true the fixture will not create a pre-existing secret
+	skipSecretCreation bool
 	// These keys will be removed from the data keys of the secret used to initialize the fake k8s client set.
 	missingSecretDataKeys []string
 	// If set to a non-zero value, then the UID of the owner of the secret used to initialize the fake k8s client

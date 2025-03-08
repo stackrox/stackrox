@@ -30,15 +30,15 @@ import (
 var (
 	authorizer = or.SensorOr(perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Cluster)): {
-			"/v1.ClustersService/GetClusters",
-			"/v1.ClustersService/GetCluster",
-			"/v1.ClustersService/GetKernelSupportAvailable",
-			"/v1.ClustersService/GetClusterDefaultValues",
+			v1.ClustersService_GetClusters_FullMethodName,
+			v1.ClustersService_GetCluster_FullMethodName,
+			v1.ClustersService_GetKernelSupportAvailable_FullMethodName,
+			v1.ClustersService_GetClusterDefaultValues_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.Cluster)): {
-			"/v1.ClustersService/PostCluster",
-			"/v1.ClustersService/PutCluster",
-			"/v1.ClustersService/DeleteCluster",
+			v1.ClustersService_PostCluster_FullMethodName,
+			v1.ClustersService_PutCluster_FullMethodName,
+			v1.ClustersService_DeleteCluster_FullMethodName,
 		},
 	}))
 )
@@ -245,7 +245,7 @@ func (s *serviceImpl) GetClusterDefaultValues(ctx context.Context, _ *v1.Empty) 
 	flavor := defaults.GetImageFlavorFromEnv()
 	defaults := &v1.ClusterDefaultsResponse{
 		MainImageRepository:      flavor.MainImageNoTag(),
-		CollectorImageRepository: flavor.CollectorFullImageNoTag(),
+		CollectorImageRepository: flavor.CollectorImageNoTag(),
 		KernelSupportAvailable:   kernelSupport,
 	}
 	return defaults, nil

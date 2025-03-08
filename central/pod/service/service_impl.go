@@ -27,8 +27,8 @@ const (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Deployment)): {
-			"/v1.PodService/GetPods",
-			"/v1.PodService/ExportPods",
+			v1.PodService_GetPods_FullMethodName,
+			v1.PodService_ExportPods_FullMethodName,
 		},
 	})
 )

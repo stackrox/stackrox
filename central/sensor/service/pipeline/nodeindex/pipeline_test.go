@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	nodesEnricherMocks "github.com/stackrox/rox/pkg/nodes/enricher/mocks"
 	"github.com/stretchr/testify/assert"
@@ -18,7 +17,7 @@ import (
 )
 
 func TestPipelineWithEmptyIndex(t *testing.T) {
-	t.Setenv(env.NodeIndexEnabled.EnvVar(), "true")
+	t.Setenv(features.NodeIndexEnabled.EnvVar(), "true")
 	t.Setenv(features.ScannerV4.EnvVar(), "true")
 	p := &pipelineImpl{}
 	expectedError := "unexpected resource type"
@@ -29,7 +28,7 @@ func TestPipelineWithEmptyIndex(t *testing.T) {
 }
 
 func TestPipelineWithIncorrectAction(t *testing.T) {
-	t.Setenv(env.NodeIndexEnabled.EnvVar(), "true")
+	t.Setenv(features.NodeIndexEnabled.EnvVar(), "true")
 	t.Setenv(features.ScannerV4.EnvVar(), "true")
 	p := &pipelineImpl{}
 	msg := createMsg()
@@ -41,7 +40,7 @@ func TestPipelineWithIncorrectAction(t *testing.T) {
 }
 
 func TestPipelineEnrichesAndUpserts(t *testing.T) {
-	t.Setenv(env.NodeIndexEnabled.EnvVar(), "true")
+	t.Setenv(features.NodeIndexEnabled.EnvVar(), "true")
 	t.Setenv(features.ScannerV4.EnvVar(), "true")
 	node := storage.Node{
 		Id: "1",

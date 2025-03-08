@@ -17,7 +17,7 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.DeploymentExtension)): {
-			"/v1.ListeningEndpointsService/GetListeningEndpoints",
+			v1.ListeningEndpointsService_GetListeningEndpoints_FullMethodName,
 		},
 	})
 )

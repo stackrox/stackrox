@@ -1,7 +1,7 @@
 FROM registry.redhat.io/rhel8/postgresql-15:latest
 
-ARG MAIN_IMAGE_TAG
-RUN if [[ "$MAIN_IMAGE_TAG" == "" ]]; then >&2 echo "error: required MAIN_IMAGE_TAG arg is unset"; exit 6; fi
+ARG BUILD_TAG
+RUN if [[ "$BUILD_TAG" == "" ]]; then >&2 echo "error: required BUILD_TAG arg is unset"; exit 6; fi
 
 LABEL \
     com.redhat.component="rhacs-scanner-v4-db-container" \
@@ -17,7 +17,7 @@ LABEL \
     summary="Scanner v4 DB for Red Hat Advanced Cluster Security for Kubernetes" \
     url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
     # We must set version label to prevent inheriting value set in the base stage.
-    version="${MAIN_IMAGE_TAG}" \
+    version="${BUILD_TAG}" \
     # Release label is required by EC although has no practical semantics.
     # We also set it to not inherit one from a base stage in case it's RHEL or UBI.
     release="1"

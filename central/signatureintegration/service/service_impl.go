@@ -22,13 +22,13 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Integration)): {
-			"/v1.SignatureIntegrationService/ListSignatureIntegrations",
-			"/v1.SignatureIntegrationService/GetSignatureIntegration",
+			v1.SignatureIntegrationService_ListSignatureIntegrations_FullMethodName,
+			v1.SignatureIntegrationService_GetSignatureIntegration_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.Integration)): {
-			"/v1.SignatureIntegrationService/PostSignatureIntegration",
-			"/v1.SignatureIntegrationService/PutSignatureIntegration",
-			"/v1.SignatureIntegrationService/DeleteSignatureIntegration",
+			v1.SignatureIntegrationService_PostSignatureIntegration_FullMethodName,
+			v1.SignatureIntegrationService_PutSignatureIntegration_FullMethodName,
+			v1.SignatureIntegrationService_DeleteSignatureIntegration_FullMethodName,
 		},
 	})
 )

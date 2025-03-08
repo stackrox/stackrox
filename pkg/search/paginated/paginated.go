@@ -50,7 +50,7 @@ func Paginated(searcher search.Searcher) search.Searcher {
 	}
 }
 
-func paginate(offset, limit int, results []search.Result, err error) ([]search.Result, error) {
+func paginate[T any](offset, limit int, results []T, err error) ([]T, error) {
 	if err != nil {
 		return results, err
 	}
@@ -183,4 +183,10 @@ func convertV2AggregateByToV1(aggregateBy *v2.AggregateBy) *v1.AggregateBy {
 		AggrFunc: v1.Aggregation(aggregateBy.GetAggrFunc()),
 		Distinct: aggregateBy.GetDistinct(),
 	}
+}
+
+func PaginateSlice[T any](offset, limit int, slice []T) []T {
+	// if we pass nil, then there can be no error
+	result, _ := paginate(offset, limit, slice, nil)
+	return result
 }

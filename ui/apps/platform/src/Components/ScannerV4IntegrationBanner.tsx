@@ -34,10 +34,7 @@ function ScannerV4IntegrationBanner() {
     const docsLink = (
         <ExternalLink>
             <a
-                href={getVersionedDocs(
-                    version,
-                    'operating/examine-images-for-vulnerabilities.html'
-                )}
+                href={getVersionedDocs(version, 'operating/examine-images-for-vulnerabilities')}
                 target="_blank"
                 rel="noopener noreferrer"
             >

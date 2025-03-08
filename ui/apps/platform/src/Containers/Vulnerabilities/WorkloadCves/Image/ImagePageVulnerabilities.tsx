@@ -21,7 +21,7 @@ import { getHasSearchApplied, getPaginationParams } from 'utils/searchUtils';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useMap from 'hooks/useMap';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
-
+import { getSearchFilterConfigWithFeatureFlagDependency } from 'Components/CompoundSearchFilter/utils/utils';
 import { DynamicTableLabel } from 'Components/DynamicIcon';
 import {
     SummaryCardLayout,
@@ -93,7 +93,17 @@ export const imageVulnerabilitiesQuery = gql`
 
 const defaultSortFields = ['CVE', 'CVSS', 'Severity'];
 
-const searchFilterConfig = [imageCVESearchFilterConfig, imageComponentSearchFilterConfig];
+const searchFilterConfigWithFeatureFlagDependency = [
+    // Omit EPSSProbability for 4.7 release until CVE/advisory separatipn is available in 4.8 release.
+    // imageCVESearchFilterConfig,
+    {
+        ...imageCVESearchFilterConfig,
+        attributes: imageCVESearchFilterConfig.attributes.filter(
+            ({ searchTerm }) => searchTerm !== 'EPSS Probability'
+        ),
+    },
+    imageComponentSearchFilterConfig,
+];
 
 export type ImagePageVulnerabilitiesProps = {
     imageId: string;
@@ -185,15 +195,25 @@ function ImagePageVulnerabilities({
     });
 
     const isNvdCvssColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
-    const isEpssProbabilityColumnEnabled =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_EPSS_SCORE');
+    // Omit for 4.7 release until CVE/advisory separatipn is available in 4.8 release.
+    // const isEpssProbabilityColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
+    const isEpssProbabilityColumnEnabled = false;
+    const isAdvisoryColumnEnabled =
+        isFeatureFlagEnabled('ROX_SCANNER_V4') &&
+        isFeatureFlagEnabled('ROX_CVE_ADVISORY_SEPARATION');
     const filteredColumns = filterManagedColumns(
         defaultColumns,
         (key) =>
             (key !== 'nvdCvss' || isNvdCvssColumnEnabled) &&
-            (key !== 'epssProbability' || isEpssProbabilityColumnEnabled)
+            (key !== 'epssProbability' || isEpssProbabilityColumnEnabled) &&
+            (key !== 'totalAdvisories' || isAdvisoryColumnEnabled)
     );
     const managedColumnState = useManagedColumns(tableId, filteredColumns);
+
+    const searchFilterConfig = getSearchFilterConfigWithFeatureFlagDependency(
+        isFeatureFlagEnabled,
+        searchFilterConfigWithFeatureFlagDependency
+    );
 
     const hiddenSeverities = getHiddenSeverities(querySearchFilter);
     const hiddenStatuses = getHiddenStatuses(querySearchFilter);

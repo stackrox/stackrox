@@ -185,6 +185,7 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	g.removeOldReportBlobs(pvtConfig)
 	g.removeExpiredAdministrationEvents(pvtConfig)
 	g.removeExpiredDiscoveredClusters()
+	g.removeInvalidAPITokens()
 	postgres.PruneActiveComponents(pruningCtx, g.postgres)
 	postgres.PruneClusterHealthStatuses(pruningCtx, g.postgres)
 
@@ -518,6 +519,11 @@ func (g *garbageCollectorImpl) removeExpiredAdministrationEvents(config *storage
 func (g *garbageCollectorImpl) removeExpiredDiscoveredClusters() {
 	defer metrics.SetPruningDuration(time.Now(), "DiscoveredClusters")
 	postgres.PruneDiscoveredClusters(pruningCtx, g.postgres, env.DiscoveredClustersRetentionTime.DurationSetting())
+}
+
+func (g *garbageCollectorImpl) removeInvalidAPITokens() {
+	defer metrics.SetPruningDuration(time.Now(), "InvalidAPITokens")
+	postgres.PruneInvalidAPITokens(pruningCtx, g.postgres, env.APITokenInvalidRetentionTime.DurationSetting())
 }
 
 func (g *garbageCollectorImpl) getOrphanedAlerts(ctx context.Context) ([]string, error) {

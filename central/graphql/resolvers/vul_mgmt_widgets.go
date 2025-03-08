@@ -101,7 +101,7 @@ func deploymentsWithMostSevereViolations(ctx context.Context, resolver *Resolver
 	}
 
 	q = paginated.FillDefaultSortOption(q, paginated.GetViolationTimeSortOption())
-	alerts, err := resolver.ViolationsDataStore.SearchListAlerts(ctx, q)
+	alerts, err := resolver.ViolationsDataStore.SearchListAlerts(ctx, q, true)
 	if err != nil {
 		return nil, err
 	}

@@ -41,7 +41,7 @@ class ClientCertAuthTest extends BaseSpecification {
             log.info "Client cert auth provider ID is ${providerIDs[i]}"
             GroupService.addDefaultMapping(providerIDs[i], "Continuous Integration")
             certTokens[i] = AuthProviderService.getAuthProviderLoginToken(providerIDs[i])
-            log.info "Certificate token is ${certTokens[i]}"
+            log.info "Certificate token is ${certTokens[i]} #notsecret"
         }
     }
 

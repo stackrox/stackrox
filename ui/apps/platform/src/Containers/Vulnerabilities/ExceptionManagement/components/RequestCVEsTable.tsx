@@ -14,25 +14,28 @@ import { useQuery } from '@apollo/client';
 import { Link } from 'react-router-dom';
 import pluralize from 'pluralize';
 
+import { vulnerabilitiesWorkloadCvesPath } from 'routePaths';
 import { SetResult } from 'hooks/useSet';
-import { UseURLPaginationResult } from 'hooks/useURLPagination';
+import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
-import { VulnerabilityState } from 'services/VulnerabilityExceptionService';
+import {
+    VulnerabilityExceptionScope,
+    VulnerabilityState,
+} from 'services/VulnerabilityExceptionService';
 import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
 import CvssFormatted from 'Components/CvssFormatted';
 import DateDistance from 'Components/DateDistance';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import { getTableUIState } from 'utils/getTableUIState';
-import { SearchFilter } from 'types/search';
 import {
     aggregateByCVSS,
     aggregateByCreatedTime,
     aggregateByDistinctCount,
     getScoreVersionsForTopCVSS,
     sortCveDistroList,
-    getWorkloadSortFields,
-    getDefaultWorkloadSortOption,
+    getWorkloadCveOverviewSortFields,
+    getWorkloadCveOverviewDefaultSortOption,
     getSeveritySortOptions,
 } from '../../utils/sortUtils';
 import {
@@ -40,32 +43,38 @@ import {
     cveListQuery,
 } from '../../WorkloadCves/Tables/WorkloadCVEOverviewTable';
 import { VulnerabilitySeverityLabel } from '../../types';
+import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 
+import { getImageScopeSearchValue } from '../utils';
+
 type RequestCVEsTableProps = {
-    searchFilter: SearchFilter;
-    vulnMgmtBaseUrl: string;
-    pagination: UseURLPaginationResult;
+    cves: string[];
+    scope: VulnerabilityExceptionScope;
     expandedRowSet: SetResult<string>;
     vulnerabilityState: VulnerabilityState;
 };
 
 function RequestCVEsTable({
-    searchFilter,
-    vulnMgmtBaseUrl,
-    pagination,
+    cves,
+    scope,
     expandedRowSet,
     vulnerabilityState,
 }: RequestCVEsTableProps) {
-    const { page, perPage, setPage, setPerPage } = pagination;
+    const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
     const { sortOption, getSortParams } = useURLSort({
-        sortFields: getWorkloadSortFields('CVE'),
-        defaultSortOption: getDefaultWorkloadSortOption('CVE'),
+        sortFields: getWorkloadCveOverviewSortFields('CVE'),
+        defaultSortOption: getWorkloadCveOverviewDefaultSortOption('CVE'),
         onSort: () => setPage(1),
     });
 
-    const query = getRequestQueryStringForSearchFilter(searchFilter);
+    const queryObject = {
+        CVE: cves.join(','),
+        Image: getImageScopeSearchValue(scope),
+    };
+
+    const query = getRequestQueryStringForSearchFilter(queryObject);
 
     const {
         error,
@@ -76,7 +85,6 @@ function RequestCVEsTable({
             query,
             pagination: getPaginationParams({ page, perPage, sortOption }),
         },
-        fetchPolicy: 'no-cache',
     });
 
     const tableState = getTableUIState({
@@ -89,7 +97,7 @@ function RequestCVEsTable({
     const colSpan = 6;
 
     return (
-        <PageSection variant="light" className="pf-v5-u-pt-0">
+        <PageSection variant="light">
             <Flex direction={{ default: 'column' }}>
                 <Toolbar>
                     <ToolbarContent className="pf-v5-u-justify-content-space-between">
@@ -176,11 +184,11 @@ function RequestCVEsTable({
 
                                 const cveURLQueryOptions = {
                                     s: {
-                                        IMAGE: searchFilter.Image,
+                                        IMAGE: queryObject.Image,
                                     },
                                 };
 
-                                const cveURL = `${vulnMgmtBaseUrl}/${getWorkloadEntityPagePath(
+                                const cveURL = `${vulnerabilitiesWorkloadCvesPath}/${getWorkloadEntityPagePath(
                                     'CVE',
                                     cve,
                                     vulnerabilityState,

@@ -53,7 +53,7 @@ func (s *matcherServiceTestSuite) Test_matcherService_NewMatcherService() {
 	s.False(srv.disableEmptyContents)
 }
 
-func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_contents_disbled() {
+func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_contents_disabled() {
 	// when empty content is disabled and empty contents then error
 	srv := NewMatcherService(s.matcherMock, nil)
 	s.matcherMock.
@@ -303,4 +303,72 @@ func (s *matcherServiceTestSuite) Test_matcherService_notes() {
 		},
 	})
 	s.ElementsMatch([]v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_UNKNOWN}, notes)
+}
+
+func (s *matcherServiceTestSuite) Test_matcherService_GetSBOM() {
+	s.Run("error on empty request", func() {
+		srv := NewMatcherService(nil, nil)
+		_, err := srv.GetSBOM(s.ctx, nil)
+		s.ErrorContains(err, "empty request")
+	})
+
+	s.Run("error on no id", func() {
+		srv := NewMatcherService(nil, nil)
+		_, err := srv.GetSBOM(s.ctx, &v4.GetSBOMRequest{})
+		s.ErrorContains(err, "id is required")
+	})
+
+	s.Run("error on no name", func() {
+		srv := NewMatcherService(nil, nil)
+		_, err := srv.GetSBOM(s.ctx, &v4.GetSBOMRequest{
+			Id: "id",
+		})
+		s.ErrorContains(err, "name is required")
+	})
+
+	s.Run("error on no uri", func() {
+		srv := NewMatcherService(nil, nil)
+		_, err := srv.GetSBOM(s.ctx, &v4.GetSBOMRequest{
+			Id:   "id",
+			Name: "name",
+		})
+		s.ErrorContains(err, "uri is required")
+	})
+
+	s.Run("error on empty contents", func() {
+		srv := NewMatcherService(nil, nil)
+		_, err := srv.GetSBOM(s.ctx, &v4.GetSBOMRequest{
+			Id:   "id",
+			Name: "name",
+			Uri:  "uri",
+		})
+		s.ErrorContains(err, "contents are required")
+
+	})
+
+	s.Run("error when sbom generation fails", func() {
+		s.matcherMock.EXPECT().GetSBOM(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("broken"))
+		srv := NewMatcherService(s.matcherMock, nil)
+		_, err := srv.GetSBOM(s.ctx, &v4.GetSBOMRequest{
+			Id:       "id",
+			Name:     "name",
+			Uri:      "uri",
+			Contents: &v4.Contents{},
+		})
+		s.ErrorContains(err, "broken")
+	})
+
+	s.Run("success", func() {
+		fakeSbomB := []byte("fake sbom")
+		s.matcherMock.EXPECT().GetSBOM(gomock.Any(), gomock.Any(), gomock.Any()).Return(fakeSbomB, nil)
+		srv := NewMatcherService(s.matcherMock, nil)
+		res, err := srv.GetSBOM(s.ctx, &v4.GetSBOMRequest{
+			Id:       "id",
+			Name:     "name",
+			Uri:      "uri",
+			Contents: &v4.Contents{},
+		})
+		s.Require().NoError(err)
+		s.Equal(res.Sbom, fakeSbomB)
+	})
 }

@@ -49,7 +49,7 @@ export const integrationEditPath = `${integrationsPath}/:source/:type/edit/:id`;
 export const integrationsListPath = `${integrationsPath}/:source/:type`;
 export const listeningEndpointsBasePath = `${mainPath}/listening-endpoints`;
 export const networkBasePath = `${mainPath}/network-graph`;
-export const networkPath = `${networkBasePath}/:detailType?/:detailId?`;
+export const networkPath = `${networkBasePath}/:nodeType?/:nodeId?/:detailType?/:detailID?`;
 export const policyManagementBasePath = `${mainPath}/policy-management`;
 export const policiesBasePath = `${policyManagementBasePath}/policies`;
 export const policiesPath = `${policiesBasePath}/:policyId?/:command?`;
@@ -65,13 +65,26 @@ export const systemHealthPath = `${mainPath}/system-health`;
 export const userBasePath = `${mainPath}/user`;
 export const userRolePath = `${userBasePath}/roles/:roleName`;
 export const violationsBasePath = `${mainPath}/violations`;
+export const violationsUserWorkloadsViewPath = `${mainPath}/violations?filteredWorkflowView=Application view`;
+export const violationsPlatformViewPath = `${mainPath}/violations?filteredWorkflowView=Platform view`;
+export const violationsFullViewPath = `${mainPath}/violations?filteredWorkflowView=Full view`;
 export const violationsPath = `${violationsBasePath}/:alertId?`;
 export const vulnManagementPath = `${mainPath}/vulnerability-management`;
+// TODO Deprecate these paths
 export const vulnerabilitiesWorkloadCvesPath = `${vulnerabilitiesBasePath}/workload-cves`;
-export const vulnerabilitiesPlatformWorkloadCvesPath = `${vulnerabilitiesBasePath}/platform-workload-cves`;
-export const vulnerabilityNamespaceViewPath = `${vulnerabilitiesWorkloadCvesPath}/namespace-view`;
 export const vulnerabilitiesPlatformCvesPath = `${vulnerabilitiesBasePath}/platform-cves`;
+// TODO End Deprecate
+
+export const vulnerabilitiesUserWorkloadsPath = `${vulnerabilitiesBasePath}/user-workloads`;
+export const vulnerabilitiesPlatformPath = `${vulnerabilitiesBasePath}/platform`;
 export const vulnerabilitiesNodeCvesPath = `${vulnerabilitiesBasePath}/node-cves`;
+// System defined "views"
+export const vulnerabilitiesAllImagesPath = `${vulnerabilitiesBasePath}/all-images`;
+export const vulnerabilitiesInactiveImagesPath = `${vulnerabilitiesBasePath}/inactive-images`;
+export const vulnerabilitiesImagesWithoutCvesPath = `${vulnerabilitiesBasePath}/images-without-cves`;
+// user-workload template views path
+export const vulnerabilitiesViewPath = `${vulnerabilitiesBasePath}/results/:viewTemplate/:viewId`;
+
 export const vulnerabilityReportsPath = `${vulnerabilitiesBasePath}/reports`;
 
 // Vulnerability Management 1.0 path for links from Dashboard:
@@ -157,8 +170,12 @@ export type RouteKey =
     | 'vulnerabilities/exception-management'
     | 'vulnerabilities/node-cves'
     | 'vulnerabilities/reports'
+    | 'vulnerabilities/user-workloads'
+    | 'vulnerabilities/platform'
+    | 'vulnerabilities/all-images'
+    | 'vulnerabilities/inactive-images'
+    | 'vulnerabilities/images-without-cves'
     | 'vulnerabilities/platform-cves'
-    | 'vulnerabilities/platform-workload-cves'
     | 'vulnerabilities/workload-cves'
     | 'vulnerability-management'
     ;
@@ -306,14 +323,31 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     'vulnerabilities/platform-cves': {
         resourceAccessRequirements: everyResource(['Cluster']),
     },
-    'vulnerabilities/platform-workload-cves': {
-        featureFlagRequirements: allEnabled(['ROX_PLATFORM_CVE_SPLIT']),
-        // "platform-workload-cves" uses the same code as "workload-cves", so should have
-        // identical resource requirements until the two sections diverge
-        resourceAccessRequirements: everyResource(['Deployment', 'Image']),
-    },
     'vulnerabilities/reports': {
         resourceAccessRequirements: everyResource(['WorkflowAdministration']),
+    },
+    'vulnerabilities/workload-cves': {
+        resourceAccessRequirements: everyResource(['Deployment', 'Image']),
+    },
+    'vulnerabilities/user-workloads': {
+        featureFlagRequirements: allEnabled(['ROX_PLATFORM_CVE_SPLIT']),
+        resourceAccessRequirements: everyResource(['Deployment', 'Image']),
+    },
+    'vulnerabilities/platform': {
+        featureFlagRequirements: allEnabled(['ROX_PLATFORM_CVE_SPLIT']),
+        resourceAccessRequirements: everyResource(['Deployment', 'Image']),
+    },
+    'vulnerabilities/all-images': {
+        featureFlagRequirements: allEnabled(['ROX_PLATFORM_CVE_SPLIT']),
+        resourceAccessRequirements: everyResource(['Deployment', 'Image']),
+    },
+    'vulnerabilities/inactive-images': {
+        featureFlagRequirements: allEnabled(['ROX_PLATFORM_CVE_SPLIT']),
+        resourceAccessRequirements: everyResource(['Deployment', 'Image']),
+    },
+    'vulnerabilities/images-without-cves': {
+        featureFlagRequirements: allEnabled(['ROX_PLATFORM_CVE_SPLIT']),
+        resourceAccessRequirements: everyResource(['Deployment', 'Image']),
     },
     'vulnerability-management': {
         resourceAccessRequirements: everyResource([
@@ -325,10 +359,6 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
             // 'Node',
             // 'WatchedImage', // for Image
         ]),
-    },
-    'vulnerabilities/workload-cves': {
-        featureFlagRequirements: allEnabled(['ROX_VULN_MGMT_WORKLOAD_CVES']),
-        resourceAccessRequirements: everyResource(['Deployment', 'Image']),
     },
 };
 
@@ -406,7 +436,6 @@ const vulnManagementPathToLabelMap: Record<string, string> = {
 const vulnerabilitiesPathToLabelMap: Record<string, string> = {
     [vulnerabilitiesBasePath]: 'Vulnerabilities',
     [vulnerabilitiesWorkloadCvesPath]: 'Workload CVEs',
-    [vulnerabilityNamespaceViewPath]: 'Namespace View',
     [vulnerabilitiesPlatformCvesPath]: 'Platform CVEs',
     [vulnerabilitiesNodeCvesPath]: 'Node CVEs',
     [vulnerabilityReportsPath]: 'Vulnerability Reporting',

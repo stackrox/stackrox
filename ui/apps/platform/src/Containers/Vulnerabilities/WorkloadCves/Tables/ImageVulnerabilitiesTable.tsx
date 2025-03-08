@@ -17,7 +17,7 @@ import useFeatureFlags from 'hooks/useFeatureFlags';
 import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
-import { VulnerabilityState, isVulnerabilitySeverity } from 'types/cve.proto';
+import { CveBaseInfo, VulnerabilityState, isVulnerabilitySeverity } from 'types/cve.proto';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import useMap from 'hooks/useMap';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
@@ -47,6 +47,8 @@ import ExceptionDetailsCell from '../components/ExceptionDetailsCell';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
+import { infoForEpssProbability } from './infoForTh';
+import { formatEpssProbabilityAsPercent, formatTotalAdvisories } from './table.utils';
 
 export const tableId = 'WorkloadCvesImageVulnerabilitiesTable';
 export const defaultColumns = {
@@ -68,6 +70,10 @@ export const defaultColumns = {
     },
     epssProbability: {
         title: 'EPSS probability',
+        isShownByDefault: true,
+    },
+    totalAdvisories: {
+        title: 'Advisories',
         isShownByDefault: true,
     },
     affectedComponents: {
@@ -94,6 +100,11 @@ export const imageVulnerabilitiesFragment = gql`
         scoreVersion
         nvdCvss
         nvdScoreVersion
+        cveBaseInfo {
+            epss {
+                epssProbability
+            }
+        }
         discoveredAtImage
         publishedOn
         pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
@@ -111,6 +122,7 @@ export type ImageVulnerability = {
     scoreVersion: string;
     nvdCvss: number;
     nvdScoreVersion: string; // for example, V3 or UNKNOWN_VERSION
+    cveBaseInfo: CveBaseInfo;
     discoveredAtImage: string | null;
     publishedOn: string | null;
     pendingExceptionCount: number;
@@ -154,13 +166,18 @@ function ImageVulnerabilitiesTable({
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isNvdCvssColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
-    const isEpssProbabilityColumnEnabled =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_EPSS_SCORE');
+    // Omit for 4.7 release until CVE/advisory separatipn is available in 4.8 release.
+    // const isEpssProbabilityColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
+    const isEpssProbabilityColumnEnabled = false;
+    const isAdvisoryColumnEnabled =
+        isFeatureFlagEnabled('ROX_SCANNER_V4') &&
+        isFeatureFlagEnabled('ROX_CVE_ADVISORY_SEPARATION');
 
     const colSpan =
         7 +
         (isNvdCvssColumnEnabled ? 1 : 0) +
         (isEpssProbabilityColumnEnabled ? 1 : 0) +
+        (isAdvisoryColumnEnabled ? 1 : 0) +
         (canSelectRows ? 1 : 0) +
         (createTableActions ? 1 : 0) +
         (showExceptionDetailsLink ? 1 : 0) +
@@ -192,10 +209,14 @@ function ImageVulnerabilitiesTable({
                     {isEpssProbabilityColumnEnabled && (
                         <Th
                             className={getVisibilityClass('epssProbability')}
+                            info={infoForEpssProbability}
                             sort={getSortParams('EPSS Probability')}
                         >
                             EPSS probability
                         </Th>
+                    )}
+                    {isAdvisoryColumnEnabled && (
+                        <Th className={getVisibilityClass('totalAdvisories')}>Advisories</Th>
                     )}
                     <Th className={getVisibilityClass('affectedComponents')}>
                         Affected components
@@ -234,6 +255,7 @@ function ImageVulnerabilitiesTable({
                             scoreVersion,
                             nvdCvss,
                             nvdScoreVersion,
+                            cveBaseInfo,
                             imageComponents,
                             discoveredAtImage,
                             publishedOn,
@@ -243,6 +265,8 @@ function ImageVulnerabilitiesTable({
                             (imageComponent) => imageComponent.imageVulnerabilities
                         );
                         const isFixableInImage = getIsSomeVulnerabilityFixable(vulnerabilities);
+                        const epssProbability = cveBaseInfo?.epss?.epssProbability;
+                        const totalAdvisories = undefined;
                         const isExpanded = expandedRowSet.has(cve);
 
                         return (
@@ -324,7 +348,16 @@ function ImageVulnerabilitiesTable({
                                             modifier="nowrap"
                                             dataLabel="EPSS probability"
                                         >
-                                            Not available
+                                            {formatEpssProbabilityAsPercent(epssProbability)}
+                                        </Td>
+                                    )}
+                                    {isAdvisoryColumnEnabled && (
+                                        <Td
+                                            className={getVisibilityClass('totalAdvisories')}
+                                            modifier="nowrap"
+                                            dataLabel="Advisories"
+                                        >
+                                            {formatTotalAdvisories(totalAdvisories)}
                                         </Td>
                                     )}
                                     <Td

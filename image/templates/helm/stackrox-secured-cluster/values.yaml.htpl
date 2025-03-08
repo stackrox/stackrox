@@ -10,7 +10,7 @@ endpoint:
 image:
   repository:
     main: [< required "" .ImageRemote >]
-    collector: [< required "" .CollectorFullImageRemote >]
+    collector: [< required "" .CollectorImageRemote >]
   registry:
     main: [< required "" .MainRegistry >]
     collector: [< required "" .CollectorRegistry >]
@@ -31,7 +31,7 @@ config:
   createUpgraderServiceAccount: [< default false .CreateUpgraderSA >]
   createSecrets: true
   offlineMode: [< default false .OfflineMode >]
-  slimCollector: [< default false .SlimCollector >]
+  slimCollector: false
 
 envVars: [< if empty .EnvVars >] []
   [< else >]

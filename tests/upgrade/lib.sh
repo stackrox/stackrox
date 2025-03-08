@@ -15,7 +15,7 @@ wait_for_central_reconciliation() {
     local success=0
     for i in $(seq 1 90); do
         local numDeployments
-        numDeployments="$(curl -sSk --config <(curl_cfg user "admin:$ROX_ADMIN_PASSWORD") "https://$API_ENDPOINT/v1/summary/counts" | jq '.numDeployments' -r)"
+        numDeployments="$(curl -sSk --config <(curl_cfg user "admin:$ROX_ADMIN_PASSWORD") -X POST -d "{\"operationName\":\"summary_counts\",\"variables\":{},\"query\":\"query summary_counts {\n  clusterCount\n  nodeCount\n  violationCount\n  deploymentCount\n  imageCount\n  secretCount\n}\"}" "https://$API_ENDPOINT/api/graphql" | jq '.data.deploymentCount' -r)"
         echo "Try number ${i}. Number of deployments in Central: $numDeployments"
         [[ -n "$numDeployments" ]]
         if [[ "$numDeployments" -lt 100 ]]; then
@@ -105,7 +105,8 @@ deploy_earlier_postgres_central() {
          --set central.image.tag="${EARLIER_TAG}" \
          --set central.db.image.tag="${EARLIER_TAG}" \
          --set scanner.image.tag="$(cat SCANNER_VERSION)" \
-         --set scanner.dbImage.tag="$(cat SCANNER_VERSION)"
+         --set scanner.dbImage.tag="$(cat SCANNER_VERSION)" \
+         --set scanner.resources.limits.memory="6Gi"
 
     # Installing this way returns faster than the scripts but everything isn't running when it finishes like with
     # the scripts.  So we will give it a minute for things to get started before we proceed

@@ -71,6 +71,29 @@ func ValidateContainerImageRequest(req *v4.CreateIndexReportRequest) error {
 	return nil
 }
 
+func ValidateGetSBOMRequest(req *v4.GetSBOMRequest) error {
+	if req == nil {
+		return errox.InvalidArgs.New("empty request")
+	}
+	if req.GetId() == "" {
+		return errox.InvalidArgs.New("id is required")
+	}
+	if req.GetName() == "" {
+		return errox.InvalidArgs.New("name is required")
+	}
+	if req.GetUri() == "" {
+		return errox.InvalidArgs.New("uri is required")
+	}
+	// The SBOM request requires Contents to be populated.
+	if req.GetContents() == nil {
+		return errox.InvalidArgs.New("contents are required")
+	}
+	if err := validateContents(req.GetContents()); err != nil {
+		return err
+	}
+	return nil
+}
+
 func validateContents(contents *v4.Contents) error {
 	if contents == nil {
 		return nil

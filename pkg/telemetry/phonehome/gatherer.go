@@ -32,7 +32,6 @@ type gatherer struct {
 	period      time.Duration
 	stopSig     concurrency.Signal
 	ctx         context.Context
-	mu          sync.Mutex
 	gathering   sync.Mutex
 	gatherFuncs []GatherFunc
 	opts        []telemeter.Option
@@ -49,11 +48,6 @@ func newGatherer(clientType string, t telemeter.Telemeter, p time.Duration) *gat
 
 		tickerFactory: time.NewTicker,
 	}
-}
-
-func (g *gatherer) reset() {
-	g.stopSig.Reset()
-	g.ctx, _ = concurrency.DependentContext(context.Background(), &g.stopSig)
 }
 
 func (g *gatherer) gather() map[string]any {
@@ -103,35 +97,29 @@ func (g *gatherer) loop() {
 }
 
 func (g *gatherer) Start(opts ...telemeter.Option) {
-	if g == nil {
+	if g == nil || !g.stopSig.IsDone() {
 		return
 	}
-	g.mu.Lock()
-	defer g.mu.Unlock()
-	if g.stopSig.IsDone() {
-		g.reset()
-		concurrency.WithLock(&g.gathering, func() {
-			g.opts = opts
-		})
-		go g.loop()
-	}
+	concurrency.WithLock(&g.gathering, func() {
+		g.stopSig.Reset()
+		g.ctx, _ = concurrency.DependentContext(context.Background(), &g.stopSig)
+		g.opts = opts
+	})
+	go g.loop()
 }
 
 func (g *gatherer) Stop() {
-	if g == nil {
-		return
+	if g != nil {
+		g.stopSig.Signal()
 	}
-	g.mu.Lock()
-	defer g.mu.Unlock()
-	g.stopSig.Signal()
 }
 
 func (g *gatherer) AddGatherer(f GatherFunc) {
 	if g == nil {
 		return
 	}
-	g.mu.Lock()
-	defer g.mu.Unlock()
+	g.gathering.Lock()
+	defer g.gathering.Unlock()
 	g.gatherFuncs = append(g.gatherFuncs, f)
 }
 

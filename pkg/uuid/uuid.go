@@ -159,14 +159,11 @@ func NewDummy() UUID {
 }
 
 // NewTestUUID returns a UUID for testing purposes with the given number.
-// If number is negative or greater than 9 then zeroes are returned.
-// Example: 11111111-1111-1111-1111-111111111111.
+// If number is negative or greater than 9999 then zeroes are returned.
+// Examples:
+// - 1    -> 00010001-0001-0001-0001-000100010001.
+// - 1111 -> 11111111-1111-1111-1111-111111111111.
 func NewTestUUID(d int) UUID {
-	s := fmt.Sprintf("%d", d)
-	return FromStringOrNil(
-		strings.Repeat(s, 8) +
-			strings.Repeat(s, 4) +
-			strings.Repeat(s, 4) +
-			strings.Repeat(s, 4) +
-			strings.Repeat(s, 12))
+	s := fmt.Sprintf("%04d", d)
+	return FromStringOrNil(strings.Repeat(s, 2+1+1+1+3))
 }

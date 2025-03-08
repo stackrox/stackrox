@@ -34,15 +34,15 @@ const (
 
 var authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 	user.With(permissions.View(resources.Integration)): {
-		"/v1.CloudSourcesService/CountCloudSources",
-		"/v1.CloudSourcesService/GetCloudSource",
-		"/v1.CloudSourcesService/ListCloudSources",
+		v1.CloudSourcesService_CountCloudSources_FullMethodName,
+		v1.CloudSourcesService_GetCloudSource_FullMethodName,
+		v1.CloudSourcesService_ListCloudSources_FullMethodName,
 	},
 	user.With(permissions.Modify(resources.Integration)): {
-		"/v1.CloudSourcesService/CreateCloudSource",
-		"/v1.CloudSourcesService/DeleteCloudSource",
-		"/v1.CloudSourcesService/TestCloudSource",
-		"/v1.CloudSourcesService/UpdateCloudSource",
+		v1.CloudSourcesService_CreateCloudSource_FullMethodName,
+		v1.CloudSourcesService_DeleteCloudSource_FullMethodName,
+		v1.CloudSourcesService_TestCloudSource_FullMethodName,
+		v1.CloudSourcesService_UpdateCloudSource_FullMethodName,
 	},
 })
 

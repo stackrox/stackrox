@@ -25,5 +25,4 @@ export const selectors = {
         securityContext: `[aria-label="Deployment details"]:has('h3:contains("Security context")')`,
         portConfiguration: `[aria-label="Deployment details"]:has('h3:contains("Port configuration")')`,
     },
-    filteredWorkflowSelectButton: 'button[aria-label="Filtered workflow select"]',
 };

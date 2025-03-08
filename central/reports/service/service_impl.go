@@ -24,7 +24,7 @@ var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.WorkflowAdministration), permissions.View(resources.Integration),
 			permissions.View(resources.Image)): {
-			"/v1.ReportService/RunReport",
+			v1.ReportService_RunReport_FullMethodName,
 		},
 	})
 )

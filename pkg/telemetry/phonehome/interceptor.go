@@ -3,7 +3,6 @@ package phonehome
 import (
 	"context"
 	"net/http"
-	"strings"
 
 	erroxGRPC "github.com/stackrox/rox/pkg/errox/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -12,7 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 )
 
-const userAgentKey = "User-Agent"
+const userAgentHeaderKey = "User-Agent"
 
 func (cfg *Config) track(rp *RequestParams) {
 	cfg.interceptorsLock.RLock()
@@ -45,37 +44,39 @@ func getGRPCRequestDetails(ctx context.Context, err error, grpcFullMethod string
 
 	ri := requestinfo.FromContext(ctx)
 
-	// This is either the gRPC client or the grpc-gateway user agent:
-	grpcClientAgent := ri.Metadata.Get(userAgentKey)
-
 	// Use the wrapped HTTP request if provided by the grpc-gateway.
 	if ri.HTTPRequest != nil {
 		var path string
 		if ri.HTTPRequest.URL != nil {
 			path = ri.HTTPRequest.URL.Path
 		}
-		if clientAgent := ri.HTTPRequest.Headers.Get(userAgentKey); clientAgent != "" {
+		// This is either the gRPC client or the grpc-gateway user agent:
+		grpcClientAgent := ri.Metadata.Get(userAgentHeaderKey)
+		if clientAgent := ri.HTTPRequest.Headers.Get(userAgentHeaderKey); clientAgent != "" {
 			grpcClientAgent = append(grpcClientAgent, clientAgent)
 		}
 		return &RequestParams{
-			UserAgent: strings.Join(grpcClientAgent, " "),
-			UserID:    id,
-			Method:    ri.HTTPRequest.Method,
-			Path:      path,
-			Code:      grpcError.ErrToHTTPStatus(err),
-			GRPCReq:   req,
-			Headers:   Headers(ri.HTTPRequest.Headers).Get,
+			UserID:  id,
+			Method:  ri.HTTPRequest.Method,
+			Path:    path,
+			Code:    grpcError.ErrToHTTPStatus(err),
+			GRPCReq: req,
+			Headers: func(key string) []string {
+				if http.CanonicalHeaderKey(key) == userAgentHeaderKey {
+					return grpcClientAgent
+				}
+				return Headers(ri.HTTPRequest.Headers).Get(key)
+			},
 		}
 	}
 
 	return &RequestParams{
-		UserAgent: strings.Join(grpcClientAgent, " "),
-		UserID:    id,
-		Method:    grpcFullMethod,
-		Path:      grpcFullMethod,
-		Code:      int(erroxGRPC.RoxErrorToGRPCCode(err)),
-		GRPCReq:   req,
-		Headers:   ri.Metadata.Get,
+		UserID:  id,
+		Method:  grpcFullMethod,
+		Path:    grpcFullMethod,
+		Code:    int(erroxGRPC.RoxErrorToGRPCCode(err)),
+		GRPCReq: req,
+		Headers: ri.Metadata.Get,
 	}
 }
 
@@ -86,12 +87,11 @@ func getHTTPRequestDetails(ctx context.Context, r *http.Request, status int) *Re
 	}
 
 	return &RequestParams{
-		UserAgent: r.Header.Get(userAgentKey),
-		UserID:    id,
-		Method:    r.Method,
-		Path:      r.URL.Path,
-		Code:      status,
-		HTTPReq:   r,
-		Headers:   Headers(r.Header).Get,
+		UserID:  id,
+		Method:  r.Method,
+		Path:    r.URL.Path,
+		Code:    status,
+		HTTPReq: r,
+		Headers: Headers(r.Header).Get,
 	}
 }

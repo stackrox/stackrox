@@ -215,6 +215,12 @@ spec:
                                     the Pod where this field is used. It makes that resource available
                                     inside a container.
                                   type: string
+                                request:
+                                  description: |-
+                                    Request is the name chosen for a request in the referenced claim.
+                                    If empty, everything from the claim is made available, otherwise
+                                    only the result of this request.
+                                  type: string
                               required:
                               - name
                               type: object
@@ -495,6 +501,12 @@ spec:
                                 Name must match the name of one entry in pod.spec.resourceClaims of
                                 the Pod where this field is used. It makes that resource available
                                 inside a container.
+                              type: string
+                            request:
+                              description: |-
+                                Request is the name chosen for a request in the referenced claim.
+                                If empty, everything from the claim is made available, otherwise
+                                only the result of this request.
                               type: string
                           required:
                           - name
@@ -822,7 +834,7 @@ spec:
                     spec.ingress[-1]\n\t  value: |\n\t    ports:\n\t    - port: 999\n\t
                     \     protocol: TCP\n\n## Changing the value of a configMap\n\n\tapiVersion:
                     v1\n\tkind: ConfigMap\n\tname: central-endpoints\n\tpatches:\n\t-
-                    path: data\n\t  value: |\n\t    endpoints.yaml: |\n\t    disableDefault:
+                    path: data.endpoints\\.yaml:\n\t  verbatim: |\n\t    disableDefault:
                     false\n\n## Adding a container to a deployment\n\n\tapiVersion:
                     apps/v1\n\tkind: Deployment\n\tname: central\n\tpatches:\n\t  -
                     path: spec.template.spec.containers[-1]\n\t    value: |\n\t      name:
@@ -864,6 +876,12 @@ spec:
                               For delete, value should be unset.
                               For replace, path should reference an existing node.
                               All values are strings but are converted into appropriate type based on schema.
+                            type: string
+                          verbatim:
+                            description: |-
+                              Verbatim value to add, delete or replace.
+                              Same as Value, however the content is not interpreted as YAML, but treated as literal string instead.
+                              At least one of Value and Verbatim must be empty.
                             type: string
                         type: object
                       type: array
@@ -927,6 +945,12 @@ spec:
                                     Name must match the name of one entry in pod.spec.resourceClaims of
                                     the Pod where this field is used. It makes that resource available
                                     inside a container.
+                                  type: string
+                                request:
+                                  description: |-
+                                    Request is the name chosen for a request in the referenced claim.
+                                    If empty, everything from the claim is made available, otherwise
+                                    only the result of this request.
                                   type: string
                               required:
                               - name
@@ -1086,6 +1110,12 @@ spec:
                                     Name must match the name of one entry in pod.spec.resourceClaims of
                                     the Pod where this field is used. It makes that resource available
                                     inside a container.
+                                  type: string
+                                request:
+                                  description: |-
+                                    Request is the name chosen for a request in the referenced claim.
+                                    If empty, everything from the claim is made available, otherwise
+                                    only the result of this request.
                                   type: string
                               required:
                               - name
@@ -1285,6 +1315,12 @@ spec:
                                     the Pod where this field is used. It makes that resource available
                                     inside a container.
                                   type: string
+                                request:
+                                  description: |-
+                                    Request is the name chosen for a request in the referenced claim.
+                                    If empty, everything from the claim is made available, otherwise
+                                    only the result of this request.
+                                  type: string
                               required:
                               - name
                               type: object
@@ -1410,6 +1446,12 @@ spec:
                                     Name must match the name of one entry in pod.spec.resourceClaims of
                                     the Pod where this field is used. It makes that resource available
                                     inside a container.
+                                  type: string
+                                request:
+                                  description: |-
+                                    Request is the name chosen for a request in the referenced claim.
+                                    If empty, everything from the claim is made available, otherwise
+                                    only the result of this request.
                                   type: string
                               required:
                               - name
@@ -1568,6 +1610,12 @@ spec:
                                     Name must match the name of one entry in pod.spec.resourceClaims of
                                     the Pod where this field is used. It makes that resource available
                                     inside a container.
+                                  type: string
+                                request:
+                                  description: |-
+                                    Request is the name chosen for a request in the referenced claim.
+                                    If empty, everything from the claim is made available, otherwise
+                                    only the result of this request.
                                   type: string
                               required:
                               - name

@@ -25,7 +25,6 @@ export type ScanConfigActionDropdownProps = {
     isReportStatusPending: boolean;
     scanConfigResponse: ComplianceScanConfigurationStatus;
     isReportJobsEnabled: boolean;
-    isComplianceReportingEnabled: boolean;
 };
 
 function ScanConfigActionDropdown({
@@ -36,7 +35,6 @@ function ScanConfigActionDropdown({
     isReportStatusPending,
     scanConfigResponse,
     isReportJobsEnabled,
-    isComplianceReportingEnabled,
 }: ScanConfigActionDropdownProps): ReactElement {
     const history = useHistory();
 
@@ -84,31 +82,26 @@ function ScanConfigActionDropdown({
         >
             Run scan
         </DropdownItem>,
+        <DropdownItem
+            key="Send report"
+            component="button"
+            description={
+                notifiers.length === 0
+                    ? 'Send is disabled if no delivery destinations'
+                    : /* : isScanning
+                        ? 'Send is disabled while scan is running' */
+                      ''
+            }
+            isDisabled={notifiers.length === 0 || isProcessing}
+            onClick={() => {
+                handleSendReport(scanConfigResponse);
+            }}
+        >
+            Send report
+        </DropdownItem>,
     ];
 
-    if (isComplianceReportingEnabled) {
-        dropdownItems.push(
-            <DropdownItem
-                key="Send report"
-                component="button"
-                description={
-                    notifiers.length === 0
-                        ? 'Send is disabled if no delivery destinations'
-                        : /* : isScanning
-                          ? 'Send is disabled while scan is running' */
-                          ''
-                }
-                isDisabled={notifiers.length === 0 || isProcessing}
-                onClick={() => {
-                    handleSendReport(scanConfigResponse);
-                }}
-            >
-                Send report
-            </DropdownItem>
-        );
-    }
-
-    if (isComplianceReportingEnabled && isReportJobsEnabled) {
+    if (isReportJobsEnabled) {
         dropdownItems.push(
             <DropdownItem
                 key="Generate download"

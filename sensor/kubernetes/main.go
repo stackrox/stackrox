@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/continuousprofiling"
 	"github.com/stackrox/rox/pkg/devmode"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
@@ -35,6 +36,11 @@ func main() {
 
 	devmode.StartOnDevBuilds("bin/kubernetes-sensor")
 
+	if err := continuousprofiling.SetupClient(continuousprofiling.DefaultConfig(),
+		continuousprofiling.WithDefaultAppName("sensor")); err != nil {
+		log.Errorf("unable to start continuous profiling: %v", err)
+	}
+
 	log.Infof("Running StackRox Version: %s", version.GetMainVersion())
 
 	features.LogFeatureFlags()
@@ -56,11 +62,13 @@ func main() {
 	signal.Notify(sigs, os.Interrupt, unix.SIGTERM)
 
 	var sharedClientInterface client.Interface
+	var sharedClientInterfaceForFetchingPodOwnership client.Interface
 
 	// Workload manager is only non-nil when we are mocking out the k8s client
 	workloadManager := fake.NewWorkloadManager(fake.ConfigDefaults())
 	if workloadManager != nil {
 		sharedClientInterface = workloadManager.Client()
+		sharedClientInterfaceForFetchingPodOwnership = client.MustCreateInterface()
 	} else {
 		sharedClientInterface = client.MustCreateInterface()
 	}
@@ -76,7 +84,8 @@ func main() {
 		WithK8sClient(sharedClientInterface).
 		WithCentralConnectionFactory(centralConnFactory).
 		WithCertLoader(certLoader).
-		WithWorkloadManager(workloadManager))
+		WithWorkloadManager(workloadManager).
+		WithIntrospectionK8sClient(sharedClientInterfaceForFetchingPodOwnership))
 	utils.CrashOnError(err)
 
 	s.Start()

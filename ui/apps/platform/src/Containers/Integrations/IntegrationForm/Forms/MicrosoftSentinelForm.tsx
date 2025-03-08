@@ -6,6 +6,7 @@ import {
     Checkbox,
     Form,
     PageSection,
+    Text,
     TextArea,
     TextInput,
     ToggleGroup,
@@ -17,10 +18,14 @@ import merge from 'lodash/merge';
 import { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
 
 import usePageState from 'Containers/Integrations/hooks/usePageState';
+import useMetadata from 'hooks/useMetadata';
+import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import FormMessage from 'Components/PatternFly/FormMessage';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
+import { getVersionedDocs } from 'utils/versioning';
+import IntegrationHelpIcon from './Components/IntegrationHelpIcon';
 import useIntegrationForm from '../useIntegrationForm';
 import { IntegrationFormProps } from '../integrationFormTypes';
 
@@ -47,6 +52,7 @@ export type MicrosoftSentinel = {
             streamName: string;
             enabled: boolean;
         };
+        wifEnabled: boolean;
     };
     type: 'microsoftSentinel';
 } & NotifierIntegrationBase;
@@ -65,15 +71,13 @@ export const validationSchema = yup.object().shape({
                 .trim()
                 .required('A log ingestion endpoint is required'),
             directoryTenantId: yup.string().trim().required('A directory tenant ID is required'),
-            applicationClientId: yup
-                .string()
-                .trim()
-                .required('A application client ID is required'),
+            applicationClientId: yup.string().trim(),
             secret: yup.string().trim(),
             clientCertAuthConfig: yup.object().shape({
                 clientCert: yup.string().trim(),
                 privateKey: yup.string().trim(),
             }),
+            wifEnabled: yup.boolean(),
         }),
     }),
     updatePassword: yup.bool(),
@@ -102,6 +106,7 @@ export const defaultValues: MicrosoftSentinelFormValues = {
                 streamName: '',
                 enabled: false,
             },
+            wifEnabled: false,
         },
         labelDefault: '',
         labelKey: '',
@@ -144,12 +149,17 @@ function MicrosoftSentinelForm({
         initialValues: formInitialValues,
         validationSchema,
     });
+    const { version } = useMetadata();
     const { isCreating } = usePageState();
-    const [selectedAuthMethod, setSelectedAuthMethod] = useState(
-        values.notifier.microsoftSentinel.clientCertAuthConfig.clientCert
-            ? 'use-client-cert'
-            : 'use-secret'
-    );
+    const [selectedAuthMethod, setSelectedAuthMethod] = useState((): string => {
+        if (values.notifier.microsoftSentinel.wifEnabled) {
+            return 'use-workload-identity';
+        }
+        if (values.notifier.microsoftSentinel.clientCertAuthConfig.clientCert) {
+            return 'use-client-cert';
+        }
+        return 'use-secret';
+    });
 
     function onChange(
         value: string | boolean,
@@ -173,16 +183,29 @@ function MicrosoftSentinelForm({
         return setFieldValue(event.currentTarget.id, value);
     }
 
-    function preOnSaveHook() {
+    function preHook(callback: () => void) {
         // use only the auth method selected by the user
-        if (selectedAuthMethod === 'use-client-cert') {
-            setFieldValue('notifier.microsoftSentinel.secret', '');
-        } else {
+        if (selectedAuthMethod === 'use-secret') {
             setFieldValue('notifier.microsoftSentinel.clientCertAuthConfig.clientCert', '');
             setFieldValue('notifier.microsoftSentinel.clientCertAuthConfig.privateKey', '');
+            setFieldValue('notifier.microsoftSentinel.wifEnabled', false);
+        }
+        if (selectedAuthMethod === 'use-client-cert') {
+            setFieldValue('notifier.microsoftSentinel.secret', '');
+            setFieldValue('notifier.microsoftSentinel.wifEnabled', false);
+        }
+        if (selectedAuthMethod === 'use-workload-identity') {
+            if (!isCreating) {
+                setFieldValue('updatePassword', true);
+            }
+            setFieldValue('notifier.microsoftSentinel.applicationClientId', '');
+            setFieldValue('notifier.microsoftSentinel.secret', '');
+            setFieldValue('notifier.microsoftSentinel.clientCertAuthConfig.clientCert', '');
+            setFieldValue('notifier.microsoftSentinel.clientCertAuthConfig.privateKey', '');
+            setFieldValue('notifier.microsoftSentinel.wifEnabled', true);
         }
 
-        onSave();
+        callback();
     }
 
     return (
@@ -250,28 +273,13 @@ function MicrosoftSentinelForm({
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
-                    <FormLabelGroup
-                        label="Application client ID"
-                        isRequired
-                        fieldId="notifier.microsoftSentinel.applicationClientId"
-                        touched={touched}
-                        helperText="(example, abcd1234-abcd-1234-abcd-1234abce1234)"
-                        errors={errors}
-                    >
-                        <TextInput
-                            isRequired
-                            type="text"
-                            id="notifier.microsoftSentinel.applicationClientId"
-                            value={values.notifier.microsoftSentinel.applicationClientId}
-                            onChange={(event, value) => onChange(value, event)}
-                            onBlur={handleBlur}
-                            isDisabled={!isEditable}
-                        />
-                    </FormLabelGroup>
                     <Card isFlat>
                         <CardTitle>Authentication method</CardTitle>
                         <CardBody>
-                            <ToggleGroup aria-label="Authentication method selection">
+                            <ToggleGroup
+                                aria-label="Authentication method selection"
+                                className="pf-v5-u-pb-md"
+                            >
                                 <ToggleGroupItem
                                     text="Use secret"
                                     buttonId="use-secret"
@@ -286,21 +294,52 @@ function MicrosoftSentinelForm({
                                     onChange={onUpdateAuthMethod}
                                     isDisabled={!isEditable}
                                 />
+                                <ToggleGroupItem
+                                    text="Use workload identity"
+                                    buttonId="use-workload-identity"
+                                    isSelected={selectedAuthMethod === 'use-workload-identity'}
+                                    onChange={onUpdateAuthMethod}
+                                    isDisabled={!isEditable}
+                                />
                             </ToggleGroup>
-                            {!isCreating && isEditable && (
+                            {!isCreating &&
+                                isEditable &&
+                                selectedAuthMethod !== 'use-workload-identity' && (
+                                    <FormLabelGroup
+                                        label=""
+                                        fieldId="updatePassword"
+                                        helperText="Enable this option to replace currently stored credentials (if any)"
+                                        errors={errors}
+                                    >
+                                        <Checkbox
+                                            label="Update authentication"
+                                            id="updatePassword"
+                                            isChecked={values.updatePassword}
+                                            onChange={(event, value) =>
+                                                onUpdateCredentialsChange(value, event)
+                                            }
+                                            onBlur={handleBlur}
+                                            isDisabled={!isEditable}
+                                        />
+                                    </FormLabelGroup>
+                                )}
+                            {selectedAuthMethod !== 'use-workload-identity' && (
                                 <FormLabelGroup
-                                    label=""
-                                    fieldId="updatePassword"
-                                    helperText="Enable this option to replace currently stored credentials (if any)"
+                                    label="Application client ID"
+                                    isRequired={values.updatePassword}
+                                    fieldId="notifier.microsoftSentinel.applicationClientId"
+                                    touched={touched}
+                                    helperText="(example, abcd1234-abcd-1234-abcd-1234abce1234)"
                                     errors={errors}
                                 >
-                                    <Checkbox
-                                        label="Update authentication"
-                                        id="updatePassword"
-                                        isChecked={values.updatePassword}
-                                        onChange={(event, value) =>
-                                            onUpdateCredentialsChange(value, event)
+                                    <TextInput
+                                        isRequired
+                                        type="text"
+                                        id="notifier.microsoftSentinel.applicationClientId"
+                                        value={
+                                            values.notifier.microsoftSentinel.applicationClientId
                                         }
+                                        onChange={(event, value) => onChange(value, event)}
                                         onBlur={handleBlur}
                                         isDisabled={!isEditable}
                                     />
@@ -377,6 +416,54 @@ function MicrosoftSentinelForm({
                                         />
                                     </FormLabelGroup>
                                 </>
+                            )}
+                            {selectedAuthMethod === 'use-workload-identity' && (
+                                <FormLabelGroup
+                                    label="Short-lived tokens"
+                                    labelIcon={
+                                        <IntegrationHelpIcon
+                                            helpTitle="Use workload identity"
+                                            helpText={
+                                                <>
+                                                    <Text>
+                                                        Enables authentication with short-lived
+                                                        tokens using Azure managed identities or
+                                                        Azure workload identities.
+                                                    </Text>
+                                                    <Text>
+                                                        For more information, see{' '}
+                                                        <ExternalLink>
+                                                            <a
+                                                                href={getVersionedDocs(
+                                                                    version,
+                                                                    'integrating/integrate-using-short-lived-tokens'
+                                                                )}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                            >
+                                                                RHACS documentation
+                                                            </a>
+                                                        </ExternalLink>
+                                                    </Text>
+                                                </>
+                                            }
+                                            ariaLabel="Help for short-lived tokens"
+                                        />
+                                    }
+                                    helperText="Enabling short-lived tokens removes any existing credentials from this integration"
+                                    fieldId="notifier.microsoftSentinel.wifEnabled"
+                                    touched={touched}
+                                    errors={errors}
+                                >
+                                    <Checkbox
+                                        isRequired
+                                        checked
+                                        label="Use workload identity"
+                                        id="notifier.microsoftSentinel.wifEnabled"
+                                        onBlur={handleBlur}
+                                        isDisabled={!isEditable}
+                                    />
+                                </FormLabelGroup>
                             )}
                         </CardBody>
                     </Card>
@@ -504,7 +591,7 @@ function MicrosoftSentinelForm({
             {isEditable && (
                 <IntegrationFormActions>
                     <FormSaveButton
-                        onSave={preOnSaveHook}
+                        onSave={() => preHook(onSave)}
                         isSubmitting={isSubmitting}
                         isTesting={isTesting}
                         isDisabled={!dirty || !isValid}
@@ -512,7 +599,7 @@ function MicrosoftSentinelForm({
                         Save
                     </FormSaveButton>
                     <FormTestButton
-                        onTest={onTest}
+                        onTest={() => preHook(onTest)}
                         isSubmitting={isSubmitting}
                         isTesting={isTesting}
                         isDisabled={!isValid}

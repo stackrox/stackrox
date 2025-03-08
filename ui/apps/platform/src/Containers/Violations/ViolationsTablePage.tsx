@@ -1,14 +1,19 @@
-import React, { useEffect, useMemo, useState, ReactElement } from 'react';
+import React, { useEffect, useState, ReactElement } from 'react';
 import {
-    PageSection,
-    Bullseye,
     Alert,
+    Bullseye,
+    Button,
+    Flex,
+    PageSection,
+    Popover,
+    Spinner,
     Title,
     Tabs,
     Tab,
     TabTitleText,
-    Spinner,
+    Text,
 } from '@patternfly/react-core';
+import { OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
 
 import { fetchAlerts, fetchAlertCount } from 'services/AlertsService';
 import { CancelledPromiseError } from 'services/cancellationUtils';
@@ -33,8 +38,8 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import FilteredWorkflowViewSelector from 'Components/FilteredWorkflowViewSelector/FilteredWorkflowViewSelector';
 import useFilteredWorkflowViewURLState from 'Components/FilteredWorkflowViewSelector/useFilteredWorkflowViewURLState';
 import ViolationsTablePanel from './ViolationsTablePanel';
-import tableColumnDescriptor from './violationTableColumnDescriptors';
-import { violationStateTabs } from './types';
+import getTableColumnDescriptors from './violationTableColumnDescriptors';
+import { ViolationStateTab, violationStateTabs } from './types';
 
 import './ViolationsTablePage.css';
 
@@ -60,11 +65,55 @@ function getFilteredWorkflowViewSearchFilter(
     }
 }
 
+const violationPageText: Record<
+    FilteredWorkflowView,
+    {
+        title: string;
+        description: string;
+    }
+> = {
+    'Applications view': {
+        title: 'User workload violations',
+        description: 'Violations affecting user-managed workloads',
+    },
+    'Platform view': {
+        title: 'Platform violations',
+        description:
+            'Violations affecting workloads used by the OpenShift Platform and layered services',
+    },
+    'Full view': {
+        title: 'All violations',
+        description:
+            'Violations affecting both user and platform workloads, as well as audit log violations for cluster resources.',
+    },
+};
+
+function getFilteredWorkflowViewText(filteredWorkflowView: FilteredWorkflowView): {
+    title: string;
+    description: string;
+} {
+    return violationPageText[filteredWorkflowView];
+}
+
+const violationsPageDescription: Record<ViolationStateTab, string> = {
+    ACTIVE: 'Build/Deploy-stage violations for workloads currently in violation, along with unresolved Runtime violations.',
+    RESOLVED:
+        'Build/Deploy-stage violations for workloads that were removed or modified to be compliant, manually resolved Runtime violations, and violations generated before a policy exclusion was added (all lifecycles)',
+    ATTEMPTED:
+        'Would-be violations that caused workload deployment attempts to be blocked by the Admission Controller.',
+};
+
+function getDescriptionForSelectedViolationState(
+    selectedViolationState: ViolationStateTab
+): string {
+    return violationsPageDescription[selectedViolationState];
+}
+
 function ViolationsTablePage(): ReactElement {
     const { analyticsTrack } = useAnalytics();
     const { searchFilter, setSearchFilter } = useURLSearch();
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isPlatformComponentsEnabled = isFeatureFlagEnabled('ROX_PLATFORM_COMPONENTS');
+    const isPlatformCveSplitEnabled = isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT');
 
     const [selectedViolationStateTab, setSelectedViolationStateTab] = useURLStringUnion(
         'violationState',
@@ -87,15 +136,16 @@ function ViolationsTablePage(): ReactElement {
     const [currentPageAlertsErrorMessage, setCurrentPageAlertsErrorMessage] = useState('');
     const [alertCount, setAlertCount] = useState(0);
 
+    // Flag to signal that the table is in an updating state
+    // Note: This would be better replaced with a consistent "polling" state in TBodyUnified
+    const [isTableDataUpdating, setIsTableDataUpdating] = useState(true);
+
     // To handle page/count refreshing.
     const [pollEpoch, setPollEpoch] = useState(0);
 
     // To handle sort options.
-    const columns = tableColumnDescriptor;
-    const sortFields = useMemo(
-        () => columns.flatMap(({ sortField }) => (sortField ? [sortField] : [])),
-        [columns]
-    );
+    const columns = getTableColumnDescriptors(filteredWorkflowView);
+    const sortFields = columns.flatMap(({ sortField }) => (sortField ? [sortField] : []));
 
     const defaultSortOption: SortOption = {
         field: 'Violation Time',
@@ -145,10 +195,8 @@ function ViolationsTablePage(): ReactElement {
 
     // When any of the deps to this effect change, we want to reload the alerts and count.
     useEffect(() => {
-        const filteredWorkflowFilter = isPlatformComponentsEnabled
-            ? getFilteredWorkflowViewSearchFilter(filteredWorkflowView)
-            : {};
-
+        setIsTableDataUpdating(true);
+        const filteredWorkflowFilter = getFilteredWorkflowViewSearchFilter(filteredWorkflowView);
         const alertSearchFilter: SearchFilter = {
             ...searchFilter,
             ...filteredWorkflowFilter,
@@ -171,7 +219,6 @@ function ViolationsTablePage(): ReactElement {
                 setCurrentPageAlerts(alerts);
                 setAlertCount(counts);
                 setCurrentPageAlertsErrorMessage('');
-                setIsLoadingAlerts(false);
             })
             .catch((error) => {
                 if (error instanceof CancelledPromiseError) {
@@ -181,7 +228,10 @@ function ViolationsTablePage(): ReactElement {
                 setAlertCount(0);
                 const parsedMessage = getAxiosErrorMessage(error);
                 setCurrentPageAlertsErrorMessage(parsedMessage);
+            })
+            .finally(() => {
                 setIsLoadingAlerts(false);
+                setIsTableDataUpdating(false);
             });
 
         return () => {
@@ -199,7 +249,6 @@ function ViolationsTablePage(): ReactElement {
         perPage,
         selectedViolationStateTab,
         filteredWorkflowView,
-        isPlatformComponentsEnabled,
     ]);
 
     // We need to be able to identify which alerts are runtime or attempted, and which are not by id.
@@ -218,10 +267,31 @@ function ViolationsTablePage(): ReactElement {
             alert.enforcementAction !== ENFORCEMENT_ACTIONS.FAIL_DEPLOYMENT_CREATE_ENFORCEMENT
     );
 
+    const { title, description } = getFilteredWorkflowViewText(filteredWorkflowView);
+
     return (
         <>
             <PageSection variant="light" id="violations-table">
-                <Title headingLevel="h1">Violations</Title>
+                <Flex
+                    direction={{ default: 'row' }}
+                    alignItems={{ default: 'alignItemsCenter' }}
+                    spaceItems={{ default: 'spaceItemsNone' }}
+                    className="pf-v5-u-flex-grow-1"
+                >
+                    <Title headingLevel="h1">
+                        {isPlatformCveSplitEnabled ? title : 'Violations'}
+                    </Title>
+                    {isPlatformCveSplitEnabled && (
+                        <Popover
+                            aria-label="More information about the current page"
+                            bodyContent={description}
+                        >
+                            <Button title="Page description" variant="plain">
+                                <OutlinedQuestionCircleIcon />
+                            </Button>
+                        </Popover>
+                    )}
+                </Flex>
             </PageSection>
             <PageSection variant="light" className="pf-v5-u-py-0">
                 <Tabs
@@ -230,7 +300,6 @@ function ViolationsTablePage(): ReactElement {
                         setIsLoadingAlerts(true);
                         setSearchFilter({});
                         setPage(1);
-                        setFilteredWorkflowView('Applications view');
                         setSelectedViolationStateTab(tab);
                     }}
                     aria-label="Violation state tabs"
@@ -252,12 +321,19 @@ function ViolationsTablePage(): ReactElement {
                     />
                 </Tabs>
             </PageSection>
-            {isPlatformComponentsEnabled && (
+            {!isPlatformCveSplitEnabled && (
                 <PageSection className="pf-v5-u-py-md" component="div" variant="light">
                     <FilteredWorkflowViewSelector
                         filteredWorkflowView={filteredWorkflowView}
                         onChangeFilteredWorkflowView={onChangeFilteredWorkflowView}
                     />
+                </PageSection>
+            )}
+            {isPlatformCveSplitEnabled && (
+                <PageSection variant="light">
+                    <Text>
+                        {getDescriptionForSelectedViolationState(selectedViolationStateTab)}
+                    </Text>
                 </PageSection>
             )}
             <PageSection variant="default" id={tabContentId}>
@@ -293,6 +369,7 @@ function ViolationsTablePage(): ReactElement {
                             onSearch={onSearch}
                             additionalContextFilter={additionalContextFilter}
                             hasActiveViolations={selectedViolationStateTab === 'ACTIVE'}
+                            isTableDataUpdating={isTableDataUpdating}
                         />
                     </PageSection>
                 )}

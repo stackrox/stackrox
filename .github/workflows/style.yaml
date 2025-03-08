@@ -20,7 +20,7 @@ jobs:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.4
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -46,7 +46,7 @@ jobs:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.4
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -75,13 +75,13 @@ jobs:
     - name: Check Policies
       run: scripts/ci/jobs/policy-checks.sh
 
-    - name: Check Konflux pipelines
-      run: scripts/ci/jobs/check-konflux-pipelines.sh
+    - name: Check Konflux setup
+      run: scripts/ci/jobs/check-konflux-setup.sh
 
   style-check:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.4
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
       volumes:
       - /usr:/mnt/usr
       - /opt:/mnt/opt
@@ -95,17 +95,6 @@ jobs:
       - uses: ./.github/actions/job-preamble
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-      - name: Free more disk space
-        shell: bash
-        run: |
-          set +e
-          set -x
-          df -h
-          for delete in /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL; do
-            rm -rf "/mnt${delete:?}"
-          done
-          df -h
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
@@ -126,7 +115,10 @@ jobs:
     timeout-minutes: 240
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.4
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
+      volumes:
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
     steps:
     - name: Checkout
       uses: actions/checkout@v4

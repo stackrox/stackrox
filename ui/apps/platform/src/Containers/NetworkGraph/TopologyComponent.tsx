@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useHistory, useParams } from 'react-router-dom';
 import { Popover } from '@patternfly/react-core';
 import {
     SELECTION_EVENT,
@@ -15,16 +15,20 @@ import {
 } from '@patternfly/react-topology';
 
 import { networkBasePath } from 'routePaths';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
 import useFetchDeploymentCount from 'hooks/useFetchDeploymentCount';
+import useURLSearch from 'hooks/useURLSearch';
+import useURLPagination from 'hooks/useURLPagination';
 import DeploymentSideBar from './deployment/DeploymentSideBar';
 import NamespaceSideBar from './namespace/NamespaceSideBar';
 import GenericEntitiesSideBar from './genericEntities/GenericEntitiesSideBar';
+import ExternalEntitiesSideBar from './external/ExternalEntitiesSideBar';
 import ExternalGroupSideBar from './external/ExternalGroupSideBar';
 import NetworkPolicySimulatorSidePanel, {
     clearSimulationQuery,
 } from './simulation/NetworkPolicySimulatorSidePanel';
-import { getNodeById } from './utils/networkGraphUtils';
+import { getExternalEntitiesNode, getNodeById } from './utils/networkGraphUtils';
 import { CustomModel, CustomNodeModel, isNodeOfType } from './types/topology.type';
 import { Simulation } from './utils/getSimulation';
 import LegendContent from './components/LegendContent';
@@ -43,9 +47,10 @@ import {
     ExternalEntitiesIcon,
     InternalEntitiesIcon,
 } from './common/NetworkGraphIcons';
+import { DEFAULT_NETWORK_GRAPH_PAGE_SIZE } from './NetworkGraph.constants';
 
 // TODO: move these type defs to a central location
-export const UrlDetailType = {
+export const UrlNodeType = {
     NAMESPACE: 'namespace',
     DEPLOYMENT: 'deployment',
     CIDR_BLOCK: 'cidr',
@@ -53,12 +58,12 @@ export const UrlDetailType = {
     EXTERNAL_GROUP: 'external',
     INTERNAL_ENTITIES: 'internal',
 } as const;
-export type UrlDetailTypeKey = keyof typeof UrlDetailType;
-export type UrlDetailTypeValue = (typeof UrlDetailType)[UrlDetailTypeKey];
+export type UrlNodeTypeKey = keyof typeof UrlNodeType;
+export type UrlNodeTypeValue = (typeof UrlNodeType)[UrlNodeTypeKey];
 
-function getUrlParamsForEntity(type, id): [UrlDetailTypeValue, string] {
+function getUrlParamsForNode(type, id): [UrlNodeTypeValue, string] {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return [UrlDetailType[type], id];
+    return [UrlNodeType[type], id];
 }
 
 export type TopologyComponentProps = {
@@ -82,8 +87,17 @@ const TopologyComponent = ({
     edgeState,
     scopeHierarchy,
 }: TopologyComponentProps) => {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isNetworkGraphExternalIpsEnabled = isFeatureFlagEnabled('ROX_NETWORK_GRAPH_EXTERNAL_IPS');
+
     const { hasReadAccess } = usePermissions();
     const hasReadAccessForNetworkPolicy = hasReadAccess('NetworkPolicy');
+
+    const { detailID: selectedExternalIP } = useParams();
+    const urlPagination = useURLPagination(DEFAULT_NETWORK_GRAPH_PAGE_SIZE);
+    const { setPage, setPerPage } = urlPagination;
+    const urlSearchFiltering = useURLSearch('sidePanel');
+    const { searchFilter, setSearchFilter } = urlSearchFiltering;
 
     const firstRenderRef = useRef(true);
     const history = useHistory();
@@ -95,8 +109,13 @@ const TopologyComponent = ({
         history.push(`${networkBasePath}${queryString}`);
     }, [history]);
 
-    function onNodeClick(ids: string[]) {
-        const newSelectedId = ids?.[0] || '';
+    type OnNavigateArgs = {
+        nodeID: string;
+        externalIP?: string;
+    };
+
+    function onNavigate({ nodeID, externalIP }: OnNavigateArgs) {
+        const newSelectedId = nodeID || '';
         const newSelectedEntity = getNodeById(model?.nodes, newSelectedId);
         if (selectedNode && !newSelectedId) {
             closeSidebar();
@@ -105,13 +124,15 @@ const TopologyComponent = ({
         } else if (newSelectedEntity) {
             setDefaultDeploymentTab(deploymentTabs.DETAILS);
             const { data, id } = newSelectedEntity;
-            const [newDetailType, newDetailId] = getUrlParamsForEntity(data.type, id);
+            const [newNodeType, newNodeId] = getUrlParamsForNode(data.type, id);
             const queryString = clearSimulationQuery(history.location.search);
             // if found, and it's not the logical grouping of all external sources, then trigger URL update
-            if (newDetailId !== 'EXTERNAL') {
-                const newURL = `${networkBasePath}/${newDetailType}/${encodeURIComponent(
-                    newDetailId
-                )}${queryString}`;
+            if (newNodeId !== 'EXTERNAL') {
+                let newURL = `${networkBasePath}/${newNodeType}/${encodeURIComponent(newNodeId)}`;
+                if (externalIP) {
+                    newURL = `${newURL}/externalIP/${externalIP}`;
+                }
+                newURL = `${newURL}${queryString}`;
                 history.push(newURL);
             } else {
                 // otherwise, return to the graph-only state
@@ -124,8 +145,15 @@ const TopologyComponent = ({
         getSearchFilterFromScopeHierarchy(scopeHierarchy)
     );
 
-    function onNodeSelect(id: string) {
-        onNodeClick([id]);
+    function onNodeSelect(nodeID: string) {
+        onNavigate({ nodeID });
+    }
+
+    function onExternalIPSelect(externalIP: string | undefined) {
+        const externalEntitiesNode = getExternalEntitiesNode(model.nodes);
+        if (externalEntitiesNode) {
+            onNavigate({ nodeID: externalEntitiesNode.id, externalIP });
+        }
     }
 
     function zoomInCallback() {
@@ -157,8 +185,18 @@ const TopologyComponent = ({
     );
 
     useEventListener<SelectionEventListener>(SELECTION_EVENT, (ids) => {
-        onNodeClick(ids);
+        onNavigate({ nodeID: ids?.[0] || '' });
     });
+
+    useEffect(() => {
+        setPage(1);
+        setPerPage(DEFAULT_NETWORK_GRAPH_PAGE_SIZE);
+        setSearchFilter({});
+    }, [setPage, setPerPage, setSearchFilter, selectedNode]);
+
+    useEffect(() => {
+        setPage(1);
+    }, [setPage, setPerPage, searchFilter]);
 
     useEffect(() => {
         // we don't want to reset view on init
@@ -173,8 +211,15 @@ const TopologyComponent = ({
         controller.fromModel(model);
         if (selectedNode) {
             panNodeIntoView(selectedNode);
-        } else if (history.location.pathname !== networkBasePath && !selectedNode) {
-            // if the path does not reflect the selected node state, sync URL to state
+        } else if (
+            history.location.pathname !== networkBasePath &&
+            !selectedNode &&
+            model.nodes.length > 0
+        ) {
+            // If there's no selected node but the user is on a node-specific URL (and we've
+            // confirmed nodes have been fetched), reset to the base path by closing the sidebar.
+            // This also handles the edge case where a user might land on a node URL before node data
+            // is available – we want to prevent closing the sidebar until data has been fetched
             closeSidebar();
         }
     }, [controller, model, selectedNode, history, closeSidebar, panNodeIntoView]);
@@ -182,6 +227,7 @@ const TopologyComponent = ({
     const selectedIds = selectedNode ? [selectedNode.id] : [];
 
     const labelledById = 'TopologySideBarLabelledBy';
+
     return (
         <TopologyView
             sideBar={
@@ -214,7 +260,11 @@ const TopologyComponent = ({
                             edges={model?.edges || []}
                             edgeState={edgeState}
                             onNodeSelect={onNodeSelect}
+                            onExternalIPSelect={onExternalIPSelect}
                             defaultDeploymentTab={defaultDeploymentTab}
+                            scopeHierarchy={scopeHierarchy}
+                            urlPagination={urlPagination}
+                            urlSearchFiltering={urlSearchFiltering}
                         />
                     )}
                     {selectedNode && selectedNode?.data?.type === 'EXTERNAL_GROUP' && (
@@ -238,18 +288,33 @@ const TopologyComponent = ({
                             flowTableLabel="Cidr block flows"
                         />
                     )}
-                    {selectedNode && isNodeOfType('EXTERNAL_ENTITIES', selectedNode) && (
-                        <GenericEntitiesSideBar
-                            labelledById={labelledById}
-                            id={selectedNode.id}
-                            nodes={model?.nodes || []}
-                            edges={model?.edges || []}
-                            onNodeSelect={onNodeSelect}
-                            EntityHeaderIcon={<ExternalEntitiesIcon />}
-                            sidebarTitle={'Connected Entities Outside Your Cluster'}
-                            flowTableLabel="External entities flows"
-                        />
-                    )}
+                    {selectedNode &&
+                        isNodeOfType('EXTERNAL_ENTITIES', selectedNode) &&
+                        (isNetworkGraphExternalIpsEnabled ? (
+                            <ExternalEntitiesSideBar
+                                labelledById={labelledById}
+                                id={selectedNode.id}
+                                nodes={model?.nodes || []}
+                                edges={model?.edges || []}
+                                scopeHierarchy={scopeHierarchy}
+                                selectedExternalIP={selectedExternalIP}
+                                onNodeSelect={onNodeSelect}
+                                onExternalIPSelect={onExternalIPSelect}
+                                urlPagination={urlPagination}
+                                urlSearchFiltering={urlSearchFiltering}
+                            />
+                        ) : (
+                            <GenericEntitiesSideBar
+                                labelledById={labelledById}
+                                id={selectedNode.id}
+                                nodes={model?.nodes || []}
+                                edges={model?.edges || []}
+                                onNodeSelect={onNodeSelect}
+                                EntityHeaderIcon={<ExternalEntitiesIcon />}
+                                sidebarTitle={'Connected entities outside your cluster'}
+                                flowTableLabel="External entities flows"
+                            />
+                        ))}
                     {selectedNode && isNodeOfType('INTERNAL_ENTITIES', selectedNode) && (
                         <GenericEntitiesSideBar
                             labelledById={labelledById}

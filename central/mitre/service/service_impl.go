@@ -19,8 +19,8 @@ var (
 	// 1 MB.
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.Authenticated(): {
-			"/v1.MitreAttackService/ListMitreAttackVectors",
-			"/v1.MitreAttackService/GetMitreAttackVector",
+			v1.MitreAttackService_ListMitreAttackVectors_FullMethodName,
+			v1.MitreAttackService_GetMitreAttackVector_FullMethodName,
 		},
 	})
 )

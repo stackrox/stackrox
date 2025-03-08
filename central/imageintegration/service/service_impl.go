@@ -39,16 +39,16 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		or.SensorOr(user.With(permissions.View(resources.Integration))): {
-			"/v1.ImageIntegrationService/GetImageIntegration",
-			"/v1.ImageIntegrationService/GetImageIntegrations",
+			v1.ImageIntegrationService_GetImageIntegration_FullMethodName,
+			v1.ImageIntegrationService_GetImageIntegrations_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.Integration)): {
-			"/v1.ImageIntegrationService/PostImageIntegration",
-			"/v1.ImageIntegrationService/PutImageIntegration",
-			"/v1.ImageIntegrationService/TestImageIntegration",
-			"/v1.ImageIntegrationService/DeleteImageIntegration",
-			"/v1.ImageIntegrationService/UpdateImageIntegration",
-			"/v1.ImageIntegrationService/TestUpdatedImageIntegration",
+			v1.ImageIntegrationService_PostImageIntegration_FullMethodName,
+			v1.ImageIntegrationService_PutImageIntegration_FullMethodName,
+			v1.ImageIntegrationService_TestImageIntegration_FullMethodName,
+			v1.ImageIntegrationService_DeleteImageIntegration_FullMethodName,
+			v1.ImageIntegrationService_UpdateImageIntegration_FullMethodName,
+			v1.ImageIntegrationService_TestUpdatedImageIntegration_FullMethodName,
 		},
 	})
 )
@@ -316,6 +316,18 @@ func (s *serviceImpl) testNodeScannerIntegration(integration *storage.NodeIntegr
 	return nil
 }
 
+func (s *serviceImpl) migrateAzureIntegration(request *storage.ImageIntegration) {
+	if dockerCfg := request.GetDocker(); dockerCfg != nil {
+		request.IntegrationConfig = &storage.ImageIntegration_Azure{
+			Azure: &storage.AzureConfig{
+				Endpoint: dockerCfg.GetEndpoint(),
+				Username: dockerCfg.GetUsername(),
+				Password: dockerCfg.GetPassword(),
+			},
+		}
+	}
+}
+
 func (s *serviceImpl) validateIntegration(ctx context.Context, request *storage.ImageIntegration) error {
 	if request == nil {
 		return errors.New("empty integration")
@@ -364,6 +376,14 @@ func (s *serviceImpl) reconcileUpdateImageIntegrationRequest(ctx context.Context
 		if newType != oldType && (newType == scannerTypes.ScannerV4 || oldType == scannerTypes.ScannerV4) {
 			return errors.Wrap(errox.InvalidArgs, "cannot change integration type to/from scanner V4")
 		}
+
+		// Note that integrations of type "azure" support both `DockerConfig` (deprecated in 4.7) and `AzureConfig`.
+		// Here we migrate requests with type "azure" and `DockerConfig` on the fly to type `AzureConfig`.
+		// TODO(ROX-27720): remove support for `DockerConfig`.
+		if cfg := updateRequest.GetConfig(); cfg.GetType() == types.AzureType && cfg.GetAzure() != nil {
+			s.migrateAzureIntegration(integration)
+		}
+
 	}
 
 	if updateRequest.GetUpdatePassword() {

@@ -1,5 +1,4 @@
 import withAuth from '../../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../../helpers/features';
 import { cancelAllCveExceptions } from '../workloadCves/WorkloadCves.helpers';
 import {
     deferAndVisitRequestDetails,
@@ -16,22 +15,12 @@ const scope = 'All images';
 describe('Exception Management Request Details Page', () => {
     withAuth();
 
-    before(function () {
-        if (!hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES')) {
-            this.skip();
-        }
-    });
-
     beforeEach(() => {
-        if (hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES')) {
-            cancelAllCveExceptions();
-        }
+        cancelAllCveExceptions();
     });
 
     after(() => {
-        if (hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES')) {
-            cancelAllCveExceptions();
-        }
+        cancelAllCveExceptions();
     });
 
     it('should be able to cancel a request if the user is the requester', () => {

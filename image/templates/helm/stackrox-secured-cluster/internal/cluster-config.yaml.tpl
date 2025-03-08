@@ -18,7 +18,7 @@ clusterConfig:
     admissionControllerEvents: {{ ._rox.admissionControl.listenOnEvents }}
     tolerationsConfig:
       disabled: {{ ._rox.collector.disableTaintTolerations }}
-    slimCollector: {{ ._rox.collector.slimMode }}
+    slimCollector: false
   dynamicConfig:
     disableAuditLogs: {{ ._rox.auditLogs.disableCollection | not | not }}
     admissionControllerConfig:

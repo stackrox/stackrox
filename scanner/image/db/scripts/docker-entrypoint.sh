@@ -6,12 +6,13 @@ set -Eeo pipefail
 ### Community][1]. Any StackRox modification or comments are tagged with this
 ### comment.
 ###
-### [1]: https://github.com/docker-library/postgres/blob/master/15/bullseye/docker-entrypoint.sh
+### [1]: https://github.com/docker-library/postgres/blob/master/15/bookworm/docker-entrypoint.sh
 
 ### STACKROX MODIFIED - Fast shutdown to kill and rollback in-flight transactions.
 shutdown() {
   pg_ctl -D "$PGDATA" stop -m fast
 }
+
 trap shutdown SIGINT SIGTERM
 
 # usage: file_env VAR [DEFAULT]
@@ -115,20 +116,24 @@ docker_init_database_dir() {
 # print large warning if POSTGRES_HOST_AUTH_METHOD is set to 'trust'
 # assumes database is not set up, ie: [ -z "$DATABASE_ALREADY_EXISTS" ]
 docker_verify_minimum_env() {
-	# check password first so we can output the warning before postgres
-	# messes it up
-	if [ "${#POSTGRES_PASSWORD}" -ge 100 ]; then
-		cat >&2 <<-'EOWARN'
+	case "${PG_MAJOR:-}" in
+		13) # https://github.com/postgres/postgres/commit/67a472d71c98c3d2fa322a1b4013080b20720b98
+			# check password first so we can output the warning before postgres
+			# messes it up
+			if [ "${#POSTGRES_PASSWORD}" -ge 100 ]; then
+				cat >&2 <<-'EOWARN'
 
-			WARNING: The supplied POSTGRES_PASSWORD is 100+ characters.
+					WARNING: The supplied POSTGRES_PASSWORD is 100+ characters.
 
-			  This will not work if used via PGPASSWORD with "psql".
+					  This will not work if used via PGPASSWORD with "psql".
 
-			  https://www.postgresql.org/message-id/flat/E1Rqxp2-0004Qt-PL%40wrigleys.postgresql.org (BUG #6412)
-			  https://github.com/docker-library/postgres/issues/507
+					  https://www.postgresql.org/message-id/flat/E1Rqxp2-0004Qt-PL%40wrigleys.postgresql.org (BUG #6412)
+					  https://github.com/docker-library/postgres/issues/507
 
-		EOWARN
-	fi
+				EOWARN
+			fi
+			;;
+	esac
 	if [ -z "$POSTGRES_PASSWORD" ] && [ 'trust' != "$POSTGRES_HOST_AUTH_METHOD" ]; then
 		# The - option suppresses leading tabs but *not* spaces. :)
 		cat >&2 <<-'EOE'
@@ -237,6 +242,7 @@ docker_setup_env() {
 	: "${POSTGRES_HOST_AUTH_METHOD:=}"
 
 	declare -g DATABASE_ALREADY_EXISTS
+	: "${DATABASE_ALREADY_EXISTS:=}"
 	# look specifically for PG_VERSION, as it is expected in the DB dir
 	if [ -s "$PGDATA/PG_VERSION" ]; then
 		DATABASE_ALREADY_EXISTS='true'
@@ -259,7 +265,7 @@ pg_setup_hba_conf() {
 		printf '\n'
 		if [ 'trust' = "$POSTGRES_HOST_AUTH_METHOD" ]; then
 			printf '# warning trust is enabled for all connections\n'
-			printf '# see https://www.postgresql.org/docs/12/auth-trust.html\n'
+			printf '# see https://www.postgresql.org/docs/17/auth-trust.html\n'
 		fi
 		printf 'host all all all %s\n' "$POSTGRES_HOST_AUTH_METHOD"
 	} >> "$PGDATA/pg_hba.conf"

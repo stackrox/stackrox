@@ -339,6 +339,19 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption,
 				logging.ImageName(image.GetName().GetFullName()), logging.Err(err))
 			return nil, false
 		}
+		// We need to fetch the image again to make sure all fields are populated.
+		// GetImage will internally call a Merge function which will use the CVEEdges table to enrich fields like
+		// FirstImageOccurrence and FirstSystemOccurrence.
+		newImage, exists, err := l.images.GetImage(allAccessCtx, id)
+		if err != nil {
+			log.Errorw("Error fetching image from database", logging.ImageName(image.GetName().GetFullName()), logging.Err(err))
+			return nil, false
+		}
+		if !exists {
+			log.Errorw("The image was not found after enrichement", logging.ImageName(image.GetName().GetFullName()))
+			return nil, false
+		}
+		return newImage, true
 	}
 	return image, true
 }

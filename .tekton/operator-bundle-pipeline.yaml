@@ -35,7 +35,7 @@ spec:
       - name: name
         value: show-sbom
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-show-sbom:0.1@sha256:945a7c9066d3e0a95d3fddb7e8a6992e4d632a2a75d8f3a9bd2ff2fef0ec9aa0
+        value: quay.io/konflux-ci/tekton-catalog/task-show-sbom:0.1@sha256:04f15cbce548e1db7770eee3f155ccb2cc0140a6c371dc67e9a34d83673ea0c0
       - name: kind
         value: task
       resolver: bundles
@@ -174,20 +174,11 @@ spec:
     type: string
     default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-v4-db-rhel8"
 
-  - name: collector-slim-image-build-repo
-    description: Repository where the (unreleased) collector slim image is pushed by its build pipeline.
-    type: string
-    default: "quay.io/rhacs-eng/collector-slim"
-  - name: collector-slim-image-catalog-repo
-    description: Repository within the Red Hat Container Catalog where the collector slim image is pushed to during the release.
-    type: string
-    default: "registry.redhat.io/advanced-cluster-security/rhacs-collector-slim-rhel8"
-
-  - name: collector-full-image-build-repo
+  - name: collector-image-build-repo
     description: Repository where the (unreleased) collector full image is pushed by its build pipeline.
     type: string
     default: "quay.io/rhacs-eng/collector"
-  - name: collector-full-image-catalog-repo
+  - name: collector-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the collector full image is pushed to during the release.
     type: string
     default: "registry.redhat.io/advanced-cluster-security/rhacs-collector-rhel8"
@@ -248,7 +239,21 @@ spec:
       - name: name
         value: init
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-init:0.2@sha256:90dda596d44b3f861889da2fba161dff34c6116fe76c3989e3f84262ea0f29cd
+        value: quay.io/konflux-ci/tekton-catalog/task-init:0.2@sha256:63eb4a4c0cfb491276bff86fdad1c96bf238506388848e79001058450a8e843a
+      - name: kind
+        value: task
+      resolver: bundles
+
+  - name: determine-image-expiration
+    params:
+      - name: DEFAULT_IMAGE_EXPIRES_AFTER
+        value: $(params.image-expires-after)
+    taskRef:
+      params:
+      - name: name
+        value: determine-image-expiration
+      - name: bundle
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:e557f9ca3e3d31f48127c3528c2c2647f4b49e2d72dce022c85fbe121c113ecd
       - name: kind
         value: task
       resolver: bundles
@@ -272,7 +277,7 @@ spec:
       - name: name
         value: git-clone-oci-ta
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.1@sha256:f72fcca6732516339d55ac5f01660e287968e64e857a40a8608db27e298b5126
+        value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.1@sha256:944e7698434862d7d295b69718accf01b0e0cbeccd44b6d68d65e67f14b97d82
       - name: kind
         value: task
       resolver: bundles
@@ -284,37 +289,23 @@ spec:
     - name: basic-auth
       workspace: git-auth
 
-  - name: determine-operator-image-tag
+  - name: determine-image-tag
     params:
     - name: TAG_SUFFIX
       value: $(params.output-tag-suffix)
     - name: SOURCE_ARTIFACT
       value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
-    - name: MAKEFILE_DIRECTORY
-      value: ./operator
     - name: SOURCE_BRANCH
       value: '{{source_branch}}'
-    taskRef: &determine-image-tag-ref
+    taskRef:
       params:
       - name: name
         value: determine-image-tag
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:7b7c2f3c1a73190d50f3d2ce68077f44981596f491a52b5d7450a2f717050a11
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:0c6cd49c7cab12f611986efd494ac5f5ca8a77993129612bdbce9cf9833a5fa6
       - name: kind
         value: task
       resolver: bundles
-
-  - name: determine-main-image-tag
-    params:
-    - name: TAG_SUFFIX
-      value: $(params.output-tag-suffix)
-    - name: SOURCE_ARTIFACT
-      value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
-    - name: MAKEFILE_DIRECTORY
-      value: "."
-    - name: SOURCE_BRANCH
-      value: '{{source_branch}}'
-    taskRef: *determine-image-tag-ref
 
   - name: prefetch-dependencies
     params:
@@ -331,7 +322,7 @@ spec:
       - name: name
         value: prefetch-dependencies-oci-ta
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-prefetch-dependencies-oci-ta:0.1@sha256:e6b92dfd7442b261ef539d780c635163b2b2d099b8ce9455e0baf51a0fedabec
+        value: quay.io/konflux-ci/tekton-catalog/task-prefetch-dependencies-oci-ta:0.2@sha256:752230a646483aebd465a942aef4f35c08e67185609ac26e19a3b931de9b7b0a
       - name: kind
         value: task
       resolver: bundles
@@ -342,13 +333,13 @@ spec:
   - name: wait-for-operator-image
     params:
     - name: IMAGE
-      value: "$(params.operator-image-build-repo):$(tasks.determine-operator-image-tag.results.IMAGE_TAG)"
+      value: "$(params.operator-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
     taskRef: &wait-for-image-ref
       params:
       - name: name
         value: wait-for-image
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:7b7c2f3c1a73190d50f3d2ce68077f44981596f491a52b5d7450a2f717050a11
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:0c6cd49c7cab12f611986efd494ac5f5ca8a77993129612bdbce9cf9833a5fa6
       - name: kind
         value: task
       resolver: bundles
@@ -358,7 +349,7 @@ spec:
   - name: wait-for-main-image
     params:
     - name: IMAGE
-      value: "$(params.main-image-build-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+      value: "$(params.main-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
     taskRef: *wait-for-image-ref
     # This timeout must be the same as the pipeline timeout in `main-build.yaml`.
     timeout: 2h40m
@@ -366,7 +357,7 @@ spec:
   - name: wait-for-scanner-image
     params:
     - name: IMAGE
-      value: "$(params.scanner-image-build-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+      value: "$(params.scanner-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
     taskRef: *wait-for-image-ref
     # This timeout must be the same as the pipeline timeout in `scanner-retag.yaml`
     timeout: 40m
@@ -374,7 +365,7 @@ spec:
   - name: wait-for-scanner-db-image
     params:
     - name: IMAGE
-      value: "$(params.scanner-db-image-build-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+      value: "$(params.scanner-db-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
     taskRef: *wait-for-image-ref
     # This timeout must be the same as the pipeline timeout in `scanner-db-retag.yaml`
     timeout: 40m
@@ -382,7 +373,7 @@ spec:
   - name: wait-for-scanner-slim-image
     params:
     - name: IMAGE
-      value: "$(params.scanner-slim-image-build-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+      value: "$(params.scanner-slim-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
     taskRef: *wait-for-image-ref
     # This timeout must be the same as the pipeline timeout in `scanner-slim-retag.yaml`
     timeout: 40m
@@ -390,7 +381,7 @@ spec:
   - name: wait-for-scanner-db-slim-image
     params:
     - name: IMAGE
-      value: "$(params.scanner-db-slim-image-build-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+      value: "$(params.scanner-db-slim-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
     taskRef: *wait-for-image-ref
     # This timeout must be the same as the pipeline timeout in `scanner-db-slim-retag.yaml`
     timeout: 40m
@@ -398,7 +389,7 @@ spec:
   - name: wait-for-scanner-v4-image
     params:
     - name: IMAGE
-      value: "$(params.scanner-v4-image-build-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+      value: "$(params.scanner-v4-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
     taskRef: *wait-for-image-ref
     # This timeout must be the same as the pipeline timeout in `scanner-v4-build.yaml`.
     timeout: 1h10m
@@ -406,31 +397,23 @@ spec:
   - name: wait-for-scanner-v4-db-image
     params:
     - name: IMAGE
-      value: "$(params.scanner-v4-db-image-build-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+      value: "$(params.scanner-v4-db-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
     taskRef: *wait-for-image-ref
     # This timeout must be the same as the pipeline timeout in `scanner-v4-db-build.yaml`.
     timeout: 1h10m
 
-  - name: wait-for-collector-slim-image
-    params:
-    - name: IMAGE
-      value: "$(params.collector-slim-image-build-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
-    taskRef: *wait-for-image-ref
-    # The timeout must be the same as the pipeline timeout in `collector-slim-retag.yaml`
-    timeout: 40m
-
   - name: wait-for-collector-image
     params:
     - name: IMAGE
-      value: "$(params.collector-full-image-build-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+      value: "$(params.collector-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
     taskRef: *wait-for-image-ref
-    # The timeout must be the same as the pipeline timeout in `collector-full-retag.yaml`
+    # The timeout must be the same as the pipeline timeout in `collector-retag.yaml`
     timeout: 40m
 
   - name: wait-for-roxctl-image
     params:
     - name: IMAGE
-      value: "$(params.roxctl-image-build-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+      value: "$(params.roxctl-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
     taskRef: *wait-for-image-ref
     # This timeout must be the same as the pipeline timeout in `roxctl-build.yaml`.
     timeout: 1h10m
@@ -438,7 +421,7 @@ spec:
   - name: wait-for-central-db-image
     params:
     - name: IMAGE
-      value: "$(params.central-db-image-build-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+      value: "$(params.central-db-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
     taskRef: *wait-for-image-ref
     # This timeout must be the same as the pipeline timeout in `central-db-build.yaml`.
     timeout: 1h40m
@@ -447,7 +430,7 @@ spec:
     params:
     - name: IMAGE
       # Note the operator bundle tag is prefixed with "v".
-      value: $(params.output-image-repo):v$(tasks.determine-operator-image-tag.results.IMAGE_TAG)
+      value: $(params.output-image-repo):v$(tasks.determine-image-tag.results.IMAGE_TAG)
     - name: DOCKERFILE
       value: $(params.dockerfile)
     - name: CONTEXT
@@ -457,12 +440,12 @@ spec:
     - name: PREFETCH_INPUT
       value: $(params.prefetch-input)
     - name: IMAGE_EXPIRES_AFTER
-      value: $(params.image-expires-after)
+      value: $(tasks.determine-image-expiration.results.IMAGE_EXPIRES_AFTER)
     - name: COMMIT_SHA
       value: $(tasks.clone-repository.results.commit)
     - name: BUILD_ARGS
       value:
-      - OPERATOR_IMAGE_TAG=$(tasks.determine-operator-image-tag.results.IMAGE_TAG)
+      - OPERATOR_IMAGE_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
       - OPERATOR_IMAGE_REF=$(params.operator-image-catalog-repo)@$(tasks.wait-for-operator-image.results.IMAGE_DIGEST)
       - RELATED_IMAGE_MAIN=$(params.main-image-catalog-repo)@$(tasks.wait-for-main-image.results.IMAGE_DIGEST)
       - RELATED_IMAGE_SCANNER=$(params.scanner-image-catalog-repo)@$(tasks.wait-for-scanner-image.results.IMAGE_DIGEST)
@@ -471,10 +454,7 @@ spec:
       - RELATED_IMAGE_SCANNER_DB_SLIM=$(params.scanner-db-slim-image-catalog-repo)@$(tasks.wait-for-scanner-db-slim-image.results.IMAGE_DIGEST)
       - RELATED_IMAGE_SCANNER_V4=$(params.scanner-v4-image-catalog-repo)@$(tasks.wait-for-scanner-v4-image.results.IMAGE_DIGEST)
       - RELATED_IMAGE_SCANNER_V4_DB=$(params.scanner-v4-db-image-catalog-repo)@$(tasks.wait-for-scanner-v4-db-image.results.IMAGE_DIGEST)
-      - RELATED_IMAGE_COLLECTOR_SLIM=$(params.collector-slim-image-catalog-repo)@$(tasks.wait-for-collector-slim-image.results.IMAGE_DIGEST)
-      # TODO(ROX-27612): change to RELATED_IMAGE_COLLECTOR and delete RELATED_IMAGE_COLLECTOR_SLIM
-      # once https://github.com/stackrox/stackrox/pull/13350 is merged.
-      - RELATED_IMAGE_COLLECTOR_FULL=$(params.collector-full-image-catalog-repo)@$(tasks.wait-for-collector-image.results.IMAGE_DIGEST)
+      - RELATED_IMAGE_COLLECTOR=$(params.collector-image-catalog-repo)@$(tasks.wait-for-collector-image.results.IMAGE_DIGEST)
       - RELATED_IMAGE_ROXCTL=$(params.roxctl-image-catalog-repo)@$(tasks.wait-for-roxctl-image.results.IMAGE_DIGEST)
       - RELATED_IMAGE_CENTRAL_DB=$(params.central-db-image-catalog-repo)@$(tasks.wait-for-central-db-image.results.IMAGE_DIGEST)
     - name: SOURCE_ARTIFACT
@@ -486,7 +466,7 @@ spec:
       - name: name
         value: buildah-oci-ta
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-buildah-oci-ta:0.3@sha256:0d638dc1cbfa0f6b7ffbb2f4709cbd25db122f79437b3300eae8a8d2ed960701
+        value: quay.io/konflux-ci/tekton-catalog/task-buildah-oci-ta:0.4@sha256:8cdd218d094e586ece807eb0c61b42cd6baa32c7397fe4ce9d33f6239b78c3cd
       - name: kind
         value: task
       resolver: bundles
@@ -507,7 +487,7 @@ spec:
       - name: name
         value: apply-tags
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-apply-tags:0.1@sha256:2c2d88c07623b2d25163994ded6e9f29205ea5bbab090f4c86379739940028b9
+        value: quay.io/konflux-ci/tekton-catalog/task-apply-tags:0.1@sha256:5e5f290359fd34ae4cc77cbbba6ef8c9907d752572d6dc2a00f5a4c504eb48bb
       - name: kind
         value: task
       resolver: bundles
@@ -525,7 +505,7 @@ spec:
       - name: name
         value: source-build-oci-ta
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-source-build-oci-ta:0.1@sha256:75e882bf1619dd45a4043060ce42a6ad3ce781264ade5b7f66a1d994ee159126
+        value: quay.io/konflux-ci/tekton-catalog/task-source-build-oci-ta:0.2@sha256:183b28fc7c3ca8bc81b00d695517cd2e0b7c31e13365bcfd7e3c758ce13c489c
       - name: kind
         value: task
       resolver: bundles
@@ -548,7 +528,7 @@ spec:
       - name: name
         value: deprecated-image-check
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-deprecated-image-check:0.4@sha256:650330fde0773f73f6bac77ae573031c44c79165d9503b0d5ec1db3e6ef981d7
+        value: quay.io/konflux-ci/tekton-catalog/task-deprecated-image-check:0.5@sha256:a0a5b05286e3df5045432b3da3cc11224a831e05bc77c927cbfd00381f7f6235
       - name: kind
         value: task
       resolver: bundles
@@ -568,7 +548,7 @@ spec:
       - name: name
         value: clair-scan
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-clair-scan:0.2@sha256:907f11c67b0330480cbf85c23b1085acc5a049ab90af980169251860a3d97ef7
+        value: quay.io/konflux-ci/tekton-catalog/task-clair-scan:0.2@sha256:c45aae9e7d4449e1ea3ef0fc59dec84b77831329ae2b03c1578e02bd051a2863
       - name: kind
         value: task
       resolver: bundles
@@ -592,7 +572,7 @@ spec:
       - name: name
         value: sast-snyk-check-oci-ta
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-sast-snyk-check-oci-ta:0.3@sha256:9172196136831a61b9039ea4498fcdc71d6adc86d9694f236bea7b2a85488cd3
+        value: quay.io/konflux-ci/tekton-catalog/task-sast-snyk-check-oci-ta:0.3@sha256:6673cbd19e4f1872dd194c91d0b1fe14cacd3768050f6516d3888f660e0732de
       - name: kind
         value: task
       resolver: bundles
@@ -612,7 +592,7 @@ spec:
       - name: name
         value: clamav-scan
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-clamav-scan:0.2@sha256:c12e7a774bb07ad2796c01071b0dc0f199111b0ee99c45b55fa599e23b200bae
+        value: quay.io/konflux-ci/tekton-catalog/task-clamav-scan:0.2@sha256:7595ba07e6bf3737a7ce51e0d75e43bd2658a9b9c5b59e161c005029ac758b3d
       - name: kind
         value: task
       resolver: bundles
@@ -632,7 +612,7 @@ spec:
       - name: name
         value: rpms-signature-scan
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-rpms-signature-scan:0.2@sha256:39cd56ffa26ff5edfd5bf9b61e902cae35a345c078cd9dcbc0737d30f3ce5ef1
+        value: quay.io/konflux-ci/tekton-catalog/task-rpms-signature-scan:0.2@sha256:5bc61290c6d56cb3d61409efdf522574e7d08a497f362d7456ed33d56189c4f9
       - name: kind
         value: task
       resolver: bundles
@@ -658,7 +638,7 @@ spec:
       - name: name
         value: push-dockerfile-oci-ta
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-push-dockerfile-oci-ta:0.1@sha256:a2beb43c9f2a72f55ca17e196f66bcdaf4ff9a0b722c7e063af1f38e7003faad
+        value: quay.io/konflux-ci/tekton-catalog/task-push-dockerfile-oci-ta:0.1@sha256:443e665458bd44f029c8e44e8d4c44e4faa8c533f129014ccb3c4c51fd89bbfc
       - name: kind
         value: task
       resolver: bundles
@@ -668,7 +648,7 @@ spec:
     # Explicitly running after all other tasks to ensure that
     # - there are no failures that should prevent a release of the operator-bundle image (missing RPMs signatures, deprecated base images, ...)
     # - the source image is present as it is required by EC
-    # Use scripts/ci/jobs/check-konflux-pipelines.sh to validate and update the list.
+    # Use scripts/ci/jobs/check-konflux-setup.sh to validate and update the list.
     runAfter:
     - apply-tags
     - build-container
@@ -677,8 +657,8 @@ spec:
     - clamav-scan
     - clone-repository
     - deprecated-base-image-check
-    - determine-main-image-tag
-    - determine-operator-image-tag
+    - determine-image-expiration
+    - determine-image-tag
     - init
     - prefetch-dependencies
     - push-dockerfile
@@ -686,7 +666,6 @@ spec:
     - sast-snyk-check
     - wait-for-central-db-image
     - wait-for-collector-image
-    - wait-for-collector-slim-image
     - wait-for-main-image
     - wait-for-operator-image
     - wait-for-roxctl-image
@@ -698,7 +677,7 @@ spec:
     - wait-for-scanner-v4-image
     params:
     - name: PRODUCT_VERSION
-      value: $(tasks.determine-main-image-tag.results.IMAGE_TAG)
+      value: $(tasks.determine-image-tag.results.IMAGE_TAG)
     - name: COMPONENTS
       value: |
         [
@@ -710,15 +689,9 @@ spec:
           },
           {
             "name": "collector",
-            "containerImage": "$(params.collector-full-image-build-repo)@$(tasks.wait-for-collector-image.results.IMAGE_DIGEST)",
+            "containerImage": "$(params.collector-image-build-repo)@$(tasks.wait-for-collector-image.results.IMAGE_DIGEST)",
             "repository": "$(tasks.wait-for-collector-image.results.GIT_REPO)",
             "revision": "$(tasks.wait-for-collector-image.results.GIT_REF)"
-          },
-          {
-            "name": "collector-slim",
-            "containerImage": "$(params.collector-slim-image-build-repo)@$(tasks.wait-for-collector-slim-image.results.IMAGE_DIGEST)",
-            "repository": "$(tasks.wait-for-collector-slim-image.results.GIT_REPO)",
-            "revision": "$(tasks.wait-for-collector-slim-image.results.GIT_REF)"
           },
           {
             "name": "main",
@@ -786,7 +759,7 @@ spec:
       - name: name
         value: create-snapshot
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:7b7c2f3c1a73190d50f3d2ce68077f44981596f491a52b5d7450a2f717050a11
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:0c6cd49c7cab12f611986efd494ac5f5ca8a77993129612bdbce9cf9833a5fa6
       - name: kind
         value: task
       resolver: bundles

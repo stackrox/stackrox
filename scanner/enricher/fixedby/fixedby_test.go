@@ -120,7 +120,6 @@ func TestEnrich_Alpine(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			runTest(t, tc)
 		})
@@ -232,7 +231,6 @@ func TestEnrich_AWS(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			runTest(t, tc)
 		})
@@ -351,7 +349,6 @@ func TestEnrich_Debian(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			runTest(t, tc)
 		})
@@ -641,7 +638,6 @@ func TestEnrich_Go(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			runTest(t, tc)
 		})
@@ -734,7 +730,6 @@ func TestEnrich_Java(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			runTest(t, tc)
 		})
@@ -836,7 +831,6 @@ func TestEnrich_Nodejs(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			runTest(t, tc)
 		})
@@ -989,7 +983,6 @@ func TestEnrich_Oracle(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			runTest(t, tc)
 		})
@@ -1092,7 +1085,6 @@ func TestEnrich_Photon(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			runTest(t, tc)
 		})
@@ -1208,7 +1200,6 @@ func TestEnrich_Python(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			runTest(t, tc)
 		})
@@ -1308,7 +1299,6 @@ func TestEnrich_RHCC(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			runTest(t, tc)
 		})
@@ -1507,7 +1497,6 @@ func TestEnrich_RHEL(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			runTest(t, tc)
 		})
@@ -1620,7 +1609,6 @@ func TestEnrich_Ruby(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			runTest(t, tc)
 		})
@@ -1717,7 +1705,6 @@ func TestEnrich_SUSE(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			runTest(t, tc)
 		})
@@ -1808,7 +1795,6 @@ func TestEnrich_Ubuntu(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			runTest(t, tc)
 		})

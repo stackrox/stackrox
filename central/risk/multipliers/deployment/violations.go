@@ -46,7 +46,7 @@ func NewViolations(searcher getters.AlertSearcher) *ViolationsMultiplier {
 func (v *ViolationsMultiplier) Score(ctx context.Context, deployment *storage.Deployment, _ map[string][]*storage.Risk_Result) *storage.Risk_Result {
 	qb := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deployment.GetId()).AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String())
 
-	alerts, err := v.searcher.SearchListAlerts(ctx, qb.ProtoQuery())
+	alerts, err := v.searcher.SearchListAlerts(ctx, qb.ProtoQuery(), true)
 	if err != nil {
 		log.Errorf("Couldn't get risk violations for %s: %s", deployment.GetId(), err)
 		return nil

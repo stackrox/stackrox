@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/integrationhealth"
+	"github.com/stackrox/rox/pkg/openshift"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -36,9 +37,6 @@ import (
 const (
 	// The number of consecutive errors for a scanner or registry that cause its health status to be UNHEALTHY
 	consecutiveErrorThreshold = 3
-
-	openshiftConfigNamespace  = "openshift-config"
-	openshiftConfigPullSecret = "pull-secret"
 )
 
 var (
@@ -858,11 +856,6 @@ func (e *enricherImpl) checkRegistryForImage(image *storage.Image) error {
 	return nil
 }
 
-func isOpenshiftGlobalPullSecret(source *storage.ImageIntegration_Source) bool {
-	return source.GetNamespace() == openshiftConfigNamespace &&
-		source.GetImagePullSecretName() == openshiftConfigPullSecret
-}
-
 func (e *enricherImpl) getRegistriesForContext(ctx EnrichmentContext) ([]registryTypes.ImageRegistry, error) {
 	var registries []registryTypes.ImageRegistry
 	if env.DedupeImageIntegrations.BooleanSetting() {
@@ -919,7 +912,7 @@ func filterRegistriesBySource(requestSource *RequestSource, registries []registr
 			continue
 		}
 		// Check if the integration source is the global OpenShift registry
-		if isOpenshiftGlobalPullSecret(source) {
+		if openshift.GlobalPullSecretIntegration(integration) {
 			filteredRegistries = append(filteredRegistries, registry)
 			continue
 		}
@@ -963,7 +956,7 @@ func (e *enricherImpl) enrichImageWithScanner(ctx context.Context, image *storag
 	sema := scanner.MaxConcurrentScanSemaphore()
 	err := sema.Acquire(ctx, 1)
 	if err != nil {
-		return ScanNotDone, err
+		return ScanNotDone, errors.Wrapf(err, "acquiring max concurrent scan semaphore with scanner %q", scanner.Name())
 	}
 	defer sema.Release(1)
 

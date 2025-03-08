@@ -25,14 +25,13 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Compliance)): {
-			"/v1.ComplianceService/GetStandards",
-			"/v1.ComplianceService/GetStandard",
-			"/v1.ComplianceService/GetComplianceStatistics",
-			"/v1.ComplianceService/GetRunResults",
-			"/v1.ComplianceService/GetAggregatedResults",
+			v1.ComplianceService_GetStandards_FullMethodName,
+			v1.ComplianceService_GetStandard_FullMethodName,
+			v1.ComplianceService_GetRunResults_FullMethodName,
+			v1.ComplianceService_GetAggregatedResults_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.Compliance)): {
-			"/v1.ComplianceService/UpdateComplianceStandardConfig",
+			v1.ComplianceService_UpdateComplianceStandardConfig_FullMethodName,
 		},
 	})
 )

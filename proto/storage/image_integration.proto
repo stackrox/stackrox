@@ -18,6 +18,7 @@ message ImageIntegration {
   reserved 5;
   repeated ImageIntegrationCategory categories = 6;
 
+  // Custom configuration based on the image integration type.
   oneof IntegrationConfig {
     ClairifyConfig clairify = 8;
     ScannerV4Config scanner_v4 = 23;
@@ -85,6 +86,9 @@ message ClairifyConfig {
   int32 num_concurrent_scans = 2;
 }
 
+// Docker registry configuration. Used by integrations of type "docker" and other docker compliant registries without dedicated configuration type.
+//
+// Use of type "azure" with `DockerConfig` has been deprecated in 4.7. Use `AzureConfig` instead.
 message DockerConfig {
   string endpoint = 1; // @gotags: scrub:"dependent" validate:"nolocalendpoint"
   string username = 2; // @gotags: scrub:"dependent"
@@ -131,12 +135,14 @@ message ScannerV4Config {
   string matcher_endpoint = 3;
 }
 
+// Azure container registry configuration. Used by integrations of type "azure".
 message AzureConfig {
   string endpoint = 1; // @gotags: scrub:"dependent" validate:"nolocalendpoint"
   string username = 2; // @gotags: scrub:"dependent"
   // The password for the integration. The server will mask the value of this credential in responses and logs.
   string password = 3; // @gotags: scrub:"always"
-  bool wif_enabled = 4;
+  // Enables authentication with short-lived tokens using Azure managed identities or Azure workload identities.
+  bool wif_enabled = 4; // @gotags: scrub:"dependent"
 }
 
 enum ImageIntegrationCategory {

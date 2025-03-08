@@ -7,15 +7,19 @@ import (
 
 	nvdschema "github.com/facebookincubator/nvdtools/cveapi/nvd/schema"
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/enricher/epss"
 	"github.com/quay/claircore/toolkit/types/cpe"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
-	"github.com/stackrox/rox/pkg/scannerv4/constants"
+	"github.com/stackrox/rox/pkg/scannerv4/enricher/csaf"
+	"github.com/stackrox/rox/pkg/scannerv4/updater/manual"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var (
@@ -55,7 +59,7 @@ func Test_ToProtoV4IndexReport(t *testing.T) {
 func Test_ToProtoV4VulnerabilityReport(t *testing.T) {
 	now := time.Now()
 	protoNow, err := protocompat.ConvertTimeToTimestampOrError(now)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	tests := map[string]struct {
 		arg     *claircore.VulnerabilityReport
@@ -304,11 +308,11 @@ func Test_ToProtoV4VulnerabilityReport(t *testing.T) {
 }
 
 func Test_ToProtoV4VulnerabilityReport_FilterNodeJS(t *testing.T) {
-	t.Setenv(env.ScannerV4PartialNodeJSSupport.EnvVar(), "true")
+	t.Setenv(features.ScannerV4PartialNodeJSSupport.EnvVar(), "true")
 
 	now := time.Now()
 	protoNow, err := protocompat.ConvertTimeToTimestampOrError(now)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	tests := map[string]struct {
 		arg     *claircore.VulnerabilityReport
@@ -832,7 +836,6 @@ func Test_toProtoV4Environment(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			got := toProtoV4Environment(tt.arg)
 			protoassert.Equal(t, tt.want, got)
@@ -900,15 +903,249 @@ func Test_toProtoV4Contents(t *testing.T) {
 	}
 }
 
+func Test_toProtoV4VulnerabilitiesMapWithEPSS(t *testing.T) {
+	now := time.Now()
+	protoNow, err := protocompat.ConvertTimeToTimestampOrError(now)
+	require.NoError(t, err)
+
+	tests := map[string]struct {
+		ccVulnerabilities map[string]*claircore.Vulnerability
+		nvdVulns          map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem
+		epssItems         map[string]map[string]*epss.EPSSItem
+		enableRedHatCVEs  bool
+		want              map[string]*v4.VulnerabilityReport_Vulnerability
+	}{
+		"should use EPSS and NVD CVSS scores": {
+			ccVulnerabilities: map[string]*claircore.Vulnerability{
+				"foo": {
+					ID:      "foo",
+					Name:    "Name contains CVE-1234-567",
+					Issued:  now,
+					Updater: "unknown updater",
+				},
+			},
+			nvdVulns: map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem{
+				"foo": {
+					"CVE-9999-999": {
+						ID: "CVE-9999-999",
+					},
+					"CVE-1234-567": {
+						ID: "CVE-1234-567",
+						Metrics: &nvdschema.CVEAPIJSON20CVEItemMetrics{
+							CvssMetricV31: []*nvdschema.CVEAPIJSON20CVSSV31{
+								{
+									CvssData: &nvdschema.CVSSV31{
+										Version:      "3.1",
+										VectorString: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			epssItems: map[string]map[string]*epss.EPSSItem{
+				"foo": {
+					"CVE-1234-567": &epss.EPSSItem{
+						ModelVersion: "v2023.03.01",
+						CVE:          "CVE-1234-567",
+						Date:         "2025-01-15T00:00:00+0000",
+						EPSS:         0.00215,
+						Percentile:   0.59338,
+					},
+				},
+			},
+			want: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"foo": {
+					EpssMetrics: &v4.VulnerabilityReport_Vulnerability_EPSS{
+						ModelVersion: "v2023.03.01",
+						Date:         "2025-01-15T00:00:00+0000",
+						Probability:  0.00215,
+						Percentile:   0.59338,
+					},
+					Id:     "foo",
+					Issued: protoNow,
+					Name:   "CVE-1234-567",
+					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
+						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+							Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+						},
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+						Url:    "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
+					},
+					CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+						{
+							V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+								Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+							},
+							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+							Url:    "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
+						},
+					},
+				},
+			},
+		},
+
+		// TODO(ROX-27729): get the highest EPSS score for an RHSA across all CVEs associated with that RHSA
+		"should use EPSS score of highest CVE on multi-CVE RHSAs": {
+			ccVulnerabilities: map[string]*claircore.Vulnerability{
+				"foo": {
+					ID:      "foo",
+					Name:    "Name contains CVE-1234-567",
+					Issued:  now,
+					Updater: "rhel-vex",
+					Links:   "https://access.redhat.com/errata/RHSA-2021:1234",
+				},
+				"bar": {
+					ID:      "bar",
+					Name:    "Name contains CVE-7654-321",
+					Issued:  now,
+					Updater: "rhel-vex",
+					Links:   "https://access.redhat.com/errata/RHSA-2021:1234",
+				},
+			},
+			nvdVulns: nil,
+			epssItems: map[string]map[string]*epss.EPSSItem{
+				"foo": {
+					"CVE-1234-567": {
+						ModelVersion: "v2023.03.01",
+						CVE:          "CVE-1234-567",
+						Date:         "2025-01-15T00:00:00+0000",
+						EPSS:         0.00215,
+						Percentile:   0.59338,
+					},
+					"CVE-7654-321": {
+						ModelVersion: "v2023.03.01",
+						CVE:          "CVE-7654-321",
+						Date:         "2025-01-15T00:00:00+0000",
+						EPSS:         0.04215,
+						Percentile:   0.69338,
+					}},
+				"bar": {
+					"CVE-1234-567": {
+						ModelVersion: "v2023.03.01",
+						CVE:          "CVE-1234-567",
+						Date:         "2025-01-15T00:00:00+0000",
+						EPSS:         0.00215,
+						Percentile:   0.59338,
+					},
+					"CVE-7654-321": {
+						ModelVersion: "v2023.03.01",
+						CVE:          "CVE-7654-321",
+						Date:         "2025-01-15T00:00:00+0000",
+						EPSS:         0.04215,
+						Percentile:   0.69338,
+					}},
+			},
+			want: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"foo": {
+					EpssMetrics: &v4.VulnerabilityReport_Vulnerability_EPSS{
+						ModelVersion: "v2023.03.01",
+						Date:         "2025-01-15T00:00:00+0000",
+						Probability:  0.04215,
+						Percentile:   0.69338,
+					},
+					Id:          "foo",
+					Issued:      protoNow,
+					Name:        "RHSA-2021:1234",
+					Cvss:        nil,
+					CvssMetrics: nil,
+					Link:        "https://access.redhat.com/errata/RHSA-2021:1234",
+				},
+				"bar": {
+					EpssMetrics: &v4.VulnerabilityReport_Vulnerability_EPSS{
+						ModelVersion: "v2023.03.01",
+						Date:         "2025-01-15T00:00:00+0000",
+						Probability:  0.04215,
+						Percentile:   0.69338,
+					},
+					Id:          "bar",
+					Issued:      protoNow,
+					Name:        "RHSA-2021:1234",
+					Cvss:        nil,
+					CvssMetrics: nil,
+					Link:        "https://access.redhat.com/errata/RHSA-2021:1234",
+				},
+			},
+		},
+		"EPSS Missing": { // it could be the feature is turned off or EPSS data is missing for some reason
+			ccVulnerabilities: map[string]*claircore.Vulnerability{
+				"bar": {
+					ID:      "bar",
+					Name:    "Name contains CVE-5678-1234",
+					Issued:  now,
+					Updater: "unknown updater",
+				},
+			},
+			nvdVulns: map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem{
+				"bar": {
+					"CVE-5678-1234": {
+						ID: "CVE-5678-1234",
+						Metrics: &nvdschema.CVEAPIJSON20CVEItemMetrics{
+							CvssMetricV31: []*nvdschema.CVEAPIJSON20CVSSV31{
+								{
+									CvssData: &nvdschema.CVSSV31{
+										Version:      "3.1",
+										VectorString: "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:L/A:N",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			epssItems: nil,
+			want: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"bar": {
+					Id:     "bar",
+					Name:   "CVE-5678-1234",
+					Issued: protoNow,
+					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
+						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+							Vector: "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:L/A:N",
+						},
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+						Url:    "https://nvd.nist.gov/vuln/detail/CVE-5678-1234",
+					},
+					CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+						{
+							V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+								Vector: "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:L/A:N",
+							},
+							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+							Url:    "https://nvd.nist.gov/vuln/detail/CVE-5678-1234",
+						},
+					},
+					// No EpssMetrics because epssItems has no entry for CVE-5678-1234
+				},
+			},
+		},
+	}
+
+	ctx := context.Background()
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			enableRedHatCVEs := "false"
+			t.Setenv(features.ScannerV4RedHatCVEs.EnvVar(), enableRedHatCVEs)
+			enableEPSS := "true"
+			t.Setenv(features.EPSSScore.EnvVar(), enableEPSS)
+			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities, tt.nvdVulns, tt.epssItems, nil)
+			assert.NoError(t, err)
+			protoassert.MapEqual(t, tt.want, got)
+		})
+	}
+}
+
 func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 	now := time.Now()
 	protoNow, err := protocompat.ConvertTimeToTimestampOrError(now)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	published2021 := "2021-12-10T10:15:09.143"
 	proto2021 := protoconv.ConvertTimeString(published2021)
 	tests := map[string]struct {
 		ccVulnerabilities map[string]*claircore.Vulnerability
 		nvdVulns          map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem
+		advisories        map[string]csaf.Advisory
 		enableRedHatCVEs  bool
 		want              map[string]*v4.VulnerabilityReport_Vulnerability
 	}{
@@ -1319,7 +1556,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 					ID:       "foo",
 					Name:     "CVE-2021-44228",
 					Links:    "https://nvd.nist.gov/vuln/detail/CVE-2021-44228",
-					Updater:  constants.ManualUpdaterName,
+					Updater:  manual.UpdaterName,
 					Severity: "CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
 					Issued:   now,
 				},
@@ -1378,7 +1615,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 					Updater:            "rhel-vex",
 					Severity:           "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
 					NormalizedSeverity: claircore.Critical,
-					Issued:             now,
+					Issued:             now.Add(-1 * time.Second),
 				},
 			},
 			nvdVulns: map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem{
@@ -1399,18 +1636,39 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 					},
 				},
 			},
+			advisories: map[string]csaf.Advisory{
+				"foo": {
+					Name:        "RHSA-2021:5132",
+					Description: "RHSA description",
+					Severity:    "Moderate",
+					CVSSv3: csaf.CVSS{
+						Score:  9.1,
+						Vector: "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N",
+					},
+					CVSSv2: csaf.CVSS{
+						Score:  9.4,
+						Vector: "AV:N/AC:L/Au:N/C:C/I:C/A:N",
+					},
+					ReleaseDate: now,
+				},
+			},
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
 				"foo": {
 					Id:                 "foo",
 					Name:               "RHSA-2021:5132",
+					Description:        "RHSA description",
 					Link:               "https://access.redhat.com/security/cve/CVE-2021-44228 https://access.redhat.com/errata/RHSA-2021:5132",
 					Issued:             protoNow,
 					Severity:           "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
-					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_CRITICAL,
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
 					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
 						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
-							BaseScore: 9.8,
-							Vector:    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+							BaseScore: 9.1,
+							Vector:    "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N",
+						},
+						V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
+							BaseScore: 9.4,
+							Vector:    "AV:N/AC:L/Au:N/C:C/I:C/A:N",
 						},
 						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
 						Url:    "https://access.redhat.com/errata/RHSA-2021:5132",
@@ -1418,8 +1676,12 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 					CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
 						{
 							V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
-								BaseScore: 9.8,
-								Vector:    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+								BaseScore: 9.1,
+								Vector:    "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N",
+							},
+							V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
+								BaseScore: 9.4,
+								Vector:    "AV:N/AC:L/Au:N/C:C/I:C/A:N",
 							},
 							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
 							Url:    "https://access.redhat.com/errata/RHSA-2021:5132",
@@ -1471,6 +1733,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				"foo": {
 					Id:                 "foo",
 					Name:               "CVE-2021-44228",
+					Advisory:           "RHSA-2021:5132",
 					Link:               "https://access.redhat.com/security/cve/CVE-2021-44228 https://access.redhat.com/errata/RHSA-2021:5132",
 					Issued:             protoNow,
 					Severity:           "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
@@ -1504,6 +1767,108 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				},
 			},
 		},
+		// Note: Scanner V4 should ultimately return a single RHSA, but this is handled via manipulation to
+		// PackageVulnerabilities through dedupeAdvisories.
+		"when multiple Red Hat CVEs relate to same RHSA return each RHSA": {
+			ccVulnerabilities: map[string]*claircore.Vulnerability{
+				"foo": {
+					ID:                 "foo",
+					Name:               "CVE-2024-24789",
+					Links:              "https://access.redhat.com/security/cve/CVE-2024-24789 https://access.redhat.com/errata/RHSA-2024:10775",
+					Updater:            "rhel-vex",
+					Severity:           "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
+					NormalizedSeverity: claircore.Medium,
+					Issued:             now.Add(-2 * time.Hour),
+				},
+				"bar": {
+					ID:                 "bar",
+					Name:               "CVE-2024-24790",
+					Links:              "https://access.redhat.com/security/cve/CVE-2024-24790 https://access.redhat.com/errata/RHSA-2024:10775",
+					Updater:            "rhel-vex",
+					Severity:           "CVSS:3.1/AV:L/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:N",
+					NormalizedSeverity: claircore.Medium,
+					Issued:             now.Add(-1 * time.Hour),
+				},
+			},
+			advisories: map[string]csaf.Advisory{
+				"foo": {
+					Name:        "RHSA-2024:10775",
+					Description: "RHSA description",
+					Severity:    "Moderate",
+					CVSSv3: csaf.CVSS{
+						Score:  7.5,
+						Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
+					},
+					ReleaseDate: now,
+				},
+				"bar": {
+					Name:        "RHSA-2024:10775",
+					Description: "RHSA description",
+					Severity:    "Moderate",
+					CVSSv3: csaf.CVSS{
+						Score:  7.5,
+						Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
+					},
+					ReleaseDate: now,
+				},
+			},
+			want: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"foo": {
+					Id:                 "foo",
+					Name:               "RHSA-2024:10775",
+					Description:        "RHSA description",
+					Link:               "https://access.redhat.com/security/cve/CVE-2024-24789 https://access.redhat.com/errata/RHSA-2024:10775",
+					Issued:             protoNow,
+					Severity:           "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
+					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
+						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+							BaseScore: 7.5,
+							Vector:    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
+						},
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
+						Url:    "https://access.redhat.com/errata/RHSA-2024:10775",
+					},
+					CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+						{
+							V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+								BaseScore: 7.5,
+								Vector:    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
+							},
+							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
+							Url:    "https://access.redhat.com/errata/RHSA-2024:10775",
+						},
+					},
+				},
+				"bar": {
+					Id:                 "bar",
+					Name:               "RHSA-2024:10775",
+					Description:        "RHSA description",
+					Link:               "https://access.redhat.com/security/cve/CVE-2024-24790 https://access.redhat.com/errata/RHSA-2024:10775",
+					Issued:             protoNow,
+					Severity:           "CVSS:3.1/AV:L/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:N",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
+					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
+						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+							BaseScore: 7.5,
+							Vector:    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
+						},
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
+						Url:    "https://access.redhat.com/errata/RHSA-2024:10775",
+					},
+					CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+						{
+							V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+								BaseScore: 7.5,
+								Vector:    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
+							},
+							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
+							Url:    "https://access.redhat.com/errata/RHSA-2024:10775",
+						},
+					},
+				},
+			},
+		},
 	}
 	ctx := context.Background()
 	for name, tt := range tests {
@@ -1513,7 +1878,8 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				enableRedHatCVEs = "true"
 			}
 			t.Setenv(features.ScannerV4RedHatCVEs.EnvVar(), enableRedHatCVEs)
-			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities, tt.nvdVulns)
+			// EPSS scores are intentionally not covered here
+			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities, tt.nvdVulns, nil, tt.advisories)
 			assert.NoError(t, err)
 			protoassert.MapEqual(t, tt.want, got)
 		})
@@ -1637,6 +2003,41 @@ func Test_vulnerabilityName(t *testing.T) {
 	})
 }
 
+func Test_advisory(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.ScannerV4RedHatCVEs, true)
+	testcases := map[string]struct {
+		vuln     *claircore.Vulnerability
+		expected string
+	}{
+		"non-VEX": {
+			vuln: &claircore.Vulnerability{
+				Links:   "https://access.redhat.com/security/cve/CVE-2023-25761 https://access.redhat.com/errata/RHSA-2023:1866 https://access.redhat.com/security/cve/CVE-2023-25762",
+				Updater: "not-vex",
+			},
+			expected: "",
+		},
+		"no RHSA": {
+			vuln: &claircore.Vulnerability{
+				Links:   "https://access.redhat.com/security/cve/CVE-2023-25761 https://access.redhat.com/security/cve/CVE-2023-25762",
+				Updater: "rhel-vex",
+			},
+			expected: "",
+		},
+		"RHSA": {
+			vuln: &claircore.Vulnerability{
+				Links:   "https://access.redhat.com/security/cve/CVE-2023-25761 https://access.redhat.com/errata/RHSA-2023:1866 https://access.redhat.com/security/cve/CVE-2023-25762",
+				Updater: "rhel-vex",
+			},
+			expected: "RHSA-2023:1866",
+		},
+	}
+	for name, testcase := range testcases {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, testcase.expected, advisory(testcase.vuln))
+		})
+	}
+}
+
 func Test_versionID(t *testing.T) {
 	tests := map[string]struct {
 		d         *claircore.Distribution
@@ -1655,6 +2056,107 @@ func Test_versionID(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			versionID := VersionID(tt.d)
 			assert.Equal(t, tt.versionID, versionID)
+		})
+	}
+}
+
+func Test_sortByNVDCVSS(t *testing.T) {
+	type args struct {
+		ids             []string
+		vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerability
+	}
+	tests := []struct {
+		name string
+		args args
+		want []string
+	}{
+		{
+			name: "no NVD CVSS scores",
+			args: args{
+				ids: []string{"0", "1"},
+				vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"0": {
+						CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{},
+					},
+					"1": {
+						CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{},
+					},
+				},
+			},
+			want: []string{"0", "1"},
+		},
+		{
+			name: "one NVD CVSS score",
+			args: args{
+				ids: []string{"0", "1"},
+				vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"0": {
+						CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{},
+					},
+					"1": {
+						CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+							{
+								Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+								V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+									BaseScore: 1.0,
+								},
+							},
+						},
+					},
+				},
+			},
+			want: []string{"1", "0"},
+		},
+		{
+			name: "multiple NVD CVSS scores",
+			args: args{
+				ids: []string{"0", "1", "2"},
+				vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"0": {
+						CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+							{
+								Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_OSV,
+								V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+									BaseScore: 10.0,
+								},
+							},
+						},
+					},
+					"1": {
+						CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+							{
+								Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
+								V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+									BaseScore: 10.0,
+								},
+							},
+							{
+								Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+								V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+									BaseScore: 1.0,
+								},
+							},
+						},
+					},
+					"2": {
+						CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+							{
+								Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+								V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
+									BaseScore: 3.0,
+								},
+							},
+						},
+					},
+				},
+			},
+			want: []string{"2", "1", "0"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sortByNVDCVSS(tt.args.ids, tt.args.vulnerabilities)
+			assert.Equalf(t, tt.want, tt.args.ids, "sortByNVDCVSS(%v, %v)", tt.args.ids, tt.args.vulnerabilities)
 		})
 	}
 }
@@ -1883,6 +2385,78 @@ func Test_sortBySeverity(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			sortBySeverity(tt.args.ids, tt.args.vulnerabilities)
 			assert.Equalf(t, tt.want, tt.args.ids, "sortBySeverity(%v, %v)", tt.args.ids, tt.args.vulnerabilities)
+		})
+	}
+}
+
+func Test_dedupeAdvisories(t *testing.T) {
+	now := timestamppb.Now()
+
+	testcases := []struct {
+		name     string
+		vulnIDs  []string
+		vulns    map[string]*v4.VulnerabilityReport_Vulnerability
+		expected []string
+	}{
+		{
+			name:    "basic",
+			vulnIDs: []string{"0", "1", "2", "3", "4", "5"},
+			vulns: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"0": {
+					Id:                 "0",
+					Name:               "RHSA-2021:0735",
+					Description:        "Red Hat Security Advisory: nodejs:10 security update",
+					Issued:             now,
+					Link:               "https://access.redhat.com/errata/RHSA-2021:0735",
+					Severity:           "Important",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
+				},
+				"1": {
+					Id:                 "1",
+					Name:               "RHSA-2021:0735",
+					Description:        "Red Hat Security Advisory: nodejs:10 security update",
+					Issued:             now,
+					Link:               "https://access.redhat.com/errata/RHSA-2021:0735",
+					Severity:           "Important",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
+				},
+				"2": {
+					Id:                 "2",
+					Name:               "RHSA-2021:0548",
+					Description:        "Red Hat Security Advisory: nodejs:10 security update",
+					Issued:             now,
+					Link:               "https://access.redhat.com/errata/RHSA-2021:0548",
+					Severity:           "Moderate",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
+				},
+				"3": {
+					Id:          "3",
+					Name:        "CVE-2025-12342",
+					Description: "very vulnerable",
+				},
+				"4": {
+					Id:                 "4",
+					Name:               "RHSA-2021:0548",
+					Description:        "Red Hat Security Advisory: nodejs:10 security update",
+					Issued:             now,
+					Link:               "https://access.redhat.com/errata/RHSA-2021:0548",
+					Severity:           "Moderate",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
+				},
+				"5": {
+					Id:          "5",
+					Name:        "CVE-2025-12342",
+					Description: "very vulnerable",
+				},
+			},
+			expected: []string{"0", "2", "3", "5"},
+		},
+	}
+
+	for _, tt := range testcases {
+		t.Run(tt.name, func(t *testing.T) {
+			got := dedupeAdvisories(tt.vulnIDs, tt.vulns)
+			assert.ElementsMatch(t, tt.expected, got)
 		})
 	}
 }

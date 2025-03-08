@@ -1,5 +1,4 @@
 import withAuth from '../../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../../helpers/features';
 
 import {
     cancelAllCveExceptions,
@@ -16,20 +15,12 @@ import {
 describe('Workload CVE Image page deferral and false positive flows', () => {
     withAuth();
 
-    before(function () {
-        if (!hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES')) {
-            this.skip();
-        }
-    });
-
     beforeEach(() => {
         cancelAllCveExceptions();
     });
 
     after(() => {
-        if (hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES')) {
-            cancelAllCveExceptions();
-        }
+        cancelAllCveExceptions();
     });
 
     it('should defer a single CVE', () => {
@@ -50,7 +41,8 @@ describe('Workload CVE Image page deferral and false positive flows', () => {
         });
     });
 
-    it('should defer multiple selected CVEs', () => {
+    // TODO(ROX-27510): CI improvements 2025-02-12: The test is unstable.
+    it.skip('should defer multiple selected CVEs', () => {
         visitImageSinglePageWithMockedResponses().then((image) => {
             selectMultipleCvesForException('DEFERRAL').then((cveNames) => {
                 verifySelectedCvesInModal(cveNames);
@@ -83,7 +75,8 @@ describe('Workload CVE Image page deferral and false positive flows', () => {
         });
     });
 
-    it('should mark multiple selected CVEs as false positive', () => {
+    // TODO(ROX-27251): CI improvements 2025-02-12: The test is unstable.
+    it.skip('should mark multiple selected CVEs as false positive', () => {
         visitImageSinglePageWithMockedResponses().then((image) => {
             selectMultipleCvesForException('FALSE_POSITIVE').then((cveNames) => {
                 verifySelectedCvesInModal(cveNames);

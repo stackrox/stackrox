@@ -21,6 +21,7 @@ sensor_wait() {
       echo "Sensor replicas: $(jq '.status.replicas' <<<"${sensor_json}")"
       echo "Sensor readyReplicas: $(jq '.status.readyReplicas' <<<"${sensor_json}")"
       if (( $(date '+%s') - start_time > 1200 )); then
+        echo "Waiting for sensor in ns ${sensor_namespace} to be ready timed out." > "${QA_DEPLOY_WAIT_INFO}" || true
         kubectl -n "${sensor_namespace}" get pod -o wide
         kubectl -n "${sensor_namespace}" get deploy -o wide
         echo >&2 "Timed out after 20m"
@@ -40,6 +41,7 @@ sensor_wait() {
       echo "Desired collectors: $(kubectl -n "${sensor_namespace}" get ds/collector | tail -n +2 | awk '{print $2}')"
       echo "Ready collectors: $(kubectl -n "${sensor_namespace}" get ds/collector | tail -n +2 | awk '{print $4}')"
       if (( $(date '+%s') - start_time > 1200 )); then
+        echo "Waiting for collectors in ns ${sensor_namespace} to be ready timed out." > "${QA_DEPLOY_WAIT_INFO}" || true
         kubectl -n "${sensor_namespace}" get pod -o wide
         kubectl -n "${sensor_namespace}" get ds -o wide
         echo >&2 "Timed out after 20m"

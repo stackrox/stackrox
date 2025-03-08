@@ -58,9 +58,8 @@ package v1alpha1
 //	kind: ConfigMap
 //	name: central-endpoints
 //	patches:
-//	- path: data
-//	  value: |
-//	    endpoints.yaml: |
+//	- path: data.endpoints\.yaml:
+//	  verbatim: |
 //	    disableDefault: false
 //
 // ## Adding a container to a deployment
@@ -112,4 +111,9 @@ type K8sObjectOverlayPatch struct {
 	// All values are strings but are converted into appropriate type based on schema.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Value",order=2
 	Value string `json:"value,omitempty"`
+	// Verbatim value to add, delete or replace.
+	// Same as Value, however the content is not interpreted as YAML, but treated as literal string instead.
+	// At least one of Value and Verbatim must be empty.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Verbatim",order=3
+	Verbatim string `json:"verbatim,omitempty"`
 }

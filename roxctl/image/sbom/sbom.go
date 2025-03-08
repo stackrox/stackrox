@@ -42,7 +42,8 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c.Flags().StringVarP(&imageSBOMCmd.image, "image", "i", "", "Image name and reference. (e.g. nginx:latest or nginx@sha256:...)")
 	c.Flags().BoolVarP(&imageSBOMCmd.force, "force", "f", false, "Bypass Central's cache for the image and force a new pull from the Scanner")
-	c.Flags().StringVar(&imageSBOMCmd.cluster, "cluster", "", "Cluster name or ID to delegate image scan to")
+	// TODO(ROX-27920): re-introduce cluster flag when SBOM generation from delegated scans is implemented.
+	// c.Flags().StringVar(&imageSBOMCmd.cluster, "cluster", "", "Cluster name or ID to delegate image scan to")
 	c.Flags().IntVarP(&imageSBOMCmd.retryDelay, "retry-delay", "d", 3, "Set time to wait between retries in seconds")
 	c.Flags().IntVarP(&imageSBOMCmd.retryCount, "retries", "r", 3, "Number of retries before exiting as error")
 
@@ -52,9 +53,10 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 // imageSBOMCommand holds all configurations and metadata to generate an SBOM.
 type imageSBOMCommand struct {
-	image      string
-	force      bool
-	cluster    string
+	image string
+	force bool
+	// TODO(ROX-27920): re-introduce cluster flag when SBOM generation from delegated scans is implemented.
+	// cluster    string
 	retryDelay int
 	retryCount int
 
@@ -89,8 +91,9 @@ func (i *imageSBOMCommand) construct(cobraCmd *cobra.Command) error {
 	}
 
 	// Create the request.
-	req := apiparams.SbomRequestBody{
-		Cluster:   i.cluster,
+	req := apiparams.SBOMRequestBody{
+		// TODO(ROX-27920): re-introduce cluster flag when SBOM generation from delegated scans is implemented.
+		// Cluster:   i.cluster,
 		ImageName: i.image,
 		Force:     i.force,
 	}

@@ -6,6 +6,9 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	yaml "gopkg.in/yaml.v3"
 )
 
 func isCapitalized(s string) bool {
@@ -45,4 +48,44 @@ func checkUsageFirstCharacter(t *testing.T, command *cobra.Command) {
 
 func Test_Commands(t *testing.T) {
 	checkUsageFirstCharacter(t, Command())
+}
+
+type cmdNode struct {
+	Commands        map[string]*cmdNode `yaml:"cmd,inline,omitempty"`
+	LocalFlags      []string            `yaml:"LOCAL_FLAGS,omitempty"`
+	PersistentFlags []string            `yaml:"PERSISTENT_FLAGS,omitempty"`
+	InheritedFlags  []string            `yaml:"INHERITED_FLAGS,omitempty"`
+}
+
+func buildCmdTree(c *cobra.Command) *cmdNode {
+	command := &cmdNode{
+		Commands: make(map[string]*cmdNode),
+	}
+	c.LocalNonPersistentFlags().VisitAll(func(f *pflag.Flag) {
+		command.LocalFlags = append(command.LocalFlags, f.Name)
+	})
+	c.PersistentFlags().VisitAll(func(f *pflag.Flag) {
+		command.PersistentFlags = append(command.PersistentFlags, f.Name)
+	})
+	c.InheritedFlags().VisitAll(func(f *pflag.Flag) {
+		command.InheritedFlags = append(command.InheritedFlags, f.Name)
+	})
+
+	for _, cmd := range c.Commands() {
+		command.Commands[cmd.Name()] = buildCmdTree(cmd)
+	}
+	return command
+}
+
+func Test_commandTree(t *testing.T) {
+	sb := &strings.Builder{}
+	e := yaml.NewEncoder(sb)
+	e.SetIndent(2)
+	require.NoError(t, e.Encode(buildCmdTree(Command())))
+	_ = e.Close()
+	result := sb.String()
+	// Regenerate the tree:
+	// os.WriteFile(commandTreeFilename, []byte(result), 0666)
+	assert.NotEmpty(t, commandTreeFilename, result)
+	assert.Equal(t, commandTree, result)
 }

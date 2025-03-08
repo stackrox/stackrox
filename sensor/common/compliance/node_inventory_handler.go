@@ -11,16 +11,18 @@ import (
 var _ common.ComplianceComponent = (*nodeInventoryHandlerImpl)(nil)
 
 // NewNodeInventoryHandler returns a new instance of a NodeInventoryHandler
-func NewNodeInventoryHandler(ch <-chan *storage.NodeInventory, iw <-chan *index.IndexReportWrap, matcher NodeIDMatcher) *nodeInventoryHandlerImpl {
+func NewNodeInventoryHandler(ch <-chan *storage.NodeInventory, iw <-chan *index.IndexReportWrap, nodeIDMatcher NodeIDMatcher, nodeRHCOSmatcher NodeRHCOSMatcher) *nodeInventoryHandlerImpl {
 	return &nodeInventoryHandlerImpl{
-		inventories:     ch,
-		reportWraps:     iw,
-		toCentral:       nil,
-		centralReady:    concurrency.NewSignal(),
-		toCompliance:    nil,
-		acksFromCentral: nil,
-		lock:            &sync.Mutex{},
-		stopper:         concurrency.NewStopper(),
-		nodeMatcher:     matcher,
+		inventories:      ch,
+		reportWraps:      iw,
+		toCentral:        nil,
+		centralReady:     concurrency.NewSignal(),
+		toCompliance:     nil,
+		acksFromCentral:  nil,
+		lock:             &sync.Mutex{},
+		stopper:          concurrency.NewStopper(),
+		nodeMatcher:      nodeIDMatcher,
+		nodeRHCOSMatcher: nodeRHCOSmatcher,
+		archCache:        make(map[string]string),
 	}
 }
