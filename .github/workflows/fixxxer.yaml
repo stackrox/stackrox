@@ -8,6 +8,24 @@ permissions:
   contents: write
 
 jobs:
+  reaction:
+    name: Run PR Fixxxer
+    # TODO: support leading and trailing whitespace too
+    if: ${{ github.event.issue.pull_request && github.event.comment.body == '/fixxx' }}
+    runs-on: ubuntu-latest
+    steps:
+    - name: 👍 on a comment
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        COMMENT_ID: ${{ github.event.comment.node_id }}
+      run: |
+        gh api \
+          -X POST \
+          "/repos/${{ github.repository }}/issues/comments/$COMMENT_ID/reactions" \
+          -f content="+1"
+    env:
+        GH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
   pr_commented:
     name: Run PR Fixxxer
     # TODO: support leading and trailing whitespace too
