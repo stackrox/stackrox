@@ -13,6 +13,7 @@ import {
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
+import usePermissions from 'hooks/usePermissions';
 import { clustersBasePath } from 'routePaths';
 import {
     fetchDelegatedRegistryConfig,
@@ -73,6 +74,12 @@ function DelegateScanningPage() {
     >([]);
     const [alertObj, setAlertObj] = useState<AlertObj | null>(null);
 
+    const [hasLoadedClusters, setHasLoadedClusters] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+
+    const { hasReadWriteAccess } = usePermissions();
+    const hasReadWriteAccessForAdministration = hasReadWriteAccess('Administration');
+
     useEffect(() => {
         fetchClusters();
         fetchConfig();
@@ -108,6 +115,7 @@ function DelegateScanningPage() {
             .then((clusters) => {
                 const validClusters = clusters.filter((cluster) => cluster.isValid);
                 setDelegatedRegistryClusters(validClusters);
+                setHasLoadedClusters(true);
             })
             .catch((error) => {
                 const newErrorObj: AlertObj = {
@@ -125,6 +133,10 @@ function DelegateScanningPage() {
                 setAlertObj(newErrorObj);
                 setDelegatedRegistryClusters([]);
             });
+    }
+
+    function onClickEdit() {
+        setIsEditing(true);
     }
 
     function onChangeEnabledFor(newEnabledState) {
@@ -225,6 +237,7 @@ function DelegateScanningPage() {
                     body: <></>,
                 };
                 setAlertObj(newSuccessObj);
+                setIsEditing(false);
             })
             .catch((error) => {
                 const newErrorObj: AlertObj = {
@@ -244,23 +257,41 @@ function DelegateScanningPage() {
     }
 
     function onCancel() {
+        setIsEditing(false);
         fetchConfig();
     }
 
     return (
         <>
             <PageTitle title={displayedPageTitle} />
-            <PageSection variant="light" padding={{ default: 'noPadding' }}>
-                <Flex direction={{ default: 'column' }} className="pf-v5-u-py-lg pf-v5-u-pl-lg">
+            <PageSection variant="light">
+                <Flex direction={{ default: 'column' }}>
                     <FlexItem>
                         <Breadcrumb>
                             <BreadcrumbItemLink to={clustersBasePath}>Clusters</BreadcrumbItemLink>
                             <BreadcrumbItem isActive>{displayedPageTitle}</BreadcrumbItem>
                         </Breadcrumb>
                     </FlexItem>
-                    <FlexItem>
-                        <Title headingLevel="h1">{displayedPageTitle}</Title>
-                    </FlexItem>
+                    <Flex>
+                        <FlexItem flex={{ default: 'flex_1' }}>
+                            <Title headingLevel="h1">{displayedPageTitle}</Title>
+                        </FlexItem>
+                        {hasReadWriteAccessForAdministration && (
+                            <FlexItem align={{ default: 'alignRight' }}>
+                                <Button
+                                    variant="primary"
+                                    isDisabled={
+                                        delegatedRegistryConfig == null ||
+                                        !hasLoadedClusters ||
+                                        isEditing
+                                    }
+                                    onClick={onClickEdit}
+                                >
+                                    Edit
+                                </Button>
+                            </FlexItem>
+                        )}
+                    </Flex>
                     <FlexItem>
                         Delegating image scanning allows you to use secured clusters for scanning
                         instead of Central services.
@@ -282,6 +313,7 @@ function DelegateScanningPage() {
                 <Form>
                     <ToggleDelegatedScanning
                         enabledFor={delegatedRegistryConfig.enabledFor}
+                        isEditing={isEditing}
                         onChangeEnabledFor={onChangeEnabledFor}
                     />
                     {/* TODO: decide who to structure this form, where the `enabledFor` value spans multiple inputs */}
@@ -289,6 +321,7 @@ function DelegateScanningPage() {
                         <>
                             <DelegatedScanningSettings
                                 clusters={delegatedRegistryClusters}
+                                isEditing={isEditing}
                                 selectedClusterId={delegatedRegistryConfig.defaultClusterId}
                                 setSelectedClusterId={onChangeDefaultCluster}
                             />
@@ -296,6 +329,7 @@ function DelegateScanningPage() {
                                 registries={delegatedRegistryConfig.registries}
                                 clusters={delegatedRegistryClusters}
                                 selectedClusterId={delegatedRegistryConfig.defaultClusterId}
+                                isEditing={isEditing}
                                 handlePathChange={handlePathChange}
                                 handleClusterChange={handleClusterChange}
                                 addRegistryRow={addRegistryRow}
@@ -309,18 +343,20 @@ function DelegateScanningPage() {
                         </>
                     )}
                 </Form>
-                <Flex className="pf-v5-u-p-md">
-                    <FlexItem align={{ default: 'alignLeft' }}>
-                        <Flex>
-                            <Button variant="primary" onClick={onSave}>
-                                Save
-                            </Button>
-                            <Button variant="secondary" onClick={onCancel}>
-                                Cancel
-                            </Button>
-                        </Flex>
-                    </FlexItem>
-                </Flex>
+                {isEditing && (
+                    <Flex>
+                        <FlexItem>
+                            <Flex>
+                                <Button variant="primary" onClick={onSave}>
+                                    Save
+                                </Button>
+                                <Button variant="secondary" onClick={onCancel}>
+                                    Cancel
+                                </Button>
+                            </Flex>
+                        </FlexItem>
+                    </Flex>
+                )}
             </PageSection>
         </>
     );

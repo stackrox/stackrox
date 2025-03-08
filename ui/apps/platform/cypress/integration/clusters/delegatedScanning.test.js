@@ -43,6 +43,8 @@ describe('Delegated Image Scanning', () => {
         cy.get('label:contains("All registries")').should('not.be.checked');
         cy.get('label:contains("Specified registries")').should('not.be.checked');
 
+        cy.get('button:contains("Edit")').click();
+
         // Enable delegate scanning with default
         getInputByLabel('All registries').click();
 
