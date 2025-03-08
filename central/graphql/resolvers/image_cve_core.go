@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/views/imagecve"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/search"
@@ -168,11 +169,20 @@ func (resolver *imageCVECoreResolver) Deployments(ctx context.Context, args stru
 
 func (resolver *imageCVECoreResolver) DistroTuples(ctx context.Context) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVECore, "DistroTuples")
+	var q PaginatedQuery
+	if features.FlattenCVEData.Enabled() {
+		// TODO:  Look at this to see if we need to get a list of CVE names instead
+		q = PaginatedQuery{
+			Query: pointers.String(search.NewQueryBuilder().AddExactMatches(search.CVE, resolver.data.GetCVE()).
+				Query()),
+		}
+		return resolver.root.ImageVulnerabilities(ctx, q)
+	}
 	// ImageVulnerabilities resolver filters out snoozed CVEs when no explicit filter by CVESuppressed is provided.
 	// When ImageVulnerabilities resolver is called from here, it is to get the details of a single CVE which cannot be
 	// obtained via SQF. So, the auto removal of snoozed CVEs is unintentional here. Hence, we add explicit filter with
 	// CVESuppressed == true OR false
-	q := PaginatedQuery{
+	q = PaginatedQuery{
 		Query: pointers.String(search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.data.GetCVEIDs()...).
 			AddBools(search.CVESuppressed, true, false).
 			Query()),
