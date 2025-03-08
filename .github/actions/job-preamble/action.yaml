@@ -17,6 +17,7 @@ runs:
     - name: Remove unused gha runner tools if found
       shell: bash
       run: |
+        set +e
         set -x
         cleanup=(
           /usr/share/dotnet
@@ -29,7 +30,8 @@ runs:
           if [[ -d "/mnt${d}" ]]; then
             rm -rf "/mnt${d}"
           elif [[ -d "$d" ]]; then
-            rm -rf "$d"
+            rm -rf "$d" \
+              || sudo rm -rf "$d"
           fi
         done
         df --si /
@@ -56,4 +58,5 @@ runs:
         post: >
           source scripts/ci/lib.sh;
           export METRICS_JOB_ID=$GITHUB_RUN_ID;
-          update_job_record outcome "${{ job.status }}" stopped_at "CURRENT_TIMESTAMP()"
+          update_job_record outcome "${{ job.status }}" stopped_at "CURRENT_TIMESTAMP()";
+          df --si /;
