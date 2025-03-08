@@ -233,8 +233,9 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 				// This enrichment should have been delegated, short circuit.
 				return EnrichmentResult{ImageUpdated: false, ScanResult: ScanNotDone}, err
 			}
+		} else {
+			return EnrichmentResult{ImageUpdated: true, ScanResult: ScanSucceeded}, nil
 		}
-		return EnrichmentResult{ImageUpdated: true, ScanResult: ScanSucceeded}, nil
 	} else if err != nil {
 		log.Warnf("Error attempting to delegate: %v", err)
 	}
