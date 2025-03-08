@@ -11,22 +11,22 @@ func TestFlagOrSettingValue(t *testing.T) {
 	// 1. Default, unchanged flag value and setting not set should lead to the default value being returned.
 	cmd := &cobra.Command{}
 
-	AddPassword(cmd)
+	addCentralAuthFlags(cmd)
 
 	assert.Empty(t, Password())
 
 	// 2. Change the flag value. The changed flag value should be returned, irrespective of whether the setting is set.
 	t.Setenv("ROX_ADMIN_PASSWORD", "some-test-value")
 	cmd = &cobra.Command{}
-	AddPassword(cmd)
-	err := cmd.PersistentFlags().Set("password", "some-other-test-value")
-	assert.NoError(t, err)
+	addCentralAuthFlags(cmd)
+	assert.NoError(t, cmd.ParseFlags([]string{"--password", "some-other-test-value"}))
 	assert.Equal(t, "some-other-test-value", Password())
 
 	// 3. Default flag value and setting's value set should return the settings value instead.
 	t.Setenv("ROX_ADMIN_PASSWORD", "some-test-value")
 	cmd = &cobra.Command{}
-	AddPassword(cmd)
+	authFlagSet.Lookup("password").Changed = false
+	addCentralAuthFlags(cmd)
 	assert.Equal(t, "some-test-value", Password())
 }
 
@@ -34,21 +34,21 @@ func TestBooleanFlagOrSettingValue(t *testing.T) {
 	// 1. Default, unchanged flag value and setting not set should lead to the default value being returned.
 	cmd := &cobra.Command{}
 
-	AddConnectionFlags(cmd)
+	AddCentralConnectionFlags(cmd)
 
 	assert.False(t, UseInsecure())
 
 	// 2. Change the flag value. The changed flag value should be returned, irrespective of whether the setting is set.
 	t.Setenv("ROX_INSECURE_CLIENT", "true")
 	cmd = &cobra.Command{}
-	AddConnectionFlags(cmd)
-	err := cmd.PersistentFlags().Set("insecure", "false")
-	assert.NoError(t, err)
+	AddCentralConnectionFlags(cmd)
+	assert.NoError(t, cmd.ParseFlags([]string{"--insecure=false"}))
 	assert.Equal(t, false, UseInsecure())
 
 	// 3. Default flag value and setting's value set should return the settings value instead.
 	t.Setenv("ROX_INSECURE_CLIENT", "true")
 	cmd = &cobra.Command{}
-	AddConnectionFlags(cmd)
+	connectionFlags.Lookup("insecure").Changed = false
+	AddCentralConnectionFlags(cmd)
 	assert.Equal(t, true, UseInsecure())
 }

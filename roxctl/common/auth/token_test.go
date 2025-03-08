@@ -21,13 +21,27 @@ func TestToken(t *testing.T) {
 
 type tokenSuite struct {
 	suite.Suite
+
+	c *cobra.Command
 }
+
+var _ suite.SetupTestSuite = (*tokenSuite)(nil)
+var _ suite.SetupSubTest = (*tokenSuite)(nil)
 
 func (s *tokenSuite) SetupTest() {
 	// Reset the APITokenFile value between tests.
-	c := &cobra.Command{}
-	flags.AddAPITokenFile(c)
-	s.NoError(c.ParseFlags([]string{}))
+	s.c = &cobra.Command{}
+	flags.AddCentralConnectionFlags(s.c)
+	s.NoError(s.c.ParseFlags([]string{}))
+	tokenFileFlag := s.c.PersistentFlags().Lookup("token-file")
+	s.NoError(tokenFileFlag.Value.Set(""))
+	tokenFileFlag.Changed = false
+	s.T().Setenv(env.TokenFileEnv.EnvVar(), "")
+	s.T().Setenv(env.TokenEnv.EnvVar(), "")
+}
+
+func (s *tokenSuite) SetupSubTest() {
+	s.SetupTest()
 }
 
 func (s *tokenSuite) Test_RetrieveAuthToken_WithEnv() {
@@ -88,24 +102,18 @@ func (s *tokenSuite) Test_RetrieveAuthToken_Precedence() {
 	s.NoError(initErr)
 
 	s.Run("error when neither flag nor env vars are not set", func() {
-		c := &cobra.Command{}
-		flags.AddAPITokenFile(c)
-
-		err := c.ParseFlags([]string{})
-		s.NoError(err)
-
 		method := tokenMethod{}
 		token, err := method.retrieveAuthToken()
 		s.ErrorIs(err, errox.InvalidArgs)
 		s.Equal("", token)
 	})
-
 	testCases := map[string]struct {
 		flagValue     string
 		fileEnvValue  string
 		tokenEnvValue string
 		expectedToken string
 	}{
+
 		"flag has precedence over env vars": {
 			flagValue:     forFlagFilePath,
 			fileEnvValue:  forEnvFilePath,
@@ -140,15 +148,11 @@ func (s *tokenSuite) Test_RetrieveAuthToken_Precedence() {
 
 	for name, testCase := range testCases {
 		s.Run(name, func() {
-			c := &cobra.Command{}
-			flags.AddAPITokenFile(c)
-
 			s.T().Setenv(env.TokenFileEnv.EnvVar(), testCase.fileEnvValue)
 			s.T().Setenv(env.TokenEnv.EnvVar(), testCase.tokenEnvValue)
 
 			if testCase.flagValue != "" {
-				err := c.ParseFlags([]string{"--token-file", testCase.flagValue})
-				s.NoError(err)
+				s.NoError(s.c.ParseFlags([]string{"--token-file", testCase.flagValue}))
 			}
 
 			method := tokenMethod{}
@@ -158,11 +162,7 @@ func (s *tokenSuite) Test_RetrieveAuthToken_Precedence() {
 		})
 	}
 	s.Run("error when neither flag nor env vars are non-empty", func() {
-		c := &cobra.Command{}
-		flags.AddAPITokenFile(c)
-
-		err := c.ParseFlags([]string{"--token-file", ""})
-		s.NoError(err)
+		s.NoError(s.c.ParseFlags([]string{"--token-file", ""}))
 		s.T().Setenv(env.TokenFileEnv.EnvVar(), "")
 		s.T().Setenv(env.TokenEnv.EnvVar(), "")
 
