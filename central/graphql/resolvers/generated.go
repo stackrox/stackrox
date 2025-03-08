@@ -916,6 +916,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"clusterId: String!",
 		"lastSeenTimestamp: Time",
 		"props: NetworkFlowProperties",
+		"updatedAt: Time",
 	}))
 	utils.Must(builder.AddType("NetworkFlowProperties", []string{
 		"dstEntity: NetworkEntityInfo",
@@ -10598,6 +10599,11 @@ func (resolver *networkFlowResolver) LastSeenTimestamp(ctx context.Context) (*gr
 func (resolver *networkFlowResolver) Props(ctx context.Context) (*networkFlowPropertiesResolver, error) {
 	value := resolver.data.GetProps()
 	return resolver.root.wrapNetworkFlowProperties(value, true, nil)
+}
+
+func (resolver *networkFlowResolver) UpdatedAt(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetUpdatedAt()
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 type networkFlowPropertiesResolver struct {
