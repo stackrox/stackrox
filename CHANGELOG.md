@@ -10,7 +10,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ## [NEXT RELEASE]
 
 ### Added Features
+
 - ROX-13493: Support for scale subresource in the admission controller to enable policy detection and enforcement on admission review requests on the scale subresource.
+- RHPF-98: Log creation of API token. The token creation log message will trigger an administration event.
 
 ### Removed Features
 
@@ -19,8 +21,6 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Technical Changes
 
 ## [4.7.0]
-
-
 
 ### Added Features
 

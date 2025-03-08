@@ -10,6 +10,7 @@ const (
 )
 
 var moduleToDomain = map[*regexp.Regexp]string{
+	regexp.MustCompile(`^apitoken/creation`):         authenticationDomain,
 	regexp.MustCompile(`^apitoken/expiration`):       authenticationDomain,
 	regexp.MustCompile(`(^|/)externalbackups(/|$)`):  integrationDomain,
 	regexp.MustCompile(`(^|/)cloudsources(/|$)`):     integrationDomain,
