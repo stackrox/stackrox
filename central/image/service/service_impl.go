@@ -401,7 +401,7 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 
 		enrichmentCtx.ClusterID = clusterID
 	}
-	log.Infof(">>>>ScanImage: ad-hoc request")
+
 	img, err := enricher.EnrichImageByName(ctx, s.enricher, enrichmentCtx, request.GetImageName())
 	if err != nil {
 		return nil, err
