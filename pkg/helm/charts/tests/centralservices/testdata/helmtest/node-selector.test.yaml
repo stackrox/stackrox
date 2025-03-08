@@ -5,6 +5,7 @@ tests:
 - name: "with default settings"
   expect: |
     .deployments.central.spec.template.spec.nodeSelector | assertThat(. == null)
+    .deployments["config-controller"].spec.template.spec.nodeSelector | assertThat(. == null)
     .deployments.scanner.spec.template.spec.nodeSelector | assertThat(. == null)
     .deployments["scanner-db"].spec.template.spec.nodeSelector | assertThat(. == null)
 
@@ -12,11 +13,14 @@ tests:
   values:
     central:
       nodeSelector: ""
+    configController:
+      nodeSelector: ""
     scanner:
       nodeSelector: ""
       dbNodeSelector: ""
   expect: |
     .deployments.central.spec.template.spec.nodeSelector | assertThat(. == null)
+    .deployments["config-controller"].spec.template.spec.nodeSelector | assertThat(. == null)
     .deployments.scanner.spec.template.spec.nodeSelector | assertThat(. == null)
     .deployments["scanner-db"].spec.template.spec.nodeSelector | assertThat(. == null)
 
@@ -24,20 +28,24 @@ tests:
   values:
     central:
       nodeSelector: {}
+    configController:
+      nodeSelector: {}
     scanner:
       nodeSelector: {}
       dbNodeSelector: {}
   expect: |
     .deployments.central.spec.template.spec.nodeSelector | assertThat(length == 0)
+    .deployments["config-controller"].spec.template.spec.nodeSelector | assertThat(length == 0)
     .deployments.scanner.spec.template.spec.nodeSelector | assertThat(length == 0)
     .deployments["scanner-db"].spec.template.spec.nodeSelector | assertThat(length == 0)
 
 - name: "with populated settings"
   expect: |
     .deployments.central.spec.template.spec.nodeSelector | assertThat(.role == "central")
+    .deployments["config-controller"].spec.template.spec.nodeSelector | assertThat(.role == "config-controller")
     .deployments.scanner.spec.template.spec.nodeSelector | assertThat(.role == "scanner")
     .deployments["scanner-db"].spec.template.spec.nodeSelector | assertThat(.role == "scanner-db")
-    [.deployments.central, .deployments.scanner, .deployments["scanner-db"]][] |
+    [.deployments.central, .deployments["config-controller"], .deployments.scanner, .deployments["scanner-db"]][] |
       .spec.template.spec.nodeSelector | assertThat(.foo == "bar")
 
   tests:
@@ -47,6 +55,10 @@ tests:
         nodeSelector:
           foo: bar
           role: central
+      configController:
+        nodeSelector:
+          foo: bar
+          role: "config-controller"
       scanner:
         nodeSelector:
           foo: bar
@@ -60,6 +72,10 @@ tests:
         nodeSelector: |
           foo: bar
           role: central
+      configController:
+        nodeSelector: |
+          foo: bar
+          role: "config-controller"
       scanner:
         nodeSelector: |
           foo: bar
