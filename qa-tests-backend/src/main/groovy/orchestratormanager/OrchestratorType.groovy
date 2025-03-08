@@ -1,12 +1,15 @@
 package orchestratormanager
 
+import groovy.transform.CompileStatic
+
 /**
  * Created by parulshukla on 5/22/18.
  */
+@CompileStatic
 class OrchestratorType {
-    static OrchestratorMain orchestrator
+    static Kubernetes orchestrator
 
-    static OrchestratorMain create(OrchestratorTypes type, String namespace = null) {
+    static Kubernetes create(OrchestratorTypes type, String namespace = null) {
         switch (type) {
             case OrchestratorTypes.K8S:
                 orchestrator = new Kubernetes(namespace)
