@@ -17,7 +17,6 @@ runs:
     - name: Remove unused gha runner tools if found
       shell: bash
       run: |
-        set +e
         set -x
         cleanup=(
           /usr/share/dotnet
@@ -30,7 +29,7 @@ runs:
           if [[ -d "/mnt${d}" ]]; then
             rm -rf "/mnt${d}"
           elif [[ -d "$d" ]]; then
-            sudo rm -rf "$d"
+            rm -rf "$d"
           fi
         done
         df --si /
