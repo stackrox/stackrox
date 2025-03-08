@@ -38,7 +38,7 @@ COPY --from=mappings /mappings/repository-to-cpe.json /mappings/container-name-r
 RUN microdnf upgrade --nobest && \
     microdnf clean all && \
     # (Optional) Remove line below to keep package management utilities
-    rpm -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
+    rpm -v -e $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*' libmodulemd) && \
     rm -rf /var/cache/dnf /var/cache/yum && \
     chown -R 65534:65534 /tmp && \
     # The contents of paths mounted as emptyDir volumes in Kubernetes are saved
