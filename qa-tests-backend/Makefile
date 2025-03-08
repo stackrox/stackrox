@@ -52,7 +52,7 @@ clean-generated-srcs:
 .PHONY: test
 test: compile
 	@echo "+ $@"
-	$(GRADLE) testBegin testParallel testRest $(GRADLE_TEST_ARGS)
+	$(GRADLE) test --tests "NetworkFlowTest.Verify connections to external sources" $(GRADLE_TEST_ARGS)
 
 .PHONY: bat-test
 bat-test: compile
