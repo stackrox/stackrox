@@ -644,9 +644,9 @@ function launch_sensor {
     	extra_helm_config+=(--set "admissionControl.listenOnEvents=${bool_val}")
     fi
 
-    if [[ "${ROX_COLLECTOR_RUNTIME_CONFIG:-false}" == "true" ]]; then
+    if [[ "${ROX_COLLECTOR_RUNTIME_CONFIG:-Disabled}" == "Enabled" ]]; then
         extra_helm_config+=(--set "collector.runtimeConfig.enabled=${ROX_COLLECTOR_RUNTIME_CONFIG}")
-        if [[ "${ROX_COLLECTOR_EXTERNAL_IPS_ENABLE:-false}" == "true" ]]; then
+        if [[ "${ROX_COLLECTOR_EXTERNAL_IPS_ENABLE:-Disabled}" == "Enabled" ]]; then
             extra_helm_config+=(--set "collector.runtimeConfig.networking.externalIps.enabled=${ROX_COLLECTOR_EXTERNAL_IPS_ENABLE}")
         fi
 
@@ -654,7 +654,7 @@ function launch_sensor {
             extra_helm_config+=(--set "collector.runtimeConfig.networking.maxConnectionsPerMinute=${ROX_COLLECTOR_MAX_CONNECTIONS_PER_MINUTE}")
         fi
     else
-        if [[ "${ROX_COLLECTOR_EXTERNAL_IPS_ENABLE:-false}" == "true" ]]; then
+        if [[ "${ROX_COLLECTOR_EXTERNAL_IPS_ENABLE:-Disabled}" == "Enabled" ]]; then
 	    echo "If ROX_COLLECTOR_EXTERNAL_IPS_ENABLE is true ROX_COLLECTOR_RUNTIME_CONFIG must be true"
 	    exit 1
         fi
