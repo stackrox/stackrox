@@ -1,0 +1,11 @@
+version: "1.0"
+instances:
+  name: "minimal-instance"
+  endpoint: "https://minimal.stackrox.example.com"
+users:
+  username: "minimal-user"
+  apiToken: "token-only"
+contexts:
+  instance: "minimal-instance"
+  user: "minimal-user"
+current-context: "minimal-instance-context"

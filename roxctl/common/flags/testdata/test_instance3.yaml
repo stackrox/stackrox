@@ -1,0 +1,5 @@
+# Sample instance.yaml configuration for StackRox roxctl.
+name: staging-profile
+caCertPath: "./staging/certs"
+apiTokenPath: "staging-secret-token"
+endpoint: "staging.example.com:9000"
