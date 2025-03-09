@@ -71,6 +71,19 @@ func (b *flowGraphBuilder) AddDeployments(deployments []*storage.ListDeployment)
 }
 
 func (b *flowGraphBuilder) AddFlows(flows []*storage.NetworkFlow) {
+	log.Info("")
+	log.Info("")
+	log.Info("")
+	log.Info("")
+	for _, flow := range flows {
+		log.Info("")
+		log.Infof("flow= %+v", flow)
+		log.Info("")
+	}
+	log.Info("")
+	log.Info("")
+	log.Info("")
+	log.Info("")
 	for _, flow := range flows {
 		props := flow.GetProps()
 		srcEnt := networkgraph.EntityFromProto(props.GetSrcEntity())
@@ -131,6 +144,19 @@ func (b *flowGraphBuilder) AddFlows(flows []*storage.NetworkFlow) {
 
 		tgtEdgeBundle.Properties = append(tgtEdgeBundle.Properties, edgeProps)
 	}
+	log.Info("")
+	log.Info("")
+	log.Info("")
+	log.Info("")
+	for _, node := range b.nodes {
+		log.Info("")
+		log.Infof("node= %+v", node)
+		log.Info("")
+	}
+	log.Info("")
+	log.Info("")
+	log.Info("")
+	log.Info("")
 }
 
 func (b *flowGraphBuilder) Build() *v1.NetworkGraph {
