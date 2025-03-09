@@ -6,6 +6,8 @@ var (
 	MaxParallelImageScanInternal = RegisterIntegerSetting("ROX_MAX_PARALLEL_IMAGE_SCAN_INTERNAL", 30)
 
 	// MaxParallelAdHocScan defines the maximum number of parallel ad-hoc roxctl delegated scans initiated from Central.
-	// It must be set lower than the collective limit for ScanImageInternal, EnrichLocalImageInternal, and GetImageVulnerabilitiesInternal endpoints.
+	// The value is subtracted from MaxParallelImageScanInternal and must be less than MaxParallelImageScanInternal.
+	// This ensures that ad-hoc requests can always be handled.
+	// If this value exceeds MaxParallelImageScanInternal, MaxParallelImageScanInternal will be set to 10 higher than this value to prevent scan failures.
 	MaxParallelAdHocScan = RegisterIntegerSetting("ROX_MAX_PARALLEL_ADHOC_SCAN_INTERNAL", 5)
 )

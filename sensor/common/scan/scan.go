@@ -139,8 +139,7 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 
 	// Throttle the # of active scans.
 	scanLimitSemaphore := s.scanSemaphore
-
-	// ad-hoc requests
+	// Ad hoc requests have a request ID.
 	if req.ID != "" {
 		scanLimitSemaphore = s.adHocScanSemaphore
 	}

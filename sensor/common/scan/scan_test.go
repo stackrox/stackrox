@@ -373,7 +373,7 @@ func (suite *scanTestSuite) TestAdHocScanThrottle() {
 	}
 
 	img := &storage.ContainerImage{Name: &storage.ImageName{Registry: "fake"}}
-	req := genScanReq(img, "", "some-id", false) // "makes it an ad-hoc delegated request
+	req := genScanReq(img, "", "some-id", false) // "setting up request ID to make it an ad-hoc delegated request
 
 	_, err := ls.EnrichLocalImageInNamespace(context.Background(), nil, req)
 	suite.Require().ErrorIs(err, ErrTooManyParallelScans)
