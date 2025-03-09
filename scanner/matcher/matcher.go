@@ -41,31 +41,33 @@ import (
 	"github.com/stackrox/rox/scanner/sbom"
 )
 
-// matcherNames specifies the ClairCore matchers to use.
-//
-// Note: Do NOT hardcode the names. It's very easy to mess up...
-var matcherNames = []string{
-	(*alpine.Matcher)(nil).Name(),
-	(*aws.Matcher)(nil).Name(),
-	(*debian.Matcher)(nil).Name(),
-	(*gobin.Matcher)(nil).Name(),
-	(*java.Matcher)(nil).Name(),
-	(*oracle.Matcher)(nil).Name(),
-	(*photon.Matcher)(nil).Name(),
-	(*python.Matcher)(nil).Name(),
-	rhcc.Matcher.Name(),
-	(*rhel.Matcher)(nil).Name(),
-	(*ruby.Matcher)(nil).Name(),
-	(*suse.Matcher)(nil).Name(),
-	(*ubuntu.Matcher)(nil).Name(),
-}
-
-func init() {
-	// ClairCore does not register the Node.js factory by default.
-	m := nodejs.Matcher{}
-	mf := driver.MatcherStatic(&m)
-	registry.Register(m.Name(), mf)
-	matcherNames = append(matcherNames, m.Name())
+// matcherNames specifies the matchers to use for vulnerability matching.
+func matcherNames() []string {
+	// Note: Do NOT hardcode the names. It's very easy to mess up...
+	ms := []string{
+		(*alpine.Matcher)(nil).Name(),
+		(*aws.Matcher)(nil).Name(),
+		(*debian.Matcher)(nil).Name(),
+		(*oracle.Matcher)(nil).Name(),
+		(*photon.Matcher)(nil).Name(),
+		rhcc.Matcher.Name(),
+		(*rhel.Matcher)(nil).Name(),
+		(*suse.Matcher)(nil).Name(),
+		(*ubuntu.Matcher)(nil).Name(),
+	}
+	if features.ScannerV4LanguageSupport.Enabled() {
+		// Claircore does not register the Node.js factory by default, so register it here.
+		nodeJSMatcher := nodejs.Matcher{}
+		registry.Register(nodeJSMatcher.Name(), driver.MatcherStatic(&nodeJSMatcher))
+		ms = append(ms,
+			(*gobin.Matcher)(nil).Name(),
+			(*java.Matcher)(nil).Name(),
+			nodeJSMatcher.Name(),
+			(*python.Matcher)(nil).Name(),
+			(*ruby.Matcher)(nil).Name(),
+		)
+	}
+	return ms
 }
 
 // Matcher represents a vulnerability matcher.
@@ -156,7 +158,7 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 	libVuln, err := libvuln.New(ctx, &libvuln.Options{
 		Store:                    store,
 		Locker:                   locker,
-		MatcherNames:             matcherNames,
+		MatcherNames:             matcherNames(),
 		Enrichers:                enrichers,
 		UpdateRetention:          libvuln.DefaultUpdateRetention,
 		DisableBackgroundUpdates: true,

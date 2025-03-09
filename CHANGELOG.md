@@ -18,6 +18,10 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Technical Changes
 
+- ROX-28113: Scanner V4 may now be configured to skip language package analysis via `ROX_SCANNER_V4_LANGUAGE_SUPPORT`.
+  - To skip language-level support in Scanner V4, `ROX_SCANNER_V4_LANGUAGE_SUPPORT=false` must be set in both Scanner V4 Indexer and Scanner V4 Matcher.
+  - This setting is enabled by default, as it was unconditionally enabled before.
+
 ## [4.7.0]
 
 
