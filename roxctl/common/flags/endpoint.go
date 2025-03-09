@@ -90,7 +90,12 @@ func AddConnectionFlags(c *cobra.Command) {
 // connect in plaintext mode. As connection requires a port it deduces it from provided schema. If schema is not provided
 // the givenEndpoint must contain port or error is returned.
 func EndpointAndPlaintextSetting() (string, bool, error) {
-	endpoint = flagOrSettingValue(endpoint, *endpointChanged, env.EndpointEnv)
+	endpoint = flagOrConfigurationValue(endpoint,
+		*endpointChanged,
+		ConfigEndpoint(),
+		*configEndpointSet,
+		env.EndpointEnv)
+
 	if !strings.Contains(endpoint, "://") {
 		if _, _, err := net.SplitHostPort(endpoint); err != nil {
 			return "", false, errox.InvalidArgs.CausedBy(err)
@@ -140,19 +145,22 @@ func ServerName() string {
 }
 
 // UseDirectGRPC returns whether to use gRPC directly, i.e., without a proxy.
+// TODO(1): Write tests
 func UseDirectGRPC() bool {
-	return booleanFlagOrSettingValue(directGRPC, *directGRPCSet, env.DirectGRPCEnv) ||
+	return booleanFlagOrConfigurationValue(directGRPC, *directGRPCSet, ConfigUseDirectGRPC(), *configDirectGRPCSet, env.DirectGRPCEnv) ||
 		UseKubeContext()
 }
 
 // ForceHTTP1 indicates that the HTTP/1 should be used for all outgoing connections.
+// TODO(1): Write tests
 func ForceHTTP1() bool {
-	return booleanFlagOrSettingValue(forceHTTP1, *forceHTTP1Set, env.ClientForceHTTP1Env)
+	return booleanFlagOrConfigurationValue(forceHTTP1, *forceHTTP1Set, ConfigForceHTTP1(), *configForceHTTP1Set, env.ClientForceHTTP1Env)
 }
 
 // UseInsecure returns whether to use insecure connection behavior.
+// TODO(1): Write tests
 func UseInsecure() bool {
-	return booleanFlagOrSettingValue(insecure, *insecureSet, env.InsecureClientEnv)
+	return booleanFlagOrConfigurationValue(insecure, *insecureSet, ConfigUseInsecure(), *configUseInsecureSet, env.InsecureClientEnv)
 }
 
 // SkipTLSValidation returns a bool that indicates the value of the `--insecure-skip-tls-verify` flag, with `nil`
@@ -169,8 +177,16 @@ func SkipTLSValidation() *bool {
 }
 
 // CAFile returns the file for custom CA certificates.
+// TODO(1): Write tests
 func CAFile() string {
-	return flagOrSettingValue(caCertFile, *caCertFileSet, env.CACertFileEnv)
+	return flagOrConfigurationValueWithFilepathOption(
+		caCertFile,
+		*caCertFileSet,
+		ConfigInlineCaCertificate(),
+		*configInlineCaCertificateSet,
+		ConfigCaCertificatePath(),
+		*configCaCertificatePathSet,
+		env.CACertFileEnv)
 }
 
 // CentralURL returns the URL for the central instance based on the endpoint flags.
