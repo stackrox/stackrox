@@ -14,19 +14,26 @@ message CollectorRegisterRequest {
   string instance_id = 2;
 }
 
+enum ExternalIpsEnabled {
+  ENABLED = 0;
+  DISABLED = 1;
+  AUTO = 2;
+}
+
 // CollectorConfig controls which type of data is reported by collector
 // and how it is processed by collector. These configurations are used
 // to fine-tune collector's performance on large scale clusters.
 // At this time it only controls if external IPs are aggregated at the
-// cluster level.
+// cluster level and the maximum number of open connections reported
+// for each container.
 message CollectorConfig {
   message ExternalIPs {
-    bool enable = 1;
+    ExternalIpsEnabled enabled = 1;
   }
 
   message Networking {
     ExternalIPs external_ips = 1;
-    int64 per_container_rate_limit = 2;
+    int64 max_connections_per_minute = 2;
   }
 
   Networking networking = 1;

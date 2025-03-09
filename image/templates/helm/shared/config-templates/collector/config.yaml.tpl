@@ -9,5 +9,19 @@
 
 networking:
   externalIps:
-    enable: {{ ._rox.collector.runtimeConfig.networking.externalIps.enabled }}
-  perContainerRateLimit: {{ ._rox.collector.runtimeConfig.networking.maxConnectionsPerMinute }}
+    {{- $enabled := lower (default "disabled" ._rox.collector.runtimeConfig.networking.externalIps.enabled) }}
+    {{- if eq $enabled "auto" }}
+    enabled: Auto
+    {{- else if eq $enabled "disabled" }}
+    enabled: Disabled
+    {{- else if eq $enabled "enabled" }}
+    enabled: Enabled
+    {{- else if eq $enabled "true" }}
+    enabled: Enabled
+    {{- else if eq $enabled "false" }}
+    enabled: Disabled
+    {{- else }}
+    enabled: Disabled
+    {{- end }}
+
+  maxConnectionsPerMinute: {{ ._rox.collector.runtimeConfig.networking.maxConnectionsPerMinute }}
