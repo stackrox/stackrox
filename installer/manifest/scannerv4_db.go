@@ -195,7 +195,7 @@ func (g *ScannerV4DBGenerator) genScannerV4DBDeployment() Resource {
 					ServiceAccountName: "scanner-v4",
 					Containers: []v1.Container{{
 						Name:            "db",
-						Image:           "quay.io/stackrox-io/scanner-v4-db:4.8.x-92-g99b84f31ac-amd64",
+						Image:           "localhost:5001/stackrox/scanner-v4-db:latest",
 						SecurityContext: RestrictedSecurityContext(PostgresUser),
 						Ports: []v1.ContainerPort{{
 							Name:          "tcp-postgresql",
@@ -215,7 +215,7 @@ func (g *ScannerV4DBGenerator) genScannerV4DBDeployment() Resource {
 					}},
 					InitContainers: []v1.Container{{
 						Name:            "init-db",
-						Image:           "quay.io/stackrox-io/scanner-v4-db:4.8.x-92-g99b84f31ac-amd64",
+						Image:           "localhost:5001/stackrox/scanner-v4-db:latest",
 						SecurityContext: RestrictedSecurityContext(PostgresUser),
 						Command:         []string{"init-entrypoint.sh"},
 						Env: []v1.EnvVar{

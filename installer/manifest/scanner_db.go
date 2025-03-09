@@ -58,7 +58,7 @@ func (g ScannerDBGenerator) Generate(ctx context.Context, m *manifestGenerator) 
 }
 
 func (g *ScannerDBGenerator) genScannerDbDeployment() Resource {
-	image := "quay.io/stackrox-io/scanner-db:4.3.4"
+	image := "localhost:5001/stackrox/scanner-db:latest"
 	deployment := apps.Deployment{
 		Spec: apps.DeploymentSpec{
 			Selector: &metav1.LabelSelector{

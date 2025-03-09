@@ -220,6 +220,21 @@ func genClusterRoleBinding(serviceAccountName, roleName, ns string) Resource {
 	}
 }
 
+func genRole(name string, rules []rbacv1.PolicyRule) Resource {
+	role := &rbacv1.Role{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+		Rules: rules,
+	}
+	role.SetGroupVersionKind(rbacv1.SchemeGroupVersion.WithKind("Role"))
+	return Resource{
+		Object:       role,
+		Name:         name,
+		IsUpdateable: true,
+	}
+}
+
 func genRoleBinding(serviceAccountName, roleName, ns string) Resource {
 	name := fmt.Sprintf("%s-%s", serviceAccountName, roleName)
 	binding := &rbacv1.RoleBinding{
