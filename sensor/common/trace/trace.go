@@ -8,8 +8,6 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-var log = logging.LoggerForModule()
-
 func withClusterID(ctx context.Context) context.Context {
 	return metadata.NewOutgoingContext(ctx,
 		metadata.Pairs(logging.ClusterIDContextValue, clusterid.GetNoWait()),
