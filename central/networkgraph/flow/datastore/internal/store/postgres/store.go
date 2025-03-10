@@ -148,7 +148,10 @@ type flowStoreImpl struct {
 	partitionName string
 }
 
-func (s *flowStoreImpl) insertIntoNetworkflow(ctx context.Context, tx *postgres.Tx, clusterID uuid.UUID, obj *storage.NetworkFlow) error {
+func (s *flowStoreImpl) insertIntoNetworkflow(ctx context.Context, tx *postgres.Tx, clusterID uuid.UUID, obj *storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error {
+	if lastUpdateTS == 0 {
+		lastUpdateTS = timestamp.Now()
+	}
 
 	values := []interface{}{
 		// parent primary keys start
@@ -160,7 +163,7 @@ func (s *flowStoreImpl) insertIntoNetworkflow(ctx context.Context, tx *postgres.
 		obj.GetProps().GetL4Protocol(),
 		protocompat.NilOrTime(obj.GetLastSeenTimestamp()),
 		clusterID,
-		time.Now(),
+		protocompat.NilOrTime(protoconv.ConvertMicroTSToProtobufTS(lastUpdateTS)),
 	}
 
 	finalStr := fmt.Sprintf("INSERT INTO %s (Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId, UpdatedAt) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)", s.partitionName)
@@ -172,7 +175,7 @@ func (s *flowStoreImpl) insertIntoNetworkflow(ctx context.Context, tx *postgres.
 	return nil
 }
 
-func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx *postgres.Tx, objs ...*storage.NetworkFlow) error {
+func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx *postgres.Tx, lastUpdateTS timestamp.MicroTS, objs ...*storage.NetworkFlow) error {
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)
@@ -192,7 +195,9 @@ func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx *postgres.Tx
 		"updatedat",
 	}
 
-	now := time.Now()
+	if lastUpdateTS == 0 {
+		lastUpdateTS = timestamp.Now()
+	}
 
 	for idx, obj := range objs {
 		inputRows = append(inputRows, []interface{}{
@@ -204,7 +209,7 @@ func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx *postgres.Tx
 			obj.GetProps().GetL4Protocol(),
 			protocompat.NilOrTime(obj.GetLastSeenTimestamp()),
 			s.clusterID,
-			now,
+			protocompat.NilOrTime(protoconv.ConvertMicroTSToProtobufTS(lastUpdateTS)),
 		})
 
 		// if we hit our batch size we need to push the data
@@ -255,7 +260,7 @@ func New(db postgres.DB, clusterID string) FlowStore {
 	}
 }
 
-func (s *flowStoreImpl) copyFrom(ctx context.Context, objs ...*storage.NetworkFlow) error {
+func (s *flowStoreImpl) copyFrom(ctx context.Context, lastUpdateTS timestamp.MicroTS, objs ...*storage.NetworkFlow) error {
 	conn, release, err := s.acquireConn(ctx, ops.Get, "NetworkFlow")
 	if err != nil {
 		return err
@@ -267,7 +272,7 @@ func (s *flowStoreImpl) copyFrom(ctx context.Context, objs ...*storage.NetworkFl
 		return err
 	}
 
-	if err := s.copyFromNetworkflow(ctx, tx, objs...); err != nil {
+	if err := s.copyFromNetworkflow(ctx, tx, lastUpdateTS, objs...); err != nil {
 		if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
 			return errors.Wrapf(rollbackErr, "rolling back due to err: %v", err)
 		}
@@ -279,7 +284,7 @@ func (s *flowStoreImpl) copyFrom(ctx context.Context, objs ...*storage.NetworkFl
 	return nil
 }
 
-func (s *flowStoreImpl) upsert(ctx context.Context, objs ...*storage.NetworkFlow) error {
+func (s *flowStoreImpl) upsert(ctx context.Context, lastUpdateTS timestamp.MicroTS, objs ...*storage.NetworkFlow) error {
 	conn, release, err := s.acquireConn(ctx, ops.Get, "NetworkFlow")
 	if err != nil {
 		return err
@@ -293,7 +298,7 @@ func (s *flowStoreImpl) upsert(ctx context.Context, objs ...*storage.NetworkFlow
 	}
 	for _, obj := range objs {
 
-		if err := s.insertIntoNetworkflow(ctx, tx, s.clusterID, obj); err != nil {
+		if err := s.insertIntoNetworkflow(ctx, tx, s.clusterID, obj, lastUpdateTS); err != nil {
 			if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
 				return errors.Wrapf(rollbackErr, "rolling back due to err: %v", err)
 			}
@@ -315,14 +320,14 @@ func (s *flowStoreImpl) UpsertFlows(ctx context.Context, flows []*storage.Networ
 	})
 }
 
-func (s *flowStoreImpl) retryableUpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, _ timestamp.MicroTS) error {
+func (s *flowStoreImpl) retryableUpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error {
 	// RocksDB implementation was adding the lastUpdatedTS to a key.  That is not necessary in PG world so that
 	// parameter is not being passed forward and should be removed from the interface once RocksDB is removed.
 	if len(flows) < batchAfter {
-		return s.upsert(ctx, flows...)
+		return s.upsert(ctx, lastUpdateTS, flows...)
 	}
 
-	return s.copyFrom(ctx, flows...)
+	return s.copyFrom(ctx, lastUpdateTS, flows...)
 }
 
 func (s *flowStoreImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
