@@ -79,6 +79,7 @@ defaults:
           tls:
             caCertificate: null
             certificate: null
+            destinationCACertificate: null
             key: null
     db:
       external: false

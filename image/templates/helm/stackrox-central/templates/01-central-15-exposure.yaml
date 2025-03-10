@@ -42,7 +42,7 @@ spec:
     name: central
 ---
 
-{{- if and ._rox.central.exposure.route.reencrypt.enabled ._rox._ca }}
+{{- if ._rox.central.exposure.route.reencrypt.enabled }}
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
@@ -59,9 +59,11 @@ spec:
   port:
     targetPort: https
   tls:
-    destinationCACertificate: |
-      {{- ._rox._ca.Cert | nindent 6 }}
     termination: reencrypt
+    {{- if or ._rox.central.exposure.route.reencrypt.tls.destinationCACertificate ._rox._ca.Cert }}
+    destinationCACertificate: |
+      {{- default ._rox._ca.Cert ._rox.central.exposure.route.reencrypt.tls.destinationCACertificate | nindent 6 }}
+    {{- end }}
     {{- with ._rox.central.exposure.route.reencrypt.tls }}
     {{- if .caCertificate }}
     caCertificate: |
