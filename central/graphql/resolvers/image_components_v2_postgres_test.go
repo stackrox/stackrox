@@ -99,7 +99,7 @@ func (s *GraphQLImageComponentV2TestSuite) SetupSuite() {
 }
 
 func (s *GraphQLImageComponentV2TestSuite) TearDownSuite() {
-	//s.testDB.Teardown(s.T())
+	s.testDB.Teardown(s.T())
 	s.T().Setenv("ROX_FLATTEN_CVE_DATA", "false")
 }
 
