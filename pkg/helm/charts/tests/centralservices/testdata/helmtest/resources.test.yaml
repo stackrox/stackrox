@@ -19,11 +19,17 @@ tests:
     configController:
       resources:
         requests:
-          memory: "64Gi"
-          cpu: "64"
+          memory: "65Gi"
+          cpu: "65"
         limits:
-          memory: "128Gi"
-          cpu: "128"
+          memory: "129Gi"
+          cpu: "129"
   expect: |
-    .deployments["central"].spec.template.spec.containers | map({(.name|tostring):.}) | add | .central.resources | assertThat(.requests.memory == "64Gi")
-    .deployments["config-controller"].spec.template.spec.containers | map({(.name|tostring):.}) | add | .manager.resources | assertThat(.requests.memory == "64Gi")
+    .deployments["central"].spec.template.spec.containers[] | select(.name == "central") | assertThat(.resources.requests.memory == "64Gi")
+    .deployments["central"].spec.template.spec.containers[] | select(.name == "central") | assertThat(.resources.limits.memory == "128Gi")
+    .deployments["central"].spec.template.spec.containers[] | select(.name == "central") | assertThat(.resources.requests.cpu == "64")
+    .deployments["central"].spec.template.spec.containers[] | select(.name == "central") | assertThat(.resources.limits.cpu == "128")
+    .deployments["config-controller"].spec.template.spec.containers[] | select(.name == "manager") | assertThat(.resources.requests.memory == "65Gi")
+    .deployments["config-controller"].spec.template.spec.containers[] | select(.name == "manager") | assertThat(.resources.limits.memory == "129Gi")
+    .deployments["config-controller"].spec.template.spec.containers[] | select(.name == "manager") | assertThat(.resources.requests.cpu == "65")
+    .deployments["config-controller"].spec.template.spec.containers[] | select(.name == "manager") | assertThat(.resources.limits.cpu == "129")
