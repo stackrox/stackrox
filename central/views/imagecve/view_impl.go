@@ -106,12 +106,10 @@ func (v *imageCVECoreViewImpl) CountBySeverity(ctx context.Context, q *v1.Query)
 }
 
 func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query, options views.ReadOptions) ([]CveCore, error) {
-	log.Info("SHREWS -- Get")
 	if err := common.ValidateQuery(q); err != nil {
 		return nil, err
 	}
 
-	log.Info("SHREWS -- Get -- query is valid")
 	var err error
 	// Avoid changing the passed query
 	cloned := q.CloneVT()
@@ -126,8 +124,6 @@ func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 		if err != nil {
 			return nil, err
 		}
-		log.Infof("SHREWS -- Get -- filter ID length %d", len(cveIDsToFilter))
-		log.Infof("SHREWS -- Get -- filter ID length %v", cveIDsToFilter)
 
 		if cloned.GetPagination() != nil && cloned.GetPagination().GetSortOptions() != nil {
 			// The CVE ID list that we get from the above query is paginated. So when we fetch the details and aggregates for those CVEs,
@@ -143,7 +139,6 @@ func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 	if err != nil {
 		return nil, err
 	}
-	log.Infof("SHREWS -- Get -- results length %d", len(results))
 
 	ret := make([]CveCore, 0, len(results))
 	for _, r := range results {
@@ -236,7 +231,6 @@ func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
 }
 
 func withSelectCVECoreResponseQuery(q *v1.Query, cveIDsToFilter []string, options views.ReadOptions) *v1.Query {
-	log.Info("SHREWS -- withSelectCVECoreResponseQuery")
 	cloned := q.CloneVT()
 	if len(cveIDsToFilter) > 0 {
 		if features.FlattenCVEData.Enabled() {
@@ -277,7 +271,6 @@ func withSelectCVECoreResponseQuery(q *v1.Query, cveIDsToFilter []string, option
 }
 
 func (v *imageCVECoreViewImpl) getFilteredCVEs(ctx context.Context, q *v1.Query) ([]string, error) {
-	log.Info("SHREWS -- withSelectCVEQuery")
 	var cveIDsToFilter []string
 
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)

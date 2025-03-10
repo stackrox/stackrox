@@ -38,7 +38,6 @@ type PaginationWrapper struct {
 
 // AsV1QueryOrEmpty returns a proto query or empty proto query if pagination query is empty
 func (r *PaginatedQuery) AsV1QueryOrEmpty() (*v1.Query, error) {
-	log.Info("SHREWS")
 	var q *v1.Query
 	if r == nil || r.Query == nil {
 		q := search.EmptyQuery()
@@ -55,7 +54,6 @@ func (r *PaginatedQuery) AsV1QueryOrEmpty() (*v1.Query, error) {
 
 // AsV1ScopeQueryOrEmpty returns a proto query or empty proto query if pagination query is empty
 func (r *PaginatedQuery) AsV1ScopeQueryOrEmpty() (*v1.Query, error) {
-	log.Info("SHREWS")
 	var q *v1.Query
 	if r == nil || r.ScopeQuery == nil {
 		q := search.EmptyQuery()
@@ -70,7 +68,6 @@ func (r *PaginatedQuery) AsV1ScopeQueryOrEmpty() (*v1.Query, error) {
 
 // String returns a String representation of PaginatedQuery
 func (r *PaginatedQuery) String() string {
-	log.Info("SHREWS")
 	if r == nil || r.Query == nil {
 		return ""
 	}
@@ -90,7 +87,6 @@ type RawQuery struct {
 
 // AsV1QueryOrEmpty returns a proto query or empty proto query if raw query is empty
 func (r RawQuery) AsV1QueryOrEmpty(opts ...search.ParseQueryOption) (*v1.Query, error) {
-	log.Info("SHREWS")
 	if r.Query == nil {
 		return search.EmptyQuery(), nil
 	}
@@ -100,7 +96,6 @@ func (r RawQuery) AsV1QueryOrEmpty(opts ...search.ParseQueryOption) (*v1.Query, 
 
 // AsV1ScopeQueryOrEmpty returns a proto query or empty proto query if pagination query is empty
 func (r *RawQuery) AsV1ScopeQueryOrEmpty() (*v1.Query, error) {
-	log.Info("SHREWS")
 	var q *v1.Query
 	if r == nil || r.ScopeQuery == nil {
 		q := search.EmptyQuery()
@@ -115,7 +110,6 @@ func (r *RawQuery) AsV1ScopeQueryOrEmpty() (*v1.Query, error) {
 
 // String returns a String representation of RawQuery
 func (r RawQuery) String() string {
-	log.Info("SHREWS")
 	if r.Query == nil {
 		return ""
 	}
@@ -128,7 +122,6 @@ func (r RawQuery) IsEmpty() bool {
 }
 
 func (resolver *Resolver) getAutoCompleteSearchers() map[v1.SearchCategory]search.Searcher {
-	log.Info("SHREWS")
 	searchers := map[v1.SearchCategory]search.Searcher{
 		v1.SearchCategory_ALERTS:                  &alertDataStore.DefaultStateAlertDataStoreImpl{DataStore: &resolver.ViolationsDataStore},
 		v1.SearchCategory_CLUSTERS:                resolver.ClusterDataStore,
@@ -155,7 +148,6 @@ func (resolver *Resolver) getAutoCompleteSearchers() map[v1.SearchCategory]searc
 }
 
 func (resolver *Resolver) getSearchFuncs() map[v1.SearchCategory]searchService.SearchFunc {
-	log.Info("SHREWS")
 	searchfuncs := map[v1.SearchCategory]searchService.SearchFunc{
 		v1.SearchCategory_ALERTS:                  resolver.ViolationsDataStore.SearchAlerts,
 		v1.SearchCategory_CLUSTERS:                resolver.ClusterDataStore.SearchResults,
@@ -187,13 +179,11 @@ type searchRequest struct {
 
 // SearchAutocomplete returns autocomplete responses for the given partial query.
 func (resolver *Resolver) SearchAutocomplete(ctx context.Context, args searchRequest) ([]string, error) {
-	log.Info("SHREWS")
 	return searchService.RunAutoComplete(ctx, args.Query, toSearchCategories(args.Categories), resolver.getAutoCompleteSearchers())
 }
 
 // SearchOptions gets all search options available for the listed categories
 func (resolver *Resolver) SearchOptions(_ context.Context, args struct{ Categories *[]string }) ([]string, error) {
-	log.Info("SHREWS")
 	return searchService.Options(toSearchCategories(args.Categories)), nil
 }
 
@@ -201,7 +191,6 @@ func (resolver *Resolver) SearchOptions(_ context.Context, args struct{ Categori
 // Note: there is not currently a way to request the underlying object from SearchResult; it might be nice to have
 // this in the future.
 func (resolver *Resolver) GlobalSearch(ctx context.Context, args searchRequest) ([]*searchResultResolver, error) {
-	log.Info("SHREWS")
 	results, _, err := searchService.GlobalSearch(ctx, args.Query, toSearchCategories(args.Categories), resolver.getSearchFuncs())
 	return resolver.wrapSearchResults(results, err)
 }
