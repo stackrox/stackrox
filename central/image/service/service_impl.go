@@ -235,7 +235,7 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 	err := s.acquireScanSemaphore(ctx)
 	if err != nil {
 		log.Errorw("Failed to acquire scan semaphore",
-			logging.Context(ctx),
+			logging.FromContext(ctx),
 			logging.ImageName(request.GetImage().GetName().GetFullName()),
 			logging.ImageID(request.GetImage().GetId()),
 			logging.Err(err),
@@ -269,7 +269,7 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 			img = existingImg
 
 			log.Debugw("Scan cache ignored enriching image",
-				logging.Context(ctx),
+				logging.FromContext(ctx),
 				logging.ImageName(existingImg.GetName().GetFullName()),
 				logging.ImageID(imgID),
 				logging.String("request_image", request.GetImage().GetName().GetFullName()),
@@ -368,7 +368,7 @@ func (s *serviceImpl) enrichImage(ctx context.Context, img *storage.Image, fetch
 
 	if _, err := s.enricher.EnrichImage(ctx, enrichmentContext, img); err != nil {
 		log.Errorw("Enriching image",
-			logging.Context(ctx),
+			logging.FromContext(ctx),
 			logging.ImageName(img.GetName().GetFullName()),
 			logging.ImageID(img.GetId()),
 			logging.Err(err),
@@ -428,7 +428,7 @@ func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, reque
 	err := s.acquireScanSemaphore(ctx)
 	if err != nil {
 		log.Errorw("Failed to acquire scan semaphore",
-			logging.Context(ctx),
+			logging.FromContext(ctx),
 			logging.ImageName(request.GetImageName().GetFullName()),
 			logging.ImageID(request.GetImageId()),
 			logging.Err(err),
@@ -507,7 +507,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 	err := s.acquireScanSemaphore(ctx)
 	if err != nil {
 		log.Errorw("Failed to acquire scan semaphore",
-			logging.Context(ctx),
+			logging.FromContext(ctx),
 			logging.ImageName(request.GetImageName().GetFullName()),
 			logging.ImageID(request.GetImageId()),
 			logging.Err(err),
@@ -526,7 +526,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 		// secured clusters are failing.
 		hasErrors = true
 		log.Warnw("Received image enrichment request with errors",
-			logging.Context(ctx),
+			logging.FromContext(ctx),
 			logging.ImageName(request.GetImageName().GetFullName()),
 			logging.ImageID(imgID),
 			logging.Err(errors.New(request.GetError())),
@@ -569,7 +569,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 			}
 
 			log.Debugw("Scan cache ignored enriching image with vulnerabilities",
-				logging.Context(ctx),
+				logging.FromContext(ctx),
 				logging.ImageName(existingImg.GetName().GetFullName()),
 				logging.ImageID(imgID),
 				logging.String("request_image", request.GetImageName().GetFullName()),
@@ -596,7 +596,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 			if err := s.enrichWithVulnerabilities(img, request); err != nil {
 				imgName := pkgUtils.IfThenElse(existingImg != nil, existingImg.GetName().GetFullName(), request.GetImageName().GetFullName())
 				log.Errorw("Enriching image with vulnerabilities",
-					logging.Context(ctx),
+					logging.FromContext(ctx),
 					logging.ImageName(imgName),
 					logging.ImageID(imgID),
 					logging.Err(err),

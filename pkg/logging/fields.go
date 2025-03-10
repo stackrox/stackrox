@@ -54,8 +54,8 @@ func (c *ContextField) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
-// Context provides selected context values as structured log fields.
-func Context(ctx context.Context) zap.Field {
+// FromContext provides selected context values as structured log fields.
+func FromContext(ctx context.Context) zap.Field {
 	context := &ContextField{}
 	if clusterID := metadata.ValueFromIncomingContext(ctx, ClusterIDContextValue); clusterID != nil {
 		context.add(ClusterID(clusterID[0]))
