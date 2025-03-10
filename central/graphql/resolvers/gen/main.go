@@ -107,14 +107,6 @@ var (
 				ParentType: reflect.TypeOf(storage.CVE{}),
 				FieldName:  "CvssV3",
 			},
-			{
-				ParentType: reflect.TypeOf(storage.ImageCVEV2{}),
-				FieldName:  "IsFixable",
-			},
-			{
-				ParentType: reflect.TypeOf(storage.ImageComponentV2{}),
-				FieldName:  "Location",
-			},
 		},
 		InputTypes: []reflect.Type{
 			reflect.TypeOf((*inputtypes.FalsePositiveVulnRequest)(nil)),

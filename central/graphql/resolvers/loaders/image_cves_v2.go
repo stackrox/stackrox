@@ -16,7 +16,7 @@ import (
 var imageCveV2LoaderType = reflect.TypeOf(storage.ImageCVEV2{})
 
 func init() {
-	RegisterTypeFactory(reflect.TypeOf(storage.ImageCVEV2{}), func() interface{} {
+	RegisterTypeFactory(imageCveV2LoaderType, func() interface{} {
 		return NewImageCVEV2Loader(ImageCVEDataStore.Singleton())
 	})
 }
