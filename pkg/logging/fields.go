@@ -6,7 +6,6 @@ import (
 	administrationResources "github.com/stackrox/rox/pkg/administration/events/resources"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-
 	"google.golang.org/grpc/metadata"
 )
 
