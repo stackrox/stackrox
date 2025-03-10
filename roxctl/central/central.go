@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/roxctl/central/userpki"
 	"github.com/stackrox/rox/roxctl/central/whoami"
 	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common/flags"
 )
 
 // Command defines the central command tree
@@ -41,5 +42,6 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	if features.ClusterRegistrationSecrets.Enabled() {
 		c.AddCommand(crs.Command(cliEnvironment))
 	}
+	flags.AddCentralConnectionFlags(c)
 	return c
 }

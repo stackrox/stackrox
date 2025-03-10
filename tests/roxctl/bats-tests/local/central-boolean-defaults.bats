@@ -22,7 +22,7 @@ teardown() {
 }
 
 @test "roxctl-release roxctl help should have no duplicated (default false) " {
-  run roxctl-release --help
+  run roxctl-release central --help
   assert_line --regexp '^[[:space:]]+--insecure .* to true \(default false\)$'
 }
 

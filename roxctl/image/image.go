@@ -27,5 +27,6 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	// TODO(cgorman) We need a flag currently that says --wait-for-image timeout or something like that because Clair does scanning inline
 	// but other scanners do not
 	flags.AddTimeoutWithDefault(c, 10*time.Minute)
+	flags.AddCentralConnectionFlags(c)
 	return c
 }

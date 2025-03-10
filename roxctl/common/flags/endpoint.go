@@ -8,6 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"k8s.io/utils/pointer"
@@ -50,40 +51,48 @@ const (
 	useKubeContextFlagName        = "use-current-k8s-context"
 )
 
-// AddConnectionFlags adds connection-related flags to roxctl.
-func AddConnectionFlags(c *cobra.Command) {
-	c.PersistentFlags().StringVarP(&endpoint, endpointFlagName, "e", "localhost:8443",
+var connectionFlags = func() *pflag.FlagSet {
+	fs := pflag.NewFlagSet("connection", pflag.ExitOnError)
+	fs.StringVarP(&endpoint, endpointFlagName, "e", "localhost:8443",
 		"Endpoint for service to contact. Alternatively, set the endpoint via the ROX_ENDPOINT environment variable")
-	endpointChanged = &c.PersistentFlags().Lookup(endpointFlagName).Changed
-	c.PersistentFlags().StringVarP(&serverName, serverNameFlagName, "s", "", "TLS ServerName to use for SNI "+
+	endpointChanged = &fs.Lookup(endpointFlagName).Changed
+	fs.StringVarP(&serverName, serverNameFlagName, "s", "", "TLS ServerName to use for SNI "+
 		"(if empty, derived from endpoint). Alternately, set the server name via the ROX_SERVER_NAME environment variable")
-	serverNameSet = &c.PersistentFlags().Lookup(serverNameFlagName).Changed
-	c.PersistentFlags().BoolVar(&directGRPC, directGRPCFlagName, false, "Use direct gRPC "+""+
+	serverNameSet = &fs.Lookup(serverNameFlagName).Changed
+	fs.BoolVar(&directGRPC, directGRPCFlagName, false, "Use direct gRPC "+""+
 		"(advanced; only use if you encounter connection issues). Alternately, enable by setting the ROX_DIRECT_GRPC_CLIENT "+
 		"environment variable to true")
-	directGRPCSet = &c.PersistentFlags().Lookup(directGRPCFlagName).Changed
-	c.PersistentFlags().BoolVar(&forceHTTP1, forceHTTP1FlagName, false, "Always use HTTP/1 for all connections "+
+	directGRPCSet = &fs.Lookup(directGRPCFlagName).Changed
+	fs.BoolVar(&forceHTTP1, forceHTTP1FlagName, false, "Always use HTTP/1 for all connections "+
 		"(advanced; only use if you encounter connection issues). Alternatively, enable by setting the ROX_CLIENT_FORCE_HTTP1 "+
 		"environment variable to true")
-	forceHTTP1Set = &c.PersistentFlags().Lookup(forceHTTP1FlagName).Changed
+	forceHTTP1Set = &fs.Lookup(forceHTTP1FlagName).Changed
 
-	c.PersistentFlags().BoolVar(&plaintext, plaintextFlagName, false, "Use a plaintext (unencrypted) connection; "+
+	fs.BoolVar(&plaintext, plaintextFlagName, false, "Use a plaintext (unencrypted) connection; "+
 		"only works in conjunction with --insecure. Alternatively can be enabled by setting the ROX_PLAINTEXT environment variable to true")
-	plaintextSet = &c.PersistentFlags().Lookup(plaintextFlagName).Changed
-	c.PersistentFlags().BoolVar(&insecure, insecureFlagName, false, "Enable insecure connection options (DANGEROUS; USE WITH CAUTION). "+
+	plaintextSet = &fs.Lookup(plaintextFlagName).Changed
+	fs.BoolVar(&insecure, insecureFlagName, false, "Enable insecure connection options (DANGEROUS; USE WITH CAUTION). "+
 		"Alternatively, enable insecure connection options by setting the ROX_INSECURE_CLIENT environment variable to true")
-	insecureSet = &c.PersistentFlags().Lookup(insecureFlagName).Changed
-	c.PersistentFlags().BoolVar(&insecureSkipTLSVerify, insecureSkipTLSVerifyFlagName, false, "Skip TLS certificate validation. "+
+	insecureSet = &fs.Lookup(insecureFlagName).Changed
+	fs.BoolVar(&insecureSkipTLSVerify, insecureSkipTLSVerifyFlagName, false, "Skip TLS certificate validation. "+
 		"Alternatively, disable TLS certivicate validation by setting the ROX_INSECURE_CLIENT_SKIP_TLS_VERIFY environment variable to true")
-	insecureSkipTLSVerifySet = &c.PersistentFlags().Lookup(insecureSkipTLSVerifyFlagName).Changed
-	c.PersistentFlags().StringVar(&caCertFile, caCertFileFlagName, "", "Path to a custom CA certificate to use (PEM format). "+
+	insecureSkipTLSVerifySet = &fs.Lookup(insecureSkipTLSVerifyFlagName).Changed
+	fs.StringVar(&caCertFile, caCertFileFlagName, "", "Path to a custom CA certificate to use (PEM format). "+
 		"Alternatively pass the file path using the ROX_CA_CERT_FILE environment variable")
-	caCertFileSet = &c.PersistentFlags().Lookup(caCertFileFlagName).Changed
+	caCertFileSet = &fs.Lookup(caCertFileFlagName).Changed
 
-	c.PersistentFlags().BoolVarP(&useKubeContext, useKubeContextFlagName, "", false,
+	fs.BoolVarP(&useKubeContext, useKubeContextFlagName, "", false,
 		"Use the current kubeconfig context to connect to the central service via port-forwarding. "+
 			"Alternatively, set "+env.UseCurrentKubeContext.EnvVar()+" environment variable to true")
+	return fs
+}()
+
+// AddCentralConnectionFlags adds connection-related flags to roxctl.
+func AddCentralConnectionFlags(c *cobra.Command) {
+	c.PersistentFlags().AddFlagSet(connectionFlags)
 	c.MarkFlagsMutuallyExclusive(useKubeContextFlagName, endpointFlagName)
+
+	addCentralAuthFlags(c)
 }
 
 // EndpointAndPlaintextSetting returns the Central endpoint to connect to, as well as a bool indicating whether to

@@ -99,8 +99,8 @@ func TestDetectVersion(t *testing.T) {
 
 	t.Setenv("ROX_ADMIN_PASSWORD", "fake")
 	t.Setenv("ROX_INSECURE_CLIENT", "true")
-	flags.AddPassword(&cobra.Command{})           // init flags.passwordChanged to avoid nil pointer
-	_, _, _ = flags.EndpointAndPlaintextSetting() // init endpoint
+	flags.AddCentralConnectionFlags(&cobra.Command{}) // init flags.passwordChanged to avoid nil pointer
+	_, _, _ = flags.EndpointAndPlaintextSetting()     // init endpoint
 
 	t.Run("use version from flag", func(t *testing.T) {
 		cmd := &scannerDownloadDBCommand{env: env, version: "1.2.3"}
@@ -195,8 +195,8 @@ func TestVersionFromCentral(t *testing.T) {
 
 	t.Setenv("ROX_ADMIN_PASSWORD", "fake")
 	t.Setenv("ROX_INSECURE_CLIENT", "true")
-	flags.AddPassword(&cobra.Command{})           // init flags.passwordChanged to avoid nil pointer
-	_, _, _ = flags.EndpointAndPlaintextSetting() // allow unencrypted http communication
+	flags.AddCentralConnectionFlags(&cobra.Command{}) // init flags.passwordChanged to avoid nil pointer
+	_, _, _ = flags.EndpointAndPlaintextSetting()     // allow unencrypted http communication
 
 	testIO, _, _, _ := roxctlio.TestIO()
 	env := environment.NewTestCLIEnvironment(t, testIO, printer.DefaultColorPrinter())
