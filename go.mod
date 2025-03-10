@@ -16,7 +16,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/containers/azcontainerregistry v0.2.2
 	github.com/Azure/azure-sdk-for-go/sdk/monitor/ingestion/azlogs v1.0.0
 	github.com/BurntSushi/toml v1.4.1-0.20240526193622-a339e1f7089c
-	github.com/ComplianceAsCode/compliance-operator v1.5.0
+	github.com/ComplianceAsCode/compliance-operator v1.6.2
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig/v3 v3.3.0
 	github.com/NYTimes/gziphandler v1.1.1
@@ -98,8 +98,8 @@ require (
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.1
 	github.com/openshift-online/ocm-sdk-go v0.1.460
-	github.com/openshift/api v0.0.0-20240415161129-d7aff303fa1a
-	github.com/openshift/client-go v0.0.0-20240415191513-dcdeb09390b4
+	github.com/openshift/api v0.0.0-20240830142653-85dc560939ef
+	github.com/openshift/client-go v0.0.0-20240528061634-b054aa794d87
 	github.com/openshift/runtime-utils v0.0.0-20230921210328-7bdb5b9c177b
 	github.com/operator-framework/helm-operator-plugins v0.0.0-00010101000000-000000000000
 	github.com/owenrumney/go-sarif/v2 v2.3.3
@@ -174,7 +174,7 @@ require (
 	k8s.io/kubelet v0.29.14
 	k8s.io/utils v0.0.0-20241210054802-24370beab758
 	sigs.k8s.io/controller-runtime v0.20.3
-	sigs.k8s.io/controller-tools v0.14.0
+	sigs.k8s.io/controller-tools v0.16.1
 	sigs.k8s.io/e2e-framework v0.3.0
 	sigs.k8s.io/yaml v1.4.0
 )
@@ -243,7 +243,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.29.1 // indirect
 	github.com/awslabs/amazon-ecr-credential-helper/ecr-login v0.9.1 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
-	github.com/beevik/etree v1.3.0 // indirect
+	github.com/beevik/etree v1.4.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bits-and-blooms/bitset v1.12.0 // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect
@@ -275,6 +275,7 @@ require (
 	github.com/digitorus/pkcs7 v0.0.0-20230818184609-3a137a874352 // indirect
 	github.com/digitorus/timestamp v0.0.0-20231217203849-220c5c2851b7 // indirect
 	github.com/dimchansky/utfbom v1.1.1 // indirect
+	github.com/distribution/distribution/v3 v3.0.0-20230511163743-f7717b7855ca // indirect
 	github.com/docker/cli v27.5.1+incompatible // indirect
 	github.com/docker/docker v27.5.1+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.8.2 // indirect
@@ -347,7 +348,7 @@ require (
 	github.com/in-toto/attestation v1.1.0 // indirect
 	github.com/in-toto/in-toto-golang v0.9.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/itchyny/gojq v0.12.15 // indirect
+	github.com/itchyny/gojq v0.12.16 // indirect
 	github.com/itchyny/timefmt-go v0.1.6 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.14.3 // indirect
