@@ -5,7 +5,7 @@ import groovy.transform.CompileStatic
 import java.net.HttpURLConnection
 import java.net.URL
 
-import orchestratormanager.OrchestratorMain
+import orchestratormanager.Kubernetes
 
 import com.google.protobuf.util.JsonFormat
 
@@ -52,7 +52,7 @@ class CollectorUtil {
         }
     }
 
-    static waitForConfigToHaveState(OrchestratorMain orchestrator, String state, int timeout = 90, int port = 8080) {
+    static waitForConfigToHaveState(Kubernetes orchestrator, String state, int timeout = 90, int port = 8080) {
         def portForwards = orchestrator.createCollectorPortForwards(port)
 
         log.info "Waiting for Collector Config propagation (${portForwards.size()} pods)"
@@ -82,21 +82,21 @@ class CollectorUtil {
         return success
     }
 
-    static enableExternalIps(OrchestratorMain orchestrator, int timeoutSeconds = 90) {
+    static enableExternalIps(Kubernetes orchestrator, int timeoutSeconds = 90) {
         setExternalIps(orchestrator, ENABLED_VALUE)
         waitForConfigToHaveState(orchestrator, ENABLED_VALUE, timeoutSeconds)
     }
 
-    static disableExternalIps(OrchestratorMain orchestrator, int timeoutSeconds = 90) {
+    static disableExternalIps(Kubernetes orchestrator, int timeoutSeconds = 90) {
         setExternalIps(orchestrator, DISABLED_VALUE)
         waitForConfigToHaveState(orchestrator, DISABLED_VALUE, timeoutSeconds)
     }
 
-    static deleteRuntimeConfig(OrchestratorMain orchestrator) {
+    static deleteRuntimeConfig(Kubernetes orchestrator) {
         orchestrator.deleteConfigMap(RUNTIME_CONFIG_MAP_NAME, "stackrox")
     }
 
-    static private setExternalIps(OrchestratorMain orchestrator, String state) {
+    static private setExternalIps(Kubernetes orchestrator, String state) {
         String runtimeConfig = """\
 networking:
   externalIps:
