@@ -367,7 +367,7 @@ func (m *networkFlowManager) resetContext() {
 	if m.cancelCtx != nil {
 		m.cancelCtx()
 	}
-	m.pipelineCtx, m.cancelCtx = context.WithCancel(trace.Context())
+	m.pipelineCtx, m.cancelCtx = context.WithCancel(trace.Background())
 }
 
 func (m *networkFlowManager) sendToCentral(msg *central.MsgFromSensor) bool {
@@ -460,7 +460,7 @@ func (m *networkFlowManager) enrichAndSend() {
 
 	var detectionContext context.Context
 	if features.SensorCapturesIntermediateEvents.Enabled() {
-		detectionContext = trace.Context()
+		detectionContext = trace.Background()
 	} else {
 		detectionContext = m.getCurrentContext()
 	}

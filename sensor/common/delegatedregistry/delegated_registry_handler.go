@@ -123,7 +123,7 @@ func (d *delegatedRegistryImpl) executeScan(scanReq *central.ScanImage) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(trace.Context(), scanTimeout)
+	ctx, cancel := context.WithTimeout(trace.Background(), scanTimeout)
 	defer cancel()
 
 	// Execute the scan, ignore returned image because will be sent to Central during enrichment.

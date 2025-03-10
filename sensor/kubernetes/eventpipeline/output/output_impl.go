@@ -67,7 +67,7 @@ func (q *outputQueueImpl) runOutputQueue() {
 			}
 
 			if msg.Context == nil {
-				msg.Context = trace.Context()
+				msg.Context = trace.Background()
 			}
 
 			for _, resourceUpdates := range msg.ForwardMessages {

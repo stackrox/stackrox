@@ -14,7 +14,7 @@ func withClusterID(ctx context.Context) context.Context {
 	)
 }
 
-// Context creates a top level context with enriched trace values.
-func Context() context.Context {
+// Background creates a context based on context.Background with enriched trace values.
+func Background() context.Context {
 	return withClusterID(context.Background())
 }

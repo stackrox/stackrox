@@ -84,7 +84,7 @@ func (p *eventPipeline) getCurrentContext() context.Context {
 func (p *eventPipeline) createNewContext() {
 	p.contextMtx.Lock()
 	defer p.contextMtx.Unlock()
-	p.context, p.cancelContext = context.WithCancel(trace.Context())
+	p.context, p.cancelContext = context.WithCancel(trace.Background())
 }
 
 // Start implements common.SensorComponent

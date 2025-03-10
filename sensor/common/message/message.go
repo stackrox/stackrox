@@ -17,7 +17,7 @@ type ExpiringMessage struct {
 
 // New creates an ExpiringMessage with msg and trace.Context.
 func New(msg *central.MsgFromSensor) *ExpiringMessage {
-	return NewExpiring(trace.Context(), msg)
+	return NewExpiring(trace.Background(), msg)
 }
 
 // NewExpiring creates a message with a specific context.

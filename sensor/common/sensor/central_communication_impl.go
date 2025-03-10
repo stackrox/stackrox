@@ -173,7 +173,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	}
 
 	// Prepare outgoing context
-	ctx := metadata.AppendToOutgoingContext(trace.Context(), centralsensor.SensorHelloMetadataKey, "true")
+	ctx := metadata.AppendToOutgoingContext(trace.Background(), centralsensor.SensorHelloMetadataKey, "true")
 	ctx, err := centralsensor.AppendSensorHelloInfoToOutgoingMetadata(ctx, sensorHello)
 	if err != nil {
 		s.stopper.Flow().StopWithError(err)

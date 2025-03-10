@@ -63,7 +63,7 @@ type ResourceEvent struct {
 
 // NewEvent creates a resource event with preset sensor event messages.
 func NewEvent(msg ...*central.SensorEvent) *ResourceEvent {
-	return &ResourceEvent{ForwardMessages: msg, Context: trace.Context()}
+	return &ResourceEvent{ForwardMessages: msg, Context: trace.Background()}
 }
 
 // AddSensorEvent appends central sensor events to be bundled with this resource event.
