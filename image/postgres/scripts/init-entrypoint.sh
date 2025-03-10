@@ -13,6 +13,25 @@ else
     if [ $(cat "${PGDATA}/PG_VERSION") -lt "$PG_BINARY_VERSION" ]; then
         # Data version is less than binaries, upgrade
 
+        # Do a backup first, ideally move it to a separate volume. Since the
+        # database is stopped we may as well simple take a filesystem backup.
+        # Alternatives would be pg_dump or pg_basebackup, both require running
+        # database cluster.
+        echo "Backup..."
+        export BACKUP_DIR="/tmp/backups/$(date +%s)"
+        mkdir -p $BACKUP_DIR
+        tar -cf $BACKUP_DIR/backup.tar -C $PGDATA .
+        sync $BACKUP_DIR/backup.tar
+
+        echo "Verify backup..."
+        export BACKUP_VERIFY_PGDATA="/tmp/backup-test"
+        export OLD_BINARIES="/usr/lib64/pgsql/postgresql-13/bin/"
+        mkdir -p $BACKUP_VERIFY_PGDATA
+        tar -xvf $BACKUP_DIR/backup.tar -C $BACKUP_VERIFY_PGDATA
+        $OLD_BINARIES/pg_ctl -D $BACKUP_VERIFY_PGDATA -w start
+        $OLD_BINARIES/pg_ctl -D $BACKUP_VERIFY_PGDATA -w stop
+        rm -rf $BACKUP_VERIFY_PGDATA
+
         # Not sure how it works now, but during the upgrade group permissions
         # are rejected.
         chmod 0700 $PGDATA
@@ -25,6 +44,7 @@ else
                                        --auth-local=scram-sha-256 \
                                        --pwfile /run/secrets/stackrox.io/secrets/password \
                                        --data-checksums"
+        echo "Upgrade..."
         # Good idea to --check first
         PGSETUP_PGUPGRADE_OPTIONS='-j 4 -k' postgresql-upgrade "${PGDATA}"
 
