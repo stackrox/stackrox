@@ -5,11 +5,11 @@ import groovy.util.logging.Slf4j
 import io.fabric8.kubernetes.client.KubernetesClientException
 import objects.DaemonSet
 import objects.Deployment
-import orchestratormanager.OrchestratorMain
+import orchestratormanager.Kubernetes
 
 @Slf4j
 class ApplicationHealth {
-    OrchestratorMain client
+    Kubernetes client
     Integer waitTimeForHealthiness
     final Integer delayBetweenChecks = 5
     final Map<String, String> readyLogMessages = [
@@ -18,7 +18,7 @@ class ApplicationHealth {
             "sensor": "TLS-enabled multiplexed HTTP/gRPC server listening on",
     ]
 
-    ApplicationHealth(OrchestratorMain client, Integer waitTimeForHealthiness) {
+    ApplicationHealth(Kubernetes client, Integer waitTimeForHealthiness) {
         this.client = client
         this.waitTimeForHealthiness = waitTimeForHealthiness
     }
