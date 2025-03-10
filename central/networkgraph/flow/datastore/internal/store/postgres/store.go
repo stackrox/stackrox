@@ -86,9 +86,9 @@ const (
 		HAVING COUNT(*) > 1
       ) b
       WHERE a.Props_SrcEntity_Type = b.Props_SrcEntity_Type
- 	AND a.Props_SrcEntity_Id = b.Props_SrcEntity_Id
- 	AND a.Props_DstEntity_Type = b.Props_DstEntity_Type
- 	AND a.Props_DstEntity_Id = b.Props_DstEntity_Id
+	AND a.Props_SrcEntity_Id = b.Props_SrcEntity_Id
+	AND a.Props_DstEntity_Type = b.Props_DstEntity_Type
+	AND a.Props_DstEntity_Id = b.Props_DstEntity_Id
 	AND a.Props_DstPort = b.Props_DstPort
 	AND a.Props_L4Protocol = b.Props_L4Protocol
 	AND a.ClusterId = b.ClusterId
