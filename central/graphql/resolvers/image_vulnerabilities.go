@@ -897,6 +897,9 @@ func (resolver *imageCVEV2Resolver) FixedByVersion(ctx context.Context) (string,
 	return cves[0].GetFixedBy(), nil
 }
 
+// IsFixable returns if the CVE is fixable or not.
+//
+//	TODO(ROX-28123): Once the old code is removed, this method can become generated.
 func (resolver *imageCVEV2Resolver) IsFixable(_ context.Context, _ RawQuery) (bool, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "IsFixable")
 	return resolver.data.IsFixable, nil

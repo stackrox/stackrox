@@ -320,7 +320,7 @@ func getImageCVEResolvers(ctx context.Context, root *Resolver, os string, vulns 
 	return paginate(query.GetPagination(), resolverI, nil)
 }
 
-func getImageCVEV2Resolvers(ctx context.Context, root *Resolver, os string, imageID string, component *storage.EmbeddedImageScanComponent, query *v1.Query) ([]ImageVulnerabilityResolver, error) {
+func getImageCVEV2Resolvers(ctx context.Context, root *Resolver, imageID string, component *storage.EmbeddedImageScanComponent, query *v1.Query) ([]ImageVulnerabilityResolver, error) {
 	query, _ = search.FilterQueryWithMap(query, mappings.VulnerabilityOptionsMap)
 	predicate, err := vulnPredicateFactory.GeneratePredicate(query)
 	if err != nil {
@@ -336,7 +336,7 @@ func getImageCVEV2Resolvers(ctx context.Context, root *Resolver, os string, imag
 		}
 		id := cve.IDV2(vuln.GetCve(), componentID, fmt.Sprintf("%d", idx))
 		if _, exists := idToVals[id]; !exists {
-			converted := cveConverter.EmbeddedVulnerabilityToImageCVEV2(os, componentID, idx, vuln)
+			converted := cveConverter.EmbeddedVulnerabilityToImageCVEV2(imageID, componentID, idx, vuln)
 			resolver, err := root.wrapImageCVEV2(converted, true, nil)
 			if err != nil {
 				return nil, err
@@ -667,7 +667,7 @@ func (resolver *imageComponentV2Resolver) ImageVulnerabilities(ctx context.Conte
 	if err != nil {
 		return nil, err
 	}
-	return getImageCVEV2Resolvers(resolver.ctx, resolver.root, embeddedobjs.OSFromContext(resolver.ctx), resolver.ImageId(resolver.ctx), embeddedComponent, query)
+	return getImageCVEV2Resolvers(resolver.ctx, resolver.root, resolver.ImageId(resolver.ctx), embeddedComponent, query)
 }
 
 func (resolver *imageComponentV2Resolver) LastScanned(ctx context.Context) (*graphql.Time, error) {
@@ -751,15 +751,17 @@ func (resolver *imageComponentV2Resolver) LayerIndex() (*int32, error) {
 	return &v, nil
 }
 
-func (resolver *imageComponentV2Resolver) UnusedVarSink(_ context.Context, _ RawQuery) *int32 {
-	return nil
-}
-
 // Location returns the location of the component.
+//
+//	TODO(ROX-28123): Once the old code is removed, this method can become generated.
 func (resolver *imageComponentV2Resolver) Location(_ context.Context, _ RawQuery) (string, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "Location")
 
 	return resolver.data.GetLocation(), nil
+}
+
+func (resolver *imageComponentV2Resolver) UnusedVarSink(_ context.Context, _ RawQuery) *int32 {
+	return nil
 }
 
 // Following are deprecated functions that are retained to allow UI time to migrate away from them
