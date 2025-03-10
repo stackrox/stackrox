@@ -48,7 +48,7 @@ var (
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "network_flow_misses_container_lookup",
 		Help:      "Total number of misses on container lookup for network flows",
-	}, []string{"status"})
+	}, []string{"subject", "status"})
 	ExternalFlowCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
