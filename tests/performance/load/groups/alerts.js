@@ -16,9 +16,8 @@ export function alertsGrpc(host, headers, baseTags, limit) {
     let tags = { ...baseTags, limit: limit };
 
     group('list alerts grpc', function () {
-        tags.limit = limit;
         const params = {
-            metadata: headers, tags: t,
+            metadata: headers, tags: tags,
         };
         const response = client.invoke(
             'v1.AlertService/ListAlerts',
