@@ -860,56 +860,59 @@ print-image-prefetcher-deploy-bin:
 prometheus-metric-parser: $(PROMETHEUS_METRIC_PARSER_BIN)
 	@echo $(PROMETHEUS_METRIC_PARSER_BIN)
 
+DEV_VERSION = 4.8.x-nightly-20250307
+DEV_LD_FLAGS = '-ldflags=-X "github.com/stackrox/rox/pkg/version/internal.MainVersion=$(DEV_VERSION)" -X "github.com/stackrox/rox/pkg/version/internal.CollectorVersion=$(DEV_VERSION)" -X "github.com/stackrox/rox/pkg/version/internal.ScannerVersion=$(DEV_VERSION)" -X "github.com/stackrox/rox/pkg/version/internal.GitShortSha=$(DEV_VERSION)"'
+
 pkg := $(shell find pkg -name *.go)
 
 bin/scanner:  $(shell find scanner -name *.go) ${pkg}
-	CGO_ENABLED=1 go build -o $@ ./scanner/cmd/scanner
+	CGO_ENABLED=1 go build $(DEV_LD_FLAGS) -o $@ ./scanner/cmd/scanner
 
 bin/kubernetes: $(shell find sensor/kubernetes/ -name *.go) ${pkg}
-	CGO_ENABLED=1 go build -o $@ ./sensor/kubernetes
+	CGO_ENABLED=1 go build $(DEV_LD_FLAGS) -o $@ ./sensor/kubernetes
 
 bin/admission-control: $(shell find sensor/admission-control/ -name *.go) ${pkg}
-	CGO_ENABLED=1 go build -o $@ ./sensor/admission-control
+	CGO_ENABLED=1 go build $(DEV_LD_FLAGS) -o $@ ./sensor/admission-control
 
 bin/compliance: $(shell find compliance/ -name *.go) ${pkg}
-	CGO_ENABLED=1 go build -o $@ ./compliance/cmd/compliance
+	CGO_ENABLED=1 go build $(DEV_LD_FLAGS) -o $@ ./compliance/cmd/compliance
 
 bin/upgrader: $(shell find sensor/upgrader/ -name *.go) ${pkg}
-	CGO_ENABLED=1 go build -o $@ ./sensor/upgrader
+	CGO_ENABLED=1 go build $(DEV_LD_FLAGS) -o $@ ./sensor/upgrader
 
 bin/init-tls-certs: $(shell find sensor/init-tls-certs/ -name *.go) ${pkg}
-	CGO_ENABLED=1 go build -o $@ ./sensor/init-tls-certs
+	CGO_ENABLED=1 go build $(DEV_LD_FLAGS) -o $@ ./sensor/init-tls-certs
 
 bin/roxctl: $(shell find roxctl/ -name *.go) ${pkg}
-	CGO_ENABLED=0 go build -o $@ ./roxctl
+	CGO_ENABLED=0 go build $(DEV_LD_FLAGS) -o $@ ./roxctl
 
 bin/central: $(shell find central/ -name *.go) ${pkg}
-	CGO_ENABLED=1 go build -o $@ ./central
+	CGO_ENABLED=1 go build $(DEV_LD_FLAGS) -o $@ ./central
 
 bin/config-controller: $(shell find config-controller/ -name *.go) ${pkg}
-	CGO_ENABLED=1 go build -o $@ ./config-controller
+	CGO_ENABLED=1 go build $(DEV_LD_FLAGS) -o $@ ./config-controller
 
 bin/migrator: $(shell find migrator/ -name *.go) ${pkg}
-	CGO_ENABLED=1 go build -o $@ ./migrator
+	CGO_ENABLED=1 go build $(DEV_LD_FLAGS) -o $@ ./migrator
 
 central: bin/central bin/config-controller bin/migrator bin/scanner-v4
 
 secured-cluster: bin/kubernetes bin/admission-control bin/compliance bin/upgrader bin/init-tls-certs
 
 bin/scanner-v4: $(shell find scanner/ -name *.go) ${pkg}
-	CGO_ENABLED=1 go build -o $@ ./scanner/cmd/scanner
+	CGO_ENABLED=1 go build $(DEV_LD_FLAGS) -o $@ ./scanner/cmd/scanner
 
 bin/scanner-v2: $(shell find scannerv2/ -name *.go)
-	go build -C scannerv2 -o ../$@ ./cmd/clair
+	go build -C scannerv2 $(DEV_LD_FLAGS) -o ../$@ ./cmd/clair
 
 bin/local-nodescanner-v2: $(shell find scannerv2/ -name *.go)
-	go build -C scannerv2 -o ../$@ ./tools/local-nodescanner
+	go build -C scannerv2 $(DEV_LD_FLAGS) -o ../$@ ./tools/local-nodescanner
 
 bin/installer: $(shell find installer/ -name *.go)
-	CGO_ENABLED=1 go build -o $@ ./installer
+	CGO_ENABLED=1 go build $(DEV_LD_FLAGS) -o $@ ./installer
 
 bin/updater: $(shell find scannerv2/ -name *.go)
-	go build -C ./scannerv2 -o ../$@ ./cmd/updater
+	go build -C ./scannerv2 $(DEV_LD_FLAGS) -o ../$@ ./cmd/updater
 
 bin/collector: $(shell find collector/ -name *.go) $(shell find collector/ -name *.cpp)
 	cmake --preset=vcpkg collector 
@@ -950,4 +953,4 @@ push-combined-image-local: build-combined-image
 	podman push --tls-verify=false localhost:5001/stackrox/stackrox:latest
 
 .PHONY: combined-image
-combined-image: all-binaries download push-combined-image-local
+combined-image: $(GENERATED_API_DOCS) all-binaries download push-combined-image-local
