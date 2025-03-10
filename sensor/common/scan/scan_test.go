@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io/fs"
 	"testing"
+	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -354,10 +355,27 @@ func (suite *scanTestSuite) TestEnrichThrottle() {
 	scan := LocalScan{
 		scannerClientSingleton: emptyScannerClientSingleton,
 		scanSemaphore:          semaphore.NewWeighted(0),
+		maxSemaphoreWaitTime:   1 * time.Millisecond,
 	}
 
 	img := &storage.ContainerImage{Name: &storage.ImageName{Registry: "fake"}}
 	_, err := scan.EnrichLocalImageInNamespace(context.Background(), nil, genScanReq(img, "", "", false))
+	suite.Require().ErrorIs(err, ErrTooManyParallelScans)
+	suite.Require().ErrorIs(err, ErrEnrichNotStarted)
+}
+
+func (suite *scanTestSuite) TestAdHocScanThrottle() {
+	ls := LocalScan{
+		scannerClientSingleton: emptyScannerClientSingleton,
+		scanSemaphore:          semaphore.NewWeighted(5),
+		adHocScanSemaphore:     semaphore.NewWeighted(0),
+		maxSemaphoreWaitTime:   1 * time.Millisecond,
+	}
+
+	img := &storage.ContainerImage{Name: &storage.ImageName{Registry: "fake"}}
+	req := genScanReq(img, "", "some-id", false) // "setting up request ID to make it an ad-hoc delegated request
+
+	_, err := ls.EnrichLocalImageInNamespace(context.Background(), nil, req)
 	suite.Require().ErrorIs(err, ErrTooManyParallelScans)
 	suite.Require().ErrorIs(err, ErrEnrichNotStarted)
 }

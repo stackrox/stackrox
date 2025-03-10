@@ -30,6 +30,7 @@ import (
 
 const (
 	defaultMaxSemaphoreWaitTime = 5 * time.Second
+	imageScanLowerBound         = 10
 )
 
 var (
@@ -60,7 +61,9 @@ type LocalScan struct {
 	getGlobalRegistry         func(*storage.ImageName) (registryTypes.ImageRegistry, error)
 
 	// scanSemaphore limits the number of active scans.
-	scanSemaphore        *semaphore.Weighted
+	scanSemaphore *semaphore.Weighted
+	// adHocScanSemaphore limits the number of delegated scans.
+	adHocScanSemaphore   *semaphore.Weighted
 	maxSemaphoreWaitTime time.Duration
 
 	regFactory registries.Factory
@@ -95,11 +98,12 @@ func NewLocalScan(registryStore registryStore, mirrorStore registrymirror.Store)
 			docker.CreatorWithoutRepoList,
 		},
 	})
-	return &LocalScan{
+	ls := &LocalScan{
 		scanImg:                   scanImage,
 		fetchSignaturesWithRetry:  signatures.FetchImageSignaturesWithRetries,
 		scannerClientSingleton:    scannerclient.GRPCClientSingleton,
-		scanSemaphore:             semaphore.NewWeighted(int64(env.MaxParallelImageScanInternal.IntegerSetting())),
+		scanSemaphore:             semaphore.NewWeighted(int64(max(imageScanLowerBound, env.MaxParallelImageScanInternal.IntegerSetting()-env.MaxParallelAdHocScan.IntegerSetting()))),
+		adHocScanSemaphore:        semaphore.NewWeighted(int64(env.MaxParallelAdHocScan.IntegerSetting())),
 		maxSemaphoreWaitTime:      defaultMaxSemaphoreWaitTime,
 		regFactory:                regFactory,
 		mirrorStore:               mirrorStore,
@@ -108,6 +112,7 @@ func NewLocalScan(registryStore registryStore, mirrorStore registrymirror.Store)
 		getPullSecretRegistries:   registryStore.GetPullSecretRegistries,
 		getGlobalRegistry:         registryStore.GetGlobalRegistry,
 	}
+	return ls
 }
 
 // EnrichLocalImageInNamespace will enrich an image with scan results from local scanner as well as signatures
@@ -133,12 +138,18 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 	}
 
 	// Throttle the # of active scans.
+	scanLimitSemaphore := s.scanSemaphore
+	// Ad hoc requests have a request ID.
+	if req.ID != "" {
+		scanLimitSemaphore = s.adHocScanSemaphore
+	}
+
 	semaphoreCtx, cancel := context.WithTimeout(ctx, s.maxSemaphoreWaitTime)
 	defer cancel()
-	if err := s.scanSemaphore.Acquire(semaphoreCtx, 1); err != nil {
+	if err := scanLimitSemaphore.Acquire(semaphoreCtx, 1); err != nil {
 		return nil, errors.Join(err, ErrTooManyParallelScans, ErrEnrichNotStarted)
 	}
-	defer s.scanSemaphore.Release(1)
+	defer scanLimitSemaphore.Release(1)
 
 	srcImage := req.Image
 	log.Debugf("Enriching image locally %q, namespace %q, requestID %q, force %v", srcImage.GetName().GetFullName(), req.Namespace, req.ID, req.Force)
