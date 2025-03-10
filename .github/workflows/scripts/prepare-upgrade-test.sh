@@ -31,6 +31,15 @@ deploy_central() {
         --image-defaults development_build \
         --output-dir bundle-test1
 
+    # Install the securitypolicies CRD since this is not done automatically when using roxctl install method
+    crd_path="./bundle-test1/helm/chart/crds/config.stackrox.io_securitypolicies.yaml"
+    if [ -f "$crd_path" ]; then
+        kubectl apply -f "$crd_path"
+    else
+        # This case is for compatibility with roxctl versions <4.6
+        echo "No securitypolicies.config.stackrox.io CRD file found at path: $crd_path. Install it manually if required."
+    fi
+
     ./bundle-test1/central/scripts/setup.sh
     kubectl apply -R -f bundle-test1/central
     ./bundle-test1/scanner/scripts/setup.sh
