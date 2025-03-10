@@ -148,6 +148,7 @@ func (resolver *Resolver) getAutoCompleteSearchers() map[v1.SearchCategory]searc
 }
 
 func (resolver *Resolver) getSearchFuncs() map[v1.SearchCategory]searchService.SearchFunc {
+
 	searchfuncs := map[v1.SearchCategory]searchService.SearchFunc{
 		v1.SearchCategory_ALERTS:                  resolver.ViolationsDataStore.SearchAlerts,
 		v1.SearchCategory_CLUSTERS:                resolver.ClusterDataStore.SearchResults,
