@@ -2750,21 +2750,6 @@ func (suite *PLOPDataStoreTestSuite) addTooMany(plops []*storage.ProcessListenin
 	}
 }
 
-func (suite *PLOPDataStoreTestSuite) upsertTooMany(plops []*storage.ProcessListeningOnPortStorage) {
-	batchSize := 30000
-
-	nplops := len(plops)
-
-	for offset := 0; offset < nplops; offset += batchSize {
-		end := offset + batchSize
-		if end > nplops {
-			end = nplops
-		}
-		err := suite.store.UpsertMany(suite.hasWriteCtx, plops[offset:end])
-		suite.NoError(err)
-	}
-}
-
 func (suite *PLOPDataStoreTestSuite) RemovePLOPsWithoutPodUIDScale(nport int, nprocess int, npod int) {
 	plopObjects := suite.makeRandomPlops(nport, nprocess, npod, fixtureconsts.Deployment1)
 
