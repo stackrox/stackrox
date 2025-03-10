@@ -22,7 +22,6 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
-	"gorm.io/gorm"
 )
 
 const (
@@ -1025,38 +1024,4 @@ func gatherKeys(parts *imagePartsAsSlice) [][]byte {
 		keys = append(keys, []byte(component.GetId()))
 	}
 	return keys
-}
-
-//// Used for testing
-
-// Destroy drops image table.
-func Destroy(ctx context.Context, db postgres.DB) {
-	dropAllTablesInImageTree(ctx, db)
-}
-
-func dropAllTablesInImageTree(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS images CASCADE")
-	dropTableImagesLayers(ctx, db)
-	dropTableImageComponents(ctx, db)
-	dropTableImageCVEs(ctx, db)
-}
-
-func dropTableImagesLayers(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS images_Layers CASCADE")
-}
-
-func dropTableImageComponents(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+imageComponentsV2Table+" CASCADE")
-}
-
-func dropTableImageCVEs(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+imageComponentsV2CVEsTable+" CASCADE")
-}
-
-// CreateTableAndNewStore returns a new Store instance for testing
-func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB, noUpdateTimestamps bool) store.Store {
-	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImagesStmt)
-	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImageComponentV2Stmt)
-	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImageCvesV2Stmt)
-	return New(db, noUpdateTimestamps, concurrency.NewKeyFence())
 }
