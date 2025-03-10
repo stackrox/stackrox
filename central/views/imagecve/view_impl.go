@@ -106,7 +106,6 @@ func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 	if err := common.ValidateQuery(q); err != nil {
 		return nil, err
 	}
-
 	var err error
 	// Avoid changing the passed query
 	cloned := q.CloneVT()
@@ -231,7 +230,11 @@ func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
 func withSelectCVECoreResponseQuery(q *v1.Query, cveIDsToFilter []string, options views.ReadOptions) *v1.Query {
 	cloned := q.CloneVT()
 	if len(cveIDsToFilter) > 0 {
-		cloned = search.ConjunctionQuery(cloned, search.NewQueryBuilder().AddDocIDs(cveIDsToFilter...).ProtoQuery())
+		if features.FlattenCVEData.Enabled() {
+			cloned = search.ConjunctionQuery(cloned, search.NewQueryBuilder().AddExactMatches(search.CVEID, cveIDsToFilter...).ProtoQuery())
+		} else {
+			cloned = search.ConjunctionQuery(cloned, search.NewQueryBuilder().AddDocIDs(cveIDsToFilter...).ProtoQuery())
+		}
 		cloned.Pagination = q.GetPagination()
 	}
 	cloned.Selects = []*v1.QuerySelect{

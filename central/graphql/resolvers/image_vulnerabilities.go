@@ -944,7 +944,7 @@ func (resolver *imageCVEV2Resolver) Vectors() *EmbeddedVulnerabilityVectorsResol
 	return nil
 }
 
-func (resolver *imageCVEV2Resolver) VulnerabilityState(ctx context.Context) string {
+func (resolver *imageCVEV2Resolver) VulnerabilityState(_ context.Context) string {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "VulnerabilityState")
 
 	return resolver.data.GetState().String()
