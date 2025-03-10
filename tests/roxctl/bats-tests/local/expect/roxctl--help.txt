@@ -1,0 +1,80 @@
+roxctl is a command-line interface (CLI) for running commands on Red Hat 
+Advanced Cluster Security for Kubernetes (RHACS)
+
+Available Commands:
+  central              Commands related to the Central service.
+  cluster              Commands related to a cluster.
+  collector            Commands related to the Collector service.
+  completion           Generate shell completion scripts.
+  declarative-config   Commands that help manage declarative configuration
+  deployment           Commands related to deployments.
+  helm                 Commands related to StackRox Helm Charts.
+  image                Commands that you can run on a specific image.
+  netpol               Commands related to network policies.
+  scanner              Commands related to the Scanner service.
+  sensor               Commands related to deploying StackRox services in 
+                       secured clusters.
+  version              Display the current roxctl version.
+
+Options:
+    --ca:
+        Path to a custom CA certificate to use (PEM format). Alternatively pass 
+        the file path using the ROX_CA_CERT_FILE environment variable
+
+    --direct-grpc=false:
+        Use direct gRPC (advanced; only use if you encounter connection issues).
+        Alternately, enable by setting the ROX_DIRECT_GRPC_CLIENT environment 
+        variable to true
+
+    -e, --endpoint='localhost:8443':
+        Endpoint for service to contact. Alternatively, set the endpoint via the
+        ROX_ENDPOINT environment variable
+
+    --force-http1=false:
+        Always use HTTP/1 for all connections (advanced; only use if you 
+        encounter connection issues). Alternatively, enable by setting the 
+        ROX_CLIENT_FORCE_HTTP1 environment variable to true
+
+    -h, --help=false:
+        Help
+
+    --insecure=false:
+        Enable insecure connection options (DANGEROUS; USE WITH CAUTION). 
+        Alternatively, enable insecure connection options by setting the 
+        ROX_INSECURE_CLIENT environment variable to true
+
+    --insecure-skip-tls-verify=false:
+        Skip TLS certificate validation. Alternatively, disable TLS certivicate 
+        validation by setting the ROX_INSECURE_CLIENT_SKIP_TLS_VERIFY 
+        environment variable to true
+
+    --no-color=false:
+        Disable color output. Alternately disable the color output by setting 
+        the ROX_NO_COLOR environment variable
+
+    -p, --password:
+        Password for basic auth. Alternatively, set the password via the 
+        ROX_ADMIN_PASSWORD environment variable
+
+    --plaintext=false:
+        Use a plaintext (unencrypted) connection; only works in conjunction with
+        --insecure. Alternatively can be enabled by setting the ROX_PLAINTEXT 
+        environment variable to true
+
+    -s, --server-name:
+        TLS ServerName to use for SNI (if empty, derived from endpoint). 
+        Alternately, set the server name via the ROX_SERVER_NAME environment 
+        variable
+
+    --token-file:
+        Use the API token in the provided file to authenticate. Alternatively, 
+        set the path via the ROX_API_TOKEN_FILE environment variable or set the 
+        token via the ROX_API_TOKEN environment variable
+
+    --use-current-k8s-context=false:
+        Use the current kubeconfig context to connect to the central service via
+        port-forwarding. Alternatively, set ROX_USE_KUBECONTEXT environment 
+        variable to true
+
+Usage:
+  tmp/roxctl-bats/bin/roxctl-release [command]
