@@ -78,7 +78,7 @@ jobs:
     - name: Check Konflux setup
       run: scripts/ci/jobs/check-konflux-setup.sh
 
-    - name: Check TODOs
+    - name: Check build & test image versions
       run: scripts/ci/jobs/check-image-version.sh
 
   style-check:
