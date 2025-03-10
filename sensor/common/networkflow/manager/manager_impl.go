@@ -506,38 +506,44 @@ func (m *networkFlowManager) enrichAndSendProcesses() {
 	}
 }
 
+func (m *networkFlowManager) handleContainerNotFound(
+	conn *connection,
+	status *connStatus,
+	enrichedConnections map[networkConnIndicator]timestamp.MicroTS,
+	now timestamp.MicroTS,
+) *multierror.Error {
+	timeElapsedSinceFirstSeen := now.ElapsedSince(status.firstSeen)
+	failReason := fmt.Errorf("ContainerID %s unknown", conn.containerID)
+	if timeElapsedSinceFirstSeen <= maxContainerResolutionWaitPeriod {
+		flowMetrics.ContainerIDMisses.WithLabelValues("connection", "in-grace-period").Inc()
+		return multierror.Append(failReason, fmt.Errorf("time for container resolution (%s) not elapsed yet", maxContainerResolutionWaitPeriod))
+	}
+
+	if expireConnection(conn, m.activeConnections, enrichedConnections, now) != nil {
+		// Connection cannot be expired, so it must be rotten
+		status.rotten = true
+		// Only increment metric once the connection is marked rotten
+		flowMetrics.ContainerIDMisses.WithLabelValues("connection", "rotten").Inc()
+		return multierror.Append(failReason, errors.New("connection is rotten"))
+	}
+	flowMetrics.ContainerIDMisses.WithLabelValues("connection", "expired").Inc()
+	return multierror.Append(failReason, fmt.Errorf("marking connection as inactive, because it involves non-existing container %s", conn.containerID))
+}
+
 func expireConnection(conn *connection,
 	activeConnections map[connection]*networkConnIndicator,
-	enrichedConnections map[networkConnIndicator]timestamp.MicroTS) error {
+	enrichedConnections map[networkConnIndicator]timestamp.MicroTS,
+	now timestamp.MicroTS,
+) error {
 	activeConn, found := activeConnections[*conn]
 	if !found {
 		return errors.New("cannot expire inactive connection: connection is rotten")
 	}
 	// Active connection found - enrichment can be done.
-	enrichedConnections[*activeConn] = timestamp.Now()
+	enrichedConnections[*activeConn] = now
 	delete(activeConnections, *conn)
 	flowMetrics.SetActiveFlowsTotalGauge(len(activeConnections))
 	return nil
-}
-
-func (m *networkFlowManager) handleContainerNotFound(conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) *multierror.Error {
-	timeElapsedSinceFirstSeen := timestamp.Now().ElapsedSince(status.firstSeen)
-	failReason := fmt.Errorf("ContainerID %s unknown", conn.containerID)
-	if timeElapsedSinceFirstSeen <= maxContainerResolutionWaitPeriod {
-		flowMetrics.ContainerIDMisses.WithLabelValues("in-grace-period").Inc()
-		return multierror.Append(failReason, fmt.Errorf("time for container resolution (%s) not elapsed yet", maxContainerResolutionWaitPeriod))
-	}
-
-	if expireConnection(conn, m.activeConnections, enrichedConnections) != nil {
-		// Connection cannot be expired, so it must be rotten
-		status.rotten = true
-		// Only increment metric once the connection is marked rotten
-		flowMetrics.ContainerIDMisses.WithLabelValues("rotten").Inc()
-		log.Debugf("Can't find deployment information for container %s", conn.containerID)
-		return multierror.Append(failReason, errors.New("connection is rotten"))
-	}
-	flowMetrics.ContainerIDMisses.WithLabelValues("expired").Inc()
-	return multierror.Append(failReason, fmt.Errorf("marking connection as inactive, because it involves non-existing container %s", conn.containerID))
 }
 
 func formatMultiErrorOneline(errs []error) string {
@@ -574,7 +580,8 @@ func logReasonForAggregatingNetGraphFlow(conn *connection, contNs, contName, ent
 }
 
 func (m *networkFlowManager) enrichConnection(conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) {
-	timeElapsedSinceFirstSeen := timestamp.Now().ElapsedSince(status.firstSeen)
+	now := timestamp.Now()
+	timeElapsedSinceFirstSeen := now.ElapsedSince(status.firstSeen)
 	isFresh := timeElapsedSinceFirstSeen < clusterEntityResolutionWaitPeriod
 	var netGraphFailReason *multierror.Error
 
@@ -582,7 +589,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 	if !found {
 		// There is an incoming connection to a container that Sensor does not recognize.
 		// 90% of the cases that container is Sensor itself before being restarted.
-		reason := m.handleContainerNotFound(conn, status, enrichedConnections)
+		reason := m.handleContainerNotFound(conn, status, enrichedConnections, now)
 		reason.ErrorFormat = formatMultiErrorOneline
 		log.Debugf("Enrichment finished early: %s", reason.Error())
 		// If we miss container data, there is no point in trying further enrichments (endpoint won't be found as well).
@@ -590,17 +597,16 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 	}
 	netGraphFailReason = multierror.Append(netGraphFailReason, errors.New("ContainerID lookup successful"))
 
-	// Container can be found in the store only because it is historical.
+	// It is possible, that Container is found in the store only because it is historical.
 	// In that case, we shall enrich the container with all the data from the store (i.e., do not exit early),
 	// but the connection must be marked as expired (i.e., the last-seen timestamp must be set to 'now').
 	if isHistorical {
 		// With history disabled, we would mark this connection as closed. That would be implicit
 		// decision (i.e., not communicated by Collector) based on the container being gone. We assume that if container
 		// is gone, then all connections involving it must also be finished.
-		if expireConnection(conn, m.activeConnections, enrichedConnections) != nil {
+		if expireConnection(conn, m.activeConnections, enrichedConnections, now) != nil {
 			// Connection cannot be expired (not found within activeConnections), so we mark it as rotten
 			status.rotten = true
-			// TODO: What does it mean that the connection is rotten for historical containers?
 		} else {
 			netGraphFailReason = multierror.Append(netGraphFailReason,
 				fmt.Errorf("marking connection as inactive, because it involves historical container %s", conn.containerID))
@@ -766,32 +772,45 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 }
 
 func (m *networkFlowManager) enrichContainerEndpoint(ep *containerEndpoint, status *connStatus, enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS) {
-	timeElapsedSinceFirstSeen := timestamp.Now().ElapsedSince(status.firstSeen)
+	now := timestamp.Now()
+	timeElapsedSinceFirstSeen := now.ElapsedSince(status.firstSeen)
 	isFresh := timeElapsedSinceFirstSeen < clusterEntityResolutionWaitPeriod
 	if !isFresh {
 		status.used = true
 	}
 
-	container, ok, _ := m.clusterEntities.LookupByContainerID(ep.containerID)
+	container, ok, isHistorical := m.clusterEntities.LookupByContainerID(ep.containerID)
 	if !ok {
-		// Expire the endpoint if the container cannot be found within the clusterEntityResolutionWaitPeriod
-		if timeElapsedSinceFirstSeen > maxContainerResolutionWaitPeriod {
-			if activeEp, found := m.activeEndpoints[*ep]; found {
-				enrichedEndpoints[*activeEp] = timestamp.Now()
-				delete(m.activeEndpoints, *ep)
-				flowMetrics.SetActiveEndpointsTotalGauge(len(m.activeEndpoints))
-				return
-			}
-			status.rotten = true
-			// Only increment metric once the connection is marked rotten
-			flowMetrics.ContainerIDMisses.WithLabelValues("rotten-for-endpoint").Inc()
-			log.Debugf("Unable to fetch deployment information for container %s: no deployment found", ep.containerID)
+		if timeElapsedSinceFirstSeen <= maxContainerResolutionWaitPeriod {
+			flowMetrics.ContainerIDMisses.WithLabelValues("endpoint", "in-grace-period").Inc()
+			// Still within the grace-period - will retry next iteration.
+			return
 		}
+		// Expire the endpoint if the container cannot be found within the clusterEntityResolutionWaitPeriod.
+		if err := expireEndpoint(ep, m.activeEndpoints, enrichedEndpoints, now); err != nil {
+			// Endpoint is not in activeEndpoints, so it must be rotten. No action required, as
+			// there is nothing to update in activeEndpoints and in enrichedEndpoints.
+			status.rotten = true
+			flowMetrics.ContainerIDMisses.WithLabelValues("endpoint", "rotten").Inc()
+			return
+		}
+		// Endpoint has been expired; it is no longer in activeEndpoints or enrichedEndpoints.
+		flowMetrics.ContainerIDMisses.WithLabelValues("endpoint", "expired").Inc()
 		return
 	}
-	// If the container ID is historical, we do not remove the matching endpoint from active endpoints
-	// as there may be other messages about connections involving that endpoint.
-	// TODO: Verify that the active endpoints are not piling up in the long running clusters.
+	// It is possible, that Container is found in the store only because it is historical.
+	// In that case, we shall enrich the endpoint with all the data from the store (i.e., do not exit early),
+	// but the endpoint must be marked as expired (i.e., the last-seen timestamp must be set to 'now').
+	if isHistorical {
+		// With history disabled, we would mark this endpoint as no longer active. That would be implicit
+		// decision (i.e., not communicated by Collector) based on the container being gone. We assume that if container
+		// is gone, then all its endpoints must also be gone.
+		if expireEndpoint(ep, m.activeEndpoints, enrichedEndpoints, now) != nil {
+			// Endpoint cannot be expired (not found within activeEndpoints), so we mark it as rotten
+			status.rotten = true
+		}
+		// Do not exit early, let's do the full enrichment of
+	}
 
 	status.used = true
 
@@ -817,6 +836,21 @@ func (m *networkFlowManager) enrichContainerEndpoint(ep *containerEndpoint, stat
 	}
 }
 
+func expireEndpoint(ep *containerEndpoint,
+	activeEndpoints map[containerEndpoint]*containerEndpointIndicator,
+	enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS,
+	now timestamp.MicroTS) error {
+	activeEp, found := activeEndpoints[*ep]
+	if !found {
+		return errors.New("cannot expire active endpoint: endpoint not found within active endpoints")
+	}
+	// Active endpoint found for historical container => removing from active endpoints and setting last-seen.
+	enrichedEndpoints[*activeEp] = now
+	delete(activeEndpoints, *ep)
+	flowMetrics.SetActiveFlowsTotalGauge(len(activeEndpoints))
+	return nil
+}
+
 func (m *networkFlowManager) enrichProcessListening(ep *containerEndpoint, status *connStatus, processesListening map[processListeningIndicator]timestamp.MicroTS) {
 	timeElapsedSinceFirstSeen := timestamp.Now().ElapsedSince(status.firstSeen)
 	isFresh := timeElapsedSinceFirstSeen < clusterEntityResolutionWaitPeriod
@@ -830,9 +864,10 @@ func (m *networkFlowManager) enrichProcessListening(ep *containerEndpoint, statu
 		if timeElapsedSinceFirstSeen > maxContainerResolutionWaitPeriod {
 			status.rotten = true
 			// Only increment metric once the connection is marked rotten
-			flowMetrics.ContainerIDMisses.WithLabelValues("rotten-for-plop").Inc()
+			flowMetrics.ContainerIDMisses.WithLabelValues("process-listening", "rotten").Inc()
 			log.Debugf("Unable to fetch deployment information for container %s: no deployment found", ep.containerID)
 		}
+		flowMetrics.ContainerIDMisses.WithLabelValues("process-listening", "expired").Inc()
 		return
 	}
 
