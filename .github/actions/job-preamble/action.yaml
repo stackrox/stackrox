@@ -27,12 +27,10 @@ runs:
           /opt/hostedtoolcache/Ruby
         )
         for d in "${cleanup[@]}"; do
-          if [[ -e "/mnt${d}" ]]; then
-            rm -rf "/mnt${d}"
-          elif [[ -e "$d" ]]; then
-            rm -rf "$d" \
-              || sudo rm -rf "$d"
-          fi
+          rm -rf "/mnt${d}" \
+            || sudo rm -rf "/mnt${d}"
+          rm -rf "$d" \
+            || sudo rm -rf "$d"
         done
         df --si /
 
