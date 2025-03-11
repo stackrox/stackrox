@@ -1137,7 +1137,3 @@ func (resolver *imageCVEV2Resolver) imageVulnerabilityScopeContext(ctx context.C
 		Level: v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
 	})
 }
-
-func (resolver *imageCVEV2Resolver) getImageCVEQuery() *v1.Query {
-	return search.NewQueryBuilder().AddExactMatches(search.CVE, resolver.data.GetCveBaseInfo().GetCve()).ProtoQuery()
-}
