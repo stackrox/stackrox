@@ -18,6 +18,15 @@ func WithCountQuery(q *v1.Query, field search.FieldLabel) *v1.Query {
 	return cloned
 }
 
+// WithDistinctCountQuery returns a query to count the number of distinct values of the given field
+func WithDistinctCountQuery(q *v1.Query, field search.FieldLabel) *v1.Query {
+	cloned := q.CloneVT()
+	cloned.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(field).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
+	}
+	return cloned
+}
+
 func WithCountBySeverityAndFixabilityQuery(q *v1.Query, countOn search.FieldLabel) *v1.Query {
 	cloned := q.CloneVT()
 	cloned.Selects = append(cloned.Selects,

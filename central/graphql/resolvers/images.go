@@ -11,6 +11,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
@@ -155,11 +156,23 @@ func (resolver *imageResolver) ImageVulnerabilities(ctx context.Context, args Pa
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageVulnerabilities")
 	// TODO(ROX-28320): Data here needs to be grouped by CVE not the ID as is done in the Image Vulnerabilities resolver.
 	log.Infof("SHREWS -- image.ImageVulnerabilities -- context %v, args %v", ctx, args.String())
+	if features.FlattenCVEData.Enabled() {
+		// Grab distinct CVEs
+	}
 	return resolver.root.ImageVulnerabilities(resolver.withImageScopeContext(ctx), args)
 }
 
 func (resolver *imageResolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageVulnerabilityCount")
+	if features.FlattenCVEData.Enabled() {
+		// Grab count for distinct CVEs
+		query, err := args.AsV1QueryOrEmpty()
+		if err != nil {
+			return 0, err
+		}
+		count, err := resolver.root.ImageCVEView.Count(resolver.withImageScopeContext(ctx), query)
+		return int32(count), err
+	}
 	return resolver.root.ImageVulnerabilityCount(resolver.withImageScopeContext(ctx), args)
 }
 
@@ -192,6 +205,7 @@ func (resolver *imageResolver) ImageCVECountBySeverity(ctx context.Context, q Ra
 
 func (resolver *imageResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageComponents")
+	log.Infof("SHREWS -- image.ImageComponents -- context %v, args %v", ctx, args.String())
 	return resolver.root.ImageComponents(resolver.withImageScopeContext(ctx), args)
 }
 

@@ -31,6 +31,7 @@ type CveCore interface {
 //go:generate mockgen-wrapper
 type CveView interface {
 	Count(ctx context.Context, q *v1.Query) (int, error)
+	CountDistinct(ctx context.Context, q *v1.Query) (int, error)
 	CountBySeverity(ctx context.Context, q *v1.Query) (common.ResourceCountByCVESeverity, error)
 	Get(ctx context.Context, q *v1.Query, options views.ReadOptions) ([]CveCore, error)
 	GetImageIDs(ctx context.Context, q *v1.Query) ([]string, error)
