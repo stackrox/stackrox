@@ -38,7 +38,7 @@ spec:
       affinity:
         {{- toYaml ._rox.configController.affinity | nindent 8 }}
       {{- if ._rox.configController.priorityClassName }}
-      priorityClassName: {{ ._rox.configController.priorityClassName }}
+      priorityClassName: {{ quote ._rox.configController.priorityClassName }}
       {{- end }}
       {{- if ._rox.configController.hostAliases }}
       hostAliases: {{ toYaml ._rox.configController.hostAliases | nindent 8 }}
