@@ -114,9 +114,6 @@ func TestToProtobuf(t *testing.T) {
 				Cluster: clusterID,
 			},
 		},
-		CriteriaLocked:     true,
-		MitreVectorsLocked: true,
-		IsDefault:          false,
 	}
 
 	notifiers := map[string]string{
