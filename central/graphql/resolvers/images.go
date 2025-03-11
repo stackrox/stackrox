@@ -163,7 +163,15 @@ func (resolver *imageResolver) ImageVulnerabilities(ctx context.Context, args Pa
 		if err != nil {
 			return nil, err
 		}
-		cveListish, err := resolver.root.ImageCVEView.Get(resolver.withImageScopeContext(ctx), query, views.ReadOptions{})
+		readOptions := views.ReadOptions{
+			SkipGetImagesBySeverity:        true,
+			SkipGetTopCVSS:                 true,
+			SkipGetTopNVDCVSS:              true,
+			SkipGetAffectedImages:          true,
+			SkipGetFirstDiscoveredInSystem: false,
+			SkipPublishedDate:              false,
+		}
+		cveListish, err := resolver.root.ImageCVEView.Get(resolver.withImageScopeContext(ctx), query, readOptions)
 		if err != nil {
 			return nil, err
 		}
