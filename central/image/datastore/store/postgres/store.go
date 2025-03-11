@@ -1203,7 +1203,6 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(image 
 		}
 	}()
 
-	ctxWithTx := postgres.ContextWithTx(ctx, tx)
 	callback := func(image *storage.Image) error {
 		err := s.populateImage(ctx, tx, image)
 		if err != nil {
@@ -1214,7 +1213,7 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(image 
 		}
 		return nil
 	}
-	err = pgSearch.RunCursorQueryForSchemaFn(ctxWithTx, pkgSchema.ImagesSchema, q, s.db, callback)
+	err = pgSearch.RunCursorQueryForSchemaFn(ctx, pkgSchema.ImagesSchema, q, s.db, callback)
 	if err != nil {
 		return errors.Wrap(err, "cursor by query")
 	}
