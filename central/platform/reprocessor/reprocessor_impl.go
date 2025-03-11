@@ -10,9 +10,13 @@ import (
 	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/k8scfgwatch"
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	k8sV1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 const batchSize = 5000
@@ -32,7 +36,8 @@ type platformReprocessorImpl struct {
 
 	stopSignal concurrency.Signal
 	// isStarted will make sure only one reprocessing routine runs for an instance of reprocessor
-	isStarted atomic.Bool
+	isStarted         atomic.Bool
+	ruleChangeWatcher *k8scfgwatch.ConfigMapWatcher
 }
 
 func New(alertDatastore alertDS.DataStore,
@@ -64,6 +69,7 @@ func (pr *platformReprocessorImpl) Stop() {
 }
 
 func (pr *platformReprocessorImpl) runReprocessing() {
+	pr.watchPlatformRulesForChanges()
 	err := pr.reprocessAlerts()
 	if err != nil {
 		log.Errorf("Error reprocessing alerts with platform rules: %v", err)
@@ -72,6 +78,30 @@ func (pr *platformReprocessorImpl) runReprocessing() {
 	err = pr.reprocessDeployments()
 	if err != nil {
 		log.Errorf("Error reprocessing deployments with platform rules: %v", err)
+	}
+}
+
+func (pr *platformReprocessorImpl) watchPlatformRulesForChanges() {
+	config, err := k8sutil.GetK8sInClusterConfig()
+	if err != nil {
+		log.Errorf("Error getting in-cluster config: %v", err)
+		return
+	}
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		log.Errorf("Error creating create Kubernetes client: %v", err)
+		return
+	}
+	pr.ruleChangeWatcher = k8scfgwatch.NewConfigMapWatcher(clientset, pr.updatePlatformRules)
+	pr.ruleChangeWatcher.Watch(reprocessorCtx, "stackrox", "platform-rules")
+}
+
+func (pr *platformReprocessorImpl) updatePlatformRules(cm *k8sV1.ConfigMap) {
+	if cm == nil {
+		return
+	}
+	for _, rule := range cm.Data {
+		log.Info("Platform rule: %s", rule)
 	}
 }
 
