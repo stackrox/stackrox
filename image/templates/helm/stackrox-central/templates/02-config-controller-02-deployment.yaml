@@ -41,7 +41,8 @@ spec:
       priorityClassName: {{ quote ._rox.configController.priorityClassName }}
       {{- end }}
       {{- if ._rox.configController.hostAliases }}
-      hostAliases: {{ toYaml ._rox.configController.hostAliases | nindent 8 }}
+      hostAliases:
+        {{- toYaml ._rox.configController.hostAliases | nindent 8 }}
       {{- end }}
       serviceAccountName: config-controller
       {{- if not (eq ._rox.env.openshift 4)}}
