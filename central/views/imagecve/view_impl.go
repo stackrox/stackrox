@@ -193,18 +193,18 @@ func (v *imageCVECoreViewImpl) GetCVE(ctx context.Context, q *v1.Query) ([]CveNe
 	}
 
 	var cveIDsToFilter []string
-	if cloned.GetPagination().GetLimit() > 0 || cloned.GetPagination().GetOffset() > 0 {
-		cveIDsToFilter, err = v.getFilteredCVEs(ctx, cloned)
-		if err != nil {
-			return nil, err
-		}
-
-		if cloned.GetPagination() != nil && cloned.GetPagination().GetSortOptions() != nil {
-			// The CVE ID list that we get from the above query is paginated. So when we fetch the details and aggregates for those CVEs,
-			// we do not need to re-apply pagination limit and offset
-			cloned.Pagination = &v1.QueryPagination{SortOptions: cloned.GetPagination().GetSortOptions()}
-		}
-	}
+	//if cloned.GetPagination().GetLimit() > 0 || cloned.GetPagination().GetOffset() > 0 {
+	//	cveIDsToFilter, err = v.getFilteredCVEs(ctx, cloned)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//
+	//	if cloned.GetPagination() != nil && cloned.GetPagination().GetSortOptions() != nil {
+	//		// The CVE ID list that we get from the above query is paginated. So when we fetch the details and aggregates for those CVEs,
+	//		// we do not need to re-apply pagination limit and offset
+	//		cloned.Pagination = &v1.QueryPagination{SortOptions: cloned.GetPagination().GetSortOptions()}
+	//	}
+	//}
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
