@@ -18,9 +18,10 @@ import (
 )
 
 var (
-	ipPool        = newPool()
-	containerPool = newPool()
-	endpointPool  = newEndpointPool()
+	ipPool         = newPool()
+	externalIpPool = newPool()
+	containerPool  = newPool()
+	endpointPool   = newEndpointPool()
 
 	registeredHostConnections []manager.HostNetworkInfo
 )
@@ -120,6 +121,30 @@ func generateIP() string {
 	return fmt.Sprintf("10.%d.%d.%d", rand.Intn(256), rand.Intn(256), rand.Intn(256))
 }
 
+func isPublicIP(ip string) bool {
+	return net.ParseIP(ip).IsPublic()
+}
+
+func generateExternalIP() string {
+	for {
+		ip := fmt.Sprintf("%d.%d.%d.%d", rand.Intn(256), rand.Intn(256), rand.Intn(256), rand.Intn(256))
+
+		if isPublicIP(ip) {
+			return ip
+		}
+	}
+}
+
+// We want to reuse some external IPs, so we test the cases where muliple
+// entities connect to the same external IP, but we also want many external IPs
+// that are only used once.
+func (w *WorkloadManager) generateExternalIPPool() {
+	for range 1000 {
+		ip := generateExternalIP()
+		externalIpPool.add(ip)
+	}
+}
+
 func generateAndAddIPToPool() string {
 	ip := generateIP()
 	for !ipPool.add(ip) {
@@ -210,18 +235,72 @@ func makeNetworkConnection(src string, dst string, containerID string, closeTime
 	}
 }
 
+// Randomly decide to get an interal or external IP. If the IP is external
+// randomly decide to pick it from a pool of external IPs or a new exteranl IP.
+// We want to have cases where multiple different entities connect to the same
+// external IP, but we also want a large number of unique external IPs.
+func (w *WorkloadManager) getRandomInternalExternalIP() (string, bool, bool) {
+	ip := ""
+	var ok bool
+
+	p := rand.Float32()
+	probInternal := float32(0.8)
+	var internal bool
+	if p < probInternal {
+		internal = true
+		ip, ok = ipPool.randomElem()
+		if !ok {
+			log.Error("found no IPs in pool")
+			return "", internal, false
+		}
+	} else {
+		probPool := float32(0.5)
+		p := rand.Float32()
+		if p < probPool {
+			internal = false
+			ip, ok = externalIpPool.randomElem()
+			if !ok {
+				log.Error("found no IPs in pool")
+				return "", internal, false
+			}
+		} else {
+			ip = generateExternalIP()
+		}
+	}
+
+	return ip, internal, true
+}
+
+func (w *WorkloadManager) getRandomSrcDst() (string, string, bool) {
+	src, internal, ok := w.getRandomInternalExternalIP()
+	if !ok {
+		return "", "", false
+	}
+	var dst string
+	// If the src is internal, the dst can be internal or external, but
+	// if the src is external, the dst cannot also be external.
+	if internal {
+		dst, _, ok = w.getRandomInternalExternalIP()
+		if !ok {
+			return "", "", false
+		}
+	} else {
+		dst, ok = ipPool.randomElem()
+		if !ok {
+			log.Error("found no IPs in pool")
+			return "", "", false
+		}
+	}
+
+	return src, dst, ok
+}
+
 func (w *WorkloadManager) getFakeNetworkConnectionInfo(workload NetworkWorkload) *sensor.NetworkConnectionInfo {
 	conns := make([]*sensor.NetworkConnection, 0, workload.BatchSize)
 	networkEndpoints := make([]*sensor.NetworkEndpoint, 0, workload.BatchSize)
 	for i := 0; i < workload.BatchSize; i++ {
-		src, ok := ipPool.randomElem()
+		src, dst, ok := w.getRandomSrcDst()
 		if !ok {
-			log.Error("found no IPs in pool")
-			continue
-		}
-		dst, ok := ipPool.randomElem()
-		if !ok {
-			log.Error("found no IPs in pool")
 			continue
 		}
 
@@ -272,6 +351,8 @@ func (w *WorkloadManager) manageFlows(ctx context.Context, workload NetworkWorkl
 	// Pick a valid pod
 	ticker := time.NewTicker(workload.FlowInterval)
 	defer ticker.Stop()
+
+	w.generateExternalIPPool()
 
 	for {
 		select {
