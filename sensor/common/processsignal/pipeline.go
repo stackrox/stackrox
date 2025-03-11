@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/metrics"
+	"github.com/stackrox/rox/sensor/common/trace"
 )
 
 var (
@@ -48,8 +49,8 @@ type Pipeline struct {
 // NewProcessPipeline defines how to process a ProcessIndicator
 func NewProcessPipeline(indicators chan *message.ExpiringMessage, clusterEntities *clusterentities.Store, processFilter filter.Filter, detector detector.Detector) *Pipeline {
 	log.Debug("Calling NewProcessPipeline")
-	msgCtx, cancelMsgCtx := context.WithCancelCause(context.Background())
-	enricherCtx, cancelEnricherCtx := context.WithCancelCause(context.Background())
+	msgCtx, cancelMsgCtx := context.WithCancelCause(trace.Background())
+	enricherCtx, cancelEnricherCtx := context.WithCancelCause(trace.Background())
 	en := newEnricher(enricherCtx, clusterEntities)
 	enrichedIndicators := make(chan *storage.ProcessIndicator)
 
@@ -114,13 +115,13 @@ func (p *Pipeline) Notify(e common.SensorComponentEvent) {
 func (p *Pipeline) createNewContext() {
 	p.msgCtxMux.Lock()
 	defer p.msgCtxMux.Unlock()
-	p.msgCtx, p.msgCtxCancel = context.WithCancelCause(context.Background())
+	p.msgCtx, p.msgCtxCancel = context.WithCancelCause(trace.Background())
 }
 
 func (p *Pipeline) getCurrentContext() context.Context {
 	// If we are in offline v3 the context won't be cancelled on disconnect, so we can just return Background here.
 	if features.SensorCapturesIntermediateEvents.Enabled() {
-		return context.Background()
+		return trace.Background()
 	}
 	p.msgCtxMux.Lock()
 	defer p.msgCtxMux.Unlock()

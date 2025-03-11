@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/sensor/common/store/resolver"
+	"github.com/stackrox/rox/sensor/common/trace"
 )
 
 // DeploytimeDetectionRequest is used to define a request for a detection based on a deployment object. This is message
@@ -62,7 +63,7 @@ type ResourceEvent struct {
 
 // NewEvent creates a resource event with preset sensor event messages.
 func NewEvent(msg ...*central.SensorEvent) *ResourceEvent {
-	return &ResourceEvent{ForwardMessages: msg, Context: context.Background()}
+	return &ResourceEvent{ForwardMessages: msg, Context: trace.Background()}
 }
 
 // AddSensorEvent appends central sensor events to be bundled with this resource event.
