@@ -49,6 +49,12 @@ var (
 		Name:      "network_flow_misses_container_lookup",
 		Help:      "Total number of misses on container lookup for network flows",
 	}, []string{"subject", "status"})
+	FlowEnrichmentEventsEndpoint = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "network_flow_enrichment_endpoint_events_total",
+		Help:      "Total number of events occurred to endpoints during the enrichment of network flows passed from collector",
+	}, []string{"containerIDlookup", "action", "isHistorical", "reason"})
 	ExternalFlowCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
