@@ -37,12 +37,11 @@ func addColumnToTable(ctx context.Context, db postgres.DB, table, column string)
 		return errors.Wrapf(err, "unable to alter table %s", table)
 	}
 
-	// Using ALTER TABLE to set the value of the entire column instead of UPDATE as we do not need the WHERE clause
-	alterColumnStmt := fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s TYPE TIMESTAMP WITHOUT TIME ZONE USING now()::timestamp;", table, column)
+	updateColumnStmt := fmt.Sprintf("UPDATE %s SET %s = now()::timestamp WHERE %s IS NULL;", table, column, column)
 
-	_, err = db.Exec(ctx, alterColumnStmt)
+	_, err = db.Exec(ctx, updateColumnStmt)
 	if err != nil {
-		return errors.Wrapf(err, "unable to alter column %s", column)
+		return errors.Wrapf(err, "unable to update column %s", column)
 	}
 
 	addIndexStmt := fmt.Sprintf("CREATE INDEX IF NOT EXISTS network_flows_updatedat_v2 ON %s USING brin (%s);", table, column)
