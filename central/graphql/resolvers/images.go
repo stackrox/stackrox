@@ -8,7 +8,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/views"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
@@ -163,15 +162,7 @@ func (resolver *imageResolver) ImageVulnerabilities(ctx context.Context, args Pa
 		if err != nil {
 			return nil, err
 		}
-		readOptions := views.ReadOptions{
-			SkipGetImagesBySeverity:        true,
-			SkipGetTopCVSS:                 true,
-			SkipGetTopNVDCVSS:              true,
-			SkipGetAffectedImages:          true,
-			SkipGetFirstDiscoveredInSystem: false,
-			SkipPublishedDate:              false,
-		}
-		cveListish, err := resolver.root.ImageCVEView.Get(resolver.withImageScopeContext(ctx), query, readOptions)
+		cveListish, err := resolver.root.ImageCVEView.GetCVE(resolver.withImageScopeContext(ctx), query)
 		if err != nil {
 			return nil, err
 		}

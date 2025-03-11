@@ -179,6 +179,52 @@ func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 	return ret, nil
 }
 
+func (v *imageCVECoreViewImpl) GetCVE(ctx context.Context, q *v1.Query) ([]CveNeedName, error) {
+	if err := common.ValidateQuery(q); err != nil {
+		return nil, err
+	}
+
+	var err error
+	// Avoid changing the passed query
+	cloned := q.CloneVT()
+	cloned, err = common.WithSACFilter(ctx, resources.Image, cloned)
+	if err != nil {
+		return nil, err
+	}
+
+	var cveIDsToFilter []string
+	if cloned.GetPagination().GetLimit() > 0 || cloned.GetPagination().GetOffset() > 0 {
+		cveIDsToFilter, err = v.getFilteredCVEs(ctx, cloned)
+		if err != nil {
+			return nil, err
+		}
+
+		if cloned.GetPagination() != nil && cloned.GetPagination().GetSortOptions() != nil {
+			// The CVE ID list that we get from the above query is paginated. So when we fetch the details and aggregates for those CVEs,
+			// we do not need to re-apply pagination limit and offset
+			cloned.Pagination = &v1.QueryPagination{SortOptions: cloned.GetPagination().GetSortOptions()}
+		}
+	}
+	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
+	defer cancel()
+
+	var results []*imageCVEResponse
+	results, err = pgSearch.RunSelectRequestForSchema[imageCVEResponse](queryCtx, v.db, v.schema, withSelectCVEResponseQuery(cloned, cveIDsToFilter))
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]CveNeedName, 0, len(results))
+	for _, r := range results {
+		// For each record, sort the IDs so that result looks consistent.
+		sort.SliceStable(r.CVEIDs, func(i, j int) bool {
+			return r.CVEIDs[i] < r.CVEIDs[j]
+		})
+		ret = append(ret, r)
+	}
+	return ret, nil
+}
+
 func (v *imageCVECoreViewImpl) GetDeploymentIDs(ctx context.Context, q *v1.Query) ([]string, error) {
 	var err error
 	q, err = common.WithSACFilter(ctx, resources.Deployment, q)
@@ -290,6 +336,41 @@ func withSelectCVECoreResponseQuery(q *v1.Query, cveIDsToFilter []string, option
 	}
 	cloned.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{search.CVE.String()},
+	}
+	return cloned
+}
+
+func withSelectCVEResponseQuery(q *v1.Query, cveIDsToFilter []string) *v1.Query {
+	cloned := q.CloneVT()
+	if len(cveIDsToFilter) > 0 {
+		if features.FlattenCVEData.Enabled() {
+			cloned = search.ConjunctionQuery(cloned, search.NewQueryBuilder().AddExactMatches(search.CVEID, cveIDsToFilter...).ProtoQuery())
+		} else {
+			cloned = search.ConjunctionQuery(cloned, search.NewQueryBuilder().AddDocIDs(cveIDsToFilter...).ProtoQuery())
+		}
+		cloned.Pagination = q.GetPagination()
+	}
+	cloned.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(search.CVE).Proto(),
+		search.NewQuerySelect(search.CVEID).Distinct().Proto(),
+		search.NewQuerySelect(search.CVSS).AggrFunc(aggregatefunc.Max).Proto(),
+		search.NewQuerySelect(search.ComponentID).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
+		search.NewQuerySelect(search.CVECreatedTime).AggrFunc(aggregatefunc.Min).Proto(),
+		search.NewQuerySelect(search.CVEPublishedOn).AggrFunc(aggregatefunc.Min).Proto(),
+		search.NewQuerySelect(search.NVDCVSS).AggrFunc(aggregatefunc.Max).Proto(),
+		search.NewQuerySelect(search.Severity).AggrFunc(aggregatefunc.Max).Proto(),
+		search.NewQuerySelect(search.VulnerabilityState).Proto(),
+	}
+
+	cloned.GroupBy = &v1.QueryGroupBy{
+		Fields: []string{search.CVE.String()},
+	}
+
+	// Add pagination sort options to GroupBy
+	for _, sortField := range cloned.GetPagination().GetSortOptions() {
+		if sortField.GetField() != "" {
+			cloned.GroupBy.Fields = append(cloned.GroupBy.Fields, sortField.GetField())
+		}
 	}
 	return cloned
 }
