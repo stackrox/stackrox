@@ -43,7 +43,7 @@ func NewVulnReportQueryBuilder(collection *storage.ResourceCollection, vulnFilte
 // BuildQuery builds scope and cve filtering queries for vuln reporting
 func (q *queryBuilder) BuildQuery(ctx context.Context, clusters []*storage.Cluster,
 	namespaces []*storage.NamespaceMetadata) (*ReportQuery, error) {
-	deploymentsQuery, err := q.collectionQueryResolver.ResolveCollectionQuery(ctx, q.collection)
+	deploymentsQuery, err := q.collectionQueryResolver.ResolveCollectionQuery(ctx, q.collection, false)
 	if err != nil {
 		return nil, err
 	}
