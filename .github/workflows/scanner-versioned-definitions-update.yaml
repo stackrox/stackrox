@@ -248,7 +248,7 @@ jobs:
   upload-definitions:
     needs:
     - build-and-run
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    if: ${{ (failure() || success()) && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}
     runs-on: ubuntu-latest
     steps:
     # Checkout to run ./.github/actions/download-artifact-with-retry
@@ -258,13 +258,19 @@ jobs:
 
     - uses: ./.github/actions/download-artifact-with-retry
       with:
-        # Only download vulnerability bundles.
-        # This avoids accidentally downloading nvd.zip.
+        # Vulnerability bundles are named `artifact_${{ env.SCANNER_BUNDLE_VERSION }}`.
         pattern: "artifact_*"
         path: downloaded_artifacts
 
-    - name: Move files artifacts
-      run: rsync -av downloaded_artifacts/*/ definitions_files/
+    - name: Check and move files artifacts
+      run: |
+        ls -lR downloaded_artifacts
+        if rmdir downloaded_artifacts 2>/dev/null; then
+            echo "error: no definition files were created, abort..."
+            exit 1
+        fi
+        rsync -av downloaded_artifacts/*/ definitions_files/
+        ls -lR definitions_files
 
     - name: Authenticate with Google Cloud
       uses: google-github-actions/auth@v2
@@ -276,7 +282,6 @@ jobs:
 
     - name: Upload to GCS
       run: |
-        ls -lr definitions_files
         for dir in definitions_files/*; do
           if [ -d "$dir" ]; then
             echo "Copy $dir"
@@ -288,6 +293,11 @@ jobs:
 
     - name: Copy v1 to pre-versioned bundles
       run: |
+        # Only execute if v1 files were created by the build job.
+        if ! [ -d "definitions_files/v1" ]; then
+           echo "error: no definition files for v1 were created: skipping..."
+           exit 0
+        fi
         # Using v1 bundle for released versions listed in RELEASE_VERSION.
         single=gs://definitions.stackrox.io/v4/vulnerability-bundles/v1/vulns.json.zst
         multi=gs://definitions.stackrox.io/v4/vulnerability-bundles/v1/vulnerabilities.zip
