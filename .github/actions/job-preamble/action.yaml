@@ -27,9 +27,9 @@ runs:
           /opt/hostedtoolcache/Ruby
         )
         for d in "${cleanup[@]}"; do
-          if [[ -d "/mnt${d}" ]]; then
+          if [[ -e "/mnt${d}" ]]; then
             rm -rf "/mnt${d}"
-          elif [[ -d "$d" ]]; then
+          elif [[ -e "$d" ]]; then
             rm -rf "$d" \
               || sudo rm -rf "$d"
           fi
