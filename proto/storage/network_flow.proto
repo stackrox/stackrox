@@ -16,6 +16,8 @@ message NetworkFlow {
   string cluster_id = 3; // @gotags: sql:"pk,type(uuid)"
 
   // This field is set by Central everytime a flow is upserted.
+  // This should not be set by Sensor.
+  // For more context: https://github.com/stackrox/stackrox/pull/14483
   google.protobuf.Timestamp updated_at = 4; // @gotags: sql:"index=brin"
 }
 

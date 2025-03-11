@@ -630,7 +630,7 @@
         "updatedAt": {
           "type": "string",
           "format": "date-time",
-          "description": "This field is set by Central everytime a flow is upserted."
+          "title": "This field is set by Central everytime a flow is upserted.\nThis should not be set by Sensor.\nFor more context: https://github.com/stackrox/stackrox/pull/14483"
         }
       }
     },

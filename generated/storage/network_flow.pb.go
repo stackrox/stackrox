@@ -149,6 +149,8 @@ type NetworkFlow struct {
 	// Need the clusterID as that is part of the key in RocksDB
 	ClusterId string `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
 	// This field is set by Central everytime a flow is upserted.
+	// This should not be set by Sensor.
+	// For more context: https://github.com/stackrox/stackrox/pull/14483
 	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty" sql:"index=brin"` // @gotags: sql:"index=brin"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
