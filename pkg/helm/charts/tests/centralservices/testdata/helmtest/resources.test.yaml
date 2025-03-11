@@ -25,5 +25,5 @@ tests:
           memory: "128Gi"
           cpu: "128"
   expect: |
-    .deployments["central"].spec.template.spec.containers | map({(.name|tostring):.}) | add | .central.resources | assertThat(.requests.memory == "64Gi")
-    .deployments["config-controller"].spec.template.spec.containers | map({(.name|tostring):.}) | add | .manager.resources | assertThat(.requests.memory == "64Gi")
+    .deployments["central"].spec.template.spec.containers[] | select(.name == "central") | assertThat(.resources.requests.memory == "64Gi")
+    .deployments["config-controller"].spec.template.spec.containers[] | select(.name == "manager") | assertThat(.resources.requests.memory == "64Gi")
