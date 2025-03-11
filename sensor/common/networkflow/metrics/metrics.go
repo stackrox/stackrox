@@ -10,6 +10,7 @@ func init() {
 		NetworkFlowsPerNodeByType,
 		ContainerEndpointsPerNode,
 		NetworkFlowMessagesPerNode,
+		FlowEnrichmentEventsEndpoint,
 		ContainerIDMisses,
 		ExternalFlowCounter,
 		InternalFlowCounter,
