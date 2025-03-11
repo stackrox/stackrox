@@ -101,7 +101,7 @@ func (pr *platformReprocessorImpl) updatePlatformRules(cm *k8sV1.ConfigMap) {
 		return
 	}
 	for _, rule := range cm.Data {
-		log.Info("Platform rule: %s", rule)
+		log.Infof("Platform rule: %s", rule)
 	}
 }
 
