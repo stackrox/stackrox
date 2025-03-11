@@ -782,6 +782,7 @@ func (m *networkFlowManager) enrichContainerEndpoint(ep *containerEndpoint, stat
 	container, ok, isHistorical := m.clusterEntities.LookupByContainerID(ep.containerID)
 	if !ok {
 		if timeElapsedSinceFirstSeen <= maxContainerResolutionWaitPeriod {
+			flowMetrics.FlowEnrichmentEventsEndpoint.WithLabelValues("miss", "retry-later", "n/a", "in-grace-period").Inc()
 			flowMetrics.ContainerIDMisses.WithLabelValues("endpoint", "in-grace-period").Inc()
 			// Still within the grace-period - will retry next iteration.
 			return
@@ -791,13 +792,16 @@ func (m *networkFlowManager) enrichContainerEndpoint(ep *containerEndpoint, stat
 			// Endpoint is not in activeEndpoints, so it must be rotten. No action required, as
 			// there is nothing to update in activeEndpoints and in enrichedEndpoints.
 			status.rotten = true
+			flowMetrics.FlowEnrichmentEventsEndpoint.WithLabelValues("miss", "remove", "n/a", "rotten").Inc()
 			flowMetrics.ContainerIDMisses.WithLabelValues("endpoint", "rotten").Inc()
 			return
 		}
 		// Endpoint has been expired; it is no longer in activeEndpoints or enrichedEndpoints.
+		flowMetrics.FlowEnrichmentEventsEndpoint.WithLabelValues("miss", "remove", "n/a", "no-longer-active").Inc()
 		flowMetrics.ContainerIDMisses.WithLabelValues("endpoint", "expired").Inc()
 		return
 	}
+	isHistoricalStr := fmt.Sprintf("%t", isHistorical)
 	// It is possible, that Container is found in the store only because it is historical.
 	// In that case, we shall enrich the endpoint with all the data from the store (i.e., do not exit early),
 	// but the endpoint must be marked as expired (i.e., the last-seen timestamp must be set to 'now').
@@ -808,6 +812,9 @@ func (m *networkFlowManager) enrichContainerEndpoint(ep *containerEndpoint, stat
 		if expireEndpoint(ep, m.activeEndpoints, enrichedEndpoints, now) != nil {
 			// Endpoint cannot be expired (not found within activeEndpoints), so we mark it as rotten
 			status.rotten = true
+			flowMetrics.FlowEnrichmentEventsEndpoint.WithLabelValues("hit", "continue-enrichment", isHistoricalStr, "rotten").Inc()
+		} else {
+			flowMetrics.FlowEnrichmentEventsEndpoint.WithLabelValues("hit", "continue-enrichment", isHistoricalStr, "no-longer-active").Inc()
 		}
 		// Do not exit early, let's do the full enrichment of
 	}
@@ -822,18 +829,25 @@ func (m *networkFlowManager) enrichContainerEndpoint(ep *containerEndpoint, stat
 
 	// Multiple endpoints from a collector can result in a single enriched endpoint,
 	// hence update the timestamp only if we have a more recent endpoint than the one we have already enriched.
-	if oldTS, found := enrichedEndpoints[indicator]; !found || oldTS < status.lastSeen {
-		enrichedEndpoints[indicator] = status.lastSeen
-		if features.SensorCapturesIntermediateEvents.Enabled() {
-			if status.lastSeen == timestamp.InfiniteFuture {
-				m.activeEndpoints[*ep] = &indicator
-				flowMetrics.SetActiveEndpointsTotalGauge(len(m.activeEndpoints))
-			} else {
-				delete(m.activeEndpoints, *ep)
-				flowMetrics.SetActiveEndpointsTotalGauge(len(m.activeEndpoints))
-			}
-		}
+	if oldTS, found := enrichedEndpoints[indicator]; found && oldTS >= status.lastSeen {
+		flowMetrics.FlowEnrichmentEventsEndpoint.WithLabelValues("hit", "nothing-to-update", isHistoricalStr, "end-of-enrichment").Inc()
+		return
 	}
+
+	enrichedEndpoints[indicator] = status.lastSeen
+	if !features.SensorCapturesIntermediateEvents.Enabled() {
+		return
+	}
+	if status.lastSeen == timestamp.InfiniteFuture {
+		m.activeEndpoints[*ep] = &indicator
+		flowMetrics.FlowEnrichmentEventsEndpoint.WithLabelValues("hit", "updating-active", isHistoricalStr, "end-of-enrichment").Inc()
+		flowMetrics.SetActiveEndpointsTotalGauge(len(m.activeEndpoints))
+	} else {
+		flowMetrics.FlowEnrichmentEventsEndpoint.WithLabelValues("hit", "remove", isHistoricalStr, "end-of-enrichment").Inc()
+		delete(m.activeEndpoints, *ep)
+		flowMetrics.SetActiveEndpointsTotalGauge(len(m.activeEndpoints))
+	}
+
 }
 
 func expireEndpoint(ep *containerEndpoint,
