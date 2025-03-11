@@ -30,21 +30,22 @@ func migrate(database *types.Databases) error {
 func addColumnToTable(ctx context.Context, db postgres.DB, table, column string) error {
 	ctx, cancel := context.WithTimeout(ctx, types.DefaultMigrationTimeout)
 	defer cancel()
-	alterTableStmt := fmt.Sprintf("alter table %s add column if not exists %s timestamp without time zone;", table, column)
+	alterTableStmt := fmt.Sprintf("ALTER TABLE %s ADD COLUMN IF NOT EXISTS %s TIMESTAMP WITHOUT TIME ZONE;", table, column)
 
 	_, err := db.Exec(ctx, alterTableStmt)
 	if err != nil {
 		return errors.Wrapf(err, "unable to alter table %s", table)
 	}
 
-	alterColumnStmt := fmt.Sprintf("alter table %s alter column %s type timestamp without time zone using now()::timestamp;", table, column)
+	// Using ALTER TABLE to set the value of the entire column instead of UPDATE as we do not need the WHERE clause
+	alterColumnStmt := fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s TYPE TIMESTAMP WITHOUT TIME ZONE USING now()::timestamp;", table, column)
 
 	_, err = db.Exec(ctx, alterColumnStmt)
 	if err != nil {
 		return errors.Wrapf(err, "unable to alter column %s", column)
 	}
 
-	addIndexStmt := fmt.Sprintf("create index if not exists network_flows_updatedat_v2 on %s using brin (%s);", table, column)
+	addIndexStmt := fmt.Sprintf("CREATE INDEX IF NOT EXISTS network_flows_updatedat_v2 ON %s USING brin (%s);", table, column)
 	_, err = db.Exec(ctx, addIndexStmt)
 	if err != nil {
 		return errors.Wrapf(err, "unable to create index in table %s", table)
