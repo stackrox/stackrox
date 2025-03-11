@@ -1,6 +1,8 @@
 package metrics
 
 import (
+	"strconv"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/pkg/metrics"
 )
@@ -11,7 +13,6 @@ func init() {
 		ContainerEndpointsPerNode,
 		NetworkFlowMessagesPerNode,
 		FlowEnrichmentEventsEndpoint,
-		ContainerIDMisses,
 		ExternalFlowCounter,
 		InternalFlowCounter,
 		NetworkEntityFlowCounter,
@@ -44,18 +45,12 @@ var (
 		Name:      "network_flow_msgs_received_per_node",
 		Help:      "Total number of network flows received for a specific node",
 	}, []string{"Hostname"})
-	ContainerIDMisses = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "network_flow_misses_container_lookup",
-		Help:      "Total number of misses on container lookup for network flows",
-	}, []string{"subject", "status"})
 	FlowEnrichmentEventsEndpoint = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "network_flow_enrichment_endpoint_events_total",
 		Help:      "Total number of events occurred to endpoints during the enrichment of network flows passed from collector",
-	}, []string{"containerIDlookup", "action", "isHistorical", "reason"})
+	}, []string{"containerIDfound", "action", "isHistorical", "reason", "lastSeenSet", "rotten", "expired", "fresh"})
 	ExternalFlowCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
@@ -117,6 +112,18 @@ var (
 		Help:      "A gauge that tracks the total active endpoints in sensor",
 	})
 )
+
+func IncFlowEnrichmentEndpoint(condIDfound bool, action, isHistorical string, reason string, lastSeenSet, rotten, expired, fresh bool) {
+	FlowEnrichmentEventsEndpoint.With(prometheus.Labels{
+		"containerIDfound": strconv.FormatBool(condIDfound),
+		"action":           action,
+		"isHistorical":     isHistorical,
+		"reason":           reason,
+		"lastSeenSet":      strconv.FormatBool(lastSeenSet),
+		"rotten":           strconv.FormatBool(rotten),
+		"expired":          strconv.FormatBool(expired),
+		"fresh":            strconv.FormatBool(fresh)}).Inc()
+}
 
 // SetActiveFlowsTotalGauge set the active network flows total gauge.
 func SetActiveFlowsTotalGauge(number int) {
