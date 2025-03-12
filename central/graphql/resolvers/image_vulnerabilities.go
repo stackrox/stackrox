@@ -163,8 +163,8 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 	return ret, nil
 }
 
-// FlattenImageVulnerabilities resolves a set of image vulnerabilities for the input query
-func (resolver *Resolver) FlattenImageVulnerabilities(ctx context.Context, q PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
+// FlattenedImageVulnerabilities resolves a set of image vulnerabilities for the input query
+func (resolver *Resolver) FlattenedImageVulnerabilities(ctx context.Context, q PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilities")
 	if !features.FlattenCVEData.Enabled() {
 		return nil, nil
