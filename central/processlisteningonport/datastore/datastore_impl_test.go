@@ -2836,7 +2836,10 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUIDScaleRaceCondit
 
 	totalPrunedCount := 0
 
+	var wgPrune sync.WaitGroup
+	wgPrune.Add(1)
 	go func() {
+		defer wgPrune.Done()
 		for running {
 			prunedCount, err := suite.datastore.RemovePLOPsWithoutPodUID(suite.hasWriteCtx)
 			suite.NoError(err)
@@ -2847,6 +2850,8 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUIDScaleRaceCondit
 	wg.Wait()
 
 	running = false
+
+	wgPrune.Wait()
 
 	prunedCount, err := suite.datastore.RemovePLOPsWithoutPodUID(suite.hasWriteCtx)
 	suite.NoError(err)
