@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/continuousprofiling/mocks"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -71,7 +72,7 @@ func (s *continuousProfilingSuite) TestProfileValidation() {
 				ApplicationName: "test",
 				ServerAddress:   "https:// invalid",
 			},
-			expectedError: ErrUnableToParseServerAddress,
+			expectedError: errox.InvalidArgs,
 		},
 		"no profiles defined": {
 			config: pyroscope.Config{

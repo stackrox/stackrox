@@ -7,6 +7,7 @@ import (
 	"github.com/grafana/pyroscope-go"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/urlfmt"
 )
@@ -32,10 +33,9 @@ func (c *startClient) Start(cfg pyroscope.Config) (*pyroscope.Profiler, error) {
 }
 
 var (
-	ErrApplicationName            = errors.New("the ApplicationName must be defined")
-	ErrServerAddress              = errors.New("the ServerAddress must be defined")
-	ErrUnableToParseServerAddress = errors.New("unable to parse server address")
-	ErrAtLeastOneProfileIsNeeded  = errors.New("at least one profile is needed")
+	ErrApplicationName           = errors.New("the ApplicationName must be defined")
+	ErrServerAddress             = errors.New("the ServerAddress must be defined")
+	ErrAtLeastOneProfileIsNeeded = errors.New("at least one profile is needed")
 
 	log = logging.LoggerForModule()
 
@@ -100,7 +100,7 @@ func validateServerAddress(address string) (string, error) {
 	// We default to https unless http is specified
 	sanitizedAddress := urlfmt.FormatURL(address, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 	if _, err := url.Parse(sanitizedAddress); err != nil {
-		return "", errors.Wrap(ErrUnableToParseServerAddress, errors.Wrapf(err, "server address %q", address).Error())
+		return "", errox.InvalidArgs.Newf("unable to parse server address %q", address).CausedBy(err)
 	}
 	return sanitizedAddress, nil
 }
