@@ -55,9 +55,6 @@ type Store interface {
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.Policy, error)
 	GetMany(ctx context.Context, identifiers []string) ([]*storage.Policy, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
-	GetAll(ctx context.Context) ([]*storage.Policy, error)
-
-	Walk(ctx context.Context, fn func(obj *storage.Policy) error) error
 
 	AckKeysIndexed(ctx context.Context, keys ...string) error
 	GetKeysToIndex(ctx context.Context) ([]string, error)
@@ -477,41 +474,6 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	}
 
 	return identifiers, nil
-}
-
-// GetAll retrieves all objects from the store.
-func (s *storeImpl) GetAll(ctx context.Context) ([]*storage.Policy, error) {
-	var objs []*storage.Policy
-	err := s.Walk(ctx, func(obj *storage.Policy) error {
-		objs = append(objs, obj)
-		return nil
-	})
-	return objs, err
-}
-
-// Walk iterates over all of the objects in the store and applies the closure.
-func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Policy) error) error {
-	var sacQueryFilter *v1.Query
-	fetcher, closer, err := pgSearch.RunCursorQueryForSchema[storage.Policy](ctx, schema, sacQueryFilter, s.db)
-	if err != nil {
-		return err
-	}
-	defer closer()
-	for {
-		rows, err := fetcher(cursorBatchSize)
-		if err != nil {
-			return pgutils.ErrNilIfNoRows(err)
-		}
-		for _, data := range rows {
-			if err := fn(data); err != nil {
-				return err
-			}
-		}
-		if len(rows) != cursorBatchSize {
-			break
-		}
-	}
-	return nil
 }
 
 //// Stubs for satisfying legacy interfaces
