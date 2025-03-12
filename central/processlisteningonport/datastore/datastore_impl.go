@@ -647,6 +647,7 @@ func (ds *datastoreImpl) RemovePLOPsWithoutProcessIndicatorOrProcessInfo(ctx con
 	return int64(len(plopsToDelete)), nil
 }
 
+// Removes PLOPs without poduids between a range of ids.
 func (ds *datastoreImpl) RemovePLOPsWithoutPodUIDOnePage(ctx context.Context, prevId string, nextId string) (int64, error) {
 	ds.mutex.Lock()
 	defer ds.mutex.Unlock()
@@ -661,46 +662,21 @@ func (ds *datastoreImpl) RemovePLOPsWithoutPodUIDOnePage(ctx context.Context, pr
 	return commandTag.RowsAffected(), nil
 }
 
-func (ds *datastoreImpl) RemovePLOPsWithoutPodUIDFirstPage(ctx context.Context, id string) (int64, error) {
-	ds.mutex.Lock()
-	defer ds.mutex.Unlock()
+// Given a set of rows with ids, returns the id of the last row. This is useful for pagination.
+func (ds *datastoreImpl) getLastIdFromRows(ctx context.Context, rows pgx.Rows) (string, error) {
+	id := ""
 
-	query := fmt.Sprintf(deletePLOPsWithoutPoduidInFirstPage, id)
-	commandTag, err := ds.pool.Exec(ctx, query)
-
-	if err != nil {
-		return 0, err
-	}
-
-	return commandTag.RowsAffected(), nil
-}
-
-func (ds *datastoreImpl) GetFirstPageId(ctx context.Context, limit int) (string, error) {
-	ds.mutex.Lock()
-	defer ds.mutex.Unlock()
-
-	query := fmt.Sprintf(getLastIdFromFirstPage, limit)
-	rows, err := ds.pool.Query(ctx, query)
-
-	if err != nil {
-		// Do not be alarmed if the error is simply NoRows
-		err = pgutils.ErrNilIfNoRows(err)
-		if err != nil {
-			log.Warnf("%s: %s", query, err)
+	for rows.Next() {
+		if err := rows.Scan(&id); err != nil {
+			return "", pgutils.ErrNilIfNoRows(err)
 		}
-		return "", err
-	}
-	defer rows.Close()
-
-	id, err := ds.getLastIdFromRows(ctx, rows)
-
-	if err != nil {
-		return "", err
 	}
 
 	return id, nil
 }
 
+// Given an id and a limit, returns the id a limit number of rows after the given id. This is useful
+// for efficient pagination.
 func (ds *datastoreImpl) GetNextPageId(ctx context.Context, prevId string, limit int) (string, error) {
 	ds.mutex.Lock()
 	defer ds.mutex.Unlock()
@@ -729,20 +705,9 @@ func (ds *datastoreImpl) GetNextPageId(ctx context.Context, prevId string, limit
 
 func (ds *datastoreImpl) retryableRemovePLOPsWithoutPodUID(ctx context.Context) (int64, error) {
 	limit := 10000
+	totalRows := int64(0)
 
-	prevId, err := ds.GetFirstPageId(ctx, limit)
-	if err != nil {
-		return 0, err
-	}
-	if prevId == "" {
-		return 0, nil
-	}
-
-	totalRows, err := ds.RemovePLOPsWithoutPodUIDFirstPage(ctx, prevId)
-	if err != nil {
-		return totalRows, err
-	}
-
+	prevId := "00000000-0000-0000-0000-000000000000"
 	for {
 		nextId, err := ds.GetNextPageId(ctx, prevId, limit)
 		if err != nil {
@@ -760,18 +725,6 @@ func (ds *datastoreImpl) retryableRemovePLOPsWithoutPodUID(ctx context.Context) 
 	}
 
 	return totalRows, nil
-}
-
-func (ds *datastoreImpl) getLastIdFromRows(ctx context.Context, rows pgx.Rows) (string, error) {
-	id := ""
-
-	for rows.Next() {
-		if err := rows.Scan(&id); err != nil {
-			return "", pgutils.ErrNilIfNoRows(err)
-		}
-	}
-
-	return id, nil
 }
 
 func (ds *datastoreImpl) RemovePLOPsWithoutPodUID(ctx context.Context) (int64, error) {

@@ -32,17 +32,13 @@ const (
 	getPotentiallyOrphanedPLOPs = `SELECT plop.serialized FROM listening_endpoints plop where NOT EXISTS
 			(select 1 FROM process_indicators proc where plop.processindicatorid = proc.id)`
 
-	getLastIdFromFirstPage = `(SELECT id FROM listening_endpoints ORDER BY id OFFSET %d LIMIT 1)
-				UNION ALL
-				(SELECT id FROM listening_endpoints ORDER BY id DESC LIMIT 1)
-				LIMIT 1`
-
+	// This is used to make pagination more efficient compared to using offset. The ids obtained using this query are used for deleting
+	// PLOPs without poduids in batches. See the query below this query.
 	getLastIdFromPage = `WITH tmp as (
 				SELECT id FROM listening_endpoints WHERE id > '%s' ORDER BY id LIMIT %d
 			)
 			SELECT id FROM tmp ORDER BY id DESC LIMIT 1`
 
-	deletePLOPsWithoutPoduidInFirstPage = "DELETE FROM listening_endpoints WHERE poduid is null AND id <= '%s'"
-
-	deletePLOPsWithoutPoduidInPage = "DELETE FROM listening_endpoints WHERE poduid is null AND id > '%s' AND id <= '%s'"
+	// Deletes PLOPs without poduids in batches according to id, which is more efficient than using offset.
+	deletePLOPsWithoutPoduidInPage = "DELETE FROM listening_endpoints WHERE poduid is null AND id >= '%s' AND id <= '%s'"
 )
