@@ -158,19 +158,19 @@ func (resolver *imageResolver) ImageVulnerabilities(ctx context.Context, args Pa
 	log.Infof("SHREWS -- image.ImageVulnerabilities -- context %v, args %v", ctx, args.String())
 	if features.FlattenCVEData.Enabled() {
 		// Grab distinct CVEs
-		query, err := args.AsV1QueryOrEmpty()
-		if err != nil {
-			return nil, err
-		}
-		cveListish, err := resolver.root.ImageCVEView.GetCVE(resolver.withImageScopeContext(ctx), query)
-		if err != nil {
-			return nil, err
-		}
-		for _, cve := range cveListish {
-			log.Infof("SHREWS -- CVE: %s", cve.GetCVE())
-			log.Infof("SHREWS -- CVE IDs: %v", cve.GetCVEIDs())
-		}
-
+		//query, err := args.AsV1QueryOrEmpty()
+		//if err != nil {
+		//	return nil, err
+		//}
+		//cveListish, err := resolver.root.ImageCVEView.GetCVE(resolver.withImageScopeContext(ctx), query)
+		//if err != nil {
+		//	return nil, err
+		//}
+		//for _, cve := range cveListish {
+		//	log.Infof("SHREWS -- CVE: %s", cve.GetCVE())
+		//	log.Infof("SHREWS -- CVE IDs: %v", cve.GetCVEIDs())
+		//}
+		return resolver.root.FlattenImageVulnerabilities(resolver.withImageScopeContext(ctx), args)
 	}
 	return resolver.root.ImageVulnerabilities(resolver.withImageScopeContext(ctx), args)
 }
