@@ -562,7 +562,6 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 	isFresh := timeElapsedSinceFirstSeen < clusterEntityResolutionWaitPeriod
 	lastSeenSet := status.lastSeen < timestamp.InfiniteFuture
 	var netGraphFailReason *multierror.Error
-	netGraphFailReason.ErrorFormat = formatMultiErrorOneline
 
 	container, found, isHistorical := m.clusterEntities.LookupByContainerID(conn.containerID)
 	if !found {
@@ -580,6 +579,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		}
 		netGraphFailReason = multierror.Append(netGraphFailReason, fmt.Errorf("marking connection as inactive, because it involves non-existing container %s", conn.containerID))
 
+		netGraphFailReason.ErrorFormat = formatMultiErrorOneline
 		log.Debugf("Enrichment finished early: %s", netGraphFailReason.Error())
 		// If we miss container data, there is no point in trying further enrichments (endpoint won't be found as well).
 		flowMetrics.IncFlowEnrichmentConnection(found, "enrich-and-remove-from-activeConnections", "N/A", "past-grace-period", lastSeenSet, status.rotten, isExpired, isFresh, "N/A")
