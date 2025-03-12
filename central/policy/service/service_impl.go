@@ -290,7 +290,7 @@ func (s *serviceImpl) PostPolicy(ctx context.Context, request *v1.PostPolicyRequ
 		options = append(options, booleanpolicy.ValidateEnvVarSourceRestrictions())
 	}
 	policy, err := s.addOrUpdatePolicy(ctx, request.GetPolicy(), ensureIDEmpty, s.addPolicyToStoreAndSetID, options...)
-	if err != nil {
+	if err == nil && policy != nil && policy.Source == storage.PolicySource_DECLARATIVE {
 		metrics.IncrementTotalPolicyAsCodeCRsReceivedCounter()
 	}
 	return policy, err
