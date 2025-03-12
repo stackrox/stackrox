@@ -88,6 +88,20 @@ func (mr *MockDataStoreMockRecorder) RemovePod(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemovePod", reflect.TypeOf((*MockDataStore)(nil).RemovePod), ctx, id)
 }
 
+// RemovePods mocks base method.
+func (m *MockDataStore) RemovePods(ctx context.Context, ids []string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemovePods", ctx, ids)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemovePods indicates an expected call of RemovePods.
+func (mr *MockDataStoreMockRecorder) RemovePods(ctx, ids any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemovePods", reflect.TypeOf((*MockDataStore)(nil).RemovePods), ctx, ids)
+}
+
 // Search mocks base method.
 func (m *MockDataStore) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	m.ctrl.T.Helper()
