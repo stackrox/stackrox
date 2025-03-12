@@ -289,10 +289,11 @@ func (s *serviceImpl) PostPolicy(ctx context.Context, request *v1.PostPolicyRequ
 	if request.GetEnableStrictValidation() {
 		options = append(options, booleanpolicy.ValidateEnvVarSourceRestrictions())
 	}
-	if request.PolicyAsCode {
+	policy, err := s.addOrUpdatePolicy(ctx, request.GetPolicy(), ensureIDEmpty, s.addPolicyToStoreAndSetID, options...)
+	if err != nil && request.PolicyAsCode {
 		metrics.IncrementTotalPolicyAsCodeCRsReceivedCounter()
 	}
-	return s.addOrUpdatePolicy(ctx, request.GetPolicy(), ensureIDEmpty, s.addPolicyToStoreAndSetID, options...)
+	return policy, err
 }
 
 // PutPolicy updates a current policy in the system.
