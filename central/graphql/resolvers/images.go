@@ -170,7 +170,7 @@ func (resolver *imageResolver) ImageVulnerabilities(ctx context.Context, args Pa
 		//	log.Infof("SHREWS -- CVE: %s", cve.GetCVE())
 		//	log.Infof("SHREWS -- CVE IDs: %v", cve.GetCVEIDs())
 		//}
-		return resolver.root.FlattenImageVulnerabilities(resolver.withImageScopeContext(ctx), args)
+		return resolver.root.FlattenedImageVulnerabilities(resolver.withImageScopeContext(ctx), args)
 	}
 	return resolver.root.ImageVulnerabilities(resolver.withImageScopeContext(ctx), args)
 }
