@@ -26,6 +26,7 @@ import services.ClusterService
 import services.DeploymentService
 import services.NetworkGraphService
 import services.NetworkPolicyService
+import util.CollectorUtil
 import util.Env
 import util.Helpers
 import util.NetworkGraphUtil
@@ -475,11 +476,71 @@ class NetworkFlowTest extends BaseSpecification {
         String deploymentUid = deployments.find { it.name == EXTERNALDESTINATION }?.deploymentUid
         assert deploymentUid != null
 
-        expect:
-        "Check for edge in network graph"
+        when: "External IPs is disabled"
+        // External IPs should be disabled at this point, but it is disabled again to be safe.
+        // Later external IPs is enabled and then disabled again.
+        CollectorUtil.disableExternalIps(orchestrator)
+
         log.info "Checking for edge from ${EXTERNALDESTINATION} to external target"
         List<Edge> edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
+        def graph = NetworkGraphService.getNetworkGraph(null, null)
+        log.info "graph0 = ${graph}"
+        then:
+        "There should be an edge fro A to external entities and it should be the only edge"
         assert edges
+        def nedges = edges.size()
+        int i
+        for (i=0 ; i<nedges ; i++) {
+            log.info ""
+            log.info "external edge"
+            log.info "${edges[i].getLastActiveTimestamp()}"
+            log.info "${edges[i].getProtocol()}"
+            log.info "${edges[i].getPort()}"
+            log.info ""
+        }
+        assert edges.size() == 1
+
+        when: "External IPs is enabled"
+        CollectorUtil.enableExternalIps(orchestrator)
+        sleep 65000 // Wait for the collector scrape interval and for sensor to send connections to sensor
+
+        edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
+        graph = NetworkGraphService.getNetworkGraph(null, null)
+        def node = NetworkGraphUtil.findDeploymentNode(graph, deploymentUid)
+        log.info "graph1 = ${graph}"
+        then:
+        "The edge should still be there and it should still be the only edge from A"
+        assert edges
+        // Enabling external IPs should not change the number of edges
+        assert edges.size() == 1
+        assert node
+        // There should only be one connection and it should be to the generic external entity.
+        assert node.outEdges.size() == 1
+        // // Collector reports the normalized connection as being closed. There is no assert here
+        // // as we don't want this behavior long term.
+        // waitForEdgeToBeClosed(edges.get(0), 165)
+        // assert !waitForEdgeToBeClosed(edges.get(0), 165) // This assert was failing
+
+        when: "External IPs is disabled after being enabled"
+        // Disable external IPs at the end of the test and check the relevant edge
+        CollectorUtil.disableExternalIps(orchestrator)
+        sleep 65000 // Wait for the collector scrape interval and for sensor to send connections to sensor
+
+        edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
+        graph = NetworkGraphService.getNetworkGraph(null, null)
+        node = NetworkGraphUtil.findDeploymentNode(graph, deploymentUid)
+        then:
+        "The edge should still be there and it should still be the only edge from A"
+        assert edges
+        // Disbling external IPs should not change the number of edges
+        log.info "graph2 = ${graph}"
+        assert edges.size() == 1
+        assert node
+        // There should only be one connection and it should be to the generic external entity.
+        assert node.outEdgesMap.size() == 1
+        // // Collector reports the unnormalized connection as being closed. There is no assert here
+        // // as we don't want this behavior long term.
+        // waitForEdgeToBeClosed(edges.get(0), 165)
     }
 
     @Tag("NetworkFlowVisualization")
