@@ -178,7 +178,6 @@ func (m *PostPolicyRequest) CloneVT() *PostPolicyRequest {
 	}
 	r := new(PostPolicyRequest)
 	r.EnableStrictValidation = m.EnableStrictValidation
-	r.PolicyAsCode = m.PolicyAsCode
 	if rhs := m.Policy; rhs != nil {
 		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.Policy }); ok {
 			r.Policy = vtpb.CloneVT()
@@ -776,9 +775,6 @@ func (this *PostPolicyRequest) EqualVT(that *PostPolicyRequest) bool {
 		return false
 	}
 	if this.EnableStrictValidation != that.EnableStrictValidation {
-		return false
-	}
-	if this.PolicyAsCode != that.PolicyAsCode {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1659,16 +1655,6 @@ func (m *PostPolicyRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
-	}
-	if m.PolicyAsCode {
-		i--
-		if m.PolicyAsCode {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
-		i--
-		dAtA[i] = 0x18
 	}
 	if m.EnableStrictValidation {
 		i--
@@ -2705,9 +2691,6 @@ func (m *PostPolicyRequest) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.EnableStrictValidation {
-		n += 2
-	}
-	if m.PolicyAsCode {
 		n += 2
 	}
 	n += len(m.unknownFields)
@@ -3832,26 +3815,6 @@ func (m *PostPolicyRequest) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			m.EnableStrictValidation = bool(v != 0)
-		case 3:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field PolicyAsCode", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.PolicyAsCode = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -6356,26 +6319,6 @@ func (m *PostPolicyRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			}
 			m.EnableStrictValidation = bool(v != 0)
-		case 3:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field PolicyAsCode", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.PolicyAsCode = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
