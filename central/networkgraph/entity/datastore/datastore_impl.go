@@ -65,21 +65,9 @@ func NewEntityDataStore(storage store.EntityStore, graphConfig graphConfigDS.Dat
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(t *testing.T, pool postgres.DB) (EntityDataStore, error) {
+func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (EntityDataStore, error) {
 	dbstore := pgStore.New(pool)
 	graphConfigStore, err := graphConfigDS.GetTestPostgresDataStore(t, pool)
-	if err != nil {
-		return nil, err
-	}
-	treeMgr := networktree.Singleton()
-	sensorCnxMgr := connection.ManagerSingleton()
-	return NewEntityDataStore(dbstore, graphConfigStore, treeMgr, sensorCnxMgr), nil
-}
-
-// GetBenchPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetBenchPostgresDataStore(t testing.TB, pool postgres.DB) (EntityDataStore, error) {
-	dbstore := pgStore.New(pool)
-	graphConfigStore, err := graphConfigDS.GetBenchPostgresDataStore(t, pool)
 	if err != nil {
 		return nil, err
 	}

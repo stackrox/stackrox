@@ -53,7 +53,7 @@ func New(complianceProfileStorage pgStore.Store, pool postgres.DB, searcher sear
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB, searcher search.Searcher) DataStore {
+func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB, searcher search.Searcher) DataStore {
 	store := pgStore.New(pool)
 	return New(store, pool, searcher)
 }

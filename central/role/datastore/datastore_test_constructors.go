@@ -11,7 +11,7 @@ import (
 )
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(t *testing.T, pool postgres.DB) (DataStore, error) {
+func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error) {
 	permissionStore := permissionSetPostgresStore.New(pool)
 	roleStore := rolePostgresStore.New(pool)
 	scopeStore := accessScopePostgresStore.New(pool)
