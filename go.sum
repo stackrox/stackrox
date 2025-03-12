@@ -2271,8 +2271,8 @@ k8s.io/kube-openapi v0.0.0-20241105132330-32ad38e42d3f h1:GA7//TjRY9yWGy1poLzYYJ
 k8s.io/kube-openapi v0.0.0-20241105132330-32ad38e42d3f/go.mod h1:R/HEjbvWI0qdfb8viZUeVZm0X6IZnxAydC7YU42CMw4=
 k8s.io/kubectl v0.32.2 h1:TAkag6+XfSBgkqK9I7ZvwtF0WVtUAvK8ZqTt+5zi1Us=
 k8s.io/kubectl v0.32.2/go.mod h1:+h/NQFSPxiDZYX/WZaWw9fwYezGLISP0ud8nQKg+3g8=
-k8s.io/kubelet v0.29.14 h1:kkjpSJ6W+jrzr2AwOpVrOMY7iu3uim7RO+EC2zBVOzY=
-k8s.io/kubelet v0.29.14/go.mod h1:4FD4VXVnoCxXv0VnI3LKTYYtGtmWL3UEI/Q6/Y1hskk=
+k8s.io/kubelet v0.29.15 h1:aEoVJCW6eR+2rY2sdO/I9w5p0nTu/jSOeUBfRHFWjTY=
+k8s.io/kubelet v0.29.15/go.mod h1:l4IrTn+YrG/1i993gNiVs0uhk4nAUx1gGshR+vO3BOA=
 k8s.io/utils v0.0.0-20241210054802-24370beab758 h1:sdbE21q2nlQtFh65saZY+rRM6x6aJJI8IUa1AmH/qa0=
 k8s.io/utils v0.0.0-20241210054802-24370beab758/go.mod h1:OLgZIPagt7ERELqWJFomSt595RzquPNLL48iOWgYOg0=
 modernc.org/cc/v4 v4.21.4 h1:3Be/Rdo1fpr8GrQ7IVw9OHtplU4gWbb+wNgeoBMmGLQ=
