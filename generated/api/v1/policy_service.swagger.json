@@ -122,13 +122,6 @@
             "in": "query",
             "required": false,
             "type": "boolean"
-          },
-          {
-            "name": "policyAsCode",
-            "description": "This field is optional and should only be used by the Config Controller when it is posting new policy as code CRs\nfor metrics purposes.",
-            "in": "query",
-            "required": false,
-            "type": "boolean"
           }
         ],
         "tags": [
