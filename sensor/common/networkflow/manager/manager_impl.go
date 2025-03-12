@@ -506,26 +506,6 @@ func (m *networkFlowManager) enrichAndSendProcesses() {
 	}
 }
 
-func (m *networkFlowManager) handleContainerNotFound(
-	conn *connection,
-	status *connStatus,
-	enrichedConnections map[networkConnIndicator]timestamp.MicroTS,
-	now timestamp.MicroTS,
-) *multierror.Error {
-	timeElapsedSinceFirstSeen := now.ElapsedSince(status.firstSeen)
-	failReason := fmt.Errorf("ContainerID %s unknown", conn.containerID)
-	if timeElapsedSinceFirstSeen <= maxContainerResolutionWaitPeriod {
-		return multierror.Append(failReason, fmt.Errorf("time for container resolution (%s) not elapsed yet", maxContainerResolutionWaitPeriod))
-	}
-
-	if expireConnection(conn, m.activeConnections, enrichedConnections, now) != nil {
-		// Connection cannot be expired, so it must be rotten
-		status.rotten = true
-		return multierror.Append(failReason, errors.New("connection is rotten"))
-	}
-	return multierror.Append(failReason, fmt.Errorf("marking connection as inactive, because it involves non-existing container %s", conn.containerID))
-}
-
 func expireConnection(conn *connection,
 	activeConnections map[connection]*networkConnIndicator,
 	enrichedConnections map[networkConnIndicator]timestamp.MicroTS,
@@ -578,19 +558,35 @@ func logReasonForAggregatingNetGraphFlow(conn *connection, contNs, contName, ent
 func (m *networkFlowManager) enrichConnection(conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) {
 	now := timestamp.Now()
 	timeElapsedSinceFirstSeen := now.ElapsedSince(status.firstSeen)
+	isExpired := timeElapsedSinceFirstSeen <= maxContainerResolutionWaitPeriod
 	isFresh := timeElapsedSinceFirstSeen < clusterEntityResolutionWaitPeriod
+	lastSeenSet := status.lastSeen < timestamp.InfiniteFuture
 	var netGraphFailReason *multierror.Error
+	netGraphFailReason.ErrorFormat = formatMultiErrorOneline
 
 	container, found, isHistorical := m.clusterEntities.LookupByContainerID(conn.containerID)
 	if !found {
 		// There is an incoming connection to a container that Sensor does not recognize.
-		// 90% of the cases that container is Sensor itself before being restarted.
-		reason := m.handleContainerNotFound(conn, status, enrichedConnections, now)
-		reason.ErrorFormat = formatMultiErrorOneline
-		log.Debugf("Enrichment finished early: %s", reason.Error())
+		netGraphFailReason = multierror.Append(netGraphFailReason, fmt.Errorf("ContainerID %s unknown", conn.containerID))
+		if isExpired {
+			flowMetrics.IncFlowEnrichmentConnection(found, "retry-later", "N/A", "in-grace-period", lastSeenSet, status.rotten, isExpired, isFresh, "N/A")
+			netGraphFailReason = multierror.Append(netGraphFailReason, fmt.Errorf("time for container resolution (%s) not elapsed yet", maxContainerResolutionWaitPeriod))
+		}
+		if expireConnection(conn, m.activeConnections, enrichedConnections, now) != nil {
+			// Connection cannot be expired, so it must be rotten
+			status.rotten = true
+			flowMetrics.IncFlowEnrichmentConnection(found, "mark-rotten", "N/A", "not-in-activeConnections", lastSeenSet, status.rotten, isExpired, isFresh, "N/A")
+			netGraphFailReason = multierror.Append(netGraphFailReason, errors.New("connection is rotten"))
+		}
+		netGraphFailReason = multierror.Append(netGraphFailReason, fmt.Errorf("marking connection as inactive, because it involves non-existing container %s", conn.containerID))
+
+		log.Debugf("Enrichment finished early: %s", netGraphFailReason.Error())
 		// If we miss container data, there is no point in trying further enrichments (endpoint won't be found as well).
+		flowMetrics.IncFlowEnrichmentConnection(found, "enrich-and-remove-from-activeConnections", "N/A", "past-grace-period", lastSeenSet, status.rotten, isExpired, isFresh, "N/A")
 		return
 	}
+	isHistoricalStr := strconv.FormatBool(isHistorical)
+	isExternalStr := "N/A"
 	netGraphFailReason = multierror.Append(netGraphFailReason, errors.New("ContainerID lookup successful"))
 
 	// It is possible, that Container is found in the store only because it is historical.
@@ -646,6 +642,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		// If the address is set and is not resolvable, we want to we wait for `clusterEntityResolutionWaitPeriod` time
 		// before associating it to a known network or INTERNET.
 		if isFresh && conn.remote.IPAndPort.Address.IsValid() {
+			flowMetrics.IncFlowEnrichmentConnection(found, "retry-later", isHistoricalStr, "endpoint-lookup-failed", lastSeenSet, status.rotten, isExpired, isFresh, "N/A")
 			return
 		}
 
@@ -656,6 +653,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 
 		if isFresh {
 			log.Debugf("Enrichment aborted: Connection is fresh")
+			flowMetrics.IncFlowEnrichmentConnection(found, "retry-later", isHistoricalStr, "ext-network-lookup-failed", lastSeenSet, status.rotten, isExpired, isFresh, "N/A")
 			return
 		}
 
@@ -668,10 +666,12 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 				fmt.Errorf("lookup by network in externalSrcsStore failed for network %+v", conn.remote.IPAndPort))
 			entityType := networkgraph.InternetEntity()
 			isExternal, err := conn.IsExternal()
+			isExternalStr = strconv.FormatBool(isExternal)
 			if err != nil {
 				// IP is malformed or unknown - do not show on the graph and log the info
 				// TODO(ROX-22388): Change log level back to warning when potential Collector issue is fixed
 				log.Debugf("Enrichment aborted: Not showing flow on the network graph: %v", err)
+				flowMetrics.IncFlowEnrichmentConnection(found, "abort", isHistoricalStr, "isExternal-check-failed", lastSeenSet, status.rotten, isExpired, isFresh, isExternalStr)
 				return
 			}
 			if isExternal {
@@ -730,6 +730,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		if conn.incoming {
 			// Only report incoming connections from outside the cluster. These are already taken care of by the
 			// corresponding outgoing connection from the other end.
+			flowMetrics.IncFlowEnrichmentConnection(found, "end-of-enrichment", isHistoricalStr, "incoming-conn", lastSeenSet, status.rotten, isExpired, isFresh, isExternalStr)
 			return
 		}
 	}
@@ -751,17 +752,21 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 
 			// Multiple connections from a collector can result in a single enriched connection
 			// hence update the timestamp only if we have a more recent connection than the one we have already enriched.
-			if oldTS, found := enrichedConnections[indicator]; !found || oldTS < status.lastSeen {
+			if oldTS, found2 := enrichedConnections[indicator]; !found2 || oldTS < status.lastSeen {
 				enrichedConnections[indicator] = status.lastSeen
-				if features.SensorCapturesIntermediateEvents.Enabled() {
-					if status.lastSeen == timestamp.InfiniteFuture {
-						m.activeConnections[*conn] = &indicator
-						flowMetrics.SetActiveFlowsTotalGauge(len(m.activeConnections))
-					} else {
-						delete(m.activeConnections, *conn)
-						flowMetrics.SetActiveFlowsTotalGauge(len(m.activeConnections))
-					}
+				if !features.SensorCapturesIntermediateEvents.Enabled() {
+					flowMetrics.IncFlowEnrichmentConnection(found2, "update-last-seen", isHistoricalStr, "ff-disabled", lastSeenSet, status.rotten, isExpired, isFresh, isExternalStr)
+					return
 				}
+				if status.lastSeen == timestamp.InfiniteFuture {
+					m.activeConnections[*conn] = &indicator
+					flowMetrics.SetActiveFlowsTotalGauge(len(m.activeConnections))
+					flowMetrics.IncFlowEnrichmentConnection(found2, "update-last-seen-&-mark-active", isHistoricalStr, "last-seen-inf-future", lastSeenSet, status.rotten, isExpired, isFresh, isExternalStr)
+					return
+				}
+				delete(m.activeConnections, *conn)
+				flowMetrics.SetActiveFlowsTotalGauge(len(m.activeConnections))
+				flowMetrics.IncFlowEnrichmentConnection(found2, "update-last-seen-&-mark-no-longer-active", isHistoricalStr, "last-seen-provided", lastSeenSet, status.rotten, isExpired, isFresh, isExternalStr)
 			}
 		}
 	}
@@ -796,7 +801,7 @@ func (m *networkFlowManager) enrichContainerEndpoint(ep *containerEndpoint, stat
 		flowMetrics.IncFlowEnrichmentEndpoint(ok, "enrich-and-remove-from-activeEndpoints", "N/A", "past-grace-period", lastSeenSet, status.rotten, isExpired, isFresh)
 		return
 	}
-	isHistoricalStr := fmt.Sprintf("%t", isHistorical)
+	isHistoricalStr := strconv.FormatBool(isHistorical)
 	// It is possible, that Container is found in the store only because it is historical.
 	// In that case, we shall enrich the endpoint with all the data from the store (i.e., do not exit early),
 	// but the endpoint must be marked as expired (i.e., the last-seen timestamp must be set to 'now').
@@ -833,11 +838,12 @@ func (m *networkFlowManager) enrichContainerEndpoint(ep *containerEndpoint, stat
 	}
 	if status.lastSeen == timestamp.InfiniteFuture {
 		m.activeEndpoints[*ep] = &indicator
+		// (long-running-fake) Millions of endpoints finish enrichment here!
 		flowMetrics.IncFlowEnrichmentEndpoint(ok, "update-last-seen-&-mark-active", isHistoricalStr, "last-seen-inf-future", lastSeenSet, status.rotten, isExpired, isFresh)
 		flowMetrics.SetActiveEndpointsTotalGauge(len(m.activeEndpoints))
 		return
 	}
-	flowMetrics.IncFlowEnrichmentEndpoint(ok, "update-last-seen-mark-no-longer-active", isHistoricalStr, "last-seen-provided", lastSeenSet, status.rotten, isExpired, isFresh)
+	flowMetrics.IncFlowEnrichmentEndpoint(ok, "update-last-seen-&-mark-no-longer-active", isHistoricalStr, "last-seen-provided", lastSeenSet, status.rotten, isExpired, isFresh)
 	delete(m.activeEndpoints, *ep)
 	flowMetrics.SetActiveEndpointsTotalGauge(len(m.activeEndpoints))
 }
