@@ -13,6 +13,7 @@ func init() {
 		ContainerEndpointsPerNode,
 		NetworkFlowMessagesPerNode,
 		FlowEnrichmentEventsEndpoint,
+		FlowEnrichmentEventsConnection,
 		ExternalFlowCounter,
 		InternalFlowCounter,
 		NetworkEntityFlowCounter,
@@ -51,6 +52,12 @@ var (
 		Name:      "network_flow_enrichment_endpoint_events_total",
 		Help:      "Total number of events occurred to endpoints during the enrichment of network flows passed from collector",
 	}, []string{"containerIDfound", "action", "isHistorical", "reason", "lastSeenSet", "rotten", "expired", "fresh"})
+	FlowEnrichmentEventsConnection = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "network_flow_enrichment_connection_events_total",
+		Help:      "Total number of events occurred to connections during the enrichment of network flows passed from collector",
+	}, []string{"containerIDfound", "action", "isHistorical", "reason", "lastSeenSet", "rotten", "expired", "fresh", "isExternal"})
 	ExternalFlowCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
@@ -123,6 +130,19 @@ func IncFlowEnrichmentEndpoint(condIDfound bool, action, isHistorical string, re
 		"rotten":           strconv.FormatBool(rotten),
 		"expired":          strconv.FormatBool(expired),
 		"fresh":            strconv.FormatBool(fresh)}).Inc()
+}
+
+func IncFlowEnrichmentConnection(condIDfound bool, action, isHistorical string, reason string, lastSeenSet, rotten, expired, fresh bool, isExternal string) {
+	FlowEnrichmentEventsConnection.With(prometheus.Labels{
+		"containerIDfound": strconv.FormatBool(condIDfound),
+		"action":           action,
+		"isHistorical":     isHistorical,
+		"reason":           reason,
+		"lastSeenSet":      strconv.FormatBool(lastSeenSet),
+		"rotten":           strconv.FormatBool(rotten),
+		"expired":          strconv.FormatBool(expired),
+		"fresh":            strconv.FormatBool(fresh),
+		"isExternal":       isExternal}).Inc()
 }
 
 // SetActiveFlowsTotalGauge set the active network flows total gauge.
