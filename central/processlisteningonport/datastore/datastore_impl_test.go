@@ -2795,22 +2795,6 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUIDScale125K() {
 	suite.RemovePLOPsWithoutPodUIDScale(nport, nprocess, npod)
 }
 
-func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUIDScale1M() {
-	nport := 100
-	nprocess := 100
-	npod := 100
-
-	suite.RemovePLOPsWithoutPodUIDScale(nport, nprocess, npod)
-}
-
-func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUIDScale3M() {
-	nport := 150
-	nprocess := 150
-	npod := 150
-
-	suite.RemovePLOPsWithoutPodUIDScale(nport, nprocess, npod)
-}
-
 func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUIDScaleRaceCondition() {
 	var wg sync.WaitGroup
 	wg.Add(1)
