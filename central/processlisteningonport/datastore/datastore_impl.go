@@ -728,7 +728,6 @@ func (ds *datastoreImpl) GetNextPageId(ctx context.Context, prevId string, limit
 }
 
 func (ds *datastoreImpl) retryableRemovePLOPsWithoutPodUID(ctx context.Context) (int64, error) {
-	totalRows := int64(0)
 	limit := 10000
 
 	prevId, err := ds.GetFirstPageId(ctx, limit)
@@ -739,30 +738,28 @@ func (ds *datastoreImpl) retryableRemovePLOPsWithoutPodUID(ctx context.Context) 
 		return 0, nil
 	}
 
-	nrows, err := ds.RemovePLOPsWithoutPodUIDFirstPage(ctx, prevId)
+	totalRows, err := ds.RemovePLOPsWithoutPodUIDFirstPage(ctx, prevId)
 	if err != nil {
-		return nrows, err
+		return totalRows, err
 	}
-
-	totalRows = nrows
 
 	for {
 		nextId, err := ds.GetNextPageId(ctx, prevId, limit)
 		if err != nil {
-			return int64(totalRows), err
+			return totalRows, err
 		}
 		if nextId == "" {
 			break
 		}
-		nrows, err = ds.RemovePLOPsWithoutPodUIDOnePage(ctx, prevId, nextId)
+		nrows, err := ds.RemovePLOPsWithoutPodUIDOnePage(ctx, prevId, nextId)
 		if err != nil {
-			return int64(totalRows), err
+			return totalRows, err
 		}
 		totalRows += nrows
 		prevId = nextId
 	}
 
-	return int64(totalRows), nil
+	return totalRows, nil
 }
 
 func (ds *datastoreImpl) getLastIdFromRows(ctx context.Context, rows pgx.Rows) (string, error) {
