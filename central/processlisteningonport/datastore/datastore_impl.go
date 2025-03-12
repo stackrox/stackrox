@@ -647,7 +647,7 @@ func (ds *datastoreImpl) RemovePLOPsWithoutProcessIndicatorOrProcessInfo(ctx con
 	return int64(len(plopsToDelete)), nil
 }
 
-func (ds *datastoreImpl) RemovePLOPsWithoutPodUIDGetPagesOnePage(ctx context.Context, prevId string, nextId string) (int64, error) {
+func (ds *datastoreImpl) RemovePLOPsWithoutPodUIDOnePage(ctx context.Context, prevId string, nextId string) (int64, error) {
 	ds.mutex.Lock()
 	defer ds.mutex.Unlock()
 
@@ -661,7 +661,7 @@ func (ds *datastoreImpl) RemovePLOPsWithoutPodUIDGetPagesOnePage(ctx context.Con
 	return commandTag.RowsAffected(), nil
 }
 
-func (ds *datastoreImpl) RemovePLOPsWithoutPodUIDGetPagesFirstPage(ctx context.Context, id string) (int64, error) {
+func (ds *datastoreImpl) RemovePLOPsWithoutPodUIDFirstPage(ctx context.Context, id string) (int64, error) {
 	ds.mutex.Lock()
 	defer ds.mutex.Unlock()
 
@@ -727,7 +727,7 @@ func (ds *datastoreImpl) GetNextPageId(ctx context.Context, prevId string, limit
 	return nextId, nil
 }
 
-func (ds *datastoreImpl) retryableRemovePLOPsWithoutPodUIDGetPages(ctx context.Context) (int64, error) {
+func (ds *datastoreImpl) retryableRemovePLOPsWithoutPodUID(ctx context.Context) (int64, error) {
 	totalRows := int64(0)
 	limit := 10000
 
@@ -739,7 +739,7 @@ func (ds *datastoreImpl) retryableRemovePLOPsWithoutPodUIDGetPages(ctx context.C
 		return 0, nil
 	}
 
-	nrows, err := ds.RemovePLOPsWithoutPodUIDGetPagesFirstPage(ctx, prevId)
+	nrows, err := ds.RemovePLOPsWithoutPodUIDFirstPage(ctx, prevId)
 	if err != nil {
 		return nrows, err
 	}
@@ -754,7 +754,7 @@ func (ds *datastoreImpl) retryableRemovePLOPsWithoutPodUIDGetPages(ctx context.C
 		if nextId == "" {
 			break
 		}
-		nrows, err = ds.RemovePLOPsWithoutPodUIDGetPagesOnePage(ctx, prevId, nextId)
+		nrows, err = ds.RemovePLOPsWithoutPodUIDOnePage(ctx, prevId, nextId)
 		if err != nil {
 			return int64(totalRows), err
 		}
@@ -777,10 +777,8 @@ func (ds *datastoreImpl) getLastIdFromRows(ctx context.Context, rows pgx.Rows) (
 	return id, nil
 }
 
-///////////////////////////////////////////////////////////
-
 func (ds *datastoreImpl) RemovePLOPsWithoutPodUID(ctx context.Context) (int64, error) {
 	return pgutils.Retry2(ctx, func() (int64, error) {
-		return ds.retryableRemovePLOPsWithoutPodUIDGetPages(ctx)
+		return ds.retryableRemovePLOPsWithoutPodUID(ctx)
 	})
 }
