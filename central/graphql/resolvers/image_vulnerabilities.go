@@ -1010,11 +1010,13 @@ func (resolver *imageCVEV2Resolver) DiscoveredAtImage(_ context.Context, _ RawQu
 
 func (resolver *imageCVEV2Resolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "ImageComponents")
+	log.Infof("SHREWS -- image_vulnerabilities.ImageComponents %s", args.String())
 	return resolver.root.ImageComponents(resolver.imageVulnerabilityScopeContext(ctx), args)
 }
 
 func (resolver *imageCVEV2Resolver) ImageComponentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "ImageComponentCount")
+	log.Infof("SHREWS -- image_vulnerabilities.ImageComponents %s", args.String())
 	return resolver.root.ImageComponentCount(resolver.imageVulnerabilityScopeContext(ctx), args)
 }
 
