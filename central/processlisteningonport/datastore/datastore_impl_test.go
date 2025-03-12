@@ -2796,6 +2796,7 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUIDScale125K() {
 }
 
 func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUIDScaleRaceCondition() {
+	var mutex sync.RWMutex
 	var wg sync.WaitGroup
 	wg.Add(1)
 
@@ -2840,7 +2841,15 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUIDScaleRaceCondit
 	wgPrune.Add(1)
 	go func() {
 		defer wgPrune.Done()
-		for running {
+		for {
+			mutex.Lock()
+			stop := !running
+			mutex.Unlock()
+
+			if stop {
+				break
+			}
+
 			prunedCount, err := suite.datastore.RemovePLOPsWithoutPodUID(suite.hasWriteCtx)
 			suite.NoError(err)
 			totalPrunedCount += int(prunedCount)
@@ -2849,7 +2858,9 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUIDScaleRaceCondit
 
 	wg.Wait()
 
+	mutex.Lock()
 	running = false
+	mutex.Unlock()
 
 	wgPrune.Wait()
 
