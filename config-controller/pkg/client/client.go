@@ -167,6 +167,7 @@ func (gc *grpcClient) PostPolicy(ctx context.Context, policy *storage.Policy) (*
 	req := &v1.PostPolicyRequest{
 		Policy:                 policy,
 		EnableStrictValidation: true,
+		PolicyAsCode:           true,
 	}
 
 	policy, err := gc.policySvc.PostPolicy(ctx, req)
