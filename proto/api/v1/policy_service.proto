@@ -46,6 +46,9 @@ message ListPoliciesResponse {
 message PostPolicyRequest {
   storage.Policy policy = 1;
   bool enable_strict_validation = 2;
+  // This field is optional and should only be used by the Config Controller when it is posting new policy as code CRs
+  // for metrics purposes.
+  bool policy_as_code = 3;
 }
 
 message PatchPolicyRequest {
