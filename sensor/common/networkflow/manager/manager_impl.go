@@ -920,6 +920,26 @@ func (m *networkFlowManager) enrichHostConnections(hostConns *hostConnections, e
 	flowMetrics.HostConnectionsRemoved.Add(float64(prevSize - len(hostConns.connections)))
 }
 
+func shallRemove(status *connStatus) bool {
+	// Endpoints that are no longer active can be deleted.
+	if status.rotten {
+		return true
+	}
+	// Historical but not rotten (active) endpoints must be deleted,
+	// otherwise they will be enriched multiple times until the history expires.
+	// In some cases, e.g., long-running cluster with fake workload, the history may never expire,
+	// because the endpoints are reused (new identical are created after old ones expire),
+	// thus it is important to enrich those endpoints maximally once after they become historical.
+	if status.historical {
+		return true
+	}
+	// If processes listening on ports is enabled, it has to be used there as well before being deleted.
+	if env.ProcessesListeningOnPort.BooleanSetting() {
+		return status.used && status.usedProcess && status.lastSeen != timestamp.InfiniteFuture
+	}
+	return status.used && status.lastSeen != timestamp.InfiniteFuture
+}
+
 func (m *networkFlowManager) enrichHostContainerEndpoints(hostConns *hostConnections, enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS) {
 	hostConns.mutex.Lock()
 	defer hostConns.mutex.Unlock()
@@ -927,10 +947,7 @@ func (m *networkFlowManager) enrichHostContainerEndpoints(hostConns *hostConnect
 	prevSize := len(hostConns.endpoints)
 	for ep, status := range hostConns.endpoints {
 		m.enrichContainerEndpoint(&ep, status, enrichedEndpoints)
-		// If processes listening on ports is enabled, it has to be used there as well before being deleted.
-		used := status.used && (status.usedProcess || !env.ProcessesListeningOnPort.BooleanSetting())
-		if status.rotten || status.historical || (used && status.lastSeen != timestamp.InfiniteFuture) {
-			// endpoints that are no longer active and have already been used can be deleted.
+		if shallRemove(status) {
 			delete(hostConns.endpoints, ep)
 		}
 	}
