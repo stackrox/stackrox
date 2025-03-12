@@ -592,7 +592,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 	// It is possible, that Container is found in the store only because it is historical.
 	// In that case, we shall enrich the container with all the data from the store (i.e., do not exit early),
 	// but the connection must be marked as expired (i.e., the last-seen timestamp must be set to 'now').
-	if isHistorical {
+	if debugCloseHistoricalEntities.BooleanSetting() && isHistorical {
 		// With history disabled, we would mark this connection as closed. That would be implicit
 		// decision (i.e., not communicated by Collector) based on the container being gone. We assume that if container
 		// is gone, then all connections involving it must also be finished.
@@ -805,7 +805,7 @@ func (m *networkFlowManager) enrichContainerEndpoint(ep *containerEndpoint, stat
 	// It is possible, that Container is found in the store only because it is historical.
 	// In that case, we shall enrich the endpoint with all the data from the store (i.e., do not exit early),
 	// but the endpoint must be marked as expired (i.e., the last-seen timestamp must be set to 'now').
-	if isHistorical {
+	if debugCloseHistoricalEntities.BooleanSetting() && isHistorical {
 		// With history disabled, we would mark this endpoint as no longer active. That would be implicit
 		// decision (i.e., not communicated by Collector) based on the container being gone. We assume that if container
 		// is gone, then all its endpoints must also be gone.
