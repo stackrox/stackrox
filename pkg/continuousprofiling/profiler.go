@@ -16,6 +16,21 @@ const (
 	blockProfileRate     = 5
 )
 
+// StartClientWrapper wraps the Start function to enable mocking in test
+//
+//go:generate mockgen-wrapper
+type StartClientWrapper interface {
+	Start(pyroscope.Config) (*pyroscope.Profiler, error)
+}
+
+type startClient struct {
+}
+
+// Start wrapper for pyroscope.Start
+func (c *startClient) Start(cfg pyroscope.Config) (*pyroscope.Profiler, error) {
+	return pyroscope.Start(cfg)
+}
+
 var (
 	ErrApplicationName            = errors.New("the ApplicationName must be defined")
 	ErrServerAddress              = errors.New("the ServerAddress must be defined")
@@ -36,6 +51,8 @@ var (
 		pyroscope.ProfileBlockCount,
 		pyroscope.ProfileBlockDuration,
 	}
+
+	startClientFuncWrapper StartClientWrapper = &startClient{}
 )
 
 // DefaultConfig creates a new configuration with default properties.
@@ -83,7 +100,7 @@ func validateServerAddress(address string) (string, error) {
 	// We default to https unless http is specified
 	sanitizedAddress := urlfmt.FormatURL(address, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 	if _, err := url.Parse(sanitizedAddress); err != nil {
-		return "", errors.Wrapf(ErrUnableToParseServerAddress, errors.Wrapf(err, "server address %q", address).Error())
+		return "", errors.Wrap(ErrUnableToParseServerAddress, errors.Wrapf(err, "server address %q", address).Error())
 	}
 	return sanitizedAddress, nil
 }
@@ -128,7 +145,7 @@ func SetupClient(cfg *pyroscope.Config, opts ...OptionFunc) error {
 		runtime.SetBlockProfileRate(blockProfileRate)
 	}
 
-	_, err := pyroscope.Start(*cfg)
+	_, err := startClientFuncWrapper.Start(*cfg)
 	if err != nil {
 		return err
 	}
