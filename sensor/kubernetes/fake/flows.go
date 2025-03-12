@@ -121,18 +121,9 @@ func generateIP() string {
 	return fmt.Sprintf("10.%d.%d.%d", rand.Intn(256), rand.Intn(256), rand.Intn(256))
 }
 
-func isPublicIP(ip string) bool {
-	return net.ParseIP(ip).IsPublic()
-}
-
+// Generate IP addresses from 11.0.0.0 to 171.255.255.255 which are all public
 func generateExternalIP() string {
-	for {
-		ip := fmt.Sprintf("%d.%d.%d.%d", rand.Intn(256), rand.Intn(256), rand.Intn(256), rand.Intn(256))
-
-		if isPublicIP(ip) {
-			return ip
-		}
-	}
+	return fmt.Sprintf("%d.%d.%d.%d", rand.Intn(171)+11, rand.Intn(256), rand.Intn(256), rand.Intn(256))
 }
 
 // We want to reuse some external IPs, so we test the cases where muliple
@@ -141,7 +132,9 @@ func generateExternalIP() string {
 func (w *WorkloadManager) generateExternalIPPool() {
 	for range 1000 {
 		ip := generateExternalIP()
-		externalIpPool.add(ip)
+		for !externalIpPool.add(ip) {
+			ip = generateExternalIP()
+		}
 	}
 }
 
@@ -235,10 +228,12 @@ func makeNetworkConnection(src string, dst string, containerID string, closeTime
 	}
 }
 
-// Randomly decide to get an interal or external IP. If the IP is external
-// randomly decide to pick it from a pool of external IPs or a new exteranl IP.
-// We want to have cases where multiple different entities connect to the same
-// external IP, but we also want a large number of unique external IPs.
+// Randomly decide to get an interal or external IP, with an 80% chance of the IP
+// being internal and 20% of being external. If the IP is external randomly decide
+// to pick it from a pool of external IPs or a new exteranl IP, with a 50/50 chance
+// of being from the pool or a newly generated IP address. We want to have cases
+// where multiple different entities connect to the same external IP, but we also
+// want a large number of unique external IPs.
 func (w *WorkloadManager) getRandomInternalExternalIP() (string, bool, bool) {
 	ip := ""
 	var ok bool
