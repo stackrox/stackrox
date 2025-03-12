@@ -83,6 +83,8 @@ type connStatus struct {
 	usedProcess bool
 	// rotten implies we expected to correlate the flow with a container, but were unable to
 	rotten bool
+	// historical means that the enrichment has been done for historical entity and no further enrichments should be tried
+	historical bool
 }
 
 type networkConnIndicator struct {
@@ -775,7 +777,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 func (m *networkFlowManager) enrichContainerEndpoint(ep *containerEndpoint, status *connStatus, enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS) {
 	now := timestamp.Now()
 	timeElapsedSinceFirstSeen := now.ElapsedSince(status.firstSeen)
-	isExpired := timeElapsedSinceFirstSeen <= maxContainerResolutionWaitPeriod
+	isExpired := timeElapsedSinceFirstSeen > maxContainerResolutionWaitPeriod
 	isFresh := timeElapsedSinceFirstSeen < clusterEntityResolutionWaitPeriod
 	if !isFresh {
 		status.used = true
@@ -784,7 +786,7 @@ func (m *networkFlowManager) enrichContainerEndpoint(ep *containerEndpoint, stat
 
 	container, ok, isHistorical := m.clusterEntities.LookupByContainerID(ep.containerID)
 	if !ok {
-		if isExpired {
+		if !isExpired {
 			flowMetrics.IncFlowEnrichmentEndpoint(ok, "retry-later", "N/A", "in-grace-period", lastSeenSet, status.rotten, isExpired, isFresh)
 			// Still within the grace-period - will retry next iteration.
 			return
@@ -813,7 +815,11 @@ func (m *networkFlowManager) enrichContainerEndpoint(ep *containerEndpoint, stat
 			// Endpoint cannot be expired (not found within activeEndpoints), so we mark it as rotten
 			status.rotten = true
 		}
-		// Do not exit early, let's do the full enrichment of
+		// As this endpoint is historical, we want to make sure that this enrichment is:
+		// - done fully, i.e., containerEndpointIndicator is set (because the endpoint was removed only recently)
+		// - done for the last time, because the endpoint does not exist anymore.
+		// Thus, we set the historical flag so that this endpoint is removed in the further processing steps.
+		status.historical = true
 	}
 
 	status.used = true
@@ -838,7 +844,6 @@ func (m *networkFlowManager) enrichContainerEndpoint(ep *containerEndpoint, stat
 	}
 	if status.lastSeen == timestamp.InfiniteFuture {
 		m.activeEndpoints[*ep] = &indicator
-		// (long-running-fake) Millions of endpoints finish enrichment here!
 		flowMetrics.IncFlowEnrichmentEndpoint(ok, "update-last-seen-&-mark-active", isHistoricalStr, "last-seen-inf-future", lastSeenSet, status.rotten, isExpired, isFresh)
 		flowMetrics.SetActiveEndpointsTotalGauge(len(m.activeEndpoints))
 		return
@@ -848,13 +853,15 @@ func (m *networkFlowManager) enrichContainerEndpoint(ep *containerEndpoint, stat
 	flowMetrics.SetActiveEndpointsTotalGauge(len(m.activeEndpoints))
 }
 
+// expireEndpoint removes endpoint from active endpoints and sets the timestamp in enrichedEndpoints.
+// It returns error when endpoint is not found in active endpoints.
 func expireEndpoint(ep *containerEndpoint,
 	activeEndpoints map[containerEndpoint]*containerEndpointIndicator,
 	enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS,
 	now timestamp.MicroTS) error {
 	activeEp, found := activeEndpoints[*ep]
 	if !found {
-		return errors.New("cannot expire active endpoint: endpoint not found within active endpoints")
+		return errors.New("endpoint not found in activeEndpoints")
 	}
 	// Active endpoint found for historical container => removing from active endpoints and setting last-seen.
 	enrichedEndpoints[*activeEp] = now
@@ -922,7 +929,7 @@ func (m *networkFlowManager) enrichHostContainerEndpoints(hostConns *hostConnect
 		m.enrichContainerEndpoint(&ep, status, enrichedEndpoints)
 		// If processes listening on ports is enabled, it has to be used there as well before being deleted.
 		used := status.used && (status.usedProcess || !env.ProcessesListeningOnPort.BooleanSetting())
-		if status.rotten || (used && status.lastSeen != timestamp.InfiniteFuture) {
+		if status.rotten || status.historical || (used && status.lastSeen != timestamp.InfiniteFuture) {
 			// endpoints that are no longer active and have already been used can be deleted.
 			delete(hostConns.endpoints, ep)
 		}
