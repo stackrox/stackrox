@@ -11,10 +11,16 @@ import (
 	"github.com/stackrox/rox/pkg/urlfmt"
 )
 
+const (
+	mutexProfileFraction = 5
+	blockProfileRate     = 5
+)
+
 var (
-	ErrApplicationName           = errors.New("the ApplicationName must be defined")
-	ErrServerAddress             = errors.New("the ServerAddress must be defined")
-	ErrAtLeastOneProfileIsNeeded = errors.New("at least one profile is needed")
+	ErrApplicationName            = errors.New("the ApplicationName must be defined")
+	ErrServerAddress              = errors.New("the ServerAddress must be defined")
+	ErrUnableToParseServerAddress = errors.New("unable to parse server address")
+	ErrAtLeastOneProfileIsNeeded  = errors.New("at least one profile is needed")
 
 	log = logging.LoggerForModule()
 
@@ -77,7 +83,7 @@ func validateServerAddress(address string) (string, error) {
 	// We default to https unless http is specified
 	sanitizedAddress := urlfmt.FormatURL(address, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 	if _, err := url.Parse(sanitizedAddress); err != nil {
-		return "", errors.Wrapf(err, "unable to parse the server address %q", address)
+		return "", errors.Wrapf(ErrUnableToParseServerAddress, errors.Wrapf(err, "server address %q", address).Error())
 	}
 	return sanitizedAddress, nil
 }
@@ -106,20 +112,20 @@ func SetupClient(cfg *pyroscope.Config, opts ...OptionFunc) error {
 		return nil
 	}
 
-	if profileTypeEnabled(pyroscope.ProfileMutexCount, cfg.ProfileTypes...) {
-		runtime.SetMutexProfileFraction(5)
-	}
-
-	if profileTypeEnabled(pyroscope.ProfileBlockCount, cfg.ProfileTypes...) {
-		runtime.SetBlockProfileRate(5)
-	}
-
 	for _, o := range opts {
 		o(cfg)
 	}
 
 	if err := validateConfig(cfg); err != nil {
 		return err
+	}
+
+	if profileTypeEnabled(pyroscope.ProfileMutexCount, cfg.ProfileTypes...) {
+		runtime.SetMutexProfileFraction(mutexProfileFraction)
+	}
+
+	if profileTypeEnabled(pyroscope.ProfileBlockCount, cfg.ProfileTypes...) {
+		runtime.SetBlockProfileRate(blockProfileRate)
 	}
 
 	_, err := pyroscope.Start(*cfg)
