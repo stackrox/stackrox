@@ -24,6 +24,6 @@ func Singleton() Store {
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) Store {
+func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) Store {
 	return pgStore.New(pool)
 }

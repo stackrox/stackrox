@@ -52,7 +52,7 @@ func NewForTestOnly(imageIntegrationStorage store.Store, searcher search.Searche
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) (DataStore, error) {
+func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) (DataStore, error) {
 	store := pgStore.New(pool)
 	searcher := search.New(store)
 	return New(store, searcher), nil
