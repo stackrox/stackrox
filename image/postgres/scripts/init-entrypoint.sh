@@ -18,13 +18,13 @@ else
         # Alternatives would be pg_dump or pg_basebackup, both require running
         # database cluster.
         echo "Backup..."
-        export BACKUP_DIR="/tmp/backups/$(date +%s)"
+        export BACKUP_DIR="$PGDATA/backups/$(date +%s)"
         mkdir -p $BACKUP_DIR
         tar -cf $BACKUP_DIR/backup.tar -C $PGDATA .
         sync $BACKUP_DIR/backup.tar
 
         echo "Verify backup..."
-        export BACKUP_VERIFY_PGDATA="/tmp/backup-test"
+        export BACKUP_VERIFY_PGDATA="$PGDATA/backup-test"
         export OLD_BINARIES="/usr/lib64/pgsql/postgresql-13/bin/"
         mkdir -p $BACKUP_VERIFY_PGDATA
         tar -xvf $BACKUP_DIR/backup.tar -C $BACKUP_VERIFY_PGDATA
