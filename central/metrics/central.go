@@ -1,12 +1,16 @@
 package metrics
 
 import (
+	"context"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/reflectutils"
+	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sensor/event"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
@@ -399,12 +403,9 @@ func IncrementTotalNetworkEndpointsReceivedCounter(clusterID string, numberOfEnd
 	totalNetworkEndpointsReceivedCounter.With(prometheus.Labels{"ClusterID": clusterID}).Add(float64(numberOfEndpoints))
 }
 
-func IncrementTotalPolicyAsCodeCRsReceivedGauge() {
-	totalPolicyAsCodeCRsReceivedGauge.Inc()
-}
-
-func DecrementTotalPolicyAsCodeCRsReceivedGauge() {
-	totalPolicyAsCodeCRsReceivedGauge.Dec()
+func UpdatePolicyAsCodeCRsReceivedGauge(ctx context.Context, policyDS policyDatastore.DataStore) {
+	count, _ := policyDS.Count(ctx, searchPkg.NewQueryBuilder().AddExactMatches(searchPkg.PolicySource, storage.PolicySource_DECLARATIVE.String()).ProtoQuery())
+	totalPolicyAsCodeCRsReceivedGauge.Set(float64(count))
 }
 
 // ObserveRiskProcessingDuration adds an observation for risk processing duration.
