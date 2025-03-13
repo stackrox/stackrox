@@ -588,27 +588,10 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		flowMetrics.IncFlowEnrichmentConnection(found, "enrich-and-remove-from-activeConnections", "N/A", "past-grace-period", lastSeenSet, status.rotten, isExpired, isFresh, "N/A")
 		return
 	}
+	status.historical = isHistorical
 	isHistoricalStr := strconv.FormatBool(isHistorical)
 	isExternalStr := "N/A"
 	netGraphFailReason = multierror.Append(netGraphFailReason, errors.New("ContainerID lookup successful"))
-
-	// It is possible, that Container is found in the store only because it is historical.
-	// In that case, we shall enrich the container with all the data from the store (i.e., do not exit early),
-	// but the connection must be marked as expired (i.e., the last-seen timestamp must be set to 'now').
-	if debugCloseHistoricalEntities.BooleanSetting() && isHistorical {
-		// With history disabled, we would mark this connection as closed. That would be implicit
-		// decision (i.e., not communicated by Collector) based on the container being gone. We assume that if container
-		// is gone, then all connections involving it must also be finished.
-		if expireConnection(conn, m.activeConnections, enrichedConnections, now) != nil {
-			// Connection cannot be expired (not found within activeConnections), so we mark it as rotten
-			status.rotten = true
-		} else {
-			netGraphFailReason = multierror.Append(netGraphFailReason,
-				fmt.Errorf("marking connection as inactive, because it involves historical container %s", conn.containerID))
-		}
-		// Do not return here, as we want to enrich also the endpoints and all other data, so that this connection
-		// is correctly displayed on the network graph.
-	}
 
 	var lookupResults []clusterentities.LookupResult
 	var isInternet = false
@@ -805,25 +788,8 @@ func (m *networkFlowManager) enrichContainerEndpoint(ep *containerEndpoint, stat
 		flowMetrics.IncFlowEnrichmentEndpoint(ok, "enrich-and-remove-from-activeEndpoints", "N/A", "past-grace-period", lastSeenSet, status.rotten, isExpired, isFresh)
 		return
 	}
+	status.historical = isHistorical
 	isHistoricalStr := strconv.FormatBool(isHistorical)
-	// It is possible, that Container is found in the store only because it is historical.
-	// In that case, we shall enrich the endpoint with all the data from the store (i.e., do not exit early),
-	// but the endpoint must be marked as expired (i.e., the last-seen timestamp must be set to 'now').
-	if debugCloseHistoricalEntities.BooleanSetting() && isHistorical {
-		// With history disabled, we would mark this endpoint as no longer active. That would be implicit
-		// decision (i.e., not communicated by Collector) based on the container being gone. We assume that if container
-		// is gone, then all its endpoints must also be gone.
-		if expireEndpoint(ep, m.activeEndpoints, enrichedEndpoints, now) != nil {
-			// Endpoint cannot be expired (not found within activeEndpoints), so we mark it as rotten
-			status.rotten = true
-		}
-		// As this endpoint is historical, we want to make sure that this enrichment is:
-		// - done fully, i.e., containerEndpointIndicator is set (because the endpoint was removed only recently)
-		// - done for the last time, because the endpoint does not exist anymore.
-		// Thus, we set the historical flag so that this endpoint is removed in the further processing steps.
-		status.historical = true
-	}
-
 	status.used = true
 
 	indicator := containerEndpointIndicator{
