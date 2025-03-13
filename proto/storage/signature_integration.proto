@@ -12,6 +12,8 @@ message SignatureIntegration {
   CosignPublicKeyVerification cosign = 3;
 
   repeated CosignCertificateVerification cosign_certificates = 4;
+
+  TransparencyLogVerification transparency_log = 5;
 }
 
 message CosignPublicKeyVerification {
@@ -43,4 +45,19 @@ message CosignCertificateVerification {
   // recommended to use Fulcio compatible certificates according to the specification:
   // https://github.com/sigstore/fulcio/blob/main/docs/certificate-specification.md.
   string certificate_identity = 4;
+}
+
+// Validate the inclusion of signature signing events in a transparency log.
+message TransparencyLogVerification {
+  // Perform transparency log validation. Overrides other settings.
+  bool enabled = 1;
+  // The URL of the Rekor transparency log.
+  // Defaults to the Sigstore instance `rekor.sigstore.dev`.
+  string rekor_url = 2;
+  // Do not validate that the certificate contains a signed certificate
+  // timestamp as proof of inclusion in the transparency log.
+  bool ignore_sct = 3;
+  // Perform the transparency log validation offline based on the proof of
+  // inclusion. Do not reach out to the transparency log for confirmation.
+  bool validate_offline = 4;
 }
