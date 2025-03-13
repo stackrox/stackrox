@@ -916,7 +916,7 @@ bin/updater: $(shell find scannerv2/ -name *.go)
 
 bin/collector: $(shell find collector/ -name *.go) $(shell find collector/ -name *.cpp)
 	cmake --preset=vcpkg collector 
-	cmake --build cmake-build/vcpkg -j$(nproc) collector
+	cmake --build collector/cmake-build/vcpkg -j$(nproc)
 	cp collector/cmake-build/vcpkg/collector/collector bin/collector
 
 bundle: scannerv2/image/scanner/dump/genesis_manifests.json
@@ -936,7 +936,7 @@ bundle: scannerv2/image/scanner/dump/genesis_manifests.json
 scanner-v2: bin/scanner-v2 bin/local-nodescanner-v2 bundle
 
 .PHONY: all-binaries
-all-binaries: secured-cluster central bin/installer scanner-v2
+all-binaries: secured-cluster central bin/installer scanner-v2 bin/collector
 
 download: data
 	rm -rf data
