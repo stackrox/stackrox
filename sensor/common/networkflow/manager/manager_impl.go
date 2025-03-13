@@ -932,7 +932,7 @@ func shallRemove(status *connStatus) bool {
 	// In some cases, e.g., long-running cluster with fake workload, the history may never expire,
 	// because the endpoints are reused (new identical are created after old ones expire),
 	// thus it is important to enrich those endpoints maximally once after they become historical.
-	if status.historical {
+	if status.historical && debugCloseHistoricalEntities.BooleanSetting() {
 		return true
 	}
 	// If processes listening on ports is enabled, it has to be used there as well before being deleted.
