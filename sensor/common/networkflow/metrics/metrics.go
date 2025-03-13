@@ -12,6 +12,7 @@ func init() {
 		NetworkFlowsPerNodeByType,
 		ContainerEndpointsPerNode,
 		NetworkFlowMessagesPerNode,
+		FlowEnrichments,
 		FlowEnrichmentEventsEndpoint,
 		FlowEnrichmentEventsConnection,
 		ExternalFlowCounter,
@@ -46,6 +47,14 @@ var (
 		Name:      "network_flow_msgs_received_per_node",
 		Help:      "Total number of network flows received for a specific node",
 	}, []string{"Hostname"})
+	FlowEnrichments = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "network_flow_enrichments_total",
+		Help: "Total number of enrichments started for a given object " +
+			"(allows to calculate the percentage of events being enriched for " +
+			"network_flow_enrichment_endpoint_events_total and network_flow_enrichment_connection_events_total)",
+	}, []string{"object"})
 	FlowEnrichmentEventsEndpoint = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
