@@ -42,6 +42,9 @@ func ValidateSignatureIntegration(integration *storage.SignatureIntegration) err
 	if err := validateCosignCertificateVerification(integration.GetCosignCertificates()); err != nil {
 		multiErr = multierror.Append(multiErr, err)
 	}
+	if err := validateTransparencyLogVerification(integration.GetTransparencyLog()); err != nil {
+		multiErr = multierror.Append(multiErr, err)
+	}
 
 	return multiErr
 }
@@ -51,7 +54,7 @@ func validateCosignKeyVerification(config *storage.CosignPublicKeyVerification) 
 
 	for _, publicKey := range config.GetPublicKeys() {
 		if publicKey.GetName() == "" {
-			err := errors.New("public key name should be filled")
+			err := errors.New("public key name must be filled")
 			multiErr = multierror.Append(multiErr, err)
 		}
 
@@ -94,4 +97,13 @@ func validateCosignCertificateVerification(configs []*storage.CosignCertificateV
 	}
 
 	return multiErr
+}
+
+func validateTransparencyLogVerification(config *storage.TransparencyLogVerification) error {
+	// // The Rekor URL should never be empty at this point because of the applied default value.
+	// if config.GetRekorUrl() == "" {
+	// 	return errors.New("Rekor URL must be filled")
+	// }
+
+	return nil
 }
