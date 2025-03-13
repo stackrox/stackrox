@@ -126,7 +126,7 @@ func generateExternalIP() string {
 	return fmt.Sprintf("%d.%d.%d.%d", rand.Intn(171)+11, rand.Intn(256), rand.Intn(256), rand.Intn(256))
 }
 
-// We want to reuse some external IPs, so we test the cases where muliple
+// We want to reuse some external IPs, so we test the cases where multiple
 // entities connect to the same external IP, but we also want many external IPs
 // that are only used once.
 func (w *WorkloadManager) generateExternalIPPool() {
@@ -230,7 +230,7 @@ func makeNetworkConnection(src string, dst string, containerID string, closeTime
 
 // Randomly decide to get an interal or external IP, with an 80% chance of the IP
 // being internal and 20% of being external. If the IP is external randomly decide
-// to pick it from a pool of external IPs or a new exteranl IP, with a 50/50 chance
+// to pick it from a pool of external IPs or a new external IP, with a 50/50 chance
 // of being from the pool or a newly generated IP address. We want to have cases
 // where multiple different entities connect to the same external IP, but we also
 // want a large number of unique external IPs.
@@ -238,21 +238,15 @@ func (w *WorkloadManager) getRandomInternalExternalIP() (string, bool, bool) {
 	ip := ""
 	var ok bool
 
-	p := rand.Float32()
-	probInternal := float32(0.8)
-	var internal bool
-	if p < probInternal {
-		internal = true
+	internal := rand.Intn(100) < 80
+	if internal {
 		ip, ok = ipPool.randomElem()
 		if !ok {
 			log.Error("found no IPs in pool")
 			return "", internal, false
 		}
 	} else {
-		probPool := float32(0.5)
-		p := rand.Float32()
-		if p < probPool {
-			internal = false
+		if rand.Intn(100) < 50 {
 			ip, ok = externalIpPool.randomElem()
 			if !ok {
 				log.Error("found no IPs in pool")
@@ -273,7 +267,7 @@ func (w *WorkloadManager) getRandomSrcDst() (string, string, bool) {
 	}
 	var dst string
 	// If the src is internal, the dst can be internal or external, but
-	// if the src is external, the dst cannot also be external.
+	// if the src is external, the dst must be internal.
 	if internal {
 		dst, _, ok = w.getRandomInternalExternalIP()
 		if !ok {
