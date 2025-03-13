@@ -438,7 +438,7 @@ type Policy struct {
 	MitreVectorsLocked bool `protobuf:"varint,25,opt,name=mitre_vectors_locked,json=mitreVectorsLocked,proto3" json:"mitre_vectors_locked,omitempty" crYaml:"mitreVectorsLocked"` // @gotags: crYaml:"mitreVectorsLocked"
 	// Read-only field. Indicates the policy is a default policy if true and a custom policy if false.
 	IsDefault     bool         `protobuf:"varint,26,opt,name=is_default,json=isDefault,proto3" json:"is_default,omitempty" crYaml:"isDefault"`    // @gotags: crYaml:"isDefault"
-	Source        PolicySource `protobuf:"varint,27,opt,name=source,proto3,enum=storage.PolicySource" json:"source,omitempty" crYaml:"-"` // @gotags: crYaml:"-"
+	Source        PolicySource `protobuf:"varint,27,opt,name=source,proto3,enum=storage.PolicySource" json:"source,omitempty" search:"Policy Source,store" crYaml:"-"` // @gotags: search:"Policy Source,store" crYaml:"-"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
