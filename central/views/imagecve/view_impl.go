@@ -230,11 +230,7 @@ func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
 func withSelectCVECoreResponseQuery(q *v1.Query, cveIDsToFilter []string, options views.ReadOptions) *v1.Query {
 	cloned := q.CloneVT()
 	if len(cveIDsToFilter) > 0 {
-		if features.FlattenCVEData.Enabled() {
-			cloned = search.ConjunctionQuery(cloned, search.NewQueryBuilder().AddExactMatches(search.CVEID, cveIDsToFilter...).ProtoQuery())
-		} else {
-			cloned = search.ConjunctionQuery(cloned, search.NewQueryBuilder().AddDocIDs(cveIDsToFilter...).ProtoQuery())
-		}
+		cloned = search.ConjunctionQuery(cloned, search.NewQueryBuilder().AddDocIDs(cveIDsToFilter...).ProtoQuery())
 		cloned.Pagination = q.GetPagination()
 	}
 	cloned.Selects = []*v1.QuerySelect{
