@@ -9,7 +9,7 @@ require (
 	cloud.google.com/go/compute/metadata v0.6.0
 	cloud.google.com/go/containeranalysis v0.13.3
 	cloud.google.com/go/securitycenter v1.36.0
-	cloud.google.com/go/storage v1.50.0
+	cloud.google.com/go/storage v1.51.0
 	github.com/Azure/azure-sdk-for-go-extensions v0.1.8
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.17.0
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.8.2
@@ -152,7 +152,7 @@ require (
 	golang.org/x/tools v0.31.0
 	golang.stackrox.io/grpc-http1 v0.4.0
 	google.golang.org/api v0.225.0
-	google.golang.org/genproto v0.0.0-20250122153221-138b5a5a4fd4
+	google.golang.org/genproto v0.0.0-20250303144028-a0af3efb3deb
 	google.golang.org/genproto/googleapis/api v0.0.0-20250303144028-a0af3efb3deb
 	google.golang.org/grpc v1.71.0
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
@@ -180,13 +180,13 @@ require (
 )
 
 require (
-	cel.dev/expr v0.19.1 // indirect
-	cloud.google.com/go v0.118.2 // indirect
+	cel.dev/expr v0.19.2 // indirect
+	cloud.google.com/go v0.118.3 // indirect
 	cloud.google.com/go/auth v0.15.0 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.7 // indirect
-	cloud.google.com/go/iam v1.4.0 // indirect
-	cloud.google.com/go/longrunning v0.6.4 // indirect
-	cloud.google.com/go/monitoring v1.23.0 // indirect
+	cloud.google.com/go/iam v1.4.1 // indirect
+	cloud.google.com/go/longrunning v0.6.5 // indirect
+	cloud.google.com/go/monitoring v1.24.0 // indirect
 	dario.cat/mergo v1.0.1 // indirect
 	github.com/AdaLogics/go-fuzz-headers v0.0.0-20230811130428-ced1acdcaa24 // indirect
 	github.com/AliyunContainerService/ack-ram-tool/pkg/credentials/provider v0.14.0 // indirect
@@ -204,8 +204,8 @@ require (
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.3.3 // indirect
 	github.com/DataDog/zstd v1.4.5 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.25.0 // indirect
-	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.49.0 // indirect
-	github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.49.0 // indirect
+	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.51.0 // indirect
+	github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.51.0 // indirect
 	github.com/MakeNowJust/heredoc v1.0.0 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver/v3 v3.3.1 // indirect
@@ -255,7 +255,7 @@ require (
 	github.com/chrismellard/docker-credential-acr-env v0.0.0-20230304212654-82a0ddb27589 // indirect
 	github.com/clbanning/mxj/v2 v2.7.0 // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect
-	github.com/cncf/xds/go v0.0.0-20241223141626-cff3c89139a3 // indirect
+	github.com/cncf/xds/go v0.0.0-20250121191232-2f005788dc42 // indirect
 	github.com/cockroachdb/errors v1.11.3 // indirect
 	github.com/cockroachdb/fifo v0.0.0-20240606204812-0bbfbd93a7ce // indirect
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
