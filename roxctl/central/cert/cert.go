@@ -62,6 +62,7 @@ func (cmd *centralCertCommand) certs() error {
 	if err != nil {
 		return err
 	}
+
 	// Connect to the given server. We're not expecting the endpoint be
 	// trusted, but force the user to use insecure mode if needed.
 	config := tls.Config{
