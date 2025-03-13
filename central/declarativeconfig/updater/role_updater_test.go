@@ -47,8 +47,7 @@ func (s *roleUpdaterTestSuite) SetupTest() {
 
 	s.pgTest = pgtest.ForT(s.T())
 	s.Require().NotNil(s.pgTest)
-	rds, err := roleDS.GetTestPostgresDataStore(s.T(), s.pgTest.DB)
-	s.Require().NoError(err)
+	rds := roleDS.GetTestPostgresDataStore(s.T(), s.pgTest.DB)
 	s.ads = authProviderDS.GetTestPostgresDataStore(s.T(), s.pgTest.DB)
 	s.gds = groupDS.GetTestPostgresDataStore(s.T(), s.pgTest.DB, rds, s.ads)
 	s.updater = newRoleUpdater(

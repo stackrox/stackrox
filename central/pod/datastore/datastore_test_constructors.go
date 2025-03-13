@@ -10,11 +10,8 @@ import (
 )
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error) {
-	processIndicatorStore, err := piDS.GetTestPostgresDataStore(t, pool)
-	if err != nil {
-		return nil, err
-	}
+func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) DataStore {
+	processIndicatorStore := piDS.GetTestPostgresDataStore(t, pool)
 	plopStore := plopDS.GetTestPostgresDataStore(t, pool)
 	processIndicatorFilter := piFilter.Singleton()
 	return NewPostgresDB(pool, processIndicatorStore, plopStore, processIndicatorFilter)

@@ -146,8 +146,7 @@ func (s *PostgresPruningSuite) TestPruneClusterHealthStatuses() {
 }
 
 func (s *PostgresPruningSuite) TestGetOrphanedAlertIDs() {
-	alertDS, err := alertStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
-	s.Nil(err)
+	alertDS := alertStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 
 	deploymentDS, err := deploymentStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	s.Nil(err)
@@ -255,8 +254,7 @@ func (s *PostgresPruningSuite) TestGetOrphanedAlertIDs() {
 }
 
 func (s *PostgresPruningSuite) TestGetOrphanedPodIDs() {
-	podDS, err := podStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
-	s.Nil(err)
+	podDS := podStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 
 	clusterDS, err := clusterStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	s.Nil(err)
@@ -402,15 +400,13 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 				s.Require().NoError(deploymentDS.UpsertDeployment(s.ctx, &storage.Deployment{Id: deploymentID, ClusterId: fixtureconsts.Cluster1}))
 			}
 
-			podDS, err := podStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
-			s.Require().NoError(err)
+			podDS := podStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 			for _, podID := range c.pods.AsSlice() {
 				err := podDS.UpsertPod(s.ctx, &storage.Pod{Id: podID, ClusterId: fixtureconsts.Cluster1})
 				s.Require().NoError(err)
 			}
 
-			processDatastore, err := processIndicatorDatastore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
-			s.Require().NoError(err)
+			processDatastore := processIndicatorDatastore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 			s.Require().NoError(processDatastore.AddProcessIndicators(s.ctx, c.initialProcesses...))
 			countFromDB, err := processDatastore.Count(s.ctx, nil)
 			s.Require().NoError(err)

@@ -31,10 +31,7 @@ import (
 func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error) {
 	clusterdbstore := clusterPostgresStore.New(pool)
 	clusterhealthdbstore := clusterHealthPostgresStore.New(pool)
-	alertStore, err := alertDataStore.GetTestPostgresDataStore(t, pool)
-	if err != nil {
-		return nil, err
-	}
+	alertStore := alertDataStore.GetTestPostgresDataStore(t, pool)
 	namespaceStore, err := namespaceDataStore.GetTestPostgresDataStore(t, pool)
 	if err != nil {
 		return nil, err
@@ -44,45 +41,27 @@ func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error)
 		return nil, err
 	}
 	nodeStore := nodeDataStore.GetTestPostgresDataStore(t, pool)
-	podStore, err := podDataStore.GetTestPostgresDataStore(t, pool)
-	if err != nil {
-		return nil, err
-	}
-	secretStore, err := secretDataStore.GetTestPostgresDataStore(t, pool)
-	if err != nil {
-		return nil, err
-	}
+	podStore := podDataStore.GetTestPostgresDataStore(t, pool)
+	secretStore := secretDataStore.GetTestPostgresDataStore(t, pool)
 	netFlowStore, err := netFlowsDataStore.GetTestPostgresClusterDataStore(t, pool)
 	if err != nil {
 		return nil, err
 	}
-	netEntityStore, err := netEntityDataStore.GetTestPostgresDataStore(t, pool)
-	if err != nil {
-		return nil, err
-	}
-	serviceAccountStore, err := serviceAccountDataStore.GetTestPostgresDataStore(t, pool)
-	if err != nil {
-		return nil, err
-	}
+	netEntityStore := netEntityDataStore.GetTestPostgresDataStore(t, pool)
+	serviceAccountStore := serviceAccountDataStore.GetTestPostgresDataStore(t, pool)
 	k8sRoleStore := roleDataStore.GetTestPostgresDataStore(t, pool)
 	k8sRoleBindingStore := roleBindingDataStore.GetTestPostgresDataStore(t, pool)
 	networkBaselineManager, err := networkBaselineManager.GetTestPostgresManager(t, pool)
 	if err != nil {
 		return nil, err
 	}
-	iiStore, err := imageIntegrationDataStore.GetTestPostgresDataStore(t, pool)
-	if err != nil {
-		return nil, err
-	}
+	iiStore := imageIntegrationDataStore.GetTestPostgresDataStore(t, pool)
 	clusterCVEStore, err := clusterCVEDataStore.GetTestPostgresDataStore(t, pool)
 	if err != nil {
 		return nil, err
 	}
 
-	hashStore, err := datastore.GetTestPostgresDataStore(t, pool)
-	if err != nil {
-		return nil, err
-	}
+	hashStore := datastore.GetTestPostgresDataStore(t, pool)
 
 	sensorCnxMgr := connection.NewManager(hashManager.NewManager(hashStore))
 	clusterRanker := ranking.ClusterRanker()

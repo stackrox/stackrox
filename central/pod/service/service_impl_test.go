@@ -81,8 +81,7 @@ func TestGetPods(t *testing.T) {
 			pool := pgtestbase.DB
 			defer pgtestbase.Teardown(t)
 
-			podsDS, err := datastore.NewPostgresDB(pool, mockIndicators, mockPlops, mockFilter)
-			require.NoError(t, err)
+			podsDS := datastore.NewPostgresDB(pool, mockIndicators, mockPlops, mockFilter)
 
 			for _, pod := range c.pods {
 				assert.NoError(t, podsDS.UpsertPod(ctx, pod))

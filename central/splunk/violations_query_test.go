@@ -46,11 +46,9 @@ type testDataStore struct {
 func makeDS(t *testing.T, alerts []*storage.Alert) testDataStore {
 	testDB := pgtest.ForT(t)
 	assert.NotNil(t, testDB)
-	alertsDS, err := datastore.GetTestPostgresDataStore(t, testDB.DB)
-	require.NoError(t, err)
+	alertsDS := datastore.GetTestPostgresDataStore(t, testDB.DB)
 
-	err = alertsDS.UpsertAlerts(sac.WithAllAccess(context.Background()), alerts)
-	require.NoError(t, err)
+	require.NoError(t, alertsDS.UpsertAlerts(sac.WithAllAccess(context.Background()), alerts))
 
 	return testDataStore{testDB: testDB, alertsDS: alertsDS}
 }

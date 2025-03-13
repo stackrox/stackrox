@@ -1,13 +1,11 @@
 package datastore
 
 import (
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
 	piDS "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/processindicator/filter"
 	plopDS "github.com/stackrox/rox/central/processlisteningonport/datastore"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -19,9 +17,7 @@ var (
 // Singleton provides the interface for non-service external interaction.
 func Singleton() DataStore {
 	once.Do(func() {
-		var err error
-		ps, err = NewPostgresDB(globaldb.GetPostgres(), piDS.Singleton(), plopDS.Singleton(), filter.Singleton())
-		utils.CrashOnError(errors.Wrap(err, "unable to load datastore for pods"))
+		ps = NewPostgresDB(globaldb.GetPostgres(), piDS.Singleton(), plopDS.Singleton(), filter.Singleton())
 	})
 	return ps
 }
