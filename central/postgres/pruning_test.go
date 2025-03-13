@@ -56,16 +56,14 @@ func (s *PostgresPruningSuite) TearDownTest() {
 
 func (s *PostgresPruningSuite) TestPruneActiveComponents() {
 	depStore, _ := deploymentStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
-	acDS, err := activeComponent.NewForTestOnly(s.T(), s.testDB.DB)
-	s.NoError(err)
+	acDS := activeComponent.NewForTestOnly(s.T(), s.testDB.DB)
 
 	// Create and save a deployment
 	deployment := &storage.Deployment{
 		Id:   fixtureconsts.Deployment1,
 		Name: "TestDeployment",
 	}
-	err = depStore.UpsertDeployment(s.ctx, deployment)
-	s.Nil(err)
+	s.NoError(depStore.UpsertDeployment(s.ctx, deployment))
 
 	activeComponents := []*storage.ActiveComponent{
 		{
@@ -81,8 +79,7 @@ func (s *PostgresPruningSuite) TestPruneActiveComponents() {
 			DeploymentId: fixtureconsts.Deployment2,
 		},
 	}
-	err = acDS.UpsertBatch(s.ctx, activeComponents)
-	s.Nil(err)
+	s.NoError(acDS.UpsertBatch(s.ctx, activeComponents))
 
 	exists, err := acDS.Exists(s.ctx, "test1")
 	s.Nil(err)
