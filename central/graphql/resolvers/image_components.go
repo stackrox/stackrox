@@ -761,7 +761,3 @@ func (resolver *imageComponentV2Resolver) imageComponentScopeContext(ctx context
 		ID:    resolver.data.GetId(),
 	})
 }
-
-func (resolver *imageComponentV2Resolver) componentQuery() *v1.Query {
-	return search.NewQueryBuilder().AddExactMatches(search.ComponentID, resolver.data.GetId()).ProtoQuery()
-}
