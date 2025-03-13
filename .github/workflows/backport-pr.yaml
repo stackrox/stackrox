@@ -24,4 +24,4 @@ jobs:
       - uses: tibdex/backport@v2.0.4
         with:
           github_token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
-          title_template: "<%= title %> <%= base %>"
+          title_template: "<%= title %>"
