@@ -1,27 +1,5 @@
 package utils
 
-import (
-	"io"
-
-	"github.com/spf13/cobra"
-)
-
-// cobraWriter implements StringWriter using cobra.command.Print[Ln] functions.
-type cobraWriter struct {
-	c *cobra.Command
-}
-
-var _ io.StringWriter = (*cobraWriter)(nil)
-
-func (cw *cobraWriter) WriteString(s string) (int, error) {
-	cw.c.Print(s)
-	return len(s), nil
-}
-
-func (cw *cobraWriter) Println(s ...any) {
-	cw.c.Println(s...)
-}
-
 // helpWriter supports writing command usage messages.
 type helpWriter struct {
 	fw    *formattingWriter
@@ -61,8 +39,7 @@ func (w *helpWriter) Write(s ...string) {
 func (w *helpWriter) WriteLn(s ...string) {
 	w.Write(s...)
 	if w.err == nil {
-		w.Indent()
-		w.Write("\n")
+		w.Indent().Write("\n")
 		w.empty = false
 	}
 }

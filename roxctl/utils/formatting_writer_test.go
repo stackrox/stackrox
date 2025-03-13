@@ -158,6 +158,8 @@ func Test_setIndent(t *testing.T) {
 	})
 }
 
+var errBadToken = errors.New("test error")
+
 type sbWithErrors struct {
 	strings.Builder
 	fail func(n int, s string) bool
@@ -165,7 +167,7 @@ type sbWithErrors struct {
 
 func (sbe *sbWithErrors) WriteString(s string) (int, error) {
 	if sbe.fail(sbe.Builder.Len(), s) {
-		return 0, errors.New("test error")
+		return 0, errBadToken
 	}
 	return sbe.Builder.WriteString(s)
 }
@@ -221,4 +223,15 @@ func Test_writeErrors(t *testing.T) {
 		assert.Error(t, err)
 		assert.Equal(t, 0, sb.Len())
 	})
+	t.Run("do not write after error", func(t *testing.T) {
+		sb := &sbWithErrors{fail: func(_ int, s string) bool {
+			return s == "X"
+		}}
+		w := makeFormattingWriter(sb, 10, defaultTabWidth)
+		err := w.WriteString("a b X d e f")
+		assert.ErrorIs(t, err, errBadToken)
+		assert.NoError(t, w.WriteString("g h i"))
+		assert.Equal(t, "a b g h i", sb.String())
+	})
+
 }
