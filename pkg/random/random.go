@@ -1,8 +1,7 @@
 package random
 
 import (
-	"crypto/rand"
-	"math/big"
+	"math/rand/v2"
 )
 
 const (
@@ -17,15 +16,11 @@ const (
 )
 
 // GenerateString generates a random string based on the passed number of characters and the character set
-func GenerateString(num int, charSet string) (string, error) {
+func GenerateString(num int, charSet string) string {
 	var str string
-	max := big.NewInt(int64(len(charSet)))
 	for i := 0; i < num; i++ {
-		randInt, err := rand.Int(rand.Reader, max)
-		if err != nil {
-			return "", err
-		}
-		str += string(charSet[randInt.Int64()])
+		randInt := rand.IntN(len(charSet))
+		str += string(charSet[randInt])
 	}
-	return str, nil
+	return str
 }

@@ -158,12 +158,9 @@ func (h *ExportServicePostgresTestHelper) InjectImages(
 		imgName := img.GetName()
 		for j := 0; j < copyCount; j++ {
 			clone := img.CloneVT()
-			hash, err := random.GenerateString(64, random.HexValues)
-			if err != nil {
-				return nil, nil, err
-			}
+			hash := random.GenerateString(64, random.HexValues)
 			clone.Id = fmt.Sprintf("sha256:%s", hash)
-			err = h.Images.UpsertImage(upsertCtx, clone)
+			err := h.Images.UpsertImage(upsertCtx, clone)
 			if err != nil {
 				return nil, nil, err
 			}

@@ -1021,11 +1021,7 @@ func RunCursorQueryForSchema[T any, PT pgutils.Unmarshaler[T]](ctx context.Conte
 		}
 	}
 
-	cursorSuffix, err := random.GenerateString(16, random.CaseInsensitiveAlpha)
-	if err != nil {
-		closer()
-		return nil, nil, errors.Wrap(err, "creating cursor name")
-	}
+	cursorSuffix := random.GenerateString(16, random.CaseInsensitiveAlpha)
 	cursor := stringutils.JoinNonEmpty("_", query.From, cursorSuffix)
 	_, err = tx.Exec(ctx, fmt.Sprintf("DECLARE %s CURSOR FOR %s", cursor, queryStr), query.Data...)
 	if err != nil {
