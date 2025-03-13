@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -328,39 +327,22 @@ func getImageCVEV2Resolvers(ctx context.Context, root *Resolver, imageID string,
 	}
 
 	componentID := scancomponent.ComponentIDV2(component.GetName(), component.GetVersion(), component.GetArchitecture(), imageID)
-	// Use the images to map CVEs to the images and components.
-	idToVals := make(map[string]*imageCVEV2Resolver)
+	resolvers := make([]ImageVulnerabilityResolver, 0, len(component.GetVulns()))
 	for idx, vuln := range component.GetVulns() {
 		if !predicate.Matches(vuln) {
 			continue
 		}
-		id := cve.IDV2(vuln.GetCve(), componentID, fmt.Sprintf("%d", idx))
-		if _, exists := idToVals[id]; !exists {
-			converted := cveConverter.EmbeddedVulnerabilityToImageCVEV2(imageID, componentID, idx, vuln)
-			resolver, err := root.wrapImageCVEV2(converted, true, nil)
-			if err != nil {
-				return nil, err
-			}
-			resolver.ctx = embeddedobjs.VulnContext(ctx, vuln)
-			idToVals[id] = resolver
+		converted := cveConverter.EmbeddedVulnerabilityToImageCVEV2(imageID, componentID, idx, vuln)
+		resolver, err := root.wrapImageCVEV2(converted, true, nil)
+		if err != nil {
+			return nil, err
 		}
+		resolver.ctx = embeddedobjs.VulnContext(ctx, vuln)
+
+		resolvers = append(resolvers, resolver)
 	}
 
-	// For now, sort by ID.
-	resolvers := make([]*imageCVEV2Resolver, 0, len(idToVals))
-	for _, vuln := range idToVals {
-		resolvers = append(resolvers, vuln)
-	}
-	if len(query.GetPagination().GetSortOptions()) == 0 {
-		sort.SliceStable(resolvers, func(i, j int) bool {
-			return resolvers[i].data.GetId() < resolvers[j].data.GetId()
-		})
-	}
-	resolverI := make([]ImageVulnerabilityResolver, 0, len(resolvers))
-	for _, resolver := range resolvers {
-		resolverI = append(resolverI, resolver)
-	}
-	return paginate(query.GetPagination(), resolverI, nil)
+	return paginate(query.GetPagination(), resolvers, nil)
 }
 
 /*
@@ -686,17 +668,7 @@ func (resolver *imageComponentV2Resolver) LastScanned(ctx context.Context) (*gra
 		return nil, err
 	}
 
-	q := resolver.componentQuery()
-	q.Pagination = &v1.QueryPagination{
-		Limit:  1,
-		Offset: 0,
-		SortOptions: []*v1.QuerySortOption{
-			{
-				Field:    search.ImageScanTime.String(),
-				Reversed: true,
-			},
-		},
-	}
+	q := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, resolver.data.GetImageId()).ProtoQuery()
 
 	images, err := imageLoader.FromQuery(resolver.ctx, q)
 	if err != nil || len(images) == 0 {

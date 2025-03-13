@@ -125,7 +125,6 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 		// get values
 		// TODO(ROX-27780): figure out what to do with this
 		//  query = tryUnsuppressedQuery(query)
-		query.Selects = append(query.Selects, search.NewQuerySelect(search.CVE).Distinct().Proto())
 
 		vulns, err := loader.FromQuery(ctx, query)
 		cveResolvers, err := resolver.wrapImageCVEV2sWithContext(ctx, vulns, err)
@@ -918,17 +917,7 @@ func (resolver *imageCVEV2Resolver) LastScanned(ctx context.Context) (*graphql.T
 		return nil, err
 	}
 
-	q := search.EmptyQuery()
-	q.Pagination = &v1.QueryPagination{
-		Limit:  1,
-		Offset: 0,
-		SortOptions: []*v1.QuerySortOption{
-			{
-				Field:    search.ImageScanTime.String(),
-				Reversed: true,
-			},
-		},
-	}
+	q := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, resolver.data.GetImageId()).ProtoQuery()
 
 	images, err := imageLoader.FromQuery(resolver.imageVulnerabilityScopeContext(ctx), q)
 	if err != nil || len(images) == 0 {
@@ -958,51 +947,7 @@ func (resolver *imageCVEV2Resolver) Vectors() *EmbeddedVulnerabilityVectorsResol
 func (resolver *imageCVEV2Resolver) VulnerabilityState(ctx context.Context) string {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "VulnerabilityState")
 
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-
-	// Short path. Full image is embedded when image scan resolver is called.
-	if embeddedVuln := embeddedobjs.VulnFromContext(resolver.ctx); embeddedVuln != nil {
-		return embeddedVuln.GetState().String()
-	}
-
-	var imageID string
-	scope, hasScope := scoped.GetScopeAtLevel(resolver.ctx, v1.SearchCategory_IMAGES)
-	if hasScope {
-		imageID = scope.ID
-	}
-
-	if imageID == "" {
-		return ""
-	}
-
-	imageLoader, err := loaders.GetImageLoader(resolver.ctx)
-	if err != nil {
-		log.Error(errors.Wrap(err, "getting image loader"))
-		return ""
-	}
-	img, err := imageLoader.FromID(resolver.ctx, imageID)
-	if err != nil {
-		log.Error(errors.Wrapf(err, "fetching image with id %s", imageID))
-		return ""
-	}
-
-	states, err := resolver.root.vulnReqQueryMgr.VulnsWithState(resolver.ctx,
-		common.VulnReqScope{
-			Registry: img.GetName().GetRegistry(),
-			Remote:   img.GetName().GetRemote(),
-			Tag:      img.GetName().GetTag(),
-		})
-	if err != nil {
-		log.Error(errors.Wrapf(err, "fetching vuln requests for image %s/%s:%s", img.GetName().GetRegistry(), img.GetName().GetRemote(), img.GetName().GetTag()))
-		return ""
-	}
-	if s, ok := states[resolver.data.GetCveBaseInfo().GetCve()]; ok {
-		return s.String()
-	}
-
-	return storage.VulnerabilityState_OBSERVED.String()
+	return resolver.data.GetState().String()
 }
 
 func (resolver *imageCVEV2Resolver) ActiveState(_ context.Context, _ RawQuery) (*activeStateResolver, error) {

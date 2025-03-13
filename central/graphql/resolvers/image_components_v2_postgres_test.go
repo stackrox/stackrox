@@ -305,9 +305,9 @@ func (s *GraphQLImageComponentV2TestSuite) TestImageComponentImages() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
 	imageCompTests := []struct {
-		name                 string
-		id                   string
-		expectedComponentIDs []string
+		name             string
+		id               string
+		expectedImageIDs []string
 	}{
 		{
 			"comp1image1",
@@ -344,12 +344,12 @@ func (s *GraphQLImageComponentV2TestSuite) TestImageComponentImages() {
 	for _, test := range imageCompTests {
 		s.T().Run(test.name, func(t *testing.T) {
 			comp := s.getImageComponentResolver(ctx, test.id)
-			expectedCount := int32(len(test.expectedComponentIDs))
+			expectedCount := int32(len(test.expectedImageIDs))
 
 			images, err := comp.Images(ctx, PaginatedQuery{})
 			assert.NoError(t, err)
 			assert.Equal(t, expectedCount, int32(len(images)))
-			assert.ElementsMatch(t, test.expectedComponentIDs, getIDList(ctx, images))
+			assert.ElementsMatch(t, test.expectedImageIDs, getIDList(ctx, images))
 
 			count, err := comp.ImageCount(ctx, RawQuery{})
 			assert.NoError(t, err)
@@ -362,10 +362,10 @@ func (s *GraphQLImageComponentV2TestSuite) TestImageComponentImageVulnerabilitie
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
 	imageCompTests := []struct {
-		name                 string
-		id                   string
-		expectedComponentIDs []string
-		expectedCounter      *VulnerabilityCounterResolver
+		name            string
+		id              string
+		expectedCVEIDs  []string
+		expectedCounter *VulnerabilityCounterResolver
 	}{
 		{
 			"comp1os1",
@@ -459,13 +459,13 @@ func (s *GraphQLImageComponentV2TestSuite) TestImageComponentImageVulnerabilitie
 	for _, test := range imageCompTests {
 		s.T().Run(test.name, func(t *testing.T) {
 			comp := s.getImageComponentResolver(ctx, test.id)
-			expectedCount := int32(len(test.expectedComponentIDs))
+			expectedCount := int32(len(test.expectedCVEIDs))
 			test.expectedCounter.all.total = expectedCount
 
 			vulns, err := comp.ImageVulnerabilities(ctx, PaginatedQuery{})
 			assert.NoError(t, err)
 			assert.Equal(t, expectedCount, int32(len(vulns)))
-			assert.ElementsMatch(t, test.expectedComponentIDs, getIDList(ctx, vulns))
+			assert.ElementsMatch(t, test.expectedCVEIDs, getIDList(ctx, vulns))
 
 			count, err := comp.ImageVulnerabilityCount(ctx, RawQuery{})
 			assert.NoError(t, err)

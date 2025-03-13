@@ -171,9 +171,9 @@ func (resolver *imageCVECoreResolver) DistroTuples(ctx context.Context) ([]Image
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVECore, "DistroTuples")
 	var q PaginatedQuery
 	if features.FlattenCVEData.Enabled() {
-		// TODO:  Look at this to see if we need to get a list of CVE names instead
+		// Suppressed is no longer valid in the flattened model
 		q = PaginatedQuery{
-			Query: pointers.String(search.NewQueryBuilder().AddExactMatches(search.CVE, resolver.data.GetCVE()).
+			Query: pointers.String(search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.data.GetCVEIDs()...).
 				Query()),
 		}
 		return resolver.root.ImageVulnerabilities(ctx, q)
