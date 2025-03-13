@@ -121,15 +121,15 @@ func generateIP() string {
 	return fmt.Sprintf("10.%d.%d.%d", rand.Intn(256), rand.Intn(256), rand.Intn(256))
 }
 
-// Generate IP addresses from 11.0.0.0 to 126.255.255.255 which are all public
+// Generate IP addresses from 11.0.0.0 to 99.255.255.255 which are all public
 func generateExternalIP() string {
-	return fmt.Sprintf("%d.%d.%d.%d", rand.Intn(116)+11, rand.Intn(256), rand.Intn(256), rand.Intn(256))
+	return fmt.Sprintf("%d.%d.%d.%d", rand.Intn(89)+11, rand.Intn(256), rand.Intn(256), rand.Intn(256))
 }
 
 // We want to reuse some external IPs, so we test the cases where multiple
 // entities connect to the same external IP, but we also want many external IPs
 // that are only used once.
-func (w *WorkloadManager) generateExternalIPPool() {
+func generateExternalIPPool() {
 	for range 1000 {
 		ip := generateExternalIP()
 		for !externalIpPool.add(ip) {
@@ -355,7 +355,7 @@ func (w *WorkloadManager) manageFlows(ctx context.Context, workload NetworkWorkl
 	ticker := time.NewTicker(workload.FlowInterval)
 	defer ticker.Stop()
 
-	w.generateExternalIPPool()
+	generateExternalIPPool()
 
 	for {
 		select {
