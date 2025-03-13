@@ -9,21 +9,21 @@ import (
 )
 
 type flowsSuite struct {
-        suite.Suite
+	suite.Suite
 }
 
 func TestFlowsSuite(t *testing.T) {
-        suite.Run(t, new(flowsSuite))
+	suite.Run(t, new(flowsSuite))
 }
 
-func (s* flowsSuite) TestGetRandomInternalExternalIP() {
+func (s *flowsSuite) TestGetRandomInternalExternalIP() {
 	var w WorkloadManager
-	for _ = range 1000 {
+	for range 1000 {
 		generateAndAddIPToPool()
 	}
 	generateExternalIPPool()
 
-	for _ = range 1000 {
+	for range 1000 {
 		ip, internal, ok := w.getRandomInternalExternalIP()
 		if internal == net.ParseIP(ip).IsPublic() {
 			fmt.Println()
@@ -36,4 +36,3 @@ func (s* flowsSuite) TestGetRandomInternalExternalIP() {
 		s.Equal(internal, !net.ParseIP(ip).IsPublic())
 	}
 }
-

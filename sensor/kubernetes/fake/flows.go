@@ -131,7 +131,7 @@ func generateExternalIP() string {
 // that are only used once.
 func generateExternalIPPool() {
 	ip := []int{11, 0, 0, 0}
-	for _ = range 1000 {
+	for range 1000 {
 		for j := 3; j >= 0; j-- {
 			ip[j]++
 			if ip[j] > 255 {
