@@ -994,7 +994,7 @@ func RunGetManyQueryForSchema[T any, PT pgutils.Unmarshaler[T]](ctx context.Cont
 
 // RunCursorQueryForSchema creates a cursor against the database
 //
-// Deprecated: use RunCursorQueryForSchemaFn instead
+// Deprecated: use RunGetQueryForSchemaFn instead
 func RunCursorQueryForSchema[T any, PT pgutils.Unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) (fetcher func(n int) ([]*T, error), closer func(), err error) {
 	if q == nil {
 		q = searchPkg.EmptyQuery()
@@ -1041,8 +1041,8 @@ func RunCursorQueryForSchema[T any, PT pgutils.Unmarshaler[T]](ctx context.Conte
 	}, closer, nil
 }
 
-// RunCursorQueryForSchemaFn creates a cursor against the database
-func RunCursorQueryForSchemaFn[T any, PT pgutils.Unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB, callback func(obj PT) error) error {
+// RunGetQueryForSchemaFn runs a query and call a callback for each row. It stops on first error.
+func RunGetQueryForSchemaFn[T any, PT pgutils.Unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB, callback func(obj PT) error) error {
 	if q == nil {
 		q = searchPkg.EmptyQuery()
 	}
@@ -1056,48 +1056,20 @@ func RunCursorQueryForSchemaFn[T any, PT pgutils.Unmarshaler[T]](ctx context.Con
 	}
 
 	queryStr := query.AsSQL()
-
-	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, cursorDefaultTimeout)
-	defer cancel()
-
-	tx, err := db.Begin(ctx)
+	rows, err := tracedQuery(ctx, db, queryStr, query.Data...)
 	if err != nil {
-		return errors.Wrap(err, "creating transaction")
-	}
-	defer func() {
-		if err := tx.Commit(ctx); err != nil {
-			log.Errorf("error committing cursor transaction: %v", err)
-		}
-	}()
-
-	cursorSuffix := random.GenerateString(16, random.CaseInsensitiveAlpha)
-	cursor := stringutils.JoinNonEmpty("_", query.From, cursorSuffix)
-	_, err = tx.Exec(ctx, fmt.Sprintf("DECLARE %s CURSOR FOR %s", cursor, queryStr), query.Data...)
-	if err != nil {
-		return errors.Wrap(err, "creating cursor")
+		return err
 	}
 
-	for {
-		rows, err := tx.Query(ctx, fmt.Sprintf("FETCH %d FROM %s", cursorBatchSize, cursor))
-		if err != nil {
-			return errors.Wrap(err, "advancing in cursor")
+	var data []byte
+	_, err = pgx.ForEachRow(rows, []any{&data}, func() error {
+		msg := new(T)
+		if err := PT(msg).UnmarshalVTUnsafe(data); err != nil {
+			return err
 		}
-
-		var data []byte
-		tag, err := pgx.ForEachRow(rows, []any{&data}, func() error {
-			msg := new(T)
-			if err := PT(msg).UnmarshalVTUnsafe(data); err != nil {
-				return err
-			}
-			return callback(msg)
-		})
-		if err != nil {
-			return errors.Wrap(err, "processing rows")
-		}
-		if tag.RowsAffected() != cursorBatchSize {
-			return nil
-		}
-	}
+		return callback(msg)
+	})
+	return errors.Wrap(err, "for each row")
 }
 
 // RunDeleteRequestForSchema executes a request for just the delete against the database
