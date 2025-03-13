@@ -20,7 +20,7 @@ else
         echo "Backup..."
         export BACKUP_DIR="$PGDATA/backups/$(date +%s)"
         mkdir -p $BACKUP_DIR
-        tar -cf $BACKUP_DIR/backup.tar -C $PGDATA .
+        tar -cf $BACKUP_DIR/backup.tar -C $PGDATA --checkpoint .
         sync $BACKUP_DIR/backup.tar
 
         echo "Verify backup..."
