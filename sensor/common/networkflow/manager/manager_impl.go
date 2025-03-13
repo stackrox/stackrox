@@ -914,7 +914,7 @@ func (m *networkFlowManager) enrichHostConnections(hostConns *hostConnections, e
 	prevSize := len(hostConns.connections)
 	for conn, status := range hostConns.connections {
 		m.enrichConnection(&conn, status, enrichedConnections)
-		if status.rotten || (status.used && status.lastSeen != timestamp.InfiniteFuture) {
+		if shallRemoveConnection(status) {
 			// connections that are no longer active and have already been used can be deleted.
 			delete(hostConns.connections, conn)
 		}
@@ -922,7 +922,7 @@ func (m *networkFlowManager) enrichHostConnections(hostConns *hostConnections, e
 	flowMetrics.HostConnectionsRemoved.Add(float64(prevSize - len(hostConns.connections)))
 }
 
-func shallRemove(status *connStatus) bool {
+func shallRemoveConnection(status *connStatus) bool {
 	// Endpoints that are no longer active can be deleted.
 	if status.rotten {
 		return true
@@ -935,11 +935,16 @@ func shallRemove(status *connStatus) bool {
 	if status.historical && debugCloseHistoricalEntities.BooleanSetting() {
 		return true
 	}
+	return status.used && status.lastSeen != timestamp.InfiniteFuture
+}
+
+func shallRemoveEndpoint(status *connStatus) bool {
+	shallConn := shallRemoveConnection(status)
 	// If processes listening on ports is enabled, it has to be used there as well before being deleted.
 	if env.ProcessesListeningOnPort.BooleanSetting() {
-		return status.used && status.usedProcess && status.lastSeen != timestamp.InfiniteFuture
+		return status.usedProcess && shallConn
 	}
-	return status.used && status.lastSeen != timestamp.InfiniteFuture
+	return shallConn
 }
 
 func (m *networkFlowManager) enrichHostContainerEndpoints(hostConns *hostConnections, enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS) {
@@ -949,7 +954,7 @@ func (m *networkFlowManager) enrichHostContainerEndpoints(hostConns *hostConnect
 	prevSize := len(hostConns.endpoints)
 	for ep, status := range hostConns.endpoints {
 		m.enrichContainerEndpoint(&ep, status, enrichedEndpoints)
-		if shallRemove(status) {
+		if shallRemoveEndpoint(status) {
 			delete(hostConns.endpoints, ep)
 		}
 	}
