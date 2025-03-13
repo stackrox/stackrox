@@ -194,6 +194,8 @@ message CosignSignature {
   bytes signature_payload = 2;
   bytes cert_pem = 3;
   bytes cert_chain_pem = 4;
+  bytes rekor_bundle = 5;
+  bytes rfc3161_timestamp = 6;
 }
 
 message V2Metadata {
