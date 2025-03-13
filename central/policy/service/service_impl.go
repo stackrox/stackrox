@@ -291,7 +291,7 @@ func (s *serviceImpl) PostPolicy(ctx context.Context, request *v1.PostPolicyRequ
 	}
 	policy, err := s.addOrUpdatePolicy(ctx, request.GetPolicy(), ensureIDEmpty, s.addPolicyToStoreAndSetID, options...)
 	if err == nil && policy != nil && policy.Source == storage.PolicySource_DECLARATIVE {
-		metrics.IncrementTotalPolicyAsCodeCRsReceivedGauge()
+		metrics.UpdatePolicyAsCodeCRsReceivedGauge(ctx, s.policies)
 	}
 	return policy, err
 }
@@ -354,7 +354,7 @@ func (s *serviceImpl) DeletePolicy(ctx context.Context, request *v1.ResourceByID
 	}
 
 	if policy.Source == storage.PolicySource_DECLARATIVE {
-		metrics.DecrementTotalPolicyAsCodeCRsReceivedGauge()
+		metrics.UpdatePolicyAsCodeCRsReceivedGauge(ctx, s.policies)
 	}
 
 	return &v1.Empty{}, nil
