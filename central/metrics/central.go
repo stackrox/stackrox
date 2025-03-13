@@ -112,7 +112,7 @@ var (
 		Help:      "A counter of the total number of network endpoints received by Central from Sensor",
 	}, []string{"ClusterID"})
 
-	totalPolicyAsCodeCRsReceivedCounter = prometheus.NewCounter(prometheus.CounterOpts{
+	totalPolicyAsCodeCRsReceivedGauge = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "total_policy_as_code_crs_received_counter",
@@ -399,8 +399,12 @@ func IncrementTotalNetworkEndpointsReceivedCounter(clusterID string, numberOfEnd
 	totalNetworkEndpointsReceivedCounter.With(prometheus.Labels{"ClusterID": clusterID}).Add(float64(numberOfEndpoints))
 }
 
-func IncrementTotalPolicyAsCodeCRsReceivedCounter() {
-	totalPolicyAsCodeCRsReceivedCounter.Inc()
+func IncrementTotalPolicyAsCodeCRsReceivedGauge() {
+	totalPolicyAsCodeCRsReceivedGauge.Inc()
+}
+
+func DecrementTotalPolicyAsCodeCRsReceivedGauge() {
+	totalPolicyAsCodeCRsReceivedGauge.Dec()
 }
 
 // ObserveRiskProcessingDuration adds an observation for risk processing duration.
