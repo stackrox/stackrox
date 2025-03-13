@@ -47,7 +47,8 @@ func (w *helpWriter) Write(s ...string) {
 	}
 	for _, s := range s {
 		if len(s) > 0 {
-			if w.err = w.fw.WriteString(s); w.err != nil {
+			w.err = w.fw.WriteString(s)
+			if w.err != nil {
 				return
 			}
 			w.empty = false
@@ -60,7 +61,8 @@ func (w *helpWriter) Write(s ...string) {
 func (w *helpWriter) WriteLn(s ...string) {
 	w.Write(s...)
 	if w.err == nil {
-		w.err = w.Indent().fw.WriteString("\n")
+		w.Indent()
+		w.Write("\n")
 		w.empty = false
 	}
 }
