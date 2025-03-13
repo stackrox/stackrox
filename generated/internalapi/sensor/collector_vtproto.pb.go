@@ -117,7 +117,7 @@ func (m *ProcessSignal) CloneVT() *ProcessSignal {
 	r := new(ProcessSignal)
 	r.Id = m.Id
 	r.ContainerId = m.ContainerId
-	r.Time = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.Time).CloneVT())
+	r.CreationTime = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.CreationTime).CloneVT())
 	r.Name = m.Name
 	r.Args = m.Args
 	r.ExecFilePath = m.ExecFilePath
@@ -259,7 +259,7 @@ func (this *ProcessSignal) EqualVT(that *ProcessSignal) bool {
 	if this.ContainerId != that.ContainerId {
 		return false
 	}
-	if !(*timestamppb1.Timestamp)(this.Time).EqualVT((*timestamppb1.Timestamp)(that.Time)) {
+	if !(*timestamppb1.Timestamp)(this.CreationTime).EqualVT((*timestamppb1.Timestamp)(that.CreationTime)) {
 		return false
 	}
 	if this.Name != that.Name {
@@ -619,8 +619,8 @@ func (m *ProcessSignal) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x22
 	}
-	if m.Time != nil {
-		size, err := (*timestamppb1.Timestamp)(m.Time).MarshalToSizedBufferVT(dAtA[:i])
+	if m.CreationTime != nil {
+		size, err := (*timestamppb1.Timestamp)(m.CreationTime).MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -739,8 +739,8 @@ func (m *ProcessSignal) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	if m.Time != nil {
-		l = (*timestamppb1.Timestamp)(m.Time).SizeVT()
+	if m.CreationTime != nil {
+		l = (*timestamppb1.Timestamp)(m.CreationTime).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	l = len(m.Name)
@@ -1352,7 +1352,7 @@ func (m *ProcessSignal) UnmarshalVT(dAtA []byte) error {
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Time", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field CreationTime", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -1379,10 +1379,10 @@ func (m *ProcessSignal) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.Time == nil {
-				m.Time = &timestamppb.Timestamp{}
+			if m.CreationTime == nil {
+				m.CreationTime = &timestamppb.Timestamp{}
 			}
-			if err := (*timestamppb1.Timestamp)(m.Time).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := (*timestamppb1.Timestamp)(m.CreationTime).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2210,7 +2210,7 @@ func (m *ProcessSignal) UnmarshalVTUnsafe(dAtA []byte) error {
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Time", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field CreationTime", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -2237,10 +2237,10 @@ func (m *ProcessSignal) UnmarshalVTUnsafe(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.Time == nil {
-				m.Time = &timestamppb.Timestamp{}
+			if m.CreationTime == nil {
+				m.CreationTime = &timestamppb.Timestamp{}
 			}
-			if err := (*timestamppb1.Timestamp)(m.Time).UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+			if err := (*timestamppb1.Timestamp)(m.CreationTime).UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

@@ -51,7 +51,7 @@ message ProcessSignal {
   string container_id = 2;
 
   // Process creation time
-  google.protobuf.Timestamp time = 3;
+  google.protobuf.Timestamp creation_time = 3;
 
   // Process name
   string name = 4;
@@ -79,6 +79,6 @@ message ProcessSignal {
 
   message LineageInfo {
     uint32 parent_uid = 1;
-    string parent_exec_file_path = 2; // @gotags: policy:"Process Ancestor"
+    string parent_exec_file_path = 2;
   }
 }
