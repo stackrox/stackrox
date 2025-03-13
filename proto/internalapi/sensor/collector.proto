@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package sensor;
 
+import "google/protobuf/timestamp.proto";
+
 option cc_enable_arenas = true;
 option go_package = "./internalapi/sensor;sensor";
 
@@ -36,4 +38,47 @@ message CollectorConfig {
   }
 
   Networking networking = 1;
+}
+
+message ProcessSignal {
+  // A unique UUID for identifying the message
+  // We have this here instead of at the top level
+  // because we want to have each message to be
+  // self contained.
+  string id = 1;
+
+  // ID of container associated with this process
+  string container_id = 2;
+
+  // Process creation time
+  google.protobuf.Timestamp time = 3;
+
+  // Process name
+  string name = 4;
+
+  // Process arguments
+  string args = 5;
+
+  // Process executable file path
+  string exec_file_path = 6;
+
+  // Host process ID
+  uint32 pid = 7;
+
+  // Real user ID
+  uint32 uid = 8;
+
+  // Real group ID
+  uint32 gid = 9;
+
+  // Signal origin
+  bool scraped = 10;
+
+  // Process LineageInfo
+  repeated LineageInfo lineage_info = 11;
+
+  message LineageInfo {
+    uint32 parent_uid = 1;
+    string parent_exec_file_path = 2; // @gotags: policy:"Process Ancestor"
+  }
 }

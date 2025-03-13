@@ -7,7 +7,6 @@ package sensor
 import (
 	fmt "fmt"
 	protohelpers "github.com/planetscale/vtprotobuf/protohelpers"
-	storage "github.com/stackrox/rox/generated/storage"
 	proto "google.golang.org/protobuf/proto"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	io "io"
@@ -62,13 +61,7 @@ func (m *MsgFromCollector_ProcessSignal) CloneVT() isMsgFromCollector_Msg {
 		return (*MsgFromCollector_ProcessSignal)(nil)
 	}
 	r := new(MsgFromCollector_ProcessSignal)
-	if rhs := m.ProcessSignal; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.ProcessSignal }); ok {
-			r.ProcessSignal = vtpb.CloneVT()
-		} else {
-			r.ProcessSignal = proto.Clone(rhs).(*storage.ProcessSignal)
-		}
-	}
+	r.ProcessSignal = m.ProcessSignal.CloneVT()
 	return r
 }
 
@@ -200,18 +193,12 @@ func (this *MsgFromCollector_ProcessSignal) EqualVT(thatIface isMsgFromCollector
 	}
 	if p, q := this.ProcessSignal, that.ProcessSignal; p != q {
 		if p == nil {
-			p = &storage.ProcessSignal{}
+			p = &ProcessSignal{}
 		}
 		if q == nil {
-			q = &storage.ProcessSignal{}
+			q = &ProcessSignal{}
 		}
-		if equal, ok := interface{}(p).(interface {
-			EqualVT(*storage.ProcessSignal) bool
-		}); ok {
-			if !equal.EqualVT(q) {
-				return false
-			}
-		} else if !proto.Equal(p, q) {
+		if !p.EqualVT(q) {
 			return false
 		}
 	}
@@ -392,24 +379,12 @@ func (m *MsgFromCollector_ProcessSignal) MarshalToVT(dAtA []byte) (int, error) {
 func (m *MsgFromCollector_ProcessSignal) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.ProcessSignal != nil {
-		if vtmsg, ok := interface{}(m.ProcessSignal).(interface {
-			MarshalToSizedBufferVT([]byte) (int, error)
-		}); ok {
-			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		} else {
-			encoded, err := proto.Marshal(m.ProcessSignal)
-			if err != nil {
-				return 0, err
-			}
-			i -= len(encoded)
-			copy(dAtA[i:], encoded)
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		size, err := m.ProcessSignal.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
 		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x1a
 	} else {
@@ -555,13 +530,7 @@ func (m *MsgFromCollector_ProcessSignal) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.ProcessSignal != nil {
-		if size, ok := interface{}(m.ProcessSignal).(interface {
-			SizeVT() int
-		}); ok {
-			l = size.SizeVT()
-		} else {
-			l = proto.Size(m.ProcessSignal)
-		}
+		l = m.ProcessSignal.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	} else {
 		n += 2
@@ -750,29 +719,13 @@ func (m *MsgFromCollector) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Msg.(*MsgFromCollector_ProcessSignal); ok {
-				if unmarshal, ok := interface{}(oneof.ProcessSignal).(interface {
-					UnmarshalVT([]byte) error
-				}); ok {
-					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-						return err
-					}
-				} else {
-					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.ProcessSignal); err != nil {
-						return err
-					}
+				if err := oneof.ProcessSignal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
 				}
 			} else {
-				v := &storage.ProcessSignal{}
-				if unmarshal, ok := interface{}(v).(interface {
-					UnmarshalVT([]byte) error
-				}); ok {
-					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-						return err
-					}
-				} else {
-					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
-						return err
-					}
+				v := &ProcessSignal{}
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
 				}
 				m.Msg = &MsgFromCollector_ProcessSignal{ProcessSignal: v}
 			}
@@ -1073,29 +1026,13 @@ func (m *MsgFromCollector) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Msg.(*MsgFromCollector_ProcessSignal); ok {
-				if unmarshal, ok := interface{}(oneof.ProcessSignal).(interface {
-					UnmarshalVTUnsafe([]byte) error
-				}); ok {
-					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-						return err
-					}
-				} else {
-					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.ProcessSignal); err != nil {
-						return err
-					}
+				if err := oneof.ProcessSignal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
 				}
 			} else {
-				v := &storage.ProcessSignal{}
-				if unmarshal, ok := interface{}(v).(interface {
-					UnmarshalVTUnsafe([]byte) error
-				}); ok {
-					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-						return err
-					}
-				} else {
-					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
-						return err
-					}
+				v := &ProcessSignal{}
+				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
 				}
 				m.Msg = &MsgFromCollector_ProcessSignal{ProcessSignal: v}
 			}
