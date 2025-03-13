@@ -20,6 +20,7 @@ func Test_helpWriter(t *testing.T) {
 		w.EmptyLineSeparator()
 		w.EmptyLineSeparator()
 		w.WriteLn("word2")
+		assert.NoError(t, w.err)
 		assert.Equal(t, "word1\n\nword2\n", sb.String())
 	})
 	t.Run("write", func(t *testing.T) {
@@ -30,6 +31,7 @@ func Test_helpWriter(t *testing.T) {
 		w.Indent(2, 3).Write("<-2 sps")
 		w.WriteLn("\t<-\\t\\n->", "<-three spaces")
 		w.WriteLn("no indent")
+		assert.NoError(t, w.err)
 		assert.Equal(t, "short line of text\n"+
 			"somewhat long line of \n"+
 			"text\n"+
