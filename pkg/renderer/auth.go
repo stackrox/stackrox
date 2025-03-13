@@ -36,9 +36,5 @@ func CreateHtpasswd(password string) ([]byte, error) {
 
 // CreatePassword generates an alphanumeric password
 func CreatePassword() string {
-	password, err := random.GenerateString(autogenPasswordLength, random.AlphanumericCharacters)
-	if err != nil {
-		panic(err)
-	}
-	return password
+	return random.GenerateString(autogenPasswordLength, random.AlphanumericCharacters)
 }
