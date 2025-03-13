@@ -10,13 +10,14 @@
 set -euo pipefail
 
 src=$(mktemp -d)
+trap 'rm -rf "${src}"' EXIT
 
 for folder in "${@:2}"; do
     find "$folder/" -name '*.swagger.json' -exec cp {} $src \;
 done
 
 export TITLE="API Reference"
-export VERSION="$2"
+export VERSION="$1"
 export DESCRIPTION="API reference for the StackRox Security Platform"
 
 metadata='{
@@ -30,5 +31,3 @@ metadata='{
 find "$src" -type f -name "*" -print0 \
 	| sort -zr \
 	| xargs -0 jq -s 'reduce .[] as $item ('"$metadata"'; $item * .)'
-
-rm -rf $src

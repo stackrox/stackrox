@@ -10,11 +10,11 @@ Creating a new spec for a custom route involves a few steps.
 
 If you want to maintain the spec in YAML:
 
-1. Create a YAML-based swagger spec from scratch in the file format `<service_name>_swagger.yaml` in this directory.
+1. Create a YAML-based swagger spec from scratch in the file format `<serviceName>.swagger.yaml` in this directory.
 2. Convert the YAML to JSON and save the JSON in the file format `<serviceName>.swagger.json` in this directory.
 3. Add both files to git.
 
-If you want to main the spec in JSON:
+If you want to maintain the spec in JSON:
 
 1. Create a JSON-based spec from scratch in the file format `<serviceName>.swagger.json` in this directory.
 2. Add the file to git.
