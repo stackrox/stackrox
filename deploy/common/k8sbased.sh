@@ -898,7 +898,6 @@ function launch_sensor {
              --collection-method="$COLLECTION_METHOD" \
              "${ORCH}" \
              "${extra_config[@]+"${extra_config[@]}"}"
-        echo "continue..."
         mv "sensor-${CLUSTER}" "$k8s_dir/sensor-deploy"
         if [[ "${GENERATE_SCANNER_DEPLOYMENT_BUNDLE:-}" == "true" ]]; then
             roxctl --endpoint "${API_ENDPOINT}" scanner generate \
