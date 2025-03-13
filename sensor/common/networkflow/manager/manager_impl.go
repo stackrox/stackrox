@@ -558,6 +558,7 @@ func logReasonForAggregatingNetGraphFlow(conn *connection, contNs, contName, ent
 }
 
 func (m *networkFlowManager) enrichConnection(conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) {
+	flowMetrics.FlowEnrichments.WithLabelValues("connection").Inc()
 	now := timestamp.Now()
 	timeElapsedSinceFirstSeen := now.ElapsedSince(status.firstSeen)
 	isExpired := timeElapsedSinceFirstSeen <= maxContainerResolutionWaitPeriod
@@ -775,6 +776,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 }
 
 func (m *networkFlowManager) enrichContainerEndpoint(ep *containerEndpoint, status *connStatus, enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS) {
+	flowMetrics.FlowEnrichments.WithLabelValues("endpoint").Inc()
 	now := timestamp.Now()
 	timeElapsedSinceFirstSeen := now.ElapsedSince(status.firstSeen)
 	isExpired := timeElapsedSinceFirstSeen > maxContainerResolutionWaitPeriod
