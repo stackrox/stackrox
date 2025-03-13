@@ -98,7 +98,8 @@ func GetExtSrcNetworkEntityInfo(id, name, cidr string, isDefault bool) *storage.
 				Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
 					Cidr: cidr,
 				},
-				Default: isDefault,
+				Default:    isDefault,
+				Discovered: !isDefault,
 			},
 		},
 	}
