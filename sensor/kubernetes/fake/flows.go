@@ -130,11 +130,18 @@ func generateExternalIP() string {
 // entities connect to the same external IP, but we also want many external IPs
 // that are only used once.
 func generateExternalIPPool() {
-	for range 1000 {
-		ip := generateExternalIP()
-		for !externalIpPool.add(ip) {
-			ip = generateExternalIP()
+	ip := []int{11, 0, 0, 0}
+	for _ = range 1000 {
+		for j := 3; j >= 0; j-- {
+			ip[j]++
+			if ip[j] > 255 {
+				ip[j] = 0
+			} else {
+				break
+			}
 		}
+		ipString := fmt.Sprintf("%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3])
+		externalIpPool.add(ipString)
 	}
 }
 
