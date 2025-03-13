@@ -12,7 +12,6 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/lifecycle"
-	"github.com/stackrox/rox/central/metrics"
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/policy/datastore"
@@ -291,7 +290,7 @@ func (s *serviceImpl) PostPolicy(ctx context.Context, request *v1.PostPolicyRequ
 	}
 	policy, err := s.addOrUpdatePolicy(ctx, request.GetPolicy(), ensureIDEmpty, s.addPolicyToStoreAndSetID, options...)
 	if err == nil && policy != nil && policy.Source == storage.PolicySource_DECLARATIVE {
-		metrics.UpdatePolicyAsCodeCRsReceivedGauge(ctx, s.policies)
+		s.updatePolicyAsCodeMetrics(ctx)
 	}
 	return policy, err
 }
@@ -354,10 +353,13 @@ func (s *serviceImpl) DeletePolicy(ctx context.Context, request *v1.ResourceByID
 	}
 
 	if policy.Source == storage.PolicySource_DECLARATIVE {
-		metrics.UpdatePolicyAsCodeCRsReceivedGauge(ctx, s.policies)
 	}
 
 	return &v1.Empty{}, nil
+}
+
+func (s *serviceImpl) updatePolicyAsCodeMetrics(ctx context.Context) {
+	s.updatePolicyAsCodeMetrics(ctx)
 }
 
 // ReassessPolicies manually triggers enrichment of all deployments, and re-assesses policies if there's updated data.
