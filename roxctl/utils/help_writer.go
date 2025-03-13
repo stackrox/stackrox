@@ -40,26 +40,33 @@ func (w *helpWriter) Indent(indent ...int) *helpWriter {
 
 // WriteLn writes the strings with the underlying writer, adds new line and
 // resets the indentation.
-func (w *helpWriter) Write(s ...string) {
+func (w *helpWriter) Write(s ...string) error {
 	for _, s := range s {
 		if len(s) > 0 {
-			_, _ = w.fw.WriteString(s)
+			if err := w.fw.WriteString(s); err != nil {
+				return err
+			}
 			w.empty = false
 		}
 	}
+	return nil
 }
 
 // WriteLn writes the strings with the underlying writer, adds new line and
 // resets the indentation.
-func (w *helpWriter) WriteLn(s ...string) {
-	w.Write(s...)
-	_, _ = w.Indent().fw.WriteString("\n")
-	w.empty = false
+func (w *helpWriter) WriteLn(s ...string) error {
+	err := w.Write(s...)
+	if err == nil {
+		err = w.Indent().fw.WriteString("\n")
+		w.empty = false
+	}
+	return err
 }
 
-func (w *helpWriter) EmptyLineSeparator() {
+func (w *helpWriter) EmptyLineSeparator() error {
 	if !w.empty {
-		_, _ = w.Indent().fw.WriteString("\n")
 		w.empty = true
+		return w.Indent().fw.WriteString("\n")
 	}
+	return nil
 }

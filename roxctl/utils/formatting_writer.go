@@ -9,8 +9,8 @@ import (
 
 const defaultTabWidth = 8
 
-// formattingWriter implements StringWriter interface.
-// It writes strings to the underlying writer indenting and wrapping the text.
+// formattingWriter writes strings to the underlying writer indenting and
+// wrapping the text.
 type formattingWriter struct {
 	raw      io.StringWriter
 	width    int
@@ -20,8 +20,6 @@ type formattingWriter struct {
 	currentLine int
 	indentReset bool
 }
-
-var _ io.StringWriter = (*formattingWriter)(nil)
 
 func makeFormattingWriter(w io.StringWriter, width int, tabWidth int, indent ...int) *formattingWriter {
 	return &formattingWriter{raw: w, width: width, indent: indent, tabWidth: tabWidth}
@@ -59,24 +57,19 @@ func (w *formattingWriter) SetIndent(indent ...int) {
 
 // WriteString writes the string to the underlying writer, with the configured
 // indentation and wrapping.
-// Implements the StringWriter interface.
-func (w *formattingWriter) WriteString(s string) (int, error) {
-	written := 0
-	for token := range w.tokens(s) {
-		n, err := w.raw.WriteString(token)
-		written += n
-		if err != nil {
-			return written, err //nolint:wrapcheck
+func (w *formattingWriter) WriteString(s string) error {
+	for token := range w.tokens(strings.NewReader(s)) {
+		if _, err := w.raw.WriteString(token); err != nil {
+			return err //nolint:wrapcheck
 		}
 	}
-	return written, nil
+	return nil
 }
 
 // tokens is an internal iterator that issues tokens with paddings and wrapping.
-func (w *formattingWriter) tokens(s string) iter.Seq[string] {
+func (w *formattingWriter) tokens(s io.Reader) iter.Seq[string] {
+	tokenScanner := bufio.NewScanner(s)
 	return func(yield func(string) bool) {
-		tokenScanner := bufio.NewScanner(strings.NewReader(s))
-	tokenLoop:
 		for tokenScanner.Split(wordsAndDelimeters); tokenScanner.Scan(); {
 			token := tokenScanner.Text()
 			tokenLength := len(token)
@@ -90,7 +83,7 @@ func (w *formattingWriter) tokens(s string) iter.Seq[string] {
 				}
 				w.currentLine = 0
 				if !yield("\n") {
-					break tokenLoop
+					return
 				}
 				continue
 			}
