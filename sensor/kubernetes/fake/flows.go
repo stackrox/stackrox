@@ -121,9 +121,9 @@ func generateIP() string {
 	return fmt.Sprintf("10.%d.%d.%d", rand.Intn(256), rand.Intn(256), rand.Intn(256))
 }
 
-// Generate IP addresses from 11.0.0.0 to 171.255.255.255 which are all public
+// Generate IP addresses from 11.0.0.0 to 126.255.255.255 which are all public
 func generateExternalIP() string {
-	return fmt.Sprintf("%d.%d.%d.%d", rand.Intn(171)+11, rand.Intn(256), rand.Intn(256), rand.Intn(256))
+	return fmt.Sprintf("%d.%d.%d.%d", rand.Intn(116)+11, rand.Intn(256), rand.Intn(256), rand.Intn(256))
 }
 
 // We want to reuse some external IPs, so we test the cases where multiple
@@ -192,17 +192,6 @@ func getRandomOriginator(containerID string) *storage.NetworkProcessUniqueKey {
 	}
 
 	return getNetworkProcessUniqueKeyFromProcess(process)
-}
-
-func getNetworkEndpointFromConnectionAndOriginator(conn *sensor.NetworkConnection, originator *storage.NetworkProcessUniqueKey) *sensor.NetworkEndpoint {
-	return &sensor.NetworkEndpoint{
-		SocketFamily:   conn.SocketFamily,
-		Protocol:       conn.Protocol,
-		ListenAddress:  conn.LocalAddress,
-		ContainerId:    conn.ContainerId,
-		CloseTimestamp: nil,
-		Originator:     originator,
-	}
 }
 
 func makeNetworkConnection(src string, dst string, containerID string, closeTimestamp time.Time) *sensor.NetworkConnection {
@@ -284,6 +273,30 @@ func (w *WorkloadManager) getRandomSrcDst() (string, string, bool) {
 	return src, dst, ok
 }
 
+func (w *WorkloadManager) getRandomNetworkEndpoint(containerID string) (*sensor.NetworkEndpoint, bool) {
+	originator := getRandomOriginator(containerID)
+
+	ip, ok := ipPool.randomElem()
+	if !ok {
+		log.Error("found no IPs in pool")
+		return nil, false
+	}
+
+	networkEndpoint := &sensor.NetworkEndpoint{
+		SocketFamily: sensor.SocketFamily_SOCKET_FAMILY_IPV4,
+		Protocol:     storage.L4Protocol_L4_PROTOCOL_TCP,
+		ListenAddress: &sensor.NetworkAddress{
+			AddressData: net.ParseIP(ip).AsNetIP(),
+			Port:        rand.Uint32() % 63556,
+		},
+		ContainerId:    containerID,
+		CloseTimestamp: nil,
+		Originator:     originator,
+	}
+
+	return networkEndpoint, ok
+}
+
 func (w *WorkloadManager) getFakeNetworkConnectionInfo(workload NetworkWorkload) *sensor.NetworkConnectionInfo {
 	conns := make([]*sensor.NetworkConnection, 0, workload.BatchSize)
 	networkEndpoints := make([]*sensor.NetworkEndpoint, 0, workload.BatchSize)
@@ -300,10 +313,11 @@ func (w *WorkloadManager) getFakeNetworkConnectionInfo(workload NetworkWorkload)
 		}
 
 		conn := makeNetworkConnection(src, dst, containerID, time.Now().Add(-5*time.Second))
-
-		originator := getRandomOriginator(containerID)
-
-		networkEndpoint := getNetworkEndpointFromConnectionAndOriginator(conn, originator)
+		networkEndpoint, ok := w.getRandomNetworkEndpoint(containerID)
+		if !ok {
+			log.Error("found no IPs in pool")
+			continue
+		}
 
 		conns = append(conns, conn)
 		if endpointPool.Size < endpointPool.Capacity {
