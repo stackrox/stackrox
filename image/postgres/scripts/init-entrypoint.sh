@@ -2,6 +2,30 @@
 
 set -Eeo pipefail
 
+check_volume_use () {
+    MOUNT_POINT=$1
+    THRESHOLD=$2
+
+    USE=$(df |\
+          grep "${MOUNT_POINT}" |\
+          tail -n -1 |\
+          awk '{print $5}' |\
+          tr -d '%')
+
+    if [ -z "${USE}" ]; then
+        echo "No volume at ${MOUNT_POINT}"
+        return 1
+    fi
+
+    if [ "${USE}" -gt "${THRESHOLD}" ]; then
+        echo "Volume at ${MOUNT_POINT} is not large enough, use is ${USE}%"
+        return 1
+    fi
+
+    echo "Volume at ${MOUNT_POINT} is large enough, use is ${USE}%"
+    return 0
+}
+
 # Initialize DB if it does not exist
 if [ ! -s "$PGDATA/PG_VERSION" ]; then
   initdb --auth-host=scram-sha-256 --auth-local=scram-sha-256 --pwfile /run/secrets/stackrox.io/secrets/password --data-checksums
@@ -13,6 +37,14 @@ else
     if [ $(cat "${PGDATA}/PG_VERSION") -lt "$PG_BINARY_VERSION" ]; then
         # Data version is less than binaries, upgrade
 
+        echo "Checking backup volume space..."
+        if ! check_volume_use "/backups" 33; then
+            echo "Checking data volume space..."
+            if ! check_volume_use "/var/lib/postgresql/data" 33; then
+                echo "Not enough disk space, upgrade is cancelled"
+            fi
+        fi
+
         # Do a backup first, ideally move it to a separate volume. Since the
         # database is stopped we may as well simple take a filesystem backup.
         # Alternatives would be pg_dump or pg_basebackup, both require running
@@ -20,7 +52,7 @@ else
         echo "Backup..."
         export BACKUP_DIR="$PGDATA/backups/$(date +%s)"
         mkdir -p $BACKUP_DIR
-        tar -cf $BACKUP_DIR/backup.tar -C $PGDATA --checkpoint .
+        tar -cf $BACKUP_DIR/backup.tar -C $PGDATA --checkpoint=1000 .
         sync $BACKUP_DIR/backup.tar
 
         echo "Verify backup..."
