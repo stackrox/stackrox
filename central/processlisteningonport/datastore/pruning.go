@@ -40,5 +40,8 @@ const (
 			SELECT id FROM tmp ORDER BY id DESC LIMIT 1`
 
 	// Deletes PLOPs without poduids in batches according to id, which is more efficient than using offset.
+	// It is possible that new rows may be inserted between the starting and ending ids, after the two ids
+	// are obtained. Meaning that the number of rows in the page may be different than what is expected for
+	// the page. This should not cause a problem.
 	deletePLOPsWithoutPoduidInPage = "DELETE FROM listening_endpoints WHERE poduid is null AND id >= '%s' AND id <= '%s'"
 )
