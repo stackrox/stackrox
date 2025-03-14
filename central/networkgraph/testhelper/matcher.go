@@ -12,7 +12,8 @@ func MatchElements(expected []*storage.NetworkFlow, actual []*storage.NetworkFlo
 		for _, actualFlow := range actual {
 			if actualFlow.GetClusterId() == expectedFlow.GetClusterId() &&
 				proto.Equal(actualFlow.GetProps(), expectedFlow.GetProps()) &&
-				proto.Equal(actualFlow.GetLastSeenTimestamp(), expectedFlow.GetLastSeenTimestamp()) {
+				proto.Equal(actualFlow.GetLastSeenTimestamp(), expectedFlow.GetLastSeenTimestamp()) &&
+				actualFlow.GetUpdatedAt() != nil {
 				foundCount++
 				break
 			}

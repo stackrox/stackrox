@@ -86,16 +86,16 @@ func (suite *FlowStoreTestSuite) TestStore() {
 
 	readFlows, _, err := suite.tested.GetAllFlows(context.Background(), nil)
 	suite.Require().NoError(err)
-	assert.True(suite.T(), testhelper.MatchElements(readFlows, flows))
+	assert.True(suite.T(), testhelper.MatchElements(flows, readFlows))
 
 	readFlows, _, err = suite.tested.GetAllFlows(context.Background(), &t2)
 	suite.Require().NoError(err)
-	assert.True(suite.T(), testhelper.MatchElements(readFlows, flows[1:]))
+	assert.True(suite.T(), testhelper.MatchElements(flows[1:], readFlows))
 
 	now := time.Now().UTC()
 	readFlows, _, err = suite.tested.GetAllFlows(context.Background(), &now)
 	suite.Require().NoError(err)
-	assert.True(suite.T(), testhelper.MatchElements(readFlows, flows[2:]))
+	assert.True(suite.T(), testhelper.MatchElements(flows[2:], readFlows))
 
 	updateTS += 1337
 	err = suite.tested.UpsertFlows(context.Background(), flows, updateTS)
@@ -120,7 +120,7 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	var actualFlows []*storage.NetworkFlow
 	actualFlows, _, err = suite.tested.GetAllFlows(context.Background(), nil)
 	suite.NoError(err)
-	assert.True(suite.T(), testhelper.MatchElements(actualFlows, flows[1:]))
+	assert.True(suite.T(), testhelper.MatchElements(flows[1:], actualFlows))
 
 	updateTS += 42
 	err = suite.tested.UpsertFlows(context.Background(), flows, updateTS)
@@ -128,7 +128,7 @@ func (suite *FlowStoreTestSuite) TestStore() {
 
 	actualFlows, _, err = suite.tested.GetAllFlows(context.Background(), nil)
 	suite.NoError(err)
-	assert.True(suite.T(), testhelper.MatchElements(actualFlows, flows))
+	assert.True(suite.T(), testhelper.MatchElements(flows, actualFlows))
 
 	node1Flows, _, err := suite.tested.GetMatchingFlows(context.Background(), func(props *storage.NetworkFlowProperties) bool {
 		if props.GetDstEntity().GetType() == storage.NetworkEntityInfo_DEPLOYMENT && props.GetDstEntity().GetId() == fixtureconsts.Deployment1 {
@@ -140,7 +140,7 @@ func (suite *FlowStoreTestSuite) TestStore() {
 		return false
 	}, nil)
 	suite.NoError(err)
-	assert.True(suite.T(), testhelper.MatchElements(node1Flows, flows[:1]))
+	assert.True(suite.T(), testhelper.MatchElements(flows[:1], node1Flows))
 }
 
 // TestRemoveAllMatching tests removing flows that match deployments that have been removed
