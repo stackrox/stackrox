@@ -24,8 +24,6 @@ type storeType = storage.ImageCVEEdge
 // Store is the interface to interact with the storage for storage.ImageCVEEdge
 type Store interface {
 	UpsertMany(ctx context.Context, objs []*storeType) error
-
-	Walk(ctx context.Context, fn func(obj *storeType) error) error
 }
 
 // New returns a new Store instance using the provided sql instance.
