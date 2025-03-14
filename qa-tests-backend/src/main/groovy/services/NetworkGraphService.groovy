@@ -41,6 +41,20 @@ class NetworkGraphService extends BaseService {
         }
     }
 
+    static getExternalNetworkEntities(String query = null) {
+        try {
+            GetExternalNetworkEntitiesRequest.Builder request =
+                   GetExternalNetworkEntitiesRequest.newBuilder()
+                           .setClusterId(ClusterService.getClusterId())
+            if (query != null) {
+                request.setQuery(query)
+            }
+            return getNetworkGraphClient().getExternalNetworkEntities(request.build())
+        } catch (Exception e) {
+            log.error("Exception fetching external entities", e)
+        }
+    }
+
     static createNetworkEntity(String clusterId, String name, String cidr, Boolean isSystemGenerated) {
         try {
             if (clusterId == null) {

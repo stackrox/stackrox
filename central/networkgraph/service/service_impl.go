@@ -333,6 +333,7 @@ func (s *serviceImpl) GetNetworkGraph(ctx context.Context, request *v1.NetworkGr
 }
 
 func (s *serviceImpl) getNetworkGraph(ctx context.Context, request *v1.NetworkGraphRequest, withListenPorts bool) (*v1.NetworkGraph, error) {
+	log.Info("In getNetworkGraph")
 	if request.GetClusterId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "cluster ID must be specified")
 	}
@@ -400,6 +401,7 @@ func (s *serviceImpl) getNetworkGraph(ctx context.Context, request *v1.NetworkGr
 			log.Warnf("Failed to enhance Network Graph Nodes with Network policy: %s", err)
 		}
 	}
+	log.Info("Leaving getNetworkGraph")
 
 	return graph, nil
 }
