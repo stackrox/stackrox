@@ -2,24 +2,23 @@ package services
 
 import static io.restassured.RestAssured.given
 
-import groovy.transform.CompileStatic
-import io.restassured.config.RestAssuredConfig
-import groovy.util.logging.Slf4j
-
-import util.Helpers
-import util.Keys
-
-import javax.net.ssl.SSLContext
 import java.security.SecureRandom
+import javax.net.ssl.SSLContext
 
+import groovy.transform.CompileStatic
+import groovy.util.logging.Slf4j
+import io.restassured.config.RestAssuredConfig
 import io.restassured.config.SSLConfig
 import org.apache.http.conn.ssl.SSLSocketFactory
-import util.Env
 
 import io.stackrox.proto.api.v1.AuthProviderServiceGrpc
 import io.stackrox.proto.api.v1.AuthproviderService
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.storage.AuthProviderOuterClass
+
+import util.Env
+import util.Helpers
+import util.Keys
 
 @Slf4j
 @CompileStatic

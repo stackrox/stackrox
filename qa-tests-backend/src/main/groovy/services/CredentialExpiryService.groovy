@@ -1,11 +1,14 @@
 package services
 
 import com.google.protobuf.Timestamp
+import groovy.transform.CompileStatic
+
 import io.stackrox.proto.api.v1.CredentialExpiryServiceGrpc
 import io.stackrox.proto.api.v1.CredentialExpiryServiceOuterClass.GetCertExpiry
 
+@CompileStatic
 class CredentialExpiryService extends BaseService {
-    static getCredentialExpiryServiceClient() {
+    static CredentialExpiryServiceGrpc.CredentialExpiryServiceBlockingStub getCredentialExpiryServiceClient() {
         return CredentialExpiryServiceGrpc.newBlockingStub(getChannel())
     }
 
