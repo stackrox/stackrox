@@ -195,6 +195,7 @@ func (s *serviceImpl) runRecv(stream sensor.NetworkConnectionInfoService_PushNet
 			return
 		}
 		if s.writer != nil {
+			log.Infof("========= lvm message from collector %v", msg)
 			if data, err := msg.MarshalVT(); err == nil {
 				if _, err := s.writer.Write(data); err != nil {
 					log.Warnf("Error writing msg: %v", err)
