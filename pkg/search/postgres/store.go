@@ -189,26 +189,7 @@ func (s *genericStore[T, PT]) Search(ctx context.Context, q *v1.Query) ([]search
 }
 
 func (s *genericStore[T, PT]) walkByQuery(ctx context.Context, query *v1.Query, fn func(obj PT) error) error {
-	fetcher, closer, err := RunCursorQueryForSchema[T, PT](ctx, s.schema, query, s.db)
-	if err != nil {
-		return err
-	}
-	defer closer()
-	for {
-		rows, err := fetcher(cursorBatchSize)
-		if err != nil {
-			return pgutils.ErrNilIfNoRows(err)
-		}
-		for _, data := range rows {
-			if err := fn(data); err != nil {
-				return err
-			}
-		}
-		if len(rows) != cursorBatchSize {
-			break
-		}
-	}
-	return nil
+	return RunCursorQueryForSchemaFn[T, PT](ctx, s.schema, query, s.db, fn)
 }
 
 // Walk iterates over all the objects in the store and applies the closure.
