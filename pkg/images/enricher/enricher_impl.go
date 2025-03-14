@@ -224,18 +224,25 @@ func (e *enricherImpl) updateImageWithExistingImage(image *storage.Image, existi
 
 // EnrichImage enriches an image with the integration set present.
 func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext EnrichmentContext, image *storage.Image) (EnrichmentResult, error) {
-	if shouldDelegate, err := e.delegateEnrichImage(ctx, enrichContext, image); shouldDelegate {
-		// This enrichment should have been delegated, short circuit.
+	shouldDelegate, err := e.delegateEnrichImage(ctx, enrichContext, image)
+	if shouldDelegate {
 		if err != nil {
-			return EnrichmentResult{ImageUpdated: false, ScanResult: ScanNotDone}, err
+			if errors.Is(err, errox.InvalidArgs) {
+				// Log the warning and try to keep enriching
+				log.Warnf("No default cluster found for delegation: %v, proceed enriching with Central", err)
+			} else {
+				// This enrichment should have been delegated, short circuit.
+				return EnrichmentResult{ImageUpdated: false, ScanResult: ScanNotDone}, err
+			}
+		} else {
+			return EnrichmentResult{ImageUpdated: true, ScanResult: ScanSucceeded}, nil
 		}
-		return EnrichmentResult{ImageUpdated: true, ScanResult: ScanSucceeded}, nil
 	} else if err != nil {
 		log.Warnf("Error attempting to delegate: %v", err)
 	}
 
 	errorList := errorhelpers.NewErrorList("image enrichment")
-
+	errCentralScan := errors.New("No cluster specified for delegated scanning and Central scan attempt failed.")
 	imageNoteSet := make(map[storage.Image_Note]struct{}, len(image.Notes))
 	for _, note := range image.Notes {
 		imageNoteSet[note] = struct{}{}
@@ -259,6 +266,9 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 	// here.
 	if err != nil {
 		errorList.AddError(err)
+		if shouldDelegate {
+			errorList.AddError(errCentralScan)
+		}
 		return EnrichmentResult{ImageUpdated: didUpdateMetadata, ScanResult: ScanNotDone}, errorList.ToError()
 	}
 
@@ -298,6 +308,10 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 
 	e.cvesSuppressor.EnrichImageWithSuppressedCVEs(image)
 	e.cvesSuppressorV2.EnrichImageWithSuppressedCVEs(image)
+
+	if scanResult == ScanNotDone && shouldDelegate {
+		errorList.AddError(errCentralScan)
+	}
 
 	return EnrichmentResult{
 		ImageUpdated: updated,
