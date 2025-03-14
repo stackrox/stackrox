@@ -2,6 +2,7 @@ package services
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+
 import io.stackrox.proto.api.v1.ClusterService.GetClustersRequest
 import io.stackrox.proto.api.v1.ClustersServiceGrpc
 import io.stackrox.proto.api.v1.Common
@@ -29,7 +30,7 @@ class ClusterService extends BaseService {
         return getClusterServiceClient().getCluster(Common.ResourceByID.newBuilder().setId(clusterId).build()).cluster
     }
 
-    static getClusterId(String name = DEFAULT_CLUSTER_NAME) {
+    static String getClusterId(String name = DEFAULT_CLUSTER_NAME) {
         return getClusterServiceClient().getClusters(
                 GetClustersRequest.newBuilder().setQuery("Cluster:${name}").build()
         ).clustersList.find { it.name == name }?.id

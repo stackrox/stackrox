@@ -1,21 +1,27 @@
 package services
 
-import common.Constants
+import static util.Helpers.getStackRoxEndpoint
+
+import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+
 import io.stackrox.proto.api.v1.NotifierServiceGrpc
 import io.stackrox.proto.api.v1.NotifierServiceOuterClass
 import io.stackrox.proto.storage.Common
 import io.stackrox.proto.storage.NotifierOuterClass
+
+import common.Constants
 import util.Env
 import util.MailServer
 
 @Slf4j
+@CompileStatic
 class NotifierService extends BaseService {
     // FIXME(ROX-7589): this should be secret
     // private static final PAGERDUTY_API_KEY = Env.mustGetPagerdutyApiKey()
     private static final String PAGERDUTY_API_KEY = null
 
-    static getNotifierClient() {
+    static NotifierServiceGrpc.NotifierServiceBlockingStub getNotifierClient() {
         return NotifierServiceGrpc.newBlockingStub(getChannel())
     }
 
