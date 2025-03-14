@@ -1058,13 +1058,13 @@ func RunCursorQueryForSchemaFn[T any, PT pgutils.Unmarshaler[T]](ctx context.Con
 	queryStr := query.AsSQL()
 
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, cursorDefaultTimeout)
+	defer cancel()
 
 	tx, err := db.Begin(ctx)
 	if err != nil {
 		return errors.Wrap(err, "creating transaction")
 	}
 	defer func() {
-		cancel()
 		if err := tx.Commit(ctx); err != nil {
 			log.Errorf("error committing cursor transaction: %v", err)
 		}
