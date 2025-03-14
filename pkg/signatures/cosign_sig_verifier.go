@@ -16,8 +16,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sigstore/cosign/v2/cmd/cosign/cli/fulcio"
 	"github.com/sigstore/cosign/v2/pkg/cosign"
+	"github.com/sigstore/cosign/v2/pkg/cosign/bundle"
 	"github.com/sigstore/cosign/v2/pkg/oci"
 	"github.com/sigstore/cosign/v2/pkg/oci/static"
+	rekorClient "github.com/sigstore/rekor/pkg/client"
+	rekorGenClient "github.com/sigstore/rekor/pkg/generated/client"
 	"github.com/sigstore/sigstore/pkg/cryptoutils"
 	"github.com/sigstore/sigstore/pkg/signature"
 	"github.com/sigstore/sigstore/pkg/signature/payload"
@@ -36,16 +39,15 @@ const (
 )
 
 var (
-	errNoImageSHA         = errors.New("no image SHA found")
-	errInvalidHashAlgo    = errox.InvalidArgs.New("invalid hash algorithm used")
-	errNoVerificationData = errors.New("verification data not found")
-	errHashCreation       = errox.InvariantViolation.New("creating hash")
 	errCorruptedSignature = errox.InvariantViolation.New("corrupted signature")
+	errHashCreation       = errox.InvariantViolation.New("creating hash")
+	errInvalidHashAlgo    = errox.InvalidArgs.New("invalid hash algorithm used")
+	errNoImageSHA         = errors.New("no image SHA found")
+	errNoVerificationData = errors.New("verification data not found")
+	errUnverifiedBundle   = errors.New("unverified transparency log bundle")
 )
 
-var (
-	once sync.Once
-)
+var once sync.Once
 
 func setupTufRootDir() {
 	once.Do(func() {
@@ -61,6 +63,7 @@ func setupTufRootDir() {
 type cosignSignatureVerifier struct {
 	parsedPublicKeys []crypto.PublicKey
 	certs            []certVerificationData
+	rekorURL         string
 
 	verifierOpts []cosign.CheckOpts
 }
@@ -139,7 +142,8 @@ func newCosignSignatureVerifier(config *storage.SignatureIntegration) (*cosignSi
 // The signature of the image will be verified using cosign. It will include the verification via public key
 // as well as the claim verification of the payload of the signature.
 func (c *cosignSignatureVerifier) VerifySignature(ctx context.Context,
-	image *storage.Image) (storage.ImageSignatureVerificationResult_Status, []string, error) {
+	image *storage.Image,
+) (storage.ImageSignatureVerificationResult_Status, []string, error) {
 	// Short-circuit if we, for some reason, do not have anything to verify against.
 	if len(c.parsedPublicKeys) == 0 && len(c.certs) == 0 {
 		return storage.ImageSignatureVerificationResult_FAILED_VERIFICATION, nil, errNoVerificationData
@@ -151,7 +155,7 @@ func (c *cosignSignatureVerifier) VerifySignature(ctx context.Context,
 	}
 
 	var allVerifyErrs error
-	if err := c.createVerifierOpts(); err != nil {
+	if err := c.createVerifierOpts(ctx); err != nil {
 		// Fail open here instead of closed. During the creation of verifier opts for certificates, if one is given,
 		// verification of the subject & identity will be done. Thus, it could always fail if things aren't signed
 		// appropriately. In case we have a signature integration with a mix of keys & certificates to verify against,
@@ -171,7 +175,7 @@ func (c *cosignSignatureVerifier) VerifySignature(ctx context.Context,
 	return storage.ImageSignatureVerificationResult_FAILED_VERIFICATION, nil, allVerifyErrs
 }
 
-func (c *cosignSignatureVerifier) createVerifierOpts() error {
+func (c *cosignSignatureVerifier) createVerifierOpts(ctx context.Context) error {
 	var verifierErrs error
 
 	for _, key := range c.parsedPublicKeys {
@@ -181,13 +185,13 @@ func (c *cosignSignatureVerifier) createVerifierOpts() error {
 			verifierErrs = multierror.Append(verifierErrs, errors.Wrap(err, "creating verifier"))
 			continue
 		}
-		opts := defaultCosignCheckOpts()
+		opts := c.defaultCosignCheckOpts(ctx)
 		opts.SigVerifier = v
 		c.verifierOpts = append(c.verifierOpts, opts)
 	}
 
 	for _, certs := range c.certs {
-		opts, err := cosignCheckOptsFromCert(certs)
+		opts, err := c.cosignCheckOptsFromCert(ctx, certs)
 		if err != nil {
 			verifierErrs = multierror.Append(verifierErrs, errors.Wrap(err, "creating cosign check opts"))
 			continue
@@ -198,20 +202,35 @@ func (c *cosignSignatureVerifier) createVerifierOpts() error {
 	return verifierErrs
 }
 
-func defaultCosignCheckOpts() cosign.CheckOpts {
+func (c *cosignSignatureVerifier) defaultCosignCheckOpts(ctx context.Context) cosign.CheckOpts {
+	// TODO: handle errors
+	rekorURL := c.rekorURL
+	if c.rekorURL == "" {
+		rekorURL = rekorGenClient.DefaultHost
+	}
+	rekorClient, err := rekorClient.GetRekorClient(rekorURL)
+	if err != nil {
+		log.Errorf("Failed to create rekor client: %v", err)
+	}
+	rekorPubKeys, err := cosign.GetRekorPubs(ctx)
+	if err != nil {
+		log.Errorf("Failed to get rekor public keys: %v", err)
+	}
+	ctlogPubKeys, err := cosign.GetCTLogPubs(ctx)
+	if err != nil {
+		log.Errorf("Failed to get transparency log public keys: %v", err)
+	}
+
 	return cosign.CheckOpts{
 		ClaimVerifier: cosign.SimpleClaimVerifier,
-		// With the latest version of cosign, by default signatures will be uploaded to rekor.
-		// This means that also during verification, an entry in the transparency log will be expected and verified.
-		// Since currently this is not the case in what we support / offer, explicitly disable this for now
-		// until we enable and expect this to be the case.
-		IgnoreSCT:  true,
-		IgnoreTlog: true,
+		RekorClient:   rekorClient,
+		RekorPubKeys:  rekorPubKeys,
+		CTLogPubKeys:  ctlogPubKeys,
 	}
 }
 
-func cosignCheckOptsFromCert(cert certVerificationData) (cosign.CheckOpts, error) {
-	opts := defaultCosignCheckOpts()
+func (c *cosignSignatureVerifier) cosignCheckOptsFromCert(ctx context.Context, cert certVerificationData) (cosign.CheckOpts, error) {
+	opts := c.defaultCosignCheckOpts(ctx)
 
 	// Skip verifying the identities when the wildcard matching logic being used. This fixes an issue
 	// with verifying the identity which will yield an error when using the wildcard expressions _and_ the certificate
@@ -271,14 +290,20 @@ func cosignCheckOptsFromCert(cert certVerificationData) (cosign.CheckOpts, error
 }
 
 func verifyImageSignatures(ctx context.Context, signatures []oci.Signature, imageHash gcrv1.Hash, image *storage.Image,
-	cosignOpts cosign.CheckOpts) (verifiedImageReferences []string, verificationErrors error) {
+	cosignOpts cosign.CheckOpts,
+) (verifiedImageReferences []string, verificationErrors error) {
 	for _, signature := range signatures {
 		// The bundle references a rekor bundle within the transparency log. Since we do not support this, the
 		// bundle verified will _always_ be false.
 		// See: https://github.com/sigstore/cosign/blob/eaee4b7da0c1a42326bd82c6a4da7e16741db266/pkg/cosign/verify.go#L584-L586.
 		// If there is no error during the verification, the signature was successfully verified
 		// as well as the claims.
-		_, err := cosign.VerifyImageSignature(ctx, signature, imageHash, &cosignOpts)
+		bundleVerified, err := cosign.VerifyImageSignature(ctx, signature, imageHash, &cosignOpts)
+
+		if !bundleVerified {
+			verificationErrors = multierror.Append(verificationErrors, errUnverifiedBundle)
+			continue
+		}
 
 		if err != nil {
 			verificationErrors = multierror.Append(verificationErrors, err)
@@ -335,12 +360,32 @@ func retrieveVerificationDataFromImage(image *storage.Image) ([]oci.Signature, g
 			continue
 		}
 		b64Sig := base64.StdEncoding.EncodeToString(imgSig.GetCosign().GetRawSignature())
+		sigOpts := []static.Option{
+			static.WithCertChain(imgSig.GetCosign().GetCertPem(), imgSig.GetCosign().GetCertChainPem()),
+		}
 
-		sig, err := static.NewSignature(imgSig.GetCosign().GetSignaturePayload(), b64Sig,
-			static.WithCertChain(imgSig.GetCosign().GetCertPem(), imgSig.GetCosign().GetCertChainPem()))
+		if sigBundle := imgSig.GetCosign().GetRekorBundle(); len(sigBundle) > 0 {
+			rekorBundle := &bundle.RekorBundle{Payload: bundle.RekorPayload{Body: ""}}
+			err := json.Unmarshal(imgSig.GetCosign().GetRekorBundle(), rekorBundle)
+			if err != nil {
+				log.Errorf("Failed to unmarshal rekor bundle for image %q", image.GetName().GetFullName())
+			} else {
+				sigOpts = append(sigOpts, static.WithBundle(rekorBundle))
+			}
+		}
+
+		if sigTimestamp := imgSig.GetCosign().GetRfc3161Timestamp(); len(sigTimestamp) > 0 {
+			rfc3161Timestamp := &bundle.RFC3161Timestamp{}
+			err = json.Unmarshal(imgSig.GetCosign().GetRfc3161Timestamp(), rfc3161Timestamp)
+			if err != nil {
+				log.Errorf("Failed to unmarshal rfc3161 timestamp for image %q", image.GetName().GetFullName())
+			} else {
+				sigOpts = append(sigOpts, static.WithRFC3161Timestamp(rfc3161Timestamp))
+			}
+		}
+
+		sig, err := static.NewSignature(imgSig.GetCosign().GetSignaturePayload(), b64Sig, sigOpts...)
 		if err != nil {
-			// Theoretically, this error should never happen, as the only error currently occurs when using options,
-			// which we do not use _yet_. When introducing support for rekor bundles, this could potentially error.
 			return nil, gcrv1.Hash{}, errCorruptedSignature.CausedBy(err)
 		}
 		signatures = append(signatures, sig)

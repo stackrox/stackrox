@@ -576,6 +576,14 @@
         "certChainPem": {
           "type": "string",
           "format": "byte"
+        },
+        "rekorBundle": {
+          "type": "string",
+          "format": "byte"
+        },
+        "rfc3161Timestamp": {
+          "type": "string",
+          "format": "byte"
         }
       }
     },
