@@ -12,7 +12,9 @@ import io.stackrox.proto.storage.NotifierOuterClass
 
 import common.Constants
 import util.Env
+import util.Helpers
 import util.MailServer
+import util.Retry
 
 @Slf4j
 @CompileStatic
@@ -25,13 +27,16 @@ class NotifierService extends BaseService {
         return NotifierServiceGrpc.newBlockingStub(getChannel())
     }
 
+    @Retry
     static addNotifier(NotifierOuterClass.Notifier notifier) {
         return getNotifierClient().postNotifier(notifier)
     }
 
     static testNotifier(NotifierOuterClass.Notifier notifier) {
         try {
-            getNotifierClient().testNotifier(notifier)
+            Helpers.withRetry(3, 1) {
+                getNotifierClient().testNotifier(notifier)
+            }
             return true
         } catch (Exception e) {
             log.error("error testing notifier", e)
