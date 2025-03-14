@@ -8,7 +8,7 @@ require (
 	cloud.google.com/go/artifactregistry v1.16.3
 	cloud.google.com/go/compute/metadata v0.6.0
 	cloud.google.com/go/containeranalysis v0.13.3
-	cloud.google.com/go/securitycenter v1.36.0
+	cloud.google.com/go/securitycenter v1.36.1
 	cloud.google.com/go/storage v1.51.0
 	github.com/Azure/azure-sdk-for-go-extensions v0.1.8
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.17.0
