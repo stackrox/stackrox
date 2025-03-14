@@ -178,13 +178,7 @@ func (resolver *imageResolver) ImageVulnerabilities(ctx context.Context, args Pa
 func (resolver *imageResolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageVulnerabilityCount")
 	if features.FlattenCVEData.Enabled() {
-		// Grab count for distinct CVEs
-		query, err := args.AsV1QueryOrEmpty()
-		if err != nil {
-			return 0, err
-		}
-		count, err := resolver.root.ImageCVEView.Count(resolver.withImageScopeContext(ctx), query)
-		return int32(count), err
+		return resolver.root.ImageFlatVulnerabilityCount(resolver.withImageScopeContext(ctx), args)
 	}
 	return resolver.root.ImageVulnerabilityCount(resolver.withImageScopeContext(ctx), args)
 }

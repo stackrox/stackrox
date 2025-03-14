@@ -103,6 +103,10 @@ func (resolver *Resolver) ImageFlatVulnerability(ctx context.Context, args IDQue
 // ImageFlatVulnerabilities resolves a set of image vulnerabilities for the input query
 func (resolver *Resolver) ImageFlatVulnerabilities(ctx context.Context, q PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilities")
+	if !features.FlattenCVEData.Enabled() {
+		return nil, nil
+	}
+	log.Info("SHREWS -- image_vulnerabilities.FlattenImageVulnerabilities")
 
 	// check permissions
 	if err := readImages(ctx); err != nil {
@@ -115,41 +119,40 @@ func (resolver *Resolver) ImageFlatVulnerabilities(ctx context.Context, q Pagina
 		return nil, err
 	}
 
-	if features.FlattenCVEData.Enabled() {
-		// get loader
-		loader, err := loaders.GetImageCVEV2Loader(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		// get values
-		// TODO(ROX-27780): figure out what to do with this
-		//  query = tryUnsuppressedQuery(query)
-
-		vulns, err := loader.FromQuery(ctx, query)
-		cveResolvers, err := resolver.wrapImageCVEV2sWithContext(ctx, vulns, err)
-		if err != nil {
-			return nil, err
-		}
-
-		// cast as return type
-		ret := make([]ImageVulnerabilityResolver, 0, len(cveResolvers))
-		for _, res := range cveResolvers {
-			ret = append(ret, res)
-		}
-		return ret, nil
+	cveListish, err := resolver.ImageCVEView.GetCVE(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	cveList := make([]string, 0, len(cveListish))
+	for _, cve := range cveListish {
+		log.Infof("SHREWS -- CVE: %s", cve.GetCVE())
+		cveList = append(cveList, cve.GetCVE())
+		log.Infof("SHREWS -- CVE IDs: %v", cve.GetCVEIDs())
 	}
 
 	// get loader
-	loader, err := loaders.GetImageCVELoader(ctx)
+	loader, err := loaders.GetImageCVEV2Loader(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	// get values
-	query = tryUnsuppressedQuery(query)
+	// TODO(ROX-27780): figure out what to do with this
+	//  query = tryUnsuppressedQuery(query)
+	//query.Selects = append(query.Selects, search.NewQuerySelect(search.CVE).Distinct().Proto())
+	query = search.ConjunctionQuery(query, search.NewQueryBuilder().AddExactMatches(search.CVE, cveList...).ProtoQuery())
+
 	vulns, err := loader.FromQuery(ctx, query)
-	cveResolvers, err := resolver.wrapImageCVEsWithContext(ctx, vulns, err)
+
+	vulnMap := make(map[string]*storage.ImageCVEV2)
+	outVulns := make([]*storage.ImageCVEV2, 0, len(vulns))
+	for _, vuln := range vulns {
+		if _, ok := vulnMap[vuln.GetCveBaseInfo().GetCve()]; !ok {
+			vulnMap[vuln.GetCveBaseInfo().GetCve()] = vuln
+			outVulns = append(outVulns, vuln)
+		}
+	}
+	cveResolvers, err := resolver.wrapImageCVEV2sWithContext(ctx, outVulns, err)
 	if err != nil {
 		return nil, err
 	}
@@ -165,6 +168,11 @@ func (resolver *Resolver) ImageFlatVulnerabilities(ctx context.Context, q Pagina
 // ImageFlatVulnerabilityCount returns count of image vulnerabilities for the input query
 func (resolver *Resolver) ImageFlatVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilityCount")
+	if !features.FlattenCVEData.Enabled() {
+		return 0, nil
+	}
+	log.Info("SHREWS -- image_vulnerabilities.FlattenImageVulnerabilities")
+
 	// check permissions
 	if err := readImages(ctx); err != nil {
 		return 0, err
@@ -176,24 +184,12 @@ func (resolver *Resolver) ImageFlatVulnerabilityCount(ctx context.Context, args 
 		return 0, err
 	}
 
-	if features.FlattenCVEData.Enabled() {
-		// get loader
-		loader, err := loaders.GetImageCVEV2Loader(ctx)
-		if err != nil {
-			return 0, err
-		}
-
-		return loader.CountFromQuery(ctx, query)
-	}
-
-	// get loader
-	loader, err := loaders.GetImageCVELoader(ctx)
+	cveCount, err := resolver.ImageCVEView.Count(ctx, query)
 	if err != nil {
 		return 0, err
 	}
-	query = tryUnsuppressedQuery(query)
 
-	return loader.CountFromQuery(ctx, query)
+	return int32(cveCount), nil
 }
 
 // ImageFlatVulnerabilityCounter returns a VulnerabilityCounterResolver for the input query
