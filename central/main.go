@@ -67,6 +67,9 @@ import (
 	nodeCVEService "github.com/stackrox/rox/central/cve/node/service"
 	"github.com/stackrox/rox/central/cve/suppress"
 	debugService "github.com/stackrox/rox/central/debug/service"
+	"github.com/stackrox/rox/central/debugactions"
+	debugActionManager "github.com/stackrox/rox/central/debugactions/manager"
+	debugActionService "github.com/stackrox/rox/central/debugactions/service"
 	"github.com/stackrox/rox/central/declarativeconfig"
 	declarativeConfigHealthService "github.com/stackrox/rox/central/declarativeconfig/health/service"
 	delegatedRegistryConfigDS "github.com/stackrox/rox/central/delegatedregistryconfig/datastore"
@@ -471,6 +474,10 @@ func servicesToRegister() []pkgGRPC.APIService {
 
 	if features.UnifiedCVEDeferral.Enabled() {
 		servicesToRegister = append(servicesToRegister, vulnRequestServiceV2.Singleton())
+	}
+
+	if debugactions.DebugActions.BooleanSetting() {
+		servicesToRegister = append(servicesToRegister, debugActionService.Singleton())
 	}
 
 	autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()
@@ -967,6 +974,10 @@ func waitForTerminationSignal() {
 	if features.PlatformComponents.Enabled() {
 		stoppables = append(stoppables,
 			stoppableWithName{platformReprocessor.Singleton(), "platform components reprocessor"})
+	}
+
+	if debugactions.DebugActions.BooleanSetting() {
+		stoppables = append(stoppables, stoppableWithName{debugActionManager.Singleton(), "debug actions manager"})
 	}
 
 	var wg sync.WaitGroup
