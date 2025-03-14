@@ -118,11 +118,7 @@ class BaseService {
     private static Channel effectiveChannel = null
     private static Boolean useClientCert = false
 
-    static initializeChannel(boolean reset = false) {
-        if (reset && transportChannel != null) {
-            transportChannel.shutdown()
-            transportChannel = null
-        }
+    static initializeChannel() {
         if (transportChannel == null) {
             SslContextBuilder sslContextBuilder = GrpcSslContexts
                     .forClient()
@@ -158,15 +154,18 @@ class BaseService {
 
     static Channel getChannel() {
         if (effectiveChannel != null) {
-            ConnectivityState state = effectiveChannel.getState(true)
-            if (state == ConnectivityState.TRANSIENT_FAILURE || state == ConnectivityState.SHUTDOWN) {
-                try {
-                    effectiveChannel.shutdown().awaitTermination(5, TimeUnit.SECONDS)
-                    log.debug("The gRPC channel has been shut down")
-                } catch (InterruptedException e) {
-                    log.debug("Failed to shutdown the terminated channel: ${e}")
+            synchronized(BaseService) {
+                ConnectivityState state = effectiveChannel.getState(true)
+                if (state == ConnectivityState.TRANSIENT_FAILURE || state == ConnectivityState.SHUTDOWN) {
+                    try {
+                        effectiveChannel.shutdown().awaitTermination(5, TimeUnit.SECONDS)
+                        log.debug("The gRPC channel has been shut down")
+                    } catch (InterruptedException e) {
+                        log.debug("Failed to shutdown the terminated channel: ${e}")
+                    }
+                    transportChannel = null
+                    effectiveChannel = null
                 }
-                effectiveChannel = null
             }
         }
         if (effectiveChannel == null) {
