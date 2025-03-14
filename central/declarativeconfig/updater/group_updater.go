@@ -41,7 +41,7 @@ func (u *groupUpdater) Upsert(ctx context.Context, m protocompat.Message) error 
 	return u.groupDS.Upsert(ctx, group)
 }
 
-func (u *groupUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...string) ([]string, error) {
+func (u *groupUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...string) ([]string, int, error) {
 	groupsToSkip := set.NewFrozenStringSet(resourceIDsToSkip...)
 
 	groups, err := u.groupDS.GetFiltered(ctx, func(group *storage.Group) bool {
@@ -49,7 +49,7 @@ func (u *groupUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ..
 			!groupsToSkip.Contains(group.GetProps().GetId())
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "retrieving declarative groups")
+		return nil, 0, errors.Wrap(err, "retrieving declarative groups")
 	}
 
 	var groupDeletionErr *multierror.Error
@@ -64,5 +64,5 @@ func (u *groupUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ..
 			}
 		}
 	}
-	return groupIDs, groupDeletionErr.ErrorOrNil()
+	return groupIDs, len(groups) - len(groupIDs), groupDeletionErr.ErrorOrNil()
 }
