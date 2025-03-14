@@ -103,6 +103,29 @@ func (s *datastorePostgresTestSuite) TestKubeServiceAccountConfig() {
 	s.NoError(authDataStore.InitializeTokenExchangers())
 }
 
+// 1. init auth data store
+// 2. do nothing
+// 3. re-init auth data store
+// 4. ensure there is no k8s sa token m2m config
+
+// 0. enable feature flag
+// 1. init auth data store
+// 2. delete k8s sa token auth m2m config
+// 3. re-init auth data store
+// 4. ensure k8s sa token auth m2m config is present with correct role mapping
+
+// 0. enable feature flag
+// 1. init auth data store
+// 2. do nothing
+// 3. re-init auth data store
+// 4. ensure k8s sa token auth m2m config is present with correct role mapping
+
+// 0. enable feature flag
+// 1. init auth data store
+// 2. add extra role mapping and delete config-controller role mapping
+// 3. re-init auth data store
+// 4. ensure k8s sa token auth m2m config is present with correct role mapping
+
 func (s *datastorePostgresTestSuite) TestAddFKConstraint() {
 	config, err := s.authDataStore.UpsertAuthM2MConfig(s.ctx, &storage.AuthMachineToMachineConfig{
 		Id:                      "80c053c2-24a7-4b97-bd69-85b3a511241e",
