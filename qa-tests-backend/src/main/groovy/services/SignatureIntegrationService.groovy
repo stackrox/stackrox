@@ -4,8 +4,10 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import io.grpc.Status
 import io.grpc.StatusRuntimeException
+
 import io.stackrox.proto.api.v1.SignatureIntegrationServiceGrpc
 import io.stackrox.proto.storage.SignatureIntegrationOuterClass
+
 import util.Timer
 
 @CompileStatic
