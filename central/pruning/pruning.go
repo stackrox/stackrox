@@ -67,11 +67,12 @@ const (
 )
 
 var (
-	log                   = logging.LoggerForModule()
-	pruningCtx            = sac.WithAllAccess(context.Background())
-	lastClusterPruneTime  time.Time
-	lastLogImbuePruneTime time.Time
-	pruningTimeout        = env.PostgresDefaultPruningStatementTimeout.DurationSetting()
+	log                       = logging.LoggerForModule()
+	pruningCtx                = sac.WithAllAccess(context.Background())
+	lastClusterPruneTime      time.Time
+	lastLogImbuePruneTime     time.Time
+	pruningTimeout            = env.PostgresDefaultPruningStatementTimeout.DurationSetting()
+	prunedPLOPsWithoutPodUIDs = false
 
 	pruneInterval = env.PruneInterval.DurationSetting()
 	orphanWindow  = env.PruneOrphanedWindow.DurationSetting()
@@ -510,11 +511,14 @@ func (g *garbageCollectorImpl) removeOrphanedPLOPs() {
 	}
 	log.Infof("[PLOP pruning] Pruning of %d orphaned PLOPs with no matching process indicator or process information complete", prunedCount)
 
-	prunedCount, err = g.plops.RemovePLOPsWithoutPodUID(pruningCtx)
-	if err != nil {
-		log.Errorf("error removing PLOPs without poduid: %v", err)
+	// Only run once since we don't expect any new PLOPs without poduids.
+	if (!prunedPLOPsWithoutPodUIDs) {
+		prunedCount, err = g.plops.RemovePLOPsWithoutPodUID(pruningCtx)
+		if err != nil {
+			log.Errorf("error removing PLOPs without poduid: %v", err)
+		}
+		log.Infof("[PLOP pruning] Prunned %d orphaned PLOPs with no poduid", prunedCount)
 	}
-	log.Infof("[PLOP pruning] Prunned %d orphaned PLOPs with no poduid", prunedCount)
 }
 
 func (g *garbageCollectorImpl) removeExpiredAdministrationEvents(config *storage.PrivateConfig) {
