@@ -189,7 +189,7 @@ func (s *genericStore[T, PT]) Search(ctx context.Context, q *v1.Query) ([]search
 }
 
 func (s *genericStore[T, PT]) walkByQuery(ctx context.Context, query *v1.Query, fn func(obj PT) error) error {
-	return RunCursorQueryForSchemaFn[T, PT](ctx, s.schema, query, s.db, fn)
+	return RunGetQueryForSchemaFn[T, PT](ctx, s.schema, query, s.db, fn)
 }
 
 // Walk iterates over all the objects in the store and applies the closure.
