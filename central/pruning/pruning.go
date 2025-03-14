@@ -512,7 +512,7 @@ func (g *garbageCollectorImpl) removeOrphanedPLOPs() {
 	log.Infof("[PLOP pruning] Pruning of %d orphaned PLOPs with no matching process indicator or process information complete", prunedCount)
 
 	// Only run once since we don't expect any new PLOPs without poduids.
-	if (!prunedPLOPsWithoutPodUIDs) {
+	if !prunedPLOPsWithoutPodUIDs {
 		prunedCount, err = g.plops.RemovePLOPsWithoutPodUID(pruningCtx)
 		if err != nil {
 			log.Errorf("error removing PLOPs without poduid: %v", err)
