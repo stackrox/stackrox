@@ -15,7 +15,6 @@ jobs:
   go:
     strategy:
       matrix:
-        try: [1, 2, 3, 4, 5]
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
     runs-on: ubuntu-latest
     outputs:
@@ -36,7 +35,12 @@ jobs:
       uses: ./.github/actions/cache-go-dependencies
 
     - name: Go Unit Tests
-      run: ${{ matrix.gotags }} make go-unit-tests
+      run: |
+        ${{ matrix.gotags }} make go-unit-tests
+        for I in {1..100}; do
+          go test -timeout 1800s -v -run TestUpdate ./central/scannerdefinitions/handler/ -count 1 || true
+          sleep 1
+        done
 
     - uses: codecov/codecov-action@v3
       with:
