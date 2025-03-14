@@ -189,6 +189,7 @@ message ImageCVEV2 {
   }
 
   string component_id = 14; // @gotags: sql:"fk(ImageComponentV2:id),index=btree"
+  string advisory = 15; // @gotags: search:"Advisory"
 }
 
 message NodeCVE {
