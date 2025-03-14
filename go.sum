@@ -45,8 +45,8 @@ cloud.google.com/go/bigquery v1.8.0/go.mod h1:J5hqkt3O0uAFnINi6JXValWIb1v0goeZM7
 cloud.google.com/go/compute/metadata v0.3.0/go.mod h1:zFmK7XCadkQkj6TtorcaGlCW1hT1fIilQDwofLpJ20k=
 cloud.google.com/go/compute/metadata v0.6.0 h1:A6hENjEsCDtC1k8byVsgwvVcioamEHvZ4j01OwKxG9I=
 cloud.google.com/go/compute/metadata v0.6.0/go.mod h1:FjyFAW1MW0C203CEOMDTu3Dk1FlqW3Rga40jzHL4hfg=
-cloud.google.com/go/containeranalysis v0.13.3 h1:1D8U75BeotZxrG4jR6NYBtOt+uAeBsWhpBZmSYLakQw=
-cloud.google.com/go/containeranalysis v0.13.3/go.mod h1:0SYnagA1Ivb7qPqKNYPkCtphhkJn3IzgaSp3mj+9XAY=
+cloud.google.com/go/containeranalysis v0.13.4 h1:HC+6o00uA3XdFvGJ7/4VT4e+CC/UkPt3KJHozFNwKhU=
+cloud.google.com/go/containeranalysis v0.13.4/go.mod h1:rOJDmPja/8tbTSJ/Lo0bFGpP+HipCbkytpPjugAIWjI=
 cloud.google.com/go/datastore v1.0.0/go.mod h1:LXYbyblFSglQ5pkeyhO+Qmw7ukd3C+pD7TKLgZqpHYE=
 cloud.google.com/go/datastore v1.1.0/go.mod h1:umbIZjpQpHh4hmRpGhH4tLFup+FVzqBi1b3c64qFpCk=
 cloud.google.com/go/firestore v1.6.1/go.mod h1:asNXNOzBdyVQmEU+ggO8UPodTkEVFW5Qx+rwHnAz+EY=
