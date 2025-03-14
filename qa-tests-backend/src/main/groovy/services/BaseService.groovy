@@ -8,6 +8,7 @@ import io.grpc.Channel
 import io.grpc.ClientCall
 import io.grpc.ClientInterceptor
 import io.grpc.ClientInterceptors
+import io.grpc.ConnectivityState
 import io.grpc.ManagedChannel
 import io.grpc.Metadata
 import io.grpc.MethodDescriptor
@@ -18,6 +19,7 @@ import io.netty.handler.ssl.SslContextBuilder
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory
 import io.stackrox.proto.api.v1.Common.ResourceByID
 import io.stackrox.proto.api.v1.EmptyOuterClass
+import java.util.concurrent.TimeUnit
 import util.Env
 import util.Keys
 
@@ -151,6 +153,21 @@ class BaseService {
     }
 
     static Channel getChannel() {
+        if (transportChannel != null) {
+            synchronized(BaseService) {
+                ConnectivityState state = transportChannel.getState(true)
+                if (state == ConnectivityState.TRANSIENT_FAILURE || state == ConnectivityState.SHUTDOWN) {
+                    try {
+                        transportChannel.shutdown().awaitTermination(5, TimeUnit.SECONDS)
+                        log.debug("The gRPC channel has been shut down")
+                    } catch (InterruptedException e) {
+                        log.debug("Failed to shutdown the terminated channel: ${e}")
+                    }
+                    transportChannel = null
+                    effectiveChannel = null
+                }
+            }
+        }
         if (effectiveChannel == null) {
             synchronized(BaseService) {
                 initializeChannel()
