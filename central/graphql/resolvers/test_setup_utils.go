@@ -21,6 +21,9 @@ import (
 	imageCVEDS "github.com/stackrox/rox/central/cve/image/datastore"
 	imageCVESearch "github.com/stackrox/rox/central/cve/image/datastore/search"
 	imageCVEPostgres "github.com/stackrox/rox/central/cve/image/datastore/store/postgres"
+	imageCVEV2DS "github.com/stackrox/rox/central/cve/image/v2/datastore"
+	imageCVEV2Search "github.com/stackrox/rox/central/cve/image/v2/datastore/search"
+	imageCVEV2Postgres "github.com/stackrox/rox/central/cve/image/v2/datastore/store/postgres"
 	nodeCVEDataStore "github.com/stackrox/rox/central/cve/node/datastore"
 	nodeCVESearch "github.com/stackrox/rox/central/cve/node/datastore/search"
 	nodeCVEPostgres "github.com/stackrox/rox/central/cve/node/datastore/store/postgres"
@@ -28,9 +31,13 @@ import (
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	imagePostgres "github.com/stackrox/rox/central/image/datastore/store/postgres"
+	imagePostgresV2 "github.com/stackrox/rox/central/image/datastore/store/v2/postgres"
 	imageComponentDS "github.com/stackrox/rox/central/imagecomponent/datastore"
 	imageComponentPostgres "github.com/stackrox/rox/central/imagecomponent/datastore/store/postgres"
 	imageComponentSearch "github.com/stackrox/rox/central/imagecomponent/search"
+	imageComponentV2DS "github.com/stackrox/rox/central/imagecomponent/v2/datastore"
+	imageComponentV2Search "github.com/stackrox/rox/central/imagecomponent/v2/datastore/search"
+	imageComponentV2Postgres "github.com/stackrox/rox/central/imagecomponent/v2/datastore/store/postgres"
 	imageComponentEdgeDS "github.com/stackrox/rox/central/imagecomponentedge/datastore"
 	imageCVEEdgeDS "github.com/stackrox/rox/central/imagecveedge/datastore"
 	imageCVEEdgePostgres "github.com/stackrox/rox/central/imagecveedge/datastore/postgres"
@@ -77,6 +84,9 @@ func SetupTestResolver(t testing.TB, datastores ...interface{}) (*Resolver, *gra
 		case imageCVEDS.DataStore:
 			registerImageCveLoader(t, ds)
 			resolver.ImageCVEDataStore = ds
+		case imageCVEV2DS.DataStore:
+			registerImageCveV2Loader(t, ds)
+			resolver.ImageCVEV2DataStore = ds
 		case nodeCVEDataStore.DataStore:
 			registerNodeCVELoader(t, ds)
 			resolver.NodeCVEDataStore = ds
@@ -86,6 +96,9 @@ func SetupTestResolver(t testing.TB, datastores ...interface{}) (*Resolver, *gra
 		case imageComponentDS.DataStore:
 			registerImageComponentLoader(t, ds)
 			resolver.ImageComponentDataStore = ds
+		case imageComponentV2DS.DataStore:
+			registerImageComponentV2Loader(t, ds)
+			resolver.ImageComponentV2DataStore = ds
 		case nodeComponentDataStore.DataStore:
 			registerNodeComponentLoader(t, ds)
 			resolver.NodeComponentDataStore = ds
@@ -152,6 +165,18 @@ func CreateTestImageDatastore(t testing.TB, testDB *pgtest.TestPostgres, ctrl *g
 	)
 }
 
+// CreateTestImageV2Datastore creates image datastore for testing
+func CreateTestImageV2Datastore(t testing.TB, testDB *pgtest.TestPostgres, ctrl *gomock.Controller) imageDS.DataStore {
+	risks := mockRisks.NewMockDataStore(ctrl)
+	risks.EXPECT().RemoveRisk(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	return imageDS.NewWithPostgres(
+		imagePostgresV2.New(testDB.DB, false, concurrency.NewKeyFence()),
+		risks,
+		ranking.NewRanker(),
+		ranking.NewRanker(),
+	)
+}
+
 // CreateTestImageComponentDatastore creates imageComponent datastore for testing
 func CreateTestImageComponentDatastore(t testing.TB, testDB *pgtest.TestPostgres, ctrl *gomock.Controller) imageComponentDS.DataStore {
 	ctx := context.Background()
@@ -164,6 +189,15 @@ func CreateTestImageComponentDatastore(t testing.TB, testDB *pgtest.TestPostgres
 	return imageComponentDS.New(storage, searcher, mockRisk, ranking.NewRanker())
 }
 
+// CreateTestImageComponentV2Datastore creates imageComponent datastore for testing
+func CreateTestImageComponentV2Datastore(_ testing.TB, testDB *pgtest.TestPostgres, ctrl *gomock.Controller) imageComponentV2DS.DataStore {
+	mockRisk := mockRisks.NewMockDataStore(ctrl)
+	storage := imageComponentV2Postgres.New(testDB.DB)
+	searcher := imageComponentV2Search.NewV2(storage)
+
+	return imageComponentV2DS.New(storage, searcher, mockRisk, ranking.NewRanker())
+}
+
 // CreateTestImageCVEDatastore creates imageCVE datastore for testing
 func CreateTestImageCVEDatastore(t testing.TB, testDB *pgtest.TestPostgres) imageCVEDS.DataStore {
 	ctx := context.Background()
@@ -172,6 +206,15 @@ func CreateTestImageCVEDatastore(t testing.TB, testDB *pgtest.TestPostgres) imag
 	storage := imageCVEPostgres.CreateTableAndNewStore(ctx, testDB.DB, testDB.GetGormDB(t))
 	searcher := imageCVESearch.New(storage)
 	datastore := imageCVEDS.New(storage, searcher, nil)
+
+	return datastore
+}
+
+// CreateTestImageCVEV2Datastore creates imageCVE datastore for testing
+func CreateTestImageCVEV2Datastore(_ testing.TB, testDB *pgtest.TestPostgres) imageCVEV2DS.DataStore {
+	storage := imageCVEV2Postgres.New(testDB.DB)
+	searcher := imageCVEV2Search.New(storage)
+	datastore := imageCVEV2DS.New(storage, searcher)
 
 	return datastore
 }
@@ -334,9 +377,21 @@ func registerImageComponentLoader(_ testing.TB, ds imageComponentDS.DataStore) {
 	})
 }
 
+func registerImageComponentV2Loader(_ testing.TB, ds imageComponentV2DS.DataStore) {
+	loaders.RegisterTypeFactory(reflect.TypeOf(storage.ImageComponentV2{}), func() interface{} {
+		return loaders.NewComponentV2Loader(ds)
+	})
+}
+
 func registerImageCveLoader(_ testing.TB, ds imageCVEDS.DataStore) {
 	loaders.RegisterTypeFactory(reflect.TypeOf(storage.ImageCVE{}), func() interface{} {
 		return loaders.NewImageCVELoader(ds)
+	})
+}
+
+func registerImageCveV2Loader(_ testing.TB, ds imageCVEV2DS.DataStore) {
+	loaders.RegisterTypeFactory(reflect.TypeOf(storage.ImageCVEV2{}), func() interface{} {
+		return loaders.NewImageCVEV2Loader(ds)
 	})
 }
 
