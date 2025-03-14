@@ -2,12 +2,14 @@ package services
 
 import groovy.transform.CompileStatic
 import groovy.transform.EqualsAndHashCode
+import groovy.util.concurrent.TimeUnit;
 import groovy.util.logging.Slf4j
 import io.grpc.CallOptions
 import io.grpc.Channel
 import io.grpc.ClientCall
 import io.grpc.ClientInterceptor
 import io.grpc.ClientInterceptors
+import io.grpc.ConnectivityState
 import io.grpc.ManagedChannel
 import io.grpc.Metadata
 import io.grpc.MethodDescriptor
@@ -116,7 +118,11 @@ class BaseService {
     private static Channel effectiveChannel = null
     private static Boolean useClientCert = false
 
-    static initializeChannel() {
+    static initializeChannel(boolean reset = false) {
+        if (reset && transportChannel != null) {
+            transportChannel.shutdown()
+            transportChannel = null
+        }
         if (transportChannel == null) {
             SslContextBuilder sslContextBuilder = GrpcSslContexts
                     .forClient()
@@ -151,6 +157,18 @@ class BaseService {
     }
 
     static Channel getChannel() {
+        if (effectiveChannel != null) {
+            ConnectivityState state = effectiveChannel.getState(true)
+            if (state == ConnectivityState.TRANSIENT_FAILURE || state == ConnectivityState.SHUTDOWN) {
+                try {
+                    effectiveChannel.shutdown().awaitTermination(5, TimeUnit.SECONDS)
+                    log.debug("The gRPC channel has been shut down")
+                } catch (InterruptedException e) {
+                    log.debug("Failed to shutdown the terminated channel: ${e}")
+                }
+                effectiveChannel = null
+            }
+        }
         if (effectiveChannel == null) {
             synchronized(BaseService) {
                 initializeChannel()
