@@ -2,7 +2,6 @@ package services
 
 import groovy.transform.CompileStatic
 import groovy.transform.EqualsAndHashCode
-import groovy.util.concurrent.TimeUnit;
 import groovy.util.logging.Slf4j
 import io.grpc.CallOptions
 import io.grpc.Channel
@@ -20,6 +19,7 @@ import io.netty.handler.ssl.SslContextBuilder
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory
 import io.stackrox.proto.api.v1.Common.ResourceByID
 import io.stackrox.proto.api.v1.EmptyOuterClass
+import java.util.concurrent.TimeUnit
 import util.Env
 import util.Keys
 
