@@ -9,28 +9,18 @@ import (
 	"time"
 
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
-
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
-
 	configDS "github.com/stackrox/rox/central/networkgraph/config/datastore"
-
 	networkEntityDS "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
-
 	networkFlowDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
-
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
-
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
-
-	// "github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
 	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
 	"github.com/stackrox/rox/pkg/networkgraph/testutils"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-
-	// "github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -114,7 +104,6 @@ func (suite *networkGraphServiceBenchmarks) setupTables(b *testing.B) string {
 	err = suite.entityDataStore.CreateExternalNetworkEntity(globalWriteAccessCtx, entity, true)
 	require.NoError(b, err)
 
-	deployments := make([]*storage.Deployment, 0, 2000)
 	flows := make([]*storage.NetworkFlow, 0, 2000)
 
 	ts := time.Now()
@@ -126,8 +115,6 @@ func (suite *networkGraphServiceBenchmarks) setupTables(b *testing.B) string {
 			ClusterId: fixtureconsts.Cluster1,
 			Namespace: fixtureconsts.Namespace1,
 		}
-
-		deployments = append(deployments, deployment)
 
 		deploymentEnt := testutils.GetDeploymentNetworkEntity(deployment.Id, deployment.Name)
 		err := suite.deploymentsDataStore.UpsertDeployment(globalWriteAccessCtx, deployment)
@@ -171,7 +158,6 @@ func (s *networkGraphServiceBenchmarks) setupTablesForMetadata(b *testing.B) {
 	// first 10000 communicate with deployment 2 (1.2.1.1 -> 1.2.40.17)
 
 	flows := make([]*storage.NetworkFlow, 0, 13000)
-	deployments := make([]*storage.Deployment, 2000)
 
 	for i := 0; i < 2000; i++ {
 		name := fmt.Sprintf("deployment-%d", i)
@@ -181,8 +167,6 @@ func (s *networkGraphServiceBenchmarks) setupTablesForMetadata(b *testing.B) {
 			ClusterId: fixtureconsts.Cluster1,
 			Namespace: fixtureconsts.Namespace1,
 		}
-
-		deployments = append(deployments, deployment)
 
 		deploymentEnt := testutils.GetDeploymentNetworkEntity(deployment.Id, deployment.Name)
 		err := s.deploymentsDataStore.UpsertDeployment(globalWriteAccessCtx, deployment)
