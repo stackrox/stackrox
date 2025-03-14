@@ -65,15 +65,12 @@ func NewEntityDataStore(storage store.EntityStore, graphConfig graphConfigDS.Dat
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (EntityDataStore, error) {
+func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) EntityDataStore {
 	dbstore := pgStore.New(pool)
-	graphConfigStore, err := graphConfigDS.GetTestPostgresDataStore(t, pool)
-	if err != nil {
-		return nil, err
-	}
+	graphConfigStore := graphConfigDS.GetTestPostgresDataStore(t, pool)
 	treeMgr := networktree.Singleton()
 	sensorCnxMgr := connection.ManagerSingleton()
-	return NewEntityDataStore(dbstore, graphConfigStore, treeMgr, sensorCnxMgr), nil
+	return NewEntityDataStore(dbstore, graphConfigStore, treeMgr, sensorCnxMgr)
 }
 
 func (ds *dataStoreImpl) initNetworkTrees(ctx context.Context) {

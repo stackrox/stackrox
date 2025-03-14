@@ -65,8 +65,7 @@ func (s *networkGraphServiceSuite) SetupTest() {
 	s.deploymentsDataStore, err = deploymentDS.GetTestPostgresDataStore(s.T(), db.DB)
 	s.NoError(err)
 
-	s.entityDataStore, err = networkEntityDS.GetTestPostgresDataStore(s.T(), db.DB)
-	s.NoError(err)
+	s.entityDataStore = networkEntityDS.GetTestPostgresDataStore(s.T(), db.DB)
 
 	s.flowDataStore, err = networkFlowDS.GetTestPostgresClusterDataStore(s.T(), db.DB)
 	s.NoError(err)
@@ -74,8 +73,7 @@ func (s *networkGraphServiceSuite) SetupTest() {
 	s.policyDataStore, err = networkPolicyDS.GetTestPostgresDataStore(s.T(), db.DB)
 	s.NoError(err)
 
-	s.configDataStore, err = configDS.GetTestPostgresDataStore(s.T(), db.DB)
-	s.NoError(err)
+	s.configDataStore = configDS.GetTestPostgresDataStore(s.T(), db.DB)
 
 	s.treeMgr = networktree.Singleton()
 

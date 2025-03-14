@@ -961,10 +961,7 @@ func GetTestPostgresManager(t testing.TB, pool postgres.DB) (Manager, error) {
 	if err != nil {
 		return nil, err
 	}
-	networkEntityStore, err := networkEntityDS.GetTestPostgresDataStore(t, pool)
-	if err != nil {
-		return nil, err
-	}
+	networkEntityStore := networkEntityDS.GetTestPostgresDataStore(t, pool)
 	deploymentStore, err := deploymentDS.GetTestPostgresDataStore(t, pool)
 	if err != nil {
 		return nil, err

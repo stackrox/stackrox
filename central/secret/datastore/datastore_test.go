@@ -34,13 +34,10 @@ type SecretDataStoreTestSuite struct {
 }
 
 func (suite *SecretDataStoreTestSuite) SetupSuite() {
-	var err error
-
 	pgtestbase := pgtest.ForT(suite.T())
 	suite.Require().NotNil(pgtestbase)
 	suite.pool = pgtestbase.DB
-	suite.datastore, err = GetTestPostgresDataStore(suite.T(), suite.pool)
-	suite.Require().NoError(err)
+	suite.datastore = GetTestPostgresDataStore(suite.T(), suite.pool)
 
 	suite.ctx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(

@@ -45,7 +45,7 @@ type DataStore interface {
 }
 
 // New returns a new instance of DataStore using the input store, and searcher.
-func New(store store.Store, plopStorage plopStore.Store, searcher search.Searcher, prunerFactory pruner.Factory) (DataStore, error) {
+func New(store store.Store, plopStorage plopStore.Store, searcher search.Searcher, prunerFactory pruner.Factory) DataStore {
 	d := &datastoreImpl{
 		storage:               store,
 		plopStorage:           plopStorage,
@@ -59,11 +59,11 @@ func New(store store.Store, plopStorage plopStore.Store, searcher search.Searche
 	if env.ProcessPruningEnabled.BooleanSetting() {
 		go d.prunePeriodically(ctx)
 	}
-	return d, nil
+	return d
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) (DataStore, error) {
+func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) DataStore {
 	dbstore := pgStore.New(pool)
 	plopDBstore := plopStore.New(pool)
 	searcher := search.New(dbstore)

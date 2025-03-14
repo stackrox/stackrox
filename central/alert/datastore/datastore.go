@@ -45,7 +45,7 @@ type DataStore interface {
 }
 
 // New returns a new soleInstance of DataStore using the input store, and searcher.
-func New(alertStore store.Store, searcher search.Searcher, platformMatcher platformmatcher.PlatformMatcher) (DataStore, error) {
+func New(alertStore store.Store, searcher search.Searcher, platformMatcher platformmatcher.PlatformMatcher) DataStore {
 	ds := &datastoreImpl{
 		storage:         alertStore,
 		searcher:        searcher,
@@ -53,11 +53,11 @@ func New(alertStore store.Store, searcher search.Searcher, platformMatcher platf
 		keyFence:        concurrency.NewKeyFence(),
 		platformMatcher: platformMatcher,
 	}
-	return ds, nil
+	return ds
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) (DataStore, error) {
+func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) DataStore {
 	alertStore := pgStore.New(pool)
 	searcher := search.New(alertStore)
 

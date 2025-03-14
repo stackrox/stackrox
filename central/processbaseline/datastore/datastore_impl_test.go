@@ -24,7 +24,6 @@ import (
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/uuid"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -55,16 +54,13 @@ func (suite *ProcessBaselineDataStoreTestSuite) SetupTest() {
 			sac.ResourceScopeKeys(resources.DeploymentExtension),
 		),
 	)
-	var err error
 
 	pgtestbase := pgtest.ForT(suite.T())
 	suite.Require().NotNil(pgtestbase)
 	suite.pool = pgtestbase.DB
 	suite.storage = postgresStore.New(suite.pool)
-	require.NoError(suite.T(), err)
 
-	suite.searcher, err = baselineSearch.New(suite.storage)
-	suite.NoError(err)
+	suite.searcher = baselineSearch.New(suite.storage)
 
 	suite.mockCtrl = gomock.NewController(suite.T())
 

@@ -101,17 +101,13 @@ func (suite *IndicatorDataStoreTestSuite) initPodToIndicatorsMap() {
 }
 
 func (suite *IndicatorDataStoreTestSuite) setupDataStoreNoPruning() {
-	var err error
-	suite.datastore, err = New(suite.storage, suite.plopStorage, suite.searcher, nil)
-	suite.Require().NoError(err)
+	suite.datastore = New(suite.storage, suite.plopStorage, suite.searcher, nil)
 }
 
 func (suite *IndicatorDataStoreTestSuite) setupDataStoreWithMocks() (*storeMocks.MockStore, *searchMocks.MockSearcher) {
 	mockStorage := storeMocks.NewMockStore(suite.mockCtrl)
 	mockSearcher := searchMocks.NewMockSearcher(suite.mockCtrl)
-	var err error
-	suite.datastore, err = New(mockStorage, nil, mockSearcher, nil)
-	suite.Require().NoError(err)
+	suite.datastore = New(mockStorage, nil, mockSearcher, nil)
 
 	return mockStorage, mockSearcher
 }
@@ -322,9 +318,7 @@ func (suite *IndicatorDataStoreTestSuite) TestPruning() {
 			return true
 		})
 	}
-	var err error
-	suite.datastore, err = New(suite.storage, suite.plopStorage, suite.searcher, mockPrunerFactory)
-	suite.Require().NoError(err)
+	suite.datastore = New(suite.storage, suite.plopStorage, suite.searcher, mockPrunerFactory)
 	suite.NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, indicators...))
 	suite.verifyIndicatorsAre(indicators...)
 
