@@ -18,10 +18,7 @@ func TestFlowsSuite(t *testing.T) {
 func (s *flowsSuite) TestGetRandomInternalExternalIP() {
 	var w WorkloadManager
 
-	_, _, ok := w.getRandomInternalExternalIP()
-	s.False(ok)
-
-	_, _, ok = w.getRandomSrcDst()
+	_, _, ok := w.getRandomSrcDst()
 	s.False(ok)
 
 	for range 1000 {

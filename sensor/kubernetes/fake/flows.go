@@ -237,23 +237,20 @@ func (w *WorkloadManager) getRandomInternalExternalIP() (string, bool, bool) {
 	internal := rand.Intn(100) < 80
 	if internal {
 		ip, ok = ipPool.randomElem()
-		if !ok {
-			log.Error("found no IPs in pool")
-			return "", internal, false
-		}
 	} else {
 		if rand.Intn(100) < 50 {
 			ip, ok = externalIpPool.randomElem()
-			if !ok {
-				log.Error("found no IPs in pool")
-				return "", internal, false
-			}
 		} else {
 			ip = generateExternalIP()
+			ok = true
 		}
 	}
 
-	return ip, internal, true
+	if !ok {
+		log.Errorf("Found no IPs in the %s pool", map[bool]string{true: "internal", false: "external"}[internal])
+	}
+
+	return ip, internal, ok
 }
 
 func (w *WorkloadManager) getRandomSrcDst() (string, string, bool) {
@@ -266,14 +263,10 @@ func (w *WorkloadManager) getRandomSrcDst() (string, string, bool) {
 	// if the src is external, the dst must be internal.
 	if internal {
 		dst, _, ok = w.getRandomInternalExternalIP()
-		if !ok {
-			return "", "", false
-		}
 	} else {
 		dst, ok = ipPool.randomElem()
 		if !ok {
-			log.Error("found no IPs in pool")
-			return "", "", false
+			log.Error("Found no IPs in the internal pool")
 		}
 	}
 
@@ -285,7 +278,6 @@ func (w *WorkloadManager) getRandomNetworkEndpoint(containerID string) (*sensor.
 
 	ip, ok := ipPool.randomElem()
 	if !ok {
-		log.Error("found no IPs in pool")
 		return nil, false
 	}
 
@@ -315,14 +307,14 @@ func (w *WorkloadManager) getFakeNetworkConnectionInfo(workload NetworkWorkload)
 
 		containerID, ok := containerPool.randomElem()
 		if !ok {
-			log.Error("found no containers in pool")
+			log.Error("Found no containers in pool")
 			continue
 		}
 
 		conn := makeNetworkConnection(src, dst, containerID, time.Now().Add(-5*time.Second))
 		networkEndpoint, ok := w.getRandomNetworkEndpoint(containerID)
 		if !ok {
-			log.Error("found no IPs in pool")
+			log.Error("Found no IPs in the internal pool")
 			continue
 		}
 
