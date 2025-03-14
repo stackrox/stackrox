@@ -43,6 +43,7 @@ var (
 	PolicyName         = newFieldLabel("Policy")
 	PolicyCategoryName = newFieldLabel("Policy Category")
 	PolicyCategoryID   = newFieldLabel("Policy Category ID")
+	PolicySource       = newFieldLabel("Policy Source")
 
 	LifecycleStage = newFieldLabel("Lifecycle Stage")
 	Description    = newFieldLabel("Description")

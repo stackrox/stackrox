@@ -12,6 +12,7 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/lifecycle"
+	"github.com/stackrox/rox/central/metrics"
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/policy/datastore"
@@ -288,7 +289,11 @@ func (s *serviceImpl) PostPolicy(ctx context.Context, request *v1.PostPolicyRequ
 	if request.GetEnableStrictValidation() {
 		options = append(options, booleanpolicy.ValidateEnvVarSourceRestrictions())
 	}
-	return s.addOrUpdatePolicy(ctx, request.GetPolicy(), ensureIDEmpty, s.addPolicyToStoreAndSetID, options...)
+	policy, err := s.addOrUpdatePolicy(ctx, request.GetPolicy(), ensureIDEmpty, s.addPolicyToStoreAndSetID, options...)
+	if err == nil && policy != nil && policy.Source == storage.PolicySource_DECLARATIVE {
+		s.updatePolicyAsCodeMetrics(ctx)
+	}
+	return policy, err
 }
 
 // PutPolicy updates a current policy in the system.
@@ -348,7 +353,16 @@ func (s *serviceImpl) DeletePolicy(ctx context.Context, request *v1.ResourceByID
 		return nil, err
 	}
 
+	if policy.Source == storage.PolicySource_DECLARATIVE {
+		s.updatePolicyAsCodeMetrics(ctx)
+	}
+
 	return &v1.Empty{}, nil
+}
+
+func (s *serviceImpl) updatePolicyAsCodeMetrics(ctx context.Context) {
+	count, _ := s.policies.Count(ctx, search.NewQueryBuilder().AddExactMatches(search.PolicySource, storage.PolicySource_DECLARATIVE.String()).ProtoQuery())
+	metrics.UpdatePolicyAsCodeCRsReceivedGauge(count)
 }
 
 // ReassessPolicies manually triggers enrichment of all deployments, and re-assesses policies if there's updated data.
