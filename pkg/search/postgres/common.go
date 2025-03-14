@@ -1058,13 +1058,13 @@ func RunCursorQueryForSchemaFn[T any, PT pgutils.Unmarshaler[T]](ctx context.Con
 	queryStr := query.AsSQL()
 
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, cursorDefaultTimeout)
+	defer cancel()
 
 	tx, err := db.Begin(ctx)
 	if err != nil {
 		return errors.Wrap(err, "creating transaction")
 	}
 	defer func() {
-		cancel()
 		if err := tx.Commit(ctx); err != nil {
 			log.Errorf("error committing cursor transaction: %v", err)
 		}
@@ -1083,33 +1083,34 @@ func RunCursorQueryForSchemaFn[T any, PT pgutils.Unmarshaler[T]](ctx context.Con
 			return errors.Wrap(err, "advancing in cursor")
 		}
 
-		tag, err := forEachRow(rows, callback)
+		// forEachRow closes rows so it could not be used later.
+		rowsAffected, err := forEachRow(rows, callback)
 		if err != nil {
 			return errors.Wrap(err, "processing rows")
 		}
-		if tag.RowsAffected() != cursorBatchSize {
+		if rowsAffected != cursorBatchSize {
 			return nil
 		}
 	}
 }
 
-func forEachRow[T any, PT pgutils.Unmarshaler[T]](rows pgx.Rows, callback func(obj PT) error) (pgconn.CommandTag, error) {
+func forEachRow[T any, PT pgutils.Unmarshaler[T]](rows pgx.Rows, callback func(obj PT) error) (int64, error) {
 	defer rows.Close()
 	for rows.Next() {
 		obj, err := pgutils.Unmarshal[T, PT](rows)
 		if err != nil {
-			return pgconn.CommandTag{}, errors.Wrap(err, "could not unmarshal row")
+			return 0, errors.Wrap(err, "could not unmarshal row")
 		}
 		if err := callback(obj); err != nil {
-			return pgconn.CommandTag{}, errors.Wrap(err, "callback returned an error")
+			return 0, errors.Wrap(err, "callback returned an error")
 		}
 	}
 
 	if err := rows.Err(); err != nil {
-		return pgconn.CommandTag{}, errors.Wrap(err, "could not read rows")
+		return 0, errors.Wrap(err, "could not read rows")
 	}
 
-	return rows.CommandTag(), nil
+	return rows.CommandTag().RowsAffected(), nil
 }
 
 // RunDeleteRequestForSchema executes a request for just the delete against the database
