@@ -827,6 +827,9 @@
         "cve": {
           "type": "string"
         },
+        "advisory": {
+          "type": "string"
+        },
         "cvss": {
           "type": "number",
           "format": "float"
@@ -909,9 +912,6 @@
         },
         "epss": {
           "$ref": "#/definitions/storageEPSS"
-        },
-        "advisory": {
-          "type": "string"
         }
       },
       "title": "Next Tag: 25"
