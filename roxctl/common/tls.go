@@ -19,7 +19,7 @@ import (
 )
 
 const errorMsg = `The remote endpoint failed TLS validation.
-  Please do one of the following:
+  Do one of the following:
   1. Obtain a valid certificate for your Central instance/Load Balancer.
   2. Use the --ca option to specify a custom CA certificate (PEM format).
      This certificate can be obtained by running "roxctl central cert".
