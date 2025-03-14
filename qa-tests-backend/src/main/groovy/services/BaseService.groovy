@@ -153,12 +153,12 @@ class BaseService {
     }
 
     static Channel getChannel() {
-        if (effectiveChannel != null) {
+        if (transportChannel != null) {
             synchronized(BaseService) {
-                ConnectivityState state = effectiveChannel.getState(true)
+                ConnectivityState state = transportChannel.getState(true)
                 if (state == ConnectivityState.TRANSIENT_FAILURE || state == ConnectivityState.SHUTDOWN) {
                     try {
-                        effectiveChannel.shutdown().awaitTermination(5, TimeUnit.SECONDS)
+                        transportChannel.shutdown().awaitTermination(5, TimeUnit.SECONDS)
                         log.debug("The gRPC channel has been shut down")
                     } catch (InterruptedException e) {
                         log.debug("Failed to shutdown the terminated channel: ${e}")
