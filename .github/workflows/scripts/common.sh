@@ -86,8 +86,8 @@ if ! (return 0 2>/dev/null); then # called
         GITHUB_REPOSITORY \
         GITHUB_REF_NAME
 
-    URL="/repos/$GITHUB_REPOSITORY/contents/.github/workflows/scripts/$SCRIPT.sh?ref=$GITHUB_REF_NAME"
+    URL="/repos/$GITHUB_REPOSITORY/contents/.github/workflows/scripts/$SCRIPT.sh?ref=${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
     shift
-    gh_log debug "Executing '$SCRIPT.sh' from '$GITHUB_REPOSITORY' $GITHUB_REF_NAME branch with: ${*@Q}"
+    gh_log debug "Executing '$SCRIPT.sh' from '$GITHUB_REPOSITORY' ${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}} ref with: ${*@Q}"
     gh api -H "Accept: application/vnd.github.v3.raw" "$URL" | bash -s -- "$@"
 fi
