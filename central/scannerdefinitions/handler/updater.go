@@ -72,9 +72,15 @@ func (u *updater) runForever() {
 }
 
 func (u *updater) update() {
-	if err := u.doUpdate(); err != nil {
-		log.Errorf("Scanner vulnerability updater for endpoint %q failed: %v", u.downloadURL, err)
+	for attempt := 1; attempt <= 3; attempt++ {
+		if err := u.doUpdate(); err != nil {
+			log.Warnf("Scanner vulnerability updater for endpoint %q failed: %v", u.downloadURL, err)
+		} else {
+			return // successful update
+		}
+		time.Sleep(10 * time.Second)
 	}
+	log.Errorf("Scanner vulnerability updater for endpoint %q failed retries.", u.downloadURL)
 }
 
 func (u *updater) doUpdate() error {

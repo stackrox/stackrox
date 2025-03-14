@@ -36,7 +36,7 @@ func TestUpdate(t *testing.T) {
 	filePath := filepath.Join(t.TempDir(), "dump.zip")
 	u := newUpdater(file.New(filePath), &http.Client{Timeout: 30 * time.Second}, defURL, 1*time.Hour)
 	// Should fetch first time.
-	require.NoError(t, u.doUpdate())
+	u.update()
 	assertOnFileExistence(t, filePath, true)
 
 	lastUpdatedTime := time.Now()
