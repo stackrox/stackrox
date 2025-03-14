@@ -14,6 +14,7 @@ import (
 	networkEntityDS "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	networkFlowDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
+	"github.com/stackrox/rox/central/networkgraph/testhelper"
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -25,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -273,7 +275,7 @@ func (s *networkGraphServiceSuite) TestGetExternalNetworkFlows() {
 			if tc.expectSuccess {
 				s.NoError(err)
 				protoassert.Equal(s.T(), tc.expected.Entity, response.Entity)
-				protoassert.ElementsMatch(s.T(), tc.expected.Flows, response.Flows)
+				assert.True(s.T(), testhelper.MatchElements(tc.expected.Flows, response.Flows))
 			} else {
 				s.Error(err)
 			}
