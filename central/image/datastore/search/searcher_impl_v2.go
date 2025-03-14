@@ -54,11 +54,11 @@ func (s *searcherImplV2) SearchImages(ctx context.Context, q *v1.Query) ([]*v1.S
 }
 
 func (s *searcherImplV2) SearchListImages(ctx context.Context, q *v1.Query) ([]*storage.ListImage, error) {
-	images, _, err := s.searchImages(ctx, q)
-	listImages := make([]*storage.ListImage, 0, len(images))
-	for _, image := range images {
+	listImages := make([]*storage.ListImage, 0, 2)
+	err := s.storage.WalkByQuery(ctx, q, func(image *storage.Image) error {
 		listImages = append(listImages, types.ConvertImageToListImage(image))
-	}
+		return nil
+	})
 	return listImages, err
 }
 
