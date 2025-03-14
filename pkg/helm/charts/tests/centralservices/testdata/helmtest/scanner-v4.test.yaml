@@ -227,13 +227,13 @@ tests:
     expect: |
       .configmaps["scanner-v4-matcher-config"].data.["config.yaml"] | fromyaml | .matcher.vulnerabilities_url | assertThat(. == "https://central.stackrox.svc/api/extensions/scannerdefinitions?version=ROX_VERSION")
 
-- name: "Scanner V4 is not installed by default"
+- name: "Scanner V4 is installed by default"
   set:
     scannerV4.disable: null
   expect: |
-    .deployments["scanner-v4-indexer"] | assertThat(. == null)
-    .deployments["scanner-v4-matcher"] | assertThat(. == null)
-    .deployments["scanner-v4-db"] | assertThat(. == null)
+    .deployments["scanner-v4-indexer"] | assertThat(. != null)
+    .deployments["scanner-v4-matcher"] | assertThat(. != null)
+    .deployments["scanner-v4-db"] | assertThat(. != null)
 
 - name: "Scanner V4 can be disabled without impacting Scanner V2"
   set:
