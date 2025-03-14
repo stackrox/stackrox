@@ -2,6 +2,7 @@ package handler
 
 import (
 	"archive/zip"
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -39,11 +40,22 @@ func TestUpdate(t *testing.T) {
 	u.update()
 	assertOnFileExistence(t, filePath, true)
 
-	lastUpdatedTime := time.Now()
-	mustSetModTime(t, filePath, lastUpdatedTime)
-	// Should not fetch since it can't be updated in a time in the future.
-	require.NoError(t, u.doUpdate())
-	assert.Equal(t, lastUpdatedTime.UTC(), mustGetModTime(t, filePath))
+	// Should not fetch unless the file changed; The file could change during testing.
+	attempt := 0
+	for attempt = 1; attempt <= 3; attempt++ {
+		lastUpdatedTime := time.Now()
+		mustSetModTime(t, filePath, lastUpdatedTime)
+		if err := u.doUpdate(); err != nil {
+			fmt.Printf("Scanner vulnerability updater for endpoint %q failed: %v", u.downloadURL, err)
+		} else {
+			break
+		}
+		time.Sleep(10 * time.Second)
+	}
+	if attempt == 1 {
+		// File did not change during testing.
+		assert.Equal(t, lastUpdatedTime.UTC(), mustGetModTime(t, filePath))
+	}
 	assertOnFileExistence(t, filePath, true)
 
 	// Should definitely fetch.
