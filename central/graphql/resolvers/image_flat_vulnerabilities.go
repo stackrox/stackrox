@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
@@ -550,6 +551,42 @@ func (resolver *imageFlatCVEV2Resolver) ImageComponents(ctx context.Context, arg
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "ImageComponents")
 	log.Infof("SHREWS -- image_vulnerabilities.ImageComponents %s", args.String())
 	log.Infof("SHREWS -- image_vulnerabilities.ImageComponents %s", resolver.data.GetId())
+	log.Infof("SHREWS -- image_vulnerabilities.ImageComponents %s", resolver.data.GetCveBaseInfo().GetCve())
+	// check permissions
+	if err := readImages(ctx); err != nil {
+		return nil, err
+	}
+
+	queryString := *args.Query
+	queryString = queryString + ",CVE:" + resolver.data.GetCveBaseInfo().GetCve()
+	args.Query = pointers.String(queryString)
+	// cast query
+	//query, err := args.AsV1QueryOrEmpty()
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//query = search.ConjunctionQuery(query, search.NewQueryBuilder().AddExactMatches(search.CVE, resolver.data.GetCveBaseInfo().GetCve()).ProtoQuery())
+	//
+	//loader, err := loaders.GetComponentV2Loader(ctx)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//// get values
+	//comps, err := loader.FromQuery(ctx, query)
+	//componentResolvers, err := resolver.wrapImageFlatComponentV2sWithContext(ctx, comps, err)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//// cast as return type
+	//ret := make([]ImageComponentResolver, 0, len(componentResolvers))
+	//for _, res := range componentResolvers {
+	//	ret = append(ret, res)
+	//}
+	//return ret, nil
+
 	return resolver.root.ImageComponents(resolver.imageVulnerabilityScopeContext(ctx), args)
 }
 
@@ -619,7 +656,6 @@ func (resolver *imageFlatCVEV2Resolver) imageVulnerabilityScopeContext(ctx conte
 	}
 
 	return scoped.Context(resolver.ctx, scoped.Scope{
-		ID:    resolver.data.GetId(),
 		Level: v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
 	})
 }
