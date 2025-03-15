@@ -42,8 +42,9 @@ func TestUpdate(t *testing.T) {
 
 	// Should not fetch unless the file changed; The file could change during testing.
 	attempt := 0
+	lastUpdatedTime := time.Now()
 	for attempt = 1; attempt <= 3; attempt++ {
-		lastUpdatedTime := time.Now()
+		lastUpdatedTime = time.Now()
 		mustSetModTime(t, filePath, lastUpdatedTime)
 		if err := u.doUpdate(); err != nil {
 			fmt.Printf("Scanner vulnerability updater for endpoint %q failed: %v", u.downloadURL, err)
