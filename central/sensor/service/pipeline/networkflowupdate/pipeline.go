@@ -12,11 +12,13 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 var (
 	_ pipeline.Fragment = (*pipelineImpl)(nil)
+	log     = logging.LoggerForModule()
 )
 
 // Template design pattern. We define control flow here and defer logic to subclasses.
@@ -71,6 +73,13 @@ func (s *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 		return nil
 	}
 
+	log.Info("Receiving flows")
+	for i, flow := range update.GetUpdated() {
+		log.Info("")
+		log.Infof("i= %+v", i)
+		log.Infof("receivedFlow= %+v", flow)
+		log.Info("")
+	}
 	var updateTime *time.Time
 	if update.Time != nil {
 		updateRawTime, err := protocompat.ConvertTimestampToTimeOrError(update.Time)

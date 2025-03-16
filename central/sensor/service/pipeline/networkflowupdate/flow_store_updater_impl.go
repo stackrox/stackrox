@@ -70,7 +70,15 @@ func (s *flowPersisterImpl) update(ctx context.Context, newFlows []*storage.Netw
 		s.firstUpdateSeen = true
 	}
 
-	return s.flowStore.UpsertFlows(ctx, convertToFlows(flowsByIndicator), now)
+	convertedFlows := convertToFlows(flowsByIndicator)
+	for i, convertedFlow := range convertedFlows {
+		log.Info("")
+		log.Infof("i= %+v", i)
+		log.Infof("convertedFlow= %+v", convertedFlow)
+		log.Info("")
+	}
+	return s.flowStore.UpsertFlows(ctx, convertedFlows, now)
+	//return s.flowStore.UpsertFlows(ctx, convertToFlows(flowsByIndicator), now)
 }
 
 func (s *flowPersisterImpl) markExistingFlowsAsTerminatedIfNotSeen(ctx context.Context, currentFlows map[networkgraph.NetworkConnIndicator]timestamp.MicroTS) error {

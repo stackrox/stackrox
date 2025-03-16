@@ -450,6 +450,58 @@ func (s *serviceImpl) enhanceWithNetworkPolicyIsolationInfo(ctx context.Context,
 	return nil
 }
 
+func aggregateExternal(conns []*storage.NetworkFlow) []*storage.NetworkFlow {
+        log.Info("In AggregateExternal")
+        normalizedConns := make(map[networkgraph.NetworkConnIndicator]*storage.NetworkFlow)
+        ret := make([]*storage.NetworkFlow, 0, len(conns))
+
+        for _, conn := range conns {
+                log.Info("")
+                log.Info("conn= %v", conn)
+                srcEntity, dstEntity := conn.GetProps().GetSrcEntity(), conn.GetProps().GetDstEntity()
+                // This is essentially an invalid connection.
+                if srcEntity == nil || dstEntity == nil {
+                        utils.Should(errors.Errorf("network conn %s without endpoints is unexpected", networkgraph.GetNetworkConnIndicator(conn).String()))
+                        continue
+                }
+
+                if networkgraph.IsExternal(srcEntity) && networkgraph.IsExternal(dstEntity) {
+                        utils.Should(errors.Errorf("network conn %s with all external endpoints is unexpected", networkgraph.GetNetworkConnIndicator(conn).String()))
+                        continue
+                }
+
+                conn = conn.CloneVT()
+                srcEntity, dstEntity = conn.GetProps().GetSrcEntity(), conn.GetProps().GetDstEntity()
+
+                log.Infof("Checking if at least one side is external conn= %v", conn)
+                // If both endpoints are not external (including INTERNET), skip processing.
+                if !networkgraph.IsExternal(srcEntity) && !networkgraph.IsExternal(dstEntity) {
+                        ret = append(ret, conn)
+                        continue
+                }
+
+		connID := networkgraph.GetNetworkConnIndicator(conn)
+                log.Infof("connID= %+v", connID)
+                if storedFlow := normalizedConns[connID]; storedFlow != nil {
+                        log.Info("Connection already seen")
+                        if protocompat.CompareTimestamps(storedFlow.GetLastSeenTimestamp(), conn.GetLastSeenTimestamp()) < 0 {
+                                storedFlow.LastSeenTimestamp = conn.GetLastSeenTimestamp()
+                                log.Info("Updating timestamp")
+                        }
+                } else {
+                        normalizedConns[connID] = conn
+                        log.Infof("Added to normalizedConns conn= %+v", conn)
+                }
+                log.Info("")
+        }
+
+        for _, conn := range normalizedConns {
+                ret = append(ret, conn)
+        }
+        return ret
+}
+
+
 func (s *serviceImpl) addDeploymentFlowsToGraph(
 	ctx context.Context,
 	request *v1.NetworkGraphRequest,
@@ -525,6 +577,53 @@ func (s *serviceImpl) addDeploymentFlowsToGraph(
 		s.networkTreeMgr.GetDefaultNetworkTree(ctx),
 	)
 
+	// // Aggregate all external conns into supernet conns for which external entities do not exists (as a result of deletion).
+	// aggr, err := aggregator.NewSubnetToSupernetConnAggregator(networkTree)
+	// utils.Should(err)
+	// flows = aggr.Aggregate(flows)
+
+	// flows, missingInfoFlows := networkgraph.UpdateFlowsWithEntityDesc(flows, deploymentsMap,
+	// 	func(id string) *storage.NetworkEntityInfo {
+	// 		if networkTree == nil {
+	// 			return nil
+	// 		}
+	// 		return networkTree.Get(id)
+	// 	},
+	// )
+
+	// // Aggregate all external flows by node names to control the number of external nodes.
+	// flows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(flows)
+	// missingInfoFlows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(missingInfoFlows)
+
+	// networkTree2 := tree.NewMultiNetworkTree(
+	// 	s.networkTreeMgr.GetReadOnlyNetworkTree(ctx, request.GetClusterId()),
+	// 	s.networkTreeMgr.GetDefaultNetworkTree(ctx),
+	// )
+	// aggr2, err := aggregator.NewSubnetToSupernetConnAggregator(networkTree2)
+	// utils.Should(err)
+	// flows = aggr2.Aggregate(flows)
+
+	// //missingInfoFlows = aggr.Aggregate(missingInfoFlows)
+	// graphBuilder.AddFlows(flows)
+
+	//flows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(flows)
+
+	//flows, missingInfoFlows := networkgraph.UpdateFlowsWithEntityDesc(flows, deploymentsMap,
+	//	func(id string) *storage.NetworkEntityInfo {
+	//		if networkTree == nil {
+	//			return nil
+	//		}
+	//		return networkTree.Get(id)
+	//	},
+	//)
+
+	//aggr, err := aggregator.NewSubnetToSupernetConnAggregator(networkTree)
+	//utils.Should(err)
+	//flows = aggr.Aggregate(flows)
+	//missingInfoFlows = aggr.Aggregate(missingInfoFlows)
+	//graphBuilder.AddFlows(flows)
+
+
 	// Aggregate all external conns into supernet conns for which external entities do not exists (as a result of deletion).
 	aggr, err := aggregator.NewSubnetToSupernetConnAggregator(networkTree)
 	utils.Should(err)
@@ -542,7 +641,9 @@ func (s *serviceImpl) addDeploymentFlowsToGraph(
 	// Aggregate all external flows by node names to control the number of external nodes.
 	flows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(flows)
 	missingInfoFlows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(missingInfoFlows)
+	flows = aggregateExternal(flows)
 	graphBuilder.AddFlows(flows)
+
 
 	filteredFlows, visibleNeighbors, maskedDeployments, err := filterFlowsAndMaskScopeAlienDeployments(ctx,
 		request.GetClusterId(), scopeQuery, missingInfoFlows, deploymentsMap, s.deployments)

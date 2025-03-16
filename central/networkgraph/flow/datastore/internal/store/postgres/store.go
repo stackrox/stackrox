@@ -163,6 +163,10 @@ func (s *flowStoreImpl) insertIntoNetworkflow(ctx context.Context, tx *postgres.
 	}
 
 	finalStr := fmt.Sprintf("INSERT INTO %s (Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId) VALUES($1, $2, $3, $4, $5, $6, $7, $8)", s.partitionName)
+	log.Info("")
+	log.Infof("values= %+v", values)
+	log.Infof("finalStr= %s ", finalStr)
+	log.Info("")
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err

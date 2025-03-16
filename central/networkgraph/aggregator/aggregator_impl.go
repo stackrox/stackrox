@@ -30,11 +30,14 @@ type aggregateToSupernetImpl struct {
 // Aggregate aggregates multiple external network connections with same external endpoint,
 // as determined by name, into a single connection.
 func (a *aggregateToSupernetImpl) Aggregate(conns []*storage.NetworkFlow) []*storage.NetworkFlow {
+	log.Info("In Aggregate")
 	normalizedConns := make(map[networkgraph.NetworkConnIndicator]*storage.NetworkFlow)
 	ret := make([]*storage.NetworkFlow, 0, len(conns))
 	supernetCache := make(map[string]*storage.NetworkEntityInfo)
 
 	for _, conn := range conns {
+		log.Info("")
+		log.Info("conn= %v", conn)
 		srcEntity, dstEntity := conn.GetProps().GetSrcEntity(), conn.GetProps().GetDstEntity()
 		// This is essentially an invalid connection.
 		if srcEntity == nil || dstEntity == nil {
@@ -50,6 +53,7 @@ func (a *aggregateToSupernetImpl) Aggregate(conns []*storage.NetworkFlow) []*sto
 		conn = conn.CloneVT()
 		srcEntity, dstEntity = conn.GetProps().GetSrcEntity(), conn.GetProps().GetDstEntity()
 
+		log.Infof("Checking if at least one side is external conn= %v", conn)
 		// If both endpoints are not external (including INTERNET), skip processing.
 		if !networkgraph.IsExternal(srcEntity) && !networkgraph.IsExternal(dstEntity) {
 			ret = append(ret, conn)
@@ -57,16 +61,22 @@ func (a *aggregateToSupernetImpl) Aggregate(conns []*storage.NetworkFlow) []*sto
 		}
 
 		// Move the connections to supernet.
+		log.Infof("Before mapToSupernetIfNotfound conn= %+v", conn)
 		a.mapToSupernetIfNotfound(supernetCache, conn.Props.SrcEntity, conn.Props.DstEntity)
-
+		log.Infof("After mapToSupernetIfNotfound conn= %+v", conn)
 		connID := networkgraph.GetNetworkConnIndicator(conn)
+		log.Infof("connID= %+v", connID)
 		if storedFlow := normalizedConns[connID]; storedFlow != nil {
+			log.Info("Connection already seen")
 			if protocompat.CompareTimestamps(storedFlow.GetLastSeenTimestamp(), conn.GetLastSeenTimestamp()) < 0 {
 				storedFlow.LastSeenTimestamp = conn.GetLastSeenTimestamp()
+				log.Info("Updating timestamp")
 			}
 		} else {
 			normalizedConns[connID] = conn
+			log.Infof("Added to normalizedConns conn= %+v", conn)
 		}
+		log.Info("")
 	}
 
 	for _, conn := range normalizedConns {
