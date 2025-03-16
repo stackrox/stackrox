@@ -449,45 +449,45 @@ func (s *serviceImpl) enhanceWithNetworkPolicyIsolationInfo(ctx context.Context,
 }
 
 func aggregateExternal(conns []*storage.NetworkFlow) []*storage.NetworkFlow {
-        normalizedConns := make(map[networkgraph.NetworkConnIndicator]*storage.NetworkFlow)
-        ret := make([]*storage.NetworkFlow, 0, len(conns))
+	normalizedConns := make(map[networkgraph.NetworkConnIndicator]*storage.NetworkFlow)
+	ret := make([]*storage.NetworkFlow, 0, len(conns))
 
-        for _, conn := range conns {
-                srcEntity, dstEntity := conn.GetProps().GetSrcEntity(), conn.GetProps().GetDstEntity()
-                // This is essentially an invalid connection.
-                if srcEntity == nil || dstEntity == nil {
-                        utils.Should(errors.Errorf("network conn %s without endpoints is unexpected", networkgraph.GetNetworkConnIndicator(conn).String()))
-                        continue
-                }
+	for _, conn := range conns {
+		srcEntity, dstEntity := conn.GetProps().GetSrcEntity(), conn.GetProps().GetDstEntity()
+		// This is essentially an invalid connection.
+		if srcEntity == nil || dstEntity == nil {
+			utils.Should(errors.Errorf("network conn %s without endpoints is unexpected", networkgraph.GetNetworkConnIndicator(conn).String()))
+			continue
+		}
 
-                if networkgraph.IsExternal(srcEntity) && networkgraph.IsExternal(dstEntity) {
-                        utils.Should(errors.Errorf("network conn %s with all external endpoints is unexpected", networkgraph.GetNetworkConnIndicator(conn).String()))
-                        continue
-                }
+		if networkgraph.IsExternal(srcEntity) && networkgraph.IsExternal(dstEntity) {
+			utils.Should(errors.Errorf("network conn %s with all external endpoints is unexpected", networkgraph.GetNetworkConnIndicator(conn).String()))
+			continue
+		}
 
-                conn = conn.CloneVT()
-                srcEntity, dstEntity = conn.GetProps().GetSrcEntity(), conn.GetProps().GetDstEntity()
+		conn = conn.CloneVT()
+		srcEntity, dstEntity = conn.GetProps().GetSrcEntity(), conn.GetProps().GetDstEntity()
 
-                // If both endpoints are not external (including INTERNET), skip processing.
-                if !networkgraph.IsExternal(srcEntity) && !networkgraph.IsExternal(dstEntity) {
-                        ret = append(ret, conn)
-                        continue
-                }
+		// If both endpoints are not external (including INTERNET), skip processing.
+		if !networkgraph.IsExternal(srcEntity) && !networkgraph.IsExternal(dstEntity) {
+			ret = append(ret, conn)
+			continue
+		}
 
 		connID := networkgraph.GetNetworkConnIndicator(conn)
-                if storedFlow := normalizedConns[connID]; storedFlow != nil {
-                        if protocompat.CompareTimestamps(storedFlow.GetLastSeenTimestamp(), conn.GetLastSeenTimestamp()) < 0 {
-                                storedFlow.LastSeenTimestamp = conn.GetLastSeenTimestamp()
-                        }
-                } else {
-                        normalizedConns[connID] = conn
-                }
-        }
+		if storedFlow := normalizedConns[connID]; storedFlow != nil {
+			if protocompat.CompareTimestamps(storedFlow.GetLastSeenTimestamp(), conn.GetLastSeenTimestamp()) < 0 {
+				storedFlow.LastSeenTimestamp = conn.GetLastSeenTimestamp()
+			}
+		} else {
+			normalizedConns[connID] = conn
+		}
+	}
 
-        for _, conn := range normalizedConns {
-                ret = append(ret, conn)
-        }
-        return ret
+	for _, conn := range normalizedConns {
+		ret = append(ret, conn)
+	}
+	return ret
 }
 
 func (s *serviceImpl) addDeploymentFlowsToGraph(
