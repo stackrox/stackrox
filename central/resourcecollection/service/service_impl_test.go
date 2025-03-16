@@ -5,10 +5,18 @@ package service
 import (
 	"context"
 	"errors"
+	"os"
 	"testing"
 
+	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
+	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stretchr/testify/require"
+
+	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	deploymentDSMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
+	"github.com/stackrox/rox/central/globaldb"
 	reportConfigurationDS "github.com/stackrox/rox/central/reports/config/datastore"
+	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	datastoreMocks "github.com/stackrox/rox/central/resourcecollection/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -55,6 +63,41 @@ func (suite *CollectionServiceTestSuite) SetupSuite() {
 func (suite *CollectionServiceTestSuite) TearDownSuite() {
 	suite.testDB.Teardown(suite.T())
 	suite.mockCtrl.Finish()
+}
+
+func TestCollectionAgainstRealDatabase(t *testing.T) {
+	os.Setenv("USER", "postgres")
+	os.Setenv("POSTGRES_PASSWORD", "password")
+	testDB := pgtest.ForT(t)
+
+	mockCtrl := gomock.NewController(t)
+
+	globaldb.SetPostgresTest(t, testDB)
+
+	collectionDS, qr := collectionDS.Singleton()
+	as = New(collectionDS, qr, deploymentDS.Singleton(), reportConfigDS.Singleton())
+
+	mockIdentity := mockIdentity.NewMockIdentity(mockCtrl)
+	mockIdentity.EXPECT().UID().Return(uuid.NewDummy().String())
+	mockIdentity.EXPECT().FriendlyName().Return("John")
+	mockIdentity.EXPECT().FullName().Return("John Doe")
+
+	ctx := authn.ContextWithIdentity(context.Background(), mockIdentity, t)
+	ctx = sac.WithAllAccess(ctx)
+	r, err := as.DryRunCollection(ctx, &v1.DryRunCollectionRequest{
+		Name:    "dry-run",
+		Options: &v1.CollectionDeploymentMatchOptions{},
+		ResourceSelectors: []*storage.ResourceSelector{
+			{Rules: []*storage.SelectorRule{
+				{FieldName: "Deployment", Operator: storage.BooleanOperator_OR, Values: []*storage.RuleValue{
+					{Value: "central", MatchType: storage.MatchType_EXACT},
+				}},
+			}},
+		},
+	})
+
+	require.NoError(t, err)
+	require.NotEmpty(t, r.Deployments)
 }
 
 func (suite *CollectionServiceTestSuite) TestListCollectionSelectors() {
