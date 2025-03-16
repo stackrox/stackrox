@@ -63,6 +63,7 @@ const (
 	DELETE
 	SELECT
 	DELETERETURNINGIDS
+	COUNTBY
 )
 
 func replaceVars(s string) string {
@@ -222,6 +223,22 @@ func (q *query) getPortionBeforeFromClause() string {
 			countOn = fmt.Sprintf("distinct(%s)", strings.Join(primaryKeyPaths, ", "))
 		}
 		return fmt.Sprintf("select count(%s)", countOn)
+	case COUNTBY:
+		var countByStrs []string
+		for _, g := range q.GroupBys {
+			countByStrs = append(countByStrs, g.Field.PathForSelectPortion())
+		}
+		countOn := "*"
+		if q.DistinctAppliedOnPrimaryKeySelect() {
+			var primaryKeyPaths []string
+			// Always select the primary keys for count.
+			for _, pk := range q.Schema.PrimaryKeys() {
+				primaryKeyPaths = append(primaryKeyPaths, qualifyColumn(pk.Schema.Table, pk.ColumnName, ""))
+			}
+			countOn = fmt.Sprintf("distinct(%s)", strings.Join(primaryKeyPaths, ", "))
+		}
+		countByStrs = append(countByStrs, fmt.Sprintf("count(%s)", countOn))
+		return "select " + stringutils.JoinNonEmpty(", ", countByStrs...)
 	case GET:
 		return fmt.Sprintf("select %q.serialized", q.From)
 	case SEARCH:
@@ -258,6 +275,9 @@ func (q *query) DistinctAppliedOnPrimaryKeySelect() bool {
 	// If this involves multiple tables, then we need to wrap the primary key portion in a distinct, because
 	// otherwise there could be multiple rows with the same primary key in the join table.
 	// TODO(viswa): we might be able to do this even more narrowly
+	if q.QueryType == COUNTBY {
+		return len(q.Joins) > 0
+	}
 	return len(q.Joins) > 0 && len(q.GroupBys) == 0
 }
 
@@ -937,6 +957,50 @@ func RunCountRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.
 			return 0, errors.Wrap(err, "error executing query")
 		}
 		return count, nil
+	})
+}
+
+// RunCountByRequestForSchema executes a request for just the count against the database
+func RunCountByRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) ([]searchPkg.CountByWrapper, error) {
+	if q == nil {
+		q = searchPkg.EmptyQuery()
+	}
+
+	query, err := standardizeQueryAndPopulatePath(ctx, q, schema, COUNTBY)
+	if err != nil || query == nil {
+		return nil, err
+	}
+	queryStr := query.AsSQL()
+
+	return pgutils.Retry2(ctx, func() ([]searchPkg.CountByWrapper, error) {
+		bufferToScanRowInto := make([]interface{}, len(query.GroupBys)+1)
+		rows, err := tracedQuery(ctx, db, queryStr, query.Data...)
+		if err != nil {
+			log.Errorf("Query issue: %s: %v", queryStr, err)
+			return nil, errors.Wrap(err, "error executing query")
+		}
+		var results []searchPkg.CountByWrapper
+		for rows.Next() {
+			if err := rows.Scan(&bufferToScanRowInto); err != nil {
+				log.Errorf("Query issue: %s: %v", queryStr, err)
+				return nil, errors.Wrap(err, "error executing query")
+			}
+			result := searchPkg.CountByWrapper{}
+			if len(query.GroupBys) > 0 {
+				for i, field := range query.GroupBys {
+					returnedValue := bufferToScanRowInto[i]
+					if field.Field.PostTransform != nil {
+						returnedValue = field.Field.PostTransform(returnedValue)
+					}
+					if matches := mustPrintForDataType(field.Field.FieldType, returnedValue); len(matches) > 0 {
+						result.ByFields.Matches[field.Field.FieldPath] = append(result.ByFields.Matches[field.Field.FieldPath], matches...)
+					}
+				}
+			}
+			result.Count = bufferToScanRowInto[len(query.GroupBys)].(int)
+			results = append(results, result)
+		}
+		return results, nil
 	})
 }
 
