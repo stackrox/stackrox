@@ -1,17 +1,15 @@
 package util
 
+import static util.Helpers.withRetry
+
 import groovy.util.logging.Slf4j
 import groovy.transform.CompileStatic
-import java.net.HttpURLConnection
-import java.net.URL
 
 import orchestratormanager.Kubernetes
 
 import com.google.protobuf.util.JsonFormat
 
 import sensor.Collector
-
-import static util.Helpers.withRetry
 
 @Slf4j
 @CompileStatic
