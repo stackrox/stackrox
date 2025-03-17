@@ -1,4 +1,4 @@
-import React, { FunctionComponent, ReactElement } from 'react';
+import React, { FunctionComponent, ReactElement, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { isUserResource } from 'Containers/AccessControl/traits';
@@ -130,9 +130,11 @@ function IntegrationForm({
     const canUseCloudBackupIntegrations = isCentralCapabilityAvailable(
         'centralCanUseCloudBackupIntegrations'
     );
-    if (!canUseCloudBackupIntegrations && source === 'backups') {
-        navigate(integrationsPath, { replace: true });
-    }
+    useEffect(() => {
+        if (!canUseCloudBackupIntegrations && source === 'backups') {
+            navigate(integrationsPath, { replace: true });
+        }
+    }, [canUseCloudBackupIntegrations, source, navigate]);
 
     const Form: FunctionComponent<React.PropsWithChildren<FormProps>> =
         ComponentFormMap?.[source]?.[type];
