@@ -487,7 +487,6 @@ class NetworkFlowTest extends BaseSpecification {
         then:
         "There should be an edge from A to external entities and it should be the only edge"
         assert edges
-        def nedges = edges.size()
         assert edges.size() == 1
 
         when: "External IPs is enabled"
