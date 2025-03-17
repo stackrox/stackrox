@@ -41,16 +41,15 @@ func (ds *searcherImpl) SearchListAlerts(ctx context.Context, q *v1.Query, exclu
 	if excludeResolved {
 		q = applyDefaultState(q)
 	}
-	alerts, err := ds.storage.GetByQuery(ctx, q)
+	listAlerts := make([]*storage.ListAlert, 0, q.GetPagination().GetLimit())
+	err := ds.storage.GetByQueryFn(ctx, q, func(alert *storage.Alert) error {
+		listAlerts = append(listAlerts, convert.AlertToListAlert(alert))
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
-	listAlerts := make([]*storage.ListAlert, 0, len(alerts))
-	for _, alert := range alerts {
-		listAlerts = append(listAlerts, convert.AlertToListAlert(alert))
-	}
 	return listAlerts, nil
-
 }
 
 // SearchRawAlerts retrieves Alerts from the storage
