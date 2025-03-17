@@ -13,6 +13,7 @@ type DelegatedRegistriesTableProps = {
     registries: DelegatedRegistry[];
     clusters: DelegatedRegistryCluster[];
     selectedClusterId: string;
+    isEditing: boolean;
     handlePathChange: (number, string) => void;
     handleClusterChange: (number, string) => void;
     deleteRow: (number) => void;
@@ -22,6 +23,7 @@ function DelegatedRegistriesTable({
     registries,
     clusters,
     selectedClusterId,
+    isEditing,
     handlePathChange,
     handleClusterChange,
     deleteRow,
@@ -51,9 +53,11 @@ function DelegatedRegistriesTable({
                 <Tr>
                     <Th width={40}>Source registry</Th>
                     <Th width={40}>Destination cluster (CLI/API only)</Th>
-                    <Th>
-                        <span className="pf-v5-screen-reader">Row action</span>
-                    </Th>
+                    {isEditing && (
+                        <Th>
+                            <span className="pf-v5-screen-reader">Row action</span>
+                        </Th>
+                    )}
                 </Tr>
             </Thead>
             <Tbody>
@@ -70,6 +74,7 @@ function DelegatedRegistriesTable({
                                 <TextInput
                                     aria-label="registry"
                                     isRequired
+                                    isDisabled={!isEditing}
                                     type="text"
                                     value={registry.path}
                                     onChange={(_event, value) => handlePathChange(rowIndex, value)}
@@ -87,6 +92,7 @@ function DelegatedRegistriesTable({
                                     onToggle={() => toggleSelect(rowIndex)}
                                     onSelect={(_, value) => onSelect(rowIndex, value)}
                                     isOpen={openRow === rowIndex}
+                                    isDisabled={!isEditing}
                                     selections={selectedClusterName}
                                 >
                                     <SelectOption key="no-cluster-selected" value="" isPlaceholder>
@@ -95,18 +101,20 @@ function DelegatedRegistriesTable({
                                     <>{clusterSelectOptions}</>
                                 </Select>
                             </Td>
-                            <Td dataLabel="Row action" className="pf-v5-u-text-align-right">
-                                <Button
-                                    variant="link"
-                                    isInline
-                                    icon={
-                                        <MinusCircleIcon color="var(--pf-v5-global--danger-color--100)" />
-                                    }
-                                    onClick={() => deleteRow(rowIndex)}
-                                >
-                                    Delete row
-                                </Button>
-                            </Td>
+                            {isEditing && (
+                                <Td dataLabel="Row action" className="pf-v5-u-text-align-right">
+                                    <Button
+                                        variant="link"
+                                        isInline
+                                        icon={
+                                            <MinusCircleIcon color="var(--pf-v5-global--danger-color--100)" />
+                                        }
+                                        onClick={() => deleteRow(rowIndex)}
+                                    >
+                                        Delete row
+                                    </Button>
+                                </Td>
+                            )}
                         </Tr>
                     );
                 })}

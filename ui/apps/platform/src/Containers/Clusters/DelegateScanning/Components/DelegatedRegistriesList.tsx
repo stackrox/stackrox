@@ -23,6 +23,7 @@ type DelegatedRegistriesListProps = {
     registries: DelegatedRegistry[];
     clusters: DelegatedRegistryCluster[];
     selectedClusterId: string;
+    isEditing: boolean;
     addRegistryRow: () => void;
     deleteRow: (number) => void;
     handlePathChange: (number, string) => void;
@@ -35,6 +36,7 @@ function DelegatedRegistriesList({
     registries,
     clusters,
     selectedClusterId,
+    isEditing,
     handlePathChange,
     handleClusterChange,
     addRegistryRow,
@@ -52,6 +54,7 @@ function DelegatedRegistriesList({
                         registries={registries}
                         clusters={clusters}
                         selectedClusterId={selectedClusterId}
+                        isEditing={isEditing}
                         handlePathChange={handlePathChange}
                         handleClusterChange={handleClusterChange}
                         deleteRow={deleteRow}
@@ -61,11 +64,17 @@ function DelegatedRegistriesList({
                         updateRegistriesOrder={updateRegistriesOrder}
                         key="delegated-registries-table"
                     />
-                    <CardFooter>
-                        <Button variant="link" icon={<PlusCircleIcon />} onClick={addRegistryRow}>
-                            Add registry
-                        </Button>
-                    </CardFooter>
+                    {isEditing && (
+                        <CardFooter>
+                            <Button
+                                variant="link"
+                                icon={<PlusCircleIcon />}
+                                onClick={addRegistryRow}
+                            >
+                                Add registry
+                            </Button>
+                        </CardFooter>
+                    )}
                 </>
             ) : (
                 <Bullseye className="pf-v5-u-flex-grow-1">
@@ -75,11 +84,13 @@ function DelegatedRegistriesList({
                             <p>All scans will be delegated to the default cluster.</p>
                             <p>You can override this for specific registries.</p>
                         </EmptyStateBody>
-                        <EmptyStateFooter>
-                            <Button variant="primary" onClick={addRegistryRow}>
-                                Add registry
-                            </Button>
-                        </EmptyStateFooter>
+                        {isEditing && (
+                            <EmptyStateFooter>
+                                <Button variant="primary" onClick={addRegistryRow}>
+                                    Add registry
+                                </Button>
+                            </EmptyStateFooter>
+                        )}
                     </EmptyState>
                 </Bullseye>
             )}
