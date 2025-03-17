@@ -42,6 +42,7 @@ func init() {
 				"nvdCvss: Float!",
 				"nvdScoreVersion: String!",
 			)),
+		schema.AddQuery("flattenedImageVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ImageVulnerability!]!"),
 		schema.AddQuery("imageVulnerability(id: ID): ImageVulnerability"),
 		schema.AddQuery("imageVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ImageVulnerability!]!"),
 		schema.AddQuery("imageVulnerabilityCount(query: String): Int!"),
@@ -150,6 +151,71 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 	query = tryUnsuppressedQuery(query)
 	vulns, err := loader.FromQuery(ctx, query)
 	cveResolvers, err := resolver.wrapImageCVEsWithContext(ctx, vulns, err)
+	if err != nil {
+		return nil, err
+	}
+
+	// cast as return type
+	ret := make([]ImageVulnerabilityResolver, 0, len(cveResolvers))
+	for _, res := range cveResolvers {
+		ret = append(ret, res)
+	}
+	return ret, nil
+}
+
+// FlattenedImageVulnerabilities resolves a set of image vulnerabilities for the input query
+func (resolver *Resolver) FlattenedImageVulnerabilities(ctx context.Context, q PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilities")
+	if !features.FlattenCVEData.Enabled() {
+		return nil, nil
+	}
+	log.Info("SHREWS -- image_vulnerabilities.FlattenImageVulnerabilities")
+
+	// check permissions
+	if err := readImages(ctx); err != nil {
+		return nil, err
+	}
+
+	// cast query
+	query, err := q.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+
+	cveListish, err := resolver.ImageCVEView.GetCVE(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	cveList := make([]string, 0, len(cveListish))
+	for _, cve := range cveListish {
+		log.Infof("SHREWS -- CVE: %s", cve.GetCVE())
+		cveList = append(cveList, cve.GetCVE())
+		log.Infof("SHREWS -- CVE IDs: %v", cve.GetCVEIDs())
+	}
+
+	// get loader
+	loader, err := loaders.GetImageCVEV2Loader(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// get values
+	// TODO(ROX-27780): figure out what to do with this
+	//  query = tryUnsuppressedQuery(query)
+	//query.Selects = append(query.Selects, search.NewQuerySelect(search.CVE).Distinct().Proto())
+	query = search.ConjunctionQuery(query, search.NewQueryBuilder().AddExactMatches(search.CVE, cveList...).ProtoQuery())
+
+	vulns, err := loader.FromQuery(ctx, query)
+
+	vulnMap := make(map[string]*storage.ImageCVEV2)
+	outVulns := make([]*storage.ImageCVEV2, 0, len(vulns))
+	for _, vuln := range vulns {
+		if _, ok := vulnMap[vuln.GetCveBaseInfo().GetCve()]; !ok {
+			vulnMap[vuln.GetCveBaseInfo().GetCve()] = vuln
+			outVulns = append(outVulns, vuln)
+		}
+	}
+	cveResolvers, err := resolver.wrapImageCVEV2sWithContext(ctx, outVulns, err)
 	if err != nil {
 		return nil, err
 	}
@@ -1010,11 +1076,14 @@ func (resolver *imageCVEV2Resolver) DiscoveredAtImage(_ context.Context, _ RawQu
 
 func (resolver *imageCVEV2Resolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "ImageComponents")
+	log.Infof("SHREWS -- image_vulnerabilities.ImageComponents %s", args.String())
+	log.Infof("SHREWS -- image_vulnerabilities.ImageComponents %s", resolver.data.GetId())
 	return resolver.root.ImageComponents(resolver.imageVulnerabilityScopeContext(ctx), args)
 }
 
 func (resolver *imageCVEV2Resolver) ImageComponentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "ImageComponentCount")
+	log.Infof("SHREWS -- image_vulnerabilities.ImageComponents %s", args.String())
 	return resolver.root.ImageComponentCount(resolver.imageVulnerabilityScopeContext(ctx), args)
 }
 

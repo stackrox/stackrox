@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/central/views/common"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type imageCVECoreResponse struct {
@@ -81,4 +82,59 @@ type imageResponse struct {
 
 type deploymentResponse struct {
 	DeploymentID string `db:"deployment_id"`
+}
+
+type imageCVEResponse struct {
+	CVE                     string                         `db:"cve"`
+	CVEIDs                  []string                       `db:"cve_id"`
+	ComponentIDs            []string                       `db:"component_id"`
+	Severity                *storage.VulnerabilitySeverity `db:"severity"`
+	TopCVSS                 *float32                       `db:"cvss_max"`
+	CVEState                *storage.VulnerabilityState    `db:"state"`
+	AffectedComponentCount  int                            `db:"componentid_count"`
+	FirstDiscoveredInSystem *time.Time                     `db:"cve_created_time_min"`
+	Published               *time.Time                     `db:"cve_published_on_min"`
+	TopNVDCVSS              *float32                       `db:"nvd_cvss_max"`
+}
+
+func (c *imageCVEResponse) GetCVE() string {
+	return c.CVE
+}
+
+func (c *imageCVEResponse) GetCVEIDs() []string {
+	return c.CVEIDs
+}
+
+func (c *imageCVEResponse) GetComponentIDs() []string {
+	return c.ComponentIDs
+}
+
+func (c *imageCVEResponse) GetSeverity() *storage.VulnerabilitySeverity {
+	return c.Severity
+}
+
+func (c *imageCVEResponse) GetTopCVSS() float32 {
+	if c.TopCVSS == nil {
+		return 0.0
+	}
+	return *c.TopCVSS
+}
+
+func (c *imageCVEResponse) GetTopNVDCVSS() float32 {
+	if c.TopNVDCVSS == nil {
+		return 0.0
+	}
+	return *c.TopNVDCVSS
+}
+
+func (c *imageCVEResponse) GetAffectedComponentCount() int {
+	return len(c.ComponentIDs)
+}
+
+func (c *imageCVEResponse) GetFirstDiscoveredInSystem() *time.Time {
+	return c.FirstDiscoveredInSystem
+}
+
+func (c *imageCVEResponse) GetPublishDate() *time.Time {
+	return c.Published
 }
