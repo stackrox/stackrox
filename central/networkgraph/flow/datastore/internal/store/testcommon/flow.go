@@ -7,10 +7,12 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store"
+	"github.com/stackrox/rox/central/networkgraph/testhelper"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -84,16 +86,16 @@ func (suite *FlowStoreTestSuite) TestStore() {
 
 	readFlows, _, err := suite.tested.GetAllFlows(context.Background(), nil)
 	suite.Require().NoError(err)
-	suite.ElementsMatch(readFlows, flows)
+	assert.True(suite.T(), testhelper.MatchElements(flows, readFlows))
 
 	readFlows, _, err = suite.tested.GetAllFlows(context.Background(), &t2)
 	suite.Require().NoError(err)
-	suite.ElementsMatch(readFlows, flows[1:])
+	assert.True(suite.T(), testhelper.MatchElements(flows[1:], readFlows))
 
 	now := time.Now().UTC()
 	readFlows, _, err = suite.tested.GetAllFlows(context.Background(), &now)
 	suite.Require().NoError(err)
-	suite.ElementsMatch(readFlows, flows[2:])
+	assert.True(suite.T(), testhelper.MatchElements(flows[2:], readFlows))
 
 	updateTS += 1337
 	err = suite.tested.UpsertFlows(context.Background(), flows, updateTS)
@@ -118,7 +120,7 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	var actualFlows []*storage.NetworkFlow
 	actualFlows, _, err = suite.tested.GetAllFlows(context.Background(), nil)
 	suite.NoError(err)
-	suite.ElementsMatch(actualFlows, flows[1:])
+	assert.True(suite.T(), testhelper.MatchElements(flows[1:], actualFlows))
 
 	updateTS += 42
 	err = suite.tested.UpsertFlows(context.Background(), flows, updateTS)
@@ -126,7 +128,7 @@ func (suite *FlowStoreTestSuite) TestStore() {
 
 	actualFlows, _, err = suite.tested.GetAllFlows(context.Background(), nil)
 	suite.NoError(err)
-	suite.ElementsMatch(actualFlows, flows)
+	assert.True(suite.T(), testhelper.MatchElements(flows, actualFlows))
 
 	node1Flows, _, err := suite.tested.GetMatchingFlows(context.Background(), func(props *storage.NetworkFlowProperties) bool {
 		if props.GetDstEntity().GetType() == storage.NetworkEntityInfo_DEPLOYMENT && props.GetDstEntity().GetId() == fixtureconsts.Deployment1 {
@@ -138,7 +140,7 @@ func (suite *FlowStoreTestSuite) TestStore() {
 		return false
 	}, nil)
 	suite.NoError(err)
-	suite.ElementsMatch(node1Flows, flows[:1])
+	assert.True(suite.T(), testhelper.MatchElements(flows[:1], node1Flows))
 }
 
 // TestRemoveAllMatching tests removing flows that match deployments that have been removed
@@ -181,13 +183,16 @@ func (suite *FlowStoreTestSuite) TestRemoveAllMatching() {
 			ClusterId: fixtureconsts.Cluster1,
 		},
 	}
-	updateTS := timestamp.Now() - 1000000
-	err := suite.tested.UpsertFlows(context.Background(), flows, updateTS)
+	err := suite.tested.UpsertFlows(context.Background(), []*storage.NetworkFlow{flows[0]}, timestamp.FromGoTime(t1))
+	suite.NoError(err)
+	err = suite.tested.UpsertFlows(context.Background(), []*storage.NetworkFlow{flows[1]}, timestamp.FromGoTime(t2))
+	suite.NoError(err)
+	err = suite.tested.UpsertFlows(context.Background(), []*storage.NetworkFlow{flows[2]}, timestamp.FromGoTime(t3))
 	suite.NoError(err)
 
 	currFlows, _, err := suite.tested.GetAllFlows(context.Background(), nil)
 	suite.NoError(err)
-	suite.ElementsMatch(flows, currFlows)
+	assert.True(suite.T(), testhelper.MatchElements(flows, currFlows))
 
 	utc := t3.UTC()
 	err = suite.tested.RemoveOrphanedFlows(context.Background(), &utc)
@@ -195,5 +200,5 @@ func (suite *FlowStoreTestSuite) TestRemoveAllMatching() {
 
 	currFlows, _, err = suite.tested.GetAllFlows(context.Background(), nil)
 	suite.NoError(err)
-	suite.ElementsMatch(flows[2:], currFlows)
+	assert.True(suite.T(), testhelper.MatchElements(flows[2:], currFlows))
 }
