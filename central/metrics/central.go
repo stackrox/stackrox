@@ -403,6 +403,14 @@ func UpdatePolicyAsCodeCRsReceivedGauge(count int) {
 	totalPolicyAsCodeCRsReceivedGauge.Set(float64(count))
 }
 
+func IncrementPolicyAsCodeCRsReceivedGauge() {
+	totalPolicyAsCodeCRsReceivedGauge.Inc()
+}
+
+func DecrementPolicyAsCodeCRsReceivedGauge() {
+	totalPolicyAsCodeCRsReceivedGauge.Dec()
+}
+
 // ObserveRiskProcessingDuration adds an observation for risk processing duration.
 func ObserveRiskProcessingDuration(startTime time.Time, riskObjectType string) {
 	riskProcessingHistogramVec.With(prometheus.Labels{"Risk_Reprocessor": riskObjectType}).
