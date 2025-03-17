@@ -156,20 +156,11 @@ func PruneClusterHealthStatuses(ctx context.Context, pool postgres.DB) {
 }
 
 func getOrphanedIDs(ctx context.Context, pool postgres.DB, query string) ([]string, error) {
-	var ids []string
 	rows, err := pool.Query(ctx, query)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get orphaned alerts")
 	}
-	defer rows.Close()
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, errors.Wrap(err, "getting ids from orphaned alerts query")
-		}
-		ids = append(ids, id)
-	}
-	return ids, rows.Err()
+	return pgutils.ScanStrings(rows)
 }
 
 // GetOrphanedAlertIDs returns the alert IDs for alerts that are orphaned, so they can be resolved.
