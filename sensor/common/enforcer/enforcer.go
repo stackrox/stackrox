@@ -63,7 +63,13 @@ func generateDeploymentEnforcement(a *storage.Alert) *central.DeploymentEnforcem
 }
 
 func (e *enforcer) ProcessAlertResults(action central.ResourceAction, stage storage.LifecycleStage, alertResults *central.AlertResults) {
-	if action != central.ResourceAction_CREATE_RESOURCE {
+	// We have to take both create and updates into account for policy enforcement.
+	// Reasons for this:
+	// - when policy criteria are being changed that affect existing deployments, we need to take those into account
+	//   for enforcement; since an alert will be created that states we do take this into account (i.e. scale to zero).
+	// - when policy enforcement via sensor is configured, we need to take updates into account to make sure malicious
+	//   users cannot just re-scale the deployment (which previously was ignored).
+	if action != central.ResourceAction_CREATE_RESOURCE && action != central.ResourceAction_UPDATE_RESOURCE {
 		return
 	}
 	for _, a := range alertResults.GetAlerts() {
