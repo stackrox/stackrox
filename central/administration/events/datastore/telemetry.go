@@ -25,36 +25,24 @@ func Gather(ds DataStore) phonehome.GatherFunc {
 		_ = phonehome.AddTotal(ctx, props, "Info type administrative events", func(ctx context.Context) (int, error) {
 			return ds.CountEvents(ctx,
 				search.NewQueryBuilder().
-					AddStrings(search.EventLevel, "info").
+					AddStrings(search.EventLevel, storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_INFO.String()).
 					ProtoQuery(),
 			)
 		})
 		_ = phonehome.AddTotal(ctx, props, "Warning type administrative events", func(ctx context.Context) (int, error) {
 			return ds.CountEvents(ctx,
 				search.NewQueryBuilder().
-					AddStrings(search.EventLevel, "warn").
+					AddStrings(search.EventLevel, storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_WARNING.String()).
 					ProtoQuery(),
 			)
 		})
 		_ = phonehome.AddTotal(ctx, props, "Error type administrative events", func(ctx context.Context) (int, error) {
 			return ds.CountEvents(ctx,
 				search.NewQueryBuilder().
-					AddStrings(search.EventLevel, "error").
+					AddStrings(search.EventLevel, storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR.String()).
 					ProtoQuery(),
 			)
 		})
 		return props, nil
 	}
 }
-
-/*
-
-		return storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_INFO
-	case "warn":
-		return storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_WARNING
-	case "error":
-		return storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR
-	default:
-		return storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_UNKNOWN
-
-*/
