@@ -87,6 +87,8 @@ import DefaultFilterModal from '../components/DefaultFilterModal';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
 import ObservedCveModeSelect from './ObservedCveModeSelect';
 import { getViewStateDescription, getViewStateTitle } from './string.utils';
+import CreateReportDropdown from '../components/CreateReportDropdown';
+import CreateAdHocReportModal from '../components/CreateAdHocReportModal';
 
 export const entityTypeCountsQuery = gql`
     query getEntityTypeCounts($query: String) {
@@ -394,6 +396,10 @@ function WorkloadCvesOverviewPage() {
         />
     );
 
+    // Report-specific state management
+    const [isCreateReportDropdownOpen, setIsCreateReportDropdownOpen] = useState(false);
+    const [isCreateAdHocReportModalOpen, setIsCreateAdHocReportModalOpen] = useState(false);
+
     return (
         <>
             <PageTitle title={`${pageTitle} Overview`} />
@@ -447,6 +453,15 @@ function WorkloadCvesOverviewPage() {
                             Manage watched images
                         </Button>
                     )}
+                    <FlexItem>
+                        <CreateReportDropdown
+                            isOpen={isCreateReportDropdownOpen}
+                            setIsOpen={setIsCreateReportDropdownOpen}
+                            onSelect={() => {
+                                setIsCreateAdHocReportModalOpen(true);
+                            }}
+                        />
+                    </FlexItem>
                 </Flex>
             </PageSection>
             <PageSection id={vulnStateTabContentId} padding={{ default: 'noPadding' }}>
@@ -611,6 +626,10 @@ function WorkloadCvesOverviewPage() {
                     unwatchImageModalToggle.closeSelect();
                 }}
                 onWatchedImagesChange={onWatchedImagesChange}
+            />
+            <CreateAdHocReportModal
+                isOpen={isCreateAdHocReportModalOpen}
+                setIsOpen={setIsCreateAdHocReportModalOpen}
             />
         </>
     );
