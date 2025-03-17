@@ -271,7 +271,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.NetworkBasel
 // Walk iterates over all of the objects in the store and applies the closure.
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.NetworkBaseline) error) error {
 	var sacQueryFilter *v1.Query
-	return pgSearch.RunCursorQueryForSchemaFn(ctx, schema, sacQueryFilter, s.db, fn)
+	return pgSearch.RunQueryForSchemaFn(ctx, schema, sacQueryFilter, s.db, fn)
 }
 
 //// Stubs for satisfying legacy interfaces

@@ -944,7 +944,7 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(node *
 		return nil
 	}
 
-	err = pgSearch.RunCursorQueryForSchemaFn(ctx, pkgSchema.NodesSchema, q, s.db, callback)
+	err = pgSearch.RunQueryForSchemaFn(ctx, pkgSchema.NodesSchema, q, s.db, callback)
 	if err != nil {
 		return errors.Wrap(err, "cursor by query")
 	}

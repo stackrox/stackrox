@@ -88,7 +88,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 // Walk iterates through each policy category
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.PolicyCategory) error) error {
 	var sacQueryFilter *v1.Query
-	return pgSearch.RunCursorQueryForSchemaFn(ctx, schema, sacQueryFilter, s.db, fn)
+	return pgSearch.RunQueryForSchemaFn(ctx, schema, sacQueryFilter, s.db, fn)
 }
 
 // Upsert saves the current state of an object in storage.

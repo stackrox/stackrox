@@ -49,7 +49,7 @@ func (s *storeImpl) GetAll(ctx context.Context) ([]*storeType, error) {
 // Walk iterates through each policy category
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.PolicyCategory) error) error {
 	var sacQueryFilter *v1.Query
-	return pgSearch.RunCursorQueryForSchemaFn(ctx, schema, sacQueryFilter, s.db, fn)
+	return pgSearch.RunQueryForSchemaFn(ctx, schema, sacQueryFilter, s.db, fn)
 }
 
 // New returns a new Store instance using the provided sql instance.

@@ -279,5 +279,5 @@ func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []string) error 
 // Walk iterates over all of the objects in the store and applies the closure.
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ReportConfiguration) error) error {
 	var sacQueryFilter *v1.Query
-	return pgSearch.RunCursorQueryForSchemaFn(ctx, schema, sacQueryFilter, s.db, fn)
+	return pgSearch.RunQueryForSchemaFn(ctx, schema, sacQueryFilter, s.db, fn)
 }

@@ -258,7 +258,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 // Walk iterates over all of the objects in the store and applies the closure
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.PolicyCategoryEdge) error) error {
 	var sacQueryFilter *v1.Query
-	return pgSearch.RunCursorQueryForSchemaFn(ctx, schema, sacQueryFilter, s.db, fn)
+	return pgSearch.RunQueryForSchemaFn(ctx, schema, sacQueryFilter, s.db, fn)
 }
 
 func (s *storeImpl) acquireConn(ctx context.Context, _ ops.Op, _ string) (*postgres.Conn, func(), error) {
