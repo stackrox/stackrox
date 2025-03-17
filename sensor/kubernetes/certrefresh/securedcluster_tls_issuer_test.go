@@ -87,7 +87,7 @@ func newSecuredClusterTLSIssuerFixture(k8sClientConfig fakeK8sClientConfig) *sec
 		getServiceCertificatesRepoFn: fixture.componentGetter.getServiceCertificatesRepo,
 		msgToCentralC:                make(chan *message.ExpiringMessage),
 		newMsgFromSensorFn:           newSecuredClusterMsgFromSensor,
-		responseReceived:             concurrency.NewSignal(),
+		responseFromCentral:          make(chan *Response),
 		requiredCentralCapability: func() *centralsensor.CentralCapability {
 			centralCap := centralsensor.CentralCapability(centralsensor.SecuredClusterCertificatesReissue)
 			return &centralCap
@@ -267,12 +267,14 @@ func (s *securedClusterTLSIssuerTests) TestSecuredClusterTLSIssuerProcessMessage
 		},
 	}
 
-	fixture.tlsIssuer.ongoingRequestID = expectedResponse.RequestId
-	fixture.tlsIssuer.requestOngoing.Store(true)
-
 	assert.NoError(s.T(), fixture.tlsIssuer.ProcessMessage(msg))
 	assert.Eventually(s.T(), func() bool {
-		return fixture.tlsIssuer.responseReceived.IsDone()
+		select {
+		case <-fixture.tlsIssuer.responseFromCentral:
+			return true
+		default:
+			return false
+		}
 	}, 2*time.Second, 100*time.Millisecond)
 }
 
@@ -284,7 +286,12 @@ func (s *securedClusterTLSIssuerTests) TestSecuredClusterTLSIssuerProcessMessage
 
 	assert.NoError(s.T(), fixture.tlsIssuer.ProcessMessage(msg))
 	assert.Never(s.T(), func() bool {
-		return fixture.tlsIssuer.responseReceived.IsDone()
+		select {
+		case <-fixture.tlsIssuer.responseFromCentral:
+			return true
+		default:
+			return false
+		}
 	}, 200*time.Millisecond, 50*time.Millisecond)
 }
 
