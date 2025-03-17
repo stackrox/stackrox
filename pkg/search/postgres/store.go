@@ -66,6 +66,7 @@ type Store[T any, PT pgutils.Unmarshaler[T]] interface {
 	GetAll(ctx context.Context) ([]PT, error)
 	Get(ctx context.Context, id string) (PT, bool, error)
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*T, error)
+	GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj PT) error) error
 	GetIDs(ctx context.Context) ([]string, error)
 	GetIDsByQuery(ctx context.Context, query *v1.Query) ([]string, error)
 	GetMany(ctx context.Context, identifiers []string) ([]PT, []int, error)
@@ -245,6 +246,12 @@ func (s *genericStore[T, PT]) GetByQuery(ctx context.Context, query *v1.Query) (
 		return nil, err
 	}
 	return rows, nil
+}
+
+// GetByQueryFn returns the objects from the store matching the query.
+func (s *genericStore[T, PT]) GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj PT) error) error {
+	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetByQuery)
+	return RunGetQueryForSchemaFn[T, PT](ctx, s.schema, query, s.db, fn)
 }
 
 func (s *genericStore[T, PT]) fetchIDsByQuery(ctx context.Context, query *v1.Query) ([]string, error) {

@@ -84,6 +84,7 @@ type Store interface {
     Get(ctx context.Context, {{template "paramList" $pks}}) (*storeType, bool, error)
 {{- if .SearchCategory }}
     GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
+    GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj *storeType) error) error
 {{- end }}
     GetMany(ctx context.Context, identifiers []{{$singlePK.Type}}) ([]*storeType, []int, error)
     GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error)
