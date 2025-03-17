@@ -1041,22 +1041,28 @@ func RunCursorQueryForSchema[T any, PT pgutils.Unmarshaler[T]](ctx context.Conte
 	}, closer, nil
 }
 
-// RunGetQueryForSchemaFn runs a query and call a callback for each row. It stops on first error.
-func RunGetQueryForSchemaFn[T any, PT pgutils.Unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB, callback func(obj PT) error) error {
+func retryableGetRows(ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) (*tracedRows, error) {
 	if q == nil {
 		q = searchPkg.EmptyQuery()
 	}
 
 	query, err := standardizeQueryAndPopulatePath(ctx, q, schema, GET)
 	if err != nil {
-		return errors.Wrap(err, "error creating query")
+		return nil, errors.Wrap(err, "error creating query")
 	}
 	if query == nil {
-		return emptyQueryErr
+		return nil, emptyQueryErr
 	}
 
 	queryStr := query.AsSQL()
-	rows, err := tracedQuery(ctx, db, queryStr, query.Data...)
+	return tracedQuery(ctx, db, queryStr, query.Data...)
+}
+
+// RunGetQueryForSchemaFn runs a query and call a callback for each row. It stops on first error.
+func RunGetQueryForSchemaFn[T any, PT pgutils.Unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB, callback func(obj PT) error) error {
+	rows, err := pgutils.Retry2(ctx, func() (*tracedRows, error) {
+		return retryableGetRows(ctx, schema, q, db)
+	})
 	if err != nil {
 		return err
 	}
@@ -1072,7 +1078,7 @@ func RunGetQueryForSchemaFn[T any, PT pgutils.Unmarshaler[T]](ctx context.Contex
 		}
 	}
 
-	return nil
+	return rows.Err()
 }
 
 // RunDeleteRequestForSchema executes a request for just the delete against the database
