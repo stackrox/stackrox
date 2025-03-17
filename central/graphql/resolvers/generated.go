@@ -712,7 +712,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"id: ID!",
 		"imageId: String!",
 		"impactScore: Float!",
-		"isFixable: Boolean!",
 		"nvdScoreVersion: CvssScoreVersion!",
 		"nvdcvss: Float!",
 		"operatingSystem: String!",
@@ -736,7 +735,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"id: ID!",
 		"imageId: String!",
 		"license: License",
-		"location: String!",
 		"name: String!",
 		"operatingSystem: String!",
 		"priority: Int!",
@@ -8452,11 +8450,6 @@ func (resolver *imageCVEV2Resolver) ImpactScore(ctx context.Context) float64 {
 	return float64(value)
 }
 
-func (resolver *imageCVEV2Resolver) IsFixable(ctx context.Context) bool {
-	value := resolver.data.GetIsFixable()
-	return value
-}
-
 func (resolver *imageCVEV2Resolver) NvdScoreVersion(ctx context.Context) string {
 	value := resolver.data.GetNvdScoreVersion()
 	return value.String()
@@ -8634,11 +8627,6 @@ func (resolver *imageComponentV2Resolver) ImageId(ctx context.Context) string {
 func (resolver *imageComponentV2Resolver) License(ctx context.Context) (*licenseResolver, error) {
 	value := resolver.data.GetLicense()
 	return resolver.root.wrapLicense(value, true, nil)
-}
-
-func (resolver *imageComponentV2Resolver) Location(ctx context.Context) string {
-	value := resolver.data.GetLocation()
-	return value
 }
 
 func (resolver *imageComponentV2Resolver) Name(ctx context.Context) string {
