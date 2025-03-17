@@ -372,10 +372,10 @@ function NavigationSidebar({
                                             return (
                                                 <NavigationItem
                                                     key={path}
-                                                    isActive={isActiveLink(
-                                                        location,
-                                                        childDescription
-                                                    )}
+                                                    isActive={isActiveLink(location, {
+                                                        ...childDescription,
+                                                        path: `${path}/*`,
+                                                    })}
                                                     path={path}
                                                     content={
                                                         typeof content === 'function'

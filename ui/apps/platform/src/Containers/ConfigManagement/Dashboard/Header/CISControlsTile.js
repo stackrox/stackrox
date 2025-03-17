@@ -1,10 +1,10 @@
 import React from 'react';
 import URLService from 'utils/URLService';
-import { useLocation, useMatch } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import entityTypes from 'constants/entityTypes';
+import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import { gql, useQuery } from '@apollo/client';
 import logError from 'utils/logError';
-import { workflowPaths } from 'routePaths';
 
 import EntityTileLink from 'Components/EntityTileLink';
 
@@ -20,7 +20,7 @@ const CISControlsTile = () => {
         logError(error);
     }
 
-    const match = useMatch(workflowPaths.DASHBOARD);
+    const match = useWorkflowMatch();
     const location = useLocation();
     const controlsURL = URLService.getURL(match, location).base(entityTypes.CONTROL).url();
 

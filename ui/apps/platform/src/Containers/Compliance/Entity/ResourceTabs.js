@@ -1,17 +1,17 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Link, useLocation, useMatch } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import { resourceLabels } from 'messages/common';
 import URLService from 'utils/URLService';
 import pluralize from 'pluralize';
 import Query from 'Components/ThrowingQuery';
 import { SEARCH_WITH_CONTROLS as QUERY } from 'queries/search';
-import { workflowPaths } from 'routePaths';
 import queryService from 'utils/queryService';
 import { getResourceCountFromAggregatedResults } from 'utils/complianceUtils';
 
 const ResourceTabs = ({ entityType, entityId, resourceTabs, selectedType }) => {
-    const match = useMatch(workflowPaths.ENTITY);
+    const match = useWorkflowMatch();
     const location = useLocation();
 
     function getLinkToListType(listEntityType) {

@@ -1,6 +1,6 @@
 import React, { useContext, useState } from 'react';
 import PropTypes from 'prop-types';
-import { useLocation, useMatch } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import lowerCase from 'lodash/lowerCase';
 import pluralize from 'pluralize';
 
@@ -8,14 +8,14 @@ import URLService from 'utils/URLService';
 import BackdropExporting from 'Components/PatternFly/BackdropExporting';
 import ComplianceList from 'Containers/Compliance/List/List';
 import searchContext from 'Containers/searchContext';
-import { workflowPaths } from 'routePaths';
+import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import ComplianceSearchInput from '../ComplianceSearchInput';
 import Header from './Header';
 
 const ComplianceListPage = () => {
     const [isExporting, setIsExporting] = useState(false);
     const location = useLocation();
-    const match = useMatch(workflowPaths.LIST);
+    const match = useWorkflowMatch();
     const params = URLService.getParams(match, location);
     const searchParam = useContext(searchContext);
     const query = { ...params.query[searchParam] };

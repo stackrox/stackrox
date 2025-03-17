@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { ExternalLinkAltIcon } from '@patternfly/react-icons';
-import { Link, useLocation, useNavigate, useMatch } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import Query from 'Components/CacheFirstQuery';
 import CloseButton from 'Components/CloseButton';
@@ -10,7 +10,7 @@ import { resourceTypes, standardEntityTypes } from 'constants/entityTypes';
 // TODO: this exception will be unnecessary once Compliance pages are re-structured like Config Management
 /* eslint-disable import/no-cycle */
 import ControlPage from 'Containers/Compliance/Entity/Control';
-import { workflowPaths } from 'routePaths';
+import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import URLService from 'utils/URLService';
 import getEntityName from 'utils/getEntityName';
 import { entityNameQueryMap } from 'utils/queryMap';
@@ -25,7 +25,7 @@ const MAX_CONTROL_TITLE = 120;
 const ComplianceListSidePanel = ({ entityType, entityId }) => {
     const navigate = useNavigate();
     const location = useLocation();
-    const match = useMatch(workflowPaths.LIST);
+    const match = useWorkflowMatch();
 
     function getEntityPage() {
         switch (entityType) {

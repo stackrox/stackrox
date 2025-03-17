@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { useLocation, useMatch } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import pluralize from 'pluralize';
 
 import entityTypes from 'constants/entityTypes';
@@ -21,7 +21,7 @@ import Labels from 'Containers/Compliance/widgets/Labels';
 import ComplianceByStandards from 'Containers/Compliance/widgets/ComplianceByStandards';
 import isGQLLoading from 'utils/gqlLoading';
 import searchContext from 'Containers/searchContext';
-import { workflowPaths } from 'routePaths';
+import useWorkflowMatch from 'hooks/useWorkflowMatch';
 
 import Header from './Header';
 import ResourceTabs from './ResourceTabs';
@@ -47,7 +47,7 @@ const DeploymentPage = ({
 }) => {
     const [isExporting, setIsExporting] = useState(false);
     const searchParam = useContext(searchContext);
-    const match = useMatch(workflowPaths.ENTITY);
+    const match = useWorkflowMatch();
     const location = useLocation();
 
     return (

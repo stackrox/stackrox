@@ -41,7 +41,6 @@ import {
     exceptionManagementPath,
     vulnerabilitiesNodeCvesPath,
     vulnerabilitiesPlatformCvesPath,
-    deprecatedPoliciesBasePath,
     policiesBasePath,
     vulnerabilitiesUserWorkloadsPath,
     vulnerabilitiesPlatformPath,
@@ -281,9 +280,18 @@ function WorkloadCvesRedirect() {
     return <Navigate to={`${newPath}${location.search}`} replace />;
 }
 
+function DeprecatedPoliciesRedirect() {
+    const { policyId, command } = useParams();
+
+    const newPath = `${policiesBasePath}${policyId ? `/${policyId}` : ''}${
+        command ? `/${command}` : ''
+    }`;
+
+    return <Navigate to={newPath} replace />;
+}
+
 function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement {
     const location = useLocation();
-    const params = useParams();
     const { analyticsPageVisit } = useAnalytics();
     useEffect(() => {
         analyticsPageVisit('Page Viewed', '', { path: location.pathname });
@@ -301,14 +309,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                     <Route path="/" element={<Navigate to={dashboardPath} replace />} />
                     <Route path={mainPath} element={<Navigate to={dashboardPath} replace />} />
                     {/* Make sure the following Redirect element works after react-router-dom upgrade */}
-                    <Route
-                        path={`${deprecatedPoliciesBasePath}/*`}
-                        element={<Navigate to={policiesBasePath} replace />}
-                    />
-                    <Route
-                        path={deprecatedPoliciesPath}
-                        element={<Navigate to={`${policiesBasePath}/${params.policyId}`} replace />}
-                    />
+                    <Route path={deprecatedPoliciesPath} element={<DeprecatedPoliciesRedirect />} />
                     {isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT') && (
                         <Route
                             // all prior workload-cves routes must redirect to the new path.

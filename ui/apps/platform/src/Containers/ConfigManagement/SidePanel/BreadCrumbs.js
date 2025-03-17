@@ -3,12 +3,13 @@ import PropTypes from 'prop-types';
 import pluralize from 'pluralize';
 import upperFirst from 'lodash/upperFirst';
 import { ChevronRight } from 'react-feather';
-import { Link, useLocation, useMatch } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 import useEntityName from 'hooks/useEntityName';
+import useWorkflowMatch from 'hooks/useWorkflowMatch';
+
 import entityLabels from 'messages/entity';
 import URLService from 'utils/URLService';
-import { workflowPaths } from 'routePaths';
 
 import BackButton from './BackButton';
 
@@ -86,7 +87,7 @@ const getMaxWidthClass = (length) => {
 
 const BreadCrumbLinks = (props) => {
     const location = useLocation();
-    const match = useMatch(workflowPaths.LIST);
+    const match = useWorkflowMatch();
 
     // disable because unused history might be specified for rest spread idiom.
     const { className, ...params } = props;

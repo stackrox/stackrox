@@ -1,5 +1,5 @@
 import React, { useCallback, useContext, useRef, useState } from 'react';
-import { useLocation, useNavigate, useMatch } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import pluralize from 'pluralize';
 import upperFirst from 'lodash/upperFirst';
 import startCase from 'lodash/startCase';
@@ -18,12 +18,12 @@ import searchContext from 'Containers/searchContext';
 import { searchParams } from 'constants/searchParams';
 import workflowStateContext from 'Containers/workflowStateContext';
 import useClickOutside from 'hooks/useClickOutside';
+import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import entityLabels from 'messages/entity';
 import parseURL from 'utils/URLParser';
 import URLService from 'utils/URLService';
 import { getConfigurationManagementEntityTypes } from 'utils/entityRelationships';
 import { WorkflowState } from 'utils/WorkflowState';
-import { workflowPaths } from 'routePaths';
 import EntityList from './EntityList';
 import SidePanel from '../SidePanel/SidePanel';
 
@@ -31,7 +31,7 @@ const ListPage = () => {
     const sidePanelRef = useRef(null);
     const location = useLocation();
     const navigate = useNavigate();
-    const match = useMatch(workflowPaths.LIST);
+    const match = useWorkflowMatch();
     const [isExporting, setIsExporting] = useState(false);
 
     const workflowState = parseURL(location);

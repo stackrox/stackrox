@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink, Route, Routes, useParams } from 'react-router-dom';
+import { NavLink, Route, Routes, useMatch, useParams } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createStructuredSelector, createSelector } from 'reselect';
@@ -22,7 +22,7 @@ import {
 
 import DescriptionListCompact from 'Components/DescriptionListCompact';
 import { selectors } from 'reducers';
-import { userBasePath } from 'routePaths';
+import { userBasePath, userRolePath } from 'routePaths';
 import User from 'utils/User';
 
 import UserPermissionsForRolesTable from './UserPermissionsForRolesTable';
@@ -43,6 +43,9 @@ function UserPage({ resourceToAccessByRole, userData }) {
     const { email, name, roles, usedAuthProvider } = new User(userData);
     const authProviderName =
         usedAuthProvider?.type === 'basic' ? 'Basic' : (usedAuthProvider?.name ?? '');
+
+    const isUserPathActive = useMatch(userBasePath);
+    const isRolePathActive = useMatch(userRolePath);
 
     const UserRoleRoute = () => {
         const { roleName } = useParams();
@@ -91,27 +94,15 @@ function UserPage({ resourceToAccessByRole, userData }) {
                         <div className="pf-v5-u-background-color-200">
                             <Nav aria-label="Roles" theme="light">
                                 <NavList>
-                                    <NavItem>
-                                        <NavLink
-                                            to={userBasePath}
-                                            className={({ isActive }) =>
-                                                isActive ? 'pf-m-current' : ''
-                                            }
-                                            end
-                                        >
+                                    <NavItem isActive={isUserPathActive}>
+                                        <NavLink to={userBasePath} end>
                                             User permissions for roles
                                         </NavLink>
                                     </NavItem>
                                     <NavExpandable title="User roles" isExpanded>
                                         {roles.map((role) => (
-                                            <NavItem key={role.name}>
-                                                <NavLink
-                                                    to={getUserRolePath(role.name)}
-                                                    className={({ isActive }) =>
-                                                        isActive ? 'pf-m-current' : ''
-                                                    }
-                                                    end
-                                                >
+                                            <NavItem key={role.name} isActive={isRolePathActive}>
+                                                <NavLink to={getUserRolePath(role.name)} end>
                                                     {role.name}
                                                 </NavLink>
                                             </NavItem>
