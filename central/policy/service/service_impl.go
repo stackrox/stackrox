@@ -291,7 +291,7 @@ func (s *serviceImpl) PostPolicy(ctx context.Context, request *v1.PostPolicyRequ
 	}
 	policy, err := s.addOrUpdatePolicy(ctx, request.GetPolicy(), ensureIDEmpty, s.addPolicyToStoreAndSetID, options...)
 	if err == nil && policy != nil && policy.Source == storage.PolicySource_DECLARATIVE {
-		s.updatePolicyAsCodeMetrics(ctx)
+		metrics.IncrementPolicyAsCodeCRsReceivedGauge()
 	}
 	return policy, err
 }
@@ -354,15 +354,10 @@ func (s *serviceImpl) DeletePolicy(ctx context.Context, request *v1.ResourceByID
 	}
 
 	if policy.Source == storage.PolicySource_DECLARATIVE {
-		s.updatePolicyAsCodeMetrics(ctx)
+		metrics.DecrementPolicyAsCodeCRsReceivedGauge()
 	}
 
 	return &v1.Empty{}, nil
-}
-
-func (s *serviceImpl) updatePolicyAsCodeMetrics(ctx context.Context) {
-	count, _ := s.policies.Count(ctx, search.NewQueryBuilder().AddExactMatches(search.PolicySource, storage.PolicySource_DECLARATIVE.String()).ProtoQuery())
-	metrics.UpdatePolicyAsCodeCRsReceivedGauge(count)
 }
 
 // ReassessPolicies manually triggers enrichment of all deployments, and re-assesses policies if there's updated data.
