@@ -1,0 +1,9 @@
+## StackRox Secured Cluster Services chart
+##   values.yaml
+##
+## This file contains no values. In particular, you should NOT modify this file; instead,
+## create your own configuration file and pass it to `helm` via the `-f` parameter.
+## For this, you can use the files `values-private.yaml.example` and `values-public.yaml.example`
+## that are part of the chart as a blueprint.
+##
+## Please also consult README.md for a list of available configuration options.

@@ -1,0 +1,308 @@
+{{- include "srox.init" . -}}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sensor
+  namespace: {{ ._rox._namespace }}
+  labels:
+    {{- include "srox.labels" (list . "deployment" "sensor") | nindent 4 }}
+    app: sensor
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "deployment" "sensor") | nindent 4 }}
+spec:
+  replicas: 1
+  minReadySeconds: 15
+  selector:
+    matchLabels:
+      app: sensor
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: sensor
+        {{- include "srox.podLabels" (list . "deployment" "sensor") | nindent 8 }}
+      annotations:
+        traffic.sidecar.istio.io/excludeInboundPorts: "8443,9443"
+        {{- include "srox.podAnnotations" (list . "deployment" "sensor") | nindent 8 }}
+        {{- if eq ._rox.env.openshift 4 }}
+        openshift.io/required-scc: restricted-v2
+        {{- end }}
+    spec:
+      {{- if ._rox.sensor._nodeSelector }}
+      nodeSelector:
+        {{- ._rox.sensor._nodeSelector | nindent 8 }}
+      {{- end}}
+      {{- if ._rox.sensor.tolerations }}
+      tolerations:
+        {{- toYaml ._rox.sensor.tolerations | nindent 8 }}
+      {{- end }}
+      {{- if ._rox.sensor.hostAliases }}
+      hostAliases: {{ toYaml ._rox.sensor.hostAliases | nindent 8 }}
+      {{- end }}
+      affinity:
+      {{- toYaml ._rox.sensor.affinity | nindent 8 }}
+      {{- if ._rox.sensor.priorityClassName }}
+      priorityClassName: {{ ._rox.sensor.priorityClassName }}
+      {{- end }}
+      {{- if not ._rox.env.openshift }}
+      securityContext:
+        runAsUser: 4000
+        fsGroup: 4000
+      {{- end }}
+      serviceAccountName: sensor
+      containers:
+      - image: {{ quote ._rox.image.main.fullRef }}
+        imagePullPolicy: {{ ._rox.sensor.imagePullPolicy }}
+        name: sensor
+        readinessProbe:
+          httpGet:
+            scheme: HTTPS
+            path: /ready
+            port: 9443
+        ports:
+          - containerPort: 8443
+            name: api
+          - containerPort: 9443
+            name: webhook
+          {{- if ._rox.sensor.exposeMonitoring }}
+          - containerPort: 9090
+            name: monitoring
+          {{- end }}
+          {{- if ._rox.monitoring.openshift.enabled }}
+          - containerPort: 9091
+            name: monitoring-tls
+          {{- end }}
+        command:
+          - kubernetes-sensor
+        resources:
+          {{- ._rox.sensor._resources | nindent 10 }}
+        securityContext:
+          runAsNonRoot: true
+          readOnlyRootFilesystem: true
+        env:
+        - name: ROX_MEMLIMIT
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.memory
+        - name: GOMAXPROCS
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.cpu
+        - name: K8S_NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: ROX_CENTRAL_ENDPOINT
+          value: {{ ._rox.centralEndpoint }}
+        - name: ROX_ADVERTISED_ENDPOINT
+          value: {{ ._rox.sensor.endpoint }}
+        {{- if ._rox.env.openshift }}
+        - name: ROX_OPENSHIFT_API
+          value: "true"
+        {{- end }}
+        {{- if ._rox.sensor.localImageScanning.enabled }}
+        - name: ROX_SCANNER_GRPC_ENDPOINT
+          value: {{ printf "scanner.%s.svc:8443" .Release.Namespace }}
+        - name: ROX_LOCAL_IMAGE_SCANNING_ENABLED
+          value: "true"
+        {{- end }}
+        - name: ROX_HELM_CLUSTER_CONFIG_FP
+          value: {{ quote ._rox._configFP }}
+        {{- if ._rox._scannerV4Enabled }}
+        - name: ROX_SCANNER_V4_INDEXER_ENDPOINT
+          value: {{ printf "scanner-v4-indexer.%s.svc:8443" .Release.Namespace }}
+        - name: ROX_SCANNER_V4
+          value: "true"
+        {{- end }}
+        {{- if ._rox.monitoring.openshift.enabled }}
+        - name: ROX_ENABLE_SECURE_METRICS
+          value: "true"
+        {{- end }}
+        {{- include "srox.envVars" (list . "deployment" "sensor" "sensor") | nindent 8 }}
+        volumeMounts:
+        - name: varlog
+          mountPath: /var/log/stackrox/
+        - name: sensor-etc-ssl-volume
+          mountPath: /etc/ssl/
+        - name: sensor-etc-pki-volume
+          mountPath: /etc/pki/ca-trust/
+        - name: certs
+          mountPath: /run/secrets/stackrox.io/certs/
+          readOnly: true
+        - name: additional-ca-volume
+          mountPath: /usr/local/share/ca-certificates/
+          readOnly: true
+        - name: cache
+          mountPath: /var/cache/stackrox
+        {{- if ._rox.env.openshift }}
+        - name: sensor-bound-sa-token
+          mountPath: /var/run/secrets/openshift/serviceaccount
+        {{- end }}
+        - name: helm-cluster-config
+          mountPath: /run/secrets/stackrox.io/helm-cluster-config/
+          readOnly: true
+        - name: helm-effective-cluster-name
+          mountPath: /run/secrets/stackrox.io/helm-effective-cluster-name/
+          readOnly: true
+        {{- include "srox.injectedCABundleVolumeMount" . | nindent 8 }}
+        {{- if ._rox.monitoring.openshift.enabled }}
+        - name: monitoring-tls
+          mountPath: /run/secrets/stackrox.io/monitoring-tls
+          readOnly: true
+        {{- end }}
+      volumes:
+      - name: certs
+        secret:
+          secretName: sensor-tls
+          items:
+          - key: sensor-cert.pem
+            path: cert.pem
+          - key: sensor-key.pem
+            path: key.pem
+          - key: ca.pem
+            path: ca.pem
+      - name: sensor-etc-ssl-volume
+        emptyDir: {}
+      - name: sensor-etc-pki-volume
+        emptyDir: {}
+      - name: additional-ca-volume
+        secret:
+          secretName: additional-ca-sensor
+          optional: true
+      - name: varlog
+        emptyDir: {}
+      - name: cache
+        emptyDir: {}
+      {{- if ._rox.env.openshift }}
+      - name: sensor-bound-sa-token
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              path: token
+              audience: openshift
+              expirationSeconds: 3600
+      {{- end }}
+      - name: helm-cluster-config
+        secret:
+          secretName: helm-cluster-config
+          optional: true
+      - name: helm-effective-cluster-name
+        secret:
+          secretName: helm-effective-cluster-name
+          optional: true
+      {{- include "srox.injectedCABundleVolume" . | nindent 6 }}
+      {{- if ._rox.monitoring.openshift.enabled }}
+      - name: monitoring-tls
+        secret:
+          secretName: sensor-monitoring-tls
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sensor
+  namespace: {{ ._rox._namespace }}
+  labels:
+    {{- include "srox.labels" (list . "service" "sensor") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "service" "sensor") | nindent 4 }}
+    {{- if ._rox.monitoring.openshift.enabled }}
+    service.beta.openshift.io/serving-cert-secret-name: sensor-monitoring-tls
+    {{- end }}
+spec:
+  ports:
+  - name: https
+    port: 443
+    targetPort: api
+    protocol: TCP
+  {{- if ._rox.sensor.exposeMonitoring }}
+  - name: monitoring
+    port: 9090
+    targetPort: monitoring
+    protocol: TCP
+  {{- end }}
+  {{- if ._rox.monitoring.openshift.enabled }}
+  - name: monitoring-tls
+    port: 9091
+    targetPort: monitoring-tls
+    protocol: TCP
+  {{- end }}
+  selector:
+    app: sensor
+  type: ClusterIP
+  sessionAffinity: None
+---
+
+{{- if ._rox.env.istio }}
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: sensor-internal-no-istio-mtls
+  namespace: {{ ._rox._namespace }}
+  labels:
+    {{- include "srox.labels" (list . "destinationrule" "sensor-internal-no-istio-mtls") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "destinationrule" "sensor-internal-no-istio-mtls") | nindent 4 }}
+    stackrox.io/description: "Disable Istio mTLS for port 443, since StackRox services use built-in mTLS."
+spec:
+  host: sensor.stackrox.svc.cluster.local
+  trafficPolicy:
+    portLevelSettings:
+    - port:
+        number: 443
+      tls:
+        mode: DISABLE
+---
+{{- end }}
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: sensor-webhook
+  namespace: {{ ._rox._namespace }}
+  labels:
+    {{- include "srox.labels" (list . "service" "sensor-webhook") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "service" "sensor-webhook") | nindent 4 }}
+spec:
+  ports:
+  - name: https
+    port: 443
+    targetPort: webhook
+    protocol: TCP
+  selector:
+    app: sensor
+  type: ClusterIP
+  sessionAffinity: None
+{{- if or .Release.IsInstall (eq ._rox.confirmNewClusterName ._rox.clusterName) }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: helm-effective-cluster-name
+  namespace: {{ ._rox._namespace }}
+  labels:
+    {{- include "srox.labels" (list . "secret" "helm-effective-cluster-name") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: sensor
+  annotations:
+    {{- $annotations := dict -}}
+    {{- $_ := include "srox.getAnnotationTemplate" (list . "helm-hook_secret" $annotations) -}}
+    {{- include "srox.annotations" (list . "secret" "helm-effective-cluster-name" $annotations) | nindent 4 }}
+stringData:
+  cluster-name: |
+    {{- ._rox.clusterName | nindent 4 }}
+{{- end}}
