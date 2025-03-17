@@ -18,7 +18,6 @@ import {
 } from 'services/DeploymentsService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import {
-    filterAllowedSearch,
     convertToRestSearch,
     convertSortToGraphQLFormat,
     convertSortToRestFormat,
@@ -31,7 +30,6 @@ function RiskTablePanel({
     setSelectedDeploymentId,
     isViewFiltered,
     setIsViewFiltered,
-    searchOptions,
 }) {
     const navigate = useNavigate();
     const workflowState = useContext(workflowStateContext);
@@ -61,8 +59,7 @@ function RiskTablePanel({
      * Compute outside hook to avoid double requests if no page search options
      * before and after response to request for searchOptions.
      */
-    const filteredSearch = filterAllowedSearch(searchOptions, pageSearch || {});
-    const restSearch = convertToRestSearch(filteredSearch || {});
+    const restSearch = convertToRestSearch(pageSearch || {});
     const restSort = convertSortToRestFormat(sortOption);
 
     useDeepCompareEffect(() => {
@@ -137,12 +134,10 @@ RiskTablePanel.propTypes = {
     setSelectedDeploymentId: PropTypes.func.isRequired,
     isViewFiltered: PropTypes.bool.isRequired,
     setIsViewFiltered: PropTypes.func.isRequired,
-    searchOptions: PropTypes.arrayOf(PropTypes.string),
 };
 
 RiskTablePanel.defaultProps = {
     selectedDeploymentId: null,
-    searchOptions: [],
 };
 
 export default RiskTablePanel;
