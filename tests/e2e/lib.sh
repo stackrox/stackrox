@@ -41,14 +41,6 @@ POD_CONTAINERS_MAP["pod: collector - container: collector"]="collector-[A-Za-z0-
 POD_CONTAINERS_MAP["pod: collector - container: compliance"]="collector-[A-Za-z0-9]+-compliance-previous.log"
 POD_CONTAINERS_MAP["pod: collector - container: node-inventory"]="collector-[A-Za-z0-9]+-node-inventory-previous.log"
 
-stacktrace() {
-   local i=1 line file func
-   while read -r line func file < <(caller $i); do
-      echo >&2 "[$i] $file:$line $func(): $(sed -n "${line}p" "$file")"
-      ((i++))
-   done
-}
-
 # shellcheck disable=SC2120
 deploy_stackrox() {
     local tls_client_certs=${1:-}
@@ -507,7 +499,6 @@ export_central_cert() {
     local central_cert
     central_cert="$(mktemp -d)/central_cert.pem"
     info "Storing central certificate in ${central_cert} for ${API_ENDPOINT}"
-    stacktrace
 
     roxctl -e "$API_ENDPOINT" \
         central cert --insecure-skip-tls-verify 1>"$central_cert"
