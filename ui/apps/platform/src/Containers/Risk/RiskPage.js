@@ -57,7 +57,6 @@ const RiskPage = () => {
                         setSelectedDeploymentId={setSelectedDeploymentId}
                         isViewFiltered={isViewFiltered}
                         setIsViewFiltered={setIsViewFiltered}
-                        searchOptions={searchOptions}
                     />
                 </div>
                 {deploymentId && (
