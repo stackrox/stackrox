@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useLocation, useNavigate, useMatch } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import SidePanelAnimatedArea from 'Components/animations/SidePanelAnimatedArea';
 import BackdropExporting from 'Components/PatternFly/BackdropExporting';
@@ -11,10 +11,10 @@ import configMgmtPaginationContext, {
 import searchContext from 'Containers/searchContext';
 import workflowStateContext from 'Containers/workflowStateContext';
 import useClickOutside from 'hooks/useClickOutside';
+import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import parseURL from 'utils/URLParser';
 import URLService from 'utils/URLService';
 import { WorkflowState } from 'utils/WorkflowState';
-import { workflowPaths } from 'routePaths';
 import EntityPageHeader from './EntityPageHeader';
 import Tabs from './EntityTabs';
 import SidePanel from '../SidePanel/SidePanel';
@@ -25,7 +25,7 @@ const EntityPage = () => {
     const [isExporting, setIsExporting] = useState(false);
     const location = useLocation();
     const navigate = useNavigate();
-    const match = useMatch(workflowPaths.ENTITY);
+    const match = useWorkflowMatch();
     const workflowState = parseURL(location);
     const { useCase, search, sort, paging } = workflowState;
     const pageState = new WorkflowState(

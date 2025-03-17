@@ -227,7 +227,13 @@ const URLSearchInputWithAutocomplete = ({
     function replaceLocationSearch(searchOptions) {
         const { pathname } = location;
         const search = transformSearchOptionsToQueryString(searchOptions);
-        navigate(`${pathname}${search}`, { replace: true });
+        navigate(
+            {
+                pathname,
+                search,
+            },
+            { replace: true }
+        );
     }
 
     function updateAutocompleteState(searchOptions) {

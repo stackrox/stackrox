@@ -1,18 +1,18 @@
 import React, { useContext } from 'react';
-import { useLocation, useNavigate, useMatch } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
 
 import Widget from 'Components/Widget';
 import { newWorkflowCases } from 'constants/useCaseTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
+import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import URLService from 'utils/URLService';
-import { workflowPaths } from 'routePaths';
 
 // @TODO We should try to use this component for Compliance as well
 const RelatedEntityListCount = ({ name, value, entityType, ...rest }) => {
     const navigate = useNavigate();
     const location = useLocation();
-    const match = useMatch(workflowPaths.LIST);
+    const match = useWorkflowMatch();
     const workflowState = useContext(workflowStateContext);
 
     function onClick() {

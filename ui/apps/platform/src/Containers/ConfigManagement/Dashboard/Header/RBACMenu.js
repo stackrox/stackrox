@@ -3,10 +3,10 @@ import entityTypes from 'constants/entityTypes';
 import pluralize from 'pluralize';
 import entityLabels from 'messages/entity';
 import URLService from 'utils/URLService';
-import { useLocation, useMatch } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 
 import DashboardMenu from 'Components/DashboardMenu';
-import { workflowPaths } from 'routePaths';
+import useWorkflowMatch from 'hooks/useWorkflowMatch';
 
 const getLabel = (entityType) => pluralize(entityLabels[entityType]);
 
@@ -22,7 +22,7 @@ const createOptions = (urlBuilder, types) => {
 const RBACMenu = () => {
     const types = [entityTypes.SUBJECT, entityTypes.SERVICE_ACCOUNT, entityTypes.ROLE];
 
-    const match = useMatch(workflowPaths.DASHBOARD);
+    const match = useWorkflowMatch();
     const location = useLocation();
     const urlBuilder = URLService.getURL(match, location);
     const options = createOptions(urlBuilder, types);

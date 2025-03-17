@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLocation, useMatch } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import pluralize from 'pluralize';
 import { format } from 'date-fns';
 
@@ -13,10 +13,10 @@ import dateTimeFormat from 'constants/dateTimeFormat';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import entityTypes from 'constants/entityTypes';
 import { imageSortFields } from 'constants/sortFields';
+import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import { IMAGES_QUERY } from 'queries/image';
 import queryService from 'utils/queryService';
 import URLService from 'utils/URLService';
-import { workflowPaths } from 'routePaths';
 import { getConfigMgmtPathForEntitiesAndId } from '../entities';
 import List from './List';
 
@@ -108,7 +108,7 @@ const Images = ({
     entityContext,
 }) => {
     const location = useLocation();
-    const match = useMatch(workflowPaths.LIST);
+    const match = useWorkflowMatch();
     const autoFocusSearchInput = !selectedRowId;
     const queryText = queryService.objectToWhereClause(query);
     const variables = queryText ? { query: queryText } : null;

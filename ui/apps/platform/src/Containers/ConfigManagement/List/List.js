@@ -1,6 +1,6 @@
 import React, { useState, useContext } from 'react';
 import PropTypes from 'prop-types';
-import { useMatch, useLocation, useNavigate } from 'react-router-dom'; // Updated imports
+import { useLocation, useNavigate } from 'react-router-dom'; // Updated imports
 import pluralize from 'pluralize';
 import resolvePath from 'object-resolve-path';
 
@@ -16,13 +16,13 @@ import workflowStateContext from 'Containers/workflowStateContext';
 import { searchCategories as searchCategoryTypes } from 'constants/entityTypes';
 import useCases from 'constants/useCaseTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
+import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import entityLabels from 'messages/entity';
 import { SEARCH_OPTIONS_QUERY } from 'queries/search';
 import isGQLLoading from 'utils/gqlLoading';
 import createPDFTable from 'utils/pdfUtils';
 import queryService from 'utils/queryService';
 import URLService from 'utils/URLService';
-import { workflowPaths } from 'routePaths';
 
 const serverSidePagination = true;
 
@@ -42,7 +42,7 @@ const List = ({
     autoFocusSearchInput,
     noDataText,
 }) => {
-    const match = useMatch(workflowPaths.LIST);
+    const match = useWorkflowMatch();
     const location = useLocation();
     const navigate = useNavigate();
     const workflowState = useContext(workflowStateContext);
