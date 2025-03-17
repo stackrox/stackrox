@@ -16,8 +16,10 @@ import io.grpc.netty.NegotiationType
 import io.grpc.netty.NettyChannelBuilder
 import io.netty.handler.ssl.SslContextBuilder
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory
+
 import io.stackrox.proto.api.v1.Common.ResourceByID
 import io.stackrox.proto.api.v1.EmptyOuterClass
+
 import util.Env
 import util.Keys
 
@@ -28,7 +30,7 @@ class BaseService {
     static final String BASIC_AUTH_USERNAME = Env.mustGetUsername()
     static final String BASIC_AUTH_PASSWORD = Env.mustGetPassword()
 
-    static final EMPTY = EmptyOuterClass.Empty.newBuilder().build()
+    static final EmptyOuterClass.Empty EMPTY = EmptyOuterClass.Empty.newBuilder().build()
 
     static ResourceByID getResourceByID(String id) {
         return ResourceByID.newBuilder().setId(id).build()
