@@ -1,4 +1,4 @@
-import React, { ReactElement, useState } from 'react';
+import React, { ReactElement, useEffect, useState } from 'react';
 import {
     PageSection,
     PageSectionVariants,
@@ -58,9 +58,11 @@ function IntegrationsListPage({
     const canUseCloudBackupIntegrations = isCentralCapabilityAvailable(
         'centralCanUseCloudBackupIntegrations'
     );
-    if (!canUseCloudBackupIntegrations && source === 'backups') {
-        navigate(integrationsPath, { replace: true });
-    }
+    useEffect(() => {
+        if (!canUseCloudBackupIntegrations && source === 'backups') {
+            navigate(integrationsPath, { replace: true });
+        }
+    }, [canUseCloudBackupIntegrations, source, navigate]);
 
     const typeLabel = getIntegrationLabel(source, type);
     const isAPIToken = getIsAPIToken(source, type);
