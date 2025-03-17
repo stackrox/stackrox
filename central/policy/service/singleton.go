@@ -16,6 +16,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/cache"
 	mitreDataStore "github.com/stackrox/rox/pkg/mitre/datastore"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -39,7 +41,13 @@ func initialize() {
 		cache.ImageMetadataCacheSingleton(),
 		connection.ManagerSingleton())
 
-	count, _ := datastore.Singleton().Count(context.Background(), search.NewQueryBuilder().AddExactMatches(search.PolicySource, storage.PolicySource_DECLARATIVE.String()).ProtoQuery())
+	count, _ := datastore.Singleton().Count(
+		sac.WithGlobalAccessScopeChecker(context.Background(),
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.WorkflowAdministration),
+			),
+		), search.NewQueryBuilder().AddExactMatches(search.PolicySource, storage.PolicySource_DECLARATIVE.String()).ProtoQuery())
 	metrics.UpdatePolicyAsCodeCRsReceivedGauge(count)
 }
 
