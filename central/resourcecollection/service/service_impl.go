@@ -329,7 +329,7 @@ func (s *serviceImpl) tryDeploymentMatching(ctx context.Context, collection *sto
 		return nil, nil
 	}
 
-	collectionQuery, err := s.queryResolver.ResolveCollectionQuery(ctx, collection)
+	collectionQuery, err := s.queryResolver.ResolveCollectionQuery(ctx, collection, false)
 	if err != nil {
 		return nil, err
 	}

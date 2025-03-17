@@ -444,11 +444,11 @@ func verifyCollectionObjectNotEmpty(obj *storage.ResourceCollection) error {
 	return nil
 }
 
-func (ds *datastoreImpl) ResolveCollectionQuery(ctx context.Context, collection *storage.ResourceCollection) (*v1.Query, error) {
+func (ds *datastoreImpl) ResolveCollectionQuery(ctx context.Context, collection *storage.ResourceCollection, excludeMatches bool) (*v1.Query, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "ResolveCollectionQuery")
 	var collectionQueue []*storage.ResourceCollection
 	var visitedCollection set.Set[string]
-	var disjunctions []*v1.Query
+	var queryList []*v1.Query
 
 	if err := verifyCollectionConstraints(collection); err != nil {
 		return nil, err
@@ -470,11 +470,11 @@ func (ds *datastoreImpl) ResolveCollectionQuery(ctx context.Context, collection 
 		}
 
 		// resolve the collection to queries
-		queries, err := collectionToQueries(collection)
+		queries, err := collectionToQueries(collection, excludeMatches)
 		if err != nil {
 			return nil, err
 		}
-		disjunctions = append(disjunctions, queries...)
+		queryList = append(queryList, queries...)
 
 		// add embedded values
 		embeddedList, _, err := ds.storage.GetMany(ctx, embeddedCollectionsToIDList(collection.GetEmbeddedCollections()))
@@ -484,12 +484,18 @@ func (ds *datastoreImpl) ResolveCollectionQuery(ctx context.Context, collection 
 		collectionQueue = append(collectionQueue, embeddedList...)
 	}
 
-	return pkgSearch.DisjunctionQuery(disjunctions...), nil
+	if excludeMatches {
+		// If the collection is used to exclude matches, then we need to negate the final query.
+		// Applying to De-Morgan's law, we do this by swapping conjunctions and disjunctions with each other.
+		// We can do this because the underlying base queries will be negated by adding a negation string to the match field queries.
+		return pkgSearch.ConjunctionQuery(queryList...), nil
+	}
+	return pkgSearch.DisjunctionQuery(queryList...), nil
 }
 
 // collectionToQueries returns a list of queries derived from the given resource collection's storage.ResourceSelector list
 // these should be combined as disjunct with any resolved embedded queries
-func collectionToQueries(collection *storage.ResourceCollection) ([]*v1.Query, error) {
+func collectionToQueries(collection *storage.ResourceCollection, excludeMatches bool) ([]*v1.Query, error) {
 	var ret []*v1.Query
 
 	for _, resourceSelector := range collection.GetResourceSelectors() {
@@ -501,32 +507,49 @@ func collectionToQueries(collection *storage.ResourceCollection) ([]*v1.Query, e
 				return nil, errors.Wrapf(errox.InvalidArgs, "unsupported field name %q", selectorRule.GetFieldName())
 			}
 
-			ruleValueQueries, err := ruleValuesToQueryList(fieldLabel, selectorRule.GetValues())
+			ruleValueQueries, err := ruleValuesToQueryList(fieldLabel, selectorRule.GetValues(), excludeMatches)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to parse collection to query")
 			}
 			if len(ruleValueQueries) > 0 {
-				// rule values are conjunct or disjunct with each other depending on the operator
+				// rule values are conjunct or disjunct with each other depending on the operator.
+				// If the collection is used to exclude matches, then we need to negate the query built from rule values.
+				// Applying to De-Morgan's law, we do this by swapping conjunctions and disjunctions with each other.
+				// We can do this because the underlying base queries will be negated by adding a negation string to the match field queries.
 				switch selectorRule.GetOperator() {
 				case storage.BooleanOperator_OR:
-					selectorRuleQueries = append(selectorRuleQueries, pkgSearch.DisjunctionQuery(ruleValueQueries...))
+					if excludeMatches {
+						selectorRuleQueries = append(selectorRuleQueries, pkgSearch.ConjunctionQuery(ruleValueQueries...))
+					} else {
+						selectorRuleQueries = append(selectorRuleQueries, pkgSearch.DisjunctionQuery(ruleValueQueries...))
+					}
 				case storage.BooleanOperator_AND:
-					selectorRuleQueries = append(selectorRuleQueries, pkgSearch.ConjunctionQuery(ruleValueQueries...))
+					if excludeMatches {
+						selectorRuleQueries = append(selectorRuleQueries, pkgSearch.DisjunctionQuery(ruleValueQueries...))
+					} else {
+						selectorRuleQueries = append(selectorRuleQueries, pkgSearch.ConjunctionQuery(ruleValueQueries...))
+					}
 				default:
 					return nil, errors.Wrap(errox.InvalidArgs, "unsupported boolean operator")
 				}
 			}
 		}
 		if len(selectorRuleQueries) > 0 {
-			// selector rules are conjunct with each other
-			ret = append(ret, pkgSearch.ConjunctionQuery(selectorRuleQueries...))
+			// selector rules are conjunct with each other.
+			// If the collection is used to exclude matches, then we need to negate the query built by combining selector rules.
+			// Applying to De-Morgan's law, we do this by swapping conjunctions and disjunctions with each other
+			if excludeMatches {
+				ret = append(ret, pkgSearch.DisjunctionQuery(selectorRuleQueries...))
+			} else {
+				ret = append(ret, pkgSearch.ConjunctionQuery(selectorRuleQueries...))
+			}
 		}
 	}
 
 	return ret, nil
 }
 
-func ruleValuesToQueryList(fieldLabel supportedFieldKey, ruleValues []*storage.RuleValue) ([]*v1.Query, error) {
+func ruleValuesToQueryList(fieldLabel supportedFieldKey, ruleValues []*storage.RuleValue, negateQueries bool) ([]*v1.Query, error) {
 	ret := make([]*v1.Query, 0, len(ruleValues))
 	for _, ruleValue := range ruleValues {
 		var query *v1.Query
@@ -534,16 +557,30 @@ func ruleValuesToQueryList(fieldLabel supportedFieldKey, ruleValues []*storage.R
 			switch ruleValue.GetMatchType() {
 			case storage.MatchType_EXACT:
 				key, value := stringutils.Split2(ruleValue.GetValue(), "=")
-				query = pkgSearch.NewQueryBuilder().AddMapQuery(fieldLabel.fieldLabel, fmt.Sprintf("%q", key), fmt.Sprintf("%q", value)).ProtoQuery()
+				if negateQueries {
+					query = pkgSearch.NewQueryBuilder().
+						AddNotInMapQuery(fieldLabel.fieldLabel, fmt.Sprintf("%q", key), fmt.Sprintf("%q", value)).
+						ProtoQuery()
+				} else {
+					query = pkgSearch.NewQueryBuilder().
+						AddMapQuery(fieldLabel.fieldLabel, fmt.Sprintf("%q", key), fmt.Sprintf("%q", value)).
+						ProtoQuery()
+				}
 			default:
 				return nil, errors.Wrap(errox.InvalidArgs, "label rules should only use exact mating")
 			}
 		} else {
+			var negationPrefix string
+			if negateQueries {
+				negationPrefix = pkgSearch.NegationPrefix
+			}
 			switch ruleValue.GetMatchType() {
 			case storage.MatchType_EXACT:
-				query = pkgSearch.NewQueryBuilder().AddExactMatches(fieldLabel.fieldLabel, ruleValue.GetValue()).ProtoQuery()
+				query = pkgSearch.SimpleFieldValueQuery(fieldLabel.fieldLabel,
+					fmt.Sprintf("%s%s", negationPrefix, pkgSearch.ExactMatchString(ruleValue.GetValue())))
 			case storage.MatchType_REGEX:
-				query = pkgSearch.NewQueryBuilder().AddRegexes(fieldLabel.fieldLabel, ruleValue.GetValue()).ProtoQuery()
+				query = pkgSearch.SimpleFieldValueQuery(fieldLabel.fieldLabel,
+					fmt.Sprintf("%s%s", negationPrefix, pkgSearch.RegexQueryString(ruleValue.GetValue())))
 			default:
 				return nil, errors.Wrapf(errox.InvalidArgs, "unknown match type encountered %q", ruleValue.GetMatchType())
 			}

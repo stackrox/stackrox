@@ -245,16 +245,16 @@ func (m *MockQueryResolver) EXPECT() *MockQueryResolverMockRecorder {
 }
 
 // ResolveCollectionQuery mocks base method.
-func (m *MockQueryResolver) ResolveCollectionQuery(ctx context.Context, collection *storage.ResourceCollection) (*v1.Query, error) {
+func (m *MockQueryResolver) ResolveCollectionQuery(ctx context.Context, collection *storage.ResourceCollection, excludeMatches bool) (*v1.Query, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ResolveCollectionQuery", ctx, collection)
+	ret := m.ctrl.Call(m, "ResolveCollectionQuery", ctx, collection, excludeMatches)
 	ret0, _ := ret[0].(*v1.Query)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ResolveCollectionQuery indicates an expected call of ResolveCollectionQuery.
-func (mr *MockQueryResolverMockRecorder) ResolveCollectionQuery(ctx, collection any) *gomock.Call {
+func (mr *MockQueryResolverMockRecorder) ResolveCollectionQuery(ctx, collection, excludeMatches any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveCollectionQuery", reflect.TypeOf((*MockQueryResolver)(nil).ResolveCollectionQuery), ctx, collection)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveCollectionQuery", reflect.TypeOf((*MockQueryResolver)(nil).ResolveCollectionQuery), ctx, collection, excludeMatches)
 }
