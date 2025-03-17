@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 	"github.com/stackrox/rox/sensor/common/certdistribution"
+	"github.com/stackrox/rox/sensor/common/collector"
 	"github.com/stackrox/rox/sensor/common/compliance"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/delegatedregistry"
@@ -204,6 +205,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		complianceService,
 		imageService,
 		deployment.NewService(storeProvider.Deployments(), storeProvider.Pods()),
+		collector.NewService(),
 	}
 
 	if admCtrlSettingsMgr != nil {
