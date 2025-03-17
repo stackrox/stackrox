@@ -484,20 +484,10 @@ class NetworkFlowTest extends BaseSpecification {
         log.info "Checking for edge from ${EXTERNALDESTINATION} to external target"
         List<Edge> edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
         def graph = NetworkGraphService.getNetworkGraph(null, null)
-        log.info "graph0 = ${graph}"
         then:
-        "There should be an edge fro A to external entities and it should be the only edge"
+        "There should be an edge from A to external entities and it should be the only edge"
         assert edges
         def nedges = edges.size()
-        int i
-        for (i=0 ; i<nedges ; i++) {
-            log.info ""
-            log.info "external edge"
-            log.info "${edges[i].getLastActiveTimestamp()}"
-            log.info "${edges[i].getProtocol()}"
-            log.info "${edges[i].getPort()}"
-            log.info ""
-        }
         assert edges.size() == 1
 
         when: "External IPs is enabled"
@@ -507,7 +497,6 @@ class NetworkFlowTest extends BaseSpecification {
         edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
         graph = NetworkGraphService.getNetworkGraph(null, null)
         def node = NetworkGraphUtil.findDeploymentNode(graph, deploymentUid)
-        log.info "graph1 = ${graph}"
         then:
         "The edge should still be there and it should still be the only edge from A"
         assert edges
@@ -533,7 +522,6 @@ class NetworkFlowTest extends BaseSpecification {
         "The edge should still be there and it should still be the only edge from A"
         assert edges
         // Disbling external IPs should not change the number of edges
-        log.info "graph2 = ${graph}"
         assert edges.size() == 1
         assert node
         // There should only be one connection and it should be to the generic external entity.
