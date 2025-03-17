@@ -5,6 +5,7 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v5"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	migrationSchema "github.com/stackrox/rox/migrator/migrations/m_183_to_m_184_move_declarative_config_health/declarativeconfig/schema"
 	ops "github.com/stackrox/rox/pkg/metrics"
@@ -19,6 +20,7 @@ type Store interface {
 	Get(ctx context.Context, id string) (*storage.DeclarativeConfigHealth, bool, error)
 	Upsert(ctx context.Context, obj *storage.DeclarativeConfigHealth) error
 	Delete(ctx context.Context, id string) error
+	Walk(ctx context.Context, fn func(obj *storage.DeclarativeConfigHealth) error) error
 }
 
 const (
@@ -123,4 +125,29 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.DeclarativeCon
 	}
 
 	return data, true, nil
+}
+
+// Walk iterates over all of the objects in the store and applies the closure.
+func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.DeclarativeConfigHealth) error) error {
+	var sacQueryFilter *v1.Query
+	fetcher, closer, err := pgSearch.RunCursorQueryForSchema[storage.DeclarativeConfigHealth](ctx, schema, sacQueryFilter, s.db)
+	if err != nil {
+		return err
+	}
+	defer closer()
+	for {
+		rows, err := fetcher(cursorBatchSize)
+		if err != nil {
+			return pgutils.ErrNilIfNoRows(err)
+		}
+		for _, data := range rows {
+			if err := fn(data); err != nil {
+				return err
+			}
+		}
+		if len(rows) != cursorBatchSize {
+			break
+		}
+	}
+	return nil
 }
