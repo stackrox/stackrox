@@ -648,7 +648,7 @@ func (ds *datastoreImpl) RemovePLOPsWithoutProcessIndicatorOrProcessInfo(ctx con
 }
 
 // Removes PLOPs without poduids between a range of ids.
-func (ds *datastoreImpl) RemovePLOPsWithoutPodUIDOnePage(ctx context.Context, prevId string, nextId string) (int64, error) {
+func (ds *datastoreImpl) removePLOPsWithoutPodUIDOnePage(ctx context.Context, prevId string, nextId string) (int64, error) {
 	ds.mutex.Lock()
 	defer ds.mutex.Unlock()
 
@@ -672,12 +672,12 @@ func (ds *datastoreImpl) getLastIdFromRows(ctx context.Context, rows pgx.Rows) (
 		}
 	}
 
-	return id, nil
+	return id, rows.Err()
 }
 
 // Given an id and a limit, returns the id a limit number of rows after the given id. This is useful
 // for efficient pagination.
-func (ds *datastoreImpl) GetNextPageId(ctx context.Context, prevId string, limit int) (string, error) {
+func (ds *datastoreImpl) getNextPageId(ctx context.Context, prevId string, limit int) (string, error) {
 	ds.mutex.Lock()
 	defer ds.mutex.Unlock()
 
