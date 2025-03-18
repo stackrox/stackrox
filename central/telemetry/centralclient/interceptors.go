@@ -30,6 +30,11 @@ var (
 			},
 		},
 		{
+			Headers: map[string]phonehome.Pattern{
+				userAgentHeaderKey: "*stackrox-container-image-scanner*",
+			},
+		},
+		{
 			Path: phonehome.Pattern("/v1/clusters").Ptr(),
 			Headers: map[string]phonehome.Pattern{
 				// ServiceNow default User-Agent includes "ServiceNow", but
