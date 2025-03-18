@@ -64,6 +64,7 @@ func NewSecuredClusterTLSIssuer(
 		msgToCentralC:                make(chan *message.ExpiringMessage),
 		newMsgFromSensorFn:           newSecuredClusterMsgFromSensor,
 		responseFromCentral:          make(chan *Response),
+		stopSig:                      concurrency.NewSignal(),
 		requiredCentralCapability: func() *centralsensor.CentralCapability {
 			centralCap := centralsensor.CentralCapability(centralsensor.SecuredClusterCertificatesReissue)
 			return &centralCap
@@ -103,6 +104,7 @@ type tlsIssuerImpl struct {
 	msgToCentralC                chan *message.ExpiringMessage
 	responseFromCentral          chan *Response
 	requestMutex                 sync.Mutex
+	stopSig                      concurrency.Signal
 	newMsgFromSensorFn           newMsgFromSensor
 	requiredCentralCapability    *centralsensor.CentralCapability
 	started                      atomic.Bool
@@ -151,6 +153,8 @@ func (i *tlsIssuerImpl) activate() error {
 	i.certRefresher = i.getCertificateRefresherFn(i.componentName, i.requestCertificates, certsRepo,
 		certRefreshTimeout, i.certRefreshBackoff)
 
+	i.stopSig.Reset()
+
 	refresherCtx, cancelFunc := context.WithCancel(context.Background())
 	i.cancelRefresher = cancelFunc
 	if refreshStartErr := i.certRefresher.Start(refresherCtx); refreshStartErr != nil {
@@ -177,6 +181,7 @@ func (i *tlsIssuerImpl) deactivate() {
 		i.cancelRefresher()
 		i.certRefresher.Stop()
 		i.certRefresher = nil
+		i.stopSig.Signal()
 	}
 
 	log.Debugf("%s TLS issuer is not active.", i.componentName)
@@ -231,7 +236,10 @@ func (i *tlsIssuerImpl) ProcessMessage(msg *central.MsgToSensor) error {
 }
 
 func (i *tlsIssuerImpl) dispatch(response *Response) {
-	i.responseFromCentral <- response
+	select {
+	case i.responseFromCentral <- response:
+	case <-i.stopSig.Done():
+	}
 }
 
 // requestCertificates makes a new request for a new set of secured cluster certificates from Central.
@@ -245,7 +253,8 @@ func (i *tlsIssuerImpl) requestCertificates(ctx context.Context) (*Response, err
 		}
 	}
 
-	// make sure that only one request can be active
+	// Ensure only one request can be active at a time. By protecting both send and receive
+	// with the same mutex, we prevent a future send from starting while an older receive is still running.
 	return concurrency.WithLock2(&i.requestMutex, func() (*Response, error) {
 		requestID := uuid.NewV4().String()
 		if err := i.send(ctx, requestID); err != nil {

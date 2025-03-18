@@ -88,6 +88,7 @@ func newSecuredClusterTLSIssuerFixture(k8sClientConfig fakeK8sClientConfig) *sec
 		msgToCentralC:                make(chan *message.ExpiringMessage),
 		newMsgFromSensorFn:           newSecuredClusterMsgFromSensor,
 		responseFromCentral:          make(chan *Response),
+		stopSig:                      concurrency.NewSignal(),
 		requiredCentralCapability: func() *centralsensor.CentralCapability {
 			centralCap := centralsensor.CentralCapability(centralsensor.SecuredClusterCertificatesReissue)
 			return &centralCap
