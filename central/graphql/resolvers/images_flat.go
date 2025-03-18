@@ -23,7 +23,7 @@ func init() {
 	schema := getBuilder()
 	utils.Must(
 		// NOTE: This list is and should remain alphabetically ordered
-		schema.AddExtraResolvers("Image", []string{
+		schema.AddExtraResolvers("ImageFlat", []string{
 			"deploymentCount(query: String): Int!",
 			"deployments(query: String, pagination: Pagination): [Deployment!]!",
 			"imageComponentCount(query: String): Int!",
@@ -45,16 +45,16 @@ func init() {
 			"scanTime: Time",
 			"scannerVersion: String!",
 		}),
-		schema.AddQuery("image(id: ID!): Image"),
-		schema.AddQuery("fullImage(id: ID!): Image"),
-		schema.AddQuery("images(query: String, pagination: Pagination): [Image!]!"),
-		schema.AddQuery("imageCount(query: String): Int!"),
-		schema.AddEnumType("ImageWatchStatus", imageWatchStatuses),
+		schema.AddQuery("imageFlat(id: ID!): ImageFlat"),
+		schema.AddQuery("fullImageFlat(id: ID!): ImageFlat"),
+		schema.AddQuery("imagesFlat(query: String, pagination: Pagination): [ImageFlat!]!"),
+		schema.AddQuery("imageFlatCount(query: String): Int!"),
+		schema.AddEnumType("ImageFlatWatchStatus", imageWatchStatuses),
 	)
 }
 
-// Images returns GraphQL resolvers for all images
-func (resolver *Resolver) Images(ctx context.Context, args PaginatedQuery) ([]*imageFlatResolver, error) {
+// ImagesFlat returns GraphQL resolvers for all images
+func (resolver *Resolver) ImagesFlat(ctx context.Context, args PaginatedQuery) ([]*imageFlatResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Images")
 	if err := readImages(ctx); err != nil {
 		return nil, err
@@ -68,11 +68,11 @@ func (resolver *Resolver) Images(ctx context.Context, args PaginatedQuery) ([]*i
 		return nil, err
 	}
 	images, err := imageLoader.FromQuery(ctx, q)
-	return resolver.wrapImagesWithContext(ctx, images, err)
+	return resolver.wrapImagesFlatWithContext(ctx, images, err)
 }
 
-// ImageCount returns count of all images across deployments
-func (resolver *Resolver) ImageCount(ctx context.Context, args RawQuery) (int32, error) {
+// ImageFlatCount returns count of all images across deployments
+func (resolver *Resolver) ImageFlatCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageCount")
 	if err := readImages(ctx); err != nil {
 		return 0, err
@@ -89,8 +89,8 @@ func (resolver *Resolver) ImageCount(ctx context.Context, args RawQuery) (int32,
 	return imageLoader.CountFromQuery(ctx, q)
 }
 
-// Image returns a graphql resolver for the identified image, if it exists
-func (resolver *Resolver) Image(ctx context.Context, args struct{ ID graphql.ID }) (*imageFlatResolver, error) {
+// ImageFlat returns a graphql resolver for the identified image, if it exists
+func (resolver *Resolver) ImageFlat(ctx context.Context, args struct{ ID graphql.ID }) (*imageFlatResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Image")
 	if err := readImages(ctx); err != nil {
 		return nil, err
@@ -101,11 +101,11 @@ func (resolver *Resolver) Image(ctx context.Context, args struct{ ID graphql.ID 
 		return nil, err
 	}
 	image, err := imageLoader.FromID(ctx, string(args.ID))
-	return resolver.wrapImageWithContext(ctx, image, image != nil, err)
+	return resolver.wrapImageFlatWithContext(ctx, image, image != nil, err)
 }
 
-// FullImage returns a graphql resolver for the identified image, if it exists
-func (resolver *Resolver) FullImage(ctx context.Context, args struct{ ID graphql.ID }) (*imageFlatResolver, error) {
+// FullImageFlat returns a graphql resolver for the identified image, if it exists
+func (resolver *Resolver) FullImageFlat(ctx context.Context, args struct{ ID graphql.ID }) (*imageFlatResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "FullImage")
 	if err := readImages(ctx); err != nil {
 		return nil, err
@@ -116,7 +116,7 @@ func (resolver *Resolver) FullImage(ctx context.Context, args struct{ ID graphql
 		return nil, err
 	}
 	image, err := imageLoader.FullImageWithID(ctx, string(args.ID))
-	return resolver.wrapImageWithContext(ctx, image, image != nil, err)
+	return resolver.wrapImageFlatWithContext(ctx, image, image != nil, err)
 }
 
 // Deployments returns the deployments which use this image for the identified image, if it exists
@@ -212,7 +212,7 @@ func (resolver *imageFlatResolver) withElevatedImageScopeContext(ctx context.Con
 	)
 }
 
-func (resolver *Resolver) getImage(ctx context.Context, id string) *storage.Image {
+func (resolver *Resolver) getImageFlat(ctx context.Context, id string) *storage.Image {
 	imageLoader, err := loaders.GetImageLoader(ctx)
 	if err != nil {
 		return nil
@@ -301,4 +301,142 @@ func (resolver *imageFlatResolver) ScanTime(_ context.Context) (*graphql.Time, e
 func (resolver *imageFlatResolver) ScannerVersion(_ context.Context) string {
 	value := resolver.data.GetScan().GetScannerVersion()
 	return value
+}
+
+type imageFlatResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.Image
+	list *storage.ListImage
+}
+
+func (resolver *Resolver) wrapImageFlat(value *storage.Image, ok bool, err error) (*imageFlatResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &imageFlatResolver{root: resolver, data: value, list: nil}, nil
+}
+
+func (resolver *Resolver) wrapImagesFlat(values []*storage.Image, err error) ([]*imageFlatResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*imageFlatResolver, len(values))
+	for i, v := range values {
+		output[i] = &imageFlatResolver{root: resolver, data: v, list: nil}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapImageFlatWithContext(ctx context.Context, value *storage.Image, ok bool, err error) (*imageFlatResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &imageFlatResolver{ctx: ctx, root: resolver, data: value, list: nil}, nil
+}
+
+func (resolver *Resolver) wrapImagesFlatWithContext(ctx context.Context, values []*storage.Image, err error) ([]*imageFlatResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*imageFlatResolver, len(values))
+	for i, v := range values {
+		output[i] = &imageFlatResolver{ctx: ctx, root: resolver, data: v, list: nil}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapListImagesFlat(values []*storage.ListImage, err error) ([]*imageFlatResolver, error) {
+	if err != nil || values == nil {
+		return nil, err
+	}
+	output := make([]*imageFlatResolver, len(values))
+	for i, v := range values {
+		output[i] = &imageFlatResolver{root: resolver, data: nil, list: v}
+	}
+	return output, nil
+}
+
+func (resolver *imageFlatResolver) ensureData(ctx context.Context) {
+	if resolver.data == nil {
+		resolver.data = resolver.root.getImageFlat(ctx, resolver.list.GetId())
+	}
+}
+
+func (resolver *imageFlatResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	if resolver.data == nil {
+		value = resolver.list.GetId()
+	}
+	return graphql.ID(value)
+}
+
+func (resolver *imageFlatResolver) IsClusterLocal(ctx context.Context) bool {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetIsClusterLocal()
+	return value
+}
+
+func (resolver *imageFlatResolver) LastUpdated(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetLastUpdated()
+	if resolver.data == nil {
+		value = resolver.list.GetLastUpdated()
+	}
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
+}
+
+func (resolver *imageFlatResolver) Metadata(ctx context.Context) (*imageMetadataResolver, error) {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetMetadata()
+	return resolver.root.wrapImageMetadata(value, true, nil)
+}
+
+func (resolver *imageFlatResolver) Name(ctx context.Context) (*imageNameResolver, error) {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetName()
+	return resolver.root.wrapImageName(value, true, nil)
+}
+
+func (resolver *imageFlatResolver) Names(ctx context.Context) ([]*imageNameResolver, error) {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetNames()
+	return resolver.root.wrapImageNames(value, nil)
+}
+
+func (resolver *imageFlatResolver) NotPullable(ctx context.Context) bool {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetNotPullable()
+	return value
+}
+
+func (resolver *imageFlatResolver) Notes(ctx context.Context) []string {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetNotes()
+	return stringSlice(value)
+}
+
+func (resolver *imageFlatResolver) Priority(ctx context.Context) int32 {
+	value := resolver.data.GetPriority()
+	if resolver.data == nil {
+		value = resolver.list.GetPriority()
+	}
+	return int32(value)
+}
+
+func (resolver *imageFlatResolver) RiskScore(ctx context.Context) float64 {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetRiskScore()
+	return float64(value)
+}
+
+func (resolver *imageFlatResolver) Signature(ctx context.Context) (*imageSignatureResolver, error) {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetSignature()
+	return resolver.root.wrapImageSignature(value, true, nil)
+}
+
+func (resolver *imageFlatResolver) SignatureVerificationData(ctx context.Context) (*imageSignatureVerificationDataResolver, error) {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetSignatureVerificationData()
+	return resolver.root.wrapImageSignatureVerificationData(value, true, nil)
 }
