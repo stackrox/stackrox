@@ -201,7 +201,7 @@ class SACTest extends BaseSpecification {
 
     def createSecret(String namespace) {
         String secID = orchestrator.createSecret(SECRETNAME, namespace)
-        SecretService.waitForSecret(secID, 10)
+        SecretService.waitForSecret(secID)
     }
 
     def deleteSecret(String namespace) {
