@@ -17,7 +17,7 @@ func Gather(ds DataStore) phonehome.GatherFunc {
 		ctx = sac.WithGlobalAccessScopeChecker(ctx,
 			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-				sac.ResourceScopeKeys(resources.Integration),
+				sac.ResourceScopeKeys(resources.Administration),
 			),
 		)
 		props := map[string]any{}

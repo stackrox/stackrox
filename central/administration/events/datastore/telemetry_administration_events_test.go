@@ -26,9 +26,7 @@ func TestGather(t *testing.T) {
 	})
 	require.NotNil(t, pool)
 	store := pgStore.New(pool)
-	searcher := search.New(store)
-	write := writer.New(store)
-	dst := newDataStore(searcher, store, write)
+	datastore := newDataStore(search.New(store), store, writer.New(store))
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
@@ -96,13 +94,13 @@ func TestGather(t *testing.T) {
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
 			for _, event := range tc.administrativeEvents {
-				err := dst.AddEvent(ctx, event)
-				require.NoError(t, err)
-				err = dst.Flush(ctx)
+				err := datastore.AddEvent(ctx, event)
 				require.NoError(t, err)
 			}
+			err := datastore.Flush(ctx)
+			require.NoError(t, err)
 
-			props, err := Gather(dst)(ctx)
+			props, err := Gather(datastore)(ctx)
 			require.NoError(t, err)
 
 			expectedProps := map[string]any{
@@ -114,7 +112,7 @@ func TestGather(t *testing.T) {
 			assert.Equal(t, expectedProps, props)
 
 			for _, event := range tc.administrativeEvents {
-				err = store.Delete(ctx, event.GetResourceID())
+				err = store.Delete(ctx, events.GenerateEventID(event))
 				require.NoError(t, err)
 			}
 		})
