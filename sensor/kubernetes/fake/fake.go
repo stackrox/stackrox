@@ -14,7 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
-	"github.com/stackrox/rox/sensor/common/signal"
+	signalComponent "github.com/stackrox/rox/sensor/common/signal/component"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -97,7 +97,7 @@ type WorkloadManager struct {
 
 	// signals services
 	servicesInitialized concurrency.Signal
-	processes           signal.Pipeline
+	processes           signalComponent.Pipeline
 	networkManager      manager.Manager
 }
 
@@ -161,7 +161,7 @@ func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 }
 
 // SetSignalHandlers sets the handlers that will accept runtime data to be mocked from collector
-func (w *WorkloadManager) SetSignalHandlers(processPipeline signal.Pipeline, networkManager manager.Manager) {
+func (w *WorkloadManager) SetSignalHandlers(processPipeline signalComponent.Pipeline, networkManager manager.Manager) {
 	w.processes = processPipeline
 	w.networkManager = networkManager
 	w.servicesInitialized.Signal()
