@@ -38,13 +38,10 @@ type processIndicatorDatastoreSACSuite struct {
 }
 
 func (s *processIndicatorDatastoreSACSuite) SetupSuite() {
-	var err error
-
 	pgtestbase := pgtest.ForT(s.T())
 	s.Require().NotNil(pgtestbase)
 	s.pool = pgtestbase.DB
-	s.datastore, err = GetTestPostgresDataStore(s.T(), s.pool)
-	s.Require().NoError(err)
+	s.datastore = GetTestPostgresDataStore(s.T(), s.pool)
 	s.optionsMap = schema.ProcessIndicatorsSchema.OptionsMap
 
 	s.testContexts = sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(),

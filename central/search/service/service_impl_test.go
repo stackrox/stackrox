@@ -303,8 +303,7 @@ func (s *SearchOperationsTestSuite) TestAutocompleteAuthz() {
 	deploymentDS, err = deploymentDatastore.New(s.pool, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker(), platformmatcher.Singleton())
 	s.Require().NoError(err)
 
-	alertsDS, err = alertDatastore.GetTestPostgresDataStore(s.T(), s.pool)
-	s.NoError(err)
+	alertsDS = alertDatastore.GetTestPostgresDataStore(s.T(), s.pool)
 
 	deployment := fixtures.GetDeployment()
 	s.NoError(deploymentDS.UpsertDeployment(deploymentAccessCtx, deployment))
@@ -375,8 +374,7 @@ func (s *SearchOperationsTestSuite) TestSearchAuthz() {
 	deploymentDS, err = deploymentDatastore.New(s.pool, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker(), platformmatcher.Singleton())
 	s.Require().NoError(err)
 
-	alertsDS, err = alertDatastore.GetTestPostgresDataStore(s.T(), s.pool)
-	s.NoError(err)
+	alertsDS = alertDatastore.GetTestPostgresDataStore(s.T(), s.pool)
 
 	deployment := fixtures.GetDeployment()
 	s.NoError(deploymentDS.UpsertDeployment(deploymentAccessCtx, deployment))

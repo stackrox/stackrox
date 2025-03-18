@@ -232,9 +232,7 @@ func CreateTestImageComponentCVEEdgeDatastore(t testing.TB, testDB *pgtest.TestP
 
 // CreateTestImageComponentEdgeDatastore creates edge datastore for edge table between image and imageComponent
 func CreateTestImageComponentEdgeDatastore(t testing.TB, testDB *pgtest.TestPostgres) imageComponentEdgeDS.DataStore {
-	ds, err := imageComponentEdgeDS.GetTestPostgresDataStore(t, testDB.DB)
-	assert.NoError(t, err)
-	return ds
+	return imageComponentEdgeDS.GetTestPostgresDataStore(t, testDB.DB)
 }
 
 // CreateTestImageCVEEdgeDatastore creates edge datastore for edge table between image and imageCVE

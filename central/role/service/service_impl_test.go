@@ -519,8 +519,7 @@ func (s *serviceImplTestSuite) SetupSuite() {
 	var err error
 	s.postgres = pgtest.ForT(s.T())
 	s.Require().NotNil(s.postgres)
-	roleStore, err := roleDatastore.GetTestPostgresDataStore(s.T(), s.postgres.DB)
-	s.Require().NoError(err)
+	roleStore := roleDatastore.GetTestPostgresDataStore(s.T(), s.postgres.DB)
 	clusterStore, err := clusterDataStore.GetTestPostgresDataStore(s.T(), s.postgres.DB)
 	s.Require().NoError(err)
 	namespaceStore, err := namespaceDataStore.GetTestPostgresDataStore(s.T(), s.postgres.DB)

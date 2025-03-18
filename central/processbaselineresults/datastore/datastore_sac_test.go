@@ -33,12 +33,10 @@ type processBaselineResultsDatastoreSACSuite struct {
 }
 
 func (s *processBaselineResultsDatastoreSACSuite) SetupSuite() {
-	var err error
 	pgtestbase := pgtest.ForT(s.T())
 	s.Require().NotNil(pgtestbase)
 	s.pool = pgtestbase.DB
-	s.datastore, err = GetTestPostgresDataStore(s.T(), s.pool)
-	s.Require().NoError(err)
+	s.datastore = GetTestPostgresDataStore(s.T(), s.pool)
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(),
 		resources.DeploymentExtension)
