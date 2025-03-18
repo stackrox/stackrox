@@ -4,12 +4,12 @@ import (
 	"math/rand"
 	"path/filepath"
 
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 var (
-	processAncestors = []*storage.ProcessSignal_LineageInfo{
+	processAncestors = []*sensor.ProcessSignal_LineageInfo{
 		{
 			ParentExecFilePath: "bash",
 		},
@@ -453,28 +453,28 @@ var (
 	}
 )
 
-func getBadProcess(containerID string) *storage.ProcessSignal {
+func getBadProcess(containerID string) *sensor.ProcessSignal {
 	name := badProcessNames[rand.Int()%len(badProcessNames)]
 	return getProcess("/bin", name, containerID)
 }
 
-func getGoodProcess(containerID string) *storage.ProcessSignal {
+func getGoodProcess(containerID string) *sensor.ProcessSignal {
 	name := goodProcessNames[rand.Int()%len(goodProcessNames)]
 	return getProcess("/bin", name, containerID)
 }
 
-func getActiveProcesses(containerID string) []*storage.ProcessSignal {
-	processes := make([]*storage.ProcessSignal, 0, len(activeProcessNames))
+func getActiveProcesses(containerID string) []*sensor.ProcessSignal {
+	processes := make([]*sensor.ProcessSignal, 0, len(activeProcessNames))
 	for _, process := range activeProcessNames {
 		processes = append(processes, getProcess("", process, containerID))
 	}
 	return processes
 }
 
-func getProcess(path, name, containerID string) *storage.ProcessSignal {
-	return &storage.ProcessSignal{
+func getProcess(path, name, containerID string) *sensor.ProcessSignal {
+	return &sensor.ProcessSignal{
 		ContainerId:  containerID[:12],
-		Time:         protocompat.TimestampNow(),
+		CreationTime: protocompat.TimestampNow(),
 		Name:         name,
 		Args:         "abc def ghi jkl lmn op qrs tuv",
 		ExecFilePath: filepath.Clean(path + "/" + name),

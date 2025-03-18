@@ -8,6 +8,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/generated/storage"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
@@ -39,7 +40,7 @@ type Service interface {
 type serviceImpl struct {
 	sensorAPI.UnimplementedSignalServiceServer
 
-	queue chan *v1.Signal
+	queue chan *sensorAPI.ProcessSignal
 
 	authFuncOverride func(context.Context, string) (context.Context, error)
 }
@@ -78,13 +79,52 @@ func (s *serviceImpl) receiveMessages(stream sensorAPI.SignalService_PushSignals
 			return errors.Wrap(err, "receiving signal stream message")
 		}
 
-		// Ignore the collector register request
-		if signalStreamMsg.GetSignal() == nil {
-			log.Error("Empty signalStreamMsg")
-			continue
-		}
-		signal := signalStreamMsg.GetSignal()
+		signal := apiToSensorSignal(signalStreamMsg.GetSignal())
 
 		s.queue <- signal
+	}
+}
+
+func storageToSensorLineage(l *storage.ProcessSignal_LineageInfo) *sensorAPI.ProcessSignal_LineageInfo {
+	if l == nil {
+		return nil
+	}
+
+	return &sensorAPI.ProcessSignal_LineageInfo{
+		ParentUid:          l.ParentUid,
+		ParentExecFilePath: l.ParentExecFilePath,
+	}
+}
+
+func apiToSensorSignal(signal *v1.Signal) *sensorAPI.ProcessSignal {
+	if signal == nil {
+		log.Error("Empty signalStreamMsg")
+		return nil
+	}
+
+	s := signal.GetProcessSignal()
+	if s == nil {
+		log.Error("Empty process signal")
+		return nil
+	}
+
+	lineage := make([]*sensorAPI.ProcessSignal_LineageInfo, 0, len(s.LineageInfo))
+
+	for _, l := range s.LineageInfo {
+		lineage = append(lineage, storageToSensorLineage(l))
+	}
+
+	return &sensorAPI.ProcessSignal{
+		Id:           s.Id,
+		ContainerId:  s.ContainerId,
+		CreationTime: s.Time,
+		Name:         s.Name,
+		Args:         s.Args,
+		ExecFilePath: s.ExecFilePath,
+		Pid:          s.Pid,
+		Uid:          s.Uid,
+		Gid:          s.Gid,
+		Scraped:      s.Scraped,
+		LineageInfo:  lineage,
 	}
 }

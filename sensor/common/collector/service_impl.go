@@ -18,10 +18,14 @@ type Option func(*serviceImpl)
 
 type serviceImpl struct {
 	sensor.UnimplementedCollectorServiceServer
+
+	queue chan *sensor.ProcessSignal
 }
 
-func newService() Service {
-	return &serviceImpl{}
+func newService(queue chan *sensor.ProcessSignal) Service {
+	return &serviceImpl{
+		queue: queue,
+	}
 }
 
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
@@ -38,7 +42,7 @@ func (s *serviceImpl) Communicate(server sensor.CollectorService_CommunicateServ
 
 		switch msg.GetMsg().(type) {
 		case *sensor.MsgFromCollector_ProcessSignal:
-			log.Infof("got process signal: %+v", msg.GetProcessSignal())
+			s.queue <- msg.GetProcessSignal()
 		case *sensor.MsgFromCollector_Register:
 			log.Infof("got register: %+v", msg.GetRegister())
 		case *sensor.MsgFromCollector_Info:
