@@ -1,0 +1,155 @@
+package component
+
+import (
+	"io"
+	"strings"
+
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/message"
+)
+
+const maxBufferSize = 10000
+
+var (
+	log = logging.LoggerForModule()
+)
+
+type Component interface {
+	common.SensorComponent
+
+	GetReceiver() chan *v1.Signal
+}
+
+type componentImpl struct {
+	common.SensorComponent
+
+	processPipeline Pipeline
+	indicators      chan *message.ExpiringMessage
+	receiver        chan *v1.Signal
+	writer          io.Writer
+
+	stopper concurrency.Stopper
+}
+
+type Option func(*componentImpl)
+
+// WithTraceWriter sets a trace writer that will write the messages received from collector.
+func WithTraceWriter(writer io.Writer) Option {
+	return func(cmp *componentImpl) {
+		cmp.writer = writer
+	}
+}
+
+func New(pipeline Pipeline, indicators chan *message.ExpiringMessage, opts ...Option) Component {
+	cmp := &componentImpl{
+		processPipeline: pipeline,
+		indicators:      indicators,
+		receiver:        make(chan *v1.Signal, maxBufferSize),
+		writer:          nil,
+		stopper:         concurrency.NewStopper(),
+	}
+	for _, o := range opts {
+		o(cmp)
+	}
+	return cmp
+}
+
+func (c *componentImpl) Start() error {
+	go c.run()
+	return nil
+}
+
+func (c *componentImpl) Stop(_ error) {
+	c.processPipeline.Shutdown()
+	c.stopper.Client().Stop()
+}
+
+func (c *componentImpl) Notify(e common.SensorComponentEvent) {
+	log.Info(common.LogSensorComponentEvent(e))
+	c.processPipeline.Notify(e)
+}
+
+func (c *componentImpl) Capabilities() []centralsensor.SensorCapability {
+	return nil
+}
+func (c *componentImpl) ProcessMessage(_ *central.MsgToSensor) error {
+	return nil
+}
+
+func (c *componentImpl) ResponsesC() <-chan *message.ExpiringMessage {
+	return c.indicators
+}
+
+func (c *componentImpl) GetReceiver() chan *v1.Signal {
+	return c.receiver
+}
+
+func (c *componentImpl) run() {
+	defer c.stopper.Flow().ReportStopped()
+
+	for {
+		select {
+		case msg := <-c.receiver:
+			c.processMsg(msg)
+		case <-c.stopper.Flow().StopRequested():
+			log.Info("Shutting down signal component")
+			return
+		}
+	}
+}
+
+func (c *componentImpl) processMsg(signal *v1.Signal) {
+	switch signal.GetSignal().(type) {
+	case *v1.Signal_ProcessSignal:
+		processSignal := signal.GetProcessSignal()
+		if processSignal == nil {
+			log.Error("Empty process signal")
+			return
+		}
+
+		processSignal.ExecFilePath = stringutils.OrDefault(processSignal.GetExecFilePath(), processSignal.GetName())
+		if !isProcessSignalValid(processSignal) {
+			log.Debugf("Invalid process signal: %+v", processSignal)
+			return
+		}
+		if c.writer != nil {
+			if data, err := signal.MarshalVT(); err == nil {
+				if _, err := c.writer.Write(data); err != nil {
+					log.Warnf("Error writing msg: %v", err)
+				}
+			} else {
+				log.Warnf("Error marshalling  msg: %v", err)
+			}
+		}
+
+		c.processPipeline.Process(processSignal)
+	default:
+		// Currently eat unhandled signals
+	}
+}
+
+// TODO(ROX-3281) this is a workaround for these collector issues
+func isProcessSignalValid(signal *storage.ProcessSignal) bool {
+	// Example: <NA> or sometimes a truncated variant
+	if signal.GetExecFilePath() == "" || signal.GetExecFilePath()[0] == '<' {
+		return false
+	}
+	if signal.GetName() == "" || signal.GetName()[0] == '<' {
+		return false
+	}
+	if strings.HasPrefix(signal.GetExecFilePath(), "/proc/self") {
+		return false
+	}
+	// Example: /var/run/docker/containerd/daemon/io.containerd.runtime.v1.linux/moby/8f79b77ac6785562e875cde2f087c49f1d4e4899f18a26d3739c47155668ec0b/run
+	if strings.HasPrefix(signal.GetExecFilePath(), "/var/run/docker") {
+		return false
+	}
+	return true
+}
