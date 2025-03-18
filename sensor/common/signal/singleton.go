@@ -2,18 +2,21 @@ package signal
 
 import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/signal/component"
 )
 
-// New creates a new signal service
-func New(pipeline Pipeline, indicators chan *message.ExpiringMessage, opts ...Option) Service {
+func NewComponent(pipeline component.Pipeline, indicators chan *message.ExpiringMessage, opts ...component.Option) common.SensorComponent {
+	return component.New(pipeline, indicators, opts...)
+}
+
+func NewService(queue chan *v1.Signal, opts ...Option) Service {
 	srv := &serviceImpl{
-		queue:            make(chan *v1.Signal, maxBufferSize),
-		indicators:       indicators,
-		processPipeline:  pipeline,
+		queue:            queue,
 		authFuncOverride: authFuncOverride,
-		writer:           nil,
 	}
+
 	for _, o := range opts {
 		o(srv)
 	}
