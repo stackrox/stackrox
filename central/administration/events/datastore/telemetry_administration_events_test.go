@@ -6,7 +6,9 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stackrox/rox/central/administration/events/datastore/internal/search"
 	pgStore "github.com/stackrox/rox/central/administration/events/datastore/internal/store/postgres"
+	"github.com/stackrox/rox/central/administration/events/datastore/internal/writer"
 	"github.com/stackrox/rox/central/administration/events/testutils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events"
@@ -22,12 +24,15 @@ func TestGather(t *testing.T) {
 	t.Cleanup(func() {
 		pool.Teardown(t)
 	})
-	store := pgStore.New(pool.DB)
-	ds := &datastoreImpl{store: store}
+	require.NotNil(t, pool)
+	store := pgStore.New(pool)
+	searcher := search.New(store)
+	write := writer.New(store)
+	dst := newDataStore(searcher, store, write)
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Integration),
+			sac.ResourceScopeKeys(resources.Administration),
 		),
 	)
 	infoEvent := storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_INFO
@@ -91,23 +96,25 @@ func TestGather(t *testing.T) {
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
 			for _, event := range tc.administrativeEvents {
-				err := ds.AddEvent(ctx, event)
+				err := dst.AddEvent(ctx, event)
+				require.NoError(t, err)
+				err = dst.Flush(ctx)
 				require.NoError(t, err)
 			}
 
-			props, err := Gather(ds)(ctx)
+			props, err := Gather(dst)(ctx)
 			require.NoError(t, err)
 
 			expectedProps := map[string]any{
-				"Total administrative events":        tc.expectedTotalEvents,
-				"Info type administrative events":    tc.expectedInfoEvents,
-				"Warning type administrative events": tc.expectedWarningEvents,
-				"Error type administrative events":   tc.expectedErrorEvents,
+				"Total Error type Administrative Events":   tc.expectedErrorEvents,
+				"Total Info type Administrative Events":    tc.expectedInfoEvents,
+				"Total Administrative Events":              tc.expectedTotalEvents,
+				"Total Warning type Administrative Events": tc.expectedWarningEvents,
 			}
 			assert.Equal(t, expectedProps, props)
 
 			for _, event := range tc.administrativeEvents {
-				err := store.Delete(ctx, event.GetResourceID())
+				err = store.Delete(ctx, event.GetResourceID())
 				require.NoError(t, err)
 			}
 		})

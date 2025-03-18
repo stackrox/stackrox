@@ -22,21 +22,21 @@ func Gather(ds DataStore) phonehome.GatherFunc {
 		_ = phonehome.AddTotal(ctx, props, "Administrative Events", func(ctx context.Context) (int, error) {
 			return ds.CountEvents(ctx, search.EmptyQuery())
 		})
-		_ = phonehome.AddTotal(ctx, props, "Info type administrative events", func(ctx context.Context) (int, error) {
+		_ = phonehome.AddTotal(ctx, props, "Info type Administrative Events", func(ctx context.Context) (int, error) {
 			return ds.CountEvents(ctx,
 				search.NewQueryBuilder().
 					AddStrings(search.EventLevel, storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_INFO.String()).
 					ProtoQuery(),
 			)
 		})
-		_ = phonehome.AddTotal(ctx, props, "Warning type administrative events", func(ctx context.Context) (int, error) {
+		_ = phonehome.AddTotal(ctx, props, "Warning type Administrative Events", func(ctx context.Context) (int, error) {
 			return ds.CountEvents(ctx,
 				search.NewQueryBuilder().
 					AddStrings(search.EventLevel, storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_WARNING.String()).
 					ProtoQuery(),
 			)
 		})
-		_ = phonehome.AddTotal(ctx, props, "Error type administrative events", func(ctx context.Context) (int, error) {
+		_ = phonehome.AddTotal(ctx, props, "Error type Administrative Events", func(ctx context.Context) (int, error) {
 			return ds.CountEvents(ctx,
 				search.NewQueryBuilder().
 					AddStrings(search.EventLevel, storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR.String()).
