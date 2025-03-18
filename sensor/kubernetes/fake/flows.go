@@ -173,7 +173,7 @@ func (w *WorkloadManager) getRandomHostConnection(ctx context.Context) (manager.
 	return registeredHostConnections[rand.Intn(len(registeredHostConnections))], true
 }
 
-func getNetworkProcessUniqueKeyFromProcess(process *storage.ProcessSignal) *storage.NetworkProcessUniqueKey {
+func getNetworkProcessUniqueKeyFromProcess(process *sensor.ProcessSignal) *storage.NetworkProcessUniqueKey {
 	if process != nil {
 		return &storage.NetworkProcessUniqueKey{
 			ProcessName:         process.Name,
@@ -186,7 +186,7 @@ func getNetworkProcessUniqueKeyFromProcess(process *storage.ProcessSignal) *stor
 }
 
 func getRandomOriginator(containerID string) *storage.NetworkProcessUniqueKey {
-	var process *storage.ProcessSignal
+	var process *sensor.ProcessSignal
 	var percentMatchedProcess float32 = 0.5
 	p := rand.Float32()
 	if p < percentMatchedProcess {

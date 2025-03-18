@@ -205,13 +205,15 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		signalSrv = signalService.NewService(signalCmp.GetReceiver())
 	}
 
+	collectorSrv := collector.NewService(signalCmp.GetReceiver())
+
 	apiServices := []grpc.APIService{
 		networkFlowService,
 		signalSrv,
 		complianceService,
 		imageService,
 		deployment.NewService(storeProvider.Deployments(), storeProvider.Pods()),
-		collector.NewService(),
+		collectorSrv,
 	}
 
 	if admCtrlSettingsMgr != nil {
