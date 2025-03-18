@@ -1,14 +1,17 @@
 package services
 
-import com.google.gson.Gson
-import com.google.gson.JsonObject
-import io.netty.handler.ssl.util.InsecureTrustManagerFactory
-import util.Env
-
+import java.security.SecureRandom
 import javax.net.ssl.HttpsURLConnection
 import javax.net.ssl.SSLContext
-import java.security.SecureRandom
 
+import com.google.gson.Gson
+import com.google.gson.JsonObject
+import groovy.transform.CompileStatic
+import io.netty.handler.ssl.util.InsecureTrustManagerFactory
+
+import util.Env
+
+@CompileStatic
 class DirectHTTPService {
 
     static final BASIC_AUTH_USERNAME = Env.mustGetUsername()

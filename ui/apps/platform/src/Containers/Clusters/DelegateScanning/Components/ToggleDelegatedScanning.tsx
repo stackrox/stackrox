@@ -6,10 +6,15 @@ import { DelegatedRegistryConfigEnabledFor } from 'services/DelegatedRegistryCon
 
 type ToggleDelegatedScanningProps = {
     enabledFor: DelegatedRegistryConfigEnabledFor;
+    isEditing: boolean;
     onChangeEnabledFor: (newEnabledState: DelegatedRegistryConfigEnabledFor) => void;
 };
 
-function ToggleDelegatedScanning({ enabledFor, onChangeEnabledFor }: ToggleDelegatedScanningProps) {
+function ToggleDelegatedScanning({
+    enabledFor,
+    isEditing,
+    onChangeEnabledFor,
+}: ToggleDelegatedScanningProps) {
     return (
         <Card className="pf-v5-u-mb-lg">
             <CardBody>
@@ -24,6 +29,7 @@ function ToggleDelegatedScanning({ enabledFor, onChangeEnabledFor }: ToggleDeleg
                             <Radio
                                 label="None"
                                 isChecked={enabledFor === 'NONE'}
+                                isDisabled={!isEditing}
                                 id="choose-none"
                                 name="enabledFor"
                                 onChange={() => {
@@ -35,6 +41,7 @@ function ToggleDelegatedScanning({ enabledFor, onChangeEnabledFor }: ToggleDeleg
                             <Radio
                                 label="All registries"
                                 isChecked={enabledFor === 'ALL'}
+                                isDisabled={!isEditing}
                                 id="choose-all-registries"
                                 name="enabledFor"
                                 onChange={() => {
@@ -46,6 +53,7 @@ function ToggleDelegatedScanning({ enabledFor, onChangeEnabledFor }: ToggleDeleg
                             <Radio
                                 label="Specified registries"
                                 isChecked={enabledFor === 'SPECIFIC'}
+                                isDisabled={!isEditing}
                                 id="chose-specified-registries"
                                 name="enabledFor"
                                 onChange={() => {

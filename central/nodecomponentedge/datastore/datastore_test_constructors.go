@@ -9,8 +9,8 @@ import (
 )
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) (DataStore, error) {
+func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) DataStore {
 	storage := postgresStore.New(pool)
 	searcher := search.New(storage)
-	return New(storage, searcher), nil
+	return New(storage, searcher)
 }

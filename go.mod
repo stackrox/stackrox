@@ -5,17 +5,17 @@ go 1.23.4
 toolchain go1.23.6
 
 require (
-	cloud.google.com/go/artifactregistry v1.16.2
+	cloud.google.com/go/artifactregistry v1.16.3
 	cloud.google.com/go/compute/metadata v0.6.0
-	cloud.google.com/go/containeranalysis v0.13.3
-	cloud.google.com/go/securitycenter v1.36.0
+	cloud.google.com/go/containeranalysis v0.13.4
+	cloud.google.com/go/securitycenter v1.36.1
 	cloud.google.com/go/storage v1.51.0
 	github.com/Azure/azure-sdk-for-go-extensions v0.1.8
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.17.0
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.8.2
 	github.com/Azure/azure-sdk-for-go/sdk/containers/azcontainerregistry v0.2.2
 	github.com/Azure/azure-sdk-for-go/sdk/monitor/ingestion/azlogs v1.0.0
-	github.com/BurntSushi/toml v1.4.1-0.20240526193622-a339e1f7089c
+	github.com/BurntSushi/toml v1.5.0
 	github.com/ComplianceAsCode/compliance-operator v1.5.0
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig/v3 v3.3.0
@@ -41,7 +41,7 @@ require (
 	github.com/cloudflare/cfssl v1.6.5
 	github.com/cockroachdb/pebble v1.1.4
 	github.com/containers/image/v5 v5.34.2
-	github.com/coreos/go-oidc/v3 v3.12.0
+	github.com/coreos/go-oidc/v3 v3.13.0
 	github.com/coreos/go-systemd/v22 v22.5.0
 	github.com/dave/jennifer v1.7.1
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
@@ -109,7 +109,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2
 	github.com/prometheus/client_golang v1.21.1
 	github.com/prometheus/client_model v0.6.1
-	github.com/prometheus/common v0.62.0
+	github.com/prometheus/common v0.63.0
 	github.com/quay/claircore v1.5.35
 	github.com/quay/claircore/toolkit v1.2.5-0.20250120211107-bea8a6c197b2
 	github.com/quay/zlog v1.1.8
@@ -151,7 +151,7 @@ require (
 	golang.org/x/time v0.11.0
 	golang.org/x/tools v0.31.0
 	golang.stackrox.io/grpc-http1 v0.4.0
-	google.golang.org/api v0.225.0
+	google.golang.org/api v0.226.0
 	google.golang.org/genproto v0.0.0-20250303144028-a0af3efb3deb
 	google.golang.org/genproto/googleapis/api v0.0.0-20250303144028-a0af3efb3deb
 	google.golang.org/grpc v1.71.0
@@ -263,7 +263,7 @@ require (
 	github.com/cockroachdb/tokenbucket v0.0.0-20230807174530-cc333fc44b06 // indirect
 	github.com/coder/websocket v1.8.12 // indirect
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be // indirect
-	github.com/containerd/containerd v1.7.24 // indirect
+	github.com/containerd/containerd v1.7.27 // indirect
 	github.com/containerd/errdefs v0.3.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/platforms v0.2.1 // indirect

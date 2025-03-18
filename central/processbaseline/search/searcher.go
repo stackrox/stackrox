@@ -19,11 +19,11 @@ type Searcher interface {
 }
 
 // New returns a new instance of Searcher for the given storage.
-func New(processBaselineStore store.Store) (Searcher, error) {
+func New(processBaselineStore store.Store) Searcher {
 	ds := &searcherImpl{
 		storage:           processBaselineStore,
 		formattedSearcher: formatSearcher(processBaselineStore),
 	}
 
-	return ds, nil
+	return ds
 }

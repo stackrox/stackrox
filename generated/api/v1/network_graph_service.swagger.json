@@ -626,6 +626,11 @@
         "clusterId": {
           "type": "string",
           "title": "Need the clusterID as that is part of the key in RocksDB"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "title": "This field is set by Central everytime a flow is upserted.\nThis should not be set by Sensor.\nFor more context: https://github.com/stackrox/stackrox/pull/14483"
         }
       }
     },

@@ -959,7 +959,7 @@ func getImageCVEEdgeIDs(ctx context.Context, tx *postgres.Tx, imageIDs ...string
 	if err != nil {
 		return nil, err
 	}
-	ids, err := scanIDs(rows)
+	ids, err := pgutils.ScanStrings(rows)
 	if err != nil {
 		return nil, err
 	}
@@ -1120,7 +1120,7 @@ func (s *storeImpl) retryableGetIDs(ctx context.Context) ([]string, error) {
 	if err != nil {
 		return nil, pgutils.ErrNilIfNoRows(err)
 	}
-	ids, err := scanIDs(rows)
+	ids, err := pgutils.ScanStrings(rows)
 	if err != nil {
 		return nil, err
 	}
@@ -1448,18 +1448,4 @@ func gatherKeys(parts *imagePartsAsSlice) [][]byte {
 		keys = append(keys, []byte(vuln.GetId()))
 	}
 	return keys
-}
-
-func scanIDs(rows pgx.Rows) ([]string, error) {
-	defer rows.Close()
-	var ids []string
-
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		ids = append(ids, id)
-	}
-	return ids, rows.Err()
 }

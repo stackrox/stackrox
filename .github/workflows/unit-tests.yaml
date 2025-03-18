@@ -14,6 +14,7 @@ on:
 jobs:
   go:
     strategy:
+      fail-fast: false
       matrix:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
     runs-on: ubuntu-latest
@@ -80,6 +81,7 @@ jobs:
 
   go-postgres:
     strategy:
+      fail-fast: false
       matrix:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
         pg: [ '13', '15' ]

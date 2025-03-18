@@ -28,8 +28,7 @@ func BenchmarkAddIndicator(b *testing.B) {
 	plopStore := plopStore.New(db)
 	searcher := search.New(store)
 
-	datastore, err := New(store, plopStore, searcher, nil)
-	require.NoError(b, err)
+	datastore := New(store, plopStore, searcher, nil)
 
 	ctx := sac.WithAllAccess(context.Background())
 	b.ResetTimer()
