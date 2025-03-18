@@ -111,6 +111,13 @@ central:
           volumeSpec: null # dict
       none: null # bool
     extraMounts: null # [dict]
+configController:
+  nodeSelector: null # string | dict
+  tolerations: null # [dict]
+  hostAliases: null # [dict]
+  affinity: null # dict
+  priorityClassName: null # string
+  resources: null # string | dict
 customize:
   labels: {} # dict
   annotations: {} # dict

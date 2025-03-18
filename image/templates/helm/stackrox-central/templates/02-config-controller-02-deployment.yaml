@@ -27,6 +27,23 @@ spec:
       annotations:
         {{- include "srox.podAnnotations" (list . "deployment" "config-controller") | nindent 8 }}
     spec:
+      {{- if ._rox.configController._nodeSelector }}
+      nodeSelector:
+        {{- ._rox.configController._nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if ._rox.configController.tolerations }}
+      tolerations:
+        {{- toYaml ._rox.configController.tolerations | nindent 8 }}
+      {{- end }}
+      affinity:
+        {{- toYaml ._rox.configController.affinity | nindent 8 }}
+      {{- if ._rox.configController.priorityClassName }}
+      priorityClassName: {{ quote ._rox.configController.priorityClassName }}
+      {{- end }}
+      {{- if ._rox.configController.hostAliases }}
+      hostAliases:
+        {{- toYaml ._rox.configController.hostAliases | nindent 8 }}
+      {{- end }}
       serviceAccountName: config-controller
       {{- if not (eq ._rox.env.openshift 4)}}
       securityContext:
@@ -40,6 +57,8 @@ spec:
           - /stackrox/bin/config-controller
         args:
           - --health-probe-bind-address=:8081
+        resources:
+          {{- ._rox.configController._resources | nindent 10 }}
         env:
         - name: POD_NAMESPACE
           valueFrom:
@@ -65,13 +84,6 @@ spec:
             port: 8081
           initialDelaySeconds: 5
           periodSeconds: 10
-        resources:
-          requests:
-            cpu: "10m"
-            memory: "64Mi"
-          limits:
-            cpu: "500m"
-            memory: "128Mi"
         volumeMounts:
         - mountPath: /run/secrets/stackrox.io/certs/
           name: central-certs-volume
