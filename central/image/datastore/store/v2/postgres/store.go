@@ -603,20 +603,7 @@ func getImageComponents(ctx context.Context, tx *postgres.Tx, imageID string) ([
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-	components := make([]*storage.ImageComponentV2, 0)
-	for rows.Next() {
-		var data []byte
-		if err := rows.Scan(&data); err != nil {
-			return nil, err
-		}
-		msg := &storage.ImageComponentV2{}
-		if err := msg.UnmarshalVTUnsafe(data); err != nil {
-			return nil, err
-		}
-		components = append(components, msg)
-	}
-	return components, rows.Err()
+	return pgutils.ScanRows[storage.ImageComponentV2, *storage.ImageComponentV2](rows)
 }
 
 func getImageComponentCVEs(ctx context.Context, tx *postgres.Tx, componentID string) ([]*storage.ImageCVEV2, error) {
@@ -628,20 +615,7 @@ func getImageComponentCVEs(ctx context.Context, tx *postgres.Tx, componentID str
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-	cves := make([]*storage.ImageCVEV2, 0)
-	for rows.Next() {
-		var data []byte
-		if err := rows.Scan(&data); err != nil {
-			return nil, err
-		}
-		msg := &storage.ImageCVEV2{}
-		if err := msg.UnmarshalVTUnsafe(data); err != nil {
-			return nil, err
-		}
-		cves = append(cves, msg)
-	}
-	return cves, rows.Err()
+	return pgutils.ScanRows[storage.ImageCVEV2, *storage.ImageCVEV2](rows)
 }
 
 func getImageCVEs(ctx context.Context, tx *postgres.Tx, imageID string) ([]*storage.ImageCVEV2, error) {
@@ -653,20 +627,7 @@ func getImageCVEs(ctx context.Context, tx *postgres.Tx, imageID string) ([]*stor
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-	cves := make([]*storage.ImageCVEV2, 0)
-	for rows.Next() {
-		var data []byte
-		if err := rows.Scan(&data); err != nil {
-			return nil, err
-		}
-		msg := &storage.ImageCVEV2{}
-		if err := msg.UnmarshalVTUnsafe(data); err != nil {
-			return nil, err
-		}
-		cves = append(cves, msg)
-	}
-	return cves, rows.Err()
+	return pgutils.ScanRows[storage.ImageCVEV2, *storage.ImageCVEV2](rows)
 }
 
 // Delete removes the specified ID from the store.
@@ -925,20 +886,9 @@ func (s *storeImpl) retryableUpdateVulnState(ctx context.Context, cve string, im
 	if err != nil {
 		return err
 	}
-	defer rows.Close()
-	var imageCVEs []*storage.ImageCVEV2
-	for rows.Next() {
-		var serialized []byte
-
-		if err := rows.Scan(&serialized); err != nil {
-			return pgutils.ErrNilIfNoRows(err)
-		}
-		var msg storage.ImageCVEV2
-		if err := msg.UnmarshalVTUnsafe(serialized); err != nil {
-			return err
-		}
-
-		imageCVEs = append(imageCVEs, &msg)
+	imageCVEs, err := pgutils.ScanRows[storage.ImageCVEV2, *storage.ImageCVEV2](rows)
+	if err != nil {
+		return err
 	}
 
 	// Update state.
