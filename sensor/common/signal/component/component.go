@@ -4,9 +4,8 @@ import (
 	"io"
 	"strings"
 
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
@@ -24,7 +23,7 @@ var (
 type Component interface {
 	common.SensorComponent
 
-	GetReceiver() chan *v1.Signal
+	GetReceiver() chan *sensor.ProcessSignal
 }
 
 type componentImpl struct {
@@ -32,7 +31,7 @@ type componentImpl struct {
 
 	processPipeline Pipeline
 	indicators      chan *message.ExpiringMessage
-	receiver        chan *v1.Signal
+	receiver        chan *sensor.ProcessSignal
 	writer          io.Writer
 
 	stopper concurrency.Stopper
@@ -51,7 +50,7 @@ func New(pipeline Pipeline, indicators chan *message.ExpiringMessage, opts ...Op
 	cmp := &componentImpl{
 		processPipeline: pipeline,
 		indicators:      indicators,
-		receiver:        make(chan *v1.Signal, maxBufferSize),
+		receiver:        make(chan *sensor.ProcessSignal, maxBufferSize),
 		writer:          nil,
 		stopper:         concurrency.NewStopper(),
 	}
@@ -87,7 +86,7 @@ func (c *componentImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return c.indicators
 }
 
-func (c *componentImpl) GetReceiver() chan *v1.Signal {
+func (c *componentImpl) GetReceiver() chan *sensor.ProcessSignal {
 	return c.receiver
 }
 
@@ -105,38 +104,27 @@ func (c *componentImpl) run() {
 	}
 }
 
-func (c *componentImpl) processMsg(signal *v1.Signal) {
-	switch signal.GetSignal().(type) {
-	case *v1.Signal_ProcessSignal:
-		processSignal := signal.GetProcessSignal()
-		if processSignal == nil {
-			log.Error("Empty process signal")
-			return
-		}
-
-		processSignal.ExecFilePath = stringutils.OrDefault(processSignal.GetExecFilePath(), processSignal.GetName())
-		if !isProcessSignalValid(processSignal) {
-			log.Debugf("Invalid process signal: %+v", processSignal)
-			return
-		}
-		if c.writer != nil {
-			if data, err := signal.MarshalVT(); err == nil {
-				if _, err := c.writer.Write(data); err != nil {
-					log.Warnf("Error writing msg: %v", err)
-				}
-			} else {
-				log.Warnf("Error marshalling  msg: %v", err)
-			}
-		}
-
-		c.processPipeline.Process(processSignal)
-	default:
-		// Currently eat unhandled signals
+func (c *componentImpl) processMsg(signal *sensor.ProcessSignal) {
+	signal.ExecFilePath = stringutils.OrDefault(signal.GetExecFilePath(), signal.GetName())
+	if !isProcessSignalValid(signal) {
+		log.Debugf("Invalid process signal: %+v", signal)
+		return
 	}
+	if c.writer != nil {
+		if data, err := signal.MarshalVT(); err == nil {
+			if _, err := c.writer.Write(data); err != nil {
+				log.Warnf("Error writing msg: %v", err)
+			}
+		} else {
+			log.Warnf("Error marshalling  msg: %v", err)
+		}
+	}
+
+	c.processPipeline.Process(signal)
 }
 
 // TODO(ROX-3281) this is a workaround for these collector issues
-func isProcessSignalValid(signal *storage.ProcessSignal) bool {
+func isProcessSignalValid(signal *sensor.ProcessSignal) bool {
 	// Example: <NA> or sometimes a truncated variant
 	if signal.GetExecFilePath() == "" || signal.GetExecFilePath()[0] == '<' {
 		return false
