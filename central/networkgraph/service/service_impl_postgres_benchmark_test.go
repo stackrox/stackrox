@@ -92,7 +92,7 @@ func setupBenchmarkForB(b *testing.B) networkGraphServiceBenchmarks {
 }
 
 // setupTables setups up the database for a large number of deployments all
-// communicating with the same flow - it is intended for benchmarks of the
+// communicating with the same external IP - it is intended for benchmarks of the
 // GetExternalNetworkFlows API endpoint
 func (suite *networkGraphServiceBenchmarks) setupTables(b *testing.B) string {
 	cidr := "192.168.0.1/32"
@@ -132,7 +132,7 @@ func (suite *networkGraphServiceBenchmarks) setupTables(b *testing.B) string {
 	return id.String()
 }
 
-// setupTablesForMetadata setups up the database for a large number of entities all
+// setupTablesForMetadata sets up the database for a large number of entities all
 // communicating with a set of deployments - it is intended for benchmarks of the
 // GetExternalNetworkFlowsMetadata API endpoint
 func (s *networkGraphServiceBenchmarks) setupTablesForMetadata(b *testing.B) {
