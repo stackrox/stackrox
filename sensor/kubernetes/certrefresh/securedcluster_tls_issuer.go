@@ -63,7 +63,6 @@ func NewSecuredClusterTLSIssuer(
 		getServiceCertificatesRepoFn: securedcluster.NewServiceCertificatesRepo,
 		msgToCentralC:                make(chan *message.ExpiringMessage),
 		newMsgFromSensorFn:           newSecuredClusterMsgFromSensor,
-		responseFromCentral:          make(chan *Response),
 		stopSig:                      concurrency.NewSignal(),
 		requiredCentralCapability: func() *centralsensor.CentralCapability {
 			centralCap := centralsensor.CentralCapability(centralsensor.SecuredClusterCertificatesReissue)
@@ -104,6 +103,8 @@ type tlsIssuerImpl struct {
 	msgToCentralC                chan *message.ExpiringMessage
 	responseFromCentral          chan *Response
 	requestMutex                 sync.Mutex
+	wgDispatch                   sync.WaitGroup
+	wgRequest                    sync.WaitGroup
 	stopSig                      concurrency.Signal
 	newMsgFromSensorFn           newMsgFromSensor
 	requiredCentralCapability    *centralsensor.CentralCapability
@@ -153,6 +154,7 @@ func (i *tlsIssuerImpl) activate() error {
 	i.certRefresher = i.getCertificateRefresherFn(i.componentName, i.requestCertificates, certsRepo,
 		certRefreshTimeout, i.certRefreshBackoff)
 
+	i.responseFromCentral = make(chan *Response)
 	i.stopSig.Reset()
 
 	refresherCtx, cancelFunc := context.WithCancel(context.Background())
@@ -178,10 +180,16 @@ func (i *tlsIssuerImpl) deactivate() {
 	defer i.activateLock.Unlock()
 
 	if i.certRefresher != nil {
+		// cancel the refresher and wait for any ongoing requests to end
 		i.cancelRefresher()
+		i.wgRequest.Wait()
 		i.certRefresher.Stop()
 		i.certRefresher = nil
+
+		// send the stop signal, wait for the dispatch goroutines to finish, then safely close the channel
 		i.stopSig.Signal()
+		i.wgDispatch.Wait()
+		close(i.responseFromCentral)
 	}
 
 	log.Debugf("%s TLS issuer is not active.", i.componentName)
@@ -236,6 +244,13 @@ func (i *tlsIssuerImpl) ProcessMessage(msg *central.MsgToSensor) error {
 }
 
 func (i *tlsIssuerImpl) dispatch(response *Response) {
+	concurrency.WithLock(&i.activateLock, func() { i.wgDispatch.Add(1) })
+	defer i.wgDispatch.Done()
+
+	if i.stopSig.IsDone() {
+		return
+	}
+
 	select {
 	case i.responseFromCentral <- response:
 	case <-i.stopSig.Done():
@@ -251,6 +266,13 @@ func (i *tlsIssuerImpl) requestCertificates(ctx context.Context) (*Response, err
 		if !centralcaps.Has(*i.requiredCentralCapability) {
 			return nil, fmt.Errorf("TLS certificate refresh failed: missing Central capability %q", *i.requiredCentralCapability)
 		}
+	}
+
+	concurrency.WithLock(&i.activateLock, func() { i.wgRequest.Add(1) })
+	defer i.wgRequest.Done()
+
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
 	}
 
 	// Ensure only one request can be active at a time. By protecting both send and receive
