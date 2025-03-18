@@ -166,7 +166,7 @@ func Test_addCustomHeaders(t *testing.T) {
 			},
 		}
 		props := map[string]any{}
-		addCustomHeaders(rp, telemetryCampaign[2], props)
+		addCustomHeaders(rp, telemetryCampaign[1], props)
 		assert.Equal(t, map[string]any{
 			userAgentHeaderKey:    "RHACS Integration ServiceNow client",
 			snowIntegrationHeader: "v1.0.3; beta",
