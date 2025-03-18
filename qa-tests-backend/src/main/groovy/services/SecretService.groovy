@@ -10,7 +10,7 @@ import io.stackrox.proto.api.v1.SecretServiceOuterClass
 import io.stackrox.proto.storage.SecretOuterClass
 import io.stackrox.proto.storage.SecretOuterClass.ListSecret
 
-import util.Timer
+import util.Retry
 
 @Slf4j
 @CompileStatic
@@ -24,39 +24,18 @@ class SecretService extends BaseService {
         return getSecretClient().listSecrets(query).secretsList
     }
 
-    static waitForSecret(String id, int timeoutSeconds = 10) {
-        int intervalSeconds = 1
-        int retries = (timeoutSeconds / intervalSeconds) as int
-        Timer t = new Timer(retries, intervalSeconds)
-        while (t.IsValid()) {
-            if (getSecret(id) != null ) {
-                log.debug "SR found secret ${id} within ${t.SecondsSince()}s"
-                return true
-            }
-            log.debug "Retrying in ${intervalSeconds}..."
-        }
-        log.warn "SR did not detect the secret ${id}"
-        return false
+    @Retry(attempts = 10)
+    static void waitForSecret(String id) {
+        assert getSecret(id) != null
     }
 
+    @Retry(attempts = 50)
     static SecretOuterClass.Secret getSecret(String id) {
-        int intervalSeconds = 1
-        int retries = (50 / intervalSeconds) as int
-        Timer t = new Timer(retries, intervalSeconds)
-        while (t.IsValid()) {
-            try {
-                SecretOuterClass.Secret sec = getSecretClient().getSecret(ResourceByID.newBuilder().setId(id).build())
-                return sec
-            } catch (Exception e) {
-                log.debug("Exception checking for getting the secret ${id}, retrying...", e)
-            }
-        }
-        log.warn "Failed to add secret ${id} after waiting ${t.SecondsSince()} seconds"
-        return null
+        return getSecretClient().getSecret(ResourceByID.newBuilder().setId(id).build())
     }
 
     static SecretServiceOuterClass.ListSecretsResponse listSecrets() {
-        return getSecretClient().listSecrets(null)
+        return getSecretClient().listSecrets(RawQuery.newBuilder().build())
     }
 
 }
