@@ -11,6 +11,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
@@ -154,11 +155,31 @@ func (resolver *imageResolver) TopImageVulnerability(ctx context.Context, args R
 func (resolver *imageResolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageVulnerabilities")
 	// TODO(ROX-28320): Data here needs to be grouped by CVE not the ID as is done in the Image Vulnerabilities resolver.
+	log.Infof("SHREWS -- image.ImageVulnerabilities -- context %v, args %v", ctx, args.String())
+	if features.FlattenCVEData.Enabled() {
+		// Grab distinct CVEs
+		//query, err := args.AsV1QueryOrEmpty()
+		//if err != nil {
+		//	return nil, err
+		//}
+		//cveListish, err := resolver.root.ImageCVEView.GetCVE(resolver.withImageScopeContext(ctx), query)
+		//if err != nil {
+		//	return nil, err
+		//}
+		//for _, cve := range cveListish {
+		//	log.Infof("SHREWS -- CVE: %s", cve.GetCVE())
+		//	log.Infof("SHREWS -- CVE IDs: %v", cve.GetCVEIDs())
+		//}
+		return resolver.root.ImageFlatVulnerabilities(resolver.withImageScopeContext(ctx), args)
+	}
 	return resolver.root.ImageVulnerabilities(resolver.withImageScopeContext(ctx), args)
 }
 
 func (resolver *imageResolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageVulnerabilityCount")
+	if features.FlattenCVEData.Enabled() {
+		return resolver.root.ImageFlatVulnerabilityCount(resolver.withImageScopeContext(ctx), args)
+	}
 	return resolver.root.ImageVulnerabilityCount(resolver.withImageScopeContext(ctx), args)
 }
 
@@ -191,6 +212,7 @@ func (resolver *imageResolver) ImageCVECountBySeverity(ctx context.Context, q Ra
 
 func (resolver *imageResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageComponents")
+	log.Infof("SHREWS -- image.ImageComponents -- context %v, args %v", ctx, args.String())
 	return resolver.root.ImageComponents(resolver.withImageScopeContext(ctx), args)
 }
 
