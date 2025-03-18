@@ -709,14 +709,14 @@ func (ds *datastoreImpl) retryableRemovePLOPsWithoutPodUID(ctx context.Context) 
 
 	prevId := "00000000-0000-0000-0000-000000000000"
 	for {
-		nextId, err := ds.GetNextPageId(ctx, prevId, limit)
+		nextId, err := ds.getNextPageId(ctx, prevId, limit)
 		if err != nil {
 			return totalRows, err
 		}
 		if nextId == "" {
 			break
 		}
-		nrows, err := ds.RemovePLOPsWithoutPodUIDOnePage(ctx, prevId, nextId)
+		nrows, err := ds.removePLOPsWithoutPodUIDOnePage(ctx, prevId, nextId)
 		if err != nil {
 			return totalRows, err
 		}
