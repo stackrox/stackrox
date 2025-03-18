@@ -40,6 +40,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/scan"
 	"github.com/stackrox/rox/sensor/common/sensor"
 	signalService "github.com/stackrox/rox/sensor/common/signal"
+	signalComponent "github.com/stackrox/rox/sensor/common/signal/component"
 	k8sadmctrl "github.com/stackrox/rox/sensor/kubernetes/admissioncontroller"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh"
 	"github.com/stackrox/rox/sensor/kubernetes/clusterhealth"
@@ -115,14 +116,10 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	// Create Process Pipeline
 	indicators := make(chan *message.ExpiringMessage, queue.ScaleSizeOnNonDefault(env.ProcessIndicatorBufferSize))
 	processPipeline := processsignal.NewProcessPipeline(indicators, storeProvider.Entities(), processfilter.Singleton(), policyDetector)
-	var processSignals signalService.Service
-	if cfg.signalServiceAuthFuncOverride != nil && cfg.localSensor {
-		processSignals = signalService.New(processPipeline, indicators,
-			signalService.WithAuthFuncOverride(cfg.signalServiceAuthFuncOverride),
-			signalService.WithTraceWriter(cfg.processIndicatorWriter))
-	} else {
-		processSignals = signalService.New(processPipeline, indicators, signalService.WithTraceWriter(cfg.processIndicatorWriter))
-	}
+
+	signalCmp := signalComponent.New(processPipeline, indicators,
+		signalComponent.WithTraceWriter(cfg.processIndicatorWriter))
+
 	networkFlowManager :=
 		manager.NewManager(storeProvider.Entities(), externalsrcs.StoreInstance(), policyDetector, pubSub)
 	enhancer := deploymentenhancer.CreateEnhancer(storeProvider)
@@ -135,7 +132,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		clusterhealth.NewUpdater(cfg.k8sClient.Kubernetes(), 0),
 		clustermetrics.New(cfg.k8sClient.Kubernetes()),
 		complianceCommandHandler,
-		processSignals,
+		signalCmp,
 		telemetry.NewCommandHandler(cfg.k8sClient.Kubernetes(), storeProvider),
 		externalsrcs.Singleton(),
 		admissioncontroller.AlertHandlerSingleton(),
@@ -199,9 +196,18 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	} else {
 		networkFlowService = service.NewService(networkFlowManager, service.WithTraceWriter(cfg.networkFlowWriter))
 	}
+
+	var signalSrv signalService.Service
+	if cfg.signalServiceAuthFuncOverride != nil && cfg.localSensor {
+		signalSrv = signalService.NewService(signalCmp.GetReceiver(),
+			signalService.WithAuthFuncOverride(cfg.signalServiceAuthFuncOverride))
+	} else {
+		signalSrv = signalService.NewService(signalCmp.GetReceiver())
+	}
+
 	apiServices := []grpc.APIService{
 		networkFlowService,
-		processSignals,
+		signalSrv,
 		complianceService,
 		imageService,
 		deployment.NewService(storeProvider.Deployments(), storeProvider.Pods()),
