@@ -13,8 +13,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-const maxBufferSize = 10000
-
 var (
 	log = logging.LoggerForModule()
 )
