@@ -30,8 +30,6 @@ const (
 	imageComponentsV2CVEsTable = pkgSchema.ImageCvesV2TableName
 
 	getImageMetaStmt = "SELECT serialized FROM " + imagesTable + " WHERE Id = $1"
-
-	cursorBatchSize = 50
 )
 
 var (

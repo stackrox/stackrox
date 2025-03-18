@@ -41,8 +41,6 @@ const (
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
 	batchSize = 500
-
-	cursorBatchSize = 50
 )
 
 var (
