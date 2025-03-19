@@ -92,6 +92,10 @@ spec:
         volumeMounts:
         - name: disk
           mountPath: /var/lib/postgresql/data
+        {{- if ._rox.central.db.persistence.backups }}
+        - name: backups
+          mountPath: /var/lib/postgresql/backups
+        {{- end }}
         - name: central-db-password
           mountPath: /run/secrets/stackrox.io/secrets
         resources:
@@ -142,6 +146,10 @@ spec:
       volumes:
       - name: disk
         {{- toYaml ._rox.central.db.persistence._volumeCfg | nindent 8 }}
+      {{- if ._rox.central.db.persistence.backups }}
+      - name: backups
+        {{- toYaml ._rox.central.db.persistence._backupsVolumeCfg | nindent 8 }}
+      {{- end }}
       - name: config-volume
         configMap:
           name: {{ default "central-db-config" ._rox.central.db.configOverride }}
