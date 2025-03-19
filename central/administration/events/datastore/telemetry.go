@@ -26,7 +26,7 @@ var (
 	}
 )
 
-// Gather the number of administration events
+// Gather the number of administration events.
 func Gather(ds DataStore) phonehome.GatherFunc {
 	return func(ctx context.Context) (map[string]any, error) {
 		ctx = sac.WithGlobalAccessScopeChecker(ctx,
