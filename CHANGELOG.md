@@ -20,7 +20,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Technical Changes
 
 - ROX-28263: New `roxctl` help formatting.
-- ROX-24500: Certificate validation error in `roxctl` is an error.
+- ROX-24500: Certificate validation failure in `roxctl` is now an error.
 
 ## [4.7.0]
 
