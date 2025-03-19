@@ -45,8 +45,6 @@ const (
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
 	batchSize = 500
-
-	cursorBatchSize = 50
 )
 
 var (
@@ -1203,29 +1201,19 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(image 
 		}
 	}()
 
-	ctxWithTx := postgres.ContextWithTx(ctx, tx)
-	fetcher, closer, err := pgSearch.RunCursorQueryForSchema[storage.Image, *storage.Image](ctxWithTx, pkgSchema.ImagesSchema, q, s.db)
-	if err != nil {
-		return err
-	}
-	defer closer()
-	for {
-		rows, err := fetcher(cursorBatchSize)
+	callback := func(image *storage.Image) error {
+		err := s.populateImage(ctx, tx, image)
 		if err != nil {
-			return pgutils.ErrNilIfNoRows(err)
+			return errors.Wrap(err, "populate image")
 		}
-		for _, image := range rows {
-			err := s.populateImage(ctx, tx, image)
-			if err != nil {
-				return err
-			}
-			if err := fn(image); err != nil {
-				return err
-			}
+		if err := fn(image); err != nil {
+			return errors.Wrap(err, "failed to process image")
 		}
-		if len(rows) != cursorBatchSize {
-			break
-		}
+		return nil
+	}
+	err = pgSearch.RunCursorQueryForSchemaFn(ctx, pkgSchema.ImagesSchema, q, s.db, callback)
+	if err != nil {
+		return errors.Wrap(err, "cursor by query")
 	}
 	return nil
 }
