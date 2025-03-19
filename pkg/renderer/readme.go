@@ -40,6 +40,7 @@ the login page, and log in with username "admin" and the password found in the
 	kubectlInstructionTemplate = `
   - Deploy Central
     - Run central/scripts/setup.sh
+    - Run {{.K8sConfig.Command}} apply -f helm/chart/crds/config.stackrox.io_securitypolicies.yaml
     - Run {{.K8sConfig.Command}} create -R -f central
 `
 
