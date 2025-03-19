@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	configDS "github.com/stackrox/rox/central/networkgraph/config/datastore"
@@ -19,6 +21,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
 	"github.com/stackrox/rox/pkg/networkgraph/testutils"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -129,6 +132,18 @@ func externalFlow(deployment *storage.Deployment, entity *storage.NetworkEntity,
 	}
 }
 
+func normalizeTimestamps(graph *v1.NetworkGraph, timeNow *timestamppb.Timestamp) {
+	for _, node := range graph.Nodes {
+		for _, edgeBundle := range node.OutEdges {
+			for _, edge := range edgeBundle.Properties {
+				if edge.LastActiveTimestamp != nil {
+					edge.LastActiveTimestamp = timeNow
+				}
+			}
+		}
+	}
+}
+
 func (s *networkGraphServiceSuite) TestGetNetworkGraph() {
 	ctx := sac.WithGlobalAccessScopeChecker(
 		context.Background(),
@@ -182,14 +197,14 @@ func (s *networkGraphServiceSuite) TestGetNetworkGraph() {
 	flowStore, err := s.flowDataStore.CreateFlowStore(globalWriteAccessCtx, testCluster)
 	s.NoError(err)
 
-	err = flowStore.UpsertFlows(globalWriteAccessCtx, entityFlows, timestamp.FromGoTime(time.Now()))
+	timeNow := timestamp.FromGoTime(time.Now())
+	err = flowStore.UpsertFlows(globalWriteAccessCtx, entityFlows, timeNow)
 	s.NoError(err)
 
 	request := &v1.NetworkGraphRequest{
 			ClusterId: testCluster,
 		}
 
-	internetId := ""
 	expectedResponse := &v1.NetworkGraph{
 				Nodes: []*v1.NetworkNode{
 					&v1.NetworkNode{
@@ -208,24 +223,30 @@ func (s *networkGraphServiceSuite) TestGetNetworkGraph() {
 									&v1.NetworkEdgeProperties{
 										Port: 1234,
 										Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-										LastActiveTimestamp: nil,
+										LastActiveTimestamp: timeNow.Protobuf(),
 									},
 								},
 							},
 						},
+						QueryMatch: true,
 					},
 					&v1.NetworkNode{
 						Entity:	&storage.NetworkEntityInfo{
 							Type:	storage.NetworkEntityInfo_INTERNET,
-							Id:	internetId,
+							Id:	networkgraph.InternetExternalSourceID,
 						},
+						OutEdges: map[int32]*v1.NetworkEdgePropertiesBundle{},
 					},
 				},
 			}
 
 
+
 	response, err := s.service.GetNetworkGraph(ctx, request)
 	s.NoError(err)
+
+	normalizeTimestamps(response, timeNow.Protobuf())
+	normalizeTimestamps(expectedResponse, timeNow.Protobuf())
 	protoassert.Equal(s.T(), expectedResponse, response)
 }
 
