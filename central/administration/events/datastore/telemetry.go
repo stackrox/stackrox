@@ -58,6 +58,7 @@ func Gather(ds DataStore) phonehome.GatherFunc {
 					ProtoQuery(),
 			)
 		})
+		errorList.AddError(err)
 		err = phonehome.AddTotal(ctx, props, "Default domain Administrative Events", func(ctx context.Context) (int, error) {
 			return ds.CountEvents(ctx,
 				search.NewQueryBuilder().
@@ -65,6 +66,7 @@ func Gather(ds DataStore) phonehome.GatherFunc {
 					ProtoQuery(),
 			)
 		})
+		errorList.AddError(err)
 		err = phonehome.AddTotal(ctx, props, "Image Scanning domain Administrative Events", func(ctx context.Context) (int, error) {
 			return ds.CountEvents(ctx,
 				search.NewQueryBuilder().
@@ -72,6 +74,7 @@ func Gather(ds DataStore) phonehome.GatherFunc {
 					ProtoQuery(),
 			)
 		})
+		errorList.AddError(err)
 		err = phonehome.AddTotal(ctx, props, "Integration domain Administrative Events", func(ctx context.Context) (int, error) {
 			return ds.CountEvents(ctx,
 				search.NewQueryBuilder().
