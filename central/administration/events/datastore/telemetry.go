@@ -38,16 +38,16 @@ func Gather(ds DataStore) phonehome.GatherFunc {
 		props := map[string]any{}
 		errorList := errorhelpers.NewErrorList("Administration Events Telemetry")
 		for key, query := range telemetryMap {
-			errorList.AddError(addTelemetry(ctx, ds, props, key, query))
+			errorList.AddError(phonehome.AddTotal(ctx, props, key, countEvents(ds, query)))
 		}
 		return props, errorList.ToError()
 	}
 }
 
-func addTelemetry(ctx context.Context, ds DataStore, props map[string]any, key string, query *v1.Query) error {
-	return phonehome.AddTotal(ctx, props, key, func(ctx context.Context) (int, error) {
+func countEvents(ds DataStore, query *v1.Query) func(context.Context) (int, error) {
+	return func(ctx context.Context) (int, error) {
 		return ds.CountEvents(ctx, query)
-	})
+	}
 }
 
 func stringQuery(label search.FieldLabel, value string) *v1.Query {
