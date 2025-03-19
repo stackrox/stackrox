@@ -41,7 +41,7 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
     int attempts() default 3
 
     /**
-     * Delay in seconds between attempts, in time units.
+     * Delay in seconds between attempts.
      * @return Delay
      */
     long delay() default 1
