@@ -86,6 +86,7 @@ func DropDatabase(t testing.TB, database string) {
 }
 
 // ForT creates and returns a Postgres for the test
+// It will teardown DB at the end of the test.
 func ForT(t testing.TB) *TestPostgres {
 	// Bootstrap a test database
 	database := CreateADatabaseForT(t)
@@ -102,10 +103,16 @@ func ForT(t testing.TB) *TestPostgres {
 	// initialize pool to be used
 	pool := ForTCustomPool(t, database)
 
-	return &TestPostgres{
+	testPg := &TestPostgres{
 		DB:       pool,
 		database: database,
 	}
+
+	t.Cleanup(func() {
+		testPg.Teardown(t)
+	})
+
+	return testPg
 }
 
 // ForTCustomDB - creates and returns a Postgres for the test.  This is used primarily in testing migrations,
