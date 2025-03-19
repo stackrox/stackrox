@@ -302,6 +302,7 @@ func copyFromImageComponentV2Cves(ctx context.Context, tx *postgres.Tx, iTime ti
 		"isfixable",
 		"fixedby",
 		"componentid",
+		"advisory",
 		"serialized",
 	}
 
@@ -341,6 +342,7 @@ func copyFromImageComponentV2Cves(ctx context.Context, tx *postgres.Tx, iTime ti
 			obj.GetIsFixable(),
 			obj.GetFixedBy(),
 			obj.GetComponentId(),
+			obj.GetAdvisory(),
 			serialized,
 		})
 
