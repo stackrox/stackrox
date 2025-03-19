@@ -953,7 +953,7 @@ export const policyCriteriaDescriptors: Descriptor[] = [
     },
     {
         label: 'Container CPU limit',
-        name: 'Container CPU Limit"',
+        name: 'Container CPU Limit',
         shortName: 'Container CPU limit',
         category: policyCriteriaCategories.CONTAINER_CONFIGURATION,
         type: 'group',
