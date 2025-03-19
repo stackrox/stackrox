@@ -245,6 +245,7 @@ func (s *networkGraphServiceSuite) TestGetNetworkGraph() {
 	response, err := s.service.GetNetworkGraph(ctx, request)
 	s.NoError(err)
 
+	// We don't expect the timestamps to agree perfectly so set them to the same value
 	normalizeTimestamps(response, timeNow.Protobuf())
 	normalizeTimestamps(expectedResponse, timeNow.Protobuf())
 	protoassert.Equal(s.T(), expectedResponse, response)
