@@ -1083,34 +1083,21 @@ func RunCursorQueryForSchemaFn[T any, PT pgutils.Unmarshaler[T]](ctx context.Con
 			return errors.Wrap(err, "advancing in cursor")
 		}
 
-		// forEachRow closes rows so it could not be used later.
-		rowsAffected, err := forEachRow(rows, callback)
+		var data []byte
+		tag, err := pgx.ForEachRow(rows, []any{&data}, func() error {
+			msg := new(T)
+			if err := PT(msg).UnmarshalVTUnsafe(data); err != nil {
+				return err
+			}
+			return callback(msg)
+		})
 		if err != nil {
 			return errors.Wrap(err, "processing rows")
 		}
-		if rowsAffected != cursorBatchSize {
+		if tag.RowsAffected() != cursorBatchSize {
 			return nil
 		}
 	}
-}
-
-func forEachRow[T any, PT pgutils.Unmarshaler[T]](rows pgx.Rows, callback func(obj PT) error) (int64, error) {
-	defer rows.Close()
-	for rows.Next() {
-		obj, err := pgutils.Unmarshal[T, PT](rows)
-		if err != nil {
-			return 0, errors.Wrap(err, "could not unmarshal row")
-		}
-		if err := callback(obj); err != nil {
-			return 0, errors.Wrap(err, "callback returned an error")
-		}
-	}
-
-	if err := rows.Err(); err != nil {
-		return 0, errors.Wrap(err, "could not read rows")
-	}
-
-	return rows.CommandTag().RowsAffected(), nil
 }
 
 // RunDeleteRequestForSchema executes a request for just the delete against the database
