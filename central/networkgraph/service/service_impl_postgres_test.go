@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
-
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	configDS "github.com/stackrox/rox/central/networkgraph/config/datastore"
@@ -175,9 +174,9 @@ func (s *networkGraphServiceSuite) TestGetNetworkGraph() {
 	}
 
 	deployment := &storage.Deployment{
-			Id:        fixtureconsts.Deployment1,
-			ClusterId: testCluster,
-			Namespace: testNamespace,
+		Id:        fixtureconsts.Deployment1,
+		ClusterId: testCluster,
+		Namespace: testNamespace,
 	}
 
 	err := s.deploymentsDataStore.UpsertDeployment(globalWriteAccessCtx, deployment)
@@ -202,45 +201,43 @@ func (s *networkGraphServiceSuite) TestGetNetworkGraph() {
 	s.NoError(err)
 
 	request := &v1.NetworkGraphRequest{
-			ClusterId: testCluster,
-		}
+		ClusterId: testCluster,
+	}
 
 	expectedResponse := &v1.NetworkGraph{
-				Nodes: []*v1.NetworkNode{
-					&v1.NetworkNode{
-						Entity:	&storage.NetworkEntityInfo{
-							Type:	storage.NetworkEntityInfo_DEPLOYMENT,
-							Id:	deployment.Id,
-							Desc: &storage.NetworkEntityInfo_Deployment_{
-								Deployment: &storage.NetworkEntityInfo_Deployment{
-									Namespace: deployment.Namespace,
-								},
-							},
+		Nodes: []*v1.NetworkNode{
+			{
+				Entity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					Id:   deployment.Id,
+					Desc: &storage.NetworkEntityInfo_Deployment_{
+						Deployment: &storage.NetworkEntityInfo_Deployment{
+							Namespace: deployment.Namespace,
 						},
-						OutEdges: map[int32]*v1.NetworkEdgePropertiesBundle{
-							1: &v1.NetworkEdgePropertiesBundle{
-								Properties: []*v1.NetworkEdgeProperties{
-									&v1.NetworkEdgeProperties{
-										Port: 1234,
-										Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-										LastActiveTimestamp: timeNow.Protobuf(),
-									},
-								},
-							},
-						},
-						QueryMatch: true,
-					},
-					&v1.NetworkNode{
-						Entity:	&storage.NetworkEntityInfo{
-							Type:	storage.NetworkEntityInfo_INTERNET,
-							Id:	networkgraph.InternetExternalSourceID,
-						},
-						OutEdges: map[int32]*v1.NetworkEdgePropertiesBundle{},
 					},
 				},
-			}
-
-
+				OutEdges: map[int32]*v1.NetworkEdgePropertiesBundle{
+					1: {
+						Properties: []*v1.NetworkEdgeProperties{
+							{
+								Port:                1234,
+								Protocol:            storage.L4Protocol_L4_PROTOCOL_TCP,
+								LastActiveTimestamp: timeNow.Protobuf(),
+							},
+						},
+					},
+				},
+				QueryMatch: true,
+			},
+			{
+				Entity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_INTERNET,
+					Id:   networkgraph.InternetExternalSourceID,
+				},
+				OutEdges: map[int32]*v1.NetworkEdgePropertiesBundle{},
+			},
+		},
+	}
 
 	response, err := s.service.GetNetworkGraph(ctx, request)
 	s.NoError(err)
