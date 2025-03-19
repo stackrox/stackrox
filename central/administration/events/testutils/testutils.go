@@ -11,8 +11,8 @@ var (
 	eventCounter = 0
 )
 
-// GenerateAdministrativeEvent creates an administrative event for testing.
-func GenerateAdministrativeEvent(eventLevel storage.AdministrationEventLevel, domain string) *events.AdministrationEvent {
+// GenerateAdministrationEvent creates an administration event for testing.
+func GenerateAdministrationEvent(eventLevel storage.AdministrationEventLevel, domain string) *events.AdministrationEvent {
 	event := &events.AdministrationEvent{
 		Domain:       domain,
 		Hint:         fmt.Sprintf("sample hint %d", eventCounter),

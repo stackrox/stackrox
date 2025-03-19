@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -12,7 +13,20 @@ import (
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 )
 
-// Gather the number of administrative events
+var (
+	telemetryMap = map[string]*v1.Query{
+		"Administration Events":                       search.EmptyQuery(),
+		"Info type Administration Events":             stringQuery(search.EventLevel, storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_INFO.String()),
+		"Warning type Administration Events":          stringQuery(search.EventLevel, storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_WARNING.String()),
+		"Error type Administration Events":            stringQuery(search.EventLevel, storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR.String()),
+		"Authentication domain Administration Events": stringQuery(search.EventDomain, events.AuthenticationDomain),
+		"Default domain Administration Events":        stringQuery(search.EventDomain, events.DefaultDomain),
+		"Image Scanning domain Administration Events": stringQuery(search.EventDomain, events.ImageScanningDomain),
+		"Integration domain Administration Events":    stringQuery(search.EventDomain, events.IntegrationDomain),
+	}
+)
+
+// Gather the number of administration events
 func Gather(ds DataStore) phonehome.GatherFunc {
 	return func(ctx context.Context) (map[string]any, error) {
 		ctx = sac.WithGlobalAccessScopeChecker(ctx,
@@ -22,67 +36,20 @@ func Gather(ds DataStore) phonehome.GatherFunc {
 			),
 		)
 		props := map[string]any{}
-		errorList := errorhelpers.NewErrorList("Administrative Events Telemetry")
-		err := phonehome.AddTotal(ctx, props, "Administrative Events", func(ctx context.Context) (int, error) {
-			return ds.CountEvents(ctx, search.EmptyQuery())
-		})
-		errorList.AddError(err)
-		err = phonehome.AddTotal(ctx, props, "Info type Administrative Events", func(ctx context.Context) (int, error) {
-			return ds.CountEvents(ctx,
-				search.NewQueryBuilder().
-					AddStrings(search.EventLevel, storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_INFO.String()).
-					ProtoQuery(),
-			)
-		})
-		errorList.AddError(err)
-		err = phonehome.AddTotal(ctx, props, "Warning type Administrative Events", func(ctx context.Context) (int, error) {
-			return ds.CountEvents(ctx,
-				search.NewQueryBuilder().
-					AddStrings(search.EventLevel, storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_WARNING.String()).
-					ProtoQuery(),
-			)
-		})
-		errorList.AddError(err)
-		err = phonehome.AddTotal(ctx, props, "Error type Administrative Events", func(ctx context.Context) (int, error) {
-			return ds.CountEvents(ctx,
-				search.NewQueryBuilder().
-					AddStrings(search.EventLevel, storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR.String()).
-					ProtoQuery(),
-			)
-		})
-		errorList.AddError(err)
-		err = phonehome.AddTotal(ctx, props, "Authentication domain Administrative Events", func(ctx context.Context) (int, error) {
-			return ds.CountEvents(ctx,
-				search.NewQueryBuilder().
-					AddStrings(search.EventDomain, events.AuthenticationDomain).
-					ProtoQuery(),
-			)
-		})
-		errorList.AddError(err)
-		err = phonehome.AddTotal(ctx, props, "Default domain Administrative Events", func(ctx context.Context) (int, error) {
-			return ds.CountEvents(ctx,
-				search.NewQueryBuilder().
-					AddStrings(search.EventDomain, events.DefaultDomain).
-					ProtoQuery(),
-			)
-		})
-		errorList.AddError(err)
-		err = phonehome.AddTotal(ctx, props, "Image Scanning domain Administrative Events", func(ctx context.Context) (int, error) {
-			return ds.CountEvents(ctx,
-				search.NewQueryBuilder().
-					AddStrings(search.EventDomain, events.ImageScanningDomain).
-					ProtoQuery(),
-			)
-		})
-		errorList.AddError(err)
-		err = phonehome.AddTotal(ctx, props, "Integration domain Administrative Events", func(ctx context.Context) (int, error) {
-			return ds.CountEvents(ctx,
-				search.NewQueryBuilder().
-					AddStrings(search.EventDomain, events.IntegrationDomain).
-					ProtoQuery(),
-			)
-		})
-		errorList.AddError(err)
+		errorList := errorhelpers.NewErrorList("Administration Events Telemetry")
+		for key, query := range telemetryMap {
+			errorList.AddError(addTelemetry(ctx, ds, props, key, query))
+		}
 		return props, errorList.ToError()
 	}
+}
+
+func addTelemetry(ctx context.Context, ds DataStore, props map[string]any, key string, query *v1.Query) error {
+	return phonehome.AddTotal(ctx, props, key, func(ctx context.Context) (int, error) {
+		return ds.CountEvents(ctx, query)
+	})
+}
+
+func stringQuery(label search.FieldLabel, value string) *v1.Query {
+	return search.NewQueryBuilder().AddStrings(label, value).ProtoQuery()
 }
