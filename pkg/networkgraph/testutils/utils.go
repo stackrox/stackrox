@@ -27,6 +27,32 @@ func GetDeploymentNetworkEntity(id, name string) *storage.NetworkEntityInfo {
 	}
 }
 
+func GetExtSrcNetworkEntityDiscovered(id, name, cidr string, isDefault bool, clusterID string, isDiscovered bool) *storage.NetworkEntity {
+	return &storage.NetworkEntity{
+		Info: GetExtSrcNetworkEntityInfoDiscovered(id, name, cidr, isDefault, isDiscovered),
+		Scope: &storage.NetworkEntity_Scope{
+			ClusterId: clusterID,
+		},
+	}
+}
+
+func GetExtSrcNetworkEntityInfoDiscovered(id, name, cidr string, isDefault bool, isDiscovered bool) *storage.NetworkEntityInfo {
+	return &storage.NetworkEntityInfo{
+		Id:   id,
+		Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+		Desc: &storage.NetworkEntityInfo_ExternalSource_{
+			ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+				Name: name,
+				Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+					Cidr: cidr,
+				},
+				Default:    isDefault,
+				Discovered: isDiscovered,
+			},
+		},
+	}
+}
+
 // GetExtSrcNetworkEntity returns a external source typed *storage.NetworkEntity object.
 func GetExtSrcNetworkEntity(id, name, cidr string, isDefault bool, clusterID string) *storage.NetworkEntity {
 	return &storage.NetworkEntity{
@@ -48,7 +74,7 @@ func GetExtSrcNetworkEntityInfo(id, name, cidr string, isDefault bool) *storage.
 				Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
 					Cidr: cidr,
 				},
-				Default: isDefault,
+				Default:    isDefault,
 			},
 		},
 	}
