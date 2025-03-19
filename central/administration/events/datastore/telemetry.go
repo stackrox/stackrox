@@ -3,8 +3,8 @@ package datastore
 import (
 	"context"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -21,13 +21,11 @@ func Gather(ds DataStore) phonehome.GatherFunc {
 			),
 		)
 		props := map[string]any{}
-		var combinedErr error
+		var errorList errorhelpers.ErrorList
 		err := phonehome.AddTotal(ctx, props, "Administrative Events", func(ctx context.Context) (int, error) {
 			return ds.CountEvents(ctx, search.EmptyQuery())
 		})
-		if err != nil {
-			combinedErr = multierror.Append(combinedErr, err)
-		}
+		errorList.AddError(err)
 		err = phonehome.AddTotal(ctx, props, "Info type Administrative Events", func(ctx context.Context) (int, error) {
 			return ds.CountEvents(ctx,
 				search.NewQueryBuilder().
@@ -35,9 +33,7 @@ func Gather(ds DataStore) phonehome.GatherFunc {
 					ProtoQuery(),
 			)
 		})
-		if err != nil {
-			combinedErr = multierror.Append(combinedErr, err)
-		}
+		errorList.AddError(err)
 		err = phonehome.AddTotal(ctx, props, "Warning type Administrative Events", func(ctx context.Context) (int, error) {
 			return ds.CountEvents(ctx,
 				search.NewQueryBuilder().
@@ -45,9 +41,7 @@ func Gather(ds DataStore) phonehome.GatherFunc {
 					ProtoQuery(),
 			)
 		})
-		if err != nil {
-			combinedErr = multierror.Append(combinedErr, err)
-		}
+		errorList.AddError(err)
 		err = phonehome.AddTotal(ctx, props, "Error type Administrative Events", func(ctx context.Context) (int, error) {
 			return ds.CountEvents(ctx,
 				search.NewQueryBuilder().
@@ -55,9 +49,7 @@ func Gather(ds DataStore) phonehome.GatherFunc {
 					ProtoQuery(),
 			)
 		})
-		if err != nil {
-			combinedErr = multierror.Append(combinedErr, err)
-		}
-		return props, combinedErr
+		errorList.AddError(err)
+		return props, errorList.ToError()
 	}
 }
