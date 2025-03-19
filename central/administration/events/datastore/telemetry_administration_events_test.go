@@ -36,57 +36,74 @@ func TestGather(t *testing.T) {
 	infoEvent := storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_INFO
 	warningEvent := storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_WARNING
 	errorEvent := storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR
+	authDomain := events.AuthenticationDomain
+	defaultDomain := events.DefaultDomain
+	imageScanningDomain := events.ImageScanningDomain
+	integrationDomain := events.IntegrationDomain
 
 	testCases := map[string]struct {
-		administrativeEvents  []*events.AdministrationEvent
-		expectedTotalEvents   int
-		expectedInfoEvents    int
-		expectedWarningEvents int
-		expectedErrorEvents   int
+		administrativeEvents              []*events.AdministrationEvent
+		expectedTotalEvents               int
+		expectedInfoEvents                int
+		expectedWarningEvents             int
+		expectedErrorEvents               int
+		expectedAuthDomainEvents          int
+		expectedDefaultDomainEvents       int
+		expectedImageScanningDomainEvents int
+		expectedIntegrationDomainEvents   int
 	}{
-		"one info event": {
+		"one info event in default domain": {
 			administrativeEvents: []*events.AdministrationEvent{
-				testutils.GenerateAdministrativeEvent(infoEvent),
+				testutils.GenerateAdministrativeEvent(infoEvent, defaultDomain),
 			},
-			expectedTotalEvents: 1,
-			expectedInfoEvents:  1,
+			expectedTotalEvents:         1,
+			expectedInfoEvents:          1,
+			expectedDefaultDomainEvents: 1,
 		},
-		"one warning event": {
+		"one warning event in image scanning": {
 			administrativeEvents: []*events.AdministrationEvent{
-				testutils.GenerateAdministrativeEvent(warningEvent),
+				testutils.GenerateAdministrativeEvent(warningEvent, imageScanningDomain),
 			},
-			expectedTotalEvents:   1,
-			expectedWarningEvents: 1,
+			expectedTotalEvents:               1,
+			expectedWarningEvents:             1,
+			expectedImageScanningDomainEvents: 1,
 		},
-		"one error event": {
+		"one error event in integrations": {
 			administrativeEvents: []*events.AdministrationEvent{
-				testutils.GenerateAdministrativeEvent(errorEvent),
+				testutils.GenerateAdministrativeEvent(errorEvent, integrationDomain),
 			},
-			expectedTotalEvents: 1,
-			expectedErrorEvents: 1,
+			expectedTotalEvents:             1,
+			expectedErrorEvents:             1,
+			expectedIntegrationDomainEvents: 1,
 		},
-		"one of each event": {
+		"one of each": {
 			administrativeEvents: []*events.AdministrationEvent{
-				testutils.GenerateAdministrativeEvent(infoEvent),
-				testutils.GenerateAdministrativeEvent(warningEvent),
-				testutils.GenerateAdministrativeEvent(errorEvent),
+				testutils.GenerateAdministrativeEvent(infoEvent, authDomain),
+				testutils.GenerateAdministrativeEvent(warningEvent, imageScanningDomain),
+				testutils.GenerateAdministrativeEvent(errorEvent, integrationDomain),
+				testutils.GenerateAdministrativeEvent(errorEvent, defaultDomain),
 			},
-			expectedTotalEvents:   3,
-			expectedInfoEvents:    1,
-			expectedWarningEvents: 1,
-			expectedErrorEvents:   1,
+			expectedTotalEvents:               4,
+			expectedInfoEvents:                1,
+			expectedWarningEvents:             1,
+			expectedErrorEvents:               2,
+			expectedAuthDomainEvents:          1,
+			expectedImageScanningDomainEvents: 1,
+			expectedIntegrationDomainEvents:   1,
+			expectedDefaultDomainEvents:       1,
 		},
-		"3 errors 2 warning events": {
+		"3 errors 2 warning events, all in default domain": {
 			administrativeEvents: []*events.AdministrationEvent{
-				testutils.GenerateAdministrativeEvent(warningEvent),
-				testutils.GenerateAdministrativeEvent(warningEvent),
-				testutils.GenerateAdministrativeEvent(errorEvent),
-				testutils.GenerateAdministrativeEvent(errorEvent),
-				testutils.GenerateAdministrativeEvent(errorEvent),
+				testutils.GenerateAdministrativeEvent(warningEvent, defaultDomain),
+				testutils.GenerateAdministrativeEvent(warningEvent, defaultDomain),
+				testutils.GenerateAdministrativeEvent(errorEvent, defaultDomain),
+				testutils.GenerateAdministrativeEvent(errorEvent, defaultDomain),
+				testutils.GenerateAdministrativeEvent(errorEvent, defaultDomain),
 			},
-			expectedTotalEvents:   5,
-			expectedWarningEvents: 2,
-			expectedErrorEvents:   3,
+			expectedTotalEvents:         5,
+			expectedWarningEvents:       2,
+			expectedErrorEvents:         3,
+			expectedDefaultDomainEvents: 5,
 		},
 		"no event": {},
 	}
@@ -104,10 +121,14 @@ func TestGather(t *testing.T) {
 			require.NoError(t, err)
 
 			expectedProps := map[string]any{
-				"Total Error type Administrative Events":   tc.expectedErrorEvents,
-				"Total Info type Administrative Events":    tc.expectedInfoEvents,
-				"Total Administrative Events":              tc.expectedTotalEvents,
-				"Total Warning type Administrative Events": tc.expectedWarningEvents,
+				"Total Error type Administrative Events":            tc.expectedErrorEvents,
+				"Total Info type Administrative Events":             tc.expectedInfoEvents,
+				"Total Administrative Events":                       tc.expectedTotalEvents,
+				"Total Warning type Administrative Events":          tc.expectedWarningEvents,
+				"Total Authentication domain Administrative Events": tc.expectedAuthDomainEvents,
+				"Total Default domain Administrative Events":        tc.expectedDefaultDomainEvents,
+				"Total Image Scanning domain Administrative Events": tc.expectedImageScanningDomainEvents,
+				"Total Integration domain Administrative Events":    tc.expectedIntegrationDomainEvents,
 			}
 			assert.Equal(t, expectedProps, props)
 

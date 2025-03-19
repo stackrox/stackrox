@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/administration/events"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -21,7 +22,7 @@ func Gather(ds DataStore) phonehome.GatherFunc {
 			),
 		)
 		props := map[string]any{}
-		var errorList errorhelpers.ErrorList
+		errorList := errorhelpers.NewErrorList("Administrative Events Telemetry")
 		err := phonehome.AddTotal(ctx, props, "Administrative Events", func(ctx context.Context) (int, error) {
 			return ds.CountEvents(ctx, search.EmptyQuery())
 		})
@@ -46,6 +47,35 @@ func Gather(ds DataStore) phonehome.GatherFunc {
 			return ds.CountEvents(ctx,
 				search.NewQueryBuilder().
 					AddStrings(search.EventLevel, storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR.String()).
+					ProtoQuery(),
+			)
+		})
+		errorList.AddError(err)
+		err = phonehome.AddTotal(ctx, props, "Authentication domain Administrative Events", func(ctx context.Context) (int, error) {
+			return ds.CountEvents(ctx,
+				search.NewQueryBuilder().
+					AddStrings(search.EventDomain, events.AuthenticationDomain).
+					ProtoQuery(),
+			)
+		})
+		err = phonehome.AddTotal(ctx, props, "Default domain Administrative Events", func(ctx context.Context) (int, error) {
+			return ds.CountEvents(ctx,
+				search.NewQueryBuilder().
+					AddStrings(search.EventDomain, events.DefaultDomain).
+					ProtoQuery(),
+			)
+		})
+		err = phonehome.AddTotal(ctx, props, "Image Scanning domain Administrative Events", func(ctx context.Context) (int, error) {
+			return ds.CountEvents(ctx,
+				search.NewQueryBuilder().
+					AddStrings(search.EventDomain, events.ImageScanningDomain).
+					ProtoQuery(),
+			)
+		})
+		err = phonehome.AddTotal(ctx, props, "Integration domain Administrative Events", func(ctx context.Context) (int, error) {
+			return ds.CountEvents(ctx,
+				search.NewQueryBuilder().
+					AddStrings(search.EventDomain, events.IntegrationDomain).
 					ProtoQuery(),
 			)
 		})
