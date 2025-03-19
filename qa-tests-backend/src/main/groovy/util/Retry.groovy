@@ -88,6 +88,7 @@ class RetryASTTransformation extends AbstractASTTransformation {
                         new ArgumentListExpression(
                                 new ConstantExpression(attempts),
                                 new ConstantExpression(delay),
+                                new ConstantExpression("${clazz.name}.${method.name}".toString()),
                                 closureExpression
                         )
                 ))
