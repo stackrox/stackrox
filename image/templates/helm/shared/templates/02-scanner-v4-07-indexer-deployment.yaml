@@ -157,7 +157,16 @@ spec:
       - name: etc-pki-volume
         emptyDir: {}
       {{- if ._rox._securedClusterCertRefresh }}
-      {{- include "srox.tlsCertsInitContainerVolumes" (list "scanner-v4-indexer") | indent 6 }}
+      - name: certs
+        emptyDir: { }
+      - name: certs-legacy
+        secret:
+          secretName: scanner-v4-indexer-tls
+          optional: true
+      - name: certs-new
+        secret:
+          secretName: tls-cert-scanner-v4-indexer
+          optional: true
       {{- else }}
       - name: certs
         secret:
