@@ -69,7 +69,6 @@ func (s *authProviderServiceTestSuite) SetupSuite() {
 }
 
 func (s *authProviderServiceTestSuite) TearDownSuite() {
-	s.db.Teardown(s.T())
 	s.mockCtrl.Finish()
 }
 

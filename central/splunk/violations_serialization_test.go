@@ -41,11 +41,6 @@ func (s *violationSerializationTestSuite) SetupTest() {
 	s.alertStore = alertStore
 }
 
-func (s *violationSerializationTestSuite) TearDownTest() {
-	s.pool.Teardown(s.T())
-	s.pool.Close()
-}
-
 func (s *violationSerializationTestSuite) TestViolationSerialization() {
 	ctx := sac.WithAllAccess(context.Background())
 

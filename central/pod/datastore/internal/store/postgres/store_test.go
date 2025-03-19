@@ -44,10 +44,6 @@ func (s *PodsStoreSuite) SetupTest() {
 	s.NoError(err)
 }
 
-func (s *PodsStoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *PodsStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 

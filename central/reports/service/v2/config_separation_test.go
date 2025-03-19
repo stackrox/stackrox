@@ -94,7 +94,7 @@ func (s *ServiceLevelConfigSeparationSuiteV2) SetupSuite() {
 
 func (s *ServiceLevelConfigSeparationSuiteV2) TearDownSuite() {
 	s.mockCtrl.Finish()
-	s.testDB.Teardown(s.T())
+
 }
 
 func (s *ServiceLevelConfigSeparationSuiteV2) TestListReportConfigurations() {

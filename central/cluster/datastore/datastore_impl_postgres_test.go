@@ -113,10 +113,6 @@ func (s *ClusterPostgresDataStoreTestSuite) SetupTest() {
 	s.NoError(err)
 }
 
-func (s *ClusterPostgresDataStoreTestSuite) TearDownTest() {
-	s.db.Teardown(s.T())
-}
-
 // Test that when we try to remove a cluster that does not exist, we return an error.
 func (s *ClusterPostgresDataStoreTestSuite) TestHandlesClusterDoesNotExist() {
 	ctx := sac.WithAllAccess(context.Background())

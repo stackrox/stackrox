@@ -70,11 +70,6 @@ func (s *servicePostgresTestSuite) SetupTest() {
 	}
 }
 
-func (s *servicePostgresTestSuite) TearDownTest() {
-	s.pool.Teardown(s.T())
-	s.pool.Close()
-}
-
 func (s *servicePostgresTestSuite) TestCount() {
 	s.addCloudSources(50)
 

@@ -69,10 +69,6 @@ func (s *migrationTestSuite) SetupSuite() {
 	pgutils.CreateTableFromModel(s.ctx, s.db.GetGormDB(), schema.CreateTableVulnerabilityRequestsStmt)
 }
 
-func (s *migrationTestSuite) TearDownSuite() {
-	s.db.Teardown(s.T())
-}
-
 func (s *migrationTestSuite) TestMigration() {
 	oldRequests := map[string]*storage.VulnerabilityRequest{
 		"1": fakeOldVulnReq(&requestParams{

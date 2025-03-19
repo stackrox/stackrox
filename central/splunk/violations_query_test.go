@@ -53,11 +53,6 @@ func makeDS(t *testing.T, alerts []*storage.Alert) testDataStore {
 	return testDataStore{testDB: testDB, alertsDS: alertsDS}
 }
 
-// teardown cleans up test datastore.
-func (d *testDataStore) teardown(t *testing.T) {
-	d.testDB.Teardown(t)
-}
-
 // these simply converts varargs to slice for slightly less typing (pun intended).
 func these(alerts ...*storage.Alert) []*storage.Alert {
 	return alerts
@@ -66,7 +61,6 @@ func these(alerts ...*storage.Alert) []*storage.Alert {
 // withAlerts runs action in a scope of test datastore.DataStore that contains given alerts.
 func (s *violationsTestSuite) withAlerts(alerts []*storage.Alert, action func(alertsDS datastore.DataStore)) {
 	ds := makeDS(s.T(), alerts)
-	defer ds.teardown(s.T())
 	action(ds.alertsDS)
 }
 

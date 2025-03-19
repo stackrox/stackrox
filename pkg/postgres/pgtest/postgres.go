@@ -109,7 +109,7 @@ func ForT(t testing.TB) *TestPostgres {
 	}
 
 	t.Cleanup(func() {
-		testPg.Teardown(t)
+		testPg.teardown(t)
 	})
 
 	return testPg
@@ -150,8 +150,7 @@ func (tp *TestPostgres) GetGormDB(t testing.TB) *gorm.DB {
 	return OpenGormDB(t, source)
 }
 
-// Teardown tears down a Postgres instance used in tests
-func (tp *TestPostgres) Teardown(t testing.TB) {
+func (tp *TestPostgres) teardown(t testing.TB) {
 	if tp == nil {
 		return
 	}

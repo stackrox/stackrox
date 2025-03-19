@@ -65,10 +65,6 @@ func (s *reportConfigMigrationTestSuite) SetupTest() {
 	s.newReportStore = newStore.New(s.db.DB)
 }
 
-func (s *reportConfigMigrationTestSuite) TearDownTest() {
-	s.db.Teardown(s.T())
-}
-
 func (s *reportConfigMigrationTestSuite) TestMigration() {
 	ctx := sac.WithAllAccess(context.Background())
 

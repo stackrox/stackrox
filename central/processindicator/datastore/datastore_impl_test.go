@@ -78,7 +78,6 @@ func (suite *IndicatorDataStoreTestSuite) SetupTest() {
 }
 
 func (suite *IndicatorDataStoreTestSuite) TearDownTest() {
-	suite.postgres.Teardown(suite.T())
 	suite.mockCtrl.Finish()
 }
 

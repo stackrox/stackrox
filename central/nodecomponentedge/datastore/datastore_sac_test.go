@@ -51,10 +51,6 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 }
 
-func (s *nodeComponentEdgeDatastoreSACTestSuite) TearDownSuite() {
-	s.testGraphDatastore.Cleanup(s.T())
-}
-
 func getComponentID(component *storage.EmbeddedNodeScanComponent, os string) string {
 	return scancomponent.ComponentID(component.GetName(), component.GetVersion(), os)
 }

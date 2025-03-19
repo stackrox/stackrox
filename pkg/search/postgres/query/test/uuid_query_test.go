@@ -35,10 +35,6 @@ func (s *UUIDTestSuite) SetupTest() {
 	s.ctx = sac.WithAllAccess(context.Background())
 }
 
-func (s *UUIDTestSuite) TearDownTest() {
-	s.postgres.Teardown(s.T())
-}
-
 func (s *UUIDTestSuite) TestRemovePLOPsWithoutPodUID() {
 	plops := []*storage.ProcessListeningOnPortStorage{
 		fixtures.GetPlopStorage1(),

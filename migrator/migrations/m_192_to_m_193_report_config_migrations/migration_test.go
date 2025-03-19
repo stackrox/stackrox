@@ -81,10 +81,6 @@ func (s *migrationTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 }
 
-func (s *migrationTestSuite) TearDownSuite() {
-	s.db.Teardown(s.T())
-}
-
 func (s *migrationTestSuite) TestMigration() {
 	dbs := &types.Databases{
 		GormDB:     s.db.GetGormDB(),

@@ -484,10 +484,6 @@ func (s *complianceCheckResultDataStoreTestSuite) SetupTest() {
 	s.dataStore = New(s.storage, s.db, s.searcher)
 }
 
-func (s *complianceCheckResultDataStoreTestSuite) TearDownTest() {
-	s.db.Teardown(s.T())
-}
-
 func (s *complianceCheckResultDataStoreTestSuite) TestUpsertResult() {
 	// make sure we have nothing
 	checkResultIDs, err := s.storage.GetIDs(s.hasReadCtx)

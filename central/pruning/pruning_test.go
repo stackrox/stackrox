@@ -1309,8 +1309,6 @@ func (s *PruningTestSuite) TestRemoveOrphanedProcesses() {
 
 			processes.EXPECT().PruneProcessIndicators(gomock.Any(), c.expectedDeletions).AnyTimes()
 			gci.removeOrphanedProcesses()
-
-			db.Teardown(t)
 		})
 	}
 }

@@ -63,12 +63,6 @@ func (h *ExportServicePostgresTestHelper) SetupTest(tb testing.TB) error {
 	return nil
 }
 
-// TearDownTest cleans up the ExportServicePostgresTestHelper resources after testing.
-func (h *ExportServicePostgresTestHelper) TearDownTest(tb testing.TB) {
-	h.pool.Teardown(tb)
-	h.pool.Close()
-}
-
 func getImageSetPath() (string, error) {
 	// Go up the directory tree from the current working directory
 	// to location where the subtree to the image data file matches.

@@ -46,11 +46,6 @@ func (s *permissionSetUpdaterTestSuite) SetupTest() {
 		s.pgTest.DB)).(*permissionSetUpdater)
 }
 
-func (s *permissionSetUpdaterTestSuite) TearDownTest() {
-	s.pgTest.Teardown(s.T())
-	s.pgTest.Close()
-}
-
 func (s *permissionSetUpdaterTestSuite) TestUpsert() {
 	cases := map[string]struct {
 		m   protocompat.Message

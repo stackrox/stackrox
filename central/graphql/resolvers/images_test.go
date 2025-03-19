@@ -65,10 +65,6 @@ func (s *ImageResolversTestSuite) SetupSuite() {
 	}
 }
 
-func (s *ImageResolversTestSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func sacAllowOnlyCluster2Namespace2(ctx context.Context) context.Context {
 	return sac.WithGlobalAccessScopeChecker(
 		ctx,

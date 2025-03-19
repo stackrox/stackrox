@@ -31,9 +31,6 @@ func (s *ConfigsStoreSuite) SetupTest() {
 	s.store = New(s.testDB.DB)
 }
 
-func (s *ConfigsStoreSuite) TearDownTest() {
-	s.testDB.Teardown(s.T())
-}
 
 func (s *ConfigsStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())

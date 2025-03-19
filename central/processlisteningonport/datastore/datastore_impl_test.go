@@ -77,10 +77,6 @@ func (suite *PLOPDataStoreTestSuite) SetupTest() {
 	suite.datastore = New(suite.store, suite.indicatorDataStore, suite.postgres)
 }
 
-func (suite *PLOPDataStoreTestSuite) TearDownTest() {
-	suite.postgres.Teardown(suite.T())
-}
-
 func (suite *PLOPDataStoreTestSuite) getPlopsFromDB() []*storage.ProcessListeningOnPortStorage {
 	plopsFromDB := []*storage.ProcessListeningOnPortStorage{}
 	err := suite.datastore.WalkAll(suite.hasReadCtx,
@@ -2462,7 +2458,6 @@ func (suite *PLOPDataStoreTestSuite) TestRemoveOrphanedPLOPs() {
 	}
 	for _, c := range cases {
 		suite.T().Run(c.name, func(t *testing.T) {
-			suite.TearDownTest()
 			suite.SetupTest()
 			// Add deployments if necessary
 			deploymentDS, err := deploymentStore.GetTestPostgresDataStore(suite.T(), suite.postgres.DB)
@@ -2632,7 +2627,6 @@ func (suite *PLOPDataStoreTestSuite) TestRemoveOrphanedPLOPsByProcesses() {
 	}
 	for _, c := range cases {
 		suite.T().Run(c.name, func(t *testing.T) {
-			suite.TearDownTest()
 			suite.SetupTest()
 			// Add deployments if necessary
 			deploymentDS, err := deploymentStore.GetTestPostgresDataStore(suite.T(), suite.postgres.DB)

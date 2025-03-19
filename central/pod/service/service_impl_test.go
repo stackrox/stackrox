@@ -79,7 +79,6 @@ func TestGetPods(t *testing.T) {
 			pgtestbase := pgtest.ForT(t)
 			require.NotNil(t, pgtestbase)
 			pool := pgtestbase.DB
-			defer pgtestbase.Teardown(t)
 
 			podsDS := datastore.NewPostgresDB(pool, mockIndicators, mockPlops, mockFilter)
 

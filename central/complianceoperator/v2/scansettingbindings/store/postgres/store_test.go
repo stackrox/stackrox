@@ -51,10 +51,6 @@ func (s *ComplianceOperatorScanSettingBindingV2StoreSuite) SetupTest() {
 	s.NoError(err)
 }
 
-func (s *ComplianceOperatorScanSettingBindingV2StoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *ComplianceOperatorScanSettingBindingV2StoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 

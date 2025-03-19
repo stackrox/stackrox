@@ -126,10 +126,6 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) SetupSuite() {
 	}
 }
 
-func (s *GraphQLImageVulnerabilityV2TestSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *GraphQLImageVulnerabilityV2TestSuite) TestUnauthorizedImageVulnerabilityEndpoint() {
 	_, err := s.resolver.ImageVulnerability(s.ctx, IDQuery{})
 	s.Error(err, "Unauthorized request got through")

@@ -41,10 +41,6 @@ func (s *LogImbuesStoreSuite) SetupTest() {
 	s.NoError(err)
 }
 
-func (s *LogImbuesStoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *LogImbuesStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
