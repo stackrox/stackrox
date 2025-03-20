@@ -12,7 +12,6 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/lifecycle"
-	"github.com/stackrox/rox/central/metrics"
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/policy/datastore"
@@ -290,9 +289,6 @@ func (s *serviceImpl) PostPolicy(ctx context.Context, request *v1.PostPolicyRequ
 		options = append(options, booleanpolicy.ValidateEnvVarSourceRestrictions())
 	}
 	policy, err := s.addOrUpdatePolicy(ctx, request.GetPolicy(), ensureIDEmpty, s.addPolicyToStoreAndSetID, options...)
-	if err == nil && policy != nil && policy.Source == storage.PolicySource_DECLARATIVE {
-		metrics.IncrementPolicyAsCodeCRsReceivedGauge()
-	}
 	return policy, err
 }
 
@@ -341,7 +337,7 @@ func (s *serviceImpl) DeletePolicy(ctx context.Context, request *v1.ResourceByID
 		return nil, errors.Wrap(errox.InvalidArgs, "A default policy cannot be deleted. (You can disable a default policy, but not delete it.)")
 	}
 
-	if err := s.policies.RemovePolicy(ctx, request.GetId()); err != nil {
+	if err := s.policies.RemovePolicy(ctx, policy); err != nil {
 		return nil, err
 	}
 
@@ -352,11 +348,6 @@ func (s *serviceImpl) DeletePolicy(ctx context.Context, request *v1.ResourceByID
 	if err := s.syncPoliciesWithSensors(); err != nil {
 		return nil, err
 	}
-
-	if policy.Source == storage.PolicySource_DECLARATIVE {
-		metrics.DecrementPolicyAsCodeCRsReceivedGauge()
-	}
-
 	return &v1.Empty{}, nil
 }
 

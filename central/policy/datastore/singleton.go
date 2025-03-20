@@ -5,14 +5,18 @@ import (
 
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/central/metrics"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/policy/search"
 	policyStore "github.com/stackrox/rox/central/policy/store"
 	policyPostgres "github.com/stackrox/rox/central/policy/store/postgres"
 	categoriesDS "github.com/stackrox/rox/central/policycategory/datastore"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/defaults/policies"
 	"github.com/stackrox/rox/pkg/policyutils"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
+	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -39,6 +43,15 @@ func initialize() {
 // Singleton provides the interface for non-service external interaction.
 func Singleton() DataStore {
 	once.Do(initialize)
+
+	count, _ := ad.Count(
+		sac.WithGlobalAccessScopeChecker(context.Background(),
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.WorkflowAdministration),
+			),
+		), pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.PolicySource, storage.PolicySource_DECLARATIVE.String()).ProtoQuery())
+	metrics.UpdatePolicyAsCodeCRsReceivedGauge(count)
 	return ad
 }
 
