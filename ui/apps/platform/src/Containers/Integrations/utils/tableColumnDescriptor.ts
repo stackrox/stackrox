@@ -99,6 +99,7 @@ const originColumnDescriptor = {
 const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
     authProviders: {
         clusterInitBundle: [{ accessor: 'name', Header: 'Name' }],
+        clusterRegistrationSecret: [{ accessor: 'name', Header: 'Name' }],
         apitoken: [
             { accessor: 'name', Header: 'Name' },
             { accessor: 'role', Header: 'Role' },
