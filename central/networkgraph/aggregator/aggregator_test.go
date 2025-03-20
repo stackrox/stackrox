@@ -313,20 +313,19 @@ func TestAggregateExtConnsByNameAnonymizeDiscoveredExtEntities(t *testing.T) {
 	detailed_flow2 := testutils.GetNetworkFlow(d1, discovered_entity2, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, &ts2)
 	anonymized_flow := testutils.GetNetworkFlow(d1, internet, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, &ts1)
 
-
 	for _, testCase := range []struct {
-		name	 string
-		flows	 []*storage.NetworkFlow
+		name     string
+		flows    []*storage.NetworkFlow
 		expected []*storage.NetworkFlow
 	}{
 		{
-			name: "Single flow with discovered entity",
-			flows: []*storage.NetworkFlow{detailed_flow1},
+			name:     "Single flow with discovered entity",
+			flows:    []*storage.NetworkFlow{detailed_flow1},
 			expected: []*storage.NetworkFlow{anonymized_flow},
 		},
 		{
-			name: "Two flows with discovered entities are aggregated",
-			flows: []*storage.NetworkFlow{detailed_flow1, detailed_flow2},
+			name:     "Two flows with discovered entities are aggregated",
+			flows:    []*storage.NetworkFlow{detailed_flow1, detailed_flow2},
 			expected: []*storage.NetworkFlow{anonymized_flow},
 		},
 	} {
