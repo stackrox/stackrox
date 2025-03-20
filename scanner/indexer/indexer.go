@@ -215,9 +215,8 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		}
 	}()
 
-	// Note: http.DefaultTransport has already been modified to handle configured proxies.
-	// See scanner/cmd/scanner/main.go.
-	t, err := httputil.TransportMux(http.DefaultTransport, httputil.WithDenyStackRoxServices(!cfg.StackRoxServices))
+	defaultTransport := httputil.NewInsecureCapableTransport(http.DefaultTransport.(*http.Transport))
+	t, err := httputil.TransportMux(defaultTransport, httputil.WithDenyStackRoxServices(!cfg.StackRoxServices))
 	if err != nil {
 		return nil, fmt.Errorf("creating HTTP transport: %w", err)
 	}
@@ -411,6 +410,9 @@ func (i *localIndexer) IndexContainerImage(ctx context.Context, hashID string, i
 		}
 		layerReq.Header.Del("User-Agent")
 		layerReq.Header.Del("Range")
+		if o.insecureSkipTLSVerify {
+			layerReq.Header.Set(httputil.InsecureSkipTLSVerifyHeader, "true")
+		}
 		manifest.Layers = append(manifest.Layers, &claircore.Layer{
 			Hash:    ccDigest,
 			URI:     layerReq.URL.String(),
