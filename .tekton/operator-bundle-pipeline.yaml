@@ -339,7 +339,8 @@ spec:
       - name: name
         value: wait-for-image
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:0c6cd49c7cab12f611986efd494ac5f5ca8a77993129612bdbce9cf9833a5fa6
+        # TODO(ROX-26707): either revert or change to latest
+        value: quay.io/rhacs-eng/konflux-tasks:pr-42@sha256:b1f11c0cb9bf326d39721e67fb94dbf313232cedc9a52b2b24252ccf4cf574fe
       - name: kind
         value: task
       resolver: bundles
@@ -446,17 +447,17 @@ spec:
     - name: BUILD_ARGS
       value:
       - OPERATOR_IMAGE_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
-      - OPERATOR_IMAGE_REF=$(params.operator-image-catalog-repo)@$(tasks.wait-for-operator-image.results.IMAGE_DIGEST)
-      - RELATED_IMAGE_MAIN=$(params.main-image-catalog-repo)@$(tasks.wait-for-main-image.results.IMAGE_DIGEST)
-      - RELATED_IMAGE_SCANNER=$(params.scanner-image-catalog-repo)@$(tasks.wait-for-scanner-image.results.IMAGE_DIGEST)
-      - RELATED_IMAGE_SCANNER_DB=$(params.scanner-db-image-catalog-repo)@$(tasks.wait-for-scanner-db-image.results.IMAGE_DIGEST)
-      - RELATED_IMAGE_SCANNER_SLIM=$(params.scanner-slim-image-catalog-repo)@$(tasks.wait-for-scanner-slim-image.results.IMAGE_DIGEST)
-      - RELATED_IMAGE_SCANNER_DB_SLIM=$(params.scanner-db-slim-image-catalog-repo)@$(tasks.wait-for-scanner-db-slim-image.results.IMAGE_DIGEST)
-      - RELATED_IMAGE_SCANNER_V4=$(params.scanner-v4-image-catalog-repo)@$(tasks.wait-for-scanner-v4-image.results.IMAGE_DIGEST)
-      - RELATED_IMAGE_SCANNER_V4_DB=$(params.scanner-v4-db-image-catalog-repo)@$(tasks.wait-for-scanner-v4-db-image.results.IMAGE_DIGEST)
-      - RELATED_IMAGE_COLLECTOR=$(params.collector-image-catalog-repo)@$(tasks.wait-for-collector-image.results.IMAGE_DIGEST)
-      - RELATED_IMAGE_ROXCTL=$(params.roxctl-image-catalog-repo)@$(tasks.wait-for-roxctl-image.results.IMAGE_DIGEST)
-      - RELATED_IMAGE_CENTRAL_DB=$(params.central-db-image-catalog-repo)@$(tasks.wait-for-central-db-image.results.IMAGE_DIGEST)
+      - OPERATOR_IMAGE_REF=$(params.operator-image-catalog-repo)@$(tasks.wait-for-operator-image.results.ARTIFACT_DIGEST)
+      - RELATED_IMAGE_MAIN=$(params.main-image-catalog-repo)@$(tasks.wait-for-main-image.results.ARTIFACT_DIGEST)
+      - RELATED_IMAGE_SCANNER=$(params.scanner-image-catalog-repo)@$(tasks.wait-for-scanner-image.results.ARTIFACT_DIGEST)
+      - RELATED_IMAGE_SCANNER_DB=$(params.scanner-db-image-catalog-repo)@$(tasks.wait-for-scanner-db-image.results.ARTIFACT_DIGEST)
+      - RELATED_IMAGE_SCANNER_SLIM=$(params.scanner-slim-image-catalog-repo)@$(tasks.wait-for-scanner-slim-image.results.ARTIFACT_DIGEST)
+      - RELATED_IMAGE_SCANNER_DB_SLIM=$(params.scanner-db-slim-image-catalog-repo)@$(tasks.wait-for-scanner-db-slim-image.results.ARTIFACT_DIGEST)
+      - RELATED_IMAGE_SCANNER_V4=$(params.scanner-v4-image-catalog-repo)@$(tasks.wait-for-scanner-v4-image.results.ARTIFACT_DIGEST)
+      - RELATED_IMAGE_SCANNER_V4_DB=$(params.scanner-v4-db-image-catalog-repo)@$(tasks.wait-for-scanner-v4-db-image.results.ARTIFACT_DIGEST)
+      - RELATED_IMAGE_COLLECTOR=$(params.collector-image-catalog-repo)@$(tasks.wait-for-collector-image.results.ARTIFACT_DIGEST)
+      - RELATED_IMAGE_ROXCTL=$(params.roxctl-image-catalog-repo)@$(tasks.wait-for-roxctl-image.results.ARTIFACT_DIGEST)
+      - RELATED_IMAGE_CENTRAL_DB=$(params.central-db-image-catalog-repo)@$(tasks.wait-for-central-db-image.results.ARTIFACT_DIGEST)
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
@@ -683,25 +684,25 @@ spec:
         [
           {
             "name": "central-db",
-            "containerImage": "$(params.central-db-image-build-repo)@$(tasks.wait-for-central-db-image.results.IMAGE_DIGEST)",
+            "containerImage": "$(params.central-db-image-build-repo)@$(tasks.wait-for-central-db-image.results.ARTIFACT_DIGEST)",
             "repository": "$(tasks.wait-for-central-db-image.results.GIT_REPO)",
             "revision": "$(tasks.wait-for-central-db-image.results.GIT_REF)"
           },
           {
             "name": "collector",
-            "containerImage": "$(params.collector-image-build-repo)@$(tasks.wait-for-collector-image.results.IMAGE_DIGEST)",
+            "containerImage": "$(params.collector-image-build-repo)@$(tasks.wait-for-collector-image.results.ARTIFACT_DIGEST)",
             "repository": "$(tasks.wait-for-collector-image.results.GIT_REPO)",
             "revision": "$(tasks.wait-for-collector-image.results.GIT_REF)"
           },
           {
             "name": "main",
-            "containerImage": "$(params.main-image-build-repo)@$(tasks.wait-for-main-image.results.IMAGE_DIGEST)",
+            "containerImage": "$(params.main-image-build-repo)@$(tasks.wait-for-main-image.results.ARTIFACT_DIGEST)",
             "repository": "$(tasks.wait-for-main-image.results.GIT_REPO)",
             "revision": "$(tasks.wait-for-main-image.results.GIT_REF)"
           },
           {
             "name": "operator",
-            "containerImage": "$(params.operator-image-build-repo)@$(tasks.wait-for-operator-image.results.IMAGE_DIGEST)",
+            "containerImage": "$(params.operator-image-build-repo)@$(tasks.wait-for-operator-image.results.ARTIFACT_DIGEST)",
             "repository": "$(tasks.wait-for-operator-image.results.GIT_REPO)",
             "revision": "$(tasks.wait-for-operator-image.results.GIT_REF)"
           },
@@ -713,43 +714,43 @@ spec:
           },
           {
             "name": "roxctl",
-            "containerImage": "$(params.roxctl-image-build-repo)@$(tasks.wait-for-roxctl-image.results.IMAGE_DIGEST)",
+            "containerImage": "$(params.roxctl-image-build-repo)@$(tasks.wait-for-roxctl-image.results.ARTIFACT_DIGEST)",
             "repository": "$(tasks.wait-for-roxctl-image.results.GIT_REPO)",
             "revision": "$(tasks.wait-for-roxctl-image.results.GIT_REF)"
           },
           {
             "name": "scanner-db",
-            "containerImage": "$(params.scanner-db-image-build-repo)@$(tasks.wait-for-scanner-db-image.results.IMAGE_DIGEST)",
+            "containerImage": "$(params.scanner-db-image-build-repo)@$(tasks.wait-for-scanner-db-image.results.ARTIFACT_DIGEST)",
             "repository": "$(tasks.wait-for-scanner-db-image.results.GIT_REPO)",
             "revision": "$(tasks.wait-for-scanner-db-image.results.GIT_REF)"
           },
           {
             "name": "scanner-db-slim",
-            "containerImage": "$(params.scanner-db-slim-image-build-repo)@$(tasks.wait-for-scanner-db-slim-image.results.IMAGE_DIGEST)",
+            "containerImage": "$(params.scanner-db-slim-image-build-repo)@$(tasks.wait-for-scanner-db-slim-image.results.ARTIFACT_DIGEST)",
             "repository": "$(tasks.wait-for-scanner-db-slim-image.results.GIT_REPO)",
             "revision": "$(tasks.wait-for-scanner-db-slim-image.results.GIT_REF)"
           },
           {
             "name": "scanner",
-            "containerImage": "$(params.scanner-image-build-repo)@$(tasks.wait-for-scanner-image.results.IMAGE_DIGEST)",
+            "containerImage": "$(params.scanner-image-build-repo)@$(tasks.wait-for-scanner-image.results.ARTIFACT_DIGEST)",
             "repository": "$(tasks.wait-for-scanner-image.results.GIT_REPO)",
             "revision": "$(tasks.wait-for-scanner-image.results.GIT_REF)"
           },
           {
             "name": "scanner-slim",
-            "containerImage": "$(params.scanner-slim-image-build-repo)@$(tasks.wait-for-scanner-slim-image.results.IMAGE_DIGEST)",
+            "containerImage": "$(params.scanner-slim-image-build-repo)@$(tasks.wait-for-scanner-slim-image.results.ARTIFACT_DIGEST)",
             "repository": "$(tasks.wait-for-scanner-slim-image.results.GIT_REPO)",
             "revision": "$(tasks.wait-for-scanner-slim-image.results.GIT_REF)"
           },
           {
             "name": "scanner-v4-db",
-            "containerImage": "$(params.scanner-v4-db-image-build-repo)@$(tasks.wait-for-scanner-v4-db-image.results.IMAGE_DIGEST)",
+            "containerImage": "$(params.scanner-v4-db-image-build-repo)@$(tasks.wait-for-scanner-v4-db-image.results.ARTIFACT_DIGEST)",
             "repository": "$(tasks.wait-for-scanner-v4-db-image.results.GIT_REPO)",
             "revision": "$(tasks.wait-for-scanner-v4-db-image.results.GIT_REF)"
           },
           {
             "name": "scanner-v4",
-            "containerImage": "$(params.scanner-v4-image-build-repo)@$(tasks.wait-for-scanner-v4-image.results.IMAGE_DIGEST)",
+            "containerImage": "$(params.scanner-v4-image-build-repo)@$(tasks.wait-for-scanner-v4-image.results.ARTIFACT_DIGEST)",
             "repository": "$(tasks.wait-for-scanner-v4-image.results.GIT_REPO)",
             "revision": "$(tasks.wait-for-scanner-v4-image.results.GIT_REF)"
           }
