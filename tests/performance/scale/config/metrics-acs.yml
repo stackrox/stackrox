@@ -281,6 +281,9 @@
 - query: rox_central_image_upsert_deduper{namespace="stackrox",container="central"}
   metricName: central_rox_central_image_upsert_deduper
 
+- query: rox_central_image_scan_semaphore_queue_size{namespace="stackrox",container="central"}
+  metricName: central_rox_central_image_scan_semaphore_queue_size
+
 - query: rox_central_info{namespace="stackrox",container="central"}
   metricName: central_rox_central_info
 
