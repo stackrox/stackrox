@@ -24,30 +24,31 @@ func init() {
 	utils.Must(
 		// NOTE: This list is and should remain alphabetically ordered
 		schema.AddType("ImageCVEFlat",
-			append(commonVulnerabilitySubResolvers,
-				"activeState(query: String): ActiveState",
+			[]string{
+				//append(
+				//commonVulnerabilitySubResolvers,
 				"affectedImageCount: Int!",
 				"affectedImageCountBySeverity: ResourceCountByCVESeverity!",
 				"cve: String!",
-				"deploymentCount(query: String): Int!",
+				//"deploymentCount(query: String): Int!",
 				"deployments(query: String, pagination: Pagination): [Deployment!]!",
-				"discoveredAtImage(query: String): Time",
-				"distroTuples: [ImageVulnerability!]!",
-				"effectiveVulnerabilityRequest: VulnerabilityRequest",
+				//"discoveredAtImage(query: String): Time",
+				//"distroTuples: [ImageVulnerability!]!",
+				//"effectiveVulnerabilityRequest: VulnerabilityRequest",
 				"exceptionCount(requestStatus: [String]): Int!",
 				"firstDiscoveredInSystem: Time",
-				"imageComponentCount(query: String): Int!",
-				"imageComponents(query: String, pagination: Pagination): [ImageComponent!]!",
-				"imageCount(query: String): Int!",
+				//"imageComponentCount(query: String): Int!",
+				//"imageComponents(query: String, pagination: Pagination): [ImageComponent!]!",
+				//"imageCount(query: String): Int!",
 				"images(query: String, pagination: Pagination): [Image!]!",
-				"nvdCvss: Float!",
-				"nvdScoreVersion: String!",
-				"operatingSystem: String!",
+				//"nvdCvss: Float!",
+				//"nvdScoreVersion: String!",
 				"publishedOn: Time",
 				"topCVSS: Float!",
 				"topNvdCVSS: Float!",
-				"vulnerabilityState: String!",
-			)),
+				//"vulnerabilityState: String!",
+			},
+		),
 		schema.AddQuery("imageCVEFlatCount(query: String): Int!"),
 		schema.AddQuery("imageCVEsFlat(query: String, pagination: Pagination): [ImageCVEFlat!]!"),
 		// `subfieldScopeQuery` applies the scope query to all the subfields of the ImageCVE resolver.
@@ -139,7 +140,7 @@ func (resolver *imageCVEFlatResolver) CVE(_ context.Context) string {
 	return resolver.data.GetCVE()
 }
 
-func (resolver *imageCVEFlatResolver) Deployments(ctx context.Context, args struct{ Pagination *inputtypes.Pagination }) ([]*deploymentResolver, error) {
+func (resolver *imageCVEFlatResolver) Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVECore, "Deployments")
 
 	if err := readDeployments(ctx); err != nil {
@@ -172,14 +173,37 @@ func (resolver *imageCVEFlatResolver) Deployments(ctx context.Context, args stru
 	})
 }
 
-func (resolver *imageCVEFlatResolver) DistroTuples(ctx context.Context) ([]*imageCVEFlatResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVECore, "DistroTuples")
-	q := PaginatedQuery{
-		Query: pointers.String(search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.data.GetCVEIDs()...).
-			Query()),
+func (resolver *imageCVEFlatResolver) DeploymentCount(ctx context.Context, args struct{ Pagination *inputtypes.Pagination }) int32 {
+	if err := readDeployments(ctx); err != nil {
+		return 0
 	}
-	return resolver.root.ImageCVEsFlat(ctx, q)
+
+	// Get full query for deployments
+	query := search.NewQueryBuilder().AddExactMatches(search.CVE, resolver.data.GetCVE()).ProtoQuery()
+	if resolver.subFieldQuery != nil {
+		query = search.ConjunctionQuery(query, resolver.subFieldQuery)
+	}
+	if args.Pagination != nil {
+		paginated.FillPagination(query, args.Pagination.AsV1Pagination(), maxDeployments)
+	}
+
+	// ROX-17254: Because of the incompatibility between
+	// the data model and search framework, run the query through on CVE datastore through SQF.
+	deploymentIDs, err := resolver.root.ImageCVEView.GetDeploymentIDs(ctx, query)
+	if err != nil {
+		return 0
+	}
+	return int32(len(deploymentIDs))
 }
+
+//func (resolver *imageCVEFlatResolver) DistroTuples(ctx context.Context) ([]*imageCVEFlatResolver, error) {
+//	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVECore, "DistroTuples")
+//	q := PaginatedQuery{
+//		Query: pointers.String(search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.data.GetCVEIDs()...).
+//			Query()),
+//	}
+//	return resolver.root.ImageCVEsFlat(ctx, q)
+//}
 
 func (resolver *imageCVEFlatResolver) FirstDiscoveredInSystem(_ context.Context) *graphql.Time {
 	ts := resolver.data.GetFirstDiscoveredInSystem()
@@ -235,7 +259,7 @@ func (resolver *imageCVEFlatResolver) ExceptionCount(ctx context.Context, args s
 	return int32(count), nil
 }
 
-func (resolver *imageCVEFlatResolver) Images(ctx context.Context, args struct{ Pagination *inputtypes.Pagination }) ([]*imageResolver, error) {
+func (resolver *imageCVEFlatResolver) Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVECore, "Images")
 
 	if err := readImages(ctx); err != nil {
