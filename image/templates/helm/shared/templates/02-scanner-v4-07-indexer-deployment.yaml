@@ -158,7 +158,7 @@ spec:
         emptyDir: {}
       {{- if ._rox._securedClusterCertRefresh }}
       - name: certs
-        emptyDir: { }
+        emptyDir: {}
       - name: certs-legacy
         secret:
           secretName: scanner-v4-indexer-tls
