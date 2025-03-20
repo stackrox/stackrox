@@ -14,7 +14,8 @@
     "license": "UNLICENSED",
     "dependencies": {
         "@apollo/client": "^3.6.3",
-        "@lifeomic/axios-fetch": "^3.0.1",
+        "@lifeomic/axios-fetch": "^3.1.0",
+        "@monaco-editor/react": "^4.7.0",
         "@patternfly/react-charts": "^7.2.2",
         "@patternfly/react-code-editor": "^5.2.2",
         "@patternfly/react-component-groups": "^5.2.0",
