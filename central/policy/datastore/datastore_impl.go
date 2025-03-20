@@ -316,11 +316,13 @@ func (ds *datastoreImpl) RemovePolicy(ctx context.Context, policy *storage.Polic
 	ds.policyMutex.Lock()
 	defer ds.policyMutex.Unlock()
 
-	if policy.Source == storage.PolicySource_DECLARATIVE {
+	err := ds.removePolicyNoLock(ctx, policy.GetId())
+
+	if err != nil && policy.Source == storage.PolicySource_DECLARATIVE {
 		metrics.DecrementPolicyAsCodeCRsReceivedGauge()
 	}
 
-	return ds.removePolicyNoLock(ctx, policy.GetId())
+	return err
 }
 
 func (ds *datastoreImpl) removePolicyNoLock(ctx context.Context, id string) error {
