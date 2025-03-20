@@ -56,7 +56,7 @@ func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore) {
 	for _, p := range storedPolicies {
 		policyIDSet.Add(p.GetId())
 		if p.Source == storage.PolicySource_DECLARATIVE {
-			metrics.IncrementPolicyAsCodeCRsReceivedGauge()
+			metrics.IncrementTotalExternalPoliciesGauge()
 		}
 	}
 

@@ -261,7 +261,7 @@ func (ds *datastoreImpl) AddPolicy(ctx context.Context, policy *storage.Policy) 
 	}
 
 	if clonedPolicy.Source == storage.PolicySource_DECLARATIVE {
-		metrics.IncrementPolicyAsCodeCRsReceivedGauge()
+		metrics.IncrementTotalExternalPoliciesGauge()
 	}
 
 	return clonedPolicy.Id, nil
@@ -319,7 +319,7 @@ func (ds *datastoreImpl) RemovePolicy(ctx context.Context, policy *storage.Polic
 	err := ds.removePolicyNoLock(ctx, policy.GetId())
 
 	if err != nil && policy.Source == storage.PolicySource_DECLARATIVE {
-		metrics.DecrementPolicyAsCodeCRsReceivedGauge()
+		metrics.DecrementTotalExternalPoliciesGauge()
 	}
 
 	return err
