@@ -153,7 +153,16 @@ spec:
         configMap:
           name: scanner-config
       {{- if ._rox._securedClusterCertRefresh }}
-      {{- include "srox.tlsCertsInitContainerVolumes" (list "scanner") | indent 6 }}
+      - name: certs
+        emptyDir: {}
+      - name: certs-legacy
+        secret:
+          secretName: scanner-tls
+          optional: true
+      - name: certs-new
+        secret:
+          secretName: tls-cert-scanner
+          optional: true
       {{- else }}
       - name: certs
         secret:
