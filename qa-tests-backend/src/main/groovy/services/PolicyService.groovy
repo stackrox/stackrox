@@ -1,8 +1,6 @@
 package services
 
-import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.PolicyServiceGrpc
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass
@@ -12,9 +10,8 @@ import io.stackrox.proto.storage.PolicyOuterClass.Policy
 import io.stackrox.proto.storage.ScopeOuterClass
 
 @Slf4j
-@CompileStatic
 class PolicyService extends BaseService {
-    static PolicyServiceGrpc.PolicyServiceBlockingStub getPolicyClient() {
+    static getPolicyClient() {
         return PolicyServiceGrpc.newBlockingStub(getChannel())
     }
 
