@@ -55,6 +55,7 @@ func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore) {
 
 	for _, p := range storedPolicies {
 		policyIDSet.Add(p.GetId())
+		// Unrelated to adding/checking default policies, this was put here to prevent looping through all policies a second time
 		if p.Source == storage.PolicySource_DECLARATIVE {
 			metrics.IncrementTotalExternalPoliciesGauge()
 		}
