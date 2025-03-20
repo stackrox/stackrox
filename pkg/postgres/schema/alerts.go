@@ -57,7 +57,6 @@ type Alerts struct {
 	PolicySORTName           string                              `gorm:"column:policy_sortname;type:varchar"`
 	PolicySORTLifecycleStage string                              `gorm:"column:policy_sortlifecyclestage;type:varchar"`
 	PolicySORTEnforcement    bool                                `gorm:"column:policy_sortenforcement;type:bool"`
-	PolicySource             storage.PolicySource                `gorm:"column:policy_source;type:integer"`
 	LifecycleStage           storage.LifecycleStage              `gorm:"column:lifecyclestage;type:integer;index:alerts_lifecyclestage,type:btree"`
 	ClusterID                string                              `gorm:"column:clusterid;type:uuid;index:alerts_sac_filter,type:btree"`
 	ClusterName              string                              `gorm:"column:clustername;type:varchar"`
