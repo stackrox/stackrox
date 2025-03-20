@@ -34,14 +34,15 @@ func Gather(ds DataStore) phonehome.GatherFunc {
 
 		formattedNow := time.Now().Format(TimestampLayout)
 		_ = phonehome.AddTotal(ctx, props, "API Tokens Expired", dsCount(
-			search.NewQueryBuilder().AddBools(search.Revoked, false).
+			search.NewQueryBuilder().
 				AddStrings(search.Expiration, "<"+formattedNow).
 				ProtoQuery()))
 
 		_ = phonehome.AddTotal(ctx, props, "API Tokens Revoked", dsCount(revokedQuery))
 
 		_ = phonehome.AddTotal(ctx, props, "API Tokens Valid", dsCount(
-			search.NewQueryBuilder().AddBools(search.Revoked, false).
+			search.NewQueryBuilder().
+				AddBools(search.Revoked, false).
 				AddStrings(search.Expiration, ">"+formattedNow).
 				ProtoQuery()))
 		return props, nil
