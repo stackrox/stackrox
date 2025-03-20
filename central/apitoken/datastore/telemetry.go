@@ -13,11 +13,8 @@ import (
 
 var (
 	revokedQuery = search.NewQueryBuilder().
-			AddBools(search.Revoked, true).
-			ProtoQuery()
-
-	notRevoked = search.NewQueryBuilder().
-			AddBools(search.Revoked, false)
+		AddBools(search.Revoked, true).
+		ProtoQuery()
 )
 
 // Gather the number of configured API tokens.
@@ -36,13 +33,17 @@ func Gather(ds DataStore) phonehome.GatherFunc {
 		_ = phonehome.AddTotal(ctx, props, "API Tokens", dsCount(search.EmptyQuery()))
 
 		formattedNow := time.Now().Format(TimestampLayout)
-		_ = phonehome.AddTotal(ctx, props, "API Tokens Expired",
-			dsCount(notRevoked.AddStrings(search.Expiration, "<"+formattedNow).ProtoQuery()))
+		_ = phonehome.AddTotal(ctx, props, "API Tokens Expired", dsCount(
+			search.NewQueryBuilder().AddBools(search.Revoked, false).
+				AddStrings(search.Expiration, "<"+formattedNow).
+				ProtoQuery()))
 
 		_ = phonehome.AddTotal(ctx, props, "API Tokens Revoked", dsCount(revokedQuery))
 
-		_ = phonehome.AddTotal(ctx, props, "API Tokens Valid",
-			dsCount(notRevoked.AddStrings(search.Expiration, ">"+formattedNow).ProtoQuery()))
+		_ = phonehome.AddTotal(ctx, props, "API Tokens Valid", dsCount(
+			search.NewQueryBuilder().AddBools(search.Revoked, false).
+				AddStrings(search.Expiration, ">"+formattedNow).
+				ProtoQuery()))
 		return props, nil
 	}
 }
