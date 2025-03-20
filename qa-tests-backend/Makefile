@@ -35,13 +35,13 @@ style-fix:
 .PHONY: proto-generated-srcs
 proto-generated-srcs: build/generated
 
-build/generated: src/main/proto
+build/generated: src/main/proto/scanner
 	@echo "+ $@"
 	$(GRADLE) generateProto generateTestProto
 
-src/main/proto: $(shell find ../proto)
-	@echo "+ migrate protos"
-	-rm -r src/main/proto
+src/main/proto/scanner: ../go.mod
+	@echo "+ copy scanner protos"
+	-rm -r src/main/proto/scanner
 	@scripts/migrate_protos.sh
 
 .PHONY: clean-generated-srcs
