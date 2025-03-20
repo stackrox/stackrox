@@ -8,7 +8,13 @@
 
 set -euo pipefail
 
-error_regex=': i/o timeout$|net/http: request canceled \(Client\.Timeout exceeded while awaiting headers\)$'
+# RegExes for which we attempt a retry (one regex per line).
+error_regex=$(tr '\n' '|' <<EOT | sed -e 's/|$//;'
+: i/o timeout$
+net/http: request canceled \(Client\.Timeout exceeded while awaiting headers\)$
+: the server is currently unable to handle the request
+EOT
+)
 
 tmp_in="$(mktemp)"
 tmp_out="$(mktemp --suffix=-stdout.txt)"
