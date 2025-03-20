@@ -15,8 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/defaults/policies"
 	"github.com/stackrox/rox/pkg/policyutils"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/sac/resources"
-	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -43,15 +41,6 @@ func initialize() {
 // Singleton provides the interface for non-service external interaction.
 func Singleton() DataStore {
 	once.Do(initialize)
-
-	count, _ := ad.Count(
-		sac.WithGlobalAccessScopeChecker(context.Background(),
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-				sac.ResourceScopeKeys(resources.WorkflowAdministration),
-			),
-		), pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.PolicySource, storage.PolicySource_DECLARATIVE.String()).ProtoQuery())
-	metrics.UpdatePolicyAsCodeCRsReceivedGauge(count)
 	return ad
 }
 
@@ -67,6 +56,9 @@ func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore) {
 
 	for _, p := range storedPolicies {
 		policyIDSet.Add(p.GetId())
+		if p.Source == storage.PolicySource_DECLARATIVE {
+			metrics.IncrementPolicyAsCodeCRsReceivedGauge()
+		}
 	}
 
 	// Preload the default policies.

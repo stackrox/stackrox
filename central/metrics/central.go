@@ -399,10 +399,6 @@ func IncrementTotalNetworkEndpointsReceivedCounter(clusterID string, numberOfEnd
 	totalNetworkEndpointsReceivedCounter.With(prometheus.Labels{"ClusterID": clusterID}).Add(float64(numberOfEndpoints))
 }
 
-func UpdatePolicyAsCodeCRsReceivedGauge(count int) {
-	totalPolicyAsCodeCRsReceivedGauge.Set(float64(count))
-}
-
 func IncrementPolicyAsCodeCRsReceivedGauge() {
 	totalPolicyAsCodeCRsReceivedGauge.Inc()
 }
