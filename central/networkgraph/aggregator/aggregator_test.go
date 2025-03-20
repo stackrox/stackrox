@@ -301,23 +301,42 @@ func TestAggregateExtConnsByName(t *testing.T) {
 
 func TestAggregateExtConnsByNameAnonymizeDiscoveredExtEntities(t *testing.T) {
 	ts1 := time.Now()
+	ts2 := ts1.Add(-1000 * time.Second)
 
 	d1 := testutils.GetDeploymentNetworkEntity("d1", "d1")
 
-	discovered_entity := networkgraph.DiscoveredExternalEntity(net.IPNetworkFromCIDRBytes([]byte{35, 187, 144, 4, 32})).ToProto()
+	discovered_entity1 := networkgraph.DiscoveredExternalEntity(net.IPNetworkFromCIDRBytes([]byte{35, 187, 144, 4, 32})).ToProto()
+	discovered_entity2 := networkgraph.DiscoveredExternalEntity(net.IPNetworkFromCIDRBytes([]byte{35, 187, 144, 5, 32})).ToProto()
 	internet := networkgraph.InternetEntity().ToProto()
 
-	detailed_flow := testutils.GetNetworkFlow(d1, discovered_entity, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, &ts1)
+	detailed_flow1 := testutils.GetNetworkFlow(d1, discovered_entity1, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, &ts1)
+	detailed_flow2 := testutils.GetNetworkFlow(d1, discovered_entity2, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, &ts2)
 	anonymized_flow := testutils.GetNetworkFlow(d1, internet, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, &ts1)
 
-	flows := []*storage.NetworkFlow{detailed_flow}
 
-	expected := []*storage.NetworkFlow{anonymized_flow}
+	for _, testCase := range []struct {
+		name	 string
+		flows	 []*storage.NetworkFlow
+		expected []*storage.NetworkFlow
+	}{
+		{
+			name: "Single flow with discovered entity",
+			flows: []*storage.NetworkFlow{detailed_flow1},
+			expected: []*storage.NetworkFlow{anonymized_flow},
+		},
+		{
+			name: "Two flows with discovered entities are aggregated",
+			flows: []*storage.NetworkFlow{detailed_flow1, detailed_flow2},
+			expected: []*storage.NetworkFlow{anonymized_flow},
+		},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			actual := NewDuplicateNameExtSrcConnAggregator().Aggregate(testCase.flows)
 
-	actual := NewDuplicateNameExtSrcConnAggregator().Aggregate(flows)
-
-	assert.Len(t, actual, len(expected))
-	protoassert.ElementsMatch(t, expected, actual)
+			assert.Len(t, actual, len(testCase.expected))
+			protoassert.ElementsMatch(t, testCase.expected, actual)
+		})
+	}
 }
 
 func TestAnonymizeDiscoveredEntity(t *testing.T) {
