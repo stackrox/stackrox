@@ -141,8 +141,8 @@ func AddTotal(ctx context.Context, props map[string]any, key string, f TotalFunc
 //
 // Example:
 //
-//	func myfunc(ctx context.Context, v int) (int, error) {
-//		return v
+//	func myfunc(_ context.Context, v int) (int, error) {
+//		return v, nil
 //	}
 //	...
 //	f := Bind2nd(myfunc)
