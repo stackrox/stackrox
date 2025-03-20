@@ -125,6 +125,8 @@ spec:
           name: collector-config
           readOnly: true
       {{- end }}
+        - mountPath: /var/profiles
+          name: collector-profiles
       - command:
         - stackrox/compliance
         env:
@@ -285,6 +287,8 @@ spec:
       - name: etc-pki-volume
         emptyDir: {}
       - name: tmp-volume
+        emptyDir: {}
+      - name: collector-profiles
         emptyDir: {}
       - name: cache-volume
         emptyDir:
