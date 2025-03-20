@@ -29,22 +29,21 @@ func Gather(ds DataStore) phonehome.GatherFunc {
 			),
 		)
 
+		formattedNow := time.Now().Format(TimestampLayout)
+
+		expiredQuery := search.NewQueryBuilder().
+			AddStrings(search.Expiration, "<"+formattedNow).
+			ProtoQuery()
+		validQuery := search.NewQueryBuilder().
+			AddBools(search.Revoked, false).
+			AddStrings(search.Expiration, ">"+formattedNow).
+			ProtoQuery()
+
 		props := map[string]any{}
 		_ = phonehome.AddTotal(ctx, props, "API Tokens", dsCount(search.EmptyQuery()))
-
-		formattedNow := time.Now().Format(TimestampLayout)
-		_ = phonehome.AddTotal(ctx, props, "API Tokens Expired", dsCount(
-			search.NewQueryBuilder().
-				AddStrings(search.Expiration, "<"+formattedNow).
-				ProtoQuery()))
-
+		_ = phonehome.AddTotal(ctx, props, "API Tokens Expired", dsCount(expiredQuery))
 		_ = phonehome.AddTotal(ctx, props, "API Tokens Revoked", dsCount(revokedQuery))
-
-		_ = phonehome.AddTotal(ctx, props, "API Tokens Valid", dsCount(
-			search.NewQueryBuilder().
-				AddBools(search.Revoked, false).
-				AddStrings(search.Expiration, ">"+formattedNow).
-				ProtoQuery()))
+		_ = phonehome.AddTotal(ctx, props, "API Tokens Valid", dsCount(validQuery))
 		return props, nil
 	}
 }
