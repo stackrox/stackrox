@@ -76,7 +76,7 @@ message Policy {
   // Read-only field. Indicates the policy is a default policy if true and a custom policy if false.
   bool is_default = 26; // @gotags: crYaml:"isDefault"
 
-  PolicySource source = 27; // @gotags: search:"Policy Source,store" crYaml:"-"
+  PolicySource source = 27; // @gotags: crYaml:"-"
 }
 
 enum PolicySource {
