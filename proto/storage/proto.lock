@@ -6115,6 +6115,11 @@
                 "id": 14,
                 "name": "component_id",
                 "type": "string"
+              },
+              {
+                "id": 15,
+                "name": "advisory",
+                "type": "string"
               }
             ]
           },

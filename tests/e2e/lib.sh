@@ -55,6 +55,8 @@ deploy_stackrox() {
 
     export_central_basic_auth_creds
     wait_for_api "${central_namespace}"
+    export_central_cert "${central_namespace}"
+
     setup_client_TLS_certs "${tls_client_certs}"
     record_build_info "${central_namespace}"
 
@@ -377,6 +379,7 @@ deploy_sensor() {
         fi
 
         DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
+        ROX_CA_CERT_FILE="" # force sensor.sh to fetch the actual cert.
         CENTRAL_NAMESPACE="${central_namespace}" SENSOR_NAMESPACE="${sensor_namespace}" "${ROOT}/${DEPLOY_DIR}/sensor.sh"
     fi
 
@@ -397,7 +400,6 @@ deploy_sensor_via_operator() {
     local central_endpoint="central.${central_namespace}.svc:443"
 
     info "Deploying sensor via operator into namespace ${sensor_namespace} (central is expected in namespace ${central_namespace})"
-
     if ! kubectl get ns "${sensor_namespace}" >/dev/null 2>&1; then
         kubectl create ns "${sensor_namespace}"
     fi
@@ -489,6 +491,25 @@ export_central_basic_auth_creds() {
     ci_export "ROX_ADMIN_PASSWORD" "$ROX_ADMIN_PASSWORD"
 }
 
+export_central_cert() {
+    # Export the internal central TLS certificate for roxctl to access central
+    # through TLS-passthrough router by specifying the TLS server name.
+    ci_export ROX_SERVER_NAME "central.${CENTRAL_NAMESPACE:-stackrox}"
+
+    require_environment "API_ENDPOINT"
+    require_environment "ROX_ADMIN_PASSWORD"
+
+    local central_cert
+    central_cert="$(mktemp -d)/central_cert.pem"
+    info "Storing central certificate in ${central_cert} for ${API_ENDPOINT}"
+
+    roxctl -e "$API_ENDPOINT" \
+        central cert --insecure-skip-tls-verify 1>"$central_cert"
+
+    ci_export ROX_CA_CERT_FILE "$central_cert"
+    openssl x509 -in "${ROX_CA_CERT_FILE}" -subject -issuer -ext subjectAltName -noout
+}
+
 deploy_optional_e2e_components() {
     info "Installing optional components used in E2E tests"
 
@@ -526,6 +547,7 @@ setup_client_CA_auth_provider() {
     require_environment "ROX_ADMIN_PASSWORD"
     require_environment "CLIENT_CA_PATH"
 
+    export_central_cert
     roxctl -e "$API_ENDPOINT" \
         central userpki create test-userpki -r Analyst -c "$CLIENT_CA_PATH"
 }
@@ -542,6 +564,7 @@ setup_generated_certs_for_test() {
     require_environment "API_ENDPOINT"
     require_environment "ROX_ADMIN_PASSWORD"
 
+    export_central_cert
     roxctl -e "$API_ENDPOINT" \
         sensor generate-certs remote --output-dir "$dir"
     [[ -f "$dir"/cluster-remote-tls.yaml ]]
@@ -1245,6 +1268,7 @@ restore_4_1_postgres_backup() {
     require_environment "ROX_ADMIN_PASSWORD"
 
     gsutil cp gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/postgres_db_4_1.sql.zip .
+    export_central_cert
     roxctl -e "$API_ENDPOINT" \
         central db restore --timeout 5m postgres_db_4_1.sql.zip
 }
@@ -1272,6 +1296,7 @@ db_backup_and_restore_test() {
 
     # Ensure central is ready for requests after any previous tests
     wait_for_api "${central_namespace}"
+    export_central_cert "${central_namespace}"
 
     info "Backing up to ${output_dir}"
     mkdir -p "$output_dir"

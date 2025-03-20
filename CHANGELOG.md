@@ -20,6 +20,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Technical Changes
 
 - ROX-28263: New `roxctl` help formatting.
+- ROX-24500: Certificate validation failure in `roxctl` is now an error.
 
 ## [4.7.0]
 
@@ -81,6 +82,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - `roxctl central generate k8s hostpath` and `roxctl central generate openshift hostpath` no longer have the flags `--hostpath`, `--node-selector-key`, and `--node-selector-value`.
 
 ### Deprecated Features
+
 - ROX-25677: The format for specifying durations in JSON requests to
   `v1/nodecves/suppress`, `v1/clustercves/suppress` and `v1/imagecves/suppress`
   will be restricted to a [proto JSON format](https://protobuf.dev/programming-guides/proto3/#json:~:text=are%20also%20accepted.-,Duration,-string).
@@ -94,6 +96,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-26670: Google Container Registry integration is now deprecated. Users should use Artifact Registry as a registry replacement and Scanner V4 as a scanner replacement.
 
 ### Technical Changes
+
 - ROX-24897: Sensor will now perform TLS checks lazily during delegated scanning instead of when secrets are first discovered, this should reduce Sensor startup time.
 - ROX-23343: The auto-sensing within the Helm charts for detecting OpenShift clusters has been changed to depend on the `project.openshift.io/v1` APIVersion.
 - ROX-22701: Prevent deleting default policies through the API
@@ -130,8 +133,6 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - Alpine vulnerabilities will now have a link to https://security.alpinelinux.org instead of https://www.cve.org.
 
 ## [4.5.0]
-
-
 
 ### Added Features
 

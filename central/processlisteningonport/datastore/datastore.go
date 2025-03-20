@@ -34,6 +34,7 @@ type DataStore interface {
 	PruneOrphanedPLOPs(ctx context.Context, orphanWindow time.Duration) int64
 	PruneOrphanedPLOPsByProcessIndicators(ctx context.Context, orphanWindow time.Duration)
 	RemovePLOPsWithoutProcessIndicatorOrProcessInfo(ctx context.Context) (int64, error)
+	RemovePLOPsWithoutPodUID(ctx context.Context) (int64, error)
 }
 
 // New creates a data store object to access the database. Since some

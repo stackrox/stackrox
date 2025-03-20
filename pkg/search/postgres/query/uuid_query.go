@@ -35,6 +35,17 @@ func newUUIDQueryWhereClause(columnName string, value string, queryModifiers ...
 		}, nil
 	}
 
+	if value == pkgSearch.NullString {
+		return WhereClause{
+			Query:  fmt.Sprintf("%s is null", columnName),
+			Values: []interface{}{},
+			equivalentGoFunc: func(foundValue interface{}) bool {
+				foundVal := strings.ToLower(foundValue.(string))
+				return foundVal == ""
+			},
+		}, nil
+	}
+
 	if len(queryModifiers) == 0 {
 		uuidVal, err := uuid.FromString(value)
 		if err != nil {
