@@ -31,7 +31,6 @@ func (s *NotificationSchedulesStoreSuite) SetupTest() {
 	s.store = New(s.testDB.DB)
 }
 
-
 func (s *NotificationSchedulesStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 

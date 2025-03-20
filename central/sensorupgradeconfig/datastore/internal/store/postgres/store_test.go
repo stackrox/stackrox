@@ -31,7 +31,6 @@ func (s *SensorUpgradeConfigsStoreSuite) SetupTest() {
 	s.store = New(s.testDB.DB)
 }
 
-
 func (s *SensorUpgradeConfigsStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
