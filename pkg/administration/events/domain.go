@@ -3,18 +3,18 @@ package events
 import "regexp"
 
 const (
-	authenticationDomain = "Authentication"
-	defaultDomain        = "General"
-	imageScanningDomain  = "Image Scanning"
-	integrationDomain    = "Integrations"
+	AuthenticationDomain = "Authentication"
+	DefaultDomain        = "General"
+	ImageScanningDomain  = "Image Scanning"
+	IntegrationDomain    = "Integrations"
 )
 
 var moduleToDomain = map[*regexp.Regexp]string{
-	regexp.MustCompile(`^apitoken/expiration`):       authenticationDomain,
-	regexp.MustCompile(`(^|/)externalbackups(/|$)`):  integrationDomain,
-	regexp.MustCompile(`(^|/)cloudsources(/|$)`):     integrationDomain,
-	regexp.MustCompile(`(^|/)notifiers(/|$)`):        integrationDomain,
-	regexp.MustCompile(`^reprocessor|image/service`): imageScanningDomain,
+	regexp.MustCompile(`^apitoken/expiration`):       AuthenticationDomain,
+	regexp.MustCompile(`(^|/)externalbackups(/|$)`):  IntegrationDomain,
+	regexp.MustCompile(`(^|/)cloudsources(/|$)`):     IntegrationDomain,
+	regexp.MustCompile(`(^|/)notifiers(/|$)`):        IntegrationDomain,
+	regexp.MustCompile(`^reprocessor|image/service`): ImageScanningDomain,
 }
 
 // GetDomainFromModule retrieves a domain based on a specific module which will be
@@ -25,5 +25,5 @@ func GetDomainFromModule(module string) string {
 			return domain
 		}
 	}
-	return defaultDomain
+	return DefaultDomain
 }
