@@ -41,8 +41,8 @@ build/generated: src/main/proto/scanner
 
 src/main/proto/scanner: ../go.mod
 	@echo "+ copy scanner protos"
-	-rm -r src/main/proto/scanner
-	@scripts/migrate_protos.sh
+	-rm -rf src/main/proto/scanner
+	@scripts/copy_scanner_protos.sh
 
 .PHONY: clean-generated-srcs
 clean-generated-srcs:
