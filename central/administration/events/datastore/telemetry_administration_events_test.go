@@ -21,9 +21,6 @@ import (
 
 func TestGather(t *testing.T) {
 	pool := pgtest.ForT(t)
-	t.Cleanup(func() {
-		pool.Teardown(t)
-	})
 	require.NotNil(t, pool)
 	store := pgStore.New(pool)
 	datastore := newDataStore(search.New(store), store, writer.New(store))
