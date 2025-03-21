@@ -243,7 +243,7 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 		)
 		return nil, err
 	}
-	defer s.releaseFromScanSemaphore(1)
+	defer s.releaseFromScanSemaphore()
 
 	var (
 		img       *storage.Image
@@ -436,7 +436,7 @@ func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, reque
 		)
 		return nil, err
 	}
-	defer s.releaseFromScanSemaphore(1)
+	defer s.releaseFromScanSemaphore()
 
 	imgID := request.GetImageId()
 
@@ -477,15 +477,17 @@ func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, reque
 	return internalScanRespFromImage(img), nil
 }
 
-func (s *serviceImpl) releaseFromScanSemaphore(n int64) {
-	metrics.ImageScanSemaphoreQueueSize.Add(float64(-n))
-	s.internalScanSemaphore.Release(n)
+func (s *serviceImpl) releaseFromScanSemaphore() {
+	metrics.ImageScanSemaphoreHoldingSize.Dec()
+	s.internalScanSemaphore.Release(1)
 }
 
 func (s *serviceImpl) acquireScanSemaphore(ctx context.Context) error {
 	semaphoreCtx, cancel := context.WithTimeout(ctx, maxSemaphoreWaitTime)
 	defer cancel()
-	metrics.ImageScanSemaphoreQueueSize.Add(1)
+	metrics.ImageScanSemaphoreQueueSize.Inc()
+	defer metrics.ImageScanSemaphoreQueueSize.Dec()
+	defer metrics.ImageScanSemaphoreHoldingSize.Inc()
 	if err := s.internalScanSemaphore.Acquire(semaphoreCtx, 1); err != nil {
 		wrappedErr := errors.Wrap(err, "acquiring scan semaphore")
 
@@ -523,7 +525,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 		return nil, err
 	}
 
-	defer s.releaseFromScanSemaphore(1)
+	defer s.releaseFromScanSemaphore()
 
 	imgID := request.GetImageId()
 	var hasErrors bool
