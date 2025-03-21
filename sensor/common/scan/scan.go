@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/registrymirror"
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/tlscheck"
+	"github.com/stackrox/rox/sensor/common/scan/metrics"
 	"github.com/stackrox/rox/sensor/common/scannerclient"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"golang.org/x/sync/semaphore"
@@ -146,9 +147,11 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 
 	semaphoreCtx, cancel := context.WithTimeout(ctx, s.maxSemaphoreWaitTime)
 	defer cancel()
-	if err := scanLimitSemaphore.Acquire(semaphoreCtx, 1); err != nil {
+	if err := acquireSemaphore(semaphoreCtx, scanLimitSemaphore); err != nil {
 		return nil, errors.Join(err, ErrTooManyParallelScans, ErrEnrichNotStarted)
 	}
+	metrics.SensorScanSemaphoreHoldingSize.Inc()
+	defer metrics.SensorScanSemaphoreHoldingSize.Dec()
 	defer scanLimitSemaphore.Release(1)
 
 	srcImage := req.Image
@@ -196,6 +199,12 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 	}
 
 	return centralResp.GetImage(), errorList.ToError()
+}
+
+func acquireSemaphore(ctx context.Context, sema *semaphore.Weighted) error {
+	metrics.SensorScanSemaphoreQueueSize.Inc()
+	defer metrics.SensorScanSemaphoreQueueSize.Dec()
+	return sema.Acquire(ctx, 1)
 }
 
 func (s *LocalScan) enrichImageForPullSource(ctx context.Context, pullSource *storage.ContainerImage, req *LocalScanRequest) (
