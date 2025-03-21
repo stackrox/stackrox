@@ -123,9 +123,10 @@ func proxiedRemoteTransport(insecure bool) http.RoundTripper {
 		return tr
 	}()
 	if insecure {
-		tr.TLSClientConfig = &tls.Config{
-			InsecureSkipVerify: true,
+		if tr.TLSClientConfig == nil {
+			tr.TLSClientConfig = &tls.Config{}
 		}
+		tr.TLSClientConfig.InsecureSkipVerify = true
 	}
 	return tr
 }
