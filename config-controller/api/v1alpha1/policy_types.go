@@ -150,7 +150,7 @@ type SecurityPolicyCondition struct {
 	Type               SecurityPolicyConditionType `json:"type"`
 	Status             bool                        `json:"status"`
 	Message            string                      `json:"message"`
-	LastTransitionTime metav1.Time                 `json:"lastTransitionTime,omitempty"`
+	LastTransitionTime metav1.Time                 `json:"lastTransitionTime"`
 }
 
 type SecurityPolicyConditions []SecurityPolicyCondition
@@ -369,7 +369,7 @@ func (s *SecurityPolicyConditions) UpdateCondition(sType SecurityPolicyCondition
 			continue
 		}
 		if st.Status != newCondition.Status {
-			newCondition.LastTransitionTime = metav1.Time{}
+			newCondition.LastTransitionTime = metav1.Now()
 		} else {
 			newCondition.LastTransitionTime = st.LastTransitionTime
 		}
