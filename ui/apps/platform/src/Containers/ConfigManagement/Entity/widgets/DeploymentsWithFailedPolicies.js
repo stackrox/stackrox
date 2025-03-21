@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { Alert } from '@patternfly/react-core';
 
 import VIOLATIONS from 'queries/violation';
 import resolvePath from 'object-resolve-path';
@@ -7,7 +8,6 @@ import URLService from 'utils/URLService';
 import entityTypes from 'constants/entityTypes';
 import uniq from 'lodash/uniq';
 import CollapsibleRow from 'Components/CollapsibleRow';
-import NoResultsMessage from 'Components/NoResultsMessage';
 
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
@@ -81,7 +81,11 @@ const DeploymentsWithFailedPolicies = ({ query, message, entityContext }) => (
                 data.violations.map((violation) => violation.deployment)
             ).length;
             if (numDeployments === 0) {
-                return <NoResultsMessage message={message} className="p-3 shadow" icon="info" />;
+                return (
+                    <div className="w-full">
+                        <Alert variant="success" isInline title={message} component="p" />
+                    </div>
+                );
             }
             const header = `${numDeployments} deployments failed across ${groups.length} policies`;
             const columns = [
