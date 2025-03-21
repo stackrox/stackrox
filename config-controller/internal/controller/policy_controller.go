@@ -245,7 +245,7 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			policyCR.Status.Condition.UpdateCondition(configstackroxiov1alpha1.Ready, configstackroxiov1alpha1.SecurityPolicyCondition{
 				Type:    configstackroxiov1alpha1.Active,
 				Status:  true,
-				Message: "Successfully updated policy",
+				Message: "Successfully created policy",
 			})
 			policyCR.Status.PolicyId = createdPolicy.GetId()
 		}
