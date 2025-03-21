@@ -145,6 +145,7 @@ func (resolver *Resolver) ImageComponents(ctx context.Context, q PaginatedQuery)
 
 		// get values
 		comps, err := loader.FromQuery(ctx, query)
+		log.Infof("SHREWS -- ImageComponents -- %v", comps)
 		componentResolvers, err := resolver.wrapImageComponentV2sWithContext(ctx, comps, err)
 		if err != nil {
 			return nil, err
