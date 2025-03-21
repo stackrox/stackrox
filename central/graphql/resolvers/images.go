@@ -154,6 +154,7 @@ func (resolver *imageResolver) TopImageVulnerability(ctx context.Context, args R
 func (resolver *imageResolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageVulnerabilities")
 	// TODO(ROX-28320): Data here needs to be grouped by CVE not the ID as is done in the Image Vulnerabilities resolver.
+	log.Infof("SHREWS --- images.ImageVulnerabilities ---")
 	return resolver.root.ImageVulnerabilities(resolver.withImageScopeContext(ctx), args)
 }
 
@@ -191,6 +192,7 @@ func (resolver *imageResolver) ImageCVECountBySeverity(ctx context.Context, q Ra
 
 func (resolver *imageResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageComponents")
+	log.Infof("SHREWS --- images.ImageComponents ---")
 	return resolver.root.ImageComponents(resolver.withImageScopeContext(ctx), args)
 }
 
