@@ -11,7 +11,7 @@ type Unmarshaler[T any] interface {
 	*T
 }
 
-// ScanStrings ScanRows scans strings.
+// ScanStrings scans strings from rows.
 //
 // This function closes the rows automatically on return.
 func ScanStrings(rows pgx.Rows) ([]string, error) {
