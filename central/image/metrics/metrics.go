@@ -28,5 +28,6 @@ var (
 
 func init() {
 	prometheus.MustRegister(ImageScanSemaphoreQueueSize,
-		ImageScanSemaphoreHoldingSize)
+		ImageScanSemaphoreHoldingSize,
+		ImageScanSemaphoreLimit)
 }
