@@ -1,5 +1,7 @@
 package util
 
+import common.Constants
+
 import static util.Helpers.withRetry
 
 import groovy.util.logging.Slf4j
@@ -14,19 +16,34 @@ import sensor.Collector
 @Slf4j
 @CompileStatic
 class CollectorUtil {
-    static final String RUNTIME_CONFIG_MAP_NAME = "collector-config"
-    static final String RUNTIME_CONFIG_MAP_KEY = "runtime_config.yaml"
+    private static final String RUNTIME_CONFIG_MAP_NAME = "collector-config"
+    private static final String RUNTIME_CONFIG_MAP_KEY = "runtime_config.yaml"
 
-    static final String ENABLED_VALUE = "ENABLED"
-    static final String DISABLED_VALUE = "DISABLED"
+    private static final String ENABLED_VALUE = "ENABLED"
+    private static final String DISABLED_VALUE = "DISABLED"
 
-    static parseJsonToProtobuf(String json) {
+    static enableExternalIps(Kubernetes orchestrator, int timeoutSeconds = 90) {
+        setExternalIps(orchestrator, ENABLED_VALUE)
+        waitForConfigToHaveState(orchestrator, ENABLED_VALUE, timeoutSeconds)
+    }
+
+    static disableExternalIps(Kubernetes orchestrator, int timeoutSeconds = 90) {
+        setExternalIps(orchestrator, DISABLED_VALUE)
+        waitForConfigToHaveState(orchestrator, DISABLED_VALUE, timeoutSeconds)
+    }
+
+    static deleteRuntimeConfig(Kubernetes orchestrator) {
+        orchestrator.deleteConfigMap(RUNTIME_CONFIG_MAP_NAME, Constants.STACKROX_NAMESPACE)
+        return true
+    }
+
+    private static parseJsonToProtobuf(String json) {
         Collector.CollectorConfig.Builder builder = Collector.CollectorConfig.newBuilder()
         JsonFormat.parser().merge(json, builder)
         return builder.build()
     }
 
-    static introspectionQuery(String collectorAddress, String endpoint) {
+    private static introspectionQuery(String collectorAddress, String endpoint) {
         String uri = "http://${collectorAddress}${endpoint}"
         URL url = new URL(uri)
         HttpURLConnection connection = null
@@ -45,12 +62,10 @@ class CollectorUtil {
             return parseJsonToProtobuf(jsonResponse)
         } catch (Exception e) {
             throw new RuntimeException("Error making request: ${e.message}", e)
-        } finally {
-            connection.disconnect()
         }
     }
 
-    static waitForConfigToHaveState(Kubernetes orchestrator, String state, int timeout = 90, int port = 8080) {
+    private static waitForConfigToHaveState(Kubernetes orchestrator, String state, int timeout = 90, int port = 8080) {
         def portForwards = orchestrator.createCollectorPortForwards(port)
 
         log.info "Waiting for Collector Config propagation (${portForwards.size()} pods)"
@@ -64,11 +79,11 @@ class CollectorUtil {
                 def configTyped = (Collector.CollectorConfig) config
                 return configTyped.networking.externalIps.enabled.name() == state
             }
-            assert portForwards.size() == 0
-            waitTime++
+            assert portForwards.isEmpty()
+            waitTime += intervalSeconds
         }
 
-        def success = portForwards.size() == 0
+        def success = portForwards.isEmpty()
         if (success) {
             log.info "Waited for ${waitTime} seconds for Collector runtime configuration to be updated"
         } else {
@@ -80,30 +95,16 @@ class CollectorUtil {
         return success
     }
 
-    static enableExternalIps(Kubernetes orchestrator, int timeoutSeconds = 90) {
-        setExternalIps(orchestrator, ENABLED_VALUE)
-        waitForConfigToHaveState(orchestrator, ENABLED_VALUE, timeoutSeconds)
-    }
-
-    static disableExternalIps(Kubernetes orchestrator, int timeoutSeconds = 90) {
-        setExternalIps(orchestrator, DISABLED_VALUE)
-        waitForConfigToHaveState(orchestrator, DISABLED_VALUE, timeoutSeconds)
-    }
-
-    static deleteRuntimeConfig(Kubernetes orchestrator) {
-        orchestrator.deleteConfigMap(RUNTIME_CONFIG_MAP_NAME, "stackrox")
-    }
-
     static private setExternalIps(Kubernetes orchestrator, String state) {
-        String runtimeConfig = """\
-networking:
-  externalIps:
-    enabled: ${state}
-"""
+        String runtimeConfig = """|
+                                  |networking:
+                                  |  externalIps:
+                                  |    enabled: ${state}
+                                  |""".stripMargin()
         Map<String, String> data = [
             (RUNTIME_CONFIG_MAP_KEY): runtimeConfig,
         ]
 
-        orchestrator.createConfigMap(RUNTIME_CONFIG_MAP_NAME, data, "stackrox")
+        orchestrator.createConfigMap(RUNTIME_CONFIG_MAP_NAME, data, Constants.STACKROX_NAMESPACE)
     }
 }

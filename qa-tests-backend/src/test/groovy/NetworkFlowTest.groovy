@@ -494,7 +494,7 @@ class NetworkFlowTest extends BaseSpecification {
         sleep 65000 // Wait for the collector scrape interval and for sensor to send connections to sensor
 
         edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
-        graph = NetworkGraphService.getNetworkGraph(null, null)
+        graph = NetworkGraphService.getNetworkGraph()
         def node = NetworkGraphUtil.findDeploymentNode(graph, deploymentUid)
         then:
         "The edge should still be there and it should still be the only edge from A"
@@ -503,7 +503,7 @@ class NetworkFlowTest extends BaseSpecification {
         assert edges.size() == 1
         assert node
         // There should only be one connection and it should be to the generic external entity.
-        assert node.outEdges.size() == 1
+        assert node.outEdgesMap.size() == 1
         // // Collector reports the normalized connection as being closed. There is no assert here
         // // as we don't want this behavior long term.
         // waitForEdgeToBeClosed(edges.get(0), 165)
@@ -515,7 +515,7 @@ class NetworkFlowTest extends BaseSpecification {
         sleep 65000 // Wait for the collector scrape interval and for sensor to send connections to sensor
 
         edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
-        graph = NetworkGraphService.getNetworkGraph(null, null)
+        graph = NetworkGraphService.getNetworkGraph()
         node = NetworkGraphUtil.findDeploymentNode(graph, deploymentUid)
         then:
         "The edge should still be there and it should still be the only edge from A"
@@ -528,6 +528,8 @@ class NetworkFlowTest extends BaseSpecification {
         // // Collector reports the unnormalized connection as being closed. There is no assert here
         // // as we don't want this behavior long term.
         // waitForEdgeToBeClosed(edges.get(0), 165)
+
+        CollectorUtil.deleteRuntimeConfig(orchestrator)
     }
 
     @Tag("NetworkFlowVisualization")
