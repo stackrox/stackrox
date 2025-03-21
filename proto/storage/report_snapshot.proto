@@ -31,6 +31,7 @@ message ReportSnapshot {
   ReportStatus report_status = 9;
   repeated NotifierSnapshot notifiers = 10;
   SlimUser requester = 11;
+  VulnerabilityReportOptionalColumns optionalColumns = 12;
 }
 
 message CollectionSnapshot {

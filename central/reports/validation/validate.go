@@ -322,5 +322,6 @@ func generateReportSnapshot(
 		})
 	}
 	snapshot.Notifiers = notifierSnaps
+	snapshot.OptionalColumns = config.GetOptionalColumns().CloneVT()
 	return snapshot
 }
