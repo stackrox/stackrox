@@ -72,6 +72,15 @@ defaults:
         port: null
       route:
         enabled: false
+        host: null
+        reencrypt:
+          host: null
+          enabled: false
+          tls:
+            caCertificate: null
+            certificate: null
+            destinationCACertificate: null
+            key: null
     db:
       external: false
 
