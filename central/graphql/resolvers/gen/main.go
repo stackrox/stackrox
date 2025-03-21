@@ -29,7 +29,6 @@ var (
 			reflect.TypeOf((*storage.Group)(nil)),
 			reflect.TypeOf((*storage.Image)(nil)),
 			reflect.TypeOf((*storage.ImageComponent)(nil)),
-			reflect.TypeOf((*storage.ImageCVE)(nil)),
 			reflect.TypeOf((*storage.K8SRole)(nil)),
 			reflect.TypeOf((*storage.K8SRoleBinding)(nil)),
 			reflect.TypeOf((*storage.ListAlert)(nil)),
@@ -59,7 +58,6 @@ var (
 			reflect.TypeOf((*storage.ComplianceDomain_Deployment)(nil)),
 			reflect.TypeOf((*storage.ComplianceDomain_Node)(nil)),
 			reflect.TypeOf((*storage.ImageComponentV2)(nil)),
-			reflect.TypeOf((*storage.ImageCVEV2)(nil)),
 
 			reflect.TypeOf((*v1.ComplianceStandard)(nil)),
 			reflect.TypeOf((*v1.GenerateTokenResponse)(nil)),
@@ -77,6 +75,8 @@ var (
 			reflect.TypeOf(storage.EmbeddedNodeScanComponent{}),
 			protocompat.TimestampType,
 			reflect.TypeOf(storage.NodeVulnerability{}),
+			reflect.TypeOf((*storage.ImageCVE)(nil)),
+			reflect.TypeOf((*storage.ImageCVEV2)(nil)),
 		},
 		SkipFields: []generator.TypeAndField{
 			{
