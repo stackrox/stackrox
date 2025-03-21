@@ -14267,6 +14267,11 @@
                 "id": 14,
                 "name": "version",
                 "type": "int32"
+              },
+              {
+                "id": 15,
+                "name": "optionalColumns",
+                "type": "VulnerabilityReportOptionalColumns"
               }
             ]
           },
@@ -14338,14 +14343,19 @@
                 "name": "access_scope_rules",
                 "type": "SimpleAccessScope.Rules",
                 "is_repeated": true
-              },
+              }
+            ]
+          },
+          {
+            "name": "VulnerabilityReportOptionalColumns",
+            "fields": [
               {
-                "id": 9,
+                "id": 1,
                 "name": "include_nvd_cvss",
                 "type": "bool"
               },
               {
-                "id": 10,
+                "id": 2,
                 "name": "include_epss_probability",
                 "type": "bool"
               }
@@ -14582,6 +14592,11 @@
                 "id": 11,
                 "name": "requester",
                 "type": "SlimUser"
+              },
+              {
+                "id": 12,
+                "name": "optionalColumns",
+                "type": "VulnerabilityReportOptionalColumns"
               }
             ]
           },

@@ -35,6 +35,7 @@ message ReportConfiguration {
   repeated NotifierConfiguration notifiers = 12;
   SlimUser creator = 13; // @gotags: sql:"ignore_labels(User ID)"
   int32 version = 14; // version=0 is unmigrated v1 config, version=1 is migrated v1 config and version=2 is v2 config
+  VulnerabilityReportOptionalColumns optionalColumns = 15;
 }
 
 message ReportLastRunStatus {
@@ -69,8 +70,11 @@ message VulnerabilityReportFilters {
     google.protobuf.Timestamp since_start_date = 7;
   }
   repeated SimpleAccessScope.Rules access_scope_rules = 8;
-  bool include_nvd_cvss = 9;
-  bool include_epss_probability = 10;
+}
+
+message VulnerabilityReportOptionalColumns {
+  bool include_nvd_cvss = 1;
+  bool include_epss_probability = 2;
 }
 
 message ResourceScope {
