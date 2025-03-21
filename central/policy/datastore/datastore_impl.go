@@ -310,10 +310,7 @@ func (ds *datastoreImpl) RemovePolicy(ctx context.Context, id string) error {
 	ds.policyMutex.Lock()
 	defer ds.policyMutex.Unlock()
 
-	if err := ds.removePolicyNoLock(ctx, id); err != nil {
-		return err
-	}
-	return nil
+	return ds.removePolicyNoLock(ctx, id)
 }
 
 func (ds *datastoreImpl) removePolicyNoLock(ctx context.Context, id string) error {
