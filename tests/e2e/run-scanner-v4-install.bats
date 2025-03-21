@@ -146,6 +146,9 @@ EOT
     OS="$(uname | tr '[:upper:]' '[:lower:]')"
     export OS
     export ORCH_CMD="${ROOT}/scripts/retry-kubectl.sh"
+    echo "Orchestrator command: ${ORCH_CMD}"
+    export TEST_HELM_CMD="${ROOT}/scripts/retry-helm.sh"
+    echo "Helm command: ${TEST_HELM_CMD}"
     export SENSOR_HELM_MANAGED=true
     export CENTRAL_CHART_DIR="${ROOT}/deploy/${ORCHESTRATOR_FLAVOR}/central-deploy/chart"
     export SENSOR_CHART_DIR="${ROOT}/deploy/${ORCHESTRATOR_FLAVOR}/sensor-deploy/chart"
@@ -423,9 +426,9 @@ EOF
 
     # Deactivate Scanner V4 for both releases.
     info "Disabling Scanner V4 for Central"
-    helm upgrade -n stackrox stackrox-central-services "${CENTRAL_CHART_DIR}" --reuse-values --set scannerV4.disable=true
+    "$TEST_HELM_CMD" upgrade -n stackrox stackrox-central-services "${CENTRAL_CHART_DIR}" --reuse-values --set scannerV4.disable=true
     info "Disabling Scanner V4 for SecuredCluster"
-    helm upgrade -n stackrox stackrox-secured-cluster-services "${SENSOR_CHART_DIR}" --reuse-values --set scannerV4.disable=true
+    "$TEST_HELM_CMD" upgrade -n stackrox stackrox-secured-cluster-services "${SENSOR_CHART_DIR}" --reuse-values --set scannerV4.disable=true
 
     verify_deployment_deletion_with_timeout 4m "stackrox" scanner-v4-indexer scanner-v4-matcher scanner-v4-db
     run ! verify_deployment_scannerV4_env_var_set "stackrox" "central"
@@ -480,8 +483,8 @@ EOF
     verify_deployment_scannerV4_env_var_set "$sensor_namespace" "sensor"
 
     # Deactivate Scanner V4 for both releases.
-    helm upgrade -n "${central_namespace}" stackrox-central-services "${CENTRAL_CHART_DIR}" --reuse-values --set scannerV4.disable=true
-    helm upgrade -n "${sensor_namespace}" stackrox-secured-cluster-services "${SENSOR_CHART_DIR}" --reuse-values --set scannerV4.disable=true
+    "$TEST_HELM_CMD" upgrade -n "${central_namespace}" stackrox-central-services "${CENTRAL_CHART_DIR}" --reuse-values --set scannerV4.disable=true
+    "$TEST_HELM_CMD" upgrade -n "${sensor_namespace}" stackrox-secured-cluster-services "${SENSOR_CHART_DIR}" --reuse-values --set scannerV4.disable=true
 
     verify_deployment_deletion_with_timeout 4m "stackrox" scanner-v4-indexer scanner-v4-matcher scanner-v4-db
     run ! verify_deployment_scannerV4_env_var_set "${central_namespace}" "central"
