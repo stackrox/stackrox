@@ -1,5 +1,7 @@
 package services
 
+import java.util.concurrent.TimeUnit
+
 import groovy.transform.CompileStatic
 import groovy.transform.EqualsAndHashCode
 import groovy.util.logging.Slf4j
@@ -139,6 +141,8 @@ class BaseService {
                     // .enableRetry()
                     .negotiationType(NegotiationType.TLS)
                     .sslContext(sslContext)
+                    .keepAliveTime(1, TimeUnit.SECONDS)
+                    .idleTimeout(1, TimeUnit.MINUTES)
                     .build()
             effectiveChannel = null
 
