@@ -68,4 +68,3 @@ for attempt in $(seq 0 ${attempts}); do
     cat "${grep_out}" >&2
 done
 exit "${ret}"
-
