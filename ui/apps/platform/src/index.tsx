@@ -15,6 +15,7 @@ import 'css.imports';
 
 import { configure as mobxConfigure } from 'mobx';
 import * as monaco from 'monaco-editor';
+import { loader } from '@monaco-editor/react';
 import { configureMonacoYaml } from 'monaco-yaml';
 
 import ErrorBoundary from 'Components/PatternFly/ErrorBoundary/ErrorBoundary';
@@ -37,6 +38,7 @@ configureMonacoYaml(monaco, {
     format: true,
     schemas: [],
 });
+loader.config({ monaco });
 
 // We need to call this MobX utility function, to prevent the error
 //   Uncaught Error: [MobX] There are multiple, different versions of MobX active. Make sure MobX is loaded only once or use `configure({ isolateGlobalState: true })`
