@@ -478,8 +478,8 @@ func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, reque
 }
 
 func (s *serviceImpl) releaseFromScanSemaphore() {
-	metrics.ImageScanSemaphoreHoldingSize.Dec()
 	s.internalScanSemaphore.Release(1)
+	metrics.ImageScanSemaphoreHoldingSize.Dec()
 }
 
 func (s *serviceImpl) acquireScanSemaphore(ctx context.Context) error {
