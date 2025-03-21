@@ -141,15 +141,14 @@ type SecurityPolicyConditionType string
 
 const (
 	Ready      SecurityPolicyConditionType = "Ready"
-	Reconciled                             = "Reconciled"
-	Active                                 = "Active"
+	Reconciled SecurityPolicyConditionType = "Reconciled"
+	Active     SecurityPolicyConditionType = "Active"
 )
 
 // SecurityPolicyCondition defines the observed state of SecurityPolicy
 type SecurityPolicyCondition struct {
 	Type               SecurityPolicyConditionType `json:"type"`
 	Status             bool                        `json:"status"`
-	Reason             string                      `json:"reason"`
 	Message            string                      `json:"message"`
 	LastTransitionTime metav1.Time                 `json:"lastTransitionTime,omitempty"`
 }

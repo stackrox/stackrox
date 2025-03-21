@@ -262,15 +262,12 @@ spec:
                       type: string
                     message:
                       type: string
-                    reason:
-                      type: string
                     status:
                       type: boolean
                     type:
                       type: string
                   required:
                   - message
-                  - reason
                   - status
                   - type
                   type: object
