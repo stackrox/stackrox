@@ -30,9 +30,6 @@ func BenchmarkMany(b *testing.B) {
 	}
 
 	testDB := pgtest.ForT(b)
-	b.Cleanup(func() {
-		testDB.Teardown(b)
-	})
 	store := New(testDB.DB)
 
 	ctx := sac.WithAllAccess(context.Background())
