@@ -130,10 +130,17 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 	}
 
 	if features.FlattenCVEData.Enabled() {
-		cvecoreresolver, err := resolver.ImageCVEs(ctx, q)
+		coreQuery := PaginatedQuery{
+			Query:      q.Query,
+			ScopeQuery: q.ScopeQuery,
+			Pagination: nil,
+		}
+		log.Infof("SHREWS -- about to get core stuff")
+		cvecoreresolver, err := resolver.ImageCVEs(ctx, coreQuery)
 		if err != nil {
 			return nil, err
 		}
+		log.Infof("SHREWS -- got core stuff")
 
 		// get loader
 		loader, err := loaders.GetImageCVEV2Loader(ctx)
