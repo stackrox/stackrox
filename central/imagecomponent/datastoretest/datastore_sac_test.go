@@ -50,10 +50,6 @@ func (s *cveDataStoreSACTestSuite) SetupSuite() {
 	s.nodeTestContexts = sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Node)
 }
 
-func (s *cveDataStoreSACTestSuite) TearDownSuite() {
-	s.testGraphDatastore.Cleanup(s.T())
-}
-
 func getImageComponentID(component *storage.EmbeddedImageScanComponent, os string) string {
 	return scancomponent.ComponentID(component.GetName(), component.GetVersion(), os)
 }

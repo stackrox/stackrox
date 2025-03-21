@@ -53,10 +53,6 @@ func (s *groupsWithPostgresTestSuite) SetupSuite() {
 	s.groupsDatastore = New(store, s.roleStore, s.authProviderStore)
 }
 
-func (s *groupsWithPostgresTestSuite) TearDownSuite() {
-	s.testPostgres.Teardown(s.T())
-}
-
 func (s *groupsWithPostgresTestSuite) TearDownTest() {
 	sql := fmt.Sprintf("TRUNCATE %s CASCADE", postgresSchema.GroupsTableName)
 	_, err := s.testPostgres.Exec(s.ctx, sql)

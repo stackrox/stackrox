@@ -81,10 +81,6 @@ func (s *complianceProfileDataStoreTestSuite) SetupTest() {
 	s.dataStore = GetTestPostgresDataStore(s.T(), s.db, searcher)
 }
 
-func (s *complianceProfileDataStoreTestSuite) TearDownTest() {
-	s.db.Teardown(s.T())
-}
-
 func (s *complianceProfileDataStoreTestSuite) TestUpsertProfile() {
 	// make sure we have nothing
 	profileIDs, err := s.storage.GetIDs(s.hasReadCtx)

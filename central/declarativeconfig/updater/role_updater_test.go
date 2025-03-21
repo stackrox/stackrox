@@ -54,11 +54,6 @@ func (s *roleUpdaterTestSuite) SetupTest() {
 		rds, declarativeConfigHealth.GetTestPostgresDataStore(s.T(), s.pgTest.DB)).(*roleUpdater)
 }
 
-func (s *roleUpdaterTestSuite) TearDownTest() {
-	s.pgTest.Teardown(s.T())
-	s.pgTest.Close()
-}
-
 func (s *roleUpdaterTestSuite) TestUpsert() {
 	cases := map[string]struct {
 		prepData func()

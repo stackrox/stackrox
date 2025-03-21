@@ -19,9 +19,6 @@ import (
 
 func TestGather(t *testing.T) {
 	pool := pgtest.ForT(t)
-	t.Cleanup(func() {
-		pool.Teardown(t)
-	})
 	store := pgStore.New(pool.DB)
 	ds := &datastoreImpl{storage: store}
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),

@@ -655,7 +655,3 @@ func (s *GraphQueriesTestSuite) TestDerivedFieldHighlighted() {
 		},
 	})
 }
-
-func (s *GraphQueriesTestSuite) TearDownTest() {
-	s.testDB.Teardown(s.T())
-}

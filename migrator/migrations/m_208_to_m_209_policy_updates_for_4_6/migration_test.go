@@ -52,10 +52,6 @@ func (s *migrationTestSuite) SetupSuite() {
 	}
 }
 
-func (s *migrationTestSuite) TearDownSuite() {
-	s.db.Teardown(s.T())
-}
-
 func (s *migrationTestSuite) TestMigration() {
 	// Insert the policies to be migrated
 	for _, diff := range policyDiffs {

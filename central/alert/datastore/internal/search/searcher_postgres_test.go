@@ -41,10 +41,6 @@ func (s *AlertsSearchSuite) SetupTest() {
 	s.searcher = New(s.store)
 }
 
-func (s *AlertsSearchSuite) TearDownTest() {
-	s.testPostgres.Teardown(s.T())
-}
-
 func (s *AlertsSearchSuite) TestSearch() {
 	alert := fixtures.GetAlert()
 	alert.EntityType = storage.Alert_DEPLOYMENT

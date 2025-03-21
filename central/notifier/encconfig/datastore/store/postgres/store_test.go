@@ -31,10 +31,6 @@ func (s *NotifierEncConfigsStoreSuite) SetupTest() {
 	s.store = New(s.testDB.DB)
 }
 
-func (s *NotifierEncConfigsStoreSuite) TearDownTest() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *NotifierEncConfigsStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 

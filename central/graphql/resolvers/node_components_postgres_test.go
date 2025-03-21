@@ -60,10 +60,6 @@ func (s *GraphQLNodeComponentTestSuite) SetupSuite() {
 	}
 }
 
-func (s *GraphQLNodeComponentTestSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 // permission checks
 
 func (s *GraphQLNodeComponentTestSuite) TestUnauthorizedNodeComponentEndpoint() {

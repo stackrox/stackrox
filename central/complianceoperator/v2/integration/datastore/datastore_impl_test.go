@@ -66,10 +66,6 @@ func (s *complianceIntegrationDataStoreTestSuite) SetupTest() {
 	s.dataStore = New(s.storage, s.db.DB)
 }
 
-func (s *complianceIntegrationDataStoreTestSuite) TearDownTest() {
-	s.db.Teardown(s.T())
-}
-
 func (s *complianceIntegrationDataStoreTestSuite) TestAddComplianceIntegration() {
 	testIntegrations := getDefaultTestIntegrations()
 	// This will add entries by calling AddComplianceIntegration

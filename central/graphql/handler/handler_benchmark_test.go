@@ -88,7 +88,6 @@ func BenchmarkDeploymentExport(b *testing.B) {
 	testHelper := &testutils.ExportServicePostgresTestHelper{}
 	err := testHelper.SetupTest(b)
 	require.NoError(b, err)
-	b.Cleanup(func() { testHelper.TearDownTest(b) })
 
 	testHelper.InjectDataAndRunBenchmark(b, false, getDeploymentBenchmark(testHelper))
 }
@@ -101,7 +100,6 @@ func BenchmarkImageExport(b *testing.B) {
 	testHelper := &testutils.ExportServicePostgresTestHelper{}
 	err := testHelper.SetupTest(b)
 	require.NoError(b, err)
-	b.Cleanup(func() { testHelper.TearDownTest(b) })
 
 	testHelper.InjectDataAndRunBenchmark(b, true, getImageBenchmark(testHelper))
 }
@@ -114,7 +112,6 @@ func BenchmarkDeploymentWithImageExport(b *testing.B) {
 	testHelper := &testutils.ExportServicePostgresTestHelper{}
 	err := testHelper.SetupTest(b)
 	require.NoError(b, err)
-	b.Cleanup(func() { testHelper.TearDownTest(b) })
 
 	testHelper.InjectDataAndRunBenchmark(b, true, getDeploymentWithImageBenchmark(testHelper))
 }

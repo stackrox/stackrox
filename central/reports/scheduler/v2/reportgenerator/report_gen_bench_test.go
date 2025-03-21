@@ -45,7 +45,6 @@ type ReportGeneratorBenchmarkTestSuite struct {
 func BenchmarkReportGenerator(b *testing.B) {
 	bts := &ReportGeneratorBenchmarkTestSuite{b: b}
 	bts.setupTestSuite()
-	defer bts.teardownTestSuite()
 
 	clusters := []*storage.Cluster{
 		{Id: uuid.NewV4().String(), Name: "c1"},
@@ -129,10 +128,6 @@ func (bts *ReportGeneratorBenchmarkTestSuite) setupTestSuite() {
 	bts.reportGenerator = newReportGeneratorImpl(bts.testDB, nil, bts.resolver.DeploymentDataStore,
 		bts.watchedImageDatastore, bts.collectionQueryResolver, nil, nil, bts.clusterDatastore,
 		bts.namespaceDatastore, imageCVEDatastore, bts.schema)
-}
-
-func (bts *ReportGeneratorBenchmarkTestSuite) teardownTestSuite() {
-	bts.testDB.Teardown(bts.b)
 }
 
 func (bts *ReportGeneratorBenchmarkTestSuite) upsertManyImages(images []*storage.Image) {

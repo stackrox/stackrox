@@ -81,10 +81,6 @@ func (s *ReportingWithCollectionsTestSuite) SetupSuite() {
 		nil, nil, s.schema)
 }
 
-func (s *ReportingWithCollectionsTestSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *ReportingWithCollectionsTestSuite) TearDownTest() {
 	s.truncateTable(postgresSchema.DeploymentsTableName)
 	s.truncateTable(postgresSchema.ImagesTableName)

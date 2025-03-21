@@ -63,10 +63,6 @@ func (s *policyMigrationTestSuite) SetupTest() {
 	}
 }
 
-func (s *policyMigrationTestSuite) TearDownTest() {
-	s.db.Teardown(s.T())
-}
-
 func (s *policyMigrationTestSuite) TestMigration() {
 
 	// Insert the policies to be migrated

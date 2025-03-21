@@ -61,10 +61,6 @@ func (s *graphQLClusterTestSuite) addClusterScopeObject(cluster *storage.Cluster
 	s.scopeObjects = append(s.scopeObjects, scopeObject)
 }
 
-func (s *graphQLClusterTestSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *graphQLClusterTestSuite) TestClustersForPermission() {
 	testCases := map[string]struct {
 		ctx            context.Context

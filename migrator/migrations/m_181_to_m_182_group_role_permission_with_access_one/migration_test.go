@@ -349,10 +349,6 @@ func (s *psMigrationTestSuite) SetupSuite() {
 	pgutils.CreateTableFromModel(ctx, s.db.GetGormDB(), frozenSchema.CreateTablePermissionSetsStmt)
 }
 
-func (s *psMigrationTestSuite) TearDownSuite() {
-	s.db.Teardown(s.T())
-}
-
 func (s *psMigrationTestSuite) TestMigration() {
 	store := permissionsetpostgresstore.New(s.db.DB)
 

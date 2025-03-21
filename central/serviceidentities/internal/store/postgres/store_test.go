@@ -41,10 +41,6 @@ func (s *ServiceIdentitiesStoreSuite) SetupTest() {
 	s.NoError(err)
 }
 
-func (s *ServiceIdentitiesStoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *ServiceIdentitiesStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 

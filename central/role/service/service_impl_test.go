@@ -534,10 +534,6 @@ func (s *serviceImplTestSuite) SetupSuite() {
 	}
 }
 
-func (s *serviceImplTestSuite) TearDownSuite() {
-	s.postgres.Teardown(s.T())
-}
-
 func (s *serviceImplTestSuite) SetupTest() {
 	s.storedAccessScopeIDs = make([]string, 0)
 	s.storedPermissionSetIDs = make([]string, 0)

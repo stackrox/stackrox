@@ -42,10 +42,6 @@ func (s *apMigrationTestSuite) SetupSuite() {
 	pgutils.CreateTableFromModel(ctx, s.db.GetGormDB(), schema.CreateTableGroupsStmt)
 }
 
-func (s *apMigrationTestSuite) TearDownSuite() {
-	s.db.Teardown(s.T())
-}
-
 var unmigratedAuthProviders = []*storage.AuthProvider{
 	{
 		Id:   uuid.NewV5FromNonUUIDs(providerIDNamespace, "no-claims").String(),

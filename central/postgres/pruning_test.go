@@ -50,10 +50,6 @@ func (s *PostgresPruningSuite) SetupTest() {
 	s.ctx = sac.WithAllAccess(context.Background())
 }
 
-func (s *PostgresPruningSuite) TearDownTest() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *PostgresPruningSuite) TestPruneActiveComponents() {
 	depStore, _ := deploymentStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	acDS := activeComponent.NewForTestOnly(s.T(), s.testDB.DB)
@@ -388,7 +384,7 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 	}
 	for _, c := range cases {
 		s.T().Run(c.name, func(t *testing.T) {
-			s.testDB.Teardown(s.T())
+
 			s.testDB = pgtest.ForT(s.T())
 			// Add deployments if necessary
 			deploymentDS, err := deploymentStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)

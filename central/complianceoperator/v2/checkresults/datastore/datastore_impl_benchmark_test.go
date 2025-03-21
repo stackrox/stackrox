@@ -94,9 +94,6 @@ func setupTest(b *testing.B, pool *pgtest.TestPostgres, datastore DataStore, num
 
 func BenchmarkComplianceCheckResultStats(b *testing.B) {
 	pool := pgtest.ForT(b)
-	b.Cleanup(func() {
-		pool.Teardown(b)
-	})
 	datastore := GetTestPostgresDataStore(b, pool)
 
 	setupTest(b, pool, datastore, 5, 10, 500)

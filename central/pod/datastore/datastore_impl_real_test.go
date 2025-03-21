@@ -74,10 +74,6 @@ func (s *PodDatastoreSuite) SetupTest() {
 	s.datastore = newDatastoreImpl(podStorage, podSearcher, s.indicatorDataStore, s.plopDS, s.filter)
 }
 
-func (s *PodDatastoreSuite) TearDownTest() {
-	s.postgres.Teardown(s.T())
-}
-
 func (s *PodDatastoreSuite) getProcessIndicatorsFromDB() []*storage.ProcessIndicator {
 	indicatorsFromDB := []*storage.ProcessIndicator{}
 	err := s.indicatorDataStore.WalkAll(s.plopAndPiCtx,

@@ -49,11 +49,6 @@ func (s *updaterTestSuite) SetupTest() {
 		declarativeConfigHealth.GetTestPostgresDataStore(s.T(), s.pgTest.DB)).(*accessScopeUpdater)
 }
 
-func (s *updaterTestSuite) TearDownTest() {
-	s.pgTest.Teardown(s.T())
-	s.pgTest.Close()
-}
-
 func (s *updaterTestSuite) TestUpsert() {
 	cases := map[string]struct {
 		m   protocompat.Message

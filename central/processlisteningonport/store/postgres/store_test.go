@@ -44,10 +44,6 @@ func (s *ListeningEndpointsStoreSuite) SetupTest() {
 	s.NoError(err)
 }
 
-func (s *ListeningEndpointsStoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *ListeningEndpointsStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 

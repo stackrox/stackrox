@@ -92,10 +92,6 @@ func (s *networkGraphServiceSuite) SetupTest() {
 	s.db = db
 }
 
-func (s *networkGraphServiceSuite) TeardownTest() {
-	s.db.Teardown(s.T())
-}
-
 func externalFlow(deployment *storage.Deployment, entity *storage.NetworkEntity, ingress bool) *storage.NetworkFlow {
 	deploymentEntityInfo := &storage.NetworkEntityInfo{
 		Type: storage.NetworkEntityInfo_DEPLOYMENT,

@@ -54,10 +54,6 @@ func (s *migrationTestSuite) SetupSuite() {
 	s.oldStore2 = previous.New(s.db.DB, cluster2)
 }
 
-func (s *migrationTestSuite) TearDownSuite() {
-	s.db.Teardown(s.T())
-}
-
 func (s *migrationTestSuite) TestMigration() {
 	ctx, cancel := context.WithTimeout(s.ctx, 5*time.Minute)
 	defer cancel()

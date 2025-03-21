@@ -24,7 +24,6 @@ func BenchmarkNodes(b *testing.B) {
 
 	testDB := pgtest.ForT(b)
 	nodeDS := GetTestPostgresDataStore(b, testDB.DB)
-	defer testDB.Teardown(b)
 
 	fakeNode := fixtures.GetNodeWithUniqueComponents(100, 100)
 	nodes := make([]*storage.Node, 100)

@@ -75,10 +75,6 @@ func (s *complianceReportSnapshotDataStoreSuite) SetupTest() {
 	require.NoError(s.T(), s.scanConfigDB.UpsertScanConfiguration(s.hasWriteCtx, &storage.ComplianceOperatorScanConfigurationV2{Id: uuidScanConfigStub2, ScanConfigName: uuidScanConfigStub2}))
 }
 
-func (s *complianceReportSnapshotDataStoreSuite) TearDownTest() {
-	s.db.Teardown(s.T())
-}
-
 func (s *complianceReportSnapshotDataStoreSuite) TestUpsertReport() {
 	// make sure we have nothing
 	reportIDs, err := s.storage.GetIDs(s.hasReadCtx)

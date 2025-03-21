@@ -93,10 +93,6 @@ func (s *EnhancedReportingTestSuite) SetupSuite() {
 		s.namespaceDatastore, imageCVEDatastore, s.schema)
 }
 
-func (s *EnhancedReportingTestSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *EnhancedReportingTestSuite) TearDownTest() {
 	s.truncateTable(postgresSchema.DeploymentsTableName)
 	s.truncateTable(postgresSchema.ImagesTableName)

@@ -50,10 +50,6 @@ func (s *SearchComparisonTestSuite) SetupSuite() {
 	s.optionsMap = pkgSchema.ImagesSchema.OptionsMap
 }
 
-func (s *SearchComparisonTestSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func compareResults(t *testing.T, matches bool, predResult *search.Result, searchResults []search.Result) {
 	assert.Equal(t, matches, len(searchResults) != 0)
 	imageKeyMap := map[string]string{"image.scan.components.vulns.cve": "imagecve.cve_base_info.cve", "image.scan.components.vulns.cvss": "imagecve.cvss"}
