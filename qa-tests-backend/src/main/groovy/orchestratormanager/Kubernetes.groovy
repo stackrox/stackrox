@@ -1987,7 +1987,7 @@ class Kubernetes {
     List<LocalPortForward> createCollectorPortForwards(int port) {
         // since Collector's a daemonset, we can match the behavior of
         // kubectl, and pick a pod to forward to.
-        def collectorPods = getPods("stackrox", "collector")
+        def collectorPods = getPods(Constants.STACKROX_NAMESPACE, "collector")
 
         return collectorPods.collect {
             this.client.pods()
