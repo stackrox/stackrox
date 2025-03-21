@@ -267,6 +267,7 @@ spec:
                     type:
                       type: string
                   required:
+                  - lastTransitionTime
                   - message
                   - status
                   - type
