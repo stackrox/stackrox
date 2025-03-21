@@ -78,19 +78,19 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 				Type:               configstackroxiov1alpha1.Ready,
 				Message:            "",
 				Status:             false,
-				LastTransitionTime: metav1.Time{},
+				LastTransitionTime: metav1.Now(),
 			},
 			configstackroxiov1alpha1.SecurityPolicyCondition{
 				Type:               configstackroxiov1alpha1.Reconciled,
 				Message:            "",
 				Status:             false,
-				LastTransitionTime: metav1.Time{},
+				LastTransitionTime: metav1.Now(),
 			},
 			configstackroxiov1alpha1.SecurityPolicyCondition{
 				Type:               configstackroxiov1alpha1.Active,
 				Message:            "",
 				Status:             false,
-				LastTransitionTime: metav1.Time{},
+				LastTransitionTime: metav1.Now(),
 			},
 		}
 	}
