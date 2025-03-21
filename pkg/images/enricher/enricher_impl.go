@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/cache"
 	"github.com/stackrox/rox/pkg/images/integration"
+	prometheusMetrics "github.com/stackrox/rox/pkg/images/metrics"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/openshift"
@@ -31,6 +32,7 @@ import (
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/sync"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
+	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 )
 
@@ -957,6 +959,12 @@ func normalizeVulnerabilities(scan *storage.ImageScan) {
 	}
 }
 
+func (e *enricherImpl) acquireSemaphore(ctx context.Context, scanner types.Scanner, sema *semaphore.Weighted) error {
+	prometheusMetrics.EnricherSemaphoreQueueSize.Inc()
+	defer prometheusMetrics.EnricherSemaphoreQueueSize.Dec()
+	return sema.Acquire(ctx, 1)
+}
+
 func (e *enricherImpl) enrichImageWithScanner(ctx context.Context, image *storage.Image, imageScanner scannerTypes.ImageScannerWithDataSource) (ScanResult, error) {
 	scanner := imageScanner.GetScanner()
 
@@ -965,10 +973,13 @@ func (e *enricherImpl) enrichImageWithScanner(ctx context.Context, image *storag
 	}
 
 	sema := scanner.MaxConcurrentScanSemaphore()
-	err := sema.Acquire(ctx, 1)
+	err := e.acquireSemaphore(ctx, scanner, sema)
 	if err != nil {
 		return ScanNotDone, errors.Wrapf(err, "acquiring max concurrent scan semaphore with scanner %q", scanner.Name())
 	}
+
+	prometheusMetrics.EnricherSemaphoreHoldingSize.Inc()
+	defer prometheusMetrics.EnricherSemaphoreHoldingSize.Dec()
 	defer sema.Release(1)
 
 	scanStartTime := time.Now()
