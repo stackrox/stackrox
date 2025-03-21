@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/cache"
 	"github.com/stackrox/rox/pkg/images/integration"
-	prometheusMetrics "github.com/stackrox/rox/pkg/images/metrics"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/openshift"
@@ -960,8 +959,8 @@ func normalizeVulnerabilities(scan *storage.ImageScan) {
 }
 
 func (e *enricherImpl) acquireSemaphore(ctx context.Context, scanner types.Scanner, sema *semaphore.Weighted) error {
-	prometheusMetrics.EnricherSemaphoreQueueSize.Inc()
-	defer prometheusMetrics.EnricherSemaphoreQueueSize.Dec()
+	e.metrics.IncrementEnricherSemaphoreQueueSize()
+	defer e.metrics.DecrementEnricherSemaphoreQueueSize()
 	return sema.Acquire(ctx, 1)
 }
 
@@ -978,8 +977,8 @@ func (e *enricherImpl) enrichImageWithScanner(ctx context.Context, image *storag
 		return ScanNotDone, errors.Wrapf(err, "acquiring max concurrent scan semaphore with scanner %q", scanner.Name())
 	}
 
-	prometheusMetrics.EnricherSemaphoreHoldingSize.Inc()
-	defer prometheusMetrics.EnricherSemaphoreHoldingSize.Dec()
+	e.metrics.IncrementEnricherSemaphoreHoldingSize()
+	defer e.metrics.DecrementEnricherSemaphoreHoldingSize()
 	defer sema.Release(1)
 
 	scanStartTime := time.Now()
