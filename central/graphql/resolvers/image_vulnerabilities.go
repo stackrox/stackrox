@@ -1040,7 +1040,7 @@ func (resolver *imageCVEV2Resolver) ImageComponents(ctx context.Context, args Pa
 	log.Infof("SHREWS -- image_vule.ImageComponents")
 	if resolver.flatData != nil {
 		q := *args.Query
-		q = q + "CVEID:" + strings.Join(resolver.flatData.GetCVEIDs(), ",")
+		q = q + "+CVEID:" + strings.Join(resolver.flatData.GetCVEIDs(), ",")
 		args.Query = pointers.String(q)
 	}
 
