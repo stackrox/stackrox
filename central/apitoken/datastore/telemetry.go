@@ -11,8 +11,16 @@ import (
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 )
 
+var (
+	revokedQuery = search.NewQueryBuilder().
+		AddBools(search.Revoked, true).
+		ProtoQuery()
+)
+
 // Gather the number of configured API tokens.
 func Gather(ds DataStore) phonehome.GatherFunc {
+	dsCount := phonehome.Bind2nd(ds.Count)
+
 	return func(ctx context.Context) (map[string]any, error) {
 		ctx = sac.WithGlobalAccessScopeChecker(ctx,
 			sac.AllowFixedScopes(
@@ -20,33 +28,22 @@ func Gather(ds DataStore) phonehome.GatherFunc {
 				sac.ResourceScopeKeys(resources.Integration),
 			),
 		)
-		props := map[string]any{}
-		_ = phonehome.AddTotal(ctx, props, "API Tokens", func(ctx context.Context) (int, error) {
-			return ds.Count(ctx, search.EmptyQuery())
-		})
+
 		formattedNow := time.Now().Format(TimestampLayout)
-		_ = phonehome.AddTotal(ctx, props, "API Tokens Expired", func(ctx context.Context) (int, error) {
-			return ds.Count(ctx,
-				search.NewQueryBuilder().
-					AddStrings(search.Expiration, "<"+formattedNow).
-					ProtoQuery(),
-			)
-		})
-		_ = phonehome.AddTotal(ctx, props, "API Tokens Revoked", func(ctx context.Context) (int, error) {
-			return ds.Count(ctx,
-				search.NewQueryBuilder().
-					AddBools(search.Revoked, true).
-					ProtoQuery(),
-			)
-		})
-		_ = phonehome.AddTotal(ctx, props, "API Tokens Valid", func(ctx context.Context) (int, error) {
-			return ds.Count(ctx,
-				search.NewQueryBuilder().
-					AddBools(search.Revoked, false).
-					AddStrings(search.Expiration, ">"+formattedNow).
-					ProtoQuery(),
-			)
-		})
+
+		expiredQuery := search.NewQueryBuilder().
+			AddStrings(search.Expiration, "<"+formattedNow).
+			ProtoQuery()
+		validQuery := search.NewQueryBuilder().
+			AddBools(search.Revoked, false).
+			AddStrings(search.Expiration, ">"+formattedNow).
+			ProtoQuery()
+
+		props := map[string]any{}
+		_ = phonehome.AddTotal(ctx, props, "API Tokens", dsCount(search.EmptyQuery()))
+		_ = phonehome.AddTotal(ctx, props, "API Tokens Expired", dsCount(expiredQuery))
+		_ = phonehome.AddTotal(ctx, props, "API Tokens Revoked", dsCount(revokedQuery))
+		_ = phonehome.AddTotal(ctx, props, "API Tokens Valid", dsCount(validQuery))
 		return props, nil
 	}
 }
