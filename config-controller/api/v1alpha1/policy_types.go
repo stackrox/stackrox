@@ -137,11 +137,27 @@ type MitreAttackVectors struct {
 	Techniques []string `json:"techniques,omitempty"`
 }
 
-// SecurityPolicyStatus defines the observed state of SecurityPolicy
+type SecurityPolicyConditionType string
+
+const (
+	Ready      SecurityPolicyConditionType = "Ready"
+	Reconciled SecurityPolicyConditionType = "Reconciled"
+	Active     SecurityPolicyConditionType = "Active"
+)
+
+// SecurityPolicyCondition defines the observed state of SecurityPolicy
+type SecurityPolicyCondition struct {
+	Type               SecurityPolicyConditionType `json:"type"`
+	Status             bool                        `json:"status"`
+	Message            string                      `json:"message"`
+	LastTransitionTime metav1.Time                 `json:"lastTransitionTime"`
+}
+
+type SecurityPolicyConditions []SecurityPolicyCondition
+
 type SecurityPolicyStatus struct {
-	Accepted bool   `json:"accepted"`
-	Message  string `json:"message"`
-	PolicyId string `json:"policyId"`
+	Condition SecurityPolicyConditions `json:"conditions"`
+	PolicyId  string                   `json:"policyId"`
 }
 
 // IsValid runs validation checks against the SecurityPolicy spec
@@ -345,4 +361,28 @@ func (p SecurityPolicySpec) ToProtobuf(caches map[CacheType]map[string]string) (
 	}
 
 	return &proto, nil
+}
+
+func (s *SecurityPolicyConditions) UpdateCondition(sType SecurityPolicyConditionType, newCondition SecurityPolicyCondition) {
+	for i, st := range *s {
+		if st.Type != sType {
+			continue
+		}
+		if st.Status != newCondition.Status {
+			newCondition.LastTransitionTime = metav1.Now()
+		} else {
+			newCondition.LastTransitionTime = st.LastTransitionTime
+		}
+		(*s)[i] = newCondition
+		return
+	}
+}
+
+func (s *SecurityPolicyConditions) GetCondition(sType SecurityPolicyConditionType) *SecurityPolicyCondition {
+	for _, st := range *s {
+		if st.Type == sType {
+			return &st
+		}
+	}
+	return nil
 }

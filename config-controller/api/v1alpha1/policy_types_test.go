@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -131,4 +132,47 @@ func TestToProtobuf(t *testing.T) {
 	// Hack: Reset the source field for us to be able to compare
 	protoPolicy.Source = storage.PolicySource_IMPERATIVE
 	protoassert.Equal(t, expectedProto, protoPolicy, "proto message derived from custom resource not as expected")
+}
+
+func TestConditionUpdates(t *testing.T) {
+	startTime := metav1.Now()
+	policy := &SecurityPolicy{}
+	policy.Status = SecurityPolicyStatus{
+		Condition: SecurityPolicyConditions{
+			SecurityPolicyCondition{
+				Type:               Ready,
+				Status:             false,
+				Message:            "",
+				LastTransitionTime: startTime,
+			},
+			SecurityPolicyCondition{
+				Type:               Reconciled,
+				Status:             false,
+				Message:            "",
+				LastTransitionTime: startTime,
+			},
+			SecurityPolicyCondition{
+				Type:               Active,
+				Status:             false,
+				Message:            "",
+				LastTransitionTime: startTime,
+			},
+		},
+	}
+	assert.Equal(t, false, policy.Status.Condition.GetCondition(Ready).Status)
+	policy.Status.Condition.UpdateCondition(Ready, SecurityPolicyCondition{
+		Type:    Ready,
+		Status:  true,
+		Message: "Now Ready",
+	})
+	// Check that the condition was properly updated
+	newReadyCondition := policy.Status.Condition.GetCondition(Ready)
+	assert.Equal(t, "Now Ready", newReadyCondition.Message)
+	assert.Equal(t, true, newReadyCondition.Status)
+	assert.NotEqual(t, startTime, newReadyCondition.LastTransitionTime)
+	// Ensure no other fields were changed
+	assert.Equal(t, false, policy.Status.Condition.GetCondition(Reconciled).Status)
+	assert.Equal(t, false, policy.Status.Condition.GetCondition(Active).Status)
+	// Ensure the length of the conditions array is still 3
+	assert.Equal(t, 3, len(policy.Status.Condition))
 }
