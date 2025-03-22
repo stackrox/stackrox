@@ -36,6 +36,7 @@ func (m *ReportSnapshot) CloneVT() *ReportSnapshot {
 	r.Schedule = m.Schedule.CloneVT()
 	r.ReportStatus = m.ReportStatus.CloneVT()
 	r.Requester = m.Requester.CloneVT()
+	r.OptionalColumns = m.OptionalColumns.CloneVT()
 	if m.Filter != nil {
 		r.Filter = m.Filter.(interface {
 			CloneVT() isReportSnapshot_Filter
@@ -199,6 +200,9 @@ func (this *ReportSnapshot) EqualVT(that *ReportSnapshot) bool {
 		}
 	}
 	if !this.Requester.EqualVT(that.Requester) {
+		return false
+	}
+	if !this.OptionalColumns.EqualVT(that.OptionalColumns) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -386,6 +390,16 @@ func (m *ReportSnapshot) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 			return 0, err
 		}
 		i -= size
+	}
+	if m.OptionalColumns != nil {
+		size, err := m.OptionalColumns.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x62
 	}
 	if m.Requester != nil {
 		size, err := m.Requester.MarshalToSizedBufferVT(dAtA[:i])
@@ -740,6 +754,10 @@ func (m *ReportSnapshot) SizeVT() (n int) {
 	}
 	if m.Requester != nil {
 		l = m.Requester.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.OptionalColumns != nil {
+		l = m.OptionalColumns.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -1232,6 +1250,42 @@ func (m *ReportSnapshot) UnmarshalVT(dAtA []byte) error {
 				m.Requester = &SlimUser{}
 			}
 			if err := m.Requester.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 12:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OptionalColumns", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.OptionalColumns == nil {
+				m.OptionalColumns = &VulnerabilityReportOptionalColumns{}
+			}
+			if err := m.OptionalColumns.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2116,6 +2170,42 @@ func (m *ReportSnapshot) UnmarshalVTUnsafe(dAtA []byte) error {
 				m.Requester = &SlimUser{}
 			}
 			if err := m.Requester.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 12:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OptionalColumns", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.OptionalColumns == nil {
+				m.OptionalColumns = &VulnerabilityReportOptionalColumns{}
+			}
+			if err := m.OptionalColumns.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

@@ -622,6 +622,9 @@
             "type": "object",
             "$ref": "#/definitions/v2NotifierConfiguration"
           }
+        },
+        "optionalColumns": {
+          "$ref": "#/definitions/v2VulnerabilityReportOptionalColumns"
         }
       }
     },
@@ -853,6 +856,9 @@
             "type": "object",
             "$ref": "#/definitions/v2NotifierConfiguration"
           }
+        },
+        "optionalColumns": {
+          "$ref": "#/definitions/v2VulnerabilityReportOptionalColumns"
         }
       }
     },
@@ -964,6 +970,9 @@
         },
         "isDownloadAvailable": {
           "type": "boolean"
+        },
+        "optionalColumns": {
+          "$ref": "#/definitions/v2VulnerabilityReportOptionalColumns"
         }
       }
     },
@@ -1098,7 +1107,12 @@
         "sinceStartDate": {
           "type": "string",
           "format": "date-time"
-        },
+        }
+      }
+    },
+    "v2VulnerabilityReportOptionalColumns": {
+      "type": "object",
+      "properties": {
         "includeNvdCvss": {
           "type": "boolean"
         },
