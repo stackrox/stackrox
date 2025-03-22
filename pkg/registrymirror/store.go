@@ -16,6 +16,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"golang.org/x/exp/maps"
@@ -220,6 +221,7 @@ func (s *FileStore) PullSources(srcImage string) ([]string, error) {
 	}
 
 	srcs := make([]string, 0, len(pullSrcs))
+	dedupSet := set.NewStringSet()
 	for _, src := range pullSrcs {
 		ref := src.Reference.String()
 
@@ -228,7 +230,12 @@ func (s *FileStore) PullSources(srcImage string) ([]string, error) {
 			continue
 		}
 
-		srcs = append(srcs, ref)
+		if isUnique := dedupSet.Add(ref); isUnique {
+			srcs = append(srcs, ref)
+			log.Debugf("Added pull source %q for image %q", ref, srcImage)
+		} else {
+			log.Debugf("Dropped pull source %q for image %q", ref, srcImage)
+		}
 	}
 
 	return srcs, nil
