@@ -94,6 +94,7 @@ type ImageComponentResolver interface {
 func (resolver *Resolver) ImageComponent(ctx context.Context, args IDQuery) (ImageComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageComponent")
 
+	log.Infof("SHREWS -- ImageComponent -- %v", args.ID)
 	// check permissions
 	if err := readImages(ctx); err != nil {
 		return nil, err
@@ -123,6 +124,7 @@ func (resolver *Resolver) ImageComponent(ctx context.Context, args IDQuery) (Ima
 func (resolver *Resolver) ImageComponents(ctx context.Context, q PaginatedQuery) ([]ImageComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageComponents")
 
+	log.Infof("SHREWS -- ImageComponents -- %v", q.String())
 	// check permissions
 	if err := readImages(ctx); err != nil {
 		return nil, err
@@ -143,6 +145,7 @@ func (resolver *Resolver) ImageComponents(ctx context.Context, q PaginatedQuery)
 
 		// get values
 		comps, err := loader.FromQuery(ctx, query)
+		log.Infof("SHREWS -- ImageComponents -- %v", comps)
 		componentResolvers, err := resolver.wrapImageComponentV2sWithContext(ctx, comps, err)
 		if err != nil {
 			return nil, err
