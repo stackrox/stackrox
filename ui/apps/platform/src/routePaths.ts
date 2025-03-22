@@ -240,7 +240,7 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     configmanagement: {
         // Require at least one resource for a dashboard widget.
         resourceAccessRequirements: someResource([
-            'Alert',
+            everyResource(['Alert', 'WorkflowAdministration']), // PolicyViolationsBySeverity
             // 'Cluster',
             'Compliance',
             // 'Deployment',
