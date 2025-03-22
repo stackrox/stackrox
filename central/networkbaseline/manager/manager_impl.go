@@ -201,7 +201,7 @@ type peerInfo struct {
 	cidrBlock string
 }
 
-func (m *manager) lookUpPeerInfo(entity networkgraph.Entity) peerInfo {
+func (m *manager) lookUpPeerInfo(entity networkgraph.Entity, anonymizeDiscovered bool) peerInfo {
 	switch entity.Type {
 	case storage.NetworkEntityInfo_DEPLOYMENT:
 		// If the peer is a deployment, just look it up from the baselines
@@ -229,7 +229,17 @@ func (m *manager) lookUpPeerInfo(entity networkgraph.Entity) peerInfo {
 			log.Warnf("network entity peer %q not found", entity.ID)
 			return peerInfo{}
 		}
+
 		externalSource := networkEntity.GetInfo().GetExternalSource()
+
+		if externalSource.GetDiscovered() && anonymizeDiscovered {
+			// If it's a discovered external IP, we anonymise to the
+			// internet to better reflect the baseline behavior
+			return peerInfo{
+				name: networkgraph.InternetExternalSourceName,
+			}
+		}
+
 		return peerInfo{
 			name:      externalSource.GetName(),
 			cidrBlock: externalSource.GetCidr(),
@@ -252,7 +262,7 @@ func (m *manager) processFlowUpdate(flows map[networkgraph.NetworkConnIndicator]
 			continue
 		}
 		if conn.SrcEntity.Type == storage.NetworkEntityInfo_DEPLOYMENT {
-			peer := m.lookUpPeerInfo(conn.DstEntity)
+			peer := m.lookUpPeerInfo(conn.DstEntity, true)
 			if peer.name != "" {
 				m.maybeAddPeer(conn.SrcEntity.ID, &networkbaseline.Peer{
 					IsIngress: false,
@@ -265,7 +275,7 @@ func (m *manager) processFlowUpdate(flows map[networkgraph.NetworkConnIndicator]
 			}
 		}
 		if conn.DstEntity.Type == storage.NetworkEntityInfo_DEPLOYMENT {
-			peer := m.lookUpPeerInfo(conn.SrcEntity)
+			peer := m.lookUpPeerInfo(conn.SrcEntity, true)
 			if peer.name != "" {
 				m.maybeAddPeer(conn.DstEntity.ID, &networkbaseline.Peer{
 					IsIngress: true,
@@ -467,7 +477,7 @@ func (m *manager) ProcessBaselineStatusUpdate(ctx context.Context, modifyRequest
 			networkgraph.Entity{
 				Type: v1Peer.GetEntity().GetType(),
 				ID:   v1Peer.GetEntity().GetId(),
-			})
+			}, false)
 		peer := networkbaseline.PeerFromV1Peer(v1Peer, info.name, info.cidrBlock)
 		_, inBaseline := baseline.BaselinePeers[peer]
 		_, inForbidden := baseline.ForbiddenPeers[peer]
