@@ -58,7 +58,7 @@ type LocalScan struct {
 	createNoAuthImageRegistry func(context.Context, *storage.ImageName, registries.Factory) (registryTypes.ImageRegistry, error)
 	getCentralRegistries      func(*storage.ImageName) []registryTypes.ImageRegistry
 	getPullSecretRegistries   func(*storage.ImageName, string, []string) ([]registryTypes.ImageRegistry, error)
-	getGlobalRegistry         func(*storage.ImageName) (registryTypes.ImageRegistry, error)
+	getGlobalRegistries       func(*storage.ImageName) ([]registryTypes.ImageRegistry, error)
 
 	// scanSemaphore limits the number of active scans.
 	scanSemaphore *semaphore.Weighted
@@ -82,7 +82,7 @@ type LocalScanRequest struct {
 
 type registryStore interface {
 	GetPullSecretRegistries(image *storage.ImageName, namespace string, imagePullSecrets []string) ([]registryTypes.ImageRegistry, error)
-	GetGlobalRegistry(*storage.ImageName) (registryTypes.ImageRegistry, error)
+	GetGlobalRegistries(*storage.ImageName) ([]registryTypes.ImageRegistry, error)
 	GetCentralRegistries(*storage.ImageName) []registryTypes.ImageRegistry
 }
 
@@ -110,7 +110,7 @@ func NewLocalScan(registryStore registryStore, mirrorStore registrymirror.Store)
 		createNoAuthImageRegistry: createNoAuthImageRegistry,
 		getCentralRegistries:      registryStore.GetCentralRegistries,
 		getPullSecretRegistries:   registryStore.GetPullSecretRegistries,
-		getGlobalRegistry:         registryStore.GetGlobalRegistry,
+		getGlobalRegistries:       registryStore.GetGlobalRegistries,
 	}
 	return ls
 }
@@ -295,8 +295,8 @@ func (s *LocalScan) getRegistries(ctx context.Context, namespace string, imgName
 
 	// Add global pull secret registry.
 	// An err indicates no registry was found, only append if was no err.
-	if reg, err := s.getGlobalRegistry(imgName); err == nil {
-		regs = append(regs, reg)
+	if reg, err := s.getGlobalRegistries(imgName); err == nil {
+		regs = append(regs, reg...)
 	}
 
 	// Create a no auth registry if no other registries have been found.
