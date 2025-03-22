@@ -18,9 +18,10 @@ import (
 )
 
 var (
-	ipPool        = newPool()
-	containerPool = newPool()
-	endpointPool  = newEndpointPool()
+	ipPool         = newPool()
+	externalIpPool = newPool()
+	containerPool  = newPool()
+	endpointPool   = newEndpointPool()
 
 	registeredHostConnections []manager.HostNetworkInfo
 )
@@ -120,6 +121,30 @@ func generateIP() string {
 	return fmt.Sprintf("10.%d.%d.%d", rand.Intn(256), rand.Intn(256), rand.Intn(256))
 }
 
+// Generate IP addresses from 11.0.0.0 to 99.255.255.255 which are all public
+func generateExternalIP() string {
+	return fmt.Sprintf("%d.%d.%d.%d", rand.Intn(89)+11, rand.Intn(256), rand.Intn(256), rand.Intn(256))
+}
+
+// We want to reuse some external IPs, so we test the cases where multiple
+// entities connect to the same external IP, but we also want many external IPs
+// that are only used once.
+func generateExternalIPPool() {
+	ip := []int{11, 0, 0, 0}
+	for range 1000 {
+		for j := 3; j >= 0; j-- {
+			ip[j]++
+			if ip[j] > 255 {
+				ip[j] = 0
+			} else {
+				break
+			}
+		}
+		ipString := fmt.Sprintf("%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3])
+		externalIpPool.add(ipString)
+	}
+}
+
 func generateAndAddIPToPool() string {
 	ip := generateIP()
 	for !ipPool.add(ip) {
@@ -176,17 +201,6 @@ func getRandomOriginator(containerID string) *storage.NetworkProcessUniqueKey {
 	return getNetworkProcessUniqueKeyFromProcess(process)
 }
 
-func getNetworkEndpointFromConnectionAndOriginator(conn *sensor.NetworkConnection, originator *storage.NetworkProcessUniqueKey) *sensor.NetworkEndpoint {
-	return &sensor.NetworkEndpoint{
-		SocketFamily:   conn.SocketFamily,
-		Protocol:       conn.Protocol,
-		ListenAddress:  conn.LocalAddress,
-		ContainerId:    conn.ContainerId,
-		CloseTimestamp: nil,
-		Originator:     originator,
-	}
-}
-
 func makeNetworkConnection(src string, dst string, containerID string, closeTimestamp time.Time) *sensor.NetworkConnection {
 	closeTS, err := protocompat.ConvertTimeToTimestampOrError(closeTimestamp)
 	if err != nil {
@@ -210,32 +224,99 @@ func makeNetworkConnection(src string, dst string, containerID string, closeTime
 	}
 }
 
+// Randomly decide to get an interal or external IP, with an 80% chance of the IP
+// being internal and 20% of being external. If the IP is external randomly decide
+// to pick it from a pool of external IPs or a new external IP, with a 50/50 chance
+// of being from the pool or a newly generated IP address. We want to have cases
+// where multiple different entities connect to the same external IP, but we also
+// want a large number of unique external IPs.
+func (w *WorkloadManager) getRandomInternalExternalIP() (string, bool, bool) {
+	ip := ""
+	var ok bool
+
+	internal := rand.Intn(100) < 80
+	if internal {
+		ip, ok = ipPool.randomElem()
+	} else {
+		if rand.Intn(100) < 50 {
+			ip, ok = externalIpPool.randomElem()
+		} else {
+			ip = generateExternalIP()
+			ok = true
+		}
+	}
+
+	if !ok {
+		log.Errorf("Found no IPs in the %s pool", map[bool]string{true: "internal", false: "external"}[internal])
+	}
+
+	return ip, internal, ok
+}
+
+func (w *WorkloadManager) getRandomSrcDst() (string, string, bool) {
+	src, internal, ok := w.getRandomInternalExternalIP()
+	if !ok {
+		return "", "", false
+	}
+	var dst string
+	// If the src is internal, the dst can be internal or external, but
+	// if the src is external, the dst must be internal.
+	if internal {
+		dst, _, ok = w.getRandomInternalExternalIP()
+	} else {
+		dst, ok = ipPool.randomElem()
+		if !ok {
+			log.Error("Found no IPs in the internal pool")
+		}
+	}
+
+	return src, dst, ok
+}
+
+func (w *WorkloadManager) getRandomNetworkEndpoint(containerID string) (*sensor.NetworkEndpoint, bool) {
+	originator := getRandomOriginator(containerID)
+
+	ip, ok := ipPool.randomElem()
+	if !ok {
+		return nil, false
+	}
+
+	networkEndpoint := &sensor.NetworkEndpoint{
+		SocketFamily: sensor.SocketFamily_SOCKET_FAMILY_IPV4,
+		Protocol:     storage.L4Protocol_L4_PROTOCOL_TCP,
+		ListenAddress: &sensor.NetworkAddress{
+			AddressData: net.ParseIP(ip).AsNetIP(),
+			Port:        rand.Uint32() % 63556,
+		},
+		ContainerId:    containerID,
+		CloseTimestamp: nil,
+		Originator:     originator,
+	}
+
+	return networkEndpoint, ok
+}
+
 func (w *WorkloadManager) getFakeNetworkConnectionInfo(workload NetworkWorkload) *sensor.NetworkConnectionInfo {
 	conns := make([]*sensor.NetworkConnection, 0, workload.BatchSize)
 	networkEndpoints := make([]*sensor.NetworkEndpoint, 0, workload.BatchSize)
 	for i := 0; i < workload.BatchSize; i++ {
-		src, ok := ipPool.randomElem()
+		src, dst, ok := w.getRandomSrcDst()
 		if !ok {
-			log.Error("found no IPs in pool")
-			continue
-		}
-		dst, ok := ipPool.randomElem()
-		if !ok {
-			log.Error("found no IPs in pool")
 			continue
 		}
 
 		containerID, ok := containerPool.randomElem()
 		if !ok {
-			log.Error("found no containers in pool")
+			log.Error("Found no containers in pool")
 			continue
 		}
 
 		conn := makeNetworkConnection(src, dst, containerID, time.Now().Add(-5*time.Second))
-
-		originator := getRandomOriginator(containerID)
-
-		networkEndpoint := getNetworkEndpointFromConnectionAndOriginator(conn, originator)
+		networkEndpoint, ok := w.getRandomNetworkEndpoint(containerID)
+		if !ok {
+			log.Error("Found no IPs in the internal pool")
+			continue
+		}
 
 		conns = append(conns, conn)
 		if endpointPool.Size < endpointPool.Capacity {
@@ -272,6 +353,8 @@ func (w *WorkloadManager) manageFlows(ctx context.Context, workload NetworkWorkl
 	// Pick a valid pod
 	ticker := time.NewTicker(workload.FlowInterval)
 	defer ticker.Stop()
+
+	generateExternalIPPool()
 
 	for {
 		select {
