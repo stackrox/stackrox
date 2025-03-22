@@ -63,7 +63,7 @@ func NewSecuredClusterTLSIssuer(
 		getServiceCertificatesRepoFn: securedcluster.NewServiceCertificatesRepo,
 		msgToCentralC:                make(chan *message.ExpiringMessage),
 		newMsgFromSensorFn:           newSecuredClusterMsgFromSensor,
-		responseReceived:             concurrency.NewSignal(),
+		stopSig:                      concurrency.NewSignal(),
 		requiredCentralCapability: func() *centralsensor.CentralCapability {
 			centralCap := centralsensor.CentralCapability(centralsensor.SecuredClusterCertificatesReissue)
 			return &centralCap
@@ -101,11 +101,11 @@ type tlsIssuerImpl struct {
 	getServiceCertificatesRepoFn serviceCertificatesRepoGetter
 	certRefresher                concurrency.RetryTicker
 	msgToCentralC                chan *message.ExpiringMessage
-	responseFromCentral          atomic.Pointer[Response]
-	responseReceived             concurrency.Signal
-	ongoingRequestID             string
-	ongoingRequestIDMutex        sync.Mutex
-	requestOngoing               atomic.Bool
+	responseFromCentral          chan *Response
+	requestMutex                 sync.Mutex
+	wgDispatch                   sync.WaitGroup
+	wgRequest                    sync.WaitGroup
+	stopSig                      concurrency.Signal
 	newMsgFromSensorFn           newMsgFromSensor
 	requiredCentralCapability    *centralsensor.CentralCapability
 	started                      atomic.Bool
@@ -154,6 +154,9 @@ func (i *tlsIssuerImpl) activate() error {
 	i.certRefresher = i.getCertificateRefresherFn(i.componentName, i.requestCertificates, certsRepo,
 		certRefreshTimeout, i.certRefreshBackoff)
 
+	i.responseFromCentral = make(chan *Response)
+	i.stopSig.Reset()
+
 	refresherCtx, cancelFunc := context.WithCancel(context.Background())
 	i.cancelRefresher = cancelFunc
 	if refreshStartErr := i.certRefresher.Start(refresherCtx); refreshStartErr != nil {
@@ -177,9 +180,16 @@ func (i *tlsIssuerImpl) deactivate() {
 	defer i.activateLock.Unlock()
 
 	if i.certRefresher != nil {
+		// cancel the refresher and wait for any ongoing requests to end
 		i.cancelRefresher()
+		i.wgRequest.Wait()
 		i.certRefresher.Stop()
 		i.certRefresher = nil
+
+		// send the stop signal, wait for the dispatch goroutines to finish, then safely close the channel
+		i.stopSig.Signal()
+		i.wgDispatch.Wait()
+		close(i.responseFromCentral)
 	}
 
 	log.Debugf("%s TLS issuer is not active.", i.componentName)
@@ -234,25 +244,21 @@ func (i *tlsIssuerImpl) ProcessMessage(msg *central.MsgToSensor) error {
 }
 
 func (i *tlsIssuerImpl) dispatch(response *Response) {
-	if !i.requestOngoing.Load() {
-		log.Warnf("Received a response for request ID %q, but there is no ongoing RequestCertificates call.", response.RequestId)
-		return
-	}
-	ongoingRequestID := concurrency.WithLock1(&i.ongoingRequestIDMutex, func() string {
-		return i.ongoingRequestID
-	})
-	if ongoingRequestID != response.RequestId {
-		log.Warnf("Request ID %q does not match ongoing request ID %q.",
-			response.RequestId, ongoingRequestID)
+	concurrency.WithLock(&i.activateLock, func() { i.wgDispatch.Add(1) })
+	defer i.wgDispatch.Done()
+
+	if i.stopSig.IsDone() {
 		return
 	}
 
-	i.responseFromCentral.Store(response)
-	i.responseReceived.Signal()
+	select {
+	case i.responseFromCentral <- response:
+	case <-i.stopSig.Done():
+	}
 }
 
 // requestCertificates makes a new request for a new set of secured cluster certificates from Central.
-// Concurrent requests are *not* supported.
+// Concurrent requests are *not* supported, this function will block until previous calls finish.
 func (i *tlsIssuerImpl) requestCertificates(ctx context.Context) (*Response, error) {
 	if i.requiredCentralCapability != nil {
 		// Central capabilities are only available after this component is created,
@@ -262,24 +268,22 @@ func (i *tlsIssuerImpl) requestCertificates(ctx context.Context) (*Response, err
 		}
 	}
 
-	if !i.requestOngoing.CompareAndSwap(false, true) {
-		return nil, errors.New("concurrent requests are not supported.")
+	concurrency.WithLock(&i.activateLock, func() { i.wgRequest.Add(1) })
+	defer i.wgRequest.Done()
+
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
 	}
 
-	defer func() {
-		i.requestOngoing.Store(false)
-		i.responseReceived.Reset()
-	}()
-
-	requestID := uuid.NewV4().String()
-	concurrency.WithLock(&i.ongoingRequestIDMutex, func() {
-		i.ongoingRequestID = requestID
+	// Ensure only one request can be active at a time. By protecting both send and receive
+	// with the same mutex, we prevent a future send from starting while an older receive is still running.
+	return concurrency.WithLock2(&i.requestMutex, func() (*Response, error) {
+		requestID := uuid.NewV4().String()
+		if err := i.send(ctx, requestID); err != nil {
+			return nil, err
+		}
+		return i.receive(ctx, requestID)
 	})
-
-	if err := i.send(ctx, requestID); err != nil {
-		return nil, err
-	}
-	return i.receive(ctx)
 }
 
 // send a cert refresh request to Central
@@ -293,11 +297,18 @@ func (i *tlsIssuerImpl) send(ctx context.Context, requestID string) error {
 }
 
 // receive handles the response to a specific certificate request
-func (i *tlsIssuerImpl) receive(ctx context.Context) (*Response, error) {
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	case <-i.responseReceived.Done():
-		return i.responseFromCentral.Load(), nil
+func (i *tlsIssuerImpl) receive(ctx context.Context, requestID string) (*Response, error) {
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case response := <-i.responseFromCentral:
+			if response.RequestId == requestID {
+				return response, nil
+			}
+
+			log.Warnf("Ignoring response, ID %q does not match ongoing request ID %q.",
+				response.RequestId, requestID)
+		}
 	}
 }

@@ -87,7 +87,7 @@ func newSecuredClusterTLSIssuerFixture(k8sClientConfig fakeK8sClientConfig) *sec
 		getServiceCertificatesRepoFn: fixture.componentGetter.getServiceCertificatesRepo,
 		msgToCentralC:                make(chan *message.ExpiringMessage),
 		newMsgFromSensorFn:           newSecuredClusterMsgFromSensor,
-		responseReceived:             concurrency.NewSignal(),
+		stopSig:                      concurrency.NewSignal(),
 		requiredCentralCapability: func() *centralsensor.CentralCapability {
 			centralCap := centralsensor.CentralCapability(centralsensor.SecuredClusterCertificatesReissue)
 			return &centralCap
@@ -267,12 +267,18 @@ func (s *securedClusterTLSIssuerTests) TestSecuredClusterTLSIssuerProcessMessage
 		},
 	}
 
-	fixture.tlsIssuer.ongoingRequestID = expectedResponse.RequestId
-	fixture.tlsIssuer.requestOngoing.Store(true)
+	fixture.mockForStart(mockForStartConfig{})
+	fixture.tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
+	s.Require().NoError(fixture.tlsIssuer.Start())
 
 	assert.NoError(s.T(), fixture.tlsIssuer.ProcessMessage(msg))
 	assert.Eventually(s.T(), func() bool {
-		return fixture.tlsIssuer.responseReceived.IsDone()
+		select {
+		case <-fixture.tlsIssuer.responseFromCentral:
+			return true
+		default:
+			return false
+		}
 	}, 2*time.Second, 100*time.Millisecond)
 }
 
@@ -282,9 +288,18 @@ func (s *securedClusterTLSIssuerTests) TestSecuredClusterTLSIssuerProcessMessage
 		Msg: &central.MsgToSensor_ReprocessDeployments{},
 	}
 
+	fixture.mockForStart(mockForStartConfig{})
+	fixture.tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
+	s.Require().NoError(fixture.tlsIssuer.Start())
+
 	assert.NoError(s.T(), fixture.tlsIssuer.ProcessMessage(msg))
 	assert.Never(s.T(), func() bool {
-		return fixture.tlsIssuer.responseReceived.IsDone()
+		select {
+		case <-fixture.tlsIssuer.responseFromCentral:
+			return true
+		default:
+			return false
+		}
 	}, 200*time.Millisecond, 50*time.Millisecond)
 }
 
@@ -303,6 +318,10 @@ func (s *securedClusterTLSIssuerTests) TestSecuredClusterTLSIssuerRequestSuccess
 	f := newSecuredClusterTLSIssuerFixture(fakeK8sClientConfig{})
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
+
+	f.mockForStart(mockForStartConfig{})
+	f.tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
+	s.Require().NoError(f.tlsIssuer.Start())
 
 	go f.respondRequest(ctx, s.T(), nil)
 
