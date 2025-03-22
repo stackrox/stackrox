@@ -1,11 +1,14 @@
 package services
 
+import groovy.transform.CompileStatic
+
 import io.stackrox.proto.api.v1.ProcessServiceGrpc
 import io.stackrox.proto.api.v1.ProcessServiceOuterClass
 import io.stackrox.proto.storage.ProcessIndicatorOuterClass.ProcessIndicator
 
+@CompileStatic
 class ProcessService extends BaseService {
-    static getClient() {
+    static ProcessServiceGrpc.ProcessServiceBlockingStub getClient() {
         return ProcessServiceGrpc.newBlockingStub(getChannel())
     }
 

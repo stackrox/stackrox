@@ -77,7 +77,7 @@ class Helpers {
         return baseString.replaceAll("\\s", "").contains(subString.replaceAll("\\s", ""))
     }
 
-    static String getStackRoxEndpoint(Object ignored) {
+    static String getStackRoxEndpoint() {
         return "https://" + Env.mustGetHostname() + ":" + Env.mustGetPort()
     }
 

@@ -2,6 +2,7 @@ package services
 
 import static util.Helpers.evaluateWithRetry
 
+import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import io.grpc.StatusRuntimeException
 
@@ -23,9 +24,10 @@ import io.stackrox.proto.storage.NetworkPolicyOuterClass.NetworkPolicyReference
 import util.Timer
 
 @Slf4j
+@CompileStatic
 class NetworkPolicyService extends BaseService {
 
-    static getNetworkPolicyClient() {
+    static NetworkPolicyServiceGrpc.NetworkPolicyServiceBlockingStub getNetworkPolicyClient() {
         return NetworkPolicyServiceGrpc.newBlockingStub(getChannel())
     }
 
@@ -105,7 +107,7 @@ class NetworkPolicyService extends BaseService {
 
     static waitForNetworkPolicy(String id, int timeoutSeconds = 30) {
         int intervalSeconds = 1
-        int retries = timeoutSeconds / intervalSeconds
+        int retries = (timeoutSeconds / intervalSeconds) as int
         try {
             evaluateWithRetry(retries, intervalSeconds) {
                 getNetworkPolicyClient().getNetworkPolicy(ResourceByID.newBuilder().setId(id).build())
