@@ -1,8 +1,8 @@
 package util
 
-import common.Constants
-
 import static util.Helpers.withRetry
+
+import common.Constants
 
 import groovy.util.logging.Slf4j
 import groovy.transform.CompileStatic
