@@ -1,5 +1,5 @@
 import React from 'react';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
     PageSection,
     Title,
@@ -31,13 +31,13 @@ const wizardStepNames = [
 ];
 
 function CreateVulnReportPage() {
-    const history = useHistory();
+    const navigate = useNavigate();
 
     const formik = useReportFormValues();
     const { isLoading, error, createReport } = useCreateReport({
         onCompleted: () => {
             formik.resetForm();
-            history.push(vulnerabilityReportsPath);
+            navigate(vulnerabilityReportsPath);
         },
     });
 
@@ -46,7 +46,7 @@ function CreateVulnReportPage() {
     }
 
     function onClose() {
-        history.push(vulnerabilityReportsPath);
+        navigate(vulnerabilityReportsPath);
     }
 
     // @TODO: This is reused in the Edit and Clone components so we can try to refactor this soon

@@ -5,7 +5,8 @@ import Sunburst from 'Components/visuals/Sunburst';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import networkStatuses from 'constants/networkStatuses';
-import { Link, useRouteMatch, useLocation } from 'react-router-dom';
+import useWorkflowMatch from 'hooks/useWorkflowMatch';
+import { Link, useLocation } from 'react-router-dom';
 import { gql } from '@apollo/client';
 import max from 'lodash/max';
 import { severityValues, severities } from 'constants/severities';
@@ -59,7 +60,7 @@ function getCategorySeverity(category, violationsByCategory) {
 }
 
 const PolicyViolationsBySeverity = () => {
-    const match = useRouteMatch();
+    const match = useWorkflowMatch();
     const location = useLocation();
     const searchParam = useContext(searchContext);
     const processData = (data) => {

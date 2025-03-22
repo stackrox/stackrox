@@ -1,6 +1,6 @@
 import React, { CSSProperties, ReactElement } from 'react';
 import { Activity } from 'react-feather';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Tooltip } from '@patternfly/react-core';
 
 import { clustersBasePath } from 'routePaths';
@@ -23,7 +23,7 @@ const ClusterStatusButton = ({
     degraded = 0,
     unhealthy = 0,
 }: ClusterStatusButtonProps): ReactElement => {
-    const history = useHistory();
+    const navigate = useNavigate();
     const hasDegradedClusters = degraded > 0;
     const hasUnhealthyClusters = unhealthy > 0;
     const hasProblems = hasDegradedClusters || hasUnhealthyClusters;
@@ -71,13 +71,10 @@ const ClusterStatusButton = ({
     }
 
     const onClick = () => {
-        history.push({
-            pathname: clustersBasePath,
-            search: '',
-            // TODO after ClustersPage sets search filter according to search query string in URL:
-            // If any clusters have problems, then Clusters list has search filter.
-            // search: hasUnhealthyClusters || hasDegradedClusters ? '?s[Cluster Health][0]=UNHEALTHY&s[Cluster Health][1]=DEGRADED' : '',
-        });
+        navigate(`${clustersBasePath}`);
+        // TODO after ClustersPage sets search filter according to search query string in URL:
+        // If any clusters have problems, then Clusters list has search filter.
+        // search: hasUnhealthyClusters || hasDegradedClusters ? '?s[Cluster Health][0]=UNHEALTHY&s[Cluster Health][1]=DEGRADED' : '',
     };
 
     // On masthead, black text on white background like a dropdown menu.

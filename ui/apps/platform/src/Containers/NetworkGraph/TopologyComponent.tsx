@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { useHistory, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Popover } from '@patternfly/react-core';
 import {
     SELECTION_EVENT,
@@ -100,14 +100,15 @@ const TopologyComponent = ({
     const { searchFilter, setSearchFilter } = urlSearchFiltering;
 
     const firstRenderRef = useRef(true);
-    const history = useHistory();
+    const location = useLocation();
+    const navigate = useNavigate();
     const controller = useVisualizationController();
     const [defaultDeploymentTab, setDefaultDeploymentTab] = useState(deploymentTabs.DETAILS);
 
     const closeSidebar = useCallback(() => {
-        const queryString = clearSimulationQuery(history.location.search);
-        history.push(`${networkBasePath}${queryString}`);
-    }, [history]);
+        const queryString = clearSimulationQuery(location.search);
+        navigate(`${networkBasePath}${queryString}`);
+    }, [navigate, location.search]);
 
     type OnNavigateArgs = {
         nodeID: string;
@@ -125,7 +126,7 @@ const TopologyComponent = ({
             setDefaultDeploymentTab(deploymentTabs.DETAILS);
             const { data, id } = newSelectedEntity;
             const [newNodeType, newNodeId] = getUrlParamsForNode(data.type, id);
-            const queryString = clearSimulationQuery(history.location.search);
+            const queryString = clearSimulationQuery(location.search);
             // if found, and it's not the logical grouping of all external sources, then trigger URL update
             if (newNodeId !== 'EXTERNAL') {
                 let newURL = `${networkBasePath}/${newNodeType}/${encodeURIComponent(newNodeId)}`;
@@ -133,10 +134,10 @@ const TopologyComponent = ({
                     newURL = `${newURL}/externalIP/${externalIP}`;
                 }
                 newURL = `${newURL}${queryString}`;
-                history.push(newURL);
+                navigate(newURL);
             } else {
                 // otherwise, return to the graph-only state
-                history.push(`${networkBasePath}${queryString}`);
+                navigate(`${networkBasePath}${queryString}`);
             }
         }
     }
@@ -212,7 +213,7 @@ const TopologyComponent = ({
         if (selectedNode) {
             panNodeIntoView(selectedNode);
         } else if (
-            history.location.pathname !== networkBasePath &&
+            location.pathname !== networkBasePath &&
             !selectedNode &&
             model.nodes.length > 0
         ) {
@@ -222,7 +223,7 @@ const TopologyComponent = ({
             // is available – we want to prevent closing the sidebar until data has been fetched
             closeSidebar();
         }
-    }, [controller, model, selectedNode, history, closeSidebar, panNodeIntoView]);
+    }, [controller, location.pathname, model, selectedNode, closeSidebar, panNodeIntoView]);
 
     const selectedIds = selectedNode ? [selectedNode.id] : [];
 

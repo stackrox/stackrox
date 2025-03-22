@@ -7,7 +7,7 @@ import {
     HorizontalBarSeries,
     LabelSeries,
 } from 'react-vis';
-import { useHistory, Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import merge from 'deepmerge';
 
@@ -34,7 +34,7 @@ const HorizontalBarChart = ({
     tickValues = [0, 25, 50, 75, 100],
     minimal = false,
 }) => {
-    const history = useHistory();
+    const navigate = useNavigate();
 
     const showLabel = (value) => value >= 10;
 
@@ -58,7 +58,7 @@ const HorizontalBarChart = ({
 
     const onValueClickHandler = (datum) => {
         if (datum.link) {
-            history.push(datum.link);
+            navigate(datum.link);
         }
     };
 

@@ -1,5 +1,5 @@
-import React, { FunctionComponent, ReactElement } from 'react';
-import { useHistory } from 'react-router-dom';
+import React, { FunctionComponent, ReactElement, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { isUserResource } from 'Containers/AccessControl/traits';
 import useCentralCapabilities from 'hooks/useCentralCapabilities';
@@ -124,15 +124,17 @@ function IntegrationForm({
     initialValues,
     isEditable,
 }: IntegrationFormProps): ReactElement {
-    const history = useHistory();
+    const navigate = useNavigate();
 
     const { isCentralCapabilityAvailable } = useCentralCapabilities();
     const canUseCloudBackupIntegrations = isCentralCapabilityAvailable(
         'centralCanUseCloudBackupIntegrations'
     );
-    if (!canUseCloudBackupIntegrations && source === 'backups') {
-        history.replace(integrationsPath);
-    }
+    useEffect(() => {
+        if (!canUseCloudBackupIntegrations && source === 'backups') {
+            navigate(integrationsPath, { replace: true });
+        }
+    }, [canUseCloudBackupIntegrations, source, navigate]);
 
     const Form: FunctionComponent<React.PropsWithChildren<FormProps>> =
         ComponentFormMap?.[source]?.[type];

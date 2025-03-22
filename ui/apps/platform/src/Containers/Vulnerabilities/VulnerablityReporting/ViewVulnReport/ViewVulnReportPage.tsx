@@ -1,5 +1,5 @@
 import React, { ReactElement, useState } from 'react';
-import { useHistory, useParams, generatePath } from 'react-router-dom';
+import { useNavigate, useParams, generatePath } from 'react-router-dom';
 import {
     Alert,
     AlertActionCloseButton,
@@ -66,8 +66,8 @@ const allReportJobsTabId = 'VulnReportsConfigReportJobs';
 const headingLevel = 'h2';
 
 function ViewVulnReportPage() {
-    const history = useHistory();
-    const { reportId } = useParams();
+    const navigate = useNavigate();
+    const { reportId } = useParams() as { reportId: string };
     const [isActionsDropdownOpen, setIsActionsDropdownOpen] = useState(false);
     const [selectedTab, setSelectedTab] = useState<JobContextTab>('CONFIGURATION_DETAILS');
 
@@ -90,7 +90,7 @@ function ViewVulnReportPage() {
         deleteResults,
     } = useDeleteModal({
         onCompleted: () => {
-            history.push(vulnerabilityReportsPath);
+            navigate(vulnerabilityReportsPath);
         },
     });
 
@@ -138,7 +138,7 @@ function ViewVulnReportPage() {
 
     const vulnReportPageURL = generatePath(vulnerabilityReportPath, {
         reportId: reportConfiguration.id,
-    }) as string;
+    });
 
     const reportFormValues = getReportFormValuesFromConfiguration(reportConfiguration);
 
@@ -204,7 +204,7 @@ function ViewVulnReportPage() {
                                         key="Edit report"
                                         component="button"
                                         onClick={() => {
-                                            history.push(`${vulnReportPageURL}?action=edit`);
+                                            navigate(`${vulnReportPageURL}?action=edit`);
                                         }}
                                         isDisabled={isReportStatusPending || isRunning}
                                     >
@@ -240,7 +240,7 @@ function ViewVulnReportPage() {
                                         key="Clone report"
                                         component="button"
                                         onClick={() => {
-                                            history.push(`${vulnReportPageURL}?action=clone`);
+                                            navigate(`${vulnReportPageURL}?action=clone`);
                                         }}
                                     >
                                         Clone report

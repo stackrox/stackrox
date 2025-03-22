@@ -1,6 +1,5 @@
-import { matchPath } from 'react-router-dom';
+import { Location, matchPath } from 'react-router-dom';
 import qs, { ParsedQs } from 'qs';
-import { Location, LocationState } from 'history';
 
 import useCases from 'constants/useCaseTypes';
 import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
@@ -16,6 +15,8 @@ import {
     policiesPath,
     userRolePath,
     accessControlPath,
+    validPageEntityListTypes,
+    validPageEntityTypes,
 } from '../routePaths';
 
 type ParamsWithContext = {
@@ -35,10 +36,7 @@ const nonWorkflowUseCasePathEntries = Object.entries({
 function getNonWorkflowParams(pathname): ParamsWithContext {
     for (let i = 0; i < nonWorkflowUseCasePathEntries.length; i += 1) {
         const [useCaseKey, path] = nonWorkflowUseCasePathEntries[i];
-        const matchedPath = matchPath(pathname, {
-            path,
-            exact: true,
-        });
+        const matchedPath = matchPath({ path, end: true }, pathname);
 
         if (matchedPath?.params) {
             const { params } = matchedPath;
@@ -55,24 +53,23 @@ function getNonWorkflowParams(pathname): ParamsWithContext {
 function getParams(pathname): ParamsWithContext {
     // The type casts assert that workflow paths include a :context param.
 
-    const matchedEntityPath = matchPath(pathname, {
-        path: workflowPaths.ENTITY,
-    });
-    if (matchedEntityPath?.params) {
+    const matchedEntityPath = matchPath({ path: workflowPaths.ENTITY }, pathname);
+    if (
+        matchedEntityPath &&
+        validPageEntityTypes.includes(matchedEntityPath?.params?.pageEntityType ?? '')
+    ) {
         return matchedEntityPath.params as ParamsWithContext;
     }
 
-    const matchedListPath = matchPath(pathname, {
-        path: workflowPaths.LIST,
-    });
-    if (matchedListPath?.params) {
+    const matchedListPath = matchPath({ path: workflowPaths.LIST }, pathname);
+    if (
+        matchedListPath &&
+        validPageEntityListTypes.includes(matchedListPath?.params?.pageEntityListType ?? '')
+    ) {
         return matchedListPath.params as ParamsWithContext;
     }
 
-    const matchedDashboardPath = matchPath(pathname, {
-        path: workflowPaths.DASHBOARD,
-        exact: true,
-    });
+    const matchedDashboardPath = matchPath({ path: workflowPaths.DASHBOARD, end: true }, pathname);
     if (matchedDashboardPath?.params) {
         return matchedDashboardPath.params as ParamsWithContext;
     }
@@ -152,7 +149,7 @@ function formatSort(sort?: ParsedQs | ParsedQs[]): Record<string, unknown>[] | n
 
 // Convert URL to workflow state and search objects
 // note: this will read strictly from 'location' as 'match' is relative to the closest Route component
-function parseURL(location: Location<LocationState>): WorkflowState {
+function parseURL(location: Location): WorkflowState {
     if (!location) {
         // TODO: be more specific, it could be an exception instead of a dummy object
         return new WorkflowState();

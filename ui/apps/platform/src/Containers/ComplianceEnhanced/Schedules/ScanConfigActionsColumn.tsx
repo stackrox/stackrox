@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { generatePath, useHistory } from 'react-router-dom';
+import { generatePath, useNavigate } from 'react-router-dom';
 import { ActionsColumn } from '@patternfly/react-table';
 
 import { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
@@ -29,7 +29,7 @@ function ScanConfigActionsColumn({
     isSnapshotStatusPending,
     isReportJobsEnabled,
 }: ScanConfigActionsColumnProps): ReactElement {
-    const history = useHistory();
+    const navigate = useNavigate();
 
     const { id, /* lastExecutedTime, */ scanConfig } = scanConfigResponse;
     const { notifiers } = scanConfig;
@@ -45,10 +45,7 @@ function ScanConfigActionsColumn({
             // isDisabled: isScanning,
             onClick: (event) => {
                 event.preventDefault();
-                history.push({
-                    pathname: scanConfigUrl,
-                    search: 'action=edit',
-                });
+                navigate(`${scanConfigUrl}?action=edit`);
             },
             isDisabled: isSnapshotStatusPending,
         },

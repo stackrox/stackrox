@@ -3,7 +3,7 @@ import React, { ReactElement, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
-import { useHistory, useLocation, useParams, Link } from 'react-router-dom';
+import { useLocation, useNavigate, useParams, Link } from 'react-router-dom';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import {
     Alert,
@@ -31,7 +31,7 @@ import { actions as authActions, types as authActionTypes } from 'reducers/auth'
 import { actions as groupActions } from 'reducers/groups';
 import { actions as inviteActions } from 'reducers/invite';
 import { actions as roleActions, types as roleActionTypes } from 'reducers/roles';
-import { AuthProvider } from 'services/AuthService';
+import { AuthProvider, AuthProviderInfo, Group } from 'services/AuthService';
 import usePermissions from 'hooks/usePermissions';
 import { integrationsPath } from 'routePaths';
 import { getVersionedDocs } from 'utils/versioning';
@@ -57,14 +57,21 @@ const authProviderNew = {
     config: {},
 } as AuthProvider; // TODO what are the minimum properties for create request?
 
-const authProviderState = createStructuredSelector({
+type AuthProviderState = {
+    authProviders: AuthProvider[];
+    groups: Group[];
+    isFetchingAuthProviders: boolean;
+    isFetchingRoles: boolean;
+    availableProviderTypes: AuthProviderInfo[];
+};
+
+const authProviderState = createStructuredSelector<AuthProviderState>({
     authProviders: selectors.getAvailableAuthProviders,
     groups: selectors.getRuleGroups,
     isFetchingAuthProviders: (state) =>
         selectors.getLoadingStatus(state, authActionTypes.FETCH_AUTH_PROVIDERS) as boolean,
     isFetchingRoles: (state) =>
         selectors.getLoadingStatus(state, roleActionTypes.FETCH_ROLES) as boolean,
-    userRolePermissions: selectors.getUserRolePermissions,
     availableProviderTypes: selectors.getAvailableProviderTypes,
 });
 
@@ -75,7 +82,7 @@ function getNewAuthProviderObj(type) {
 function AuthProviders(): ReactElement {
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForPage = hasReadWriteAccess('Access');
-    const history = useHistory();
+    const navigate = useNavigate();
     const { search } = useLocation();
     const queryObject = getQueryObject(search);
     const { action, type } = queryObject;
@@ -116,7 +123,7 @@ function AuthProviders(): ReactElement {
     function onClickCreate(event) {
         setIsCreateMenuOpen(false);
 
-        history.push(
+        navigate(
             getEntityPath(entityType, undefined, {
                 ...queryObject,
                 action: 'create',
@@ -126,19 +133,20 @@ function AuthProviders(): ReactElement {
     }
 
     function onClickEdit() {
-        history.push(getEntityPath(entityType, entityId, { ...queryObject, action: 'edit' }));
+        navigate(getEntityPath(entityType, entityId, { ...queryObject, action: 'edit' }));
     }
 
     function onClickCancel() {
         dispatch(authActions.setSaveAuthProviderStatus(null));
 
         // The entityId is undefined for create and defined for update.
-        history.push(getEntityPath(entityType, entityId, { ...queryObject, action: undefined }));
+        navigate(getEntityPath(entityType, entityId, { ...queryObject, action: undefined }));
     }
 
     function getProviderLabel(): string {
-        const provider = availableProviderTypes.find(({ value }) => value === type) ?? {};
-        return (provider.label as string) ?? 'auth';
+        const provider: Partial<AuthProviderInfo> =
+            availableProviderTypes.find(({ value }) => value === type) ?? {};
+        return provider.label ?? 'auth';
     }
 
     const onToggle = (_isExpanded: boolean) => {

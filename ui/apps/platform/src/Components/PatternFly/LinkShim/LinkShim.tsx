@@ -18,6 +18,9 @@ function LinkShim({
     href,
     ...rest
 }: AnchorHTMLAttributes<HTMLAnchorElement>): ReactElement {
+    if (!href) {
+        return <></>;
+    }
     return (
         <Link {...rest} to={href}>
             {children}

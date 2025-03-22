@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 import capitalize from 'lodash/capitalize';
-import { Link, useLocation, useRouteMatch } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 import URLService from 'utils/URLService';
 import entityTypes, { standardBaseTypes } from 'constants/entityTypes';
@@ -16,6 +16,7 @@ import {
     MODERATE_MEDIUM_SEVERITY_COLOR,
     noViolationsColor,
 } from 'constants/severityColors';
+import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import { COMPLIANCE_STANDARDS } from 'queries/standard';
 import queryService from 'utils/queryService';
 import searchContext from 'Containers/searchContext';
@@ -140,7 +141,7 @@ const ComplianceByStandard = ({
     className,
 }) => {
     const location = useLocation();
-    const match = useRouteMatch();
+    const match = useWorkflowMatch();
     const searchParam = useContext(searchContext);
     const groupBy = [
         entityTypes.STANDARD,

@@ -43,7 +43,7 @@ function ViolationDetailsPage(): ReactElement {
     const [alert, setAlert] = useState<Alert | null>(null);
     const [isFetchingSelectedAlert, setIsFetchingSelectedAlert] = useState(false);
 
-    const { alertId } = useParams();
+    const { alertId } = useParams() as { alertId: string };
 
     const { filteredWorkflowView } = useFilteredWorkflowViewURLState('Full view');
 

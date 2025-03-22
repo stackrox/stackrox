@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
-import { useLocation, useRouteMatch } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
 import capitalize from 'lodash/capitalize';
 import sortBy from 'lodash/sortBy';
@@ -11,6 +11,7 @@ import URLService from 'utils/URLService';
 import Widget from 'Components/Widget';
 import Loader from 'Components/Loader';
 import NoResultsMessage from 'Components/NoResultsMessage';
+import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import { standardLabels } from 'messages/standards';
 import { AGGREGATED_RESULTS_STANDARDS_BY_ENTITY } from 'queries/controls';
 import searchContext from 'Containers/searchContext';
@@ -92,7 +93,7 @@ function getLabelLinks(match, location, data, entityType) {
 
 const StandardsByEntity = ({ entityType, bodyClassName, className }) => {
     const searchParam = useContext(searchContext);
-    const match = useRouteMatch();
+    const match = useWorkflowMatch();
     const location = useLocation();
     const headerText = `Passing standards by ${entityNounOrdinaryCaseSingular[entityType]}`;
 
