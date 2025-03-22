@@ -191,6 +191,9 @@
             "type": "object",
             "$ref": "#/definitions/storageCosignCertificateVerification"
           }
+        },
+        "transparencyLog": {
+          "$ref": "#/definitions/storageTransparencyLogVerification"
         }
       }
     },
@@ -276,8 +279,33 @@
             "type": "object",
             "$ref": "#/definitions/storageCosignCertificateVerification"
           }
+        },
+        "transparencyLog": {
+          "$ref": "#/definitions/storageTransparencyLogVerification"
         }
       }
+    },
+    "storageTransparencyLogVerification": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Perform transparency log validation. Overrides other settings."
+        },
+        "rekorUrl": {
+          "type": "string",
+          "description": "The URL of the Rekor transparency log.\nDefaults to the Sigstore instance `rekor.sigstore.dev`."
+        },
+        "ignoreSct": {
+          "type": "boolean",
+          "description": "Do not validate that the certificate contains a signed certificate\ntimestamp as proof of inclusion in the transparency log."
+        },
+        "validateOffline": {
+          "type": "boolean",
+          "description": "Perform the transparency log validation offline based on the proof of\ninclusion. Do not reach out to the transparency log for confirmation."
+        }
+      },
+      "description": "Validate the inclusion of signature signing events in a transparency log."
     },
     "v1Empty": {
       "type": "object"

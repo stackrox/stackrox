@@ -2,6 +2,7 @@ import React, { ReactElement, useState } from 'react';
 import {
     Alert,
     Button,
+    Checkbox,
     ExpandableSection,
     Flex,
     FlexItem,
@@ -55,6 +56,12 @@ const validationSchema = yup.object().shape({
             certificateIdentity: yup.string().trim().required('Certificate identity is required'),
         })
     ),
+    transparencyLog: yup.object().shape({
+        enabled: yup.string(),
+        rekorLog: yup.string(),
+        ignoreSct: yup.string(),
+        validateOffline: yup.string(),
+    }),
 });
 
 const defaultValues: SignatureIntegration = {
@@ -64,6 +71,12 @@ const defaultValues: SignatureIntegration = {
         publicKeys: [],
     },
     cosignCertificates: [],
+    transparencyLog: {
+        enabled: false,
+        rekorUrl: 'rekor.sigstore.dev',
+        ignoreSct: false,
+        validateOffline: false,
+    },
 };
 
 const defaultValuesOfCosignCertificateVerification: CosignCertificateVerification = {
@@ -88,6 +101,26 @@ const VerificationExpandableSection = ({ toggleText, children }): ReactElement =
     return (
         <ExpandableSection
             className="verification-expandable-section"
+            toggleText={toggleText}
+            onToggle={onToggle}
+            isExpanded={isExpanded}
+            isIndented
+        >
+            {children}
+        </ExpandableSection>
+    );
+};
+
+const TransparencyLogExpandableSection = ({ toggleText, children }): ReactElement => {
+    const [isExpanded, setIsExpanded] = useState(false);
+
+    function onToggle() {
+        setIsExpanded(!isExpanded);
+    }
+
+    return (
+        <ExpandableSection
+            className="transparency-log-expandable-section"
             toggleText={toggleText}
             onToggle={onToggle}
             isExpanded={isExpanded}
@@ -156,13 +189,6 @@ function SignatureIntegrationForm({
                                 trusted image signer by specifying a Cosign public encryption key or
                                 a Cosign certificate chain. Multiple image signers may be combined
                                 in a single signature integration.
-                            </Text>
-                        </FlexItem>
-                        <FlexItem>
-                            <Text>
-                                Certificates that are contained in the image signature must not be
-                                expired. Communication with the transparency log Rekor is not
-                                supported.
                             </Text>
                         </FlexItem>
                         <FlexItem>
@@ -648,6 +674,66 @@ function SignatureIntegrationForm({
                                 )}
                             />
                         </VerificationExpandableSection>
+                        <TransparencyLogExpandableSection toggleText="Transparency log">
+                            <FormLabelGroup
+                                fieldId="transparencyLog.enabled"
+                                touched={touched}
+                                errors={errors}
+                            >
+                                <Checkbox
+                                    label="Enable transparency log validation"
+                                    id="transparencyLog.enabled"
+                                    isChecked={values.transparencyLog.enabled}
+                                    onChange={(event, value) => onChange(value, event)}
+                                    onBlur={handleBlur}
+                                    isDisabled={!isEditable}
+                                />
+                            </FormLabelGroup>
+                            <FormLabelGroup
+                                label="Rekor URL"
+                                fieldId="transparencyLog.rekorUrl"
+                                touched={touched}
+                                errors={errors}
+                            >
+                                <TextInput
+                                    isRequired
+                                    type="text"
+                                    id="transparencyLog.rekorUrl"
+                                    value={values.transparencyLog.rekorUrl}
+                                    onChange={(event, value) => onChange(value, event)}
+                                    onBlur={handleBlur}
+                                    isDisabled={!isEditable}
+                                />
+                            </FormLabelGroup>
+                            <FormLabelGroup
+                                fieldId="transparencyLog.ignoreSct"
+                                touched={touched}
+                                errors={errors}
+                            >
+                                <Checkbox
+                                    label="Ignore signed certificate timestamp"
+                                    id="transparencyLog.ignoreSct"
+                                    isChecked={values.transparencyLog.ignoreSct}
+                                    onChange={(event, value) => onChange(value, event)}
+                                    onBlur={handleBlur}
+                                    isDisabled={!isEditable}
+                                />
+                            </FormLabelGroup>
+                            <FormLabelGroup
+                                fieldId="transparencyLog.validateOffline"
+                                touched={touched}
+                                errors={errors}
+                            >
+                                <Checkbox
+                                    label="Validate in offline mode"
+                                    id="transparencyLog.validateOffline"
+                                    isChecked={values.transparencyLog.validateOffline}
+                                    onChange={(event, value) => onChange(value, event)}
+                                    onBlur={handleBlur}
+                                    isDisabled={!isEditable}
+                                />
+                            </FormLabelGroup>
+                        </TransparencyLogExpandableSection>
                     </FormikProvider>
                 </Form>
             </PageSection>
