@@ -174,4 +174,19 @@ Usage:
 DEPRECATED: don't use
 `, sb.String())
 	})
+
+	t.Run("don't write after errors", func(t *testing.T) {
+		sb := &sbWithErrors{fail: func(_ int, s string) bool {
+			return s == "X"
+		}}
+		w := makeHelpWriter(
+			makeFormattingWriter(sb, 40, defaultTabWidth))
+
+		w.Write("A")
+		w.Write("B", "X <- bad token")
+		w.WriteLn("C", "D")
+
+		assert.ErrorIs(t, w.err, errBadToken)
+		assert.Equal(t, "AB", sb.String())
+	})
 }
