@@ -98,7 +98,7 @@ func (s *PolicyDatastoreTestSuite) TestReplacingResourceAccess() {
 	_, err = s.datastore.AddPolicy(s.hasReadWorkflowAdministrationAccess, policy)
 	s.Error(err)
 	s.ErrorIs(err, sac.ErrResourceAccessDenied)
-	err = s.datastore.RemovePolicy(s.hasReadWorkflowAdministrationAccess, policy.GetId())
+	err = s.datastore.RemovePolicy(s.hasReadWorkflowAdministrationAccess, policy)
 	s.Error(err)
 	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 
@@ -109,7 +109,7 @@ func (s *PolicyDatastoreTestSuite) TestReplacingResourceAccess() {
 
 	_, err = s.datastore.AddPolicy(s.hasReadWriteWorkflowAdministrationAccess, policy)
 	s.NoError(err)
-	err = s.datastore.RemovePolicy(s.hasReadWriteWorkflowAdministrationAccess, policy.GetId())
+	err = s.datastore.RemovePolicy(s.hasReadWriteWorkflowAdministrationAccess, policy)
 	s.NoError(err)
 }
 

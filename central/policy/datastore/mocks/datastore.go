@@ -153,17 +153,17 @@ func (mr *MockDataStoreMockRecorder) ImportPolicies(ctx, policies, overwrite any
 }
 
 // RemovePolicy mocks base method.
-func (m *MockDataStore) RemovePolicy(ctx context.Context, id string) error {
+func (m *MockDataStore) RemovePolicy(ctx context.Context, policy *storage.Policy) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RemovePolicy", ctx, id)
+	ret := m.ctrl.Call(m, "RemovePolicy", ctx, policy)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RemovePolicy indicates an expected call of RemovePolicy.
-func (mr *MockDataStoreMockRecorder) RemovePolicy(ctx, id any) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) RemovePolicy(ctx, policy any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemovePolicy", reflect.TypeOf((*MockDataStore)(nil).RemovePolicy), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemovePolicy", reflect.TypeOf((*MockDataStore)(nil).RemovePolicy), ctx, policy)
 }
 
 // Search mocks base method.

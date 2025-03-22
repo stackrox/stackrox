@@ -7,6 +7,7 @@ import (
 
 	errorsPkg "github.com/pkg/errors"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/metrics"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/policy/search"
 	"github.com/stackrox/rox/central/policy/store"
@@ -248,6 +249,11 @@ func (ds *datastoreImpl) AddPolicy(ctx context.Context, policy *storage.Policy) 
 	if err != nil {
 		return clonedPolicy.Id, err
 	}
+
+	if clonedPolicy.Source == storage.PolicySource_DECLARATIVE {
+		metrics.IncrementTotalExternalPoliciesGauge()
+	}
+
 	return clonedPolicy.Id, nil
 }
 
@@ -281,7 +287,7 @@ func (ds *datastoreImpl) UpdatePolicy(ctx context.Context, policy *storage.Polic
 }
 
 // RemovePolicy removes a policy from the storage.
-func (ds *datastoreImpl) RemovePolicy(ctx context.Context, id string) error {
+func (ds *datastoreImpl) RemovePolicy(ctx context.Context, policy *storage.Policy) error {
 	if ok, err := workflowAdministrationSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
@@ -291,7 +297,13 @@ func (ds *datastoreImpl) RemovePolicy(ctx context.Context, id string) error {
 	ds.policyMutex.Lock()
 	defer ds.policyMutex.Unlock()
 
-	return ds.removePolicyNoLock(ctx, id)
+	err := ds.removePolicyNoLock(ctx, policy.GetId())
+
+	if err != nil && policy.Source == storage.PolicySource_DECLARATIVE {
+		metrics.DecrementTotalExternalPoliciesGauge()
+	}
+
+	return err
 }
 
 func (ds *datastoreImpl) removePolicyNoLock(ctx context.Context, id string) error {

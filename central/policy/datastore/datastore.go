@@ -29,7 +29,7 @@ type DataStore interface {
 
 	AddPolicy(context.Context, *storage.Policy) (string, error)
 	UpdatePolicy(context.Context, *storage.Policy) error
-	RemovePolicy(ctx context.Context, id string) error
+	RemovePolicy(ctx context.Context, policy *storage.Policy) error
 	// This method is allowed to return a v1 proto because it is in the allowed list in
 	// "tools/storedprotos/storeinterface/storeinterface.go".
 	ImportPolicies(ctx context.Context, policies []*storage.Policy, overwrite bool) (responses []*v1.ImportPolicyResponse, allSucceeded bool, err error)
