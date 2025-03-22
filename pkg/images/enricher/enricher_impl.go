@@ -229,7 +229,7 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 		if err != nil {
 			if errors.Is(err, errox.InvalidArgs) {
 				// Log the warning and try to keep enriching
-				log.Warnf("No default cluster found for delegation: %v, proceed enriching with Central", err)
+				log.Warnf("Skipping delegation for %q (ID %q): %v, enriching via Central", image.GetName().GetFullName(), image.GetId(), err)
 			} else {
 				// This enrichment should have been delegated, short circuit.
 				return EnrichmentResult{ImageUpdated: false, ScanResult: ScanNotDone}, err
