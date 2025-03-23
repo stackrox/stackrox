@@ -48,21 +48,17 @@ class CollectorUtil {
         URL url = new URL(uri)
         HttpURLConnection connection = null
 
-        try {
-            connection = (HttpURLConnection) url.openConnection()
+        connection = (HttpURLConnection) url.openConnection()
 
-            // this might be unneeded?
-            connection.setRequestMethod("GET")
-            connection.connect()
+        // this might be unneeded?
+        connection.setRequestMethod("GET")
+        connection.connect()
 
-            if (connection.responseCode != HttpURLConnection.HTTP_OK) {
-                throw new RuntimeException("IntrospectionQuery failed with ${connection.responseMessage}")
-            }
-            def jsonResponse = connection.inputStream.text
-            return parseJsonToProtobuf(jsonResponse)
-        } catch (Exception e) {
-            throw new RuntimeException("Error making request: ${e.message}", e)
+        if (connection.responseCode != HttpURLConnection.HTTP_OK) {
+            throw new RuntimeException("IntrospectionQuery failed with ${connection.responseMessage}")
         }
+        def jsonResponse = connection.inputStream.text
+        return parseJsonToProtobuf(jsonResponse)
     }
 
     private static waitForConfigToHaveState(Kubernetes orchestrator, String state, int timeout = 90, int port = 8080) {
@@ -79,8 +75,8 @@ class CollectorUtil {
                 def configTyped = (Collector.CollectorConfig) config
                 return configTyped.networking.externalIps.enabled.name() == state
             }
-            assert portForwards.isEmpty()
             waitTime += intervalSeconds
+            assert portForwards.isEmpty()
         }
 
         def success = portForwards.isEmpty()
