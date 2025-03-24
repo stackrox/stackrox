@@ -115,7 +115,7 @@ var (
 	totalExternalPoliciesGauge = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
-		Name:      "total_external_policies_gauge",
+		Name:      "total_external_policies_count",
 		Help:      "A gauge of the total number of policy as code CRs that have been accepted by Central from Config Controller",
 	})
 
