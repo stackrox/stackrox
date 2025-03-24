@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	errorsPkg "github.com/pkg/errors"
 	"github.com/stackrox/rox/central/policycategory/search"
@@ -20,11 +19,14 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 var (
 	log               = logging.LoggerForModule()
 	policyCategorySAC = sac.ForResource(resources.WorkflowAdministration)
+	titleCase         = cases.Title(language.English)
 
 	policyCategoryCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
@@ -44,6 +46,10 @@ type datastoreImpl struct {
 func (ds *datastoreImpl) SetPolicyCategoriesForPolicy(ctx context.Context, policyID string, categoryNames []string) error {
 	ds.categoryMutex.Lock()
 	defer ds.categoryMutex.Unlock()
+
+	for i, categoryName := range categoryNames {
+		categoryNames[i] = titleCase.String(categoryName)
+	}
 
 	edges, err := ds.policyCategoryEdgeDS.SearchRawEdges(ctx, searchPkg.NewQueryBuilder().AddExactMatches(searchPkg.PolicyID, policyID).ProtoQuery())
 	if err != nil {
@@ -80,12 +86,12 @@ func (ds *datastoreImpl) SetPolicyCategoriesForPolicy(ctx context.Context, polic
 	categoryIds := make([]string, 0, len(categoryNames))
 	categoriesToAdd := make([]*storage.PolicyCategory, 0)
 	for _, c := range categoryNames {
-		if ds.categoryNameIDMap[strings.Title(c)] != "" {
+		if ds.categoryNameIDMap[c] != "" {
 			categoryIds = append(categoryIds, ds.categoryNameIDMap[c])
 		} else {
 			newCategory := &storage.PolicyCategory{
 				Id:        uuid.NewV4().String(),
-				Name:      strings.Title(c),
+				Name:      c,
 				IsDefault: false,
 			}
 			categoriesToAdd = append(categoriesToAdd, newCategory)
@@ -202,7 +208,7 @@ func (ds *datastoreImpl) AddPolicyCategory(ctx context.Context, category *storag
 	ds.categoryMutex.Lock()
 	defer ds.categoryMutex.Unlock()
 
-	category.Name = strings.Title(category.GetName())
+	category.Name = titleCase.String(category.GetName())
 	err := ds.storage.Upsert(ctx, category)
 	if err != nil {
 		return nil, err
@@ -237,7 +243,7 @@ func (ds *datastoreImpl) RenamePolicyCategory(ctx context.Context, id, newName s
 		return nil, errorsPkg.Wrap(errox.InvalidArgs, fmt.Sprintf("policy category %q is a default category, cannot be renamed", id))
 	}
 
-	category.Name = strings.Title(newName)
+	category.Name = titleCase.String(newName)
 	err = ds.storage.Upsert(ctx, category)
 	if err != nil {
 		return nil, errorsPkg.Wrap(err, fmt.Sprintf("failed to rename category '%q' to '%q'", id, newName))

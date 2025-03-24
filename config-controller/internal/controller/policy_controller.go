@@ -29,8 +29,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 const (
@@ -204,19 +202,10 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	return ctrl.Result{}, retErr
 }
 
-func getEventFilter() predicate.Funcs {
-	return predicate.Funcs{
-		UpdateFunc: func(e event.UpdateEvent) bool {
-			return e.ObjectOld.GetGeneration() != e.ObjectNew.GetGeneration()
-		},
-	}
-}
-
 // SetupWithManager sets up the controller with the Manager.
 func (r *SecurityPolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	err := ctrl.NewControllerManagedBy(mgr).
 		For(&configstackroxiov1alpha1.SecurityPolicy{}).
-		WithEventFilter(getEventFilter()).
 		Complete(r)
 
 	if err != nil {
