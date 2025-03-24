@@ -326,6 +326,25 @@ function launch_central {
           --set persistence.type="${STORAGE}"
           --set exposure.type="${MONITORING_LOAD_BALANCER}"
         )
+
+        elastic_count=0 # A counter for Elasticsearch related environment variables
+	[[ -n "${ELASTICSEARCH_URL:-}" ]] && ((elastic_count++))
+	[[ -n "${ELASTICSEARCH_USER:-}" ]] && ((elastic_count++))
+	[[ -n "${ELASTICSEARCH_PASSWORD:-}" ]] && ((elastic_count++))
+
+	# Either all or none of the Elastic search environment variables should be set
+	if [[ "$elastic_count" -ne 0 && "$elastic_count" -ne 3 ]]; then
+	  echo "Either all or none of ELASTICSEARCH_URL, ELASTICSEARCH_USER, and ELASTICSEARCH_PASSWORD should be set"
+	  exit 1
+	fi
+
+	if [[ "$elastic_count" -eq 3 ]]; then
+          helm_args+=(--set elasticsearch.url="${ELASTICSEARCH_URL}")
+          helm_args+=(--set elasticsearch.user="${ELASTICSEARCH_USER}")
+          helm_args+=(--set elasticsearch.password="${ELASTICSEARCH_PASSWORD}")
+        fi
+
+
         if [[ "${is_local_dev}" == "true" ]]; then
           helm_args+=(-f "${COMMON_DIR}/monitoring-values-local.yaml")
         fi

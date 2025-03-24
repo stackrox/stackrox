@@ -16,6 +16,12 @@ data:
             - targets:
                 - {{ .Release.Name }}-alertmanager:9093
 
+    remote_write:
+      - url: "${ELASTICSEARCH_URL}"
+        basic_auth:
+          username: "${ELASTICSEARCH_USER}"
+          password: "${ELASTICSEARCH_PASSWORD}"
+
     rule_files:
       - /etc/prometheus/rules_*.yml
 

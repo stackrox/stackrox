@@ -108,6 +108,22 @@ spec:
             readOnly: true
           - name: prometheus-data-volume
             mountPath: /var/prometheus
+        env:
+          - name: ELASTICSEARCH_URL
+            valueFrom:
+              secretKeyRef:
+                name: monitoring
+                key: elasticsearch_url
+            name: ELASTICSEARCH_USER
+            valueFrom:
+              secretKeyRef:
+                name: monitoring
+                key: elasticsearch_user
+            name: ELASTICSEARCH_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: monitoring
+                key: elasticsearch_password
       volumes:
       - name: monitoring-ui-volume
         secret:
