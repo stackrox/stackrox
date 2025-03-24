@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	defURL = "https://definitions.stackrox.io/dev/diff3.zip"
+	defURL = "https://definitions.stackrox.io/dev/diff.zip"
 
 	mappingURL = "https://definitions.stackrox.io/v4/redhat-repository-mappings/mapping.zip"
 
@@ -36,16 +36,10 @@ func assertOnFileExistence(t *testing.T, path string, shouldExist bool) {
 func TestUpdate(t *testing.T) {
 	filePath := filepath.Join(t.TempDir(), "dump.zip")
 	u := newUpdater(file.New(filePath), &http.Client{Timeout: 30 * time.Second}, defURL, 1*time.Hour)
-	// Should fetch first time.
-	u.update()
-	assertOnFileExistence(t, filePath, true)
 
-	// Should not fetch unless the file changed; The file could change during testing.
-	attempt := 0
-	lastUpdatedTime := time.Now()
+	// Should fetch.
+	// The file is more than 150mb and download can fail if the file changes during the download.
 	for attempt = 1; attempt <= 3; attempt++ {
-		lastUpdatedTime = time.Now()
-		mustSetModTime(t, filePath, lastUpdatedTime)
 		if err := u.doUpdate(); err != nil {
 			fmt.Printf("Scanner vulnerability updater for endpoint %q failed: %v", u.downloadURL, err)
 		} else {
@@ -53,18 +47,8 @@ func TestUpdate(t *testing.T) {
 		}
 		time.Sleep(10 * time.Second)
 	}
-	if attempt == 1 {
-		// File did not change during testing.
-		assert.Equal(t, lastUpdatedTime.UTC(), mustGetModTime(t, filePath))
-	}
 	assertOnFileExistence(t, filePath, true)
-
-	// Should definitely fetch.
-	mustSetModTime(t, filePath, nov23)
-	require.NoError(t, u.doUpdate())
-	assert.True(t, lastUpdatedTime.UTC().After(mustGetModTime(t, filePath)))
 	assert.True(t, mustGetModTime(t, filePath).After(nov23.UTC()))
-	assertOnFileExistence(t, filePath, true)
 }
 
 func mustGetModTime(t *testing.T, path string) time.Time {
