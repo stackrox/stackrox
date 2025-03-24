@@ -145,6 +145,7 @@ EOT
     export CI=${CI:-false}
     OS="$(uname | tr '[:upper:]' '[:lower:]')"
     export OS
+    export DOCKER_CMD="${DOCKER_CMD:-podman}"
     export ORCH_CMD="${ROOT}/scripts/retry-kubectl.sh"
     export SENSOR_HELM_MANAGED=true
     export CENTRAL_CHART_DIR="${ROOT}/deploy/${ORCHESTRATOR_FLAVOR}/central-deploy/chart"
@@ -207,6 +208,15 @@ EOT
     # Without a timeout it might happen that the pod running the tests is simply killed and we won't
     # have any logs for investigation the situation.
     export BATS_TEST_TIMEOUT=1800 # Seconds
+
+   if [[ -z "${HEAD_HELM_CHART_CENTRAL_SERVICES_DIR:-}" ]]; then
+        HEAD_HELM_CHART_CENTRAL_SERVICES_DIR=$(mktemp -d)
+        echo "Rendering fresh central-services Helm chart and writing to ${HEAD_HELM_CHART_CENTRAL_SERVICES_DIR}..."
+        roxctl helm output central-services \
+            --debug --debug-path="${ROOT}/image" \
+            --output-dir="${HEAD_HELM_CHART_CENTRAL_SERVICES_DIR}" --remove
+        export HEAD_HELM_CHART_CENTRAL_SERVICES_DIR
+    fi
 
     _end
 }
@@ -344,6 +354,44 @@ teardown() {
     echo "Teardown complete"
 
     _end
+}
+
+check_image_pullable() {
+    local image_ref="$1"
+    "${DOCKER_CMD}" manifest inspect "${image_ref}" >/dev/null 2>/dev/null
+}
+
+check_image() {
+    local images_for_main_tag=("main" "central-db" "scanner-v4" "scanner-v4-db")
+    local name="$1"
+    local tag="$2"
+
+    local short_name="${name##*/}"
+    for image in "${images_for_main_tag[@]}"; do
+        if [[ "$image" == "$short_name" ]]; then
+            tag="$MAIN_IMAGE_TAG"
+        fi
+    done
+    local ref="${name}:${tag}"
+    echo "Checking existence for image ${ref}"
+    if ! check_image_pullable "${ref}"; then
+        echo "ERROR: image ${ref} is not pullable."
+        return 1
+    fi
+}
+
+check_central_chart_images() {
+    local chart_dir="$1"
+    echo "Verifying that default images in the Helm chart ${chart_dir} exist..."
+    yq -oj "${chart_dir}/internal/defaults.yaml" \
+        | jq -r '.. | objects | select(has("image")) | .image | select(has("name") and has("tag")) | "quay.io/rhacs-eng/\(.name):\(.tag)"' \
+        | sort \
+        | uniq \
+        | while read -r image_ref; do
+            name="$(echo "$image_ref" | cut -d : -f 1)"
+            tag="$(echo "$image_ref" | cut -d : -f 2)"
+            check_image "$name" "$tag"
+        done
 }
 
 @test "Upgrade from old Helm chart to HEAD Helm chart with Scanner v4 enabled" {
@@ -1011,6 +1059,144 @@ _deploy_central() {
     fi
     deploy_central "${central_namespace}"
     patch_down_central "${central_namespace}"
+}
+
+# shellcheck disable=SC2120
+# deploy_central_with_helm "<central namespace>" "<main image tag>" "<helm chart dir overwrite>" [ additional args for helm ... ]
+deploy_central_with_helm() {
+    echo "Deploying central-services via Helm..."
+    local central_namespace="$1"; shift
+    local main_image_tag="$1"; shift
+    local helm_chart_dir="$HEAD_HELM_CHART_CENTRAL_SERVICES_DIR"
+    local use_default_chart="true"
+    if [[ -n "$1" ]]; then
+        # overwrite Helm chart path.
+        helm_chart_dir="$1"
+        use_default_chart="false"
+    fi; shift
+
+    if [[ "${CI:-}" != "true" ]]; then
+        info "Creating namespace and image pull secrets..."
+        "${ORCH_CMD}" </dev/null create namespace "$central_namespace" || true
+        "${ROOT}/deploy/common/pull-secret.sh" stackrox quay.io | "${ORCH_CMD}" -n "$central_namespace" apply -f -
+    fi
+
+    local image_overwrites=""
+    if [[ "$use_default_chart" == "true" ]]; then
+        image_overwrites=$(cat <<EOT
+central:
+  db:
+    image:
+      tag: "$main_image_tag"
+  image:
+    tag: "$main_image_tag"
+
+scannerV4:
+  image:
+    tag: "$main_image_tag"
+  db:
+    image:
+      tag: "$main_image_tag"
+EOT
+        )
+    fi
+
+    local base_helm_values=""
+
+    command=("install")
+    if helm list -n "$central_namespace" -o json | jq -e '.[] | select(.name == "stackrox-central-services")' > /dev/null 2>&1; then
+        helm_generated_values_file=$(mktemp)
+        "${ORCH_CMD}" -n "$central_namespace" get secrets -o json \
+            </dev/null \
+            | jq -r '.items[] | select(.metadata.name | startswith("stackrox-generated-")) | .data["generated-values.yaml"] | @base64d' \
+            > "$helm_generated_values_file"
+        command=("upgrade" "--install" "--reuse-values" "-f" "$helm_generated_values_file")
+    else
+        base_helm_values=$(cat <<EOT
+central:
+  resources:
+    requests:
+      cpu: 500m
+      memory: 2Gi
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+  telemetry:
+    enabled: false
+  exposure:
+    loadBalancer:
+      enabled: true
+  persistence:
+    none: true
+  db:
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: 2000m
+        memory: 4Gi
+
+scanner:
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "500Mi"
+    limits:
+      cpu: "2000m"
+      memory: "2500Mi"
+  dbResources:
+    requests:
+      cpu: "400m"
+      memory: "512Mi"
+    limits:
+      cpu: "2000m"
+      memory: "4Gi"
+  replicas: 1
+  autoscaling:
+    disable: true
+
+scannerV4:
+  indexer:
+    replicas: 1
+    autoscaling:
+      disable: true
+  matcher:
+    replicas: 1
+    autoscaling:
+      disable: true
+  db:
+    persistence:
+      none: true
+
+allowNonstandardNamespace: true
+EOT
+        )
+    fi
+
+    echo "Deploying stackrox-central-services Helm chart "${helm_chart_dir}" into namespace ${central_namespace} with the following settings:"
+    if [[ -n "$base_helm_values" ]]; then
+        echo "base Helm values:"
+        echo "$base_helm_values" | sed -e 's/^/  |/;'
+    fi
+    if [[ -n "$image_overwrites" ]]; then
+        echo "image overwrites:"
+        echo "$image_overwrites" | sed -e 's/^/  |/;'
+    fi
+    echo "additional arguments:"
+    echo "  | $*"
+
+    helm -n "${central_namespace}" "${command[@]}" \
+        -f <(echo "$image_overwrites") \
+        -f <(echo "$base_helm_values") \
+        "$@" \
+        stackrox-central-services "${helm_chart_dir}"
+    echo "Waiting for API..."
+    wait_for_api "${central_namespace}"
+    echo "Setting up client TLS certs..."
+    setup_client_TLS_certs ""
+    echo "Recording build info..."
+    record_build_info "${central_namespace}"
 }
 
 patch_down_central() {
