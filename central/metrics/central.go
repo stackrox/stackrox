@@ -115,8 +115,8 @@ var (
 	totalExternalPoliciesGauge = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
-		Name:      "total_policy_as_code_crs_received_counter",
-		Help:      "A counter of the total number of policy as code CRs that have been accepted by Central from Config Controller",
+		Name:      "total_external_policies_gauge",
+		Help:      "A gauge of the total number of policy as code CRs that have been accepted by Central from Config Controller",
 	})
 
 	riskProcessingHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
