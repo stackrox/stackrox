@@ -901,6 +901,7 @@ func (resolver *imageCVEV2Resolver) EnvImpact(ctx context.Context) (float64, err
 
 func (resolver *imageCVEV2Resolver) FixedByVersion(ctx context.Context) (string, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "FixedByVersion")
+	log.Infof("SHREWS -- image_vuln.FixedByVersion")
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}
@@ -918,6 +919,8 @@ func (resolver *imageCVEV2Resolver) FixedByVersion(ctx context.Context) (string,
 		return "", nil
 	}
 
+	log.Infof("SHREWS -- image_vuln.FixedByVersion -- IDs %v", resolver.flatData.GetCVE())
+	log.Infof("SHREWS -- image_vuln.FixedByVersion -- IDs %v", resolver.flatData.GetCVEIDs())
 	query := search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.flatData.GetCVEIDs()...).ProtoQuery()
 	cves, err := resolver.root.ImageCVEV2DataStore.SearchRawImageCVEs(resolver.ctx, query)
 	if err != nil || len(cves) == 0 {
