@@ -44,15 +44,9 @@ func (s *updaterTestSuite) SetupTest() {
 
 	s.pgTest = pgtest.ForT(s.T())
 	s.Require().NotNil(s.pgTest)
-	ds, err := roleDS.GetTestPostgresDataStore(s.T(), s.pgTest.DB)
-	s.Require().NoError(err)
+	ds := roleDS.GetTestPostgresDataStore(s.T(), s.pgTest.DB)
 	s.updater = newAccessScopeUpdater(ds,
 		declarativeConfigHealth.GetTestPostgresDataStore(s.T(), s.pgTest.DB)).(*accessScopeUpdater)
-}
-
-func (s *updaterTestSuite) TearDownTest() {
-	s.pgTest.Teardown(s.T())
-	s.pgTest.Close()
 }
 
 func (s *updaterTestSuite) TestUpsert() {

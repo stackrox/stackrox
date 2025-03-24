@@ -64,7 +64,7 @@ func (s *PodDatastoreSuite) SetupTest() {
 	indicatorStorage := processIndicatorStorage.New(s.postgres.DB)
 	indicatorSearcher := processIndicatorSearch.New(indicatorStorage)
 
-	s.indicatorDataStore, _ = processIndicatorDataStore.New(
+	s.indicatorDataStore = processIndicatorDataStore.New(
 		indicatorStorage, plopStorage, indicatorSearcher, nil)
 
 	s.plopDS = plopDataStore.New(plopStorage, s.indicatorDataStore, s.postgres.DB)
@@ -72,10 +72,6 @@ func (s *PodDatastoreSuite) SetupTest() {
 	s.filter = filter.NewFilter(5, 5, []int{5, 4, 3, 2, 1})
 
 	s.datastore = newDatastoreImpl(podStorage, podSearcher, s.indicatorDataStore, s.plopDS, s.filter)
-}
-
-func (s *PodDatastoreSuite) TearDownTest() {
-	s.postgres.Teardown(s.T())
 }
 
 func (s *PodDatastoreSuite) getProcessIndicatorsFromDB() []*storage.ProcessIndicator {

@@ -993,6 +993,8 @@ func RunGetManyQueryForSchema[T any, PT pgutils.Unmarshaler[T]](ctx context.Cont
 }
 
 // RunCursorQueryForSchema creates a cursor against the database
+//
+// Deprecated: use RunCursorQueryForSchemaFn instead
 func RunCursorQueryForSchema[T any, PT pgutils.Unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) (fetcher func(n int) ([]*T, error), closer func(), err error) {
 	if q == nil {
 		q = searchPkg.EmptyQuery()
@@ -1021,11 +1023,7 @@ func RunCursorQueryForSchema[T any, PT pgutils.Unmarshaler[T]](ctx context.Conte
 		}
 	}
 
-	cursorSuffix, err := random.GenerateString(16, random.CaseInsensitiveAlpha)
-	if err != nil {
-		closer()
-		return nil, nil, errors.Wrap(err, "creating cursor name")
-	}
+	cursorSuffix := random.GenerateString(16, random.CaseInsensitiveAlpha)
 	cursor := stringutils.JoinNonEmpty("_", query.From, cursorSuffix)
 	_, err = tx.Exec(ctx, fmt.Sprintf("DECLARE %s CURSOR FOR %s", cursor, queryStr), query.Data...)
 	if err != nil {
@@ -1041,6 +1039,65 @@ func RunCursorQueryForSchema[T any, PT pgutils.Unmarshaler[T]](ctx context.Conte
 
 		return pgutils.ScanRows[T, PT](rows)
 	}, closer, nil
+}
+
+// RunCursorQueryForSchemaFn creates a cursor against the database
+func RunCursorQueryForSchemaFn[T any, PT pgutils.Unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB, callback func(obj PT) error) error {
+	if q == nil {
+		q = searchPkg.EmptyQuery()
+	}
+
+	query, err := standardizeQueryAndPopulatePath(ctx, q, schema, GET)
+	if err != nil {
+		return errors.Wrap(err, "error creating query")
+	}
+	if query == nil {
+		return emptyQueryErr
+	}
+
+	queryStr := query.AsSQL()
+
+	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, cursorDefaultTimeout)
+	defer cancel()
+
+	tx, err := db.Begin(ctx)
+	if err != nil {
+		return errors.Wrap(err, "creating transaction")
+	}
+	defer func() {
+		if err := tx.Commit(ctx); err != nil {
+			log.Errorf("error committing cursor transaction: %v", err)
+		}
+	}()
+
+	cursorSuffix := random.GenerateString(16, random.CaseInsensitiveAlpha)
+	cursor := stringutils.JoinNonEmpty("_", query.From, cursorSuffix)
+	_, err = tx.Exec(ctx, fmt.Sprintf("DECLARE %s CURSOR FOR %s", cursor, queryStr), query.Data...)
+	if err != nil {
+		return errors.Wrap(err, "creating cursor")
+	}
+
+	for {
+		rows, err := tx.Query(ctx, fmt.Sprintf("FETCH %d FROM %s", cursorBatchSize, cursor))
+		if err != nil {
+			return errors.Wrap(err, "advancing in cursor")
+		}
+
+		var data []byte
+		tag, err := pgx.ForEachRow(rows, []any{&data}, func() error {
+			msg := new(T)
+			if err := PT(msg).UnmarshalVTUnsafe(data); err != nil {
+				return err
+			}
+			return callback(msg)
+		})
+		if err != nil {
+			return errors.Wrap(err, "processing rows")
+		}
+		if tag.RowsAffected() != cursorBatchSize {
+			return nil
+		}
+	}
 }
 
 // RunDeleteRequestForSchema executes a request for just the delete against the database

@@ -1,6 +1,8 @@
 package services
 
+import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+
 import io.stackrox.proto.api.v1.GroupServiceGrpc
 import io.stackrox.proto.api.v1.GroupServiceOuterClass
 import io.stackrox.proto.api.v1.GroupServiceOuterClass.GetGroupsRequest
@@ -8,8 +10,9 @@ import io.stackrox.proto.storage.GroupOuterClass.Group
 import io.stackrox.proto.storage.GroupOuterClass.GroupProperties
 
 @Slf4j
+@CompileStatic
 class GroupService extends BaseService {
-    static getGroupService() {
+    static GroupServiceGrpc.GroupServiceBlockingStub getGroupService() {
         return GroupServiceGrpc.newBlockingStub(getChannel())
     }
 
@@ -54,11 +57,11 @@ class GroupService extends BaseService {
         }
     }
 
-    static getGroup(GroupProperties props) {
+    static Group getGroup(GroupProperties props) {
         return getGroupService().getGroup(props)
     }
 
-    static getGroups(GetGroupsRequest req) {
+    static GroupServiceOuterClass.GetGroupsResponse getGroups(GetGroupsRequest req) {
         return getGroupService().getGroups(req)
     }
 }

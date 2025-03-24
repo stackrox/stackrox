@@ -21,7 +21,7 @@ func NewTestDataStore(t testing.TB, testDB *pgtest.TestPostgres, deploymentDataS
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(t *testing.T, pool postgres.DB) (DataStore, error) {
+func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error) {
 	dbStore := pgStore.New(pool)
 	deploymentStore, err := deploymentDataStore.GetTestPostgresDataStore(t, pool)
 	if err != nil {

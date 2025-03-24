@@ -39,10 +39,6 @@ func (s *blobMigrationTestSuite) SetupTest() {
 	s.db = pghelper.ForT(s.T(), false)
 }
 
-func (s *blobMigrationTestSuite) TearDownTest() {
-	s.db.Teardown(s.T())
-}
-
 func (s *blobMigrationTestSuite) TestScannerDefinitionMigration() {
 	// Nothing to migrate
 	s.Require().NoError(moveToBlobs(s.db.GetGormDB()))

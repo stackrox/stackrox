@@ -44,8 +44,7 @@ func (s *authProviderServiceTestSuite) SetupSuite() {
 	tokenIssuerFactory := authTokenMocks.NewMockIssuerFactory(s.mockCtrl)
 	tokenIssuerFactory.EXPECT().CreateIssuer(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 
-	roleDS, err := roleDataStore.GetTestPostgresDataStore(t, db)
-	s.Require().NoError(err)
+	roleDS := roleDataStore.GetTestPostgresDataStore(t, db)
 	authProviderDS := authProviderDataStore.GetTestPostgresDataStore(t, db)
 	groupDS := groupDataStore.GetTestPostgresDataStore(t, db, roleDS, authProviderDS)
 	userDS := userDataStore.GetTestDataStore(t)
@@ -59,7 +58,7 @@ func (s *authProviderServiceTestSuite) SetupSuite() {
 	)
 
 	ctx := sac.WithAllAccess(context.Background())
-	err = providerRegistry.RegisterBackendFactory(
+	err := providerRegistry.RegisterBackendFactory(
 		ctx,
 		openshiftAuth.TypeName,
 		openshiftAuth.NewTestFactoryCreator(t),
@@ -70,7 +69,6 @@ func (s *authProviderServiceTestSuite) SetupSuite() {
 }
 
 func (s *authProviderServiceTestSuite) TearDownSuite() {
-	s.db.Teardown(s.T())
 	s.mockCtrl.Finish()
 }
 

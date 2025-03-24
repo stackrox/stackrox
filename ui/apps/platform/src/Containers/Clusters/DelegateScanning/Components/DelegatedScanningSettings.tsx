@@ -8,12 +8,14 @@ import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 
 type DelegatedScanningSettingsProps = {
     clusters?: DelegatedRegistryCluster[];
+    isEditing: boolean;
     selectedClusterId?: string;
     setSelectedClusterId: (newClusterId: string) => void;
 };
 
 function DelegatedScanningSettings({
     clusters = [],
+    isEditing,
     selectedClusterId,
     setSelectedClusterId,
 }: DelegatedScanningSettingsProps) {
@@ -61,6 +63,7 @@ function DelegatedScanningSettings({
                                 toggleAriaLabel="Select a cluster"
                                 onToggle={(_e, v) => toggleIsClusterOpen(v)}
                                 onSelect={onClusterSelect}
+                                isDisabled={!isEditing}
                                 isOpen={isClusterOpen}
                                 selections={selectedClusterName}
                             >

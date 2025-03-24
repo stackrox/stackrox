@@ -43,10 +43,6 @@ func (s *ReportSnapshotDatastoreTestSuite) SetupSuite() {
 			sac.ResourceScopeKeys(resources.WorkflowAdministration)))
 }
 
-func (s *ReportSnapshotDatastoreTestSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *ReportSnapshotDatastoreTestSuite) TestReportMetadataWorkflows() {
 	reportConfig := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
 	reportConfig.Id = ""

@@ -63,12 +63,6 @@ func (h *ExportServicePostgresTestHelper) SetupTest(tb testing.TB) error {
 	return nil
 }
 
-// TearDownTest cleans up the ExportServicePostgresTestHelper resources after testing.
-func (h *ExportServicePostgresTestHelper) TearDownTest(tb testing.TB) {
-	h.pool.Teardown(tb)
-	h.pool.Close()
-}
-
 func getImageSetPath() (string, error) {
 	// Go up the directory tree from the current working directory
 	// to location where the subtree to the image data file matches.
@@ -158,12 +152,9 @@ func (h *ExportServicePostgresTestHelper) InjectImages(
 		imgName := img.GetName()
 		for j := 0; j < copyCount; j++ {
 			clone := img.CloneVT()
-			hash, err := random.GenerateString(64, random.HexValues)
-			if err != nil {
-				return nil, nil, err
-			}
+			hash := random.GenerateString(64, random.HexValues)
 			clone.Id = fmt.Sprintf("sha256:%s", hash)
-			err = h.Images.UpsertImage(upsertCtx, clone)
+			err := h.Images.UpsertImage(upsertCtx, clone)
 			if err != nil {
 				return nil, nil, err
 			}

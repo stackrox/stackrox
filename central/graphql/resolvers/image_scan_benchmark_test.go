@@ -74,7 +74,6 @@ func BenchmarkImageResolver(b *testing.B) {
 
 	mockCtrl := gomock.NewController(b)
 	testDB := SetupTestPostgresConn(b)
-	defer testDB.Teardown(b)
 
 	resolver, schema := SetupTestResolver(b,
 		imagesView.NewImageView(testDB.DB),

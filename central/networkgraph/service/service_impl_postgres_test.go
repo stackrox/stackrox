@@ -14,6 +14,7 @@ import (
 	networkEntityDS "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	networkFlowDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
+	"github.com/stackrox/rox/central/networkgraph/testhelper"
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -25,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -65,8 +67,7 @@ func (s *networkGraphServiceSuite) SetupTest() {
 	s.deploymentsDataStore, err = deploymentDS.GetTestPostgresDataStore(s.T(), db.DB)
 	s.NoError(err)
 
-	s.entityDataStore, err = networkEntityDS.GetTestPostgresDataStore(s.T(), db.DB)
-	s.NoError(err)
+	s.entityDataStore = networkEntityDS.GetTestPostgresDataStore(s.T(), db.DB)
 
 	s.flowDataStore, err = networkFlowDS.GetTestPostgresClusterDataStore(s.T(), db.DB)
 	s.NoError(err)
@@ -74,8 +75,7 @@ func (s *networkGraphServiceSuite) SetupTest() {
 	s.policyDataStore, err = networkPolicyDS.GetTestPostgresDataStore(s.T(), db.DB)
 	s.NoError(err)
 
-	s.configDataStore, err = configDS.GetTestPostgresDataStore(s.T(), db.DB)
-	s.NoError(err)
+	s.configDataStore = configDS.GetTestPostgresDataStore(s.T(), db.DB)
 
 	s.treeMgr = networktree.Singleton()
 
@@ -90,10 +90,6 @@ func (s *networkGraphServiceSuite) SetupTest() {
 	)
 
 	s.db = db
-}
-
-func (s *networkGraphServiceSuite) TeardownTest() {
-	s.db.Teardown(s.T())
 }
 
 func externalFlow(deployment *storage.Deployment, entity *storage.NetworkEntity, ingress bool) *storage.NetworkFlow {
@@ -273,7 +269,7 @@ func (s *networkGraphServiceSuite) TestGetExternalNetworkFlows() {
 			if tc.expectSuccess {
 				s.NoError(err)
 				protoassert.Equal(s.T(), tc.expected.Entity, response.Entity)
-				protoassert.ElementsMatch(s.T(), tc.expected.Flows, response.Flows)
+				assert.True(s.T(), testhelper.MatchElements(tc.expected.Flows, response.Flows))
 			} else {
 				s.Error(err)
 			}

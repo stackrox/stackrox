@@ -70,10 +70,6 @@ func (suite *ImageIntegrationDataStoreTestSuite) SetupTest() {
 	suite.datastore = NewForTestOnly(suite.store, suite.mockSearcher)
 }
 
-func (suite *ImageIntegrationDataStoreTestSuite) TearDownTest() {
-	suite.testDB.Teardown(suite.T())
-}
-
 func (suite *ImageIntegrationDataStoreTestSuite) TestIntegrationsPersistence() {
 	testIntegrations(suite.T(), suite.store, suite.datastore)
 }

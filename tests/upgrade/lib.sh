@@ -174,7 +174,7 @@ validate_sensor_bundle_via_upgrader() {
 
 test_sensor_bundle() {
     info "Testing the sensor bundle"
-
+    export_central_cert
     rm -rf sensor-remote
     "$TEST_ROOT/bin/${TEST_HOST_PLATFORM}/roxctl" -e "$API_ENDPOINT" sensor get-bundle remote
     [[ -d sensor-remote ]]
@@ -191,7 +191,7 @@ test_sensor_bundle() {
 
 test_upgrader() {
     info "Starting bin/upgrader tests"
-
+    export_central_cert
     deactivate_metrics_server
 
     info "Creating a 'sensor-remote-new' cluster"

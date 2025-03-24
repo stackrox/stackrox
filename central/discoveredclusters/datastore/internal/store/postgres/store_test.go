@@ -41,10 +41,6 @@ func (s *DiscoveredClustersStoreSuite) SetupTest() {
 	s.NoError(err)
 }
 
-func (s *DiscoveredClustersStoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *DiscoveredClustersStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 

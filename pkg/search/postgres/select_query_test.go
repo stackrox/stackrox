@@ -87,7 +87,6 @@ func TestSelectQuery(t *testing.T) {
 
 	ctx := sac.WithAllAccess(context.Background())
 	testDB := pgtest.ForT(t)
-	defer testDB.Teardown(t)
 
 	store := postgres.New(testDB.DB)
 
@@ -519,7 +518,6 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 
 	ctx := sac.WithAllAccess(context.Background())
 	testDB := pgtest.ForT(t)
-	defer testDB.Teardown(t)
 
 	store := postgres.New(testDB.DB)
 

@@ -42,7 +42,7 @@ func New(storage pgStore.Store, searcher search.Searcher, risks riskDataStore.Da
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(t *testing.T, pool postgres.DB) DataStore {
+func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) DataStore {
 	dbstore := pgStore.New(pool)
 	searcher := search.NewV2(dbstore)
 	riskStore := riskDataStore.GetTestPostgresDataStore(t, pool)

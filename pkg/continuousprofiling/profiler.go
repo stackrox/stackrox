@@ -7,9 +7,30 @@ import (
 	"github.com/grafana/pyroscope-go"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/urlfmt"
 )
+
+const (
+	mutexProfileFraction = 5
+	blockProfileRate     = 5
+)
+
+// StartClientWrapper wraps the Start function to enable mocking in test
+//
+//go:generate mockgen-wrapper
+type StartClientWrapper interface {
+	Start(pyroscope.Config) (*pyroscope.Profiler, error)
+}
+
+type startClient struct {
+}
+
+// Start wrapper for pyroscope.Start
+func (c *startClient) Start(cfg pyroscope.Config) (*pyroscope.Profiler, error) {
+	return pyroscope.Start(cfg)
+}
 
 var (
 	ErrApplicationName           = errors.New("the ApplicationName must be defined")
@@ -30,6 +51,8 @@ var (
 		pyroscope.ProfileBlockCount,
 		pyroscope.ProfileBlockDuration,
 	}
+
+	startClientFuncWrapper StartClientWrapper = &startClient{}
 )
 
 // DefaultConfig creates a new configuration with default properties.
@@ -77,7 +100,7 @@ func validateServerAddress(address string) (string, error) {
 	// We default to https unless http is specified
 	sanitizedAddress := urlfmt.FormatURL(address, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 	if _, err := url.Parse(sanitizedAddress); err != nil {
-		return "", errors.Wrapf(err, "unable to parse the server address %q", address)
+		return "", errox.InvalidArgs.Newf("unable to parse server address %q", address).CausedBy(err)
 	}
 	return sanitizedAddress, nil
 }
@@ -106,14 +129,6 @@ func SetupClient(cfg *pyroscope.Config, opts ...OptionFunc) error {
 		return nil
 	}
 
-	if profileTypeEnabled(pyroscope.ProfileMutexCount, cfg.ProfileTypes...) {
-		runtime.SetMutexProfileFraction(5)
-	}
-
-	if profileTypeEnabled(pyroscope.ProfileBlockCount, cfg.ProfileTypes...) {
-		runtime.SetBlockProfileRate(5)
-	}
-
 	for _, o := range opts {
 		o(cfg)
 	}
@@ -122,7 +137,15 @@ func SetupClient(cfg *pyroscope.Config, opts ...OptionFunc) error {
 		return err
 	}
 
-	_, err := pyroscope.Start(*cfg)
+	if profileTypeEnabled(pyroscope.ProfileMutexCount, cfg.ProfileTypes...) {
+		runtime.SetMutexProfileFraction(mutexProfileFraction)
+	}
+
+	if profileTypeEnabled(pyroscope.ProfileBlockCount, cfg.ProfileTypes...) {
+		runtime.SetBlockProfileRate(blockProfileRate)
+	}
+
+	_, err := startClientFuncWrapper.Start(*cfg)
 	if err != nil {
 		return err
 	}

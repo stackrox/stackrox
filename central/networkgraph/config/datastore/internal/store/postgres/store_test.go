@@ -41,10 +41,6 @@ func (s *NetworkGraphConfigsStoreSuite) SetupTest() {
 	s.NoError(err)
 }
 
-func (s *NetworkGraphConfigsStoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *NetworkGraphConfigsStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 

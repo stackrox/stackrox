@@ -48,10 +48,6 @@ func (s *HashesStoreSuite) SetupTest() {
 	s.NoError(err)
 }
 
-func (s *HashesStoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *HashesStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 

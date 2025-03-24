@@ -41,10 +41,6 @@ func (s *DeclarativeConfigHealthsStoreSuite) SetupTest() {
 	s.NoError(err)
 }
 
-func (s *DeclarativeConfigHealthsStoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *DeclarativeConfigHealthsStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 

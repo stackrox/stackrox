@@ -126,11 +126,6 @@ func (s *authServiceAccessControlTestSuite) SetupTest() {
 	s.svc = &serviceImpl{authDataStore: authDataStore}
 }
 
-func (s *authServiceAccessControlTestSuite) TearDownTest() {
-	s.pool.Teardown(s.T())
-	s.pool.Close()
-}
-
 type testCase struct {
 	name string
 	ctx  context.Context

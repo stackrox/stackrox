@@ -41,10 +41,6 @@ func (s *NetworkpolicyapplicationundorecordsStoreSuite) SetupTest() {
 	s.NoError(err)
 }
 
-func (s *NetworkpolicyapplicationundorecordsStoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *NetworkpolicyapplicationundorecordsStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 

@@ -124,10 +124,6 @@ func (s *groupUniqueConstraintMigrationTestSuite) SetupSuite() {
 	pgutils.CreateTableFromModel(ctx, s.db.GetGormDB(), frozenSchemav73.CreateTableGroupsStmt)
 }
 
-func (s *groupUniqueConstraintMigrationTestSuite) TearDownSuite() {
-	s.db.Teardown(s.T())
-}
-
 func (s *groupUniqueConstraintMigrationTestSuite) TestMigration() {
 	previousStore := previous.New(s.db.DB)
 	updatedStore := updated.New(s.db.DB)

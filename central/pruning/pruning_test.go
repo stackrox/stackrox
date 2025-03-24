@@ -254,8 +254,7 @@ func (s *PruningTestSuite) generateImageDataStructures(ctx context.Context) (ale
 		ranking.NewRanker(),
 	)
 
-	pods, err := podDatastore.NewPostgresDB(s.pool, mockProcessDataStore, mockPlopDataStore, mockFilter)
-	require.NoError(s.T(), err)
+	pods := podDatastore.NewPostgresDB(s.pool, mockProcessDataStore, mockPlopDataStore, mockFilter)
 
 	return mockAlertDatastore, mockConfigDatastore, images, deployments, pods
 }
@@ -273,8 +272,7 @@ func (s *PruningTestSuite) generatePodDataStructures() podDatastore.DataStore {
 	mockFilter.EXPECT().UpdateByPod(gomock.Any()).AnyTimes()
 	mockFilter.EXPECT().DeleteByPod(gomock.Any()).AnyTimes()
 
-	pods, err := podDatastore.NewPostgresDB(s.pool, mockProcessDataStore, mockPlopDataStore, mockFilter)
-	require.NoError(s.T(), err)
+	pods := podDatastore.NewPostgresDB(s.pool, mockProcessDataStore, mockPlopDataStore, mockFilter)
 
 	return pods
 }
@@ -302,8 +300,7 @@ func (s *PruningTestSuite) generateAlertDataStructures(ctx context.Context) (ale
 		err    error
 	)
 
-	alerts, err = alertDatastore.GetTestPostgresDataStore(s.T(), s.pool)
-	require.NoError(s.T(), err)
+	alerts = alertDatastore.GetTestPostgresDataStore(s.T(), s.pool)
 
 	ctrl := gomock.NewController(s.T())
 
@@ -1301,21 +1298,17 @@ func (s *PruningTestSuite) TestRemoveOrphanedProcesses() {
 				s.NoError(deploymentDS.UpsertDeployment(s.ctx, &storage.Deployment{Id: deploymentID, ClusterId: fixtureconsts.Cluster1}))
 			}
 
-			podDS, err := podDatastore.GetTestPostgresDataStore(t, db.DB)
-			s.Nil(err)
+			podDS := podDatastore.GetTestPostgresDataStore(t, db.DB)
 			for _, podID := range c.pods.AsSlice() {
 				err := podDS.UpsertPod(s.ctx, &storage.Pod{Id: podID, ClusterId: fixtureconsts.Cluster1})
 				s.Nil(err)
 			}
 
-			actualProcessDatastore, err := processIndicatorDatastore.GetTestPostgresDataStore(t, db.DB)
-			s.Nil(err)
+			actualProcessDatastore := processIndicatorDatastore.GetTestPostgresDataStore(t, db.DB)
 			s.NoError(actualProcessDatastore.AddProcessIndicators(s.ctx, c.initialProcesses...))
 
 			processes.EXPECT().PruneProcessIndicators(gomock.Any(), c.expectedDeletions).AnyTimes()
 			gci.removeOrphanedProcesses()
-
-			db.Teardown(t)
 		})
 	}
 }
@@ -1351,8 +1344,11 @@ func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
 						ProcessArgs:         "test_arguments1",
 						ProcessExecFilePath: "test_path1",
 					},
+					DeploymentId: fixtureconsts.Deployment1,
+					PodUid:       fixtureconsts.PodUID1,
 				},
 			},
+			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID1),
 			expectedDeletions: []string{plopID1},
 		},
 		{
@@ -1373,9 +1369,11 @@ func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
 						ProcessExecFilePath: "test_path1",
 					},
 					DeploymentId: fixtureconsts.Deployment1,
+					PodUid:       fixtureconsts.PodUID1,
 				},
 			},
 			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment1),
+			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID1),
 			expectedDeletions: []string{},
 		},
 		{
@@ -1395,8 +1393,12 @@ func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
 						ProcessArgs:         "test_arguments1",
 						ProcessExecFilePath: "test_path1",
 					},
+					DeploymentId: fixtureconsts.Deployment1,
+					PodUid:       fixtureconsts.PodUID1,
 				},
 			},
+			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment1),
+			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID1),
 			expectedDeletions: []string{plopID1},
 		},
 		{
@@ -1420,6 +1422,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
 					PodUid:       fixtureconsts.PodUID1,
 				},
 			},
+			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment1),
 			expectedDeletions: []string{plopID1},
 		},
 		{
@@ -1447,6 +1450,30 @@ func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
 			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID1),
 			expectedDeletions: []string{},
 		},
+		{
+			name: "Plop does not have a poduid so it is removed",
+			initialPlops: []*storage.ProcessListeningOnPortStorage{
+				{
+					Id:                 plopID1,
+					Port:               1234,
+					Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
+					CloseTimestamp:     nil,
+					ProcessIndicatorId: fixtureconsts.ProcessIndicatorID1,
+					Closed:             false,
+					Process: &storage.ProcessIndicatorUniqueKey{
+						PodId:               fixtureconsts.PodUID1,
+						ContainerName:       "test_container1",
+						ProcessName:         "test_process1",
+						ProcessArgs:         "test_arguments1",
+						ProcessExecFilePath: "test_path1",
+					},
+					DeploymentId: fixtureconsts.Deployment1,
+				},
+			},
+			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment1),
+			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID1),
+			expectedDeletions: []string{plopID1},
+		},
 	}
 
 	for _, c := range cases {
@@ -1458,6 +1485,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
 				postgres: db,
 				plops:    plopDS,
 			}
+			prunedPLOPsWithoutPodUIDs = false
 
 			// Populate some actual data so the query returns what needs deleted
 			deploymentDS, err := deploymentDatastore.GetTestPostgresDataStore(t, db.DB)
@@ -1466,8 +1494,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
 				s.NoError(deploymentDS.UpsertDeployment(s.ctx, &storage.Deployment{Id: deploymentID, ClusterId: fixtureconsts.Cluster1}))
 			}
 
-			podDS, err := podDatastore.GetTestPostgresDataStore(t, db.DB)
-			s.Nil(err)
+			podDS := podDatastore.GetTestPostgresDataStore(t, db.DB)
 			for _, podID := range c.pods.AsSlice() {
 				err := podDS.UpsertPod(s.ctx, &storage.Pod{Id: podID, ClusterId: fixtureconsts.Cluster1})
 				s.Nil(err)
@@ -1572,8 +1599,7 @@ func (s *PruningTestSuite) TestMarkOrphanedAlerts() {
 				alerts:   alerts,
 			}
 
-			actualAlertsDS, err := alertDatastore.GetTestPostgresDataStore(t, db.DB)
-			assert.NoError(t, err)
+			actualAlertsDS := alertDatastore.GetTestPostgresDataStore(t, db.DB)
 
 			deploymentDS, err := deploymentDatastore.GetTestPostgresDataStore(t, db.DB)
 			assert.NoError(t, err)
@@ -1984,8 +2010,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedRBACObjects() {
 
 	for _, c := range cases {
 		s.T().Run(c.name, func(t *testing.T) {
-			serviceAccounts, err := serviceAccountDataStore.GetTestPostgresDataStore(t, s.pool)
-			assert.NoError(t, err)
+			serviceAccounts := serviceAccountDataStore.GetTestPostgresDataStore(t, s.pool)
 			k8sRoles := k8sRoleDataStore.GetTestPostgresDataStore(t, s.pool)
 			k8sRoleBindings := k8sRoleBindingDataStore.GetTestPostgresDataStore(t, s.pool)
 

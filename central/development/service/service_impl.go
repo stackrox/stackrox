@@ -77,10 +77,7 @@ func (s *serviceImpl) ReplicateImage(ctx context.Context, req *central.Replicate
 		return nil, errors.Errorf("image %q does not exist", req.GetId())
 	}
 	for i := 0; i < int(req.GetTimes()); i++ {
-		image.Id, err = random.GenerateString(65, random.HexValues)
-		if err != nil {
-			return nil, err
-		}
+		image.Id = random.GenerateString(65, random.HexValues)
 		if err := s.riskManager.CalculateRiskAndUpsertImage(image); err != nil {
 			return nil, err
 		}

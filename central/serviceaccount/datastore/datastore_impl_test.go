@@ -38,14 +38,12 @@ type ServiceAccountDataStoreTestSuite struct {
 }
 
 func (suite *ServiceAccountDataStoreTestSuite) SetupSuite() {
-	var err error
 	pgtestbase := pgtest.ForT(suite.T())
 	suite.Require().NotNil(pgtestbase)
 	suite.pool = pgtestbase.DB
 	suite.storage = pgStore.New(suite.pool)
 	suite.searcher = serviceAccountSearch.New(suite.storage)
-	suite.datastore, err = New(suite.storage, suite.searcher)
-	suite.Require().NoError(err)
+	suite.datastore = New(suite.storage, suite.searcher)
 
 	suite.ctx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(

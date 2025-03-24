@@ -1,10 +1,13 @@
 package services
 
+import groovy.transform.CompileStatic
+
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.SensorUpgradeServiceGrpc
 
+@CompileStatic
 class SensorUpgradeService extends BaseService {
-    static getSensorUpgradeServiceClient() {
+    static SensorUpgradeServiceGrpc.SensorUpgradeServiceBlockingStub getSensorUpgradeServiceClient() {
         return SensorUpgradeServiceGrpc.newBlockingStub(getChannel())
     }
 

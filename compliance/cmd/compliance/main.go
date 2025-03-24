@@ -7,7 +7,9 @@ import (
 	"github.com/stackrox/rox/compliance/node"
 	"github.com/stackrox/rox/compliance/node/index"
 	"github.com/stackrox/rox/compliance/node/inventory"
+	"github.com/stackrox/rox/pkg/continuousprofiling"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/memlimit"
 	"github.com/stackrox/rox/pkg/retry/handler"
 )
@@ -16,7 +18,15 @@ func init() {
 	memlimit.SetMemoryLimit()
 }
 
+var (
+	log = logging.LoggerForModule()
+)
+
 func main() {
+	if err := continuousprofiling.SetupClient(continuousprofiling.DefaultConfig()); err != nil {
+		log.Errorf("unable to start continuous profiling: %v", err)
+	}
+
 	np := &node.EnvNodeNameProvider{}
 	cfg := index.DefaultNodeIndexerConfig
 

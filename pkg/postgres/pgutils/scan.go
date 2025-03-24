@@ -2,12 +2,26 @@ package pgutils
 
 import (
 	"github.com/jackc/pgx/v5"
+	"github.com/pkg/errors"
 )
 
 // Unmarshaler is a generic interface type wrapping around types that implement protobuf Unmarshaler.
 type Unmarshaler[T any] interface {
 	UnmarshalVTUnsafe(dAtA []byte) error
 	*T
+}
+
+// ScanStrings scans strings from rows.
+//
+// This function closes the rows automatically on return.
+func ScanStrings(rows pgx.Rows) ([]string, error) {
+	return pgx.CollectRows(rows, func(r pgx.CollectableRow) (string, error) {
+		var str string
+		if err := r.Scan(&str); err != nil {
+			return "", errors.Wrap(err, "scanning string")
+		}
+		return str, nil
+	})
 }
 
 // ScanRows scan and Unmarshal postgres rows into object of type T.

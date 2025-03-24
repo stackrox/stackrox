@@ -1,8 +1,10 @@
 package services
 
+import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import io.grpc.Status
 import io.grpc.StatusRuntimeException
+
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.RoleServiceGrpc
 import io.stackrox.proto.api.v1.RoleServiceOuterClass
@@ -10,8 +12,9 @@ import io.stackrox.proto.storage.RoleOuterClass
 import io.stackrox.proto.storage.RoleOuterClass.Role
 
 @Slf4j
+@CompileStatic
 class RoleService extends BaseService {
-    static getRoleService() {
+    static RoleServiceGrpc.RoleServiceBlockingStub getRoleService() {
         return RoleServiceGrpc.newBlockingStub(getChannel())
     }
 
@@ -19,7 +22,7 @@ class RoleService extends BaseService {
         return getRoleService().getRoles(EMPTY)
     }
 
-    static getRole(String roleId) {
+    static Role getRole(String roleId) {
         return getRoleService().getRole(Common.ResourceByID.newBuilder().setId(roleId).build())
     }
 
@@ -75,7 +78,7 @@ class RoleService extends BaseService {
 
     static deleteRole(String name) {
         try {
-            def role = getRole(name)
+            Role role = getRole(name)
             getRoleService().deleteRole(Common.ResourceByID.newBuilder().setId(name).build())
             deletePermissionSet(role.permissionSetId)
             log.info "Deleted role: ${name} and permission set"
@@ -93,13 +96,13 @@ class RoleService extends BaseService {
         }
     }
 
-    static createPermissionSet(String name, Map<String, RoleOuterClass.Access> resources) {
+    static RoleOuterClass.PermissionSet createPermissionSet(String name, Map<String, RoleOuterClass.Access> resources) {
         getRoleService().postPermissionSet(RoleOuterClass.PermissionSet.newBuilder()
                 .setName(name)
                 .putAllResourceToAccess(resources).build())
     }
 
-    static deletePermissionSet(String id) {
+    static void deletePermissionSet(String id) {
         try {
             getRoleService().deletePermissionSet(Common.ResourceByID.newBuilder().setId(id).build())
         } catch (Exception e) {
@@ -113,10 +116,6 @@ class RoleService extends BaseService {
 
     static deleteAccessScope(String id) {
         getRoleService().deleteSimpleAccessScope(Common.ResourceByID.newBuilder().setId(id).build())
-    }
-
-    static myPermissions() {
-        getRoleService().getMyPermissions(EMPTY)
     }
 }
 

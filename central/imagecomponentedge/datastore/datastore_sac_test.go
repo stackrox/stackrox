@@ -43,13 +43,8 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) SetupSuite() {
 	s.testGraphDatastore, err = graphDBTestUtils.NewTestGraphDataStore(s.T())
 	s.Require().NoError(err)
 	pool := s.testGraphDatastore.GetPostgresPool()
-	s.datastore, err = GetTestPostgresDataStore(s.T(), pool)
-	s.Require().NoError(err)
+	s.datastore = GetTestPostgresDataStore(s.T(), pool)
 	s.testContexts = sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Image)
-}
-
-func (s *imageComponentEdgeDatastoreSACTestSuite) TearDownSuite() {
-	s.testGraphDatastore.Cleanup(s.T())
 }
 
 func (s *imageComponentEdgeDatastoreSACTestSuite) cleanImageToVulnerabilityGraph() {

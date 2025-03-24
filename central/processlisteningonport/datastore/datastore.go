@@ -34,6 +34,7 @@ type DataStore interface {
 	PruneOrphanedPLOPs(ctx context.Context, orphanWindow time.Duration) int64
 	PruneOrphanedPLOPsByProcessIndicators(ctx context.Context, orphanWindow time.Duration)
 	RemovePLOPsWithoutProcessIndicatorOrProcessInfo(ctx context.Context) (int64, error)
+	RemovePLOPsWithoutPodUID(ctx context.Context) (int64, error)
 }
 
 // New creates a data store object to access the database. Since some
@@ -51,9 +52,6 @@ func New(
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) DataStore {
 	plopDBstore := plopStore.NewFullStore(pool)
-	indicatorDS, err := processIndicatorStore.GetTestPostgresDataStore(t, pool)
-	if err != nil {
-		log.Infof("getting test store %v", err)
-	}
+	indicatorDS := processIndicatorStore.GetTestPostgresDataStore(t, pool)
 	return newDatastoreImpl(plopDBstore, indicatorDS, pool)
 }

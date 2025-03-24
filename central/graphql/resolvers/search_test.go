@@ -358,7 +358,6 @@ func TestSubjectAutocompleteSearch(t *testing.T) {
 	testDB := pgtest.ForT(t)
 	testGormDB := testDB.GetGormDB(t)
 	defer pgtest.CloseGormDB(t, testGormDB)
-	defer testDB.Teardown(t)
 
 	roleBindingDatastore := k8sRoleBindingDataStore.GetTestPostgresDataStore(t, testDB.DB)
 
@@ -439,7 +438,6 @@ func TestImageLabelAutoCompleteSearch(t *testing.T) {
 	testDB := pgtest.ForT(t)
 	testGormDB := testDB.GetGormDB(t)
 	defer pgtest.CloseGormDB(t, testGormDB)
-	defer testDB.Teardown(t)
 
 	imageDatastore := imageDS.GetTestPostgresDataStore(t, testDB.DB)
 	ctx := loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))

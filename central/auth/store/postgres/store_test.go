@@ -41,10 +41,6 @@ func (s *AuthMachineToMachineConfigsStoreSuite) SetupTest() {
 	s.NoError(err)
 }
 
-func (s *AuthMachineToMachineConfigsStoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *AuthMachineToMachineConfigsStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 

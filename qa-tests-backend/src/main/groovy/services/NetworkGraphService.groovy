@@ -1,21 +1,25 @@
 package services
 
 import com.google.protobuf.Timestamp
+import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+
 import io.stackrox.proto.api.v1.Common.ResourceByID
+import io.stackrox.proto.api.v1.NetworkGraphServiceGrpc
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.CreateNetworkEntityRequest
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.GetExternalNetworkEntitiesRequest
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.GetExternalNetworkEntitiesResponse
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.NetworkGraphRequest
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.NetworkGraphScope
-import io.stackrox.proto.api.v1.NetworkGraphServiceGrpc
 import io.stackrox.proto.storage.NetworkFlowOuterClass.NetworkEntity
 import io.stackrox.proto.storage.NetworkFlowOuterClass.NetworkEntityInfo.ExternalSource
+
 import util.Timer
 
 @Slf4j
+@CompileStatic
 class NetworkGraphService extends BaseService {
-    static getNetworkGraphClient() {
+    static NetworkGraphServiceGrpc.NetworkGraphServiceBlockingStub getNetworkGraphClient() {
         return NetworkGraphServiceGrpc.newBlockingStub(getChannel())
             .withMaxInboundMessageSize(2*4194304) // Twice the default size
             .withMaxOutboundMessageSize(2*4194304)
@@ -86,7 +90,7 @@ class NetworkGraphService extends BaseService {
     static waitForNetworkEntityOfExternalSource(String clusterId, String entityName) {
         int intervalInSeconds = 5
         int timeoutInSeconds = 120
-        int retries = timeoutInSeconds / intervalInSeconds
+        int retries = (timeoutInSeconds / intervalInSeconds) as int
         Timer t = new Timer(retries, intervalInSeconds)
         while (t.IsValid()) {
             try {

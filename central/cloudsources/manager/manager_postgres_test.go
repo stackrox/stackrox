@@ -19,10 +19,6 @@ import (
 
 func TestChangeDiscoveredClustersStatus(t *testing.T) {
 	pool := pgtest.ForT(t)
-	defer func() {
-		pool.Teardown(t)
-		pool.Close()
-	}()
 	dcDS := discoveredClustersDS.GetTestPostgresDataStore(t, pool)
 
 	csDS := cloudSourcesDS.GetTestPostgresDataStore(t, pool)

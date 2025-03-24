@@ -1,11 +1,14 @@
 package services
 
+import groovy.transform.CompileStatic
+
 import io.stackrox.proto.api.v1.Common.ResourceByID
 import io.stackrox.proto.api.v1.NetworkBaselineServiceGrpc
 
+@CompileStatic
 class NetworkBaselineService extends BaseService {
 
-    static getNetworkBaselineClient() {
+    static NetworkBaselineServiceGrpc.NetworkBaselineServiceBlockingStub getNetworkBaselineClient() {
         return NetworkBaselineServiceGrpc.newBlockingStub(getChannel())
     }
 

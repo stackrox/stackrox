@@ -27,12 +27,10 @@ type insecureCapableTransport struct {
 func NewInsecureCapableTransport(transport *http.Transport) http.RoundTripper {
 	insecure := transport.Clone()
 	if insecure.TLSClientConfig == nil {
-		insecure.TLSClientConfig = &tls.Config{
-			InsecureSkipVerify: true,
-		}
-	} else {
-		insecure.TLSClientConfig.InsecureSkipVerify = true
+		insecure.TLSClientConfig = &tls.Config{}
 	}
+	insecure.TLSClientConfig.InsecureSkipVerify = true
+
 	return &insecureCapableTransport{
 		transport:         transport,
 		insecureTransport: insecure,

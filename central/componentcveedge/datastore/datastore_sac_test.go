@@ -49,10 +49,6 @@ func (s *imageComponentCVEEdgeDatastoreSACTestSuite) SetupSuite() {
 	s.testContexts = sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Image)
 }
 
-func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TearDownSuite() {
-	s.testGraphDatastore.Cleanup(s.T())
-}
-
 func (s *imageComponentCVEEdgeDatastoreSACTestSuite) cleanImageToVulnerabilitiesGraph() {
 	s.Require().NoError(s.testGraphDatastore.CleanImageToVulnerabilitiesGraph())
 }

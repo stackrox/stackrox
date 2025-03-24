@@ -41,10 +41,6 @@ func (s *TestSingleUUIDKeyStructsStoreSuite) SetupTest() {
 	s.NoError(err)
 }
 
-func (s *TestSingleUUIDKeyStructsStoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *TestSingleUUIDKeyStructsStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 

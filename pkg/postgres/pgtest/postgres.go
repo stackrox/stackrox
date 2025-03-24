@@ -35,11 +35,10 @@ type TestPostgres struct {
 
 // CreateADatabaseForT creates a postgres database for test
 func CreateADatabaseForT(t testing.TB) string {
-	suffix, err := random.GenerateString(5, random.AlphanumericCharacters)
-	require.NoError(t, err)
+	suffix := random.GenerateString(5, random.AlphanumericCharacters)
 
 	h := fnv.New64a()
-	_, err = io.WriteString(h, t.Name())
+	_, err := io.WriteString(h, t.Name())
 	require.NoError(t, err)
 
 	database := fmt.Sprintf("%x_%s", h.Sum64(), suffix)
@@ -87,6 +86,7 @@ func DropDatabase(t testing.TB, database string) {
 }
 
 // ForT creates and returns a Postgres for the test
+// It will teardown DB at the end of the test.
 func ForT(t testing.TB) *TestPostgres {
 	// Bootstrap a test database
 	database := CreateADatabaseForT(t)
@@ -103,10 +103,16 @@ func ForT(t testing.TB) *TestPostgres {
 	// initialize pool to be used
 	pool := ForTCustomPool(t, database)
 
-	return &TestPostgres{
+	testPg := &TestPostgres{
 		DB:       pool,
 		database: database,
 	}
+
+	t.Cleanup(func() {
+		testPg.teardown(t)
+	})
+
+	return testPg
 }
 
 // ForTCustomDB - creates and returns a Postgres for the test.  This is used primarily in testing migrations,
@@ -144,8 +150,7 @@ func (tp *TestPostgres) GetGormDB(t testing.TB) *gorm.DB {
 	return OpenGormDB(t, source)
 }
 
-// Teardown tears down a Postgres instance used in tests
-func (tp *TestPostgres) Teardown(t testing.TB) {
+func (tp *TestPostgres) teardown(t testing.TB) {
 	if tp == nil {
 		return
 	}

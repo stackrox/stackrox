@@ -53,6 +53,12 @@ var (
 			Method:  phonehome.Pattern("POST").Ptr(),
 			Headers: map[string]phonehome.Pattern{userAgentHeaderKey: phonehome.NoHeaderOrAnyValue},
 		},
+		{
+			// Capture Jenkins Plugin requests
+			Headers: map[string]phonehome.Pattern{
+				userAgentHeaderKey: "*stackrox-container-image-scanner*",
+			},
+		},
 		apiPathsCampaign(),
 		userAgentsCampaign(),
 	}

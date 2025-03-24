@@ -19,7 +19,6 @@ func BenchmarkCollections(b *testing.B) {
 	ctx := sac.WithAllAccess(context.Background())
 
 	db := pgtest.ForT(b)
-	defer db.Teardown(b)
 
 	datastore, _, err := GetTestPostgresDataStore(b, db)
 	require.NoError(b, err)

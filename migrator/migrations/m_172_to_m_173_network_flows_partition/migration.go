@@ -149,7 +149,6 @@ func getClusters(ctx context.Context, db postgres.DB) ([]string, error) {
 	ctx, cancel := context.WithTimeout(ctx, types.DefaultMigrationTimeout)
 	defer cancel()
 
-	var clusters []string
 	getClustersStmt := "select distinct id from clusters;"
 
 	rows, err := db.Query(ctx, getClustersStmt)
@@ -157,17 +156,7 @@ func getClusters(ctx context.Context, db postgres.DB) ([]string, error) {
 		return nil, err
 	}
 
-	defer rows.Close()
-	for rows.Next() {
-		var cluster string
-		if err := rows.Scan(&cluster); err != nil {
-			return nil, err
-		}
-
-		clusters = append(clusters, cluster)
-	}
-
-	return clusters, rows.Err()
+	return pgutils.ScanStrings(rows)
 }
 
 func migrateData(ctx context.Context, db postgres.DB, partitionName string, cluster string) error {

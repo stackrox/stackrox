@@ -981,6 +981,7 @@ _deploy_stackrox() {
       DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}" export_central_basic_auth_creds
     fi
     wait_for_api "${central_namespace}"
+    export_central_cert "${central_namespace}"
     setup_client_TLS_certs "${tls_client_certs}"
     record_build_info "${central_namespace}"
 

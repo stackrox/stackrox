@@ -39,10 +39,6 @@ func (s *BlobsStoreSuite) SetupTest() {
 	s.NoError(err)
 }
 
-func (s *BlobsStoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *BlobsStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 	size := 1024*1024 + 16

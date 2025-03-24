@@ -74,7 +74,6 @@ func TestComplianceReportPruning(t *testing.T) {
 
 var _ suite.SetupAllSuite = (*ComplianceReportPruningSuite)(nil)
 var _ suite.TearDownTestSuite = (*ComplianceReportPruningSuite)(nil)
-var _ suite.TearDownAllSuite = (*ComplianceReportPruningSuite)(nil)
 
 func (s *ComplianceReportPruningSuite) SetupSuite() {
 	s.db = pgtest.ForT(s.T())
@@ -97,10 +96,6 @@ func (s *ComplianceReportPruningSuite) TearDownTest() {
 	tag, err = s.db.Exec(s.ctx, fmt.Sprintf("TRUNCATE %s CASCADE", schema.BlobsTableName))
 	s.T().Logf("%s %v", schema.BlobsTableName, tag)
 	s.Require().NoError(err)
-}
-
-func (s *ComplianceReportPruningSuite) TearDownSuite() {
-	s.db.Teardown(s.T())
 }
 
 func (s *ComplianceReportPruningSuite) Test_MustNotDeleteLastSuccessfulJobOneDownload() {

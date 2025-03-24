@@ -34,6 +34,7 @@ func ImageCVEV2ToEmbeddedVulnerability(vuln *storage.ImageCVEV2) *storage.Embedd
 		VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 		VulnerabilityTypes:    []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
 		State:                 vuln.GetState(),
+		Advisory:              vuln.GetAdvisory(),
 	}
 
 	if vuln.IsFixable {
@@ -107,6 +108,7 @@ func EmbeddedVulnerabilityToImageCVEV2(imageID string, componentID string, cveIn
 		State:                from.GetState(),
 		IsFixable:            from.GetFixedBy() != "",
 		ImpactScore:          impactScore,
+		Advisory:             from.GetAdvisory(),
 	}
 
 	if from.GetFixedBy() != "" {

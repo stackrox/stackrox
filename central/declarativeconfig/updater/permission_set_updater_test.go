@@ -41,15 +41,9 @@ func (s *permissionSetUpdaterTestSuite) SetupTest() {
 
 	s.pgTest = pgtest.ForT(s.T())
 	s.Require().NotNil(s.pgTest)
-	rds, err := roleDS.GetTestPostgresDataStore(s.T(), s.pgTest.DB)
-	s.Require().NoError(err)
+	rds := roleDS.GetTestPostgresDataStore(s.T(), s.pgTest.DB)
 	s.updater = newPermissionSetUpdater(rds, declarativeConfigHealth.GetTestPostgresDataStore(s.T(),
 		s.pgTest.DB)).(*permissionSetUpdater)
-}
-
-func (s *permissionSetUpdaterTestSuite) TearDownTest() {
-	s.pgTest.Teardown(s.T())
-	s.pgTest.Close()
 }
 
 func (s *permissionSetUpdaterTestSuite) TestUpsert() {

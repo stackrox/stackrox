@@ -44,10 +44,6 @@ func (s *NamespacesStoreSuite) SetupTest() {
 	s.NoError(err)
 }
 
-func (s *NamespacesStoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *NamespacesStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 

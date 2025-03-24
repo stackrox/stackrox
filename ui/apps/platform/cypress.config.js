@@ -14,6 +14,14 @@ module.exports = {
     video: true, // Videos options
     videoCompression: 32, // Videos options
 
+    retries: {
+        // Configure retry attempts for `cypress run`
+        // Attempt a single retry for failed tests when run headless
+        runMode: 1,
+        // Configure retry attempts for `cypress open`
+        openMode: 0,
+    },
+
     e2e: {
         baseUrl: 'https://localhost:3000',
         specPattern: 'cypress/integration/**/*.test.{js,ts}',

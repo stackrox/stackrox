@@ -44,10 +44,6 @@ func (s *managerTestSuite) SetupTest() {
 	s.mgr.freeStorageThreshold = 0 // not interested in testing this
 }
 
-func (s *managerTestSuite) TearDownTest() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *managerTestSuite) TestGetExistingProbeFilesWithNoProbes() {
 	s.Require().NoError(s.mgr.Initialize())
 
