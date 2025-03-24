@@ -1077,6 +1077,7 @@ func RunCursorQueryForSchemaFn[T any, PT pgutils.Unmarshaler[T]](ctx context.Con
 		return errors.Wrap(err, "creating cursor")
 	}
 
+	const cursorBatchSize = 1000
 	for {
 		rows, err := tx.Query(ctx, fmt.Sprintf("FETCH %d FROM %s", cursorBatchSize, cursor))
 		if err != nil {
