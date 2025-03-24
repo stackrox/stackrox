@@ -836,6 +836,9 @@ func (resolver *imageCVEResolver) Suppressed(_ context.Context) bool {
 // or are convenience functions to allow time for UI to migrate to new naming schemes
 // This is awful
 func (resolver *imageCVEV2Resolver) ID(_ context.Context) graphql.ID {
+	if features.FlattenCVEData.Enabled() {
+		return graphql.ID(resolver.data.GetCveBaseInfo().GetCve())
+	}
 	return graphql.ID(resolver.data.GetId())
 }
 
@@ -1115,7 +1118,6 @@ func (resolver *imageCVEV2Resolver) imageVulnerabilityScopeContext(ctx context.C
 	// and not use the scope context as it is too limiting and it would cause far reaching changes to
 	// extend it.  I think.
 	return scoped.Context(resolver.ctx, scoped.Scope{
-		ID:    resolver.data.GetId(),
 		Level: v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
 	})
 }
