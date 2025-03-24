@@ -182,9 +182,6 @@
         "@typescript-eslint/parser": "^8.17.0",
         "autoprefixer": "10.4.5",
         "babel-jest": "^29.7.0",
-        "connected-react-router": {
-            "react": "^18.0.0"
-        },
         "eslint": "^9.16.0",
         "eslint-plugin-jest": "^28.9.0",
         "eslint-plugin-jest-dom": {

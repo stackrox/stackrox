@@ -31,6 +31,8 @@ function AuthenticatedRoutes(): ReactElement {
             return (
                 <Navigate
                     to="/login"
+                    // Include the current path & query string in state for authSagas,
+                    // which will store and use it to redirect back here after successful login
                     state={{ from: `${location.pathname}${location.search}` }}
                     replace
                 />

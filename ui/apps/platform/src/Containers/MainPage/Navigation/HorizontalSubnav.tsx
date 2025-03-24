@@ -50,7 +50,8 @@ function getSubnavDescriptionGroups(
                       path: violationsUserWorkloadsViewPath,
                       isActive: (location) => {
                           const search: string = location.search || '';
-                          return search.includes(`filteredWorkflowView=Applications view`);
+                          const encodedValue = encodeURIComponent('Applications view');
+                          return search.includes(`filteredWorkflowView=${encodedValue}`);
                       },
                       routeKey: 'violations',
                   },
@@ -60,7 +61,8 @@ function getSubnavDescriptionGroups(
                       path: violationsPlatformViewPath,
                       isActive: (location) => {
                           const search: string = location.search || '';
-                          return search.includes(`filteredWorkflowView=Platform view`);
+                          const encodedValue = encodeURIComponent('Platform view');
+                          return search.includes(`filteredWorkflowView=${encodedValue}`);
                       },
                       routeKey: 'violations',
                   },
@@ -70,7 +72,8 @@ function getSubnavDescriptionGroups(
                       path: violationsFullViewPath,
                       isActive: (location) => {
                           const search: string = location.search || '';
-                          return search.includes(`filteredWorkflowView=Full view`);
+                          const encodedValue = encodeURIComponent('Full view');
+                          return search.includes(`filteredWorkflowView=${encodedValue}`);
                       },
                       routeKey: 'violations',
                   },

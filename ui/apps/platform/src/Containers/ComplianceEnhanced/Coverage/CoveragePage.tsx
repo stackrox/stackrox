@@ -41,14 +41,14 @@ function CoverageContent() {
 
     return (
         <Routes>
+            <Route index element={<ProfilesRedirectHandler />} />
+            <Route path="profiles" element={<ProfilesRedirectHandler />} />
             <Route path="profiles/:profileName/checks/:checkName" element={<CheckDetailsPage />} />
             <Route
                 path="profiles/:profileName/clusters/:clusterId"
                 element={<ClusterDetailsPage />}
             />
             <Route path="profiles/:profileName/*" element={<CoveragesPage />} />
-            <Route index element={<ProfilesRedirectHandler />} />
-            <Route path="profiles" element={<ProfilesRedirectHandler />} />
             <Route path="*" element={<ComplianceNotFoundPage />} />
         </Routes>
     );

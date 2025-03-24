@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useCallback } from 'react';
 import { generatePath, Link } from 'react-router-dom';
 import pluralize from 'pluralize';
@@ -31,7 +30,6 @@ import { complianceEnhancedSchedulesPath } from 'routePaths';
 import DeleteModal from 'Components/PatternFly/DeleteModal';
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import PageTitle from 'Components/PageTitle';
-import TabNavSubHeader from 'Components/TabNav/TabNavSubHeader';
 import useAlert from 'hooks/useAlert';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';

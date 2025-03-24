@@ -14,12 +14,6 @@ export type AccessControlQueryObject = {
     type?: 'auth0' | 'odic' | 'saml' | 'userpki' | 'iap';
 };
 
-export type AccessControlContainerProps = {
-    entityId: string;
-    history: History;
-    queryObject: AccessControlQueryObject;
-};
-
 export const entityPathSegment: Record<AccessControlEntityType, string> = {
     AUTH_PROVIDER: 'auth-providers',
     ROLE: 'roles',

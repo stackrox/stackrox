@@ -18,9 +18,9 @@ function NodeCvesPage() {
         <>
             {hasReadAccessForIntegration && <ScannerV4IntegrationBanner />}
             <Routes>
+                <Route index element={<NodeCvesOverviewPage />} />
                 <Route path="cves/:cveId" element={<NodeCvePage />} />
                 <Route path="nodes/:nodeId" element={<NodePage />} />
-                <Route index element={<NodeCvesOverviewPage />} />
                 <Route
                     path="*"
                     element={
