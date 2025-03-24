@@ -37,18 +37,20 @@ func TestUpdate(t *testing.T) {
 	filePath := filepath.Join(t.TempDir(), "dump.zip")
 	u := newUpdater(file.New(filePath), &http.Client{Timeout: 30 * time.Second}, defURL, 1*time.Hour)
 
-	// Should fetch.
-	// The file is more than 150mb and download can fail if the file changes during the download.
-	for attempt := 1; attempt <= 3; attempt++ {
-		if err := u.doUpdate(); err != nil {
-			fmt.Printf("Scanner vulnerability updater for endpoint %q failed: %v", u.downloadURL, err)
-		} else {
-			break
+	// Should fetch on first run and then not fail on an update.
+	for downloads := 0; downloads <= 2; downloads++ {
+		// retry: The file is more than 150mb and the download can fail if the file changes during the download.
+		for attempt := 1; attempt <= 10; attempt++ {
+			if err := u.doUpdate(); err != nil {
+				fmt.Printf("Scanner vulnerability updater for endpoint %q failed attempt %d: %v\n", u.downloadURL, attempt, err)
+			} else {
+				break
+			}
+			time.Sleep(5 * time.Second)
 		}
-		time.Sleep(10 * time.Second)
+		assertOnFileExistence(t, filePath, true)
+		assert.True(t, mustGetModTime(t, filePath).After(nov23.UTC()))
 	}
-	assertOnFileExistence(t, filePath, true)
-	assert.True(t, mustGetModTime(t, filePath).After(nov23.UTC()))
 }
 
 func mustGetModTime(t *testing.T, path string) time.Time {
