@@ -1040,7 +1040,7 @@ func (resolver *imageCVEV2Resolver) DiscoveredAtImage(_ context.Context, _ RawQu
 
 func (resolver *imageCVEV2Resolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "ImageComponents")
-	log.Infof("SHREWS -- image_vule.ImageComponents")
+	log.Infof("SHREWS -- image_vule.ImageComponents -- %v", resolver.flatData)
 	if resolver.flatData != nil {
 		q := *args.Query
 		q = q + "+CVEID:" + strings.Join(resolver.flatData.GetCVEIDs(), ",")

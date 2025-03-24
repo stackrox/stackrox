@@ -169,6 +169,7 @@ func (resolver *Resolver) wrapImageCVEV2sCoreWithContext(ctx context.Context, va
 	}
 	output := make([]*imageCVEV2Resolver, len(values))
 	for i, v := range values {
+		log.Infof("SHREWS -- trying to add flat data %v", coreMap[v.GetCveBaseInfo().GetCve()])
 		output[i] = &imageCVEV2Resolver{ctx: ctx, root: resolver, data: v, flatData: coreMap[v.GetCveBaseInfo().GetCve()]}
 	}
 	return output, nil
