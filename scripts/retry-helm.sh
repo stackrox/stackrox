@@ -16,6 +16,8 @@ error_regex=$(tr '\n' '|' <<EOT | sed -e 's/|$//;'
 EOT
 )
 
+helm_atomic_wait_timeout=10m
+
 tmp_in="$(mktemp)"
 tmp_out="$(mktemp --suffix=-stdout.txt)"
 tmp_err="$(mktemp --suffix=-stderr.txt)"
@@ -37,7 +39,7 @@ inject_atomic_flag() {
             # Some command.
             if [[ $arg == "install" || $arg == "upgrade" ]]; then
                 # Inject atomic flag.
-                modified_args_ref+=("--atomic")
+                modified_args_ref+=("--atomic" "--timeout=${helm_atomic_wait_timeout}")
             fi
             break
         fi
@@ -65,6 +67,7 @@ for attempt in $(seq 0 ${attempts}); do
         break
     fi
     echo "$(date -Ins) Found the following message(s) in helm stderr, retrying..." >&2
+
     cat "${grep_out}" >&2
 done
 exit "${ret}"
