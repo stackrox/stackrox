@@ -15,10 +15,6 @@ import (
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
 
-const (
-	cursorBatchSize = 50
-)
-
 var (
 	schema = frozenSchema.PolicyCategoriesSchema
 )
@@ -53,26 +49,7 @@ func (s *storeImpl) GetAll(ctx context.Context) ([]*storeType, error) {
 // Walk iterates through each policy category
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.PolicyCategory) error) error {
 	var sacQueryFilter *v1.Query
-	fetcher, closer, err := pgSearch.RunCursorQueryForSchema[storage.PolicyCategory](ctx, schema, sacQueryFilter, s.db)
-	if err != nil {
-		return err
-	}
-	defer closer()
-	for {
-		rows, err := fetcher(cursorBatchSize)
-		if err != nil {
-			return pgutils.ErrNilIfNoRows(err)
-		}
-		for _, data := range rows {
-			if err := fn(data); err != nil {
-				return err
-			}
-		}
-		if len(rows) != cursorBatchSize {
-			break
-		}
-	}
-	return nil
+	return pgSearch.RunCursorQueryForSchemaFn(ctx, schema, sacQueryFilter, s.db, fn)
 }
 
 // New returns a new Store instance using the provided sql instance.
