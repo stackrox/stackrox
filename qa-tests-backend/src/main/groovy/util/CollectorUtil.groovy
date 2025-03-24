@@ -46,9 +46,7 @@ class CollectorUtil {
     private static introspectionQuery(String collectorAddress, String endpoint) {
         String uri = "http://${collectorAddress}${endpoint}"
         URL url = new URL(uri)
-        HttpURLConnection connection = null
-
-        connection = (HttpURLConnection) url.openConnection()
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection()
 
         // this might be unneeded?
         connection.setRequestMethod("GET")
