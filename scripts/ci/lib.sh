@@ -482,33 +482,22 @@ poll_for_system_test_images() {
     local start_time
     start_time="$(date '+%s')"
 
-    while true; do
-        local all_exist=true
-        local tag
-        local image
-        while read -r image tag
+    local tag
+    local image
+    while read -r image tag
+    do
+        while ! check_rhacs_eng_image_exists "$image" "$tag"
         do
-            if ! check_rhacs_eng_image_exists "$image" "$tag"; then
-                info "$image does not exist"
-                all_exist=false
-                break
+            info "$image does not exist"
+            if (( $(date '+%s') - start_time > time_limit )); then
+                check_build_workflows "$(get_commit_sha)"
+                die "ERROR: Timed out waiting for images after ${time_limit} seconds"
             fi
-        done < "$image_list"
+            sleep 60
+        done
+    done < "$image_list"
 
-        if $all_exist; then
-            info "All images exist"
-            break
-        fi
-        if (( $(date '+%s') - start_time > time_limit )); then
-            local commit_sha
-            commit_sha="$(get_commit_sha)"
-            check_build_workflows "${commit_sha}"
-            die "ERROR: Timed out waiting for images after ${time_limit} seconds"
-        fi
-
-        sleep 60
-    done
-
+    info "All images exist."
     touch "${STATE_IMAGES_AVAILABLE}"
 }
 
