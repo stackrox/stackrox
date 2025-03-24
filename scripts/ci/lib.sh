@@ -497,6 +497,7 @@ poll_for_system_test_images() {
         done
     done < "$image_list"
 
+    info "All images exist."
     touch "${STATE_IMAGES_AVAILABLE}"
 }
 
