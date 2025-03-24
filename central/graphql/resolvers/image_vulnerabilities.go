@@ -918,7 +918,7 @@ func (resolver *imageCVEV2Resolver) FixedByVersion(ctx context.Context) (string,
 		return "", nil
 	}
 
-	query := search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.data.GetId()).ProtoQuery()
+	query := search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.flatData.GetCVEIDs()...).ProtoQuery()
 	cves, err := resolver.root.ImageCVEV2DataStore.SearchRawImageCVEs(resolver.ctx, query)
 	if err != nil || len(cves) == 0 {
 		return "", err
@@ -1035,6 +1035,17 @@ func (resolver *imageCVEV2Resolver) Deployments(ctx context.Context, args Pagina
 
 func (resolver *imageCVEV2Resolver) DiscoveredAtImage(_ context.Context, _ RawQuery) (*graphql.Time, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "DiscoveredAtImage")
+	// TODO(ROX-28320) figure out if this is correct as it may not be per image
+	// TODO(ROX-28320) make a helper for this
+	if resolver.flatData != nil {
+		ts := resolver.flatData.GetFirstDiscoveredInSystem()
+		if ts == nil {
+			return nil, nil
+		}
+		return &graphql.Time{
+			Time: *ts,
+		}, nil
+	}
 	return protocompat.ConvertTimestampToGraphqlTimeOrError(resolver.data.GetFirstImageOccurrence())
 }
 
@@ -1055,6 +1066,14 @@ func (resolver *imageCVEV2Resolver) ImageComponents(ctx context.Context, args Pa
 
 func (resolver *imageCVEV2Resolver) ImageComponentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "ImageComponentCount")
+	if resolver.flatData != nil {
+		q := *args.Query
+		q = q + "+CVE ID:" + strings.Join(resolver.flatData.GetCVEIDs(), ",")
+		args.Query = pointers.String(q)
+		log.Infof("SHREWS -- about to send query %v", args.String())
+		log.Infof("SHREWS -- what is the context %v", ctx)
+		return resolver.root.ImageComponentCount(ctx, args)
+	}
 	return resolver.root.ImageComponentCount(resolver.imageVulnerabilityScopeContext(ctx), args)
 }
 
