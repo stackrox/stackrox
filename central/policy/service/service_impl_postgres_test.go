@@ -83,10 +83,6 @@ func (s *PolicyServicePostgresSuite) SetupSuite() {
 	s.tested = New(s.policies, s.clusters, nil, nil, notifierDS, s.mitreVectorStore, nil, s.lifecycleManager, nil, nil, s.connectionManager)
 }
 
-func (s *PolicyServicePostgresSuite) TearDownSuite() {
-	s.db.Teardown(s.T())
-}
-
 // TestPostPolicy tests posting and then immediately after putting the same policy, as this discovered a bug in the
 // title casing of policy categories. This caused the policy as code workflow to create a new policy CR with a new policy
 // category name that did not conform to "title" casing to fail (ROX-26676).
