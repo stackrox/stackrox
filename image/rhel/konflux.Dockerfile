@@ -29,8 +29,6 @@ RUN /tmp/.konflux/subscription-manager-bro.sh cleanup
 
 FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.23 AS go-builder
 
-RUN dnf -y install --allowerasing make automake gcc gcc-c++ coreutils binutils diffutils zlib-devel bzip2-devel lz4-devel cmake jq
-
 WORKDIR /go/src/github.com/stackrox/rox/app
 
 COPY . .
