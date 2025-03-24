@@ -71,6 +71,14 @@ central:
     route:
       enabled: null # bool
       host: null # string
+      reencrypt:
+        enabled: false # bool
+        host: null # string
+        tls:
+          caCertificate: null # string
+          certificate: null # string
+          destinationCACertificate: null # string
+          key: null # string
   declarativeConfiguration:
     mounts:
       configMaps: null # [string]

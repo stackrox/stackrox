@@ -74,8 +74,8 @@ defaults:
         enabled: false
         host: null
         reencrypt:
-          host: null
           enabled: false
+          host: null
           tls:
             caCertificate: null
             certificate: null
