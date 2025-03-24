@@ -125,6 +125,7 @@ func (resolver *Resolver) ImageComponents(ctx context.Context, q PaginatedQuery)
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageComponents")
 
 	log.Infof("SHREWS -- ImageComponents -- %v", q.String())
+	log.Infof("SHREWS -- ImageComponents -- %v", ctx)
 	// check permissions
 	if err := readImages(ctx); err != nil {
 		return nil, err
@@ -145,7 +146,7 @@ func (resolver *Resolver) ImageComponents(ctx context.Context, q PaginatedQuery)
 
 		// get values
 		comps, err := loader.FromQuery(ctx, query)
-		log.Infof("SHREWS -- ImageComponents -- %v", comps)
+		log.Infof("SHREWS -- ImageComponents -- %v", len(comps))
 		componentResolvers, err := resolver.wrapImageComponentV2sWithContext(ctx, comps, err)
 		if err != nil {
 			return nil, err
