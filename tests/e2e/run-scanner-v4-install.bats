@@ -218,7 +218,33 @@ EOT
         export HEAD_HELM_CHART_CENTRAL_SERVICES_DIR
     fi
 
+   if [[ -z "${HEAD_HELM_CHART_SECURED_CLUSTER_SERVICES_DIR:-}" ]]; then
+        HEAD_HELM_CHART_SECURED_CLUSTER_SERVICES_DIR=$(mktemp -d)
+        echo "Rendering fresh secured-cluster-services Helm chart and writing to ${HEAD_HELM_CHART_SECURED_CLUSTER_SERVICES_DIR}..."
+        roxctl helm output secured-cluster-services \
+            --debug --debug-path="${ROOT}/image" \
+            --output-dir="${HEAD_HELM_CHART_SECURED_CLUSTER_SERVICES_DIR}" --remove
+        export HEAD_HELM_CHART_SECURED_CLUSTER_SERVICES_DIR
+    fi
+
+    # For installation testing we don't need to deploy collector per-node, it is sufficient to deploy
+    # collector on a single node.
+    local _worker; _worker=$(select_worker_node)
+
+    echo "Patching node ${_worker} to include label run-collector=true"
+    "${ORCH_CMD}" </dev/null label node "$_worker" run-collector=true
+    echo "collector will only be scheduled on node ${_worker}"
+
     _end
+}
+
+select_worker_node() {
+    local select_filter="true"
+    if [[ "$ORCHESTRATOR_FLAVOR" == "openshift" ]]; then
+        select_filter=".metadata.labels[\"node-role.kubernetes.io/worker\"] != null"
+    fi
+
+    "${ORCH_CMD}" </dev/null get nodes -o json | jq -r ".items | map(select(${select_filter})) | .[0].metadata.name"
 }
 
 teardown_file() {
@@ -1197,6 +1223,141 @@ EOT
     setup_client_TLS_certs ""
     echo "Recording build info..."
     record_build_info "${central_namespace}"
+}
+
+# shellcheck disable=SC2120
+# deploy_sensor_with_helm "<central namespace>" "<sensor namespace>"
+#   "<main image tag>" "<helm chart dir overwrite>"
+#   "<cluster name>" "<central admin password>" "<central endpoint>" [ additional args for helm ... ]
+deploy_sensor_with_helm() {
+    echo "Deploying secured-cluster-services via Helm..."
+    local central_namespace="$1"; shift
+    local sensor_namespace="$1"; shift
+    local main_image_tag="${1:-$MAIN_IMAGE_TAG}"; shift
+    local helm_chart_dir="$HEAD_HELM_CHART_SECURED_CLUSTER_SERVICES_DIR"
+    local use_default_chart="true"
+    if [[ -n "$1" ]]; then
+        # overwrite Helm chart path.
+        helm_chart_dir="$1"
+        use_default_chart="false"
+    fi; shift
+    local cluster_name="$1"; shift
+    local central_password="$1"; shift
+    local central_endpoint="$1"; shift
+    local base_helm_values=""
+    local image_overwrites=""
+    local upgrade="false"
+
+    if [[ "$use_default_chart" == "true" ]]; then
+        image_overwrites=$(cat <<EOT
+image:
+  main:
+    tag: "$main_image_tag"
+  scannerV4:
+    tag: "$main_image_tag"
+  scannerV4DB:
+    tag: "$main_image_tag"
+EOT
+        )
+    fi
+
+    command=("install")
+    if helm list -n "$sensor_namespace" -o json | jq -e '.[] | select(.name == "stackrox-secured-cluster-services")' > /dev/null 2>&1; then
+        command=("upgrade" "--install" "--reuse-values")
+        upgrade="true"
+    else
+        # Later this will be replaced by CRS.
+        echo "Retrieving init-bundle from Central..."
+        init_bundle="$("${ORCH_CMD}" </dev/null -n "$central_namespace" exec deploy/central -- roxctl \
+            --insecure-skip-tls-verify \
+            -p "$central_password" \
+            -e "central.${central_namespace}.svc:443" \
+            central init-bundles generate "$cluster_name" --output=-)"
+
+        if [[ "${CI:-}" != "true" ]]; then
+            info "Creating image pull secrets..."
+            "${ORCH_CMD}" </dev/null create namespace "$sensor_namespace" || true
+            "${ROOT}/deploy/common/pull-secret.sh" stackrox quay.io | "${ORCH_CMD}" -n "$sensor_namespace" apply -f -
+            "${ROOT}/deploy/common/pull-secret.sh" collector-stackrox quay.io | "${ORCH_CMD}" -n "$sensor_namespace" apply -f -
+        fi
+        base_helm_values=$(cat <<EOT
+clusterName: "$cluster_name"
+centralEndpoint: "$central_endpoint"
+
+scanner:
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "500Mi"
+    limits:
+      cpu: "2000m"
+      memory: "2500Mi"
+  dbResources:
+    requests:
+      cpu: "400m"
+      memory: "512Mi"
+    limits:
+      cpu: "2000m"
+      memory: "4Gi"
+  replicas: 1
+  autoscaling:
+    disable: true
+
+scannerV4:
+  indexer:
+    replicas: 1
+    autoscaling:
+      disable: true
+  matcher:
+    replicas: 1
+    autoscaling:
+      disable: true
+  db:
+    persistence:
+      none: true
+
+admissionControl:
+  replicas: 1
+
+collector:
+  nodeSelector:
+    run-collector: "true"
+
+allowNonstandardNamespace: true
+EOT
+        )
+    fi
+
+    echo "Deploying stackrox-secured-cluster-services Helm chart "${helm_chart_dir}" into namespace ${sensor_namespace} with the following settings:"
+    if [[ -n "$base_helm_values" ]]; then
+        echo "base Helm values:"
+        echo "$base_helm_values" | sed -e 's/^/  |/;'
+    fi
+    if [[ -n "$image_overwrites" ]]; then
+        echo "image overwrites:"
+        echo "$image_overwrites" | sed -e 's/^/  |/;'
+    fi
+    echo "additional arguments:"
+    echo "  | $*"
+
+    helm -n "${sensor_namespace}" "${command[@]}" \
+        -f <(echo "$image_overwrites") \
+        -f <(echo "$base_helm_values") \
+        -f <(echo "$init_bundle") \
+        "$@" \
+        stackrox-secured-cluster-services "${helm_chart_dir}"
+
+    if [[ "$upgrade" == "true" ]]; then
+        # For some reason collector pods don't like to terminate smoothly.
+        echo "Restarting collector pods..."
+        kubectl -n "${sensor_namespace}" delete pod -l app=collector --force --grace-period=0
+        echo "Restarting admission-control pods..."
+        kubectl -n "${sensor_namespace}" delete pod -l app=admission-control --force --grace-period=0
+    fi
+
+    echo "Sensor deployed. Waiting for sensor to be up"
+    sensor_wait "${sensor_namespace}"
+    wait_for_collectors_to_be_operational "${sensor_namespace}"
 }
 
 patch_down_central() {
