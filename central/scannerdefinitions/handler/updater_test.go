@@ -39,7 +39,7 @@ func TestUpdate(t *testing.T) {
 
 	// Should fetch.
 	// The file is more than 150mb and download can fail if the file changes during the download.
-	for attempt = 1; attempt <= 3; attempt++ {
+	for attempt := 1; attempt <= 3; attempt++ {
 		if err := u.doUpdate(); err != nil {
 			fmt.Printf("Scanner vulnerability updater for endpoint %q failed: %v", u.downloadURL, err)
 		} else {
