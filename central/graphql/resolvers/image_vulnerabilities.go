@@ -1043,7 +1043,7 @@ func (resolver *imageCVEV2Resolver) ImageComponents(ctx context.Context, args Pa
 	log.Infof("SHREWS -- image_vule.ImageComponents -- %v", resolver.flatData)
 	if resolver.flatData != nil {
 		q := *args.Query
-		q = q + "+CVEID:" + strings.Join(resolver.flatData.GetCVEIDs(), ",")
+		q = q + "+CVE ID:" + strings.Join(resolver.flatData.GetCVEIDs(), ",")
 		args.Query = pointers.String(q)
 		log.Infof("SHREWS -- about to send query %v", args.String())
 		log.Infof("SHREWS -- what is the context %v", ctx)

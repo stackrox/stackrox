@@ -136,6 +136,8 @@ func (resolver *Resolver) ImageComponents(ctx context.Context, q PaginatedQuery)
 	if err != nil {
 		return nil, err
 	}
+	log.Infof("SHREWS -- ImageComponents -- %v", query.String())
+	log.Infof("SHREWS -- ImageComponents -- %v", query)
 
 	if features.FlattenCVEData.Enabled() {
 		// get loader
