@@ -71,10 +71,16 @@ spec:
       {{- .caCertificate | nindent 6 }}
     {{- end }}
     {{- if .certificate }}
+    {{- if empty .key }}
+      {{ include "srox.fail" "A private key must be specified when creating a reencrypt route with a certificate." }}
+    {{- end }}
     certificate: |
       {{- .certificate | nindent 6 }}
     {{- end }}
     {{- if .key }}
+    {{- if empty .certificate }}
+      {{ include "srox.fail" "A certificate must be specified when creating a reencrypt route with a private key." }}
+    {{- end }}
     key: |
       {{- .key | nindent 6 }}
     {{- end }}
