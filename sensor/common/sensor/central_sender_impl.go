@@ -62,6 +62,9 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 	wrappedStream = metrics.NewCountingEventStream(wrappedStream, "unique")
 	wrappedStream = metrics.NewTimingEventStream(wrappedStream, "unique")
 	wrappedStream = deduper.NewDedupingMessageStream(wrappedStream, s.initialDeduperState, sendUnchangedIDs)
+	if true {
+		wrappedStream = NewDebuggingMessageStream(wrappedStream)
+	}
 	wrappedStream = metrics.NewCountingEventStream(wrappedStream, "total")
 	wrappedStream = metrics.NewTimingEventStream(wrappedStream, "total")
 
