@@ -22,7 +22,11 @@ func FormatHelp(c *cobra.Command, _ []string) {
 	w := makeHelpWriter(
 		makeFormattingWriter(&cobraWriter{c}, termWidth, defaultTabWidth))
 	if len(c.Short) > 0 {
-		w.WriteLn(c.Short)
+		if strings.HasSuffix(c.Short, ".") {
+			w.WriteLn(c.Short)
+		} else {
+			w.WriteLn(c.Short, ".")
+		}
 	}
 	if len(c.Long) > 0 {
 		w.EmptyLineSeparator()
