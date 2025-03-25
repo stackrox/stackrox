@@ -68,19 +68,19 @@ func checkUsageStyle(t *testing.T, command *cobra.Command) {
 	assert.NoErrorf(t, runChecks(command.Short, shortChecks),
 		"%q, short usage: %q", getCommandPath(command), command.Short)
 
+	var err error
 	switch {
 	case command.Use == "doc [man|md|yaml|rest]":
 		// This command long description ends with a list, hence exception.
-		assert.NoErrorf(t, runChecks(command.Long, isCapitalizedCheck),
-			"%q, long usage: %q", getCommandPath(command), command.Long)
+		err = runChecks(command.Long, isCapitalizedCheck)
 	case strings.HasPrefix(command.Long, "roxctl "):
-		assert.NoErrorf(t, runChecks(command.Long, map[string]func(string) bool{
-			"must have trailing period": func(s string) bool { return !hasNoTrailingPeriod(s) }}),
-			"%q, long usage: %q", getCommandPath(command), command.Long)
+		// roxctl is not capitalized.
+		err = runChecks(command.Long, map[string]func(string) bool{
+			"must have trailing period": func(s string) bool { return !hasNoTrailingPeriod(s) }})
 	default:
-		assert.NoErrorf(t, runChecks(command.Long, longChecks),
-			"%q, long usage: %q", getCommandPath(command), command.Long)
+		err = runChecks(command.Long, longChecks)
 	}
+	assert.NoErrorf(t, err, "%q, long usage: %q", getCommandPath(command), command.Long)
 
 	for _, subcommand := range command.Commands() {
 		t.Run(getCommandPath(subcommand), func(t *testing.T) {
