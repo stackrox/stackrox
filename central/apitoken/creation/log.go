@@ -18,7 +18,7 @@ func LogTokenCreation(id authn.Identity, md *storage.TokenMetadata) {
 	}
 
 	fields := []any{
-		logging.ErrCode(codes.TokenCreated),
+		logging.ErrCode(codes.APITokenCreated),
 		logging.APITokenName(md.Name),
 		logging.APITokenID(md.Id),
 		logging.Strings("roles", md.Roles),

@@ -5,8 +5,8 @@ package codes
 // specific hints for the related administration events.
 const (
 	// API Token codes.
-	TokenCreated = "token-created"
-	TokenExpired = "token-expired"
+	APITokenCreated = "api-token-created"
+	APITokenExpired = "api-token-expired"
 
 	// Backup codes.
 	GCSGeneric          = "gcs-generic"

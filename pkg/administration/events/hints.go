@@ -17,8 +17,8 @@ var (
 	hints = map[string]map[string]map[string]string{
 		AuthenticationDomain: {
 			adminResources.APIToken: {
-				codes.TokenCreated: `An API token has been created.`,
-				codes.TokenExpired: `An API token is about to expire. See the details on the expiration time within the event message.
+				codes.APITokenCreated: `An API token has been created.`,
+				codes.APITokenExpired: `An API token is about to expire. See the details on the expiration time within the event message.
 You cannot re-create the token. Instead, perform these steps:
 - Delete the expiring API token.
 - Create a new API token (you can choose the same name).
