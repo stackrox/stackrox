@@ -29,6 +29,8 @@ RUN /tmp/.konflux/subscription-manager-bro.sh cleanup
 
 FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.23 AS go-builder
 
+RUN dnf -y install --allowerasing jq
+
 WORKDIR /go/src/github.com/stackrox/rox/app
 
 COPY . .
@@ -46,8 +48,9 @@ ENV GOEXPERIMENT=strictfipsruntime
 ENV CI=1
 
 RUN # TODO(ROX-13200): make sure roxctl cli is built without running go mod tidy. \
-    make main-build-nodeps cli-build && \
-    mkdir -p image/rhel/docs/api/v1 && \
+    make main-build-nodeps cli-build
+
+RUN mkdir -p image/rhel/docs/api/v1 && \
     ./scripts/mergeswag.sh 1 generated/api/v1 central/docs/api_custom_routes >image/rhel/docs/api/v1/swagger.json && \
     mkdir -p image/rhel/docs/api/v2 && \
     ./scripts/mergeswag.sh 2 generated/api/v2 >image/rhel/docs/api/v2/swagger.json
