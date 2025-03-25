@@ -10,6 +10,16 @@ import (
 	"golang.org/x/term"
 )
 
+// cobraWriter implements StringWriter using cobra.command.Print functions.
+type cobraWriter cobra.Command
+
+var _ io.StringWriter = (*cobraWriter)(nil)
+
+func (cw *cobraWriter) WriteString(s string) (int, error) {
+	(*cobra.Command)(cw).Print(s)
+	return len(s), nil
+}
+
 // FormatHelp formats command help.
 // FTR, kubectl uses a similar, but even more sophisticated custom formatter:
 // https://github.com/kubernetes/kubectl/blob/master/pkg/util/templates/templater.go
@@ -20,7 +30,7 @@ func FormatHelp(c *cobra.Command, _ []string) {
 		termWidth = 80
 	}
 	w := makeHelpWriter(
-		makeFormattingWriter(&cobraWriter{c}, termWidth, defaultTabWidth))
+		makeFormattingWriter((*cobraWriter)(c), termWidth, defaultTabWidth))
 	if len(c.Short) > 0 {
 		w.WriteLn(c.Short)
 	}
