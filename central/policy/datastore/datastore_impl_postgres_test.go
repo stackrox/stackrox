@@ -376,5 +376,5 @@ func (s *PolicyPostgresDataStoreTestSuite) TestTransactionRollbacks() {
 	s.Equal(1, count)
 
 	// Clean up policy
-	_ = s.datastoreWithMockCategoryDS.RemovePolicy(ctx, policy.GetId())
+	_ = s.datastoreWithMockCategoryDS.RemovePolicy(ctx, policy)
 }
