@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/policy/search"
 	policyStore "github.com/stackrox/rox/central/policy/store"
 	categoriesDS "github.com/stackrox/rox/central/policycategory/datastore"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/defaults/policies"
 	"github.com/stackrox/rox/pkg/policyutils"
 	"github.com/stackrox/rox/pkg/sac"
@@ -46,13 +47,12 @@ func Singleton() DataStore {
 // from the policies table in postgres
 func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore) {
 	policyIDSet := set.NewStringSet()
-	storedPolicies, err := s.GetAll(workflowAdministrationCtx)
+	err := s.Walk(workflowAdministrationCtx, func(p *storage.Policy) error {
+		policyIDSet.Add(p.GetId())
+		return nil
+	})
 	if err != nil {
 		panic(err)
-	}
-
-	for _, p := range storedPolicies {
-		policyIDSet.Add(p.GetId())
 	}
 
 	// Preload the default policies.
