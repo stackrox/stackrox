@@ -646,14 +646,16 @@ func (resolver *imageComponentV2Resolver) ImageVulnerabilityCounter(ctx context.
 
 func (resolver *imageComponentV2Resolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "ImageVulnerabilities")
-	log.Infof("SHREWS -- components.ImageVulnerabilities -- ")
+	log.Infof("SHREWS -- components.ImageVulnerabilities -- %v", args.String())
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}
 
 	// Short path. Full image is embedded when image scan resolver is called.
 	embeddedComponent := embeddedobjs.ComponentFromContext(resolver.ctx)
+	log.Infof("SHREWS -- components.ImageVulnerabilities -- %v", embeddedComponent)
 	if embeddedComponent == nil {
+		log.Infof("SHREWS -- components.ImageVulnerabilities back to Vulns-- %v", resolver.data.GetId())
 		return resolver.root.ImageVulnerabilities(resolver.imageComponentScopeContext(ctx), args)
 	}
 
