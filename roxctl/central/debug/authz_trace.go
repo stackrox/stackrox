@@ -28,7 +28,7 @@ const (
 func authzTraceCommand(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "authz-trace",
-		Short: "Stream built-in authorizer traces for all incoming requests.",
+		Short: "Stream built-in authorizer traces for all incoming requests",
 		Long: `Stream built-in authorizer traces for all incoming requests.
 The command blocks for the given number of minutes and collects the authorization trace log for all incoming API requests to the Central service.`,
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {

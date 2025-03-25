@@ -201,54 +201,54 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	generateCmd := &sensorGenerateCommand{env: cliEnvironment, cluster: defaultCluster()}
 	c := &cobra.Command{
 		Use:   "generate",
-		Short: "Commands that generate files to deploy StackRox services into secured clusters.",
+		Short: "Commands that generate files to deploy StackRox services into secured clusters",
 		PersistentPreRunE: func(c *cobra.Command, _ []string) error {
 			return generateCmd.Construct(c)
 		},
 	}
 
-	c.PersistentFlags().StringVar(&generateCmd.outputDir, "output-dir", "", "Output directory for bundle contents (default: auto-generated directory name inside the current directory)")
-	c.PersistentFlags().BoolVar(&generateCmd.continueIfExists, "continue-if-exists", false, "Continue with downloading the sensor bundle even if the cluster already exists")
-	c.PersistentFlags().StringVar(&generateCmd.cluster.Name, "name", "", "Cluster name to identify the cluster")
-	c.PersistentFlags().StringVar(&generateCmd.cluster.CentralApiEndpoint, "central", "central.stackrox:443", "Endpoint that sensor should connect to")
-	c.PersistentFlags().StringVar(&generateCmd.cluster.MainImage, mainImageRepository, "", "Image repository sensor should be deployed with (if unset, a default will be used)")
-	c.PersistentFlags().StringVar(&generateCmd.cluster.CollectorImage, "collector-image-repository", "", "Image repository collector should be deployed with (if unset, a default will be derived according to the effective --"+mainImageRepository+" value)")
+	c.PersistentFlags().StringVar(&generateCmd.outputDir, "output-dir", "", "Output directory for bundle contents (default: auto-generated directory name inside the current directory).")
+	c.PersistentFlags().BoolVar(&generateCmd.continueIfExists, "continue-if-exists", false, "Continue with downloading the sensor bundle even if the cluster already exists.")
+	c.PersistentFlags().StringVar(&generateCmd.cluster.Name, "name", "", "Cluster name to identify the cluster.")
+	c.PersistentFlags().StringVar(&generateCmd.cluster.CentralApiEndpoint, "central", "central.stackrox:443", "Endpoint that sensor should connect to.")
+	c.PersistentFlags().StringVar(&generateCmd.cluster.MainImage, mainImageRepository, "", "Image repository sensor should be deployed with (if unset, a default will be used).")
+	c.PersistentFlags().StringVar(&generateCmd.cluster.CollectorImage, "collector-image-repository", "", "Image repository collector should be deployed with (if unset, a default will be derived according to the effective --"+mainImageRepository+" value).")
 
-	c.PersistentFlags().Var(&collectionTypeWrapper{CollectionMethod: &generateCmd.cluster.CollectionMethod}, "collection-method", "Which collection method to use for runtime support (none, default, core_bpf)")
+	c.PersistentFlags().Var(&collectionTypeWrapper{CollectionMethod: &generateCmd.cluster.CollectionMethod}, "collection-method", "Which collection method to use for runtime support (none, default, core_bpf).")
 
-	c.PersistentFlags().BoolVar(&generateCmd.createUpgraderSA, "create-upgrader-sa", true, "Whether to create the upgrader service account, with cluster-admin privileges, to facilitate automated sensor upgrades")
+	c.PersistentFlags().BoolVar(&generateCmd.createUpgraderSA, "create-upgrader-sa", true, "Whether to create the upgrader service account, with cluster-admin privileges, to facilitate automated sensor upgrades.")
 
 	c.PersistentFlags().StringVar(&generateCmd.istioVersion, "istio-support", "",
 		fmt.Sprintf(
-			"Generate deployment files supporting the given Istio version. Valid versions: %s",
+			"Generate deployment files supporting the given Istio version. Valid versions: %s.",
 			strings.Join(istioutils.ListKnownIstioVersions(), ", ")))
 
-	c.PersistentFlags().BoolVar(&generateCmd.cluster.GetTolerationsConfig().Disabled, "disable-tolerations", false, "Disable tolerations for tainted nodes")
+	c.PersistentFlags().BoolVar(&generateCmd.cluster.GetTolerationsConfig().Disabled, "disable-tolerations", false, "Disable tolerations for tainted nodes.")
 
 	autobool.NewFlag(c.PersistentFlags(), &generateCmd.slimCollectorP, slimCollector, "Use slim collector in deployment bundle.")
 	utils.Must(c.PersistentFlags().MarkDeprecated(slimCollector, warningSlimCollectorModeSet))
 
-	c.PersistentFlags().BoolVar(&generateCmd.cluster.AdmissionController, "create-admission-controller", false, "Whether or not to use an admission controller for enforcement (WARNING: deprecated; admission controller will be deployed by default")
+	c.PersistentFlags().BoolVar(&generateCmd.cluster.AdmissionController, "create-admission-controller", false, "Whether or not to use an admission controller for enforcement (WARNING: deprecated; admission controller will be deployed by default.")
 	utils.Must(c.PersistentFlags().MarkHidden("create-admission-controller"))
 
-	c.PersistentFlags().BoolVar(&generateCmd.cluster.AdmissionController, "admission-controller-listen-on-creates", false, "Whether or not to configure the admission controller webhook to listen on deployment creates")
-	c.PersistentFlags().BoolVar(&generateCmd.cluster.AdmissionControllerUpdates, "admission-controller-listen-on-updates", false, "Whether or not to configure the admission controller webhook to listen on deployment updates")
-	c.PersistentFlags().BoolVar(&generateCmd.enablePodSecurityPolicies, "enable-pod-security-policies", false, "Create PodSecurityPolicy resources (for pre-v1.25 Kubernetes)")
+	c.PersistentFlags().BoolVar(&generateCmd.cluster.AdmissionController, "admission-controller-listen-on-creates", false, "Whether or not to configure the admission controller webhook to listen on deployment creates.")
+	c.PersistentFlags().BoolVar(&generateCmd.cluster.AdmissionControllerUpdates, "admission-controller-listen-on-updates", false, "Whether or not to configure the admission controller webhook to listen on deployment updates.")
+	c.PersistentFlags().BoolVar(&generateCmd.enablePodSecurityPolicies, "enable-pod-security-policies", false, "Create PodSecurityPolicy resources (for pre-v1.25 Kubernetes).")
 
 	// Admission controller config
 	ac := generateCmd.cluster.DynamicConfig.AdmissionControllerConfig
-	c.PersistentFlags().BoolVar(&ac.Enabled, "admission-controller-enabled", false, "Dynamic enable for the admission controller (WARNING: deprecated; use --admission-controller-enforce-on-creates instead")
+	c.PersistentFlags().BoolVar(&ac.Enabled, "admission-controller-enabled", false, "Dynamic enable for the admission controller (WARNING: deprecated; use --admission-controller-enforce-on-creates instead.")
 	utils.Must(c.PersistentFlags().MarkHidden("admission-controller-enabled"))
 
 	// TODO(ROX-24956): As part of ROX-21288 this default timeout should be adjusted as well. On the other hand it is questionable to have this default timeout set
 	// in multiple places (the Helm chart defaults, on central side, within roxctl). It might be a better approach to have roxctl not propagate a default
 	// timeout to central, allowing central to inject a default timeout. This could, in principle, be achieved by having a default timeout of 0 here. But, due to
 	// the bug described in ROX-24956, this is currently not testable. Hence, we should pick this up again when that ticket has been taken care of.
-	c.PersistentFlags().Int32Var(&ac.TimeoutSeconds, "admission-controller-timeout", 3, "Timeout in seconds for the admission controller")
-	c.PersistentFlags().BoolVar(&ac.ScanInline, "admission-controller-scan-inline", false, "Get scans inline when using the admission controller")
-	c.PersistentFlags().BoolVar(&ac.DisableBypass, "admission-controller-disable-bypass", false, "Disable the bypass annotations for the admission controller")
-	c.PersistentFlags().BoolVar(&ac.Enabled, "admission-controller-enforce-on-creates", false, "Dynamic enable for enforcing on object creates in the admission controller")
-	c.PersistentFlags().BoolVar(&ac.EnforceOnUpdates, "admission-controller-enforce-on-updates", false, "Dynamic enable for enforcing on object updates in the admission controller")
+	c.PersistentFlags().Int32Var(&ac.TimeoutSeconds, "admission-controller-timeout", 3, "Timeout in seconds for the admission controller.")
+	c.PersistentFlags().BoolVar(&ac.ScanInline, "admission-controller-scan-inline", false, "Get scans inline when using the admission controller.")
+	c.PersistentFlags().BoolVar(&ac.DisableBypass, "admission-controller-disable-bypass", false, "Disable the bypass annotations for the admission controller.")
+	c.PersistentFlags().BoolVar(&ac.Enabled, "admission-controller-enforce-on-creates", false, "Dynamic enable for enforcing on object creates in the admission controller.")
+	c.PersistentFlags().BoolVar(&ac.EnforceOnUpdates, "admission-controller-enforce-on-updates", false, "Dynamic enable for enforcing on object updates in the admission controller.")
 
 	flags.AddTimeoutWithDefault(c, 5*time.Minute)
 

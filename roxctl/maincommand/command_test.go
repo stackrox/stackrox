@@ -1,6 +1,7 @@
 package maincommand
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -19,6 +20,37 @@ func isCapitalized(s string) bool {
 	return first == strings.ToUpper(first)
 }
 
+func hasNoTrailingPeriod(s string) bool {
+	return !strings.HasSuffix(s, ".") && !strings.HasSuffix(s, "!")
+}
+
+var shortChecks = map[string]func(string) bool{
+	"must be capitalized":           isCapitalized,
+	"must not have trailing period": hasNoTrailingPeriod,
+}
+
+var longChecks = map[string]func(string) bool{
+	"must be capitalized":       isCapitalized,
+	"must have trailing period": func(s string) bool { return s == "" || !hasNoTrailingPeriod(s) },
+}
+
+var isCapitalizedCheck = map[string]func(string) bool{
+	"must be capitalized": isCapitalized,
+}
+
+func runChecks(message string, checks map[string]func(string) bool) error {
+	errors := []string{}
+	for test, check := range checks {
+		if !check(message) {
+			errors = append(errors, test)
+		}
+	}
+	if len(errors) > 0 {
+		return fmt.Errorf("%v", errors)
+	}
+	return nil
+}
+
 func getCommandPath(command *cobra.Command) string {
 	// Assume the binary has no spaces in the filepath.
 	if path := strings.SplitN(command.CommandPath(), " ", 2); len(path) > 1 {
@@ -27,27 +59,38 @@ func getCommandPath(command *cobra.Command) string {
 	return "roxctl"
 }
 
-func checkUsageFirstCharacter(t *testing.T, command *cobra.Command) {
+func checkUsageStyle(t *testing.T, command *cobra.Command) {
 	command.LocalFlags().VisitAll(func(flag *pflag.Flag) {
-		if !isCapitalized(flag.Usage) {
-			t.Errorf(`"%s --%s" flag usage: %q`, getCommandPath(command), flag.Name, flag.Usage)
-		}
+		assert.NoErrorf(t, runChecks(flag.Usage, longChecks),
+			`"%s --%s" flag usage: %q`, getCommandPath(command), flag.Name, flag.Usage)
+
 	})
-	if !isCapitalized(command.Short) {
-		t.Errorf("%q, short usage: %q", getCommandPath(command), command.Short)
+	assert.NoErrorf(t, runChecks(command.Short, shortChecks),
+		"%q, short usage: %q", getCommandPath(command), command.Short)
+
+	var err error
+	switch {
+	case command.Use == "doc [man|md|yaml|rest]":
+		// This command long description ends with a list, hence exception.
+		err = runChecks(command.Long, isCapitalizedCheck)
+	case strings.HasPrefix(command.Long, "roxctl "):
+		// roxctl is not capitalized.
+		err = runChecks(command.Long, map[string]func(string) bool{
+			"must have trailing period": func(s string) bool { return !hasNoTrailingPeriod(s) }})
+	default:
+		err = runChecks(command.Long, longChecks)
 	}
-	if !isCapitalized(command.Long) && !strings.HasPrefix(command.Long, "roxctl ") {
-		t.Errorf("%q, long usage: %q", getCommandPath(command), command.Long)
-	}
+	assert.NoErrorf(t, err, "%q, long usage: %q", getCommandPath(command), command.Long)
+
 	for _, subcommand := range command.Commands() {
 		t.Run(getCommandPath(subcommand), func(t *testing.T) {
-			checkUsageFirstCharacter(t, subcommand)
+			checkUsageStyle(t, subcommand)
 		})
 	}
 }
 
 func Test_Commands(t *testing.T) {
-	checkUsageFirstCharacter(t, Command())
+	checkUsageStyle(t, Command())
 }
 
 type cmdNode struct {
