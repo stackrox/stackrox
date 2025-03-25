@@ -27,9 +27,7 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 
 	totalPublicKeys, totalCertificates := 0, 0
 	for _, i := range integrations {
-		if cosign := i.GetCosign(); cosign != nil {
-			totalPublicKeys += len(cosign.GetPublicKeys())
-		}
+		totalPublicKeys += len(i.GetCosign().GetPublicKeys())
 		totalCertificates += len(i.GetCosignCertificates())
 	}
 
