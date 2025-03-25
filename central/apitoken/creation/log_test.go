@@ -58,4 +58,12 @@ func Test_loggingMessage(t *testing.T) {
 		`{"err_code": "token-created", "api_token_name": "test", "api_token_id": "token-id", `+
 		`"roles": ["Admin", "Test"], "user_id": "sso:0000-0000:admin"}`+"\n",
 		w.String())
+
+	w.Reset()
+	mockIdentity.EXPECT().UID().Times(1).Return("sso:0000-0000:admin")
+	mockIdentity.EXPECT().ExternalAuthProvider().Times(1).Return(nil)
+	LogTokenCreation(mockIdentity, nil)
+	assert.Equal(t, `An API token has been created	`+
+		`{"err_code": "token-created", "user_id": "sso:0000-0000:admin"}`+"\n",
+		w.String())
 }

@@ -13,6 +13,10 @@ import (
 var logger interface{ Warnw(string, ...any) } = logging.LoggerForModule(events.EnableAdministrationEvents())
 
 func LogTokenCreation(id authn.Identity, md *storage.TokenMetadata) {
+	if md == nil {
+		md = &storage.TokenMetadata{}
+	}
+
 	fields := []any{
 		logging.ErrCode(codes.TokenCreated),
 		logging.APITokenName(md.Name),
