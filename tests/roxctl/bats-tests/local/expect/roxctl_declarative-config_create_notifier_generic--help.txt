@@ -1,7 +1,7 @@
 Create a declarative configuration for a generic notifier
 
 Usage:
-  bin/linux_amd64/roxctl declarative-config create notifier generic [flags]
+  tmp/roxctl-bats/bin/roxctl-release declarative-config create notifier generic [flags]
 
 Flags:
       --audit-logging                 Audit logging enabled.
