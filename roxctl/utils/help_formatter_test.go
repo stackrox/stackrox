@@ -76,7 +76,7 @@ func TestFormatHelp(t *testing.T) {
 
 		FormatHelp(c, nil)
 		assert.Equal(t, `
-short description
+short description.
 
 long description
 multiline
@@ -128,7 +128,7 @@ Usage:
 
 		FormatHelp(subcommand, nil)
 		assert.Equal(t, `
-short sub test description
+short sub test description.
 
 long sub test description
 multiline
@@ -160,7 +160,7 @@ Usage:
 
 		FormatHelp(deprecatedCommand, nil)
 		assert.Equal(t, `
-short depreacted command test description
+short depreacted command test description.
 
 long depreacted command test description
 
