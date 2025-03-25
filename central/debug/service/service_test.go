@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -318,7 +317,7 @@ func (s *debugServiceTestSuite) TestGetLogsWhenThereAreNoLogs() {
 
 func (s *debugServiceTestSuite) TestGetLogsWhenThereAreWriteErrors() {
 	logStore := logMocks.NewMockStore(s.mockCtrl)
-	logStore.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(fmt.Errorf("some error"))
+	logStore.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(errors.New("some error"))
 	s.service.store = logStore
 
 	buf := &bytes.Buffer{}
