@@ -196,6 +196,7 @@
         "connected-react-router": {
             "react": "^18.0.0"
         },
+        "eslint": "^8.56.0",
         "eslint-plugin-jest": "^28.8.3",
         "eslint-plugin-jest-dom": {
             "@testing-library/dom": "^10.1.0"
