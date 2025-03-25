@@ -22,7 +22,6 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	groupDS "github.com/stackrox/rox/central/group/datastore"
 	"github.com/stackrox/rox/central/logimbue/store"
-	"github.com/stackrox/rox/central/logimbue/writer"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	roleDS "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -41,6 +40,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/k8sintrospect"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
@@ -481,11 +481,6 @@ func getCentralDBData(ctx context.Context, zipWriter *zipWriter) error {
 }
 
 func (s *serviceImpl) getLogImbue(ctx context.Context, zipWriter *zipWriter) error {
-	logs, err := s.store.GetAll(ctx)
-	if err != nil {
-		return err
-	}
-
 	zipWriter.LockWrite()
 	defer zipWriter.UnlockWrite()
 	w, err := zipWriter.writerWithCurrentTimestampNoLock("logimbue-data.json")
@@ -493,7 +488,36 @@ func (s *serviceImpl) getLogImbue(ctx context.Context, zipWriter *zipWriter) err
 		return err
 	}
 
-	return writer.WriteLogs(w, logs)
+	// WriteLogs takes the LogImbue logs from the Store and writes them to Writer.
+	// Each log will be a JSON object. For convenience, we wrap it in "[]" so that
+	// it is readable as a JSON array.
+	jsonWriter := jsonutil.NewJSONArrayWriter(w)
+	err = jsonWriter.Init()
+	if err != nil {
+		return err
+	}
+
+	err = s.store.Walk(ctx, func(log *storage.LogImbue) error {
+		return jsonWriter.WriteObject(safeRawMessage(log.Log))
+	})
+	if err != nil {
+		return errors.Wrap(err, "writing logs to zip")
+	}
+	return jsonWriter.Finish()
+}
+
+type safeRawMessage []byte
+
+// MarshalJSON returns m as the JSON encoding of m.
+func (m safeRawMessage) MarshalJSON() ([]byte, error) {
+	if m == nil {
+		return []byte("null"), nil
+	}
+	msg, err := json.Marshal(json.RawMessage(m))
+	if err != nil {
+		msg, err = json.Marshal(map[string]interface{}{"encodingError": err.Error(), "raw": string(m)})
+	}
+	return msg, err
 }
 
 func (s *serviceImpl) getAuthProviders(_ context.Context) (interface{}, error) {
