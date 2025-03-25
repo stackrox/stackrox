@@ -22,7 +22,6 @@ import spock.lang.Tag
 class SummaryTest extends BaseSpecification {
 
     @Tag("BAT")
-    @Tag("COMPATIBILITY")
     // Temporarily enable this test to gather debug data and fix the flaky behavior
     // @Ignore("ROX-24528: This API is deprecated in 4.5. Remove this test once the API is removed")
     @IgnoreIf({ System.getenv("OPENSHIFT_CI_CLUSTER_CLAIM") == "openshift-4" })
