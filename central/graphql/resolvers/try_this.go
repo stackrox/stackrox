@@ -428,3 +428,21 @@ func (resolver *imageComponentV2Resolver) Version(ctx context.Context) string {
 	value := resolver.data.GetVersion()
 	return value
 }
+
+func toCvssScoreVersion(value *string) storage.CvssScoreVersion {
+	if value != nil {
+		return storage.CvssScoreVersion(storage.CvssScoreVersion_value[*value])
+	}
+	return storage.CvssScoreVersion(0)
+}
+
+func toCvssScoreVersions(values *[]string) []storage.CvssScoreVersion {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.CvssScoreVersion, len(*values))
+	for i, v := range *values {
+		output[i] = toCvssScoreVersion(&v)
+	}
+	return output
+}
