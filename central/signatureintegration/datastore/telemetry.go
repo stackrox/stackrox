@@ -21,8 +21,12 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to get all signature integrations")
 	}
+	return computeTelemetryProperties(ctx, integrations), nil
+}
+
+func computeTelemetryProperties(ctx context.Context, integrations []*storage.SignatureIntegration) map[string]any {
 	if len(integrations) == 0 {
-		return nil, nil
+		return nil
 	}
 
 	totalPublicKeys, totalCertificates := 0, 0
@@ -51,5 +55,5 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 		"Signature Integration With Custom Certificate", phonehome.Constant(totalCertsWithIntermediateCert))
 	_ = phonehome.AddTotal(ctx, totals,
 		"Signature Integration With Custom Chain", phonehome.Constant(totalCertsWithCustomChain))
-	return totals, nil
+	return totals
 }
