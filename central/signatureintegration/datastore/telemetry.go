@@ -16,10 +16,29 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Integration)))
-	totals := make(map[string]any)
-	si := Singleton()
-	if err := phonehome.AddTotal(ctx, totals, "Signature Integrations", si.CountSignatureIntegrations); err != nil {
-		return nil, errors.Wrap(err, "failed to get signature integrations")
+
+	integrations, err := Singleton().GetAllSignatureIntegrations(ctx)
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to get all signature integrations")
 	}
+	if len(integrations) == 0 {
+		return nil, nil
+	}
+
+	totalPublicKeys, totalCertificates := 0, 0
+	for _, i := range integrations {
+		if cosign := i.GetCosign(); cosign != nil {
+			totalPublicKeys += len(cosign.GetPublicKeys())
+		}
+		totalCertificates += len(i.GetCosignCertificates())
+	}
+
+	totals := make(map[string]any)
+	_ = phonehome.AddTotal(ctx, totals,
+		"Signature Integrations", phonehome.Len(integrations))
+	_ = phonehome.AddTotal(ctx, totals,
+		"Signature Integration Cosign Public Keys", phonehome.Constant(totalPublicKeys))
+	_ = phonehome.AddTotal(ctx, totals,
+		"Signature Integration Certificates", phonehome.Constant(totalCertificates))
 	return totals, nil
 }
