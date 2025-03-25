@@ -72,7 +72,7 @@ central:
       enabled: null # bool
       host: null # string
       reencrypt:
-        enabled: false # bool
+        enabled: null # bool
         host: null # string
         tls:
           caCertificate: null # string
