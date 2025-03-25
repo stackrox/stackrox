@@ -926,6 +926,9 @@ func (resolver *imageCVEV2Resolver) FixedByVersion(ctx context.Context) (string,
 	if err != nil || len(cves) == 0 {
 		return "", err
 	}
+	if strings.Contains(resolver.flatData.GetCVE(), "37434") {
+		log.Infof("SHREWS -- image_vuln.FixedByVersion -- %v", cves)
+	}
 	return cves[0].GetFixedBy(), nil
 }
 
