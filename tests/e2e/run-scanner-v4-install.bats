@@ -144,7 +144,7 @@ EOT
     export CURRENT_MAIN_IMAGE_TAG=${CURRENT_MAIN_IMAGE_TAG:-} # Setting a tag can be useful for local testing.
     export EARLIER_CHART_VERSION="4.6.0"
     export EARLIER_MAIN_IMAGE_TAG=$EARLIER_CHART_VERSION
-    export USE_LOCAL_ROXCTL=true
+    export USE_LOCAL_ROXCTL="${USE_LOCAL_ROXCTL:-true}"
     export ROX_PRODUCT_BRANDING=RHACS_BRANDING
     export CI=${CI:-false}
     OS="$(uname | tr '[:upper:]' '[:lower:]')"
