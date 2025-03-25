@@ -69,18 +69,10 @@ defaults:
         port: 443
       nodePort:
         enabled: false
-        port: null
       route:
         enabled: false
-        host: null
         reencrypt:
           enabled: false
-          host: null
-          tls:
-            caCertificate: null
-            certificate: null
-            destinationCACertificate: null
-            key: null
     db:
       external: false
 
