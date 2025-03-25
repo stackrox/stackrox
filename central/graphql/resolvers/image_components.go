@@ -329,6 +329,8 @@ func getImageCVEResolvers(ctx context.Context, root *Resolver, os string, vulns 
 }
 
 func getImageCVEV2Resolvers(ctx context.Context, root *Resolver, imageID string, component *storage.EmbeddedImageScanComponent, query *v1.Query) ([]ImageVulnerabilityResolver, error) {
+	log.Infof("SHREWS -- components -- getImageCVEV2Resolvers")
+
 	query, _ = search.FilterQueryWithMap(query, mappings.VulnerabilityOptionsMap)
 	predicate, err := vulnPredicateFactory.GeneratePredicate(query)
 	if err != nil {
@@ -644,6 +646,7 @@ func (resolver *imageComponentV2Resolver) ImageVulnerabilityCounter(ctx context.
 
 func (resolver *imageComponentV2Resolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "ImageVulnerabilities")
+	log.Infof("SHREWS -- components.ImageVulnerabilities -- ")
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}
@@ -748,6 +751,7 @@ func (resolver *imageComponentV2Resolver) UnusedVarSink(_ context.Context, _ Raw
 // Following are deprecated functions that are retained to allow UI time to migrate away from them
 
 func (resolver *imageComponentV2Resolver) FixedIn(_ context.Context) string {
+	log.Infof("SHREWS -- component.FixedIn -- actually deprecated")
 	return resolver.data.GetFixedBy()
 }
 
