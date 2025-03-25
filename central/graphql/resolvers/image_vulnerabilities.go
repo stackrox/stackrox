@@ -2,11 +2,13 @@ package resolvers
 
 import (
 	"context"
+	"reflect"
 	"strings"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/graphql/generator"
 	"github.com/stackrox/rox/central/graphql/resolvers/embeddedobjs"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
@@ -25,6 +27,38 @@ import (
 
 func init() {
 	schema := getBuilder()
+	generator.RegisterProtoEnum(schema, reflect.TypeOf(storage.CvssScoreVersion(0)))
+
+	utils.Must(schema.AddType("ImageCVE", []string{
+		"cveBaseInfo: CVEInfo",
+		"cvss: Float!",
+		"cvssMetrics: [CVSSScore]!",
+		"id: ID!",
+		"impactScore: Float!",
+		"nvdScoreVersion: CvssScoreVersion!",
+		"nvdcvss: Float!",
+		"operatingSystem: String!",
+		"severity: VulnerabilitySeverity!",
+		"snoozeExpiry: Time",
+		"snoozeStart: Time",
+		"snoozed: Boolean!",
+	}))
+	utils.Must(schema.AddType("ImageCVEV2", []string{
+		"advisory: String!",
+		"componentId: String!",
+		"cveBaseInfo: CVEInfo",
+		"cvss: Float!",
+		"firstImageOccurrence: Time",
+		"id: ID!",
+		"imageId: String!",
+		"impactScore: Float!",
+		"nvdScoreVersion: CvssScoreVersion!",
+		"nvdcvss: Float!",
+		"operatingSystem: String!",
+		"severity: VulnerabilitySeverity!",
+		"state: VulnerabilityState!",
+	}))
+
 	utils.Must(
 		// NOTE: This list is and should remain alphabetically ordered
 		schema.AddType("ImageVulnerability",
