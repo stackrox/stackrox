@@ -26,9 +26,18 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 	}
 
 	totalPublicKeys, totalCertificates := 0, 0
+	totalCertsWithCustomChain, totalCertsWithIntermediateCert := 0, 0
 	for _, i := range integrations {
 		totalPublicKeys += len(i.GetCosign().GetPublicKeys())
 		totalCertificates += len(i.GetCosignCertificates())
+		for _, cert := range i.GetCosignCertificates() {
+			if len(cert.GetCertificateChainPemEnc()) > 0 {
+				totalCertsWithCustomChain++
+			}
+			if len(cert.GetCertificatePemEnc()) > 0 {
+				totalCertsWithIntermediateCert++
+			}
+		}
 	}
 
 	totals := make(map[string]any)
@@ -38,5 +47,9 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 		"Signature Integration Cosign Public Keys", phonehome.Constant(totalPublicKeys))
 	_ = phonehome.AddTotal(ctx, totals,
 		"Signature Integration Certificates", phonehome.Constant(totalCertificates))
+	_ = phonehome.AddTotal(ctx, totals,
+		"Signature Integration With Custom Certificate", phonehome.Constant(totalCertsWithIntermediateCert))
+	_ = phonehome.AddTotal(ctx, totals,
+		"Signature Integration With Custom Chain", phonehome.Constant(totalCertsWithCustomChain))
 	return totals, nil
 }
