@@ -114,12 +114,12 @@ spec:
               secretKeyRef:
                 name: monitoring
                 key: elasticsearch_url
-            name: ELASTICSEARCH_USER
+          - name: ELASTICSEARCH_USER
             valueFrom:
               secretKeyRef:
                 name: monitoring
                 key: elasticsearch_user
-            name: ELASTICSEARCH_PASSWORD
+          - name: ELASTICSEARCH_PASSWORD
             valueFrom:
               secretKeyRef:
                 name: monitoring

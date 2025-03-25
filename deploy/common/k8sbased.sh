@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -x
 
 function realpath {
 	[[ -n "$1" ]] || return 0
@@ -328,9 +329,9 @@ function launch_central {
         )
 
         elastic_count=0 # A counter for Elasticsearch related environment variables
-	[[ -n "${ELASTICSEARCH_URL:-}" ]] && ((elastic_count++))
-	[[ -n "${ELASTICSEARCH_USER:-}" ]] && ((elastic_count++))
-	[[ -n "${ELASTICSEARCH_PASSWORD:-}" ]] && ((elastic_count++))
+	[[ -n "${ELASTICSEARCH_URL:-}" ]] && elastic_count=$((elastic_count + 1))
+	[[ -n "${ELASTICSEARCH_USER:-}" ]] && elastic_count=$((elastic_count + 1))
+	[[ -n "${ELASTICSEARCH_PASSWORD:-}" ]] && elastic_count=$((elastic_count + 1))
 
 	# Either all or none of the Elastic search environment variables should be set
 	if [[ "$elastic_count" -ne 0 && "$elastic_count" -ne 3 ]]; then
