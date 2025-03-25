@@ -108,7 +108,7 @@ func (resolver *Resolver) ImageComponent(ctx context.Context, args IDQuery) (Ima
 		}
 
 		ret, err := loader.FromID(ctx, string(*args.ID))
-		return resolver.wrapImageComponentV2WithContext(ctx, ret, true, err)
+		return resolver.wrapImageComponentV2WithContext(ctx, ret, true, PaginatedQuery{}, err)
 	}
 	// get loader
 	loader, err := loaders.GetComponentLoader(ctx)
@@ -152,7 +152,7 @@ func (resolver *Resolver) ImageComponents(ctx context.Context, q PaginatedQuery)
 		if strings.Contains(query.String(), "37434") {
 			log.Infof("SHREWS -- ImageComponents -- 37434 --  %v", comps)
 		}
-		componentResolvers, err := resolver.wrapImageComponentV2sWithContext(ctx, comps, err)
+		componentResolvers, err := resolver.wrapImageComponentV2sWithContext(ctx, comps, q, err)
 		if err != nil {
 			return nil, err
 		}
@@ -656,7 +656,8 @@ func (resolver *imageComponentV2Resolver) ImageVulnerabilities(ctx context.Conte
 	log.Infof("SHREWS -- components.ImageVulnerabilities -- %v", embeddedComponent)
 	if embeddedComponent == nil {
 		log.Infof("SHREWS -- components.ImageVulnerabilities back to Vulns-- %v", resolver.data.GetId())
-		return resolver.root.ImageVulnerabilities(resolver.imageComponentScopeContext(ctx), args)
+		// TODO(ROX-28320) for now just replace the args with the original.  Probably correct thing to do anyway.
+		return resolver.root.ImageVulnerabilities(resolver.imageComponentScopeContext(ctx), resolver.subFieldQuery)
 	}
 
 	query, err := args.AsV1QueryOrEmpty()
