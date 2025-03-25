@@ -97,9 +97,9 @@ func k8sBasedOrchestrator(cliEnvironment environment.Environment, k8sConfig *ren
 		return nil
 	}
 
-	c.AddCommand(externalVolume(cliEnvironment))
-	c.AddCommand(hostPathVolume(cliEnvironment))
-	c.AddCommand(noVolume(cliEnvironment))
+	c.AddCommand(externalVolume(cliEnvironment, c.PersistentFlags()))
+	c.AddCommand(hostPathVolume(cliEnvironment, c.PersistentFlags()))
+	c.AddCommand(noVolume(cliEnvironment, c.PersistentFlags()))
 
 	flagWrap := &flagsWrapper{FlagSet: c.PersistentFlags()}
 	// Adds k8s specific flags
