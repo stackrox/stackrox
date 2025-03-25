@@ -1869,6 +1869,7 @@ netpol:
         - use-current-k8s-context
     map:
       LOCAL_FLAGS:
+        - explain
         - exposure
         - fail
         - focus-workload
