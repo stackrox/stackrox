@@ -50,10 +50,6 @@ func initialize() {
 	pr = New(ns, reporter.Singleton())
 
 	notifierDatastore := datastore.Singleton()
-	protoNotifiers, err := notifierDatastore.GetNotifiers(ctx)
-	if err != nil {
-		log.Panicf("unable to fetch notifiers: %v", err)
-	}
 
 	if env.EncNotifierCreds.BooleanSetting() {
 		var notifiersToUpsert []*storage.Notifier
@@ -86,12 +82,12 @@ func initialize() {
 			}
 		}
 
-		for _, protoNotifier := range protoNotifiers {
+		err = notifierDatastore.ProcessNotifiers(ctx, func(protoNotifier *storage.Notifier) error {
 			secured, err := notifierUtils.IsNotifierSecured(protoNotifier)
 			if err != nil {
 				utils.Should(errors.Wrapf(err, "Error checking id the notifier %s is secured, notifications to this notifier will fail",
 					protoNotifier.GetId()))
-				continue
+				return nil
 			}
 			if !secured {
 				// If notifier is not secured, then we just need to secure it using the active key and continue
@@ -99,10 +95,10 @@ func initialize() {
 				if err != nil {
 					// Don't send out error from crypto lib
 					utils.Should(fmt.Errorf("error securing notifier %s, notifications to this notifier will fail", protoNotifier.GetId()))
-					continue
+					return nil
 				}
 				notifiersToUpsert = append(notifiersToUpsert, protoNotifier)
-				continue
+				return nil
 			}
 
 			if needsRekey {
@@ -111,10 +107,14 @@ func initialize() {
 				err = notifierUtils.RekeyNotifier(protoNotifier, oldKey, cryptoKey)
 				if err != nil {
 					utils.Should(fmt.Errorf("error rekeying notifier %s, notifications to this notifier will fail", protoNotifier.GetId()))
-					continue
+					return nil
 				}
 				notifiersToUpsert = append(notifiersToUpsert, protoNotifier)
 			}
+			return nil
+		})
+		if err != nil {
+			log.Panicf("unable to fetch notifiers: %v", err)
 		}
 
 		err = notifierDatastore.UpsertManyNotifiers(ctx, notifiersToUpsert)
@@ -132,13 +132,17 @@ func initialize() {
 	}
 
 	// Create actionable notifiers from the loaded protos.
-	for _, protoNotifier := range protoNotifiers {
+	err := notifierDatastore.ProcessNotifiers(ctx, func(protoNotifier *storage.Notifier) error {
 		notifier, err := notifiers.CreateNotifier(protoNotifier)
 		if err != nil {
 			utils.Should(errors.Wrapf(err, "error creating notifier with %v (%v) and type %v", protoNotifier.GetId(), protoNotifier.GetName(), protoNotifier.GetType()))
-			continue
+			return nil
 		}
 		pr.UpdateNotifier(ctx, notifier)
+		return nil
+	})
+	if err != nil {
+		log.Panicf("unable to fetch notifiers: %v", err)
 	}
 
 	// When alerts have failed, we will want to retry the notifications.
