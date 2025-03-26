@@ -153,6 +153,7 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilities")
 
 	log.Infof("SHREWS -- ImageVulnerabilities -- %v", q.String())
+	log.Infof("SHREWS -- ImageVulnerabilities -- paging -- %v", q.Pagination.AsV1Pagination().String())
 	// check permissions
 	if err := readImages(ctx); err != nil {
 		return nil, err
