@@ -1115,6 +1115,7 @@ EOT
             | jq -r '.items[] | select(.metadata.name | startswith("stackrox-generated-")) | .data["generated-values.yaml"] | @base64d' \
             > "$helm_generated_values_file"
         command=("upgrade" "--install" "--reuse-values" "-f" "$helm_generated_values_file")
+        upgrade="true"
     else
         base_helm_values=$(cat <<EOT
 central:
@@ -1195,6 +1196,12 @@ EOT
         -f <(echo "$base_helm_values") \
         "$@" \
         stackrox-central-services "${helm_chart_dir}"
+
+    if [[ "$upgrade" == "true" ]]; then
+        # For some reason pods don't always terminate smoothly after an upgrade.
+        bounce_pods "${central_namespace}"
+    fi
+
     echo "Waiting for API..."
     wait_for_api "${central_namespace}"
 
@@ -1330,16 +1337,24 @@ EOT
         stackrox-secured-cluster-services "${helm_chart_dir}"
 
     if [[ "$upgrade" == "true" ]]; then
-        # For some reason collector pods don't like to terminate smoothly.
-        echo "Restarting collector pods..."
-        kubectl -n "${sensor_namespace}" delete pod -l app=collector --force --grace-period=0
-        echo "Restarting admission-control pods..."
-        kubectl -n "${sensor_namespace}" delete pod -l app=admission-control --force --grace-period=0
+        # For some reason pods don't always terminate smoothly after an upgrade.
+        bounce_pods "${sensor_namespace}"
     fi
 
     echo "Sensor deployed. Waiting for sensor to be up"
     sensor_wait "${sensor_namespace}"
     wait_for_collectors_to_be_operational "${sensor_namespace}"
+}
+
+bounce_pods() {
+    local namespace="$1"
+    echo "Bouncing all workload pods..."
+    {
+        "${ORCH_CMD}" </dev/null -n "$namespace" get deployments -o name
+        "${ORCH_CMD}" </dev/null -n "$namespace" get daemonsets -o name
+    } | cut -d / -f 2 | while read -r workload; do
+        "${ORCH_CMD}" </dev/null -n "$namespace" delete pod -l "app=$workload" --force --grace-period=0
+    done
 }
 
 patch_down_central() {
