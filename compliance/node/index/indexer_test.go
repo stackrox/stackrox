@@ -152,11 +152,18 @@ func (s *nodeIndexerSuite) TestRunPackageScannerAnyPath() {
 	s.Len(packages, 0)
 }
 
+func (s *nodeIndexerSuite) TestMappingURL() {
+	s.T().Setenv("ROX_ADVERTISED_ENDPOINT", "example.com:8080")
+	s.Equal("https://example.com:8080/scanner/definitions?file=repo2cpe", DefaultNodeIndexerConfig().Repo2CPEMappingURL)
+	s.T().Setenv("ROX_ADVERTISED_ENDPOINT", "sensor.rhacs.svc")
+	s.Equal("https://sensor.rhacs.svc/scanner/definitions?file=repo2cpe", DefaultNodeIndexerConfig().Repo2CPEMappingURL)
+}
+
 func (s *nodeIndexerSuite) TestIndexerE2E() {
 	s.T().Setenv(mtls.CertFilePathEnvName, filepath.Join("testdata", "certs", "client-cert.pem"))
 	s.T().Setenv(mtls.KeyFileEnvName, filepath.Join("testdata", "certs", "client-key.pem"))
 	server := s.createTestServer(true)
-	cfg := DefaultNodeIndexerConfig
+	cfg := DefaultNodeIndexerConfig()
 	cfg.HostPath = "testdata"
 	cfg.Repo2CPEMappingURL = server.URL
 	indexer := NewNodeIndexer(cfg)
@@ -172,7 +179,7 @@ func (s *nodeIndexerSuite) TestIndexerE2E() {
 
 func (s *nodeIndexerSuite) TestIndexerE2ENoPath() {
 	server := s.createTestServer(false)
-	cfg := DefaultNodeIndexerConfig
+	cfg := DefaultNodeIndexerConfig()
 	cfg.Client = server.Client()
 	cfg.HostPath = "doesnotexist"
 	cfg.Repo2CPEMappingURL = server.URL

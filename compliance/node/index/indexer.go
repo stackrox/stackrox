@@ -109,12 +109,14 @@ type NodeIndexerConfig struct {
 }
 
 // DefaultNodeIndexerConfig is the default configuration for a node indexer.
-var DefaultNodeIndexerConfig = NodeIndexerConfig{
-	HostPath: env.NodeIndexHostPath.Setting(),
-	// The default, mTLS-capable client will be used.
-	Client:             nil,
-	Repo2CPEMappingURL: "https://" + env.AdvertisedEndpoint.Setting() + env.NodeIndexMappingURLPath.Setting(),
-	Timeout:            10 * time.Second,
+func DefaultNodeIndexerConfig() NodeIndexerConfig {
+	return NodeIndexerConfig{
+		HostPath: env.NodeIndexHostPath.Setting(),
+		// The default, mTLS-capable client will be used.
+		Client:             nil,
+		Repo2CPEMappingURL: "https://" + env.AdvertisedEndpoint.Setting() + env.NodeIndexMappingURLPath.Setting(),
+		Timeout:            10 * time.Second,
+	}
 }
 
 type localNodeIndexer struct {
