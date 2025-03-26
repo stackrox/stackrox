@@ -2,12 +2,10 @@ package manifest
 
 import (
 	"context"
-	"fmt"
 
 	apps "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 type CollectorGenerator struct{}
@@ -48,7 +46,7 @@ func (g CollectorGenerator) genDaemonSet(ctx context.Context, m *manifestGenerat
 					ServiceAccountName: "collector",
 					Containers: []v1.Container{{
 						Name:            "collector",
-						Image:           m.Config.Images.Stackrox,
+						Image:           m.Config.Images.Collector,
 						ImagePullPolicy: v1.PullAlways,
 						Command:         []string{"/stackrox/collector"},
 						Ports: []v1.ContainerPort{{

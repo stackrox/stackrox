@@ -53,12 +53,11 @@ func (g ScannerDBGenerator) Generate(ctx context.Context, m *manifestGenerator) 
 		dbPass,
 		dbTls,
 		svc,
-		g.genScannerDbDeployment(),
+		g.genScannerDbDeployment(m),
 	}, nil
 }
 
-func (g *ScannerDBGenerator) genScannerDbDeployment() Resource {
-	image := "localhost:5001/stackrox/scanner-db:latest"
+func (g *ScannerDBGenerator) genScannerDbDeployment(m *manifestGenerator) Resource {
 	deployment := apps.Deployment{
 		Spec: apps.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
@@ -82,7 +81,7 @@ func (g *ScannerDBGenerator) genScannerDbDeployment() Resource {
 					ServiceAccountName: "scanner-db",
 					Containers: []v1.Container{{
 						Name:            "db",
-						Image:           image,
+						Image:           m.Config.Images.ScannerDB,
 						SecurityContext: RestrictedSecurityContext(PostgresUser),
 						Ports: []v1.ContainerPort{{
 							Name:          "tcp-postgresql",
@@ -102,7 +101,7 @@ func (g *ScannerDBGenerator) genScannerDbDeployment() Resource {
 					}},
 					InitContainers: []v1.Container{{
 						Name:            "init-db",
-						Image:           image,
+						Image:           m.Config.Images.ScannerDB,
 						SecurityContext: RestrictedSecurityContext(PostgresUser),
 						Env: []v1.EnvVar{
 							{

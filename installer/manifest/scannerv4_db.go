@@ -54,7 +54,7 @@ func (g ScannerV4DBGenerator) Generate(ctx context.Context, m *manifestGenerator
 		dbTls,
 		svc,
 		g.genScannerV4DBConfigs(),
-		g.genScannerV4DBDeployment(),
+		g.genScannerV4DBDeployment(m),
 	}, nil
 }
 
@@ -171,7 +171,7 @@ shared_preload_libraries = 'pg_stat_statements'`,
 	}
 }
 
-func (g *ScannerV4DBGenerator) genScannerV4DBDeployment() Resource {
+func (g *ScannerV4DBGenerator) genScannerV4DBDeployment(m *manifestGenerator) Resource {
 	deployment := apps.Deployment{
 		Spec: apps.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
@@ -195,7 +195,7 @@ func (g *ScannerV4DBGenerator) genScannerV4DBDeployment() Resource {
 					ServiceAccountName: "scanner-v4",
 					Containers: []v1.Container{{
 						Name:            "db",
-						Image:           "localhost:5001/stackrox/scanner-v4-db:latest",
+						Image:           m.Config.Images.ScannerV4DB,
 						SecurityContext: RestrictedSecurityContext(PostgresUser),
 						Ports: []v1.ContainerPort{{
 							Name:          "tcp-postgresql",
@@ -215,7 +215,7 @@ func (g *ScannerV4DBGenerator) genScannerV4DBDeployment() Resource {
 					}},
 					InitContainers: []v1.Container{{
 						Name:            "init-db",
-						Image:           "localhost:5001/stackrox/scanner-v4-db:latest",
+						Image:           m.Config.Images.ScannerV4DB,
 						SecurityContext: RestrictedSecurityContext(PostgresUser),
 						Command:         []string{"init-entrypoint.sh"},
 						Env: []v1.EnvVar{

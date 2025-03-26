@@ -146,7 +146,7 @@ func (g CentralDBGenerator) createCentralDbDeployment(m *manifestGenerator) Reso
 					},
 					Containers: []v1.Container{{
 						Name:            "central-db",
-						Image:           m.Config.Images.DB,
+						Image:           m.Config.Images.CentralDB,
 						SecurityContext: RestrictedSecurityContext(PostgresUser),
 						Ports: []v1.ContainerPort{{
 							Name:          "postgresql",
@@ -166,7 +166,7 @@ func (g CentralDBGenerator) createCentralDbDeployment(m *manifestGenerator) Reso
 					}},
 					InitContainers: []v1.Container{{
 						Name:            "init-db",
-						Image:           m.Config.Images.DB,
+						Image:           m.Config.Images.CentralDB,
 						Command:         []string{"init-entrypoint.sh"},
 						SecurityContext: RestrictedSecurityContext(PostgresUser),
 						Env: []v1.EnvVar{

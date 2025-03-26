@@ -9,6 +9,11 @@ import (
 	"strings"
 )
 
+const (
+	localStackroxImage = "localhost:5001/stackrox/stackrox:latest"
+	localDbImage       = "localhost:5001/stackrox/db:latest"
+)
+
 type Config struct {
 	Action    string `yaml:"action"`
 	Namespace string `yaml:"namespace"`
@@ -17,16 +22,30 @@ type Config struct {
 }
 
 type Images struct {
-	Stackrox string `yaml:"stackrox"`
-	DB       string `yaml:"db"`
+	Sensor           string `yaml:"sensor"`
+	ConfigController string `yaml:"configController"`
+	Central          string `yaml:"central"`
+	CentralDB        string `yaml:"centralDb"`
+	Scanner          string `yaml:"scanner"`
+	ScannerDB        string `yaml:"scannerDb"`
+	ScannerV4        string `yaml:"scannerv4"`
+	ScannerV4DB      string `yaml:"scannerv4db"`
+	Collector        string `yaml:"collector"`
 }
 
 var DefaultConfig Config = Config{
 	Namespace: "stackrox",
 	ScannerV4: false,
 	Images: Images{
-		Stackrox: "localhost:5001/stackrox/stackrox:latest",
-		DB:       "localhost:5001/stackrox/db:latest",
+		Sensor:           localStackroxImage,
+		ConfigController: localStackroxImage,
+		Central:          localStackroxImage,
+		Scanner:          localStackroxImage,
+		ScannerV4:        localStackroxImage,
+		Collector:        localStackroxImage,
+		CentralDB:        localDbImage,
+		ScannerDB:        localDbImage,
+		ScannerV4DB:      localDbImage,
 	},
 }
 

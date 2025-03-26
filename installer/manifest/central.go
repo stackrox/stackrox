@@ -166,7 +166,7 @@ func (g *CentralGenerator) createCentralDeployment(m *manifestGenerator) Resourc
 					ServiceAccountName: "central",
 					InitContainers: []v1.Container{{
 						Name:            "add-additional-cas",
-						Image:           m.Config.Images.Stackrox,
+						Image:           m.Config.Images.Central,
 						ImagePullPolicy: v1.PullAlways,
 						Command: []string{
 							"sh",
@@ -175,13 +175,13 @@ func (g *CentralGenerator) createCentralDeployment(m *manifestGenerator) Resourc
 						},
 					}, {
 						Name:            "migrator",
-						Image:           m.Config.Images.Stackrox,
+						Image:           m.Config.Images.Central,
 						ImagePullPolicy: v1.PullAlways,
-						Command:         []string{"/stackrox/migrator"},
+						Command:         []string{"/stackrox/bin/migrator"},
 					}},
 					Containers: []v1.Container{{
 						Name:            "central",
-						Image:           m.Config.Images.Stackrox,
+						Image:           m.Config.Images.Central,
 						ImagePullPolicy: v1.PullAlways,
 						Command:         []string{"/stackrox/central"},
 						Ports: []v1.ContainerPort{{

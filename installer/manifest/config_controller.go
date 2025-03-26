@@ -39,11 +39,11 @@ func (g ConfigControllerGenerator) Generate(ctx context.Context, m *manifestGene
 			},
 		}}),
 		genRoleBinding("config-controller", "config-controller-manager-role", m.Config.Namespace),
-		g.genConfigControllerDeployment(),
+		g.genConfigControllerDeployment(m),
 	}, nil
 }
 
-func (g *ConfigControllerGenerator) genConfigControllerDeployment() Resource {
+func (g *ConfigControllerGenerator) genConfigControllerDeployment(m *manifestGenerator) Resource {
 	deployment := apps.Deployment{
 		Spec: apps.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
@@ -64,7 +64,7 @@ func (g *ConfigControllerGenerator) genConfigControllerDeployment() Resource {
 					ServiceAccountName: "config-controller",
 					Containers: []v1.Container{{
 						Name:    "config-controller",
-						Image:   "localhost:5001/stackrox/stackrox:latest",
+						Image:   m.Config.Images.ConfigController,
 						Command: []string{"/stackrox/config-controller"},
 						Env: []v1.EnvVar{
 							{

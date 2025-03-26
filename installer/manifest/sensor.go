@@ -62,7 +62,7 @@ clusterConfig:
     registryOverride:
   configFingerprint: fingerprint
   clusterLabels:
-    null`, m.Config.Images.Stackrox, m.Config.Images.Stackrox, m.Config.Namespace)
+    null`, m.Config.Images.Sensor, m.Config.Images.Collector, m.Config.Namespace)
 
 	sensorConfig := v1.Secret{
 		StringData: map[string]string{"config.yaml": config},
@@ -130,14 +130,14 @@ func (g SensorGenerator) applySensorDeployment(m *manifestGenerator) Resource {
 					ServiceAccountName: "sensor",
 					InitContainers: []v1.Container{{
 						Name:            "crs",
-						Image:           m.Config.Images.Stackrox,
+						Image:           m.Config.Images.Sensor,
 						ImagePullPolicy: v1.PullAlways,
 						Command:         []string{"/stackrox/kubernetes"},
 						Args:            []string{"ensure-service-certificates"},
 						Env:             envVars,
 					}, {
 						Name:            "init-tls-certs",
-						Image:           m.Config.Images.Stackrox,
+						Image:           m.Config.Images.Sensor,
 						ImagePullPolicy: v1.PullAlways,
 						Command:         []string{"/stackrox/init-tls-certs"},
 						Args: []string{
@@ -148,7 +148,7 @@ func (g SensorGenerator) applySensorDeployment(m *manifestGenerator) Resource {
 					}},
 					Containers: []v1.Container{{
 						Name:            "sensor",
-						Image:           m.Config.Images.Stackrox,
+						Image:           m.Config.Images.Sensor,
 						ImagePullPolicy: v1.PullAlways,
 						Command:         []string{"/stackrox/kubernetes"},
 						Ports: []v1.ContainerPort{{

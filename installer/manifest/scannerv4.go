@@ -170,7 +170,7 @@ func (g *ScannerV4Generator) genScannerV4Deployment(name string, replicaCount in
 					ServiceAccountName: "scanner-v4",
 					InitContainers: []v1.Container{{
 						Name:            "add-additional-cas",
-						Image:           m.Config.Images.Stackrox,
+						Image:           m.Config.Images.ScannerV4,
 						ImagePullPolicy: v1.PullAlways,
 						Command: []string{
 							"sh",
@@ -180,7 +180,7 @@ func (g *ScannerV4Generator) genScannerV4Deployment(name string, replicaCount in
 					}},
 					Containers: []v1.Container{{
 						Name:  name,
-						Image: m.Config.Images.Stackrox,
+						Image: m.Config.Images.ScannerV4,
 						Command: []string{
 							"/stackrox/scanner-v4",
 							"--conf=/etc/scanner/config.yaml",

@@ -53,7 +53,7 @@ func (g ScannerGenerator) Generate(ctx context.Context, m *manifestGenerator) ([
 		scannerTls,
 		svc,
 		g.genScannerConfig(m),
-		g.genScannerDeployment(),
+		g.genScannerDeployment(m),
 	}, nil
 }
 
@@ -111,9 +111,7 @@ scanner:
 	}
 }
 
-func (g *ScannerGenerator) genScannerDeployment() Resource {
-	// image := "quay.io/redhat-user-workloads/rh-acs-tenant/acs/scanner:on-pr-8f408774a783d37ea22030afbae689aa72ba1966"
-	image := "localhost:5001/stackrox/stackrox:latest"
+func (g *ScannerGenerator) genScannerDeployment(m *manifestGenerator) Resource {
 	deployment := apps.Deployment{
 		Spec: apps.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
@@ -132,23 +130,9 @@ func (g *ScannerGenerator) genScannerDeployment() Resource {
 				},
 				Spec: v1.PodSpec{
 					ServiceAccountName: "scanner",
-					// InitContainers: []v1.Container{{
-					// 	Name:  "init",
-					// 	Image: image,
-					// 	Command: []string{
-					// 		"/bin/sh",
-					// 		"-c",
-					// 		`
-					// set -euo pipefail
-					// CA_PATH="/run/secrets/stackrox.io/certs/ca.pem"
-					// cp "${CA_PATH}" /etc/pki/ca-trust/source/anchors/root-ca.pem
-					// update-ca-trust
-					// `,
-					// 	},
-					// }},
 					Containers: []v1.Container{{
 						Name:    "scanner",
-						Image:   image,
+						Image:   m.Config.Images.Scanner,
 						Command: []string{"/stackrox/scanner-v2"},
 						Ports: []v1.ContainerPort{{
 							Name:          "https",
