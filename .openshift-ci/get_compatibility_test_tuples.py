@@ -44,6 +44,29 @@ def main():
         )
 
 
+# Returns True if the helm_version is newer than the current_version
+def is_newer_version(current_version: str, helm_version: str):
+    helm_version_split = helm_version.split(sep='.')
+    current_version_split = current_version.split(sep='.')
+    # Remove the trailing 0s
+    # Helm chart versions have two trailing 0s in the major version number
+    helm_version_split[0] = helm_version_split[0][:-2]
+    # Remove commit hash from the current version
+    current_version_split = current_version_split[:-1]
+    # If we are in a release branch, we will have patch version with '-rc'
+    if len(current_version_split) > 2:
+        # Remove '-rc' if present
+        current_version_split[2] = str(current_version_split[2]).rstrip("-rc")
+
+    for (c, h) in zip(current_version_split, helm_version_split):
+        if c > h:
+            break
+        if c < h:
+            return True
+
+    return False
+
+
 def get_compatibility_test_tuples():
     Release = namedtuple("Release", ["major", "minor"])
 
@@ -58,6 +81,16 @@ def get_compatibility_test_tuples():
         shell=False,
         encoding="utf-8",
     ).strip()
+
+    # Remove the versions that are newer than the version of the current branch.
+    # This will make sure we do not test with an old test suite newer versions.
+    # It is important to not test newer versions with old tests suites because
+    # old test suites might depend on endpoints that no longer exist in newer
+    # versions.
+    # There is no risk in excluding newer versions as the compatibility tests in
+    # their respective branches will test against older versions.
+    central_chart_versions = [i for i in central_chart_versions if not is_newer_version(current_version=latest_tag, helm_version=i)]
+    sensor_chart_versions = [i for i in sensor_chart_versions if not is_newer_version(current_version=latest_tag, helm_version=i)]
 
     if len(central_chart_versions) == 0:
         logging.info("Found no older central chart versions to test against according to the product lifecycles API.")
