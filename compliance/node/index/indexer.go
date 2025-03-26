@@ -113,7 +113,7 @@ var DefaultNodeIndexerConfig = NodeIndexerConfig{
 	HostPath: env.NodeIndexHostPath.Setting(),
 	// The default, mTLS-capable client will be used.
 	Client:             nil,
-	Repo2CPEMappingURL: env.NodeIndexMappingURL.Setting(),
+	Repo2CPEMappingURL: "https://" + env.AdvertisedEndpoint.Setting() + env.NodeIndexMappingURLPath.Setting(),
 	Timeout:            10 * time.Second,
 }
 

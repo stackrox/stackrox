@@ -7,8 +7,8 @@ var (
 	// that should be scanned by Scanners NodeIndexer
 	NodeIndexHostPath = RegisterSetting("ROX_NODE_INDEX_HOST_PATH", WithDefault("/host"))
 
-	// NodeIndexMappingURL defines the endpoint for the RepositoryScanner to download mapping information from.
-	NodeIndexMappingURL = RegisterSetting("ROX_NODE_INDEX_MAPPING_URL", WithDefault("https://sensor.stackrox.svc/scanner/definitions?file=repo2cpe"))
+	// NodeIndexMappingURLPath defines the Sensor URL path for the RepositoryScanner to download mapping information from.
+	NodeIndexMappingURLPath = RegisterSetting("ROX_NODE_INDEX_MAPPING_URL_PATH", WithDefault("/scanner/definitions?file=repo2cpe"))
 
 	// NodeIndexCacheDuration defines the time a cached node index will be considered fresh and served from file.
 	// Defaults to 75% of the default rescan interval.

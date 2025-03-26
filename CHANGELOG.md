@@ -16,6 +16,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Removed Features
 
+- ROX-28698: Environment variable `ROX_NODE_INDEX_MAPPING_URL` has been removed. The mapping URL is now computed by concatenating `ROX_ADVERTISED_ENDPOINT` and `ROX_NODE_INDEX_MAPPING_URL_PATH`.
+
 ### Deprecated Features
 
 ### Technical Changes
