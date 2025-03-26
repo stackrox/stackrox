@@ -168,7 +168,7 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 		coreQuery := PaginatedQuery{
 			Query:      q.Query,
 			ScopeQuery: q.ScopeQuery,
-			Pagination: nil,
+			Pagination: q.Pagination,
 		}
 		log.Infof("SHREWS -- about to get core stuff")
 		cvecoreresolver, err := resolver.ImageCVEs(ctx, coreQuery)
@@ -176,6 +176,11 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 			return nil, err
 		}
 		log.Infof("SHREWS -- got core stuff")
+
+		cveIDs := make([]string, 0, len(cvecoreresolver))
+		for _, cvecore := range cvecoreresolver {
+			cveIDs = append(cveIDs, cvecore.data.GetCVEIDs()...)
+		}
 
 		// get loader
 		loader, err := loaders.GetImageCVEV2Loader(ctx)
@@ -187,8 +192,17 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 		// TODO(ROX-27780): figure out what to do with this
 		//  query = tryUnsuppressedQuery(query)
 
-		vulns, err := loader.FromQuery(ctx, query)
-		cveResolvers, err := resolver.wrapImageCVEV2sCoreWithContext(ctx, vulns, cvecoreresolver, err)
+		vulnQuery := search.NewQueryBuilder().AddExactMatches(search.CVEID, cveIDs...).ProtoQuery()
+		vulns, err := loader.FromQuery(ctx, vulnQuery)
+		foundVulns := make(map[string]bool)
+		normalizedVulns := make([]*storage.ImageCVEV2, 0, len(vulns))
+		for _, vuln := range vulns {
+			if _, ok := foundVulns[vuln.GetCveBaseInfo().GetCve()]; !ok {
+				foundVulns[vuln.GetCveBaseInfo().GetCve()] = true
+				normalizedVulns = append(normalizedVulns, vuln)
+			}
+		}
+		cveResolvers, err := resolver.wrapImageCVEV2sCoreWithContext(ctx, normalizedVulns, cvecoreresolver, err)
 		if err != nil {
 			return nil, err
 		}
