@@ -52,6 +52,7 @@ var (
 type sensorConnection struct {
 	clusterID           string
 	stopSig, stoppedSig concurrency.ErrorSignal
+	numMsgs             int
 
 	sendC chan *central.MsgToSensor
 
@@ -194,6 +195,12 @@ func (c *sensorConnection) runRecv(ctx context.Context, grpcServer central.Senso
 	queues := make(map[string]*dedupingqueue.DedupingQueue[string])
 	for !c.stopSig.IsDone() {
 		msg, err := grpcServer.Recv()
+		if env.TmpCrashGrpcAfterMessages.IntegerSetting() > 0 {
+			c.numMsgs++
+			if c.numMsgs > env.TmpCrashGrpcAfterMessages.IntegerSetting() {
+				err = errors.New("arbitrary connection crash")
+			}
+		}
 		if err != nil {
 			if errStatus, ok := status.FromError(err); ok {
 				if errStatus.Code() == codes.ResourceExhausted {
