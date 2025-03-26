@@ -61,26 +61,20 @@ spec:
     targetPort: https
   tls:
     termination: reencrypt
-    {{- if or $reencryptConfig.tls.destinationCACertificate ._rox._ca.Cert }}
-    destinationCACertificate: |
-      {{- default ._rox._ca.Cert $reencryptConfig.tls.destinationCACertificate | nindent 6 }}
-    {{- end }}
     {{- with $reencryptConfig.tls }}
     {{- if .caCertificate }}
     caCertificate: |
       {{- .caCertificate | nindent 6 }}
     {{- end }}
     {{- if .certificate }}
-    {{- if empty .key }}
-      {{ include "srox.fail" "A private key must be specified when creating a reencrypt route with a certificate." }}
-    {{- end }}
     certificate: |
       {{- .certificate | nindent 6 }}
     {{- end }}
-    {{- if .key }}
-    {{- if empty .certificate }}
-      {{ include "srox.fail" "A certificate must be specified when creating a reencrypt route with a private key." }}
+    {{- if .destinationCACertificate }}
+    destinationCACertificate: |
+      {{- .destinationCACertificate | nindent 6 }}
     {{- end }}
+    {{- if .key }}
     key: |
       {{- .key | nindent 6 }}
     {{- end }}

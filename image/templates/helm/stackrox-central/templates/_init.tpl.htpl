@@ -83,6 +83,18 @@
   {{ end }}
 {{ end }}
 
+{{ $reencryptConfig := ._rox.central.exposure.route.reencrypt }}
+{{ if $reencryptConfig.enabled }}
+  {{ if kindIs "invalid" $reencryptConfig.tls.destinationCACertificate }}
+    {{ include "srox.fail" (list $ "The reencrypt route must specify a destination certificate authority.") }}
+  {{ end }}
+  {{ if and (kindIs "invalid" $reencryptConfig.tls.certificate) (kindIs "invalid" $reencryptConfig.tls.key) }}
+    {{ include "srox.note" (list $ "The reencrypt route will serve a certificate signed by the OpenShift certificate authority.") }}
+  {{ else if or $reencryptConfig.tls.certificate $reencryptConfig.tls.key }}
+    {{ include "srox.fail" "The reencrypt route must specify either both certificate and key or neither." }}
+  {{ end }}
+{{ end }}
+
 {{/* Initialize global prefix */}}
 {{- include "srox.initGlobalPrefix" (list $) -}}
 
