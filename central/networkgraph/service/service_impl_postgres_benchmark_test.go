@@ -63,7 +63,7 @@ func setupBenchmarkForB(b *testing.B) networkGraphServiceBenchmarks {
 	n.deploymentsDataStore, err = deploymentDS.GetTestPostgresDataStore(b, db.DB)
 	require.NoError(b, err)
 
-	n.entityDataStore, err = networkEntityDS.GetTestPostgresDataStore(b, db.DB)
+	n.entityDataStore = networkEntityDS.GetTestPostgresDataStore(b, db.DB)
 	require.NoError(b, err)
 
 	n.flowDataStore, err = networkFlowDS.GetTestPostgresClusterDataStore(b, db.DB)
@@ -72,7 +72,7 @@ func setupBenchmarkForB(b *testing.B) networkGraphServiceBenchmarks {
 	n.policyDataStore, err = networkPolicyDS.GetTestPostgresDataStore(b, db.DB)
 	require.NoError(b, err)
 
-	n.configDataStore, err = configDS.GetTestPostgresDataStore(b, db.DB)
+	n.configDataStore = configDS.GetTestPostgresDataStore(b, db.DB)
 	require.NoError(b, err)
 
 	n.treeMgr = networktree.Singleton()
@@ -94,7 +94,7 @@ func setupBenchmarkForB(b *testing.B) networkGraphServiceBenchmarks {
 // setupTables setups up the database for a large number of deployments all
 // communicating with the same external IP - it is intended for benchmarks of the
 // GetExternalNetworkFlows API endpoint
-func (suite *networkGraphServiceBenchmarks) setupTables(b *testing.B) string {
+func (suite *networkGraphServiceBenchmarks) setupTables(b *testing.B, numFlows int) string {
 	cidr := "192.168.0.1/32"
 	id, err := externalsrcs.NewClusterScopedID(fixtureconsts.Cluster1, cidr)
 	require.NoError(b, err)
@@ -104,10 +104,10 @@ func (suite *networkGraphServiceBenchmarks) setupTables(b *testing.B) string {
 	err = suite.entityDataStore.CreateExternalNetworkEntity(globalWriteAccessCtx, entity, true)
 	require.NoError(b, err)
 
-	flows := make([]*storage.NetworkFlow, 0, 2000)
+	flows := make([]*storage.NetworkFlow, 0, numFlows)
 
 	ts := time.Now()
-	for i := 0; i < cap(flows); i++ {
+	for i := 0; i < numFlows; i++ {
 		name := fmt.Sprintf("deployment-%d", i)
 		deployment := &storage.Deployment{
 			Name:      name,
@@ -120,7 +120,8 @@ func (suite *networkGraphServiceBenchmarks) setupTables(b *testing.B) string {
 		err := suite.deploymentsDataStore.UpsertDeployment(globalWriteAccessCtx, deployment)
 		require.NoError(b, err)
 
-		flows = append(flows, testutils.GetNetworkFlow(deploymentEnt, entity.Info, 1337, storage.L4Protocol_L4_PROTOCOL_TCP, &ts))
+		// The port is not important for the purposes of benchmarks, so 1234 chosen arbitrarily
+		flows = append(flows, testutils.GetNetworkFlow(deploymentEnt, entity.Info, 1234, storage.L4Protocol_L4_PROTOCOL_TCP, &ts))
 	}
 
 	flowStore, err := suite.flowDataStore.CreateFlowStore(globalWriteAccessCtx, fixtureconsts.Cluster1)
@@ -275,7 +276,7 @@ func benchmarkGetExternalNetworkFlows(suite *networkGraphServiceBenchmarks, req 
 
 func BenchmarkGetExternalNetworkFlows(b *testing.B) {
 	suite := setupBenchmarkForB(b)
-	entityId := suite.setupTables(b)
+	entityId := suite.setupTables(b, 2000)
 
 	b.Run("all entity flows", benchmarkGetExternalNetworkFlows(&suite, &v1.GetExternalNetworkFlowsRequest{
 		ClusterId: fixtureconsts.Cluster1,
