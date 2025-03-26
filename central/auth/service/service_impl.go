@@ -139,7 +139,12 @@ func (s *serviceImpl) ListAuthMachineToMachineConfigs(ctx context.Context, _ *v1
 	if !features.AuthMachineToMachine.Enabled() {
 		return nil, m2mFeatureDisabledError()
 	}
-	storageConfigs, err := s.authDataStore.ListAuthM2MConfigs(ctx)
+
+	var storageConfigs []*storage.AuthMachineToMachineConfig
+	err := s.authDataStore.ProcessAuthM2MConfigs(ctx, func(c *storage.AuthMachineToMachineConfig) error {
+		storageConfigs = append(storageConfigs, c)
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
