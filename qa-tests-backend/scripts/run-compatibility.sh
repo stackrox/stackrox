@@ -49,6 +49,10 @@ _compatibility_test() {
     export_test_environment
     ci_export CENTRAL_PERSISTENCE_NONE "true"
 
+    # For every version pair we use a unique name for the secured cluster to prevent attempts
+    # to register the same secured cluster name multiple times, which will fails in CRS mode.
+    export CLUSTER="sc-${short_sensor_tag}-${short_central_tag}"
+
     if [[ "${SKIP_DEPLOY:-false}" = "false" ]]; then
         if [[ "${CI:-false}" = "true" ]]; then
             setup_gcp
@@ -78,8 +82,6 @@ _compatibility_test() {
     if [[ "${ORCHESTRATOR_FLAVOR}" == "openshift" ]]; then
         oc get scc qatest-anyuid || oc create -f "${ROOT}/qa-tests-backend/src/k8s/scc-qatest-anyuid.yaml"
     fi
-
-    export CLUSTER="${ORCHESTRATOR_FLAVOR^^}"
 
     make -C qa-tests-backend compatibility-test || touch FAIL
 
