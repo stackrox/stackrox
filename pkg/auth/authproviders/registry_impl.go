@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/errox"
@@ -58,13 +59,8 @@ type registryImpl struct {
 }
 
 func (r *registryImpl) Init() error {
-	providerDefs, err := r.store.GetAllAuthProviders(sac.WithAllAccess(context.Background()))
-	if err != nil {
-		return err
-	}
-
-	r.providers = make(map[string]Provider, len(providerDefs))
-	for _, storedValue := range providerDefs {
+	r.providers = make(map[string]Provider)
+	err := r.store.GetAllAuthProviders(sac.WithAllAccess(context.Background()), func(storedValue *storage.AuthProvider) error {
 		// Construct the options for the provider, using the stored definition, and the defaults for previously stored objects.
 		options := []ProviderOption{
 			WithStorageView(storedValue),
@@ -78,6 +74,10 @@ func (r *registryImpl) Init() error {
 			panic(err)
 		}
 		r.addProvider(provider)
+		return nil
+	})
+	if err != nil {
+		return err
 	}
 
 	r.initHTTPMux()

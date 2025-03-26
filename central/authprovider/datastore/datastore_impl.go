@@ -25,13 +25,13 @@ type datastoreImpl struct {
 	storage store.Store
 }
 
-// GetAllAuthProviders retrieves authProviders.
-func (b *datastoreImpl) GetAllAuthProviders(ctx context.Context) ([]*storage.AuthProvider, error) {
+// GetAllAuthProviders retrieves authProviders and process each one with provided function.
+func (b *datastoreImpl) GetAllAuthProviders(ctx context.Context, fn func(obj *storage.AuthProvider) error) error {
 	if err := sac.VerifyAuthzOK(accessSAC.ReadAllowed(ctx)); err != nil {
-		return nil, err
+		return err
 	}
 
-	return b.storage.GetAll(ctx)
+	return b.storage.Walk(ctx, fn)
 }
 
 func (b *datastoreImpl) GetAuthProvider(ctx context.Context, id string) (*storage.AuthProvider, bool, error) {
@@ -60,18 +60,16 @@ func (b *datastoreImpl) GetAuthProvidersFiltered(ctx context.Context,
 	if err := sac.VerifyAuthzOK(accessSAC.ReadAllowed(ctx)); err != nil {
 		return nil, err
 	}
-	// TODO(ROX-15902): The store currently doesn't provide a Walk function. This is mostly due to us supporting the
-	// old bolt store. Once we deprecate old store solutions with the 4.0.0 release, this should be changed to use
-	// store.Walk.
-	authProviders, err := b.storage.GetAll(ctx)
-	if err != nil {
-		return nil, pkgErrors.Wrap(err, "retrieving auth providers")
-	}
-	filteredAuthProviders := make([]*storage.AuthProvider, 0, len(authProviders))
-	for _, authProvider := range authProviders {
+
+	var filteredAuthProviders []*storage.AuthProvider
+	err := b.storage.Walk(ctx, func(authProvider *storage.AuthProvider) error {
 		if filter(authProvider) {
 			filteredAuthProviders = append(filteredAuthProviders, authProvider)
 		}
+		return nil
+	})
+	if err != nil {
+		return nil, pkgErrors.Wrap(err, "retrieving auth providers")
 	}
 	return filteredAuthProviders, nil
 }
