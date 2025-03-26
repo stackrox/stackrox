@@ -10,7 +10,7 @@ const rules = {
             type: 'problem',
             docs: {
                 description:
-                    'Require tbat Button element with component={LinkShim} also has href prop',
+                    'Require that Button element with component={LinkShim} also has href prop',
             },
             schema: [],
         },
@@ -33,7 +33,7 @@ const rules = {
                                 context.report({
                                     node,
                                     message:
-                                        'Require tbat Button element with component={LinkShim} also has href prop',
+                                        'Require that Button element with component={LinkShim} also has href prop',
                                 });
                             }
                         }
@@ -79,7 +79,7 @@ const rules = {
             type: 'problem',
             docs: {
                 description:
-                    'Require tbat Link element with target="_blank" also has rel="noopener noreferrer" prop',
+                    'Require that Link element with target="_blank" also has rel="noopener noreferrer" prop',
             },
             schema: [],
         },
@@ -104,7 +104,7 @@ const rules = {
                                 context.report({
                                     node,
                                     message:
-                                        'Require tbat Link element with target="_blank" also has rel="noopener noreferrer" prop',
+                                        'Require that Link element with target="_blank" also has rel="noopener noreferrer" prop',
                                 });
                             }
                         }
