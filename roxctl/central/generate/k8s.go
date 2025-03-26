@@ -79,7 +79,7 @@ func orchestratorCommand(shortName, _ string) *cobra.Command {
 		}),
 	}
 	if !roxctl.InMainImage() {
-		c.PersistentFlags().Var(common.NewOutputDir(&cfg.OutputDir, defaultBundlePath), "output-dir", "The directory to output the deployment bundle to")
+		c.PersistentFlags().Var(common.NewOutputDir(&cfg.OutputDir, defaultBundlePath), "output-dir", "The directory to output the deployment bundle to.")
 		flags.OutputDirManuallySet = c.PersistentFlags().Changed("output-dir")
 	}
 	return c
@@ -105,21 +105,21 @@ func k8sBasedOrchestrator(cliEnvironment environment.Environment, k8sConfig *ren
 	// Adds k8s specific flags
 	flags.AddImageDefaults(flagWrap.FlagSet, &k8sConfig.ImageFlavorName)
 
-	defaultImageHelp := fmt.Sprintf(" (if unset, a default will be used according to --%s)", flags.ImageDefaultsFlagName)
+	defaultImageHelp := fmt.Sprintf(" (if unset, a default will be used according to --%s).", flags.ImageDefaultsFlagName)
 	flagWrap.StringVarP(&k8sConfig.MainImage, flags.FlagNameMainImage, "i", "", "The main image to use"+defaultImageHelp, "central")
-	flagWrap.BoolVar(&k8sConfig.OfflineMode, "offline", false, "Whether to run StackRox in offline mode, which avoids reaching out to the Internet", "central")
+	flagWrap.BoolVar(&k8sConfig.OfflineMode, "offline", false, "Whether to run StackRox in offline mode, which avoids reaching out to the Internet.", "central")
 	flagWrap.StringVar(&k8sConfig.CentralDBImage, flags.FlagNameCentralDBImage, "", "The central-db image to use"+defaultImageHelp, "central")
 	flagWrap.StringVar(&k8sConfig.ScannerImage, flags.FlagNameScannerImage, "", "The scanner image to use"+defaultImageHelp, "scanner")
 	flagWrap.StringVar(&k8sConfig.ScannerDBImage, flags.FlagNameScannerDBImage, "", "The scanner-db image to use"+defaultImageHelp, "scanner")
 	flagWrap.StringVar(&k8sConfig.ScannerV4Image, flags.FlagNameScannerV4Image, "", "The scanner-v4 image to use"+defaultImageHelp, "scanner-v4")
 	flagWrap.StringVar(&k8sConfig.ScannerV4DBImage, flags.FlagNameScannerV4DBImage, "", "The scanner-v4-db image to use"+defaultImageHelp, "scanner-v4")
-	flagWrap.BoolVar(&k8sConfig.Telemetry.Enabled, "enable-telemetry", version.IsReleaseVersion(), "Whether to enable telemetry", "central")
+	flagWrap.BoolVar(&k8sConfig.Telemetry.Enabled, "enable-telemetry", version.IsReleaseVersion(), "Whether to enable telemetry.", "central")
 
 	if env.DeclarativeConfiguration.BooleanSetting() {
 		flagWrap.StringSliceVar(&k8sConfig.DeclarativeConfigMounts.ConfigMaps, "declarative-config-config-maps", nil,
-			"List of config maps to add as declarative configuration mounts in central", "central")
+			"List of config maps to add as declarative configuration mounts in central.", "central")
 		flagWrap.StringSliceVar(&k8sConfig.DeclarativeConfigMounts.Secrets, "declarative-config-secrets", nil,
-			"List of secrets to add as declarative configuration mounts in central", "central")
+			"List of secrets to add as declarative configuration mounts in central.", "central")
 	}
 
 	k8sConfig.EnableCentralDB = true
@@ -134,23 +134,23 @@ func newK8sConfig() *renderer.K8sConfig {
 func k8s(cliEnvironment environment.Environment) *cobra.Command {
 	k8sConfig := newK8sConfig()
 	c := k8sBasedOrchestrator(cliEnvironment, k8sConfig, "k8s", "Kubernetes", func() (storage.ClusterType, error) { return storage.ClusterType_KUBERNETES_CLUSTER, nil })
-	c.Short = "Generate the required YAML configuration files to deploy StackRox Central into a Kubernetes cluster."
+	c.Short = "Generate the required YAML configuration files to deploy StackRox Central into a Kubernetes cluster"
 	flagWrap := &flagsWrapper{FlagSet: c.PersistentFlags()}
 
-	flagWrap.Var(&loadBalancerWrapper{LoadBalancerType: &k8sConfig.LoadBalancerType}, "lb-type", "The method of exposing Central (lb, np, none)", "central")
+	flagWrap.Var(&loadBalancerWrapper{LoadBalancerType: &k8sConfig.LoadBalancerType}, "lb-type", "The method of exposing Central (lb, np, none).", "central")
 
 	validFormats := []string{"kubectl", "helm", "helm-values"}
-	flagWrap.Var(&fileFormatWrapper{DeploymentFormat: &k8sConfig.DeploymentFormat}, "output-format", fmt.Sprintf("The deployment tool to use (%s)", strings.Join(validFormats, ", ")), "central")
+	flagWrap.Var(&fileFormatWrapper{DeploymentFormat: &k8sConfig.DeploymentFormat}, "output-format", fmt.Sprintf("The deployment tool to use (%s).", strings.Join(validFormats, ", ")), "central")
 
 	flagWrap.Var(istioSupportWrapper{&k8sConfig.IstioVersion}, "istio-support",
 		fmt.Sprintf(
-			"Generate deployment files supporting the given Istio version (kubectl output format only). Valid versions: %s",
+			"Generate deployment files supporting the given Istio version (kubectl output format only). Valid versions: %s.",
 			strings.Join(istioutils.ListKnownIstioVersions(), ", ")),
 		"central", "output-format=kubectl",
 	)
 	utils.Must(
 		flagWrap.SetAnnotation("istio-support", flags.OptionalKey, []string{"true"}),
-		flagWrap.SetAnnotation("istio-support", flags.InteractiveUsageKey, []string{"Istio version when deploying into an Istio-enabled cluster (leave empty when not running Istio)"}),
+		flagWrap.SetAnnotation("istio-support", flags.InteractiveUsageKey, []string{"Istio version when deploying into an Istio-enabled cluster (leave empty when not running Istio)."}),
 	)
 
 	return c
@@ -172,20 +172,20 @@ func openshift(cliEnvironment environment.Environment) *cobra.Command {
 		}
 		return clusterType, nil
 	})
-	c.Short = "Generate the required YAML configuration files to deploy StackRox Central into an OpenShift cluster."
+	c.Short = "Generate the required YAML configuration files to deploy StackRox Central into an OpenShift cluster"
 
 	flagWrap := &flagsWrapper{FlagSet: c.PersistentFlags()}
 
-	flagWrap.Var(&loadBalancerWrapper{LoadBalancerType: &k8sConfig.LoadBalancerType}, "lb-type", "The method of exposing Central (route, lb, np, none)", "central")
+	flagWrap.Var(&loadBalancerWrapper{LoadBalancerType: &k8sConfig.LoadBalancerType}, "lb-type", "The method of exposing Central (route, lb, np, none).", "central")
 
 	validFormats := []string{"kubectl", "helm", "helm-values"}
-	flagWrap.Var(&fileFormatWrapper{DeploymentFormat: &k8sConfig.DeploymentFormat}, "output-format", fmt.Sprintf("The deployment tool to use (%s)", strings.Join(validFormats, ", ")), "central")
+	flagWrap.Var(&fileFormatWrapper{DeploymentFormat: &k8sConfig.DeploymentFormat}, "output-format", fmt.Sprintf("The deployment tool to use (%s).", strings.Join(validFormats, ", ")), "central")
 
-	flagWrap.IntVar(&openshiftVersion, "openshift-version", 0, "The OpenShift major version (3 or 4) to deploy on")
-	flagWrap.OptBoolVar(&k8sConfig.Monitoring.OpenShiftMonitoring, "openshift-monitoring", "", "Integration with OpenShift 4 monitoring", "auto", "central")
+	flagWrap.IntVar(&openshiftVersion, "openshift-version", 0, "The OpenShift major version (3 or 4) to deploy on.")
+	flagWrap.OptBoolVar(&k8sConfig.Monitoring.OpenShiftMonitoring, "openshift-monitoring", "", "Integration with OpenShift 4 monitoring.", "auto", "central")
 	flagWrap.Var(istioSupportWrapper{&k8sConfig.IstioVersion}, "istio-support",
 		fmt.Sprintf(
-			"Generate deployment files supporting the given Istio version. Valid versions: %s",
+			"Generate deployment files supporting the given Istio version. Valid versions: %s.",
 			strings.Join(istioutils.ListKnownIstioVersions(), ", ")),
 		"central",
 	)

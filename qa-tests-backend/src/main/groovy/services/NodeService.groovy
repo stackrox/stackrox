@@ -1,10 +1,13 @@
 package services
 
+import groovy.transform.CompileStatic
+
 import io.stackrox.proto.api.v1.NodeServiceGrpc
 import io.stackrox.proto.api.v1.NodeServiceOuterClass
 
+@CompileStatic
 class NodeService extends BaseService {
-    static getNodeClient() {
+    static NodeServiceGrpc.NodeServiceBlockingStub getNodeClient() {
         return NodeServiceGrpc.newBlockingStub(getChannel())
     }
 

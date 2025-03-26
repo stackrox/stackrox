@@ -79,7 +79,7 @@ require (
 	github.com/heroku/docker-registry-client v0.0.0
 	github.com/jackc/pgtype v1.14.4
 	github.com/jackc/pgx/v4 v4.18.3
-	github.com/jackc/pgx/v5 v5.7.3
+	github.com/jackc/pgx/v5 v5.7.4
 	github.com/jeremywohl/flatten v1.0.1
 	github.com/joshdk/go-junit v1.0.0
 	github.com/klauspost/compress v1.18.0
@@ -97,7 +97,7 @@ require (
 	github.com/onsi/gomega v1.36.3
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.1
-	github.com/openshift-online/ocm-sdk-go v0.1.462
+	github.com/openshift-online/ocm-sdk-go v0.1.463
 	github.com/openshift/api v0.0.0-20240415161129-d7aff303fa1a
 	github.com/openshift/client-go v0.0.0-20240415191513-dcdeb09390b4
 	github.com/openshift/runtime-utils v0.0.0-20230921210328-7bdb5b9c177b
@@ -114,7 +114,7 @@ require (
 	github.com/quay/claircore/toolkit v1.2.5-0.20250120211107-bea8a6c197b2
 	github.com/quay/zlog v1.1.8
 	github.com/remind101/migrate v0.0.0-20170729031349-52c1edff7319
-	github.com/rs/zerolog v1.33.0
+	github.com/rs/zerolog v1.34.0
 	github.com/russellhaering/gosaml2 v0.10.0
 	github.com/russellhaering/goxmldsig v1.5.0
 	github.com/segmentio/analytics-go/v3 v3.3.0
@@ -173,7 +173,7 @@ require (
 	k8s.io/kubectl v0.32.3
 	k8s.io/kubelet v0.29.15
 	k8s.io/utils v0.0.0-20241210054802-24370beab758
-	sigs.k8s.io/controller-runtime v0.20.3
+	sigs.k8s.io/controller-runtime v0.20.4
 	sigs.k8s.io/controller-tools v0.14.0
 	sigs.k8s.io/e2e-framework v0.3.0
 	sigs.k8s.io/yaml v1.4.0

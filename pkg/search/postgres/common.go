@@ -50,6 +50,8 @@ var (
 	}
 )
 
+const cursorBatchSize = 1000
+
 // QueryType describe what type of query to execute
 //
 //go:generate stringer -type=QueryType

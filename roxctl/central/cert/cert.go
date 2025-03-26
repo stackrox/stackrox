@@ -35,7 +35,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	centralCertCommand := &centralCertCommand{env: cliEnvironment}
 	cbr := &cobra.Command{
 		Use:   "cert",
-		Short: "Download certificate chain for the Central service.",
+		Short: "Download certificate chain for the Central service",
 		Long:  "Download certificate chain for the Central service or its associated ingress or load balancer, if one exists.",
 		RunE: util.RunENoArgs(func(cmd *cobra.Command) error {
 			if err := centralCertCommand.construct(cmd); err != nil {
@@ -45,7 +45,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		}),
 	}
 
-	cbr.Flags().StringVar(&centralCertCommand.filename, "output", "-", "Filename to output PEM certificate to; '-' for stdout")
+	cbr.Flags().StringVar(&centralCertCommand.filename, "output", "-", "Filename to output PEM certificate to; '-' for stdout.")
 	flags.AddTimeout(cbr)
 	flags.AddRetryTimeout(cbr)
 	return cbr

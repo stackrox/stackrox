@@ -93,7 +93,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c := &cobra.Command{
 		Use:   "check",
-		Short: "Check deployments for deploy time policy violations.",
+		Short: "Check deployments for deploy time policy violations",
 		Long:  "Check deployments for deploy time policy violations, and exit with an non-zero code if at least one of the violated policies has deploy time enforcement turned on.",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -111,17 +111,17 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	// Add all printer related flags
 	objectPrinterFactory.AddFlags(c)
 
-	c.Flags().StringArrayVarP(&deploymentCheckCmd.files, "file", "f", nil, "YAML files to send to Central to evaluate policies against")
+	c.Flags().StringArrayVarP(&deploymentCheckCmd.files, "file", "f", nil, "YAML files to send to Central to evaluate policies against.")
 	c.Flags().BoolVar(&deploymentCheckCmd.json, "json", false, "Output policy results as json.")
-	c.Flags().IntVarP(&deploymentCheckCmd.retryDelay, "retry-delay", "d", 3, "Set time to wait between retries in seconds")
-	c.Flags().IntVarP(&deploymentCheckCmd.retryCount, "retries", "r", 3, "Number of retries before exiting as error")
+	c.Flags().IntVarP(&deploymentCheckCmd.retryDelay, "retry-delay", "d", 3, "Set time to wait between retries in seconds.")
+	c.Flags().IntVarP(&deploymentCheckCmd.retryCount, "retries", "r", 3, "Number of retries before exiting as error.")
 	c.Flags().StringSliceVarP(&deploymentCheckCmd.policyCategories, "categories", "c", nil, "Optional comma separated list of policy categories to run.  Defaults to all policy categories.")
-	c.Flags().BoolVar(&deploymentCheckCmd.printAllViolations, "print-all-violations", false, "Whether to print all violations per alert or truncate violations for readability")
-	c.Flags().BoolVar(&deploymentCheckCmd.force, "force", false, "Bypass Central's cache for images and force a new pull from the Scanner")
+	c.Flags().BoolVar(&deploymentCheckCmd.printAllViolations, "print-all-violations", false, "Whether to print all violations per alert or truncate violations for readability.")
+	c.Flags().BoolVar(&deploymentCheckCmd.force, "force", false, "Bypass Central's cache for images and force a new pull from the Scanner.")
 	utils.Must(c.MarkFlagRequired("file"))
 	c.Flags().StringVar(&deploymentCheckCmd.cluster, "cluster", "", "Cluster name or ID to use as context for evaluation. Setting cluster enables enhancing deployments with cluster-specific information.")
 	c.Flags().StringVarP(&deploymentCheckCmd.namespace, "namespace", "n", defaultNamespace, "A namespace to enhance the deployments with context information (network policies, RBACs, services) for deployments that lack namespace in their spec. Namespace defined in spec will not be changed.")
-	c.Flags().BoolVarP(&deploymentCheckCmd.verbose, "verbose", "v", false, "Enable additional output like permission level and applied network policies for checked deployments")
+	c.Flags().BoolVarP(&deploymentCheckCmd.verbose, "verbose", "v", false, "Enable additional output like permission level and applied network policies for checked deployments.")
 	// mark legacy output format specific flags as deprecated
 	utils.Must(c.Flags().MarkDeprecated("json", "Use the new output format which also offers JSON. NOTE: "+
 		"The new output format's structure has changed in a non-backward compatible way."))

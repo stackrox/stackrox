@@ -96,7 +96,7 @@ func (o *ObjectPrinterFactory) AddFlags(cmd *cobra.Command) {
 	}
 
 	cmd.PersistentFlags().StringVarP(&o.OutputFormat, "output", "o", o.OutputFormat,
-		fmt.Sprintf("Output format. Choose one of: %s", strings.Join(o.supportedFormats(), " | ")))
+		fmt.Sprintf("Output format. Choose one of: %s.", strings.Join(o.supportedFormats(), " | ")))
 }
 
 // CreatePrinter will iterate through the registered CustomPrinterFactory and try to create a ObjectPrinter for each.

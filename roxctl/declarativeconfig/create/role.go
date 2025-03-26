@@ -31,12 +31,12 @@ func roleCommand(cliEnvironment environment.Environment) *cobra.Command {
 		Short: "Create a declarative configuration for a role",
 	}
 
-	cmd.Flags().StringVar(&roleCmd.role.Name, "name", "", "Name of the role")
-	cmd.Flags().StringVar(&roleCmd.role.Description, "description", "", "Description of the role")
+	cmd.Flags().StringVar(&roleCmd.role.Name, "name", "", "Name of the role.")
+	cmd.Flags().StringVar(&roleCmd.role.Description, "description", "", "Description of the role.")
 	cmd.Flags().StringVar(&roleCmd.role.AccessScope, "access-scope", "",
-		"Name of the referenced access scope")
+		"Name of the referenced access scope.")
 	cmd.Flags().StringVar(&roleCmd.role.PermissionSet, "permission-set", "",
-		"Name of the referenced permission set")
+		"Name of the referenced permission set.")
 
 	// No additional validation is required for roles, since a role is valid when name, permission set, access
 	// scope are set, which is covered by requiring the flag.

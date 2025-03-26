@@ -21,7 +21,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	cbr := &cobra.Command{
 		Use:   "delete",
-		Short: "Remove a Sensor from Central.",
+		Short: "Remove a Sensor from Central",
 		Long:  "Remove a Sensor from Central, without deleting any orchestrator objects.",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -35,7 +35,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 			return clusterDeleteCmd.Delete()
 		},
 	}
-	cbr.PersistentFlags().StringVar(&clusterDeleteCmd.name, "name", "", "Cluster name to delete")
+	cbr.PersistentFlags().StringVar(&clusterDeleteCmd.name, "name", "", "Cluster name to delete.")
 	return cbr
 }
 

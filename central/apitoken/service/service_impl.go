@@ -8,6 +8,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/apitoken/backend"
+	"github.com/stackrox/rox/central/apitoken/creation"
 	roleDS "github.com/stackrox/rox/central/role/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -120,6 +121,8 @@ func (s *serviceImpl) GenerateToken(ctx context.Context, req *v1.GenerateTokenRe
 	if err != nil {
 		return nil, err
 	}
+
+	creation.LogTokenCreation(id, metadata)
 
 	return &v1.GenerateTokenResponse{
 		Token:    token,
