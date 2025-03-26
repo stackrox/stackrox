@@ -1106,28 +1106,28 @@ func (resolver *imageCVEV2Resolver) DiscoveredAtImage(_ context.Context, _ RawQu
 func (resolver *imageCVEV2Resolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "ImageComponents")
 	log.Infof("SHREWS -- image_vule.ImageComponents -- %v", resolver.flatData)
-	if resolver.flatData != nil {
-		q := *args.Query
-		q = q + "+CVE ID:" + strings.Join(resolver.flatData.GetCVEIDs(), ",")
-		args.Query = pointers.String(q)
-		log.Infof("SHREWS -- about to send query %v", args.String())
-		log.Infof("SHREWS -- what is the context %v", ctx)
-		return resolver.root.ImageComponents(ctx, args)
-	}
+	//if resolver.flatData != nil {
+	//	q := *args.Query
+	//	q = q + "+CVE ID:" + strings.Join(resolver.flatData.GetCVEIDs(), ",")
+	//	args.Query = pointers.String(q)
+	//	log.Infof("SHREWS -- about to send query %v", args.String())
+	//	log.Infof("SHREWS -- what is the context %v", ctx)
+	//	return resolver.root.ImageComponents(ctx, args)
+	//}
 
 	return resolver.root.ImageComponents(resolver.imageVulnerabilityScopeContext(ctx), args)
 }
 
 func (resolver *imageCVEV2Resolver) ImageComponentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "ImageComponentCount")
-	if resolver.flatData != nil {
-		q := *args.Query
-		q = q + "+CVE ID:" + strings.Join(resolver.flatData.GetCVEIDs(), ",")
-		args.Query = pointers.String(q)
-		log.Infof("SHREWS -- about to send query %v", args.String())
-		log.Infof("SHREWS -- what is the context %v", ctx)
-		return resolver.root.ImageComponentCount(ctx, args)
-	}
+	//if resolver.flatData != nil {
+	//	q := *args.Query
+	//	q = q + "+CVE ID:" + strings.Join(resolver.flatData.GetCVEIDs(), ",")
+	//	args.Query = pointers.String(q)
+	//	log.Infof("SHREWS -- about to send query %v", args.String())
+	//	log.Infof("SHREWS -- what is the context %v", ctx)
+	//	return resolver.root.ImageComponentCount(ctx, args)
+	//}
 	return resolver.root.ImageComponentCount(resolver.imageVulnerabilityScopeContext(ctx), args)
 }
 
@@ -1193,7 +1193,15 @@ func (resolver *imageCVEV2Resolver) imageVulnerabilityScopeContext(ctx context.C
 	// TODO(ROX-28320): make sure this query is correct for flattened schema.  May have to just build a query
 	// and not use the scope context as it is too limiting and it would cause far reaching changes to
 	// extend it.  I think.
+	if resolver.flatData != nil {
+		return scoped.Context(resolver.ctx, scoped.Scope{
+			IDs:   resolver.flatData.GetCVEIDs(),
+			Level: v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
+		})
+	}
+
 	return scoped.Context(resolver.ctx, scoped.Scope{
+		ID:    resolver.data.GetId(),
 		Level: v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
 	})
 }
