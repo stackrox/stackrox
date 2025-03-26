@@ -7,7 +7,12 @@ import { ActionsColumn, Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/reac
 
 import { selectors } from 'reducers';
 import { actions as authActions } from 'reducers/auth';
-import { AuthProvider, AuthProviderInfo, getIsAuthProviderImmutable } from 'services/AuthService';
+import {
+    AuthProvider,
+    AuthProviderInfo,
+    AuthStatus,
+    getIsAuthProviderImmutable,
+} from 'services/AuthService';
 
 import { AccessControlEntityLink } from '../AccessControlLinks';
 import { getOriginLabel } from '../traits';
@@ -29,7 +34,12 @@ export type AuthProvidersListProps = {
     authProviders: AuthProvider[];
 };
 
-const authProviderState = createStructuredSelector({
+type AuthProviderState = {
+    currentUser: AuthStatus;
+    availableProviderTypes: AuthProviderInfo[];
+};
+
+const authProviderState = createStructuredSelector<AuthProviderState>({
     currentUser: selectors.getCurrentUser,
     availableProviderTypes: selectors.getAvailableProviderTypes,
 });

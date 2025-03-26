@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useHistory, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
     PageSection,
     Title,
@@ -36,15 +36,15 @@ const wizardStepNames = [
 ];
 
 function EditVulnReportPage() {
-    const history = useHistory();
-    const { reportId } = useParams();
+    const navigate = useNavigate();
+    const { reportId } = useParams() as { reportId: string };
 
     const { reportConfiguration, isLoading, error } = useFetchReport(reportId);
     const formik = useReportFormValues();
     const { isSaving, saveError, saveReport } = useSaveReport({
         onCompleted: () => {
             formik.resetForm();
-            history.push(vulnerabilityReportsPath);
+            navigate(vulnerabilityReportsPath);
         },
     });
 
@@ -80,7 +80,7 @@ function EditVulnReportPage() {
     }
 
     function onClose() {
-        history.push(vulnerabilityReportsPath);
+        navigate(vulnerabilityReportsPath);
     }
 
     const wizardSteps = [

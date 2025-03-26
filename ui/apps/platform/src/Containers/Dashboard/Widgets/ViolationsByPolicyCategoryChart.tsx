@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
     Chart,
     ChartAxis,
@@ -166,7 +166,7 @@ function ViolationsByPolicyCategoryChart({
     setHiddenSeverities,
     searchFilter,
 }: ViolationsByPolicyCategoryChartProps) {
-    const history = useHistory();
+    const navigate = useNavigate();
     const [widgetContainer, setWidgetContainer] = useState<HTMLDivElement | null>(null);
     const widgetContainerResizeEntry = useResizeObserver(widgetContainer);
 
@@ -203,7 +203,7 @@ function ViolationsByPolicyCategoryChart({
                 events={[
                     // TS2339: Property 'xName' does not exist on type '{}'.
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    navigateOnClickEvent(history, (targetProps: any) => {
+                    navigateOnClickEvent(navigate, (targetProps: any) => {
                         const category = targetProps?.datum?.xName;
                         return linkForViolationsCategory(
                             category,

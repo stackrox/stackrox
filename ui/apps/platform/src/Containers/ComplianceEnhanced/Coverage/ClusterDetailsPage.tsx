@@ -49,7 +49,7 @@ const searchFilterConfig = [profileCheckSearchFilterConfig];
 function ClusterDetailsPage() {
     const { scanConfigurationsQuery, selectedScanConfigName, setSelectedScanConfigName } =
         useContext(ScanConfigurationsContext);
-    const { clusterId, profileName } = useParams();
+    const { clusterId, profileName } = useParams() as { clusterId: string; profileName: string };
     const { generatePathWithScanConfig, navigateWithScanConfigQuery } = useScanConfigRouter();
     const pagination = useURLPagination(DEFAULT_COMPLIANCE_PAGE_SIZE);
     const { page, perPage, setPage } = pagination;

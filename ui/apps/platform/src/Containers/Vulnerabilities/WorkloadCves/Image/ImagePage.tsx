@@ -79,8 +79,8 @@ function OptionalSbomButtonTooltip({
 }
 
 function ImagePage() {
-    const { imageId } = useParams();
     const { getAbsoluteUrl, pageTitle } = useWorkloadCveViewContext();
+    const { imageId } = useParams() as { imageId: string };
     const { data, error } = useQuery<
         {
             image: {

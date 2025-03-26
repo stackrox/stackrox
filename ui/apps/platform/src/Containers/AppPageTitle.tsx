@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Location, useLocation } from 'react-router-dom';
 import capitalize from 'lodash/capitalize';
 
 import { basePathToLabelMap } from 'routePaths';
@@ -8,10 +8,6 @@ import { resourceLabels } from 'messages/common';
 import useCaseLabels from 'messages/useCase';
 
 import PageTitle from 'Components/PageTitle';
-
-type Location = {
-    pathname: string;
-};
 
 const getTitleFromWorkflowState = (workflowState): string => {
     const useCase = useCaseLabels[workflowState.getUseCase()];

@@ -1,15 +1,12 @@
 import React from 'react';
 import { renderHook, act } from '@testing-library/react';
-import { Router } from 'react-router-dom';
-import { createMemoryHistory } from 'history';
+import { MemoryRouter } from 'react-router-dom';
 import cloneDeep from 'lodash/cloneDeep';
 
 import useURLSort from './useURLSort';
 
 const wrapper = ({ children }) => {
-    const history = createMemoryHistory();
-
-    return <Router history={history}>{children}</Router>;
+    return <MemoryRouter>{children}</MemoryRouter>;
 };
 
 beforeAll(() => {

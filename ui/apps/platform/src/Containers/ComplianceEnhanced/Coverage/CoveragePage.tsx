@@ -1,18 +1,12 @@
 import React, { useContext } from 'react';
-import { Redirect, Route, Switch } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import { Alert, Bullseye, Spinner } from '@patternfly/react-core';
 
-import { complianceEnhancedCoveragePath } from 'routePaths';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
-import {
-    coverageCheckDetailsPath,
-    coverageClusterDetailsPath,
-    coverageProfileChecksPath,
-    coverageProfileClustersPath,
-} from './compliance.coverage.routes';
 import CheckDetailsPage from './CheckDetailsPage';
 import ClusterDetailsPage from './ClusterDetailsPage';
+import ComplianceNotFoundPage from '../ComplianceNotFoundPage';
 import ComplianceProfilesProvider, {
     ComplianceProfilesContext,
 } from './ComplianceProfilesProvider';
@@ -46,26 +40,17 @@ function CoverageContent() {
     }
 
     return (
-        <Switch>
-            <Route exact path={[coverageProfileChecksPath, coverageProfileClustersPath]}>
-                <CoveragesPage />
-            </Route>
-            <Route exact path={coverageCheckDetailsPath}>
-                <CheckDetailsPage />
-            </Route>
-            <Route exact path={coverageClusterDetailsPath}>
-                <ClusterDetailsPage />
-            </Route>
+        <Routes>
+            <Route index element={<ProfilesRedirectHandler />} />
+            <Route path="profiles" element={<ProfilesRedirectHandler />} />
+            <Route path="profiles/:profileName/checks/:checkName" element={<CheckDetailsPage />} />
             <Route
-                exact
-                path={[
-                    `${complianceEnhancedCoveragePath}`,
-                    `${complianceEnhancedCoveragePath}/profiles`,
-                ]}
-            >
-                <ProfilesRedirectHandler />
-            </Route>
-        </Switch>
+                path="profiles/:profileName/clusters/:clusterId"
+                element={<ClusterDetailsPage />}
+            />
+            <Route path="profiles/:profileName/*" element={<CoveragesPage />} />
+            <Route path="*" element={<ComplianceNotFoundPage />} />
+        </Routes>
     );
 }
 
@@ -81,9 +66,7 @@ function ProfilesRedirectHandler() {
         );
     }
 
-    return (
-        <Redirect to={`${complianceEnhancedCoveragePath}/profiles/${firstProfile.name}/checks`} />
-    );
+    return <Navigate to={`profiles/${firstProfile.name}/checks`} replace />;
 }
 
 export default CoveragePage;
