@@ -64,6 +64,14 @@ func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
 		// reconcileInitBundleSecrets not called due to ROX-9023. TODO(ROX-9969): call after the init-bundle cert rotation stabilization.
 	}
 
+	// TODO: make nice
+	if route := r.centralObj.Spec.Central.GetExposure().GetRoute(); route != nil {
+		if route.Reencrypt != nil && route.Reencrypt.TLS != nil {
+			ca := "xxx"
+			route.Reencrypt.TLS.CaCertificate = &ca
+		}
+	}
+
 	if err := r.EnsureSecret(ctx, "central-tls", r.validateAndConsumeCentralTLSData, r.generateCentralTLSData, commonLabels.TLSSecretLabels()); err != nil {
 		return errors.Wrap(err, "reconciling central-tls secret failed")
 	}

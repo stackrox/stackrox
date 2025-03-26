@@ -1,0 +1,20 @@
+# Make kuttl ignore this file unless running against openshift.
+apiVersion: kuttl.dev/v1beta1
+kind: TestFile
+testRunSelector:
+  matchLabels:
+    openshift: "true"
+---
+apiVersion: platform.stackrox.io/v1alpha1
+kind: Central
+metadata:
+  name: stackrox-central-services
+spec:
+  central:
+    exposure:
+      route:
+        enabled: true
+        host: custom-route.host
+        reencrypt:
+          enabled: true
+          host: custom-reencrypt-route.host
