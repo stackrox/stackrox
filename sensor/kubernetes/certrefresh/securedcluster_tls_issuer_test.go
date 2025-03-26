@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/mtls"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
+	"github.com/stackrox/rox/pkg/queue"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
@@ -87,7 +88,7 @@ func newSecuredClusterTLSIssuerFixture(k8sClientConfig fakeK8sClientConfig) *sec
 		getServiceCertificatesRepoFn: fixture.componentGetter.getServiceCertificatesRepo,
 		msgToCentralC:                make(chan *message.ExpiringMessage),
 		newMsgFromSensorFn:           newSecuredClusterMsgFromSensor,
-		stopSig:                      concurrency.NewSignal(),
+		responseQueue:                queue.NewQueue[*Response](),
 		requiredCentralCapability: func() *centralsensor.CentralCapability {
 			centralCap := centralsensor.CentralCapability(centralsensor.SecuredClusterCertificatesReissue)
 			return &centralCap
@@ -134,7 +135,7 @@ func (f *securedClusterTLSIssuerFixture) respondRequest(
 			response = &central.IssueSecuredClusterCertsResponse{RequestId: interceptedRequestID}
 		}
 		f.interceptedRequestID.Store(response.GetRequestId())
-		f.tlsIssuer.dispatch(NewResponseFromSecuredClusterCerts(response))
+		f.tlsIssuer.responseQueue.Push(NewResponseFromSecuredClusterCerts(response))
 	}
 }
 
@@ -273,12 +274,8 @@ func (s *securedClusterTLSIssuerTests) TestSecuredClusterTLSIssuerProcessMessage
 
 	assert.NoError(s.T(), fixture.tlsIssuer.ProcessMessage(msg))
 	assert.Eventually(s.T(), func() bool {
-		select {
-		case <-fixture.tlsIssuer.responseFromCentral:
-			return true
-		default:
-			return false
-		}
+		response := fixture.tlsIssuer.responseQueue.Pull()
+		return response != nil
 	}, 2*time.Second, 100*time.Millisecond)
 }
 
@@ -294,12 +291,8 @@ func (s *securedClusterTLSIssuerTests) TestSecuredClusterTLSIssuerProcessMessage
 
 	assert.NoError(s.T(), fixture.tlsIssuer.ProcessMessage(msg))
 	assert.Never(s.T(), func() bool {
-		select {
-		case <-fixture.tlsIssuer.responseFromCentral:
-			return true
-		default:
-			return false
-		}
+		response := fixture.tlsIssuer.responseQueue.Pull()
+		return response != nil
 	}, 200*time.Millisecond, 50*time.Millisecond)
 }
 

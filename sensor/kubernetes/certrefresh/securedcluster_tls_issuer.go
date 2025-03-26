@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/queue"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
@@ -63,7 +64,7 @@ func NewSecuredClusterTLSIssuer(
 		getServiceCertificatesRepoFn: securedcluster.NewServiceCertificatesRepo,
 		msgToCentralC:                make(chan *message.ExpiringMessage),
 		newMsgFromSensorFn:           newSecuredClusterMsgFromSensor,
-		stopSig:                      concurrency.NewSignal(),
+		responseQueue:                queue.NewQueue[*Response](),
 		requiredCentralCapability: func() *centralsensor.CentralCapability {
 			centralCap := centralsensor.CentralCapability(centralsensor.SecuredClusterCertificatesReissue)
 			return &centralCap
@@ -101,11 +102,8 @@ type tlsIssuerImpl struct {
 	getServiceCertificatesRepoFn serviceCertificatesRepoGetter
 	certRefresher                concurrency.RetryTicker
 	msgToCentralC                chan *message.ExpiringMessage
-	responseFromCentral          chan *Response
+	responseQueue                *queue.Queue[*Response]
 	requestMutex                 sync.Mutex
-	wgDispatch                   sync.WaitGroup
-	wgRequest                    sync.WaitGroup
-	stopSig                      concurrency.Signal
 	newMsgFromSensorFn           newMsgFromSensor
 	requiredCentralCapability    *centralsensor.CentralCapability
 	started                      atomic.Bool
@@ -154,9 +152,6 @@ func (i *tlsIssuerImpl) activate() error {
 	i.certRefresher = i.getCertificateRefresherFn(i.componentName, i.requestCertificates, certsRepo,
 		certRefreshTimeout, i.certRefreshBackoff)
 
-	i.responseFromCentral = make(chan *Response)
-	i.stopSig.Reset()
-
 	refresherCtx, cancelFunc := context.WithCancel(context.Background())
 	i.cancelRefresher = cancelFunc
 	if refreshStartErr := i.certRefresher.Start(refresherCtx); refreshStartErr != nil {
@@ -180,16 +175,9 @@ func (i *tlsIssuerImpl) deactivate() {
 	defer i.activateLock.Unlock()
 
 	if i.certRefresher != nil {
-		// cancel the refresher and wait for any ongoing requests to end
 		i.cancelRefresher()
-		i.wgRequest.Wait()
 		i.certRefresher.Stop()
 		i.certRefresher = nil
-
-		// send the stop signal, wait for the dispatch goroutines to finish, then safely close the channel
-		i.stopSig.Signal()
-		i.wgDispatch.Wait()
-		close(i.responseFromCentral)
 	}
 
 	log.Debugf("%s TLS issuer is not active.", i.componentName)
@@ -239,22 +227,9 @@ func (i *tlsIssuerImpl) ProcessMessage(msg *central.MsgToSensor) error {
 		return nil
 	}
 
-	go i.dispatch(response)
+	i.responseQueue.Push(response)
+
 	return nil
-}
-
-func (i *tlsIssuerImpl) dispatch(response *Response) {
-	concurrency.WithLock(&i.activateLock, func() { i.wgDispatch.Add(1) })
-	defer i.wgDispatch.Done()
-
-	if i.stopSig.IsDone() {
-		return
-	}
-
-	select {
-	case i.responseFromCentral <- response:
-	case <-i.stopSig.Done():
-	}
 }
 
 // requestCertificates makes a new request for a new set of secured cluster certificates from Central.
@@ -266,13 +241,6 @@ func (i *tlsIssuerImpl) requestCertificates(ctx context.Context) (*Response, err
 		if !centralcaps.Has(*i.requiredCentralCapability) {
 			return nil, fmt.Errorf("TLS certificate refresh failed: missing Central capability %q", *i.requiredCentralCapability)
 		}
-	}
-
-	concurrency.WithLock(&i.activateLock, func() { i.wgRequest.Add(1) })
-	defer i.wgRequest.Done()
-
-	if ctx.Err() != nil {
-		return nil, ctx.Err()
 	}
 
 	// Ensure only one request can be active at a time. By protecting both send and receive
@@ -299,16 +267,19 @@ func (i *tlsIssuerImpl) send(ctx context.Context, requestID string) error {
 // receive handles the response to a specific certificate request
 func (i *tlsIssuerImpl) receive(ctx context.Context, requestID string) (*Response, error) {
 	for {
-		select {
-		case <-ctx.Done():
+		response := i.responseQueue.PullBlocking(ctx)
+		if ctx.Err() != nil {
 			return nil, ctx.Err()
-		case response := <-i.responseFromCentral:
-			if response.RequestId == requestID {
-				return response, nil
-			}
-
-			log.Warnf("Ignoring response, ID %q does not match ongoing request ID %q.",
-				response.RequestId, requestID)
 		}
+		if response == nil {
+			return nil, errors.New("received nil response")
+		}
+
+		if response.RequestId == requestID {
+			return response, nil
+		}
+
+		log.Warnf("Ignoring response, ID %q does not match ongoing request ID %q.",
+			response.RequestId, requestID)
 	}
 }
