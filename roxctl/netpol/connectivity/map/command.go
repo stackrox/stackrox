@@ -87,6 +87,6 @@ func (cmd *Cmd) AddFlags(c *cobra.Command) *cobra.Command {
 	c.Flags().StringVarP(&cmd.focusWorkload, "focus-workload", "", "", "Focus on connections of specified workload name in the output.")
 	c.Flags().StringVarP(&cmd.outputFormat, "output-format", "o", defaultOutputFormat, "Configure the connections list in specific format, supported formats: txt|json|md|dot|csv.")
 	c.Flags().BoolVar(&cmd.exposure, "exposure", false, "Enhance the analysis of permitted connectivity with exposure analysis.")
-  	c.Flags().BoolVar(&cmd.explain, "explain", false, "Enhance the analysis of permitted connectivity with explanations per denied/allowed connection; supported only for txt output format.")
+	c.Flags().BoolVar(&cmd.explain, "explain", false, "Enhance the analysis of permitted connectivity with explanations per denied/allowed connection; supported only for txt output format.")
 	return c
 }
