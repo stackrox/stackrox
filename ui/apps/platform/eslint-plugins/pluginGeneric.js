@@ -4,6 +4,44 @@ const rules = {
     // ESLint naming convention for positive rules:
     // If your rule is enforcing the inclusion of something, use a short name without a special prefix.
 
+    'Button-LinkShim-href': {
+        // Enforce assumption about Button and LinkShim elements.
+        meta: {
+            type: 'problem',
+            docs: {
+                description:
+                    'Require tbat Button element with component={LinkShim} also has href prop',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                JSXOpeningElement(node) {
+                    if (node.name?.name === 'Button') {
+                        if (
+                            node.attributes.some(
+                                (attribute) =>
+                                    attribute.name?.name === 'component' &&
+                                    attribute.value?.expression?.name === 'LinkShim'
+                            )
+                        ) {
+                            if (
+                                !node.attributes.some(
+                                    (attribute) => attribute.name?.name === 'href'
+                                )
+                            ) {
+                                context.report({
+                                    node,
+                                    message:
+                                        'Require tbat Button element with component={LinkShim} also has href prop',
+                                });
+                            }
+                        }
+                    }
+                },
+            };
+        },
+    },
     'ExternalLink-anchor': {
         // Require ExternalLink with anchor element as child for consistent presentation of external links.
         meta: {
