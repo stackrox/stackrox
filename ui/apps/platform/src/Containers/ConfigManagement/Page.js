@@ -24,7 +24,6 @@ const Page = () => (
             <Route path={`image/${entityPath}`} element={<EntityPage />} />
             <Route path={`secret/${entityPath}`} element={<EntityPage />} />
             <Route path={`policy/${entityPath}`} element={<EntityPage />} />
-            <Route path={`cve/${entityPath}`} element={<EntityPage />} />
             <Route path={`control/${entityPath}`} element={<EntityPage />} />
             <Route path={`serviceaccount/${entityPath}`} element={<EntityPage />} />
             <Route path={`subject/${entityPath}`} element={<EntityPage />} />
@@ -37,13 +36,6 @@ const Page = () => (
             <Route path={`images/${listPath}`} element={<ListPage />} />
             <Route path={`secrets/${listPath}`} element={<ListPage />} />
             <Route path={`policies/${listPath}`} element={<ListPage />} />
-            <Route path={`cves/${listPath}`} element={<ListPage />} />
-            <Route path={`image-cves/${listPath}`} element={<ListPage />} />
-            <Route path={`node-cves/${listPath}`} element={<ListPage />} />
-            <Route path={`cluster-cves/${listPath}`} element={<ListPage />} />
-            <Route path={`components/${listPath}`} element={<ListPage />} />
-            <Route path={`node-components/${listPath}`} element={<ListPage />} />
-            <Route path={`image-components/${listPath}`} element={<ListPage />} />
             <Route path={`controls/${listPath}`} element={<ListPage />} />
             <Route path={`serviceaccounts/${listPath}`} element={<ListPage />} />
             <Route path={`subjects/${listPath}`} element={<ListPage />} />
