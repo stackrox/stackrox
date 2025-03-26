@@ -6,7 +6,6 @@ import (
 
 	storeMocks "github.com/stackrox/rox/central/serviceidentities/internal/store/mocks"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/suite"
@@ -54,31 +53,24 @@ func (s *serviceIdentityDataStoreTestSuite) TestAddSrvId() {
 	srvID := &storage.ServiceIdentity{
 		Id: "FAKEID",
 	}
-	allSrvIDs := []*storage.ServiceIdentity{srvID}
 
-	s.storage.EXPECT().GetAll(gomock.Any()).Return(allSrvIDs, nil).Times(1)
 	s.storage.EXPECT().Upsert(gomock.Any(), srvID).Return(nil).Times(1)
 
 	err := s.dataStore.AddServiceIdentity(s.hasWriteCtx, srvID)
 	s.NoError(err)
-
-	result, err := s.dataStore.GetServiceIdentities(s.hasReadCtx)
-	protoassert.SlicesEqual(s.T(), allSrvIDs, result)
-	s.NoError(err)
 }
 
 func (s *serviceIdentityDataStoreTestSuite) TestEnforcesGet() {
-	s.storage.EXPECT().GetAll(gomock.Any()).Times(0)
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Times(0)
 
-	group, err := s.dataStore.GetServiceIdentities(s.hasNoneCtx)
+	err := s.dataStore.ProcessServiceIdentities(s.hasNoneCtx, nil)
 	s.NoError(err, "expected no error, should return nil without access")
-	s.Nil(group, "expected return value to be nil")
 }
 
 func (s *serviceIdentityDataStoreTestSuite) TestAllowsGet() {
-	s.storage.EXPECT().GetAll(gomock.Any()).Return(nil, nil).Times(1)
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
-	_, err := s.dataStore.GetServiceIdentities(s.hasReadCtx)
+	err := s.dataStore.ProcessServiceIdentities(s.hasReadCtx, nil)
 	s.NoError(err, "expected no error trying to read with permissions")
 }
 

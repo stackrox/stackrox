@@ -17,14 +17,14 @@ type dataStoreImpl struct {
 	storage store.Store
 }
 
-func (ds *dataStoreImpl) GetServiceIdentities(ctx context.Context) ([]*storage.ServiceIdentity, error) {
+func (ds *dataStoreImpl) ProcessServiceIdentities(ctx context.Context, fn func(obj *storage.ServiceIdentity) error) error {
 	if ok, err := administrationSAC.ReadAllowed(ctx); err != nil {
-		return nil, err
+		return err
 	} else if !ok {
-		return nil, nil
+		return nil
 	}
 
-	return ds.storage.GetAll(ctx)
+	return ds.storage.Walk(ctx, fn)
 }
 
 func (ds *dataStoreImpl) AddServiceIdentity(ctx context.Context, identity *storage.ServiceIdentity) error {
