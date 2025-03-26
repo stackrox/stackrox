@@ -531,7 +531,7 @@ install_the_compliance_operator() {
         oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/catalog-source.yaml"
         oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/operator-group.yaml"
         oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/subscription.yaml"
-        wait_for_object_to_appear openshift-compliance deploy/compliance-operator
+        wait_for_object_to_appear openshift-compliance deploy/compliance-operator 600
     else
         info "Reusing existing compliance operator deployment from $csv subscription"
     fi
