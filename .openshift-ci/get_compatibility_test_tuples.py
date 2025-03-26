@@ -58,10 +58,10 @@ def is_newer_version(current_version: str, helm_version: str):
         # Remove '-rc' if present
         current_version_split[2] = str(current_version_split[2]).rstrip("-rc")
 
-    for (c, h) in zip(current_version_split, helm_version_split):
-        if c > h:
+    for (current, helm) in zip(current_version_split, helm_version_split):
+        if current > helm:
             break
-        if c < h:
+        if current < helm:
             return True
 
     return False
@@ -89,8 +89,14 @@ def get_compatibility_test_tuples():
     # versions.
     # There is no risk in excluding newer versions as the compatibility tests in
     # their respective branches will test against older versions.
-    central_chart_versions = [i for i in central_chart_versions if not is_newer_version(current_version=latest_tag, helm_version=i)]
-    sensor_chart_versions = [i for i in sensor_chart_versions if not is_newer_version(current_version=latest_tag, helm_version=i)]
+    central_chart_versions = [i for i in central_chart_versions
+                              if not
+                              is_newer_version(current_version=latest_tag,
+                                               helm_version=i)]
+    sensor_chart_versions = [i for i in sensor_chart_versions
+                             if not
+                             is_newer_version(current_version=latest_tag,
+                                              helm_version=i)]
 
     if len(central_chart_versions) == 0:
         logging.info("Found no older central chart versions to test against according to the product lifecycles API.")
