@@ -901,7 +901,8 @@ func (resolver *imageCVEV2Resolver) ScoreVersion(_ context.Context) string {
 }
 
 func (resolver *imageCVEV2Resolver) Summary(_ context.Context) string {
-	return resolver.data.GetCveBaseInfo().GetSummary()
+	log.Infof("SHREWS -- In summary -- trying something")
+	return "return some garbage"
 }
 
 func (resolver *imageCVEV2Resolver) SuppressActivation(_ context.Context) (*graphql.Time, error) {
