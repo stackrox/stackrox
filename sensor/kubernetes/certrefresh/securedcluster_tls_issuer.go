@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/queue"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
@@ -63,7 +64,7 @@ func NewSecuredClusterTLSIssuer(
 		getServiceCertificatesRepoFn: securedcluster.NewServiceCertificatesRepo,
 		msgToCentralC:                make(chan *message.ExpiringMessage),
 		newMsgFromSensorFn:           newSecuredClusterMsgFromSensor,
-		responseReceived:             concurrency.NewSignal(),
+		responseQueue:                queue.NewQueue[*Response](),
 		requiredCentralCapability: func() *centralsensor.CentralCapability {
 			centralCap := centralsensor.CentralCapability(centralsensor.SecuredClusterCertificatesReissue)
 			return &centralCap
@@ -101,11 +102,8 @@ type tlsIssuerImpl struct {
 	getServiceCertificatesRepoFn serviceCertificatesRepoGetter
 	certRefresher                concurrency.RetryTicker
 	msgToCentralC                chan *message.ExpiringMessage
-	responseFromCentral          atomic.Pointer[Response]
-	responseReceived             concurrency.Signal
-	ongoingRequestID             string
-	ongoingRequestIDMutex        sync.Mutex
-	requestOngoing               atomic.Bool
+	responseQueue                *queue.Queue[*Response]
+	requestMutex                 sync.Mutex
 	newMsgFromSensorFn           newMsgFromSensor
 	requiredCentralCapability    *centralsensor.CentralCapability
 	started                      atomic.Bool
@@ -229,30 +227,13 @@ func (i *tlsIssuerImpl) ProcessMessage(msg *central.MsgToSensor) error {
 		return nil
 	}
 
-	go i.dispatch(response)
+	i.responseQueue.Push(response)
+
 	return nil
 }
 
-func (i *tlsIssuerImpl) dispatch(response *Response) {
-	if !i.requestOngoing.Load() {
-		log.Warnf("Received a response for request ID %q, but there is no ongoing RequestCertificates call.", response.RequestId)
-		return
-	}
-	ongoingRequestID := concurrency.WithLock1(&i.ongoingRequestIDMutex, func() string {
-		return i.ongoingRequestID
-	})
-	if ongoingRequestID != response.RequestId {
-		log.Warnf("Request ID %q does not match ongoing request ID %q.",
-			response.RequestId, ongoingRequestID)
-		return
-	}
-
-	i.responseFromCentral.Store(response)
-	i.responseReceived.Signal()
-}
-
 // requestCertificates makes a new request for a new set of secured cluster certificates from Central.
-// Concurrent requests are *not* supported.
+// Concurrent requests are *not* supported, this function will block until previous calls finish.
 func (i *tlsIssuerImpl) requestCertificates(ctx context.Context) (*Response, error) {
 	if i.requiredCentralCapability != nil {
 		// Central capabilities are only available after this component is created,
@@ -262,24 +243,15 @@ func (i *tlsIssuerImpl) requestCertificates(ctx context.Context) (*Response, err
 		}
 	}
 
-	if !i.requestOngoing.CompareAndSwap(false, true) {
-		return nil, errors.New("concurrent requests are not supported.")
-	}
-
-	defer func() {
-		i.requestOngoing.Store(false)
-		i.responseReceived.Reset()
-	}()
-
-	requestID := uuid.NewV4().String()
-	concurrency.WithLock(&i.ongoingRequestIDMutex, func() {
-		i.ongoingRequestID = requestID
+	// Ensure only one request can be active at a time. By protecting both send and receive
+	// with the same mutex, we prevent a future send from starting while an older receive is still running.
+	return concurrency.WithLock2(&i.requestMutex, func() (*Response, error) {
+		requestID := uuid.NewV4().String()
+		if err := i.send(ctx, requestID); err != nil {
+			return nil, err
+		}
+		return i.receive(ctx, requestID)
 	})
-
-	if err := i.send(ctx, requestID); err != nil {
-		return nil, err
-	}
-	return i.receive(ctx)
 }
 
 // send a cert refresh request to Central
@@ -293,11 +265,21 @@ func (i *tlsIssuerImpl) send(ctx context.Context, requestID string) error {
 }
 
 // receive handles the response to a specific certificate request
-func (i *tlsIssuerImpl) receive(ctx context.Context) (*Response, error) {
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	case <-i.responseReceived.Done():
-		return i.responseFromCentral.Load(), nil
+func (i *tlsIssuerImpl) receive(ctx context.Context, requestID string) (*Response, error) {
+	for {
+		response := i.responseQueue.PullBlocking(ctx)
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
+		if response == nil {
+			return nil, errors.New("received nil response")
+		}
+
+		if response.RequestId == requestID {
+			return response, nil
+		}
+
+		log.Warnf("Ignoring response, ID %q does not match ongoing request ID %q.",
+			response.RequestId, requestID)
 	}
 }
