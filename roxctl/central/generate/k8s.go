@@ -80,7 +80,7 @@ func orchestratorCommand(shortName, _ string) *cobra.Command {
 		}),
 	}
 	if !roxctl.InMainImage() {
-		if containers.IsRunningInContainer( {
+		if containers.IsRunningInContainer() {
 			c.PersistentFlags().Var(common.NewOutputDir(&cfg.OutputDir, defaultBundlePath), "output-dir", "The directory to output the deployment bundle to")
 		} else {
 			c.PersistentFlags().Var(common.NewOutputDir(&cfg.OutputDir, ""), "output-dir", "The directory to output the deployment bundle to")
