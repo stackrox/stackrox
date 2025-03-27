@@ -20,12 +20,12 @@ func (m *networkFlowManager) StartDebugServer(addr string) error {
 	if err != nil {
 		log.Error(errors.Wrap(err, "unable to start networkFlow manager debug server"))
 	}
+	return err
 }
 
 // Debug returns an object that represents the current state of the entire store
 func (m *networkFlowManager) Debug() []byte {
 	d := make(map[string]map[string]string)
-
 	d["connections"] = make(map[string]string)
 	for c, indicator := range m.activeConnections {
 		d["connections"][c.String()] = indicator.String()
