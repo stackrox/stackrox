@@ -17,7 +17,6 @@ type imageCVEFlatResponse struct {
 	ImpactScore             *float32   `db:"impactscore_max"`
 	FirstImageOccurrence    *time.Time `db:"firstimageoccurrence_min"`
 	State                   int        `db:"state_max"`
-	Fixable                 bool       `db:"isfixable_max"`
 }
 
 func (c *imageCVEFlatResponse) GetCVE() string {
@@ -63,8 +62,6 @@ func (c *imageCVEFlatResponse) GetFirstImageOccurrence() *time.Time {
 }
 
 func (c *imageCVEFlatResponse) GetState() int { return c.State }
-
-func (c *imageCVEFlatResponse) IsFixable() bool { return c.Fixable }
 
 type imageCVEFlatCount struct {
 	CVECount int `db:"cve_count"`

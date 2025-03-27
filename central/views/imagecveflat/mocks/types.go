@@ -184,20 +184,6 @@ func (mr *MockCveFlatMockRecorder) GetTopNVDCVSS() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTopNVDCVSS", reflect.TypeOf((*MockCveFlat)(nil).GetTopNVDCVSS))
 }
 
-// IsFixable mocks base method.
-func (m *MockCveFlat) IsFixable() bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsFixable")
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// IsFixable indicates an expected call of IsFixable.
-func (mr *MockCveFlatMockRecorder) IsFixable() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsFixable", reflect.TypeOf((*MockCveFlat)(nil).IsFixable))
-}
-
 // MockCveFlatView is a mock of CveFlatView interface.
 type MockCveFlatView struct {
 	ctrl     *gomock.Controller
