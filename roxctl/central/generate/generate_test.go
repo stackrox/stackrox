@@ -95,7 +95,7 @@ func TestRestoreKeysAndCerts(t *testing.T) {
 			// Note: This test is not for parallel run.
 			config.OutputDir = filepath.Join(tmpDir, testCase.testDir)
 			config.BackupBundle = testCase.backupBundle
-			require.NoError(t, outputZip(logger, io, config))
+			require.NoError(t, OutputZip(logger, io, config))
 
 			// Load values-private.yaml file
 			values, err := chartutil.ReadValuesFile(filepath.Join(config.OutputDir, "values-private.yaml"))
@@ -182,7 +182,7 @@ func TestTelemetryConfiguration(t *testing.T) {
 			config.K8sConfig.Telemetry.Enabled = testCase.telemetry
 
 			bundleio, _, out, _ := io2.TestIO()
-			require.ErrorIs(t, outputZip(logger, bundleio, config), testCase.expected.err)
+			require.ErrorIs(t, OutputZip(logger, bundleio, config), testCase.expected.err)
 			if testCase.expected.err != nil {
 				return
 			}
@@ -282,7 +282,7 @@ func TestMonitoringConfiguration(t *testing.T) {
 			bundleio, _, out, _ := io2.TestIO()
 			config.ClusterType = testCase.clusterType
 			config.K8sConfig.Monitoring.OpenShiftMonitoring = testCase.flagEnabled
-			err := outputZip(logger, bundleio, config)
+			err := OutputZip(logger, bundleio, config)
 			require.ErrorIs(t, err, testCase.expectErr)
 			if err != nil {
 				return

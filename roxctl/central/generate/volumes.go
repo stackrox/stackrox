@@ -30,7 +30,7 @@ func externalVolume(cliEnvironment environment.Environment) *cobra.Command {
 		if err := validateConfig(&cfg); err != nil {
 			return err
 		}
-		return outputZip(cliEnvironment.Logger(), cliEnvironment.InputOutput(), cfg)
+		return OutputZip(cliEnvironment.Logger(), cliEnvironment.InputOutput(), cfg)
 	}
 	flagWrap := &flagsWrapper{FlagSet: c.Flags()}
 	flagWrap.StringVarP(&external.DB.Name, "db-name", "", "central-db", "External volume name for Central DB.", "central-db")
@@ -45,7 +45,7 @@ func noVolume(cliEnvironment environment.Environment) *cobra.Command {
 		if err := validateConfig(&cfg); err != nil {
 			return err
 		}
-		return outputZip(cliEnvironment.Logger(), cliEnvironment.InputOutput(), cfg)
+		return OutputZip(cliEnvironment.Logger(), cliEnvironment.InputOutput(), cfg)
 	}
 	c.Hidden = true
 	return c
@@ -61,7 +61,7 @@ func hostPathVolume(cliEnvironment environment.Environment) *cobra.Command {
 		if err := validateConfig(&cfg); err != nil {
 			return err
 		}
-		return outputZip(cliEnvironment.Logger(), cliEnvironment.InputOutput(), cfg)
+		return OutputZip(cliEnvironment.Logger(), cliEnvironment.InputOutput(), cfg)
 	}
 	c.Flags().StringVarP(&hostpath.DB.HostPath, "db-hostpath", "", "/var/lib/stackrox-central", "Path on the host.")
 	c.Flags().StringVarP(&hostpath.DB.NodeSelectorKey, "db-node-selector-key", "", "", "Node selector key (e.g. kubernetes.io/hostname).")
