@@ -34,20 +34,7 @@ _create_job_record() {
     local ci_system="$2"
 
     local id
-    if is_OPENSHIFT_CI; then
-        if [[ -z "${BUILD_ID:-}" ]]; then
-            info "Skipping job record for jobs without a BUILD_ID (bin, images)"
-            return
-        fi
-        id="${BUILD_ID}"
-    elif is_GITHUB_ACTIONS; then
-        id="${GITHUB_RUN_ID}"
-    else
-        die "Support is required for a job id for this CI environment"
-    fi
-
-    # exported to handle updates and finalization
-    set_ci_shared_export "METRICS_JOB_ID" "$id"
+    id="$(_get_metrics_job_id)"
 
     local repo
     repo="$(get_repo_full_name)"
@@ -64,6 +51,22 @@ _create_job_record() {
     commit_sha="$(get_commit_sha)"
 
     bq_create_job_record "$id" "$name" "$repo" "$branch" "$pr_number" "$commit_sha" "$ci_system"
+}
+
+_get_metrics_job_id() {
+    local id
+    if is_OPENSHIFT_CI; then
+        if [[ -z "${BUILD_ID:-}" ]]; then
+            info "Skipping job record for jobs without a BUILD_ID (bin, images)"
+            return
+        fi
+        id="${BUILD_ID}"
+    elif is_GITHUB_ACTIONS; then
+        id="${GITHUB_RUN_ID}"
+    else
+        die "Support is required for a job id for this CI environment"
+    fi
+    echo "$id"
 }
 
 bq_create_job_record() {
@@ -101,19 +104,20 @@ _update_job_record() {
         return
     fi
 
-    if [[ -z "${METRICS_JOB_ID:-}" ]]; then
-        info "WARNING: Skipping job record update as no initial record was created"
-        return
-    fi
+    local id
+    id="$(_get_metrics_job_id)"
 
-    bq_update_job_record "$@"
+    bq_update_job_record "$id" "$@"
 }
 
 bq_update_job_record() {
     setup_gcp
 
+    local id="$1"
+    shift
+
     local -a sql_params
-    sql_params=("--parameter=id::${METRICS_JOB_ID}")
+    sql_params=("--parameter=id::$id")
 
     local update_set=""
     while [[ "$#" -ne 0 ]]; do
