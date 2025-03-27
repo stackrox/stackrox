@@ -61,7 +61,18 @@ _compatibility_test() {
         remove_existing_stackrox_resources
         setup_default_TLS_certs
 
-        deploy_stackrox_with_custom_central_and_sensor_versions "${central_version}" "${sensor_version}"
+        # For every version pair we use a unique name for the secured cluster to prevent attempts
+        # to register the same secured cluster name multiple times, which will fails in CRS mode.
+        #
+        # Note that the meaning of the CLUSTER environment variable here is unfortunately
+        # different from the meaning of the CLUSTER environment variable defined below.
+        #
+        # Here it refers to the name of the secured cluster to be created.
+        #
+        # Below it is expected to be set to the (upper-cased) orchestrator type for usage
+        # by the QA Groovy tests.
+        CLUSTER="sc-${short_sensor_tag}-${short_central_tag}" \
+            deploy_stackrox_with_custom_central_and_sensor_versions "${central_version}" "${sensor_version}"
         echo "Stackrox deployed"
         kubectl -n stackrox get deploy,ds -o wide
 
