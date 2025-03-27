@@ -1,26 +1,10 @@
 {{define "schemaVar"}}pkgSchema.{{.Table|upperCamelCase}}Schema{{end}}
-{{define "paramList"}}{{range $index, $pk := .}}{{if $index}}, {{end}}{{$pk.ColumnName|lowerCamelCase}} {{$pk.Type}}{{end}}{{end}}
-{{define "argList"}}{{range $index, $pk := .}}{{if $index}}, {{end}}{{$pk.ColumnName|lowerCamelCase}}{{end}}{{end}}
-{{define "whereMatch"}}{{range $index, $pk := .}}{{if $index}} AND {{end}}{{$pk.ColumnName}} = ${{add $index 1}}{{end}}{{end}}
+{{define "paramList"}}{{ $singlePK := index .Schema.PrimaryKeys 0 }}{{$singlePK.ColumnName|lowerCamelCase}} {{$singlePK.Type}}{{end}}
 {{define "commaSeparatedColumns"}}{{range $index, $field := .}}{{if $index}}, {{end}}{{$field.ColumnName}}{{end}}{{end}}
-{{define "commandSeparatedRefs"}}{{range $index, $field := .}}{{if $index}}, {{end}}{{$field.Reference}}{{end}}{{end}}
 {{define "updateExclusions"}}{{range $index, $field := .}}{{if $index}}, {{end}}{{$field.ColumnName}} = EXCLUDED.{{$field.ColumnName}}{{end}}{{end}}
-{{define "matchQuery" -}}
-    {{- $pks := index . 0 -}}
-    {{- $singlePK := index . 1 -}}
-    {{- range $index, $pk := $pks -}}
-    {{- if eq $pk.Name $singlePK.Name -}}
-        search.NewQueryBuilder().AddDocIDs({{ $singlePK.ColumnName|lowerCamelCase }}).ProtoQuery(),
-    {{- else }}
-        search.NewQueryBuilder().AddExactMatches(search.FieldLabel("{{ searchFieldNameInOtherSchema $pk }}"), {{ $pk.ColumnName|lowerCamelCase }}).ProtoQuery(),
-    {{- end -}}
-    {{- end -}}
-{{end}}
 
 {{- $ := . }}
-{{- $pks := .Schema.PrimaryKeys }}
-
-{{ $singlePK := index $pks 0 }}
+{{ $singlePK := index .Schema.PrimaryKeys 0 }}
 
 package postgres
 
@@ -71,17 +55,17 @@ type Store interface {
 {{- if not .JoinTable }}
     Upsert(ctx context.Context, obj *storeType) error
     UpsertMany(ctx context.Context, objs []*storeType) error
-    Delete(ctx context.Context, {{template "paramList" $pks}}) error
+    Delete(ctx context.Context, {{template "paramList" $}}) error
     DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
     DeleteMany(ctx context.Context, identifiers []{{$singlePK.Type}}) error
     PruneMany(ctx context.Context, identifiers []{{$singlePK.Type}}) error
 {{- end }}
 
     Count(ctx context.Context, q *v1.Query) (int, error)
-    Exists(ctx context.Context, {{template "paramList" $pks}}) (bool, error)
+    Exists(ctx context.Context, {{template "paramList" $}}) (bool, error)
     Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 
-    Get(ctx context.Context, {{template "paramList" $pks}}) (*storeType, bool, error)
+    Get(ctx context.Context, {{template "paramList" $}}) (*storeType, bool, error)
 {{- if .SearchCategory }}
     GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
 {{- end }}

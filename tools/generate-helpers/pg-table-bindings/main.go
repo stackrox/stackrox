@@ -159,28 +159,8 @@ func main() {
 		if schema.NoPrimaryKey() && !props.SingletonStore {
 			log.Fatal("No primary key defined, please check relevant proto file and ensure a primary key is specified using the \"sql:\"pk\"\" tag")
 		}
-
-		parsedReferences := parseReferencesAndInjectPeerSchemas(schema, props.Refs)
-		if len(schema.PrimaryKeys()) > 1 {
-			for _, pk := range schema.PrimaryKeys() {
-				// We need all primary keys to be searchable unless they are ID fields, or if they are a foreign key.
-				if pk.Search.FieldName == "" && !pk.Options.ID {
-					var isValid bool
-					if ref := pk.Options.Reference; ref != nil {
-						referencedField, err := ref.FieldInOtherSchema()
-						if err != nil {
-							log.Fatalf("Error getting referenced field for pk %+v in schema %s: %v", pk, schema.Table, err)
-						}
-						// If the referenced field is searchable, then this field is searchable, so we don't need to enforce anything.
-						if referencedField.Search.FieldName != "" {
-							isValid = true
-						}
-					}
-					if !isValid {
-						log.Fatalf("%s:%s is not searchable and is a primary key that is not a foreign key reference", props.Type, pk.Name)
-					}
-				}
-			}
+		if schema.MultiplePrimaryKeys() && !props.SingletonStore {
+			log.Fatal("Multiple primary keys defined, please check relevant proto file and ensure a primary key is specified once using the \"sql:\"pk\"\" tag")
 		}
 
 		permissionCheckerEnabled := props.PermissionChecker != ""
@@ -206,6 +186,7 @@ func main() {
 		}
 
 		// remove any self references
+		parsedReferences := parseReferencesAndInjectPeerSchemas(schema, props.Refs)
 		filteredReferences := make([]parsedReference, 0, len(parsedReferences))
 		for _, ref := range parsedReferences {
 			if ref.Table != props.Table {
