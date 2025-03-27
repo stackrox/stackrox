@@ -69,14 +69,19 @@ _create_job_record() {
 bq_create_job_record() {
     setup_gcp
 
-    read -r -d '' sql <<- _EO_RECORD_ || true
-INSERT INTO ${_JOBS_TABLE_NAME}
-    (id, name, repo, branch, pr_number, commit_sha, started_at, ci_system)
-VALUES
-    ('$1', '$2', '$3', '$4', ${5:-null}, '$6', CURRENT_TIMESTAMP(), '$7')
-_EO_RECORD_
-
-    bq query --use_legacy_sql=false "$sql"
+    bq query \
+        --use_legacy_sql=false \
+        --parameter="id::$1" \
+        --parameter="name::$2" \
+        --parameter="repo::$3" \
+        --parameter="branch::$4" \
+        --parameter="pr_number:INTEGER:${5:-NULL}" \
+        --parameter="commit_sha::$6" \
+        --parameter="ci_system::$7" \
+        "INSERT INTO ${_JOBS_TABLE_NAME}
+            (id, name, repo, branch, pr_number, commit_sha, started_at, ci_system)
+        VALUES
+            (@id, @name, @repo, @branch, @pr_number, @commit_sha, CURRENT_TIMESTAMP(), @ci_system)"
 }
 
 update_job_record() {
