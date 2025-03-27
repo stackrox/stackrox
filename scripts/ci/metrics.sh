@@ -25,11 +25,13 @@ create_job_record() {
 _create_job_record() {
     info "Creating a job record for this test run"
 
-    if [[ "$#" -ne 1 ]]; then
-        die "missing arg. usage: create_job_record <job name>"
+    if [[ "$#" -ne 2 ]]; then
+        die "missing arg. usage: create_job_record <job name> <ci system>"
     fi
 
     local name="$1"
+
+    local ci_system="$2"
 
     local id
     if is_OPENSHIFT_CI; then
@@ -61,7 +63,7 @@ _create_job_record() {
     local commit_sha
     commit_sha="$(get_commit_sha)"
 
-    bq_create_job_record "$id" "$name" "$repo" "$branch" "$pr_number" "$commit_sha"
+    bq_create_job_record "$id" "$name" "$repo" "$branch" "$pr_number" "$commit_sha" "$ci_system"
 }
 
 bq_create_job_record() {
@@ -69,9 +71,9 @@ bq_create_job_record() {
 
     read -r -d '' sql <<- _EO_RECORD_ || true
 INSERT INTO ${_JOBS_TABLE_NAME}
-    (id, name, repo, branch, pr_number, commit_sha, started_at)
+    (id, name, repo, branch, pr_number, commit_sha, started_at, ci_system)
 VALUES
-    ('$1', '$2', '$3', '$4', ${5:-null}, '$6', CURRENT_TIMESTAMP())
+    ('$1', '$2', '$3', '$4', ${5:-null}, '$6', CURRENT_TIMESTAMP(), '$7')
 _EO_RECORD_
 
     bq query --use_legacy_sql=false "$sql"
