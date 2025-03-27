@@ -465,13 +465,11 @@ func (m *networkFlowManager) getCurrentContext() context.Context {
 
 func (m *networkFlowManager) enrichAndSend() {
 	currentConns, currentEndpoints := m.currentEnrichedConnsAndEndpoints()
-	flowMetrics.NumEnriched.WithLabelValues("connection", "enriched").Set(float64(len(currentConns)))
-	flowMetrics.NumEnriched.WithLabelValues("endpoint", "enriched").Set(float64(len(currentEndpoints)))
 
 	updatedConns := computeUpdatedConns(currentConns, m.enrichedConnsLastSentState, &m.lastSentStateMutex)
 	updatedEndpoints := computeUpdatedEndpoints(currentEndpoints, m.enrichedEndpointsLastSentState, &m.lastSentStateMutex)
-	flowMetrics.NumEnriched.WithLabelValues("connection", "updated").Set(float64(len(updatedConns)))
-	flowMetrics.NumEnriched.WithLabelValues("endpoint", "updated").Set(float64(len(updatedEndpoints)))
+	flowMetrics.NumUpdatedConnectionsEndpoints.WithLabelValues("connections").Set(float64(len(updatedConns)))
+	flowMetrics.NumUpdatedConnectionsEndpoints.WithLabelValues("endpoints").Set(float64(len(updatedEndpoints)))
 
 	if len(updatedConns)+len(updatedEndpoints) == 0 {
 		return
@@ -922,7 +920,7 @@ func shallRemoveConnection(status *connStatus) bool {
 	// In some cases, e.g., long-running cluster with fake workload, the history may never expire,
 	// because the endpoints are reused (new identical are created after old ones expire),
 	// thus it is important to enrich those endpoints maximally once after they become historical.
-	if status.historical && debugCloseHistoricalEntities.BooleanSetting() {
+	if status.historical {
 		return true
 	}
 	return status.used && status.lastSeen != timestamp.InfiniteFuture

@@ -26,13 +26,13 @@ func (m *networkFlowManager) StartDebugServer(addr string) error {
 // Debug returns an object that represents the current state of the entire store
 func (m *networkFlowManager) Debug() []byte {
 	d := make(map[string]map[string]string)
-	d["connections"] = make(map[string]string)
+	d["activeConnections"] = make(map[string]string)
 	for c, indicator := range m.activeConnections {
-		d["connections"][c.String()] = indicator.String()
+		d["activeConnections"][c.String()] = indicator.String()
 	}
-	d["endpoints"] = make(map[string]string)
+	d["activeEndpoints"] = make(map[string]string)
 	for ep, indicator := range m.activeEndpoints {
-		d["endpoints"][ep.String()] = indicator.String()
+		d["activeEndpoints"][ep.String()] = indicator.String()
 	}
 	ret, err := json.Marshal(d)
 	if err != nil {

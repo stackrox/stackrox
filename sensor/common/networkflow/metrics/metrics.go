@@ -24,7 +24,7 @@ func init() {
 		HostEndpointsRemoved,
 		activeFlowsTotal,
 		activeEndpointsTotal,
-		NumEnriched,
+		NumUpdatedConnectionsEndpoints,
 	)
 }
 
@@ -116,23 +116,23 @@ var (
 		Name:      "processes_listening_on_port_removed",
 		Help:      "Total number of processes listening on ports",
 	})
-	NumEnriched = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+	NumUpdatedConnectionsEndpoints = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "num_enriched",
-		Help:      "A gauge that tracks the number of connections and endpoints being enriched in a given tick",
-	}, []string{"object", "status"})
+		Name:      "num_updated",
+		Help:      "A gauge that tracks the number of connections and endpoints being updated (i.e., sent to Central) in a given tick",
+	}, []string{"object"})
 	activeFlowsTotal = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "active_network_flows_total",
-		Help:      "A gauge that tracks the total active network flows in sensor",
+		Name:      "active_network_flows_current",
+		Help:      "A gauge that tracks the current  active network flows in sensor",
 	})
 	activeEndpointsTotal = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "active_endpoints_total",
-		Help:      "A gauge that tracks the total active endpoints in sensor",
+		Name:      "active_endpoints_current",
+		Help:      "A gauge that tracks the current active endpoints in sensor",
 	})
 )
 
