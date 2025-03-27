@@ -154,7 +154,6 @@ func withSelectCVECoreResponseQuery(q *v1.Query, cveIDsToFilter []string, option
 	cloned.Selects = append(cloned.Selects, search.NewQuerySelect(search.ImpactScore).AggrFunc(aggregatefunc.Max).Proto())
 	cloned.Selects = append(cloned.Selects, search.NewQuerySelect(search.FirstImageOccurrenceTimestamp).AggrFunc(aggregatefunc.Min).Proto())
 	cloned.Selects = append(cloned.Selects, search.NewQuerySelect(search.VulnerabilityState).AggrFunc(aggregatefunc.Max).Proto())
-	cloned.Selects = append(cloned.Selects, search.NewQuerySelect(search.Fixable).AggrFunc(aggregatefunc.Max).Proto())
 
 	cloned.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{search.CVE.String()},
