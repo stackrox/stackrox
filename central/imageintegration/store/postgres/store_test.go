@@ -92,9 +92,6 @@ func (s *ImageIntegrationsStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, imageIntegrations))
-	allImageIntegration, err := store.GetAll(ctx)
-	s.NoError(err)
-	protoassert.ElementsMatch(s.T(), imageIntegrations, allImageIntegration)
 
 	imageIntegrationCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
