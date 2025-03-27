@@ -623,7 +623,7 @@
             "$ref": "#/definitions/v2NotifierConfiguration"
           }
         },
-        "optionalColumns": {
+        "vulnReportOptionalColumns": {
           "$ref": "#/definitions/v2VulnerabilityReportOptionalColumns"
         }
       }
@@ -857,7 +857,7 @@
             "$ref": "#/definitions/v2NotifierConfiguration"
           }
         },
-        "optionalColumns": {
+        "vulnReportOptionalColumns": {
           "$ref": "#/definitions/v2VulnerabilityReportOptionalColumns"
         }
       }

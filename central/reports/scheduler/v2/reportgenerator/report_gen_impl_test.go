@@ -351,16 +351,6 @@ func (s *EnhancedReportingTestSuite) TestGetReportData() {
 		s.T().Run(tc.name, func(t *testing.T) {
 			reportSnap := testReportSnapshot(tc.collection.GetId(), tc.fixability, tc.severities, tc.imageTypes, tc.scopeRules)
 
-			// Test get data using graphQL
-			deployedImgResults, watchedImgResults, err := s.reportGenerator.getReportData(reportSnap, tc.collection, time.Time{})
-			s.NoError(err)
-			collected := collectVulnReportData(deployedImgResults, watchedImgResults)
-			s.ElementsMatch(tc.expected.deploymentNames, collected.deploymentNames)
-			s.ElementsMatch(tc.expected.imageNames, collected.imageNames)
-			s.ElementsMatch(tc.expected.componentNames, collected.componentNames)
-			s.ElementsMatch(tc.expected.cveNames, collected.cveNames)
-			s.Equal(len(tc.expected.cveNames), len(collected.cvss))
-
 			// Test get data using SQF
 			reportData, err := s.reportGenerator.getReportDataSQF(reportSnap, tc.collection, time.Time{})
 			s.NoError(err)
@@ -399,50 +389,6 @@ func (s *EnhancedReportingTestSuite) upsertManyDeployments(deployments []*storag
 	for _, dep := range deployments {
 		err := s.resolver.DeploymentDataStore.UpsertDeployment(s.ctx, dep)
 		s.NoError(err)
-	}
-}
-
-func collectVulnReportData(deployedImgResults []common.DeployedImagesResult, watchedImgResults []common.WatchedImagesResult) *vulnReportData {
-	deploymentNames := set.NewStringSet()
-	imageNames := set.NewStringSet()
-	componentNames := set.NewStringSet()
-	cveNames := make([]string, 0)
-	cvss := make([]float64, 0)
-
-	for _, res := range deployedImgResults {
-		for _, dep := range res.Deployments {
-			deploymentNames.Add(dep.DeploymentName)
-			for _, img := range dep.Images {
-				imageNames.Add(img.Name.FullName)
-				for _, comp := range img.ImageComponents {
-					componentNames.Add(comp.Name)
-					for _, cve := range comp.ImageVulnerabilities {
-						cveNames = append(cveNames, cve.Cve)
-						cvss = append(cvss, cve.Cvss)
-					}
-				}
-			}
-		}
-	}
-	for _, res := range watchedImgResults {
-		for _, img := range res.Images {
-			imageNames.Add(img.Name.FullName)
-			for _, comp := range img.ImageComponents {
-				componentNames.Add(comp.Name)
-				for _, cve := range comp.ImageVulnerabilities {
-					cveNames = append(cveNames, cve.Cve)
-					cvss = append(cvss, cve.Cvss)
-				}
-			}
-		}
-	}
-
-	return &vulnReportData{
-		deploymentNames: deploymentNames.AsSlice(),
-		imageNames:      imageNames.AsSlice(),
-		componentNames:  componentNames.AsSlice(),
-		cveNames:        cveNames,
-		cvss:            cvss,
 	}
 }
 

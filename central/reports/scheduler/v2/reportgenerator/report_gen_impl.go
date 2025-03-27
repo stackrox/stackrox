@@ -248,51 +248,6 @@ func (rg *reportGeneratorImpl) saveReportData(configID, reportID string, data *b
 	return rg.blobStore.Upsert(reportGenCtx, b, data)
 }
 
-func (rg *reportGeneratorImpl) getReportData(snap *storage.ReportSnapshot, collection *storage.ResourceCollection,
-	dataStartTime time.Time) ([]common.DeployedImagesResult, []common.WatchedImagesResult, error) {
-	var deployedImgResults []common.DeployedImagesResult
-	var watchedImgResults []common.WatchedImagesResult
-	rQuery, err := rg.buildReportQuery(snap, collection, dataStartTime)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	if filterOnImageType(snap.GetVulnReportFilters().GetImageTypes(), storage.VulnerabilityReportFilters_DEPLOYED) {
-		// We first get deploymentIDs using a DeploymentsQuery and then again run graphQL queries with deploymentIDs to get the deployment objects.
-		// Why do we not directly create a queryString directly from the collection and pass that to graphQL?
-		// The  query language we support for graphQL has some limitations that prevent us from doing that.
-		// DeploymentsQuery is of type *v1.Query and can support complex queries like the one below.
-		// [(Cluster: c1 AND Namespace: n1 AND Deployment: d1) OR (Cluster: c2 AND Namespace: n2 AND Deployment: d2)]
-		// This query is a 'disjunction of conjunctions' where all conjunctions involve same fields.
-		// Current query language for graphQL does not have semantics to define such a query. Due to this we need to fetch deploymentIDs first
-		// and then pass them to graphQL.
-		deploymentIds, err := rg.getDeploymentIDs(rQuery.DeploymentsQuery)
-		if err != nil {
-			return nil, nil, err
-		}
-		result, err := rg.runPaginatedDeploymentsQuery(rQuery.CveFieldsQuery, deploymentIds)
-		if err != nil {
-			return nil, nil, err
-		}
-		result.Deployments = orderByClusterAndNamespace(result.Deployments)
-		deployedImgResults = append(deployedImgResults, result)
-	}
-
-	if filterOnImageType(snap.GetVulnReportFilters().GetImageTypes(), storage.VulnerabilityReportFilters_WATCHED) {
-		watchedImages, err := rg.getWatchedImages()
-		if err != nil {
-			return nil, nil, err
-		}
-		result, err := rg.runPaginatedImagesQuery(rQuery.CveFieldsQuery, watchedImages)
-		if err != nil {
-			return nil, nil, err
-		}
-		watchedImgResults = append(watchedImgResults, result)
-	}
-
-	return deployedImgResults, watchedImgResults, nil
-}
-
 func (rg *reportGeneratorImpl) getReportDataSQF(snap *storage.ReportSnapshot, collection *storage.ResourceCollection,
 	dataStartTime time.Time) (*ReportData, error) {
 	rQuery, err := rg.buildReportQuery(snap, collection, dataStartTime)
