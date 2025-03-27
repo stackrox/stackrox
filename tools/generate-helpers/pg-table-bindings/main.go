@@ -159,7 +159,7 @@ func main() {
 		if schema.NoPrimaryKey() && !props.SingletonStore {
 			log.Fatal("No primary key defined, please check relevant proto file and ensure a primary key is specified using the \"sql:\"pk\"\" tag")
 		}
-		if schema.MultiplePrimaryKeys() && !props.SingletonStore {
+		if schema.MultiplePrimaryKeys() {
 			log.Fatal("Multiple primary keys defined, please check relevant proto file and ensure a primary key is specified once using the \"sql:\"pk\"\" tag")
 		}
 
