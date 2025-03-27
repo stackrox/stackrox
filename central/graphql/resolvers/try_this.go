@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/stackrox/rox/central/views/imagecve"
+	"github.com/stackrox/rox/central/views/imagecveflat"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -15,7 +15,7 @@ type imageCVEResolver struct {
 	root *Resolver
 	data *storage.ImageCVE
 
-	flatData imagecve.CveCore
+	flatData imagecveflat.CveFlat
 }
 
 func (resolver *Resolver) wrapImageCVE(value *storage.ImageCVE, ok bool, err error) (*imageCVEResolver, error) {
@@ -119,7 +119,7 @@ type imageCVEV2Resolver struct {
 	root *Resolver
 	data *storage.ImageCVEV2
 
-	flatData imagecve.CveCore
+	flatData imagecveflat.CveFlat
 }
 
 func (resolver *Resolver) wrapImageCVEV2(value *storage.ImageCVEV2, ok bool, err error) (*imageCVEV2Resolver, error) {
@@ -158,14 +158,14 @@ func (resolver *Resolver) wrapImageCVEV2sWithContext(ctx context.Context, values
 	return output, nil
 }
 
-func (resolver *Resolver) wrapImageCVEV2sCoreWithContext(ctx context.Context, values []*storage.ImageCVEV2, coreResover []*imageCVECoreResolver, err error) ([]*imageCVEV2Resolver, error) {
+func (resolver *Resolver) wrapImageCVEV2sCoreWithContext(ctx context.Context, values []*storage.ImageCVEV2, coreResover []imagecveflat.CveFlat, err error) ([]*imageCVEV2Resolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
-	coreMap := make(map[string]imagecve.CveCore)
+	coreMap := make(map[string]imagecveflat.CveFlat)
 	for _, res := range coreResover {
-		if _, ok := coreMap[res.CVE(ctx)]; !ok {
-			coreMap[res.CVE(ctx)] = res.data
+		if _, ok := coreMap[res.GetCVE()]; !ok {
+			coreMap[res.GetCVE()] = res
 		}
 	}
 	output := make([]*imageCVEV2Resolver, len(values))

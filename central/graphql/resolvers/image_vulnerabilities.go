@@ -12,13 +12,13 @@ import (
 	"github.com/stackrox/rox/central/graphql/resolvers/embeddedobjs"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/views"
 	"github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
@@ -115,6 +115,7 @@ func (resolver *Resolver) ImageVulnerability(ctx context.Context, args IDQuery) 
 		return nil, err
 	}
 
+	//TODO(ROX-28320): Fix this
 	if features.FlattenCVEData.Enabled() {
 		// get loader
 		loader, err := loaders.GetImageCVEV2Loader(ctx)
@@ -125,16 +126,17 @@ func (resolver *Resolver) ImageVulnerability(ctx context.Context, args IDQuery) 
 		ret, err := loader.FromID(ctx, string(*args.ID))
 		res, err := resolver.wrapImageCVEV2WithContext(ctx, ret, true, err)
 
-		cveresolver, err := resolver.ImageCVE(ctx, struct {
-			Cve                *string
-			SubfieldScopeQuery *string
-		}{
-			Cve:                pointers.String(ret.GetCveBaseInfo().GetCve()),
-			SubfieldScopeQuery: pointers.String("CVEID:" + ret.GetId()),
-		})
-		if cveresolver != nil {
-			res.flatData = cveresolver.data
-		}
+		//resolver.ImageCVEFlatView.Get(ctx, query, views.ReadOptions{})
+		//cveresolver, err := resolver.ImageCVE(ctx, struct {
+		//	Cve                *string
+		//	SubfieldScopeQuery *string
+		//}{
+		//	Cve:                pointers.String(ret.GetCveBaseInfo().GetCve()),
+		//	SubfieldScopeQuery: pointers.String("CVEID:" + ret.GetId()),
+		//})
+		//if cveresolver != nil {
+		//	res.flatData = cveresolver.data
+		//}
 		return res, err
 	}
 
@@ -167,13 +169,13 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 
 	if features.FlattenCVEData.Enabled() {
 		// TODO(ROX-28320): figure out paging
-		coreQuery := PaginatedQuery{
-			Query:      q.Query,
-			ScopeQuery: q.ScopeQuery,
-			Pagination: nil,
-		}
+		//coreQuery := PaginatedQuery{
+		//	Query:      q.Query,
+		//	ScopeQuery: q.ScopeQuery,
+		//	Pagination: q.Pagination,
+		//}
 		log.Infof("SHREWS -- about to get core stuff")
-		cvecoreresolver, err := resolver.ImageCVEs(ctx, coreQuery)
+		cvecoreresolver, err := resolver.ImageCVEFlatView.Get(ctx, query, views.ReadOptions{})
 		if err != nil {
 			return nil, err
 		}
@@ -181,7 +183,7 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 
 		cveIDs := make([]string, 0, len(cvecoreresolver))
 		for _, cvecore := range cvecoreresolver {
-			cveIDs = append(cveIDs, cvecore.data.GetCVEIDs()...)
+			cveIDs = append(cveIDs, cvecore.GetCVEIDs()...)
 		}
 
 		// get loader
