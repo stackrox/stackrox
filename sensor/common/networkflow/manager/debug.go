@@ -34,7 +34,7 @@ func (m *networkFlowManager) Debug() []byte {
 	for ep, indicator := range m.activeEndpoints {
 		d["endpoints"][ep.String()] = indicator.String()
 	}
-	ret, err := json.Marshal(m)
+	ret, err := json.Marshal(d)
 	if err != nil {
 		log.Errorf("Error marshalling networkFlowManager debug: %v", err)
 	}
