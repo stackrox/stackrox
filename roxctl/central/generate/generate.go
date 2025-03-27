@@ -252,9 +252,9 @@ func createBundle(config *renderer.Config) (*zip.Wrapper, error) {
 	return wrapper, nil
 }
 
-// OutputZip renders a deployment bundle. The deployment bundle can either be
+// outputZip renders a deployment bundle. The deployment bundle can either be
 // written directly into a directory, or as a zipfile to STDOUT.
-func OutputZip(logger logger.Logger, io io2.IO, config renderer.Config) error {
+func outputZip(logger logger.Logger, io io2.IO, config renderer.Config) error {
 	logger.InfofLn("Generating deployment bundle...")
 
 	common.LogInfoPsp(logger, config.EnablePodSecurityPolicies)
