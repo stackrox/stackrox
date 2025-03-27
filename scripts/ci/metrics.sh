@@ -8,7 +8,7 @@ source "$ROOT/scripts/ci/gcp.sh"
 
 set -euo pipefail
 
-# Possible outcome field values.
+# Possible outcome field values for prow.
 export OUTCOME_PASSED="passed"
 export OUTCOME_FAILED="failed"
 export OUTCOME_CANCELED="canceled"
