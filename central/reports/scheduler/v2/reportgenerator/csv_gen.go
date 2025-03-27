@@ -32,8 +32,8 @@ var (
 )
 
 // GenerateCSV takes in the results of vuln report query, converts to CSV and returns zipped data
-func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string, reportFilters *storage.VulnerabilityReportFilters) (*bytes.Buffer, error) {
-	csvHeaderClone := addOptionalColumnstoHeader(reportFilters)
+func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string, reportFilters *storage.VulnerabilityReportFilters, optionalColumns *storage.VulnerabilityReportOptionalColumns) (*bytes.Buffer, error) {
+	csvHeaderClone := addOptionalColumnstoHeader(optionalColumns)
 	csvWriter := csv.NewGenericWriter(csvHeaderClone, true)
 	for _, r := range cveResponses {
 		row := csv.Value{
@@ -50,7 +50,7 @@ func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string, repor
 			r.GetDiscoveredAtImage(),
 			r.Link,
 		}
-		addOptionalColumnstoRow(reportFilters, &row, csvWriter, r)
+		addOptionalColumnstoRow(optionalColumns, &row, csvWriter, r)
 		csvWriter.AddValue(row)
 	}
 
@@ -83,7 +83,7 @@ func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string, repor
 	return &zipBuf, nil
 }
 
-func addOptionalColumnstoHeader(optionalColumns *storage.VulnerabilityReportFilters) []string {
+func addOptionalColumnstoHeader(optionalColumns *storage.VulnerabilityReportOptionalColumns) []string {
 	csvHeaderClone := make([]string, len(csvHeader))
 	copy(csvHeaderClone, csvHeader)
 	if optionalColumns.GetIncludeNvdCvss() {
@@ -95,7 +95,7 @@ func addOptionalColumnstoHeader(optionalColumns *storage.VulnerabilityReportFilt
 	return csvHeaderClone
 }
 
-func addOptionalColumnstoRow(optionalColumns *storage.VulnerabilityReportFilters, row *csv.Value, csvWriter *csv.GenericWriter, resp *ImageCVEQueryResponse) {
+func addOptionalColumnstoRow(optionalColumns *storage.VulnerabilityReportOptionalColumns, row *csv.Value, csvWriter *csv.GenericWriter, resp *ImageCVEQueryResponse) {
 	if optionalColumns.GetIncludeNvdCvss() {
 		csvWriter.AppendToValue(row, strconv.FormatFloat(resp.GetNVDCVSS(), 'f', 2, 64))
 	}
