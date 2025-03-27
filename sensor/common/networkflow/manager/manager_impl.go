@@ -88,10 +88,11 @@ type connStatus struct {
 }
 
 type networkConnIndicator struct {
-	srcEntity networkgraph.Entity
-	dstEntity networkgraph.Entity
-	dstPort   uint16
-	protocol  storage.L4Protocol
+	srcEntity  networkgraph.Entity
+	dstEntity  networkgraph.Entity
+	dstPort    uint16
+	protocol   storage.L4Protocol
+	lastUpdate timestamp.MicroTS
 }
 
 func (i *networkConnIndicator) toProto(ts timestamp.MicroTS) *storage.NetworkFlow {
@@ -446,9 +447,13 @@ func (m *networkFlowManager) getCurrentContext() context.Context {
 
 func (m *networkFlowManager) enrichAndSend() {
 	currentConns, currentEndpoints := m.currentEnrichedConnsAndEndpoints()
+	flowMetrics.NumEnriched.WithLabelValues("connection", "enriched").Set(float64(len(currentConns)))
+	flowMetrics.NumEnriched.WithLabelValues("endpoint", "enriched").Set(float64(len(currentEndpoints)))
 
 	updatedConns := computeUpdatedConns(currentConns, m.enrichedConnsLastSentState, &m.lastSentStateMutex)
 	updatedEndpoints := computeUpdatedEndpoints(currentEndpoints, m.enrichedEndpointsLastSentState, &m.lastSentStateMutex)
+	flowMetrics.NumEnriched.WithLabelValues("connection", "updated").Set(float64(len(updatedConns)))
+	flowMetrics.NumEnriched.WithLabelValues("endpoint", "updated").Set(float64(len(updatedEndpoints)))
 
 	if len(updatedConns)+len(updatedEndpoints) == 0 {
 		return
@@ -724,8 +729,9 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 	for _, lookupResult := range lookupResults {
 		for _, port := range lookupResult.ContainerPorts {
 			indicator := networkConnIndicator{
-				dstPort:  port,
-				protocol: conn.remote.L4Proto.ToProtobuf(),
+				dstPort:    port,
+				protocol:   conn.remote.L4Proto.ToProtobuf(),
+				lastUpdate: now,
 			}
 
 			if conn.incoming {
@@ -957,7 +963,6 @@ func (m *networkFlowManager) currentEnrichedConnsAndEndpoints() (map[networkConn
 		m.enrichHostConnections(hostConns, enrichedConnections)
 		m.enrichHostContainerEndpoints(hostConns, enrichedEndpoints)
 	}
-
 	return enrichedConnections, enrichedEndpoints
 }
 
