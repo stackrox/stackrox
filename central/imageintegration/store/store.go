@@ -15,7 +15,7 @@ type Store interface {
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 	Get(ctx context.Context, id string) (*storage.ImageIntegration, bool, error)
-	GetAll(ctx context.Context) ([]*storage.ImageIntegration, error)
+	Walk(ctx context.Context, fn func(obj *storage.ImageIntegration) error) error
 	Upsert(ctx context.Context, integration *storage.ImageIntegration) error
 	UpsertMany(ctx context.Context, objs []*storage.ImageIntegration) error
 	Delete(ctx context.Context, id string) error
