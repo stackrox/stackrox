@@ -4,13 +4,14 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 
 import usePageAction from 'hooks/usePageAction';
 import usePermissions from 'hooks/usePermissions';
-import { vulnerabilityReportsPath } from 'routePaths';
 
-import VulnReportsPage from './VulnReports/VulnReportsPage';
 import CreateVulnReportPage from './ModifyVulnReport/CreateVulnReportPage';
 import EditVulnReportPage from './ModifyVulnReport/EditVulnReportPage';
 import CloneVulnReportPage from './ModifyVulnReport/CloneVulnReportPage';
 import ViewVulnReportPage from './ViewVulnReport/ViewVulnReportPage';
+import ConfigReportsTab from './VulnReports/ConfigReportsTab';
+import OnDemandReportsTab from './VulnReports/OnDemandReportsTab';
+import VulnReportingLayout from './VulnReports/VulnReportingLayout';
 
 import './VulnReportingPage.css';
 
@@ -28,19 +29,20 @@ function VulnReportingPage() {
     return (
         <Routes>
             <Route
-                index
                 element={
                     pageAction === 'create' && hasWriteAccessForReport ? (
                         <CreateVulnReportPage />
-                    ) : !pageAction ? (
-                        <VulnReportsPage />
                     ) : (
-                        <Navigate to={vulnerabilityReportsPath} replace />
+                        <VulnReportingLayout />
                     )
                 }
-            />
+            >
+                <Route index element={<Navigate to="configuration" replace />} />
+                <Route path="configuration" element={<ConfigReportsTab />} />
+                <Route path="on-demand" element={<OnDemandReportsTab />} />
+            </Route>
             <Route
-                path=":reportId"
+                path="/configuration/:reportId"
                 element={
                     pageAction === 'edit' && hasWriteAccessForReport ? (
                         <EditVulnReportPage />

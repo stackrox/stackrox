@@ -12,7 +12,7 @@ import {
 import { Wizard, WizardStep } from '@patternfly/react-core/deprecated';
 import isEmpty from 'lodash/isEmpty';
 
-import { vulnerabilityReportsPath } from 'routePaths';
+import { vulnerabilityConfigurationReportsPath } from 'routePaths';
 import useReportFormValues from 'Containers/Vulnerabilities/VulnerablityReporting/forms/useReportFormValues';
 
 import PageTitle from 'Components/PageTitle';
@@ -37,7 +37,7 @@ function CreateVulnReportPage() {
     const { isLoading, error, createReport } = useCreateReport({
         onCompleted: () => {
             formik.resetForm();
-            navigate(vulnerabilityReportsPath);
+            navigate(vulnerabilityConfigurationReportsPath);
         },
     });
 
@@ -46,7 +46,7 @@ function CreateVulnReportPage() {
     }
 
     function onClose() {
-        navigate(vulnerabilityReportsPath);
+        navigate(vulnerabilityConfigurationReportsPath);
     }
 
     // @TODO: This is reused in the Edit and Clone components so we can try to refactor this soon
@@ -91,7 +91,7 @@ function CreateVulnReportPage() {
             <ReportFormErrorAlert error={error} />
             <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
-                    <BreadcrumbItemLink to={vulnerabilityReportsPath}>
+                    <BreadcrumbItemLink to={vulnerabilityConfigurationReportsPath}>
                         Vulnerability reporting
                     </BreadcrumbItemLink>
                     <BreadcrumbItem isActive>Create report</BreadcrumbItem>
