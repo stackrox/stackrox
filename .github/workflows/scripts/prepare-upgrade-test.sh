@@ -50,9 +50,9 @@ deploy_central() {
 
     kubectl rollout status deployment central -n stackrox --watch --timeout 5m
 
-    ROX_PASSWORD="$(cat bundle-test1/password)"
-    echo "::add-mask::$ROX_PASSWORD"
-    export ROX_PASSWORD
+    ROX_ADMIN_PASSWORD="$(cat bundle-test1/password)"
+    echo "::add-mask::$ROX_ADMIN_PASSWORD"
+    export ROX_ADMIN_PASSWORD
 
     COUNTER=0
     while [[ -z $(kubectl -n stackrox get service/central-loadbalancer -o jsonpath="{.status.loadBalancer.ingress}" 2>/dev/null) ]]; do
