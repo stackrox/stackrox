@@ -2,6 +2,7 @@ package sac
 
 import (
 	"context"
+	"slices"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -65,14 +66,12 @@ func (h ForResourceHelper) FilterAccessibleNamespaces(
 	accessMode storage.Access,
 	namespaces []*storage.NamespaceMetadata,
 ) ([]*storage.NamespaceMetadata, error) {
-	filtered := make([]*storage.NamespaceMetadata, 0, len(namespaces))
 	hasGlobalAccess, err := h.AccessAllowed(ctx, accessMode)
 	if err != nil {
 		return nil, err
 	}
 	if hasGlobalAccess {
-		filtered = append(filtered, namespaces...)
-		return filtered, nil
+		return slices.Clone(namespaces), nil
 	}
 	scopeChecker := h.ScopeChecker(ctx, accessMode)
 	accessScopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
@@ -82,10 +81,10 @@ func (h ForResourceHelper) FilterAccessibleNamespaces(
 	if err != nil {
 		return nil, err
 	}
-	if h.resourceMD.Scope == permissions.GlobalScope || accessScopeTree.State == effectiveaccessscope.Included {
-		filtered = append(filtered, namespaces...)
-		return filtered, nil
+	if accessScopeTree.State == effectiveaccessscope.Included {
+		return slices.Clone(namespaces), nil
 	}
+	filtered := make([]*storage.NamespaceMetadata, 0, len(namespaces))
 	for _, ns := range namespaces {
 		clusterSubTree := accessScopeTree.GetClusterByID(ns.GetClusterId())
 		if clusterSubTree == nil || clusterSubTree.State == effectiveaccessscope.Excluded {
