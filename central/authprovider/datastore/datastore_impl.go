@@ -26,7 +26,7 @@ type datastoreImpl struct {
 }
 
 // GetAllAuthProviders retrieves authProviders and process each one with provided function.
-func (b *datastoreImpl) GetAllAuthProviders(ctx context.Context, fn func(obj *storage.AuthProvider) error) error {
+func (b *datastoreImpl) ProcessAuthProviders(ctx context.Context, fn func(obj *storage.AuthProvider) error) error {
 	if err := sac.VerifyAuthzOK(accessSAC.ReadAllowed(ctx)); err != nil {
 		return err
 	}

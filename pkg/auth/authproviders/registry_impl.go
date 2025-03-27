@@ -60,7 +60,7 @@ type registryImpl struct {
 
 func (r *registryImpl) Init() error {
 	r.providers = make(map[string]Provider)
-	err := r.store.GetAllAuthProviders(sac.WithAllAccess(context.Background()), func(storedValue *storage.AuthProvider) error {
+	err := r.store.ProcessAuthProviders(sac.WithAllAccess(context.Background()), func(storedValue *storage.AuthProvider) error {
 		// Construct the options for the provider, using the stored definition, and the defaults for previously stored objects.
 		options := []ProviderOption{
 			WithStorageView(storedValue),
