@@ -160,7 +160,7 @@ SELECT
 FROM
     `acs-san-stackroxci.ci_metrics.stackrox_tests__extended_view`
 WHERE
-    CONTAINS_SUBSTR(ShortJobName, "'"${job_name_match}"'")
+    CONTAINS_SUBSTR(ShortJobName, @job_name_match)
     -- omit PR check jobs
     AND NOT IsPullRequest
     AND NOT STARTS_WITH(JobName, "rehearse-")
@@ -186,7 +186,7 @@ LIMIT
     local data_file
     data_file="$(mktemp)"
     echo "Running query with job match name $job_name_match"
-    bq --quiet --format=json query --use_legacy_sql=false "$sql" > "${data_file}" 2>/dev/null || {
+    bq --quiet --format=json query --use_legacy_sql=false --parameter="job_name_match::${job_name_match}" "$sql" > "${data_file}" 2>/dev/null || {
         echo >&2 -e "Cannot run query:\n${sql}\nresponse:\n$(jq < "${data_file}")"
         exit 1
     }
