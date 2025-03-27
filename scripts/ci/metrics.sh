@@ -62,7 +62,7 @@ _get_metrics_job_id() {
         fi
         id="${BUILD_ID}"
     elif is_GITHUB_ACTIONS; then
-        id="${GITHUB_RUN_ID}"
+        id="${GITHUB_RUN_ID}.${GITHUB_RUN_ATTEMPT}.${GITHUB_JOB}"
     else
         die "Support is required for a job id for this CI environment"
     fi
