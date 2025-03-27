@@ -26,7 +26,9 @@ message ReportConfiguration {
   ReportSchedule schedule = 6;
   ResourceScope resource_scope = 7;
   repeated NotifierConfiguration notifiers = 8;
-  VulnerabilityReportOptionalColumns optionalColumns = 9;
+  oneof optionalColumns{
+    VulnerabilityReportOptionalColumns vulnerabilityReportOptionalColumns = 9;
+  }
 }
 
 message VulnerabilityReportFilters {
@@ -155,7 +157,9 @@ message ReportSnapshot {
   repeated NotifierConfiguration notifiers = 9;
   SlimUser user = 10;
   bool is_download_available = 11;
-  VulnerabilityReportOptionalColumns optionalColumns = 12;
+  oneof optionalColumns{
+    VulnerabilityReportOptionalColumns vulnerabilityReportOptionalColumns = 12;
+  }
 }
 
 message ReportStatus {

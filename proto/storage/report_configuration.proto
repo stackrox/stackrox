@@ -35,7 +35,9 @@ message ReportConfiguration {
   repeated NotifierConfiguration notifiers = 12;
   SlimUser creator = 13; // @gotags: sql:"ignore_labels(User ID)"
   int32 version = 14; // version=0 is unmigrated v1 config, version=1 is migrated v1 config and version=2 is v2 config
-  VulnerabilityReportOptionalColumns optionalColumns = 15;
+  oneof optionalColumns {
+    VulnerabilityReportOptionalColumns vulnerabilityReportOptionalColumns = 15;
+  }
 }
 
 message ReportLastRunStatus {

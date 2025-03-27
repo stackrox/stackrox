@@ -623,7 +623,7 @@
             "$ref": "#/definitions/v2NotifierConfiguration"
           }
         },
-        "optionalColumns": {
+        "vulnerabilityReportOptionalColumns": {
           "$ref": "#/definitions/v2VulnerabilityReportOptionalColumns"
         }
       }
@@ -857,7 +857,7 @@
             "$ref": "#/definitions/v2NotifierConfiguration"
           }
         },
-        "optionalColumns": {
+        "vulnerabilityReportOptionalColumns": {
           "$ref": "#/definitions/v2VulnerabilityReportOptionalColumns"
         }
       }
@@ -971,7 +971,7 @@
         "isDownloadAvailable": {
           "type": "boolean"
         },
-        "optionalColumns": {
+        "vulnerabilityReportOptionalColumns": {
           "$ref": "#/definitions/v2VulnerabilityReportOptionalColumns"
         }
       }

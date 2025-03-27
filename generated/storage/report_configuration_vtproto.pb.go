@@ -38,7 +38,6 @@ func (m *ReportConfiguration) CloneVT() *ReportConfiguration {
 	r.ResourceScope = m.ResourceScope.CloneVT()
 	r.Creator = m.Creator.CloneVT()
 	r.Version = m.Version
-	r.OptionalColumns = m.OptionalColumns.CloneVT()
 	if m.Filter != nil {
 		r.Filter = m.Filter.(interface {
 			CloneVT() isReportConfiguration_Filter
@@ -55,6 +54,11 @@ func (m *ReportConfiguration) CloneVT() *ReportConfiguration {
 			tmpContainer[k] = v.CloneVT()
 		}
 		r.Notifiers = tmpContainer
+	}
+	if m.OptionalColumns != nil {
+		r.OptionalColumns = m.OptionalColumns.(interface {
+			CloneVT() isReportConfiguration_OptionalColumns
+		}).CloneVT()
 	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
@@ -82,6 +86,15 @@ func (m *ReportConfiguration_EmailConfig) CloneVT() isReportConfiguration_Notifi
 	}
 	r := new(ReportConfiguration_EmailConfig)
 	r.EmailConfig = m.EmailConfig.CloneVT()
+	return r
+}
+
+func (m *ReportConfiguration_VulnerabilityReportOptionalColumns) CloneVT() isReportConfiguration_OptionalColumns {
+	if m == nil {
+		return (*ReportConfiguration_VulnerabilityReportOptionalColumns)(nil)
+	}
+	r := new(ReportConfiguration_VulnerabilityReportOptionalColumns)
+	r.VulnerabilityReportOptionalColumns = m.VulnerabilityReportOptionalColumns.CloneVT()
 	return r
 }
 
@@ -249,6 +262,18 @@ func (this *ReportConfiguration) EqualVT(that *ReportConfiguration) bool {
 			return false
 		}
 	}
+	if this.OptionalColumns == nil && that.OptionalColumns != nil {
+		return false
+	} else if this.OptionalColumns != nil {
+		if that.OptionalColumns == nil {
+			return false
+		}
+		if !this.OptionalColumns.(interface {
+			EqualVT(isReportConfiguration_OptionalColumns) bool
+		}).EqualVT(that.OptionalColumns) {
+			return false
+		}
+	}
 	if this.Id != that.Id {
 		return false
 	}
@@ -297,9 +322,6 @@ func (this *ReportConfiguration) EqualVT(that *ReportConfiguration) bool {
 		return false
 	}
 	if this.Version != that.Version {
-		return false
-	}
-	if !this.OptionalColumns.EqualVT(that.OptionalColumns) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -354,6 +376,31 @@ func (this *ReportConfiguration_EmailConfig) EqualVT(thatIface isReportConfigura
 		}
 		if q == nil {
 			q = &EmailNotifierConfiguration{}
+		}
+		if !p.EqualVT(q) {
+			return false
+		}
+	}
+	return true
+}
+
+func (this *ReportConfiguration_VulnerabilityReportOptionalColumns) EqualVT(thatIface isReportConfiguration_OptionalColumns) bool {
+	that, ok := thatIface.(*ReportConfiguration_VulnerabilityReportOptionalColumns)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if p, q := this.VulnerabilityReportOptionalColumns, that.VulnerabilityReportOptionalColumns; p != q {
+		if p == nil {
+			p = &VulnerabilityReportOptionalColumns{}
+		}
+		if q == nil {
+			q = &VulnerabilityReportOptionalColumns{}
 		}
 		if !p.EqualVT(q) {
 			return false
@@ -612,6 +659,15 @@ func (m *ReportConfiguration) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if vtmsg, ok := m.OptionalColumns.(interface {
+		MarshalToSizedBufferVT([]byte) (int, error)
+	}); ok {
+		size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+	}
 	if vtmsg, ok := m.NotifierConfig.(interface {
 		MarshalToSizedBufferVT([]byte) (int, error)
 	}); ok {
@@ -629,16 +685,6 @@ func (m *ReportConfiguration) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 			return 0, err
 		}
 		i -= size
-	}
-	if m.OptionalColumns != nil {
-		size, err := m.OptionalColumns.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x7a
 	}
 	if m.Version != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Version))
@@ -786,6 +832,29 @@ func (m *ReportConfiguration_EmailConfig) MarshalToSizedBufferVT(dAtA []byte) (i
 		i = protohelpers.EncodeVarint(dAtA, i, 0)
 		i--
 		dAtA[i] = 0x3a
+	}
+	return len(dAtA) - i, nil
+}
+func (m *ReportConfiguration_VulnerabilityReportOptionalColumns) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *ReportConfiguration_VulnerabilityReportOptionalColumns) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.VulnerabilityReportOptionalColumns != nil {
+		size, err := m.VulnerabilityReportOptionalColumns.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x7a
+	} else {
+		i = protohelpers.EncodeVarint(dAtA, i, 0)
+		i--
+		dAtA[i] = 0x7a
 	}
 	return len(dAtA) - i, nil
 }
@@ -1181,9 +1250,8 @@ func (m *ReportConfiguration) SizeVT() (n int) {
 	if m.Version != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.Version))
 	}
-	if m.OptionalColumns != nil {
-		l = m.OptionalColumns.SizeVT()
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	if vtmsg, ok := m.OptionalColumns.(interface{ SizeVT() int }); ok {
+		n += vtmsg.SizeVT()
 	}
 	n += len(m.unknownFields)
 	return n
@@ -1211,6 +1279,20 @@ func (m *ReportConfiguration_EmailConfig) SizeVT() (n int) {
 	_ = l
 	if m.EmailConfig != nil {
 		l = m.EmailConfig.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	} else {
+		n += 2
+	}
+	return n
+}
+func (m *ReportConfiguration_VulnerabilityReportOptionalColumns) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.VulnerabilityReportOptionalColumns != nil {
+		l = m.VulnerabilityReportOptionalColumns.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	} else {
 		n += 2
@@ -1841,7 +1923,7 @@ func (m *ReportConfiguration) UnmarshalVT(dAtA []byte) error {
 			}
 		case 15:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field OptionalColumns", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field VulnerabilityReportOptionalColumns", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -1868,11 +1950,16 @@ func (m *ReportConfiguration) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.OptionalColumns == nil {
-				m.OptionalColumns = &VulnerabilityReportOptionalColumns{}
-			}
-			if err := m.OptionalColumns.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if oneof, ok := m.OptionalColumns.(*ReportConfiguration_VulnerabilityReportOptionalColumns); ok {
+				if err := oneof.VulnerabilityReportOptionalColumns.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &VulnerabilityReportOptionalColumns{}
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.OptionalColumns = &ReportConfiguration_VulnerabilityReportOptionalColumns{VulnerabilityReportOptionalColumns: v}
 			}
 			iNdEx = postIndex
 		default:
@@ -3063,7 +3150,7 @@ func (m *ReportConfiguration) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 		case 15:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field OptionalColumns", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field VulnerabilityReportOptionalColumns", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -3090,11 +3177,16 @@ func (m *ReportConfiguration) UnmarshalVTUnsafe(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.OptionalColumns == nil {
-				m.OptionalColumns = &VulnerabilityReportOptionalColumns{}
-			}
-			if err := m.OptionalColumns.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if oneof, ok := m.OptionalColumns.(*ReportConfiguration_VulnerabilityReportOptionalColumns); ok {
+				if err := oneof.VulnerabilityReportOptionalColumns.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &VulnerabilityReportOptionalColumns{}
+				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.OptionalColumns = &ReportConfiguration_VulnerabilityReportOptionalColumns{VulnerabilityReportOptionalColumns: v}
 			}
 			iNdEx = postIndex
 		default:

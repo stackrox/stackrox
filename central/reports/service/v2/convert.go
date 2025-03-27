@@ -50,20 +50,25 @@ func (s *serviceImpl) convertV2ReportConfigurationToProto(config *apiV2.ReportCo
 	}
 
 	ret := &storage.ReportConfiguration{
-		Id:              config.GetId(),
-		Name:            config.GetName(),
-		Description:     config.GetDescription(),
-		Type:            storage.ReportConfiguration_ReportType(config.GetType()),
-		Schedule:        s.convertV2ScheduleToProto(config.GetSchedule()),
-		ResourceScope:   s.convertV2ResourceScopeToProto(config.GetResourceScope()),
-		Creator:         creator,
-		Version:         2,
-		OptionalColumns: s.convertV2VulnerabilityReportOptionalColumnsToProto(config.GetOptionalColumns()),
+		Id:            config.GetId(),
+		Name:          config.GetName(),
+		Description:   config.GetDescription(),
+		Type:          storage.ReportConfiguration_ReportType(config.GetType()),
+		Schedule:      s.convertV2ScheduleToProto(config.GetSchedule()),
+		ResourceScope: s.convertV2ResourceScopeToProto(config.GetResourceScope()),
+		Creator:       creator,
+		Version:       2,
 	}
 
 	if config.GetVulnReportFilters() != nil {
 		ret.Filter = &storage.ReportConfiguration_VulnReportFilters{
 			VulnReportFilters: s.convertV2VulnReportFiltersToProto(config.GetVulnReportFilters(), accessScopeRules),
+		}
+	}
+
+	if config.GetVulnerabilityReportOptionalColumns() != nil {
+		ret.OptionalColumns = &storage.ReportConfiguration_VulnerabilityReportOptionalColumns{
+			VulnerabilityReportOptionalColumns: s.convertV2VulnerabilityReportOptionalColumnsToProto(config.GetVulnerabilityReportOptionalColumns()),
 		}
 	}
 
@@ -194,18 +199,23 @@ func (s *serviceImpl) convertProtoReportConfigurationToV2(config *storage.Report
 		return nil, err
 	}
 	ret := &apiV2.ReportConfiguration{
-		Id:              config.GetId(),
-		Name:            config.GetName(),
-		Description:     config.GetDescription(),
-		Type:            apiV2.ReportConfiguration_ReportType(config.GetType()),
-		Schedule:        s.convertProtoScheduleToV2(config.GetSchedule()),
-		ResourceScope:   resourceScope,
-		OptionalColumns: s.convertProtoVulnerabilityReportOptionalColumnstoV2(config.GetOptionalColumns()),
+		Id:            config.GetId(),
+		Name:          config.GetName(),
+		Description:   config.GetDescription(),
+		Type:          apiV2.ReportConfiguration_ReportType(config.GetType()),
+		Schedule:      s.convertProtoScheduleToV2(config.GetSchedule()),
+		ResourceScope: resourceScope,
 	}
 
 	if config.GetVulnReportFilters() != nil {
 		ret.Filter = &apiV2.ReportConfiguration_VulnReportFilters{
 			VulnReportFilters: s.convertProtoVulnReportFiltersToV2(config.GetVulnReportFilters()),
+		}
+	}
+
+	if config.GetVulnerabilityReportOptionalColumns() != nil {
+		ret.OptionalColumns = &apiV2.ReportConfiguration_VulnerabilityReportOptionalColumns{
+			VulnerabilityReportOptionalColumns: s.convertProtoVulnerabilityReportOptionalColumnstoV2(config.GetVulnerabilityReportOptionalColumns()),
 		}
 	}
 
@@ -422,7 +432,9 @@ func (s *serviceImpl) convertProtoReportSnapshotstoV2(snapshots []*storage.Repor
 				VulnReportFilters: s.convertProtoVulnReportFiltersToV2(snapshot.GetVulnReportFilters()),
 			},
 			IsDownloadAvailable: blobNames.Contains(common.GetReportBlobPath(snapshot.GetReportConfigurationId(), snapshot.GetReportId())),
-			OptionalColumns:     s.convertProtoVulnerabilityReportOptionalColumnstoV2(snapshot.GetOptionalColumns()),
+			OptionalColumns: &apiV2.ReportSnapshot_VulnerabilityReportOptionalColumns{
+				VulnerabilityReportOptionalColumns: s.convertProtoVulnerabilityReportOptionalColumnstoV2(snapshot.GetVulnerabilityReportOptionalColumns()),
+			},
 		}
 		for _, notifier := range snapshot.GetNotifiers() {
 			converted := s.convertProtoNotifierSnapshotToV2(notifier)

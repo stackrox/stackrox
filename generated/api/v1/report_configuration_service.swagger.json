@@ -539,7 +539,7 @@
           "format": "int32",
           "title": "version=0 is unmigrated v1 config, version=1 is migrated v1 config and version=2 is v2 config"
         },
-        "optionalColumns": {
+        "vulnerabilityReportOptionalColumns": {
           "$ref": "#/definitions/storageVulnerabilityReportOptionalColumns"
         }
       }

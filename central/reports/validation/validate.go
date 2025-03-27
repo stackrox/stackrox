@@ -322,6 +322,8 @@ func generateReportSnapshot(
 		})
 	}
 	snapshot.Notifiers = notifierSnaps
-	snapshot.OptionalColumns = config.GetOptionalColumns().CloneVT()
+	snapshot.OptionalColumns = &storage.ReportSnapshot_VulnerabilityReportOptionalColumns{
+		VulnerabilityReportOptionalColumns: config.GetVulnerabilityReportOptionalColumns(),
+	}
 	return snapshot
 }

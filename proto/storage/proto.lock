@@ -14270,8 +14270,9 @@
               },
               {
                 "id": 15,
-                "name": "optionalColumns",
-                "type": "VulnerabilityReportOptionalColumns"
+                "name": "vulnerabilityReportOptionalColumns",
+                "type": "VulnerabilityReportOptionalColumns",
+                "oneof_parent": "optionalColumns"
               }
             ]
           },
@@ -14595,8 +14596,9 @@
               },
               {
                 "id": 12,
-                "name": "optionalColumns",
-                "type": "VulnerabilityReportOptionalColumns"
+                "name": "vulnerabilityReportOptionalColumns",
+                "type": "VulnerabilityReportOptionalColumns",
+                "oneof_parent": "optionalColumns"
               }
             ]
           },
