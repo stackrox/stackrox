@@ -361,7 +361,7 @@ function ClustersTablePanel({
                                         component={LinkShim}
                                         href={clustersDelegatedScanningPath}
                                     >
-                                        Delegated scanning
+                                        Delegated image scanning
                                     </Button>
                                 </ToolbarItem>
                             )}
