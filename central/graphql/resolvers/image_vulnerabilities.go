@@ -198,13 +198,17 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 
 		vulnQuery := search.NewQueryBuilder().AddExactMatches(search.CVEID, cveIDs...).ProtoQuery()
 		vulns, err := loader.FromQuery(ctx, vulnQuery)
-		foundVulns := make(map[string]bool)
+		foundVulns := make(map[string]*storage.ImageCVEV2)
 		normalizedVulns := make([]*storage.ImageCVEV2, 0, len(vulns))
 		for _, vuln := range vulns {
 			if _, ok := foundVulns[vuln.GetCveBaseInfo().GetCve()]; !ok {
-				foundVulns[vuln.GetCveBaseInfo().GetCve()] = true
-				normalizedVulns = append(normalizedVulns, vuln)
+				foundVulns[vuln.GetCveBaseInfo().GetCve()] = vuln
 			}
+		}
+
+		// Start with this because it is sorted.
+		for _, cvecore := range cvecoreresolver {
+			normalizedVulns = append(normalizedVulns, foundVulns[cvecore.GetCVE()])
 		}
 		cveResolvers, err := resolver.wrapImageCVEV2sCoreWithContext(ctx, normalizedVulns, cvecoreresolver, err)
 		if err != nil {
