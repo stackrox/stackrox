@@ -112,6 +112,9 @@ _update_job_record() {
 bq_update_job_record() {
     setup_gcp
 
+    local -a sql_params
+    sql_params=("--parameter=id::${METRICS_JOB_ID}")
+
     local update_set=""
     while [[ "$#" -ne 0 ]]; do
         local field="$1"
@@ -122,23 +125,21 @@ bq_update_job_record() {
             update_set="$update_set, "
         fi
 
-        case "$field" in
-            # All updateable string fields need quotation
-            build|cut_*|outcome|test_target)
-                value="'$value'"
-                ;;
-        esac
-
-        update_set="$update_set $field=$value"
+        if [[ "$field" == "stopped_at" ]]; then
+            # $value is ignored, we know what to do.
+            update_set="$update_set stopped_at=CURRENT_TIMESTAMP()"
+        else
+            update_set="$update_set $field=@$field"
+            sql_params+=("--parameter=${field}::$value")
+        fi
     done
 
-    read -r -d '' sql <<- _EO_UPDATE_ || true
-UPDATE ${_JOBS_TABLE_NAME}
-SET $update_set
-WHERE id='${METRICS_JOB_ID}'
-_EO_UPDATE_
-
-    bq query --use_legacy_sql=false "$sql"
+    bq query \
+        --use_legacy_sql=false \
+        "${sql_params[@]}" \
+        "UPDATE ${_JOBS_TABLE_NAME}
+        SET $update_set
+        WHERE id=@id"
 }
 
 slack_top_n_failures() {
