@@ -12,7 +12,7 @@ metadata:
     {{- include "srox.annotations" (list . "route" "central") | nindent 4 }}
 spec:
 {{- if ._rox.central.exposure.route.host }}
-  host: {{ ._rox.central.exposure.route.host }}
+  host: {{ ._rox.central.exposure.route.host | quote }}
 {{- end }}
   port:
     targetPort: https
@@ -41,6 +41,50 @@ spec:
     kind: Service
     name: central
 ---
+
+{{ $reencryptConfig := ._rox.central.exposure.route.reencrypt }}
+{{- if $reencryptConfig.enabled }}
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: central-reencrypt
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "route" "central-reencrypt") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "route" "central-reencrypt") | nindent 4 }}
+spec:
+{{- if $reencryptConfig.host }}
+  host: {{ $reencryptConfig.host | quote }}
+{{- end }}
+  port:
+    targetPort: https
+  tls:
+    termination: reencrypt
+    {{- with $reencryptConfig.tls }}
+    {{- if .caCertificate }}
+    caCertificate: |
+      {{- .caCertificate | nindent 6 }}
+    {{- end }}
+    {{- if .certificate }}
+    certificate: |
+      {{- .certificate | nindent 6 }}
+    {{- end }}
+    {{- if .destinationCACertificate }}
+    destinationCACertificate: |
+      {{- .destinationCACertificate | nindent 6 }}
+    {{- end }}
+    {{- if .key }}
+    key: |
+      {{- .key | nindent 6 }}
+    {{- end }}
+    {{- end }}
+  to:
+    kind: Service
+    name: central
+---
+{{- end }}
+
 {{- end }}
 
 {{- if ._rox.central.exposure.nodePort.enabled }}

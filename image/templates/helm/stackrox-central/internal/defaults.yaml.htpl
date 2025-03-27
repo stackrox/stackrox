@@ -69,9 +69,10 @@ defaults:
         port: 443
       nodePort:
         enabled: false
-        port: null
       route:
         enabled: false
+        reencrypt:
+          enabled: false
     db:
       external: false
 
