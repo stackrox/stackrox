@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/containers"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/istioutils"
@@ -79,8 +80,11 @@ func orchestratorCommand(shortName, _ string) *cobra.Command {
 		}),
 	}
 	if !roxctl.InMainImage() {
-		c.PersistentFlags().Var(common.NewOutputDir(&cfg.OutputDir, defaultBundlePath), "output-dir", "The directory to output the deployment bundle to.")
-		flags.OutputDirManuallySet = c.PersistentFlags().Changed("output-dir")
+		if containers.IsRunningInContainer( {
+			c.PersistentFlags().Var(common.NewOutputDir(&cfg.OutputDir, defaultBundlePath), "output-dir", "The directory to output the deployment bundle to")
+		} else {
+			c.PersistentFlags().Var(common.NewOutputDir(&cfg.OutputDir, ""), "output-dir", "The directory to output the deployment bundle to")
+		}
 	}
 	return c
 }
@@ -97,9 +101,9 @@ func k8sBasedOrchestrator(cliEnvironment environment.Environment, k8sConfig *ren
 		return nil
 	}
 
-	c.AddCommand(externalVolume(cliEnvironment, c.PersistentFlags()))
-	c.AddCommand(hostPathVolume(cliEnvironment, c.PersistentFlags()))
-	c.AddCommand(noVolume(cliEnvironment, c.PersistentFlags()))
+	c.AddCommand(externalVolume(cliEnvironment))
+	c.AddCommand(hostPathVolume(cliEnvironment))
+	c.AddCommand(noVolume(cliEnvironment))
 
 	flagWrap := &flagsWrapper{FlagSet: c.PersistentFlags()}
 	// Adds k8s specific flags

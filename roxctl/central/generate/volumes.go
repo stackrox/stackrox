@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/roxctl/common/environment"
 )
@@ -21,7 +20,7 @@ Output is a zip file printed to stdout.`, name),
 	}
 }
 
-func externalVolume(cliEnvironment environment.Environment, persistentFlags *pflag.FlagSet) *cobra.Command {
+func externalVolume(cliEnvironment environment.Environment) *cobra.Command {
 	external := &renderer.ExternalPersistence{
 		DB: &renderer.ExternalPersistenceInstance{},
 	}
@@ -31,7 +30,7 @@ func externalVolume(cliEnvironment environment.Environment, persistentFlags *pfl
 		if err := validateConfig(&cfg); err != nil {
 			return err
 		}
-		return OutputZip(cliEnvironment.Logger(), cliEnvironment.InputOutput(), cfg, persistentFlags)
+		return OutputZip(cliEnvironment.Logger(), cliEnvironment.InputOutput(), cfg)
 	}
 	flagWrap := &flagsWrapper{FlagSet: c.Flags()}
 	flagWrap.StringVarP(&external.DB.Name, "db-name", "", "central-db", "External volume name for Central DB.", "central-db")
@@ -40,19 +39,19 @@ func externalVolume(cliEnvironment environment.Environment, persistentFlags *pfl
 	return c
 }
 
-func noVolume(cliEnvironment environment.Environment, persistentFlags *pflag.FlagSet) *cobra.Command {
+func noVolume(cliEnvironment environment.Environment) *cobra.Command {
 	c := volumeCommand("none")
 	c.RunE = func(c *cobra.Command, args []string) error {
 		if err := validateConfig(&cfg); err != nil {
 			return err
 		}
-		return OutputZip(cliEnvironment.Logger(), cliEnvironment.InputOutput(), cfg, persistentFlags)
+		return OutputZip(cliEnvironment.Logger(), cliEnvironment.InputOutput(), cfg)
 	}
 	c.Hidden = true
 	return c
 }
 
-func hostPathVolume(cliEnvironment environment.Environment, persistentFlags *pflag.FlagSet) *cobra.Command {
+func hostPathVolume(cliEnvironment environment.Environment) *cobra.Command {
 	hostpath := &renderer.HostPathPersistence{
 		DB: &renderer.HostPathPersistenceInstance{},
 	}
@@ -62,7 +61,7 @@ func hostPathVolume(cliEnvironment environment.Environment, persistentFlags *pfl
 		if err := validateConfig(&cfg); err != nil {
 			return err
 		}
-		return OutputZip(cliEnvironment.Logger(), cliEnvironment.InputOutput(), cfg, persistentFlags)
+		return OutputZip(cliEnvironment.Logger(), cliEnvironment.InputOutput(), cfg)
 	}
 	c.Flags().StringVarP(&hostpath.DB.HostPath, "db-hostpath", "", "/var/lib/stackrox-central", "Path on the host.")
 	c.Flags().StringVarP(&hostpath.DB.NodeSelectorKey, "db-node-selector-key", "", "", "Node selector key (e.g. kubernetes.io/hostname).")

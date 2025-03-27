@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/spf13/pflag"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/buildinfo"
@@ -46,8 +45,6 @@ func TestRestoreKeysAndCerts(t *testing.T) {
 	tmpDir := t.TempDir()
 
 	testutils.SetExampleVersion(t)
-
-	persistentFlags := pflag.NewFlagSet("test", pflag.ContinueOnError)
 
 	flavorName := defaults.ImageFlavorNameDevelopmentBuild
 	if buildinfo.ReleaseBuild {
@@ -98,7 +95,7 @@ func TestRestoreKeysAndCerts(t *testing.T) {
 			// Note: This test is not for parallel run.
 			config.OutputDir = filepath.Join(tmpDir, testCase.testDir)
 			config.BackupBundle = testCase.backupBundle
-			require.NoError(t, OutputZip(logger, io, config, persistentFlags))
+			require.NoError(t, OutputZip(logger, io, config))
 
 			// Load values-private.yaml file
 			values, err := chartutil.ReadValuesFile(filepath.Join(config.OutputDir, "values-private.yaml"))
@@ -129,8 +126,6 @@ func TestTelemetryConfiguration(t *testing.T) {
 	t.Setenv("ROX_ROXCTL_IN_MAIN_IMAGE", "true")
 
 	testutils.SetExampleVersion(t)
-
-	persistentFlags := pflag.NewFlagSet("test", pflag.ContinueOnError)
 
 	flavorName := defaults.ImageFlavorNameDevelopmentBuild
 	if buildinfo.ReleaseBuild {
@@ -187,7 +182,7 @@ func TestTelemetryConfiguration(t *testing.T) {
 			config.K8sConfig.Telemetry.Enabled = testCase.telemetry
 
 			bundleio, _, out, _ := io2.TestIO()
-			require.ErrorIs(t, OutputZip(logger, bundleio, config, persistentFlags), testCase.expected.err)
+			require.ErrorIs(t, OutputZip(logger, bundleio, config), testCase.expected.err)
 			if testCase.expected.err != nil {
 				return
 			}
@@ -217,8 +212,6 @@ func TestMonitoringConfiguration(t *testing.T) {
 	t.Setenv("ROX_ROXCTL_IN_MAIN_IMAGE", "true")
 
 	testutils.SetExampleVersion(t)
-
-	persistentFlags := pflag.NewFlagSet("test", pflag.ContinueOnError)
 
 	flavorName := defaults.ImageFlavorNameDevelopmentBuild
 	if buildinfo.ReleaseBuild {
@@ -289,7 +282,7 @@ func TestMonitoringConfiguration(t *testing.T) {
 			bundleio, _, out, _ := io2.TestIO()
 			config.ClusterType = testCase.clusterType
 			config.K8sConfig.Monitoring.OpenShiftMonitoring = testCase.flagEnabled
-			err := OutputZip(logger, bundleio, config, persistentFlags)
+			err := OutputZip(logger, bundleio, config)
 			require.ErrorIs(t, err, testCase.expectErr)
 			if err != nil {
 				return
