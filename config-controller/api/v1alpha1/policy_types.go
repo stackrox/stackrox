@@ -148,7 +148,7 @@ const (
 // SecurityPolicyCondition defines the observed state of SecurityPolicy
 type SecurityPolicyCondition struct {
 	Type               SecurityPolicyConditionType `json:"type"`
-	Status             bool                        `json:"status"`
+	Status             string                      `json:"status"`
 	Message            string                      `json:"message"`
 	LastTransitionTime metav1.Time                 `json:"lastTransitionTime"`
 }
