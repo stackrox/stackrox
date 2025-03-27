@@ -404,7 +404,7 @@ function ConfigReportsTab() {
                                             {
                                                 reportId: report.id,
                                             }
-                                        ) as string;
+                                        );
                                         const snapshot = reportSnapshots[report.id];
                                         const isReportStatusPending =
                                             snapshot?.reportStatus.runState === 'PREPARING' ||
