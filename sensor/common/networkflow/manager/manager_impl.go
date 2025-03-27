@@ -95,6 +95,14 @@ type networkConnIndicator struct {
 	lastUpdate timestamp.MicroTS
 }
 
+func (i *networkConnIndicator) String() string {
+	return fmt.Sprintf("%s(%s) => %s(%s), port=%d, protocol=%s, lastUpdated=%s",
+		i.srcEntity.Type, i.srcEntity.ID,
+		i.dstEntity.Type, i.dstEntity.ID,
+		i.dstPort, i.protocol,
+		i.lastUpdate.GoTime().Format(time.RFC3339))
+}
+
 func (i *networkConnIndicator) toProto(ts timestamp.MicroTS) *storage.NetworkFlow {
 	proto := &storage.NetworkFlow{
 		Props: &storage.NetworkFlowProperties{
@@ -115,6 +123,10 @@ type containerEndpointIndicator struct {
 	entity   networkgraph.Entity
 	port     uint16
 	protocol storage.L4Protocol
+}
+
+func (i *containerEndpointIndicator) String() string {
+	return fmt.Sprintf("%s(%s), port=%d, protocol=%s", i.entity.Type, i.entity.ID, i.port, i.protocol)
 }
 
 func (i *containerEndpointIndicator) toProto(ts timestamp.MicroTS) *storage.NetworkEndpoint {
@@ -277,6 +289,12 @@ func NewManager(
 	}); err != nil {
 		log.Errorf("unable to subscribe to %s: %+v", internalmessage.SensorMessageResourceSyncFinished, err)
 	}
+
+	go func() {
+		if err := mgr.StartDebugServer(":8098"); err != nil {
+			log.Errorf("unable to start debug server %+v", err)
+		}
+	}()
 
 	return mgr
 }
