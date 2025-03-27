@@ -158,7 +158,7 @@ func withSelectCVECoreResponseQuery(q *v1.Query, cveIDsToFilter []string, option
 		Fields: []string{search.CVE.String()},
 	}
 	// TODO(ROX-28320): hack around severity sort for now
-	for _, sortOption := range q.GetPagination().GetSortOptions() {
+	for _, sortOption := range cloned.GetPagination().GetSortOptions() {
 		if sortOption.Field == search.Severity.String() {
 			log.Infof("SHREWS -- we have Severity sort")
 			sortOption.Field = search.SeverityMax.String()
@@ -171,7 +171,7 @@ func withSelectCVECoreResponseQuery(q *v1.Query, cveIDsToFilter []string, option
 			log.Infof("SHREWS -- we have CVE sort")
 		}
 	}
-	//if strings.Contains(q.GetPagination().String(), search.Severity.String()) {
+	//if strings.Contains(cloned.GetPagination().String(), search.Severity.String()) {
 	//	cloned.GroupBy.Fields = append(cloned.GroupBy.Fields, search.Severity.String())
 	//}
 	return cloned
