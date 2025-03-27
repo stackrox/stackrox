@@ -70,21 +70,6 @@ func (mr *MockDataStoreMockRecorder) Get(ctx, props any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockDataStore)(nil).Get), ctx, props)
 }
 
-// GetAll mocks base method.
-func (m *MockDataStore) GetAll(ctx context.Context) ([]*storage.Group, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAll", ctx)
-	ret0, _ := ret[0].([]*storage.Group)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetAll indicates an expected call of GetAll.
-func (mr *MockDataStoreMockRecorder) GetAll(ctx any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockDataStore)(nil).GetAll), ctx)
-}
-
 // GetFiltered mocks base method.
 func (m *MockDataStore) GetFiltered(ctx context.Context, filter func(*storage.Group) bool) ([]*storage.Group, error) {
 	m.ctrl.T.Helper()
@@ -112,6 +97,20 @@ func (m *MockDataStore) Mutate(ctx context.Context, remove, update, add []*stora
 func (mr *MockDataStoreMockRecorder) Mutate(ctx, remove, update, add, force any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Mutate", reflect.TypeOf((*MockDataStore)(nil).Mutate), ctx, remove, update, add, force)
+}
+
+// ProcessAll mocks base method.
+func (m *MockDataStore) ProcessAll(ctx context.Context, fn func(*storage.Group) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ProcessAll", ctx, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ProcessAll indicates an expected call of ProcessAll.
+func (mr *MockDataStoreMockRecorder) ProcessAll(ctx, fn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessAll", reflect.TypeOf((*MockDataStore)(nil).ProcessAll), ctx, fn)
 }
 
 // Remove mocks base method.
