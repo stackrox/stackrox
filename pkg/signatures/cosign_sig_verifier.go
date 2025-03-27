@@ -171,12 +171,15 @@ func (c *cosignSignatureVerifier) VerifySignature(ctx context.Context,
 	// verifier_N(sig_1) OR ... OR verifier_N(sig_N)
 	verifiedImageReferences := set.NewStringSet()
 	for _, opts := range c.verifierOpts {
-		verifierReferenceSet, err := verifyImageSignatures(ctx, sigs, hash, image, opts)
-		if err != nil {
-			allVerifyErrs = multierror.Append(allVerifyErrs, err)
-			continue
+		for _, sig := range sigs {
+			verifierRefs, err := verifyImageSignature(ctx, sig, hash, image, opts)
+			if err != nil {
+				allVerifyErrs = multierror.Append(allVerifyErrs, err)
+				continue
+			}
+			// Successful verification. Keep the image references.
+			verifiedImageReferences.AddAll(verifierRefs...)
 		}
-		verifiedImageReferences = verifiedImageReferences.Union(verifierReferenceSet)
 	}
 
 	if len(verifiedImageReferences) > 0 {
@@ -287,35 +290,18 @@ func cosignCheckOptsFromCert(cert certVerificationData) (cosign.CheckOpts, error
 	}
 }
 
-func verifyImageSignatures(ctx context.Context, signatures []oci.Signature,
+func verifyImageSignature(ctx context.Context, signature oci.Signature,
 	imageHash gcrv1.Hash, image *storage.Image, cosignOpts cosign.CheckOpts,
-) (set.StringSet, error) {
-	verifiedImageReferences := set.NewStringSet()
-	var verificationErrors error
-
-	for _, signature := range signatures {
-		// The bundle references a rekor bundle within the transparency log. Since we do not support this, the
-		// bundle verified will _always_ be false.
-		// See: https://github.com/sigstore/cosign/blob/eaee4b7da0c1a42326bd82c6a4da7e16741db266/pkg/cosign/verify.go#L584-L586.
-		// If there is no error during the verification, the signature was successfully verified
-		// as well as the claims.
-		if _, err := cosign.VerifyImageSignature(ctx, signature, imageHash, &cosignOpts); err != nil {
-			verificationErrors = multierror.Append(verificationErrors, err)
-			continue
-		}
-
-		refs, err := getVerifiedImageReference(signature, image)
-		if err != nil {
-			verificationErrors = multierror.Append(verificationErrors, err)
-			continue
-		}
-		verifiedImageReferences.AddAll(refs...)
+) ([]string, error) {
+	// The bundle references a rekor bundle within the transparency log. Since we do not support this, the
+	// bundle verified will _always_ be false.
+	// See: https://github.com/sigstore/cosign/blob/eaee4b7da0c1a42326bd82c6a4da7e16741db266/pkg/cosign/verify.go#L584-L586.
+	// If there is no error during the verification, the signature was successfully verified
+	// as well as the claims.
+	if _, err := cosign.VerifyImageSignature(ctx, signature, imageHash, &cosignOpts); err != nil {
+		return nil, err
 	}
-
-	if len(verifiedImageReferences) > 0 {
-		return verifiedImageReferences, nil
-	}
-	return nil, verificationErrors
+	return getVerifiedImageReference(signature, image)
 }
 
 // getVerificationResultStatusFromErr will map an error to a specific storage.ImageSignatureVerificationResult_Status.
