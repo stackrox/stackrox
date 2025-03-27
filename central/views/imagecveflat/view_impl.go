@@ -3,6 +3,7 @@ package imagecveflat
 import (
 	"context"
 	"sort"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/views"
@@ -153,6 +154,10 @@ func withSelectCVECoreResponseQuery(q *v1.Query, cveIDsToFilter []string, option
 
 	cloned.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{search.CVE.String()},
+	}
+	// TODO(ROX-28320): hack around severity sort for now
+	if strings.Contains(q.GetPagination().String(), search.Severity.String()) {
+		cloned.GroupBy.Fields = append(cloned.GroupBy.Fields, search.Severity.String())
 	}
 	return cloned
 }
