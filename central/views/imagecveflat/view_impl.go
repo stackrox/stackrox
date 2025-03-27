@@ -128,11 +128,6 @@ func withSelectCVECoreResponseQuery(q *v1.Query, cveIDsToFilter []string, option
 		search.NewQuerySelect(search.CVE).Proto(),
 		search.NewQuerySelect(search.CVEID).Distinct().Proto(),
 	}
-	if !options.SkipGetImagesBySeverity {
-		cloned.Selects = append(cloned.Selects,
-			common.WithCountBySeverityAndFixabilityQuery(q, search.ImageSHA).Selects...,
-		)
-	}
 	if !options.SkipGetTopCVSS {
 		cloned.Selects = append(cloned.Selects, search.NewQuerySelect(search.CVSS).AggrFunc(aggregatefunc.Max).Proto())
 	}
@@ -154,6 +149,7 @@ func withSelectCVECoreResponseQuery(q *v1.Query, cveIDsToFilter []string, option
 	cloned.Selects = append(cloned.Selects, search.NewQuerySelect(search.ImpactScore).AggrFunc(aggregatefunc.Max).Proto())
 	cloned.Selects = append(cloned.Selects, search.NewQuerySelect(search.FirstImageOccurrenceTimestamp).AggrFunc(aggregatefunc.Min).Proto())
 	cloned.Selects = append(cloned.Selects, search.NewQuerySelect(search.VulnerabilityState).AggrFunc(aggregatefunc.Max).Proto())
+	cloned.Selects = append(cloned.Selects, search.NewQuerySelect(search.Severity).AggrFunc(aggregatefunc.Max).Proto())
 
 	cloned.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{search.CVE.String()},
