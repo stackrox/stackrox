@@ -56,8 +56,8 @@ func (ds *datastoreImpl) GetCloudSource(ctx context.Context, id string) (*storag
 	return cloudSource, nil
 }
 
-func (ds *datastoreImpl) GetAllCloudSources(ctx context.Context) ([]*storage.CloudSource, error) {
-	return ds.store.GetAll(ctx)
+func (ds *datastoreImpl) ProcessCloudSources(ctx context.Context, fn func(obj *storage.CloudSource) error) error {
+	return ds.store.Walk(ctx, fn)
 }
 
 func (ds *datastoreImpl) ListCloudSources(ctx context.Context, query *v1.Query) ([]*storage.CloudSource, error) {
