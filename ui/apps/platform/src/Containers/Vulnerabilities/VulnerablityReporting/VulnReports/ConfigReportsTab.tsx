@@ -6,7 +6,6 @@ import {
     AlertActionCloseButton,
     AlertGroup,
     PageSection,
-    Title,
     Flex,
     FlexItem,
     Button,
@@ -29,8 +28,8 @@ import { DropdownItem } from '@patternfly/react-core/deprecated';
 import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { ExclamationCircleIcon, FileIcon, SearchIcon } from '@patternfly/react-icons';
 
-import { vulnerabilityReportsPath } from 'routePaths';
-import { vulnerabilityReportPath } from 'Containers/Vulnerabilities/VulnerablityReporting/pathsForVulnerabilityReporting';
+import { vulnerabilityConfigurationReportsPath } from 'routePaths';
+import { vulnerabilityConfigurationReportPath } from 'Containers/Vulnerabilities/VulnerablityReporting/pathsForVulnerabilityReporting';
 import useFetchReports from 'Containers/Vulnerabilities/VulnerablityReporting/api/useFetchReports';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
@@ -60,7 +59,7 @@ import { reportDownloadURL } from 'services/ReportsService';
 
 const CreateReportsButton = () => {
     return (
-        <Link to={`${vulnerabilityReportsPath}?action=create`}>
+        <Link to={`${vulnerabilityConfigurationReportsPath}?action=create`}>
             <Button variant="primary">Create report</Button>
         </Link>
     );
@@ -75,7 +74,7 @@ const sortOptions = {
 
 const emptyReportArray = [];
 
-function VulnReportsPage() {
+function ConfigReportsTab() {
     const navigate = useNavigate();
     const { currentUser } = useAuthStatus();
 
@@ -182,31 +181,22 @@ function VulnReportsPage() {
                     </Alert>
                 ))}
             </AlertGroup>
-            <PageTitle title="Vulnerability reporting" />
-            {runError && <Alert variant="danger" isInline title={runError} component="p" />}
+            <PageTitle title="Vulnerability reporting - Report configurations" />
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
+                {runError && <Alert variant="danger" isInline title={runError} component="p" />}
                 <Flex
                     direction={{ default: 'row' }}
                     alignItems={{ default: 'alignItemsCenter' }}
                     className="pf-v5-u-py-lg pf-v5-u-px-lg"
                 >
-                    <FlexItem flex={{ default: 'flex_1' }}>
-                        <Flex direction={{ default: 'column' }}>
-                            <FlexItem>
-                                <Flex spaceItems={{ default: 'spaceItemsSm' }}>
-                                    <Title headingLevel="h1">Vulnerability reporting</Title>
-                                </Flex>
-                            </FlexItem>
-                            <FlexItem>
-                                Configure reports, define collections, and assign delivery
-                                destinations to report on vulnerabilities across the organization.
-                            </FlexItem>
-                        </Flex>
-                    </FlexItem>
+                    <Text>
+                        Configure reports, define collections, and assign delivery destinations to
+                        report on vulnerabilities across the organization.
+                    </Text>
                     {reportConfigurations &&
                         reportConfigurations.length > 0 &&
                         hasWriteAccessForReport && (
-                            <FlexItem>
+                            <FlexItem align={{ default: 'alignRight' }}>
                                 <CreateReportsButton />
                             </FlexItem>
                         )}
@@ -410,7 +400,7 @@ function VulnReportsPage() {
                                         )}
                                     {reportConfigurations.map((report, rowIndex) => {
                                         const vulnReportURL = generatePath(
-                                            vulnerabilityReportPath,
+                                            vulnerabilityConfigurationReportPath,
                                             {
                                                 reportId: report.id,
                                             }
@@ -615,4 +605,4 @@ function VulnReportsPage() {
     );
 }
 
-export default VulnReportsPage;
+export default ConfigReportsTab;

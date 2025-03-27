@@ -14,7 +14,7 @@ import {
 import { Wizard } from '@patternfly/react-core/deprecated';
 import isEmpty from 'lodash/isEmpty';
 
-import { vulnerabilityReportsPath } from 'routePaths';
+import { vulnerabilityConfigurationReportsPath } from 'routePaths';
 import useReportFormValues from 'Containers/Vulnerabilities/VulnerablityReporting/forms/useReportFormValues';
 import useSaveReport from 'Containers/Vulnerabilities/VulnerablityReporting/api/useSaveReport';
 import useFetchReport from 'Containers/Vulnerabilities/VulnerablityReporting/api/useFetchReport';
@@ -44,7 +44,7 @@ function EditVulnReportPage() {
     const { isSaving, saveError, saveReport } = useSaveReport({
         onCompleted: () => {
             formik.resetForm();
-            navigate(vulnerabilityReportsPath);
+            navigate(vulnerabilityConfigurationReportsPath);
         },
     });
 
@@ -80,7 +80,7 @@ function EditVulnReportPage() {
     }
 
     function onClose() {
-        navigate(vulnerabilityReportsPath);
+        navigate(vulnerabilityConfigurationReportsPath);
     }
 
     const wizardSteps = [
@@ -107,7 +107,7 @@ function EditVulnReportPage() {
                 title="Error fetching the report configuration"
                 message={error}
                 actionText="Go to reports"
-                url={vulnerabilityReportsPath}
+                url={vulnerabilityConfigurationReportsPath}
             />
         );
     }
@@ -126,7 +126,7 @@ function EditVulnReportPage() {
             <ReportFormErrorAlert error={saveError} />
             <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
-                    <BreadcrumbItemLink to={vulnerabilityReportsPath}>
+                    <BreadcrumbItemLink to={vulnerabilityConfigurationReportsPath}>
                         Vulnerability reporting
                     </BreadcrumbItemLink>
                     <BreadcrumbItem isActive>Edit report</BreadcrumbItem>
