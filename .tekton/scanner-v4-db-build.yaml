@@ -17,7 +17,7 @@ metadata:
           target_branch.startsWith("release-") ||
           source_branch.matches("(konflux|renovate|appstudio|rhtap)") ||
           body.pull_request.labels.exists(l, l.name == "konflux-build")
-        )
+        ) && body.action != "labeled"
       )
   labels:
     appstudio.openshift.io/application: acs
