@@ -7,6 +7,23 @@ Entries in this file should be limited to:
 - Obscure side-effects that are not obviously apparent based on the JIRA associated with the changes.
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
+## [4.7.2]
+
+### Added Features
+
+- ROX-13493: Support for scale subresource in the admission controller to enable policy detection and enforcement on admission review requests on the scale subresource.
+- RHPF-98: Log creation of API token. The token creation log message will trigger an administration event.
+- ROX-28716: New policy criterion "Days Since CVE Was Published" to allow creation of a policy that offers a grace period to teams to fix vulnerabilities within the number of days from when the CVE was published in the vulnerability feeds.
+
+### Removed Features
+
+### Deprecated Features
+
+### Technical Changes
+
+- ROX-28263: New `roxctl` help formatting.
+- ROX-24500: Certificate validation failure in `roxctl` is now an error.
+
 ## [4.7.0]
 
 ### Added Features
