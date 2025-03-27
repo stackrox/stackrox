@@ -143,25 +143,6 @@ setup_deployment_env() {
     ci_export ROX_PRODUCT_BRANDING "RHACS_BRANDING"
 }
 
-export_central_cert() {
-    # Export the internal central TLS certificate for roxctl to access central
-    # through TLS-passthrough router by specifying the TLS server name.
-    ci_export ROX_SERVER_NAME "central.${CENTRAL_NAMESPACE:-stackrox}"
-
-    require_environment "API_ENDPOINT"
-    require_environment "ROX_ADMIN_PASSWORD"
-
-    local central_cert
-    central_cert="$(mktemp -d)/central_cert.pem"
-    info "Storing central certificate in ${central_cert} for ${API_ENDPOINT}"
-
-    roxctl -e "$API_ENDPOINT" \
-        central cert --insecure-skip-tls-verify 1>"$central_cert"
-
-    ci_export ROX_CA_CERT_FILE "$central_cert"
-    openssl x509 -in "${ROX_CA_CERT_FILE}" -subject -issuer -ext subjectAltName -noout
-}
-
 get_central_debug_dump() {
     info "Getting a central debug dump"
 
@@ -173,8 +154,8 @@ get_central_debug_dump() {
 
     require_environment "API_ENDPOINT"
     require_environment "ROX_ADMIN_PASSWORD"
-    export_central_cert
-    roxctl -e "${API_ENDPOINT}" central debug dump --output-dir "${output_dir}"
+    roxctl -e "${API_ENDPOINT}" --server-name "${API_ENDPOINT}" \
+        central debug dump --output-dir "${output_dir}"
     ls -l "${output_dir}"
 }
 
@@ -234,8 +215,8 @@ get_central_diagnostics() {
 
     require_environment "API_ENDPOINT"
     require_environment "ROX_ADMIN_PASSWORD"
-    export_central_cert
-    roxctl -e "${API_ENDPOINT}" central debug download-diagnostics --output-dir "${output_dir}"
+    roxctl -e "${API_ENDPOINT}" --server-name "${API_ENDPOINT}" \
+        central debug download-diagnostics --output-dir "${output_dir}"
     ls -l "${output_dir}"
 }
 
