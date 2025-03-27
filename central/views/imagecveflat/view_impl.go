@@ -163,6 +163,13 @@ func withSelectCVECoreResponseQuery(q *v1.Query, cveIDsToFilter []string, option
 			log.Infof("SHREWS -- we have Severity sort")
 			sortOption.Field = search.SeverityMax.String()
 		}
+		if sortOption.Field == search.CVSS.String() {
+			log.Infof("SHREWS -- we have CVSS sort")
+			sortOption.Field = search.CVSSMax.String()
+		}
+		if sortOption.Field == search.CVE.String() {
+			log.Infof("SHREWS -- we have CVE sort")
+		}
 	}
 	//if strings.Contains(q.GetPagination().String(), search.Severity.String()) {
 	//	cloned.GroupBy.Fields = append(cloned.GroupBy.Fields, search.Severity.String())
