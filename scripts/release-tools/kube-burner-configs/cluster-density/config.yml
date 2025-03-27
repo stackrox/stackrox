@@ -41,6 +41,11 @@ jobs:
         inputVars:
           podReplicas: 2
 
+      - objectTemplate: connection-load-deployment.yml
+        replicas: 5
+        inputVars:
+          podReplicas: 2
+
       - objectTemplate: service.yml
         replicas: 5
 
@@ -51,4 +56,7 @@ jobs:
         replicas: 10
 
       - objectTemplate: berserker-configmap-endpoints-zipf.yml
+        replicas: 10
+
+      - objectTemplate: berserker-configmap-connections.yml
         replicas: 10

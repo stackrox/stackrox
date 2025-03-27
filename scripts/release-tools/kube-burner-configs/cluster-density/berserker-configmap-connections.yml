@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{.JobName}}-berserker-connections-config
+data:
+  network-server.toml: |
+    restart_interval = 10
+    workers = 1
+    per_core = false
+    
+    [workload]
+    type = "network"
+    server = true
+    address = [223, 42, 0, 1]
+    target_port = 1337
+    arrival_rate = 0.1
+    departure_rate = 0.1
+    nconnections = 100
+
+  network-client.toml: |
+    restart_interval = 10
+    workers = 1
+    per_core = false
+    
+    [workload]
+    type = "network"
+    server = false
+    address = [223, 42, 0, 1]
+    target_port = 1337
+    arrival_rate = 0.1
+    departure_rate = 0.1
+    nconnections = 100
