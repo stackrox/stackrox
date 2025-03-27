@@ -27,14 +27,6 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 	)
 	props := make(map[string]any)
 
-	backups, err := Singleton().ListBackups(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get external backups")
-	}
-
-	// Can safely ignore the error here since we already fetched backups.
-	_ = phonehome.AddTotal(ctx, props, "External Backups", phonehome.Len(backups))
-
 	backupTypesCount := map[string]int{
 		types.S3Type:           0,
 		types.S3CompatibleType: 0,
@@ -46,7 +38,9 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 		types.GCSType: 0,
 	}
 
-	for _, backup := range backups {
+	count := 0
+	err := Singleton().ProcessBackups(ctx, func(backup *storage.ExternalBackup) error {
+		count++
 		backupTypesCount[backup.GetType()]++
 
 		if backup.GetType() == types.S3Type && backup.GetS3().GetUseIam() {
@@ -56,7 +50,14 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 		if backup.GetType() == types.GCSType && backup.GetGcs().GetUseWorkloadId() {
 			cloudCredentialsEnabledBackupsCount[types.GCSType]++
 		}
+		return nil
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get external backups")
 	}
+
+	// Can safely ignore the error here since we already fetched backups.
+	_ = phonehome.AddTotal(ctx, props, "External Backups", phonehome.Constant(count))
 
 	for backupType, count := range backupTypesCount {
 		props[fmt.Sprintf("Total %s External Backups",

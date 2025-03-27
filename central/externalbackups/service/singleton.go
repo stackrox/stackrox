@@ -30,15 +30,15 @@ func initializeManager() manager.Manager {
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Integration)))
 
-	backups, err := datastore.Singleton().ListBackups(ctx)
-	if err != nil {
-		panic(err)
-	}
 	mgr := manager.New(reporter.Singleton(), backupListener.Singleton())
-	for _, b := range backups {
+	err := datastore.Singleton().ProcessBackups(ctx, func(b *storage.ExternalBackup) error {
 		if err := mgr.Upsert(ctx, b); err != nil {
 			log.Errorf("error initializing backup: %v", err)
 		}
+		return nil
+	})
+	if err != nil {
+		panic(err)
 	}
 	return mgr
 }
