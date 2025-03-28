@@ -101,8 +101,11 @@ type ImageIntegrations struct {
 	state                 protoimpl.MessageState      `protogen:"open.v1"`
 	UpdatedIntegrations   []*storage.ImageIntegration `protobuf:"bytes,1,rep,name=updated_integrations,json=updatedIntegrations,proto3" json:"updated_integrations,omitempty"`
 	DeletedIntegrationIds []string                    `protobuf:"bytes,2,rep,name=deleted_integration_ids,json=deletedIntegrationIds,proto3" json:"deleted_integration_ids,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	// refresh when true indicates that the updated integrations should replace
+	// any existing integrations.
+	Refresh       bool `protobuf:"varint,3,opt,name=refresh,proto3" json:"refresh,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ImageIntegrations) Reset() {
@@ -149,6 +152,13 @@ func (x *ImageIntegrations) GetDeletedIntegrationIds() []string {
 	return nil
 }
 
+func (x *ImageIntegrations) GetRefresh() bool {
+	if x != nil {
+		return x.Refresh
+	}
+	return false
+}
+
 var File_internalapi_central_image_proto protoreflect.FileDescriptor
 
 const file_internalapi_central_image_proto_rawDesc = "" +
@@ -160,10 +170,11 @@ const file_internalapi_central_image_proto_rawDesc = "" +
 	"\n" +
 	"image_name\x18\x02 \x01(\tR\timageName\x12\x14\n" +
 	"\x05force\x18\x03 \x01(\bR\x05force\x12\x1c\n" +
-	"\tnamespace\x18\x04 \x01(\tR\tnamespace\"\x99\x01\n" +
+	"\tnamespace\x18\x04 \x01(\tR\tnamespace\"\xb3\x01\n" +
 	"\x11ImageIntegrations\x12L\n" +
 	"\x14updated_integrations\x18\x01 \x03(\v2\x19.storage.ImageIntegrationR\x13updatedIntegrations\x126\n" +
-	"\x17deleted_integration_ids\x18\x02 \x03(\tR\x15deletedIntegrationIdsB\x1fZ\x1d./internalapi/central;centralb\x06proto3"
+	"\x17deleted_integration_ids\x18\x02 \x03(\tR\x15deletedIntegrationIds\x12\x18\n" +
+	"\arefresh\x18\x03 \x01(\bR\arefreshB\x1fZ\x1d./internalapi/central;centralb\x06proto3"
 
 var (
 	file_internalapi_central_image_proto_rawDescOnce sync.Once
