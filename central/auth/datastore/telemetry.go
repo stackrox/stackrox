@@ -19,22 +19,21 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 			sac.ResourceScopeKeys(resources.Access)))
 
 	props := make(map[string]any)
-
-	configs, err := Singleton().ListAuthM2MConfigs(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get machine-to-machine configurations")
-	}
-
-	_ = phonehome.AddTotal(ctx, props, "Machine-To-Machine Configurations", phonehome.Len(configs))
-
 	countByType := map[string]int{
 		storage.AuthMachineToMachineConfig_GITHUB_ACTIONS.String(): 0,
 		storage.AuthMachineToMachineConfig_GENERIC.String():        0,
 	}
-
-	for _, config := range configs {
+	count := 0
+	err := Singleton().ProcessAuthM2MConfigs(ctx, func(config *storage.AuthMachineToMachineConfig) error {
+		count++
 		countByType[config.GetType().String()]++
+		return nil
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get machine-to-machine configurations")
 	}
+
+	_ = phonehome.AddTotal(ctx, props, "Machine-To-Machine Configurations", phonehome.Constant(count))
 
 	titleCase := cases.Title(language.English, cases.Compact).String
 	for configType, count := range countByType {
