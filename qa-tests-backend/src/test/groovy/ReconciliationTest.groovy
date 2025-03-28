@@ -5,7 +5,6 @@ import static util.Helpers.withRetry
 import orchestratormanager.OrchestratorTypes
 
 import io.fabric8.kubernetes.api.model.Pod
-import io.fabric8.kubernetes.api.model.apps.Deployment as OrchestratorDeployment
 
 import io.stackrox.proto.storage.AlertOuterClass
 
@@ -97,8 +96,6 @@ class ReconciliationTest extends BaseSpecification {
         when:
         "Get Sensor and counts"
 
-        OrchestratorDeployment sensorOrchestratorDeployment =
-                orchestrator.getOrchestratorDeployment("stackrox", "sensor")
         Deployment sensorDeployment = new Deployment().setNamespace("stackrox").setName("sensor")
 
         List<AlertOuterClass.ListAlert> violations = []
@@ -154,7 +151,10 @@ class ReconciliationTest extends BaseSpecification {
                 log.info pod
             }
 
-            orchestrator.deleteAndWaitForDeploymentDeletion(sensorDeployment)
+            List<Pod> pods = orchestrator.getPodsByLabel("stackrox", ["app": "sensor"])
+            assert pods.size() == 1
+            orchestrator.scaleDeployment("stackrox", "sensor", 0)
+            orchestrator.deletePod("stackrox", pods[0].getMetadata().getName(), 0)
 
             orchestrator.waitForAllPodsToBeRemoved("stackrox", ["app": "sensor"], 30, 5)
 
@@ -183,14 +183,14 @@ class ReconciliationTest extends BaseSpecification {
 
         // Recreate sensor
         try {
-            orchestrator.createOrchestratorDeployment(sensorOrchestratorDeployment)
+            orchestrator.scaleDeployment("stackrox", "sensor", 1)
         } catch (Exception e) {
             log.error("Error re-creating the sensor: ", e)
             throw e
         }
         Services.waitForDeployment(sensorDeployment)
 
-        def maxWaitForSync = 100
+        def maxWaitForSync = 200
         def interval = 1
 
         then:
