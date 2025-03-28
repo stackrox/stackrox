@@ -93,6 +93,8 @@ func newCVESummaryForPrinting(scanResults *storage.ImageScan, severities []strin
 		}
 	}
 
+	sortVulnerabilitiesBySeverityGroupedByComponentName(vulnerabilitiesJSON)
+
 	return &cveJSONResult{
 		Result: cveJSONStructure{
 			Summary:         vulnSummaryMap,
@@ -132,6 +134,18 @@ func getVulnerabilityJSON(vulnerabilities []*storage.EmbeddedVulnerability, comp
 		vulnerabilitiesJSON = append(vulnerabilitiesJSON, vulnJSON)
 	}
 	return vulnerabilitiesJSON
+}
+
+func sortVulnerabilitiesBySeverityGroupedByComponentName(vulnerabilitiesJSON []cveVulnerabilityJSON) {
+	componentMaxSeverity := map[string]cveSeverity{}
+	for _, v := range vulnerabilitiesJSON {
+		componentMaxSeverity[v.ComponentName] = max(v.CveSeverity, componentMaxSeverity[v.ComponentName])
+	}
+	sort.SliceStable(vulnerabilitiesJSON, func(i, j int) bool {
+		a := vulnerabilitiesJSON[i]
+		b := vulnerabilitiesJSON[j]
+		return componentMaxSeverity[a.ComponentName] > componentMaxSeverity[b.ComponentName]
+	})
 }
 
 func sortVulnerabilitiesForSeverity(vulns []*storage.EmbeddedVulnerability) []*storage.EmbeddedVulnerability {
