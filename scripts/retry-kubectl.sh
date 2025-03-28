@@ -13,6 +13,7 @@ error_regex=$(tr '\n' '|' <<EOT | sed -e 's/|$//;'
 : i/o timeout$
 net/http: request canceled \(Client\.Timeout exceeded while awaiting headers\)$
 : the server is currently unable to handle the request
+: TLS handshake timeout
 EOT
 )
 
