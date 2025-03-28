@@ -1643,7 +1643,9 @@ pre_pull_images() {
     done
     "$ORCH_CMD" </dev/null delete namespace "$namespace" >/dev/null 2>&1 || true
     "$ORCH_CMD" </dev/null create namespace "$namespace"
-    "${ROOT}/deploy/common/pull-secret.sh" quay quay.io | "$ORCH_CMD" -n "$namespace" apply -f -
+    if [[ "${CI:-}" != "true" ]]; then
+        "${ROOT}/deploy/common/pull-secret.sh" quay quay.io | "$ORCH_CMD" -n "$namespace" apply -f -
+    fi
     "$ORCH_CMD" </dev/null apply -f <(
     cat <<EOT
 apiVersion: apps/v1
@@ -1661,8 +1663,14 @@ spec:
         name: image-pre-pull
     spec:
       terminationGracePeriodSeconds: 0
+EOT
+    if [[ "${CI:-}" != "true" ]]; then
+        cat <<EOT
       imagePullSecrets:
       - name: quay
+EOT
+    fi
+    cat <<EOT
       containers:
 EOT
     i=1
