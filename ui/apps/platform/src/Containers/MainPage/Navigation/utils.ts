@@ -24,7 +24,7 @@ export type LinkDescription = {
 export function isActiveLink(location: Location, { isActive, path }: LinkDescription) {
     return typeof isActive === 'function'
         ? isActive(location)
-        : Boolean(matchPath({ path }, location.pathname));
+        : Boolean(matchPath({ path, end: false }, location.pathname));
 }
 
 export type SeparatorDescription = {
