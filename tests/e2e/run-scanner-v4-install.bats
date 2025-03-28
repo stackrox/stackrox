@@ -146,6 +146,14 @@ EOT
     OS="$(uname | tr '[:upper:]' '[:lower:]')"
     export OS
     export DOCKER_CMD="${DOCKER_CMD:-podman}"
+    local DEFAULT_SKIP_IMAGE_PULL_CHECK="true"
+    if [[ "$CI" == "" || "$CI" == "false" ]]; then
+        # For execution outside of CI we execute initial image pull checks to fail early in case something
+        # is off with the environmental setup (for example, `-dirty` suffixed image references in the charts
+        # rendered by roxctl in PATH or MAIN_IMAGE_TAG not set properly).
+        DEFAULT_SKIP_IMAGE_PULL_CHECK=false
+    fi
+    export SKIP_IMAGE_PULL_CHECK="${SKIP_IMAGE_PULL_CHECK:-$DEFAULT_SKIP_IMAGE_PULL_CHECK}"
     export ORCH_CMD="${ROOT}/scripts/retry-kubectl.sh"
     export SENSOR_HELM_MANAGED=true
     export CENTRAL_CHART_DIR="${ROOT}/deploy/${ORCHESTRATOR_FLAVOR}/central-deploy/chart"
@@ -225,6 +233,10 @@ EOT
             --debug --debug-path="${ROOT}/image" \
             --output-dir="${HEAD_HELM_CHART_SECURED_CLUSTER_SERVICES_DIR}" --remove
         export HEAD_HELM_CHART_SECURED_CLUSTER_SERVICES_DIR
+    fi
+
+    if [[ "$SKIP_IMAGE_PULL_CHECK" != "true" ]]; then
+        check_central_chart_images "$HEAD_HELM_CHART_CENTRAL_SERVICES_DIR"
     fi
 
     # For installation testing we don't need to deploy collector per-node, it is sufficient to deploy
