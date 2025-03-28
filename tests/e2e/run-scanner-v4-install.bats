@@ -247,9 +247,11 @@ EOT
     "${ORCH_CMD}" </dev/null label node "$_worker" run-collector=true
     echo "collector will only be scheduled on node ${_worker}"
 
-    # Pre-pull big main image(s) for more deterministic execution times for the test cases
-    # depending on these images.
-    pre_pull_images "main:${EARLIER_MAIN_IMAGE_TAG}" "main:${MAIN_IMAGE_TAG}" "scanner-v4:${MAIN_IMAGE_TAG}"
+    if [[ "${CI:-}" != "true" ]]; then
+        # Pre-pull big main image(s) for more deterministic execution times for the test cases
+        # depending on these images.
+        pre_pull_images "main:${EARLIER_MAIN_IMAGE_TAG}" "main:${MAIN_IMAGE_TAG}" "scanner-v4:${MAIN_IMAGE_TAG}"
+    fi
 
     _end
 }
