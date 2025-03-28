@@ -513,7 +513,12 @@ func (s *serviceImpl) getGroups(_ context.Context) (interface{}, error) {
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Access)))
 
-	return s.groupDataStore.GetAll(accessGroupsCtx)
+	var groups []*storage.Group
+	err := s.groupDataStore.ProcessAll(accessGroupsCtx, func(group *storage.Group) error {
+		groups = append(groups, group)
+		return nil
+	})
+	return groups, err
 }
 
 type diagResolvedRole struct {

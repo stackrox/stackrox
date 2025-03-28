@@ -17,7 +17,7 @@ import (
 //go:generate mockgen-wrapper
 type DataStore interface {
 	Get(ctx context.Context, props *storage.GroupProperties) (*storage.Group, error)
-	GetAll(ctx context.Context) ([]*storage.Group, error)
+	ProcessAll(ctx context.Context, fn func(group *storage.Group) error) error
 	GetFiltered(ctx context.Context, filter func(*storage.Group) bool) ([]*storage.Group, error)
 
 	Walk(ctx context.Context, authProviderID string, attributes map[string][]string) ([]*storage.Group, error)
