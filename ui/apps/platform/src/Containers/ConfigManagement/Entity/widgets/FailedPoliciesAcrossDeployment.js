@@ -1,6 +1,7 @@
 import React from 'react';
 import entityTypes from 'constants/entityTypes';
 import { useParams } from 'react-router-dom';
+import { Alert } from '@patternfly/react-core';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import { gql } from '@apollo/client';
 import queryService from 'utils/queryService';
@@ -8,7 +9,6 @@ import { sortSeverity } from 'sorters/sorters';
 import { format } from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
 
-import NoResultsMessage from 'Components/NoResultsMessage';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverityIconText';
@@ -66,11 +66,14 @@ const FailedPoliciesAcrossDeployment = () => {
                 const rows = createTableRows(data);
                 if (rows.length === 0) {
                     return (
-                        <NoResultsMessage
-                            message="No policies failed across this deployment"
-                            className="p-3 shadow"
-                            icon="info"
-                        />
+                        <div className="w-full">
+                            <Alert
+                                variant="success"
+                                isInline
+                                title="No policies failed across this deployment"
+                                component="p"
+                            />
+                        </div>
                     );
                 }
                 const header = `${rows.length} policies failed across this deployment`;
