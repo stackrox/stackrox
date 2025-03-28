@@ -1,0 +1,49 @@
+package manager
+
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+
+	"github.com/pkg/errors"
+)
+
+// StartDebugServer starts HTTP server that allows to look inside the active connections and endpoints.
+// This blocks and should be always started in a goroutine!
+func (m *networkFlowManager) StartDebugServer(addr string) error {
+	http.HandleFunc("/debug/netflow/state.json", func(w http.ResponseWriter, req *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		n, err := fmt.Fprintf(w, "%s\n", m.Debug())
+		log.Debugf("Serving debug http endpoint: n=%d, err=%v", n, err)
+	})
+	err := http.ListenAndServe(addr, nil)
+	if err != nil {
+		log.Error(errors.Wrap(err, "unable to start networkFlow manager debug server"))
+	}
+	return err
+}
+
+// Debug returns an object that represents the current state of the entire store
+func (m *networkFlowManager) Debug() []byte {
+	m.connectionsByHostMutex.Lock()
+	defer m.connectionsByHostMutex.Unlock()
+
+	d := make(map[string]map[string]string)
+	d["cardinality"] = make(map[string]string)
+	d["cardinality"]["activeConnections"] = fmt.Sprintf("%d", len(m.activeConnections))
+	d["cardinality"]["activeEndpoints"] = fmt.Sprintf("%d", len(m.activeEndpoints))
+
+	d["activeConnections"] = make(map[string]string)
+	for c, indicator := range m.activeConnections {
+		d["activeConnections"][c.String()] = indicator.String()
+	}
+	d["activeEndpoints"] = make(map[string]string)
+	for ep, indicator := range m.activeEndpoints {
+		d["activeEndpoints"][ep.String()] = indicator.String()
+	}
+	ret, err := json.Marshal(d)
+	if err != nil {
+		log.Errorf("Error marshalling networkFlowManager debug: %v", err)
+	}
+	return ret
+}

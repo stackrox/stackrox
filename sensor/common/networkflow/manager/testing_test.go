@@ -48,8 +48,8 @@ func (f expectFn) runIfSet() {
 
 func expectEntityLookupContainerHelper(mockEntityStore *mocksManager.MockEntityStore, times int, containerMetadata clusterentities.ContainerMetadata, found bool) expectFn {
 	return func() {
-		mockEntityStore.EXPECT().LookupByContainerID(gomock.Any()).Times(times).DoAndReturn(func(_ any) (clusterentities.ContainerMetadata, bool) {
-			return containerMetadata, found
+		mockEntityStore.EXPECT().LookupByContainerID(gomock.Any()).Times(times).DoAndReturn(func(_ any) (clusterentities.ContainerMetadata, bool, bool) {
+			return containerMetadata, found, false
 		})
 	}
 }
@@ -213,9 +213,13 @@ func (ch *HostnameAndConnections) withEndpointPair(pair *endpointPair) *Hostname
 func addHostConnection(mgr *networkFlowManager, connectionsHostPair *HostnameAndConnections) {
 	mgr.connectionsByHostMutex.Lock()
 	defer mgr.connectionsByHostMutex.Unlock()
+
 	h, ok := mgr.connectionsByHost[connectionsHostPair.hostname]
 	if !ok {
 		h = &hostConnections{}
+	} else {
+		h.mutex.Lock()
+		defer h.mutex.Unlock()
 	}
 	if connectionsHostPair.connPair != nil {
 		if h.connections == nil {
