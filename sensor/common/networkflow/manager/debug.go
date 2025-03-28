@@ -25,7 +25,14 @@ func (m *networkFlowManager) StartDebugServer(addr string) error {
 
 // Debug returns an object that represents the current state of the entire store
 func (m *networkFlowManager) Debug() []byte {
+	m.connectionsByHostMutex.Lock()
+	defer m.connectionsByHostMutex.Unlock()
+
 	d := make(map[string]map[string]string)
+	d["cardinality"] = make(map[string]string)
+	d["cardinality"]["activeConnections"] = fmt.Sprintf("%d", len(m.activeConnections))
+	d["cardinality"]["activeEndpoints"] = fmt.Sprintf("%d", len(m.activeEndpoints))
+
 	d["activeConnections"] = make(map[string]string)
 	for c, indicator := range m.activeConnections {
 		d["activeConnections"][c.String()] = indicator.String()
