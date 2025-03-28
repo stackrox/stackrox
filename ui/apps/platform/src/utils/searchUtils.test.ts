@@ -1,10 +1,8 @@
 import {
     getViewStateFromSearch,
-    filterAllowedSearch,
     convertToRestSearch,
     convertSortToGraphQLFormat,
     convertSortToRestFormat,
-    searchOptionsToSearchFilter,
     getListQueryParams,
     getPaginationParams,
     searchValueAsArray,
@@ -56,78 +54,6 @@ describe('searchUtils', () => {
             const containsKey = getViewStateFromSearch(searchObj, key);
 
             expect(containsKey).toEqual(false);
-        });
-    });
-
-    describe('filterAllowedSearch', () => {
-        it('should return an empty object for an empty object', () => {
-            const allowedOptions = [
-                'Annotation',
-                'Deployment',
-                'Image',
-                'Image Created Time',
-                'Label',
-                'Namespace',
-                'Priority',
-                'Secret',
-                'Service Account',
-            ];
-            const pageSearch = {};
-
-            const allowedSearch = filterAllowedSearch(allowedOptions, pageSearch);
-
-            expect(allowedSearch).toEqual({});
-        });
-
-        it('should pass through all terms when allowed', () => {
-            const allowedOptions = [
-                'Annotation',
-                'Deployment',
-                'Image',
-                'Image Created Time',
-                'Label',
-                'Namespace',
-                'Priority',
-                'Secret',
-                'Service Account',
-            ];
-            const pageSearch = {
-                Deployment: 'nginx',
-                Label: 'web',
-                Namespace: 'production',
-            };
-
-            const allowedSearch = filterAllowedSearch(allowedOptions, pageSearch);
-
-            expect(allowedSearch).toEqual(pageSearch);
-        });
-
-        it('should filter out unallowed terms', () => {
-            const allowedOptions = [
-                'Annotation',
-                'Deployment',
-                'Image',
-                'Image Created Time',
-                'Label',
-                'Namespace',
-                'Priority',
-                'Secret',
-                'Service Account',
-            ];
-            const pageSearch = {
-                Deployment: 'nginx',
-                Label: 'web',
-                Marco: 'polo',
-                Namespace: 'production',
-            };
-
-            const allowedSearch = filterAllowedSearch(allowedOptions, pageSearch);
-
-            expect(allowedSearch).toEqual({
-                Deployment: 'nginx',
-                Label: 'web',
-                Namespace: 'production',
-            });
         });
     });
 
@@ -266,52 +192,6 @@ describe('searchUtils', () => {
                 field: 'Priority',
                 reversed: true,
             });
-        });
-    });
-
-    describe('searchOptionsToSearchFilter', () => {
-        it('should translate an array of SearchEntries to a SearchFilter object', () => {
-            expect(
-                searchOptionsToSearchFilter([
-                    { type: 'categoryOption', value: 'Image', label: 'Image' },
-                    { value: 'nginx:latest', label: 'nginx:latest' },
-                    { type: 'categoryOption', value: 'Status', label: 'Status' },
-                    { type: 'categoryOption', value: 'Severity', label: 'Severity' },
-                    { value: 'LOW_SEVERITY', label: 'LOW_SEVERITY' },
-                    { value: 'HIGH_SEVERITY', label: 'HIGH_SEVERITY' },
-                ])
-            ).toEqual({
-                Image: 'nginx:latest',
-                Status: '',
-                Severity: ['LOW_SEVERITY', 'HIGH_SEVERITY'],
-            });
-        });
-
-        it('should return an empty string value when no search options is provided for a category', () => {
-            expect(
-                searchOptionsToSearchFilter([
-                    { type: 'categoryOption', value: 'Status', label: 'Status' },
-                ])
-            ).toEqual({ Status: '' });
-        });
-
-        it('should return a string value when a single search options is provided for a category', () => {
-            expect(
-                searchOptionsToSearchFilter([
-                    { type: 'categoryOption', value: 'Image', label: 'Image' },
-                    { value: 'nginx:latest', label: 'nginx:latest' },
-                ])
-            ).toEqual({ Image: 'nginx:latest' });
-        });
-
-        it('should return an array value when multiple search options are provided for a category', () => {
-            expect(
-                searchOptionsToSearchFilter([
-                    { type: 'categoryOption', value: 'Severity', label: 'Severity' },
-                    { value: 'LOW_SEVERITY', label: 'LOW_SEVERITY' },
-                    { value: 'HIGH_SEVERITY', label: 'HIGH_SEVERITY' },
-                ])
-            ).toEqual({ Severity: ['LOW_SEVERITY', 'HIGH_SEVERITY'] });
         });
     });
 
