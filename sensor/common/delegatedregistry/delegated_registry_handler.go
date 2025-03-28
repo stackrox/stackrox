@@ -173,9 +173,9 @@ func (d *delegatedRegistryImpl) processImageIntegrations(iiReq *central.ImageInt
 	case <-d.stopSig.Done():
 		return errors.New("could not process updated image integrations, stop requested")
 	default:
-		log.Infof("Received %d updated and %d deleted image integrations", len(iiReq.GetUpdatedIntegrations()), len(iiReq.GetDeletedIntegrationIds()))
+		log.Infof("Received %d updated (refresh: %t) and %d deleted image integrations", len(iiReq.GetUpdatedIntegrations()), iiReq.GetRefresh(), len(iiReq.GetDeletedIntegrationIds()))
 
-		d.registryStore.UpsertCentralRegistryIntegrations(iiReq.GetUpdatedIntegrations())
+		d.registryStore.UpsertCentralRegistryIntegrations(iiReq.GetUpdatedIntegrations(), iiReq.GetRefresh())
 		d.registryStore.DeleteCentralRegistryIntegrations(iiReq.GetDeletedIntegrationIds())
 	}
 	return nil
