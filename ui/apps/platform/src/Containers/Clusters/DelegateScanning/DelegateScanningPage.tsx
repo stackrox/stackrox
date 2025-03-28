@@ -1,9 +1,11 @@
 import React, { useState, useEffect, ReactNode } from 'react';
 import {
+    ActionGroup,
     Alert,
     Breadcrumb,
     BreadcrumbItem,
     Button,
+    Divider,
     Flex,
     FlexItem,
     Form,
@@ -39,7 +41,7 @@ const initialDelegatedState: DelegatedRegistryConfig = {
 };
 
 function DelegateScanningPage() {
-    const displayedPageTitle = 'Delegated Image Scanning';
+    const displayedPageTitle = 'Delegated image scanning';
     const [delegatedRegistryConfig, setDedicatedRegistryConfig] =
         useState<DelegatedRegistryConfig>(initialDelegatedState);
     const [delegatedRegistryClusters, setDelegatedRegistryClusters] = useState<
@@ -190,7 +192,7 @@ function DelegateScanningPage() {
             .then(() => {
                 const newSuccessObj: AlertObj = {
                     type: 'success',
-                    title: 'Delegated scanning configuration saved successfully',
+                    title: 'Delegated image scanning configuration saved successfully',
                     body: <></>,
                 };
                 setAlertObj(newSuccessObj);
@@ -255,7 +257,8 @@ function DelegateScanningPage() {
                     </FlexItem>
                 </Flex>
             </PageSection>
-            <PageSection>
+            <Divider component="div" />
+            <PageSection variant="light">
                 {!!alertObj && (
                     <Alert
                         title={alertObj.title}
@@ -273,7 +276,6 @@ function DelegateScanningPage() {
                         isEditing={isEditing}
                         onChangeEnabledFor={onChangeEnabledFor}
                     />
-                    {/* TODO: decide who to structure this form, where the `enabledFor` value spans multiple inputs */}
                     {delegatedRegistryConfig.enabledFor !== 'NONE' && (
                         <>
                             <DelegatedScanningSettings
@@ -291,25 +293,20 @@ function DelegateScanningPage() {
                                 handleClusterChange={handleClusterChange}
                                 addRegistryRow={addRegistryRow}
                                 deleteRow={deleteRow}
-                                key="delegated-registries-list"
                             />
                         </>
                     )}
+                    {isEditing && (
+                        <ActionGroup>
+                            <Button variant="primary" onClick={onSave}>
+                                Save
+                            </Button>
+                            <Button variant="secondary" onClick={onCancel}>
+                                Cancel
+                            </Button>
+                        </ActionGroup>
+                    )}
                 </Form>
-                {isEditing && (
-                    <Flex>
-                        <FlexItem>
-                            <Flex>
-                                <Button variant="primary" onClick={onSave}>
-                                    Save
-                                </Button>
-                                <Button variant="secondary" onClick={onCancel}>
-                                    Cancel
-                                </Button>
-                            </Flex>
-                        </FlexItem>
-                    </Flex>
-                )}
             </PageSection>
         </>
     );
