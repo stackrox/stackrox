@@ -247,6 +247,10 @@ EOT
     "${ORCH_CMD}" </dev/null label node "$_worker" run-collector=true
     echo "collector will only be scheduled on node ${_worker}"
 
+    # Pre-pull big main image(s) for more deterministic execution times for the test cases
+    # depending on these images.
+    pre_pull_images "main:${EARLIER_MAIN_IMAGE_TAG}" "main:${MAIN_IMAGE_TAG}" "scanner-v4:${MAIN_IMAGE_TAG}"
+
     _end
 }
 
@@ -1166,6 +1170,9 @@ deploy_central_with_helm() {
 
     if [[ "$use_default_chart" == "true" ]]; then
         image_overwrites=$(cat <<EOT
+image:
+  registry: quay.io/rhacs-eng
+
 central:
   db:
     image:
@@ -1314,12 +1321,14 @@ deploy_sensor_with_helm() {
     if [[ "$use_default_chart" == "true" ]]; then
         image_overwrites=$(cat <<EOT
 image:
+  registry: quay.io/rhacs-eng
   main:
     tag: "$main_image_tag"
   scannerV4:
     tag: "$main_image_tag"
   scannerV4DB:
     tag: "$main_image_tag"
+
 EOT
         )
     fi
@@ -1619,4 +1628,56 @@ test_identifier_from_description() {
     # Substitute all whitespaces with underscores
     identifier="${identifier// /_}"
     echo "$identifier"
+}
+
+pre_pull_images() {
+    local namespace="image-pre-pull"
+    local num_images=$#
+    local i
+
+    echo "Pre-pulling ${num_images} images:"
+    i=1
+    for img in "$@"; do
+        echo "| [${i}/${num_images}] ${img}"
+        i=$((i + 1))
+    done
+    "$ORCH_CMD" </dev/null delete namespace "$namespace" >/dev/null 2>&1 || true
+    "$ORCH_CMD" </dev/null create namespace "$namespace"
+    "${ROOT}/deploy/common/pull-secret.sh" quay quay.io | "$ORCH_CMD" -n "$namespace" apply -f -
+    "$ORCH_CMD" </dev/null apply -f <(
+    cat <<EOT
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: image-pre-pull
+  namespace: "$namespace"
+spec:
+  selector:
+    matchLabels:
+      name: image-pre-pull
+  template:
+    metadata:
+      labels:
+        name: image-pre-pull
+    spec:
+      terminationGracePeriodSeconds: 0
+      imagePullSecrets:
+      - name: quay
+      containers:
+EOT
+    i=1
+    for img in "$@"; do
+        cat <<EOT
+      - name: "image-pre-pull-$i"
+        image: "quay.io/rhacs-eng/${img}"
+        command: ["sleep", "infinity"]
+EOT
+        i=$((i + 1))
+    done
+    )
+
+    sleep 10 # Wait for pods to appear
+    "$ORCH_CMD" </dev/null -n "$namespace" wait pod -l name=image-pre-pull --for=condition=Ready --timeout=10m
+
+    echo "pre-pulling images complete."
 }
