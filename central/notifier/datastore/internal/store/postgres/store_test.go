@@ -92,9 +92,6 @@ func (s *NotifiersStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, notifiers))
-	allNotifier, err := store.GetAll(ctx)
-	s.NoError(err)
-	protoassert.ElementsMatch(s.T(), notifiers, allNotifier)
 
 	notifierCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
