@@ -1,5 +1,4 @@
-
-{{define "paramList"}}{{$name := .TrimmedType|lowerCamelCase}}{{range $index, $pk := .Schema.PrimaryKeys}}{{if $index}}, {{end}}{{$pk.Getter $name}}{{end}}{{end}}
+{{define "paramList"}}{{ $singlePK := index .Schema.PrimaryKeys 0 }}{{$name := .TrimmedType|lowerCamelCase}}{{$singlePK.Getter $name}}{{end}}
 
 {{- $ := . }}
 {{- $name := .TrimmedType|lowerCamelCase }}

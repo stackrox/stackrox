@@ -426,6 +426,11 @@ func (s *Schema) NoPrimaryKey() bool {
 	return len(s.PrimaryKeys()) == 0
 }
 
+// MultiplePrimaryKeys returns true if the current schema have more than 1 primary key defined
+func (s *Schema) MultiplePrimaryKeys() bool {
+	return len(s.PrimaryKeys()) > 1
+}
+
 // SearchField is the parsed representation of the search tag on the struct field
 type SearchField struct {
 	FieldName string
