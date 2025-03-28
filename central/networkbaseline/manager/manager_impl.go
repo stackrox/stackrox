@@ -236,17 +236,7 @@ func (m *manager) lookUpPeerInfo(entity networkgraph.Entity) peerInfo {
 			log.Warnf("network entity peer %q not found", entity.ID)
 			return peerInfo{}
 		}
-
 		externalSource := networkEntity.GetInfo().GetExternalSource()
-
-		if externalSource.GetDiscovered() {
-			// If it's a discovered external IP, we anonymise to the
-			// internet to better reflect the baseline behavior
-			return peerInfo{
-				name: networkgraph.InternetExternalSourceName,
-			}
-		}
-
 		return peerInfo{
 			name:      externalSource.GetName(),
 			cidrBlock: externalSource.GetCidr(),
