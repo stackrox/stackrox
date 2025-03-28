@@ -139,7 +139,8 @@ create_cluster() {
     GCP_IMAGE_TYPE="${GCP_IMAGE_TYPE:-UBUNTU_CONTAINERD}"
     POD_SECURITY_POLICIES="${POD_SECURITY_POLICIES:-false}"
     GKE_RELEASE_CHANNEL="${GKE_RELEASE_CHANNEL:-stable}"
-    MACHINE_TYPE="${MACHINE_TYPE:-e2-standard-4}"
+    # ARM options on GKE: (Google Axion with networked storage: c4a-standard-4 with hyperdisk-balanced) / (AMD Ampere: t2a-standard-4 with pd-ssd)
+    MACHINE_TYPE="${MACHINE_TYPE:-t2a-standard-4}"
     DISK_SIZE_GB=${DISK_SIZE_GB:-40}
 
     echo "Creating ${NUM_NODES} node cluster with image type \"${GCP_IMAGE_TYPE}\" and ${DISK_SIZE_GB}GB disks."
