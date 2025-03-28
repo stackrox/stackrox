@@ -20,6 +20,8 @@ const (
 	nsJPL        = "JPL"
 
 	nsAtreides     = "Atreides"
+	nsBeneGesserit = "Bene Gesserit"
+	nsFremen       = "Fremen"
 	nsHarkonnen    = "Harkonnen"
 	nsSpacingGuild = "Spacing Guild"
 )
