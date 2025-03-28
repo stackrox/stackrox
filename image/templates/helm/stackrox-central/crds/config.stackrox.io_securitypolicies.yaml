@@ -251,17 +251,32 @@ spec:
             - severity
             type: object
           status:
-            description: SecurityPolicyStatus defines the observed state of SecurityPolicy
             properties:
-              accepted:
-                type: boolean
-              message:
-                type: string
+              conditions:
+                items:
+                  description: SecurityPolicyCondition defines the observed state
+                    of SecurityPolicy
+                  properties:
+                    lastTransitionTime:
+                      format: date-time
+                      type: string
+                    message:
+                      type: string
+                    status:
+                      type: string
+                    type:
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - status
+                  - type
+                  type: object
+                type: array
               policyId:
                 type: string
             required:
-            - accepted
-            - message
+            - conditions
             - policyId
             type: object
         type: object
