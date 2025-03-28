@@ -1,6 +1,7 @@
 package policy
 
 import (
+	"encoding/json"
 	"sort"
 	"strings"
 
@@ -11,26 +12,35 @@ import (
 // policies
 const TotalPolicyAmountKey = "TOTAL"
 
-// Severity is used for easier comparing the prettified string version of storage.Severity
+// severity is used for easier comparing the prettified string version of storage.Severity
 // when sorting policies by severity.
-type Severity int
+type severity int
 
 const (
-	// LowSeverity represents a "LOW" Severity for policies
-	LowSeverity Severity = iota
-	// MediumSeverity represents a "MEDIUM" Severity for policies
+	// LowSeverity represents a "LOW" severity for policies
+	LowSeverity severity = iota
+	// MediumSeverity represents a "MEDIUM" severity for policies
 	MediumSeverity
-	// HighSeverity represents a "HIGH" Severity for policies
+	// HighSeverity represents a "HIGH" severity for policies
 	HighSeverity
-	// CriticalSeverity represents a "CRITICAL" Severity for policies
+	// CriticalSeverity represents a "CRITICAL" severity for policies
 	CriticalSeverity
 )
 
-func (s Severity) String() string {
+func (s severity) String() string {
 	return [...]string{"LOW", "MEDIUM", "HIGH", "CRITICAL"}[s]
 }
 
-func policySeverityFromString(s string) Severity {
+func (s severity) MarshalJSON() ([]byte, error) {
+	return json.Marshal(s.String())
+}
+
+// trimSeverityEnumSuffix trims the proto generated "_SEVERITY" suffix
+func trimSeverityEnumSuffix(severity storage.Severity) severity {
+	return policySeverityFromString(strings.TrimSuffix(severity.String(), "_SEVERITY"))
+}
+
+func policySeverityFromString(s string) severity {
 	switch s {
 	case LowSeverity.String():
 		return LowSeverity
@@ -87,9 +97,9 @@ func NewPolicySummaryForPrinting(alerts []*storage.Alert, forbiddenEnforcementAc
 		}
 
 		// increase the severity count & total account for the entity and the total amount
-		numOfSeveritiesByEntities[entityID][strippedPolicySeverityEnum]++
+		numOfSeveritiesByEntities[entityID][strippedPolicySeverityEnum.String()]++
 		numOfSeveritiesByEntities[entityID][TotalPolicyAmountKey]++
-		numOfSeveritiesAcrossEntities[strippedPolicySeverityEnum]++
+		numOfSeveritiesAcrossEntities[strippedPolicySeverityEnum.String()]++
 		numOfSeveritiesAcrossEntities[TotalPolicyAmountKey]++
 	}
 
@@ -165,10 +175,10 @@ func createNumOfSeverityByEntity(resultMetadata map[string]EntityMetadata) map[s
 func createNumOfSeverityMap() map[string]int {
 	numOfSeverityMap := make(map[string]int, 5)
 	numOfSeverityMap[TotalPolicyAmountKey] = 0
-	numOfSeverityMap[trimSeverityEnumSuffix(storage.Severity_LOW_SEVERITY)] = 0
-	numOfSeverityMap[trimSeverityEnumSuffix(storage.Severity_MEDIUM_SEVERITY)] = 0
-	numOfSeverityMap[trimSeverityEnumSuffix(storage.Severity_HIGH_SEVERITY)] = 0
-	numOfSeverityMap[trimSeverityEnumSuffix(storage.Severity_CRITICAL_SEVERITY)] = 0
+	numOfSeverityMap[LowSeverity.String()] = 0
+	numOfSeverityMap[MediumSeverity.String()] = 0
+	numOfSeverityMap[HighSeverity.String()] = 0
+	numOfSeverityMap[CriticalSeverity.String()] = 0
 	return numOfSeverityMap
 }
 
@@ -223,12 +233,7 @@ func checkIfPolicyHasForbiddenEnforcementAction(policy *storage.Policy, forbidde
 	return false
 }
 
-// trimSeverityEnumSuffix trims the proto generated "_SEVERITY" suffix
-func trimSeverityEnumSuffix(severity storage.Severity) string {
-	return strings.TrimSuffix(severity.String(), "_SEVERITY")
-}
-
-// sortPoliciesBySeverity sorts policies by their Severity from highest (CriticalSeverity) to lowest (LowSeverity)
+// sortPoliciesBySeverity sorts policies by their severity from highest (CriticalSeverity) to lowest (LowSeverity)
 func sortPoliciesBySeverity(policies []Policy) []Policy {
 	// sort alphabetically by name first
 	sort.SliceStable(policies, func(i, j int) bool {
@@ -236,7 +241,7 @@ func sortPoliciesBySeverity(policies []Policy) []Policy {
 	})
 	// sort decreasing by severity, CRITICAL being highest - LOW being lowest
 	sort.SliceStable(policies, func(i, j int) bool {
-		return policySeverityFromString(policies[i].Severity) > policySeverityFromString(policies[j].Severity)
+		return policies[i].Severity > policies[j].Severity
 	})
 	return policies
 }
@@ -306,7 +311,7 @@ func (e *EntityResult) GetBreakingPolicies() []Policy {
 // Policy represents information about a policy
 type Policy struct {
 	Name         string   `json:"name"`
-	Severity     string   `json:"severity"`
+	Severity     severity `json:"severity"`
 	Description  string   `json:"description"`
 	Violation    []string `json:"violation"`
 	Remediation  string   `json:"remediation"`
