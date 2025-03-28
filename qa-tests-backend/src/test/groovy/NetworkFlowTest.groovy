@@ -244,6 +244,7 @@ class NetworkFlowTest extends BaseSpecification {
 
     def cleanupSpec() {
         destroyDeployments()
+        CollectorUtil.deleteRuntimeConfig(orchestrator)
     }
 
     @Tag("NetworkFlowVisualization")
@@ -528,8 +529,6 @@ class NetworkFlowTest extends BaseSpecification {
         // // Collector reports the unnormalized connection as being closed. There is no assert here
         // // as we don't want this behavior long term.
         // waitForEdgeToBeClosed(edges.get(0), 165)
-
-        CollectorUtil.deleteRuntimeConfig(orchestrator)
     }
 
     @Tag("NetworkFlowVisualization")
