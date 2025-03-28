@@ -937,10 +937,6 @@ function launch_sensor {
       collector_env+=("ROX_NON_AGGREGATED_NETWORKS=${ROX_NON_AGGREGATED_NETWORKS}")
     fi
 
-    if [[ -n "${ROX_NETWORK_GRAPH_EXTERNAL_IPS}" ]]; then
-      collector_env+=("ROX_NETWORK_GRAPH_EXTERNAL_IPS=${ROX_NETWORK_GRAPH_EXTERNAL_IPS}")
-    fi
-
     if [[ -n "${ROX_COLLECTOR_INTROSPECTION_ENABLE}" ]]; then
       collector_env+=("ROX_COLLECTOR_INTROSPECTION_ENABLE=${ROX_COLLECTOR_INTROSPECTION_ENABLE}")
     fi
