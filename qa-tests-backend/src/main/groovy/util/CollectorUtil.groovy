@@ -65,7 +65,8 @@ class CollectorUtil {
         log.info "Waiting for Collector Config propagation (${portForwards.size()} pods)"
         int intervalSeconds = 1
         int waitTime = 0
-        withRetry(timeout, intervalSeconds) {
+        int nretry = timeout / intervalSeconds
+        withRetry(nretry, intervalSeconds) {
             // if a pod has the right config, remove it from the list
             // we need to check
             portForwards.removeAll {
