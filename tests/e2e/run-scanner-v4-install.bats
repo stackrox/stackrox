@@ -399,51 +399,81 @@ teardown() {
 @test "Upgrade from old Helm chart to HEAD Helm chart with Scanner v4 enabled" {
     init
 
-    # shellcheck disable=SC2030,SC2031
-    export OUTPUT_FORMAT=helm
-    export ROX_DEPLOY_SENSOR_WITH_CRS=false
-
     local main_image_tag="${MAIN_IMAGE_TAG}"
 
     # Deploy earlier version without Scanner V4.
-    local _CENTRAL_CHART_DIR_OVERRIDE="${CHART_REPOSITORY}${CHART_BASE}/${EARLIER_CHART_VERSION}/central-services"
+    local old_central_chart="${CHART_REPOSITORY}${CHART_BASE}/${EARLIER_CHART_VERSION}/central-services"
+    local old_sensor_chart="${CHART_REPOSITORY}${CHART_BASE}/${EARLIER_CHART_VERSION}/secured-cluster-services"
 
-    _begin "deploying-stackrox"
-
-    info "Deploying StackRox services using chart ${_CENTRAL_CHART_DIR_OVERRIDE}"
-
-    if [[ -n "${EARLIER_MAIN_IMAGE_TAG:-}" ]]; then
-        MAIN_IMAGE_TAG=$EARLIER_MAIN_IMAGE_TAG
-        info "Overriding MAIN_IMAGE_TAG=$EARLIER_MAIN_IMAGE_TAG"
-    fi
-    local _ROX_CENTRAL_EXTRA_HELM_VALUES_FILE
-    _ROX_CENTRAL_EXTRA_HELM_VALUES_FILE=$(mktemp)
-    cat <<EOF >"$_ROX_CENTRAL_EXTRA_HELM_VALUES_FILE"
+    _begin "deploying-old-central"
+    info "Deploying StackRox central-services using chart ${old_central_chart}"
+    password_setting=$(cat <<EOT
 central:
-  persistence:
-    none: true
-EOF
-    ROX_CENTRAL_EXTRA_HELM_VALUES_FILE="${_ROX_CENTRAL_EXTRA_HELM_VALUES_FILE}" CENTRAL_CHART_DIR_OVERRIDE="${_CENTRAL_CHART_DIR_OVERRIDE}" _deploy_stackrox
+  adminPassword:
+    value: "$ROX_ADMIN_PASSWORD"
+EOT
+    )
+    deploy_central_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$EARLIER_MAIN_IMAGE_TAG" "$old_central_chart" \
+        -f <(echo "$password_setting")
 
-    _step "upgrading-stackrox"
+    _step "verify-scanner-V4-not-deployed"
+    verify_scannerV2_deployed "$CUSTOM_CENTRAL_NAMESPACE"
+    verify_no_scannerV4_deployed "$CUSTOM_CENTRAL_NAMESPACE"
 
-    # Upgrade to HEAD chart without explicit disabling of Scanner V4.
-    info "Upgrading StackRox using HEAD Helm chart"
-    MAIN_IMAGE_TAG="${main_image_tag}"
+    _begin "upgrading-to-HEAD-central"
+    deploy_central_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$MAIN_IMAGE_TAG" "" \
+        --reuse-values
 
-    # shellcheck disable=SC2030,SC2031
-    export SENSOR_SCANNER_V4_SUPPORT=true
+    _step "verify-scanner-V4-not-deployed"
+    verify_scannerV2_deployed "$CUSTOM_CENTRAL_NAMESPACE"
+    verify_no_scannerV4_deployed "$CUSTOM_CENTRAL_NAMESPACE"
 
-    apply_crd_ownership_for_upgrade "stackrox"
-    _deploy_stackrox
+    _step "patching-crd"
+    apply_crd_ownership_for_upgrade "$CUSTOM_CENTRAL_NAMESPACE"
 
-    _step "verify"
+    _begin "enable-scanner-V4-in-central"
+    deploy_central_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$MAIN_IMAGE_TAG" "" \
+        --reuse-values \
+        -f <(cat <<EOT
+scannerV4:
+  disable: false
+EOT
+    )
 
-    # Verify that Scanner V2 and V4 are up.
-    verify_scannerV2_deployed "stackrox"
-    verify_scannerV4_deployed "stackrox"
-    verify_deployment_scannerV4_env_var_set "stackrox" "central"
-    verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
+    _step "verify-scanners-deployed"
+    verify_scannerV2_deployed "$CUSTOM_CENTRAL_NAMESPACE"
+    verify_scannerV4_deployed "$CUSTOM_CENTRAL_NAMESPACE"
+    verify_deployment_scannerV4_env_var_set "$CUSTOM_CENTRAL_NAMESPACE" "central"
+
+    _begin "deploying-old-sensor"
+    info "Deploying StackRox secured-cluster-services using chart ${old_sensor_chart}"
+    local central_endpoint="$(get_central_endpoint "$CUSTOM_CENTRAL_NAMESPACE")"
+    local secured_cluster_name="$(get_cluster_name)"
+    deploy_sensor_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$CUSTOM_SENSOR_NAMESPACE" \
+        "$EARLIER_MAIN_IMAGE_TAG" "$old_sensor_chart" \
+        "$secured_cluster_name" "$ROX_ADMIN_PASSWORD" "$central_endpoint"
+
+    _step "verify-scanner-V4-not-deployed"
+    verify_no_scannerV4_deployed "$CUSTOM_SENSOR_NAMESPACE"
+
+    _step "upgrading-to-HEAD-sensor"
+    deploy_sensor_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$CUSTOM_SENSOR_NAMESPACE" "" "" "" "" ""
+
+    _step "verify-scanner-not-deployed"
+    verify_no_scannerV4_deployed "$CUSTOM_SENSOR_NAMESPACE"
+
+    _begin "enabling-scanner-V4-in-secured-cluster"
+    # Without creating the scanner-db-password secret manually Scanner V2 doesn't come up.
+    # Let's just reuse an existing password for this for simplicity.
+    "$ORCH_CMD" </dev/null -n "$CUSTOM_SENSOR_NAMESPACE" create secret generic scanner-db-password \
+        --from-file=password=<(echo "$ROX_ADMIN_PASSWORD")
+
+    deploy_sensor_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$CUSTOM_SENSOR_NAMESPACE" "" "" "" "" "" \
+        --set scannerV4.disable=false \
+        --set scanner.disable=false
+
+    _step "verify-scanner-V4-deployed"
+    verify_scannerV4_indexer_deployed "$CUSTOM_SENSOR_NAMESPACE"
 
     _end
 }
@@ -882,6 +912,19 @@ EOT
 
     _end
 }
+
+get_central_endpoint() {
+    local namespace="$1"
+    local central_ip="$("${ORCH_CMD}" -n "$CUSTOM_CENTRAL_NAMESPACE" </dev/null get service central-loadbalancer \
+        -o jsonpath='{.status.loadBalancer.ingress[0].ip}')"
+    echo "${central_ip}:443"
+}
+
+get_cluster_name() {
+    local prefix="${1:-sc}"
+    echo "${prefix}-${RANDOM}"
+}
+
 
 verify_deployment_deletion() {
     local deployment_names_file="$1"; shift
