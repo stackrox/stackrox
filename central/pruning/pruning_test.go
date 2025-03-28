@@ -2117,11 +2117,11 @@ func (s *PruningTestSuite) TestRemoveLogImbues() {
 
 			gc.pruneLogImbues()
 
-			logImbues, err := logImbueStore.GetAll(pruningCtx)
-			assert.NoError(t, err)
-			for _, li := range logImbues {
+			err := logImbueStore.Walk(pruningCtx, func(li *storage.LogImbue) error {
 				assert.False(t, c.expectedLogDeletions.Contains(li.Id))
-			}
+				return nil
+			})
+			assert.NoError(t, err)
 		})
 	}
 }
