@@ -20,8 +20,6 @@ import (
 )
 
 const (
-	baseTable       = "policies"
-	cursorBatchSize = 50
 	batchAfter      = 100
 	batchSize       = 10000
 	deleteBatchSize = 5000

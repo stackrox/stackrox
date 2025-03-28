@@ -31,7 +31,6 @@ const (
 	// proceed and move into more e2e and larger performance testing
 	batchSize = 10000
 
-	cursorBatchSize = 50
 	deleteBatchSize = 5000
 )
 

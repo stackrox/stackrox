@@ -23,10 +23,6 @@ type Store interface {
 	Walk(ctx context.Context, fn func(obj *storage.DeclarativeConfigHealth) error) error
 }
 
-const (
-	cursorBatchSize = 50
-)
-
 var (
 	schema = migrationSchema.DeclarativeConfigHealthsSchema
 )
@@ -130,24 +126,5 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.DeclarativeCon
 // Walk iterates over all of the objects in the store and applies the closure.
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.DeclarativeConfigHealth) error) error {
 	var sacQueryFilter *v1.Query
-	fetcher, closer, err := pgSearch.RunCursorQueryForSchema[storage.DeclarativeConfigHealth](ctx, schema, sacQueryFilter, s.db)
-	if err != nil {
-		return err
-	}
-	defer closer()
-	for {
-		rows, err := fetcher(cursorBatchSize)
-		if err != nil {
-			return pgutils.ErrNilIfNoRows(err)
-		}
-		for _, data := range rows {
-			if err := fn(data); err != nil {
-				return err
-			}
-		}
-		if len(rows) != cursorBatchSize {
-			break
-		}
-	}
-	return nil
+	return pgSearch.RunCursorQueryForSchemaFn(ctx, schema, sacQueryFilter, s.db, fn)
 }
