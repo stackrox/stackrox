@@ -139,18 +139,30 @@ func (m *managerImpl) discoverClustersFromCloudSources() {
 func (m *managerImpl) getDiscoveredClustersFromCloudSources() []*discoveredclusters.DiscoveredCluster {
 	// Fetch the cloud sources from the datastore. This will ensure that we will always use the latest updates.
 	// For the time being we do not foresee this to be a high cardinality store.
-	cloudSources, err := m.cloudSourcesDataStore.GetAllCloudSources(cloudSourceCtx)
+	createCtx, cancel := context.WithTimeout(context.Background(), clientCreationTimeout)
+	defer cancel()
+
+	var clients []cloudsources.Client
+	var clientCreationErrs error
+	err := m.cloudSourcesDataStore.ProcessCloudSources(cloudSourceCtx, func(cloudSource *storage.CloudSource) error {
+		client, err := cloudsources.NewClientForCloudSource(createCtx, cloudSource)
+		if err != nil {
+			clientCreationErrs = errors.Join(clientCreationErrs,
+				pkgErrors.Wrapf(err, "creating client for cloud source %q", cloudSource.GetName()))
+		}
+		if client != nil {
+			clients = append(clients, client)
+		}
+		return nil
+	})
 	if err != nil {
 		log.Errorw("Failed listing stored cloud sources", logging.Err(err))
 		return nil
 	}
 
-	createCtx, cancel := context.WithTimeout(context.Background(), clientCreationTimeout)
-	defer cancel()
-	clients, err := createClients(createCtx, cloudSources)
-	if err != nil {
+	if clientCreationErrs != nil {
 		log.Errorw("Received errors during creating clients from cloud sources. The result might be incomplete",
-			logging.Err(err))
+			logging.Err(clientCreationErrs))
 	}
 
 	var clientErrors error
@@ -246,14 +258,18 @@ func (m *managerImpl) changeStatusForDiscoveredClusters(clusterID string, status
 		return
 	}
 
-	cloudSources, err := m.cloudSourcesDataStore.GetAllCloudSources(cloudSourceCtx)
+	var discoveredClusterIds []string
+	err = m.cloudSourcesDataStore.ProcessCloudSources(cloudSourceCtx, func(c *storage.CloudSource) error {
+		discoveredClusterIds = append(discoveredClusterIds, createDiscoveredClusterId(cluster, c))
+		return nil
+	})
 	if err != nil {
 		log.Errorw("Failed to list stored cloud sources for changing cluster status",
 			logging.Err(err), logging.ClusterID(clusterID))
 		return
 	}
 
-	discoveredClusters := m.fetchDiscoveredClusters(cluster, cloudSources)
+	discoveredClusters := m.fetchDiscoveredClusters(discoveredClusterIds)
 	// In case we found no discovered clusters, we can short-circuit here.
 	if len(discoveredClusters) == 0 {
 		return
@@ -281,9 +297,7 @@ func (m *managerImpl) getCluster(id string) (*storage.Cluster, error) {
 	return cluster, nil
 }
 
-func (m *managerImpl) fetchDiscoveredClusters(cluster *storage.Cluster, sources []*storage.CloudSource) []*storage.DiscoveredCluster {
-	ids := createDiscoveredClusterIds(cluster, sources)
-
+func (m *managerImpl) fetchDiscoveredClusters(ids []string) []*storage.DiscoveredCluster {
 	discoveredClusters := make([]*storage.DiscoveredCluster, 0, len(ids))
 	for _, id := range ids {
 		cluster, err := m.discoveredClustersDataStore.GetDiscoveredCluster(discoveredClusterCtx, id)
@@ -292,24 +306,6 @@ func (m *managerImpl) fetchDiscoveredClusters(cluster *storage.Cluster, sources 
 		}
 	}
 	return discoveredClusters
-}
-
-// createClients creates the API clients to interact with the third-party API of the cloud source.
-func createClients(ctx context.Context, cloudSources []*storage.CloudSource) ([]cloudsources.Client, error) {
-	clients := make([]cloudsources.Client, 0, len(cloudSources))
-	var clientCreationErrs error
-	for _, cloudSource := range cloudSources {
-		client, err := cloudsources.NewClientForCloudSource(ctx, cloudSource)
-		if err != nil {
-			clientCreationErrs = errors.Join(clientCreationErrs,
-				pkgErrors.Wrapf(err, "creating client for cloud source %q", cloudSource.GetName()))
-			continue
-		}
-		if client != nil {
-			clients = append(clients, client)
-		}
-	}
-	return clients, clientCreationErrs
 }
 
 func debugPrintDiscoveredClusters(clusters []*discoveredclusters.DiscoveredCluster) {
@@ -333,14 +329,10 @@ func providerMetadataToProviderType(metadata *storage.ProviderMetadata) storage.
 	}
 }
 
-func createDiscoveredClusterIds(cluster *storage.Cluster, cloudSources []*storage.CloudSource) []string {
-	discoveredClusterIDs := make([]string, 0, len(cloudSources))
-	for _, cloudSource := range cloudSources {
-		discoveredClusterIDs = append(discoveredClusterIDs, discoveredclusters.
-			GenerateDiscoveredClusterID(&discoveredclusters.DiscoveredCluster{
-				ID:            cluster.GetStatus().GetProviderMetadata().GetCluster().GetId(),
-				CloudSourceID: cloudSource.GetId(),
-			}))
-	}
-	return discoveredClusterIDs
+func createDiscoveredClusterId(cluster *storage.Cluster, cloudSource *storage.CloudSource) string {
+	return discoveredclusters.
+		GenerateDiscoveredClusterID(&discoveredclusters.DiscoveredCluster{
+			ID:            cluster.GetStatus().GetProviderMetadata().GetCluster().GetId(),
+			CloudSourceID: cloudSource.GetId(),
+		})
 }

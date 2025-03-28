@@ -12,7 +12,7 @@ import (
 //
 //go:generate mockgen-wrapper
 type Store interface {
-	GetAll(ctx context.Context) ([]*storage.CloudSource, error)
+	Walk(ctx context.Context, fn func(obj *storage.CloudSource) error) error
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 	Get(ctx context.Context, id string) (*storage.CloudSource, bool, error)
