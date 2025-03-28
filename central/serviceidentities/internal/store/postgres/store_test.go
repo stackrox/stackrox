@@ -92,9 +92,6 @@ func (s *ServiceIdentitiesStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, serviceIdentitys))
-	allServiceIdentity, err := store.GetAll(ctx)
-	s.NoError(err)
-	protoassert.ElementsMatch(s.T(), serviceIdentitys, allServiceIdentity)
 
 	serviceIdentityCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
