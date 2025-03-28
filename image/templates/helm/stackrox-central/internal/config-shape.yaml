@@ -175,6 +175,7 @@ customize:
   other: {} # dict
 allowNonstandardNamespace: null # bool
 allowNonstandardReleaseName: null # bool
+allowUnsupportedMultipleCentralsUsingHelm: null # string
 allowUnsupportedHelmVersion: null # bool
 enableOpenShiftMonitoring: null # bool
 configAsCode:
