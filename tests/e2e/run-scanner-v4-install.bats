@@ -152,6 +152,8 @@ EOT
     if [[ "${ORCHESTRATOR_FLAVOR:-}" == "openshift" ]]; then
       export ROX_OPENSHIFT_VERSION=4
     fi
+    ROX_ADMIN_PASSWORD=$(openssl rand -base64 20 | tr -d '/=+')
+    export ROX_ADMIN_PASSWORD
 
     if ! command -v roxctl >/dev/null; then
         die "roxctl not found, please make sure it can be resolved via PATH."
