@@ -43,7 +43,7 @@ concurrency: Release automation
 jobs:
   clusters:
     name: Setup demo clusters
-    uses: stackrox/actions/.github/workflows/create-demo-clusters.yml@v1
+    uses: stackrox/actions/.github/workflows/create-demo-clusters.yml@tm/ROX-28659-enable-scanner-v4-long-running
     secrets: inherit
     with:
       version: ${{github.event.inputs.version}}
