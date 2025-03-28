@@ -61,13 +61,13 @@ var (
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "network_flow_enrichment_endpoint_events_total",
 		Help:      "Total number of events occurred to endpoints during the enrichment of network flows passed from collector",
-	}, []string{"containerIDfound", "action", "isHistorical", "reason", "lastSeenSet", "rotten", "expired", "fresh"})
+	}, []string{"containerIDfound", "action", "isHistorical", "reason", "lastSeenSet", "rotten", "mature", "fresh"})
 	FlowEnrichmentEventsConnection = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "network_flow_enrichment_connection_events_total",
 		Help:      "Total number of events occurred to connections during the enrichment of network flows passed from collector",
-	}, []string{"containerIDfound", "action", "isHistorical", "reason", "lastSeenSet", "rotten", "expired", "fresh", "isExternal"})
+	}, []string{"containerIDfound", "action", "isHistorical", "reason", "lastSeenSet", "rotten", "mature", "fresh", "isExternal"})
 	ExternalFlowCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
@@ -148,7 +148,7 @@ func IncFlowEnrichmentEndpoint(condIDfound bool, action, isHistorical string, re
 		"fresh":            strconv.FormatBool(fresh)}).Inc()
 }
 
-func IncFlowEnrichmentConnection(condIDfound bool, action, isHistorical string, reason string, lastSeenSet, rotten, expired, fresh bool, isExternal string) {
+func IncFlowEnrichmentConnection(condIDfound bool, action, isHistorical string, reason string, lastSeenSet, rotten, mature, fresh bool, isExternal string) {
 	FlowEnrichmentEventsConnection.With(prometheus.Labels{
 		"containerIDfound": strconv.FormatBool(condIDfound),
 		"action":           action,
@@ -156,7 +156,7 @@ func IncFlowEnrichmentConnection(condIDfound bool, action, isHistorical string, 
 		"reason":           reason,
 		"lastSeenSet":      strconv.FormatBool(lastSeenSet),
 		"rotten":           strconv.FormatBool(rotten),
-		"expired":          strconv.FormatBool(expired),
+		"mature":           strconv.FormatBool(mature),
 		"fresh":            strconv.FormatBool(fresh),
 		"isExternal":       isExternal}).Inc()
 }
