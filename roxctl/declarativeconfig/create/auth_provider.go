@@ -183,9 +183,10 @@ func (a *authProviderCmd) samlCommand() *cobra.Command {
 
 func (a *authProviderCmd) iapCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:  "iap",
-		Args: cobra.NoArgs,
-		RunE: a.RunE(),
+		Use:   "iap",
+		Short: "Create a declarative configuration for an Identity-Aware Proxy (IAP) auth provider",
+		Args:  cobra.NoArgs,
+		RunE:  a.RunE(),
 	}
 	a.iapConfig = &declarativeconfig.IAPConfig{}
 

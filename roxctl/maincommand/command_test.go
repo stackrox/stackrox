@@ -82,6 +82,14 @@ func checkUsageStyle(t *testing.T, command *cobra.Command) {
 	}
 	assert.NoErrorf(t, err, "%q, long usage: %q", getCommandPath(command), command.Long)
 
+	if command.Short == command.Long {
+		if command.Short == "" {
+			t.Errorf("no usage provided for command %q", getCommandPath(command))
+		} else {
+			t.Errorf("short and long usage strings are equal for %q", getCommandPath(command))
+		}
+	}
+
 	for _, subcommand := range command.Commands() {
 		t.Run(getCommandPath(subcommand), func(t *testing.T) {
 			checkUsageStyle(t, subcommand)
@@ -90,7 +98,8 @@ func checkUsageStyle(t *testing.T, command *cobra.Command) {
 }
 
 func Test_Commands(t *testing.T) {
-	checkUsageStyle(t, Command())
+	cmd := Command()
+	checkUsageStyle(t, cmd)
 }
 
 type cmdNode struct {
