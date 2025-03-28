@@ -22,11 +22,11 @@ spec:
         image: quay.io/rhacs-eng/qa:berserker-1.0-63-g7b0a20bf5f
         resources:
           requests:
-            memory: "150Mi"
-            cpu: "250m"
+            memory: "100Mi"
+            cpu: "25m"
           limits:
-            memory: "150Mi"
-            cpu: "250m"
+            memory: "100Mi"
+            cpu: "25m"
         volumeMounts:
         - name: secret-1
           mountPath: /secret1

@@ -19,11 +19,11 @@ spec:
       - image: quay.io/rhacs-eng/qa:berserker-1.0-40-ge3bd96aa5a
         resources:
           requests:
-            memory: "150Mi"
-            cpu: "250m"
+            memory: "100Mi"
+            cpu: "25m"
           limits:
-            memory: "150Mi"
-            cpu: "250m"
+            memory: "100Mi"
+            cpu: "25m"
         volumeMounts:
         - name: config
           mountPath: "/etc/berserker"
