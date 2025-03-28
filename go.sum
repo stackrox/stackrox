@@ -450,8 +450,8 @@ github.com/containerd/stargz-snapshotter/estargz v0.16.3/go.mod h1:uyr4BfYfOj3G9
 github.com/containerd/typeurl v1.0.2 h1:Chlt8zIieDbzQFzXzAeBEF92KhExuE4p9p92/QmY7aY=
 github.com/containerd/typeurl/v2 v2.2.3 h1:yNA/94zxWdvYACdYO8zofhrTVuQY73fFU1y++dYSw40=
 github.com/containerd/typeurl/v2 v2.2.3/go.mod h1:95ljDnPfD3bAbDJRugOiShd/DlAAsxGtUBhJxIn7SCk=
-github.com/containers/image/v5 v5.34.2 h1:3r1etun4uJYq5197tcymUcI1h6+zyzKS9PtRtBlEKMI=
-github.com/containers/image/v5 v5.34.2/go.mod h1:MG++slvQSZVq5ejAcLdu4APGsKGMb0YHHnAo7X28fdE=
+github.com/containers/image/v5 v5.34.3 h1:/cMgfyA4Y7ILH7nzWP/kqpkE5Df35Ek4bp5ZPvJOVmI=
+github.com/containers/image/v5 v5.34.3/go.mod h1:MG++slvQSZVq5ejAcLdu4APGsKGMb0YHHnAo7X28fdE=
 github.com/containers/storage v1.57.2 h1:2roCtTyE9pzIaBDHibK72DTnYkPmwWaq5uXxZdaWK4U=
 github.com/containers/storage v1.57.2/go.mod h1:i/Hb4lu7YgFr9G0K6BMjqW0BLJO1sFsnWQwj2UoWCUM=
 github.com/coreos/go-oidc/v3 v3.13.0 h1:M66zd0pcc5VxvBNM4pB331Wrsanby+QomQYjN8HamW8=
