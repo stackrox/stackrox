@@ -40,6 +40,20 @@ spec:
         value: task
       resolver: bundles
 
+  - name: post-metric-end
+    params:
+      - name: AGGREGATE_TASKS_STATUS
+        value: $(tasks.status)
+    taskRef: &post-bigquery-metrics-ref
+      params:
+        - name: name
+          value: post-bigquery-metrics
+        - name: bundle
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:cb26355b1f84fcebc056981b31ed6df64b96dfe26b82db27590f74e67e993f57
+        - name: kind
+          value: task
+      resolver: bundles
+
   params:
   - description: Source Repository URL
     name: git-url
@@ -121,6 +135,9 @@ spec:
 
   tasks:
 
+  - name: post-metric-start
+    taskRef: *post-bigquery-metrics-ref
+
   - name: init
     params:
     - name: image-url
@@ -151,7 +168,7 @@ spec:
       - name: name
         value: determine-image-expiration
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:e557f9ca3e3d31f48127c3528c2c2647f4b49e2d72dce022c85fbe121c113ecd
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:cb26355b1f84fcebc056981b31ed6df64b96dfe26b82db27590f74e67e993f57
       - name: kind
         value: task
       resolver: bundles
@@ -200,7 +217,7 @@ spec:
       - name: name
         value: determine-image-tag
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:0c6cd49c7cab12f611986efd494ac5f5ca8a77993129612bdbce9cf9833a5fa6
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:cb26355b1f84fcebc056981b31ed6df64b96dfe26b82db27590f74e67e993f57
       - name: kind
         value: task
       resolver: bundles
@@ -220,7 +237,7 @@ spec:
       - name: name
         value: fetch-scanner-v4-vuln-mappings
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:0c6cd49c7cab12f611986efd494ac5f5ca8a77993129612bdbce9cf9833a5fa6
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:cb26355b1f84fcebc056981b31ed6df64b96dfe26b82db27590f74e67e993f57
       - name: kind
         value: task
       resolver: bundles
