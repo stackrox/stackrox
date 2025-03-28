@@ -14,13 +14,59 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	// imgName_1a and imgName_1b are both signed by pemPublicKey_1.
+	pemPublicKey_1 = "-----BEGIN PUBLIC KEY-----\n" +
+		"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEvVPaOS6sfpySbaceiwg0e6p6Bzo1\n" +
+		"A2qyHC5rfVNn2uBRz2Xy0nYBiJ1mFLXaiWGQ2AyCfVh5DzDqJx8eY7YwHQ==\n" +
+		"-----END PUBLIC KEY-----"
+	imgName_1a = "ttl.sh/2fd430e3-6589-4a5c-865b-4c0aa5b8b041@sha256:298d1eed2893f61ed254c68aff2417deaf342632ab" +
+		"26dbbdb3991714e501e1c9"
+	b64Signature_1a = "MEUCIDuWppiw7vQzqSRaNA7jx0DtLtWtQvDd/Sm6JfL3nb9uAiEA7bm6pY+GozjTE4hZLPf6ypJqusBNSc9OdC0X" +
+		"Mx7sXjk="
+	b64SignaturePayload_1a = "eyJjcml0aWNhbCI6eyJpZGVudGl0eSI6eyJkb2NrZXItcmVmZXJlbmNlIjoidHRsLnNoLzJmZDQzMGUzL" +
+		"TY1ODktNGE1Yy04NjViLTRjMGFhNWI4YjA0MSJ9LCJpbWFnZSI6eyJkb2NrZXItbWFuaWZlc3QtZGlnZXN0Ijoic2hhMjU2OjI5OGQxZWVk" +
+		"Mjg5M2Y2MWVkMjU0YzY4YWZmMjQxN2RlYWYzNDI2MzJhYjI2ZGJiZGIzOTkxNzE0ZTUwMWUxYzkifSwidHlwZSI6ImNvc2lnbiBjb250YWl" +
+		"uZXIgaW1hZ2Ugc2lnbmF0dXJlIn0sIm9wdGlvbmFsIjpudWxsfQ=="
+	b64Signature_1b = "MEQCIHJQ8ijck0xwcFpIru/VW8zhdOadKLuilZwyJGgbAEsaAiB4LdLNIvRJbNaRFhyYTXGFo8cK/VZ7P+Z4Ky+M" +
+		"Hk11IA=="
+	b64SignaturePayload_1b = "eyJjcml0aWNhbCI6eyJpZGVudGl0eSI6eyJkb2NrZXItcmVmZXJlbmNlIjoidHRsLnNoL2FjNzExYTA1L" +
+		"WZhNjItNDBmYy04ZDNmLWVhM2JjMTk5N2E2NCJ9LCJpbWFnZSI6eyJkb2NrZXItbWFuaWZlc3QtZGlnZXN0Ijoic2hhMjU2OjI5OGQxZWVk" + "Mjg5M2Y2MWVkMjU0YzY4YWZmMjQxN2RlYWYzNDI2MzJhYjI2ZGJiZGIzOTkxNzE0ZTUwMWUxYzkifSwidHlwZSI6ImNvc2lnbiBjb250YWl" +
+		"uZXIgaW1hZ2Ugc2lnbmF0dXJlIn0sIm9wdGlvbmFsIjpudWxsfQ=="
+	imgName_1b = "ttl.sh/ac711a05-fa62-40fc-8d3f-ea3bc1997a64@sha256:298d1eed2893f61ed254c68aff2417deaf342632ab" +
+		"26dbbdb3991714e501e1c9"
+
+	// imgName_2 is signed by pemPublicKey_2.
+	pemPublicKey_2 = "-----BEGIN PUBLIC KEY-----\n" +
+		"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEKt34iWzgZUoGERCjOhjlxTviXQYk\n" +
+		"CxNmhRr5rMeatATTskxx0i6eB04jum2FFPmfIvThIuzyzQxlBDj1gNKXLw==\n" +
+		"-----END PUBLIC KEY-----"
+	b64Signature_2 = "MEUCIQCoqJSXaMtrHla2iARwMkSiQCadPUgL4y3QQYjW8MLgnAIgC+6233YksZtzLlyMfvHcGUzHg8QoEeKef027" +
+		"2n3JN2I="
+	b64SignaturePayload_2 = "eyJjcml0aWNhbCI6eyJpZGVudGl0eSI6eyJkb2NrZXItcmVmZXJlbmNlIjoidHRsLnNoL2MwMGRhZjA1L" +
+		"TljNWItNDA0MC05ZGJlLTQ0NDgzNjE3MGJlYSJ9LCJpbWFnZSI6eyJkb2NrZXItbWFuaWZlc3QtZGlnZXN0Ijoic2hhMjU2OjI5OGQxZWVk" +
+		"Mjg5M2Y2MWVkMjU0YzY4YWZmMjQxN2RlYWYzNDI2MzJhYjI2ZGJiZGIzOTkxNzE0ZTUwMWUxYzkifSwidHlwZSI6ImNvc2lnbiBjb250YWl" +
+		"uZXIgaW1hZ2Ugc2lnbmF0dXJlIn0sIm9wdGlvbmFsIjpudWxsfQ=="
+	imgName_2 = "ttl.sh/c00daf05-9c5b-4040-9dbe-444836170bea@sha256:298d1eed2893f61ed254c68aff2417deaf342632ab" +
+		"26dbbdb3991714e501e1c9"
+
+	// imgName_3 is not signed by pemPublicKey_1 or pemPublicKey_2.
+	imgName_3 = "ttl.sh/c00daf05-9c5b-4040-9dbe-444836170bea@sha256:298d1eed2893f61ed254c68aff2417deaf342632ab" +
+		"26dbbdb3991714e501e1c9"
+	b64Signature_3 = "MEUCIQCoqJSXaMtrHla2iARwMkSiQCadPUgL4y3QQYjW8MLgnAIgC+6233YksZtzLlyMfvHcGUzHg8QoEeKef027" +
+		"2n3JN2I="
+	b64SignaturePayload_3 = "eyJjcml0aWNhbCI6eyJpZGVudGl0eSI6eyJkb2NrZXItcmVmZXJlbmNlIjoidHRsLnNoL2MwMGRhZjA1L" +
+		"TljNWItNDA0MC05ZGJlLTQ0NDgzNjE3MGJlYSJ9LCJpbWFnZSI6eyJkb2NrZXItbWFuaWZlc3QtZGlnZXN0Ijoic2hhMjU2OjI5OGQxZWVk" +
+		"Mjg5M2Y2MWVkMjU0YzY4YWZmMjQxN2RlYWYzNDI2MzJhYjI2ZGJiZGIzOTkxNzE0ZTUwMWUxYzkifSwidHlwZSI6ImNvc2lnbiBjb250YWl" +
+		"uZXIgaW1hZ2Ugc2lnbmF0dXJlIn0sIm9wdGlvbmFsIjpudWxsfQ=="
+)
+
 func TestNewCosignSignatureVerifier(t *testing.T) {
 	cases := map[string]struct {
 		pemEncKey string
 		fail      bool
 		err       error
 	}{
-
 		"valid public key": {
 			pemEncKey: "-----BEGIN PUBLIC KEY-----\n" +
 				"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE04soAoNygRhaytCtygPcwsP+6Ein\n" +
@@ -60,31 +106,18 @@ func TestNewCosignSignatureVerifier(t *testing.T) {
 }
 
 func TestCosignSignatureVerifier_VerifySignature_Success(t *testing.T) {
-	const pemPublicKey = "-----BEGIN PUBLIC KEY-----\n" +
-		"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE04soAoNygRhaytCtygPcwsP+6Ein\n" +
-		"YoDv/BJx1T9WmtsANh2HplRR66Fbm+3OjFuah2IhFufPhDl6a85I3ymVYw==\n" +
-		"-----END PUBLIC KEY-----"
-	const b64Signature = "MEUCIDGMmJyxVKGPxvPk/QlRzMSGzcI8pYCy+MB7RTTpegzTAiEArssqWntVN8oJOMV0Aey0zhsNqRmEVQAYZNkn8h" +
-		"kAnXI="
-	const b64SignaturePayload = "eyJjcml0aWNhbCI6eyJpZGVudGl0eSI6eyJkb2NrZXItcmVmZXJlbmNlIjoidHRsLnNoL2Q4ZDM4OTJkLTQ" +
-		"4YmQtNDY3MS1hNTQ2LTJlNzBhOTAwYjcwMiJ9LCJpbWFnZSI6eyJkb2NrZXItbWFuaWZlc3QtZGlnZXN0Ijoic2hhMjU2OmVlODliMDA1Mj" +
-		"hmZjRmMDJmMjQwNWU0ZWUyMjE3NDNlYmMzZjhlOGRkMGJmZDVjNGMyMGEyZmEyYWFhN2VkZTMifSwidHlwZSI6ImNvc2lnbiBjb250YWluZ" +
-		"XIgaW1hZ2Ugc2lnbmF0dXJlIn0sIm9wdGlvbmFsIjpudWxsfQ=="
-	const imgString = "ttl.sh/d8d3892d-48bd-4671-a546-2e70a900b702@sha256:ee89b00528ff4f02f2405e4ee221743ebc3f8e8dd0" +
-		"bfd5c4c20a2fa2aaa7ede3"
-
 	pubKeyVerifier, err := newCosignSignatureVerifier(&storage.SignatureIntegration{Cosign: &storage.CosignPublicKeyVerification{
 		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
 			{
 				Name:            "cosignSignatureVerifier",
-				PublicKeyPemEnc: pemPublicKey,
+				PublicKeyPemEnc: pemPublicKey_1,
 			},
 		},
 	}})
 
 	require.NoError(t, err, "creating public key verifier")
 
-	img, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload, nil, nil)
+	img, err := generateImageWithCosignSignature(imgName_1a, b64Signature_1a, b64SignaturePayload_1a, nil, nil)
 	require.NoError(t, err, "creating image with signature")
 
 	status, verifiedImageReferences, err := pubKeyVerifier.VerifySignature(context.Background(), img)
@@ -95,32 +128,19 @@ func TestCosignSignatureVerifier_VerifySignature_Success(t *testing.T) {
 		"image full name should match verified image reference")
 }
 
-func TestCosignSignatureVerifier_VerifySignature_Multiple_Names(t *testing.T) {
-	const pemPublicKey = "-----BEGIN PUBLIC KEY-----\n" +
-		"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE04soAoNygRhaytCtygPcwsP+6Ein\n" +
-		"YoDv/BJx1T9WmtsANh2HplRR66Fbm+3OjFuah2IhFufPhDl6a85I3ymVYw==\n" +
-		"-----END PUBLIC KEY-----"
-	const b64Signature = "MEUCIDGMmJyxVKGPxvPk/QlRzMSGzcI8pYCy+MB7RTTpegzTAiEArssqWntVN8oJOMV0Aey0zhsNqRmEVQAYZNkn8h" +
-		"kAnXI="
-	const b64SignaturePayload = "eyJjcml0aWNhbCI6eyJpZGVudGl0eSI6eyJkb2NrZXItcmVmZXJlbmNlIjoidHRsLnNoL2Q4ZDM4OTJkLTQ" +
-		"4YmQtNDY3MS1hNTQ2LTJlNzBhOTAwYjcwMiJ9LCJpbWFnZSI6eyJkb2NrZXItbWFuaWZlc3QtZGlnZXN0Ijoic2hhMjU2OmVlODliMDA1Mj" +
-		"hmZjRmMDJmMjQwNWU0ZWUyMjE3NDNlYmMzZjhlOGRkMGJmZDVjNGMyMGEyZmEyYWFhN2VkZTMifSwidHlwZSI6ImNvc2lnbiBjb250YWluZ" +
-		"XIgaW1hZ2Ugc2lnbmF0dXJlIn0sIm9wdGlvbmFsIjpudWxsfQ=="
-	const imgString = "ttl.sh/d8d3892d-48bd-4671-a546-2e70a900b702@sha256:ee89b00528ff4f02f2405e4ee221743ebc3f8e8dd0" +
-		"bfd5c4c20a2fa2aaa7ede3"
-
+func TestCosignSignatureVerifier_VerifySignature_Multiple_Names_One_Sig(t *testing.T) {
 	pubKeyVerifier, err := newCosignSignatureVerifier(&storage.SignatureIntegration{Cosign: &storage.CosignPublicKeyVerification{
 		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
 			{
 				Name:            "cosignSignatureVerifier",
-				PublicKeyPemEnc: pemPublicKey,
+				PublicKeyPemEnc: pemPublicKey_1,
 			},
 		},
 	}})
 
 	require.NoError(t, err, "creating public key verifier")
 
-	img, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload, nil, nil)
+	img, err := generateImageWithCosignSignature(imgName_1a, b64Signature_1a, b64SignaturePayload_1a, nil, nil)
 	require.NoError(t, err, "creating image with signature")
 
 	secondImageName := &storage.ImageName{
@@ -142,19 +162,128 @@ func TestCosignSignatureVerifier_VerifySignature_Multiple_Names(t *testing.T) {
 		"verified image references should not contain image name %s", secondImageName.GetFullName())
 }
 
+func TestCosignSignatureVerifier_VerifySignature_Multiple_Names_Multiple_Sigs(t *testing.T) {
+	pubKeyVerifier, err := newCosignSignatureVerifier(&storage.SignatureIntegration{Cosign: &storage.CosignPublicKeyVerification{
+		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
+			{
+				Name:            "cosignSignatureVerifier",
+				PublicKeyPemEnc: pemPublicKey_1,
+			},
+		},
+	}})
+	require.NoError(t, err, "creating public key verifier")
+
+	img, err := generateImageWithCosignSignature(imgName_1a, b64Signature_1a, b64SignaturePayload_1a, nil, nil)
+	require.NoError(t, err, "creating image with signature")
+	// Use the helper function to create a new image, but we only want the signature here.
+	img_2, err := generateImageWithCosignSignature(imgName_1b, b64Signature_1b, b64SignaturePayload_1b, nil, nil)
+	require.NoError(t, err, "creating image with signature")
+	// `img` must have both names and signatures for the test.
+	img.Names = append(img.GetNames(), img_2.GetNames()...)
+	img.Signature.Signatures = append(img.GetSignature().GetSignatures(), img_2.GetSignature().GetSignatures()...)
+
+	status, verifiedImageReferences, err := pubKeyVerifier.VerifySignature(context.Background(), img)
+	assert.NoError(t, err, "verification should be successful")
+	assert.Equal(t, storage.ImageSignatureVerificationResult_VERIFIED, status, "status should be VERIFIED")
+	require.Len(t, verifiedImageReferences, 2)
+	assert.Contains(t, verifiedImageReferences, img.GetName().GetFullName(),
+		"image full name should match verified image reference")
+}
+
+func TestCosignSignatureVerifier_VerifySignature_Duplicate_Names_Multiple_Sigs(t *testing.T) {
+	pubKeyVerifier, err := newCosignSignatureVerifier(&storage.SignatureIntegration{Cosign: &storage.CosignPublicKeyVerification{
+		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
+			{
+				Name:            "cosignSignatureVerifier",
+				PublicKeyPemEnc: pemPublicKey_1,
+			},
+		},
+	}})
+	require.NoError(t, err, "creating public key verifier")
+
+	img, err := generateImageWithCosignSignature(imgName_1a, b64Signature_1a, b64SignaturePayload_1a, nil, nil)
+	require.NoError(t, err, "creating image with signature")
+	// Duplicate the names and signature for testing purposes.
+	img.Names = append(img.GetNames(), img.GetNames()...)
+	img.Signature.Signatures = append(img.GetSignature().GetSignatures(), img.GetSignature().GetSignatures()...)
+
+	status, verifiedImageReferences, err := pubKeyVerifier.VerifySignature(context.Background(), img)
+	assert.NoError(t, err, "verification should be successful")
+	assert.Equal(t, storage.ImageSignatureVerificationResult_VERIFIED, status, "status should be VERIFIED")
+	require.Len(t, verifiedImageReferences, 1)
+	assert.Contains(t, verifiedImageReferences, img.GetName().GetFullName(),
+		"image full name should match verified image reference")
+}
+
+func TestCosignSignatureVerifier_VerifySignature_One_Key_Partial_Match(t *testing.T) {
+	pubKeyVerifier, err := newCosignSignatureVerifier(&storage.SignatureIntegration{Cosign: &storage.CosignPublicKeyVerification{
+		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
+			{
+				Name:            "cosignSignatureVerifier",
+				PublicKeyPemEnc: pemPublicKey_1,
+			},
+		},
+	}})
+	require.NoError(t, err, "creating public key verifier")
+
+	img, err := generateImageWithCosignSignature(imgName_1a, b64Signature_1a, b64SignaturePayload_1a, nil, nil)
+	require.NoError(t, err, "creating image with signature")
+	// Use the helper function to create a new image, but we only want the signature here.
+	img_3, err := generateImageWithCosignSignature(imgName_3, b64Signature_3, b64SignaturePayload_3, nil, nil)
+	require.NoError(t, err, "creating image with signature")
+	// `img` must have both names and signatures for the test.
+	img.Names = append(img.GetNames(), img_3.GetNames()...)
+	img.Signature.Signatures = append(img.GetSignature().GetSignatures(), img_3.GetSignature().GetSignatures()...)
+
+	status, verifiedImageReferences, err := pubKeyVerifier.VerifySignature(context.Background(), img)
+	assert.NoError(t, err, "verification should be successful")
+	assert.Equal(t, storage.ImageSignatureVerificationResult_VERIFIED, status, "status should be VERIFIED")
+	require.Len(t, verifiedImageReferences, 1)
+	assert.Contains(t, verifiedImageReferences, img.GetName().GetFullName(),
+		"image full name should match verified image reference")
+	assert.NotContains(t, verifiedImageReferences, img_3.GetName().GetFullName(),
+		"image full name must not match verified image reference")
+}
+
+func TestCosignSignatureVerifier_VerifySignature_Multiple_Keys_Full_Match(t *testing.T) {
+	pubKeyVerifier, err := newCosignSignatureVerifier(&storage.SignatureIntegration{Cosign: &storage.CosignPublicKeyVerification{
+		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
+			{
+				Name:            "cosignSignatureVerifier_1",
+				PublicKeyPemEnc: pemPublicKey_1,
+			},
+			{
+				Name:            "cosignSignatureVerifier_2",
+				PublicKeyPemEnc: pemPublicKey_2,
+			},
+		},
+	}})
+	require.NoError(t, err, "creating public key verifier")
+
+	img, err := generateImageWithCosignSignature(imgName_1a, b64Signature_1a, b64SignaturePayload_1a, nil, nil)
+	require.NoError(t, err, "creating image with signature")
+	// Use the helper function to create a new image, but we only want the signature here.
+	img_2, err := generateImageWithCosignSignature(imgName_2, b64Signature_2, b64SignaturePayload_2, nil, nil)
+	require.NoError(t, err, "creating image with signature")
+	// `img` must have both names and signatures for the test.
+	img.Names = append(img.GetNames(), img_2.GetNames()...)
+	img.Signature.Signatures = append(img.GetSignature().GetSignatures(), img_2.GetSignature().GetSignatures()...)
+
+	status, verifiedImageReferences, err := pubKeyVerifier.VerifySignature(context.Background(), img)
+	assert.NoError(t, err, "verification should be successful")
+	assert.Equal(t, storage.ImageSignatureVerificationResult_VERIFIED, status, "status should be VERIFIED")
+	require.Len(t, verifiedImageReferences, 2)
+	assert.Contains(t, verifiedImageReferences, img.GetName().GetFullName(),
+		"image full name should match verified image reference")
+	assert.Contains(t, verifiedImageReferences, img_2.GetName().GetFullName(),
+		"image full name should match verified image reference")
+}
+
 func TestCosignSignatureVerifier_VerifySignature_Failure(t *testing.T) {
 	const pemNonMatchingPubKey = "-----BEGIN PUBLIC KEY-----\n" +
 		"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEWi3tSxvBH7S/WUmv408nKPxNSJx6\n" +
 		"+w7c9FtFSk6coxx2VUbPy/X3US3cXfk/zVA+G7NbXGBYhAGaOsps5ZKjkQ==\n" +
 		"-----END PUBLIC KEY-----"
-	const b64Signature = "MEUCIDGMmJyxVKGPxvPk/QlRzMSGzcI8pYCy+MB7RTTpegzTAiEArssqWntVN8oJOMV0Aey0zhsNqRmEVQAYZNkn8h" +
-		"kAnXI="
-	const b64SignaturePayload = "eyJjcml0aWNhbCI6eyJpZGVudGl0eSI6eyJkb2NrZXItcmVmZXJlbmNlIjoidHRsLnNoL2Q4ZDM4OTJkLTQ" +
-		"4YmQtNDY3MS1hNTQ2LTJlNzBhOTAwYjcwMiJ9LCJpbWFnZSI6eyJkb2NrZXItbWFuaWZlc3QtZGlnZXN0Ijoic2hhMjU2OmVlODliMDA1Mj" +
-		"hmZjRmMDJmMjQwNWU0ZWUyMjE3NDNlYmMzZjhlOGRkMGJmZDVjNGMyMGEyZmEyYWFhN2VkZTMifSwidHlwZSI6ImNvc2lnbiBjb250YWluZ" +
-		"XIgaW1hZ2Ugc2lnbmF0dXJlIn0sIm9wdGlvbmFsIjpudWxsfQ=="
-	const imgString = "ttl.sh/d8d3892d-48bd-4671-a546-2e70a900b702@sha256:ee89b00528ff4f02f2405e4ee221743ebc3f8e8dd0" +
-		"bfd5c4c20a2fa2aaa7ede3"
 
 	pubKeyVerifier, err := newCosignSignatureVerifier(&storage.SignatureIntegration{Cosign: &storage.CosignPublicKeyVerification{
 		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
@@ -170,7 +299,7 @@ func TestCosignSignatureVerifier_VerifySignature_Failure(t *testing.T) {
 	emptyPubKeyVerifier, err := newCosignSignatureVerifier(&storage.SignatureIntegration{Cosign: &storage.CosignPublicKeyVerification{}})
 	require.NoError(t, err, "creating empty public key verifier")
 
-	img, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload, nil, nil)
+	img, err := generateImageWithCosignSignature(imgName_1a, b64Signature_1a, b64SignaturePayload_1a, nil, nil)
 	require.NoError(t, err, "creating image with signature")
 
 	cases := map[string]struct {
