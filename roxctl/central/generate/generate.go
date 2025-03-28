@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/backup"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/certgen"
-	"github.com/stackrox/rox/pkg/containers"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
@@ -253,9 +252,9 @@ func createBundle(config *renderer.Config) (*zip.Wrapper, error) {
 	return wrapper, nil
 }
 
-// OutputZip renders a deployment bundle. The deployment bundle can either be
+// outputZip renders a deployment bundle. The deployment bundle can either be
 // written directly into a directory, or as a zipfile to STDOUT.
-func OutputZip(logger logger.Logger, io io2.IO, config renderer.Config) error {
+func outputZip(logger logger.Logger, io io2.IO, config renderer.Config) error {
 	logger.InfofLn("Generating deployment bundle...")
 
 	common.LogInfoPsp(logger, config.EnablePodSecurityPolicies)
@@ -278,7 +277,7 @@ func OutputZip(logger logger.Logger, io io2.IO, config renderer.Config) error {
 	}
 
 	var outputPath string
-	if roxctl.InMainImage() || (!containers.IsRunningInContainer() && !flags.OutputDirManuallySet) {
+	if roxctl.InMainImage() || config.OutputDir == "" {
 		bytes, err := wrapper.Zip()
 		if err != nil {
 			return errors.Wrap(err, "error generating zip file")
