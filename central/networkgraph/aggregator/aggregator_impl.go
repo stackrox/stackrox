@@ -180,12 +180,6 @@ func (a *aggregateExternalConnByNameImpl) Aggregate(flows []*storage.NetworkFlow
 			continue
 		}
 
-		// If the entity is discovered, anonymize it to avoid overloading
-		// the graph with many nodes (external IP details are still accessible
-		// via other APIs)
-		flowProps.SrcEntity = anonymizeDiscoveredEntity(flowProps.SrcEntity)
-		flowProps.DstEntity = anonymizeDiscoveredEntity(flowProps.DstEntity)
-
 		srcEntity, dstEntity = flowProps.SrcEntity, flowProps.DstEntity
 
 		// If both endpoints are not known external sources, skip processing.
@@ -193,6 +187,12 @@ func (a *aggregateExternalConnByNameImpl) Aggregate(flows []*storage.NetworkFlow
 			ret = append(ret, flow)
 			continue
 		}
+
+		// If the entity is discovered, anonymize it to avoid overloading
+		// the graph with many nodes (external IP details are still accessible
+		// via other APIs)
+		flowProps.SrcEntity = anonymizeDiscoveredEntity(flowProps.SrcEntity)
+		flowProps.DstEntity = anonymizeDiscoveredEntity(flowProps.DstEntity)
 
 		updateDupNameExtSrcTracker(srcEntity, dupNameExtSrcTracker)
 		updateDupNameExtSrcTracker(dstEntity, dupNameExtSrcTracker)
