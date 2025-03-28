@@ -2,12 +2,12 @@ module github.com/stackrox/rox
 
 go 1.23.4
 
-toolchain go1.23.6
+toolchain go1.24.1
 
 require (
 	cloud.google.com/go/artifactregistry v1.16.3
 	cloud.google.com/go/compute/metadata v0.6.0
-	cloud.google.com/go/containeranalysis v0.13.4
+	cloud.google.com/go/containeranalysis v0.14.0
 	cloud.google.com/go/securitycenter v1.36.1
 	cloud.google.com/go/storage v1.51.0
 	github.com/Azure/azure-sdk-for-go-extensions v0.1.8
@@ -153,10 +153,10 @@ require (
 	golang.stackrox.io/grpc-http1 v0.4.0
 	google.golang.org/api v0.227.0
 	google.golang.org/genproto v0.0.0-20250303144028-a0af3efb3deb
-	google.golang.org/genproto/googleapis/api v0.0.0-20250303144028-a0af3efb3deb
+	google.golang.org/genproto/googleapis/api v0.0.0-20250313205543-e70fdf4c4cb4
 	google.golang.org/grpc v1.71.0
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
-	google.golang.org/protobuf v1.36.5
+	google.golang.org/protobuf v1.36.6
 	gopkg.in/mcuadros/go-syslog.v2 v2.3.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
@@ -181,10 +181,10 @@ require (
 
 require (
 	cel.dev/expr v0.19.2 // indirect
-	cloud.google.com/go v0.118.3 // indirect
+	cloud.google.com/go v0.120.0 // indirect
 	cloud.google.com/go/auth v0.15.0 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.7 // indirect
-	cloud.google.com/go/iam v1.4.1 // indirect
+	cloud.google.com/go/iam v1.4.2 // indirect
 	cloud.google.com/go/longrunning v0.6.5 // indirect
 	cloud.google.com/go/monitoring v1.24.0 // indirect
 	dario.cat/mergo v1.0.1 // indirect
@@ -479,13 +479,13 @@ require (
 	go.opentelemetry.io/contrib/detectors/gcp v1.34.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.59.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.59.0 // indirect
-	go.opentelemetry.io/otel v1.34.0 // indirect
+	go.opentelemetry.io/otel v1.35.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.32.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.32.0 // indirect
-	go.opentelemetry.io/otel/metric v1.34.0 // indirect
-	go.opentelemetry.io/otel/sdk v1.34.0 // indirect
+	go.opentelemetry.io/otel/metric v1.35.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.35.0 // indirect
 	go.opentelemetry.io/otel/sdk/metric v1.34.0 // indirect
-	go.opentelemetry.io/otel/trace v1.34.0 // indirect
+	go.opentelemetry.io/otel/trace v1.35.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.3.1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
