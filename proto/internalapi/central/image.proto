@@ -26,4 +26,8 @@ message ScanImage {
 message ImageIntegrations {
   repeated storage.ImageIntegration updated_integrations = 1;
   repeated string deleted_integration_ids = 2;
+
+  // refresh when true indicates that the updated integrations should replace
+  // any existing integrations.
+  bool refresh = 3;
 }
