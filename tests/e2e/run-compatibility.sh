@@ -59,9 +59,6 @@ _run_compatibility_tests() {
     info "Creating mocked compliance operator data for compliance v1 tests"
     "$ROOT/tests/complianceoperator/create.sh"
 
-    # For every version pair we use a unique name for the secured cluster to prevent attempts
-    # to register the same secured cluster name multiple times, which will fails in CRS mode.
-    export CLUSTER="sc-${short_sensor_tag}-${short_central_tag}"
     deploy_stackrox_with_custom_central_and_sensor_versions "${central_version}" "${sensor_version}"
     echo "Stackrox deployed with Central version - ${central_version}, Sensor version - ${sensor_version}"
 
