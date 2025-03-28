@@ -11,17 +11,16 @@ func init() {
 	prometheus.MustRegister(
 		NetworkFlowsPerNodeByType,
 		ContainerEndpointsPerNode,
-		NetworkFlowMessagesPerNode,
+		NetworkConnectionInfoMessagesRcvd,
 		FlowEnrichments,
 		FlowEnrichmentEventsEndpoint,
 		FlowEnrichmentEventsConnection,
 		ExternalFlowCounter,
 		InternalFlowCounter,
 		NetworkEntityFlowCounter,
-		HostConnectionsAdded,
-		HostConnectionsRemoved,
-		HostEndpointsAdded,
-		HostEndpointsRemoved,
+		HostConnections,
+		HostProcessesRemoved,
+		NumUpdated,
 		activeFlowsTotal,
 		activeEndpointsTotal,
 		NumUpdatedConnectionsEndpoints,
@@ -30,24 +29,51 @@ func init() {
 
 // Metrics for network flows
 var (
+	// A networkConnectionInfo message arrives from collector
+
+	// NetworkConnectionInfoMessagesRcvd - 1. Collector sends NetworkConnection Info messages where each contains endpoints and connections
+	NetworkConnectionInfoMessagesRcvd = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "network_connection_info_msgs_received_per_node_total",
+		Help:      "Total number of messages containing network flows received from Collector for a specific node",
+	}, []string{"Hostname"})
+	// NumUpdated - 2. Out of newly arrived endpoints and connections, only selected need an update
+	NumUpdated = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "network_connection_info_num_updates",
+		Help:      "Current number of network endpoints or connections being updated in the message from Collector received for a specific node",
+	}, []string{"Hostname", "Type"})
+	// HostConnections - 3a. Out of the updates, only some result in adding dhe connection to the connections map
+	HostConnections = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "network_connection_info_host_connections_total",
+		Help:      "Total number of flows added/removed in the host connections maps",
+	}, []string{"op"})
+	// HostEndpoints - 3b. The same as 3a but for endpoints
+	HostEndpoints = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "network_connection_info_host_endpoints_total",
+		Help:      "Total number of endpoints added/removed in the host connections maps",
+	}, []string{"op"})
+	// End of processing of the networkConnectionInfo message
+
 	NetworkFlowsPerNodeByType = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "network_flow_total_per_node",
+		Name:      "network_flow_total_per_node_total",
 		Help:      "Total number of network flows received for a specific node",
 	}, []string{"Hostname", "Type", "Protocol"})
 	ContainerEndpointsPerNode = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "network_endpoints_total_per_node",
+		Name:      "network_endpoints_total_per_node_total",
 		Help:      "Total number of container endpoint updates received for a specific node",
 	}, []string{"Hostname", "Protocol"})
-	NetworkFlowMessagesPerNode = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "network_flow_msgs_received_per_node",
-		Help:      "Total number of network flows received for a specific node",
-	}, []string{"Hostname"})
+
 	FlowEnrichments = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
@@ -86,34 +112,11 @@ var (
 		Name:      "network_flow_entity_flows",
 		Help:      "Total number of network entity flows observed by Sensor enrichment",
 	}, []string{"direction", "namespace"})
-	HostConnectionsAdded = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "network_flow_host_connections_added",
-		Help:      "Total number of flows stored in the host connections maps",
-	})
-	HostConnectionsRemoved = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "network_flow_host_connections_removed",
-		Help:      "Total number of flows stored in the host connections maps",
-	})
-	HostEndpointsAdded = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "network_flow_host_endpoints_added",
-		Help:      "Total number of endpoints stored in the host endpoints maps",
-	})
-	HostEndpointsRemoved = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "network_flow_host_endpoints_removed",
-		Help:      "Total number of endpoints stored in the host connections maps",
-	})
+
 	HostProcessesRemoved = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "processes_listening_on_port_removed",
+		Name:      "processes_listening_on_port_removed_total",
 		Help:      "Total number of processes listening on ports",
 	})
 	NumUpdatedConnectionsEndpoints = prometheus.NewGaugeVec(prometheus.GaugeOpts{

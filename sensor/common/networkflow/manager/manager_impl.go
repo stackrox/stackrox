@@ -907,7 +907,7 @@ func (m *networkFlowManager) enrichHostConnections(hostConns *hostConnections, e
 			delete(hostConns.connections, conn)
 		}
 	}
-	flowMetrics.HostConnectionsRemoved.Add(float64(prevSize - len(hostConns.connections)))
+	flowMetrics.HostConnections.WithLabelValues("remove").Add(float64(prevSize - len(hostConns.connections)))
 }
 
 func shallRemoveConnection(status *connStatus) bool {
@@ -946,7 +946,7 @@ func (m *networkFlowManager) enrichHostContainerEndpoints(hostConns *hostConnect
 			delete(hostConns.endpoints, ep)
 		}
 	}
-	flowMetrics.HostEndpointsRemoved.Add(float64(prevSize - len(hostConns.endpoints)))
+	flowMetrics.HostEndpoints.WithLabelValues("remove").Add(float64(prevSize - len(hostConns.endpoints)))
 }
 
 func (m *networkFlowManager) enrichProcessesListening(hostConns *hostConnections, processesListening map[processListeningIndicator]timestamp.MicroTS) {
@@ -1121,7 +1121,7 @@ func (m *networkFlowManager) deleteHostConnections(hostname string) {
 	if conns.pendingDeletion == nil {
 		return
 	}
-	flowMetrics.HostConnectionsRemoved.Add(float64(len(conns.connections)))
+	flowMetrics.HostConnections.WithLabelValues("remove").Add(float64(len(conns.connections)))
 	delete(m.connectionsByHost, hostname)
 }
 
@@ -1152,8 +1152,13 @@ func (m *networkFlowManager) UnregisterCollector(hostname string, sequenceID int
 }
 
 func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, nowTimestamp timestamp.MicroTS, sequenceID int64) error {
+	flowMetrics.NetworkConnectionInfoMessagesRcvd.With(prometheus.Labels{"Hostname": h.hostname}).Inc()
+
 	updatedConnections := getUpdatedConnections(h.hostname, networkInfo)
 	updatedEndpoints := getUpdatedContainerEndpoints(h.hostname, networkInfo)
+
+	flowMetrics.NumUpdated.With(prometheus.Labels{"Hostname": h.hostname, "Type": "Connection"}).Add(float64(len(updatedConnections)))
+	flowMetrics.NumUpdated.With(prometheus.Labels{"Hostname": h.hostname, "Type": "Endpoint"}).Add(float64(len(updatedEndpoints)))
 
 	collectorTS := timestamp.FromProtobuf(networkInfo.GetTime())
 	tsOffset := nowTimestamp - collectorTS
@@ -1197,7 +1202,7 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 		}
 
 		h.lastKnownTimestamp = nowTimestamp
-		flowMetrics.HostConnectionsAdded.Add(float64(len(h.connections) - prevSize))
+		flowMetrics.HostConnections.WithLabelValues("add").Add(float64(len(h.connections) - prevSize))
 	}
 
 	{
@@ -1215,13 +1220,14 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 				if t < status.firstSeen {
 					status.firstSeen = t
 				}
-				h.endpoints[ep] = status
+				h.endpoints[ep] = status // TODO: The ep key contains a process identity that is almost unique for each process.
+				// Do we need that in the key of a endpoint?
 			}
 			status.lastSeen = t
 		}
 
 		h.lastKnownTimestamp = nowTimestamp
-		flowMetrics.HostEndpointsAdded.Add(float64(len(h.endpoints) - prevSize))
+		flowMetrics.HostEndpoints.WithLabelValues("add").Add(float64(len(h.endpoints) - prevSize))
 	}
 
 	return nil
@@ -1287,8 +1293,6 @@ func processConnection(conn *sensor.NetworkConnection) (*connection, error) {
 func getUpdatedConnections(hostname string, networkInfo *sensor.NetworkConnectionInfo) map[connection]timestamp.MicroTS {
 	updatedConnections := make(map[connection]timestamp.MicroTS)
 
-	flowMetrics.NetworkFlowMessagesPerNode.With(prometheus.Labels{"Hostname": hostname}).Inc()
-
 	for _, conn := range networkInfo.GetUpdatedConnections() {
 		c, err := processConnection(conn)
 		if err != nil {
@@ -1316,8 +1320,6 @@ func getUpdatedConnections(hostname string, networkInfo *sensor.NetworkConnectio
 
 func getUpdatedContainerEndpoints(hostname string, networkInfo *sensor.NetworkConnectionInfo) map[containerEndpoint]timestamp.MicroTS {
 	updatedEndpoints := make(map[containerEndpoint]timestamp.MicroTS)
-
-	flowMetrics.NetworkFlowMessagesPerNode.With(prometheus.Labels{"Hostname": hostname}).Inc()
 
 	for _, endpoint := range networkInfo.GetUpdatedEndpoints() {
 		normalize.NetworkEndpoint(endpoint)
