@@ -55,7 +55,6 @@ _compatibility_test() {
         else
             info "Not running on CI: skipping cluster setup make sure cluster is already available"
         fi
-        export ROX_DEPLOY_SENSOR_WITH_CRS="false"
 
         setup_deployment_env false false
         setup_podsecuritypolicies_config
