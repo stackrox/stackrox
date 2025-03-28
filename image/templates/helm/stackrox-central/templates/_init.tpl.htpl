@@ -83,18 +83,6 @@
   {{ end }}
 {{ end }}
 
-{{ $reencryptConfig := ._rox.central.exposure.route.reencrypt }}
-{{ if $reencryptConfig.enabled }}
-  {{ if kindIs "invalid" $reencryptConfig.tls.destinationCACertificate }}
-    {{ include "srox.warn" (list $ "The reencrypt route does not specify a destination certificate authority. Routing may be impaired.") }}
-  {{ end }}
-  {{ if and (kindIs "invalid" $reencryptConfig.tls.certificate) (kindIs "invalid" $reencryptConfig.tls.key) }}
-    {{ include "srox.note" (list $ "The reencrypt route will serve a certificate signed by the OpenShift certificate authority.") }}
-  {{ else if or $reencryptConfig.tls.certificate $reencryptConfig.tls.key }}
-    {{ include "srox.fail" "The reencrypt route must specify either both certificate and key or neither." }}
-  {{ end }}
-{{ end }}
-
 {{/* Initialize global prefix */}}
 {{- include "srox.initGlobalPrefix" (list $) -}}
 
@@ -219,6 +207,24 @@
   {{ $_ := set $additionalCAs $normalizedName $elem.contents }}
 {{ end }}
 {{ $_ = set $._rox "_additionalCAs" $additionalCAs }}
+
+{{/* Route configuration */}}
+{{ $reencryptConfig := $._rox.central.exposure.route.reencrypt }}
+{{ if $reencryptConfig.enabled }}
+  {{/* Default the destination CA certificate to the Central CA. */}}
+  {{ if kindIs "invalid" $reencryptConfig.tls.destinationCACertificate }}
+    {{ if kindIs "invalid" $._rox._ca.Cert }}
+      {{ include "srox.warn" (list $ "The reencrypt route does not specify a destination certificate authority. Routing may be impaired.") }}
+    {{ else }}
+      {{ $_ := set $._rox.central.exposure.route.reencrypt.tls "destinationCACertificate" $._rox._ca.Cert }}
+    {{ end }}
+  {{ end }}
+  {{ if and (kindIs "invalid" $reencryptConfig.tls.certificate) (kindIs "invalid" $reencryptConfig.tls.key) }}
+    {{ include "srox.note" (list $ "The reencrypt route will serve a certificate signed by the OpenShift certificate authority.") }}
+  {{ else if or $reencryptConfig.tls.certificate $reencryptConfig.tls.key }}
+    {{ include "srox.fail" "The reencrypt route must specify either both certificate and key or neither." }}
+  {{ end }}
+{{ end }}
 
 {{/* Proxy configuration.
      Note: The reason this is different is that unlike the endpoints config, the proxy configuration
