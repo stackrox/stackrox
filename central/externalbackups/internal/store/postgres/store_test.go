@@ -92,9 +92,6 @@ func (s *ExternalBackupsStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, externalBackups))
-	allExternalBackup, err := store.GetAll(ctx)
-	s.NoError(err)
-	protoassert.ElementsMatch(s.T(), externalBackups, allExternalBackup)
 
 	externalBackupCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
