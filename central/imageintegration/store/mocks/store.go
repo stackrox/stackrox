@@ -103,6 +103,20 @@ func (mr *MockStoreMockRecorder) GetAll(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockStore)(nil).GetAll), ctx)
 }
 
+// PruneMany mocks base method.
+func (m *MockStore) PruneMany(ctx context.Context, identifiers []string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PruneMany", ctx, identifiers)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PruneMany indicates an expected call of PruneMany.
+func (mr *MockStoreMockRecorder) PruneMany(ctx, identifiers any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PruneMany", reflect.TypeOf((*MockStore)(nil).PruneMany), ctx, identifiers)
+}
+
 // Search mocks base method.
 func (m *MockStore) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	m.ctrl.T.Helper()
@@ -130,4 +144,18 @@ func (m *MockStore) Upsert(ctx context.Context, integration *storage.ImageIntegr
 func (mr *MockStoreMockRecorder) Upsert(ctx, integration any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockStore)(nil).Upsert), ctx, integration)
+}
+
+// UpsertMany mocks base method.
+func (m *MockStore) UpsertMany(ctx context.Context, objs []*storage.ImageIntegration) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertMany", ctx, objs)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpsertMany indicates an expected call of UpsertMany.
+func (mr *MockStoreMockRecorder) UpsertMany(ctx, objs any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertMany", reflect.TypeOf((*MockStore)(nil).UpsertMany), ctx, objs)
 }
