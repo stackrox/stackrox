@@ -1194,7 +1194,7 @@ EOT
 
     local base_helm_values=""
 
-    command=("install")
+    command=("install" "--create-namespace")
     if helm list -n "$central_namespace" -o json | jq -e '.[] | select(.name == "stackrox-central-services")' > /dev/null 2>&1; then
         helm_generated_values_file=$(mktemp)
         "${ORCH_CMD}" -n "$central_namespace" get secrets -o json \
@@ -1335,7 +1335,7 @@ EOT
         )
     fi
 
-    command=("install")
+    command=("install" "--create-namespace")
     if helm list -n "$sensor_namespace" -o json | jq -e '.[] | select(.name == "stackrox-secured-cluster-services")' > /dev/null 2>&1; then
         command=("upgrade" "--install" "--reuse-values")
         upgrade="true"
