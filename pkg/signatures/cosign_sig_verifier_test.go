@@ -91,6 +91,9 @@ func TestNewCosignSignatureVerifier(t *testing.T) {
 						},
 					},
 				},
+				TransparencyLog: &storage.TransparencyLogVerification{
+					Enabled: false,
+				},
 			}
 			verifier, err := newCosignSignatureVerifier(config)
 			if c.fail {
@@ -106,14 +109,16 @@ func TestNewCosignSignatureVerifier(t *testing.T) {
 }
 
 func TestCosignSignatureVerifier_VerifySignature_Success(t *testing.T) {
-	pubKeyVerifier, err := newCosignSignatureVerifier(&storage.SignatureIntegration{Cosign: &storage.CosignPublicKeyVerification{
-		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
-			{
-				Name:            "cosignSignatureVerifier",
-				PublicKeyPemEnc: pemPublicKey_1,
+	pubKeyVerifier, err := newCosignSignatureVerifier(&storage.SignatureIntegration{
+		Cosign: &storage.CosignPublicKeyVerification{
+			PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
+				{
+					Name:            "cosignSignatureVerifier",
+					PublicKeyPemEnc: pemPublicKey_1,
+				},
 			},
 		},
-	}})
+	})
 
 	require.NoError(t, err, "creating public key verifier")
 
@@ -129,14 +134,16 @@ func TestCosignSignatureVerifier_VerifySignature_Success(t *testing.T) {
 }
 
 func TestCosignSignatureVerifier_VerifySignature_Multiple_Names_One_Sig(t *testing.T) {
-	pubKeyVerifier, err := newCosignSignatureVerifier(&storage.SignatureIntegration{Cosign: &storage.CosignPublicKeyVerification{
-		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
-			{
-				Name:            "cosignSignatureVerifier",
-				PublicKeyPemEnc: pemPublicKey_1,
+	pubKeyVerifier, err := newCosignSignatureVerifier(&storage.SignatureIntegration{
+		Cosign: &storage.CosignPublicKeyVerification{
+			PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
+				{
+					Name:            "cosignSignatureVerifier",
+					PublicKeyPemEnc: pemPublicKey_1,
+				},
 			},
 		},
-	}})
+	})
 
 	require.NoError(t, err, "creating public key verifier")
 
@@ -285,14 +292,21 @@ func TestCosignSignatureVerifier_VerifySignature_Failure(t *testing.T) {
 		"+w7c9FtFSk6coxx2VUbPy/X3US3cXfk/zVA+G7NbXGBYhAGaOsps5ZKjkQ==\n" +
 		"-----END PUBLIC KEY-----"
 
-	pubKeyVerifier, err := newCosignSignatureVerifier(&storage.SignatureIntegration{Cosign: &storage.CosignPublicKeyVerification{
-		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
-			{
-				Name:            "Non matching key",
-				PublicKeyPemEnc: pemNonMatchingPubKey,
+	pubKeyVerifier, err := newCosignSignatureVerifier(
+		&storage.SignatureIntegration{
+			Cosign: &storage.CosignPublicKeyVerification{
+				PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
+					{
+						Name:            "Non matching key",
+						PublicKeyPemEnc: pemNonMatchingPubKey,
+					},
+				},
+			},
+			TransparencyLog: &storage.TransparencyLogVerification{
+				Enabled: false,
 			},
 		},
-	}})
+	)
 
 	require.NoError(t, err, "creating public key verifier")
 
@@ -361,60 +375,80 @@ func TestCosignVerifier_VerifySignature_Certificate(t *testing.T) {
 		"verifying with both cert and chain should work": {
 			status: storage.ImageSignatureVerificationResult_VERIFIED,
 			v: func() (*cosignSignatureVerifier, error) {
-				return newCosignSignatureVerifier(&storage.SignatureIntegration{
-					CosignCertificates: []*storage.CosignCertificateVerification{
-						{
-							CertificatePemEnc:      string(certPEM),
-							CertificateChainPemEnc: string(chainPEM),
-							CertificateIdentity:    ".*",
-							CertificateOidcIssuer:  ".*",
+				return newCosignSignatureVerifier(
+					&storage.SignatureIntegration{
+						CosignCertificates: []*storage.CosignCertificateVerification{
+							{
+								CertificatePemEnc:      string(certPEM),
+								CertificateChainPemEnc: string(chainPEM),
+								CertificateIdentity:    ".*",
+								CertificateOidcIssuer:  ".*",
+							},
+						},
+						TransparencyLog: &storage.TransparencyLogVerification{
+							Enabled: false,
 						},
 					},
-				})
+				)
 			},
 		},
 		"verifying with only the chain should work": {
 			status: storage.ImageSignatureVerificationResult_VERIFIED,
 			v: func() (*cosignSignatureVerifier, error) {
-				return newCosignSignatureVerifier(&storage.SignatureIntegration{
-					CosignCertificates: []*storage.CosignCertificateVerification{
-						{
-							CertificateChainPemEnc: string(chainPEM),
-							CertificateIdentity:    ".*",
-							CertificateOidcIssuer:  ".*",
+				return newCosignSignatureVerifier(
+					&storage.SignatureIntegration{
+						CosignCertificates: []*storage.CosignCertificateVerification{
+							{
+								CertificateChainPemEnc: string(chainPEM),
+								CertificateIdentity:    ".*",
+								CertificateOidcIssuer:  ".*",
+							},
+						},
+						TransparencyLog: &storage.TransparencyLogVerification{
+							Enabled: false,
 						},
 					},
-				})
+				)
 			},
 		},
 		"verifying with only the cert should not work due to the wrong chain": {
 			status: storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
 			fail:   true,
 			v: func() (*cosignSignatureVerifier, error) {
-				return newCosignSignatureVerifier(&storage.SignatureIntegration{
-					CosignCertificates: []*storage.CosignCertificateVerification{
-						{
-							CertificatePemEnc:     string(certPEM),
-							CertificateIdentity:   ".*",
-							CertificateOidcIssuer: ".*",
+				return newCosignSignatureVerifier(
+					&storage.SignatureIntegration{
+						CosignCertificates: []*storage.CosignCertificateVerification{
+							{
+								CertificatePemEnc:     string(certPEM),
+								CertificateIdentity:   ".*",
+								CertificateOidcIssuer: ".*",
+							},
+						},
+						TransparencyLog: &storage.TransparencyLogVerification{
+							Enabled: false,
 						},
 					},
-				})
+				)
 			},
 		},
 		"verifying with only the chain but a mismatch in issuer should fail": {
 			status: storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
 			fail:   true,
 			v: func() (*cosignSignatureVerifier, error) {
-				return newCosignSignatureVerifier(&storage.SignatureIntegration{
-					CosignCertificates: []*storage.CosignCertificateVerification{
-						{
-							CertificateChainPemEnc: string(chainPEM),
-							CertificateOidcIssuer:  "invalid-issuer",
-							CertificateIdentity:    "invalid-identity",
+				return newCosignSignatureVerifier(
+					&storage.SignatureIntegration{
+						CosignCertificates: []*storage.CosignCertificateVerification{
+							{
+								CertificateChainPemEnc: string(chainPEM),
+								CertificateOidcIssuer:  "invalid-issuer",
+								CertificateIdentity:    "invalid-identity",
+							},
+						},
+						TransparencyLog: &storage.TransparencyLogVerification{
+							Enabled: false,
 						},
 					},
-				})
+				)
 			},
 		},
 	}

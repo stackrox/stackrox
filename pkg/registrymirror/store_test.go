@@ -20,11 +20,13 @@ import (
 )
 
 var (
+	// Include the source in the mirrors to make sure we deduplicate correctly.
+	// Configurations that include the source in the mirror list are used on OSD clusters.
 	icspA = &operatorV1Alpha1.ImageContentSourcePolicy{
 		ObjectMeta: v1.ObjectMeta{Name: "icspA", UID: "UIDicspA"},
 		Spec: operatorV1Alpha1.ImageContentSourcePolicySpec{
 			RepositoryDigestMirrors: []operatorV1Alpha1.RepositoryDigestMirrors{
-				{Source: "icsp.registry.com", Mirrors: []string{"icsp.mirror1.com", "icsp.mirror2.com"}},
+				{Source: "icsp.registry.com", Mirrors: []string{"icsp.mirror1.com", "icsp.mirror2.com", "icsp.registry.com"}},
 			},
 		},
 	}
@@ -33,7 +35,7 @@ var (
 		ObjectMeta: v1.ObjectMeta{Name: "idmsA", UID: "UIDidmsA"},
 		Spec: configV1.ImageDigestMirrorSetSpec{
 			ImageDigestMirrors: []configV1.ImageDigestMirrors{
-				{Source: "idms.registry.com", Mirrors: []configV1.ImageMirror{"idms.mirror1.com", "idms.mirror2.com"}},
+				{Source: "idms.registry.com", Mirrors: []configV1.ImageMirror{"idms.mirror1.com", "idms.mirror2.com", "idms.registry.com"}},
 			},
 		},
 	}
@@ -42,7 +44,7 @@ var (
 		ObjectMeta: v1.ObjectMeta{Name: "itmsA", UID: "UIDitmsA"},
 		Spec: configV1.ImageTagMirrorSetSpec{
 			ImageTagMirrors: []configV1.ImageTagMirrors{
-				{Source: "itms.registry.com", Mirrors: []configV1.ImageMirror{"itms.mirror1.com", "itms.mirror2.com"}},
+				{Source: "itms.registry.com", Mirrors: []configV1.ImageMirror{"itms.mirror1.com", "itms.mirror2.com", "itms.registry.com"}},
 			},
 		},
 	}

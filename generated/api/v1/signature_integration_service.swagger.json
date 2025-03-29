@@ -191,6 +191,13 @@
             "type": "object",
             "$ref": "#/definitions/storageCosignCertificateVerification"
           }
+        },
+        "tufRepositoryUrl": {
+          "type": "string",
+          "description": "URL for the the update framework (TUF) repository. Defaults to\nhttps://tuf-repo-cdn.sigstore.dev if left empty."
+        },
+        "transparencyLog": {
+          "$ref": "#/definitions/storageTransparencyLogVerification"
         }
       }
     },
@@ -276,8 +283,45 @@
             "type": "object",
             "$ref": "#/definitions/storageCosignCertificateVerification"
           }
+        },
+        "tufRepositoryUrl": {
+          "type": "string",
+          "description": "URL for the the update framework (TUF) repository. Defaults to\nhttps://tuf-repo-cdn.sigstore.dev if left empty."
+        },
+        "transparencyLog": {
+          "$ref": "#/definitions/storageTransparencyLogVerification"
         }
       }
+    },
+    "storageTransparencyLogVerification": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Validate the inclusion of signatures into a transparency log.\nDisables all validation if not enabled."
+        },
+        "rekorUrl": {
+          "type": "string",
+          "description": "The URL of the Rekor transparency log.\nDefaults to the Sigstore instance `rekor.sigstore.dev`."
+        },
+        "validateOffline": {
+          "type": "boolean",
+          "description": "Force offline validation of the signature proof of inclusion into the\ntransparency log. Do not fall back to request confirmation from the\ntransparency log over network."
+        },
+        "rekorPublicKeyPemEnc": {
+          "type": "string",
+          "description": "PEM encoded public key used to validate the proof of inclusion into the\ntransparency log. Defaults to the key of the public Sigstore instance if\nleft empty."
+        },
+        "ignoreSct": {
+          "type": "boolean",
+          "description": "Do not validate that the signature certificate contains a signed\ncertificate timestamp as proof of inclusion into the certificate\ntransparency log."
+        },
+        "ctlogPublicKeyPemEnc": {
+          "type": "string",
+          "description": "PEM encoded public key used to validate the proof of inclusion into the\ncertificate transparency log. Defaults to the key of the public Sigstore\ninstance if left empty."
+        }
+      },
+      "description": "Validate the inclusion of signature signing events into a transparency log."
     },
     "v1Empty": {
       "type": "object"
