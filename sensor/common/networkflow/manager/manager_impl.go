@@ -88,19 +88,17 @@ type connStatus struct {
 }
 
 type networkConnIndicator struct {
-	srcEntity  networkgraph.Entity
-	dstEntity  networkgraph.Entity
-	dstPort    uint16
-	protocol   storage.L4Protocol
-	lastUpdate timestamp.MicroTS
+	srcEntity networkgraph.Entity
+	dstEntity networkgraph.Entity
+	dstPort   uint16
+	protocol  storage.L4Protocol
 }
 
 func (i *networkConnIndicator) String() string {
-	return fmt.Sprintf("%s(%s) => %s(%s), port=%d, protocol=%s, lastUpdated=%s",
+	return fmt.Sprintf("%s(%s) => %s(%s), port=%d, protocol=%s",
 		i.srcEntity.Type, i.srcEntity.ID,
 		i.dstEntity.Type, i.dstEntity.ID,
-		i.dstPort, i.protocol,
-		i.lastUpdate.GoTime().Format(time.RFC3339))
+		i.dstPort, i.protocol)
 }
 
 func (i *networkConnIndicator) toProto(ts timestamp.MicroTS) *storage.NetworkFlow {
@@ -119,18 +117,22 @@ func (i *networkConnIndicator) toProto(ts timestamp.MicroTS) *storage.NetworkFlo
 	return proto
 }
 
+// containerEndpointIndicator is a key in Sensor's maps that track active endpoints. It's set of fields should be minimal.
 type containerEndpointIndicator struct {
-	entity     networkgraph.Entity
-	port       uint16
-	protocol   storage.L4Protocol
-	lastUpdate timestamp.MicroTS
+	entity   networkgraph.Entity
+	port     uint16
+	protocol storage.L4Protocol
+}
+
+// MapKey returns compact string representation that can be used as key in a map
+func (i *containerEndpointIndicator) MapKey() string {
+	return fmt.Sprintf("%s/%d/%s", i.entity.ID, i.port, i.protocol)
 }
 
 func (i *containerEndpointIndicator) String() string {
-	return fmt.Sprintf("%s(%s), port=%d, protocol=%s, lastUpdated=%s",
+	return fmt.Sprintf("%s(%s), port=%d, protocol=%s",
 		i.entity.Type, i.entity.ID,
-		i.port, i.protocol,
-		i.lastUpdate.GoTime().Format(time.RFC3339))
+		i.port, i.protocol)
 }
 
 func (i *containerEndpointIndicator) toProto(ts timestamp.MicroTS) *storage.NetworkEndpoint {
@@ -315,6 +317,8 @@ type networkFlowManager struct {
 	enrichedEndpointsLastSentState map[containerEndpointIndicator]timestamp.MicroTS
 	enrichedProcessesLastSentState map[processListeningIndicator]timestamp.MicroTS
 
+	// activeConnections tracks all connections reported by Collector that are believed to be active.
+	// A connection is active for as long as Collector sends a NetworkConnectionInfo message with `lastSeen` set to a non-nil value.
 	activeConnections map[connection]*networkConnIndicator
 	activeEndpoints   map[containerEndpoint]*containerEndpointIndicator
 
@@ -472,8 +476,8 @@ func (m *networkFlowManager) enrichAndSend() {
 
 	updatedConns := computeUpdatedConns(currentConns, m.enrichedConnsLastSentState, &m.lastSentStateMutex)
 	updatedEndpoints := computeUpdatedEndpoints(currentEndpoints, m.enrichedEndpointsLastSentState, &m.lastSentStateMutex)
-	flowMetrics.NumUpdatedConnectionsEndpoints.WithLabelValues("connections").Set(float64(len(updatedConns)))
-	flowMetrics.NumUpdatedConnectionsEndpoints.WithLabelValues("endpoints").Set(float64(len(updatedEndpoints)))
+	flowMetrics.NumUpdatedConnectionsEndpoints.WithLabelValues("connections").Add(float64(len(updatedConns)))
+	flowMetrics.NumUpdatedConnectionsEndpoints.WithLabelValues("endpoints").Add(float64(len(updatedEndpoints)))
 
 	if len(updatedConns)+len(updatedEndpoints) == 0 {
 		return
@@ -497,11 +501,12 @@ func (m *networkFlowManager) enrichAndSend() {
 	}
 
 	log.Debugf("Flow update : %v", protoToSend)
-	if m.sendToCentral(&central.MsgFromSensor{
+	sent := m.sendToCentral(&central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_NetworkFlowUpdate{
 			NetworkFlowUpdate: protoToSend,
 		},
-	}) {
+	})
+	if sent {
 		m.updateConnectionStates(currentConns, currentEndpoints)
 		metrics.IncrementTotalNetworkFlowsSentCounter(len(protoToSend.Updated))
 		metrics.IncrementTotalNetworkEndpointsSentCounter(len(protoToSend.UpdatedEndpoints))
@@ -749,9 +754,8 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 	for _, lookupResult := range lookupResults {
 		for _, port := range lookupResult.ContainerPorts {
 			indicator := networkConnIndicator{
-				dstPort:    port,
-				protocol:   conn.remote.L4Proto.ToProtobuf(),
-				lastUpdate: now,
+				dstPort:  port,
+				protocol: conn.remote.L4Proto.ToProtobuf(),
 			}
 
 			if conn.incoming {
@@ -819,10 +823,9 @@ func (m *networkFlowManager) enrichContainerEndpoint(ep *containerEndpoint, stat
 	status.used = true
 
 	indicator := containerEndpointIndicator{
-		entity:     networkgraph.EntityForDeployment(container.DeploymentID),
-		port:       ep.endpoint.IPAndPort.Port,
-		protocol:   ep.endpoint.L4Proto.ToProtobuf(),
-		lastUpdate: now,
+		entity:   networkgraph.EntityForDeployment(container.DeploymentID),
+		port:     ep.endpoint.IPAndPort.Port,
+		protocol: ep.endpoint.L4Proto.ToProtobuf(),
 	}
 
 	// Multiple endpoints from a collector can result in a single enriched endpoint,
@@ -944,14 +947,13 @@ func (m *networkFlowManager) enrichHostContainerEndpoints(hostConns *hostConnect
 	hostConns.mutex.Lock()
 	defer hostConns.mutex.Unlock()
 
-	prevSize := len(hostConns.endpoints)
 	for ep, status := range hostConns.endpoints {
 		m.enrichContainerEndpoint(&ep, status, enrichedEndpoints)
 		if shallRemoveEndpoint(status) {
 			delete(hostConns.endpoints, ep)
+			flowMetrics.HostEndpoints.WithLabelValues("remove").Inc()
 		}
 	}
-	flowMetrics.HostEndpoints.WithLabelValues("remove").Add(float64(prevSize - len(hostConns.endpoints)))
 }
 
 func (m *networkFlowManager) enrichProcessesListening(hostConns *hostConnections, processesListening map[processListeningIndicator]timestamp.MicroTS) {
@@ -1187,14 +1189,14 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 	}
 
 	{
-		prevSize := len(h.connections)
 		for c, t := range updatedConnections {
 			// timestamp = zero implies the connection is newly added. Add new connections, update existing ones to mark them closed
 			if t != timestamp.InfiniteFuture { // adjust timestamp if not zero.
 				t += tsOffset
 			}
-			status := h.connections[c]
-			if status == nil {
+			status, found := h.connections[c]
+			if !found || status == nil {
+				flowMetrics.HostConnections.WithLabelValues("add").Inc()
 				status = &connStatus{
 					firstSeen: timestamp.Now(),
 				}
@@ -1205,20 +1207,18 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 			}
 			status.lastSeen = t
 		}
-
 		h.lastKnownTimestamp = nowTimestamp
-		flowMetrics.HostConnections.WithLabelValues("add").Add(float64(len(h.connections) - prevSize))
 	}
 
 	{
-		prevSize := len(h.endpoints)
 		for ep, t := range updatedEndpoints {
 			// timestamp = zero implies the endpoint is newly added. Add new endpoints, update existing ones to mark them closed
 			if t != timestamp.InfiniteFuture { // adjust timestamp if not zero.
 				t += tsOffset
 			}
-			status := h.endpoints[ep]
-			if status == nil {
+			status, found := h.endpoints[ep]
+			if !found || status == nil {
+				flowMetrics.HostEndpoints.WithLabelValues("add").Inc()
 				status = &connStatus{
 					firstSeen: timestamp.Now(),
 				}
@@ -1232,7 +1232,6 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 		}
 
 		h.lastKnownTimestamp = nowTimestamp
-		flowMetrics.HostEndpoints.WithLabelValues("add").Add(float64(len(h.endpoints) - prevSize))
 	}
 
 	return nil
@@ -1305,13 +1304,6 @@ func getUpdatedConnections(hostname string, networkInfo *sensor.NetworkConnectio
 			continue
 		}
 
-		connType := "outgoing"
-		if c.incoming {
-			connType = "incoming"
-		}
-
-		flowMetrics.NetworkFlowsPerNodeByType.With(prometheus.Labels{"Hostname": hostname, "Type": connType, "Protocol": conn.Protocol.String()}).Inc()
-
 		// timestamp will be set to close timestamp for closed connections, and zero for newly added connection.
 		ts := timestamp.FromProtobuf(conn.CloseTimestamp)
 		if ts == 0 {
@@ -1328,9 +1320,6 @@ func getUpdatedContainerEndpoints(hostname string, networkInfo *sensor.NetworkCo
 
 	for _, endpoint := range networkInfo.GetUpdatedEndpoints() {
 		normalize.NetworkEndpoint(endpoint)
-
-		flowMetrics.ContainerEndpointsPerNode.With(prometheus.Labels{"Hostname": hostname, "Protocol": endpoint.Protocol.String()}).Inc()
-
 		ep := containerEndpoint{
 			containerID: endpoint.GetContainerId(),
 			endpoint: net.NumericEndpoint{

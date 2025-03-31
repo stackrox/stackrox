@@ -9,8 +9,6 @@ import (
 
 func init() {
 	prometheus.MustRegister(
-		NetworkFlowsPerNodeByType,
-		ContainerEndpointsPerNode,
 		NetworkConnectionInfoMessagesRcvd,
 		FlowEnrichments,
 		FlowEnrichmentEventsEndpoint,
@@ -22,8 +20,8 @@ func init() {
 		HostEndpoints,
 		HostProcessesRemoved,
 		NumUpdated,
-		activeFlowsTotal,
-		activeEndpointsTotal,
+		activeFlowsCurrent,
+		activeEndpointsCurrent,
 		NumUpdatedConnectionsEndpoints,
 	)
 }
@@ -62,19 +60,7 @@ var (
 	}, []string{"op"})
 	// End of processing of the networkConnectionInfo message
 
-	NetworkFlowsPerNodeByType = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "network_flow_total_per_node_total",
-		Help:      "Total number of network flows received for a specific node",
-	}, []string{"Hostname", "Type", "Protocol"})
-	ContainerEndpointsPerNode = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "network_endpoints_total_per_node_total",
-		Help:      "Total number of container endpoint updates received for a specific node",
-	}, []string{"Hostname", "Protocol"})
-
+	// FlowEnrichments - 4. All connections and endpoints kept in memory are enriched
 	FlowEnrichments = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
@@ -83,30 +69,44 @@ var (
 			"(allows to calculate the percentage of events being enriched for " +
 			"network_flow_enrichment_endpoint_events_total and network_flow_enrichment_connection_events_total)",
 	}, []string{"object"})
+	// FlowEnrichmentEventsEndpoint - 4a. Enrichment can have various outcomes. This metric stores the details about the outcomes for endpoints.
 	FlowEnrichmentEventsEndpoint = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "network_flow_enrichment_endpoint_events_total",
 		Help:      "Total number of events occurred to endpoints during the enrichment of network flows passed from collector",
 	}, []string{"containerIDfound", "action", "isHistorical", "reason", "lastSeenSet", "rotten", "mature", "fresh"})
+	// FlowEnrichmentEventsConnection - 4b. Enrichment can have various outcomes. This metric stores the details about the outcomes for connections.
 	FlowEnrichmentEventsConnection = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "network_flow_enrichment_connection_events_total",
 		Help:      "Total number of events occurred to connections during the enrichment of network flows passed from collector",
 	}, []string{"containerIDfound", "action", "isHistorical", "reason", "lastSeenSet", "rotten", "mature", "fresh", "isExternal"})
+	// ExternalFlowCounter - 4c. Counts the number of flows treated as external in the enrichment.
 	ExternalFlowCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "network_flow_external_flows",
 		Help:      "Total number of external flows observed by Sensor enrichment",
 	}, []string{"direction", "namespace"})
+	// InternalFlowCounter - 4d. Counts the number of flows treated as external in the enrichment.
 	InternalFlowCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "network_flow_internal_flows",
 		Help:      "Total number of internal flows observed by Sensor enrichment",
 	}, []string{"direction", "namespace"})
+
+	// NumUpdatedConnectionsEndpoints - 5. An update is calculated between the states in consecutive enrichment ticks and the
+	// difference is treated as new updates. That updates are sent to central.
+	NumUpdatedConnectionsEndpoints = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "network_flow_num_sent_to_central_total",
+		Help:      "A counter that tracks the total number of connections and endpoints being updated (i.e., sent to Central)",
+	}, []string{"object"})
+
 	NetworkEntityFlowCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
@@ -120,19 +120,14 @@ var (
 		Name:      "processes_listening_on_port_removed_total",
 		Help:      "Total number of processes listening on ports",
 	})
-	NumUpdatedConnectionsEndpoints = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "num_updated",
-		Help:      "A gauge that tracks the number of connections and endpoints being updated (i.e., sent to Central) in a given tick",
-	}, []string{"object"})
-	activeFlowsTotal = prometheus.NewGauge(prometheus.GaugeOpts{
+
+	activeFlowsCurrent = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "active_network_flows_current",
-		Help:      "A gauge that tracks the current  active network flows in sensor",
+		Help:      "A gauge that tracks the current active network flows in sensor",
 	})
-	activeEndpointsTotal = prometheus.NewGauge(prometheus.GaugeOpts{
+	activeEndpointsCurrent = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "active_endpoints_current",
@@ -167,10 +162,10 @@ func IncFlowEnrichmentConnection(condIDfound bool, action, isHistorical string, 
 
 // SetActiveFlowsTotalGauge set the active network flows total gauge.
 func SetActiveFlowsTotalGauge(number int) {
-	activeFlowsTotal.Set(float64(number))
+	activeFlowsCurrent.Set(float64(number))
 }
 
 // SetActiveEndpointsTotalGauge set the active endpoints total gauge.
 func SetActiveEndpointsTotalGauge(number int) {
-	activeEndpointsTotal.Set(float64(number))
+	activeEndpointsCurrent.Set(float64(number))
 }
