@@ -93,7 +93,8 @@ func (bts *ReportGeneratorBenchmarkTestSuite) setupTestSuite() {
 	bts.mockCtrl = gomock.NewController(bts.b)
 	bts.testDB = resolvers.SetupTestPostgresConn(bts.b)
 
-	imageDataStore := resolvers.CreateTestImageDatastore(bts.b, bts.testDB, bts.mockCtrl)
+	imageDataStore := resolvers.CreateTestImageV2Datastore(bts.b, bts.testDB, bts.mockCtrl)
+	imageCVE2Datastore := resolvers.CreateTestImageCVEV2Datastore(bts.b, bts.testDB)
 	imageCVEDatastore := resolvers.CreateTestImageCVEDatastore(bts.b, bts.testDB)
 	bts.resolver, bts.schema = resolvers.SetupTestResolver(bts.b,
 		imageDataStore,
@@ -116,7 +117,7 @@ func (bts *ReportGeneratorBenchmarkTestSuite) setupTestSuite() {
 
 	bts.reportGenerator = newReportGeneratorImpl(bts.testDB, nil, bts.resolver.DeploymentDataStore,
 		bts.watchedImageDatastore, bts.collectionQueryResolver, nil, nil, bts.clusterDatastore,
-		bts.namespaceDatastore, imageCVEDatastore, bts.schema)
+		bts.namespaceDatastore, imageCVEDatastore, imageCVE2Datastore, bts.schema)
 }
 
 func (bts *ReportGeneratorBenchmarkTestSuite) upsertManyImages(images []*storage.Image) {
