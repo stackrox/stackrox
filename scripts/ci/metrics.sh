@@ -35,6 +35,7 @@ _create_job_record() {
 
     local id
     id="$(_get_metrics_job_id)"
+    set_ci_shared_export "METRICS_JOB_ID" "$id"
 
     local repo
     repo="$(get_repo_full_name)"
@@ -62,7 +63,15 @@ _get_metrics_job_id() {
         fi
         id="${BUILD_ID}"
     elif is_GITHUB_ACTIONS; then
-        id="${GITHUB_RUN_ID}.${GITHUB_RUN_ATTEMPT}.${GITHUB_JOB}"
+        # There's such thing as a unique GitHub Actions Job ID but it's not available to us.
+        # See https://github.com/orgs/community/discussions/8945
+        # We have to uniquely identify a job run differently. Here we use the following:
+        # * GITHUB_RUN_ID - workflow id, e.g. 14113014151.
+        # * GITHUB_RUN_ATTEMPT - workflow re-run attempt, e.g. 1, 2, 3, ... Because GITHUB_RUN_ID stays the same.
+        # * GITHUB_JOB - name of the job, e.g. "build-and-push-main".
+        # * A random number because the above is not enough to differentiate matrix jobs.
+        # The resulting value has to be stored for subsequent metrics updates.
+        id="${GITHUB_RUN_ID}.${GITHUB_RUN_ATTEMPT}.${GITHUB_JOB}.${RANDOM}"
     else
         die "Support is required for a job id for this CI environment"
     fi
@@ -104,10 +113,12 @@ _update_job_record() {
         return
     fi
 
-    local id
-    id="$(_get_metrics_job_id)"
+    if [[ -z "${METRICS_JOB_ID:-}" ]]; then
+        info "WARNING: Skipping job record update as no initial record was created"
+        return
+    fi
 
-    bq_update_job_record "$id" "$@"
+    bq_update_job_record "${METRICS_JOB_ID}" "$@"
 }
 
 bq_update_job_record() {

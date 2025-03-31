@@ -33,7 +33,7 @@ ci_export() {
     fi
 }
 
-# set_ci_shared_export() - for openshift-ci this is state shared between steps.
+# set_ci_shared_export() - for openshift-ci and GHA this is state shared between steps.
 set_ci_shared_export() {
     if [[ "$#" -ne 2 ]]; then
         die "missing args. usage: set_ci_shared_export <env-name> <env-value>"
@@ -45,6 +45,7 @@ set_ci_shared_export() {
     local env_value="$2"
 
     echo "export ${env_name}=${env_value}" | tee -a "${SHARED_DIR:-/tmp}/shared_env"
+    echo "${env_name}=${env_value}" >> "${GITHUB_ENV:-/dev/null}"
 }
 
 ci_exit_trap() {
