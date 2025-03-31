@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -154,8 +155,6 @@ func (resolver *Resolver) ImageVulnerability(ctx context.Context, args IDQuery) 
 func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilities")
 
-	log.Infof("SHREWS -- ImageVulnerabilities -- %v", q.String())
-	log.Infof("SHREWS -- ImageVulnerabilities -- paging -- %v", q.Pagination.AsV1Pagination().String())
 	// check permissions
 	if err := readImages(ctx); err != nil {
 		return nil, err
@@ -168,18 +167,11 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 	}
 
 	if features.FlattenCVEData.Enabled() {
-		// TODO(ROX-28320): figure out paging
-		//coreQuery := PaginatedQuery{
-		//	Query:      q.Query,
-		//	ScopeQuery: q.ScopeQuery,
-		//	Pagination: q.Pagination,
-		//}
-		log.Infof("SHREWS -- about to get core stuff")
+		// Get the flattened data
 		cvecoreresolver, err := resolver.ImageCVEFlatView.Get(ctx, query, views.ReadOptions{})
 		if err != nil {
 			return nil, err
 		}
-		log.Infof("SHREWS -- got core stuff")
 
 		cveIDs := make([]string, 0, len(cvecoreresolver))
 		for _, cvecore := range cvecoreresolver {
@@ -192,21 +184,24 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 			return nil, err
 		}
 
-		// get values
 		// TODO(ROX-27780): figure out what to do with this
 		//  query = tryUnsuppressedQuery(query)
 
+		// Get the CVEs themselves.  This will be denormalized.  So use the IDs to get them, but use
+		// the data returned from CVE Flat View to keep order and set just 1 instance of a CVE
 		vulnQuery := search.NewQueryBuilder().AddExactMatches(search.CVEID, cveIDs...).ProtoQuery()
 		vulns, err := loader.FromQuery(ctx, vulnQuery)
+
+		// Stash a single instance of a CVE to aid in normalizing
 		foundVulns := make(map[string]*storage.ImageCVEV2)
-		normalizedVulns := make([]*storage.ImageCVEV2, 0, len(vulns))
 		for _, vuln := range vulns {
 			if _, ok := foundVulns[vuln.GetCveBaseInfo().GetCve()]; !ok {
 				foundVulns[vuln.GetCveBaseInfo().GetCve()] = vuln
 			}
 		}
 
-		// Start with this because it is sorted.
+		// Normalize the CVEs based on the flat view to keep them in the correct paging and sort order
+		normalizedVulns := make([]*storage.ImageCVEV2, 0, len(cvecoreresolver))
 		for _, cvecore := range cvecoreresolver {
 			normalizedVulns = append(normalizedVulns, foundVulns[cvecore.GetCVE()])
 		}
@@ -430,8 +425,13 @@ func imageCveToVulnerabilityWithSeverity(in []*storage.ImageCVE) []Vulnerability
 
 func imageCveV2ToVulnerabilityWithSeverity(in []*storage.ImageCVEV2) []VulnerabilityWithSeverity {
 	ret := make([]VulnerabilityWithSeverity, len(in))
+	// Data is now denormalized, need to normalize it to make the counts make sense.
+	seenVulns := set.NewStringSet()
 	for i, vuln := range in {
-		ret[i] = vuln
+		if !seenVulns.Contains(vuln.GetCveBaseInfo().GetCve()) {
+			ret[i] = vuln
+			seenVulns.Add(vuln.GetCveBaseInfo().GetCve())
+		}
 	}
 	return ret
 }
@@ -892,14 +892,13 @@ func (resolver *imageCVEResolver) Advisory(ctx context.Context) (string, error) 
 // or are convenience functions to allow time for UI to migrate to new naming schemes
 func (resolver *imageCVEV2Resolver) ID(_ context.Context) graphql.ID {
 	// TODO(ROX-28320):  Figure out if this is really what I want to do.
-	if features.FlattenCVEData.Enabled() {
-		return graphql.ID(resolver.data.GetCveBaseInfo().GetCve())
-	}
-	return graphql.ID(resolver.data.GetId())
+	return graphql.ID(resolver.data.GetCveBaseInfo().GetCve())
 }
 
 func (resolver *imageCVEV2Resolver) CreatedAt(_ context.Context) (*graphql.Time, error) {
-	// TODO(ROX-28320): figure out if I need to get the min created time for the CVE.
+	if resolver.flatData != nil {
+		return convertTimeToGraphQLTime(resolver.flatData.GetCreatedAt()), nil
+	}
 	return protocompat.ConvertTimestampToGraphqlTimeOrError(resolver.data.GetCveBaseInfo().GetCreatedAt())
 }
 
@@ -908,7 +907,6 @@ func (resolver *imageCVEV2Resolver) CVE(_ context.Context) string {
 }
 
 func (resolver *imageCVEV2Resolver) LastModified(_ context.Context) (*graphql.Time, error) {
-	// TODO(ROX-28320): figure out if I need to get the min created time for the CVE.
 	return protocompat.ConvertTimestampToGraphqlTimeOrError(resolver.data.GetCveBaseInfo().GetLastModified())
 }
 
@@ -918,13 +916,7 @@ func (resolver *imageCVEV2Resolver) Link(_ context.Context) string {
 
 func (resolver *imageCVEV2Resolver) PublishedOn(_ context.Context) (*graphql.Time, error) {
 	if resolver.flatData != nil {
-		ts := resolver.flatData.GetPublishDate()
-		if ts == nil {
-			return nil, nil
-		}
-		return &graphql.Time{
-			Time: *ts,
-		}, nil
+		return convertTimeToGraphQLTime(resolver.flatData.GetPublishDate()), nil
 	}
 	return protocompat.ConvertTimestampToGraphqlTimeOrError(resolver.data.GetCveBaseInfo().GetPublishedOn())
 }
@@ -1106,15 +1098,8 @@ func (resolver *imageCVEV2Resolver) Deployments(ctx context.Context, args Pagina
 
 func (resolver *imageCVEV2Resolver) DiscoveredAtImage(_ context.Context, _ RawQuery) (*graphql.Time, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "DiscoveredAtImage")
-	// TODO(ROX-28320) make a helper for this
 	if resolver.flatData != nil {
-		ts := resolver.flatData.GetFirstImageOccurrence()
-		if ts == nil {
-			return nil, nil
-		}
-		return &graphql.Time{
-			Time: *ts,
-		}, nil
+		return convertTimeToGraphQLTime(resolver.flatData.GetFirstImageOccurrence()), nil
 	}
 	return protocompat.ConvertTimestampToGraphqlTimeOrError(resolver.data.GetFirstImageOccurrence())
 }
@@ -1229,4 +1214,13 @@ func (resolver *imageCVEV2Resolver) imageVulnerabilityScopeContext(ctx context.C
 		ID:    resolver.data.GetId(),
 		Level: v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
 	})
+}
+
+func convertTimeToGraphQLTime(t *time.Time) *graphql.Time {
+	if t == nil {
+		return nil
+	}
+	return &graphql.Time{
+		Time: *t,
+	}
 }

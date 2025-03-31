@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/central/views"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // CveFlat is an interface to get image CVE properties.
@@ -14,14 +15,15 @@ import (
 type CveFlat interface {
 	GetCVE() string
 	GetCVEIDs() []string
-	GetSeverity() int
+	GetSeverity() *storage.VulnerabilitySeverity
 	GetTopCVSS() float32
 	GetTopNVDCVSS() float32
 	GetAffectedImageCount() int
 	GetFirstDiscoveredInSystem() *time.Time
 	GetPublishDate() *time.Time
 	GetFirstImageOccurrence() *time.Time
-	GetState() int
+	GetCreatedAt() *time.Time
+	GetState() *storage.VulnerabilityState
 }
 
 // CveFlatView interface is like a SQL view that provides functionality to fetch the image CVE data
