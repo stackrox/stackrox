@@ -82,7 +82,7 @@
         "react-transition-group": "^4.4.1",
         "react-truncate": "^2.4.0",
         "react-vis": "^1.12.1",
-        "redoc": "^2.0.0",
+        "redoc": "^2.4.0",
         "redux": "^4.1.2",
         "redux-first-history": "^5.2.0",
         "redux-form": "^8.3.7",
