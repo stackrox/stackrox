@@ -43,7 +43,7 @@ runs:
       shell: bash
 
     - name: Set up gcloud CLI
-      uses: 'google-github-actions/setup-gcloud@v2'
+      uses: 'google-github-actions/setup-gcloud@6189d56e4096ee891640bb02ac264be376592d6a' # ratchet:google-github-actions/setup-gcloud@v2
 
     - name: Record job info
       uses: gacts/run-and-post-run@d803f6920adc9a47eeac4cb6c93dbc2e2890c684 # v1.4.0

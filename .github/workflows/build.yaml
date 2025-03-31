@@ -9,14 +9,14 @@ on:
   workflow_call:
   push:
     tags:
-    - '*-nightly-*'
+      - '*-nightly-*'
     branches:
-    - master
+      - master
   pull_request:
     types:
-    - opened
-    - reopened
-    - synchronize
+      - opened
+      - reopened
+      - synchronize
 
 defaults:
   run:
@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # ratchet:actions/checkout@v4
         with:
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
@@ -102,17 +102,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        branding: [ RHACS_BRANDING, STACKROX_BRANDING ]
+        branding: [RHACS_BRANDING, STACKROX_BRANDING]
     env:
       ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
       # For consistency with `image/rhel/konflux.Dockerfile`, see comment there.
       UI_PKG_INSTALL_EXTRA_ARGS: --ignore-scripts
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8@sha256:a2ad2e694263990180670c0859cf9ef962519bd41e9b52e9ffd32dd90e6f6e46 # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # ratchet:actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -141,13 +141,13 @@ jobs:
   pre-build-cli:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8@sha256:a2ad2e694263990180670c0859cf9ef962519bd41e9b52e9ffd32dd90e6f6e46 # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # ratchet:actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -182,10 +182,10 @@ jobs:
     needs: define-job-matrix
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8@sha256:a2ad2e694263990180670c0859cf9ef962519bd41e9b52e9ffd32dd90e6f6e46 # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # ratchet:actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -200,7 +200,7 @@ jobs:
       - uses: ./.github/actions/handle-tagged-build
 
       - name: PR labels
-        uses: joerick/pr-labels-action@v1.0.9
+        uses: joerick/pr-labels-action@0543b277721e852d821c6738d449f2f4dea03d5f # ratchet:joerick/pr-labels-action@v1.0.9
 
       - name: Setup build env for debugging support
         run: |
@@ -247,10 +247,10 @@ jobs:
   pre-build-docs:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8@sha256:a2ad2e694263990180670c0859cf9ef962519bd41e9b52e9ffd32dd90e6f6e46 # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # ratchet:actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -287,20 +287,20 @@ jobs:
       matrix:
         tag_suffix: ["", "-fast"]
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # ratchet:actions/checkout@v4
 
-    - name: Get COLLECTOR_VERSION
-      id: collector-version
-      run: |
-        echo "collector-version=$(make --quiet --no-print-directory collector-tag)" >> "${GITHUB_OUTPUT}"
+      - name: Get COLLECTOR_VERSION
+        id: collector-version
+        run: |
+          echo "collector-version=$(make --quiet --no-print-directory collector-tag)" >> "${GITHUB_OUTPUT}"
 
-    - name: Check image exists
-      uses: stackrox/actions/release/wait-for-image@v1
-      with:
-        token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
-        image: rhacs-eng/collector:${{ steps.collector-version.outputs.collector-version }}${{ matrix.tag_suffix }}
-        limit: 300
+      - name: Check image exists
+        uses: stackrox/actions/release/wait-for-image@760d656f8293faec4f390398ca7a8036b8313a39 # ratchet:stackrox/actions/release/wait-for-image@v1
+        with:
+          token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
+          image: rhacs-eng/collector:${{ steps.collector-version.outputs.collector-version }}${{ matrix.tag_suffix }}
+          limit: 300
 
   check-scanner-images-exist:
     # This job ensures that SCANNER_VERSION cannot be updated to a version for which
@@ -311,20 +311,20 @@ jobs:
         image: ["scanner", "scanner-slim", "scanner-db", "scanner-db-slim"]
         tag_suffix: ["", "-fast"]
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # ratchet:actions/checkout@v4
 
-    - name: Get SCANNER_VERSION
-      id: scanner-version
-      run: |
-        echo "scanner-version=$(make --quiet --no-print-directory scanner-tag)" >> "${GITHUB_OUTPUT}"
+      - name: Get SCANNER_VERSION
+        id: scanner-version
+        run: |
+          echo "scanner-version=$(make --quiet --no-print-directory scanner-tag)" >> "${GITHUB_OUTPUT}"
 
-    - name: Check image exists
-      uses: stackrox/actions/release/wait-for-image@v1
-      with:
-        token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
-        image: rhacs-eng/${{ matrix.image }}:${{ steps.scanner-version.outputs.scanner-version }}${{ matrix.tag_suffix }}
-        limit: 300
+      - name: Check image exists
+        uses: stackrox/actions/release/wait-for-image@760d656f8293faec4f390398ca7a8036b8313a39 # ratchet:stackrox/actions/release/wait-for-image@v1
+        with:
+          token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
+          image: rhacs-eng/${{ matrix.image }}:${{ steps.scanner-version.outputs.scanner-version }}${{ matrix.tag_suffix }}
+          limit: 300
 
   build-and-push-main:
     runs-on: ubuntu-latest
@@ -353,7 +353,7 @@ jobs:
       GO_BINARIES_BUILD_ARTIFACT: ""
       ROX_PRODUCT_BRANDING: ""
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8@sha256:a2ad2e694263990180670c0859cf9ef962519bd41e9b52e9ffd32dd90e6f6e46 # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
       env:
         QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
@@ -398,7 +398,7 @@ jobs:
           fi
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # ratchet:actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -408,21 +408,21 @@ jobs:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
-        uses: docker/login-action@v3
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # ratchet:docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_CI_ACCOUNT_USERNAME }}
           password: ${{ secrets.DOCKERHUB_CI_ACCOUNT_PASSWORD }}
 
       - name: Set up QEMU
         if: matrix.arch != 'amd64'
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # ratchet:docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # ratchet:docker/setup-buildx-action@v3
 
       - name: Checkout submodules
         run: |
-            git submodule update --init
+          git submodule update --init
 
       - uses: ./.github/actions/handle-tagged-build
 
@@ -494,29 +494,29 @@ jobs:
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
-            source ./scripts/ci/lib.sh
-            echo "Will determine context from: ${{ github.event_name }} & ${{ github.ref_name }}"
-            push_context=""
-            if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
-              push_context="merge-to-master"
-            fi
-            push_main_image_set "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"
+          source ./scripts/ci/lib.sh
+          echo "Will determine context from: ${{ github.event_name }} & ${{ github.ref_name }}"
+          push_context=""
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
+            push_context="merge-to-master"
+          fi
+          push_main_image_set "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"
 
       - name: Push matching collector and scanner images
         # Skip for external contributions.
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
-            # Need to free up some space before push_matching_collector_scanner_images() does its pull.
-            docker system prune --all --force
-            source ./scripts/ci/lib.sh
-            push_matching_collector_scanner_images "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"
+          # Need to free up some space before push_matching_collector_scanner_images() does its pull.
+          docker system prune --all --force
+          source ./scripts/ci/lib.sh
+          push_matching_collector_scanner_images "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"
 
   push-main-manifests:
     runs-on: ubuntu-latest
     needs:
-    - define-job-matrix
-    - build-and-push-main
+      - define-job-matrix
+      - build-and-push-main
     # This step will run even if some of the build-and-push-matrix steps failed.
     # By following this approach as much of the build matrix as possible is
     # completed despite transient issues e.g. docker pull timeouts. In this way
@@ -534,7 +534,7 @@ jobs:
     env:
       ROX_PRODUCT_BRANDING: ""
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8@sha256:a2ad2e694263990180670c0859cf9ef962519bd41e9b52e9ffd32dd90e6f6e46 # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
       env:
         QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
@@ -543,90 +543,90 @@ jobs:
         QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
         QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
     steps:
-    - name: Setup build env
-      run: |
-        case "${{ matrix.name }}" in
-          STACKROX_BRANDING)
-            brand="STACKROX_BRANDING"
-            ;;
-          RHACS_BRANDING)
-            brand="RHACS_BRANDING"
-            ;;
-          race-condition-debug)
-            brand="RHACS_BRANDING"
-            ;;
-          prerelease)
-            brand="RHACS_BRANDING"
-            ;;
-          *)
-            echo "Unsupported build: ${{ matrix.name }}"
-            exit 1
-        esac
+      - name: Setup build env
+        run: |
+          case "${{ matrix.name }}" in
+            STACKROX_BRANDING)
+              brand="STACKROX_BRANDING"
+              ;;
+            RHACS_BRANDING)
+              brand="RHACS_BRANDING"
+              ;;
+            race-condition-debug)
+              brand="RHACS_BRANDING"
+              ;;
+            prerelease)
+              brand="RHACS_BRANDING"
+              ;;
+            *)
+              echo "Unsupported build: ${{ matrix.name }}"
+              exit 1
+          esac
 
-        {
-          echo "ROX_PRODUCT_BRANDING=${brand}"
-        } >> "$GITHUB_ENV"
+          {
+            echo "ROX_PRODUCT_BRANDING=${brand}"
+          } >> "$GITHUB_ENV"
 
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-        ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # ratchet:actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
-    - uses: ./.github/actions/job-preamble
-      with:
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - name: Checkout submodules
-      run: |
-        git submodule update --init
+      - name: Checkout submodules
+        run: |
+          git submodule update --init
 
-    - uses: ./.github/actions/handle-tagged-build
+      - uses: ./.github/actions/handle-tagged-build
 
-    - name: Set build tag for prerelease images
-      if: matrix.name == 'prerelease'
-      run: echo "BUILD_TAG=$(make --quiet --no-print-directory tag)-prerelease" >> "$GITHUB_ENV"
+      - name: Set build tag for prerelease images
+        if: matrix.name == 'prerelease'
+        run: echo "BUILD_TAG=$(make --quiet --no-print-directory tag)-prerelease" >> "$GITHUB_ENV"
 
-    - name: Set build tag for race condition images
-      if: matrix.name == 'race-condition-debug'
-      run: echo "BUILD_TAG=$(make --quiet --no-print-directory tag)-rcd" >> "$GITHUB_ENV"
+      - name: Set build tag for race condition images
+        if: matrix.name == 'race-condition-debug'
+        run: echo "BUILD_TAG=$(make --quiet --no-print-directory tag)-rcd" >> "$GITHUB_ENV"
 
-    - name: Build and push manifest lists
-      # Skip for external contributions.
-      if: |
-        github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-      run: |
-        source ./scripts/ci/lib.sh
-        echo "Will determine context from: ${{ github.event_name }} & ${{ github.ref_name }}"
-        push_context=""
-        if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
-          push_context="merge-to-master"
-        fi
-        architectures="amd64,arm64"
-        if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
-          architectures="amd64,arm64,ppc64le,s390x"
-        fi
-        if [[ "${{ matrix.name }}" == "race-condition-debug" ]]; then
-          architectures="amd64"
-        fi
-        push_image_manifest_lists "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "$architectures"
+      - name: Build and push manifest lists
+        # Skip for external contributions.
+        if: |
+          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        run: |
+          source ./scripts/ci/lib.sh
+          echo "Will determine context from: ${{ github.event_name }} & ${{ github.ref_name }}"
+          push_context=""
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
+            push_context="merge-to-master"
+          fi
+          architectures="amd64,arm64"
+          if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
+            architectures="amd64,arm64,ppc64le,s390x"
+          fi
+          if [[ "${{ matrix.name }}" == "race-condition-debug" ]]; then
+            architectures="amd64"
+          fi
+          push_image_manifest_lists "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "$architectures"
 
-    - name: Comment on the PR
-      # Skip for external contributions.
-      if: |
-        github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-      env:
-        GITHUB_TOKEN: "${{ secrets.RHACS_BOT_GITHUB_TOKEN }}"
-      run: |
-        source ./scripts/ci/lib.sh
-        add_build_comment_to_pr
+      - name: Comment on the PR
+        # Skip for external contributions.
+        if: |
+          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        env:
+          GITHUB_TOKEN: "${{ secrets.RHACS_BOT_GITHUB_TOKEN }}"
+        run: |
+          source ./scripts/ci/lib.sh
+          add_build_comment_to_pr
 
   build-and-push-operator:
     runs-on: ubuntu-latest
     needs:
       - define-job-matrix
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8@sha256:a2ad2e694263990180670c0859cf9ef962519bd41e9b52e9ffd32dd90e6f6e46 # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
       env:
         QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
         QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
@@ -640,7 +640,7 @@ jobs:
       ROX_PRODUCT_BRANDING: ${{ matrix.name }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # ratchet:actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -658,7 +658,7 @@ jobs:
         run: go mod tidy
 
       - name: PR labels
-        uses: joerick/pr-labels-action@v1.0.9
+        uses: joerick/pr-labels-action@0543b277721e852d821c6738d449f2f4dea03d5f # ratchet:joerick/pr-labels-action@v1.0.9
 
       - name: Setup Go build environment
         if: contains(github.event.pull_request.labels.*.name, 'ci-release-build')
@@ -711,58 +711,57 @@ jobs:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8@sha256:a2ad2e694263990180670c0859cf9ef962519bd41e9b52e9ffd32dd90e6f6e46 # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
     needs:
-    - pre-build-cli
-    - pre-build-go-binaries
+      - pre-build-cli
+      - pre-build-go-binaries
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 1
-        ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # ratchet:actions/checkout@v4
+        with:
+          fetch-depth: 1
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
-    - uses: ./.github/actions/job-preamble
-      with:
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - uses: ./.github/actions/download-artifact-with-retry
-      with:
-        name: cli-build
+      - uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: cli-build
 
-    - name: Unpack cli build
-      run: |
-        tar xvzf cli-build.tgz
+      - name: Unpack cli build
+        run: |
+          tar xvzf cli-build.tgz
 
-    - uses: ./.github/actions/download-artifact-with-retry
-      with:
-        name: go-binaries-build-amd64-default
+      - uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: go-binaries-build-amd64-default
 
-    - name: Unpack Go binaries build
-      run: |
-        tar xvzf go-binaries-build.tgz
+      - name: Unpack Go binaries build
+        run: |
+          tar xvzf go-binaries-build.tgz
 
-    - name: Scan
-      run: |
-        ./scripts/ci/govulncheck.sh
+      - name: Scan
+        run: |
+          ./scripts/ci/govulncheck.sh
 
-    - name: Publish Test Report
-      uses: test-summary/action@v2
-      if: always()
-      with:
-        paths: 'junit-reports/**/*.xml'
+      - name: Publish Test Report
+        uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
+        if: always()
+        with:
+          paths: 'junit-reports/**/*.xml'
 
-    - name: Report junit failures in jira
-      uses: ./.github/actions/junit2jira
-      if: always()
-      with:
-        jira-token: ${{ secrets.JIRA_TOKEN }}
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-        directory: 'junit-reports'
+      - name: Report junit failures in jira
+        uses: ./.github/actions/junit2jira
+        if: always()
+        with:
+          jira-token: ${{ secrets.JIRA_TOKEN }}
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+          directory: 'junit-reports'
 
   scan-images-with-roxctl:
-    if: github.event_name == 'push' ||
-      contains(github.event.pull_request.labels.*.name, 'scan-images-with-roxctl')
+    if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'scan-images-with-roxctl')
     needs:
       - define-job-matrix
       - build-and-push-main
@@ -779,34 +778,35 @@ jobs:
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).scan_images_with_roxctl }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # ratchet:actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
-
       - uses: ./.github/actions/job-preamble
+
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
       - uses: ./.github/actions/handle-tagged-build
 
       - name: Central login
-        uses: stackrox/central-login@v1
+
+        uses: stackrox/central-login@2721ff9949fa82bde0fbc5d85591a15af27d7064 # ratchet:stackrox/central-login@v1
         with:
           endpoint: ${{ vars.ACS_DOGFOODING_CENTRAL_URL }}
-
       - name: Install roxctl
-        uses: stackrox/roxctl-installer-action@v1
+
+        uses: stackrox/roxctl-installer-action@47fb4f5b275066b8322369e6e33fa010915b0d13 # ratchet:stackrox/roxctl-installer-action@v1
         with:
           central-endpoint: ${{ vars.ACS_DOGFOODING_CENTRAL_URL }}
           central-token: ${{ env.ROX_API_TOKEN }}
-
       - name: Scan images for vulnerabilities
+
         run: |
           release_tag="$(make --quiet --no-print-directory tag)"
           if [[ "${{ matrix.image }}" =~ "operator" ]]; then
             release_tag="$(make -C operator --quiet --no-print-directory tag)"
           fi
+
 
           registry="$(./scripts/ci/lib.sh registry_from_branding "${{ matrix.name }}")"
 
@@ -814,12 +814,12 @@ jobs:
             --image="${registry}/${{ matrix.image }}:${release_tag}" \
             | tee results.sarif
 
-      # TODO: re-enable roxctl scan results upload once quota issue has been resolved
-      # - name: Upload roxctl scan results to GitHub Security tab
-      #   uses: github/codeql-action/upload-sarif@v3
-      #   with:
-      #     category: ${{ matrix.image }}
-      #     sarif_file: results.sarif
+        # TODO: re-enable roxctl scan results upload once quota issue has been resolved
+        # - name: Upload roxctl scan results to GitHub Security tab
+        #   uses: github/codeql-action/upload-sarif@v3
+        #   with:
+        #     category: ${{ matrix.image }}
+        #     sarif_file: results.sarif
 
   slack-on-build-failure:
     env:
@@ -846,7 +846,7 @@ jobs:
       actions: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # ratchet:actions/checkout@v4
 
       - name: Slack message
         env:

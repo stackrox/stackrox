@@ -3,9 +3,9 @@ name: Scanner NVD update
 on:
   pull_request:
     types:
-    - opened
-    - reopened
-    - synchronize
+      - opened
+      - reopened
+      - synchronize
   schedule:
     - cron: '0 */6 * * *'
   workflow_dispatch:
@@ -20,37 +20,37 @@ jobs:
        contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-nvd'))
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # ratchet:actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.10'
+      - name: Set up Python
+        uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # ratchet:actions/setup-python@v5
+        with:
+          python-version: '3.10'
 
-    - name: Fetch NVD Feeds
-      env:
-        SCANNER_NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
-        SCANNER_NVD_URL: https://services.nvd.nist.gov/rest/json/cves/2.0
-      run: |
-        set -eu
-        dir=$(mktemp -d)
-        python3 .github/workflows/scripts/scanner-update-nvd-feeds.py "$dir"
-        for f in "$dir"/*.nvd.json; do
-          if jq . "$f" >/dev/null 2>&1; then
-            echo "Validating and adding '$f' to nvd-feeds.zip"
-            zip -j nvd-feeds.zip "$f"
-          else
-            echo "Error: Invalid JSON file '$f'"
-            exit 1
-          fi
-        done
+      - name: Fetch NVD Feeds
+        env:
+          SCANNER_NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+          SCANNER_NVD_URL: https://services.nvd.nist.gov/rest/json/cves/2.0
+        run: |
+          set -eu
+          dir=$(mktemp -d)
+          python3 .github/workflows/scripts/scanner-update-nvd-feeds.py "$dir"
+          for f in "$dir"/*.nvd.json; do
+            if jq . "$f" >/dev/null 2>&1; then
+              echo "Validating and adding '$f' to nvd-feeds.zip"
+              zip -j nvd-feeds.zip "$f"
+            else
+              echo "Error: Invalid JSON file '$f'"
+              exit 1
+            fi
+          done
 
-    - uses: ./.github/actions/upload-artifact-with-retry
-      with:
-        name: nvd-feeds
-        path: nvd-feeds.zip
-        if-no-files-found: error
+      - uses: ./.github/actions/upload-artifact-with-retry
+        with:
+          name: nvd-feeds
+          path: nvd-feeds.zip
+          if-no-files-found: error
 
   fetch-nvd-api:
     runs-on: ubuntu-latest
@@ -61,103 +61,102 @@ jobs:
        contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-nvd'))
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # ratchet:actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.10'
+      - name: Set up Python
+        uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # ratchet:actions/setup-python@v5
+        with:
+          python-version: '3.10'
 
-    - name: Fetch NVD API
-      env:
-        SCANNER_NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
-        SCANNER_NVD_URL: https://services.nvd.nist.gov/rest/json/cves/2.0
-      run: |
-        set -eu
-        dir=$(mktemp -d)
-        python3 .github/workflows/scripts/scanner-update-nvd-api.py "$dir"
-        for f in "$dir"/*.nvd.json; do
-          if jq . "$f" >/dev/null 2>&1; then
-            echo "Validating and adding '$f' to nvd-api.zip"
-            zip -j nvd-api.zip "$f"
-          else
-            echo "Error: Invalid JSON file '$f'"
-            exit 1
-          fi
-        done
+      - name: Fetch NVD API
+        env:
+          SCANNER_NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+          SCANNER_NVD_URL: https://services.nvd.nist.gov/rest/json/cves/2.0
+        run: |
+          set -eu
+          dir=$(mktemp -d)
+          python3 .github/workflows/scripts/scanner-update-nvd-api.py "$dir"
+          for f in "$dir"/*.nvd.json; do
+            if jq . "$f" >/dev/null 2>&1; then
+              echo "Validating and adding '$f' to nvd-api.zip"
+              zip -j nvd-api.zip "$f"
+            else
+              echo "Error: Invalid JSON file '$f'"
+              exit 1
+            fi
+          done
 
-    - uses: ./.github/actions/upload-artifact-with-retry
-      with:
-        name: nvd-api
-        path: nvd-api.zip
-        if-no-files-found: error
+      - uses: ./.github/actions/upload-artifact-with-retry
+        with:
+          name: nvd-api
+          path: nvd-api.zip
+          if-no-files-found: error
 
   upload-nvd-feeds:
     needs:
-    - fetch-nvd-feeds
+      - fetch-nvd-feeds
     runs-on: ubuntu-latest
     if: github.event_name != 'pull_request'
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-        ref: ${{ github.ref }}
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # ratchet:actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref }}
 
-    - uses: ./.github/actions/download-artifact-with-retry
-      with:
-        name: nvd-feeds
-        path: .
+      - uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: nvd-feeds
+          path: .
 
-    - name: Authenticate with Google Cloud
-      uses: google-github-actions/auth@v2
-      with:
-        credentials_json: ${{ secrets.GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER }}
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@6fc4af4b145ae7821d527454aa9bd537d1f2dc5f # ratchet:google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER }}
 
-    - name: Set up Cloud SDK
-      uses: google-github-actions/setup-gcloud@v2
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@6189d56e4096ee891640bb02ac264be376592d6a # ratchet:google-github-actions/setup-gcloud@v2
 
-    - name: Upload NVD Feeds to Google Cloud Storage
-      run: |
-        gsutil cp nvd-feeds.zip "gs://definitions.stackrox.io/v4/nvd/nvd-feeds.zip"
+      - name: Upload NVD Feeds to Google Cloud Storage
+        run: |
+          gsutil cp nvd-feeds.zip "gs://definitions.stackrox.io/v4/nvd/nvd-feeds.zip"
 
   upload-nvd-api:
     needs:
-    - fetch-nvd-api
+      - fetch-nvd-api
     runs-on: ubuntu-latest
     if: github.event_name != 'pull_request'
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-        ref: ${{ github.ref }}
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # ratchet:actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref }}
 
-    - uses: ./.github/actions/download-artifact-with-retry
-      with:
-        name: nvd-api
-        path: .
+      - uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: nvd-api
+          path: .
 
-    - name: Authenticate with Google Cloud
-      uses: google-github-actions/auth@v2
-      with:
-        credentials_json: ${{ secrets.GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER }}
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@6fc4af4b145ae7821d527454aa9bd537d1f2dc5f # ratchet:google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER }}
 
-    - name: Set up Cloud SDK
-      uses: google-github-actions/setup-gcloud@v2
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@6189d56e4096ee891640bb02ac264be376592d6a # ratchet:google-github-actions/setup-gcloud@v2
 
-    - name: Upload NVD API to Google Cloud Storage
-      run:
-        gsutil cp nvd-api.zip "gs://definitions.stackrox.io/v4/nvd/nvd-api.zip"
-
+      - name: Upload NVD API to Google Cloud Storage
+        run: gsutil cp nvd-api.zip "gs://definitions.stackrox.io/v4/nvd/nvd-api.zip"
   send-notification:
+
     needs:
       - upload-nvd-feeds
       - upload-nvd-api
     runs-on: ubuntu-latest
     if: failure()
     steps:
-    - name: Send Slack notification on workflow failure
-      run: |
-        curl -X POST -H 'Content-type: application/json' --data '{"text":"<${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|Workflow ${{ github.workflow }}> failed in repository ${{ github.repository }}: Failed to update NVD CVEs"}' ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
+      - name: Send Slack notification on workflow failure
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{"text":"<${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|Workflow ${{ github.workflow }}> failed in repository ${{ github.repository }}: Failed to update NVD CVEs"}' ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}

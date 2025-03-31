@@ -20,7 +20,7 @@ runs:
   using: composite
   steps:
     - id: upload-artifact-try1
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # ratchet:actions/upload-artifact@v4
       with:
         name: ${{ inputs.name }}
         path: ${{ inputs.path }}
@@ -28,14 +28,14 @@ runs:
       continue-on-error: true
     - id: upload-artifact-try2
       if: steps.upload-artifact-try1.outcome == 'failure'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # ratchet:actions/upload-artifact@v4
       with:
         name: ${{ inputs.name }}
         path: ${{ inputs.path }}
         if-no-files-found: ${{ inputs.if-no-files-found }}
       continue-on-error: true
     - if: steps.upload-artifact-try2.outcome == 'failure'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # ratchet:actions/upload-artifact@v4
       with:
         name: ${{ inputs.name }}
         path: ${{ inputs.path }}

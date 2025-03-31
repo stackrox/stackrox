@@ -2,15 +2,15 @@ name: Style
 on:
   push:
     tags:
-    - '*'
+      - '*'
     branches:
-    - master
-    - release-*
+      - master
+      - release-*
   pull_request:
     types:
-    - opened
-    - reopened
-    - synchronize
+      - opened
+      - reopened
+      - synchronize
 env:
   ROX_PRODUCT_BRANDING: RHACS_BRANDING
 
@@ -20,77 +20,77 @@ jobs:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8@sha256:a2ad2e694263990180670c0859cf9ef962519bd41e9b52e9ffd32dd90e6f6e46 # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-        ref: ${{ github.event.pull_request.head.sha }}
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # ratchet:actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
 
-    - uses: ./.github/actions/job-preamble
-      with:
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - name: Create artifacts dir
-      run: mkdir -p "$ARTIFACT_DIR"
+      - name: Create artifacts dir
+        run: mkdir -p "$ARTIFACT_DIR"
 
-    - name: Cache Go dependencies
-      uses: ./.github/actions/cache-go-dependencies
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
 
-    - name: Check Generated
-      run: scripts/ci/jobs/check-generated.sh
+      - name: Check Generated
+        run: scripts/ci/jobs/check-generated.sh
 
   misc-checks:
     env:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8@sha256:a2ad2e694263990180670c0859cf9ef962519bd41e9b52e9ffd32dd90e6f6e46 # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-        ref: ${{ github.event.pull_request.head.sha }}
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # ratchet:actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
 
-    - uses: ./.github/actions/job-preamble
-      with:
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - name: Create artifacts dir
-      run: mkdir -p "$ARTIFACT_DIR"
+      - name: Create artifacts dir
+        run: mkdir -p "$ARTIFACT_DIR"
 
-    - name: Ensure no trailing whitespaces
-      if: github.event_name == 'pull_request'
-      # Markdown files aren't checked for trailing whitespaces because it's a valid linebreak there.
-      run: git diff --check "${{ github.event.pull_request.base.sha }}"...HEAD ':(exclude)*.md'
+      - name: Ensure no trailing whitespaces
+        if: github.event_name == 'pull_request'
+        # Markdown files aren't checked for trailing whitespaces because it's a valid linebreak there.
+        run: git diff --check "${{ github.event.pull_request.base.sha }}"...HEAD ':(exclude)*.md'
 
-    - name: Check PR fixes
-      run: scripts/ci/jobs/check-pr-fixes.sh
+      - name: Check PR fixes
+        run: scripts/ci/jobs/check-pr-fixes.sh
 
-    - name: Check TODOs
-      run: scripts/ci/jobs/check-todos.sh
+      - name: Check TODOs
+        run: scripts/ci/jobs/check-todos.sh
 
-    - name: Check Policies
-      run: scripts/ci/jobs/policy-checks.sh
+      - name: Check Policies
+        run: scripts/ci/jobs/policy-checks.sh
 
-    - name: Check Konflux setup
-      run: scripts/ci/jobs/check-konflux-setup.sh
+      - name: Check Konflux setup
+        run: scripts/ci/jobs/check-konflux-setup.sh
 
-    - name: Check build & test image versions
-      run: scripts/ci/jobs/check-image-version.sh
+      - name: Check build & test image versions
+        run: scripts/ci/jobs/check-image-version.sh
 
   style-check:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8@sha256:a2ad2e694263990180670c0859cf9ef962519bd41e9b52e9ffd32dd90e6f6e46 # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
       volumes:
-      - /usr:/mnt/usr
-      - /opt:/mnt/opt
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # ratchet:actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
@@ -118,48 +118,48 @@ jobs:
     timeout-minutes: 240
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8@sha256:a2ad2e694263990180670c0859cf9ef962519bd41e9b52e9ffd32dd90e6f6e46 # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-        ref: ${{ github.event.pull_request.head.sha }}
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # ratchet:actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
 
-    - uses: ./.github/actions/job-preamble
-      with:
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - name: Cache Go dependencies
-      uses: ./.github/actions/cache-go-dependencies
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
 
-    - name: Check Cache golangci-lint
-      run: make golangci-lint-cache-status
+      - name: Check Cache golangci-lint
+        run: make golangci-lint-cache-status
 
-    - name: Cache golangci-lint
-      uses: actions/cache@v4
-      with:
-        path: /github/home/.cache/golangci-lint
-        key: go-lint-v2-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          go-lint-v2-${{ hashFiles('**/go.sum') }}
-          go-lint-v2-
+      - name: Cache golangci-lint
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # ratchet:actions/cache@v4
+        with:
+          path: /github/home/.cache/golangci-lint
+          key: go-lint-v2-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            go-lint-v2-${{ hashFiles('**/go.sum') }}
+            go-lint-v2-
 
-    - name: Check cache golangci-lint
-      run: make golangci-lint-cache-status
+      - name: Check cache golangci-lint
+        run: make golangci-lint-cache-status
 
-    - name: Check Go version is in sync in .golangci.yml and go.mod
-      run: |
-        [ "$(awk '/^go /{print $2}' go.mod | cut -d. -f 1-2)" = "$(yq e .run.go .golangci.yml)" ]
+      - name: Check Go version is in sync in .golangci.yml and go.mod
+        run: |
+          [ "$(awk '/^go /{print $2}' go.mod | cut -d. -f 1-2)" = "$(yq e .run.go .golangci.yml)" ]
 
-    - name: make golangci-lint
-      run: make golangci-lint
+      - name: make golangci-lint
+        run: make golangci-lint
 
-    - name: Check Cache golangci-lint
-      run: make golangci-lint-cache-status
+      - name: Check Cache golangci-lint
+        run: make golangci-lint-cache-status
 
   slack-on-style-failure:
     env:
@@ -181,12 +181,12 @@ jobs:
     permissions:
       actions: read
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # ratchet:actions/checkout@v4
 
-    - name: Slack message
-      env:
-        GITHUB_CONTEXT: ${{ toJSON(github) }}
-      run: |
-        source scripts/ci/lib.sh
-        slack_workflow_failure
+      - name: Slack message
+        env:
+          GITHUB_CONTEXT: ${{ toJSON(github) }}
+        run: |
+          source scripts/ci/lib.sh
+          slack_workflow_failure

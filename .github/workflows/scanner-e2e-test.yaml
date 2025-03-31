@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
   pull_request:
     types:
-    - opened
-    - reopened
-    - synchronize
+      - opened
+      - reopened
+      - synchronize
 
 jobs:
   scanner-ft-images:
@@ -22,7 +22,7 @@ jobs:
           - scanner-v4-db
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # ratchet:actions/checkout@v4
         with:
           fetch-depth: 0
           ref: "${{ github.event.pull_request.head.sha }}"
@@ -30,7 +30,7 @@ jobs:
         run: |
           echo "tag=$(make tag)" >> "$GITHUB_ENV"
       - name: Wait for image ${{ matrix.image }}
-        uses: stackrox/actions/release/wait-for-image@v1
+        uses: stackrox/actions/release/wait-for-image@760d656f8293faec4f390398ca7a8036b8313a39 # ratchet:stackrox/actions/release/wait-for-image@v1
         with:
           token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
           image: rhacs-eng/${{ matrix.image }}:${{ env.tag }}
@@ -48,7 +48,7 @@ jobs:
       SCANNER_E2E_REDHAT_PASSWORD: ${{ secrets.REDHAT_PASSWORD }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # ratchet:actions/checkout@v4
         with:
           fetch-depth: 0
           ref: "${{ github.event.pull_request.head.sha }}"
@@ -58,7 +58,7 @@ jobs:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Create cluster (minikube)
-        uses: medyagh/setup-minikube@latest
+        uses: medyagh/setup-minikube@cea33675329b799adccc9526aa5daccc26cd5052 # ratchet:medyagh/setup-minikube@latest
         with:
           driver: docker
           cpus: max

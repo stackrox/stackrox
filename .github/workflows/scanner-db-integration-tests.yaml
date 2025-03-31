@@ -3,41 +3,41 @@ name: Scanner DB integration tests
 on:
   push:
     tags:
-    - '*'
+      - '*'
     branches:
-    - master
-    - release-*
+      - master
+      - release-*
   pull_request:
     types:
-    - opened
-    - reopened
-    - synchronize
+      - opened
+      - reopened
+      - synchronize
 
 jobs:
   db-integration-tests:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.8
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.8@sha256:279c4fad8feea1eba0f588aa6d12655d16c70b67cb132a2c3cc687ef793608a9 # ratchet:quay.io/stackrox-io/apollo-ci:scanner-test-0.4.8
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # ratchet:actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - uses: ./.github/actions/job-preamble
-      with:
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - name: Run Postgres
-      run: |
-        su postgres -c 'initdb -D /tmp/data'
-        su postgres -c 'pg_ctl -D /tmp/data start'
+      - name: Run Postgres
+        run: |
+          su postgres -c 'initdb -D /tmp/data'
+          su postgres -c 'pg_ctl -D /tmp/data start'
 
-    - name: Cache Go dependencies
-      uses: ./.github/actions/cache-go-dependencies
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
 
-    - name: Is Postgres ready
-      run: pg_isready -h 127.0.0.1
+      - name: Is Postgres ready
+        run: pg_isready -h 127.0.0.1
 
-    - name: DB Integration tests
-      run: make -C scanner db-integration-test
+      - name: DB Integration tests
+        run: make -C scanner db-integration-test
