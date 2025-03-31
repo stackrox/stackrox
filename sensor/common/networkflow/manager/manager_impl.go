@@ -126,7 +126,7 @@ type containerEndpointIndicatorWithAge struct {
 func (i *containerEndpointIndicatorWithAge) String() string {
 	return fmt.Sprintf("%s, lastUpdate=%s",
 		i.containerEndpointIndicator.String(),
-		i.lastUpdate)
+		i.lastUpdate.GoTime().Format(time.RFC3339))
 }
 
 // containerEndpointIndicator is a key in Sensor's maps that track active endpoints. It's set of fields should be minimal.
