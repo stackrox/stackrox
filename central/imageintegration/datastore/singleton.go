@@ -163,7 +163,7 @@ func deleteScannerV4Integrations(ctx context.Context, iiStore store.Store, iis [
 	}
 
 	if err := iiStore.PruneMany(ctx, idsToDelete); err != nil {
-		utils.Should(errors.Wrapf(err, "failed to delete Scanner V4 integrations"))
+		utils.Should(errors.Wrap(err, "failed to delete Scanner V4 integrations"))
 	}
 
 	log.Infof("Deleted %d Scanner V4 integrations", len(idsToDelete))
