@@ -1,5 +1,5 @@
 import React, { useCallback, useContext, useState } from 'react';
-import { Route, Switch, useParams } from 'react-router-dom';
+import { Navigate, Route, Routes, useParams } from 'react-router-dom';
 import {
     Bullseye,
     Divider,
@@ -36,10 +36,7 @@ import {
     CHECK_STATUS_QUERY,
     CLUSTER_QUERY,
 } from './compliance.coverage.constants';
-import {
-    coverageProfileChecksPath,
-    coverageProfileClustersPath,
-} from './compliance.coverage.routes';
+import { coverageProfileChecksPath } from './compliance.coverage.routes';
 import { createScanConfigFilter } from './compliance.coverage.utils';
 import { ComplianceProfilesContext } from './ComplianceProfilesProvider';
 import CheckStatusDropdown from './components/CheckStatusDropdown';
@@ -62,7 +59,7 @@ function CoveragesPage() {
         false
     );
     const { navigateWithScanConfigQuery } = useScanConfigRouter();
-    const { profileName } = useParams();
+    const { profileName } = useParams() as { profileName: string };
     const { isLoading: isLoadingScanConfigProfiles, scanConfigProfilesResponse } =
         useContext(ComplianceProfilesContext);
     const { scanConfigurationsQuery, selectedScanConfigName, setSelectedScanConfigName } =
@@ -221,14 +218,11 @@ function CoveragesPage() {
                                 </ToolbarContent>
                             </Toolbar>
                             <Divider />
-                            <Switch>
-                                <Route exact path={coverageProfileChecksPath}>
-                                    <ProfileChecksPage />
-                                </Route>
-                                <Route exact path={coverageProfileClustersPath}>
-                                    <ProfileClustersPage />
-                                </Route>
-                            </Switch>
+                            <Routes>
+                                <Route path="checks" element={<ProfileChecksPage />} />
+                                <Route path="clusters" element={<ProfileClustersPage />} />
+                                <Route path="*" element={<Navigate to="checks" replace />} />
+                            </Routes>
                         </PageSection>
                     </>
                 )}

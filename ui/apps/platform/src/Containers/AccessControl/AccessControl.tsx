@@ -1,10 +1,7 @@
 import React, { ReactElement } from 'react';
-import { Redirect, Route, Switch } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 
-import { accessControlBasePath, accessControlPath } from 'routePaths';
-
-import { getEntityPath } from './accessControlPaths';
-
+import { entityPathSegment } from './accessControlPaths';
 import AccessControlRouteNotFound from './AccessControlRouteNotFound';
 import AccessScopes from './AccessScopes/AccessScopes';
 import AuthProviders from './AuthProviders/AuthProviders';
@@ -16,32 +13,23 @@ const paramId = ':entityId?';
 function AccessControl(): ReactElement {
     return (
         <>
-            <Switch>
+            <Routes>
+                <Route index element={<Navigate to={entityPathSegment.AUTH_PROVIDER} />} />
                 <Route
-                    exact
-                    path={accessControlBasePath}
-                    render={() => <Redirect to={getEntityPath('AUTH_PROVIDER')} />}
+                    path={`${entityPathSegment.AUTH_PROVIDER}/${paramId}`}
+                    element={<AuthProviders />}
                 />
-                <Route path={accessControlPath}>
-                    <Switch>
-                        <Route path={getEntityPath('AUTH_PROVIDER', paramId)}>
-                            <AuthProviders />
-                        </Route>
-                        <Route path={getEntityPath('ROLE', paramId)}>
-                            <Roles />
-                        </Route>
-                        <Route path={getEntityPath('PERMISSION_SET', paramId)}>
-                            <PermissionSets />
-                        </Route>
-                        <Route path={getEntityPath('ACCESS_SCOPE', paramId)}>
-                            <AccessScopes />
-                        </Route>
-                        <Route>
-                            <AccessControlRouteNotFound />
-                        </Route>
-                    </Switch>
-                </Route>
-            </Switch>
+                <Route path={`${entityPathSegment.ROLE}/${paramId}`} element={<Roles />} />
+                <Route
+                    path={`${entityPathSegment.PERMISSION_SET}/${paramId}`}
+                    element={<PermissionSets />}
+                />
+                <Route
+                    path={`${entityPathSegment.ACCESS_SCOPE}/${paramId}`}
+                    element={<AccessScopes />}
+                />
+                <Route path="*" element={<AccessControlRouteNotFound />} />
+            </Routes>
         </>
     );
 }

@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { useLocation, useRouteMatch } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import pluralize from 'pluralize';
 
 import PolicyStatusIconText from 'Components/PatternFly/IconText/PolicyStatusIconText';
@@ -14,6 +14,7 @@ import entityTypes from 'constants/entityTypes';
 import { deploymentSortFields } from 'constants/sortFields';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
+import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import { DEPLOYMENTS_QUERY } from 'queries/deployment';
 import queryService from 'utils/queryService';
 import URLService from 'utils/URLService';
@@ -192,7 +193,7 @@ const Deployments = ({
     entityContext,
 }) => {
     const location = useLocation();
-    const match = useRouteMatch();
+    const match = useWorkflowMatch();
     const searchParam = useContext(searchContext);
 
     const autoFocusSearchInput = !selectedRowId;

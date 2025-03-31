@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { matchPath, useLocation } from 'react-router-dom';
+import { Location, matchPath, useLocation } from 'react-router-dom';
 import {
     Nav,
     NavExpandable,
@@ -69,20 +69,23 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
                   content: 'Results',
                   path: vulnerabilitiesUserWorkloadsPath,
                   routeKey: 'vulnerabilities/user-workloads',
-                  isActive: (location) =>
-                      Boolean(
-                          matchPath(location.pathname, [
-                              vulnerabilitiesWorkloadCvesPath,
-                              vulnerabilitiesNodeCvesPath,
-                              vulnerabilitiesUserWorkloadsPath,
-                              vulnerabilitiesPlatformPath,
-                              vulnerabilitiesAllImagesPath,
-                              vulnerabilitiesInactiveImagesPath,
-                              vulnerabilitiesImagesWithoutCvesPath,
-                              vulnerabilitiesViewPath,
-                              vulnerabilitiesPlatformCvesPath,
-                          ])
-                      ),
+                  isActive: (location: Location) => {
+                      const pathsToMatch = [
+                          vulnerabilitiesWorkloadCvesPath,
+                          vulnerabilitiesNodeCvesPath,
+                          vulnerabilitiesUserWorkloadsPath,
+                          vulnerabilitiesPlatformPath,
+                          vulnerabilitiesAllImagesPath,
+                          vulnerabilitiesInactiveImagesPath,
+                          vulnerabilitiesImagesWithoutCvesPath,
+                          vulnerabilitiesViewPath,
+                          vulnerabilitiesPlatformCvesPath,
+                      ];
+
+                      return pathsToMatch.some((path) =>
+                          matchPath({ path: `${path}/*` }, location.pathname)
+                      );
+                  },
               },
               {
                   type: 'link',
@@ -106,7 +109,7 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
                   path: vulnManagementPath,
                   routeKey: 'vulnerability-management',
                   isActive: (location) =>
-                      Boolean(matchPath(location.pathname, { vulnManagementPath, exact: true })),
+                      Boolean(matchPath({ path: vulnManagementPath }, location.pathname)),
               },
           ]
         : [
@@ -154,7 +157,7 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
                   path: vulnManagementPath,
                   routeKey: 'vulnerability-management',
                   isActive: (location) =>
-                      Boolean(matchPath(location.pathname, { vulnManagementPath, exact: true })),
+                      Boolean(matchPath({ path: vulnManagementPath }, location.pathname)),
               },
           ];
 
@@ -199,13 +202,13 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
                     type: 'link',
                     content: <NavigationContent variant="TechPreview">Coverage</NavigationContent>,
                     path: complianceEnhancedCoveragePath,
-                    routeKey: 'compliance-enhanced',
+                    routeKey: 'compliance-coverage',
                 },
                 {
                     type: 'link',
                     content: <NavigationContent variant="TechPreview">Schedules</NavigationContent>,
                     path: complianceEnhancedSchedulesPath,
-                    routeKey: 'compliance-enhanced',
+                    routeKey: 'compliance-schedules',
                 },
                 {
                     type: 'separator',
@@ -217,11 +220,17 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
                     path: complianceBasePath,
                     routeKey: 'compliance',
                     isActive: (location) =>
-                        Boolean(matchPath(location.pathname, complianceBasePath)) &&
-                        !matchPath(location.pathname, [
-                            complianceEnhancedCoveragePath,
-                            complianceEnhancedSchedulesPath,
-                        ]),
+                        Boolean(
+                            matchPath({ path: `${complianceBasePath}/*` }, location.pathname)
+                        ) &&
+                        !matchPath(
+                            { path: `${complianceEnhancedCoveragePath}/*` },
+                            location.pathname
+                        ) &&
+                        !matchPath(
+                            { path: `${complianceEnhancedSchedulesPath}/*` },
+                            location.pathname
+                        ),
                 },
             ],
         },
@@ -338,7 +347,12 @@ function NavigationSidebar({
                             const hasChildMatchPath = children.some(
                                 (childDescription) =>
                                     childDescription.type === 'link' &&
-                                    (Boolean(matchPath(location.pathname, childDescription.path)) ||
+                                    (Boolean(
+                                        matchPath(
+                                            { path: `${childDescription.path}/*` },
+                                            location.pathname
+                                        )
+                                    ) ||
                                         isActiveLink(location, childDescription))
                             );
                             return (
@@ -358,10 +372,10 @@ function NavigationSidebar({
                                             return (
                                                 <NavigationItem
                                                     key={path}
-                                                    isActive={isActiveLink(
-                                                        location,
-                                                        childDescription
-                                                    )}
+                                                    isActive={isActiveLink(location, {
+                                                        ...childDescription,
+                                                        path: `${path}/*`,
+                                                    })}
                                                     path={path}
                                                     content={
                                                         typeof content === 'function'

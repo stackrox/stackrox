@@ -415,7 +415,8 @@ payments/gateway[Deployment] => payments/visa-processor[Deployment] : TCP 8080'
   assert_success
   echo "$output" > "$ofile"
   assert_file_exist "$ofile"
-  assert_output --partial 'Workload abc does not exist in the input resources. Connectivity map report will be empty.'
+  assert_output --partial 'Workload abc does not exist in the input resources'
+  assert_output --partial 'Connectivity map report will be empty.'
 }
 
 @test "roxctl-development netpol connectivity map generates connlist for acs-security-demo with focus-workload=ingress-controller" {
@@ -634,6 +635,72 @@ monitoring/mymonitoring[Pod] => baz/mybaz[Pod] : All Connections
 monitoring/mymonitoring[Pod] => foo/myfoo[Pod] : All Connections'
   normalized_expected_output=$(normalize_whitespaces "$expected_output")
   assert_output "$normalized_expected_output"
+}
+
+@test "roxctl-development netpol connectivity map generates explainability report" {
+  assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/backend.yaml"
+  assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/frontend.yaml"
+  assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/netpols.yaml"
+  echo "Writing explainability to ${ofile}" >&3
+  run roxctl-development netpol connectivity map "${test_data}/np-guard/netpols-analysis-example-minimal" --explain
+  assert_success
+
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  # normalizing tabs and whitespaces in output so it will be easier to compare with expected
+  output=$(normalize_whitespaces "$output")
+  # partial output - explaining connections between pair of the input peers
+  partial_expected_output="""Connections between default/backend[Deployment] => default/frontend[Deployment]:
+
+Denied connections:
+        Denied TCP:[1-8079,8081-65535], UDP, SCTP due to the following policies and rules:
+                Egress (Denied)
+                        NetworkPolicy list:
+                                - NetworkPolicy 'default/backend-netpol' selects default/backend[Deployment], but default/frontend[Deployment] is not allowed by any Egress rule (no rules defined)
+                                - NetworkPolicy 'default/default-deny-in-namespace' selects default/backend[Deployment], but default/frontend[Deployment] is not allowed by any Egress rule (no rules defined)
+
+                Ingress (Denied)
+                        NetworkPolicy list:
+                                - NetworkPolicy 'default/default-deny-in-namespace' selects default/frontend[Deployment], but default/backend[Deployment] is not allowed by any Ingress rule (no rules defined)
+                                - NetworkPolicy 'default/frontend-netpol' selects default/frontend[Deployment], and Ingress rule #1 selects default/backend[Deployment], but the protocols and ports do not match
+
+
+        Denied TCP:[8080] due to the following policies and rules:
+                Egress (Denied)
+                        NetworkPolicy list:
+                                - NetworkPolicy 'default/backend-netpol' selects default/backend[Deployment], but default/frontend[Deployment] is not allowed by any Egress rule (no rules defined)
+                                - NetworkPolicy 'default/default-deny-in-namespace' selects default/backend[Deployment], but default/frontend[Deployment] is not allowed by any Egress rule (no rules defined)
+
+                Ingress (Allowed)
+                        NetworkPolicy 'default/frontend-netpol' allows connections by Ingress rule #1"""
+  normalized_expected_output=$(normalize_whitespaces "$partial_expected_output")
+  assert_output --partial "$normalized_expected_output"
+}
+
+@test "roxctl-development netpol connectivity map ignores explain flag for unsupported md format with warning" {
+  assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/backend.yaml"
+  assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/frontend.yaml"
+  assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/netpols.yaml"
+  echo "Writing explainability to ${ofile}" >&3
+  run roxctl-development netpol connectivity map "${test_data}/np-guard/netpols-analysis-example-minimal" --explain --output-format=md
+  assert_success
+
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+   # normalizing tabs and whitespaces in output so it will be easier to compare with expected
+  output=$(normalize_whitespaces "$output")
+  # output contains a warn since explain is supported only with txt format
+  expected_warn=$(normalize_whitespaces "WARN:   explain flag is supported only with txt output format; ignoring this flag for the required output format md")
+  assert_output --partial "$expected_warn"
+  # output consists of connectivity map without explanations in md format
+  expected_connlist='| src | dst | conn |
+|-----|-----|------|
+| 0.0.0.0-255.255.255.255 | default/frontend[Deployment] | TCP 8080 |
+| default/backend[Deployment] | default/frontend[Deployment] |  |
+| default/frontend[Deployment] | 0.0.0.0-255.255.255.255 | UDP 53 |
+| default/frontend[Deployment] | default/backend[Deployment] | TCP 9090 |'
+normalized_expected_connlist=$(normalize_whitespaces "$expected_connlist")
+assert_output --partial "$normalized_expected_connlist"
 }
 
 normalize_whitespaces() {

@@ -21,7 +21,6 @@ import (
 
 const (
 	batchAfter      = 100
-	cursorBatchSize = 50
 	deleteBatchSize = 65000
 	pruneBatchSize  = 5000
 

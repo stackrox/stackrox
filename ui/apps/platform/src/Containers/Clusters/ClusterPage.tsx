@@ -1,5 +1,5 @@
 import React, { ReactElement, useEffect, useState } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Alert, Button, Flex, FlexItem } from '@patternfly/react-core';
 import cloneDeep from 'lodash/cloneDeep';
 import get from 'lodash/get';
@@ -59,7 +59,7 @@ export type ClusterPageProps = {
 };
 
 function ClusterPage({ clusterId }: ClusterPageProps): ReactElement {
-    const history = useHistory();
+    const navigate = useNavigate();
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForCluster = hasReadWriteAccess('Cluster');
 
@@ -239,7 +239,7 @@ function ClusterPage({ clusterId }: ClusterPageProps): ReactElement {
                     });
                 });
         } else {
-            history.push(clustersBasePath);
+            navigate(clustersBasePath);
         }
     }
 

@@ -1,8 +1,8 @@
 import { all, take, call, fork, put, takeLatest, takeEvery, select } from 'redux-saga/effects';
 import { delay } from 'redux-saga';
-import { push } from 'connected-react-router';
 import queryString from 'qs';
 import Raven from 'raven-js';
+import { LOCATION_CHANGE, push } from 'redux-first-history';
 import { Base64 } from 'js-base64';
 
 import { loginPath, testLoginResultsPath, authResponsePrefix } from 'routePaths';
@@ -14,7 +14,6 @@ import { fetchUserRolePermissions } from 'services/RolesService';
 import { selectors } from 'reducers';
 import { actions, types, AUTH_STATUS } from 'reducers/auth';
 import { actions as groupActions } from 'reducers/groups';
-import { types as locationActionTypes } from 'reducers/routes';
 import { actions as notificationActions } from 'reducers/notifications';
 import { actions as rolesActions } from 'reducers/roles';
 
@@ -393,7 +392,7 @@ export default function* auth() {
     yield fork(fetchAvailableProviderTypes);
 
     // take the first location change, i.e. the location where user landed first time
-    const action = yield take(locationActionTypes.LOCATION_CHANGE);
+    const action = yield take(LOCATION_CHANGE);
     const {
         payload: { location },
     } = action;

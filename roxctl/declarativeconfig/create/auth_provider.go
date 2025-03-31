@@ -43,20 +43,20 @@ func authProviderCommand(cliEnvironment environment.Environment) *cobra.Command 
 		Short: "Commands to create a declarative configuration for an auth provider",
 	}
 
-	cmd.PersistentFlags().StringVar(&authProviderCmd.authProvider.Name, "name", "", "Name of the auth provider")
+	cmd.PersistentFlags().StringVar(&authProviderCmd.authProvider.Name, "name", "", "Name of the auth provider.")
 	cmd.PersistentFlags().StringVar(&authProviderCmd.authProvider.MinimumRoleName, "minimum-access-role", "",
 		`Minimum access role of the auth provider.
-This can be left empty if the minimum access role should not be configured via declarative configuration`)
+This can be left empty if the minimum access role should not be configured via declarative configuration.`)
 	cmd.PersistentFlags().StringVar(&authProviderCmd.authProvider.UIEndpoint, "ui-endpoint", "",
 		`UI Endpoint from which the auth provider is used (this is typically the public endpoint where RHACS is exposed).
-The expected format is <endpoint>:<port>`)
+The expected format is <endpoint>:<port>.`)
 	cmd.PersistentFlags().StringSliceVar(&authProviderCmd.authProvider.ExtraUIEndpoints, "extra-ui-endpoints", []string{},
 		`Additional UI endpoints from which the auth provider is used.
-The expected format is <endpoint>:<port>`)
+The expected format is <endpoint>:<port>.`)
 
 	cmd.PersistentFlags().StringToStringVar(&authProviderCmd.requiredAttributes, "required-attributes",
 		map[string]string{}, `List of attributes that are required to be returned by the auth provider during authentication,
-e.g. --required-attributes "my_org=sample-org"`)
+e.g. --required-attributes "my_org=sample-org".`)
 
 	// pflag.FlagSet currently lacks to provide a tuple of repeated key value pairs, hence we need to resort to
 	// providing three separate flags which hold the values required to construct a single group:
@@ -67,16 +67,16 @@ e.g. --required-attributes "my_org=sample-org"`)
 	cmd.PersistentFlags().StringSliceVar(&authProviderCmd.groupsKeys, "groups-key", []string{},
 		`Keys of the groups to add within the auth provider. Note that the tuple of key, value, role should
 be of the same length.
-Example of a group: --groups-key "email" --groups-value "my@domain.com" --groups-role "Admin"`)
+Example of a group: --groups-key "email" --groups-value "my@domain.com" --groups-role "Admin".`)
 
 	cmd.PersistentFlags().StringSliceVar(&authProviderCmd.groupsValues, "groups-value", []string{},
 		`Values of the groups to add within the auth provider. Note that the tuple of key, value, role should
 be of the same length.
-Example of a group: --groups-key "email" --groups-value "my@domain.com" --groups-role "Admin"`)
+Example of a group: --groups-key "email" --groups-value "my@domain.com" --groups-role "Admin".`)
 	cmd.PersistentFlags().StringSliceVar(&authProviderCmd.groupsRoles, "groups-role", []string{},
 		`Role of the groups to add within the auth provider. Note that the tuple of key, value, role should
 be of the same length.
-Example of a group: --groups-key "email" --groups-value "my@domain.com" --groups-role "Admin"`)
+Example of a group: --groups-key "email" --groups-value "my@domain.com" --groups-role "Admin".`)
 
 	cmd.MarkFlagsRequiredTogether("name", "ui-endpoint")
 
@@ -131,20 +131,20 @@ func (a *authProviderCmd) oidcCommand() *cobra.Command {
 	a.oidcConfig = &declarativeconfig.OIDCConfig{}
 
 	cmd.Flags().StringVar(&a.oidcConfig.Issuer, "issuer", "",
-		"Issuer of the OIDC client")
+		"Issuer of the OIDC client.")
 	cmd.Flags().StringVar(&a.oidcConfig.CallbackMode, "mode", "auto",
-		"The callback mode to use. Possible values are: auto, post, query, fragment")
+		"The callback mode to use. Possible values are: auto, post, query, fragment.")
 	cmd.Flags().StringVar(&a.oidcConfig.ClientID, "client-id", "",
-		"Client ID of the OIDC client")
+		"Client ID of the OIDC client.")
 	cmd.Flags().StringVar(&a.oidcConfig.ClientSecret, "client-secret", "",
-		"Client Secret of the OIDC client")
+		"Client Secret of the OIDC client.")
 	cmd.Flags().BoolVar(&a.oidcConfig.DisableOfflineAccessScope, "disable-offline-access", false,
 		"Disable requesting the scope offline_access from the OIDC identity provider. This should only be set "+
-			"if there are any limitations from your OIDC IdP about the number of sessions with the offline_access scope")
+			"if there are any limitations from your OIDC IdP about the number of sessions with the offline_access scope.")
 
 	cmd.Flags().StringToStringVar(&a.claimMapping, "claim-mappings", map[string]string{},
 		`List of non-standard claims from the IdP token that should be available within auth provider rules, e.g.
---claim-mappings "my_claim_on_the_idp_token=claim_name_on_the_rox_token"`)
+--claim-mappings "my_claim_on_the_idp_token=claim_name_on_the_rox_token".`)
 
 	utils.Must(cmd.MarkFlagRequired("issuer"))
 	utils.Must(cmd.MarkFlagRequired("client-id"))
@@ -163,15 +163,15 @@ func (a *authProviderCmd) samlCommand() *cobra.Command {
 	a.samlConfig = &declarativeconfig.SAMLConfig{}
 
 	cmd.Flags().StringVar(&a.samlConfig.SpIssuer, "sp-issuer", "", "Service provider "+
-		"issuer")
+		"issuer.")
 	cmd.Flags().StringVar(&a.samlConfig.MetadataURL, "metadata-url", "", "Metadata "+
-		"URL of the service provider")
+		"URL of the service provider.")
 	cmd.Flags().StringVar(&a.samlIDPCertFile, "idp-cert", "", "File containing the SAML IdP "+
-		"certificate in PEM format")
-	cmd.Flags().StringVar(&a.samlConfig.SsoURL, "sso-url", "", "URL of the IdP")
+		"certificate in PEM format.")
+	cmd.Flags().StringVar(&a.samlConfig.SsoURL, "sso-url", "", "URL of the IdP.")
 	cmd.Flags().StringVar(&a.samlConfig.NameIDFormat, "name-id-format", "",
-		"Name ID format")
-	cmd.Flags().StringVar(&a.samlConfig.IDPIssuer, "idp-issuer", "", "Issuer of the IdP")
+		"Name ID format.")
+	cmd.Flags().StringVar(&a.samlConfig.IDPIssuer, "idp-issuer", "", "Issuer of the IdP.")
 
 	utils.Must(cmd.MarkFlagRequired("sp-issuer"))
 	cmd.MarkFlagsRequiredTogether("idp-cert", "sso-url", "idp-issuer")
@@ -183,14 +183,15 @@ func (a *authProviderCmd) samlCommand() *cobra.Command {
 
 func (a *authProviderCmd) iapCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:  "iap",
-		Args: cobra.NoArgs,
-		RunE: a.RunE(),
+		Use:   "iap",
+		Short: "Create a declarative configuration for an Identity-Aware Proxy (IAP) auth provider",
+		Args:  cobra.NoArgs,
+		RunE:  a.RunE(),
 	}
 	a.iapConfig = &declarativeconfig.IAPConfig{}
 
 	cmd.Flags().StringVar(&a.iapConfig.Audience, "audience", "", "Audience that should "+
-		"be validated")
+		"be validated.")
 
 	utils.Must(cmd.MarkFlagRequired("audience"))
 
@@ -208,7 +209,7 @@ func (a *authProviderCmd) userPKICommand() *cobra.Command {
 	a.userPKIConfig = &declarativeconfig.UserpkiConfig{}
 
 	cmd.Flags().StringVar(&a.userPKICAFile, "ca-file", "", "File containing the certificate "+
-		"authorities in PEM format")
+		"authorities in PEM format.")
 
 	utils.Must(cmd.MarkFlagRequired("ca-file"))
 

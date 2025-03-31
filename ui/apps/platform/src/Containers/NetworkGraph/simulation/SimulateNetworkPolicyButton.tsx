@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '@patternfly/react-core';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 import { networkBasePath } from 'routePaths';
 import useAnalytics, { CLUSTER_LEVEL_SIMULATOR_OPENED } from 'hooks/useAnalytics';
@@ -16,7 +16,7 @@ type SimulateNetworkPolicyButtonProps = {
 
 function SimulateNetworkPolicyButton({ simulation, isDisabled }: SimulateNetworkPolicyButtonProps) {
     const { analyticsTrack } = useAnalytics();
-    const history = useHistory();
+    const navigate = useNavigate();
     const { searchFilter } = useURLSearch();
 
     const [, setSimulationQueryValue] = useURLParameter('simulation', undefined);
@@ -28,7 +28,7 @@ function SimulateNetworkPolicyButton({ simulation, isDisabled }: SimulateNetwork
             properties,
         });
 
-        history.push(`${networkBasePath}${history.location.search as string}`);
+        navigate(`${networkBasePath}${location.search}`);
 
         setSimulationQueryValue('networkPolicy');
     }

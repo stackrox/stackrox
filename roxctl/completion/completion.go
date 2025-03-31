@@ -67,7 +67,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	cmd := &cobra.Command{
 		DisableFlagsInUseLine: true,
 		Use:                   "completion [bash|zsh|fish|powershell]",
-		Short:                 "Generate shell completion scripts.",
+		Short:                 "Generate shell completion scripts",
 		Long:                  longDescriptionForCompletion,
 		Args:                  common.ExactArgsWithCustomErrMessage(1, "Missing argument. Use one of the following: [bash|zsh|fish|powershell]"),
 		RunE: func(cmd *cobra.Command, args []string) error {

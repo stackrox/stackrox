@@ -1604,7 +1604,7 @@ post_process_test_results() {
             -job-name "${JOB_NAME}" \
             -junit-reports-dir "${ARTIFACT_DIR}" \
             -orchestrator "${ORCHESTRATOR_FLAVOR:-PROW}" \
-            -threshold 5 \
+            -threshold 10 \
             -html-output "$ARTIFACT_DIR/junit2jira-summary.html" \
             -slack-output "${slack_attachments_file}" \
             -summary-output "${summary_file}" \

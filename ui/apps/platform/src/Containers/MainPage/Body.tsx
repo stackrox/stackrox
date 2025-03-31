@@ -1,12 +1,12 @@
 import React, { ElementType, ReactElement, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { Redirect, Route, Switch, useLocation } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom';
 import { PageSection } from '@patternfly/react-core';
 
 // Import path variables in alphabetical order to minimize merge conflicts when multiple people add routes.
 import {
     RouteKey,
-    accessControlPath,
+    accessControlBasePath,
     administrationEventsPathWithParam,
     apidocsPath,
     apidocsPathV2,
@@ -18,7 +18,7 @@ import {
     collectionsPath,
     complianceEnhancedCoveragePath,
     complianceEnhancedSchedulesPath,
-    compliancePath,
+    complianceBasePath,
     configManagementPath,
     dashboardPath,
     exceptionConfigurationPath,
@@ -34,14 +34,13 @@ import {
     systemConfigPath,
     systemHealthPath,
     userBasePath,
-    violationsPath,
+    violationsBasePath,
     vulnManagementPath,
     vulnerabilitiesWorkloadCvesPath,
     vulnerabilityReportsPath,
     exceptionManagementPath,
     vulnerabilitiesNodeCvesPath,
     vulnerabilitiesPlatformCvesPath,
-    deprecatedPoliciesBasePath,
     policiesBasePath,
     vulnerabilitiesUserWorkloadsPath,
     vulnerabilitiesPlatformPath,
@@ -89,7 +88,7 @@ type RouteComponent = {
 const routeComponentMap: Record<RouteKey, RouteComponent> = {
     'access-control': {
         component: asyncComponent(() => import('Containers/AccessControl/AccessControl')),
-        path: accessControlPath,
+        path: accessControlBasePath,
     },
     'administration-events': {
         component: asyncComponent(
@@ -139,16 +138,21 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         component: asyncComponent(() => import('Containers/Collections/CollectionsPage')),
         path: collectionsPath,
     },
-    // Compliance enhanced must precede compliance classic.
-    'compliance-enhanced': {
+    'compliance-coverage': {
         component: asyncComponent(
-            () => import('Containers/ComplianceEnhanced/ComplianceEnhancedPage')
+            () => import('Containers/ComplianceEnhanced/Coverage/CoveragePage')
         ),
-        path: [complianceEnhancedCoveragePath, complianceEnhancedSchedulesPath],
+        path: complianceEnhancedCoveragePath,
+    },
+    'compliance-schedules': {
+        component: asyncComponent(
+            () => import('Containers/ComplianceEnhanced/Schedules/ScanConfigsPage')
+        ),
+        path: complianceEnhancedSchedulesPath,
     },
     compliance: {
         component: asyncComponent(() => import('Containers/Compliance/Page')),
-        path: compliancePath,
+        path: complianceBasePath,
     },
     configmanagement: {
         component: asyncComponent(() => import('Containers/ConfigManagement/Page')),
@@ -204,7 +208,7 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
     },
     violations: {
         component: asyncComponent(() => import('Containers/Violations/ViolationsPage')),
-        path: violationsPath,
+        path: violationsBasePath,
     },
     'vulnerabilities/exception-management': {
         component: asyncComponent(
@@ -265,12 +269,33 @@ type BodyProps = {
     isFeatureFlagEnabled: IsFeatureFlagEnabled;
 };
 
+function WorkloadCvesRedirect() {
+    const location = useLocation();
+
+    const newPath = location.pathname.replace(
+        vulnerabilitiesWorkloadCvesPath,
+        vulnerabilitiesAllImagesPath
+    );
+
+    return <Navigate to={`${newPath}${location.search}`} replace />;
+}
+
+function DeprecatedPoliciesRedirect() {
+    const { policyId, command } = useParams();
+
+    const newPath = `${policiesBasePath}${policyId ? `/${policyId}` : ''}${
+        command ? `/${command}` : ''
+    }`;
+
+    return <Navigate to={newPath} replace />;
+}
+
 function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement {
     const location = useLocation();
     const { analyticsPageVisit } = useAnalytics();
     useEffect(() => {
         analyticsPageVisit('Page Viewed', '', { path: location.pathname });
-    }, [location, analyticsPageVisit]);
+    }, [location.pathname, analyticsPageVisit]);
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForInviting = hasReadWriteAccess('Access');
     const showInviteModal = useSelector(selectors.inviteSelector);
@@ -280,48 +305,31 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
     return (
         <div className="flex flex-col h-full w-full relative overflow-auto bg-base-100">
             <ErrorBoundary>
-                <Switch>
-                    <Route path="/" exact render={() => <Redirect to={dashboardPath} />} />
-                    <Route path={mainPath} exact render={() => <Redirect to={dashboardPath} />} />
+                <Routes>
+                    <Route path="/" element={<Navigate to={dashboardPath} replace />} />
+                    <Route path={mainPath} element={<Navigate to={dashboardPath} replace />} />
                     {/* Make sure the following Redirect element works after react-router-dom upgrade */}
-                    <Route
-                        path={deprecatedPoliciesBasePath}
-                        exact
-                        render={() => <Redirect to={policiesBasePath} />}
-                    />
-                    <Route
-                        exact
-                        path={deprecatedPoliciesPath}
-                        render={({ match }) => (
-                            <Redirect to={`${policiesBasePath}/${match.params.policyId}`} />
-                        )}
-                    />
+                    <Route path={deprecatedPoliciesPath} element={<DeprecatedPoliciesRedirect />} />
                     {isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT') && (
                         <Route
-                            // We _do not_ include the `exact` prop here, as all prior workload-cves routes
-                            // must redirect to the new path. Instead we match against all subpaths.
-                            path={`${vulnerabilitiesWorkloadCvesPath}/:subpath*`}
+                            // all prior workload-cves routes must redirect to the new path.
+                            path={`${vulnerabilitiesWorkloadCvesPath}/*`}
                             // Since all subpaths and query parameters must be retained, we need to do
-                            // a search and replace of the subpath we are redirecting
-                            render={({ location }) => {
-                                const newPath = location.pathname.replace(
-                                    vulnerabilitiesWorkloadCvesPath,
-                                    vulnerabilitiesAllImagesPath
-                                );
-                                return <Redirect to={`${newPath}${location.search}`} />;
-                            }}
+                            // a search and replace of the subpath we are redirecting, which is accomplished
+                            // by using the WorkloadCvesRedirect component.
+                            element={<WorkloadCvesRedirect />}
                         />
                     )}
                     {Object.keys(routeComponentMap)
                         .filter((routeKey) => isRouteEnabled(routePredicates, routeKey as RouteKey))
                         .map((routeKey) => {
-                            const { component, path } = routeComponentMap[routeKey];
-                            return <Route key={routeKey} path={path} component={component} />;
+                            const { component: Component, path } = routeComponentMap[routeKey];
+                            return (
+                                <Route key={routeKey} path={`${path}/*`} element={<Component />} />
+                            );
                         })}
-                    <Route>
-                        <NotFoundPage />
-                    </Route>
-                </Switch>
+                    <Route path="*" element={<NotFoundPage />} />
+                </Routes>
                 {hasWriteAccessForInviting && showInviteModal && <InviteUsersModal />}
             </ErrorBoundary>
         </div>

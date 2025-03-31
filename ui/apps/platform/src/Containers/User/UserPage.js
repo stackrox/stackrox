@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink, Route, Switch } from 'react-router-dom';
+import { NavLink, Route, Routes, useMatch, useParams } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createStructuredSelector, createSelector } from 'reselect';
@@ -44,6 +44,25 @@ function UserPage({ resourceToAccessByRole, userData }) {
     const authProviderName =
         usedAuthProvider?.type === 'basic' ? 'Basic' : (usedAuthProvider?.name ?? '');
 
+    const isUserPathActive = useMatch(userBasePath);
+    const isRolePathActive = useMatch(userRolePath);
+
+    const UserRoleRoute = () => {
+        const { roleName } = useParams();
+        const role = roles.find((_role) => _role.name === roleName);
+
+        if (role) {
+            return <UserPermissionsTable permissions={role?.resourceToAccess ?? {}} />;
+        }
+
+        return (
+            <EmptyState>
+                <EmptyStateHeader titleText="Role not found for user" headingLevel="h4" />
+                <EmptyStateBody>{`Role name: ${roleName}`}</EmptyStateBody>
+            </EmptyState>
+        );
+    };
+
     return (
         <>
             <PageSection variant="light" style={stylePageSection}>
@@ -75,23 +94,15 @@ function UserPage({ resourceToAccessByRole, userData }) {
                         <div className="pf-v5-u-background-color-200">
                             <Nav aria-label="Roles" theme="light">
                                 <NavList>
-                                    <NavItem>
-                                        <NavLink
-                                            exact
-                                            to={userBasePath}
-                                            activeClassName="pf-m-current"
-                                        >
+                                    <NavItem isActive={isUserPathActive}>
+                                        <NavLink to={userBasePath} end>
                                             User permissions for roles
                                         </NavLink>
                                     </NavItem>
                                     <NavExpandable title="User roles" isExpanded>
                                         {roles.map((role) => (
-                                            <NavItem key={role.name} activeClassName="pf-m-current">
-                                                <NavLink
-                                                    exact
-                                                    to={getUserRolePath(role.name)}
-                                                    activeClassName="pf-m-current"
-                                                >
+                                            <NavItem key={role.name} isActive={isRolePathActive}>
+                                                <NavLink to={getUserRolePath(role.name)} end>
                                                     {role.name}
                                                 </NavLink>
                                             </NavItem>
@@ -102,41 +113,17 @@ function UserPage({ resourceToAccessByRole, userData }) {
                         </div>
                     </FlexItem>
                     <FlexItem>
-                        <Switch>
+                        <Routes>
+                            <Route path={'roles/:roleName'} element={<UserRoleRoute />} />
                             <Route
-                                path={userRolePath}
-                                render={({
-                                    match: {
-                                        params: { roleName },
-                                    },
-                                }) => {
-                                    const role = roles.find((_role) => _role.name === roleName);
-
-                                    if (role) {
-                                        return (
-                                            <UserPermissionsTable
-                                                permissions={role?.resourceToAccess ?? {}}
-                                            />
-                                        );
-                                    }
-
-                                    return (
-                                        <EmptyState>
-                                            <EmptyStateHeader
-                                                titleText="Role not found for user"
-                                                headingLevel="h4"
-                                            />
-                                            <EmptyStateBody>{`Role name: ${roleName}`}</EmptyStateBody>
-                                        </EmptyState>
-                                    );
-                                }}
+                                index
+                                element={
+                                    <UserPermissionsForRolesTable
+                                        resourceToAccessByRole={resourceToAccessByRole}
+                                    />
+                                }
                             />
-                            <Route path={userBasePath}>
-                                <UserPermissionsForRolesTable
-                                    resourceToAccessByRole={resourceToAccessByRole}
-                                />
-                            </Route>
-                        </Switch>
+                        </Routes>
                     </FlexItem>
                 </Flex>
             </PageSection>

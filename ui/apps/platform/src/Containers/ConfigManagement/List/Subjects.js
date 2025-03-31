@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLocation, useRouteMatch } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import pluralize from 'pluralize';
 
 import {
@@ -11,6 +11,7 @@ import TableCellLink from 'Components/TableCellLink';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import entityTypes from 'constants/entityTypes';
 import { subjectSortFields } from 'constants/sortFields';
+import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import { SUBJECTS_QUERY } from 'queries/subject';
 import queryService from 'utils/queryService';
 import URLService from 'utils/URLService';
@@ -106,7 +107,7 @@ const createTableRows = (data) => data?.results || [];
 
 const Subjects = ({ selectedRowId, onRowClick, query, className, data, totalResults }) => {
     const location = useLocation();
-    const match = useRouteMatch();
+    const match = useWorkflowMatch();
     const autoFocusSearchInput = !selectedRowId;
     const tableColumns = buildTableColumns(match, location);
     const queryText = queryService.objectToWhereClause(query);

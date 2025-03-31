@@ -1,6 +1,6 @@
 import React, { useState, useContext } from 'react';
 import PropTypes from 'prop-types';
-import { useRouteMatch, useLocation, useHistory } from 'react-router-dom'; // Updated imports
+import { useLocation, useNavigate } from 'react-router-dom'; // Updated imports
 import pluralize from 'pluralize';
 import resolvePath from 'object-resolve-path';
 
@@ -16,6 +16,7 @@ import workflowStateContext from 'Containers/workflowStateContext';
 import { searchCategories as searchCategoryTypes } from 'constants/entityTypes';
 import useCases from 'constants/useCaseTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
+import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import entityLabels from 'messages/entity';
 import { SEARCH_OPTIONS_QUERY } from 'queries/search';
 import isGQLLoading from 'utils/gqlLoading';
@@ -41,9 +42,9 @@ const List = ({
     autoFocusSearchInput,
     noDataText,
 }) => {
-    const match = useRouteMatch();
+    const match = useWorkflowMatch();
     const location = useLocation();
-    const history = useHistory();
+    const navigate = useNavigate();
     const workflowState = useContext(workflowStateContext);
     const configMgmtPagination = useContext(configMgmtPaginationContext);
     const page = workflowState.paging[configMgmtPagination.pageParam];
@@ -55,7 +56,7 @@ const List = ({
     function onRowClickHandler(row) {
         const id = resolvePath(row, idAttribute);
         const url = URLService.getURL(match, location).push(id).url();
-        history.push(url);
+        navigate(url);
     }
 
     const categories = [searchCategoryTypes[entityType]];
@@ -94,7 +95,7 @@ const List = ({
     }
 
     function setPage(newPage) {
-        history.push(workflowState.setPage(newPage).toUrl());
+        navigate(workflowState.setPage(newPage).toUrl());
     }
 
     function onSortedChange(newSort, column) {
@@ -109,7 +110,7 @@ const List = ({
         });
 
         const url = workflowState.setSort(workflowSort).toUrl();
-        history.push(url);
+        navigate(url);
     }
 
     function getHeaderComponents(totalRows) {
