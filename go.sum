@@ -1181,7 +1181,7 @@ github.com/nozzle/throttler v0.0.0-20180817012639-2ea982251481 h1:Up6+btDp321ZG5
 github.com/nozzle/throttler v0.0.0-20180817012639-2ea982251481/go.mod h1:yKZQO8QE2bHlgozqWDiRVqTFlLQSj30K/6SAK8EeYFw=
 github.com/np-guard/cluster-topology-analyzer/v2 v2.3.0 h1:xCG4o7tO/MloIU5vo8sjXqwF6YuTNPBHmH0dILJcNSo=
 github.com/np-guard/cluster-topology-analyzer/v2 v2.3.0/go.mod h1:Xg979Vq4Z7eZa01X8XYzr8nPBD2tvNcbnF8Fkkeqv+c=
-github.com/np-guard/models v0.5.6 h1:oWajSa+/mlR0lyVmoG35LbKclHXj+4aTs/HmMQCCD1s=
+github.com/np-guard/models v0.5.6 h1:+RsV+7vNMhn2W/Q0XVtaQJSB2ehhs45CJ3v5WCNQZjs=
 github.com/np-guard/models v0.5.6/go.mod h1:Cj2nHAECvIuNoEBHXyzvauf3jXYgLzjxuHH73COaazE=
 github.com/np-guard/netpol-analyzer v1.4.2 h1:rntc7NyesdZ8GjUP8HEctICNBXuQOurbclNo+ZVWQYo=
 github.com/np-guard/netpol-analyzer v1.4.2/go.mod h1:enTdgIfMJc/OoIUxnC7lVr/+2xA7tN1/5TPaDCZTqqs=

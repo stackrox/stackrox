@@ -19,6 +19,7 @@ import (
 	concPool "github.com/sourcegraph/conc/pool"
 	"github.com/stackrox/rox/central/cluster/datastore"
 	configDS "github.com/stackrox/rox/central/config/datastore"
+	deleRegDS "github.com/stackrox/rox/central/delegatedregistryconfig/datastore"
 	"github.com/stackrox/rox/central/globaldb"
 	groupDS "github.com/stackrox/rox/central/group/datastore"
 	"github.com/stackrox/rox/central/logimbue/store"
@@ -125,7 +126,7 @@ type Service interface {
 func New(clusters datastore.DataStore, sensorConnMgr connection.Manager, telemetryGatherer *gatherers.RoxGatherer,
 	store store.Store, authzTraceSink observe.AuthzTraceSink, authProviderRegistry authproviders.Registry,
 	groupDataStore groupDS.DataStore, roleDataStore roleDS.DataStore, configDataStore configDS.DataStore,
-	notifierDataStore notifierDS.DataStore) Service {
+	notifierDataStore notifierDS.DataStore, deleRegConfigDS deleRegDS.DataStore) Service {
 	return &serviceImpl{
 		clusters:             clusters,
 		sensorConnMgr:        sensorConnMgr,
@@ -137,6 +138,7 @@ func New(clusters datastore.DataStore, sensorConnMgr connection.Manager, telemet
 		roleDataStore:        roleDataStore,
 		configDataStore:      configDataStore,
 		notifierDataStore:    notifierDataStore,
+		deleRegConfigDS:      deleRegConfigDS,
 	}
 }
 
@@ -153,6 +155,7 @@ type serviceImpl struct {
 	roleDataStore        roleDS.DataStore
 	configDataStore      configDS.DataStore
 	notifierDataStore    notifierDS.DataStore
+	deleRegConfigDS      deleRegDS.DataStore
 }
 
 // ResetDBStats resets pg_stat_statements in order to allow new metrics to be accumulated.
