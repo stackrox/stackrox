@@ -176,6 +176,25 @@
       ],
       "default": "UNSET"
     },
+    "PlatformComponentConfigRule": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "namespaceRule": {
+          "$ref": "#/definitions/RuleNamespaceRule"
+        }
+      }
+    },
+    "RuleNamespaceRule": {
+      "type": "object",
+      "properties": {
+        "regex": {
+          "type": "string"
+        }
+      }
+    },
     "googlerpcStatus": {
       "type": "object",
       "properties": {
@@ -271,6 +290,9 @@
         },
         "privateConfig": {
           "$ref": "#/definitions/storagePrivateConfig"
+        },
+        "platformComponentConfig": {
+          "$ref": "#/definitions/storagePlatformComponentConfig"
         }
       }
     },
@@ -318,6 +340,21 @@
         },
         "text": {
           "type": "string"
+        }
+      }
+    },
+    "storagePlatformComponentConfig": {
+      "type": "object",
+      "properties": {
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/PlatformComponentConfigRule"
+          }
+        },
+        "needsReevaluation": {
+          "type": "boolean"
         }
       }
     },
