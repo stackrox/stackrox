@@ -912,6 +912,13 @@ func (ts *DelegatedScanningSuite) scanWithRetries(ctx context.Context, service v
 		// ex:
 		// - no connection to "a21b168a-280e-40d1-a175-e84d14ed8232"
 		"no connection to",
+
+		// A registry having gateway issues (Quay.io in particular) may return a 502 (Bad Gateway)
+		// message along with some HTML, retry when this happens.
+		//
+		// ex:
+		// - http: non-successful response (status=502 body="<!doctype html>...<HTML HERE>...")
+		"non-successful response (status=502",
 	}
 
 	retryFunc := func() error {
