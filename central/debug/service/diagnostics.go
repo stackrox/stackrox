@@ -11,6 +11,7 @@ import (
 
 	"github.com/pkg/errors"
 	concPool "github.com/sourcegraph/conc/pool"
+	deleRegDS "github.com/stackrox/rox/central/delegatedregistryconfig/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/central/sensor/telemetry"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -30,6 +31,15 @@ var (
 // metrics collection.
 type gatherResult struct {
 	files []k8sintrospect.File
+}
+
+func (s *serviceImpl) getDelegatedScanningConfig(ctx context.Context, since time.Time) ([]k8sintrospect.File, error) {
+	var files []k8sintrospect.File
+	res, err := createDelScanningConfigFile(centralClusterPrefix, s.deleRegConfigDS, ctx)
+	if err != nil {
+		return []k8sintrospect.File{createErrorFile(centralClusterPrefix, err)}, nil
+	}
+	return files, nil
 }
 
 func (s *serviceImpl) getK8sDiagnostics(ctx context.Context, zipWriter *zipWriter, opts debugDumpOptions) error {
@@ -141,6 +151,22 @@ func gatherResultCallback(res *gatherResult, clusterName string) func(ctx concur
 		}
 		return nil
 	}
+}
+
+func createDelScanningConfigFile(clusterName string, d deleRegDS.DataStore, ctx context.Context) k8sintrospect.File {
+	adminCtx := withAdminRead(ctx)
+	config, exists, err := d.GetConfig(adminCtx)
+	file := "delegated-scanning-config.txt"
+	res := k8sintrospect.File{}
+	res.Path = path.Join(clusterName, file)
+	if err != nil {
+		res.Contents = []byte(err.Error())
+	} else if !exists {
+		res.Contents = []byte("delegated scanning configs unavailable")
+	} else {
+		res.Contents = []byte(config.String())
+	}
+	return res
 }
 
 func createErrorFile(clusterName string, err error) k8sintrospect.File {
