@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
@@ -36,11 +37,11 @@ func BenchmarkNetEntityCreates(b *testing.B) {
 	store := postgres.New(db.DB)
 
 	treeMgr := networktree.Singleton()
-	defer treeMgr.DeleteNetworkTree(globalAccessCtx, "c1")
+	defer treeMgr.DeleteNetworkTree(globalAccessCtx, testconsts.Cluster1)
 
 	ds := NewEntityDataStore(store, mocks.NewMockDataStore(mockCtrl), treeMgr, connection.ManagerSingleton())
 
-	entities, err := testutils.GenRandomExtSrcNetworkEntity(pkgNet.IPv4, b.N, "c1")
+	entities, err := testutils.GenRandomExtSrcNetworkEntity(pkgNet.IPv4, b.N, testconsts.Cluster1)
 	require.NoError(b, err)
 
 	b.ResetTimer()
@@ -61,17 +62,17 @@ func BenchmarkNetEntityCreateBatch(b *testing.B) {
 
 	ds := NewEntityDataStore(store, mocks.NewMockDataStore(mockCtrl), networktree.Singleton(), connection.ManagerSingleton())
 
-	entities, err := testutils.GenRandomExtSrcNetworkEntity(pkgNet.IPv4, 10000, "c1")
+	entities, err := testutils.GenRandomExtSrcNetworkEntity(pkgNet.IPv4, 10000, testconsts.Cluster1)
 	require.NoError(b, err)
 
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		_, err = ds.CreateExtNetworkEntitiesForCluster(globalAccessCtx, "c1", entities...)
+		_, err = ds.CreateExtNetworkEntitiesForCluster(globalAccessCtx, testconsts.Cluster1, entities...)
 		require.NoError(b, err)
 
 		b.StopTimer()
-		require.NoError(b, ds.DeleteExternalNetworkEntitiesForCluster(globalAccessCtx, "c1"))
+		require.NoError(b, ds.DeleteExternalNetworkEntitiesForCluster(globalAccessCtx, testconsts.Cluster1))
 		b.StartTimer()
 	}
 }
@@ -86,7 +87,7 @@ func BenchmarkNetEntityUpdates(b *testing.B) {
 	store := postgres.New(db.DB)
 	ds := NewEntityDataStore(store, mocks.NewMockDataStore(mockCtrl), networktree.Singleton(), connection.ManagerSingleton())
 
-	entities, err := testutils.GenRandomExtSrcNetworkEntity(pkgNet.IPv4, b.N, "c1")
+	entities, err := testutils.GenRandomExtSrcNetworkEntity(pkgNet.IPv4, b.N, testconsts.Cluster1)
 	require.NoError(b, err)
 
 	for _, e := range entities {
