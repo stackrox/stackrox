@@ -27,13 +27,13 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-27622: Move `SecurityPolicy` CRD to template directory in Helm chart. **All Helm users will need to take action!**
   No action is needed for users that use the operator or `roxctl` to install StackRox.
   This change makes the CRD simpler to maintain for users because it will now be automatically upgraded.
-  To avoid installation failure, Helm users need to apply the following changes to the CRD prior to upgrade:
+  To avoid upgrade failure, Helm users need to apply the following changes to the CRD prior to upgrade:
 
       kubectl annotate crd/securitypolicies.config.stackrox.io meta.helm.sh/release-name=stackrox-central-services
       kubectl annotate crd/securitypolicies.config.stackrox.io meta.helm.sh/release-namespace=stackrox
       kubectl label crd/securitypolicies.config.stackrox.io app.kubernetes.io/managed-by=Helm
 
-  The value of the annotations will need to be updated if you've updated the release name (i.e. "stackrox-central-services") or namespace (i.e. "stackrox").
+  The above values will need to be updated to match your release name (i.e. "stackrox-central-services") or namespace (i.e. "stackrox") in case you had used different ones.
 
 ## [4.7.0]
 

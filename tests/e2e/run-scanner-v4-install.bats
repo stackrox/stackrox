@@ -254,9 +254,10 @@ setup() {
 }
 
 # CRD needs to be owned by Helm if upgrading to 4.7+ from 4.6.x via Helm
-apply_crd_ownership() {
+apply_crd_ownership_for_upgrade() {
+    local namespace={$1:-stackrox}
     "${ORCH_CMD}" </dev/null annotate crd/securitypolicies.config.stackrox.io meta.helm.sh/release-name=stackrox-central-services || true
-    "${ORCH_CMD}" </dev/null annotate crd/securitypolicies.config.stackrox.io meta.helm.sh/release-namespace=stackrox || true
+    "${ORCH_CMD}" </dev/null annotate crd/securitypolicies.config.stackrox.io meta.helm.sh/release-namespace="$namespace" || true
     "${ORCH_CMD}" </dev/null label crd/securitypolicies.config.stackrox.io app.kubernetes.io/managed-by=Helm || true
 }
 
@@ -389,7 +390,7 @@ EOF
     # shellcheck disable=SC2030,SC2031
     export SENSOR_SCANNER_V4_SUPPORT=true
 
-    apply_crd_ownership
+    apply_crd_ownership_for_upgrade "stackrox"
     _deploy_stackrox
 
     _step "verify"
