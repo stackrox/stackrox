@@ -897,7 +897,7 @@ func (resolver *imageCVEV2Resolver) ID(_ context.Context) graphql.ID {
 
 func (resolver *imageCVEV2Resolver) CreatedAt(_ context.Context) (*graphql.Time, error) {
 	if resolver.flatData != nil {
-		return convertTimeToGraphQLTime(resolver.flatData.GetCreatedAt()), nil
+		return convertTimeToGraphQLTime(resolver.flatData.GetFirstDiscoveredInSystem()), nil
 	}
 	return protocompat.ConvertTimestampToGraphqlTimeOrError(resolver.data.GetCveBaseInfo().GetCreatedAt())
 }

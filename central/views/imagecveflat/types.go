@@ -22,7 +22,6 @@ type CveFlat interface {
 	GetFirstDiscoveredInSystem() *time.Time
 	GetPublishDate() *time.Time
 	GetFirstImageOccurrence() *time.Time
-	GetCreatedAt() *time.Time
 	GetState() *storage.VulnerabilityState
 }
 

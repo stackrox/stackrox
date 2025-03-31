@@ -18,7 +18,6 @@ type imageCVEFlatResponse struct {
 	EpssProbability         *float32                       `db:"cvebaseinfo_epss_epssprobability_max"`
 	ImpactScore             *float32                       `db:"impactscore_max"`
 	FirstImageOccurrence    *time.Time                     `db:"firstimageoccurrence_min"`
-	CreatedAt               *time.Time                     `db:"created_at_min"`
 	State                   *storage.VulnerabilityState    `db:"state_max"`
 }
 
@@ -62,10 +61,6 @@ func (c *imageCVEFlatResponse) GetPublishDate() *time.Time {
 
 func (c *imageCVEFlatResponse) GetFirstImageOccurrence() *time.Time {
 	return c.FirstImageOccurrence
-}
-
-func (c *imageCVEFlatResponse) GetCreatedAt() *time.Time {
-	return c.CreatedAt
 }
 
 func (c *imageCVEFlatResponse) GetState() *storage.VulnerabilityState { return c.State }

@@ -17,6 +17,7 @@ import (
 	views "github.com/stackrox/rox/central/views"
 	imagecveflat "github.com/stackrox/rox/central/views/imagecveflat"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	storage "github.com/stackrox/rox/generated/storage"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -129,10 +130,10 @@ func (mr *MockCveFlatMockRecorder) GetPublishDate() *gomock.Call {
 }
 
 // GetSeverity mocks base method.
-func (m *MockCveFlat) GetSeverity() int {
+func (m *MockCveFlat) GetSeverity() *storage.VulnerabilitySeverity {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetSeverity")
-	ret0, _ := ret[0].(int)
+	ret0, _ := ret[0].(*storage.VulnerabilitySeverity)
 	return ret0
 }
 
@@ -143,10 +144,10 @@ func (mr *MockCveFlatMockRecorder) GetSeverity() *gomock.Call {
 }
 
 // GetState mocks base method.
-func (m *MockCveFlat) GetState() int {
+func (m *MockCveFlat) GetState() *storage.VulnerabilityState {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetState")
-	ret0, _ := ret[0].(int)
+	ret0, _ := ret[0].(*storage.VulnerabilityState)
 	return ret0
 }
 
