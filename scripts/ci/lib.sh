@@ -1129,8 +1129,8 @@ get_base_ref() {
 
 get_repo_full_name() {
     if is_GITHUB_ACTIONS; then
-        [[ -n "${GITHUB_ACTION_REPOSITORY:-}" ]] || die "expect: GITHUB_ACTION_REPOSITORY"
-        echo "${GITHUB_ACTION_REPOSITORY}"
+        [[ -n "${GITHUB_REPOSITORY:-}" ]] || die "expect: GITHUB_REPOSITORY"
+        echo "${GITHUB_REPOSITORY}"
     elif is_OPENSHIFT_CI; then
         if [[ -n "${REPO_OWNER:-}" ]]; then
             # presubmit, postsubmit and batch runs
