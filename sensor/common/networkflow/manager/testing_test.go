@@ -32,7 +32,7 @@ func createManager(mockCtrl *gomock.Controller) (*networkFlowManager, *mocksMana
 		centralReady:      concurrency.NewSignal(),
 		enricherTicker:    ticker,
 		activeConnections: make(map[connection]*networkConnIndicator),
-		activeEndpoints:   make(map[containerEndpoint]*containerEndpointIndicator),
+		activeEndpoints:   make(map[containerEndpoint]*containerEndpointIndicatorWithAge),
 		stopper:           concurrency.NewStopper(),
 	}
 	return mgr, mockEntityStore, mockExternalStore, mockDetector
