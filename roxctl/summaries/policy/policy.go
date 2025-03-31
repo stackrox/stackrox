@@ -32,7 +32,7 @@ func (s severity) String() string {
 }
 
 func (s severity) MarshalJSON() ([]byte, error) {
-	return json.Marshal(s.String())
+	return json.Marshal(s.String()) //nolint:wrapcheck
 }
 
 // trimSeverityEnumSuffix trims the proto generated "_SEVERITY" suffix
