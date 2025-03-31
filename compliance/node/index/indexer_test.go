@@ -154,9 +154,11 @@ func (s *nodeIndexerSuite) TestRunPackageScannerAnyPath() {
 
 func (s *nodeIndexerSuite) TestMappingURL() {
 	s.T().Setenv("ROX_ADVERTISED_ENDPOINT", "example.com:8080")
-	s.Equal("https://example.com:8080/scanner/definitions?file=repo2cpe", DefaultNodeIndexerConfig().Repo2CPEMappingURL)
+	s.Equal("https://example.com:8080/scanner/definitions?file=repo2cpe", buildMappingURL())
 	s.T().Setenv("ROX_ADVERTISED_ENDPOINT", "sensor.rhacs.svc")
-	s.Equal("https://sensor.rhacs.svc/scanner/definitions?file=repo2cpe", DefaultNodeIndexerConfig().Repo2CPEMappingURL)
+	s.Equal("https://sensor.rhacs.svc/scanner/definitions?file=repo2cpe", buildMappingURL())
+	s.T().Setenv("ROX_ADVERTISED_ENDPOINT", "http://example.com")
+	s.Equal("https://example.com/scanner/definitions?file=repo2cpe", buildMappingURL())
 }
 
 func (s *nodeIndexerSuite) TestIndexerE2E() {

@@ -29,7 +29,9 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/scannerv4/mappers"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/urlfmt"
 	pkgutils "github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/sensor/common/sensor"
 	"go.uber.org/zap/zapcore"
 )
 
@@ -37,6 +39,8 @@ const (
 	layerMediaType = "application/vnd.claircore.filesystem"
 
 	rhcosPackageDB = "sqlite:usr/share/rpm"
+
+	sensorMappingsFile = "repo2cpe"
 )
 
 var (
@@ -114,9 +118,14 @@ func DefaultNodeIndexerConfig() NodeIndexerConfig {
 		HostPath: env.NodeIndexHostPath.Setting(),
 		// The default, mTLS-capable client will be used.
 		Client:             nil,
-		Repo2CPEMappingURL: "https://" + env.AdvertisedEndpoint.Setting() + env.NodeIndexMappingURLPath.Setting(),
+		Repo2CPEMappingURL: buildMappingURL(),
 		Timeout:            10 * time.Second,
 	}
+}
+
+func buildMappingURL() string {
+	URL := env.AdvertisedEndpoint.Setting() + sensor.ScannerDefinitionsRoute + "?file=" + sensorMappingsFile
+	return urlfmt.FormatURL(URL, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 }
 
 type localNodeIndexer struct {
