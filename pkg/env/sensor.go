@@ -92,4 +92,7 @@ var (
 	// ResponsesChannelBufferSize defines how many messages to central are we buffering before dropping messages
 	// Setting this variable to zero will disable this feature.
 	ResponsesChannelBufferSize = RegisterIntegerSetting("ROX_RESPONSES_CHANNEL_BUFFER_SIZE", 0)
+
+	// ActiveEndpointsPurgerTickerMaxAge controls how frequently stale active endpoints are purged from Sensors memory
+	ActiveEndpointsPurgerTickerMaxAge = registerDurationSetting("ROX_PURGER_TICKER_MAX_AGE", 5*time.Minute, WithDurationZeroAllowed())
 )

@@ -52,7 +52,8 @@ const (
 
 var (
 	emptyProcessInfo = processInfo{}
-	tickerTime       = time.Second * 30
+	enricherCycle    = time.Second * 30
+	purgerCycle      = time.Minute * 5
 )
 
 type hostConnections struct {
@@ -115,6 +116,11 @@ func (i *networkConnIndicator) toProto(ts timestamp.MicroTS) *storage.NetworkFlo
 		proto.LastSeenTimestamp = protoconv.ConvertMicroTSToProtobufTS(ts)
 	}
 	return proto
+}
+
+type containerEndpointIndicatorWithAge struct {
+	containerEndpointIndicator
+	lastUpdate timestamp.MicroTS
 }
 
 // containerEndpointIndicator is a key in Sensor's maps that track active endpoints. It's set of fields should be minimal.
@@ -263,7 +269,8 @@ func NewManager(
 	policyDetector detector.Detector,
 	pubSub *internalmessage.MessageSubscriber,
 ) Manager {
-	enricherTicker := time.NewTicker(tickerTime)
+	enricherTicker := time.NewTicker(enricherCycle)
+	purgerTicker := time.NewTicker(purgerCycle)
 	mgr := &networkFlowManager{
 		connectionsByHost: make(map[string]*hostConnections),
 		clusterEntities:   clusterEntities,
@@ -271,14 +278,16 @@ func NewManager(
 		externalSrcs:      externalSrcs,
 		policyDetector:    policyDetector,
 		enricherTicker:    enricherTicker,
+		purgerTicker:      purgerTicker,
 		initialSync:       &atomic.Bool{},
 		activeConnections: make(map[connection]*networkConnIndicator),
-		activeEndpoints:   make(map[containerEndpoint]*containerEndpointIndicator),
+		activeEndpoints:   make(map[containerEndpoint]*containerEndpointIndicatorWithAge),
 		stopper:           concurrency.NewStopper(),
 		pubSub:            pubSub,
 	}
 
 	enricherTicker.Stop()
+	purgerTicker.Stop()
 	if features.SensorCapturesIntermediateEvents.Enabled() {
 		mgr.sensorUpdates = make(chan *message.ExpiringMessage, queue.ScaleSizeOnNonDefault(env.NetworkFlowBufferSize))
 	} else {
@@ -320,7 +329,7 @@ type networkFlowManager struct {
 	// activeConnections tracks all connections reported by Collector that are believed to be active.
 	// A connection is active for as long as Collector sends a NetworkConnectionInfo message with `lastSeen` set to a non-nil value.
 	activeConnections map[connection]*networkConnIndicator
-	activeEndpoints   map[containerEndpoint]*containerEndpointIndicator
+	activeEndpoints   map[containerEndpoint]*containerEndpointIndicatorWithAge
 
 	sensorUpdates chan *message.ExpiringMessage
 	centralReady  concurrency.Signal
@@ -331,6 +340,7 @@ type networkFlowManager struct {
 	initialSync *atomic.Bool
 
 	enricherTicker *time.Ticker
+	purgerTicker   *time.Ticker
 
 	publicIPs *publicIPsManager
 
@@ -346,6 +356,7 @@ func (m *networkFlowManager) ProcessMessage(_ *central.MsgToSensor) error {
 
 func (m *networkFlowManager) Start() error {
 	go m.enrichConnections(m.enricherTicker.C)
+	go m.purgeStaleActiveEndpoints(m.purgerTicker.C)
 	go m.publicIPs.Run(m.stopper.LowLevel().GetStopRequestSignal(), m.clusterEntities)
 	return nil
 }
@@ -369,20 +380,23 @@ func (m *networkFlowManager) Notify(e common.SensorComponentEvent) {
 	case common.SensorComponentEventResourceSyncFinished:
 		if features.SensorCapturesIntermediateEvents.Enabled() {
 			if m.initialSync.CompareAndSwap(false, true) {
-				m.enricherTicker.Reset(tickerTime)
+				m.enricherTicker.Reset(enricherCycle)
+				m.purgerTicker.Reset(purgerCycle)
 			}
 			return
 		}
 		m.resetContext()
 		m.resetLastSentState()
 		m.centralReady.Signal()
-		m.enricherTicker.Reset(tickerTime)
+		m.enricherTicker.Reset(enricherCycle)
+		m.purgerTicker.Reset(purgerCycle)
 	case common.SensorComponentEventOfflineMode:
 		if features.SensorCapturesIntermediateEvents.Enabled() {
 			return
 		}
 		m.centralReady.Reset()
 		m.enricherTicker.Stop()
+		m.purgerTicker.Stop()
 	}
 }
 
@@ -444,6 +458,28 @@ func (m *networkFlowManager) updateProcessesState(newProcesses map[processListen
 	m.enrichedProcessesLastSentState = newProcesses
 }
 
+func (m *networkFlowManager) purgeStaleActiveEndpoints(tickerC <-chan time.Time) {
+	for {
+		select {
+		case <-m.stopper.Flow().StopRequested():
+			return
+		case <-tickerC:
+			if env.ActiveEndpointsPurgerTickerMaxAge.DurationSetting() > 0 {
+				maxAge := env.ActiveEndpointsPurgerTickerMaxAge.DurationSetting()
+				purgeIfOlderThan(timestamp.Now().Add(maxAge*-1), m.activeEndpoints)
+			}
+		}
+	}
+}
+
+func purgeIfOlderThan(ts timestamp.MicroTS, endpoints map[containerEndpoint]*containerEndpointIndicatorWithAge) {
+	for endpoint, age := range endpoints {
+		if ts.After(age.lastUpdate) {
+			delete(endpoints, endpoint)
+		}
+	}
+}
+
 func (m *networkFlowManager) enrichConnections(tickerC <-chan time.Time) {
 	defer m.stopper.Flow().ReportStopped()
 	for {
@@ -472,6 +508,7 @@ func (m *networkFlowManager) getCurrentContext() context.Context {
 }
 
 func (m *networkFlowManager) enrichAndSend() {
+	// takes host connections and endpoints and updates them
 	currentConns, currentEndpoints := m.currentEnrichedConnsAndEndpoints()
 
 	updatedConns := computeUpdatedConns(currentConns, m.enrichedConnsLastSentState, &m.lastSentStateMutex)
@@ -841,7 +878,10 @@ func (m *networkFlowManager) enrichContainerEndpoint(ep *containerEndpoint, stat
 		return
 	}
 	if status.lastSeen == timestamp.InfiniteFuture {
-		m.activeEndpoints[*ep] = &indicator
+		m.activeEndpoints[*ep] = &containerEndpointIndicatorWithAge{
+			indicator,
+			now,
+		}
 		flowMetrics.IncFlowEnrichmentEndpoint(ok, "update-last-seen-&-mark-active", isHistoricalStr, "last-seen-inf-future", lastSeenSet, status.rotten, isMature, isFresh)
 		flowMetrics.SetActiveEndpointsTotalGauge(len(m.activeEndpoints))
 		return
@@ -854,7 +894,7 @@ func (m *networkFlowManager) enrichContainerEndpoint(ep *containerEndpoint, stat
 // expireEndpoint removes endpoint from active endpoints and sets the timestamp in enrichedEndpoints.
 // It returns error when endpoint is not found in active endpoints.
 func expireEndpoint(ep *containerEndpoint,
-	activeEndpoints map[containerEndpoint]*containerEndpointIndicator,
+	activeEndpoints map[containerEndpoint]*containerEndpointIndicatorWithAge,
 	enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS,
 	now timestamp.MicroTS) error {
 	activeEp, found := activeEndpoints[*ep]
@@ -862,7 +902,7 @@ func expireEndpoint(ep *containerEndpoint,
 		return errors.New("endpoint not found in activeEndpoints")
 	}
 	// Active endpoint found for historical container => removing from active endpoints and setting last-seen.
-	enrichedEndpoints[*activeEp] = now
+	enrichedEndpoints[activeEp.containerEndpointIndicator] = now
 	delete(activeEndpoints, *ep)
 	flowMetrics.SetActiveFlowsTotalGauge(len(activeEndpoints))
 	return nil
@@ -907,15 +947,14 @@ func (m *networkFlowManager) enrichHostConnections(hostConns *hostConnections, e
 	hostConns.mutex.Lock()
 	defer hostConns.mutex.Unlock()
 
-	prevSize := len(hostConns.connections)
 	for conn, status := range hostConns.connections {
 		m.enrichConnection(&conn, status, enrichedConnections)
 		if shallRemoveConnection(status) {
 			// connections that are no longer active and have already been used can be deleted.
 			delete(hostConns.connections, conn)
+			flowMetrics.HostConnections.WithLabelValues("remove").Inc()
 		}
 	}
-	flowMetrics.HostConnections.WithLabelValues("remove").Add(float64(prevSize - len(hostConns.connections)))
 }
 
 func shallRemoveConnection(status *connStatus) bool {
