@@ -79,9 +79,22 @@ message PrivateConfig {
   AdministrationEventsConfig administration_events_config = 8;
 }
 
+message PlatformComponentConfig {
+  message Rule {
+    message NamespaceRule {
+      string regex = 1;
+    }
+    string name = 1;
+    NamespaceRule namespace_rule = 2;
+  }
+  repeated Rule rules = 1;
+  bool needs_reevaluation = 2;
+}
+
 message Config {
   PublicConfig public_config = 1;
   PrivateConfig private_config = 2;
+  PlatformComponentConfig platform_component_config = 3;
 }
 
 message VulnerabilityExceptionConfig {
