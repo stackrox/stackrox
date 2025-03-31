@@ -120,13 +120,17 @@ func (i *networkConnIndicator) toProto(ts timestamp.MicroTS) *storage.NetworkFlo
 }
 
 type containerEndpointIndicator struct {
-	entity   networkgraph.Entity
-	port     uint16
-	protocol storage.L4Protocol
+	entity     networkgraph.Entity
+	port       uint16
+	protocol   storage.L4Protocol
+	lastUpdate timestamp.MicroTS
 }
 
 func (i *containerEndpointIndicator) String() string {
-	return fmt.Sprintf("%s(%s), port=%d, protocol=%s", i.entity.Type, i.entity.ID, i.port, i.protocol)
+	return fmt.Sprintf("%s(%s), port=%d, protocol=%s, lastUpdated=%s",
+		i.entity.Type, i.entity.ID,
+		i.port, i.protocol,
+		i.lastUpdate.GoTime().Format(time.RFC3339))
 }
 
 func (i *containerEndpointIndicator) toProto(ts timestamp.MicroTS) *storage.NetworkEndpoint {
@@ -815,9 +819,10 @@ func (m *networkFlowManager) enrichContainerEndpoint(ep *containerEndpoint, stat
 	status.used = true
 
 	indicator := containerEndpointIndicator{
-		entity:   networkgraph.EntityForDeployment(container.DeploymentID),
-		port:     ep.endpoint.IPAndPort.Port,
-		protocol: ep.endpoint.L4Proto.ToProtobuf(),
+		entity:     networkgraph.EntityForDeployment(container.DeploymentID),
+		port:       ep.endpoint.IPAndPort.Port,
+		protocol:   ep.endpoint.L4Proto.ToProtobuf(),
+		lastUpdate: now,
 	}
 
 	// Multiple endpoints from a collector can result in a single enriched endpoint,

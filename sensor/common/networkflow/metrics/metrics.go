@@ -45,7 +45,7 @@ var (
 		Name:      "network_connection_info_num_updates",
 		Help:      "Current number of network endpoints or connections being updated in the message from Collector received for a specific node",
 	}, []string{"Hostname", "Type"})
-	// HostConnections - 3a. Out of the updates, only some result in adding dhe connection to the connections map
+	// HostConnections - 3a. Out of the updates, only some result in adding the connection to the connections map
 	HostConnections = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
@@ -139,7 +139,7 @@ var (
 	})
 )
 
-func IncFlowEnrichmentEndpoint(condIDfound bool, action, isHistorical string, reason string, lastSeenSet, rotten, expired, fresh bool) {
+func IncFlowEnrichmentEndpoint(condIDfound bool, action, isHistorical string, reason string, lastSeenSet, rotten, mature, fresh bool) {
 	FlowEnrichmentEventsEndpoint.With(prometheus.Labels{
 		"containerIDfound": strconv.FormatBool(condIDfound),
 		"action":           action,
@@ -147,7 +147,7 @@ func IncFlowEnrichmentEndpoint(condIDfound bool, action, isHistorical string, re
 		"reason":           reason,
 		"lastSeenSet":      strconv.FormatBool(lastSeenSet),
 		"rotten":           strconv.FormatBool(rotten),
-		"expired":          strconv.FormatBool(expired),
+		"mature":           strconv.FormatBool(mature),
 		"fresh":            strconv.FormatBool(fresh)}).Inc()
 }
 
