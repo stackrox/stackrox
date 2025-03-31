@@ -66,11 +66,24 @@ func (s *serviceImpl) convertV2ReportConfigurationToProto(config *apiV2.ReportCo
 		}
 	}
 
+	if config.GetVulnerabilityReportOptionalColumns() != nil {
+		ret.OptionalColumns = &storage.ReportConfiguration_VulnerabilityReportOptionalColumns{
+			VulnerabilityReportOptionalColumns: s.convertV2VulnerabilityReportOptionalColumnsToProto(config.GetVulnerabilityReportOptionalColumns()),
+		}
+	}
+
 	for _, notifier := range config.GetNotifiers() {
 		ret.Notifiers = append(ret.Notifiers, s.convertV2NotifierConfigToProto(notifier))
 	}
 
 	return ret
+}
+
+func (s *serviceImpl) convertV2VulnerabilityReportOptionalColumnsToProto(optionalColumns *apiV2.VulnerabilityReportOptionalColumns) *storage.VulnerabilityReportOptionalColumns {
+	return &storage.VulnerabilityReportOptionalColumns{
+		IncludeNvdCvss:         optionalColumns.GetIncludeNvdCvss(),
+		IncludeEpssProbability: optionalColumns.GetIncludeEpssProbability(),
+	}
 }
 
 func (s *serviceImpl) convertV2VulnReportFiltersToProto(filters *apiV2.VulnerabilityReportFilters,
@@ -80,10 +93,8 @@ func (s *serviceImpl) convertV2VulnReportFiltersToProto(filters *apiV2.Vulnerabi
 	}
 
 	ret := &storage.VulnerabilityReportFilters{
-		Fixability:             storage.VulnerabilityReportFilters_Fixability(filters.GetFixability()),
-		AccessScopeRules:       accessScopeRules,
-		IncludeNvdCvss:         filters.GetIncludeNvdCvss(),
-		IncludeEpssProbability: filters.GetIncludeEpssProbability(),
+		Fixability:       storage.VulnerabilityReportFilters_Fixability(filters.GetFixability()),
+		AccessScopeRules: accessScopeRules,
 	}
 
 	for _, severity := range filters.GetSeverities() {
@@ -187,7 +198,6 @@ func (s *serviceImpl) convertProtoReportConfigurationToV2(config *storage.Report
 	if err != nil {
 		return nil, err
 	}
-
 	ret := &apiV2.ReportConfiguration{
 		Id:            config.GetId(),
 		Name:          config.GetName(),
@@ -203,6 +213,12 @@ func (s *serviceImpl) convertProtoReportConfigurationToV2(config *storage.Report
 		}
 	}
 
+	if config.GetVulnerabilityReportOptionalColumns() != nil {
+		ret.OptionalColumns = &apiV2.ReportConfiguration_VulnerabilityReportOptionalColumns{
+			VulnerabilityReportOptionalColumns: s.convertProtoVulnerabilityReportOptionalColumnstoV2(config.GetVulnerabilityReportOptionalColumns()),
+		}
+	}
+
 	for _, notifier := range config.GetNotifiers() {
 		converted, err := s.convertProtoNotifierConfigToV2(notifier)
 		if err != nil {
@@ -214,6 +230,14 @@ func (s *serviceImpl) convertProtoReportConfigurationToV2(config *storage.Report
 	return ret, nil
 }
 
+func (s *serviceImpl) convertProtoVulnerabilityReportOptionalColumnstoV2(optionalColumns *storage.VulnerabilityReportOptionalColumns) *apiV2.VulnerabilityReportOptionalColumns {
+	return &apiV2.VulnerabilityReportOptionalColumns{
+		IncludeEpssProbability: optionalColumns.GetIncludeEpssProbability(),
+		IncludeNvdCvss:         optionalColumns.GetIncludeNvdCvss(),
+	}
+
+}
+
 // convertProtoVulnReportFiltersToV2 converts storaage.VulnerabilityReportFilters to apiV2.VulnerabilityReportFilters
 func (s *serviceImpl) convertProtoVulnReportFiltersToV2(filters *storage.VulnerabilityReportFilters) *apiV2.VulnerabilityReportFilters {
 	if filters == nil {
@@ -221,9 +245,7 @@ func (s *serviceImpl) convertProtoVulnReportFiltersToV2(filters *storage.Vulnera
 	}
 
 	ret := &apiV2.VulnerabilityReportFilters{
-		Fixability:             apiV2.VulnerabilityReportFilters_Fixability(filters.GetFixability()),
-		IncludeNvdCvss:         filters.GetIncludeNvdCvss(),
-		IncludeEpssProbability: filters.GetIncludeEpssProbability(),
+		Fixability: apiV2.VulnerabilityReportFilters_Fixability(filters.GetFixability()),
 	}
 
 	for _, severity := range filters.GetSeverities() {
@@ -410,6 +432,9 @@ func (s *serviceImpl) convertProtoReportSnapshotstoV2(snapshots []*storage.Repor
 				VulnReportFilters: s.convertProtoVulnReportFiltersToV2(snapshot.GetVulnReportFilters()),
 			},
 			IsDownloadAvailable: blobNames.Contains(common.GetReportBlobPath(snapshot.GetReportConfigurationId(), snapshot.GetReportId())),
+			OptionalColumns: &apiV2.ReportSnapshot_VulnerabilityReportOptionalColumns{
+				VulnerabilityReportOptionalColumns: s.convertProtoVulnerabilityReportOptionalColumnstoV2(snapshot.GetVulnerabilityReportOptionalColumns()),
+			},
 		}
 		for _, notifier := range snapshot.GetNotifiers() {
 			converted := s.convertProtoNotifierSnapshotToV2(notifier)

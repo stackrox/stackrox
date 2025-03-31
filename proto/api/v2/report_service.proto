@@ -26,6 +26,9 @@ message ReportConfiguration {
   ReportSchedule schedule = 6;
   ResourceScope resource_scope = 7;
   repeated NotifierConfiguration notifiers = 8;
+  oneof optionalColumns{
+    VulnerabilityReportOptionalColumns vulnerabilityReportOptionalColumns = 9;
+  }
 }
 
 message VulnerabilityReportFilters {
@@ -56,8 +59,11 @@ message VulnerabilityReportFilters {
     bool since_last_sent_scheduled_report = 5;
     google.protobuf.Timestamp since_start_date = 6;
   }
-  bool include_nvd_cvss = 7;
-  bool include_epss_probability = 8;
+}
+
+message VulnerabilityReportOptionalColumns {
+  bool include_nvd_cvss = 1;
+  bool include_epss_probability = 2;
 }
 
 message ReportSchedule {
@@ -151,6 +157,9 @@ message ReportSnapshot {
   repeated NotifierConfiguration notifiers = 9;
   SlimUser user = 10;
   bool is_download_available = 11;
+  oneof optionalColumns{
+    VulnerabilityReportOptionalColumns vulnerabilityReportOptionalColumns = 12;
+  }
 }
 
 message ReportStatus {

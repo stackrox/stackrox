@@ -156,7 +156,7 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 	}
 
 	// Format results into CSV
-	zippedCSVData, err := GenerateCSV(reportData.CVEResponses, req.ReportSnapshot.Name, req.ReportSnapshot.GetVulnReportFilters())
+	zippedCSVData, err := GenerateCSV(reportData.CVEResponses, req.ReportSnapshot.Name, req.ReportSnapshot.GetVulnReportFilters(), req.ReportSnapshot.GetVulnerabilityReportOptionalColumns())
 	if err != nil {
 		return err
 	}

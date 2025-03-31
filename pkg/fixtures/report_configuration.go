@@ -98,6 +98,11 @@ func GetValidReportConfigWithMultipleNotifiersV2() *storage.ReportConfiguration 
 				},
 			},
 		},
+		OptionalColumns: &storage.ReportConfiguration_VulnerabilityReportOptionalColumns{
+			VulnerabilityReportOptionalColumns: &storage.VulnerabilityReportOptionalColumns{
+				IncludeNvdCvss: false,
+			},
+		},
 		Schedule: &storage.Schedule{
 			IntervalType: storage.Schedule_WEEKLY,
 			Interval: &storage.Schedule_DaysOfWeek_{
@@ -235,6 +240,12 @@ func GetValidV2ReportConfigWithMultipleNotifiers() *v2.ReportConfiguration {
 				CvesSince: &v2.VulnerabilityReportFilters_SinceLastSentScheduledReport{
 					SinceLastSentScheduledReport: true,
 				},
+			},
+		},
+		OptionalColumns: &v2.ReportConfiguration_VulnerabilityReportOptionalColumns{
+			VulnerabilityReportOptionalColumns: &v2.VulnerabilityReportOptionalColumns{
+				IncludeEpssProbability: false,
+				IncludeNvdCvss:         false,
 			},
 		},
 		Schedule: &v2.ReportSchedule{

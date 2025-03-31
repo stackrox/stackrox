@@ -538,6 +538,9 @@
           "type": "integer",
           "format": "int32",
           "title": "version=0 is unmigrated v1 config, version=1 is migrated v1 config and version=2 is v2 config"
+        },
+        "vulnerabilityReportOptionalColumns": {
+          "$ref": "#/definitions/storageVulnerabilityReportOptionalColumns"
         }
       }
     },
@@ -679,7 +682,12 @@
             "type": "object",
             "$ref": "#/definitions/SimpleAccessScopeRules"
           }
-        },
+        }
+      }
+    },
+    "storageVulnerabilityReportOptionalColumns": {
+      "type": "object",
+      "properties": {
         "includeNvdCvss": {
           "type": "boolean"
         },
