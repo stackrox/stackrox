@@ -147,11 +147,11 @@ func (d *datastoreImpl) InitializeTokenExchangers() error {
 
 	configs, err := d.listAuthM2MConfigsNoLock(ctx)
 	if err != nil {
-		return fmt.Errorf("Failed to list auth m2m configs: %w", err)
+		return pkgErrors.Wrap(err, "Failed to list auth m2m configs")
 	}
 
 	if err = d.configureConfigControllerAccess(configs); err != nil {
-		return fmt.Errorf("Failed to configure config controller access: %w", err)
+		return pkgErrors.Wrap(err, "Failed to configure config controller access")
 	}
 
 	tokenExchangerErrors := []error{}
@@ -177,7 +177,7 @@ func (d *datastoreImpl) InitializeTokenExchangers() error {
 func (d *datastoreImpl) configureConfigControllerAccess(configs []*storage.AuthMachineToMachineConfig) error {
 	kubeSAIssuer, err := d.issuerFetcher.GetServiceAccountIssuer()
 	if err != nil {
-		return fmt.Errorf("Failed to get service account issuer: %w", err)
+		return pkgErrors.Wrap(err, "Failed to get service account issuer")
 	}
 
 	var kubeSAConfig *storage.AuthMachineToMachineConfig
@@ -221,10 +221,10 @@ func (d *datastoreImpl) configureConfigControllerAccess(configs []*storage.AuthM
 	// This inits the token exchanger, too
 	_, err = d.UpsertAuthM2MConfigNoLock(ctx, kubeSAConfig)
 	if err != nil {
-		return fmt.Errorf("Failed to upsert auth m2m config: %w", err)
+		return pkgErrors.Wrap(err, "Failed to upsert auth m2m config")
 	}
 
-	return err
+	return nil
 }
 
 // wrapRollback wraps the error with potential rollback errors.
