@@ -19,6 +19,7 @@ func init() {
 		InternalFlowCounter,
 		NetworkEntityFlowCounter,
 		HostConnections,
+		HostEndpoints,
 		HostProcessesRemoved,
 		NumUpdated,
 		activeFlowsTotal,
