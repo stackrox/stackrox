@@ -38,6 +38,10 @@ const (
 	DefaultDownloadableReportGlobalRetentionBytes = 500 * 1024 * 1024
 	// DefaultAdministrationEventsRetention is the number of days to retain administration events.
 	DefaultAdministrationEventsRetention = 4
+	// PlatformComponentSystemRuleName is the name of the system defined rule for matching platform components
+	PlatformComponentSystemRuleName = "system rule"
+	// PlatformComponentDefaultNamespaceRegex is the default system defined namespace regex for matching platform components
+	PlatformComponentDefaultNamespaceRegex = `^kube-.*|^openshift-.*|^stackrox$|^rhacs-operator$|^open-cluster-management$|^multicluster-engine$|^aap$|^hive$|^nvidia-gpu-operator$`
 )
 
 var (
@@ -103,6 +107,13 @@ var (
 	defaultAdministrationEventsConfig = &storage.AdministrationEventsConfig{
 		RetentionDurationDays: DefaultAdministrationEventsRetention,
 	}
+
+	defaultPlatformConfigSystemRule = &storage.PlatformComponentConfig_Rule{
+		Name: PlatformComponentSystemRuleName,
+		NamespaceRule: &storage.PlatformComponentConfig_Rule_NamespaceRule{
+			Regex: PlatformComponentDefaultNamespaceRegex,
+		},
+	}
 )
 
 func validateConfigAndPopulateMissingDefaults(datastore DataStore) {
@@ -149,12 +160,36 @@ func validateConfigAndPopulateMissingDefaults(datastore DataStore) {
 		needsUpsert = true
 	}
 
+	if features.CustomizablePlatformComponents.Enabled() {
+		needsUpsert = populateDefaultSystemRuleIfMissing(config)
+	}
+
 	if needsUpsert {
 		utils.Must(datastore.UpsertConfig(ctx, &storage.Config{
 			PublicConfig:  config.GetPublicConfig(),
 			PrivateConfig: privateConfig,
 		}))
 	}
+}
+
+// populateDefaultSystemRuleIfMissing returns true if the platform component config's system rule was updated
+func populateDefaultSystemRuleIfMissing(config *storage.Config) bool {
+	if config.GetPlatformComponentConfig() == nil {
+		config.PlatformComponentConfig = &storage.PlatformComponentConfig{
+			Rules: []*storage.PlatformComponentConfig_Rule{defaultPlatformConfigSystemRule},
+		}
+		return true
+	}
+	for _, rule := range config.GetPlatformComponentConfig().GetRules() {
+		if rule.GetName() == PlatformComponentSystemRuleName {
+			return false
+		}
+	}
+	config.GetPlatformComponentConfig().Rules = append(
+		config.GetPlatformComponentConfig().Rules,
+		defaultPlatformConfigSystemRule,
+	)
+	return true
 }
 
 func initialize() {
