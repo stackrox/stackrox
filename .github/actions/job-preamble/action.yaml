@@ -57,7 +57,5 @@ runs:
           create_job_record "${{ github.job }}" "gha";
         post: >
           source scripts/ci/lib.sh;
-          `# TODO: setting METRICS_JOB_ID here is redundant and should be removed.`;
-          export METRICS_JOB_ID=$GITHUB_RUN_ID;
           update_job_record outcome "${{ job.status }}" stopped_at "CURRENT_TIMESTAMP()";
           df --si /;
