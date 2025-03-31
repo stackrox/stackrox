@@ -109,8 +109,7 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicyDuplicateID() {
 		SORTName: "test policy",
 	}
 
-	errString1 := "policy with id \"test-policy-1\" already exists, unable to import policy"
-	errString2 := "policy with name \"test policy\" already exists, unable to import policy"
+	errString := "policy with id \"test-policy-1\" already exists, unable to import policy"
 
 	s.clusterDatastore.EXPECT().GetClusters(s.hasReadWriteWorkflowAdministrationAccess).Return(nil, nil)
 	s.store.EXPECT().Get(s.hasReadWriteWorkflowAdministrationAccess, policy.GetId()).Return(policy, true, nil)
@@ -125,7 +124,7 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicyDuplicateID() {
 	s.Require().Len(responses, 1)
 
 	s.testImportFailResponse(policy, []string{policies.ErrImportDuplicateID, policies.ErrImportDuplicateName},
-		[]string{errString1, errString2}, []string{policy.GetName(), policy.GetName()}, responses[0])
+		[]string{errString, errString}, []string{policy.GetName(), policy.GetName()}, responses[0])
 }
 
 func (s *PolicyDatastoreTestSuite) TestImportPolicyDuplicateName() {
@@ -136,7 +135,7 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicyDuplicateName() {
 		SORTName: name,
 	}
 
-	errString := fmt.Sprintf("policy with name %q already exists, unable to import policy", policy.Name)
+	errString := fmt.Sprintf("policy with id %q already exists, unable to import policy", policy.GetId())
 
 	s.clusterDatastore.EXPECT().GetClusters(s.hasReadWriteWorkflowAdministrationAccess).Return(nil, nil)
 	s.store.EXPECT().Get(s.hasReadWriteWorkflowAdministrationAccess, policy.GetId()).Return(nil, false, nil)
