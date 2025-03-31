@@ -108,8 +108,6 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
                   content: <NavigationContent variant="Deprecated">Dashboard</NavigationContent>,
                   path: vulnManagementPath,
                   routeKey: 'vulnerability-management',
-                  isActive: (location) =>
-                      Boolean(matchPath({ path: vulnManagementPath }, location.pathname)),
               },
           ]
         : [
@@ -156,8 +154,6 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
                   content: <NavigationContent variant="Deprecated">Dashboard</NavigationContent>,
                   path: vulnManagementPath,
                   routeKey: 'vulnerability-management',
-                  isActive: (location) =>
-                      Boolean(matchPath({ path: vulnManagementPath }, location.pathname)),
               },
           ];
 
