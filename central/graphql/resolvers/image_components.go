@@ -119,7 +119,6 @@ type ImageComponentResolver interface {
 func (resolver *Resolver) ImageComponent(ctx context.Context, args IDQuery) (ImageComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageComponent")
 
-	log.Infof("SHREWS -- ImageComponent -- %v", args.ID)
 	// check permissions
 	if err := readImages(ctx); err != nil {
 		return nil, err
@@ -149,8 +148,6 @@ func (resolver *Resolver) ImageComponent(ctx context.Context, args IDQuery) (Ima
 func (resolver *Resolver) ImageComponents(ctx context.Context, q PaginatedQuery) ([]ImageComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageComponents")
 
-	log.Infof("SHREWS -- ImageComponents -- %v", q.String())
-	log.Infof("SHREWS -- ImageComponents -- %v", ctx)
 	// check permissions
 	if err := readImages(ctx); err != nil {
 		return nil, err
@@ -161,8 +158,6 @@ func (resolver *Resolver) ImageComponents(ctx context.Context, q PaginatedQuery)
 	if err != nil {
 		return nil, err
 	}
-	log.Infof("SHREWS -- ImageComponents -- %v", query.String())
-	log.Infof("SHREWS -- ImageComponents -- %v", query)
 
 	if features.FlattenCVEData.Enabled() {
 		// get loader
@@ -173,10 +168,6 @@ func (resolver *Resolver) ImageComponents(ctx context.Context, q PaginatedQuery)
 
 		// get values
 		comps, err := loader.FromQuery(ctx, query)
-		log.Infof("SHREWS -- ImageComponents -- %v", len(comps))
-		if strings.Contains(query.String(), "37434") {
-			log.Infof("SHREWS -- ImageComponents -- 37434 --  %v", comps)
-		}
 		componentResolvers, err := resolver.wrapImageComponentV2sWithContext(ctx, comps, q, err)
 		if err != nil {
 			return nil, err
@@ -354,8 +345,6 @@ func getImageCVEResolvers(ctx context.Context, root *Resolver, os string, vulns 
 }
 
 func getImageCVEV2Resolvers(ctx context.Context, root *Resolver, imageID string, component *storage.EmbeddedImageScanComponent, query *v1.Query) ([]ImageVulnerabilityResolver, error) {
-	log.Infof("SHREWS -- components -- getImageCVEV2Resolvers")
-
 	query, _ = search.FilterQueryWithMap(query, mappings.VulnerabilityOptionsMap)
 	predicate, err := vulnPredicateFactory.GeneratePredicate(query)
 	if err != nil {
@@ -671,17 +660,13 @@ func (resolver *imageComponentV2Resolver) ImageVulnerabilityCounter(ctx context.
 
 func (resolver *imageComponentV2Resolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "ImageVulnerabilities")
-	log.Infof("SHREWS -- components.ImageVulnerabilities -- %v", args.String())
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}
 
 	// Short path. Full image is embedded when image scan resolver is called.
 	embeddedComponent := embeddedobjs.ComponentFromContext(resolver.ctx)
-	log.Infof("SHREWS -- components.ImageVulnerabilities -- %v", embeddedComponent)
 	if embeddedComponent == nil {
-		log.Infof("SHREWS -- components.ImageVulnerabilities back to Vulns-- %v", resolver.data.GetId())
-		// TODO(ROX-28320) for now just replace the args with the original.  Probably correct thing to do anyway.
 		return resolver.root.ImageVulnerabilities(resolver.imageComponentScopeContext(ctx), resolver.subFieldQuery)
 	}
 
@@ -779,7 +764,6 @@ func (resolver *imageComponentV2Resolver) UnusedVarSink(_ context.Context, _ Raw
 // Following are deprecated functions that are retained to allow UI time to migrate away from them
 
 func (resolver *imageComponentV2Resolver) FixedIn(_ context.Context) string {
-	log.Infof("SHREWS -- component.FixedIn -- actually deprecated")
 	return resolver.data.GetFixedBy()
 }
 

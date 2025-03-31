@@ -3,7 +3,6 @@ package resolvers
 import (
 	"context"
 	"reflect"
-	"strings"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
@@ -44,7 +43,6 @@ func init() {
 		"snoozed: Boolean!",
 	}))
 	utils.Must(schema.AddType("ImageCVEV2", []string{
-		"advisory: String!",
 		"componentId: String!",
 		"cveBaseInfo: CVEInfo",
 		"cvss: Float!",
@@ -64,6 +62,7 @@ func init() {
 		schema.AddType("ImageVulnerability",
 			append(commonVulnerabilitySubResolvers,
 				"activeState(query: String): ActiveState",
+				"advisory: String!",
 				"deploymentCount(query: String): Int!",
 				"deployments(query: String, pagination: Pagination): [Deployment!]!",
 				"discoveredAtImage(query: String): Time",
@@ -91,6 +90,7 @@ type ImageVulnerabilityResolver interface {
 	CommonVulnerabilityResolver
 
 	ActiveState(ctx context.Context, args RawQuery) (*activeStateResolver, error)
+	Advisory(ctx context.Context) (string, error)
 	DeploymentCount(ctx context.Context, args RawQuery) (int32, error)
 	Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error)
 	DiscoveredAtImage(ctx context.Context, args RawQuery) (*graphql.Time, error)
@@ -260,13 +260,8 @@ func (resolver *Resolver) ImageVulnerabilityCount(ctx context.Context, args RawQ
 	}
 
 	if features.FlattenCVEData.Enabled() {
-		// get loader
-		loader, err := loaders.GetImageCVEV2Loader(ctx)
-		if err != nil {
-			return 0, err
-		}
-
-		return loader.CountFromQuery(ctx, query)
+		cveCount, err := resolver.ImageCVEFlatView.Count(ctx, query)
+		return int32(cveCount), err
 	}
 
 	// get loader
@@ -888,10 +883,15 @@ func (resolver *imageCVEResolver) Suppressed(_ context.Context) bool {
 	return resolver.data.GetSnoozed()
 }
 
+func (resolver *imageCVEResolver) Advisory(ctx context.Context) (string, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "Advisory")
+	return "", nil
+}
+
 // Following are the functions that return information that is nested in the CVEInfo object
 // or are convenience functions to allow time for UI to migrate to new naming schemes
-// This is awful
 func (resolver *imageCVEV2Resolver) ID(_ context.Context) graphql.ID {
+	// TODO(ROX-28320):  Figure out if this is really what I want to do.
 	if features.FlattenCVEData.Enabled() {
 		return graphql.ID(resolver.data.GetCveBaseInfo().GetCve())
 	}
@@ -899,6 +899,7 @@ func (resolver *imageCVEV2Resolver) ID(_ context.Context) graphql.ID {
 }
 
 func (resolver *imageCVEV2Resolver) CreatedAt(_ context.Context) (*graphql.Time, error) {
+	// TODO(ROX-28320): figure out if I need to get the min created time for the CVE.
 	return protocompat.ConvertTimestampToGraphqlTimeOrError(resolver.data.GetCveBaseInfo().GetCreatedAt())
 }
 
@@ -907,6 +908,7 @@ func (resolver *imageCVEV2Resolver) CVE(_ context.Context) string {
 }
 
 func (resolver *imageCVEV2Resolver) LastModified(_ context.Context) (*graphql.Time, error) {
+	// TODO(ROX-28320): figure out if I need to get the min created time for the CVE.
 	return protocompat.ConvertTimestampToGraphqlTimeOrError(resolver.data.GetCveBaseInfo().GetLastModified())
 }
 
@@ -915,6 +917,15 @@ func (resolver *imageCVEV2Resolver) Link(_ context.Context) string {
 }
 
 func (resolver *imageCVEV2Resolver) PublishedOn(_ context.Context) (*graphql.Time, error) {
+	if resolver.flatData != nil {
+		ts := resolver.flatData.GetPublishDate()
+		if ts == nil {
+			return nil, nil
+		}
+		return &graphql.Time{
+			Time: *ts,
+		}, nil
+	}
 	return protocompat.ConvertTimestampToGraphqlTimeOrError(resolver.data.GetCveBaseInfo().GetPublishedOn())
 }
 
@@ -945,7 +956,7 @@ func (resolver *imageCVEV2Resolver) EnvImpact(ctx context.Context) (float64, err
 		return 0, err
 	}
 	ctx = scoped.Context(ctx, scoped.Scope{
-		ID:    resolver.data.GetId(),
+		IDs:   resolver.flatData.GetCVEIDs(),
 		Level: v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
 	})
 	scopedCount, err := resolver.root.DeploymentCount(ctx, RawQuery{})
@@ -957,7 +968,6 @@ func (resolver *imageCVEV2Resolver) EnvImpact(ctx context.Context) (float64, err
 
 func (resolver *imageCVEV2Resolver) FixedByVersion(ctx context.Context) (string, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "FixedByVersion")
-	log.Infof("SHREWS -- image_vuln.FixedByVersion")
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}
@@ -975,15 +985,10 @@ func (resolver *imageCVEV2Resolver) FixedByVersion(ctx context.Context) (string,
 		return "", nil
 	}
 
-	log.Infof("SHREWS -- image_vuln.FixedByVersion -- IDs %v", resolver.flatData.GetCVE())
-	log.Infof("SHREWS -- image_vuln.FixedByVersion -- IDs %v", resolver.flatData.GetCVEIDs())
 	query := search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.flatData.GetCVEIDs()...).ProtoQuery()
 	cves, err := resolver.root.ImageCVEV2DataStore.SearchRawImageCVEs(resolver.ctx, query)
 	if err != nil || len(cves) == 0 {
 		return "", err
-	}
-	if strings.Contains(resolver.flatData.GetCVE(), "37434") {
-		log.Infof("SHREWS -- image_vuln.FixedByVersion -- 37434 -- %v", cves)
 	}
 	return cves[0].GetFixedBy(), nil
 }
@@ -993,6 +998,7 @@ func (resolver *imageCVEV2Resolver) FixedByVersion(ctx context.Context) (string,
 //	TODO(ROX-28123): Once the old code is removed, this method can become generated.
 func (resolver *imageCVEV2Resolver) IsFixable(_ context.Context, _ RawQuery) (bool, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "IsFixable")
+	// TODO(ROX-28320): figure out if I need to use the flat data here
 	return resolver.data.IsFixable, nil
 }
 
@@ -1038,7 +1044,10 @@ func (resolver *imageCVEV2Resolver) Vectors() *EmbeddedVulnerabilityVectorsResol
 
 func (resolver *imageCVEV2Resolver) VulnerabilityState(ctx context.Context) string {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "VulnerabilityState")
-
+	// TODO(ROX-28320): convert the type to the storage type.
+	//if resolver.flatData != nil {
+	//	return resolver.flatData.GetState()
+	//}
 	return resolver.data.GetState().String()
 }
 
@@ -1061,7 +1070,7 @@ func (resolver *imageCVEV2Resolver) EffectiveVulnerabilityRequest(ctx context.Co
 	}
 
 	if imageID == "" {
-		return nil, errors.Errorf("image scope must be provided for determining effective vulnerability request for cve %s", resolver.data.GetId())
+		return nil, errors.Errorf("image scope must be provided for determining effective vulnerability request for cve %s", resolver.data.GetCveBaseInfo().GetCve())
 	}
 	imageLoader, err := loaders.GetImageLoader(resolver.ctx)
 	if err != nil {
@@ -1097,10 +1106,9 @@ func (resolver *imageCVEV2Resolver) Deployments(ctx context.Context, args Pagina
 
 func (resolver *imageCVEV2Resolver) DiscoveredAtImage(_ context.Context, _ RawQuery) (*graphql.Time, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "DiscoveredAtImage")
-	// TODO(ROX-28320) figure out if this is correct as it may not be per image
 	// TODO(ROX-28320) make a helper for this
 	if resolver.flatData != nil {
-		ts := resolver.flatData.GetFirstDiscoveredInSystem()
+		ts := resolver.flatData.GetFirstImageOccurrence()
 		if ts == nil {
 			return nil, nil
 		}
@@ -1113,29 +1121,13 @@ func (resolver *imageCVEV2Resolver) DiscoveredAtImage(_ context.Context, _ RawQu
 
 func (resolver *imageCVEV2Resolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "ImageComponents")
-	log.Infof("SHREWS -- image_vule.ImageComponents -- %v", resolver.flatData)
-	//if resolver.flatData != nil {
-	//	q := *args.Query
-	//	q = q + "+CVE ID:" + strings.Join(resolver.flatData.GetCVEIDs(), ",")
-	//	args.Query = pointers.String(q)
-	//	log.Infof("SHREWS -- about to send query %v", args.String())
-	//	log.Infof("SHREWS -- what is the context %v", ctx)
-	//	return resolver.root.ImageComponents(ctx, args)
-	//}
 
 	return resolver.root.ImageComponents(resolver.imageVulnerabilityScopeContext(ctx), args)
 }
 
 func (resolver *imageCVEV2Resolver) ImageComponentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "ImageComponentCount")
-	//if resolver.flatData != nil {
-	//	q := *args.Query
-	//	q = q + "+CVE ID:" + strings.Join(resolver.flatData.GetCVEIDs(), ",")
-	//	args.Query = pointers.String(q)
-	//	log.Infof("SHREWS -- about to send query %v", args.String())
-	//	log.Infof("SHREWS -- what is the context %v", ctx)
-	//	return resolver.root.ImageComponentCount(ctx, args)
-	//}
+
 	return resolver.root.ImageComponentCount(resolver.imageVulnerabilityScopeContext(ctx), args)
 }
 
@@ -1187,6 +1179,34 @@ func (resolver *imageCVEV2Resolver) ExceptionCount(ctx context.Context, args str
 	return int32(count), nil
 }
 
+func (resolver *imageCVEV2Resolver) Advisory(ctx context.Context) (string, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "Advisory")
+	log.Infof("SHREWS -- image_vuln.Advisory")
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
+
+	// Short path. Full image is embedded when image scan resolver is called.
+	if embeddedVuln := embeddedobjs.VulnFromContext(resolver.ctx); embeddedVuln != nil {
+		return embeddedVuln.GetAdvisory(), nil
+	}
+
+	scope, hasScope := scoped.GetScope(resolver.ctx)
+	if !hasScope {
+		return "", nil
+	}
+	if scope.Level != v1.SearchCategory_IMAGE_COMPONENTS_V2 {
+		return "", nil
+	}
+
+	query := search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.flatData.GetCVEIDs()...).ProtoQuery()
+	cves, err := resolver.root.ImageCVEV2DataStore.SearchRawImageCVEs(resolver.ctx, query)
+	if err != nil || len(cves) == 0 {
+		return "", err
+	}
+	return cves[0].GetAdvisory(), nil
+}
+
 func (resolver *imageCVEV2Resolver) imageVulnerabilityScopeContext(ctx context.Context) context.Context {
 	if ctx == nil {
 		err := utils.ShouldErr(errors.New("argument 'ctx' is nil"))
@@ -1198,9 +1218,6 @@ func (resolver *imageCVEV2Resolver) imageVulnerabilityScopeContext(ctx context.C
 		resolver.ctx = ctx
 	}
 
-	// TODO(ROX-28320): make sure this query is correct for flattened schema.  May have to just build a query
-	// and not use the scope context as it is too limiting and it would cause far reaching changes to
-	// extend it.  I think.
 	if resolver.flatData != nil {
 		return scoped.Context(resolver.ctx, scoped.Scope{
 			IDs:   resolver.flatData.GetCVEIDs(),
