@@ -153,7 +153,7 @@ func gatherResultCallback(res *gatherResult, clusterName string) func(ctx concur
 	}
 }
 
-func getDelScanningConfigs(clusterName string, d deleRegDS.DataStore, ctx context.Context) ([]k8sintrospect.File, error) {
+func getDelScanningConfigs(clusterName string, d deleRegDS.DataStore, ctx context.Context) []k8sintrospect.File {
 	adminCtx := sac.WithGlobalAccessScopeChecker(
 		ctx,
 		sac.AllowFixedScopes(
@@ -172,7 +172,7 @@ func getDelScanningConfigs(clusterName string, d deleRegDS.DataStore, ctx contex
 	} else {
 		res.Contents = []byte(config.String())
 	}
-	return []k8sintrospect.File{res}, nil
+	return []k8sintrospect.File{res}
 }
 
 func createErrorFile(clusterName string, err error) k8sintrospect.File {
