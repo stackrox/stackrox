@@ -37,12 +37,16 @@ function DelegatedRegistriesTable({
         setRowOpen(-1);
     }
 
+    const defaultClusterName =
+        selectedClusterId === ''
+            ? 'None'
+            : (clusters.find(({ id }) => id === selectedClusterId)?.name ?? selectedClusterId);
+    const defaultClusterItem = `Default cluster (${defaultClusterName})`;
+
     const clusterSelectOptions: JSX.Element[] = clusters.map((cluster) => {
-        const optionLabel =
-            cluster.id === selectedClusterId ? `${cluster.name} (default)` : cluster.name;
         return (
             <SelectOption key={cluster.id} value={cluster.id}>
-                <span>{optionLabel}</span>
+                {cluster.name}
             </SelectOption>
         );
     });
@@ -62,9 +66,11 @@ function DelegatedRegistriesTable({
             </Thead>
             <Tbody>
                 {registries.map((registry, rowIndex) => {
-                    const selectedClusterName =
-                        clusters.find((cluster) => registry.clusterId === cluster.id)?.name ??
-                        'None';
+                    const selectedClusterItem =
+                        registry.clusterId === ''
+                            ? defaultClusterItem
+                            : (clusters.find((cluster) => registry.clusterId === cluster.id)
+                                  ?.name ?? registry.clusterId);
 
                     // Even path and clusterId combined is not a unique key.
                     /* eslint-disable react/no-array-index-key */
@@ -82,21 +88,15 @@ function DelegatedRegistriesTable({
                             </Td>
                             <Td dataLabel="Destination cluster (CLI/API only)">
                                 <Select
-                                    className="cluster-select"
-                                    placeholderText={
-                                        <span style={{ position: 'relative', top: '1px' }}>
-                                            None
-                                        </span>
-                                    }
                                     toggleAriaLabel="Select a cluster"
                                     onToggle={() => toggleSelect(rowIndex)}
                                     onSelect={(_, value) => onSelect(rowIndex, value)}
                                     isOpen={openRow === rowIndex}
                                     isDisabled={!isEditing}
-                                    selections={selectedClusterName}
+                                    selections={selectedClusterItem}
                                 >
-                                    <SelectOption key="no-cluster-selected" value="" isPlaceholder>
-                                        <span>None</span>
+                                    <SelectOption key="" value="">
+                                        {defaultClusterItem}
                                     </SelectOption>
                                     <>{clusterSelectOptions}</>
                                 </Select>
