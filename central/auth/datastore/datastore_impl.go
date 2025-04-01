@@ -57,10 +57,10 @@ func (d *datastoreImpl) UpsertAuthM2MConfig(ctx context.Context,
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
 
-	return d.UpsertAuthM2MConfigNoLock(ctx, config)
+	return d.upsertAuthM2MConfigNoLock(ctx, config)
 }
 
-func (d *datastoreImpl) UpsertAuthM2MConfigNoLock(ctx context.Context,
+func (d *datastoreImpl) upsertAuthM2MConfigNoLock(ctx context.Context,
 	config *storage.AuthMachineToMachineConfig) (*storage.AuthMachineToMachineConfig, error) {
 	if err := sac.VerifyAuthzOK(accessSAC.WriteAllowed(ctx)); err != nil {
 		return nil, err
@@ -219,7 +219,7 @@ func (d *datastoreImpl) configureConfigControllerAccess(configs []*storage.AuthM
 		sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS), sac.ResourceScopeKeys(resources.Access)))
 
 	// This inits the token exchanger, too
-	_, err = d.UpsertAuthM2MConfigNoLock(ctx, kubeSAConfig)
+	_, err = d.upsertAuthM2MConfigNoLock(ctx, kubeSAConfig)
 	if err != nil {
 		return pkgErrors.Wrap(err, "Failed to upsert auth m2m config")
 	}
