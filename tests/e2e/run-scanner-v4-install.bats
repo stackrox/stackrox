@@ -55,6 +55,7 @@ init() {
 initialized="false"
 begin_timestamp=""
 current_label=""
+post_processor_pid=""
 
 _begin() {
     # In case it is convenient for a given test-case, _begin() can take care of the initialization.
@@ -74,6 +75,7 @@ _begin() {
     exec \
         1> >(bash -c "post_process_output '$label'" > "/dev/fd/$outfd") \
         2>&1
+    post_processor_pid="$!"
     begin_timestamp=$(date +%s)
 }
 
@@ -84,6 +86,8 @@ _end() {
     emit_timing_data "$test_identifier" "$current_label" "$begin_timestamp" "$end_timestamp"
     # Close post-processing stdout and stderr and restore from original fds.
     exec 1>&- 2>&- 1>&4 2>&5
+    wait "$post_processor_pid" || echo "Failed to wait for output post processor (PID ${post_processor_pid})."
+    post_processor_pid=""
     current_label=""
     begin_timestamp=""
 }
@@ -230,7 +234,7 @@ setup() {
         setup_deployment_env false false
     fi
 
-    _step "tear-down"
+    _step "pre-test-tear-down"
 
     if [[ "${SKIP_INITIAL_TEARDOWN:-}" != "true" ]] && (( test_case_no == 0 )); then
         # executing teardown to begin test execution in a well-defined state
@@ -284,7 +288,7 @@ describe_deployments_in_namespace() {
 }
 
 teardown() {
-    _begin "tear-down"
+    _begin "post-test-tear-down"
 
     if [[ "${TEST_SUITE_ABORTED}" == "true" ]]; then
         echo "Skipping teardown due to previous failure." >&3
@@ -340,7 +344,7 @@ teardown() {
     fi
 
     run remove_existing_stackrox_resources "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}" "stackrox"
-    echo "Teardown complete"
+    echo "Post-test teardown complete."
 
     _end
 }
