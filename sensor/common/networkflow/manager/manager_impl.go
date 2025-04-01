@@ -490,7 +490,9 @@ func (m *networkFlowManager) purgeStaleActiveEndpoints(tickerC <-chan time.Time)
 			maxAge := env.ActiveEndpointsPurgerTickerMaxAge.DurationSetting()
 			concurrency.WithLock(&m.activeEndpointsMutex, func() {
 				log.Debug("Purging active endpoints")
+				start := time.Now()
 				purgeIfOlderThanNoLock(maxAge, m.activeEndpoints, m.clusterEntities)
+				flowMetrics.ActiveEndpointsPurgerDuration.Observe(float64(time.Since(start).Milliseconds()))
 			})
 		}
 	}
@@ -499,7 +501,6 @@ func (m *networkFlowManager) purgeStaleActiveEndpoints(tickerC <-chan time.Time)
 func purgeIfOlderThanNoLock(maxAge time.Duration,
 	endpoints map[containerEndpoint]*containerEndpointIndicatorWithAge,
 	store EntityStore) {
-	defer flowMetrics.ActiveEndpointsPurgerDuration.Observe(float64(time.Since(time.Now()).Milliseconds()))
 	for endpoint, age := range endpoints {
 		// remove if the endpoint is not in the store (also not in history)
 		if len(store.LookupByEndpoint(endpoint.endpoint)) == 0 {
