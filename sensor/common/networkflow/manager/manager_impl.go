@@ -53,8 +53,18 @@ const (
 var (
 	emptyProcessInfo = processInfo{}
 	enricherCycle    = time.Second * 30
-	purgerCycle      = time.Minute * 30
+	// How often purger should run. The Purger removes old endpoints from activeEndpoints slice.
+	// This is important for cases when Collector or the orchestrator never reports a given endpoint
+	// as deleted, because there is no other mechanism that would remove an endpoint from memory.
+	purgerCycleSetting = env.ActiveEndpointsPurgerTickerCycle.DurationSetting()
 )
+
+func nonZeroPurgerCycle() time.Duration {
+	if purgerCycleSetting > 0 {
+		return purgerCycleSetting
+	}
+	return time.Hour
+}
 
 type hostConnections struct {
 	hostname           string
@@ -276,7 +286,8 @@ func NewManager(
 	pubSub *internalmessage.MessageSubscriber,
 ) Manager {
 	enricherTicker := time.NewTicker(enricherCycle)
-	purgerTicker := time.NewTicker(purgerCycle)
+	purgerTicker := time.NewTicker(nonZeroPurgerCycle())
+
 	mgr := &networkFlowManager{
 		connectionsByHost: make(map[string]*hostConnections),
 		clusterEntities:   clusterEntities,
@@ -363,7 +374,10 @@ func (m *networkFlowManager) ProcessMessage(_ *central.MsgToSensor) error {
 
 func (m *networkFlowManager) Start() error {
 	go m.enrichConnections(m.enricherTicker.C)
-	go m.purgeStaleActiveEndpoints(m.purgerTicker.C)
+	// Check if purger is enabled
+	if env.ActiveEndpointsPurgerTickerCycle.DurationSetting() > 0 {
+		go m.purgeStaleActiveEndpoints(m.purgerTicker.C)
+	}
 	go m.publicIPs.Run(m.stopper.LowLevel().GetStopRequestSignal(), m.clusterEntities)
 	return nil
 }
@@ -388,7 +402,8 @@ func (m *networkFlowManager) Notify(e common.SensorComponentEvent) {
 		if features.SensorCapturesIntermediateEvents.Enabled() {
 			if m.initialSync.CompareAndSwap(false, true) {
 				m.enricherTicker.Reset(enricherCycle)
-				m.purgerTicker.Reset(purgerCycle)
+				m.purgerTicker.Reset(nonZeroPurgerCycle())
+
 			}
 			return
 		}
@@ -396,7 +411,8 @@ func (m *networkFlowManager) Notify(e common.SensorComponentEvent) {
 		m.resetLastSentState()
 		m.centralReady.Signal()
 		m.enricherTicker.Reset(enricherCycle)
-		m.purgerTicker.Reset(purgerCycle)
+		m.purgerTicker.Reset(nonZeroPurgerCycle())
+
 	case common.SensorComponentEventOfflineMode:
 		if features.SensorCapturesIntermediateEvents.Enabled() {
 			return
@@ -472,20 +488,39 @@ func (m *networkFlowManager) purgeStaleActiveEndpoints(tickerC <-chan time.Time)
 			return
 		case <-tickerC:
 			maxAge := env.ActiveEndpointsPurgerTickerMaxAge.DurationSetting()
-			if maxAge > 0 {
-				concurrency.WithLock(&m.activeEndpointsMutex, func() {
-					log.Debugf("Purging active endpoints older than %s", maxAge.String())
-					purgeIfOlderThanNoLock(timestamp.Now().Add(maxAge*-1), m.activeEndpoints)
-				})
-			}
+			concurrency.WithLock(&m.activeEndpointsMutex, func() {
+				log.Debug("Purging active endpoints")
+				purgeIfOlderThanNoLock(maxAge, m.activeEndpoints, m.clusterEntities)
+			})
 		}
 	}
 }
 
-func purgeIfOlderThanNoLock(cutOffTS timestamp.MicroTS, endpoints map[containerEndpoint]*containerEndpointIndicatorWithAge) {
+func purgeIfOlderThanNoLock(maxAge time.Duration,
+	endpoints map[containerEndpoint]*containerEndpointIndicatorWithAge,
+	store EntityStore) {
+	defer flowMetrics.ActiveEndpointsPurgerDuration.Observe(float64(time.Since(time.Now()).Milliseconds()))
 	for endpoint, age := range endpoints {
-		if cutOffTS.After(age.lastUpdate) {
+		// remove if the endpoint is not in the store (also not in history)
+		if len(store.LookupByEndpoint(endpoint.endpoint)) == 0 {
 			delete(endpoints, endpoint)
+			flowMetrics.ActiveEndpointsPurger.WithLabelValues("endpoint-gone").Inc()
+			continue
+		}
+		// remove if the related container is not found or is found but is historical
+		_, found, isHistorical := store.LookupByContainerID(endpoint.containerID)
+		if !found || isHistorical {
+			delete(endpoints, endpoint)
+			flowMetrics.ActiveEndpointsPurger.WithLabelValues("container-gone").Inc()
+			continue
+		}
+		if maxAge > 0 {
+			// finally, remove all that didn't get any update from collector for a given time
+			cutOff := timestamp.Now().Add(-maxAge)
+			if cutOff.After(age.lastUpdate) {
+				flowMetrics.ActiveEndpointsPurger.WithLabelValues("max-age-reached").Inc()
+				delete(endpoints, endpoint)
+			}
 		}
 	}
 }

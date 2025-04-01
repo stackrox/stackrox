@@ -93,6 +93,10 @@ var (
 	// Setting this variable to zero will disable this feature.
 	ResponsesChannelBufferSize = RegisterIntegerSetting("ROX_RESPONSES_CHANNEL_BUFFER_SIZE", 0)
 
-	// ActiveEndpointsPurgerTickerMaxAge controls how frequently stale active endpoints are purged from Sensors memory
-	ActiveEndpointsPurgerTickerMaxAge = registerDurationSetting("ROX_PURGER_TICKER_MAX_AGE", 5*time.Minute, WithDurationZeroAllowed())
+	// ActiveEndpointsPurgerTickerMaxAge controls the max age of active endpoints for keeping them in  Sensor's memory.
+	// Set to zero to not purge based on max age (other purger rules will be executed).
+	ActiveEndpointsPurgerTickerMaxAge = registerDurationSetting("ROX_PURGER_ACTIVE_ENDPOINT_MAX_AGE", 4*time.Hour, WithDurationZeroAllowed())
+	// ActiveEndpointsPurgerTickerCycle controls how frequently stale active endpoints are purged from Sensor's memory.
+	// Set to zero to completely disable the purger.
+	ActiveEndpointsPurgerTickerCycle = registerDurationSetting("ROX_PURGER_ACTIVE_ENDPOINT_CYCLE", 30*time.Minute, WithDurationZeroAllowed())
 )

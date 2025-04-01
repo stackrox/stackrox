@@ -22,6 +22,8 @@ func init() {
 		NumUpdated,
 		activeFlowsCurrent,
 		activeEndpointsCurrent,
+		ActiveEndpointsPurger,
+		ActiveEndpointsPurgerDuration,
 		NumUpdatedConnectionsEndpoints,
 	)
 }
@@ -132,6 +134,19 @@ var (
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "active_endpoints_current",
 		Help:      "A gauge that tracks the current active endpoints in sensor",
+	})
+	ActiveEndpointsPurger = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "active_endpoints_purger_events_total",
+		Help:      "A counter that tracks the reasons for purging active endpoints from memory",
+	}, []string{"purgeReason"})
+	ActiveEndpointsPurgerDuration = prometheus.NewHistogram(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "active_endpoints_purger_duration_ms",
+		Help:      "Time taken by a single purger run",
+		Buckets:   prometheus.ExponentialBuckets(4, 2, 10),
 	})
 )
 
