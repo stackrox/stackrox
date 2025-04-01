@@ -1287,10 +1287,13 @@ EOT
 
     echo "Waiting for API..."
     wait_for_api "${central_namespace}"
-    echo "Setting up client TLS certs..."
-    setup_client_TLS_certs ""
-    echo "Recording build info..."
-    record_build_info "${central_namespace}"
+
+    if [[ "$upgrade" == "false" ]]; then
+        echo "Setting up client TLS certs..."
+        setup_client_TLS_certs ""
+        echo "Recording build info..."
+        record_build_info "${central_namespace}"
+    fi
 }
 
 # shellcheck disable=SC2120
