@@ -2,7 +2,9 @@ package handler
 
 import (
 	"archive/zip"
+	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
@@ -15,15 +17,13 @@ import (
 )
 
 const (
-	defURL = "https://definitions.stackrox.io/e799c68a-671f-44db-9682-f24248cd0ffe/diff.zip"
-
 	mappingURL = "https://definitions.stackrox.io/v4/redhat-repository-mappings/mapping.zip"
 
 	v4VulnURL = "https://definitions.stackrox.io/v4/vulnerability-bundles/dev/vulns.json.zst"
 )
 
 var (
-	nov23 = time.Date(2019, time.November, 23, 0, 0, 0, 0, time.Local)
+	nov23 = time.Date(2019, time.November, 23, 0, 0, 0, 0, time.UTC)
 )
 
 func assertOnFileExistence(t *testing.T, path string, shouldExist bool) {
@@ -34,24 +34,55 @@ func assertOnFileExistence(t *testing.T, path string, shouldExist bool) {
 
 func TestUpdate(t *testing.T) {
 	filePath := filepath.Join(t.TempDir(), "dump.zip")
-	u := newUpdater(file.New(filePath), &http.Client{Timeout: 30 * time.Second}, defURL, 1*time.Hour)
+
+	lastUpdatedTime := time.Now().UTC().Truncate(time.Second)
+	body := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	responseLengths := [3]int{len(body), len(body), len(body)}
+	responseI := 0
+	responses := 1
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		responseI = min(responses-1, responseI)
+		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(body)))
+		w.Header().Set("Last-Modified", lastUpdatedTime.Format(http.TimeFormat))
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, body[:responseLengths[responseI]])
+		responseI++
+	}))
+
+	u := newUpdater(file.New(filePath), &http.Client{Timeout: 30 * time.Second}, server.URL, 1*time.Hour)
+	u.RetryDelay = 0
+
 	// Should fetch first time.
 	assert.NotPanics(t, u.update)
 	assertOnFileExistence(t, filePath, true)
 
-	lastUpdatedTime := time.Now()
+	// Should not fetch if no update.
 	mustSetModTime(t, filePath, lastUpdatedTime)
-	// Should not fetch since it can't be updated in a time in the future.
 	assert.NotPanics(t, u.update)
-	assert.Equal(t, lastUpdatedTime.UTC(), mustGetModTime(t, filePath))
+	assert.Equal(t, lastUpdatedTime, mustGetModTime(t, filePath))
 	assertOnFileExistence(t, filePath, true)
 
-	// Should definitely fetch.
+	// Should fetch if updated.
 	mustSetModTime(t, filePath, nov23)
 	assert.NotPanics(t, u.update)
-	assert.True(t, lastUpdatedTime.UTC().After(mustGetModTime(t, filePath)))
-	assert.True(t, mustGetModTime(t, filePath).After(nov23.UTC()))
+	assert.True(t, mustGetModTime(t, filePath).After(nov23))
 	assertOnFileExistence(t, filePath, true)
+
+	// Wrapped doUpdate() should fail, and not change the file, if the downloaded content-length is too short.
+	mustSetModTime(t, filePath, nov23)
+	responseLengths[0] = len(body) / 2
+	responses = 2
+	responseI = 0
+	require.Error(t, u.doUpdate())
+	assert.Equal(t, nov23, mustGetModTime(t, filePath))
+
+	// Should retry, if the downloaded content-length is too short.
+	mustSetModTime(t, filePath, nov23)
+	responseLengths[0] = len(body) / 2
+	responses = 2
+	responseI = 0
+	assert.NotPanics(t, u.update)
+	assert.NotEqual(t, nov23, mustGetModTime(t, filePath))
 }
 
 func mustGetModTime(t *testing.T, path string) time.Time {
