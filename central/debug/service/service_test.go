@@ -12,6 +12,7 @@ import (
 
 	"github.com/pkg/errors"
 	configMocks "github.com/stackrox/rox/central/config/datastore/mocks"
+	deleRegMocks "github.com/stackrox/rox/central/delegatedregistryconfig/datastore/mocks"
 	"github.com/stackrox/rox/central/globaldb"
 	groupMocks "github.com/stackrox/rox/central/group/datastore/mocks"
 	logMocks "github.com/stackrox/rox/central/logimbue/store/mocks"
@@ -39,12 +40,12 @@ type debugServiceTestSuite struct {
 	mockCtrl *gomock.Controller
 	noneCtx  context.Context
 
-	groupsMock    *groupMocks.MockDataStore
-	rolesMock     *roleMocks.MockDataStore
-	notifiersMock *notifierMocks.MockDataStore
-	configMock    *configMocks.MockDataStore
-
-	service *serviceImpl
+	groupsMock        *groupMocks.MockDataStore
+	rolesMock         *roleMocks.MockDataStore
+	notifiersMock     *notifierMocks.MockDataStore
+	configMock        *configMocks.MockDataStore
+	deleRegConfigMock *deleRegMocks.MockDataStore
+	service           *serviceImpl
 }
 
 func (s *debugServiceTestSuite) SetupTest() {
@@ -55,6 +56,7 @@ func (s *debugServiceTestSuite) SetupTest() {
 	s.rolesMock = roleMocks.NewMockDataStore(s.mockCtrl)
 	s.notifiersMock = notifierMocks.NewMockDataStore(s.mockCtrl)
 	s.configMock = configMocks.NewMockDataStore(s.mockCtrl)
+	s.deleRegConfigMock = deleRegMocks.NewMockDataStore(s.mockCtrl)
 
 	s.service = &serviceImpl{
 		clusters:             nil,
@@ -67,6 +69,7 @@ func (s *debugServiceTestSuite) SetupTest() {
 		roleDataStore:        s.rolesMock,
 		configDataStore:      s.configMock,
 		notifierDataStore:    s.notifiersMock,
+		deleRegConfigDS:      s.deleRegConfigMock,
 	}
 }
 
@@ -211,6 +214,7 @@ func (s *debugServiceTestSuite) TestGetBundle() {
 	globaldb.SetPostgresTest(s.T(), db)
 
 	s.configMock.EXPECT().GetConfig(gomock.Any()).Return(&storage.Config{}, nil)
+	s.deleRegConfigMock.EXPECT().GetConfig(gomock.Any()).Return(&storage.DelegatedRegistryConfig{}, true, nil)
 	s.service.writeZippedDebugDump(context.Background(), w, "debug.zip", debugDumpOptions{
 		logs:              0,
 		telemetryMode:     noTelemetry,
@@ -229,7 +233,7 @@ func (s *debugServiceTestSuite) TestGetBundle() {
 	zipReader, err := zip.NewReader(bytes.NewReader(body), int64(len(body)))
 	s.Require().NoError(err)
 
-	s.Assert().Len(zipReader.File, 2)
+	s.Assert().Len(zipReader.File, 3)
 	for _, zipFile := range zipReader.File {
 		s.T().Log("Reading file:", zipFile.Name)
 		s.Assert().Equal(stubTime, zipFile.Modified.UTC())
