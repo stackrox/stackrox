@@ -222,7 +222,7 @@
   {{ if and (kindIs "invalid" $reencryptConfig.tls.certificate) (kindIs "invalid" $reencryptConfig.tls.key) }}
     {{ include "srox.note" (list $ "The reencrypt route will serve a certificate signed by the OpenShift certificate authority.") }}
   {{ else if or $reencryptConfig.tls.certificate $reencryptConfig.tls.key }}
-    {{ include "srox.fail" "The reencrypt route must specify either both certificate and key or neither." }}
+    {{ include "srox.fail" "The reencrypt route must specify either both, certificate and key, or neither." }}
   {{ end }}
 {{ end }}
 
