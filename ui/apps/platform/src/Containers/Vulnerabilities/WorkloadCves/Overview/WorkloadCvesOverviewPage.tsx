@@ -182,6 +182,7 @@ function WorkloadCvesOverviewPage() {
         pageTitleDescription,
         baseSearchFilter,
         overviewEntityTabs,
+        viewContext,
     } = useWorkloadCveViewContext();
     const currentVulnerabilityState = useVulnerabilityState();
 
@@ -402,10 +403,10 @@ function WorkloadCvesOverviewPage() {
 
     const isOnDemandReportsVisible =
         isOnDemandReportsEnabled &&
-        (pageTitle === 'User workload vulnerabilities' ||
-            pageTitle === 'Platform vulnerabilities' ||
-            pageTitle === 'All vulnerable images' ||
-            pageTitle === 'Inactive images only');
+        (viewContext === 'User workloads' ||
+            viewContext === 'Platform' ||
+            viewContext === 'All vulnerable images' ||
+            viewContext === 'Inactive images');
 
     return (
         <>
@@ -639,7 +640,7 @@ function WorkloadCvesOverviewPage() {
                     isOpen={isCreateOnDemandReportModalOpen}
                     setIsOpen={setIsCreateOnDemandReportModalOpen}
                     query={workloadCvesScopedQueryString}
-                    areaOfConcern={pageTitle}
+                    areaOfConcern={viewContext}
                 />
             )}
         </>

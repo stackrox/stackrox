@@ -22,7 +22,7 @@ import ImagePage from './Image/ImagePage';
 import WorkloadCvesOverviewPage from './Overview/WorkloadCvesOverviewPage';
 import ImageCvePage from './ImageCve/ImageCvePage';
 import NamespaceViewPage from './NamespaceView/NamespaceViewPage';
-import { WorkloadCveViewContext } from './WorkloadCveViewContext';
+import { WorkloadCveView, WorkloadCveViewContext } from './WorkloadCveViewContext';
 
 import './WorkloadCvesPage.css';
 import { QuerySearchFilter, WorkloadEntityTab } from '../types';
@@ -33,12 +33,16 @@ export const allImagesViewId = 'all-images';
 export const inactiveImagesViewId = 'inactive-images';
 export const imagesWithoutCvesViewId = 'images-without-cves';
 
-function getWorkloadCveContextFromView(viewId: string, isFeatureFlagEnabled: IsFeatureFlagEnabled) {
+function getWorkloadCveContextFromView(
+    viewId: string,
+    isFeatureFlagEnabled: IsFeatureFlagEnabled
+): WorkloadCveView {
     let pageTitle: string = '';
     let pageTitleDescription: string | undefined;
     let baseSearchFilter: QuerySearchFilter = {};
     let getAbsoluteUrl: (subPath: string) => string = () => '';
     let overviewEntityTabs: NonEmptyArray<WorkloadEntityTab> = ['CVE', 'Image', 'Deployment'];
+    let viewContext: string = '';
 
     switch (viewId) {
         case userWorkloadViewId:
@@ -49,11 +53,13 @@ function getWorkloadCveContextFromView(viewId: string, isFeatureFlagEnabled: IsF
                 baseSearchFilter = { 'Platform Component': ['false'] };
                 getAbsoluteUrl = (subPath: string) =>
                     `${vulnerabilitiesUserWorkloadsPath}/${subPath}`;
+                viewContext = 'User workloads';
             } else {
                 pageTitle = 'Workload CVEs';
                 baseSearchFilter = {};
                 getAbsoluteUrl = (subPath: string) =>
                     `${vulnerabilitiesWorkloadCvesPath}/${subPath}`;
+                viewContext = 'Workload CVEs';
             }
             break;
         case platformViewId:
@@ -62,6 +68,7 @@ function getWorkloadCveContextFromView(viewId: string, isFeatureFlagEnabled: IsF
                 'Vulnerabilities affecting images and workloads used by the OpenShift Platform and layered services';
             baseSearchFilter = { 'Platform Component': ['true'] };
             getAbsoluteUrl = (subPath: string) => `${vulnerabilitiesPlatformPath}/${subPath}`;
+            viewContext = 'Platform';
             break;
         case allImagesViewId:
             pageTitle = 'All vulnerable images';
@@ -69,6 +76,7 @@ function getWorkloadCveContextFromView(viewId: string, isFeatureFlagEnabled: IsF
                 'Findings for user, platform, and inactive images simultaneously';
             baseSearchFilter = { 'Platform Component': ['true', 'false', '-'] };
             getAbsoluteUrl = (subPath: string) => `${vulnerabilitiesAllImagesPath}/${subPath}`;
+            viewContext = 'All vulnerable images';
             break;
         case inactiveImagesViewId:
             pageTitle = 'Inactive images only';
@@ -77,6 +85,7 @@ function getWorkloadCveContextFromView(viewId: string, isFeatureFlagEnabled: IsF
             baseSearchFilter = { 'Platform Component': ['-'] };
             getAbsoluteUrl = (subPath: string) => `${vulnerabilitiesInactiveImagesPath}/${subPath}`;
             overviewEntityTabs = ['CVE', 'Image'];
+            viewContext = 'Inactive images';
             break;
         case imagesWithoutCvesViewId:
             pageTitle = 'Images without CVEs';
@@ -86,6 +95,7 @@ function getWorkloadCveContextFromView(viewId: string, isFeatureFlagEnabled: IsF
             getAbsoluteUrl = (subPath: string) =>
                 `${vulnerabilitiesImagesWithoutCvesPath}/${subPath}`;
             overviewEntityTabs = ['Image', 'Deployment'];
+            viewContext = 'Images without CVEs';
             break;
         default:
         // TODO Handle user-defined views, or error
@@ -97,6 +107,7 @@ function getWorkloadCveContextFromView(viewId: string, isFeatureFlagEnabled: IsF
         baseSearchFilter,
         getAbsoluteUrl,
         overviewEntityTabs,
+        viewContext,
     };
 }
 
