@@ -114,7 +114,7 @@ type NodeIndexerConfig struct {
 	Timeout time.Duration
 }
 
-// DefaultNodeIndexerConfig is the default configuration for a node indexer.
+// DefaultNodeIndexerConfig provides the default configuration for a node indexer.
 func DefaultNodeIndexerConfig() NodeIndexerConfig {
 	return NodeIndexerConfig{
 		HostPath: env.NodeIndexHostPath.Setting(),
