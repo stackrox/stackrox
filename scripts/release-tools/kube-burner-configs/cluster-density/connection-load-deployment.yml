@@ -5,7 +5,7 @@
 {{ $ip4 := randInt 0 255 }}
 
 {{ $ip := printf "%d.%d.%d.%d/16" $ip1 $ip2 $ip3 $ip4 }}
-{{ $berserker_address := printf "[%d, %d, %d, %d]" $ip1 $ip2 $ip3 $ip4 }}
+{{ $berserker_address := printf "%d.%d.%d.%d" $ip1 $ip2 $ip3 $ip4 }}
 
 kind: Deployment
 apiVersion: apps/v1
@@ -24,7 +24,7 @@ spec:
       imagePullSecrets:
       - name: {{.JobName}}-{{.Replica}}
       containers:
-      - image: quay.io/jvirtane/berserker-connection-load-1.0-69-g959d27d476-dirty-7
+      - image: quay.io/jvirtane/berserker-connection-load-1.0-77-g80d8771450-2
         resources:
           requests:
             memory: "100Mi"
@@ -37,6 +37,8 @@ spec:
             value: "{{ $ip }}"
           - name: BERSERKER__WORKLOAD__ADDRESS
             value: "{{ $berserker_address }}"
+          - name: RUST_LOG
+            value: "debug"
         volumeMounts:
         - name: config
           mountPath: "/etc/berserker"

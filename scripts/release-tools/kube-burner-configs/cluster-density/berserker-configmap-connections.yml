@@ -11,10 +11,11 @@ data:
     [workload]
     type = "network"
     server = true
-    address = [223, 42, 0, 1]
+    address = "223.42.0.1"
     target_port = 1337
     arrival_rate = 0.1
     departure_rate = 0.1
+    ports_per_addr = 2
     nconnections = 100
 
   network-client.toml: |
@@ -25,8 +26,9 @@ data:
     [workload]
     type = "network"
     server = false
-    address = [223, 42, 0, 1]
+    address = "223.42.0.1"
     target_port = 1337
     arrival_rate = 0.1
     departure_rate = 0.1
+    ports_per_addr = 2
     nconnections = 100
