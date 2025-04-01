@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import { useHistory, useLocation, useRouteMatch } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import resolvePath from 'object-resolve-path';
 
 import Widget from 'Components/Widget';
 import TablePagination from 'Components/TablePagination';
 import Table from 'Components/Table';
+import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import URLService from 'utils/URLService';
 
 const TableWidget = ({ header, entityType, ...rest }) => {
@@ -25,9 +26,9 @@ const TableWidget = ({ header, entityType, ...rest }) => {
         ...widgetProps
     } = { ...rest };
 
-    const history = useHistory();
+    const navigate = useNavigate();
     const location = useLocation();
-    const match = useRouteMatch();
+    const match = useWorkflowMatch();
 
     const headerComponents = (
         <TablePagination page={page} dataLength={rows.length} setPage={setPage} />
@@ -35,7 +36,7 @@ const TableWidget = ({ header, entityType, ...rest }) => {
     function onRowClick(row) {
         const id = resolvePath(row, idAttribute);
         const url = URLService.getURL(match, location).push(entityType, id).url();
-        history.push(url);
+        navigate(url);
     }
     return (
         <Widget

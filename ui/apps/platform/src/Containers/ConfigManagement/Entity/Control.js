@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { useLocation, useRouteMatch } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { gql } from '@apollo/client';
 import entityTypes from 'constants/entityTypes';
 import useCases from 'constants/useCaseTypes';
@@ -10,6 +10,7 @@ import PageNotFound from 'Components/PageNotFound';
 import CollapsibleSection from 'Components/CollapsibleSection';
 import ControlDetails from 'Components/ControlDetails';
 import RelatedEntityListCount from 'Components/RelatedEntityListCount';
+import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import isGQLLoading from 'utils/gqlLoading';
 import Widget from 'Components/Widget';
 import searchContext from 'Containers/searchContext';
@@ -45,7 +46,7 @@ const QUERY = gql`
 
 const Control = ({ id, entityListType, query, entityContext }) => {
     const location = useLocation();
-    const match = useRouteMatch();
+    const match = useWorkflowMatch();
     const searchParam = useContext(searchContext);
 
     const variables = {

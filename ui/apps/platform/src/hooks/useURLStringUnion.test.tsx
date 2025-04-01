@@ -1,35 +1,9 @@
-import React, { ReactNode } from 'react';
-import { MemoryRouter, Route, RouteComponentProps } from 'react-router-dom';
+import React from 'react';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import { renderHook, act } from '@testing-library/react';
 
 import { URLSearchParams } from 'url';
 import useURLStringUnion from './useURLStringUnion';
-
-type WrapperProps = {
-    children: ReactNode;
-    onRouteRender: (renderResult: RouteComponentProps) => void;
-    initialEntries: string[];
-};
-
-// This Wrapper component allows the hook to simulate the browser's
-// URL bar in JSDom via the MemoryRouter
-function Wrapper({ children, onRouteRender, initialEntries = [] }: WrapperProps) {
-    return (
-        <MemoryRouter
-            initialEntries={initialEntries}
-            initialIndex={Math.max(0, initialEntries.length - 1)}
-        >
-            <Route path="*" render={onRouteRender} />
-            {children}
-        </MemoryRouter>
-    );
-}
-
-const createWrapper = (props) => {
-    return function CreatedWrapper({ children }) {
-        return <Wrapper {...props}>{children}</Wrapper>;
-    };
-};
 
 beforeAll(() => {
     jest.useFakeTimers();
@@ -48,15 +22,18 @@ test('should read/write only the specified set of strings to the URL parameter',
 
     const possibleUrlValues = ['Alpha', 'Beta', 'Delta'] as const;
 
-    const { result } = renderHook(() => useURLStringUnion('urlKey', possibleUrlValues), {
-        wrapper: createWrapper({
-            children: [],
-            onRouteRender: ({ location }) => {
-                testLocation = location;
-            },
-            initialEntries: [''],
-        }),
-    });
+    const { result } = renderHook(
+        () => {
+            testLocation = useLocation();
+            return useURLStringUnion('urlKey', possibleUrlValues);
+        },
+        {
+            wrapper: ({ children }) => (
+                <MemoryRouter initialEntries={['']}>{children}</MemoryRouter>
+            ),
+        }
+    );
+
     actAndRunTicks(() => {});
 
     // Check that default value is applied correctly
@@ -112,17 +89,17 @@ test('should default to the current URL parameter value on initialization, if it
     const possibleUrlValues = ['Alpha', 'Beta', 'Delta'] as const;
 
     const { result: initialValidResult } = renderHook(
-        () => useURLStringUnion('urlKey', possibleUrlValues),
+        () => {
+            testLocation = useLocation();
+            return useURLStringUnion('urlKey', possibleUrlValues);
+        },
         {
-            wrapper: createWrapper({
-                children: [],
-                onRouteRender: ({ location }) => {
-                    testLocation = location;
-                },
-                initialEntries: ['?urlKey=Beta'],
-            }),
+            wrapper: ({ children }) => (
+                <MemoryRouter initialEntries={['?urlKey=Beta']}>{children}</MemoryRouter>
+            ),
         }
     );
+
     actAndRunTicks(() => {});
 
     // Check that default value is not applied if the URL param already contains a valid value
@@ -135,18 +112,19 @@ test('should use the default value when an invalid value is entered directly int
     let testLocation;
 
     const possibleUrlValues = ['Alpha', 'Beta', 'Delta'] as const;
+
     const { result: initialInvalidResult } = renderHook(
-        () => useURLStringUnion('urlKey', possibleUrlValues),
+        () => {
+            testLocation = useLocation();
+            return useURLStringUnion('urlKey', possibleUrlValues);
+        },
         {
-            wrapper: createWrapper({
-                children: [],
-                onRouteRender: ({ location }) => {
-                    testLocation = location;
-                },
-                initialEntries: ['?urlKey=Bogus'],
-            }),
+            wrapper: ({ children }) => (
+                <MemoryRouter initialEntries={['?urlKey=Bogus']}>{children}</MemoryRouter>
+            ),
         }
     );
+
     actAndRunTicks(() => {});
 
     // Check that default value is applied correctly when the URL param is invalid

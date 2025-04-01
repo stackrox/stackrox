@@ -336,7 +336,7 @@ func (s *serviceImpl) DeletePolicy(ctx context.Context, request *v1.ResourceByID
 		return nil, errors.Wrap(errox.InvalidArgs, "A default policy cannot be deleted. (You can disable a default policy, but not delete it.)")
 	}
 
-	if err := s.policies.RemovePolicy(ctx, request.GetId()); err != nil {
+	if err := s.policies.RemovePolicy(ctx, policy); err != nil {
 		return nil, err
 	}
 
@@ -347,7 +347,6 @@ func (s *serviceImpl) DeletePolicy(ctx context.Context, request *v1.ResourceByID
 	if err := s.syncPoliciesWithSensors(); err != nil {
 		return nil, err
 	}
-
 	return &v1.Empty{}, nil
 }
 

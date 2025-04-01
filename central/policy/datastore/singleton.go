@@ -5,10 +5,12 @@ import (
 
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/central/metrics"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/policy/search"
 	policyStore "github.com/stackrox/rox/central/policy/store"
 	categoriesDS "github.com/stackrox/rox/central/policycategory/datastore"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/defaults/policies"
 	"github.com/stackrox/rox/pkg/policyutils"
 	"github.com/stackrox/rox/pkg/sac"
@@ -53,6 +55,10 @@ func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore) {
 
 	for _, p := range storedPolicies {
 		policyIDSet.Add(p.GetId())
+		// Unrelated to adding/checking default policies, this was put here to prevent looping through all policies a second time
+		if p.Source == storage.PolicySource_DECLARATIVE {
+			metrics.IncrementTotalExternalPoliciesGauge()
+		}
 	}
 
 	// Preload the default policies.

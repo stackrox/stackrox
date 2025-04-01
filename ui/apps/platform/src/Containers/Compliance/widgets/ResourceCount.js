@@ -8,10 +8,11 @@ import Widget from 'Components/Widget';
 import Query from 'Components/CacheFirstQuery';
 import Loader from 'Components/Loader';
 import CountWidget from 'Components/CountWidget';
+import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import { SEARCH_WITH_CONTROLS as QUERY } from 'queries/search';
 import queryService from 'utils/queryService';
 import { getResourceCountFromAggregatedResults } from 'utils/complianceUtils';
-import { useLocation, useRouteMatch } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import useCases from 'constants/useCaseTypes';
 import searchContext from 'Containers/searchContext';
 
@@ -19,7 +20,7 @@ import { entityNounSentenceCaseSingular } from '../entitiesForCompliance';
 
 const ResourceCount = ({ entityType, relatedToResourceType, relatedToResource, count }) => {
     const searchParam = useContext(searchContext);
-    const match = useRouteMatch();
+    const match = useWorkflowMatch();
     const location = useLocation();
 
     function getUrl() {

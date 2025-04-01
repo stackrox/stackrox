@@ -50,6 +50,8 @@ var (
 	}
 )
 
+const cursorBatchSize = 1000
+
 // QueryType describe what type of query to execute
 //
 //go:generate stringer -type=QueryType
@@ -990,55 +992,6 @@ func RunGetManyQueryForSchema[T any, PT pgutils.Unmarshaler[T]](ctx context.Cont
 
 		return retryableRunGetManyQueryForSchema[T, PT](ctx, query, db)
 	})
-}
-
-// RunCursorQueryForSchema creates a cursor against the database
-//
-// Deprecated: use RunCursorQueryForSchemaFn instead
-func RunCursorQueryForSchema[T any, PT pgutils.Unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) (fetcher func(n int) ([]*T, error), closer func(), err error) {
-	if q == nil {
-		q = searchPkg.EmptyQuery()
-	}
-
-	query, err := standardizeQueryAndPopulatePath(ctx, q, schema, GET)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "error creating query")
-	}
-	if query == nil {
-		return nil, nil, emptyQueryErr
-	}
-
-	queryStr := query.AsSQL()
-
-	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, cursorDefaultTimeout)
-
-	tx, err := db.Begin(ctx)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "creating transaction")
-	}
-	closer = func() {
-		defer cancel()
-		if err := tx.Commit(ctx); err != nil {
-			log.Errorf("error committing cursor transaction: %v", err)
-		}
-	}
-
-	cursorSuffix := random.GenerateString(16, random.CaseInsensitiveAlpha)
-	cursor := stringutils.JoinNonEmpty("_", query.From, cursorSuffix)
-	_, err = tx.Exec(ctx, fmt.Sprintf("DECLARE %s CURSOR FOR %s", cursor, queryStr), query.Data...)
-	if err != nil {
-		closer()
-		return nil, nil, errors.Wrap(err, "creating cursor")
-	}
-
-	return func(n int) ([]*T, error) {
-		rows, err := tx.Query(ctx, fmt.Sprintf("FETCH %d FROM %s", n, cursor))
-		if err != nil {
-			return nil, errors.Wrap(err, "advancing in cursor")
-		}
-
-		return pgutils.ScanRows[T, PT](rows)
-	}, closer, nil
 }
 
 // RunCursorQueryForSchemaFn creates a cursor against the database

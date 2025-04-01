@@ -1,6 +1,6 @@
 import React, { useContext, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { Button } from '@patternfly/react-core';
 
@@ -21,7 +21,7 @@ function CreatePolicyFromSearch({
     clearFormMessages,
 }) {
     const workflowState = useContext(workflowStateContext);
-    const history = useHistory();
+    const navigate = useNavigate();
 
     // this utility filters out incomplete search pairs
     const currentSearch = workflowState.getCurrentSearchState();
@@ -36,10 +36,7 @@ function CreatePolicyFromSearch({
 
         generatePolicyFromSearch(queryString)
             .then((response) => {
-                history.push({
-                    pathname: policiesBasePath,
-                    search: '?action=generate',
-                });
+                navigate(`${policiesBasePath}?action=generate`);
 
                 const newPolicy = {
                     ...response?.policy,

@@ -1,5 +1,5 @@
 import { ReactElement } from 'react';
-import { matchPath } from 'react-router-dom';
+import { Location, matchPath } from 'react-router-dom';
 
 import { isRouteEnabled, RouteKey } from 'routePaths';
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
@@ -24,7 +24,7 @@ export type LinkDescription = {
 export function isActiveLink(location: Location, { isActive, path }: LinkDescription) {
     return typeof isActive === 'function'
         ? isActive(location)
-        : Boolean(matchPath(location.pathname, path));
+        : Boolean(matchPath({ path }, location.pathname));
 }
 
 export type SeparatorDescription = {

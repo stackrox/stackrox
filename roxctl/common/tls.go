@@ -18,7 +18,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-const errorMsg = `The remote endpoint failed TLS validation.
+const errorMsg = `The remote endpoint failed TLS validation: %v
+
   Do one of the following:
   1. Obtain a valid certificate for your Central instance/Load Balancer.
   2. Use the --ca option to specify a custom CA certificate (PEM format).
@@ -48,7 +49,7 @@ func (v *insecureVerifierWithError) VerifyPeerCertificate(leaf *x509.Certificate
 		v.logger.InfofLn("%d cert in chain %s, signed by %s (CA %v)", i, c.Subject, c.Issuer, c.IsCA)
 	}
 	if _, err := leaf.Verify(verifyOpts); err != nil {
-		v.logger.ErrfLn(errorMsg)
+		v.logger.ErrfLn(errorMsg, err)
 		return &grpcPermissionDenied{err}
 	}
 	return nil

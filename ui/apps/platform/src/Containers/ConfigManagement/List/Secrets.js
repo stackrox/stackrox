@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLocation, useRouteMatch } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import uniq from 'lodash/uniq';
 import { format } from 'date-fns';
 import pluralize from 'pluralize';
@@ -13,6 +13,7 @@ import TableCellLink from 'Components/TableCellLink';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import entityTypes from 'constants/entityTypes';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
+import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import { SECRETS_QUERY } from 'queries/secret';
 import { secretSortFields } from 'constants/sortFields';
 import queryService from 'utils/queryService';
@@ -159,7 +160,7 @@ const Secrets = ({
     entityContext,
 }) => {
     const location = useLocation();
-    const match = useRouteMatch();
+    const match = useWorkflowMatch();
     const autoFocusSearchInput = !selectedRowId;
     const tableColumns = buildTableColumns(match, location, entityContext);
     const queryText = queryService.objectToWhereClause(query);

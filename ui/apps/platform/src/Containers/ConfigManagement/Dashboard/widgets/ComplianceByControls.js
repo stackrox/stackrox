@@ -2,10 +2,11 @@ import React, { useState, useContext } from 'react';
 import { Alert } from '@patternfly/react-core';
 import PropTypes from 'prop-types';
 import { gql } from '@apollo/client';
-import { Link, useLocation, useRouteMatch } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import queryService from 'utils/queryService';
 import entityTypes, { standardEntityTypes, standardBaseTypes } from 'constants/entityTypes';
 import { COMPLIANCE_FAIL_COLOR, COMPLIANCE_PASS_COLOR } from 'constants/severityColors';
+import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import { standardLabels } from 'messages/standards';
 import URLService from 'utils/URLService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
@@ -275,7 +276,7 @@ const ComplianceByControls = ({ className, standardOptions }) => {
     const [selectedStandard, selectStandard] = useState(options[0]);
 
     const location = useLocation();
-    const match = useRouteMatch();
+    const match = useWorkflowMatch();
 
     function onChange(datum) {
         const standard = options.find((option) => option.value === datum);

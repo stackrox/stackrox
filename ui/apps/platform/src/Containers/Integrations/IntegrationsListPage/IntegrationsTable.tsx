@@ -21,7 +21,13 @@ import TableCellValue from 'Components/TableCellValue/TableCellValue';
 import { isUserResource } from 'Containers/AccessControl/traits';
 import useIntegrationPermissions from '../hooks/useIntegrationPermissions';
 import usePageState from '../hooks/usePageState';
-import { Integration, getIsAPIToken, getIsClusterInitBundle } from '../utils/integrationUtils';
+import {
+    Integration,
+    IntegrationSource,
+    IntegrationType,
+    getIsAPIToken,
+    getIsClusterInitBundle,
+} from '../utils/integrationUtils';
 import tableColumnDescriptor from '../utils/tableColumnDescriptor';
 import DownloadCAConfigBundle from './DownloadCAConfigBundle';
 
@@ -54,7 +60,7 @@ function IntegrationsTable({
     isReadOnly,
 }: IntegrationsTableProps): React.ReactElement {
     const permissions = useIntegrationPermissions();
-    const { source, type } = useParams();
+    const { source, type } = useParams() as { source: IntegrationSource; type: IntegrationType };
     const { getPathToCreate, getPathToEdit, getPathToViewDetails } = usePageState();
     const {
         selected,

@@ -70,7 +70,7 @@ func listCommand(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "list",
 		Short: "List cluster init bundles",
-		Long:  "List all previously generated init bundles for bootstrapping new StackRox secured clusters",
+		Long:  "List all previously generated init bundles for bootstrapping new StackRox secured clusters.",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			return listInitBundles(cliEnvironment, flags.Timeout(c), flags.RetryTimeout(c))
 		}),

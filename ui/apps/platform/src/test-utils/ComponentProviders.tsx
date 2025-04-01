@@ -1,9 +1,8 @@
 import React from 'react';
 import { Store, createStore } from 'redux';
 import { Provider } from 'react-redux';
-import { Router } from 'react-router-dom';
+import { BrowserRouter } from 'react-router-dom';
 import { ApolloProvider } from '@apollo/client';
-import { createBrowserHistory } from 'history';
 
 import configureApolloClient from 'configureApolloClient';
 
@@ -19,13 +18,11 @@ export default function ComponentTestProviders({
     children,
     reduxStore = defaultStore,
 }: ComponentTestProviderProps) {
-    const history = createBrowserHistory();
-
     return (
         <Provider store={reduxStore}>
-            <Router history={history}>
+            <BrowserRouter>
                 <ApolloProvider client={configureApolloClient()}>{children}</ApolloProvider>
-            </Router>
+            </BrowserRouter>
         </Provider>
     );
 }

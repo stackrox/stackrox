@@ -1,5 +1,5 @@
 import React, { ReactElement, useState, useReducer } from 'react';
-import { Link, useHistory } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import useDeepCompareEffect from 'use-deep-compare-effect';
 import {
     Alert,
@@ -73,7 +73,7 @@ function ClustersTablePanel({
     searchOptions,
 }: ClustersTablePanelProps): ReactElement {
     const { analyticsTrack } = useAnalytics();
-    const history = useHistory();
+    const navigate = useNavigate();
 
     const { hasReadAccess, hasReadWriteAccess } = usePermissions();
     const hasReadAccessForAdministration = hasReadAccess('Administration');
@@ -244,7 +244,7 @@ function ClustersTablePanel({
     }
 
     function setSelectedClusterId(cluster: Cluster) {
-        history.push(`${clustersBasePath}/${cluster.id}`);
+        navigate(`${clustersBasePath}/${cluster.id}`);
     }
 
     function upgradeSingleCluster(id) {
@@ -361,7 +361,7 @@ function ClustersTablePanel({
                                         component={LinkShim}
                                         href={clustersDelegatedScanningPath}
                                     >
-                                        Delegated scanning
+                                        Delegated image scanning
                                     </Button>
                                 </ToolbarItem>
                             )}

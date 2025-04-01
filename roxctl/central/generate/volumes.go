@@ -30,12 +30,12 @@ func externalVolume(cliEnvironment environment.Environment) *cobra.Command {
 		if err := validateConfig(&cfg); err != nil {
 			return err
 		}
-		return OutputZip(cliEnvironment.Logger(), cliEnvironment.InputOutput(), cfg)
+		return outputZip(cliEnvironment.Logger(), cliEnvironment.InputOutput(), cfg)
 	}
 	flagWrap := &flagsWrapper{FlagSet: c.Flags()}
-	flagWrap.StringVarP(&external.DB.Name, "db-name", "", "central-db", "External volume name for Central DB", "central-db")
-	flagWrap.StringVarP(&external.DB.StorageClass, "db-storage-class", "", "", "Storage class name for Central DB (optional if you have a default StorageClass configured)", "central-db")
-	flagWrap.Uint32VarP(&external.DB.Size, "db-size", "", 100, "External volume size in Gi for Central DB", "central-db")
+	flagWrap.StringVarP(&external.DB.Name, "db-name", "", "central-db", "External volume name for Central DB.", "central-db")
+	flagWrap.StringVarP(&external.DB.StorageClass, "db-storage-class", "", "", "Storage class name for Central DB (optional if you have a default StorageClass configured).", "central-db")
+	flagWrap.Uint32VarP(&external.DB.Size, "db-size", "", 100, "External volume size in Gi for Central DB.", "central-db")
 	return c
 }
 
@@ -45,7 +45,7 @@ func noVolume(cliEnvironment environment.Environment) *cobra.Command {
 		if err := validateConfig(&cfg); err != nil {
 			return err
 		}
-		return OutputZip(cliEnvironment.Logger(), cliEnvironment.InputOutput(), cfg)
+		return outputZip(cliEnvironment.Logger(), cliEnvironment.InputOutput(), cfg)
 	}
 	c.Hidden = true
 	return c
@@ -61,11 +61,11 @@ func hostPathVolume(cliEnvironment environment.Environment) *cobra.Command {
 		if err := validateConfig(&cfg); err != nil {
 			return err
 		}
-		return OutputZip(cliEnvironment.Logger(), cliEnvironment.InputOutput(), cfg)
+		return outputZip(cliEnvironment.Logger(), cliEnvironment.InputOutput(), cfg)
 	}
-	c.Flags().StringVarP(&hostpath.DB.HostPath, "db-hostpath", "", "/var/lib/stackrox-central", "Path on the host")
-	c.Flags().StringVarP(&hostpath.DB.NodeSelectorKey, "db-node-selector-key", "", "", "Node selector key (e.g. kubernetes.io/hostname)")
-	c.Flags().StringVarP(&hostpath.DB.NodeSelectorValue, "db-node-selector-value", "", "", "Node selector value")
+	c.Flags().StringVarP(&hostpath.DB.HostPath, "db-hostpath", "", "/var/lib/stackrox-central", "Path on the host.")
+	c.Flags().StringVarP(&hostpath.DB.NodeSelectorKey, "db-node-selector-key", "", "", "Node selector key (e.g. kubernetes.io/hostname).")
+	c.Flags().StringVarP(&hostpath.DB.NodeSelectorValue, "db-node-selector-value", "", "", "Node selector value.")
 
 	return c
 }

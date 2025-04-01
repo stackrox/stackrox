@@ -31,7 +31,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	collectorSPUploadCmd := &collectorSPUploadCommand{env: cliEnvironment}
 	c := &cobra.Command{
 		Use:   "upload <package-file>",
-		Short: "Upload files from a Collector support package to Central.",
+		Short: "Upload files from a Collector support package to Central",
 		Long:  uploadHelpLong,
 		RunE: func(c *cobra.Command, args []string) error {
 			if err := validate(args); err != nil {
@@ -44,7 +44,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		},
 	}
 
-	c.Flags().BoolVarP(&collectorSPUploadCmd.overwrite, "overwrite", "", false, "Whether to overwrite present but different files")
+	c.Flags().BoolVarP(&collectorSPUploadCmd.overwrite, "overwrite", "", false, "Whether to overwrite present but different files.")
 	flags.AddTimeout(c)
 	flags.AddRetryTimeout(c)
 	return c

@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/administration/events"
 	"github.com/stackrox/rox/central/apitoken/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/administration/events/codes"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
@@ -189,7 +190,8 @@ func (n *logExpirationNotifier) Notify(items []*storage.TokenMetadata) error {
 	expirationSliceName := env.APITokenExpirationExpirationSliceName.Setting()
 	for _, token := range items {
 		log.Warnw(generateExpiringTokenLog(token, now, expirationSliceDuration, expirationSliceName),
-			logging.APITokenName(token.GetName()), logging.APITokenID(token.GetId()))
+			logging.APITokenName(token.GetName()), logging.APITokenID(token.GetId()),
+			logging.ErrCode(codes.APITokenExpired))
 	}
 	return nil
 }
