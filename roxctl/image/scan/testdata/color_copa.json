@@ -1,0 +1,116 @@
+{
+  "apiVersion": "v1alpha1",
+  "metadata": {
+    "os": {
+      "type": "",
+      "version": ""
+    },
+    "config": {
+      "arch": ""
+    }
+  },
+  "updates": [
+    {
+      "name": "apt",
+      "installedVersion": "1.0",
+      "fixedVersion": "1.3",
+      "vulnerabilityID": "CVE-789-CRIT"
+    },
+    {
+      "name": "apt",
+      "installedVersion": "1.0",
+      "fixedVersion": "1.1",
+      "vulnerabilityID": "CVE-123-[34;2mLOW[0;22m"
+    },
+    {
+      "name": "apt",
+      "installedVersion": "1.0",
+      "fixedVersion": "1.3",
+      "vulnerabilityID": "CVE-789-[34;2mLOW[0;22m"
+    },
+    {
+      "name": "bash",
+      "installedVersion": "4.2",
+      "fixedVersion": "1.1",
+      "vulnerabilityID": "CVE-123-CRIT"
+    },
+    {
+      "name": "bash",
+      "installedVersion": "4.2",
+      "fixedVersion": "1.2",
+      "vulnerabilityID": "CVE-456-CRIT"
+    },
+    {
+      "name": "bash",
+      "installedVersion": "4.2",
+      "fixedVersion": "1.3",
+      "vulnerabilityID": "CVE-789-CRIT"
+    },
+    {
+      "name": "curl",
+      "installedVersion": "7.0-rc1",
+      "fixedVersion": "1.1",
+      "vulnerabilityID": "CVE-123-IMP"
+    },
+    {
+      "name": "curl",
+      "installedVersion": "7.0-rc1",
+      "fixedVersion": "1.2",
+      "vulnerabilityID": "CVE-456-IMP"
+    },
+    {
+      "name": "curl",
+      "installedVersion": "7.0-rc1",
+      "fixedVersion": "1.3",
+      "vulnerabilityID": "CVE-789-IMP"
+    },
+    {
+      "name": "openssl",
+      "installedVersion": "1.1.1k",
+      "fixedVersion": "1.3",
+      "vulnerabilityID": "CVE-789-CRIT"
+    },
+    {
+      "name": "openssl",
+      "installedVersion": "1.1.1k",
+      "fixedVersion": "1.1",
+      "vulnerabilityID": "CVE-123-IMP"
+    },
+    {
+      "name": "openssl",
+      "installedVersion": "1.1.1k",
+      "fixedVersion": "1.1",
+      "vulnerabilityID": "CVE-123-MED"
+    },
+    {
+      "name": "openssl",
+      "installedVersion": "1.1.1k",
+      "fixedVersion": "1.2",
+      "vulnerabilityID": "CVE-456-MED"
+    },
+    {
+      "name": "openssl",
+      "installedVersion": "1.1.1k",
+      "fixedVersion": "1.1",
+      "vulnerabilityID": "CVE-123-[34;2mLOW[0;22m"
+    },
+    {
+      "name": "systemd",
+      "installedVersion": "1.3-debu49",
+      "fixedVersion": "1.1",
+      "vulnerabilityID": "CVE-123-MED"
+    },
+    {
+      "name": "systemd",
+      "installedVersion": "1.3-debu49",
+      "fixedVersion": "1.2",
+      "vulnerabilityID": "CVE-456-MED"
+    },
+    {
+      "name": "systemd",
+      "installedVersion": "1.3-debu49",
+      "fixedVersion": "1.3",
+      "vulnerabilityID": "CVE-789-MED"
+    }
+  ]
+}

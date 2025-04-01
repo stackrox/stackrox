@@ -19,10 +19,13 @@ type testObject struct {
 }
 
 type violation struct {
-	ID          string `json:"id"`
-	Description string `json:"description"`
-	Reason      string `json:"reason"`
-	Severity    string `json:"severity"`
+	ID               string `json:"id"`
+	Description      string `json:"description"`
+	Reason           string `json:"reason"`
+	Severity         string `json:"severity"`
+	Name             string `json:"name"`
+	InstalledVersion string `json:"installed"`
+	UpdateVersion    string `json:"fixed"`
 }
 
 func TestSarifPrinter_Print_InvalidJSONPathExpressions(t *testing.T) {

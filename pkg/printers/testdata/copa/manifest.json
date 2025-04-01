@@ -1,0 +1,32 @@
+{
+  "apiVersion": "v1alpha1",
+  "metadata": {
+    "os": {
+      "type": "",
+      "version": ""
+    },
+    "config": {
+      "arch": ""
+    }
+  },
+  "updates": [
+    {
+      "name": "first",
+      "installedVersion": "0.1.0",
+      "fixedVersion": "0.1.1",
+      "vulnerabilityID": "first-violation"
+    },
+    {
+      "name": "second",
+      "installedVersion": "0.2.0",
+      "fixedVersion": "0.2.2",
+      "vulnerabilityID": "second-violation"
+    },
+    {
+      "name": "third",
+      "installedVersion": "0.3.0",
+      "fixedVersion": "0.3.3",
+      "vulnerabilityID": "third-violation"
+    }
+  ]
+}

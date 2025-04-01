@@ -33,6 +33,14 @@ const (
 )
 
 var (
+	// JSON Path expressions to use for copa report generation
+	copaJSONPathExpressions = map[string]string{
+		printers.CopaVulnerabilityIdJSONPathExpressionKey:  `result.vulnerabilities.#.cveId`,
+		printers.CopaNameJSONPathExpressionKey:             `result.vulnerabilities.#.componentName`,
+		printers.CopaInstalledVersionJSONPathExpressionKey: "result.vulnerabilities.#.componentVersion",
+		printers.CopaFixedVersionJSONPathExpressionKey:     "result.vulnerabilities.#.componentFixedVersion",
+	}
+
 	// JSON Path expressions to use for sarif report generation
 	sarifJSONPathExpressions = map[string]string{
 		printers.SarifRuleJSONPathExpressionKey: gjson.MultiPathExpression(
@@ -85,12 +93,13 @@ var (
 	}
 )
 
-// Command checks the image against image build lifecycle policies
+// Command scans the image for known CVEs
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	imageScanCmd := &imageScanCommand{env: cliEnvironment}
 
 	objectPrinterFactory, err := printer.NewObjectPrinterFactory("table",
 		append(supportedObjectPrinters,
+			printer.NewCopaPrinterFactory(copaJSONPathExpressions),
 			printer.NewSarifPrinterFactory(printers.SarifVulnerabilityReport, sarifJSONPathExpressions, &imageScanCmd.image))...)
 	// should not happen when using default values, must be a programming error
 	utils.Must(err)

@@ -505,6 +505,26 @@ func (s *imageScanTestSuite) TestScan_JSONOutput() {
 	s.runOutputTests(cases, jsonPrinter, true)
 }
 
+func (s *imageScanTestSuite) TestScan_CopaOutput() {
+	cases := map[string]outputFormatTest{
+		"should render default output non compact without additional verbose output": {
+			components:     testComponents,
+			expectedOutput: "copa.json",
+		},
+		"should print nothing with empty components in image scan": {
+			components:     nil,
+			expectedOutput: "empty.copa.json",
+		},
+	}
+
+	factory, err := printer.NewObjectPrinterFactory("copa", printer.NewCopaPrinterFactory(copaJSONPathExpressions))
+	s.Require().NoError(err)
+	jsonPrinter, err := factory.CreatePrinter()
+	s.Require().NoError(err)
+
+	s.runOutputTests(cases, jsonPrinter, true)
+}
+
 func (s *imageScanTestSuite) TestScan_CSVOutput() {
 	cases := map[string]outputFormatTest{
 		"should render default output without additional verbose output": {
