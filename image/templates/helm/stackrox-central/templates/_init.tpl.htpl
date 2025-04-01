@@ -216,7 +216,7 @@
     {{ if kindIs "invalid" $._rox._ca.Cert }}
       {{ include "srox.warn" (list $ "The reencrypt route does not specify a destination certificate authority. Routing may be impaired.") }}
     {{ else }}
-      {{ $_ := set $._rox.central.exposure.route.reencrypt.tls "destinationCACertificate" $._rox._ca.Cert }}
+      {{ $_ := set $reencryptConfig.tls "destinationCACertificate" $._rox._ca.Cert }}
     {{ end }}
   {{ end }}
   {{ if and (kindIs "invalid" $reencryptConfig.tls.certificate) (kindIs "invalid" $reencryptConfig.tls.key) }}
