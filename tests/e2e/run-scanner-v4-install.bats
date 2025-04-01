@@ -517,41 +517,76 @@ EOT
     _end
 }
 
-@test "Fresh installation of HEAD Helm chart with Scanner V4 disabled and enabling it later" {
-    _begin "deploy-stackrox"
+@test "Fresh installation of HEAD Helm charts and toggling Scanner V4" {
+    local password_setting=$(cat <<EOT
+central:
+  adminPassword:
+    value: "$ROX_ADMIN_PASSWORD"
+EOT
+    )
+    local secured_cluster_name="$(get_cluster_name)"
 
-    info "Installing StackRox using HEAD Helm chart with Scanner V4 disabled and enabling it later"
-    # shellcheck disable=SC2030,SC2031
-    export OUTPUT_FORMAT=helm
-    ROX_SCANNER_V4=false _deploy_stackrox
+    ######################
+    _begin "deploying-head-central"
+    info "Deploying central-services using HEAD chart"
+    deploy_central_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$MAIN_IMAGE_TAG" "" \
+        -f <(echo "$password_setting")
+    local central_endpoint="$(get_central_endpoint "$CUSTOM_CENTRAL_NAMESPACE")"
 
-    _step "verify"
+    ######################
+    _begin "deploying-head-sensor"
+    info "Deploying secured-cluster-services using HEAD chart"
+    deploy_sensor_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$CUSTOM_SENSOR_NAMESPACE" \
+        "$MAIN_IMAGE_TAG" "" \
+        "$secured_cluster_name" "$ROX_ADMIN_PASSWORD" "$central_endpoint"
 
-    verify_scannerV2_deployed "stackrox"
-    verify_no_scannerV4_deployed "stackrox"
-    run ! verify_deployment_scannerV4_env_var_set "stackrox" "central"
-    run ! verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
+    ######################
+    _step "verifying-central-scanners-deployed"
+    verify_scannerV2_deployed "$CUSTOM_CENTRAL_NAMESPACE"
+    verify_scannerV4_deployed "$CUSTOM_CENTRAL_NAMESPACE"
+    verify_deployment_scannerV4_env_var_set "$CUSTOM_CENTRAL_NAMESPACE" "central"
 
-    _step "enable-scanner-v4"
+    ######################
+    _step "verifying-sensor-scanner-not-deployed"
+    verify_no_scannerV2_deployed "$CUSTOM_SENSOR_NAMESPACE"
+    verify_no_scannerV4_deployed "$CUSTOM_SENSOR_NAMESPACE"
+    run ! verify_deployment_scannerV4_env_var_set "$CUSTOM_SENSOR_NAMESPACE" "sensor"
 
-    SENSOR_SCANNER_V4_SUPPORT=true HELM_REUSE_VALUES=true _deploy_stackrox
+    ######################
+    _step "enabling-sensor-scanners"
+    info "Enabling Scanner V4 for secured-cluster-services"
+    deploy_sensor_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$CUSTOM_SENSOR_NAMESPACE" "" "" "" "" "" \
+        --set scannerV4.disable=false --set scanner.disable=false
 
-    verify_scannerV2_deployed "stackrox"
-    verify_scannerV4_deployed "stackrox"
-    verify_deployment_scannerV4_env_var_set "stackrox" "central"
-    verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
+    ######################
+    _step "verifying-sensor-scanners-deployed"
+    verify_scannerV2_deployed "$CUSTOM_SENSOR_NAMESPACE"
+    verify_scannerV4_indexer_deployed "$CUSTOM_SENSOR_NAMESPACE"
+    run verify_deployment_scannerV4_env_var_set "$CUSTOM_SENSOR_NAMESPACE" "sensor"
 
-    _step "disable-scanner-v4"
+    ######################
+    _begin "disabling-central-scanner-v4"
+    info "Disabling Scanner V4 for central-services"
+    deploy_central_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$MAIN_IMAGE_TAG" "" \
+        --reuse-values --set scannerV4.disable=true
 
-    # Deactivate Scanner V4 for both releases.
-    info "Disabling Scanner V4 for Central"
-    helm upgrade -n stackrox stackrox-central-services "${CENTRAL_CHART_DIR}" --reuse-values --set scannerV4.disable=true
-    info "Disabling Scanner V4 for SecuredCluster"
-    helm upgrade -n stackrox stackrox-secured-cluster-services "${SENSOR_CHART_DIR}" --reuse-values --set scannerV4.disable=true
+    ######################
+    _step "disabling-sensor-scanners"
+    info "Disabling Scanner V4 for secured-cluster-services"
+    deploy_sensor_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$CUSTOM_SENSOR_NAMESPACE" "" "" "" "" "" \
+        --set scannerV4.disable=true --set scanner.disable=true
 
-    verify_deployment_deletion_with_timeout 4m "stackrox" scanner-v4-indexer scanner-v4-matcher scanner-v4-db
-    run ! verify_deployment_scannerV4_env_var_set "stackrox" "central"
-    run ! verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
+    ######################
+    _step "verifying-central-scanner-v4-not-deployed"
+    info "Verifying Scanner V4 is getting removed for central-services"
+    verify_deployment_deletion_with_timeout 4m "$CUSTOM_CENTRAL_NAMESPACE" scanner-v4-indexer scanner-v4-matcher scanner-v4-db
+    run ! verify_deployment_scannerV4_env_var_set "$CUSTOM_CENTRAL_NAMESPACE" "central"
+
+    ######################
+    _step "verifying-sensor-scanner-v4-not-deployed"
+    info "Verifying Scanner V4 is getting removed for secured-cluster-services"
+    verify_deployment_deletion_with_timeout 4m "$CUSTOM_SENSOR_NAMESPACE" scanner-v4-indexer scanner-v4-db
+    run ! verify_deployment_scannerV4_env_var_set "$CUSTOM_SENSOR_NAMESPACE" "sensor"
 
     _end
 }
@@ -1053,6 +1088,14 @@ verify_scannerV2_deployed() {
     wait_for_object_to_appear "$namespace" deploy/scanner 300
     info "** Scanner V2 is deployed in namespace ${namespace}"
 }
+
+verify_no_scannerV2_deployed() {
+    local namespace=${1:-stackrox}
+    echo "Verifying that scanner V2 is not deployed"
+    run "${ORCH_CMD}" </dev/null -n "$namespace" get deployments -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
+    refute_output --regexp "^(scanner|scannert-db)$"
+}
+
 
 verify_scannerV4_deployed() {
     local namespace=${1:-stackrox}
