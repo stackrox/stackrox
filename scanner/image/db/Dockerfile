@@ -1,17 +1,56 @@
+ARG FINAL_STAGE_PATH="/mnt/final"
+
 ARG RPMS_REGISTRY=registry.access.redhat.com
 ARG RPMS_BASE_IMAGE=ubi8
-ARG RPMS_BASE_TAG=latest
+ARG RPMS_BASE_TAG=8.7
 
 ARG BASE_REGISTRY=registry.access.redhat.com
 ARG BASE_IMAGE=ubi8-minimal
-ARG BASE_TAG=latest
+ARG BASE_TAG=8.7
 
-FROM ${RPMS_REGISTRY}/${RPMS_BASE_IMAGE}:${RPMS_BASE_TAG} AS postgres_rpms
+FROM ${RPMS_REGISTRY}/${RPMS_BASE_IMAGE}:${RPMS_BASE_TAG} AS ubi-base
+FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} AS final-base
+
+
+FROM ubi-base AS postgres_rpms
+ARG FINAL_STAGE_PATH
+COPY --from=final-base / "$FINAL_STAGE_PATH"
 
 COPY scripts/download.sh /download.sh
 RUN /download.sh
 
-FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
+COPY signatures/PGDG-RPM-GPG-KEY-RHEL /
+
+RUN dnf -y --installroot="$FINAL_STAGE_PATH" upgrade -y --nobest && \
+    # groupadd is in shadow-utils package that is not installed by default.
+    dnf -y --installroot="$FINAL_STAGE_PATH" install -y shadow-utils && \
+    rpm --import PGDG-RPM-GPG-KEY-RHEL && \
+    dnf -y --installroot="$FINAL_STAGE_PATH" install -y \
+        ca-certificates \
+        glibc-langpack-en \
+        glibc-locale-source \
+        libicu \
+        libxslt \
+        lz4 \
+        perl-libs \
+        python3 \
+        systemd-sysv \
+        zstd \
+        && \
+    if [[ $(awk -F'=' '/VERSION_ID/{ gsub(/"/,""); print substr($2,1,1)}' /etc/os-release) -gt 8 ]]; then \
+        dnf -y --installroot="$FINAL_STAGE_PATH" install -y uuid; \
+    fi && \
+    rpm --root $FINAL_STAGE_PATH -i /rpms/postgres-libs.rpm /rpms/postgres-server.rpm /rpms/postgres.rpm /rpms/postgres-contrib.rpm && \
+    # Restore /usr/share/zoneinfo that's empty in ubi-minimal because postgres reads timezone data from it.
+    # https://access.redhat.com/solutions/5616681
+    dnf -y --installroot="$FINAL_STAGE_PATH" reinstall -y tzdata && \
+    dnf -y --installroot="$FINAL_STAGE_PATH" clean all
+
+FROM scratch
+
+ARG FINAL_STAGE_PATH
+
+COPY --from=postgres_rpms "$FINAL_STAGE_PATH" /
 
 ARG LABEL_VERSION
 ARG LABEL_RELEASE
@@ -34,40 +73,14 @@ ENV LANG=en_US.utf8
 # This will be ignored if empty in the init script.
 COPY init-bundles/db-init.dump.zst /db-init.dump.zst
 
-COPY signatures/PGDG-RPM-GPG-KEY-RHEL /
 COPY scripts/docker-entrypoint.sh scripts/init-entrypoint.sh /usr/local/bin/
-COPY --from=postgres_rpms /rpms/postgres.rpm /rpms/postgres-libs.rpm /rpms/postgres-server.rpm /rpms/postgres-contrib.rpm /tmp/
 
-RUN microdnf upgrade -y --nobest && \
-    # groupadd is in shadow-utils package that is not installed by default.
-    microdnf install -y shadow-utils && \
-    groupadd -g 70 postgres && \
-    adduser postgres -u 70 -g 70 -d /var/lib/postgresql -s /bin/sh && \
-    rpm --import PGDG-RPM-GPG-KEY-RHEL && \
-    microdnf install -y \
-        ca-certificates \
-        glibc-langpack-en \
-        glibc-locale-source \
-        libicu \
-        libxslt \
-        lz4 \
-        perl-libs \
-        python3 \
-        systemd-sysv \
-        zstd \
-        && \
-    if [[ $(awk -F'=' '/VERSION_ID/{ gsub(/"/,""); print substr($2,1,1)}' /etc/os-release) -gt 8 ]]; then \
-        microdnf install -y uuid; \
-    fi && \
-    rpm -i /tmp/postgres-libs.rpm /tmp/postgres-server.rpm /tmp/postgres.rpm /tmp/postgres-contrib.rpm && \
-    # Restore /usr/share/zoneinfo that's empty in ubi-minimal because postgres reads timezone data from it.
-    # https://access.redhat.com/solutions/5616681
-    microdnf reinstall -y tzdata && \
-    microdnf clean all && \
-    # (Optional) Remove line below to keep package management utilities
-    rpm -e --nodeps $(rpm -qa shadow-utils curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
-    rm -rf /var/cache/dnf /var/cache/yum /tmp/postgres-libs.rpm /tmp/postgres-server.rpm /tmp/postgres.rpm /tmp/postgres-contrib.rpm && \
-    localedef -f UTF-8 -i en_US en_US.UTF-8 && \
+RUN localedef -f UTF-8 -i en_US en_US.UTF-8 && \
+    mkdir -p /var/lib/postgresql && \
+    groupmod -g 70 postgres && \
+    usermod -u 70 postgres -d /var/lib/postgresql && \
+    chown -R postgres:postgres /var/lib/postgresql && \
+    chown -R postgres:postgres /var/run/postgresql && \
     mkdir /docker-entrypoint-initdb.d
 
 STOPSIGNAL SIGINT
