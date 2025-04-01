@@ -36,10 +36,6 @@ type gatherResult struct {
 	files []k8sintrospect.File
 }
 
-func (s *serviceImpl) getDelegatedScanningConfig(ctx context.Context) ([]k8sintrospect.File, error) {
-	return []k8sintrospect.File{createDelScanningConfigFile(centralClusterPrefix, s.deleRegConfigDS, ctx)}, nil
-}
-
 func (s *serviceImpl) getK8sDiagnostics(ctx context.Context, zipWriter *zipWriter, opts debugDumpOptions) error {
 	gatherPool := concPool.NewWithResults[[]k8sintrospect.File]().WithContext(ctx)
 
@@ -74,6 +70,12 @@ func (s *serviceImpl) getK8sDiagnostics(ctx context.Context, zipWriter *zipWrite
 	if opts.withCentral {
 		gatherPool.Go(func(ctx context.Context) ([]k8sintrospect.File, error) {
 			return pullCentralClusterDiagnostics(ctx, opts.since)
+		})
+	}
+
+	if opts.withCentral {
+		gatherPool.Go(func(ctx context.Context) ([]k8sintrospect.File, error) {
+			return getDelScanningConfigs(centralClusterPrefix, s.deleRegConfigDS, ctx), nil
 		})
 	}
 
@@ -151,7 +153,7 @@ func gatherResultCallback(res *gatherResult, clusterName string) func(ctx concur
 	}
 }
 
-func createDelScanningConfigFile(clusterName string, d deleRegDS.DataStore, ctx context.Context) k8sintrospect.File {
+func getDelScanningConfigs(clusterName string, d deleRegDS.DataStore, ctx context.Context) ([]k8sintrospect.File, error) {
 	adminCtx := sac.WithGlobalAccessScopeChecker(
 		ctx,
 		sac.AllowFixedScopes(
@@ -160,9 +162,9 @@ func createDelScanningConfigFile(clusterName string, d deleRegDS.DataStore, ctx 
 		),
 	)
 	config, exists, err := d.GetConfig(adminCtx)
-	file := "delegated-scanning-config.txt"
+	f := "delegated-scanning-config.txt"
 	res := k8sintrospect.File{}
-	res.Path = path.Join(clusterName, file)
+	res.Path = path.Join(clusterName, f)
 	if err != nil {
 		res.Contents = []byte(err.Error())
 	} else if !exists {
@@ -170,7 +172,7 @@ func createDelScanningConfigFile(clusterName string, d deleRegDS.DataStore, ctx 
 	} else {
 		res.Contents = []byte(config.String())
 	}
-	return res
+	return []k8sintrospect.File{res}, nil
 }
 
 func createErrorFile(clusterName string, err error) k8sintrospect.File {
