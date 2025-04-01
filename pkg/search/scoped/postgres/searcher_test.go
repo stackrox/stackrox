@@ -40,14 +40,14 @@ func TestScoping(t *testing.T) {
 			Level: v1.SearchCategory_CLUSTERS,
 		},
 		{
-			ID:    "n1",
+			IDs:   []string{"n1", "n2"},
 			Level: v1.SearchCategory_NAMESPACES,
 		},
 	}
 	expected = search.ConjunctionQuery(
 		query,
 		search.NewQueryBuilder().AddExactMatches(search.ClusterID, "c1").ProtoQuery(),
-		search.NewQueryBuilder().AddExactMatches(search.NamespaceID, "n1").ProtoQuery(),
+		search.NewQueryBuilder().AddExactMatches(search.NamespaceID, "n1", "n2").ProtoQuery(),
 	)
 	actual, err = scopeQuery(query, scopes)
 	assert.NoError(t, err)
