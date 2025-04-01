@@ -31,7 +31,6 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	pkgutils "github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/sensor/common/sensor"
 	"go.uber.org/zap/zapcore"
 )
 
@@ -40,7 +39,10 @@ const (
 
 	rhcosPackageDB = "sqlite:usr/share/rpm"
 
-	sensorMappingsFile = "repo2cpe"
+	// scannerDefinitionsRouteInSensor should be in sync with `scannerDefinitionsRoute` in sensor/sensor.go
+	// Direct import is prohibited by import rules
+	scannerDefinitionsRouteInSensor = "/scanner/definitions"
+	sensorMappingsFile              = "repo2cpe"
 )
 
 var (
@@ -124,7 +126,7 @@ func DefaultNodeIndexerConfig() NodeIndexerConfig {
 }
 
 func buildMappingURL() string {
-	URL := env.AdvertisedEndpoint.Setting() + sensor.ScannerDefinitionsRoute + "?file=" + sensorMappingsFile
+	URL := env.AdvertisedEndpoint.Setting() + scannerDefinitionsRouteInSensor + "?file=" + sensorMappingsFile
 	return urlfmt.FormatURL(URL, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 }
 
