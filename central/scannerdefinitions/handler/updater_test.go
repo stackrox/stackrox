@@ -38,11 +38,12 @@ func TestUpdate(t *testing.T) {
 	lastUpdatedTime := time.Now().UTC().Truncate(time.Second)
 	body := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	responseLengths := [3]int{len(body), len(body), len(body)}
+	headContentLengths := [3]int{len(body), len(body), len(body)}
 	responseI := 0
 	responses := 1
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		responseI = min(responses-1, responseI)
-		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(body)))
+		w.Header().Set("Content-Length", fmt.Sprintf("%d", headContentLengths[responseI]))
 		w.Header().Set("Last-Modified", lastUpdatedTime.Format(http.TimeFormat))
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, body[:responseLengths[responseI]])
@@ -52,17 +53,17 @@ func TestUpdate(t *testing.T) {
 	u := newUpdater(file.New(filePath), &http.Client{Timeout: 30 * time.Second}, server.URL, 1*time.Hour)
 	u.RetryDelay = 0
 
-	// Should fetch first time.
+	// Should fetch on first try.
 	assert.NotPanics(t, u.update)
 	assertOnFileExistence(t, filePath, true)
 
-	// Should not fetch if no update.
+	// Should not fetch if Last-Modified is not newer than file modified time.
 	mustSetModTime(t, filePath, lastUpdatedTime)
 	assert.NotPanics(t, u.update)
 	assert.Equal(t, lastUpdatedTime, mustGetModTime(t, filePath))
 	assertOnFileExistence(t, filePath, true)
 
-	// Should fetch if updated.
+	// Should fetch if Last-Modified is newer than file modified time.
 	mustSetModTime(t, filePath, nov23)
 	assert.NotPanics(t, u.update)
 	assert.True(t, mustGetModTime(t, filePath).After(nov23))
@@ -79,6 +80,24 @@ func TestUpdate(t *testing.T) {
 	// Should retry, if the downloaded content-length is too short.
 	mustSetModTime(t, filePath, nov23)
 	responseLengths[0] = len(body) / 2
+	responses = 2
+	responseI = 0
+	assert.NotPanics(t, u.update)
+	assert.NotEqual(t, nov23, mustGetModTime(t, filePath))
+
+	// Wrapped doUpdate() should fail, and not change the file, if the downloaded content-length is too long.
+	mustSetModTime(t, filePath, nov23)
+	responseLengths[0] = len(body)
+	headContentLengths[0] = len(body) / 2
+	responses = 2
+	responseI = 0
+	require.Error(t, u.doUpdate())
+	assert.Equal(t, nov23, mustGetModTime(t, filePath))
+
+	// Should retry, if the downloaded content-length is too long.
+	mustSetModTime(t, filePath, nov23)
+	responseLengths[0] = len(body)
+	headContentLengths[0] = len(body) / 2
 	responses = 2
 	responseI = 0
 	assert.NotPanics(t, u.update)
