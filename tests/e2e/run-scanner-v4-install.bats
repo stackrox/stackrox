@@ -428,7 +428,7 @@ check_central_chart_images() {
     local chart_dir="$1"
     echo "Verifying that default images in the Helm chart ${chart_dir} exist..."
     yq -oj "${chart_dir}/internal/defaults.yaml" \
-        | jq -r '.. | objects | select(has("image")) | .image | select(has("name") and has("tag")) | "quay.io/rhacs-eng/\(.name):\(.tag)"' \
+        | jq -r ".. | objects | select(has(\"image\")) | .image | select(has(\"name\") and has(\"tag\")) | \"${DEFAULT_IMAGE_REGISTRY}/\(.name):\(.tag)\"" \
         | sort \
         | uniq \
         | while read -r image_ref; do
@@ -1171,9 +1171,6 @@ deploy_central_with_helm() {
 
     if [[ "$use_default_chart" == "true" ]]; then
         image_overwrites=$(cat <<EOT
-image:
-  registry: quay.io/rhacs-eng
-
 central:
   db:
     image:
@@ -1322,7 +1319,6 @@ deploy_sensor_with_helm() {
     if [[ "$use_default_chart" == "true" ]]; then
         image_overwrites=$(cat <<EOT
 image:
-  registry: quay.io/rhacs-eng
   main:
     tag: "$main_image_tag"
   scannerV4:
@@ -1678,7 +1674,7 @@ EOT
     for img in "$@"; do
         cat <<EOT
       - name: "image-pre-pull-$i"
-        image: "quay.io/rhacs-eng/${img}"
+        image: "${DEFAULT_IMAGE_REGISTRY}/${img}"
         command: ["sleep", "infinity"]
 EOT
         i=$((i + 1))
