@@ -976,7 +976,7 @@ verify_deployment_deletion() {
 
     local deleted
     while [[ -s "$deployment_names_file" ]]; do
-        active_deployments=$("${ORCH_CMD}" -n "$namespace" get deployments -o json)
+        active_deployments=$("${ORCH_CMD}" </dev/null -n "$namespace" get deployments -o json)
         deployment_names=$(cat "$deployment_names_file")
 
         for deployment_name in $deployment_names; do
