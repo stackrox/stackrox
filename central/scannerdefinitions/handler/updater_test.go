@@ -2,7 +2,6 @@ package handler
 
 import (
 	"archive/zip"
-	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -16,7 +15,7 @@ import (
 )
 
 const (
-	defURL = "https://definitions.stackrox.io/dev/diff3.zip"
+	defURL = "https://definitions.stackrox.io/e799c68a-671f-44db-9682-f24248cd0ffe/diff.zip"
 
 	mappingURL = "https://definitions.stackrox.io/v4/redhat-repository-mappings/mapping.zip"
 
@@ -37,31 +36,19 @@ func TestUpdate(t *testing.T) {
 	filePath := filepath.Join(t.TempDir(), "dump.zip")
 	u := newUpdater(file.New(filePath), &http.Client{Timeout: 30 * time.Second}, defURL, 1*time.Hour)
 	// Should fetch first time.
-	u.update()
+	assert.NotPanics(t, u.update)
 	assertOnFileExistence(t, filePath, true)
 
-	// Should not fetch unless the file changed; The file could change during testing.
-	attempt := 0
 	lastUpdatedTime := time.Now()
-	for attempt = 1; attempt <= 3; attempt++ {
-		lastUpdatedTime = time.Now()
-		mustSetModTime(t, filePath, lastUpdatedTime)
-		if err := u.doUpdate(); err != nil {
-			fmt.Printf("Scanner vulnerability updater for endpoint %q failed: %v", u.downloadURL, err)
-		} else {
-			break
-		}
-		time.Sleep(10 * time.Second)
-	}
-	if attempt == 1 {
-		// File did not change during testing.
-		assert.Equal(t, lastUpdatedTime.UTC(), mustGetModTime(t, filePath))
-	}
+	mustSetModTime(t, filePath, lastUpdatedTime)
+	// Should not fetch since it can't be updated in a time in the future.
+	assert.NotPanics(t, u.update)
+	assert.Equal(t, lastUpdatedTime.UTC(), mustGetModTime(t, filePath))
 	assertOnFileExistence(t, filePath, true)
 
 	// Should definitely fetch.
 	mustSetModTime(t, filePath, nov23)
-	require.NoError(t, u.doUpdate())
+	assert.NotPanics(t, u.update)
 	assert.True(t, lastUpdatedTime.UTC().After(mustGetModTime(t, filePath)))
 	assert.True(t, mustGetModTime(t, filePath).After(nov23.UTC()))
 	assertOnFileExistence(t, filePath, true)

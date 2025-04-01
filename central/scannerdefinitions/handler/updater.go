@@ -78,7 +78,7 @@ func (u *updater) update() {
 		} else {
 			return // successful update
 		}
-		time.Sleep(10 * time.Second)
+		time.Sleep(time.Duration(attempt*10) * time.Second)
 	}
 	log.Errorf("Scanner vulnerability updater for endpoint %q failed retries.", u.downloadURL)
 }
