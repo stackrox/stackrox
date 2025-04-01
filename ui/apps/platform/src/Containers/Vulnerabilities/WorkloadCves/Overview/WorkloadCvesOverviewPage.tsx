@@ -399,7 +399,7 @@ function WorkloadCvesOverviewPage() {
 
     // Report-specific state management
     const [isCreateOnDemandReportModalOpen, setIsCreateOnDemandReportModalOpen] = useState(false);
-    const isOnDemandReportsEnabled = isFeatureFlagEnabled('ROX_VULNERABILITY_AD_HOC_REPORTS');
+    const isOnDemandReportsEnabled = isFeatureFlagEnabled('ROX_VULNERABILITY_ON_DEMAND_REPORTS');
 
     const isOnDemandReportsVisible =
         isOnDemandReportsEnabled &&
