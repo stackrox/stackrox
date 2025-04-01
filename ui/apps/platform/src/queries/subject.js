@@ -74,33 +74,3 @@ export const SUBJECT_NAME = gql`
         }
     }
 `;
-
-export const SUBJECT_QUERY = gql`
-    query subject($id: String!) {
-        clusters {
-            id
-            name
-            subject(name: $id) {
-                id: name
-                subject {
-                    name
-                    kind
-                    namespace
-                }
-                type
-                scopedPermissions {
-                    scope
-                    permissions {
-                        key
-                        values
-                    }
-                }
-                clusterAdmin
-                roles {
-                    id
-                    name
-                }
-            }
-        }
-    }
-`;
