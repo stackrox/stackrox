@@ -21,7 +21,7 @@ function SecureClusterUsingOperator({
                 <ListItem>
                     <p>
                         In the RHACS web portal, you have created a cluster registration secret and
-                        download the YAML file for the cluster registration secret.
+                        downloaded the YAML file for the cluster registration secret.
                     </p>
                 </ListItem>
                 <ListItem>

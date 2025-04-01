@@ -1,5 +1,5 @@
 import React, { ReactElement, useState } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Alert, Bullseye, Button, PageSection, Spinner } from '@patternfly/react-core';
 
 import useRestQuery from 'hooks/useRestQuery';
@@ -19,7 +19,7 @@ function ClusterRegistrationSecretPage({
     hasWriteAccessForClusterRegistrationSecrets,
     id,
 }: ClusterRegistrationSecretPageProps): ReactElement {
-    const history = useHistory();
+    const navigate = useNavigate();
     const [isRevoking, setIsRevoking] = useState(false);
 
     const {
@@ -39,7 +39,7 @@ function ClusterRegistrationSecretPage({
     function onCloseModal(wasRevoked: boolean) {
         setIsRevoking(false);
         if (wasRevoked) {
-            history.goBack(); // to table
+            navigate(-1); // to table
         }
     }
 

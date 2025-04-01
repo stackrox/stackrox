@@ -1,5 +1,5 @@
 import React, { ReactElement, useState } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
     ActionGroup,
     Alert,
@@ -46,7 +46,7 @@ const validationSchema: yup.ObjectSchema<ClusterRegistrationSecretFormValues> = 
 
 function ClusterRegistrationSecretForm(): ReactElement {
     const { analyticsTrack } = useAnalytics();
-    const history = useHistory();
+    const navigate = useNavigate();
     const [errorMessage, setErrorMessage] = useState('');
     const {
         errors,
@@ -79,7 +79,7 @@ function ClusterRegistrationSecretForm(): ReactElement {
     });
 
     function goBack() {
-        history.goBack(); // to InputBundlesTable or NoClustersPage
+        navigate(-1); // to InputBundlesTable or NoClustersPage
     }
 
     // return setWhatever solves problem reported by typescript-eslint no-floating-promises
