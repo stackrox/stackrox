@@ -53,7 +53,7 @@ const (
 var (
 	emptyProcessInfo = processInfo{}
 	enricherCycle    = time.Second * 30
-	purgerCycle      = time.Minute * 5
+	purgerCycle      = time.Minute * 30
 )
 
 type hostConnections struct {
