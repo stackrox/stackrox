@@ -1010,7 +1010,7 @@ func (m *networkFlowManager) enrichHostConnections(hostConns *hostConnections, e
 		if shallRemoveConnection(status) {
 			// connections that are no longer active and have already been used can be deleted.
 			delete(hostConns.connections, conn)
-			flowMetrics.HostConnections.WithLabelValues("remove").Inc()
+			flowMetrics.HostConnectionsOperations.WithLabelValues("remove").Inc()
 		}
 	}
 }
@@ -1048,7 +1048,7 @@ func (m *networkFlowManager) enrichHostContainerEndpoints(hostConns *hostConnect
 		m.enrichContainerEndpoint(&ep, status, enrichedEndpoints)
 		if shallRemoveEndpoint(status) {
 			delete(hostConns.endpoints, ep)
-			flowMetrics.HostEndpoints.WithLabelValues("remove").Inc()
+			flowMetrics.HostConnectionsOperations.WithLabelValues("remove", "endpoints").Inc()
 		}
 	}
 }
@@ -1225,7 +1225,7 @@ func (m *networkFlowManager) deleteHostConnections(hostname string) {
 	if conns.pendingDeletion == nil {
 		return
 	}
-	flowMetrics.HostConnections.WithLabelValues("remove").Add(float64(len(conns.connections)))
+	flowMetrics.HostConnectionsOperations.WithLabelValues("remove").Add(float64(len(conns.connections)))
 	delete(m.connectionsByHost, hostname)
 }
 
@@ -1261,8 +1261,9 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 	updatedConnections := getUpdatedConnections(h.hostname, networkInfo)
 	updatedEndpoints := getUpdatedContainerEndpoints(h.hostname, networkInfo)
 
-	flowMetrics.NumUpdated.With(prometheus.Labels{"Hostname": h.hostname, "Type": "Connection"}).Add(float64(len(updatedConnections)))
-	flowMetrics.NumUpdated.With(prometheus.Labels{"Hostname": h.hostname, "Type": "Endpoint"}).Add(float64(len(updatedEndpoints)))
+	flowMetrics.NumUpdated.With(prometheus.Labels{"Hostname": h.hostname, "Type": "Connection"}).Set(float64(len(updatedConnections)))
+	flowMetrics.NumUpdated.With(prometheus.Labels{"Hostname": h.hostname, "Type": "Endpoint"}).Set(float64(len(updatedEndpoints)))
+	flowMetrics.NumHostConnections.Set(float64(len(h.connections)))
 
 	collectorTS := timestamp.FromProtobuf(networkInfo.GetTime())
 	tsOffset := nowTimestamp - collectorTS
@@ -1293,7 +1294,7 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 			}
 			status, found := h.connections[c]
 			if !found || status == nil {
-				flowMetrics.HostConnections.WithLabelValues("add").Inc()
+				flowMetrics.HostConnectionsOperations.WithLabelValues("add").Inc()
 				status = &connStatus{
 					firstSeen: timestamp.Now(),
 				}
@@ -1315,7 +1316,7 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 			}
 			status, found := h.endpoints[ep]
 			if !found || status == nil {
-				flowMetrics.HostEndpoints.WithLabelValues("add").Inc()
+				flowMetrics.HostConnectionsOperations.WithLabelValues("add", "endpoints").Inc()
 				status = &connStatus{
 					firstSeen: timestamp.Now(),
 				}

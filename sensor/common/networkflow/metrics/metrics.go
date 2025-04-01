@@ -9,24 +9,34 @@ import (
 
 func init() {
 	prometheus.MustRegister(
+		// Host Connections
 		NetworkConnectionInfoMessagesRcvd,
+		NumUpdated,
+		HostConnectionsOperations,
+		NumHostConnections,
+
+		// Network Flows Manager
 		FlowEnrichments,
 		FlowEnrichmentEventsEndpoint,
 		FlowEnrichmentEventsConnection,
 		ExternalFlowCounter,
 		InternalFlowCounter,
-		NetworkEntityFlowCounter,
-		HostConnections,
-		HostEndpoints,
-		HostProcessesRemoved,
-		NumUpdated,
 		activeFlowsCurrent,
 		activeEndpointsCurrent,
 		ActiveEndpointsPurger,
 		ActiveEndpointsPurgerDuration,
 		NumUpdatedConnectionsEndpoints,
+
+		// Other
+		NetworkEntityFlowCounter, // flow directions and graph entities
+		HostProcessesRemoved,     // plop
 	)
 }
+
+const (
+	hostConnectionsPrefix = "host_connections_"
+	netFlowManagerPrefix  = "network_flow_manager_"
+)
 
 // Metrics for network flows
 var (
@@ -36,37 +46,37 @@ var (
 	NetworkConnectionInfoMessagesRcvd = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "network_connection_info_msgs_received_per_node_total",
+		Name:      hostConnectionsPrefix + "msgs_received_per_node_total",
 		Help:      "Total number of messages containing network flows received from Collector for a specific node",
 	}, []string{"Hostname"})
 	// NumUpdated - 2. Out of newly arrived endpoints and connections, only selected need an update
 	NumUpdated = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "network_connection_info_num_updates",
+		Name:      hostConnectionsPrefix + "num_updates",
 		Help:      "Current number of network endpoints or connections being updated in the message from Collector received for a specific node",
 	}, []string{"Hostname", "Type"})
-	// HostConnections - 3a. Out of the updates, only some result in adding the connection to the connections map
-	HostConnections = prometheus.NewCounterVec(prometheus.CounterOpts{
+	// HostConnectionsOperations - 3a. Out of the updates, only some result in adding the connection/endpoint to the map
+	HostConnectionsOperations = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "network_connection_info_host_connections_total",
-		Help:      "Total number of flows added/removed in the host connections maps",
-	}, []string{"op"})
-	// HostEndpoints - 3b. The same as 3a but for endpoints
-	HostEndpoints = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Name:      hostConnectionsPrefix + "operations_total",
+		Help:      "Total number of flows/endpoints added/removed in the host connections maps",
+	}, []string{"op", "object"})
+	// NumHostConnections - 3b. how many entries does Sensor hold in the hostConnections map?
+	NumHostConnections = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "network_connection_info_host_endpoints_total",
-		Help:      "Total number of endpoints added/removed in the host connections maps",
-	}, []string{"op"})
+		Name:      hostConnectionsPrefix + "size",
+		Help:      "Current number of host connections being held in Sensor's memory",
+	})
 	// End of processing of the networkConnectionInfo message
 
 	// FlowEnrichments - 4. All connections and endpoints kept in memory are enriched
 	FlowEnrichments = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "network_flow_enrichments_total",
+		Name:      netFlowManagerPrefix + "enrichments_total",
 		Help: "Total number of enrichments started for a given object " +
 			"(allows to calculate the percentage of events being enriched for " +
 			"network_flow_enrichment_endpoint_events_total and network_flow_enrichment_connection_events_total)",
@@ -75,28 +85,28 @@ var (
 	FlowEnrichmentEventsEndpoint = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "network_flow_enrichment_endpoint_events_total",
+		Name:      netFlowManagerPrefix + "enrichment_endpoint_events_total",
 		Help:      "Total number of events occurred to endpoints during the enrichment of network flows passed from collector",
 	}, []string{"containerIDfound", "action", "isHistorical", "reason", "lastSeenSet", "rotten", "mature", "fresh"})
 	// FlowEnrichmentEventsConnection - 4b. Enrichment can have various outcomes. This metric stores the details about the outcomes for connections.
 	FlowEnrichmentEventsConnection = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "network_flow_enrichment_connection_events_total",
+		Name:      netFlowManagerPrefix + "enrichment_connection_events_total",
 		Help:      "Total number of events occurred to connections during the enrichment of network flows passed from collector",
 	}, []string{"containerIDfound", "action", "isHistorical", "reason", "lastSeenSet", "rotten", "mature", "fresh", "isExternal"})
-	// ExternalFlowCounter - 4c. Counts the number of flows treated as external in the enrichment.
+	// ExternalFlowCounter - 4c. Counts the number of flows treated as external in the enrichment (will show edge to External Entities on the Network Graph).
 	ExternalFlowCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "network_flow_external_flows",
+		Name:      netFlowManagerPrefix + "external_flows",
 		Help:      "Total number of external flows observed by Sensor enrichment",
 	}, []string{"direction", "namespace"})
-	// InternalFlowCounter - 4d. Counts the number of flows treated as external in the enrichment.
+	// InternalFlowCounter - 4d. Counts the number of flows treated as internal in the enrichment (will show edge to Internal Entities on the Network Graph).
 	InternalFlowCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "network_flow_internal_flows",
+		Name:      netFlowManagerPrefix + "internal_flows",
 		Help:      "Total number of internal flows observed by Sensor enrichment",
 	}, []string{"direction", "namespace"})
 
@@ -105,48 +115,47 @@ var (
 	NumUpdatedConnectionsEndpoints = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "network_flow_num_sent_to_central_total",
+		Name:      netFlowManagerPrefix + "num_sent_to_central_total",
 		Help:      "A counter that tracks the total number of connections and endpoints being updated (i.e., sent to Central)",
 	}, []string{"object"})
+	activeFlowsCurrent = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      netFlowManagerPrefix + "active_network_flows_current",
+		Help:      "A gauge that tracks the current active network flows in sensor",
+	})
+	activeEndpointsCurrent = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      netFlowManagerPrefix + "active_endpoints_current",
+		Help:      "A gauge that tracks the current active endpoints in sensor",
+	})
+	ActiveEndpointsPurger = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      netFlowManagerPrefix + "active_endpoints_purger_events_total",
+		Help:      "A counter that tracks the reasons for purging active endpoints from memory",
+	}, []string{"purgeReason"})
+	ActiveEndpointsPurgerDuration = prometheus.NewHistogram(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      netFlowManagerPrefix + "active_endpoints_purger_duration_ms",
+		Help:      "Time taken by a single purger run",
+		Buckets:   prometheus.ExponentialBuckets(4, 2, 10),
+	})
 
 	NetworkEntityFlowCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "network_flow_entity_flows",
+		Name:      netFlowManagerPrefix + "entity_flows_total",
 		Help:      "Total number of network entity flows observed by Sensor enrichment",
 	}, []string{"direction", "namespace"})
 
 	HostProcessesRemoved = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "processes_listening_on_port_removed_total",
+		Name:      netFlowManagerPrefix + "processes_listening_on_port_removed_total",
 		Help:      "Total number of processes listening on ports",
-	})
-
-	activeFlowsCurrent = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "active_network_flows_current",
-		Help:      "A gauge that tracks the current active network flows in sensor",
-	})
-	activeEndpointsCurrent = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "active_endpoints_current",
-		Help:      "A gauge that tracks the current active endpoints in sensor",
-	})
-	ActiveEndpointsPurger = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "active_endpoints_purger_events_total",
-		Help:      "A counter that tracks the reasons for purging active endpoints from memory",
-	}, []string{"purgeReason"})
-	ActiveEndpointsPurgerDuration = prometheus.NewHistogram(prometheus.HistogramOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "active_endpoints_purger_duration_ms",
-		Help:      "Time taken by a single purger run",
-		Buckets:   prometheus.ExponentialBuckets(4, 2, 10),
 	})
 )
 
