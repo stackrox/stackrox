@@ -285,7 +285,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        tag_suffix: ["", "-fast"]
+        tag_suffix: ["-fast"]
     steps:
     - name: Checkout repo
       uses: actions/checkout@v4
@@ -309,7 +309,7 @@ jobs:
     strategy:
       matrix:
         image: ["scanner", "scanner-slim", "scanner-db", "scanner-db-slim"]
-        tag_suffix: ["", "-fast"]
+        tag_suffix: ["-fast"]
     steps:
     - name: Checkout repo
       uses: actions/checkout@v4
