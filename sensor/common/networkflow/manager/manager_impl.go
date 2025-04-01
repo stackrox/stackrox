@@ -511,7 +511,11 @@ func purgeIfOlderThanNoLock(maxAge time.Duration,
 		_, found, isHistorical := store.LookupByContainerID(endpoint.containerID)
 		if !found || isHistorical {
 			delete(endpoints, endpoint)
-			flowMetrics.ActiveEndpointsPurger.WithLabelValues("container-gone").Inc()
+			if isHistorical {
+				flowMetrics.ActiveEndpointsPurger.WithLabelValues("containerID-historical").Inc()
+			} else {
+				flowMetrics.ActiveEndpointsPurger.WithLabelValues("containerID-gone").Inc()
+			}
 			continue
 		}
 		if maxAge > 0 {
