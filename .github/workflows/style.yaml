@@ -225,6 +225,8 @@ jobs:
       - misc-checks
       - style-check
       - golangci-lint
+      - check-collector-images-exist
+      - check-scanner-images-exist
     permissions:
       actions: read
     steps:
