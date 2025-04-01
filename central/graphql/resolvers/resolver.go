@@ -54,6 +54,7 @@ import (
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	"github.com/stackrox/rox/central/views/imagecve"
+	"github.com/stackrox/rox/central/views/imagecveflat"
 	"github.com/stackrox/rox/central/views/nodecve"
 	"github.com/stackrox/rox/central/views/platformcve"
 	vulnReqDataStore "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/datastore"
@@ -124,9 +125,10 @@ type Resolver struct {
 	ImageCVEV2DataStore           imageCVEV2DataStore.DataStore
 
 	// Views
-	ImageCVEView    imagecve.CveView
-	PlatformCVEView platformcve.CveView
-	NodeCVEView     nodecve.CveView
+	ImageCVEView     imagecve.CveView
+	ImageCVEFlatView imagecveflat.CveFlatView
+	PlatformCVEView  platformcve.CveView
+	NodeCVEView      nodecve.CveView
 }
 
 // New returns a Resolver wired into the relevant data stores
@@ -186,6 +188,9 @@ func New() *Resolver {
 		// Views
 		ImageCVEView: func() imagecve.CveView {
 			return imagecve.Singleton()
+		}(),
+		ImageCVEFlatView: func() imagecveflat.CveFlatView {
+			return imagecveflat.Singleton()
 		}(),
 		NodeCVEView: func() nodecve.CveView {
 			return nodecve.Singleton()
