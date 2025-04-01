@@ -33,7 +33,9 @@ function generated_files-are-up-to-date() {
         return 1
     fi
 }
-generated_files-are-up-to-date || {
+export -f generated_files-are-up-to-date
+
+bash -c generated_files-are-up-to-date || {
     save_junit_failure "Check_Generated_Files" \
         "Found new untracked files after running \`make proto-generated-srcs\` and \`make go-generated-srcs\`" \
         "$(cat /tmp/untracked-new)"
@@ -54,7 +56,9 @@ function check-operator-generated-files-up-to-date() {
     echo 'needs to change due to formatting changes in the generated files.'
     git diff --exit-code HEAD
 }
-check-operator-generated-files-up-to-date || {
+export -f check-operator-generated-files-up-to-date
+
+bash -c check-operator-generated-files-up-to-date || {
     save_junit_failure "Check_Operator_Generated_Files" \
         "Operator generated files are not up to date" \
         "$(git diff HEAD || true)"
@@ -69,7 +73,9 @@ function check-config-controller-generated-files-up-to-date() {
     echo 'Checking for diffs after making config-controller-gen...'
     git diff --exit-code HEAD
 }
-check-config-controller-generated-files-up-to-date || {
+export -f check-config-controller-generated-files-up-to-date
+
+bash -c check-config-controller-generated-files-up-to-date || {
     save_junit_failure "Check_Config_Controller_Generated_Files" \
         "Config controller generated files are not up to date" \
         "$(git diff HEAD || true)"
@@ -86,7 +92,9 @@ function check-containerignore-is-in-sync() {
         <(grep -vF -e '/.git/' -e '/image/' -e '/qa-tests-backend/' .dockerignore) \
     > diff.txt
 }
-check-containerignore-is-in-sync || {
+export -f check-containerignore-is-in-sync
+
+bash -c check-containerignore-is-in-sync || {
     save_junit_failure "Check_Containerignore_File" \
         ".containerignore file is not in sync with .dockerignore" \
         "$(cat diff.txt)"
@@ -105,7 +113,9 @@ function check-shellcheck-failing-list() {
             && git reset --hard HEAD
     fi
 }
-check-shellcheck-failing-list || {
+export -f check-shellcheck-failing-list
+
+bash -c check-shellcheck-failing-list || {
     save_junit_failure "Check_Shellcheck_Skip_List" \
         "Check if a script that is listed in scripts/style/shellcheck_skip.txt is now free from shellcheck errors" \
         "$(git diff HEAD || true)"
