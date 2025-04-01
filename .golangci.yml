@@ -122,15 +122,7 @@ linters:
         - name: unexported-return
           disabled: true
     staticcheck:
-      checks:
-        - -SA1019
-        - -SA4001
-        - -ST1000
-        - -ST1001
-        - -ST1003
-        - -ST1005
-        - -ST1016
-        - all
+      checks: [all,-ST1000,-ST1001,-ST1003,-ST1005,-SA1019,-SA4001,-ST1016]
     wrapcheck:
       ignore-sig-regexps:
         - utils\.Should
