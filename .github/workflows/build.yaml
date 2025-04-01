@@ -329,8 +329,6 @@ jobs:
   build-and-push-main:
     runs-on: ubuntu-latest
     needs:
-      - check-collector-images-exist
-      - check-scanner-images-exist
       - define-job-matrix
       - pre-build-ui
       - pre-build-cli
