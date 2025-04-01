@@ -491,14 +491,14 @@ func (m *networkFlowManager) purgeStaleActiveEndpoints(tickerC <-chan time.Time)
 			concurrency.WithLock(&m.activeEndpointsMutex, func() {
 				log.Debug("Purging active endpoints")
 				start := time.Now()
-				purgeIfOlderThanNoLock(maxAge, m.activeEndpoints, m.clusterEntities)
+				purgeActiveEndpointsNoLock(maxAge, m.activeEndpoints, m.clusterEntities)
 				flowMetrics.ActiveEndpointsPurgerDuration.Observe(float64(time.Since(start).Milliseconds()))
 			})
 		}
 	}
 }
 
-func purgeIfOlderThanNoLock(maxAge time.Duration,
+func purgeActiveEndpointsNoLock(maxAge time.Duration,
 	endpoints map[containerEndpoint]*containerEndpointIndicatorWithAge,
 	store EntityStore) {
 	for endpoint, age := range endpoints {
@@ -558,9 +558,12 @@ func (m *networkFlowManager) getCurrentContext() context.Context {
 }
 
 func (m *networkFlowManager) enrichAndSend() {
-	// takes host connections and endpoints and updates them
+	// Takes host connections & endpoints and updates them by enriching with additional data.
+	// Updates m.activeEndpoints and m.activeConnections if lastSeen was reported as null by the Collector.
 	currentConns, currentEndpoints := m.currentEnrichedConnsAndEndpoints()
 
+	// Compares currently enriched connections & endpoints with those enriched in the previous cycle.
+	// The new changes are sent to Central.
 	updatedConns := computeUpdatedConns(currentConns, m.enrichedConnsLastSentState, &m.lastSentStateMutex)
 	updatedEndpoints := computeUpdatedEndpoints(currentEndpoints, m.enrichedEndpointsLastSentState, &m.lastSentStateMutex)
 	flowMetrics.NumUpdatedConnectionsEndpoints.WithLabelValues("connections").Add(float64(len(updatedConns)))

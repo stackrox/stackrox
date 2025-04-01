@@ -215,14 +215,12 @@ func (ch *HostnameAndConnections) withEndpointPair(pair *endpointPair) *Hostname
 func addHostConnection(mgr *networkFlowManager, connectionsHostPair *HostnameAndConnections) {
 	mgr.connectionsByHostMutex.Lock()
 	defer mgr.connectionsByHostMutex.Unlock()
-
 	h, ok := mgr.connectionsByHost[connectionsHostPair.hostname]
 	if !ok {
 		h = &hostConnections{}
-	} else {
-		h.mutex.Lock()
-		defer h.mutex.Unlock()
 	}
+	h.mutex.Lock()
+	defer h.mutex.Unlock()
 	if connectionsHostPair.connPair != nil {
 		if h.connections == nil {
 			h.connections = make(map[connection]*connStatus)
