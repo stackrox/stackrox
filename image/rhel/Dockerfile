@@ -55,6 +55,7 @@ RUN rpm --import RPM-GPG-KEY-CentOS-Official && \
     microdnf -y upgrade --nobest && \
     rpm -i --nodeps /tmp/postgres-libs.rpm && \
     rpm -i --nodeps /tmp/postgres.rpm && \
+    microdnf install --setopt=install_weak_deps=0 --nodocs -y util-linux && \
     microdnf clean all -y && \
     rm /tmp/postgres.rpm /tmp/postgres-libs.rpm RPM-GPG-KEY-CentOS-Official && \
     # (Optional) Remove line below to keep package management utilities
