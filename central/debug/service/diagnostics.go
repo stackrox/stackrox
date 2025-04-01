@@ -15,11 +15,14 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/central/sensor/telemetry"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/k8sintrospect"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -33,13 +36,8 @@ type gatherResult struct {
 	files []k8sintrospect.File
 }
 
-func (s *serviceImpl) getDelegatedScanningConfig(ctx context.Context, since time.Time) ([]k8sintrospect.File, error) {
-	var files []k8sintrospect.File
-	res, err := createDelScanningConfigFile(centralClusterPrefix, s.deleRegConfigDS, ctx)
-	if err != nil {
-		return []k8sintrospect.File{createErrorFile(centralClusterPrefix, err)}, nil
-	}
-	return files, nil
+func (s *serviceImpl) getDelegatedScanningConfig(ctx context.Context) ([]k8sintrospect.File, error) {
+	return []k8sintrospect.File{createDelScanningConfigFile(centralClusterPrefix, s.deleRegConfigDS, ctx)}, nil
 }
 
 func (s *serviceImpl) getK8sDiagnostics(ctx context.Context, zipWriter *zipWriter, opts debugDumpOptions) error {
@@ -154,7 +152,13 @@ func gatherResultCallback(res *gatherResult, clusterName string) func(ctx concur
 }
 
 func createDelScanningConfigFile(clusterName string, d deleRegDS.DataStore, ctx context.Context) k8sintrospect.File {
-	adminCtx := withAdminRead(ctx)
+	adminCtx := sac.WithGlobalAccessScopeChecker(
+		ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Administration),
+		),
+	)
 	config, exists, err := d.GetConfig(adminCtx)
 	file := "delegated-scanning-config.txt"
 	res := k8sintrospect.File{}
