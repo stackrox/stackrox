@@ -334,8 +334,9 @@ type networkFlowManager struct {
 
 	// activeConnections tracks all connections reported by Collector that are believed to be active.
 	// A connection is active for as long as Collector sends a NetworkConnectionInfo message with `lastSeen` set to a non-nil value.
-	activeConnections map[connection]*networkConnIndicator
-	activeEndpoints   map[containerEndpoint]*containerEndpointIndicatorWithAge
+	activeConnections    map[connection]*networkConnIndicator
+	activeEndpointsMutex sync.Mutex
+	activeEndpoints      map[containerEndpoint]*containerEndpointIndicatorWithAge
 
 	sensorUpdates chan *message.ExpiringMessage
 	centralReady  concurrency.Signal
@@ -470,17 +471,20 @@ func (m *networkFlowManager) purgeStaleActiveEndpoints(tickerC <-chan time.Time)
 		case <-m.stopper.Flow().StopRequested():
 			return
 		case <-tickerC:
-			if env.ActiveEndpointsPurgerTickerMaxAge.DurationSetting() > 0 {
-				maxAge := env.ActiveEndpointsPurgerTickerMaxAge.DurationSetting()
-				purgeIfOlderThan(timestamp.Now().Add(maxAge*-1), m.activeEndpoints)
+			maxAge := env.ActiveEndpointsPurgerTickerMaxAge.DurationSetting()
+			if maxAge > 0 {
+				concurrency.WithLock(&m.activeEndpointsMutex, func() {
+					log.Debugf("Purging active endpoints older than %s", maxAge.String())
+					purgeIfOlderThanNoLock(timestamp.Now().Add(maxAge*-1), m.activeEndpoints)
+				})
 			}
 		}
 	}
 }
 
-func purgeIfOlderThan(ts timestamp.MicroTS, endpoints map[containerEndpoint]*containerEndpointIndicatorWithAge) {
+func purgeIfOlderThanNoLock(cutOffTS timestamp.MicroTS, endpoints map[containerEndpoint]*containerEndpointIndicatorWithAge) {
 	for endpoint, age := range endpoints {
-		if ts.After(age.lastUpdate) {
+		if cutOffTS.After(age.lastUpdate) {
 			delete(endpoints, endpoint)
 		}
 	}
@@ -850,7 +854,10 @@ func (m *networkFlowManager) enrichContainerEndpoint(ep *containerEndpoint, stat
 			return
 		}
 		// Expire the endpoint if the container cannot be found within the clusterEntityResolutionWaitPeriod.
-		if err := expireEndpoint(ep, m.activeEndpoints, enrichedEndpoints, now); err != nil {
+		expireErr := concurrency.WithLock1(&m.activeEndpointsMutex, func() error {
+			return expireEndpoint(ep, m.activeEndpoints, enrichedEndpoints, now)
+		})
+		if expireErr != nil {
 			// Endpoint is not in activeEndpoints, so it must be rotten. No action required, as
 			// there is nothing to update in activeEndpoints and in enrichedEndpoints.
 			status.rotten = true
@@ -883,6 +890,8 @@ func (m *networkFlowManager) enrichContainerEndpoint(ep *containerEndpoint, stat
 		flowMetrics.IncFlowEnrichmentEndpoint(ok, "update-last-seen", isHistoricalStr, "ff-disabled", lastSeenSet, status.rotten, isMature, isFresh)
 		return
 	}
+	m.activeEndpointsMutex.Lock()
+	defer m.activeEndpointsMutex.Unlock()
 	if status.lastSeen == timestamp.InfiniteFuture {
 		m.activeEndpoints[*ep] = &containerEndpointIndicatorWithAge{
 			indicator,

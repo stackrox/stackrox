@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/concurrency"
 )
 
 // StartDebugServer starts HTTP server that allows to look inside the active connections and endpoints.
@@ -37,10 +38,12 @@ func (m *networkFlowManager) Debug() []byte {
 	for c, indicator := range m.activeConnections {
 		d["activeConnections"][c.String()] = indicator.String()
 	}
-	d["activeEndpoints"] = make(map[string]string)
-	for ep, indicator := range m.activeEndpoints {
-		d["activeEndpoints"][ep.String()] = indicator.String()
-	}
+	concurrency.WithLock(&m.activeEndpointsMutex, func() {
+		d["activeEndpoints"] = make(map[string]string)
+		for ep, indicator := range m.activeEndpoints {
+			d["activeEndpoints"][ep.String()] = indicator.String()
+		}
+	})
 	ret, err := json.Marshal(d)
 	if err != nil {
 		log.Errorf("Error marshalling networkFlowManager debug: %v", err)
